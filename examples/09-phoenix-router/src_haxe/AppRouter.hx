@@ -26,9 +26,9 @@ typedef ProductReviewPathParams = {
 // @:router: marks this module as a Phoenix router and enables route emission transforms.
 @:router
 final routes = [
-	pipeline("browser", [plug("accepts", {initArgs: ["html"]}), plug("fetch_session")]),
+	pipeline(browser, [plug(accepts, {initArgs: ["html"]}), plug(fetch_session)]),
 	scope("/", [
-		pipeThrough(["browser"]),
+		pipeThrough([browser]),
 		get("/users", UserController, UserController.index),
 		get("/users/:id", UserController, UserController.show,
 			{

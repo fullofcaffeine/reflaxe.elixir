@@ -8,6 +8,11 @@ import elixir.otp.Supervisor.SupervisorOptions;
 import elixir.otp.TypeSafeChildSpec;
 import elixir.otp.Supervisor.ChildSpecFormat;
 import elixir.types.Term;
+import server.infrastructure.Endpoint;
+import server.infrastructure.PubSub;
+import server.infrastructure.Repo;
+import server.infrastructure.Telemetry;
+import server.presence.TodoPresence;
 import server.support.DevAutoMigrate;
 
 /**
@@ -31,20 +36,20 @@ class TodoApp {
 		// Define children for the supervision tree using type-safe child specs
 		var children:Array<ChildSpecFormat> = [
 			// Database repository - Ecto.Repo handles Postgrex.TypeManager internally
-			ModuleRef("TodoApp.Repo"),
+			TypeSafeChildSpec.moduleRef(Repo),
 
 			// PubSub system with proper child spec
-			TypeSafeChildSpec.pubSub("TodoApp.PubSub"),
+			TypeSafeChildSpec.pubSub(PubSub),
 
 			// Presence tracker - starts Phoenix.Tracker backing ETS tables
 			// Presence module defines child_spec via `use Phoenix.Presence`
-			ModuleRef("TodoAppWeb.Presence"),
+			TypeSafeChildSpec.moduleRef(TodoPresence),
 
 			// Telemetry supervisor
-			TypeSafeChildSpec.telemetry("TodoAppWeb.Telemetry"),
+			TypeSafeChildSpec.telemetry(Telemetry),
 
 			// Web endpoint
-			TypeSafeChildSpec.endpoint("TodoAppWeb.Endpoint")
+			TypeSafeChildSpec.endpoint(Endpoint)
 		];
 
 		final options:SupervisorOptions = {

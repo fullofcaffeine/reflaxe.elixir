@@ -38,12 +38,12 @@ import reflaxe.elixir.macros.RouterDsl.*;
 @:native("PhoenixHaxeExampleWeb.Router")
 @:router
 final routes = [
-  pipeline("browser", [
-    plug("accepts", {initArgs: ["html"]}),
-    plug("fetch_session")
+  pipeline(browser, [
+    plug(accepts, {initArgs: ["html"]}),
+    plug(fetch_session)
   ]),
   scope("/", [
-    pipeThrough(["browser"]),
+    pipeThrough([browser]),
     get("/", PageController, PageController.home)
   ])
 ];

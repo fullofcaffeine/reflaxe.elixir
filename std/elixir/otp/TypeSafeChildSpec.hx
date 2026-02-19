@@ -3,140 +3,157 @@ package elixir.otp;
 import elixir.otp.Supervisor.ChildSpecFormat;
 import elixir.otp.Supervisor.ChildSpec;
 import elixir.types.Term;
+#if macro
+import haxe.macro.Expr;
+#end
 
 /**
- * Type-safe child specifications for OTP supervisors
- * 
- * Provides compile-time checked child specs that generate proper Elixir child specifications.
- * Each method returns a proper child spec map or module reference that Supervisor.start_link expects.
- * 
- * ## Usage Example
- * 
- * ```haxe
- * var children = [
- *     TypeSafeChildSpec.pubSub("MyApp.PubSub"),
- *     TypeSafeChildSpec.repo("MyApp.Repo", {
- *         database: "myapp_dev",
- *         username: "postgres",
- *         pool_size: 10
- *     }),
- *     TypeSafeChildSpec.endpoint("MyAppWeb.Endpoint"),
- *     TypeSafeChildSpec.telemetry()
- * ];
- * 
- * Supervisor.start_link(children, opts);
- * ```
- * 
- * ## Generated Elixir Code
- * 
- * These methods generate proper child specifications:
- * - Module references: `MyAppWeb.Endpoint`
- * - Tuple specs: `{Phoenix.PubSub, [name: "MyApp.PubSub"]}`
- * - Map specs: `%{id: MyWorker, start: {MyWorker, :start_link, []}}`
+ * Type-safe child specifications for OTP supervisors.
+ *
+ * WHY
+ * - Child specs are foundational app wiring; weak string-based APIs make mistakes easy.
+ * - Typed module refs catch misspelled/unresolvable modules at compile time.
+ *
+ * WHAT
+ * - Primary APIs accept module type references (class/extern), resolved at compile time.
+ * - Explicit `*Unsafe` variants keep interop available when dynamic strings are intentional.
+ *
+ * HOW
+ * - Typed macro entry points resolve module refs to Elixir module names.
+ * - Runtime child-spec shapes remain the same (`ModuleRef`, `{Module, kw}`, full spec maps).
+ *
+ * EXAMPLES
+ * Haxe (typed):
+ *   TypeSafeChildSpec.endpoint(server.infrastructure.Endpoint)
+ *   TypeSafeChildSpec.pubSub(server.infrastructure.PubSub)
+ *
+ * Haxe (explicit escape hatch):
+ *   TypeSafeChildSpec.endpointUnsafe("MyAppWeb.Endpoint")
  */
 class TypeSafeChildSpec {
 	/**
-	 * Phoenix PubSub child specification
-	 * 
-	 * @param name The PubSub name (e.g., "MyApp.PubSub")
-	 * @return Child spec for Phoenix.PubSub
+	 * Phoenix PubSub child specification (typed module reference).
 	 */
-	public static inline function pubSub(name:String):ChildSpecFormat {
-		// Phoenix.PubSub expects a keyword list with name
+	public static macro function pubSub(moduleRef:Expr):ExprOf<ChildSpecFormat> {
+		var moduleName = elixir.otp.macros.ChildSpecModuleResolver.resolveModuleName(moduleRef, "TypeSafeChildSpec.pubSub", "TypeSafeChildSpec.pubSubUnsafe");
+		return macro TypeSafeChildSpec.pubSubUnsafe($v{moduleName});
+	}
+
+	/**
+	 * Explicit dynamic escape hatch for PubSub module names.
+	 */
+	public static inline function pubSubUnsafe(name:String):ChildSpecFormat {
 		return ModuleWithConfig("Phoenix.PubSub", [{key: "name", value: name}]);
 	}
 
 	/**
-	 * Ecto Repository child specification
-	 * 
-	 * @param module The repo module name (e.g., "MyApp.Repo")
-	 * @param config Optional configuration as keyword list
-	 * @return Child spec for the repository
+	 * Ecto repository child specification (typed module reference).
 	 */
-	public static inline function repo(module:String, ?config:Array<{key:String, value:Term}>):ChildSpecFormat {
+	public static macro function repo(moduleRef:Expr, ?config:Expr):ExprOf<ChildSpecFormat> {
+		var moduleName = elixir.otp.macros.ChildSpecModuleResolver.resolveModuleName(moduleRef, "TypeSafeChildSpec.repo", "TypeSafeChildSpec.repoUnsafe");
+		var configExpr = config != null ? config : macro null;
+		return macro TypeSafeChildSpec.repoUnsafe($v{moduleName}, $configExpr);
+	}
+
+	/**
+	 * Explicit dynamic escape hatch for repo module names.
+	 */
+	public static inline function repoUnsafe(module:String, ?config:Array<{key:String, value:Term}>):ChildSpecFormat {
 		if (config != null) {
 			return ModuleWithConfig(module, config);
-		} else {
-			// Just the module reference
-			return ModuleRef(module);
 		}
-	}
-
-	/**
-	 * Phoenix Endpoint child specification
-	 * 
-	 * @param module The endpoint module name
-	 * @return Module reference for the endpoint
-	 */
-	public static inline function endpoint(module:String):ChildSpecFormat {
 		return ModuleRef(module);
 	}
 
 	/**
-	 * Telemetry supervisor child specification
-	 * 
-	 * @param module The telemetry module name
-	 * @return Module reference for telemetry
+	 * Phoenix endpoint child specification (typed module reference).
 	 */
-	public static inline function telemetry(module:String):ChildSpecFormat {
+	public static macro function endpoint(moduleRef:Expr):ExprOf<ChildSpecFormat> {
+		var moduleName = elixir.otp.macros.ChildSpecModuleResolver.resolveModuleName(moduleRef, "TypeSafeChildSpec.endpoint",
+			"TypeSafeChildSpec.endpointUnsafe");
+		return macro TypeSafeChildSpec.endpointUnsafe($v{moduleName});
+	}
+
+	/**
+	 * Explicit dynamic escape hatch for endpoint module names.
+	 */
+	public static inline function endpointUnsafe(module:String):ChildSpecFormat {
 		return ModuleRef(module);
 	}
 
 	/**
-	 * Generic worker child specification
-	 * 
-	 * @param module The worker module
-	 * @param args Arguments to pass to start_link
-	 * @return Child spec for the worker
+	 * Telemetry child specification (typed module reference).
 	 */
-	public static inline function worker(module:String, ?args:Array<Term>):ChildSpecFormat {
+	public static macro function telemetry(moduleRef:Expr):ExprOf<ChildSpecFormat> {
+		var moduleName = elixir.otp.macros.ChildSpecModuleResolver.resolveModuleName(moduleRef, "TypeSafeChildSpec.telemetry",
+			"TypeSafeChildSpec.telemetryUnsafe");
+		return macro TypeSafeChildSpec.telemetryUnsafe($v{moduleName});
+	}
+
+	/**
+	 * Explicit dynamic escape hatch for telemetry module names.
+	 */
+	public static inline function telemetryUnsafe(module:String):ChildSpecFormat {
+		return ModuleRef(module);
+	}
+
+	/**
+	 * Generic worker child specification (typed module reference).
+	 */
+	public static macro function worker(moduleRef:Expr, ?args:Expr):ExprOf<ChildSpecFormat> {
+		var moduleName = elixir.otp.macros.ChildSpecModuleResolver.resolveModuleName(moduleRef, "TypeSafeChildSpec.worker", "TypeSafeChildSpec.workerUnsafe");
+		var argsExpr = args != null ? args : macro null;
+		return macro TypeSafeChildSpec.workerUnsafe($v{moduleName}, $argsExpr);
+	}
+
+	/**
+	 * Explicit dynamic escape hatch for worker module names.
+	 */
+	public static inline function workerUnsafe(module:String, ?args:Array<Term>):ChildSpecFormat {
 		if (args != null && args.length > 0) {
 			return ModuleWithArgs(module, args);
-		} else {
-			return ModuleRef(module);
 		}
+		return ModuleRef(module);
 	}
 
 	/**
-	 * Generic supervisor child specification
-	 * 
-	 * @param module The supervisor module
-	 * @param args Arguments to pass to start_link
-	 * @param opts Additional options for full spec
-	 * @return Child spec for the supervisor
+	 * Generic supervisor child specification (typed module reference).
 	 */
-	public static inline function supervisor(module:String, ?args:Array<Term>, ?opts:ChildSpec):ChildSpecFormat {
+	public static macro function supervisor(moduleRef:Expr, ?args:Expr, ?opts:Expr):ExprOf<ChildSpecFormat> {
+		var moduleName = elixir.otp.macros.ChildSpecModuleResolver.resolveModuleName(moduleRef, "TypeSafeChildSpec.supervisor",
+			"TypeSafeChildSpec.supervisorUnsafe");
+		var argsExpr = args != null ? args : macro null;
+		var optsExpr = opts != null ? opts : macro null;
+		return macro TypeSafeChildSpec.supervisorUnsafe($v{moduleName}, $argsExpr, $optsExpr);
+	}
+
+	/**
+	 * Explicit dynamic escape hatch for supervisor module names.
+	 */
+	public static inline function supervisorUnsafe(module:String, ?args:Array<Term>, ?opts:ChildSpec):ChildSpecFormat {
 		if (opts != null) {
-			// Use full spec with provided options
 			var spec = opts;
 			spec.id = module;
 			spec.start = {module: module, func: "start_link", args: args != null ? args : []};
 			if (spec.type == null)
 				spec.type = Supervisor;
 			return FullSpec(spec);
-		} else if (args != null && args.length > 0) {
-			return ModuleWithArgs(module, args);
-		} else {
-			return ModuleRef(module);
 		}
+		if (args != null && args.length > 0) {
+			return ModuleWithArgs(module, args);
+		}
+		return ModuleRef(module);
 	}
 
 	/**
-	 * Task supervisor child specification
-	 * 
-	 * @param name The task supervisor name
-	 * @return Child spec for Task.Supervisor
+	 * Task supervisor child specification.
 	 */
 	public static inline function taskSupervisor(name:String):ChildSpecFormat {
 		return ModuleWithConfig("Task.Supervisor", [{key: "name", value: name}]);
 	}
 
 	/**
-	 * Registry child specification
-	 * 
-	 * @param name The registry name
-	 * @param opts Registry options as keyword list
-	 * @return Child spec for Registry
+	 * Registry child specification.
 	 */
 	public static inline function registry(name:String, ?opts:Array<{key:String, value:Term}>):ChildSpecFormat {
 		var config = [{key: "name", value: name}];
@@ -147,27 +164,76 @@ class TypeSafeChildSpec {
 	}
 
 	/**
-	 * Dynamic child specification from a map
-	 * 
-	 * @param spec The child spec map
-	 * @return The child spec as a full specification
+	 * Generic typed wrapper for ChildSpecFormat.ModuleRef(module).
+	 */
+	public static macro function moduleRef(moduleRefExpr:Expr):ExprOf<ChildSpecFormat> {
+		var moduleName = elixir.otp.macros.ChildSpecModuleResolver.resolveModuleName(moduleRefExpr, "TypeSafeChildSpec.moduleRef",
+			"TypeSafeChildSpec.moduleRefUnsafe");
+		return macro TypeSafeChildSpec.moduleRefUnsafe($v{moduleName});
+	}
+
+	/**
+	 * Dynamic escape hatch for ChildSpecFormat.ModuleRef(module).
+	 */
+	public static inline function moduleRefUnsafe(module:String):ChildSpecFormat {
+		return ModuleRef(module);
+	}
+
+	/**
+	 * Generic typed wrapper for ChildSpecFormat.ModuleWithConfig(module, config).
+	 */
+	public static macro function moduleWithConfig(moduleRefExpr:Expr, config:Expr):ExprOf<ChildSpecFormat> {
+		var moduleName = elixir.otp.macros.ChildSpecModuleResolver.resolveModuleName(moduleRefExpr, "TypeSafeChildSpec.moduleWithConfig",
+			"TypeSafeChildSpec.moduleWithConfigUnsafe");
+		return macro TypeSafeChildSpec.moduleWithConfigUnsafe($v{moduleName}, $config);
+	}
+
+	/**
+	 * Dynamic escape hatch for ChildSpecFormat.ModuleWithConfig(module, config).
+	 */
+	public static inline function moduleWithConfigUnsafe(module:String, config:Array<{key:String, value:Term}>):ChildSpecFormat {
+		return ModuleWithConfig(module, config);
+	}
+
+	/**
+	 * Generic typed wrapper for ChildSpecFormat.ModuleWithArgs(module, args).
+	 */
+	public static macro function moduleWithArgs(moduleRefExpr:Expr, args:Expr):ExprOf<ChildSpecFormat> {
+		var moduleName = elixir.otp.macros.ChildSpecModuleResolver.resolveModuleName(moduleRefExpr, "TypeSafeChildSpec.moduleWithArgs",
+			"TypeSafeChildSpec.moduleWithArgsUnsafe");
+		return macro TypeSafeChildSpec.moduleWithArgsUnsafe($v{moduleName}, $args);
+	}
+
+	/**
+	 * Dynamic escape hatch for ChildSpecFormat.ModuleWithArgs(module, args).
+	 */
+	public static inline function moduleWithArgsUnsafe(module:String, args:Array<Term>):ChildSpecFormat {
+		return ModuleWithArgs(module, args);
+	}
+
+	/**
+	 * Dynamic child specification from a map.
 	 */
 	public static inline function fromMap(spec:ChildSpec):ChildSpecFormat {
 		return FullSpec(spec);
 	}
 
 	/**
-	 * Create a simple child spec from module and arguments
-	 * 
-	 * @param module The module to start
-	 * @param args Arguments for start_link
-	 * @return Simple module-based child spec
+	 * Create a simple child spec from module and arguments (typed module reference).
 	 */
-	public static inline function simple(module:String, ?args:Array<Term>):ChildSpecFormat {
+	public static macro function simple(moduleRef:Expr, ?args:Expr):ExprOf<ChildSpecFormat> {
+		var moduleName = elixir.otp.macros.ChildSpecModuleResolver.resolveModuleName(moduleRef, "TypeSafeChildSpec.simple", "TypeSafeChildSpec.simpleUnsafe");
+		var argsExpr = args != null ? args : macro null;
+		return macro TypeSafeChildSpec.simpleUnsafe($v{moduleName}, $argsExpr);
+	}
+
+	/**
+	 * Explicit dynamic escape hatch for simple child specs.
+	 */
+	public static inline function simpleUnsafe(module:String, ?args:Array<Term>):ChildSpecFormat {
 		if (args != null && args.length > 0) {
 			return ModuleWithArgs(module, args);
-		} else {
-			return ModuleRef(module);
 		}
+		return ModuleRef(module);
 	}
 }

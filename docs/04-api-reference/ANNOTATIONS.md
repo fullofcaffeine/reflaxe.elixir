@@ -100,12 +100,12 @@ typedef UserPathParams = {
 @:native("MyAppWeb.Router")
 @:router
 final routes = [
-  pipeline("browser", [
-    plug("accepts", {initArgs: ["html"]}),
-    plug("fetch_session")
+  pipeline(browser, [
+    plug(accepts, {initArgs: ["html"]}),
+    plug(fetch_session)
   ]),
   scope("/", [
-    pipeThrough(["browser"]),
+    pipeThrough([browser]),
     get("/users/:id", UserController, UserController.show, {
       paramsContract: UserPathParams
     })
@@ -125,6 +125,8 @@ class LegacyRouter {
 ```
 
 Use module-level `final routes = [...]` for new code. Static-imported router nodes map directly to Phoenix router nesting and enable extra compile-time checks.
+For finite router atoms, prefer typed tokens (`browser`, `accepts`, `fetch_session`) over raw strings.
+Use `pipelineName("...")` / `plugName("...")` for custom typed names, and `pipelineUnsafe` / `plugUnsafe` only for intentional dynamic/legacy values.
 Use `@:routes` as a compatibility surface when migrating existing code.
 Use `@:route` only for manual/legacy router glue where string literals are acceptable.
 

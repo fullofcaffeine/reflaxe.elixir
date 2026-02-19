@@ -4571,6 +4571,132 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			}
 		}
 
+		function extractCallName(expr:Expr):Null<String> {
+			return switch (expr.expr) {
+				case EConst(CIdent(name)):
+					name;
+				case EField(_, field):
+					field;
+				default:
+					null;
+			};
+		}
+
+		function unwrapExpr(expr:Expr):Expr {
+			return switch (expr.expr) {
+				case EParenthesis(inner):
+					unwrapExpr(inner);
+				case ECheckType(inner, _):
+					unwrapExpr(inner);
+				case EMeta(_, inner):
+					unwrapExpr(inner);
+				case ECast(inner, _):
+					unwrapExpr(inner);
+				default:
+					expr;
+			};
+		}
+
+		function isLikelyModulePath(path:String):Bool {
+			if (path == null || path.length == 0) {
+				return false;
+			}
+			if (StringTools.startsWith(path, "Elixir.")) {
+				return true;
+			}
+			var firstDot = path.indexOf(".");
+			var firstSegment = firstDot == -1 ? path : path.substr(0, firstDot);
+			if (firstSegment == null || firstSegment.length == 0) {
+				return false;
+			}
+			var firstChar = firstSegment.charAt(0);
+			return firstChar >= "A" && firstChar <= "Z";
+		}
+
+		function extractTypedAtomToken(expr:Expr, fieldName:String, allowStringLiteral:Bool, factoryCall:String):Null<String> {
+			var normalizedExpr = unwrapExpr(expr);
+			return switch (normalizedExpr.expr) {
+				case EConst(CIdent(identifier)):
+					identifier;
+				case EField(owner, field):
+					var ownerPath = extractDotPath(owner);
+					if (ownerPath == "RouterDsl" || (ownerPath != null && StringTools.endsWith(ownerPath, ".RouterDsl"))) {
+						field;
+					} else {
+						var dotted = extractDotPath(normalizedExpr);
+						if (dotted != null && !isLikelyModulePath(dotted)) {
+							field;
+						} else {
+							Context.error('${fieldName} must be a typed token (use RouterDsl.${factoryCall} for custom names).', expr.pos);
+							null;
+						}
+					}
+				case EConst(CString(value, _)):
+					if (allowStringLiteral) {
+						value;
+					} else {
+						Context.error('${fieldName} must use typed tokens in RouterDsl.* APIs. Use ${factoryCall}("name") or the Unsafe variant for raw strings.',
+							expr.pos);
+						null;
+					}
+				case ECall(callee, args):
+					var callName = extractCallName(callee);
+					if (callName == factoryCall) {
+						if (args.length != 1) {
+							Context.error('RouterDsl.${factoryCall}(name) requires a single string literal argument.', expr.pos);
+						}
+						extractStringValue(args[0], fieldName, args[0].pos);
+					} else {
+						Context.error('${fieldName} must be a typed token (identifier or RouterDsl.${factoryCall}("name")).', expr.pos);
+						null;
+					}
+				default:
+					Context.error('${fieldName} must be a typed token.', expr.pos);
+					null;
+			};
+		}
+
+		function extractPipelineNameValue(expr:Expr, allowStringLiteral:Bool):Null<String> {
+			return extractTypedAtomToken(expr, "pipeline", allowStringLiteral, "pipelineName");
+		}
+
+		function extractPlugTargetValue(expr:Expr, allowStringLiteral:Bool):Null<String> {
+			var normalizedExpr = unwrapExpr(expr);
+			return switch (normalizedExpr.expr) {
+				case EConst(CString(targetValue, _)):
+					if (allowStringLiteral) {
+						targetValue;
+					} else {
+						Context.error('RouterDsl.plug(...) is typed. Use plug(accepts), plug(fetch_session), plug(MyPlugModule), or plugUnsafe("...").',
+							expr.pos);
+						null;
+					}
+				case ECall(callee, args):
+					var callName = extractCallName(callee);
+					if (callName == "plugName") {
+						if (args.length != 1) {
+							Context.error('RouterDsl.plugName(name) requires a single string literal argument.', expr.pos);
+						}
+						extractStringValue(args[0], "plug target", args[0].pos);
+					} else {
+						Context.error('plug target must be a typed plug token or module reference.', expr.pos);
+						null;
+					}
+				default:
+					var dottedPath = extractDotPath(normalizedExpr);
+					if (dottedPath == null) {
+						Context.error('plug target must be a typed plug token or module reference.', expr.pos);
+						null;
+					} else if (isLikelyModulePath(dottedPath)) {
+						var resolvedModulePath = extractTypeRef(normalizedExpr, "plug module", expr.pos, false, false);
+						resolvedModulePath != null ? stripLocalModulePrefix(resolvedModulePath) : null;
+					} else {
+						var lastDot = dottedPath.lastIndexOf(".");
+						lastDot == -1 ? dottedPath : dottedPath.substr(lastDot + 1);
+					}
+			};
+		}
+
 		var parseNodeRef:Expr->Null<RouterNodeMeta> = null;
 
 		function parseChildren(expr:Expr):Array<RouterNodeMeta> {
@@ -4588,6 +4714,68 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 					Context.error("Children argument must be an array of RouterDsl nodes", expr.pos);
 					[];
 			};
+		}
+
+		var declaredPipelines = new Map<String, Bool>();
+
+		function collectDeclaredPipelines(expr:Expr):Void {
+			var normalizedExpr = unwrapExpr(expr);
+			switch (normalizedExpr.expr) {
+				case ECall(callee, args):
+					var callName = extractCallName(callee);
+					if ((callName == "pipeline" || callName == "pipelineUnsafe") && args.length > 0) {
+						var pipelineName = extractPipelineNameValue(args[0], callName == "pipelineUnsafe");
+						if (pipelineName != null) {
+							if (declaredPipelines.exists(pipelineName)) {
+								Context.error('Duplicate pipeline declaration "${pipelineName}".', expr.pos);
+							}
+							declaredPipelines.set(pipelineName, true);
+						}
+					}
+					for (arg in args) {
+						collectDeclaredPipelines(arg);
+					}
+				case EArrayDecl(items):
+					for (item in items) {
+						collectDeclaredPipelines(item);
+					}
+				case EObjectDecl(fields):
+					for (field in fields) {
+						collectDeclaredPipelines(field.expr);
+					}
+				default:
+			}
+		}
+
+		for (routeValue in routeValues) {
+			collectDeclaredPipelines(routeValue);
+		}
+
+		function parsePipeThroughPipelines(expr:Expr, allowStringLiteral:Bool):Array<String> {
+			var pipelines:Array<String> = [];
+			switch (unwrapExpr(expr).expr) {
+				case EArrayDecl(values):
+					for (value in values) {
+						var pipelineName = extractPipelineNameValue(value, allowStringLiteral);
+						if (pipelineName != null) {
+							pipelines.push(pipelineName);
+						}
+					}
+				default:
+					var singlePipeline = extractPipelineNameValue(expr, allowStringLiteral);
+					if (singlePipeline != null) {
+						pipelines.push(singlePipeline);
+					}
+			}
+			return pipelines;
+		}
+
+		function validatePipeThroughReferences(pipelines:Array<String>, pos:haxe.macro.Expr.Position):Void {
+			for (pipelineName in pipelines) {
+				if (!declaredPipelines.exists(pipelineName)) {
+					Context.error('pipeThrough references unknown pipeline "${pipelineName}". Declare it with pipeline(...) first.', pos);
+				}
+			}
 		}
 
 		function parseCompatRouteObject(routeExpr:Expr):Null<RouterNodeMeta> {
@@ -4697,17 +4885,6 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			};
 		}
 
-		function extractCallName(expr:Expr):Null<String> {
-			return switch (expr.expr) {
-				case EConst(CIdent(name)):
-					name;
-				case EField(_, field):
-					field;
-				default:
-					null;
-			};
-		}
-
 		function parseNode(nodeExpr:Expr):Null<RouterNodeMeta> {
 			var compat = parseCompatRouteObject(nodeExpr);
 			if (compat != null) {
@@ -4723,11 +4900,12 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 					}
 
 					switch (name) {
-						case "pipeline":
+						case "pipeline", "pipelineUnsafe":
 							if (args.length < 2) {
-								Context.error('RouterDsl.pipeline(name, children) requires two arguments', nodeExpr.pos);
+								var ctor = name == "pipelineUnsafe" ? "pipelineUnsafe" : "pipeline";
+								Context.error('RouterDsl.${ctor}(name, children) requires two arguments', nodeExpr.pos);
 							}
-							var pipelineName = extractStringValue(args[0], "pipeline name", nodeExpr.pos);
+							var pipelineName = extractPipelineNameValue(args[0], name == "pipelineUnsafe");
 							var children = parseChildren(args[1]);
 							{
 								kind: "pipeline",
@@ -4735,24 +4913,12 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 								children: children
 							};
 
-						case "plug":
+						case "plug", "plugUnsafe":
 							if (args.length < 1) {
-								Context.error('RouterDsl.plug(target, ?opts) requires at least one argument', nodeExpr.pos);
+								var ctor = name == "plugUnsafe" ? "plugUnsafe" : "plug";
+								Context.error('RouterDsl.${ctor}(target, ?opts) requires at least one argument', nodeExpr.pos);
 							}
-							var target = switch (args[0].expr) {
-								case EConst(CString(s, _)):
-									s;
-								case EConst(CIdent(ident)):
-									ident;
-								default:
-									var path = extractDotPath(args[0]);
-									if (path == null) {
-										Context.error('plug target must be an atom/module reference (e.g. "accepts" or Plug.MyPlug)', nodeExpr.pos);
-										null;
-									} else {
-										path;
-									}
-							}
+							var target = extractPlugTargetValue(args[0], name == "plugUnsafe");
 							var opts = args.length > 1 ? parseOptionsExpr(args[1]) : [];
 							{
 								kind: "plug",
@@ -4774,25 +4940,13 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 								options: scopeOpts
 							};
 
-						case "pipeThrough":
+						case "pipeThrough", "pipeThroughUnsafe":
 							if (args.length < 1) {
-								Context.error('RouterDsl.pipeThrough(pipelines, ?opts) requires at least one argument', nodeExpr.pos);
+								var ctor = name == "pipeThroughUnsafe" ? "pipeThroughUnsafe" : "pipeThrough";
+								Context.error('RouterDsl.${ctor}(pipelines, ?opts) requires at least one argument', nodeExpr.pos);
 							}
-							var pipelines:Array<String> = [];
-							switch (args[0].expr) {
-								case EArrayDecl(values):
-									for (value in values) {
-										var pipelineName = extractStringValue(value, "pipeline", value.pos);
-										if (pipelineName != null) {
-											pipelines.push(pipelineName);
-										}
-									}
-								default:
-									var singlePipeline = extractStringValue(args[0], "pipeline", args[0].pos);
-									if (singlePipeline != null) {
-										pipelines.push(singlePipeline);
-									}
-							}
+							var pipelines = parsePipeThroughPipelines(args[0], name == "pipeThroughUnsafe");
+							validatePipeThroughReferences(pipelines, nodeExpr.pos);
 							{
 								kind: "pipe_through",
 								pipelines: pipelines

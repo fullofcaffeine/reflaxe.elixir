@@ -386,6 +386,18 @@ Examples
 - Prefer omission-friendly typed APIs that match Phoenix defaults. Example: `live(path, LiveModule[, opts])` should not require placeholder `index/show/edit` methods when no route-action dispatch is needed.
 - API design rule for router/live surfaces: choose the shortest typed shape that preserves Phoenix faithfulness and compile-time checks; avoid adding user-facing boilerplate just to satisfy compiler internals.
 
+### Finite DSL APIs Must Be Typed (Hard Rule)
+
+- Do not expose finite DSL inputs as raw `String` by default (examples: pipeline names, plug atoms, child-spec module refs).
+- Preferred shape:
+  - typed/default constants for common values (completion-friendly)
+  - typed constructors for custom values (`pipelineName("admin")`, `plugName("my_plug")`)
+  - explicit `*Unsafe` escape hatch for intentional dynamic/legacy strings
+- Document both paths clearly:
+  - typed path first (recommended, compile-time checked)
+  - unsafe path second (interop/migration only)
+- For skeptics coming from Elixir: explain the concrete edge in each example (earlier error detection, shorter callsites, or better API composition), not abstract “type safety” claims.
+
 ### Module-Level Fields Over Empty Classes (Hard Rule)
 
 - For API design and code style, default to module-level fields whenever a class would otherwise be empty (for example, annotation/config containers with no meaningful fields/functions).

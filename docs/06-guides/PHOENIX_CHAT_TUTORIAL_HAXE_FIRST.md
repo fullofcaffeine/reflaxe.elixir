@@ -68,6 +68,11 @@ import elixir.otp.Supervisor.SupervisorExtern;
 import elixir.otp.Supervisor.SupervisorOptions;
 import elixir.otp.Supervisor.SupervisorStrategy;
 import elixir.otp.TypeSafeChildSpec;
+import phoenix_chat_hx.infrastructure.DNSCluster;
+import phoenix_chat_hx.infrastructure.Endpoint;
+import phoenix_chat_hx.infrastructure.PubSub;
+import phoenix_chat_hx.infrastructure.Telemetry;
+import phoenix_chat_hx.presence.ChatPresence;
 
 @:application
 @:appName("PhoenixChat")
@@ -81,11 +86,11 @@ class PhoenixChat {
     );
 
     var children:Array<ChildSpecFormat> = [
-      TypeSafeChildSpec.telemetry("PhoenixChatWeb.Telemetry"),
-      ModuleWithConfig("DNSCluster", [{key: "query", value: dnsClusterQuery}]),
-      TypeSafeChildSpec.pubSub("PhoenixChat.PubSub"),
-      ModuleRef("PhoenixChatWeb.Presence"),
-      TypeSafeChildSpec.endpoint("PhoenixChatWeb.Endpoint")
+      TypeSafeChildSpec.telemetry(Telemetry),
+      TypeSafeChildSpec.moduleWithConfig(DNSCluster, [{key: "query", value: dnsClusterQuery}]),
+      TypeSafeChildSpec.pubSub(PubSub),
+      TypeSafeChildSpec.moduleRef(ChatPresence),
+      TypeSafeChildSpec.endpoint(Endpoint)
     ];
 
     final options:SupervisorOptions = {
@@ -97,6 +102,18 @@ class PhoenixChat {
     return SupervisorExtern.startLink(children, options);
   }
 }
+```
+
+Why these typed refs: `TypeSafeChildSpec.*` now validates module references at compile time. If you have a pure Elixir module, wrap it once as an extern and keep app callsites typed.
+
+Example extern wrapper (`src_haxe/phoenix_chat_hx/infrastructure/PubSub.hx`):
+
+```haxe
+package phoenix_chat_hx.infrastructure;
+
+@:native("PhoenixChat.PubSub")
+@:unsafeExtern // Explicit app-level extern boundary.
+extern class PubSub {}
 ```
 
 ## 4) Move router definition to Haxe
@@ -112,15 +129,15 @@ import reflaxe.elixir.macros.RouterDsl.*;
 @:native("PhoenixChatWeb.Router")
 @:router
 final routes = [
-  pipeline("browser", [
-    plug("accepts", {initArgs: ["html"]}),
-    plug("fetch_session"),
-    plug("fetch_live_flash"),
-    plug("protect_from_forgery"),
-    plug("put_secure_browser_headers")
+  pipeline(browser, [
+    plug(accepts, {initArgs: ["html"]}),
+    plug(fetch_session),
+    plug(fetch_live_flash),
+    plug(protect_from_forgery),
+    plug(put_secure_browser_headers)
   ]),
   scope("/", [
-    pipeThrough(["browser"]),
+    pipeThrough([browser]),
     liveSession("default", [live("/", AppLive)])
   ])
 ];

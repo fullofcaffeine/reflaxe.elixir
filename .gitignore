@@ -21,13 +21,11 @@ _build/
 *.beam
 *.o
 *.so
-.haxerc
 /haxe_libraries/*
-!/haxe_libraries/reflaxe.elixir.hxml
-!/haxe_libraries/genes.hxml
-!/haxe_libraries/helder.set.hxml
-!/haxe_libraries/phoenix_js.hxml
-!/haxe_libraries/tink_parse.hxml
+!/haxe_libraries/*.hxml
+!/haxe_libraries/archived/
+/haxe_libraries/archived/*
+!/haxe_libraries/archived/*.hxml
 examples/**/haxe_libraries/
 
 # Test outputs
@@ -158,6 +156,24 @@ examples/**/lib/reflect.ex*
 examples/**/lib/e_reg.ex
 examples/**/lib/int_iterator.ex*
 examples/**/lib/reflaxe/
+
+# Committed example `lib/` source trees (intentionally tracked)
+!examples/10-option-patterns/lib/
+examples/10-option-patterns/lib/**
+!examples/10-option-patterns/lib/.gitkeep
+!examples/12-phoenix-chat/lib/
+!examples/12-phoenix-chat/lib/**
+!examples/14-abstraction-lab/lib/
+!examples/14-abstraction-lab/lib/**
+!examples/15-phoenix-chat-haxe-first/lib/
+!examples/15-phoenix-chat-haxe-first/lib/**
+
+# todo-app keeps these specific hand-written Elixir modules tracked
+!examples/todo-app/lib/
+examples/todo-app/lib/**
+!examples/todo-app/lib/todo_app/
+!examples/todo-app/lib/todo_app/mailer.ex
+!examples/todo-app/lib/todo_app/invite_email.ex
 
 # Deprecated templates (no longer used)
 /templates/test/test-results.tmp

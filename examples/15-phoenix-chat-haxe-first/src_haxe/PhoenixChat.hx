@@ -7,6 +7,11 @@ import elixir.otp.Supervisor.SupervisorExtern;
 import elixir.otp.Supervisor.SupervisorOptions;
 import elixir.otp.Supervisor.SupervisorStrategy;
 import elixir.otp.TypeSafeChildSpec;
+import phoenix_chat_hx.infrastructure.DNSCluster;
+import phoenix_chat_hx.infrastructure.Endpoint;
+import phoenix_chat_hx.infrastructure.PubSub;
+import phoenix_chat_hx.infrastructure.Telemetry;
+import phoenix_chat_hx.presence.ChatPresence;
 
 /**
  * PhoenixChat OTP application entrypoint authored in Haxe.
@@ -22,11 +27,11 @@ class PhoenixChat {
 		var dnsClusterQuery = elixir.Application.get_env(Atom.create("phoenix_chat"), Atom.create("dns_cluster_query"), Atom.create("ignore"));
 
 		var children:Array<ChildSpecFormat> = [
-			TypeSafeChildSpec.telemetry("PhoenixChatWeb.Telemetry"),
-			ModuleWithConfig("DNSCluster", [{key: "query", value: dnsClusterQuery}]),
-			TypeSafeChildSpec.pubSub("PhoenixChat.PubSub"),
-			ModuleRef("PhoenixChatWeb.Presence"),
-			TypeSafeChildSpec.endpoint("PhoenixChatWeb.Endpoint")
+			TypeSafeChildSpec.telemetry(Telemetry),
+			TypeSafeChildSpec.moduleWithConfig(DNSCluster, [{key: "query", value: dnsClusterQuery}]),
+			TypeSafeChildSpec.pubSub(PubSub),
+			TypeSafeChildSpec.moduleRef(ChatPresence),
+			TypeSafeChildSpec.endpoint(Endpoint)
 		];
 
 		final options:SupervisorOptions = {

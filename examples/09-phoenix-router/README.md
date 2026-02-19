@@ -38,12 +38,12 @@ import reflaxe.elixir.macros.RouterDsl.*;
 @:native("PhoenixRouterWeb.Router")
 @:router
 final routes = [
-  pipeline("browser", [
-    plug("accepts", {initArgs: ["html"]}),
-    plug("fetch_session")
+  pipeline(browser, [
+    plug(accepts, {initArgs: ["html"]}),
+    plug(fetch_session)
   ]),
   scope("/", [
-    pipeThrough(["browser"]),
+    pipeThrough([browser]),
     get("/users", UserController, UserController.index),
     get("/users/:id", UserController, UserController.show, {
       paramsContract: UserIdPathParams
@@ -74,12 +74,12 @@ Use this when you want source nesting to match Phoenix router nesting and to ena
 import reflaxe.elixir.macros.RouterDsl.*;
 
 final routes = [
-  pipeline("browser", [
-    plug("accepts", {initArgs: ["html"]}),
-    plug("fetch_session")
+  pipeline(browser, [
+    plug(accepts, {initArgs: ["html"]}),
+    plug(fetch_session)
   ]),
   scope("/", [
-    pipeThrough(["browser"]),
+    pipeThrough([browser]),
     get("/users", UserController, UserController.index)
   ])
 ];

@@ -53,14 +53,14 @@ Gleam is a strong typed BEAM language with its own language/runtime story.
 Reflaxe.Elixir takes a different approach:
 
 - You author in Haxe and compile to Elixir.
-- You integrate directly with Phoenix/LiveView/Ecto through typed extern surfaces.
+- You integrate directly with Phoenix/[LiveView](https://www.phoenixframework.org/liveview)/Ecto through typed extern surfaces.
 - You can reuse Haxe tooling/macros and keep cross-target options where they make sense.
 
 ## Current Support (v0.x pre-1.0)
 
 ### Stable (documented subset)
 
-- Phoenix integration (LiveView/controllers/templates/routers) for documented paths
+- Phoenix integration ([LiveView](https://www.phoenixframework.org/liveview)/controllers/templates/routers) for documented paths
 - HEEx-oriented template authoring modes (`tsx`, `balanced`, `metal`)
 - Ecto schemas/changesets/typed query surfaces
 - OTP patterns (GenServer/Supervisor/Registry)

@@ -6,6 +6,8 @@ import elixir.otp.Supervisor.SupervisorOptions;
 import elixir.otp.Supervisor.SupervisorStrategy;
 import elixir.otp.TypeSafeChildSpec;
 import elixir.otp.Supervisor.ChildSpecFormat;
+import server.infrastructure.Endpoint;
+import server.infrastructure.PubSub;
 
 /**
  * PhoenixHaxeExample application entry point.
@@ -23,10 +25,7 @@ class PhoenixHaxeExample {
 	// @:keep: required because OTP invokes Application.start/2 via runtime callback dispatch, not direct Haxe callsites.
 	@:keep
 	public static function start(type:ApplicationStartType, args:ApplicationArgs):ApplicationResult {
-		var children:Array<ChildSpecFormat> = [
-			TypeSafeChildSpec.pubSub("PhoenixHaxeExample.PubSub"),
-			TypeSafeChildSpec.endpoint("PhoenixHaxeExampleWeb.Endpoint")
-		];
+		var children:Array<ChildSpecFormat> = [TypeSafeChildSpec.pubSub(PubSub), TypeSafeChildSpec.endpoint(Endpoint)];
 
 		final options:SupervisorOptions = {
 			strategy: SupervisorStrategy.OneForOne,

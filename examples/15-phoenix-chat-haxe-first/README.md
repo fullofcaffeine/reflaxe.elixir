@@ -69,16 +69,18 @@ Application (`@:application`):
 class PhoenixChat {
   public static function start(type: ApplicationStartType, args: ApplicationArgs): ApplicationResult {
     var children:Array<ChildSpecFormat> = [
-      TypeSafeChildSpec.telemetry("PhoenixChatWeb.Telemetry"),
-      ModuleWithConfig("DNSCluster", [{key: "query", value: dnsClusterQuery}]),
-      TypeSafeChildSpec.pubSub("PhoenixChat.PubSub"),
-      ModuleRef("PhoenixChatWeb.Presence"),
-      TypeSafeChildSpec.endpoint("PhoenixChatWeb.Endpoint")
+      TypeSafeChildSpec.telemetry(Telemetry),
+      TypeSafeChildSpec.moduleWithConfig(DNSCluster, [{key: "query", value: dnsClusterQuery}]),
+      TypeSafeChildSpec.pubSub(PubSub),
+      TypeSafeChildSpec.moduleRef(ChatPresence),
+      TypeSafeChildSpec.endpoint(Endpoint)
     ];
     return SupervisorExtern.startLink(children, options);
   }
 }
 ```
+
+Why this shape: child-spec module refs are compile-time checked. For pure Elixir modules, this example adds small extern wrappers under `src_haxe/phoenix_chat_hx/infrastructure/` (for example `@:native("PhoenixChat.PubSub") @:unsafeExtern extern class PubSub {}`) so callsites stay typed.
 
 Router (`@:router` module-level field):
 
@@ -88,15 +90,15 @@ import reflaxe.elixir.macros.RouterDsl.*;
 @:native("PhoenixChatWeb.Router")
 @:router
 final routes = [
-  pipeline("browser", [
-    plug("accepts", {initArgs: ["html"]}),
-    plug("fetch_session"),
-    plug("fetch_live_flash"),
-    plug("protect_from_forgery"),
-    plug("put_secure_browser_headers")
+  pipeline(browser, [
+    plug(accepts, {initArgs: ["html"]}),
+    plug(fetch_session),
+    plug(fetch_live_flash),
+    plug(protect_from_forgery),
+    plug(put_secure_browser_headers)
   ]),
   scope("/", [
-    pipeThrough(["browser"]),
+    pipeThrough([browser]),
     liveSession("default", [live("/", AppLive)])
   ])
 ];

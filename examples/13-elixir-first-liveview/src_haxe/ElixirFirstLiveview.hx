@@ -6,6 +6,8 @@ import elixir.otp.Supervisor.SupervisorOptions;
 import elixir.otp.Supervisor.SupervisorStrategy;
 import elixir.otp.TypeSafeChildSpec;
 import elixir.otp.Supervisor.ChildSpecFormat;
+import server.infrastructure.Endpoint;
+import server.infrastructure.PubSub;
 
 /**
  * ElixirFirstLiveview application entry point.
@@ -18,10 +20,7 @@ class ElixirFirstLiveview {
 	// @:keep: required because OTP calls Application.start/2 by convention at runtime, so Haxe DCE cannot see a direct Haxe callsite.
 	@:keep
 	public static function start(type:ApplicationStartType, args:ApplicationArgs):ApplicationResult {
-		var children:Array<ChildSpecFormat> = [
-			TypeSafeChildSpec.pubSub("ElixirFirstLiveview.PubSub"),
-			TypeSafeChildSpec.endpoint("ElixirFirstLiveviewWeb.Endpoint")
-		];
+		var children:Array<ChildSpecFormat> = [TypeSafeChildSpec.pubSub(PubSub), TypeSafeChildSpec.endpoint(Endpoint)];
 
 		final options:SupervisorOptions = {
 			strategy: SupervisorStrategy.OneForOne,

@@ -33,6 +33,12 @@ Why use these surfaces:
 
 Use these for typed OTP process and supervision-tree composition in Haxe while emitting standard Elixir runtime patterns.
 
+`TypeSafeChildSpec` guidance:
+
+- Prefer typed module refs (`TypeSafeChildSpec.endpoint(EndpointExtern)`) so unresolved modules fail at compile time.
+- For pure Elixir modules, add a small `@:native("...") extern class ... {}` wrapper and keep callsites typed.
+- Use `*Unsafe` variants only for intentional dynamic/legacy strings.
+
 ### IO/System/Utility
 
 - `elixir.IO`, `elixir.File`, `elixir.Path`, `elixir.System`, `elixir.Regex`, `elixir.Stream`, `elixir.DateTime`

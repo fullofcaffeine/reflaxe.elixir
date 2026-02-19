@@ -35,12 +35,12 @@ class UserController {
 @:native("MyAppWeb.Router")
 @:router
 final routes = [
-  pipeline("browser", [
-    plug("accepts", {initArgs: ["html"]}),
-    plug("fetch_session")
+  pipeline(browser, [
+    plug(accepts, {initArgs: ["html"]}),
+    plug(fetch_session)
   ]),
   scope("/", [
-    pipeThrough(["browser"]),
+    pipeThrough([browser]),
     liveSession("default", [
       live("/", UsersLive),
       get("/users/:id", UserController, UserController.show, {
@@ -94,13 +94,58 @@ get("/users/:id", UserController, UserController.show)
 
 This fails because `paramsContract` is required when path params are present.
 
+## Typed Tokens vs Unsafe Escape Hatches
+
+Why this section exists: `pipeline` and common `plug` names are a finite set in most apps, so plain strings are easy to mistype and hard to autocomplete.
+
+Preferred typed style:
+
+```haxe
+import reflaxe.elixir.macros.RouterDsl.*;
+
+final routes = [
+  pipeline(browser, [
+    plug(accepts, {initArgs: ["html"]}),
+    plug(fetch_session)
+  ]),
+  scope("/", [
+    pipeThrough([browser])
+  ])
+];
+```
+
+Custom names (still typed):
+
+```haxe
+import reflaxe.elixir.macros.RouterDsl.*;
+
+pipeline(pipelineName("admin"), [
+  plug(plugName("my_custom_plug"))
+]);
+```
+
+Explicit escape hatches for legacy/dynamic values:
+
+```haxe
+pipelineUnsafe("admin", [
+  plugUnsafe("my_custom_plug")
+]);
+pipeThroughUnsafe(["admin"]);
+```
+
+Use `*Unsafe` only when values are intentionally dynamic or migration glue.
+
 ## Router node constructor reference
 
 - Structure:
   - `pipeline(name, children)`
+  - `pipelineUnsafe(name, children)` (escape hatch)
   - `scope(path, children, ?opts)`
   - `pipeThrough(pipelines)`
+  - `pipeThroughUnsafe(pipelines)` (escape hatch)
   - `liveSession(name, children, ?opts)`
+  - `plug(target, ?opts)` where `target` is a typed plug token or module reference
+  - `plugUnsafe(target, ?opts)` (escape hatch)
 - Routes:
   - `get/post/put/patch/delete/options/head/connect/trace(path, controller, action, ?opts)`
   - `live(path, liveModule, ?action, ?opts)`

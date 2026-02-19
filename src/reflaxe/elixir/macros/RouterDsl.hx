@@ -1,6 +1,55 @@
 package reflaxe.elixir.macros;
 
 #if (macro || reflaxe_runtime)
+#if macro
+import haxe.macro.Context;
+import haxe.macro.Expr;
+#end
+
+/**
+ * Typed pipeline-name token used by router DSL calls.
+ *
+ * WHY
+ * - Prevents accidental raw-string API usage in typed router nodes.
+ * - Keeps pipeline refs finite and completion-friendly.
+ *
+ * HOW
+ * - Built-in names are exposed as constants (`browser`, `api`).
+ * - Custom names can be created with `pipelineName("custom_name")`.
+ */
+abstract PipelineName(String) to String {}
+
+/**
+ * Typed plug-name token for atom-style `plug :name` entries.
+ *
+ * WHY
+ * - Avoids weak `String` parameters for plug atoms in typed router APIs.
+ *
+ * HOW
+ * - Built-in names are exposed as constants (`accepts`, `fetch_session`, ...).
+ * - Custom names can be created with `plugName("my_plug")`.
+ */
+abstract PlugName(String) to String {}
+
+/**
+ * Typed plug target token.
+ *
+ * Supports:
+ * - plug atoms (`PlugName`) => `plug :fetch_session`
+ * - plug modules (`Class<Any>`) => `plug MyAppWeb.SomePlug`
+ */
+abstract PlugTarget(Any) {
+	@:from
+	public static inline function fromPlugName(value:PlugName):PlugTarget {
+		return cast value;
+	}
+
+	@:from
+	public static inline function fromModuleRef(value:Class<Any>):PlugTarget {
+		return cast value;
+	}
+}
+
 /**
  * Typed router DSL nodes for `@:routes([...])`.
  *
@@ -23,11 +72,11 @@ package reflaxe.elixir.macros;
 typedef RouterDslNode = {
 	var kind:String;
 	@:optional var name:String;
-	@:optional var target:Any;
+	@:optional var target:PlugTarget;
 	@:optional var path:String;
 	@:optional var children:Array<RouterDslNode>;
 	@:optional var opts:Any;
-	@:optional var pipelines:Array<String>;
+	@:optional var pipelines:Array<PipelineName>;
 	@:optional var method:String;
 	@:optional var controller:Class<Any>;
 	@:optional var action:Any;
@@ -102,8 +151,60 @@ typedef MailboxOptions = {
 }
 
 class RouterDsl {
+	// Default Phoenix pipelines.
+	public static inline var browser:PipelineName = cast "browser";
+	public static inline var api:PipelineName = cast "api";
+
+	// Common Phoenix plug atoms.
+	public static inline var accepts:PlugName = cast "accepts";
+	public static inline var fetch_session:PlugName = cast "fetch_session";
+	public static inline var fetch_live_flash:PlugName = cast "fetch_live_flash";
+	public static inline var protect_from_forgery:PlugName = cast "protect_from_forgery";
+	public static inline var put_secure_browser_headers:PlugName = cast "put_secure_browser_headers";
+	public static inline var put_root_layout:PlugName = cast "put_root_layout";
+
+	#if macro
+	static function validateTypedAtomName(expr:ExprOf<String>, label:String):String {
+		return switch (expr.expr) {
+			case EConst(CString(value, _)):
+				var isValid = ~/^[a-z_][a-z0-9_]*$/.match(value);
+				if (!isValid) {
+					Context.error('${label} must be snake_case (example: "fetch_session").', expr.pos);
+				}
+				value;
+			default:
+				Context.error('${label} must be a string literal.', expr.pos);
+				null;
+		};
+	}
+	#end
+
+	/**
+	 * Create a typed custom pipeline token from a literal (validated at compile time).
+	 */
+	public static macro function pipelineName(value:ExprOf<String>):ExprOf<PipelineName> {
+		#if macro
+		var pipelineValue = validateTypedAtomName(value, "pipelineName");
+		return macro(cast($v{pipelineValue} : String) : reflaxe.elixir.macros.PipelineName);
+		#else
+		return null;
+		#end
+	}
+
+	/**
+	 * Create a typed custom plug atom token from a literal (validated at compile time).
+	 */
+	public static macro function plugName(value:ExprOf<String>):ExprOf<PlugName> {
+		#if macro
+		var plugValue = validateTypedAtomName(value, "plugName");
+		return macro(cast($v{plugValue} : String) : reflaxe.elixir.macros.PlugName);
+		#else
+		return null;
+		#end
+	}
+
 	/** `pipeline :name do ... end` */
-	public static inline function pipeline(name:String, children:Array<RouterDslNode>):RouterDslNode {
+	public static inline function pipeline(name:PipelineName, children:Array<RouterDslNode>):RouterDslNode {
 		return {
 			kind: "pipeline",
 			name: name,
@@ -111,11 +212,37 @@ class RouterDsl {
 		};
 	}
 
+	/**
+	 * Escape hatch for legacy/raw pipeline names.
+	 *
+	 * Prefer `pipeline(browser, ...)` or `pipeline(pipelineName("custom"), ...)` in new code.
+	 */
+	public static inline function pipelineUnsafe(name:String, children:Array<RouterDslNode>):RouterDslNode {
+		return {
+			kind: "pipeline_unsafe",
+			name: name,
+			children: children
+		};
+	}
+
 	/** `plug ...` inside pipeline */
-	public static inline function plug(target:Any, ?opts:PlugOptions):RouterDslNode {
+	public static inline function plug(target:PlugTarget, ?opts:PlugOptions):RouterDslNode {
 		return {
 			kind: "plug",
 			target: target,
+			opts: opts
+		};
+	}
+
+	/**
+	 * Escape hatch for raw plug targets.
+	 *
+	 * Prefer typed `plug(accepts, ...)`, `plug(fetch_session)`, or `plug(MyPlugModule)`.
+	 */
+	public static inline function plugUnsafe(target:String, ?opts:PlugOptions):RouterDslNode {
+		return {
+			kind: "plug_unsafe",
+			target: cast target,
 			opts: opts
 		};
 	}
@@ -131,10 +258,23 @@ class RouterDsl {
 	}
 
 	/** `pipe_through ...` */
-	public static inline function pipeThrough(pipelines:Array<String>, ?opts:PipeThroughOptions):RouterDslNode {
+	public static inline function pipeThrough(pipelines:Array<PipelineName>, ?opts:PipeThroughOptions):RouterDslNode {
 		return {
 			kind: "pipe_through",
 			pipelines: pipelines,
+			opts: opts
+		};
+	}
+
+	/**
+	 * Escape hatch for raw `pipe_through` values.
+	 *
+	 * Prefer typed `pipeThrough([browser])` (or `pipelineName("custom")` for custom names).
+	 */
+	public static inline function pipeThroughUnsafe(pipelines:Array<String>, ?opts:PipeThroughOptions):RouterDslNode {
+		return {
+			kind: "pipe_through_unsafe",
+			pipelines: cast pipelines,
 			opts: opts
 		};
 	}

@@ -34,23 +34,23 @@ class Main {
 	static function testTypeSafeChildSpecs() {
 		// Test modern Phoenix.PubSub tuple format
 		var pubsubChildren:Array<ChildSpecFormat> = [
-			TypeSafeChildSpec.pubSub("TestApp.PubSub"),
-			TypeSafeChildSpec.pubSub("CustomName.PubSub")
+			TypeSafeChildSpec.pubSubUnsafe("TestApp.PubSub"),
+			TypeSafeChildSpec.pubSubUnsafe("CustomName.PubSub")
 		];
 
 		// Test simple module references
 		var moduleChildren:Array<ChildSpecFormat> = [
-			TypeSafeChildSpec.repo("TestApp.Repo"),
-			TypeSafeChildSpec.endpoint("TestAppWeb.Endpoint"),
-			TypeSafeChildSpec.telemetry("TestApp.Telemetry")
+			TypeSafeChildSpec.repoUnsafe("TestApp.Repo"),
+			TypeSafeChildSpec.endpointUnsafe("TestAppWeb.Endpoint"),
+			TypeSafeChildSpec.telemetryUnsafe("TestApp.Telemetry")
 		];
 
 		// Test with configuration
 		var configuredChildren:Array<ChildSpecFormat> = [
-			TypeSafeChildSpec.repo("TestApp.Repo", [{key: "database", value: "test_db"}, {key: "pool_size", value: 5}]),
-			TypeSafeChildSpec.endpoint("TestAppWeb.Endpoint"),
+			TypeSafeChildSpec.repoUnsafe("TestApp.Repo", [{key: "database", value: "test_db"}, {key: "pool_size", value: 5}]),
+			TypeSafeChildSpec.endpointUnsafe("TestAppWeb.Endpoint"),
 			// Presence method not in TypeSafeChildSpec, using worker
-			TypeSafeChildSpec.worker("TestApp.Presence", [{name: "TestApp.Presence", pubsub_server: "TestApp.PubSub"}])
+			TypeSafeChildSpec.workerUnsafe("TestApp.Presence", [{name: "TestApp.Presence", pubsub_server: "TestApp.PubSub"}])
 		];
 
 		trace("Basic TypeSafeChildSpec compilation test completed");
@@ -64,10 +64,10 @@ class Main {
 	static function testChildSpecBuilders() {
 		// Test simple enum usage instead of builders for now
 		var directChildren = [
-			TypeSafeChildSpec.pubSub("TestApp.PubSub"),
-			TypeSafeChildSpec.repo("TestApp.Repo"),
-			TypeSafeChildSpec.endpoint("TestAppWeb.Endpoint"),
-			TypeSafeChildSpec.telemetry("TestApp.Telemetry")
+			TypeSafeChildSpec.pubSubUnsafe("TestApp.PubSub"),
+			TypeSafeChildSpec.repoUnsafe("TestApp.Repo"),
+			TypeSafeChildSpec.endpointUnsafe("TestAppWeb.Endpoint"),
+			TypeSafeChildSpec.telemetryUnsafe("TestApp.Telemetry")
 		];
 
 		trace("Direct TypeSafeChildSpec test completed");
@@ -109,23 +109,23 @@ class Main {
 	static function testApplicationChildren() {
 		var typeSafeChildren:Array<ChildSpecFormat> = [
 			// Phoenix.PubSub with modern tuple format
-			TypeSafeChildSpec.pubSub("TestApp.PubSub"),
+			TypeSafeChildSpec.pubSubUnsafe("TestApp.PubSub"),
 
 			// Ecto repository with configuration
-			TypeSafeChildSpec.repo("TestApp.Repo", [
+			TypeSafeChildSpec.repoUnsafe("TestApp.Repo", [
 				{key: "database", value: "test_app_dev"},
 				{key: "pool_size", value: 10},
 				{key: "timeout", value: 15000}
 			]),
 
 			// Phoenix endpoint
-			TypeSafeChildSpec.endpoint("TestAppWeb.Endpoint"),
+			TypeSafeChildSpec.endpointUnsafe("TestAppWeb.Endpoint"),
 
 			// Telemetry supervisor
-			TypeSafeChildSpec.telemetry("TestApp.Telemetry"),
+			TypeSafeChildSpec.telemetryUnsafe("TestApp.Telemetry"),
 
 			// Phoenix Presence using generic worker
-			TypeSafeChildSpec.worker("TestApp.Presence", [{name: "TestApp.Presence", pubsub_server: "TestApp.PubSub"}]),
+			TypeSafeChildSpec.workerUnsafe("TestApp.Presence", [{name: "TestApp.Presence", pubsub_server: "TestApp.PubSub"}]),
 
 			// Custom worker with specific restart policy using FullSpec
 			FullSpec({
@@ -148,7 +148,7 @@ class Main {
 
 		// Test mixed array with manual specs
 		var mixedChildren:Array<ChildSpecFormat> = [
-			TypeSafeChildSpec.pubSub("TestApp.PubSub"),
+			TypeSafeChildSpec.pubSubUnsafe("TestApp.PubSub"),
 			FullSpec({
 				id: "legacy_worker",
 				start: {

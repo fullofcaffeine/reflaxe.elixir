@@ -31,16 +31,16 @@ typedef UserIdPathParams = {
 // @:router: marks this module as a Phoenix router and enables route emission transforms.
 @:router
 final routes = [
-	pipeline("browser", [
-		plug("accepts", {initArgs: ["html"]}),
-		plug("fetch_session"),
-		plug("fetch_live_flash"),
-		plug("protect_from_forgery"),
-		plug("put_secure_browser_headers")
+	pipeline(browser, [
+		plug(accepts, {initArgs: ["html"]}),
+		plug(fetch_session),
+		plug(fetch_live_flash),
+		plug(protect_from_forgery),
+		plug(put_secure_browser_headers)
 	]),
-	pipeline("api", [plug("accepts", {initArgs: ["json"]}), plug("fetch_session")]),
+	pipeline(api, [plug(accepts, {initArgs: ["json"]}), plug(fetch_session)]),
 	scope("/", [
-		pipeThrough(["browser"]),
+		pipeThrough([browser]),
 		// Live routes
 		liveSession("default", [
 			live("/", TodoLive),
@@ -70,7 +70,7 @@ final routes = [
 	]),
 	// JSON API endpoints (admin-only; scoped by session org)
 	scope("/api", [
-		pipeThrough(["api"]),
+		pipeThrough([api]),
 		get("/users", UserController, UserController.index),
 		get("/users/:id", UserController, UserController.show, {paramsContract: UserIdPathParams}),
 		post("/users", UserController, UserController.create),

@@ -60,10 +60,10 @@ class AdminRouter {}
 @:native("RouterDslTypedNested")
 @:router
 final routes = [
-	pipeline("browser", [plug("accepts", {initArgs: ["html"]}), plug("fetch_session")]),
-	pipeline("api", [plug("accepts", {initArgs: ["json"]})]),
+	pipeline(browser, [plug(accepts, {initArgs: ["html"]}), plug(fetch_session)]),
+	pipeline(api, [plug(accepts, {initArgs: ["json"]})]),
 	scope("/", [
-		pipeThrough(["browser"]),
+		pipeThrough([browser]),
 		liveSession("default",
 			[
 				live("/", DashboardLive, DashboardLive.index),
@@ -78,7 +78,7 @@ final routes = [
 		mailbox("/mailbox")
 	], {aliasModule: MyAppWeb}),
 	scope("/api", [
-		pipeThrough(["api"]),
+		pipeThrough([api]),
 		match(HttpMethod.GET, "/events", ApiController, ApiController.index),
 		options("/events", ApiController, ApiController.options),
 		head("/events", ApiController, ApiController.head),

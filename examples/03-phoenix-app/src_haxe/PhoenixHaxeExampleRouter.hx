@@ -11,6 +11,6 @@ import reflaxe.elixir.macros.RouterDsl.*;
 // @:router: marks this module as a Phoenix router and enables route emission transforms.
 @:router
 final routes = [
-	pipeline("browser", [plug("accepts", {initArgs: ["html"]}), plug("fetch_session")]),
-	scope("/", [pipeThrough(["browser"]), get("/", PageController, PageController.home)])
+	pipeline(browser, [plug(accepts, {initArgs: ["html"]}), plug(fetch_session)]),
+	scope("/", [pipeThrough([browser]), get("/", PageController, PageController.home)])
 ];
