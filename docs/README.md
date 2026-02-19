@@ -53,6 +53,7 @@ This index helps you find the right docs quickly, whether you're building apps w
 - [LiveSocket Assign API](04-api-reference/LIVE_SOCKET_ASSIGN_API.md) - `assign(_.field, value)` vs `assign({...})` vs typed keys
 - [Ecto API Reference](04-api-reference/ECTO_API_REFERENCE.md) - Schema/Changeset/Repo/Query/Migration user APIs
 - [Elixir Runtime API Reference](04-api-reference/ELIXIR_RUNTIME_API_REFERENCE.md) - Core runtime and OTP extern surfaces
+- [Type-Safe ChildSpec API](04-api-reference/TYPE_SAFE_CHILD_SPEC.md) - Typed OTP child-spec surfaces and explicit `*Unsafe` escape hatches
 - [Atom Type](04-api-reference/ATOM_TYPE.md) - Type-safe atoms for Elixir APIs
 - [Standard Library](04-api-reference/STANDARD_LIBRARY_HANDLING.md) - Stdlib strategy + guidance
 - [Stdlib Support Matrix](04-api-reference/STDLIB_SUPPORT_MATRIX.md) - What’s overridden vs upstream vs missing
@@ -139,6 +140,7 @@ This documentation is optimized for AI assistant development with **AGENTS.md** 
 - **[Phoenix (New App)](06-guides/PHOENIX_NEW_APP.md)** - Greenfield Phoenix setup
 - **[Phoenix (Existing App)](06-guides/PHOENIX_GRADUAL_ADOPTION.md)** - Add Haxe to an existing Phoenix app
 - **[Interop With Existing Elixir](02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md)** - Call pure Elixir modules from Haxe with typed boundaries
+- **[Type-Safe ChildSpec API](04-api-reference/TYPE_SAFE_CHILD_SPEC.md)** - Canonical typed child-spec reference
 - **[Phoenix Guide](02-user-guide/PHOENIX_INTEGRATION.md)** - Building Phoenix applications
 - **[Troubleshooting](06-guides/TROUBLESHOOTING.md)** - Solve common issues
 - **[Known Limitations](06-guides/KNOWN_LIMITATIONS.md)** - Sharp edges and experimental surfaces

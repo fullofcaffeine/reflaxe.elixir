@@ -80,7 +80,12 @@ class PhoenixChat {
 }
 ```
 
-Why this shape: child-spec module refs are compile-time checked. For pure Elixir modules, this example adds small extern wrappers under `src_haxe/phoenix_chat_hx/infrastructure/` (for example `@:native("PhoenixChat.PubSub") @:unsafeExtern extern class PubSub {}`) so callsites stay typed.
+Why this shape:
+- catches unresolved module refs at compile time
+- keeps supervision-tree code compact and explicit
+- preserves standard OTP child-spec runtime output
+
+For pure Elixir modules, this example adds small extern wrappers under `src_haxe/phoenix_chat_hx/infrastructure/` (for example `@:native("PhoenixChat.PubSub") @:unsafeExtern extern class PubSub {}`) so callsites stay typed.
 
 Router (`@:router` module-level field):
 
@@ -117,3 +122,4 @@ Note: live routes can omit actions (`live("/", AppLive)`), which keeps LiveView 
 - Haxe-first walkthrough: `docs/06-guides/PHOENIX_CHAT_TUTORIAL_HAXE_FIRST.md`
 - Hybrid walkthrough: `docs/06-guides/PHOENIX_CHAT_TUTORIAL.md`
 - New app setup: `docs/06-guides/PHOENIX_NEW_APP.md`
+- Type-safe child specs: `docs/04-api-reference/TYPE_SAFE_CHILD_SPEC.md`

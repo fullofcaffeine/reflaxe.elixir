@@ -36,8 +36,9 @@ Use these for typed OTP process and supervision-tree composition in Haxe while e
 `TypeSafeChildSpec` guidance:
 
 - Prefer typed module refs (`TypeSafeChildSpec.endpoint(EndpointExtern)`) so unresolved modules fail at compile time.
-- For pure Elixir modules, add a small `@:native("...") extern class ... {}` wrapper and keep callsites typed.
+- For pure Elixir modules, add a small `@:native("...") extern class ... {}` wrapper and keep callsites typed (add `@:unsafeExtern` where strict mode requires explicit app-local boundaries).
 - Use `*Unsafe` variants only for intentional dynamic/legacy strings.
+- Canonical API reference: `docs/04-api-reference/TYPE_SAFE_CHILD_SPEC.md`.
 
 ### IO/System/Utility
 
@@ -85,3 +86,4 @@ Most runtime interop modules use metadata such as:
 - `docs/04-api-reference/ANNOTATIONS.md`
 - `docs/04-api-reference/HAXE_MACRO_APIS.md`
 - `docs/04-api-reference/STDLIB_SUPPORT_MATRIX.md`
+- `docs/04-api-reference/TYPE_SAFE_CHILD_SPEC.md`

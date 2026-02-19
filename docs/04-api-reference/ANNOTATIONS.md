@@ -808,22 +808,37 @@ Marks a class as an OTP Application module that defines a supervision tree.
 **Basic Usage**:
 ```haxe
 import elixir.Atom;
+import elixir.otp.Application;
+import elixir.otp.Supervisor.ChildSpecFormat;
+import elixir.otp.Supervisor.SupervisorExtern;
+import elixir.otp.Supervisor.SupervisorOptions;
+import elixir.otp.Supervisor.SupervisorStrategy;
+import elixir.otp.TypeSafeChildSpec;
 import elixir.types.Term;
+import my_app.infrastructure.Endpoint;
+import my_app.infrastructure.PubSub;
+import my_app.infrastructure.Repo;
+import my_app.infrastructure.Telemetry;
 
 @:application
 @:native("MyApp.Application")
 class MyApp {
-    public static function start(type: Term, args: Term): Term {
+    public static function start(type: ApplicationStartType, args: ApplicationArgs): ApplicationResult {
         // Define children for supervision tree
-        var children = [
-            "MyApp.Repo",                              // Simple module reference
-            {module: "Phoenix.PubSub", name: "MyApp.PubSub"}, // Tuple with options
-            "MyAppWeb.Endpoint"                        // Simple module reference
+        var children:Array<ChildSpecFormat> = [
+            TypeSafeChildSpec.moduleRef(Repo),
+            TypeSafeChildSpec.pubSub(PubSub),
+            TypeSafeChildSpec.telemetry(Telemetry),
+            TypeSafeChildSpec.endpoint(Endpoint)
         ];
         
         // Start supervisor with children
-        var opts = {strategy: "one_for_one", name: "MyApp.Supervisor"};
-        return Supervisor.startLink(children, opts);
+        var opts:SupervisorOptions = {
+            strategy: SupervisorStrategy.OneForOne,
+            max_restarts: 3,
+            max_seconds: 5
+        };
+        return SupervisorExtern.startLink(children, opts);
     }
     
     public static function config_change(changed: Term, new_config: Term, removed: Term): Term {
@@ -863,14 +878,16 @@ end
 **Key Features**:
 - Automatically adds `use Application` directive
 - Transforms child specifications into proper OTP format
-- Handles Phoenix-specific modules (Repo, PubSub, Endpoint, Telemetry)
+- Supports typed module references via `TypeSafeChildSpec.*`
 - Adds `@impl true` annotations for callbacks
 - Supports config_change callback for hot reloading
 
-**Child Specification Formats**:
-- String module names become atoms: `"MyApp.Repo"` → `MyApp.Repo`
-- Objects with module/name become tuples: `{module: "Phoenix.PubSub", name: "MyApp.PubSub"}` → `{Phoenix.PubSub, name: MyApp.PubSub}`
-- Supervisor options converted to keyword lists
+**Child Specification Guidance**:
+- Preferred: typed `TypeSafeChildSpec` methods (`moduleRef`, `pubSub`, `endpoint`, `telemetry`, etc.)
+- Dynamic/manual escape hatch: explicit `TypeSafeChildSpec.*Unsafe(...)` methods
+- Supervisor options are converted to keyword lists in generated Elixir
+
+See canonical child-spec docs: `docs/04-api-reference/TYPE_SAFE_CHILD_SPEC.md`.
 
 ### @:elixirIdiomatic - Idiomatic Elixir Pattern Generation
 

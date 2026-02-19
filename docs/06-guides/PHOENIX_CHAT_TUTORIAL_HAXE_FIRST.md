@@ -104,7 +104,12 @@ class PhoenixChat {
 }
 ```
 
-Why these typed refs: `TypeSafeChildSpec.*` now validates module references at compile time. If you have a pure Elixir module, wrap it once as an extern and keep app callsites typed.
+Why these typed refs:
+- Catch unresolved/misspelled module refs during compile, before runtime boot.
+- Keep supervision-tree callsites short and readable (`moduleRef(...)`, `pubSub(...)`, `endpoint(...)`).
+- Emit the same OTP/Phoenix child-spec runtime shapes Elixir developers expect.
+
+If you have a pure Elixir module, wrap it once as an extern and keep app callsites typed.
 
 Example extern wrapper (`src_haxe/phoenix_chat_hx/infrastructure/PubSub.hx`):
 
@@ -206,3 +211,4 @@ scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 120
 - Hybrid/gradual counterpart: `docs/06-guides/PHOENIX_CHAT_TUTORIAL.md`
 - Reference example: `examples/15-phoenix-chat-haxe-first/README.md`
 - Router DSL details: `docs/04-api-reference/ROUTER_DSL.md`
+- Type-safe child specs: `docs/04-api-reference/TYPE_SAFE_CHILD_SPEC.md`

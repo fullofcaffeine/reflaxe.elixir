@@ -235,5 +235,6 @@ For new routers, prefer module-level `final routes = [...]`.
 ## References
 
 - `docs/04-api-reference/ANNOTATIONS.md`
+- `docs/04-api-reference/TYPE_SAFE_CHILD_SPEC.md`
 - `docs/02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md`
 - `examples/09-phoenix-router/README.md`

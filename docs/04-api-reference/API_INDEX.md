@@ -29,6 +29,25 @@ Not included as primary reference surface:
 - LiveSocket assign API (consumer + technical): `docs/04-api-reference/LIVE_SOCKET_ASSIGN_API.md`
 - Ecto API deep dive: `docs/04-api-reference/ECTO_API_REFERENCE.md`
 - Elixir runtime API deep dive: `docs/04-api-reference/ELIXIR_RUNTIME_API_REFERENCE.md`
+- Type-safe OTP child-spec API: `docs/04-api-reference/TYPE_SAFE_CHILD_SPEC.md`
+
+## LLM Contract: Typed Phoenix DSL Surfaces
+
+Use this section as the concise contract for assistant/tooling retrieval.
+
+- Router DSL (`docs/04-api-reference/ROUTER_DSL.md`):
+  - typed tokens are default (`pipeline(browser)`, `plug(accepts)`, `pipeThrough([browser])`)
+  - `*Unsafe` constructors are explicit escape hatches for dynamic/legacy values
+- OTP child specs (`docs/04-api-reference/TYPE_SAFE_CHILD_SPEC.md`):
+  - typed module refs are default (`TypeSafeChildSpec.endpoint(Endpoint)`)
+  - `*Unsafe` methods are escape hatches for dynamic/legacy strings
+- Existing pure Elixir modules should keep typed callsites by using small extern boundaries:
+  - `@:native("...") extern class ... {}`
+  - in strict-mode contexts, mark app-local extern boundaries explicitly with `@:unsafeExtern`
+- Canonical references:
+  - Router DSL: `docs/04-api-reference/ROUTER_DSL.md`
+  - Child specs: `docs/04-api-reference/TYPE_SAFE_CHILD_SPEC.md`
+  - Interop boundaries: `docs/02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md`
 
 ## Metadata Tag Index (Examples + User Surface)
 

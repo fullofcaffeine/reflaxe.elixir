@@ -120,6 +120,8 @@ With `-D reflaxe_elixir_strict`:
 
 When you intentionally keep an app-local extern boundary, mark it explicitly (for example `@:unsafeExtern`) and keep it small and documented.
 
+This same boundary pattern applies to typed OTP child specs when modules are hand-written in Elixir. See `docs/04-api-reference/TYPE_SAFE_CHILD_SPEC.md`.
+
 If strict mode blocks a needed boundary, the preferred path is to add a typed surface in shared layers (`std/*`) or a documented, minimal project wrapper.
 
 Reference: `docs/06-guides/STRICT_MODE.md`.
@@ -136,3 +138,4 @@ Related docs:
 - `docs/06-guides/ADDING_ELIXIR_LIBS_FROM_HAXE.md`
 - `docs/02-user-guide/ESCAPE_HATCHES.md`
 - `docs/04-api-reference/ELIXIR_INJECTION_GUIDE.md`
+- `docs/04-api-reference/TYPE_SAFE_CHILD_SPEC.md`

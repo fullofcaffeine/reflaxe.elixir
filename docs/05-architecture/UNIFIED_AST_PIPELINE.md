@@ -90,6 +90,9 @@ end
 
 ### Example 2: Enum with @:elixirIdiomatic
 
+Note: this is an internal AST/transform demonstration, not recommended app-level API.
+For app supervision code, use `TypeSafeChildSpec.*` from `docs/04-api-reference/TYPE_SAFE_CHILD_SPEC.md`.
+
 ```haxe
 // Input: Haxe EnumType
 @:elixirIdiomatic
@@ -122,22 +125,22 @@ end
 ### Example 3: Expression in Function Body
 
 ```haxe
-// Input: TypedExpr from function body
-var spec = ChildSpecFormat.ModuleRef("Phoenix.PubSub");
+// Input: typed app-level call
+var spec = TypeSafeChildSpec.pubSub(PubSub);
 
 // Phase 1: Build AST
 ECall(
-    EFieldAccess("ChildSpecFormat", "ModuleRef"),
-    [EString("Phoenix.PubSub")]
+    EFieldAccess("TypeSafeChildSpec", "pubSub"),
+    [EVar("PubSub")]
 )
-// Metadata: {isIdiomaticEnum: true}
+// Metadata/typing identify this as a child-spec helper call
 
 // Phase 2: Transform (SAME otpChildSpecTransformPass!)
-// Detects metadata, applies transformation
-EString("Phoenix.PubSub")  // Transformed to just the module name
+// Lowers helper call into standard OTP child-spec shape
+EChildSpec(...)
 
 // Phase 3: Print
-"Phoenix.PubSub"
+{Phoenix.PubSub, name: MyApp.PubSub}
 ```
 
 ## Key Benefits
