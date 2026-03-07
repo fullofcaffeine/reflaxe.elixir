@@ -19,7 +19,8 @@ defmodule ReflaxeElixir.MixProject do
     [
       # FileSystem is intentionally NOT in extra_applications - it's loaded on-demand
       # This keeps production deployments lightweight since file watching is only needed in dev
-      extra_applications: [:logger, :jason]
+      # HaxeServer uses :crypto for deterministic cookie/cache keys even outside tests.
+      extra_applications: [:logger, :jason, :crypto]
     ]
   end
 
