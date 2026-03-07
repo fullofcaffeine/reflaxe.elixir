@@ -26,6 +26,18 @@ That is not automatically wrong, but it does mean contributors need a clearer me
 
 That is a coherent design, but it is a different design from `reflaxe.ocaml`.
 
+## Quick matrix
+
+| Question | Answer for this repo |
+| --- | --- |
+| Main override style | broad `std/*.cross.hx` plus `std/_std/**` plus one early `src/haxe/*` exception |
+| Is `_std` used? | yes |
+| Is `.cross.hx` used broadly? | yes |
+| Does this repo own early `src/haxe/*` modules? | yes, `src/haxe/Exception.cross.hx` |
+| Bootstrap activation currently keys off raw Haxe 4 `Cross`? | yes |
+| Same-compilation sibling-target coexistence safe today? | no |
+| Highest-priority hardening item | narrow Haxe 4 bootstrap activation and add mixed-target fail-fast |
+
 ## What `.cross.hx` means here
 
 In this repo, many `.cross.hx` files are not "special bootstrap exceptions".
