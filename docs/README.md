@@ -67,6 +67,7 @@ This index helps you find the right docs quickly, whether you're building apps w
 ### 🏗️ Architecture
 **[05-architecture/](05-architecture/)** - System design and implementation details
 - [Architecture](05-architecture/ARCHITECTURE.md) - Overall system design
+- [Cross Overrides & Multi-Target Hardening](05-architecture/CROSS_OVERRIDES_AND_MULTI_TARGET_HARDENING.md) - `.cross.hx` / `_std` ownership and sibling-target coexistence risks
 - [HXML Architecture](05-architecture/HXML_ARCHITECTURE.md) - Build file patterns and anti-patterns
 - [File Naming](05-architecture/FILE_NAMING_ARCHITECTURE.md) - snake_case conversion rules
 - [HXX Templates](05-architecture/HXX_ARCHITECTURE.md) - Template compilation system
