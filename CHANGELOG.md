@@ -1,3 +1,10 @@
+## [0.2.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.2.0...v0.2.1) (2026-03-07)
+
+
+### Bug Fixes
+
+* **ci:** harden mix runtime deps and generator smoke ([4562d10](https://github.com/fullofcaffeine/reflaxe.elixir/commit/4562d1036404e61d43879a2a3e3be62c5faebdf7))
+
 # [0.2.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.1.0...v0.2.0) (2026-02-19)
 
 
