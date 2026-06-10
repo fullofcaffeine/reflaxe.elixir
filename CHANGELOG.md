@@ -1,3 +1,10 @@
+## [0.3.3](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.3.2...v0.3.3) (2026-06-10)
+
+
+### Bug Fixes
+
+* **stdlib:** preserve Map abstract conversions ([6883568](https://github.com/fullofcaffeine/reflaxe.elixir/commit/6883568f1b1a340dae86611d59fee204529e802d))
+
 ## [0.3.2](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.3.1...v0.3.2) (2026-06-10)
 
 
