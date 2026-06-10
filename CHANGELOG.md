@@ -1,3 +1,10 @@
+# [0.3.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.2.1...v0.3.0) (2026-06-10)
+
+
+### Features
+
+* **stdlib:** add canonical IMap unwrap runtime ([67ab169](https://github.com/fullofcaffeine/reflaxe.elixir/commit/67ab169f73cbda56c6b8190c4764d50589eb4443))
+
 ## [0.2.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.2.0...v0.2.1) (2026-03-07)
 
 
