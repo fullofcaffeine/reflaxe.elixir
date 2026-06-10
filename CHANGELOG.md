@@ -1,3 +1,10 @@
+## [0.3.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.3.0...v0.3.1) (2026-06-10)
+
+
+### Bug Fixes
+
+* **stdlib:** lock native map iterator semantics ([017d229](https://github.com/fullofcaffeine/reflaxe.elixir/commit/017d229083211282c73ab0cc48b9d43c4f32b823))
+
 # [0.3.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.2.1...v0.3.0) (2026-06-10)
 
 
