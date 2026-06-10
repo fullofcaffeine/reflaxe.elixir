@@ -11,6 +11,7 @@
   "haxe/iterators/array_iterator.ex",
   "haxe/io/status.ex",
   "haxe/io/bytes.ex",
+  "haxe/int64_helper.ex",
   "enhanced_pattern_matching_test.ex",
   "data_result.ex"
 ],

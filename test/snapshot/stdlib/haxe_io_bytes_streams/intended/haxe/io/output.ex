@@ -3,7 +3,7 @@ defmodule Output do
     _ = %{struct | big_endian: b}
     b
   end
-  def write_byte(_, _) do
+  def write_byte(_struct, _c) do
     raise Reflaxe.Elixir.HaxeThrow, [value: NotImplementedException.new(nil, nil, %{:file_name => "../../../../std/haxe/io/Output.hx", :line_number => 38, :class_name => "haxe.io.Output", :method_name => "writeByte"})]
   end
   def write_bytes(struct, s, pos, len) do
@@ -34,10 +34,10 @@ defmodule Output do
     end)
     len
   end
-  def flush(_) do
+  def flush(_struct) do
     
   end
-  def close(_) do
+  def close(_struct) do
     
   end
   def write(struct, s) do
@@ -179,7 +179,7 @@ end).()] end).())
       _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_byte, [struct, Bitwise.bsr(x, 24)])
     end
   end
-  def prepare(_, _) do
+  def prepare(_struct, _nbytes) do
     
   end
   def write_input(struct, i, bufsize) do

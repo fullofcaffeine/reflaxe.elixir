@@ -30,10 +30,8 @@ class ArrayIterator<T> {
 	}
 
 	public function next():T {
-		return untyped __elixir__('
-            index = {0}
-            Process.put({1}, index + 1)
-            Enum.at({2}, index)
-        ', currentIndex(), stateKey(), this.array);
+		return untyped __elixir__('index = {0}
+    Process.put({1}, index + 1)
+    Enum.at({2}, index)', currentIndex(), stateKey(), this.array);
 	}
 }

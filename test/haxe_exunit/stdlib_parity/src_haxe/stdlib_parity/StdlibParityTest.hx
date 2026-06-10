@@ -188,6 +188,23 @@ class StdlibParityTest extends TestCase {
 
 	@:describe("haxe.ds.Map (native map backend)")
 	@:test
+	function testIntMapOps():Void {
+		var m:Map<Int, String> = new Map();
+		Assert.isFalse(m.exists(1));
+
+		m.set(1, "one");
+		m.set(2, "two");
+		Assert.isTrue(m.exists(1));
+		Assert.equals("one", m.get(1));
+		Assert.equals("two", m.get(2));
+
+		Assert.isTrue(m.remove(1));
+		Assert.isFalse(m.exists(1));
+		Assert.isNull(m.get(1));
+	}
+
+	@:describe("haxe.ds.Map (native map backend)")
+	@:test
 	function testMapCopyIsPersistentValue():Void {
 		var m:Map<String, Int> = new Map();
 		m.set("k", 1);
@@ -199,6 +216,53 @@ class StdlibParityTest extends TestCase {
 		Assert.equals(1, snapshot.get("k"));
 		Assert.isNull(snapshot.get("new"));
 		Assert.equals(2, m.get("k"));
+	}
+
+	@:describe("haxe.ds.Map (native map backend)")
+	@:test
+	function testMapValueIterationUsesNativeMapValues():Void {
+		var m:Map<String, Int> = new Map();
+		m.set("first", 1);
+		m.set("second", 2);
+
+		var values:Array<Int> = [];
+		for (value in m.iterator()) {
+			values.push(value);
+		}
+
+		Assert.equals(2, values.length);
+		Assert.contains(values, 1);
+		Assert.contains(values, 2);
+	}
+
+	@:describe("haxe.ds.Map (native map backend)")
+	@:test
+	function testMapKeyValueIteratorUsesCanonicalRuntime():Void {
+		var m:Map<String, Int> = new Map();
+		m.set("alpha", 1);
+		m.set("beta", 2);
+
+		var iterator = m.keyValueIterator();
+		Assert.isTrue(iterator.hasNext());
+		var first = pairToString(iterator.next());
+		Assert.isTrue(iterator.hasNext());
+		var second = pairToString(iterator.next());
+		Assert.isFalse(iterator.hasNext());
+
+		var seenPairs = [first, second];
+		Assert.contains(seenPairs, "alpha:1");
+		Assert.contains(seenPairs, "beta:2");
+	}
+
+	@:describe("haxe.ds.Map (native map backend)")
+	@:test
+	function testMapToStringUsesInspectableNativeMap():Void {
+		var m:Map<String, Int> = new Map();
+		m.set("alpha", 1);
+
+		var stringValue = m.toString();
+		Assert.containsString(stringValue, "alpha");
+		Assert.containsString(stringValue, "1");
 	}
 
 	@:describe("Reflect + JSON string keys")

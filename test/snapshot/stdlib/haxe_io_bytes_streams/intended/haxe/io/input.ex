@@ -3,7 +3,7 @@ defmodule Input do
     _ = %{struct | big_endian: b}
     b
   end
-  def read_byte(_) do
+  def read_byte(_struct) do
     raise Reflaxe.Elixir.HaxeThrow, [value: NotImplementedException.new(nil, nil, %{:file_name => "../../../../std/haxe/io/Input.hx", :line_number => 38, :class_name => "haxe.io.Input", :method_name => "readByte"})]
   end
   def read_bytes(struct, s, pos, len) do
@@ -50,7 +50,7 @@ end), haxe_exception} do
     end)
     (len - k)
   end
-  def close(_) do
+  def close(_struct) do
     
   end
   def read_all(struct, bufsize) do

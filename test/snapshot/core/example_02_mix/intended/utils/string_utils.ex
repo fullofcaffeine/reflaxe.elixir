@@ -59,7 +59,7 @@ defmodule StringUtils do
       slug = _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, slug, "-"])
       reflaxe_dispatch_receiver = EReg.new("-+", "g")
       slug = _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, slug, "-"])
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, fn _, {acc_slug} ->
+      {slug} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, fn _, {acc_slug} ->
         try do
           cond_value = (String.at(acc_slug, 0) || "")
           if (cond_value == "-") do
@@ -79,7 +79,7 @@ defmodule StringUtils do
             {:cont, {acc_slug}}
         end
       end)
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, fn _, {acc_slug} ->
+      {slug} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, fn _, {acc_slug} ->
         try do
           cond_value = (if ((String.length(acc_slug) - 1) < 0) do
             ""

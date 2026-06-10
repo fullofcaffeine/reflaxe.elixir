@@ -949,6 +949,16 @@ class CallExprBuilder {
 									// loop lowering into `Enum.reduce_while(Map.keys(map), ...)`.
 									return ERemoteCall(makeAST(EVar("Map")), "keys", [receiverAst]);
 
+								case "iterator" if (argASTs != null && argASTs.length == 0):
+									// Structural value iterators call closure fields directly, so build the
+									// canonical closure-backed value at the IMap runtime boundary.
+									return ERemoteCall(makeAST(EVar("Reflaxe.Elixir.IMap")), "value_iterator", [receiverAst]);
+
+								case "keyValueIterator" if (argASTs != null && argASTs.length == 0):
+									// Structural key/value iterators call closure fields directly, so build the
+									// canonical closure-backed value at the IMap runtime boundary.
+									return ERemoteCall(makeAST(EVar("Reflaxe.Elixir.IMap")), "key_value_iterator", [receiverAst]);
+
 								case "exists" if (argASTs != null && argASTs.length == 1):
 									return ERemoteCall(makeAST(EVar("Map")), "has_key?", [receiverAst, argASTs[0]]);
 
@@ -963,6 +973,9 @@ class CallExprBuilder {
 								case "clear" if (receiverVarName != null):
 									var empty = makeAST(EMap([]));
 									return EBlock([makeAST(EMatch(PVar(receiverVarName), empty)), makeAST(ENil)]);
+
+								case "toString" if (argASTs != null && argASTs.length == 0):
+									return ECall(null, "inspect", [receiverAst]);
 
 								case "remove" if (argASTs != null && argASTs.length == 1 && receiverVarName != null):
 									// Haxe semantics: return whether the key existed, and remove it from the map.

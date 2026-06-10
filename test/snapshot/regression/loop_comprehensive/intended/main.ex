@@ -26,7 +26,7 @@ end)
     _ = 3
     _ = 4
     count = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count}, fn _, {acc_count} ->
+    {_count} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count}, fn _, {acc_count} ->
       try do
         if (acc_count < 3) do
           _old_count = acc_count

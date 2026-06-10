@@ -4,7 +4,7 @@ defmodule Main do
     _g = 0
     _ = Enum.each(fruits, fn _ -> nil end)
     i = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i}, fn _, {acc_i} ->
+    {_i} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i}, fn _, {acc_i} ->
       try do
         if (acc_i < length(fruits)) do
           _old_i = acc_i

@@ -11,7 +11,7 @@ defmodule Main do
   defp test_simple_map_iteration() do
     colors = %{}
     colors = colors |> Map.put("red", "#FF0000") |> Map.put("green", "#00FF00") |> Map.put("blue", "#0000FF")
-    g = apply(Map.get(colors, :__reflaxe_class__) || Map.get(colors, :__struct__), :key_value_iterator, [colors])
+    g = Reflaxe.Elixir.IMap.key_value_iterator(colors)
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
     if (g.has_next.()) do
@@ -37,8 +37,8 @@ end)
     inventory = %{}
     inventory = inventory |> Map.put("apples", 10) |> Map.put("oranges", 5) |> Map.put("bananas", 8)
     keys = []
-    g = apply(Map.get(inventory, :__reflaxe_class__) || Map.get(inventory, :__struct__), :key_value_iterator, [inventory])
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {keys}, fn _, {acc_keys} ->
+    g = Reflaxe.Elixir.IMap.key_value_iterator(inventory)
+    {_keys} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {keys}, fn _, {acc_keys} ->
       try do
         if (g.has_next.()) do
           item = g.next.().key
@@ -65,8 +65,8 @@ end)
     scores = %{}
     scores = scores |> Map.put("Alice", 95) |> Map.put("Bob", 87) |> Map.put("Charlie", 92)
     total = 0
-    g = apply(Map.get(scores, :__reflaxe_class__) || Map.get(scores, :__struct__), :key_value_iterator, [scores])
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {total}, fn _, {acc_total} ->
+    g = Reflaxe.Elixir.IMap.key_value_iterator(scores)
+    {_total} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {total}, fn _, {acc_total} ->
       try do
         if (g.has_next.()) do
           _ = g.next.().key
@@ -92,7 +92,7 @@ end)
   defp test_map_comprehension() do
     prices = %{}
     prices = prices |> Map.put("apple", 1.5) |> Map.put("orange", 2) |> Map.put("banana", 0.75)
-    g_value = apply(Map.get(prices, :__reflaxe_class__) || Map.get(prices, :__struct__), :key_value_iterator, [prices])
+    g_value = Reflaxe.Elixir.IMap.key_value_iterator(prices)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {[]}, fn _, {acc__g} ->
       try do
         if (g_value.has_next.()) do
@@ -125,13 +125,13 @@ end)
     sales = %{}
     sales = sales |> Map.put("Charlie", 7) |> Map.put("Diana", 4)
     departments = Map.put(departments, "Sales", sales)
-    g = apply(Map.get(departments, :__reflaxe_class__) || Map.get(departments, :__struct__), :key_value_iterator, [departments])
+    g = Reflaxe.Elixir.IMap.key_value_iterator(departments)
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
     if (g.has_next.()) do
       _dept = g.next.().key
       employees = g.next.().value
-      g = apply(Map.get(employees, :__reflaxe_class__) || Map.get(employees, :__struct__), :key_value_iterator, [employees])
+      g = Reflaxe.Elixir.IMap.key_value_iterator(employees)
       _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
         try do
           if (g.has_next.()) do
@@ -172,8 +172,8 @@ end)
     ages = %{}
     ages = ages |> Map.put("Alice", 25) |> Map.put("Bob", 17) |> Map.put("Charlie", 30) |> Map.put("Diana", 16)
     adults = []
-    g = apply(Map.get(ages, :__reflaxe_class__) || Map.get(ages, :__struct__), :key_value_iterator, [ages])
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {adults}, fn _, {acc_adults} ->
+    g = Reflaxe.Elixir.IMap.key_value_iterator(ages)
+    {_adults} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {adults}, fn _, {acc_adults} ->
       try do
         if (g.has_next.()) do
           name = g.next.().key
@@ -201,7 +201,7 @@ end)
     products = products |> Map.put("laptop", 999.99) |> Map.put("mouse", 25.5) |> Map.put("keyboard", 75)
     descriptions = []
     total_value = 0
-    g = apply(Map.get(products, :__reflaxe_class__) || Map.get(products, :__struct__), :key_value_iterator, [products])
+    g = Reflaxe.Elixir.IMap.key_value_iterator(products)
     {_descriptions, _total_value} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {descriptions, total_value}, fn _, {acc_descriptions, acc_total_value} ->
       try do
         if (g.has_next.()) do

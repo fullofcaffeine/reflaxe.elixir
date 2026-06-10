@@ -1,7 +1,7 @@
 defmodule Main do
   def main() do
     i = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i}, fn _, {acc_i} ->
+    {_i} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i}, fn _, {acc_i} ->
       try do
         if (acc_i < 5) do
           _old_i = acc_i
@@ -22,7 +22,7 @@ defmodule Main do
       end
     end)
     j = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {j}, fn _, {acc_j} ->
+    {_j} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {j}, fn _, {acc_j} ->
       try do
         if (acc_j < 3) do
           _old_j = acc_j
@@ -43,7 +43,7 @@ defmodule Main do
       end
     end)
     counter = 10
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {counter}, fn _, {acc_counter} ->
+    {_counter} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {counter}, fn _, {acc_counter} ->
       try do
         if (acc_counter > 0) do
           acc_counter = (acc_counter - 2)
@@ -92,7 +92,7 @@ defmodule Main do
       end
     end)
     count = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count}, fn _, {acc_count} ->
+    {_count} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count}, fn _, {acc_count} ->
       try do
         _old_count = acc_count
         acc_count = acc_count + 1
@@ -112,11 +112,11 @@ defmodule Main do
       end
     end)
     outer = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {outer}, fn _, {acc_outer} ->
+    {_outer} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {outer}, fn _, {acc_outer} ->
       try do
         if (acc_outer < 3) do
           inner = 0
-          Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {inner}, fn _, {acc_inner} ->
+          {_inner} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {inner}, fn _, {acc_inner} ->
             try do
               if (acc_inner < 2) do
                 _old_inner = acc_inner
@@ -178,7 +178,7 @@ defmodule Main do
       end
     end)
     x = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {x}, fn _, {acc_x} ->
+    {_x} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {x}, fn _, {acc_x} ->
       try do
         if (acc_x < 10) do
           _old_x = acc_x

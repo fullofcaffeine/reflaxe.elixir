@@ -90,7 +90,7 @@ end) do
       "{#{Enum.join(pairs, ",")}}"
     end
   end
-  defp quote_string(_, s) do
+  defp quote_string(_struct, s) do
     result = "\""
     _g = 0
     s_length = String.length(s)

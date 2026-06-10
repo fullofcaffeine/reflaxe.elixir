@@ -18,7 +18,8 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * HOW
  * - When encountering `Enum.reduce_while(collection, {v1, v2}, fn ... end)`
- *   as an expression statement, rewrite to `{v1, v2} = Enum.reduce_while(...)`.
+ *   with a variable-only accumulator tuple, rewrite to
+ *   `{v1, v2} = Enum.reduce_while(...)`.
  *
  * EXAMPLES
  * Elixir before:
@@ -36,9 +37,9 @@ class ReduceWhileResultBindingTransforms {
 				case ERemoteCall(mod, fn, args) if (isEnumReduceWhile(mod, fn, args)):
 					var acc = args[1];
 					switch (acc.def) {
-						case ETuple(_):
-							// Leave tuple accumulators as-is to preserve expected snapshot shapes
-							node;
+						case ETuple(items):
+							var pattern = tuplePatternFromAccumulator(items);
+							pattern != null ? makeASTWithMeta(EMatch(pattern, node), node.metadata, node.pos) : node;
 						case EVar(name):
 							// Single-variable accumulator: v = Enum.reduce_while(...)
 							makeASTWithMeta(EMatch(PVar(name), node), node.metadata, node.pos);
@@ -58,6 +59,19 @@ class ReduceWhileResultBindingTransforms {
 			case EVar(m): m == "Enum";
 			default: false;
 		};
+	}
+
+	static function tuplePatternFromAccumulator(items:Array<ElixirAST>):Null<EPattern> {
+		var patterns:Array<EPattern> = [];
+		for (item in items) {
+			switch (item.def) {
+				case EVar(name) if (name != "_"):
+					patterns.push(PVar(name));
+				default:
+					return null;
+			}
+		}
+		return patterns.length > 0 ? PTuple(patterns) : null;
 	}
 }
 #end

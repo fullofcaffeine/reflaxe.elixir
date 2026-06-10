@@ -2,7 +2,7 @@ defmodule Main do
   def main() do
     array_iterator = ArrayIterator.new([1, 2, 3])
     array_values = []
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {array_values}, fn _, {acc_array_values} ->
+    {_array_values} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {array_values}, fn _, {acc_array_values} ->
       try do
         if (apply(Map.get(array_iterator, :__reflaxe_class__) || Map.get(array_iterator, :__struct__), :has_next, [array_iterator])) do
           acc_array_values = acc_array_values ++ [apply(Map.get(array_iterator, :__reflaxe_class__) || Map.get(array_iterator, :__struct__), :next, [array_iterator])]
@@ -23,8 +23,8 @@ defmodule Main do
     end)
     wrapped_map = %{"alpha" => 1, "beta" => 2}
     wrapped_pairs = []
-    wrapped_iterator = apply(Map.get(wrapped_map, :__reflaxe_class__) || Map.get(wrapped_map, :__struct__), :key_value_iterator, [wrapped_map])
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {wrapped_pairs}, fn _, {acc_wrapped_pairs} ->
+    wrapped_iterator = Reflaxe.Elixir.IMap.key_value_iterator(wrapped_map)
+    {_wrapped_pairs} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {wrapped_pairs}, fn _, {acc_wrapped_pairs} ->
       try do
         if (wrapped_iterator.has_next.()) do
           pair = wrapped_iterator.next.()
@@ -49,7 +49,7 @@ defmodule Main do
     _ = apply(Map.get(balanced_tree, :__reflaxe_class__) || Map.get(balanced_tree, :__struct__), :set, [balanced_tree, "right", 20])
     tree_pairs = []
     tree_iterator = apply(Map.get(balanced_tree, :__reflaxe_class__) || Map.get(balanced_tree, :__struct__), :key_value_iterator, [balanced_tree])
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {tree_pairs}, fn _, {acc_tree_pairs} ->
+    {_tree_pairs} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {tree_pairs}, fn _, {acc_tree_pairs} ->
       try do
         if (tree_iterator.has_next.()) do
           tree_pair = tree_iterator.next.()

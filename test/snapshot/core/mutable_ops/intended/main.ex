@@ -31,7 +31,7 @@ defmodule Main do
   end
   defp test_loop_counters() do
     i = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i}, fn _, {acc_i} ->
+    {_i} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i}, fn _, {acc_i} ->
       try do
         if (acc_i < 5) do
           _old_i = acc_i
@@ -52,7 +52,7 @@ defmodule Main do
       end
     end)
     j = 5
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {j}, fn _, {acc_j} ->
+    {_j} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {j}, fn _, {acc_j} ->
       try do
         if (acc_j > 0) do
           _old_j = acc_j

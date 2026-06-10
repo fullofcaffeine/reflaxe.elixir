@@ -93,7 +93,7 @@ state.pos
       len
     end
   end
-  def read_all(struct, _) do
+  def read_all(struct, _bufsize) do
     state = Process.get(struct.dict_key)
     state = if (Kernel.is_nil(state)) do
       state = %{:pos => 0, :remaining => struct.total_length}

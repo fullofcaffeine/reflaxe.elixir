@@ -10,8 +10,7 @@
   "phoenix/types/attribute_helper.ex",
   "main.ex",
   "int_iterator.ex",
-  "haxe/iterators/array_iterator.ex",
-  "haxe/ds/_map/map_impl_.ex"
+  "haxe/iterators/array_iterator.ex"
 ],
   "id": 0,
   "wasCached": false,

@@ -12,7 +12,7 @@ defmodule Main do
     g = 0
     _ = Enum.each(fruits, fn _ -> nil end)
     scores = %{"Alice" => 95, "Bob" => 87, "Charlie" => 92}
-    g = apply(Map.get(scores, :__reflaxe_class__) || Map.get(scores, :__struct__), :key_value_iterator, [scores])
+    g = Reflaxe.Elixir.IMap.key_value_iterator(scores)
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
     if (g.has_next.()) do
@@ -36,7 +36,7 @@ end)
   end
   defp test_while_loops() do
     i = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i}, fn _, {acc_i} ->
+    {_i} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i}, fn _, {acc_i} ->
       try do
         if (acc_i < 5) do
           _old_i = acc_i
@@ -57,7 +57,7 @@ end)
       end
     end)
     j = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {j}, fn _, {acc_j} ->
+    {_j} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {j}, fn _, {acc_j} ->
       try do
         if (acc_j >= 3) do
           throw({:break, {acc_j}})
@@ -77,7 +77,7 @@ end)
       end
     end)
     k = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k}, fn _, {acc_k} ->
+    {_k} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k}, fn _, {acc_k} ->
       try do
         if (acc_k < 10) do
           _old_k = acc_k
@@ -101,7 +101,7 @@ end)
       end
     end)
     m = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {m}, fn _, {acc_m} ->
+    {_m} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {m}, fn _, {acc_m} ->
       try do
         if (acc_m < 3) do
           _old_m = acc_m
@@ -141,11 +141,11 @@ end)
   end
   defp test_nested_loops() do
     outer = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {outer}, fn _, {acc_outer} ->
+    {_outer} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {outer}, fn _, {acc_outer} ->
       try do
         if (acc_outer < 2) do
           inner = 0
-          Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {inner}, fn _, {acc_inner} ->
+          {_inner} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {inner}, fn _, {acc_inner} ->
             try do
               if (acc_inner < 2) do
                 _old_inner = acc_inner
@@ -183,7 +183,7 @@ end)
       end
     end)
     j = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {j}, fn _, {acc_j} ->
+    {j} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {j}, fn _, {acc_j} ->
       try do
         if (acc_j < 2) do
           _old_j = acc_j
@@ -204,7 +204,7 @@ end)
       end
     end)
     j = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {j}, fn _, {acc_j} ->
+    {_j} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {j}, fn _, {acc_j} ->
       try do
         if (acc_j < 2) do
           _old_j = acc_j

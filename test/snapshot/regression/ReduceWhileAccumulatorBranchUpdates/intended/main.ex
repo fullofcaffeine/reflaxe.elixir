@@ -2,7 +2,7 @@ defmodule Main do
   def main() do
     users = %{"a" => 0, "b" => 1, "c" => 2}
     names = []
-    {names} = Enum.reduce_while(Map.keys(users), {names}, fn k, {acc_names} ->
+    {_names} = Enum.reduce_while(Map.keys(users), {names}, fn k, {acc_names} ->
       try do
         acc_names = (if (k != "a") do
   v = Map.get(users, k)
@@ -23,7 +23,7 @@ end)
       end
     end)
     views = []
-    {views} = Enum.reduce_while(Map.keys(users), {views}, fn k, {acc_views} ->
+    {_views} = Enum.reduce_while(Map.keys(users), {views}, fn k, {acc_views} ->
       try do
         v = Map.get(users, k)
         acc_views = if (not Kernel.is_nil(v)), do: acc_views ++ [%{:key => k, :value => v}], else: acc_views

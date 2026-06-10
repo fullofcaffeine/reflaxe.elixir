@@ -3,7 +3,7 @@ defmodule Eof do
   def new() do
     %{:__reflaxe_class__ => Eof}
   end
-  def to_string(_) do
+  def to_string(_struct) do
     "Eof"
   end
 end

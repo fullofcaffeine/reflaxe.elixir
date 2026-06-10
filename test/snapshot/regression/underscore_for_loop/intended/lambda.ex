@@ -2,7 +2,7 @@ defmodule Lambda do
   def array(it) do
     arr = []
     v = it.iterator.()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {arr}, fn _, {acc_arr} ->
+    {arr} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {arr}, fn _, {acc_arr} ->
       try do
         if (v.has_next.()) do
           v = v.next.()
@@ -27,7 +27,7 @@ defmodule Lambda do
   def list(it) do
     arr = []
     v = it.iterator.()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {arr}, fn _, {acc_arr} ->
+    {arr} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {arr}, fn _, {acc_arr} ->
       try do
         if (v.has_next.()) do
           v = v.next.()
@@ -52,7 +52,7 @@ defmodule Lambda do
   def concat(a, b) do
     arr = []
     v = a.iterator.()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {arr}, fn _, {acc_arr} ->
+    {arr} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {arr}, fn _, {acc_arr} ->
       try do
         if (v.has_next.()) do
           v = v.next.()
@@ -73,7 +73,7 @@ defmodule Lambda do
       end
     end)
     v = b.iterator.()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {arr}, fn _, {acc_arr} ->
+    {arr} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {arr}, fn _, {acc_arr} ->
       try do
         if (v.has_next.()) do
           v = v.next.()

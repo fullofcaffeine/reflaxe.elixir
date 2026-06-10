@@ -51,8 +51,8 @@ defmodule Main do
     user_map = %{}
     user_map = user_map |> Map.put(1, "Alice") |> Map.put(2, "Bob") |> Map.put(3, "Charlie")
     result = []
-    g = apply(Map.get(user_map, :__reflaxe_class__) || Map.get(user_map, :__struct__), :key_value_iterator, [user_map])
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result}, fn _, {acc_result} ->
+    g = Reflaxe.Elixir.IMap.key_value_iterator(user_map)
+    {_result} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result}, fn _, {acc_result} ->
       try do
         if (g.has_next.()) do
           key = g.next.().key

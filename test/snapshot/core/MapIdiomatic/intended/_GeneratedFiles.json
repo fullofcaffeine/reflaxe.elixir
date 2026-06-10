@@ -3,7 +3,6 @@
   "type.ex",
   "string_buf.ex",
   "std.ex",
-  "reflect.ex",
   "reflaxe/exception.ex",
   "reflaxe/elixir/haxe_throw.ex",
   "main.ex",

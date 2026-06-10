@@ -29,9 +29,9 @@ defmodule Main do
     map = %{}
     map = map |> Map.put("a", 1) |> Map.put("b", 2) |> Map.put("c", 3)
     _keys = Map.keys(map)
-    _values = apply(Map.get(map, :__reflaxe_class__) || Map.get(map, :__struct__), :iterator, [map])
+    _values = Reflaxe.Elixir.IMap.value_iterator(map)
     has_keys = false
-    {has_keys} = Enum.reduce_while(Map.keys(map), {has_keys}, fn _key, {acc_has_keys} ->
+    {_has_keys} = Enum.reduce_while(Map.keys(map), {has_keys}, fn _key, {acc_has_keys} ->
       try do
         acc_has_keys = true
         throw({:break, {acc_has_keys}})
@@ -49,7 +49,7 @@ defmodule Main do
     end)
     empty_map = %{}
     empty_has_keys = false
-    {empty_has_keys} = Enum.reduce_while(Map.keys(empty_map), {empty_has_keys}, fn _key, {acc_empty_has_keys} ->
+    {_empty_has_keys} = Enum.reduce_while(Map.keys(empty_map), {empty_has_keys}, fn _key, {acc_empty_has_keys} ->
       try do
         acc_empty_has_keys = true
         throw({:break, {acc_empty_has_keys}})
@@ -108,7 +108,7 @@ end)
   defp test_map_utilities() do
     map = %{}
     map = map |> Map.put("string", "hello") |> Map.put("number", 42) |> Map.put("boolean", true)
-    _string_repr = apply(Map.get(map, :__reflaxe_class__) || Map.get(map, :__struct__), :to_string, [map])
+    _string_repr = inspect(map)
     _string_val = Map.get(map, "string")
     _number_val = Map.get(map, "number")
     _bool_val = Map.get(map, "boolean")
