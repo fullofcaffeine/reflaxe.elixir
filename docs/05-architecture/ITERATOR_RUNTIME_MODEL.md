@@ -69,6 +69,29 @@ The Elixir target contract is:
 
 It returns a normalized list of `%{key: k, value: v}` maps. Unsupported inputs raise `ArgumentError` instead of silently guessing. This keeps the representation contract centralized and prevents helpers from shape-sniffing arbitrary maps.
 
+## Decision: native map-backed built-in Haxe maps
+
+The Elixir target uses native `%{}` maps as the runtime representation for the built-in Haxe map surfaces where BEAM semantics line up:
+
+- `haxe.ds.Map<K,V>` as the abstract user-facing surface
+- `haxe.ds.StringMap<V>`
+- `haxe.ds.IntMap<V>`
+
+This is the chosen direction because these map types sit directly on common Phoenix/JSON/PubSub boundaries. Keeping them as `%{}` avoids boundary allocation, lets generated code call idiomatic `Map.*` functions, and makes values easier to inspect from hand-written Elixir.
+
+This choice is intentionally scoped:
+
+- `haxe.ds.ObjectMap<K,V>` still needs explicit identity-vs-structural-key semantics before it can be considered parity-complete.
+- `haxe.ds.BalancedTree` and `haxe.ds.EnumValueMap` remain bootstrap-safe dual-mode surfaces. They exist to satisfy macro/eval and WAE constraints, not because arbitrary tree-backed `IMap` values should be shape-sniffed as native maps.
+- Custom `IMap` implementations must use explicit APIs or normalized pair lists at runtime. `Reflaxe.Elixir.IMap.unwrap/1` is the only generic runtime boundary.
+
+Tradeoffs:
+
+- **WAE:** native-map built-ins avoid emitting canonical Haxe stdlib map implementations that can produce Elixir warnings under `--warnings-as-errors`.
+- **Macro/eval:** dual-mode modules under `src/haxe/ds` remain required for stdlib classes that eval instantiates during macro compilation.
+- **Performance:** `%{}` storage gives O(1)-ish BEAM map operations and avoids conversion at Elixir boundaries. Iteration order follows BEAM map semantics and must not be treated as insertion order.
+- **Portability:** this is Elixir-target behavior only. Shared Haxe code should rely on the Haxe `Map` API, not on `%{}` identity.
+
 ## Source-of-truth locations
 
 - Canonical runtime: `std/haxe/iterators/*.cross.hx`
