@@ -13,12 +13,16 @@ defmodule Mix.Tasks.Haxe.Gen.Extern do
       mix haxe.gen.extern Enum
       mix haxe.gen.extern Ecto.Changeset --package externs.ecto --out src_haxe/externs
       mix haxe.gen.extern :crypto --package externs.erlang --out src_haxe/externs
+      mix haxe.gen.extern Jason --wrapper --decoder --test-pointer
 
   ## Options
 
     * `--out` - Output directory (default: `src_haxe/externs`)
     * `--package` - Haxe package name (default: `externs`)
     * `--class-name` - Override generated Haxe class name (default: last segment of module)
+    * `--wrapper` - Also generate a normal Haxe wrapper class for app-facing calls
+    * `--decoder` - Also generate a `TermDecoder` helper template
+    * `--test-pointer` - Also generate a minimal Haxe ExUnit test scaffold pointer
 
   """
 
@@ -35,7 +39,10 @@ defmodule Mix.Tasks.Haxe.Gen.Extern do
         switches: [
           out: :string,
           package: :string,
-          class_name: :string
+          class_name: :string,
+          wrapper: :boolean,
+          decoder: :boolean,
+          test_pointer: :boolean
         ]
       )
 
@@ -49,6 +56,7 @@ defmodule Mix.Tasks.Haxe.Gen.Extern do
 
         Usage:
           mix haxe.gen.extern Module.Name [--out DIR] [--package PKG] [--class-name Name]
+          mix haxe.gen.extern Module.Name --wrapper --decoder --test-pointer
         """)
 
         System.halt(1)
@@ -67,23 +75,66 @@ defmodule Mix.Tasks.Haxe.Gen.Extern do
     out_dir = Keyword.get(opts, :out, "src_haxe/externs")
     pkg = Keyword.get(opts, :package, "externs") |> normalize_package()
     class_name = Keyword.get(opts, :class_name, default_class_name(native_module))
+    package_dir = package_output_dir(out_dir, pkg)
 
-    functions =
-      module.__info__(:functions)
-      |> Enum.map(fn {name, arity} -> {Atom.to_string(name), arity} end)
-      |> Enum.sort_by(fn {name, arity} -> {name, arity} end)
-      |> Enum.group_by(fn {name, _arity} -> name end, fn {_name, arity} -> arity end)
+    functions = exported_functions(module)
 
-    File.mkdir_p!(out_dir)
+    File.mkdir_p!(package_dir)
 
-    file_path = Path.join(out_dir, "#{class_name}.hx")
-    File.write!(file_path, render_haxe(pkg, class_name, native_module, functions))
+    file_path = Path.join(package_dir, "#{class_name}.hx")
+    File.write!(file_path, render_extern_haxe(pkg, class_name, native_module, functions))
 
     Mix.shell().info("Generated extern: #{file_path}")
+
+    if Keyword.get(opts, :wrapper, false) do
+      wrapper_class_name = "#{class_name}Wrapper"
+      wrapper_path = Path.join(package_dir, "#{wrapper_class_name}.hx")
+
+      File.write!(
+        wrapper_path,
+        render_wrapper_haxe(pkg, class_name, wrapper_class_name, functions)
+      )
+
+      Mix.shell().info("Generated wrapper: #{wrapper_path}")
+    end
+
+    if Keyword.get(opts, :decoder, false) do
+      decoder_class_name = "#{class_name}Decoder"
+      decoder_path = Path.join(package_dir, "#{decoder_class_name}.hx")
+
+      File.write!(decoder_path, render_decoder_haxe(pkg, decoder_class_name, class_name))
+
+      Mix.shell().info("Generated decoder template: #{decoder_path}")
+    end
+
+    if Keyword.get(opts, :test_pointer, false) do
+      test_pointer_path = Path.join(package_dir, "#{class_name}InteropTest.md")
+
+      File.write!(test_pointer_path, render_test_pointer(pkg, class_name))
+
+      Mix.shell().info("Generated test pointer: #{test_pointer_path}")
+    end
   end
 
-  defp parse_module(":" <> _ = erl) do
-    String.to_atom(erl)
+  defp exported_functions(module) do
+    module
+    |> module_exports()
+    |> Enum.map(fn {name, arity} -> {Atom.to_string(name), arity} end)
+    |> Enum.sort_by(fn {name, arity} -> {name, arity} end)
+    |> Enum.group_by(fn {name, _arity} -> name end, fn {_name, arity} -> arity end)
+  end
+
+  defp module_exports(module) do
+    if function_exported?(module, :__info__, 1) do
+      module.__info__(:functions)
+    else
+      module.module_info(:exports)
+      |> Enum.reject(fn {name, _arity} -> name in [:module_info, :behaviour_info] end)
+    end
+  end
+
+  defp parse_module(":" <> erlang_module) do
+    String.to_atom(erlang_module)
   end
 
   defp parse_module(elixir_module) do
@@ -107,16 +158,39 @@ defmodule Mix.Tasks.Haxe.Gen.Extern do
     |> Enum.join(".")
   end
 
-  defp render_haxe(pkg, class_name, native_module, functions_by_name) do
+  defp package_output_dir(out_dir, pkg) do
+    package_parts = String.split(pkg, ".", trim: true)
+    out_parts = Path.split(out_dir)
+    matched_parts = longest_package_prefix_in_path_suffix(out_parts, package_parts)
+    remaining_parts = Enum.drop(package_parts, matched_parts)
+
+    Path.join([out_dir | remaining_parts])
+  end
+
+  defp longest_package_prefix_in_path_suffix(_out_parts, []), do: 0
+
+  defp longest_package_prefix_in_path_suffix(out_parts, package_parts) do
+    max_match = min(length(out_parts), length(package_parts))
+
+    max_match..0//-1
+    |> Enum.find(0, fn match_length ->
+      match_length == 0 ||
+        Enum.take(out_parts, -match_length) == Enum.take(package_parts, match_length)
+    end)
+  end
+
+  defp render_extern_haxe(pkg, class_name, native_module, functions_by_name) do
     header = """
     // Generated by `mix haxe.gen.extern`
     // Native module: #{native_module}
+    // Canonical workflow: docs/06-guides/ADDING_ELIXIR_LIBS_FROM_HAXE.md
 
     package #{pkg};
 
     import elixir.types.Term;
 
     @:native("#{native_module}")
+    @:unsafeExtern
     extern class #{class_name} {
 
     """
@@ -131,6 +205,127 @@ defmodule Mix.Tasks.Haxe.Gen.Extern do
     """
 
     header <> body <> footer
+  end
+
+  defp render_wrapper_haxe(pkg, extern_class_name, wrapper_class_name, functions_by_name) do
+    body =
+      functions_by_name
+      |> Enum.map(fn {name, arities} ->
+        render_wrapper_function(name, arities, extern_class_name)
+      end)
+      |> Enum.join("\n")
+
+    """
+    // Generated by `mix haxe.gen.extern --wrapper`
+    // Canonical workflow: docs/06-guides/ADDING_ELIXIR_LIBS_FROM_HAXE.md
+
+    package #{pkg};
+
+    import elixir.types.Term;
+
+    /**
+     * App-facing wrapper over #{extern_class_name}.
+     *
+     * Keep this class small: refine parameter and return types here as the native
+     * boundary becomes clearer, while leaving #{extern_class_name} API-faithful.
+     */
+    class #{wrapper_class_name} {
+    #{body}}
+    """
+  end
+
+  defp render_wrapper_function(native_name, arities, extern_class_name) do
+    arity = Enum.max(arities)
+    haxe_name = haxe_function_name(native_name)
+    params = render_params(arity)
+    args = render_args(arity)
+
+    if length(arities) > 1 do
+      """
+        // #{extern_class_name}.#{haxe_name} also supports arities: #{arity_list(arities)}.
+        public static function #{haxe_name}(#{params}): Term {
+          return #{extern_class_name}.#{haxe_name}(#{args});
+        }
+      """
+    else
+      """
+        public static function #{haxe_name}(#{params}): Term {
+          return #{extern_class_name}.#{haxe_name}(#{args});
+        }
+      """
+    end
+  end
+
+  defp render_decoder_haxe(pkg, decoder_class_name, extern_class_name) do
+    """
+    // Generated by `mix haxe.gen.extern --decoder`
+    // Canonical workflow: docs/06-guides/ADDING_ELIXIR_LIBS_FROM_HAXE.md
+
+    package #{pkg};
+
+    import elixir.types.Term;
+    import elixir.types.TermDecoder;
+    import elixir.types.TermDecoder.TermDecodeError;
+    import haxe.functional.Result;
+
+    /**
+     * Decoder helpers for #{extern_class_name} wrapper boundaries.
+     *
+     * Add app-specific decoders here as you replace generic Term values with
+     * stable Haxe typedefs, enums, and Result shapes.
+     */
+    class #{decoder_class_name} {
+      public static function asString(term: Term): Result<String, TermDecodeError> {
+        return TermDecoder.asString(term);
+      }
+
+      public static function asInt(term: Term): Result<Int, TermDecodeError> {
+        return TermDecoder.asInt(term);
+      }
+
+      public static function asBool(term: Term): Result<Bool, TermDecodeError> {
+        return TermDecoder.asBool(term);
+      }
+
+      public static function asTermList(term: Term): Result<Array<Term>, TermDecodeError> {
+        return TermDecoder.asList(term);
+      }
+    }
+    """
+  end
+
+  defp render_test_pointer(pkg, class_name) do
+    """
+    # #{class_name} Interop Test Pointer
+
+    Generated by `mix haxe.gen.extern --test-pointer`.
+
+    Recommended location for the first runtime test:
+
+    - `test_haxe/externs/#{class_name}InteropTest.hx`
+
+    Reference docs:
+
+    - `docs/02-user-guide/exunit-testing.md`
+    - `docs/06-guides/ADDING_ELIXIR_LIBS_FROM_HAXE.md`
+
+    Minimal Haxe ExUnit scaffold:
+
+    ```haxe
+    package #{pkg};
+
+    import haxe.test.Assert;
+    import haxe.test.ExUnit.TestCase;
+
+    @:exunit
+    class #{class_name}InteropTest extends TestCase {
+      @:test
+      public function generatedExternIsReachable():Void {
+        Assert.isTrue(true);
+      }
+    }
+    ```
+    """
   end
 
   defp render_function_group(name, arities) do
@@ -170,6 +365,21 @@ defmodule Mix.Tasks.Haxe.Gen.Extern do
     1..arity
     |> Enum.map(&param_name/1)
     |> Enum.map(fn name -> "#{name}: Term" end)
+    |> Enum.join(", ")
+  end
+
+  defp render_args(0), do: ""
+
+  defp render_args(arity) do
+    1..arity
+    |> Enum.map(&param_name/1)
+    |> Enum.join(", ")
+  end
+
+  defp arity_list(arities) do
+    arities
+    |> Enum.sort()
+    |> Enum.map(&Integer.to_string/1)
     |> Enum.join(", ")
   end
 
@@ -230,8 +440,11 @@ defmodule Mix.Tasks.Haxe.Gen.Extern do
 
     name =
       case base do
-        "" -> "call"
-        other -> String.replace_prefix(other, String.first(other), String.downcase(String.first(other)))
+        "" ->
+          "call"
+
+        other ->
+          String.replace_prefix(other, String.first(other), String.downcase(String.first(other)))
       end
 
     sanitize_haxe_ident(name <> suffix)

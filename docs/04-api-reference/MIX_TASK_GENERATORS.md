@@ -108,15 +108,29 @@ Examples:
 mix haxe.gen.extern Enum
 mix haxe.gen.extern Ecto.Changeset --package externs.ecto --out src_haxe/externs
 mix haxe.gen.extern :crypto --package externs.erlang --out src_haxe/externs
+mix haxe.gen.extern Jason --wrapper --decoder --test-pointer
 ```
 
 Output:
 - `src_haxe/externs/<Module>.hx` (configurable via `--out`, `--package`, `--class-name`)
+- `src_haxe/externs/<Module>Wrapper.hx` when `--wrapper` is provided
+- `src_haxe/externs/<Module>Decoder.hx` when `--decoder` is provided
+- `src_haxe/externs/<Module>InteropTest.md` when `--test-pointer` is provided
+- If `--package` has extra segments, files are placed under matching package directories (for example `--out src_haxe/externs --package externs.ecto` writes `src_haxe/externs/ecto/<Module>.hx`).
+
+Options:
+- `--out DIR` - Output directory (default: `src_haxe/externs`)
+- `--package PKG` - Haxe package name (default: `externs`)
+- `--class-name Name` - Override generated Haxe class name
+- `--wrapper` - Generate a normal Haxe wrapper class for app-facing calls
+- `--decoder` - Generate a `TermDecoder` helper template
+- `--test-pointer` - Generate a minimal Haxe ExUnit test scaffold pointer
 
 Notes:
 - This generator is intended to keep app code away from untyped `__elixir__()` strings.
 - The generated extern uses `elixir.types.Term` at the boundary by default (safe, generic).
 - Functions with multiple arities are generated using Haxe overloads.
+- Erlang modules such as `:crypto` are supported through `module_info(:exports)`.
 - Canonical usage workflow (extern + wrapper + tests): `docs/06-guides/ADDING_ELIXIR_LIBS_FROM_HAXE.md`.
 
 ### `mix haxe.gen.project`
