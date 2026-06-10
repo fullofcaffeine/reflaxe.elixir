@@ -33,7 +33,7 @@
 -lib reflaxe
 
 # Define the library version
--D reflaxe.elixir=0.3.1
+-D reflaxe.elixir=0.3.2
 # Bootstrap early (target-conditional stdlib gating + vendored reflaxe injection)
 --macro reflaxe.elixir.CompilerBootstrap.Start()
 

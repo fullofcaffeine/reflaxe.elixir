@@ -1,3 +1,10 @@
+## [0.3.2](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.3.1...v0.3.2) (2026-06-10)
+
+
+### Bug Fixes
+
+* **stdlib:** reject ObjectMap identity semantics ([fd8ae53](https://github.com/fullofcaffeine/reflaxe.elixir/commit/fd8ae53a763428e6ad0d3214edd622846b93b54f))
+
 ## [0.3.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.3.0...v0.3.1) (2026-06-10)
 
 
