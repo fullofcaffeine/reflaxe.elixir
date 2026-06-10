@@ -498,6 +498,101 @@ class BlockBuilder {
 		return null; // No comprehensions found
 	}
 
+	static function isNativeMapCtorClass(classType:ClassType):Bool {
+		return classType != null
+			&& classType.pack != null
+			&& classType.pack.join(".") == "haxe.ds"
+			&& (classType.name == "Map" || classType.name == "StringMap" || classType.name == "IntMap" || classType.name == "EnumValueMap");
+	}
+
+	static function copyNullVarIds(nullVarIds:Map<Int, Bool>):Map<Int, Bool> {
+		var copied = new Map<Int, Bool>();
+		for (id in nullVarIds.keys()) {
+			copied.set(id, true);
+		}
+		return copied;
+	}
+
+	static function isKnownNullExpr(expr:TypedExpr, nullVarIds:Map<Int, Bool>):Bool {
+		if (expr == null)
+			return false;
+		return switch (expr.expr) {
+			case TConst(TNull):
+				true;
+			case TLocal(v):
+				nullVarIds.exists(v.id);
+			case TParenthesis(inner) | TCast(inner, _) | TMeta(_, inner):
+				isKnownNullExpr(inner, nullVarIds);
+			default:
+				false;
+		}
+	}
+
+	static function nullCheckInfo(expr:TypedExpr, nullVarIds:Map<Int, Bool>):Null<{varId:Int, nullBranchIsThen:Bool}> {
+		if (expr == null)
+			return null;
+		return switch (expr.expr) {
+			case TParenthesis(inner) | TCast(inner, _) | TMeta(_, inner):
+				nullCheckInfo(inner, nullVarIds);
+			case TBinop(op, left, right) if (op == OpEq || op == OpNotEq):
+				var nullBranchIsThen = op == OpEq;
+				switch [left.expr, right.expr] {
+					case [TLocal(v), _] if (nullVarIds.exists(v.id) && isKnownNullExpr(right, nullVarIds)):
+						{varId: v.id, nullBranchIsThen: nullBranchIsThen};
+					case [_, TLocal(v)] if (nullVarIds.exists(v.id) && isKnownNullExpr(left, nullVarIds)):
+						{varId: v.id, nullBranchIsThen: nullBranchIsThen};
+					default:
+						null;
+				}
+			default:
+				null;
+		}
+	}
+
+	static function isNullBackedNativeMapCtor(expr:TypedExpr, nullVarIds:Map<Int, Bool>):Bool {
+		if (expr == null)
+			return false;
+		return switch (expr.expr) {
+			case TNew(c, _, _):
+				isNativeMapCtorClass(c.get());
+			case TParenthesis(inner) | TCast(inner, _) | TMeta(_, inner):
+				isNullBackedNativeMapCtor(inner, nullVarIds);
+			case TIf(condition, thenExpr, elseExpr): var info = nullCheckInfo(condition,
+					nullVarIds); info != null && (info.nullBranchIsThen ? isNullBackedNativeMapCtor(thenExpr,
+					nullVarIds) : (elseExpr != null && isNullBackedNativeMapCtor(elseExpr, nullVarIds)));
+			case TBlock(statements):
+				var localNullVarIds = copyNullVarIds(nullVarIds);
+				var sawNullBackedCtor = false;
+				for (statement in statements) {
+					switch (statement.expr) {
+						case TVar(v, init):
+							if (init == null || isKnownNullExpr(init, localNullVarIds)) {
+								localNullVarIds.set(v.id, true);
+							} else {
+								localNullVarIds.remove(v.id);
+							}
+						case TBinop(OpAssign, {expr: TLocal(v)}, value):
+							if (isKnownNullExpr(value, localNullVarIds)) {
+								localNullVarIds.set(v.id, true);
+							} else {
+								localNullVarIds.remove(v.id);
+							}
+						default:
+							if (isNullBackedNativeMapCtor(statement, localNullVarIds)) {
+								sawNullBackedCtor = true;
+							}
+					}
+				}
+				sawNullBackedCtor;
+			default:
+				false;
+		}
+	}
+
+	public static function isNativeMapConstructorExpression(expr:TypedExpr):Bool {
+		return isNullBackedNativeMapCtor(expr, new Map<Int, Bool>());
+	}
+
 	/**
 	 * Detect and compile Haxe's desugared Map-literal builder blocks into a literal `%{}`.
 	 *
@@ -523,18 +618,9 @@ class BlockBuilder {
 				return null;
 		}
 
-		// Must be a map constructor (`new Map()` / `new StringMap()` etc).
-		var isMapCtor = switch (mapInit.expr) {
-			case TNew(c, _, _):
-				var classType = c.get();
-				classType != null
-				&& classType.pack != null
-				&& classType.pack.join(".") == "haxe.ds"
-				&& (classType.name == "Map" || classType.name == "StringMap" || classType.name == "IntMap" || classType.name == "EnumValueMap");
-			default:
-				false;
-		}
-		if (!isMapCtor)
+		// Must be a native-map constructor (`new Map()` / `new StringMap()` etc).
+		// Haxe may inline Map's abstract constructor as a null-backed conversion block.
+		if (!isNativeMapConstructorExpression(mapInit))
 			return null;
 
 		// Last statement must be returning the same var.

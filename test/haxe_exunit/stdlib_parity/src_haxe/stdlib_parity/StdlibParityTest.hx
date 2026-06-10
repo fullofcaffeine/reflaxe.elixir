@@ -5,6 +5,9 @@ import haxe.Int64;
 import haxe.DynamicAccess;
 import haxe.Json;
 import haxe.crypto.Md5;
+import haxe.ds.EnumValueMap;
+import haxe.ds.IntMap;
+import haxe.ds.StringMap;
 import haxe.iterators.MapKeyValueIterator;
 import haxe.test.ExUnit.TestCase;
 import haxe.test.Assert;
@@ -18,6 +21,11 @@ import reflaxe.elixir.IMap as IMapRuntime;
  * These tests are authored in Haxe and compiled to ExUnit modules, then loaded
  * by `test/exunit/test_helper.exs` during the mix test suite.
  */
+enum ParityColor {
+	Red;
+	Green;
+}
+
 @:exunit
 class StdlibParityTest extends TestCase {
 	static function pairToString<K, V>(pair:{key:K, value:V}):String {
@@ -216,6 +224,85 @@ class StdlibParityTest extends TestCase {
 		Assert.equals(1, snapshot.get("k"));
 		Assert.isNull(snapshot.get("new"));
 		Assert.equals(2, m.get("k"));
+	}
+
+	@:describe("haxe.ds.Map (native map backend)")
+	@:test
+	function testMapToStringMapConversionPreservesEntries():Void {
+		var m:Map<String, Int> = new Map();
+		m.set("alpha", 1);
+		m.set("beta", 2);
+
+		var stringMap:StringMap<Int> = m;
+		Assert.equals(1, stringMap.get("alpha"));
+		Assert.equals(2, stringMap.get("beta"));
+
+		stringMap.set("gamma", 3);
+		Assert.equals(3, stringMap.get("gamma"));
+		Assert.isNull(m.get("gamma"));
+	}
+
+	@:describe("haxe.ds.Map (native map backend)")
+	@:test
+	function testStringMapToMapConversionPreservesEntries():Void {
+		var stringMap = new StringMap<Int>();
+		stringMap.set("alpha", 1);
+
+		var m:Map<String, Int> = stringMap;
+		Assert.equals(1, m.get("alpha"));
+	}
+
+	@:describe("haxe.ds.Map (native map backend)")
+	@:test
+	function testMapToIntMapConversionPreservesEntries():Void {
+		var m:Map<Int, String> = new Map();
+		m.set(1, "one");
+		m.set(2, "two");
+
+		var intMap:IntMap<String> = m;
+		Assert.equals("one", intMap.get(1));
+		Assert.equals("two", intMap.get(2));
+
+		intMap.set(3, "three");
+		Assert.equals("three", intMap.get(3));
+		Assert.isNull(m.get(3));
+	}
+
+	@:describe("haxe.ds.Map (native map backend)")
+	@:test
+	function testIntMapToMapConversionPreservesEntries():Void {
+		var intMap = new IntMap<String>();
+		intMap.set(7, "seven");
+
+		var m:Map<Int, String> = intMap;
+		Assert.equals("seven", m.get(7));
+	}
+
+	@:describe("haxe.ds.Map (native map backend)")
+	@:test
+	function testMapToEnumValueMapConversionPreservesEntries():Void {
+		var m:Map<ParityColor, String> = new Map();
+		m.set(Red, "red");
+		m.set(Green, "green");
+
+		var enumMap:EnumValueMap<ParityColor, String> = m;
+		Assert.equals("red", enumMap.get(Red));
+		Assert.equals("green", enumMap.get(Green));
+	}
+
+	@:describe("haxe.ds.Map (native map backend)")
+	@:test
+	function testDirectNativeMapCopyPreservesSnapshot():Void {
+		var stringMap = new StringMap<Int>();
+		stringMap.set("k", 1);
+
+		var snapshot = stringMap.copy();
+		stringMap.set("k", 2);
+		stringMap.set("new", 9);
+
+		Assert.equals(1, snapshot.get("k"));
+		Assert.isNull(snapshot.get("new"));
+		Assert.equals(2, stringMap.get("k"));
 	}
 
 	@:describe("haxe.ds.Map (native map backend)")

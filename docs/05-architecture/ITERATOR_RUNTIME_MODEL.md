@@ -85,6 +85,10 @@ This choice is intentionally scoped:
 - `haxe.ds.BalancedTree` and `haxe.ds.EnumValueMap` remain bootstrap-safe dual-mode surfaces. They exist to satisfy macro/eval and WAE constraints, not because arbitrary tree-backed `IMap` values should be shape-sniffed as native maps.
 - Custom `IMap` implementations must use explicit APIs or normalized pair lists at runtime. `Reflaxe.Elixir.IMap.unwrap/1` is the only generic runtime boundary.
 
+Map abstract conversions preserve the current backing value when one exists. For Elixir output, converting a populated `Map<String,V>` to `StringMap<V>`, `Map<Int,V>` to `IntMap<V>`, or a native-map-backed enum-value map surface must be a representation cast, not allocation of a fresh empty map. The only allocation path is the abstract constructor case where Haxe supplies a null backing value for `new Map()`.
+
+These conversions do not create a mutable alias. Native map operations compile to persistent BEAM map updates that rebind the receiving Haxe variable, so later `set`, `remove`, or `clear` calls on the converted binding do not mutate earlier bindings. `copy()` follows the same value semantics: it can preserve the backing value directly because subsequent writes rebind rather than mutating in place.
+
 Tradeoffs:
 
 - **WAE:** native-map built-ins avoid emitting canonical Haxe stdlib map implementations that can produce Elixir warnings under `--warnings-as-errors`.

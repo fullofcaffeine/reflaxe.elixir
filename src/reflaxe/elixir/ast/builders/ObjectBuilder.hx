@@ -378,6 +378,10 @@ class ObjectBuilder {
 	 * HOW: Pattern match on TBlock structure
 	 */
 	static function handleFieldValue(field:{name:String, expr:TypedExpr}, context:CompilationContext):ElixirAST {
+		if (BlockBuilder.isNativeMapConstructorExpression(field.expr)) {
+			return makeAST(EMap([]));
+		}
+
 		switch (field.expr.expr) {
 			// Detect null coalescing pattern
 			case TBlock([

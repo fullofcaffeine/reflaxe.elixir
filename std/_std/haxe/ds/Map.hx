@@ -58,15 +58,15 @@ abstract Map<K, V>(IMap<K, V>) {
 	}
 
 	@:to static inline function toStringMap<K:String, V>(t:IMap<K, V>):StringMap<V> {
-		return new StringMap<V>();
+		return t == null ? new StringMap<V>() : cast t;
 	}
 
 	@:to static inline function toIntMap<K:Int, V>(t:IMap<K, V>):IntMap<V> {
-		return new IntMap<V>();
+		return t == null ? new IntMap<V>() : cast t;
 	}
 
 	@:to static inline function toEnumValueMapMap<K:EnumValue, V>(t:IMap<K, V>):EnumValueMap<K, V> {
-		return new EnumValueMap<K, V>();
+		return t == null ? new EnumValueMap<K, V>() : cast t;
 	}
 
 	@:to static inline function toObjectMap<K:{}, V>(t:IMap<K, V>):ObjectMap<K, V> {
