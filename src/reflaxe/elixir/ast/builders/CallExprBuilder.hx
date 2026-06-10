@@ -900,12 +900,16 @@ class CallExprBuilder {
 						switch (followedReceiverType) {
 							case TInst(classRef, _):
 								var ct = classRef.get();
+								if (ct != null && ct.pack != null && ct.pack.join(".") == "haxe.ds" && ct.name == "ObjectMap") {
+									context.error(objectMapUnsupportedMessage(), e.pos);
+									return ENil;
+								}
 								if (ct != null && ct.pack != null && ct.pack.join(".") == "haxe.Constraints" && ct.name == "IMap") {
 									isNativeMapReceiver = true;
 								}
 								if (ct != null && ct.pack != null && ct.pack.join(".") == "haxe.ds") {
 									switch (ct.name) {
-										case "StringMap" | "IntMap" | "ObjectMap" | "EnumValueMap":
+										case "StringMap" | "IntMap" | "EnumValueMap":
 											isNativeMapReceiver = true;
 										default:
 									}
@@ -1813,6 +1817,11 @@ class CallExprBuilder {
 	 */
 	static inline function makeAST(def:ElixirASTDef, ?pos:haxe.macro.Expr.Position):ElixirAST {
 		return {def: def, metadata: {}, pos: pos};
+	}
+
+	static function objectMapUnsupportedMessage():String {
+		return "haxe.ds.ObjectMap is not supported on the Elixir target yet: Haxe ObjectMap requires object-identity keys, "
+			+ "while BEAM map keys are structural terms. Use StringMap/IntMap/Map for structural keys, or keep ObjectMap behind a target-specific abstraction.";
 	}
 }
 #end

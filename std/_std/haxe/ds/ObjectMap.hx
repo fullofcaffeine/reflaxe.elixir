@@ -6,9 +6,9 @@ package haxe.ds;
  * Declares the `haxe.ds.ObjectMap` API surface without emitting generated Elixir code.
  *
  * NOTE
- * - The Elixir target primarily uses native maps for key/value storage. Object-keyed maps
- *   require careful semantic decisions (identity vs structural) and are treated as
- *   runtime-provided until stdlib parity work defines the exact behavior.
+ * - The Elixir target rejects ObjectMap for output code until it has a real identity-key
+ *   implementation. Native BEAM maps compare keys structurally, while Haxe ObjectMap
+ *   requires object-identity semantics.
  */
 @:nativeGen
 extern class ObjectMap<K:{}, V> implements haxe.Constraints.IMap<K, V> {

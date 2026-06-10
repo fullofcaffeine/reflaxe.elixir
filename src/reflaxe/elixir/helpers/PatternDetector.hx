@@ -89,8 +89,9 @@ class PatternDetector {
 	 */
 	public static function isMapType(t:Type):Bool {
 		return switch (t) {
-			case TInst(c, _): var cl = c.get(); cl.name == "StringMap" || cl.name == "IntMap" || cl.name == "ObjectMap" || cl.name == "Map" || cl.name.endsWith("Map");
-			case TAbstract(a, params): var abs = a.get(); abs.name == "Map" || abs.name.endsWith("Map");
+			case TInst(c, _): var classType = c.get(); classType.pack != null && classType.pack.join(".") == "haxe.ds" && (classType.name == "StringMap"
+					|| classType.name == "IntMap" || classType.name == "Map" || classType.name == "EnumValueMap");
+			case TAbstract(a, params): var abstractType = a.get(); abstractType.pack != null && abstractType.pack.join(".") == "haxe.ds" && abstractType.name == "Map";
 			default: false;
 		}
 	}

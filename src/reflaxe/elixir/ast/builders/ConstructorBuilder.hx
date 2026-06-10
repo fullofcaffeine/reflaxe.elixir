@@ -3,6 +3,7 @@ package reflaxe.elixir.ast.builders;
 #if (macro || reflaxe_runtime)
 import haxe.macro.Type;
 import haxe.macro.Expr;
+import haxe.macro.Expr.Position;
 import haxe.macro.Context;
 import haxe.macro.TypeTools;
 import reflaxe.elixir.ast.ElixirAST;
@@ -61,7 +62,7 @@ class ConstructorBuilder {
 	 * @param context Compilation context
 	 * @return ElixirASTDef for the constructor call
 	 */
-	public static function build(c:Ref<ClassType>, params:Array<Type>, el:Array<TypedExpr>, context:CompilationContext):Null<ElixirASTDef> {
+	public static function build(c:Ref<ClassType>, params:Array<Type>, el:Array<TypedExpr>, context:CompilationContext, ?pos:Position):Null<ElixirASTDef> {
 		var classType = c.get();
 		var className = classType.name;
 		var moduleName = ModuleBuilder.extractModuleName(classType);
@@ -119,7 +120,12 @@ class ConstructorBuilder {
 		// ====================================================================
 		// PATTERN 2: Map Types
 		// ====================================================================
-		if (isMapType(className)) {
+		if (isObjectMapType(classType)) {
+			context.error(objectMapUnsupportedMessage(), pos);
+			return ENil;
+		}
+
+		if (isNativeMapType(classType)) {
 			#if debug_ast_builder trace('[ConstructorBuilder] ✓ Detected Map type, generating empty map'); #end
 			return EMap([]);
 		}
@@ -188,8 +194,24 @@ class ConstructorBuilder {
 	 * WHAT: Check for common Map class names
 	 * HOW: String matching on class name
 	 */
-	static function isMapType(className:String):Bool {
-		return className == "StringMap" || className == "Map" || className == "IntMap" || StringTools.endsWith(className, "Map");
+	static function isNativeMapType(classType:ClassType):Bool {
+		return isHaxeDsClass(classType, "Map")
+			|| isHaxeDsClass(classType, "StringMap")
+			|| isHaxeDsClass(classType, "IntMap")
+			|| isHaxeDsClass(classType, "EnumValueMap");
+	}
+
+	static function isObjectMapType(classType:ClassType):Bool {
+		return isHaxeDsClass(classType, "ObjectMap");
+	}
+
+	static function isHaxeDsClass(classType:ClassType, className:String):Bool {
+		return classType != null && classType.name == className && classType.pack != null && classType.pack.join(".") == "haxe.ds";
+	}
+
+	static function objectMapUnsupportedMessage():String {
+		return "haxe.ds.ObjectMap is not supported on the Elixir target yet: Haxe ObjectMap requires object-identity keys, "
+			+ "while BEAM map keys are structural terms. Use StringMap/IntMap/Map for structural keys, or keep ObjectMap behind a target-specific abstraction.";
 	}
 
 	/**

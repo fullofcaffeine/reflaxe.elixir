@@ -34,7 +34,7 @@ class CollectionsAndLoops {
 
 		passes.push({
 			name: "HaxeMapModuleCallRewrite",
-			description: "Rewrite IntMap/StringMap/ObjectMap calls to native Map operations",
+			description: "Rewrite IntMap/StringMap calls to native Map operations",
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.HaxeMapModuleCallRewriteTransforms.pass
 		});

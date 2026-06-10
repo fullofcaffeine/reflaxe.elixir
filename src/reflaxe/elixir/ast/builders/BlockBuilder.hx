@@ -525,8 +525,12 @@ class BlockBuilder {
 
 		// Must be a map constructor (`new Map()` / `new StringMap()` etc).
 		var isMapCtor = switch (mapInit.expr) {
-			case TNew(c, _, _): var ct = c.get(); ct != null && (ct.name == "Map" || ct.name == "StringMap" || ct.name == "IntMap"
-					|| StringTools.endsWith(ct.name, "Map"));
+			case TNew(c, _, _):
+				var classType = c.get();
+				classType != null
+				&& classType.pack != null
+				&& classType.pack.join(".") == "haxe.ds"
+				&& (classType.name == "Map" || classType.name == "StringMap" || classType.name == "IntMap" || classType.name == "EnumValueMap");
 			default:
 				false;
 		}

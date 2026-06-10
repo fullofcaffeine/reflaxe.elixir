@@ -126,9 +126,9 @@ Goal: make `Map` usage predictable and eliminate “native map vs Haxe map” tr
 - Runtime tests for negative keys, key equality, iteration.
 
 **Task: `haxe.ds.ObjectMap` decision (explicit, separate)**
-- Decide/document what semantics we support on BEAM.
-  - Haxe’s “object identity” does not translate cleanly to BEAM terms.
-- Either implement with clearly documented semantics + tests, or intentionally defer with a documented limitation (no band-aids).
+- Decision: intentionally unsupported for Elixir output until there is a real identity-key runtime.
+- Haxe’s object identity does not translate cleanly to BEAM structural terms, so the compiler rejects ObjectMap construction/calls instead of lowering them to `%{}` and silently merging distinct-but-equal objects.
+- Future implementation path: identity tokens/wrappers plus tests proving distinct objects with equal fields remain distinct keys.
 
 **Task: `Map<K,V>` dispatch rules (Elixir target)**
 - Ensure `Map<K,V>` chooses the correct backing implementation (StringMap/IntMap/…).

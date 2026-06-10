@@ -178,11 +178,22 @@ class LoopBuilder {
 						default: false;
 					};
 				}
+				inline function isNativeMapClass(classType:ClassType):Bool {
+					return classType != null
+						&& classType.pack != null
+						&& classType.pack.join(".") == "haxe.ds"
+						&& (classType.name == "Map" || classType.name == "StringMap" || classType.name == "IntMap" || classType.name == "EnumValueMap");
+				}
+				inline function isNativeMapAbstract(abstractType:AbstractType):Bool {
+					return abstractType != null
+						&& abstractType.pack != null
+						&& abstractType.pack.join(".") == "haxe.ds"
+						&& abstractType.name == "Map";
+				}
 				inline function isMapType(t:Type):Bool {
 					return switch (haxe.macro.TypeTools.follow(t)) {
-						case TInst(_.get() => {name: n}, _) if (n == "Map" || n == "StringMap" || n == "IntMap" || StringTools.endsWith(n, "Map")): true;
-						case TAbstract(_.get() => {name: n2},
-							_) if (n2 == "Map" || n2 == "StringMap" || n2 == "IntMap" || StringTools.endsWith(n2, "Map")): true;
+						case TInst(_.get() => classType, _) if (isNativeMapClass(classType)): true;
+						case TAbstract(_.get() => abstractType, _) if (isNativeMapAbstract(abstractType)): true;
 						default: false;
 					};
 				}

@@ -81,7 +81,7 @@ This is the chosen direction because these map types sit directly on common Phoe
 
 This choice is intentionally scoped:
 
-- `haxe.ds.ObjectMap<K,V>` still needs explicit identity-vs-structural-key semantics before it can be considered parity-complete.
+- `haxe.ds.ObjectMap<K,V>` is intentionally unsupported for Elixir output code until an identity-key implementation exists. Haxe ObjectMap expects two distinct object instances with equal fields to remain distinct keys; native BEAM maps compare key terms structurally, so lowering ObjectMap to `%{}` would silently merge those keys.
 - `haxe.ds.BalancedTree` and `haxe.ds.EnumValueMap` remain bootstrap-safe dual-mode surfaces. They exist to satisfy macro/eval and WAE constraints, not because arbitrary tree-backed `IMap` values should be shape-sniffed as native maps.
 - Custom `IMap` implementations must use explicit APIs or normalized pair lists at runtime. `Reflaxe.Elixir.IMap.unwrap/1` is the only generic runtime boundary.
 
@@ -91,6 +91,14 @@ Tradeoffs:
 - **Macro/eval:** dual-mode modules under `src/haxe/ds` remain required for stdlib classes that eval instantiates during macro compilation.
 - **Performance:** `%{}` storage gives O(1)-ish BEAM map operations and avoids conversion at Elixir boundaries. Iteration order follows BEAM map semantics and must not be treated as insertion order.
 - **Portability:** this is Elixir-target behavior only. Shared Haxe code should rely on the Haxe `Map` API, not on `%{}` identity.
+
+## ObjectMap decision
+
+`haxe.ds.ObjectMap` is rejected at compile time on the Elixir target rather than supported with structural semantics.
+
+The rejected structural option would be deceptively convenient because `%{}` already accepts arbitrary BEAM terms as keys, but it would violate ObjectMap's identity contract. For example, two `new Key("same")` objects should occupy two entries even if their fields compare equal; as native BEAM map keys, equivalent generated struct/map terms would collide structurally. That is worse than an unsupported feature because it loses data silently.
+
+A future supported implementation needs explicit identity tokens or a wrapper runtime that assigns stable per-object identities and carries those identities through map operations. Until that design exists, construction and direct method calls fail with a compiler diagnostic.
 
 ## Source-of-truth locations
 

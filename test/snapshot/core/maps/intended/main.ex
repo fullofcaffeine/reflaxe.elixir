@@ -71,13 +71,6 @@ end)
     _values = []
     nil
   end
-  def object_map() do
-    map = %{}
-    obj1 = %{:id => 1}
-    obj2 = %{:id => 2}
-    _ = map |> Map.put(obj1, "Object 1") |> Map.put(obj2, "Object 2")
-    nil
-  end
   def map_literals() do
     colors = %{"red" => 16711680, "green" => 65280, "blue" => 255}
     _ = Enum.reduce_while(Map.keys(colors), :ok, fn color, acc ->
@@ -308,7 +301,6 @@ end)
   def main() do
     _ = string_map()
     _ = int_map()
-    _ = object_map()
     _ = map_literals()
     _ = nested_maps()
     _ = map_transformations()

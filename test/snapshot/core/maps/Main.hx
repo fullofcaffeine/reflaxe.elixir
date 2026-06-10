@@ -60,24 +60,6 @@ class Main {
 		trace('Values: $values');
 	}
 
-	// Object map (using objects as keys)
-	public static function objectMap():Void {
-		var map = new Map<{id:Int}, String>();
-
-		var obj1 = {id: 1};
-		var obj2 = {id: 2};
-
-		map.set(obj1, "Object 1");
-		map.set(obj2, "Object 2");
-
-		trace('Object 1 value: ${map.get(obj1)}');
-		trace('Object 2 value: ${map.get(obj2)}');
-
-		// Note: new object with same structure won't match
-		var obj3 = {id: 1};
-		trace('New {id: 1} value: ${map.get(obj3)}'); // null - different object
-	}
-
 	// Map literal syntax
 	public static function mapLiterals():Void {
 		// String map literal
@@ -209,9 +191,6 @@ class Main {
 
 		trace("\n=== Int Map ===");
 		intMap();
-
-		trace("\n=== Object Map ===");
-		objectMap();
 
 		trace("\n=== Map Literals ===");
 		mapLiterals();

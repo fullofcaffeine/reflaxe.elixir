@@ -70,7 +70,7 @@ abstract Map<K, V>(IMap<K, V>) {
 	}
 
 	@:to static inline function toObjectMap<K:{}, V>(t:IMap<K, V>):ObjectMap<K, V> {
-		return new ObjectMap<K, V>();
+		return cast t;
 	}
 
 	@:from static inline function fromStringMap<V>(map:StringMap<V>):Map<String, V> {

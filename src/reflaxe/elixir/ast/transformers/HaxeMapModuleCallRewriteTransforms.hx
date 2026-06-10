@@ -10,17 +10,17 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HaxeMapModuleCallRewriteTransforms
  *
  * WHAT
- * - Rewrites lowered Haxe stdlib map module calls (`IntMap.*`, `StringMap.*`, `ObjectMap.*`)
+ * - Rewrites lowered Haxe stdlib map module calls (`IntMap.*`, `StringMap.*`)
  *   to native Elixir `Map.*` operations.
  *
  * WHY
  * - The AST builder lowers Haxe map operations (e.g. `map.exists(k)`) to module calls like
- *   `IntMap.exists(map, k)`. We do not ship `IntMap/StringMap/ObjectMap` runtime modules, so
+ *   `IntMap.exists(map, k)`. We do not ship `IntMap/StringMap` runtime modules, so
  *   Elixir compilation emits undefined-module warnings (fatal under `--warnings-as-errors`).
  * - Using the real `Map` module yields more idiomatic Elixir and avoids missing-module warnings.
  *
  * HOW
- * - Pattern-match remote calls targeting `IntMap/StringMap/ObjectMap` and rewrite:
+ * - Pattern-match remote calls targeting `IntMap/StringMap` and rewrite:
  *   - `exists/2` → `Map.has_key?/2`
  *   - `get/2`    → `Map.get/2`
  *   - `keys/1`   → `Map.keys/1`
@@ -206,7 +206,7 @@ class HaxeMapModuleCallRewriteTransforms {
 	}
 
 	static function isHaxeMapModule(modName:String):Bool {
-		return modName == "IntMap" || modName == "StringMap" || modName == "ObjectMap";
+		return modName == "IntMap" || modName == "StringMap";
 	}
 
 	static function extractVarAssign(node:ElixirAST):Null<{name:String, rhs:ElixirAST}> {

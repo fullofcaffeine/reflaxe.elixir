@@ -2838,7 +2838,7 @@ class ElixirASTBuilder {
 			// ================================================================
 			case TNew(c, params, el):
 				// Delegate to ConstructorBuilder for modular handling
-				var result = reflaxe.elixir.ast.builders.ConstructorBuilder.build(c, params, el, currentContext);
+				var result = reflaxe.elixir.ast.builders.ConstructorBuilder.build(c, params, el, currentContext, expr.pos);
 				if (result != null)
 					return result;
 
@@ -4963,7 +4963,12 @@ class ElixirASTBuilder {
 		}
 
 		var isMapCtor = switch (tempInit.expr) {
-			case TNew(c, _, _): var className = c.get().name; className == "StringMap" || className == "Map" || className.endsWith("Map");
+			case TNew(c, _, _):
+				var classType = c.get();
+				classType != null
+				&& classType.pack != null
+				&& classType.pack.join(".") == "haxe.ds"
+				&& (classType.name == "Map" || classType.name == "StringMap" || classType.name == "IntMap" || classType.name == "EnumValueMap");
 			default:
 				false;
 		};
