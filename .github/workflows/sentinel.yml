@@ -215,7 +215,8 @@ jobs:
           PGPORT: '5432'
         run: |
           set -euo pipefail
-          scripts/with-timeout.sh --secs 1800 --cwd examples/todo-app -- mix test | tee todo-app-mix-test.log
+          scripts/with-timeout.sh --secs 300 --cwd examples/todo-app -- mix deps.get
+          scripts/with-timeout.sh --secs 1800 --cwd examples/todo-app -- mix test 2>&1 | tee todo-app-mix-test.log
 
       - name: Upload todo-app mix test logs
         if: always()
