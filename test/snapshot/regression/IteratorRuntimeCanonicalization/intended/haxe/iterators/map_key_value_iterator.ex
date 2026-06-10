@@ -1,24 +1,12 @@
 defmodule MapKeyValueIterator do
   def new(map) do
-    struct = %{:__reflaxe_class__ => MapKeyValueIterator, :pairs => nil, :ref => nil, :current => nil}
+    struct = %{:__reflaxe_class__ => MapKeyValueIterator, :pairs => nil, :ref => nil, :has_next => nil, :next => nil, :current => nil}
     struct = %{struct | current: 0}
-    struct = %{struct | pairs: 
-            cond do
-                Kernel.is_list(map) ->
-                    Enum.map(map, fn
-                        {key, value} -> %{key: key, value: value}
-                        %{key: _key, value: _value} = pair -> pair
-                        _ -> %{key: nil, value: nil}
-                    end)
-                Kernel.is_map(map) ->
-                    Enum.map(Map.to_list(map), fn {key, value} ->
-                        %{key: key, value: value}
-                    end)
-                true ->
-                    []
-            end
-        }
+    gthis = struct
+    struct = %{struct | pairs: Reflaxe.Elixir.IMap.unwrap(map)}
     struct = %{struct | ref: make_ref()}
+    struct = %{struct | has_next: fn -> apply(Map.get(gthis, :__reflaxe_class__) || Map.get(gthis, :__struct__), :has_next, [gthis]) end}
+    struct = %{struct | next: fn -> apply(Map.get(gthis, :__reflaxe_class__) || Map.get(gthis, :__struct__), :next, [gthis]) end}
     struct
   end
   defp state_key(struct) do

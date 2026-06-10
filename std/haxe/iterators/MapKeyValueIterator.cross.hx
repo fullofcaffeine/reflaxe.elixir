@@ -1,6 +1,7 @@
 package haxe.iterators;
 
 import haxe.Constraints.IMap;
+import reflaxe.elixir.IMap as IMapRuntime;
 
 /**
  * Elixir target runtime for `haxe.iterators.MapKeyValueIterator`.
@@ -22,22 +23,7 @@ class MapKeyValueIterator<K, V> {
 	var current:Int = 0;
 
 	public function new(map:IMap<K, V>) {
-		this.pairs = untyped __elixir__('
-            cond do
-                Kernel.is_list({0}) ->
-                    Enum.map({0}, fn
-                        {key, value} -> %{key: key, value: value}
-                        %{key: _key, value: _value} = pair -> pair
-                        _ -> %{key: nil, value: nil}
-                    end)
-                Kernel.is_map({0}) ->
-                    Enum.map(Map.to_list({0}), fn {key, value} ->
-                        %{key: key, value: value}
-                    end)
-                true ->
-                    []
-            end
-        ', map);
+		this.pairs = IMapRuntime.unwrap(map);
 		this.ref = untyped __elixir__('make_ref()');
 		this.hasNextFn = () -> hasNext();
 		this.nextFn = () -> next();

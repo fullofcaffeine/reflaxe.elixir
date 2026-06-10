@@ -129,11 +129,19 @@ class StdHaxeRuntimeOverrideTransforms {
 			+ "  # - Haxe `Map`/`StringMap`/`IntMap` values are plain Elixir maps (`%{}`) and are passed here directly.\n"
 			+ "  # - Non-map `IMap` implementations (e.g. tree-backed maps) should pass a list of `{k,v}` pairs.\n"
 			+ "  def new(map_or_pairs) do\n"
+			+ "    normalize_pair = fn\n"
+			+ "      {k, v} -> %{:key => k, :value => v}\n"
+			+ "      %{key: _k, value: _v} = pair -> pair\n"
+			+ "      other -> raise ArgumentError, message: \"expected IMap pair list entry, got: \" <> inspect(other)\n"
+			+ "    end\n"
 			+ "    pairs =\n"
 			+ "      cond do\n"
-			+ "        Kernel.is_list(map_or_pairs) -> map_or_pairs\n"
-			+ "        Kernel.is_map(map_or_pairs) -> Map.to_list(map_or_pairs)\n"
-			+ "        true -> []\n"
+			+ "        Kernel.is_list(map_or_pairs) -> Enum.map(map_or_pairs, normalize_pair)\n"
+			+
+			"        Kernel.is_map(map_or_pairs) and not Map.has_key?(map_or_pairs, :__struct__) and not Map.has_key?(map_or_pairs, :__reflaxe_class__) -> Enum.map(Map.to_list(map_or_pairs), normalize_pair)\n"
+			+
+			"        Kernel.is_map(map_or_pairs) -> raise ArgumentError, message: \"expected plain Elixir map or key/value pair list; custom IMap implementations must pass pre-normalized pairs\"\n"
+			+ "        true -> raise ArgumentError, message: \"expected plain Elixir map or key/value pair list, got: \" <> inspect(map_or_pairs)\n"
 			+ "      end\n"
 			+ "    %__MODULE__{pairs: pairs, ref: make_ref()}\n"
 			+ "  end\n"
@@ -144,8 +152,9 @@ class StdHaxeRuntimeOverrideTransforms {
 			+ "    i = current_index(struct)\n"
 			+ "    Process.put(state_key(struct.ref), i + 1)\n"
 			+ "    case Enum.at(struct.pairs, i) do\n"
+			+ "      %{key: k, value: v} -> %{:key => k, :value => v}\n"
 			+ "      {k, v} -> %{:key => k, :value => v}\n"
-			+ "      _ -> %{:key => nil, :value => nil}\n"
+			+ "      other -> raise ArgumentError, message: \"expected normalized IMap pair, got: \" <> inspect(other)\n"
 			+ "    end\n"
 			+ "  end\n"));
 		return makeASTWithMeta(EBlock([raw]), meta, pos);

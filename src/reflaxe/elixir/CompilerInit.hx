@@ -133,12 +133,10 @@ class CompilerInit {
 		// The generated Elixir may reference `%Reflaxe.Elixir.HaxeThrow{...}` even if user code
 		// never directly references the Haxe type path, so we must keep it explicitly under `-dce full`.
 		try {
-			// `Compiler.keep()` alone does not force a module to be typed/compiled; it only prevents
-			// DCE from removing it *if* it is already part of the compilation.
-			//
-			// Because our generated Elixir can pattern-match on `%Reflaxe.Elixir.HaxeThrow{...}`
-			// without any user-facing Haxe reference, we must also force it into the compilation.
-			Compiler.include("reflaxe.elixir.runtime", true);
+			// Because generated Elixir can pattern-match on `%Reflaxe.Elixir.HaxeThrow{...}`
+			// without a user-facing Haxe reference, force only that runtime type into compilation.
+			// Do not include the whole runtime package here: doing so emits every runtime helper in
+			// every compilation and causes broad, unrelated snapshot churn.
 			Context.getType("reflaxe.elixir.runtime.HaxeThrow");
 			Compiler.keep("reflaxe.elixir.runtime.HaxeThrow");
 		} catch (e:haxe.Exception) {}

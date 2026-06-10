@@ -49,22 +49,29 @@ This keeps iterator semantics correct without changing the call sites.
   - Relies on process-local state (not purely functional).
   - Iterator state is tied to the process executing it (which is acceptable for iterator usage patterns).
 
-## Canonical IMap representation
+## Canonical IMap representation and unwrap API
 
 `haxe.iterators.MapKeyValueIterator` takes `haxe.Constraints.IMap<K,V>`. Depending on where the value originates, the runtime may see:
 
 - a plain Elixir map (`%{}`) (common for boundary terms like Phoenix params/payloads)
 - a Haxe map implementation (e.g. `BalancedTree`) represented as a struct/map with `__reflaxe_class__` dispatch
 
-To avoid brittle internal-shape coupling, `MapKeyValueIterator.new/1` supports exactly:
+The Elixir target contract is:
 
-- a plain Elixir map (`%{}`), or
-- a list of `{k,v}` pairs (or key/value maps) for pre-normalized iterables.
+- native `Map`/`StringMap`/`IntMap` values are represented as plain Elixir maps (`%{}`)
+- tree-backed or custom `IMap` implementations must expose key/value pairs through their own APIs
+- runtime helpers must unwrap through `Reflaxe.Elixir.IMap.unwrap/1`
 
-Non-map `IMap` implementations should produce key/value pairs before constructing the iterator.
+`Reflaxe.Elixir.IMap.unwrap/1` accepts exactly:
+
+- a plain Elixir map (`%{}`), excluding BEAM structs and Reflaxe runtime structs
+- a list of `{k,v}` tuples or `%{key: k, value: v}` maps for pre-normalized iterables
+
+It returns a normalized list of `%{key: k, value: v}` maps. Unsupported inputs raise `ArgumentError` instead of silently guessing. This keeps the representation contract centralized and prevents helpers from shape-sniffing arbitrary maps.
 
 ## Source-of-truth locations
 
 - Canonical runtime: `std/haxe/iterators/*.cross.hx`
+- Canonical `IMap` unwrap API: `std/reflaxe/elixir/IMap.hx`
 - CI safety-net fallback (narrowed): `src/reflaxe/elixir/ast/transformers/StdHaxeRuntimeOverrideTransforms.hx`
   - fallback only applies when generated iterator modules are incomplete (missing `new/has_next/next`).

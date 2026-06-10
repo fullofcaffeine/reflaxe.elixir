@@ -8,6 +8,7 @@ import haxe.crypto.Md5;
 import haxe.iterators.MapKeyValueIterator;
 import haxe.test.ExUnit.TestCase;
 import haxe.test.Assert;
+import reflaxe.elixir.IMap as IMapRuntime;
 
 /**
  * StdlibParityTest
@@ -87,6 +88,37 @@ class StdlibParityTest extends TestCase {
 		Assert.equals(2, seenPairs.length);
 		Assert.contains(seenPairs, "alpha:1");
 		Assert.contains(seenPairs, "beta:2");
+	}
+
+	@:describe("Reflaxe.Elixir.IMap")
+	@:test
+	function testIMapUnwrapPlainElixirMap():Void {
+		var nativeMap = cast untyped __elixir__('%{"alpha" => 1, "beta" => 2}');
+		var pairs:Array<{key:String, value:Int}> = IMapRuntime.unwrap(nativeMap);
+		var seenPairs = [pairToString(pairs[0]), pairToString(pairs[1])];
+		Assert.equals(2, pairs.length);
+		Assert.contains(seenPairs, "alpha:1");
+		Assert.contains(seenPairs, "beta:2");
+	}
+
+	@:describe("Reflaxe.Elixir.IMap")
+	@:test
+	function testIMapUnwrapPairList():Void {
+		var pairList = cast untyped __elixir__('[{"left", 10}, %{key: "right", value: 20}]');
+		var pairs:Array<{key:String, value:Int}> = IMapRuntime.unwrap(pairList);
+		var seenPairs = [pairToString(pairs[0]), pairToString(pairs[1])];
+		Assert.equals(2, pairs.length);
+		Assert.contains(seenPairs, "left:10");
+		Assert.contains(seenPairs, "right:20");
+	}
+
+	@:describe("Reflaxe.Elixir.IMap")
+	@:test
+	function testIMapUnwrapRejectsRuntimeStructs():Void {
+		var runtimeStruct = cast untyped __elixir__('%{:__reflaxe_class__ => BalancedTree, :root => nil}');
+		Assert.raises(() -> {
+			IMapRuntime.unwrap(runtimeStruct);
+		});
 	}
 
 	@:describe("haxe.Int64")
