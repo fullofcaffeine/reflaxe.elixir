@@ -20,13 +20,13 @@ scripts/stdlib-parity-report.sh --markdown > docs/08-roadmap/stdlib-parity/gap-r
 ## Summary
 
 - Reference std modules: **204**
-- Local std modules present: **66** (candidates scanned: 69)
-- Intersection (local provides): **57**
-- Missing locally (reference-only): **147**
+- Local std modules present: **67** (candidates scanned: 70)
+- Intersection (local provides): **58**
+- Missing locally (reference-only): **146**
 - Local-only: **9**
 
 ## Missing modules (high-level)
-Top-level (7): `Any`, `Class`, `Enum`, `EnumValue`, `StdTypes`, `UnicodeString`, `Xml`
+Top-level (6): `Any`, `Class`, `Enum`, `EnumValue`, `StdTypes`, `UnicodeString`
 
 `haxe.*` (113): heavy gaps including `haxe.CallStack`, `haxe.Http`, `haxe.Serializer`, `haxe.Template`.
 `sys.*` (27): gaps across IO/process/network/threading including `sys.net.Socket`, `sys.net.UdpSocket`, `sys.ssl.Socket`.

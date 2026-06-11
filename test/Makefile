@@ -257,6 +257,9 @@ test-%:
 				--exclude="string_buf.ex" \
 				--exclude="type.ex" \
 				--exclude="int_iterator.ex" \
+				--exclude="reflaxe/exception.ex" \
+				--exclude="reflaxe/elixir/haxe_throw.ex" \
+				--exclude="reflaxe" \
 				--exclude="hxx.ex" \
 				--exclude="_any/*" \
 				--exclude="haxe" \

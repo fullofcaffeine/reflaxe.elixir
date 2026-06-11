@@ -38,6 +38,19 @@ extern class String {
 	extern public function charCodeAt(index:Int):Null<Int>;
 
 	/**
+	 * Returns the character code at position `index` of `this` String.
+	 * This mirrors Haxe's internal fast code access helper and is used by
+	 * stdlib parsers which already guard bounds before calling it.
+	 */
+	extern public function fastCodeAt(index:Int):Int;
+
+	/**
+	 * Returns the character code at position `index` of `this` String without
+	 * exposing a nullable result to callers.
+	 */
+	extern public function unsafeCodeAt(index:Int):Int;
+
+	/**
 	 * Returns the position of the leftmost occurrence of `str` within `this`
 	 * String.
 	 * If `str` cannot be found, -1 is returned.

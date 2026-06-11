@@ -51,6 +51,7 @@ Top-level:
 - `Sys`
 - `Type`
 - `UInt`
+- `Xml` (parse/print, attributes, child iteration, parent links)
 
 `haxe.*`:
 - `haxe.Log`
@@ -112,7 +113,6 @@ If a given upstream std module produces invalid/non-idiomatic Elixir, it becomes
 
 Top-level std modules that exist upstream but are not yet overridden/validated specifically for Elixir:
 
-- `Xml` (XML parsing/printing)
 - `UnicodeString`, etc.
 
 `sys.*` surfaces that still need BEAM mapping (not exhaustive):

@@ -1,7 +1,7 @@
 {
   "diff": {
     "intersection": {
-      "count": 57,
+      "count": 58,
       "modules": [
         "Array",
         "Date",
@@ -20,6 +20,7 @@
         "Sys",
         "Type",
         "UInt",
+        "Xml",
         "haxe.DynamicAccess",
         "haxe.Exception",
         "haxe.Int32",
@@ -77,7 +78,7 @@
       ]
     },
     "reference_only": {
-      "count": 147,
+      "count": 146,
       "modules": [
         "Any",
         "Class",
@@ -85,7 +86,6 @@
         "EnumValue",
         "StdTypes",
         "UnicodeString",
-        "Xml",
         "haxe.CallStack",
         "haxe.Constraints",
         "haxe.EntryPoint",

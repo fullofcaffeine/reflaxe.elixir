@@ -628,6 +628,15 @@ class CallExprBuilder {
 								return ERemoteCall(makeAST(EVar("String")), fnName, callArgs);
 							}
 
+							inline function charCodeAt(receiver:ElixirAST, index:ElixirAST, fallback:ElixirAST):ElixirASTDef {
+								// Enum.at(String.to_charlist(str), idx) preserves character-index semantics.
+								var charlist = makeAST(stringRemote("to_charlist", [receiver]));
+								var enumAt = makeAST(ERemoteCall(makeAST(EVar("Enum")), "at", [charlist, index]));
+								var value = makeAST(EBinary(OrElse, enumAt, fallback));
+								var isNegativeIndex = makeAST(EBinary(Less, index, makeAST(EInteger(0))));
+								return EIf(isNegativeIndex, fallback, value);
+							}
+
 							switch (methodName) {
 								case "toString":
 									lowered = receiverAst.def;
@@ -696,6 +705,9 @@ class CallExprBuilder {
 									var enumAt = makeAST(ERemoteCall(makeAST(EVar("Enum")), "at", [charlist, index]));
 									var isNegativeIndex = makeAST(EBinary(Less, index, makeAST(EInteger(0))));
 									lowered = EIf(isNegativeIndex, makeAST(ENil), enumAt);
+
+								case "fastCodeAt" | "unsafeCodeAt" if (argASTs != null && argASTs.length == 1):
+									lowered = charCodeAt(receiverAst, argASTs[0], makeAST(EInteger(0)));
 
 								case "indexOf" if (argASTs != null && (argASTs.length == 1 || argASTs.length == 2)):
 									var needle = argASTs[0];
