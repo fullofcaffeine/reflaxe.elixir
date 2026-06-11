@@ -2527,6 +2527,313 @@ class LoopBuilder {
 		return buildWhileLoop(econd, e, normalWhile, context, toElixirVarName);
 	}
 
+	/**
+	 * Build a safe imperative array update loop as a direct Enum.map rebinding.
+	 *
+	 * WHAT
+	 * - Recognizes the user-authored shape:
+	 *     var i = 0;
+	 *     while (i < values.length) {
+	 *       values[i] = transform(values[i], i);
+	 *       i++;
+	 *     }
+	 * - Emits:
+	 *     values = Enum.map(values, fn item -> ... end)
+	 *   or:
+	 *     values = Enum.with_index(values) |> Enum.map(fn {item, index} -> ... end)
+	 *
+	 * WHY
+	 * - Haxe arrays are mutable, but this target represents arrays as immutable Elixir lists.
+	 *   Repeated indexed replacement is both non-idiomatic and expensive. When the loop is
+	 *   provably a pure map-in-place over the current element, a single Enum.map preserves the
+	 *   user-visible result and avoids O(n²) list rebuilding.
+	 *
+	 * HOW
+	 * - Keep the proof at TypedExpr level where the counter, array local, and exact assignment
+	 *   target are known.
+	 * - Replace reads of values[i] in the RHS with the lambda item binder.
+	 * - If the rewritten RHS still references the counter, use Enum.with_index/1 and bind it.
+	 *
+	 * EXAMPLES
+	 * - values[i] = values[i] * 2  ->  values = Enum.map(values, fn item -> item * 2 end)
+	 * - values[i] = values[i] + i  ->  values = Enum.with_index(values) |> Enum.map(fn {item, i} -> item + i end)
+	 */
+	public static function tryBuildArrayMutationMapLoop(counterVar:TVar, counterInit:TypedExpr, whileExpr:TypedExpr, context:BuildContext,
+			toElixirVarName:String->String):Null<ElixirAST> {
+		if (!isZeroInt(counterInit))
+			return null;
+
+		var whileParts = switch (whileExpr.expr) {
+			case TWhile(condition, body, _):
+				{condition: condition, body: body};
+			default:
+				return null;
+		};
+
+		var proof = analyzeArrayMutationMapLoop(counterVar, whileParts.condition, whileParts.body);
+		if (proof == null)
+			return null;
+
+		var buildExpression = context.getExpressionBuilder();
+		var arrayName = toElixirVarName(proof.arrayVar.name);
+		var counterName = toElixirVarName(counterVar.name);
+		var usedNames = collectLocalNames(proof.rhs, toElixirVarName);
+		usedNames.set(arrayName, true);
+		usedNames.set(counterName, true);
+
+		var itemName = uniqueName("item", ["mapped_item", "array_item"], usedNames);
+		usedNames.set(itemName, true);
+		var indexName = uniqueName(counterName != "_" ? counterName : "index", ["index", "mapped_index"], usedNames);
+
+		var rhsAst = buildExpression(proof.rhs);
+		if (rhsAst == null)
+			return null;
+
+		var itemAst = makeAST(EVar(itemName));
+		var rhsWithItem = ElixirASTTransformer.transformNode(rhsAst, function(node:ElixirAST):ElixirAST {
+			if (node == null || node.def == null)
+				return node;
+			return switch (node.def) {
+				case EAccess({def: EVar(targetName)}, {def: EVar(indexVarName)}) if (targetName == arrayName && indexVarName == counterName):
+					itemAst;
+				default:
+					node;
+			}
+		});
+
+		var needsIndex = astUsesVar(rhsWithItem, counterName);
+		var lambdaBody = if (needsIndex) {
+			ElixirASTTransformer.transformNode(rhsWithItem, function(node:ElixirAST):ElixirAST {
+				if (node == null || node.def == null)
+					return node;
+				return switch (node.def) {
+					case EVar(name) if (name == counterName):
+						makeASTWithMeta(EVar(indexName), node.metadata, node.pos);
+					default:
+						node;
+				}
+			});
+		} else {
+			rhsWithItem;
+		};
+
+		var arrayAst = makeAST(EVar(arrayName));
+		var mapperFn = makeAST(EFn([
+			{
+				args: needsIndex ? [PTuple([PVar(itemName), PVar(indexName)])] : [PVar(itemName)],
+				guard: null,
+				body: lambdaBody
+			}
+		]));
+
+		var mapped = if (needsIndex) {
+			makeAST(EPipe(makeAST(ERemoteCall(makeAST(EVar("Enum")), "with_index", [arrayAst])),
+				makeAST(ERemoteCall(makeAST(EVar("Enum")), "map", [mapperFn]))));
+		} else {
+			makeAST(ERemoteCall(makeAST(EVar("Enum")), "map", [arrayAst, mapperFn]));
+		};
+
+		return makeAST(EMatch(PVar(arrayName), mapped));
+	}
+
+	static function analyzeArrayMutationMapLoop(counterVar:TVar, condition:TypedExpr, body:TypedExpr):Null<{
+		arrayVar:TVar,
+		rhs:TypedExpr
+	}> {
+		var conditionInfo = detectArrayLengthCondition(counterVar, condition);
+		if (conditionInfo == null)
+			return null;
+
+		var statements = switch (unwrapTypedExpr(body).expr) {
+			case TBlock(exprs): exprs;
+			default: return null;
+		};
+		if (statements.length != 2)
+			return null;
+
+		var assignmentRhs:Null<TypedExpr> = null;
+		var sawIncrement = false;
+		for (statement in statements) {
+			var unwrapped = unwrapTypedExpr(statement);
+			switch (unwrapped.expr) {
+				case TBinop(OpAssign, {expr: TArray(arrayExpr, indexExpr)}, rhs)
+					if (isSameLocal(arrayExpr, conditionInfo.arrayVar) && isCounterReference(indexExpr, counterVar)):
+					if (assignmentRhs != null)
+						return null;
+					assignmentRhs = rhs;
+				default:
+					if (isCounterIncrement(unwrapped, counterVar)) {
+						if (sawIncrement)
+							return null;
+						sawIncrement = true;
+					} else {
+						return null;
+					}
+			}
+		}
+
+		if (assignmentRhs == null || !sawIncrement)
+			return null;
+		if (!rhsUsesOnlySafeArrayReads(assignmentRhs, conditionInfo.arrayVar, counterVar))
+			return null;
+
+		return {arrayVar: conditionInfo.arrayVar, rhs: assignmentRhs};
+	}
+
+	static function detectArrayLengthCondition(counterVar:TVar, condition:TypedExpr):Null<{arrayVar:TVar}> {
+		var actual = unwrapTypedExpr(condition);
+		return switch (actual.expr) {
+			case TBinop(OpLt, left, right) if (isCounterReference(left, counterVar)):
+				switch (unwrapTypedExpr(right).expr) {
+					case TField(arrayExpr, fieldAccess) if (isLengthField(fieldAccess)):
+						switch (unwrapTypedExpr(arrayExpr).expr) {
+							case TLocal(arrayVar):
+								{arrayVar: arrayVar};
+							default:
+								null;
+						}
+					default:
+						null;
+				}
+			default:
+				null;
+		};
+	}
+
+	static function rhsUsesOnlySafeArrayReads(expr:TypedExpr, arrayVar:TVar, counterVar:TVar):Bool {
+		var safe = true;
+		function walk(node:TypedExpr):Void {
+			if (!safe || node == null)
+				return;
+			var actual = unwrapTypedExpr(node);
+			switch (actual.expr) {
+				case TArray(arrayExpr, indexExpr) if (isSameLocal(arrayExpr, arrayVar)):
+					if (!isCounterReference(indexExpr, counterVar)) {
+						safe = false;
+						return;
+					}
+					return;
+				case TField(arrayExpr, fieldAccess) if (isSameLocal(arrayExpr, arrayVar)):
+					if (!isLengthField(fieldAccess))
+						safe = false;
+					return;
+				case TLocal(localVar) if (localVar.id == arrayVar.id):
+					safe = false;
+					return;
+				case TFunction(_):
+					return;
+				default:
+					TypedExprTools.iter(actual, walk);
+			}
+		}
+		walk(expr);
+		return safe;
+	}
+
+	static function unwrapTypedExpr(expr:TypedExpr):TypedExpr {
+		return switch (expr.expr) {
+			case TParenthesis(inner) | TMeta(_, inner) | TCast(inner, _):
+				unwrapTypedExpr(inner);
+			default:
+				expr;
+		};
+	}
+
+	static function isZeroInt(expr:TypedExpr):Bool {
+		if (expr == null)
+			return false;
+		return switch (unwrapTypedExpr(expr).expr) {
+			case TConst(TInt(0)): true;
+			default: false;
+		};
+	}
+
+	static function isSameLocal(expr:TypedExpr, expected:TVar):Bool {
+		return switch (unwrapTypedExpr(expr).expr) {
+			case TLocal(localVar): localVar.id == expected.id;
+			default: false;
+		};
+	}
+
+	static function isCounterReference(expr:TypedExpr, counterVar:TVar):Bool {
+		return switch (unwrapTypedExpr(expr).expr) {
+			case TLocal(localVar): localVar.id == counterVar.id;
+			default: false;
+		};
+	}
+
+	static function isCounterIncrement(expr:TypedExpr, counterVar:TVar):Bool {
+		return switch (unwrapTypedExpr(expr).expr) {
+			case TUnop(OpIncrement, _, target):
+				isCounterReference(target, counterVar);
+			case TBinop(OpAssignOp(OpAdd), left, {expr: TConst(TInt(1))}):
+				isCounterReference(left, counterVar);
+			case TBinop(OpAssign, left, {expr: TBinop(OpAdd, rhsLeft, {expr: TConst(TInt(1))})}): isCounterReference(left,
+					counterVar) && isCounterReference(rhsLeft, counterVar);
+			default:
+				false;
+		};
+	}
+
+	static function isLengthField(fieldAccess:FieldAccess):Bool {
+		return switch (fieldAccess) {
+			case FInstance(_, _, cf): cf.get().name == "length";
+			case FAnon(cf): cf.get().name == "length";
+			case FDynamic(name): name == "length";
+			default: false;
+		};
+	}
+
+	static function collectLocalNames(expr:TypedExpr, toElixirVarName:String->String):Map<String, Bool> {
+		var names = new Map<String, Bool>();
+		function walk(node:TypedExpr):Void {
+			if (node == null)
+				return;
+			switch (unwrapTypedExpr(node).expr) {
+				case TLocal(localVar):
+					names.set(toElixirVarName(localVar.name), true);
+				case TFunction(_):
+					return;
+				default:
+					TypedExprTools.iter(node, walk);
+			}
+		}
+		walk(expr);
+		return names;
+	}
+
+	static function uniqueName(preferred:String, fallbacks:Array<String>, usedNames:Map<String, Bool>):String {
+		if (preferred != null && preferred.length > 0 && !usedNames.exists(preferred))
+			return preferred;
+		for (candidate in fallbacks) {
+			if (candidate != null && candidate.length > 0 && !usedNames.exists(candidate))
+				return candidate;
+		}
+		var index = 0;
+		while (true) {
+			var candidate = 'mapped_value_${index}';
+			if (!usedNames.exists(candidate))
+				return candidate;
+			index++;
+		}
+		return "mapped_value";
+	}
+
+	static function astUsesVar(expr:ElixirAST, varName:String):Bool {
+		var used = false;
+		ElixirASTTransformer.transformNode(expr, function(node:ElixirAST):ElixirAST {
+			if (used || node == null || node.def == null)
+				return node;
+			switch (node.def) {
+				case EVar(name) if (name == varName):
+					used = true;
+				default:
+			}
+			return node;
+		});
+		return used;
+	}
+
 	static function buildDesugaredForRangeLoop(econd:TypedExpr, body:TypedExpr, context:BuildContext, toElixirVarName:String->String):Null<ElixirASTDef> {
 		// Unwrap common wrappers in the while condition.
 		function unwrap(e:TypedExpr):TypedExpr {

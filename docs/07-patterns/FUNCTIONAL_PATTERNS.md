@@ -326,6 +326,28 @@ In particular, Haxe `Array` is represented as an immutable Elixir list for this 
 
 Reflaxe.Elixir intentionally does **not** auto-rewrite arbitrary mutation-heavy loops into `Enum.map/2` unless it can prove the rewrite is semantics-safe (e.g. the loop counter isn’t observed after the loop, there’s no early-exit control flow, and there aren’t multiple interacting mutations).
 
+The compiler does rewrite the narrow same-slot map-in-place shape when it can prove the loop is safe:
+```haxe
+var i = 0;
+while (i < values.length) {
+    values[i] = transform(values[i]);
+    i++;
+}
+```
+```elixir
+values = Enum.map(values, fn item -> transform(item) end)
+```
+
+If the right-hand side also uses the index, the compiler emits `Enum.with_index/1 |> Enum.map/2`:
+```haxe
+values[i] = values[i] + i;
+```
+```elixir
+values = Enum.with_index(values) |> Enum.map(fn {item, index} -> item + index end)
+```
+
+The rewrite is skipped when the counter is read after the loop or when the loop reads the same array through another index, because those cases can depend on mutation history.
+
 If you want the cleanest and fastest Elixir, write the functional shape explicitly:
 ```haxe
 // Avoid

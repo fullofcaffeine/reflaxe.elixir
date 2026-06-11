@@ -4,6 +4,7 @@ package reflaxe.elixir.ast.builders;
 import haxe.macro.Type;
 import haxe.macro.Expr;
 import haxe.macro.Context;
+import haxe.macro.TypedExprTools;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
@@ -92,6 +93,25 @@ class BlockBuilder {
 				var result = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(el[0], context);
 				return result != null ? result.def : ENil;
 			}
+
+			// ====================================================================
+			// PATTERN DETECTION: Safe array mutation loops
+			// ====================================================================
+			//
+			// Haxe users sometimes write map-like loops in imperative form:
+			//   var i = 0;
+			//   while (i < values.length) {
+			//     values[i] = transform(values[i], i);
+			//     i++;
+			//   }
+			//
+			// The Elixir target should not lower this to repeated indexed list updates.
+			// When the counter is not observed later in this block and LoopBuilder can
+			// prove the body is exactly one same-slot assignment plus one increment, emit
+			// a single Enum.map/Enum.with_index rebinding instead.
+			var arrayMutationMapBlock = rewriteArrayMutationMapLoops(el, context);
+			if (arrayMutationMapBlock != null)
+				return arrayMutationMapBlock;
 
 			// ====================================================================
 			// PATTERN DETECTION: Map Literal Builder Blocks
@@ -230,6 +250,88 @@ class BlockBuilder {
 
 			return buildRegularBlock(el, context);
 		});
+	}
+
+	static function rewriteArrayMutationMapLoops(el:Array<TypedExpr>, context:CompilationContext):Null<ElixirASTDef> {
+		if (el == null || el.length < 2 || context == null || context.compiler == null)
+			return null;
+
+		var expressions:Array<ElixirAST> = [];
+		var changed = false;
+		var index = 0;
+
+		while (index < el.length) {
+			if (index + 1 < el.length) {
+				var counterInfo:Null<{counter:TVar, init:TypedExpr}> = switch (unwrapTypedExpr(el[index]).expr) {
+					case TVar(counter, init) if (init != null):
+						{counter: counter, init: init};
+					default:
+						null;
+				};
+
+				if (counterInfo != null) {
+					var next = unwrapTypedExpr(el[index + 1]);
+					switch (next.expr) {
+						case TWhile(_, _, _):
+							if (!typedExprsUseLocal(el.slice(index + 2), counterInfo.counter)) {
+								var mapped = LoopBuilder.tryBuildArrayMutationMapLoop(counterInfo.counter, counterInfo.init, next, context,
+									name -> VariableAnalyzer.toElixirVarName(name));
+								if (mapped != null) {
+									expressions.push(mapped);
+									changed = true;
+									index += 2;
+									continue;
+								}
+							}
+						default:
+					}
+				}
+			}
+
+			var compiled = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(el[index], context);
+			if (compiled != null)
+				expressions.push(compiled);
+			index++;
+		}
+
+		if (!changed)
+			return null;
+		if (expressions.length == 0)
+			return ENil;
+		if (expressions.length == 1)
+			return expressions[0].def;
+		return EBlock(expressions);
+	}
+
+	static function typedExprsUseLocal(expressions:Array<TypedExpr>, local:TVar):Bool {
+		if (expressions == null || local == null)
+			return false;
+
+		var found = false;
+		function walk(expr:TypedExpr):Void {
+			if (found || expr == null)
+				return;
+			switch (unwrapTypedExpr(expr).expr) {
+				case TLocal(v) if (v.id == local.id):
+					found = true;
+				case TFunction(_):
+					return;
+				default:
+					TypedExprTools.iter(expr, walk);
+			}
+		}
+		for (expr in expressions)
+			walk(expr);
+		return found;
+	}
+
+	static function unwrapTypedExpr(expr:TypedExpr):TypedExpr {
+		return switch (expr.expr) {
+			case TParenthesis(inner) | TMeta(_, inner) | TCast(inner, _):
+				unwrapTypedExpr(inner);
+			default:
+				expr;
+		};
 	}
 
 	/**
