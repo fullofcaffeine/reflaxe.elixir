@@ -38,6 +38,7 @@ docs/
 
 ### "What is...?" → User Guide & Architecture
 - **Haxe→Elixir basics** → [02-user-guide/HAXE_LANGUAGE_FUNDAMENTALS.md](02-user-guide/HAXE_LANGUAGE_FUNDAMENTALS.md)
+- **Portable vs Elixir-first authoring profiles** → [02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md](02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md)
 - **Phoenix integration** → [02-user-guide/PHOENIX_INTEGRATION.md](02-user-guide/PHOENIX_INTEGRATION.md)
 - **LiveView architecture** → [02-user-guide/PHOENIX_LIVEVIEW_ARCHITECTURE.md](02-user-guide/PHOENIX_LIVEVIEW_ARCHITECTURE.md)
 - **Compilation flow** → [05-architecture/COMPILATION_FLOW.md](05-architecture/COMPILATION_FLOW.md)
@@ -162,6 +163,7 @@ docs/
 - **Current**: Updated with recent changes
 - **Discoverable**: Easy to find through navigation
 - **Actionable**: Provide clear next steps
+- **Profile language**: Treat `portable` and `Elixir-first` as application authoring profiles. Both aim to generate idiomatic Elixir; `portable` preserves Haxe semantics first, while `Elixir-first` prioritizes BEAM/Phoenix/Ecto/OTP-native source shapes. Do not present `metal` as an application profile; it is a local HXX/HEEx escape hatch. If docs mention future profile defines/metadata, describe them as advisory lint/warning inputs, not backend switches.
 
 ### AI Assistant Responsibilities
 - **Guide users efficiently** to the right documentation

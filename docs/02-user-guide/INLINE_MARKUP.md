@@ -232,7 +232,7 @@ TSX-mode control tags:
 
 Legacy marker headers with braces (`<if { ... }>` / `<for { ... }>` ) are rejected in TSX mode.
 
-If you truly need raw HEEx, use `@:hxx_mode("metal")` (discouraged; emits warnings), or the explicit escape hatch `@:allow_heex`.
+If you truly need raw HEEx, use `@:hxx_mode("metal")` (discouraged; emits warnings), or the explicit escape hatch `@:allow_heex`. This is a local template escape hatch, not an application-wide authoring profile.
 
 ## Typed `phx-hook` / `phx-*` Names in Inline Markup
 

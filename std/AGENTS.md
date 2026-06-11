@@ -737,6 +737,8 @@ end
 ```
 
 ### Cross-Platform Compatibility
+Portable stdlib APIs are part of the `portable` authoring profile: preserve Haxe stdlib semantics first, but still emit idiomatic Elixir wherever that is safe. Do not treat portable stdlib code as an "unidiomatic" lane. If profile defines/metadata are added later, they should guide warnings and boundary checks only; they must not fork stdlib codegen into a separate backend.
+
 ```haxe
 // Compile to different patterns per target
 #if elixir

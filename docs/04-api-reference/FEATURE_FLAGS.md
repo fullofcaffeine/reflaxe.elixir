@@ -46,13 +46,14 @@ These are the user-facing flags wired by the compiler (see `src/reflaxe/elixir/E
 ## What Feature Flags Are Not
 
 - They are not a second "mode" of compilation (there is no separate "portable/unidiomatic backend").
+- They are not application authoring profiles. Use the `portable` vs `Elixir-first` guidance for that decision.
 - They are not a substitute for writing BEAM-idiomatic Haxe when the semantics gap is real.
   See `docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md`.
 
 ## Related Docs
 
 - Codegen mental model: `docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md`
-- Authoring styles (portable vs Elixir-first): `docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md`
+- Authoring profiles (portable vs Elixir-first): `docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md`
 - "Portable stdlib" vs "BEAM-first externs": `docs/04-api-reference/STANDARD_LIBRARY_HANDLING.md`
 - Calling Elixir from Haxe (typed externs): `docs/02-user-guide/ESCAPE_HATCHES.md`
 - Opt-in "Gleam-like discipline": `docs/06-guides/STRICT_MODE.md`

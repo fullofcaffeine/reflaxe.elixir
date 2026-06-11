@@ -325,6 +325,18 @@ Use this loop to implement/verify user-facing features end‑to‑end without co
 ### Core Mission
 Enable developers to **write business logic once in Haxe and deploy it anywhere** while generating **idiomatic target code that looks hand-written**, not machine-generated.
 
+### Authoring Profile Contract
+Reflaxe.Elixir has two application authoring profiles, not separate compiler backends:
+
+- **Portable stdlib-first**: preserve Haxe semantics and cross-target reuse first; still generate idiomatic Elixir wherever that is safe.
+- **Typed Elixir-first**: prefer BEAM/Phoenix/Ecto/OTP-native source shapes first; this usually gives the compiler more room to emit handwritten-looking Elixir.
+
+Both profiles must aim for idiomatic Elixir output. Portable is not an "unidiomatic mode"; when portability and target-native shape conflict, preserve Haxe behavior and document/centralize the required lowering. `metal` is not an application-wide profile in Reflaxe.Elixir; it is a local HXX/HEEx escape hatch (`@:hxx_mode("metal")`) or similarly explicit low-level target-syntax escape hatch.
+
+Do not implement profile declarations as backend switches. If profile defines/metadata are added, they should be advisory lint inputs only: warnings for obvious intent violations, never a separate generated-code engine and never a reason to change semantics silently. Strictness remains orthogonal (`-D reflaxe_elixir_strict`, HXX strict flags).
+
+Use `docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md` as the source of truth for profile language.
+
 ### Key Principles
 - **Idiomatic Code Generation**: Generated Elixir must pass human review as "natural"
 - **Type Safety Without Vendor Lock-in**: Compile-time safety with deployment flexibility  
@@ -2145,7 +2157,7 @@ socket = assign(socket, :total, calculate_total(items))
 
 ## 📚 Layered API Architecture ⚡ **MAXIMUM FLEXIBILITY DESIGN**
 
-**FUNDAMENTAL PRINCIPLE**: Create faithful 1:1 Elixir/Phoenix externs first, then build Haxe stdlib abstractions on top. This gives users maximum flexibility - they can choose the Elixir-idiomatic API or the cross-platform Haxe API based on their needs.
+**FUNDAMENTAL PRINCIPLE**: Create faithful 1:1 Elixir/Phoenix externs first, then build Haxe stdlib abstractions on top. This gives users maximum flexibility - they can choose the Elixir-first API or the portable cross-platform Haxe API based on their needs.
 
 ### Architecture Layers
 ```
@@ -2167,7 +2179,7 @@ socket = assign(socket, :total, calculate_total(items))
 
 ### ⚠️ CRITICAL: Both Layers Must Generate Idiomatic Elixir
 
-**KEY PRINCIPLE**: Whether using Layer 2 (Elixir externs) or Layer 3 (Haxe stdlib), the generated Elixir code should be nearly identical and idiomatic.
+**KEY PRINCIPLE**: Whether using Layer 2 (Elixir externs) or Layer 3 (Haxe stdlib), the generated Elixir code should be nearly identical and idiomatic when semantics allow. If preserving the Haxe stdlib contract requires helper code or heavier lowering, do that deliberately rather than pretending the semantics are identical.
 
 ```haxe
 // Using Layer 2 (Elixir Externs):
@@ -2212,7 +2224,7 @@ array = array ++ [item]
 ```
 
 ### Benefits of This Architecture
-- **User Choice**: Developers can choose Elixir-idiomatic APIs OR Haxe cross-platform APIs
+- **User Choice**: Developers can choose Elixir-first APIs OR portable cross-platform Haxe APIs
 - **Better Code Generation**: Direct extern usage generates more idiomatic Elixir
 - **Maintainability**: Clear separation between Elixir bindings and Haxe abstractions
 - **Learning Curve**: Elixir developers can use familiar APIs while gaining type safety

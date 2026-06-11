@@ -30,6 +30,8 @@ See also:
   - `balanced` is migration-friendly and accepts legacy string-template forms.
   - `metal` is intentionally close to raw HEEx and should be rare.
 
+`metal` here is a template-local escape hatch, not an application-wide compiler profile. For application authoring profiles, use `portable` or `Elixir-first`; both aim to generate idiomatic Elixir, with different priorities when portability and BEAM-native shape conflict.
+
 Inline markup notes:
 - Root tag must be a valid XML name (Haxe lexer rule).
 - Phoenix dot-components like `<.form>` cannot be the *root*; wrap them in a normal element (e.g. `<div>...</div>`).
@@ -81,7 +83,7 @@ end
 ### Raw HEEx Escape Hatch (Avoid)
 - Raw `<% ... %>` blocks inside `hxx('...')` / `HXX.hxx('...')` are **disallowed by default**.
 - Opt-in escape hatch: add `@:allow_heex` to the enclosing function or class (or compile with `-D hxx_allow_raw_heex`).
-- Metal mode: `@:hxx_mode("metal")` allows raw `<% ... %>` without `@:allow_heex` (discouraged; emits warnings).
+- Metal mode: `@:hxx_mode("metal")` allows raw `<% ... %>` without `@:allow_heex` (discouraged; emits warnings). This is scoped to HXX/HEEx authoring and should not be treated as a project-wide profile.
 
 ### Assigns
 - `render(assigns: AssignsType)` is required; `@field` references are validated against `AssignsType`.

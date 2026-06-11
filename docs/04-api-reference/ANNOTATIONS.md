@@ -423,6 +423,8 @@ Modes:
 - `@:hxx_mode("tsx")`: strict typed authoring. Disallows raw `<% ... %>` escape hatches, disallows legacy string-template markers (`#{...}`, `<if { ... }>` / `<for { ... }>`), and rejects `hxx('...')` / `HXX.block('...')` usage in that scope. Supports typed TSX control tags (`<if ${...}>`, `<for ${item in items}>`) and typed spread attrs in tag position (`{assigns.attrs}` / `{@assigns.attrs}`).
 - `@:hxx_mode("metal")`: allows raw `<% ... %>` without `@:allow_heex` (discouraged; emits warnings).
 
+`metal` is scoped to HXX/HEEx template authoring. It is not an application-wide Reflaxe.Elixir profile; use `portable` or `Elixir-first` for that decision.
+
 Precedence:
 
 - Function-level `@:hxx_mode(...)` overrides class-level `@:hxx_mode(...)`.

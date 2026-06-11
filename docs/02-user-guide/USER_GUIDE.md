@@ -23,14 +23,16 @@ Chat walkthroughs for both adoption styles:
 - Hybrid (gradual): `docs/06-guides/PHOENIX_CHAT_TUTORIAL.md`
 - Haxe-first server: `docs/06-guides/PHOENIX_CHAT_TUTORIAL_HAXE_FIRST.md`
 
-## Choose an Authoring Style
+## Choose an Authoring Profile
 
-You can build production Phoenix apps with either style today:
+You can build production Phoenix apps with either profile today:
 
 - Portable stdlib-first (cross-target domain emphasis)
 - Typed Elixir-first (BEAM/Phoenix extern emphasis)
 
-Both styles compile through the same compiler pipeline. This is a source-authoring choice, not a separate backend mode.
+Both profiles compile through the same compiler pipeline and both aim to emit idiomatic Elixir. The difference is what wins when portability and target-native shape conflict: portable preserves Haxe semantics first; Elixir-first prioritizes BEAM/Phoenix/Ecto/OTP-native source shapes.
+
+This is a source-authoring choice, not a separate backend mode. `metal` is not an application profile in Reflaxe.Elixir; it is a local HXX/HEEx escape hatch.
 
 Start here:
 
