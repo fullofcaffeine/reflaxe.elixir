@@ -1,7 +1,7 @@
 defmodule Child do
   def new(name_param, age_param) do
     struct = %{:__reflaxe_class__ => Child, :age => nil, :name => nil}
-    struct = Map.merge(struct, Map.delete(Parent.new(name_param), :__struct__))
+    struct = Map.merge(struct, Map.drop(Parent.new(name_param), [:__struct__, :__reflaxe_class__]))
     struct = %{struct | age: age_param}
     struct
   end

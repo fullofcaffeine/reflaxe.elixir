@@ -1604,10 +1604,10 @@ class ElixirASTTransformer {
 									if (methodName == "") {
 										var paddedArgs = padTrailingOptionalCallArgs(node, args);
 										var parentCtor = makeAST(ERemoteCall(makeAST(EVar(parentModule)), "new", paddedArgs));
-										// Parent ctors may now return structs (not just maps). When merging parent
-										// fields into a derived struct, ensure we never overwrite the derived
-										// `__struct__` identity.
-										var parentFields = makeAST(ERemoteCall(makeAST(EVar("Map")), "delete", [parentCtor, makeAST(EAtom("__struct__"))]));
+										// Parent ctors may now return structs/tagged maps. When merging parent
+										// fields into a derived struct, never overwrite the derived runtime identity.
+										var identityKeys = makeAST(EList([makeAST(EAtom("__struct__")), makeAST(EAtom("__reflaxe_class__"))]));
+										var parentFields = makeAST(ERemoteCall(makeAST(EVar("Map")), "drop", [parentCtor, identityKeys]));
 										var merged = makeAST(ERemoteCall(makeAST(EVar("Map")), "merge", [makeAST(EVar("struct")), parentFields]));
 										return makeAST(EMatch(PVar("struct"), merged));
 									}

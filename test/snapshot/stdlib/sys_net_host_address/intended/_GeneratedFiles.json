@@ -1,0 +1,18 @@
+{
+  "filesGenerated": [
+  "type.ex",
+  "sys/net/host.ex",
+  "sys/net/address.ex",
+  "sys/net/_address/address_state.ex",
+  "string_buf.ex",
+  "std.ex",
+  "reflaxe/exception.ex",
+  "reflaxe/elixir/haxe_throw.ex",
+  "main.ex",
+  "int_iterator.ex",
+  "haxe/iterators/array_iterator.ex"
+],
+  "id": 0,
+  "wasCached": false,
+  "version": 1
+}

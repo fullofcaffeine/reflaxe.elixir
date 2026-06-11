@@ -85,6 +85,10 @@ Top-level:
 - `sys.io.FileOutput`
 - `sys.io.Process`
 - `sys.io.FileSeek`
+- `sys.net.Address`
+- `sys.net.Host`
+- `sys.net.Socket`
+- `sys.net.UdpSocket`
 
 Notes:
 - Iterator modules (`haxe.iterators.ArrayIterator`, `haxe.iterators.MapKeyValueIterator`) now have canonical Elixir-target runtime implementations under `std/haxe/iterators/*.cross.hx` and are no longer transformer-only runtime stubs.
@@ -93,6 +97,16 @@ Notes:
 - Built-in map surfaces (`haxe.ds.Map`, `StringMap`, `IntMap`) are represented as native Elixir `%{}` maps and lowered to idiomatic `Map.*` operations.
 - `haxe.ds.ObjectMap` is intentionally unsupported for Elixir output code for now. Haxe ObjectMap requires object-identity keys, but BEAM map keys are structural terms. The compiler rejects construction and direct method calls instead of silently lowering them to structural `%{}` behavior. See `docs/05-architecture/ITERATOR_RUNTIME_MODEL.md`.
 - Some exist to avoid invalid Elixir from upstream inline patterns (notably parts of `haxe.io`).
+
+### `sys.net.*` BEAM contract
+
+`sys.net.Host` and `sys.net.Address` support IPv4 host/address values. `Host` resolves names with Erlang `:inet`, stores `ip` as a big-endian IPv4 integer, and converts to `{a, b, c, d}` tuples when socket APIs need BEAM-native addresses.
+
+`sys.net.Socket` maps TCP operations to `:gen_tcp`; `sys.net.UdpSocket` maps UDP operations to `:gen_udp`. Because Haxe socket objects are mutable but generated Elixir values are immutable maps, sockets store mutable runtime state behind an opaque BEAM reference in the current process dictionary. This keeps `connect()`, `bind()`, `listen()`, `accept()`, `input`, and `output` observing the same underlying BEAM socket without pretending Elixir maps mutate in place.
+
+Blocking behavior is implemented with BEAM receive/socket timeouts. `setTimeout(seconds)` sets the timeout in milliseconds; `setBlocking(false)` uses zero-timeout receive behavior for read-style operations. Full POSIX `select(2)` semantics are not promised; `Socket.select()` is a lightweight readiness helper for generated Haxe compatibility.
+
+Unsupported buffer-mutating receive APIs fail explicitly instead of silently losing data: `Socket.input.readBytes(buf, pos, len)` and `UdpSocket.readFrom(buf, pos, len, addr)` currently raise `haxe.io.Error.Custom`. Generated Elixir `haxe.io.Bytes` values are immutable maps, so these APIs need a stateful Bytes backing or compiler-level out-parameter support before they can preserve Haxe’s caller-buffer mutation semantics. Supported paths today are TCP `Socket.read()`/`write()`, `Input.readByte()`, TCP bind/listen/accept/connect endpoint flows, and UDP bind/options/`sendTo()`.
 
 ## Additional modules shipped under `std/` (not part of upstream std)
 
@@ -119,7 +133,6 @@ Core top-level modules like `Any`, `Class`, `Enum`, `EnumValue`, and `StdTypes` 
 
 `sys.*` surfaces that still need BEAM mapping (not exhaustive):
 
-- `sys.net.*` (Socket/UdpSocket/Host)
 - `sys.thread.*` (EventLoop, pools)
 - `sys.ssl.*`
 - `sys.db.*`

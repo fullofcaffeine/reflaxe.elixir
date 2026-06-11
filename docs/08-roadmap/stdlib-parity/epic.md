@@ -37,7 +37,7 @@ Related work:
 
 ## Current status (rolling)
 
-- Latest gap report: **147 missing** modules (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
+- Latest gap report: **143 missing** modules (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
 - Recently closed (high leverage):
   - `haxe.Int32`, `haxe.Int64`, `haxe.Int64Helper` (deterministic overflow + bitwise semantics on BEAM)
   - `haxe.ds.Map` + `haxe.ds.StringMap`/`IntMap`/`ObjectMap` surfaces (native `%{}` backend; lowered to `Map.*`)
@@ -160,9 +160,11 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
 - Runtime tests: GET success, error handling, timeout behavior.
 
 **Task cluster: `sys.net.*`**
-- `sys.net.Host`, `sys.net.Address`, `sys.net.Socket`, `sys.net.UdpSocket`
-- Map to `:gen_tcp` / `:gen_udp` idioms; document blocking behavior.
-- Runtime tests: local loopback connect/send/recv, error cases.
+- Status: implemented for IPv4 `Host`/`Address`, TCP `Socket` via `:gen_tcp`, and UDP `UdpSocket` via `:gen_udp`.
+- Contract: Haxe socket mutability is represented with an opaque BEAM reference and process-dictionary-backed state so `connect()`/`bind()`/`listen()` update the socket observed by existing `input`/`output` values.
+- Blocking: `setTimeout(seconds)` maps to BEAM millisecond timeouts; `setBlocking(false)` uses zero-timeout read behavior. `Socket.select()` is a compatibility readiness helper, not full POSIX `select(2)`.
+- Unsupported: buffer-mutating receive APIs (`Socket.input.readBytes(...)` and `UdpSocket.readFrom(...)`) raise `Error.Custom` on the Elixir target because generated `haxe.io.Bytes` values are immutable maps; implement stateful Bytes or compiler out-parameter support before claiming those semantics.
+- Coverage: snapshot coverage for Host/Address and socket surfaces, plus generated-runtime smoke for bind/listen and UDP send.
 
 **Task cluster: `sys.ssl.*`**
 - `sys.ssl.Socket` plus certificate/key/digest types as needed.
@@ -188,7 +190,7 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
    - Next: `haxe.CallStack`, and remaining `haxe.io.*` utilities as-needed
 
 3) **`sys.*` runtime integration**
-   - Prioritize: `sys.Http`, `sys.net.*`, `sys.ssl.*`, `sys.thread.*`
+   - Prioritize: `sys.Http`, `sys.ssl.*`, `sys.thread.*`
    - Guardrails: BEAM/OTP idioms, avoid pretending POSIX semantics exist where they don’t.
 
 4) **Parsers/serializers**

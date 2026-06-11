@@ -3,7 +3,7 @@ defmodule CustomException do
   import Kernel, except: [to_string: 1], warn: false
   def new(message_param) do
     struct = %CustomException{}
-    struct = Map.merge(struct, Map.delete(Reflaxe.Exception.new(message_param, nil, nil), :__struct__))
+    struct = Map.merge(struct, Map.drop(Reflaxe.Exception.new(message_param, nil, nil), [:__struct__, :__reflaxe_class__]))
     struct
   end
   def to_string(struct) do

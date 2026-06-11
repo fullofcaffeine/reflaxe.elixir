@@ -29,6 +29,6 @@ scripts/stdlib-parity-report.sh --markdown > docs/08-roadmap/stdlib-parity/gap-r
 Top-level (5): `Any`, `Class`, `Enum`, `EnumValue`, `StdTypes`
 
 `haxe.*` (111): heavy gaps including `haxe.CallStack`, `haxe.Http`, `haxe.Serializer`, `haxe.Template`.
-`sys.*` (27): gaps across IO/process/network/threading including `sys.net.Socket`, `sys.net.UdpSocket`, `sys.ssl.Socket`.
+`sys.*`: remaining gaps are now mostly SSL, threading/concurrency, database, and HTTP surfaces. `sys.net.Host`, `sys.net.Address`, `sys.net.Socket`, and `sys.net.UdpSocket` have Elixir-target BEAM mappings.
 
 Note: This report counts the compiler-emitted runtime overrides as “present”: `EReg`, `haxe.exceptions.PosException`, `haxe.iterators.ArrayIterator`.
