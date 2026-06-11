@@ -1,3 +1,15 @@
+# [0.4.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.3.3...v0.4.0) (2026-06-11)
+
+
+### Bug Fixes
+
+* **docs:** refresh stdlib parity counters ([7de7f57](https://github.com/fullofcaffeine/reflaxe.elixir/commit/7de7f570c792b229854da59e85920cd29bc1d951))
+
+
+### Features
+
+* **std:** implement Xml support ([b81e471](https://github.com/fullofcaffeine/reflaxe.elixir/commit/b81e4719169dcd4e2d6e38f49f658db887d7d8a0))
+
 ## [0.3.3](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.3.2...v0.3.3) (2026-06-10)
 
 
