@@ -108,5 +108,5 @@ A future supported implementation needs explicit identity tokens or a wrapper ru
 
 - Canonical runtime: `std/haxe/iterators/*.cross.hx`
 - Canonical `IMap` unwrap API: `std/reflaxe/elixir/IMap.hx`
-- CI safety-net fallback (narrowed): `src/reflaxe/elixir/ast/transformers/StdHaxeRuntimeOverrideTransforms.hx`
-  - fallback only applies when generated iterator modules are incomplete (missing `new/has_next/next`).
+- `StdHaxeRuntimeOverrideTransforms` no longer owns iterator behavior. If iterator output regresses,
+  fix the stdlib/runtime modules rather than adding transformer-side replacement blocks.

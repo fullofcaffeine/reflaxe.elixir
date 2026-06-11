@@ -12,49 +12,29 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * WHAT
  * - Provides minimal target-native fallbacks for select Haxe std runtime modules.
- * - Primary runtime source-of-truth for iterators now lives in `std/haxe/iterators/*.cross.hx`.
- * - This pass keeps a narrow fallback for iterator modules only when generated output is
- *   incomplete (docs-only/no `new|has_next|next` functions).
- * - Always overrides `PosException` and `EReg` with known-safe runtime blocks.
+ * - Overrides `PosException` and `EReg` with known-safe runtime blocks.
  *
  * WHY
- * - Keep WAE (`--warnings-as-errors`) stable in CI even if an iterator module regresses to a stub.
- * - Avoid brittle, always-on iterator replacement now that stdlib modules provide canonical runtime.
- * - Preserve backward compatibility while narrowing transformer scope to true safety-net behavior.
+ * - These modules need stable BEAM-native behavior that is easier to express as target runtime
+ *   blocks than by compiling the upstream Haxe implementations directly.
  *
  * HOW
- * - For `ArrayIterator` and `MapKeyValueIterator`, inspect the module AST and verify that
- *   `new/1`, `has_next/1`, and `next/1` are present.
- * - If missing, inject fallback runtime blocks (same semantics as previous override).
  * - For `PosException` and `EReg`, replace module bodies with stable runtime implementations.
  *
  * See also: `docs/05-architecture/ITERATOR_RUNTIME_MODEL.md`.
  *
  * EXAMPLES
- * - Generated module has `new/has_next/next`: keep as-is.
- * - Generated module is docs-only: inject fallback runtime so CI and runtime remain valid.
+ * - Generated `PosException` module: replace body with runtime-safe constructor/formatter.
+ * - Generated `EReg` module: replace body with BEAM `Regex`-backed implementation.
  */
 class StdHaxeRuntimeOverrideTransforms {
-	static final REQUIRED_ITERATOR_FUNCTIONS = ["new", "has_next", "next"];
-
 	public static function transformPass(ast:ElixirAST):ElixirAST {
 		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
 			return switch (n.def) {
 				case EDefmodule(name, doBlock):
-					if (name == "ArrayIterator"
-						&& !hasRequiredFunctions(doBlock,
-							REQUIRED_ITERATOR_FUNCTIONS)) arrayIteratorDef(n) else if (name == "MapKeyValueIterator"
-						&& !hasRequiredFunctions(doBlock,
-							REQUIRED_ITERATOR_FUNCTIONS)) mapKeyValueIteratorDef(n) else if (name == "PosException") posExceptionDef(n) else
-						if (name == "EReg") eRegDef(n) else n;
+					if (name == "PosException") posExceptionDef(n) else if (name == "EReg") eRegDef(n) else n;
 				case EModule(name, attrs, body):
-					if (name == "ArrayIterator" && !hasRequiredFunctionsInBody(body, REQUIRED_ITERATOR_FUNCTIONS)) {
-						var arrayIteratorBlockNode = arrayIteratorBlock(n.metadata, n.pos);
-						makeASTWithMeta(EModule(name, attrs, [arrayIteratorBlockNode]), n.metadata, n.pos);
-					} else if (name == "MapKeyValueIterator" && !hasRequiredFunctionsInBody(body, REQUIRED_ITERATOR_FUNCTIONS)) {
-						var mapKeyValueIteratorBlockNode = mapKeyValueIteratorBlock(n.metadata, n.pos);
-						makeASTWithMeta(EModule(name, attrs, [mapKeyValueIteratorBlockNode]), n.metadata, n.pos);
-					} else if (name == "PosException") {
+					if (name == "PosException") {
 						var posExceptionBlockNode = posExceptionBlock(n.metadata, n.pos);
 						makeASTWithMeta(EModule(name, attrs, [posExceptionBlockNode]), n.metadata, n.pos);
 					} else if (name == "EReg") {
@@ -65,99 +45,6 @@ class StdHaxeRuntimeOverrideTransforms {
 					n;
 			}
 		});
-	}
-
-	static function hasRequiredFunctions(moduleAst:ElixirAST, requiredNames:Array<String>):Bool {
-		var found = new Map<String, Bool>();
-		for (requiredName in requiredNames)
-			found.set(requiredName, false);
-
-		ElixirASTTransformer.transformNode(moduleAst, function(n:ElixirAST):ElixirAST {
-			return switch (n.def) {
-				case EDef(name, _, _, _):
-					if (found.exists(name))
-						found.set(name, true);
-					n;
-				case EDefp(name, _, _, _):
-					if (found.exists(name))
-						found.set(name, true);
-					n;
-				default:
-					n;
-			}
-		});
-
-		for (requiredName in requiredNames) {
-			if (found.get(requiredName) != true)
-				return false;
-		}
-		return true;
-	}
-
-	static function hasRequiredFunctionsInBody(body:Array<ElixirAST>, requiredNames:Array<String>):Bool {
-		return hasRequiredFunctions(makeAST(EBlock(body)), requiredNames);
-	}
-
-	static inline function arrayIteratorDef(orig:ElixirAST):ElixirAST {
-		return makeASTWithMeta(EDefmodule("ArrayIterator", arrayIteratorBlock(orig.metadata, orig.pos)), orig.metadata, orig.pos);
-	}
-
-	static inline function arrayIteratorBlock(meta:ElixirMetadata, pos:haxe.macro.Expr.Position):ElixirAST {
-		var raw = makeAST(ERaw("  defstruct array: [], current: 0, ref: nil\n"
-			+ "  def new(array), do: %__MODULE__{array: array, current: 0, ref: make_ref()}\n"
-			+ "  defp state_key(ref), do: {__MODULE__, ref}\n"
-			+ "  defp current_index(struct) do\n"
-			+ "    if Kernel.is_nil(struct.ref), do: struct.current, else: Process.get(state_key(struct.ref), struct.current)\n"
-			+ "  end\n"
-			+ "  def has_next(struct), do: current_index(struct) < length(struct.array)\n"
-			+ "  def next(struct) do\n"
-			+ "    i = current_index(struct)\n"
-			+ "    if not Kernel.is_nil(struct.ref), do: Process.put(state_key(struct.ref), i + 1)\n"
-			+ "    Enum.at(struct.array, i)\n"
-			+ "  end\n"));
-		return makeASTWithMeta(EBlock([raw]), meta, pos);
-	}
-
-	static inline function mapKeyValueIteratorDef(orig:ElixirAST):ElixirAST {
-		return makeASTWithMeta(EDefmodule("MapKeyValueIterator", mapKeyValueIteratorBlock(orig.metadata, orig.pos)), orig.metadata, orig.pos);
-	}
-
-	static inline function mapKeyValueIteratorBlock(meta:ElixirMetadata, pos:haxe.macro.Expr.Position):ElixirAST {
-		var raw = makeAST(ERaw("  defstruct pairs: [], ref: nil\n"
-			+ "  # MapKeyValueIterator is used for Haxe `for (k => v in map)`-style loops.\n"
-			+ "  # Runtime contract:\n"
-			+ "  # - Haxe `Map`/`StringMap`/`IntMap` values are plain Elixir maps (`%{}`) and are passed here directly.\n"
-			+ "  # - Non-map `IMap` implementations (e.g. tree-backed maps) should pass a list of `{k,v}` pairs.\n"
-			+ "  def new(map_or_pairs) do\n"
-			+ "    normalize_pair = fn\n"
-			+ "      {k, v} -> %{:key => k, :value => v}\n"
-			+ "      %{key: _k, value: _v} = pair -> pair\n"
-			+ "      other -> raise ArgumentError, message: \"expected IMap pair list entry, got: \" <> inspect(other)\n"
-			+ "    end\n"
-			+ "    pairs =\n"
-			+ "      cond do\n"
-			+ "        Kernel.is_list(map_or_pairs) -> Enum.map(map_or_pairs, normalize_pair)\n"
-			+
-			"        Kernel.is_map(map_or_pairs) and not Map.has_key?(map_or_pairs, :__struct__) and not Map.has_key?(map_or_pairs, :__reflaxe_class__) -> Enum.map(Map.to_list(map_or_pairs), normalize_pair)\n"
-			+
-			"        Kernel.is_map(map_or_pairs) -> raise ArgumentError, message: \"expected plain Elixir map or key/value pair list; custom IMap implementations must pass pre-normalized pairs\"\n"
-			+ "        true -> raise ArgumentError, message: \"expected plain Elixir map or key/value pair list, got: \" <> inspect(map_or_pairs)\n"
-			+ "      end\n"
-			+ "    %__MODULE__{pairs: pairs, ref: make_ref()}\n"
-			+ "  end\n"
-			+ "  defp state_key(ref), do: {__MODULE__, ref}\n"
-			+ "  defp current_index(struct), do: Process.get(state_key(struct.ref), 0)\n"
-			+ "  def has_next(struct), do: current_index(struct) < length(struct.pairs)\n"
-			+ "  def next(struct) do\n"
-			+ "    i = current_index(struct)\n"
-			+ "    Process.put(state_key(struct.ref), i + 1)\n"
-			+ "    case Enum.at(struct.pairs, i) do\n"
-			+ "      %{key: k, value: v} -> %{:key => k, :value => v}\n"
-			+ "      {k, v} -> %{:key => k, :value => v}\n"
-			+ "      other -> raise ArgumentError, message: \"expected normalized IMap pair, got: \" <> inspect(other)\n"
-			+ "    end\n"
-			+ "  end\n"));
-		return makeASTWithMeta(EBlock([raw]), meta, pos);
 	}
 
 	static inline function posExceptionDef(orig:ElixirAST):ElixirAST {

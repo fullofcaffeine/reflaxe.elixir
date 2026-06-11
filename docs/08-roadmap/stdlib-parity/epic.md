@@ -25,7 +25,7 @@ This is why we treat “Map parity” as a first-class workstream: it is the hig
 Related work:
 - Iterator + `IMap` runtime canonicalization (BD `haxe.elixir-hm47.23`):
   - canonical iterator runtime now lives in `std/haxe/iterators/ArrayIterator.cross.hx` and `std/haxe/iterators/MapKeyValueIterator.cross.hx`
-  - transformer fallback is narrowed to incomplete iterator module output only
+  - transformer iterator fallback was removed; iterator behavior is owned by stdlib/runtime modules
   - map representation decision: built-in `Map`/`StringMap`/`IntMap` are native `%{}` backed on Elixir; `ObjectMap` identity semantics and parity tests are tracked as follow-ups
 
 ## Inputs
