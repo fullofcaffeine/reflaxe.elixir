@@ -51,6 +51,7 @@ Top-level:
 - `Sys`
 - `Type`
 - `UInt`
+- `UnicodeString` (UTF-8 validation and codepoint iteration)
 - `Xml` (parse/print, attributes, child iteration, parent links)
 
 `haxe.*`:
@@ -73,6 +74,8 @@ Top-level:
 - `haxe.iterators.ArrayIterator`
 - `haxe.iterators.ArrayKeyValueIterator`
 - `haxe.iterators.MapKeyValueIterator`
+- `haxe.iterators.StringIteratorUnicode`
+- `haxe.iterators.StringKeyValueIteratorUnicode`
 
 `sys.*` (BEAM mappings):
 - `sys.FileStat`
@@ -86,6 +89,7 @@ Top-level:
 Notes:
 - Iterator modules (`haxe.iterators.ArrayIterator`, `haxe.iterators.MapKeyValueIterator`) now have canonical Elixir-target runtime implementations under `std/haxe/iterators/*.cross.hx` and are no longer transformer-only runtime stubs.
 - The AST pipeline still optimizes most loop patterns to idiomatic `Enum.*`; runtime iterators are primarily for manual iterator usage and stdlib/runtime compatibility.
+- `UnicodeString.validate` supports `UTF8`; UTF-16/UTF-32 validation fails fast because `haxe.io.Bytes` stores UTF-8 binaries on this target.
 - Built-in map surfaces (`haxe.ds.Map`, `StringMap`, `IntMap`) are represented as native Elixir `%{}` maps and lowered to idiomatic `Map.*` operations.
 - `haxe.ds.ObjectMap` is intentionally unsupported for Elixir output code for now. Haxe ObjectMap requires object-identity keys, but BEAM map keys are structural terms. The compiler rejects construction and direct method calls instead of silently lowering them to structural `%{}` behavior. See `docs/05-architecture/ITERATOR_RUNTIME_MODEL.md`.
 - Some exist to avoid invalid Elixir from upstream inline patterns (notably parts of `haxe.io`).
@@ -111,9 +115,7 @@ If a given upstream std module produces invalid/non-idiomatic Elixir, it becomes
 
 ## Known high-impact gaps (planned parity work)
 
-Top-level std modules that exist upstream but are not yet overridden/validated specifically for Elixir:
-
-- `UnicodeString`, etc.
+Core top-level modules like `Any`, `Class`, `Enum`, `EnumValue`, and `StdTypes` are compiler/type-system surfaces rather than normal override targets.
 
 `sys.*` surfaces that still need BEAM mapping (not exhaustive):
 

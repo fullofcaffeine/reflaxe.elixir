@@ -44,6 +44,7 @@ Related work:
   - `haxe.DynamicAccess` + iterators (typed dynamic map access for JSON/string-key payloads)
   - `Reflect` improvements for string-key JSON maps vs atom-key “object literal” maps
   - `haxe.crypto.Md5` (BEAM-native `:crypto.hash/2` for runtime, pure Haxe fallback for macro context)
+  - `UnicodeString` (UTF-8 validation + codepoint/key-value iteration on BEAM strings)
 
 ## Root Layout (source of truth)
 
@@ -177,8 +178,8 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
 ## Workstreams (proposed order)
 
 1) **Core top-level modules**
-   - Done: `EReg`, `DateTools`, `IntIterator`, `List`, `Map`, `UInt`, `Xml`
-   - Next: `UnicodeString` (core-types like `Any`, `Class`, `StdTypes` are typically not override targets)
+   - Done: `EReg`, `DateTools`, `IntIterator`, `List`, `Map`, `UInt`, `UnicodeString`, `Xml`
+   - Remaining core-types like `Any`, `Class`, `Enum`, `EnumValue`, and `StdTypes` are typically not override targets
 
 2) **`haxe.io` + core utilities**
    - Done (core building blocks): `haxe.io.BufferInput`, `haxe.io.BytesBuffer`, `haxe.io.BytesInput`, `haxe.io.BytesOutput`, `haxe.io.FPHelper`, `haxe.Json`

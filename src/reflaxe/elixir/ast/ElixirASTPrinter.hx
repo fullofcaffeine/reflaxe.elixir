@@ -2009,6 +2009,15 @@ class ElixirASTPrinter {
 				if (field == "to_iso8601") {
 					return 'DateTime.to_iso8601(' + print(target, 0) + ')';
 				}
+				if (field == "length") {
+					switch (target.def) {
+						case EVar(name) if (name == "g_s" || name == "_g_s"):
+							// UnicodeString iterator loops can arrive at printing as a synthetic string
+							// subject without receiver type metadata. Preserve BEAM codepoint semantics.
+							return 'String.length(' + print(target, 0) + ')';
+						default:
+					}
+				}
 				// If target is an atom, combine into a single atom with proper quoting
 				switch (target.def) {
 					case EAtom(atomBase):

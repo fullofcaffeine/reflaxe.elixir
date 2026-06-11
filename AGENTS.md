@@ -31,6 +31,7 @@ Always use these sentinels for runtime checks. Do not run `mix phx.server` in th
 
 These failures usually come from running only a subset locally (e.g. `test:quick`) while CI runs additional suites and strict example compilation.
 
+- Docs/examples must move with behavior: any compiler, stdlib, framework DSL, profile/define, or generated-output behavior change must update the relevant docs and examples in the same task when user-facing behavior, supported APIs, or validation commands change. If no docs/examples need changes, state that explicitly in the final summary.
 - Bugs: when you fix a bug, add a regression test/snapshot when it fits (and keep it minimal).
 - If the bug is already covered by an existing test, update/fix that test instead of adding duplicates.
 - Repair transforms (when unavoidable): keep them narrowly scoped and deterministic, document them with hxdoc (WHAT/WHY/HOW/EXAMPLES), and add a regression snapshot. If the repair is compensating for an earlier miscompile shape, add a low-priority follow-up task to prevent the bad shape from being emitted upstream.
@@ -43,6 +44,7 @@ These failures usually come from running only a subset locally (e.g. `test:quick
 - Examples (strict warnings): `npm run test:examples-elixir` (mix compile `--warnings-as-errors`, no deps check)
 - Mix tests (fast): `npm run test:mix-fast`
 - Todo-app runtime smoke (non-blocking): `npm run qa:sentinel` then `scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 120`
+- Todo-app Playwright smoke for compiler/std/runtime changes: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --env e2e --async --deadline 900 --playwright --e2e-spec "e2e/smoke/*.spec.ts" --verbose`, then `scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 180`
 
 ## 🧼 Path Hygiene (Required)
 

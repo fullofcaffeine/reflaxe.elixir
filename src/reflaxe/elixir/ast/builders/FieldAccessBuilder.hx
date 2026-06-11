@@ -316,6 +316,7 @@ class FieldAccessBuilder {
 			var isString = switch (receiverInnerType) {
 				case TInst(_.get() => {name: "String"}, _): true;
 				case TAbstract(_.get() => {name: "String"}, _): true;
+				case TAbstract(_.get() => {pack: [], name: "UnicodeString"}, _): true;
 				default: false;
 			};
 			if (isString) {

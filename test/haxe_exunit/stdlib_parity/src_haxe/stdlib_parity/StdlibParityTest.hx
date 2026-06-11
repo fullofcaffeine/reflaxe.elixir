@@ -8,6 +8,7 @@ import haxe.crypto.Md5;
 import haxe.ds.EnumValueMap;
 import haxe.ds.IntMap;
 import haxe.ds.StringMap;
+import haxe.io.Bytes;
 import haxe.iterators.MapKeyValueIterator;
 import haxe.test.ExUnit.TestCase;
 import haxe.test.Assert;
@@ -127,6 +128,49 @@ class StdlibParityTest extends TestCase {
 		Assert.raises(() -> {
 			IMapRuntime.unwrap(runtimeStruct);
 		});
+	}
+
+	@:describe("UnicodeString")
+	@:test
+	function testUnicodeStringIteratesCodepoints():Void {
+		var text:UnicodeString = "Aé🌍中";
+		Assert.equals(4, text.length);
+
+		var codes:Array<Int> = [];
+		for (code in text) {
+			codes.push(code);
+		}
+
+		Assert.equals(4, codes.length);
+		Assert.equals(65, codes[0]);
+		Assert.equals(233, codes[1]);
+		Assert.equals(0x1F30D, codes[2]);
+		Assert.equals(0x4E2D, codes[3]);
+	}
+
+	@:describe("UnicodeString")
+	@:test
+	function testUnicodeStringKeyValueIteratorUsesCharacterIndices():Void {
+		var text:UnicodeString = "a🌍b";
+		var entries:Array<String> = [];
+		for (index => code in text) {
+			entries.push(index + ":" + code);
+		}
+
+		Assert.equals(3, entries.length);
+		Assert.equals("0:97", entries[0]);
+		Assert.equals("1:127757", entries[1]);
+		Assert.equals("2:98", entries[2]);
+	}
+
+	@:describe("UnicodeString")
+	@:test
+	function testUnicodeStringValidateUtf8():Void {
+		var valid:Bytes = cast untyped __elixir__('%{__reflaxe_class__: Bytes, length: byte_size("Aé🌍中"), b: "Aé🌍中"}');
+		Assert.isTrue(UnicodeString.validate(valid, UTF8));
+
+		var invalid:Bytes = cast untyped __elixir__('%{__reflaxe_class__: Bytes, length: 1, b: <<0xC0>>}');
+		Assert.isFalse(UnicodeString.validate(invalid, UTF8));
 	}
 
 	@:describe("haxe.Int64")
