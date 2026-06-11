@@ -231,7 +231,7 @@
   },
   "local": {
     "counts_by_prefix": {
-      "<top-level>": 17,
+      "<top-level>": 18,
       "haxe": 42,
       "sys": 7
     },
@@ -259,8 +259,8 @@
       "std/_std",
       "src/haxe"
     ],
-    "total_candidates": 69,
-    "total_std_modules": 66
+    "total_candidates": 70,
+    "total_std_modules": 67
   },
   "reference": {
     "counts_by_prefix": {
