@@ -1,7 +1,7 @@
 {
   "diff": {
     "intersection": {
-      "count": 61,
+      "count": 65,
       "modules": [
         "Array",
         "Date",
@@ -63,7 +63,11 @@
         "sys.io.FileInput",
         "sys.io.FileOutput",
         "sys.io.FileSeek",
-        "sys.io.Process"
+        "sys.io.Process",
+        "sys.net.Address",
+        "sys.net.Host",
+        "sys.net.Socket",
+        "sys.net.UdpSocket"
       ]
     },
     "local_only": {
@@ -81,7 +85,7 @@
       ]
     },
     "reference_only": {
-      "count": 143,
+      "count": 139,
       "modules": [
         "Any",
         "Class",
@@ -204,10 +208,6 @@
         "sys.db.Mysql",
         "sys.db.ResultSet",
         "sys.db.Sqlite",
-        "sys.net.Address",
-        "sys.net.Host",
-        "sys.net.Socket",
-        "sys.net.UdpSocket",
         "sys.ssl.Certificate",
         "sys.ssl.Digest",
         "sys.ssl.DigestAlgorithm",
@@ -233,7 +233,7 @@
     "counts_by_prefix": {
       "<top-level>": 19,
       "haxe": 44,
-      "sys": 7
+      "sys": 11
     },
     "nonstdlib_modules_under_std_dir": [
       "ArrayTools",
@@ -259,8 +259,8 @@
       "std/_std",
       "src/haxe"
     ],
-    "total_candidates": 73,
-    "total_std_modules": 70
+    "total_candidates": 77,
+    "total_std_modules": 74
   },
   "reference": {
     "counts_by_prefix": {
