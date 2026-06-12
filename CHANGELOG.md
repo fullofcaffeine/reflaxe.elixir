@@ -1,3 +1,10 @@
+## [0.5.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.5.0...v0.5.1) (2026-06-12)
+
+
+### Bug Fixes
+
+* **stdlib:** keep bytes compare out of guards ([692d60d](https://github.com/fullofcaffeine/reflaxe.elixir/commit/692d60d92e8fe9c95acf4f629f01309dac3af3ba))
+
 # [0.5.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.4.0...v0.5.0) (2026-06-12)
 
 
