@@ -560,6 +560,13 @@ class ElixirASTPassRegistry {
 			enabled: true,
 			pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_arrayLengthFieldToFunctionPass
 		});
+		passes.push({
+			name: "KnownStringLengthFieldRewrite",
+			description: "Transform .length on locals proven to hold strings into String.length/1",
+			enabled: true,
+			pass: reflaxe.elixir.ast.transformers.KnownStringLengthFieldRewriteTransforms.pass,
+			runAfter: ["ArrayLengthFieldToFunction"]
+		});
 
 		// Split FPHelper.double_to_i64(...) results into integer high/low parts.
 		// This runs after most normalization and before later field rewrites.
