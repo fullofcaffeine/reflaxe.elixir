@@ -294,6 +294,7 @@ class SocketState {
             state = Process.get(key)
             if is_map(state) and state.socket != nil do
               case state.kind do
+                :ssl -> :ssl.close(state.socket)
                 :udp -> :gen_udp.close(state.socket)
                 _ -> :gen_tcp.close(state.socket)
               end

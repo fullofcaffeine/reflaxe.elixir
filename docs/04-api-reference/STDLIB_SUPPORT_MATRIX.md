@@ -89,6 +89,11 @@ Top-level:
 - `sys.net.Host`
 - `sys.net.Socket`
 - `sys.net.UdpSocket`
+- `sys.ssl.Certificate`
+- `sys.ssl.Digest`
+- `sys.ssl.DigestAlgorithm`
+- `sys.ssl.Key`
+- `sys.ssl.Socket`
 
 Notes:
 - Iterator modules (`haxe.iterators.ArrayIterator`, `haxe.iterators.MapKeyValueIterator`) now have canonical Elixir-target runtime implementations under `std/haxe/iterators/*.cross.hx` and are no longer transformer-only runtime stubs.
@@ -107,6 +112,22 @@ Notes:
 Blocking behavior is implemented with BEAM receive/socket timeouts. `setTimeout(seconds)` sets the timeout in milliseconds; `setBlocking(false)` uses zero-timeout receive behavior for read-style operations. Full POSIX `select(2)` semantics are not promised; `Socket.select()` is a lightweight readiness helper for generated Haxe compatibility.
 
 Unsupported buffer-mutating receive APIs fail explicitly instead of silently losing data: `Socket.input.readBytes(buf, pos, len)` and `UdpSocket.readFrom(buf, pos, len, addr)` currently raise `haxe.io.Error.Custom`. Generated Elixir `haxe.io.Bytes` values are immutable maps, so these APIs need a stateful Bytes backing or compiler-level out-parameter support before they can preserve Haxe’s caller-buffer mutation semantics. Supported paths today are TCP `Socket.read()`/`write()`, `Input.readByte()`, TCP bind/listen/accept/connect endpoint flows, and UDP bind/options/`sendTo()`.
+
+### `sys.ssl.*` BEAM contract
+
+`sys.ssl.Socket` maps TLS sockets to Erlang/OTP `:ssl` and reuses the same opaque socket-reference model as `sys.net.Socket`. The generated target module is `SslSocket` to avoid colliding with `sys.net.Socket`'s generated `Socket` module while preserving the Haxe-facing `sys.ssl.Socket` API.
+
+Supported today:
+- `Socket.connect`, `listen`, `accept`, `handshake`, `shutdown`, `peer`, `host`, `setCA`, `setHostname`, `setCertificate`, and `peerCertificate` lower to `:ssl`/`:public_key` surfaces.
+- `Certificate.loadFile`, `loadPath`, `fromString`, `loadDefaults`, `add`, `addDER`, and `next` operate on opaque DER certificate chains suitable for `:ssl` CA/cert options.
+- `Key.loadFile`, `readPEM`, and `readDER` create opaque key containers for `:ssl` certificate configuration.
+- `Digest.make` maps Haxe digest names to `:crypto.hash/2`.
+
+Unsupported pieces fail explicitly with `haxe.io.Error.Custom` instead of pretending full native SSL parity:
+- `Certificate.subject`, `issuer`, `commonName`, `altNames`, `notBefore`, and `notAfter` are not implemented yet because Erlang decoded X.509 record shapes are version-sensitive.
+- `Digest.sign` and `Digest.verify` are not implemented yet because the generic Haxe `Key` API does not expose signing algorithm/padding semantics precisely enough.
+- `Socket.addSNICertificate` is not implemented yet; use `setCertificate` for a single cert/key pair.
+- Like TCP sockets, `sys.ssl.Socket.input.readBytes(...)` is unsupported until generated `haxe.io.Bytes` can preserve caller-buffer mutations.
 
 ## Additional modules shipped under `std/` (not part of upstream std)
 
@@ -134,7 +155,6 @@ Core top-level modules like `Any`, `Class`, `Enum`, `EnumValue`, and `StdTypes` 
 `sys.*` surfaces that still need BEAM mapping (not exhaustive):
 
 - `sys.thread.*` (EventLoop, pools)
-- `sys.ssl.*`
 - `sys.db.*`
 
 Track the ongoing parity roadmap in bd:

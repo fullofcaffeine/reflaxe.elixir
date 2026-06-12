@@ -20,15 +20,15 @@ scripts/stdlib-parity-report.sh --markdown > docs/08-roadmap/stdlib-parity/gap-r
 ## Summary
 
 - Reference std modules: **204**
-- Local std modules present: **74** (candidates scanned: 77)
-- Intersection (local provides): **65**
-- Missing locally (reference-only): **139**
+- Local std modules present: **79** (candidates scanned: 82)
+- Intersection (local provides): **70**
+- Missing locally (reference-only): **134**
 - Local-only: **9**
 
 ## Missing modules (high-level)
 Top-level (5): `Any`, `Class`, `Enum`, `EnumValue`, `StdTypes`
 
 `haxe.*` (111): heavy gaps including `haxe.CallStack`, `haxe.Http`, `haxe.Serializer`, `haxe.Template`.
-`sys.*` (23): gaps across IO/process/network/threading including `sys.ssl.Socket`.
+`sys.*` (18): gaps across IO/process/network/threading.
 
 Note: This report counts the compiler-emitted runtime overrides as “present”: `EReg`, `haxe.exceptions.PosException`, `haxe.iterators.ArrayIterator`.

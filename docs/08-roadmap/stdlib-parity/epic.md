@@ -37,7 +37,7 @@ Related work:
 
 ## Current status (rolling)
 
-- Latest gap report: **139 missing** modules (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
+- Latest gap report: **134 missing** modules (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
 - Recently closed (high leverage):
   - `haxe.Int32`, `haxe.Int64`, `haxe.Int64Helper` (deterministic overflow + bitwise semantics on BEAM)
   - `haxe.ds.Map` + `haxe.ds.StringMap`/`IntMap`/`ObjectMap` surfaces (native `%{}` backend; lowered to `Map.*`)
@@ -151,7 +151,7 @@ Goal: make `Map` usage predictable and eliminate “native map vs Haxe map” tr
 
 ### Phase 3 — `sys.*` integration (BEAM/OTP idioms; explicitly scoped)
 
-The gap report shows `sys.*` missing is mostly `sys.net.*`, `sys.ssl.*`, `sys.thread.*`, `sys.db.*`, and `sys.Http`.
+The gap report shows remaining `sys.*` gaps are mostly `sys.thread.*`, `sys.db.*`, `sys.Http`, and smaller host/process surfaces.
 These require careful design on BEAM; we should not “fake” POSIX semantics.
 
 **Task: `sys.Http`**
@@ -167,8 +167,10 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
 - Coverage: snapshot coverage for Host/Address and socket surfaces, plus generated-runtime smoke for bind/listen and UDP send.
 
 **Task cluster: `sys.ssl.*`**
-- `sys.ssl.Socket` plus certificate/key/digest types as needed.
-- Map to `:ssl` module; document platform limitations.
+- Status: implemented for TLS `Socket` via `:ssl`, opaque DER `Certificate` chains, opaque `Key` containers, digest algorithm constants, and `Digest.make` via `:crypto.hash/2`.
+- Contract: SSL sockets use generated target module `SslSocket` to avoid colliding with TCP `Socket`; Haxe-facing code still imports `sys.ssl.Socket`.
+- Unsupported: X.509 metadata introspection (`subject`, `issuer`, `commonName`, SAN/date fields), digest sign/verify, SNI certificate callbacks, and buffer-mutating `input.readBytes` fail explicitly with `Error.Custom`.
+- Coverage: snapshot coverage for digest and SSL socket surfaces, plus generated-runtime smoke for hashing, socket configuration, certificate-default loading, and fail-fast unsupported APIs.
 
 **Task cluster: `sys.thread.*`**
 - BEAM is not OS-thread oriented; treat as “concurrency primitives” mapping to OTP processes where possible.
