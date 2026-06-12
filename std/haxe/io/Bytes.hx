@@ -218,10 +218,10 @@ class Bytes {
 	 * Compare two Bytes objects
 	 */
 	public function compare(other:Bytes):Int {
-		return untyped __elixir__('case {0} do
-            x when x < {1} -> -1
-            x when x > {1} -> 1
-            _ -> 0
+		return untyped __elixir__('cond do
+            {0} < {1} -> -1
+            {0} > {1} -> 1
+            true -> 0
         end', getBinary(), other.getData());
 	}
 

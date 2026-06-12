@@ -176,6 +176,18 @@ class StdlibParityTest extends TestCase {
 		Assert.isFalse(UnicodeString.validate(invalid, UTF8));
 	}
 
+	@:describe("haxe.io.Bytes")
+	@:test
+	function testBytesCompareUsesBinaryOrdering():Void {
+		var alpha = Bytes.ofString("alpha");
+		var alphaCopy = Bytes.ofString("alpha");
+		var beta = Bytes.ofString("beta");
+
+		Assert.equals(0, alpha.compare(alphaCopy));
+		Assert.equals(-1, alpha.compare(beta));
+		Assert.equals(1, beta.compare(alpha));
+	}
+
 	@:describe("haxe.io.BytesInput/BytesOutput")
 	@:test
 	function testBytesInputOutputRoundTripAndEof():Void {
