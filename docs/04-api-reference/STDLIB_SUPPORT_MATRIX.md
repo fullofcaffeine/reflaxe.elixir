@@ -94,6 +94,19 @@ Top-level:
 - `sys.ssl.DigestAlgorithm`
 - `sys.ssl.Key`
 - `sys.ssl.Socket`
+- `sys.thread.Condition`
+- `sys.thread.Deque`
+- `sys.thread.ElasticThreadPool`
+- `sys.thread.EventLoop`
+- `sys.thread.FixedThreadPool`
+- `sys.thread.IThreadPool`
+- `sys.thread.Lock`
+- `sys.thread.Mutex`
+- `sys.thread.NoEventLoopException`
+- `sys.thread.Semaphore`
+- `sys.thread.Thread`
+- `sys.thread.ThreadPoolException`
+- `sys.thread.Tls`
 
 Notes:
 - Iterator modules (`haxe.iterators.ArrayIterator`, `haxe.iterators.MapKeyValueIterator`) now have canonical Elixir-target runtime implementations under `std/haxe/iterators/*.cross.hx` and are no longer transformer-only runtime stubs.
@@ -129,6 +142,26 @@ Unsupported pieces fail explicitly with `haxe.io.Error.Custom` instead of preten
 - `Socket.addSNICertificate` is not implemented yet; use `setCertificate` for a single cert/key pair.
 - Like TCP sockets, `sys.ssl.Socket.input.readBytes(...)` is unsupported until generated `haxe.io.Bytes` can preserve caller-buffer mutations.
 
+### `sys.thread.*` BEAM contract
+
+`sys.thread.Thread` maps Haxe thread handles to BEAM process identifiers. `Thread.create` spawns a lightweight BEAM process, `Thread.current` wraps `self()`, and `sendMessage`/`readMessage` use tagged BEAM mailbox messages. Haxe's message API is dynamically typed upstream; that is the narrow compatibility exception for this surface.
+
+Synchronization primitives use tiny BEAM server processes instead of process-local mutable fields:
+- `Deque<T>` is a shared blocking FIFO/deque server, so producers and consumers in different BEAM processes observe the same queue.
+- `Lock` is a counting release/wait primitive. `wait(0)` performs a server-side non-blocking availability check; positive timeouts are milliseconds-backed BEAM receive timeouts.
+- `Semaphore` is a counting semaphore with blocking `acquire` and non-blocking/timed `tryAcquire`.
+- `Mutex` is re-entrant for the owning BEAM process and queues other processes.
+- `Tls<T>` stores values in the current BEAM process dictionary, matching thread-local behavior for spawned Haxe threads.
+
+`EventLoop` is backed by a BEAM state process, but callbacks are drained and executed by the caller of `progress()`/`loop()` rather than inside the storage process. `repeat` uses a BEAM timer process and `cancel` sends that timer a cancel message.
+
+Thread pools are BEAM-shaped:
+- `FixedThreadPool` starts a fixed number of worker processes and feeds them through `Deque`.
+- `ElasticThreadPool` spawns per task while bounding concurrency with `Semaphore`; `threadsCount` reports `0` because workers are not retained as an OS-thread pool.
+
+Unsupported pieces fail explicitly:
+- `Condition.wait`, `signal`, and `broadcast` are not implemented because POSIX condition-variable semantics depend on shared-memory mutation. Use `Thread` messages, `Deque`, `Lock`, or `Semaphore` instead.
+
 ## Additional modules shipped under `std/` (not part of upstream std)
 
 These are “extra” modules provided by the library (not present in upstream Haxe stdlib), typically used by Reflaxe.Elixir features or example apps:
@@ -154,7 +187,6 @@ Core top-level modules like `Any`, `Class`, `Enum`, `EnumValue`, and `StdTypes` 
 
 `sys.*` surfaces that still need BEAM mapping (not exhaustive):
 
-- `sys.thread.*` (EventLoop, pools)
 - `sys.db.*`
 
 Track the ongoing parity roadmap in bd:

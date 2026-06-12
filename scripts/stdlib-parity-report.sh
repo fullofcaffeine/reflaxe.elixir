@@ -306,7 +306,7 @@ elif markdown_mode:
   haxe_hint = (" including `" + "`, `".join(haxe_high) + "`") if haxe_high else ""
   sys_hint = (" including `" + "`, `".join(sys_high) + "`") if sys_high else ""
   print(f"`haxe.*` ({len(haxe_mods)}): heavy gaps{haxe_hint}.")
-  print(f"`sys.*` ({len(sys_mods)}): gaps across IO/process/network/threading{sys_hint}.")
+  print(f"`sys.*` ({len(sys_mods)}): gaps across host/runtime integration surfaces{sys_hint}.")
   print("")
   if report['local']['runtime_overrides']['counted_as_present']:
     print("Note: This report counts the compiler-emitted runtime overrides as “present”: `" + "`, `".join(report['local']['runtime_overrides']['counted_as_present']) + "`.")

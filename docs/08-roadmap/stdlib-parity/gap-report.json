@@ -1,7 +1,7 @@
 {
   "diff": {
     "intersection": {
-      "count": 70,
+      "count": 83,
       "modules": [
         "Array",
         "Date",
@@ -72,7 +72,20 @@
         "sys.ssl.Digest",
         "sys.ssl.DigestAlgorithm",
         "sys.ssl.Key",
-        "sys.ssl.Socket"
+        "sys.ssl.Socket",
+        "sys.thread.Condition",
+        "sys.thread.Deque",
+        "sys.thread.ElasticThreadPool",
+        "sys.thread.EventLoop",
+        "sys.thread.FixedThreadPool",
+        "sys.thread.IThreadPool",
+        "sys.thread.Lock",
+        "sys.thread.Mutex",
+        "sys.thread.NoEventLoopException",
+        "sys.thread.Semaphore",
+        "sys.thread.Thread",
+        "sys.thread.ThreadPoolException",
+        "sys.thread.Tls"
       ]
     },
     "local_only": {
@@ -90,7 +103,7 @@
       ]
     },
     "reference_only": {
-      "count": 134,
+      "count": 121,
       "modules": [
         "Any",
         "Class",
@@ -212,20 +225,7 @@
         "sys.db.Connection",
         "sys.db.Mysql",
         "sys.db.ResultSet",
-        "sys.db.Sqlite",
-        "sys.thread.Condition",
-        "sys.thread.Deque",
-        "sys.thread.ElasticThreadPool",
-        "sys.thread.EventLoop",
-        "sys.thread.FixedThreadPool",
-        "sys.thread.IThreadPool",
-        "sys.thread.Lock",
-        "sys.thread.Mutex",
-        "sys.thread.NoEventLoopException",
-        "sys.thread.Semaphore",
-        "sys.thread.Thread",
-        "sys.thread.ThreadPoolException",
-        "sys.thread.Tls"
+        "sys.db.Sqlite"
       ]
     }
   },
@@ -233,7 +233,7 @@
     "counts_by_prefix": {
       "<top-level>": 19,
       "haxe": 44,
-      "sys": 16
+      "sys": 29
     },
     "nonstdlib_modules_under_std_dir": [
       "ArrayTools",
@@ -259,8 +259,8 @@
       "std/_std",
       "src/haxe"
     ],
-    "total_candidates": 82,
-    "total_std_modules": 79
+    "total_candidates": 95,
+    "total_std_modules": 92
   },
   "reference": {
     "counts_by_prefix": {

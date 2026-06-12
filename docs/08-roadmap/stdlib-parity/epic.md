@@ -37,7 +37,7 @@ Related work:
 
 ## Current status (rolling)
 
-- Latest gap report: **134 missing** modules (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
+- Latest gap report: **121 missing** modules (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
 - Recently closed (high leverage):
   - `haxe.Int32`, `haxe.Int64`, `haxe.Int64Helper` (deterministic overflow + bitwise semantics on BEAM)
   - `haxe.ds.Map` + `haxe.ds.StringMap`/`IntMap`/`ObjectMap` surfaces (native `%{}` backend; lowered to `Map.*`)
@@ -151,7 +151,7 @@ Goal: make `Map` usage predictable and eliminate “native map vs Haxe map” tr
 
 ### Phase 3 — `sys.*` integration (BEAM/OTP idioms; explicitly scoped)
 
-The gap report shows remaining `sys.*` gaps are mostly `sys.thread.*`, `sys.db.*`, `sys.Http`, and smaller host/process surfaces.
+The gap report shows remaining `sys.*` gaps are mostly `sys.db.*`, `sys.Http`, and smaller host/process surfaces.
 These require careful design on BEAM; we should not “fake” POSIX semantics.
 
 **Task: `sys.Http`**
@@ -173,8 +173,12 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
 - Coverage: snapshot coverage for digest and SSL socket surfaces, plus generated-runtime smoke for hashing, socket configuration, certificate-default loading, and fail-fast unsupported APIs.
 
 **Task cluster: `sys.thread.*`**
-- BEAM is not OS-thread oriented; treat as “concurrency primitives” mapping to OTP processes where possible.
-- Must be carefully specified; some APIs may not be meaningfully supported 1:1.
+- Status: implemented as BEAM process/mailbox primitives, not OS threads.
+- Contract: `Thread` wraps BEAM pids; message passing uses tagged mailboxes; `Deque`, `Lock`, `Semaphore`, and `Mutex` use small BEAM server processes so state is shared across spawned processes without pretending Elixir maps mutate in place.
+- Event loop: callbacks are queued in a BEAM state process but executed by the caller of `progress()`/`loop()`; `repeat` uses a timer process.
+- Pools: `FixedThreadPool` uses fixed worker processes; `ElasticThreadPool` spawns per task and bounds concurrency with `Semaphore`.
+- Unsupported: POSIX-style `Condition.wait`/`signal`/`broadcast` fail explicitly; use mailboxes, `Deque`, `Lock`, or `Semaphore`.
+- Coverage: snapshot coverage plus generated-runtime smoke for thread messages, blocking deque handoff, TLS isolation, event-loop progress, lock/mutex/semaphore behavior, and fixed-pool execution.
 
 **Task cluster: `sys.db.*`**
 - Likely out of scope for “stdlib parity first” unless needed by key libraries; if implemented, prefer DB driver idioms and document mismatch.
@@ -192,7 +196,7 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
    - Next: `haxe.CallStack`, and remaining `haxe.io.*` utilities as-needed
 
 3) **`sys.*` runtime integration**
-   - Prioritize: `sys.Http`, `sys.ssl.*`, `sys.thread.*`
+   - Prioritize: `sys.Http`, `sys.db.*`, and remaining smaller host/process surfaces
    - Guardrails: BEAM/OTP idioms, avoid pretending POSIX semantics exist where they don’t.
 
 4) **Parsers/serializers**
