@@ -1,3 +1,10 @@
+# [0.5.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.4.0...v0.5.0) (2026-06-12)
+
+
+### Features
+
+* **stdlib:** implement haxe http on beam ([2a69ffd](https://github.com/fullofcaffeine/reflaxe.elixir/commit/2a69ffd41c076aadb44e02f831557919144e2783))
+
 # [0.4.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.3.3...v0.4.0) (2026-06-11)
 
 
