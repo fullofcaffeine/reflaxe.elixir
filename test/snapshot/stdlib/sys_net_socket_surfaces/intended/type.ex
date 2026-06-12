@@ -1,6 +1,6 @@
 defmodule Type do
   def typeof(value) do
-
+    
       case value do
         nil -> {:TNull}
         val when is_integer(val) -> {:TInt}
@@ -11,34 +11,34 @@ defmodule Type do
         val when is_map(val) -> {:TObject}
         _ -> {:TUnknown}
       end
-
+    
   end
   def enum_index(enum_value) do
-
+    
       case enum_value do
         tuple when is_tuple(tuple) and tuple_size(tuple) > 0 -> :erlang.phash2(elem(tuple, 0))
         atom when is_atom(atom) -> :erlang.phash2(atom)
         _ -> 0
       end
-
+    
   end
   def enum_parameters(enum_value) do
-
+    
       case enum_value do
         tuple when is_tuple(tuple) and tuple_size(tuple) > 1 ->
           tuple |> Tuple.to_list() |> Enum.drop(1)
         _ -> []
       end
-
+    
   end
   def enum_constructor(enum_value) do
-
+    
       case enum_value do
         tuple when is_tuple(tuple) and tuple_size(tuple) > 0 -> elem(tuple, 0) |> Atom.to_string()
         atom when is_atom(atom) -> Atom.to_string(atom)
         _ -> ""
       end
-
+    
   end
   def enum_eq(a, b) do
     a == b
@@ -67,7 +67,7 @@ defmodule Type do
   end
   def create_enum(enum, constructor, params) do
     _ignore_enum = enum
-
+    
       tag = String.to_atom(constructor)
       values = case params do
         nil -> []
@@ -75,7 +75,7 @@ defmodule Type do
         other -> List.wrap(other)
       end
       List.to_tuple([tag | values])
-
+    
   end
   def create_enum_index(enum, index, params) do
     _ignore_enum = enum

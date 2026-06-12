@@ -25,7 +25,7 @@ defmodule Reflaxe.Exception do
     get_message(struct)
   end
   def details(struct) do
-
+    
 build = fn build, ex, acc ->
   if Kernel.is_nil(ex) do
     acc

@@ -162,7 +162,7 @@ end) != -1
     s
   end
   def parse_int(str) do
-
+    
             case str do
               <<"0x", rest::binary>> ->
                 case Integer.parse(rest, 16) do
@@ -175,7 +175,7 @@ end) != -1
                   _ -> nil
                 end
             end
-
+        
   end
   def parse_float(str) do
     (case Float.parse(str) do
