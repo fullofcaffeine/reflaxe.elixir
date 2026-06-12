@@ -37,7 +37,7 @@ Related work:
 
 ## Current status (rolling)
 
-- Latest gap report: **121 missing** modules (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
+- Latest gap report: **118 missing** modules (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
 - Recently closed (high leverage):
   - `haxe.Int32`, `haxe.Int64`, `haxe.Int64Helper` (deterministic overflow + bitwise semantics on BEAM)
   - `haxe.ds.Map` + `haxe.ds.StringMap`/`IntMap`/`ObjectMap` surfaces (native `%{}` backend; lowered to `Map.*`)
@@ -45,6 +45,7 @@ Related work:
   - `Reflect` improvements for string-key JSON maps vs atom-key “object literal” maps
   - `haxe.crypto.Md5` (BEAM-native `:crypto.hash/2` for runtime, pure Haxe fallback for macro context)
   - `UnicodeString` (UTF-8 validation + codepoint/key-value iteration on BEAM strings)
+  - `haxe.Http` / `sys.Http` / `haxe.http.HttpBase` (OTP `:httpc` mapping with Haxe callback/state semantics)
 
 ## Root Layout (source of truth)
 
@@ -151,13 +152,15 @@ Goal: make `Map` usage predictable and eliminate “native map vs Haxe map” tr
 
 ### Phase 3 — `sys.*` integration (BEAM/OTP idioms; explicitly scoped)
 
-The gap report shows remaining `sys.*` gaps are mostly `sys.db.*`, `sys.Http`, and smaller host/process surfaces.
+The gap report shows remaining `sys.*` gaps are mostly `sys.db.*` and smaller host/process surfaces.
 These require careful design on BEAM; we should not “fake” POSIX semantics.
 
-**Task: `sys.Http`**
-- Provide a BEAM-native implementation with clear sync/async semantics matching Haxe expectations.
-- Prefer minimal dependencies and document limitations.
-- Runtime tests: GET success, error handling, timeout behavior.
+**Task: `haxe.Http` / `sys.Http`**
+- Status: implemented with OTP `:httpc` behind `sys.Http`, with `haxe.Http` as the standard sys-target alias.
+- Contract: mutable Haxe request/response state is represented by an opaque process-dictionary reference; callback fields (`onStatus`, `onData`, `onBytes`, `onError`) are stored on the generated Elixir struct and invoked through target helpers.
+- Supported: `requestUrl`, GET query params, POST form params, explicit request body bytes/data, custom methods (`GET`, `POST`, `HEAD`, `OPTIONS`, `PUT`, `DELETE`, `TRACE`, `PATCH`), response bytes/data, response headers, and duplicate header values.
+- Unsupported: caller-supplied sockets, `PROXY`, and multipart `fileTransfer` fail explicitly with target-specific guidance.
+- Coverage: `test/snapshot/stdlib/sys_http_basic` includes a generated-runtime smoke against a local TCP server for success, callbacks, duplicate headers, POST, custom PUT, and HTTP error behavior.
 
 **Task cluster: `sys.net.*`**
 - Status: implemented for IPv4 `Host`/`Address`, TCP `Socket` via `:gen_tcp`, and UDP `UdpSocket` via `:gen_udp`.
@@ -196,7 +199,7 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
    - Next: `haxe.CallStack`, and remaining `haxe.io.*` utilities as-needed
 
 3) **`sys.*` runtime integration**
-   - Prioritize: `sys.Http`, `sys.db.*`, and remaining smaller host/process surfaces
+   - Prioritize: `sys.db.*` and remaining smaller host/process surfaces
    - Guardrails: BEAM/OTP idioms, avoid pretending POSIX semantics exist where they don’t.
 
 4) **Parsers/serializers**

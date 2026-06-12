@@ -55,11 +55,13 @@ Top-level:
 - `Xml` (parse/print, attributes, child iteration, parent links)
 
 `haxe.*`:
+- `haxe.Http`
 - `haxe.Log`
 - `haxe.ds.BalancedTree`
 - `haxe.ds.EnumValueMap` (bootstrap-safe override under `src/haxe/ds`)
 - `haxe.ds.Option`
 - `haxe.format.JsonPrinter`
+- `haxe.http.HttpBase`
 - `haxe.io.BufferInput`
 - `haxe.io.Bytes`
 - `haxe.io.BytesBuffer`
@@ -80,6 +82,7 @@ Top-level:
 `sys.*` (BEAM mappings):
 - `sys.FileStat`
 - `sys.FileSystem`
+- `sys.Http`
 - `sys.io.File`
 - `sys.io.FileInput`
 - `sys.io.FileOutput`
@@ -115,6 +118,26 @@ Notes:
 - Built-in map surfaces (`haxe.ds.Map`, `StringMap`, `IntMap`) are represented as native Elixir `%{}` maps and lowered to idiomatic `Map.*` operations.
 - `haxe.ds.ObjectMap` is intentionally unsupported for Elixir output code for now. Haxe ObjectMap requires object-identity keys, but BEAM map keys are structural terms. The compiler rejects construction and direct method calls instead of silently lowering them to structural `%{}` behavior. See `docs/05-architecture/ITERATOR_RUNTIME_MODEL.md`.
 - Some exist to avoid invalid Elixir from upstream inline patterns (notably parts of `haxe.io`).
+
+### `haxe.Http` / `sys.Http` BEAM contract
+
+`haxe.Http` is the standard sys-target alias to `sys.Http`. The implementation is backed by OTP `:httpc`, not by a custom HTTP parser over `sys.net.Socket`. This keeps the generated code close to BEAM/OTP primitives while preserving the Haxe callback contract.
+
+Supported today:
+- `Http.requestUrl(url)` returns the response body or throws the recorded request error.
+- `request(?post)` supports GET and form-style POST parameter encoding.
+- `customRequest(post, output, null, method)` supports OTP `:httpc` methods `GET`, `POST`, `HEAD`, `OPTIONS`, `PUT`, `DELETE`, `TRACE`, and `PATCH`.
+- `setHeader`, `addHeader`, `setParameter`, `addParameter`, `setPostData`, and `setPostBytes` persist through an opaque process-dictionary reference because generated Elixir maps are immutable.
+- `onStatus`, `onData`, `onBytes`, and `onError` remain assignable Haxe callback fields. The target runtime stores callbacks as struct fields and invokes them through explicit BEAM helper calls.
+- `responseData`, `responseBytes`, `responseHeaders`, and `getResponseHeaderValues` are populated from the OTP response. Duplicate response headers keep the last value in `responseHeaders` and preserve all values through `getResponseHeaderValues`.
+
+Unsupported pieces fail explicitly:
+- `customRequest` with a caller-supplied `sys.net.Socket` is not supported; use `sys.net.Socket` directly for manual protocol work.
+- `sys.Http.PROXY` is not supported on this target yet; configure an OTP `:httpc` profile or use a typed application HTTP boundary.
+- `fileTransfer` / `fileTransfert` multipart uploads are not supported yet; use an Elixir HTTP client boundary for multipart payloads.
+
+Coverage:
+- Snapshot/runtime smoke: `test/snapshot/stdlib/sys_http_basic` exercises `requestUrl`, GET query params, POST form params, custom PUT, callbacks, response bytes/data, duplicate headers, and HTTP error callbacks against a tiny local TCP server.
 
 ### `sys.net.*` BEAM contract
 
