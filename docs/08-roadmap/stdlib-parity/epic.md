@@ -90,6 +90,8 @@ Stdlib runtime semantics are tested by compiling Haxe tests into ExUnit and exec
   - `test/haxe_exunit/stdlib_parity/src_haxe/**`
 - Compilation + loading is wired in:
   - `test/exunit/test_helper.exs`
+- Focused command:
+  - `npm run test:haxe-exunit-stdlib`
 - Primary command (fast CI-friendly):
   - `npm run test:mix-fast`
 
@@ -106,6 +108,7 @@ The gap report is large; we focus on the smallest set that unlocks real-world li
 - Acceptance:
   - Tests compile from Haxe and run on BEAM in CI.
   - Documentation on where/how to add these tests.
+  - The focused harness command is visible in `package.json` and the CI `Tests` job.
 
 Notes learned from early parity work:
 - Prefer semantic tests that exercise real BEAM behaviors (immutability, exceptions, key types) rather than relying on print-shape snapshots alone.

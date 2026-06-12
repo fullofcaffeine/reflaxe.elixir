@@ -98,7 +98,14 @@ if File.dir?(haxe_test_src) do
     "std.ex",
     "string_tools.ex",
     "string_buf.ex",
-    "sys.ex"
+    "sys.ex",
+    "haxe/exceptions/pos_exception.ex",
+    "haxe/exceptions/not_implemented_exception.ex",
+    "haxe/io/eof.ex",
+    "haxe/io/bytes.ex",
+    "haxe/io/output.ex",
+    "haxe/io/bytes_input.ex",
+    "haxe/io/bytes_output.ex"
   ]
 
   {preferred, remaining} = Enum.split_with(ex_files, fn rel -> rel in prefer end)

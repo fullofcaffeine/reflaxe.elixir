@@ -12,6 +12,7 @@ npm test                          # Complete test suite (mandatory before commit
 make -C test test-name                     # Run specific snapshot test
 make -C test update-intended TEST=name     # Accept new compiler output
 MIX_ENV=test mix test                      # Runtime validation tests
+npm run test:haxe-exunit-stdlib           # Haxe-authored stdlib semantics on BEAM
 ```
 
 ### Integration Testing

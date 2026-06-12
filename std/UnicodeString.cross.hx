@@ -48,8 +48,8 @@ abstract UnicodeString(String) from String to String {
 				{:utf32be} ->
 					raise "UnicodeString.validate: only UTF8 encoding is supported on the Elixir target"
 				{:utf8} ->
-					reflaxe_unicode_len = {0}.length
-					reflaxe_unicode_get = fn pos -> :binary.at({0}.b, pos) end
+					reflaxe_unicode_len = {2}
+					reflaxe_unicode_get = fn pos -> :binary.at({0}, pos) end
 					reflaxe_unicode_valid = fn reflaxe_unicode_valid, pos ->
 						if pos >= reflaxe_unicode_len do
 							true
@@ -116,7 +116,7 @@ abstract UnicodeString(String) from String to String {
 					end
 					reflaxe_unicode_valid.(reflaxe_unicode_valid, 0)
 			end
-		', bytes, encoding);
+		', bytes.getData(), encoding, bytes.length);
 	}
 
 	public inline function new(string:String):Void {

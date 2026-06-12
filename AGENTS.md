@@ -43,6 +43,7 @@ These failures usually come from running only a subset locally (e.g. `test:quick
 - CI-equivalent full suite: `npm test`
 - Examples (strict warnings): `npm run test:examples-elixir` (mix compile `--warnings-as-errors`, no deps check)
 - Mix tests (fast): `npm run test:mix-fast`
+- Stdlib runtime semantics (Haxe→ExUnit): `npm run test:haxe-exunit-stdlib`
 - Todo-app runtime smoke (non-blocking): `npm run qa:sentinel` then `scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 120`
 - Todo-app Playwright smoke for compiler/std/runtime changes: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --env e2e --async --deadline 900 --playwright --e2e-spec "e2e/smoke/*.spec.ts" --verbose`, then `scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 180`
 

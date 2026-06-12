@@ -20,6 +20,23 @@ GitHub Actions runs a few higher-level “integration” checks in addition to s
 
 The same WAE philosophy is used by the todo-app QA sentinel when it runs `mix compile --warnings-as-errors`.
 
+## Haxe-authored ExUnit stdlib runtime harness
+
+Snapshot tests validate emitted Elixir shape. Stdlib parity also needs executable BEAM semantics tests for
+stateful/runtime-sensitive APIs such as iterators, `haxe.io.BytesInput`/`BytesOutput`, exceptions, maps,
+Unicode strings, crypto helpers, and numeric edge cases.
+
+The focused harness is:
+
+- Haxe source: `test/haxe_exunit/stdlib_parity/src_haxe/**`
+- Generated output: `test/fixtures/_generated_haxe_exunit/` (created by `test/exunit/test_helper.exs`)
+- Focused command: `npm run test:haxe-exunit-stdlib`
+- Broader command: `npm run test:mix-fast` or `npm test`
+
+When adding or changing stdlib behavior, add at least one focused Haxe ExUnit assertion here whenever a
+snapshot cannot prove runtime semantics by itself. Keep tests deterministic and bounded; do not depend on
+external services.
+
 ### How shards map to the repo
 
 The WAE job is implemented by:

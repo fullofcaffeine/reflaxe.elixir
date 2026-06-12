@@ -1,5 +1,7 @@
 package haxe.io;
 
+import elixir.types.Term;
+
 /**
  * Bytes: Elixir-optimized implementation of Haxe's Bytes class
  * 
@@ -21,15 +23,34 @@ package haxe.io;
 class Bytes {
 	public var length(default, null):Int;
 
-	// Internal binary data representation
-	var b:Dynamic;
+	// Internal binary data representation. Mutations are mirrored into process state
+	// so shared Bytes instances preserve Haxe's mutable API on immutable BEAM binaries.
+	var b:BytesData;
+	final refId:Int;
+	final dictKey:Term;
 
 	/**
 	 * Private constructor - use factory methods instead
 	 */
-	private function new(length:Int, b:Dynamic) {
+	private function new(length:Int, b:BytesData) {
 		this.length = length;
-		this.b = b;
+		this.refId = untyped __elixir__(":erlang.unique_integer([:positive])");
+		this.dictKey = untyped __elixir__("{:reflaxe_bytes, {0}}", refId);
+		putBinary(b);
+	}
+
+	inline function getBinary():BytesData {
+		var data:Null<BytesData> = untyped __elixir__("Process.get({0})", dictKey);
+		if (data == null) {
+			data = b;
+			untyped __elixir__("Process.put({0}, {1})", dictKey, data);
+		}
+		return data;
+	}
+
+	inline function putBinary(data:BytesData):Void {
+		b = data;
+		untyped __elixir__("Process.put({0}, {1})", dictKey, data);
 	}
 
 	/**
@@ -73,8 +94,9 @@ class Bytes {
 			throw "Out of bounds";
 		}
 
+		var data = getBinary();
 		// Extract the binary slice and convert to an Elixir string (UTF-8 binary).
-		var slice = untyped __elixir__(':binary.part({0}, {1}, {2})', b, pos, len);
+		var slice = untyped __elixir__(':binary.part({0}, {1}, {2})', data, pos, len);
 		return untyped __elixir__(':unicode.characters_to_binary({0}, :utf8)', slice);
 	}
 
@@ -92,7 +114,7 @@ class Bytes {
 		if (pos < 0 || pos >= length) {
 			throw "Out of bounds";
 		}
-		return untyped __elixir__(':binary.at({0}, {1})', b, pos);
+		return untyped __elixir__(':binary.at({0}, {1})', getBinary(), pos);
 	}
 
 	/**
@@ -103,20 +125,21 @@ class Bytes {
 			throw "Out of bounds";
 		}
 
+		var data = getBinary();
 		// In Elixir, binaries are immutable, so we need to rebuild
 		var beforePart = if (pos > 0) {
-			untyped __elixir__(':binary.part({0}, 0, {1})', b, pos);
+			untyped __elixir__(':binary.part({0}, 0, {1})', data, pos);
 		} else {
 			untyped __elixir__('<<>>');
 		}
 
 		var afterPart = if (pos < length - 1) {
-			untyped __elixir__(':binary.part({0}, {1}, {2})', b, pos + 1, length - pos - 1);
+			untyped __elixir__(':binary.part({0}, {1}, {2})', data, pos + 1, length - pos - 1);
 		} else {
 			untyped __elixir__('<<>>');
 		}
 
-		b = untyped __elixir__('<<{0}::binary, {1}::8, {2}::binary>>', beforePart, v, afterPart);
+		putBinary(untyped __elixir__('<<{0}::binary, {1}::8, {2}::binary>>', beforePart, v, afterPart));
 	}
 
 	/**
@@ -127,23 +150,24 @@ class Bytes {
 			throw "Out of bounds";
 		}
 
-		// Extract the source slice
-		var srcSlice = untyped __elixir__(':binary.part({0}, {1}, {2})', src.b, srcpos, len);
+		var data = getBinary();
+		// Extract the source slice before rebuilding to support self-overlapping blits.
+		var srcSlice = untyped __elixir__(':binary.part({0}, {1}, {2})', src.getData(), srcpos, len);
 
 		// Rebuild the binary with the new data
 		var beforePart = if (pos > 0) {
-			untyped __elixir__(':binary.part({0}, 0, {1})', b, pos);
+			untyped __elixir__(':binary.part({0}, 0, {1})', data, pos);
 		} else {
 			untyped __elixir__('<<>>');
 		}
 
 		var afterPart = if (pos + len < length) {
-			untyped __elixir__(':binary.part({0}, {1}, {2})', b, pos + len, length - pos - len);
+			untyped __elixir__(':binary.part({0}, {1}, {2})', data, pos + len, length - pos - len);
 		} else {
 			untyped __elixir__('<<>>');
 		}
 
-		b = untyped __elixir__('<<{0}::binary, {1}::binary, {2}::binary>>', beforePart, srcSlice, afterPart);
+		putBinary(untyped __elixir__('<<{0}::binary, {1}::binary, {2}::binary>>', beforePart, srcSlice, afterPart));
 	}
 
 	/**
@@ -154,7 +178,7 @@ class Bytes {
 			throw "Out of bounds";
 		}
 
-		var subBinary = untyped __elixir__(':binary.part({0}, {1}, {2})', b, pos, len);
+		var subBinary = untyped __elixir__(':binary.part({0}, {1}, {2})', getBinary(), pos, len);
 		return new Bytes(len, subBinary);
 	}
 
@@ -170,23 +194,24 @@ class Bytes {
 			throw "Out of bounds";
 		}
 
+		var data = getBinary();
 		// Create the fill pattern
 		var fillBytes = untyped __elixir__(':binary.copy(<<{0}::8>>, {1})', value, len);
 
 		// Rebuild the binary with the filled section
 		var beforePart = if (pos > 0) {
-			untyped __elixir__(':binary.part({0}, 0, {1})', b, pos);
+			untyped __elixir__(':binary.part({0}, 0, {1})', data, pos);
 		} else {
 			untyped __elixir__('<<>>');
 		}
 
 		var afterPart = if (pos + len < length) {
-			untyped __elixir__(':binary.part({0}, {1}, {2})', b, pos + len, length - pos - len);
+			untyped __elixir__(':binary.part({0}, {1}, {2})', data, pos + len, length - pos - len);
 		} else {
 			untyped __elixir__('<<>>');
 		}
 
-		b = untyped __elixir__('<<{0}::binary, {1}::binary, {2}::binary>>', beforePart, fillBytes, afterPart);
+		putBinary(untyped __elixir__('<<{0}::binary, {1}::binary, {2}::binary>>', beforePart, fillBytes, afterPart));
 	}
 
 	/**
@@ -197,7 +222,7 @@ class Bytes {
             x when x < {1} -> -1
             x when x > {1} -> 1
             _ -> 0
-        end', b, other.b);
+        end', getBinary(), other.getData());
 	}
 
 	/**
@@ -205,7 +230,7 @@ class Bytes {
 	 * Required by Haxe core type interface
 	 */
 	public function getData():haxe.io.BytesData {
-		return b;
+		return getBinary();
 	}
 
 	/**
@@ -215,7 +240,7 @@ class Bytes {
 		if (pos < 0 || pos + 8 > length) {
 			throw "Out of bounds";
 		}
-		return untyped __elixir__('<<value::float-little-size(64)>> = :binary.part({0}, {1}, 8); value', b, pos);
+		return untyped __elixir__('<<value::float-little-size(64)>> = :binary.part({0}, {1}, 8); value', getBinary(), pos);
 	}
 
 	/**
@@ -226,19 +251,20 @@ class Bytes {
 			throw "Out of bounds";
 		}
 
+		var data = getBinary();
 		var beforePart = if (pos > 0) {
-			untyped __elixir__(':binary.part({0}, 0, {1})', b, pos);
+			untyped __elixir__(':binary.part({0}, 0, {1})', data, pos);
 		} else {
 			untyped __elixir__('<<>>');
 		}
 
 		var afterPart = if (pos + 8 < length) {
-			untyped __elixir__(':binary.part({0}, {1}, {2})', b, pos + 8, length - pos - 8);
+			untyped __elixir__(':binary.part({0}, {1}, {2})', data, pos + 8, length - pos - 8);
 		} else {
 			untyped __elixir__('<<>>');
 		}
 
-		b = untyped __elixir__('<<{0}::binary, {1}::float-little-size(64), {2}::binary>>', beforePart, v, afterPart);
+		putBinary(untyped __elixir__('<<{0}::binary, {1}::float-little-size(64), {2}::binary>>', beforePart, v, afterPart));
 	}
 
 	/**
@@ -248,7 +274,7 @@ class Bytes {
 		if (pos < 0 || pos + 4 > length) {
 			throw "Out of bounds";
 		}
-		return untyped __elixir__('<<value::float-little-size(32)>> = :binary.part({0}, {1}, 4); value', b, pos);
+		return untyped __elixir__('<<value::float-little-size(32)>> = :binary.part({0}, {1}, 4); value', getBinary(), pos);
 	}
 
 	/**
@@ -259,19 +285,20 @@ class Bytes {
 			throw "Out of bounds";
 		}
 
+		var data = getBinary();
 		var beforePart = if (pos > 0) {
-			untyped __elixir__(':binary.part({0}, 0, {1})', b, pos);
+			untyped __elixir__(':binary.part({0}, 0, {1})', data, pos);
 		} else {
 			untyped __elixir__('<<>>');
 		}
 
 		var afterPart = if (pos + 4 < length) {
-			untyped __elixir__(':binary.part({0}, {1}, {2})', b, pos + 4, length - pos - 4);
+			untyped __elixir__(':binary.part({0}, {1}, {2})', data, pos + 4, length - pos - 4);
 		} else {
 			untyped __elixir__('<<>>');
 		}
 
-		b = untyped __elixir__('<<{0}::binary, {1}::float-little-size(32), {2}::binary>>', beforePart, v, afterPart);
+		putBinary(untyped __elixir__('<<{0}::binary, {1}::float-little-size(32), {2}::binary>>', beforePart, v, afterPart));
 	}
 
 	/**
@@ -281,7 +308,7 @@ class Bytes {
 		if (pos < 0 || pos + 2 > length) {
 			throw "Out of bounds";
 		}
-		return untyped __elixir__('<<value::little-unsigned-size(16)>> = :binary.part({0}, {1}, 2); value', b, pos);
+		return untyped __elixir__('<<value::little-unsigned-size(16)>> = :binary.part({0}, {1}, 2); value', getBinary(), pos);
 	}
 
 	/**
@@ -292,19 +319,20 @@ class Bytes {
 			throw "Out of bounds";
 		}
 
+		var data = getBinary();
 		var beforePart = if (pos > 0) {
-			untyped __elixir__(':binary.part({0}, 0, {1})', b, pos);
+			untyped __elixir__(':binary.part({0}, 0, {1})', data, pos);
 		} else {
 			untyped __elixir__('<<>>');
 		}
 
 		var afterPart = if (pos + 2 < length) {
-			untyped __elixir__(':binary.part({0}, {1}, {2})', b, pos + 2, length - pos - 2);
+			untyped __elixir__(':binary.part({0}, {1}, {2})', data, pos + 2, length - pos - 2);
 		} else {
 			untyped __elixir__('<<>>');
 		}
 
-		b = untyped __elixir__('<<{0}::binary, {1}::little-unsigned-size(16), {2}::binary>>', beforePart, v, afterPart);
+		putBinary(untyped __elixir__('<<{0}::binary, {1}::little-unsigned-size(16), {2}::binary>>', beforePart, v, afterPart));
 	}
 
 	/**
@@ -314,7 +342,7 @@ class Bytes {
 		if (pos < 0 || pos + 4 > length) {
 			throw "Out of bounds";
 		}
-		return untyped __elixir__('<<value::little-signed-size(32)>> = :binary.part({0}, {1}, 4); value', b, pos);
+		return untyped __elixir__('<<value::little-signed-size(32)>> = :binary.part({0}, {1}, 4); value', getBinary(), pos);
 	}
 
 	/**
@@ -325,19 +353,20 @@ class Bytes {
 			throw "Out of bounds";
 		}
 
+		var data = getBinary();
 		var beforePart = if (pos > 0) {
-			untyped __elixir__(':binary.part({0}, 0, {1})', b, pos);
+			untyped __elixir__(':binary.part({0}, 0, {1})', data, pos);
 		} else {
 			untyped __elixir__('<<>>');
 		}
 
 		var afterPart = if (pos + 4 < length) {
-			untyped __elixir__(':binary.part({0}, {1}, {2})', b, pos + 4, length - pos - 4);
+			untyped __elixir__(':binary.part({0}, {1}, {2})', data, pos + 4, length - pos - 4);
 		} else {
 			untyped __elixir__('<<>>');
 		}
 
-		b = untyped __elixir__('<<{0}::binary, {1}::little-signed-size(32), {2}::binary>>', beforePart, v, afterPart);
+		putBinary(untyped __elixir__('<<{0}::binary, {1}::little-signed-size(32), {2}::binary>>', beforePart, v, afterPart));
 	}
 
 	/**
@@ -349,7 +378,7 @@ class Bytes {
 		}
 		// In Elixir, we'll just return the value as-is
 		// The compiler will handle Int64 abstraction
-		return untyped __elixir__('<<value::little-signed-size(64)>> = :binary.part({0}, {1}, 8); value', b, pos);
+		return untyped __elixir__('<<value::little-signed-size(64)>> = :binary.part({0}, {1}, 8); value', getBinary(), pos);
 	}
 
 	/**
@@ -362,19 +391,20 @@ class Bytes {
 
 		// In Elixir, Int64 is just a regular integer
 		// The compiler handles the abstraction
+		var data = getBinary();
 		var beforePart = if (pos > 0) {
-			untyped __elixir__(':binary.part({0}, 0, {1})', b, pos);
+			untyped __elixir__(':binary.part({0}, 0, {1})', data, pos);
 		} else {
 			untyped __elixir__('<<>>');
 		}
 
 		var afterPart = if (pos + 8 < length) {
-			untyped __elixir__(':binary.part({0}, {1}, {2})', b, pos + 8, length - pos - 8);
+			untyped __elixir__(':binary.part({0}, {1}, {2})', data, pos + 8, length - pos - 8);
 		} else {
 			untyped __elixir__('<<>>');
 		}
 
-		b = untyped __elixir__('<<{0}::binary, {1}::little-signed-size(64), {2}::binary>>', beforePart, v, afterPart);
+		putBinary(untyped __elixir__('<<{0}::binary, {1}::little-signed-size(64), {2}::binary>>', beforePart, v, afterPart));
 	}
 
 	/**
@@ -388,7 +418,7 @@ class Bytes {
 	 * Get hex string representation
 	 */
 	public function toHex():String {
-		return untyped __elixir__('Base.encode16({0}, case: :lower)', b);
+		return untyped __elixir__('Base.encode16({0}, case: :lower)', getBinary());
 	}
 
 	/**

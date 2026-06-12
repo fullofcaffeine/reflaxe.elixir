@@ -40,6 +40,7 @@
     "test:generator": "haxe tools/TestProjectGeneratorTemplates.hxml",
     "test:mix": "HAXE_NO_SERVER=1 mix local.hex --force && HAXE_NO_SERVER=1 mix local.rebar --force && HAXE_NO_SERVER=1 MIX_ENV=test mix deps.get && HAXE_NO_SERVER=1 MIX_ENV=test mix deps.compile && HAXE_NO_SERVER=1 MIX_ENV=test mix test --max-cases 1 --timeout 120000",
     "test:mix-fast": "bash scripts/test-mix-fast.sh",
+    "test:haxe-exunit-stdlib": "bash scripts/test-haxe-exunit-stdlib.sh",
     "test:haxe5": "bash scripts/test-haxe5-smoke.sh",
     "test:core": "scripts/test-runner.sh --category core",
     "test:stdlib": "scripts/test-runner.sh --category stdlib",

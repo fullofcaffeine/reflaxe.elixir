@@ -179,6 +179,8 @@ jobs:
           haxe -version
       - name: Download Haxe libraries (lix)
         run: npx lix download
+      - name: Run Haxe ExUnit stdlib parity suite
+        run: npm run test:haxe-exunit-stdlib
       - name: Run full test suite
         run: npm test
 

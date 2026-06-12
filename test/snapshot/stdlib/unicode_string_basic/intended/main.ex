@@ -101,7 +101,7 @@ defmodule Main do
 					raise "UnicodeString.validate: only UTF8 encoding is supported on the Elixir target"
 				{:utf8} ->
 					reflaxe_unicode_len = valid.length
-					reflaxe_unicode_get = fn pos -> :binary.at(valid.b, pos) end
+					reflaxe_unicode_get = fn pos -> :binary.at(apply(Map.get(valid, :__reflaxe_class__) || Map.get(valid, :__struct__), :get_data, [valid]), pos) end
 					reflaxe_unicode_valid = fn reflaxe_unicode_valid, pos ->
 						if pos >= reflaxe_unicode_len do
 							true
@@ -184,7 +184,7 @@ defmodule Main do
 					raise "UnicodeString.validate: only UTF8 encoding is supported on the Elixir target"
 				{:utf8} ->
 					reflaxe_unicode_len = invalid.length
-					reflaxe_unicode_get = fn pos -> :binary.at(invalid.b, pos) end
+					reflaxe_unicode_get = fn pos -> :binary.at(apply(Map.get(invalid, :__reflaxe_class__) || Map.get(invalid, :__struct__), :get_data, [invalid]), pos) end
 					reflaxe_unicode_valid = fn reflaxe_unicode_valid, pos ->
 						if pos >= reflaxe_unicode_len do
 							true

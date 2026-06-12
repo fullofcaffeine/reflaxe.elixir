@@ -13,6 +13,18 @@ ExUnit is Elixir's built-in testing framework. With Reflaxe.Elixir, you can writ
 - Test tagging for selective execution
 - All ExUnit assertions with type safety
 
+## Stdlib Runtime Parity Harness
+
+Compiler contributors should use the stdlib parity harness for behavior that snapshots cannot prove by shape alone.
+
+- Haxe tests live in `test/haxe_exunit/stdlib_parity/src_haxe/**`.
+- `test/exunit/test_helper.exs` compiles them into `test/fixtures/_generated_haxe_exunit/` before Mix tests run.
+- Run only this lane with `npm run test:haxe-exunit-stdlib`.
+- The broader `npm run test:mix-fast` and `npm test` commands also execute the generated ExUnit tests.
+
+Add a Haxe-authored runtime assertion when changing stdlib behavior for iterators, exceptions, bytes/io, maps,
+Unicode strings, numeric overflow, or any target-specific BEAM mapping.
+
 ## Getting Started
 
 ### Basic Test Class

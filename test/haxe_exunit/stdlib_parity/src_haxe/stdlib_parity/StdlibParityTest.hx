@@ -9,6 +9,9 @@ import haxe.ds.EnumValueMap;
 import haxe.ds.IntMap;
 import haxe.ds.StringMap;
 import haxe.io.Bytes;
+import haxe.io.BytesInput;
+import haxe.io.BytesOutput;
+import haxe.io.Eof;
 import haxe.iterators.MapKeyValueIterator;
 import haxe.test.ExUnit.TestCase;
 import haxe.test.Assert;
@@ -166,11 +169,46 @@ class StdlibParityTest extends TestCase {
 	@:describe("UnicodeString")
 	@:test
 	function testUnicodeStringValidateUtf8():Void {
-		var valid:Bytes = cast untyped __elixir__('%{__reflaxe_class__: Bytes, length: byte_size("Aé🌍中"), b: "Aé🌍中"}');
+		var valid = Bytes.ofString("Aé🌍中");
 		Assert.isTrue(UnicodeString.validate(valid, UTF8));
 
-		var invalid:Bytes = cast untyped __elixir__('%{__reflaxe_class__: Bytes, length: 1, b: <<0xC0>>}');
+		var invalid = Bytes.ofData(cast untyped __elixir__('<<0xC0>>'));
 		Assert.isFalse(UnicodeString.validate(invalid, UTF8));
+	}
+
+	@:describe("haxe.io.BytesInput/BytesOutput")
+	@:test
+	function testBytesInputOutputRoundTripAndEof():Void {
+		var output = new BytesOutput();
+		output.writeByte(0);
+		output.writeString("hi");
+
+		var bytes = output.getBytes();
+		Assert.equals(3, bytes.length);
+
+		var input = new BytesInput(bytes);
+		Assert.equals(0, input.readByte());
+
+		var buffer = Bytes.alloc(2);
+		Assert.equals(2, input.readBytes(buffer, 0, 2));
+		Assert.equals("hi", buffer.toString());
+
+		Assert.raises(() -> {
+			input.readByte();
+		});
+	}
+
+	@:describe("haxe.io.BytesInput/BytesOutput")
+	@:test
+	function testBytesInputReadLineHandlesCrLfAndLf():Void {
+		var input = new BytesInput(Bytes.ofString("alpha\r\nbeta\n"));
+		Assert.equals("alpha", input.readLine());
+		Assert.equals("beta", input.readLine());
+
+		try {
+			input.readLine();
+			Assert.fail("readLine should throw Eof after the final line");
+		} catch (_:Eof) {}
 	}
 
 	@:describe("haxe.Int64")
