@@ -30,19 +30,15 @@ defmodule Main do
                 body = if request_ok, do: response_body, else: "server request mismatch"
                 reason = if actual_status >= 400, do: "ERROR", else: "OK"
 
+                crlf = <<13, 10>>
+
                 response =
-                  "HTTP/1.1 #{actual_status} #{reason}
-" <>
-                    "content-type: text/plain
-" <>
-                    "x-test: one
-" <>
-                    "x-test: two
-" <>
-                    "content-length: #{byte_size(body)}
-" <>
-                    "
-" <>
+                  "HTTP/1.1 #{actual_status} #{reason}" <> crlf <>
+                    "content-type: text/plain" <> crlf <>
+                    "x-test: one" <> crlf <>
+                    "x-test: two" <> crlf <>
+                    "content-length: #{byte_size(body)}" <> crlf <>
+                    crlf <>
                     body
 
                 :ok = :gen_tcp.send(socket, response)

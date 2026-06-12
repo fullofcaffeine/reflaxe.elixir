@@ -33,13 +33,15 @@ class Main {
                 body = if request_ok, do: {3}, else: "server request mismatch"
                 reason = if actual_status >= 400, do: "ERROR", else: "OK"
 
+                crlf = <<13, 10>>
+
                 response =
-                  "HTTP/1.1 #{actual_status} #{reason}\r\n" <>
-                    "content-type: text/plain\r\n" <>
-                    "x-test: one\r\n" <>
-                    "x-test: two\r\n" <>
-                    "content-length: #{byte_size(body)}\r\n" <>
-                    "\r\n" <>
+                  "HTTP/1.1 #{actual_status} #{reason}" <> crlf <>
+                    "content-type: text/plain" <> crlf <>
+                    "x-test: one" <> crlf <>
+                    "x-test: two" <> crlf <>
+                    "content-length: #{byte_size(body)}" <> crlf <>
+                    crlf <>
                     body
 
                 :ok = :gen_tcp.send(socket, response)
