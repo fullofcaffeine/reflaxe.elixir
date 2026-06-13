@@ -148,8 +148,23 @@ Main test APIs:
 
 - `phoenix.test.ConnTest`
 - `phoenix.test.LiveViewTest`
+- `phoenix.test.LiveViewMountResult`
 - `phoenix.test.LiveView`
 - `phoenix.test.Conn`
+
+`LiveViewTest.live(conn, path)` preserves Phoenix API faithfulness: the emitted call is still
+`Phoenix.LiveViewTest.live/2`, which returns `{:ok, view, html}`. Haxe wraps that tuple as
+`LiveViewMountResult`, so tests can use named accessors:
+
+```haxe
+var result = LiveViewTest.live(conn, "/");
+var liveView = result.view();
+var initialHtml = result.initialHtml();
+```
+
+The wrapper is `from Term` / `to Term`, so existing raw tuple helpers such as
+`LiveViewTest.view(result)` and `LiveViewTest.initial_html(result)` remain available for
+compatibility.
 
 Keep most coverage in Haxe-authored ExUnit integration tests and use Playwright only as thin smoke coverage.
 

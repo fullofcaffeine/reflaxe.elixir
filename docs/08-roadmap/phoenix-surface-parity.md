@@ -75,23 +75,22 @@ Evidence:
 - `npm run guard:docs-links`
 - `make -C test single TEST=phoenix/PresenceNativeRegression`
 
-### P2: Typed LiveViewTest Result Wrapper
+### Done: Typed LiveViewTest Result Wrapper
 
-Current pain:
+Implemented:
 
-- `LiveViewTest.live/2` correctly returns the Phoenix tuple as `Term`.
-- Callers then use `LiveViewTest.view(result)` and `initial_html(result)` helpers.
-- This avoids `Dynamic`, but still leaves tuple shape implicit.
+- `std/phoenix/test/LiveViewMountResult.hx` wraps Phoenix's raw `{:ok, view, html}` tuple as a `Term` abstract.
+- `LiveViewTest.live/2` now returns `LiveViewMountResult`, preserving raw `Term` compatibility via `from Term` / `to Term`.
+- Haxe-authored tests can use `result.view()` and `result.initialHtml()` instead of tuple-position helpers.
+- Existing raw helpers `LiveViewTest.view(result)` and `LiveViewTest.initial_html(result)` remain available for compatibility.
+- `examples/13-elixir-first-liveview/test_haxe/web/SearchLiveIntegrationTest.hx` exercises the typed wrapper in a Haxe-authored ExUnit integration test.
 
-Target:
+Evidence:
 
-- Add a typed result abstraction such as `LiveViewMountResult` or helper functions with clearer names and docs.
-- Preserve API faithfulness: Phoenix still returns `{:ok, view, html}`; the wrapper only decodes the tuple for Haxe tests.
-
-Required evidence:
-
-- Haxe-authored ExUnit test in `examples/13-elixir-first-liveview` or a snapshot that uses the wrapper.
-- `npm run test:mix-fast` or focused example test gate.
+- `haxe build-tests.hxml` from `examples/13-elixir-first-liveview`
+- `MIX_ENV=test mix test` from `examples/13-elixir-first-liveview`
+- `npm run guard:docs-links`
+- `npm run test:mix-fast`
 
 ### P2: Router DSL UX Follow-Ups
 

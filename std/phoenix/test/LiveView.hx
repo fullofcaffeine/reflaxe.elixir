@@ -18,7 +18,7 @@ import elixir.types.Term;
  * @:test
  * function testLiveViewMount(conn: Conn): Void {
  *     var result = LiveViewTest.live(conn, "/todos");
- *     var liveView: LiveView = LiveViewTest.view(result);
+ *     var liveView: LiveView = result.view();
  *     Assert.contains(liveView.html(), "Todo List");
  * }
  * ```

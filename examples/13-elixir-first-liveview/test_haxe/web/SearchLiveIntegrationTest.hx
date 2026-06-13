@@ -31,8 +31,11 @@ class SearchLiveIntegrationTest extends TestCase {
 	public function testSearchFiltersResultsWithRenderChange():Void {
 		var conn = ConnTest.build_conn();
 		var liveResult = LiveViewTest.live(conn, "/");
-		var liveView:LiveView = LiveViewTest.view(liveResult);
+		var liveView:LiveView = liveResult.view();
+		var initialHtml = liveResult.initialHtml();
 		var searchForm:Term = LiveViewTest.element(liveView, "form[phx-change='search']");
+
+		assertTrue(ElixirString.contains(initialHtml, "Search BEAM topics"));
 
 		var params:Term = ElixirMap.put(ElixirMap.new_(), "query", "phoenix");
 		LiveViewTest.render_change(searchForm, params);

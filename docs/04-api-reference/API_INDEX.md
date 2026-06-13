@@ -162,6 +162,7 @@ Testing:
 - `std/phoenix/test/Conn.hx`
 - `std/phoenix/test/ConnTest.hx`
 - `std/phoenix/test/LiveView.hx`
+- `std/phoenix/test/LiveViewMountResult.hx`
 - `std/phoenix/test/LiveViewTest.hx`
 
 ### Ecto Surface (`std/ecto`)

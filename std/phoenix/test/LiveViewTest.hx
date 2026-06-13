@@ -2,6 +2,7 @@ package phoenix.test;
 
 import phoenix.test.Conn;
 import phoenix.test.LiveView;
+import phoenix.test.LiveViewMountResult;
 import elixir.types.Term;
 
 /**
@@ -20,7 +21,7 @@ import elixir.types.Term;
  * function testLiveViewInteraction(): Void {
  *     var conn = ConnTest.build_conn();
  *     var result = LiveViewTest.live(conn, "/todos");
- *     var liveView = LiveViewTest.view(result);
+ *     var liveView = result.view();
  *     liveView = LiveViewTest.render_click(liveView, "add-todo");
  *     Assert.contains(liveView.html(), "New todo");
  * }
@@ -34,9 +35,9 @@ extern class LiveViewTest {
 	 * Mount a LiveView for testing.
 	 * Connects to the LiveView and returns a test harness.
 	 */
-	@:overload(function(conn:Conn, path:String, params:Map<String, Term>):Term {})
-	@:overload(function(conn:Conn, path:String, session:Map<String, Term>, params:Map<String, Term>):Term {})
-	public static function live(conn:Conn, path:String):Term;
+	@:overload(function(conn:Conn, path:String, params:Map<String, Term>):LiveViewMountResult {})
+	@:overload(function(conn:Conn, path:String, session:Map<String, Term>, params:Map<String, Term>):LiveViewMountResult {})
+	public static function live(conn:Conn, path:String):LiveViewMountResult;
 
 	/**
 	 * Connect to an isolated LiveView component.
@@ -47,8 +48,8 @@ extern class LiveViewTest {
 	/**
 	 * Extract the LiveView handle from a successful `live/2` or `live_component/2` result.
 	 *
-	 * Phoenix returns `{:ok, view, html}`. Keeping the raw return as `Term` avoids inventing
-	 * tuple shapes in app/test code while still eliminating `Dynamic` from APIs.
+	 * Prefer `result.view()` on `LiveViewMountResult` for new `live/2` call sites.
+	 * This helper remains for raw `Term` compatibility and `live_component` results.
 	 */
 	public static inline function view(result:Term):LiveView {
 		return cast elixir.Tuple.elem(result, 1);
@@ -56,6 +57,8 @@ extern class LiveViewTest {
 
 	/**
 	 * Extract the initial rendered HTML from a successful `live/2` result tuple.
+	 *
+	 * Prefer `result.initialHtml()` on `LiveViewMountResult` for new `live/2` call sites.
 	 */
 	public static inline function initial_html(result:Term):String {
 		return cast elixir.Tuple.elem(result, 2);
