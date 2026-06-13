@@ -9,7 +9,6 @@
   "int_iterator.ex",
   "haxe/test/assert.ex",
   "haxe/iterators/array_iterator.ex",
-  "haxe/ds/_map/map_impl_.ex",
   "array_tools.ex"
 ],
   "id": 0,
