@@ -118,7 +118,7 @@ Reflaxe.Elixir supports two authoring styles on one compiler pipeline. This matr
 - Default for examples: strict TSX mode (`-D hxx_mode=tsx`) and inline markup authoring.
 - Legacy `hxx('...')` templates are only allowed in explicitly labeled migration demos.
 - Current intentional non-TSX demo: `examples/05-heex-templates/` (see its README rationale).
-- CI guardrail: `npm run guard:examples-hxx-mode` prevents legacy marker regressions outside demo paths.
+- CI guardrails: `npm run guard:examples-hxx-mode` prevents legacy marker regressions outside demo paths, and `npm run guard:hxx-raw-heex` forbids unannotated raw HEEx in Haxe-authored templates.
 
 ## 🚀 Quick Start
 
