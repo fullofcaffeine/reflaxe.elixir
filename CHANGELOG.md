@@ -1,3 +1,10 @@
+## [0.5.2](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.5.1...v0.5.2) (2026-06-13)
+
+
+### Bug Fixes
+
+* **ast:** rewrite known string length before printing ([8a9a5d2](https://github.com/fullofcaffeine/reflaxe.elixir/commit/8a9a5d295b96b6788ff5cca2fcb42424120dab03))
+
 ## [0.5.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.5.0...v0.5.1) (2026-06-12)
 
 
