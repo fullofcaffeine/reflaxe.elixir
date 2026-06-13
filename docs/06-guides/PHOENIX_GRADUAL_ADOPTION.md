@@ -7,6 +7,8 @@ The core idea: **compile Haxe modules into their own Elixir namespace** first (`
 Important: this “Haxe namespace” is controlled by your Haxe packages + `-D elixir_output` (for example `src_haxe/my_app_hx/*` → `lib/my_app_hx/*` → `MyAppHx.*`).
 `-D app_name` should still match your Phoenix app module (for example `-D app_name=MyApp`) so Phoenix/Ecto integrations can derive framework modules correctly.
 
+For a concrete copy-paste walkthrough with a domain module, an Elixir call path, a Haxe-authored LiveView, and tests, start with `docs/06-guides/PHOENIX_GRADUAL_ADOPTION_TUTORIAL.md`.
+
 ## What You Need
 
 - Elixir 1.14+

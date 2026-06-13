@@ -16,6 +16,7 @@ The Phoenix docs are split into two concrete paths:
 
 - New Phoenix app in Haxe: `docs/06-guides/PHOENIX_NEW_APP.md`
 - Add Haxe modules to an existing Phoenix app: `docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md`
+- Step-by-step gradual adoption tutorial: `docs/06-guides/PHOENIX_GRADUAL_ADOPTION_TUTORIAL.md`
 
 Phoenix integration overview: `docs/02-user-guide/PHOENIX_INTEGRATION.md`.
 

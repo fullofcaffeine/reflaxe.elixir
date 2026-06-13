@@ -78,6 +78,7 @@ This index helps you find the right docs quickly, whether you're building apps w
 - [Quickstart](06-guides/QUICKSTART.md) - Fast track to productivity
 - [Phoenix (New App)](06-guides/PHOENIX_NEW_APP.md) - Greenfield Phoenix setup
 - [Phoenix (Existing App)](06-guides/PHOENIX_GRADUAL_ADOPTION.md) - Gradual adoption in an existing app
+- [Phoenix Gradual Adoption Tutorial](06-guides/PHOENIX_GRADUAL_ADOPTION_TUTORIAL.md) - Concrete domain module, LiveView, and test path
 - [Scaffolding System](06-guides/SCAFFOLDING_SYSTEM.md) - How generators + marker blocks work
 - [Adding Elixir Libraries From Haxe](06-guides/ADDING_ELIXIR_LIBS_FROM_HAXE.md) - Thin extern + wrapper pattern
 - [Phoenix Chat Tutorial (Hybrid)](06-guides/PHOENIX_CHAT_TUTORIAL.md) - Gradual adoption: feature logic in Haxe, core app/router wiring in Elixir
