@@ -1,3 +1,10 @@
+## [0.5.3](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.5.2...v0.5.3) (2026-06-13)
+
+
+### Bug Fixes
+
+* **generator:** guard strict hxx scaffolds ([534d4a5](https://github.com/fullofcaffeine/reflaxe.elixir/commit/534d4a5c9538d311bb435ae0ee15d580831d84e0))
+
 ## [0.5.2](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.5.1...v0.5.2) (2026-06-13)
 
 
