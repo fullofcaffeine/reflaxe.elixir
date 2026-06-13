@@ -10,12 +10,17 @@ using StringTools;
 /**
  * Build macro for auto-generating router functions from declarative route definitions.
  * 
- * Transforms this declarative syntax:
+ * Transforms this compatibility declarative syntax:
  * ```haxe
+ * import reflaxe.elixir.macros.HttpMethod;
+ *
+ * class TodoLive {
+ *     public static function index():String return "ok";
+ * }
+ *
  * @:router
  * @:routes([
- *     {name: "root", method: "LIVE", path: "/", controller: "TodoLive", action: "index"},
- *     {name: "todosList", method: "LIVE", path: "/todos", controller: "TodoLive"}
+ *     {name: "root", method: HttpMethod.LIVE, path: "/", controller: TodoLive, action: TodoLive.index}
  * ])
  * class TodoAppRouter {}
  * ```
@@ -26,8 +31,13 @@ using StringTools;
  * public static function root(): String { return "/"; }
  * ```
  * 
- * This eliminates the need for empty placeholder functions while maintaining full
- * RouterCompiler compatibility and providing optional type-safe route helpers.
+ * This eliminates the need for empty placeholder functions while maintaining
+ * RouterCompiler compatibility and providing route helpers.
+ *
+ * New routers should prefer module-level `final routes = [...]` with
+ * `RouterDsl.*` typed tree nodes. Flat `@:routes` remains a migration surface.
+ * String controller refs in flat objects are legacy-only: the compiler warns
+ * by default and this macro also fails fast with `-D router_strict_typed_refs`.
  */
 @:nullSafety(Off)
 class RouterBuildMacro {
@@ -184,6 +194,7 @@ class RouterBuildMacro {
 							routeDef.path = extractStringValue(field.expr, "path");
 						case "controller":
 							routeDef.controllerIsTypeRef = !isStringLiteral(field.expr);
+							routeDef.controllerPos = field.expr.pos;
 							routeDef.controller = extractControllerValue(field.expr);
 						case "action":
 							routeDef.action = extractActionValue(field.expr);
@@ -453,6 +464,7 @@ class RouterBuildMacro {
 		var usedNames = new Map<String, Bool>();
 		var usedPaths = new Map<String, String>();
 		var fastBoot = isFastBoot();
+		var strictTypedRouteControllerRefs = Context.defined("router_strict_typed_refs");
 
 		for (route in routes) {
 			// Validate required fields
@@ -497,6 +509,13 @@ class RouterBuildMacro {
 			];
 			if (!validMethods.contains(route.method)) {
 				Context.warning('Unknown HTTP method: ${route.method}. Valid: ${validMethods.join(", ")}', pos);
+			}
+
+			if (strictTypedRouteControllerRefs && !route.controllerIsTypeRef && route.controller != null && route.controller != "") {
+				var routeName = route.name != null && route.name != "" ? route.name : "<unnamed>";
+				var recommendation = 'Route "${routeName}" uses a legacy string literal for controller. Prefer a typed controller reference (for example controllers.UserController).';
+				var diagnosticPos = route.controllerPos != null ? route.controllerPos : pos;
+				Context.error(recommendation + " Use @:route for intentionally legacy/manual string routing.", diagnosticPos);
 			}
 
 			// Skip expensive type checks under fast_boot; keep warnings lightweight
@@ -708,6 +727,7 @@ class RouteDefinition {
 	public var action:String; // Action method (optional)
 	public var pipeline:String; // Pipeline to use (optional)
 	public var controllerIsTypeRef:Bool; // true when controller is expressed as a type ref (not a string literal)
+	public var controllerPos:Position; // precise diagnostic location for legacy controller literals
 
 	public function new() {}
 }

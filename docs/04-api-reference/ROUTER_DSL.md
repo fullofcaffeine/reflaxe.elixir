@@ -3,6 +3,7 @@
 ## Summary
 
 Use module-level `final routes = [...]` on a `@:router` declaration for new code.
+This is the `@:routes`-first model: route metadata lives in one router-level declaration, not scattered across empty helper functions.
 
 Router declarations support:
 
@@ -190,9 +191,9 @@ Prefer `reflaxe.elixir.macros.HttpMethod`:
 - `LIVE_DASHBOARD`
 - `MAILBOX`
 
-## Compatibility: `@:routes([...])`
+## Compatibility: flat `@:routes([...])`
 
-`@:routes([...])` remains supported for existing routers and migration work.
+Flat `@:routes([...])` objects remain supported for existing routers and migration work. They still participate in router-level metadata and can use typed controller/action refs.
 
 ```haxe
 import controllers.UserController;
@@ -216,11 +217,32 @@ String controller refs in flat `@:routes` objects are compatibility-only:
 - Default: warning
 - `-D router_strict_typed_refs`: compile error
 
-Prefer typed refs in new code.
+Prefer typed refs in new code. The strict flag is useful in CI once a router has migrated away from string controller literals.
+
+Migration shape:
+
+```haxe
+// Legacy compatibility: warns by default.
+@:routes([
+  {name: "usersIndex", method: "GET", path: "/users", controller: "controllers.UserController", action: "index"}
+])
+
+// Migration step: flat @:routes object, but typed refs.
+@:routes([
+  {name: "usersIndex", method: HttpMethod.GET, path: "/users", controller: UserController, action: UserController.index}
+])
+
+// Preferred final shape: module-level typed tree.
+final routes = [
+  scope("/", [
+    get("/users", UserController, UserController.index)
+  ])
+];
+```
 
 ## Legacy/manual: `@:route`
 
-`@:route(...)` on controller actions is still available for legacy/manual glue.
+`@:route(...)` on controller actions is still available for legacy/manual glue. Use it when a route must stay function-by-function, or when intentional string metadata is bridging existing Elixir/router code.
 
 ```haxe
 @:router

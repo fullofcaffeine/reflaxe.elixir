@@ -2,6 +2,7 @@ package;
 
 /**
  * Negative test: strict router typed refs mode rejects string controller literals in @:routes.
+ * The build macro is included so legacy helper generation uses the same strict diagnostic.
  */
 class UserController {
 	public static function index():String {
@@ -10,6 +11,7 @@ class UserController {
 }
 
 @:router
+@:build(reflaxe.elixir.macros.RouterBuildMacro.generateRoutes())
 @:routes([
 	{
 		name: "legacyUsersIndex",

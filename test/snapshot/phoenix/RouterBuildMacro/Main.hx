@@ -1,10 +1,11 @@
 package;
 
 /**
- * Test RouterBuildMacro declarative router syntax
+ * Test RouterBuildMacro legacy declarative router syntax.
  * 
- * Tests the new @:routes annotation with auto-generated functions.
- * Should generate the same Phoenix routes as manual @:route functions.
+ * This intentionally keeps string controller/action metadata to cover the
+ * compatibility path. New router code should use module-level `final routes`
+ * with `RouterDsl.*`, or typed flat @:routes refs while migrating.
  */
 @:router
 @:build(reflaxe.elixir.macros.RouterBuildMacro.generateRoutes())
