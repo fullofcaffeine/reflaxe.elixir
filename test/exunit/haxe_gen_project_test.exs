@@ -27,17 +27,24 @@ defmodule Mix.Tasks.Haxe.Gen.ProjectTest do
   ExUnit.start()
   """
 
-  test "build.hxml enables strict TSX mode for phoenix scaffolds" do
-    config = %{
-      haxe_namespace: "my_app_hx",
-      elixir_namespace: "MyApp",
-      haxe_dir: "src_haxe",
-      output_dir: "lib/my_app_hx",
-      basic_modules: false,
-      phoenix: true,
-      skip_examples: true
-    }
+  defp phoenix_config(overrides \\ []) do
+    Map.merge(
+      %{
+        haxe_namespace: "my_app_hx",
+        elixir_namespace: "MyApp",
+        module_name: "MyApp",
+        haxe_dir: "src_haxe",
+        output_dir: "lib/my_app_hx",
+        basic_modules: false,
+        phoenix: true,
+        skip_examples: true
+      },
+      Map.new(overrides)
+    )
+  end
 
+  test "build.hxml enables strict TSX mode for phoenix scaffolds" do
+    config = phoenix_config()
     hxml = Mix.Tasks.Haxe.Gen.Project.build_hxml_content_for_test(config)
 
     assert hxml =~ "-D hxx_string_to_sigil"
@@ -45,16 +52,7 @@ defmodule Mix.Tasks.Haxe.Gen.ProjectTest do
   end
 
   test "build.hxml does not inject TSX flag for non-phoenix scaffolds" do
-    config = %{
-      haxe_namespace: "my_app_hx",
-      elixir_namespace: "MyApp",
-      haxe_dir: "src_haxe",
-      output_dir: "lib/my_app_hx",
-      basic_modules: false,
-      phoenix: false,
-      skip_examples: true
-    }
-
+    config = phoenix_config(phoenix: false)
     hxml = Mix.Tasks.Haxe.Gen.Project.build_hxml_content_for_test(config)
 
     refute hxml =~ "-D hxx_string_to_sigil"
@@ -62,16 +60,7 @@ defmodule Mix.Tasks.Haxe.Gen.ProjectTest do
   end
 
   test "build-tests.hxml includes ExUnit and generated test output wiring" do
-    config = %{
-      haxe_namespace: "my_app_hx",
-      elixir_namespace: "MyApp",
-      haxe_dir: "src_haxe",
-      output_dir: "lib/my_app_hx",
-      basic_modules: false,
-      phoenix: true,
-      skip_examples: true
-    }
-
+    config = phoenix_config()
     test_hxml = Mix.Tasks.Haxe.Gen.Project.build_tests_hxml_content_for_test(config)
 
     assert test_hxml =~ "-cp src_haxe"
@@ -80,6 +69,38 @@ defmodule Mix.Tasks.Haxe.Gen.ProjectTest do
     assert test_hxml =~ "-D elixir_output_exs"
     assert test_hxml =~ "-D exunit"
     assert test_hxml =~ "-D app_name=MyApp"
+  end
+
+  test "directory plan avoids example-only dirs when examples are skipped" do
+    directories =
+      phoenix_config(basic_modules: true, skip_examples: true)
+      |> Mix.Tasks.Haxe.Gen.Project.directories_for_test()
+
+    refute "src_haxe/my_app_hx/utils" in directories
+    refute "src_haxe/my_app_hx/live" in directories
+  end
+
+  test "directory plan creates example dirs only when their files are generated" do
+    directories =
+      phoenix_config(basic_modules: true, skip_examples: false)
+      |> Mix.Tasks.Haxe.Gen.Project.directories_for_test()
+
+    assert "src_haxe/my_app_hx/utils" in directories
+    assert "src_haxe/my_app_hx/live" in directories
+  end
+
+  test "phoenix live example template is strict TSX and raw-HEEx free" do
+    source =
+      phoenix_config(skip_examples: false)
+      |> Mix.Tasks.Haxe.Gen.Project.live_example_content_for_test()
+
+    assert source =~ ~S|@:hxx_mode("tsx")|
+    assert source =~ "return <div"
+    assert source =~ ~S(${assigns.count})
+    refute source =~ "<%"
+    refute source =~ "hxx("
+    refute source =~ "HXX.hxx"
+    refute source =~ "@:allow_heex"
   end
 
   test "test helper patch injects Haxe ExUnit generated test require block" do

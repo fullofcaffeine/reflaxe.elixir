@@ -151,38 +151,35 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
 
   # Create necessary directories
   defp create_directories(config) do
-    haxe_base = Path.join([config.haxe_dir, config.haxe_namespace])
-
-    base_directories = [
-      config.haxe_dir,
-      config.output_dir,
-      haxe_base,
-      Path.join([haxe_base, "utils"]),
-      ".vscode"
-    ]
-
-    all_directories =
-      if config.phoenix do
-        base_directories ++
-          [
-            Path.join([haxe_base, "live"])
-          ]
-      else
-        base_directories
-      end
-
-    all_directories =
-      all_directories ++
-        [
-          "test_haxe",
-          Path.join(["test", "generated"])
-        ]
-
-    Enum.each(all_directories, fn dir ->
+    Enum.each(directories_for(config), fn dir ->
       File.mkdir_p!(dir)
       Mix.shell().info("Created directory: #{dir}")
     end)
   end
+
+  defp directories_for(config) do
+    haxe_base = Path.join([config.haxe_dir, config.haxe_namespace])
+
+    [
+      config.haxe_dir,
+      config.output_dir,
+      haxe_base,
+      ".vscode",
+      "test_haxe",
+      Path.join(["test", "generated"])
+    ]
+    |> maybe_append_directory(generates_basic_modules?(config), Path.join([haxe_base, "utils"]))
+    |> maybe_append_directory(
+      generates_phoenix_live_example?(config),
+      Path.join([haxe_base, "live"])
+    )
+  end
+
+  defp generates_basic_modules?(config), do: config.basic_modules and not config.skip_examples
+  defp generates_phoenix_live_example?(config), do: config.phoenix and not config.skip_examples
+
+  defp maybe_append_directory(directories, true, directory), do: directories ++ [directory]
+  defp maybe_append_directory(directories, false, _directory), do: directories
 
   defp phoenix_project_shape? do
     File.dir?(Path.join(["assets", "js"])) and
@@ -290,6 +287,12 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
 
   @doc false
   def build_hxml_content_for_test(config), do: build_hxml_content(config)
+
+  @doc false
+  def directories_for_test(config), do: directories_for(config)
+
+  @doc false
+  def live_example_content_for_test(config), do: live_example_content(config)
 
   @doc false
   def build_tests_hxml_content_for_test(config), do: build_tests_hxml_content(config)
