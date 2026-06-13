@@ -39,10 +39,10 @@ Options:
   -h, --help         Show this help
 
 Examples:
-  export HAXE_ELIXIR_REFERENCE=/path/to/haxe.elixir.reference
+  export HAXE_ELIXIR_REFERENCE=/path/to/haxe.compilerdev.reference
   scripts/stdlib-parity-report.sh --json
   scripts/stdlib-parity-report.sh --markdown
-  scripts/stdlib-parity-report.sh --reference /path/to/haxe.elixir.reference/haxe/std
+  scripts/stdlib-parity-report.sh --reference /path/to/haxe.compilerdev.reference/haxe/std
 EOF
   exit 2
 }
@@ -265,7 +265,7 @@ elif markdown_mode:
   print("To regenerate:")
   print("")
   print("```bash")
-  print("export HAXE_ELIXIR_REFERENCE=/path/to/haxe.elixir.reference")
+  print("export HAXE_ELIXIR_REFERENCE=/path/to/haxe.compilerdev.reference")
   print("scripts/stdlib-parity-report.sh --json > docs/08-roadmap/stdlib-parity/gap-report.json")
   print("scripts/stdlib-parity-report.sh --markdown > docs/08-roadmap/stdlib-parity/gap-report.md")
   print("```")

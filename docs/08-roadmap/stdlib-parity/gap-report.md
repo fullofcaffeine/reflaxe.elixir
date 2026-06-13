@@ -12,7 +12,7 @@ Local roots considered:
 To regenerate:
 
 ```bash
-export HAXE_ELIXIR_REFERENCE=/path/to/haxe.elixir.reference
+export HAXE_ELIXIR_REFERENCE=/path/to/haxe.compilerdev.reference
 scripts/stdlib-parity-report.sh --json > docs/08-roadmap/stdlib-parity/gap-report.json
 scripts/stdlib-parity-report.sh --markdown > docs/08-roadmap/stdlib-parity/gap-report.md
 ```

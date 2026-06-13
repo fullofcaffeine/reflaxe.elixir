@@ -1,4 +1,4 @@
-# Epic: Stdlib Parity vs `haxe.elixir.reference`
+# Epic: Stdlib Parity vs `haxe.compilerdev.reference`
 
 Owner: Compiler/stdlib
 
@@ -223,7 +223,7 @@ Create one task per module (or small module cluster) with:
    - Tier 1 (ecosystem blockers): serializer/unserializer/template/http
    - Tier 2 (BEAM integration): `sys.net.*`, `sys.ssl.*`, `sys.thread.*`
 3) **Open one BD task per module/cluster**, each including:
-   - Reference link(s) to `haxe.elixir.reference`
+   - Reference link(s) to `haxe.compilerdev.reference`
    - Snapshots + Haxe-authored ExUnit runtime semantics test(s)
    - WAE criteria: `npm run test:mix-fast`, `npm run test:examples-elixir`, and todo-app QA sentinel
 
@@ -232,7 +232,7 @@ Create one task per module (or small module cluster) with:
 For each module/cluster task:
 
 - Scope: which module(s), which functions are in-scope now (explicit).
-- Reference: link to `haxe.elixir.reference` source file(s) used.
+- Reference: link to `haxe.compilerdev.reference` source file(s) used.
 - Implementation:
   - `std/**/*.cross.hx` vs `std/_std/**/*.hx` vs `src/haxe/**/*.cross.hx` (if early-resolved)
   - any compiler transforms required (shape-driven; no app-specific heuristics)
@@ -251,7 +251,7 @@ For each module/cluster task:
 ## BD Epic (pasteable template)
 
 Title:
-- `Stdlib parity vs haxe.elixir.reference (phase 1–3)`
+- `Stdlib parity vs haxe.compilerdev.reference (phase 1–3)`
 
 Description:
 - Goal: close stdlib parity gaps for Haxe→Elixir while keeping output idiomatic and typed.

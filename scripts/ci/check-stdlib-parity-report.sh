@@ -194,7 +194,7 @@ if errors:
         print(f"  - {error}")
     print("")
     print("[guard:stdlib-parity] To regenerate (with local reference checkout):")
-    print("  export HAXE_ELIXIR_REFERENCE=/path/to/haxe.elixir.reference")
+    print("  export HAXE_ELIXIR_REFERENCE=/path/to/haxe.compilerdev.reference")
     print("  scripts/stdlib-parity-report.sh --json > docs/08-roadmap/stdlib-parity/gap-report.json")
     print("  scripts/stdlib-parity-report.sh --markdown > docs/08-roadmap/stdlib-parity/gap-report.md")
     sys.exit(1)
