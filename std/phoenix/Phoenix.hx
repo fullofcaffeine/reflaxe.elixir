@@ -538,80 +538,6 @@ extern class Socket<T> {
 	var _private:Map<String, Term>;
 }
 
-/**
- * Phoenix.PubSub for type-safe real-time messaging
- * 
- * ARCHITECTURAL NOTE: These extern definitions map to the actual Phoenix.PubSub API.
- * Phoenix.PubSub.subscribe/3 signature: subscribe(pubsub, topic, opts \\ [])
- * Where pubsub is an atom (like TodoApp.PubSub), topic is a string, opts is a keyword list
- */
-@:native("Phoenix.PubSub")
-extern class PubSub {
-	/**
-	 * Subscribe to a topic for real-time updates
-	 * 
-	 * Maps to: Phoenix.PubSub.subscribe(pubsub, topic, opts \\ [])
-	 * 
-	 * @param pubsub PubSub server name (atom like TodoApp.PubSub)
-	 * @param topic Topic string to subscribe to
-	 * @return :ok on success, {:error, reason} on failure
-	 */
-	static function subscribe(pubsub:Term, topic:String):Term;
-
-	/**
-	 * Subscribe to a topic with options
-	 * 
-	 * @param pubsub PubSub server name (atom like TodoApp.PubSub) 
-	 * @param topic Topic string to subscribe to
-	 * @param options Subscription options as keyword list
-	 * @return :ok on success, {:error, reason} on failure
-	 */
-	static function subscribeWithOptions(pubsub:PubSubServer, topic:String, options:PubSubOptions):Result<Void, String>;
-
-	/**
-	 * Broadcast a typed message to all subscribers  
-	 * @param pubsub PubSub server instance (typically AppName.PubSub)
-	 * @param topic Topic string to broadcast on
-	 * @param message Message payload to broadcast
-	 */
-	static function broadcast<T>(pubsub:Term, topic:String, message:T):Term;
-
-	/**
-	 * Broadcast with specific PubSub server
-	 */
-	static function broadcastTo<T>(pubsub:PubSubServer, topic:String, message:T):Result<Void, String>;
-
-	/**
-	 * Broadcast from a specific process (excludes sender)
-	 */
-	static function broadcastFrom<T>(from:ProcessId, topic:String, message:T):Result<Void, String>;
-
-	/**
-	 * Unsubscribe from a topic
-	 */
-	static function unsubscribe(topic:String):Result<Void, String>;
-
-	/**
-	 * Unsubscribe with specific PubSub server
-	 */
-	static function unsubscribeFrom(pubsub:PubSubServer, topic:String):Result<Void, String>;
-
-	/**
-	 * Get subscribers for a topic
-	 */
-	static function subscribers(topic:String):Array<ProcessId>;
-
-	/**
-	 * Local broadcast (single node only)
-	 */
-	static function localBroadcast<T>(topic:String, message:T):Result<Void, String>;
-
-	/**
-	 * Get subscription count for a topic
-	 */
-	static function subscriptionCount(topic:String):Int;
-}
-
 // ============================================================================
 // Additional Type Definitions for Phoenix Integration
 // ============================================================================
@@ -778,20 +704,6 @@ typedef LinkOptions = {
 enum RouteHelper {
 	Named(name:String);
 	Path(path:String);
-}
-
-/**
- * PubSub server reference
- */
-typedef PubSubServer = String;
-
-/**
- * PubSub subscription options
- */
-typedef PubSubOptions = {
-	var ?fastlane:Map<String, Term>;
-	var ?link:Bool;
-	var ?metadata:Map<String, Term>;
 }
 
 /**

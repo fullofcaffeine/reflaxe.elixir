@@ -124,6 +124,7 @@ Core:
 - `std/phoenix/PresenceBehavior.hx`
 - `std/phoenix/PresenceModule.hx`
 - `std/phoenix/PhoenixFlash.hx`
+- `std/phoenix/PubSub.hx`
 - `std/phoenix/PubSubShim.hx`
 - `std/phoenix/SafePubSub.hx`
 - `std/phoenix/Token.hx`

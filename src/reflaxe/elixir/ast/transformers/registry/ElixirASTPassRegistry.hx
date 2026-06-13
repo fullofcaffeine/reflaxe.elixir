@@ -3604,6 +3604,12 @@ class ElixirASTPassRegistry {
 			pass: reflaxe.elixir.ast.transformers.SafePubSubModuleRewriteTransforms.rewritePass
 		});
 		passes.push({
+			name: "PubSubModuleRewrite",
+			description: "Rewrite PubSub.* to Phoenix.PubSub.* (ultimate fallback for native extern calls)",
+			enabled: true,
+			pass: reflaxe.elixir.ast.transformers.PubSubModuleRewriteTransforms.rewritePass
+		});
+		passes.push({
 			name: "GlobalNumericSentinelCleanup",
 			description: "Global sweep to drop standalone numeric sentinel literals (0,1,0.0) in any block",
 			enabled: true,
@@ -4640,6 +4646,13 @@ class ElixirASTPassRegistry {
 			pass: reflaxe.elixir.ast.transformers.RemoteCallModuleAliasCaseNormalizeTransforms.pass,
 			runAfter: ["EFnUnusedArgUnderscore_AbsoluteLast"]
 		});
+		passes.push({
+			name: "PubSubModuleRewrite_AbsoluteLastReplay",
+			description: "Absolute-last: rewrite PubSub API calls back to Phoenix.PubSub after alias normalization",
+			enabled: true,
+			pass: reflaxe.elixir.ast.transformers.PubSubModuleRewriteTransforms.rewritePass,
+			runAfter: ["RemoteCallModuleAliasCaseNormalize_AbsoluteLast"]
+		});
 
 		// Absolute-last replay: underscore unused case/with/receive pattern binders.
 		//
@@ -4654,7 +4667,7 @@ class ElixirASTPassRegistry {
 			description: "Absolute-last: underscore unused case/with/receive binders (replay)",
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms.pass,
-			runAfter: ["RemoteCallModuleAliasCaseNormalize_AbsoluteLast"]
+			runAfter: ["PubSubModuleRewrite_AbsoluteLastReplay"]
 		});
 
 		// Absolute-last replay: drop any no-op self-assignments like `v = v`.

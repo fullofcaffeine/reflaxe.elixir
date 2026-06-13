@@ -11,10 +11,8 @@ defmodule PhoenixChatWeb.AppLive do
     live = Phoenix.Component.assign(socket, assigns)
     live = if (connected) do
       pubsub = pubsub_module()
-      topic = chat_topic(room)
-      Phoenix.PubSub.subscribe(pubsub, topic)
-      topic = presence_topic(room)
-      Phoenix.PubSub.subscribe(pubsub, topic)
+      _ = Phoenix.PubSub.subscribe(pubsub, chat_topic(room))
+      _ = Phoenix.PubSub.subscribe(pubsub, presence_topic(room))
       topic = presence_topic(room)
       PhoenixChatWeb.Presence.track(self(), topic, current_user_id, %{:online_at => online_at, :name => current_user_name})
       topic = presence_topic(room)
@@ -176,9 +174,7 @@ end) do
       b = socket.assigns.current_user_id
       c = socket.assigns.current_user_name
       payload = {a, b, c, body, now}
-      pubsub = pubsub_module()
-      topic = chat_topic(socket.assigns.room)
-      Phoenix.PubSub.broadcast_from(pubsub, self(), topic, payload)
+      _ = Phoenix.PubSub.broadcast_from(pubsub_module(), Kernel.self(), chat_topic(socket.assigns.room), payload)
       {:noreply, updated}
     end
   end

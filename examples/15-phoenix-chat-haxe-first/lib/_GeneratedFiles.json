@@ -16,7 +16,6 @@
   "phoenix/types/flash_type_tools.ex",
   "phoenix/types/flash_type.ex",
   "phoenix/route_helper.ex",
-  "phoenix/pub_sub_shim.ex",
   "phoenix/mount_result.ex",
   "phoenix/http_status.ex",
   "phoenix/http_method.ex",
@@ -40,7 +39,7 @@
   "e_reg.ex",
   "phoenix_chat_web/presence.ex"
 ],
-  "id": 11,
+  "id": 12,
   "wasCached": false,
   "version": 1
 }

@@ -28,37 +28,35 @@ Use this decision rule for every Phoenix surface addition:
 | HXX/HEEx templates | inline markup, `HeexTemplate`, strict raw-HEEx guard | HXX snapshots, examples, CI guard | Covered |
 | Router DSL | module-level `@:router`, `RouterDsl.*` nodes | `examples/09-phoenix-router`, `examples/13-elixir-first-liveview`, `examples/15-phoenix-chat-haxe-first` | Covered with UX follow-up |
 | Presence module generation | `@:presence`, `PresenceBehavior`, `@:presenceTopic`, generated `list/getByKey/*WithSocket` helpers | chat examples + Presence E2E | Covered with docs/API drift follow-up |
-| PubSub direct calls | `phoenix.PubSubShim`, partial `phoenix.Phoenix.PubSub` extern | chat examples | Needs std surface cleanup |
+| PubSub direct calls | `phoenix.PubSub` API-faithful extern | `test/snapshot/phoenix/pubsub_api_faithful`, chat examples | Covered |
 | Phoenix tests | `phoenix.test.ConnTest`, `phoenix.test.LiveViewTest`, `LiveViewTest.view/initial_html` | `examples/13-elixir-first-liveview/test_haxe` | Covered with typed result follow-up |
 | Channels | `phoenix.Channel`, `phoenix.channels.*` | channel snapshots/docs | Covered, needs example-driven expansion only |
 | App-owned infra modules | app-local `@:unsafeExtern` for Endpoint/PubSub/Telemetry/DNSCluster | Haxe-first chat + Elixir-first LiveView examples | Intentional boundary |
 
 ## Open Gaps
 
-### P1: Replace PubSubShim With API-Faithful PubSub Helpers
+### Done: Replace PubSubShim With API-Faithful PubSub Helpers
 
-Current pain:
+Implemented:
 
-- Chat examples use `phoenix.PubSubShim.subscribe/2` and `broadcast/3`.
-- `PubSubShim` exists because direct calls through `phoenix.Phoenix.PubSub` previously printed as bare `PubSub.*` in some contexts.
-- The shim intentionally uses `broadcast_from/4` to avoid the sending LiveView double-applying its own broadcast.
+- `std/phoenix/PubSub.hx` provides direct typed externs for Phoenix.PubSub.
+- Chat and todo examples use `phoenix.PubSub` instead of `phoenix.PubSubShim`.
+- Chat and todo preserve sender exclusion with `PubSub.broadcastFrom(pubsub, Kernel.self(), topic, message)`.
+- A final AST rewrite normalizes bare `PubSub.*` call nodes to fully-qualified `Phoenix.PubSub.*`.
 
-Target:
+Available surfaces:
 
-- Add a focused `std/phoenix/PubSub.hx` or repair `phoenix.Phoenix.PubSub` so app code can call API-faithful helpers directly.
-- Include explicit surfaces for:
-  - `subscribe(pubsub, topic)`
-  - `subscribe(pubsub, topic, opts)`
-  - `broadcast(pubsub, topic, message)`
-  - `broadcast_from(pubsub, from, topic, message)`
-  - `unsubscribe(pubsub, topic)`
-- Preserve a small ergonomic helper only if it is clearly named as policy, for example `broadcastFromSelf`.
+- `subscribe(pubsub, topic)`
+- `subscribeWithOptions(pubsub, topic, opts)` → `Phoenix.PubSub.subscribe/3`
+- `broadcast(pubsub, topic, message)`
+- `broadcastFrom(pubsub, from, topic, message)` → `Phoenix.PubSub.broadcast_from/4`
+- `unsubscribe(pubsub, topic)`
 
-Required evidence:
+Evidence:
 
-- Snapshot proving fully-qualified `Phoenix.PubSub.*` emission.
-- Update chat examples away from `PubSubShim`.
-- Run `examples/12-phoenix-chat` sentinel with `--playwright --e2e-spec "e2e/presence.spec.ts"`.
+- `test/snapshot/phoenix/pubsub_api_faithful` proves fully-qualified `Phoenix.PubSub.*` emission.
+- Chat examples no longer import `PubSubShim`.
+- Runtime evidence: `examples/12-phoenix-chat` sentinel passed with `--playwright --e2e-spec "e2e/presence.spec.ts"`.
 
 ### P1: Refresh Presence API Docs Around Topic-Aware Generated Helpers
 

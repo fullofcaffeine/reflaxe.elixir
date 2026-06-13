@@ -38,7 +38,7 @@ import server.presence.TodoPresence;
 import server.presence.TodoPresence.PresenceMeta;
 import server.pubsub.TodoPubSub.TodoPubSubMessage;
 import server.pubsub.TodoPubSub.TodoPubSubTopic;
-import phoenix.PubSubShim;
+import phoenix.PubSub;
 import server.support.OrganizationTools;
 import server.types.Types.PresenceTopic;
 import server.types.Types.PresenceTopics;
@@ -272,7 +272,7 @@ class TodoLive {
 		if (connected) {
 			TodoPubSub.subscribe(TodoUpdates, currentUser.organizationId);
 			TodoPubSub.subscribe(UserActivity, currentUser.organizationId);
-			PubSubShim.subscribe(Atom.fromString("Elixir.TodoApp.PubSub"), presenceTopic);
+			PubSub.subscribe(Atom.fromString("Elixir.TodoApp.PubSub"), presenceTopic);
 		}
 
 		var presenceOnlineAt = Date.now().getTime();

@@ -5,8 +5,9 @@ import StringTools;
 import server.types.Types.BulkOperationType;
 import server.types.Types.AlertLevel;
 import elixir.Atom;
+import elixir.Kernel;
 import elixir.Tuple;
-import phoenix.PubSubShim;
+import phoenix.PubSub;
 import server.types.Types.TodoPriority;
 import elixir.types.Term;
 import Type;
@@ -26,7 +27,7 @@ class TodoPubSub {
 		var topicStr = topicToString(topic, organizationId);
 		var pubsub = pubsubModule();
 		// Phoenix.PubSub.subscribe/2 accepts the PubSub server module and topic
-		PubSubShim.subscribe(pubsub, topicStr);
+		PubSub.subscribe(pubsub, topicStr);
 		return Ok(null);
 	}
 
@@ -37,7 +38,7 @@ class TodoPubSub {
 		var topicStr = topicToString(topic, organizationId);
 		var msgTuple = messageToElixir(msg);
 		var pubsub = pubsubModule();
-		PubSubShim.broadcast(pubsub, topicStr, msgTuple);
+		PubSub.broadcastFrom(pubsub, Kernel.self(), topicStr, msgTuple);
 		return Ok(null);
 	}
 

@@ -11,9 +11,10 @@ import phoenix.Phoenix.HandleInfoResult;
 import phoenix.LiveSocket;
 import elixir.Atom;
 import elixir.ElixirMap;
+import elixir.Kernel;
 import elixir.Tuple;
 import elixir.types.Term;
-import phoenix.PubSubShim;
+import phoenix.PubSub;
 import phoenix_chat_hx.presence.ChatPresence;
 import phoenix_chat_hx.presence.ChatPresence.PresenceMeta;
 import phoenix_chat_hx.live.AppLiveTypes.AppLiveAssigns;
@@ -59,8 +60,8 @@ class AppLive {
 
 		if (connected) {
 			var pubsub = pubsubModule();
-			PubSubShim.subscribe(pubsub, chatTopic(room));
-			PubSubShim.subscribe(pubsub, presenceTopic(room));
+			PubSub.subscribe(pubsub, chatTopic(room));
+			PubSub.subscribe(pubsub, presenceTopic(room));
 
 			live = ChatPresence.trackWithSocket(live, presenceTopic(room), currentUserId, {onlineAt: onlineAt, name: currentUserName});
 
@@ -264,7 +265,7 @@ class AppLive {
 
 		var payload = Tuple.make5(Atom.create("chat_msg"), socket.assigns.current_user_id, socket.assigns.current_user_name, body, now);
 
-		PubSubShim.broadcast(pubsubModule(), chatTopic(socket.assigns.room), payload);
+		PubSub.broadcastFrom(pubsubModule(), Kernel.self(), chatTopic(socket.assigns.room), payload);
 
 		return NoReply(updated);
 	}

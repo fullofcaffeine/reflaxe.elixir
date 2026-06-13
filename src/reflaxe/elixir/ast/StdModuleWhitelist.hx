@@ -63,7 +63,9 @@ class StdModuleWhitelist {
 			"Access",
 			"Reflect",
 			"Type",
-			// PubSub is a Phoenix root module; keep unqualified
+			// Bare PubSub call nodes are normalized to Phoenix.PubSub by PubSubModuleRewrite.
+			// Keep the name here so web/app qualification passes do not incorrectly
+			// reinterpret it as an application-local module before that final rewrite.
 			"PubSub",
 			// Haxe runtime shim modules that must remain top-level
 			// Prevent accidental qualification to <App>.StringBuf inside Web context
