@@ -12,7 +12,7 @@ For the example-driven parity backlog, see `docs/08-roadmap/phoenix-surface-pari
 - `phoenix.LiveSocket`: optional typed wrapper operations
 - `phoenix.PhoenixFlash`: typed flash helpers
 - `phoenix.Channel` + `phoenix.channels.*`: typed channel callback/result helpers
-- `phoenix.Presence` + `phoenix.PresenceModule`: presence tracking APIs
+- `phoenix.Presence`, `phoenix.PresenceBehavior`, and generated app Presence modules: presence tracking APIs
 - `phoenix.types.*`: typed contracts used by templates, assigns, slots, hooks, and route params
 
 ## LiveView Surface
@@ -105,7 +105,42 @@ Relevant strictness/authoring metadata:
 
 - `@:presence` marks a presence module
 - `@:presenceTopic("...")` (optional) supplies default topic wiring for presence helpers
-- Use `Presence.track`, `Presence.update`, and `Presence.list` patterns for stable realtime state
+- Prefer generated app-module helpers from LiveViews: `ChatPresence.trackWithSocket(socket, topic, key, meta)`, `ChatPresence.updateWithSocket(socket, topic, key, meta)`, `ChatPresence.untrackWithSocket(socket, topic, key)`, `ChatPresence.list(topic)`, and `ChatPresence.getByKey(topic, key)`
+- Use raw `phoenix.Presence` only for lower-level Phoenix interop; normal app code should call the generated module so emitted Elixir goes through `<AppWeb>.Presence.*`
+
+Canonical Haxe shape:
+
+```haxe
+import phoenix.PresenceBehavior;
+
+typedef PresenceMeta = {
+  var onlineAt:Float;
+  var name:String;
+}
+
+@:native("PhoenixChatWeb.Presence")
+@:presence
+class ChatPresence implements PresenceBehavior {}
+
+// From a LiveView callback:
+var topic = "chat:presence:lobby";
+live = ChatPresence.trackWithSocket(live, topic, currentUserId, {
+  onlineAt: Date.now().getTime(),
+  name: currentUserName
+});
+
+var onlineUsers:Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>> =
+  cast ChatPresence.list(topic);
+```
+
+Canonical Elixir shape:
+
+```elixir
+PhoenixChatWeb.Presence.track(self(), topic, current_user_id, %{online_at: online_at, name: name})
+online_users = PhoenixChatWeb.Presence.list(topic)
+```
+
+With `@:presenceTopic("users")`, the macro also provides `trackSimple(key, meta)`, `updateSimple(key, meta)`, `untrackSimple(key)`, and `listSimple()` for fixed-topic modules. Use explicit `topic` helpers when the topic is dynamic, such as per-room chat presence.
 
 ## Testing Surface
 

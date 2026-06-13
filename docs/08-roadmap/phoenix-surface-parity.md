@@ -58,26 +58,22 @@ Evidence:
 - Chat examples no longer import `PubSubShim`.
 - Runtime evidence: `examples/12-phoenix-chat` sentinel passed with `--playwright --e2e-spec "e2e/presence.spec.ts"`.
 
-### P1: Refresh Presence API Docs Around Topic-Aware Generated Helpers
+### Done: Refresh Presence API Docs Around Topic-Aware Generated Helpers
 
-Current pain:
+Implemented:
 
-- `PresenceBehavior.hx` and `docs/04-api-reference/PHOENIX_API_REFERENCE.md` under-describe the topic-aware helper shape now used by chat examples.
-- Real usage relies on generated helpers such as `trackWithSocket(socket, topic, key, meta)`, `list(topic)`, and topic-aware `getByKey`.
+- `PresenceBehavior.hx`, `Presence.hx`, and `PHOENIX_API_REFERENCE.md` now describe the canonical app-facing pattern:
+  - define a `@:presence` module implementing `PresenceBehavior`
+  - optionally set `@:presenceTopic("topic")` for fixed-topic helpers
+  - from LiveViews, prefer generated module helpers such as `ChatPresence.trackWithSocket(socket, topic, key, meta)`, `ChatPresence.list(topic)`, and `ChatPresence.getByKey(topic, key)`
+  - use raw `phoenix.Presence` only for lower-level interop
+- `ANNOTATIONS.md` no longer teaches old socket-only Presence examples as the main path.
+- `PresenceModule.hx` is marked as a legacy helper, with `PresenceBehavior` documented as the preferred API.
 
-Target:
+Evidence:
 
-- Update `PresenceBehavior.hx`, `Presence.hx`, and `PHOENIX_API_REFERENCE.md` to state the canonical app-facing patterns:
-  - define a `@:presence` module
-  - optionally set `@:presenceTopic("topic")`
-  - from LiveViews, prefer generated module helpers (`ChatPresence.trackWithSocket(...)`, `ChatPresence.list(topic)`)
-  - use raw `phoenix.Presence` extern only for lower-level interop
-- Make old socket-only examples non-canonical or remove them.
-
-Required evidence:
-
-- Docs link guard.
-- One existing Presence snapshot or chat sentinel run referenced in the close note.
+- `npm run guard:docs-links`
+- `make -C test single TEST=phoenix/PresenceNativeRegression`
 
 ### P2: Typed LiveViewTest Result Wrapper
 

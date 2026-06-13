@@ -39,11 +39,13 @@ import reflaxe.elixir.PhoenixMapper;
  * - `updateInternal(topic, key, meta)` - Direct presence manipulation
  * - `untrackInternal(topic, key)` - Low-level access
  * 
- * ### Layer 4: External Static API (Framework Use)
- * For calling from outside the presence module:
- * - `track(socket, key, meta)` - Standard Phoenix.Presence interface
- * - `update(socket, key, meta)` - External updates
- * - `untrack(socket, key)` - External cleanup
+ * ### Layer 4: Topic Query/Mutation API
+ * For app code that does not need socket chaining:
+ * - `track(topic, key, meta)` - Tracks the current process in a topic
+ * - `update(topic, key, meta)` - Updates topic/key metadata
+ * - `untrack(topic, key)` - Stops tracking a topic/key
+ * - `list(topic)` - Lists topic presences
+ * - `getByKey(topic, key)` - Gets one topic/key presence entry
  * 
  * ## Usage Examples
  * 
@@ -184,11 +186,12 @@ import reflaxe.elixir.PhoenixMapper;
  * }
  * ```
  * 
- * ### External Static Methods (use from LiveViews)
+ * ### LiveView Socket Methods
  * ```haxe
- * // Generated: Calls Phoenix.Presence directly with type-safe parameters
- * extern inline public static function track<T, M>(socket: T, key: String, meta: M): T {
- *     return untyped __elixir__('Phoenix.Presence.track({0}, {1}, {2})', socket, key, meta);
+ * // Generated: tracks current process and returns the socket for callback pipelines
+ * extern inline public static function trackWithSocket<T, M>(socket: T, topic: String, key: String, meta: M): T {
+ *     untyped __elixir__('MyAppWeb.Presence.track(self(), {0}, {1}, {2})', topic, key, meta);
+ *     return socket;
  * }
  * ```
  * 
@@ -196,8 +199,8 @@ import reflaxe.elixir.PhoenixMapper;
  * 
  * 1. **Detect implementation**: Check if class implements PresenceBehavior
  * 2. **Generate internal methods**: Create methods that inject self()
- * 3. **Generate external methods**: Create methods that call Phoenix.Presence
- * 4. **Add utility methods**: list() and getByKey() for presence queries
+ * 3. **Generate LiveView helpers**: Create socket-returning helpers for callback pipelines
+ * 4. **Add topic utilities**: list(topic) and getByKey(topic, key) for presence queries
  * 
  * ## Type Safety
  * 

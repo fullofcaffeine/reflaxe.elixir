@@ -3,7 +3,7 @@ package phoenix;
 import elixir.types.Term;
 
 /**
- * Phoenix.Presence extern definitions for real-time presence tracking
+ * Phoenix.Presence extern definitions for low-level real-time presence tracking
  * 
  * ## Overview
  * 
@@ -13,39 +13,50 @@ import elixir.types.Term;
  * 
  * ## How Phoenix.Presence Works
  * 
- * Phoenix.Presence uses a special behavior that injects functions into your module when
- * you call `use Phoenix.Presence`. This is why the function signatures differ depending
- * on whether you're calling from inside or outside a Presence module.
+ * Phoenix.Presence uses a special behavior that injects functions into your app's
+ * Presence module when you call `use Phoenix.Presence`. In Haxe apps, prefer defining
+ * a `@:presence` module that implements `PresenceBehavior` and calling that generated
+ * module's helpers from LiveViews:
+ *
+ * ```haxe
+ * live = ChatPresence.trackWithSocket(live, presenceTopic(room), currentUserId, meta);
+ * var onlineUsers = ChatPresence.list(presenceTopic(room));
+ * var currentUser = ChatPresence.getByKey(presenceTopic(room), currentUserId);
+ * ```
+ *
+ * Use this raw `phoenix.Presence` extern when you intentionally need direct interop
+ * with Phoenix.Presence itself. Most app code should go through the generated module
+ * (`ChatPresence`, `TodoPresence`, etc.) so calls preserve the app module name and
+ * use the correct process/topic/key shape.
  * 
  * ### Inside a Presence Module (with `use Phoenix.Presence`)
  * 
- * When you define a module with `use Phoenix.Presence`, Phoenix injects local functions
- * that require `self()` as the first argument:
+ * When you define a module with `use Phoenix.Presence`, Phoenix injects functions
+ * used by the generated Haxe helpers:
  * 
  * ```elixir
  * defmodule MyAppWeb.Presence do
  *   use Phoenix.Presence, otp_app: :my_app
  *   
- *   def track_user(socket, user_id, meta) do
- *     # Inside the module, track() is a local injected function
- *     # It needs self() as first argument to identify the tracker process
- *     track(self(), socket, "users", user_id, meta)
+ *   def track_user(topic, user_id, meta) do
+ *     # Track the current LiveView/process in an explicit topic.
+ *     track(self(), topic, user_id, meta)
  *   end
  * end
  * ```
  * 
  * ### Outside a Presence Module
  * 
- * When calling from outside (e.g., from a LiveView or Channel), you use the module name:
+ * When calling from outside (e.g. from a LiveView), use the generated app Presence
+ * module helpers, not `Phoenix.Presence` directly:
  * 
  * ```elixir
  * defmodule MyAppWeb.UserLive do
  *   alias MyAppWeb.Presence
  *   
  *   def mount(_params, _session, socket) do
- *     # From outside, we call through the module
- *     # The module name replaces self()
- *     Presence.track(socket, "users", user_id, %{online_at: now()})
+ *     Presence.track(self(), "users", user_id, %{online_at: now()})
+ *     online = Presence.list("users")
  *   end
  * end
  * ```
@@ -61,18 +72,15 @@ import elixir.types.Term;
  * 
  * ## Using from Haxe
  * 
- * In Haxe, when you create a Presence module with `@:presence` annotation:
+ * In Haxe, when you create a Presence module with `@:presence` and `PresenceBehavior`:
  * 
  * ```haxe
  * @:presence
- * class TodoPresence {
- *     // The compiler should generate local function calls with self()
- *     public static function trackUser(socket: Socket, user: User) {
- *         // This should compile to: track(self(), socket, "users", ...)
- *         // NOT: Phoenix.Presence.track(socket, "users", ...)
- *         return Presence.track(socket, "users", user.id, meta);
- *     }
- * }
+ * class TodoPresence implements PresenceBehavior {}
+ *
+ * // From a LiveView:
+ * live = TodoPresence.trackWithSocket(live, "users", Std.string(user.id), meta);
+ * var users = TodoPresence.list("users");
  * ```
  * 
  * ## Common Patterns
@@ -124,8 +132,8 @@ typedef Topic = String;
  *     var status: String;
  * }
  * 
- * // Use it with PresenceEntry
- * var userPresence: PresenceEntry<UserMeta> = Presence.getByKey(socket, "user_123");
+ * // Use it with the generated app Presence module.
+ * var userPresence: Null<PresenceEntry<UserMeta>> = ChatPresence.getByKey("users", "user_123");
  * 
  * // Access metadata with full type safety
  * for (meta in userPresence.metas) {
@@ -154,7 +162,7 @@ typedef Topic = String;
  * 
  * 3. **Using raw terms**: When you don't need type safety
  *    ```haxe
- *    var presence: PresenceEntry<Term> = Presence.getByKey(socket, key);
+ *    var presence: Null<PresenceEntry<Term>> = ChatPresence.getByKey("users", key);
  *    ```
  * 
  * @param TMeta The type of metadata attached to each presence. Can be any type including
@@ -171,21 +179,26 @@ typedef PresenceEntry<TMeta> = {
 typedef PresenceList = Term;
 
 /**
- * Phoenix.Presence functions for tracking user presence
+ * Low-level Phoenix.Presence functions for tracking user presence.
+ *
+ * Prefer generated `PresenceBehavior` helpers from application code. They emit
+ * `<AppWeb>.Presence.track(self(), topic, key, meta)`, `<AppWeb>.Presence.list(topic)`,
+ * and related app-module calls. This extern remains for direct Phoenix interop.
  */
 @:native("Phoenix.Presence")
 extern class Presence {
 	/**
-	 * Track a channel's process with metadata (3-argument version for channels)
+	 * Track a channel socket with metadata (3-argument channel shape)
 	 * 
-	 * **IMPORTANT**: This overload is for calling from OUTSIDE a Presence module.
-	 * When calling from INSIDE a module with `use Phoenix.Presence`, the injected
-	 * function requires `self()` as the first argument.
+	 * **Lower-level API**: App LiveViews should usually call a generated presence
+	 * module helper such as `ChatPresence.trackWithSocket(socket, topic, key, meta)`.
+	 * This raw extern maps to Phoenix.Presence's channel/socket-oriented `track/3`
+	 * shape and does not choose your app Presence module for you.
 	 * 
 	 * ## Usage from Outside (LiveView/Channel)
 	 * ```haxe
-	 * // In a LiveView mount function
-	 * MyPresence.track(socket, user_id, %{online_at: now()});
+	 * // Preferred LiveView pattern:
+	 * live = MyPresence.trackWithSocket(live, "users", user_id, meta);
 	 * ```
 	 * 
 	 * ## Internal Behavior
@@ -263,7 +276,7 @@ extern class Presence {
 	public static function untrackPid(pid:Term, topic:Topic, key:PresenceKey):Term;
 
 	/**
-	 * Get all presences for a socket or topic
+	 * Get all presences for a topic or channel socket
 	 * 
 	 * Returns all presences for a given topic as a map. Each presence can have
 	 * multiple metadata entries if tracked from multiple processes.
@@ -291,8 +304,8 @@ extern class Presence {
 	 * 
 	 * ## Usage Examples
 	 * ```haxe
-	 * // Get all online users
-	 * var presences = Presence.list(socket);
+	 * // Preferred app-module usage.
+	 * var presences = ChatPresence.list("users");
 	 * 
 	 * // Count online users
 	 * var userCount = Reflect.fields(presences).length;
@@ -308,14 +321,14 @@ extern class Presence {
 	 * This returns ALL presences for the topic. For large topics, consider
 	 * pagination or filtering on the client side.
 	 * 
-	 * @param socketOrTopic Either a channel socket or a topic string
+	 * @param socketOrTopic Either a topic string or a channel socket
 	 * @return PresenceList Map of presence_key to metadata entries
 	 */
 	@:native("list")
 	public static function list(socketOrTopic:Term):PresenceList;
 
 	/**
-	 * Update presence metadata for a channel's process
+	 * Update presence metadata for a channel socket
 	 * 
 	 * Updates the metadata for an existing presence without untracking/retracking.
 	 * This is more efficient than track/untrack cycles and maintains the presence
@@ -327,17 +340,10 @@ extern class Presence {
 	 * 
 	 * ## Example: User Status Updates
 	 * ```haxe
-	 * // User starts editing
-	 * Presence.update(socket, user_id, %{
+	 * // Preferred LiveView pattern.
+	 * live = ChatPresence.updateWithSocket(live, "users", user_id, {
 	 *     status: "editing",
-	 *     editing_todo_id: todo_id,
-	 *     editing_started_at: now()
-	 * });
-	 * 
-	 * // User goes idle
-	 * Presence.update(socket, user_id, %{
-	 *     status: "idle",
-	 *     idle_since: now()
+	 *     editingTodoId: todoId
 	 * });
 	 * ```
 	 * 
@@ -347,9 +353,9 @@ extern class Presence {
 	 * - An update function: `(old_meta) -> new_meta`
 	 * 
 	 * ## Self() Requirement
-	 * Inside a Presence module: `update(self(), socket, topic, key, meta)`
+	 * Inside a Presence module: `update(self(), topic, key, meta)`
 	 * 
-	 * @param socket Channel socket containing the process and topic
+	 * @param socket Channel socket containing the process/topic
 	 * @param key Presence key to update (must already be tracked)
 	 * @param meta New metadata map or update function
 	 * @return Term Either {:ok, ref} or {:error, :not_tracked}
@@ -370,10 +376,13 @@ extern class Presence {
 	public static function updatePid(pid:Term, topic:Topic, key:PresenceKey, meta:PresenceMeta):Term;
 
 	/**
-	 * Get presence entries for a specific key
-	 * Returns list of presence entries for the key
+	 * Get presence entries for a specific key.
+	 *
+	 * Prefer generated `PresenceBehavior` modules for app code:
+	 * `ChatPresence.getByKey(topic, key)` returns `Null<PresenceEntry<TMeta>>`,
+	 * matching the `[] -> nil` convenience used by Haxe call sites.
 	 * 
-	 * @param socketOrTopic Channel socket or topic string
+	 * @param socketOrTopic Topic string or channel socket
 	 * @param key Presence key to get
 	 */
 	@:native("get_by_key")

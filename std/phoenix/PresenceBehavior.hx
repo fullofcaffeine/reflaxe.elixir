@@ -1,68 +1,79 @@
 package phoenix;
 
 /**
- * PresenceBehavior: Type-safe interface for Phoenix.Presence modules
- * 
+ * PresenceBehavior: type-safe interface for generated Phoenix.Presence modules
+ *
  * ## Overview
- * 
+ *
  * This interface provides a type-safe way to implement Phoenix.Presence modules in Haxe.
- * Classes that implement this interface automatically get both internal and external
- * APIs generated at compile-time through the @:autoBuild macro.
- * 
+ * Classes that implement it get topic-aware helpers generated at compile time through
+ * the @:autoBuild macro.
+ *
+ * The canonical app-facing pattern is:
+ * - define one app presence module with `@:presence`
+ * - optionally add `@:presenceTopic("topic")` when a fixed topic is enough
+ * - from LiveViews, call generated module helpers such as
+ *   `ChatPresence.trackWithSocket(socket, topic, key, meta)`,
+ *   `ChatPresence.list(topic)`, and `ChatPresence.getByKey(topic, key)`
+ * - use the raw `phoenix.Presence` extern only for lower-level Phoenix interop
+ *
  * ## Usage Pattern
- * 
+ *
  * ```haxe
+ * import phoenix.PresenceBehavior;
+ *
  * @:native("MyAppWeb.Presence")
+ * @:presence
  * class MyPresence implements PresenceBehavior {
- *     // The macro automatically generates:
- *     // - Internal methods: trackInternal, updateInternal, untrackInternal (with self())
- *     // - External static methods: track, update, untrack (without self())
- *     // - Utility methods: list, getByKey
+ *     // The macro automatically generates LiveView-friendly socket helpers,
+ *     // topic helpers, query helpers, and optional simple helpers.
  * }
  * ```
- * 
+ *
  * ## Generated Methods
- * 
- * ### Internal Methods (for use within the presence module)
- * - `trackInternal(socket, key, meta)` → `track(self(), socket, key, meta)`
- * - `updateInternal(socket, key, meta)` → `update(self(), socket, key, meta)`
- * - `untrackInternal(socket, key, meta)` → `untrack(self(), socket, key, meta)`
- * 
- * ### External Static Methods (for use from LiveViews)
- * - `track(socket, key, meta)` → Calls Phoenix.Presence.track externally
- * - `update(socket, key, meta)` → Calls Phoenix.Presence.update externally
- * - `untrack(socket, key)` → Calls Phoenix.Presence.untrack externally
- * 
- * ### Utility Methods (available in both contexts)
- * - `list(socket)` → Returns current presences
- * - `getByKey(socket, key)` → Returns specific presence entry
- * 
+ *
+ * ### LiveView-Friendly Socket Methods
+ * - `trackWithSocket(socket, topic, key, meta)` -> emits `<PresenceModule>.track(self(), topic, key, meta)` and returns `socket`
+ * - `updateWithSocket(socket, topic, key, meta)` -> emits `<PresenceModule>.update(self(), topic, key, meta)` and returns `socket`
+ * - `untrackWithSocket(socket, topic, key)` -> emits `<PresenceModule>.untrack(self(), topic, key)` and returns `socket`
+ *
+ * These are the preferred helpers from LiveView callbacks because Phoenix Presence
+ * tracking needs the LiveView process (`self()`), a topic string, and a key.
+ *
+ * ### Topic Methods
+ * - `track(topic, key, meta)` -> tracks the current process in an explicit topic
+ * - `update(topic, key, meta)` -> updates metadata for that topic/key
+ * - `untrack(topic, key)` -> stops tracking that topic/key
+ *
+ * ### Query Methods
+ * - `list(topic)` -> returns all presences for the topic
+ * - `getByKey(topic, key)` -> returns one presence entry or `null`
+ *
+ * ### Optional `@:presenceTopic` Methods
+ * When the class has `@:presenceTopic("users")`, the macro also generates:
+ * - `trackSimple(key, meta)`
+ * - `updateSimple(key, meta)`
+ * - `untrackSimple(key)`
+ * - `listSimple()`
+ *
  * ## Type Safety Benefits
- * 
+ *
  * 1. **Compile-time validation** of presence metadata structure
  * 2. **IntelliSense support** for all presence operations
  * 3. **No runtime errors** from missing self() injection
- * 4. **Consistent API** across all presence modules
- * 
- * ## Implementation Details
- * 
- * The @:autoBuild macro (PresenceMacro.build()) handles:
- * - Detecting whether code is inside or outside the presence module
- * - Generating appropriate method signatures
- * - Injecting self() for internal operations
- * - Preserving type safety throughout
- * 
+ * 4. **Topic-aware API** that matches Phoenix's LiveView/process presence shape
+ *
  * ## Phoenix.Presence Behavior
- * 
+ *
  * When a module uses `use Phoenix.Presence`, it:
  * 1. Adds the Phoenix.Presence behavior to the module
- * 2. Injects track/4, update/4, untrack/3 functions that expect self() as first arg
+ * 2. Injects track/4, update/4, untrack/3 functions for process/topic/key metadata
  * 3. Provides list/1 and get_by_key/2 utility functions
- * 
+ *
  * This Haxe interface replicates that pattern with compile-time safety.
- * 
+ *
  * @see phoenix.macros.PresenceMacro - The build macro implementation
- * @see phoenix.Presence - The Phoenix.Presence extern for external usage
+ * @see phoenix.Presence - The Phoenix.Presence extern for low-level usage
  * @see docs/05-architecture/PHOENIX_PRESENCE_BEHAVIOR_PATTERNS.md - Architecture docs
  */
 @:autoBuild(phoenix.macros.PresenceMacro.build())

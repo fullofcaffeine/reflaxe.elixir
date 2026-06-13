@@ -4,7 +4,12 @@ import elixir.types.Term;
 import phoenix.Phoenix.Socket;
 
 /**
- * Base class for Phoenix Presence modules
+ * Legacy base class for Phoenix Presence modules.
+ *
+ * Prefer `@:presence class MyPresence implements PresenceBehavior {}` for new code.
+ * `PresenceBehavior` generates topic-aware app-module helpers such as
+ * `trackWithSocket(socket, topic, key, meta)`, `list(topic)`, and
+ * `getByKey(topic, key)`.
  * 
  * WHY: When a module uses Phoenix.Presence, it gets injected functions
  * that have different calling conventions than the static extern functions.
@@ -28,8 +33,8 @@ import phoenix.Phoenix.Socket;
  */
 class PresenceModule {
 	/**
-	 * Track a presence in this module
-	 * Generates: track(self(), socket, topic, key, meta)
+	 * Track a presence in this module using the legacy base-class helper.
+	 * New LiveView code should prefer `PresenceBehavior.trackWithSocket`.
 	 * 
 	 * @param socket The LiveView or Channel socket
 	 * @param topic The presence topic (e.g., "users")
@@ -43,8 +48,8 @@ class PresenceModule {
 	}
 
 	/**
-	 * Update a presence in this module
-	 * Generates: update(self(), socket, topic, key, meta)
+	 * Update a presence in this module using the legacy base-class helper.
+	 * New LiveView code should prefer `PresenceBehavior.updateWithSocket`.
 	 * 
 	 * @param socket The LiveView or Channel socket
 	 * @param topic The presence topic
@@ -71,8 +76,8 @@ class PresenceModule {
 	}
 
 	/**
-	 * Untrack a presence in this module
-	 * Generates: untrack(self(), socket, topic, key)
+	 * Untrack a presence in this module using the legacy base-class helper.
+	 * New LiveView code should prefer `PresenceBehavior.untrackWithSocket`.
 	 * 
 	 * @param socket The LiveView or Channel socket
 	 * @param topic The presence topic

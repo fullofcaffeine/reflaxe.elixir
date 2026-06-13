@@ -466,70 +466,43 @@ Transforms a class into a Phoenix.Presence module for real-time presence trackin
 
 **How It Works**:
 1. The `@:presence` annotation tells the compiler to inject `use Phoenix.Presence, otp_app: :your_app`
-2. This enables the `track`, `untrack`, `update`, and `list` functions from Phoenix.Presence
+2. Implementing `PresenceBehavior` generates topic-aware helpers such as `trackWithSocket`, `list`, and `getByKey`
 3. Presence data is automatically synchronized across all nodes in your cluster
-4. Each user gets a single presence entry with metadata you define
+4. Each key gets one or more metadata entries, depending on how many processes track it
 
 **Basic Usage**:
 ```haxe
+import phoenix.PresenceBehavior;
+
 @:native("TodoAppWeb.Presence")
 @:presence
-class TodoPresence {
-    // Track a user coming online
-    public static function trackUser<T>(socket: Socket<T>, user: User): Socket<T> {
-        var meta = {
-            onlineAt: Date.now().getTime(),
-            userName: user.name,
-            status: "active"
-        };
-        return Presence.track(socket, "users", Std.string(user.id), meta);
-    }
-    
-    // Update user status (e.g., from "active" to "away")
-    public static function updateUserStatus<T>(socket: Socket<T>, userId: Int, status: String): Socket<T> {
-        var currentMeta = getUserPresence(socket, userId);
-        if (currentMeta != null) {
-            currentMeta.status = status;
-            return Presence.update(socket, "users", Std.string(userId), currentMeta);
-        }
-        return socket;
-    }
-    
-    // List all online users
-    public static function listOnlineUsers<T>(socket: Socket<T>): Map<String, PresenceEntry> {
-        return Presence.list(socket, "users");
-    }
-}
+class TodoPresence implements PresenceBehavior {}
+
+// From a LiveView callback:
+var topic = "users";
+socket = TodoPresence.trackWithSocket(socket, topic, Std.string(user.id), {
+    onlineAt: Date.now().getTime(),
+    userName: user.name,
+    status: "active"
+});
+
+var onlineUsers = TodoPresence.list(topic);
 ```
 
 **Generated Elixir**:
 ```elixir
 defmodule TodoAppWeb.Presence do
   use Phoenix.Presence, otp_app: :todo_app
-  
-  def track_user(socket, user) do
-    meta = %{
-      online_at: System.system_time(:millisecond),
-      user_name: user.name,
-      status: "active"
-    }
-    track(socket, "users", to_string(user.id), meta)
-  end
-  
-  def update_user_status(socket, user_id, status) do
-    current_meta = get_user_presence(socket, user_id)
-    if current_meta do
-      updated_meta = Map.put(current_meta, :status, status)
-      update(socket, "users", to_string(user_id), updated_meta)
-    else
-      socket
-    end
-  end
-  
-  def list_online_users(socket) do
-    list(socket, "users")
-  end
 end
+
+# From the generated LiveView:
+TodoAppWeb.Presence.track(self(), "users", to_string(user.id), %{
+  online_at: online_at,
+  user_name: user.name,
+  status: "active"
+})
+
+online_users = TodoAppWeb.Presence.list("users")
 ```
 
 **Common Use Cases**:
@@ -1724,6 +1697,15 @@ Frequently-used Haxe metadata in user-facing extern/abstraction layers:
 ### @:presenceTopic
 
 Optional presence helper metadata to provide a default topic for presence operations and reduce repeated string literals.
+
+When set on a `@:presence` class implementing `PresenceBehavior`, the macro also generates fixed-topic helpers:
+
+- `trackSimple(key, meta)`
+- `updateSimple(key, meta)`
+- `untrackSimple(key)`
+- `listSimple()`
+
+Prefer explicit topic helpers (`trackWithSocket(socket, topic, key, meta)`, `list(topic)`, `getByKey(topic, key)`) when the topic is dynamic, such as per-room chat or per-tenant resources.
 
 ### @:query (Status)
 
