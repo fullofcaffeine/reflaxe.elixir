@@ -2,6 +2,8 @@
 
 This page documents high-impact Phoenix-facing APIs used by applications authored in Haxe and compiled to Elixir.
 
+For the example-driven parity backlog, see `docs/08-roadmap/phoenix-surface-parity.md`.
+
 ## Core Module Roles
 
 - `phoenix.Phoenix`: canonical LiveView callback result types and helper entrypoints
@@ -131,3 +133,4 @@ Keep most coverage in Haxe-authored ExUnit integration tests and use Playwright 
 - `docs/04-api-reference/ROUTER_DSL.md`
 - `docs/02-user-guide/HXX_SYNTAX_AND_COMPARISON.md`
 - `docs/02-user-guide/INLINE_MARKUP.md`
+- `docs/08-roadmap/phoenix-surface-parity.md`

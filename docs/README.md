@@ -113,6 +113,7 @@ Legacy guides (kept for link stability):
 ### 🗺️ Roadmap & Planning
 **[08-roadmap/](08-roadmap/)** - Planning notes and long-term ideas
 - [Vision](08-roadmap/vision.md) - Long-term ideas (not a stability contract)
+- [Phoenix Surface Parity](08-roadmap/phoenix-surface-parity.md) - Example-driven Phoenix/PubSub/Presence/LiveView API gap checklist
 
 ### 📜 History
 Historical notes and experiments are kept in git history to keep the working tree focused and current.
