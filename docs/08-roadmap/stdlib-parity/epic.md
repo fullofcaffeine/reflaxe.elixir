@@ -164,7 +164,7 @@ Goal: make `Map` usage predictable and eliminate “native map vs Haxe map” tr
 
 ### Phase 3 — `sys.*` integration (BEAM/OTP idioms; explicitly scoped)
 
-The gap report shows remaining `sys.*` gaps are mostly `sys.db.*` and smaller host/process surfaces.
+The gap report shows remaining `sys.*` gaps are smaller host/process surfaces. `sys.db.*` is intentionally unsupported on the Elixir target; use Ecto instead.
 These require careful design on BEAM; we should not “fake” POSIX semantics.
 
 **Task: `haxe.Http` / `sys.Http`**
@@ -196,7 +196,10 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
 - Coverage: snapshot coverage plus generated-runtime smoke for thread messages, blocking deque handoff, TLS isolation, event-loop progress, lock/mutex/semaphore behavior, and fixed-pool execution.
 
 **Task cluster: `sys.db.*`**
-- Likely out of scope for “stdlib parity first” unless needed by key libraries; if implemented, prefer DB driver idioms and document mismatch.
+- Status: intentionally unsupported with compile-time rejection for `sys.db.Connection`, `sys.db.ResultSet`, `sys.db.Mysql`, and `sys.db.Sqlite`.
+- Contract: direct Haxe host-driver database APIs are not mapped to BEAM. Generated Elixir applications should use Ecto schemas, changesets, typed queries, Repo externs, or Elixir boundary modules.
+- Coverage: `test/snapshot/negative/sys_db_unsupported` verifies the APIs fail to compile instead of emitting runtime stubs.
+- Docs: see `docs/04-api-reference/STDLIB_SUPPORT_MATRIX.md` and `docs/07-patterns/ECTO_INTEGRATION_PATTERNS.md`.
 
 ## Workstreams (proposed order)
 
@@ -214,7 +217,7 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
    - Next: remaining `haxe.io.*` utilities as-needed
 
 3) **`sys.*` runtime integration**
-   - Prioritize: `sys.db.*` and remaining smaller host/process surfaces
+   - Prioritize: remaining smaller host/process surfaces
    - Guardrails: BEAM/OTP idioms, avoid pretending POSIX semantics exist where they don’t.
 
 4) **Parsers/serializers**

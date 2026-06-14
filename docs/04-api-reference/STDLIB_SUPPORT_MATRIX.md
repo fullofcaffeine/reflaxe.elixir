@@ -252,6 +252,26 @@ These are “extra” modules provided by the library (not present in upstream H
 - `haxe.test.Assert` / `haxe.test.ExUnit` (Haxe-authored ExUnit support)
 - `haxe.validation.*` (example-facing typed validation helpers)
 
+## Intentionally Unsupported: `sys.db.*`
+
+`sys.db.Connection`, `sys.db.ResultSet`, `sys.db.Mysql`, and `sys.db.Sqlite` are deliberately rejected at Haxe compile time on the Elixir target.
+
+Why:
+- Haxe `sys.db.*` models direct host-driver database access.
+- BEAM/Phoenix applications should use Ecto schemas, queries, changesets, migrations, and Repo boundaries.
+- Emitting runtime stubs would fail late and would encourage non-idiomatic database code.
+
+Use these supported paths instead:
+- `@:schema` and `@:changeset` for Ecto schema modules and changesets.
+- `ecto.TypedQuery` / `Ecto.Query` externs for query construction.
+- typed repository externs or application boundary modules for `Repo.all`, `Repo.get`, `Repo.insert`, `Repo.update`, and transactions.
+- Haxe-authored Ecto migrations where appropriate.
+
+Reference docs:
+- `docs/02-user-guide/ECTO_INTEGRATION_PATTERNS.md`
+- `docs/04-api-reference/ECTO_API_REFERENCE.md`
+- `docs/07-patterns/ECTO_INTEGRATION_PATTERNS.md`
+
 ## Upstream stdlib fallback (expected to work)
 
 Most of the remaining Haxe stdlib is used as-is from the installed Haxe toolchain.
@@ -266,9 +286,7 @@ If a given upstream std module produces invalid/non-idiomatic Elixir, it becomes
 
 Core top-level modules like `Any`, `Class`, `Enum`, `EnumValue`, and `StdTypes` are compiler/type-system surfaces rather than normal override targets.
 
-`sys.*` surfaces that still need BEAM mapping (not exhaustive):
-
-- `sys.db.*`
+Remaining `sys.*` gaps should be evaluated case-by-case against BEAM/OTP semantics. `sys.db.*` is not a planned direct mapping; use Ecto instead.
 
 Track the ongoing parity roadmap in bd:
 - `haxe.elixir-hm47` (stdlib parity roadmap)

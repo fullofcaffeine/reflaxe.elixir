@@ -1,7 +1,7 @@
 {
   "diff": {
     "intersection": {
-      "count": 90,
+      "count": 94,
       "modules": [
         "Array",
         "Date",
@@ -66,6 +66,10 @@
         "sys.FileStat",
         "sys.FileSystem",
         "sys.Http",
+        "sys.db.Connection",
+        "sys.db.Mysql",
+        "sys.db.ResultSet",
+        "sys.db.Sqlite",
         "sys.io.File",
         "sys.io.FileInput",
         "sys.io.FileOutput",
@@ -110,7 +114,7 @@
       ]
     },
     "reference_only": {
-      "count": 114,
+      "count": 110,
       "modules": [
         "Any",
         "Class",
@@ -221,11 +225,7 @@
         "haxe.zip.Reader",
         "haxe.zip.Tools",
         "haxe.zip.Uncompress",
-        "haxe.zip.Writer",
-        "sys.db.Connection",
-        "sys.db.Mysql",
-        "sys.db.ResultSet",
-        "sys.db.Sqlite"
+        "haxe.zip.Writer"
       ]
     }
   },
@@ -233,7 +233,7 @@
     "counts_by_prefix": {
       "<top-level>": 19,
       "haxe": 50,
-      "sys": 30
+      "sys": 34
     },
     "nonstdlib_modules_under_std_dir": [
       "ArrayTools",
@@ -259,8 +259,8 @@
       "std/_std",
       "src/haxe"
     ],
-    "total_candidates": 102,
-    "total_std_modules": 99
+    "total_candidates": 106,
+    "total_std_modules": 103
   },
   "reference": {
     "counts_by_prefix": {
