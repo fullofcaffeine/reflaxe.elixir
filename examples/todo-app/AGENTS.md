@@ -259,7 +259,7 @@ The entire point of Reflaxe.Elixir is to write everything in Haxe. Writing manua
 
 ## 🎨 HXX Template Syntax for Phoenix Assigns
 
-**CRITICAL**: Todo-app server templates use inline HXX in strict TSX mode default TSX mode. New code must use inline markup directly, not legacy `hxx('...')` / `HXX.hxx('...')` wrappers.
+**CRITICAL**: Todo-app server templates use inline HXX in the default strict TSX mode. New code must use inline markup directly, not legacy `hxx('...')` / `HXX.hxx('...')` wrappers.
 
 ### ✅ Use Typed Haxe Assigns
 
@@ -777,7 +777,6 @@ typedef TodoParams = {
 ### 3. Phoenix LiveView Components
 
 ```haxe
-import HXX.*;
 import elixir.types.Term;
 import phoenix.Phoenix.HandleEventResult;
 import phoenix.Phoenix.MountResult;

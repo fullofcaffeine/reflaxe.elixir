@@ -16,7 +16,6 @@ Reflaxe.Elixir generates idiomatic LiveView modules:
 Define assigns as a Haxe `typedef` and keep state updates typed end-to-end.
 
 ```haxe
-import HXX.*;
 import elixir.types.Term;
 import phoenix.Phoenix.HandleEventResult;
 import phoenix.Phoenix.MountResult;

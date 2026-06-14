@@ -1,6 +1,5 @@
 package server.components;
 
-import HXX.*;
 import elixir.Enum;
 import elixir.types.Term;
 import phoenix.Component;

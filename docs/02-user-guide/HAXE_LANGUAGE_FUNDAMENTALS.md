@@ -40,22 +40,20 @@ var hasEither = (a != null) || (b != null);           // Returns Bool
 
 ### Template Expression Implications
 
-This affects template string expressions in Phoenix HEEx templates:
+This affects inline markup expressions in Phoenix HEEx templates:
 
 ```haxe
-import HXX.*;
-
 // ❌ WRONG - generates type errors
-hxx('<span>${assigns.user && assigns.user.name || "Guest"}</span>')
+return <span>${assigns.user && assigns.user.name || "Guest"}</span>;
 
 // ✅ CORRECT - explicit conditional logic
-	hxx('<span>${assigns.user != null && assigns.user.name != null ? assigns.user.name : "Guest"}</span>')
+return <span>${assigns.user != null && assigns.user.name != null ? assigns.user.name : "Guest"}</span>;
 ```
 
 ## Why This Matters for Compiler Development
 
 ### 1. Template Processing
-- HXX template expressions must use proper Haxe conditional syntax
+- Inline markup expressions must use proper Haxe conditional syntax
 - Cannot rely on JavaScript-style truthiness evaluation
 - Type checking prevents implicit conversions
 

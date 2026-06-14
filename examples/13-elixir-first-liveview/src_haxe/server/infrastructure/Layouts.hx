@@ -1,6 +1,5 @@
 package server.infrastructure;
 
-import HXX.*;
 import plug.CSRFProtection;
 
 typedef LayoutTemplateAssigns = {

@@ -10,7 +10,6 @@ import phoenix.Phoenix.MountParams;
 import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.Session;
 import phoenix.Phoenix.Socket;
-import HXX.*;
 
 private typedef UserLiveAssigns = {
 	users:Array<User>,

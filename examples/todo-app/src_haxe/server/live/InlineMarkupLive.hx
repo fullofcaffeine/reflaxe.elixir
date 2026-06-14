@@ -1,6 +1,5 @@
 package server.live;
 
-import HXX.*;
 import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.Socket;
 import server.types.Types.MountParams;
@@ -17,7 +16,7 @@ typedef InlineMarkupLiveAssigns = {
  * - A tiny LiveView used by the todo-app to showcase Haxe inline markup (`return <div>...</div>`).
  *
  * WHY
- * - Inline markup is TSX-like syntax sugar for authoring HEEx/HXX templates.
+ * - Inline markup is syntax sugar for authoring typed HEEx/HXX templates.
  * - This demo intentionally avoids LiveView events/hooks and complex interpolations so it remains
  *   representative of what inline markup is best at: ergonomic, mostly-static UI.
  *

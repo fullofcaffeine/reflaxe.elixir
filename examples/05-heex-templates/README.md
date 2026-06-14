@@ -7,7 +7,7 @@ This example focuses on HXX template authoring and Phoenix component-style marku
 - This example uses legacy string template style (`hxx('...')`) for migration compatibility demos.
 - It is the intentional non-TSX example listed in `examples/README.md` policy guardrails.
 - It therefore opts into `-D hxx_mode=balanced` (typed inline markup available, legacy strings still allowed).
-- Recommended default for new code is inline TSX-like markup (`return <div>...</div>`).
+- Recommended default for new code is inline markup (`return <div>...</div>`) in strict TSX mode.
 - See `docs/02-user-guide/INLINE_MARKUP.md` and `docs/02-user-guide/HXX_SYNTAX_AND_COMPARISON.md`.
 
 ## Run

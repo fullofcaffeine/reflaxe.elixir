@@ -32,6 +32,7 @@ Always use these sentinels for runtime checks. Do not run `mix phx.server` in th
 These failures usually come from running only a subset locally (e.g. `test:quick`) while CI runs additional suites and strict example compilation.
 
 - Docs/examples must move with behavior: any compiler, stdlib, framework DSL, profile/define, or generated-output behavior change must update the relevant docs and examples in the same task when user-facing behavior, supported APIs, or validation commands change. If no docs/examples need changes, state that explicitly in the final summary.
+- Docs/API UX sweep checklist: primary user-facing snippets should include enough imports/context to compile, show generated Elixir when the output shape is the point, use current terminology (for example default inline HXX/TSX mode, `final routes` router DSL, typed externs), and link to canonical docs instead of duplicating long explanations in example READMEs.
 - Bugs: when you fix a bug, add a regression test/snapshot when it fits (and keep it minimal).
 - If the bug is already covered by an existing test, update/fix that test instead of adding duplicates.
 - Repair transforms (when unavoidable): keep them narrowly scoped and deterministic, document them with hxdoc (WHAT/WHY/HOW/EXAMPLES), and add a regression snapshot. If the repair is compensating for an earlier miscompile shape, add a low-priority follow-up task to prevent the bad shape from being emitted upstream.

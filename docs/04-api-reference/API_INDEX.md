@@ -138,11 +138,11 @@ Channels and wire types:
 
 Template/HXX:
 
-- `std/phoenix/hxx/H.hx`
-- `std/phoenix/hxx/HXX2.hx`
 - `std/phoenix/hxx/HeexTemplate.hx`
+- `std/phoenix/hxx/H.hx`
 - `std/phoenix/hxx/ast/HeexNode.hx`
 - `std/phoenix/hxx/ast/HeexAttr.hx`
+- `std/phoenix/hxx/HXX2.hx` (deprecated compatibility alias; prefer `HeexTemplate`)
 
 Types and registries:
 

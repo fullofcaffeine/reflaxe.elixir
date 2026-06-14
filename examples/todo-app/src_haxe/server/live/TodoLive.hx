@@ -1,6 +1,5 @@
 package server.live;
 
-import HXX.*; // Import HXX template helpers
 import ecto.Changeset; // Import Ecto Changeset from the correct location
 import ecto.Query; // Import Ecto Query from the correct location
 import elixir.types.Term;
