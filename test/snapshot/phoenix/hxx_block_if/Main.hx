@@ -10,6 +10,7 @@ typedef Assigns = {
 	pending_todos:Int
 }
 
+@:hxx_mode("balanced")
 class Main {
 	public static function render(assigns:Assigns):String {
 		var content = HXX.hxx('

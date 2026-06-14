@@ -32,7 +32,6 @@ typedef InteropAssigns = {
  */
 @:native("ElixirFirstLiveviewWeb.InteropLive")
 @:liveview
-@:hxx_mode("tsx")
 class InteropLive {
 	public static function mount(params:MountParams, session:Session, socket:Socket<InteropAssigns>):MountResult<InteropAssigns> {
 		var initialInput = "Haxe + Elixir Interop";

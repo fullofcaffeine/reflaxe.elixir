@@ -60,9 +60,12 @@ These failures usually come from running only a subset locally (e.g. `test:quick
 
 ## 🧩 HXX Raw HEEx Policy (Required)
 
-- Do not embed raw EEx/HEEx blocks (`<% ... %>`, `<%= ... %>`) inside `hxx('...')` / `HXX.hxx('...')` templates.
-- Author templates with HXX constructs instead: `#{...}` for text interpolation and `<if>` / `<for>` control tags.
-- Escape hatch (avoid): add `@:allow_heex` to the enclosing function/class, or compile with `-D hxx_allow_raw_heex`.
+- Default HXX authoring is inline markup in strict TSX mode: `return <div>${assigns.title}</div>;`
+- New examples/app code must prefer inline markup without `hxx('...')` / `HXX.hxx('...')` wrappers.
+- `hxx('...')` / `HXX.hxx('...')` is legacy/balanced migration syntax only. Do not use it for new app templates unless the task is explicitly about compatibility coverage.
+- Do not embed raw EEx/HEEx blocks (`<% ... %>`, `<%= ... %>`) inside Haxe-authored templates.
+- In TSX inline markup, author typed constructs directly: `${...}` for text interpolation and `<if ${...}>` / `<for ${item in items}>` control tags.
+- Escape hatch (avoid): isolate the template in balanced mode with `@:allow_heex`, or use `@:hxx_mode("metal")` for last-resort raw HEEx interop.
 
 ### Common CI failure mode: “unused literal” warnings
 
@@ -920,8 +923,6 @@ class UserClient {
 
 #### 3. Universal Components (Future Vision)
 ```haxe
-import HXX.*;
-
 // Universal component that compiles to both LiveView and React
 @:universal
 class TodoItem {
@@ -932,12 +933,10 @@ class TodoItem {
     // Compiles to LiveView component (Elixir)
     @:target("elixir")
     function render() {
-        return hxx('
-            <div class={if completed "completed" else ""}>
+        return <div class=${completed ? "completed" : ""}>
                 <input type="checkbox" checked={completed} phx-click="toggle" phx-value-id={id}/>
-                <span>{text}</span>
-            </div>
-        ');
+                <span>${text}</span>
+            </div>;
     }
     
     // Compiles to React-like component (JavaScript)

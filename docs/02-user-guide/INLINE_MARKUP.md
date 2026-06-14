@@ -27,7 +27,7 @@ In Reflaxe.Elixir, inline markup is syntax sugar over a compiler-intercepted tem
 Inline markup parsing extracts `${ ... }` segments and converts them into real Haxe expressions via `Context.parseInlineString`,
 so the Haxe typer checks syntax and types.
 
-Legacy note: `@:hxx_legacy` forces the old "rewrite to `HXX.hxx(\"...\")`" behavior for migration.
+Migration note: `@:hxx_legacy` forces the old "rewrite to `HXX.hxx(\"...\")`" behavior. It is deprecated, emits a compiler warning, and is rejected in `@:hxx_mode("tsx")`.
 
 Implementation: `src/reflaxe/elixir/macros/InlineMarkup.hx`.
 
@@ -55,7 +55,7 @@ This lowers to a real HEEx block:
 
 ### Loops
 
-In `@:hxx_mode("tsx")`, use typed control tags directly:
+In default TSX mode, use typed control tags directly:
 
 ```haxe
 return <ul>
@@ -144,7 +144,7 @@ Notes:
 - Inline markup rewrite is enabled by default for Phoenix-facing modules.
 - Opt out globally: `-D hxx_no_inline_markup`
 - Opt out per module: `@:hxx_no_inline_markup`
-- Force legacy rewrite per module: `@:hxx_legacy`
+- Force legacy rewrite per module: `@:hxx_legacy` (deprecated; migration fixtures only)
 
 ## Where It Runs (Scope)
 
@@ -195,23 +195,24 @@ Inline markup expressions are authored in Haxe:
 
 ## Template Modes
 
-Inline markup is the recommended authoring surface because `${ ... }` splices are parsed into real Haxe expressions and type-checked.
+Inline markup is the default authoring surface because `${ ... }` splices are parsed into real Haxe expressions and type-checked.
 
 However, the broader template system also supports legacy string-level markers (useful for migration), which are **not** Haxe-typed:
 
 - `#{...}` interpolation markers
 - `<if { ... }>` / `<for { ... }>` control tags
 
-If you want to enforce a fully-typed TSX-like style, enable TSX mode:
+For new code, no HXX mode metadata is required:
 
 ```haxe
-@:hxx_mode("tsx")
 class MyLive {
   public static function render(assigns: Assigns): String {
     return <div>${assigns.count}</div>;
   }
 }
 ```
+
+Use `@:hxx_mode("balanced")` only for migration modules that still need legacy `hxx('...')` string templates. Use `@:hxx_mode("tsx")` only when you need to override an enclosing/global non-TSX mode back to the default.
 
 In TSX mode, raw `<% ... %>` blocks and string-level markers are rejected.
 
@@ -232,7 +233,7 @@ TSX-mode control tags:
 
 Legacy marker headers with braces (`<if { ... }>` / `<for { ... }>` ) are rejected in TSX mode.
 
-If you truly need raw HEEx, use `@:hxx_mode("metal")` (discouraged; emits warnings), or the explicit escape hatch `@:allow_heex`. This is a local template escape hatch, not an application-wide authoring profile.
+If you truly need raw HEEx, use `@:hxx_mode("metal")` (discouraged; emits warnings), or the explicit escape hatch `@:allow_heex` in a balanced migration scope. `@:allow_heex` is invalid in TSX mode. This is a local template escape hatch, not an application-wide authoring profile.
 
 ## Typed `phx-hook` / `phx-*` Names in Inline Markup
 

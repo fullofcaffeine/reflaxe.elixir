@@ -160,7 +160,7 @@ Output (defaults; configurable via flags):
   - `-D app_name=<ModuleName>`
   - `-dce full`
   - `-D hxx_string_to_sigil` (when `--phoenix` is enabled)
-  - `-D hxx_mode=tsx` (when `--phoenix` is enabled; strict typed HXX for new scaffolds)
+  - No `-D hxx_mode=tsx` is emitted; strict typed HXX is the compiler default for new scaffolds
 - `package.json` + `.haxerc` (unless `--skip-npm`)
 - `mix.exs` updated to include `compilers: [:haxe] ++ Mix.compilers()` and a `haxe: [...]` config block
 - `build-tests.hxml` + `test_haxe/` + `test/generated/` for Haxe-authored ExUnit modules

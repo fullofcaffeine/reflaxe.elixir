@@ -120,10 +120,9 @@ defmodule PhoenixChatWeb.Presence do
 end
 ```
 
-Haxe LiveView render excerpt (typed TSX mode):
+Haxe LiveView render excerpt (default typed TSX mode):
 
 ```haxe
-@:hxx_mode("tsx")
 public static function render(assigns: AppLiveAssigns): String {
   return <div class="panel">
     <div class="badge">${assigns.online_user_count}</div>
@@ -145,7 +144,7 @@ end
 
 ## Notes
 
-- This example uses strict TSX mode in `AppLive.hx` (`@:hxx_mode("tsx")`).
+- This example uses strict TSX inline markup by default in `AppLive.hx`.
 - Template expressions are real Haxe expressions (`${...}`), so syntax/type errors are caught by the Haxe typer.
 - For detailed template authoring guidance, see `docs/02-user-guide/INLINE_MARKUP.md` and `docs/02-user-guide/HXX_SYNTAX_AND_COMPARISON.md`.
 - For the most complete end-to-end app (Ecto + tests + Playwright), see `examples/todo-app/README.md`.

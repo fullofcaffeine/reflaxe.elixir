@@ -7,6 +7,7 @@ typedef Assigns = {
 }
 
 @:native("AppWeb.SomeLive")
+@:hxx_mode("balanced")
 class Main {
 	public static function render(assigns:Assigns):String {
 		// Component assigns are wrapped in phoenix.types.Assigns<T>, but strict component

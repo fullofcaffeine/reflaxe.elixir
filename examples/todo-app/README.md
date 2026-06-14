@@ -522,5 +522,5 @@ GPL-3.0 - See LICENSE file in project root
 
 ## Template Mode
 
-- `build-server.hxml` enables strict TSX HXX mode with `-D hxx_mode=tsx`.
+- Server HXX uses strict TSX inline markup by compiler default.
 - Server templates in `src_haxe/server/` use inline markup authoring (no legacy `hxx('...')` wrappers).

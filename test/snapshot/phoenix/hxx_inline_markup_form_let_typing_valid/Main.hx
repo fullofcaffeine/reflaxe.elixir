@@ -8,6 +8,7 @@ typedef Assigns = {
 
 @:hxx_inline_markup
 @:hxx_legacy
+@:hxx_mode("balanced")
 class Main {
 	public static function render(assigns:Assigns):String {
 		return <div>

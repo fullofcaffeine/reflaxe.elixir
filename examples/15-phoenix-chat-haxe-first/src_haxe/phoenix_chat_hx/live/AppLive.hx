@@ -31,8 +31,6 @@ import phoenix_chat_hx.live.AppLiveTypes.OnlineUserView;
 @:native("PhoenixChatWeb.AppLive")
 // @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
 @:liveview
-// @:hxx_mode: sets template authoring strictness mode for HXX/inline markup in this scope.
-@:hxx_mode("tsx")
 class AppLive {
 	public static function mount(_params:MountParams, _session:Session, socket:Socket<AppLiveAssigns>):MountResult<AppLiveAssigns> {
 		var connected = socket.transport_pid != null;

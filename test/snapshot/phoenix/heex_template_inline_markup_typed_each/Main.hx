@@ -11,6 +11,7 @@ typedef Assigns = {
 }
 
 @:liveview
+@:hxx_mode("balanced")
 class Main {
 	public static function render(assigns:Assigns):String {
 		return <ul data-testid="items">

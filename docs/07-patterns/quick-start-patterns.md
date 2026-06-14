@@ -218,16 +218,16 @@ users = Repo.all(q)
 ## 5) HEEx templates in Haxe (HXX)
 
 ```haxe
-	import HXX.*;
 import phoenix.types.Assigns;
 
 typedef PageAssigns = {
     title: String
 }
 
+@:hxx_inline_markup
 class Page {
     public static function render(assigns: Assigns<PageAssigns>): String {
-        return hxx('<h1>${assigns.title}</h1>');
+        return <h1>${assigns.title}</h1>;
     }
 }
 ```

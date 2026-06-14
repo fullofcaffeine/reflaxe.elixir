@@ -13,6 +13,7 @@ typedef DerivedAssigns = {
 }
 
 @:liveview
+@:hxx_mode("balanced")
 class CounterLiveDerivedEvents {
 	@:native("handle_event")
 	public static function handle_event(event:String, _params:Term, socket:Socket<DerivedAssigns>):HandleEventResult<DerivedAssigns> {

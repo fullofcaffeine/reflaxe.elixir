@@ -6,6 +6,7 @@ typedef Assigns = {
 	var ok:Bool;
 }
 
+@:hxx_mode("balanced")
 class Main {
 	public static function render(assigns:Assigns):String {
 		return HXX.hxx('<.card title="Hello" :let={row}><span class={row.user_name}>#{row.user_name} (#{row.count})</span></.card>');

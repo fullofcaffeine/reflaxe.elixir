@@ -13,7 +13,7 @@ This example is the Haxe-first counterpart to `examples/12-phoenix-chat/`:
 - `@:liveview` callbacks and render in Haxe
 - `@:presence` module in Haxe
 - Haxe->JS client hook (`AutoScroll`) for LiveView
-- TSX-style HXX templates (`-D hxx_mode=tsx`)
+- TSX-style HXX templates default TSX mode
 
 ## Run
 

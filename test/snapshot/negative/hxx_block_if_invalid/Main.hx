@@ -7,6 +7,7 @@ typedef Assigns = {
 	var show_form:Bool; // valid field
 }
 
+@:hxx_mode("balanced")
 class Main {
 	// Intentionally references an unknown assigns field in an HXX inline expression
 	// to mirror a block-if style conditional. This MUST fail at Haxe compile time.

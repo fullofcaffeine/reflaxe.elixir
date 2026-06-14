@@ -7,6 +7,7 @@ typedef Assigns = {
 }
 
 @:hxx_strict_phx_events
+@:hxx_mode("balanced")
 class Main {
 	public static function render(assigns:Assigns):String {
 		// Should fail under @:hxx_strict_phx_events: unknown literal phx-click values are disallowed.

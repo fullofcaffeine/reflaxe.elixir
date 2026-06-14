@@ -3,7 +3,7 @@ defmodule Main do
   use Phoenix.LiveView, layout: {Main.Layouts, :app}
   def render(assigns) do
     ~H"""
-<div class={("chip " <> Kernel.to_string(if @enabled, do: "is-on", else: "is-off"))} data-count={@count}>
+<div class={"chip " <> (if (assigns.enabled), do: "is-on", else: "is-off")} data-count={@count}>
           <span class="label">Hello</span>
         </div>
 """

@@ -35,8 +35,8 @@ import reflaxe.elixir.macros.heex_tsx.HeexTsxParser;
  * - Default-on for Phoenix-facing modules (same gating as before).
  * - Opt-out per module: `@:hxx_no_inline_markup`
  * - Global opt-out: `-D hxx_no_inline_markup`
- * - Legacy escape hatch: `@:hxx_legacy` forces the old rewrite to `HXX.hxx(<string-literal>)`
- *   (and keeps `${...}` segments as text for the legacy HXX parser).
+ * - Deprecated migration escape hatch: `@:hxx_legacy` forces the old rewrite to
+ *   `HXX.hxx(<string-literal>)` and keeps `${...}` segments as text for the legacy HXX parser.
  *
  * LIMITATIONS
  * - Haxe's markup lexer requires a valid XML root tag name at the start of the literal. Phoenix
@@ -45,6 +45,9 @@ import reflaxe.elixir.macros.heex_tsx.HeexTsxParser;
  * - Haxe 4 inline markup does not support fragment roots (`<> ... </>`).
  */
 class InlineMarkup {
+	static inline var HXX_LEGACY_DEPRECATION_MESSAGE = "@:hxx_legacy is deprecated and migration-only. "
+		+ "Use typed inline markup in @:hxx_mode(\"tsx\"), or keep legacy string templates in an explicitly balanced migration module.";
+
 	/**
 	 * enable
 	 *
@@ -137,6 +140,9 @@ class InlineMarkup {
 			Context.error("Inline markup: @:hxx_legacy is not allowed in @:hxx_mode(\"tsx\") code.\n"
 				+ "TSX mode requires fully-typed inline markup; use @:hxx_mode(\"balanced\") for legacy template-string features.",
 				field.pos);
+		}
+		if (legacy) {
+			Context.warning(HXX_LEGACY_DEPRECATION_MESSAGE, field.pos);
 		}
 		switch (field.kind) {
 			case FFun(fn):

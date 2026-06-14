@@ -383,7 +383,20 @@ end
 
 ### Template / HXX Metadata (Phoenix HEEx)
 
-These annotations control how Reflaxe.Elixir processes HEEx templates authored from Haxe (via `hxx('...')` / inline markup).
+These annotations control how Reflaxe.Elixir processes HEEx templates authored from Haxe.
+
+Default authoring path for new Phoenix code is strict inline markup:
+
+```haxe
+@:liveview
+class MyLive {
+  public static function render(assigns: MyAssigns): String {
+    return <div>${assigns.count}</div>;
+  }
+}
+```
+
+Legacy `hxx('...')` / `HXX.hxx('...')` string templates remain supported for balanced-mode migration code, but should not be used for new app templates.
 
 #### @:allow_heex (Escape Hatch, Avoid)
 
@@ -395,6 +408,7 @@ Add `@:allow_heex` to a **class** or **function** to opt in explicitly:
 @:liveview
 class MyLive {
   @:allow_heex
+  @:hxx_mode("balanced")
   public static function render(assigns: MyAssigns): String {
     return hxx('<div><%= @count %></div>');
   }
@@ -409,7 +423,6 @@ Select how strict the template authoring surface should be for a scope (class or
 
 ```haxe
 @:liveview
-@:hxx_mode("tsx")
 class MyLive {
   public static function render(assigns: MyAssigns): String {
     return <div>${assigns.count}</div>;
@@ -419,8 +432,8 @@ class MyLive {
 
 Modes:
 
-- `@:hxx_mode("balanced")` (default): normal behavior; inline markup is recommended, but legacy template strings are allowed. Raw `<% ... %>` requires `@:allow_heex` (or `-D hxx_allow_raw_heex` during migration).
-- `@:hxx_mode("tsx")`: strict typed authoring. Disallows raw `<% ... %>` escape hatches, disallows legacy string-template markers (`#{...}`, `<if { ... }>` / `<for { ... }>`), and rejects `hxx('...')` / `HXX.block('...')` usage in that scope. Supports typed TSX control tags (`<if ${...}>`, `<for ${item in items}>`) and typed spread attrs in tag position (`{assigns.attrs}` / `{@assigns.attrs}`).
+- default / `@:hxx_mode("tsx")`: strict typed authoring and the default path for new code. Disallows raw `<% ... %>` escape hatches, disallows legacy string-template markers (`#{...}`, `<if { ... }>` / `<for { ... }>`), and rejects `hxx('...')` / `HXX.block('...')` usage in that scope. Supports typed TSX control tags (`<if ${...}>`, `<for ${item in items}>`) and typed spread attrs in tag position (`{assigns.attrs}` / `{@assigns.attrs}`). The metadata form is only needed to override an enclosing/global non-TSX mode.
+- `@:hxx_mode("balanced")`: compatibility behavior; inline markup is available, but legacy template strings are allowed. Raw `<% ... %>` requires `@:allow_heex` (or `-D hxx_allow_raw_heex` during migration). Use this only for migration modules or legacy test fixtures.
 - `@:hxx_mode("metal")`: allows raw `<% ... %>` without `@:allow_heex` (discouraged; emits warnings).
 
 `metal` is scoped to HXX/HEEx template authoring. It is not an application-wide Reflaxe.Elixir profile; use `portable` or `Elixir-first` for that decision.
@@ -438,7 +451,7 @@ Controls:
 - `@:hxx_no_inline_markup`: opt out for a module.
 - `-D hxx_no_inline_markup`: opt out globally.
 - `@:hxx_inline_markup`: force-enable for non-Phoenix modules (default scope is Phoenix-facing modules like `@:liveview`, `@:component`, etc).
-- `@:hxx_legacy`: force the legacy rewrite path (wrap markup payload in `HXX.hxx("...")`) for migration.
+- `@:hxx_legacy`: deprecated migration-only escape hatch. It forces the legacy rewrite path (wrap markup payload in `HXX.hxx("...")`), emits a warning, and is rejected in TSX mode.
 
 #### Strictness Toggles (Local Metadata)
 

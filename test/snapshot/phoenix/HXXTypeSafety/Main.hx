@@ -12,6 +12,7 @@ import phoenix.types.HXXComponentRegistry;
  * - Phoenix LiveView directive support
  * - HTML5 element coverage
  */
+@:hxx_mode("balanced")
 class Main {
 	static function main() {
 		testAttributeConversion();

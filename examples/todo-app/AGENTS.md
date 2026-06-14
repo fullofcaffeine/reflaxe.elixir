@@ -259,155 +259,84 @@ The entire point of Reflaxe.Elixir is to write everything in Haxe. Writing manua
 
 ## 🎨 HXX Template Syntax for Phoenix Assigns
 
-**CRITICAL**: Understanding correct HXX syntax is essential for Phoenix LiveView development. Wrong syntax causes compilation errors.
+**CRITICAL**: Todo-app server templates use inline HXX in strict TSX mode default TSX mode. New code must use inline markup directly, not legacy `hxx('...')` / `HXX.hxx('...')` wrappers.
 
-### ⚠️ NEVER Use `${@field}` Pattern
+### ✅ Use Typed Haxe Assigns
 
-❌ **THIS FAILS** (causes Haxe compilation errors):
+✅ **THIS WORKS**:
 ```haxe
-return hxx('<button class="${@className}" id="${@id}">
-    ${@inner_content}
-</button>');
+return <button class=${assigns.className} id=${assigns.id}>
+    ${assigns.inner_content}
+</button>;
 ```
 
-**Why it fails**: Haxe's string interpolation tries to evaluate `@field` as a variable, but `@` is not a valid Haxe identifier character.
-
-### ✅ ALWAYS Use `{@field}` Pattern
-
-✅ **THIS WORKS** (correct Phoenix assigns syntax):
+❌ **DO NOT USE legacy string-template assigns**:
 ```haxe
-return hxx('<button class={@className} id={@id}>
-    <%= @inner_content %>
-</button>');
+return hxx('<button class={@className} id={@id}>...</button>');
 ```
 
-### HXX → HEEx Translation Rules
+Inline markup splices (`${...}`) are parsed as real Haxe expressions and type-checked before the compiler lowers them to HEEx assigns.
 
 ## 🔒 HARD RULE: Zero‑Logic HXX (Todo‑App)
 
-HXX in this app must not contain HEEx/Elixir logic inside `{ … }`. Only bind to assigns or view‑model fields computed in Haxe.
+HXX in this app must not contain HEEx/Elixir logic. Only bind to typed assigns or view‑model fields computed in Haxe.
 
 Allowed examples:
-- `id={v.dom_id}`, `data-completed={v.completed_str}`, `class={@filter_btn_all_class}`
+- `id=${v.dom_id}`, `data-completed=${v.completed_str}`, `class=${assigns.filter_btn_all_class}`
 
 Disallowed examples (fix by precomputing in Haxe):
-- `{Kernel.is_nil(v.description)}` → use `v.has_description`
-- `{length(@todos) > 0}` → use `@visible_count > 0`
-- `{sort_selected(@sort_by, :created)}` → use `@sort_selected_created`
+- `Kernel.is_nil(v.description)` in template markup -> use `v.has_description`
+- `length(@todos) > 0` in template markup -> use `assigns.visible_count > 0`
+- `sort_selected(@sort_by, :created)` in template markup -> use `assigns.sort_selected_created`
 
 Pattern to follow:
 1) Introduce a typed view model (e.g., `TodoView`) with all derived fields (bools/strings/classes).
-2) Build it in Haxe (`buildVisibleTodos(assigns)`) and store in `@visible_todos` + helper assigns:
-   - `@filter_btn_*_class`, `@sort_selected_*`, `@visible_count`, etc.
-3) In HXX, iterate `@visible_todos` and bind only fields/assigns. No `Kernel.*`, `Enum.*`, `Map.*`, atoms (`:created`), pipes (`|>`), or `length()` calls inside braces.
+2) Build it in Haxe (`buildVisibleTodos(assigns)`) and store in `assigns.visible_todos` + helper assigns:
+   - `assigns.filter_btn_*_class`, `assigns.sort_selected_*`, `assigns.visible_count`, etc.
+3) In HXX, iterate the view models and bind only fields/assigns. No `Kernel.*`, `Enum.*`, `Map.*`, atoms (`:created`), pipes (`|>`), or `length()` calls in template markup.
 
 CI/Local Guard (should be empty):
 ```bash
-rg -n "\{[^}]*\b(Kernel\.|Enum\.|Map\.|length\(|\|>|:)" examples/todo-app/src_haxe --no-messages
+rg -n "Kernel\\.|Enum\\.|Map\\.|length\\(|\\|>|:[a-zA-Z_]" examples/todo-app/src_haxe/server --no-messages
 ```
 
 Rationale: keep all logic Haxe‑typed and make HEEx a presentation surface only.
 
-#### 1. Attribute Values: `{@field}` → `{@field}`
+## 🚦 Runtime Validation
 
-## 🚦 Background Server Validation (Non‑blocking)
+Use the repository QA sentinel rules for all server boot/runtime checks. Do not run `mix phx.server` in the foreground or hand-roll background server lifecycle scripts.
 
-When you need to boot the Phoenix server and probe it from automation (or Codex CLI) without blocking the session, run it in the background and curl the endpoint. This is useful for quick smoke checks during compiler iterations.
-
-Example (dev, custom port):
-
-```bash
-cd examples/todo-app
-# Build Haxe → Elixir output
-haxe build-server.hxml
-
-# Ensure deps and database
-mix deps.get
-mix ecto.create
-mix ecto.migrate
-
-# Start server in background on a free port and wait briefly
-PORT=4011 MIX_ENV=dev mix phx.server > tmp_server.log 2>&1 & echo $! > tmp_server.pid
-sleep 10
-
-# Probe with GET (avoid HEAD in dev, as reloader can trip it)
-curl -sS -i http://127.0.0.1:4011/ | head -n 20 || true
-
-# Stop server and inspect recent logs if needed
-kill $(cat tmp_server.pid) >/dev/null 2>&1 || true
-sleep 1
-tail -n 120 tmp_server.log || true
-```
-
-Notes
-- If port 4000 is busy locally, use an alternate port via `PORT=<free_port>`.
-- If you run into DB connection errors, ensure Postgres is running with the credentials from `config/dev.exs`. A quick local option is Docker:
-  - `docker run --rm -e POSTGRES_PASSWORD=postgres -e POSTGRES_USER=postgres -e POSTGRES_DB=todo_app_dev -p 5432:5432 postgres:14`
-- For repeatable CI checks, wait for a log line like `Running ...Endpoint with cowboy` before probing.
+#### 1. Attribute Values
 
 ```haxe
-// Haxe HXX Input
-<meta name="csrf-token" content={Component.get_csrf_token()}/>
-<div class={@userClass} id={@userId}>
+// Haxe inline HXX input
+<meta name="csrf-token" content=${Component.get_csrf_token()}/>
+<div class=${assigns.userClass} id=${assigns.userId}></div>
 
-// Generated HEEx Output  
+// Generated HEEx output uses Phoenix assigns where appropriate.
 <meta name="csrf-token" content={Component.get_csrf_token()}/>
-<div class={@user_class} id={@user_id}>
+<div class={@user_class} id={@user_id}></div>
 ```
 
-#### 2. Text Content: Direct Phoenix Syntax
+#### 2. Text Content
 ```haxe
-// Haxe HXX Input
-<h1><%= @title %></h1>
-<p>Welcome, <%= @user.name %>!</p>
-
-// Generated HEEx Output (same)
-<h1><%= @title %></h1>  
-<p>Welcome, <%= @user.name %>!</p>
+return <h1>${assigns.title}</h1>;
 ```
 
 #### 3. Conditional Attributes
 ```haxe
-// ❌ WRONG: Ternary in template string (causes Haxe errors)
-<button class="${@active ? 'btn-active' : 'btn-inactive'}">
-
-// ✅ CORRECT: Phoenix conditional syntax  
-<button class={if @active, do: "btn-active", else: "btn-inactive"}>
-
-// Escape hatch: raw `<% ... %>` blocks are disallowed inside `hxx('...')` by default.
-// Opt-in per function/class via `@:allow_heex` (or compile with `-D hxx_allow_raw_heex`).
-```
-
-### Working Examples from Codebase
-
-#### UserLive.hx (✅ Correct Pattern)
-```haxe
-return hxx('
-    <.input 
-        name="search" 
-        value={@searchTerm}        // ✅ Correct: {@ for attributes
-        placeholder="Search users..."
-        type="search"
-    />
-    
-    ${renderUserList(assigns)}     // ✅ Correct: ${ for Haxe function calls
-');
-```
-
-#### RootLayout.hx (✅ Correct Pattern)  
-```haxe
-return hxx('
-    <meta name="csrf-token" content={Component.get_csrf_token()}/>  // ✅ Correct
-');
+// Compute classes and flags in Haxe first.
+var buttonClass = assigns.active ? "btn-active" : "btn-inactive";
+return <button class=${buttonClass}>Save</button>;
 ```
 
 ### Migration Guide for Broken Patterns
 
 If you find `${@field}` patterns in the codebase:
 
-1. **For attributes**: Change `"${@field}"` → `{@field}`
-2. **For text content**: Change `${@field}` → `#{@field}`
-3. **For complex expressions**: Use `#{if ...}` or `<if {cond}> ... <else> ... </if>`
+1. **For attributes**: Change `"${@field}"` / `{@field}` to typed Haxe fields such as `${assigns.field}`.
+2. **For text content**: Change `${@field}` / `#{@field}` to `${assigns.field}`.
+3. **For complex expressions**: Precompute in Haxe and bind a named field.
 
 ## 🧰 Build & Run (Mix Integration)
 
@@ -423,10 +352,10 @@ We compile the server (Haxe→Elixir) via a Mix compiler and the client (Haxe→
   - Deploy: `mix assets.deploy` (Haxe client + tailwind + esbuild + digest)
 
 Quick commands
-- One‑liner with watchers (recommended): `mix dev`  
+- One‑liner with watchers for humans/manual sessions: `mix dev`
   (alias for `ecto.create`, `ecto.migrate`, then `phx.server` — includes Phoenix + dev watchers)
 - Manual one‑off build: `mix assets.build && mix compile`
-- Start server only (watchers also run): `mix phx.server`
+- Agents must not use foreground server commands here; use the repo QA sentinel with `--async --deadline ...`.
 
 CI suggestions
 - `mix compile --force && mix assets.build`
@@ -466,16 +395,15 @@ Constraints (project-wide)
 
 #### Before (Broken):
 ```haxe
-return hxx('<button type="${@type || "button"}" class="${@className}" ${@disabled ? "disabled" : ""}>
-    ${@inner_content}
-</button>');
+return hxx('<button type="${@type || "button"}" class="${@className}" ${@disabled ? "disabled" : ""}>...</button>');
 ```
 
 #### After (Fixed):
 ```haxe
-return hxx('<button type={@type || "button"} class={@className} disabled={@disabled}>
-    <%= @inner_content %>
-</button>');
+var buttonType = assigns.type != null ? assigns.type : "button";
+return <button type=${buttonType} class=${assigns.className} disabled=${assigns.disabled}>
+    ${assigns.inner_content}
+</button>;
 ```
 
 ### Debugging HXX Compilation Errors

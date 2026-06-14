@@ -7,6 +7,7 @@ typedef Assigns = {
 }
 
 @:hxx_strict_attr_values
+@:hxx_mode("balanced")
 class Main {
 	public static function render(assigns:Assigns):String {
 		return HXX.hxx('

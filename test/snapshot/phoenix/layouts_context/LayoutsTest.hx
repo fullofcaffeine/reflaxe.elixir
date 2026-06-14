@@ -8,6 +8,7 @@ package;
  * - Verify CSRF meta tag emission uses Phoenix.Controller.get_csrf_token/0.
  */
 @:native("MyAppWeb.Layouts")
+@:hxx_mode("balanced")
 class LayoutsTest {
 	public static function root(assigns:Dynamic):Dynamic {
 		return HXX.hxx('

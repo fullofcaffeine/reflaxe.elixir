@@ -17,6 +17,7 @@ typedef CounterAssigns = {
  * Tests @:liveview annotation compilation
  */
 @:liveview
+@:hxx_mode("balanced")
 class CounterLive {
 	public function mount(params:Term, session:Term, socket:Socket<CounterAssigns>):MountResult<CounterAssigns> {
 		// Use LiveView.assign like todo-app does

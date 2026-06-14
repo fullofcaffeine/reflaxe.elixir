@@ -9,6 +9,7 @@ typedef Assigns = {
 	user:{name:String}
 }
 
+@:hxx_mode("balanced")
 class Main {
 	public static function render(assigns:Assigns):String {
 		// Valid usages the linter should accept

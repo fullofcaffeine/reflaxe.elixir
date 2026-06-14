@@ -7,6 +7,7 @@ typedef Assigns = {
 }
 
 @:native("AppAWeb.SomeLive")
+@:hxx_mode("balanced")
 class Main {
 	public static function render(assigns:Assigns):String {
 		// Must resolve to AppAWeb.CoreComponents.card/1 (not AppBWeb.CoreComponents.card/1).

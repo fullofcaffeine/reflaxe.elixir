@@ -7,6 +7,7 @@ typedef Assigns = {
 }
 
 @:hxx_strict_phx_hook
+@:hxx_mode("balanced")
 class Main {
 	public static function render(assigns:Assigns):String {
 		return HXX.hxx('<div id="hook-root" phx-hook=${HookName.Ping}>Connected</div>');

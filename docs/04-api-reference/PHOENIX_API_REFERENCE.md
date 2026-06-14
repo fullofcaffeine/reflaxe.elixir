@@ -84,9 +84,9 @@ Slot typing uses `phoenix.types.Slot` + `@:slot` metadata in assigns typedefs.
 
 Primary template entrypoints:
 
-- Inline markup: `return <div>...</div>;`
+- Inline markup: `return <div>...</div>;` (recommended/default authoring path)
 - `phoenix.hxx.HeexTemplate` (`root`, `root_ast`, helpers)
-- `HXX.hxx(...)` / `HXX.block(...)` for explicit string-template forms
+- `HXX.hxx(...)` / `HXX.block(...)` for legacy balanced-mode string-template forms
 
 Relevant strictness/authoring metadata:
 

@@ -60,6 +60,7 @@ class BitwiseOperations {
 // Test 2: HXX templates should trigger Phoenix.Component import
 
 @:native("TestAppWeb.TestComponent")
+@:hxx_mode("balanced")
 class TestComponent {
 	public static function template(assigns:ComponentAssigns):String {
 		// This should generate ~H sigil and trigger use Phoenix.Component
@@ -84,6 +85,7 @@ class TestComponent {
 
 @:native("TestAppWeb.TestLive")
 @:liveview
+@:hxx_mode("balanced")
 class TestLive {
 	public static function mount(params:Term, session:Term, socket:phoenix.Phoenix.Socket<{}>):phoenix.Phoenix.MountResult<{}> {
 		return phoenix.Phoenix.MountResult.Ok(socket);

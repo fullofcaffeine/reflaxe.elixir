@@ -8,6 +8,7 @@ typedef Assigns = {
 	var total:Int;
 }
 
+@:hxx_mode("balanced")
 class Main {
 	// Intentionally contains two template errors:
 	// 1) Unknown assigns field @sort_byy

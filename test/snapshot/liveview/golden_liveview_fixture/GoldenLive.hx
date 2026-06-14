@@ -49,6 +49,7 @@ enum GoldenMessage {
  */
 @:native("TestAppWeb.GoldenLive")
 @:liveview
+@:hxx_mode("balanced")
 class GoldenLive {
 	public static function mount(_params:Term, _session:Term, socket:Socket<GoldenAssigns>):MountResult<GoldenAssigns> {
 		var live:LiveSocket<GoldenAssigns> = socket;

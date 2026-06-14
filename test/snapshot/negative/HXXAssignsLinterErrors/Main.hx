@@ -8,6 +8,7 @@ typedef Assigns = {
 	active:Bool
 }
 
+@:hxx_mode("balanced")
 class Main {
 	public static function render(assigns:Assigns):String {
 		// Intentionally invalid usages to trigger HeexAssignsTypeLinter errors:

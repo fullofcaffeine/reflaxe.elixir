@@ -61,7 +61,7 @@ Reflaxe.Elixir takes a different approach:
 ### Stable (documented subset)
 
 - Phoenix integration ([LiveView](https://www.phoenixframework.org/liveview)/controllers/templates/routers) for documented paths
-- HEEx-oriented template authoring modes (`tsx`, `balanced`, `metal`); raw HEEx in HXX is disallowed by default and documented in [HXX Syntax & Comparison](docs/02-user-guide/HXX_SYNTAX_AND_COMPARISON.md)
+- HEEx-oriented inline markup authoring (`return <div>...</div>`) with strict `tsx` mode as the default path for new code; legacy `balanced` string templates and `metal` raw-HEEx escapes are documented in [HXX Syntax & Comparison](docs/02-user-guide/HXX_SYNTAX_AND_COMPARISON.md)
 - Ecto schemas/changesets/typed query surfaces
 - OTP patterns (GenServer/Supervisor/Registry)
 - Mix integration (`mix compile.haxe`, watcher workflows) and client hook builds with [Genes](https://github.com/benmerckx/genes)

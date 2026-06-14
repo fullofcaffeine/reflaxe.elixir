@@ -3,6 +3,7 @@ package;
 import HXX;
 
 @:hxxHtmlTags
+@:hxx_mode("balanced")
 class CustomTags {
 	@:hxxTagAttrs(["enabled"])
 	@:hxxTagAttrKinds({enabled: "bool"})

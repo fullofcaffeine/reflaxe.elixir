@@ -46,12 +46,10 @@ class CounterLive {
   }
 
   public static function render(assigns: CounterAssigns): String {
-    return hxx('
-      <div class="counter">
+    return <div class="counter">
         <h1>${assigns.count}</h1>
         <button phx-click="increment">+</button>
-      </div>
-    ');
+      </div>;
   }
 }
 ```

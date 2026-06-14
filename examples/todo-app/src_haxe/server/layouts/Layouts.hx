@@ -1,6 +1,5 @@
 package server.layouts;
 
-import HXX.*; // Compile-time hxx(...) → ~H macro
 import plug.CSRFProtection;
 import phoenix.types.Assigns;
 import phoenix.types.Assigns.LayoutAssigns;

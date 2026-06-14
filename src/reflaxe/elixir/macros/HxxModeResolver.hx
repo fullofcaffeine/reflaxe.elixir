@@ -13,6 +13,7 @@ import haxe.macro.Type;
  * Selection:
  * - `@:hxx_mode("...")` on a function overrides the class-level mode.
  * - `-D hxx_mode=<value>` may set a global default (migration tooling).
+ * - No explicit mode means TSX/typed inline markup, matching the modern RailsHx-style default.
  */
 class HxxModeResolver {
 	public static inline var META_NAME = ":hxx_mode";
@@ -94,7 +95,7 @@ class HxxModeResolver {
 		if (defined != null)
 			return parseModeString(defined, Context.currentPos());
 
-		return HxxMode.Balanced;
+		return HxxMode.Tsx;
 	}
 
 	public static function hasAllowHeexMeta(cls:Null<ClassType>, field:Null<ClassField>):Bool {

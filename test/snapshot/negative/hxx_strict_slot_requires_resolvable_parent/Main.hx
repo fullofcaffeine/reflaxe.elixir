@@ -11,6 +11,7 @@ typedef Assigns = {
  * - Under -D hxx_strict_slots, slot tags require a resolvable parent component definition
  *   so slot existence/props can be type-checked.
  */
+@:hxx_mode("balanced")
 class Main {
 	public static function render(assigns:Assigns):String {
 		return HXX.hxx('<.unknown>

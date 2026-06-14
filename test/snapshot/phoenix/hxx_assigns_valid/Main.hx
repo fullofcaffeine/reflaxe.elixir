@@ -7,6 +7,7 @@ typedef Assigns = {
 	var show_form:Bool;
 }
 
+@:hxx_mode("balanced")
 class Main {
 	public static function render(assigns:Assigns):String {
 		return HXX.hxx('<div>

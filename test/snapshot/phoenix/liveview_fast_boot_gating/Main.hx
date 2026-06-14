@@ -29,6 +29,7 @@ import phoenix.Phoenix.Socket;
  */
 @:native("TestAppWeb.FastBootLive")
 @:liveview
+@:hxx_mode("balanced")
 class Main {
 	public static function mount(params:Term, session:Term, socket:Socket<FastBootAssigns>):MountResult<FastBootAssigns> {
 		// Exercise assign/assigns transforms without relying on raw param maps.

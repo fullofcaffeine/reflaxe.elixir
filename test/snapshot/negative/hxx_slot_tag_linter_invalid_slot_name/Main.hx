@@ -6,6 +6,7 @@ typedef Assigns = {
 	var ok:Bool;
 }
 
+@:hxx_mode("balanced")
 class Main {
 	public static function render(assigns:Assigns):String {
 		// Should fail: slot tag names must be identifiers (no dashes).

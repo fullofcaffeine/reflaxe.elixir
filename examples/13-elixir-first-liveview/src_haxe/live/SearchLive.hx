@@ -28,8 +28,6 @@ typedef SearchAssigns = {
 @:native("ElixirFirstLiveviewWeb.SearchLive")
 // @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
 @:liveview
-// @:hxx_mode: sets template authoring strictness mode for HXX/inline markup in this scope.
-@:hxx_mode("tsx")
 class SearchLive {
 	public static function mount(_params:MountParams, _session:Session, socket:Socket<SearchAssigns>):MountResult<SearchAssigns> {
 		var catalog = [

@@ -6,6 +6,7 @@ typedef Assigns = {
 	var count:Int;
 }
 
+@:hxx_mode("balanced")
 class Main {
 	@:allow_heex
 	public static function render(assigns:Assigns):String {

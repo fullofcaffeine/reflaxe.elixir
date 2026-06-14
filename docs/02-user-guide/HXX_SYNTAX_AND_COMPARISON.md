@@ -25,10 +25,17 @@ See also:
 - Typed spread attrs: tag-position attrs expressions (e.g. `<section {assigns.attrs}>`) lower to HEEx spread attrs (`<section {@attrs}>`).
 - Typed loop helper: `phoenix.hxx.HeexTemplate.for_each(items, (item) -> <li>...</li>)` remains available when expression-style composition is preferred. Short alias: `phoenix.hxx.H.each(...)` (or `phoenix.hxx.H.for_each(...)`).
 - Template strings (legacy/migration): `hxx('...')` / `HXX.block('...')` are supported in **balanced** mode, but they are string-rewritten + linted (template-local markers are not Haxe-typed).
-- Layered modes: `@:hxx_mode("tsx"|"balanced"|"metal")` controls how strict the template authoring surface is. In TSX mode, legacy string templates and untyped markers are rejected.
-  - `tsx` is named after TypeScript JSX-style authoring: strict, typed expression embedding.
-  - `balanced` is migration-friendly and accepts legacy string-template forms.
-  - `metal` is intentionally close to raw HEEx and should be rare.
+- Layered modes: `@:hxx_mode("tsx"|"balanced"|"metal")` controls how strict the template authoring surface is.
+
+### HXX Mode Contract
+
+| Mode | Use for | Allows legacy `hxx('...')` strings? | Allows raw `<% ... %>`? | Recommendation |
+| --- | --- | --- | --- | --- |
+| `tsx` | New application code and examples | No | No | Recommended/default authoring path |
+| `balanced` | Migration modules and demos | Yes | Only with `@:allow_heex` or `-D hxx_allow_raw_heex` | Compatibility path |
+| `metal` | Last-resort raw HEEx interop | Yes | Yes, with a compiler warning | Local escape hatch only |
+
+`tsx` is named after TypeScript JSX-style authoring: dynamic pieces are real typed host-language expressions, not string-rewritten mini-languages.
 
 `metal` here is a template-local escape hatch, not an application-wide compiler profile. For application authoring profiles, use `portable` or `Elixir-first`; both aim to generate idiomatic Elixir, with different priorities when portability and BEAM-native shape conflict.
 
@@ -40,7 +47,7 @@ Inline markup notes:
 Defaults / opt-out:
 - Inline markup rewrite is enabled by default for Phoenix-facing modules (`@:liveview`, `@:component`, etc.); opt out with `-D hxx_no_inline_markup` or `@:hxx_no_inline_markup`.
 - Force-enable per-module with `@:hxx_inline_markup` (useful for non-Phoenix modules).
-- Legacy escape hatch: `@:hxx_legacy` forces the older rewrite-to-`HXX.hxx("...")` behavior for that class.
+- Deprecated migration escape hatch: `@:hxx_legacy` forces the older rewrite-to-`HXX.hxx("...")` behavior for that class. Keep it only in legacy/balanced migration fixtures; it is rejected in `tsx` mode and emits a deprecation warning elsewhere.
 
 Interpolation note:
 - In inline markup, `${...}` segments are parsed into real Haxe expressions (`Context.parseInlineString`) and are fully type-checked by Haxe.
@@ -84,6 +91,8 @@ end
 - Raw `<% ... %>` blocks inside `hxx('...')` / `HXX.hxx('...')` are **disallowed by default**.
 - Opt-in escape hatch: add `@:allow_heex` to the enclosing function or class (or compile with `-D hxx_allow_raw_heex`).
 - Metal mode: `@:hxx_mode("metal")` allows raw `<% ... %>` without `@:allow_heex` (discouraged; emits warnings). This is scoped to HXX/HEEx authoring and should not be treated as a project-wide profile.
+
+`@:allow_heex` is invalid in `tsx` mode. If a template still needs raw HEEx, keep that scope in `balanced` with explicit `@:allow_heex`, or isolate it in `metal` until it can be rewritten.
 
 ### Assigns
 - `render(assigns: AssignsType)` is required; `@field` references are validated against `AssignsType`.
@@ -217,6 +226,19 @@ Note: The `{cond}` / `{pattern in expr}` headers inside template strings are not
 
 ## Extending the HXX type vocabulary
 
+## HXX Flags and Metadata Status
+
+| Surface | Status | Notes |
+| --- | --- | --- |
+| default / `-D hxx_mode=tsx` / `@:hxx_mode("tsx")` | Default | Strict typed authoring path for new code; explicit forms are only needed to override a non-TSX scope. |
+| `@:hxx_mode("balanced")` | Supported compatibility | Useful for migration modules that still need string templates. |
+| `@:hxx_mode("metal")` | Escape hatch | Allows raw HEEx and emits warnings when raw markers are present. |
+| `@:allow_heex` / `-D hxx_allow_raw_heex` | Escape hatch | Avoid in app code; invalid under `tsx`. Global define is migration-only. |
+| `@:hxx_legacy` | Deprecated migration-only | Emits a warning; rejected under `tsx`. Prefer typed inline markup or explicit balanced string templates. |
+| `@:hxx_no_inline_markup` / `-D hxx_no_inline_markup` | Supported opt-out | Use only when inline markup conflicts with non-template Haxe syntax. |
+| `@:hxx_inline_markup` | Supported opt-in | Enables inline markup for non-Phoenix helper modules. |
+| `-D hxx_allow_string_fallback` / `@:hxx_allow_string_fallback` | Debug/compatibility | Forces legacy string scanning when typed HEEx AST metadata is available; do not use as an app authoring mode. |
+
 You have two “vocabularies” you can extend:
 
 1) HTML element typing
@@ -304,7 +326,8 @@ Notes:
 
 ## Migration Tips
 
-- From HEEx: keep your template semantics identical; replace `~H` chunks with `hxx('...')`. Use Haxe types for assigns.
+- From HEEx: keep your template semantics identical; move the markup into inline Haxe markup (`return <div>...</div>`). Use Haxe types for assigns.
+- From older HXX: keep `hxx('...')` only in balanced migration modules, then migrate toward inline markup as you touch templates.
 - From Coconut UI/TSX: move client‑side interactivity to LiveView patterns (events, assigns) or to genes‑generated JS when needed. Keep shared validation in Haxe to use on both server and client.
 
 ## Roadmap to Full Parity
@@ -346,7 +369,7 @@ class Badge {
   // Server: HEEx (Phoenix LiveView)
   @:target("elixir")
   public function renderHeex():String {
-    return hxx('<span class="badge ${color()}">${label}</span>');
+    return <span class=${"badge " + color()}>${label}</span>;
   }
 
   // Client: JSX (ES6 via genes)

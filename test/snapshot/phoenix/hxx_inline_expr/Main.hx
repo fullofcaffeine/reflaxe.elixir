@@ -7,6 +7,7 @@ typedef Assigns = {
 	total_todos:Int
 }
 
+@:hxx_mode("balanced")
 class Main {
 	public static function render(assigns:Assigns):String {
 		return HXX.hxx('<div>Welcome, ${assigns.current_user.name}! (${assigns.total_todos})</div>');

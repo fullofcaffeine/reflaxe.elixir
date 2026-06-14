@@ -6,6 +6,7 @@ typedef Assigns = {
 	var form:phoenix.Phoenix.Form<elixir.types.Term>;
 }
 
+@:hxx_mode("balanced")
 class Main {
 	public static function render(assigns:Assigns):String {
 		return HXX.hxx('

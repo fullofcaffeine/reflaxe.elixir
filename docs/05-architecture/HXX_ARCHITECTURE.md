@@ -11,6 +11,7 @@ There is **no runtime HXX engine**: the generated Elixir contains standard Phoen
 
 Recommended template producers:
 
+- Inline markup: `return <div>${assigns.title}</div>;`
 - `phoenix.hxx.HeexTemplate.root/1` (and `root_ast/1` for TSX AST mode)
 - `phoenix.hxx.H.root/1` / `H.root_ast/1` (short aliases)
 
@@ -67,8 +68,9 @@ would otherwise produce empty/no‑runtime `.ex` files. This keeps generated pro
 ## Optional: Macro‑Validated HXX (Legacy path)
 
 There is also an optional macro implementation (`reflaxe.elixir.macros.HXX`) which can validate
-and pre‑process string literals, tagging them for the builder. The **recommended default** for
-applications is the `std/HXX.hx` stub + AST‑intercept path to avoid nested macro forwarding issues.
+and pre‑process string literals, tagging them for the builder. This is a compatibility path for
+legacy balanced-mode string templates. New application templates should use default inline markup
+instead.
 
 ## Optional: Inline Markup (Syntax Sugar)
 
@@ -79,7 +81,7 @@ compiler-intercepted template entrypoint: `phoenix.hxx.HeexTemplate.root(...)`.
 Implementation:
 - `src/reflaxe/elixir/macros/InlineMarkup.hx`
 - Default-on for Phoenix-facing modules; opt out with `-D hxx_no_inline_markup` / `@:hxx_no_inline_markup`
-- Legacy escape hatch: `@:hxx_legacy` forces the old rewrite-to-`HXX.hxx("...")` behavior for that class
+- Deprecated migration escape hatch: `@:hxx_legacy` forces the old rewrite-to-`HXX.hxx("...")` behavior for that class
 
 How it works (high-level):
 - Haxe parses `<div>...</div>` into an expression `@:markup "<div>...</div>"`.
@@ -106,13 +108,12 @@ Inline markup has no runtime cost. Compile-time overhead is a small additional A
 Haxe:
 
 ```haxe
-import HXX.*;
 import phoenix.types.Assigns;
 
 typedef AssignsData = { var title: String; }
 
 function render(assigns: Assigns<AssignsData>): String {
-  return hxx('<h1>${assigns.title}</h1>');
+  return <h1>${assigns.title}</h1>;
 }
 ```
 

@@ -6,6 +6,7 @@ typedef Assigns = {
 	var any:Bool;
 }
 
+@:hxx_mode("balanced")
 class Main {
 	public static function render(assigns:Assigns):String {
 		// Should fail: misspelled `placeholder` attribute.

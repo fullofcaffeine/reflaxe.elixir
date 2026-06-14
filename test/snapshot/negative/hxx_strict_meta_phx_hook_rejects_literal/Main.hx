@@ -7,6 +7,7 @@ typedef Assigns = {
 }
 
 @:hxx_strict_phx_hook
+@:hxx_mode("balanced")
 class Main {
 	public static function render(assigns:Assigns):String {
 		// Should fail under @:hxx_strict_phx_hook: literal phx-hook values are disallowed.

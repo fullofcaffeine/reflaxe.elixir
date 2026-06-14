@@ -7,7 +7,6 @@
 -D elixir_output=lib
 -D reflaxe_runtime
 -D reflaxe_elixir_strict
--D hxx_mode=tsx
 
 -D app_name=ElixirFirstLiveview
 

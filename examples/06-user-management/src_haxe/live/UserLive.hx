@@ -63,8 +63,6 @@ private typedef ErrorAssigns = {
 // @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
 
 @:liveview
-// @:hxx_mode: sets template authoring strictness mode for HXX/inline markup in this scope.
-@:hxx_mode("tsx")
 class UserLive {
 	public static function mount(_params:MountParams, _session:Session, socket:Socket<UserLiveAssigns>):MountResult<UserLiveAssigns> {
 		var users = Users.list_users();

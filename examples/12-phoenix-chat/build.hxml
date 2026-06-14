@@ -38,4 +38,3 @@ phoenix_chat_hx.utils.StringUtils
 phoenix_chat_hx.utils.MathHelper
 phoenix_chat_hx.live.AppLive
 phoenix_chat_hx.presence.ChatPresence
--D hxx_mode=tsx

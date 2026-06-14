@@ -12,7 +12,6 @@ typedef Assigns = {
 }
 
 @:liveview
-@:hxx_mode("tsx")
 class Main {
 	public static function render(assigns:Assigns):String {
 		return <div class="wrap ${assigns.klass}">

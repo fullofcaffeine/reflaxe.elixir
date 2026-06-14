@@ -10,6 +10,7 @@ typedef CardAssigns = {
 
 @:native("Test.Components")
 @:component
+@:hxx_mode("balanced")
 class Components {
 	@:component
 	public static function card(assigns:CardAssigns):String {
