@@ -1,7 +1,7 @@
 {
   "diff": {
     "intersection": {
-      "count": 87,
+      "count": 89,
       "modules": [
         "Array",
         "Date",
@@ -31,6 +31,8 @@
         "haxe.Int64Helper",
         "haxe.Json",
         "haxe.Log",
+        "haxe.Serializer",
+        "haxe.Unserializer",
         "haxe.crypto.Md5",
         "haxe.ds.BalancedTree",
         "haxe.ds.EnumValueMap",
@@ -107,7 +109,7 @@
       ]
     },
     "reference_only": {
-      "count": 117,
+      "count": 115,
       "modules": [
         "Any",
         "Class",
@@ -123,12 +125,10 @@
         "haxe.PosInfos",
         "haxe.Resource",
         "haxe.Rest",
-        "haxe.Serializer",
         "haxe.SysTools",
         "haxe.Template",
         "haxe.Timer",
         "haxe.Ucs2",
-        "haxe.Unserializer",
         "haxe.Utf8",
         "haxe.ValueException",
         "haxe.atomic.AtomicBool",
@@ -232,7 +232,7 @@
   "local": {
     "counts_by_prefix": {
       "<top-level>": 19,
-      "haxe": 47,
+      "haxe": 49,
       "sys": 30
     },
     "nonstdlib_modules_under_std_dir": [
@@ -259,8 +259,8 @@
       "std/_std",
       "src/haxe"
     ],
-    "total_candidates": 99,
-    "total_std_modules": 96
+    "total_candidates": 101,
+    "total_std_modules": 98
   },
   "reference": {
     "counts_by_prefix": {

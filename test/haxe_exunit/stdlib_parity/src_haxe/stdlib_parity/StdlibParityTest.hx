@@ -5,6 +5,8 @@ import haxe.Int64;
 import haxe.CallStack;
 import haxe.DynamicAccess;
 import haxe.Json;
+import haxe.Serializer;
+import haxe.Unserializer;
 import haxe.crypto.Md5;
 import haxe.ds.EnumValueMap;
 import haxe.ds.IntMap;
@@ -89,6 +91,43 @@ class StdlibParityTest extends TestCase {
 		var details = exception.details();
 		Assert.containsString(details, "details-probe");
 		Assert.containsString(details, "Called from ");
+	}
+
+	@:describe("haxe.Serializer / haxe.Unserializer")
+	@:test
+	function testSerializerPortableDataRoundTrip():Void {
+		var wire = Serializer.run(["alpha", 42, true, null]);
+		Assert.equals("ay5:alphai42tnh", wire);
+
+		var value:Array<Dynamic> = Unserializer.run(wire);
+		Assert.equals("alpha", value[0]);
+		Assert.equals(42, value[1]);
+		Assert.equals(true, value[2]);
+		Assert.isNull(value[3]);
+	}
+
+	@:describe("haxe.Serializer / haxe.Unserializer")
+	@:test
+	function testSerializerNativeMapRoundTrip():Void {
+		var map = new StringMap<Int>();
+		map.set("one", 1);
+		map.set("two", 2);
+
+		var wire = Serializer.run(map);
+		var value:StringMap<Int> = Unserializer.run(wire);
+
+		Assert.equals(1, value.get("one"));
+		Assert.equals(2, value.get("two"));
+	}
+
+	@:describe("haxe.Serializer / haxe.Unserializer")
+	@:test
+	function testSerializerInstanceBuffer():Void {
+		var serializer = new Serializer();
+		serializer.serialize("prefix");
+		serializer.serialize(7);
+
+		Assert.equals("y6:prefixi7", serializer.toString());
 	}
 
 	@:describe("haxe.iterators.ArrayIterator runtime semantics")

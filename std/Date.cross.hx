@@ -102,6 +102,7 @@ import elixir.DateTime.Date as ElixirDate;
  * These extensions are only available when compiling to Elixir and don't
  * affect cross-platform compatibility of standard Date usage.
  */
+@:runtimeValue
 @:forward(year, month, day, hour, minute, second, microsecond, time_zone)
 abstract Date(DateTime) from DateTime to DateTime {
 	// ==============================

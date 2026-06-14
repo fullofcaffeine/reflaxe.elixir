@@ -58,6 +58,8 @@ Top-level:
 - `haxe.CallStack` (BEAM stack capture/formatting)
 - `haxe.Http`
 - `haxe.Log`
+- `haxe.Serializer` (portable data subset)
+- `haxe.Unserializer` (portable data subset)
 - `haxe.ds.BalancedTree`
 - `haxe.ds.EnumValueMap` (bootstrap-safe override under `src/haxe/ds`)
 - `haxe.ds.Option`
@@ -119,6 +121,25 @@ Notes:
 - Built-in map surfaces (`haxe.ds.Map`, `StringMap`, `IntMap`) are represented as native Elixir `%{}` maps and lowered to idiomatic `Map.*` operations.
 - `haxe.ds.ObjectMap` is intentionally unsupported for Elixir output code for now. Haxe ObjectMap requires object-identity keys, but BEAM map keys are structural terms. The compiler rejects construction and direct method calls instead of silently lowering them to structural `%{}` behavior. See `docs/05-architecture/ITERATOR_RUNTIME_MODEL.md`.
 - Some exist to avoid invalid Elixir from upstream inline patterns (notably parts of `haxe.io`).
+
+### `haxe.Serializer` / `haxe.Unserializer` BEAM contract
+
+`haxe.Serializer` and `haxe.Unserializer` use the standard Haxe serialization wire prefixes for the portable BEAM data subset.
+
+Supported today:
+- nulls, booleans, integers, floats, and strings
+- arrays/lists as `a...h`
+- native string-key maps and anonymous maps as object records (`o...g`)
+- `Serializer.run(value)` / `Unserializer.run(value)`
+- instance buffering through `new Serializer(); serialize(...); toString()`
+
+Not yet supported:
+- class instances, enum values, `Date`, `haxe.io.Bytes`, `haxe.ds.ObjectMap`, object/reference caches, and custom `hxSerialize` / `hxUnserialize`
+- class/enum resolver behavior in `Unserializer`
+
+Notes:
+- Native Elixir maps do not carry the original Haxe map abstract type at runtime, so the supported map encoding uses object-record semantics and round-trips to a native map.
+- Coverage: `test/snapshot/stdlib/haxe_serializer_basic` locks emitted shape; `test:haxe-exunit-stdlib` covers portable array, native map, and instance-buffer round-trips.
 
 ### `haxe.CallStack` BEAM contract
 

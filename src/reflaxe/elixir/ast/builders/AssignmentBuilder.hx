@@ -76,7 +76,7 @@ class AssignmentBuilder {
 			default:
 		}
 
-		var localField = detectLocalFieldAssign(e1);
+		var localField = detectLocalFieldAssign(e1, context);
 		var pattern:EPattern = (localField != null) ? EPattern.PVar(localField.baseVarName) : PatternBuilder.extractPattern(e1, context);
 
 		// Flatten nested underscore assignment: x = _ = expr → x = expr
@@ -132,7 +132,7 @@ class AssignmentBuilder {
 	}
 
 	static function buildAssignOp(innerOp:Binop, e1:TypedExpr, e2:TypedExpr, context:CompilationContext):Null<ElixirASTDef> {
-		var localField = detectLocalFieldAssign(e1);
+		var localField = detectLocalFieldAssign(e1, context);
 		if (localField != null) {
 			// base.field <op>= rhs  ->  base = update(base, field, base.field <op> rhs)
 			var leftAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e1, context);
@@ -160,7 +160,7 @@ class AssignmentBuilder {
 		return matchNode.def;
 	}
 
-	static function detectLocalFieldAssign(e:TypedExpr):Null<LocalFieldAssign> {
+	static function detectLocalFieldAssign(e:TypedExpr, context:CompilationContext):Null<LocalFieldAssign> {
 		return switch (e.expr) {
 			case TField(baseExpr, fa):
 				switch (baseExpr.expr) {
@@ -190,6 +190,27 @@ class AssignmentBuilder {
 							baseVarId: v.id,
 							fieldNameSnake: fieldNameSnake,
 							isStruct: isStruct
+						};
+					case TConst(TThis):
+						var compilationCtx = context;
+						if (compilationCtx == null || compilationCtx.currentReceiverParamName == null)
+							return null;
+						var baseVarName = compilationCtx.currentReceiverParamName;
+
+						var rawFieldName = switch (fa) {
+							case FInstance(_, _, cf): cf.get().name;
+							case FStatic(_, cf): cf.get().name;
+							case FAnon(cf): cf.get().name;
+							case FClosure(_, cf): cf.get().name;
+							case FEnum(_, ef): ef.name;
+							case FDynamic(s): s;
+						};
+
+						{
+							baseVarName: baseVarName,
+							baseVarId: -1,
+							fieldNameSnake: NameUtils.toSnakeCase(rawFieldName),
+							isStruct: true
 						};
 					default:
 						null;

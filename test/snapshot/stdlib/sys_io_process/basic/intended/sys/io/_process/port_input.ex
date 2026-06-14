@@ -30,7 +30,7 @@ defmodule PortInput do
         )
     _ = Bytes.of_data(data)
   end
-  def read_bytes(_struct, buf, pos, len) do
+  def read_bytes(struct, buf, pos, len) do
     if (pos < 0 or len < 0 or pos + len > buf.length) do
       raise Reflaxe.Elixir.HaxeThrow, [value: {:outside_bounds}]
     end
@@ -38,7 +38,37 @@ defmodule PortInput do
       0
     else
       total_read = 0
-      _ = total_read
+      {total_read} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {total_read}, fn _, {acc_total_read} ->
+        try do
+          if (acc_total_read < len) do
+            if (not ensure_buffered(struct)) do
+              throw({:break, {acc_total_read}})
+            end
+            available = (struct.buffer.length - struct.buffer_offset)
+            remaining = (len - acc_total_read)
+            to_copy = if (remaining < available), do: remaining, else: available
+            _ = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :blit, [buf, pos + acc_total_read, struct.buffer, struct.buffer_offset, to_copy])
+            _ = %{struct | buffer_offset: struct.buffer_offset + to_copy}
+            acc_total_read = acc_total_read + to_copy
+            {:cont, {acc_total_read}}
+          else
+            {:halt, {acc_total_read}}
+          end
+        catch
+          :throw, {:break, break_state} ->
+            {:halt, break_state}
+          :throw, {:continue, continue_state} ->
+            {:cont, continue_state}
+          :throw, :break ->
+            {:halt, {acc_total_read}}
+          :throw, :continue ->
+            {:cont, {acc_total_read}}
+        end
+      end)
+      if (total_read == 0) do
+        raise Reflaxe.Elixir.HaxeThrow, [value: Eof.new()]
+      end
+      total_read
     end
   end
   defp ensure_buffered(struct) do

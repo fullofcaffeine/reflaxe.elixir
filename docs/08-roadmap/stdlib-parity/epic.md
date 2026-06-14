@@ -37,7 +37,7 @@ Related work:
 
 ## Current status (rolling)
 
-- Latest gap report: **117 missing** modules (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
+- Latest gap report: **115 missing** modules (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
 - Recently closed (high leverage):
   - `haxe.Int32`, `haxe.Int64`, `haxe.Int64Helper` (deterministic overflow + bitwise semantics on BEAM)
   - `haxe.ds.Map` + `haxe.ds.StringMap`/`IntMap`/`ObjectMap` surfaces (native `%{}` backend; lowered to `Map.*`)
@@ -151,8 +151,10 @@ Goal: make `Map` usage predictable and eliminate “native map vs Haxe map” tr
 - Runtime tests: parse/print, comparisons, arithmetic edge cases (document expectations).
 
 **Task cluster: `haxe.Serializer` + `haxe.Unserializer`**
-- Only if we want portability claims for libs that rely on them (common in some ecosystems).
-- Runtime tests: round-trip, malformed input errors, compatibility notes.
+- Status: portable data subset implemented for BEAM (`null`/bool/int/float/string, arrays/lists, native maps/anonymous objects).
+- Contract: emits standard Haxe wire prefixes for supported values; map values round-trip as native BEAM maps because target maps do not carry the original Haxe map abstract at runtime.
+- Remaining: class instances, enums, `Date`, `Bytes`, object/reference caches, custom `hxSerialize` / `hxUnserialize`, and resolver behavior.
+- Coverage: `test/snapshot/stdlib/haxe_serializer_basic` and Haxe-authored ExUnit runtime tests in `test:haxe-exunit-stdlib`.
 
 ### Phase 3 — `sys.*` integration (BEAM/OTP idioms; explicitly scoped)
 
@@ -201,6 +203,7 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
    - Done: `haxe.Exception`
    - Done: `haxe.Int32`, `haxe.Int64`, `haxe.Int64Helper`
    - Done: `haxe.CallStack`
+   - Done: `haxe.Serializer` / `haxe.Unserializer` portable data subset
    - Next: remaining `haxe.io.*` utilities as-needed
 
 3) **`sys.*` runtime integration**
@@ -208,7 +211,7 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
    - Guardrails: BEAM/OTP idioms, avoid pretending POSIX semantics exist where they don’t.
 
 4) **Parsers/serializers**
-   - Prioritize: `haxe.Serializer` / `haxe.Unserializer` (if required by downstream libs)
+   - Next: expand `haxe.Serializer` / `haxe.Unserializer` beyond the portable data subset if downstream libraries require classes/enums/custom serialization
 
 ## Tracking
 

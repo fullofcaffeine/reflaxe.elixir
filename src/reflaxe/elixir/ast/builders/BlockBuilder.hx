@@ -993,17 +993,23 @@ class BlockBuilder {
 				// CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
 				// Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
 				var compiled = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
-				if (compiled != null) {
+				if (compiled != null && compiled.def != null) {
 					expressions.push(compiled);
 				}
 			}
 
 			// Check for combining TVar and TBinop patterns
 			if (expressions.length >= 2) {
-				var combined = attemptStatementCombining(expressions);
-				if (combined != null) {
-					result = combined;
-					didSetResult = true;
+				var shouldAttemptCombining = expressions.length == 2 || switch ([expressions[0].def, expressions[1].def]) {
+					case [EMatch(PVar(_), _), EIf(_, _, _)]: true;
+					default: false;
+				};
+				if (shouldAttemptCombining) {
+					var combined = attemptStatementCombining(expressions);
+					if (combined != null) {
+						result = combined;
+						didSetResult = true;
+					}
 				}
 			}
 

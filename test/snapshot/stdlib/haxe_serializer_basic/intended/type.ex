@@ -61,7 +61,8 @@ defmodule Type do
     case e do mod when is_atom(mod) -> mod |> Module.split() |> Enum.join("."); _ -> nil end
   end
   def resolve_class(name) do
-    case name do
+    
+case name do
   nil -> nil
   "String" -> String
   "Array" -> Array
@@ -72,9 +73,11 @@ defmodule Type do
   other ->
     other
 end
+
   end
   def resolve_enum(name) do
-    case name do
+    
+case name do
   nil -> nil
   binary when is_binary(binary) ->
     binary
@@ -83,6 +86,7 @@ end
   other ->
     other
 end
+
   end
   def is_type(value, t) do
     case value do %{__struct__: mod} -> mod == t; _ -> false end

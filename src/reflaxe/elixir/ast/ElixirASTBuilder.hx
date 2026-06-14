@@ -1800,28 +1800,91 @@ class ElixirASTBuilder {
 						// - Prefix (++x / --x): returns the *new* value after rebinding.
 						// - Postfix (x++ / x--): returns the *old* value and then rebinds.
 						var one = makeAST(EInteger(1));
-						var built = buildFromTypedExpr(e, currentContext);
-						var targetVar:Null<String> = switch (built.def) {
-							case EVar(n): n;
-							default: null;
-						};
 						var arithmeticOp = (op == OpIncrement) ? Add : Subtract;
-						if (targetVar != null) {
+						var thisFieldName:Null<String> = switch (e.expr) {
+							case TField({expr: TConst(TThis)}, fa):
+								var rawFieldName = switch (fa) {
+									case FInstance(_, _, cf): cf.get().name;
+									case FStatic(_, cf): cf.get().name;
+									case FAnon(cf): cf.get().name;
+									case FClosure(_, cf): cf.get().name;
+									case FEnum(_, ef): ef.name;
+									case FDynamic(s): s;
+								};
+								reflaxe.elixir.ast.NameUtils.toSnakeCase(rawFieldName);
+							default:
+								null;
+						};
+						if (thisFieldName != null && currentContext.currentReceiverParamName != null) {
+							var receiverName = currentContext.currentReceiverParamName;
+							var receiver = makeAST(EVar(receiverName));
+							var currentField = makeAST(EField(receiver, thisFieldName));
+							var updatedField = makeAST(EBinary(arithmeticOp, currentField, one));
+							var updatedReceiver = makeAST(EStructUpdate(receiver, [{key: thisFieldName, value: updatedField}]));
 							if (postFix) {
-								// old = x; x = x + 1; old
-								var oldVarName = "__old_" + targetVar;
+								var oldFieldVarName = "__old_" + receiverName + "_" + thisFieldName;
 								EParen(makeAST(EBlock([
-									makeAST(EMatch(PVar(oldVarName), makeAST(EVar(targetVar)))),
-									makeAST(EMatch(PVar(targetVar), makeAST(EBinary(arithmeticOp, makeAST(EVar(targetVar)), one)))),
-									makeAST(EVar(oldVarName))
+									makeAST(EMatch(PVar(oldFieldVarName), currentField)),
+									makeAST(EMatch(PVar(receiverName), updatedReceiver)),
+									makeAST(EVar(oldFieldVarName))
 								])));
 							} else {
-								// x = x + 1
-								EMatch(PVar(targetVar), makeAST(EBinary(arithmeticOp, makeAST(EVar(targetVar)), one)));
+								EParen(makeAST(EBlock([
+									makeAST(EMatch(PVar(receiverName), updatedReceiver)),
+									makeAST(EField(receiver, thisFieldName))
+								])));
 							}
 						} else {
-							// Fallback: compute the arithmetic value when we can't safely rebind.
-							EBinary(arithmeticOp, built, one);
+							var built = buildFromTypedExpr(e, currentContext);
+							var targetVar:Null<String> = switch (built != null ? built.def : null) {
+								case EVar(n): n;
+								default: null;
+							};
+							if (targetVar != null) {
+								if (postFix) {
+									// old = x; x = x + 1; old
+									var oldVarName = "__old_" + targetVar;
+									EParen(makeAST(EBlock([
+										makeAST(EMatch(PVar(oldVarName), makeAST(EVar(targetVar)))),
+										makeAST(EMatch(PVar(targetVar), makeAST(EBinary(arithmeticOp, makeAST(EVar(targetVar)), one)))),
+										makeAST(EVar(oldVarName))
+									])));
+								} else {
+									// x = x + 1
+									EMatch(PVar(targetVar), makeAST(EBinary(arithmeticOp, makeAST(EVar(targetVar)), one)));
+								}
+							} else {
+								switch (built != null ? built.def : null) {
+									case EField(receiver, fieldName):
+										switch (receiver.def) {
+											case EVar(receiverName):
+												var currentField = makeAST(EField(receiver, fieldName));
+												var updatedField = makeAST(EBinary(arithmeticOp, currentField, one));
+												var updatedReceiver = makeAST(EStructUpdate(receiver, [{key: fieldName, value: updatedField}]));
+												if (postFix) {
+													// old = receiver.field; receiver = %{receiver | field: receiver.field + 1}; old
+													var oldFieldVarName = "__old_" + receiverName + "_" + fieldName;
+													EParen(makeAST(EBlock([
+														makeAST(EMatch(PVar(oldFieldVarName), currentField)),
+														makeAST(EMatch(PVar(receiverName), updatedReceiver)),
+														makeAST(EVar(oldFieldVarName))
+													])));
+												} else {
+													// receiver = %{receiver | field: receiver.field + 1}; receiver.field
+													EParen(makeAST(EBlock([
+														makeAST(EMatch(PVar(receiverName), updatedReceiver)),
+														makeAST(EField(receiver, fieldName))
+													])));
+												}
+											default:
+												// Fallback: compute the arithmetic value when we can't safely rebind.
+												EBinary(arithmeticOp, built, one);
+										}
+									default:
+										// Fallback: compute the arithmetic value when we can't safely rebind.
+										EBinary(arithmeticOp, built, one);
+								}
+							}
 						}
 					case OpSpread:
 						// Spread operator for destructuring

@@ -6,6 +6,7 @@ enum ValueType {
 	TInt;
 	TFloat;
 	TBool;
+	TFunction;
 	TObject;
 	TClass(c:Class<Dynamic>);
 	TEnum(e:Enum<Dynamic>);
@@ -24,14 +25,18 @@ class Type {
 	public static function typeof(value:Dynamic):ValueType {
 		return untyped __elixir__('
       case {0} do
-        nil -> {:TNull}
-        val when is_integer(val) -> {:TInt}
-        val when is_float(val) -> {:TFloat}
-        val when is_boolean(val) -> {:TBool}
-        %{__struct__: mod} -> {:TClass, mod}
-        val when is_tuple(val) and tuple_size(val) > 0 and is_atom(elem(val, 0)) -> {:TEnum, nil}
-        val when is_map(val) -> {:TObject}
-        _ -> {:TUnknown}
+        nil -> {:t_null}
+        val when is_integer(val) -> {:t_int}
+        val when is_float(val) -> {:t_float}
+        val when is_boolean(val) -> {:t_bool}
+        val when is_function(val) -> {:t_function}
+        val when is_binary(val) -> {:t_class, String}
+        val when is_list(val) -> {:t_class, Array}
+        %{__reflaxe_class__: mod} -> {:t_class, mod}
+        %{__struct__: mod} -> {:t_class, mod}
+        val when is_tuple(val) and tuple_size(val) > 0 and is_atom(elem(val, 0)) -> {:t_enum, nil}
+        val when is_map(val) -> {:t_object}
+        _ -> {:t_unknown}
       end
     ', value);
 	}
@@ -76,7 +81,7 @@ class Type {
 
 	/** Gets the class/module of an instance. */
 	public static function getClass<T>(object:T):Class<T> {
-		return untyped __elixir__('case {0} do %{__struct__: mod} -> mod; _ -> nil end', object);
+		return untyped __elixir__('case {0} do %{__reflaxe_class__: mod} -> mod; %{__struct__: mod} -> mod; _ -> nil end', object);
 	}
 
 	/** Gets the superclass of a class (always nil in Elixir). */
@@ -93,6 +98,34 @@ class Type {
 	/** Gets the enum name as a string. */
 	public static function getEnumName(e:Enum<Dynamic>):String {
 		return untyped __elixir__('case {0} do mod when is_atom(mod) -> mod |> Module.split() |> Enum.join(\".\"); _ -> nil end', e);
+	}
+
+	/** Resolves a serialized Haxe class name to the target module atom. */
+	public static function resolveClass(name:String):Class<Dynamic> {
+		return cast untyped __elixir__('case {0} do
+  nil -> nil
+  "String" -> String
+  "Array" -> Array
+  binary when is_binary(binary) ->
+    binary
+    |> String.split(".")
+    |> Module.concat()
+  other ->
+    other
+end', name);
+	}
+
+	/** Resolves a serialized Haxe enum name to the target module atom. */
+	public static function resolveEnum(name:String):Enum<Dynamic> {
+		return cast untyped __elixir__('case {0} do
+  nil -> nil
+  binary when is_binary(binary) ->
+    binary
+    |> String.split(".")
+    |> Module.concat()
+  other ->
+    other
+end', name);
 	}
 
 	/** Checks if an object is of a specific type. */
