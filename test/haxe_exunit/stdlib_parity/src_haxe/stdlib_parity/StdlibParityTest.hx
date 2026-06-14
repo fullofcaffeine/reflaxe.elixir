@@ -6,6 +6,7 @@ import haxe.CallStack;
 import haxe.DynamicAccess;
 import haxe.Json;
 import haxe.Serializer;
+import haxe.Template;
 import haxe.Unserializer;
 import haxe.crypto.Md5;
 import haxe.ds.EnumValueMap;
@@ -128,6 +129,32 @@ class StdlibParityTest extends TestCase {
 		serializer.serialize(7);
 
 		Assert.equals("y6:prefixi7", serializer.toString());
+	}
+
+	@:describe("haxe.Template")
+	@:test
+	function testTemplatePortableRendering():Void {
+		var template = new Template("Hello ::user.name::! ::if enabled::on::else::off::end:: ::foreach items::::label::=::value::;::end::");
+		var rendered = template.execute({
+			enabled: true,
+			user: {name: "BEAM"},
+			items: [{label: "a", value: 1}, {label: "b", value: 2}]
+		});
+
+		Assert.equals("Hello BEAM! on a=1;b=2;", rendered);
+	}
+
+	@:describe("haxe.Template")
+	@:test
+	function testTemplateMacroRendering():Void {
+		var template = new Template("$$upper(name)");
+		var rendered = template.execute({name: "beam"}, {
+			upper: function(resolve:String->String, name:String):String {
+				return name.toUpperCase();
+			}
+		});
+
+		Assert.equals("BEAM", rendered);
 	}
 
 	@:describe("haxe.iterators.ArrayIterator runtime semantics")

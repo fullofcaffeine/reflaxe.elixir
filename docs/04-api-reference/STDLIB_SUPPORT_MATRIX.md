@@ -59,6 +59,7 @@ Top-level:
 - `haxe.Http`
 - `haxe.Log`
 - `haxe.Serializer` (portable data subset)
+- `haxe.Template` (portable rendering subset)
 - `haxe.Unserializer` (portable data subset)
 - `haxe.ds.BalancedTree`
 - `haxe.ds.EnumValueMap` (bootstrap-safe override under `src/haxe/ds`)
@@ -140,6 +141,25 @@ Not yet supported:
 Notes:
 - Native Elixir maps do not carry the original Haxe map abstract type at runtime, so the supported map encoding uses object-record semantics and round-trips to a native map.
 - Coverage: `test/snapshot/stdlib/haxe_serializer_basic` locks emitted shape; `test:haxe-exunit-stdlib` covers portable array, native map, and instance-buffer round-trips.
+
+### `haxe.Template` BEAM contract
+
+`haxe.Template` uses a BEAM-native renderer for the portable template subset instead of lowering the upstream mutable parser directly.
+
+Supported today:
+- variable interpolation with `::name::` and dotted paths such as `::user.name::`
+- `::if expr::...::else::...::end::` where expressions are booleans, null, numbers, quoted strings, negation, or lookups
+- `::foreach items::...::end::` over lists and maps
+- macro calls such as `$$upper(name)` through the `execute(context, macros)` macro object
+
+Not yet supported:
+- the full upstream expression parser, including arithmetic/comparison operators inside template expressions
+- object-identity-sensitive iteration semantics; maps iterate over values in BEAM map order
+
+Notes:
+- `Template.globals` remains available and is consulted after the local context stack.
+- Missing lookups render as `null`, matching the target's `Std.string(null)` behavior.
+- Coverage: `test/snapshot/stdlib/haxe_template_basic` locks emitted shape; `test:haxe-exunit-stdlib` covers interpolation, conditionals, loops, and macros on BEAM.
 
 ### `haxe.CallStack` BEAM contract
 

@@ -156,6 +156,12 @@ Goal: make `Map` usage predictable and eliminate “native map vs Haxe map” tr
 - Remaining: class instances, enums, `Date`, `Bytes`, object/reference caches, custom `hxSerialize` / `hxUnserialize`, and resolver behavior.
 - Coverage: `test/snapshot/stdlib/haxe_serializer_basic` and Haxe-authored ExUnit runtime tests in `test:haxe-exunit-stdlib`.
 
+**Task: `haxe.Template`**
+- Status: portable rendering subset implemented with a BEAM-native renderer.
+- Contract: supports `::name::` / dotted interpolation, `::if::` / `::else::` / `::end::`, `::foreach::` over lists/maps, and `$$macro(...)` callback execution through `execute(context, macros)`.
+- Remaining: full upstream expression-parser parity, including arithmetic/comparison operators inside template expressions.
+- Coverage: `test/snapshot/stdlib/haxe_template_basic` and Haxe-authored ExUnit runtime tests in `test:haxe-exunit-stdlib`.
+
 ### Phase 3 — `sys.*` integration (BEAM/OTP idioms; explicitly scoped)
 
 The gap report shows remaining `sys.*` gaps are mostly `sys.db.*` and smaller host/process surfaces.
@@ -204,6 +210,7 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
    - Done: `haxe.Int32`, `haxe.Int64`, `haxe.Int64Helper`
    - Done: `haxe.CallStack`
    - Done: `haxe.Serializer` / `haxe.Unserializer` portable data subset
+   - Done: `haxe.Template` portable rendering subset
    - Next: remaining `haxe.io.*` utilities as-needed
 
 3) **`sys.*` runtime integration**
@@ -211,6 +218,7 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
    - Guardrails: BEAM/OTP idioms, avoid pretending POSIX semantics exist where they don’t.
 
 4) **Parsers/serializers**
+   - Done: `haxe.Template` portable rendering subset
    - Next: expand `haxe.Serializer` / `haxe.Unserializer` beyond the portable data subset if downstream libraries require classes/enums/custom serialization
 
 ## Tracking
