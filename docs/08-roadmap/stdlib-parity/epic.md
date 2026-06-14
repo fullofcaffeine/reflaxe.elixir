@@ -37,7 +37,7 @@ Related work:
 
 ## Current status (rolling)
 
-- Latest gap report: **118 missing** modules (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
+- Latest gap report: **117 missing** modules (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
 - Recently closed (high leverage):
   - `haxe.Int32`, `haxe.Int64`, `haxe.Int64Helper` (deterministic overflow + bitwise semantics on BEAM)
   - `haxe.ds.Map` + `haxe.ds.StringMap`/`IntMap`/`ObjectMap` surfaces (native `%{}` backend; lowered to `Map.*`)
@@ -142,8 +142,9 @@ Goal: make `Map` usage predictable and eliminate “native map vs Haxe map” tr
 ### Phase 2 — Core “ecosystem blockers” (small set; big payoff)
 
 **Task: `haxe.CallStack`**
-- Provide correct types + behavior for stack capture/formatting that integrates with our exception model.
-- Runtime tests: capture is non-empty; formatting stable; integration with `haxe.Exception.details()`.
+- Status: implemented for BEAM stack capture/formatting and integrated with generated `try/catch` plus `haxe.Exception.details()`.
+- Contract: `callStack()` captures `Process.info(self(), :current_stacktrace)`; generated rescues save `__STACKTRACE__` so `exceptionStack()` can return the last caught stack.
+- Coverage: `test/snapshot/stdlib/haxe_callstack` and Haxe-authored ExUnit runtime tests in `test:haxe-exunit-stdlib`.
 
 **Task: `haxe.Int64`**
 - Implement minimal correct semantics for arithmetic/comparison/printing.
@@ -199,7 +200,8 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
    - Done (core building blocks): `haxe.io.BufferInput`, `haxe.io.BytesBuffer`, `haxe.io.BytesInput`, `haxe.io.BytesOutput`, `haxe.io.FPHelper`, `haxe.Json`
    - Done: `haxe.Exception`
    - Done: `haxe.Int32`, `haxe.Int64`, `haxe.Int64Helper`
-   - Next: `haxe.CallStack`, and remaining `haxe.io.*` utilities as-needed
+   - Done: `haxe.CallStack`
+   - Next: remaining `haxe.io.*` utilities as-needed
 
 3) **`sys.*` runtime integration**
    - Prioritize: `sys.db.*` and remaining smaller host/process surfaces

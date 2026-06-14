@@ -12,6 +12,7 @@ defmodule Main do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Error code: " <> Kernel.to_string(error_code)]
     rescue
       haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
@@ -28,6 +29,7 @@ end), haxe_exception} do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Changeset has errors: " <> (if (not Kernel.is_nil(errors)), do: errors.to_string.(), else: "null")]
     rescue
       haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
@@ -43,6 +45,7 @@ end), haxe_exception} do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Failed to process: " <> format_data(process_data(data))]
     rescue
       haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
@@ -58,6 +61,7 @@ end), haxe_exception} do
       raise Reflaxe.Elixir.HaxeThrow, [value: "User " <> user <> " cannot " <> action <> " resource " <> resource]
     rescue
       haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
@@ -73,6 +77,7 @@ end), haxe_exception} do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Value is: " <> (if (Kernel.is_nil(maybe_value)), do: "nil", else: maybe_value)]
     rescue
       haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
@@ -88,6 +93,7 @@ end), haxe_exception} do
       raise Reflaxe.Elixir.HaxeThrow, [value: CustomError.new("Error in " <> module <> "." <> func)]
     rescue
       haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception

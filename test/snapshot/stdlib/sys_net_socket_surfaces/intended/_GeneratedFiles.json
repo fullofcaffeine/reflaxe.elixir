@@ -11,7 +11,6 @@
   "sys/net/_socket/socket_input.ex",
   "sys/net/_address/address_state.ex",
   "string_tools.ex",
-  "string_buf.ex",
   "std.ex",
   "reflaxe/exception.ex",
   "reflaxe/elixir/haxe_throw.ex",
@@ -26,7 +25,8 @@
   "haxe/io/bytes.ex",
   "haxe/int64_helper.ex",
   "haxe/exceptions/pos_exception.ex",
-  "haxe/exceptions/not_implemented_exception.ex"
+  "haxe/exceptions/not_implemented_exception.ex",
+  "haxe/_call_stack/call_stack_impl_.ex"
 ],
   "id": 0,
   "wasCached": false,

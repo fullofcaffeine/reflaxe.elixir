@@ -55,6 +55,7 @@ Top-level:
 - `Xml` (parse/print, attributes, child iteration, parent links)
 
 `haxe.*`:
+- `haxe.CallStack` (BEAM stack capture/formatting)
 - `haxe.Http`
 - `haxe.Log`
 - `haxe.ds.BalancedTree`
@@ -118,6 +119,22 @@ Notes:
 - Built-in map surfaces (`haxe.ds.Map`, `StringMap`, `IntMap`) are represented as native Elixir `%{}` maps and lowered to idiomatic `Map.*` operations.
 - `haxe.ds.ObjectMap` is intentionally unsupported for Elixir output code for now. Haxe ObjectMap requires object-identity keys, but BEAM map keys are structural terms. The compiler rejects construction and direct method calls instead of silently lowering them to structural `%{}` behavior. See `docs/05-architecture/ITERATOR_RUNTIME_MODEL.md`.
 - Some exist to avoid invalid Elixir from upstream inline patterns (notably parts of `haxe.io`).
+
+### `haxe.CallStack` BEAM contract
+
+`haxe.CallStack` maps BEAM stacktrace entries into Haxe `StackItem` values. A BEAM frame such as
+`{Module, function, arity, location}` becomes `FilePos(Method(module, function), file, line)`.
+
+Supported today:
+- `CallStack.callStack()` captures the current BEAM process stack with `Process.info(self(), :current_stacktrace)`.
+- `CallStack.exceptionStack(true)` returns the last rescued Elixir `__STACKTRACE__` saved by generated Haxe `try/catch`.
+- `CallStack.exceptionStack(false)` subtracts the current call stack from the saved exception stack, matching Haxe's default API shape.
+- `CallStack.toString(stack)`, `copy()`, `subtract()`, and array access are available on the Elixir target.
+- `haxe.Exception` now captures a creation stack and includes stack text in `details()`.
+
+Notes:
+- BEAM stack frames use Elixir/Erlang module and function names after lowering, so output is target-native rather than source-mapped Haxe locations.
+- Coverage: `test/snapshot/stdlib/haxe_callstack` locks emitted shape; `test:haxe-exunit-stdlib` covers runtime stack capture, exception stack capture, formatting, subtraction, and `haxe.Exception.details()`.
 
 ### `haxe.Http` / `sys.Http` BEAM contract
 

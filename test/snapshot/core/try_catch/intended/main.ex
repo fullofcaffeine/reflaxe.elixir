@@ -5,6 +5,7 @@ defmodule Main do
       ""
     rescue
       haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
@@ -22,6 +23,7 @@ end), haxe_exception} do
       ""
     rescue
       haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
@@ -48,6 +50,7 @@ end), haxe_exception} do
         end)
       rescue
         haxe_exception ->
+          Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
           (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
@@ -80,6 +83,7 @@ end), haxe_exception} do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Error during operation"]
     rescue
       haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
@@ -93,6 +97,7 @@ end), haxe_exception} do
       nil
     rescue
       haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
@@ -108,6 +113,7 @@ end), haxe_exception} do
         raise Reflaxe.Elixir.HaxeThrow, [value: "Inner error"]
       rescue
         haxe_exception ->
+          Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
           (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
@@ -120,6 +126,7 @@ end), haxe_exception} do
       "no_error"
     rescue
       haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
@@ -139,6 +146,7 @@ end), haxe_exception} do
       "no_error"
     rescue
       haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
@@ -168,6 +176,7 @@ end), haxe_exception} do
       "no_error"
     rescue
       haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
@@ -188,6 +197,7 @@ end), haxe_exception} do
         raise Reflaxe.Elixir.HaxeThrow, [value: Reflaxe.Exception.new("Original error", nil, nil)]
       rescue
         haxe_exception ->
+          Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
           (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
@@ -200,6 +210,7 @@ end), haxe_exception} do
       "no_error"
     rescue
       haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
@@ -223,6 +234,7 @@ end), haxe_exception} do
       "no_error"
     rescue
       haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
@@ -249,6 +261,7 @@ end), haxe_exception} do
       parsed
     rescue
       haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
@@ -270,6 +283,7 @@ end), haxe_exception} do
       parsed
     rescue
       haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception

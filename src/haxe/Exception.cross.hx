@@ -55,8 +55,7 @@ class Exception {
 	/**
 	 * The call stack at the moment of the exception creation.
 	 *
-	 * NOTE: We currently store stack as an opaque value (default `[]`) to keep the
-	 * shape stable without depending on `haxe.NativeStackTrace` parity yet.
+	 * Captured from `haxe.CallStack.callStack()` when the exception is created.
 	 */
 	public var stack(get, never):CallStack;
 
@@ -117,7 +116,7 @@ class Exception {
 		untyped __elixir__('{0} = %{ {0} | message: {1} }', this, message);
 		untyped __elixir__('{0} = %{ {0} | previous: {1} }', this, previous);
 		untyped __elixir__('{0} = %{ {0} | native: {1} }', this, native);
-		untyped __elixir__('{0} = %{ {0} | stack: [] }', this);
+		untyped __elixir__('{0} = %{ {0} | stack: apply(CallStack_Impl_, :call_stack, []) }', this);
 	}
 
 	private function unwrap():Any {
@@ -137,8 +136,11 @@ build = fn build, ex, acc ->
     acc
   else
     msg = Kernel.to_string(Map.get(ex, :message))
+    stack = Map.get(ex, :stack, [])
+    stack_text = apply(CallStack_Impl_, :to_string, [stack])
     prev = Map.get(ex, :previous)
-    acc = if acc == "", do: msg, else: acc <> "\\nCaused by: " <> msg
+    entry = msg <> stack_text
+    acc = if acc == "", do: entry, else: acc <> "\\nCaused by: " <> entry
     build.(build, prev, acc)
   end
 end

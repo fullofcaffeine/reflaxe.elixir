@@ -467,10 +467,14 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			if (top == "reflaxe" || top == "js" || top == "genes")
 				return true;
 
-			// Haxe std: allow by default, but filter internal subpackages starting with underscore
+			// Haxe std: allow by default, but filter internal subpackages starting with underscore.
+			// `haxe.CallStack` is an abstract whose runtime functions live in
+			// `haxe._CallStack.CallStack_Impl_`, so it must be emitted once the target override is real.
 			if (top == "haxe") {
 				if (classType.pack.length > 1) {
 					var sub = classType.pack[1];
+					if (sub == "_CallStack" && classType.name == "CallStack_Impl_")
+						return false;
 					if (sub != null && StringTools.startsWith(sub, "_"))
 						return true; // _call_stack, _constraints, _int32, etc.
 				}

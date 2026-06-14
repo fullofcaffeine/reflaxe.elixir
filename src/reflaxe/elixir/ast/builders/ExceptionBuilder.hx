@@ -166,7 +166,10 @@ class ExceptionBuilder {
 			});
 		}
 
-		var rescueBody = makeAST(ECase(dispatchScrutinee, caseClauses));
+		var rescueBody = makeAST(EBlock([
+			makeAST(ERaw("Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)")),
+			makeAST(ECase(dispatchScrutinee, caseClauses))
+		]));
 
 		var rescueClauses:Array<ERescueClause> = [
 			{

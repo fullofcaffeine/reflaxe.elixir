@@ -18,6 +18,7 @@ defmodule Input do
             apply(Map.get(acc_s, :__reflaxe_class__) || Map.get(acc_s, :__struct__), :set, [acc_s, acc_pos, apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])])
           rescue
             haxe_exception ->
+              Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
               (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
@@ -76,6 +77,7 @@ end), haxe_exception} do
       end
     rescue
       haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
@@ -192,6 +194,7 @@ end)
       _ = %{buf | byte_length: buf.byte_length + 1}
     rescue
       haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception

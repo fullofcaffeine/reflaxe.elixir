@@ -1,7 +1,6 @@
 {
   "filesGenerated": [
   "string_tools.ex",
-  "string_buf.ex",
   "std.ex",
   "reflect.ex",
   "reflaxe/exception.ex",
@@ -39,7 +38,7 @@
   "e_reg.ex",
   "phoenix_chat_web/presence.ex"
 ],
-  "id": 12,
+  "id": 13,
   "wasCached": false,
   "version": 1
 }

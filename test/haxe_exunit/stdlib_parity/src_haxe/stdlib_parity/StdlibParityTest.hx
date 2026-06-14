@@ -2,6 +2,7 @@ package stdlib_parity;
 
 import haxe.Int32;
 import haxe.Int64;
+import haxe.CallStack;
 import haxe.DynamicAccess;
 import haxe.Json;
 import haxe.crypto.Md5;
@@ -32,10 +33,62 @@ enum ParityColor {
 
 @:exunit
 class StdlibParityTest extends TestCase {
+	static function throwCallStackProbe():Void {
+		throw "callstack-probe";
+	}
+
+	static function makeExceptionWithStack():haxe.Exception {
+		return new haxe.Exception("details-probe");
+	}
+
+	static function arrayLength<T>(values:Array<T>):Int {
+		return untyped __elixir__('length({0})', values);
+	}
+
 	static function pairToString<K, V>(pair:{key:K, value:V}):String {
 		var keyString:String = cast untyped __elixir__('Kernel.to_string({0})', pair.key);
 		var valueString:String = cast untyped __elixir__('Kernel.to_string({0})', pair.value);
 		return keyString + ":" + valueString;
+	}
+
+	@:describe("haxe.CallStack")
+	@:test
+	function testCallStackReturnsPrintableStack():Void {
+		var stack = CallStack.callStack();
+		Assert.isTrue(stack.length > 0);
+
+		var printed = CallStack.toString(stack);
+		Assert.containsString(printed, "Called from ");
+	}
+
+	@:describe("haxe.CallStack")
+	@:test
+	function testExceptionStackUsesRescuedBeamStacktrace():Void {
+		try {
+			throwCallStackProbe();
+			Assert.fail("throwCallStackProbe should throw");
+		} catch (_:String) {
+			var stack = CallStack.exceptionStack(true);
+			Assert.isTrue(arrayLength(stack) > 0);
+
+			var printed = CallStack.toString(stack);
+			Assert.containsString(printed, "Called from ");
+			Assert.containsString(printed, "throw_call_stack_probe");
+		}
+	}
+
+	@:describe("haxe.CallStack")
+	@:test
+	function testCallStackSubtractAndExceptionDetails():Void {
+		var current:CallStack = CallStack.callStack();
+		var same:CallStack = current.copy();
+		var diff = current.subtract(same);
+		Assert.equals(0, diff.length);
+
+		var exception = makeExceptionWithStack();
+		var details = exception.details();
+		Assert.containsString(details, "details-probe");
+		Assert.containsString(details, "Called from ");
 	}
 
 	@:describe("haxe.iterators.ArrayIterator runtime semantics")

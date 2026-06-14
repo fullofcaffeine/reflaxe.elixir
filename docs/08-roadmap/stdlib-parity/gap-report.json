@@ -1,7 +1,7 @@
 {
   "diff": {
     "intersection": {
-      "count": 86,
+      "count": 87,
       "modules": [
         "Array",
         "Date",
@@ -22,6 +22,7 @@
         "UInt",
         "UnicodeString",
         "Xml",
+        "haxe.CallStack",
         "haxe.DynamicAccess",
         "haxe.Exception",
         "haxe.Http",
@@ -106,14 +107,13 @@
       ]
     },
     "reference_only": {
-      "count": 118,
+      "count": 117,
       "modules": [
         "Any",
         "Class",
         "Enum",
         "EnumValue",
         "StdTypes",
-        "haxe.CallStack",
         "haxe.Constraints",
         "haxe.EntryPoint",
         "haxe.EnumFlags",
@@ -232,7 +232,7 @@
   "local": {
     "counts_by_prefix": {
       "<top-level>": 19,
-      "haxe": 46,
+      "haxe": 47,
       "sys": 30
     },
     "nonstdlib_modules_under_std_dir": [
@@ -259,8 +259,8 @@
       "std/_std",
       "src/haxe"
     ],
-    "total_candidates": 98,
-    "total_std_modules": 95
+    "total_candidates": 99,
+    "total_std_modules": 96
   },
   "reference": {
     "counts_by_prefix": {
