@@ -102,7 +102,7 @@ class ProfileLive {
 		return chosen != null ? cast chosen : null;
 	}
 
-	public static function handle_event(event:String, params:EventParams, socket:Socket<ProfileLiveAssigns>):HandleEventResult<ProfileLiveAssigns> {
+	public static function handleEvent(event:String, params:EventParams, socket:Socket<ProfileLiveAssigns>):HandleEventResult<ProfileLiveAssigns> {
 		var sock:LiveSocket<ProfileLiveAssigns> = socket;
 		return switch (event) {
 			case EventName.SaveProfile:

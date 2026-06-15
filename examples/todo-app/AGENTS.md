@@ -559,7 +559,7 @@ If this fails, the compiler has hardcoded dependencies that must be removed.
 
 ### LiveView Component Pattern
 ```haxe
-// Framework-agnostic with explicit Phoenix convention
+// Framework-agnostic with explicit Phoenix module naming
 @:native("TodoAppWeb.TodoLive")  // Generates TodoAppWeb.TodoLive module
 @:liveview
 class TodoLive {
@@ -569,7 +569,7 @@ class TodoLive {
         });
     }
     
-    public static function handle_event(event, params, socket) {
+    public static function handleEvent(event, params, socket) {
         return switch(event) {
             case "your_event": 
                 // Handle event
@@ -581,7 +581,7 @@ class TodoLive {
 ```
 
 ### Module Naming Convention
-**CRITICAL**: The compiler generates plain Elixir by default. Use @:native to apply Phoenix conventions:
+**CRITICAL**: The compiler generates plain Elixir modules by default. Use class-level `@:native` to pin Phoenix module names. In `@:liveview` modules, exact Haxe-style callback names such as `handleEvent` and `handleInfo` emit canonical Phoenix callback names automatically.
 
 ```haxe
 @:native("TodoAppWeb.TodoLive")    // Phoenix web module
@@ -797,8 +797,7 @@ class TodoLive {
         return Ok(socket);
     }
 
-    @:native("handle_event")
-    public static function handle_event(event: String, _params: Term, socket: Socket<Assigns>): HandleEventResult<Assigns> {
+    public static function handleEvent(event: String, _params: Term, socket: Socket<Assigns>): HandleEventResult<Assigns> {
         // Full implementation: examples/todo-app/src_haxe/server/live/TodoLive.hx
         return NoReply(socket);
     }

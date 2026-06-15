@@ -140,7 +140,7 @@ class AuditLogLive {
 		return chosen != null ? cast chosen : null;
 	}
 
-	public static function handle_event(event:String, params:Term, socket:Socket<AuditLogLiveAssigns>):HandleEventResult<AuditLogLiveAssigns> {
+	public static function handleEvent(event:String, params:Term, socket:Socket<AuditLogLiveAssigns>):HandleEventResult<AuditLogLiveAssigns> {
 		var sock:LiveSocket<AuditLogLiveAssigns> = socket;
 		return switch (event) {
 			case EventName.FilterAudit:

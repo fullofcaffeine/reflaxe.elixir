@@ -337,8 +337,7 @@ class TodoLive {
 	 */
 	// @:native (function): pins the emitted function/callback name to match an exact Elixir API.
 
-	@:native("handle_event")
-	public static function handle_event(event:String, params:Term, socket:Socket<TodoLiveAssigns>):HandleEventResult<TodoLiveAssigns> {
+	public static function handleEvent(event:String, params:Term, socket:Socket<TodoLiveAssigns>):HandleEventResult<TodoLiveAssigns> {
 		var nextSocket:Socket<TodoLiveAssigns> = if (event == EventName.CreateTodo) {
 			create_todo(params, socket);
 		} else if (event == EventName.ToggleTodo) {

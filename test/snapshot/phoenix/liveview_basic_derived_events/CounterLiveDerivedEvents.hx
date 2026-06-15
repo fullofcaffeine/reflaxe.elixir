@@ -15,8 +15,7 @@ typedef DerivedAssigns = {
 @:liveview
 @:hxx_mode("balanced")
 class CounterLiveDerivedEvents {
-	@:native("handle_event")
-	public static function handle_event(event:String, _params:Term, socket:Socket<DerivedAssigns>):HandleEventResult<DerivedAssigns> {
+	public static function handleEvent(event:String, _params:Term, socket:Socket<DerivedAssigns>):HandleEventResult<DerivedAssigns> {
 		return switch (event) {
 			case "increment":
 				var nextCount = socket.assigns.count + 1;

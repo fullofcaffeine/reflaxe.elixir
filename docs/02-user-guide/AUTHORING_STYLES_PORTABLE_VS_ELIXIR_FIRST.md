@@ -136,7 +136,6 @@ typedef ChatAssigns = {
 @:native("MyAppWeb.ChatLive")
 @:liveview
 class ChatLive {
-  @:native("handle_event")
   public static function handleEvent(event:String, params:Term, socket:Socket<ChatAssigns>):HandleEventResult<ChatAssigns> {
     return switch (event) {
       case "validate":

@@ -41,7 +41,7 @@ class InteropLive {
 		}));
 	}
 
-	public static function handle_event(event:String, params:EventParams, socket:Socket<InteropAssigns>):HandleEventResult<InteropAssigns> {
+	public static function handleEvent(event:String, params:EventParams, socket:Socket<InteropAssigns>):HandleEventResult<InteropAssigns> {
 		if (event != "normalize") {
 			return NoReply(socket);
 		}

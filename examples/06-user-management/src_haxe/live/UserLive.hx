@@ -77,7 +77,7 @@ class UserLive {
 		return Ok(socket.assign(assigns));
 	}
 
-	public static function handle_event(event:String, params:EventParams, socket:Socket<UserLiveAssigns>):HandleEventResult<UserLiveAssigns> {
+	public static function handleEvent(event:String, params:EventParams, socket:Socket<UserLiveAssigns>):HandleEventResult<UserLiveAssigns> {
 		return switch (event) {
 			case "new_user":
 				handleNewUser(socket);

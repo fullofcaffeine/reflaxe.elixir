@@ -830,6 +830,58 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	}
 
 	/**
+	 * Resolve the Elixir function name for a generated class method.
+	 *
+	 * WHAT
+	 * - `@:native("...")` on a method is authoritative and emitted exactly.
+	 * - `@:liveview` modules normalize exact known Haxe-style callback names to Phoenix names.
+	 * - All other methods keep the compiler's existing safe snake_case behavior.
+	 *
+	 * WHY
+	 * Phoenix calls callbacks by atom name at runtime (`handle_event/3`, `handle_info/2`, etc.).
+	 * Users should be able to write either canonical Elixir names or Haxe-style names without
+	 * remembering boilerplate metadata, while explicit `@:native` must remain a precise escape hatch.
+	 *
+	 * HOW
+	 * Resolve explicit native metadata first, then apply a small exact-name LiveView callback map.
+	 * The map is intentionally not fuzzy: arbitrary helper names still use regular snake_case.
+	 *
+	 * EXAMPLES
+	 * - `handleEvent` in `@:liveview` -> `handle_event`
+	 * - `handleAsync` in `@:liveview` -> `handle_async`
+	 * - `@:native("handle_event") function eventCallback` -> `handle_event`
+	 */
+	private function resolveDefinitionFunctionName(field:ClassField, classType:ClassType):String {
+		if (field == null)
+			return "";
+
+		var nativeName = field.getNameOrNative();
+		if (nativeName != null && nativeName != field.name)
+			return nativeName;
+
+		if (classType != null && classType.meta != null && classType.meta.has(":liveview")) {
+			var callbackName = normalizeLiveViewCallbackName(field.name);
+			if (callbackName != null)
+				return callbackName;
+		}
+
+		return reflaxe.elixir.ast.NameUtils.toSafeElixirFunctionName(field.name);
+	}
+
+	private inline function normalizeLiveViewCallbackName(name:String):Null<String> {
+		return switch (name) {
+			case "mount": "mount";
+			case "render": "render";
+			case "handleEvent" | "handle_event": "handle_event";
+			case "handleInfo" | "handle_info": "handle_info";
+			case "handleParams" | "handle_params": "handle_params";
+			case "handleAsync" | "handle_async": "handle_async";
+			case "terminate": "terminate";
+			default: null;
+		};
+	}
+
+	/**
 	 * Required implementation for GenericCompiler - implements class compilation
 	 * @param classType The Haxe class type
 	 * @param varFields Class variables
@@ -2184,9 +2236,9 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 					}
 				}
 
-				// Create function definition
-				// Use toSafeElixirFunctionName to handle reserved keywords
-				var elixirName = reflaxe.elixir.ast.NameUtils.toSafeElixirFunctionName(funcData.field.name);
+				// Create function definition.
+				// Respect explicit method @:native first, then apply framework-aware defaults.
+				var elixirName = resolveDefinitionFunctionName(funcData.field, classType);
 
 				// Haxe entrypoints (`static function main()`) are not required to be `public`,
 				// but Elixir warnings-as-errors will flag unused private functions in examples.
@@ -2830,7 +2882,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 					if (!emitPublic)
 						continue;
 
-					var elixirName = reflaxe.elixir.ast.NameUtils.toSafeElixirFunctionName(field.name);
+					var elixirName = resolveDefinitionFunctionName(field, parentType);
 					if (existingFunctionNames.exists(elixirName))
 						continue;
 

@@ -51,7 +51,7 @@ class SearchLive {
 		return Ok(socket.assign(initialAssigns));
 	}
 
-	public static function handle_event(event:String, params:EventParams, socket:Socket<SearchAssigns>):HandleEventResult<SearchAssigns> {
+	public static function handleEvent(event:String, params:EventParams, socket:Socket<SearchAssigns>):HandleEventResult<SearchAssigns> {
 		if (event != "search") {
 			return NoReply(socket);
 		}

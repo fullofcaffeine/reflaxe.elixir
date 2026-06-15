@@ -63,8 +63,7 @@ class TodoLive {
         return Ok(socket);
     }
     
-    @:native("handle_event")
-    public static function handle_event(event: String, params: TodoEventParams, socket: Socket<TodoAssigns>): HandleEventResult<TodoAssigns> {
+    public static function handleEvent(event: String, params: TodoEventParams, socket: Socket<TodoAssigns>): HandleEventResult<TodoAssigns> {
         return switch (event) {
             case "add_todo": NoReply(socket);
             case "toggle_todo": NoReply(socket);

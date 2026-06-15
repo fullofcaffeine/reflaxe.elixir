@@ -27,7 +27,6 @@ class TodoLive {
     return Ok(socket);
   }
 
-  @:native("handle_event")
   public static function handleEvent(event:String, params:Term, socket:Socket<TodoAssigns>):HandleEventResult<TodoAssigns> {
     return NoReply(socket);
   }
@@ -36,7 +35,9 @@ class TodoLive {
 
 Key points:
 
-- Use `@:native("handle_event")` when your Haxe method name differs from canonical callback naming.
+- In `@:liveview` modules, exact Haxe-style callbacks emit canonical Phoenix names:
+  `handleEvent -> handle_event`, `handleInfo -> handle_info`, `handleParams -> handle_params`, and `handleAsync -> handle_async`.
+- Use function-level `@:native("...")` only for explicit interop with an existing Elixir API or unusual callback name.
 - Prefer typed assigns typedefs and keep them shared between render/mount/event paths.
 
 ## LiveView Assign APIs (Important)
@@ -172,7 +173,7 @@ Keep most coverage in Haxe-authored ExUnit integration tests and use Playwright 
 
 - Missing function-level `@:component` on a component function used as `<.name ...>`
 - Ambiguous component names under strict component mode (`-D hxx_strict_components`)
-- Callback naming drift when `@:native("handle_event")` is omitted
+- Callback naming drift from misspelled callback names; exact Haxe-style names are normalized automatically in `@:liveview`
 - Untyped slot/let usage under strict slot mode (`-D hxx_strict_slots`)
 - Hook names not registered when strict hook mode is enabled (`-D hxx_strict_phx_hook`)
 

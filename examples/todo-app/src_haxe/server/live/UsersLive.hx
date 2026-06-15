@@ -127,7 +127,7 @@ class UsersLive {
 		return chosen != null ? cast chosen : null;
 	}
 
-	public static function handle_event(event:String, params:Term, socket:Socket<UsersLiveAssigns>):HandleEventResult<UsersLiveAssigns> {
+	public static function handleEvent(event:String, params:Term, socket:Socket<UsersLiveAssigns>):HandleEventResult<UsersLiveAssigns> {
 		var sock:LiveSocket<UsersLiveAssigns> = socket;
 
 		return switch (event) {

@@ -360,8 +360,7 @@ class UserLive {
         return Ok(socket);
     }
     
-    @:native("handle_event")
-    public static function handle_event(event: String, params: Term, socket: Socket<UserAssigns>): HandleEventResult<UserAssigns> {
+    public static function handleEvent(event: String, params: Term, socket: Socket<UserAssigns>): HandleEventResult<UserAssigns> {
         return NoReply(socket);
     }
     
@@ -1563,19 +1562,20 @@ Use this when you need typed ownership of the app web namespace module itself.
 `@:native` is valid at multiple scopes and meaning changes by scope:
 
 - **Class-level**: pins generated module name.
-- **Function-level**: pins emitted function name (for callbacks/functions with exact naming like `handle_event`).
+- **Function-level**: pins emitted function name for explicit interop with an existing Elixir API.
 
 ```haxe
 @:native("MyAppWeb.UserLive")
 @:liveview
 class UserLive {
-  @:native("handle_event")
   public static function handleEvent(event:String, params:Term, socket:Socket<UserAssigns>):HandleEventResult<UserAssigns> {
     return NoReply(socket);
   }
 }
 ```
 
+In `@:liveview` modules, exact Haxe-style callback names normalize automatically:
+`handleEvent`, `handleInfo`, `handleParams`, and `handleAsync` emit Phoenix's canonical snake_case names.
 Prefer `@:native` for compatibility with existing Elixir APIs; avoid using it to mask naming-model bugs in transforms.
 
 ### @:module - Module Macro Convenience

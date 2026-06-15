@@ -452,8 +452,7 @@ typedef Assigns = { clicked: Bool }
 
 @:liveview
 class MyLive {
-    @:native("handle_event")
-    public static function handle_event(event: String, params: Term, socket: Socket<Assigns>): HandleEventResult<Assigns> {
+    public static function handleEvent(event: String, params: Term, socket: Socket<Assigns>): HandleEventResult<Assigns> {
         return switch (event) {
             case "click":
                 NoReply(socket.assign({clicked: true}));
@@ -781,8 +780,7 @@ typedef Assigns = {};
 
 @:liveview  
 class TodoLive {
-    @:native("handle_event")
-    public static function handle_event(event: String, params: EventParams, socket: Socket<Assigns>): HandleEventResult<Assigns> {
+    public static function handleEvent(event: String, params: EventParams, socket: Socket<Assigns>): HandleEventResult<Assigns> {
         return switch (event) {
             case "toggle":
                 var id = params.id;

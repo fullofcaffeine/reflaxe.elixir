@@ -187,7 +187,7 @@ class OrganizationLive {
 		return Repo.insert(changeset);
 	}
 
-	public static function handle_event(event:String, params:Term, socket:Socket<OrganizationLiveAssigns>):HandleEventResult<OrganizationLiveAssigns> {
+	public static function handleEvent(event:String, params:Term, socket:Socket<OrganizationLiveAssigns>):HandleEventResult<OrganizationLiveAssigns> {
 		var sock:LiveSocket<OrganizationLiveAssigns> = socket;
 		return switch (event) {
 			case EventName.SwitchOrg:

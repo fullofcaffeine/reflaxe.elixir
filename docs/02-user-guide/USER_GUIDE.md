@@ -96,8 +96,7 @@ class CounterLive {
     return Ok(socket.assign(_.count, 0));
   }
 
-  @:native("handle_event")
-  public static function handle_event(event: String, params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
+  public static function handleEvent(event: String, params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
     return switch (event) {
       case "increment":
         var nextCount = socket.assigns.count + 1;

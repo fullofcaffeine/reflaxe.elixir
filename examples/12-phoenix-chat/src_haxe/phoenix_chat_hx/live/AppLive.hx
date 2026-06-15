@@ -73,7 +73,7 @@ class AppLive {
 		return Ok(live);
 	}
 
-	public static function handle_event(event:String, _params:EventParams, socket:Socket<AppLiveAssigns>):HandleEventResult<AppLiveAssigns> {
+	public static function handleEvent(event:String, _params:EventParams, socket:Socket<AppLiveAssigns>):HandleEventResult<AppLiveAssigns> {
 		var live:LiveSocket<AppLiveAssigns> = socket;
 
 		return if (event == "update_input") {

@@ -43,8 +43,7 @@ class ProductLive {
         return Ok(socket);
     }
 
-    @:native("handle_event")
-    public static function handle_event(event: String, params: ProductEventParams, socket: Socket<ProductAssigns>): HandleEventResult<ProductAssigns> {
+    public static function handleEvent(event: String, params: ProductEventParams, socket: Socket<ProductAssigns>): HandleEventResult<ProductAssigns> {
         return switch (event) {
             case "search":
                 var query = params.query != null ? params.query : "";
