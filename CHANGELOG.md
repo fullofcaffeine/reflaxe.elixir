@@ -1,3 +1,10 @@
+# [0.10.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.9.5...v0.10.0) (2026-06-15)
+
+
+### Features
+
+* add haxe io string input ([a6d6136](https://github.com/fullofcaffeine/reflaxe.elixir/commit/a6d6136032b4587f5751fa339151ca1b4dd2619b))
+
 ## [0.9.5](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.9.4...v0.9.5) (2026-06-15)
 
 
