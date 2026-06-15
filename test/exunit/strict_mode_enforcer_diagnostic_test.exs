@@ -14,8 +14,12 @@ defmodule StrictModeEnforcerDiagnosticTest do
 
     previous_haxelib_path = System.get_env("HAXELIB_PATH")
 
+    project_root = HaxeTestHelper.find_project_root()
+
     tmp_root =
       Path.join(System.tmp_dir!(), "strict_mode_diag_#{System.unique_integer([:positive])}")
+
+    System.put_env("HAXELIB_PATH", Path.join(project_root, "haxe_libraries"))
 
     on_exit(fn ->
       case previous_haxelib_path do
@@ -26,7 +30,8 @@ defmodule StrictModeEnforcerDiagnosticTest do
       File.rm_rf!(tmp_root)
     end)
 
-    HaxeTestHelper.setup_test_project(dir: tmp_root, create_hxml: false)
+    File.mkdir_p!(Path.join(tmp_root, "src_haxe"))
+    File.mkdir_p!(Path.join(tmp_root, "lib"))
 
     File.write!(
       Path.join([tmp_root, "src_haxe", "StrictExternDiagnostic.hx"]),
