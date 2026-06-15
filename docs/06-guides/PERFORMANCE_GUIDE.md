@@ -88,6 +88,119 @@ attached to `push` or `pull_request`, so it does not gate PRs or regular CI. Run
 Actions when you want a shared timing artifact; the scheduled run provides a low-frequency trend sample.
 The workflow uploads `compile-times.json`, phase logs, and the intermediate metadata as an artifact.
 
+## Read Benchmark JSON
+
+Use the JSON artifacts to compare phases, not just total wall time.
+
+Compile benchmark (`tmp/perf/compile-times.json`):
+
+- `repo` and `environment` identify the exact compiler commit, dirty state, Haxe version, Elixir/Mix
+  version, OTP release, and host OS.
+- `runs[].name` is one of `cold`, `warm`, or `incremental`.
+- `runs[].phases[]` contains timed phases such as `deps_get`, `deps_compile`, `haxe_build`, and
+  `mix_compile`.
+- Failed phases include `log_tail`; full logs live under `tmp/perf/todo-compile/logs/`.
+
+Watch benchmark (`tmp/perf/watch-cycle-times.json`):
+
+- `phases[]` covers setup costs such as dependency resolution and watcher startup.
+- `samples[]` are the measured edit→rebuild cycles.
+- `summary` reports `min_ms`, `max_ms`, `mean_ms`, `p50_ms`, and `p95_ms`.
+- Full logs live under `tmp/perf/todo-watch/logs/`.
+
+Interpretation rules:
+
+- Compare `warm` with `warm`, `incremental` with `incremental`, and watch samples with watch samples.
+  Do not compare cold compile totals with watch-cycle latency.
+- A slow `cold/deps_compile` phase is usually Hex/Mix dependency work, not Reflaxe.Elixir codegen.
+- A slow `haxe_build` phase points at Haxe macro work, AST building, AST transforms, or printing.
+- A slow `mix_compile` phase points at generated Elixir compilation, warnings, dependency checks, or
+  generated output shape.
+- Watch p95 matters more than a single fast sample; it captures the annoying tail of the edit loop.
+
+## Compile-Time Profiling Playbook
+
+Use this loop when a compile feels slow or a CI budget starts drifting.
+
+1. Capture a bounded baseline:
+
+   ```bash
+   npm run perf:todo-compile
+   npm run perf:todo-watch -- --iterations 5 --deadline 720
+   ```
+
+2. Compare against a known-good ref:
+
+   ```bash
+   npm run perf:todo-compile -- --ref HEAD~1 --out tmp/perf/compile-before.json
+   npm run perf:todo-watch -- --ref HEAD~1 --out tmp/perf/watch-before.json
+   ```
+
+3. Classify the slow phase from JSON before adding debug flags. Debug flags can change timing, so use
+   them after the baseline tells you where to look.
+
+4. If the slow phase is Mix integration overhead, enable Mix/Haxe phase timing:
+
+   ```bash
+   HAXE_TIMINGS=1 mix compile
+   ```
+
+   For examples where Haxe generation has already happened and you only want generated Elixir compile
+   cost, isolate Mix:
+
+   ```bash
+   HAXE_NO_COMPILE=1 MIX_ENV=test mix compile --force --warnings-as-errors --no-deps-check
+   ```
+
+5. If the slow phase is Haxe generation, use Haxe timings:
+
+   ```bash
+   haxe build-server.hxml --times
+   haxe build-server.hxml -D macro-times --times
+   ```
+
+   Use verbose Haxe logging only for diagnosis, and redirect it because it is noisy:
+
+   ```bash
+   haxe -v build-server.hxml > tmp/haxe-verbose.log 2>&1
+   ```
+
+6. If the slow phase is an AST transform, enable pass-level diagnostics:
+
+   ```bash
+   haxe build-server.hxml -D debug_pass_metrics
+   rm -f /tmp/passF-macro.log
+   haxe build-server.hxml -D profile_passes
+   ```
+
+   `debug_pass_metrics` prints which passes changed the AST. `profile_passes` writes pass timings to
+   `/tmp/passF-macro.log`; narrow noisy output with `-D hxx_pass_timing_filter=<substring>` when needed.
+
+7. If the slow phase is generated Elixir compilation, inspect generated shape instead of patching
+   outputs:
+
+   ```bash
+   MIX_ENV=test mix compile --force --warnings-as-errors --no-deps-check
+   ```
+
+   Look for warnings-as-errors, huge generated modules, duplicated helper output, dependency checks, and
+   non-linear generated code. Fix the compiler/std source-of-truth, not generated `.ex` files.
+
+8. If the symptom is runtime slowness rather than compile slowness, switch tools. Use ExUnit,
+   Phoenix integration tests, or targeted BEAM profilers (`:timer.tc`, `:eprof`, `:fprof`) around the
+   generated function/runtime path. Do not infer runtime performance from compile-time benchmarks.
+
+Common hot spots and mitigations:
+
+| Signal | Likely cause | First mitigation |
+| --- | --- | --- |
+| `deps_compile` dominates only cold runs | Hex/Mix dependency compilation | Treat as environment/setup cost; keep dependency work out of WAE timing where possible. |
+| `haxe_build` dominates warm/incremental runs | Macro expansion, stdlib shaping, AST transforms, or printer work | Use `--times`, `-D macro-times`, then `-D profile_passes`; prefer single-pass transforms and better data structures. |
+| Watch p95 is much higher than warm compile | Watcher startup, file event debounce, Haxe server behavior, or repeated full rebuilds | Compare default direct mode with `--use-haxe-server`; inspect `tmp/perf/todo-watch/logs/watch.log`. |
+| `mix_compile` dominates after Haxe output | Generated Elixir shape, warning churn, oversized modules, or dependency checks | Use `HAXE_NO_COMPILE=1`; fix emitted shape upstream; compile deps without WAE and project with WAE. |
+| CI slow but local fast | Runner cache misses, slower CPU, dependency download, or shard imbalance | Compare phase logs/artifacts; do not tune local-only microbenchmarks to CI wall time. |
+| A debug flag makes timings worse | Instrumentation overhead | Re-run the baseline without debug flags before claiming a regression or improvement. |
+
 ## Use the Right Compilation Profile
 
 ### Default (recommended for CI / release builds)
