@@ -1,0 +1,7 @@
+# Haxe -> JavaScript proof build for the same portable chat domain.
+
+-cp src_haxe
+
+-js dist/portable_chat_domain.js
+-main client.PortableChatClient
+-dce full

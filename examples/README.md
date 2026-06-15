@@ -79,12 +79,17 @@ This directory contains progressive examples demonstrating Haxe→Elixir compila
 **Features**: Haxe-authored `@:application`, module-level `@:router`, LiveView + PubSub + Presence, tiny client hook (Genes)  
 **Use Case**: Haxe-first Phoenix chat where app/router/live/presence are authored in Haxe
 
-### 16. [todo-app](./todo-app/)
+### 16. [16-portable-chat-domain](./16-portable-chat-domain/)
+**Difficulty**: Intermediate
+**Features**: Shared Haxe chat domain compiled to both Elixir and JavaScript
+**Use Case**: Portable domain-first chat rules with thin target adapters
+
+### 17. [todo-app](./todo-app/)
 **Difficulty**: Advanced  
 **Features**: Full Phoenix LiveView app, Ecto, Playwright E2E  
 **Use Case**: End-to-end reference app (recommended for Phoenix/LiveView)
 
-### 17. [test-integration](./test-integration/)
+### 18. [test-integration](./test-integration/)
 **Difficulty**: Intermediate  
 **Features**: Mix compiler task testing, build pipeline validation  
 **Use Case**: Testing Haxe→Elixir compilation in Mix projects
@@ -110,6 +115,7 @@ Reflaxe.Elixir supports two authoring styles on one compiler pipeline. This matr
 | `13-elixir-first-liveview` | Elixir-first | Typed LiveView app flow with strict-mode discipline and boundary decoding. |
 | `14-abstraction-lab` | Elixir-first | Framework-agnostic abstraction patterns: protocols, behaviours, and typed process boundaries. |
 | `15-phoenix-chat-haxe-first` | Elixir-first | Haxe-authored `@:application` + module-level `@:router` + LiveView/Presence in one server-first workflow. |
+| `16-portable-chat-domain` | Portable-first | Same chat domain compiles to Elixir and JavaScript; target adapters stay thin. |
 | `todo-app` | Hybrid (intentional) | Full app canary: portable shared domain + extensive Phoenix/Ecto/OTP integration. |
 | `test-integration` | N/A | Compiler/Mix integration verification harness. |
 

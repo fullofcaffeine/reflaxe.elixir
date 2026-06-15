@@ -1,0 +1,4 @@
+# Build both proof targets for the portable chat domain.
+
+--next build-elixir.hxml
+--next build-js.hxml

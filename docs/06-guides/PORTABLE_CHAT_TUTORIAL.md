@@ -1,68 +1,152 @@
 # Portable Chat Tutorial (Shared Haxe Domain)
 
-This tutorial focuses on writing **portable** Haxe that can be reused across targets (Elixir, JS, etc.).
+This tutorial shows the portable-authoring lane: write a small chat domain once in Haxe, keep it target-agnostic, and compile it to both Elixir and JavaScript.
 
-Unlike `docs/06-guides/PHOENIX_CHAT_TUTORIAL.md`, the goal here is not “Phoenix-first typed extern usage”.
-The goal is:
+Use this when portability is the main goal. If you want a Phoenix-first tutorial with LiveView, PubSub, and Presence wiring, use:
 
-- keep domain logic target-agnostic
-- isolate Phoenix/Elixir extern calls at the edges
+- `docs/06-guides/PHOENIX_CHAT_TUTORIAL.md`
+- `docs/06-guides/PHOENIX_CHAT_TUTORIAL_HAXE_FIRST.md`
 
-## Pattern: Split “domain” from “transport”
+## The Shape
 
-Recommended folder split:
+The runnable example is `examples/16-portable-chat-domain/`.
 
-- `src_haxe/shared/**` for portable logic (no `elixir.*`, no `phoenix.*`)
-- `src_haxe/<app>_hx/**` for Phoenix adapters (LiveView, Presence, PubSub, etc.)
+It has three layers:
 
-## Example: Message validation (portable)
+- `src_haxe/shared/chat/**` - portable domain code only.
+- `src_haxe/server/**` - thin Elixir-target adapter/demo.
+- `src_haxe/client/**` - thin JavaScript-target adapter/demo.
 
-`src_haxe/shared/chat/Message.hx`:
+The portable layer must not import `elixir.*`, `phoenix.*`, or `js.*`. Those imports belong at the edge.
+
+## Build Both Targets
+
+```bash
+cd examples/16-portable-chat-domain
+haxe build.hxml
+```
+
+`build.hxml` delegates to:
+
+- `build-elixir.hxml`, which emits Elixir under `lib/`
+- `build-js.hxml`, which emits JavaScript under `dist/`
+
+You can run the JS proof directly:
+
+```bash
+node dist/portable_chat_domain.js
+```
+
+And you can validate the generated Elixir with warnings as errors:
+
+```bash
+elixirc --warnings-as-errors -o _build/elixirc_validate $(find lib -type f -name "*.ex" | sort)
+```
+
+## Portable Domain Code
+
+The core domain is plain Haxe:
 
 ```haxe
 package shared.chat;
 
-typedef Message = {
-  var author: String;
-  var body: String;
-  var at: Float;
+typedef ChatMessage = {
+	var author:String;
+	var body:String;
+	var preview:String;
+}
+
+enum MessageDecision {
+	Accepted(message:ChatMessage);
+	Rejected(reason:String);
 }
 
 class MessageRules {
-  public static function normalizeBody(body: String): String {
-    if (body == null) return "";
-    return StringTools.trim(body);
-  }
+	public static function validate(author:String, body:String):MessageDecision {
+		var normalizedAuthor = normalizeAuthor(author);
+		var normalizedBody = normalizeBody(body);
 
-  public static function isAcceptable(body: String): Bool {
-    var b = normalizeBody(body);
-    return b.length > 0 && b.length <= 500;
-  }
+		if (normalizedAuthor.length == 0) {
+			return Rejected("author is required");
+		}
+
+		if (normalizedBody.length == 0) {
+			return Rejected("message body is required");
+		}
+
+		return Accepted({
+			author: normalizedAuthor,
+			body: normalizedBody,
+			preview: preview(normalizedBody)
+		});
+	}
 }
 ```
 
-This code is plain Haxe:
+The important part is not the validation itself. The important part is what is absent:
 
-- no `Term`
-- no `Atom`
-- no Phoenix runtime assumptions
+- No `Term`.
+- No `Atom`.
+- No Phoenix socket, PubSub, Presence, or LiveView APIs.
+- No browser APIs.
 
-## Edge adapter: LiveView uses the portable rules
+That keeps the domain reusable across targets.
 
-In your Phoenix LiveView module (Haxe -> Elixir), you can keep the transport concerns at the boundary:
+## Elixir Adapter
 
-- parse event params (Phoenix maps / `Term`)
-- call `shared.chat.MessageRules`
-- broadcast/assign using Phoenix externs
+`src_haxe/server/PortableChatServer.hx` proves that the shared domain compiles to Elixir:
 
-See the “Phoenix-first” example for the boundary mechanics:
+```haxe
+package server;
 
-- `docs/06-guides/PHOENIX_CHAT_TUTORIAL.md`
-- `examples/12-phoenix-chat/`
+import shared.chat.Transcript;
 
-## Tradeoffs
+class PortableChatServer {
+	public static function sampleSummary():String {
+		var history = Transcript.empty();
+		history = Transcript.add(history, "Ada", " Hello from the BEAM side. ");
+		return Transcript.render(history).join(" | ");
+	}
+}
+```
 
-- Portable logic is easier to test and reuse.
-- Phoenix adapters will still be target-specific, but they stay small and explicit.
-- You can iterate toward portability gradually: start Phoenix-first, then peel off pure helpers.
+In a real Phoenix app, this adapter is where you would decode event params, call the portable domain, and then assign or broadcast through typed Phoenix externs.
 
+## JavaScript Adapter
+
+`src_haxe/client/PortableChatClient.hx` proves that the same domain compiles to JS:
+
+```haxe
+package client;
+
+import shared.chat.Transcript;
+
+class PortableChatClient {
+	public static function main():Void {
+		var history = Transcript.empty();
+		history = Transcript.add(history, "Grace", "The same Haxe rules compiled to JS.");
+
+		for (line in Transcript.render(history)) {
+			trace(line);
+		}
+	}
+}
+```
+
+In a Phoenix app, the JS adapter could power client-side validation or render hints while the Elixir adapter remains authoritative on the server.
+
+## How This Differs From Phoenix-First Chat
+
+Portable chat:
+
+- optimizes for shared domain reuse
+- keeps framework APIs out of core logic
+- uses target-specific adapters only at the boundary
+
+Phoenix-first chat:
+
+- optimizes for idiomatic Phoenix integration
+- uses typed LiveView/PubSub/Presence externs directly in app modules
+- still can call portable helpers, but portability is not the primary teaching goal
+
+Both approaches generate idiomatic Elixir where they target Elixir. The difference is source organization and coupling, not a separate compiler backend.
