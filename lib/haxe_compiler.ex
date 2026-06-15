@@ -1,16 +1,16 @@
 defmodule HaxeCompiler do
   @moduledoc """
   Core Haxe compilation functionality for Phoenix integration.
-  
+
   Handles the execution of Haxe compilation, file watching, dependency tracking,
   and incremental compilation for optimal development workflow.
   """
 
   @doc """
   Compiles Haxe files using the specified build configuration.
-  
+
   ## Options
-  
+
     * `:hxml_file` - Path to the HXML build file (default: "build.hxml")
     * `:source_dir` - Source directory for Haxe files (default: "src_haxe")
     * `:target_dir` - Target directory for compiled files (default: "lib")
@@ -18,7 +18,7 @@ defmodule HaxeCompiler do
     * `:force` - Force full recompilation (default: false)
     
   ## Returns
-  
+
     * `{:ok, files}` - Success with list of compiled files
     * `{:error, reason}` - Compilation failed with reason
   """
@@ -28,19 +28,26 @@ defmodule HaxeCompiler do
     source_dir = Keyword.get(opts, :source_dir, "src_haxe")
     target_dir = Keyword.get(opts, :target_dir, "lib")
     verbose = Keyword.get(opts, :verbose, false)
-    _ = HaxeServer.ensure_running_if_configured(Mix.env())
-    
+
+    _ =
+      HaxeTimings.measure("haxe.ensure_server", fn ->
+        HaxeServer.ensure_running_if_configured(Mix.env())
+      end)
+
     cond do
       not File.exists?(hxml_file) ->
         {:error, "Build file not found: #{hxml_file}"}
-      
+
       not File.exists?(source_dir) ->
         {:error, "Source directory not found: #{source_dir}"}
-      
+
       true ->
         case execute_haxe_compilation(hxml_file, source_dir, target_dir, verbose) do
           {:ok, compiled_files} ->
-            persist_manifest(opts, compiled_files)
+            HaxeTimings.measure("haxe.persist_manifest", fn ->
+              persist_manifest(opts, compiled_files)
+            end)
+
             {:ok, compiled_files}
 
           other ->
@@ -51,9 +58,9 @@ defmodule HaxeCompiler do
 
   @doc """
   Checks if any source files have been modified since the last compilation.
-  
+
   ## Returns
-  
+
     * `true` - Files need recompilation
     * `false` - No recompilation needed
   """
@@ -93,7 +100,8 @@ defmodule HaxeCompiler do
               stored_hash != current_hash ->
                 true
 
-              is_list(stored_files) and stored_files != [] and Enum.any?(stored_files, fn path -> not File.exists?(path) end) ->
+              is_list(stored_files) and stored_files != [] and
+                  Enum.any?(stored_files, fn path -> not File.exists?(path) end) ->
                 true
 
               true ->
@@ -126,14 +134,14 @@ defmodule HaxeCompiler do
   @spec source_files(keyword()) :: [binary()]
   def source_files(opts \\ []) do
     source_dir = Keyword.get(opts, :source_dir, "src_haxe")
-    
+
     if File.exists?(source_dir) do
       find_haxe_files(source_dir)
     else
       []
     end
   end
-  
+
   # Private helper functions
 
   defp manifest_path do
@@ -183,10 +191,10 @@ defmodule HaxeCompiler do
       Mix.shell().info("Compiling Haxe files from #{source_dir} to #{target_dir}")
       Mix.shell().info("Using build file: #{hxml_file}")
     end
-    
+
     # Find source files for tracking
-    source_files = find_haxe_files(source_dir)
-    
+    source_files = HaxeTimings.measure("haxe.find_sources", fn -> find_haxe_files(source_dir) end)
+
     if Enum.empty?(source_files) do
       {:ok, []}
     else
@@ -196,14 +204,15 @@ defmodule HaxeCompiler do
           if verbose do
             Mix.shell().info("Successfully compiled #{length(compiled_files)} file(s)")
           end
+
           {:ok, compiled_files}
-        
+
         {:error, reason} ->
           {:error, reason}
       end
     end
   end
-  
+
   defp newest_source_mtime_posix(source_dir) do
     if File.exists?(source_dir) do
       source_dir
@@ -217,61 +226,85 @@ defmodule HaxeCompiler do
       0
     end
   end
-  
+
   defp find_haxe_files(dir) do
     dir
     |> Path.join("**/*.hx")
     |> Path.wildcard()
     |> Enum.sort()
   end
-  
-  
+
   defp compile_with_real_haxe(hxml_file, _source_dir, target_dir, verbose) do
     # First, try to use HaxeServer for incremental compilation if available
     # fast_boot is an opt-in compilation profile that disables expensive macro/transform work.
     # Enable it explicitly via env var:
     #   HAXE_FAST_BOOT=1 mix compile
     common_args = if fast_boot_enabled?(), do: ["-D", "fast_boot"], else: []
-    
-    compilation_result =
-      case {System.get_env("HAXE_NO_SERVER"), HaxeServer.running?()} do
-      {"1", _} ->
-        if verbose do
-          Mix.shell().info("HAXE_NO_SERVER=1; using direct Haxe compilation")
-        end
-        compile_with_direct_haxe(hxml_file, verbose, common_args)
 
-      {_, true} ->
-        if verbose do
-          Mix.shell().info("Using Haxe server for incremental compilation")
-        end
-        case HaxeServer.compile(common_args ++ [hxml_file]) do
-          {:ok, _} = ok -> ok
-          {:error, reason} ->
-            # Fallback transparently to direct compile and refresh the server in background
+    compilation_result =
+      HaxeTimings.measure("haxe.invoke", fn ->
+        case {System.get_env("HAXE_NO_SERVER"), HaxeServer.running?()} do
+          {"1", _} ->
             if verbose do
-              Mix.shell().info("Haxe server compile failed; falling back to direct compile (#{reason})")
+              Mix.shell().info("HAXE_NO_SERVER=1; using direct Haxe compilation")
             end
-            Task.start(fn ->
-              # best effort restart without impacting current compile
-              try do HaxeServer.stop() rescue _ -> :ok end
-              try do HaxeServer.start_link([]) rescue _ -> :ok end
-            end)
+
+            compile_with_direct_haxe(hxml_file, verbose, common_args)
+
+          {_, true} ->
+            if verbose do
+              Mix.shell().info("Using Haxe server for incremental compilation")
+            end
+
+            case HaxeServer.compile(common_args ++ [hxml_file]) do
+              {:ok, _} = ok ->
+                ok
+
+              {:error, reason} ->
+                # Fallback transparently to direct compile and refresh the server in background
+                if verbose do
+                  Mix.shell().info(
+                    "Haxe server compile failed; falling back to direct compile (#{reason})"
+                  )
+                end
+
+                Task.start(fn ->
+                  # best effort restart without impacting current compile
+                  try do
+                    HaxeServer.stop()
+                  rescue
+                    _ -> :ok
+                  end
+
+                  try do
+                    HaxeServer.start_link([])
+                  rescue
+                    _ -> :ok
+                  end
+                end)
+
+                compile_with_direct_haxe(hxml_file, verbose, common_args)
+            end
+
+          {_, false} ->
+            if verbose do
+              Mix.shell().info("Using direct Haxe compilation")
+            end
+
             compile_with_direct_haxe(hxml_file, verbose, common_args)
         end
-      {_, false} ->
-        if verbose do
-          Mix.shell().info("Using direct Haxe compilation")
-        end
-        compile_with_direct_haxe(hxml_file, verbose, common_args)
-    end
-    
+      end)
+
     case compilation_result do
       {:ok, _output} ->
         # Compilation succeeded, find generated .ex files
-        compiled_files = find_generated_elixir_files(target_dir)
+        compiled_files =
+          HaxeTimings.measure("haxe.find_generated_files", fn ->
+            find_generated_elixir_files(target_dir)
+          end)
+
         {:ok, compiled_files}
-        
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -295,48 +328,51 @@ defmodule HaxeCompiler do
         end
     end
   end
-  
+
   defp compile_with_direct_haxe(hxml_file, verbose, common_args) do
     {haxe_cmd, cmd_args} = get_haxe_command()
     args = cmd_args ++ common_args ++ [hxml_file]
-    
+
     if verbose do
       Mix.shell().info("Running: #{haxe_cmd} #{Enum.join(args, " ")}")
     end
-    
+
     # Build environment for Haxe command
-    env = build_haxe_env()
-    
+    env = HaxeTimings.measure("haxe.build_env", fn -> build_haxe_env() end)
+
     # Change to the directory containing the hxml file so relative paths work
-    cmd_opts = case Path.dirname(hxml_file) do
-      "." -> [stderr_to_stdout: true, env: env]
-      dir -> [cd: dir, stderr_to_stdout: true, env: env]
-    end
-    
+    cmd_opts =
+      case Path.dirname(hxml_file) do
+        "." -> [stderr_to_stdout: true, env: env]
+        dir -> [cd: dir, stderr_to_stdout: true, env: env]
+      end
+
     # Use just the filename if we're changing directory
-    final_hxml = if Keyword.has_key?(cmd_opts, :cd) do
-      Path.basename(hxml_file)
-    else
-      hxml_file
-    end
-    
+    final_hxml =
+      if Keyword.has_key?(cmd_opts, :cd) do
+        Path.basename(hxml_file)
+      else
+        hxml_file
+      end
+
     args = cmd_args ++ common_args ++ [final_hxml]
-    
+
     case System.cmd(haxe_cmd, args, cmd_opts) do
       {output, 0} ->
         {:ok, output}
+
       {output, exit_code} ->
         # Parse structured error information from Haxe output
         structured_errors = parse_haxe_errors(output)
         store_compilation_errors(structured_errors)
-        
+
         {:error, "Haxe compilation failed (exit #{exit_code}): #{output}"}
     end
   rescue
     error ->
       {:error, "Failed to execute Haxe: #{Exception.message(error)}"}
   end
-  
+
   defp find_generated_elixir_files(target_dir) do
     if File.exists?(target_dir) do
       ex_files =
@@ -356,31 +392,32 @@ defmodule HaxeCompiler do
       []
     end
   end
-  
+
   @doc """
   Parses Haxe compiler error output into structured format for LLM agents.
-  
+
   Returns list of structured error maps with file, line, column, error type, 
   message, and stacktrace information.
   """
   def parse_haxe_errors(output) when is_binary(output) do
-    errors = output
-    |> String.split("\n")
-    |> Enum.reduce([], fn line, acc ->
-      case parse_error_line(line) do
-        nil -> acc
-        error -> [error | acc]
-      end
-    end)
-    |> Enum.reverse()
-    |> add_error_ids()
-    
+    errors =
+      output
+      |> String.split("\n")
+      |> Enum.reduce([], fn line, acc ->
+        case parse_error_line(line) do
+          nil -> acc
+          error -> [error | acc]
+        end
+      end)
+      |> Enum.reverse()
+      |> add_error_ids()
+
     # Automatically store errors for retrieval by Mix tasks
     store_compilation_errors(errors)
-    
+
     errors
   end
-  
+
   @doc """
   Returns stored compilation errors in structured format.
   """
@@ -393,21 +430,24 @@ defmodule HaxeCompiler do
           :json -> "[]"
           :map -> []
         end
-      
+
       _table ->
         # Table exists, try to get errors
         case :ets.lookup(:haxe_errors, :current_errors) do
           [{:current_errors, errors}] ->
             case format do
-              :json -> 
+              :json ->
                 if Code.ensure_loaded?(Jason) do
                   Jason.encode!(errors)
                 else
                   inspect(errors)
                 end
-              :map -> errors
+
+              :map ->
+                errors
             end
-          [] -> 
+
+          [] ->
             case format do
               :json -> "[]"
               :map -> []
@@ -415,45 +455,46 @@ defmodule HaxeCompiler do
         end
     end
   end
-  
+
   @doc """
   Clears stored compilation errors.
   """
   def clear_compilation_errors() do
     case :ets.whereis(:haxe_errors) do
-      :undefined -> :ok  # Table doesn't exist, nothing to clear
+      # Table doesn't exist, nothing to clear
+      :undefined -> :ok
       _ -> :ets.delete_all_objects(:haxe_errors)
     end
   end
-  
+
   # Private error parsing functions
-  
+
   defp parse_error_line(line) do
     cond do
       # Haxe error format: "src/Main.hx:10: characters 5-12 : Type not found : UnknownType"
       String.match?(line, ~r/\.hx:\d+:/) ->
         parse_standard_error(line)
-      
+
       # Stack trace lines: "    at Main.main (src/Main.hx line 10)"  
       String.match?(line, ~r/\s+at\s+.*\.hx\s+line\s+\d+/) ->
         parse_stacktrace_line(line)
-      
+
       # Warning format: "Warning : ..."
       String.starts_with?(line, "Warning :") ->
         parse_warning(line)
-        
+
       true ->
         nil
     end
   end
-  
+
   defp parse_standard_error(line) do
     # Try pattern with character positions first: "file.hx:line: characters start-end : message"
     case Regex.run(~r/(.+\.hx):(\d+):\s+characters\s+(\d+)-(\d+)\s*:\s*(.*)/, line) do
       [_, file, line_str, col_start, col_end, full_message] ->
         # For real Haxe errors, try to extract error type from the message
         {error_type, message} = extract_error_type_from_message(full_message)
-        
+
         %{
           type: :compilation_error,
           level: :haxe,
@@ -467,13 +508,13 @@ defmodule HaxeCompiler do
           timestamp: DateTime.utc_now(),
           stacktrace: []
         }
-      
+
       _ ->
         # Try simpler pattern without character positions: "file.hx:line: message"
         case Regex.run(~r/(.+\.hx):(\d+):\s*(.*)/, line) do
           [_, file, line_str, full_message] ->
             {error_type, message} = extract_error_type_from_message(full_message)
-            
+
             %{
               type: :compilation_error,
               level: :haxe,
@@ -487,12 +528,13 @@ defmodule HaxeCompiler do
               timestamp: DateTime.utc_now(),
               stacktrace: []
             }
-            
-          _ -> nil
+
+          _ ->
+            nil
         end
     end
   end
-  
+
   defp parse_stacktrace_line(line) do
     # Parse pattern: "    at Main.main (src/Main.hx line 10)"
     case Regex.run(~r/\s+at\s+(.*?)\s+\((.+\.hx)\s+line\s+(\d+)\)/, line) do
@@ -506,23 +548,26 @@ defmodule HaxeCompiler do
           raw_line: line,
           timestamp: DateTime.utc_now()
         }
-      
-      _ -> nil
+
+      _ ->
+        nil
     end
   end
-  
+
   defp parse_warning(line) do
     message = String.trim(String.replace_prefix(line, "Warning :", ""))
-    
+
     # Try to extract file information from warning message
-    {file, clean_message} = case Regex.run(~r/in\s+(.+\.hx)/, message) do
-      [_, file_path] ->
-        clean_msg = message |> String.replace(~r/\s+in\s+.+\.hx/, "")
-        {Path.relative_to_cwd(file_path), clean_msg}
-      _ ->
-        {nil, message}
-    end
-    
+    {file, clean_message} =
+      case Regex.run(~r/in\s+(.+\.hx)/, message) do
+        [_, file_path] ->
+          clean_msg = message |> String.replace(~r/\s+in\s+.+\.hx/, "")
+          {Path.relative_to_cwd(file_path), clean_msg}
+
+        _ ->
+          {nil, message}
+      end
+
     %{
       type: :warning,
       level: :haxe,
@@ -532,46 +577,48 @@ defmodule HaxeCompiler do
       timestamp: DateTime.utc_now()
     }
   end
-  
+
   defp parse_column(nil), do: nil
   defp parse_column(""), do: nil
   defp parse_column(col_str), do: String.to_integer(col_str)
-  
+
   defp extract_error_type_from_message(full_message) do
     full_message = String.trim(full_message)
-    
+
     cond do
       # "Type not found : SomeType"
       String.starts_with?(full_message, "Type not found") ->
         case String.split(full_message, ":", parts: 2) do
           [type_part, message_part] ->
             {String.trim(type_part), String.trim(message_part)}
+
           _ ->
             {"Type not found", full_message}
         end
-      
+
       # "has no field fieldName"  
       String.contains?(full_message, "has no field") ->
         {"Field not found", full_message}
-      
+
       # "Missing ;" or other syntax errors
       String.match?(full_message, ~r/Missing|Expected|Unexpected/) ->
         {"Syntax Error", full_message}
-        
+
       # Default: try to split on first colon, otherwise use full message
       String.contains?(full_message, ":") ->
         case String.split(full_message, ":", parts: 2) do
           [type_part, message_part] when byte_size(type_part) < 50 ->
             {String.trim(type_part), String.trim(message_part)}
+
           _ ->
             {"Compilation Error", full_message}
         end
-        
+
       true ->
         {"Compilation Error", full_message}
     end
   end
-  
+
   defp add_error_ids(errors) do
     errors
     |> Enum.with_index()
@@ -579,7 +626,7 @@ defmodule HaxeCompiler do
       Map.put(error, :error_id, "haxe_error_#{System.system_time(:microsecond)}_#{index}")
     end)
   end
-  
+
   @doc """
   Stores compilation errors in ETS table for later retrieval by Mix tasks.
   """
@@ -588,25 +635,27 @@ defmodule HaxeCompiler do
     case :ets.whereis(:haxe_errors) do
       :undefined ->
         :ets.new(:haxe_errors, [:named_table, :set, :public])
-      _ -> :ok
+
+      _ ->
+        :ok
     end
-    
+
     # Enhance errors with source mapping information before storing
     enhanced_errors = SourceMapLookup.enhance_errors_with_source_mapping(errors)
-    
+
     # Store enhanced errors
     :ets.insert(:haxe_errors, {:current_errors, enhanced_errors})
-    
+
     # Also store with timestamp for history
     timestamp = System.system_time(:microsecond)
     :ets.insert(:haxe_errors, {{:errors_at, timestamp}, errors})
   end
-  
+
   defp get_haxe_command() do
     # First check if HAXE_PATH environment variable is set (used in tests)
     # This allows tests to explicitly control which Haxe binary to use
     env_haxe = System.get_env("HAXE_PATH")
-    
+
     # Try to find a lix-managed `node_modules/.bin/haxe` by walking up from cwd.
     #
     # Why:
@@ -615,27 +664,27 @@ defmodule HaxeCompiler do
     # - Using `npx haxe` as a fallback can implicitly download an npm "haxe" package which is
     #   both slow and may not support the current platform (e.g. darwin/arm64).
     project_haxe = find_haxe_in_ancestors(File.cwd!())
-    
+
     cond do
       # Respect HAXE_PATH environment variable if set (highest priority)
       env_haxe && File.exists?(env_haxe) ->
         {env_haxe, []}
-      
+
       # Prefer the nearest lix-managed haxe shim when available
       is_binary(project_haxe) ->
         {project_haxe, []}
-      
+
       # Check if haxe is directly available
       System.find_executable("haxe") != nil ->
         {"haxe", []}
-      
+
       # Try common installation paths
       File.exists?("/opt/homebrew/bin/haxe") ->
         {"/opt/homebrew/bin/haxe", []}
-      
+
       File.exists?("/usr/local/bin/haxe") ->
         {"/usr/local/bin/haxe", []}
-        
+
       true ->
         # Final fallback - will likely fail but provides clear error
         {"haxe", []}
@@ -656,7 +705,7 @@ defmodule HaxeCompiler do
         find_haxe_in_ancestors(Path.dirname(start_dir))
     end
   end
-  
+
   defp build_haxe_env() do
     _ = HaxeServer.ensure_haxeshim_server_port_env()
 
@@ -665,16 +714,17 @@ defmodule HaxeCompiler do
 
     haxe_libraries_dir = find_haxe_libraries_in_ancestors(File.cwd!())
     resolved_haxelib_path = System.get_env("HAXELIB_PATH") || haxe_libraries_dir
-    
+
     # Add or override specific Haxe environment variables
     # NOTE: Mix tasks often run from nested directories (examples/*) and need to resolve `-lib` via the
     # repo's scoped `haxe_libraries/`. Use the nearest ancestor `haxe_libraries/` as the fallback.
-    haxe_env = [
-      {"HAXELIB_PATH", resolved_haxelib_path}
-    ]
-    |> Enum.filter(fn {_key, value} -> value != nil end)
-    |> Enum.into(%{})
-    
+    haxe_env =
+      [
+        {"HAXELIB_PATH", resolved_haxelib_path}
+      ]
+      |> Enum.filter(fn {_key, value} -> value != nil end)
+      |> Enum.into(%{})
+
     # Merge with base environment
     Map.merge(base_env |> Enum.into(%{}), haxe_env)
     |> Enum.into([])
@@ -705,5 +755,4 @@ defmodule HaxeCompiler do
   rescue
     _ -> false
   end
-  
 end

@@ -20,6 +20,18 @@ If you’re investigating macro‑time work specifically, enable macro timings:
 haxe build.hxml -D macro-times --times
 ```
 
+For Mix-integrated Haxe builds, enable phase timing output:
+
+```bash
+HAXE_TIMINGS=1 mix compile
+```
+
+`HAXE_TIMINGS` is silent by default and accepts `1`, `true`, `yes`, or `y`. When enabled, the
+`compile.haxe` task prints a short summary with phases such as Mix config/staleness checks, Haxe server
+setup, source discovery, Haxe invocation, generated-file discovery, manifest writes, diagnostics, and
+total wall time. This is useful when the benchmark says a build is slow and you need to see which local
+phase is responsible.
+
 For the todo-app compile baseline, use the bounded benchmark harness:
 
 ```bash
