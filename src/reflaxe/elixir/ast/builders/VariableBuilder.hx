@@ -181,6 +181,7 @@ class VariableBuilder {
 
 		// Build the initialization expression
 		var initAST = buildExpression(init);
+		initAST = reflaxe.elixir.ast.builders.BlockBuilder.collapseInlineAbstractValueAST(initAST);
 
 		if (initAST == null) {
 			#if debug_ast_builder

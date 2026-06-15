@@ -110,6 +110,12 @@ class HygieneFinal {
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.LateEnsureCsBinderTransforms.pass
 		});
+		passes.push({
+			name: "ChangesetSequentialValidateThread_Final",
+			description: "Finalize sequential Ecto.Changeset validate calls through one changeset binder",
+			enabled: true,
+			pass: reflaxe.elixir.ast.transformers.ChangesetTransforms.threadSequentialValidatePass
+		});
 
 		// Global temp/Repo helpers
 		passes.push({

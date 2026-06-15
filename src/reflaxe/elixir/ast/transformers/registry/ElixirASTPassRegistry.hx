@@ -1062,6 +1062,12 @@ class ElixirASTPassRegistry {
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.BinderTransforms.eqNilToIsNilPass
 		});
+		passes.push({
+			name: "ChangesetSequentialValidateThread",
+			description: "Thread sequential Ecto.Changeset validate calls through one changeset binder",
+			enabled: true,
+			pass: reflaxe.elixir.ast.transformers.ChangesetTransforms.threadSequentialValidatePass
+		});
 		// Ensure validate_* field argument uses literal atom when possible
 		passes.push({
 			name: "ChangesetFieldAtomNormalize",
@@ -4669,6 +4675,13 @@ class ElixirASTPassRegistry {
 			pass: reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms.pass,
 			runAfter: ["PubSubModuleRewrite_AbsoluteLastReplay"]
 		});
+		passes.push({
+			name: "ChangesetAssignedWildcardValidateCollapse_AbsoluteLast",
+			description: "Absolute-last: collapse assigned Ecto.Changeset validation wildcard wrappers",
+			enabled: true,
+			pass: reflaxe.elixir.ast.transformers.ChangesetTransforms.collapseAssignedWildcardValidatePass,
+			runAfter: ["CaseClauseUnusedBinderUnderscore_AbsoluteLastReplay"]
+		});
 
 		// Absolute-last replay: drop any no-op self-assignments like `v = v`.
 		//
@@ -4682,7 +4695,7 @@ class ElixirASTPassRegistry {
 			description: "Absolute-last: remove no-op self-assignments v = v (replay)",
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.DropSelfAssignNoopTransforms.pass,
-			runAfter: ["CaseClauseUnusedBinderUnderscore_AbsoluteLastReplay"]
+			runAfter: ["ChangesetAssignedWildcardValidateCollapse_AbsoluteLast"]
 		});
 
 		// Absolute-last cleanup: drop non-final bare literal statements to avoid warnings like

@@ -156,10 +156,7 @@ abstract Changeset<T, P>(Term) from Term to Term {
 	 * @return The updated changeset
 	 */
 	extern inline public function validateRequired(fields:Array<String>):Changeset<T, P> {
-		// Build the atoms list directly as part of the __elixir__ call
-		// We can't dynamically build strings for __elixir__, so we need to handle this differently
-		// The simplest approach is to pass the array directly and let Elixir handle it
-		return untyped __elixir__('Ecto.Changeset.validate_required({0}, Enum.map({1}, &String.to_atom/1))', this, fields);
+		return cast ChangesetApi.validateRequired(this, atomFields(fields));
 	}
 
 	/**
@@ -170,27 +167,7 @@ abstract Changeset<T, P>(Term) from Term to Term {
 	 * @return The updated changeset
 	 */
 	extern inline public function validateLength(field:String, opts:{?min:Int, ?max:Int, ? is:Int}):Changeset<T, P> {
-		// Build the options list directly with __elixir__ based on what's provided
-		// We need to handle all combinations since __elixir__ requires compile-time constants
-		if (opts.min != null && opts.max != null && opts.is != null) {
-			return untyped __elixir__('Ecto.Changeset.validate_length({0}, String.to_atom({1}), [min: {2}, max: {3}, is: {4}])', this, field, opts.min,
-				opts.max, opts.is);
-		} else if (opts.min != null && opts.max != null) {
-			return untyped __elixir__('Ecto.Changeset.validate_length({0}, String.to_atom({1}), [min: {2}, max: {3}])', this, field, opts.min, opts.max);
-		} else if (opts.min != null && opts.is != null) {
-			return untyped __elixir__('Ecto.Changeset.validate_length({0}, String.to_atom({1}), [min: {2}, is: {3}])', this, field, opts.min, opts.is);
-		} else if (opts.max != null && opts.is != null) {
-			return untyped __elixir__('Ecto.Changeset.validate_length({0}, String.to_atom({1}), [max: {2}, is: {3}])', this, field, opts.max, opts.is);
-		} else if (opts.min != null) {
-			return untyped __elixir__('Ecto.Changeset.validate_length({0}, String.to_atom({1}), [min: {2}])', this, field, opts.min);
-		} else if (opts.max != null) {
-			return untyped __elixir__('Ecto.Changeset.validate_length({0}, String.to_atom({1}), [max: {2}])', this, field, opts.max);
-		} else if (opts.is != null) {
-			return untyped __elixir__('Ecto.Changeset.validate_length({0}, String.to_atom({1}), [is: {2}])', this, field, opts.is);
-		} else {
-			// No options provided, just call with empty options
-			return untyped __elixir__('Ecto.Changeset.validate_length({0}, String.to_atom({1}), [])', this, field);
-		}
+		return cast ChangesetApi.validateLength(this, atomField(field), lengthOptions(opts));
 	}
 
 	/**
@@ -217,7 +194,7 @@ abstract Changeset<T, P>(Term) from Term to Term {
 	 * @return The updated changeset
 	 */
 	extern inline public function validateInclusion(field:String, values:Array<Term>):Changeset<T, P> {
-		return untyped __elixir__('Ecto.Changeset.validate_inclusion({0}, {1}, {2})', this, cast(field, Atom), values);
+		return cast ChangesetApi.validateInclusion(this, atomField(field), values);
 	}
 
 	/**
@@ -228,7 +205,19 @@ abstract Changeset<T, P>(Term) from Term to Term {
 	 * @return The updated changeset
 	 */
 	extern inline public function validateExclusion(field:String, values:Array<Term>):Changeset<T, P> {
-		return untyped __elixir__('Ecto.Changeset.validate_exclusion({0}, {1}, {2})', this, cast(field, Atom), values);
+		return cast ChangesetApi.validateExclusion(this, atomField(field), values);
+	}
+
+	extern static inline function atomFields(fields:Array<String>):Term {
+		return untyped __elixir__('Enum.map({0}, &String.to_atom/1)', fields);
+	}
+
+	extern static inline function atomField(field:String):Term {
+		return untyped __elixir__('String.to_atom({0})', field);
+	}
+
+	extern static inline function lengthOptions(opts:{?min:Int, ?max:Int, ? is:Int}):Term {
+		return untyped __elixir__('Enum.filter([min: Map.get({0}, :min), max: Map.get({0}, :max), is: Map.get({0}, :is)], fn {_, v} -> v != nil end)', opts);
 	}
 
 	/**

@@ -1466,6 +1466,8 @@ class ElixirASTBuilder {
 							initExpr;
 					};
 
+					initValue = reflaxe.elixir.ast.builders.BlockBuilder.collapseInlineAbstractValueAST(initValue);
+
 					// Check if we should skip this assignment
 					// Following Codex's architecture guidance: use ID-based tracking
 					var shouldSkipAssignment = false;

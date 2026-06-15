@@ -57,6 +57,51 @@ import reflaxe.elixir.ast.ElixirASTPrinter;
 class ChangesetTransforms {
 	static var debugCount:Int = 0;
 
+	public static function threadSequentialValidatePass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(node:ElixirAST):ElixirAST {
+			return switch (node.def) {
+				case EDef(name, params, guards, body):
+					var threaded = threadSequentialValidateBlock(body);
+					threaded != null ? makeASTWithMeta(EDef(name, params, guards, threaded), node.metadata, node.pos) : node;
+				case EDefp(name, params, guards, body):
+					var threaded = threadSequentialValidateBlock(body);
+					threaded != null ? makeASTWithMeta(EDefp(name, params, guards, threaded), node.metadata, node.pos) : node;
+				default:
+					node;
+			}
+		});
+	}
+
+	public static function collapseAssignedWildcardValidatePass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(node:ElixirAST):ElixirAST {
+			return switch (node.def) {
+				case EMatch(pattern, rhs):
+					var validation = unwrapWildcardValidate(rhs);
+					validation != null ? makeASTWithMeta(EMatch(pattern, validation), node.metadata, node.pos) : node;
+				case EBinary(Match, left, rhs):
+					var validation = unwrapWildcardValidate(rhs);
+					validation != null ? makeASTWithMeta(EBinary(Match, left, validation), node.metadata, node.pos) : node;
+				default:
+					node;
+			}
+		});
+	}
+
+	static function unwrapWildcardValidate(rhs:ElixirAST):Null<ElixirAST> {
+		if (rhs == null || rhs.def == null)
+			return null;
+		var unwrapped = switch (rhs.def) {
+			case EParen(inner): inner;
+			default: rhs;
+		};
+		return switch (unwrapped.def) {
+			case EMatch(PVar("_"), inner) | EBinary(Match, {def: EVar("_")}, inner):
+				extractChangesetValidateCall(inner);
+			default:
+				null;
+		}
+	}
+
 	public static function normalizeChangesetPass(ast:ElixirAST):ElixirAST {
 		return ElixirASTTransformer.transformNode(ast, function(node:ElixirAST):ElixirAST {
 			return switch (node.def) {
@@ -406,7 +451,7 @@ class ChangesetTransforms {
 		}
 		function rewrite(n:ElixirAST):ElixirAST {
 			return switch (n.def) {
-				case ERemoteCall(mod, fn, args) if (isChangeset(mod) && (fn == "validate_required" || fn == "validate_length")):
+				case ERemoteCall(mod, fn, args) if (isChangeset(mod) && isChangesetValidateFunction(fn)):
 					var a = args.copy();
 					if (a.length >= 2) {
 						if (fn == "validate_required") {
@@ -423,9 +468,155 @@ class ChangesetTransforms {
 		return ElixirASTTransformer.transformNode(ast, rewrite);
 	}
 
+	static function threadSequentialValidateBlock(body:ElixirAST):Null<ElixirAST> {
+		return switch (body.def) {
+			case EBlock(stmts) if (stmts.length >= 2):
+				var initial = matchChangesetProducerAssignment(stmts[0]);
+				if (initial == null)
+					return null;
+
+				var outputBinder = isThisLike(initial.binder) ? "changeset" : initial.binder;
+				var out:Array<ElixirAST> = [
+					makeASTWithMeta(EMatch(PVar(outputBinder), initial.value), stmts[0].metadata, stmts[0].pos)
+				];
+				var sawValidate = false;
+				for (i in 1...stmts.length) {
+					var statement = stmts[i];
+					if (isIgnorableTrailingBinder(statement, initial.binder, outputBinder) || (sawValidate && isBareVariable(statement)))
+						continue;
+					var validation = extractChangesetValidateCall(statement);
+					if (validation == null)
+						return null;
+					out.push(makeASTWithMeta(EMatch(PVar(outputBinder), rewriteValidateReceiver(validation, outputBinder)), statement.metadata, statement.pos));
+					sawValidate = true;
+				}
+
+				if (!sawValidate)
+					return null;
+
+				out.push(makeAST(EVar(outputBinder)));
+				makeASTWithMeta(EBlock(out), body.metadata, body.pos);
+			default:
+				null;
+		}
+	}
+
+	static function matchChangesetProducerAssignment(statement:ElixirAST):Null<{binder:String, value:ElixirAST}> {
+		if (statement == null || statement.def == null)
+			return null;
+		return switch (statement.def) {
+			case EMatch(PVar(binder), value) if (isChangesetProducer(value)):
+				{binder: binder, value: value};
+			case EBinary(Match, {def: EVar(binder)}, value) if (isChangesetProducer(value)):
+				{binder: binder, value: value};
+			default:
+				null;
+		}
+	}
+
+	static function isChangesetProducer(value:ElixirAST):Bool {
+		var found = false;
+		function scan(node:ElixirAST):Void {
+			if (found || node == null || node.def == null)
+				return;
+			switch (node.def) {
+				case ERemoteCall(mod, functionName, args):
+					if (isChangeset(mod) && (functionName == "cast" || functionName == "change")) {
+						found = true;
+						return;
+					}
+					scan(mod);
+					if (args != null)
+						for (arg in args)
+							scan(arg);
+				case ECall(target, _, args):
+					if (target != null)
+						scan(target);
+					if (args != null)
+						for (arg in args)
+							scan(arg);
+				case EFn(clauses):
+					for (clause in clauses)
+						scan(clause.body);
+				case EBlock(statements) | EDo(statements):
+					for (statement in statements)
+						scan(statement);
+				case EIf(condition, thenBranch, elseBranch):
+					scan(condition);
+					scan(thenBranch);
+					if (elseBranch != null)
+						scan(elseBranch);
+				case ECase(subject, clauses):
+					scan(subject);
+					for (clause in clauses) {
+						if (clause.guard != null)
+							scan(clause.guard);
+						scan(clause.body);
+					}
+				case EMatch(_, inner) | EBinary(_, _, inner) | EParen(inner):
+					scan(inner);
+				case ERaw(code):
+					if (code != null && (code.indexOf("Ecto.Changeset.cast(") != -1 || code.indexOf("Ecto.Changeset.change(") != -1))
+						found = true;
+				default:
+			}
+		}
+		scan(value);
+		return found;
+	}
+
+	static function isBareVariable(statement:ElixirAST):Bool {
+		if (statement == null || statement.def == null)
+			return false;
+		return switch (statement.def) {
+			case EVar(_): true;
+			default: false;
+		}
+	}
+
+	static function isIgnorableTrailingBinder(statement:ElixirAST, initialBinder:String, outputBinder:String):Bool {
+		if (statement == null || statement.def == null)
+			return false;
+		return switch (statement.def) {
+			case EVar(name): name == initialBinder || name == outputBinder;
+			default: false;
+		}
+	}
+
+	static function extractChangesetValidateCall(statement:ElixirAST):Null<ElixirAST> {
+		if (statement == null || statement.def == null)
+			return null;
+		return switch (statement.def) {
+			case ERemoteCall(mod, functionName, args) if (isChangesetValidate(mod, functionName, args)):
+				statement;
+			case EMatch(_, rhs) | EBinary(Match, _, rhs):
+				extractChangesetValidateCall(rhs);
+			case EParen(inner):
+				extractChangesetValidateCall(inner);
+			default:
+				null;
+		}
+	}
+
+	static function rewriteValidateReceiver(call:ElixirAST, binder:String):ElixirAST {
+		return switch (call.def) {
+			case ERemoteCall(mod, functionName, args):
+				var rewrittenArgs = args.copy();
+				if (rewrittenArgs.length > 0)
+					rewrittenArgs[0] = makeAST(EVar(binder));
+				makeASTWithMeta(ERemoteCall(mod, functionName, rewrittenArgs), call.metadata, call.pos);
+			default:
+				call;
+		}
+	}
+
 	static function normalizeBody(body:ElixirAST):ElixirAST {
 		#if debug_changeset_transforms
 		#end
+		var threadedBlock = threadSequentialValidateBlock(body);
+		if (threadedBlock != null)
+			return threadedBlock;
+
 		// Early exit: preserve pure expression bodies that directly return a Changeset pipeline
 		// (no assignments/blocks), to avoid introducing or expecting a `cs` binder.
 		var isSimpleExpr = switch (body.def) {
@@ -598,7 +789,9 @@ class ChangesetTransforms {
 				return switch (e.def) {
 					case ERemoteCall(mod, fn, args): isChangesetValidate(mod, fn, args);
 					case ERaw(code): code != null && (code.indexOf("Ecto.Changeset.validate_required(") != -1
-							|| code.indexOf("Ecto.Changeset.validate_length(") != -1);
+							|| code.indexOf("Ecto.Changeset.validate_length(") != -1
+							|| code.indexOf("Ecto.Changeset.validate_inclusion(") != -1
+							|| code.indexOf("Ecto.Changeset.validate_exclusion(") != -1);
 					default: false;
 				}
 			}
@@ -628,15 +821,15 @@ class ChangesetTransforms {
 			return switch (n.def) {
 				case EMatch(PVar(lhs), rhs) if (rhs != null):
 					var isTarget = switch (rhs.def) {
-						case ERemoteCall(m, f, _): isChangeset(m) && (f == "change" || f == "validate_required" || f == "validate_length");
+						case ERemoteCall(m, f, args): isChangesetChangeOrValidate(m, f, args);
 						case EMatch(_, inner):
 							switch (inner.def) {
-								case ERemoteCall(m2, f2, _): isChangeset(m2) && (f2 == "change" || f2 == "validate_required" || f2 == "validate_length");
+								case ERemoteCall(m2, f2, args2): isChangesetChangeOrValidate(m2, f2, args2);
 								default: false;
 							}
 						case EBinary(Match, _, r2):
 							switch (r2.def) {
-								case ERemoteCall(m3, f3, _): isChangeset(m3) && (f3 == "change" || f3 == "validate_required" || f3 == "validate_length");
+								case ERemoteCall(m3, f3, args3): isChangesetChangeOrValidate(m3, f3, args3);
 								default: false;
 							}
 						default: false;
@@ -657,15 +850,15 @@ class ChangesetTransforms {
 				case EBinary(Match, left, rhs):
 					// dst = (thisN = change/validate_*) -> cs = change/validate_*
 					var isTarget = switch (rhs.def) {
-						case ERemoteCall(m, f, _): isChangeset(m) && (f == "change" || f == "validate_required" || f == "validate_length");
+						case ERemoteCall(m, f, args): isChangesetChangeOrValidate(m, f, args);
 						case EMatch(_, inner):
 							switch (inner.def) {
-								case ERemoteCall(m2, f2, _): isChangeset(m2) && (f2 == "change" || f2 == "validate_required" || f2 == "validate_length");
+								case ERemoteCall(m2, f2, args2): isChangesetChangeOrValidate(m2, f2, args2);
 								default: false;
 							}
 						case EBinary(Match, _, r2):
 							switch (r2.def) {
-								case ERemoteCall(m3, f3, _): isChangeset(m3) && (f3 == "change" || f3 == "validate_required" || f3 == "validate_length");
+								case ERemoteCall(m3, f3, args3): isChangesetChangeOrValidate(m3, f3, args3);
 								default: false;
 							}
 						default: false;
@@ -913,8 +1106,18 @@ class ChangesetTransforms {
 			return false;
 		if (args == null || args.length == 0)
 			return false;
+		return isChangesetValidateFunction(func);
+	}
+
+	static inline function isChangesetChangeOrValidate(mod:ElixirAST, func:String, args:Array<ElixirAST>):Bool {
+		if (!isChangeset(mod))
+			return false;
+		return func == "change" || isChangesetValidateFunction(func);
+	}
+
+	static inline function isChangesetValidateFunction(func:String):Bool {
 		return switch (func) {
-			case "validate_required" | "validate_length": true;
+			case "validate_required" | "validate_length" | "validate_inclusion" | "validate_exclusion": true;
 			default: false;
 		}
 	}
@@ -928,11 +1131,13 @@ class ChangesetTransforms {
 
 	static function containsValidateCall(e:ElixirAST):Bool {
 		return switch (e.def) {
-			case ERemoteCall(mod, fn, _) if (isChangeset(mod) && (fn == "validate_required" || fn == "validate_length")): true;
+			case ERemoteCall(mod, fn, _) if (isChangeset(mod) && isChangesetValidateFunction(fn)): true;
 			case ERaw(code)
 				if (code != null
 					&& (code.indexOf("Ecto.Changeset.validate_required(") != -1
-						|| code.indexOf("Ecto.Changeset.validate_length(") != -1)): true;
+						|| code.indexOf("Ecto.Changeset.validate_length(") != -1
+						|| code.indexOf("Ecto.Changeset.validate_inclusion(") != -1
+						|| code.indexOf("Ecto.Changeset.validate_exclusion(") != -1)): true;
 			case EMatch(_, inner): containsValidateCall(inner);
 			case EBinary(Match, _, right): containsValidateCall(right);
 			case EParen(inner): containsValidateCall(inner);
@@ -947,7 +1152,7 @@ class ChangesetTransforms {
 
 	static function extractValidateCall(e:ElixirAST):ElixirAST {
 		return switch (e.def) {
-			case ERemoteCall(mod, fn, args) if (isChangeset(mod) && (fn == "validate_required" || fn == "validate_length")): e;
+			case ERemoteCall(mod, fn, args) if (isChangeset(mod) && isChangesetValidateFunction(fn)): e;
 			case EMatch(_, inner): extractValidateCall(inner);
 			case EBinary(Match, _, right): extractValidateCall(right);
 			case EParen(inner): extractValidateCall(inner);

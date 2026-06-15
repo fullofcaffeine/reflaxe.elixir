@@ -94,6 +94,10 @@ class BlockBuilder {
 				return result != null ? result.def : ENil;
 			}
 
+			var inlineAbstractValue = detectInlineAbstractValueBlock(el, context);
+			if (inlineAbstractValue != null)
+				return inlineAbstractValue;
+
 			// ====================================================================
 			// PATTERN DETECTION: Safe array mutation loops
 			// ====================================================================
@@ -607,6 +611,66 @@ class BlockBuilder {
 			&& (classType.name == "Map" || classType.name == "StringMap" || classType.name == "IntMap" || classType.name == "EnumValueMap");
 	}
 
+	static function detectInlineAbstractValueBlock(el:Array<TypedExpr>, context:CompilationContext):Null<ElixirASTDef> {
+		if (el == null || el.length != 3 || context == null)
+			return null;
+
+		var tempVar:Null<TVar> = null;
+		switch (el[0].expr) {
+			case TVar(v, init) if (isThisLikeTemp(v.name) && isNilInitializer(init)):
+				tempVar = v;
+			default:
+				return null;
+		}
+
+		var assignedValue:Null<TypedExpr> = null;
+		switch (el[1].expr) {
+			case TBinop(OpAssign, {expr: TLocal(v)}, value) if (v.id == tempVar.id):
+				assignedValue = value;
+			default:
+				return null;
+		}
+
+		switch (el[2].expr) {
+			case TLocal(v) if (v.id == tempVar.id):
+			default:
+				return null;
+		}
+
+		var valueAst = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(assignedValue, context);
+		return valueAst != null ? valueAst.def : null;
+	}
+
+	static function isThisLikeTemp(name:String):Bool {
+		if (name == null)
+			return false;
+		if (name == "this")
+			return true;
+		if (!StringTools.startsWith(name, "this"))
+			return false;
+		var suffix = name.substr("this".length);
+		if (suffix.length == 0)
+			return true;
+		for (i in 0...suffix.length) {
+			var code = suffix.charCodeAt(i);
+			if (code < "0".code || code > "9".code)
+				return false;
+		}
+		return true;
+	}
+
+	static function isNilInitializer(init:Null<TypedExpr>):Bool {
+		if (init == null)
+			return true;
+		return switch (init.expr) {
+			case TConst(TNull): true;
+			case TParenthesis(inner) | TCast(inner, _) | TMeta(_, inner):
+				isNilInitializer(inner);
+			default:
+				false;
+		}
+	}
+
 	static function copyNullVarIds(nullVarIds:Map<Int, Bool>):Map<Int, Bool> {
 		var copied = new Map<Int, Bool>();
 		for (id in nullVarIds.keys()) {
@@ -1027,6 +1091,72 @@ class BlockBuilder {
 		}
 
 		return result;
+	}
+
+	public static function collapseInlineAbstractValueAST(ast:Null<ElixirAST>):Null<ElixirAST> {
+		if (ast == null || ast.def == null)
+			return ast;
+		return switch (ast.def) {
+			case EBlock(expressions):
+				var value = detectInlineAbstractValueAST(expressions);
+				value != null ? value : ast;
+			default:
+				ast;
+		}
+	}
+
+	static function detectInlineAbstractValueAST(expressions:Array<ElixirAST>):Null<ElixirAST> {
+		if (expressions == null || expressions.length != 3)
+			return null;
+
+		var tempName = matchNilTempAssignment(expressions[0]);
+		if (tempName == null)
+			return null;
+
+		var value = matchTempAssignment(expressions[1], tempName);
+		if (value == null)
+			return null;
+
+		if (!isVar(expressions[2], tempName))
+			return null;
+
+		return value;
+	}
+
+	static function matchNilTempAssignment(ast:ElixirAST):Null<String> {
+		if (ast == null || ast.def == null)
+			return null;
+		var matched = switch (ast.def) {
+			case EMatch(PVar(name), {def: ENil}) if (isThisLikeTemp(name)):
+				name;
+			case EBinary(Match, {def: EVar(name)}, {def: ENil}) if (isThisLikeTemp(name)):
+				name;
+			default:
+				null;
+		}
+		return matched;
+	}
+
+	static function matchTempAssignment(ast:ElixirAST, tempName:String):Null<ElixirAST> {
+		if (ast == null || ast.def == null)
+			return null;
+		return switch (ast.def) {
+			case EMatch(PVar(name), value) if (name == tempName):
+				value;
+			case EBinary(Match, {def: EVar(name)}, value) if (name == tempName):
+				value;
+			default:
+				null;
+		}
+	}
+
+	static function isVar(ast:ElixirAST, name:String):Bool {
+		if (ast == null)
+			return false;
+		return switch (ast.def) {
+			case EVar(varName): varName == name;
+			default: false;
+		}
 	}
 
 	/**

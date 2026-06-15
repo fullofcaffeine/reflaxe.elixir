@@ -37,6 +37,12 @@ extern class ChangesetApi {
 	@:native("validate_format")
 	public static function validateFormat(cs:Term, field:Term, pattern:Term):Term;
 
+	@:native("validate_inclusion")
+	public static function validateInclusion(cs:Term, field:Term, values:Term):Term;
+
+	@:native("validate_exclusion")
+	public static function validateExclusion(cs:Term, field:Term, values:Term):Term;
+
 	@:native("validate_confirmation")
 	public static function validateConfirmation(cs:Term, field:Term, opts:Term = null):Term;
 
