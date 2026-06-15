@@ -15,7 +15,7 @@ class Main {
 		var fields = fieldsForChangeset();
 		var email = emailField();
 		var lastLoginAt = lastLoginAtField();
-		untyped __elixir__('IO.inspect({fields: {0}, email: {1}, last_login_at: {2}})', fields, email, lastLoginAt);
+		untyped __elixir__('IO.inspect(%{fields: {0}, email: {1}, last_login_at: {2}})', fields, email, lastLoginAt);
 	}
 
 	static function fieldsForChangeset():Array<String> {

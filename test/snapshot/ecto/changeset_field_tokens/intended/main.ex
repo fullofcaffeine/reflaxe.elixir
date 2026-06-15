@@ -3,7 +3,7 @@ defmodule Main do
     fields = fields_for_changeset()
     email = email_field()
     last_login_at = last_login_at_field()
-    IO.inspect({fields: fields, email: email, last_login_at: last_login_at})
+    IO.inspect(%{fields: fields, email: email, last_login_at: last_login_at})
   end
   defp fields_for_changeset() do
     ["name", "email", "age", "role", "last_login_at"]
