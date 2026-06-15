@@ -176,6 +176,14 @@ function transformToEnumCall(pattern: LoopPattern): ElixirASTDef
 
 ## 🔧 Development Workflow
 
+### Stdlib Runtime Conformance
+
+- Stdlib override changes must update `test/upstream_unitstd/manifest.json`.
+- If upstream Haxe has a matching `tests/unit/src/unitstd/**/*.unit.hx` spec, prefer enabling or adapting the checked-in fixture under `test/upstream_unitstd/upstream/**`.
+- Run `npm run test:haxe-exunit-stdlib` and `npm run guard:upstream-unitstd` for stdlib parity work.
+- Snapshots prove generated Elixir shape; upstream unitstd/ExUnit coverage proves runtime behavior on BEAM.
+- Runtime conformance failures can expose real compiler lowering or target stdlib bugs. Diagnose the generated Elixir and fix the compiler/std source first; only mark a spec skipped/adapted after confirming the upstream contract is intentionally unsupported or target-specific.
+
 ### After ANY Compiler Change
 1. **Run full test suite**: `npm test` (ALL tests must pass)
 2. **Test todo-app integration (non-blocking QA sentinel)**:

@@ -1,0 +1,27 @@
+# Upstream Haxe `unitstd` Runtime Specs
+
+This directory contains a curated, checked-in subset of Haxe upstream
+`tests/unit/src/unitstd/**/*.unit.hx` specs.
+
+Why this exists:
+- Snapshot tests validate generated Elixir shape.
+- These specs validate BEAM runtime behavior against Haxe's stdlib contract.
+- CI must be deterministic, so it cannot depend on a sibling
+  `../haxe.compilerdev.reference` checkout.
+
+Source provenance:
+- Upstream source: Haxe `tests/unit/src/unitstd`
+- Haxe standard library/tests are distributed under the Haxe Foundation MIT
+  license; see the upstream `extra/LICENSE.txt`.
+
+Coverage policy:
+- `manifest.json` must include every module listed in the core stdlib support
+  matrix.
+- `enabled` and `adapted` fixtures compile through Reflaxe.Elixir into ExUnit
+  and run on BEAM via `npm run test:haxe-exunit-stdlib`.
+- Non-enabled entries must explain whether no upstream spec exists, the spec is
+  unsupported for this target, or target-specific triage is still required.
+
+Use `scripts/sync-upstream-unitstd-specs.sh` to refresh enabled, unmodified specs
+from a local Haxe reference checkout. Adapted specs must be reviewed manually so
+their local target/path-hygiene changes are not overwritten.

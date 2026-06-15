@@ -17,6 +17,7 @@ defmodule Main do
     _ = assert_that(Haxe.IO.Path.with_extension("/tmp/file", "log") == "/tmp/file.log", "withExtension failed")
     _ = assert_that(Haxe.IO.Path.join(["/usr", "local", "../bin"]) == "/usr/bin", "join normalize failed")
     _ = assert_that(Haxe.IO.Path.normalize("/usr//local/../bin/./tool") == "/usr/bin/tool", "normalize failed")
+    _ = assert_that(Haxe.IO.Path.normalize("http://haxe.org/downloads") == "http://haxe.org/downloads", "URL normalize failed")
     _ = assert_that(Haxe.IO.Path.add_trailing_slash("foo\\bar") == "foo\\bar\\", "addTrailingSlash backslash failed")
     _ = assert_that(Haxe.IO.Path.remove_trailing_slashes("foo///") == "foo", "removeTrailingSlashes failed")
     _ = assert_that(Haxe.IO.Path.is_absolute("/tmp"), "unix absolute failed")

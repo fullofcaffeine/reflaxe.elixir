@@ -32,6 +32,7 @@ class Main {
 		assertThat(Path.withExtension("/tmp/file", "log") == "/tmp/file.log", "withExtension failed");
 		assertThat(Path.join(["/usr", "local", "../bin"]) == "/usr/bin", "join normalize failed");
 		assertThat(Path.normalize("/usr//local/../bin/./tool") == "/usr/bin/tool", "normalize failed");
+		assertThat(Path.normalize("http://haxe.org/downloads") == "http://haxe.org/downloads", "URL normalize failed");
 		assertThat(Path.addTrailingSlash("foo\\bar") == "foo\\bar\\", "addTrailingSlash backslash failed");
 		assertThat(Path.removeTrailingSlashes("foo///") == "foo", "removeTrailingSlashes failed");
 		assertThat(Path.isAbsolute("/tmp"), "unix absolute failed");

@@ -667,20 +667,10 @@ class ElixirASTBuilder {
 					#end
 					renamed;
 				} else if (currentContext.isInConstructorArgContext) {
-					// Constructor argument context - strip Haxe's numeric shadowing suffix
-					// Pattern: replacer2 -> replacer, space3 -> space
-					var pattern = ~/^(.+?)(\d+)$/;
-					var baseName = if (pattern.match(v.name)) {
-						var base = pattern.matched(1);
-						var suffix = pattern.matched(2);
-						#if debug_constructor_args
-						#end
-						base;
-					} else {
-						v.name;
-					};
-					// Convert to Elixir variable name
-					VariableAnalyzer.toElixirVarName(baseName);
+					// Constructor arguments must preserve source identity unless an explicit
+					// rename map exists. Guessing from numeric suffixes corrupts ordinary
+					// locals such as `path2` -> `path`.
+					VariableAnalyzer.toElixirVarName(v.name);
 				} else {
 					// Not in context - use standard snake_case conversion
 					var converted = VariableAnalyzer.toElixirVarName(v.name);

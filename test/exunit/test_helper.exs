@@ -50,6 +50,11 @@ if File.dir?(haxe_test_src) do
   timeout_script = Path.join(project_root, "scripts/with-timeout.sh")
   bash_bin = System.find_executable("bash") || "bash"
 
+  haxe_test_modules = [
+    "stdlib_parity.StdlibParityTest",
+    "stdlib_parity.UpstreamUnitStdTest"
+  ]
+
   {output, status} =
     System.cmd(bash_bin, [
       timeout_script,
@@ -66,13 +71,12 @@ if File.dir?(haxe_test_src) do
       "-D",
       "reflaxe_runtime",
       "-D",
-      "elixir_output=#{generated_dir}",
-      "stdlib_parity.StdlibParityTest"
-    ], cd: project_root, stderr_to_stdout: true)
+      "elixir_output=#{generated_dir}"
+    ] ++ haxe_test_modules, cd: project_root, stderr_to_stdout: true)
 
   if status != 0 do
     raise """
-    Failed to compile Haxe-authored ExUnit tests (status=#{status}).
+    Failed to compile Haxe-authored ExUnit modules #{Enum.join(haxe_test_modules, ", ")} (status=#{status}).
 
     Output:
     #{output}

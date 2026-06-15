@@ -485,23 +485,16 @@ class VariableBuilder {
 
 		ensureStableNameForAnonymousLocal(tvar, context);
 
-		// Priority 0: In constructor contexts, check tempVarRenameMap for parameter name mapping
-		// WHY: Prevents "replacer2/space2" bug where shadowed parameters are passed to constructors
-		// CONTEXT: When a class has fields "replacer" and "space", and a method has parameters
-		//          with the same names, Haxe renames the parameters to "replacer2" and "space2"
-		//          to avoid shadowing. FunctionBuilder stores the mapping "replacer2" → "replacer"
-		//          in tempVarRenameMap. We must check this mapping FIRST before falling back.
-		// RESULT: JsonPrinter.new(replacer, space) instead of JsonPrinter.new(replacer2, space2)
+		// Priority 0: In constructor contexts, honor explicit parameter rename mappings.
+		// Do not guess from numeric suffixes: ordinary locals like `path2` are valid source
+		// names and must not be rewritten to `path` just because they are constructor args.
 		if (context.isInConstructorArgContext) {
-			// Check tempVarRenameMap for the mapping (e.g., "replacer2" → "replacer")
 			if (context.tempVarRenameMap != null && context.tempVarRenameMap.exists(defaultName)) {
 				var mappedName = context.tempVarRenameMap.get(defaultName);
 				return mappedName;
 			}
 
-			// If not in map, strip numeric suffix as fallback
-			var strippedName = stripNumericShadowSuffix(defaultName);
-			return strippedName;
+			return reflaxe.elixir.ast.analyzers.VariableAnalyzer.toElixirVarName(defaultName);
 		}
 
 		// Priority 1: Check pattern registry for enum pattern extraction
@@ -669,31 +662,6 @@ class VariableBuilder {
 
 		#if debug_pattern_variables
 		#end
-	}
-
-	/**
-	 * Strip numeric shadow suffix from parameter names
-	 *
-	 * WHY: Haxe adds numeric suffixes (2, 3, etc.) when parameters shadow class fields
-	 * WHAT: Removes the numeric suffix to get the original parameter name
-	 * HOW: Pattern matches "name + digits" and strips the digits
-	 *
-	 * EXAMPLE:
-	 * - "replacer2" → "replacer" (shadowed parameter)
-	 * - "space3" → "space" (shadowed parameter)
-	 * - "counter" → "counter" (no shadow, unchanged)
-	 * - "value2extra" → "value2extra" (not pure numeric suffix, unchanged)
-	 */
-	static function stripNumericShadowSuffix(name:String):String {
-		var pattern = ~/^(.+?)(\d+)$/;
-		if (pattern.match(name)) {
-			var base = pattern.matched(1);
-			var suffix = pattern.matched(2);
-			#if debug_constructor_args
-			#end
-			return base;
-		}
-		return name;
 	}
 }
 #end

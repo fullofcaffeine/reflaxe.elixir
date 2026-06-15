@@ -110,32 +110,41 @@ class Path {
 		if (path == slash)
 			return slash;
 
-		var parts:Array<String> = [];
+		var target:Array<String> = [];
 		for (part in path.split(slash)) {
-			if (part == "..") {
-				if (canResolveParent(parts))
-					parts = withoutLastPart(parts);
-				else
-					parts.push(part);
+			if (part == ".." && target.length > 0 && target[target.length - 1] != "..") {
+				target = withoutLastPart(target);
 			} else if (part == "") {
-				if (parts.length == 0 && path.charCodeAt(0) == slash.charCodeAt(0)) {
-					parts.push(part);
+				if (target.length > 0 || path.charCodeAt(0) == slash.charCodeAt(0)) {
+					target.push(part);
 				}
 			} else if (part != ".") {
-				parts.push(part);
+				target.push(part);
 			}
 		}
 
-		return parts.join(slash);
-	}
+		var collapsed = target.join(slash);
+		var result = "";
+		var colon = false;
+		var slashes = false;
+		for (index in 0...collapsed.length) {
+			var code = collapsed.charCodeAt(index);
+			if (code == ":".code) {
+				result += ":";
+				colon = true;
+			} else if (code == "/".code && !colon) {
+				slashes = true;
+			} else {
+				colon = false;
+				if (slashes) {
+					result += "/";
+					slashes = false;
+				}
+				result += String.fromCharCode(code);
+			}
+		}
 
-	static function canResolveParent(parts:Array<String>):Bool {
-		if (parts.length == 0)
-			return false;
-		var lastPart:Null<String> = null;
-		for (part in parts)
-			lastPart = part;
-		return lastPart != ".." && lastPart != "";
+		return result;
 	}
 
 	static function withoutLastPart(parts:Array<String>):Array<String> {

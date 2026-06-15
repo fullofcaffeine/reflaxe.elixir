@@ -29,6 +29,41 @@ CI parity drift guard (no external reference checkout required):
 npm run guard:stdlib-parity
 ```
 
+Runtime conformance guard:
+
+```bash
+npm run guard:upstream-unitstd
+npm run test:haxe-exunit-stdlib
+```
+
+## Upstream runtime conformance
+
+Snapshot tests validate the generated Elixir shape. Stdlib runtime conformance
+uses checked-in Haxe upstream `unitstd` specs under
+`test/upstream_unitstd/upstream/**`, compiles them through Reflaxe.Elixir into
+ExUnit, and runs the resulting tests on BEAM.
+
+The coverage manifest is `test/upstream_unitstd/manifest.json`.
+
+- `enabled` / `adapted`: the checked-in fixture is compiled and run by
+  `npm run test:haxe-exunit-stdlib`.
+- `skipped-target-specific`: an upstream spec exists, but the BEAM semantics or
+  adapter support still need explicit triage before enabling it.
+- `skipped-unsupported`: the upstream spec targets behavior this Elixir target
+  intentionally does not support.
+- `no-upstream-spec`: no matching upstream `unitstd` fixture exists, so runtime
+  behavior must be covered by local Haxe-authored ExUnit or snapshot/runtime
+  tests.
+
+When adding or changing a stdlib override, update this manifest in the same
+change. If upstream has a matching `unitstd` spec, prefer enabling/adapting that
+fixture; otherwise record the reason and add local runtime coverage where
+appropriate. Refresh checked-in enabled, unmodified fixtures from a local Haxe checkout with:
+
+```bash
+scripts/sync-upstream-unitstd-specs.sh
+```
+
 ## Implemented/overridden by Reflaxe.Elixir (core set)
 
 These modules are implemented/overridden in this repo (and covered by snapshot tests where relevant):
@@ -62,6 +97,7 @@ Top-level:
 - `haxe.Template` (portable rendering subset)
 - `haxe.Unserializer` (portable data subset)
 - `haxe.crypto.Base64`
+- `haxe.crypto.Md5`
 - `haxe.crypto.Sha1`
 - `haxe.ds.BalancedTree`
 - `haxe.ds.EnumValueMap` (bootstrap-safe override under `src/haxe/ds`)

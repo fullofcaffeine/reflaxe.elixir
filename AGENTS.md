@@ -41,6 +41,11 @@ These failures usually come from running only a subset locally (e.g. `test:quick
 - Snapshots (full CI categories): `scripts/test-chunks.sh`
   - CI includes: `core,stdlib,regression,phoenix,liveview,ecto,otp,exunit,bootstrap`
   - If you changed an AST pass or stdlib shaping, prefer running the full categories to avoid “works locally but CI fails” on later suites.
+- Stdlib runtime conformance: `npm run test:haxe-exunit-stdlib` and `npm run guard:upstream-unitstd`.
+  - When adding or changing any stdlib override, update `test/upstream_unitstd/manifest.json` in the same change.
+  - If upstream Haxe has a matching `tests/unit/src/unitstd/**/*.unit.hx` spec, prefer checking in/enabling that fixture under `test/upstream_unitstd/upstream/**` so it compiles to ExUnit and runs on BEAM.
+  - If the upstream spec is not yet runnable or no spec exists, record the explicit manifest reason and add local runtime coverage when appropriate. Snapshot coverage alone is not sufficient for stdlib semantics.
+  - Treat upstream runtime test failures as compiler/stdlib correctness signals first, not as bad fixtures. Investigate whether the fix belongs in AST lowering, target stdlib source, or the adapter before skipping/adapting the spec.
 - CI-equivalent full suite: `npm test`
 - Examples (strict warnings): `npm run test:examples-elixir` (mix compile `--warnings-as-errors`, no deps check)
 - Mix tests (fast): `npm run test:mix-fast`

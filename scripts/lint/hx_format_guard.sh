@@ -13,5 +13,10 @@ if ! haxelib run formatter --help >/dev/null 2>&1; then
 fi
 
 echo "[guard:hx-format] Checking Haxe formatting..."
-haxelib run formatter -s src -s std -s examples -s test --check
+test_sources=()
+while IFS= read -r source; do
+  test_sources+=("-s" "$source")
+done < <(find test -name '*.hx' -not -path 'test/upstream_unitstd/upstream/*' | sort)
+
+haxelib run formatter -s src -s std -s examples "${test_sources[@]}" --check
 echo "[guard:hx-format] OK: Haxe formatting is clean."

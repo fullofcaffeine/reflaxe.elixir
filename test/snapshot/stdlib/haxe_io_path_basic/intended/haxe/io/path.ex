@@ -116,47 +116,69 @@ defmodule Haxe.IO.Path do
     if (path == slash) do
       slash
     else
-      parts = []
+      target = []
       _g = 0
       g_value = if (slash == "") do
         String.graphemes(path)
       else
         String.split(path, slash)
       end
-      parts = Enum.reduce(g_value, parts, fn part, parts_acc ->
+      target = Enum.reduce(g_value, target, fn part, target_acc ->
         cond do
-          part == ".." ->
-            parts_acc = if (can_resolve_parent(parts_acc)) do
-  without_last_part(parts_acc)
-else
-  Enum.concat(parts_acc, [part])
-end
-            parts_acc
+          part == ".." and length(target_acc) > 0 and Enum.at(target_acc, (length(target_acc) - 1)) != ".." ->
+            target_acc = without_last_part(target_acc)
+            target_acc
           part == "" ->
             cond_value = Enum.at(String.to_charlist(path), 0) == Enum.at(String.to_charlist(slash), 0)
-            parts_acc = if (length(parts_acc) == 0 and cond_value) do
-  Enum.concat(parts_acc, [part])
+            target_acc = if (length(target_acc) > 0 or cond_value) do
+  Enum.concat(target_acc, [part])
 else
-  parts_acc
+  target_acc
 end
-            parts_acc
+            target_acc
           part != "." ->
-            parts_acc = Enum.concat(parts_acc, [part])
-            parts_acc
-          :true -> parts_acc
+            target_acc = Enum.concat(target_acc, [part])
+            target_acc
+          :true -> target_acc
         end
       end)
-      _ = Enum.join(parts, slash)
-    end
-  end
-  defp can_resolve_parent(parts) do
-    if (length(parts) == 0) do
-      false
-    else
-      last_part = nil
+      collapsed = Enum.join(target, slash)
+      result = ""
+      colon = false
+      slashes = false
       _g = 0
-      last_part = Enum.reduce(parts, last_part, fn part, _last_part_acc -> part end)
-      last_part != ".." and last_part != ""
+      collapsed_length = String.length(collapsed)
+      {result, _colon, _slashes} = Enum.reduce(0..(collapsed_length - 1)//1, {result, colon, slashes}, fn index, {result_acc, colon_acc, slashes_acc} ->
+        code = if (index < 0) do
+          nil
+        else
+          Enum.at(String.to_charlist(collapsed), index)
+        end
+        {_code, colon_acc, result_acc, slashes_acc} = cond do
+          code == 58 ->
+            result_acc = result_acc <> ":"
+            colon_acc = true
+            {code, colon_acc, result_acc, slashes_acc}
+          code == 47 and not colon_acc ->
+            slashes_acc = true
+            {code, colon_acc, result_acc, slashes_acc}
+          :true ->
+            colon_acc = false
+            {result_acc, slashes_acc} = if (slashes_acc) do
+              result_acc = result_acc <> "/"
+              slashes_acc = false
+              {result_acc, slashes_acc}
+            else
+              {result_acc, slashes_acc}
+            end
+            result_acc = result_acc <> (fn ->
+  <<code::utf8>>
+end).()
+            {code, colon_acc, result_acc, slashes_acc}
+        end
+        {result_acc, colon_acc, slashes_acc}
+      end)
+      result
     end
   end
   defp without_last_part(parts) do
