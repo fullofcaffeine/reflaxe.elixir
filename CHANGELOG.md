@@ -1,3 +1,10 @@
+# [0.6.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.5.3...v0.6.0) (2026-06-15)
+
+
+### Features
+
+* add checked Ecto field selectors ([47fef59](https://github.com/fullofcaffeine/reflaxe.elixir/commit/47fef59fd30216544d568141482ddd7a0af0434b))
+
 ## [0.5.3](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.5.2...v0.5.3) (2026-06-13)
 
 
