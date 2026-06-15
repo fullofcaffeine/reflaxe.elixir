@@ -30,6 +30,7 @@ Not included as primary reference surface:
 - Ecto API deep dive: `docs/04-api-reference/ECTO_API_REFERENCE.md`
 - Elixir runtime API deep dive: `docs/04-api-reference/ELIXIR_RUNTIME_API_REFERENCE.md`
 - Type-safe OTP child-spec API: `docs/04-api-reference/TYPE_SAFE_CHILD_SPEC.md`
+- API UX backlog and prioritization: `docs/08-roadmap/api-ux-backlog.md`
 
 ## LLM Contract: Typed Phoenix DSL Surfaces
 
