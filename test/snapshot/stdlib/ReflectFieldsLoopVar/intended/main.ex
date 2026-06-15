@@ -56,7 +56,7 @@ end) do
       end)
       meta_list = entry.metas
       if (length(meta_list) > 0) do
-        first_meta = user_id
+        first_meta = Enum.at(meta_list, 0)
         name = first_meta.user_name
         Enum.concat(user_names_acc, [name])
       else
