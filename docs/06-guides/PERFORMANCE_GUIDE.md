@@ -52,6 +52,37 @@ The JSON includes Haxe/Elixir/Mix/OTP versions, per-phase durations, command str
 the last log lines for failed phases. The artifact intentionally lives under `tmp/` because it includes
 machine-specific environment data.
 
+For todo-app edit→rebuild latency through `mix haxe.watch`, use the bounded watch benchmark:
+
+```bash
+npm run perf:todo-watch
+```
+
+This writes `tmp/perf/watch-cycle-times.json` and keeps watcher/dependency logs under
+`tmp/perf/todo-watch/logs/`. The harness runs in an isolated git worktree, starts `mix haxe.watch`,
+waits for the initial compile, atomically rewrites `src_haxe/shared/TodoTypes.hx` with a harmless
+comment, waits for the watch task’s `✅ Haxe compilation successful` marker, and repeats the cycle.
+It reports p50/p95 plus min/max/mean.
+
+Useful local options:
+
+```bash
+npm run perf:todo-watch -- --iterations 10 --debounce-ms 150 --deadline 600
+npm run perf:todo-watch -- --ref HEAD~1 --out tmp/perf/watch-before.json
+```
+
+The JSON includes Haxe/Elixir/Mix/OTP versions, dependency setup phases, watcher startup timing,
+per-iteration samples, command strings, log paths, and the last log lines for failed phases. Like the
+compile benchmark, this is a local/non-gating baseline tool; use it before and after compiler/watch
+changes when you need evidence for DevX performance claims.
+
+By default, the watch benchmark sets `HAXE_NO_SERVER=1` so the run does not leave a persistent Haxe
+`--wait` server behind. To measure server-backed watcher behavior explicitly:
+
+```bash
+npm run perf:todo-watch -- --use-haxe-server --iterations 10 --deadline 600
+```
+
 GitHub Actions also has an optional **Perf Todo Compile Benchmark** workflow. It is intentionally not
 attached to `push` or `pull_request`, so it does not gate PRs or regular CI. Run it manually from
 Actions when you want a shared timing artifact; the scheduled run provides a low-frequency trend sample.
