@@ -41,8 +41,11 @@ import elixir.types.Term;
  *     @:changeset
  *     public static function changeset(todo: Todo, params: Term): Changeset<Todo, Term> {
  *         return new Changeset(todo, params)
- *             .validateRequired(["title", "userId"])
- *             .validateLength("title", {min: 3, max: 200});
+ *             .validateRequired([
+ *                 Field.of((todo:Todo) -> todo.title),
+ *                 Field.of((todo:Todo) -> todo.userId)
+ *             ])
+ *             .validateLength(Field.of((todo:Todo) -> todo.title), {min: 3, max: 200});
  *     }
  * }
  * ```
@@ -174,8 +177,11 @@ class Schema {
 	 * @:keep  // Optional: Add if function is being eliminated
 	 * public static function changeset(todo: Todo, params: TodoParams): Changeset<Todo, TodoParams> {
 	 *     return new Changeset(todo, params)
-	 *         .validateRequired(["title", "userId"])
-	 *         .validateLength("title", {min: 3, max: 200});
+	 *         .validateRequired([
+	 *             Field.of((todo:Todo) -> todo.title),
+	 *             Field.of((todo:Todo) -> todo.userId)
+	 *         ])
+	 *         .validateLength(Field.of((todo:Todo) -> todo.title), {min: 3, max: 200});
 	 * }
 	 * ```
 	 * 

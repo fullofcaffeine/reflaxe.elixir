@@ -330,8 +330,12 @@ static function changeset(user:User, params:UserParams):Changeset<User, UserPara
 ```
 
 `Field.of` forces Haxe to type-check the selector, so a typo such as `user.emali` fails during
-compilation instead of becoming a bad Ecto field name. It lowers to the existing string-compatible
-changeset API, including camelCase-to-snake_case conversion.
+compilation instead of becoming a bad Ecto field name. It lowers to a schema-typed token that
+generates the atom Ecto expects, including camelCase-to-snake_case conversion.
+
+String literals remain accepted for migration and compile to atom fields when passed directly to
+changeset APIs. For dynamic runtime strings, use `Field.unsafe<SchemaType>(fieldName)` so atom
+creation is visible at the callsite.
 
 **Validation Annotations**:
 - `@:validate_required([fields])` - Required field validation

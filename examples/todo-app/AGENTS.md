@@ -745,6 +745,8 @@ class TodoApp {
 
 ```haxe
 // src_haxe/server/schemas/Todo.hx
+import ecto.Field;
+
 @:native("TodoApp.Todo")  // Control module name
 @:schema("todos")
 @:timestamps
@@ -760,8 +762,11 @@ class Todo {
     // Type-safe changeset
     public static function changeset(todo: Todo, attrs: TodoParams): Changeset<Todo> {
         return cast(todo, attrs)
-            .validateRequired(["title", "userId"])
-            .validateLength("title", {min: 3, max: 200});
+            .validateRequired([
+                Field.of((todo:Todo) -> todo.title),
+                Field.of((todo:Todo) -> todo.userId)
+            ])
+            .validateLength(Field.of((todo:Todo) -> todo.title), {min: 3, max: 200});
     }
 }
 

@@ -36,7 +36,11 @@ import haxe.functional.Result;
  * @:changeset
  * public static function changeset(user: User, params: UserParams): Changeset<User, UserParams> {
  *     return new Changeset(user, params)
- *         .castFields(["name", "email", "age"])
+ *         .castFields([
+ *             Field.of((user:User) -> user.name),
+ *             Field.of((user:User) -> user.email),
+ *             Field.of((user:User) -> user.age)
+ *         ])
  *         .validateRequired([
  *             Field.of((user:User) -> user.name),
  *             Field.of((user:User) -> user.email)
@@ -65,6 +69,7 @@ import haxe.functional.Result;
  * - **IDE support**: Full autocomplete for validation methods
  * - **Refactoring safety**: Rename fields across entire codebase
  * 
+ * @see ecto.Field For checked schema field tokens
  * @see ecto.Schema For defining database schemas
  * @see ecto.Repository For database operations
  */
@@ -144,9 +149,8 @@ abstract Changeset<T, P>(Term) from Term to Term {
 	 * @param fields List of field names to cast
 	 * @return The updated changeset
 	 */
-	extern inline public function castFields(fields:Array<String>):Changeset<T, P> {
-		// Pass the fields array directly and convert to atoms in Elixir
-		return untyped __elixir__('Ecto.Changeset.cast({0}, {1}, Enum.map({2}, &String.to_atom/1))', this, untyped __elixir__('{1}', this), fields);
+	extern inline public function castFields(fields:Array<SchemaField<T>>):Changeset<T, P> {
+		return cast ChangesetApi.castParams(this, untyped __elixir__('Map.get({0}, :params, %{}) || %{}', this), fields);
 	}
 
 	/**
@@ -155,8 +159,8 @@ abstract Changeset<T, P>(Term) from Term to Term {
 	 * @param fields List of required field names
 	 * @return The updated changeset
 	 */
-	extern inline public function validateRequired(fields:Array<String>):Changeset<T, P> {
-		return cast ChangesetApi.validateRequired(this, atomFields(fields));
+	extern inline public function validateRequired(fields:Array<SchemaField<T>>):Changeset<T, P> {
+		return cast ChangesetApi.validateRequired(this, fields);
 	}
 
 	/**
@@ -166,8 +170,8 @@ abstract Changeset<T, P>(Term) from Term to Term {
 	 * @param opts Length options (min, max, is)
 	 * @return The updated changeset
 	 */
-	extern inline public function validateLength(field:String, opts:{?min:Int, ?max:Int, ? is:Int}):Changeset<T, P> {
-		return cast ChangesetApi.validateLength(this, atomField(field), lengthOptions(opts));
+	extern inline public function validateLength(field:SchemaField<T>, opts:{?min:Int, ?max:Int, ? is:Int}):Changeset<T, P> {
+		return cast ChangesetApi.validateLength(this, field, lengthOptions(opts));
 	}
 
 	/**
@@ -178,11 +182,11 @@ abstract Changeset<T, P>(Term) from Term to Term {
 	 * @param message Optional error message
 	 * @return The updated changeset
 	 */
-	extern inline public function validateFormat(field:String, pattern:EReg, ?message:String):Changeset<T, P> {
+	extern inline public function validateFormat(field:SchemaField<T>, pattern:EReg, ?message:String):Changeset<T, P> {
 		if (message != null) {
-			return untyped __elixir__('Ecto.Changeset.validate_format({0}, String.to_atom({1}), {2}, message: {3})', this, field, pattern, message);
+			return untyped __elixir__('Ecto.Changeset.validate_format({0}, {1}, {2}, message: {3})', this, field, pattern, message);
 		} else {
-			return untyped __elixir__('Ecto.Changeset.validate_format({0}, String.to_atom({1}), {2})', this, field, pattern);
+			return untyped __elixir__('Ecto.Changeset.validate_format({0}, {1}, {2})', this, field, pattern);
 		}
 	}
 
@@ -193,8 +197,8 @@ abstract Changeset<T, P>(Term) from Term to Term {
 	 * @param values List of allowed values
 	 * @return The updated changeset
 	 */
-	extern inline public function validateInclusion(field:String, values:Array<Term>):Changeset<T, P> {
-		return cast ChangesetApi.validateInclusion(this, atomField(field), values);
+	extern inline public function validateInclusion(field:SchemaField<T>, values:Array<Term>):Changeset<T, P> {
+		return cast ChangesetApi.validateInclusion(this, field, values);
 	}
 
 	/**
@@ -204,16 +208,8 @@ abstract Changeset<T, P>(Term) from Term to Term {
 	 * @param values List of excluded values
 	 * @return The updated changeset
 	 */
-	extern inline public function validateExclusion(field:String, values:Array<Term>):Changeset<T, P> {
-		return cast ChangesetApi.validateExclusion(this, atomField(field), values);
-	}
-
-	extern static inline function atomFields(fields:Array<String>):Term {
-		return untyped __elixir__('Enum.map({0}, &String.to_atom/1)', fields);
-	}
-
-	extern static inline function atomField(field:String):Term {
-		return untyped __elixir__('String.to_atom({0})', field);
+	extern inline public function validateExclusion(field:SchemaField<T>, values:Array<Term>):Changeset<T, P> {
+		return cast ChangesetApi.validateExclusion(this, field, values);
 	}
 
 	extern static inline function lengthOptions(opts:{?min:Int, ?max:Int, ? is:Int}):Term {
@@ -227,7 +223,7 @@ abstract Changeset<T, P>(Term) from Term to Term {
 	 * @param opts Number validation options
 	 * @return The updated changeset
 	 */
-	extern inline public function validateNumber(field:String, opts:{
+	extern inline public function validateNumber(field:SchemaField<T>, opts:{
 		?min:Float,
 		?max:Float,
 		?equal_to:Float,
@@ -235,18 +231,18 @@ abstract Changeset<T, P>(Term) from Term to Term {
 	}):Changeset<T, P> {
 		// Build the options list directly - simplified version for common cases
 		if (opts.min != null && opts.max != null) {
-			return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [greater_than_or_equal_to: {2}, less_than_or_equal_to: {3}])', this,
-				cast(field, Atom), opts.min, opts.max);
+			return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [greater_than_or_equal_to: {2}, less_than_or_equal_to: {3}])', this, field,
+				opts.min, opts.max);
 		} else if (opts.min != null) {
-			return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [greater_than_or_equal_to: {2}])', this, cast(field, Atom), opts.min);
+			return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [greater_than_or_equal_to: {2}])', this, field, opts.min);
 		} else if (opts.max != null) {
-			return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [less_than_or_equal_to: {2}])', this, cast(field, Atom), opts.max);
+			return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [less_than_or_equal_to: {2}])', this, field, opts.max);
 		} else if (opts.equal_to != null) {
-			return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [equal_to: {2}])', this, cast(field, Atom), opts.equal_to);
+			return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [equal_to: {2}])', this, field, opts.equal_to);
 		} else if (opts.not_equal_to != null) {
-			return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [not_equal_to: {2}])', this, cast(field, Atom), opts.not_equal_to);
+			return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [not_equal_to: {2}])', this, field, opts.not_equal_to);
 		} else {
-			return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [])', this, cast(field, Atom));
+			return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [])', this, field);
 		}
 	}
 

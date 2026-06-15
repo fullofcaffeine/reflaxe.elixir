@@ -1,14 +1,19 @@
 {
   "filesGenerated": [
-  "user.ex",
   "type.ex",
   "std.ex",
   "reflaxe/exception.ex",
   "reflaxe/elixir/haxe_throw.ex",
   "main.ex",
   "haxe/iterators/array_iterator.ex",
+  "haxe/exceptions/pos_exception.ex",
+  "haxe/exceptions/not_implemented_exception.ex",
   "haxe/_call_stack/call_stack_impl_.ex",
-  "elixir/types/_atom/atom_impl_.ex"
+  "elixir/types/_atom/atom_impl_.ex",
+  "ecto/option.ex",
+  "ecto/changeset_utils.ex",
+  "ecto/changeset_action.ex",
+  "e_reg.ex"
 ],
   "id": 0,
   "wasCached": false,

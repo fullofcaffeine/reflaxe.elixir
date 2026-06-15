@@ -205,7 +205,8 @@ function validateTodo(todo:Todo, params:TodoParams):Changeset<Todo, TodoParams> 
 ```
 
 `Field.of` catches field typos during Haxe compilation and converts camelCase schema fields to the
-snake_case names expected by Ecto.
+snake_case atom fields expected by Ecto. String literals still work for migration, but dynamic
+field names should use `Field.unsafe<Todo>(fieldName)` so runtime atom creation is explicit.
 
 ### 2) Keep `__elixir__()` out of apps (use std bridges)
 

@@ -48,7 +48,8 @@ These map to the standard Ecto validation pipeline and should be used instead of
 
 ## Checked Field Selectors
 
-For handwritten changeset code, prefer `ecto.Field.of` over raw field strings:
+For handwritten changeset code, prefer `ecto.Field.of` over raw field strings.
+It returns a `SchemaField<T>` token that emits an Elixir atom:
 
 ```haxe
 import ecto.Changeset;
@@ -66,16 +67,29 @@ static function changeset(user:User, params:UserParams):Changeset<User, UserPara
 ```
 
 `Field.of((user:User) -> user.email)` is a compile-time selector macro. Haxe checks that `email`
-exists on `User`, then the macro lowers it to the snake_case field name expected by the existing
-changeset APIs. For example, `lastLoginAt` lowers to `"last_login_at"`.
+exists on `User`, then the macro lowers it to the snake_case atom expected by Ecto. For example,
+`lastLoginAt` lowers to `:last_login_at`.
 
-Raw strings remain supported for compatibility and dynamic interop:
+String literals remain supported for compatibility and migration. They are converted at compile time
+when passed to token-based changeset APIs:
 
 ```haxe
 changeset.validateRequired(["name", "email"]);
 ```
 
-Use raw strings only when the field list is intentionally dynamic or during migration of older code.
+Generated Elixir still uses atoms:
+
+```elixir
+Ecto.Changeset.validate_required(changeset, [:name, :email])
+```
+
+For field names that are genuinely dynamic at runtime, use the explicit escape hatch:
+
+```haxe
+changeset.validateRequired([Field.unsafe<User>(fieldName)]);
+```
+
+Use `Field.unsafe` only for interop or migration paths where the field name is not known at compile time.
 
 ## Repository Surface
 

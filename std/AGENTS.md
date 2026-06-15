@@ -612,6 +612,7 @@ abstract Assigns<T>(T) from T to T {
 ```haxe
 // ecto/Changeset.hx - Type-safe changesets
 import ecto.Changeset;
+import ecto.Field;
 
 typedef UserParams = {
     ?name: String,
@@ -620,8 +621,14 @@ typedef UserParams = {
 
 public static function changeset(user: User, params: UserParams): Changeset<User, UserParams> {
     return new Changeset(user, params)
-        .cast(["name", "email"])
-        .validateRequired(["name", "email"]);
+        .castFields([
+            Field.of((user:User) -> user.name),
+            Field.of((user:User) -> user.email)
+        ])
+        .validateRequired([
+            Field.of((user:User) -> user.name),
+            Field.of((user:User) -> user.email)
+        ]);
 }
 ```
 
