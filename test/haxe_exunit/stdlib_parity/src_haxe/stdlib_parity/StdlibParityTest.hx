@@ -10,6 +10,7 @@ import haxe.Template;
 import haxe.Unserializer;
 import haxe.crypto.Base64;
 import haxe.crypto.Md5;
+import haxe.crypto.Sha1;
 import haxe.ds.EnumValueMap;
 import haxe.ds.IntMap;
 import haxe.ds.StringMap;
@@ -689,5 +690,19 @@ class StdlibParityTest extends TestCase {
 		binary.set(2, 0x00);
 		Assert.equals("+/8A", Base64.encode(binary));
 		Assert.equals("-_8A", Base64.urlEncode(binary));
+	}
+
+	@:describe("haxe.crypto.Sha1")
+	@:test
+	function testSha1EncodeAndMake():Void {
+		Assert.equals("a9993e364706816aba3e25717850c26c9cd0d89d", Sha1.encode("abc"));
+		Assert.equals("da39a3ee5e6b4b0d3255bfef95601890afd80709", Sha1.encode(""));
+		Assert.equals("a9993e364706816aba3e25717850c26c9cd0d89d", Sha1.make(Bytes.ofString("abc")).toHex());
+
+		var binary = Bytes.alloc(3);
+		binary.set(0, 0x00);
+		binary.set(1, 0xFF);
+		binary.set(2, 0x10);
+		Assert.equals("a14c2fba17201c1ead45b6c4af4409fbfc16ba8a", Sha1.make(binary).toHex());
 	}
 }
