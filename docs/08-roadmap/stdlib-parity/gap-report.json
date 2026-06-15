@@ -1,7 +1,7 @@
 {
   "diff": {
     "intersection": {
-      "count": 94,
+      "count": 95,
       "modules": [
         "Array",
         "Date",
@@ -56,6 +56,7 @@
         "haxe.io.FPHelper",
         "haxe.io.Input",
         "haxe.io.Output",
+        "haxe.io.StringInput",
         "haxe.iterators.ArrayIterator",
         "haxe.iterators.ArrayKeyValueIterator",
         "haxe.iterators.DynamicAccessIterator",
@@ -114,7 +115,7 @@
       ]
     },
     "reference_only": {
-      "count": 110,
+      "count": 109,
       "modules": [
         "Any",
         "Class",
@@ -180,7 +181,6 @@
         "haxe.io.Mime",
         "haxe.io.Path",
         "haxe.io.Scheme",
-        "haxe.io.StringInput",
         "haxe.io.UInt16Array",
         "haxe.io.UInt32Array",
         "haxe.io.UInt8Array",
@@ -232,7 +232,7 @@
   "local": {
     "counts_by_prefix": {
       "<top-level>": 19,
-      "haxe": 50,
+      "haxe": 51,
       "sys": 34
     },
     "nonstdlib_modules_under_std_dir": [
@@ -259,8 +259,8 @@
       "std/_std",
       "src/haxe"
     ],
-    "total_candidates": 106,
-    "total_std_modules": 103
+    "total_candidates": 107,
+    "total_std_modules": 104
   },
   "reference": {
     "counts_by_prefix": {

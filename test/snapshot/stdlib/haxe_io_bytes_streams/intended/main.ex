@@ -8,6 +8,7 @@ defmodule Main do
     _ = bytes_buffer()
     _ = bytes_input_output()
     _ = buffer_input()
+    _ = string_input()
     _ = fp_helper()
     _ = io_semantics()
   end
@@ -48,6 +49,10 @@ defmodule Main do
     base = BytesInput.new(bytes, nil, nil)
     buf = Bytes.alloc(2)
     _buffered = BufferInput.new(base, buf, nil, nil)
+    nil
+  end
+  defp string_input() do
+    _input = StringInput.new("alpha\nbeta")
     nil
   end
   defp fp_helper() do
@@ -102,5 +107,23 @@ end).() == "xyz", "writeInput failed")
     v
   end
 end).() < 1.0e-12, "double roundtrip failed")
+    string_input = StringInput.new("red\r\nblue\n")
+    _ = assert_that(apply(Map.get(string_input, :__reflaxe_class__) || Map.get(string_input, :__struct__), :read_line, [string_input]) == "red", "StringInput readLine CRLF failed")
+    _ = assert_that(apply(Map.get(string_input, :__reflaxe_class__) || Map.get(string_input, :__struct__), :read_line, [string_input]) == "blue", "StringInput readLine LF failed")
+    try do
+      _ = apply(Map.get(string_input, :__reflaxe_class__) || Map.get(string_input, :__struct__), :read_byte, [string_input])
+      _ = assert_that(false, "StringInput should throw Eof after readLine consumes content")
+    rescue
+      haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
+        (case {(case haxe_exception do
+  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+  _ -> haxe_exception
+end), haxe_exception} do
+          {haxe_catch_value, _} when is_struct(haxe_catch_value, Eof) or is_map(haxe_catch_value) and is_map_key(haxe_catch_value, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, haxe_catch_value) == Eof -> nil
+          _ ->
+            reraise(haxe_exception, __STACKTRACE__)
+        end)
+    end
   end
 end

@@ -8,6 +8,7 @@
   "main.ex",
   "int_iterator.ex",
   "haxe/iterators/array_iterator.ex",
+  "haxe/io/string_input.ex",
   "haxe/io/output.ex",
   "haxe/io/input.ex",
   "haxe/io/fp_helper.ex",

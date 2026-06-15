@@ -16,6 +16,7 @@ import haxe.io.Bytes;
 import haxe.io.BytesInput;
 import haxe.io.BytesOutput;
 import haxe.io.Eof;
+import haxe.io.StringInput;
 import haxe.iterators.MapKeyValueIterator;
 import haxe.test.ExUnit.TestCase;
 import haxe.test.Assert;
@@ -340,6 +341,21 @@ class StdlibParityTest extends TestCase {
 			input.readLine();
 			Assert.fail("readLine should throw Eof after the final line");
 		} catch (_:Eof) {}
+	}
+
+	@:describe("haxe.io.StringInput")
+	@:test
+	function testStringInputReadAllReadLineAndEof():Void {
+		var allInput = new StringInput("hello");
+		Assert.equals("hello", allInput.readAll(2).toString());
+
+		var lineInput = new StringInput("red\r\nblue\n");
+		Assert.equals("red", lineInput.readLine());
+		Assert.equals("blue", lineInput.readLine());
+
+		Assert.raises(() -> {
+			lineInput.readByte();
+		});
 	}
 
 	@:describe("haxe.Int64")

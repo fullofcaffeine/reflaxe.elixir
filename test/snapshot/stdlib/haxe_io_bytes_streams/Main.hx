@@ -7,6 +7,7 @@ import haxe.io.BytesInput;
 import haxe.io.BytesOutput;
 import haxe.io.Eof;
 import haxe.io.FPHelper;
+import haxe.io.StringInput;
 
 /**
  * Snapshot: haxe.io bytes IO building blocks
@@ -28,6 +29,7 @@ class Main {
 		bytesBuffer();
 		bytesInputOutput();
 		bufferInput();
+		stringInput();
 		fpHelper();
 		ioSemantics();
 	}
@@ -67,6 +69,12 @@ class Main {
 		var buffered = new BufferInput(base, buf);
 
 		trace(buffered.readByte());
+	}
+
+	static function stringInput() {
+		var input = new StringInput("alpha\nbeta");
+		trace(input.readLine());
+		trace(input.readAll().toString());
 	}
 
 	static function fpHelper() {
@@ -122,5 +130,13 @@ class Main {
 		inp.bigEndian = false;
 		var got = inp.readDouble();
 		assertThat(Math.abs(got - 3.25) < 1e-12, "double roundtrip failed");
+
+		var stringInput = new StringInput("red\r\nblue\n");
+		assertThat(stringInput.readLine() == "red", "StringInput readLine CRLF failed");
+		assertThat(stringInput.readLine() == "blue", "StringInput readLine LF failed");
+		try {
+			stringInput.readByte();
+			assertThat(false, "StringInput should throw Eof after readLine consumes content");
+		} catch (_:Eof) {}
 	}
 }
