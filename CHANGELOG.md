@@ -1,3 +1,10 @@
+# [0.7.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.6.0...v0.7.0) (2026-06-15)
+
+
+### Features
+
+* normalize LiveView callback names ([a465916](https://github.com/fullofcaffeine/reflaxe.elixir/commit/a465916442727487df561a310c4e3fc309d222e6))
+
 # [0.6.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.5.3...v0.6.0) (2026-06-15)
 
 
