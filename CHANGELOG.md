@@ -1,3 +1,10 @@
+## [0.9.5](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.9.4...v0.9.5) (2026-06-15)
+
+
+### Performance Improvements
+
+* add example compile benchmark ([54d5283](https://github.com/fullofcaffeine/reflaxe.elixir/commit/54d5283becac3e2f73ef36a7bd4bc2e391257547))
+
 ## [0.9.4](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.9.3...v0.9.4) (2026-06-15)
 
 
