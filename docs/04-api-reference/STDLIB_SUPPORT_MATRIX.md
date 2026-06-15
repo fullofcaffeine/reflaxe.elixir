@@ -61,6 +61,7 @@ Top-level:
 - `haxe.Serializer` (portable data subset)
 - `haxe.Template` (portable rendering subset)
 - `haxe.Unserializer` (portable data subset)
+- `haxe.crypto.Base64`
 - `haxe.ds.BalancedTree`
 - `haxe.ds.EnumValueMap` (bootstrap-safe override under `src/haxe/ds`)
 - `haxe.ds.Option`

@@ -8,6 +8,7 @@ import haxe.Json;
 import haxe.Serializer;
 import haxe.Template;
 import haxe.Unserializer;
+import haxe.crypto.Base64;
 import haxe.crypto.Md5;
 import haxe.ds.EnumValueMap;
 import haxe.ds.IntMap;
@@ -663,5 +664,30 @@ class StdlibParityTest extends TestCase {
 	@:test
 	function testMd5EncodeLowerHex():Void {
 		Assert.equals("098f6bcd4621d373cade4e832627b4f6", Md5.encode("test"));
+	}
+
+	@:describe("haxe.crypto.Base64")
+	@:test
+	function testBase64StandardAndUrlSafe():Void {
+		var hello = Bytes.ofString("hello");
+		Assert.equals("aGVsbG8=", Base64.encode(hello));
+		Assert.equals("aGVsbG8", Base64.encode(hello, false));
+		Assert.equals("hello", Base64.decode("aGVsbG8=").toString());
+		Assert.equals("hello", Base64.decode("aGVsbG8", false).toString());
+
+		var url = Bytes.ofString("fo?");
+		Assert.equals("Zm8_", Base64.urlEncode(url));
+		Assert.equals("fo?", Base64.urlDecode("Zm8_").toString());
+
+		var shortUrl = Bytes.ofString("fo");
+		Assert.equals("Zm8=", Base64.urlEncode(shortUrl, true));
+		Assert.equals("fo", Base64.urlDecode("Zm8=", true).toString());
+
+		var binary = Bytes.alloc(3);
+		binary.set(0, 0xFB);
+		binary.set(1, 0xFF);
+		binary.set(2, 0x00);
+		Assert.equals("+/8A", Base64.encode(binary));
+		Assert.equals("-_8A", Base64.urlEncode(binary));
 	}
 }
