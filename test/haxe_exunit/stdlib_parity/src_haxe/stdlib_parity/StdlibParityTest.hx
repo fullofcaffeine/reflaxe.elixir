@@ -16,6 +16,7 @@ import haxe.io.Bytes;
 import haxe.io.BytesInput;
 import haxe.io.BytesOutput;
 import haxe.io.Eof;
+import haxe.io.Path;
 import haxe.io.StringInput;
 import haxe.iterators.MapKeyValueIterator;
 import haxe.test.ExUnit.TestCase;
@@ -356,6 +357,30 @@ class StdlibParityTest extends TestCase {
 		Assert.raises(() -> {
 			lineInput.readByte();
 		});
+	}
+
+	@:describe("haxe.io.Path")
+	@:test
+	function testPathParsingAndNormalization():Void {
+		var parsed = new Path("/tmp/archive.tar.gz");
+		Assert.equals("/tmp", parsed.dir);
+		Assert.equals("archive.tar", parsed.file);
+		Assert.equals("gz", parsed.ext);
+		Assert.equals("/tmp/archive.tar.gz", parsed.toString());
+
+		Assert.equals("/tmp/file", Path.withoutExtension("/tmp/file.txt"));
+		Assert.equals("file.txt", Path.withoutDirectory("/tmp/file.txt"));
+		Assert.equals("/tmp", Path.directory("/tmp/file.txt"));
+		Assert.equals("txt", Path.extension("/tmp/file.txt"));
+		Assert.equals("/tmp/file.log", Path.withExtension("/tmp/file", "log"));
+		Assert.equals("/usr/bin", Path.join(["/usr", "local", "../bin"]));
+		Assert.equals("/usr/bin/tool", Path.normalize("/usr//local/../bin/./tool"));
+		Assert.equals("foo\\bar\\", Path.addTrailingSlash("foo\\bar"));
+		Assert.equals("foo", Path.removeTrailingSlashes("foo///"));
+		Assert.isTrue(Path.isAbsolute("/tmp"));
+		Assert.isTrue(Path.isAbsolute("C:/tmp"));
+		Assert.isTrue(Path.isAbsolute("\\\\server\\share"));
+		Assert.isFalse(Path.isAbsolute("relative/path"));
 	}
 
 	@:describe("haxe.Int64")

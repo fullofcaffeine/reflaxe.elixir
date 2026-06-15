@@ -77,6 +77,7 @@ Top-level:
 - `haxe.io.FPHelper`
 - `haxe.io.Input`
 - `haxe.io.Output`
+- `haxe.io.Path`
 - `haxe.io.StringInput`
 - `haxe.iterators.ArrayIterator`
 - `haxe.iterators.ArrayKeyValueIterator`
