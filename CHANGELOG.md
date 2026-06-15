@@ -1,3 +1,10 @@
+## [0.9.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.9.0...v0.9.1) (2026-06-15)
+
+
+### Bug Fixes
+
+* preserve unrelated list indexing in reducers ([f555878](https://github.com/fullofcaffeine/reflaxe.elixir/commit/f5558781a3bb4d1cfd964fac0037332d5b669186))
+
 # [0.9.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.8.0...v0.9.0) (2026-06-15)
 
 
