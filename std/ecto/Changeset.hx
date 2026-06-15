@@ -31,13 +31,18 @@ import haxe.functional.Result;
  * }
  * 
  * // In your schema
+ * import ecto.Field;
+ *
  * @:changeset
  * public static function changeset(user: User, params: UserParams): Changeset<User, UserParams> {
  *     return new Changeset(user, params)
- *         .cast(["name", "email", "age"])
- *         .validateRequired(["name", "email"])
- *         .validateFormat("email", ~/@/)
- *         .validateNumber("age", {min: 18, max: 120});
+ *         .castFields(["name", "email", "age"])
+ *         .validateRequired([
+ *             Field.of((user:User) -> user.name),
+ *             Field.of((user:User) -> user.email)
+ *         ])
+ *         .validateFormat(Field.of((user:User) -> user.email), ~/@/)
+ *         .validateNumber(Field.of((user:User) -> user.age), {min: 18, max: 120});
  * }
  * ```
  * 

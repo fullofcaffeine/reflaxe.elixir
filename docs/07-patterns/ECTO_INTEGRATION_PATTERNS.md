@@ -191,6 +191,22 @@ switch (createTodo(params)) {
 }
 ```
 
+For custom/manual changeset pipelines, prefer checked selectors over raw field strings:
+
+```haxe
+import ecto.Changeset;
+import ecto.Field;
+
+function validateTodo(todo:Todo, params:TodoParams):Changeset<Todo, TodoParams> {
+  return new Changeset(todo, params)
+    .validateRequired([Field.of((todo:Todo) -> todo.title)])
+    .validateLength(Field.of((todo:Todo) -> todo.title), {min: 2, max: 120});
+}
+```
+
+`Field.of` catches field typos during Haxe compilation and converts camelCase schema fields to the
+snake_case names expected by Ecto.
+
 ### 2) Keep `__elixir__()` out of apps (use std bridges)
 
 Some Ecto ergonomics are easiest to express with `__elixir__()` (sigils, keyword options, certain pipeline shapes).

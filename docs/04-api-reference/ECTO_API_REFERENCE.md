@@ -46,6 +46,37 @@ Core changeset tags:
 
 These map to the standard Ecto validation pipeline and should be used instead of ad-hoc runtime string patching.
 
+## Checked Field Selectors
+
+For handwritten changeset code, prefer `ecto.Field.of` over raw field strings:
+
+```haxe
+import ecto.Changeset;
+import ecto.Field;
+
+static function changeset(user:User, params:UserParams):Changeset<User, UserParams> {
+  return new Changeset(user, params)
+    .validateRequired([
+      Field.of((user:User) -> user.name),
+      Field.of((user:User) -> user.email)
+    ])
+    .validateLength(Field.of((user:User) -> user.name), {min: 2, max: 80})
+    .validateFormat(Field.of((user:User) -> user.email), ~/@/);
+}
+```
+
+`Field.of((user:User) -> user.email)` is a compile-time selector macro. Haxe checks that `email`
+exists on `User`, then the macro lowers it to the snake_case field name expected by the existing
+changeset APIs. For example, `lastLoginAt` lowers to `"last_login_at"`.
+
+Raw strings remain supported for compatibility and dynamic interop:
+
+```haxe
+changeset.validateRequired(["name", "email"]);
+```
+
+Use raw strings only when the field list is intentionally dynamic or during migration of older code.
+
 ## Repository Surface
 
 `@:repo({...})` configures a repository module with typed adapter options.

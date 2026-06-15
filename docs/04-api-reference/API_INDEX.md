@@ -170,6 +170,7 @@ Testing:
 
 - `std/ecto/Schema.hx`
 - `std/ecto/Changeset.hx`
+- `std/ecto/Field.hx`
 - `std/ecto/ChangesetApi.hx`
 - `std/ecto/ChangesetBridge.hx`
 - `std/ecto/Repository.hx`

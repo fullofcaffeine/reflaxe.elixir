@@ -260,6 +260,7 @@ Notes:
 **Basic Usage**:
 ```haxe
 import ecto.Changeset;
+import ecto.Field;
 
 typedef UserParams = {
     ?name: String,
@@ -314,6 +315,23 @@ Legacy positional form remains supported:
 ```haxe
 @:changeset(["name", "email"], ["name", "email"])
 ```
+
+For manual changeset pipelines, prefer checked field selectors over raw strings:
+
+```haxe
+static function changeset(user:User, params:UserParams):Changeset<User, UserParams> {
+    return new Changeset(user, params)
+        .validateRequired([
+            Field.of((user:User) -> user.name),
+            Field.of((user:User) -> user.email)
+        ])
+        .validateLength(Field.of((user:User) -> user.name), {min: 2, max: 80});
+}
+```
+
+`Field.of` forces Haxe to type-check the selector, so a typo such as `user.emali` fails during
+compilation instead of becoming a bad Ecto field name. It lowers to the existing string-compatible
+changeset API, including camelCase-to-snake_case conversion.
 
 **Validation Annotations**:
 - `@:validate_required([fields])` - Required field validation
