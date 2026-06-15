@@ -1,3 +1,10 @@
+## [0.9.3](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.9.2...v0.9.3) (2026-06-15)
+
+
+### Performance Improvements
+
+* add haxe compile phase timings ([e4e4284](https://github.com/fullofcaffeine/reflaxe.elixir/commit/e4e42842e6a37a7126ac08423695ac1c005e38b1))
+
 ## [0.9.2](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.9.1...v0.9.2) (2026-06-15)
 
 
