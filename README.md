@@ -7,10 +7,10 @@
 [![Version](https://img.shields.io/badge/version-0.5.3-blue)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![CI](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml/badge.svg)](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml)
-[![Haxe](https://img.shields.io/badge/Haxe-4.3.7+-orange)](https://haxe.org/)
-[![Elixir](https://img.shields.io/badge/Elixir-1.14+-purple)](https://elixir-lang.org/)
+[![Haxe](https://img.shields.io/badge/Haxe-4.3.7+-orange)](https://haxe.org)
+[![Elixir](https://img.shields.io/badge/Elixir-1.14+-purple)](https://elixir-lang.org)
 
-**[Haxe](https://haxe.org/) -> [Elixir](https://elixir-lang.org/) compiler for the BEAM ecosystem, with first-class [Phoenix](https://www.phoenixframework.org/)/[LiveView](https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html) support.**
+**[Haxe](https://haxe.org) -> [Elixir](https://elixir-lang.org) compiler for the BEAM ecosystem, with first-class [Phoenix](https://phoenixframework.org)/[LiveView](https://www.phoenixframework.org/liveview) support.**
 Write application code in Haxe and compile to conventional Elixir shapes for pure Elixir/OTP services and Phoenix applications.
 
 > [!WARNING]
@@ -47,7 +47,7 @@ For a focused walkthrough of these patterns in one place, see [`examples/14-abst
 
 Tradeoff: you add a compile step and should still read generated Elixir for hot paths and debugging. If an abstraction does not remove real duplication or drift, direct Haxe->Elixir modules are usually the simpler choice.
 
-### How this differs from Gleam (briefly)
+### How this differs from [Gleam](https://gleam.run) (briefly)
 
 Gleam is a strong typed BEAM language with its own language/runtime story.
 Reflaxe.Elixir takes a different approach:
