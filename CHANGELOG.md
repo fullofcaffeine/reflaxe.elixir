@@ -1,3 +1,10 @@
+# [0.9.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.8.0...v0.9.0) (2026-06-15)
+
+
+### Features
+
+* **interop:** scaffold app-local extern boundaries ([ed2f4e6](https://github.com/fullofcaffeine/reflaxe.elixir/commit/ed2f4e66f42b72ff10e0269bc9365d03a1895bb0))
+
 # [0.8.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.7.0...v0.8.0) (2026-06-15)
 
 
