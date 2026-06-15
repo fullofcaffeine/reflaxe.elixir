@@ -20,6 +20,26 @@ If you’re investigating macro‑time work specifically, enable macro timings:
 haxe build.hxml -D macro-times --times
 ```
 
+For the todo-app compile baseline, use the bounded benchmark harness:
+
+```bash
+npm run perf:todo-compile
+```
+
+This writes `tmp/perf/compile-times.json` and keeps detailed logs under
+`tmp/perf/todo-compile/logs/`. The harness runs in an isolated git worktree so the cold path can
+delete build artifacts without mutating your working copy. It records:
+
+- `cold` — removes `_build`, `deps`, and manifest-listed generated `lib/` files, then runs deps,
+  Haxe generation, and Mix WAE compile.
+- `warm` — reruns Haxe generation and Mix WAE compile with dependencies/build cache already present.
+- `incremental` — touches one todo-app Haxe source file, then reruns Haxe generation and Mix WAE
+  compile.
+
+The JSON includes Haxe/Elixir/Mix/OTP versions, per-phase durations, command strings, log paths, and
+the last log lines for failed phases. The artifact intentionally lives under `tmp/` because it includes
+machine-specific environment data.
+
 ## Use the Right Compilation Profile
 
 ### Default (recommended for CI / release builds)

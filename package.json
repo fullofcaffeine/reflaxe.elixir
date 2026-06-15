@@ -82,6 +82,7 @@
     "ci:dead-code-audit": "bash -lc 'mkdir -p tmp && scripts/repo-dead-code-audit.sh --scope src --limit 200 --json > tmp/dead-code-audit.json && echo \"Wrote tmp/dead-code-audit.json\"'",
     "ci:acceptance": "bash scripts/ci/acceptance_gate.sh",
     "ci:budgets": "bash scripts/ci/perf-determinism-budgets.sh",
+    "perf:todo-compile": "bash scripts/perf/benchmark-todo-compile.sh",
     "hooks:install": "bash scripts/install-git-hooks.sh",
     "qa:sentinel": "bash scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 600 --verbose",
     "demo:todo": "bash scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --keep-alive -v --deadline 900",
