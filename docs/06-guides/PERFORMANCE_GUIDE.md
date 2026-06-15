@@ -40,6 +40,11 @@ The JSON includes Haxe/Elixir/Mix/OTP versions, per-phase durations, command str
 the last log lines for failed phases. The artifact intentionally lives under `tmp/` because it includes
 machine-specific environment data.
 
+GitHub Actions also has an optional **Perf Todo Compile Benchmark** workflow. It is intentionally not
+attached to `push` or `pull_request`, so it does not gate PRs or regular CI. Run it manually from
+Actions when you want a shared timing artifact; the scheduled run provides a low-frequency trend sample.
+The workflow uploads `compile-times.json`, phase logs, and the intermediate metadata as an artifact.
+
 ## Use the Right Compilation Profile
 
 ### Default (recommended for CI / release builds)

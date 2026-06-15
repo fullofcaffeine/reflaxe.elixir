@@ -1,0 +1,113 @@
+name: Perf Todo Compile Benchmark
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 8 * * 1'
+
+concurrency:
+  group: perf-todo-compile-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '20'
+  HAXE_VERSION: '4.3.7'
+  ELIXIR_VERSION: '1.18.3'
+  OTP_VERSION: '27.2'
+
+jobs:
+  benchmark:
+    name: Todo compile timings
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Setup Erlang/Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      - name: Cache Haxe toolchain (lix)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/haxe
+          key: ${{ runner.os }}-lix-haxe-${{ env.HAXE_VERSION }}-${{ hashFiles('.haxerc', 'haxe_libraries/*.hxml', 'package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-lix-haxe-${{ env.HAXE_VERSION }}-
+
+      - name: Install npm dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Install Haxe (pinned via lix)
+        run: |
+          set -euo pipefail
+          npx lix download
+          npx lix download haxe "${{ env.HAXE_VERSION }}"
+          npx lix use haxe "${{ env.HAXE_VERSION }}"
+          echo "$(pwd)/node_modules/.bin" >> "$GITHUB_PATH"
+          export PATH="$(pwd)/node_modules/.bin:$PATH"
+          haxe -version
+
+      - name: Download Haxe libraries (lix)
+        run: npx lix download
+
+      - name: Run todo-app compile benchmark
+        run: |
+          set -euo pipefail
+          scripts/with-timeout.sh --secs 2400 -- npm run perf:todo-compile -- --ref "$GITHUB_SHA"
+
+      - name: Summarize timings
+        if: always()
+        run: |
+          set -euo pipefail
+          if [[ ! -f tmp/perf/compile-times.json ]]; then
+            echo "No benchmark JSON was produced." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+
+          with open("tmp/perf/compile-times.json", "r", encoding="utf-8") as f:
+              data = json.load(f)
+
+          print("## Todo Compile Benchmark")
+          print()
+          print(f"- Status: `{data.get('status', 'unknown')}`")
+          print(f"- Commit: `{data.get('repo', {}).get('head', 'unknown')}`")
+          print(f"- Haxe: `{data.get('environment', {}).get('haxe', 'unknown')}`")
+          print(f"- OTP: `{data.get('environment', {}).get('otp_release', 'unknown')}`")
+          print()
+          print("| Run | Status | Total ms | Phases |")
+          print("| --- | --- | ---: | --- |")
+          for run in data.get("runs", []):
+              phases = ", ".join(f"{phase['phase']}={phase['duration_ms']}ms" for phase in run.get("phases", []))
+              print(f"| `{run['name']}` | `{run['status']}` | {run['duration_ms']} | {phases} |")
+          PY
+
+      - name: Upload benchmark artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: todo-compile-benchmark-${{ github.run_id }}
+          path: |
+            tmp/perf/compile-times.json
+            tmp/perf/todo-compile/logs/**
+            tmp/perf/todo-compile/results.ndjson
+            tmp/perf/todo-compile/meta.json
+          if-no-files-found: warn
+          retention-days: 30
