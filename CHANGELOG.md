@@ -1,3 +1,10 @@
+# [0.8.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.7.0...v0.8.0) (2026-06-15)
+
+
+### Features
+
+* **ecto:** add typed changeset field tokens ([cb65945](https://github.com/fullofcaffeine/reflaxe.elixir/commit/cb6594561617b2b52a82d4663af1545734bbdd3d))
+
 # [0.7.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.6.0...v0.7.0) (2026-06-15)
 
 
