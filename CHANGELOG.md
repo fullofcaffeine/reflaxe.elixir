@@ -1,3 +1,10 @@
+## [0.9.4](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.9.3...v0.9.4) (2026-06-15)
+
+
+### Performance Improvements
+
+* add todo watch benchmark ([51555ff](https://github.com/fullofcaffeine/reflaxe.elixir/commit/51555ff0deb33c12f38ff6488cda2b9ac3de4215))
+
 ## [0.9.3](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.9.2...v0.9.3) (2026-06-15)
 
 
