@@ -417,6 +417,15 @@ Examples
   - unsafe path second (interop/migration only)
 - For skeptics coming from Elixir: explain the concrete edge in each example (earlier error detection, shorter callsites, or better API composition), not abstract “type safety” claims.
 
+### App-Local Extern Boundaries (Hard Rule)
+
+- For existing Elixir modules used from app Haxe code, prefer the scaffolded typed extern path first:
+  - Callable module: `mix haxe.gen.extern MyApp.Module --package my_app.externs --out src_haxe --wrapper --decoder --test-pointer`
+  - Module-reference marker only: `mix haxe.gen.extern MyApp.PubSub --boundary --package my_app.infrastructure --out src_haxe`
+- Boundary externs must include `@:native("Exact.Elixir.Module")` and, in strict-mode app code, `@:unsafeExtern`.
+- Keep app-local externs tiny and API-faithful; move reusable Phoenix/Ecto/OTP surfaces into `std/` instead of duplicating project-local wrappers.
+- Update the relevant docs/examples when adding or changing an interop boundary.
+
 ### Module-Level Fields Over Empty Classes (Hard Rule)
 
 - For API design and code style, default to module-level fields whenever a class would otherwise be empty (for example, annotation/config containers with no meaningful fields/functions).

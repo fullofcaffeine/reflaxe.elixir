@@ -27,6 +27,18 @@ Run `mix phx.server` in `examples/13-elixir-first-liveview` and open `/interop`.
 
 Why this section exists: most interop should be explicit and typed, so call sites stay readable and refactors stay safe.
 
+Start with the generator, then tighten the generated types:
+
+```bash
+mix haxe.gen.extern MyApp.LegacyBilling --package my_app.billing --out src_haxe --wrapper --decoder --test-pointer
+```
+
+For app-owned module references with no callable Haxe surface (for example `MyApp.PubSub` in a child spec), generate a strict-mode marker:
+
+```bash
+mix haxe.gen.extern MyApp.PubSub --boundary --package my_app.infrastructure --out src_haxe
+```
+
 ### Haxe input
 
 ```haxe
@@ -37,6 +49,7 @@ import elixir.types.Term;
 import haxe.functional.Result;
 
 @:native("MyApp.LegacyBilling")
+@:unsafeExtern
 extern class LegacyBilling {
   @:native("charge")
   public static function charge(accountId: String, amountCents: Int): ElixirResult<String, Term>;
@@ -119,6 +132,22 @@ With `-D reflaxe_elixir_strict`:
 - ad-hoc app-local externs are restricted
 
 When you intentionally keep an app-local extern boundary, mark it explicitly (for example `@:unsafeExtern`) and keep it small and documented.
+
+Prefer generating that marker instead of hand-rolling it:
+
+```bash
+mix haxe.gen.extern MyApp.PubSub --boundary --package my_app.infrastructure --out src_haxe
+```
+
+Generated shape:
+
+```haxe
+package my_app.infrastructure;
+
+@:native("MyApp.PubSub")
+@:unsafeExtern
+extern class PubSub {}
+```
 
 This same boundary pattern applies to typed OTP child specs when modules are hand-written in Elixir. See `docs/04-api-reference/TYPE_SAFE_CHILD_SPEC.md`.
 

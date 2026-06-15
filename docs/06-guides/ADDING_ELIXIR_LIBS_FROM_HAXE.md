@@ -37,6 +37,10 @@ Runnable reference:
 
 If your app already has a module like `MyApp.LegacyBilling`, map it exactly the same way:
 
+```bash
+mix haxe.gen.extern MyApp.LegacyBilling --package my_app.extern --out src_haxe --wrapper --decoder --test-pointer
+```
+
 ```haxe
 package my_app.extern;
 
@@ -44,6 +48,7 @@ import elixir.ElixirResult;
 import elixir.types.Term;
 
 @:native("MyApp.LegacyBilling")
+@:unsafeExtern
 extern class LegacyBilling {
   @:native("charge")
   static function charge(accountId: String, amountCents: Int): ElixirResult<String, Term>;
@@ -54,6 +59,22 @@ Generated call sites stay direct:
 
 ```elixir
 MyApp.LegacyBilling.charge(account_id, amount_cents)
+```
+
+For app-owned module references that do not expose callable functions to Haxe, use boundary mode:
+
+```bash
+mix haxe.gen.extern MyApp.PubSub --boundary --package my_app.infrastructure --out src_haxe
+```
+
+It emits the minimal strict-mode marker:
+
+```haxe
+package my_app.infrastructure;
+
+@:native("MyApp.PubSub")
+@:unsafeExtern
+extern class PubSub {}
 ```
 
 ## Step 1: Add The Hex Dependency
@@ -208,6 +229,7 @@ Minimal checklist for each new API surface:
 If you want to avoid hand-writing boilerplate, use the generator:
 
 - `mix haxe.gen.extern` (see `docs/04-api-reference/MIX_TASK_GENERATORS.md`)
+- `mix haxe.gen.extern MyApp.PubSub --boundary` for app-local module-reference markers
 
 Related docs:
 

@@ -369,18 +369,21 @@ mix haxe.gen.extern Enum
 mix haxe.gen.extern Ecto.Changeset --package externs.ecto --out src_haxe/externs
 mix haxe.gen.extern :crypto --package externs.erlang --out src_haxe/externs
 mix haxe.gen.extern Jason --wrapper --decoder --test-pointer
+mix haxe.gen.extern MyApp.PubSub --boundary --package my_app.infrastructure --out src_haxe
 ```
 
 Options:
 - `--out DIR` - Output directory (default: `src_haxe/externs`)
 - `--package PKG` - Haxe package name (default: `externs`)
 - `--class-name Name` - Override generated Haxe class name
+- `--boundary` - Generate a minimal app-local module-reference extern without loading the Elixir module
 - `--wrapper` - Generate a normal Haxe wrapper class for app-facing calls
 - `--decoder` - Generate a `TermDecoder` helper template
 - `--test-pointer` - Generate a minimal Haxe ExUnit test scaffold pointer
 
 Generated files:
 - `<Module>.hx` - Thin `@:native` extern surface using `elixir.types.Term`
+- `<Module>.hx` with no functions when `--boundary` is used; this is for app-owned module references such as `MyApp.PubSub`
 - `<Module>Wrapper.hx` - Optional app-facing wrapper
 - `<Module>Decoder.hx` - Optional decoder helper template
 - `<Module>InteropTest.md` - Optional Haxe ExUnit test pointer
@@ -388,6 +391,16 @@ Generated files:
 Files are written under the package-matching directory. For example,
 `--out src_haxe/externs --package externs.ecto` writes
 `src_haxe/externs/ecto/<Module>.hx`.
+
+Use `--boundary` for strict-mode app-local markers where the Elixir module may not be loadable or callable from Haxe, but the compiler needs a typed module reference:
+
+```haxe
+package my_app.infrastructure;
+
+@:native("MyApp.PubSub")
+@:unsafeExtern
+extern class PubSub {}
+```
 
 ## Migration Tasks
 

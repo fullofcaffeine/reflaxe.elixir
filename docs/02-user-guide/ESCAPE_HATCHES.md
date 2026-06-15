@@ -16,6 +16,7 @@ Tip: generate a starter extern automatically:
 
 ```bash
 mix haxe.gen.extern Ecto.Changeset --package externs.ecto --out src_haxe/externs
+mix haxe.gen.extern MyApp.PubSub --boundary --package my_app.infrastructure --out src_haxe
 ```
 
 ### Example: Erlang `:crypto`

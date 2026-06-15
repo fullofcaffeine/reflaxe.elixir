@@ -73,6 +73,10 @@ Use `*Unsafe` only when values are intentionally dynamic or migration glue.
 
 When a module is intentionally hand-written in Elixir, keep Haxe callsites typed with a tiny extern wrapper:
 
+```bash
+mix haxe.gen.extern MyApp.PubSub --boundary --package my_app.infrastructure --out src_haxe
+```
+
 ```haxe
 package my_app.infrastructure;
 

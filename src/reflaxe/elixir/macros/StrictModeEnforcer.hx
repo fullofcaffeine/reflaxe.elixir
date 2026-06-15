@@ -105,8 +105,9 @@ class StrictModeEnforcer {
 		}
 
 		Context.error("Strict mode forbids ad-hoc `extern class` declarations in application code. "
-			+ "Move the extern to `std/` (framework-level), use a compiler-supported boundary annotation (e.g. `@:repo`), "
-			+ "or explicitly acknowledge the escape hatch with `@:unsafeExtern`.",
+			+ "Move reusable interop to `std/` (framework-level), use a compiler-supported boundary annotation (e.g. `@:repo`), "
+			+ "or scaffold an explicit app-local boundary with `mix haxe.gen.extern MyApp.Module --boundary --package my_app.externs --out src_haxe`. "
+			+ "The minimal strict-mode shape is `@:native(\"MyApp.Module\") @:unsafeExtern extern class Module {}`.",
 			classType.pos);
 	}
 

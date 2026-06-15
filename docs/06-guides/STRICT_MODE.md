@@ -46,7 +46,8 @@ When enabled, the compiler **fails the build** if project-local sources contain:
 3. **Ad‑hoc `extern class` declarations**
    - Prefer moving reusable externs/wrappers into `std/` (framework-level).
    - For boundary externs that must live in app code, use a compiler-supported annotation such as `@:repo`.
-   - If you must use an app-local extern anyway, you can explicitly acknowledge the escape hatch with:
+   - If you must use an app-local extern anyway, scaffold and mark it explicitly:
+     - `mix haxe.gen.extern MyApp.Module --boundary --package my_app.externs --out src_haxe`
      - `@:unsafeExtern`
 
 Strict mode only scans **project-local sources** (under the current working directory) and excludes this
@@ -65,3 +66,20 @@ Common replacements for `Dynamic` / `untyped`:
 If strict mode blocks a real Phoenix/Ecto integration you need, that’s a signal the framework layer is
 missing a reusable surface. Add it to `std/` (or a compiler-supported annotation module) so it benefits
 all projects.
+
+For app-owned module references such as `MyApp.PubSub`, `MyAppWeb.Endpoint`, or a small hand-written
+Elixir bridge, keep the boundary narrow:
+
+```haxe
+package my_app.infrastructure;
+
+@:native("MyApp.PubSub")
+@:unsafeExtern
+extern class PubSub {}
+```
+
+Prefer generating that scaffold:
+
+```bash
+mix haxe.gen.extern MyApp.PubSub --boundary --package my_app.infrastructure --out src_haxe
+```
