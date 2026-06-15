@@ -83,6 +83,7 @@
     "ci:acceptance": "bash scripts/ci/acceptance_gate.sh",
     "ci:budgets": "bash scripts/ci/perf-determinism-budgets.sh",
     "perf:todo-compile": "bash scripts/perf/benchmark-todo-compile.sh",
+    "perf:example-compile": "bash scripts/perf/benchmark-todo-compile.sh --app examples/03-phoenix-app --build-file build.hxml --incremental-source src_haxe/PhoenixHaxeExample.hx --artifact-dir tmp/perf/example-compile --out tmp/perf/example-compile-times.json",
     "perf:todo-watch": "python3 scripts/perf/benchmark-todo-watch.py",
     "hooks:install": "bash scripts/install-git-hooks.sh",
     "qa:sentinel": "bash scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 600 --verbose",

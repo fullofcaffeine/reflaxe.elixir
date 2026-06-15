@@ -14,6 +14,8 @@ APP_REL="examples/todo-app"
 REF="HEAD"
 ARTIFACT_DIR_REL="tmp/perf/todo-compile"
 OUT_REL="tmp/perf/compile-times.json"
+BUILD_FILE="build-server.hxml"
+INCREMENTAL_SOURCE_REL="src_haxe/shared/TodoTypes.hx"
 HAXE_BIN="${HAXE_BIN:-haxe}"
 
 DEPS_GET_TIMEOUT="${DEPS_GET_TIMEOUT:-300}"
@@ -32,6 +34,9 @@ Options:
   --ref REF             Git ref to benchmark in isolated worktree (default: $REF)
   --artifact-dir PATH   Artifact dir relative to repo root (default: $ARTIFACT_DIR_REL)
   --out PATH            JSON output path relative to repo root (default: $OUT_REL)
+  --build-file PATH     HXML build file relative to app root (default: $BUILD_FILE)
+  --incremental-source PATH
+                        Source file to touch relative to app root (default: $INCREMENTAL_SOURCE_REL)
   --keep-worktree       Do not remove the benchmark worktree on exit
   -h, --help            Show this help
 
@@ -49,6 +54,8 @@ while [[ $# -gt 0 ]]; do
     --ref) REF="$2"; shift 2 ;;
     --artifact-dir) ARTIFACT_DIR_REL="$2"; shift 2 ;;
     --out) OUT_REL="$2"; shift 2 ;;
+    --build-file) BUILD_FILE="$2"; shift 2 ;;
+    --incremental-source) INCREMENTAL_SOURCE_REL="$2"; shift 2 ;;
     --keep-worktree) KEEP_WORKTREE=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) usage; exit 2 ;;
@@ -67,6 +74,8 @@ require_safe_relative_path() {
 require_safe_relative_path "--app" "$APP_REL"
 require_safe_relative_path "--artifact-dir" "$ARTIFACT_DIR_REL"
 require_safe_relative_path "--out" "$OUT_REL"
+require_safe_relative_path "--build-file" "$BUILD_FILE"
+require_safe_relative_path "--incremental-source" "$INCREMENTAL_SOURCE_REL"
 
 if [[ ! -x "$TIMEOUT" ]]; then
   echo "[bench] ERROR: missing timeout wrapper: $TIMEOUT" >&2
@@ -115,7 +124,7 @@ write_meta() {
     dirty="true"
   fi
 
-  python3 - "$META_JSON" "$ROOT_DIR" "$APP_REL" "$REF" "$ARTIFACT_DIR_REL" "$OUT_REL" "$dirty" <<'PY'
+  python3 - "$META_JSON" "$ROOT_DIR" "$APP_REL" "$REF" "$ARTIFACT_DIR_REL" "$OUT_REL" "$BUILD_FILE" "$INCREMENTAL_SOURCE_REL" "$dirty" <<'PY'
 import json
 import os
 import platform
@@ -123,7 +132,7 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 
-out, root, app_rel, ref, artifact_dir, out_rel, dirty = sys.argv[1:8]
+out, root, app_rel, ref, artifact_dir, out_rel, build_file, incremental_source, dirty = sys.argv[1:10]
 
 def run(cmd):
     try:
@@ -142,6 +151,8 @@ meta = {
     "config": {
         "app": app_rel,
         "artifact_dir": artifact_dir,
+        "build_file": build_file,
+        "incremental_source": incremental_source,
         "output": out_rel,
         "timeouts_seconds": {
             "deps_get": int(os.environ.get("DEPS_GET_TIMEOUT", "300")),
@@ -340,7 +351,7 @@ PY
 
 touch_incremental_source() {
   local app_dir="$1"
-  local source_rel="src_haxe/shared/TodoTypes.hx"
+  local source_rel="$INCREMENTAL_SOURCE_REL"
   local source_path="$app_dir/$source_rel"
   if [[ ! -f "$source_path" ]]; then
     echo "[bench] ERROR: incremental source not found: $source_rel" >&2
@@ -368,7 +379,7 @@ run_compile_sequence() {
     run_phase "$run_name" "deps_compile" "$DEPS_COMPILE_TIMEOUT" "$app_dir" env HAXE_NO_SERVER=1 MIX_ENV=test mix deps.compile
   fi
 
-  run_phase "$run_name" "haxe_build" "$HAXE_BUILD_TIMEOUT" "$app_dir" "$HAXE_BIN" build-server.hxml
+  run_phase "$run_name" "haxe_build" "$HAXE_BUILD_TIMEOUT" "$app_dir" "$HAXE_BIN" "$BUILD_FILE"
   run_phase "$run_name" "mix_compile" "$MIX_COMPILE_TIMEOUT" "$app_dir" env HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=test mix compile --warnings-as-errors --no-deps-check
 }
 
@@ -379,6 +390,11 @@ main() {
   local app_dir="$WORKTREE/$APP_REL"
   if [[ ! -d "$app_dir" ]]; then
     echo "[bench] ERROR: app not found in worktree: $APP_REL" >&2
+    finalize_json "failure"
+    exit 2
+  fi
+  if [[ ! -f "$app_dir/$BUILD_FILE" ]]; then
+    echo "[bench] ERROR: build file not found in app: $BUILD_FILE" >&2
     finalize_json "failure"
     exit 2
   fi

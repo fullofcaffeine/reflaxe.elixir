@@ -52,6 +52,17 @@ The JSON includes Haxe/Elixir/Mix/OTP versions, per-phase durations, command str
 the last log lines for failed phases. The artifact intentionally lives under `tmp/` because it includes
 machine-specific environment data.
 
+For a smaller representative Phoenix example baseline, use:
+
+```bash
+npm run perf:example-compile
+```
+
+This reuses the same bounded compile harness against `examples/03-phoenix-app`, writes
+`tmp/perf/example-compile-times.json`, and keeps logs under `tmp/perf/example-compile/logs/`.
+It records the same `cold`, `warm`, and `incremental` phases, using `build.hxml` and
+`src_haxe/PhoenixHaxeExample.hx`.
+
 For todo-app edit→rebuild latency through `mix haxe.watch`, use the bounded watch benchmark:
 
 ```bash
@@ -101,6 +112,13 @@ Compile benchmark (`tmp/perf/compile-times.json`):
   `mix_compile`.
 - Failed phases include `log_tail`; full logs live under `tmp/perf/todo-compile/logs/`.
 
+Representative example benchmark (`tmp/perf/example-compile-times.json`):
+
+- Uses the same schema as the todo-app compile benchmark.
+- `config.app`, `config.build_file`, and `config.incremental_source` identify the example and HXML
+  entrypoint.
+- Full logs live under `tmp/perf/example-compile/logs/`.
+
 Watch benchmark (`tmp/perf/watch-cycle-times.json`):
 
 - `phases[]` covers setup costs such as dependency resolution and watcher startup.
@@ -126,6 +144,7 @@ Use this loop when a compile feels slow or a CI budget starts drifting.
 
    ```bash
    npm run perf:todo-compile
+   npm run perf:example-compile
    npm run perf:todo-watch -- --iterations 5 --deadline 720
    ```
 
@@ -133,6 +152,7 @@ Use this loop when a compile feels slow or a CI budget starts drifting.
 
    ```bash
    npm run perf:todo-compile -- --ref HEAD~1 --out tmp/perf/compile-before.json
+   npm run perf:example-compile -- --ref HEAD~1 --out tmp/perf/example-before.json
    npm run perf:todo-watch -- --ref HEAD~1 --out tmp/perf/watch-before.json
    ```
 
