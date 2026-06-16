@@ -1,3 +1,10 @@
+## [0.10.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.10.0...v0.10.1) (2026-06-16)
+
+
+### Bug Fixes
+
+* thread persistent receiver state ([e8091c4](https://github.com/fullofcaffeine/reflaxe.elixir/commit/e8091c4cc7075c3c3cd7bc7a65cc82f5df9b0f7a))
+
 # [0.10.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.9.5...v0.10.0) (2026-06-15)
 
 
