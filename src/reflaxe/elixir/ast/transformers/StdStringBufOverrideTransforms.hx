@@ -30,7 +30,7 @@ import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
  *   b.toString();
  * Elixir (after override):
  *   defstruct parts: []
- *   def add(struct, x), do: %{struct | parts: struct.parts ++ [inspect(x)]}
+ *   def add(struct, x), do: %{struct | parts: struct.parts ++ [stringified_x]}
  *   def to_string(struct), do: IO.iodata_to_binary(struct.parts)
  */
 class StdStringBufOverrideTransforms {
@@ -55,7 +55,11 @@ class StdStringBufOverrideTransforms {
 			+ "    %__MODULE__{}\n"
 			+ "  end\n"
 			+ "  def add(struct, x) do\n"
-			+ "    str = if Kernel.is_nil(x), do: \"null\", else: inspect(x)\n"
+			+ "    str = cond do\n"
+			+ "      Kernel.is_nil(x) -> \"null\"\n"
+			+ "      Kernel.is_binary(x) -> x\n"
+			+ "      true -> inspect(x)\n"
+			+ "    end\n"
 			+ "    %{struct | parts: struct.parts ++ [str]}\n"
 			+ "  end\n"
 			+ "  def add_char(struct, c) do\n"
@@ -64,12 +68,23 @@ class StdStringBufOverrideTransforms {
 			+ "  def add_sub(struct, s, pos, len) do\n"
 			+ "    if Kernel.is_nil(s), do: struct, else: (\n"
 			+ "      substr = if Kernel.is_nil(len) do\n"
-			+ "        String.slice(s, pos..-1)\n"
+			+ "        utf16_slice(s, pos, nil)\n"
 			+ "      else\n"
-			+ "        String.slice(s, pos, len)\n"
+			+ "        utf16_slice(s, pos, len)\n"
 			+ "      end\n"
 			+ "      %{struct | parts: struct.parts ++ [substr]}\n"
 			+ "    )\n"
+			+ "  end\n"
+			+ "  defp utf16_slice(s, pos, len) do\n"
+			+ "    end_pos = if Kernel.is_nil(len), do: nil, else: pos + len\n"
+			+ "    {parts, _offset} = Enum.reduce(String.graphemes(s), {[], 0}, fn grapheme, {acc, offset} ->\n"
+			+ "      codepoint = List.first(String.to_charlist(grapheme)) || 0\n"
+			+ "      units = if codepoint > 0xFFFF, do: 2, else: 1\n"
+			+ "      next_offset = offset + units\n"
+			+ "      include = next_offset > pos and (Kernel.is_nil(end_pos) or offset < end_pos)\n"
+			+ "      {if(include, do: [grapheme | acc], else: acc), next_offset}\n"
+			+ "    end)\n"
+			+ "    parts |> Enum.reverse() |> IO.iodata_to_binary()\n"
 			+ "  end\n"
 			+ "  def to_string(struct) do\n"
 			+ "    IO.iodata_to_binary(struct.parts)\n"

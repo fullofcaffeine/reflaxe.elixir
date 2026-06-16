@@ -11,6 +11,12 @@ import stdlib_parity.upstream.UpstreamUnitStdMacro;
  */
 @:exunit
 class UpstreamUnitStdTest extends TestCase {
+	@:describe("upstream Haxe unitstd: StringBuf")
+	@:test
+	function testStringBuf():Void {
+		UpstreamUnitStdMacro.assertSpec("StringBuf.unit.hx");
+	}
+
 	@:describe("upstream Haxe unitstd: haxe.crypto.Base64")
 	@:test
 	function testHaxeCryptoBase64():Void {
@@ -27,6 +33,24 @@ class UpstreamUnitStdTest extends TestCase {
 	@:test
 	function testHaxeCryptoSha1():Void {
 		UpstreamUnitStdMacro.assertSpec("haxe/crypto/Sha1.unit.hx");
+	}
+
+	@:describe("upstream Haxe unitstd: IntIterator")
+	@:test
+	function testIntIterator():Void {
+		UpstreamUnitStdMacro.assertSpec("IntIterator.unit.hx");
+	}
+
+	@:describe("upstream Haxe unitstd: haxe.io.BytesBuffer")
+	@:test
+	function testHaxeIoBytesBuffer():Void {
+		UpstreamUnitStdMacro.assertSpec("haxe/io/BytesBuffer.unit.hx");
+	}
+
+	@:describe("upstream Haxe unitstd: haxe.io.FPHelper")
+	@:test
+	function testHaxeIoFPHelper():Void {
+		UpstreamUnitStdMacro.assertSpec("haxe/io/FPHelper.unit.hx");
 	}
 
 	@:describe("upstream Haxe unitstd: haxe.io.Path")

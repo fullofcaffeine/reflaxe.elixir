@@ -14,22 +14,11 @@ defmodule Main do
   end
   defp bytes_buffer() do
     buffer = BytesBuffer.new()
-    buffer = %{buffer | parts_reversed: [65 | buffer.parts_reversed]}
-    buffer = %{buffer | byte_length: buffer.byte_length + 1}
-    encoding = nil
-    src = Bytes.of_string("BC", encoding)
-    buffer = if (src.length == 0) do
-      buffer
-    else
-      buffer = %{buffer | parts_reversed: [apply(Map.get(src, :__reflaxe_class__) || Map.get(src, :__struct__), :get_data, [src]) | buffer.parts_reversed]}
-      %{buffer | byte_length: buffer.byte_length + src.length}
-    end
-    buffer = %{buffer | parts_reversed: [<<16909060::little-signed-size(32)>> | buffer.parts_reversed]}
-    buffer = %{buffer | byte_length: buffer.byte_length + 4}
-    buffer = %{buffer | parts_reversed: [<<1.5::float-little-size(32)>> | buffer.parts_reversed]}
-    buffer = %{buffer | byte_length: buffer.byte_length + 4}
-    buffer = %{buffer | parts_reversed: [<<3.25::float-little-size(64)>> | buffer.parts_reversed]}
-    buffer = %{buffer | byte_length: buffer.byte_length + 8}
+    buffer = apply(Map.get(buffer, :__reflaxe_class__) || Map.get(buffer, :__struct__), :add_byte, [buffer, 65])
+    buffer = apply(Map.get(buffer, :__reflaxe_class__) || Map.get(buffer, :__struct__), :add_string, [buffer, "BC", nil])
+    buffer = apply(Map.get(buffer, :__reflaxe_class__) || Map.get(buffer, :__struct__), :add_int32, [buffer, 16909060])
+    buffer = apply(Map.get(buffer, :__reflaxe_class__) || Map.get(buffer, :__struct__), :add_float, [buffer, 1.5])
+    buffer = apply(Map.get(buffer, :__reflaxe_class__) || Map.get(buffer, :__struct__), :add_double, [buffer, 3.25])
     _bytes = apply(Map.get(buffer, :__reflaxe_class__) || Map.get(buffer, :__struct__), :get_bytes, [buffer])
     nil
   end

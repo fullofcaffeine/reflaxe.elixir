@@ -349,6 +349,17 @@ Do not implement profile declarations as backend switches. If profile defines/me
 
 Use `docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md` as the source of truth for profile language.
 
+### Imperative Lowering Contract
+
+Reflaxe.Elixir supports both Elixir-first Haxe and normal imperative Haxe. When Haxe mutation semantics are required, preserve behavior through explicit immutable Elixir rebinding rather than runtime patches or generated-output cleanup.
+
+- Stateful receiver methods must use the centralized receiver-return convention. Examples: `StringBuf.add(...)` and `haxe.io.BytesBuffer.add*` return the updated receiver; `IntIterator.next()` returns `{updated_receiver, value}` and call sites must rebind the receiver in the same Elixir scope.
+- Stateful calls embedded in expressions must be hoisted before the surrounding expression, preserving Haxe left-to-right evaluation order and avoiding IIFE/anonymous-function isolation.
+- `for` loops over persistent receiver iterators must thread the iterator through `Enum.reduce_while` and rebind the outer iterator after the loop.
+- Do not classify process-dictionary-backed iterators (`ArrayIterator`, `MapKeyValueIterator`) as persistent receiver mutators.
+
+Source of truth: `docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md` and `docs/05-architecture/ITERATOR_RUNTIME_MODEL.md`.
+
 ### Key Principles
 - **Idiomatic Code Generation**: Generated Elixir must pass human review as "natural"
 - **Type Safety Without Vendor Lock-in**: Compile-time safety with deployment flexibility  

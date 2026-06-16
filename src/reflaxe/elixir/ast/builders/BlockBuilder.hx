@@ -13,6 +13,8 @@ import reflaxe.elixir.ast.ElixirAST.EBinaryOp;
 import reflaxe.elixir.CompilationContext;
 import reflaxe.elixir.ast.optimizers.LoopOptimizer;
 import reflaxe.elixir.ast.ElixirASTPatterns;
+import reflaxe.elixir.ast.ReceiverReturnConventions;
+import reflaxe.elixir.ast.ReceiverReturnConventions.ReceiverReturnConvention;
 import reflaxe.elixir.ast.analyzers.VariableAnalyzer;
 import reflaxe.elixir.ast.builders.ComprehensionBuilder;
 import reflaxe.elixir.ast.ElixirASTBuilder;
@@ -943,6 +945,19 @@ class BlockBuilder {
 		return false;
 	}
 
+	static function isPersistentIteratorSeed(init:TypedExpr):Bool {
+		if (init == null)
+			return false;
+		return switch (haxe.macro.TypeTools.follow(init.t)) {
+			case TInst(classRef, _):
+				var classType = classRef.get();
+				var classPack = classType.pack != null ? classType.pack.join(".") : "";
+				ReceiverReturnConventions.forMethod(classPack, classType.name, "next") == UpdatedReceiverAndValue;
+			default:
+				false;
+		};
+	}
+
 	static function trackLocalInitValuesById(el:Array<TypedExpr>, context:CompilationContext):Array<{id:Int, had:Bool, value:Null<ElixirAST>}> {
 		if (el == null)
 			return [];
@@ -954,7 +969,7 @@ class BlockBuilder {
 
 		for (expr in el) {
 			switch (expr.expr) {
-				case TVar(v, init) if (init != null && shouldTrackLocalInitValueById(v.name)):
+				case TVar(v, init) if (init != null && (shouldTrackLocalInitValueById(v.name) || isPersistentIteratorSeed(init))):
 					#if debug_haxe5_loop_seeds
 					if (v.name != null && v.name.indexOf("`") != -1) {
 						trace('[haxe5-loop-seeds] trackLocalInitValuesById: name="${v.name}" id=${v.id} init='
@@ -1053,13 +1068,20 @@ class BlockBuilder {
 		} else {
 			var expressions:Array<ElixirAST> = [];
 
-			for (expr in el) {
+			var index = 0;
+			while (index < el.length) {
+				var expr = el[index];
+				if (index + 1 < el.length && isPersistentIteratorAliasForNextLoop(expr, el[index + 1])) {
+					index++;
+					continue;
+				}
 				// CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
 				// Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
 				var compiled = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
 				if (compiled != null && compiled.def != null) {
 					expressions.push(compiled);
 				}
+				index++;
 			}
 
 			// Check for combining TVar and TBinop patterns
@@ -1091,6 +1113,61 @@ class BlockBuilder {
 		}
 
 		return result;
+	}
+
+	static function isPersistentIteratorAliasForNextLoop(expr:TypedExpr, nextExpr:TypedExpr):Bool {
+		function unwrap(value:TypedExpr):TypedExpr {
+			return switch (value.expr) {
+				case TParenthesis(inner) | TMeta(_, inner): unwrap(inner);
+				default: value;
+			}
+		}
+
+		var aliasVar:Null<TVar> = null;
+		switch (unwrap(expr).expr) {
+			case TVar(v, init) if (init != null && isPersistentIteratorSeed(init)):
+				aliasVar = v;
+			default:
+		}
+		if (aliasVar == null)
+			return false;
+
+		var whileParts = switch (unwrap(nextExpr).expr) {
+			case TWhile(condition, body, _): {condition: condition, body: body};
+			default: return false;
+		};
+
+		var conditionUsesAlias = switch (unwrap(whileParts.condition).expr) {
+			case TCall({expr: TField({expr: TLocal(receiver)}, FInstance(_, _, methodRef))}, [])
+				if (receiver.id == aliasVar.id && methodRef.get().name == "hasNext"):
+				true;
+			default:
+				false;
+		};
+		if (!conditionUsesAlias)
+			return false;
+
+		var statements = switch (unwrap(whileParts.body).expr) {
+			case TBlock(items): items;
+			default: return false;
+		}
+		if (statements.length == 0)
+			return false;
+
+		return switch (unwrap(statements[0]).expr) {
+			case TVar(_, init) if (init != null):
+				switch (unwrap(init).expr) {
+					case TCall({expr: TField({expr: TLocal(receiver)}, FInstance(classRef, _, methodRef))}, [])
+						if (receiver.id == aliasVar.id && methodRef.get().name == "next"):
+						var classType = classRef.get();
+						var classPack = classType.pack != null ? classType.pack.join(".") : "";
+						ReceiverReturnConventions.forMethod(classPack, classType.name, "next") == UpdatedReceiverAndValue;
+					default:
+						false;
+				}
+			default:
+				false;
+		};
 	}
 
 	public static function collapseInlineAbstractValueAST(ast:Null<ElixirAST>):Null<ElixirAST> {

@@ -22,6 +22,17 @@ Coverage policy:
 - Non-enabled entries must explain whether no upstream spec exists, the spec is
   unsupported for this target, or target-specific triage is still required.
 
+Current upstream runtime fixtures:
+- Enabled: `IntIterator`, `StringBuf`, `haxe.crypto.Base64`, `haxe.crypto.Md5`,
+  `haxe.crypto.Sha1`, `haxe.io.BytesBuffer`, `haxe.io.FPHelper`.
+- Adapted: `haxe.io.Path` (path-hygiene-only Windows sample adjustment).
+
+Iterator note:
+- `IntIterator.unit.hx` is enabled. It validates persistent receiver threading:
+  `next()` returns `{updated_iterator, value}` in generated Elixir, call sites
+  rebind the iterator in the same scope, and desugared `for` loops thread the
+  iterator through `Enum.reduce_while`.
+
 Use `scripts/sync-upstream-unitstd-specs.sh` to refresh enabled, unmodified specs
 from a local Haxe reference checkout. Adapted specs must be reviewed manually so
 their local target/path-hygiene changes are not overwritten.

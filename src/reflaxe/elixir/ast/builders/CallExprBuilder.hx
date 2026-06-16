@@ -8,6 +8,8 @@ import haxe.macro.Type.TypedExpr;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.EPattern;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
+import reflaxe.elixir.ast.ReceiverReturnConventions;
+import reflaxe.elixir.ast.ReceiverReturnConventions.ReceiverReturnConvention;
 import reflaxe.elixir.CompilationContext;
 import reflaxe.elixir.helpers.PatternDetector;
 import reflaxe.elixir.ast.builders.VariableBuilder;
@@ -590,6 +592,15 @@ class CallExprBuilder {
 				}
 			}
 		}
+		var extractedCallArgs = extractStatefulCallArguments(argASTs);
+		argASTs = extractedCallArgs.args;
+		inline function withArgumentPrelude(callDef:ElixirASTDef):ElixirASTDef {
+			if (extractedCallArgs.prelude.length == 0)
+				return callDef;
+			var statements = extractedCallArgs.prelude.copy();
+			statements.push(makeAST(callDef));
+			return EParen(makeASTWithMeta(EBlock(statements), {noIifeWrap: true}, null));
+		}
 
 		// Determine the call type
 		switch (e.expr) {
@@ -600,6 +611,7 @@ class CallExprBuilder {
 						// Instance method call
 						var classType = classRef.get();
 						var className = classType.name;
+						var classPack = classType.pack != null ? classType.pack.join(".") : "";
 						var moduleName = ModuleBuilder.extractModuleName(classType);
 						var methodName = cf.get().name;
 
@@ -1074,6 +1086,30 @@ class CallExprBuilder {
 								makeAST(EList([receiverRef].concat(argASTs)))
 							]));
 
+							var receiverConvention = ReceiverReturnConventions.forMethod(classPack, className, methodName);
+							switch (receiverConvention) {
+								case UpdatedReceiver:
+									switch (receiverRef.def) {
+										case EVar(receiverVarName):
+											return EMatch(PVar(receiverVarName), applyCall);
+										default:
+									}
+								case UpdatedReceiverAndValue:
+									switch (receiverRef.def) {
+										case EVar(receiverVarName):
+											var resultVarName = "reflaxe_receiver_value_" + context.generateNodeId();
+											var block = makeASTWithMeta(EBlock([
+												makeAST(EMatch(PTuple([PVar(receiverVarName), PVar(resultVarName)]), applyCall)),
+												makeAST(EVar(resultVarName))
+											]), {
+												noIifeWrap: true
+											}, null);
+											return EParen(block);
+										default:
+									}
+								case PureValue:
+							}
+
 							if (prefix.length > 0) {
 								prefix.push(applyCall);
 								return EBlock(prefix);
@@ -1094,6 +1130,7 @@ class CallExprBuilder {
 						// Static method call
 						var classType = classRef.get();
 						var className = classType.name;
+						var classPack = classType.pack != null ? classType.pack.join(".") : "";
 						var moduleName = ModuleBuilder.extractModuleName(classType);
 						var methodName = cf.get().name;
 
@@ -1131,7 +1168,6 @@ class CallExprBuilder {
 						// WHY: Ensure "from" part of a TypedQuery chain is emitted as proper Ecto code,
 						// so downstream where/order_by transforms receive a valid query AST.
 						// Detect ecto.TypedQuery.from
-						var classPack = classRef.get().pack != null ? classRef.get().pack.join(".") : "";
 						if (className == "TypedQuery" && classPack == "ecto" && methodName == "from") {
 							// Expect signature from<T>(schemaClass: Class<T>)
 							if (args.length >= 1) {
@@ -1181,10 +1217,10 @@ class CallExprBuilder {
 
 						if (isSameModule) {
 							// Same module - use direct function call
-							return ECall(null, elixirMethodName, argASTs);
+							return withArgumentPrelude(ECall(null, elixirMethodName, argASTs));
 						} else {
 							// Different module - use qualified call
-							return ERemoteCall(makeAST(EVar(moduleName)), elixirMethodName, argASTs);
+							return withArgumentPrelude(ERemoteCall(makeAST(EVar(moduleName)), elixirMethodName, argASTs));
 						}
 
 					case FEnum(_, ef):
@@ -1203,12 +1239,50 @@ class CallExprBuilder {
 				// This ensures lambda function parameters use their snake_case names
 				// (e.g., topicConverter -> topic_converter)
 				var resolvedName = VariableBuilder.resolveVariableName(v, context);
-				return ECall(makeAST(EVar(resolvedName)), "", argASTs);
+				return withArgumentPrelude(ECall(makeAST(EVar(resolvedName)), "", argASTs));
 
 			default:
 				// Generic call
-				return ECall(target, "", argASTs);
+				return withArgumentPrelude(ECall(target, "", argASTs));
 		}
+	}
+
+	static function extractStatefulCallArguments(args:Array<ElixirAST>):{prelude:Array<ElixirAST>, args:Array<ElixirAST>} {
+		var prelude:Array<ElixirAST> = [];
+		var rewrittenArgs:Array<ElixirAST> = [];
+		for (arg in args) {
+			var extracted = extractStatefulExpression(arg);
+			for (statement in extracted.prelude)
+				prelude.push(statement);
+			rewrittenArgs.push(extracted.value);
+		}
+		return {prelude: prelude, args: rewrittenArgs};
+	}
+
+	static function extractStatefulExpression(expression:ElixirAST):{prelude:Array<ElixirAST>, value:ElixirAST} {
+		return switch (expression.def) {
+			case EParen(inner):
+				switch (inner.def) {
+					case EBlock(statements) if (isNoIifeBlock(inner) && statements.length > 0):
+						{
+							prelude: statements.slice(0, statements.length - 1),
+							value: statements[statements.length - 1]
+						};
+					default:
+						{prelude: [], value: expression};
+				}
+			case EBlock(statements) if (isNoIifeBlock(expression) && statements.length > 0):
+				{
+					prelude: statements.slice(0, statements.length - 1),
+					value: statements[statements.length - 1]
+				};
+			default:
+				{prelude: [], value: expression};
+		}
+	}
+
+	static function isNoIifeBlock(expression:ElixirAST):Bool {
+		return expression != null && expression.metadata != null && expression.metadata.noIifeWrap == true;
 	}
 
 	/**

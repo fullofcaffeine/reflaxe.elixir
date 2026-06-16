@@ -33,6 +33,8 @@ import reflaxe.elixir.ast.ElixirAST.RouterOptionMeta;
 import reflaxe.elixir.ast.ElixirAST.RouterMetaValue;
 import reflaxe.elixir.ast.ElixirAST.SocketChannelMeta;
 import reflaxe.elixir.ast.ElixirAST.EndpointSocketMeta;
+import reflaxe.elixir.ast.ReceiverReturnConventions;
+import reflaxe.elixir.ast.ReceiverReturnConventions.ReceiverReturnConvention;
 import reflaxe.elixir.ast.builders.ModuleBuilder;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.ast.NameUtils;
@@ -2249,6 +2251,10 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 				// Constructors compile to a module-level `new/arity` that returns an initialized struct/map.
 				// Haxe constructors mutate `this`; in Elixir we build a fresh `struct` map, run the body
 				// against it, and return it.
+				var receiverConvention = (!isStaticMethod && !isExUnitTestMethod && !isConstructor) ? ReceiverReturnConventions.forClassMethod(classType,
+					funcData.field.name) : PureValue;
+				funcBody = applyReceiverReturnConvention(funcBody, "struct", receiverConvention);
+
 				if (isConstructor) {
 					var isExceptionConstructor = false;
 					var exceptionCheck:Null<ClassType> = classType;
@@ -2424,6 +2430,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 
 				// Check for test-related metadata on the function field
 				var funcMetadata:reflaxe.elixir.ast.ElixirAST.ElixirMetadata = {};
+				funcMetadata.receiverReturnConvention = ReceiverReturnConventions.toMetadataValue(receiverConvention);
 
 				// Set ExUnit-related metadata flags directly (accept both forms with and without ':')
 				inline function hasMeta(name:String):Bool {
@@ -5774,6 +5781,57 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 				writer.generateSourceMap();
 		}
 		pendingSourceMapWriters = [];
+	}
+
+	static function applyReceiverReturnConvention(body:Null<reflaxe.elixir.ast.ElixirAST>, receiverName:String,
+			convention:ReceiverReturnConvention):Null<reflaxe.elixir.ast.ElixirAST> {
+		if (body == null)
+			return body;
+
+		return switch (convention) {
+			case PureValue:
+				body;
+			case UpdatedReceiver:
+				body;
+			case UpdatedReceiverAndValue:
+				replaceFinalExpressionWithTuple(body, receiverName);
+		}
+	}
+
+	static function replaceFinalExpressionWithTuple(body:reflaxe.elixir.ast.ElixirAST, receiverName:String):reflaxe.elixir.ast.ElixirAST {
+		return switch (body.def) {
+			case EParen(inner):
+				replaceFinalExpressionWithTuple(inner, receiverName);
+			case EBlock(expressions):
+				reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EBlock(replaceFinalInListWithTuple(expressions, receiverName)));
+			case EDo(expressions):
+				reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EDo(replaceFinalInListWithTuple(expressions, receiverName)));
+			default:
+				reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.ETuple([reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EVar(receiverName)), body]));
+		}
+	}
+
+	static function replaceFinalInListWithTuple(expressions:Array<reflaxe.elixir.ast.ElixirAST>, receiverName:String):Array<reflaxe.elixir.ast.ElixirAST> {
+		var rewritten:Array<reflaxe.elixir.ast.ElixirAST> = [];
+		if (expressions == null || expressions.length == 0) {
+			rewritten.push(reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.ETuple([
+				reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EVar(receiverName)),
+				reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.ENil)
+			])));
+			return rewritten;
+		}
+		for (index in 0...expressions.length) {
+			var expression = expressions[index];
+			if (index == expressions.length - 1) {
+				rewritten.push(reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.ETuple([
+					reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EVar(receiverName)),
+					expression
+				])));
+			} else {
+				rewritten.push(expression);
+			}
+		}
+		return rewritten;
 	}
 
 	/**

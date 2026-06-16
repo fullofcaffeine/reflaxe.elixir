@@ -15,6 +15,7 @@ import haxe.ds.EnumValueMap;
 import haxe.ds.IntMap;
 import haxe.ds.StringMap;
 import haxe.io.Bytes;
+import haxe.io.BytesBuffer;
 import haxe.io.BytesInput;
 import haxe.io.BytesOutput;
 import haxe.io.Eof;
@@ -56,6 +57,10 @@ class StdlibParityTest extends TestCase {
 		var keyString:String = cast untyped __elixir__('Kernel.to_string({0})', pair.key);
 		var valueString:String = cast untyped __elixir__('Kernel.to_string({0})', pair.value);
 		return keyString + ":" + valueString;
+	}
+
+	static function pairIntBool(value:Int, flag:Bool):String {
+		return Std.string(value) + ":" + Std.string(flag);
 	}
 
 	@:describe("haxe.CallStack")
@@ -172,6 +177,44 @@ class StdlibParityTest extends TestCase {
 		Assert.isTrue(iterator.hasNext());
 		Assert.equals(3, iterator.next());
 		Assert.isFalse(iterator.hasNext());
+	}
+
+	@:describe("IntIterator persistent receiver semantics")
+	@:test
+	function testIntIteratorDirectNextSequence():Void {
+		var iterator = new IntIterator(0, 2);
+		Assert.isTrue(iterator.hasNext());
+		Assert.equals(0, iterator.next());
+		Assert.isTrue(iterator.hasNext());
+		Assert.equals(1, iterator.next());
+		Assert.isFalse(iterator.hasNext());
+	}
+
+	@:describe("IntIterator persistent receiver semantics")
+	@:test
+	function testIntIteratorEmbeddedAssertions():Void {
+		var iterator = new IntIterator(0, 2);
+		Assert.isTrue(iterator.next() == 0);
+		Assert.isTrue(iterator.hasNext());
+		Assert.isTrue(iterator.next() == 1);
+		Assert.isFalse(iterator.hasNext());
+	}
+
+	@:describe("IntIterator persistent receiver semantics")
+	@:test
+	function testIntIteratorRepeatedCallsPreserveOrder():Void {
+		var iterator = new IntIterator(0, 3);
+		Assert.equals(1, iterator.next() + iterator.next());
+		Assert.equals(2, iterator.next());
+		Assert.isFalse(iterator.hasNext());
+	}
+
+	@:describe("IntIterator persistent receiver semantics")
+	@:test
+	function testIntIteratorFunctionArgumentOrdering():Void {
+		var iterator = new IntIterator(0, 2);
+		Assert.equals("0:true", pairIntBool(iterator.next(), iterator.hasNext()));
+		Assert.equals("1:false", pairIntBool(iterator.next(), iterator.hasNext()));
 	}
 
 	@:describe("haxe.iterators.MapKeyValueIterator runtime semantics")
@@ -344,6 +387,19 @@ class StdlibParityTest extends TestCase {
 			input.readLine();
 			Assert.fail("readLine should throw Eof after the final line");
 		} catch (_:Eof) {}
+	}
+
+	@:describe("haxe.io.BytesBuffer")
+	@:test
+	function testBytesBufferNoOpMutationsKeepReceiver():Void {
+		var buffer = new BytesBuffer();
+		buffer.add(Bytes.ofString(""));
+		Assert.equals(0, buffer.length);
+
+		buffer.addString("ok");
+		buffer.addBytes(Bytes.ofString("ignored"), 0, 0);
+		Assert.equals(2, buffer.length);
+		Assert.equals("ok", buffer.getBytes().toString());
 	}
 
 	@:describe("haxe.io.StringInput")

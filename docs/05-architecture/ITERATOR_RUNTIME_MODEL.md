@@ -13,16 +13,48 @@ However, some stdlib and user code still constructs and calls iterators at runti
 
 So we must provide a *real* runtime implementation for the iterator modules that can be invoked at runtime.
 
-## Constraint: stateful iterator calling convention
+## Constraint: stateful iterator calling conventions
 
 Haxe iterators are stateful: `next()` advances internal state.
 
-On BEAM/Elixir, a purely functional iterator protocol would typically return an updated iterator (`{value, it2}`), but the Haxe surface does not do that.
+On BEAM/Elixir, persistent data cannot mutate in place. Reflaxe.Elixir therefore uses two iterator strategies depending
+on how the iterator is represented.
 
-Therefore, the Elixir target must preserve the calling convention:
+## Persistent receiver iterators
 
-- `has_next(it)` does not mutate `it` directly
-- `next(it)` advances, without returning a new `it`
+`IntIterator` is a persistent receiver-backed iterator. Its Haxe API is:
+
+```haxe
+iterator.hasNext();
+iterator.next();
+```
+
+but `next()` mutates `min` and returns the old value. Generated Elixir must return both the updated receiver and the Haxe
+method result:
+
+```elixir
+{iterator, value} = IntIterator.next(iterator)
+```
+
+The caller then rebinds `iterator` in the same Elixir scope before any later `has_next/1` call. This is required for
+embedded expressions and repeated calls:
+
+```haxe
+iterator.next() + iterator.next();
+pair(iterator.next(), iterator.hasNext());
+```
+
+Those shapes lower by hoisting the stateful `next()` calls before the surrounding expression, preserving Haxe
+left-to-right evaluation order and the updated receiver state.
+
+For `for (value in iterator)` over an `IntIterator`, the compiler lowers the desugared `while (iterator.hasNext())`
+shape to a `reduce_while` that threads the iterator through the reducer accumulator and rebinds the outer iterator after
+the loop. A second loop over the same iterator therefore sees the exhausted iterator, matching Haxe semantics.
+
+## Runtime-state iterators
+
+Some iterator modules intentionally keep the Haxe surface convention where `next(it)` advances without returning a new
+`it`.
 
 ## Current runtime strategy
 
@@ -38,6 +70,9 @@ Both iterators preserve stateful Haxe semantics by storing the current index in 
 - `Process.get/2` and `Process.put/2` hold the current index
 
 This keeps iterator semantics correct without changing the call sites.
+
+Do not blindly classify these process-dictionary-backed iterators as persistent receiver mutators. Their receiver value is
+not what changes; their runtime state changes through the process dictionary.
 
 ### Tradeoffs
 

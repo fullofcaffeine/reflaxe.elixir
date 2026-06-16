@@ -130,7 +130,17 @@ class UpstreamUnitStdMacro {
 
 	static function message(source:Expr, relativePath:String):String {
 		var location = Context.getPosInfos(source.pos);
-		return 'upstream unitstd ${relativePath} at ${location.file}:${location.min}';
+		return 'upstream unitstd ${relativePath} at ${workspaceRelativePath(location.file)}:${location.min}';
+	}
+
+	static function workspaceRelativePath(path:String):String {
+		var workspace = haxe.io.Path.normalize(Sys.getCwd());
+		var normalizedPath = haxe.io.Path.normalize(path);
+		var workspacePrefix = workspace + "/";
+		if (StringTools.startsWith(normalizedPath, workspacePrefix)) {
+			return normalizedPath.substr(workspacePrefix.length);
+		}
+		return normalizedPath;
 	}
 	#end
 }

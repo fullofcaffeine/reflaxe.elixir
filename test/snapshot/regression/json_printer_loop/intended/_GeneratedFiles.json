@@ -10,7 +10,8 @@
   "main.ex",
   "json_printer.ex",
   "int_iterator.ex",
-  "haxe/iterators/array_iterator.ex"
+  "haxe/iterators/array_iterator.ex",
+  "haxe/_call_stack/call_stack_impl_.ex"
 ],
   "id": 0,
   "wasCached": false,

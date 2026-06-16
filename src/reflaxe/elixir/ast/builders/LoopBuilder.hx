@@ -16,6 +16,8 @@ import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.ast.ElixirASTPatterns;
 import reflaxe.elixir.ast.ElixirASTPrinter;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.ReceiverReturnConventions;
+import reflaxe.elixir.ast.ReceiverReturnConventions.ReceiverReturnConvention;
 import reflaxe.elixir.ast.context.BuildContext;
 import reflaxe.elixir.ast.loop_ir.LoopIR;
 import reflaxe.elixir.ast.analyzers.RangeIterationAnalyzer;
@@ -23,6 +25,7 @@ import reflaxe.elixir.helpers.MutabilityDetector;
 import reflaxe.elixir.CompilationContext;
 import reflaxe.elixir.ast.builders.ComprehensionBuilder; // for unwrap helpers
 import reflaxe.elixir.ast.builders.VariableBuilder;
+import reflaxe.elixir.ast.naming.ElixirNaming;
 
 using StringTools;
 
@@ -2365,6 +2368,10 @@ class LoopBuilder {
 				return desugaredRange;
 		}
 
+		var persistentIteratorPattern = detectPersistentIteratorWhilePattern(econd, e);
+		if (persistentIteratorPattern != null)
+			return buildPersistentIteratorWhileLoop(persistentIteratorPattern, context, toElixirVarName);
+
 		// Detect `for (item in array)` desugared to an indexed while loop:
 		//   g = 0; while (g < array.length) { var item = array[g]; g++; <userCode> }
 		// and rewrite to Enum.each/Enum.reduce(array, ...).
@@ -3199,6 +3206,264 @@ class LoopBuilder {
 			elementVarName: elementVarName,
 			userBody: userBody
 		};
+	}
+
+	static function detectPersistentIteratorWhilePattern(econd:TypedExpr, body:TypedExpr):Null<{
+		iteratorVar:TVar,
+		itemVar:TVar,
+		nextMethodName:String,
+		hasNextMethodName:String,
+		userBody:TypedExpr
+	}> {
+		function unwrap(expr:TypedExpr):TypedExpr {
+			return switch (expr.expr) {
+				case TParenthesis(inner) | TMeta(_, inner): unwrap(inner);
+				default: expr;
+			}
+		}
+
+		function methodConvention(classType:ClassType, methodName:String):ReceiverReturnConvention {
+			var classPack = classType.pack != null ? classType.pack.join(".") : "";
+			return ReceiverReturnConventions.forMethod(classPack, classType.name, methodName);
+		}
+
+		var condition = unwrap(econd);
+		var iteratorVar:Null<TVar> = null;
+		var hasNextMethodName:Null<String> = null;
+		switch (condition.expr) {
+			case TCall({expr: TField({expr: TLocal(receiver)}, FInstance(classRef, _, methodRef))}, [])
+				if (methodRef.get().name == "hasNext" && methodConvention(classRef.get(), "next") == UpdatedReceiverAndValue):
+				iteratorVar = receiver;
+				hasNextMethodName = methodRef.get().name;
+			default:
+		}
+
+		if (iteratorVar == null)
+			return null;
+
+		var statements = switch (body.expr) {
+			case TBlock(exprs): exprs;
+			default: return null;
+		}
+		if (statements.length == 0)
+			return null;
+
+		var itemVar:Null<TVar> = null;
+		var nextMethodName:Null<String> = null;
+		var first = unwrap(statements[0]);
+		switch (first.expr) {
+			case TVar(valueVar, init) if (init != null):
+				var nextExpr = unwrap(init);
+				switch (nextExpr.expr) {
+					case TCall({expr: TField({expr: TLocal(nextReceiver)}, FInstance(classRef, _, methodRef))}, [])
+						if (nextReceiver.id == iteratorVar.id
+							&& methodConvention(classRef.get(), methodRef.get().name) == UpdatedReceiverAndValue):
+						itemVar = valueVar;
+						nextMethodName = methodRef.get().name;
+					default:
+				}
+			default:
+		}
+
+		if (itemVar == null || nextMethodName == null)
+			return null;
+
+		var userExprs = statements.slice(1);
+		var userBody:TypedExpr = if (userExprs.length == 0) {
+			{expr: TBlock([]), pos: body.pos, t: body.t};
+		} else if (userExprs.length == 1) {
+			userExprs[0];
+		} else {
+			{expr: TBlock(userExprs), pos: body.pos, t: body.t};
+		};
+
+		return {
+			iteratorVar: iteratorVar,
+			itemVar: itemVar,
+			nextMethodName: nextMethodName,
+			hasNextMethodName: hasNextMethodName,
+			userBody: userBody
+		};
+	}
+
+	static function buildPersistentIteratorWhileLoop(pattern:{
+		iteratorVar:TVar,
+		itemVar:TVar,
+		nextMethodName:String,
+		hasNextMethodName:String,
+		userBody:TypedExpr
+	}, context:BuildContext, toElixirVarName:String->String):ElixirASTDef {
+		var buildExpression = context.getExpressionBuilder();
+		var compilationContext:Null<CompilationContext> = Std.isOfType(context, CompilationContext) ? cast context : null;
+
+		function resolvedName(tvar:TVar):String {
+			return compilationContext != null ? VariableBuilder.resolveVariableName(tvar, compilationContext) : toElixirVarName(tvar.name);
+		}
+
+		function accumulatorName(outerName:String):String {
+			if (outerName == "_")
+				return "_acc";
+			if (outerName.endsWith("_acc"))
+				return outerName + "_state";
+			return "acc_" + outerName;
+		}
+
+		function runtimeApply(receiverName:String, methodName:String):ElixirAST {
+			var receiver = makeAST(EVar(receiverName));
+			var runtimeModule = makeAST(EBinary(OrElse, makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [receiver, makeAST(EAtom("__reflaxe_class__"))])),
+				makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [receiver, makeAST(EAtom("__struct__"))]))));
+			return makeAST(ECall(null, "apply", [
+				runtimeModule,
+				makeAST(EAtom(ElixirNaming.toVarName(methodName))),
+				makeAST(EList([receiver]))
+			]));
+		}
+
+		function initialIteratorName():String {
+			var fallback = resolvedName(pattern.iteratorVar);
+			if (compilationContext == null || compilationContext.localVarInitValuesById == null)
+				return fallback;
+			if (!compilationContext.localVarInitValuesById.exists(pattern.iteratorVar.id))
+				return fallback;
+			var init = compilationContext.localVarInitValuesById.get(pattern.iteratorVar.id);
+			return switch (init.def) {
+				case EVar(name): name;
+				default: fallback;
+			};
+		}
+
+		var stateEntries:Array<{
+			id:Int,
+			originalName:String,
+			outerName:String,
+			accName:String,
+			initialValue:ElixirAST
+		}> = [];
+
+		var iteratorOuterName = initialIteratorName();
+		var iteratorAccName = accumulatorName(iteratorOuterName);
+		stateEntries.push({
+			id: pattern.iteratorVar.id,
+			originalName: pattern.iteratorVar.name,
+			outerName: iteratorOuterName,
+			accName: iteratorAccName,
+			initialValue: makeAST(EVar(iteratorOuterName))
+		});
+
+		var mutated = MutabilityDetector.detectMutatedVariables(pattern.userBody);
+		var mutatedEntries:Array<{
+			id:Int,
+			originalName:String,
+			outerName:String,
+			accName:String,
+			initialValue:ElixirAST
+		}> = [];
+		for (id => tvar in mutated) {
+			if (id == pattern.iteratorVar.id || id == pattern.itemVar.id)
+				continue;
+			var outerName = resolvedName(tvar);
+			mutatedEntries.push({
+				id: id,
+				originalName: tvar.name,
+				outerName: outerName,
+				accName: accumulatorName(outerName),
+				initialValue: makeAST(EVar(outerName))
+			});
+		}
+		mutatedEntries.sort((a, b) -> a.id - b.id);
+		for (entry in mutatedEntries)
+			stateEntries.push(entry);
+
+		function tupleOrSingle(values:Array<ElixirAST>):ElixirAST {
+			return values.length == 1 ? values[0] : makeAST(ETuple(values));
+		}
+
+		function patternTupleOrSingle(patterns:Array<EPattern>):EPattern {
+			return patterns.length == 1 ? patterns[0] : PTuple(patterns);
+		}
+
+		var initialState = tupleOrSingle([for (entry in stateEntries) entry.initialValue]);
+		var reducerPattern = patternTupleOrSingle([for (entry in stateEntries) PVar(entry.accName)]);
+		var finalPattern = patternTupleOrSingle([for (entry in stateEntries) PVar(entry.outerName)]);
+		var stateReturn = tupleOrSingle([for (entry in stateEntries) makeAST(EVar(entry.accName))]);
+
+		var savedMappings:Array<{key:String, had:Bool, value:Null<String>}> = [];
+		if (compilationContext != null) {
+			function saveAndSet(key:String, value:String):Void {
+				var had = compilationContext.tempVarRenameMap.exists(key);
+				var old = had ? compilationContext.tempVarRenameMap.get(key) : null;
+				savedMappings.push({key: key, had: had, value: old});
+				compilationContext.tempVarRenameMap.set(key, value);
+			}
+
+			saveAndSet(Std.string(pattern.iteratorVar.id), iteratorAccName);
+			for (entry in mutatedEntries) {
+				saveAndSet(Std.string(entry.id), entry.accName);
+				saveAndSet(entry.originalName, entry.accName);
+			}
+			if (compilationContext.loopControlStateStack != null)
+				compilationContext.loopControlStateStack.push([for (entry in stateEntries) entry.accName]);
+		}
+
+		var compiledUserBody = buildExpression(pattern.userBody);
+
+		if (compilationContext != null) {
+			if (compilationContext.loopControlStateStack != null && compilationContext.loopControlStateStack.length > 0)
+				compilationContext.loopControlStateStack.pop();
+			for (saved in savedMappings) {
+				if (saved.had)
+					compilationContext.tempVarRenameMap.set(saved.key, saved.value);
+				else
+					compilationContext.tempVarRenameMap.remove(saved.key);
+			}
+		}
+
+		var itemName = toElixirVarName(pattern.itemVar.name);
+		var resultVarName = "reflaxe_receiver_value_" + (compilationContext != null ? compilationContext.generateNodeId() : "iterator");
+		var nextAssign = makeAST(EMatch(PTuple([PVar(iteratorAccName), PVar(resultVarName)]), runtimeApply(iteratorAccName, pattern.nextMethodName)));
+		var itemAssign = makeAST(EMatch(PVar(itemName), makeAST(EVar(resultVarName))));
+
+		var bodyStatements:Array<ElixirAST> = [nextAssign, itemAssign];
+		switch (compiledUserBody.def) {
+			case EBlock(statements):
+				for (statement in statements)
+					bodyStatements.push(statement);
+			case EDo(statements):
+				for (statement in statements)
+					bodyStatements.push(statement);
+			case ENil:
+			default:
+				bodyStatements.push(compiledUserBody);
+		}
+		bodyStatements.push(makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("cont"))), stateReturn])));
+
+		var lambdaIfBody = makeAST(EIf(runtimeApply(iteratorAccName, pattern.hasNextMethodName), makeAST(EBlock(bodyStatements)),
+			makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("halt"))), stateReturn]))));
+
+		var reducerFn = makeAST(EFn([
+			{
+				args: [PWildcard, reducerPattern],
+				guard: null,
+				body: wrapLoopControlTry(lambdaIfBody, stateReturn)
+			}
+		]));
+
+		var reduceCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce_while", [
+			makeAST(ERemoteCall(makeAST(EVar("Stream")), "iterate", [
+				makeAST(EInteger(0)),
+				makeAST(EFn([
+					{
+						args: [PVar("n")],
+						guard: null,
+						body: makeAST(EBinary(Add, makeAST(EVar("n")), makeAST(EInteger(1))))
+					}
+				]))
+			])),
+			initialState,
+			reducerFn
+		]));
+
+		return EMatch(finalPattern, reduceCall);
 	}
 
 	/**

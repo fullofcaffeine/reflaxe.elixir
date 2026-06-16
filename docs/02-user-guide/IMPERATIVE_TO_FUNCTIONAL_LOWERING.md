@@ -63,6 +63,34 @@ Typical transformations:
 
 See: `docs/07-patterns/FUNCTIONAL_PATTERNS.md`
 
+### Stateful receiver methods
+
+Some Haxe APIs look like in-place mutation on an object:
+
+```haxe
+var iterator = new IntIterator(0, 2);
+var first = iterator.next();
+var stillHasItems = iterator.hasNext();
+```
+
+Elixir values are immutable, so receiver state must be threaded explicitly in generated code. When a method mutates the
+receiver and also returns a separate value, the compiler lowers it to a same-scope rebind:
+
+```elixir
+iterator = IntIterator.new(0, 2)
+{iterator, first} = IntIterator.next(iterator)
+still_has_items = IntIterator.has_next(iterator)
+```
+
+This same-scope rebind matters. The compiler must not hide it inside an anonymous function/IIFE, because that would update
+only the inner binding and leave the outer Haxe variable unchanged.
+
+Current receiver conventions:
+- Pure methods return only their Haxe value, for example `iterator.hasNext()`.
+- Receiver mutators whose Haxe result is effectively `Void` return the updated receiver, for example `StringBuf.add(...)`
+  and `haxe.io.BytesBuffer.add*`.
+- Receiver mutators that also return a value return `{updated_receiver, value}`, for example `IntIterator.next()`.
+
 ### Data structure updates
 
 Haxe “field assignment” and “map-like updates” lower into:

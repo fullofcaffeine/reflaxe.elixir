@@ -947,6 +947,7 @@ typedef ElixirMetadata = {
 	?mutatesFields:Array<String>, // Fields mutated in this method (e.g., ["columns", "indexes"])
 	?fieldMutations:Array<{field:String, expr:ElixirAST}>, // Field mutation operations
 	?returnsThis:Bool, // Method returns 'this' for fluent chaining
+	?receiverReturnConvention:String, // Persistent receiver return convention for immutable targets
 
 	// Guard Condition Grouping (Added January 2025)
 	?patternKey:String, // Normalized pattern signature for grouping (e.g., "tuple:rgb:3")

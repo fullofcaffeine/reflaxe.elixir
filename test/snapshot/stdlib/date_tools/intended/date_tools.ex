@@ -131,8 +131,8 @@ defmodule DateTools do
         if (next_percent < 0) do
           throw({:break, {acc_result, acc_p}})
         end
-        _ = apply(Map.get(acc_result, :__reflaxe_class__) || Map.get(acc_result, :__struct__), :add_sub, [acc_result, f, acc_p, (next_percent - acc_p)])
-        _ = apply(Map.get(acc_result, :__reflaxe_class__) || Map.get(acc_result, :__struct__), :add, [acc_result, __format_get(d, String.slice(f, next_percent + 1, 1))])
+        acc_result = apply(Map.get(acc_result, :__reflaxe_class__) || Map.get(acc_result, :__struct__), :add_sub, [acc_result, f, acc_p, (next_percent - acc_p)])
+        acc_result = apply(Map.get(acc_result, :__reflaxe_class__) || Map.get(acc_result, :__struct__), :add, [acc_result, __format_get(d, String.slice(f, next_percent + 1, 1))])
         acc_p = next_percent + 2
         {:cont, {acc_result, acc_p}}
       catch
@@ -146,7 +146,7 @@ defmodule DateTools do
           {:cont, {acc_result, acc_p}}
       end
     end)
-    _ = apply(Map.get(result, :__reflaxe_class__) || Map.get(result, :__struct__), :add_sub, [result, f, p, (String.length(f) - p)])
+    result = apply(Map.get(result, :__reflaxe_class__) || Map.get(result, :__struct__), :add_sub, [result, f, p, (String.length(f) - p)])
     _ = apply(Map.get(result, :__reflaxe_class__) || Map.get(result, :__struct__), :to_string, [result])
   end
   def format(d, f) do

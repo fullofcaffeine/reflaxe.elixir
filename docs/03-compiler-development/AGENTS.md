@@ -94,6 +94,18 @@ We use many small, ordered AST transforms because Haxe→Elixir spans imperative
 
 When adding/updating a pass: include hxdoc WHAT/WHY/HOW/EXAMPLES, keep it shape‑based and under 2,000 LOC, and link snapshots in the hxdoc block.
 
+## 🔁 Stateful Receiver Lowering
+
+When compiler work touches mutation, method calls, binary expressions, function arguments, or loop lowering, preserve Haxe side effects through same-scope immutable Elixir rebinding. Do not hide persistent receiver rebinding inside IIFEs/anonymous functions.
+
+- Use the receiver-return convention helper for persistent receiver methods.
+- `UpdatedReceiver`: rebind receiver only, e.g. `StringBuf.add(...)`, `haxe.io.BytesBuffer.add*`.
+- `UpdatedReceiverAndValue`: rebind receiver and expose the Haxe value, e.g. `IntIterator.next()` → `{iterator, value}`.
+- Desugared iterator loops over persistent receivers must thread the iterator through reducer state and rebind the outer iterator.
+- Runtime-state iterators such as `ArrayIterator` and `MapKeyValueIterator` use process-local runtime state; do not model them as persistent receiver mutators unless the receiver value actually changes.
+
+Source docs: `docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md` and `docs/05-architecture/ITERATOR_RUNTIME_MODEL.md`.
+
 ## 📝 Code Quality Standards
 
 ### Pattern Matching Readability (NEW STANDARD)

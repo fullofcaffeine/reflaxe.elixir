@@ -14,21 +14,15 @@ defmodule BytesBuffer do
     struct
   end
   def add(struct, src) do
-    if (src.length == 0) do
-      nil
-    else
+    if (src.length != 0) do
       struct = %{struct | parts_reversed: [apply(Map.get(src, :__reflaxe_class__) || Map.get(src, :__struct__), :get_data, [src]) | struct.parts_reversed]}
       _ = %{struct | byte_length: struct.byte_length + src.length}
+    else
+      struct
     end
   end
   def add_string(struct, v, encoding) do
-    src = Bytes.of_string(v, encoding)
-    if (src.length == 0) do
-      nil
-    else
-      struct = %{struct | parts_reversed: [apply(Map.get(src, :__reflaxe_class__) || Map.get(src, :__struct__), :get_data, [src]) | struct.parts_reversed]}
-      _ = %{struct | byte_length: struct.byte_length + src.length}
-    end
+    _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :add, [struct, Bytes.of_string(v, encoding)])
   end
   def add_int32(struct, v) do
     struct = %{struct | parts_reversed: [<<v::little-signed-size(32)>> | struct.parts_reversed]}
@@ -54,12 +48,12 @@ defmodule BytesBuffer do
     if (pos < 0 or len < 0 or pos + len > src.length) do
       raise Reflaxe.Elixir.HaxeThrow, [value: {:outside_bounds}]
     end
-    if (len == 0) do
-      nil
-    else
+    if (len != 0) do
       slice = :binary.part(apply(Map.get(src, :__reflaxe_class__) || Map.get(src, :__struct__), :get_data, [src]), pos, len)
       struct = %{struct | parts_reversed: [slice | struct.parts_reversed]}
       _ = %{struct | byte_length: struct.byte_length + len}
+    else
+      struct
     end
   end
   def get_bytes(struct) do

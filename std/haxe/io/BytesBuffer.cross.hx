@@ -32,52 +32,55 @@ class BytesBuffer {
 		return byteLength;
 	}
 
-	public inline function addByte(byte:Int):Void {
+	public function addByte(byte:Int):Void {
 		partsReversed = untyped __elixir__("[{0} | {1}]", byte, partsReversed);
 		byteLength += 1;
 	}
 
-	public inline function add(src:Bytes):Void {
-		if (src.length == 0)
-			return;
-		partsReversed = untyped __elixir__("[{0} | {1}]", src.getData(), partsReversed);
-		byteLength += src.length;
+	public function add(src:Bytes):Void {
+		if (src.length != 0) {
+			partsReversed = untyped __elixir__("[{0} | {1}]", src.getData(), partsReversed);
+			byteLength += src.length;
+		} else {
+			untyped __elixir__("{0}", this);
+		}
 	}
 
-	public inline function addString(v:String, ?encoding:Encoding):Void {
+	public function addString(v:String, ?encoding:Encoding):Void {
 		add(Bytes.ofString(v, encoding));
 	}
 
-	public inline function addInt32(v:Int):Void {
+	public function addInt32(v:Int):Void {
 		partsReversed = untyped __elixir__("[<<{0}::little-signed-size(32)>> | {1}]", v, partsReversed);
 		byteLength += 4;
 	}
 
-	public inline function addInt64(v:haxe.Int64):Void {
+	public function addInt64(v:haxe.Int64):Void {
 		partsReversed = untyped __elixir__("[<<{0}::little-signed-size(64)>> | {1}]", v, partsReversed);
 		byteLength += 8;
 	}
 
-	public inline function addFloat(v:Float):Void {
+	public function addFloat(v:Float):Void {
 		partsReversed = untyped __elixir__("[<<{0}::float-little-size(32)>> | {1}]", v, partsReversed);
 		byteLength += 4;
 	}
 
-	public inline function addDouble(v:Float):Void {
+	public function addDouble(v:Float):Void {
 		partsReversed = untyped __elixir__("[<<{0}::float-little-size(64)>> | {1}]", v, partsReversed);
 		byteLength += 8;
 	}
 
-	public inline function addBytes(src:Bytes, pos:Int, len:Int):Void {
+	public function addBytes(src:Bytes, pos:Int, len:Int):Void {
 		if (pos < 0 || len < 0 || pos + len > src.length) {
 			throw Error.OutsideBounds;
 		}
-		if (len == 0)
-			return;
-
-		var slice = untyped __elixir__(":binary.part({0}, {1}, {2})", src.getData(), pos, len);
-		partsReversed = untyped __elixir__("[{0} | {1}]", slice, partsReversed);
-		byteLength += len;
+		if (len != 0) {
+			var slice = untyped __elixir__(":binary.part({0}, {1}, {2})", src.getData(), pos, len);
+			partsReversed = untyped __elixir__("[{0} | {1}]", slice, partsReversed);
+			byteLength += len;
+		} else {
+			untyped __elixir__("{0}", this);
+		}
 	}
 
 	/**
