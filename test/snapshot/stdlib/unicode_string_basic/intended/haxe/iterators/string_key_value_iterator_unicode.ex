@@ -6,11 +6,17 @@ defmodule StringKeyValueIteratorUnicode do
     struct
   end
   def has_next(struct) do
-    struct.offset < String.length(struct.s)
+    (if (struct.offset < 0) do
+  ""
+else
+  String.at(struct.s, struct.offset) || ""
+end) != ""
   end
   def next(struct) do
     struct = %{struct | s: struct.s}
-    index = struct.offset + 1
+    old_struct_offset = struct.offset
+    struct = %{struct | offset: struct.offset + 1}
+    index = old_struct_offset
     %{:key => struct.offset, :value => (if (index < 0) do
   nil
 else

@@ -12,7 +12,12 @@ defmodule Main do
     g_s = text
     {codes, _g_offset} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {codes, g_offset}, fn _, {acc_codes, acc__g_offset} ->
       try do
-        if (acc__g_offset < String.length(g_s)) do
+        cond_value = (if (acc__g_offset < 0) do
+          ""
+        else
+          String.at(g_s, acc__g_offset) || ""
+        end)
+        if (cond_value != "") do
           s = g_s
           old__g_offset = acc__g_offset
           acc__g_offset = acc__g_offset + 1
@@ -51,7 +56,12 @@ defmodule Main do
     g_s = text
     {entries, _g_offset} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {entries, g_offset}, fn _, {acc_entries, acc__g_offset} ->
       try do
-        if (acc__g_offset < String.length(g_s)) do
+        cond_value = (if (acc__g_offset < 0) do
+          ""
+        else
+          String.at(g_s, acc__g_offset) || ""
+        end)
+        if (cond_value != "") do
           g_key = acc__g_offset
           s = g_s
           old__g_offset = acc__g_offset

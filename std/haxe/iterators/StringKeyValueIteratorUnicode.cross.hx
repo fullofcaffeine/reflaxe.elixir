@@ -15,7 +15,7 @@ class StringKeyValueIteratorUnicode {
 	}
 
 	public inline function hasNext() {
-		return offset < s.length;
+		return s.charAt(offset) != "";
 	}
 
 	@:access(StringTools)

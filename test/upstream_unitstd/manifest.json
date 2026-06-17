@@ -31,7 +31,7 @@
 
     {"module": "haxe.CallStack", "status": "skipped-target-specific", "source": "haxe/CallStack.unit.hx", "reason": "Upstream spec exists; enable after BEAM stack-frame formatting differences are triaged."},
     {"module": "haxe.Http", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is target/sys integration specific."},
-    {"module": "haxe.Log", "status": "skipped-target-specific", "source": "haxe/Log.unit.hx", "reason": "Upstream spec exists; enable after BEAM logging/output capture is triaged."},
+    {"module": "haxe.Log", "status": "skipped-target-specific", "source": "haxe/Log.unit.hx", "reason": "Upstream spec exists; enable after mutable static dynamic field hooks and closure-captured outer-local mutation semantics are implemented."},
     {"module": "haxe.Serializer", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; runtime coverage uses local portable-subset tests."},
     {"module": "haxe.Template", "status": "skipped-target-specific", "source": "haxe/Template.unit.hx", "reason": "Upstream spec exists; local BEAM contract intentionally supports a portable subset first."},
     {"module": "haxe.Unserializer", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; runtime coverage uses local portable-subset tests."},
@@ -59,8 +59,8 @@
     {"module": "haxe.iterators.ArrayIterator", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; iterator behavior is covered by local runtime tests."},
     {"module": "haxe.iterators.ArrayKeyValueIterator", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists."},
     {"module": "haxe.iterators.MapKeyValueIterator", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; iterator behavior is covered by local runtime tests."},
-    {"module": "haxe.iterators.StringIteratorUnicode", "status": "skipped-target-specific", "source": "haxe/iterators/StringIteratorUnicode.unit.hx", "reason": "Upstream spec exists; enable after UTF-8 iterator semantics are triaged."},
-    {"module": "haxe.iterators.StringKeyValueIteratorUnicode", "status": "skipped-target-specific", "source": "haxe/iterators/StringKeyValueIteratorUnicode.unit.hx", "reason": "Upstream spec exists; enable after UTF-8 key/value iterator semantics are triaged."},
+    {"module": "haxe.iterators.StringIteratorUnicode", "status": "adapted", "source": "haxe/iterators/StringIteratorUnicode.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/iterators/StringIteratorUnicode.unit.hx", "reason": "The upstream target.unicode conditional is made explicit so Elixir always exercises UTF-8 codepoint iteration."},
+    {"module": "haxe.iterators.StringKeyValueIteratorUnicode", "status": "adapted", "source": "haxe/iterators/StringKeyValueIteratorUnicode.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/iterators/StringKeyValueIteratorUnicode.unit.hx", "reason": "The upstream target.unicode conditional is made explicit so Elixir always exercises UTF-8 codepoint key/value iteration."},
 
     {"module": "sys.FileStat", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is sys-target integration specific."},
     {"module": "sys.FileSystem", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is sys-target integration specific."},

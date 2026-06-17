@@ -16,7 +16,11 @@ class StringKeyValueIteratorUnicode {
 	}
 
 	public inline function hasNext() {
+		#if (macro || (!reflaxe_runtime && !elixir))
 		return offset < s.length;
+		#else
+		return s.charAt(offset) != "";
+		#end
 	}
 
 	@:access(StringTools)
