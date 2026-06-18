@@ -91,6 +91,7 @@ Top-level:
 
 `haxe.*`:
 - `haxe.CallStack` (BEAM stack capture/formatting)
+- `haxe.DynamicAccess` (Reflect-backed dynamic maps)
 - `haxe.Http`
 - `haxe.Log`
 - `haxe.Serializer` (portable data subset)
