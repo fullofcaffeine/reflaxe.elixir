@@ -137,7 +137,7 @@ end) do
   end)
   if (length(entry.metas) > 0) do
     meta = Enum.at(entry.metas, 0)
-    _ = (case {user_name_map, user_id, meta.user_name} do
+    (case {user_name_map, user_id, meta.user_name} do
       {reflect_obj, reflect_field, reflect_value} ->
         (case Map.has_key?(reflect_obj, reflect_field) do
           true ->

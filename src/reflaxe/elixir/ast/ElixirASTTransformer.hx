@@ -229,7 +229,8 @@ class ElixirASTTransformer {
 		#end
 
 		var passes = getEnabledPasses();
-		var result = ast;
+		var result = context != null ? reflaxe.elixir.ast.transformers.ReceiverEffectLoweringTransforms.contextualPass(ast,
+			context) : reflaxe.elixir.ast.transformers.ReceiverEffectLoweringTransforms.pass(ast);
 
 		#if ((hxx_pass_timing || profile_passes) && !hxx_disable_timing)
 		var __pipelineStart = haxe.Timer.stamp();
@@ -405,6 +406,9 @@ class ElixirASTTransformer {
 
 		#if debug_ast_transformer
 		#end
+
+		result = context != null ? reflaxe.elixir.ast.transformers.ReceiverEffectLoweringTransforms.contextualPass(result,
+			context) : reflaxe.elixir.ast.transformers.ReceiverEffectLoweringTransforms.pass(result);
 
 		// ------------------------------------------------------------------
 		// AbsoluteFinal Snapshot (debug_ast_snapshots)

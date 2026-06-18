@@ -97,7 +97,7 @@ defmodule Main do
   end
   defp test_validate_utf8() do
     valid = Bytes.of_string("Aé🌍中", {:utf8})
-    _ = expect("valid utf8", (fn -> 
+    _ = expect("valid utf8", (fn ->
 			case {:utf8} do
 				{:raw_native} ->
 					raise "UnicodeString.validate: RawNative encoding is not supported"

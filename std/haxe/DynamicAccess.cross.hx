@@ -47,7 +47,9 @@ abstract DynamicAccess<T>(Dynamic<T>) from Dynamic<T> to Dynamic<T> {
 	}
 
 	public inline function remove(key:String):Bool {
-		return Reflect.deleteField(this, key);
+		var hadKey = Reflect.hasField(this, key);
+		Reflect.deleteField(this, key);
+		return hadKey;
 	}
 
 	public inline function keys():Array<String> {

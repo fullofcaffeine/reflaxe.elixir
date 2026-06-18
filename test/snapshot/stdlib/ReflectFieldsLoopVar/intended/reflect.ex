@@ -109,7 +109,7 @@ end) do
     end)
   end
   def set_property(o, field, value) do
-    _ = (case {o, field, value} do
+    (case {o, field, value} do
       {reflect_obj, reflect_field, reflect_value} ->
         (case Map.has_key?(reflect_obj, reflect_field) do
           true ->

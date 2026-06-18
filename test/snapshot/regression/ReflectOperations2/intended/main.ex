@@ -175,10 +175,10 @@ end) do
         end)
     end)
     deletable_obj = %{:a => 1, :b => 2, :c => 3}
-    {_reflect_deleted_deletable_obj, deletable_obj} = (case {deletable_obj, "b"} do
+    {deletable_obj, _reflaxe_receiver_value_0} = (case {deletable_obj, "b"} do
       {reflect_obj, reflect_field} ->
         (case Map.has_key?(reflect_obj, reflect_field) do
-          true -> {true, Map.delete(reflect_obj, reflect_field)}
+          true -> {Map.delete(reflect_obj, reflect_field), true}
           false ->
             (case (try do
   String.to_existing_atom(reflect_field)
@@ -186,8 +186,12 @@ rescue
   _ ->
     nil
 end) do
-              nil -> {false, reflect_obj}
-              reflect_atom -> {Map.has_key?(reflect_obj, reflect_atom), Map.delete(reflect_obj, reflect_atom)}
+              nil -> {reflect_obj, false}
+              reflect_atom ->
+                (case Map.has_key?(reflect_obj, reflect_atom) do
+                  true -> {Map.delete(reflect_obj, reflect_atom), true}
+                  false -> {reflect_obj, false}
+                end)
             end)
         end)
     end)

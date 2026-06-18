@@ -327,6 +327,7 @@ class FieldAccessBuilder {
 			// Keep `length` as a field for other struct-like types (e.g. Bytes has a `length` field).
 			var isArray = switch (receiverInnerType) {
 				case TInst(_.get() => {name: "Array"}, _): true;
+				case TAbstract(_.get() => {name: "Array" | "NativeArray"}, _): true;
 				default: false;
 			};
 			if (isArray) {

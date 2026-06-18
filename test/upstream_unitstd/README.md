@@ -23,9 +23,11 @@ Coverage policy:
   unsupported for this target, or target-specific triage is still required.
 
 Current upstream runtime fixtures:
-- Enabled: `IntIterator`, `StringBuf`, `haxe.crypto.Base64`, `haxe.crypto.Md5`,
-  `haxe.crypto.Sha1`, `haxe.io.BytesBuffer`, `haxe.io.FPHelper`.
-- Adapted: `haxe.io.Path` (path-hygiene-only Windows sample adjustment),
+- Enabled: `IntIterator`, `StringBuf`, `haxe.crypto.Base64`,
+  `haxe.crypto.Md5`, `haxe.crypto.Sha1`, `haxe.io.BytesBuffer`,
+  `haxe.io.FPHelper`.
+- Adapted: `haxe.DynamicAccess` (membership syntax expansion),
+  `haxe.io.Path` (path-hygiene-only Windows sample adjustment),
   `haxe.iterators.StringIteratorUnicode`, and
   `haxe.iterators.StringKeyValueIteratorUnicode` (explicit Elixir UTF-8 branch).
 

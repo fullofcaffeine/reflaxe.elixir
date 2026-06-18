@@ -18,8 +18,8 @@ defmodule Main do
     _missing = Map.get(map, "missing")
     _has_name = Map.has_key?(map, "name")
     _has_missing = Map.has_key?(map, "missing")
-    _map_had_key_map = Map.has_key?(map, "job")
-    map = Map.delete(map, "job")
+    map_remove_key_node_0 = "job"
+    {map, _reflaxe_receiver_value_0} = {Map.delete(map, map_remove_key_node_0), Map.has_key?(map, map_remove_key_node_0)}
     _job_after_remove = Map.get(map, "job")
     map = %{}
     _value_after_clear = Map.get(map, "name")

@@ -219,55 +219,7 @@ class BinaryOpBuilder {
 				throw "Arrow operator not supported in Elixir context";
 		};
 
-		var binary = metadata != null ? makeASTWithMeta(def, metadata) : makeAST(def);
-		return hoistStatefulBinaryOperands(binary);
-	}
-
-	static function hoistStatefulBinaryOperands(binary:ElixirAST):ElixirAST {
-		return switch (binary.def) {
-			case EBinary(binaryOperator, left, right):
-				var leftExtract = extractStatefulExpression(left);
-				var rightExtract = extractStatefulExpression(right);
-				if (leftExtract.prelude.length == 0 && rightExtract.prelude.length == 0) {
-					binary;
-				} else {
-					var statements:Array<ElixirAST> = [];
-					for (statement in leftExtract.prelude)
-						statements.push(statement);
-					for (statement in rightExtract.prelude)
-						statements.push(statement);
-					statements.push(makeAST(EBinary(binaryOperator, leftExtract.value, rightExtract.value)));
-					makeASTWithMeta(EParen(makeASTWithMeta(EBlock(statements), {noIifeWrap: true}, null)), {noIifeWrap: true}, null);
-				}
-			default:
-				binary;
-		}
-	}
-
-	static function extractStatefulExpression(expression:ElixirAST):{prelude:Array<ElixirAST>, value:ElixirAST} {
-		return switch (expression.def) {
-			case EParen(inner):
-				switch (inner.def) {
-					case EBlock(statements) if (isNoIifeBlock(inner) && statements.length > 0):
-						{
-							prelude: statements.slice(0, statements.length - 1),
-							value: statements[statements.length - 1]
-						};
-					default:
-						{prelude: [], value: expression};
-				}
-			case EBlock(statements) if (isNoIifeBlock(expression) && statements.length > 0):
-				{
-					prelude: statements.slice(0, statements.length - 1),
-					value: statements[statements.length - 1]
-				};
-			default:
-				{prelude: [], value: expression};
-		}
-	}
-
-	static function isNoIifeBlock(expression:ElixirAST):Bool {
-		return expression != null && expression.metadata != null && expression.metadata.noIifeWrap == true;
+		return metadata != null ? makeASTWithMeta(def, metadata) : makeAST(def);
 	}
 
 	/**

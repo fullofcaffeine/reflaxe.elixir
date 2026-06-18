@@ -56,6 +56,36 @@ enum VarOrigin {
 	UserDefined;
 }
 
+enum ReceiverResultShape {
+	UpdatedReceiver;
+	UpdatedReceiverAndValue;
+}
+
+enum ReceiverValueProjection {
+	ReceiverValue;
+	CompanionValue;
+	NoValue;
+}
+
+enum ReceiverWriteback {
+	Never;
+	WhenDiscarded;
+	Always;
+}
+
+typedef ReceiverLValue = {
+	var varId:Int;
+	var name:String;
+}
+
+typedef ReceiverEffectData = {
+	var receiver:ReceiverLValue;
+	var operation:ElixirAST;
+	var resultShape:ReceiverResultShape;
+	var valueProjection:ReceiverValueProjection;
+	var writeback:ReceiverWriteback;
+}
+
 // ============================================================================
 // Core AST Definition
 // ============================================================================
@@ -180,6 +210,9 @@ enum ElixirASTDef {
 
 	/** Range operator .. or ... with optional step (..//step) */
 	ERange(start:ElixirAST, end:ElixirAST, exclusive:Bool, ?step:ElixirAST);
+
+	/** Persistent receiver update that must be legalized before expression repair/IIFE passes. */
+	EReceiverEffect(effect:ReceiverEffectData);
 
 	// ========================================================================
 	// Literals

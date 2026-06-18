@@ -15,11 +15,12 @@ class DynamicAccessKeyValueIterator<T> {
 	}
 
 	public inline function hasNext():Bool {
-		return index < keys.length;
+		return keys[index] != null;
 	}
 
 	public inline function next():{key:String, value:T} {
-		var key = keys[index++];
-		return {value: (access[key] : T), key: key};
+		var key = keys[index];
+		index = index + 1;
+		return {value: Reflect.field(access, key), key: key};
 	}
 }

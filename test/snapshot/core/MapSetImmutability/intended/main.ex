@@ -13,8 +13,8 @@ defmodule Main do
     _ = Map.put(nested, "section", inner)
     _name = Map.get(params, "name")
     _has_age = Map.has_key?(params, "age")
-    _map_had_key_params = Map.has_key?(params, "email")
-    _ = Map.delete(params, "email")
+    map_remove_key_node_0 = "email"
+    {_params, _reflaxe_receiver_value_0} = {Map.delete(params, map_remove_key_node_0), Map.has_key?(params, map_remove_key_node_0)}
     chain_test = %{}
     chain_test = chain_test |> Map.put("a", "1") |> Map.put("b", "2")
     chain_test

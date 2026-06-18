@@ -2,8 +2,8 @@ defmodule Main do
   def string_map() do
     map = %{}
     map = map |> Map.put("one", 1) |> Map.put("two", 2) |> Map.put("three", 3)
-    _map_had_key_map = Map.has_key?(map, "two")
-    map = Map.delete(map, "two")
+    map_remove_key_node_0 = "two"
+    {map, _reflaxe_receiver_value_0} = {Map.delete(map, map_remove_key_node_0), Map.has_key?(map, map_remove_key_node_0)}
     _ = Enum.reduce_while(Map.keys(map), :ok, fn _key, acc ->
   try do
     {:cont, acc}

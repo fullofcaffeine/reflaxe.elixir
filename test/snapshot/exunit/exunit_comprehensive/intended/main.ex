@@ -142,7 +142,7 @@ end), haxe_exception} do
         end end).())
     end
     assert_contains = fn array, element, msg ->
-      assert((fn -> 
+      assert((fn ->
                 case Enum.find_index(array, fn item -> item == element end) do
                     nil -> -1
                     idx -> idx

@@ -41,6 +41,18 @@ class UpstreamUnitStdMacro {
 
 	static function transformStatement(expression:Expr, relativePath:String):Expr {
 		return switch expression.expr {
+			case EBinop(OpEq, left, right) if (boolLiteralValue(right) != null):
+				boolLiteralValue(right) ? assertTrue(left, expression, relativePath) : assertFalse(left, expression, relativePath);
+
+			case EBinop(OpEq, left, right) if (boolLiteralValue(left) != null):
+				boolLiteralValue(left) ? assertTrue(right, expression, relativePath) : assertFalse(right, expression, relativePath);
+
+			case EBinop(OpNotEq, left, right) if (boolLiteralValue(right) != null):
+				boolLiteralValue(right) ? assertFalse(left, expression, relativePath) : assertTrue(left, expression, relativePath);
+
+			case EBinop(OpNotEq, left, right) if (boolLiteralValue(left) != null):
+				boolLiteralValue(left) ? assertFalse(right, expression, relativePath) : assertTrue(right, expression, relativePath);
+
 			case EBinop(OpEq, left, right):
 				assertTrue({expr: EBinop(OpEq, left, right), pos: expression.pos}, expression, relativePath);
 
@@ -126,6 +138,17 @@ class UpstreamUnitStdMacro {
 
 	static function assertFalse(condition:Expr, source:Expr, relativePath:String):Expr {
 		return macro haxe.test.Assert.isFalse($condition, $v{message(source, relativePath)});
+	}
+
+	static function boolLiteralValue(expression:Expr):Null<Bool> {
+		return switch expression.expr {
+			case EConst(CIdent("true")):
+				true;
+			case EConst(CIdent("false")):
+				false;
+			default:
+				null;
+		}
 	}
 
 	static function message(source:Expr, relativePath:String):String {

@@ -33,6 +33,7 @@ These failures usually come from running only a subset locally (e.g. `test:quick
 
 - Docs/examples must move with behavior: any compiler, stdlib, framework DSL, profile/define, or generated-output behavior change must update the relevant docs and examples in the same task when user-facing behavior, supported APIs, or validation commands change. If no docs/examples need changes, state that explicitly in the final summary.
 - Docs/API UX sweep checklist: primary user-facing snippets should include enough imports/context to compile, show generated Elixir when the output shape is the point, use current terminology (for example default inline HXX/TSX mode, `final routes` router DSL, typed externs), and link to canonical docs instead of duplicating long explanations in example READMEs.
+- Deep compiler/runtime semantics: if a fix becomes too complex, ambiguous, or architectural to reason about locally with confidence, stop before broad changes and ask the human to query GPT 5.5 Pro with the whole repo. Provide a precise prompt describing the failing Haxe source, generated Elixir shape, expected semantics, suspected pipeline files, and adjacent risks. Do not land speculative broad repairs while waiting for that external review.
 - Bugs: when you fix a bug, add a regression test/snapshot when it fits (and keep it minimal).
 - If the bug is already covered by an existing test, update/fix that test instead of adding duplicates.
 - Repair transforms (when unavoidable): keep them narrowly scoped and deterministic, document them with hxdoc (WHAT/WHY/HOW/EXAMPLES), and add a regression snapshot. If the repair is compensating for an earlier miscompile shape, add a low-priority follow-up task to prevent the bad shape from being emitted upstream.
@@ -386,6 +387,7 @@ Source of truth: `docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md` and `
 - Keep functions short and focused; extract helpers when a block grows complex.
 - Avoid magic numbers and stringly-typed logic; prefer enums/typedefs and small helpers.
 - Do not leak target-specific runtime details into the Haxe types unless strictly required by shape.
+- Comment clarity is a hard rule: comments must be beginner-friendly by default, explaining the plain-language what/why/how without labeling themselves as “beginner-friendly.”
 
 ### Variable Naming (Hard Rules)
 

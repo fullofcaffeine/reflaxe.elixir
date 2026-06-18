@@ -592,16 +592,6 @@ class CallExprBuilder {
 				}
 			}
 		}
-		var extractedCallArgs = extractStatefulCallArguments(argASTs);
-		argASTs = extractedCallArgs.args;
-		inline function withArgumentPrelude(callDef:ElixirASTDef):ElixirASTDef {
-			if (extractedCallArgs.prelude.length == 0)
-				return callDef;
-			var statements = extractedCallArgs.prelude.copy();
-			statements.push(makeAST(callDef));
-			return EParen(makeASTWithMeta(EBlock(statements), {noIifeWrap: true}, null));
-		}
-
 		// Determine the call type
 		switch (e.expr) {
 			case TField(obj, fa):
@@ -879,6 +869,25 @@ class CallExprBuilder {
 										return EMatch(PVar(receiverVarName), appended);
 									return appended.def;
 
+								case "remove" if (argASTs != null && argASTs.length == 1 && receiverVarName != null):
+									// Haxe Array.remove mutates the receiver and returns whether an item was removed.
+									// Model the persistent receiver effect explicitly so the early legalization pass
+									// can place the list rebind in the owning lexical scope.
+									var itemName = 'array_remove_item_${context != null ? context.generateNodeId() : "value"}';
+									var itemRef = makeAST(EVar(itemName));
+									var updatedList = makeAST(ERemoteCall(makeAST(EVar("List")), "delete", [receiverAst, itemRef]));
+									var removedValue = makeAST(ERemoteCall(makeAST(EVar("Enum")), "member?", [receiverAst, itemRef]));
+									return makeAST(EReceiverEffect({
+										receiver: {varId: receiverLocal != null ? receiverLocal.id : -1, name: receiverVarName},
+										operation: makeAST(EBlock([
+											makeAST(EMatch(PVar(itemName), argASTs[0])),
+											makeAST(ETuple([updatedList, removedValue]))
+										])),
+										resultShape: UpdatedReceiverAndValue,
+										valueProjection: CompanionValue,
+										writeback: Always
+									})).def;
+
 								case "sort" if (argASTs != null && argASTs.length == 1):
 									// Haxe comparator returns Int (-1/0/1); Enum.sort/2 expects boolean comparator.
 									var cmp = argASTs[0];
@@ -1007,17 +1016,21 @@ class CallExprBuilder {
 
 								case "remove" if (argASTs != null && argASTs.length == 1 && receiverVarName != null):
 									// Haxe semantics: return whether the key existed, and remove it from the map.
-									// Use a parenthesized multi-expression block so the rebind happens in the same scope.
-									var keyExpr = argASTs[0];
-									var existedName = '_map_had_key_${receiverVarName}';
-									var existed = makeAST(EMatch(PVar(existedName),
-										makeAST(ERemoteCall(makeAST(EVar("Map")), "has_key?", [receiverRef(), keyExpr]))));
-									var deleted = makeAST(EMatch(PVar(receiverVarName),
-										makeAST(ERemoteCall(makeAST(EVar("Map")), "delete", [receiverRef(), keyExpr]))));
-									// IMPORTANT: Mark the block so the printer does not wrap it in an IIFE.
-									// We *need* the rebinding (`m = ...`) to persist in the surrounding scope.
-									var block = makeASTWithMeta(EBlock([existed, deleted, makeAST(EVar(existedName))]), {noIifeWrap: true}, null);
-									return EParen(block);
+									// Stabilize the key once, then return {updated_map, existed?}.
+									var keyName = 'map_remove_key_${context != null ? context.generateNodeId() : "value"}';
+									var keyRef = makeAST(EVar(keyName));
+									var updatedMap = makeAST(ERemoteCall(makeAST(EVar("Map")), "delete", [receiverRef(), keyRef]));
+									var existed = makeAST(ERemoteCall(makeAST(EVar("Map")), "has_key?", [receiverRef(), keyRef]));
+									return makeAST(EReceiverEffect({
+										receiver: {varId: receiverLocal != null ? receiverLocal.id : -1, name: receiverVarName},
+										operation: makeAST(EBlock([
+											makeAST(EMatch(PVar(keyName), argASTs[0])),
+											makeAST(ETuple([updatedMap, existed]))
+										])),
+										resultShape: UpdatedReceiverAndValue,
+										valueProjection: CompanionValue,
+										writeback: Always
+									})).def;
 
 								default:
 							}
@@ -1097,14 +1110,13 @@ class CallExprBuilder {
 								case UpdatedReceiverAndValue:
 									switch (receiverRef.def) {
 										case EVar(receiverVarName):
-											var resultVarName = "reflaxe_receiver_value_" + context.generateNodeId();
-											var block = makeASTWithMeta(EBlock([
-												makeAST(EMatch(PTuple([PVar(receiverVarName), PVar(resultVarName)]), applyCall)),
-												makeAST(EVar(resultVarName))
-											]), {
-												noIifeWrap: true
-											}, null);
-											return EParen(block);
+											return makeAST(EReceiverEffect({
+												receiver: {varId: -1, name: receiverVarName},
+												operation: applyCall,
+												resultShape: UpdatedReceiverAndValue,
+												valueProjection: CompanionValue,
+												writeback: Always
+											})).def;
 										default:
 									}
 								case PureValue:
@@ -1217,10 +1229,10 @@ class CallExprBuilder {
 
 						if (isSameModule) {
 							// Same module - use direct function call
-							return withArgumentPrelude(ECall(null, elixirMethodName, argASTs));
+							return ECall(null, elixirMethodName, argASTs);
 						} else {
 							// Different module - use qualified call
-							return withArgumentPrelude(ERemoteCall(makeAST(EVar(moduleName)), elixirMethodName, argASTs));
+							return ERemoteCall(makeAST(EVar(moduleName)), elixirMethodName, argASTs);
 						}
 
 					case FEnum(_, ef):
@@ -1239,50 +1251,12 @@ class CallExprBuilder {
 				// This ensures lambda function parameters use their snake_case names
 				// (e.g., topicConverter -> topic_converter)
 				var resolvedName = VariableBuilder.resolveVariableName(v, context);
-				return withArgumentPrelude(ECall(makeAST(EVar(resolvedName)), "", argASTs));
+				return ECall(makeAST(EVar(resolvedName)), "", argASTs);
 
 			default:
 				// Generic call
-				return withArgumentPrelude(ECall(target, "", argASTs));
+				return ECall(target, "", argASTs);
 		}
-	}
-
-	static function extractStatefulCallArguments(args:Array<ElixirAST>):{prelude:Array<ElixirAST>, args:Array<ElixirAST>} {
-		var prelude:Array<ElixirAST> = [];
-		var rewrittenArgs:Array<ElixirAST> = [];
-		for (arg in args) {
-			var extracted = extractStatefulExpression(arg);
-			for (statement in extracted.prelude)
-				prelude.push(statement);
-			rewrittenArgs.push(extracted.value);
-		}
-		return {prelude: prelude, args: rewrittenArgs};
-	}
-
-	static function extractStatefulExpression(expression:ElixirAST):{prelude:Array<ElixirAST>, value:ElixirAST} {
-		return switch (expression.def) {
-			case EParen(inner):
-				switch (inner.def) {
-					case EBlock(statements) if (isNoIifeBlock(inner) && statements.length > 0):
-						{
-							prelude: statements.slice(0, statements.length - 1),
-							value: statements[statements.length - 1]
-						};
-					default:
-						{prelude: [], value: expression};
-				}
-			case EBlock(statements) if (isNoIifeBlock(expression) && statements.length > 0):
-				{
-					prelude: statements.slice(0, statements.length - 1),
-					value: statements[statements.length - 1]
-				};
-			default:
-				{prelude: [], value: expression};
-		}
-	}
-
-	static function isNoIifeBlock(expression:ElixirAST):Bool {
-		return expression != null && expression.metadata != null && expression.metadata.noIifeWrap == true;
 	}
 
 	/**
@@ -1364,6 +1338,36 @@ class CallExprBuilder {
 		}
 
 		return tupleDef;
+	}
+
+	static function effectiveReceiverVarName(receiverLocal:Null<TVar>, receiverAst:ElixirAST, context:CompilationContext):Null<String> {
+		var receiverVarName:Null<String> = receiverLocal != null ? VariableBuilder.resolveVariableName(receiverLocal, context) : null;
+		if (receiverVarName != null && receiverVarName != "_" && receiverVarName.charAt(0) != "_") {
+			return receiverVarName;
+		}
+
+		// Inlined abstract methods can expose `this` as a discarded binder while the
+		// built receiver expression has already been substituted to the caller local.
+		// Use that visible local so persistent map updates rebind in the caller scope.
+		function visibleLocal(ast:ElixirAST):Null<String> {
+			return switch (ast != null ? ast.def : null) {
+				case EVar(actualName) if (actualName != null && actualName != "_" && actualName.charAt(0) != "_"):
+					actualName;
+				case EParen(inner):
+					visibleLocal(inner);
+				case EBlock(statements) | EDo(statements) if (statements != null && statements.length > 0):
+					visibleLocal(statements[statements.length - 1]);
+				default:
+					null;
+			}
+		}
+
+		var actualReceiverName = visibleLocal(receiverAst);
+		return if (actualReceiverName != null) {
+			actualReceiverName;
+		} else {
+			receiverVarName;
+		}
 	}
 
 	/**
@@ -1590,14 +1594,31 @@ class CallExprBuilder {
 								};
 							}
 							var receiverLocal:Null<TVar> = extractReceiverLocal(args[0]);
-							var receiverVarName:Null<String> = receiverLocal != null ? VariableBuilder.resolveVariableName(receiverLocal, context) : null;
+							var receiverVarName:Null<String> = receiverLocal != null ? VariableBuilder.resolveVariableName(receiverLocal,
+								context) : effectiveReceiverVarName(receiverLocal, objExpr, context);
+							var positionFile = Context.getPosInfos(args[0].pos).file;
+							var isDynamicAccessReceiver = positionFile != null
+								&& StringTools.replace(positionFile, "\\", "/").indexOf("std/haxe/DynamicAccess.cross.hx") >= 0;
+							if (isDynamicAccessReceiver) {
+								var visibleReceiverName = effectiveReceiverVarName(null, objExpr, context);
+								if (visibleReceiverName != null)
+									receiverVarName = visibleReceiverName;
+							}
+							var usesIgnoredReceiverBinder = receiverVarName != null && receiverVarName.length > 1 && receiverVarName.charAt(0) == "_";
+							if (usesIgnoredReceiverBinder)
+								receiverVarName = receiverVarName.substr(1);
+							var usesAbstractReceiverFallback = (receiverLocal == null && receiverVarName != null)
+								|| isDynamicAccessReceiver
+								|| usesIgnoredReceiverBinder;
 
 							var objVarName = "_reflect_obj";
 							var fieldVarName = "_reflect_field";
 							var valueVarName = "_reflect_value";
 							var atomVarName = "_reflect_atom";
+							var assignedValueVarName = 'reflect_assigned_value_${context != null ? context.generateNodeId() : "node"}';
 
-							var tuple = makeAST(ETuple([objExpr, fieldExpr, valueExpr]));
+							var tupleValueExpr = usesAbstractReceiverFallback ? makeAST(EVar(assignedValueVarName)) : valueExpr;
+							var tuple = makeAST(ETuple([objExpr, fieldExpr, tupleValueExpr]));
 							var objVar = makeAST(EVar(objVarName));
 							var fieldVar = makeAST(EVar(fieldVarName));
 							var valueVar = makeAST(EVar(valueVarName));
@@ -1632,10 +1653,29 @@ class CallExprBuilder {
 								}
 							]));
 
-							// Reflect.setField mutates in Haxe. On Elixir maps (persistent values),
-							// we model mutation by rebinding the local variable when possible.
+							// Direct Reflect.setField is a functional API on Elixir and returns the updated map.
+							// In discarded position, inline abstract setters need the original receiver rebound
+							// in the caller scope. Keep that effect explicit until the early legalization pass.
 							if (receiverVarName != null) {
-								return EMatch(PVar(receiverVarName), outerCase);
+								if (usesAbstractReceiverFallback) {
+									return makeAST(EReceiverEffect({
+										receiver: {varId: -1, name: receiverVarName},
+										operation: makeAST(EBlock([
+											makeAST(EMatch(PVar(assignedValueVarName), valueExpr)),
+											makeAST(ETuple([outerCase, makeAST(EVar(assignedValueVarName))]))
+										])),
+										resultShape: UpdatedReceiverAndValue,
+										valueProjection: CompanionValue,
+										writeback: Always
+									})).def;
+								}
+								return makeAST(EReceiverEffect({
+									receiver: {varId: receiverLocal != null ? receiverLocal.id : -1, name: receiverVarName},
+									operation: outerCase,
+									resultShape: UpdatedReceiver,
+									valueProjection: ReceiverValue,
+									writeback: WhenDiscarded
+								})).def;
 							}
 							return outerCase.def;
 						}
@@ -1708,7 +1748,22 @@ class CallExprBuilder {
 								};
 							}
 							var receiverLocal:Null<TVar> = extractReceiverLocal(args[0]);
-							var receiverVarName:Null<String> = receiverLocal != null ? VariableBuilder.resolveVariableName(receiverLocal, context) : null;
+							var receiverVarName:Null<String> = receiverLocal != null ? VariableBuilder.resolveVariableName(receiverLocal,
+								context) : effectiveReceiverVarName(receiverLocal, objExpr, context);
+							var positionFile = Context.getPosInfos(args[0].pos).file;
+							var isDynamicAccessReceiver = positionFile != null
+								&& StringTools.replace(positionFile, "\\", "/").indexOf("std/haxe/DynamicAccess.cross.hx") >= 0;
+							if (isDynamicAccessReceiver) {
+								var visibleReceiverName = effectiveReceiverVarName(null, objExpr, context);
+								if (visibleReceiverName != null)
+									receiverVarName = visibleReceiverName;
+							}
+							var usesIgnoredReceiverBinder = receiverVarName != null && receiverVarName.length > 1 && receiverVarName.charAt(0) == "_";
+							if (usesIgnoredReceiverBinder)
+								receiverVarName = receiverVarName.substr(1);
+							var usesAbstractReceiverFallback = (receiverLocal == null && receiverVarName != null)
+								|| isDynamicAccessReceiver
+								|| usesIgnoredReceiverBinder;
 
 							var objVarName = "_reflect_obj";
 							var fieldVarName = "_reflect_field";
@@ -1729,14 +1784,16 @@ class CallExprBuilder {
 							var deleteByKey = makeAST(ERemoteCall(makeAST(EVar("Map")), "delete", [objVar, fieldVar]));
 							var deleteByAtom = makeAST(ERemoteCall(makeAST(EVar("Map")), "delete", [objVar, makeAST(EVar(atomVarName))]));
 
-							// Return {deleted?, updated_obj} so we can both rebind and return a boolean.
-							var okAndDeleted = makeAST(ETuple([makeAST(EBoolean(true)), deleteByKey]));
+							var okAndDeleted = makeAST(ETuple([deleteByKey, makeAST(EBoolean(true))]));
 
 							var atomHas = makeAST(ERemoteCall(makeAST(EVar("Map")), "has_key?", [objVar, makeAST(EVar(atomVarName))]));
-							var atomTuple = makeAST(ETuple([atomHas, deleteByAtom]));
+							var atomTuple = makeAST(ECase(atomHas, [
+								{pattern: EPattern.PLiteral(makeAST(EBoolean(true))), body: makeAST(ETuple([deleteByAtom, makeAST(EBoolean(true))]))},
+								{pattern: EPattern.PLiteral(makeAST(EBoolean(false))), body: makeAST(ETuple([objVar, makeAST(EBoolean(false))]))}
+							]));
 
 							var atomDeleteCase = makeAST(ECase(tryAtom, [
-								{pattern: EPattern.PLiteral(makeAST(ENil)), body: makeAST(ETuple([makeAST(EBoolean(false)), objVar]))},
+								{pattern: EPattern.PLiteral(makeAST(ENil)), body: makeAST(ETuple([objVar, makeAST(EBoolean(false))]))},
 								{pattern: EPattern.PVar(atomVarName), body: atomTuple}
 							]));
 
@@ -1753,17 +1810,17 @@ class CallExprBuilder {
 							]));
 
 							if (receiverVarName != null) {
-								var deletedVarName = '_reflect_deleted_${receiverVarName}';
-								return EParen(makeAST(EBlock([
-									makeAST(EMatch(PTuple([PVar(deletedVarName), PVar(receiverVarName)]), outerCase)),
-									makeAST(EVar(deletedVarName))
-								])));
+								return makeAST(EReceiverEffect({
+									receiver: {varId: receiverLocal != null ? receiverLocal.id : -1, name: receiverVarName},
+									operation: outerCase,
+									resultShape: UpdatedReceiverAndValue,
+									valueProjection: usesAbstractReceiverFallback ? NoValue : ReceiverValue,
+									writeback: usesAbstractReceiverFallback ? Always : WhenDiscarded
+								})).def;
 							}
 
-							// When we cannot rebind the receiver, return only the boolean signal.
-							// This matches Haxe's return type, even though mutation cannot be modeled.
 							return ECase(outerCase, [
-								{pattern: EPattern.PTuple([EPattern.PVar("_deleted"), EPattern.PWildcard]), body: makeAST(EVar("_deleted"))}
+								{pattern: EPattern.PTuple([EPattern.PVar("_updated"), EPattern.PWildcard]), body: makeAST(EVar("_updated"))}
 							]);
 						}
 				}

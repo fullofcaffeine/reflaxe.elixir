@@ -678,8 +678,8 @@ class StdlibParityTest extends TestCase {
 		var c:Int = cast Reflect.field(obj, "c");
 		Assert.equals(3, c);
 
-		Assert.isTrue(Reflect.deleteField(obj, "b"));
-		Assert.isFalse(Reflect.hasField(obj, "b"));
+		var withoutB = Reflect.deleteField(obj, "b");
+		Assert.isFalse(Reflect.hasField(withoutB, "b"));
 	}
 
 	@:describe("Reflect + object literal atom keys")
@@ -694,8 +694,8 @@ class StdlibParityTest extends TestCase {
 		var baz:Int = cast Reflect.field(obj, "baz");
 		Assert.equals(3, baz);
 
-		Assert.isTrue(Reflect.deleteField(obj, "bar"));
-		Assert.isFalse(Reflect.hasField(obj, "bar"));
+		var withoutBar = Reflect.deleteField(obj, "bar");
+		Assert.isFalse(Reflect.hasField(withoutBar, "bar"));
 
 		var fields = Reflect.fields(obj);
 		Assert.contains(fields, "foo");

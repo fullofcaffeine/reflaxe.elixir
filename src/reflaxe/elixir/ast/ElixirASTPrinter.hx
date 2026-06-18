@@ -1230,7 +1230,7 @@ class ElixirASTPrinter {
 								if (recovered != null) {
 									'[' + [for (v in recovered) print(v, 0)].join(', ') + ']';
 								} else {
-									'(fn -> ' + print(e, 0).rtrim() + ' end).()';
+									wrapIifeBody(print(e, 0));
 								}
 							case EParen(inner) if (switch (inner.def) {
 									case EBlock(es) if (es.length > 1): true;
@@ -1246,7 +1246,7 @@ class ElixirASTPrinter {
 									if (StringTools.startsWith(innerStr, "(") && StringTools.endsWith(innerStr, ")")) {
 										innerStr = innerStr.substr(1, innerStr.length - 2);
 									}
-									'(fn -> ' + innerStr + ' end).()';
+									wrapIifeBody(innerStr);
 								}
 							case EBlock(_):
 								print(e, 0);
@@ -1263,10 +1263,10 @@ class ElixirASTPrinter {
 							case EBlock(exprs) if (exprs.length > 1):
 								// Multi-statement blocks inside tuple literals must be reduced to a single expression.
 								// Use an IIFE to avoid container parsing issues and to prevent temp bindings from leaking.
-								'(fn -> ' + print(e, 0).rtrim() + ' end).()';
+								wrapIifeBody(print(e, 0));
 							case EDo(stmts) if (stmts.length > 1):
 								// Do-end blocks in expression position: also wrap.
-								'(fn -> ' + print(e, 0).rtrim() + ' end).()';
+								wrapIifeBody(print(e, 0));
 							case EIf(_cond, thenBranch, elseBranch):
 								// Inline `if` uses commas (`do:`/`else:`) and is ambiguous inside containers unless wrapped.
 								var isInline = isSimpleExpression(thenBranch) && (elseBranch == null || isSimpleExpression(elseBranch));
@@ -1283,7 +1283,7 @@ class ElixirASTPrinter {
 									default: false;
 								}):
 								// Already parenthesized multi-statement expression: still wrap in IIFE to ensure a single tuple element.
-								'(fn -> ' + print(e, 0).rtrim() + ' end).()';
+								wrapIifeBody(print(e, 0));
 							default:
 								print(e, 0);
 						}
@@ -1301,7 +1301,7 @@ class ElixirASTPrinter {
 							case EBlock(exprs) if (exprs.length > 1):
 								// Fallback: ensure single expression in map field
 								// Wrap multi-statement block in zero-arity anonymous function call
-								'(fn -> ' + print(value, 0).rtrim() + ' end).()';
+								wrapIifeBody(print(value, 0));
 							case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
 								// Wrap inline if-else in parentheses for map context
 								'(' + print(value, 0) + ')';
@@ -1335,7 +1335,7 @@ class ElixirASTPrinter {
 						var valueStr = switch (value.def) {
 							case EBlock(exprs) if (exprs.length > 1):
 								// Fallback for multi-statement in struct field
-								'(fn -> ' + print(value, 0).rtrim() + ' end).()';
+								wrapIifeBody(print(value, 0));
 							case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
 								// Wrap inline if-else in parentheses for struct context
 								'(' + print(value, 0) + ')';
@@ -1356,7 +1356,7 @@ class ElixirASTPrinter {
 						// Check if value is an inline if-else that needs parentheses
 						var valueStr = switch (value.def) {
 							case EBlock(exprs) if (exprs.length > 1):
-								'(fn -> ' + print(value, 0).rtrim() + ' end).()';
+								wrapIifeBody(print(value, 0));
 							case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
 								// Wrap inline if-else in parentheses for struct update context
 								'(' + print(value, 0) + ')';
@@ -1376,7 +1376,7 @@ class ElixirASTPrinter {
 						// Check if value is an inline if-else that needs parentheses
 						var valueStr = switch (value.def) {
 							case EBlock(exprs) if (exprs.length > 1):
-								'(fn -> ' + print(value, 0).rtrim() + ' end).()';
+								wrapIifeBody(print(value, 0));
 							case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
 								// Wrap inline if-else in parentheses for keyword list context
 								'(' + print(value, 0) + ')';
@@ -1513,7 +1513,7 @@ class ElixirASTPrinter {
 										if (!needsIife)
 											return receiverPrinted;
 										var trimmed = StringTools.trim(receiverPrinted);
-										return StringTools.startsWith(trimmed, '(fn ->') ? receiverPrinted : '(fn -> ' + receiverPrinted + ' end).()';
+										return StringTools.startsWith(trimmed, '(fn ->') ? receiverPrinted : wrapIifeBody(receiverPrinted, false);
 									} else {
 										return receiverPrinted;
 									}
@@ -1638,9 +1638,8 @@ class ElixirASTPrinter {
 						case EVar(m) if (m == "Assert" && (funcName == "is_true" || funcName == "is_false") && args.length >= 1):
 							var parts:Array<String> = [];
 							var noIife = (args[0].metadata != null && args[0].metadata.noIifeWrap == true);
-							var firstPrinted = noIife ? sanitizeArgPrinted(printFunctionArg(args[0], indent), indent) : '(fn -> '
-								+ print(args[0], indent)
-								+ ' end).()';
+							var firstPrinted = noIife ? sanitizeArgPrinted(printFunctionArg(args[0], indent),
+								indent) : wrapIifeBody(print(args[0], indent), false);
 							parts.push(firstPrinted);
 							for (i in 1...args.length)
 								parts.push(sanitizeArgPrinted(printFunctionArg(args[i], indent), indent));
@@ -1683,7 +1682,7 @@ class ElixirASTPrinter {
 							};
 							var firstPrinted = if (needsIife) {
 								var trimmed = StringTools.trim(firstPrintedRaw);
-								StringTools.startsWith(trimmed, '(fn ->') ? firstPrintedRaw : '(fn -> ' + firstPrintedRaw + ' end).()';
+								StringTools.startsWith(trimmed, '(fn ->') ? firstPrintedRaw : wrapIifeBody(firstPrintedRaw, false);
 							} else {
 								firstPrintedRaw;
 							};
@@ -2117,7 +2116,7 @@ class ElixirASTPrinter {
 						var innerTrim = StringTools.trim(inner);
 						var needsWrap = (inner.indexOf('\n') != -1) || (inner.indexOf('=') != -1 && inner.indexOf("==") == -1);
 						if (needsWrap && !StringTools.startsWith(innerTrim, '(fn ->')) {
-							inner = '(fn -> ' + inner + ' end).()';
+							inner = wrapIifeBody(inner, false);
 						}
 						out.add("#{" + inner + "}");
 						i = k;
@@ -2150,7 +2149,7 @@ class ElixirASTPrinter {
 						var inner2 = src.substr(o + 2, (k0 - 1) - (o + 2));
 						var trimmed2 = StringTools.trim(inner2);
 						var already = StringTools.startsWith(trimmed2, '(fn ->');
-						var outInner = already ? inner2 : '(fn -> ' + inner2 + ' end).()';
+						var outInner = already ? inner2 : wrapIifeBody(inner2, false);
 						buf.add("#{" + outInner + "}");
 						i0 = k0;
 					}
@@ -2555,6 +2554,25 @@ class ElixirASTPrinter {
 					for (expr in bodyStmts)
 						indentStr(indent + 1) + print(expr, indent + 1)
 				].join('\n') + '\n' + indentStr(indent) + 'end';
+
+			case EReceiverEffect(_):
+				// EReceiverEffect is a compiler-only marker, not printable Elixir.
+				//
+				// Haxe can mutate a receiver in-place (`map.set(...)`, `Reflect.setField(...)`),
+				// but Elixir maps/lists are immutable. Earlier compiler stages therefore create
+				// this node to say: "first compute the updated receiver, then rebind the original
+				// variable in the same lexical scope, and only then use the expression value."
+				//
+				// By the time we reach the printer, ReceiverEffectLoweringTransforms must already
+				// have turned this semantic marker into ordinary Elixir AST such as:
+				//
+				//   map = Map.put(map, key, value)
+				//   value
+				//
+				// If this exception fires, do not teach the printer to render EReceiverEffect.
+				// Fix the lowering traversal or pass ordering so the receiver update is legalized
+				// before generic IIFE/block repair or printing can isolate the rebind.
+				throw "Internal compiler error: EReceiverEffect reached the printer before ReceiverEffectLowering";
 
 			// ================================================================
 			// Documentation & Module Attributes
@@ -3562,10 +3580,10 @@ class ElixirASTPrinter {
 					|| looksLikeReflectDeleteFieldRebindBlock(arg)) {
 					return '(' + print(arg, indentLevel) + ')';
 				}
-				return '(fn -> ' + print(arg, indentLevel).rtrim() + ' end).()';
+				return wrapIifeBody(print(arg, indentLevel));
 			case EDo(stmts) if (stmts.length > 1):
 				// Do-end blocks used as function arguments should also be wrapped
-				return '(fn -> ' + print(arg, indentLevel).rtrim() + ' end).()';
+				return wrapIifeBody(print(arg, indentLevel));
 			case EParen(inner) if (switch (inner.def) {
 					case EBlock(exprs) if (exprs.length > 1): true;
 					default: false;
@@ -3581,7 +3599,7 @@ class ElixirASTPrinter {
 					|| looksLikeReflectDeleteFieldRebindBlock(inner)) {
 					return print(arg, indentLevel);
 				}
-				return '(fn -> ' + print(inner, indentLevel).rtrim() + ' end).()';
+				return wrapIifeBody(print(inner, indentLevel));
 
 			default:
 				return print(arg, indentLevel);
@@ -3606,6 +3624,13 @@ class ElixirASTPrinter {
 		};
 	}
 
+	static function wrapIifeBody(printedBody:String, trimBody:Bool = true):String {
+		var body = trimBody ? printedBody.rtrim() : printedBody;
+		// Avoid leaving a trailing space when the generated IIFE body starts on the next line.
+		// This keeps snapshots clean without changing the Elixir expression shape.
+		return StringTools.startsWith(body, "\n") ? '(fn ->' + body + ' end).()' : '(fn -> ' + body + ' end).()';
+	}
+
 	// Ensure printed argument is a single safe expression.
 	// If it contains line breaks and is not already wrapped (paren/IIFE),
 	// wrap it in an IIFE to prevent splitting the call site.
@@ -3622,7 +3647,7 @@ class ElixirASTPrinter {
 		// Allow multi-line string literals as arguments without wrapping
 		var isStringLiteral = StringTools.startsWith(trimmed, '"');
 		if (hasBreak && !alreadyIIFE && !alreadyParen && !isFnLiteral && !isStringLiteral) {
-			return '(fn -> ' + s + ' end).()';
+			return wrapIifeBody(s, false);
 		}
 		return s;
 	}
