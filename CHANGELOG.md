@@ -1,3 +1,10 @@
+## [0.10.2](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.10.1...v0.10.2) (2026-06-18)
+
+
+### Bug Fixes
+
+* legalize receiver effects before iife lowering ([6734c8a](https://github.com/fullofcaffeine/reflaxe.elixir/commit/6734c8a7dd90e03c8b912baca7e7e342a6ad8c42))
+
 ## [0.10.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.10.0...v0.10.1) (2026-06-16)
 
 
