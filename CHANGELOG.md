@@ -1,3 +1,15 @@
+# [0.11.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.10.2...v0.11.0) (2026-06-19)
+
+
+### Bug Fixes
+
+* lower discarded mutations without stale values ([233a6c8](https://github.com/fullofcaffeine/reflaxe.elixir/commit/233a6c8e0bd75a079d2c33e9cb6ccfcb81aaa983))
+
+
+### Features
+
+* advance stdlib parity and typed API surfaces ([9c9a5e5](https://github.com/fullofcaffeine/reflaxe.elixir/commit/9c9a5e57a638ae120a85693d05e8013f088f4cd6))
+
 ## Unreleased
 
 ### Features
