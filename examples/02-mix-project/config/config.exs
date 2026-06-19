@@ -16,8 +16,9 @@ config :mix_project_example,
   log_level: :info
 
 # Configure logger
-config :logger,
-  level: :info,
+config :logger, level: :info
+
+config :logger, :default_formatter,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id, :module, :function]
 

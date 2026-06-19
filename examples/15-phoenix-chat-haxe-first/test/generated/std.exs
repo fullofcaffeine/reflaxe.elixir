@@ -1,5 +1,5 @@
 defmodule Std do
   def string(value) do
-    inspect(value)
+    Reflaxe.Elixir.HaxeFloat.to_string(value)
   end
 end

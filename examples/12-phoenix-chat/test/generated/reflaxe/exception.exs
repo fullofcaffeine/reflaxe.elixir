@@ -5,7 +5,7 @@ defmodule Reflaxe.Exception do
     struct = %{ struct | message: message }
     struct = %{ struct | previous: previous }
     struct = %{ struct | native: native }
-    struct = %{ struct | stack: [] }
+    struct = %{ struct | stack: apply(CallStack_Impl_, :call_stack, []) }
     struct
   end
 end

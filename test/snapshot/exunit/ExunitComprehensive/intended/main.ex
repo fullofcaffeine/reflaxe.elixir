@@ -54,7 +54,7 @@ defmodule Main do
   test "array operations" do
     _ = assert(length(context[:test_data]) == 5, "Array should have 5 elements")
     _ = assert(Enum.at(context[:test_data], 0) == 1, "First element should be 1")
-    _ = assert(Enum.at(context[:test_data], (context[:test_data].length - 1)) == 5, "Last element should be 5")
+    _ = assert(Enum.at(context[:test_data], (length(context[:test_data]) - 1)) == 5, "Last element should be 5")
     doubled = Enum.map(context[:test_data], fn x -> x * 2 end)
     _ = assert(Enum.at(doubled, 0) == 2, "First doubled element should be 2")
     _ = assert(Enum.at(doubled, 4) == 10, "Last doubled element should be 10")

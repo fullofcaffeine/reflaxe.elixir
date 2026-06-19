@@ -35,6 +35,12 @@ These failures usually come from running only a subset locally (e.g. `test:quick
 - Pull before pushing: immediately before every push, fetch the remote and rebase or fast-forward onto the latest `origin/main` when it advanced. Never force-push over remote movement; resolve release/changelog overlaps locally, then push the rebased commit.
 - Docs/examples must move with behavior: any compiler, stdlib, framework DSL, profile/define, or generated-output behavior change must update the relevant docs and examples in the same task when user-facing behavior, supported APIs, or validation commands change. If no docs/examples need changes, state that explicitly in the final summary.
 - Docs/API UX sweep checklist: primary user-facing snippets should include enough imports/context to compile, show generated Elixir when the output shape is the point, use current terminology (for example default inline HXX/TSX mode, `final routes` router DSL, typed externs), and link to canonical docs instead of duplicating long explanations in example READMEs.
+- Examples are first-class QA artifacts:
+  - Every example with `build.hxml`, `compile-all.hxml`, or `mix.exs` must be listed in `examples/qa-manifest.json`.
+  - Every example must either name meaningful runtime/E2E coverage or state why compile-only validation is the right signal.
+  - After compiler/std/framework/example changes, validate the relevant layers: Haxe compile (`npm run test:examples`), generated expected-output drift (`npm run test:examples-output`), strict generated Elixir (`npm run test:examples-elixir`), and runtime example tests (`npm run test:examples-runtime`) when behavior can change.
+  - Run `npm run guard:examples-qa` after adding/removing an example or changing example test coverage.
+  - If example generated output changes intentionally, review and commit the generated output alongside the source/docs change; do not leave examples regenerating differently from checked-in files.
 - Deep compiler/runtime semantics: if a fix becomes too complex, ambiguous, or architectural to reason about locally with confidence, stop before broad changes and ask the human to query GPT 5.5 Pro with the whole repo. Provide a precise prompt describing the failing Haxe source, generated Elixir shape, expected semantics, suspected pipeline files, and adjacent risks. Do not land speculative broad repairs while waiting for that external review.
 - Bugs: when you fix a bug, add a regression test/snapshot when it fits (and keep it minimal).
 - If the bug is already covered by an existing test, update/fix that test instead of adding duplicates.
@@ -50,7 +56,11 @@ These failures usually come from running only a subset locally (e.g. `test:quick
   - If the upstream spec is not yet runnable or no spec exists, record the explicit manifest reason and add local runtime coverage when appropriate. Snapshot coverage alone is not sufficient for stdlib semantics.
   - Treat upstream runtime test failures as compiler/stdlib correctness signals first, not as bad fixtures. Investigate whether the fix belongs in AST lowering, target stdlib source, or the adapter before skipping/adapting the spec.
 - CI-equivalent full suite: `npm test`
+- Examples (compile): `npm run test:examples`
+- Examples (expected generated output): `npm run test:examples-output`
 - Examples (strict warnings): `npm run test:examples-elixir` (mix compile `--warnings-as-errors`, no deps check)
+- Examples (runtime tests): `npm run test:examples-runtime`
+- Examples (full QA): `npm run test:examples-qa`
 - Mix tests (fast): `npm run test:mix-fast`
 - Stdlib runtime semantics (Haxe→ExUnit): `npm run test:haxe-exunit-stdlib`
 - Todo-app runtime smoke (non-blocking): `npm run qa:sentinel` then `scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 120`

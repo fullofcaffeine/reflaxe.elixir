@@ -190,6 +190,18 @@ All examples are automatically tested for compilation health:
 # Compile-check all examples at once
 npm run test:examples
 
+# Compile-check all examples and fail if generated output drifts
+npm run test:examples-output
+
+# Validate the examples QA manifest
+npm run guard:examples-qa
+
+# Run examples marked as runtime-covered in examples/qa-manifest.json
+npm run test:examples-runtime
+
+# Full examples QA gate: manifest + expected output + WAE + runtime tests
+npm run test:examples-qa
+
 # Run comprehensive test suite (includes examples)  
 npm test
 
@@ -198,18 +210,33 @@ cd examples/[example-name]
 haxe build.hxml
 ```
 
+### Examples QA Contract
+
+Examples are maintained QA assets, not just documentation snippets:
+
+- `npm run test:examples` compiles every example with `build.hxml` or `compile-all.hxml`.
+- `npm run test:examples-output` recompiles the examples and fails if checked-in generated output changes.
+- `npm run test:examples-elixir` verifies generated Elixir under warnings-as-errors for Mix/tutorial examples that fit the CI budget.
+- `examples/qa-manifest.json` records each example’s QA status. An example must either list runtime/E2E coverage or explain why compile-only validation is the right signal.
+- `npm run test:examples-runtime` runs examples marked as CI runtime-covered in the manifest.
+- Heavy browser/app checks stay in dedicated sentinel workflows, especially `todo-app` and chat presence E2Es.
+
 ### Continuous Integration
 
 Examples are tested in CI/CD on every commit to ensure:
 - ✅ All examples compile successfully
+- ✅ Generated example output matches checked-in expected files
 - ✅ Generated Elixir code is syntactically valid
 - ✅ No compilation warnings or errors
+- ✅ Examples with meaningful runtime behavior keep tests attached
+- ✅ Compile-only examples have an explicit reason recorded in `examples/qa-manifest.json`
 - ✅ Documentation consistency maintained
 - ✅ Build configurations are correct
 
 Notes:
 - The heavyweight end-to-end `todo-app/` is validated by the dedicated **QA Sentinel** workflow (`.github/workflows/sentinel.yml`) which boots Phoenix in the background and runs Playwright smoke specs.
 - The `Examples (Elixir WAE)` CI job validates the tutorial examples under `--warnings-as-errors` (sharded for runtime) and skips `todo-app/`, `test-integration/`, and `lix-installation/` to keep runtime bounded (those are covered elsewhere).
+- The dedicated **Example Compilation Tests** workflow also runs expected-output drift checks, the examples QA manifest guard, and runtime checks for examples marked `ci: true`.
 
 ## 📖 Common Patterns
 

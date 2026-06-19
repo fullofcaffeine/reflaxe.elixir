@@ -3,6 +3,7 @@ defmodule MixProjectExampleTest do
   doctest MixProjectExample
   
   import ExUnit.CaptureIO
+  import TestHelpers
   
   describe "run_example/0" do
     test "successfully creates and processes a user" do
@@ -67,19 +68,19 @@ defmodule MixProjectExampleTest do
       user_data = %{name: "jane doe", email: "jane@test.com", age: 25}
       
       # Create user using UserService
-      result = Services.UserService.create_user(user_data)
+      result = UserService.create_user(user_data)
       assert {:ok, user} = result
       
       # Format display name using StringUtils
-      display_name = Utils.StringUtils.format_display_name(user.name)
+      display_name = StringUtils.format_display_name(user.name)
       assert display_name == "Jane Doe"
       
       # Calculate retirement years using MathHelper
-      retirement_years = Utils.MathHelper.calculate_years_to_retirement(user.age)
+      retirement_years = MathHelper.calculate_years_to_retirement(user.age)
       assert retirement_years == 40
       
       # Validate email using ValidationHelper
-      email_validation = Utils.ValidationHelper.validate_email(user.email)
+      email_validation = ValidationHelper.validate_email(user.email)
       assert email_validation.valid == true
     end
     
@@ -87,15 +88,15 @@ defmodule MixProjectExampleTest do
       # Test error propagation between Haxe modules
       
       # Invalid user data
-      invalid_result = Services.UserService.create_user(%{name: "", email: "invalid"})
+      invalid_result = UserService.create_user(%{name: "", email: "invalid"})
       assert {:error, _reason} = invalid_result
       
       # Invalid email validation
-      email_result = Utils.ValidationHelper.validate_email("not-an-email")
+      email_result = ValidationHelper.validate_email("not-an-email")
       assert email_result.valid == false
       
       # Invalid number validation
-      number_result = Utils.MathHelper.validate_number("not-a-number")
+      number_result = MathHelper.validate_number("not-a-number")
       assert number_result.valid == false
     end
   end
@@ -107,11 +108,11 @@ defmodule MixProjectExampleTest do
         # Run multiple operations to test performance
         Enum.each(1..100, fn i ->
           user_data = %{name: "User #{i}", email: "user#{i}@test.com", age: 20 + i}
-          {:ok, user} = Services.UserService.create_user(user_data)
+          {:ok, user} = UserService.create_user(user_data)
           
-          _display_name = Utils.StringUtils.format_display_name(user.name)
-          _retirement = Utils.MathHelper.calculate_years_to_retirement(user.age)
-          _validation = Utils.ValidationHelper.validate_email(user.email)
+          _display_name = StringUtils.format_display_name(user.name)
+          _retirement = MathHelper.calculate_years_to_retirement(user.age)
+          _validation = ValidationHelper.validate_email(user.email)
         end)
       end)
       
@@ -125,7 +126,7 @@ defmodule MixProjectExampleTest do
       # Test that type checking and validation work as expected
       
       # Test with proper types
-      valid_user = Services.UserService.create_user(%{
+      valid_user = UserService.create_user(%{
         name: "Test User",
         email: "test@example.com",
         age: 30
@@ -133,17 +134,17 @@ defmodule MixProjectExampleTest do
       assert {:ok, _user} = valid_user
       
       # Test with missing required fields
-      invalid_user = Services.UserService.create_user(%{name: "Test"})
+      invalid_user = UserService.create_user(%{name: "Test"})
       assert {:error, _reason} = invalid_user
     end
     
     test "Data transformations maintain integrity" do
       original_name = "  john DOE  "
-      formatted = Utils.StringUtils.format_display_name(original_name)
+      formatted = StringUtils.format_display_name(original_name)
       assert formatted == "John Doe"
       
       original_email = "  TEST@EXAMPLE.COM  "
-      email_result = Utils.StringUtils.process_email(original_email)
+      email_result = StringUtils.process_email(original_email)
       assert email_result.valid == true
       assert email_result.email == "test@example.com"
     end

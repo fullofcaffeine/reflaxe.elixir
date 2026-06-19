@@ -1,0 +1,192 @@
+{
+  "version": 1,
+  "examples": {
+    "01-simple-modules": {
+      "compile": { "required": true },
+      "strictElixir": { "mode": "ci" },
+      "runtime": {
+        "mode": "compile-only",
+        "reason": "Introductory pure-codegen sample. The example has no behavior beyond simple module/function shapes already checked by compile and snapshot gates."
+      }
+    },
+    "02-mix-project": {
+      "compile": { "required": true },
+      "strictElixir": { "mode": "ci" },
+      "runtime": {
+        "mode": "manual",
+        "command": "mix deps.get && mix test",
+        "ci": false,
+        "reason": "Legacy ExUnit tests exist, but they currently assert older generated module/result shapes. Refresh them before promoting this example to CI runtime coverage.",
+        "evidence": ["test"]
+      }
+    },
+    "03-phoenix-app": {
+      "compile": { "required": true },
+      "strictElixir": { "mode": "ci" },
+      "runtime": {
+        "mode": "compile-only",
+        "reason": "Minimal Phoenix wiring sample. Runtime Phoenix coverage lives in the richer Phoenix examples and todo-app sentinel."
+      }
+    },
+    "04-ecto-migrations": {
+      "compile": { "required": true },
+      "strictElixir": { "mode": "ci" },
+      "runtime": {
+        "mode": "compile-only",
+        "reason": "Migration emission sample. Generated migration shapes are covered by compile/WAE and snapshot tests."
+      }
+    },
+    "05-heex-templates": {
+      "compile": { "required": true },
+      "strictElixir": { "mode": "ci" },
+      "runtime": {
+        "mode": "compile-only",
+        "reason": "Template lowering sample. HXX syntax and rendering shapes are covered by snapshot and Phoenix-focused tests."
+      }
+    },
+    "06-user-management": {
+      "compile": { "required": true },
+      "strictElixir": { "mode": "ci" },
+      "runtime": {
+        "mode": "compile-only",
+        "reason": "Compact pattern catalog for Phoenix/Ecto/LiveView. Full runtime user flows are covered by todo-app tests."
+      }
+    },
+    "07-protocols": {
+      "compile": { "required": true },
+      "strictElixir": { "mode": "ci" },
+      "runtime": {
+        "mode": "compile-only",
+        "reason": "Protocol annotation sample. Runtime protocol semantics are covered by compiler snapshots and std/runtime tests."
+      }
+    },
+    "08-behaviors": {
+      "compile": { "required": true },
+      "strictElixir": { "mode": "ci" },
+      "runtime": {
+        "mode": "compile-only",
+        "reason": "Behavior contract sample. Callback shape correctness is checked by compile/WAE and OTP snapshot tests."
+      }
+    },
+    "09-phoenix-router": {
+      "compile": { "required": true },
+      "strictElixir": { "mode": "ci" },
+      "runtime": {
+        "mode": "compile-only",
+        "reason": "Router DSL sample. Route generation is checked by compile/WAE and router snapshot tests."
+      }
+    },
+    "10-option-patterns": {
+      "compile": { "required": true },
+      "strictElixir": { "mode": "ci" },
+      "runtime": {
+        "mode": "manual",
+        "command": "mix deps.get && mix test",
+        "ci": false,
+        "reason": "Haxe-authored test sources exist under test_haxe, but this example does not currently compile them into Mix's test path. Wire build-tests.hxml or a Mix alias before promoting to CI runtime coverage.",
+        "evidence": ["test_haxe", "test"]
+      }
+    },
+    "11-domain-validation": {
+      "compile": { "required": true },
+      "strictElixir": { "mode": "ci" },
+      "runtime": {
+        "mode": "compile-only",
+        "reason": "Domain modeling sample. Current behavior is deterministic compile-time validation without extra runtime state."
+      }
+    },
+    "12-phoenix-chat": {
+      "compile": { "required": true },
+      "strictElixir": { "mode": "dedicated", "reason": "Skipped from WAE shard budget; covered by dedicated runtime and sentinel checks." },
+      "runtime": {
+        "mode": "mix-test",
+        "command": "mix deps.get && mix test",
+        "timeoutSeconds": 900,
+        "ci": true,
+        "evidence": ["test", "src_haxe/test"]
+      },
+      "e2e": {
+        "mode": "sentinel-playwright",
+        "command": "scripts/qa-sentinel.sh --app examples/12-phoenix-chat --port 4012 --playwright --e2e-spec e2e/presence.spec.ts --e2e-workers 1 --deadline 900 --verbose",
+        "ci": true,
+        "evidence": ["e2e/presence.spec.ts"]
+      }
+    },
+    "13-elixir-first-liveview": {
+      "compile": { "required": true },
+      "strictElixir": { "mode": "ci" },
+      "runtime": {
+        "mode": "mix-test",
+        "command": "mix deps.get && mix test",
+        "timeoutSeconds": 900,
+        "ci": true,
+        "evidence": ["test_haxe", "test"]
+      }
+    },
+    "14-abstraction-lab": {
+      "compile": { "required": true },
+      "strictElixir": { "mode": "skipped", "reason": "Haxe-only abstraction lab; strict Elixir compile is covered by generated examples and snapshots that exercise these APIs." },
+      "runtime": {
+        "mode": "compile-only",
+        "reason": "Abstraction catalog. Behavior is primarily macro/codegen shape coverage, so compile and snapshots are the useful signal."
+      }
+    },
+    "15-phoenix-chat-haxe-first": {
+      "compile": { "required": true },
+      "strictElixir": { "mode": "ci" },
+      "runtime": {
+        "mode": "mix-test",
+        "command": "mix deps.get && mix test",
+        "timeoutSeconds": 900,
+        "ci": true,
+        "evidence": ["test", "src_haxe/test"]
+      },
+      "e2e": {
+        "mode": "manual",
+        "command": "scripts/qa-sentinel.sh --app examples/15-phoenix-chat-haxe-first --port 4015 --playwright --e2e-spec e2e/presence.spec.ts --e2e-workers 1 --deadline 900 --verbose",
+        "ci": false,
+        "reason": "Browser smoke is available for local/manual validation; CI keeps this example bounded with mix tests plus WAE."
+      }
+    },
+    "16-portable-chat-domain": {
+      "compile": { "required": true },
+      "strictElixir": { "mode": "skipped", "reason": "Portable domain-only sample without a Mix app; Haxe compile covers both target adapters." },
+      "runtime": {
+        "mode": "compile-only",
+        "reason": "Portable domain sample. Runtime parity should be added when the sample grows executable target adapters."
+      }
+    },
+    "lix-installation": {
+      "compile": { "required": true },
+      "strictElixir": { "mode": "dedicated", "reason": "Installer smoke is covered by docs/release installation checks, not the WAE shards." },
+      "runtime": {
+        "mode": "compile-only",
+        "reason": "Installation example. The useful signal is that the generated project compiles under the documented Lix workflow."
+      }
+    },
+    "test-integration": {
+      "compile": { "required": true },
+      "strictElixir": { "mode": "dedicated", "reason": "Integration harness is compile-checked outside the WAE shards to keep CI bounded." },
+      "runtime": {
+        "mode": "compile-only",
+        "reason": "Integration harness currently verifies Mix/Haxe compilation only. Add a real ExUnit test before marking it as runtime-covered."
+      }
+    },
+    "todo-app": {
+      "compile": { "required": true },
+      "strictElixir": { "mode": "dedicated", "reason": "Covered by QA Sentinel, Playwright, and app-specific test gates because it is intentionally heavyweight." },
+      "runtime": {
+        "mode": "sentinel",
+        "command": "npm run qa:sentinel",
+        "ci": true,
+        "evidence": ["test", "e2e/smoke"]
+      },
+      "e2e": {
+        "mode": "sentinel-playwright",
+        "command": "scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --playwright --e2e-spec \"e2e/smoke/*.spec.ts\" --async --deadline 900 --verbose",
+        "ci": true,
+        "evidence": ["e2e/smoke"]
+      }
+    }
+  }
+}

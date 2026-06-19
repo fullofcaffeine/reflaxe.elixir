@@ -378,6 +378,11 @@ function build(): String {
 
 ### Testing Requirements
 - **Every change requires full test suite** - `npm test`
+- **Examples are golden-output QA** - For compiler/std/framework changes that can affect examples, run the examples gates:
+  - `npm run test:examples-output` proves checked-in example outputs regenerate without drift.
+  - `npm run test:examples-elixir` strict-compiles generated Elixir under warnings-as-errors.
+  - `npm run test:examples-runtime` runs examples that have meaningful runtime tests.
+  - Do not duplicate full examples into `test/snapshot/**` unless a tiny focused compiler fixture is needed. The committed example outputs are already the broad golden files.
 - **Todo-app must compile cleanly** - integration validation
 - **No performance regressions** - watch for timeout increases
 - **Update documentation** - reflect changes in architecture docs

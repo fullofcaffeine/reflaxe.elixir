@@ -1,11 +1,11 @@
 {
 	"filesGenerated": [
 		"string_tools.exs",
-		"string_buf.exs",
 		"std.exs",
 		"reflect.exs",
 		"reflaxe/exception.exs",
 		"reflaxe/elixir/haxe_throw.exs",
+		"reflaxe/elixir/haxe_float.exs",
 		"phoenix_chat_web/presence.exs",
 		"phoenix_chat_web/app_live.exs",
 		"phoenix_chat_hx/live/chat_state.exs",
@@ -13,7 +13,6 @@
 		"phoenix/types/flash_type_tools.exs",
 		"phoenix/types/flash_type.exs",
 		"phoenix/route_helper.exs",
-		"phoenix/pub_sub_shim.exs",
 		"phoenix/mount_result.exs",
 		"phoenix/http_status.exs",
 		"phoenix/http_method.exs",

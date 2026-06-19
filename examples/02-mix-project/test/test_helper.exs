@@ -2,6 +2,8 @@ ExUnit.start()
 
 # Test helper utilities for Mix project integration tests
 defmodule TestHelpers do
+  import ExUnit.Assertions
+
   @moduledoc """
   Helper functions for testing Haxe-compiled modules in Mix projects.
   """
@@ -78,16 +80,5 @@ defmodule TestHelpers do
   """
   def create_test_cases(count, generator_fun) do
     1..count |> Enum.map(fn _ -> generator_fun.() end)
-  end
-end
-
-# Import test helpers into all test modules
-defmodule ExUnit.CaseTemplate do
-  use ExUnit.CaseTemplate
-  
-  using do
-    quote do
-      import TestHelpers
-    end
   end
 end

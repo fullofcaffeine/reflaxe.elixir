@@ -10,11 +10,8 @@ config :mix_project_example,
   mock_external_services: true
 
 # Logger configuration for tests
-config :logger,
-  level: :warn,
-  backends: []  # Disable console output during tests
+config :logger, level: :warning
 
 # Print only warnings and errors during test
-config :logger, :console,
-  level: :warn,
+config :logger, :default_formatter,
   format: "$message\n"
