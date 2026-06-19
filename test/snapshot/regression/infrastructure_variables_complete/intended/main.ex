@@ -120,7 +120,7 @@ end)
     _g = 0
     _ = Enum.reduce(todos, completed_count, fn todo, completed_count_acc ->
       if (todo.completed) do
-        {completed_count_acc, _reflaxe_receiver_value_0} = {completed_count_acc + 1, completed_count_acc}
+        completed_count_acc = completed_count_acc + 1
         completed_count_acc
       else
         completed_count_acc

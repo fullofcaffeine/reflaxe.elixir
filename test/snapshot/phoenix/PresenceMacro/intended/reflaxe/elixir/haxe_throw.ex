@@ -3,7 +3,7 @@ defmodule Reflaxe.Elixir.HaxeThrow do
   import Kernel, except: [to_string: 1], warn: false
   def new(message_param, previous_param, native_param) do
     struct = %Reflaxe.Elixir.HaxeThrow{}
-    struct = Map.merge(struct, Map.delete(Reflaxe.Exception.new(message_param, previous_param, native_param), :__struct__))
+    struct = Map.merge(struct, Map.drop(Reflaxe.Exception.new(message_param, previous_param, native_param), [:__struct__, :__reflaxe_class__]))
     struct
   end
   def exception(opts) do

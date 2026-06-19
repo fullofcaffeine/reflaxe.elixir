@@ -51,6 +51,66 @@ class ReduceAppendCanonicalizeTransforms {
 		return found;
 	}
 
+	static function containsSelfAppend(ast:ElixirAST, name:String):Bool {
+		var found = false;
+		ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			switch (n.def) {
+				case ERemoteCall(_, "concat", args) | ECall(_, "concat", args) if (args.length == 2 && containsVar(args[0], name)):
+					found = true;
+				case EBinary(Concat, left, _) if (containsVar(left, name)):
+					found = true;
+				default:
+			}
+			return n;
+		});
+		return found;
+	}
+
+	static function isEnumReduceCall(ast:ElixirAST):Bool {
+		return ast != null && switch (ast.def) {
+			case ERemoteCall(moduleRef, "reduce", _):
+				switch (moduleRef.def) {
+					case EVar("Enum"): true;
+					default: false;
+				}
+			default:
+				false;
+		};
+	}
+
+	static function rewriteNestedReduceAccumulator(ast:ElixirAST, outerName:String, accName:String):Null<ElixirAST> {
+		if (ast == null || outerName == null || accName == null)
+			return null;
+
+		function rewriteReduceCall(call:ElixirAST):Null<ElixirAST> {
+			return switch (call.def) {
+				case ERemoteCall(moduleRef, "reduce", args) if (args.length == 3):
+					switch (args[1].def) {
+						case EVar(name) if (name == outerName):
+							// A nested reduce inside an outer reducer must start from the current
+							// accumulator binding, not the stale variable from before the outer loop.
+							makeASTWithMeta(ERemoteCall(moduleRef, "reduce", [args[0], makeAST(EVar(accName)), args[2]]), call.metadata, call.pos);
+						default:
+							null;
+					}
+				default:
+					null;
+			};
+		}
+
+		return switch (ast.def) {
+			case EBinary(Match, {def: EVar(lhs)}, rhs) if (lhs == outerName):
+				var rewritten = rewriteReduceCall(rhs);
+				rewritten != null ? makeASTWithMeta(EBinary(Match, makeAST(EVar(accName)), rewritten), ast.metadata, ast.pos) : null;
+			case EMatch(PVar(lhs), rhs) if (lhs == outerName):
+				var rewritten = rewriteReduceCall(rhs);
+				rewritten != null ? makeASTWithMeta(EMatch(PVar(accName), rewritten), ast.metadata, ast.pos) : null;
+			default:
+				var rewritten = rewriteReduceCall(ast);
+				rewritten != null ? makeASTWithMeta(EBinary(Match, makeAST(EVar(accName)), rewritten), ast.metadata, ast.pos) : null;
+		};
+	}
+
 	public static function transformPass(ast:ElixirAST):ElixirAST {
 		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
 			return switch (n.def) {
@@ -79,6 +139,10 @@ class ReduceAppendCanonicalizeTransforms {
 							var bodyStmts:Array<ElixirAST> = switch (cl.body.def) {
 								case EBlock(ss): ss;
 								default: [cl.body];
+							};
+							var outerAccumulatorName:Null<String> = switch (init.def) {
+								case EVar(name): name;
+								default: null;
 							};
 							var elementAlias:Null<String> = null;
 							// First pass: detect element alias `local = binder`
@@ -112,6 +176,18 @@ class ReduceAppendCanonicalizeTransforms {
 							var newBody:Array<ElixirAST> = [];
 							var didRewrite = false;
 							for (stmt in bodyStmts) {
+								var nestedReduceRewrite = rewriteNestedReduceAccumulator(stmt, outerAccumulatorName, accName);
+								if (nestedReduceRewrite != null) {
+									newBody.push(nestedReduceRewrite);
+									didRewrite = true;
+									continue;
+								}
+								if (isEnumReduceCall(stmt)) {
+									// A nested reducer has its own accumulator variable. Do not rewrite
+									// its body with the parent reducer's accumulator name.
+									newBody.push(stmt);
+									continue;
+								}
 								#if debug_reduce_append_canon
 								// DEBUG: Sys.println('[ReduceAppendCanonicalize] stmt=' + ElixirASTPrinter.print(stmt, 0));
 								#end
@@ -126,7 +202,7 @@ class ReduceAppendCanonicalizeTransforms {
 												case EVar(n): n;
 												default: null;
 											};
-											if (lhs != null && containsVar(rhs, lhs)) {
+											if (lhs != null && containsSelfAppend(rhs, lhs)) {
 												localRewrote = true;
 												var rhs2 = ElixirASTTransformer.transformNode(rhs, function(t:ElixirAST):ElixirAST {
 													return switch (t.def) {
@@ -201,7 +277,7 @@ class ReduceAppendCanonicalizeTransforms {
 												case PVar(n): n;
 												default: null;
 											};
-											if (lhs2 != null && containsVar(rhs2, lhs2)) {
+											if (lhs2 != null && containsSelfAppend(rhs2, lhs2)) {
 												localRewrote = true;
 												var rhs2b = ElixirASTTransformer.transformNode(rhs2, function(t2:ElixirAST):ElixirAST {
 													return switch (t2.def) {
@@ -252,6 +328,8 @@ class ReduceAppendCanonicalizeTransforms {
 								var foundList:Null<ElixirAST> = null;
 								var foundExpr:Null<ElixirAST> = null;
 								for (stmt2 in bodyStmts) {
+									if (isEnumReduceCall(stmt2))
+										continue;
 									ASTUtils.walk(stmt2, function(n2:ElixirAST) {
 										switch (n2.def) {
 											case ERemoteCall(modX, "concat", argsX) if (argsX.length == 2):

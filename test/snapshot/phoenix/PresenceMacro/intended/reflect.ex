@@ -74,10 +74,10 @@ end
     apply(func, args)
   end
   def compare(a, b) do
-    if (inspect(a) < inspect(b)) do
+    if (Reflaxe.Elixir.HaxeFloat.to_string(a) < Reflaxe.Elixir.HaxeFloat.to_string(b)) do
       -1
     else
-      if (inspect(a) > inspect(b)), do: 1, else: 0
+      if (Reflaxe.Elixir.HaxeFloat.to_string(a) > Reflaxe.Elixir.HaxeFloat.to_string(b)), do: 1, else: 0
     end
   end
   def is_enum_value(v) do
@@ -109,7 +109,7 @@ end) do
     end)
   end
   def set_property(o, field, value) do
-    _ = (case {o, field, value} do
+    (case {o, field, value} do
       {reflect_obj, reflect_field, reflect_value} ->
         (case Map.has_key?(reflect_obj, reflect_field) do
           true ->

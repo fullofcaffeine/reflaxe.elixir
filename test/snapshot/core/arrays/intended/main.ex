@@ -22,7 +22,6 @@ defmodule Main do
     {_i} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i}, fn _, {acc_i} ->
       try do
         if (acc_i < length(fruits)) do
-          _ = acc_i
           acc_i = acc_i + 1
           {:cont, {acc_i}}
         else

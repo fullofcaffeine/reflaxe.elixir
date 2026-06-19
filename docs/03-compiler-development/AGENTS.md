@@ -14,6 +14,16 @@
 - **Phoenix framework integration** at the compiler level
 - **Advanced debugging methodologies** with XRay infrastructure
 
+## 🧭 API Design Philosophy
+
+Elixir target compatibility is the floor, not the Haxe API design ceiling. Compiler and framework APIs must emit faithful Elixir/Phoenix/Ecto/OTP behavior, but canonical Haxe-facing APIs should use Haxe's strengths when they help users: precise types, macros, generated references, properties, completion, and compile-time diagnostics.
+
+- Keep 1:1 target facades available for migration, interop, debugging, and escape hatches.
+- Target-shaped Haxe APIs are valid when intentional, especially when they improve migration, reviewability, or predictability against target docs.
+- Prefer semantic typed wrappers when they make code clearer or safer without changing target behavior.
+- Never invent target APIs. Every Haxe convenience must lower to a real target call or a documented compiler/runtime convention.
+- When adding a new API surface, document the recommended semantic API and the direct target-shaped interop path when both exist.
+
 ## ⚠️ CRITICAL: Macro-Time vs Runtime Understanding
 
 **THE #1 COMPILER DEVELOPMENT PRINCIPLE**: Understand the distinction between macro-time and runtime execution.
@@ -403,7 +413,9 @@ After each task is completed and locally verified, you must:
 
 1) Commit and push immediately
 - Use a descriptive message that summarizes WHAT changed and WHY.
+- Fetch/rebase before pushing so release automation or another collaborator cannot be overwritten.
 - Push the commit before starting the next task so CI and collaborators see the same state.
+- Never force-push over remote movement; resolve any changelog/release conflicts locally and push the rebased commit.
 - Keep the working tree clean; do not leave generated artifacts untracked.
 
 2) If a bug/regression appears and the root cause is not obvious

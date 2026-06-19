@@ -32,6 +32,7 @@ Always use these sentinels for runtime checks. Do not run `mix phx.server` in th
 These failures usually come from running only a subset locally (e.g. `test:quick`) while CI runs additional suites and strict example compilation.
 
 - Commit and push after each closed task: once a task is locally verified, commit it with a descriptive message and push it before starting the next task, unless the user explicitly asks not to push or the remote is blocked. This keeps CI feedback, bisect history, and collaboration state current.
+- Pull before pushing: immediately before every push, fetch the remote and rebase or fast-forward onto the latest `origin/main` when it advanced. Never force-push over remote movement; resolve release/changelog overlaps locally, then push the rebased commit.
 - Docs/examples must move with behavior: any compiler, stdlib, framework DSL, profile/define, or generated-output behavior change must update the relevant docs and examples in the same task when user-facing behavior, supported APIs, or validation commands change. If no docs/examples need changes, state that explicitly in the final summary.
 - Docs/API UX sweep checklist: primary user-facing snippets should include enough imports/context to compile, show generated Elixir when the output shape is the point, use current terminology (for example default inline HXX/TSX mode, `final routes` router DSL, typed externs), and link to canonical docs instead of duplicating long explanations in example READMEs.
 - Deep compiler/runtime semantics: if a fix becomes too complex, ambiguous, or architectural to reason about locally with confidence, stop before broad changes and ask the human to query GPT 5.5 Pro with the whole repo. Provide a precise prompt describing the failing Haxe source, generated Elixir shape, expected semantics, suspected pipeline files, and adjacent risks. Do not land speculative broad repairs while waiting for that external review.
@@ -372,6 +373,16 @@ Source of truth: `docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md` and `
 - **Hand-Written Quality**: Generated code should look like it was written by an Elixir expert, not a machine
 - **Transparent Bridge Variables**: When compiler-generated variables are needed (like `g` for switch expressions), add comments explaining their purpose
 - **🔥 Pragmatic Stdlib Implementation**: Use `__elixir__()` for efficient native stdlib - [see Standard Library Philosophy](#standard-library-philosophy--pragmatic-native-implementation)
+
+### Target Compatibility Floor, Haxe API Ceiling (Hard Rule)
+
+For Haxe-to-Elixir compiler and framework surfaces, Elixir/Phoenix/Ecto/OTP compatibility is the floor, not the Haxe API design ceiling. Target-shaped Haxe APIs are useful for migration, interop, predictability, and escape hatches, but canonical user-facing APIs should also leverage Haxe's strengths: precise types, macros, generated references, properties, completion, and compile-time diagnostics.
+
+- Keep faithful 1:1 target facades available where users need direct interop or migration confidence.
+- Target-shaped Haxe APIs are fine when intentional, especially when they make migration, code review, or target documentation lookup easier.
+- Prefer semantic typed wrappers when they improve readability or safety without changing emitted target behavior.
+- Do not invent fake Elixir/Phoenix APIs. Haxe conveniences must lower to real target APIs or documented compiler/runtime semantics.
+- Document both paths when both exist: typed/semantic path first, direct target facade second.
 
 ### No-Dynamic Policy (Hard Rule)
 - Do not introduce `Dynamic` types in new compiler code, stdlib externs, or tests unless absolutely unavoidable at boundary integration points.

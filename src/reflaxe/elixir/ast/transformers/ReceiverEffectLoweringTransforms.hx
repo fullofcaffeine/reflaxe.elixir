@@ -90,54 +90,66 @@ class ReceiverEffectLoweringTransforms {
 				})), node.metadata, node.pos);
 			case ECase(expr, clauses):
 				var exprPlan = lowerExpression(expr, Value);
+				var branchUse = branchBodyUse(use);
 				var rebuilt = makeASTWithMeta(ECase(exprPlan.value, clauses.map(function(clause) {
 					return {
 						pattern: clause.pattern,
 						guard: clause.guard != null ? lowerExpression(clause.guard, Value).value : null,
-						body: lowerStatementScope(clause.body, Value)
+						body: lowerStatementScope(clause.body, branchUse)
 					};
 				})), node.metadata, node.pos);
 				materialize(exprPlan.prelude, rebuilt, node);
 			case EIf(condition, thenBranch, elseBranch):
 				var conditionPlan = lowerExpression(condition, Value);
-				var rebuilt = makeASTWithMeta(EIf(conditionPlan.value, lowerStatementScope(thenBranch, Value),
-					elseBranch != null ? lowerStatementScope(elseBranch, Value) : null),
+				var branchUse = branchBodyUse(use);
+				var rebuilt = makeASTWithMeta(EIf(conditionPlan.value, lowerStatementScope(thenBranch, branchUse),
+					elseBranch != null ? lowerStatementScope(elseBranch, branchUse) : null),
 					node.metadata, node.pos);
 				materialize(conditionPlan.prelude, rebuilt, node);
 			case EUnless(condition, body, elseBranch):
 				var conditionPlan = lowerExpression(condition, Value);
-				var rebuilt = makeASTWithMeta(EUnless(conditionPlan.value, lowerStatementScope(body, Value),
-					elseBranch != null ? lowerStatementScope(elseBranch, Value) : null),
+				var branchUse = branchBodyUse(use);
+				var rebuilt = makeASTWithMeta(EUnless(conditionPlan.value, lowerStatementScope(body, branchUse),
+					elseBranch != null ? lowerStatementScope(elseBranch, branchUse) : null),
 					node.metadata, node.pos);
 				materialize(conditionPlan.prelude, rebuilt, node);
 			case ECond(clauses):
+				var branchUse = branchBodyUse(use);
 				makeASTWithMeta(ECond(clauses.map(function(clause) {
 					var conditionPlan = lowerExpression(clause.condition, Value);
 					return {
 						condition: materialize(conditionPlan.prelude, conditionPlan.value, clause.condition),
-						body: lowerStatementScope(clause.body, Value)
+						body: lowerStatementScope(clause.body, branchUse)
 					};
 				})), node.metadata, node.pos);
 			case ETry(body, rescueClauses, catchClauses, afterBlock, elseBlock):
-				makeASTWithMeta(ETry(lowerStatementScope(body, Value), rescueClauses.map(function(clause) {
+				var branchUse = branchBodyUse(use);
+				makeASTWithMeta(ETry(lowerStatementScope(body, branchUse), rescueClauses.map(function(clause) {
 					return {
 						pattern: clause.pattern,
 						varName: clause.varName,
-						body: lowerStatementScope(clause.body, Value)
+						body: lowerStatementScope(clause.body, branchUse)
 					};
 				}), catchClauses.map(function(clause) {
 					return {
 						kind: clause.kind,
 						pattern: clause.pattern,
-						body: lowerStatementScope(clause.body, Value)
+						body: lowerStatementScope(clause.body, branchUse)
 					};
 				}),
 					afterBlock != null ? lowerStatementScope(afterBlock, Discarded) : null,
-					elseBlock != null ? lowerStatementScope(elseBlock, Value) : null), node.metadata, node.pos);
+					elseBlock != null ? lowerStatementScope(elseBlock, branchUse) : null), node.metadata, node.pos);
 			default:
 				var plan = lowerExpression(node, use);
 				materialize(plan.prelude, plan.value, node);
 		}
+	}
+
+	static function branchBodyUse(use:ExpressionUse):ExpressionUse {
+		// A control-flow statement does not need the value produced by its branches.
+		// Passing `Discarded` into branch bodies lets local mutations like `score++`
+		// lower to plain rebinding instead of preserving an unused postfix value.
+		return use == Discarded ? Discarded : Value;
 	}
 
 	static function lowerStatementList(statements:Array<ElixirAST>, finalUse:ExpressionUse):Array<ElixirAST> {
@@ -428,7 +440,13 @@ class ReceiverEffectLoweringTransforms {
 					loweredChildren.push(plan.value);
 				}
 				{prelude: prelude, value: makeASTWithMeta(EFragment(tag, loweredAttributes, loweredChildren), node.metadata, node.pos)};
-			case EIf(_, _, _) | EUnless(_, _, _) | ECase(_, _) | ECond(_) | ETry(_, _, _, _, _) | EFn(_):
+			case EIf(_, _, _) | EUnless(_, _, _) | ECase(_, _) | ECond(_) | ETry(_, _, _, _, _):
+				// Keep the caller's value-use context when a control-flow node appears in
+				// expression lowering. An `if` used as a standalone statement should lower
+				// branch mutations as side effects, while an `if` used as a value must keep
+				// each branch result intact.
+				{prelude: [], value: lowerStatementScope(node, use)};
+			case EFn(_):
 				{prelude: [], value: lowerStatementScope(node, Value)};
 			default:
 				{prelude: [], value: node};
@@ -455,6 +473,19 @@ class ReceiverEffectLoweringTransforms {
 			case UpdatedReceiverAndValue:
 				var prelude = operationPlan.prelude.copy();
 				var tempId = tempCounter++;
+				if (use == Discarded && shouldWriteBack && effect.receiver.varId == -1 && effect.valueProjection == CompanionValue) {
+					switch (operationPlan.value.def) {
+						case ETuple(items) if (items.length == 2):
+							// Local postfix mutations such as `score++` produce `{updated, old}` so
+							// expression contexts can use the old value. In statement position the old
+							// value is unused, and matching `{score, old}` inside an `if` branch makes
+							// Elixir warn about a shadowing pattern. Assign only the updated binding so
+							// later control-flow passes can hoist the state change correctly.
+							prelude.push(makeASTWithMeta(EMatch(PVar(effect.receiver.name), items[0]), source.metadata, source.pos));
+							return {prelude: prelude, value: makeAST(ENil)};
+						default:
+					}
+				}
 				var updatedName = shouldWriteBack ? effect.receiver.name : 'reflaxe_receiver_updated_${tempId}';
 				var companionName = 'reflaxe_receiver_value_${tempId}';
 				prelude.push(makeASTWithMeta(EMatch(PTuple([PVar(updatedName), PVar(companionName)]), operationPlan.value), source.metadata, source.pos));

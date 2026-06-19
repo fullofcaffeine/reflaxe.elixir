@@ -31,7 +31,6 @@ defmodule Main do
       try do
         if (acc_i < 5) do
           acc_collected = acc_collected ++ [acc_i * acc_i]
-          _ = acc_i
           acc_i = acc_i + 1
           {:cont, {acc_i, acc_collected}}
         else
@@ -54,7 +53,6 @@ defmodule Main do
       try do
         if (acc_j < 3) do
           acc_results = acc_results ++ [acc_j]
-          _ = acc_j
           acc_j = acc_j + 1
           {:cont, {acc_j, acc_results}}
         else

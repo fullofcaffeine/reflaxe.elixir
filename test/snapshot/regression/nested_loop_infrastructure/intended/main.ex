@@ -19,10 +19,7 @@ defmodule Main do
     _ = Enum.reduce(matrix, sum_of_sums, fn row, sum_of_sums_acc ->
       row_sum = 0
       g = 0
-      sum_of_sums_acc = Enum.reduce(row, sum_of_sums_acc, fn item, row_sum_acc ->
-  _ = sum_of_sums_acc + item
-  row_sum_acc
-end)
+      row_sum = Enum.reduce(row, row_sum, fn item, row_sum_acc -> row_sum_acc + item end)
       sum_of_sums_acc + row_sum
     end)
     nil

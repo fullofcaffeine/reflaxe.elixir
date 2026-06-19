@@ -55,7 +55,6 @@ defmodule Main do
       try do
         if (acc_i > 1) do
           acc_result = acc_result * acc_i
-          _ = acc_i
           acc_i = (acc_i - 1)
           {:cont, {acc_result, acc_i}}
         else

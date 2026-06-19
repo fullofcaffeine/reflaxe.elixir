@@ -20,7 +20,6 @@ defmodule Main do
       try do
         if (item.has_next.()) do
           item = item.next.()
-          _ = acc_count
           acc_count = acc_count + 1
           _ = expect("item text", Xml.get_node_value(apply(Map.get(item, :__reflaxe_class__) || Map.get(item, :__struct__), :first_child, [item])) == (if (acc_count == 1), do: "A", else: "B"))
           {:cont, {acc_count}}

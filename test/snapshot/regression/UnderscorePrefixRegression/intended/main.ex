@@ -12,7 +12,6 @@ defmodule Main do
           if (key == "test") do
             "Found: " <> key
           else
-            _ = acc_count
             acc_count = acc_count + 1
             {:cont, {acc_count}}
           end
@@ -69,9 +68,7 @@ defmodule Main do
         if (acc_index < length(items) and acc_processed < max_count) do
           _item = Enum.at(items, acc_index)
           if (verbose), do: nil
-          _ = acc_processed
           acc_processed = acc_processed + 1
-          _ = acc_index
           acc_index = acc_index + 1
           {:cont, {acc_processed, acc_index}}
         else
