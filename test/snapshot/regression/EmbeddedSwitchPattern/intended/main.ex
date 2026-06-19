@@ -18,14 +18,14 @@ defmodule Main do
   end
   defp parse_message(type, msg) do
     (case type do
-      "bulk_update" when not Kernel.is_nil(((case msg do
+      "bulk_update" when Msg.neq(((case msg do
   dyn_obj ->
     (case Map.fetch(dyn_obj, "action") do
       {:ok, dyn_value} -> dyn_value
       _ ->
         Map.get(dyn_obj, :action)
     end)
-end))) ->
+end)), nil) ->
         bulk_action = parse_bulk_action(((case msg do
             dyn_obj ->
               (case Map.fetch(dyn_obj, "action") do
@@ -39,21 +39,21 @@ end))) ->
           {:none} -> {:none}
         end)
       "bulk_update" -> {:none}
-      "system_alert" when not Kernel.is_nil(((case msg do
+      "system_alert" when Msg.neq(((case msg do
   dyn_obj ->
     (case Map.fetch(dyn_obj, "message") do
       {:ok, dyn_value} -> dyn_value
       _ ->
         Map.get(dyn_obj, :message)
     end)
-end))) and not Kernel.is_nil(((case msg do
+end)), nil) and Msg.neq(((case msg do
   dyn_obj ->
     (case Map.fetch(dyn_obj, "level") do
       {:ok, dyn_value} -> dyn_value
       _ ->
         Map.get(dyn_obj, :level)
     end)
-end))) ->
+end)), nil) ->
         alert_level = parse_alert_level(((case msg do
             dyn_obj ->
               (case Map.fetch(dyn_obj, "level") do

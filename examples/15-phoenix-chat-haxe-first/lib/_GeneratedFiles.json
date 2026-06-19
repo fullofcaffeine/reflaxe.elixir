@@ -6,6 +6,7 @@
   "reflaxe/exception.ex",
   "reflaxe/elixir/macros/http_method.ex",
   "reflaxe/elixir/haxe_throw.ex",
+  "reflaxe/elixir/haxe_float.ex",
   "phoenix_chat_web/router.ex",
   "phoenix_chat_web/presence.ex",
   "phoenix_chat_web/app_live.ex",
@@ -38,7 +39,7 @@
   "e_reg.ex",
   "phoenix_chat_web/presence.ex"
 ],
-  "id": 13,
+  "id": 19,
   "wasCached": false,
   "version": 1
 }

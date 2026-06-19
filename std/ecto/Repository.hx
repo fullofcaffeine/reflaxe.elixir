@@ -268,6 +268,10 @@ class Repository {
 	 * @return The struct(s) with preloaded associations
 	 */
 	@:generic
+	public static function preloadAssociations<T>(structs_or_struct:T, preloads:Array<SchemaAssociation<T>>):T {
+		return untyped __elixir__('{0}.preload({1}, {2})', getSelf(), structs_or_struct, preloads);
+	}
+
 	public static function preload<T>(structs_or_struct:T, preloads:Term):T {
 		return untyped __elixir__('{0}.preload({1}, {2})', getSelf(), structs_or_struct, preloads);
 	}

@@ -88,6 +88,10 @@ class BinaryOpBuilder {
 	public static function buildBinopFromAST(op:Binop, leftAST:ElixirAST, rightAST:ElixirAST, leftExpr:TypedExpr,
 			rightExpr:TypedExpr, // Original exprs for type checking
 		toSnakeCase:String->String, metadata:ElixirMetadata = null):ElixirAST {
+		var numericAst = NumericOpBuilder.buildFromAST(op, leftAST, rightAST, leftExpr, rightExpr, metadata);
+		if (numericAst != null)
+			return numericAst;
+
 		var def = switch (op) {
 			case OpAdd:
 				// Detect string concatenation based on EITHER operand being a string
@@ -253,6 +257,10 @@ class BinaryOpBuilder {
 		};
 
 		var right = buildExpr(rightExpr);
+
+		var numericAst = NumericOpBuilder.buildFromAST(op, left, right, leftExpr, rightExpr, metadata);
+		if (numericAst != null)
+			return numericAst;
 
 		var def = switch (op) {
 			case OpAdd:

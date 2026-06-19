@@ -1,6 +1,7 @@
 package haxe.io;
 
 import elixir.types.Term;
+import reflaxe.elixir.runtime.HaxeFloat;
 
 /**
  * BytesBuffer (Elixir target)
@@ -61,12 +62,12 @@ class BytesBuffer {
 	}
 
 	public function addFloat(v:Float):Void {
-		partsReversed = untyped __elixir__("[<<{0}::float-little-size(32)>> | {1}]", v, partsReversed);
+		partsReversed = untyped __elixir__("[{0} | {1}]", HaxeFloat.encode32(cast v), partsReversed);
 		byteLength += 4;
 	}
 
 	public function addDouble(v:Float):Void {
-		partsReversed = untyped __elixir__("[<<{0}::float-little-size(64)>> | {1}]", v, partsReversed);
+		partsReversed = untyped __elixir__("[{0} | {1}]", HaxeFloat.encode64(cast v), partsReversed);
 		byteLength += 8;
 	}
 

@@ -51,14 +51,14 @@ end) do
     reflaxe_dispatch_receiver
   end
   defp write_value(struct, v) do
-    if (Kernel.is_nil(v)) do
+    if (Reflaxe.Elixir.HaxeFloat.eq(v, nil)) do
       "null"
     else
       if (Std.is(v, Bool)) do
-        inspect(v)
+        Reflaxe.Elixir.HaxeFloat.to_string(v)
       else
         if (Std.is(v, Float) or Std.is(v, Int)) do
-          inspect(v)
+          Reflaxe.Elixir.HaxeFloat.to_string(v)
         else
           if (Std.is(v, String)) do
             "\"#{StringTools.replace(v, "\"", "\"")}\""

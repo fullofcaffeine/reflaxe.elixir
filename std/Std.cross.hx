@@ -1,5 +1,7 @@
 package;
 
+import reflaxe.elixir.runtime.HaxeFloat;
+
 /**
  * Std: Haxe Standard Library Core Functions
  * 
@@ -20,11 +22,11 @@ class Std {
 	 * Convert any value to its string representation.
 	 *
 	 * WHY: Universal string conversion is needed for debugging, logging, and display.
-	 * WHAT: Converts any Elixir value to its string representation using inspect/1.
+	 * WHAT: Converts any Elixir value to its Haxe string representation.
 	 * HOW: CallExprBuilder.handleSpecialCall() intercepts Std.string() calls.
 	 *
 	 * IMPLEMENTATION: The body is not used during compilation. CallExprBuilder
-	 * detects Std.string(value) calls and generates inspect(value) directly.
+	 * detects Std.string(value) calls and generates HaxeFloat.toString(value) directly.
 	 * This approach is cleaner than @:native because the compiler handles it
 	 * explicitly in handleSpecialCall() where other Std methods are processed.
 	 *
@@ -32,9 +34,9 @@ class Std {
 	 * @return String representation of the value
 	 */
 	public static function string<T>(value:T):String {
-		// This body is never compiled - CallExprBuilder intercepts the call
-		// But we provide a proper implementation for clarity
-		return untyped __elixir__('inspect({0})', value);
+		// The compiler usually intercepts this call, but keeping the body correct
+		// protects direct stdlib use and makes the source easier to reason about.
+		return HaxeFloat.toString(cast value);
 	}
 
 	/**
@@ -62,19 +64,13 @@ class Std {
 	 * 
 	 * WHY: String-to-float conversion is needed for numeric input processing.
 	 * WHAT: Attempts to parse a string as a floating point number.
-	 * HOW: The compiler will optimize this to Float.parse/1.
+	 * HOW: The compiler routes this through HaxeFloat.parse/1.
 	 * 
 	 * @param str The string to parse
-	 * @return The parsed float or null if parsing fails
+	 * @return The parsed float, or NaN if parsing fails
 	 */
 	public static function parseFloat(str:String):Null<Float> {
-		// Use native Elixir Float.parse
-		return untyped __elixir__('
-            case Float.parse({0}) do
-                {num, _} -> num
-                :error -> nil
-            end
-        ', str);
+		return HaxeFloat.parse(str);
 	}
 
 	/**
@@ -93,7 +89,7 @@ class Std {
 	 * ### Basic Types
 	 * - `String` → `is_binary/1` (Elixir strings are binaries)
 	 * - `Int` → `is_integer/1`
-	 * - `Float` → `is_float/1`
+	 * - `Float` → native numbers plus HaxeFloat special sentinels
 	 * - `Bool` → `is_boolean/1`
 	 * - `Array` → `is_list/1` (Haxe arrays compile to Elixir lists)
 	 * - `Map` → `is_map/1`
@@ -179,11 +175,15 @@ class Std {
 		// Handles basic types, structs, and enums (as tagged tuples)
 		return untyped __elixir__('
             # Convert type to string for comparison
-            type_str = to_string({1})
+            type_str =
+                {1}
+                |> to_string()
+                |> String.split(".")
+                |> List.last()
             
             case type_str do
                 "String" -> is_binary({0})
-                "Float" -> is_float({0})
+                "Float" -> Reflaxe.Elixir.HaxeFloat.is_haxe_float({0})
                 "Int" -> is_integer({0})
                 "Bool" -> is_boolean({0})
                 "Array" -> is_list({0})

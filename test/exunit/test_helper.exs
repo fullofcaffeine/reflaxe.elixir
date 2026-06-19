@@ -97,6 +97,7 @@ if File.dir?(haxe_test_src) do
   prefer = [
     "reflaxe/exception.ex",
     "reflaxe/elixir/haxe_throw.ex",
+    "reflaxe/elixir/haxe_float.ex",
     "type.ex",
     "reflect.ex",
     "std.ex",

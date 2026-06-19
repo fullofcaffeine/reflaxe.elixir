@@ -22,7 +22,7 @@ end) do
             end)
         end)
     end)
-    if (not Kernel.is_nil(changeset_errors)) do
+    if (Reflaxe.Elixir.HaxeFloat.neq(changeset_errors, nil)) do
       _g = 0
       g_value = Reflect.fields(changeset_errors)
       _ = Enum.each(g_value, fn field ->

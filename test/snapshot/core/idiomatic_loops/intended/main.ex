@@ -39,7 +39,7 @@ end)
     {_i} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i}, fn _, {acc_i} ->
       try do
         if (acc_i < 5) do
-          _old_i = acc_i
+          _ = acc_i
           acc_i = acc_i + 1
           {:cont, {acc_i}}
         else
@@ -62,7 +62,7 @@ end)
         if (acc_j >= 3) do
           throw({:break, {acc_j}})
         end
-        _old_j = acc_j
+        _ = acc_j
         acc_j = acc_j + 1
         {:cont, {acc_j}}
       catch
@@ -80,7 +80,7 @@ end)
     {_k} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k}, fn _, {acc_k} ->
       try do
         if (acc_k < 10) do
-          _old_k = acc_k
+          _ = acc_k
           acc_k = acc_k + 1
           if (rem(acc_k, 2) != 0) do
             throw({:continue, {acc_k}})
@@ -104,7 +104,7 @@ end)
     {_m} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {m}, fn _, {acc_m} ->
       try do
         if (acc_m < 3) do
-          _old_m = acc_m
+          _ = acc_m
           acc_m = acc_m + 1
           {:cont, {acc_m}}
         else
@@ -148,7 +148,7 @@ end)
           {_inner} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {inner}, fn _, {acc_inner} ->
             try do
               if (acc_inner < 2) do
-                _old_inner = acc_inner
+                _ = acc_inner
                 acc_inner = acc_inner + 1
                 {:cont, {acc_inner}}
               else
@@ -165,7 +165,7 @@ end)
                 {:cont, {acc_inner}}
             end
           end)
-          _old_outer = acc_outer
+          _ = acc_outer
           acc_outer = acc_outer + 1
           {:cont, {acc_outer}}
         else
@@ -186,7 +186,7 @@ end)
     {j} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {j}, fn _, {acc_j} ->
       try do
         if (acc_j < 2) do
-          _old_j = acc_j
+          _ = acc_j
           acc_j = acc_j + 1
           {:cont, {acc_j}}
         else
@@ -207,7 +207,7 @@ end)
     {_j} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {j}, fn _, {acc_j} ->
       try do
         if (acc_j < 2) do
-          _old_j = acc_j
+          _ = acc_j
           acc_j = acc_j + 1
           {:cont, {acc_j}}
         else
@@ -279,8 +279,7 @@ end) do
     _g = 0
     {_acc_sum, _acc_count, _acc_product} = Enum.reduce(data, {acc_sum, acc_count, acc_product}, fn n, {acc_sum_acc, acc_count_acc, acc_product_acc} ->
       acc_sum_acc = acc_sum_acc + n
-      _old_acc_count_acc = acc_count_acc
-      acc_count_acc = acc_count_acc + 1
+      {acc_count_acc, _reflaxe_receiver_value_8} = {acc_count_acc + 1, acc_count_acc}
       acc_product_acc = acc_product_acc * n
       {acc_sum_acc, acc_count_acc, acc_product_acc}
     end)

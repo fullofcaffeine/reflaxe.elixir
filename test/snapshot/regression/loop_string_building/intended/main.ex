@@ -1,11 +1,11 @@
 defmodule Main do
   def main() do
     result = ""
-    result = "#{result}Item #{Kernel.to_string(0)}, "
-    result = "#{result}Item #{Kernel.to_string(1)}, "
-    result = "#{result}Item #{Kernel.to_string(2)}, "
-    result = "#{result}Item #{Kernel.to_string(3)}, "
-    _ = "#{result}Item #{Kernel.to_string(4)}, "
+    result = "#{result}Item #{Reflaxe.Elixir.HaxeFloat.to_string(0)}, "
+    result = "#{result}Item #{Reflaxe.Elixir.HaxeFloat.to_string(1)}, "
+    result = "#{result}Item #{Reflaxe.Elixir.HaxeFloat.to_string(2)}, "
+    result = "#{result}Item #{Reflaxe.Elixir.HaxeFloat.to_string(3)}, "
+    _ = "#{result}Item #{Reflaxe.Elixir.HaxeFloat.to_string(4)}, "
     items = ["apple", "banana", "cherry"]
     _g = 0
     items_length = length(items)

@@ -13,7 +13,7 @@ end
     if (full_stack), do: exception_stack, else: subtract(exception_stack, call_stack())
   end
   defp stack_trace_to_haxe(stack_trace) do
-
+    
 Enum.map(stack_trace, fn
   {module, function, _arity, location} ->
     file =
@@ -36,7 +36,7 @@ end)
 
   end
   def to_string(stack) do
-
+    
 format_item = fn format_item, item ->
   case item do
     value when value in [:c_function, {:c_function}] ->
@@ -78,7 +78,7 @@ Enum.map_join(stack, "", fn item -> "\nCalled from " <> format_item.(format_item
 
   end
   def subtract(this1, stack) do
-
+    
 source_stack = this1
 subtract_stack = stack
 

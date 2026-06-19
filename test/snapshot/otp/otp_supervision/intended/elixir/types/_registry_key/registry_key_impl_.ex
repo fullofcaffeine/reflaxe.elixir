@@ -19,7 +19,7 @@ defmodule RegistryKey_Impl_ do
     _this1 = {a, b, c}
   end
   def via(module, name) do
-    key = elixir__.("{:via, String.to_atom(#{module}), #{Kernel.to_string(name)}}")
+    key = elixir__.("{:via, String.to_atom(#{module}), #{Reflaxe.Elixir.HaxeFloat.to_string(name)}}")
     key
   end
   def to_string(this1) do

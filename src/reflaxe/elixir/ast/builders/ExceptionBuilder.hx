@@ -239,7 +239,7 @@ class ExceptionBuilder {
 				if (pack.length == 0) {
 					switch (name) {
 						case "Int": makeAST(ECall(null, "is_integer", [valueExpr]));
-						case "Float": makeAST(ECall(null, "is_float", [valueExpr]));
+						case "Float": buildHaxeFloatCatchGuard(valueExpr);
 						case "Bool": makeAST(ECall(null, "is_boolean", [valueExpr]));
 						default: null;
 					}
@@ -321,6 +321,25 @@ class ExceptionBuilder {
 		var taggedMapGuard = makeAST(EBinary(And, isMapGuard, makeAST(EBinary(And, hasKeyGuard, classEqGuard))));
 
 		return makeAST(EBinary(Or, structGuard, taggedMapGuard));
+	}
+
+	static function buildHaxeFloatCatchGuard(valueExpr:ElixirAST):ElixirAST {
+		// Rescue/catch clauses become Elixir guards, and guards cannot call arbitrary
+		// remote helper functions. Build the HaxeFloat check from guard-safe operations
+		// instead of calling Reflaxe.Elixir.HaxeFloat.is_haxe_float/1 here.
+		var isNativeFloat = makeAST(ECall(null, "is_float", [valueExpr]));
+		var isTuple = makeAST(ECall(null, "is_tuple", [valueExpr]));
+		var tupleSize = makeAST(ECall(null, "tuple_size", [valueExpr]));
+		var hasTwoElements = makeAST(EBinary(Equal, tupleSize, makeAST(EInteger(2))));
+		var tupleTag = makeAST(ECall(null, "elem", [valueExpr, makeAST(EInteger(0))]));
+		var hasHaxeFloatTag = makeAST(EBinary(Equal, tupleTag, makeAST(EVar("Reflaxe.Elixir.HaxeFloat"))));
+		var tupleKind = makeAST(ECall(null, "elem", [valueExpr, makeAST(EInteger(1))]));
+		var isNan = makeAST(EBinary(Equal, tupleKind, makeAST(EAtom("nan"))));
+		var isPositiveInfinity = makeAST(EBinary(Equal, tupleKind, makeAST(EAtom("positive_infinity"))));
+		var isNegativeInfinity = makeAST(EBinary(Equal, tupleKind, makeAST(EAtom("negative_infinity"))));
+		var isKnownSpecialKind = makeAST(EBinary(Or, isNan, makeAST(EBinary(Or, isPositiveInfinity, isNegativeInfinity))));
+		var isSpecialFloat = makeAST(EBinary(And, isTuple, makeAST(EBinary(And, hasTwoElements, makeAST(EBinary(And, hasHaxeFloatTag, isKnownSpecialKind))))));
+		return makeAST(EBinary(Or, isNativeFloat, isSpecialFloat));
 	}
 
 	// NOTE: buildTry tracks presence inline.

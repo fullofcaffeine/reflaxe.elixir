@@ -94,9 +94,9 @@ import elixir.types.TermDecoder;
 import haxe.functional.Result;
 
 function getQuery(params: Term): String {
-    // Prefer Map.fetch + typed decoding over Map.get (which can't distinguish
-    // missing keys from present-but-nil values).
-    return switch (TermDecoder.fetchStringKey(params, "query").flatMap(TermDecoder.asString)) {
+    // Prefer typed fetch+decode helpers over Map.get. They distinguish missing
+    // keys from values that are present but have the wrong shape.
+    return switch (TermDecoder.fetchStringKeyAs(params, "query", TermDecoder.asString)) {
         case Ok(q): q;
         case Error(_): "";
     };
@@ -112,6 +112,13 @@ case TermDecoder.fetch_string_key(params, "query")
   {:error, _reason} -> ""
 end
 ```
+
+Common recipes:
+
+- Required Phoenix params: `TermDecoder.fetchStringKeyAs(params, "query", TermDecoder.asString)`
+- Optional Phoenix params: `TermDecoder.optionalStringKeyAs(params, "page", TermDecoder.asInt)`
+- Ecto/struct maps with atom keys: `TermDecoder.fetchAtomKeyAs(changeset, "email", TermDecoder.asString)`
+- Elixir result tuples: `TermDecoder.okError(term, TermDecoder.asString, TermDecoder.asString)` returns a decoded `Result<Result<T, E>, TermDecodeError>`, so malformed tuples stay separate from valid `{:error, reason}` domain errors.
 
 ## 3) Don’t use `untyped` / `__elixir__()` in applications
 

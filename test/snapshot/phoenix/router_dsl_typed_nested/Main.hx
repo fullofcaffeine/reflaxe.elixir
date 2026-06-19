@@ -72,7 +72,8 @@ final routes = [
 						paramsContract: UserPathParams
 					})
 			]),
-		resources("/users", UserController, {only: ["index", "show"]}),
+		resources("/users", UserController, {only: [resourceIndex, resourceShow]}),
+		resources("/legacy-users", UserController, {except: ["delete"]}),
 		forward("/admin", AdminRouter),
 		liveDashboard("/dashboard"),
 		mailbox("/mailbox")

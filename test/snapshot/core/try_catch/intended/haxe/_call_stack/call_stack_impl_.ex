@@ -1,7 +1,7 @@
 defmodule CallStack_Impl_ do
   import Kernel, except: [to_string: 1], warn: false
   def call_stack() do
-    stack_trace_to_haxe((fn -> 
+    stack_trace_to_haxe((fn ->
 case Process.info(self(), :current_stacktrace) do
   {:current_stacktrace, stacktrace} -> stacktrace
   _ -> []

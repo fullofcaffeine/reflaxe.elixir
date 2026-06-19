@@ -74,6 +74,9 @@ class UpstreamUnitStdMacro {
 			case ECall({expr: EConst(CIdent("neq"))}, [expected, actual]):
 				assertTrue({expr: EBinop(OpNotEq, actual, expected), pos: expression.pos}, expression, relativePath);
 
+			case ECall({expr: EConst(CIdent("feq"))}, [actual, expected]):
+				assertFloatNear(actual, expected, expression, relativePath);
+
 			case ECall({expr: EConst(CIdent("exc"))}, [body]):
 				macro haxe.test.Assert.raises(function() {
 					$body;
@@ -138,6 +141,24 @@ class UpstreamUnitStdMacro {
 
 	static function assertFalse(condition:Expr, source:Expr, relativePath:String):Expr {
 		return macro haxe.test.Assert.isFalse($condition, $v{message(source, relativePath)});
+	}
+
+	static function assertFloatNear(actual:Expr, expected:Expr, source:Expr, relativePath:String):Expr {
+		var assertionMessage = message(source, relativePath);
+		return macro {
+			var actualValue = $actual;
+			var expectedValue = $expected;
+			if (Math.isNaN(expectedValue) || Math.isNaN(actualValue)) {
+				haxe.test.Assert.isTrue(Math.isNaN(expectedValue) && Math.isNaN(actualValue), $v{assertionMessage});
+			} else if (expectedValue == Math.POSITIVE_INFINITY
+				|| expectedValue == Math.NEGATIVE_INFINITY
+				|| actualValue == Math.POSITIVE_INFINITY
+				|| actualValue == Math.NEGATIVE_INFINITY) {
+				haxe.test.Assert.isTrue(actualValue == expectedValue, $v{assertionMessage});
+			} else {
+				haxe.test.Assert.inDelta(expectedValue, actualValue, 0.00001, $v{assertionMessage});
+			}
+		};
 	}
 
 	static function boolLiteralValue(expression:Expr):Null<Bool> {

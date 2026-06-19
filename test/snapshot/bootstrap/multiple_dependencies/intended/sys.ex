@@ -77,7 +77,7 @@ defmodule Sys do
         
   end
   def sleep(seconds) do
-    milliseconds = trunc(seconds * 1000)
+    milliseconds = trunc(Reflaxe.Elixir.HaxeFloat.mul(seconds, 1000))
     Process.sleep(milliseconds)
   end
   def system_name() do

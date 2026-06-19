@@ -28,6 +28,7 @@ class Type {
         nil -> {:t_null}
         val when is_integer(val) -> {:t_int}
         val when is_float(val) -> {:t_float}
+        val when is_tuple(val) and tuple_size(val) == 2 and elem(val, 0) == Reflaxe.Elixir.HaxeFloat and elem(val, 1) in [:nan, :positive_infinity, :negative_infinity] -> {:t_float}
         val when is_boolean(val) -> {:t_bool}
         val when is_function(val) -> {:t_function}
         val when is_binary(val) -> {:t_class, String}

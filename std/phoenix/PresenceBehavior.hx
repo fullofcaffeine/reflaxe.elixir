@@ -12,6 +12,7 @@ package phoenix;
  * The canonical app-facing pattern is:
  * - define one app presence module with `@:presence`
  * - optionally add `@:presenceTopic("topic")` when a fixed topic is enough
+ * - prefer `PresenceTopic.of(...)` and `PresenceKey.of(...)` for app-owned topic/key values
  * - from LiveViews, call generated module helpers such as
  *   `ChatPresence.trackWithSocket(socket, topic, key, meta)`,
  *   `ChatPresence.list(topic)`, and `ChatPresence.getByKey(topic, key)`
@@ -38,7 +39,7 @@ package phoenix;
  * - `untrackWithSocket(socket, topic, key)` -> emits `<PresenceModule>.untrack(self(), topic, key)` and returns `socket`
  *
  * These are the preferred helpers from LiveView callbacks because Phoenix Presence
- * tracking needs the LiveView process (`self()`), a topic string, and a key.
+ * tracking needs the LiveView process (`self()`), a topic, and a key.
  *
  * ### Topic Methods
  * - `track(topic, key, meta)` -> tracks the current process in an explicit topic

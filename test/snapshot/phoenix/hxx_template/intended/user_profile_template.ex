@@ -1,6 +1,6 @@
 defmodule UserProfileTemplate do
   def render_profile(user) do
-    "<div class='user-profile'><h1>#{user.name}</h1><p>Age: #{Kernel.to_string(user.age)}</p></div>"
+    "<div class='user-profile'><h1>#{user.name}</h1><p>Age: #{Reflaxe.Elixir.HaxeFloat.to_string(user.age)}</p></div>"
   end
   def render_with_condition(user) do
     badge = if (user.is_admin), do: "Admin", else: "User"

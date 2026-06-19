@@ -6,6 +6,34 @@ import elixir.types.Atom;
 import haxe.functional.Result;
 
 /**
+ * Options for `Ecto.Changeset.validate_number/3`.
+ *
+ * WHAT
+ * - Field names like `greater_than_or_equal_to` match Ecto's real keyword options.
+ * - `min` and `max` remain available as short aliases for existing Haxe code.
+ *
+ * WHY
+ * - Seeing Ecto's exact option names in Haxe makes it obvious what generated Elixir
+ *   will call.
+ * - Keeping aliases avoids churn in existing examples and apps.
+ *
+ * HOW
+ * - `min` lowers to `greater_than_or_equal_to`.
+ * - `max` lowers to `less_than_or_equal_to`.
+ * - If both a full Ecto option and its alias are present, the full Ecto option wins.
+ */
+typedef NumberValidationOptions = {
+	?greater_than:Float,
+	?greater_than_or_equal_to:Float,
+	?less_than:Float,
+	?less_than_or_equal_to:Float,
+	?equal_to:Float,
+	?not_equal_to:Float,
+	?min:Float,
+	?max:Float
+}
+
+/**
  * Type-safe Ecto.Changeset wrapper
  * 
  * ## Overview
@@ -46,7 +74,10 @@ import haxe.functional.Result;
  *             Field.of((user:User) -> user.email)
  *         ])
  *         .validateFormat(Field.of((user:User) -> user.email), ~/@/)
- *         .validateNumber(Field.of((user:User) -> user.age), {min: 18, max: 120});
+ *         .validateNumber(Field.of((user:User) -> user.age), {
+ *             greater_than_or_equal_to: 18,
+ *             less_than_or_equal_to: 120
+ *         });
  * }
  * ```
  * 
@@ -58,7 +89,7 @@ import haxe.functional.Result;
  *   |> cast(params, [:name, :email, :age])
  *   |> validate_required([:name, :email])
  *   |> validate_format(:email, ~r/@/)
- *   |> validate_number(:age, min: 18, max: 120)
+ *   |> validate_number(:age, greater_than_or_equal_to: 18, less_than_or_equal_to: 120)
  * end
  * ```
  * 
@@ -220,30 +251,41 @@ abstract Changeset<T, P>(Term) from Term to Term {
 	 * Validate a numeric field
 	 * 
 	 * @param field The field name
-	 * @param opts Number validation options
+	 * @param opts Number validation options. Prefer Ecto option names like
+	 *   `greater_than_or_equal_to` and `less_than_or_equal_to`; `min` and `max`
+	 *   remain as short aliases.
 	 * @return The updated changeset
 	 */
-	extern inline public function validateNumber(field:SchemaField<T>, opts:{
-		?min:Float,
-		?max:Float,
-		?equal_to:Float,
-		?not_equal_to:Float
-	}):Changeset<T, P> {
-		// Build the options list directly - simplified version for common cases
-		if (opts.min != null && opts.max != null) {
-			return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [greater_than_or_equal_to: {2}, less_than_or_equal_to: {3}])', this, field,
-				opts.min, opts.max);
-		} else if (opts.min != null) {
-			return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [greater_than_or_equal_to: {2}])', this, field, opts.min);
-		} else if (opts.max != null) {
-			return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [less_than_or_equal_to: {2}])', this, field, opts.max);
-		} else if (opts.equal_to != null) {
-			return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [equal_to: {2}])', this, field, opts.equal_to);
-		} else if (opts.not_equal_to != null) {
-			return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [not_equal_to: {2}])', this, field, opts.not_equal_to);
-		} else {
-			return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [])', this, field);
-		}
+	extern inline public function validateNumber(field:SchemaField<T>, opts:NumberValidationOptions):Changeset<T, P> {
+		return cast ChangesetApi.validateNumber(this, field, numberOptions(opts));
+	}
+
+	extern static inline function numberOptions(opts:NumberValidationOptions):Term {
+		return untyped __elixir__('
+          (fn opts ->
+             greater_than_or_equal_to =
+               case Map.fetch(opts, :greater_than_or_equal_to) do
+                 {:ok, value} -> value
+                 :error -> Map.get(opts, :min)
+               end
+
+             less_than_or_equal_to =
+               case Map.fetch(opts, :less_than_or_equal_to) do
+                 {:ok, value} -> value
+                 :error -> Map.get(opts, :max)
+               end
+
+             [
+               greater_than: Map.get(opts, :greater_than),
+               greater_than_or_equal_to: greater_than_or_equal_to,
+               less_than: Map.get(opts, :less_than),
+               less_than_or_equal_to: less_than_or_equal_to,
+               equal_to: Map.get(opts, :equal_to),
+               not_equal_to: Map.get(opts, :not_equal_to)
+             ]
+             |> Enum.filter(fn {_, value} -> value != nil end)
+           end).({0})
+        ', opts);
 	}
 
 	/**

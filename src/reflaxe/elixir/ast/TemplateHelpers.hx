@@ -192,6 +192,17 @@ class TemplateHelpers {
 		};
 	}
 
+	static function isHaxeFloatToStringCall(module:ElixirAST, functionName:String):Bool {
+		if (functionName != "to_string" || module == null || module.def == null)
+			return false;
+		return switch (module.def) {
+			case EVar(name):
+				name == "Reflaxe.Elixir.HaxeFloat";
+			default:
+				false;
+		};
+	}
+
 	/**
 	 * Collect template content from an ElixirAST node
 	 * 
@@ -313,6 +324,17 @@ class TemplateHelpers {
 				'<%= ' + callStr + ' %>';
 
 			case ERemoteCall(module, func, args):
+				if (isHaxeFloatToStringCall(module, func) && args.length == 1) {
+					switch (args[0].def) {
+						case EString(_):
+							// Haxe string interpolation can wrap enum-abstract strings with
+							// HaxeFloat.to_string/1 before HXX turns the pieces into HEEx.
+							// For a literal string, that wrapper adds no runtime value and hides
+							// the constant from strict phx-hook/phx-event template validation.
+							return '<%= ' + renderExpr(args[0]) + ' %>';
+						default:
+					}
+				}
 				// Typed template helper: HeexTemplate.for_each(items, fn item -> ... end)
 				//
 				// WHY: in HEEx, injecting HTML via string output escapes tags.

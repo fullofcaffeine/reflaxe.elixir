@@ -13,7 +13,7 @@ defmodule AgentRef_Impl_ do
       Process.alive?(this1)
     else
       pid = Process.whereis(this1)
-      not Kernel.is_nil(pid) and Process.alive?(pid)
+      Reflaxe.Elixir.HaxeFloat.neq(pid, nil) and Process.alive?(pid)
     end
   end
   def to_value(this1) do

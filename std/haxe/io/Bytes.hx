@@ -1,6 +1,7 @@
 package haxe.io;
 
 import elixir.types.Term;
+import reflaxe.elixir.runtime.HaxeFloat;
 
 /**
  * Bytes: Elixir-optimized implementation of Haxe's Bytes class
@@ -240,7 +241,7 @@ class Bytes {
 		if (pos < 0 || pos + 8 > length) {
 			throw "Out of bounds";
 		}
-		return untyped __elixir__('<<value::float-little-size(64)>> = :binary.part({0}, {1}, 8); value', getBinary(), pos);
+		return HaxeFloat.decode64(untyped __elixir__(':binary.part({0}, {1}, 8)', getBinary(), pos));
 	}
 
 	/**
@@ -264,7 +265,8 @@ class Bytes {
 			untyped __elixir__('<<>>');
 		}
 
-		putBinary(untyped __elixir__('<<{0}::binary, {1}::float-little-size(64), {2}::binary>>', beforePart, v, afterPart));
+		var encoded = HaxeFloat.encode64(cast v);
+		putBinary(untyped __elixir__('<<{0}::binary, {1}::binary, {2}::binary>>', beforePart, encoded, afterPart));
 	}
 
 	/**
@@ -274,7 +276,7 @@ class Bytes {
 		if (pos < 0 || pos + 4 > length) {
 			throw "Out of bounds";
 		}
-		return untyped __elixir__('<<value::float-little-size(32)>> = :binary.part({0}, {1}, 4); value', getBinary(), pos);
+		return HaxeFloat.decode32(untyped __elixir__(':binary.part({0}, {1}, 4)', getBinary(), pos));
 	}
 
 	/**
@@ -298,7 +300,8 @@ class Bytes {
 			untyped __elixir__('<<>>');
 		}
 
-		putBinary(untyped __elixir__('<<{0}::binary, {1}::float-little-size(32), {2}::binary>>', beforePart, v, afterPart));
+		var encoded = HaxeFloat.encode32(cast v);
+		putBinary(untyped __elixir__('<<{0}::binary, {1}::binary, {2}::binary>>', beforePart, encoded, afterPart));
 	}
 
 	/**

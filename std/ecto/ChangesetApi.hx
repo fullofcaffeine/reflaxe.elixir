@@ -43,6 +43,9 @@ extern class ChangesetApi {
 	@:native("validate_exclusion")
 	public static function validateExclusion(cs:Term, field:Term, values:Term):Term;
 
+	@:native("validate_number")
+	public static function validateNumber(cs:Term, field:Term, opts:Term):Term;
+
 	@:native("validate_confirmation")
 	public static function validateConfirmation(cs:Term, field:Term, opts:Term = null):Term;
 

@@ -14,7 +14,7 @@ defmodule Main do
     _var_args = fn args ->
       sum = 0
       _g = 0
-      Enum.reduce(args, sum, fn arg, sum_acc -> sum_acc + arg end)
+      Enum.reduce(args, sum, fn arg, sum_acc -> Reflaxe.Elixir.HaxeFloat.add(sum_acc, arg) end)
     end
     nil
   end
@@ -30,10 +30,7 @@ defmodule Main do
       {num, _} -> num
       :error -> nil
     end)
-    _float_value = (case Float.parse("3.14") do
-      {num, _} -> num
-      :error -> nil
-    end)
+    _float_value = Reflaxe.Elixir.HaxeFloat.parse("3.14")
     nil
   end
   def dynamic_generics(value) do
@@ -49,26 +46,26 @@ defmodule Main do
   end
   def process_dynamic(value) do
     cond do
-      Kernel.is_nil(value) -> "null"
-      Std.is(value, Bool) -> "Bool: " <> inspect(value)
-      Std.is(value, Int) -> "Int: " <> inspect(value)
-      Std.is(value, Float) -> "Float: " <> inspect(value)
-      Std.is(value, String) -> "String: " <> inspect(value)
-      Std.is(value, Array) -> "Array of length: " <> inspect(length(value))
+      Reflaxe.Elixir.HaxeFloat.eq(value, nil) -> "null"
+      Std.is(value, Bool) -> "Bool: " <> Reflaxe.Elixir.HaxeFloat.to_string(value)
+      Std.is(value, Int) -> "Int: " <> Reflaxe.Elixir.HaxeFloat.to_string(value)
+      Std.is(value, Float) -> "Float: " <> Reflaxe.Elixir.HaxeFloat.to_string(value)
+      Std.is(value, String) -> "String: " <> Reflaxe.Elixir.HaxeFloat.to_string(value)
+      Std.is(value, Array) -> "Array of length: " <> Reflaxe.Elixir.HaxeFloat.to_string(length(value))
       :true -> "Unknown type"
     end
   end
   def dynamic_method_calls() do
     obj = %{}
     obj = obj |> Map.put(:value, 10) |> Map.put(:increment, fn ->
-  (case obj do
-  dyn_obj ->
-    (case Map.fetch(dyn_obj, "value") do
-      {:ok, dyn_value} -> dyn_value
-      _ ->
-        Map.get(dyn_obj, :value)
-    end)
-end) + 1
+  Reflaxe.Elixir.HaxeFloat.add(((case obj do
+    dyn_obj ->
+      (case Map.fetch(dyn_obj, "value") do
+        {:ok, dyn_value} -> dyn_value
+        _ ->
+          Map.get(dyn_obj, :value)
+      end)
+  end)), 1)
 end) |> Map.put(:get_value, fn ->
   (case obj do
     dyn_obj ->

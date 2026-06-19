@@ -92,6 +92,19 @@ Evidence:
 - `npm run guard:docs-links`
 - `npm run test:mix-fast`
 
+### Done: Typed LiveViewTest Assign/Event Tokens
+
+Implemented:
+
+- `std/phoenix/test/LiveViewEventName.hx` adds an erased typed token for app-owned LiveView event names.
+- `LiveViewTest.get_assign_key` and `LiveViewTest.has_assign_key` reuse `AssignKey<TAssigns, TValue>` from `AssignKeys.of(...)`.
+- `LiveViewTest.render_click_event`, `render_submit_event`, and `render_change_event` accept typed event-name tokens and emit ordinary Phoenix `render_*` calls.
+- Raw string APIs remain available for CSS selectors, paths, and direct Phoenix parity.
+
+Evidence:
+
+- `make -C test single TEST=phoenix/liveview_test_typed_tokens`
+
 ### P2: Router DSL UX Follow-Ups
 
 Tracked separately by `haxe.elixir-944.10`.

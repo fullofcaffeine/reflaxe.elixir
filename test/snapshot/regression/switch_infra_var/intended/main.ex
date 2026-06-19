@@ -14,6 +14,6 @@ defmodule Main do
     end)
   end
   defp compute(n) do
-    if (n > 0), do: {:ok, "Value " <> Kernel.to_string(n)}, else: {:error, "Invalid"}
+    if (n > 0), do: {:ok, "Value " <> Reflaxe.Elixir.HaxeFloat.to_string(n)}, else: {:error, "Invalid"}
   end
 end

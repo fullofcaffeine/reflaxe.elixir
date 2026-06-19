@@ -3,6 +3,8 @@ package;
 import phoenix.PresenceBehavior;
 import phoenix.Phoenix.Socket;
 import phoenix.Presence.PresenceEntry;
+import phoenix.PresenceKey;
+import phoenix.PresenceTopic;
 
 /**
  * Test for PresenceMacro - validates that the macro generates both internal
@@ -27,9 +29,6 @@ typedef TestMeta = {
 @:native("TestApp.Presence")
 @:presence
 class TestPresence implements PresenceBehavior {
-	// Topic constant for Presence operations
-	static inline var TOPIC = "presence:test";
-
 	// Custom method that uses the generated internal methods
 	public static function trackTestUser(socket:Socket<PresenceAssigns>, userId:String, name:String):Socket<PresenceAssigns> {
 		var meta:TestMeta = {
@@ -39,14 +38,14 @@ class TestPresence implements PresenceBehavior {
 		};
 
 		// This should use the macro-generated trackInternal method
-		trackInternal(TOPIC, userId, meta);
+		trackInternal(PresenceTopic.of("presence:test"), PresenceKey.of(userId), meta);
 		return socket;
 	}
 
 	// Custom method that uses the generated update method
 	public static function updateStatus(socket:Socket<PresenceAssigns>, userId:String, newStatus:String):Socket<PresenceAssigns> {
 		// Get current metadata using macro-generated wrapper
-		var presences = TestPresence.list(TOPIC);
+		var presences = TestPresence.list(PresenceTopic.of("presence:test"));
 
 		if (Reflect.hasField(presences, userId)) {
 			var entry:PresenceEntry<TestMeta> = Reflect.field(presences, userId);
@@ -59,7 +58,7 @@ class TestPresence implements PresenceBehavior {
 				};
 
 				// This should use the macro-generated updateInternal method
-				updateInternal(TOPIC, userId, updatedMeta);
+				updateInternal(PresenceTopic.of("presence:test"), PresenceKey.of(userId), updatedMeta);
 			}
 		}
 
@@ -69,15 +68,13 @@ class TestPresence implements PresenceBehavior {
 	// Custom method that uses the generated untrack method
 	public static function removeUser(socket:Socket<PresenceAssigns>, userId:String):Socket<PresenceAssigns> {
 		// This should use the macro-generated untrackInternal method
-		untrackInternal(TOPIC, userId);
+		untrackInternal(PresenceTopic.of("presence:test"), PresenceKey.of(userId));
 		return socket;
 	}
 }
 
 // Test that external methods can be called from outside
 class ExternalCaller {
-	static inline var TOPIC = "presence:test";
-
 	public static function callFromOutside(socket:Socket<PresenceAssigns>):Void {
 		// These should use the macro-generated external methods that call Phoenix.Presence
 		var meta:TestMeta = {
@@ -87,17 +84,17 @@ class ExternalCaller {
 		};
 
 		// External track (should call Phoenix.Presence.track)
-		TestPresence.track(TOPIC, "external_user", meta);
+		TestPresence.track(PresenceTopic.of("presence:test"), PresenceKey.of("external_user"), meta);
 
 		// External update (should call Phoenix.Presence.update)
-		TestPresence.update(TOPIC, "external_user", meta);
+		TestPresence.update(PresenceTopic.of("presence:test"), PresenceKey.of("external_user"), meta);
 
 		// External untrack (should call Phoenix.Presence.untrack)
-		TestPresence.untrack(TOPIC, "external_user");
+		TestPresence.untrack(PresenceTopic.of("presence:test"), PresenceKey.of("external_user"));
 
 		// List and getByKey should work externally too
-		var allPresences = TestPresence.list(TOPIC);
-		var userPresence:Null<PresenceEntry<TestMeta>> = TestPresence.getByKey(TOPIC, "external_user");
+		var allPresences = TestPresence.list(PresenceTopic.of("presence:test"));
+		var userPresence:Null<PresenceEntry<TestMeta>> = TestPresence.getByKey(PresenceTopic.of("presence:test"), PresenceKey.of("external_user"));
 
 		// Type safety check - should be able to access typed metadata
 		if (userPresence != null && userPresence.metas.length > 0) {

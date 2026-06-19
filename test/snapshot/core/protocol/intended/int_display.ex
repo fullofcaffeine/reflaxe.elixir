@@ -1,6 +1,6 @@
 defmodule IntDisplay do
   def display(value) do
-    inspect(value)
+    Reflaxe.Elixir.HaxeFloat.to_string(value)
   end
   def format(value, options) do
     if ((case options do
@@ -13,7 +13,7 @@ defmodule IntDisplay do
 end)) do
       "0x#{StringTools.hex(value, nil)}"
     else
-      inspect(value)
+      Reflaxe.Elixir.HaxeFloat.to_string(value)
     end
   end
 end

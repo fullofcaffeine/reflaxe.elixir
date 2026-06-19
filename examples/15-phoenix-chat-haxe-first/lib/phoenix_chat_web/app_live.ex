@@ -4,7 +4,11 @@ defmodule PhoenixChatWeb.AppLive do
   def mount(_params, _session, socket) do
     connected = not Kernel.is_nil(socket.transport_pid)
     room = "lobby"
-    current_user_id = if (not Kernel.is_nil(socket.id)), do: socket.id, else: inspect(DateTime.to_iso8601(DateTime.utc_now()))
+    current_user_id = if (not Kernel.is_nil(socket.id)) do
+      socket.id
+    else
+      Reflaxe.Elixir.HaxeFloat.to_string(DateTime.to_iso8601(DateTime.utc_now()))
+    end
     current_user_name = display_name_from_id(current_user_id)
     online_at = DateTime.to_iso8601(DateTime.utc_now())
     assigns = %{:room => room, :current_user_id => current_user_id, :current_user_name => current_user_name, :message_input => "", :messages => [], :next_message_id => 1, :presence_initialized => false, :online_users => %{}, :online_user_views => [], :online_user_count => 0, :status => nil}
@@ -161,7 +165,7 @@ end) do
             end)
         end)
     end)
-    body_raw = if (not Kernel.is_nil(body_term)), do: body_term, else: ""
+    body_raw = if (Reflaxe.Elixir.HaxeFloat.neq(body_term, nil)), do: body_term, else: ""
     body = StringTools.ltrim(StringTools.rtrim(body_raw))
     if (body == "") do
       {:noreply, Phoenix.Component.assign(socket, :status, "Type a message first.")}
@@ -217,14 +221,14 @@ end).(a, b) < 0
     else
       msg_term = msg
       struct_term = Map.get(msg_term, :erlang.binary_to_atom("__struct__"))
-      if (Kernel.is_nil(struct_term)) do
+      if (Reflaxe.Elixir.HaxeFloat.eq(struct_term, nil)) do
         false
       else
-        if (struct_term != :erlang.binary_to_atom("Elixir.Phoenix.Socket.Broadcast")) do
+        if (Reflaxe.Elixir.HaxeFloat.neq(struct_term, :erlang.binary_to_atom("Elixir.Phoenix.Socket.Broadcast"))) do
           false
         else
           event_term = Map.get(msg_term, :erlang.binary_to_atom("event"))
-          not Kernel.is_nil(event_term) and event_term == "presence_diff"
+          Reflaxe.Elixir.HaxeFloat.neq(event_term, nil) and Reflaxe.Elixir.HaxeFloat.eq(event_term, "presence_diff")
         end
       end
     end

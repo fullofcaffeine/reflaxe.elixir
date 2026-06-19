@@ -1,0 +1,9 @@
+Main.hx:15: characters 23-87 : Route path "/users/:id" contains path params (id) but no paramsContract was provided in options.
+Main.hx:15: characters 23-87 : ... 
+Main.hx:15: characters 23-87 : ... Add a paramsContract typedef and pass it in the route options:
+Main.hx:15: characters 23-87 : ... 
+Main.hx:15: characters 23-87 : ... typedef UserPathParams = {
+Main.hx:15: characters 23-87 : ...   var id:Int;
+Main.hx:15: characters 23-87 : ... }
+Main.hx:15: characters 23-87 : ... 
+Main.hx:15: characters 23-87 : ... get("/users/:id", Controller, Controller.action, {paramsContract: UserPathParams})

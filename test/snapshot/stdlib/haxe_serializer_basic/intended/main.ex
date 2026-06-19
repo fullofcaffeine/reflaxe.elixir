@@ -7,10 +7,10 @@ defmodule Main do
   def main() do
     primitive_wire = Serializer.run(["alpha", 42, true, nil])
     primitive_value = Unserializer.run(primitive_wire)
-    _ = assert_that(Enum.at(primitive_value, 0) == "alpha", "string roundtrip failed")
-    _ = assert_that(Enum.at(primitive_value, 1) == 42, "int roundtrip failed")
-    _ = assert_that(Enum.at(primitive_value, 2) == true, "bool roundtrip failed")
-    _ = assert_that(Kernel.is_nil(Enum.at(primitive_value, 3)), "null roundtrip failed")
+    _ = assert_that(Reflaxe.Elixir.HaxeFloat.eq(Enum.at(primitive_value, 0), "alpha"), "string roundtrip failed")
+    _ = assert_that(Reflaxe.Elixir.HaxeFloat.eq(Enum.at(primitive_value, 1), 42), "int roundtrip failed")
+    _ = assert_that(Reflaxe.Elixir.HaxeFloat.eq(Enum.at(primitive_value, 2), true), "bool roundtrip failed")
+    _ = assert_that(Reflaxe.Elixir.HaxeFloat.eq(Enum.at(primitive_value, 3), nil), "null roundtrip failed")
     string_map = %{}
     string_map = string_map |> Map.put("one", 1) |> Map.put("two", 2)
     map_wire = Serializer.run(string_map)

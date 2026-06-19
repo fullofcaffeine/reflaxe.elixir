@@ -26,7 +26,7 @@ defmodule Main do
   defp test_mixed_usage() do
     result = {:ok, 42}
     switch_result_3 = (case result do
-      {:ok, num} -> "Number is #{inspect(num)}"
+      {:ok, num} -> "Number is #{Reflaxe.Elixir.HaxeFloat.to_string(num)}"
       {:error, _error} -> "Got an error"
     end)
     switch_result_3
@@ -36,7 +36,7 @@ defmodule Main do
     switch_result_4 = (case opt do
       {:some, result} ->
         (case result do
-          {:ok, value} -> "Nested value: #{inspect(value)}"
+          {:ok, value} -> "Nested value: #{Reflaxe.Elixir.HaxeFloat.to_string(value)}"
           {:error, _error} -> "Nested error"
         end)
       {:none} -> "Nothing"
@@ -47,7 +47,7 @@ defmodule Main do
     node = {:node, {:leaf}, 42, {:leaf}}
     switch_result_5 = (case node do
       {:leaf} -> "Empty"
-      {:node, _left, value, _right} -> "Value: #{inspect(value)}"
+      {:node, _left, value, _right} -> "Value: #{Reflaxe.Elixir.HaxeFloat.to_string(value)}"
     end)
     switch_result_5
   end

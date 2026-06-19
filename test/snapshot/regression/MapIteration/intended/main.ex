@@ -98,7 +98,7 @@ end)
         if (g_value.has_next.()) do
           item = g_value.next.().key
           price = g_value.next.().value
-          acc__g = acc__g ++ ["" <> item <> ": $" <> Kernel.to_string(price * 0.9)]
+          acc__g = acc__g ++ ["" <> item <> ": $" <> Reflaxe.Elixir.HaxeFloat.to_string(Reflaxe.Elixir.HaxeFloat.mul(price, 0.9))]
           {:cont, {acc__g}}
         else
           {:halt, {acc__g}}
@@ -207,8 +207,8 @@ end)
         if (g.has_next.()) do
           product = g.next.().key
           price = g.next.().value
-          acc_descriptions = acc_descriptions ++ ["" <> product <> " ($" <> Kernel.to_string(price) <> ")"]
-          acc_total_value = acc_total_value + price
+          acc_descriptions = acc_descriptions ++ ["" <> product <> " ($" <> Reflaxe.Elixir.HaxeFloat.to_string(price) <> ")"]
+          acc_total_value = Reflaxe.Elixir.HaxeFloat.add(acc_total_value, price)
           {:cont, {acc_descriptions, acc_total_value}}
         else
           {:halt, {acc_descriptions, acc_total_value}}

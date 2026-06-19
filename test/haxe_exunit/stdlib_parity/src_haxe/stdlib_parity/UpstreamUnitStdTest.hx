@@ -41,6 +41,12 @@ class UpstreamUnitStdTest extends TestCase {
 		UpstreamUnitStdMacro.assertSpec("IntIterator.unit.hx");
 	}
 
+	@:describe("upstream Haxe unitstd: Math")
+	@:test
+	function testMath():Void {
+		UpstreamUnitStdMacro.assertSpec("Math.unit.hx");
+	}
+
 	@:describe("upstream Haxe unitstd: haxe.DynamicAccess")
 	@:test
 	function testHaxeDynamicAccess():Void {

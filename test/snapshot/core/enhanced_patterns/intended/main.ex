@@ -8,7 +8,7 @@ defmodule Main do
   g_value = 1
   arr_length = length(arr)
   _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
-    _g_acc = _g_acc ++ [inspect(arr[i])]
+    _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(arr[i])]
     _g_acc
   end)
   _g
@@ -21,12 +21,12 @@ end).(), ",") end).()}"
   g_value = 1
   arr_length = length(arr)
   _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
-    _g_acc = _g_acc ++ [inspect(arr[i])]
+    _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(arr[i])]
     _g_acc
   end)
   _g
 end).(), ",") end).()}"
-      [_head | _tail] when length(bytes) > 10 -> "Large binary: #{Kernel.to_string(length(bytes))} bytes"
+      [_head | _tail] when length(bytes) > 10 -> "Large binary: #{Reflaxe.Elixir.HaxeFloat.to_string(length(bytes))} bytes"
       [_head | _tail] -> "Other binary pattern"
       2 ->
         arr = data
@@ -36,7 +36,7 @@ end).(), ",") end).()}"
   g_value = 1
   arr_length = length(arr)
   _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
-    _g_acc = _g_acc ++ [inspect(arr[i])]
+    _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(arr[i])]
     _g_acc
   end)
   _g
@@ -49,7 +49,7 @@ end).(), ",") end).()}"
           else
             bytes = data
             if (length(bytes) > 10) do
-              "Large binary: #{Kernel.to_string(length(bytes))} bytes"
+              "Large binary: #{Reflaxe.Elixir.HaxeFloat.to_string(length(bytes))} bytes"
             else
               "Other binary pattern"
             end
@@ -63,7 +63,7 @@ end).(), ",") end).()}"
   g_value = 1
   arr_length = length(arr)
   _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
-    _g_acc = _g_acc ++ [inspect(arr[i])]
+    _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(arr[i])]
     _g_acc
   end)
   _g
@@ -79,7 +79,7 @@ end).(), ",") end).()}"
           else
             bytes = data
             if (length(bytes) > 10) do
-              "Large binary: #{Kernel.to_string(length(bytes))} bytes"
+              "Large binary: #{Reflaxe.Elixir.HaxeFloat.to_string(length(bytes))} bytes"
             else
               "Other binary pattern"
             end
@@ -93,7 +93,7 @@ end).(), ",") end).()}"
   g_value = 1
   arr_length = length(arr)
   _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
-    _g_acc = _g_acc ++ [inspect(arr[i])]
+    _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(arr[i])]
     _g_acc
   end)
   _g
@@ -101,7 +101,7 @@ end).(), ",") end).()}"
         else
           bytes = data
           if (length(bytes) > 10) do
-            "Large binary: #{Kernel.to_string(length(bytes))} bytes"
+            "Large binary: #{Reflaxe.Elixir.HaxeFloat.to_string(length(bytes))} bytes"
           else
             "Other binary pattern"
           end
@@ -116,15 +116,15 @@ end).(), ",") end).()}"
         cond do
           Enum.at(packet, 1) == 0 ->
             size = Enum.at(packet, 2)
-            "Protocol v1, size=" <> Kernel.to_string(size) <> " (header only)"
+            "Protocol v1, size=" <> Reflaxe.Elixir.HaxeFloat.to_string(size) <> " (header only)"
           true ->
             arr = packet
             if (length(arr) >= 4 and Enum.at(arr, 0) == 1 and Enum.at(arr, 1) == 0) do
-              "Protocol v1, size=" <> Kernel.to_string(Enum.at(arr, 2)) <> ", data=" <> Enum.join((fn ->
+              "Protocol v1, size=" <> Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, 2)) <> ", data=" <> Enum.join((fn ->
   (fn ->
     g = []
     arr_length = length(arr)
-    g = Enum.reduce(3..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [inspect(Enum.at(arr, i))]) end)
+    g = Enum.reduce(3..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]) end)
     g
   end).()
 end).(), ",")
@@ -133,7 +133,7 @@ end).(), ",")
               flags = Enum.at(packet, 1)
               size = Enum.at(packet, 2)
               if (version > 1) do
-                "Future protocol v" <> Kernel.to_string(version)
+                "Future protocol v" <> Reflaxe.Elixir.HaxeFloat.to_string(version)
               else
                 header = packet
                 if (length(header) < 3), do: "Incomplete header", else: "Unknown packet format"
@@ -141,28 +141,28 @@ end).(), ",")
             end
         end
       3 when length(packet) >= 4 and Enum.at(packet, 0) == 1 and Enum.at(packet, 1) == 0 ->
-        "Protocol v1, size=#{Kernel.to_string(arr[2])}, data=#{(fn -> Enum.join((fn ->
+        "Protocol v1, size=#{Reflaxe.Elixir.HaxeFloat.to_string(arr[2])}, data=#{(fn -> Enum.join((fn ->
   _g = []
   g_value = 3
   arr_length = length(arr)
   _g = Enum.reduce(3..(arr_length - 1)//1, _g, fn i, _g_acc ->
-    _g_acc = _g_acc ++ [inspect(arr[i])]
+    _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(arr[i])]
     _g_acc
   end)
   _g
 end).(), ",") end).()}"
-      3 when version > 1 -> "Future protocol v#{Kernel.to_string(version)}"
+      3 when version > 1 -> "Future protocol v#{Reflaxe.Elixir.HaxeFloat.to_string(version)}"
       3 when length(header) < 3 -> "Incomplete header"
       3 -> "Unknown packet format"
       4 ->
         arr = packet
         if (length(arr) >= 4 and Enum.at(arr, 0) == 1 and Enum.at(arr, 1) == 0) do
-          "Protocol v1, size=#{Kernel.to_string(arr[2])}, data=#{(fn -> Enum.join((fn ->
+          "Protocol v1, size=#{Reflaxe.Elixir.HaxeFloat.to_string(arr[2])}, data=#{(fn -> Enum.join((fn ->
   _g = []
   g_value = 3
   arr_length = length(arr)
   _g = Enum.reduce(3..(arr_length - 1)//1, _g, fn i, _g_acc ->
-    _g_acc = _g_acc ++ [inspect(arr[i])]
+    _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(arr[i])]
     _g_acc
   end)
   _g
@@ -172,17 +172,17 @@ end).(), ",") end).()}"
           flags = Enum.at(packet, 1)
           size = Enum.at(packet, 2)
           _payload = Enum.at(packet, 3)
-          "Packet: v#{Kernel.to_string(version)}, flags=#{Kernel.to_string(flags)}, size=#{Kernel.to_string(size)}"
+          "Packet: v#{Reflaxe.Elixir.HaxeFloat.to_string(version)}, flags=#{Reflaxe.Elixir.HaxeFloat.to_string(flags)}, size=#{Reflaxe.Elixir.HaxeFloat.to_string(size)}"
         end
       _ ->
         arr = packet
         if (length(arr) >= 4 and Enum.at(arr, 0) == 1 and Enum.at(arr, 1) == 0) do
-          "Protocol v1, size=#{Kernel.to_string(arr[2])}, data=#{(fn -> Enum.join((fn ->
+          "Protocol v1, size=#{Reflaxe.Elixir.HaxeFloat.to_string(arr[2])}, data=#{(fn -> Enum.join((fn ->
   _g = []
   g_value = 3
   arr_length = length(arr)
   _g = Enum.reduce(3..(arr_length - 1)//1, _g, fn i, _g_acc ->
-    _g_acc = _g_acc ++ [inspect(arr[i])]
+    _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(arr[i])]
     _g_acc
   end)
   _g
@@ -225,31 +225,31 @@ end).(), ",") end).()}"
     t = temperature
     h = humidity
     p = pressure
-    if (t > 20 and t < 25 and h >= 60 and h <= 70) do
+    if (Reflaxe.Elixir.HaxeFloat.gt(t, 20) and Reflaxe.Elixir.HaxeFloat.lt(t, 25) and h >= 60 and h <= 70) do
       "Perfect conditions"
     else
       t = temperature
       h = humidity
       p = pressure
-      if (t > 30 or h > 80) do
+      if (Reflaxe.Elixir.HaxeFloat.gt(t, 30) or h > 80) do
         "Too hot or humid"
       else
         t = temperature
         h = humidity
         p = pressure
-        if (t < 10 or h < 30) do
+        if (Reflaxe.Elixir.HaxeFloat.lt(t, 10) or h < 30) do
           "Too cold or dry"
         else
           t = temperature
           h = humidity
           p = pressure
-          if (p < 1000 or p > 1020) do
+          if (Reflaxe.Elixir.HaxeFloat.lt(p, 1000) or Reflaxe.Elixir.HaxeFloat.gt(p, 1020)) do
             "Abnormal pressure"
           else
             t = temperature
             h = humidity
             p = pressure
-            if (t >= 15 and t <= 25 and h >= 40 and h <= 75 and p >= 1000 and p <= 1020), do: "Acceptable conditions", else: "Unknown conditions"
+            if (Reflaxe.Elixir.HaxeFloat.gte(t, 15) and Reflaxe.Elixir.HaxeFloat.lte(t, 25) and h >= 40 and h <= 75 and Reflaxe.Elixir.HaxeFloat.gte(p, 1000) and Reflaxe.Elixir.HaxeFloat.lte(p, 1020)), do: "Acceptable conditions", else: "Unknown conditions"
           end
         end
       end
@@ -258,33 +258,33 @@ end).(), ",") end).()}"
   def test_type_guards() do
     value = "Hello World"
     v = value
-    if (Std.is(v, String) and length(v) > 10) do
-      "Long string: #{inspect(v)}"
+    if (Std.is(v, String) and Reflaxe.Elixir.HaxeFloat.gt(length(v), 10)) do
+      "Long string: #{Reflaxe.Elixir.HaxeFloat.to_string(v)}"
     else
       v = value
-      if (Std.is(v, String) and length(v) <= 10) do
-        "Short string: #{inspect(v)}"
+      if (Std.is(v, String) and Reflaxe.Elixir.HaxeFloat.lte(length(v), 10)) do
+        "Short string: #{Reflaxe.Elixir.HaxeFloat.to_string(v)}"
       else
         v = value
-        if (Std.is(v, Int) and v > 0) do
-          "Positive integer: #{inspect(v)}"
+        if (Std.is(v, Int) and Reflaxe.Elixir.HaxeFloat.gt(v, 0)) do
+          "Positive integer: #{Reflaxe.Elixir.HaxeFloat.to_string(v)}"
         else
           v = value
-          if (Std.is(v, Int) and v <= 0) do
-            "Non-positive integer: #{inspect(v)}"
+          if (Std.is(v, Int) and Reflaxe.Elixir.HaxeFloat.lte(v, 0)) do
+            "Non-positive integer: #{Reflaxe.Elixir.HaxeFloat.to_string(v)}"
           else
             v = value
             if (Std.is(v, Float)) do
-              "Float value: #{inspect(v)}"
+              "Float value: #{Reflaxe.Elixir.HaxeFloat.to_string(v)}"
             else
               v = value
               if (Std.is(v, Bool)) do
-                "Boolean value: #{inspect(v)}"
+                "Boolean value: #{Reflaxe.Elixir.HaxeFloat.to_string(v)}"
               else
                 v = value
                 cond do
-                  Std.is(v, Array) -> "Array with " <> inspect(length(v)) <> " elements"
-                  Kernel.is_nil(value) -> "Null value"
+                  Std.is(v, Array) -> "Array with " <> Reflaxe.Elixir.HaxeFloat.to_string(length(v)) <> " elements"
+                  Reflaxe.Elixir.HaxeFloat.eq(value, nil) -> "Null value"
                   :true -> "Unknown type"
                 end
               end
@@ -340,12 +340,12 @@ end).(), ",") end).()}"
     _ = 3
     array_result = (case 3 do
       0 -> "Empty"
-      1 -> "Single: #{Kernel.to_string(x)}"
-      2 -> "Pair: #{Kernel.to_string(x)},#{Kernel.to_string(y)}"
-      3 -> "Triple: #{Kernel.to_string(x)},#{Kernel.to_string(y)},#{Kernel.to_string(z)}"
+      1 -> "Single: #{Reflaxe.Elixir.HaxeFloat.to_string(x)}"
+      2 -> "Pair: #{Reflaxe.Elixir.HaxeFloat.to_string(x)},#{Reflaxe.Elixir.HaxeFloat.to_string(y)}"
+      3 -> "Triple: #{Reflaxe.Elixir.HaxeFloat.to_string(x)},#{Reflaxe.Elixir.HaxeFloat.to_string(y)},#{Reflaxe.Elixir.HaxeFloat.to_string(z)}"
       _ ->
         cond do
-          false -> "Many: " <> Kernel.to_string(3) <> " items"
+          false -> "Many: " <> Reflaxe.Elixir.HaxeFloat.to_string(3) <> " items"
           true -> "Other array pattern"
         end
     end)
@@ -398,28 +398,28 @@ end).(), ",") end).()}"
     mem = metrics_memory
     disk = metrics_disk
     net = metrics_network
-    if (cpu > 80 or mem > 90 or disk > 90 or net > 80) do
+    if (Reflaxe.Elixir.HaxeFloat.gt(cpu, 80) or Reflaxe.Elixir.HaxeFloat.gt(mem, 90) or Reflaxe.Elixir.HaxeFloat.gt(disk, 90) or Reflaxe.Elixir.HaxeFloat.gt(net, 80)) do
       "Critical resource usage"
     else
       cpu = metrics_cpu
       mem = metrics_memory
       disk = metrics_disk
       net = metrics_network
-      if (cpu > 60 or mem > 75 or disk > 75 or net > 60) do
+      if (Reflaxe.Elixir.HaxeFloat.gt(cpu, 60) or Reflaxe.Elixir.HaxeFloat.gt(mem, 75) or Reflaxe.Elixir.HaxeFloat.gt(disk, 75) or Reflaxe.Elixir.HaxeFloat.gt(net, 60)) do
         "High resource usage"
       else
         cpu = metrics_cpu
         mem = metrics_memory
         disk = metrics_disk
         net = metrics_network
-        if (cpu > 40 and mem > 50 and disk > 50 and net > 30) do
+        if (Reflaxe.Elixir.HaxeFloat.gt(cpu, 40) and Reflaxe.Elixir.HaxeFloat.gt(mem, 50) and Reflaxe.Elixir.HaxeFloat.gt(disk, 50) and Reflaxe.Elixir.HaxeFloat.gt(net, 30)) do
           "Moderate resource usage"
         else
           cpu = metrics_cpu
           mem = metrics_memory
           disk = metrics_disk
           net = metrics_network
-          if (cpu <= 40 and mem <= 50 and disk <= 50 and net <= 30), do: "Low resource usage", else: "Unknown resource state"
+          if (Reflaxe.Elixir.HaxeFloat.lte(cpu, 40) and Reflaxe.Elixir.HaxeFloat.lte(mem, 50) and Reflaxe.Elixir.HaxeFloat.lte(disk, 50) and Reflaxe.Elixir.HaxeFloat.lte(net, 30)), do: "Low resource usage", else: "Unknown resource state"
         end
       end
     end

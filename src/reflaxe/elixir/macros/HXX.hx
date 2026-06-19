@@ -280,7 +280,8 @@ class HXX {
 					var allowHeexMeta = allowRawHeexRequestedByMeta();
 					if (mode == HxxMode.Tsx && allowHeexMeta) {
 						Context.error("HXX: @:allow_heex is not permitted when @:hxx_mode(\"tsx\") is active.\n"
-							+ "Remove @:allow_heex and keep templates fully typed (no raw `<% ... %>` blocks).",
+							+ "Remove @:allow_heex and keep templates fully typed (no raw `<% ... %>` blocks). "
+							+ "This is a template-mode rule, not a portable/Elixir-first app profile rule.",
 							templateStr.pos);
 					}
 
@@ -296,8 +297,9 @@ class HXX {
 					}
 
 					if (mode == HxxMode.Metal) {
-						Context.warning("HXX: raw `<% ... %>` blocks are enabled (metal mode). This bypasses template linting/typing.\n"
-							+ "Prefer balanced/tsx mode unless you truly need raw HEEx.",
+						Context.warning("HXX: raw `<% ... %>` blocks are enabled (`@:hxx_mode(\"metal\")` template mode). This bypasses template linting/typing.\n"
+							+
+							"Prefer the default TSX inline-markup path unless this local template truly needs raw HEEx. This is not an application-wide metal profile.",
 							templateStr.pos);
 					}
 

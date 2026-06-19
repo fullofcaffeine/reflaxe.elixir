@@ -5,6 +5,9 @@ import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 import reflaxe.elixir.schema.SchemaIntrospection;
+#if hxx_instrument_sys
+import reflaxe.elixir.macros.MacroTimingHelper;
+#end
 
 using haxe.macro.Tools;
 using StringTools;
@@ -14,18 +17,19 @@ class EctoQueryMacros {
 	#if macro
 	public static macro function from<T>(schemaClass:ExprOf<Class<T>>):ExprOf<ecto.TypedQuery.TypedQuery<T>> {
 		#if hxx_instrument_sys
-		var __t0 = haxe.Timer.stamp();
+		return MacroTimingHelper.time("EctoQueryMacros.from", () -> fromInternal(schemaClass));
+		#else
+		return fromInternal(schemaClass);
 		#end
+	}
+
+	static function fromInternal<T>(schemaClass:ExprOf<Class<T>>):ExprOf<ecto.TypedQuery.TypedQuery<T>> {
 		try {
 			var classType = getClassType(schemaClass);
 			var __result:ExprOf<ecto.TypedQuery.TypedQuery<T>> = macro {
 				var query = untyped __elixir__('(require Ecto.Query; Ecto.Query.from(t in {0}, []))', $v{classType.name});
 				new ecto.TypedQuery.TypedQuery(query);
 			};
-			#if hxx_instrument_sys
-			var __elapsed = (haxe.Timer.stamp() - __t0) * 1000.0;
-			Context.warning('[MacroTiming] name=EctoQueryMacros.from elapsed_ms=' + Std.int(__elapsed), schemaClass.pos);
-			#end
 			return __result;
 		} catch (e:haxe.Exception) {
 			// Macro boundary: macro execution can fail for many reasons (invalid AST shapes, schema
@@ -37,8 +41,13 @@ class EctoQueryMacros {
 
 	public static macro function where<T>(query:ExprOf<ecto.TypedQuery.TypedQuery<T>>, condition:ExprOf<T->Bool>):ExprOf<ecto.TypedQuery.TypedQuery<T>> {
 		#if hxx_instrument_sys
-		var __t0 = haxe.Timer.stamp();
+		return MacroTimingHelper.time("EctoQueryMacros.where", () -> whereInternal(query, condition));
+		#else
+		return whereInternal(query, condition);
 		#end
+	}
+
+	static function whereInternal<T>(query:ExprOf<ecto.TypedQuery.TypedQuery<T>>, condition:ExprOf<T->Bool>):ExprOf<ecto.TypedQuery.TypedQuery<T>> {
 		var conditionExpr = extractLambdaBody(condition);
 		var fieldAccesses = extractFieldAccesses(conditionExpr);
 		var classType = getQueryType(query);
@@ -52,10 +61,6 @@ class EctoQueryMacros {
 			var newQuery = untyped __elixir__('(require Ecto.Query; Ecto.Query.where({0}, [t], {1}))', $query.query, $v{elixirCondition});
 			new ecto.TypedQuery.TypedQuery(newQuery);
 		};
-		#if hxx_instrument_sys
-		var __elapsed = (haxe.Timer.stamp() - __t0) * 1000.0;
-		Context.warning('[MacroTiming] name=EctoQueryMacros.where elapsed_ms=' + Std.int(__elapsed), condition.pos);
-		#end
 		return __macroResult;
 	}
 

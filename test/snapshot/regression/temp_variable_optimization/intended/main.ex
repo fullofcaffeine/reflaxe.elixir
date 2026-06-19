@@ -6,7 +6,7 @@ defmodule Main do
   end
   defp test_basic_ternary() do
     config = %{:name => "test"}
-    _id = if (not Kernel.is_nil(config)) do
+    _id = if (Reflaxe.Elixir.HaxeFloat.neq(config, nil)) do
       (case config do
         dyn_obj ->
           (case Map.fetch(dyn_obj, "id") do

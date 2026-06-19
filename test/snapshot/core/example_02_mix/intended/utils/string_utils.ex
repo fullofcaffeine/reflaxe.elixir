@@ -119,7 +119,7 @@ defmodule StringUtils do
             String.length(Enum.join((fn -> Enum.slice(parts, 0..-2//1) end).(), " "))
           _ -> -1
         end)
-        truncated = if (last_space > trunc(max_length * 0.7)) do
+        truncated = if (last_space > trunc(Reflaxe.Elixir.HaxeFloat.mul(max_length, 0.7))) do
           String.slice(truncated, 0, last_space)
         else
           truncated

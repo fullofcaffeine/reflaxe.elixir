@@ -410,6 +410,12 @@ class ElixirASTTransformer {
 		result = context != null ? reflaxe.elixir.ast.transformers.ReceiverEffectLoweringTransforms.contextualPass(result,
 			context) : reflaxe.elixir.ast.transformers.ReceiverEffectLoweringTransforms.pass(result);
 
+		// ReceiverEffectLowering can expose local `i++`/`i--` matches inside reducer
+		// bodies after the normal pass registry has already run. Run the accumulator
+		// pass once more so those late matches update `acc_i` in the reducer scope
+		// instead of rebinding the outer `i` and getting lost on the next iteration.
+		result = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.reduceWhileAccumulatorPass(result);
+
 		// ------------------------------------------------------------------
 		// AbsoluteFinal Snapshot (debug_ast_snapshots)
 		//

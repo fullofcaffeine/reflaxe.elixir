@@ -122,8 +122,13 @@ class ReduceWhileAccumulatorTransform {
 		// to the outer locals as accumulator updates instead of unrelated shadowed locals.
 		var outerToAccAliases = buildOuterToAccumulatorAliases(initialAcc, accVarNames);
 
+		// Nested loops are lowered to nested Enum.reduce_while calls. Transform those
+		// inner reducers first, otherwise the outer reducer pass treats them as opaque
+		// function calls and misses loop-local mutations such as an inner `y++`.
+		var bodyWithNestedReducers = transformReduceWhile(clause.body);
+
 		// Transform the body to handle variable mutations properly
-		var transformedBody = transformClauseBody(clause.body, accVarNames, outerToAccAliases);
+		var transformedBody = transformClauseBody(bodyWithNestedReducers, accVarNames, outerToAccAliases);
 
 		return {
 			args: clause.args,
@@ -176,8 +181,16 @@ class ReduceWhileAccumulatorTransform {
 				return null;
 			if (accVarNames.indexOf(varName) >= 0)
 				return varName;
+			var baseVarName = varName.length > 1 && varName.charAt(0) == "_" ? varName.substr(1) : varName;
+			if (accVarNames.indexOf(baseVarName) >= 0)
+				return baseVarName;
 			if (outerToAccAliases != null && outerToAccAliases.exists(varName)) {
 				var mapped = outerToAccAliases.get(varName);
+				if (mapped != null && accVarNames.indexOf(mapped) >= 0)
+					return mapped;
+			}
+			if (outerToAccAliases != null && baseVarName != varName && outerToAccAliases.exists(baseVarName)) {
+				var mapped = outerToAccAliases.get(baseVarName);
 				if (mapped != null && accVarNames.indexOf(mapped) >= 0)
 					return mapped;
 			}
@@ -196,6 +209,31 @@ class ReduceWhileAccumulatorTransform {
 						n;
 				}
 			});
+		}
+
+		function rewriteAccumulatorVarRefs(expr:ElixirAST, sourceName:String, accName:String):ElixirAST {
+			var aliased = rewriteAliasedVarRefs(expr);
+			if (aliased == null || sourceName == null || accName == null)
+				return aliased;
+			var sourceBaseName = sourceName.length > 1 && sourceName.charAt(0) == "_" ? sourceName.substr(1) : sourceName;
+			return ElixirASTTransformer.transformAST(aliased, function(n:ElixirAST):ElixirAST {
+				return switch (n.def) {
+					case EVar(name) if (name == sourceName || name == sourceBaseName):
+						makeAST(EVar(accName));
+					default:
+						n;
+				}
+			});
+		}
+
+		function rewritePostfixValue(expr:ElixirAST, sourceName:String, accName:String):ElixirAST {
+			var sourceBaseName = sourceName.length > 1 && sourceName.charAt(0) == "_" ? sourceName.substr(1) : sourceName;
+			return switch (expr.def) {
+				case EVar(name) if (name == sourceName || name == sourceBaseName):
+					makeAST(EVar(accName));
+				default:
+					rewriteAccumulatorVarRefs(expr, sourceName, accName);
+			};
 		}
 
 		// Convert a branch body into an expression that yields the updated accumulator variable,
@@ -380,6 +418,18 @@ class ReduceWhileAccumulatorTransform {
 					return makeAST(ECase(expr, transformedBranches));
 				}
 
+			case EMatch(pattern, value):
+				// If an ordinary assignment contains a nested loop on its RHS, still
+				// transform that loop. The left side is not an accumulator write, but
+				// the nested reducer may have its own accumulator locals to thread.
+				return makeAST(EMatch(pattern, transformBodyRecursive(value, accVarNames, accUpdates, preserveAssignments, outerToAccAliases)));
+
+			case EBinary(Match, left, value):
+				return makeAST(EBinary(Match, left, transformBodyRecursive(value, accVarNames, accUpdates, preserveAssignments, outerToAccAliases)));
+
+			case ERemoteCall(module, "reduce_while", args) if (isEnumModule(module)):
+				return transformReduceWhile(body);
+
 			case EBlock(exprs):
 				// Process block expressions
 				var transformedExprs = [];
@@ -395,6 +445,69 @@ class ReduceWhileAccumulatorTransform {
 
 					// Check if this is an assignment to an accumulator variable
 					switch (expr.def) {
+						case EReceiverEffect(effect):
+							var accNameEffect = resolveAccumulatorName(effect.receiver.name);
+							if (accNameEffect == null || effect.resultShape != UpdatedReceiverAndValue) {
+								var transformedEffect = transformBodyRecursive(expr, accVarNames, localUpdates, preserveAssignments, outerToAccAliases);
+								if (transformedEffect != null)
+									transformedExprs.push(transformedEffect);
+								continue;
+							}
+
+							switch (effect.operation.def) {
+								case ETuple([updatedValue, expressionValue]):
+									// Some receiver effects reach this pass before ReceiverEffectLowering
+									// has turned them into a match. Handle that semantic node directly,
+									// otherwise a loop-local `i++` can update the outer `i` instead of the
+									// reducer accumulator `acc_i`.
+									var rewrittenUpdatedValue = rewriteAccumulatorVarRefs(updatedValue, effect.receiver.name, accNameEffect);
+									localUpdates.set(accNameEffect, rewrittenUpdatedValue);
+									if (preserveAssignments) transformedExprs.push(makeAST(EMatch(PVar(accNameEffect), rewrittenUpdatedValue)));
+								default:
+									var transformedEffect = transformBodyRecursive(expr, accVarNames, localUpdates, preserveAssignments, outerToAccAliases);
+									if (transformedEffect != null) transformedExprs.push(transformedEffect);
+							}
+
+						case EMatch(PTuple([PVar(varName), PVar(valueName)]), {def: ETuple([updatedValue, expressionValue])}):
+							var accNameTuple = resolveAccumulatorName(varName);
+							if (accNameTuple == null) {
+								var transformedTuple = transformBodyRecursive(expr, accVarNames, localUpdates, preserveAssignments, outerToAccAliases);
+								if (transformedTuple != null)
+									transformedExprs.push(transformedTuple);
+								continue;
+							}
+
+							// Haxe postfix mutation in a value expression lowers to:
+							//   {outer_var, value_tmp} = {outer_var + 1, outer_var}
+							// Inside Enum.reduce_while, `outer_var` is really part of the
+							// accumulator tuple. Keep the expression temp as a local binding,
+							// and thread the updated value through the reducer accumulator.
+							var rewrittenUpdatedValue = rewriteAccumulatorVarRefs(updatedValue, varName, accNameTuple);
+							var rewrittenExpressionValue = rewritePostfixValue(expressionValue, varName, accNameTuple);
+							localUpdates.set(accNameTuple, rewrittenUpdatedValue);
+
+							transformedExprs.push(makeAST(EMatch(PVar(valueName), rewrittenExpressionValue)));
+							if (preserveAssignments) transformedExprs.push(makeAST(EMatch(PVar(accNameTuple), rewrittenUpdatedValue)));
+
+						case EBinary(Match, {def: ETuple([{def: EVar(varName)}, {def: EVar(valueName)}])}, {def: ETuple([updatedValue, expressionValue])}):
+							var accNameTuple = resolveAccumulatorName(varName);
+							if (accNameTuple == null) {
+								var transformedTuple = transformBodyRecursive(expr, accVarNames, localUpdates, preserveAssignments, outerToAccAliases);
+								if (transformedTuple != null)
+									transformedExprs.push(transformedTuple);
+								continue;
+							}
+
+							// Some cleanup passes represent the same postfix mutation as a binary
+							// match instead of an EMatch pattern. Treat both shapes the same so a
+							// loop-local `i++` updates the reducer accumulator, not the outer `i`.
+							var rewrittenUpdatedValue = rewriteAccumulatorVarRefs(updatedValue, varName, accNameTuple);
+							var rewrittenExpressionValue = rewritePostfixValue(expressionValue, varName, accNameTuple);
+							localUpdates.set(accNameTuple, rewrittenUpdatedValue);
+
+							transformedExprs.push(makeAST(EMatch(PVar(valueName), rewrittenExpressionValue)));
+							if (preserveAssignments) transformedExprs.push(makeAST(EMatch(PVar(accNameTuple), rewrittenUpdatedValue)));
+
 						case EMatch(PVar(varName), value):
 							var accName = resolveAccumulatorName(varName);
 							if (accName == null) {

@@ -13,7 +13,7 @@ defmodule SemaphoreRuntime do
     acquire_with_timeout(ref, :infinity, nil)
   end
   def try_acquire(ref, timeout) do
-    should_queue = not Kernel.is_nil(timeout) and timeout > 0
+    should_queue = Reflaxe.Elixir.HaxeFloat.neq(timeout, nil) and Reflaxe.Elixir.HaxeFloat.gt(timeout, 0)
     timeout_ms = if (should_queue), do: seconds_to_timeout(timeout), else: 5000
     _ = acquire_with_timeout(ref, timeout_ms, should_queue)
   end
@@ -39,13 +39,13 @@ defmodule SemaphoreRuntime do
         )
   end
   defp seconds_to_timeout(timeout) do
-    if (Kernel.is_nil(timeout)) do
+    if (Reflaxe.Elixir.HaxeFloat.eq(timeout, nil)) do
       0
     else
-      if (timeout <= 0) do
+      if (Reflaxe.Elixir.HaxeFloat.lte(timeout, 0)) do
         0
       else
-        ceil(timeout * 1000)
+        Reflaxe.Elixir.HaxeFloat.ceil_int(Reflaxe.Elixir.HaxeFloat.mul(timeout, 1000))
       end
     end
   end

@@ -8,22 +8,26 @@ package reflaxe.elixir.macros;
  * - Lightweight timing utility for macro hotspots, gated behind `-D hxx_instrument_sys`.
  *
  * WHY
- * - Provides consistent, grep-friendly timing lines without string concatenation or StringBuf.
+ * - Uses Haxe's macro-native timer API instead of `haxe.Timer`.
+ * - That avoids pulling target `sys.*` classes into cross-target compilations.
  *
  * HOW
- * - Wrap a computation in `time("label", () -> { ... })`; prints `[MacroTiming] name=<label> elapsed_ms=<ms>`.
+ * - Wrap a computation in `time("label", () -> { ... })`.
+ * - Compile with `-D hxx_instrument_sys --times` to include the label in Haxe's timing report.
  */
 class MacroTimingHelper {
 	public static inline function time<T>(label:String, fn:() -> T):T {
-		var startSeconds = haxe.Timer.stamp();
-		var result = fn();
-		var elapsedMs = Std.int((haxe.Timer.stamp() - startSeconds) * 1000.0);
-		var parts = ["[MacroTiming] name=", label, " elapsed_ms=", Std.string(elapsedMs)];
-		#if sys
-		#else
-		haxe.macro.Context.info(parts.join(""), haxe.macro.Context.currentPos());
-		#end
-		return result;
+		var stopTimer = haxe.macro.Context.timer(label);
+		try {
+			var result = fn();
+			stopTimer();
+			return result;
+		} catch (error:Dynamic) {
+			// Stop the timer before rethrowing so failed macro expansions still leave
+			// Haxe's timing report in a consistent state.
+			stopTimer();
+			throw error;
+		}
 	}
 }
 #end

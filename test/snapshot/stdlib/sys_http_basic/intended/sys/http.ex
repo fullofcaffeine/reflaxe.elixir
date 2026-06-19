@@ -70,7 +70,7 @@ defmodule Http do
       body = Bytes.of_data(HttpRuntime.body(result))
       _ = HttpBaseRuntime.set_response_bytes(struct.http_base_ref, body)
       _ = write_response_body(api, body)
-      if (status < 200 or status >= 400), do: fail(struct, "Http Error ##{Kernel.to_string(status)}")
+      if (status < 200 or status >= 400), do: fail(struct, "Http Error ##{Reflaxe.Elixir.HaxeFloat.to_string(status)}")
     end
   end
   def get_response_header_values(struct, key) do
@@ -184,7 +184,7 @@ defmodule Http do
     end
   end
   defp timeout_millis(seconds) do
-    if (seconds < 0), do: 0, else: trunc(seconds * 1000)
+    if (Reflaxe.Elixir.HaxeFloat.lt(seconds, 0)), do: 0, else: trunc(Reflaxe.Elixir.HaxeFloat.mul(seconds, 1000))
   end
   def set_header(struct, name, value) do
     HttpBase.set_header(struct, name, value)

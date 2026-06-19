@@ -12,7 +12,7 @@ case Integer.parse(s) do
 end
   end
   def from_float(f) do
-    if (f != f or not f == f and f != 1.79769313486231571e+308 and f != -1.79769313486231571e+308) do
+    if (Reflaxe.Elixir.HaxeFloat.is_na_n(f) or not Reflaxe.Elixir.HaxeFloat.is_finite(f)) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Number is NaN or Infinite"]
     end
     no_fractions = (f - rem(f, 1))

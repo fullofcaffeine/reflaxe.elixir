@@ -72,7 +72,7 @@ defmodule PositiveInt_Impl_ do
     this1
   end
   def to_string(this1) do
-    inspect(this1)
+    Reflaxe.Elixir.HaxeFloat.to_string(this1)
   end
   def equals_int(this1, value) do
     this1 == value

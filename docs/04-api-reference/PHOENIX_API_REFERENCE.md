@@ -106,13 +106,17 @@ Relevant strictness/authoring metadata:
 
 - `@:presence` marks a presence module
 - `@:presenceTopic("...")` (optional) supplies default topic wiring for presence helpers
+- `PresenceTopic.of("...")` and `PresenceKey.of("...")` document app-owned topic/key values at the type level
 - Prefer generated app-module helpers from LiveViews: `ChatPresence.trackWithSocket(socket, topic, key, meta)`, `ChatPresence.updateWithSocket(socket, topic, key, meta)`, `ChatPresence.untrackWithSocket(socket, topic, key)`, `ChatPresence.list(topic)`, and `ChatPresence.getByKey(topic, key)`
 - Use raw `phoenix.Presence` only for lower-level Phoenix interop; normal app code should call the generated module so emitted Elixir goes through `<AppWeb>.Presence.*`
+- Raw strings still work because Phoenix topics are naturally dynamic. Use typed tokens first for fixed app concepts, and plain strings when the topic/key is already coming from dynamic routing or protocol data.
 
 Canonical Haxe shape:
 
 ```haxe
 import phoenix.PresenceBehavior;
+import phoenix.PresenceKey;
+import phoenix.PresenceTopic;
 
 typedef PresenceMeta = {
   var onlineAt:Float;
@@ -124,8 +128,9 @@ typedef PresenceMeta = {
 class ChatPresence implements PresenceBehavior {}
 
 // From a LiveView callback:
-var topic = "chat:presence:lobby";
-live = ChatPresence.trackWithSocket(live, topic, currentUserId, {
+var topic = PresenceTopic.of("chat:presence:lobby");
+var key = PresenceKey.of(currentUserId);
+live = ChatPresence.trackWithSocket(live, topic, key, {
   onlineAt: Date.now().getTime(),
   name: currentUserName
 });
@@ -141,7 +146,7 @@ PhoenixChatWeb.Presence.track(self(), topic, current_user_id, %{online_at: onlin
 online_users = PhoenixChatWeb.Presence.list(topic)
 ```
 
-With `@:presenceTopic("users")`, the macro also provides `trackSimple(key, meta)`, `updateSimple(key, meta)`, `untrackSimple(key)`, and `listSimple()` for fixed-topic modules. Use explicit `topic` helpers when the topic is dynamic, such as per-room chat presence.
+With `@:presenceTopic("users")`, the macro also provides `trackSimple(key, meta)`, `updateSimple(key, meta)`, `untrackSimple(key)`, and `listSimple()` for fixed-topic modules. Pass `PresenceKey.of(...)` for app-owned keys. Use explicit `PresenceTopic.of(...)` helpers when the topic is dynamic, such as per-room chat presence.
 
 ## Testing Surface
 
@@ -149,6 +154,7 @@ Main test APIs:
 
 - `phoenix.test.ConnTest`
 - `phoenix.test.LiveViewTest`
+- `phoenix.test.LiveViewEventName`
 - `phoenix.test.LiveViewMountResult`
 - `phoenix.test.LiveView`
 - `phoenix.test.Conn`
@@ -166,6 +172,33 @@ var initialHtml = result.initialHtml();
 The wrapper is `from Term` / `to Term`, so existing raw tuple helpers such as
 `LiveViewTest.view(result)` and `LiveViewTest.initial_html(result)` remain available for
 compatibility.
+
+For app-owned assigns and LiveView event names, tests can use typed tokens while still emitting
+ordinary Phoenix calls:
+
+```haxe
+import phoenix.AssignKeys;
+import phoenix.test.LiveViewEventName;
+import phoenix.test.LiveViewTest;
+
+typedef CounterAssigns = {
+  var count:Int;
+}
+
+@:phxEventNames
+enum abstract CounterEvent(String) to String {
+  var Increment = "increment";
+}
+
+var keys = AssignKeys.of(CounterAssigns);
+var count:Int = LiveViewTest.get_assign_key(liveView, keys.count);
+liveView = LiveViewTest.render_click_event(liveView, LiveViewEventName.of(CounterEvent.Increment));
+```
+
+Why this shape: `AssignKeys.of(...)` reuses the same assign-key tokens as LiveView code, and
+`LiveViewEventName.of(...)` works well with event registries already used by HXX strict event
+checking. CSS selectors remain raw strings because selector syntax is inherently textual and should
+mirror Phoenix directly.
 
 Keep most coverage in Haxe-authored ExUnit integration tests and use Playwright only as thin smoke coverage.
 

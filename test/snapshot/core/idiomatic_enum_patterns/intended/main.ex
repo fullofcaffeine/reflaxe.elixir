@@ -29,7 +29,7 @@ defmodule Main do
     (case msg do
       {:todo_created, _todo} -> "New todo created"
       {:todo_updated, _todo} -> "Todo updated"
-      {:todo_deleted, id} -> "Todo #{Kernel.to_string(id)} deleted"
+      {:todo_deleted, id} -> "Todo #{Reflaxe.Elixir.HaxeFloat.to_string(id)} deleted"
       {:bulk_update, action} ->
         action_str = (case parse_bulk_action(action) do
           {:complete_all} -> "Completing all todos"
@@ -39,8 +39,8 @@ defmodule Main do
           {:remove_tag, t} -> "Removing tag: #{t}"
         end)
         "Bulk operation: #{action_str}"
-      {:user_online, user_id} -> "User #{Kernel.to_string(user_id)} is online"
-      {:user_offline, user_id} -> "User #{Kernel.to_string(user_id)} is offline"
+      {:user_online, user_id} -> "User #{Reflaxe.Elixir.HaxeFloat.to_string(user_id)} is online"
+      {:user_offline, user_id} -> "User #{Reflaxe.Elixir.HaxeFloat.to_string(user_id)} is offline"
       {:system_alert, _message, level} -> "#{level}: #{msg}"
     end)
   end

@@ -451,13 +451,15 @@ class MyLive {
 }
 ```
 
+Most code should not need this metadata. TSX-style inline markup is the default for new templates; `@:hxx_mode(...)` exists for local migration/interop overrides. It controls HXX/HEEx template parsing only. It is not a portable/Elixir-first application profile and it does not switch compiler backends.
+
 Modes:
 
 - default / `@:hxx_mode("tsx")`: strict typed authoring and the default path for new code. Disallows raw `<% ... %>` escape hatches, disallows legacy string-template markers (`#{...}`, `<if { ... }>` / `<for { ... }>`), and rejects `hxx('...')` / `HXX.block('...')` usage in that scope. Supports typed TSX control tags (`<if ${...}>`, `<for ${item in items}>`) and typed spread attrs in tag position (`{assigns.attrs}` / `{@assigns.attrs}`). The metadata form is only needed to override an enclosing/global non-TSX mode.
 - `@:hxx_mode("balanced")`: compatibility behavior; inline markup is available, but legacy template strings are allowed. Raw `<% ... %>` requires `@:allow_heex` (or `-D hxx_allow_raw_heex` during migration). Use this only for migration modules or legacy test fixtures.
 - `@:hxx_mode("metal")`: allows raw `<% ... %>` without `@:allow_heex` (discouraged; emits warnings).
 
-`metal` is scoped to HXX/HEEx template authoring. It is not an application-wide Reflaxe.Elixir profile; use `portable` or `Elixir-first` for that decision.
+`metal` is scoped to HXX/HEEx template authoring. It is not an application-wide Reflaxe.Elixir profile; use `portable` or `Elixir-first` terminology for that source-authoring decision.
 
 Precedence:
 
@@ -507,14 +509,17 @@ Transforms a class into a Phoenix.Presence module for real-time presence trackin
 **Basic Usage**:
 ```haxe
 import phoenix.PresenceBehavior;
+import phoenix.PresenceKey;
+import phoenix.PresenceTopic;
 
 @:native("TodoAppWeb.Presence")
 @:presence
 class TodoPresence implements PresenceBehavior {}
 
 // From a LiveView callback:
-var topic = "users";
-socket = TodoPresence.trackWithSocket(socket, topic, Std.string(user.id), {
+var topic = PresenceTopic.of("users");
+var key = PresenceKey.of(Std.string(user.id));
+socket = TodoPresence.trackWithSocket(socket, topic, key, {
     onlineAt: Date.now().getTime(),
     userName: user.name,
     status: "active"
@@ -1733,6 +1738,8 @@ Frequently-used Haxe metadata in user-facing extern/abstraction layers:
 
 Optional presence helper metadata to provide a default topic for presence operations and reduce repeated string literals.
 
+Presence topics and keys are still Elixir strings at runtime. Prefer `PresenceTopic.of(...)` and `PresenceKey.of(...)` in Haxe code when the value is an app-owned concept; raw strings remain accepted for dynamic Phoenix interop.
+
 When set on a `@:presence` class implementing `PresenceBehavior`, the macro also generates fixed-topic helpers:
 
 - `trackSimple(key, meta)`
@@ -1740,7 +1747,7 @@ When set on a `@:presence` class implementing `PresenceBehavior`, the macro also
 - `untrackSimple(key)`
 - `listSimple()`
 
-Prefer explicit topic helpers (`trackWithSocket(socket, topic, key, meta)`, `list(topic)`, `getByKey(topic, key)`) when the topic is dynamic, such as per-room chat or per-tenant resources.
+Prefer explicit topic helpers (`trackWithSocket(socket, topic, key, meta)`, `list(topic)`, `getByKey(topic, key)`) when the topic is dynamic, such as per-room chat or per-tenant resources. In that case, build the topic with `PresenceTopic.of("room:" + roomId)` so the Haxe API still records the value's purpose.
 
 ### @:query (Status)
 

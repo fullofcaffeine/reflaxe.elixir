@@ -60,7 +60,7 @@ defmodule Main do
     "#{a}, #{b}, #{c}"
   end
   defp process_mixed(a, b, c, d) do
-    "#{a}, #{b}, #{Kernel.to_string(c)}, #{Kernel.to_string(d)}"
+    "#{a}, #{b}, #{Reflaxe.Elixir.HaxeFloat.to_string(c)}, #{Reflaxe.Elixir.HaxeFloat.to_string(d)}"
   end
   defp get_value(key) do
     "value_#{key}"
@@ -69,6 +69,6 @@ defmodule Main do
     "[#{s}]"
   end
   defp compute_value(n) do
-    "computed_#{Kernel.to_string(n)}"
+    "computed_#{Reflaxe.Elixir.HaxeFloat.to_string(n)}"
   end
 end

@@ -6,7 +6,7 @@ defmodule Main do
     config = %{}
     _ = config |> Map.put("host", "localhost") |> Map.put("port", "4000") |> Map.put("scheme", "https") |> Map.put("debug", "true")
     data = %{}
-    _ = data |> Map.put("item_#{Kernel.to_string(0)}", 0) |> Map.put("item_#{Kernel.to_string(1)}", 10) |> Map.put("item_#{Kernel.to_string(2)}", 20) |> Map.put("item_#{Kernel.to_string(3)}", 30) |> Map.put("item_#{Kernel.to_string(4)}", 40)
+    _ = data |> Map.put("item_#{Reflaxe.Elixir.HaxeFloat.to_string(0)}", 0) |> Map.put("item_#{Reflaxe.Elixir.HaxeFloat.to_string(1)}", 10) |> Map.put("item_#{Reflaxe.Elixir.HaxeFloat.to_string(2)}", 20) |> Map.put("item_#{Reflaxe.Elixir.HaxeFloat.to_string(3)}", 30) |> Map.put("item_#{Reflaxe.Elixir.HaxeFloat.to_string(4)}", 40)
     nested = %{}
     inner = %{}
     inner = Map.put(inner, "key", "value")

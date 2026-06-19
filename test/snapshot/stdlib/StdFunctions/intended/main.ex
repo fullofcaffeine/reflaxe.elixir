@@ -1,8 +1,8 @@
 defmodule Main do
   def main() do
-    _float_str = inspect(3.14)
-    _null_str = inspect(nil)
-    _array_str = inspect([1, 2, 3])
+    _float_str = Reflaxe.Elixir.HaxeFloat.to_string(3.14)
+    _null_str = Reflaxe.Elixir.HaxeFloat.to_string(nil)
+    _array_str = Reflaxe.Elixir.HaxeFloat.to_string([1, 2, 3])
     _parsed1 = (case Integer.parse("123") do
       {num, _} -> num
       :error -> nil
@@ -15,21 +15,12 @@ defmodule Main do
       {num, _} -> num
       :error -> nil
     end)
-    _float1 = (case Float.parse("3.14") do
-      {num, _} -> num
-      :error -> nil
-    end)
-    _float2 = (case Float.parse("2.71828") do
-      {num, _} -> num
-      :error -> nil
-    end)
-    _float3 = (case Float.parse("invalid") do
-      {num, _} -> num
-      :error -> nil
-    end)
+    _ = Reflaxe.Elixir.HaxeFloat.parse("3.14")
+    _ = Reflaxe.Elixir.HaxeFloat.parse("2.71828")
+    _ = Reflaxe.Elixir.HaxeFloat.parse("invalid")
     _is_string = is_binary("hello")
     _is_int = Std.is(42, Int)
-    _is_float = Std.is(3.14, Float)
+    _is_float = Reflaxe.Elixir.HaxeFloat.is_haxe_float(3.14)
     _is_bool = Std.is(true, Bool)
     _is_array = is_list([1, 2, 3])
     _check_string = Std.is("world", String)
@@ -57,14 +48,8 @@ defmodule Main do
       {num, _} -> num
       :error -> nil
     end)
-    _float_inf = (case Float.parse("Infinity") do
-      {num, _} -> num
-      :error -> nil
-    end)
-    float_neg_inf = (case Float.parse("-Infinity") do
-      {num, _} -> num
-      :error -> nil
-    end)
+    _float_inf = Reflaxe.Elixir.HaxeFloat.parse("Infinity")
+    float_neg_inf = Reflaxe.Elixir.HaxeFloat.parse("-Infinity")
     float_neg_inf
   end
 end

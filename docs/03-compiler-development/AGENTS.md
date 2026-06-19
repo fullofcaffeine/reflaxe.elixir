@@ -392,7 +392,7 @@ function build(): String {
 - **Type safety** - avoid `Dynamic` and untyped code
 
 ### Development Workflow Standards
-- **Commit after each completed task** - Incremental progress must be saved with comprehensive commit messages
+- **Commit and push after each completed task** - Incremental progress must be saved with comprehensive commit messages and pushed before starting the next task, unless the user explicitly asks not to push or the remote is blocked
 - **Test before committing** - Run `npm test` to verify no regressions
 - **Document significant changes** - Update relevant documentation after major modifications
 - **Use git bisect for debugging** - Commit often to enable effective regression debugging
@@ -401,8 +401,9 @@ function build(): String {
 
 After each task is completed and locally verified, you must:
 
-1) Commit immediately
+1) Commit and push immediately
 - Use a descriptive message that summarizes WHAT changed and WHY.
+- Push the commit before starting the next task so CI and collaborators see the same state.
 - Keep the working tree clean; do not leave generated artifacts untracked.
 
 2) If a bug/regression appears and the root cause is not obvious

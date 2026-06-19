@@ -59,6 +59,7 @@ Elixir idioms like `{:ok, value}` / `{:error, reason}` are represented by typed 
 - Generic `{:ok, value}` / `{:error, reason}`: `haxe.functional.Result` (preferred; marked Elixir-idiomatic by `reflaxe.elixir.CompilerInit.Start()`)
 - LiveView callback tuples (`{:ok, socket}`, `{:noreply, socket}`): `std/phoenix/Phoenix.hx`
 - Atoms: `std/elixir/types/Atom.hx`
+- Opaque Phoenix/Ecto/interop terms: `elixir.types.Term`, decoded near the boundary with `elixir.types.TermDecoder`
 
 Example (generic result):
 

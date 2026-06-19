@@ -32,6 +32,52 @@ abstract PipelineName(String) to String {}
 abstract PlugName(String) to String {}
 
 /**
+ * Typed Phoenix resource action token for `resources(..., {only: ...})` and
+ * `resources(..., {except: ...})`.
+ *
+ * WHY
+ * - Phoenix resource actions are a fixed set (`:index`, `:show`, etc.).
+ * - A typed token gives autocomplete and catches misspellings earlier than Elixir compilation.
+ *
+ * HOW
+ * - Prefer the `resourceIndex`, `resourceShow`, ... constants from `RouterDsl`.
+ * - Existing string literals such as `"index"` stay source-compatible, but are checked at
+ *   compile time and converted into this token type.
+ */
+abstract ResourceAction(String) to String {
+	#if macro
+	static function validateLiteral(expr:ExprOf<String>):String {
+		return switch (expr.expr) {
+			case EConst(CString(value, _)):
+				var isValid = switch (value) {
+					case "index" | "show" | "new" | "create" | "edit" | "update" | "delete":
+						true;
+					default:
+						false;
+				}
+				if (!isValid) {
+					Context.error('Resource action must be one of: "index", "show", "new", "create", "edit", "update", "delete".', expr.pos);
+				}
+				value;
+			default:
+				Context.error("Resource action compatibility values must be string literals. Use RouterDsl resource-action constants for new code.", expr.pos);
+				null;
+		};
+	}
+	#end
+
+	@:from
+	public static macro function fromStringLiteral(value:ExprOf<String>):ExprOf<ResourceAction> {
+		#if macro
+		var actionValue = validateLiteral(value);
+		return macro(cast($v{actionValue} : String) : reflaxe.elixir.macros.ResourceAction);
+		#else
+		return null;
+		#end
+	}
+}
+
+/**
  * Typed plug target token.
  *
  * Supports:
@@ -121,8 +167,8 @@ typedef LiveSessionOptions = {
 }
 
 typedef ResourceOptions = {
-	@:optional var only:Array<String>;
-	@:optional var except:Array<String>;
+	@:optional var only:Array<ResourceAction>;
+	@:optional var except:Array<ResourceAction>;
 	@:optional var param:String;
 	@:optional var asName:String;
 	@:optional var singleton:Bool;
@@ -162,6 +208,15 @@ class RouterDsl {
 	public static inline var protect_from_forgery:PlugName = cast "protect_from_forgery";
 	public static inline var put_secure_browser_headers:PlugName = cast "put_secure_browser_headers";
 	public static inline var put_root_layout:PlugName = cast "put_root_layout";
+
+	// Phoenix resource actions for `only` and `except`.
+	public static inline var resourceIndex:ResourceAction = cast "index";
+	public static inline var resourceShow:ResourceAction = cast "show";
+	public static inline var resourceNew:ResourceAction = cast "new";
+	public static inline var resourceCreate:ResourceAction = cast "create";
+	public static inline var resourceEdit:ResourceAction = cast "edit";
+	public static inline var resourceUpdate:ResourceAction = cast "update";
+	public static inline var resourceDelete:ResourceAction = cast "delete";
 
 	#if macro
 	static function validateTypedAtomName(expr:ExprOf<String>, label:String):String {

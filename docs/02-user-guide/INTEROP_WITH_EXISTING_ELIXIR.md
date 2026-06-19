@@ -46,6 +46,7 @@ package my_app.billing;
 
 import elixir.ElixirResult;
 import elixir.types.Term;
+import elixir.types.TermDecoder;
 import haxe.functional.Result;
 
 @:native("MyApp.LegacyBilling")
@@ -57,9 +58,36 @@ extern class LegacyBilling {
 
 class BillingBridge {
   public static function charge(accountId: String, amountCents: Int): Result<String, Term> {
-    return LegacyBilling.charge(accountId, amountCents).match(
-      receiptId -> Result.Ok(receiptId),
-      reason -> Result.Error(reason)
+    return switch (TermDecoder.okError(cast LegacyBilling.charge(accountId, amountCents), TermDecoder.asString, function(reason:Term) return Ok(reason))) {
+      case Ok(decoded): decoded;
+      case Error(error): Error(cast error);
+    };
+  }
+}
+```
+
+When the Elixir function returns open maps or generic tuples, decode immediately in the wrapper:
+
+```haxe
+import elixir.types.Term;
+import elixir.types.TermDecoder;
+import haxe.ds.Option;
+import haxe.functional.Result;
+
+using haxe.functional.ResultTools;
+
+typedef SearchParams = {
+  var query:String;
+  var page:Option<Int>;
+}
+
+class SearchParamsDecoder {
+  public static function fromPhoenix(params:Term):Result<SearchParams, TermDecodeError> {
+    return TermDecoder.fetchStringKeyAs(params, "query", TermDecoder.asString).flatMap(query ->
+      TermDecoder.optionalStringKeyAs(params, "page", TermDecoder.asInt).map(page -> {
+        query: query,
+        page: page
+      })
     );
   }
 }

@@ -19,10 +19,10 @@ defmodule TestAppWeb.GoldenLive do
   def render(assigns) do
     ~H"""
 <div id="golden-live">
-  <h1>Counter: <%= Kernel.to_string(@counter) %></h1>
+  <h1>Counter: <%= Reflaxe.Elixir.HaxeFloat.to_string(@counter) %></h1>
   <p>Sort: <%= @sort_by %></p>
   <p>Query: <%= @search_query %></p>
-  <p>Tags: <%= inspect(@selected_tags) %></p>
+  <p>Tags: <%= Reflaxe.Elixir.HaxeFloat.to_string(@selected_tags) %></p>
   <button phx-click="increment">+</button>
 </div>
 """
@@ -45,7 +45,7 @@ end) do
             end)
         end)
     end)
-    if (Kernel.is_nil(id_value)) do
+    if (Reflaxe.Elixir.HaxeFloat.eq(id_value, nil)) do
       0
     else
       if (Kernel.is_integer(id_value)) do

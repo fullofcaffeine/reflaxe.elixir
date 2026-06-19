@@ -36,7 +36,7 @@ end) do
             end)
         end)
     end)
-    _ = assert(Kernel.is_nil(missing), "Missing field should return null")
+    _ = assert(Reflaxe.Elixir.HaxeFloat.eq(missing, nil), "Missing field should return null")
     updated = (case {obj, "age", 31} do
       {reflect_obj, reflect_field, reflect_value} ->
         (case Map.has_key?(reflect_obj, reflect_field) do
@@ -56,23 +56,23 @@ end) do
             end)
         end)
     end)
-    _ = assert((case {updated, "age"} do
-  {reflect_obj, reflect_field} ->
-    (case Map.fetch(reflect_obj, reflect_field) do
-      {:ok, reflect_value} -> reflect_value
-      _ ->
-        (case (try do
+    _ = assert((fn -> Reflaxe.Elixir.HaxeFloat.eq(((case {updated, "age"} do
+    {reflect_obj, reflect_field} ->
+      (case Map.fetch(reflect_obj, reflect_field) do
+        {:ok, reflect_value} -> reflect_value
+        _ ->
+          (case (try do
   String.to_existing_atom(reflect_field)
 rescue
   _ ->
     nil
 end) do
-          nil -> nil
-          reflect_atom ->
-            Map.get(reflect_obj, reflect_atom)
-        end)
-    end)
-end) == 31, "Field should be updated")
+            nil -> nil
+            reflect_atom ->
+              Map.get(reflect_obj, reflect_atom)
+          end)
+      end)
+  end)), 31) end).(), "Field should be updated")
     _ = assert(obj.age == 30, "Original object should be unchanged (immutability)")
     with_email = (case {obj, "email", "john@example.com"} do
       {reflect_obj, reflect_field, reflect_value} ->
@@ -93,23 +93,23 @@ end) do
             end)
         end)
     end)
-    _ = assert((case {with_email, "email"} do
-  {reflect_obj, reflect_field} ->
-    (case Map.fetch(reflect_obj, reflect_field) do
-      {:ok, reflect_value} -> reflect_value
-      _ ->
-        (case (try do
+    _ = assert((fn -> Reflaxe.Elixir.HaxeFloat.eq(((case {with_email, "email"} do
+    {reflect_obj, reflect_field} ->
+      (case Map.fetch(reflect_obj, reflect_field) do
+        {:ok, reflect_value} -> reflect_value
+        _ ->
+          (case (try do
   String.to_existing_atom(reflect_field)
 rescue
   _ ->
     nil
 end) do
-          nil -> nil
-          reflect_atom ->
-            Map.get(reflect_obj, reflect_atom)
-        end)
-    end)
-end) == "john@example.com", "New field should be added")
+            nil -> nil
+            reflect_atom ->
+              Map.get(reflect_obj, reflect_atom)
+          end)
+      end)
+  end)), "john@example.com") end).(), "New field should be added")
     fields = Reflect.fields(obj)
     _ = assert(length(fields) == 3, "Should have 3 fields")
     _ = assert((fn ->
@@ -224,23 +224,23 @@ end) == true, "Original should still have field (immutability)")
     _ = assert(Reflect.is_object(42) == false, "Number should not be object")
     _ = assert(Reflect.is_object([1, 2, 3]) == false, "Array should not be object")
     copied = obj
-    _ = assert((case {copied, "name"} do
-  {reflect_obj, reflect_field} ->
-    (case Map.fetch(reflect_obj, reflect_field) do
-      {:ok, reflect_value} -> reflect_value
-      _ ->
-        (case (try do
+    _ = assert((fn -> Reflaxe.Elixir.HaxeFloat.eq(((case {copied, "name"} do
+    {reflect_obj, reflect_field} ->
+      (case Map.fetch(reflect_obj, reflect_field) do
+        {:ok, reflect_value} -> reflect_value
+        _ ->
+          (case (try do
   String.to_existing_atom(reflect_field)
 rescue
   _ ->
     nil
 end) do
-          nil -> nil
-          reflect_atom ->
-            Map.get(reflect_obj, reflect_atom)
-        end)
-    end)
-end) == "John", "Copy should have same fields")
+            nil -> nil
+            reflect_atom ->
+              Map.get(reflect_obj, reflect_atom)
+          end)
+      end)
+  end)), "John") end).(), "Copy should have same fields")
     _ = assert(Reflect.compare("a", "b") < 0, "a should be less than b")
     _ = assert(Reflect.compare("b", "a") > 0, "b should be greater than a")
     _ = assert(Reflect.compare("same", "same") == 0, "Same strings should be equal")

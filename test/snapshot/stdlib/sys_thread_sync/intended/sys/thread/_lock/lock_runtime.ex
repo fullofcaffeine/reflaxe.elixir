@@ -7,7 +7,7 @@ defmodule LockRuntime do
         )
   end
   def wait(ref, timeout) do
-    should_queue = Kernel.is_nil(timeout) or timeout > 0
+    should_queue = Reflaxe.Elixir.HaxeFloat.eq(timeout, nil) or Reflaxe.Elixir.HaxeFloat.gt(timeout, 0)
     timeout_ms = if (should_queue), do: seconds_to_timeout(timeout), else: 5000
     (
             {lock_ref, pid} = ref
@@ -30,13 +30,13 @@ defmodule LockRuntime do
         )
   end
   defp seconds_to_timeout(timeout) do
-    if (Kernel.is_nil(timeout)) do
+    if (Reflaxe.Elixir.HaxeFloat.eq(timeout, nil)) do
       :infinity
     else
-      if (timeout <= 0) do
+      if (Reflaxe.Elixir.HaxeFloat.lte(timeout, 0)) do
         0
       else
-        ceil(timeout * 1000)
+        Reflaxe.Elixir.HaxeFloat.ceil_int(Reflaxe.Elixir.HaxeFloat.mul(timeout, 1000))
       end
     end
   end

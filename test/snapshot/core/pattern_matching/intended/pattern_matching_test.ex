@@ -4,13 +4,13 @@ defmodule PatternMatchingTest do
       {:red} -> "red"
       {:green} -> "green"
       {:blue} -> "blue"
-      {:rgb, r, _g, b} -> "rgb(#{Kernel.to_string(r)},#{Kernel.to_string(_g)},#{Kernel.to_string(b)})"
+      {:rgb, r, _g, b} -> "rgb(#{Reflaxe.Elixir.HaxeFloat.to_string(r)},#{Reflaxe.Elixir.HaxeFloat.to_string(_g)},#{Reflaxe.Elixir.HaxeFloat.to_string(b)})"
     end)
   end
   def match_option(option) do
     (case option do
       {:none} -> "none"
-      {:some, value} -> "some(#{inspect(value)})"
+      {:some, value} -> "some(#{Reflaxe.Elixir.HaxeFloat.to_string(value)})"
     end)
   end
   def match_int(value) do
@@ -41,16 +41,16 @@ defmodule PatternMatchingTest do
       [] -> "empty"
       [_head | _tail] ->
         x = Enum.at(arr, 0)
-        "single(#{Kernel.to_string(x)})"
+        "single(#{Reflaxe.Elixir.HaxeFloat.to_string(x)})"
       2 ->
         x = Enum.at(arr, 0)
         y = Enum.at(arr, 1)
-        "pair(#{Kernel.to_string(x)},#{Kernel.to_string(y)})"
+        "pair(#{Reflaxe.Elixir.HaxeFloat.to_string(x)},#{Reflaxe.Elixir.HaxeFloat.to_string(y)})"
       3 ->
         x = Enum.at(arr, 0)
         y = Enum.at(arr, 1)
         z = Enum.at(arr, 2)
-        "triple(#{Kernel.to_string(x)},#{Kernel.to_string(y)},#{Kernel.to_string(z)})"
+        "triple(#{Reflaxe.Elixir.HaxeFloat.to_string(x)},#{Reflaxe.Elixir.HaxeFloat.to_string(y)},#{Reflaxe.Elixir.HaxeFloat.to_string(z)})"
       _ -> "many"
     end)
   end

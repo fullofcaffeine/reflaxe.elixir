@@ -120,7 +120,7 @@ class ElixirTyper {
 		// Handle basic primitive types
 		return switch (haxeType) {
 			case "Int": "integer()";
-			case "Float": "float()";
+			case "Float": "number() | {module(), :nan | :positive_infinity | :negative_infinity}";
 			case "Bool": "boolean()";
 			case "String": "String.t()";
 			case "Void": "nil";

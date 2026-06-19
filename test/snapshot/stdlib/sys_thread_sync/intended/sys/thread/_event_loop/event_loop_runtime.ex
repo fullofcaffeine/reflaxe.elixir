@@ -91,13 +91,13 @@ defmodule EventLoopRuntime do
         )
   end
   defp seconds_to_timeout(timeout) do
-    if (Kernel.is_nil(timeout)) do
+    if (Reflaxe.Elixir.HaxeFloat.eq(timeout, nil)) do
       :infinity
     else
-      if (timeout <= 0) do
+      if (Reflaxe.Elixir.HaxeFloat.lte(timeout, 0)) do
         0
       else
-        ceil(timeout * 1000)
+        Reflaxe.Elixir.HaxeFloat.ceil_int(Reflaxe.Elixir.HaxeFloat.mul(timeout, 1000))
       end
     end
   end

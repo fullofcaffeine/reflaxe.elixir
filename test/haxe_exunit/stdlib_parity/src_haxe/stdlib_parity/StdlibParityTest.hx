@@ -19,11 +19,13 @@ import haxe.io.BytesBuffer;
 import haxe.io.BytesInput;
 import haxe.io.BytesOutput;
 import haxe.io.Eof;
+import haxe.io.FPHelper;
 import haxe.io.Path;
 import haxe.io.StringInput;
 import haxe.iterators.MapKeyValueIterator;
 import haxe.test.ExUnit.TestCase;
 import haxe.test.Assert;
+import elixir.ErlangMath;
 import reflaxe.elixir.IMap as IMapRuntime;
 
 /**
@@ -61,6 +63,293 @@ class StdlibParityTest extends TestCase {
 
 	static function pairIntBool(value:Int, flag:Bool):String {
 		return Std.string(value) + ":" + Std.string(flag);
+	}
+
+	static function pairIntInt(left:Int, right:Int):String {
+		return Std.string(left) + ":" + Std.string(right);
+	}
+
+	static function throwPortableNan():Void {
+		throw Math.NaN;
+	}
+
+	@:describe("Haxe Float special values")
+	@:test
+	function testFloatSpecialConstantsClassifyAndFormat():Void {
+		Assert.isTrue(Math.isNaN(Math.NaN));
+		Assert.isFalse(Math.isFinite(Math.NaN));
+		Assert.isFalse(Math.isFinite(Math.POSITIVE_INFINITY));
+		Assert.isFalse(Math.isFinite(Math.NEGATIVE_INFINITY));
+		Assert.isTrue(Math.isFinite(1.7976931348623157e308));
+
+		Assert.equals("NaN", Std.string(Math.NaN));
+		Assert.equals("Infinity", Std.string(Math.POSITIVE_INFINITY));
+		Assert.equals("-Infinity", Std.string(Math.NEGATIVE_INFINITY));
+		Assert.equals("null", Std.string(null));
+	}
+
+	@:describe("Haxe Float special values")
+	@:test
+	function testFloatSpecialValuesReflectAsFloats():Void {
+		Assert.isTrue(Std.isOfType(Math.NaN, Float));
+		Assert.isTrue(Std.isOfType(Math.POSITIVE_INFINITY, Float));
+		Assert.equals(Type.ValueType.TFloat, Type.typeof(Math.NaN));
+		Assert.equals(Type.ValueType.TFloat, Type.typeof(Math.POSITIVE_INFINITY));
+	}
+
+	@:describe("Haxe Float special values")
+	@:test
+	function testParseFloatInvalidInputReturnsNaN():Void {
+		Assert.isTrue(Math.isNaN(Std.parseFloat("not-a-number")));
+		Assert.equals(12.5, Std.parseFloat("  12.5px"));
+		Assert.equals(7.0, Std.parseFloat("7"));
+		Assert.equals(0.5, Std.parseFloat(".5x"));
+		Assert.equals(Math.POSITIVE_INFINITY, Std.parseFloat("1e999"));
+		Assert.equals(Math.NEGATIVE_INFINITY, Std.parseFloat("-1e999"));
+		Assert.isTrue(Math.isNaN(Std.parseFloat("NaN")));
+		Assert.isTrue(Math.isNaN(Std.parseFloat("Infinity")));
+	}
+
+	@:describe("Haxe Float special values")
+	@:test
+	function testFloatCatchAcceptsSpecialSentinel():Void {
+		try {
+			throwPortableNan();
+			Assert.fail("throwPortableNan should throw");
+		} catch (value:Float) {
+			Assert.isTrue(Math.isNaN(value));
+		}
+	}
+
+	@:describe("Haxe Float special values")
+	@:test
+	function testFloatSpecialArithmeticAndComparison():Void {
+		Assert.isTrue(Math.isNaN(Math.POSITIVE_INFINITY + Math.NEGATIVE_INFINITY));
+		Assert.isTrue(Math.isNaN(Math.POSITIVE_INFINITY * 0.0));
+		Assert.isTrue(Math.isNaN(0.0 / 0.0));
+
+		Assert.equals("Infinity", Std.string(Math.POSITIVE_INFINITY + 1.0));
+		Assert.equals("-Infinity", Std.string(Math.NEGATIVE_INFINITY - 1.0));
+		Assert.equals("Infinity", Std.string(1.0 / 0.0));
+		Assert.equals("Infinity", Std.string(-Math.NEGATIVE_INFINITY));
+
+		Assert.isFalse(Math.NaN == Math.NaN);
+		Assert.isTrue(Math.NaN != Math.NaN);
+		Assert.isTrue(Math.NEGATIVE_INFINITY < -1.0);
+		Assert.isTrue(Math.POSITIVE_INFINITY > 1.0);
+		Assert.isFalse(Math.NaN < 1.0);
+	}
+
+	@:describe("Haxe Float special values")
+	@:test
+	function testFloatSpecialDynamicEqualityUsesHaxeSemantics():Void {
+		// Dynamic is intentional here: portable Haxe can hide NaN behind Dynamic values.
+		var value:Dynamic = Math.NaN;
+		Assert.isFalse(value == value);
+		Assert.isTrue(value != value);
+	}
+
+	@:describe("Haxe Float special values")
+	@:test
+	function testFloatSpecialStringConcatAndMutationOperators():Void {
+		Assert.equals("special=Infinity", "special=" + Math.POSITIVE_INFINITY);
+
+		var value:Float = Math.POSITIVE_INFINITY;
+		value += 1.0;
+		Assert.equals("Infinity", Std.string(value));
+
+		var counter:Float = 1.0;
+		var oldCounter = counter++;
+		Assert.equals(1.0, oldCounter);
+		Assert.equals(2.0, counter);
+
+		var newCounter = ++counter;
+		Assert.equals(3.0, newCounter);
+		Assert.equals(3.0, counter);
+	}
+
+	@:describe("Haxe local mutation operators")
+	@:test
+	function testLocalIncrementInAssertionArgumentsRebindsOuterVariable():Void {
+		var counter = 0;
+
+		Assert.equals(0, counter++);
+		Assert.equals(1, counter);
+		Assert.equals(2, ++counter);
+		Assert.equals(2, counter);
+	}
+
+	@:describe("Haxe local mutation operators")
+	@:test
+	function testLocalIncrementInValueExpressionsPreservesOrdering():Void {
+		var counter = 0;
+
+		Assert.equals(1, counter++ + counter++);
+		Assert.equals(2, counter);
+		Assert.equals("2:3", pairIntInt(counter++, counter));
+		Assert.equals(3, counter);
+	}
+
+	@:describe("Haxe Float special values")
+	@:test
+	function testFloatSpecialBytesExactIeeeEncoding():Void {
+		var doubleBytes = Bytes.alloc(8);
+		doubleBytes.setDouble(0, Math.POSITIVE_INFINITY);
+		Assert.equals("000000000000f07f", doubleBytes.toHex());
+		Assert.equals(Math.POSITIVE_INFINITY, doubleBytes.getDouble(0));
+
+		doubleBytes.setDouble(0, Math.NEGATIVE_INFINITY);
+		Assert.equals("000000000000f0ff", doubleBytes.toHex());
+		Assert.equals(Math.NEGATIVE_INFINITY, doubleBytes.getDouble(0));
+
+		doubleBytes.setDouble(0, Math.NaN);
+		Assert.equals("000000000000f87f", doubleBytes.toHex());
+		Assert.isTrue(Math.isNaN(doubleBytes.getDouble(0)));
+
+		doubleBytes.setDouble(0, 1.7976931348623157e308);
+		Assert.equals("ffffffffffffef7f", doubleBytes.toHex());
+		Assert.isTrue(Math.isFinite(doubleBytes.getDouble(0)));
+
+		var negativeZero = Bytes.ofHex("0000000000000080").getDouble(0);
+		doubleBytes.setDouble(0, negativeZero);
+		Assert.equals("0000000000000080", doubleBytes.toHex());
+
+		var alternateNaN = Bytes.ofHex("010000000000f87f");
+		Assert.isTrue(Math.isNaN(alternateNaN.getDouble(0)));
+
+		var floatBytes = Bytes.alloc(4);
+		floatBytes.setFloat(0, Math.POSITIVE_INFINITY);
+		Assert.equals("0000807f", floatBytes.toHex());
+		Assert.equals(Math.POSITIVE_INFINITY, floatBytes.getFloat(0));
+
+		floatBytes.setFloat(0, Math.NEGATIVE_INFINITY);
+		Assert.equals("000080ff", floatBytes.toHex());
+		Assert.equals(Math.NEGATIVE_INFINITY, floatBytes.getFloat(0));
+
+		floatBytes.setFloat(0, Math.NaN);
+		Assert.equals("0000c07f", floatBytes.toHex());
+		Assert.isTrue(Math.isNaN(floatBytes.getFloat(0)));
+
+		floatBytes.setFloat(0, 3.4028234663852886e38);
+		Assert.equals("ffff7f7f", floatBytes.toHex());
+		Assert.isTrue(Math.isFinite(floatBytes.getFloat(0)));
+
+		var negativeZero32 = Bytes.ofHex("00000080").getFloat(0);
+		floatBytes.setFloat(0, negativeZero32);
+		Assert.equals("00000080", floatBytes.toHex());
+
+		var alternateNaN32 = Bytes.ofHex("0100c07f");
+		Assert.isTrue(Math.isNaN(alternateNaN32.getFloat(0)));
+	}
+
+	@:describe("Haxe Float special values")
+	@:test
+	function testFloatSpecialBytesBufferAndStreamsUseIeeeEncoding():Void {
+		var buffer = new BytesBuffer();
+		buffer.addFloat(Math.POSITIVE_INFINITY);
+		buffer.addFloat(Math.NaN);
+		buffer.addDouble(Math.NEGATIVE_INFINITY);
+		buffer.addDouble(Math.NaN);
+		var bytes = buffer.getBytes();
+		Assert.equals("0000807f0000c07f000000000000f0ff000000000000f87f", bytes.toHex());
+		Assert.equals(Math.POSITIVE_INFINITY, bytes.getFloat(0));
+		Assert.isTrue(Math.isNaN(bytes.getFloat(4)));
+		Assert.equals(Math.NEGATIVE_INFINITY, bytes.getDouble(8));
+		Assert.isTrue(Math.isNaN(bytes.getDouble(16)));
+
+		var output = new BytesOutput();
+		output.writeFloat(Math.POSITIVE_INFINITY);
+		output.writeDouble(Math.NEGATIVE_INFINITY);
+		var streamBytes = output.getBytes();
+		Assert.equals("0000807f000000000000f0ff", streamBytes.toHex());
+
+		var input = new BytesInput(streamBytes);
+		Assert.equals(Math.POSITIVE_INFINITY, input.readFloat());
+		Assert.equals(Math.NEGATIVE_INFINITY, input.readDouble());
+	}
+
+	@:describe("Haxe Float special values")
+	@:test
+	function testFpHelperUsesHaxeFloatIeeeSemantics():Void {
+		Assert.equals(2139095040, FPHelper.floatToI32(Math.POSITIVE_INFINITY));
+		Assert.equals(-8388608, FPHelper.floatToI32(Math.NEGATIVE_INFINITY));
+		Assert.equals(2143289344, FPHelper.floatToI32(Math.NaN));
+
+		Assert.equals(Math.POSITIVE_INFINITY, FPHelper.i32ToFloat(2139095040));
+		Assert.equals(Math.NEGATIVE_INFINITY, FPHelper.i32ToFloat(-8388608));
+		Assert.isTrue(Math.isNaN(FPHelper.i32ToFloat(2143289345)));
+
+		Assert.equals("9218868437227405312", Int64.toStr(FPHelper.doubleToI64(Math.POSITIVE_INFINITY)));
+		Assert.equals("-4503599627370496", Int64.toStr(FPHelper.doubleToI64(Math.NEGATIVE_INFINITY)));
+		Assert.equals("9221120237041090560", Int64.toStr(FPHelper.doubleToI64(Math.NaN)));
+
+		Assert.equals(Math.POSITIVE_INFINITY, FPHelper.i64ToDouble(0, 2146435072));
+		Assert.equals(Math.NEGATIVE_INFINITY, FPHelper.i64ToDouble(0, -1048576));
+		Assert.isTrue(Math.isNaN(FPHelper.i64ToDouble(1, 2146959360)));
+	}
+
+	@:describe("Haxe Float special values")
+	@:test
+	function testFloatSpecialJsonSerializationUsesNull():Void {
+		Assert.equals("null", Json.stringify(Math.NaN));
+		Assert.equals("null", Json.stringify(Math.POSITIVE_INFINITY));
+		Assert.equals("[null,null,1.5]", Json.stringify([Math.NaN, Math.NEGATIVE_INFINITY, 1.5]));
+
+		var replaced = Json.stringify({value: 1}, function(key, value) {
+			return key == "value" ? Math.POSITIVE_INFINITY : value;
+		});
+		Assert.equals('{"value":null}', replaced);
+	}
+
+	@:describe("Haxe Float special values")
+	@:test
+	function testFloatSpecialSerializerUsesHaxeWireTags():Void {
+		Assert.equals("k", Serializer.run(Math.NaN));
+		Assert.equals("p", Serializer.run(Math.POSITIVE_INFINITY));
+		Assert.equals("m", Serializer.run(Math.NEGATIVE_INFINITY));
+		Assert.equals("akpmh", Serializer.run([Math.NaN, Math.POSITIVE_INFINITY, Math.NEGATIVE_INFINITY]));
+
+		Assert.isTrue(Math.isNaN(Unserializer.run("k")));
+		Assert.equals(Math.POSITIVE_INFINITY, Unserializer.run("p"));
+		Assert.equals(Math.NEGATIVE_INFINITY, Unserializer.run("m"));
+
+		var values:Array<Dynamic> = Unserializer.run("akpmh");
+		var firstValue:Dynamic = untyped __elixir__("Enum.at({0}, 0)", values);
+		var secondValue:Dynamic = untyped __elixir__("Enum.at({0}, 1)", values);
+		var thirdValue:Dynamic = untyped __elixir__("Enum.at({0}, 2)", values);
+		Assert.isTrue(Math.isNaN(firstValue));
+		Assert.equals(Math.POSITIVE_INFINITY, secondValue);
+		Assert.equals(Math.NEGATIVE_INFINITY, thirdValue);
+	}
+
+	@:describe("Haxe Float special values")
+	@:test
+	function testFloatSpecialTemplateRendering():Void {
+		var fromContext = new Template("nan=::nan:: inf=::inf:: ninf=::ninf::");
+		Assert.equals("nan=NaN inf=Infinity ninf=-Infinity", fromContext.execute({
+			nan: Math.NaN,
+			inf: Math.POSITIVE_INFINITY,
+			ninf: Math.NEGATIVE_INFINITY
+		}));
+
+		var fromExpression = new Template("small=::.5:: big=::1e999:: int=::7:: missing=::missing::");
+		Assert.equals("small=0.5 big=Infinity int=7 missing=null", fromExpression.execute({}));
+	}
+
+	@:describe("Haxe Float special values")
+	@:test
+	function testNativeElixirMathBoundaryRejectsHaxeSpecialsClearly():Void {
+		Assert.equals(4.0, ErlangMath.sqrt(16.0));
+
+		try {
+			var rejected = ErlangMath.sqrt(Math.POSITIVE_INFINITY);
+			Assert.equals(0.0, rejected);
+			Assert.fail("ErlangMath.sqrt should reject Haxe Float Infinity");
+		} catch (error:Dynamic) {
+			Assert.containsString(Std.string(error), "expected finite native Elixir number");
+			Assert.containsString(Std.string(error), ":math.sqrt/1");
+			Assert.containsString(Std.string(error), "Infinity");
+		}
 	}
 
 	@:describe("haxe.CallStack")

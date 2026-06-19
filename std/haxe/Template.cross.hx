@@ -119,9 +119,10 @@ eval_expr = fn eval_expr, stack, expr ->
           integer
 
         _ ->
-          case Float.parse(expr) do
-            {float, ""} -> float
-            _ -> lookup_path.(lookup_path, stack, expr)
+          if Regex.match?(~r/^[+-]?(?:(?:\\d+\\.\\d*)|(?:\\.\\d+)|(?:\\d+))(?:[eE][+-]?\\d+)?$/, expr) do
+            Reflaxe.Elixir.HaxeFloat.parse(expr)
+          else
+            lookup_path.(lookup_path, stack, expr)
           end
       end
   end
@@ -132,7 +133,7 @@ stringify = fn
   true -> "true"
   false -> "false"
   value when is_binary(value) -> value
-  value -> Kernel.to_string(value)
+  value -> Reflaxe.Elixir.HaxeFloat.to_string(value)
 end
 
 find_directive = fn text, start_pos ->

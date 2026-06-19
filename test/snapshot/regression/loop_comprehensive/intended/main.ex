@@ -29,7 +29,7 @@ end)
     {_count} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count}, fn _, {acc_count} ->
       try do
         if (acc_count < 3) do
-          _old_count = acc_count
+          _ = acc_count
           acc_count = acc_count + 1
           {:cont, {acc_count}}
         else

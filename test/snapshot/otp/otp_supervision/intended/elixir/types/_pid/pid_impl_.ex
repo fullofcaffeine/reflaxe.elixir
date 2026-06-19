@@ -8,15 +8,15 @@ defmodule Pid_Impl_ do
     pid
   end
   def to_string(this1) do
-    elixir__.("inspect(#{Kernel.to_string(this1)})")
+    elixir__.("inspect(#{Reflaxe.Elixir.HaxeFloat.to_string(this1)})")
   end
   def is_self(this1) do
-    elixir__.("#{Kernel.to_string(this1)} == self()")
+    elixir__.("#{Reflaxe.Elixir.HaxeFloat.to_string(this1)} == self()")
   end
   def is_alive(this1) do
-    elixir__.("Process.alive?(#{Kernel.to_string(this1)})")
+    elixir__.("Process.alive?(#{Reflaxe.Elixir.HaxeFloat.to_string(this1)})")
   end
   def node(this1) do
-    elixir__.("node(#{Kernel.to_string(this1)})")
+    elixir__.("node(#{Reflaxe.Elixir.HaxeFloat.to_string(this1)})")
   end
 end

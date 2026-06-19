@@ -135,10 +135,10 @@ end), haxe_exception} do
   end
   test "custom assertions" do
     assert_between = fn value, min, max, msg ->
-      assert(value >= min and value <= max, (fn -> if (not Kernel.is_nil(msg)) do
+      assert(Reflaxe.Elixir.HaxeFloat.gte(value, min) and Reflaxe.Elixir.HaxeFloat.lte(value, max), (fn -> if (not Kernel.is_nil(msg)) do
           msg
         else
-          "Value " <> Kernel.to_string(value) <> " should be between " <> Kernel.to_string(min) <> " and " <> Kernel.to_string(max)
+          "Value " <> Reflaxe.Elixir.HaxeFloat.to_string(value) <> " should be between " <> Reflaxe.Elixir.HaxeFloat.to_string(min) <> " and " <> Reflaxe.Elixir.HaxeFloat.to_string(max)
         end end).())
     end
     assert_contains = fn array, element, msg ->
@@ -171,17 +171,17 @@ end), haxe_exception} do
     _g = 0
     _ = Enum.each(test_cases, fn test_case ->
   result = test_case.input * 2
-  _ = assert(test_case.expected == result, "Input " <> Kernel.to_string(test_case.input) <> " should produce " <> Kernel.to_string(test_case.expected))
+  _ = assert(test_case.expected == result, "Input " <> Reflaxe.Elixir.HaxeFloat.to_string(test_case.input) <> " should produce " <> Reflaxe.Elixir.HaxeFloat.to_string(test_case.expected))
 end)
   end
   test "mocking patterns" do
     mock_calls = []
     mock_service_get_data = fn id ->
-      _ = mock_calls ++ ["getData(" <> Kernel.to_string(id) <> ")"]
-      "mock_data_" <> Kernel.to_string(id)
+      _ = mock_calls ++ ["getData(" <> Reflaxe.Elixir.HaxeFloat.to_string(id) <> ")"]
+      "mock_data_" <> Reflaxe.Elixir.HaxeFloat.to_string(id)
     end
     mock_service_save_data = fn id, data ->
-      _ = Enum.concat(data, ["saveData(" <> Kernel.to_string(id) <> ", " <> data <> ")"])
+      _ = Enum.concat(data, ["saveData(" <> Reflaxe.Elixir.HaxeFloat.to_string(id) <> ", " <> data <> ")"])
       true
     end
     result = mock_service_get_data.(123)

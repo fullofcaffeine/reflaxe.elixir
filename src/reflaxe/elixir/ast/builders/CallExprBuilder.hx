@@ -498,8 +498,9 @@ class CallExprBuilder {
 								if (mode == HxxMode.Metal
 									&& reflaxe.elixir.ast.TemplateHelpers.hxxSourceContainsRawHeexMarkers(innerAst)) {
 									var pos = context != null ? context.getCurrentPosition() : null;
-									context.warning("HXX: raw `<% ... %>` blocks are enabled (metal mode). This bypasses template linting/typing.\n"
-										+ "Prefer balanced/tsx mode unless you truly need raw HEEx.",
+									context.warning("HXX: raw `<% ... %>` blocks are enabled (`@:hxx_mode(\"metal\")` template mode). This bypasses template linting/typing.\n"
+										+
+										"Prefer the default TSX inline-markup path unless this local template truly needs raw HEEx. This is not an application-wide metal profile.",
 										pos);
 								}
 
@@ -1393,42 +1394,55 @@ class CallExprBuilder {
 			case "Std":
 				switch (methodName) {
 					case "is":
-						// Std.is(value, Type) → is_type(value)
+						// Std.is(value, Type) → target runtime predicate.
 						if (args.length == 2) {
 							var value = buildExpression(args[0]);
 							var typeExpr = args[1];
 
 							// Determine the Elixir type check function
 							var typeCheck = switch (typeExpr.expr) {
-								case TTypeExpr(TClassDecl(classRef)):
-									var typeName = classRef.get().name;
-									switch (typeName) {
-										case "String": "is_binary";
-										case "Int": "is_integer";
-										case "Float": "is_float";
-										case "Bool": "is_boolean";
-										case "Array": "is_list";
-										case "Map": "is_map";
-										default: null;
+								case TTypeExpr(moduleType):
+									switch (moduleType) {
+										case TClassDecl(classRef):
+											var typeName = classRef.get().name;
+											switch (typeName) {
+												case "String": "is_binary";
+												case "Int": "is_integer";
+												case "Bool": "is_boolean";
+												case "Array": "is_list";
+												case "Map": "is_map";
+												default: null;
+											}
+										default:
+											// Haxe versions differ in how core abstracts appear in TTypeExpr.
+											// Keep this fallback only for Float so ordinary user types do not
+											// accidentally route through the HaxeFloat runtime helper.
+											Std.string(moduleType).indexOf("Float") >= 0 ? "haxe_float" : null;
 									}
 								default: null;
 							};
 
 							if (typeCheck != null) {
-								// Emit a plain Kernel predicate call (e.g. is_integer(value))
+								if (typeCheck == "haxe_float") {
+									// Haxe Float checks include native numbers and the tagged special values
+									// used for NaN/Infinity. A plain is_float/1 would miss both integers that
+									// are accepted at Float boundaries and the HaxeFloat sentinel tuples.
+									return ERemoteCall(makeAST(EVar("Reflaxe.Elixir.HaxeFloat")), "is_haxe_float", [value]);
+								}
+
+								// Emit a plain Kernel predicate call (e.g. is_integer(value)).
 								return ECall(null, typeCheck, [value]);
 							}
 						}
 
 					case "string":
-						// Std.string(value) → inspect(value)
-						// WHY: inspect/1 provides complete string representation for all Elixir types
-						// WHAT: Converts lists, maps, tuples, structs correctly (unlike to_string/1)
-						// HOW: Direct function call without module prefix (target=null, funcName="inspect")
+						// Std.string(value) → Reflaxe.Elixir.HaxeFloat.to_string(value)
+						// WHY: Haxe special floats are tagged tuples on the BEAM, so Kernel.to_string/1
+						//      and inspect/1 would expose the implementation detail instead of "NaN".
+						// WHAT: Converts ordinary values normally and formats NaN/Infinity as Haxe expects.
 						if (args.length == 1) {
 							var value = buildExpression(args[0]);
-							// Use null target with funcName to generate plain function call
-							return ECall(null, "inspect", [value]);
+							return ERemoteCall(makeAST(EVar("Reflaxe.Elixir.HaxeFloat")), "to_string", [value]);
 						}
 
 					case "parseInt":
@@ -1443,14 +1457,11 @@ class CallExprBuilder {
 						}
 
 					case "parseFloat":
-						// Std.parseFloat(str) → case Float.parse(str) do {num, _} -> num; :error -> nil end
+						// Std.parseFloat(str) → Reflaxe.Elixir.HaxeFloat.parse(str)
+						// WHY: Haxe returns NaN for invalid Float input; Elixir Float.parse/1 returns :error.
 						if (args.length == 1) {
 							var str = buildExpression(args[0]);
-							var parsed = makeAST(ERemoteCall(makeAST(EVar("Float")), "parse", [str]));
-							return ECase(parsed, [
-								{pattern: PTuple([PVar("num"), PWildcard]), body: makeAST(EVar("num"))},
-								{pattern: PLiteral(makeAST(EAtom("error"))), body: makeAST(ENil)}
-							]);
+							return ERemoteCall(makeAST(EVar("Reflaxe.Elixir.HaxeFloat")), "parse", [str]);
 						}
 
 					case "int":
@@ -1486,8 +1497,7 @@ class CallExprBuilder {
 						// Type.typeof(value) → typeof implementation
 						if (args.length == 1) {
 							var value = buildExpression(args[0]);
-							// This would need a helper function in Elixir
-							return ECall(null, "typeof", [value]);
+							return ERemoteCall(makeAST(EVar("Type")), "typeof", [value]);
 						}
 
 					case "getClassName":

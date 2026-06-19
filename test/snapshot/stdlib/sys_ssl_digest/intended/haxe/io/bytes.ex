@@ -14,7 +14,7 @@ defmodule Bytes do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     data = Process.get(struct.dict_key)
-    data = if (Kernel.is_nil(data)) do
+    data = if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
       data = struct.b
       Process.put(struct.dict_key, data)
       data
@@ -32,7 +32,7 @@ defmodule Bytes do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     :binary.at((fn -> data = Process.get(struct.dict_key)
-if (data == nil) do
+if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
   data = struct.b
   Process.put(struct.dict_key, data)
 end
@@ -43,7 +43,7 @@ data end).(), pos)
       raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     data = Process.get(struct.dict_key)
-    data = if (Kernel.is_nil(data)) do
+    data = if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
       data = struct.b
       Process.put(struct.dict_key, data)
       data
@@ -69,7 +69,7 @@ data end).(), pos)
       raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     data = Process.get(struct.dict_key)
-    data = if (Kernel.is_nil(data)) do
+    data = if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
       data = struct.b
       Process.put(struct.dict_key, data)
       data
@@ -96,7 +96,7 @@ data end).(), pos)
       raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     sub_binary = (:binary.part((fn -> data = Process.get(struct.dict_key)
-if (data == nil) do
+if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
   data = struct.b
   Process.put(struct.dict_key, data)
 end
@@ -108,7 +108,7 @@ data end).(), pos, len))
       raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     data = Process.get(struct.dict_key)
-    data = if (Kernel.is_nil(data)) do
+    data = if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
       data = struct.b
       Process.put(struct.dict_key, data)
       data
@@ -133,13 +133,13 @@ data end).(), pos, len))
   def compare(struct, other) do
     cond do
             (fn -> data = Process.get(struct.dict_key)
-if (data == nil) do
+if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
   data = struct.b
   Process.put(struct.dict_key, data)
 end
 data end).() < apply(Map.get(other, :__reflaxe_class__) || Map.get(other, :__struct__), :get_data, [other]) -> -1
             (fn -> data = Process.get(struct.dict_key)
-if (data == nil) do
+if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
   data = struct.b
   Process.put(struct.dict_key, data)
 end
@@ -149,7 +149,7 @@ data end).() > apply(Map.get(other, :__reflaxe_class__) || Map.get(other, :__str
   end
   def get_data(struct) do
     data = Process.get(struct.dict_key)
-    data = if (Kernel.is_nil(data)) do
+    data = if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
       data = struct.b
       Process.put(struct.dict_key, data)
       data
@@ -162,19 +162,19 @@ data end).() > apply(Map.get(other, :__reflaxe_class__) || Map.get(other, :__str
     if (pos < 0 or pos + 8 > struct.length) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
-    <<value::float-little-size(64)>> = :binary.part((fn -> data = Process.get(struct.dict_key)
-if (data == nil) do
+    _ = Reflaxe.Elixir.HaxeFloat.decode64((fn -> :binary.part((fn -> data = Process.get(struct.dict_key)
+if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
   data = struct.b
   Process.put(struct.dict_key, data)
 end
-data end).(), pos, 8); value
+data end).(), pos, 8) end).())
   end
   def set_double(struct, pos, v) do
     if (pos < 0 or pos + 8 > struct.length) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     data = Process.get(struct.dict_key)
-    data = if (Kernel.is_nil(data)) do
+    data = if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
       data = struct.b
       Process.put(struct.dict_key, data)
       data
@@ -191,7 +191,8 @@ data end).(), pos, 8); value
     else
       <<>>
     end
-    data = <<before_part::binary, v::float-little-size(64), after_part::binary>>
+    encoded = Reflaxe.Elixir.HaxeFloat.encode64(v)
+    data = <<before_part::binary, encoded::binary, after_part::binary>>
     struct = %{struct | b: data}
     Process.put(struct.dict_key, data)
   end
@@ -199,19 +200,19 @@ data end).(), pos, 8); value
     if (pos < 0 or pos + 4 > struct.length) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
-    <<value::float-little-size(32)>> = :binary.part((fn -> data = Process.get(struct.dict_key)
-if (data == nil) do
+    _ = Reflaxe.Elixir.HaxeFloat.decode32((fn -> :binary.part((fn -> data = Process.get(struct.dict_key)
+if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
   data = struct.b
   Process.put(struct.dict_key, data)
 end
-data end).(), pos, 4); value
+data end).(), pos, 4) end).())
   end
   def set_float(struct, pos, v) do
     if (pos < 0 or pos + 4 > struct.length) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     data = Process.get(struct.dict_key)
-    data = if (Kernel.is_nil(data)) do
+    data = if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
       data = struct.b
       Process.put(struct.dict_key, data)
       data
@@ -228,7 +229,8 @@ data end).(), pos, 4); value
     else
       <<>>
     end
-    data = <<before_part::binary, v::float-little-size(32), after_part::binary>>
+    encoded = Reflaxe.Elixir.HaxeFloat.encode32(v)
+    data = <<before_part::binary, encoded::binary, after_part::binary>>
     struct = %{struct | b: data}
     Process.put(struct.dict_key, data)
   end
@@ -237,7 +239,7 @@ data end).(), pos, 4); value
       raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     <<value::little-unsigned-size(16)>> = :binary.part((fn -> data = Process.get(struct.dict_key)
-if (data == nil) do
+if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
   data = struct.b
   Process.put(struct.dict_key, data)
 end
@@ -248,7 +250,7 @@ data end).(), pos, 2); value
       raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     data = Process.get(struct.dict_key)
-    data = if (Kernel.is_nil(data)) do
+    data = if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
       data = struct.b
       Process.put(struct.dict_key, data)
       data
@@ -274,7 +276,7 @@ data end).(), pos, 2); value
       raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     <<value::little-signed-size(32)>> = :binary.part((fn -> data = Process.get(struct.dict_key)
-if (data == nil) do
+if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
   data = struct.b
   Process.put(struct.dict_key, data)
 end
@@ -285,7 +287,7 @@ data end).(), pos, 4); value
       raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     data = Process.get(struct.dict_key)
-    data = if (Kernel.is_nil(data)) do
+    data = if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
       data = struct.b
       Process.put(struct.dict_key, data)
       data
@@ -311,7 +313,7 @@ data end).(), pos, 4); value
       raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     <<value::little-signed-size(64)>> = :binary.part((fn -> data = Process.get(struct.dict_key)
-if (data == nil) do
+if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
   data = struct.b
   Process.put(struct.dict_key, data)
 end
@@ -322,7 +324,7 @@ data end).(), pos, 8); value
       raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     data = Process.get(struct.dict_key)
-    data = if (Kernel.is_nil(data)) do
+    data = if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
       data = struct.b
       Process.put(struct.dict_key, data)
       data
@@ -348,7 +350,7 @@ data end).(), pos, 8); value
   end
   def to_hex(struct) do
     Base.encode16((fn -> data = Process.get(struct.dict_key)
-if (data == nil) do
+if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
   data = struct.b
   Process.put(struct.dict_key, data)
 end

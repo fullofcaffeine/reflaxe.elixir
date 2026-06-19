@@ -4,7 +4,7 @@ defmodule Main do
       {:red} -> "red"
       {:green} -> "green"
       {:blue} -> "blue"
-      {:rgb, r, _g, b} -> "rgb(#{Kernel.to_string(r)}, #{Kernel.to_string(_g)}, #{Kernel.to_string(b)})"
+      {:rgb, r, _g, b} -> "rgb(#{Reflaxe.Elixir.HaxeFloat.to_string(r)}, #{Reflaxe.Elixir.HaxeFloat.to_string(_g)}, #{Reflaxe.Elixir.HaxeFloat.to_string(b)})"
     end)
   end
   def get_value(opt, default_value) do

@@ -41,11 +41,11 @@ defmodule Main do
     buf = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :add, [buf, "!"])
     _result = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :to_string, [buf])
     parts = []
-    parts = parts ++ ["Item #{Kernel.to_string(1)}"]
-    parts = parts ++ ["Item #{Kernel.to_string(2)}"]
-    parts = parts ++ ["Item #{Kernel.to_string(3)}"]
-    parts = parts ++ ["Item #{Kernel.to_string(4)}"]
-    parts = parts ++ ["Item #{Kernel.to_string(5)}"]
+    parts = parts ++ ["Item #{Reflaxe.Elixir.HaxeFloat.to_string(1)}"]
+    parts = parts ++ ["Item #{Reflaxe.Elixir.HaxeFloat.to_string(2)}"]
+    parts = parts ++ ["Item #{Reflaxe.Elixir.HaxeFloat.to_string(3)}"]
+    parts = parts ++ ["Item #{Reflaxe.Elixir.HaxeFloat.to_string(4)}"]
+    parts = parts ++ ["Item #{Reflaxe.Elixir.HaxeFloat.to_string(5)}"]
     _list = Enum.join(parts, ", ")
     nil
   end
@@ -83,7 +83,7 @@ defmodule Main do
   end
   def string_formatting() do
     num = 42
-    _padded = StringTools.lpad(inspect(num), "0", 5)
+    _padded = StringTools.lpad(Reflaxe.Elixir.HaxeFloat.to_string(num), "0", 5)
     text = "Hi"
     _rpadded = "#{StringTools.rpad(text, " ", 10)}|"
     _hex = StringTools.hex(255, nil)

@@ -93,11 +93,21 @@ Example of a rejected route:
 get("/users/:id", UserController, UserController.show)
 ```
 
-This fails because `paramsContract` is required when path params are present.
+This fails because `paramsContract` is required when path params are present. The compiler suggests a typedef skeleton inferred from the path:
+
+```haxe
+typedef UserPathParams = {
+  var id:Int;
+}
+
+get("/users/:id", UserController, UserController.show, {
+  paramsContract: UserPathParams
+});
+```
 
 ## Typed Tokens vs Unsafe Escape Hatches
 
-Why this section exists: `pipeline` and common `plug` names are a finite set in most apps, so plain strings are easy to mistype and hard to autocomplete.
+Why this section exists: `pipeline`, common `plug` names, and Phoenix resource actions are finite sets in most apps, so plain strings are easy to mistype and hard to autocomplete.
 
 Preferred typed style:
 
@@ -125,6 +135,30 @@ pipeline(pipelineName("admin"), [
 ]);
 ```
 
+Resource actions (typed):
+
+```haxe
+import reflaxe.elixir.macros.RouterDsl.*;
+
+resources("/users", UserController, {
+  only: [resourceIndex, resourceShow]
+});
+
+resources("/admin/users", UserController, {
+  except: [resourceDelete]
+});
+```
+
+The resource action constants map directly to Phoenix atoms:
+
+- `resourceIndex` -> `:index`
+- `resourceShow` -> `:show`
+- `resourceNew` -> `:new`
+- `resourceCreate` -> `:create`
+- `resourceEdit` -> `:edit`
+- `resourceUpdate` -> `:update`
+- `resourceDelete` -> `:delete`
+
 Explicit escape hatches for legacy/dynamic values:
 
 ```haxe
@@ -134,7 +168,13 @@ pipelineUnsafe("admin", [
 pipeThroughUnsafe(["admin"]);
 ```
 
-Use `*Unsafe` only when values are intentionally dynamic or migration glue.
+String literals in `only` / `except` remain migration-compatible when they name real Phoenix resource actions:
+
+```haxe
+resources("/users", UserController, {only: ["index", "show"]});
+```
+
+Use typed resource action constants in new code. Use `*Unsafe` only when values are intentionally dynamic or migration glue.
 
 ## Router node constructor reference
 

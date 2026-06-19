@@ -44,6 +44,7 @@ enum TermKind {
 enum TermDecodeError {
 	ExpectedType(expected:TermKind, got:TermKind);
 	MissingKey(key:String);
+	ExpectedOkErrorTuple(got:TermKind);
 }
 
 class TermDecoder {
@@ -93,6 +94,10 @@ class TermDecoder {
 		return Kernel.isBoolean(term) ? Ok(cast term) : Error(ExpectedType(Boolean, kind(term)));
 	}
 
+	public static inline function asFloat(term:Term):Result<Float, TermDecodeError> {
+		return Kernel.isFloat(term) ? Ok(cast term) : Error(ExpectedType(Float, kind(term)));
+	}
+
 	public static inline function asList(term:Term):Result<Array<Term>, TermDecodeError> {
 		return Kernel.isList(term) ? Ok(cast term) : Error(ExpectedType(List, kind(term)));
 	}
@@ -123,6 +128,57 @@ class TermDecoder {
 
 	public static function fetchAtomKey(map:Term, key:Atom):Result<Term, TermDecodeError> {
 		return fetch(map, cast key);
+	}
+
+	public static inline function fetchStringKeyAs<T>(map:Term, key:String, decode:Term->Result<T, TermDecodeError>):Result<T, TermDecodeError> {
+		return fetchStringKey(map, key).flatMap(decode);
+	}
+
+	public static inline function fetchAtomKeyAs<T>(map:Term, key:Atom, decode:Term->Result<T, TermDecodeError>):Result<T, TermDecodeError> {
+		return fetchAtomKey(map, key).flatMap(decode);
+	}
+
+	public static function optionalStringKeyAs<T>(map:Term, key:String, decode:Term->Result<T, TermDecodeError>):Result<Option<T>, TermDecodeError> {
+		return switch (fetchStringKey(map, key)) {
+			case Ok(value):
+				switch (decode(value)) {
+					case Ok(decodedValue):
+						Ok(Some(decodedValue));
+					case Error(error):
+						Error(error);
+				}
+			case Error(MissingKey(_)):
+				Ok(None);
+			case Error(error):
+				Error(error);
+		}
+	}
+
+	public static function optionalAtomKeyAs<T>(map:Term, key:Atom, decode:Term->Result<T, TermDecodeError>):Result<Option<T>, TermDecodeError> {
+		return switch (fetchAtomKey(map, key)) {
+			case Ok(value):
+				switch (decode(value)) {
+					case Ok(decodedValue):
+						Ok(Some(decodedValue));
+					case Error(error):
+						Error(error);
+				}
+			case Error(MissingKey(_)):
+				Ok(None);
+			case Error(error):
+				Error(error);
+		}
+	}
+
+	public static function okError<T, E>(term:Term, decodeOk:Term->Result<T, TermDecodeError>,
+			decodeError:Term->Result<E, TermDecodeError>):Result<Result<T, E>, TermDecodeError> {
+		if (ElixirTuple.isOkTuple(term)) {
+			return decodeOk(ElixirTuple.getOkValue(term)).map(function(value):Result<T, E> return Ok(value));
+		}
+		if (ElixirTuple.isErrorTuple(term)) {
+			return decodeError(ElixirTuple.getErrorReason(term)).map(function(reason):Result<T, E> return Error(reason));
+		}
+		return Error(ExpectedOkErrorTuple(kind(term)));
 	}
 }
 #end

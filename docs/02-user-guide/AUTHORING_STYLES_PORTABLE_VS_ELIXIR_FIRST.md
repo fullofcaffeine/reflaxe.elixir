@@ -17,7 +17,10 @@ These are **authoring profiles**, not separate backends.
 - You do not switch to a separate “metal mode compiler”.
 - You choose how much of your app surface is portability-oriented vs BEAM-native extern-oriented.
 
-See also: `docs/04-api-reference/FEATURE_FLAGS.md`.
+See also:
+
+- `docs/05-architecture/AUTHORING_PROFILE_CONTRACT.md`
+- `docs/04-api-reference/FEATURE_FLAGS.md`
 
 ## Idiomatic output contract
 
@@ -31,6 +34,23 @@ The difference is what wins when Haxe portability and BEAM-native shape conflict
 Portable is not an “unidiomatic” profile. It still prefers Elixir modules, functions, maps, tuples, pattern matching, `case`, `Enum`, and normal Phoenix `~H` output where those shapes preserve Haxe behavior.
 
 When semantics differ, portable code may need Haxe-compatible lowering or helper modules for things like Haxe stdlib APIs, class semantics, mutable-looking loops, iterators, exceptions, nullable behavior, and map behavior.
+
+### Float special values
+
+`Math.NaN`, `Math.POSITIVE_INFINITY`, `Math.NEGATIVE_INFINITY`, and exact IEEE
+float byte behavior are part of the portable stdlib contract.
+
+On BEAM, these are not ordinary native Elixir floats. Reflaxe.Elixir therefore
+uses the staged HaxeFloat compatibility design documented in
+`docs/05-architecture/HAXE_FLOAT_SPECIAL_VALUES.md` for portable code that can
+produce or consume Haxe special floats.
+
+Elixir-first code does not need to model every Haxe special-float behavior when
+it intentionally calls BEAM-native APIs. For example, a direct typed wrapper
+around `:math.sqrt/1` can keep Elixir's native "raise on invalid domain" behavior
+if that is the boundary you want. The important rule is to make the boundary
+explicit: do not pass Haxe special-float sentinels into native Elixir externs
+unless the extern documents how it classifies, encodes, or rejects them.
 
 ## Why there is no application-wide `metal` profile
 
@@ -199,6 +219,8 @@ Typical characteristics:
 - Target-specific integrations stay at small boundaries.
 - You can often reuse the same domain modules on JS/other targets.
 - The compiler still emits idiomatic Elixir where it can do so without changing Haxe behavior.
+- Haxe special-float semantics (`NaN`, infinities, `Std.parseFloat`, IEEE bytes)
+  are preserved by the compatibility layer when needed.
 
 Start here:
 
@@ -217,6 +239,8 @@ Typical characteristics:
 - Keep success/error flow explicit with `haxe.functional.Result`.
 - Minimize portability constraints in integration-heavy modules.
 - Generated code can be more naturally Elixir-shaped because the source already models Elixir concepts.
+- Native numeric externs may use finite BEAM numbers and BEAM error behavior
+  directly; document any boundary that rejects Haxe special floats.
 
 Start here:
 

@@ -92,11 +92,10 @@ parse = fn parse, text, pos ->
         end)
 
       float_text = binary_part(text, start, stop - start)
-      {float, _} = Float.parse(float_text)
-      {float, stop}
-    ?k -> {:math.pow(-1.0, 0.5), pos + 1}
-    ?p -> {:math.pow(1.0, 309), pos + 1}
-    ?m -> {-:math.pow(1.0, 309), pos + 1}
+      {Reflaxe.Elixir.HaxeFloat.parse(float_text), stop}
+    ?k -> {Reflaxe.Elixir.HaxeFloat.nan(), pos + 1}
+    ?p -> {Reflaxe.Elixir.HaxeFloat.positive_infinity(), pos + 1}
+    ?m -> {Reflaxe.Elixir.HaxeFloat.negative_infinity(), pos + 1}
     ?y ->
       {length, after_length} = read_digits.(text, pos + 1)
       if :binary.at(text, after_length) != ?:, do: raise(Reflaxe.Elixir.HaxeThrow, [value: "Invalid string length"])

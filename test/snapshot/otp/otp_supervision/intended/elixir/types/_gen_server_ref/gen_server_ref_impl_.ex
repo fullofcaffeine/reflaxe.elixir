@@ -18,7 +18,7 @@ defmodule GenServerRef_Impl_ do
   end
   def is_alive(this1) do
     elixir__.("
-            case #{Kernel.to_string(this1)} do
+            case #{Reflaxe.Elixir.HaxeFloat.to_string(this1)} do
                 pid when is_pid(pid) -> Process.alive?(pid)
                 name when is_atom(name) -> 
                     case Process.whereis(name) do
@@ -41,7 +41,7 @@ defmodule GenServerRef_Impl_ do
   end
   def whereis(this1) do
     elixir__.("
-            case #{Kernel.to_string(this1)} do
+            case #{Reflaxe.Elixir.HaxeFloat.to_string(this1)} do
                 pid when is_pid(pid) -> pid
                 name when is_atom(name) -> Process.whereis(name)
                 {:global, name} -> :global.whereis_name(name)

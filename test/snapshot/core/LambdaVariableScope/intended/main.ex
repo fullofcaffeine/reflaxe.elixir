@@ -18,7 +18,7 @@ defmodule Main do
     multiplier = 3
     _mapped = Enum.map(numbers, fn n -> n * multiplier end)
     prefix = "Item: "
-    _prefixed = Enum.map(numbers, fn num -> prefix <> inspect(num) end)
+    _prefixed = Enum.map(numbers, fn num -> prefix <> Reflaxe.Elixir.HaxeFloat.to_string(num) end)
   end
   defp test_nested_array_operations() do
     data = [[1, 2], [3, 4], [5, 6]]

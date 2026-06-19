@@ -5,9 +5,9 @@ defmodule TestStruct do
     struct
   end
   def write(struct, value) do
-    (case typeof(value) do
+    (case Type.typeof(value) do
       {:t_null} -> struct = %{struct | field: struct.field <> "null"}
-      {:t_int} -> struct = %{struct | field: struct.field <> inspect(value)}
+      {:t_int} -> struct = %{struct | field: struct.field <> Reflaxe.Elixir.HaxeFloat.to_string(value)}
       _ -> struct = %{struct | field: struct.field <> "other"}
     end)
   end

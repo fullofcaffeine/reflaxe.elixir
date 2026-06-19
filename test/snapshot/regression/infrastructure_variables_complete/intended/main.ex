@@ -57,7 +57,7 @@ defmodule Main do
         if (g.has_next.()) do
           key = g.next.().key
           value = g.next.().value
-          acc_result = acc_result ++ ["" <> Kernel.to_string(key) <> ": " <> value]
+          acc_result = acc_result ++ ["" <> Reflaxe.Elixir.HaxeFloat.to_string(key) <> ": " <> value]
           {:cont, {acc_result}}
         else
           {:halt, {acc_result}}
@@ -80,8 +80,8 @@ defmodule Main do
     _g = 0
     _ = Enum.each(results, fn result ->
   _output = (case result.status do
-    "error" -> "Failed: " <> Kernel.to_string(result.value)
-    "ok" -> "Success: " <> Kernel.to_string(result.value)
+    "error" -> "Failed: " <> Reflaxe.Elixir.HaxeFloat.to_string(result.value)
+    "ok" -> "Success: " <> Reflaxe.Elixir.HaxeFloat.to_string(result.value)
     _ -> "Unknown"
   end)
   nil
@@ -120,8 +120,7 @@ end)
     _g = 0
     _ = Enum.reduce(todos, completed_count, fn todo, completed_count_acc ->
       if (todo.completed) do
-        _old_completed_count_acc = completed_count_acc
-        completed_count_acc = completed_count_acc + 1
+        {completed_count_acc, _reflaxe_receiver_value_0} = {completed_count_acc + 1, completed_count_acc}
         completed_count_acc
       else
         completed_count_acc

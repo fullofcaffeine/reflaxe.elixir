@@ -36,7 +36,7 @@ defmodule Main do
     _ = (case state do
       {:loading, _progress} -> description
       {:processing, progress} ->
-        description = "Progress: #{Kernel.to_string(progress)}%"
+        description = "Progress: #{Reflaxe.Elixir.HaxeFloat.to_string(progress)}%"
         description
       {:complete, result} ->
         description = "Done: #{result}"

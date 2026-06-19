@@ -7,7 +7,7 @@ defmodule Main do
     end)
     result_value = {:ok, 42}
     _msg2 = (case result_value do
-      {:ok, value} -> "Got: #{Kernel.to_string(value)}"
+      {:ok, value} -> "Got: #{Reflaxe.Elixir.HaxeFloat.to_string(value)}"
       {:error, _error} -> "Failed"
     end)
     opt = {:some, "hello"}

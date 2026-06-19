@@ -13,10 +13,10 @@ defmodule Main do
       raise Reflaxe.Elixir.HaxeThrow, [value: "sys.io.Process stdout mismatch: \"" <> out <> "\""]
     end
     if (code != 0) do
-      raise Reflaxe.Elixir.HaxeThrow, [value: "sys.io.Process exitCode mismatch: " <> Kernel.to_string(code)]
+      raise Reflaxe.Elixir.HaxeThrow, [value: "sys.io.Process exitCode mismatch: " <> Reflaxe.Elixir.HaxeFloat.to_string(code)]
     end
     if (detached_code != 3) do
-      raise Reflaxe.Elixir.HaxeThrow, [value: "sys.io.Process detached exitCode mismatch: " <> Kernel.to_string(detached_code)]
+      raise Reflaxe.Elixir.HaxeThrow, [value: "sys.io.Process detached exitCode mismatch: " <> Reflaxe.Elixir.HaxeFloat.to_string(detached_code)]
     end
   end
 end

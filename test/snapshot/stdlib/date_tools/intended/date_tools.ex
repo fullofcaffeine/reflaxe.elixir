@@ -56,21 +56,21 @@ defmodule DateTools do
       "B" ->
         Enum.at(DateTools.month_names(), (d.month - 1))
       "C" ->
-        StringTools.lpad(inspect(trunc(d.year / 100)), "0", 2)
+        StringTools.lpad(Reflaxe.Elixir.HaxeFloat.to_string(trunc(Reflaxe.Elixir.HaxeFloat.divide(d.year, 100))), "0", 2)
       "D" ->
         __format(d, "%m/%d/%y")
       "F" ->
         __format(d, "%Y-%m-%d")
       "M" ->
-        StringTools.lpad(inspect(d.minute), "0", 2)
+        StringTools.lpad(Reflaxe.Elixir.HaxeFloat.to_string(d.minute), "0", 2)
       "R" ->
         __format(d, "%H:%M")
       "S" ->
-        StringTools.lpad(inspect(d.second), "0", 2)
+        StringTools.lpad(Reflaxe.Elixir.HaxeFloat.to_string(d.second), "0", 2)
       "T" ->
         __format(d, "%H:%M:%S")
       "Y" ->
-        inspect(d.year)
+        Reflaxe.Elixir.HaxeFloat.to_string(d.year)
       "a" ->
         Enum.at(DateTools.day_short_names(), (fn ->
           date = apply(Map.get(d, :__reflaxe_class__) || Map.get(d, :__struct__), :to_date, [d])
@@ -78,44 +78,44 @@ defmodule DateTools do
           if (dow == 7), do: 0, else: dow
         end).())
       "d" ->
-        StringTools.lpad(inspect(d.day), "0", 2)
+        StringTools.lpad(Reflaxe.Elixir.HaxeFloat.to_string(d.day), "0", 2)
       "e" ->
-        inspect(d.day)
+        Reflaxe.Elixir.HaxeFloat.to_string(d.day)
       "b" ->
         Enum.at(DateTools.month_short_names(), (d.month - 1))
       "h" ->
         Enum.at(DateTools.month_short_names(), (d.month - 1))
       "H" ->
-        StringTools.lpad(inspect(d.hour), (if (e == "H"), do: "0", else: " "), 2)
+        StringTools.lpad(Reflaxe.Elixir.HaxeFloat.to_string(d.hour), (if (e == "H"), do: "0", else: " "), 2)
       "k" ->
-        StringTools.lpad(inspect(d.hour), (if (e == "H"), do: "0", else: " "), 2)
+        StringTools.lpad(Reflaxe.Elixir.HaxeFloat.to_string(d.hour), (if (e == "H"), do: "0", else: " "), 2)
       "I" ->
         hour = rem(d.hour, 12)
-        _ = StringTools.lpad(inspect((if (hour == 0), do: 12, else: hour)), (if (e == "I"), do: "0", else: " "), 2)
+        _ = StringTools.lpad(Reflaxe.Elixir.HaxeFloat.to_string((if (hour == 0), do: 12, else: hour)), (if (e == "I"), do: "0", else: " "), 2)
       "l" ->
         hour = rem(d.hour, 12)
-        _ = StringTools.lpad(inspect((if (hour == 0), do: 12, else: hour)), (if (e == "I"), do: "0", else: " "), 2)
+        _ = StringTools.lpad(Reflaxe.Elixir.HaxeFloat.to_string((if (hour == 0), do: 12, else: hour)), (if (e == "I"), do: "0", else: " "), 2)
       "m" ->
-        StringTools.lpad(inspect((d.month - 1) + 1), "0", 2)
+        StringTools.lpad(Reflaxe.Elixir.HaxeFloat.to_string((d.month - 1) + 1), "0", 2)
       "n" -> "\n"
       "p" when d.hour > 11 -> "PM"
       "p" -> "AM"
       "r" ->
         __format(d, "%I:%M:%S %p")
       "s" ->
-        inspect(trunc(d / 1000))
+        Reflaxe.Elixir.HaxeFloat.to_string(trunc(Reflaxe.Elixir.HaxeFloat.divide(d, 1000)))
       "t" -> "\t"
       "u" when d == 0 -> "7"
       "u" ->
-        inspect(t)
+        Reflaxe.Elixir.HaxeFloat.to_string(t)
       "w" ->
-        inspect((fn ->
-            date = apply(Map.get(d, :__reflaxe_class__) || Map.get(d, :__struct__), :to_date, [d])
-            dow = Date.day_of_week(date)
-            if (dow == 7), do: 0, else: dow
-          end).())
+        Reflaxe.Elixir.HaxeFloat.to_string((fn ->
+          date = apply(Map.get(d, :__reflaxe_class__) || Map.get(d, :__struct__), :to_date, [d])
+          dow = Date.day_of_week(date)
+          if (dow == 7), do: 0, else: dow
+        end).())
       "y" ->
-        StringTools.lpad(inspect(rem(d.year, 100)), "0", 2)
+        StringTools.lpad(Reflaxe.Elixir.HaxeFloat.to_string(rem(d.year, 100)), "0", 2)
       _ -> raise Reflaxe.Elixir.HaxeThrow, [value: NotImplementedException.new("Date.format %" <> e <> "- not implemented yet.", nil, %{:file_name => "../../../../std/DateTools.cross.hx", :line_number => 82, :class_name => "DateTools", :method_name => "__format_get"})]
     end)
   end
@@ -153,7 +153,7 @@ defmodule DateTools do
     __format(d, f)
   end
   def delta(d, t) do
-    Date_Impl_.from_time(d + t)
+    Date_Impl_.from_time(Reflaxe.Elixir.HaxeFloat.add(d, t))
   end
   def get_month_days(d) do
     month = (d.month - 1)
@@ -166,25 +166,25 @@ defmodule DateTools do
     end
   end
   def seconds(n) do
-    n * 1000
+    Reflaxe.Elixir.HaxeFloat.mul(n, 1000)
   end
   def minutes(n) do
-    n * 60 * 1000
+    Reflaxe.Elixir.HaxeFloat.mul(Reflaxe.Elixir.HaxeFloat.mul(n, 60), 1000)
   end
   def hours(n) do
-    n * 60 * 60 * 1000
+    Reflaxe.Elixir.HaxeFloat.mul(Reflaxe.Elixir.HaxeFloat.mul(Reflaxe.Elixir.HaxeFloat.mul(n, 60), 60), 1000)
   end
   def days(n) do
-    n * 24 * 60 * 60 * 1000
+    Reflaxe.Elixir.HaxeFloat.mul(Reflaxe.Elixir.HaxeFloat.mul(Reflaxe.Elixir.HaxeFloat.mul(Reflaxe.Elixir.HaxeFloat.mul(n, 24), 60), 60), 1000)
   end
   def parse(t) do
-    s = t / 1000
-    m = s / 60
-    h = m / 60
-    %{:ms => rem(t, 1000), :seconds => trunc(rem(s, 60)), :minutes => trunc(rem(m, 60)), :hours => trunc(rem(h, 24)), :days => trunc(h / 24)}
+    s = Reflaxe.Elixir.HaxeFloat.divide(t, 1000)
+    m = Reflaxe.Elixir.HaxeFloat.divide(s, 60)
+    h = Reflaxe.Elixir.HaxeFloat.divide(m, 60)
+    %{:ms => Reflaxe.Elixir.HaxeFloat.remainder(t, 1000), :seconds => trunc(Reflaxe.Elixir.HaxeFloat.remainder(s, 60)), :minutes => trunc(Reflaxe.Elixir.HaxeFloat.remainder(m, 60)), :hours => trunc(Reflaxe.Elixir.HaxeFloat.remainder(h, 24)), :days => trunc(Reflaxe.Elixir.HaxeFloat.divide(h, 24))}
   end
   def make(o) do
-    o.ms + 1000 * (o.seconds + 60 * (o.minutes + 60 * (o.hours + 24 * o.days)))
+    Reflaxe.Elixir.HaxeFloat.add(o.ms, Reflaxe.Elixir.HaxeFloat.mul(1000, Reflaxe.Elixir.HaxeFloat.add(o.seconds, Reflaxe.Elixir.HaxeFloat.mul(60, Reflaxe.Elixir.HaxeFloat.add(o.minutes, Reflaxe.Elixir.HaxeFloat.mul(60, Reflaxe.Elixir.HaxeFloat.add(o.hours, Reflaxe.Elixir.HaxeFloat.mul(24, o.days))))))))
   end
   def make_utc(year, month, day, hour, min, sec) do
     (fn ->

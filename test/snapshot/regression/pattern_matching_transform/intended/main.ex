@@ -27,7 +27,7 @@ defmodule Main do
         (case value do
           {:ok, value} ->
             n = value
-            "Got number: #{Kernel.to_string(n)}"
+            "Got number: #{Reflaxe.Elixir.HaxeFloat.to_string(n)}"
           {:error, e} -> "Got error: #{e}"
         end)
       {:none} -> "Got nothing"

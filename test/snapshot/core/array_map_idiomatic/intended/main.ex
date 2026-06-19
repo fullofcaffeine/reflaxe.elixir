@@ -9,7 +9,7 @@ defmodule Main do
   defp test_simple_map() do
     numbers = [1, 2, 3, 4, 5]
     _doubled = Enum.map(numbers, fn n -> n * 2 end)
-    _strings = Enum.map(numbers, fn n -> "Number: " <> Kernel.to_string(n) end)
+    _strings = Enum.map(numbers, fn n -> "Number: " <> Reflaxe.Elixir.HaxeFloat.to_string(n) end)
     _processed = Enum.map(numbers, fn n -> process_number(n) end)
   end
   defp test_map_with_enum_construction() do
@@ -36,7 +36,7 @@ defmodule Main do
     _processed = Enum.map(Enum.filter(Enum.map(Enum.filter(users, fn u -> u.age > 20 end), fn u -> %{:name => u.name, :valid => true} end), fn u -> u.valid end), fn u -> u.name end)
   end
   defp process_number(n) do
-    "Processed: #{Kernel.to_string(n)}"
+    "Processed: #{Reflaxe.Elixir.HaxeFloat.to_string(n)}"
   end
   defp generate_id(name) do
     String.length(name) * 100

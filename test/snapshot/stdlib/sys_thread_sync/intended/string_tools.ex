@@ -178,9 +178,6 @@ end) != -1
         
   end
   def parse_float(str) do
-    (case Float.parse(str) do
-      {num, _} -> num
-      :error -> nil
-    end)
+    Reflaxe.Elixir.HaxeFloat.parse(str)
   end
 end

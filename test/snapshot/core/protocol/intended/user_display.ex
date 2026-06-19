@@ -1,6 +1,6 @@
 defmodule UserDisplay do
   def display(user) do
-    "#{user.name} (#{Kernel.to_string(user.age)})"
+    "#{user.name} (#{Reflaxe.Elixir.HaxeFloat.to_string(user.age)})"
   end
   def format(user, options) do
     if ((case options do
@@ -11,7 +11,7 @@ defmodule UserDisplay do
         Map.get(dyn_obj, :verbose)
     end)
 end)) do
-      "User: #{user.name}, Age: #{Kernel.to_string(user.age)}"
+      "User: #{user.name}, Age: #{Reflaxe.Elixir.HaxeFloat.to_string(user.age)}"
     else
       display(user)
     end

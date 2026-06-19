@@ -18,6 +18,7 @@ import reflaxe.elixir.ast.ReentrancyGuard;
 import reflaxe.elixir.ast.builders.ArrayBuilder;
 import reflaxe.elixir.ast.builders.CoreExprBuilder;
 import reflaxe.elixir.ast.builders.BinaryOpBuilder;
+import reflaxe.elixir.ast.builders.NumericOpBuilder;
 import reflaxe.elixir.ast.builders.LoopBuilder;
 import reflaxe.elixir.ast.builders.PatternBuilder;
 import reflaxe.elixir.ast.builders.EnumHandler;
@@ -93,6 +94,36 @@ class ElixirASTBuilder {
 	public static var currentModuleHasPresence:Bool = false;
 	// REMOVED: currentClauseContext - Now using context.currentClauseContext for proper context propagation
 	public static var switchNestingLevel:Int = 0; // Track how deep we are in nested switches
+
+	private static function buildSameScopeRebindValue(bindingName:String, updatedValue:ElixirAST, expressionValue:ElixirAST):ElixirAST {
+		// Elixir variables are immutable, so a Haxe mutation used inside a larger expression
+		// must be split into two pieces: rebind the local in the outer scope, then use the
+		// expression value where the original Haxe code expected it.
+		//
+		// The name says "receiver" because this semantic node was first introduced for
+		// map-like receiver updates. The lowering pass handles the more general rule:
+		// "this binding must be rebound in the same lexical scope before the value is used."
+		return makeAST(EReceiverEffect({
+			receiver: {varId: -1, name: bindingName},
+			operation: makeAST(ETuple([updatedValue, expressionValue])),
+			resultShape: UpdatedReceiverAndValue,
+			valueProjection: CompanionValue,
+			writeback: Always
+		}));
+	}
+
+	private static function buildSameScopeRebindUpdatedBinding(bindingName:String, updatedValue:ElixirAST):ElixirAST {
+		// Prefix local mutation (`++x` / `--x`) returns the value after rebinding.
+		// The lowering pass emits `x = updated` first, then leaves `x` as the
+		// residual expression value for the surrounding assertion/call/operator.
+		return makeAST(EReceiverEffect({
+			receiver: {varId: -1, name: bindingName},
+			operation: updatedValue,
+			resultShape: UpdatedReceiver,
+			valueProjection: ReceiverValue,
+			writeback: Always
+		}));
+	}
 
 	// ================================================================
 	// Compilation Instrumentation for Hanging Diagnosis
@@ -1780,8 +1811,8 @@ class ElixirASTBuilder {
 								EUnary(Not, makeAST(expr));
 						}
 					case OpNeg:
-						var expr = buildFromTypedExpr(e, currentContext).def;
-						EUnary(Negate, makeAST(expr));
+						var builtExpr = buildFromTypedExpr(e, currentContext);
+						NumericOpBuilder.buildUnaryNegation(builtExpr, e).def;
 					case OpNegBits:
 						var expr = buildFromTypedExpr(e, currentContext).def;
 						EUnary(BitwiseNot, makeAST(expr));
@@ -1811,20 +1842,12 @@ class ElixirASTBuilder {
 							var receiverName = currentContext.currentReceiverParamName;
 							var receiver = makeAST(EVar(receiverName));
 							var currentField = makeAST(EField(receiver, thisFieldName));
-							var updatedField = makeAST(EBinary(arithmeticOp, currentField, one));
+							var updatedField = NumericOpBuilder.buildIncrementValue(arithmeticOp, currentField, one, e);
 							var updatedReceiver = makeAST(EStructUpdate(receiver, [{key: thisFieldName, value: updatedField}]));
 							if (postFix) {
-								var oldFieldVarName = "__old_" + receiverName + "_" + thisFieldName;
-								EParen(makeAST(EBlock([
-									makeAST(EMatch(PVar(oldFieldVarName), currentField)),
-									makeAST(EMatch(PVar(receiverName), updatedReceiver)),
-									makeAST(EVar(oldFieldVarName))
-								])));
+								buildSameScopeRebindValue(receiverName, updatedReceiver, currentField).def;
 							} else {
-								EParen(makeAST(EBlock([
-									makeAST(EMatch(PVar(receiverName), updatedReceiver)),
-									makeAST(EField(receiver, thisFieldName))
-								])));
+								buildSameScopeRebindValue(receiverName, updatedReceiver, updatedField).def;
 							}
 						} else {
 							var built = buildFromTypedExpr(e, currentContext);
@@ -1834,16 +1857,13 @@ class ElixirASTBuilder {
 							};
 							if (targetVar != null) {
 								if (postFix) {
-									// old = x; x = x + 1; old
-									var oldVarName = "__old_" + targetVar;
-									EParen(makeAST(EBlock([
-										makeAST(EMatch(PVar(oldVarName), makeAST(EVar(targetVar)))),
-										makeAST(EMatch(PVar(targetVar), makeAST(EBinary(arithmeticOp, makeAST(EVar(targetVar)), one)))),
-										makeAST(EVar(oldVarName))
-									])));
+									// Postfix returns the old value, but the variable still needs to
+									// be rebound in the caller scope before later expressions run.
+									var updatedValue = NumericOpBuilder.buildIncrementValue(arithmeticOp, makeAST(EVar(targetVar)), one, e);
+									buildSameScopeRebindValue(targetVar, updatedValue, makeAST(EVar(targetVar))).def;
 								} else {
-									// x = x + 1
-									EMatch(PVar(targetVar), makeAST(EBinary(arithmeticOp, makeAST(EVar(targetVar)), one)));
+									var updatedValue = NumericOpBuilder.buildIncrementValue(arithmeticOp, makeAST(EVar(targetVar)), one, e);
+									buildSameScopeRebindUpdatedBinding(targetVar, updatedValue).def;
 								}
 							} else {
 								switch (built != null ? built.def : null) {
@@ -1851,30 +1871,20 @@ class ElixirASTBuilder {
 										switch (receiver.def) {
 											case EVar(receiverName):
 												var currentField = makeAST(EField(receiver, fieldName));
-												var updatedField = makeAST(EBinary(arithmeticOp, currentField, one));
+												var updatedField = NumericOpBuilder.buildIncrementValue(arithmeticOp, currentField, one, e);
 												var updatedReceiver = makeAST(EStructUpdate(receiver, [{key: fieldName, value: updatedField}]));
 												if (postFix) {
-													// old = receiver.field; receiver = %{receiver | field: receiver.field + 1}; old
-													var oldFieldVarName = "__old_" + receiverName + "_" + fieldName;
-													EParen(makeAST(EBlock([
-														makeAST(EMatch(PVar(oldFieldVarName), currentField)),
-														makeAST(EMatch(PVar(receiverName), updatedReceiver)),
-														makeAST(EVar(oldFieldVarName))
-													])));
+													buildSameScopeRebindValue(receiverName, updatedReceiver, currentField).def;
 												} else {
-													// receiver = %{receiver | field: receiver.field + 1}; receiver.field
-													EParen(makeAST(EBlock([
-														makeAST(EMatch(PVar(receiverName), updatedReceiver)),
-														makeAST(EField(receiver, fieldName))
-													])));
+													buildSameScopeRebindValue(receiverName, updatedReceiver, updatedField).def;
 												}
 											default:
 												// Fallback: compute the arithmetic value when we can't safely rebind.
-												EBinary(arithmeticOp, built, one);
+												NumericOpBuilder.buildIncrementValue(arithmeticOp, built, one, e).def;
 										}
 									default:
 										// Fallback: compute the arithmetic value when we can't safely rebind.
-										EBinary(arithmeticOp, built, one);
+										NumericOpBuilder.buildIncrementValue(arithmeticOp, built, one, e).def;
 								}
 							}
 						}

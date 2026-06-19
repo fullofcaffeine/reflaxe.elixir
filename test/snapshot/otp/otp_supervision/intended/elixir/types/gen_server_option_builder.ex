@@ -6,7 +6,7 @@ defmodule GenServerOptionBuilder do
   end
   def with_via(module, name, options) do
     options = if (Kernel.is_nil(options)), do: %{}, else: options
-    options = Map.put(options, :name, elixir__.("{:via, #{Kernel.to_string(module)}, #{Kernel.to_string(name)}}"))
+    options = Map.put(options, :name, elixir__.("{:via, #{Reflaxe.Elixir.HaxeFloat.to_string(module)}, #{Reflaxe.Elixir.HaxeFloat.to_string(name)}}"))
     options
   end
   def with_global_name(name, options) do

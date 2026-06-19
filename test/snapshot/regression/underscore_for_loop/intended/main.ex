@@ -2,14 +2,11 @@ defmodule Main do
   def main() do
     count = 0
     _ = 1
-    _old_count = count
-    count = count + 1
+    {count, _reflaxe_receiver_value_0} = {count + 1, count}
     _ = 2
-    _ = count
-    count = count + 1
+    {count, _reflaxe_receiver_value_1} = {count + 1, count}
     _ = 3
-    _ = count
-    _ = count + 1
+    {_count, _reflaxe_receiver_value_2} = {count + 1, count}
     numbers = [1, 2, 3, 4, 5]
     _total = Lambda.count(numbers, nil)
     _ = 1
@@ -17,15 +14,12 @@ defmodule Main do
     rows = 0
     _g = 0
     _ = Enum.reduce(matrix, rows, fn _, rows_acc ->
-      _old_rows_acc = rows_acc
-      rows_acc = rows_acc + 1
+      {rows_acc, _reflaxe_receiver_value_3} = {rows_acc + 1, rows_acc}
       cols = 0
       _ = 1
-      _old_cols = cols
-      rows_acc = rows_acc + 1
+      {cols, _reflaxe_receiver_value_4} = {cols + 1, cols}
       _ = 2
-      _ = cols
-      rows_acc = rows_acc + 1
+      {_cols, _reflaxe_receiver_value_5} = {cols + 1, cols}
       rows_acc
     end)
     nil

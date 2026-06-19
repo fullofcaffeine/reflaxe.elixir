@@ -3,7 +3,7 @@ defmodule Main do
   def render(assigns) do
     ~H"""
 <div>
-      <option value="created" selected={(@sort_by == "created")}></option>
+      <option value="created" selected={Reflaxe.Elixir.HaxeFloat.to_string((@sort_by == "created"))}></option>
       <div class={if @flag, do: "on", else: "off"} id={if @flag, do: "flag-on", else: "flag-off"}></div>
     </div>
 """

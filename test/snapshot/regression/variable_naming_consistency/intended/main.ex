@@ -2,7 +2,7 @@ defmodule Main do
   def main() do
     _changeset = get_changeset()
     user = get_user()
-    if (Kernel.is_nil(user)), do: nil
+    if (Reflaxe.Elixir.HaxeFloat.eq(user, nil)), do: nil
     _result = compute()
     nil
   end

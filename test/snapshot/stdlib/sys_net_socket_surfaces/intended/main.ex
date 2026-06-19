@@ -39,7 +39,7 @@ end), haxe_exception} do
           {error, _} when is_tuple(error) and elem(error, 0) in [:overflow, :outside_bounds, :custom, :blocked] ->
             (case error do
               {:custom, message} ->
-                if (message == "") do
+                if (Reflaxe.Elixir.HaxeFloat.eq(message, "")) do
                   raise Reflaxe.Elixir.HaxeThrow, [value: "UdpSocket.readFrom should explain the unsupported API"]
                 end
               _ -> raise Reflaxe.Elixir.HaxeThrow, [value: "UdpSocket.readFrom should raise Error.Custom"]

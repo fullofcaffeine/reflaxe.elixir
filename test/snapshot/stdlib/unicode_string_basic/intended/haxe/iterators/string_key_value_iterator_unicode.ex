@@ -14,9 +14,8 @@ end) != ""
   end
   def next(struct) do
     struct = %{struct | s: struct.s}
-    old_struct_offset = struct.offset
-    struct = %{struct | offset: struct.offset + 1}
-    index = old_struct_offset
+    {struct, reflaxe_receiver_value_0} = {%{struct | offset: struct.offset + 1}, struct.offset}
+    index = reflaxe_receiver_value_0
     %{:key => struct.offset, :value => (if (index < 0) do
   nil
 else

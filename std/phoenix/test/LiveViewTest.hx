@@ -2,7 +2,9 @@ package phoenix.test;
 
 import phoenix.test.Conn;
 import phoenix.test.LiveView;
+import phoenix.test.LiveViewEventName;
 import phoenix.test.LiveViewMountResult;
+import phoenix.types.AssignKey;
 import elixir.types.Term;
 
 /**
@@ -80,12 +82,47 @@ extern class LiveViewTest {
 	public static function render_click(liveView:LiveView, element:String):LiveView;
 
 	/**
+	 * Simulate a click event with an app-owned event token.
+	 *
+	 * This is a typed convenience wrapper over `render_click(...)`. The generated
+	 * Elixir still calls `Phoenix.LiveViewTest.render_click/2` or `/3` with the
+	 * plain event string.
+	 */
+	public static inline function render_click_event<TEvent>(liveView:LiveView, event:LiveViewEventName<TEvent>):LiveView {
+		return render_click(liveView, event);
+	}
+
+	/**
+	 * Simulate a click event with an app-owned event token and event payload.
+	 */
+	public static inline function render_click_event_with<TEvent>(liveView:LiveView, event:LiveViewEventName<TEvent>, value:Term):LiveView {
+		return render_click(liveView, event, value);
+	}
+
+	/**
 	 * Simulate form submission.
 	 */
 	@:overload(function(element:Term, data:Term):LiveView {})
 	@:overload(function(liveView:LiveView, form:String, data:Term):LiveView {})
 	@:overload(function(liveView:LiveView, form:String, data:Map<String, Term>):LiveView {})
 	public static function render_submit(liveView:LiveView, form:String):LiveView;
+
+	/**
+	 * Simulate a submit event with an app-owned event token.
+	 *
+	 * Keep raw `render_submit(...)` for CSS selector driven tests. Use this helper
+	 * when the second argument is the same app event name handled by the LiveView.
+	 */
+	public static inline function render_submit_event<TEvent>(liveView:LiveView, event:LiveViewEventName<TEvent>):LiveView {
+		return render_submit(liveView, event);
+	}
+
+	/**
+	 * Simulate a submit event with an app-owned event token and form data.
+	 */
+	public static inline function render_submit_event_with<TEvent>(liveView:LiveView, event:LiveViewEventName<TEvent>, data:Term):LiveView {
+		return render_submit(liveView, event, data);
+	}
 
 	/**
 	 * Simulate form change event (validation).
@@ -95,6 +132,20 @@ extern class LiveViewTest {
 	@:overload(function(liveView:LiveView, form:String, data:Term):LiveView {})
 	@:overload(function(liveView:LiveView, form:String, data:Map<String, Term>):LiveView {})
 	public static function render_change(liveView:LiveView, form:String):LiveView;
+
+	/**
+	 * Simulate a change event with an app-owned event token.
+	 */
+	public static inline function render_change_event<TEvent>(liveView:LiveView, event:LiveViewEventName<TEvent>):LiveView {
+		return render_change(liveView, event);
+	}
+
+	/**
+	 * Simulate a change event with an app-owned event token and form data.
+	 */
+	public static inline function render_change_event_with<TEvent>(liveView:LiveView, event:LiveViewEventName<TEvent>, data:Term):LiveView {
+		return render_change(liveView, event, data);
+	}
 
 	/**
 	 * Simulate keydown event.
@@ -174,9 +225,26 @@ extern class LiveViewTest {
 	public static function get_assign(liveView:LiveView, key:String):Term;
 
 	/**
+	 * Get a typed assign value from the LiveView test harness.
+	 *
+	 * The key is the same `AssignKey` token used by runtime socket assign helpers.
+	 * This keeps tests tied to the assigns typedef instead of repeating raw strings.
+	 */
+	public static inline function get_assign_key<TAssigns, TValue>(liveView:LiveView, key:AssignKey<TAssigns, TValue>):TValue {
+		return cast get_assign(liveView, cast key);
+	}
+
+	/**
 	 * Check if LiveView has specific assign.
 	 */
 	public static function has_assign(liveView:LiveView, key:String):Bool;
+
+	/**
+	 * Check for an assign using a typed assign key token.
+	 */
+	public static inline function has_assign_key<TAssigns, TValue>(liveView:LiveView, key:AssignKey<TAssigns, TValue>):Bool {
+		return has_assign(liveView, cast key);
+	}
 
 	/**
 	 * Get LiveView flash messages.

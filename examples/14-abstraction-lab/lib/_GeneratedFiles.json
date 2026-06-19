@@ -4,6 +4,7 @@
   "std.ex",
   "reflaxe/exception.ex",
   "reflaxe/elixir/haxe_throw.ex",
+  "reflaxe/elixir/haxe_float.ex",
   "protocols/command_renderable.ex",
   "implementations/string_command_renderable.ex",
   "implementations/int_command_renderable.ex",
@@ -14,7 +15,7 @@
   "behaviors/retry_policy.ex",
   "abstractions/process_boundary.ex"
 ],
-  "id": 10,
+  "id": 16,
   "wasCached": false,
   "version": 1
 }

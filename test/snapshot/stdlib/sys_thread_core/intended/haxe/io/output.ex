@@ -219,6 +219,7 @@ end).()] end).())
       end)
     rescue
       haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception

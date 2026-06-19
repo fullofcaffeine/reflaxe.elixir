@@ -5,15 +5,14 @@ defmodule FileStorage do
     struct
   end
   def init(struct, config) do
-    cond_value = (case config do
-      dyn_obj ->
-        (case Map.fetch(dyn_obj, "path") do
-          {:ok, dyn_value} -> dyn_value
-          _ ->
-            Map.get(dyn_obj, :path)
-        end)
+    struct = if ((Reflaxe.Elixir.HaxeFloat.neq(((case config do
+  dyn_obj ->
+    (case Map.fetch(dyn_obj, "path") do
+      {:ok, dyn_value} -> dyn_value
+      _ ->
+        Map.get(dyn_obj, :path)
     end)
-    struct = if (not Kernel.is_nil(cond_value)) do
+end)), nil))) do
       %{struct | base_path: (case config do
   dyn_obj ->
     (case Map.fetch(dyn_obj, "path") do

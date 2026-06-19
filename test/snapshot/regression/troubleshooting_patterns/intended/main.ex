@@ -85,12 +85,12 @@ defmodule Main do
             length = header_2
             version = header_3
             if (version == 0 and true) do
-              "Protocol v0, length=" <> Kernel.to_string(length) <> ", payload bytes=" <> Kernel.to_string(5)
+              "Protocol v0, length=" <> Reflaxe.Elixir.HaxeFloat.to_string(length) <> ", payload bytes=" <> Reflaxe.Elixir.HaxeFloat.to_string(5)
             else
               length = header_2
               version = header_3
               cond do
-                version > 0 -> "Future protocol v" <> Kernel.to_string(version)
+                version > 0 -> "Future protocol v" <> Reflaxe.Elixir.HaxeFloat.to_string(version)
                 false -> "Incomplete packet header"
                 :true -> "Unknown packet format"
               end
@@ -282,16 +282,16 @@ end).(), "") end).()} + more data"
   def test_pattern_matching_edge_cases() do
     data = [1, [2, 3], %{:name => "test", :value => 42}]
     switch_result_3 = (case data do
-      [] when Std.is(data, Array) and length(data) > 3 -> "Large array with #{inspect(length(arr))} elements"
+      [] when Std.is(data, Array) and Reflaxe.Elixir.HaxeFloat.gt(length(data), 3) -> "Large array with #{Reflaxe.Elixir.HaxeFloat.to_string(length(arr))} elements"
       [] -> "Empty array"
       [_head | _tail] ->
         x = data[0]
         if (Std.is(x, Int)) do
-          "Single integer: #{inspect(x)}"
+          "Single integer: #{Reflaxe.Elixir.HaxeFloat.to_string(x)}"
         else
           arr = data
-          if (Std.is(arr, Array) and length(arr) > 3) do
-            "Large array with #{inspect(length(arr))} elements"
+          if (Std.is(arr, Array) and Reflaxe.Elixir.HaxeFloat.gt(length(arr), 3)) do
+            "Large array with #{Reflaxe.Elixir.HaxeFloat.to_string(length(arr))} elements"
           else
             "Other data structure"
           end
@@ -300,18 +300,18 @@ end).(), "") end).()} + more data"
         x = data[0]
         y = data[1]
         if (Std.is(x, Int) and Std.is(y, Array)) do
-          "Integer and array: #{inspect(x)}, [#{(fn -> inspect((case y do
-    _dyn_obj ->
-      (case Map.fetch(_dyn_obj, "join") do
-        {:ok, _dyn_value} -> _dyn_value
-        _ ->
-          Map.get(_dyn_obj, :join)
-      end)
-  end).(",")) end).()}]"
+          "Integer and array: #{Reflaxe.Elixir.HaxeFloat.to_string(x)}, [#{(fn -> Reflaxe.Elixir.HaxeFloat.to_string((case y do
+  _dyn_obj ->
+    (case Map.fetch(_dyn_obj, "join") do
+      {:ok, _dyn_value} -> _dyn_value
+      _ ->
+        Map.get(_dyn_obj, :join)
+    end)
+end).(",")) end).()}]"
         else
           arr = data
-          if (Std.is(arr, Array) and length(arr) > 3) do
-            "Large array with #{inspect(length(arr))} elements"
+          if (Std.is(arr, Array) and Reflaxe.Elixir.HaxeFloat.gt(length(arr), 3)) do
+            "Large array with #{Reflaxe.Elixir.HaxeFloat.to_string(length(arr))} elements"
           else
             "Other data structure"
           end
@@ -320,35 +320,35 @@ end).(), "") end).()} + more data"
         _x = data[0]
         _y = data[1]
         z = data[2]
-        cond_value = not Kernel.is_nil(((case z do
-  dyn_obj ->
-    (case Map.fetch(dyn_obj, "name") do
-      {:ok, dyn_value} -> dyn_value
-      _ ->
-        Map.get(dyn_obj, :name)
-    end)
-end)))
+        cond_value = Reflaxe.Elixir.HaxeFloat.neq(((case z do
+          dyn_obj ->
+            (case Map.fetch(dyn_obj, "name") do
+              {:ok, dyn_value} -> dyn_value
+              _ ->
+                Map.get(dyn_obj, :name)
+            end)
+        end)), nil)
         if (Std.is(z, Dynamic) and cond_value) do
-          "Three elements ending with object: #{(fn -> inspect(((case z do
-    _dyn_obj ->
-      (case Map.fetch(_dyn_obj, "name") do
-        {:ok, _dyn_value} -> _dyn_value
-        _ ->
-          Map.get(_dyn_obj, :name)
-      end)
-  end))) end).()}"
+          "Three elements ending with object: #{(fn -> Reflaxe.Elixir.HaxeFloat.to_string(((case z do
+  _dyn_obj ->
+    (case Map.fetch(_dyn_obj, "name") do
+      {:ok, _dyn_value} -> _dyn_value
+      _ ->
+        Map.get(_dyn_obj, :name)
+    end)
+end))) end).()}"
         else
           arr = data
-          if (Std.is(arr, Array) and length(arr) > 3) do
-            "Large array with #{inspect(length(arr))} elements"
+          if (Std.is(arr, Array) and Reflaxe.Elixir.HaxeFloat.gt(length(arr), 3)) do
+            "Large array with #{Reflaxe.Elixir.HaxeFloat.to_string(length(arr))} elements"
           else
             "Other data structure"
           end
         end
       _ ->
         arr = data
-        if (Std.is(arr, Array) and length(arr) > 3) do
-          "Large array with #{inspect(length(arr))} elements"
+        if (Std.is(arr, Array) and Reflaxe.Elixir.HaxeFloat.gt(length(arr), 3)) do
+          "Large array with #{Reflaxe.Elixir.HaxeFloat.to_string(length(arr))} elements"
         else
           "Other data structure"
         end
@@ -365,9 +365,9 @@ end)))
       n ->
         n = value
         if (n > 10) do
-          "large number: #{Kernel.to_string(n)}"
+          "large number: #{Reflaxe.Elixir.HaxeFloat.to_string(n)}"
         else
-          "other number: #{Kernel.to_string(value)}"
+          "other number: #{Reflaxe.Elixir.HaxeFloat.to_string(value)}"
         end
     end)
     switch_result_4
@@ -378,22 +378,22 @@ end)))
     _g = 0
     results = Enum.reduce(operations, results, fn op, results_acc ->
       result = (case op.type do
-        "delete" when op.resource == "comment" -> "Deleting comment " <> Kernel.to_string(op.id)
+        "delete" when op.resource == "comment" -> "Deleting comment " <> Reflaxe.Elixir.HaxeFloat.to_string(op.id)
         "delete" ->
           type = op.type
           resource = op.resource
           "Unknown operation: " <> type <> " on " <> resource
-        "read" when op.resource == "user" -> "Reading user " <> Kernel.to_string(op.id)
+        "read" when op.resource == "user" -> "Reading user " <> Reflaxe.Elixir.HaxeFloat.to_string(op.id)
         "read" ->
           type = op.type
           resource = op.resource
           "Unknown operation: " <> type <> " on " <> resource
-        "update" when op.resource == "user" -> "Updating user " <> Kernel.to_string(op.id)
+        "update" when op.resource == "user" -> "Updating user " <> Reflaxe.Elixir.HaxeFloat.to_string(op.id)
         "update" ->
           type = op.type
           resource = op.resource
           "Unknown operation: " <> type <> " on " <> resource
-        "write" when op.resource == "post" -> "Writing post " <> Kernel.to_string(op.id)
+        "write" when op.resource == "post" -> "Writing post " <> Reflaxe.Elixir.HaxeFloat.to_string(op.id)
         "write" ->
           type = op.type
           resource = op.resource

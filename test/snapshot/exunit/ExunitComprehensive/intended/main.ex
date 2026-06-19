@@ -126,7 +126,7 @@ defmodule Main do
     _ = assert(single_0 == 42, "Single element should be 42")
     _ = assert(true, "Zero equality should work")
     _ = assert(true, "Negative comparison should work")
-    _ = assert(true == true, "Infinity comparison should work")
+    _ = assert(Reflaxe.Elixir.HaxeFloat.gt(Reflaxe.Elixir.HaxeFloat.positive_infinity(), 1000000) == true, "Infinity comparison should work")
   end
   test "assertion messages" do
     _ = assert(1 == 1, "This message appears when assertion fails")
@@ -134,7 +134,7 @@ defmodule Main do
     _ = refute(false, "False assertion with message")
     _ = assert(is_nil(nil), "Null check with message")
     value = 42
-    _ = assert(value == 42, "Value should be " <> Kernel.to_string(value))
+    _ = assert(value == 42, "Value should be " <> Reflaxe.Elixir.HaxeFloat.to_string(value))
     _ = assert(2 == 2)
     _ = assert(true)
     _ = refute(false)

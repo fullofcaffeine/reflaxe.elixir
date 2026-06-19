@@ -4,7 +4,7 @@ defmodule Main do
     _result1 = (case status do
       {:loading} -> "Loading..."
       {:success, data} -> "Got data: #{data}"
-      {:failure, error, code} -> "Error #{Kernel.to_string(code)}: #{error}"
+      {:failure, error, code} -> "Error #{Reflaxe.Elixir.HaxeFloat.to_string(code)}: #{error}"
     end)
     nested = {:ok, {:success, "Nested"}}
     _result2 = (case nested do
@@ -12,7 +12,7 @@ defmodule Main do
         (case status do
           {:loading} -> "Still loading"
           {:success, data} -> "Nested success: #{data}"
-          {:failure, error, code} -> "Nested failure #{Kernel.to_string(code)}: #{error}"
+          {:failure, error, code} -> "Nested failure #{Reflaxe.Elixir.HaxeFloat.to_string(code)}: #{error}"
         end)
       {:error, message} -> "Top level error: #{message}"
     end)

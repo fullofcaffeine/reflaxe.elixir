@@ -367,9 +367,8 @@ abstract TypedQuery<T>(EctoQueryStruct) {
 	 * //           where: c.approved == true
 	 * ```
 	 */
-	extern inline public function join(association:String, type:JoinType, ?alias:String):TypedQuery<T> {
-		// Join using association name as string
-		// Type parameter provides the join type (inner, left, right, etc.)
+	extern inline public function joinAssociation(association:SchemaAssociation<T>, type:JoinType):TypedQuery<T> {
+		var baseQuery:EctoQueryStruct = this;
 		var joinType = untyped __elixir__(switch (type) {
 			case Inner: ':inner';
 			case Left: ':left';
@@ -377,11 +376,40 @@ abstract TypedQuery<T>(EctoQueryStruct) {
 			case FullOuter: ':full';
 		});
 
-		return cast(if (alias != null) {
-			untyped __elixir__('(require Ecto.Query; Ecto.Query.join({0}, {1}, [t], assoc(t, {2}), as: {3}))', this.query, joinType, ':' + association,
-				':' + alias);
+		return cast untyped __elixir__('(require Ecto.Query; Ecto.Query.join({0}, {1}, [t], assoc(t, {2})))', baseQuery, joinType, association);
+	}
+
+	extern inline public function joinAssociationAs(association:SchemaAssociation<T>, type:JoinType, bindingAlias:String):TypedQuery<T> {
+		var baseQuery:EctoQueryStruct = this;
+		var bindingAliasAtom = untyped __elixir__('String.to_atom({0})', bindingAlias);
+		var joinType = untyped __elixir__(switch (type) {
+			case Inner: ':inner';
+			case Left: ':left';
+			case Right: ':right';
+			case FullOuter: ':full';
+		});
+
+		return cast untyped __elixir__('(require Ecto.Query; Ecto.Query.join({0}, {1}, [t], assoc(t, {2}), as: {3}))', baseQuery, joinType, association,
+			bindingAliasAtom);
+	}
+
+	extern inline public function join(association:String, type:JoinType, ?bindingAlias:String):TypedQuery<T> {
+		// Join using association name as string
+		// Type parameter provides the join type (inner, left, right, etc.)
+		var baseQuery:EctoQueryStruct = this;
+		var joinType = untyped __elixir__(switch (type) {
+			case Inner: ':inner';
+			case Left: ':left';
+			case Right: ':right';
+			case FullOuter: ':full';
+		});
+
+		return cast(if (bindingAlias != null) {
+			var bindingAliasAtom = untyped __elixir__('String.to_atom({0})', bindingAlias);
+			untyped __elixir__('(require Ecto.Query; Ecto.Query.join({0}, {1}, [t], assoc(t, {2}), as: {3}))', baseQuery, joinType, ':' + association,
+				bindingAliasAtom);
 		} else {
-			untyped __elixir__('(require Ecto.Query; Ecto.Query.join({0}, {1}, [t], assoc(t, {2})))', this.query, joinType, ':' + association);
+			untyped __elixir__('(require Ecto.Query; Ecto.Query.join({0}, {1}, [t], assoc(t, {2})))', baseQuery, joinType, ':' + association);
 		});
 	}
 
@@ -401,10 +429,14 @@ abstract TypedQuery<T>(EctoQueryStruct) {
 	 * // Generates: preload: [:user, :tags, :comments]
 	 * ```
 	 */
+	extern inline public function preloadAssociations(associations:Array<SchemaAssociation<T>>):TypedQuery<T> {
+		return cast untyped __elixir__('(require Ecto.Query; Ecto.Query.preload({0}, {1}))', this, associations);
+	}
+
 	extern inline public function preload(associations:Array<String>):TypedQuery<T> {
 		// Convert string array to atom list for Ecto
 		var atomList = untyped __elixir__('Enum.map({0}, &String.to_atom/1)', associations);
-		return cast untyped __elixir__('(require Ecto.Query; Ecto.Query.preload({0}, {1}))', this.query, atomList);
+		return cast untyped __elixir__('(require Ecto.Query; Ecto.Query.preload({0}, {1}))', this, atomList);
 	}
 
 	/**
@@ -459,9 +491,9 @@ abstract TypedQuery<T>(EctoQueryStruct) {
 	 * ### How it works:
 	 * 
 	 * ```haxe
-	 * overload extern inline public function whereRaw(sql: String): TypedQuery<T>
-	 * overload extern inline public function whereRaw<A>(sql: String, p1: A): TypedQuery<T>
-	 * overload extern inline public function whereRaw<A,B>(sql: String, p1: A, p2: B): TypedQuery<T>
+	 * overload extern inline public function whereUnsafeRaw(sql: String): TypedQuery<T>
+	 * overload extern inline public function whereUnsafeRaw<A>(sql: String, p1: A): TypedQuery<T>
+	 * overload extern inline public function whereUnsafeRaw<A,B>(sql: String, p1: A, p2: B): TypedQuery<T>
 	 * ```
 	 * 
 	 * ### Requirements:
@@ -478,7 +510,7 @@ abstract TypedQuery<T>(EctoQueryStruct) {
 	 * ```haxe
 	 * @:overload(function<A>(sql: String, p1: A): TypedQuery<T> {})
 	 * @:overload(function<A,B>(sql: String, p1: A, p2: B): TypedQuery<T> {})
-	 * extern inline public function whereRaw(sql: String): TypedQuery<T>
+	 * extern inline public function whereUnsafeRaw(sql: String): TypedQuery<T>
 	 * ```
 	 * 
 	 * **Pros:**
@@ -497,9 +529,9 @@ abstract TypedQuery<T>(EctoQueryStruct) {
 	 * 
 	 * **Usage:**
 	 * ```haxe
-	 * overload extern inline public function whereRaw(sql: String): TypedQuery<T>
-	 * overload extern inline public function whereRaw<A>(sql: String, p1: A): TypedQuery<T>
-	 * overload extern inline public function whereRaw<A,B>(sql: String, p1: A, p2: B): TypedQuery<T>
+	 * overload extern inline public function whereUnsafeRaw(sql: String): TypedQuery<T>
+	 * overload extern inline public function whereUnsafeRaw<A>(sql: String, p1: A): TypedQuery<T>
+	 * overload extern inline public function whereUnsafeRaw<A,B>(sql: String, p1: A, p2: B): TypedQuery<T>
 	 * ```
 	 * 
 	 * **Pros:**
@@ -543,7 +575,7 @@ abstract TypedQuery<T>(EctoQueryStruct) {
 	 *    ```haxe
 	 *    // SAFE: User input is escaped
 	 *    var userInput = "'; DROP TABLE users; --";
-	 *    query.whereRaw("name = ?", userInput);
+	 *    query.whereUnsafeRaw("name = ?", userInput);
 	 *    // Generates: where(fragment("name = ?", ^"'; DROP TABLE users; --"))
 	 *    // The malicious SQL is treated as a literal string, not executed
 	 *    ```
@@ -552,27 +584,27 @@ abstract TypedQuery<T>(EctoQueryStruct) {
 	 * 
 	 * ### Without parameters
 	 * ```haxe
-	 * query.whereRaw("deleted_at IS NULL");
-	 * query.whereRaw("DATE(created_at) = CURRENT_DATE");
+	 * query.whereUnsafeRaw("deleted_at IS NULL");
+	 * query.whereUnsafeRaw("DATE(created_at) = CURRENT_DATE");
 	 * ```
 	 * 
 	 * ### With 1 parameter
 	 * ```haxe
-	 * query.whereRaw("active = ?", true);
-	 * query.whereRaw("role = ?", "admin");
-	 * query.whereRaw("age >= ?", 18);
+	 * query.whereUnsafeRaw("active = ?", true);
+	 * query.whereUnsafeRaw("role = ?", "admin");
+	 * query.whereUnsafeRaw("age >= ?", 18);
 	 * ```
 	 * 
 	 * ### With 2 parameters
 	 * ```haxe
-	 * query.whereRaw("age BETWEEN ? AND ?", 18, 65);
-	 * query.whereRaw("active = ? AND role = ?", true, "admin");
+	 * query.whereUnsafeRaw("age BETWEEN ? AND ?", 18, 65);
+	 * query.whereUnsafeRaw("active = ? AND role = ?", true, "admin");
 	 * ```
 	 * 
 	 * ### With 3 parameters
 	 * ```haxe
-	 * query.whereRaw("role = ? AND active = ? AND verified = ?", "admin", true, true);
-	 * query.whereRaw("ST_DWithin(location, ST_MakePoint(?, ?), ?)", lon, lat, radius);
+	 * query.whereUnsafeRaw("role = ? AND active = ? AND verified = ?", "admin", true, true);
+	 * query.whereUnsafeRaw("ST_DWithin(location, ST_MakePoint(?, ?), ?)", lon, lat, radius);
 	 * ```
 	 * 
 	 * @param sql Raw SQL string with ? placeholders for parameters
@@ -581,23 +613,45 @@ abstract TypedQuery<T>(EctoQueryStruct) {
 	 */
 	// Overloaded implementations using the overload keyword (Haxe 4.2+)
 	// Base case - no parameters
-	overload extern inline public function whereRaw(sql:String):TypedQuery<T> {
+	overload extern inline public function whereUnsafeRaw(sql:String):TypedQuery<T> {
 		return cast untyped __elixir__('(require Ecto.Query; Ecto.Query.where({0}, fragment({1})))', this, sql);
 	}
 
 	// 1 parameter overload
-	overload extern inline public function whereRaw<A>(sql:String, p1:A):TypedQuery<T> {
+	overload extern inline public function whereUnsafeRaw<A>(sql:String, p1:A):TypedQuery<T> {
 		return cast untyped __elixir__('(require Ecto.Query; Ecto.Query.where({0}, fragment({1}, ^{2})))', this, sql, p1);
 	}
 
 	// 2 parameters overload
-	overload extern inline public function whereRaw<A, B>(sql:String, p1:A, p2:B):TypedQuery<T> {
+	overload extern inline public function whereUnsafeRaw<A, B>(sql:String, p1:A, p2:B):TypedQuery<T> {
 		return cast untyped __elixir__('(require Ecto.Query; Ecto.Query.where({0}, fragment({1}, ^{2}, ^{3})))', this, sql, p1, p2);
 	}
 
 	// 3 parameters overload
-	overload extern inline public function whereRaw<A, B, C>(sql:String, p1:A, p2:B, p3:C):TypedQuery<T> {
+	overload extern inline public function whereUnsafeRaw<A, B, C>(sql:String, p1:A, p2:B, p3:C):TypedQuery<T> {
 		return cast untyped __elixir__('(require Ecto.Query; Ecto.Query.where({0}, fragment({1}, ^{2}, ^{3}, ^{4})))', this, sql, p1, p2, p3);
+	}
+
+	/**
+	 * Compatibility alias for `whereUnsafeRaw`.
+	 *
+	 * Prefer `whereUnsafeRaw` in new code so raw SQL escape hatches are visually
+	 * obvious at the callsite.
+	 */
+	overload extern inline public function whereRaw(sql:String):TypedQuery<T> {
+		return whereUnsafeRaw(sql);
+	}
+
+	overload extern inline public function whereRaw<A>(sql:String, p1:A):TypedQuery<T> {
+		return whereUnsafeRaw(sql, p1);
+	}
+
+	overload extern inline public function whereRaw<A, B>(sql:String, p1:A, p2:B):TypedQuery<T> {
+		return whereUnsafeRaw(sql, p1, p2);
+	}
+
+	overload extern inline public function whereRaw<A, B, C>(sql:String, p1:A, p2:B, p3:C):TypedQuery<T> {
+		return whereUnsafeRaw(sql, p1, p2, p3);
 	}
 
 	/**
@@ -611,12 +665,22 @@ abstract TypedQuery<T>(EctoQueryStruct) {
 	 * 
 	 * @example
 	 * ```haxe
-	 * query.orderByRaw("CASE WHEN role = 'admin' THEN 0 ELSE 1 END, created_at DESC");
+	 * query.orderByUnsafeRaw("CASE WHEN role = 'admin' THEN 0 ELSE 1 END, created_at DESC");
 	 * // Generates: order_by: fragment("CASE WHEN role = 'admin' THEN 0 ELSE 1 END, created_at DESC")
 	 * ```
 	 */
-	extern inline public function orderByRaw(sql:String):TypedQuery<T> {
+	extern inline public function orderByUnsafeRaw(sql:String):TypedQuery<T> {
 		return cast untyped __elixir__('(require Ecto.Query; Ecto.Query.order_by({0}, fragment({1})))', this, sql);
+	}
+
+	/**
+	 * Compatibility alias for `orderByUnsafeRaw`.
+	 *
+	 * Prefer `orderByUnsafeRaw` in new code so raw SQL ordering is clearly marked
+	 * as an escape hatch.
+	 */
+	extern inline public function orderByRaw(sql:String):TypedQuery<T> {
+		return orderByUnsafeRaw(sql);
 	}
 
 	/**

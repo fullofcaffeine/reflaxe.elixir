@@ -141,6 +141,16 @@ class CompilerInit {
 			Compiler.keep("reflaxe.elixir.runtime.HaxeThrow");
 		} catch (e:haxe.Exception) {}
 
+		// Keep the Haxe Float special-value helper for compiler-generated calls.
+		//
+		// Haxe code can compile `Std.string(value)`, `Std.parseFloat(text)`, or `Std.isOfType(value, Float)`
+		// into direct calls to `Reflaxe.Elixir.HaxeFloat.*`. Those calls are created by the backend, not by
+		// ordinary Haxe source references, so DCE might otherwise remove the helper module.
+		try {
+			Context.getType("reflaxe.elixir.runtime.HaxeFloat");
+			Compiler.keep("reflaxe.elixir.runtime.HaxeFloat");
+		} catch (e:haxe.Exception) {}
+
 		// Choose preprocessor profile
 		var useFastPrepasses = !Context.defined("full_prepasses");
 		var prepasses:Array<ExpressionPreprocessor> = [];

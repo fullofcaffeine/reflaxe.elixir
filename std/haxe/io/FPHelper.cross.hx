@@ -1,5 +1,7 @@
 package haxe.io;
 
+import reflaxe.elixir.runtime.HaxeFloat;
+
 /**
  * FPHelper (Elixir target)
  *
@@ -15,18 +17,18 @@ package haxe.io;
  */
 class FPHelper {
 	public static function i32ToFloat(i:Int):Float {
-		return untyped __elixir__('<<value::float-little-size(32)>> = <<{0}::little-signed-size(32)>>\nvalue', i);
+		return HaxeFloat.decode32(untyped __elixir__('<<{0}::little-signed-size(32)>>', i));
 	}
 
 	public static function floatToI32(f:Float):Int {
-		return untyped __elixir__('<<value::little-signed-size(32)>> = <<{0}::float-little-size(32)>>\nvalue', f);
+		return untyped __elixir__('<<value::little-signed-size(32)>> = {0}; value', HaxeFloat.encode32(cast f));
 	}
 
 	public static function i64ToDouble(low:Int, high:Int):Float {
-		return untyped __elixir__('<<value::float-little-size(64)>> = <<{0}::little-signed-size(32), {1}::little-signed-size(32)>>\nvalue', low, high);
+		return HaxeFloat.decode64(untyped __elixir__('<<{0}::little-signed-size(32), {1}::little-signed-size(32)>>', low, high));
 	}
 
 	public static function doubleToI64(v:Float):haxe.Int64 {
-		return untyped __elixir__('<<value::little-signed-size(64)>> = <<{0}::float-little-size(64)>>\nvalue', v);
+		return untyped __elixir__('<<value::little-signed-size(64)>> = {0}; value', HaxeFloat.encode64(cast v));
 	}
 }

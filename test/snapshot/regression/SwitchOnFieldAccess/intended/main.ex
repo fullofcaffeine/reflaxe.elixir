@@ -20,7 +20,7 @@ end) do
     end)
   end
   defp parse_message2(msg) do
-    if (Kernel.is_nil(msg)) do
+    if (Reflaxe.Elixir.HaxeFloat.eq(msg, nil)) do
       {:none}
     else
       (case (case msg do

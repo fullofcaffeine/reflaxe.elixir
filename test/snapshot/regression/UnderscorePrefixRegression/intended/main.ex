@@ -12,7 +12,7 @@ defmodule Main do
           if (key == "test") do
             "Found: " <> key
           else
-            _old_count = acc_count
+            _ = acc_count
             acc_count = acc_count + 1
             {:cont, {acc_count}}
           end
@@ -38,7 +38,7 @@ defmodule Main do
     {_left, _right} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {left, right}, fn _, {acc_left, acc_right} ->
       try do
         if (acc_left <= acc_right) do
-          mid = trunc((acc_left + acc_right) / 2)
+          mid = trunc(Reflaxe.Elixir.HaxeFloat.divide(acc_left + acc_right, 2))
           cond do
             Enum.at(arr, mid) == target -> true
             Enum.at(arr, mid) < target -> acc_left = mid + 1
@@ -69,9 +69,9 @@ defmodule Main do
         if (acc_index < length(items) and acc_processed < max_count) do
           _item = Enum.at(items, acc_index)
           if (verbose), do: nil
-          _old_processed = acc_processed
+          _ = acc_processed
           acc_processed = acc_processed + 1
-          _old_index = acc_index
+          _ = acc_index
           acc_index = acc_index + 1
           {:cont, {acc_processed, acc_index}}
         else

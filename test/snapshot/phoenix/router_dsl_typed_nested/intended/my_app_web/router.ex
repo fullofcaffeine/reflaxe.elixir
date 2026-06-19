@@ -17,6 +17,7 @@ defmodule RouterDslTypedNested do
       _ = get("/users/:id", UserController, :show)
     end
     _ = resources("/users", UserController, [only: [:index, :show]])
+    _ = resources("/legacy-users", UserController, [except: [:delete]])
     _ = forward("/admin", AdminRouter)
     if (Mix.env() in [:dev, :test, :e2e]) do
       _ = live_dashboard("/dashboard")

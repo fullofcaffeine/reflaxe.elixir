@@ -1,13 +1,13 @@
 defmodule UserService do
   def create_user(name, age) do
-    "#{name} is #{Kernel.to_string(age)} years old"
+    "#{name} is #{Reflaxe.Elixir.HaxeFloat.to_string(age)} years old"
   end
   def process_data(data) do
     data
   end
   def complex_function(arg1, arg2, arg3, _arg4) do
     if (arg) do
-      "#{arg1} #{Kernel.to_string(arg2)}"
+      "#{arg1} #{Reflaxe.Elixir.HaxeFloat.to_string(arg2)}"
     else
       "default"
     end

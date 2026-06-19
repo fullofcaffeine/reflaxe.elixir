@@ -5,6 +5,7 @@ defmodule Type do
         nil -> {:t_null}
         val when is_integer(val) -> {:t_int}
         val when is_float(val) -> {:t_float}
+        val when is_tuple(val) and tuple_size(val) == 2 and elem(val, 0) == Reflaxe.Elixir.HaxeFloat and elem(val, 1) in [:nan, :positive_infinity, :negative_infinity] -> {:t_float}
         val when is_boolean(val) -> {:t_bool}
         val when is_function(val) -> {:t_function}
         val when is_binary(val) -> {:t_class, String}
@@ -61,8 +62,7 @@ defmodule Type do
     case e do mod when is_atom(mod) -> mod |> Module.split() |> Enum.join("."); _ -> nil end
   end
   def resolve_class(name) do
-    
-case name do
+    case name do
   nil -> nil
   "String" -> String
   "Array" -> Array
@@ -73,11 +73,9 @@ case name do
   other ->
     other
 end
-
   end
   def resolve_enum(name) do
-    
-case name do
+    case name do
   nil -> nil
   binary when is_binary(binary) ->
     binary
@@ -86,7 +84,6 @@ case name do
   other ->
     other
 end
-
   end
   def is_type(value, t) do
     case value do %{__struct__: mod} -> mod == t; _ -> false end

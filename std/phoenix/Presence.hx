@@ -19,9 +19,11 @@ import elixir.types.Term;
  * module's helpers from LiveViews:
  *
  * ```haxe
- * live = ChatPresence.trackWithSocket(live, presenceTopic(room), currentUserId, meta);
- * var onlineUsers = ChatPresence.list(presenceTopic(room));
- * var currentUser = ChatPresence.getByKey(presenceTopic(room), currentUserId);
+ * var topic = PresenceTopic.of("room:" + roomId);
+ * var key = PresenceKey.of(currentUserId);
+ * live = ChatPresence.trackWithSocket(live, topic, key, meta);
+ * var onlineUsers = ChatPresence.list(topic);
+ * var currentUser = ChatPresence.getByKey(topic, key);
  * ```
  *
  * Use this raw `phoenix.Presence` extern when you intentionally need direct interop
@@ -79,8 +81,10 @@ import elixir.types.Term;
  * class TodoPresence implements PresenceBehavior {}
  *
  * // From a LiveView:
- * live = TodoPresence.trackWithSocket(live, "users", Std.string(user.id), meta);
- * var users = TodoPresence.list("users");
+ * var topic = PresenceTopic.of("users");
+ * var key = PresenceKey.of(Std.string(user.id));
+ * live = TodoPresence.trackWithSocket(live, topic, key, meta);
+ * var users = TodoPresence.list(topic);
  * ```
  * 
  * ## Common Patterns
@@ -99,14 +103,13 @@ import elixir.types.Term;
 typedef PresenceMeta = Term;
 
 /**
- * Presence key - typically user ID or other unique identifier
+ * Backward-compatible topic alias for low-level extern signatures.
+ *
+ * New code should import `phoenix.PresenceTopic` and `phoenix.PresenceKey`
+ * directly. Haxe cannot safely re-export those exact names from this module
+ * because same-name module aliases become recursive typedefs.
  */
-typedef PresenceKey = String;
-
-/**
- * Topic identifier for presence tracking
- */
-typedef Topic = String;
+typedef Topic = phoenix.PresenceTopic;
 
 /**
  * Presence entry containing accumulated metadata for a key
@@ -133,7 +136,8 @@ typedef Topic = String;
  * }
  * 
  * // Use it with the generated app Presence module.
- * var userPresence: Null<PresenceEntry<UserMeta>> = ChatPresence.getByKey("users", "user_123");
+ * var userPresence: Null<PresenceEntry<UserMeta>> =
+ *     ChatPresence.getByKey(PresenceTopic.of("users"), PresenceKey.of("user_123"));
  * 
  * // Access metadata with full type safety
  * for (meta in userPresence.metas) {

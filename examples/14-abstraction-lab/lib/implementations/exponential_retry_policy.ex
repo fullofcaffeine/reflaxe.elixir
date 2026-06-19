@@ -4,7 +4,7 @@ defmodule AbstractionLab.ExponentialRetryPolicy do
   end
   def next_delay_ms(_struct, attempt) do
     bounded_attempt = if (attempt < 0), do: 0, else: attempt
-    _ = trunc(:math.pow(2, bounded_attempt) * 100)
+    _ = trunc(Reflaxe.Elixir.HaxeFloat.mul(Reflaxe.Elixir.HaxeFloat.pow(2, bounded_attempt), 100))
   end
   def max_attempts(_struct) do
     5

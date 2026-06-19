@@ -81,7 +81,7 @@ defmodule PortInput do
         struct = %{struct | buffer: nil}
         struct = %{struct | buffer_offset: 0}
         data = receive_data_non_blocking(struct)
-        if (not Kernel.is_nil(data)) do
+        if (Reflaxe.Elixir.HaxeFloat.neq(data, nil)) do
           _ = %{struct | buffer: Bytes.of_data(data)}
           true
         else

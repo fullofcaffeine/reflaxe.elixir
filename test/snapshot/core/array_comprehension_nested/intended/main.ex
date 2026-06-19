@@ -165,21 +165,21 @@ end).()]
   def nested_with_expression() do
     [(fn ->
   g = []
-  g = g ++ ["R" <> Kernel.to_string(0) <> "C" <> Kernel.to_string(0)]
-  g = g ++ ["R" <> Kernel.to_string(0) <> "C" <> Kernel.to_string(1)]
-  g = g ++ ["R" <> Kernel.to_string(0) <> "C" <> Kernel.to_string(2)]
+  g = g ++ ["R" <> Reflaxe.Elixir.HaxeFloat.to_string(0) <> "C" <> Reflaxe.Elixir.HaxeFloat.to_string(0)]
+  g = g ++ ["R" <> Reflaxe.Elixir.HaxeFloat.to_string(0) <> "C" <> Reflaxe.Elixir.HaxeFloat.to_string(1)]
+  g = g ++ ["R" <> Reflaxe.Elixir.HaxeFloat.to_string(0) <> "C" <> Reflaxe.Elixir.HaxeFloat.to_string(2)]
   g
 end).(), (fn ->
   g = []
-  g = g ++ ["R" <> Kernel.to_string(1) <> "C" <> Kernel.to_string(0)]
-  g = g ++ ["R" <> Kernel.to_string(1) <> "C" <> Kernel.to_string(1)]
-  g = g ++ ["R" <> Kernel.to_string(1) <> "C" <> Kernel.to_string(2)]
+  g = g ++ ["R" <> Reflaxe.Elixir.HaxeFloat.to_string(1) <> "C" <> Reflaxe.Elixir.HaxeFloat.to_string(0)]
+  g = g ++ ["R" <> Reflaxe.Elixir.HaxeFloat.to_string(1) <> "C" <> Reflaxe.Elixir.HaxeFloat.to_string(1)]
+  g = g ++ ["R" <> Reflaxe.Elixir.HaxeFloat.to_string(1) <> "C" <> Reflaxe.Elixir.HaxeFloat.to_string(2)]
   g
 end).(), (fn ->
   g = []
-  g = g ++ ["R" <> Kernel.to_string(2) <> "C" <> Kernel.to_string(0)]
-  g = g ++ ["R" <> Kernel.to_string(2) <> "C" <> Kernel.to_string(1)]
-  g = g ++ ["R" <> Kernel.to_string(2) <> "C" <> Kernel.to_string(2)]
+  g = g ++ ["R" <> Reflaxe.Elixir.HaxeFloat.to_string(2) <> "C" <> Reflaxe.Elixir.HaxeFloat.to_string(0)]
+  g = g ++ ["R" <> Reflaxe.Elixir.HaxeFloat.to_string(2) <> "C" <> Reflaxe.Elixir.HaxeFloat.to_string(1)]
+  g = g ++ ["R" <> Reflaxe.Elixir.HaxeFloat.to_string(2) <> "C" <> Reflaxe.Elixir.HaxeFloat.to_string(2)]
   g
 end).()]
   end

@@ -17,7 +17,7 @@
     {"module": "Lambda", "status": "skipped-target-specific", "source": "Lambda.unit.hx", "reason": "Upstream spec exists; enable after collection semantics are triaged."},
     {"module": "List", "status": "skipped-target-specific", "source": "List.unit.hx", "reason": "Upstream spec exists; enable after List mutability semantics are triaged."},
     {"module": "Map", "status": "skipped-target-specific", "source": "Map.unit.hx", "reason": "Upstream spec exists; enable after native BEAM map ordering/identity semantics are triaged."},
-    {"module": "Math", "status": "skipped-target-specific", "source": "Math.unit.hx", "reason": "Upstream spec exists; enable after numeric edge cases are triaged."},
+    {"module": "Math", "status": "enabled", "source": "Math.unit.hx", "fixture": "test/upstream_unitstd/upstream/Math.unit.hx"},
     {"module": "Reflect", "status": "skipped-target-specific", "source": "Reflect.unit.hx", "reason": "Upstream spec exists; enable after BEAM reflection semantics are triaged."},
     {"module": "Std", "status": "skipped-target-specific", "source": "Std.unit.hx", "reason": "Upstream spec exists; enable after target string/parse/cast edge cases are triaged."},
     {"module": "String", "status": "skipped-target-specific", "source": "String.unit.hx", "reason": "Upstream spec exists; enable after UTF-8 binary string semantics are triaged."},

@@ -25,6 +25,24 @@ Compiler contributors should use the stdlib parity harness for behavior that sna
 Add a Haxe-authored runtime assertion when changing stdlib behavior for iterators, exceptions, bytes/io, maps,
 Unicode strings, numeric overflow, or any target-specific BEAM mapping.
 
+## Phoenix Integration Tests
+
+For Phoenix routes and LiveViews, prefer Haxe-authored ExUnit tests using `phoenix.test.ConnTest`
+and `phoenix.test.LiveViewTest`. Keep Playwright as a thin browser smoke layer.
+
+LiveView tests can use optional typed tokens for app-owned names:
+
+```haxe
+var keys = phoenix.AssignKeys.of(CounterAssigns);
+var count:Int = LiveViewTest.get_assign_key(liveView, keys.count);
+
+var increment = LiveViewEventName.of(CounterEvent.Increment);
+liveView = LiveViewTest.render_click_event(liveView, increment);
+```
+
+Raw Phoenix strings remain available for selectors, paths, and migration code. Typed tokens are most
+useful for assigns and event names that already belong to your app code.
+
 ## Getting Started
 
 ### Basic Test Class

@@ -53,7 +53,11 @@ class BytesOutput extends Output {
 
 	override function writeByte(c:Int):Void {
 		var state = getState();
-		state.partsReversed = untyped __elixir__("[{0} | {1}]", c, state.partsReversed);
+		// BEAM iodata byte entries must be integers in 0..255. Haxe callers may pass
+		// signed fragments such as -1 when serializing the high byte of a 32-bit word,
+		// so keep only the low eight bits before adding the byte to the output.
+		var byte = c & 0xFF;
+		state.partsReversed = untyped __elixir__("[{0} | {1}]", byte, state.partsReversed);
 		state.byteLength += 1;
 		putState(state);
 	}

@@ -12,14 +12,14 @@ case Integer.parse(s) do
 end
   end
   def from_float(f) do
-    if (f != f or not f == f and f != 1.79769313486231571e+308 and f != -1.79769313486231571e+308) do
+    if (Reflaxe.Elixir.HaxeFloat.is_na_n(f) or not Reflaxe.Elixir.HaxeFloat.is_finite(f)) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Number is NaN or Infinite"]
     end
-    no_fractions = (f - rem(f, 1))
-    if (no_fractions > 9007199254740991) do
+    no_fractions = Reflaxe.Elixir.HaxeFloat.sub(f, Reflaxe.Elixir.HaxeFloat.remainder(f, 1))
+    if (Reflaxe.Elixir.HaxeFloat.gt(no_fractions, 9007199254740991)) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Conversion overflow"]
     end
-    if (no_fractions < -9007199254740991) do
+    if (Reflaxe.Elixir.HaxeFloat.lt(no_fractions, -9007199254740991)) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Conversion underflow"]
     end
     int32_value = 0
@@ -31,19 +31,19 @@ if reflaxe_i32_clamp >= 2147483648, do: reflaxe_i32_clamp - 4294967296, else: re
     value = :erlang.bsl(high, 32) + low_unsigned
     result = _this1 = (reflaxe_i64_clamp = :erlang.band(value, 18446744073709551615)
 if reflaxe_i64_clamp >= 9223372036854775808, do: reflaxe_i64_clamp - 18446744073709551616, else: reflaxe_i64_clamp)
-    neg = no_fractions < 0
+    neg = Reflaxe.Elixir.HaxeFloat.lt(no_fractions, 0)
     rest = if (neg) do
-      -no_fractions
+      Reflaxe.Elixir.HaxeFloat.neg(no_fractions)
     else
       no_fractions
     end
     i = 0
     {result, _rest, _i} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, rest, i}, fn _, {acc_result, acc_rest, acc_i} ->
       try do
-        if (acc_rest >= 1) do
-          curr = rem(acc_rest, 2)
-          acc_rest = acc_rest / 2
-          acc_result = (if (curr >= 1) do
+        if (Reflaxe.Elixir.HaxeFloat.gte(acc_rest, 1)) do
+          curr = Reflaxe.Elixir.HaxeFloat.remainder(acc_rest, 2)
+          acc_rest = Reflaxe.Elixir.HaxeFloat.divide(acc_rest, 2)
+          acc_result = (if (Reflaxe.Elixir.HaxeFloat.gte(curr, 1)) do
   int32_value = 1
   shift = 31
   x = :erlang.bsr(int32_value, shift)
@@ -62,7 +62,7 @@ if reflaxe_i64_clamp >= 9223372036854775808, do: reflaxe_i64_clamp - 18446744073
 else
   acc_result
 end)
-          _old_i = acc_i
+          _ = acc_i
           acc_i = acc_i + 1
           {:cont, {acc_result, acc_rest, acc_i}}
         else

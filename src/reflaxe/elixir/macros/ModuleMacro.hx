@@ -4,6 +4,9 @@ package reflaxe.elixir.macros;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
+#if (macro && hxx_instrument_sys)
+import reflaxe.elixir.macros.MacroTimingHelper;
+#end
 
 using StringTools;
 
@@ -41,9 +44,13 @@ class ModuleMacro {
 	@:build
 	public static macro function build():Array<Field> {
 		#if hxx_instrument_sys
-		var __t0 = haxe.Timer.stamp();
-		var __classPos:haxe.macro.Expr.Position = Context.currentPos();
+		return MacroTimingHelper.time("ModuleMacro.build", () -> buildInternal());
+		#else
+		return buildInternal();
 		#end
+	}
+
+	static function buildInternal():Array<Field> {
 		// Prefer cheap metadata checks before touching fields
 		var classType = Context.getLocalClass().get();
 		if (!hasModuleAnnotation(classType)) {
@@ -76,11 +83,6 @@ class ModuleMacro {
 					// Non-function fields are not modified
 			}
 		}
-
-		#if hxx_instrument_sys
-		var __elapsed = (haxe.Timer.stamp() - __t0) * 1000.0;
-		Sys.println('[MacroTiming] name=ModuleMacro.build fields=' + fields.length + ' elapsed_ms=' + Std.int(__elapsed));
-		#end
 
 		return fields;
 	}

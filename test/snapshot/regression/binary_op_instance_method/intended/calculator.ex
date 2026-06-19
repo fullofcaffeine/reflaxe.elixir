@@ -11,6 +11,6 @@ defmodule Calculator do
     struct.base * x
   end
   def concatenate(struct, str) do
-    "Base: #{Kernel.to_string(struct.base)}, Input: #{str}"
+    "Base: #{Reflaxe.Elixir.HaxeFloat.to_string(struct.base)}, Input: #{str}"
   end
 end

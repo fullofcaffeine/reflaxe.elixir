@@ -23,7 +23,7 @@ Coverage policy:
   unsupported for this target, or target-specific triage is still required.
 
 Current upstream runtime fixtures:
-- Enabled: `IntIterator`, `StringBuf`, `haxe.crypto.Base64`,
+- Enabled: `IntIterator`, `Math`, `StringBuf`, `haxe.crypto.Base64`,
   `haxe.crypto.Md5`, `haxe.crypto.Sha1`, `haxe.io.BytesBuffer`,
   `haxe.io.FPHelper`.
 - Adapted: `haxe.DynamicAccess` (membership syntax expansion),
@@ -36,6 +36,18 @@ Iterator note:
   `next()` returns `{updated_iterator, value}` in generated Elixir, call sites
   rebind the iterator in the same scope, and desugared `for` loops thread the
   iterator through `Enum.reduce_while`.
+
+Math note:
+- `Math.unit.hx` is enabled. BEAM does not provide native NaN/Infinity terms, so
+  Reflaxe.Elixir routes Haxe `Math` special values through the tagged
+  `Reflaxe.Elixir.HaxeFloat` contract documented in
+  `docs/05-architecture/HAXE_FLOAT_SPECIAL_VALUES.md`.
+
+IEEE byte note:
+- Local stdlib parity tests cover exact f32/f64 special-value bytes, alternate
+  NaN payload decode, signed zero, max finite values, `BytesBuffer`, `FPHelper`,
+  and `BytesInput`/`BytesOutput` stream round-trips. Keep this runtime coverage
+  when changing `Bytes`, `BytesBuffer`, `Input`, `Output`, or `FPHelper`.
 
 Use `scripts/sync-upstream-unitstd-specs.sh` to refresh enabled, unmodified specs
 from a local Haxe reference checkout. Adapted specs must be reviewed manually so

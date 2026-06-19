@@ -15,12 +15,9 @@ defmodule Main do
     Date.from_unix(trunc(t), "millisecond")
   end
   defp deep_nesting(t) do
-    v = (ceil(if (t < 0) do
-  -t
-else
-  t
-end))
-    floor(v)
+    v = Reflaxe.Elixir.HaxeFloat.abs(t)
+    v = _ = Reflaxe.Elixir.HaxeFloat.ceil_int(v)
+    _ = Reflaxe.Elixir.HaxeFloat.floor_int(v)
   end
   defp mixed_ops(t, u) do
     if (t > 0), do: t + u, else: u

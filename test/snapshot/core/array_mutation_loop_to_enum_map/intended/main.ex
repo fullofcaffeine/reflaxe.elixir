@@ -13,7 +13,7 @@ defmodule Main do
       try do
         if (acc_i < length(values)) do
           _ = Enum.at(values, acc_i) * 2
-          _old_i = acc_i
+          _ = acc_i
           acc_i = acc_i + 1
           {:cont, {acc_i}}
         else

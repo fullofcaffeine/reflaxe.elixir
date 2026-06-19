@@ -70,16 +70,31 @@ defmodule Main do
     else
       Ecto.Changeset.validate_format(this1, field, pattern)
     end
-    field = :age
-    opts = %{:min => 18, :max => 120}
-    this1 = cond do
-      not Kernel.is_nil(opts.min) and not Kernel.is_nil(opts.max) -> Ecto.Changeset.validate_number(this1, field, [greater_than_or_equal_to: opts.min, less_than_or_equal_to: opts.max])
-      not Kernel.is_nil(opts.min) -> Ecto.Changeset.validate_number(this1, field, [greater_than_or_equal_to: opts.min])
-      not Kernel.is_nil(opts.max) -> Ecto.Changeset.validate_number(this1, field, [less_than_or_equal_to: opts.max])
-      not Kernel.is_nil(opts.equal_to) -> Ecto.Changeset.validate_number(this1, field, [equal_to: opts.equal_to])
-      not Kernel.is_nil(opts.not_equal_to) -> Ecto.Changeset.validate_number(this1, field, [not_equal_to: opts.not_equal_to])
-      :true -> Ecto.Changeset.validate_number(this1, field, [])
-    end
+    this1 = _ = Ecto.Changeset.validate_number(this1, :age, 
+          (fn opts ->
+             greater_than_or_equal_to =
+               case Map.fetch(opts, :greater_than_or_equal_to) do
+                 {:ok, value} -> value
+                 :error -> Map.get(opts, :min)
+               end
+
+             less_than_or_equal_to =
+               case Map.fetch(opts, :less_than_or_equal_to) do
+                 {:ok, value} -> value
+                 :error -> Map.get(opts, :max)
+               end
+
+             [
+               greater_than: Map.get(opts, :greater_than),
+               greater_than_or_equal_to: greater_than_or_equal_to,
+               less_than: Map.get(opts, :less_than),
+               less_than_or_equal_to: less_than_or_equal_to,
+               equal_to: Map.get(opts, :equal_to),
+               not_equal_to: Map.get(opts, :not_equal_to)
+             ]
+             |> Enum.filter(fn {_, value} -> value != nil end)
+           end).(%{:min => 18, :max => 120})
+        )
     cs = Ecto.Changeset.validate_inclusion(this1, :role, ["admin", "user"])
     cs = Ecto.Changeset.validate_exclusion(cs, :role, ["blocked"])
     cs

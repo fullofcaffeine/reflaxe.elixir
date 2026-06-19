@@ -9,9 +9,9 @@ defmodule Main do
     {_k, _pos} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, pos}, fn _, {acc_k, acc_pos} ->
       try do
         if (acc_k > 0) do
-          _old_pos = acc_pos
+          _ = acc_pos
           acc_pos = acc_pos + 1
-          _old_k = acc_k
+          _ = acc_k
           acc_k = (acc_k - 1)
           {:cont, {acc_k, acc_pos}}
         else
@@ -32,16 +32,11 @@ defmodule Main do
   end
   defp test_for_loop() do
     count = 0
-    _old_count = count
-    count = count + 1
-    _ = count
-    count = count + 1
-    _ = count
-    count = count + 1
-    _ = count
-    count = count + 1
-    _ = count
-    _ = count + 1
+    {count, _reflaxe_receiver_value_2} = {count + 1, count}
+    {count, _reflaxe_receiver_value_3} = {count + 1, count}
+    {count, _reflaxe_receiver_value_4} = {count + 1, count}
+    {count, _reflaxe_receiver_value_5} = {count + 1, count}
+    {_count, _reflaxe_receiver_value_6} = {count + 1, count}
     nil
   end
 end

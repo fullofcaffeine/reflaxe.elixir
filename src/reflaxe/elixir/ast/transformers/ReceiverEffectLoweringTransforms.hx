@@ -446,12 +446,12 @@ class ReceiverEffectLoweringTransforms {
 		return switch (effect.resultShape) {
 			case UpdatedReceiver:
 				var prelude = operationPlan.prelude.copy();
-				var value = operationPlan.value;
+				var receiverValue = operationPlan.value;
 				if (shouldWriteBack) {
-					prelude.push(makeASTWithMeta(EMatch(PVar(effect.receiver.name), value), source.metadata, source.pos));
-					value = makeAST(ENil);
+					prelude.push(makeASTWithMeta(EMatch(PVar(effect.receiver.name), receiverValue), source.metadata, source.pos));
+					receiverValue = use == Discarded ? makeAST(ENil) : makeAST(EVar(effect.receiver.name));
 				}
-				{prelude: prelude, value: projectValue(effect.valueProjection, makeAST(EVar(effect.receiver.name)), value, makeAST(ENil))};
+				{prelude: prelude, value: projectValue(effect.valueProjection, makeAST(EVar(effect.receiver.name)), receiverValue, makeAST(ENil))};
 			case UpdatedReceiverAndValue:
 				var prelude = operationPlan.prelude.copy();
 				var tempId = tempCounter++;

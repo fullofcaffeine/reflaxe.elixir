@@ -77,7 +77,12 @@ Top-level:
 - `Lambda`
 - `List`
 - `Map`
-- `Math`
+- `Math` (portable Haxe NaN/Infinity support is implemented for constants,
+  operators, Math APIs, IEEE byte paths, JSON, Haxe serialization, templates,
+  and finite-native ErlangMath boundary diagnostics; the full target contract is
+  documented in `docs/05-architecture/HAXE_FLOAT_SPECIAL_VALUES.md`.
+  Typed Elixir-first code may use native finite BEAM numeric APIs directly,
+  with explicit boundaries for Haxe special floats.)
 - `Reflect`
 - `Std`
 - `String`
@@ -170,6 +175,7 @@ Notes:
 
 Supported today:
 - nulls, booleans, integers, floats, and strings
+- Haxe special floats using standard `k` / `p` / `m` wire tags
 - arrays/lists as `a...h`
 - native string-key maps and anonymous maps as object records (`o...g`)
 - `Serializer.run(value)` / `Unserializer.run(value)`
@@ -192,6 +198,8 @@ Supported today:
 - `::if expr::...::else::...::end::` where expressions are booleans, null, numbers, quoted strings, negation, or lookups
 - `::foreach items::...::end::` over lists and maps
 - macro calls such as `$$upper(name)` through the `execute(context, macros)` macro object
+- special Float values through `Std.string`-compatible rendering (`NaN`,
+  `Infinity`, `-Infinity`) and Haxe-compatible numeric literal parsing
 
 Not yet supported:
 - the full upstream expression parser, including arithmetic/comparison operators inside template expressions

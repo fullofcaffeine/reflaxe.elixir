@@ -12,7 +12,7 @@ defmodule Main do
     items_length = length(items)
     _ = Enum.reduce(0..(items_length - 1)//1, results, fn i, results_acc ->
       item = Enum.at(items, i)
-      Enum.concat(results_acc, ["" <> Kernel.to_string(i) <> ": " <> item])
+      Enum.concat(results_acc, ["" <> Reflaxe.Elixir.HaxeFloat.to_string(i) <> ": " <> item])
     end)
     nil
   end
@@ -21,7 +21,7 @@ defmodule Main do
     indexed = []
     _g = 0
     items_length = length(items)
-    indexed = Enum.reduce(0..(items_length - 1)//1, indexed, fn i, indexed_acc -> Enum.concat(indexed_acc, ["Item #" <> Kernel.to_string(i + 1) <> ": " <> Enum.at(items, i)]) end)
+    indexed = Enum.reduce(0..(items_length - 1)//1, indexed, fn i, indexed_acc -> Enum.concat(indexed_acc, ["Item #" <> Reflaxe.Elixir.HaxeFloat.to_string(i + 1) <> ": " <> Enum.at(items, i)]) end)
     indexed
   end
   defp test_indexed_filter() do

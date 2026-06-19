@@ -23,7 +23,7 @@ defmodule UserQueries do
     from("users", "u", %{:left_join => %{:table => "posts", :alias => "p", :on => "p.user_id == u.id"}, :group_by => "u.id", :select => %{:user => "u", :post_count => "count(p.id)"}})
   end
   def get_active_posters(min_posts) do
-    from("users", "u", %{:left_join => %{:table => "posts", :alias => "p", :on => "p.user_id == u.id"}, :group_by => "u.id", :having => "count(p.id) >= " <> Kernel.to_string(min_posts), :select => %{:user => "u", :post_count => "count(p.id)"}})
+    from("users", "u", %{:left_join => %{:table => "posts", :alias => "p", :on => "p.user_id == u.id"}, :group_by => "u.id", :having => "count(p.id) >= " <> Reflaxe.Elixir.HaxeFloat.to_string(min_posts), :select => %{:user => "u", :post_count => "count(p.id)"}})
   end
   def get_top_users() do
     subquery = from("posts", "p", %{:group_by => "p.user_id", :select => %{:user_id => "p.user_id", :count => "count(p.id)"}})
@@ -33,22 +33,21 @@ defmodule UserQueries do
     from("users", "u", %{:preload => ["posts", "profile", "comments"], :select => "u"})
   end
   def deactivate_old_users(days) do
-    from("users", "u", %{:where => %{:last_login_lt => "ago(" <> Kernel.to_string(days) <> ", \"day\")"}, :update => %{:active => false}})
+    from("users", "u", %{:where => %{:last_login_lt => "ago(" <> Reflaxe.Elixir.HaxeFloat.to_string(days) <> ", \"day\")"}, :update => %{:active => false}})
   end
   def delete_inactive_users() do
     from("users", "u", %{:where => %{:active => false}, :delete_all => true})
   end
   def search_users(filters) do
     query = from("users", "u", %{:select => "u"})
-    cond_value = (case filters do
-      dyn_obj ->
-        (case Map.fetch(dyn_obj, "name") do
-          {:ok, dyn_value} -> dyn_value
-          _ ->
-            Map.get(dyn_obj, :name)
-        end)
+    query = if ((Reflaxe.Elixir.HaxeFloat.neq(((case filters do
+  dyn_obj ->
+    (case Map.fetch(dyn_obj, "name") do
+      {:ok, dyn_value} -> dyn_value
+      _ ->
+        Map.get(dyn_obj, :name)
     end)
-    query = if (not Kernel.is_nil(cond_value)) do
+end)), nil))) do
       where(query, "u", (fn -> %{:name_ilike => (case filters do
   dyn_obj ->
     (case Map.fetch(dyn_obj, "name") do
@@ -60,15 +59,14 @@ end)} end).())
     else
       query
     end
-    cond_value = (case filters do
-      dyn_obj ->
-        (case Map.fetch(dyn_obj, "email") do
-          {:ok, dyn_value} -> dyn_value
-          _ ->
-            Map.get(dyn_obj, :email)
-        end)
+    query = if ((Reflaxe.Elixir.HaxeFloat.neq(((case filters do
+  dyn_obj ->
+    (case Map.fetch(dyn_obj, "email") do
+      {:ok, dyn_value} -> dyn_value
+      _ ->
+        Map.get(dyn_obj, :email)
     end)
-    query = if (not Kernel.is_nil(cond_value)) do
+end)), nil))) do
       where(query, "u", (fn -> %{:email => (case filters do
   dyn_obj ->
     (case Map.fetch(dyn_obj, "email") do
@@ -80,15 +78,14 @@ end)} end).())
     else
       query
     end
-    cond_value = (case filters do
-      dyn_obj ->
-        (case Map.fetch(dyn_obj, "min_age") do
-          {:ok, dyn_value} -> dyn_value
-          _ ->
-            Map.get(dyn_obj, :min_age)
-        end)
+    query = if ((Reflaxe.Elixir.HaxeFloat.neq(((case filters do
+  dyn_obj ->
+    (case Map.fetch(dyn_obj, "min_age") do
+      {:ok, dyn_value} -> dyn_value
+      _ ->
+        Map.get(dyn_obj, :min_age)
     end)
-    query = if (not Kernel.is_nil(cond_value)) do
+end)), nil))) do
       where(query, "u", (fn -> %{:age_gte => (case filters do
   dyn_obj ->
     (case Map.fetch(dyn_obj, "min_age") do

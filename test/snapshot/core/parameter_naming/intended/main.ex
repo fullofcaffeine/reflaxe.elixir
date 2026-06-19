@@ -6,7 +6,7 @@ defmodule Main do
     "Hello #{user_name}: #{message}"
   end
   def process_order(_struct, order_id, customer_email, amount) do
-    order_id > 0 and String.length(customer_email) > 0 and amount > 0
+    order_id > 0 and String.length(customer_email) > 0 and Reflaxe.Elixir.HaxeFloat.gt(amount, 0)
   end
   def validate_email(_struct, email_address) do
     (case :binary.match(email_address, "@") do
@@ -15,6 +15,6 @@ defmodule Main do
 end) > 0
   end
   def calculate_discount(original_price, discount_percent) do
-    original_price * ((1 - discount_percent / 100))
+    Reflaxe.Elixir.HaxeFloat.mul(original_price, Reflaxe.Elixir.HaxeFloat.sub(1, Reflaxe.Elixir.HaxeFloat.divide(discount_percent, 100)))
   end
 end

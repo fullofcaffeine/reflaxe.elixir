@@ -8,9 +8,9 @@ defmodule Reference_Impl_ do
     ref
   end
   def to_string(this1) do
-    elixir__.("inspect(#{Kernel.to_string(this1)})")
+    elixir__.("inspect(#{Reflaxe.Elixir.HaxeFloat.to_string(this1)})")
   end
   def is_valid(this1) do
-    elixir__.("is_reference(#{Kernel.to_string(this1)})")
+    elixir__.("is_reference(#{Reflaxe.Elixir.HaxeFloat.to_string(this1)})")
   end
 end

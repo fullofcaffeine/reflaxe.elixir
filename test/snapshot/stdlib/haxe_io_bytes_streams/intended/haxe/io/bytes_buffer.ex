@@ -35,12 +35,12 @@ defmodule BytesBuffer do
     struct
   end
   def add_float(struct, v) do
-    struct = %{struct | parts_reversed: [<<v::float-little-size(32)>> | struct.parts_reversed]}
+    struct = %{struct | parts_reversed: [Reflaxe.Elixir.HaxeFloat.encode32(v) | struct.parts_reversed]}
     struct = %{struct | byte_length: struct.byte_length + 4}
     struct
   end
   def add_double(struct, v) do
-    struct = %{struct | parts_reversed: [<<v::float-little-size(64)>> | struct.parts_reversed]}
+    struct = %{struct | parts_reversed: [Reflaxe.Elixir.HaxeFloat.encode64(v) | struct.parts_reversed]}
     struct = %{struct | byte_length: struct.byte_length + 8}
     struct
   end

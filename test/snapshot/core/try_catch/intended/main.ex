@@ -56,7 +56,7 @@ end), haxe_exception} do
   _ -> haxe_exception
 end), haxe_exception} do
             {e, _} when is_binary(e) -> "string:" <> e
-            {e, _} when is_integer(e) -> "int:" <> Kernel.to_string(e)
+            {e, _} when is_integer(e) -> "int:" <> Reflaxe.Elixir.HaxeFloat.to_string(e)
             {e, _} when is_struct(e, Reflaxe.Exception) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == Reflaxe.Exception -> "exception:" <> Reflaxe.Exception.get_message(e)
             {_e, _} -> "dynamic"
           end)
@@ -69,7 +69,7 @@ end), haxe_exception} do
         :true -> "none"
       end
       if (expected != outcome) do
-        raise Reflaxe.Elixir.HaxeThrow, [value: "Assertion failed: " <> "multipleCatch type=" <> Kernel.to_string(type) <> " (expected \"" <> expected <> "\", got \"" <> outcome <> "\")"]
+        raise Reflaxe.Elixir.HaxeThrow, [value: "Assertion failed: " <> "multipleCatch type=" <> Reflaxe.Elixir.HaxeFloat.to_string(type) <> " (expected \"" <> expected <> "\", got \"" <> outcome <> "\")"]
       end
     end
     _ = test_error.(1)
@@ -151,7 +151,7 @@ end), haxe_exception} do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
 end), haxe_exception} do
-          {e, _} when is_struct(e, CustomException) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == CustomException -> "" <> Reflaxe.Exception.get_message(e) <> ":" <> Kernel.to_string(e.code)
+          {e, _} when is_struct(e, CustomException) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == CustomException -> "" <> Reflaxe.Exception.get_message(e) <> ":" <> Reflaxe.Elixir.HaxeFloat.to_string(e.code)
           _ ->
             reraise(haxe_exception, __STACKTRACE__)
         end)
@@ -161,14 +161,14 @@ end), haxe_exception} do
     end
   end
   def divide(a, b) do
-    if (b == 0) do
+    if (Reflaxe.Elixir.HaxeFloat.eq(b, 0)) do
       raise Reflaxe.Elixir.HaxeThrow, [value: Reflaxe.Exception.new("Division by zero", nil, nil)]
     end
-    a / b
+    _ = Reflaxe.Elixir.HaxeFloat.divide(a, b)
   end
   def test_division() do
     ok = divide(10, 2)
-    if (ok != 5) do
+    if (Reflaxe.Elixir.HaxeFloat.neq(ok, 5)) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Assertion failed: divide(10, 2) == 5"]
     end
     caught_division_message = try do
@@ -270,7 +270,7 @@ end), haxe_exception} do
         end)
     end
     if (123 != value) do
-      raise Reflaxe.Elixir.HaxeThrow, [value: "Assertion failed: tryAsExpression parseInt(123) (expected " <> Kernel.to_string(123) <> ", got " <> Kernel.to_string(value) <> ")"]
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Assertion failed: tryAsExpression parseInt(123) (expected " <> Reflaxe.Elixir.HaxeFloat.to_string(123) <> ", got " <> Reflaxe.Elixir.HaxeFloat.to_string(value) <> ")"]
     end
     value_value = try do
       parsed = (case Integer.parse("not a number") do
@@ -292,7 +292,7 @@ end), haxe_exception} do
         end)
     end
     if (-1 != value_value) do
-      raise Reflaxe.Elixir.HaxeThrow, [value: "Assertion failed: tryAsExpression throws and returns fallback (expected " <> Kernel.to_string(-1) <> ", got " <> Kernel.to_string(value_value) <> ")"]
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Assertion failed: tryAsExpression throws and returns fallback (expected " <> Reflaxe.Elixir.HaxeFloat.to_string(-1) <> ", got " <> Reflaxe.Elixir.HaxeFloat.to_string(value_value) <> ")"]
     end
   end
   def main() do

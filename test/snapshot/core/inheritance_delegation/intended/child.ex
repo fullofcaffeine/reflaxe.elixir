@@ -9,7 +9,7 @@ defmodule Child do
     struct.age
   end
   def get_description(struct) do
-    "#{Parent.get_description(super)}, Age: #{Kernel.to_string(struct.age)}"
+    "#{Parent.get_description(super)}, Age: #{Reflaxe.Elixir.HaxeFloat.to_string(struct.age)}"
   end
   def get_name(struct) do
     Parent.get_name(struct)

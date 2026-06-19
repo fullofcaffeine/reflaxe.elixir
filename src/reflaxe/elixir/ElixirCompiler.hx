@@ -4485,6 +4485,60 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			};
 		}
 
+		function resourceActionNameFromIdentifier(identifier:String):Null<String> {
+			return switch (identifier) {
+				case "resourceIndex":
+					"index";
+				case "resourceShow":
+					"show";
+				case "resourceNew":
+					"new";
+				case "resourceCreate":
+					"create";
+				case "resourceEdit":
+					"edit";
+				case "resourceUpdate":
+					"update";
+				case "resourceDelete":
+					"delete";
+				default:
+					null;
+			};
+		}
+
+		function resourceActionNameFromString(value:String, pos:haxe.macro.Expr.Position):String {
+			return switch (value) {
+				case "index" | "show" | "new" | "create" | "edit" | "update" | "delete":
+					value;
+				default:
+					Context.error('Resource actions must be one of: "index", "show", "new", "create", "edit", "update", "delete".', pos);
+					value;
+			};
+		}
+
+		function parseResourceActionOptionValue(expr:Expr):RouterMetaValue {
+			return switch (expr.expr) {
+				case EArrayDecl(items):
+					ROList([
+						for (item in items)
+							switch (item.expr) {
+								case EConst(CString(value, _)):
+									ROString(resourceActionNameFromString(value, item.pos));
+								case EConst(CIdent(identifier)):
+									var actionName = resourceActionNameFromIdentifier(identifier);
+									actionName != null ? ROString(actionName) : parseOptionValue(item);
+								case EField(_, field):
+									var actionName = resourceActionNameFromIdentifier(field);
+									actionName != null ? ROString(actionName) : parseOptionValue(item);
+								default:
+									parseOptionValue(item);
+							}
+					]);
+				default:
+					parseOptionValue(expr);
+			};
+		}
+
 		function parseOptionsExpr(expr:Null<Expr>):Array<RouterOptionMeta> {
 			if (expr == null) {
 				return [];
@@ -4499,6 +4553,8 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 								var normalizeForRouterOutput = normalizedKey != "params_contract";
 								var path = extractTypeRef(field.expr, field.field, field.expr.pos, false, normalizeForRouterOutput);
 								path != null ? ROVar(path) : parseOptionValue(field.expr);
+							case "only", "except":
+								parseResourceActionOptionValue(field.expr);
 							default:
 								parseOptionValue(field.expr);
 						}
@@ -4558,6 +4614,61 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			}
 		}
 
+		function singularizePathSegment(segment:String):String {
+			if (StringTools.endsWith(segment, "ies") && segment.length > 3) {
+				return segment.substr(0, segment.length - 3) + "y";
+			}
+			if (StringTools.endsWith(segment, "s") && segment.length > 1) {
+				return segment.substr(0, segment.length - 1);
+			}
+			return segment;
+		}
+
+		function toPascalCaseName(value:String):String {
+			var normalized = ~/[^A-Za-z0-9_]+/g.replace(value, "_");
+			var parts = normalized.split("_");
+			var result = "";
+			for (part in parts) {
+				if (part == null || part == "") {
+					continue;
+				}
+				result += part.substr(0, 1).toUpperCase() + part.substr(1).toLowerCase();
+			}
+			return result == "" ? "Route" : result;
+		}
+
+		function suggestParamsContractName(path:String):String {
+			var staticSegments:Array<String> = [];
+			for (segment in path.split("/")) {
+				if (segment == null || segment == "" || StringTools.startsWith(segment, ":") || StringTools.startsWith(segment, "*")) {
+					continue;
+				}
+				staticSegments.push(segment);
+			}
+			if (staticSegments.length == 0) {
+				return "RoutePathParams";
+			}
+
+			var lastStaticSegment = staticSegments[staticSegments.length - 1];
+			return toPascalCaseName(singularizePathSegment(lastStaticSegment)) + "PathParams";
+		}
+
+		function suggestedParamFieldType(paramName:String):String {
+			var normalizedParamName = NameUtils.toSnakeCase(paramName);
+			return (normalizedParamName == "id" || StringTools.endsWith(normalizedParamName, "_id")) ? "Int" : "String";
+		}
+
+		function buildParamsContractSuggestion(path:String, pathParams:Array<String>):String {
+			var contractName = suggestParamsContractName(path);
+			var fields = [
+				for (param in pathParams)
+					'  var ${NameUtils.toSnakeCase(param)}:${suggestedParamFieldType(param)};'
+			].join("\n");
+			return 'Add a paramsContract typedef and pass it in the route options:\n\n'
+				+ 'typedef ${contractName} = {\n${fields}\n}\n\n'
+				+ 'get("${path}", Controller, Controller.action, {paramsContract: ${contractName}})';
+		}
+
 		function validatePathParamsContract(path:String, options:Array<RouterOptionMeta>, pos:haxe.macro.Expr.Position):Void {
 			var pathParams = parsePathParams(path);
 			if (pathParams.length == 0) {
@@ -4566,7 +4677,9 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 
 			var contract = getOption(options, "params_contract");
 			if (contract == null) {
-				Context.error('Route path "${path}" contains path params (${pathParams.join(", ")}) but no paramsContract was provided in options', pos);
+				Context.error('Route path "${path}" contains path params (${pathParams.join(", ")}) but no paramsContract was provided in options.\n\n'
+					+ buildParamsContractSuggestion(path, pathParams),
+					pos);
 				return;
 			}
 

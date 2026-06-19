@@ -32,8 +32,90 @@ import haxe.macro.TypeTools;
  */
 @:nullSafety(Off)
 class TypeUtils {
+	public static function isStringType(t:Null<Type>):Bool {
+		var followed = followNullable(t);
+		return switch (followed) {
+			case TInst(_.get() => {name: "String"}, _): true;
+			case TAbstract(_.get() => {name: "String"}, _): true;
+			default: false;
+		}
+	}
+
+	public static function isIntType(t:Null<Type>):Bool {
+		var followed = followNullable(t);
+		return switch (followed) {
+			case TAbstract(_.get() => {name: "Int"}, _): true;
+			default: false;
+		}
+	}
+
+	public static function isFloatType(t:Null<Type>):Bool {
+		var followed = followNullable(t);
+		return switch (followed) {
+			case TAbstract(_.get() => {name: "Float"}, _): true;
+			default: false;
+		}
+	}
+
+	/**
+	 * Returns true when a value may carry Haxe Float special values.
+	 *
+	 * This is deliberately conservative for Dynamic, unresolved monos, and type
+	 * parameters because `Math.NaN` can be hidden behind those types. Concrete Int
+	 * expressions still keep native Elixir arithmetic on the fast path.
+	 */
+	public static function mayContainHaxeFloat(t:Null<Type>):Bool {
+		return mayContainHaxeFloatInner(t, 0);
+	}
+
 	public static function isElixirAtomType(t:Null<Type>):Bool {
 		return isElixirAtomTypeInner(t, 0);
+	}
+
+	static function followNullable(t:Null<Type>):Null<Type> {
+		if (t == null)
+			return null;
+		return TypeTools.follow(t);
+	}
+
+	static function mayContainHaxeFloatInner(t:Null<Type>, depth:Int):Bool {
+		if (t == null)
+			return true;
+		if (depth > 20)
+			return true;
+
+		var followed = TypeTools.follow(t);
+		return switch (followed) {
+			case TAbstract(ref, params):
+				var abstractType = ref.get();
+				if (abstractType.name == "Float") {
+					true;
+				} else if (abstractType.name == "Int" || abstractType.name == "Bool" || abstractType.name == "String") {
+					false;
+				} else if (abstractType.name == "Null" && params != null && params.length == 1) {
+					mayContainHaxeFloatInner(params[0], depth + 1);
+				} else {
+					mayContainHaxeFloatInner(abstractType.type, depth + 1);
+				}
+			case TDynamic(_):
+				true;
+			case TMono(monoRef): var resolved = monoRef.get(); resolved == null || mayContainHaxeFloatInner(resolved, depth + 1);
+			case TLazy(thunk):
+				mayContainHaxeFloatInner(thunk(), depth + 1);
+			case TType(typeRef, params):
+				var typeDefinition = typeRef.get();
+				if (params != null && params.length > 0) {
+					for (param in params) {
+						if (mayContainHaxeFloatInner(param, depth + 1))
+							return true;
+					}
+				}
+				mayContainHaxeFloatInner(typeDefinition.type, depth + 1);
+			case TFun(args, result):
+				mayContainHaxeFloatInner(result, depth + 1);
+			default:
+				false;
+		}
 	}
 
 	static function isElixirAtomTypeInner(t:Null<Type>, depth:Int):Bool {

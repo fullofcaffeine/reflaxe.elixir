@@ -67,17 +67,22 @@ end)
     [] -> "empty"
     [_head | _tail] ->
       x = Enum.at(arr, 0)
-      "single: " <> Kernel.to_string(x)
+      "single: " <> Reflaxe.Elixir.HaxeFloat.to_string(x)
     2 ->
       x = Enum.at(arr, 0)
       y = Enum.at(arr, 1)
-      "pair: " <> Kernel.to_string(x) <> ", " <> Kernel.to_string(y)
+      "pair: " <> Reflaxe.Elixir.HaxeFloat.to_string(x) <> ", " <> Reflaxe.Elixir.HaxeFloat.to_string(y)
     3 ->
       x = Enum.at(arr, 0)
       y = Enum.at(arr, 1)
       z = Enum.at(arr, 2)
-      "triple: " <> Kernel.to_string(x) <> ", " <> Kernel.to_string(y) <> ", " <> Kernel.to_string(z)
-    _ -> "length=" <> Kernel.to_string(length(arr)) <> ", first=" <> (if (length(arr) > 0), do: inspect(Enum.at(arr, 0)), else: "none")
+      "triple: " <> Reflaxe.Elixir.HaxeFloat.to_string(x) <> ", " <> Reflaxe.Elixir.HaxeFloat.to_string(y) <> ", " <> Reflaxe.Elixir.HaxeFloat.to_string(z)
+    _ ->
+      "length=" <> Reflaxe.Elixir.HaxeFloat.to_string(length(arr)) <> ", first=" <> (if (length(arr) > 0) do
+  Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, 0))
+else
+  "none"
+end)
   end)
   nil
 end)

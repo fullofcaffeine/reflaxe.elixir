@@ -1,7 +1,7 @@
 defmodule Phoenix.SafePubSub do
   def subscribe_topic(topic_string) do
     pubsub_mod = get_pub_sub_module()
-    if (Kernel.is_nil(pubsub_mod)) do
+    if (Reflaxe.Elixir.HaxeFloat.eq(pubsub_mod, nil)) do
       {:error, "SafePubSub could not determine the PubSub server module (no Phoenix Endpoint detected)."}
     else
       
@@ -17,7 +17,7 @@ defmodule Phoenix.SafePubSub do
   end
   def broadcast_topic_payload(topic_string, payload) do
     pubsub_mod = get_pub_sub_module()
-    if (Kernel.is_nil(pubsub_mod)) do
+    if (Reflaxe.Elixir.HaxeFloat.eq(pubsub_mod, nil)) do
       {:error, "SafePubSub could not determine the PubSub server module (no Phoenix Endpoint detected)."}
     else
       

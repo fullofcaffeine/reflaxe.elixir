@@ -27,6 +27,8 @@ See also:
 - Template strings (legacy/migration): `hxx('...')` / `HXX.block('...')` are supported in **balanced** mode, but they are string-rewritten + linted (template-local markers are not Haxe-typed).
 - Layered modes: `@:hxx_mode("tsx"|"balanced"|"metal")` controls how strict the template authoring surface is.
 
+You normally do not write `@:hxx_mode("tsx")`. TSX inline markup is the default for new code; the metadata exists for local overrides when migrating legacy string templates or isolating a raw HEEx escape hatch.
+
 ### HXX Mode Contract
 
 | Mode | Use for | Allows legacy `hxx('...')` strings? | Allows raw `<% ... %>`? | Recommendation |
@@ -37,7 +39,7 @@ See also:
 
 `tsx` is named after TypeScript JSX-style authoring: dynamic pieces are real typed host-language expressions, not string-rewritten mini-languages.
 
-`metal` here is a template-local escape hatch, not an application-wide compiler profile. For application authoring profiles, use `portable` or `Elixir-first`; both aim to generate idiomatic Elixir, with different priorities when portability and BEAM-native shape conflict.
+`metal` here is a template-local escape hatch, not an application-wide compiler profile. For application authoring profiles, use `portable` or `Elixir-first`; both aim to generate idiomatic Elixir, with different priorities when portability and BEAM-native shape conflict. In other words: `@:hxx_mode(...)` answers “how should this template be parsed?”, not “what kind of app am I building?”.
 
 Inline markup notes:
 - Root tag must be a valid XML name (Haxe lexer rule).
@@ -238,6 +240,8 @@ Note: The `{cond}` / `{pattern in expr}` headers inside template strings are not
 | `@:hxx_no_inline_markup` / `-D hxx_no_inline_markup` | Supported opt-out | Use only when inline markup conflicts with non-template Haxe syntax. |
 | `@:hxx_inline_markup` | Supported opt-in | Enables inline markup for non-Phoenix helper modules. |
 | `-D hxx_allow_string_fallback` / `@:hxx_allow_string_fallback` | Debug/compatibility | Forces legacy string scanning when typed HEEx AST metadata is available; do not use as an app authoring mode. |
+
+These flags are template-authoring controls only. Keep application profile decisions in normal source shape: portable domain modules should avoid target-only APIs, while Elixir-first modules can import Phoenix/Ecto/OTP surfaces directly.
 
 You have two “vocabularies” you can extend:
 

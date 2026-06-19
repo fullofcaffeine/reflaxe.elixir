@@ -22,7 +22,7 @@ defmodule Main do
     {_i} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i}, fn _, {acc_i} ->
       try do
         if (acc_i < length(fruits)) do
-          _old_i = acc_i
+          _ = acc_i
           acc_i = acc_i + 1
           {:cont, {acc_i}}
         else
@@ -105,7 +105,7 @@ end).()]
     g = []
     g_value = trunc((fn ->
         b = length(arr)
-        if (n < b), do: n, else: b
+        _ = Reflaxe.Elixir.HaxeFloat.min(n, b)
       end).())
     g = Enum.reduce(0..(g_value - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Enum.at(arr, i)]) end)
     g

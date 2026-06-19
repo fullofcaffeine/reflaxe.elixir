@@ -6,14 +6,14 @@ defmodule Main do
     _ = test_random_and_int()
   end
   defp test_string_conversion() do
-    _float_str = inspect(3.14)
-    _null_str = inspect(nil)
+    _float_str = Reflaxe.Elixir.HaxeFloat.to_string(3.14)
+    _null_str = Reflaxe.Elixir.HaxeFloat.to_string(nil)
     obj = %{:name => "test", :value => 123}
-    _obj_str = inspect(obj)
+    _obj_str = Reflaxe.Elixir.HaxeFloat.to_string(obj)
     arr = [1, 2, 3]
-    _arr_str = inspect(arr)
+    _arr_str = Reflaxe.Elixir.HaxeFloat.to_string(arr)
     option = {:some, "value"}
-    _option_str = inspect(option)
+    _option_str = Reflaxe.Elixir.HaxeFloat.to_string(option)
     nil
   end
   defp test_parsing() do
@@ -37,26 +37,11 @@ defmodule Main do
       {num, _} -> num
       :error -> nil
     end)
-    _valid_float = (case Float.parse("3.14") do
-      {num, _} -> num
-      :error -> nil
-    end)
-    _negative_float = (case Float.parse("-2.5") do
-      {num, _} -> num
-      :error -> nil
-    end)
-    _int_as_float = (case Float.parse("42") do
-      {num, _} -> num
-      :error -> nil
-    end)
-    _invalid_float = (case Float.parse("xyz") do
-      {num, _} -> num
-      :error -> nil
-    end)
-    _partial_float = (case Float.parse("3.14xyz") do
-      {num, _} -> num
-      :error -> nil
-    end)
+    _valid_float = Reflaxe.Elixir.HaxeFloat.parse("3.14")
+    _negative_float = Reflaxe.Elixir.HaxeFloat.parse("-2.5")
+    _int_as_float = Reflaxe.Elixir.HaxeFloat.parse("42")
+    _invalid_float = Reflaxe.Elixir.HaxeFloat.parse("xyz")
+    _partial_float = Reflaxe.Elixir.HaxeFloat.parse("3.14xyz")
     nil
   end
   defp test_type_checking() do

@@ -1,6 +1,6 @@
 defmodule Log do
   def format_output(v, infos) do
-    str = inspect(v)
+    str = Reflaxe.Elixir.HaxeFloat.to_string(v)
     if (Kernel.is_nil(infos)), do: str, else: str
   end
   def trace(v, infos) do

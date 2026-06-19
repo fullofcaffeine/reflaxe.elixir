@@ -18,10 +18,10 @@ defmodule JsonPrinter do
         if (v), do: "true", else: "false"
       else
         if (Std.is(v, Int)) do
-          inspect(v)
+          Reflaxe.Elixir.HaxeFloat.to_string(v)
         else
           if (Std.is(v, Float)) do
-            s = inspect(v)
+            s = Reflaxe.Elixir.HaxeFloat.to_string(v)
             if (s == "NaN" or s == "Infinity" or s == "-Infinity"), do: "null", else: s
             if (Std.is(v, String)) do
               quote_string(struct, v)
@@ -43,7 +43,7 @@ defmodule JsonPrinter do
     items = []
     _g = 0
     arr_length = length(arr)
-    items = Enum.reduce(0..(arr_length - 1)//1, items, fn i, items_acc -> Enum.concat(items_acc, [write_value(struct, Enum.at(arr, i), inspect(i))]) end)
+    items = Enum.reduce(0..(arr_length - 1)//1, items, fn i, items_acc -> Enum.concat(items_acc, [write_value(struct, Enum.at(arr, i), Reflaxe.Elixir.HaxeFloat.to_string(i))]) end)
     if (not Kernel.is_nil(struct.space) and length(items) > 0) do
       "[
   #{Enum.join(items, ",\n  ")}

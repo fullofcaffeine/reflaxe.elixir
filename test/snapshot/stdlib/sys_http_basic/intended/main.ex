@@ -51,7 +51,7 @@ defmodule Main do
         
   end
   defp url(port, path) do
-    "http://127.0.0.1:#{Kernel.to_string(port)}#{path}"
+    "http://127.0.0.1:#{Reflaxe.Elixir.HaxeFloat.to_string(port)}#{path}"
   end
   defp put_callback_string(key, value) do
     Process.put(key, value)

@@ -66,7 +66,7 @@ import reflaxe.elixir.PhoenixMapper;
  * @:presence
  * class MyPresence implements PresenceBehavior {
  *     public static function trackUser<T>(socket: Socket<T>, user: User): Socket<T> {
- *         return trackWithSocket(socket, "users", Std.string(user.id), createUserMeta(user));
+ *         return trackWithSocket(socket, PresenceTopic.of("users"), PresenceKey.of(Std.string(user.id)), createUserMeta(user));
  *     }
  * }
  * ```
@@ -124,21 +124,23 @@ import reflaxe.elixir.PhoenixMapper;
  * 
  * ### The Solution
  * 
- * Internal methods now correctly accept `topic: String` parameters:
- * - `trackInternal<M>(topic: String, key: String, meta: M): Void`
- * - `updateInternal<M>(topic: String, key: String, meta: M): Void`
- * - `untrackInternal(topic: String, key: String): Void`
+ * Internal methods now correctly accept `topic: PresenceTopic` parameters:
+ * - `trackInternal<M>(topic: PresenceTopic, key: PresenceKey, meta: M): Void`
+ * - `updateInternal<M>(topic: PresenceTopic, key: PresenceKey, meta: M): Void`
+ * - `untrackInternal(topic: PresenceTopic, key: PresenceKey): Void`
  * 
  * These methods call Phoenix.Presence functions with the correct signature:
- * `Phoenix.Presence.track(self(), topic, key, meta)` where topic is a STRING.
+ * `Phoenix.Presence.track(self(), topic, key, meta)`. The Haxe type is
+ * `PresenceTopic`, and the emitted Elixir value is still the topic string that
+ * Phoenix expects.
  * 
  * ### Usage Pattern
  * 
  * ```haxe
  * // In your presence module:
  * public static function trackUser<T>(socket: Socket<T>, user: User): Socket<T> {
- *     var topic = "users";  // Topic is a STRING for LiveView!
- *     trackInternal(topic, Std.string(user.id), createUserMeta(user));
+ *     var topic = PresenceTopic.of("users");
+ *     trackInternal(topic, PresenceKey.of(Std.string(user.id)), createUserMeta(user));
  *     return socket;
  * }
  * ```
@@ -156,7 +158,7 @@ import reflaxe.elixir.PhoenixMapper;
  * // Generated method signature
  * extern inline public static function trackInternal<T, M>(
  *     socket: T,      // any socket type
- *     key: String, 
+ *     key: PresenceKey, 
  *     meta: M         // any metadata type
  * ): T {              // Returns same socket type
  *     return untyped __elixir__('track({0}, {1}, {2}, {3})', 
@@ -181,7 +183,7 @@ import reflaxe.elixir.PhoenixMapper;
  * ### Internal Methods (use within the presence module)
  * ```haxe
  * // Generated: Injects self() as first parameter with full type safety
- * extern inline public static function trackInternal<T, M>(socket: T, key: String, meta: M): T {
+ * extern inline public static function trackInternal<T, M>(socket: T, key: PresenceKey, meta: M): T {
  *     return untyped __elixir__('track({0}, {1}, {2}, {3})', untyped __elixir__('self()'), socket, key, meta);
  * }
  * ```
@@ -189,7 +191,7 @@ import reflaxe.elixir.PhoenixMapper;
  * ### LiveView Socket Methods
  * ```haxe
  * // Generated: tracks current process and returns the socket for callback pipelines
- * extern inline public static function trackWithSocket<T, M>(socket: T, topic: String, key: String, meta: M): T {
+ * extern inline public static function trackWithSocket<T, M>(socket: T, topic: PresenceTopic, key: PresenceKey, meta: M): T {
  *     untyped __elixir__('MyAppWeb.Presence.track(self(), {0}, {1}, {2})', topic, key, meta);
  *     return socket;
  * }
@@ -395,8 +397,8 @@ class PresenceMacro {
 					{name: "M"} // Metadata type parameter
 				],
 				args: [
-					{name: "topic", type: macro :String}, // Topic string for LiveView
-					{name: "key", type: macro :String},
+					{name: "topic", type: macro :phoenix.PresenceTopic},
+					{name: "key", type: macro :phoenix.PresenceKey},
 					{name: "meta", type: macro :M} // Generic metadata type
 				],
 				ret: macro :Void, // Presence tracking doesn't return anything
@@ -406,7 +408,7 @@ class PresenceMacro {
 				}
 			}),
 			access: [APublic, AStatic, AInline], // inline for zero-cost abstraction
-			doc: "Track presence internally for LiveView contexts. Uses topic string as required by Phoenix.Presence.",
+			doc: "Track presence internally for LiveView contexts. Uses a typed topic token that emits a Phoenix topic string.",
 			meta: [{name: ":doc", pos: Context.currentPos()}]
 		};
 	}
@@ -424,8 +426,8 @@ class PresenceMacro {
 					{name: "M"} // Metadata type parameter
 				],
 				args: [
-					{name: "topic", type: macro :String}, // Topic string for LiveView
-					{name: "key", type: macro :String},
+					{name: "topic", type: macro :phoenix.PresenceTopic},
+					{name: "key", type: macro :phoenix.PresenceKey},
 					{name: "meta", type: macro :M}
 				],
 				ret: macro :Void,
@@ -435,7 +437,7 @@ class PresenceMacro {
 				}
 			}),
 			access: [APublic, AStatic, AInline],
-			doc: "Update presence internally for LiveView contexts. Uses topic string as required by Phoenix.Presence.",
+			doc: "Update presence internally for LiveView contexts. Uses a typed topic token that emits a Phoenix topic string.",
 			meta: [
 				{
 					name: ":doc",
@@ -455,8 +457,8 @@ class PresenceMacro {
 			pos: Context.currentPos(),
 			kind: FFun({
 				args: [
-					{name: "topic", type: macro :String}, // Topic string for LiveView
-					{name: "key", type: macro :String}
+					{name: "topic", type: macro :phoenix.PresenceTopic},
+					{name: "key", type: macro :phoenix.PresenceKey}
 				],
 				ret: macro :Void,
 				expr: macro {
@@ -465,7 +467,7 @@ class PresenceMacro {
 				}
 			}),
 			access: [APublic, AStatic, AInline],
-			doc: "Untrack presence internally for LiveView contexts. Uses topic string as required by Phoenix.Presence.",
+			doc: "Untrack presence internally for LiveView contexts. Uses a typed topic token that emits a Phoenix topic string.",
 			meta: [
 				{
 					name: ":doc",
@@ -491,7 +493,7 @@ class PresenceMacro {
 				],
 				args: [
 					{name: "socket", type: macro :T},
-					{name: "key", type: macro :String},
+					{name: "key", type: macro :phoenix.PresenceKey},
 					{name: "meta", type: macro :M}
 				],
 				ret: macro :T,
@@ -521,7 +523,7 @@ class PresenceMacro {
 				],
 				args: [
 					{name: "socket", type: macro :T},
-					{name: "key", type: macro :String},
+					{name: "key", type: macro :phoenix.PresenceKey},
 					{name: "meta", type: macro :M}
 				],
 				ret: macro :T,
@@ -548,7 +550,10 @@ class PresenceMacro {
 				params: [
 					{name: "T"} // Socket type parameter
 				],
-				args: [{name: "socket", type: macro :T}, {name: "key", type: macro :String}],
+				args: [
+					{name: "socket", type: macro :T},
+					{name: "key", type: macro :phoenix.PresenceKey}
+				],
 				ret: macro :T,
 				expr: macro {
 					// Call the actual Phoenix.Presence module, not local function
@@ -586,7 +591,7 @@ class PresenceMacro {
 				params: [
 					{name: "M"} // Metadata type parameter
 				],
-				args: [{name: "key", type: macro :String}, {name: "meta", type: macro :M}],
+				args: [{name: "key", type: macro :phoenix.PresenceKey}, {name: "meta", type: macro :M}],
 				ret: macro :Void,
 				expr: macro {
 					// Use the class-level topic
@@ -610,7 +615,7 @@ class PresenceMacro {
 				params: [
 					{name: "M"} // Metadata type parameter
 				],
-				args: [{name: "key", type: macro :String}, {name: "meta", type: macro :M}],
+				args: [{name: "key", type: macro :phoenix.PresenceKey}, {name: "meta", type: macro :M}],
 				ret: macro :Void,
 				expr: macro {
 					// Use the class-level topic
@@ -631,7 +636,7 @@ class PresenceMacro {
 			name: "untrackSimple",
 			pos: Context.currentPos(),
 			kind: FFun({
-				args: [{name: "key", type: macro :String}],
+				args: [{name: "key", type: macro :phoenix.PresenceKey}],
 				ret: macro :Void,
 				expr: macro {
 					// Use the class-level topic
@@ -677,7 +682,7 @@ class PresenceMacro {
 			name: "list",
 			pos: Context.currentPos(),
 			kind: FFun({
-				args: [{name: "topic", type: macro :String}],
+				args: [{name: "topic", type: macro :phoenix.PresenceTopic}],
 				ret: macro :elixir.types.Term,
 				expr: macro {
 					// Emit <PresenceModule>.list(topic) (function injected by `use Phoenix.Presence`)
@@ -699,7 +704,10 @@ class PresenceMacro {
 			pos: Context.currentPos(),
 			kind: FFun({
 				params: [{name: "M"}],
-				args: [{name: "topic", type: macro :String}, {name: "key", type: macro :String}],
+				args: [
+					{name: "topic", type: macro :phoenix.PresenceTopic},
+					{name: "key", type: macro :phoenix.PresenceKey}
+				],
 				ret: macro :Null<phoenix.Presence.PresenceEntry<M>>,
 				expr: macro {
 					// Presence.get_by_key/2 returns `[]` when missing; convert to `nil` for Haxe `Null<T>`.
@@ -720,8 +728,8 @@ class PresenceMacro {
 			kind: FFun({
 				params: [{name: "M"}],
 				args: [
-					{name: "topic", type: macro :String},
-					{name: "key", type: macro :String},
+					{name: "topic", type: macro :phoenix.PresenceTopic},
+					{name: "key", type: macro :phoenix.PresenceKey},
 					{name: "meta", type: macro :M}
 				],
 				ret: macro :Void,
@@ -744,8 +752,8 @@ class PresenceMacro {
 			kind: FFun({
 				params: [{name: "M"}],
 				args: [
-					{name: "topic", type: macro :String},
-					{name: "key", type: macro :String},
+					{name: "topic", type: macro :phoenix.PresenceTopic},
+					{name: "key", type: macro :phoenix.PresenceKey},
 					{name: "meta", type: macro :M}
 				],
 				ret: macro :Void,
@@ -765,7 +773,10 @@ class PresenceMacro {
 			name: "untrack",
 			pos: Context.currentPos(),
 			kind: FFun({
-				args: [{name: "topic", type: macro :String}, {name: "key", type: macro :String}],
+				args: [
+					{name: "topic", type: macro :phoenix.PresenceTopic},
+					{name: "key", type: macro :phoenix.PresenceKey}
+				],
 				ret: macro :Void,
 				expr: macro {
 					untyped __elixir__('{0}.untrack(self(), {1}, {2})', untyped __elixir__($v{fqModule}), topic, key);
@@ -792,8 +803,8 @@ class PresenceMacro {
 				],
 				args: [
 					{name: "socket", type: macro :T},
-					{name: "topic", type: macro :String},
-					{name: "key", type: macro :String},
+					{name: "topic", type: macro :phoenix.PresenceTopic},
+					{name: "key", type: macro :phoenix.PresenceKey},
 					{name: "meta", type: macro :M}
 				],
 				ret: macro :T,
@@ -825,8 +836,8 @@ class PresenceMacro {
 				],
 				args: [
 					{name: "socket", type: macro :T},
-					{name: "topic", type: macro :String},
-					{name: "key", type: macro :String},
+					{name: "topic", type: macro :phoenix.PresenceTopic},
+					{name: "key", type: macro :phoenix.PresenceKey},
 					{name: "meta", type: macro :M}
 				],
 				ret: macro :T,
@@ -855,8 +866,8 @@ class PresenceMacro {
 				],
 				args: [
 					{name: "socket", type: macro :T},
-					{name: "topic", type: macro :String},
-					{name: "key", type: macro :String}
+					{name: "topic", type: macro :phoenix.PresenceTopic},
+					{name: "key", type: macro :phoenix.PresenceKey}
 				],
 				ret: macro :T,
 				expr: macro {

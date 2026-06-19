@@ -88,14 +88,7 @@ end).() == "xyz", "writeInput failed")
     inp = BytesInput.new(bytes, nil, nil)
     _ = Input.set_big_endian(inp, false)
     got = apply(Map.get(inp, :__reflaxe_class__) || Map.get(inp, :__struct__), :read_double, [inp])
-    _ = assert_that((fn ->
-  v = (got - 3.25)
-  if (v < 0) do
-    -v
-  else
-    v
-  end
-end).() < 1.0e-12, "double roundtrip failed")
+    _ = assert_that(Reflaxe.Elixir.HaxeFloat.lt(Reflaxe.Elixir.HaxeFloat.abs(Reflaxe.Elixir.HaxeFloat.sub(got, 3.25)), 1.0e-12), "double roundtrip failed")
     string_input = StringInput.new("red\r\nblue\n")
     _ = assert_that(apply(Map.get(string_input, :__reflaxe_class__) || Map.get(string_input, :__struct__), :read_line, [string_input]) == "red", "StringInput readLine CRLF failed")
     _ = assert_that(apply(Map.get(string_input, :__reflaxe_class__) || Map.get(string_input, :__struct__), :read_line, [string_input]) == "blue", "StringInput readLine LF failed")

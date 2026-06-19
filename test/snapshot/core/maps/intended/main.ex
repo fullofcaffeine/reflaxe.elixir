@@ -283,7 +283,7 @@ end)
     {result} = Enum.reduce_while(Map.keys(input), {result}, fn key, {acc_result} ->
       try do
         value = Map.get(input, key)
-        acc_result = Map.put(acc_result, key, "Value: " <> Kernel.to_string(value))
+        acc_result = Map.put(acc_result, key, "Value: " <> Reflaxe.Elixir.HaxeFloat.to_string(value))
         {:cont, {acc_result}}
       catch
         :throw, {:break, break_state} ->

@@ -18,7 +18,7 @@ end), haxe_exception} do
           {error, _} when is_tuple(error) and elem(error, 0) in [:overflow, :outside_bounds, :custom, :blocked] ->
             (case error do
               {:custom, message} ->
-                assert_that(message != "", "Digest.sign should explain unsupported status")
+                assert_that(Reflaxe.Elixir.HaxeFloat.neq(message, ""), "Digest.sign should explain unsupported status")
               _ -> raise Reflaxe.Elixir.HaxeThrow, [value: "Digest.sign should raise Error.Custom"]
             end)
           _ ->

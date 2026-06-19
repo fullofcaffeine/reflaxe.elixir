@@ -141,7 +141,7 @@ defmodule Main do
     _size = Enum.count(test_array)
     _head = Enum.at(test_array, 0)
     _tail = Enum.drop(test_array, 1)
-    _collected = Enum.map(test_array, fn x -> inspect(x) end)
+    _collected = Enum.map(test_array, fn x -> Reflaxe.Elixir.HaxeFloat.to_string(x) end)
   end
   defp test_string_externs() do
     test_string = "  Hello, World!  "

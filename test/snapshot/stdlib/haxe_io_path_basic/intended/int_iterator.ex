@@ -9,8 +9,8 @@ defmodule IntIterator do
     struct.min < struct.max
   end
   def next(struct) do
-    (old_struct_min = struct.min
-    _ = %{struct | min: struct.min + 1}
-    old_struct_min)
+    old_struct_min = struct.min
+    struct = %{struct | min: struct.min + 1}
+    {struct, old_struct_min}
   end
 end

@@ -28,7 +28,7 @@ defmodule Main do
   end
   defp get_redirect_info(status) do
     (case status do
-      {:redirect, url, permanent} -> "URL: #{url}, Permanent: #{inspect(permanent)}"
+      {:redirect, url, permanent} -> "URL: #{url}, Permanent: #{Reflaxe.Elixir.HaxeFloat.to_string(permanent)}"
       _ -> "Not a redirect"
     end)
   end

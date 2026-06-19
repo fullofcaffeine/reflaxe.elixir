@@ -5,6 +5,9 @@ import haxe.macro.Context;
 import haxe.macro.Compiler;
 import haxe.macro.Expr;
 import reflaxe.elixir.macros.heex_tsx.HeexTsxParser;
+#if hxx_instrument_sys
+import reflaxe.elixir.macros.MacroTimingHelper;
+#end
 
 /**
  * InlineMarkup
@@ -46,7 +49,8 @@ import reflaxe.elixir.macros.heex_tsx.HeexTsxParser;
  */
 class InlineMarkup {
 	static inline var HXX_LEGACY_DEPRECATION_MESSAGE = "@:hxx_legacy is deprecated and migration-only. "
-		+ "Use typed inline markup in @:hxx_mode(\"tsx\"), or keep legacy string templates in an explicitly balanced migration module.";
+		+ "Use typed inline markup in the default TSX template mode, or keep legacy string templates in an explicitly balanced migration module. "
+		+ "This is HXX template-mode metadata, not a portable/Elixir-first application profile.";
 
 	/**
 	 * enable
@@ -63,6 +67,14 @@ class InlineMarkup {
 	}
 
 	public static macro function build():Array<Field> {
+		#if hxx_instrument_sys
+		return MacroTimingHelper.time(inlineMarkupTimingLabel(), () -> buildInternal());
+		#else
+		return buildInternal();
+		#end
+	}
+
+	static function buildInternal():Array<Field> {
 		var fields = Context.getBuildFields();
 		if (!shouldProcessLocalType())
 			return fields;
@@ -74,6 +86,24 @@ class InlineMarkup {
 			rewriteField(f, classMode);
 		return fields;
 	}
+
+	#if hxx_instrument_sys
+	static function inlineMarkupTimingLabel():String {
+		var localClassRef = Context.getLocalClass();
+		var className = if (localClassRef == null) {
+			"<unknown>";
+		} else {
+			var cls = localClassRef.get();
+			if (cls == null)
+				"<unknown>";
+			else if (cls.pack == null || cls.pack.length == 0)
+				cls.name;
+			else
+				cls.pack.join(".") + "." + cls.name;
+		}
+		return "InlineMarkup.build class=" + className;
+	}
+	#end
 
 	static function localTypeUsesLegacyRewrite():Bool {
 		var localClassRef = Context.getLocalClass();
@@ -138,7 +168,7 @@ class InlineMarkup {
 		var legacy = fieldUsesLegacyRewrite(field);
 		if (mode == HxxMode.Tsx && legacy) {
 			Context.error("Inline markup: @:hxx_legacy is not allowed in @:hxx_mode(\"tsx\") code.\n"
-				+ "TSX mode requires fully-typed inline markup; use @:hxx_mode(\"balanced\") for legacy template-string features.",
+				+ "TSX template mode requires fully-typed inline markup; use @:hxx_mode(\"balanced\") only for legacy template-string migration scopes.",
 				field.pos);
 		}
 		if (legacy) {
@@ -403,7 +433,12 @@ class InlineMarkup {
 							if (mode == HxxMode.Tsx) {
 								validateTsxInlineMarkupPayload(s, rewrittenInner.pos);
 								// TSX mode: parse the markup into a compile-time HEEx AST.
+								#if hxx_instrument_sys
+								var nodeExpr = MacroTimingHelper.time("InlineMarkup.parseTsxRoot bytes=" + Std.string(s.length),
+									() -> HeexTsxParser.parseRoot(s, rewrittenInner.pos));
+								#else
 								var nodeExpr = HeexTsxParser.parseRoot(s, rewrittenInner.pos);
+								#end
 								// Rewrite nested inline markup inside spliced expressions.
 								var rewrittenNode = rewriteExpr(nodeExpr, true, mode, legacyRewrite);
 								if (insideHxxArgs)
@@ -415,7 +450,13 @@ class InlineMarkup {
 								//
 								// IMPORTANT: treat nested markup as "inside template producer args" so we do not wrap
 								// nested literals in `HeexTemplate.root(...)` again.
+								#if hxx_instrument_sys
+								var parsedPayload = MacroTimingHelper.time("InlineMarkup.parseBalancedPayload bytes=" + Std.string(s.length),
+									() -> parseInlineMarkupPayloadToTypedExpr(s, rewrittenInner.pos));
+								var payloadExpr = rewriteExpr(parsedPayload, true, mode, legacyRewrite);
+								#else
 								var payloadExpr = rewriteExpr(parseInlineMarkupPayloadToTypedExpr(s, rewrittenInner.pos), true, mode, legacyRewrite);
+								#end
 								if (insideHxxArgs)
 									payloadExpr
 								else

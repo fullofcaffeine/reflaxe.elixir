@@ -5,6 +5,9 @@ import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Expr.Position;
 import haxe.macro.Type;
+#if hxx_instrument_sys
+import reflaxe.elixir.macros.MacroTimingHelper;
+#end
 
 using haxe.macro.Tools;
 #end
@@ -52,14 +55,11 @@ class TypedQueryLambda {
 
 	public static macro function where<T>(ethis:ExprOf<ecto.TypedQuery<T>>, predicate:ExprOf<T->Bool>):Expr {
 		#if hxx_instrument_sys
-		var __t0 = haxe.Timer.stamp();
-		#end
+		return MacroTimingHelper.time("TypedQueryLambda.where", () -> buildWhereExpr(ethis, predicate));
+		#else
 		var __expr = buildWhereExpr(ethis, predicate);
-		#if hxx_instrument_sys
-		var __elapsed = (haxe.Timer.stamp() - __t0) * 1000.0;
-		haxe.macro.Context.warning('[MacroTiming] name=TypedQueryLambda.where elapsed_ms=' + Std.int(__elapsed), predicate.pos);
-		#end
 		return __expr;
+		#end
 	}
 
 	public static function buildOrderByExpr(ethis:Expr, ordering:Expr):Expr {
@@ -134,14 +134,11 @@ class TypedQueryLambda {
 
 	public static macro function orderBy<T>(ethis:ExprOf<ecto.TypedQuery<T>>, ordering:Expr):Expr {
 		#if hxx_instrument_sys
-		var __t0 = haxe.Timer.stamp();
-		#end
+		return MacroTimingHelper.time("TypedQueryLambda.orderBy", () -> buildOrderByExpr(ethis, ordering));
+		#else
 		var __expr = buildOrderByExpr(ethis, ordering);
-		#if hxx_instrument_sys
-		var __elapsed = (haxe.Timer.stamp() - __t0) * 1000.0;
-		haxe.macro.Context.warning('[MacroTiming] name=TypedQueryLambda.orderBy elapsed_ms=' + Std.int(__elapsed), ordering.pos);
-		#end
 		return __expr;
+		#end
 	}
 
 	// Represents a condition template and the pinned value expressions it references

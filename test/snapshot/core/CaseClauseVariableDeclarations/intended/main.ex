@@ -8,7 +8,7 @@ defmodule Main do
     _ = fn_.(5)
   end
   defp perform_risky_operation() do
-    if (:rand.uniform() > 0.5) do
+    if (Reflaxe.Elixir.HaxeFloat.gt(:rand.uniform(), 0.5)) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Random failure"]
     end
     "Success"

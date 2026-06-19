@@ -79,7 +79,7 @@ end)
       _ = Task.await(nolink_task)
       _ = Task.Supervisor.start_child(supervisor, fn -> nil end)
       children = Task.Supervisor.children(supervisor)
-      _stream = Task.Supervisor.async_stream(supervisor, [10, 20, 30], fn x -> x + 1 end)
+      _stream = Task.Supervisor.async_stream(supervisor, [10, 20, 30], fn x -> Reflaxe.Elixir.HaxeFloat.add(x, 1) end)
       task = Task.Supervisor.async(supervisor, fn -> "helper result" end)
       _supervised_result = _ = Task.await(task)
       funs = [fn -> 100 end, fn -> 200 end, fn -> 300 end]

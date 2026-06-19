@@ -18,6 +18,7 @@ defmodule Input do
             apply(Map.get(acc_s, :__reflaxe_class__) || Map.get(acc_s, :__struct__), :set, [acc_s, acc_pos, apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])])
           rescue
             haxe_exception ->
+              Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
               (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
@@ -64,18 +65,10 @@ end), haxe_exception} do
       if (len == 0) do
         raise Reflaxe.Elixir.HaxeThrow, [value: {:blocked}]
       end
-      if (len < 0 or len > buf.length) do
-        raise Reflaxe.Elixir.HaxeThrow, [value: {:outside_bounds}]
-      end
-      if (len == 0) do
-        nil
-      else
-        slice = :binary.part(apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :get_data, [buf]), 0, len)
-        total = %{total | parts_reversed: [slice | total.parts_reversed]}
-        _ = %{total | byte_length: total.byte_length + len}
-      end
+      _ = apply(Map.get(total, :__reflaxe_class__) || Map.get(total, :__struct__), :add_bytes, [total, buf, 0, len])
     rescue
       haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
@@ -159,8 +152,7 @@ end)
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
     if ((last = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])) != end_param) do
-      buf = %{buf | parts_reversed: [last | buf.parts_reversed]}
-      _ = %{buf | byte_length: buf.byte_length + 1}
+      _ = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :add_byte, [buf, last])
       {:cont, acc}
     else
       {:halt, acc}
@@ -188,10 +180,10 @@ end)
       if (last == 10) do
         throw({:break, acc})
       end
-      buf = %{buf | parts_reversed: [last | buf.parts_reversed]}
-      _ = %{buf | byte_length: buf.byte_length + 1}
+      _ = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :add_byte, [buf, last])
     rescue
       haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception

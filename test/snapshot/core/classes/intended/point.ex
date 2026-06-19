@@ -7,11 +7,11 @@ defmodule Point do
     struct
   end
   def distance(struct, other) do
-    dx = (struct.x - other.x)
-    dy = (struct.y - other.y)
-    :math.sqrt(dx * dx + dy * dy)
+    dx = Reflaxe.Elixir.HaxeFloat.sub(struct.x, other.x)
+    dy = Reflaxe.Elixir.HaxeFloat.sub(struct.y, other.y)
+    _ = Reflaxe.Elixir.HaxeFloat.sqrt(Reflaxe.Elixir.HaxeFloat.add(Reflaxe.Elixir.HaxeFloat.mul(dx, dx), Reflaxe.Elixir.HaxeFloat.mul(dy, dy)))
   end
   def to_string(struct) do
-    "Point(#{Kernel.to_string(struct.x)}, #{Kernel.to_string(struct.y)})"
+    "Point(#{Reflaxe.Elixir.HaxeFloat.to_string(struct.x)}, #{Reflaxe.Elixir.HaxeFloat.to_string(struct.y)})"
   end
 end

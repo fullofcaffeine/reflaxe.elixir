@@ -34,8 +34,9 @@ class JsonPrinter {
 	 */
 	function writeValue(v:Dynamic, key:String):String {
 		// Apply replacer if provided
-		if (replacer != null) {
-			v = replacer(key, v);
+		var activeReplacer = this.replacer;
+		if (activeReplacer != null) {
+			v = activeReplacer(key, v);
 		}
 
 		// Use simple type checking instead of Type.typeof for now
@@ -43,35 +44,24 @@ class JsonPrinter {
 
 		if (v == null) {
 			return "null";
-		}
-
-		if (Std.isOfType(v, Bool)) {
+		} else if (Std.isOfType(v, Bool)) {
 			return v ? "true" : "false";
-		}
-
-		if (Std.isOfType(v, Int)) {
+		} else if (Std.isOfType(v, Int)) {
 			return Std.string(v);
-		}
-
-		if (Std.isOfType(v, Float)) {
-			var s = Std.string(v);
-			// Check for NaN/Infinity
-			if (s == "NaN" || s == "Infinity" || s == "-Infinity") {
+		} else if (Std.isOfType(v, Float)) {
+			// JSON has no NaN/Infinity values. Haxe serializes non-finite floats as null.
+			if (!Math.isFinite(v)) {
 				return "null";
 			}
-			return s;
-		}
-
-		if (Std.isOfType(v, String)) {
+			return Std.string(v);
+		} else if (Std.isOfType(v, String)) {
 			return quoteString(v);
-		}
-
-		if (Std.isOfType(v, Array)) {
+		} else if (Std.isOfType(v, Array)) {
 			return writeArray(v);
+		} else {
+			// Default to object serialization.
+			return writeObject(v);
 		}
-
-		// Default to object serialization
-		return writeObject(v);
 	}
 
 	/**

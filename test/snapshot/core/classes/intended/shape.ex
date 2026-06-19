@@ -14,9 +14,9 @@ apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_
   end
   def move(struct, dx, dy) do
     fh = struct.position
-    fh = %{fh | x: fh.x + dx}
+    fh = %{fh | x: Reflaxe.Elixir.HaxeFloat.add(fh.x, dx)}
     fh = struct.position
-    fh = %{fh | y: fh.y + dy}
+    fh = %{fh | y: Reflaxe.Elixir.HaxeFloat.add(fh.y, dy)}
     fh
   end
 end

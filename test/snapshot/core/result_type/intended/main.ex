@@ -9,7 +9,7 @@ defmodule Main do
   def divide_numbers(a, b) do
     ResultTools.flat_map(parse_number(a), fn num_a ->
       ResultTools.flat_map(parse_number(b), fn num_b ->
-        if (num_b == 0), do: {:error, "Division by zero"}, else: {:ok, num_a / num_b}
+        if (num_b == 0), do: {:error, "Division by zero"}, else: {:ok, Reflaxe.Elixir.HaxeFloat.divide(num_a, num_b)}
       end)
     end)
   end
@@ -18,7 +18,7 @@ defmodule Main do
   end
   def handle_result(result) do
     (case result do
-      {:ok, value} -> "Success: #{Kernel.to_string(value)}"
+      {:ok, value} -> "Success: #{Reflaxe.Elixir.HaxeFloat.to_string(value)}"
       {:error, message} -> "Error: #{message}"
     end)
   end

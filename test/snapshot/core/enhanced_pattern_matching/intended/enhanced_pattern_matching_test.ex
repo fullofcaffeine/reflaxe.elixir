@@ -3,8 +3,8 @@ defmodule EnhancedPatternMatchingTest do
     (case status do
       {:idle} -> "Currently idle"
       {:working, task} -> "Working on: #{task}"
-      {:completed, result, duration} -> "Completed \"#{result}\" in #{Kernel.to_string(duration)}ms"
-      {:failed, error, retries} -> "Failed with \"#{error}\" after #{Kernel.to_string(retries)} retries"
+      {:completed, result, duration} -> "Completed \"#{result}\" in #{Reflaxe.Elixir.HaxeFloat.to_string(duration)}ms"
+      {:failed, error, retries} -> "Failed with \"#{error}\" after #{Reflaxe.Elixir.HaxeFloat.to_string(retries)} retries"
     end)
   end
   def incomplete_match(status) do
@@ -18,7 +18,7 @@ defmodule EnhancedPatternMatchingTest do
     (case result do
       {:success, value} ->
         (case value do
-          {:success, value} -> "Double success: #{inspect(value)}"
+          {:success, value} -> "Double success: #{Reflaxe.Elixir.HaxeFloat.to_string(value)}"
           {:error, inner_error, inner_context} -> "Outer success, inner error: #{inner_error} (context: #{inner_context})"
         end)
       {:error, outer_error, outer_context} -> "Outer error: #{outer_error} (context: #{outer_context})"
@@ -59,13 +59,13 @@ defmodule EnhancedPatternMatchingTest do
       "score" when value >= 70 and value < 90 -> "Good score"
       "score" when value >= 50 and value < 70 -> "Average score"
       "score" when value < 50 -> "Poor score"
-      "score" -> "Unknown category \"#{cat}\" with value #{Kernel.to_string(n)}"
+      "score" -> "Unknown category \"#{cat}\" with value #{Reflaxe.Elixir.HaxeFloat.to_string(n)}"
       "temperature" when value >= 30 -> "Hot"
       "temperature" when value >= 20 and value < 30 -> "Warm"
       "temperature" when value >= 10 and value < 20 -> "Cool"
       "temperature" when value < 10 -> "Cold"
-      "temperature" -> "Unknown category \"#{cat}\" with value #{Kernel.to_string(n)}"
-      cat -> "Unknown category \"#{cat}\" with value #{Kernel.to_string(n)}"
+      "temperature" -> "Unknown category \"#{cat}\" with value #{Reflaxe.Elixir.HaxeFloat.to_string(n)}"
+      cat -> "Unknown category \"#{cat}\" with value #{Reflaxe.Elixir.HaxeFloat.to_string(n)}"
     end)
   end
   def chain_result_operations(input) do
@@ -89,20 +89,20 @@ end) do
       [] -> "empty array"
       [_head | _tail] ->
         x = Enum.at(arr, 0)
-        "single element: #{Kernel.to_string(x)}"
+        "single element: #{Reflaxe.Elixir.HaxeFloat.to_string(x)}"
       2 ->
         x = Enum.at(arr, 0)
         y = Enum.at(arr, 1)
-        "pair: [#{Kernel.to_string(x)}, #{Kernel.to_string(y)}]"
+        "pair: [#{Reflaxe.Elixir.HaxeFloat.to_string(x)}, #{Reflaxe.Elixir.HaxeFloat.to_string(y)}]"
       3 ->
         x = Enum.at(arr, 0)
         y = Enum.at(arr, 1)
         z = Enum.at(arr, 2)
-        "triple: [#{Kernel.to_string(x)}, #{Kernel.to_string(y)}, #{Kernel.to_string(z)}]"
+        "triple: [#{Reflaxe.Elixir.HaxeFloat.to_string(x)}, #{Reflaxe.Elixir.HaxeFloat.to_string(y)}, #{Reflaxe.Elixir.HaxeFloat.to_string(z)}]"
       _ ->
         a = arr
         if (length(a) > 3) do
-          "starts with #{Kernel.to_string(a[0])}, has #{Kernel.to_string((length(a) - 1))} more elements"
+          "starts with #{Reflaxe.Elixir.HaxeFloat.to_string(a[0])}, has #{Reflaxe.Elixir.HaxeFloat.to_string((length(a) - 1))} more elements"
         else
           "other array pattern"
         end
@@ -150,9 +150,9 @@ end) do
       :false ->
         age = data.age
         name = data.name
-        "Inactive user: #{name} (#{Kernel.to_string(age)})"
-      :true when age >= 18 -> "Active adult: #{name} (#{Kernel.to_string(age)})"
-      :true when age < 18 -> "Active minor: #{name} (#{Kernel.to_string(age)})"
+        "Inactive user: #{name} (#{Reflaxe.Elixir.HaxeFloat.to_string(age)})"
+      :true when age >= 18 -> "Active adult: #{name} (#{Reflaxe.Elixir.HaxeFloat.to_string(age)})"
+      :true when age < 18 -> "Active minor: #{name} (#{Reflaxe.Elixir.HaxeFloat.to_string(age)})"
       :true -> "unknown pattern"
       _ -> "unknown pattern"
     end)
@@ -165,7 +165,7 @@ end) do
           length(errors) == 1 -> "Single error: " <> Enum.at(errors, 0)
           true ->
             if (length(errors) > 1) do
-              "Multiple errors: " <> Kernel.to_string(length(errors)) <> " issues"
+              "Multiple errors: " <> Reflaxe.Elixir.HaxeFloat.to_string(length(errors)) <> " issues"
             else
               "No specific errors"
             end
@@ -177,14 +177,14 @@ end) do
     bytes = Bytes.of_string(data, nil)
     (case bytes.length do
       0 -> "empty"
-      1 -> "single byte: #{Kernel.to_string(apply(Map.get(bytes, :__reflaxe_class__) || Map.get(bytes, :__struct__), :get, [bytes, 0]))}"
+      1 -> "single byte: #{Reflaxe.Elixir.HaxeFloat.to_string(apply(Map.get(bytes, :__reflaxe_class__) || Map.get(bytes, :__struct__), :get, [bytes, 0]))}"
       _ ->
         n = bytes.length
         if (n <= 4) do
-          "small data: #{Kernel.to_string(n)} bytes"
+          "small data: #{Reflaxe.Elixir.HaxeFloat.to_string(n)} bytes"
         else
           n = bytes.length
-          "large data: #{Kernel.to_string(n)} bytes"
+          "large data: #{Reflaxe.Elixir.HaxeFloat.to_string(n)} bytes"
         end
     end)
   end

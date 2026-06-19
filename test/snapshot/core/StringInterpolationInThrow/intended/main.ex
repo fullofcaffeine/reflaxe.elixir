@@ -9,7 +9,7 @@ defmodule Main do
   end
   defp test_simple_interpolation() do
     try do
-      raise Reflaxe.Elixir.HaxeThrow, [value: "Error code: " <> Kernel.to_string(error_code)]
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Error code: " <> Reflaxe.Elixir.HaxeFloat.to_string(error_code)]
     rescue
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)

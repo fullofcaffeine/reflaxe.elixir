@@ -1,31 +1,30 @@
 defmodule Std do
   def string(value) do
-    inspect(value)
+    Reflaxe.Elixir.HaxeFloat.to_string(value)
   end
   def parse_int(str) do
-
+    
             case Integer.parse(str) do
                 {num, _} -> num
                 :error -> nil
             end
-
+        
   end
   def parse_float(str) do
-
-            case Float.parse(str) do
-                {num, _} -> num
-                :error -> nil
-            end
-
+    Reflaxe.Elixir.HaxeFloat.parse(str)
   end
   def is(value, type) do
-
+    
             # Convert type to string for comparison
-            type_str = to_string(type)
-
+            type_str =
+                type
+                |> to_string()
+                |> String.split(".")
+                |> List.last()
+            
             case type_str do
                 "String" -> is_binary(value)
-                "Float" -> is_float(value)
+                "Float" -> Reflaxe.Elixir.HaxeFloat.is_haxe_float(value)
                 "Int" -> is_integer(value)
                 "Bool" -> is_boolean(value)
                 "Array" -> is_list(value)
@@ -41,7 +40,7 @@ defmodule Std do
                         _ -> false
                     end
             end
-
+        
   end
   def is_of_type(value, type) do
     is(value, type)

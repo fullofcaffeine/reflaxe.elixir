@@ -28,7 +28,7 @@ defmodule Main do
       try do
         if (wrapped_iterator.has_next.()) do
           pair = wrapped_iterator.next.()
-          acc_wrapped_pairs = acc_wrapped_pairs ++ [pair.key <> ":" <> Kernel.to_string(pair.value)]
+          acc_wrapped_pairs = acc_wrapped_pairs ++ [pair.key <> ":" <> Reflaxe.Elixir.HaxeFloat.to_string(pair.value)]
           {:cont, {acc_wrapped_pairs}}
         else
           {:halt, {acc_wrapped_pairs}}
@@ -53,7 +53,7 @@ defmodule Main do
       try do
         if (tree_iterator.has_next.()) do
           tree_pair = tree_iterator.next.()
-          acc_tree_pairs = acc_tree_pairs ++ [tree_pair.key <> ":" <> Kernel.to_string(tree_pair.value)]
+          acc_tree_pairs = acc_tree_pairs ++ [tree_pair.key <> ":" <> Reflaxe.Elixir.HaxeFloat.to_string(tree_pair.value)]
           {:cont, {acc_tree_pairs}}
         else
           {:halt, {acc_tree_pairs}}

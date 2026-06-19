@@ -3,6 +3,6 @@ defmodule AbstractionLab.StringCommandRenderable do
     "run:#{value}"
   end
   def render_summary(_struct, value) do
-    "command(#{Kernel.to_string(String.length(value))} chars)"
+    "command(#{Reflaxe.Elixir.HaxeFloat.to_string(String.length(value))} chars)"
   end
 end

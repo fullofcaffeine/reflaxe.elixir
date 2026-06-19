@@ -19,9 +19,9 @@ defmodule Main do
         end)
         if (cond_value != "") do
           s = g_s
-          old__g_offset = acc__g_offset
+          reflaxe_receiver_value_0 = acc__g_offset
           acc__g_offset = acc__g_offset + 1
-          index = old__g_offset
+          index = reflaxe_receiver_value_0
           code = if (index < 0) do
             nil
           else
@@ -64,9 +64,9 @@ defmodule Main do
         if (cond_value != "") do
           g_key = acc__g_offset
           s = g_s
-          old__g_offset = acc__g_offset
+          reflaxe_receiver_value_1 = acc__g_offset
           acc__g_offset = acc__g_offset + 1
-          index = old__g_offset
+          index = reflaxe_receiver_value_1
           g_value = if (index < 0) do
             nil
           else
@@ -74,7 +74,7 @@ defmodule Main do
           end
           index = g_key
           code = g_value
-          acc_entries = acc_entries ++ [Kernel.to_string(index) <> ":" <> Kernel.to_string(code)]
+          acc_entries = acc_entries ++ [Reflaxe.Elixir.HaxeFloat.to_string(index) <> ":" <> Reflaxe.Elixir.HaxeFloat.to_string(code)]
           {:cont, {acc_entries, acc__g_offset}}
         else
           {:halt, {acc_entries, acc__g_offset}}

@@ -179,6 +179,27 @@ Use this loop when a compile feels slow or a CI budget starts drifting.
    haxe build-server.hxml -D macro-times --times
    ```
 
+   For HXX/HEEx macro hotspots, enable the repo's opt-in macro instrumentation:
+
+   ```bash
+   haxe build-server.hxml -D hxx_instrument_sys --times
+   haxe build-server.hxml -D hxx_instrument_sys --times 2>&1 | rg 'InlineMarkup|HXX\\.|TemplateHelpers'
+   ```
+
+   This adds labels such as `InlineMarkup.build`, `InlineMarkup.parseTsxRoot`,
+   `InlineMarkup.parseBalancedPayload`, `HXX.processTemplateString`, and `TemplateHelpers.*` to Haxe's
+   timing report. The labels include template byte sizes where useful, so repeated large templates are
+   easier to spot before changing parser or transform code. Haxe may omit very small timers from the
+   report, so validate instrumentation against a realistic template-heavy build before assuming a label
+   is missing.
+
+   Parser output caching is intentionally not enabled for inline TSX templates yet. The parser returns
+   Haxe macro expressions with source positions and nested `${...}` expressions tied to the original
+   location; reusing those expressions for another template occurrence would make errors point at the
+   wrong source span and can corrupt later typing. If timings show repeated large templates dominate,
+   cache only a position-independent intermediate representation first, then rebuild fresh `Expr`
+   nodes per callsite.
+
    Use verbose Haxe logging only for diagnosis, and redirect it because it is noisy:
 
    ```bash

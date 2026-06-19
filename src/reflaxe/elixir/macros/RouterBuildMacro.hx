@@ -4,6 +4,9 @@ package reflaxe.elixir.macros;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
+#if (macro && hxx_instrument_sys)
+import reflaxe.elixir.macros.MacroTimingHelper;
+#end
 
 using StringTools;
 
@@ -72,10 +75,15 @@ class RouterBuildMacro {
 	 * Main build macro entry point - generates route functions from @:routes annotation
 	 */
 	public static function generateRoutes():Array<Field> {
-		#if debug_perf var __p = reflaxe.elixir.debug.Perf.now(); #end
 		#if hxx_instrument_sys
-		var __t0 = haxe.Timer.stamp();
+		return MacroTimingHelper.time("RouterBuildMacro.generateRoutes", () -> generateRoutesInternal());
+		#else
+		return generateRoutesInternal();
 		#end
+	}
+
+	static function generateRoutesInternal():Array<Field> {
+		#if debug_perf var __p = reflaxe.elixir.debug.Perf.now(); #end
 		#if debug_compilation_hang
 		Sys.println('[HANG DEBUG] RouterBuildMacro.generateRoutes START');
 		var routerStartTime = haxe.Timer.stamp() * 1000;
@@ -117,14 +125,6 @@ class RouterBuildMacro {
 		#if debug_compilation_hang
 		var elapsed = (haxe.Timer.stamp() * 1000) - routerStartTime;
 		Sys.println('[HANG DEBUG] RouterBuildMacro.generateRoutes END - Took ${elapsed}ms, Generated ${routeDefinitions.length} routes');
-		#end
-
-		#if hxx_instrument_sys
-		var __elapsedMacro = (haxe.Timer.stamp() - __t0) * 1000.0;
-		Sys.println('[MacroTiming] name=RouterBuildMacro.generateRoutes routes='
-			+ routeDefinitions.length
-			+ ' elapsed_ms='
-			+ Std.int(__elapsedMacro));
 		#end
 
 		#if debug_perf reflaxe.elixir.debug.Perf.add('RouterBuildMacro.generateRoutes', __p); #end

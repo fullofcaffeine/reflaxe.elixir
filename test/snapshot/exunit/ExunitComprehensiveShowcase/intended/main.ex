@@ -44,7 +44,7 @@ defmodule Main do
     __haxe_static_put__(:module_state, value)
   end
   defp safe_divide(_struct, a, b) do
-    if (b == 0), do: {:error, "Division by zero"}, else: {:ok, a / b}
+    if (Reflaxe.Elixir.HaxeFloat.eq(b, 0)), do: {:error, "Division by zero"}, else: {:ok, Reflaxe.Elixir.HaxeFloat.divide(a, b)}
   end
   defp find_in_array(_struct, arr, item) do
     _g = 0
@@ -177,7 +177,7 @@ end), haxe_exception} do
       non_null_value = "exists"
       assert null_value == nil
       assert non_null_value != nil
-      optional = if (:rand.uniform() > 0.5), do: 42, else: nil
+      optional = if (Reflaxe.Elixir.HaxeFloat.gt(:rand.uniform(), 0.5)), do: 42, else: nil
       if (Kernel.is_nil(optional)) do
         assert optional == nil
       else

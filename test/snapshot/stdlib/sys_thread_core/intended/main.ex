@@ -2,10 +2,10 @@ defmodule Main do
   def main() do
     current = Sys.Thread.Thread.current()
     _ = apply(Map.get(current, :__reflaxe_class__) || Map.get(current, :__struct__), :send_message, [current, "self-message"])
-    if (Sys.Thread.Thread.read_message(false) != "self-message") do
+    if (Reflaxe.Elixir.HaxeFloat.neq(Sys.Thread.Thread.read_message(false), "self-message")) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Thread self message mismatch"]
     end
-    if (not Kernel.is_nil(Sys.Thread.Thread.read_message(false))) do
+    if (Reflaxe.Elixir.HaxeFloat.neq(Sys.Thread.Thread.read_message(false), nil)) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Thread non-blocking empty read should return null"]
     end
     deque = Sys.Thread.Deque.new()
@@ -23,7 +23,7 @@ end)
     if (apply(Map.get(blocking_deque, :__reflaxe_class__) || Map.get(blocking_deque, :__struct__), :pop, [blocking_deque, true]) != "from-child") do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Deque blocking pop mismatch"]
     end
-    if (Sys.Thread.Thread.read_message(true) != "child-finished") do
+    if (Reflaxe.Elixir.HaxeFloat.neq(Sys.Thread.Thread.read_message(true), "child-finished")) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Thread child message mismatch"]
     end
     tls = Sys.Thread.Tls.new()
@@ -33,7 +33,7 @@ end)
   _ = Sys.Thread.Tls.set_value(tls, "child")
   _ = apply(Map.get(tls_mailbox, :__reflaxe_class__) || Map.get(tls_mailbox, :__struct__), :send_message, [tls_mailbox, Sys.Thread.Tls.get_value(tls)])
 end)
-    if (Sys.Thread.Thread.read_message(true) != "child") do
+    if (Reflaxe.Elixir.HaxeFloat.neq(Sys.Thread.Thread.read_message(true), "child")) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Tls child value mismatch"]
     end
     if (Sys.Thread.Tls.get_value(tls) != "main") do
@@ -46,9 +46,9 @@ end)
       {:now} -> nil
       _ ->
         other = apply(Map.get(loop, :__reflaxe_class__) || Map.get(loop, :__struct__), :progress, [loop])
-        raise Reflaxe.Elixir.HaxeThrow, [value: "EventLoop progress should return Now, got " <> inspect(other)]
+        raise Reflaxe.Elixir.HaxeThrow, [value: "EventLoop progress should return Now, got " <> Reflaxe.Elixir.HaxeFloat.to_string(other)]
     end)
-    if (Sys.Thread.Thread.read_message(true) != "loop-ran") do
+    if (Reflaxe.Elixir.HaxeFloat.neq(Sys.Thread.Thread.read_message(true), "loop-ran")) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "EventLoop run did not execute callback"]
     end
   end

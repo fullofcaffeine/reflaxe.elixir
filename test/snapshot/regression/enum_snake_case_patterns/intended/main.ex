@@ -18,12 +18,12 @@ defmodule Main do
   defp test_message_patterns() do
     message = {:todo_created, %{:id => 1, :title => "Test"}}
     _result = (case message do
-      {:todo_created, todo} -> "Created todo: #{inspect(todo)}"
-      {:todo_updated, todo} -> "Updated todo: #{inspect(todo)}"
-      {:todo_deleted, id} -> "Deleted todo: #{Kernel.to_string(id)}"
+      {:todo_created, todo} -> "Created todo: #{Reflaxe.Elixir.HaxeFloat.to_string(todo)}"
+      {:todo_updated, todo} -> "Updated todo: #{Reflaxe.Elixir.HaxeFloat.to_string(todo)}"
+      {:todo_deleted, id} -> "Deleted todo: #{Reflaxe.Elixir.HaxeFloat.to_string(id)}"
       {:bulk_update, action} -> "Bulk action: #{action}"
-      {:user_online, user_id} -> "User #{Kernel.to_string(user_id)} is online"
-      {:user_offline, user_id} -> "User #{Kernel.to_string(user_id)} is offline"
+      {:user_online, user_id} -> "User #{Reflaxe.Elixir.HaxeFloat.to_string(user_id)} is online"
+      {:user_offline, user_id} -> "User #{Reflaxe.Elixir.HaxeFloat.to_string(user_id)} is offline"
       {:system_alert, _message, level} -> "Alert [#{level}]: #{msg}"
     end)
     nil

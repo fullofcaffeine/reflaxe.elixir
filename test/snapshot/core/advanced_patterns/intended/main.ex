@@ -19,26 +19,26 @@ defmodule Main do
       [] -> "empty"
       [_head | _tail] ->
         x = Enum.at(arr, 0)
-        "single: #{Kernel.to_string(x)}"
+        "single: #{Reflaxe.Elixir.HaxeFloat.to_string(x)}"
       2 ->
         x = Enum.at(arr, 0)
         y = Enum.at(arr, 1)
-        "pair: #{Kernel.to_string(x)},#{Kernel.to_string(y)}"
+        "pair: #{Reflaxe.Elixir.HaxeFloat.to_string(x)},#{Reflaxe.Elixir.HaxeFloat.to_string(y)}"
       3 ->
         x = Enum.at(arr, 0)
         y = Enum.at(arr, 1)
         z = Enum.at(arr, 2)
-        "triple: #{Kernel.to_string(x)},#{Kernel.to_string(y)},#{Kernel.to_string(z)}"
+        "triple: #{Reflaxe.Elixir.HaxeFloat.to_string(x)},#{Reflaxe.Elixir.HaxeFloat.to_string(y)},#{Reflaxe.Elixir.HaxeFloat.to_string(z)}"
       4 ->
         first = Enum.at(arr, 0)
         second = Enum.at(arr, 1)
         third = Enum.at(arr, 2)
         fourth = Enum.at(arr, 3)
-        "quad: #{Kernel.to_string(first)},#{Kernel.to_string(second)},#{Kernel.to_string(third)},#{Kernel.to_string(fourth)}"
+        "quad: #{Reflaxe.Elixir.HaxeFloat.to_string(first)},#{Reflaxe.Elixir.HaxeFloat.to_string(second)},#{Reflaxe.Elixir.HaxeFloat.to_string(third)},#{Reflaxe.Elixir.HaxeFloat.to_string(fourth)}"
       _ ->
         a = arr
         if (length(a) > 4) do
-          "many: #{Kernel.to_string(length(a))} elements"
+          "many: #{Reflaxe.Elixir.HaxeFloat.to_string(length(a))} elements"
         else
           "unknown"
         end
@@ -65,35 +65,35 @@ defmodule Main do
     end)
   end
   def classify_number(n) do
-    if (n == 0) do
+    if (Reflaxe.Elixir.HaxeFloat.eq(n, 0)) do
       "zero"
     else
       x = n
-      if (x > 0 and x <= 1) do
+      if (Reflaxe.Elixir.HaxeFloat.gt(x, 0) and Reflaxe.Elixir.HaxeFloat.lte(x, 1)) do
         "tiny"
       else
         x = n
-        if (x > 1 and x <= 10) do
+        if (Reflaxe.Elixir.HaxeFloat.gt(x, 1) and Reflaxe.Elixir.HaxeFloat.lte(x, 10)) do
           "small"
         else
           x = n
-          if (x > 10 and x <= 100) do
+          if (Reflaxe.Elixir.HaxeFloat.gt(x, 10) and Reflaxe.Elixir.HaxeFloat.lte(x, 100)) do
             "medium"
           else
             x = n
-            if (x > 100 and x <= 1000) do
+            if (Reflaxe.Elixir.HaxeFloat.gt(x, 100) and Reflaxe.Elixir.HaxeFloat.lte(x, 1000)) do
               "large"
             else
               x = n
-              if (x > 1000) do
+              if (Reflaxe.Elixir.HaxeFloat.gt(x, 1000)) do
                 "huge"
               else
                 x = n
-                if (x < 0 and x >= -10) do
+                if (Reflaxe.Elixir.HaxeFloat.lt(x, 0) and Reflaxe.Elixir.HaxeFloat.gte(x, -10)) do
                   "small negative"
                 else
                   x = n
-                  if (x < -10), do: "large negative", else: "unknown"
+                  if (Reflaxe.Elixir.HaxeFloat.lt(x, -10)), do: "large negative", else: "unknown"
                 end
               end
             end
@@ -119,8 +119,8 @@ defmodule Main do
       [] -> "empty matrix"
       [head | _tail] when length(head) == 1 ->
         x = Enum.at(head, 0)
-        "single element: #{Kernel.to_string(x)}"
-      [head | _tail] when length(m) == length(head) -> "square matrix #{Kernel.to_string(length(m))}x#{Kernel.to_string(length(m))}"
+        "single element: #{Reflaxe.Elixir.HaxeFloat.to_string(x)}"
+      [head | _tail] when length(m) == length(head) -> "square matrix #{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}x#{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}"
       [_head | _tail] -> "non-square matrix"
       2 ->
         cond do
@@ -129,16 +129,16 @@ defmodule Main do
             d = Enum.at(g, 1)
             b = Enum.at(g, 1)
             a = Enum.at(g, 0)
-            "2x2 matrix: [[" <> Kernel.to_string(a) <> "," <> Kernel.to_string(b) <> "],[" <> Kernel.to_string(c) <> "," <> Kernel.to_string(d) <> "]]"
+            "2x2 matrix: [[" <> Reflaxe.Elixir.HaxeFloat.to_string(a) <> "," <> Reflaxe.Elixir.HaxeFloat.to_string(b) <> "],[" <> Reflaxe.Elixir.HaxeFloat.to_string(c) <> "," <> Reflaxe.Elixir.HaxeFloat.to_string(d) <> "]]"
           true ->
             m = matrix
             if (length(m) == length(Enum.at(m, 0))) do
-              "square matrix " <> Kernel.to_string(length(m)) <> "x" <> Kernel.to_string(length(m))
+              "square matrix " <> Reflaxe.Elixir.HaxeFloat.to_string(length(m)) <> "x" <> Reflaxe.Elixir.HaxeFloat.to_string(length(m))
             else
               "non-square matrix"
             end
         end
-      2 when length(m) == length(Enum.at(m, 0)) -> "square matrix #{Kernel.to_string(length(m))}x#{Kernel.to_string(length(m))}"
+      2 when length(m) == length(Enum.at(m, 0)) -> "square matrix #{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}x#{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}"
       2 -> "non-square matrix"
       3 ->
         cond do
@@ -156,7 +156,7 @@ defmodule Main do
             else
               m = matrix
               if (length(m) == length(Enum.at(m, 0))) do
-                "square matrix " <> Kernel.to_string(length(m)) <> "x" <> Kernel.to_string(length(m))
+                "square matrix " <> Reflaxe.Elixir.HaxeFloat.to_string(length(m)) <> "x" <> Reflaxe.Elixir.HaxeFloat.to_string(length(m))
               else
                 "non-square matrix"
               end
@@ -164,17 +164,17 @@ defmodule Main do
           true ->
             m = matrix
             if (length(m) == length(Enum.at(m, 0))) do
-              "square matrix " <> Kernel.to_string(length(m)) <> "x" <> Kernel.to_string(length(m))
+              "square matrix " <> Reflaxe.Elixir.HaxeFloat.to_string(length(m)) <> "x" <> Reflaxe.Elixir.HaxeFloat.to_string(length(m))
             else
               "non-square matrix"
             end
         end
-      3 when length(m) == length(Enum.at(m, 0)) -> "square matrix #{Kernel.to_string(length(m))}x#{Kernel.to_string(length(m))}"
+      3 when length(m) == length(Enum.at(m, 0)) -> "square matrix #{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}x#{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}"
       3 -> "non-square matrix"
       _ ->
         m = matrix
         if (length(m) == length(Enum.at(m, 0))) do
-          "square matrix #{Kernel.to_string(length(m))}x#{Kernel.to_string(length(m))}"
+          "square matrix #{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}x#{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}"
         else
           "non-square matrix"
         end
@@ -220,24 +220,24 @@ defmodule Main do
   def classify_value(value) do
     v = value
     if (Std.is(v, String)) do
-      "string: \"#{inspect(v)}\""
+      "string: \"#{Reflaxe.Elixir.HaxeFloat.to_string(v)}\""
     else
       v = value
       if (Std.is(v, Int)) do
-        "integer: #{inspect(v)}"
+        "integer: #{Reflaxe.Elixir.HaxeFloat.to_string(v)}"
       else
         v = value
         if (Std.is(v, Float)) do
-          "float: #{inspect(v)}"
+          "float: #{Reflaxe.Elixir.HaxeFloat.to_string(v)}"
         else
           v = value
           if (Std.is(v, Bool)) do
-            "boolean: #{inspect(v)}"
+            "boolean: #{Reflaxe.Elixir.HaxeFloat.to_string(v)}"
           else
             v = value
             cond do
-              Std.is(v, Array) -> "array of length " <> inspect(length(v))
-              Kernel.is_nil(value) -> "null value"
+              Std.is(v, Array) -> "array of length " <> Reflaxe.Elixir.HaxeFloat.to_string(length(v))
+              Reflaxe.Elixir.HaxeFloat.eq(value, nil) -> "null value"
               :true -> "unknown type"
             end
           end
