@@ -58,6 +58,18 @@ class TypeUtils {
 	}
 
 	/**
+	 * Returns true for Haxe values represented as plain Elixir lists.
+	 *
+	 * Some stdlib types are abstracts over `Array<T>`. For example, `haxe.CallStack`
+	 * behaves like an array but may still appear to the backend as the abstract type.
+	 * Elixir lists do not have a `.length` field, so these values must use
+	 * `length(value)` instead.
+	 */
+	public static function isListBackedType(t:Null<Type>):Bool {
+		return isListBackedTypeInner(t, 0);
+	}
+
+	/**
 	 * Returns true when a value may carry Haxe Float special values.
 	 *
 	 * This is deliberately conservative for Dynamic, unresolved monos, and type
@@ -116,6 +128,44 @@ class TypeUtils {
 			default:
 				false;
 		}
+	}
+
+	static function isListBackedTypeInner(t:Null<Type>, depth:Int):Bool {
+		if (t == null)
+			return false;
+		if (depth > 20)
+			return false;
+
+		var followed = TypeTools.follow(t);
+		if (matchesListBackedType(followed))
+			return true;
+
+		return switch (followed) {
+			case TAbstract(ref, params):
+				var abstractType = ref.get();
+				if (abstractType.name == "Null" && params != null && params.length == 1) {
+					isListBackedTypeInner(params[0], depth + 1);
+				} else {
+					isListBackedTypeInner(abstractType.type, depth + 1);
+				}
+			case TType(typeRef, _):
+				isListBackedTypeInner(typeRef.get().type, depth + 1);
+			case TLazy(thunk):
+				isListBackedTypeInner(thunk(), depth + 1);
+			case TMono(monoRef): var resolved = monoRef.get(); resolved != null && isListBackedTypeInner(resolved, depth + 1);
+			default:
+				false;
+		}
+	}
+
+	static function matchesListBackedType(t:Null<Type>):Bool {
+		return switch (t) {
+			case TInst(ref, _): var classType = ref.get(); classType.pack.length == 0 && classType.name == "Array";
+			case TAbstract(ref, _): var abstractType = ref.get(); abstractType.pack.length == 0 && (abstractType.name == "Array"
+					|| abstractType.name == "NativeArray");
+			default:
+				false;
+		};
 	}
 
 	static function isElixirAtomTypeInner(t:Null<Type>, depth:Int):Bool {

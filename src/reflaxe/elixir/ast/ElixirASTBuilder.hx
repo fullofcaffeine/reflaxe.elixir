@@ -2247,7 +2247,12 @@ class ElixirASTBuilder {
 										EAccess(makeAST(EVar("context")), makeAST(EAtom(snakeFieldName)));
 									default:
 										// Not a 'this' reference, handle normally
-										if (fieldName == "elem") {
+										if (fieldName == "length" && TypeUtils.isListBackedType(e.t)) {
+											// ExUnit test generation has its own field-access path.
+											// Keep list-backed values, such as Array and haxe.CallStack,
+											// using Elixir's `length(value)` instead of `value.length`.
+											ECall(null, "length", [target]);
+										} else if (fieldName == "elem") {
 											// Mark this as a tuple element access for later transformation
 											// The transformer will convert this to proper elem() calls
 											EField(target, fieldName);

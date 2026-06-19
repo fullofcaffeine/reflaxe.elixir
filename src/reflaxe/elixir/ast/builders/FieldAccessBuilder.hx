@@ -7,6 +7,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.EPattern;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
+import reflaxe.elixir.ast.TypeUtils;
 import reflaxe.elixir.CompilationContext;
 import reflaxe.elixir.ast.NameUtils;
 
@@ -324,13 +325,9 @@ class FieldAccessBuilder {
 			}
 
 			// Haxe `Array.length` should lower to `length(list)` on the BEAM.
-			// Keep `length` as a field for other struct-like types (e.g. Bytes has a `length` field).
-			var isArray = switch (receiverInnerType) {
-				case TInst(_.get() => {name: "Array"}, _): true;
-				case TAbstract(_.get() => {name: "Array" | "NativeArray"}, _): true;
-				default: false;
-			};
-			if (isArray) {
+			// Some stdlib abstracts, such as `haxe.CallStack`, are also backed by arrays.
+			// Keep `.length` as a field for other struct-like types, such as Bytes.
+			if (TypeUtils.isListBackedType(e.t)) {
 				return ECall(null, "length", [objAST]);
 			}
 		}

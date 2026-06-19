@@ -29,7 +29,7 @@
     {"module": "UnicodeString", "status": "skipped-target-specific", "source": "UnicodeString.unit.hx", "reason": "Upstream spec exists; enable after UTF-8 codepoint semantics are triaged."},
     {"module": "Xml", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; XML coverage is maintained by target tests."},
 
-    {"module": "haxe.CallStack", "status": "skipped-target-specific", "source": "haxe/CallStack.unit.hx", "reason": "Upstream spec exists; enable after BEAM stack-frame formatting differences are triaged."},
+    {"module": "haxe.CallStack", "status": "enabled", "source": "haxe/CallStack.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/CallStack.unit.hx"},
     {"module": "haxe.DynamicAccess", "status": "adapted", "source": "haxe/DynamicAccess.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/DynamicAccess.unit.hx", "reason": "Upstream membership expressions (`value in array`) are expanded to explicit `t(value == a || value == b || ...)` assertions for the Haxe parser used by this checked-in fixture harness."},
     {"module": "haxe.Http", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is target/sys integration specific."},
     {"module": "haxe.Log", "status": "skipped-target-specific", "source": "haxe/Log.unit.hx", "reason": "Upstream spec exists; enable after mutable static dynamic field hooks and closure-captured outer-local mutation semantics are implemented."},
