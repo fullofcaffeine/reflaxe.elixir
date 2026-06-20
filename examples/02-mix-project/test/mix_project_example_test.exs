@@ -80,8 +80,7 @@ defmodule MixProjectExampleTest do
       assert retirement_years == 40
       
       # Validate email using ValidationHelper
-      email_validation = ValidationHelper.validate_email(user.email)
-      assert email_validation.valid == true
+      assert {:ok, _email_validation} = ValidationHelper.validate_email(user.email)
     end
     
     test "Error handling works across modules" do
@@ -92,12 +91,11 @@ defmodule MixProjectExampleTest do
       assert {:error, _reason} = invalid_result
       
       # Invalid email validation
-      email_result = ValidationHelper.validate_email("not-an-email")
-      assert email_result.valid == false
-      
+      assert {:error, _reason} = ValidationHelper.validate_email("not-an-email")
+
       # Invalid number validation
       number_result = MathHelper.validate_number("not-a-number")
-      assert number_result.valid == false
+      assert {:error, _reason} = number_result
     end
   end
   
@@ -134,7 +132,7 @@ defmodule MixProjectExampleTest do
       assert {:ok, _user} = valid_user
       
       # Test with missing required fields
-      invalid_user = UserService.create_user(%{name: "Test"})
+      invalid_user = UserService.create_user(%{name: "Test", email: nil, age: nil})
       assert {:error, _reason} = invalid_user
     end
     

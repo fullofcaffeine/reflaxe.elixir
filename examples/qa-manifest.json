@@ -13,10 +13,10 @@
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
-        "mode": "manual",
+        "mode": "mix-test",
         "command": "mix deps.get && mix test",
-        "ci": false,
-        "reason": "Legacy ExUnit tests exist, but they currently assert older generated module/result shapes. Refresh them before promoting this example to CI runtime coverage.",
+        "timeoutSeconds": 900,
+        "ci": true,
         "evidence": ["test"]
       }
     },

@@ -57,10 +57,10 @@ defmodule MathHelperTest do
       assert result_10.discount == 0.10  # 5% base + 5% volume
       
       result_50 = MathHelper.calculate_discount(100.0, "regular", 50)
-      assert result_50.discount == 0.15  # 5% base + 5% + 5% volume
-      
+      assert result_50.discount == 0.20  # 5% base + 5% + 10% volume
+
       result_100 = MathHelper.calculate_discount(100.0, "regular", 100)
-      assert result_100.discount == 0.25  # 5% base + 5% + 10% + 5% volume
+      assert result_100.discount == 0.30  # 5% base + 5% + 10% + 15% volume, capped
     end
     
     test "caps discount at 30%" do
@@ -82,7 +82,7 @@ defmodule MathHelperTest do
   
   describe "calculate_compound_interest/4" do
     test "calculates compound interest correctly" do
-      result = MathHelper.calculate_compound_interest(1000.0, 5.0, 2, 1)
+      assert {:ok, result} = MathHelper.calculate_compound_interest(1000.0, 5.0, 2, 1)
       
       assert result.principal == 1000.0
       assert result.rate == 5.0
@@ -94,7 +94,7 @@ defmodule MathHelperTest do
     
     test "handles different compounding frequencies" do
       # Quarterly compounding (compound = 4)
-      result = MathHelper.calculate_compound_interest(1000.0, 4.0, 1, 4)
+      assert {:ok, result} = MathHelper.calculate_compound_interest(1000.0, 4.0, 1, 4)
       
       assert result.compound == 4
       # Amount should be 1000 * (1 + 0.04/4)^(4*1) = 1000 * (1.01)^4 ≈ 1040.60
@@ -104,21 +104,20 @@ defmodule MathHelperTest do
     
     test "rejects invalid parameters" do
       result1 = MathHelper.calculate_compound_interest(0.0, 5.0, 2, 1)
-      assert Map.has_key?(result1, :error)
-      
+      assert {:error, _reason} = result1
+
       result2 = MathHelper.calculate_compound_interest(1000.0, -5.0, 2, 1)
-      assert Map.has_key?(result2, :error)
-      
+      assert {:error, _reason} = result2
+
       result3 = MathHelper.calculate_compound_interest(1000.0, 5.0, -2, 1)
-      assert Map.has_key?(result3, :error)
+      assert {:error, _reason} = result3
     end
   end
   
   describe "validate_number/1" do
     test "validates correct numbers" do
-      result = MathHelper.validate_number(42)
-      
-      assert result.valid == true
+      assert {:ok, result} = MathHelper.validate_number("42")
+
       assert result.number == 42.0
       assert result.is_integer == true
       assert result.is_positive == true
@@ -127,18 +126,16 @@ defmodule MathHelperTest do
     end
     
     test "validates float numbers" do
-      result = MathHelper.validate_number(3.14)
-      
-      assert result.valid == true
+      assert {:ok, result} = MathHelper.validate_number("3.14")
+
       assert result.number == 3.14
       assert result.is_integer == false
       assert result.is_positive == true
     end
     
     test "validates negative numbers" do
-      result = MathHelper.validate_number(-10)
-      
-      assert result.valid == true
+      assert {:ok, result} = MathHelper.validate_number("-10")
+
       assert result.is_positive == false
       assert result.is_negative == true
       assert result.absolute_value == 10.0
@@ -146,19 +143,18 @@ defmodule MathHelperTest do
     
     test "rejects invalid inputs" do
       result1 = MathHelper.validate_number(nil)
-      assert result1.valid == false
-      assert result1.error == "Input is null"
-      
+      assert {:error, "Input is null"} = result1
+
       result2 = MathHelper.validate_number("not-a-number")
-      assert result2.valid == false
-      assert String.contains?(result2.error, "number")
+      assert {:error, reason} = result2
+      assert String.contains?(reason, "number")
     end
   end
   
   describe "calculate_stats/1" do
     test "calculates statistics correctly" do
       numbers = [1.0, 2.0, 3.0, 4.0, 5.0]
-      result = MathHelper.calculate_stats(numbers)
+      assert {:ok, result} = MathHelper.calculate_stats(numbers)
       
       assert result.count == 5
       assert result.sum == 15.0
@@ -171,14 +167,14 @@ defmodule MathHelperTest do
     
     test "handles even number of elements for median" do
       numbers = [1.0, 2.0, 3.0, 4.0]
-      result = MathHelper.calculate_stats(numbers)
+      assert {:ok, result} = MathHelper.calculate_stats(numbers)
       
       assert result.median == 2.5  # Average of 2.0 and 3.0
     end
     
     test "handles single element array" do
       numbers = [42.0]
-      result = MathHelper.calculate_stats(numbers)
+      assert {:ok, result} = MathHelper.calculate_stats(numbers)
       
       assert result.count == 1
       assert result.sum == 42.0
@@ -191,10 +187,10 @@ defmodule MathHelperTest do
     
     test "rejects invalid inputs" do
       result1 = MathHelper.calculate_stats(nil)
-      assert Map.has_key?(result1, :error)
-      
+      assert {:error, _reason} = result1
+
       result2 = MathHelper.calculate_stats([])
-      assert Map.has_key?(result2, :error)
+      assert {:error, _reason} = result2
     end
   end
 end

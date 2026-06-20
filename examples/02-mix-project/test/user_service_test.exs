@@ -23,15 +23,15 @@ defmodule UserServiceTest do
     
     test "rejects invalid user data" do
       # Missing name
-      result1 = UserService.create_user(%{email: "test@example.com"})
+      result1 = UserService.create_user(%{name: nil, email: "test@example.com", age: nil})
       assert {:error, "Invalid user data provided"} = result1
       
       # Missing email
-      result2 = UserService.create_user(%{name: "John Doe"})
+      result2 = UserService.create_user(%{name: "John Doe", email: nil, age: nil})
       assert {:error, "Invalid user data provided"} = result2
       
       # Invalid email format
-      result3 = UserService.create_user(%{name: "John Doe", email: "invalid-email"})
+      result3 = UserService.create_user(%{name: "John Doe", email: "invalid-email", age: nil})
       assert {:error, "Invalid user data provided"} = result3
       
       # Null data
@@ -40,7 +40,7 @@ defmodule UserServiceTest do
     end
     
     test "handles optional age field" do
-      user_data = %{name: "Jane Doe", email: "jane@example.com"}
+      user_data = %{name: "Jane Doe", email: "jane@example.com", age: nil}
       
       result = UserService.create_user(user_data)
       
@@ -51,7 +51,7 @@ defmodule UserServiceTest do
   
   describe "update_user/2" do
     test "updates user with valid data" do
-      result = UserService.update_user("usr_123", %{name: "jane smith"})
+      result = UserService.update_user("usr_123", %{name: "jane smith", email: nil, age: nil, status: nil})
       
       assert {:ok, user} = result
       assert user.name == "Jane Smith"  # Should be formatted
@@ -89,7 +89,7 @@ defmodule UserServiceTest do
   
   describe "list_users/2" do
     test "returns paginated user list with default parameters" do
-      result = UserService.list_users()
+      result = UserService.list_users(1, 10)
       
       assert result.data != nil
       assert is_list(result.data)

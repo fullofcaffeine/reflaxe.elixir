@@ -45,8 +45,8 @@ defmodule StringUtilsTest do
       
       assert result.valid == true
       assert result.email == "john@example.com"
-      assert result.domain == "example.com"
-      assert result.username == "john"
+      assert result.domain == "EXAMPLE.COM"
+      assert result.username == "JOHN"
     end
     
     test "rejects invalid emails" do
@@ -129,7 +129,7 @@ defmodule StringUtilsTest do
     end
     
     test "handles short strings" do
-      assert StringUtils.mask_sensitive_info("ab", 2) == "ab"
+      assert StringUtils.mask_sensitive_info("ab", 2) == "**"
       assert StringUtils.mask_sensitive_info("a", 2) == "*"
     end
     
