@@ -43,6 +43,7 @@ class BatchProcessor {
 		var currentBatch = state.current_batch != null ? state.current_batch : [];
 
 		if (!validate_data(item)) {
+			var invalidItem:DataItem = item != null ? item : {id: 0, payload: ""};
 			var newState:ProcessorState = {
 				processed_count: state.processed_count,
 				errors: state.errors + 1,
@@ -55,8 +56,8 @@ class BatchProcessor {
 
 			return {
 				result: {
-					id: item.id,
-					original: item,
+					id: invalidItem.id,
+					original: invalidItem,
 					processed_at: Date.now().getTime(),
 					batch_id: null
 				},

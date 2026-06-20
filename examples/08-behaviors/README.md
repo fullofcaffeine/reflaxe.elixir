@@ -14,12 +14,24 @@ cd examples/08-behaviors
 haxe build.hxml
 ```
 
+## Runtime check
+
+```bash
+cd examples/08-behaviors
+mix deps.get
+mix test
+```
+
+The ExUnit tests exercise the generated contract stubs and implementation modules so this example proves
+both the compile-time behavior shape and the runtime callback dispatch/state transitions.
+
 ## Key files
 
 - `examples/08-behaviors/src_haxe/behaviors/DataProcessor.hx`
 - `examples/08-behaviors/src_haxe/implementations/BatchProcessor.hx`
 - `examples/08-behaviors/src_haxe/implementations/StreamProcessor.hx`
 - `examples/08-behaviors/lib/behaviors/data_processor.ex`
+- `examples/08-behaviors/test/behaviors_test.exs`
 
 ## Direct baseline (without this abstraction layer)
 

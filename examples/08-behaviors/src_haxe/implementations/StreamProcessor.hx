@@ -46,12 +46,13 @@ class StreamProcessor {
 
 	public function process_item(item:DataItem, state:ProcessorState):ProcessItemResponse {
 		if (!validate_data(item)) {
+			var invalidItem:DataItem = item != null ? item : {id: 0, payload: ""};
 			var newState:ProcessorState = {
 				processed_count: state.processed_count,
 				errors: state.errors + 1,
 				last_processed: state.last_processed
 			};
-			return {result: {id: item.id, original: item, processed_at: Date.now().getTime()}, newState: newState};
+			return {result: {id: invalidItem.id, original: invalidItem, processed_at: Date.now().getTime()}, newState: newState};
 		}
 
 		// Simulate stream processing
