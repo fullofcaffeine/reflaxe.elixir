@@ -33,12 +33,45 @@ def normalize_manifest(raw: bytes, manifest_path: Path) -> bytes:
     return (json.dumps(data, sort_keys=True, indent=2) + "\n").encode("utf-8")
 
 
-def discover_generated_paths() -> set[Path]:
-    paths: set[Path] = set()
-    for manifest_path in sorted(EXAMPLES.rglob("_GeneratedFiles.json")):
-        if is_ignored_path(manifest_path.relative_to(EXAMPLES)):
-            continue
+def git_lines(args: list[str]) -> list[str]:
+    output = subprocess.run(
+        ["git", *args],
+        cwd=ROOT,
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE,
+    ).stdout
+    return [line for line in output.splitlines() if line]
 
+
+def tracked_manifest_paths() -> set[Path]:
+    return {
+        ROOT / line
+        for line in git_lines(["ls-files", "--", "examples/**/_GeneratedFiles.json"])
+        if not is_ignored_path(Path(line).relative_to("examples"))
+    }
+
+
+def tracked_file_paths() -> set[Path]:
+    return {ROOT / line for line in git_lines(["ls-files", "--", "examples"])}
+
+
+def read_git_blob(path: Path) -> bytes | None:
+    relative = str(path.relative_to(ROOT))
+    result = subprocess.run(
+        ["git", "show", f"HEAD:{relative}"],
+        cwd=ROOT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+    )
+    if result.returncode != 0:
+        return None
+    return result.stdout
+
+
+def discover_generated_paths(manifest_paths: set[Path]) -> set[Path]:
+    paths: set[Path] = set()
+    for manifest_path in sorted(manifest_paths):
         paths.add(manifest_path)
         try:
             data = json.loads(manifest_path.read_text())
@@ -55,6 +88,22 @@ def discover_generated_paths() -> set[Path]:
             paths.add(manifest_path.parent / relative_name)
 
     return paths
+
+
+def read_expected_state(paths: set[Path]) -> dict[Path, bytes | None]:
+    state: dict[Path, bytes | None] = {}
+    for path in sorted(paths):
+        raw = read_git_blob(path)
+        if raw is None:
+            state[path] = None
+            continue
+
+        if path.name == "_GeneratedFiles.json":
+            state[path] = normalize_manifest(raw, path)
+        else:
+            state[path] = raw
+
+    return state
 
 
 def read_generated_state(paths: set[Path]) -> dict[Path, bytes | None]:
@@ -129,15 +178,17 @@ def show_diff(path: Path, before: bytes | None, after: bytes | None) -> None:
 
 
 def main() -> int:
-    before_paths = discover_generated_paths()
+    manifest_paths = tracked_manifest_paths()
+    before_paths = discover_generated_paths(manifest_paths)
     require_clean_generated_outputs(before_paths)
-    before_state = read_generated_state(before_paths)
+    before_state = read_expected_state(before_paths)
     before_raw_manifests = read_raw_manifest_state(before_paths)
 
     subprocess.run(["npm", "run", "test:examples"], cwd=ROOT, check=True)
 
-    after_paths = discover_generated_paths()
+    after_paths = discover_generated_paths(manifest_paths)
     all_paths = before_paths | after_paths
+    before_state = read_expected_state(all_paths)
     after_state = read_generated_state(all_paths)
 
     restore_semantic_equal_manifests(before_raw_manifests, before_state, after_state)
