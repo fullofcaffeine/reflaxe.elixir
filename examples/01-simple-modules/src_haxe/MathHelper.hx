@@ -14,7 +14,7 @@ class MathHelper {
 	 * Shows how data flows through a pipeline of transformations
 	 * Note: Pipe operators will be supported in future version
 	 */
-	function processNumber(x:Float):Float {
+	public static function processNumber(x:Float):Float {
 		var step1 = multiplyByTwo(x);
 		var step2 = addTen(step1);
 		var step3 = Math.round(step2);
@@ -25,7 +25,7 @@ class MathHelper {
 	 * Complex pipeline with conditional logic
 	 * Demonstrates functional composition with branching
 	 */
-	function calculateDiscount(price:Float, customerType:String):Float {
+	public static function calculateDiscount(price:Float, customerType:String):Float {
 		var step1 = applyBaseDiscount(price);
 		var step2 = applyCustomerDiscount(step1, customerType);
 		var step3 = applyMinimumPrice(step2);
@@ -36,7 +36,7 @@ class MathHelper {
 	 * String processing pipeline
 	 * Shows functional composition with different data types
 	 */
-	function formatUserName(name:String):String {
+	public static function formatUserName(name:String):String {
 		var step1 = StringTools.trim(name);
 		var step2 = step1.toLowerCase();
 		return capitalizeFirst(step2);
@@ -46,7 +46,7 @@ class MathHelper {
 	 * Data validation pipeline
 	 * Common pattern in Elixir for validation chains
 	 */
-	function validateAndProcess(input:String):String {
+	public static function validateAndProcess(input:String):String {
 		var step1 = validateNotEmpty(input);
 		var step2 = validateLength(step1);
 		var step3 = sanitizeInput(step2);
@@ -55,19 +55,23 @@ class MathHelper {
 
 	// Helper functions used in pipelines
 
-	function multiplyByTwo(x:Float):Float {
+	@:private
+	static function multiplyByTwo(x:Float):Float {
 		return x * 2;
 	}
 
-	function addTen(x:Float):Float {
+	@:private
+	static function addTen(x:Float):Float {
 		return x + 10;
 	}
 
-	function applyBaseDiscount(price:Float):Float {
+	@:private
+	static function applyBaseDiscount(price:Float):Float {
 		return price * 0.9; // 10% discount
 	}
 
-	function applyCustomerDiscount(price:Float, customerType:String):Float {
+	@:private
+	static function applyCustomerDiscount(price:Float, customerType:String):Float {
 		return switch (customerType) {
 			case "premium": price * 0.8;
 			case "regular": price * 0.95;
@@ -75,36 +79,42 @@ class MathHelper {
 		};
 	}
 
-	function applyMinimumPrice(price:Float):Float {
+	@:private
+	static function applyMinimumPrice(price:Float):Float {
 		return Math.max(price, 5.0);
 	}
 
-	function capitalizeFirst(str:String):String {
+	@:private
+	static function capitalizeFirst(str:String):String {
 		if (str.length == 0)
 			return str;
 		return str.charAt(0).toUpperCase() + str.substr(1);
 	}
 
-	function validateNotEmpty(input:String):String {
+	@:private
+	static function validateNotEmpty(input:String):String {
 		if (input == null || input.length == 0) {
 			throw "Input cannot be empty";
 		}
 		return input;
 	}
 
-	function validateLength(input:String):String {
+	@:private
+	static function validateLength(input:String):String {
 		if (input.length > 100) {
 			throw "Input too long";
 		}
 		return input;
 	}
 
-	function sanitizeInput(input:String):String {
+	@:private
+	static function sanitizeInput(input:String):String {
 		// Simple sanitization - remove dangerous characters
 		return StringTools.replace(input, "<", "");
 	}
 
-	function processInput(input:String):String {
+	@:private
+	static function processInput(input:String):String {
 		return "Processed: " + input;
 	}
 

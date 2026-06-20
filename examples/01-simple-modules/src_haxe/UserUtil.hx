@@ -165,7 +165,15 @@ class UserUtil {
 		// For display, we might want to show only first name + last initial
 		var parts = name.split(" ");
 		if (parts.length > 1) {
-			return parts[0] + " " + parts[parts.length - 1].charAt(0) + ".";
+			var first = "";
+			var last = "";
+			for (part in parts) {
+				if (first == "" && last == "") {
+					first = part;
+				}
+				last = part;
+			}
+			return first + " " + last.charAt(0) + ".";
 		}
 		return name;
 	}

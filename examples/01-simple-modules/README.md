@@ -31,6 +31,13 @@ cd examples/01-simple-modules
 haxe compile-all.hxml
 ```
 
+### Run Runtime Tests
+```bash
+cd examples/01-simple-modules
+mix deps.get
+mix test
+```
+
 ### Compile Individual Examples
 ```bash
 # Basic module
@@ -48,11 +55,12 @@ Each example includes:
 - `.hx` source file (Haxe)
 - `.hxml` compilation config
 - `expected/` directory with hand-written Elixir equivalent
-- `output/` directory with compiled result
+- `lib/` directory with compiled result used by Mix and ExUnit
+- `test/` directory with runtime assertions for the generated modules
 
 ```bash
 # Compare compiled vs expected
-diff output/BasicModule.ex expected/BasicModule.ex
+diff lib/basic_module.ex expected/BasicModule.ex
 ```
 
 ## Key Concepts Demonstrated

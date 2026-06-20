@@ -5,8 +5,11 @@
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
-        "mode": "compile-only",
-        "reason": "Introductory pure-codegen sample. The example has no behavior beyond simple module/function shapes already checked by compile and snapshot gates."
+        "mode": "mix-test",
+        "command": "mix deps.get && mix test",
+        "timeoutSeconds": 900,
+        "ci": true,
+        "evidence": ["test"]
       }
     },
     "02-mix-project": {

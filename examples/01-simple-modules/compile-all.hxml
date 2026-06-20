@@ -1,30 +1,10 @@
 # Compile All Simple Module Examples
-# This file compiles all three examples in the 01-simple-modules directory
-
-# Compile BasicModule
+# This file compiles one entry point that references all three modules.
+# Reflaxe writes a generated-file manifest per target, so one target keeps
+# BasicModule, MathHelper, and UserUtil in the same lib/ output.
 -lib reflaxe.elixir
 -cp src_haxe
 -D elixir_output=lib
 -D reflaxe_runtime
 -D reflaxe_elixir_strict_examples
-BasicModule
-
---next
-
-# Compile MathHelper
--lib reflaxe.elixir
--cp src_haxe
--D elixir_output=lib
--D reflaxe_runtime
--D reflaxe_elixir_strict_examples
-MathHelper
-
---next
-
-# Compile UserUtil
--lib reflaxe.elixir
--cp src_haxe
--D elixir_output=lib
--D reflaxe_runtime
--D reflaxe_elixir_strict_examples
-UserUtil
+SimpleModulesMain

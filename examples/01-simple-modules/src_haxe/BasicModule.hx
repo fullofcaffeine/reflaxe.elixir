@@ -12,7 +12,7 @@ class BasicModule {
 	 * Simple greeting function
 	 * Compiles to: def hello(), do: "world"
 	 */
-	function hello():String {
+	public static function hello():String {
 		return "world";
 	}
 
@@ -20,7 +20,7 @@ class BasicModule {
 	 * Function with parameters
 	 * Compiles to: def greet(name), do: "Hello, #{name}!"
 	 */
-	function greet(name:String):String {
+	public static function greet(name:String):String {
 		return "Hello, " + name + "!";
 	}
 
@@ -28,7 +28,7 @@ class BasicModule {
 	 * Function with multiple parameters and logic
 	 * Demonstrates that complex logic compiles correctly
 	 */
-	function calculate(x:Int, y:Int, operation:String):Int {
+	public static function calculate(x:Int, y:Int, operation:String):Int {
 		return switch (operation) {
 			case "add": x + y;
 			case "subtract": x - y;
@@ -42,7 +42,7 @@ class BasicModule {
 	 * Function with no parameters
 	 * Compiles to: def get_timestamp(), do: DateTime.utc_now()
 	 */
-	function getTimestamp():String {
+	public static function getTimestamp():String {
 		return "2024-01-01T00:00:00Z";
 	}
 
@@ -50,7 +50,7 @@ class BasicModule {
 	 * Boolean function demonstrating predicate patterns
 	 * Common in Elixir for validation and guards
 	 */
-	function isValid(input:String):Bool {
+	public static function isValid(input:String):Bool {
 		return input != null && input.length > 0;
 	}
 
