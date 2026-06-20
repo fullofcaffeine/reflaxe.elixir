@@ -59,8 +59,11 @@
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
-        "mode": "compile-only",
-        "reason": "Protocol annotation sample. Runtime protocol semantics are covered by compiler snapshots and std/runtime tests."
+        "mode": "mix-test",
+        "command": "mix deps.get && mix test",
+        "timeoutSeconds": 900,
+        "ci": true,
+        "evidence": ["test"]
       }
     },
     "08-behaviors": {

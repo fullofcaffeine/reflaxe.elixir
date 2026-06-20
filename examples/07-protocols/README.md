@@ -14,12 +14,25 @@ cd examples/07-protocols
 haxe build.hxml
 ```
 
+## Runtime tests
+
+```bash
+cd examples/07-protocols
+mix deps.get
+mix test
+```
+
+The tests call each generated implementation module and the base protocol
+contract. That keeps this example honest: it must compile, and the generated
+Elixir must behave as the Haxe contract describes.
+
 ## Key files
 
 - `examples/07-protocols/src_haxe/protocols/Drawable.hx`
 - `examples/07-protocols/src_haxe/implementations/StringDrawable.hx`
 - `examples/07-protocols/src_haxe/implementations/NumberDrawable.hx`
 - `examples/07-protocols/lib/protocols/drawable.ex`
+- `examples/07-protocols/test/protocols_test.exs`
 
 ## Direct baseline (without this abstraction layer)
 
