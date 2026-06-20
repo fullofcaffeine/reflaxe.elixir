@@ -113,7 +113,7 @@ defmodule Main do
     _filename = Path.basename("/home/user/file.txt")
     _filename_no_ext = Path.rootname(Path.basename("/home/user/file.txt"))
     ext = Path.extname("/home/user/file.txt")
-    cond_value = String.at(ext, 0) || "" == "."
+    cond_value = (String.at(ext, 0) || "") == "."
     _ext = if (String.length(ext) > 0 and cond_value) do
       String.slice(ext, 1..-1//1)
     else

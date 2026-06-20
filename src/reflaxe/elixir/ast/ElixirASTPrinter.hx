@@ -3183,9 +3183,9 @@ class ElixirASTPrinter {
 	static function binaryOpPrecedence(op:EBinaryOp):Int {
 		return switch (op) {
 			case Match: 10;
-			case Or: 20;
-			case And: 30;
-			case In | Equal | NotEqual | Greater | GreaterEqual | Less | LessEqual: 40;
+			case Or | OrElse: 20;
+			case And | AndAlso: 30;
+			case In | Equal | NotEqual | StrictEqual | StrictNotEqual | Greater | GreaterEqual | Less | LessEqual: 40;
 			case Concat | StringConcat | Add | Subtract: 50;
 			case Multiply | Divide | Remainder: 60;
 			default: 50;

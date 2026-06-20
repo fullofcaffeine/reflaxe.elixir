@@ -69,7 +69,8 @@ var result = UserId.parse(input)
 
 - `UserRegistration.hx` - Complete user registration system
 - `build.hxml` - Compilation configuration
-- `mix.exs` - Phoenix project configuration (generated)
+- `mix.exs` - Mix project configuration for compiling and testing the example
+- `test/user_registration_test.exs` - Runtime checks for generated validation behavior
 
 ## Running the Example
 
@@ -79,6 +80,9 @@ haxe build.hxml
 
 # Run the generated Elixir code  
 mix run
+
+# Run the runtime checks
+mix test
 ```
 
 ## Generated Elixir Code
