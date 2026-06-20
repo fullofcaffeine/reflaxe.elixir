@@ -14,7 +14,9 @@ This is a minimal test case used to validate that:
 
 ```
 ├── mix.exs                           # Elixir project configuration
-├── build.hxml                        # Haxe compilation configuration  
+├── build.hxml                        # Haxe compilation configuration
+├── test/
+│   └── test_module_test.exs          # ExUnit test for generated module
 └── src_haxe/
     └── test/
         └── integration/
@@ -35,7 +37,7 @@ This example serves as:
 The `TestModule.hx` compiles to:
 
 ```elixir
-defmodule Test.Integration.TestModule do
+defmodule TestModule do
   def main() do
     IO.puts("Hello from integrated Mix compilation!")
   end
@@ -57,7 +59,7 @@ mix test
 
 # Test the generated module
 iex -S mix
-iex> Test.Integration.TestModule.main()
+iex> TestModule.main()
 Hello from integrated Mix compilation!
 ```
 

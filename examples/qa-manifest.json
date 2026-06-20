@@ -168,8 +168,11 @@
       "compile": { "required": true },
       "strictElixir": { "mode": "dedicated", "reason": "Integration harness is compile-checked outside the WAE shards to keep CI bounded." },
       "runtime": {
-        "mode": "compile-only",
-        "reason": "Integration harness currently verifies Mix/Haxe compilation only. Add a real ExUnit test before marking it as runtime-covered."
+        "mode": "mix-test",
+        "command": "mix deps.get && mix test",
+        "timeoutSeconds": 900,
+        "ci": true,
+        "evidence": ["test", "src_haxe/test"]
       }
     },
     "todo-app": {
