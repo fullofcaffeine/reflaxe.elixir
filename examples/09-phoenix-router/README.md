@@ -27,6 +27,18 @@ mix compile
 mix phx.server
 ```
 
+## Runtime check
+
+```bash
+cd examples/09-phoenix-router
+mix deps.get
+mix test --no-start
+```
+
+The runtime test uses `--no-start` because this compact router sample does not include a full
+`PhoenixRouter.Application` supervision tree. It still verifies Phoenix expanded the typed Haxe router
+into route metadata and that generated controller helper methods preserve typed path values.
+
 ## Haxe -> generated Elixir (typed tree routes)
 
 Haxe (`src_haxe/AppRouter.hx`):

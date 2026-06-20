@@ -84,8 +84,11 @@
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
-        "mode": "compile-only",
-        "reason": "Router DSL sample. Route generation is checked by compile/WAE and router snapshot tests."
+        "mode": "mix-test",
+        "command": "mix deps.get && mix test --no-start",
+        "timeoutSeconds": 900,
+        "ci": true,
+        "evidence": ["test"]
       }
     },
     "10-option-patterns": {
