@@ -10,6 +10,7 @@ defmodule OptionPatterns.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       elixirc_paths: elixirc_paths(Mix.env()),
+      aliases: aliases(),
       haxe: [
         hxml_file: "build.hxml",
         source_dir: "src_haxe",
@@ -33,6 +34,13 @@ defmodule OptionPatterns.MixProject do
   defp deps do
     [
       {:reflaxe_elixir, path: "../..", runtime: false}
+    ]
+  end
+
+  defp aliases do
+    [
+      test: ["haxe.compile.tests", "test"],
+      "haxe.compile.tests": ["cmd haxe build-tests.hxml"]
     ]
   end
 end

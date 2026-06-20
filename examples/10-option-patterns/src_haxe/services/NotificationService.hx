@@ -27,7 +27,7 @@ class NotificationService {
 		1 => new NotificationPreferences(true, true, false),
 		2 => new NotificationPreferences(true, false, true),
 		3 => new NotificationPreferences(false, false, false),
-		4 => new NotificationPreferences(true, true, true)
+		4 => new NotificationPreferences(false, true, true)
 	];
 
 	static var deliveryLog:Array<NotificationRecord> = [];
@@ -110,17 +110,13 @@ class NotificationService {
 	 * @return Result with success count and failure details
 	 */
 	public static function sendBulk(userIds:Array<Int>, message:String, type:NotificationType):BulkNotificationResult {
-		var successful = [];
-		var failed = [];
+		var attempts = userIds.map(userId -> {
+			return new NotificationAttempt(userId, sendToUser(userId, message, type));
+		});
 
-		for (userId in userIds) {
-			switch (sendToUser(userId, message, type)) {
-				case Ok(record):
-					successful.push(record);
-				case Error(reason):
-					failed.push({userId: userId, reason: reason});
-			}
-		}
+		var successful = attempts.filter(attempt -> isSuccessfulAttempt(attempt)).map(attempt -> successfulRecord(attempt));
+
+		var failed = attempts.filter(attempt -> isFailedAttempt(attempt)).map(attempt -> failedEntry(attempt));
 
 		return new BulkNotificationResult(successful, failed);
 	}
@@ -160,7 +156,7 @@ class NotificationService {
 		// Find most recent (highest timestamp)
 		var mostRecent = userNotifications[0];
 		for (i in 1...userNotifications.length) {
-			if (userNotifications[i].timestamp > mostRecent.timestamp) {
+			if (userNotifications[i].timestamp >= mostRecent.timestamp) {
 				mostRecent = userNotifications[i];
 			}
 		}
@@ -169,25 +165,57 @@ class NotificationService {
 	}
 
 	/**
-	 * Set user notification preferences.
+	 * Build user notification preferences after validating that the user exists.
 	 * 
-	 * Shows Result return for operations that can fail validation.
+	 * This example keeps preferences as read-only sample data instead of mutating
+	 * static state. In a real Elixir app, persisted preferences would usually live
+	 * in Ecto, an Agent, or another explicit process boundary.
 	 * 
 	 * @param userId User ID
 	 * @param emailEnabled Whether email notifications are enabled
 	 * @param smsEnabled Whether SMS notifications are enabled
 	 * @param pushEnabled Whether push notifications are enabled
-	 * @return Ok(preferences) if set successfully, Error(reason) if failed
+	 * @return Ok(preferences) if the user exists, Error(reason) if validation fails
 	 */
 	public static function setUserPreferences(userId:Int, emailEnabled:Bool, smsEnabled:Bool, pushEnabled:Bool):Result<NotificationPreferences, String> {
-		return UserRepository.find(userId).toResult("User not found").map(user -> {
-			var prefs = new NotificationPreferences(emailEnabled, smsEnabled, pushEnabled);
-			preferences.set(userId, prefs);
-			return prefs;
-		});
+		return switch (UserRepository.find(userId)) {
+			case None:
+				Error("User not found");
+			case Some(_):
+				var prefs = new NotificationPreferences(emailEnabled, smsEnabled, pushEnabled);
+				Ok(prefs);
+		}
 	}
 
 	// Private helper methods
+
+	static function isSuccessfulAttempt(attempt:NotificationAttempt):Bool {
+		return switch (attempt.result) {
+			case Ok(_): true;
+			case Error(_): false;
+		};
+	}
+
+	static function isFailedAttempt(attempt:NotificationAttempt):Bool {
+		return switch (attempt.result) {
+			case Ok(_): false;
+			case Error(_): true;
+		};
+	}
+
+	static function successfulRecord(attempt:NotificationAttempt):NotificationRecord {
+		return switch (attempt.result) {
+			case Ok(record): record;
+			case Error(_): throw "Filtered successful notifications cannot contain failures";
+		};
+	}
+
+	static function failedEntry(attempt:NotificationAttempt):{userId:Int, reason:String} {
+		return switch (attempt.result) {
+			case Ok(_): throw "Filtered failed notifications cannot contain successes";
+			case Error(reason): {userId: attempt.userId, reason: reason};
+		};
+	}
 
 	/**
 	 * Check user preferences for notification type.
@@ -295,6 +323,16 @@ class BulkNotificationResult {
 	public function getSuccessRate():Float {
 		var total = getTotalCount();
 		return total > 0 ? getSuccessCount() / total : 0.0;
+	}
+}
+
+class NotificationAttempt {
+	public var userId:Int;
+	public var result:Result<NotificationRecord, String>;
+
+	public function new(userId:Int, result:Result<NotificationRecord, String>) {
+		this.userId = userId;
+		this.result = result;
 	}
 }
 

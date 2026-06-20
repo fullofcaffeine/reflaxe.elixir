@@ -1,0 +1,10 @@
+{
+  "sourceRoot": "",
+  "names": [],
+  "mappings": "AAKC,AAAA;AAAA;AAAA;AACC,EAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA",
+  "version": 3,
+  "file": "not_implemented_exception.exs",
+  "sources": [
+  "std/haxe/exceptions/NotImplementedException.hx"
+]
+}

@@ -6,7 +6,6 @@
 
 # Source directories containing your .hx files
 -cp src_haxe
--cp test_haxe
 
 # Output directory for generated .ex files
 -D elixir_output=lib
@@ -21,9 +20,6 @@
 # Application-specific configuration
 -D app_name=OptionPatterns
 
-# Enable ExUnit test compilation
--D exunit
-
 # Enable source mapping for debugging
 -D source-map
 
@@ -33,8 +29,3 @@ repositories.UserRepository
 services.ConfigManager
 services.NotificationService
 Main
-
-# Test classes to compile
-repositories.UserRepositoryTest
-services.ConfigManagerTest
-services.NotificationServiceTest

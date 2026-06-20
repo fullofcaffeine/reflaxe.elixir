@@ -1,0 +1,22 @@
+# Haxe -> Elixir compilation for ExUnit tests (MIX_ENV=test)
+
+-lib reflaxe.elixir
+
+# Compile test modules plus referenced app modules.
+-cp src_haxe
+-cp test_haxe
+
+# Emit tests into Mix's test tree so ExUnit discovers them.
+-D elixir_output=test/generated
+-D elixir_output_exs
+
+-D reflaxe_runtime
+-D reflaxe_elixir_strict_examples
+-D exunit
+-D app_name=OptionPatterns
+-D no-utf16
+-D source-map
+
+repositories.UserRepositoryTest
+services.ConfigManagerTest
+services.NotificationServiceTest

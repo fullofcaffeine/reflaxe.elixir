@@ -201,15 +201,12 @@ class ConfigManager {
 	 * @return Ok(true) if all valid, Error(messages) listing all missing keys
 	 */
 	public static function validateRequired(requiredKeys:Array<String>):Result<Bool, String> {
-		var missing = [];
-
-		for (key in requiredKeys) {
-			switch (get(key)) {
-				case None:
-					missing.push(key);
-				case Some(_): // Key is present
+		var missing = requiredKeys.filter(key -> {
+			return switch (get(key)) {
+				case None: true;
+				case Some(_): false;
 			}
-		}
+		});
 
 		if (missing.length > 0) {
 			return Error('Missing required configuration: ${missing.join(", ")}');

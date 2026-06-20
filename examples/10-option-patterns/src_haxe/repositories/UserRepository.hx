@@ -183,11 +183,12 @@ class UserRepository {
 			return Error("Valid email is required");
 		}
 
-		// Check if email already exists
-		switch (findByEmail(email)) {
-			case Some(_):
-				return Error("Email already exists");
-			case None: // Continue with creation
+		var emailExists = switch (findByEmail(email)) {
+			case Some(_): true;
+			case None: false;
+		};
+		if (emailExists) {
+			return Error("Email already exists");
 		}
 
 		// Generate new ID (in real app, this would be done by database)

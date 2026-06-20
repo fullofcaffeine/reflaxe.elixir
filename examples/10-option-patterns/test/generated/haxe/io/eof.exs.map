@@ -1,0 +1,10 @@
+{
+  "sourceRoot": "",
+  "names": [],
+  "mappings": "AAgBC,AAAA;AAAA;AACC,EAAA;AAAA;AAAA;AAEA,EAAA;AACC,IAAA;AAAA;AAAA;AAAA",
+  "version": 3,
+  "file": "eof.exs",
+  "sources": [
+  "std/haxe/io/Eof.hx"
+]
+}

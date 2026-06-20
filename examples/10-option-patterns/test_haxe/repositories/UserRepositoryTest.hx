@@ -243,7 +243,7 @@ class UserRepositoryTest extends TestCase {
 
 	@:test
 	function createFailsForDuplicateEmail() {
-		var result = UserRepository.create("Test User", "alice@example.com");
+		var result = UserRepository.create("Test User", "bob@example.com");
 		Assert.isError(result, "Should fail for duplicate email");
 
 		switch (result) {

@@ -1,0 +1,10 @@
+{
+  "sourceRoot": "",
+  "names": [],
+  "mappings": "AAiBC,AAAA;AACC,EAAA;AACmC,sCAAA;AAAA;AAGnC,EAAA;AACC,IAAA;AAAA;AAGD,EAAA;AACmC,sCAAA;AAAA;AAGnC,EAAA;AACC,IAAA;AAAA;AAAA;AAAA",
+  "version": 3,
+  "file": "fp_helper.exs",
+  "sources": [
+  "std/haxe/io/FPHelper.cross.hx"
+]
+}

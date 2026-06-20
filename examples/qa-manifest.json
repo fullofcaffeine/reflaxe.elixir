@@ -80,10 +80,10 @@
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
-        "mode": "manual",
+        "mode": "mix-test",
         "command": "mix deps.get && mix test",
-        "ci": false,
-        "reason": "Haxe-authored test sources exist under test_haxe, but this example does not currently compile them into Mix's test path. Wire build-tests.hxml or a Mix alias before promoting to CI runtime coverage.",
+        "timeoutSeconds": 900,
+        "ci": true,
         "evidence": ["test_haxe", "test"]
       }
     },
