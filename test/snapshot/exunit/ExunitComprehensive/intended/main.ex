@@ -41,7 +41,7 @@ defmodule Main do
     _ = assert(String.upcase(context[:test_string]) == "HELLO WORLD", "Uppercase conversion should work")
     _ = assert(String.downcase(context[:test_string]) == "hello world", "Lowercase conversion should work")
     _ = assert(:binary.match(context[:test_string], "World") != :nomatch, "String should contain 'World'")
-    _ = assert(String.at(context[:test_string], 0) || "" == "H", "First character should be 'H'")
+    _ = assert((String.at(context[:test_string], 0) || "") == "H", "First character should be 'H'")
     parts = if (" " == "") do
       String.graphemes(context[:test_string])
     else
