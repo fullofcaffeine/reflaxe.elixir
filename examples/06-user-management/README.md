@@ -14,6 +14,7 @@ This example demonstrates typed Phoenix app code in Haxe for a small CRUD-style 
 - `examples/06-user-management/src_haxe/contexts/Users.hx`
 - `examples/06-user-management/src_haxe/live/UserLive.hx`
 - `examples/06-user-management/src_haxe/services/UserGenServer.hx`
+- `examples/06-user-management/test/user_management_test.exs`
 
 ## Run
 
@@ -25,6 +26,18 @@ mix phx.server
 ```
 
 Open `http://localhost:4000`.
+
+## Runtime check
+
+```bash
+cd examples/06-user-management
+mix deps.get
+mix test --no-start
+```
+
+The runtime test intentionally uses `--no-start` because this compact pattern catalog does not include a
+`UserManagement.Application` supervision module. The test still exercises generated Ecto schemas and stable
+context functions so CI catches runtime regressions beyond compile-only checks.
 
 ## Haxe -> generated Elixir examples
 
