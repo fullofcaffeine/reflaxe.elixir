@@ -1,6 +1,9 @@
 # 05 - HEEx Templates from Haxe
 
-This example focuses on HXX template authoring and Phoenix component-style markup.
+This example focuses on legacy/balanced HXX template authoring and Phoenix component-style markup.
+
+It is intentionally not the preferred starting point for new templates. For new Phoenix UI code, use
+inline HXX markup (`return <div>...</div>`) in strict TSX mode.
 
 ## Important context
 
@@ -9,6 +12,19 @@ This example focuses on HXX template authoring and Phoenix component-style marku
 - It therefore opts into `-D hxx_mode=balanced` (typed inline markup available, legacy strings still allowed).
 - Recommended default for new code is inline markup (`return <div>...</div>`) in strict TSX mode.
 - See `docs/02-user-guide/INLINE_MARKUP.md` and `docs/02-user-guide/HXX_SYNTAX_AND_COMPARISON.md`.
+
+## When this style is useful
+
+Use this balanced string-template style only when you have a real compatibility reason:
+
+- You are migrating an existing HEEx template and want the first Haxe version to stay close to the original markup.
+- You are maintaining older Reflaxe.Elixir code that already uses `hxx('...')` and should be converted gradually.
+- You need a compatibility fixture proving legacy string templates still lower to valid Phoenix HEEx.
+- You are blocked by a current inline-markup lexer limitation and want to isolate that one template.
+
+Do not use this style as the default for greenfield app templates. It gives less Haxe type-checking than inline markup because template markers are string-level constructs.
+
+Raw HEEx (`<% ... %>` / `<%= ... %>`) is a separate escape hatch and should be avoided even in this example style unless explicitly isolated with `@:allow_heex` or `@:hxx_mode("metal")`.
 
 ## Run
 
@@ -59,6 +75,7 @@ Generated HEEx shape:
 - Demonstrates compatibility for existing string-template workflows.
 - Shows component usage patterns (`<.button>`, `<.input>`) in Haxe-authored templates.
 - Serves as a migration bridge while TSX-style inline markup becomes the default authoring path.
+- Proves the compatibility path renders at runtime through ExUnit, so legacy support does not silently drift.
 
 ## For default strict typed TSX authoring
 

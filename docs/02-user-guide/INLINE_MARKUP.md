@@ -1,5 +1,12 @@
 # Inline Markup: TSX‑Like Authoring for Phoenix HEEx
 
+Inline markup is the preferred HXX authoring style for new Phoenix code. It lets you write markup
+directly in Haxe while still emitting ordinary Phoenix HEEx (`~H"""..."""`) in the generated Elixir.
+
+Use this path by default because template expressions are real Haxe expressions: the Haxe typer can
+check field names, expression syntax, and many component/attribute shapes before Phoenix ever compiles
+the generated `~H`.
+
 Haxe supports “inline markup” literals:
 
 ```haxe
@@ -215,6 +222,25 @@ class MyLive {
 Use `@:hxx_mode("balanced")` only for migration modules that still need legacy `hxx('...')` string templates. Use `@:hxx_mode("tsx")` only when you need to override an enclosing/global non-TSX mode back to the default.
 
 In TSX mode, raw `<% ... %>` blocks and string-level markers are rejected.
+
+## When to Use Legacy `hxx('...')`
+
+Legacy string templates are a compatibility tool, not the happy path for new app code.
+
+They are still useful when:
+
+- Migrating an existing Phoenix/HEEx template gradually and you want to keep the source shape close to the original while moving logic into typed Haxe over time.
+- Maintaining older Reflaxe.Elixir code that already uses `hxx('...')` and should be changed incrementally rather than rewritten all at once.
+- Writing focused compatibility tests or examples that prove the legacy string-template path still lowers to valid HEEx.
+- Temporarily isolating a template that depends on Haxe lexer edge cases that inline markup cannot express yet, such as a Phoenix dot-component as the root node.
+
+Prefer inline markup even in migration modules as soon as you touch a template deeply. In `hxx('...')`,
+markers such as `#{...}`, `${...}`, `<if { ... }>` and `<for { ... }>` are string-level constructs. They
+are rewritten and linted, but they are not parsed as full Haxe AST in the same way inline markup splices are.
+
+Raw HEEx (`<% ... %>` / `<%= ... %>`) is a stronger escape hatch than `hxx('...')`. Keep it out of new app
+templates. If a migration truly needs it, isolate the scope with `@:allow_heex` in balanced mode or
+`@:hxx_mode("metal")`, then plan to remove it.
 
 Compiles to:
 

@@ -89,6 +89,12 @@ Primary template entrypoints:
 - `phoenix.hxx.HeexTemplate` (`root`, `root_ast`, helpers)
 - `HXX.hxx(...)` / `HXX.block(...)` for legacy balanced-mode string-template forms
 
+Authoring rule of thumb:
+
+- New app templates should use inline markup. It gives the compiler real Haxe expressions to type-check.
+- Balanced string templates are for migration and compatibility: existing HEEx/string templates, older HXX modules, and focused compiler fixtures.
+- Raw HEEx markers inside Haxe-authored templates are explicit escape hatches, not a normal HXX authoring style.
+
 Relevant strictness/authoring metadata:
 
 - `@:hxx_mode("balanced"|"tsx"|"metal")`

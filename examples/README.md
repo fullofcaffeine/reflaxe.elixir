@@ -124,6 +124,8 @@ Reflaxe.Elixir supports two authoring styles on one compiler pipeline. This matr
 - Default for examples: inline markup authoring in strict TSX mode.
 - Legacy `hxx('...')` templates are only allowed in explicitly labeled migration demos.
 - Current intentional non-TSX demo: `examples/05-heex-templates/` (see its README rationale).
+- Use `hxx('...')` for migration/compatibility only: existing HEEx/string templates, older HXX code, focused compiler fixtures, or isolated lexer edge cases.
+- Raw HEEx markers inside Haxe templates are a stronger escape hatch than legacy strings and must stay explicitly annotated.
 - CI guardrails: `npm run guard:examples-hxx-mode` prevents legacy marker regressions outside demo paths, and `npm run guard:hxx-raw-heex` forbids unannotated raw HEEx in Haxe-authored templates.
 
 ## 🚀 Quick Start

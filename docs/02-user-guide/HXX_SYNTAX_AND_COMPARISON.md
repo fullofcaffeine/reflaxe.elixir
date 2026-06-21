@@ -29,6 +29,46 @@ See also:
 
 You normally do not write `@:hxx_mode("tsx")`. TSX inline markup is the default for new code; the metadata exists for local overrides when migrating legacy string templates or isolating a raw HEEx escape hatch.
 
+### Choosing an Authoring Style
+
+Use inline markup first:
+
+```haxe
+public static function render(assigns: PageAssigns):String {
+  return <section>
+    <h1>${assigns.title}</h1>
+  </section>;
+}
+```
+
+Use balanced `hxx('...')` only when you have a concrete migration or compatibility reason:
+
+```haxe
+@:hxx_mode("balanced")
+class LegacyTemplate {
+  public static function render(assigns: PageAssigns):String {
+    return hxx('
+      <section>
+        <h1>${assigns.title}</h1>
+      </section>
+    ');
+  }
+}
+```
+
+Both forms generate Phoenix HEEx. The important difference is authoring-time safety: inline markup parses
+`${...}` as Haxe expressions, while legacy strings are mostly rewritten and linted as template text.
+
+Valid reasons to keep `hxx('...')`:
+
+- You are migrating a real HEEx/string template and want a small diff before converting it to inline markup.
+- You are preserving older Reflaxe.Elixir code while adding tests around it.
+- You are writing compiler compatibility coverage for legacy string-template lowering.
+- You hit a current Haxe markup lexer limitation and need a local compatibility scope.
+
+Raw HEEx markers (`<% ... %>`, `<%= ... %>`) are not the same thing as legacy `hxx('...')`. They bypass
+the typed HXX surface and should be treated as an explicit escape hatch only.
+
 ### HXX Mode Contract
 
 | Mode | Use for | Allows legacy `hxx('...')` strings? | Allows raw `<% ... %>`? | Recommendation |
@@ -331,7 +371,8 @@ Notes:
 ## Migration Tips
 
 - From HEEx: keep your template semantics identical; move the markup into inline Haxe markup (`return <div>...</div>`). Use Haxe types for assigns.
-- From older HXX: keep `hxx('...')` only in balanced migration modules, then migrate toward inline markup as you touch templates.
+- From older HXX: keep `hxx('...')` only in balanced migration modules, add runtime coverage if the template matters, then migrate toward inline markup as you touch templates.
+- From raw HEEx blocks inside HXX strings: first isolate the scope with `@:allow_heex` or `@:hxx_mode("metal")`, then replace raw blocks with HXX interpolation, typed control tags, helper functions, or Phoenix components.
 - From Coconut UI/TSX: move client‑side interactivity to LiveView patterns (events, assigns) or to genes‑generated JS when needed. Keep shared validation in Haxe to use on both server and client.
 
 ## Roadmap to Full Parity
