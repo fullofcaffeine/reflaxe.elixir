@@ -1,6 +1,9 @@
 package templates;
 
 import HXX.*;
+import elixir.types.Term;
+import phoenix.Component;
+import phoenix.types.Slot;
 
 /**
  * HEEx template example using Haxe→Elixir compilation
@@ -38,11 +41,11 @@ class UserProfile {
             </div>
             
             <div class="actions">
-                <.button type="primary" phx-click="edit_profile">
+                <.button type="primary" disabled={false} phx-click="edit_profile">
                     Edit Profile
                 </.button>
                 
-                <.button type="secondary" phx-click="view_settings">
+                <.button type="secondary" disabled={false} phx-click="view_settings">
                     Settings  
                 </.button>
             </div>
@@ -62,7 +65,9 @@ class UserProfile {
         <div class="posts-section">
             <h3>Recent Posts (${posts.length})</h3>
             <div class="posts-list">
-                ${posts.map(renderPost).join("")}
+                <for {post in posts}>
+                    #{render_post(post)}
+                </for>
             </div>
         </div>
         ');
@@ -107,7 +112,7 @@ class UserProfile {
             type=${assigns.type != null ? assigns.type : "button"}
             disabled=${assigns.disabled}
         >
-            ${assigns.inner_content}
+            ${Component.render_slot(assigns.inner_block)}
         </button>
         ');
 	}
@@ -141,5 +146,5 @@ typedef Post = {
 typedef UserProfileButtonAssigns = {
 	?type:String,
 	?disabled:Bool,
-	inner_content:String
+	inner_block:Slot<Term>
 }

@@ -17,6 +17,16 @@ cd examples/05-heex-templates
 haxe build.hxml
 ```
 
+## Test
+
+```bash
+cd examples/05-heex-templates
+mix deps.get
+mix test --no-start
+```
+
+The tests render the generated HEEx through `Phoenix.HTML.Safe` so nested HXX helpers are checked at runtime, not just at compile time.
+
 ## Key files
 
 - `examples/05-heex-templates/src_haxe/templates/UserProfile.hx`

@@ -96,13 +96,6 @@ class HeexMain {
 		});
 
 		passes.push({
-			name: "HeexRenderHelperCallWrap",
-			description: "Wrap <%= render_* %> calls inside ~H with Phoenix.HTML.raw(...) (transitional safety)",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.HeexRenderHelperCallWrapTransforms.transformPass
-		});
-
-		passes.push({
 			name: "HeexAssignsTypeLinter",
 			description: "Validate @assigns fields and literal comparisons in ~H against the Haxe typedef",
 			enabled: #if fast_boot false #else true #end,

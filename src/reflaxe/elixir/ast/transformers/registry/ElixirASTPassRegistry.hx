@@ -2630,7 +2630,9 @@ class ElixirASTPassRegistry {
 
 		// Duplicate registration removed: HeexContentInline already ran earlier.
 
-		// (moved earlier) HeexStringReturnToSigil & HeexRenderHelperCallWrap now run before
+		// HeexStringReturnToSigil now runs before the Phoenix component import so helper-returned
+		// HTML becomes a Phoenix.LiveView.Rendered value. Rendered helpers must be inserted
+		// directly in ~H; wrapping them with Phoenix.HTML.raw/1 crashes at runtime.
 		// parameter underscore passes to preserve the `assigns` binder required by HEEx.
 		// See earlier registration for details.
 

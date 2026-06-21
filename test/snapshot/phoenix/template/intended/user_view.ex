@@ -17,7 +17,7 @@ defmodule UserView do
 			</div>
 			<%= if @show_notifications do %>
 				<div class="notifications">
-					<%= Phoenix.HTML.raw(render_notifications(@notifications) ) %>
+					<%= render_notifications(@notifications) %>
 				</div>
 			<% end %>
 		</div>

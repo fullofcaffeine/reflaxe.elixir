@@ -1,6 +1,9 @@
 package templates;
 
 import HXX.*;
+import elixir.types.Term;
+import phoenix.Component;
+import phoenix.types.Slot;
 
 /**
  * Phoenix form component examples with HEEx templates
@@ -23,9 +26,14 @@ class FormComponents {
                     <.label for="name">Full Name</.label>
                     <.input 
                         field={@changeset[:name]} 
+                        name="name"
                         type="text"
+                        value=""
                         placeholder="Enter your full name"
+                        autocomplete=""
                         required
+                        min=""
+                        max=""
                     />
                     <.error field={@changeset[:name]} />
                 </div>
@@ -34,9 +42,14 @@ class FormComponents {
                     <.label for="email">Email Address</.label>  
                     <.input
                         field={@changeset[:email]}
+                        name="email"
                         type="email" 
+                        value=""
                         placeholder="user@example.com"
+                        autocomplete=""
                         required
+                        min=""
+                        max=""
                     />
                     <.error field={@changeset[:email]} />
                 </div>
@@ -45,7 +58,12 @@ class FormComponents {
                     <.label for="age">Age</.label>
                     <.input
                         field={@changeset[:age]} 
+                        name="age"
                         type="number"
+                        value=""
+                        placeholder=""
+                        autocomplete=""
+                        required={false}
                         min="13"
                         max="120"
                     />
@@ -55,7 +73,14 @@ class FormComponents {
                 <div class="form-group checkbox">
                     <.input
                         field={@changeset[:active]}
+                        name="active"
                         type="checkbox"
+                        value=""
+                        placeholder=""
+                        autocomplete=""
+                        required={false}
+                        min=""
+                        max=""
                         label="Active account"
                     />
                 </div>
@@ -87,6 +112,9 @@ class FormComponents {
                     value={@query}
                     placeholder="Search users..."
                     autocomplete="off"
+                    required={false}
+                    min=""
+                    max=""
                 />
                 
                 <.select name="filter" value={@filter}>
@@ -95,7 +123,7 @@ class FormComponents {
                     <option value="inactive">Inactive Only</option>
                 </.select>
                 
-                <.button type="submit">
+                <.button type="submit" disabled={false}>
                     <.icon name="search" /> Search
                 </.button>
             </div>
@@ -115,8 +143,10 @@ class FormComponents {
 		return hxx('
         <div class="active-filters">
             <span class="label">Active filters:</span>
-            ${filters.map(renderFilterTag).join("")}
-            <.button variant="link" phx-click="clear_filters">
+            <for {filter in filters}>
+                #{render_filter_tag(filter)}
+            </for>
+            <.button type="button" disabled={false} variant="link" phx-click="clear_filters">
                 Clear all
             </.button>
         </div>
@@ -148,7 +178,7 @@ class FormComponents {
             type=${assigns.type != null ? assigns.type : "button"}
             disabled=${assigns.disabled}
         >
-            ${assigns.inner_content}
+            ${Component.render_slot(assigns.inner_block)}
         </button>
         ');
 	}
@@ -171,7 +201,7 @@ class FormComponents {
 
 	@:component
 	public static function label(assigns:LabelAssigns):String {
-		return hxx('<label>${assigns.inner_content}</label>');
+		return hxx('<label>${Component.render_slot(assigns.inner_block)}</label>');
 	}
 
 	@:component
@@ -183,7 +213,7 @@ class FormComponents {
 	public static function select(assigns:SelectAssigns):String {
 		return hxx('
         <select name=${assigns.name}>
-            ${assigns.inner_content}
+            ${Component.render_slot(assigns.inner_block)}
         </select>
         ');
 	}
@@ -213,7 +243,7 @@ typedef SearchAssigns = {
 typedef ButtonAssigns = {
 	?type:String,
 	?disabled:Bool,
-	inner_content:String
+	inner_block:Slot<Term>
 }
 
 typedef InputAssigns = {
@@ -228,7 +258,7 @@ typedef InputAssigns = {
 }
 
 typedef LabelAssigns = {
-	inner_content:String
+	inner_block:Slot<Term>
 }
 
 typedef ErrorAssigns = {
@@ -237,7 +267,7 @@ typedef ErrorAssigns = {
 
 typedef SelectAssigns = {
 	?name:String,
-	inner_content:String
+	inner_block:Slot<Term>
 }
 
 typedef IconAssigns = {
