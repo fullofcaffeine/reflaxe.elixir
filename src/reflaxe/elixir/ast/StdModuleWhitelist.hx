@@ -84,6 +84,7 @@ class StdModuleWhitelist {
 			"Input",
 			"Output",
 			"Sys",
+			"Error",
 			"Eof",
 			"NotImplementedException",
 			"PosException",

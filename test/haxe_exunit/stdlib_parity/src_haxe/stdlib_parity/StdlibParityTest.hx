@@ -19,6 +19,7 @@ import haxe.io.BytesBuffer;
 import haxe.io.BytesInput;
 import haxe.io.BytesOutput;
 import haxe.io.Eof;
+import haxe.io.Error;
 import haxe.io.FPHelper;
 import haxe.io.Path;
 import haxe.io.StringInput;
@@ -676,6 +677,21 @@ class StdlibParityTest extends TestCase {
 			input.readLine();
 			Assert.fail("readLine should throw Eof after the final line");
 		} catch (_:Eof) {}
+	}
+
+	@:describe("haxe.io.Error")
+	@:test
+	function testIoErrorCustomCanBeCaughtAndMatched():Void {
+		try {
+			throw Error.Custom("unsupported target IO operation");
+		} catch (error:Error) {
+			switch (error) {
+				case Custom(message):
+					Assert.equals("unsupported target IO operation", message);
+				default:
+					Assert.fail("Expected Error.Custom to survive BEAM throw/catch lowering");
+			}
+		}
 	}
 
 	@:describe("haxe.io.BytesBuffer")

@@ -1,7 +1,7 @@
 {
   "diff": {
     "intersection": {
-      "count": 98,
+      "count": 99,
       "modules": [
         "Array",
         "Date",
@@ -55,6 +55,7 @@
         "haxe.io.BytesOutput",
         "haxe.io.Encoding",
         "haxe.io.Eof",
+        "haxe.io.Error",
         "haxe.io.FPHelper",
         "haxe.io.Input",
         "haxe.io.Output",
@@ -118,7 +119,7 @@
       ]
     },
     "reference_only": {
-      "count": 106,
+      "count": 105,
       "modules": [
         "Any",
         "Class",
@@ -175,7 +176,6 @@
         "haxe.http.HttpNodeJs",
         "haxe.http.HttpStatus",
         "haxe.io.ArrayBufferView",
-        "haxe.io.Error",
         "haxe.io.Float32Array",
         "haxe.io.Float64Array",
         "haxe.io.Int32Array",
@@ -232,7 +232,7 @@
   "local": {
     "counts_by_prefix": {
       "<top-level>": 19,
-      "haxe": 54,
+      "haxe": 55,
       "sys": 34
     },
     "nonstdlib_modules_under_std_dir": [
@@ -259,8 +259,8 @@
       "std/_std",
       "src/haxe"
     ],
-    "total_candidates": 110,
-    "total_std_modules": 107
+    "total_candidates": 111,
+    "total_std_modules": 108
   },
   "reference": {
     "counts_by_prefix": {

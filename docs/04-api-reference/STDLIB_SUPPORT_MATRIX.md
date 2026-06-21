@@ -117,6 +117,7 @@ Top-level:
 - `haxe.io.BytesInput`
 - `haxe.io.BytesOutput`
 - `haxe.io.Encoding`
+- `haxe.io.Error`
 - `haxe.io.Eof`
 - `haxe.io.FPHelper`
 - `haxe.io.Input`

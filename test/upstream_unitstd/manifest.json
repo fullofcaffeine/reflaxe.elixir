@@ -51,6 +51,7 @@
     {"module": "haxe.io.BytesInput", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is covered by local runtime tests."},
     {"module": "haxe.io.BytesOutput", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is covered by local runtime tests."},
     {"module": "haxe.io.Encoding", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists."},
+    {"module": "haxe.io.Error", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; IO error enum behavior is covered by local runtime tests."},
     {"module": "haxe.io.Eof", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists."},
     {"module": "haxe.io.FPHelper", "status": "enabled", "source": "haxe/io/FPHelper.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/io/FPHelper.unit.hx"},
     {"module": "haxe.io.Input", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; concrete input implementations carry coverage."},
