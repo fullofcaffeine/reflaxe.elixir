@@ -10,6 +10,7 @@ Setup guide for Reflaxe.Elixir development with lix package management and dual-
 - **Node.js 16+** - For lix package management and npm scripts
 - **Elixir 1.14+** - For Phoenix/Ecto ecosystem and generated code testing
 - **Git** - For repository cloning and dependency management
+- **Neko runtime on Linux** - Required by the `haxelib` executable bundled with Haxe 4 toolchains installed through lix. On Ubuntu/Debian, install it with `sudo apt-get install neko`.
 
 ### Installation Check
 ```bash

@@ -50,6 +50,11 @@ jobs:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
+      - name: Install Haxe 4 haxelib runtime dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends neko
+
       - name: Install npm dependencies (repo)
         run: npm ci --ignore-scripts --no-audit --no-fund
 
