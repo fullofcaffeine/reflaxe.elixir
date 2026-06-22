@@ -6,6 +6,7 @@ HOOKS_DIR="$ROOT_DIR/.git/hooks"
 SRC_PRE_COMMIT="$ROOT_DIR/scripts/hooks/pre-commit"
 DEST_PRE_COMMIT="$HOOKS_DIR/pre-commit"
 DEST_CHAINED_PRE_COMMIT="$HOOKS_DIR/pre-commit.old"
+DEST_LEGACY_BD_PRE_COMMIT="$HOOKS_DIR/pre-commit.bd-legacy"
 
 is_bd_chained_pre_commit() {
   local hook_path="$1"
@@ -21,6 +22,16 @@ is_bd_chained_pre_commit() {
   grep -Eq "bd sync --flush-only|bd hook pre-commit|beads pre-commit hook" "$hook_path"
 }
 
+is_legacy_bd_sync_pre_commit() {
+  local hook_path="$1"
+
+  if [ ! -f "$hook_path" ]; then
+    return 1
+  fi
+
+  grep -q "bd sync --flush-only" "$hook_path"
+}
+
 if [ ! -d "$ROOT_DIR/.git" ]; then
   echo "[hooks:install] ERROR: .git directory not found at $ROOT_DIR" >&2
   exit 1
@@ -28,7 +39,14 @@ fi
 
 mkdir -p "$HOOKS_DIR"
 
-if is_bd_chained_pre_commit "$DEST_PRE_COMMIT"; then
+if is_legacy_bd_sync_pre_commit "$DEST_PRE_COMMIT"; then
+  cp "$DEST_PRE_COMMIT" "$DEST_LEGACY_BD_PRE_COMMIT"
+  cp "$SRC_PRE_COMMIT" "$DEST_PRE_COMMIT"
+  chmod +x "$DEST_PRE_COMMIT"
+  echo "[hooks:install] Replaced legacy bd pre-commit wrapper."
+  echo "[hooks:install] Saved previous wrapper -> $DEST_LEGACY_BD_PRE_COMMIT"
+  echo "[hooks:install] Installed pre-commit hook -> $DEST_PRE_COMMIT"
+elif is_bd_chained_pre_commit "$DEST_PRE_COMMIT"; then
   cp "$SRC_PRE_COMMIT" "$DEST_CHAINED_PRE_COMMIT"
   chmod +x "$DEST_CHAINED_PRE_COMMIT"
   echo "[hooks:install] Detected bd chained pre-commit wrapper."

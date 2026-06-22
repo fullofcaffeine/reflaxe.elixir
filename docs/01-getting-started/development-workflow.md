@@ -39,7 +39,8 @@ npm run hooks:install
 ```
 
 - Enables repo-managed pre-commit checks (path leaks, secrets scan, staged `.hx` auto-format, naming guards).
-- If you use `bd hooks install --chain`, re-running `npm run hooks:install` updates `.git/hooks/pre-commit.old` so repo checks still run before the `bd` flush.
+- The repo hook exports Beads issues to `.beads/issues.jsonl` when a local Beads database is bootstrapped, then runs the staged guards on the final content.
+- If you previously used an older Beads chained hook, re-running `npm run hooks:install` replaces wrappers that call the removed `bd sync --flush-only` command.
 
 ### Pre-commit Local Path Guard
 - The pre-commit hook blocks staged **absolute local paths** (for example `/Users/...`, `/home/...`, `/var/folders/...`, `C:\Users\...`).

@@ -4,6 +4,23 @@ set -euo pipefail
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 VISUAL_TRIGGER_PATTERN='^(examples/todo-app/src_haxe/server/live/.*\.hx|examples/todo-app/assets/css/.*|examples/todo-app/src_haxe/client/.*|examples/todo-app/e2e/ui_visual\.spec\.ts|examples/todo-app/e2e/ui_visual\.spec\.ts-snapshots/.*)$'
 
+if [ -d "$ROOT_DIR/.beads" ] && command -v bd >/dev/null 2>&1; then
+  if bd -C "$ROOT_DIR" context >/dev/null 2>&1; then
+    echo "[pre-commit] Exporting Beads issues to JSONL..."
+    BEADS_EXPORT_TMP="$(mktemp)"
+    cleanup_beads_export() {
+      rm -f "$BEADS_EXPORT_TMP"
+    }
+    trap cleanup_beads_export EXIT
+    bd -C "$ROOT_DIR" export > "$BEADS_EXPORT_TMP"
+    mv "$BEADS_EXPORT_TMP" "$ROOT_DIR/.beads/issues.jsonl"
+    git -C "$ROOT_DIR" add .beads/issues.jsonl
+    trap - EXIT
+  else
+    echo "[pre-commit] Beads database is not bootstrapped; skipping JSONL export."
+  fi
+fi
+
 echo "[pre-commit] Running local path guard on staged changes..."
 bash "$ROOT_DIR/scripts/lint/local_path_guard_staged.sh"
 
