@@ -4,7 +4,7 @@ Beads: `haxe.elixir.codex-1fg`
 
 ## Decision Summary
 
-Create a new didactic example at `examples/17-railshx-to-phoenixhx-todo/` that ports the user-facing RailsHx todo app from `../haxe.ruby/examples/todoapp_rails/` to a Phoenix/Reflaxe.Elixir app.
+Create a new didactic example at `examples/17-railshx-to-phoenixhx-todo/` that ports the user-facing RailsHx todo app from [`reflaxe.ruby/examples/todoapp_rails`](https://github.com/fullofcaffeine/reflaxe.ruby/tree/main/examples/todoapp_rails) to a Phoenix/Reflaxe.Elixir app.
 
 The example should preserve the RailsHx app's UX vocabulary, visual hierarchy, and core user journeys, but the implementation must be idiomatic Phoenix:
 
@@ -21,14 +21,14 @@ This is a learning example first and a future migration-tool seed second. It sho
 
 RailsHx source app:
 
-- `../haxe.ruby/examples/todoapp_rails/README.md`
-- `../haxe.ruby/examples/todoapp_rails/Main.hx`
-- `../haxe.ruby/examples/todoapp_rails/models/**`
-- `../haxe.ruby/examples/todoapp_rails/controllers/**`
-- `../haxe.ruby/examples/todoapp_rails/views/**`
-- `../haxe.ruby/examples/todoapp_rails/shared/TodoHooks.hx`
-- `../haxe.ruby/examples/todoapp_rails/client/TodoClient.hx`
-- `../haxe.ruby/examples/todoapp_rails/e2e/todoapp.spec.ts`
+- [`README.md`](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/README.md)
+- [`Main.hx`](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/Main.hx)
+- [`models/**`](https://github.com/fullofcaffeine/reflaxe.ruby/tree/main/examples/todoapp_rails/models)
+- [`controllers/**`](https://github.com/fullofcaffeine/reflaxe.ruby/tree/main/examples/todoapp_rails/controllers)
+- [`views/**`](https://github.com/fullofcaffeine/reflaxe.ruby/tree/main/examples/todoapp_rails/views)
+- [`shared/TodoHooks.hx`](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/shared/TodoHooks.hx)
+- [`client/TodoClient.hx`](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/client/TodoClient.hx)
+- [`e2e/todoapp.spec.ts`](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/e2e/todoapp.spec.ts)
 
 Local Phoenix patterns to reuse:
 
@@ -50,7 +50,7 @@ The first complete slice should include:
    - completion/toggle/delete flow,
    - user attribution where supported,
    - optional chat/user-management panels if they can be done without turning the task into a second full todo-app.
-3. A `README.md` that links back to `../haxe.ruby/examples/todoapp_rails/` and explains the Rails-to-Phoenix mapping.
+3. A `README.md` that links back to the public [`reflaxe.ruby/examples/todoapp_rails`](https://github.com/fullofcaffeine/reflaxe.ruby/tree/main/examples/todoapp_rails) source and explains the Rails-to-Phoenix mapping.
 4. A conversion crosswalk doc, preferably `docs/RAILSHX_TO_PHOENIXHX.md` inside the example, with concrete source-to-source examples.
 5. Haxe-authored Phoenix tests for the main flows, plus a thin Playwright smoke that asserts the preserved UX.
 6. `examples/qa-manifest.json` entry with meaningful runtime/E2E coverage.

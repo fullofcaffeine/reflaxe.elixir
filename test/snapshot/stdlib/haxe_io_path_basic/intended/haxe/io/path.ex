@@ -51,12 +51,12 @@ defmodule Haxe.IO.Path do
     directory_prefix = if (Kernel.is_nil(struct.dir)) do
       ""
     else
-      "#{Kernel.to_string(struct.dir)}#{if (struct.backslash), do: "\\", else: "/"}"
+      "#{struct.dir}#{if (struct.backslash), do: "\\", else: "/"}"
     end
     extension_suffix = if (Kernel.is_nil(struct.ext)) do
       ""
     else
-      ".#{Kernel.to_string(struct.ext)}"
+      ".#{struct.ext}"
     end
     "#{directory_prefix}#{struct.file}#{extension_suffix}"
   end

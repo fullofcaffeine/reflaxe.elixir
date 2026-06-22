@@ -3841,6 +3841,18 @@ class ElixirASTBuilder {
 	/**
 	 * Try to expand a specific __elixir__() call
 	 */
+	static function normalizeInjectedElixirCode(code:String):String {
+		if (code == null || code.indexOf("\n") == -1) {
+			return code;
+		}
+
+		var lines = code.split("\n");
+		for (i in 0...lines.length) {
+			lines[i] = lines[i].rtrim();
+		}
+		return lines.join("\n");
+	}
+
 	static function tryExpandElixirCall(expr:TypedExpr, thisExpr:TypedExpr, methodArgs:Array<TypedExpr>,
 			context:reflaxe.elixir.CompilationContext):Null<ElixirAST> {
 		#if debug_elixir_injection
@@ -4056,8 +4068,8 @@ class ElixirASTBuilder {
 										names.push(k);
 									Reflect.setField(meta, "rawVarRefs", names);
 
-									// Return the expanded raw Elixir code with metadata for hygiene
-									return makeASTWithMeta(ERaw(processedCode), meta, expr.pos);
+									// Return the expanded raw Elixir code with metadata for hygiene.
+									return makeASTWithMeta(ERaw(normalizeInjectedElixirCode(processedCode)), meta, expr.pos);
 
 								default:
 									#if debug_elixir_injection

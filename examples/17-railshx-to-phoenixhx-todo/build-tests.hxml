@@ -1,0 +1,15 @@
+# Haxe->Elixir compilation for ExUnit tests (MIX_ENV=test)
+
+-lib reflaxe.elixir
+
+-cp src_haxe
+-cp src_haxe/test
+
+-D elixir_output=test/generated
+-D elixir_output_exs
+-D reflaxe_runtime
+-D no-utf16
+-D app_name=PhoenixHxTodo
+-dce full
+
+live.TodoStateTest

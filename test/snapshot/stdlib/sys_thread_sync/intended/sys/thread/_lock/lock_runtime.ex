@@ -1,10 +1,10 @@
 defmodule LockRuntime do
   def create() do
     (
-            ref = make_ref()
-            pid = spawn(fn -> LockRuntime.server_loop(ref, 0, :queue.new()) end)
-            {ref, pid}
-        )
+                ref = make_ref()
+                pid = spawn(fn -> LockRuntime.server_loop(ref, 0, :queue.new()) end)
+                {ref, pid}
+            )
   end
   def wait(ref, timeout) do
     should_queue = Reflaxe.Elixir.HaxeFloat.eq(timeout, nil) or Reflaxe.Elixir.HaxeFloat.gt(timeout, 0)
@@ -24,10 +24,10 @@ defmodule LockRuntime do
   end
   def release(ref) do
     (
-            {_lock_ref, pid} = ref
-            send(pid, :release)
-            :ok
-        )
+                {_lock_ref, pid} = ref
+                send(pid, :release)
+                :ok
+            )
   end
   defp seconds_to_timeout(timeout) do
     if (Reflaxe.Elixir.HaxeFloat.eq(timeout, nil)) do
@@ -41,37 +41,37 @@ defmodule LockRuntime do
     end
   end
   def server_loop(ref, permits, waiters) do
-    
-            receive do
-              {:wait, caller, token, should_queue} ->
-                cond do
-                  permits > 0 ->
-                    send(caller, {:lock_wait, ref, token, true})
-                    LockRuntime.server_loop(ref, permits - 1, waiters)
-                  should_queue ->
-                    LockRuntime.server_loop(ref, permits, :queue.in({caller, token}, waiters))
-                  true ->
-                    send(caller, {:lock_wait, ref, token, false})
-                    LockRuntime.server_loop(ref, permits, waiters)
+
+                receive do
+                  {:wait, caller, token, should_queue} ->
+                    cond do
+                      permits > 0 ->
+                        send(caller, {:lock_wait, ref, token, true})
+                        LockRuntime.server_loop(ref, permits - 1, waiters)
+                      should_queue ->
+                        LockRuntime.server_loop(ref, permits, :queue.in({caller, token}, waiters))
+                      true ->
+                        send(caller, {:lock_wait, ref, token, false})
+                        LockRuntime.server_loop(ref, permits, waiters)
+                    end
+
+                  {:cancel, token} ->
+                    filtered =
+                      waiters
+                      |> :queue.to_list()
+                      |> Enum.reject(fn {_caller, waiter_token} -> waiter_token == token end)
+                      |> Enum.reduce(:queue.new(), fn waiter, queue -> :queue.in(waiter, queue) end)
+                    LockRuntime.server_loop(ref, permits, filtered)
+
+                  :release ->
+                    case :queue.out(waiters) do
+                      {{:value, {caller, token}}, rest} ->
+                        send(caller, {:lock_wait, ref, token, true})
+                        LockRuntime.server_loop(ref, permits, rest)
+                      {:empty, _} ->
+                        LockRuntime.server_loop(ref, permits + 1, waiters)
+                    end
                 end
 
-              {:cancel, token} ->
-                filtered =
-                  waiters
-                  |> :queue.to_list()
-                  |> Enum.reject(fn {_caller, waiter_token} -> waiter_token == token end)
-                  |> Enum.reduce(:queue.new(), fn waiter, queue -> :queue.in(waiter, queue) end)
-                LockRuntime.server_loop(ref, permits, filtered)
-
-              :release ->
-                case :queue.out(waiters) do
-                  {{:value, {caller, token}}, rest} ->
-                    send(caller, {:lock_wait, ref, token, true})
-                    LockRuntime.server_loop(ref, permits, rest)
-                  {:empty, _} ->
-                    LockRuntime.server_loop(ref, permits + 1, waiters)
-                end
-            end
-        
   end
 end

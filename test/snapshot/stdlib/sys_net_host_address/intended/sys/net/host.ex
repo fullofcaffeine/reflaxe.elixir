@@ -17,54 +17,54 @@ defmodule Host do
   end
   def localhost() do
     (
-            case :inet.gethostname() do
-              {:ok, name} -> List.to_string(name)
-              _ -> "localhost"
-            end
-        )
+                case :inet.gethostname() do
+                  {:ok, name} -> List.to_string(name)
+                  _ -> "localhost"
+                end
+            )
   end
   defp resolve(name) do
     (
-            char_name = String.to_charlist(name)
-            address =
-              case :inet.parse_address(char_name) do
-                {:ok, {a, b, c, d}} -> {a, b, c, d}
-                {:ok, other} -> raise "sys.net.Host only supports IPv4 addresses on the Elixir target, got: #{inspect(other)}"
-                {:error, _} ->
-                  case :inet.getaddr(char_name, :inet) do
+                char_name = String.to_charlist(name)
+                address =
+                  case :inet.parse_address(char_name) do
                     {:ok, {a, b, c, d}} -> {a, b, c, d}
                     {:ok, other} -> raise "sys.net.Host only supports IPv4 addresses on the Elixir target, got: #{inspect(other)}"
-                    {:error, reason} -> raise "sys.net.Host: failed to resolve " <> inspect(name) <> ": " <> inspect(reason)
+                    {:error, _} ->
+                      case :inet.getaddr(char_name, :inet) do
+                        {:ok, {a, b, c, d}} -> {a, b, c, d}
+                        {:ok, other} -> raise "sys.net.Host only supports IPv4 addresses on the Elixir target, got: #{inspect(other)}"
+                        {:error, reason} -> raise "sys.net.Host: failed to resolve " <> inspect(name) <> ": " <> inspect(reason)
+                      end
                   end
-              end
-            {a, b, c, d} = address
-            Bitwise.bor(Bitwise.bsl(a, 24), Bitwise.bor(Bitwise.bsl(b, 16), Bitwise.bor(Bitwise.bsl(c, 8), d)))
-        )
+                {a, b, c, d} = address
+                Bitwise.bor(Bitwise.bsl(a, 24), Bitwise.bor(Bitwise.bsl(b, 16), Bitwise.bor(Bitwise.bsl(c, 8), d)))
+            )
   end
   defp host_to_string(ip_param) do
     (
-            {a, b, c, d} = Host.to_inet_address(ip_param)
-            Enum.join([a, b, c, d], ".")
-        )
+                {a, b, c, d} = Host.to_inet_address(ip_param)
+                Enum.join([a, b, c, d], ".")
+            )
   end
   defp host_reverse(ip_param) do
     (
-            address = Host.to_inet_address(ip_param)
-            case :inet.gethostbyaddr(address) do
-              {:ok, {:hostent, name, _aliases, _addrtype, _length, _addr_list}} -> List.to_string(name)
-              {:error, reason} -> raise "sys.net.Host.reverse failed for #{inspect(address)}: #{inspect(reason)}"
-            end
-        )
+                address = Host.to_inet_address(ip_param)
+                case :inet.gethostbyaddr(address) do
+                  {:ok, {:hostent, name, _aliases, _addrtype, _length, _addr_list}} -> List.to_string(name)
+                  {:error, reason} -> raise "sys.net.Host.reverse failed for #{inspect(address)}: #{inspect(reason)}"
+                end
+            )
   end
   def to_inet_address(ip_param) do
     (
-            value = ip_param
-            {
-              Bitwise.band(Bitwise.bsr(value, 24), 255),
-              Bitwise.band(Bitwise.bsr(value, 16), 255),
-              Bitwise.band(Bitwise.bsr(value, 8), 255),
-              Bitwise.band(value, 255)
-            }
-        )
+                value = ip_param
+                {
+                  Bitwise.band(Bitwise.bsr(value, 24), 255),
+                  Bitwise.band(Bitwise.bsr(value, 16), 255),
+                  Bitwise.band(Bitwise.bsr(value, 8), 255),
+                  Bitwise.band(value, 255)
+                }
+            )
   end
 end

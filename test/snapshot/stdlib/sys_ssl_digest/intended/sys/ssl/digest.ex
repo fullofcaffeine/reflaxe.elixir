@@ -10,16 +10,16 @@ defmodule Digest do
   end
   def algorithm_atom(alg) do
     (
-            case alg do
-              "MD5" -> :md5
-              "SHA1" -> :sha
-              "SHA224" -> :sha224
-              "SHA256" -> :sha256
-              "SHA384" -> :sha384
-              "SHA512" -> :sha512
-              "RIPEMD160" -> :ripemd160
-              other -> raise "sys.ssl.Digest: unsupported digest algorithm #{inspect(other)}"
-            end
-        )
+                case alg do
+                  "MD5" -> :md5
+                  "SHA1" -> :sha
+                  "SHA224" -> :sha224
+                  "SHA256" -> :sha256
+                  "SHA384" -> :sha384
+                  "SHA512" -> :sha512
+                  "RIPEMD160" -> :ripemd160
+                  other -> raise "sys.ssl.Digest: unsupported digest algorithm #{inspect(other)}"
+                end
+            )
   end
 end

@@ -1020,6 +1020,18 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	 * 
 	 * HOW: Calls checkTargetCodeInjectionGeneric and processes the results into ERaw nodes
 	 */
+	static function normalizeInjectedElixirCode(code:String):String {
+		if (code == null || code.indexOf("\n") == -1) {
+			return code;
+		}
+
+		var lines = code.split("\n");
+		for (i in 0...lines.length) {
+			lines[i] = lines[i].rtrim();
+		}
+		return lines.join("\n");
+	}
+
 	public override function compileExpression(expr:TypedExpr, topLevel:Bool = false):Null<reflaxe.elixir.ast.ElixirAST> {
 		// Check for target code injection using Reflaxe's built-in system
 		switch (expr.expr) {
@@ -1100,7 +1112,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 						#end
 
 						// Return as raw Elixir code
-						return reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.ERaw(finalCode));
+						return reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.ERaw(normalizeInjectedElixirCode(finalCode)));
 					}
 
 					// WORKAROUND: Reflaxe's checkTargetCodeInjectionGeneric only detects TIdent,
@@ -1225,7 +1237,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 							#if debug_injection
 							#end
 
-							return reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.ERaw(finalCode));
+							return reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.ERaw(normalizeInjectedElixirCode(finalCode)));
 						}
 					}
 				}

@@ -394,6 +394,16 @@ For Haxe-to-Elixir compiler and framework surfaces, Elixir/Phoenix/Ecto/OTP comp
 - Do not invent fake Elixir/Phoenix APIs. Haxe conveniences must lower to real target APIs or documented compiler/runtime semantics.
 - Document both paths when both exist: typed/semantic path first, direct target facade second.
 
+### RailsHx Reference, PhoenixHx Ownership (Hard Rule)
+
+Use `reflaxe.ruby` / RailsHx as a UX and cross-target learning reference when it improves examples, docs, migration explanations, or product polish:
+
+- Canonical reference: https://github.com/fullofcaffeine/reflaxe.ruby
+- Borrow UX lessons, interaction vocabulary, test ideas, and didactic comparisons when they make a PhoenixHx example clearer.
+- Do not "Rubyfy" or "Railsify" this project by default. Haxe.Elixir app code, examples, compiler APIs, and framework surfaces should stay close to Elixir, Phoenix, Ecto, OTP, and existing PhoenixHx patterns.
+- If a Rails-shaped abstraction seems genuinely useful, justify it to the human before implementing it. The justification must explain why Phoenix-native Haxe.Elixir patterns are not enough, what real target APIs it lowers to, and what tradeoffs it introduces.
+- A future explicit RailsHx/PhoenixHx translation or adapter layer may intentionally bridge APIs or allow selected code to run across Ruby and BEAM runtimes. That layer must be opt-in, named, documented, and configurable with maximum practical granularity, such as per module, feature, route, schema, or runtime boundary. It must not become an implicit compatibility mode, backend switch, or silent semantic change.
+
 ### No-Dynamic Policy (Hard Rule)
 - Do not introduce `Dynamic` types in new compiler code, stdlib externs, or tests unless absolutely unavoidable at boundary integration points.
 - Prefer precise types in Haxe signatures and Elixir outputs. Avoid using `Dynamic` as a workaround for typing mismatches.

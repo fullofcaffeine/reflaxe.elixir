@@ -4,11 +4,11 @@ defmodule DatabaseConnection do
   end
   def child_spec(config) do
     %{
-			id: DatabaseConnection,
-			start: {DatabaseConnection, :start_link, [config]},
-			restart: :permanent,
-			shutdown: 5000,
-			type: :worker
-		}
+          id: DatabaseConnection,
+          start: {DatabaseConnection, :start_link, [config]},
+          restart: :permanent,
+          shutdown: 5000,
+          type: :worker
+        }
   end
 end

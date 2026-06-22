@@ -15,21 +15,21 @@ defmodule Sys do
     :standard_error
   end
   def get_char(echo) do
-    
-            {:ok, old_settings} = :io.getopts(:standard_io)
 
-            if not echo do
-                :io.setopts(:standard_io, [{:echo, false}])
-            end
+                {:ok, old_settings} = :io.getopts(:standard_io)
 
-            input = IO.getn("", 1)
-            :io.setopts(:standard_io, old_settings)
+                if not echo do
+                    :io.setopts(:standard_io, [{:echo, false}])
+                end
 
-            case input do
-                <<c::utf8>> -> c
-                _ -> 0
-            end
-        
+                input = IO.getn("", 1)
+                :io.setopts(:standard_io, old_settings)
+
+                case input do
+                    <<c::utf8>> -> c
+                    _ -> 0
+                end
+
   end
   def environment() do
     System.get_env()
@@ -54,13 +54,13 @@ defmodule Sys do
   end
   def command(cmd, args) do
     if (Kernel.is_nil(args) or length(args) == 0) do
-      
+
                 case System.cmd("sh", ["-c", cmd]) do
                     {_, 0} -> 0
                     {_, code} -> code
                 end
     else
-      
+
                 case System.cmd(cmd, args) do
                     {_, 0} -> 0
                     {_, code} -> code
@@ -71,41 +71,41 @@ defmodule Sys do
     System.system_time(:second)
   end
   def cpu_time() do
-    
-            {total, _} = :erlang.statistics(:runtime)
-            total / 1000.0
-        
+
+                {total, _} = :erlang.statistics(:runtime)
+                total / 1000.0
+
   end
   def sleep(seconds) do
     milliseconds = trunc(Reflaxe.Elixir.HaxeFloat.mul(seconds, 1000))
     Process.sleep(milliseconds)
   end
   def system_name() do
-    
-            case :os.type() do
-                {:unix, :linux} -> "linux"
-                {:unix, :darwin} -> "darwin"
-                {:win32, _} -> "windows"
-                {:unix, name} -> Atom.to_string(name)
-                {family, name} -> Atom.to_string(family) <> "_" <> Atom.to_string(name)
-            end
-        
+
+                case :os.type() do
+                    {:unix, :linux} -> "linux"
+                    {:unix, :darwin} -> "darwin"
+                    {:win32, _} -> "windows"
+                    {:unix, name} -> Atom.to_string(name)
+                    {family, name} -> Atom.to_string(family) <> "_" <> Atom.to_string(name)
+                end
+
   end
   def executable_path() do
-    
-            case :init.get_argument(:progname) do
-                {:ok, [[path | _]]} -> List.to_string(path)
-                _ -> System.find_executable("erl") || ""
-            end
-        
+
+                case :init.get_argument(:progname) do
+                    {:ok, [[path | _]]} -> List.to_string(path)
+                    _ -> System.find_executable("erl") || ""
+                end
+
   end
   def program_path() do
     executable_path()
   end
   def set_time_locale(loc) do
-    
+
             Application.put_env(:elixir, :locale, loc)
-        
+
     true
   end
 end

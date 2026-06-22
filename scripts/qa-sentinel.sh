@@ -775,6 +775,9 @@ if [[ -n "${QA_SKIP_ASSETS:-}" ]]; then
   log "[QA] Assets build: skipped (QA_SKIP_ASSETS set)"
 else
   run_step_with_log "Assets build ($ENV_NAME)" 300s /tmp/qa-assets-build.log "MIX_ENV=$ENV_NAME mix assets.build" || true
+  if [[ -d "priv" ]]; then
+    run_step_with_log "Priv mirror to MIX_BUILD_ROOT" 60s /tmp/qa-priv-mirror.log "ENV_NAME='$ENV_NAME' QA_BUILD_ROOT='$QA_BUILD_ROOT' bash -lc 'app_name=\$(MIX_ENV=\"\$ENV_NAME\" MIX_BUILD_ROOT=\"\$QA_BUILD_ROOT\" mix run --no-start --no-compile -e \"IO.write(Mix.Project.config()[:app])\"); if [[ -z \"\$app_name\" ]]; then echo \"Could not resolve Mix app name\" >&2; exit 1; fi; app_build_dir=\"\$QA_BUILD_ROOT/\$ENV_NAME/lib/\$app_name\"; mkdir -p \"\$app_build_dir\"; rm -rf \"\$app_build_dir/priv\"; mkdir -p \"\$app_build_dir/priv\"; rsync -aL --delete priv/ \"\$app_build_dir/priv/\"'"
+  fi
 fi
 
 # Ensure no stale Phoenix server is occupying the target port (or default :4000)

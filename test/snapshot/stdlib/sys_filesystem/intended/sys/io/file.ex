@@ -32,16 +32,16 @@ defmodule Sys.IO.File do
     cp!(src_path, dst_path)
   end
   defp open_bang(path, modes) do
-    
-            atom_modes =
-              Enum.map(modes, fn
-                "read" -> :read
-                "write" -> :write
-                "append" -> :append
-                "binary" -> :binary
-                other -> String.to_atom(other)
-              end)
-            File.open!(path, atom_modes)
-        
+
+                atom_modes =
+                  Enum.map(modes, fn
+                    "read" -> :read
+                    "write" -> :write
+                    "append" -> :append
+                    "binary" -> :binary
+                    other -> String.to_atom(other)
+                  end)
+                File.open!(path, atom_modes)
+
   end
 end

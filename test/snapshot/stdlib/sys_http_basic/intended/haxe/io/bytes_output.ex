@@ -27,7 +27,8 @@ state.byte_length
     else
       state
     end
-    state = state |> Map.put(:parts_reversed, [c | state.parts_reversed]) |> Map.put(:byte_length, state.byte_length + 1)
+    byte = Bitwise.band(c, 255)
+    state = state |> Map.put(:parts_reversed, [byte | state.parts_reversed]) |> Map.put(:byte_length, state.byte_length + 1)
     Process.put(struct.dict_key, state)
   end
   def write_bytes(struct, buf, pos, len) do

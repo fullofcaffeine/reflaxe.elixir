@@ -156,10 +156,10 @@ defmodule StringUtils do
   end
   defp normalize_case(text) do
     "#{(fn -> String.upcase((fn -> if (0 < 0) do
-  ""
-else
-  String.at(text, 0) || ""
-end end).()) end).()}#{String.downcase(String.slice(text, 1..-1//1))}"
+      ""
+    else
+      String.at(text, 0) || ""
+    end end).()) end).()}#{String.downcase(String.slice(text, 1..-1//1))}"
   end
   defp is_valid_email_format(email) do
     at_index = (case :binary.match(email, "@") do

@@ -813,8 +813,7 @@ class ElixirASTPrinter {
 				var argStr = printPatterns(args);
 				var guardStr = guards != null ? ' when ' + print(guards, 0) : '';
 				'def ${name}(${argStr})${guardStr} do\n'
-				+ indentStr(indent + 1)
-				+ print(body, indent + 1)
+				+ printDefBody(body, indent + 1)
 				+ '\n'
 				+ indentStr(indent)
 				+ 'end';
@@ -824,8 +823,7 @@ class ElixirASTPrinter {
 				var argStr = printPatterns(args);
 				var guardStr = guards != null ? ' when ' + print(guards, 0) : '';
 				'defp ${funcName}(${argStr})${guardStr} do\n'
-				+ indentStr(indent + 1)
-				+ print(body, indent + 1)
+				+ printDefBody(body, indent + 1)
 				+ '\n'
 				+ indentStr(indent)
 				+ 'end';
@@ -834,8 +832,7 @@ class ElixirASTPrinter {
 				var argStr = printPatterns(args);
 				var guardStr = guards != null ? ' when ' + print(guards, 0) : '';
 				'defmacro ${name}(${argStr})${guardStr} do\n'
-				+ indentStr(indent + 1)
-				+ print(body, indent + 1)
+				+ printDefBody(body, indent + 1)
 				+ '\n'
 				+ indentStr(indent)
 				+ 'end';
@@ -844,8 +841,7 @@ class ElixirASTPrinter {
 				var argStr = printPatterns(args);
 				var guardStr = guards != null ? ' when ' + print(guards, 0) : '';
 				'defmacrop ${name}(${argStr})${guardStr} do\n'
-				+ indentStr(indent + 1)
-				+ print(body, indent + 1)
+				+ printDefBody(body, indent + 1)
 				+ '\n'
 				+ indentStr(indent)
 				+ 'end';
@@ -2775,7 +2771,7 @@ class ElixirASTPrinter {
 							out.push(p.charAt(0).toUpperCase() + p.substr(1));
 					return out.join("");
 				}
-				var out = code;
+				var out = normalizeRawCode(code);
 				if (out.indexOf("Ecto.Query.from(") != -1) {
 					var pfx:Null<String> = null;
 					if (currentModuleName != null) {
@@ -3222,6 +3218,65 @@ class ElixirASTPrinter {
 			result += '  '; // 2 spaces per level
 		}
 		return result;
+	}
+
+	static function indentBody(body:String, level:Int):String {
+		if (body == null || body.length == 0) {
+			return "";
+		}
+
+		var padding = indentStr(level);
+		var lines = body.split("\n");
+		for (i in 0...lines.length) {
+			if (StringTools.trim(lines[i]).length > 0) {
+				lines[i] = padding + lines[i];
+			}
+		}
+		return lines.join("\n");
+	}
+
+	static function normalizeRawCode(code:String):String {
+		if (code == null || code.indexOf("\n") == -1) {
+			return code;
+		}
+
+		var lines = code.split("\n");
+		for (i in 0...lines.length) {
+			lines[i] = normalizeRawLineIndent(lines[i].rtrim());
+		}
+		return lines.join("\n");
+	}
+
+	static function normalizeRawLineIndent(line:String):String {
+		var index = 0;
+		var normalized = "";
+		while (index < line.length) {
+			var char = line.charAt(index);
+			if (char == "\t") {
+				normalized += "  ";
+			} else if (char == " ") {
+				normalized += " ";
+			} else {
+				break;
+			}
+			index++;
+		}
+		return normalized + line.substr(index);
+	}
+
+	static function printDefBody(body:ElixirAST, level:Int):String {
+		var printed = print(body, level);
+		return switch (body != null ? body.def : null) {
+			case ERaw(_):
+				indentBody(printed, level);
+			case EBlock(statements) if (statements.length == 1):
+				switch (statements[0].def) {
+					case ERaw(_): indentBody(printed, level);
+					default: indentStr(level) + printed;
+				}
+			default:
+				indentStr(level) + printed;
+		}
 	}
 
 	/**

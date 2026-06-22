@@ -117,19 +117,19 @@ end) do
                     nil -> -1
                     idx -> idx
                 end
-             >= 0 end).(), "Should have 'name' field")
+ >= 0 end).(), "Should have 'name' field")
     _ = assert((fn ->
                 case Enum.find_index(fields, fn item -> item == "age" end) do
                     nil -> -1
                     idx -> idx
                 end
-             >= 0 end).(), "Should have 'age' field")
+ >= 0 end).(), "Should have 'age' field")
     _ = assert((fn ->
                 case Enum.find_index(fields, fn item -> item == "active" end) do
                     nil -> -1
                     idx -> idx
                 end
-             >= 0 end).(), "Should have 'active' field")
+ >= 0 end).(), "Should have 'active' field")
     _ = assert((case {obj, "name"} do
   {reflect_obj, reflect_field} ->
     (case Map.has_key?(reflect_obj, reflect_field) do

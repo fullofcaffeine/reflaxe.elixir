@@ -1,15 +1,15 @@
 defmodule Int64Helper do
   def parse_string(s_param) do
     s = String.trim(s_param)
-case Integer.parse(s) do
-  {i, ""} ->
-    if i < -9223372036854775808 or i > 9223372036854775807 do
-      raise Reflaxe.Elixir.HaxeThrow, [value: "NumberFormatError"]
-    else
-      i
+    case Integer.parse(s) do
+      {i, ""} ->
+        if i < -9223372036854775808 or i > 9223372036854775807 do
+          raise Reflaxe.Elixir.HaxeThrow, [value: "NumberFormatError"]
+        else
+          i
+        end
+      _ -> raise Reflaxe.Elixir.HaxeThrow, [value: "NumberFormatError"]
     end
-  _ -> raise Reflaxe.Elixir.HaxeThrow, [value: "NumberFormatError"]
-end
   end
   def from_float(f) do
     if (Reflaxe.Elixir.HaxeFloat.is_na_n(f) or not Reflaxe.Elixir.HaxeFloat.is_finite(f)) do
@@ -62,7 +62,6 @@ if reflaxe_i64_clamp >= 9223372036854775808, do: reflaxe_i64_clamp - 18446744073
 else
   acc_result
 end)
-          _ = acc_i
           acc_i = acc_i + 1
           {:cont, {acc_result, acc_rest, acc_i}}
         else

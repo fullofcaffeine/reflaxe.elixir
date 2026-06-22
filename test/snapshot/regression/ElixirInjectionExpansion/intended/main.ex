@@ -12,7 +12,7 @@ defmodule Main do
                 {:ok, dt, _} -> dt
                 _ -> DateTime.utc_now()
             end
-        )
+)
     parsed_date
   end
 end

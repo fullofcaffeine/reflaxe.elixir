@@ -5,50 +5,50 @@ defmodule Main do
     end
   end
   defp start_server(expected_method, expected_needle, status, response_body) do
-    
-            (fn ->
-              {:ok, listener} =
-                :gen_tcp.listen(0, [
-                  :binary,
-                  {:active, false},
-                  {:packet, :raw},
-                  {:reuseaddr, true},
-                  {:ip, {127, 0, 0, 1}}
-                ])
 
-              {:ok, {{127, 0, 0, 1}, port}} = :inet.sockname(listener)
+                (fn ->
+                  {:ok, listener} =
+                    :gen_tcp.listen(0, [
+                      :binary,
+                      {:active, false},
+                      {:packet, :raw},
+                      {:reuseaddr, true},
+                      {:ip, {127, 0, 0, 1}}
+                    ])
 
-              spawn(fn ->
-                {:ok, socket} = :gen_tcp.accept(listener)
-                {:ok, request} = :gen_tcp.recv(socket, 0, 5_000)
+                  {:ok, {{127, 0, 0, 1}, port}} = :inet.sockname(listener)
 
-                request_ok =
-                  String.starts_with?(request, expected_method <> " ") and
-                    (expected_needle == "" or String.contains?(request, expected_needle))
+                  spawn(fn ->
+                    {:ok, socket} = :gen_tcp.accept(listener)
+                    {:ok, request} = :gen_tcp.recv(socket, 0, 5_000)
 
-                actual_status = if request_ok, do: status, else: 500
-                body = if request_ok, do: response_body, else: "server request mismatch"
-                reason = if actual_status >= 400, do: "ERROR", else: "OK"
+                    request_ok =
+                      String.starts_with?(request, expected_method <> " ") and
+                        (expected_needle == "" or String.contains?(request, expected_needle))
 
-                crlf = <<13, 10>>
+                    actual_status = if request_ok, do: status, else: 500
+                    body = if request_ok, do: response_body, else: "server request mismatch"
+                    reason = if actual_status >= 400, do: "ERROR", else: "OK"
 
-                response =
-                  "HTTP/1.1 #{actual_status} #{reason}" <> crlf <>
-                    "content-type: text/plain" <> crlf <>
-                    "x-test: one" <> crlf <>
-                    "x-test: two" <> crlf <>
-                    "content-length: #{byte_size(body)}" <> crlf <>
-                    crlf <>
-                    body
+                    crlf = <<13, 10>>
 
-                :ok = :gen_tcp.send(socket, response)
-                :gen_tcp.close(socket)
-                :gen_tcp.close(listener)
-              end)
+                    response =
+                      "HTTP/1.1 #{actual_status} #{reason}" <> crlf <>
+                        "content-type: text/plain" <> crlf <>
+                        "x-test: one" <> crlf <>
+                        "x-test: two" <> crlf <>
+                        "content-length: #{byte_size(body)}" <> crlf <>
+                        crlf <>
+                        body
 
-              port
-            end).()
-        
+                    :ok = :gen_tcp.send(socket, response)
+                    :gen_tcp.close(socket)
+                    :gen_tcp.close(listener)
+                  end)
+
+                  port
+                end).()
+
   end
   defp url(port, path) do
     "http://127.0.0.1:#{Reflaxe.Elixir.HaxeFloat.to_string(port)}#{path}"

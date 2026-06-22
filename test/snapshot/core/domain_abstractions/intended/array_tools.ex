@@ -10,9 +10,9 @@ defmodule ArrayTools do
   end
   def find_index(array, predicate) do
     case Enum.find_index(array, fn item -> predicate.(item) end) do
-      nil -> -1
-      index -> index
-    end
+          nil -> -1
+          index -> index
+        end
   end
   def exists(array, predicate) do
     Enum.any?(array, fn item -> predicate.(item) end)

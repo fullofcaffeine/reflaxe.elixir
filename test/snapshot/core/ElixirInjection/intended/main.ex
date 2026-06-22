@@ -7,7 +7,7 @@ defmodule Main do
             x = 10
             y = 20
             x + y
-        )
+)
     _ = test_injection_in_function()
   end
   defp test_injection_in_function() do

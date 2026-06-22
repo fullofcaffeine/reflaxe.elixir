@@ -19,9 +19,9 @@ defmodule MapTools do
   end
   def find(map, predicate) do
     case Enum.find(map, fn {k, v} -> predicate.(k, v) end) do
-      {k, v} -> %{key: k, value: v}
-      nil -> nil
-    end
+          {k, v} -> %{key: k, value: v}
+          nil -> nil
+        end
   end
   def keys(map) do
     Map.keys(map) |> Enum.to_list()

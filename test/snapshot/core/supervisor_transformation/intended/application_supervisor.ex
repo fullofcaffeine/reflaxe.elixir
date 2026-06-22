@@ -7,12 +7,12 @@ defmodule ApplicationSupervisor do
   end
   def child_spec(args) do
     %{
-			id: __MODULE__,
-			start: {__MODULE__, :start_link, [args]},
-			type: :supervisor,
-			restart: :permanent,
-			shutdown: :infinity
-		}
+          id: __MODULE__,
+          start: {__MODULE__, :start_link, [args]},
+          type: :supervisor,
+          restart: :permanent,
+          shutdown: :infinity
+        }
   end
   def start_link(args) do
     Supervisor.start_link(__MODULE__, args, name: __MODULE__)

@@ -1,0 +1,461 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+:root {
+  --ink: #17211f;
+  --muted: #68736f;
+  --paper: #f8f5ec;
+  --surface: rgba(255, 255, 255, 0.82);
+  --line: rgba(23, 33, 31, 0.14);
+  --mint: #a7f3c4;
+  --coral: #f46d43;
+  --sky: #8fc5ff;
+  --shadow: rgba(23, 33, 31, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  background:
+    linear-gradient(135deg, rgba(167, 243, 196, 0.28), transparent 34%),
+    linear-gradient(315deg, rgba(143, 197, 255, 0.22), transparent 30%),
+    var(--paper);
+  font-family: "Avenir Next", "Trebuchet MS", system-ui, sans-serif;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+.phoenixhx-page {
+  min-height: 100vh;
+}
+
+.login-shell,
+.todo-shell {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.login-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.72fr);
+  gap: 28px;
+  padding: min(10vh, 92px) 0 72px;
+}
+
+.todo-shell {
+  padding: 48px 0 72px;
+}
+
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 18px 54px var(--shadow);
+}
+
+.login-hero,
+.login-panel {
+  min-height: 520px;
+  padding: clamp(24px, 4vw, 42px);
+}
+
+.login-hero {
+  display: grid;
+  align-content: space-between;
+}
+
+.login-copy h1,
+.hero-copy h1 {
+  margin: 10px 0 16px;
+  max-width: 760px;
+  color: var(--ink);
+  font-family: Georgia, "Iowan Old Style", serif;
+  font-size: clamp(2.8rem, 7vw, 6.2rem);
+  line-height: 0.92;
+  letter-spacing: 0;
+}
+
+.login-copy p,
+.login-panel p,
+.hero-copy p {
+  max-width: 680px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.04rem;
+  line-height: 1.72;
+}
+
+.login-panel {
+  display: grid;
+  align-content: center;
+  gap: 18px;
+}
+
+.login-panel h2,
+.workspace h2,
+.conversion-panel h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: Georgia, "Iowan Old Style", serif;
+  font-size: clamp(1.55rem, 3vw, 2.25rem);
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.eyebrow,
+.credential-card span,
+.brand-mark em,
+.session-chip small,
+.stat span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.credential-card {
+  display: grid;
+  gap: 8px;
+  max-width: 360px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.credential-card strong {
+  font-size: 1.16rem;
+}
+
+.credential-card em {
+  color: var(--muted);
+  font-style: normal;
+}
+
+.primary-action,
+.secondary-action,
+.icon-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border: 0;
+  border-radius: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  color: white;
+  background: #17211f;
+  font-size: 0.84rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.primary-action:hover,
+.secondary-action:hover,
+.icon-action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(23, 33, 31, 0.22);
+}
+
+.secondary-action,
+.icon-action {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--line);
+}
+
+.icon-action.danger {
+  color: #8f2e19;
+  border-color: rgba(244, 109, 67, 0.42);
+}
+
+.status {
+  border: 1px solid rgba(244, 109, 67, 0.34);
+  border-radius: 8px;
+  padding: 13px 14px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.72);
+  font-weight: 700;
+}
+
+.app-topbar {
+  display: grid;
+  grid-template-columns: minmax(210px, 1fr) auto minmax(260px, auto);
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 28px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 16px 40px rgba(23, 33, 31, 0.12);
+}
+
+.brand-mark,
+.session-chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-mark > span {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  color: var(--ink);
+  background: linear-gradient(135deg, var(--mint), var(--sky));
+  font-weight: 900;
+}
+
+.brand-mark strong,
+.session-chip span {
+  display: block;
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.topbar-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.topbar-links a {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.58);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.session-chip {
+  justify-content: flex-end;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.34fr);
+  gap: 24px;
+  align-items: stretch;
+  margin-bottom: 24px;
+}
+
+.hero-copy,
+.stat-panel,
+.composer-card,
+.open-work-card,
+.conversion-panel {
+  padding: clamp(20px, 3vw, 32px);
+}
+
+.stat-panel {
+  display: grid;
+  align-content: center;
+  gap: 18px;
+}
+
+.stat {
+  display: grid;
+  gap: 4px;
+}
+
+.stat strong {
+  font-family: Georgia, "Iowan Old Style", serif;
+  font-size: clamp(2.4rem, 5vw, 4.2rem);
+  line-height: 0.9;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.42fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.todo-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.form-owner-note {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.todo-form label {
+  display: grid;
+  gap: 8px;
+}
+
+.todo-form label span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.todo-form input,
+.todo-form textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.82);
+  outline: none;
+}
+
+.todo-form input:focus,
+.todo-form textarea:focus {
+  border-color: rgba(244, 109, 67, 0.62);
+  box-shadow: 0 0 0 4px rgba(244, 109, 67, 0.12);
+}
+
+.todo-list-frame {
+  margin-top: 16px;
+}
+
+.todo-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.todo-item {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.todo-item.is-complete {
+  opacity: 0.74;
+  background: rgba(167, 243, 196, 0.24);
+}
+
+.todo-dot {
+  width: 14px;
+  height: 14px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: var(--coral);
+  box-shadow: 0 0 0 4px rgba(244, 109, 67, 0.13);
+}
+
+.todo-item.is-complete .todo-dot {
+  background: #2f9b69;
+  box-shadow: 0 0 0 4px rgba(47, 155, 105, 0.13);
+}
+
+.todo-body {
+  display: grid;
+  gap: 5px;
+}
+
+.todo-body > span {
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.todo-notes,
+.todo-body small {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.48;
+}
+
+.todo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.empty-state {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 18px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.conversion-panel {
+  margin-top: 24px;
+}
+
+.crosswalk-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.crosswalk-grid div {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.64);
+}
+
+.crosswalk-grid strong {
+  color: var(--ink);
+}
+
+.crosswalk-grid span {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+@media (max-width: 860px) {
+  .login-shell,
+  .hero,
+  .workspace,
+  .app-topbar,
+  .crosswalk-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .login-hero,
+  .login-panel {
+    min-height: auto;
+  }
+
+  .session-chip,
+  .todo-actions {
+    justify-content: flex-start;
+  }
+}

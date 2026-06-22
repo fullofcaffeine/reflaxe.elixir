@@ -112,23 +112,23 @@ defmodule PortInput do
     end
   end
   defp receive_data_non_blocking(struct) do
-    
-            port = struct.port
-            receive do
-              {^port, {:data, data}} -> data
-            after 0 ->
-              nil
-            end
-        
+
+                port = struct.port
+                receive do
+                  {^port, {:data, data}} -> data
+                after 0 ->
+                  nil
+                end
+
   end
   defp receive_data_or_exit_blocking(struct) do
-    
-            port = struct.port
-            receive do
-              {^port, {:data, data}} -> {:data, data}
-              {^port, {:exit_status, status}} -> {:exit, status}
-            end
-        
+
+                port = struct.port
+                receive do
+                  {^port, {:data, data}} -> {:data, data}
+                  {^port, {:exit_status, status}} -> {:exit, status}
+                end
+
   end
   def set_big_endian(struct, b) do
     Input.set_big_endian(struct, b)

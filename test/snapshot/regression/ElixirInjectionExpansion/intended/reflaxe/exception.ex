@@ -6,7 +6,7 @@ defmodule Reflaxe.Exception do
     struct = %{ struct | message: message_param }
     struct = %{ struct | previous: previous_param }
     struct = %{ struct | native: native_param }
-    struct = %{ struct | stack: [] }
+    struct = %{ struct | stack: apply(CallStack_Impl_, :call_stack, []) }
     struct
   end
   def get_message(struct) do
@@ -30,14 +30,17 @@ defmodule Reflaxe.Exception do
     item
   end
   def details(struct) do
-    
+
 build = fn build, ex, acc ->
   if Kernel.is_nil(ex) do
     acc
   else
     msg = Kernel.to_string(Map.get(ex, :message))
+    stack = Map.get(ex, :stack, [])
+    stack_text = apply(CallStack_Impl_, :to_string, [stack])
     prev = Map.get(ex, :previous)
-    acc = if acc == "", do: msg, else: acc <> "\nCaused by: " <> msg
+    entry = msg <> stack_text
+    acc = if acc == "", do: entry, else: acc <> "\nCaused by: " <> entry
     build.(build, prev, acc)
   end
 end

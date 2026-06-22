@@ -25,21 +25,21 @@ defmodule Reflaxe.Exception do
     get_message(struct)
   end
   def details(struct) do
-    
-build = fn build, ex, acc ->
-  if Kernel.is_nil(ex) do
-    acc
-  else
-    msg = Kernel.to_string(Map.get(ex, :message))
-    stack = Map.get(ex, :stack, [])
-    stack_text = apply(CallStack_Impl_, :to_string, [stack])
-    prev = Map.get(ex, :previous)
-    entry = msg <> stack_text
-    acc = if acc == "", do: entry, else: acc <> "\nCaused by: " <> entry
-    build.(build, prev, acc)
-  end
-end
-build.(build, struct, "")
+
+    build = fn build, ex, acc ->
+      if Kernel.is_nil(ex) do
+        acc
+      else
+        msg = Kernel.to_string(Map.get(ex, :message))
+        stack = Map.get(ex, :stack, [])
+        stack_text = apply(CallStack_Impl_, :to_string, [stack])
+        prev = Map.get(ex, :previous)
+        entry = msg <> stack_text
+        acc = if acc == "", do: entry, else: acc <> "\nCaused by: " <> entry
+        build.(build, prev, acc)
+      end
+    end
+    build.(build, struct, "")
 
   end
 end

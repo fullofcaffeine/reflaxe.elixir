@@ -4,13 +4,13 @@ defmodule GenServerRef_Impl_ do
     ref
   end
   def from_pid(pid) do
-    
+
   end
   def from_name(name) do
-    
+
   end
   def from_via(via) do
-    
+
   end
   def global(name) do
     ref = elixir__.("{:global, #{if (name == nil), do: "null", else: name}}")
@@ -20,7 +20,7 @@ defmodule GenServerRef_Impl_ do
     elixir__.("
             case #{Reflaxe.Elixir.HaxeFloat.to_string(this1)} do
                 pid when is_pid(pid) -> Process.alive?(pid)
-                name when is_atom(name) -> 
+                name when is_atom(name) ->
                     case Process.whereis(name) do
                         nil -> false
                         pid -> Process.alive?(pid)

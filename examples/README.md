@@ -84,12 +84,17 @@ This directory contains progressive examples demonstrating Haxe→Elixir compila
 **Features**: Shared Haxe chat domain compiled to both Elixir and JavaScript
 **Use Case**: Portable domain-first chat rules with thin target adapters
 
-### 17. [todo-app](./todo-app/)
+### 17. [17-railshx-to-phoenixhx-todo](./17-railshx-to-phoenixhx-todo/)
+**Difficulty**: Advanced
+**Features**: RailsHx-inspired UX port, Haxe-authored Phoenix LiveView, inline HXX, Genes client hook, Playwright smoke
+**Use Case**: Learn how a RailsHx todo app maps to Phoenix-native patterns without emulating Rails APIs
+
+### 18. [todo-app](./todo-app/)
 **Difficulty**: Advanced  
 **Features**: Full Phoenix LiveView app, Ecto, Playwright E2E  
 **Use Case**: End-to-end reference app (recommended for Phoenix/LiveView)
 
-### 18. [test-integration](./test-integration/)
+### 19. [test-integration](./test-integration/)
 **Difficulty**: Intermediate  
 **Features**: Mix compiler task testing, build pipeline validation  
 **Use Case**: Testing Haxe→Elixir compilation in Mix projects
@@ -116,6 +121,7 @@ Reflaxe.Elixir supports two authoring styles on one compiler pipeline. This matr
 | `14-abstraction-lab` | Elixir-first | Framework-agnostic abstraction patterns: protocols, behaviours, and typed process boundaries. |
 | `15-phoenix-chat-haxe-first` | Elixir-first | Haxe-authored `@:application` + module-level `@:router` + LiveView/Presence in one server-first workflow. |
 | `16-portable-chat-domain` | Portable-first | Same chat domain compiles to Elixir and JavaScript; target adapters stay thin. |
+| `17-railshx-to-phoenixhx-todo` | Elixir-first | RailsHx-inspired product surface implemented with Phoenix LiveView/HXX rather than Rails compatibility APIs. |
 | `todo-app` | Hybrid (intentional) | Full app canary: portable shared domain + extensive Phoenix/Ecto/OTP integration. |
 | `test-integration` | N/A | Compiler/Mix integration verification harness. |
 
@@ -167,7 +173,8 @@ mix phx.server
 4. **Abstractions**: 07-protocols, 08-behaviors, 14-abstraction-lab
 5. **Choose style**: 10-option-patterns (portable-first) or 13-elixir-first-liveview (typed Elixir-first)
 6. **Extend**: 04-ecto-migrations, 05-heex-templates, 09-phoenix-router
-7. **Master**: 06-user-management + todo-app
+7. **Compare targets**: 17-railshx-to-phoenixhx-todo for the RailsHx-to-PhoenixHx mapping
+8. **Master**: 06-user-management + todo-app
 
 ## 🧪 Running Examples
 

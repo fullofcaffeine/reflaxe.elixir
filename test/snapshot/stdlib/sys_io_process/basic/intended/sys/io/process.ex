@@ -23,13 +23,13 @@ defmodule Sys.IO.Process do
     struct
   end
   def get_pid(struct) do
-    
-            port = struct.port
-            case :erlang.port_info(port, :os_pid) do
-              {:os_pid, pid} -> pid
-              _ -> -1
-            end
-        
+
+                port = struct.port
+                case :erlang.port_info(port, :os_pid) do
+                  {:os_pid, pid} -> pid
+                  _ -> -1
+                end
+
   end
   def exit_code(struct, block) do
     if (not Kernel.is_nil(struct.exit_code_cache)) do
@@ -42,7 +42,7 @@ defmodule Sys.IO.Process do
             after 0 ->
               nil
             end
-        )
+)
       if (not Kernel.is_nil(maybe)) do
         _ = %{struct | exit_code_cache: maybe}
         maybe
@@ -55,7 +55,7 @@ defmodule Sys.IO.Process do
             receive do
               {^port, {:exit_status, status}} -> status
             end
-        )
+)
           _ = %{struct | exit_code_cache: status}
           status
         end
@@ -67,12 +67,12 @@ defmodule Sys.IO.Process do
       nil
     else
       struct = %{struct | is_closed: true}
-      
+
             port = struct.port
             if Port.info(port) != nil do
               Port.close(port)
             end
-        
+
     end
   end
   def kill(struct) do
@@ -83,23 +83,23 @@ defmodule Sys.IO.Process do
     if (Kernel.is_nil(executable)) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "sys.io.Process: executable not found: " <> cmd]
     end
-    
+
             stdio_opt = if use_stdio, do: :use_stdio, else: :nouse_stdio
             opts = [:binary, :exit_status, stdio_opt, {:args, args}]
             opts = if use_stdio, do: [:stderr_to_stdout | opts], else: opts
             Port.open({:spawn_executable, executable}, opts)
-        
+
   end
   defp open_shell_command(cmd, use_stdio) do
     shell = System.find_executable("sh")
     if (Kernel.is_nil(shell)) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "sys.io.Process: shell executable not found (sh)"]
     end
-    
+
             stdio_opt = if use_stdio, do: :use_stdio, else: :nouse_stdio
             opts = [:binary, :exit_status, stdio_opt, {:args, ["-c", cmd]}]
             opts = if use_stdio, do: [:stderr_to_stdout | opts], else: opts
             Port.open({:spawn_executable, shell}, opts)
-        
+
   end
 end

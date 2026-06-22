@@ -6,37 +6,22 @@ defmodule JsonPrinter do
     struct
   end
   defp write_value(struct, v, key) do
-    v = if (not Kernel.is_nil(struct.replacer)) do
-      replacer(struct, key, v)
-    else
-      v
-    end
-    if (Kernel.is_nil(v)) do
-      "null"
-    else
-      if (Std.is(v, Bool)) do
+    active_replacer = struct.replacer
+    v = if (Reflaxe.Elixir.HaxeFloat.neq(active_replacer, nil)), do: active_replacer.(key, v), else: v
+    cond do
+      Reflaxe.Elixir.HaxeFloat.eq(v, nil) -> "null"
+      Std.is(v, Bool) ->
         if (v), do: "true", else: "false"
-      else
-        if (Std.is(v, Int)) do
-          Reflaxe.Elixir.HaxeFloat.to_string(v)
+      Std.is(v, Int) -> Reflaxe.Elixir.HaxeFloat.to_string(v)
+      Std.is(v, Float) ->
+        if (not Reflaxe.Elixir.HaxeFloat.is_finite(v)) do
+          "null"
         else
-          if (Std.is(v, Float)) do
-            s = Reflaxe.Elixir.HaxeFloat.to_string(v)
-            if (s == "NaN" or s == "Infinity" or s == "-Infinity"), do: "null", else: s
-            if (Std.is(v, String)) do
-              quote_string(struct, v)
-            else
-              if (Std.is(v, Array)), do: write_array(struct, v), else: write_object(struct, v)
-            end
-          else
-            if (Std.is(v, String)) do
-              quote_string(struct, v)
-            else
-              if (Std.is(v, Array)), do: write_array(struct, v), else: write_object(struct, v)
-            end
-          end
+          Reflaxe.Elixir.HaxeFloat.to_string(v)
         end
-      end
+      Std.is(v, String) -> quote_string(struct, v)
+      Std.is(v, Array) -> write_array(struct, v)
+      :true -> write_object(struct, v)
     end
   end
   defp write_array(struct, arr) do
@@ -136,15 +121,15 @@ end)
             result_acc
           _ ->
             result_acc = if (c < 32) do
-  hex = StringTools.hex(c, 4)
-  result_acc <> "\\u" <> hex
-else
-  result_acc <> (if (i < 0) do
+              hex = StringTools.hex(c, 4)
+              result_acc <> "\\u" <> hex
+            else
+              result_acc <> (if (i < 0) do
   ""
 else
   String.at(s, i) || ""
 end)
-end
+            end
             result_acc
         end)
       end

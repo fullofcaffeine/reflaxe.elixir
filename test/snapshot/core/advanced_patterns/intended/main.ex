@@ -254,7 +254,7 @@ defmodule Main do
                     nil -> -1
                     idx -> idx
                 end
-             >= 0) do
+ >= 0) do
       "primary color"
     else
       c = color
@@ -263,7 +263,7 @@ defmodule Main do
                     nil -> -1
                     idx -> idx
                 end
-             >= 0) do
+ >= 0) do
         "secondary color"
       else
         (case color do

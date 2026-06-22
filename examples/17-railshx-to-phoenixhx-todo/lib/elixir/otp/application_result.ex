@@ -1,0 +1,11 @@
+defmodule Elixir.Otp.ApplicationResult do
+  def ok(arg0) do
+    {:ok, arg0}
+  end
+  def error(arg0) do
+    {:error, arg0}
+  end
+  def ignore() do
+    {:ignore}
+  end
+end

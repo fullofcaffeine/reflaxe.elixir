@@ -52,10 +52,10 @@ end) == 0
         {:error, "User ID cannot be empty"}
       else
         if (String.length(user_id) < 3) do
-          {:error, "User ID too short: minimum " <> Kernel.to_string(3) <> " characters, got " <> Kernel.to_string(String.length(user_id))}
+          {:error, "User ID too short: minimum " <> Reflaxe.Elixir.HaxeFloat.to_string(3) <> " characters, got " <> Reflaxe.Elixir.HaxeFloat.to_string(String.length(user_id))}
         else
           if (String.length(user_id) > 50) do
-            {:error, "User ID too long: maximum " <> Kernel.to_string(50) <> " characters, got " <> Kernel.to_string(String.length(user_id))}
+            {:error, "User ID too long: maximum " <> Reflaxe.Elixir.HaxeFloat.to_string(50) <> " characters, got " <> Reflaxe.Elixir.HaxeFloat.to_string(String.length(user_id))}
           else
             _g = 0
             user_id_length = String.length(user_id)
@@ -65,7 +65,7 @@ end) == 0
   else
     String.at(user_id, i) || ""
   end
-  if (not is_alpha_numeric(char)), do: {:error, "User ID contains invalid character: \"" <> char <> "\" at position " <> Kernel.to_string(i) <> ". Only alphanumeric characters allowed."}
+  if (not is_alpha_numeric(char)), do: {:error, "User ID contains invalid character: \"" <> char <> "\" at position " <> Reflaxe.Elixir.HaxeFloat.to_string(i) <> ". Only alphanumeric characters allowed."}
 end)
             {:ok, nil}
           end

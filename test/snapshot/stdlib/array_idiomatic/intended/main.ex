@@ -59,13 +59,13 @@ defmodule Main do
                     nil -> -1
                     idx -> idx
                 end
-            )
+)
     _not_found = (
                 case Enum.find_index(numbers, fn item -> item == 10 end) do
                     nil -> -1
                     idx -> idx
                 end
-            )
+)
     nil
   end
   defp test_join_function() do

@@ -71,7 +71,7 @@ defmodule Email_Impl_ do
               if (cond_value == -1) do
                 false
               else
-                cond_value = String.at(domain_part, 0) || "" == "." or String.at(domain_part, 0) || "" == "-" or (if ((String.length(domain_part) - 1) < 0) do
+                cond_value = (String.at(domain_part, 0) || "") == "." or (String.at(domain_part, 0) || "") == "-" or (if ((String.length(domain_part) - 1) < 0) do
   ""
 else
   String.at(domain_part, (String.length(domain_part) - 1)) || ""

@@ -24,16 +24,16 @@ defmodule Main do
                     nil -> -1
                     idx -> idx
                 end
-            )
+)
     list = [1, 2, 3]
     list = list ++ [4]
     _combined = list ++ [5, 6, 7]
-    _has_two = 
+    _has_two =
                 case Enum.find_index(list, fn item -> item == 2 end) do
                     nil -> -1
                     idx -> idx
                 end
-             != -1
+ != -1
     nil
   end
   defp is_even(n) do
