@@ -9,6 +9,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from typing import Dict, List, Optional, Set
 
 
 ROOT = Path(sys.argv[1])
@@ -33,7 +34,7 @@ def normalize_manifest(raw: bytes, manifest_path: Path) -> bytes:
     return (json.dumps(data, sort_keys=True, indent=2) + "\n").encode("utf-8")
 
 
-def git_lines(args: list[str]) -> list[str]:
+def git_lines(args: List[str]) -> List[str]:
     output = subprocess.run(
         ["git", *args],
         cwd=ROOT,
@@ -44,7 +45,7 @@ def git_lines(args: list[str]) -> list[str]:
     return [line for line in output.splitlines() if line]
 
 
-def tracked_manifest_paths() -> set[Path]:
+def tracked_manifest_paths() -> Set[Path]:
     return {
         ROOT / line
         for line in git_lines(["ls-files", "--", "examples/**/_GeneratedFiles.json"])
@@ -52,11 +53,11 @@ def tracked_manifest_paths() -> set[Path]:
     }
 
 
-def tracked_file_paths() -> set[Path]:
+def tracked_file_paths() -> Set[Path]:
     return {ROOT / line for line in git_lines(["ls-files", "--", "examples"])}
 
 
-def read_git_blob(path: Path) -> bytes | None:
+def read_git_blob(path: Path) -> Optional[bytes]:
     relative = str(path.relative_to(ROOT))
     result = subprocess.run(
         ["git", "show", f"HEAD:{relative}"],
@@ -69,8 +70,8 @@ def read_git_blob(path: Path) -> bytes | None:
     return result.stdout
 
 
-def discover_generated_paths(manifest_paths: set[Path]) -> set[Path]:
-    paths: set[Path] = set()
+def discover_generated_paths(manifest_paths: Set[Path]) -> Set[Path]:
+    paths: Set[Path] = set()
     for manifest_path in sorted(manifest_paths):
         paths.add(manifest_path)
         try:
@@ -90,8 +91,8 @@ def discover_generated_paths(manifest_paths: set[Path]) -> set[Path]:
     return paths
 
 
-def read_expected_state(paths: set[Path]) -> dict[Path, bytes | None]:
-    state: dict[Path, bytes | None] = {}
+def read_expected_state(paths: Set[Path]) -> Dict[Path, Optional[bytes]]:
+    state: Dict[Path, Optional[bytes]] = {}
     for path in sorted(paths):
         raw = read_git_blob(path)
         if raw is None:
@@ -106,8 +107,8 @@ def read_expected_state(paths: set[Path]) -> dict[Path, bytes | None]:
     return state
 
 
-def read_generated_state(paths: set[Path]) -> dict[Path, bytes | None]:
-    state: dict[Path, bytes | None] = {}
+def read_generated_state(paths: Set[Path]) -> Dict[Path, Optional[bytes]]:
+    state: Dict[Path, Optional[bytes]] = {}
     for path in sorted(paths):
         if not path.exists():
             state[path] = None
@@ -122,15 +123,15 @@ def read_generated_state(paths: set[Path]) -> dict[Path, bytes | None]:
     return state
 
 
-def read_raw_manifest_state(paths: set[Path]) -> dict[Path, bytes]:
-    raw: dict[Path, bytes] = {}
+def read_raw_manifest_state(paths: Set[Path]) -> Dict[Path, bytes]:
+    raw: Dict[Path, bytes] = {}
     for path in sorted(paths):
         if path.name == "_GeneratedFiles.json" and path.exists():
             raw[path] = path.read_bytes()
     return raw
 
 
-def require_clean_generated_outputs(paths: set[Path]) -> None:
+def require_clean_generated_outputs(paths: Set[Path]) -> None:
     relative_paths = [str(path.relative_to(ROOT)) for path in sorted(paths)]
     if not relative_paths:
         return
@@ -152,13 +153,13 @@ def require_clean_generated_outputs(paths: set[Path]) -> None:
     raise SystemExit(1)
 
 
-def restore_semantic_equal_manifests(before_raw: dict[Path, bytes], before: dict[Path, bytes | None], after: dict[Path, bytes | None]) -> None:
+def restore_semantic_equal_manifests(before_raw: Dict[Path, bytes], before: Dict[Path, Optional[bytes]], after: Dict[Path, Optional[bytes]]) -> None:
     for path, raw in before_raw.items():
         if before.get(path) == after.get(path) and path.exists() and path.read_bytes() != raw:
             path.write_bytes(raw)
 
 
-def show_diff(path: Path, before: bytes | None, after: bytes | None) -> None:
+def show_diff(path: Path, before: Optional[bytes], after: Optional[bytes]) -> None:
     label = str(path.relative_to(ROOT))
     if before is None:
         print(f"[examples-output] ADDED {label}", file=sys.stderr)
