@@ -13,6 +13,13 @@ bd.sock
 .local_version
 last-touched
 sync-state.json
+export-state.json
+
+# Embedded Dolt runtime state.
+# Fresh clones should run `bd bootstrap`, which imports the tracked
+# `issues.jsonl` export into a local Dolt database.
+embeddeddolt/
+backup/
 
 # Legacy database files
 db.sqlite
@@ -29,4 +36,5 @@ beads.right.meta.json
 # Keep JSONL exports and config (source of truth for git)
 !issues.jsonl
 !metadata.json
+!config.yaml
 !config.json
