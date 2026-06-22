@@ -11,10 +11,10 @@
 # Disable daemon for RPC communication (forces direct database access)
 # no-daemon: false
 
-# Disable auto-flush of database to JSONL after mutations
+# Disable automatic JSONL export after mutations when the installed bd backend supports it.
 # no-auto-flush: false
 
-# Disable auto-import from JSONL when it's newer than database
+# Disable automatic JSONL import when it is newer than the local database.
 # no-auto-import: false
 
 # Enable JSON output by default
@@ -32,12 +32,9 @@
 # Debounce interval for auto-flush (can also use BEADS_FLUSH_DEBOUNCE)
 # flush-debounce: "5s"
 
-# Git branch for beads commits (bd sync will commit to this branch)
-# IMPORTANT: Set this for team projects so all clones use the same sync branch.
-# This setting persists across clones (unlike database config which is gitignored).
-# Can also use BEADS_SYNC_BRANCH env var for local override.
-# If not set, bd sync will require you to run 'bd config set sync.branch <branch>'.
-# sync-branch: "beads-sync"
+# This repository does not configure a shared Dolt remote or top-level bd sync
+# branch. Collaboration uses the tracked `.beads/issues.jsonl` export; fresh
+# clones can hydrate the local embedded Dolt store with `bd bootstrap --yes`.
 
 # Multi-repo configuration (experimental - bd-307)
 # Allows hydrating from multiple repositories and routing writes to the correct JSONL

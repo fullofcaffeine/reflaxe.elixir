@@ -24,19 +24,36 @@ bd show <issue-id>
 
 # Update issue status
 bd update <issue-id> --status in-progress
-bd update <issue-id> --status done
+bd close <issue-id>
 
-# Sync with git remote
-bd sync
+# Fresh clone or missing local database
+bd bootstrap --yes
+
+# Manually refresh the tracked JSONL export if needed
+bd export > .beads/issues.jsonl
 ```
 
 ### Working with Issues
 
 Issues in Beads are:
-- **Git-native**: Stored in `.beads/issues.jsonl` and synced like code
+- **Git-native**: Exported to `.beads/issues.jsonl` and committed like source
 - **AI-friendly**: CLI-first design works perfectly with AI coding agents
 - **Branch-aware**: Issues can follow your branch workflow
-- **Always in sync**: Auto-syncs with your commits
+- **Reviewable**: Issue changes appear in normal git diffs and commits
+
+### Repository Workflow
+
+This repository uses Beads with an embedded Dolt local working store. It does
+not configure a shared Dolt remote. The tracked `.beads/issues.jsonl` file is
+the portable export used for code review and fresh-clone bootstrap.
+
+Run `bd bootstrap --yes` after a fresh clone if `bd` cannot see issues yet. The
+repo pre-commit hook exports the local Beads database to `.beads/issues.jsonl`
+before running path, secret, formatter, and naming guards. You can also run
+`bd export > .beads/issues.jsonl` manually before committing issue changes.
+
+The installed `bd` 1.0.x CLI used here does not provide the older top-level
+`bd sync` command.
 
 ## Why Beads?
 
@@ -51,7 +68,7 @@ Issues in Beads are:
 - Fast, lightweight, and stays out of your way
 
 🔧 **Git Integration**
-- Automatic sync with git commits
+- Reviewable issue exports with git commits
 - Branch-aware issue tracking
 - Intelligent JSONL merge resolution
 
