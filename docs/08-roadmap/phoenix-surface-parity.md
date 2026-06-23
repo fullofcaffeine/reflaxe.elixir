@@ -178,6 +178,16 @@ documented before implementation. Do not merge the examples, copy Rails-shaped
 APIs into `todo-app`, or weaken the sentinel role of `examples/todo-app/`.
 Implement type/API improvements in atomic commits with clear descriptions.
 
+Progress:
+
+- `examples/todo-app` now uses explicit router `live_session` MFA wiring with
+  `TodoAppWeb.live_session/1`.
+- `TodoAppWeb.live_session/1` uses the shared `phoenix.LiveSession.fromConnKeys`
+  helper instead of hand-building a LiveView session map.
+- LiveViews now call the app-owned `TodoAppWeb.sessionUserId(session)` helper
+  instead of repeating session-map parsing locally.
+- UI/UX was intentionally left unchanged.
+
 ### P2: Router DSL UX Follow-Ups
 
 Tracked separately by `haxe.elixir-944.10`.

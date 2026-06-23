@@ -591,6 +591,22 @@ class TodoLive {
 
 This framework-agnostic approach works with Phoenix, Nerves, pure OTP, or custom frameworks.
 
+### LiveView Session Pattern
+
+Use the app-owned `TodoAppWeb.live_session/1` bridge from the router:
+
+```haxe
+liveSession("default", routes, {
+    session: liveSessionMfa(TodoAppWeb, "live_session")
+});
+```
+
+The bridge should use `phoenix.LiveSession.fromConnKeys(...)` to copy only the
+Plug session keys needed by LiveViews. LiveViews should call
+`TodoAppWeb.sessionUserId(session)` instead of parsing the session map locally.
+Do not duplicate `Map.get(session, "user_id")` / `"userId"` fallback logic in
+individual LiveViews.
+
 ### Testing LiveView Changes
 1. Edit LiveView component → Save
 2. Watch compilation (~200ms)

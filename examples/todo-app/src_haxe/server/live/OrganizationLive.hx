@@ -25,6 +25,7 @@ import server.schemas.Organization;
 import server.schemas.OrganizationInvite;
 import server.schemas.User;
 import server.services.InviteEmail;
+import server.infrastructure.TodoAppWeb;
 import server.support.OrganizationTools;
 import server.types.Types.MountParams;
 import server.types.Types.Session;
@@ -107,7 +108,7 @@ class OrganizationLive {
 	public static function mount(params:MountParams, session:Session, socket:Socket<OrganizationLiveAssigns>):MountResult<OrganizationLiveAssigns> {
 		var sock:LiveSocket<OrganizationLiveAssigns> = socket;
 
-		var userId = sessionUserId(session);
+		var userId = TodoAppWeb.sessionUserId(session);
 		var user:Null<User> = userId != null ? Repo.get(User, userId) : null;
 		if (userId != null && user == null) {
 			sock = LiveView.putFlash(sock, FlashType.Error, "Your session is invalid. Please sign in again.");
@@ -143,15 +144,6 @@ class OrganizationLive {
 		});
 
 		return Ok(sock);
-	}
-
-	static function sessionUserId(session:Session):Null<Int> {
-		if (session == null)
-			return null;
-		var sessionTerm:Term = cast session;
-		var primary:Term = ElixirMap.get(sessionTerm, "user_id");
-		var chosen:Term = primary != null ? primary : ElixirMap.get(sessionTerm, "userId");
-		return chosen != null ? cast chosen : null;
 	}
 
 	static function normalizeSlug(raw:String):String {

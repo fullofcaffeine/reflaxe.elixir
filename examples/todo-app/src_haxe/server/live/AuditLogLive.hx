@@ -17,6 +17,7 @@ import phoenix.types.Assigns;
 import phoenix.types.Flash.FlashMap;
 import phoenix.types.Flash.FlashType;
 import server.infrastructure.Repo;
+import server.infrastructure.TodoAppWeb;
 import server.schemas.AuditLog;
 import server.schemas.User;
 import server.support.OrganizationTools;
@@ -88,7 +89,7 @@ class AuditLogLive {
 	public static function mount(params:MountParams, session:Session, socket:Socket<AuditLogLiveAssigns>):MountResult<AuditLogLiveAssigns> {
 		var sock:LiveSocket<AuditLogLiveAssigns> = socket;
 
-		var userId = sessionUserId(session);
+		var userId = TodoAppWeb.sessionUserId(session);
 		var currentUser:Null<User> = userId != null ? Repo.get(User, userId) : null;
 
 		if (userId != null && currentUser == null) {
@@ -129,15 +130,6 @@ class AuditLogLive {
 		});
 
 		return Ok(sock);
-	}
-
-	static function sessionUserId(session:Session):Null<Int> {
-		if (session == null)
-			return null;
-		var sessionTerm:Term = cast session;
-		var primary:Term = ElixirMap.get(sessionTerm, "user_id");
-		var chosen:Term = primary != null ? primary : ElixirMap.get(sessionTerm, "userId");
-		return chosen != null ? cast chosen : null;
 	}
 
 	public static function handleEvent(event:String, params:Term, socket:Socket<AuditLogLiveAssigns>):HandleEventResult<AuditLogLiveAssigns> {

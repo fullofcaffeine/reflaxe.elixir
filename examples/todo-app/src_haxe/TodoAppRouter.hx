@@ -13,6 +13,7 @@ import server.live.OrganizationLive;
 import server.live.ProfileLive;
 import server.live.TodoLive;
 import server.live.UsersLive;
+import server.infrastructure.TodoAppWeb;
 
 typedef TodoIdPathParams = {
 	var id:Int;
@@ -51,12 +52,13 @@ final routes = [
 			live("/admin", AdminLive),
 			live("/admin/audit", AuditLogLive),
 			live("/todos", TodoLive),
-			live("/todos/:id", TodoLive, {
-				paramsContract: TodoIdPathParams
-			}),
+			live("/todos/:id", TodoLive,
+				{
+					paramsContract: TodoIdPathParams
+				}),
 			live("/todos/:id/edit", TodoLive, {paramsContract: TodoIdPathParams}),
 			live("/dev/inline-markup", InlineMarkupLive)
-		]),
+		], {session: liveSessionMfa(TodoAppWeb, "live_session")}),
 		// Session/OAuth endpoints
 		post("/auth/login", SessionController, SessionController.create),
 		get("/auth/github", GithubOAuthController, GithubOAuthController.github),

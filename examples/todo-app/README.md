@@ -95,6 +95,7 @@ export GITHUB_REDIRECT_URI="http://localhost:4000/auth/github/callback"
 
 - LiveView: `examples/todo-app/src_haxe/server/live/TodoLive.hx`
 - Typed assigns/types: `examples/todo-app/src_haxe/server/live/TodoLiveTypes.hx`
+- Router/session bridge: `examples/todo-app/src_haxe/TodoAppRouter.hx` + `examples/todo-app/src_haxe/server/infrastructure/TodoAppWeb.hx`
 - Ecto schema: `examples/todo-app/src_haxe/server/schemas/Todo.hx`
 - Client hooks: `examples/todo-app/src_haxe/client/hooks/`
 - Playwright specs: `examples/todo-app/e2e/*.spec.ts`

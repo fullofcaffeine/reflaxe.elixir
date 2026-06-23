@@ -227,17 +227,24 @@ typedef PubSubMetadata = {
 // ============================================================================
 
 /**
- * Session data structure
+ * LiveView session data.
+ *
+ * Phoenix passes the string-keyed session map declared by router `live_session`,
+ * not the whole Plug session. `user_id` is copied from the Plug session by
+ * `TodoAppWeb.live_session/1`.
  */
 typedef Session = {
-	var ?userId:Int; // camelCase
+	var ?user_id:Int;
 	var ?token:String;
-	var ?csrfToken:String; // camelCase
+	// These camelCase metadata fields predate the explicit Phoenix live_session
+	// bridge. Keep them for compatibility with older app-local callers, but add
+	// new Plug-to-LiveView session keys in Phoenix's string-key shape, e.g. user_id.
+	var ?csrfToken:String;
 	var ?locale:String;
 	var ?timezone:String;
-	var ?userAgent:String; // camelCase
-	var ?ipAddress:String; // camelCase
-	var ?loginAt:Term; // camelCase
+	var ?userAgent:String;
+	var ?ipAddress:String;
+	var ?loginAt:Term;
 }
 
 /**

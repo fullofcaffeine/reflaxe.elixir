@@ -19,6 +19,7 @@ import shared.AvatarTools;
 import shared.liveview.EventName;
 import shared.liveview.HookName;
 import server.infrastructure.Repo;
+import server.infrastructure.TodoAppWeb;
 import server.pubsub.TodoPubSub;
 import server.support.OrganizationTools;
 import server.pubsub.TodoPubSub.TodoPubSubMessage;
@@ -72,7 +73,7 @@ class ProfileLive {
 	public static function mount(params:MountParams, session:Session, socket:Socket<ProfileLiveAssigns>):MountResult<ProfileLiveAssigns> {
 		var sock:LiveSocket<ProfileLiveAssigns> = socket;
 
-		var userId = sessionUserId(session);
+		var userId = TodoAppWeb.sessionUserId(session);
 		var user:Null<server.schemas.User> = userId != null ? Repo.get(server.schemas.User, userId) : null;
 		if (userId != null && user == null) {
 			sock = LiveView.putFlash(sock, FlashType.Error, "Your session is invalid. Please sign in again.");
@@ -91,15 +92,6 @@ class ProfileLive {
 			organization_name: orgInfo.name
 		});
 		return Ok(sock);
-	}
-
-	static function sessionUserId(session:Session):Null<Int> {
-		if (session == null)
-			return null;
-		var sessionTerm:Term = cast session;
-		var primary:Term = ElixirMap.get(sessionTerm, "user_id");
-		var chosen:Term = primary != null ? primary : ElixirMap.get(sessionTerm, "userId");
-		return chosen != null ? cast chosen : null;
 	}
 
 	public static function handleEvent(event:String, params:EventParams, socket:Socket<ProfileLiveAssigns>):HandleEventResult<ProfileLiveAssigns> {

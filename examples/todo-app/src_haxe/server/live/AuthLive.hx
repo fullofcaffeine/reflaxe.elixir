@@ -1,8 +1,6 @@
 package server.live;
 
 import contexts.Users;
-import elixir.ElixirMap;
-import elixir.types.Term;
 import phoenix.Component;
 import phoenix.LiveSocket;
 import phoenix.Phoenix.LiveView;
@@ -15,6 +13,7 @@ import plug.CSRFProtection;
 import shared.liveview.HookName;
 import server.services.MockOAuth;
 import server.infrastructure.Repo;
+import server.infrastructure.TodoAppWeb;
 import server.types.Types.MountParams;
 import server.types.Types.Session;
 
@@ -58,7 +57,7 @@ class AuthLive {
 	public static function mount(params:MountParams, session:Session, socket:Socket<AuthLiveAssigns>):MountResult<AuthLiveAssigns> {
 		var sock:LiveSocket<AuthLiveAssigns> = socket;
 
-		var maybeUserId = sessionUserId(session);
+		var maybeUserId = TodoAppWeb.sessionUserId(session);
 		var signedIn = maybeUserId != null;
 		var currentUser:Null<server.schemas.User> = signedIn ? Repo.get(server.schemas.User, cast maybeUserId) : null;
 		if (currentUser == null)
@@ -75,15 +74,6 @@ class AuthLive {
 			mock_oauth_enabled: mockOAuthEnabled,
 			oauth_enabled: githubOAuthEnabled || mockOAuthEnabled});
 		return Ok(sock);
-	}
-
-	static function sessionUserId(session:Session):Null<Int> {
-		if (session == null)
-			return null;
-		var sessionTerm:Term = cast session;
-		var primary:Term = ElixirMap.get(sessionTerm, "user_id");
-		var chosen:Term = primary != null ? primary : ElixirMap.get(sessionTerm, "userId");
-		return chosen != null ? cast chosen : null;
 	}
 
 	public static function render(assigns:AuthLiveRenderAssigns):String {

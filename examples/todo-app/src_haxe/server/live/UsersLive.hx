@@ -17,6 +17,7 @@ import phoenix.types.Assigns;
 import phoenix.types.Flash.FlashMap;
 import phoenix.types.Flash.FlashType;
 import server.infrastructure.Repo;
+import server.infrastructure.TodoAppWeb;
 import server.schemas.User;
 import server.types.Types.MountParams;
 import server.types.Types.Session;
@@ -85,7 +86,7 @@ class UsersLive {
 	public static function mount(params:MountParams, session:Session, socket:Socket<UsersLiveAssigns>):MountResult<UsersLiveAssigns> {
 		var sock:LiveSocket<UsersLiveAssigns> = socket;
 
-		var maybeUserId = sessionUserId(session);
+		var maybeUserId = TodoAppWeb.sessionUserId(session);
 		var signedIn = maybeUserId != null;
 		var currentUser:Null<User> = signedIn ? Repo.get(User, cast maybeUserId) : null;
 		if (currentUser == null)
@@ -116,15 +117,6 @@ class UsersLive {
 		});
 
 		return Ok(sock);
-	}
-
-	static function sessionUserId(session:Session):Null<Int> {
-		if (session == null)
-			return null;
-		var sessionTerm:Term = cast session;
-		var primary:Term = ElixirMap.get(sessionTerm, "user_id");
-		var chosen:Term = primary != null ? primary : ElixirMap.get(sessionTerm, "userId");
-		return chosen != null ? cast chosen : null;
 	}
 
 	public static function handleEvent(event:String, params:Term, socket:Socket<UsersLiveAssigns>):HandleEventResult<UsersLiveAssigns> {

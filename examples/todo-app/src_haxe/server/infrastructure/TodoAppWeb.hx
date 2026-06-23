@@ -1,8 +1,9 @@
 package server.infrastructure;
 
-import elixir.ElixirMap;
 import elixir.types.Term;
+import phoenix.LiveSession;
 import plug.Conn;
+import server.types.Types.Session;
 
 /**
  * TodoAppWeb module providing Phoenix framework helpers.
@@ -40,11 +41,25 @@ class TodoAppWeb {
 	 *   we derive a minimal session payload from `Plug.Conn.get_session/2`.
 	 *
 	 * HOW
-	 * - Read `:user_id` from the Plug session and return `%{"user_id" => user_id}` when present.
+	 * - Copy the selected Plug session keys into the LiveView session map.
 	 */
 	public static function live_session(conn:Conn<{}>):Term {
-		var userId:Term = conn.getSession("user_id");
-		var sessionMap:Term = {};
-		return userId != null ? ElixirMap.put(sessionMap, "user_id", userId) : sessionMap;
+		return LiveSession.fromConnKeys(conn, ["user_id"]);
+	}
+
+	/**
+	 * Reads the authenticated user id from a LiveView session map.
+	 *
+	 * The canonical key is `"user_id"`, matching the Plug session key copied by
+	 * `live_session/1`. The `"userId"` fallback keeps older compiled examples and
+	 * direct tests compatible while the app uses Phoenix's string-keyed session shape.
+	 */
+	public static function sessionUserId(session:Session):Null<Int> {
+		if (session == null)
+			return null;
+		var sessionTerm:Term = cast session;
+		var primary:Term = LiveSession.get(sessionTerm, "user_id");
+		var chosen:Term = primary != null ? primary : LiveSession.get(sessionTerm, "userId");
+		return chosen != null ? cast chosen : null;
 	}
 }

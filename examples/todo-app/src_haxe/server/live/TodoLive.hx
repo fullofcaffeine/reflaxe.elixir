@@ -24,6 +24,7 @@ import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.Socket;
 import phoenix.Presence; // Import Presence module for PresenceEntry typedef
 import server.infrastructure.Repo; // Import the TodoApp.Repo module
+import server.infrastructure.TodoAppWeb;
 import server.live.SafeAssigns;
 import plug.CSRFProtection;
 import server.live.TodoLiveTypes.TodoLiveAssigns;
@@ -787,14 +788,7 @@ class TodoLive {
 	}
 
 	static function getUserFromSession(session:Session):{user:User, signed_in:Bool} {
-		var userId:Null<Int> = switch (session) {
-			case null: null;
-			case _:
-				var sessionTerm:Term = cast session;
-				var primary:Term = elixir.ElixirMap.get(sessionTerm, "user_id");
-				var chosen:Term = primary != null ? primary : elixir.ElixirMap.get(sessionTerm, "userId");
-				chosen != null ? cast chosen : null;
-		};
+		var userId:Null<Int> = TodoAppWeb.sessionUserId(session);
 
 		if (userId != null) {
 			var dbUser = Repo.get(server.schemas.User, userId);

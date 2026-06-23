@@ -1,7 +1,5 @@
 package server.live;
 
-import elixir.ElixirMap;
-import elixir.types.Term;
 import haxe.Constraints.Function;
 import phoenix.Component;
 import phoenix.LiveSocket;
@@ -14,6 +12,7 @@ import phoenix.types.Flash.FlashMap;
 import phoenix.types.Flash.FlashType;
 import plug.CSRFProtection;
 import server.infrastructure.Repo;
+import server.infrastructure.TodoAppWeb;
 import server.schemas.User;
 import server.support.OrganizationTools;
 import server.types.Types.MountParams;
@@ -64,7 +63,7 @@ class AdminLive {
 	public static function mount(params:MountParams, session:Session, socket:Socket<AdminLiveAssigns>):MountResult<AdminLiveAssigns> {
 		var sock:LiveSocket<AdminLiveAssigns> = socket;
 
-		var userId = sessionUserId(session);
+		var userId = TodoAppWeb.sessionUserId(session);
 		var currentUser:Null<User> = userId != null ? Repo.get(User, userId) : null;
 
 		if (userId != null && currentUser == null) {
@@ -100,15 +99,6 @@ class AdminLive {
 		});
 
 		return Ok(sock);
-	}
-
-	static function sessionUserId(session:Session):Null<Int> {
-		if (session == null)
-			return null;
-		var sessionTerm:Term = cast session;
-		var primary:Term = ElixirMap.get(sessionTerm, "user_id");
-		var chosen:Term = primary != null ? primary : ElixirMap.get(sessionTerm, "userId");
-		return chosen != null ? cast chosen : null;
 	}
 
 	static function loadUsers(organizationId:Int):Array<User> {
