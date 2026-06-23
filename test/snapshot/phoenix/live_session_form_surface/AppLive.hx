@@ -21,7 +21,7 @@ class AppLive {
 		socket = socket.assign({
 			form: Component.toForm(changeset, ToFormOptions.build("user", "user-form")),
 			searchForm: Component.toFormParams({query: ""}, ToFormOptions.build("search")),
-			userId: LiveSession.get(session, "user_id")
+			userId: LiveSession.getInt(session, "user_id")
 		});
 		return Ok(socket);
 	}

@@ -51,15 +51,11 @@ class TodoAppWeb {
 	 * Reads the authenticated user id from a LiveView session map.
 	 *
 	 * The canonical key is `"user_id"`, matching the Plug session key copied by
-	 * `live_session/1`. The `"userId"` fallback keeps older compiled examples and
-	 * direct tests compatible while the app uses Phoenix's string-keyed session shape.
+	 * `live_session/1` and Phoenix's string-keyed session shape.
 	 */
 	public static function sessionUserId(session:Session):Null<Int> {
 		if (session == null)
 			return null;
-		var sessionTerm:Term = cast session;
-		var primary:Term = LiveSession.get(sessionTerm, "user_id");
-		var chosen:Term = primary != null ? primary : LiveSession.get(sessionTerm, "userId");
-		return chosen != null ? cast chosen : null;
+		return LiveSession.getInt(session, "user_id");
 	}
 }

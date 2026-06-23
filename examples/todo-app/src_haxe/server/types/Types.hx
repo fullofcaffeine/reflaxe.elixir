@@ -233,19 +233,7 @@ typedef PubSubMetadata = {
  * not the whole Plug session. `user_id` is copied from the Plug session by
  * `TodoAppWeb.live_session/1`.
  */
-typedef Session = {
-	var ?user_id:Int;
-	var ?token:String;
-	// These camelCase metadata fields predate the explicit Phoenix live_session
-	// bridge. Keep them for compatibility with older app-local callers, but add
-	// new Plug-to-LiveView session keys in Phoenix's string-key shape, e.g. user_id.
-	var ?csrfToken:String;
-	var ?locale:String;
-	var ?timezone:String;
-	var ?userAgent:String;
-	var ?ipAddress:String;
-	var ?loginAt:Term;
-}
+typedef Session = Term;
 
 /**
  * Mount parameters for LiveView initialization

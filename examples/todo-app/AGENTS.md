@@ -604,8 +604,8 @@ liveSession("default", routes, {
 The bridge should use `phoenix.LiveSession.fromConnKeys(...)` to copy only the
 Plug session keys needed by LiveViews. LiveViews should call
 `TodoAppWeb.sessionUserId(session)` instead of parsing the session map locally.
-Do not duplicate `Map.get(session, "user_id")` / `"userId"` fallback logic in
-individual LiveViews.
+Use Phoenix's string-keyed LiveView session shape, such as `"user_id"`; do not
+add camelCase session-key fallbacks in individual LiveViews.
 
 ### Testing LiveView Changes
 1. Edit LiveView component → Save

@@ -1,6 +1,5 @@
 package;
 
-import elixir.types.Term;
 import phoenix.Phoenix.Form;
 
 typedef User = {
@@ -19,5 +18,5 @@ typedef SearchParams = {
 typedef AppAssigns = {
 	var form:Form<User>;
 	var searchForm:Form<SearchParams>;
-	var userId:Term;
+	var userId:Null<Int>;
 }

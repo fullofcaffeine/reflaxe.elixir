@@ -37,6 +37,15 @@ class LiveSession {
 		return untyped __elixir__('Map.get({0}, {1}, {2})', session, key, defaultValue);
 	}
 
+	public static inline function getInt(session:Term, key:String):Null<Int> {
+		return untyped __elixir__('
+          case Map.get({0}, {1}) do
+            value when is_integer(value) -> value
+            _ -> nil
+          end
+        ', session, key);
+	}
+
 	/**
 	 * Copy selected Plug session values into a LiveView session map.
 	 *

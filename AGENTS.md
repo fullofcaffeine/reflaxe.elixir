@@ -388,6 +388,7 @@ Source of truth: `docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md` and `
 
 For Haxe-to-Elixir compiler and framework surfaces, Elixir/Phoenix/Ecto/OTP compatibility is the floor, not the Haxe API design ceiling. Target-shaped Haxe APIs are useful for migration, interop, predictability, and escape hatches, but canonical user-facing APIs should also leverage Haxe's strengths: precise types, macros, generated references, properties, completion, and compile-time diagnostics.
 
+- Motto for the compiler and PhoenixHx layer: PhoenixHx should feel like haxified Elixir/Phoenix. Authoring should be 1:1 with original Elixir/Phoenix or simpler, allowing only the slight explicit overhead needed for useful static types. Do not deviate from Phoenix idioms unless a Haxe-specific improvement clearly improves ergonomics while still lowering to real Phoenix APIs and preserving obvious Phoenix semantics.
 - Keep faithful 1:1 target facades available where users need direct interop or migration confidence.
 - Target-shaped Haxe APIs are fine when intentional, especially when they make migration, code review, or target documentation lookup easier.
 - Prefer semantic typed wrappers when they improve readability or safety without changing emitted target behavior.
@@ -414,6 +415,12 @@ Use `reflaxe.ruby` / RailsHx as a UX and cross-target learning reference when it
 - Exceptions (must be documented):
   - External APIs that are inherently dynamic (e.g., Map-like payloads) may use `Dynamic` locally, but public surfaces should remain typed.
   - Transitional refactors require an issue and a TODO linked to the proper fix — not allowed for 1.0 scope.
+
+### Cast Boundary Policy (Hard Rule)
+- Treat `cast` as a boundary escape hatch, not normal application or compiler logic.
+- Prefer typed decoders, abstracts, extern signatures, pattern matching, or target predicates before narrowing opaque BEAM values. For example, use PhoenixHx helpers like `phoenix.LiveSession.getInt(...)` for session values instead of app-local `cast`.
+- If a `cast` is unavoidable, keep it local to the boundary adapter, guard it first when runtime shape can vary, and document why the target value is safe to narrow.
+- Do not use `cast` to hide a type mismatch, preserve a legacy API shape, or bypass a missing typed surface. Fix the type surface instead.
 
 ## Code Style and Conventions
 

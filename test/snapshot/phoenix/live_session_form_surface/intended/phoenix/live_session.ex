@@ -12,6 +12,14 @@ defmodule LiveSession do
   def get_with_default(session, key, default_value) do
     Map.get(session, key, default_value)
   end
+  def get_int(session, key) do
+
+              case Map.get(session, key) do
+                value when is_integer(value) -> value
+                _ -> nil
+              end
+
+  end
   def from_conn_keys(conn, keys) do
 
               Enum.reduce(keys, %{}, fn key, acc ->

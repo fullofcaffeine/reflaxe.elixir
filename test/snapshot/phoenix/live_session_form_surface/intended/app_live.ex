@@ -38,7 +38,12 @@ end).()), :search_form => Phoenix.Component.to_form(%{:query => ""}, (fn ->
           ]
           |> Enum.filter(fn {_, value} -> value != nil end)
 
-end).()), :user_id => Map.get(session, "user_id")} end).())
+end).()), :user_id =>
+          case Map.get(session, "user_id") do
+            value when is_integer(value) -> value
+            _ -> nil
+          end
+} end).())
     {:ok, socket}
   end
   def handle_event(_event, params, socket) do

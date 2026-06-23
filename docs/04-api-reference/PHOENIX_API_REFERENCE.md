@@ -114,9 +114,11 @@ live_session :default,
   on_mount: [MyAppWeb.AuthHook, {MyAppWeb.AuthHook, :admin}] do
 ```
 
-`LiveSession.get(session, "user_id")`, `put`, `empty`, and `getWithDefault`
-operate on the LiveView session map itself. Keep auth/session policy app-owned;
-these helpers do not introduce a Rails/Devise-style compatibility layer.
+`LiveSession.get(session, "key")`, `getInt(session, "user_id")`, `put`,
+`empty`, and `getWithDefault` operate on the LiveView session map itself.
+Prefer typed readers such as `getInt` when narrowing session values. Keep
+auth/session policy app-owned; these helpers do not introduce a
+Rails/Devise-style compatibility layer.
 
 ## Component Surface
 
