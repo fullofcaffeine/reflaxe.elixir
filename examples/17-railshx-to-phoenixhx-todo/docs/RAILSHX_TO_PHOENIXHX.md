@@ -40,10 +40,11 @@ compatibility layer for Phoenix.
 
 2. Deterministic conversion tooling seed
    - Tracked by `haxe.elixir.codex-1fg.3`.
-   - Inventory RailsHx model/controller/view/route files.
-   - Generate a report that maps each Rails artifact to a Phoenix target category.
-   - Emit conservative Haxe stubs only for mappings with deterministic confidence.
-   - Require human decisions for auth, background jobs, Turbo-specific interactions, and database behavior.
+   - Implemented as a report-only prototype in `tools/rails_hx_inventory.js`.
+   - The checked-in report is `docs/CONVERSION_INVENTORY.md`.
+   - It inventories RailsHx model/controller/view/route/client/test files and maps each artifact to a Phoenix target category.
+   - It separates deterministic mappings from auth, optional panels, Turbo/PubSub behavior, and data lifecycle decisions.
+   - Future generators should emit conservative Haxe stubs only for mappings with deterministic confidence.
 
 3. General PhoenixHx API opportunities
    - Add a typed `on_mount` facade when a second app needs shared LiveView auth assignment.

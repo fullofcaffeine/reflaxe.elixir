@@ -63,6 +63,8 @@ scripts/qa-sentinel.sh --app examples/17-railshx-to-phoenixhx-todo --port 4017 -
 - `src_haxe/client/Boot.hx` - Genes-compiled LiveView hook registry.
 - `e2e/railshx_port.spec.ts` - real-browser smoke.
 - `docs/RAILSHX_TO_PHOENIXHX.md` - conversion crosswalk and future tooling notes.
+- `docs/CONVERSION_INVENTORY.md` - deterministic RailsHx artifact inventory for future tooling.
+- `tools/rails_hx_inventory.js` - report generator for the conversion inventory.
 
 ## Relationship To RailsHx
 
@@ -77,3 +79,15 @@ RailsHx source reference:
 - [`e2e/todoapp.spec.ts`](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/e2e/todoapp.spec.ts)
 
 RailsHx proves typed Haxe can author Rails-shaped code. This example shows the same lesson for Phoenix: keep the Haxe type vocabulary, but let the target framework stay itself.
+
+## Conversion Inventory Prototype
+
+The checked-in [conversion inventory](./docs/CONVERSION_INVENTORY.md) classifies the RailsHx todo source and separates deterministic mappings from areas that need product or framework decisions. Regenerate it from the repository root with:
+
+```bash
+node examples/17-railshx-to-phoenixhx-todo/tools/rails_hx_inventory.js \
+  --source ../haxe.ruby/examples/todoapp_rails \
+  > examples/17-railshx-to-phoenixhx-todo/docs/CONVERSION_INVENTORY.md
+```
+
+That prototype is intentionally report-only. A future RailsHx-to-PhoenixHx adapter or generator should make every compatibility layer optional and granular.
