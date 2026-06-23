@@ -22,6 +22,9 @@ user journey comparable, but keep the implementation Phoenix-native.
 - If a RailsHx/PhoenixHx adapter layer is approved later, it must be explicit,
   optional, documented, and configurable at granular boundaries such as module,
   route, schema, feature, or runtime edge.
+- The general RailsHx-to-PhoenixHx migration compiler is separate R&D. This
+  example's inventory script is report-only fixture evidence; do not turn it
+  into the general converter, JSON IR source, or code generator.
 - Any API ergonomics improvement discovered here should generalize to PhoenixHx
   or Haxe.Elixir surfaces, not just this example.
 

@@ -403,6 +403,8 @@ Use `reflaxe.ruby` / RailsHx as a UX and cross-target learning reference when it
 - Do not "Rubyfy" or "Railsify" this project by default. Haxe.Elixir app code, examples, compiler APIs, and framework surfaces should stay close to Elixir, Phoenix, Ecto, OTP, and existing PhoenixHx patterns.
 - If a Rails-shaped abstraction seems genuinely useful, justify it to the human before implementing it. The justification must explain why Phoenix-native Haxe.Elixir patterns are not enough, what real target APIs it lowers to, and what tradeoffs it introduces.
 - A future explicit RailsHx/PhoenixHx translation or adapter layer may intentionally bridge APIs or allow selected code to run across Ruby and BEAM runtimes. That layer must be opt-in, named, documented, and configurable with maximum practical granularity, such as per module, feature, route, schema, or runtime boundary. It must not become an implicit compatibility mode, backend switch, or silent semantic change.
+- A future general RailsHx-to-PhoenixHx migration compiler is separate low-priority R&D, not a Reflaxe.Elixir feature mode and not part of the todo example. Treat the todo port and its inventory script as learning fixtures/oracles only. Do not grow app-specific converter artifacts or machine-readable migration IR inside
+  `examples/17-railshx-to-phoenixhx-todo`.
 
 ### No-Dynamic Policy (Hard Rule)
 - Do not introduce `Dynamic` types in new compiler code, stdlib externs, or tests unless absolutely unavoidable at boundary integration points.
