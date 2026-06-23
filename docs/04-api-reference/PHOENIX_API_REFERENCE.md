@@ -10,6 +10,7 @@ For the example-driven parity backlog, see `docs/08-roadmap/phoenix-surface-pari
 - `phoenix.Component`: assign/slot helper APIs and component-oriented utilities
 - `phoenix.Phoenix.Socket`: LiveView callback socket surface (includes assign helpers via extensions)
 - `phoenix.LiveSocket`: optional typed wrapper operations
+- `phoenix.LiveSession`: helpers for string-keyed LiveView session maps
 - `phoenix.AssignKeys` and `phoenix.LiveStreams`: typed assign-key and stream-name token generation
 - `phoenix.PhoenixFlash`: typed flash helpers
 - `phoenix.Channel` + `phoenix.channels.*`: typed channel callback/result helpers
@@ -78,6 +79,45 @@ Canonical deep dive:
 
 - `docs/04-api-reference/LIVE_SOCKET_ASSIGN_API.md`
 
+## Live Session Handoff
+
+Phoenix LiveViews receive the session payload declared by the router, not the
+whole Plug session. Use `liveSessionMfa(...)` in the router and an app-owned
+bridge function to copy only the keys the LiveViews need:
+
+```haxe
+import phoenix.LiveSession;
+import plug.Conn;
+
+@:native("MyAppWeb.LiveSession")
+class LiveSessionBridge {
+  public static function live_session(conn:Conn<{}>):Term {
+    return LiveSession.fromConnKeys(conn, ["user_id", "organization_id"]);
+  }
+}
+```
+
+Router:
+
+```haxe
+liveSession("default", [live("/", AppLive)], {
+  session: liveSessionMfa(LiveSessionBridge, "live_session"),
+  onMount: [onMount(AuthHook), onMountArg(AuthHook, "admin")]
+});
+```
+
+This emits normal Phoenix router options:
+
+```elixir
+live_session :default,
+  session: {MyAppWeb.LiveSession, :live_session, []},
+  on_mount: [MyAppWeb.AuthHook, {MyAppWeb.AuthHook, :admin}] do
+```
+
+`LiveSession.get(session, "user_id")`, `put`, `empty`, and `getWithDefault`
+operate on the LiveView session map itself. Keep auth/session policy app-owned;
+these helpers do not introduce a Rails/Devise-style compatibility layer.
+
 ## Component Surface
 
 `@:component` semantics are two-level:
@@ -101,6 +141,31 @@ Slot typing uses `phoenix.types.Slot` + `@:slot` metadata in assigns typedefs.
 The existing component surface is intentionally Phoenix-shaped. Use function components,
 attrs, and slots when a real reusable component boundary exists; keep inline HXX in a
 LiveView render function when a template is local to that LiveView.
+
+### Forms
+
+For Phoenix 1.7-style forms, use `Phoenix.Component.to_form/1,2` through
+`Component.toForm(...)` or `Component.toFormParams(...)`:
+
+```haxe
+import phoenix.Component;
+import phoenix.ToFormOptions;
+
+var changeset = User.changeset(user, params);
+var form = Component.toForm(changeset, ToFormOptions.build("user", "user-form"));
+var searchForm = Component.toFormParams({query: ""}, ToFormOptions.build("search"));
+```
+
+The call lowers to the real Phoenix API with keyword options equivalent to:
+
+```elixir
+Phoenix.Component.to_form(changeset, as: :user, id: "user-form")
+Phoenix.Component.to_form(%{query: ""}, as: :search)
+```
+
+Use Ecto changesets for schema-backed forms and params maps for lightweight
+search/filter forms. `ToFormOptions.build(...)` exists because Phoenix expects
+keyword options, not a Haxe object map.
 
 ## HXX / HEEx APIs
 

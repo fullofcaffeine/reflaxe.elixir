@@ -162,11 +162,12 @@ typedef PipeThroughOptions = {
 
 typedef LiveSessionOptions = {
 	@:optional var session:LiveSessionMfa; // e.g. {session: liveSessionMfa(MyAppWeb, "live_session")}
-	@:optional var onMount:Array<Any>;
+	@:optional var onMount:Array<OnMountHook>;
 	@:optional var rootLayout:Any;
 }
 
 typedef LiveSessionMfa = {}
+typedef OnMountHook = {}
 
 typedef ResourceOptions = {
 	@:optional var only:Array<ResourceAction>;
@@ -362,6 +363,44 @@ class RouterDsl {
 	 * ```
 	 */
 	public static inline function liveSessionMfa(moduleRef:Class<Any>, functionName:String, ?args:Array<Any>):LiveSessionMfa {
+		return cast {};
+	}
+
+	/**
+	 * Phoenix LiveView `on_mount` hook for `live_session`.
+	 *
+	 * Haxe source:
+	 * ```haxe
+	 * liveSession("default", [live("/", AppLive)], {
+	 *   onMount: [onMount(AuthHook)]
+	 * });
+	 * ```
+	 *
+	 * Generated Elixir:
+	 * ```elixir
+	 * live_session :default, on_mount: [AuthHook] do
+	 * ```
+	 */
+	public static inline function onMount(moduleRef:Class<Any>):OnMountHook {
+		return cast {};
+	}
+
+	/**
+	 * Phoenix LiveView `on_mount` hook with an argument tuple.
+	 *
+	 * Haxe source:
+	 * ```haxe
+	 * liveSession("admin", [live("/admin", AdminLive)], {
+	 *   onMount: [onMountArg(AuthHook, "admin")]
+	 * });
+	 * ```
+	 *
+	 * Generated Elixir:
+	 * ```elixir
+	 * live_session :admin, on_mount: [{AuthHook, :admin}] do
+	 * ```
+	 */
+	public static inline function onMountArg(moduleRef:Class<Any>, arg:String):OnMountHook {
 		return cast {};
 	}
 

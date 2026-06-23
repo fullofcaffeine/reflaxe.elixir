@@ -132,24 +132,33 @@ Evidence:
 - `std/phoenix/macros/LiveStreamMacro.hx`
 - `test/snapshot/phoenix/liveview_stream_tokens`
 
-### P2: on_mount, live_session, Forms, And Changesets From RailsHx Port
+### Done: on_mount, live_session, Forms, And Changesets From RailsHx Port
 
 Tracked by `haxe.elixir-944.2.8`.
 
 The RailsHx-inspired todo port used Phoenix session controller + `live_session`
 MFA wiring and raw LiveView form events. That is valid Phoenix, but the Haxe
-layer can likely make the Phoenix-native path easier to express:
+layer now makes the Phoenix-native path easier to express:
 
-- reusable `on_mount`/session handoff helpers that keep Phoenix naming and
-  semantics
-- typed form/change helpers that work with Phoenix forms and Ecto changesets
-- clearer decode-at-boundary patterns for form params and session values
+- `RouterDsl.onMount(...)` and `RouterDsl.onMountArg(...)` emit real Phoenix
+  `on_mount:` live-session options.
+- `phoenix.LiveSession.fromConnKeys(...)` builds string-keyed LiveView session
+  maps from selected Plug session keys.
+- `phoenix.Component.toForm(...)`, `toFormParams(...)`, and
+  `phoenix.ToFormOptions.build(...)` call real `Phoenix.Component.to_form/1,2`
+  with keyword options.
+- `examples/17-railshx-to-phoenixhx-todo` now uses the shared LiveSession
+  handoff helper instead of app-local map assembly.
 
 Non-goals:
 
 - no Devise/Warden emulation
 - no Rails strong-params API
 - no auth compatibility layer hidden inside Reflaxe.Elixir
+
+Evidence:
+
+- `test/snapshot/phoenix/live_session_form_surface`
 
 ### P3: Review Legacy todo-app After RailsHx Port
 

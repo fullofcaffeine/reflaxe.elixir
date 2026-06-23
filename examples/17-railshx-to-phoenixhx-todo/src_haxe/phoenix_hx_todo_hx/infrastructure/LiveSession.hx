@@ -1,6 +1,5 @@
 package phoenix_hx_todo_hx.infrastructure;
 
-import elixir.ElixirMap;
 import elixir.types.Term;
 import plug.Conn;
 
@@ -18,8 +17,6 @@ import plug.Conn;
 @:native("PhoenixHxTodoWeb.LiveSession")
 class LiveSession {
 	public static function live_session(conn:Conn<{}>):Term {
-		var userId:Term = conn.getSession("user_id");
-		var sessionMap:Term = {};
-		return userId != null ? ElixirMap.put(sessionMap, "user_id", userId) : sessionMap;
+		return phoenix.LiveSession.fromConnKeys(conn, ["user_id"]);
 	}
 }

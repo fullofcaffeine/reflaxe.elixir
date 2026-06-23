@@ -7,6 +7,7 @@ import phoenix.types.Flash;
 import phoenix.types.Flash.FlashType;
 import phoenix.types.Flash.FlashMap;
 import phoenix.Phoenix.Socket;
+import phoenix.Phoenix.Form;
 import phoenix.types.Slot;
 
 /**
@@ -63,6 +64,25 @@ extern class Component {
 	@:overload(function<T, V>(assigns:Assigns<T>, key:Atom, value:V):Assigns<T> {})
 	@:overload(function<T>(assigns:Assigns<T>, new_assigns:T):Assigns<T> {})
 	static function assign<TAssigns, TValue>(socket:Socket<TAssigns>, key:Atom, value:TValue):Socket<TAssigns>;
+
+	/**
+	 * Convert an Ecto changeset into a Phoenix.HTML.Form.
+	 *
+	 * Compiles to Phoenix.Component.to_form/1 or /2.
+	 */
+	@:native("to_form")
+	@:overload(function<T, P>(source:ecto.Changeset<T, P>):Form<T> {})
+	static function toForm<T, P>(source:ecto.Changeset<T, P>, opts:Term):Form<T>;
+
+	/**
+	 * Convert a params map into a Phoenix.HTML.Form.
+	 *
+	 * Use this for Phoenix's map-backed form pattern, such as search/filter forms.
+	 * For schema-backed forms, prefer `toForm(changeset, opts)`.
+	 */
+	@:native("to_form")
+	@:overload(function<TParams>(params:TParams):Form<TParams> {})
+	static function toFormParams<TParams>(params:TParams, opts:Term):Form<TParams>;
 
 	/**
 	 * Conditionally assign a value if the key is not already present.

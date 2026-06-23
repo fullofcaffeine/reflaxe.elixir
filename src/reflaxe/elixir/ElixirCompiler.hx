@@ -4502,6 +4502,22 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 							functionName != null ? ROAtom(functionName) : parseOptionValue(args[1]),
 							mfaArgs
 						]);
+					} else if (calleeName == "onMount") {
+						if (args.length != 1) {
+							Context.error("onMount(moduleRef) expects one argument", expr.pos);
+						}
+						var modulePath = extractNativeModuleRef(args[0], "on_mount module", args[0].pos);
+						modulePath != null ? ROVar(modulePath) : parseOptionValue(args[0]);
+					} else if (calleeName == "onMountArg") {
+						if (args.length != 2) {
+							Context.error("onMountArg(moduleRef, arg) expects two arguments", expr.pos);
+						}
+						var modulePath = extractNativeModuleRef(args[0], "on_mount module", args[0].pos);
+						var hookArg = extractStringValue(args[1], "on_mount argument", args[1].pos);
+						ROTuple([
+							modulePath != null ? ROVar(modulePath) : parseOptionValue(args[0]),
+							hookArg != null ? ROAtom(hookArg) : parseOptionValue(args[1])
+						]);
 					} else {
 						var pathFallback = extractDotPath(expr);
 						pathFallback != null ? ROVar(pathFallback) : ROString(ExprTools.toString(expr));

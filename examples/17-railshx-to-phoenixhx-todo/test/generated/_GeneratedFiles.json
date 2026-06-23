@@ -28,6 +28,7 @@
   "phoenix/types/socket_transport.exs",
   "phoenix/types/flash_type_tools.exs",
   "phoenix/types/flash_type.exs",
+  "phoenix/types/_live_stream_name/live_stream_name_impl_.exs",
   "phoenix/test/live_view_state.exs",
   "phoenix/test/live_view_navigation.exs",
   "phoenix/test/live_view_events.exs",
@@ -36,6 +37,7 @@
   "phoenix/test/_live_view_event_name/live_view_event_name_impl_.exs",
   "phoenix/route_helper.exs",
   "phoenix/mount_result.exs",
+  "phoenix/live_session.exs",
   "phoenix/http_status.exs",
   "phoenix/http_method.exs",
   "phoenix/handle_info_result.exs",
@@ -64,7 +66,7 @@
   "e_reg.exs",
   "phoenix_hx_todo/postgrex_types.ex"
 ],
-  "id": 38,
+  "id": 39,
   "wasCached": false,
   "version": 1
 }

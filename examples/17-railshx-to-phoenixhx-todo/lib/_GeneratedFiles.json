@@ -25,8 +25,10 @@
   "phoenix/types/socket_transport.ex",
   "phoenix/types/flash_type_tools.ex",
   "phoenix/types/flash_type.ex",
+  "phoenix/types/_live_stream_name/live_stream_name_impl_.ex",
   "phoenix/route_helper.ex",
   "phoenix/mount_result.ex",
+  "phoenix/live_session.ex",
   "phoenix/http_status.ex",
   "phoenix/http_method.ex",
   "phoenix/handle_info_result.ex",
@@ -53,7 +55,7 @@
   "e_reg.ex",
   "phoenix_hx_todo/postgrex_types.ex"
 ],
-  "id": 63,
+  "id": 68,
   "wasCached": false,
   "version": 1
 }

@@ -186,6 +186,8 @@ Use typed resource action constants in new code. Use `*Unsafe` only when values 
   - `pipeThroughUnsafe(pipelines)` (escape hatch)
   - `liveSession(name, children, ?opts)`
   - `liveSessionMfa(moduleRef, functionName, ?args)` for `live_session session: {Module, :function, args}`
+  - `onMount(moduleRef)` for `live_session on_mount: Module`
+  - `onMountArg(moduleRef, arg)` for `live_session on_mount: {Module, :arg}`
   - `plug(target, ?opts)` where `target` is a typed plug token or module reference
   - `plugUnsafe(target, ?opts)` (escape hatch)
 - Routes:
@@ -215,18 +217,24 @@ Use typed resource action constants in new code. Use `*Unsafe` only when values 
 
 ```haxe
 liveSession("default", [live("/", AppLive)], {
-  session: liveSessionMfa(MyAppWeb, "live_session")
+  session: liveSessionMfa(MyAppWeb, "live_session"),
+  onMount: [onMount(AuthHook), onMountArg(AuthHook, "admin")]
 });
 ```
 
 This emits:
 
 ```elixir
-live_session :default, session: {MyAppWeb, :live_session, []} do
+live_session :default,
+  session: {MyAppWeb, :live_session, []},
+  on_mount: [AuthHook, {AuthHook, :admin}] do
 ```
 
 - Leave `asName` unset to keep Phoenix default helper-name inference.
 - `name` is for flat compatibility-route metadata and is not a Phoenix route keyword.
+- `onMount`/`onMountArg` are typed Haxe constructors for Phoenix's real
+  `on_mount:` router option; hook modules still implement Phoenix's
+  `on_mount/4` callback in app code.
 
 ## Supported `HttpMethod` values
 
