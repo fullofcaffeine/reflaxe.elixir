@@ -223,7 +223,7 @@ function makeReport(rootDir) {
   lines.push("# RailsHx Conversion Inventory");
   lines.push("");
   lines.push("This report is generated from RailsHx todo source paths and conservative mapping rules.");
-  lines.push("It is a prototype for future migration tooling, not a Phoenix compatibility layer.");
+  lines.push("It is an example-local report and fixture, not a Phoenix compatibility layer and not the architecture for a general migration compiler.");
   lines.push("");
   lines.push(`RailsHx source reference: [reflaxe.ruby/examples/todoapp_rails](${sourceRepoUrl})`);
   lines.push("");
@@ -269,13 +269,15 @@ function makeReport(rootDir) {
   lines.push("");
   lines.push("## Tooling Shape");
   lines.push("");
-  lines.push("A future converter can keep this pipeline deterministic and reviewable:");
+  lines.push("This report illustrates useful inventory evidence for the todo fixture. A future general migration compiler should live outside this example and use a typed Evidence IR, decision records, migration plans, coexistence topology, and verification receipts:");
   lines.push("");
   lines.push("1. Inventory RailsHx files by path convention and declared metadata.");
   lines.push("2. Emit a report that separates deterministic mappings from decision-required mappings.");
-  lines.push("3. Generate PhoenixHx stubs only for deterministic mappings with enough type information.");
+  lines.push("3. Generate PhoenixHx stubs only from an approved migration plan with enough type information.");
   lines.push("4. Require explicit user choices for auth, Turbo/PubSub behavior, optional panels, and data lifecycle policy.");
   lines.push("5. Keep any Rails-to-Phoenix adapter layer optional and granular, never implicit.");
+  lines.push("");
+  lines.push("The todo app may validate that future tool, but it should not define the tool's architecture or contain app-specific conversion rules.");
   lines.push("");
   lines.push("Regenerate locally with:");
   lines.push("");

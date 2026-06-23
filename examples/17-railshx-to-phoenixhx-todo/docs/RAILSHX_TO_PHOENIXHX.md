@@ -1,9 +1,9 @@
 # RailsHx To PhoenixHx Conversion Notes
 
 This document records the conversion rules used by the PhoenixHx todo example.
-It is intentionally didactic: a later deterministic conversion tool can reuse
-the inventory and mapping, but this example does not introduce a Rails
-compatibility layer for Phoenix.
+It is intentionally didactic: this example records manual mapping decisions for
+one app, but it does not introduce a Rails compatibility layer for Phoenix and
+does not define the architecture for a general migration compiler.
 
 ## Crosswalk
 
@@ -40,13 +40,13 @@ compatibility layer for Phoenix.
    - Deferred the RailsHx user-management island because it needs explicit admin authorization and account lifecycle policy.
    - A future user-management slice should be a separate Phoenix LiveView route or panel, not a Rails CRUD compatibility layer.
 
-2. Deterministic conversion tooling seed
-   - Tracked by `haxe.elixir.codex-1fg.3`.
+2. Report-only conversion inventory
+   - Implemented from `haxe.elixir.codex-1fg.3`.
    - Implemented as a report-only prototype in `tools/rails_hx_inventory.js`.
    - The checked-in report is `docs/CONVERSION_INVENTORY.md`.
    - It inventories RailsHx model/controller/view/route/client/test files and maps each artifact to a Phoenix target category.
    - It separates deterministic mappings from auth, optional panels, Turbo/PubSub behavior, and data lifecycle decisions.
-   - Future generators should emit conservative Haxe stubs only for mappings with deterministic confidence.
+   - It must not become the general converter architecture. Future migration compiler work is tracked separately by `haxe.elixir.codex-9gs`; the todo app should be a fixture/oracle only.
 
 3. General PhoenixHx API opportunities
    - Add a typed `on_mount` facade when a second app needs shared LiveView auth assignment.

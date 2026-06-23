@@ -83,7 +83,7 @@ RailsHx proves typed Haxe can author Rails-shaped code. This example shows the s
 
 ## Conversion Inventory Prototype
 
-The checked-in [conversion inventory](./docs/CONVERSION_INVENTORY.md) classifies the RailsHx todo source and separates deterministic mappings from areas that need product or framework decisions. Regenerate it from the repository root with:
+The checked-in [conversion inventory](./docs/CONVERSION_INVENTORY.md) classifies the RailsHx todo source and separates deterministic mappings from areas that need product or framework decisions. It is an example-local report and fixture, not the architecture for a general migration compiler. Regenerate it from the repository root with:
 
 ```bash
 RAILSHX_TODO_SOURCE=/path/to/reflaxe.ruby/examples/todoapp_rails \
@@ -91,4 +91,4 @@ RAILSHX_TODO_SOURCE=/path/to/reflaxe.ruby/examples/todoapp_rails \
   > examples/17-railshx-to-phoenixhx-todo/docs/CONVERSION_INVENTORY.md
 ```
 
-That prototype is intentionally report-only. A future RailsHx-to-PhoenixHx adapter or generator should make every compatibility layer optional and granular.
+That prototype is intentionally report-only. General RailsHx-to-PhoenixHx migration compiler work is tracked separately as R&D; this todo example should remain a validation fixture/oracle, not the conversion system itself.
