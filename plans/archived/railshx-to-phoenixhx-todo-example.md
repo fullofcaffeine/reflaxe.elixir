@@ -146,3 +146,22 @@ Use bounded commands only.
 - `npm run test:examples-runtime`
 - New example sentinel/Playwright command, using `scripts/qa-sentinel.sh --async --deadline ...` if a Phoenix server is booted.
 - For todo-app-adjacent runtime checks, use the QA sentinel only; do not run Phoenix foreground servers.
+
+## Archive
+
+Archived at: 2026-06-23
+
+Completed by commits:
+
+- `e290e3a06` Add PhoenixHx chat room to RailsHx todo port
+- `9cbbab8c1` Use typed LiveView mount results in RailsHx tests
+- `f0641ea4d` Add RailsHx port agent guide
+- `909dbfd7e` Use portable RailsHx inventory source path
+- `2abad0b29` Clarify RailsHx inventory scope
+
+Beads:
+
+- `haxe.elixir.codex-1fg`
+- `haxe.elixir.codex-1fg.1`
+- `haxe.elixir.codex-1fg.2`
+- `haxe.elixir.codex-1fg.3`

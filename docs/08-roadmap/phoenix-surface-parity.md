@@ -7,6 +7,7 @@ Canonical examples that drive this list:
 - `examples/12-phoenix-chat/` - hybrid LiveView + Presence + PubSub adoption
 - `examples/13-elixir-first-liveview/` - Elixir-first LiveView, typed test helpers, app-local externs
 - `examples/15-phoenix-chat-haxe-first/` - Haxe-authored app/router/live/presence server path
+- `examples/17-railshx-to-phoenixhx-todo/` - RailsHx-inspired UX port implemented with Phoenix-native LiveView, Ecto, PubSub, and session patterns
 - `examples/todo-app/` - production-shaped LiveView/Ecto app
 
 ## Policy
@@ -32,6 +33,7 @@ Use this decision rule for every Phoenix surface addition:
 | Phoenix tests | `phoenix.test.ConnTest`, `phoenix.test.LiveViewTest`, `LiveViewTest.view/initial_html` | `examples/13-elixir-first-liveview/test_haxe` | Covered with typed result follow-up |
 | Channels | `phoenix.Channel`, `phoenix.channels.*` | channel snapshots/docs | Covered, needs example-driven expansion only |
 | App-owned infra modules | app-local `@:unsafeExtern` for Endpoint/PubSub/Telemetry/DNSCluster | Haxe-first chat + Elixir-first LiveView examples | Intentional boundary |
+| RailsHx-to-PhoenixHx learning port | Phoenix-native LiveView/Ecto/PubSub/session implementation of a RailsHx-inspired UX | `examples/17-railshx-to-phoenixhx-todo/` | Covered, with follow-up parity tasks below |
 
 ## Open Gaps
 
@@ -104,6 +106,61 @@ Implemented:
 Evidence:
 
 - `make -C test single TEST=phoenix/liveview_test_typed_tokens`
+
+### P2: LiveView Components And Streams From RailsHx Port
+
+Tracked by `haxe.elixir-944.2.7`.
+
+The RailsHx-inspired todo port kept the product surface comparable while using
+one Phoenix LiveView render function and assign-backed lists. Phoenix itself
+usually reaches for function components with attrs/slots and, for mutable lists,
+`stream/3` plus `phx-update="stream"`.
+
+Follow-up rules:
+
+- Do not introduce Rails partial or Turbo compatibility APIs.
+- Keep inline HXX as a valid default.
+- Add typed surfaces only if they map directly to Phoenix component or stream
+  primitives and reduce real example boilerplate.
+- Any implementation must emit ordinary Phoenix component/LiveView code and add
+  focused coverage.
+
+### P2: on_mount, live_session, Forms, And Changesets From RailsHx Port
+
+Tracked by `haxe.elixir-944.2.8`.
+
+The RailsHx-inspired todo port used Phoenix session controller + `live_session`
+MFA wiring and raw LiveView form events. That is valid Phoenix, but the Haxe
+layer can likely make the Phoenix-native path easier to express:
+
+- reusable `on_mount`/session handoff helpers that keep Phoenix naming and
+  semantics
+- typed form/change helpers that work with Phoenix forms and Ecto changesets
+- clearer decode-at-boundary patterns for form params and session values
+
+Non-goals:
+
+- no Devise/Warden emulation
+- no Rails strong-params API
+- no auth compatibility layer hidden inside Reflaxe.Elixir
+
+### P3: Review Legacy todo-app After RailsHx Port
+
+Tracked by `haxe.elixir-944.2.6`.
+
+Review `examples/todo-app/` after the RailsHx-to-PhoenixHx learning port and
+look for improvements that should flow back into the older production-shaped
+sentinel app:
+
+- typed LiveView/session/form/list APIs that reduce app code
+- test and Playwright selector improvements
+- docs updates that clarify the difference between the learning port and the
+  sentinel app
+
+Do not change `todo-app` UI/UX unless the justification is explicit and
+documented before implementation. Do not merge the examples, copy Rails-shaped
+APIs into `todo-app`, or weaken the sentinel role of `examples/todo-app/`.
+Implement type/API improvements in atomic commits with clear descriptions.
 
 ### P2: Router DSL UX Follow-Ups
 

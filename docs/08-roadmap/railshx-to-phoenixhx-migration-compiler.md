@@ -1,6 +1,11 @@
 # RailsHx-to-PhoenixHx Migration Compiler RFC
 
-Status: R&D proposal, not an implementation commitment.
+Status: Deferred R&D proposal, not an implementation commitment.
+
+Current priority: return to Phoenix/Haxe.Elixir compiler and API-surface work.
+The RailsHx-to-PhoenixHx translation layer can wait until the Phoenix-native
+surfaces discovered by the todo port are reviewed and either implemented or
+explicitly deferred.
 
 This document captures the current architecture direction for a future general
 RailsHx-to-PhoenixHx migration compiler and coexistence planner. It is separate
