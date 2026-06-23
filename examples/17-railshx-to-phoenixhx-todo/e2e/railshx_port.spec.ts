@@ -22,5 +22,11 @@ test('opens the RailsHx-inspired PhoenixHx todo board and persists LiveView chan
 
   await page.locator('[data-testid="todo-item"]').first().getByRole('button', { name: 'Delete' }).click()
   await expect(page.locator('[data-testid="todo-item"]')).toHaveCount(3)
+
+  await page.getByPlaceholder('Share what changed or what shipped').fill('PubSub room note from Playwright')
+  await page.getByRole('button', { name: 'Post note' }).click()
+  await expect(page.locator('[data-testid="chat-message"]').first()).toContainText('PubSub room note from Playwright')
+  await expect(page.locator('[data-testid="chat-message"]').first()).toContainText('Guest Workspace')
+
   await expect(page.getByText('The Rails API is not being emulated.')).toBeVisible()
 })

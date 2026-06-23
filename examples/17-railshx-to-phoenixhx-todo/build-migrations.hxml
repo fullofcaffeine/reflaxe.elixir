@@ -18,3 +18,4 @@
 
 phoenix_hx_todo_hx.migrations.CreateUsers
 phoenix_hx_todo_hx.migrations.CreateTodos
+phoenix_hx_todo_hx.migrations.CreateChatMessages

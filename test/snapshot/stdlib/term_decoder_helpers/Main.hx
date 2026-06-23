@@ -33,8 +33,8 @@ class Main {
 	static function main() {
 		var params:Term = untyped __elixir__('%{"query" => "haxe", "page" => 2}');
 		var changesetFields:Term = untyped __elixir__('%{email: "user@example.com"}');
-		var okTuple:Term = untyped __elixir__('{{:ok, "created"}}');
-		var errorTuple:Term = untyped __elixir__('{{:error, "invalid"}}');
+		var okTuple:Term = untyped __elixir__('{:ok, "created"}');
+		var errorTuple:Term = untyped __elixir__('{:error, "invalid"}');
 
 		var decodedParams = decodeSearchParams(params);
 		var decodedField = decodeChangesetField(changesetFields);

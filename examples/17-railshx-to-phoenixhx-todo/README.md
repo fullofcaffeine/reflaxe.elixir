@@ -17,13 +17,14 @@ implemented with Phoenix-native concepts:
 - Haxe-authored OTP application and router.
 - Haxe-authored LiveView at `/` and `/todos`.
 - Haxe-authored Ecto Repo, `User`/`Todo` schemas, context functions, and migrations.
+- Haxe-authored `ChatMessage` schema/context/migration plus a compact PubSub-backed ship room.
 - Haxe-authored session controller plus `liveSessionMfa(...)` route wiring.
-- RailsHx-inspired login shell, app top bar, composer, todo list, stats, and conversion notes.
+- RailsHx-inspired login shell, app top bar, composer, todo list, stats, chat panel, and conversion notes.
 - Haxe-authored domain/state module with ExUnit coverage.
 - Haxe-authored LiveView hook bootstrap through Genes.
 - Playwright smoke for guest entry, create, toggle, delete, and conversion copy.
 
-This slice keeps the RailsHx user journey while moving persistence and auth into Phoenix/Ecto patterns. Optional chat/user-management panels and deterministic conversion inventory remain tracked as `haxe.elixir.codex-1fg.2` and `haxe.elixir.codex-1fg.3`.
+This slice keeps the RailsHx user journey while moving persistence, auth, and realtime room notes into Phoenix/Ecto/PubSub patterns. User-management remains intentionally deferred because it needs admin authorization and account lifecycle policy.
 
 ## Run
 

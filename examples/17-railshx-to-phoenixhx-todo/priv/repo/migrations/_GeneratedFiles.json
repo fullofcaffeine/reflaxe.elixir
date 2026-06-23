@@ -1,9 +1,10 @@
 {
   "filesGenerated": [
+  "20260623090200_create_chat_messages.exs",
   "20260623090100_create_todos.exs",
   "20260623090000_create_users.exs"
 ],
-  "id": 4,
+  "id": 8,
   "wasCached": false,
   "version": 1
 }

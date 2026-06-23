@@ -39,8 +39,10 @@ phoenix_hx_todo_hx.infrastructure.Repo
 phoenix_hx_todo_hx.infrastructure.LiveSession
 phoenix_hx_todo_hx.data.User
 phoenix_hx_todo_hx.data.Todo
+phoenix_hx_todo_hx.data.ChatMessage
 phoenix_hx_todo_hx.contexts.Accounts
 phoenix_hx_todo_hx.contexts.Todos
+phoenix_hx_todo_hx.contexts.ChatMessages
 phoenix_hx_todo_hx.controllers.SessionController
 phoenix_hx_todo_hx.live.AppLive
 phoenix_hx_todo_hx.live.TodoState

@@ -4,6 +4,9 @@ defmodule PhoenixHxTodoWeb.AppLive do
   def mount(_params, session, socket) do
     user = current_user(session)
     assigned_socket = if (Kernel.is_nil(user)), do: assign_signed_out(socket), else: assign_signed_in(socket, user)
+    if (not Kernel.is_nil(user) and not Kernel.is_nil(socket.transport_pid)) do
+      Phoenix.PubSub.subscribe(pubsub_module(), chat_topic())
+    end
     {:ok, assigned_socket}
   end
   def render(assigns) do
@@ -59,6 +62,7 @@ defmodule PhoenixHxTodoWeb.AppLive do
 						</div>
 						<nav class="topbar-links" aria-label="Conversion map">
 							<a href="#open-work">Open work</a>
+							<a href="#ship-room">Ship room</a>
 							<a href="#conversion-notes">Rails to Phoenix</a>
 						</nav>
 						<div class="session-chip">
@@ -93,23 +97,56 @@ defmodule PhoenixHxTodoWeb.AppLive do
 					</section>
 
 					<section class="workspace">
-						<div class="panel composer-card">
-							<h2>Add a task</h2>
-							<form phx-submit="create_todo" phx-change="update_form" class="todo-form" data-testid="todo-form">
-								<p class="form-owner-note">New tasks will be assigned to <%= @current_user_name %>.</p>
-								<label>
-									<span>What should ship next?</span>
-									<input type="text" name="title" value={@title_input} placeholder="Write the Phoenix LiveView port" required data-phoenixhx-autofocus />
-								</label>
-								<label>
-									<span>Why does it matter?</span>
-									<textarea name="notes" rows="3" placeholder="Add a short implementation note"><%= @notes_input %></textarea>
-								</label>
-								<button type="submit" class="primary-action">Add task</button>
-							</form>
-							<%= if @status != nil do %>
-								<div class="status" role="status"><%= @status %></div>
-							<% end %>
+						<div class="side-stack">
+							<div class="panel composer-card">
+								<h2>Add a task</h2>
+								<form phx-submit="create_todo" phx-change="update_form" class="todo-form" data-testid="todo-form">
+									<p class="form-owner-note">New tasks will be assigned to <%= @current_user_name %>.</p>
+									<label>
+										<span>What should ship next?</span>
+										<input type="text" name="title" value={@title_input} placeholder="Write the Phoenix LiveView port" required data-phoenixhx-autofocus />
+									</label>
+									<label>
+										<span>Why does it matter?</span>
+										<textarea name="notes" rows="3" placeholder="Add a short implementation note"><%= @notes_input %></textarea>
+									</label>
+									<button type="submit" class="primary-action">Add task</button>
+								</form>
+								<%= if @status != nil do %>
+									<div class="status" role="status"><%= @status %></div>
+								<% end %>
+							</div>
+
+							<section id="ship-room" class="panel chat-panel" aria-label="PhoenixHx typed ship room">
+								<span class="eyebrow">Phoenix PubSub room</span>
+								<h2>Ship room</h2>
+								<p>
+									RailsHx broadcasts server-rendered Turbo Stream partials. This slice persists
+									room notes through Ecto and broadcasts a PubSub refresh signal to LiveViews.
+								</p>
+								<form phx-submit="create_chat_message" phx-change="update_chat" class="chat-form" data-testid="chat-form">
+									<label>
+										<span>Add a typed room note</span>
+										<textarea name="body" rows="3" placeholder="Share what changed or what shipped"><%= @chat_input %></textarea>
+									</label>
+									<button type="submit" class="secondary-action">Post note</button>
+								</form>
+
+								<div id="phoenixhx-chat-list" class="chat-list">
+									<%= if length(assigns.chat_messages) == 0 do %>
+										<div class="empty-state">No room notes yet.</div>
+									<% else %>
+										<ul>
+											<%= for message <- @chat_messages do %>
+												<li class={message.row_class} data-testid="chat-message">
+													<strong><%= message.owner %></strong>
+													<p><%= message.body %></p>
+												</li>
+											<% end %>
+										</ul>
+									<% end %>
+								</div>
+							</section>
 						</div>
 
 						<div id="open-work" class="panel open-work-card" tabindex="-1">
@@ -152,13 +189,22 @@ defmodule PhoenixHxTodoWeb.AppLive do
 							<div><strong>ActiveRecord model</strong><span>Ecto schema + context boundary</span></div>
 							<div><strong>ActionController action</strong><span>Controller session action + LiveView callbacks</span></div>
 							<div><strong>HHX ERB partial</strong><span>Inline HXX function/component shape</span></div>
-							<div><strong>Turbo Stream mutation</strong><span>LiveView event diff over Ecto-backed state</span></div>
+							<div><strong>Turbo Stream mutation</strong><span>LiveView event diff and PubSub refresh</span></div>
 						</div>
 					</section>
 				</main>
 			<% end %>
 		</div>
 """
+  end
+  def handle_info(msg, socket) do
+    live = socket
+    if (not Kernel.is_tuple(msg)) do
+      {:noreply, live}
+    else
+      tag = :erlang.atom_to_binary(elem(msg, 0))
+      if (tag == "chat_message_created"), do: {:noreply, refresh_chat(live, "Ship room refreshed through Phoenix PubSub.")}, else: {:noreply, live}
+    end
   end
   defp create_todo(params, socket) do
     title = string_param(params, "title")
@@ -187,13 +233,35 @@ defmodule PhoenixHxTodoWeb.AppLive do
     did_delete = PhoenixHxTodo.Todos.delete_for_user(socket.assigns.current_user_id, id)
     if (did_delete), do: {:noreply, refresh_todos(socket, "Deleted from the database through the Todos context.")}, else: {:noreply, Phoenix.Component.assign(socket, :status, "Could not delete that task.")}
   end
+  defp create_chat_message(params, socket) do
+    body = string_param(params, "body")
+    if (StringTools.ltrim(StringTools.rtrim(body)) == "") do
+      {:noreply, Phoenix.Component.assign(socket, :status, "Add a room note before posting.")}
+    else
+      user = PhoenixHxTodo.Accounts.get_user(socket.assigns.current_user_id)
+      if (Kernel.is_nil(user)) do
+        {:noreply, Phoenix.Component.assign(socket, :status, "Sign in again before posting to the room.")}
+      else
+        result = PhoenixHxTodo.ChatMessages.create_for_user(user, body)
+        if (match?({:ok, _}, result)) do
+          refreshed = refresh_chat(Phoenix.Component.assign(socket, :chat_input, ""), "Room note persisted through Ecto.")
+          a = :erlang.binary_to_atom("chat_message_created")
+          payload = {a, body}
+          _ = Phoenix.PubSub.broadcast_from(pubsub_module(), Kernel.self(), chat_topic(), payload)
+          {:noreply, refreshed}
+        else
+          {:noreply, Phoenix.Component.assign(socket, :status, "Could not post that room note.")}
+        end
+      end
+    end
+  end
   defp assign_signed_out(socket) do
     owner = "Guest Workspace"
-    _ = Phoenix.Component.assign(socket, %{:authenticated => false, :current_user_id => nil, :current_user_name => owner, :current_user_email => "guest@example.test", :csrf_token => Plug.CSRFProtection.get_csrf_token(), :title_input => "", :notes_input => "", :todos => [], :status => "Sign in or continue as guest to open the PhoenixHx board.", :stats => PhoenixHxTodoHx.Live.TodoState.stats([])})
+    _ = Phoenix.Component.assign(socket, %{:authenticated => false, :current_user_id => nil, :current_user_name => owner, :current_user_email => "guest@example.test", :csrf_token => Plug.CSRFProtection.get_csrf_token(), :title_input => "", :notes_input => "", :todos => [], :chat_input => "", :chat_messages => [], :status => "Sign in or continue as guest to open the PhoenixHx board.", :stats => PhoenixHxTodoHx.Live.TodoState.stats([])})
   end
   defp assign_signed_in(socket, user) do
     todos = PhoenixHxTodo.Todos.view_items_for_user(user)
-    _ = Phoenix.Component.assign(socket, %{:authenticated => true, :current_user_id => user.id, :current_user_name => PhoenixHxTodo.User.display_name(user), :current_user_email => user.email, :csrf_token => Plug.CSRFProtection.get_csrf_token(), :title_input => "", :notes_input => "", :todos => todos, :status => "Phoenix session active. Todos are persisted through Ecto.", :stats => PhoenixHxTodoHx.Live.TodoState.stats(todos)})
+    _ = Phoenix.Component.assign(socket, %{:authenticated => true, :current_user_id => user.id, :current_user_name => PhoenixHxTodo.User.display_name(user), :current_user_email => user.email, :csrf_token => Plug.CSRFProtection.get_csrf_token(), :title_input => "", :notes_input => "", :todos => todos, :chat_input => "", :chat_messages => PhoenixHxTodo.ChatMessages.view_items(), :status => "Phoenix session active. Todos are persisted through Ecto.", :stats => PhoenixHxTodoHx.Live.TodoState.stats(todos)})
   end
   defp current_user(session) do
     user_id = Map.get(session, "user_id")
@@ -211,6 +279,15 @@ defmodule PhoenixHxTodoWeb.AppLive do
       todos = PhoenixHxTodo.Todos.view_items_for_user(user)
       _ = Phoenix.Component.assign(socket, %{:todos => todos, :stats => PhoenixHxTodoHx.Live.TodoState.stats(todos), :status => status})
     end
+  end
+  defp refresh_chat(socket, status) do
+    Phoenix.Component.assign(socket, %{:chat_messages => PhoenixHxTodo.ChatMessages.view_items(), :status => status})
+  end
+  defp pubsub_module() do
+    :erlang.binary_to_atom("Elixir.PhoenixHxTodo.PubSub")
+  end
+  defp chat_topic() do
+    "railshx-port:ship-room"
   end
   defp string_param(params, key) do
     value = (case {params, key} do
@@ -243,12 +320,15 @@ end) do
   def handle_event(event, params, socket) do
     live = socket
     switch_result_5 = (case event do
+      "create_chat_message" ->
+        create_chat_message(params, live)
       "create_todo" ->
         create_todo(params, live)
       "delete_todo" ->
         delete_todo(params, live)
       "toggle_todo" ->
         toggle_todo(params, live)
+      "update_chat" -> {:noreply, Phoenix.Component.assign(live, :chat_input, string_param(params, "body"))}
       "update_form" -> {:noreply, Phoenix.Component.assign(live, %{:title_input => string_param(params, "title"), :notes_input => string_param(params, "notes")})}
       _ -> {:noreply, live}
     end)

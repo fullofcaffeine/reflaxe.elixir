@@ -28,6 +28,7 @@ compatibility layer for Phoenix.
 - The RailsHx todo composer becomes a LiveView `phx-submit` form.
 - The RailsHx open-work list becomes inline HXX rendered from Ecto-backed LiveView assigns.
 - Create, toggle, and delete are LiveView events that call the `Todos` context instead of Turbo Stream responses.
+- The RailsHx chat panel becomes a compact LiveView panel backed by an Ecto `ChatMessage` schema and Phoenix.PubSub refresh signals.
 - The conversion notes are visible in the app so readers can compare framework ownership while using the UI.
 - `liveSessionMfa(module, functionName)` was added to the router DSL so typed Haxe can express Phoenix's session MFA tuple without raw Elixir.
 
@@ -35,8 +36,9 @@ compatibility layer for Phoenix.
 
 1. Optional panels
    - Tracked by `haxe.elixir.codex-1fg.2`.
-   - Port the RailsHx user-management island as a Phoenix LiveView component or route.
-   - Port the chat panel with Phoenix PubSub/LiveView updates rather than Turbo Streams.
+   - Implemented the chat panel with Phoenix PubSub/LiveView updates rather than Turbo Streams.
+   - Deferred the RailsHx user-management island because it needs explicit admin authorization and account lifecycle policy.
+   - A future user-management slice should be a separate Phoenix LiveView route or panel, not a Rails CRUD compatibility layer.
 
 2. Deterministic conversion tooling seed
    - Tracked by `haxe.elixir.codex-1fg.3`.

@@ -266,6 +266,7 @@ textarea {
 .hero-copy,
 .stat-panel,
 .composer-card,
+.chat-panel,
 .open-work-card,
 .conversion-panel {
   padding: clamp(20px, 3vw, 32px);
@@ -295,7 +296,13 @@ textarea {
   align-items: start;
 }
 
-.todo-form {
+.side-stack {
+  display: grid;
+  gap: 24px;
+}
+
+.todo-form,
+.chat-form {
   display: grid;
   gap: 16px;
   margin-top: 16px;
@@ -307,12 +314,14 @@ textarea {
   line-height: 1.5;
 }
 
-.todo-form label {
+.todo-form label,
+.chat-form label {
   display: grid;
   gap: 8px;
 }
 
-.todo-form label span {
+.todo-form label span,
+.chat-form label span {
   color: var(--muted);
   font-size: 0.76rem;
   font-weight: 900;
@@ -321,7 +330,8 @@ textarea {
 }
 
 .todo-form input,
-.todo-form textarea {
+.todo-form textarea,
+.chat-form textarea {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -332,9 +342,61 @@ textarea {
 }
 
 .todo-form input:focus,
-.todo-form textarea:focus {
+.todo-form textarea:focus,
+.chat-form textarea:focus {
   border-color: rgba(244, 109, 67, 0.62);
   box-shadow: 0 0 0 4px rgba(244, 109, 67, 0.12);
+}
+
+.chat-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.chat-panel h2,
+.chat-panel p {
+  margin: 0;
+}
+
+.chat-panel h2 {
+  color: var(--ink);
+  font-family: Georgia, "Iowan Old Style", serif;
+  font-size: clamp(1.35rem, 2.4vw, 1.9rem);
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+.chat-panel > p {
+  color: var(--muted);
+  line-height: 1.58;
+}
+
+.chat-list ul {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chat-message {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.64);
+}
+
+.chat-message strong {
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+
+.chat-message p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.48;
 }
 
 .todo-list-frame {

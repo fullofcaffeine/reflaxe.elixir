@@ -8,9 +8,9 @@ RailsHx source reference: [reflaxe.ruby/examples/todoapp_rails](https://github.c
 ## Summary
 
 - Source artifacts classified: 47
-- Deterministic mappings: 35
-- Human-decision mappings: 12
-- Already covered by the PhoenixHx example: 30
+- Deterministic mappings: 41
+- Human-decision mappings: 6
+- Already covered by the PhoenixHx example: 36
 
 ## Deterministic Mapping Rules
 
@@ -46,7 +46,7 @@ RailsHx source reference: [reflaxe.ruby/examples/todoapp_rails](https://github.c
 | [build-client.hxml](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/build-client.hxml) | build config | Phoenix example build/test/client hxml files | deterministic | partially implemented |
 | [build-e2e.hxml](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/build-e2e.hxml) | build config | Phoenix example build/test/client hxml files | deterministic | partially implemented |
 | [client/TodoClient.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/client/TodoClient.hx) | Rails browser client | src_haxe/client/Boot.hx | deterministic | implemented |
-| [controllers/ChatMessagesController.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/controllers/ChatMessagesController.hx) | ActionController optional panel | LiveView event handlers plus Phoenix.PubSub broadcasts | human decision | deferred optional panel |
+| [controllers/ChatMessagesController.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/controllers/ChatMessagesController.hx) | ActionController optional panel | src_haxe/phoenix_hx_todo_hx/live/AppLive.hx and contexts/ChatMessages.hx | deterministic | implemented |
 | [controllers/SessionsController.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/controllers/SessionsController.hx) | ActionController session | src_haxe/phoenix_hx_todo_hx/controllers/SessionController.hx | deterministic | implemented |
 | [controllers/TodosController.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/controllers/TodosController.hx) | ActionController CRUD | src_haxe/phoenix_hx_todo_hx/live/AppLive.hx and contexts/Todos.hx | deterministic | implemented |
 | [controllers/UsersController.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/controllers/UsersController.hx) | ActionController optional panel | Phoenix route or LiveView panel for user management | human decision | deferred optional panel |
@@ -54,17 +54,17 @@ RailsHx source reference: [reflaxe.ruby/examples/todoapp_rails](https://github.c
 | [e2e/todoapp.spec.ts](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/e2e/todoapp.spec.ts) | browser spec | e2e/railshx_port.spec.ts | deterministic | partially implemented |
 | [e2e_haxe/TodoappBrowserSpec.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/e2e_haxe/TodoappBrowserSpec.hx) | browser spec | Playwright smoke plus optional future Haxe browser spec | deterministic | partially implemented |
 | [migrations/AddDeviseToUsers.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/migrations/AddDeviseToUsers.hx) | Devise migration | Phoenix session auth or production auth package migration | human decision | deferred auth choice |
-| [migrations/CreateChatMessages.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/migrations/CreateChatMessages.hx) | ActiveRecord migration | Ecto migration if chat panel ships | human decision | deferred optional panel |
+| [migrations/CreateChatMessages.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/migrations/CreateChatMessages.hx) | ActiveRecord migration | src_haxe/phoenix_hx_todo_hx/migrations/CreateChatMessages.hx | deterministic | implemented |
 | [migrations/CreateTodos.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/migrations/CreateTodos.hx) | ActiveRecord migration | src_haxe/phoenix_hx_todo_hx/migrations/CreateTodos.hx | deterministic | implemented |
 | [migrations/UpdateTodos.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/migrations/UpdateTodos.hx) | ActiveRecord migration | src_haxe/phoenix_hx_todo_hx/migrations/CreateTodos.hx | deterministic | implemented |
 | [migrations/UpdateUsers.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/migrations/UpdateUsers.hx) | ActiveRecord migration | src_haxe/phoenix_hx_todo_hx/migrations/CreateUsers.hx | deterministic | implemented |
-| [models/ChatMessage.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/models/ChatMessage.hx) | ActiveRecord model | Phoenix context plus PubSub-backed LiveView panel | human decision | deferred optional panel |
+| [models/ChatMessage.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/models/ChatMessage.hx) | ActiveRecord model | src_haxe/phoenix_hx_todo_hx/data/ChatMessage.hx and contexts/ChatMessages.hx | deterministic | implemented |
 | [models/Todo.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/models/Todo.hx) | ActiveRecord model | src_haxe/phoenix_hx_todo_hx/data/Todo.hx and contexts/Todos.hx | deterministic | implemented |
 | [models/User.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/models/User.hx) | ActiveRecord model | src_haxe/phoenix_hx_todo_hx/data/User.hx and contexts/Accounts.hx | deterministic | implemented |
 | [rails/config/routes_rails_owned.rb](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/rails/config/routes_rails_owned.rb) | Rails routes | Phoenix RouterDsl routes and live_session | deterministic | implemented |
 | [rails/test/controllers/routes_test.rb](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/rails/test/controllers/routes_test.rb) | Rails test | Haxe-authored ExUnit or Playwright coverage | deterministic | implemented |
 | [rails/test/controllers/todos_controller_test.rb](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/rails/test/controllers/todos_controller_test.rb) | Rails test | src_haxe/test/web/TodoPersistenceTest.hx | deterministic | implemented |
-| [rails/test/models/chat_message_test.rb](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/rails/test/models/chat_message_test.rb) | Rails test | Haxe-authored ExUnit context tests if chat ships | human decision | deferred optional panel |
+| [rails/test/models/chat_message_test.rb](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/rails/test/models/chat_message_test.rb) | Rails test | src_haxe/test/web/ChatPanelTest.hx | deterministic | implemented |
 | [rails/test/models/todo_test.rb](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/rails/test/models/todo_test.rb) | Rails test | src_haxe/test/live/TodoStateTest.hx | deterministic | implemented |
 | [rails/test/models/user_test.rb](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/rails/test/models/user_test.rb) | Rails test | Haxe-authored ExUnit account tests | human decision | deferred optional panel |
 | [shared/TodoHooks.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/shared/TodoHooks.hx) | shared hook constants | src_haxe/shared/TodoHooks.hx | deterministic | implemented |
@@ -75,8 +75,8 @@ RailsHx source reference: [reflaxe.ruby/examples/todoapp_rails](https://github.c
 | [tools/ExportTodoHooks.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/tools/ExportTodoHooks.hx) | Rails support tool | Phoenix example support script only if still needed | human decision | not ported |
 | [views/AppTopBarView.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/views/AppTopBarView.hx) | HHX view | src_haxe/phoenix_hx_todo_hx/live/AppLive.hx | deterministic | implemented |
 | [views/ApplicationLayoutView.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/views/ApplicationLayoutView.hx) | HHX view | lib/phoenix_hx_todo_web/components/layouts/*.heex | deterministic | implemented |
-| [views/ChatMessageView.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/views/ChatMessageView.hx) | HHX view | LiveView component | human decision | deferred optional panel |
-| [views/ChatPanelView.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/views/ChatPanelView.hx) | HHX view | LiveView component or nested LiveView | human decision | deferred optional panel |
+| [views/ChatMessageView.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/views/ChatMessageView.hx) | HHX view | src_haxe/phoenix_hx_todo_hx/live/AppLive.hx | deterministic | implemented |
+| [views/ChatPanelView.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/views/ChatPanelView.hx) | HHX view | src_haxe/phoenix_hx_todo_hx/live/AppLive.hx | deterministic | implemented |
 | [views/DeviseLoginView.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/views/DeviseLoginView.hx) | HHX view | src_haxe/phoenix_hx_todo_hx/live/AppLive.hx | deterministic | implemented |
 | [views/TodoCardView.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/views/TodoCardView.hx) | HHX view | src_haxe/phoenix_hx_todo_hx/live/AppLive.hx | deterministic | implemented |
 | [views/TodoComposerView.hx](https://github.com/fullofcaffeine/reflaxe.ruby/blob/main/examples/todoapp_rails/views/TodoComposerView.hx) | HHX view | src_haxe/phoenix_hx_todo_hx/live/AppLive.hx | deterministic | implemented |

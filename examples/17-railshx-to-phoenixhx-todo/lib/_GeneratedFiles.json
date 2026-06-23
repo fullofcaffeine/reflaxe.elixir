@@ -18,6 +18,8 @@
   "phoenix_hx_todo/todos.ex",
   "phoenix_hx_todo/todo.ex",
   "phoenix_hx_todo/repo.ex",
+  "phoenix_hx_todo/chat_messages.ex",
+  "phoenix_hx_todo/chat_message.ex",
   "phoenix_hx_todo/application.ex",
   "phoenix_hx_todo/accounts.ex",
   "phoenix/types/socket_transport.ex",
@@ -51,7 +53,7 @@
   "e_reg.ex",
   "phoenix_hx_todo/postgrex_types.ex"
 ],
-  "id": 43,
+  "id": 63,
   "wasCached": false,
   "version": 1
 }

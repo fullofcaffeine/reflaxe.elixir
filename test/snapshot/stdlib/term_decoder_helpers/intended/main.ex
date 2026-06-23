@@ -12,8 +12,8 @@ defmodule Main do
   def main() do
     params = %{"query" => "haxe", "page" => 2}
     changeset_fields = %{email: "user@example.com"}
-    ok_tuple = {{:ok, "created"}}
-    error_tuple = {{:error, "invalid"}}
+    ok_tuple = {:ok, "created"}
+    error_tuple = {:error, "invalid"}
     _decoded_params = decode_search_params(params)
     _decoded_field = decode_changeset_field(changeset_fields)
     _decoded_ok = decode_repo_result(ok_tuple)

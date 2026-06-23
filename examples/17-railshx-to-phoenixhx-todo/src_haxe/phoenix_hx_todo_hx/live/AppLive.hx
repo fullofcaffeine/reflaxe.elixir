@@ -1,18 +1,24 @@
 package phoenix_hx_todo_hx.live;
 
 import StringTools;
+import elixir.Atom;
 import elixir.ElixirMap;
+import elixir.Kernel;
+import elixir.Tuple;
 import elixir.types.Term;
 import phoenix_hx_todo_hx.contexts.Accounts;
+import phoenix_hx_todo_hx.contexts.ChatMessages;
 import phoenix_hx_todo_hx.contexts.Todos;
 import phoenix_hx_todo_hx.data.User;
 import phoenix.LiveSocket;
 import phoenix.Phoenix.EventParams;
 import phoenix.Phoenix.HandleEventResult;
+import phoenix.Phoenix.HandleInfoResult;
 import phoenix.Phoenix.MountParams;
 import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.Session;
 import phoenix.Phoenix.Socket;
+import phoenix.PubSub;
 import phoenix_hx_todo_hx.live.AppLiveTypes.AppLiveAssigns;
 import plug.CSRFProtection;
 
@@ -22,6 +28,9 @@ class AppLive {
 	public static function mount(_params:MountParams, session:Session, socket:Socket<AppLiveAssigns>):MountResult<AppLiveAssigns> {
 		var user = currentUser(session);
 		var assignedSocket = user == null ? assignSignedOut(socket) : assignSignedIn(socket, user);
+		if (user != null && socket.transport_pid != null) {
+			PubSub.subscribe(pubsubModule(), chatTopic());
+		}
 		return Ok(assignedSocket);
 	}
 
@@ -34,8 +43,12 @@ class AppLive {
 					title_input: stringParam(params, "title"),
 					notes_input: stringParam(params, "notes")
 				}));
+			case "update_chat":
+				NoReply(live.assign(_.chat_input, stringParam(params, "body")));
 			case "create_todo":
 				createTodo(params, live);
+			case "create_chat_message":
+				createChatMessage(params, live);
 			case "toggle_todo":
 				toggleTodo(params, live);
 			case "delete_todo":
@@ -97,6 +110,7 @@ class AppLive {
 						</div>
 						<nav class="topbar-links" aria-label="Conversion map">
 							<a href="#open-work">Open work</a>
+							<a href="#ship-room">Ship room</a>
 							<a href="#conversion-notes">Rails to Phoenix</a>
 						</nav>
 						<div class="session-chip">
@@ -131,23 +145,57 @@ class AppLive {
 					</section>
 
 					<section class="workspace">
-						<div class="panel composer-card">
-							<h2>Add a task</h2>
-							<form phx-submit="create_todo" phx-change="update_form" class="todo-form" data-testid="todo-form">
-								<p class="form-owner-note">New tasks will be assigned to ${assigns.current_user_name}.</p>
-								<label>
-									<span>What should ship next?</span>
-									<input type="text" name="title" value=${assigns.title_input} placeholder="Write the Phoenix LiveView port" required data-phoenixhx-autofocus />
-								</label>
-								<label>
-									<span>Why does it matter?</span>
-									<textarea name="notes" rows="3" placeholder="Add a short implementation note">${assigns.notes_input}</textarea>
-								</label>
-								<button type="submit" class="primary-action">Add task</button>
-							</form>
-							<if ${assigns.status != null}>
-								<div class="status" role="status">${assigns.status}</div>
-							</if>
+						<div class="side-stack">
+							<div class="panel composer-card">
+								<h2>Add a task</h2>
+								<form phx-submit="create_todo" phx-change="update_form" class="todo-form" data-testid="todo-form">
+									<p class="form-owner-note">New tasks will be assigned to ${assigns.current_user_name}.</p>
+									<label>
+										<span>What should ship next?</span>
+										<input type="text" name="title" value=${assigns.title_input} placeholder="Write the Phoenix LiveView port" required data-phoenixhx-autofocus />
+									</label>
+									<label>
+										<span>Why does it matter?</span>
+										<textarea name="notes" rows="3" placeholder="Add a short implementation note">${assigns.notes_input}</textarea>
+									</label>
+									<button type="submit" class="primary-action">Add task</button>
+								</form>
+								<if ${assigns.status != null}>
+									<div class="status" role="status">${assigns.status}</div>
+								</if>
+							</div>
+
+							<section id="ship-room" class="panel chat-panel" aria-label="PhoenixHx typed ship room">
+								<span class="eyebrow">Phoenix PubSub room</span>
+								<h2>Ship room</h2>
+								<p>
+									RailsHx broadcasts server-rendered Turbo Stream partials. This slice persists
+									room notes through Ecto and broadcasts a PubSub refresh signal to LiveViews.
+								</p>
+								<form phx-submit="create_chat_message" phx-change="update_chat" class="chat-form" data-testid="chat-form">
+									<label>
+										<span>Add a typed room note</span>
+										<textarea name="body" rows="3" placeholder="Share what changed or what shipped">${assigns.chat_input}</textarea>
+									</label>
+									<button type="submit" class="secondary-action">Post note</button>
+								</form>
+
+								<div id="phoenixhx-chat-list" class="chat-list">
+									<if ${assigns.chat_messages.length == 0}>
+										<div class="empty-state">No room notes yet.</div>
+									<else>
+										<ul>
+											<for ${message in assigns.chat_messages}>
+												<li class=${message.row_class} data-testid="chat-message">
+													<strong>${message.owner}</strong>
+													<p>${message.body}</p>
+												</li>
+											</for>
+										</ul>
+									</else>
+									</if>
+								</div>
+							</section>
 						</div>
 
 						<div id="open-work" class="panel open-work-card" tabindex="-1">
@@ -191,13 +239,24 @@ class AppLive {
 							<div><strong>ActiveRecord model</strong><span>Ecto schema + context boundary</span></div>
 							<div><strong>ActionController action</strong><span>Controller session action + LiveView callbacks</span></div>
 							<div><strong>HHX ERB partial</strong><span>Inline HXX function/component shape</span></div>
-							<div><strong>Turbo Stream mutation</strong><span>LiveView event diff over Ecto-backed state</span></div>
+							<div><strong>Turbo Stream mutation</strong><span>LiveView event diff and PubSub refresh</span></div>
 						</div>
 					</section>
 				</main>
 			</else>
 			</if>
 		</div>;
+	}
+
+	public static function handleInfo(msg:Term, socket:Socket<AppLiveAssigns>):HandleInfoResult<AppLiveAssigns> {
+		var live:LiveSocket<AppLiveAssigns> = socket;
+		if (!Kernel.isTuple(msg))
+			return NoReply(live);
+		var tag = Atom.toString(Tuple.elem(msg, 0));
+		if (tag == "chat_message_created") {
+			return NoReply(refreshChat(live, "Ship room refreshed through Phoenix PubSub."));
+		}
+		return NoReply(live);
 	}
 
 	static function createTodo(params:Term, socket:LiveSocket<AppLiveAssigns>):HandleEventResult<AppLiveAssigns> {
@@ -237,6 +296,26 @@ class AppLive {
 		return NoReply(socket.assign(_.status, "Could not delete that task."));
 	}
 
+	static function createChatMessage(params:Term, socket:LiveSocket<AppLiveAssigns>):HandleEventResult<AppLiveAssigns> {
+		var body = stringParam(params, "body");
+		if (StringTools.trim(body) == "") {
+			return NoReply(socket.assign(_.status, "Add a room note before posting."));
+		}
+
+		var user = Accounts.getUser(socket.assigns.current_user_id);
+		if (user == null)
+			return NoReply(socket.assign(_.status, "Sign in again before posting to the room."));
+
+		var result:Term = cast ChatMessages.createForUser(user, body);
+		if (Tuple.isOkTuple(result)) {
+			var refreshed = refreshChat(socket.assign(_.chat_input, ""), "Room note persisted through Ecto.");
+			var payload = Tuple.make2(Atom.create("chat_message_created"), body);
+			PubSub.broadcastFrom(pubsubModule(), Kernel.self(), chatTopic(), payload);
+			return NoReply(refreshed);
+		}
+		return NoReply(socket.assign(_.status, "Could not post that room note."));
+	}
+
 	static function assignSignedOut(socket:Socket<AppLiveAssigns>):Socket<AppLiveAssigns> {
 		var owner = "Guest Workspace";
 		return socket.assign({
@@ -248,6 +327,8 @@ class AppLive {
 			title_input: "",
 			notes_input: "",
 			todos: [],
+			chat_input: "",
+			chat_messages: [],
 			status: "Sign in or continue as guest to open the PhoenixHx board.",
 			stats: TodoState.stats([])
 		});
@@ -264,6 +345,8 @@ class AppLive {
 			title_input: "",
 			notes_input: "",
 			todos: todos,
+			chat_input: "",
+			chat_messages: ChatMessages.viewItems(),
 			status: "Phoenix session active. Todos are persisted through Ecto.",
 			stats: TodoState.stats(todos)
 		});
@@ -280,6 +363,18 @@ class AppLive {
 			return socket.assign(_.status, "Sign in again to reload tasks.");
 		var todos = Todos.viewItemsForUser(user);
 		return socket.merge({todos: todos, stats: TodoState.stats(todos), status: status});
+	}
+
+	static function refreshChat(socket:LiveSocket<AppLiveAssigns>, status:String):LiveSocket<AppLiveAssigns> {
+		return socket.merge({chat_messages: ChatMessages.viewItems(), status: status});
+	}
+
+	static function pubsubModule():Term {
+		return Atom.fromString("Elixir.PhoenixHxTodo.PubSub");
+	}
+
+	static function chatTopic():String {
+		return "railshx-port:ship-room";
 	}
 
 	static function stringParam(params:Term, key:String):String {

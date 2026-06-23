@@ -11,13 +11,18 @@ const sourceBlobUrl =
 const implementedTargets = {
   "models/Todo.hx": "src_haxe/phoenix_hx_todo_hx/data/Todo.hx and contexts/Todos.hx",
   "models/User.hx": "src_haxe/phoenix_hx_todo_hx/data/User.hx and contexts/Accounts.hx",
+  "models/ChatMessage.hx": "src_haxe/phoenix_hx_todo_hx/data/ChatMessage.hx and contexts/ChatMessages.hx",
+  "migrations/CreateChatMessages.hx": "src_haxe/phoenix_hx_todo_hx/migrations/CreateChatMessages.hx",
   "migrations/CreateTodos.hx": "src_haxe/phoenix_hx_todo_hx/migrations/CreateTodos.hx",
   "migrations/UpdateTodos.hx": "src_haxe/phoenix_hx_todo_hx/migrations/CreateTodos.hx",
   "migrations/UpdateUsers.hx": "src_haxe/phoenix_hx_todo_hx/migrations/CreateUsers.hx",
+  "controllers/ChatMessagesController.hx": "src_haxe/phoenix_hx_todo_hx/live/AppLive.hx and contexts/ChatMessages.hx",
   "controllers/SessionsController.hx": "src_haxe/phoenix_hx_todo_hx/controllers/SessionController.hx",
   "controllers/TodosController.hx": "src_haxe/phoenix_hx_todo_hx/live/AppLive.hx and contexts/Todos.hx",
   "views/AppTopBarView.hx": "src_haxe/phoenix_hx_todo_hx/live/AppLive.hx",
   "views/ApplicationLayoutView.hx": "lib/phoenix_hx_todo_web/components/layouts/*.heex",
+  "views/ChatMessageView.hx": "src_haxe/phoenix_hx_todo_hx/live/AppLive.hx",
+  "views/ChatPanelView.hx": "src_haxe/phoenix_hx_todo_hx/live/AppLive.hx",
   "views/DeviseLoginView.hx": "src_haxe/phoenix_hx_todo_hx/live/AppLive.hx",
   "views/TodoCardView.hx": "src_haxe/phoenix_hx_todo_hx/live/AppLive.hx",
   "views/TodoComposerView.hx": "src_haxe/phoenix_hx_todo_hx/live/AppLive.hx",
@@ -36,18 +41,13 @@ const implementedTargets = {
   "test_haxe/controllers/TodosHaxeRequestTest.hx": "src_haxe/test/web/TodoPersistenceTest.hx",
   "test_haxe/models/TodoHaxeTest.hx": "src_haxe/test/live/TodoStateTest.hx",
   "rails/test/controllers/todos_controller_test.rb": "src_haxe/test/web/TodoPersistenceTest.hx",
+  "rails/test/models/chat_message_test.rb": "src_haxe/test/web/ChatPanelTest.hx",
   "rails/test/models/todo_test.rb": "src_haxe/test/live/TodoStateTest.hx"
 };
 
 const knownOptionalTargets = {
-  "models/ChatMessage.hx": "Phoenix context plus PubSub-backed LiveView panel",
-  "controllers/ChatMessagesController.hx": "LiveView event handlers plus Phoenix.PubSub broadcasts",
-  "views/ChatPanelView.hx": "LiveView component or nested LiveView",
-  "views/ChatMessageView.hx": "LiveView component",
-  "migrations/CreateChatMessages.hx": "Ecto migration if chat panel ships",
   "controllers/UsersController.hx": "Phoenix route or LiveView panel for user management",
   "views/UserManagementView.hx": "LiveView component or route",
-  "rails/test/models/chat_message_test.rb": "Haxe-authored ExUnit context tests if chat ships",
   "rails/test/models/user_test.rb": "Haxe-authored ExUnit account tests",
   "app/auth/UserAuth.hx": "Phoenix session/on_mount auth boundary or production auth package"
 };
@@ -119,15 +119,9 @@ function classify(relativePath) {
     return entry("stylesheet", "Phoenix asset CSS", "deterministic", "implemented");
   }
   if (relativePath.startsWith("models/")) {
-    if (baseName === "ChatMessage") {
-      return entry("ActiveRecord model", "Ecto schema plus chat context", "human decision", "deferred optional panel");
-    }
     return entry("ActiveRecord model", "Ecto schema plus context API", "deterministic", "implemented");
   }
   if (relativePath.startsWith("migrations/")) {
-    if (baseName.indexOf("Chat") >= 0) {
-      return entry("ActiveRecord migration", "Ecto migration for optional chat table", "human decision", "deferred optional panel");
-    }
     if (baseName.indexOf("Devise") >= 0) {
       return entry("Devise migration", "Phoenix session auth or production auth package migration", "human decision", "deferred auth choice");
     }
@@ -140,13 +134,19 @@ function classify(relativePath) {
     if (baseName === "SessionsController") {
       return entry("ActionController session", "Phoenix controller session edge", "deterministic", "implemented");
     }
-    if (baseName === "UsersController" || baseName === "ChatMessagesController") {
+    if (baseName === "ChatMessagesController") {
+      return entry("ActionController optional panel", "LiveView events plus Phoenix.PubSub refresh", "deterministic", "implemented");
+    }
+    if (baseName === "UsersController") {
       return entry("ActionController optional panel", "LiveView route/component plus context", "human decision", "deferred optional panel");
     }
     return entry("ActionController", "Phoenix controller or LiveView boundary", "human decision", "needs review");
   }
   if (relativePath.startsWith("views/")) {
-    if (baseName.indexOf("Chat") >= 0 || baseName === "UserManagementView") {
+    if (baseName.indexOf("Chat") >= 0) {
+      return entry("HHX view", "Inline HXX LiveView panel", "deterministic", "implemented");
+    }
+    if (baseName === "UserManagementView") {
       return entry("HHX view", "Optional LiveView component or route", "human decision", "deferred optional panel");
     }
     return entry("HHX view", "Inline HXX rendered by LiveView/components", "deterministic", "implemented");
@@ -164,7 +164,10 @@ function classify(relativePath) {
     return entry("browser spec", "Playwright smoke plus optional future Haxe browser spec", "deterministic", "partially implemented");
   }
   if (relativePath.startsWith("test_haxe/") || relativePath.startsWith("rails/test/")) {
-    if (relativePath.indexOf("chat") >= 0 || relativePath.indexOf("user") >= 0) {
+    if (relativePath.indexOf("chat") >= 0) {
+      return entry("Rails test", "Haxe-authored ExUnit and Playwright chat coverage", "deterministic", "implemented");
+    }
+    if (relativePath.indexOf("user") >= 0) {
       return entry("Rails test", "Haxe-authored ExUnit if optional panel ships", "human decision", "deferred optional panel");
     }
     return entry("Rails test", "Haxe-authored ExUnit or Playwright coverage", "deterministic", "implemented");

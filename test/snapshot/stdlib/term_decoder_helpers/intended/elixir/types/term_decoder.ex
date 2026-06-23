@@ -87,7 +87,7 @@ defmodule TermDecoder do
     (case (if (Kernel.is_map(map)), do: {:ok, map}, else: {:error, {:expected_type, {:map}, kind(map)}}) do
       {:ok, validated_map} ->
         fetch_result = Map.fetch(validated_map, key)
-        if (match?({{:ok, _}}, fetch_result)), do: {:ok, elem(fetch_result, 1)}, else: {:error, {:missing_key, Kernel.inspect(key)}}
+        if (match?({:ok, _}, fetch_result)), do: {:ok, elem(fetch_result, 1)}, else: {:error, {:missing_key, Kernel.inspect(key)}}
       {:error, error} -> {:error, error}
     end)
   end
@@ -132,10 +132,10 @@ defmodule TermDecoder do
     end)
   end
   def ok_error(term, decode_ok, decode_error) do
-    if (match?({{:ok, _}}, term)) do
+    if (match?({:ok, _}, term)) do
       ResultTools.map(decode_ok.(elem(term, 1)), fn value -> {:ok, value} end)
     else
-      if (match?({{:error, _}}, term)) do
+      if (match?({:error, _}, term)) do
         ResultTools.map(decode_error.(elem(term, 1)), fn reason -> {:error, reason} end)
       else
         {:error, {:expected_ok_error_tuple, kind(term)}}

@@ -83,11 +83,11 @@ extern class Tuple {
 
 	// Pattern matching helpers
 	public static inline function isOkTuple(tuple:Term):Bool {
-		return untyped __elixir__('match?({{:ok, _}}, {0})', tuple);
+		return untyped __elixir__('match?({:ok, _}, {0})', tuple);
 	}
 
 	public static inline function isErrorTuple(tuple:Term):Bool {
-		return untyped __elixir__('match?({{:error, _}}, {0})', tuple);
+		return untyped __elixir__('match?({:error, _}, {0})', tuple);
 	}
 
 	public static inline function getOkValue(tuple:Term):Term {
@@ -100,11 +100,11 @@ extern class Tuple {
 
 	// Common tuple patterns
 	public static inline function ok<T>(value:T):{_0:AtomValue, _1:T} {
-		return cast untyped __elixir__('{{:ok, {0}}}', value);
+		return cast untyped __elixir__('{:ok, {0}}', value);
 	}
 
 	public static inline function error<T>(reason:T):{_0:AtomValue, _1:T} {
-		return cast untyped __elixir__('{{:error, {0}}}', reason);
+		return cast untyped __elixir__('{:error, {0}}', reason);
 	}
 
 	public static inline function okAtom():AtomValue {

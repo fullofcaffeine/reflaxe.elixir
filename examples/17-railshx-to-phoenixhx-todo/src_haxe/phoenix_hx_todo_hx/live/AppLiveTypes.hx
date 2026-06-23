@@ -15,6 +15,13 @@ typedef TodoStats = {
 	var typed_column_count:Int;
 }
 
+typedef ChatMessageItem = {
+	var id:Int;
+	var body:String;
+	var owner:String;
+	var row_class:String;
+}
+
 typedef AppLiveAssigns = {
 	authenticated:Bool,
 	current_user_id:Null<Int>,
@@ -24,6 +31,8 @@ typedef AppLiveAssigns = {
 	title_input:String,
 	notes_input:String,
 	todos:Array<TodoItem>,
+	chat_input:String,
+	chat_messages:Array<ChatMessageItem>,
 	status:Null<String>,
 	stats:TodoStats,
 }

@@ -1,6 +1,7 @@
 {
   "filesGenerated": [
   "web/todo_persistence_test.exs",
+  "web/chat_panel_test.exs",
   "web/auth_flow_test.exs",
   "string_tools.exs",
   "std.exs",
@@ -20,6 +21,8 @@
   "phoenix_hx_todo/todos.exs",
   "phoenix_hx_todo/todo.exs",
   "phoenix_hx_todo/repo.exs",
+  "phoenix_hx_todo/chat_messages.exs",
+  "phoenix_hx_todo/chat_message.exs",
   "phoenix_hx_todo/application.exs",
   "phoenix_hx_todo/accounts.exs",
   "phoenix/types/socket_transport.exs",
@@ -61,7 +64,7 @@
   "e_reg.exs",
   "phoenix_hx_todo/postgrex_types.ex"
 ],
-  "id": 27,
+  "id": 38,
   "wasCached": false,
   "version": 1
 }
