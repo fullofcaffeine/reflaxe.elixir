@@ -54,7 +54,8 @@ const knownOptionalTargets = {
 
 function usage() {
   return [
-    "Usage: node tools/rails_hx_inventory.js --source <path-to-reflaxe.ruby/examples/todoapp_rails>",
+    "Usage: RAILSHX_TODO_SOURCE=<path-to-reflaxe.ruby/examples/todoapp_rails> node tools/rails_hx_inventory.js",
+    "   or: node tools/rails_hx_inventory.js --source <path-to-reflaxe.ruby/examples/todoapp_rails>",
     "",
     "The tool only reads source files and writes a Markdown report to stdout.",
     "It classifies artifacts by RailsHx path conventions and does not generate Phoenix code."
@@ -279,11 +280,10 @@ function makeReport(rootDir) {
   lines.push("Regenerate locally with:");
   lines.push("");
   lines.push("```bash");
-  lines.push("node examples/17-railshx-to-phoenixhx-todo/tools/rails_hx_inventory.js \\");
-  lines.push("  --source ../haxe.ruby/examples/todoapp_rails \\");
+  lines.push("RAILSHX_TODO_SOURCE=/path/to/reflaxe.ruby/examples/todoapp_rails \\");
+  lines.push("  node examples/17-railshx-to-phoenixhx-todo/tools/rails_hx_inventory.js \\");
   lines.push("  > examples/17-railshx-to-phoenixhx-todo/docs/CONVERSION_INVENTORY.md");
   lines.push("```");
-  lines.push("");
   return lines.join("\n");
 }
 

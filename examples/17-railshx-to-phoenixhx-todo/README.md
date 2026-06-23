@@ -86,8 +86,8 @@ RailsHx proves typed Haxe can author Rails-shaped code. This example shows the s
 The checked-in [conversion inventory](./docs/CONVERSION_INVENTORY.md) classifies the RailsHx todo source and separates deterministic mappings from areas that need product or framework decisions. Regenerate it from the repository root with:
 
 ```bash
-node examples/17-railshx-to-phoenixhx-todo/tools/rails_hx_inventory.js \
-  --source ../haxe.ruby/examples/todoapp_rails \
+RAILSHX_TODO_SOURCE=/path/to/reflaxe.ruby/examples/todoapp_rails \
+  node examples/17-railshx-to-phoenixhx-todo/tools/rails_hx_inventory.js \
   > examples/17-railshx-to-phoenixhx-todo/docs/CONVERSION_INVENTORY.md
 ```
 

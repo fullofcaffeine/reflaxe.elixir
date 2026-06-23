@@ -100,8 +100,7 @@ A future converter can keep this pipeline deterministic and reviewable:
 Regenerate locally with:
 
 ```bash
-node examples/17-railshx-to-phoenixhx-todo/tools/rails_hx_inventory.js \
-  --source ../haxe.ruby/examples/todoapp_rails \
+RAILSHX_TODO_SOURCE=/path/to/reflaxe.ruby/examples/todoapp_rails \
+  node examples/17-railshx-to-phoenixhx-todo/tools/rails_hx_inventory.js \
   > examples/17-railshx-to-phoenixhx-todo/docs/CONVERSION_INVENTORY.md
 ```
-
