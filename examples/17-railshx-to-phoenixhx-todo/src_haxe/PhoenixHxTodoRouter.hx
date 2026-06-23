@@ -1,5 +1,7 @@
 package;
 
+import phoenix_hx_todo_hx.controllers.SessionController;
+import phoenix_hx_todo_hx.infrastructure.LiveSession;
 import phoenix_hx_todo_hx.live.AppLive;
 import reflaxe.elixir.macros.RouterDsl.*;
 
@@ -15,6 +17,10 @@ final routes = [
 	]),
 	scope("/", [
 		pipeThrough([browser]),
-		liveSession("default", [live("/", AppLive), live("/todos", AppLive)])
+		liveSession("default", [live("/", AppLive), live("/todos", AppLive)], {
+			session: liveSessionMfa(LiveSession, "live_session")
+		}),
+		post("/auth/demo", SessionController, SessionController.create),
+		post("/auth/logout", SessionController, SessionController.delete)
 	])
 ];

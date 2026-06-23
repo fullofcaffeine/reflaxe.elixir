@@ -11,9 +11,11 @@ defmodule PhoenixHxTodoWeb.Router do
   end
   scope "/" do
     _ = pipe_through(:browser)
-    live_session :default do
+    live_session :default, [session: {PhoenixHxTodoWeb.LiveSession, :live_session, []}] do
       _ = live("/", PhoenixHxTodoWeb.AppLive)
       _ = live("/todos", PhoenixHxTodoWeb.AppLive)
     end
+    _ = post("/auth/demo", PhoenixHxTodoWeb.SessionController, :create)
+    _ = post("/auth/logout", PhoenixHxTodoWeb.SessionController, :delete)
   end
 end

@@ -10,6 +10,7 @@ import elixir.otp.TypeSafeChildSpec;
 import phoenix_hx_todo_hx.infrastructure.DNSCluster;
 import phoenix_hx_todo_hx.infrastructure.Endpoint;
 import phoenix_hx_todo_hx.infrastructure.PubSub;
+import phoenix_hx_todo_hx.infrastructure.Repo;
 import phoenix_hx_todo_hx.infrastructure.Telemetry;
 
 @:application
@@ -22,6 +23,7 @@ class PhoenixHxTodo {
 		var children:Array<ChildSpecFormat> = [
 			TypeSafeChildSpec.telemetry(Telemetry),
 			TypeSafeChildSpec.moduleWithConfig(DNSCluster, [{key: "query", value: dnsClusterQuery}]),
+			TypeSafeChildSpec.moduleRef(Repo),
 			TypeSafeChildSpec.pubSub(PubSub),
 			TypeSafeChildSpec.endpoint(Endpoint)
 		];

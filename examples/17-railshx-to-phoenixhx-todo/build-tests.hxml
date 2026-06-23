@@ -13,3 +13,5 @@
 -dce full
 
 live.TodoStateTest
+web.AuthFlowTest
+web.TodoPersistenceTest

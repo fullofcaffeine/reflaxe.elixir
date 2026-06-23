@@ -966,6 +966,8 @@ class AnnotationTransforms {
 				makeAST(EVar(normalizeRouterModuleVar(v)));
 			case ROList(values):
 				makeAST(EList([for (item in values) routerMetaValueToAst(item)]));
+			case ROTuple(values):
+				makeAST(ETuple([for (item in values) routerMetaValueToAst(item)]));
 			case ROKeyword(values):
 				makeAST(EKeywordList([for (pair in values) {key: pair.key, value: routerMetaValueToAst(pair.value)}]));
 			case ROMap(values):

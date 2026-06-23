@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-test('opens the RailsHx-inspired PhoenixHx todo board and edits LiveView state', async ({ page }) => {
+test('opens the RailsHx-inspired PhoenixHx todo board and persists LiveView changes', async ({ page }) => {
   const base = process.env.BASE_URL || 'http://localhost:4017'
 
   await page.goto(base + '/todos')

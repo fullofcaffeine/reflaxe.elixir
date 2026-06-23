@@ -17,12 +17,13 @@ typedef TodoStats = {
 
 typedef AppLiveAssigns = {
 	authenticated:Bool,
+	current_user_id:Null<Int>,
 	current_user_name:String,
 	current_user_email:String,
+	csrf_token:String,
 	title_input:String,
 	notes_input:String,
 	todos:Array<TodoItem>,
-	next_todo_id:Int,
 	status:Null<String>,
 	stats:TodoStats,
 }

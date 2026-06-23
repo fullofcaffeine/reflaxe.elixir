@@ -55,8 +55,17 @@ config :phoenix_hx_todo, PhoenixHxTodoWeb.Endpoint,
 
     esbuild: {Esbuild, :install_and_run, [:phoenix_hx_todo, ~w(--sourcemap=inline --watch)]},
     tailwind: {Tailwind, :install_and_run, [:phoenix_hx_todo, ~w(--watch)]}
-       ]
+      ]
      end)
+
+config :phoenix_hx_todo, PhoenixHxTodo.Repo,
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
+  database: "phoenix_hx_todo_dev",
+  stacktrace: true,
+  show_sensitive_data_on_connection_error: true,
+  pool_size: 10
 
 # ## SSL Support
 #

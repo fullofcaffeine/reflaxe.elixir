@@ -189,7 +189,7 @@
       },
       "e2e": {
         "mode": "manual",
-        "command": "scripts/qa-sentinel.sh --app examples/17-railshx-to-phoenixhx-todo --port 4017 --playwright --e2e-spec e2e/railshx_port.spec.ts --e2e-workers 1 --async --deadline 900 --verbose",
+        "command": "scripts/qa-sentinel.sh --app examples/17-railshx-to-phoenixhx-todo --port 4017 --compile-migrations --migrations-hxml build-migrations.hxml --playwright --e2e-spec e2e/railshx_port.spec.ts --e2e-workers 1 --async --deadline 900 --verbose",
         "ci": false,
         "reason": "Browser smoke is available for local/manual validation; CI keeps this learning example bounded with mix tests plus WAE."
       }

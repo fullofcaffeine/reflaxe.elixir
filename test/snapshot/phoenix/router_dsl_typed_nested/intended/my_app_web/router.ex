@@ -12,7 +12,7 @@ defmodule RouterDslTypedNested do
   end
   scope "/", MyAppWeb do
     _ = pipe_through(:browser)
-    live_session :default do
+    live_session :default, [session: {MyAppWeb, :live_session, []}] do
       _ = live("/", DashboardLive, :index)
       _ = get("/users/:id", UserController, :show)
     end

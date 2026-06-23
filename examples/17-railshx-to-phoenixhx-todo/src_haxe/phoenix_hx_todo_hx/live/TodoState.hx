@@ -14,6 +14,7 @@ class TodoState {
 		];
 	}
 
+	@:keep
 	public static function create(todos:Array<TodoItem>, id:Int, title:String, notes:String, owner:String):Array<TodoItem> {
 		var trimmedTitle = StringTools.trim(title);
 		if (trimmedTitle == "")
@@ -22,6 +23,7 @@ class TodoState {
 		return [item(id, trimmedTitle, trimmedNotes, owner, false)].concat(todos);
 	}
 
+	@:keep
 	public static function toggle(todos:Array<TodoItem>, id:Int):Array<TodoItem> {
 		return todos.map(todo -> {
 			if (todo.id != id)
@@ -30,6 +32,7 @@ class TodoState {
 		});
 	}
 
+	@:keep
 	public static function deleteById(todos:Array<TodoItem>, id:Int):Array<TodoItem> {
 		return todos.filter(todo -> todo.id != id);
 	}

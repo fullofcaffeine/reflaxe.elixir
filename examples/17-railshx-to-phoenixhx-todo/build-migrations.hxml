@@ -1,0 +1,20 @@
+# Haxe->Elixir migration-only build (Ecto executable `.exs`)
+
+-D ecto_migrations_exs
+
+-D app_name=PhoenixHxTodo
+-D elixir_output=priv/repo/migrations
+-D reflaxe_runtime
+-D reflaxe_elixir_strict_examples
+-D no-utf16
+
+-lib reflaxe.elixir
+-cp src_haxe
+
+-dce full
+
+--macro exclude('client')
+--macro exclude('test')
+
+phoenix_hx_todo_hx.migrations.CreateUsers
+phoenix_hx_todo_hx.migrations.CreateTodos

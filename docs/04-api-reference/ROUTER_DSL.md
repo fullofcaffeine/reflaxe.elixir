@@ -185,6 +185,7 @@ Use typed resource action constants in new code. Use `*Unsafe` only when values 
   - `pipeThrough(pipelines)`
   - `pipeThroughUnsafe(pipelines)` (escape hatch)
   - `liveSession(name, children, ?opts)`
+  - `liveSessionMfa(moduleRef, functionName, ?args)` for `live_session session: {Module, :function, args}`
   - `plug(target, ?opts)` where `target` is a typed plug token or module reference
   - `plugUnsafe(target, ?opts)` (escape hatch)
 - Routes:
@@ -210,6 +211,20 @@ Use typed resource action constants in new code. Use `*Unsafe` only when values 
 - Typed route-node options are Phoenix-shaped:
   - `asName` maps to Phoenix `as:`
   - `paramsContract` is a compiler-only type check for path params
+- Live session options support Phoenix session MFA callbacks without raw target code:
+
+```haxe
+liveSession("default", [live("/", AppLive)], {
+  session: liveSessionMfa(MyAppWeb, "live_session")
+});
+```
+
+This emits:
+
+```elixir
+live_session :default, session: {MyAppWeb, :live_session, []} do
+```
+
 - Leave `asName` unset to keep Phoenix default helper-name inference.
 - `name` is for flat compatibility-route metadata and is not a Phoenix route keyword.
 

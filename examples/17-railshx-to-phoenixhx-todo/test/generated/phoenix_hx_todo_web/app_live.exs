@@ -1,10 +1,10 @@
 defmodule PhoenixHxTodoWeb.AppLive do
   use Phoenix.Component
   use Phoenix.LiveView, layout: {PhoenixHxTodoWeb.Layouts, :app}
-  def mount(_params, _session, socket) do
-    owner = "Guest Workspace"
-    todos = PhoenixHxTodoHx.Live.TodoState.seed(owner)
-    {:ok, Phoenix.Component.assign(socket, %{:authenticated => false, :current_user_name => owner, :current_user_email => "guest@example.test", :title_input => "", :notes_input => "", :todos => todos, :next_todo_id => 4, :status => "Sign in or continue as guest to open the PhoenixHx board.", :stats => PhoenixHxTodoHx.Live.TodoState.stats(todos)})}
+  def mount(_params, session, socket) do
+    user = current_user(session)
+    assigned_socket = if (Kernel.is_nil(user)), do: assign_signed_out(socket), else: assign_signed_in(socket, user)
+    {:ok, assigned_socket}
   end
   def render(assigns) do
     ~H"""
@@ -32,14 +32,19 @@ defmodule PhoenixHxTodoWeb.AppLive do
 						<h2>Open the converted board.</h2>
 						<p>
 							RailsHx delegates the real sample to Devise. This PhoenixHx slice keeps auth deliberately small:
-							a LiveView event opens a demo workspace while the docs explain the production session/on_mount mapping.
+							a controller action creates a Plug session, then the LiveView consumes the derived session map.
 						</p>
 						<%= if @status != nil do %>
 							<div class="status" role="status"><%= @status %></div>
 						<% end %>
-						<button type="button" class="primary-action" phx-click="continue_guest" data-testid="continue-guest" data-phoenixhx-autofocus>
-							Continue as guest
-						</button>
+						<form action="/auth/demo" method="post">
+							<input type="hidden" name="_csrf_token" value={@csrf_token} />
+							<input type="hidden" name="name" value="Guest Workspace" />
+							<input type="hidden" name="email" value="guest@example.test" />
+							<button type="submit" class="primary-action" data-testid="continue-guest" data-phoenixhx-autofocus>
+								Continue as guest
+							</button>
+						</form>
 					</section>
 				</main>
 			<% else %>
@@ -59,7 +64,10 @@ defmodule PhoenixHxTodoWeb.AppLive do
 						<div class="session-chip">
 							<span><%= @current_user_name %></span>
 							<small><%= @current_user_email %></small>
-							<button type="button" class="secondary-action" phx-click="logout">Log out</button>
+							<form action="/auth/logout" method="post">
+								<input type="hidden" name="_csrf_token" value={@csrf_token} />
+								<button type="submit" class="secondary-action">Log out</button>
+							</form>
 						</div>
 					</header>
 
@@ -69,7 +77,7 @@ defmodule PhoenixHxTodoWeb.AppLive do
 							<h1>Typed Phoenix, live BEAM state.</h1>
 							<p>
 								The RailsHx source renders ERB and Turbo Streams from Haxe. This port renders HEEx
-								from inline HXX and handles mutations through LiveView events.
+								from inline HXX and persists mutations through Ecto contexts.
 							</p>
 						</div>
 						<aside class="panel stat-panel" aria-label="Todo stats">
@@ -142,9 +150,9 @@ defmodule PhoenixHxTodoWeb.AppLive do
 						<h2>The Rails API is not being emulated.</h2>
 						<div class="crosswalk-grid">
 							<div><strong>ActiveRecord model</strong><span>Ecto schema + context boundary</span></div>
-							<div><strong>ActionController action</strong><span>LiveView mount/event/render callbacks</span></div>
+							<div><strong>ActionController action</strong><span>Controller session action + LiveView callbacks</span></div>
 							<div><strong>HHX ERB partial</strong><span>Inline HXX function/component shape</span></div>
-							<div><strong>Turbo Stream mutation</strong><span>LiveView event diff and PubSub-ready state</span></div>
+							<div><strong>Turbo Stream mutation</strong><span>LiveView event diff over Ecto-backed state</span></div>
 						</div>
 					</section>
 				</main>
@@ -158,9 +166,50 @@ defmodule PhoenixHxTodoWeb.AppLive do
     if (StringTools.ltrim(StringTools.rtrim(title)) == "") do
       {:noreply, Phoenix.Component.assign(socket, :status, "Add a title before creating a task.")}
     else
-      next_id = socket.assigns.next_todo_id
-      todos = PhoenixHxTodoHx.Live.TodoState.create(socket.assigns.todos, next_id, title, notes, socket.assigns.current_user_name)
-      {:noreply, Phoenix.Component.assign(socket, %{:todos => todos, :next_todo_id => next_id + 1, :title_input => "", :notes_input => "", :stats => PhoenixHxTodoHx.Live.TodoState.stats(todos), :status => "Task added through Phoenix LiveView."})}
+      user = PhoenixHxTodo.Accounts.get_user(socket.assigns.current_user_id)
+      if (Kernel.is_nil(user)) do
+        {:noreply, Phoenix.Component.assign(socket, :status, "Sign in again before creating a task.")}
+      else
+        (case PhoenixHxTodo.Todos.create_for_user(user, title, notes) do
+          {:ok, _value} -> {:noreply, refresh_todos(Phoenix.Component.assign(socket, %{:title_input => "", :notes_input => ""}), "Task added through Ecto and Phoenix LiveView.")}
+          {:error, _reason} -> {:noreply, Phoenix.Component.assign(socket, :status, "Could not create that task.")}
+        end)
+      end
+    end
+  end
+  defp toggle_todo(params, socket) do
+    id = int_param(params, "id")
+    did_toggle = PhoenixHxTodo.Todos.toggle_for_user(socket.assigns.current_user_id, id)
+    if (did_toggle), do: {:noreply, refresh_todos(socket, "Updated through Ecto and a LiveView diff.")}, else: {:noreply, Phoenix.Component.assign(socket, :status, "Could not update that task.")}
+  end
+  defp delete_todo(params, socket) do
+    id = int_param(params, "id")
+    did_delete = PhoenixHxTodo.Todos.delete_for_user(socket.assigns.current_user_id, id)
+    if (did_delete), do: {:noreply, refresh_todos(socket, "Deleted from the database through the Todos context.")}, else: {:noreply, Phoenix.Component.assign(socket, :status, "Could not delete that task.")}
+  end
+  defp assign_signed_out(socket) do
+    owner = "Guest Workspace"
+    _ = Phoenix.Component.assign(socket, %{:authenticated => false, :current_user_id => nil, :current_user_name => owner, :current_user_email => "guest@example.test", :csrf_token => Plug.CSRFProtection.get_csrf_token(), :title_input => "", :notes_input => "", :todos => [], :status => "Sign in or continue as guest to open the PhoenixHx board.", :stats => PhoenixHxTodoHx.Live.TodoState.stats([])})
+  end
+  defp assign_signed_in(socket, user) do
+    todos = PhoenixHxTodo.Todos.view_items_for_user(user)
+    _ = Phoenix.Component.assign(socket, %{:authenticated => true, :current_user_id => user.id, :current_user_name => PhoenixHxTodo.User.display_name(user), :current_user_email => user.email, :csrf_token => Plug.CSRFProtection.get_csrf_token(), :title_input => "", :notes_input => "", :todos => todos, :status => "Phoenix session active. Todos are persisted through Ecto.", :stats => PhoenixHxTodoHx.Live.TodoState.stats(todos)})
+  end
+  defp current_user(session) do
+    user_id = Map.get(session, "user_id")
+    if (Reflaxe.Elixir.HaxeFloat.neq(user_id, nil)) do
+      PhoenixHxTodo.Accounts.get_user(user_id)
+    else
+      nil
+    end
+  end
+  defp refresh_todos(socket, status) do
+    user = PhoenixHxTodo.Accounts.get_user(socket.assigns.current_user_id)
+    if (Kernel.is_nil(user)) do
+      Phoenix.Component.assign(socket, :status, "Sign in again to reload tasks.")
+    else
+      todos = PhoenixHxTodo.Todos.view_items_for_user(user)
+      _ = Phoenix.Component.assign(socket, %{:todos => todos, :stats => PhoenixHxTodoHx.Live.TodoState.stats(todos), :status => status})
     end
   end
   defp string_param(params, key) do
@@ -193,22 +242,16 @@ end) do
   end
   def handle_event(event, params, socket) do
     live = socket
-    switch_result_1 = (case event do
-      "continue_guest" -> {:noreply, Phoenix.Component.assign(live, %{:authenticated => true, :status => "Phoenix session demo active. The RailsHx Devise flow maps to Phoenix session/on_mount in production."})}
+    switch_result_5 = (case event do
       "create_todo" ->
         create_todo(params, live)
       "delete_todo" ->
-        id = int_param(params, "id")
-        todos = PhoenixHxTodoHx.Live.TodoState.delete_by_id(live.assigns.todos, id)
-        {:noreply, Phoenix.Component.assign(live, %{:todos => todos, :stats => PhoenixHxTodoHx.Live.TodoState.stats(todos), :status => "Deleted from LiveView state. Ecto persistence is the next slice."})}
-      "logout" -> {:noreply, Phoenix.Component.assign(live, %{:authenticated => false, :status => "Signed out of the demo workspace."})}
+        delete_todo(params, live)
       "toggle_todo" ->
-        id = int_param(params, "id")
-        todos = PhoenixHxTodoHx.Live.TodoState.toggle(live.assigns.todos, id)
-        {:noreply, Phoenix.Component.assign(live, %{:todos => todos, :stats => PhoenixHxTodoHx.Live.TodoState.stats(todos), :status => "Updated with a LiveView event, not a Turbo Stream."})}
+        toggle_todo(params, live)
       "update_form" -> {:noreply, Phoenix.Component.assign(live, %{:title_input => string_param(params, "title"), :notes_input => string_param(params, "notes")})}
       _ -> {:noreply, live}
     end)
-    switch_result_1
+    switch_result_5
   end
 end

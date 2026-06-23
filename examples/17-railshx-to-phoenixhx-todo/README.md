@@ -8,20 +8,22 @@ The point is not to make Phoenix pretend to be Rails. The same product surface i
 implemented with Phoenix-native concepts:
 
 - LiveView callbacks and inline HXX instead of ActionController plus ERB/Turbo partials.
-- LiveView events instead of Turbo Stream form mutation.
+- Ecto schemas, context functions, and LiveView events instead of ActiveRecord plus Turbo Stream form mutation.
 - Phoenix project/asset conventions instead of Rails importmap conventions.
-- A small demo auth gate in this first slice, with the docs mapping the production path to Phoenix sessions and `on_mount`.
+- A small Phoenix session flow that demonstrates Plug session to LiveView session handoff.
 
 ## What This Slice Includes
 
 - Haxe-authored OTP application and router.
 - Haxe-authored LiveView at `/` and `/todos`.
+- Haxe-authored Ecto Repo, `User`/`Todo` schemas, context functions, and migrations.
+- Haxe-authored session controller plus `liveSessionMfa(...)` route wiring.
 - RailsHx-inspired login shell, app top bar, composer, todo list, stats, and conversion notes.
 - Haxe-authored domain/state module with ExUnit coverage.
 - Haxe-authored LiveView hook bootstrap through Genes.
 - Playwright smoke for guest entry, create, toggle, delete, and conversion copy.
 
-This first slice intentionally keeps todo state in LiveView assigns so the Rails-to-Phoenix UI conversion is easy to inspect. Ecto persistence, production-grade session auth, chat, user management, and deterministic conversion inventory are tracked as `haxe.elixir.codex-1fg.1`, `haxe.elixir.codex-1fg.2`, and `haxe.elixir.codex-1fg.3`.
+This slice keeps the RailsHx user journey while moving persistence and auth into Phoenix/Ecto patterns. Optional chat/user-management panels and deterministic conversion inventory remain tracked as `haxe.elixir.codex-1fg.2` and `haxe.elixir.codex-1fg.3`.
 
 ## Run
 
@@ -43,16 +45,21 @@ mix test
 Browser smoke via the repository sentinel:
 
 ```bash
-scripts/qa-sentinel.sh --app examples/17-railshx-to-phoenixhx-todo --port 4017 --playwright --e2e-spec e2e/railshx_port.spec.ts --e2e-workers 1 --async --deadline 900 --verbose
+scripts/qa-sentinel.sh --app examples/17-railshx-to-phoenixhx-todo --port 4017 --compile-migrations --migrations-hxml build-migrations.hxml --playwright --e2e-spec e2e/railshx_port.spec.ts --e2e-workers 1 --async --deadline 900 --verbose
 ```
 
 ## Source Map
 
 - `src_haxe/PhoenixHxTodo.hx` - Haxe-authored OTP application.
 - `src_haxe/PhoenixHxTodoRouter.hx` - Haxe-authored Phoenix router.
+- `src_haxe/phoenix_hx_todo_hx/data/` - Ecto schemas.
+- `src_haxe/phoenix_hx_todo_hx/contexts/` - Phoenix context APIs.
+- `src_haxe/phoenix_hx_todo_hx/controllers/SessionController.hx` - session create/delete actions.
+- `src_haxe/phoenix_hx_todo_hx/infrastructure/LiveSession.hx` - Plug session to LiveView session bridge.
+- `src_haxe/phoenix_hx_todo_hx/migrations/` - Haxe-authored Ecto migrations.
 - `src_haxe/phoenix_hx_todo_hx/live/AppLive.hx` - LiveView UI and events.
 - `src_haxe/phoenix_hx_todo_hx/live/TodoState.hx` - pure todo state transitions.
-- `src_haxe/test/live/TodoStateTest.hx` - Haxe-authored ExUnit coverage.
+- `src_haxe/test/` - Haxe-authored ExUnit coverage.
 - `src_haxe/client/Boot.hx` - Genes-compiled LiveView hook registry.
 - `e2e/railshx_port.spec.ts` - real-browser smoke.
 - `docs/RAILSHX_TO_PHOENIXHX.md` - conversion crosswalk and future tooling notes.

@@ -64,14 +64,14 @@ final routes = [
 	pipeline(api, [plug(accepts, {initArgs: ["json"]})]),
 	scope("/", [
 		pipeThrough([browser]),
-		liveSession("default",
-			[
-				live("/", DashboardLive, DashboardLive.index),
-				get("/users/:id", UserController, UserController.show,
-					{
-						paramsContract: UserPathParams
-					})
-			]),
+		liveSession("default", [
+			live("/", DashboardLive, DashboardLive.index),
+			get("/users/:id", UserController, UserController.show,
+				{
+					paramsContract: UserPathParams
+				})
+		],
+			{session: liveSessionMfa(MyAppWeb, "live_session")}),
 		resources("/users", UserController, {only: [resourceIndex, resourceShow]}),
 		resources("/legacy-users", UserController, {except: ["delete"]}),
 		forward("/admin", AdminRouter),

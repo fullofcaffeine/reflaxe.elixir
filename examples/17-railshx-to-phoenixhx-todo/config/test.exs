@@ -13,6 +13,15 @@ config :logger, level: :warning
 # Initialize plugs at runtime for faster test compilation
 config :phoenix, :plug_init_mode, :runtime
 
+config :phoenix_hx_todo, PhoenixHxTodo.Repo,
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
+  database: "phoenix_hx_todo_test",
+  pool: Ecto.Adapters.SQL.Sandbox,
+  pool_size: 10,
+  types: PhoenixHxTodo.PostgrexTypes
+
 config :phoenix_live_view,
   # Enable helpful, but potentially expensive runtime checks
   enable_expensive_runtime_checks: true

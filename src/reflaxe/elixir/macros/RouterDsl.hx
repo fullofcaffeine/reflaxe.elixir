@@ -161,10 +161,12 @@ typedef PipeThroughOptions = {
 }
 
 typedef LiveSessionOptions = {
-	@:optional var session:{}; // e.g. {session: {MyAppWeb, :live_session, []}}
+	@:optional var session:LiveSessionMfa; // e.g. {session: liveSessionMfa(MyAppWeb, "live_session")}
 	@:optional var onMount:Array<Any>;
 	@:optional var rootLayout:Any;
 }
+
+typedef LiveSessionMfa = {}
 
 typedef ResourceOptions = {
 	@:optional var only:Array<ResourceAction>;
@@ -342,6 +344,25 @@ class RouterDsl {
 			children: children,
 			opts: opts
 		};
+	}
+
+	/**
+	 * Phoenix LiveView session MFA for `live_session`.
+	 *
+	 * Haxe source:
+	 * ```haxe
+	 * liveSession("default", [live("/", AppLive)], {
+	 *   session: liveSessionMfa(MyAppWeb, "live_session")
+	 * });
+	 * ```
+	 *
+	 * Generated Elixir:
+	 * ```elixir
+	 * live_session :default, session: {MyAppWeb, :live_session, []} do
+	 * ```
+	 */
+	public static inline function liveSessionMfa(moduleRef:Class<Any>, functionName:String, ?args:Array<Any>):LiveSessionMfa {
+		return cast {};
 	}
 
 	public static inline function get(path:String, controller:Class<Any>, action:Any, ?opts:RouteOptions):RouterDslNode {

@@ -10,4 +10,7 @@ defmodule Std do
                 end
 
   end
+  def random(max) do
+    if max <= 0, do: 0, else: (:rand.uniform(max) - 1)
+  end
 end

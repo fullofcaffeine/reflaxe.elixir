@@ -672,6 +672,7 @@ enum RouterMetaValue {
 	ROAtom(value:String);
 	ROVar(value:String);
 	ROList(value:Array<RouterMetaValue>);
+	ROTuple(value:Array<RouterMetaValue>);
 	ROKeyword(value:Array<RouterOptionMeta>);
 	ROMap(value:Array<RouterOptionMeta>);
 }

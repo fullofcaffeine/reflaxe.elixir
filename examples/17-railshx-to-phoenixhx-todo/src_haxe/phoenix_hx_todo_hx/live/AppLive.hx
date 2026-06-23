@@ -1,7 +1,11 @@
 package phoenix_hx_todo_hx.live;
 
 import StringTools;
+import elixir.ElixirMap;
 import elixir.types.Term;
+import phoenix_hx_todo_hx.contexts.Accounts;
+import phoenix_hx_todo_hx.contexts.Todos;
+import phoenix_hx_todo_hx.data.User;
 import phoenix.LiveSocket;
 import phoenix.Phoenix.EventParams;
 import phoenix.Phoenix.HandleEventResult;
@@ -10,40 +14,21 @@ import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.Session;
 import phoenix.Phoenix.Socket;
 import phoenix_hx_todo_hx.live.AppLiveTypes.AppLiveAssigns;
+import plug.CSRFProtection;
 
 @:native("PhoenixHxTodoWeb.AppLive")
 @:liveview
 class AppLive {
-	public static function mount(_params:MountParams, _session:Session, socket:Socket<AppLiveAssigns>):MountResult<AppLiveAssigns> {
-		var owner = "Guest Workspace";
-		var todos = TodoState.seed(owner);
-		return Ok(socket.assign({
-			authenticated: false,
-			current_user_name: owner,
-			current_user_email: "guest@example.test",
-			title_input: "",
-			notes_input: "",
-			todos: todos,
-			next_todo_id: 4,
-			status: "Sign in or continue as guest to open the PhoenixHx board.",
-			stats: TodoState.stats(todos)
-		}));
+	public static function mount(_params:MountParams, session:Session, socket:Socket<AppLiveAssigns>):MountResult<AppLiveAssigns> {
+		var user = currentUser(session);
+		var assignedSocket = user == null ? assignSignedOut(socket) : assignSignedIn(socket, user);
+		return Ok(assignedSocket);
 	}
 
 	public static function handleEvent(event:String, params:EventParams, socket:Socket<AppLiveAssigns>):HandleEventResult<AppLiveAssigns> {
 		var live:LiveSocket<AppLiveAssigns> = socket;
 
 		return switch (event) {
-			case "continue_guest":
-				NoReply(live.merge({
-					authenticated: true,
-					status: "Phoenix session demo active. The RailsHx Devise flow maps to Phoenix session/on_mount in production."
-				}));
-			case "logout":
-				NoReply(live.merge({
-					authenticated: false,
-					status: "Signed out of the demo workspace."
-				}));
 			case "update_form":
 				NoReply(live.merge({
 					title_input: stringParam(params, "title"),
@@ -52,13 +37,9 @@ class AppLive {
 			case "create_todo":
 				createTodo(params, live);
 			case "toggle_todo":
-				var id = intParam(params, "id");
-				var todos = TodoState.toggle(live.assigns.todos, id);
-				NoReply(live.merge({todos: todos, stats: TodoState.stats(todos), status: "Updated with a LiveView event, not a Turbo Stream."}));
+				toggleTodo(params, live);
 			case "delete_todo":
-				var id = intParam(params, "id");
-				var todos = TodoState.deleteById(live.assigns.todos, id);
-				NoReply(live.merge({todos: todos, stats: TodoState.stats(todos), status: "Deleted from LiveView state. Ecto persistence is the next slice."}));
+				deleteTodo(params, live);
 			default:
 				NoReply(live);
 		}
@@ -89,14 +70,19 @@ class AppLive {
 						<h2>Open the converted board.</h2>
 						<p>
 							RailsHx delegates the real sample to Devise. This PhoenixHx slice keeps auth deliberately small:
-							a LiveView event opens a demo workspace while the docs explain the production session/on_mount mapping.
+							a controller action creates a Plug session, then the LiveView consumes the derived session map.
 						</p>
 						<if ${assigns.status != null}>
 							<div class="status" role="status">${assigns.status}</div>
 						</if>
-						<button type="button" class="primary-action" phx-click="continue_guest" data-testid="continue-guest" data-phoenixhx-autofocus>
-							Continue as guest
-						</button>
+						<form action="/auth/demo" method="post">
+							<input type="hidden" name="_csrf_token" value=${assigns.csrf_token} />
+							<input type="hidden" name="name" value="Guest Workspace" />
+							<input type="hidden" name="email" value="guest@example.test" />
+							<button type="submit" class="primary-action" data-testid="continue-guest" data-phoenixhx-autofocus>
+								Continue as guest
+							</button>
+						</form>
 					</section>
 				</main>
 			<else>
@@ -116,7 +102,10 @@ class AppLive {
 						<div class="session-chip">
 							<span>${assigns.current_user_name}</span>
 							<small>${assigns.current_user_email}</small>
-							<button type="button" class="secondary-action" phx-click="logout">Log out</button>
+							<form action="/auth/logout" method="post">
+								<input type="hidden" name="_csrf_token" value=${assigns.csrf_token} />
+								<button type="submit" class="secondary-action">Log out</button>
+							</form>
 						</div>
 					</header>
 
@@ -126,7 +115,7 @@ class AppLive {
 							<h1>Typed Phoenix, live BEAM state.</h1>
 							<p>
 								The RailsHx source renders ERB and Turbo Streams from Haxe. This port renders HEEx
-								from inline HXX and handles mutations through LiveView events.
+								from inline HXX and persists mutations through Ecto contexts.
 							</p>
 						</div>
 						<aside class="panel stat-panel" aria-label="Todo stats">
@@ -200,9 +189,9 @@ class AppLive {
 						<h2>The Rails API is not being emulated.</h2>
 						<div class="crosswalk-grid">
 							<div><strong>ActiveRecord model</strong><span>Ecto schema + context boundary</span></div>
-							<div><strong>ActionController action</strong><span>LiveView mount/event/render callbacks</span></div>
+							<div><strong>ActionController action</strong><span>Controller session action + LiveView callbacks</span></div>
 							<div><strong>HHX ERB partial</strong><span>Inline HXX function/component shape</span></div>
-							<div><strong>Turbo Stream mutation</strong><span>LiveView event diff and PubSub-ready state</span></div>
+							<div><strong>Turbo Stream mutation</strong><span>LiveView event diff over Ecto-backed state</span></div>
 						</div>
 					</section>
 				</main>
@@ -218,16 +207,79 @@ class AppLive {
 			return NoReply(socket.assign(_.status, "Add a title before creating a task."));
 		}
 
-		var nextId = socket.assigns.next_todo_id;
-		var todos = TodoState.create(socket.assigns.todos, nextId, title, notes, socket.assigns.current_user_name);
-		return NoReply(socket.merge({
-			todos: todos,
-			next_todo_id: nextId + 1,
+		var user = Accounts.getUser(socket.assigns.current_user_id);
+		if (user == null)
+			return NoReply(socket.assign(_.status, "Sign in again before creating a task."));
+
+		return switch (Todos.createForUser(user, title, notes)) {
+			case Ok(_):
+				NoReply(refreshTodos(socket.merge({title_input: "", notes_input: ""}), "Task added through Ecto and Phoenix LiveView."));
+			case Error(_):
+				NoReply(socket.assign(_.status, "Could not create that task."));
+		};
+	}
+
+	static function toggleTodo(params:Term, socket:LiveSocket<AppLiveAssigns>):HandleEventResult<AppLiveAssigns> {
+		var id = intParam(params, "id");
+		var didToggle = Todos.toggleForUser(socket.assigns.current_user_id, id);
+		if (didToggle) {
+			return NoReply(refreshTodos(socket, "Updated through Ecto and a LiveView diff."));
+		}
+		return NoReply(socket.assign(_.status, "Could not update that task."));
+	}
+
+	static function deleteTodo(params:Term, socket:LiveSocket<AppLiveAssigns>):HandleEventResult<AppLiveAssigns> {
+		var id = intParam(params, "id");
+		var didDelete = Todos.deleteForUser(socket.assigns.current_user_id, id);
+		if (didDelete) {
+			return NoReply(refreshTodos(socket, "Deleted from the database through the Todos context."));
+		}
+		return NoReply(socket.assign(_.status, "Could not delete that task."));
+	}
+
+	static function assignSignedOut(socket:Socket<AppLiveAssigns>):Socket<AppLiveAssigns> {
+		var owner = "Guest Workspace";
+		return socket.assign({
+			authenticated: false,
+			current_user_id: null,
+			current_user_name: owner,
+			current_user_email: "guest@example.test",
+			csrf_token: CSRFProtection.get_csrf_token(),
 			title_input: "",
 			notes_input: "",
-			stats: TodoState.stats(todos),
-			status: "Task added through Phoenix LiveView."
-		}));
+			todos: [],
+			status: "Sign in or continue as guest to open the PhoenixHx board.",
+			stats: TodoState.stats([])
+		});
+	}
+
+	static function assignSignedIn(socket:Socket<AppLiveAssigns>, user:User):Socket<AppLiveAssigns> {
+		var todos = Todos.viewItemsForUser(user);
+		return socket.assign({
+			authenticated: true,
+			current_user_id: user.id,
+			current_user_name: User.displayName(user),
+			current_user_email: user.email,
+			csrf_token: CSRFProtection.get_csrf_token(),
+			title_input: "",
+			notes_input: "",
+			todos: todos,
+			status: "Phoenix session active. Todos are persisted through Ecto.",
+			stats: TodoState.stats(todos)
+		});
+	}
+
+	static function currentUser(session:Session):Null<User> {
+		var userId:Term = ElixirMap.get(session, "user_id");
+		return userId != null ? Accounts.getUser(cast userId) : null;
+	}
+
+	static function refreshTodos(socket:LiveSocket<AppLiveAssigns>, status:String):LiveSocket<AppLiveAssigns> {
+		var user = Accounts.getUser(socket.assigns.current_user_id);
+		if (user == null)
+			return socket.assign(_.status, "Sign in again to reload tasks.");
+		var todos = Todos.viewItemsForUser(user);
+		return socket.merge({todos: todos, stats: TodoState.stats(todos), status: status});
 	}
 
 	static function stringParam(params:Term, key:String):String {

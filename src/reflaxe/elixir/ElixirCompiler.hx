@@ -4462,8 +4462,50 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			};
 		}
 
+		function extractNativeModuleRef(expr:Expr, fieldName:String, pos:haxe.macro.Expr.Position):Null<String> {
+			var path = extractDotPath(expr);
+			if (path == null) {
+				Context.error('${fieldName} must be a type/module reference', pos);
+				return null;
+			}
+
+			var resolvedPath = resolveTypePathFromExpr(expr, path);
+			return try {
+				switch (Context.getType(resolvedPath)) {
+					case TInst(classRef, _):
+						ModuleBuilder.extractModuleName(classRef.get());
+					default:
+						Context.error('Expected class type for ${fieldName}: ${resolvedPath}', pos);
+						null;
+				}
+			} catch (_:Dynamic) {
+				Context.error('Could not resolve ${fieldName} type: ${resolvedPath}', pos);
+				null;
+			};
+		}
+
 		function parseOptionValue(expr:Expr):RouterMetaValue {
 			return switch (expr.expr) {
+				case ECall(callee, args):
+					var calleePath = extractDotPath(callee);
+					var calleeName = calleePath != null
+						&& calleePath.indexOf(".") != -1 ? calleePath.substr(calleePath.lastIndexOf(".") + 1) : calleePath;
+					if (calleeName == "liveSessionMfa") {
+						if (args.length < 2 || args.length > 3) {
+							Context.error("liveSessionMfa(moduleRef, functionName, ?args) expects two or three arguments", expr.pos);
+						}
+						var modulePath = extractNativeModuleRef(args[0], "live session module", args[0].pos);
+						var functionName = extractStringValue(args[1], "live session function", args[1].pos);
+						var mfaArgs = args.length == 3 ? parseOptionValue(args[2]) : ROList([]);
+						ROTuple([
+							modulePath != null ? ROVar(modulePath) : parseOptionValue(args[0]),
+							functionName != null ? ROAtom(functionName) : parseOptionValue(args[1]),
+							mfaArgs
+						]);
+					} else {
+						var pathFallback = extractDotPath(expr);
+						pathFallback != null ? ROVar(pathFallback) : ROString(ExprTools.toString(expr));
+					}
 				case EConst(CString(s, _)):
 					ROString(s);
 				case EConst(CInt(i, _)):

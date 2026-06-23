@@ -42,6 +42,9 @@ defmodule PhoenixHxTodo.MixProject do
     [
       {:reflaxe_elixir, path: "../..", runtime: false},
       {:phoenix, "~> 1.7.12"},
+      {:phoenix_ecto, "~> 4.4"},
+      {:ecto_sql, "~> 3.10"},
+      {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 4.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 0.20.2"},
@@ -79,8 +82,10 @@ defmodule PhoenixHxTodo.MixProject do
         ],
         # END reflaxe_elixir haxe_compile_client_alias
 
-      setup: ["deps.get", "assets.setup", "assets.build"],
-      test: ["haxe.compile.tests", "test"],
+      setup: ["deps.get", "ecto.setup", "assets.setup", "assets.build"],
+      "ecto.setup": ["ecto.create", "ecto.migrate"],
+      "ecto.reset": ["ecto.drop", "ecto.setup"],
+      test: ["ecto.create --quiet", "ecto.migrate --quiet", "haxe.compile.tests", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": [
 
@@ -97,7 +102,8 @@ defmodule PhoenixHxTodo.MixProject do
         "esbuild phoenix_hx_todo --minify",
         "phx.digest"
       ],
-      "haxe.compile.tests": ["cmd haxe build-tests.hxml"]
+      "haxe.compile.tests": ["cmd haxe build-tests.hxml"],
+      "haxe.compile.migrations": ["cmd haxe build-migrations.hxml"]
     ]
   end
 end
