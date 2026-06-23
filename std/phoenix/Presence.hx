@@ -177,10 +177,14 @@ typedef PresenceEntry<TMeta> = {
 };
 
 /**
- * Presence list containing all presences for a topic
- * Map of PresenceKey -> PresenceEntry
+ * Presence list containing all presences for a topic.
+ *
+ * Phoenix returns `%{presence_key => %{metas: [...]}}`. The Haxe surface keeps
+ * the same runtime shape while allowing app code to supply the metadata type.
+ * Use `PresenceList<Term>` at direct interop boundaries where the metadata shape
+ * is intentionally not modeled.
  */
-typedef PresenceList = Term;
+typedef PresenceList<TMeta> = Map<String, PresenceEntry<TMeta>>;
 
 /**
  * Low-level Phoenix.Presence functions for tracking user presence.
@@ -326,10 +330,10 @@ extern class Presence {
 	 * pagination or filtering on the client side.
 	 * 
 	 * @param socketOrTopic Either a topic string or a channel socket
-	 * @return PresenceList Map of presence_key to metadata entries
+	 * @return PresenceList Map of presence_key to typed metadata entries
 	 */
 	@:native("list")
-	public static function list(socketOrTopic:Term):PresenceList;
+	public static function list<TMeta>(socketOrTopic:Term):PresenceList<TMeta>;
 
 	/**
 	 * Update presence metadata for a channel socket

@@ -658,8 +658,9 @@ class PresenceMacro {
 			name: "listSimple",
 			pos: Context.currentPos(),
 			kind: FFun({
+				params: [{name: "M"}],
 				args: [], // No arguments needed
-				ret: macro :elixir.types.Term, // Returns a map of presence entries
+				ret: macro :Map<String, phoenix.Presence.PresenceEntry<M>>,
 				expr: macro {
 					// Use presence module's list/1 with the class-level topic
 					return untyped __elixir__('{0}.list({1})', untyped __elixir__($v{fqModule}), $v{topic});
@@ -682,8 +683,9 @@ class PresenceMacro {
 			name: "list",
 			pos: Context.currentPos(),
 			kind: FFun({
+				params: [{name: "M"}],
 				args: [{name: "topic", type: macro :phoenix.PresenceTopic}],
-				ret: macro :elixir.types.Term,
+				ret: macro :Map<String, phoenix.Presence.PresenceEntry<M>>,
 				expr: macro {
 					// Emit <PresenceModule>.list(topic) (function injected by `use Phoenix.Presence`)
 					return untyped __elixir__('{0}.list({1})', untyped __elixir__($v{fqModule}), topic);

@@ -321,7 +321,7 @@ class TodoLive {
 			var presenceKey = Std.string(currentUser.id);
 			sock = TodoPresence.trackWithSocket(sock, presenceTopic, presenceKey, buildPresenceMeta(currentUser, presenceOnlineAt, null, null));
 
-			var list:Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>> = cast TodoPresence.list(presenceTopic);
+			var list:Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>> = TodoPresence.list(presenceTopic);
 			sock = sock.assign(_.online_users, list);
 			sock = sock.assign(_.presence_initialized, true);
 		}
@@ -446,7 +446,7 @@ class TodoLive {
 		var result:HandleInfoResult<TodoLiveAssigns> = if (isPresenceDiffBroadcast(payload)) {
 			// Phoenix.Presence broadcasts diffs as `%Phoenix.Socket.Broadcast{event: "presence_diff", ...}`.
 			var topic = presenceUsersTopic(socket.assigns.current_user.organizationId);
-			var updatedUsers:Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>> = cast TodoPresence.list(topic);
+			var updatedUsers:Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>> = TodoPresence.list(topic);
 			if (!socket.assigns.presence_initialized) {
 				NoReply(recomputeVisible(socket.merge({
 					online_users: updatedUsers,

@@ -230,7 +230,7 @@ live = ChatPresence.trackWithSocket(live, topic, key, {
 });
 
 var onlineUsers:Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>> =
-  cast ChatPresence.list(topic);
+  ChatPresence.list(topic);
 ```
 
 Canonical Elixir shape:

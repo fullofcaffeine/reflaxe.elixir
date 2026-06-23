@@ -63,7 +63,7 @@ class AppLive {
 
 			live = ChatPresence.trackWithSocket(live, presenceTopic(room), currentUserId, {onlineAt: onlineAt, name: currentUserName});
 
-			var list:Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>> = cast ChatPresence.list(presenceTopic(room));
+			var list:Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>> = ChatPresence.list(presenceTopic(room));
 
 			live = live.assign(_.online_users, list);
 			live = live.assign(_.presence_initialized, true);
@@ -187,7 +187,7 @@ class AppLive {
 	static function handlePubSub(payload:Term, socket:LiveSocket<AppLiveAssigns>):HandleInfoResult<AppLiveAssigns> {
 		if (isPresenceDiffBroadcast(payload)) {
 			var topic = presenceTopic(socket.assigns.room);
-			var updatedUsers:Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>> = cast ChatPresence.list(topic);
+			var updatedUsers:Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>> = ChatPresence.list(topic);
 
 			var nextSocket = if (!socket.assigns.presence_initialized) {
 				socket.merge({online_users: updatedUsers, presence_initialized: true});
