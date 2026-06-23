@@ -189,7 +189,7 @@ defmodule DateTools do
   def make_utc(year, month, day, hour, min, sec) do
     (fn ->
       elixir_month = month + 1
-      
+
             {:ok, naive} = NaiveDateTime.new(year, elixir_month, day, hour, min, sec)
             DateTime.from_naive!(naive, "Etc/UTC")
     end).()

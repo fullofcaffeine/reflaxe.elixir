@@ -21,7 +21,7 @@ defmodule PortOutput do
     end
   end
   def close(_struct) do
-    
+
   end
   def set_big_endian(struct, b) do
     Output.set_big_endian(struct, b)

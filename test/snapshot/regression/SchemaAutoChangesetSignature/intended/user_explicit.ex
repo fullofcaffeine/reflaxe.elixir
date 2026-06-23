@@ -7,7 +7,7 @@ defmodule UserExplicit do
   def new() do
     %{:__reflaxe_class__ => UserExplicit, :id => nil, :name => nil, :email => nil}
   end
-  
+
   def changeset(userexplicit, attrs) do
     userexplicit
     |> Ecto.Changeset.cast(attrs, [:name, :email])

@@ -1,9 +1,9 @@
 defmodule Main do
   def main() do
-    
+
   end
   def typed_tokens(user, params) do
-    this1 = 
+    this1 =
           (fn data, params ->
              # Convert incoming keys to snake_case atoms
              snake_params = for {k, v} <- Map.to_list(params), into: %{} do
@@ -58,7 +58,7 @@ defmodule Main do
              end
              Ecto.Changeset.cast(data, normalized_params, Map.keys(normalized_params))
            end).(user, params)
-        
+
     this1 = _ = Ecto.Changeset.cast(this1, Map.get(this1, :params, %{}) || %{}, [:name, :email, :age, :role])
     this1 = Ecto.Changeset.validate_required(this1, [:name, :email])
     this1 = Ecto.Changeset.validate_length(this1, :name, Enum.filter([min: Map.get(%{:min => 2, :max => 80}, :min), max: Map.get(%{:min => 2, :max => 80}, :max), is: Map.get(%{:min => 2, :max => 80}, :is)], fn {_, v} -> v != nil end))
@@ -70,7 +70,7 @@ defmodule Main do
     else
       Ecto.Changeset.validate_format(this1, field, pattern)
     end
-    this1 = _ = Ecto.Changeset.validate_number(this1, :age, 
+    this1 = _ = Ecto.Changeset.validate_number(this1, :age,
           (fn opts ->
              greater_than_or_equal_to =
                case Map.fetch(opts, :greater_than_or_equal_to) do
@@ -94,13 +94,13 @@ defmodule Main do
              ]
              |> Enum.filter(fn {_, value} -> value != nil end)
            end).(%{:min => 18, :max => 120})
-        )
+)
     cs = Ecto.Changeset.validate_inclusion(this1, :role, ["admin", "user"])
     cs = Ecto.Changeset.validate_exclusion(cs, :role, ["blocked"])
     cs
   end
   def literal_compatibility(user, params) do
-    this1 = 
+    this1 =
           (fn data, params ->
              # Convert incoming keys to snake_case atoms
              snake_params = for {k, v} <- Map.to_list(params), into: %{} do
@@ -155,7 +155,7 @@ defmodule Main do
              end
              Ecto.Changeset.cast(data, normalized_params, Map.keys(normalized_params))
            end).(user, params)
-        
+
     this1 = _ = Ecto.Changeset.cast(this1, Map.get(this1, :params, %{}) || %{}, [:name, :email])
     cs = Ecto.Changeset.validate_required(this1, [:name])
     cs = Ecto.Changeset.validate_length(cs, :name, Enum.filter([min: Map.get(%{:min => 2}, :min), max: Map.get(%{:min => 2}, :max), is: Map.get(%{:min => 2}, :is)], fn {_, v} -> v != nil end))

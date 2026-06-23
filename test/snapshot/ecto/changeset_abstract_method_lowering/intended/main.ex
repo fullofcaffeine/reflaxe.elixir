@@ -1,9 +1,9 @@
 defmodule Main do
   def main() do
-    
+
   end
   def fluent_chain(user, params) do
-    this1 = 
+    this1 =
           (fn data, params ->
              # Convert incoming keys to snake_case atoms
              snake_params = for {k, v} <- Map.to_list(params), into: %{} do
@@ -58,7 +58,7 @@ defmodule Main do
              end
              Ecto.Changeset.cast(data, normalized_params, Map.keys(normalized_params))
            end).(user, params)
-        
+
     this1 = Ecto.Changeset.validate_required(this1, [:name])
     this1 = Ecto.Changeset.validate_length(this1, :name, Enum.filter([min: Map.get(%{:min => 2}, :min), max: Map.get(%{:min => 2}, :max), is: Map.get(%{:min => 2}, :is)], fn {_, v} -> v != nil end))
     cs = Ecto.Changeset.validate_inclusion(this1, :role, ["admin", "user"])
@@ -66,7 +66,7 @@ defmodule Main do
     cs
   end
   def direct_return(user, params) do
-    cs = 
+    cs =
           (fn data, params ->
              # Convert incoming keys to snake_case atoms
              snake_params = for {k, v} <- Map.to_list(params), into: %{} do
@@ -121,12 +121,12 @@ defmodule Main do
              end
              Ecto.Changeset.cast(data, normalized_params, Map.keys(normalized_params))
            end).(user, params)
-        
+
     cs = Ecto.Changeset.validate_required(cs, [:name])
     cs
   end
   def same_variable_reassignment(user, params) do
-    changeset = 
+    changeset =
           (fn data, params ->
              # Convert incoming keys to snake_case atoms
              snake_params = for {k, v} <- Map.to_list(params), into: %{} do
@@ -181,7 +181,7 @@ defmodule Main do
              end
              Ecto.Changeset.cast(data, normalized_params, Map.keys(normalized_params))
            end).(user, params)
-        
+
     changeset = changeset |> Ecto.Changeset.validate_required([:name]) |> Ecto.Changeset.validate_length(:name, Enum.filter([min: Map.get(%{:min => 2}, :min), max: Map.get(%{:min => 2}, :max), is: Map.get(%{:min => 2}, :is)], fn {_, v} -> v != nil end)) |> Ecto.Changeset.validate_inclusion(:role, ["admin", "user"]) |> Ecto.Changeset.validate_exclusion(:role, ["blocked"])
     changeset
   end

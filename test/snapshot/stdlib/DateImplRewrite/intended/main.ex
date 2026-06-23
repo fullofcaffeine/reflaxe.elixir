@@ -1,6 +1,6 @@
 defmodule Main do
   def main() do
-    
+
   end
   def test_utc_now() do
     DateTime.to_iso8601(DateTime.utc_now())

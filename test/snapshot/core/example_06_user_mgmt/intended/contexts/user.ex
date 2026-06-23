@@ -8,7 +8,7 @@ defmodule User do
     _ = has_many(:posts, Post)
     _ = timestamps()
   end
-  
+
   def changeset(user, attrs) do
     user
     |> Ecto.Changeset.cast(attrs, [:name, :email, :age, :active])

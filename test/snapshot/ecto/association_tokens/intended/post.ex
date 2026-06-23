@@ -5,7 +5,7 @@ defmodule Post do
     _ = field(:user_id, :integer)
     _ = belongs_to(:user, User)
   end
-  
+
   def changeset(post, attrs) do
     post
     |> Ecto.Changeset.cast(attrs, [:title, :user_id])

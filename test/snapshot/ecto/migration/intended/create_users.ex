@@ -16,21 +16,21 @@ defmodule CreateUsers do
     drop_table(struct, "users")
   end
   defp create_table(_struct, _name) do
-    
+
   end
   defp add_column(_struct, _table, _name, _type, _primary_key, _default_value) do
-    
+
   end
   defp add_timestamps(_struct, _table) do
-    
+
   end
   defp drop_table(_struct, _name) do
-    
+
   end
   defp add_index(_struct, _table, _columns, _options) do
-    
+
   end
   defp add_check_constraint(_struct, _table, _name, _condition) do
-    
+
   end
 end

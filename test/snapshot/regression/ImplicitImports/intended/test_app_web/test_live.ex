@@ -8,13 +8,13 @@ defmodule TestAppWeb.TestLive do
     ~H"""
 <div>
     <.header title="Test Page" />
-    
+
     <.button type="submit">
         Submit Form
     </.button>
-    
+
     <.input field={@form["name"]} label="Name" />
-    
+
     <.modal id="test-modal" show={@show_modal}>
         Modal Content Here
     </.modal>

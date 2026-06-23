@@ -21,6 +21,6 @@ defmodule Main do
     query
   end
   def main() do
-    
+
   end
 end

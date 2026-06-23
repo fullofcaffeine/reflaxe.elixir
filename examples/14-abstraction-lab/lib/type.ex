@@ -96,7 +96,7 @@ defmodule Type do
   end
   def create_enum(enum, constructor, params) do
     _ignore_enum = enum
-    
+
       tag = String.to_atom(constructor)
       values = case params do
         nil -> []

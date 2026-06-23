@@ -1,6 +1,6 @@
 defmodule Main do
   def main() do
-    
+
   end
   def subscribe_to_presence() do
     Phoenix.PubSub.subscribe(pubsub_module(), "presence:lobby")

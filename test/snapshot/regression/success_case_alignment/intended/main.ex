@@ -1,6 +1,6 @@
 defmodule Main do
   defp broadcast(_todo) do
-    
+
   end
   defp process(res) do
     (case res do

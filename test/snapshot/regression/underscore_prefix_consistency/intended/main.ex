@@ -6,7 +6,7 @@ defmodule Main do
     _ = test_lambda_unused()
   end
   defp test_changeset_pattern() do
-    
+
   end
   defp process_data(_unused, data) do
     data * 2

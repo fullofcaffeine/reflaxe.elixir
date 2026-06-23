@@ -1,6 +1,6 @@
 defmodule MyAppWeb.Sample do
   def main() do
-    
+
   end
   def enum_map_guard() do
     xs = [1, 2, 3]

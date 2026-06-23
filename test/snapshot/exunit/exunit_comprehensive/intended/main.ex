@@ -147,7 +147,7 @@ end), haxe_exception} do
                     nil -> -1
                     idx -> idx
                 end
-             >= 0 end).(), (if (not Kernel.is_nil(msg)), do: msg, else: "Array should contain element"))
+ >= 0 end).(), (if (not Kernel.is_nil(msg)), do: msg, else: "Array should contain element"))
     end
     _ = assert_between.(5, 1, 10, "5 should be between 1 and 10")
     _ = assert_contains.([1, 2, 3], 2, "Array should contain 2")

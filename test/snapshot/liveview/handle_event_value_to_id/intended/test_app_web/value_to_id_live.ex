@@ -5,13 +5,13 @@ defmodule TestAppWeb.ValueToIdLive do
     {:ok, socket}
   end
   defp toggle_todo(_id, _socket) do
-    
+
   end
   def handle_event(event, params, socket) do
     if (event == "toggle_todo") do
       toggle_todo(params, socket)
     else
-      
+
     end
     {:noreply, socket}
   end

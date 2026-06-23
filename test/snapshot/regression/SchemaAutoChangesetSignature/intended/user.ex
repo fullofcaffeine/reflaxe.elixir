@@ -7,7 +7,7 @@ defmodule User do
   def new() do
     %{:__reflaxe_class__ => User, :id => nil, :name => nil, :email => nil}
   end
-  
+
   def changeset(user, attrs) do
     user
     |> Ecto.Changeset.cast(attrs, [:name, :email])

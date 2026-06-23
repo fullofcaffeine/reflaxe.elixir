@@ -61,7 +61,7 @@ end)
     end
   end
   defp shutdown_task() do
-    
+
   end
   defp worker_loop(worker_queue) do
     {_worker_queue} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {worker_queue}, fn _, {acc_worker_queue} ->

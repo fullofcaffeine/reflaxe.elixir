@@ -163,22 +163,22 @@ end).()
       if (not Kernel.is_nil(component)), do: validate_component_attribute(component, attribute_name), else: false
       (fn ->
   this = element.allowedAttributes
-  
+
                 case Enum.find_index(_this, fn item -> item == attribute_name end) do
                     nil -> -1
                     idx -> idx
                 end
-            
+
 end).() != -1
     else
       (fn ->
   this = element.allowedAttributes
-  
+
                 case Enum.find_index(_this, fn item -> item == attribute_name end) do
                     nil -> -1
                     idx -> idx
                 end
-            
+
 end).() != -1
     end
   end
@@ -383,12 +383,12 @@ end) do
       {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
       _ ->
         (fn ->
-  
+
                 case Enum.find_index(_this, fn item -> item == attribute_name end) do
                     nil -> -1
                     idx -> idx
                 end
-            
+
 end).() != -1
     end)
   end

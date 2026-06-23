@@ -132,20 +132,20 @@ data end).(), pos, len))
   end
   def compare(struct, other) do
     cond do
-            (fn -> data = Process.get(struct.dict_key)
-if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
-  data = struct.b
-  Process.put(struct.dict_key, data)
-end
-data end).() < apply(Map.get(other, :__reflaxe_class__) || Map.get(other, :__struct__), :get_data, [other]) -> -1
-            (fn -> data = Process.get(struct.dict_key)
-if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
-  data = struct.b
-  Process.put(struct.dict_key, data)
-end
-data end).() > apply(Map.get(other, :__reflaxe_class__) || Map.get(other, :__struct__), :get_data, [other]) -> 1
-            true -> 0
-        end
+                (fn -> data = Process.get(struct.dict_key)
+    if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
+      data = struct.b
+      Process.put(struct.dict_key, data)
+    end
+    data end).() < apply(Map.get(other, :__reflaxe_class__) || Map.get(other, :__struct__), :get_data, [other]) -> -1
+                (fn -> data = Process.get(struct.dict_key)
+    if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
+      data = struct.b
+      Process.put(struct.dict_key, data)
+    end
+    data end).() > apply(Map.get(other, :__reflaxe_class__) || Map.get(other, :__struct__), :get_data, [other]) -> 1
+                true -> 0
+            end
   end
   def get_data(struct) do
     data = Process.get(struct.dict_key)
@@ -350,11 +350,11 @@ data end).(), pos, 8); value
   end
   def to_hex(struct) do
     Base.encode16((fn -> data = Process.get(struct.dict_key)
-if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
-  data = struct.b
-  Process.put(struct.dict_key, data)
-end
-data end).(), case: :lower)
+    if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
+      data = struct.b
+      Process.put(struct.dict_key, data)
+    end
+    data end).(), case: :lower)
   end
   def alloc(length_param) do
     b = :binary.copy(<<0>>, length_param)

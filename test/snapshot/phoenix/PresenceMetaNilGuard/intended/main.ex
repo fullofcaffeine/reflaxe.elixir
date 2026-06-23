@@ -1,6 +1,6 @@
 defmodule Main do
   def main() do
-    
+
   end
   def needs_coalesce_one_liner(socket, key) do
     current_meta = maybe_get_meta()

@@ -4,7 +4,7 @@ defmodule User do
     _ = field(:email, :string)
     _ = has_many(:posts, Post)
   end
-  
+
   def changeset(user, attrs) do
     user
     |> Ecto.Changeset.cast(attrs, [:email])

@@ -150,7 +150,7 @@ end), haxe_exception} do
     if (Reflaxe.Elixir.HaxeFloat.eq(value, nil) or not Kernel.is_list(value)) do
       nil
     else
-      
+
             Enum.reduce_while(value, [], fn v, acc ->
               cond do
                 is_integer(v) ->
@@ -173,7 +173,7 @@ end), haxe_exception} do
               :error -> nil
               acc -> Enum.reverse(acc)
             end
-        
+
     end
   end
 end

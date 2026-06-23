@@ -33,7 +33,7 @@ defmodule Main do
     t + 1
   end
   defp unused_param(_t) do
-    
+
   end
   defp for_loop_test(arr) do
     sum = 0

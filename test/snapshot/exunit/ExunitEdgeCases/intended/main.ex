@@ -21,7 +21,7 @@ defmodule Main do
     42
   end
   test "without assertions" do
-    
+
   end
   test "with many tags" do
     assert true
@@ -37,7 +37,7 @@ defmodule Main do
     assert true
   end
   test "empty" do
-    
+
   end
   test "delegation" do
     helper_method(context)

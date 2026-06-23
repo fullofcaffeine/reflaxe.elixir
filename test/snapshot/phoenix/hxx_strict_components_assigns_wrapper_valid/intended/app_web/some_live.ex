@@ -7,6 +7,6 @@ defmodule AppWeb.SomeLive do
 """
   end
   def main() do
-    
+
   end
 end

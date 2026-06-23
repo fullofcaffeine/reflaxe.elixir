@@ -308,6 +308,8 @@ class ElixirOutputIterator {
 			}
 			#end
 
+			output = trimTrailingWhitespacePerLine(output);
+
 			// Return the same DataAndFileInfo but with string output instead of AST
 			return astData.withOutput(output);
 		}
@@ -338,6 +340,17 @@ class ElixirOutputIterator {
 	function clearContextForCurrentOutput():Void {
 		context.clearModuleContext();
 		context.currentClass = null;
+	}
+
+	static function trimTrailingWhitespacePerLine(output:String):String {
+		if (output == null || output.length == 0)
+			return output;
+
+		var lines = output.split("\n");
+		for (index in 0...lines.length) {
+			lines[index] = StringTools.rtrim(lines[index]);
+		}
+		return lines.join("\n");
 	}
 
 	#if macro

@@ -7,7 +7,7 @@ defmodule User do
     _ = field(:active, :boolean)
     _ = timestamps()
   end
-  
+
   def changeset(user, attrs) do
     user
     |> Ecto.Changeset.cast(attrs, [:name, :email, :age, :active])

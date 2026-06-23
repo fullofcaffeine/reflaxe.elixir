@@ -10,6 +10,6 @@ defmodule Main do
 """
   end
   def main() do
-    
+
   end
 end

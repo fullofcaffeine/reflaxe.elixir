@@ -1,6 +1,6 @@
 defmodule Main do
   def preferred_ecto_names(user, params) do
-    this1 = 
+    this1 =
           (fn data, params ->
              # Convert incoming keys to snake_case atoms
              snake_params = for {k, v} <- Map.to_list(params), into: %{} do
@@ -55,8 +55,8 @@ defmodule Main do
              end
              Ecto.Changeset.cast(data, normalized_params, Map.keys(normalized_params))
            end).(user, params)
-        
-    cs = _ = Ecto.Changeset.validate_number(this1, :age, 
+
+    cs = _ = Ecto.Changeset.validate_number(this1, :age,
           (fn opts ->
              greater_than_or_equal_to =
                case Map.fetch(opts, :greater_than_or_equal_to) do
@@ -80,8 +80,8 @@ defmodule Main do
              ]
              |> Enum.filter(fn {_, value} -> value != nil end)
            end).(%{:greater_than_or_equal_to => 18, :less_than_or_equal_to => 120})
-        )
-    _ = Ecto.Changeset.validate_number(this1, :score, 
+)
+    _ = Ecto.Changeset.validate_number(this1, :score,
           (fn opts ->
              greater_than_or_equal_to =
                case Map.fetch(opts, :greater_than_or_equal_to) do
@@ -105,11 +105,11 @@ defmodule Main do
              ]
              |> Enum.filter(fn {_, value} -> value != nil end)
            end).(%{:greater_than => 0, :less_than => 100, :not_equal_to => 13})
-        )
+)
     cs
   end
   def shorthand_aliases(user, params) do
-    cs = 
+    cs =
           (fn data, params ->
              # Convert incoming keys to snake_case atoms
              snake_params = for {k, v} <- Map.to_list(params), into: %{} do
@@ -164,8 +164,8 @@ defmodule Main do
              end
              Ecto.Changeset.cast(data, normalized_params, Map.keys(normalized_params))
            end).(user, params)
-        
-    _ = Ecto.Changeset.validate_number(this1, :age, 
+
+    _ = Ecto.Changeset.validate_number(this1, :age,
           (fn opts ->
              greater_than_or_equal_to =
                case Map.fetch(opts, :greater_than_or_equal_to) do
@@ -189,7 +189,7 @@ defmodule Main do
              ]
              |> Enum.filter(fn {_, value} -> value != nil end)
            end).(%{:min => 18, :max => 120})
-        )
+)
     cs
   end
 end

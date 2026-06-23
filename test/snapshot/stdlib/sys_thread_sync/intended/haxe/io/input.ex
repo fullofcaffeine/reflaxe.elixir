@@ -52,7 +52,7 @@ end), haxe_exception} do
     (len - k)
   end
   def close(_struct) do
-    
+
   end
   def read_all(struct, bufsize) do
     bufsize = if (Kernel.is_nil(bufsize)), do: 16384, else: bufsize

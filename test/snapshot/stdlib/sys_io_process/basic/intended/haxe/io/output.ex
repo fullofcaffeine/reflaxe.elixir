@@ -35,10 +35,10 @@ defmodule Output do
     len
   end
   def flush(_struct) do
-    
+
   end
   def close(_struct) do
-    
+
   end
   def write(struct, s) do
     l = s.length
@@ -180,7 +180,7 @@ end).()] end).())
     end
   end
   def prepare(_struct, _nbytes) do
-    
+
   end
   def write_input(struct, i, bufsize) do
     bufsize = if (Kernel.is_nil(bufsize)), do: 4096, else: bufsize

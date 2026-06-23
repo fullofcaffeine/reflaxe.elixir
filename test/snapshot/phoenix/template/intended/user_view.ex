@@ -50,11 +50,11 @@ defmodule UserView do
 						<% end %>
 					</nav>
 				</header>
-				
+
 				<main>
 					<%= inner_content %>
 				</main>
-				
+
 				<footer>
 					<p>&copy; 2024 MyApp</p>
 				</footer>

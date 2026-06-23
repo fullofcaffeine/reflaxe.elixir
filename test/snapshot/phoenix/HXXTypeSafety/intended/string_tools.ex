@@ -162,20 +162,20 @@ end) != -1
     s
   end
   def parse_int(str) do
-    
-            case str do
-              <<"0x", rest::binary>> ->
-                case Integer.parse(rest, 16) do
-                  {num, ""} -> num
-                  _ -> nil
+
+                case str do
+                  <<"0x", rest::binary>> ->
+                    case Integer.parse(rest, 16) do
+                      {num, ""} -> num
+                      _ -> nil
+                    end
+                  _ ->
+                    case Integer.parse(str) do
+                      {num, ""} -> num
+                      _ -> nil
+                    end
                 end
-              _ ->
-                case Integer.parse(str) do
-                  {num, ""} -> num
-                  _ -> nil
-                end
-            end
-        
+
   end
   def parse_float(str) do
     Reflaxe.Elixir.HaxeFloat.parse(str)

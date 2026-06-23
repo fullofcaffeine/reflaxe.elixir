@@ -1,67 +1,67 @@
 defmodule Reflect do
   def field(o, field) do
     if Map.has_key?(o, field) do
-  Map.get(o, field)
-else
-  try do
-    Map.get(o, String.to_existing_atom(field))
-  rescue
-    ArgumentError -> nil
-  end
-end
+      Map.get(o, field)
+    else
+      try do
+        Map.get(o, String.to_existing_atom(field))
+      rescue
+        ArgumentError -> nil
+      end
+    end
   end
   def set_field(o, field, value) do
     if Map.has_key?(o, field) do
-  Map.put(o, field, value)
-else
-  try do
-    key = String.to_existing_atom(field)
-    if Map.has_key?(o, key) do
-      Map.put(o, key, value)
-    else
       Map.put(o, field, value)
+    else
+      try do
+        key = String.to_existing_atom(field)
+        if Map.has_key?(o, key) do
+          Map.put(o, key, value)
+        else
+          Map.put(o, field, value)
+        end
+      rescue
+        ArgumentError -> Map.put(o, field, value)
+      end
     end
-  rescue
-    ArgumentError -> Map.put(o, field, value)
-  end
-end
   end
   def fields(o) do
     Map.keys(o)
-|> Enum.flat_map(fn k ->
-  cond do
-    is_atom(k) -> [Atom.to_string(k)]
-    is_binary(k) -> [k]
-    true -> []
-  end
-end)
+    |> Enum.flat_map(fn k ->
+      cond do
+        is_atom(k) -> [Atom.to_string(k)]
+        is_binary(k) -> [k]
+        true -> []
+      end
+    end)
   end
   def has_field(o, field) do
     if Map.has_key?(o, field) do
-  true
-else
-  try do
-    Map.has_key?(o, String.to_existing_atom(field))
-  rescue
-    ArgumentError -> false
-  end
-end
+      true
+    else
+      try do
+        Map.has_key?(o, String.to_existing_atom(field))
+      rescue
+        ArgumentError -> false
+      end
+    end
   end
   def delete_field(o, field) do
     if Map.has_key?(o, field) do
-  Map.delete(o, field)
-else
-  try do
-    key = String.to_existing_atom(field)
-    if Map.has_key?(o, key) do
-      Map.delete(o, key)
+      Map.delete(o, field)
     else
-      o
+      try do
+        key = String.to_existing_atom(field)
+        if Map.has_key?(o, key) do
+          Map.delete(o, key)
+        else
+          o
+        end
+      rescue
+        ArgumentError -> o
+      end
     end
-  rescue
-    ArgumentError -> o
-  end
-end
   end
   def is_object(v) do
     is_map(v)

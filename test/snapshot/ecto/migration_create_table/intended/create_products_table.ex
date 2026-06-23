@@ -15,15 +15,15 @@ defmodule CreateProductsTable do
     true
   end
   defp create_table(_struct, _table_name) do
-    
+
   end
   defp drop_table(_struct, _table_name) do
-    
+
   end
   defp add_column(_struct, _table, _column, _type) do
-    
+
   end
   defp timestamps(_struct) do
-    
+
   end
 end
