@@ -14,6 +14,7 @@ bd.sock
 last-touched
 sync-state.json
 export-state.json
+interactions.jsonl
 
 # Embedded Dolt runtime state.
 # Fresh clones should run `bd bootstrap`, which imports the tracked
