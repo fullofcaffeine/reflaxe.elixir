@@ -84,6 +84,7 @@ Notes:
 - `_.count` is a compile-time field selector for `socket.assign`; `_` here is not a runtime variable.
 - `assign({ ... })` maps to Phoenix `assign(socket, %{...})` (bulk assign).
 - Typed keys (`assignKey` / `updateKey`) are optional and use `AssignKeys.of(...)`.
+- Typed streams (`stream` / `streamInsert` / `streamDelete`) are optional and use `LiveStreams.of(...)`.
 - `LiveSocket<TAssigns>` remains available as an explicit wrapper when you want that style in helper APIs.
 - `event` and `params` are runtime values from Phoenix.
 - In Haxe, you can use plain names (`params`, `session`); generated Elixir will still emit `_params` / `_session` when unused.
@@ -100,6 +101,26 @@ var keys = AssignKeys.of(CounterAssigns);
 
 socket = socket.assignKey(keys.count, 0);
 socket = socket.updateKey(keys.count, (n) -> n + 1);
+```
+
+Optional typed-stream variant:
+
+```haxe
+import phoenix.LiveStreams;
+
+typedef Todo = {
+  var id:Int;
+  var title:String;
+}
+
+typedef TodoAssigns = {
+  var todos:Array<Todo>;
+}
+
+var streams = LiveStreams.of(TodoAssigns);
+
+socket = socket.stream(streams.todos, todos);
+socket = socket.streamInsert(streams.todos, todo);
 ```
 
 Deep dive:

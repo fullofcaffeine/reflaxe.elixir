@@ -1,6 +1,6 @@
-# LiveView Assign API (Haxe -> Phoenix)
+# LiveView Assign And Stream API (Haxe -> Phoenix)
 
-This page explains the two assign authoring styles and when to use each one.
+This page explains the assign and stream authoring styles and when to use each one.
 
 ## Why this page exists
 
@@ -8,6 +8,7 @@ Both styles generate normal Phoenix calls at runtime. The choice is about Haxe a
 
 - default macro selector style: least code to write
 - typed-key style: explicit key tokens and stronger key/value coupling
+- typed-stream style: explicit stream-name tokens and stronger name/item coupling
 
 ## Quick Choice Guide
 
@@ -18,6 +19,8 @@ Both styles generate normal Phoenix calls at runtime. The choice is about Haxe a
 | Typed key-token style (optional) | `assignKey(keys.field, value)` | `assign(socket, :field, value)` |
 | Set default-if-missing | `assignNew(_.field, fn)` or `assignNewKey(keys.field, fn)` | `assign_new(socket, :field, fn -> ... end)` |
 | Update from previous value | `update(_.field, fn)` or `updateKey(keys.field, fn)` | `update(socket, :field, fn prev -> ... end)` |
+| Initialize a LiveView stream | `stream(streams.todos, todos)` | `Phoenix.LiveView.stream(socket, :todos, todos)` |
+| Mutate a LiveView stream | `streamInsert(streams.todos, todo)` / `streamDelete(streams.todos, todo)` | `Phoenix.LiveView.stream_insert/delete(socket, :todos, todo)` |
 
 ## Consumer View
 
@@ -90,6 +93,41 @@ What you get:
 | Key/value typing | field name validated; value typed by call context | explicit key token carries value type |
 | Good default for most apps | yes | optional advanced mode |
 
+### 4) Optional typed-stream style (`stream(streams.field, items)`)
+
+```haxe
+import phoenix.LiveStreams;
+
+typedef Todo = {
+  var id:Int;
+  var title:String;
+}
+
+typedef TodoAssigns = {
+  var todos:Array<Todo>;
+}
+
+var streams = LiveStreams.of(TodoAssigns);
+
+socket = socket.stream(streams.todos, todos);
+socket = socket.streamInsert(streams.todos, newTodo);
+socket = socket.streamDelete(streams.todos, oldTodo);
+```
+
+Why this exists:
+
+- Phoenix streams are named atom collections under `assigns.streams`.
+- Stream items have a stable shape, and the name/item pairing is easy to mix up in larger apps.
+- `LiveStreams.of(...)` keeps the Phoenix primitive visible while giving Haxe completion and type checking.
+
+What you get:
+
+- `Array<T>` fields become `LiveStreamName<TAssigns, T>` tokens.
+- `streamInsert` and `streamDelete` require the item type paired with the selected stream.
+- generated output uses normal Phoenix calls: `Phoenix.LiveView.stream(socket, :todos, todos)`, `stream_insert`, and `stream_delete`.
+
+Raw `phoenix.Phoenix.LiveView.stream(socket, "todos", todos)` remains available for direct Phoenix interop and older code. Prefer typed stream tokens for app-owned stream names.
+
 ### Do I need `@:build(...)`?
 
 Usually, no.
@@ -161,12 +199,28 @@ Source:
 - `std/phoenix/macros/AssignKeysBuilder.hx`
 - `std/phoenix/macros/AssignKeysSupport.hx`
 
+### Stream generation details
+
+Typed-stream mode is generated on demand:
+
+- `phoenix.LiveStreams.of(MyAssigns)` reads list-shaped assigns fields.
+- `Array<T>` fields become `LiveStreamName<MyAssigns, T>` tokens.
+- Non-list fields are ignored because Phoenix streams are collection-oriented.
+- Field names use the same `camelCase -> snake_case` atom normalization as assign keys.
+
+Source:
+
+- `std/phoenix/LiveStreams.hx`
+- `std/phoenix/types/LiveStreamName.hx`
+- `std/phoenix/macros/LiveStreamMacro.hx`
+
 ### Error behavior summary
 
 - `assign(_.missingField, value)` -> compile-time error (unknown assigns field)
 - `assign({missing_field: value})` -> compile-time error (unknown assigns field)
 - `assignKey(keys.count, "x")` when `count` is `Int` -> compile-time type error
 - `assign(nonLiteralMap)` -> forwarded to Phoenix assign/2 runtime call
+- `streamInsert(streams.todos, "x")` when `todos` is `Array<Todo>` -> compile-time type error
 
 ## See Also
 

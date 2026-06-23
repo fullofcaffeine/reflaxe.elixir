@@ -10,6 +10,7 @@ For the example-driven parity backlog, see `docs/08-roadmap/phoenix-surface-pari
 - `phoenix.Component`: assign/slot helper APIs and component-oriented utilities
 - `phoenix.Phoenix.Socket`: LiveView callback socket surface (includes assign helpers via extensions)
 - `phoenix.LiveSocket`: optional typed wrapper operations
+- `phoenix.AssignKeys` and `phoenix.LiveStreams`: typed assign-key and stream-name token generation
 - `phoenix.PhoenixFlash`: typed flash helpers
 - `phoenix.Channel` + `phoenix.channels.*`: typed channel callback/result helpers
 - `phoenix.Presence`, `phoenix.PresenceBehavior`, and generated app Presence modules: presence tracking APIs
@@ -40,7 +41,7 @@ Key points:
 - Use function-level `@:native("...")` only for explicit interop with an existing Elixir API or unusual callback name.
 - Prefer typed assigns typedefs and keep them shared between render/mount/event paths.
 
-## LiveView Assign APIs (Important)
+## LiveView Assign And Stream APIs (Important)
 
 `phoenix.Phoenix.Socket` supports Phoenix-faithful runtime semantics with Haxe-oriented authoring ergonomics:
 
@@ -48,6 +49,7 @@ Key points:
 - `assign({ ... })` for Phoenix-style bulk updates (`assign/2` shape)
 - `assignKey(keys.field, value)` as an optional typed-key mode
 - `assignNew` / `assignNewKey` and `update` / `updateKey` for default/update workflows
+- `stream(streams.field, items)` plus `streamInsert` / `streamDelete` for typed LiveView streams
 
 `merge({ ... })` remains available as a backward-compatible alias; prefer `assign({ ... })` for 1:1 Phoenix API shape.
 
@@ -56,6 +58,21 @@ Typed-key setup is now:
 - then `assignKey(keys.field, value)`
 
 `phoenix.LiveSocket` keeps the same APIs for explicit wrapper-style helpers.
+
+Typed-stream setup is:
+
+- `var streams = phoenix.LiveStreams.of(MyAssigns)`
+- then `stream(streams.field, items)`, `streamInsert(streams.field, item)`, or `streamDelete(streams.field, item)`
+
+`LiveStreams.of(...)` turns list-shaped assigns fields such as `todos:Array<Todo>` into `LiveStreamName<MyAssigns, Todo>` tokens. The generated code remains ordinary Phoenix:
+
+```elixir
+Phoenix.LiveView.stream(socket, :todos, todos)
+Phoenix.LiveView.stream_insert(socket, :todos, todo)
+Phoenix.LiveView.stream_delete(socket, :todos, todo)
+```
+
+Raw `Phoenix.LiveView.stream*` extern calls remain available for direct interop and existing code.
 
 Canonical deep dive:
 
@@ -80,6 +97,10 @@ class CoreComponents {
 ```
 
 Slot typing uses `phoenix.types.Slot` + `@:slot` metadata in assigns typedefs.
+
+The existing component surface is intentionally Phoenix-shaped. Use function components,
+attrs, and slots when a real reusable component boundary exists; keep inline HXX in a
+LiveView render function when a template is local to that LiveView.
 
 ## HXX / HEEx APIs
 

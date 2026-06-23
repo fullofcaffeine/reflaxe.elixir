@@ -366,15 +366,28 @@ extern class LiveView {
 	/**
 	 * Streams API – declarative collection rendering helpers
 	 * Mirrors Phoenix.LiveView.stream/3 and friends; options are left as raw terms for flexibility.
+	 *
+	 * Raw string names remain supported for direct Phoenix interop and backward
+	 * compatibility. Prefer atom-backed `phoenix.types.LiveStreamName` tokens for
+	 * typed app code.
 	 */
 	@:native("stream")
-	static function stream<TAssigns, TItem>(socket:Socket<TAssigns>, name:String, item:TItem, ?opts:Term):Socket<TAssigns>;
+	@:overload(function<TAssigns, TItem>(socket:Socket<TAssigns>, name:Atom, items:Array<TItem>):Socket<TAssigns> {})
+	@:overload(function<TAssigns, TItem>(socket:Socket<TAssigns>, name:Atom, items:Array<TItem>, opts:Term):Socket<TAssigns> {})
+	@:overload(function<TAssigns, TItems>(socket:Socket<TAssigns>, name:String, items:TItems):Socket<TAssigns> {})
+	static function stream<TAssigns, TItems>(socket:Socket<TAssigns>, name:String, items:TItems, opts:Term):Socket<TAssigns>;
 
 	@:native("stream_insert")
-	static function streamInsert<TAssigns, TItem>(socket:Socket<TAssigns>, name:String, item:TItem, ?opts:Term):Socket<TAssigns>;
+	@:overload(function<TAssigns, TItem>(socket:Socket<TAssigns>, name:Atom, item:TItem):Socket<TAssigns> {})
+	@:overload(function<TAssigns, TItem>(socket:Socket<TAssigns>, name:Atom, item:TItem, opts:Term):Socket<TAssigns> {})
+	@:overload(function<TAssigns, TItem>(socket:Socket<TAssigns>, name:String, item:TItem):Socket<TAssigns> {})
+	static function streamInsert<TAssigns, TItem>(socket:Socket<TAssigns>, name:String, item:TItem, opts:Term):Socket<TAssigns>;
 
 	@:native("stream_delete")
-	static function streamDelete<TAssigns, TItem>(socket:Socket<TAssigns>, name:String, item:TItem, ?opts:Term):Socket<TAssigns>;
+	@:overload(function<TAssigns, TItem>(socket:Socket<TAssigns>, name:Atom, item:TItem):Socket<TAssigns> {})
+	@:overload(function<TAssigns, TItem>(socket:Socket<TAssigns>, name:Atom, item:TItem, opts:Term):Socket<TAssigns> {})
+	@:overload(function<TAssigns, TItem>(socket:Socket<TAssigns>, name:String, item:TItem):Socket<TAssigns> {})
+	static function streamDelete<TAssigns, TItem>(socket:Socket<TAssigns>, name:String, item:TItem, opts:Term):Socket<TAssigns>;
 
 	/**
 	 * Uploads API – allow and consume uploads

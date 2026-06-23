@@ -107,7 +107,7 @@ Evidence:
 
 - `make -C test single TEST=phoenix/liveview_test_typed_tokens`
 
-### P2: LiveView Components And Streams From RailsHx Port
+### Done: LiveView Components And Streams From RailsHx Port
 
 Tracked by `haxe.elixir-944.2.7`.
 
@@ -116,14 +116,21 @@ one Phoenix LiveView render function and assign-backed lists. Phoenix itself
 usually reaches for function components with attrs/slots and, for mutable lists,
 `stream/3` plus `phx-update="stream"`.
 
-Follow-up rules:
+Decision:
 
-- Do not introduce Rails partial or Turbo compatibility APIs.
-- Keep inline HXX as a valid default.
-- Add typed surfaces only if they map directly to Phoenix component or stream
-  primitives and reduce real example boilerplate.
-- Any implementation must emit ordinary Phoenix component/LiveView code and add
-  focused coverage.
+- No Rails partial or Turbo compatibility API was added.
+- The existing Phoenix-shaped component surface (`@:component`, attrs/assigns, slots, and inline HXX)
+  remains the right API; no new component DSL was needed.
+- Added typed LiveView stream-name tokens with `phoenix.LiveStreams.of(MyAssigns)`.
+- Added `Socket<T>` and `LiveSocket<T>` helpers for `stream`, `streamInsert`, and `streamDelete`.
+- Raw `Phoenix.LiveView.stream*` extern calls remain available for direct interop and older code.
+
+Evidence:
+
+- `std/phoenix/LiveStreams.hx`
+- `std/phoenix/types/LiveStreamName.hx`
+- `std/phoenix/macros/LiveStreamMacro.hx`
+- `test/snapshot/phoenix/liveview_stream_tokens`
 
 ### P2: on_mount, live_session, Forms, And Changesets From RailsHx Port
 

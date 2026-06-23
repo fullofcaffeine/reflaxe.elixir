@@ -4,6 +4,7 @@ package phoenix;
 import haxe.macro.Expr;
 #end
 import phoenix.types.AssignKey;
+import phoenix.types.LiveStreamName;
 
 /**
  * Socket assign extension macros for Phoenix LiveView callbacks.
@@ -13,6 +14,7 @@ import phoenix.types.AssignKey;
  *   - `assign(_.field, value)` / `assign({...})`
  *   - `assignKey(keys.field, value)` (optional typed-key mode)
  *   - `assignNew`, `assignNewKey`, `update`, `updateKey`, `merge`
+ *   - `stream`, `streamInsert`, `streamDelete` with typed stream-name tokens
  *
  * WHY
  * - Phoenix callbacks naturally use `socket: Socket<TAssigns>`.
@@ -20,6 +22,7 @@ import phoenix.types.AssignKey;
  *
  * HOW
  * - Each extension macro delegates to `phoenix.macros.AssignMacro`.
+ * - Stream helpers delegate to `phoenix.macros.LiveStreamMacro`.
  * - Runtime output remains the same Phoenix calls (`assign/2`, `assign/3`, `assign_new/3`, `update/3`).
  *
  * EXAMPLES
@@ -30,10 +33,14 @@ import phoenix.types.AssignKey;
  *   var keys = AssignKeys.of(CounterAssigns);
  *   socket = socket.assignKey(keys.count, 1);
  *
+ *   var streams = LiveStreams.of(TodoAssigns);
+ *   socket = socket.stream(streams.todos, todos);
+ *
  * Elixir:
  *   assign(socket, :count, 0)
  *   assign(socket, %{search_query: "term"})
  *   assign(socket, :count, 1)
+ *   Phoenix.LiveView.stream(socket, :todos, todos)
  */
 class SocketAssignExtensions {
 	/**
@@ -88,5 +95,29 @@ class SocketAssignExtensions {
 	public static macro function updateKey<T, V>(ethis:ExprOf<phoenix.Phoenix.Socket<T>>, keyExpr:ExprOf<AssignKey<T, V>>,
 			updater:ExprOf<V->V>):ExprOf<phoenix.Phoenix.Socket<T>> {
 		return cast phoenix.macros.AssignMacro.processUpdateKey(ethis, keyExpr, updater);
+	}
+
+	/**
+	 * Initialize or reset a typed LiveView stream.
+	 */
+	public static macro function stream<T, V>(ethis:ExprOf<phoenix.Phoenix.Socket<T>>, streamName:ExprOf<LiveStreamName<T, V>>, items:ExprOf<Array<V>>,
+			?opts:Expr):ExprOf<phoenix.Phoenix.Socket<T>> {
+		return cast phoenix.macros.LiveStreamMacro.processStream(ethis, streamName, items, opts);
+	}
+
+	/**
+	 * Insert or update one item in a typed LiveView stream.
+	 */
+	public static macro function streamInsert<T, V>(ethis:ExprOf<phoenix.Phoenix.Socket<T>>, streamName:ExprOf<LiveStreamName<T, V>>, item:ExprOf<V>,
+			?opts:Expr):ExprOf<phoenix.Phoenix.Socket<T>> {
+		return cast phoenix.macros.LiveStreamMacro.processStreamInsert(ethis, streamName, item, opts);
+	}
+
+	/**
+	 * Delete one item from a typed LiveView stream.
+	 */
+	public static macro function streamDelete<T, V>(ethis:ExprOf<phoenix.Phoenix.Socket<T>>, streamName:ExprOf<LiveStreamName<T, V>>, item:ExprOf<V>,
+			?opts:Expr):ExprOf<phoenix.Phoenix.Socket<T>> {
+		return cast phoenix.macros.LiveStreamMacro.processStreamDelete(ethis, streamName, item, opts);
 	}
 }
