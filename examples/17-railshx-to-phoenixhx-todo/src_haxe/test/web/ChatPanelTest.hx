@@ -1,10 +1,10 @@
 package web;
 
-import elixir.types.Term;
 import exunit.Assert.*;
 import exunit.TestCase;
 import phoenix.test.ConnTest;
 import phoenix.test.LiveView;
+import phoenix.test.LiveViewMountResult;
 import phoenix.test.LiveViewTest;
 
 @:exunit
@@ -17,8 +17,8 @@ class ChatPanelTest extends TestCase {
 		var conn = ConnTest.build_conn();
 		conn = ConnTest.post(conn, "/auth/demo", {name: "Chat User", email: 'chat-${runId}@example.test'});
 
-		var lvTuple:Term = LiveViewTest.live(conn, "/todos");
-		var lv:LiveView = LiveViewTest.view(lvTuple);
+		var mounted:LiveViewMountResult = LiveViewTest.live(conn, "/todos");
+		var lv:LiveView = mounted.view();
 		LiveViewTest.render_submit(LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), {body: body});
 
 		var html = LiveViewTest.render(lv);
@@ -33,8 +33,8 @@ class ChatPanelTest extends TestCase {
 		var conn = ConnTest.build_conn();
 		conn = ConnTest.post(conn, "/auth/demo", {name: "Recent Chat User", email: 'recent-chat-${runId}@example.test'});
 
-		var lvTuple:Term = LiveViewTest.live(conn, "/todos");
-		var lv:LiveView = LiveViewTest.view(lvTuple);
+		var mounted:LiveViewMountResult = LiveViewTest.live(conn, "/todos");
+		var lv:LiveView = mounted.view();
 		for (index in 0...7) {
 			LiveViewTest.render_submit(LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), {body: 'Recent note ${runId}-${index}'});
 		}

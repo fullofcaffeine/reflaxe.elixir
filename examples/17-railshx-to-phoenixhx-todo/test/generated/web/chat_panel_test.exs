@@ -12,8 +12,8 @@ defmodule PhoenixHxTodo.ChatPanelTest do
     body = "Phoenix PubSub room note " <> run_id
     conn = Phoenix.ConnTest.build_conn()
     conn = Phoenix.ConnTest.post(conn, "/auth/demo", %{:name => "Chat User", :email => "chat-" <> run_id <> "@example.test"})
-    lv_tuple = Phoenix.LiveViewTest.live(conn, "/todos")
-    lv = elem(lv_tuple, 1)
+    mounted = Phoenix.LiveViewTest.live(conn, "/todos")
+    lv = elem(mounted, 1)
     _ = Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{:body => body})
     html = Phoenix.LiveViewTest.render(lv)
     condition = (case :binary.match(html, body) do
@@ -34,8 +34,8 @@ end) != -1
     end)))
     conn = Phoenix.ConnTest.build_conn()
     conn = Phoenix.ConnTest.post(conn, "/auth/demo", %{:name => "Recent Chat User", :email => "recent-chat-" <> run_id <> "@example.test"})
-    lv_tuple = Phoenix.LiveViewTest.live(conn, "/todos")
-    lv = elem(lv_tuple, 1)
+    mounted = Phoenix.LiveViewTest.live(conn, "/todos")
+    lv = elem(mounted, 1)
     _ = Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{:body => "Recent note " <> run_id <> "-" <> Reflaxe.Elixir.HaxeFloat.to_string(0)})
     _ = Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{:body => "Recent note " <> run_id <> "-" <> Reflaxe.Elixir.HaxeFloat.to_string(1)})
     _ = Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{:body => "Recent note " <> run_id <> "-" <> Reflaxe.Elixir.HaxeFloat.to_string(2)})
