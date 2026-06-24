@@ -13,6 +13,7 @@ import elixir.DateTime.NaiveDateTime;
 import elixir.Enum;
 import haxe.functional.Result; // Import Result type properly
 import phoenix.LiveSocket; // Type-safe socket wrapper
+import phoenix.Params;
 import phoenix.Component;
 import phoenix.types.Assigns;
 import phoenix.types.Flash.FlashType;
@@ -353,18 +354,18 @@ class TodoLive {
 			var clearedPresence = clearPresenceEditing(socket);
 			recomputeVisible(SafeAssigns.setEditingTodo(clearedPresence, null));
 		} else if (event == EventName.FilterTodos) {
-			var filterValue:Null<String> = cast Reflect.field(params, "filter");
+			var filterValue = Params.getString(params, "filter");
 			recomputeVisible(SafeAssigns.setFilter(socket, filterValue != null ? filterValue : "all"));
 		} else if (event == EventName.SortTodos) {
-			var sortBy:Null<String> = cast Reflect.field(params, "sort_by");
+			var sortBy = Params.getString(params, "sort_by");
 			recomputeVisible(SafeAssigns.setSortByAndResort(socket, sortBy != null ? sortBy : "created"));
 		} else if (event == EventName.SearchTodos) {
-			var query:Null<String> = cast Reflect.field(params, "query");
+			var query = Params.getString(params, "query");
 			var withQuery = SafeAssigns.setSearchQuery(socket, query != null ? query : "");
 			// Ensure tag-selection state composes with search changes.
 			recomputeVisible(SafeAssigns.setSelectedTags(withQuery, socket.assigns.selected_tags));
 		} else if (event == EventName.ToggleTag) {
-			var tagValue:Null<String> = Reflect.field(params, "tag");
+			var tagValue = Params.getString(params, "tag");
 			if (tagValue == null) {
 				socket;
 			} else {
@@ -380,7 +381,7 @@ class TodoLive {
 		} else if (event == EventName.ClearTags) {
 			recomputeVisible(SafeAssigns.setSelectedTags(socket, []));
 		} else if (event == EventName.SetPriority) {
-			var priority:Null<String> = cast Reflect.field(params, "priority");
+			var priority = Params.getString(params, "priority");
 			update_todo_priority(extract_id(params), priority != null ? priority : "medium", socket);
 		} else if (event == EventName.ToggleForm) {
 			recomputeVisible(SafeAssigns.setShowForm(socket, !socket.assigns.show_form));
@@ -389,7 +390,7 @@ class TodoLive {
 		} else if (event == EventName.BulkDeleteCompleted) {
 			delete_completed_todos(socket);
 		} else if (event == EventName.BulkSetPriority) {
-			var priorityValue:Null<String> = cast Reflect.field(params, "priority");
+			var priorityValue = Params.getString(params, "priority");
 			bulk_set_priority(priorityValue != null ? priorityValue : "", socket);
 		} else {
 			socket;
@@ -399,23 +400,10 @@ class TodoLive {
 	}
 
 	public static function extract_id(params:Term):Int {
-		var direct:Term = Reflect.field(params, "id");
-		var todoObj:Term = Reflect.field(params, "todo");
-		var todoId:Term = (todoObj != null) ? Reflect.field(todoObj, "id") : null;
-		var candidate:Term = (direct != null) ? direct : todoId;
-
-		if (candidate == null)
-			return 0;
-		if (elixir.Kernel.isInteger(candidate))
-			return cast candidate;
-		else if (elixir.Kernel.isFloat(candidate))
-			return elixir.Kernel.trunc(candidate);
-		else if (elixir.Kernel.isBinary(candidate)) {
-			var parsed = Std.parseInt(cast candidate);
-			return parsed != null ? parsed : 0;
-		} else {
-			return 0;
-		}
+		var direct = Params.getInt(params, "id");
+		if (direct != null)
+			return direct;
+		return Params.getNestedIntDefault(params, "todo", "id", 0);
 	}
 
 	/**

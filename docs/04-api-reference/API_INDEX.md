@@ -121,6 +121,7 @@ Core:
 - `std/phoenix/Component.hx`
 - `std/phoenix/ToFormOptions.hx`
 - `std/phoenix/LiveSession.hx`
+- `std/phoenix/Params.hx`
 - `std/phoenix/LiveSocket.hx`
 - `std/phoenix/Channel.hx`
 - `std/phoenix/Presence.hx`

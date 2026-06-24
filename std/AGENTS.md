@@ -13,6 +13,23 @@
 
 This file contains standard library-specific guidance for agents working on Reflaxe.Elixir's standard library modules.
 
+## PhoenixHx Framework UX Extraction
+
+When a Phoenix/Ecto/OTP boundary pattern appears repeatedly in examples or apps,
+prefer a typed framework helper, extern, abstract, or macro under `std/` instead
+of copying app-local `cast`, `Reflect.field`, tuple-unwrapping, or ad hoc
+`__elixir__` snippets.
+
+- Keep direct target facades faithful to real Elixir/Phoenix APIs.
+- Put Haxe ergonomic helpers in an explicit PhoenixHx surface when they are not
+  real Phoenix modules or functions.
+- Prefer compile-time assistance where practical: macro-generated field readers,
+  typed refs, inferred assigns/forms/params surfaces, and generated accessors.
+- Each new helper should migrate at least one real call site and include focused
+  docs or snapshot coverage.
+- Boundary casts are acceptable only inside the helper after target-shape checks;
+  app code should call the typed helper.
+
 ## 📚 Standard Library Architecture Overview
 
 ### Directory Structure Philosophy

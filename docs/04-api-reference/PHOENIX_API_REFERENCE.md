@@ -11,6 +11,7 @@ For the example-driven parity backlog, see `docs/08-roadmap/phoenix-surface-pari
 - `phoenix.Phoenix.Socket`: LiveView callback socket surface (includes assign helpers via extensions)
 - `phoenix.LiveSocket`: optional typed wrapper operations
 - `phoenix.LiveSession`: helpers for string-keyed LiveView session maps
+- `phoenix.Params`: typed readers for Phoenix route/event/controller params
 - `phoenix.AssignKeys` and `phoenix.LiveStreams`: typed assign-key and stream-name token generation
 - `phoenix.PhoenixFlash`: typed flash helpers
 - `phoenix.Channel` + `phoenix.channels.*`: typed channel callback/result helpers
@@ -119,6 +120,28 @@ live_session :default,
 Prefer typed readers such as `getInt` when narrowing session values. Keep
 auth/session policy app-owned; these helpers do not introduce a
 Rails/Devise-style compatibility layer.
+
+## Params Surface
+
+Phoenix route params, LiveView event params, and controller params arrive as
+native string-keyed maps. Use `phoenix.Params` to decode common values at the
+boundary instead of scattering `Reflect.field` and Haxe `cast` through callback
+logic:
+
+```haxe
+import phoenix.Params;
+
+var query = Params.getString(params, "query") ?? "";
+var id = Params.getIntDefault(params, "id", 0);
+var nestedId = Params.getNestedIntDefault(params, "todo", "id", 0);
+```
+
+The Haxe module emits calls through the explicit PhoenixHx helper module
+`PhoenixHx.Params`, which uses real Elixir map access and predicates such as
+`Map.fetch/2`, `String.to_existing_atom/1`, `is_integer/1`, and
+`Integer.parse/1`. String keys are the Phoenix default; existing-atom fallback
+is only for trusted internal/test maps and never creates atoms from request
+data.
 
 ## Component Surface
 

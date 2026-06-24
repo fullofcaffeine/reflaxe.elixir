@@ -422,6 +422,13 @@ Use `reflaxe.ruby` / RailsHx as a UX and cross-target learning reference when it
 - If a `cast` is unavoidable, keep it local to the boundary adapter, guard it first when runtime shape can vary, and document why the target value is safe to narrow.
 - Do not use `cast` to hide a type mismatch, preserve a legacy API shape, or bypass a missing typed surface. Fix the type surface instead.
 
+### PhoenixHx UX Surface Extraction (Hard Rule)
+- When the same Phoenix boundary pattern appears more than once, prefer moving it into the PhoenixHx framework surface with typed helpers, externs, abstracts, or macros instead of copying app-local decoding code.
+- Good candidates include LiveView event params, route params, sessions, Presence entries, PubSub payloads, form/changelog results, and test tuples.
+- Keep the source shape close to Phoenix: helpers must lower to real Phoenix/Elixir APIs such as `Map.get`, `Phoenix.LiveView.*`, `Phoenix.PubSub.*`, or `Ecto.Changeset.*`.
+- Prefer compile-time help where possible: generated field accessors, typed refs, macro-derived readers, and inference should reduce boilerplate without hiding the target API or creating a Rails-shaped compatibility layer.
+- When adding a framework helper, migrate at least one real call site and update docs/examples in the same task so the improved UX is visible and validated.
+
 ## Code Style and Conventions
 
 - Prefer clear, descriptive names over abbreviations.
