@@ -270,12 +270,12 @@ class AppLive {
 
 	static function recomputeOnlineViews(socket:LiveSocket<AppLiveAssigns>):LiveSocket<AppLiveAssigns> {
 		var users = socket.assigns.online_users;
-		var keys:Array<String> = cast ElixirMap.keys(users);
+		var keys:Array<String> = ElixirMap.keys(users);
 
 		var views:Array<OnlineUserView> = [];
 
 		for (key in keys) {
-			var entry:phoenix.Presence.PresenceEntry<PresenceMeta> = cast ElixirMap.getWithDefault(users, key, null);
+			var entry:Null<phoenix.Presence.PresenceEntry<PresenceMeta>> = ElixirMap.getWithDefault(users, key, null);
 
 			if (entry != null && entry.metas != null && entry.metas.length > 0) {
 				var meta = entry.metas[0];

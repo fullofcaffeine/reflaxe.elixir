@@ -201,8 +201,8 @@ class TodoLive {
 
 	static function recordPresenceDiffActivity(socket:LiveSocket<TodoLiveAssigns>, prevUsers:Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>>,
 			newUsers:Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>>):LiveSocket<TodoLiveAssigns> {
-		var prevKeys:Array<String> = cast ElixirMap.keys(prevUsers);
-		var newKeys:Array<String> = cast ElixirMap.keys(newUsers);
+		var prevKeys:Array<String> = ElixirMap.keys(prevUsers);
+		var newKeys:Array<String> = ElixirMap.keys(newUsers);
 
 		var currentUserKey = Std.string(socket.assigns.current_user.id);
 
