@@ -2284,7 +2284,7 @@ doubled = Enum.map(numbers, fn x -> x * 2 end)
 - ✅ **Built on Layer 2** - use elixir.Enum, not __elixir__()
 - ✅ **Cross-platform contract** - same API across targets
 - ✅ **Immutability warnings** for mutable operations
-- ✅ **May use __elixir__()** for critical optimizations only
+- ✅ **May use __elixir__()** only when strictly justified; add a nearby comment explaining why typed externs/Haxe lowering cannot express the target shape well
 - ❌ **NO iterator objects** - transform to Enum operations
 
 ### Mutable Operations Must Warn
@@ -2351,14 +2351,22 @@ class List<T> {  // Don't do this if elixir.List extern exists!
 
 **⚠️ CRITICAL PRINCIPLE: `__elixir__()` is for framework and standard library implementation ONLY.**
 
+**Haxe-First / Extern-First Rule**:
+- Prefer ordinary Haxe code and typed Elixir externs over `untyped __elixir__(...)`, even inside framework/std boundary helpers.
+- Framework and stdlib code should exercise the Haxe→Elixir compiler whenever the desired Elixir shape can be expressed through Haxe control flow, typed extern calls, casts, pattern/switch logic, or small reusable abstractions.
+- Use `__elixir__()` only when strictly justified, such as target syntax or boundary behavior that cannot currently be represented through typed externs or compiler lowering without making the generated code worse.
+- Every remaining non-trivial `__elixir__()` block must have a nearby comment explaining why it is necessary and why the Haxe/extern path is not sufficient.
+- Generated output still matters: Haxe-first rewrites are not successful unless the resulting Elixir remains efficient and looks hand-written.
+
 **Client/Application Code Rules**:
 - ❌ **NEVER use `__elixir__()`** in application code - it's a sign of missing abstractions
-- ❌ **Exception: Emergency hotfixes only** - Must be justified, documented with TODO, and scheduled for proper fix
+- ❌ **No emergency production escapes** - If app code appears to need `__elixir__()`, promote the missing API into a shared framework/std helper or stop and ask for direction
 - ✅ **Always use framework abstractions** - If you need `__elixir__()`, we need better framework APIs
 - ✅ **Report missing abstractions** - File an issue when framework APIs are insufficient
 
 **Framework/Stdlib Rules**:
-- ✅ **Use `__elixir__()` strategically** for efficient native implementations
+- ✅ **Use Haxe + typed externs first** to keep compiler coverage high and generated output reviewable
+- ✅ **Use `__elixir__()` strategically** only for efficient native implementations that cannot be expressed cleanly through externs/lowering
 - ✅ **Wrap in type-safe APIs** - Never expose `__elixir__()` to users
 - ✅ **Provide complete abstractions** - Users should never need escape hatches
 

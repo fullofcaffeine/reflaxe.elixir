@@ -18,5 +18,18 @@ defmodule Main do
     _ = assert_that(PhoenixHx.Params.get_nested_int(params, "todo", "id") == 99, "getNestedInt failed")
     _ = assert_that(PhoenixHx.Params.get_bool(params, "done") == true, "getBool string failed")
     _ = assert_that(PhoenixHx.Params.get_int_default(params, "missing", 7) == 7, "getIntDefault failed")
+    atom_params = (%{
+          title: "Atom title",
+          id: 13,
+          done: false,
+          todo: %{id: "11"}
+        })
+    _ = assert_that(PhoenixHx.Params.get_string(atom_params, "title") == "Atom title", "atom getString failed")
+    _ = assert_that(PhoenixHx.Params.get_int(atom_params, "id") == 13, "atom getInt failed")
+    _ = assert_that(PhoenixHx.Params.get_nested_int(atom_params, "todo", "id") == 11, "atom getNestedInt failed")
+    _ = assert_that(PhoenixHx.Params.get_bool(atom_params, "done") == false, "atom getBool failed")
+    _ = assert_that(Reflaxe.Elixir.HaxeFloat.eq(PhoenixHx.Params.get(atom_params, "params_accessors_missing_atom"), nil), "missing atom fallback failed")
+    mixed_params = %{"title" => nil, title: "Atom title"}
+    _ = assert_that(Reflaxe.Elixir.HaxeFloat.eq(PhoenixHx.Params.get(mixed_params, "title"), nil), "string-key nil should win over atom fallback")
   end
 end
