@@ -3,7 +3,7 @@ package client.hooks;
 import phoenix.live_view.HookContext;
 import client.utils.Theme;
 import client.utils.ThemePreference;
-import js.html.Element;
+import js.html.DOMElement;
 import js.html.Event;
 
 class ThemeToggleHook {
@@ -17,7 +17,7 @@ class ThemeToggleHook {
 		};
 	}
 
-	static function updateLabel(root:Element, preference:ThemePreference):Void {
+	static function updateLabel(root:DOMElement, preference:ThemePreference):Void {
 		root.setAttribute("data-theme-mode", preference);
 		var label = root.querySelector("[data-theme-label]");
 		if (label != null) {

@@ -1,6 +1,6 @@
 package phoenix.live_view;
 
-import js.html.Element;
+import js.html.DOMElement;
 
 /**
  * phoenix.live_view.HookContext (JS)
@@ -11,7 +11,6 @@ import js.html.Element;
  * All interaction with this context is considered a boundary integration point.
  */
 typedef HookContext = {
-  var el: Element;
+  var el: DOMElement;
   @:optional var pushEvent: (event: String, payload: Dynamic) -> Void;
 }
-
