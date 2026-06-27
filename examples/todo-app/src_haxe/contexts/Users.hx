@@ -1,6 +1,6 @@
 package contexts;
 
-import elixir.Kernel;
+import ecto.SchemaStruct;
 import elixir.Enum;
 import ecto.Changeset;
 import ecto.TypedQuery;
@@ -118,7 +118,7 @@ class Users {
 	 * `Ecto.Changeset.cast/4` requires a struct, so we synthesize an empty one when `user` is null.
 	 */
 	public static function changeUser(?user:User):Changeset<User, UserParams> {
-		var data:User = (user != null) ? user : cast Kernel.struct(User);
+		var data:User = (user != null) ? user : SchemaStruct.empty(User);
 		return new Changeset(data, {});
 	}
 
@@ -146,7 +146,7 @@ class Users {
 	 * Note: Ecto requires a struct for changeset casting.
 	 */
 	public static function createUser(attrs:UserParams):Result<User, Changeset<User, UserParams>> {
-		var data:User = cast Kernel.struct(User);
+		var data = SchemaStruct.empty(User);
 		return Repo.insert(UserChangeset.changeset(data, attrs));
 	}
 

@@ -3,6 +3,7 @@ package controllers;
 import plug.Conn;
 import contexts.Accounts;
 import contexts.Users;
+import ecto.SchemaStruct;
 import elixir.ElixirMap;
 import elixir.Atom;
 import elixir.Kernel;
@@ -230,7 +231,7 @@ class UserController {
 			attrs = ElixirMap.put(attrs, "bio", bioValue == "" ? null : bioValue);
 		}
 
-		var userStruct:User = cast Kernel.struct(User);
+		var userStruct = SchemaStruct.empty(User);
 		var changeset = User.changeset(userStruct, attrs);
 
 		var requestedActive = getBoolParam(params, "active");

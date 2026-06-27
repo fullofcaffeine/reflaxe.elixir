@@ -173,7 +173,7 @@ class OrganizationLive {
 		if (existing != null)
 			return Ok(existing);
 
-		var data:Organization = cast Kernel.struct(Organization);
+		var data = ecto.SchemaStruct.empty(Organization);
 		var params:server.schemas.Organization.OrganizationParams = {slug: slug, name: slug};
 		var changeset = Organization.changeset(data, params);
 		return Repo.insert(changeset);

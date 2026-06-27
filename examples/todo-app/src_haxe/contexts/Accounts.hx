@@ -1,8 +1,8 @@
 package contexts;
 
 import ecto.Changeset;
+import ecto.SchemaStruct;
 import ecto.TypedQuery;
-import elixir.Kernel;
 import elixir.Enum;
 import elixir.types.Term;
 import haxe.functional.Result;
@@ -66,7 +66,7 @@ class Accounts {
 		if (existing != null)
 			return Ok(existing);
 
-		var data:Organization = cast Kernel.struct(Organization);
+		var data = SchemaStruct.empty(Organization);
 		var params:server.schemas.Organization.OrganizationParams = {slug: slug, name: slug};
 		var changeset = Organization.changeset(data, params);
 		return Repo.insert(changeset);
@@ -91,7 +91,7 @@ class Accounts {
 		var normalizedRole = StringTools.trim(role);
 		var roleValue = normalizedRole != "" ? normalizedRole : "user";
 
-		var data:OrganizationInvite = cast Kernel.struct(OrganizationInvite);
+		var data = SchemaStruct.empty(OrganizationInvite);
 		var params:server.schemas.OrganizationInvite.OrganizationInviteParams = {
 			organizationId: organizationId,
 			email: normalizedEmail,
@@ -189,7 +189,7 @@ class Accounts {
 			};
 		}
 
-		var data:User = cast Kernel.struct(User);
+		var data = SchemaStruct.empty(User);
 		var params:Term = {name: normalizedName, email: normalizedEmail};
 		var isFirstUserInOrg = Repo.all(TypedQuery.from(User).where(u -> u.organizationId == organization.id)).length == 0;
 		var invitedRole = pendingInvite != null

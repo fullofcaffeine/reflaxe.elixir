@@ -1,13 +1,13 @@
 package contexts;
 
 import ecto.Changeset;
+import ecto.SchemaStruct;
 import ecto.TypedQuery;
 import ecto.TypedQuery.SortDirection;
 import contexts.AuditLogTypes.AuditAction;
 import contexts.AuditLogTypes.AuditEntity;
 import contexts.AuditLogTypes.AuditLogEntryParams;
 import contexts.AuditLogTypes.AuditLogFilter;
-import elixir.Kernel;
 import elixir.types.Term;
 import haxe.functional.Result;
 import server.infrastructure.Repo;
@@ -34,7 +34,7 @@ using reflaxe.elixir.macros.TypedQueryLambda;
 @:native("TodoApp.AuditLogs")
 class AuditLogs {
 	public static function record(params:AuditLogEntryParams):Result<AuditLog, Changeset<AuditLog, Term>> {
-		var data:AuditLog = cast Kernel.struct(AuditLog);
+		var data = SchemaStruct.empty(AuditLog);
 
 		var insertParams:Term = {
 			organization_id: params.organizationId,
