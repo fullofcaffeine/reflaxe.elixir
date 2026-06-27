@@ -1,6 +1,5 @@
 import {Register} from "../../genes/Register.js"
 import {Theme} from "../utils/Theme.js"
-import {Reflect as Reflect__1} from "../../Reflect.js"
 
 const $global = Register.$global
 
@@ -37,22 +36,18 @@ class ThemeToggleHook {
 			Theme.apply(nextPreference);
 			ThemeToggleHook.updateLabel(ctx.el, nextPreference);
 		};
-		ctx.el["__todoappThemeToggleOnClick"] = handler;
+		ThemeToggleHook.handlers.set(ctx.el, handler);
 		ctx.el.addEventListener("click", handler);
 	}
 	static destroyed(ctx) {
 		ThemeToggleHook.unbindClick(ctx);
 	}
 	static unbindClick(ctx) {
-		let elementDynamic = ctx.el;
-		if (!Object.prototype.hasOwnProperty.call(elementDynamic, "__todoappThemeToggleOnClick")) {
-			return;
-		};
-		let existingHandler = Reflect__1.field(elementDynamic, "__todoappThemeToggleOnClick");
+		let existingHandler = ThemeToggleHook.handlers.get(ctx.el);
 		if (existingHandler != null) {
 			ctx.el.removeEventListener("click", existingHandler);
+			ThemeToggleHook.handlers["delete"](ctx.el);
 		};
-		Reflect__1.deleteField(elementDynamic, "__todoappThemeToggleOnClick");
 	}
 	static get __name__() {
 		return "client.hooks.ThemeToggleHook"
@@ -62,3 +57,5 @@ class ThemeToggleHook {
 	}
 }
 
+
+ThemeToggleHook.handlers = new WeakMap()

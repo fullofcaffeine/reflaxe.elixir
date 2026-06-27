@@ -5,9 +5,10 @@ import client.utils.Theme;
 import client.utils.ThemePreference;
 import js.html.DOMElement;
 import js.html.Event;
+import js.lib.WeakMap;
 
 class ThemeToggleHook {
-	static inline var handlerField = "__todoappThemeToggleOnClick";
+	static final handlers = new WeakMap<Event->Void>();
 
 	static function labelFor(preference:ThemePreference):String {
 		return switch (preference) {
@@ -38,7 +39,7 @@ class ThemeToggleHook {
 			updateLabel(ctx.el, nextPreference);
 		};
 
-		Reflect.setField(cast ctx.el, handlerField, handler);
+		handlers.set(ctx.el, handler);
 		ctx.el.addEventListener("click", handler);
 	}
 
@@ -47,14 +48,10 @@ class ThemeToggleHook {
 	}
 
 	static function unbindClick(ctx:HookContext):Void {
-		var elementDynamic:Dynamic = cast ctx.el;
-		if (!Reflect.hasField(elementDynamic, handlerField))
-			return;
-
-		var existingHandler:Null<Event->Void> = cast Reflect.field(elementDynamic, handlerField);
+		var existingHandler = handlers.get(ctx.el);
 		if (existingHandler != null) {
 			ctx.el.removeEventListener("click", existingHandler);
+			handlers.delete(ctx.el);
 		}
-		Reflect.deleteField(elementDynamic, handlerField);
 	}
 }

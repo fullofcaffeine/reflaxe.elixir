@@ -6666,53 +6666,8 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
     }
   };
 
-  // js/Reflect.js
-  var $global3 = Register.$global;
-  var Reflect2 = Register.global("$hxClasses")["Reflect"] = class Reflect3 {
-    /**
-    Returns the value of the field named `field` on object `o`.
-    
-    If `o` is not an object or has no field named `field`, the result is
-    null.
-    
-    If the field is defined as a property, its accessors are ignored. Refer
-    to `Reflect.getProperty` for a function supporting property accessors.
-    
-    If `field` is null, the result is unspecified.
-    */
-    static field(o, field) {
-      try {
-        return o[field];
-      } catch (_g) {
-        return null;
-      }
-      ;
-    }
-    /**
-    Removes the field named `field` from structure `o`.
-    
-    This method is only guaranteed to work on anonymous structures.
-    
-    If `o` or `field` are null, the result is unspecified.
-    */
-    static deleteField(o, field) {
-      if (!Object.prototype.hasOwnProperty.call(o, field)) {
-        return false;
-      }
-      ;
-      delete o[field];
-      return true;
-    }
-    static get __name__() {
-      return "Reflect";
-    }
-    get __class__() {
-      return Reflect3;
-    }
-  };
-
   // js/client/hooks/ThemeToggleHook.js
-  var $global4 = Register.$global;
+  var $global3 = Register.$global;
   var ThemeToggleHook = Register.global("$hxClasses")["client.hooks.ThemeToggleHook"] = class ThemeToggleHook2 {
     static labelFor(preference) {
       switch (preference) {
@@ -6746,24 +6701,19 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
         Theme.apply(nextPreference);
         ThemeToggleHook2.updateLabel(ctx.el, nextPreference);
       };
-      ctx.el["__todoappThemeToggleOnClick"] = handler;
+      ThemeToggleHook2.handlers.set(ctx.el, handler);
       ctx.el.addEventListener("click", handler);
     }
     static destroyed(ctx) {
       ThemeToggleHook2.unbindClick(ctx);
     }
     static unbindClick(ctx) {
-      let elementDynamic = ctx.el;
-      if (!Object.prototype.hasOwnProperty.call(elementDynamic, "__todoappThemeToggleOnClick")) {
-        return;
-      }
-      ;
-      let existingHandler = Reflect2.field(elementDynamic, "__todoappThemeToggleOnClick");
+      let existingHandler = ThemeToggleHook2.handlers.get(ctx.el);
       if (existingHandler != null) {
         ctx.el.removeEventListener("click", existingHandler);
+        ThemeToggleHook2.handlers["delete"](ctx.el);
       }
       ;
-      Reflect2.deleteField(elementDynamic, "__todoappThemeToggleOnClick");
     }
     static get __name__() {
       return "client.hooks.ThemeToggleHook";
@@ -6772,9 +6722,10 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
       return ThemeToggleHook2;
     }
   };
+  ThemeToggleHook.handlers = /* @__PURE__ */ new WeakMap();
 
   // js/client/hooks/PingHook.js
-  var $global5 = Register.$global;
+  var $global4 = Register.$global;
   var PingHook = Register.global("$hxClasses")["client.hooks.PingHook"] = class PingHook2 {
     static mounted(hook) {
       try {
@@ -6795,7 +6746,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   };
 
   // js/client/hooks/CopyToClipboardHook.js
-  var $global6 = Register.$global;
+  var $global5 = Register.$global;
   var CopyToClipboardHook = Register.global("$hxClasses")["client.hooks.CopyToClipboardHook"] = class CopyToClipboardHook2 {
     static mounted(hook) {
       let el = hook.el;
@@ -6885,7 +6836,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   };
 
   // js/client/hooks/AutoFocusHook.js
-  var $global7 = Register.$global;
+  var $global6 = Register.$global;
   var AutoFocusHook = Register.global("$hxClasses")["client.hooks.AutoFocusHook"] = class AutoFocusHook2 {
     static mounted(hook) {
       try {
@@ -6903,7 +6854,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   };
 
   // js/shared/channels/PingProtocol.js
-  var $global8 = Register.$global;
+  var $global7 = Register.$global;
   var PingClientEvent = Register.global("$hxEnums")["shared.channels.PingClientEvent"] = {
     __ename__: "shared.channels.PingClientEvent",
     Ping: Object.assign((payload) => ({ _hx_index: 0, __enum__: "shared.channels.PingClientEvent", "payload": payload }), { _hx_name: "Ping", __params__: ["payload"] })
@@ -6992,7 +6943,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   }(void 0);
 
   // js/phoenix/channels/TypedChannelClient.js
-  var $global9 = Register.$global;
+  var $global8 = Register.$global;
   var TypedChannelClient = Register.global("$hxClasses")["phoenix.channels.TypedChannelClient"] = class TypedChannelClient2 extends Register.inherits() {
     [Register.new](channel, encodeSend, decodeRecv, eventNames) {
       this.channel = channel;
@@ -7045,7 +6996,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   TypedChannelClient.prototype.handlers = null;
 
   // js/HxOverrides.js
-  var $global10 = Register.$global;
+  var $global9 = Register.$global;
   var HxOverrides = Register.global("$hxClasses")["HxOverrides"] = class HxOverrides2 {
     static cca(s, index) {
       let x = s.charCodeAt(index);
@@ -7082,7 +7033,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   (typeof performance != "undefined" ? typeof performance.now == "function" : false) ? HxOverrides.now = performance.now.bind(performance) : null;
 
   // js/StringTools.js
-  var $global11 = Register.$global;
+  var $global10 = Register.$global;
   var StringTools = Register.global("$hxClasses")["StringTools"] = class StringTools2 {
     /**
     Tells if the character in the string `s` at position `pos` is a space.
@@ -7161,7 +7112,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   };
 
   // js/client/channels/PingChannelClient.js
-  var $global12 = Register.$global;
+  var $global11 = Register.$global;
   var PingChannelClient = Register.global("$hxClasses")["client.channels.PingChannelClient"] = class PingChannelClient2 {
     static readCsrfToken() {
       let meta = window.document.querySelector("meta[name='csrf-token']");
@@ -7204,7 +7155,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   };
 
   // js/client/Boot.js
-  var $global13 = Register.$global;
+  var $global12 = Register.$global;
   var Boot = Register.global("$hxClasses")["client.Boot"] = class Boot2 {
     static readCsrfToken() {
       let meta = window.document.querySelector("meta[name='csrf-token']");
@@ -7260,7 +7211,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   };
 
   // js/hx_app.js
-  var $global14 = Register.$global;
+  var $global13 = Register.$global;
   Boot.main();
 
   // js/phoenix_app.js
