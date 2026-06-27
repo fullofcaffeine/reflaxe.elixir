@@ -78,7 +78,7 @@ defmodule PhoenixHx.Params do
     value = get_nested_int(params, key, nested_key)
     if (not Kernel.is_nil(value)), do: value, else: default_value
   end
-  defp int_from_term(value) do
+  def int_from_term(value) do
     if (Kernel.is_nil(value)) do
       nil
     else

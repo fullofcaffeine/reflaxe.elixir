@@ -7,10 +7,10 @@ import server.types.Types.AlertLevel;
 import elixir.Atom;
 import elixir.Kernel;
 import elixir.Tuple;
+import phoenix.Params;
 import phoenix.PubSub;
 import server.types.Types.TodoPriority;
 import elixir.types.Term;
-import Type;
 
 /**
  * Type-safe PubSub bridge for the todo-app.
@@ -65,25 +65,30 @@ class TodoPubSub {
 	 * Convert message enum to Elixir tuple format.
 	 */
 	public static function messageToElixir(msg:TodoPubSubMessage):Term {
-		var params = Type.enumParameters(msg);
-		return switch (Type.enumConstructor(msg)) {
-			case "TodoCreated":
-				Tuple.make2(todoCreatedAtom(), cast params[0]);
-			case "TodoUpdated":
-				Tuple.make2(todoUpdatedAtom(), cast params[0]);
-			case "TodoDeleted":
-				Tuple.make2(todoDeletedAtom(), cast params[0]);
-			case "BulkUpdate":
-				Tuple.make2(bulkUpdateAtom(), bulkActionToString(cast params[0]));
-			case "UserOnline":
-				Tuple.make2(userOnlineAtom(), cast params[0]);
-			case "UserOffline":
-				Tuple.make2(userOfflineAtom(), cast params[0]);
-			case "UserProfileUpdated":
-				Tuple.make2(userProfileUpdatedAtom(), cast params[0]);
-			case "SystemAlert":
-				systemAlertTuple(cast params[0], cast params[1]);
-			case _: msg;
+		var todoCreated = todoCreatedAtom();
+		var todoUpdated = todoUpdatedAtom();
+		var todoDeleted = todoDeletedAtom();
+		var bulkUpdate = bulkUpdateAtom();
+		var userOnline = userOnlineAtom();
+		var userOffline = userOfflineAtom();
+		var userProfileUpdated = userProfileUpdatedAtom();
+		return switch (msg) {
+			case TodoCreated(todo):
+				Tuple.make2(todoCreated, todo);
+			case TodoUpdated(todo):
+				Tuple.make2(todoUpdated, todo);
+			case TodoDeleted(id):
+				Tuple.make2(todoDeleted, id);
+			case BulkUpdate(action):
+				Tuple.make2(bulkUpdate, bulkActionToString(action));
+			case UserOnline(userId):
+				Tuple.make2(userOnline, userId);
+			case UserOffline(userId):
+				Tuple.make2(userOffline, userId);
+			case UserProfileUpdated(payload):
+				Tuple.make2(userProfileUpdated, payload);
+			case SystemAlert(message, level):
+				systemAlertTuple(message, level);
 		};
 	}
 
@@ -95,15 +100,40 @@ class TodoPubSub {
 		var tagAtom = Tuple.elem(msg, 0);
 		var tag = Atom.toString(tagAtom);
 		return switch (tag) {
-			case "todo_created": Some(TodoCreated(cast Tuple.elem(msg, 1)));
-			case "todo_updated": Some(TodoUpdated(cast Tuple.elem(msg, 1)));
-			case "todo_deleted": Some(TodoDeleted(cast Tuple.elem(msg, 1)));
-			case "bulk_update": Some(BulkUpdate(parseBulkAction(cast Tuple.elem(msg, 1))));
-			case "user_online": Some(UserOnline(cast Tuple.elem(msg, 1)));
-			case "user_offline": Some(UserOffline(cast Tuple.elem(msg, 1)));
-			case "user_profile_updated": Some(UserProfileUpdated(cast Tuple.elem(msg, 1)));
+			case "todo_created":
+				var payload = Tuple.elem(msg, 1);
+				Some(TodoCreated(todoPayload(payload)));
+			case "todo_updated":
+				var payload = Tuple.elem(msg, 1);
+				Some(TodoUpdated(todoPayload(payload)));
+			case "todo_deleted":
+				var payload = Tuple.elem(msg, 1);
+				switch (intPayload(payload)) {
+					case Some(id): Some(TodoDeleted(id));
+					case None: None;
+				}
+			case "bulk_update":
+				var payload = Tuple.elem(msg, 1);
+				Some(BulkUpdate(parseBulkAction(Params.stringFromTermDefault(payload, ""))));
+			case "user_online":
+				var payload = Tuple.elem(msg, 1);
+				switch (intPayload(payload)) {
+					case Some(userId): Some(UserOnline(userId));
+					case None: None;
+				}
+			case "user_offline":
+				var payload = Tuple.elem(msg, 1);
+				switch (intPayload(payload)) {
+					case Some(userId): Some(UserOffline(userId));
+					case None: None;
+				}
+			case "user_profile_updated":
+				var payload = Tuple.elem(msg, 1);
+				Some(UserProfileUpdated(profilePayload(payload)));
 			case "system_alert":
-				Some(SystemAlert(cast Tuple.elem(msg, 1), parseAlertLevel(cast Tuple.elem(msg, 2))));
+				var message = Params.stringFromTermDefault(Tuple.elem(msg, 1), "");
+				var level = Params.stringFromTermDefault(Tuple.elem(msg, 2), "");
+				Some(SystemAlert(message, parseAlertLevel(level)));
 			default: None;
 		};
 	}
@@ -112,25 +142,20 @@ class TodoPubSub {
 
 	@:keep
 	public static function bulkActionToString(action:BulkOperationType):String {
-		var params = Type.enumParameters(action);
-		return switch (Type.enumConstructor(action)) {
-			case "CompleteAll": "complete_all";
-			case "DeleteCompleted": "delete_completed";
-			case "SetPriority":
-				var priorityValue:TodoPriority = cast params[0];
+		return switch (action) {
+			case CompleteAll: "complete_all";
+			case DeleteCompleted: "delete_completed";
+			case SetPriority(priorityValue):
 				var priorityLabel = switch (priorityValue) {
 					case Low: "low";
 					case Medium: "medium";
 					case High: "high";
 				};
 				"set_priority_" + priorityLabel;
-			case "AddTag":
-				var tagValue:String = cast params[0];
+			case AddTag(tagValue):
 				"add_tag_" + tagValue;
-			case "RemoveTag":
-				var tagValue:String = cast params[0];
+			case RemoveTag(tagValue):
 				"remove_tag_" + tagValue;
-			case _: "complete_all";
 		};
 	}
 
@@ -183,6 +208,19 @@ class TodoPubSub {
 	static inline function systemAlertTuple(alertMessage:String, alertLevelValue:AlertLevel):Term {
 		var levelLabel = alertLevelToString(alertLevelValue);
 		return Tuple.make3(systemAlertAtom(), alertMessage, levelLabel);
+	}
+
+	static function todoPayload(value:Term):server.schemas.Todo {
+		return cast value;
+	}
+
+	static function profilePayload(value:Term):UserProfileUpdatedPayload {
+		return cast value;
+	}
+
+	static function intPayload(value:Term):Option<Int> {
+		var decoded = Params.intFromTerm(value);
+		return decoded != null ? Some(decoded) : None;
 	}
 
 	static inline function pubsubModule():Term {

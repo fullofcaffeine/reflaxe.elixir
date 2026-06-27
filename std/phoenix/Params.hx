@@ -97,7 +97,7 @@ class Params {
 		return value != null ? value : defaultValue;
 	}
 
-	static function intFromTerm(value:Null<Term>):Null<Int> {
+	public static function intFromTerm(value:Null<Term>):Null<Int> {
 		if (Kernel.isNil(value))
 			return null;
 
