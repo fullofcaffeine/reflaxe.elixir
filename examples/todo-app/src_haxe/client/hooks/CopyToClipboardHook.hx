@@ -3,7 +3,6 @@ package client.hooks;
 import phoenix.live_view.HookContext;
 import js.Browser;
 import js.html.Event;
-import js.html.TextAreaElement;
 import js.lib.Promise;
 
 class CopyToClipboardHook {
@@ -60,7 +59,7 @@ class CopyToClipboardHook {
 	}
 
 	static function fallbackCopy(text:String, done:Bool->Void):Void {
-		var tmp:TextAreaElement = cast Browser.document.createElement("textarea");
+		var tmp = Browser.document.createTextAreaElement();
 		tmp.value = text;
 		tmp.setAttribute("readonly", "");
 		tmp.style.position = "absolute";
