@@ -23,6 +23,8 @@ class Main {
 		assertThat(Params.getNestedInt(params, "todo", "id") == 99, "getNestedInt failed");
 		assertThat(Params.getBool(params, "done") == true, "getBool string failed");
 		assertThat(Params.getIntDefault(params, "missing", 7) == 7, "getIntDefault failed");
+		assertThat(Params.stringFromTerm(Params.get(params, "title")) == "Ship it", "stringFromTerm failed");
+		assertThat(Params.stringFromTermDefault(null, "fallback") == "fallback", "stringFromTermDefault failed");
 
 		var atomParams:Term = untyped __elixir__('%{
           title: "Atom title",

@@ -22,16 +22,21 @@ defmodule PhoenixHx.Params do
     if (not Kernel.is_nil(nested)), do: get(nested, nested_key), else: nil
   end
   def get_string(params, key) do
-    value = get(params, key)
+    string_from_term(get(params, key))
+  end
+  def get_string_default(params, key, default_value) do
+    string_from_term_default(get(params, key), default_value)
+  end
+  def string_from_term(value) do
     if (not Kernel.is_nil(value)) do
       Kernel.to_string(value)
     else
       nil
     end
   end
-  def get_string_default(params, key, default_value) do
-    value = get_string(params, key)
-    if (not Kernel.is_nil(value)), do: value, else: default_value
+  def string_from_term_default(value, default_value) do
+    decoded = string_from_term(value)
+    if (not Kernel.is_nil(decoded)), do: decoded, else: default_value
   end
   def get_int(params, key) do
     int_from_term(get(params, key))

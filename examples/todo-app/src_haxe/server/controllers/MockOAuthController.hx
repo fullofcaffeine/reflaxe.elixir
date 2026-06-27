@@ -1,9 +1,9 @@
 package controllers;
 
 import contexts.Accounts;
-import elixir.ElixirMap;
 import elixir.types.Term;
 import haxe.functional.Result;
+import phoenix.Params;
 import plug.Conn;
 import plug.CSRFProtection;
 import server.services.MockOAuth;
@@ -66,20 +66,17 @@ class MockOAuthController {
 		if (!MockOAuth.isEnabled())
 			return disabled(conn);
 
-		var errorTerm:Term = params != null ? ElixirMap.get(params, "error") : null;
-		if (errorTerm != null) {
-			var msgTerm:Term = ElixirMap.get(params, "error_description");
-			var msg:String = msgTerm != null ? cast msgTerm : cast errorTerm;
+		var error = Params.getString(params, "error");
+		if (error != null) {
+			var msg = Params.getStringDefault(params, "error_description", error);
 			return conn.putFlash("error", "Mock OAuth failed: " + msg).redirect("/login");
 		}
 
-		var codeTerm:Term = params != null ? ElixirMap.get(params, "code") : null;
-		var stateTerm:Term = params != null ? ElixirMap.get(params, "state") : null;
-		var code:String = codeTerm != null ? cast codeTerm : "";
-		var state:String = stateTerm != null ? cast stateTerm : "";
+		var code = Params.getStringDefault(params, "code", "");
+		var state = Params.getStringDefault(params, "state", "");
 
 		var storedStateTerm:Term = conn.getSession(MockOAuth.SESSION_STATE_KEY);
-		var storedState:String = storedStateTerm != null ? cast storedStateTerm : "";
+		var storedState = Params.stringFromTermDefault(storedStateTerm, "");
 		var identityTerm:Term = conn.getSession(MockOAuth.SESSION_IDENTITY_KEY);
 
 		var cleaned = conn.deleteSession(MockOAuth.SESSION_STATE_KEY).deleteSession(MockOAuth.SESSION_IDENTITY_KEY);

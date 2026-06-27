@@ -18,6 +18,8 @@ defmodule Main do
     _ = assert_that(PhoenixHx.Params.get_nested_int(params, "todo", "id") == 99, "getNestedInt failed")
     _ = assert_that(PhoenixHx.Params.get_bool(params, "done") == true, "getBool string failed")
     _ = assert_that(PhoenixHx.Params.get_int_default(params, "missing", 7) == 7, "getIntDefault failed")
+    _ = assert_that(PhoenixHx.Params.string_from_term(PhoenixHx.Params.get(params, "title")) == "Ship it", "stringFromTerm failed")
+    _ = assert_that(PhoenixHx.Params.string_from_term_default(nil, "fallback") == "fallback", "stringFromTermDefault failed")
     atom_params = (%{
           title: "Atom title",
           id: 13,

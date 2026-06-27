@@ -45,13 +45,20 @@ class Params {
 	}
 
 	public static function getString(params:Term, key:String):Null<String> {
-		var value = get(params, key);
-		return !Kernel.isNil(value) ? Kernel.toString(value) : null;
+		return stringFromTerm(get(params, key));
 	}
 
 	public static function getStringDefault(params:Term, key:String, defaultValue:String):String {
-		var value = getString(params, key);
-		return value != null ? value : defaultValue;
+		return stringFromTermDefault(get(params, key), defaultValue);
+	}
+
+	public static function stringFromTerm(value:Null<Term>):Null<String> {
+		return !Kernel.isNil(value) ? Kernel.toString(value) : null;
+	}
+
+	public static function stringFromTermDefault(value:Null<Term>, defaultValue:String):String {
+		var decoded = stringFromTerm(value);
+		return decoded != null ? decoded : defaultValue;
 	}
 
 	public static function getInt(params:Term, key:String):Null<Int> {

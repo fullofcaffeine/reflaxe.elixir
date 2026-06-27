@@ -1,9 +1,9 @@
 package controllers;
 
 import contexts.Accounts;
-import elixir.ElixirMap;
 import elixir.types.Term;
 import haxe.functional.Result;
+import phoenix.Params;
 import plug.Conn;
 import plug.CSRFProtection;
 import server.services.GithubIdentity;
@@ -60,20 +60,17 @@ class GithubOAuthController {
 	}
 
 	public static function github_callback(conn:Conn<{}>, params:Term):Conn<{}> {
-		var errorTerm:Term = ElixirMap.get(params, "error");
-		if (errorTerm != null) {
-			var msgTerm:Term = ElixirMap.get(params, "error_description");
-			var msg:String = msgTerm != null ? cast msgTerm : cast errorTerm;
+		var error = Params.getString(params, "error");
+		if (error != null) {
+			var msg = Params.getStringDefault(params, "error_description", error);
 			return conn.putFlash("error", "GitHub login failed: " + msg).redirect("/login");
 		}
 
-		var codeTerm:Term = ElixirMap.get(params, "code");
-		var stateTerm:Term = ElixirMap.get(params, "state");
-		var code:String = codeTerm != null ? cast codeTerm : "";
-		var state:String = stateTerm != null ? cast stateTerm : "";
+		var code = Params.getStringDefault(params, "code", "");
+		var state = Params.getStringDefault(params, "state", "");
 
 		var storedStateTerm:Term = conn.getSession("github_oauth_state");
-		var storedState:String = storedStateTerm != null ? cast storedStateTerm : "";
+		var storedState = Params.stringFromTermDefault(storedStateTerm, "");
 
 		var cleaned = conn.deleteSession("github_oauth_state");
 		if (storedState == "" || state == "" || storedState != state) {

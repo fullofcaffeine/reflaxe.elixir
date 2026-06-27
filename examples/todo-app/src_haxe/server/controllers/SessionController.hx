@@ -1,9 +1,9 @@
 package controllers;
 
 import contexts.Accounts;
-import elixir.ElixirMap;
 import elixir.types.Term;
 import haxe.functional.Result;
+import phoenix.Params;
 import plug.Conn;
 import StringTools;
 
@@ -28,11 +28,8 @@ import StringTools;
 @:controller
 class SessionController {
 	public static function create(conn:Conn<{}>, params:Term):Conn<{}> {
-		var emailTerm:Term = ElixirMap.get(params, "email");
-		var nameTerm:Term = ElixirMap.get(params, "name");
-
-		var email:String = emailTerm != null ? cast emailTerm : "";
-		var name:String = nameTerm != null ? cast nameTerm : "";
+		var email = Params.getStringDefault(params, "email", "");
+		var name = Params.getStringDefault(params, "name", "");
 
 		if (StringTools.trim(email) == "" || StringTools.trim(name) == "") {
 			return conn.putFlash("error", "Name and email are required.").redirect("/login");

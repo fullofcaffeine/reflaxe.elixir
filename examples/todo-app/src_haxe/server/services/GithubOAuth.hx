@@ -1,10 +1,10 @@
 package server.services;
 
-import elixir.ElixirMap;
 import elixir.HttpClient;
 import elixir.Kernel;
 import elixir.types.Term;
 import haxe.functional.Result;
+import phoenix.Params;
 import server.services.GithubIdentity;
 
 using StringTools;
@@ -171,10 +171,7 @@ class GithubOAuth {
 	}
 
 	static function stringField(map:Term, key:String):Null<String> {
-		if (map == null)
-			return null;
-		var value:Term = ElixirMap.get(map, key);
-		return value != null ? cast value : null;
+		return Params.getString(map, key);
 	}
 
 	static function buildQuery(pairs:Array<{_0:String, _1:String}>):String {
