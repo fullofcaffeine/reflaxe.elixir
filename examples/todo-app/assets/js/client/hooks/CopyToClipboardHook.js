@@ -40,10 +40,8 @@ class CopyToClipboardHook {
 				let promise = clipboard.writeText(text);
 				promise.then(function (_) {
 					done(true);
-					return null;
 				})["catch"](function (_) {
 					CopyToClipboardHook.fallbackCopy(text, done);
-					return null;
 				});
 				return;
 			}catch (_g) {

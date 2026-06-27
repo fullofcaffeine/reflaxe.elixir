@@ -410,6 +410,7 @@ Use `reflaxe.ruby` / RailsHx as a UX and cross-target learning reference when it
 ### No-Dynamic Policy (Hard Rule)
 - Do not introduce `Dynamic` types in new compiler code, stdlib externs, or tests unless absolutely unavoidable at boundary integration points.
 - Prefer precise types in Haxe signatures and Elixir outputs. Avoid using `Dynamic` as a workaround for typing mismatches.
+- Every unavoidable `Dynamic` must have a nearby comment explaining why the boundary cannot currently be typed more precisely and what protects the call site.
 - If a type mismatch occurs during a transform, fix the transform to produce correctly typed Elixir (and adjust Haxe signatures) instead of widening to `Dynamic`.
 - Snapshot tests must be strictly typed: do not change return types to `Dynamic` to placate compilation; correct the logic or test inputs instead.
 - Exceptions (must be documented):

@@ -6789,10 +6789,8 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
           let promise = clipboard.writeText(text);
           promise.then(function(_) {
             done(true);
-            return null;
           })["catch"](function(_) {
             CopyToClipboardHook2.fallbackCopy(text, done);
-            return null;
           });
           return;
         } catch (_g) {
