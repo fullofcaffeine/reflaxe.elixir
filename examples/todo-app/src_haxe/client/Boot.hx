@@ -21,6 +21,7 @@ import StringTools;
  */
 class Boot {
 	static inline function hookContext():HookContext {
+		// Phoenix invokes hook callbacks with its JS `this`; the typed HookContext protects all downstream use.
 		return cast js.Lib.nativeThis;
 	}
 

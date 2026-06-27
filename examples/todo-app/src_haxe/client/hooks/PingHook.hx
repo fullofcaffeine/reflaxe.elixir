@@ -8,6 +8,8 @@ class PingHook {
 			if (hook.pushEvent != null) {
 				hook.pushEvent("ping", {});
 			}
-		} catch (_:Dynamic) {}
+		} catch (_:Dynamic) {
+			// LiveView hook callbacks can throw host JS values; the ping probe is optional diagnostics.
+		}
 	}
 }

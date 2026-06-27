@@ -22,6 +22,7 @@ class Theme {
 				return null;
 			return ThemePreference.parse(storage.getItem(storageKey));
 		} catch (_e:Dynamic) {
+			// Browser storage can throw host JS values; callers fall back to the system theme.
 			return null;
 		}
 	}
@@ -36,7 +37,9 @@ class Theme {
 			if (storage == null)
 				return;
 			storage.setItem(storageKey, preference);
-		} catch (_e:Dynamic) {}
+		} catch (_e:Dynamic) {
+			// Browser storage can throw host JS values; theme application remains in-memory.
+		}
 	}
 
 	public static function clearStored():Void {
@@ -45,7 +48,9 @@ class Theme {
 			if (storage == null)
 				return;
 			storage.removeItem(storageKey);
-		} catch (_e:Dynamic) {}
+		} catch (_e:Dynamic) {
+			// Browser storage can throw host JS values; clearing is best-effort and local state is unchanged.
+		}
 	}
 
 	public static function apply(preference:ThemePreference):Void {
