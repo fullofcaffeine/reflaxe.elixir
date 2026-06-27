@@ -592,11 +592,11 @@ class TodoLive {
 	 */
 	public static function create_todo(params:Term, socket:Socket<TodoLiveAssigns>):Socket<TodoLiveAssigns> {
 		// LiveView form params arrive as a map with string keys; extract safely.
-		var rawTitle:Null<String> = Reflect.field(params, "title");
-		var rawDesc:Null<String> = Reflect.field(params, "description");
-		var rawPriority:Null<String> = Reflect.field(params, "priority");
-		var rawDue:Null<String> = Reflect.field(params, "due_date");
-		var rawTags:Null<String> = Reflect.field(params, "tags");
+		var rawTitle = Params.getString(params, "title");
+		var rawDesc = Params.getString(params, "description");
+		var rawPriority = Params.getString(params, "priority");
+		var rawDue = Params.getString(params, "due_date");
+		var rawTags = Params.getString(params, "tags");
 
 		// Normalize values and convert shapes
 		var title = (rawTitle != null) ? rawTitle : "";
@@ -1099,11 +1099,11 @@ class TodoLive {
 			return socket;
 		var todo = socket.assigns.editing_todo;
 		// LiveView form params arrive as a map with string keys; extract safely.
-		var rawTitle:Null<String> = Reflect.field(params, "title");
-		var rawDesc:Null<String> = Reflect.field(params, "description");
-		var rawPriority:Null<String> = Reflect.field(params, "priority");
-		var rawDue:Null<String> = Reflect.field(params, "due_date");
-		var rawTags:Null<String> = Reflect.field(params, "tags");
+		var rawTitle = Params.getString(params, "title");
+		var rawDesc = Params.getString(params, "description");
+		var rawPriority = Params.getString(params, "priority");
+		var rawDue = Params.getString(params, "due_date");
+		var rawTags = Params.getString(params, "tags");
 
 		// Inline computed fields into changeset map to avoid local-binder rename mismatches
 		switch (Repo.update(server.schemas.Todo.changeset(todo, {
