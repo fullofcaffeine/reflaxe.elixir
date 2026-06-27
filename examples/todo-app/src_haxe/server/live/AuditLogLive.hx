@@ -8,6 +8,7 @@ import elixir.types.Term;
 import haxe.Constraints.Function;
 import phoenix.Component;
 import phoenix.LiveSocket;
+import phoenix.Params;
 import phoenix.Phoenix.HandleEventResult;
 import phoenix.Phoenix.LiveView;
 import phoenix.Phoenix.MountResult;
@@ -142,18 +143,6 @@ class AuditLogLive {
 		};
 	}
 
-	static function parseOptionalInt(value:Term):Null<Int> {
-		if (value == null)
-			return null;
-		if (elixir.Kernel.isInteger(value))
-			return cast value;
-		if (elixir.Kernel.isFloat(value))
-			return elixir.Kernel.trunc(value);
-		if (elixir.Kernel.isBinary(value))
-			return Std.parseInt(cast value);
-		return null;
-	}
-
 	static function parseLimit(rawLimit:String):Int {
 		var parsed = Std.parseInt(rawLimit);
 		if (parsed != null && parsed > 0)
@@ -204,23 +193,23 @@ class AuditLogLive {
 		if (socket.assigns.current_user == null)
 			return socket;
 
-		var actionTerm:Term = ElixirMap.get(params, "action");
-		var entityTerm:Term = ElixirMap.get(params, "entity");
-		var actorIdTerm:Term = ElixirMap.get(params, "actor_id");
-		var limitTerm:Term = ElixirMap.get(params, "limit");
+		var action = Params.getString(params, "action");
+		var entity = Params.getString(params, "entity");
+		var actorIdRaw = Params.getString(params, "actor_id");
+		var limit = Params.getString(params, "limit");
 
-		var actionFilter = actionTerm != null ? StringTools.trim(cast actionTerm) : socket.assigns.action_filter;
+		var actionFilter = action != null ? StringTools.trim(action) : socket.assigns.action_filter;
 		if (actionFilter == "")
 			actionFilter = "all";
 
-		var entityFilter = entityTerm != null ? StringTools.trim(cast entityTerm) : socket.assigns.entity_filter;
+		var entityFilter = entity != null ? StringTools.trim(entity) : socket.assigns.entity_filter;
 		if (entityFilter == "")
 			entityFilter = "all";
 
-		var actorIdFilter = actorIdTerm != null ? StringTools.trim(cast actorIdTerm) : socket.assigns.actor_id_filter;
+		var actorIdFilter = actorIdRaw != null ? StringTools.trim(actorIdRaw) : socket.assigns.actor_id_filter;
 		var actorId = StringTools.trim(actorIdFilter) != "" ? Std.parseInt(actorIdFilter) : null;
 
-		var limitFilter = limitTerm != null ? StringTools.trim(cast limitTerm) : socket.assigns.limit_filter;
+		var limitFilter = limit != null ? StringTools.trim(limit) : socket.assigns.limit_filter;
 		if (limitFilter == "")
 			limitFilter = "50";
 

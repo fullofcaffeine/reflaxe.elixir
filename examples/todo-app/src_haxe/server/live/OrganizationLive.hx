@@ -5,13 +5,13 @@ import contexts.AuditLogs;
 import contexts.AuditLogTypes.AuditAction;
 import contexts.AuditLogTypes.AuditEntity;
 import ecto.Changeset;
-import elixir.ElixirMap;
 import elixir.Kernel;
 import elixir.types.Term;
 import haxe.Constraints.Function;
 import haxe.functional.Result;
 import phoenix.Component;
 import phoenix.LiveSocket;
+import phoenix.Params;
 import phoenix.Phoenix.HandleEventResult;
 import phoenix.Phoenix.LiveView;
 import phoenix.Phoenix.MountResult;
@@ -200,8 +200,7 @@ class OrganizationLive {
 			return LiveView.putFlash(socket, FlashType.Error, "Sign in to switch organizations.");
 		}
 
-		var slugTerm:Term = ElixirMap.get(params, "slug");
-		var raw:String = slugTerm != null ? cast slugTerm : "";
+		var raw = Params.getStringDefault(params, "slug", "");
 		var slug = normalizeSlug(raw);
 		if (slug == "") {
 			return LiveView.putFlash(socket, FlashType.Error, "Organization slug is required.");
@@ -279,18 +278,6 @@ class OrganizationLive {
 		return Repo.all(query).length;
 	}
 
-	static function parseId(value:Term):Null<Int> {
-		if (value == null)
-			return null;
-		if (Kernel.isInteger(value))
-			return cast value;
-		if (Kernel.isFloat(value))
-			return Kernel.trunc(value);
-		if (Kernel.isBinary(value))
-			return Std.parseInt(cast value);
-		return null;
-	}
-
 	static function setUserRole(params:Term, socket:LiveSocket<OrganizationLiveAssigns>):LiveSocket<OrganizationLiveAssigns> {
 		if (!socket.assigns.signed_in || socket.assigns.current_user == null) {
 			return LiveView.putFlash(socket, FlashType.Error, "Sign in to manage members.");
@@ -301,13 +288,12 @@ class OrganizationLive {
 
 		var currentUser:User = socket.assigns.current_user;
 
-		var idValue = parseId(ElixirMap.get(params, "member_id"));
+		var idValue = Params.getInt(params, "member_id");
 		if (idValue == null || idValue <= 0) {
 			return LiveView.putFlash(socket, FlashType.Error, "Invalid user id.");
 		}
 
-		var roleTerm:Term = ElixirMap.get(params, "role");
-		var rawRole:String = roleTerm != null ? cast roleTerm : "";
+		var rawRole = Params.getStringDefault(params, "role", "");
 		var role = StringTools.trim(rawRole).toLowerCase();
 		if (role != "admin" && role != "user") {
 			return LiveView.putFlash(socket, FlashType.Error, "Invalid role.");
@@ -386,10 +372,8 @@ class OrganizationLive {
 			return LiveView.putFlash(socket, FlashType.Error, "Only admins can invite users.");
 		}
 
-		var emailTerm:Term = ElixirMap.get(params, "email");
-		var roleTerm:Term = ElixirMap.get(params, "role");
-		var rawEmail:String = emailTerm != null ? cast emailTerm : "";
-		var rawRole:String = roleTerm != null ? cast roleTerm : "user";
+		var rawEmail = Params.getStringDefault(params, "email", "");
+		var rawRole = Params.getStringDefault(params, "role", "user");
 
 		if (StringTools.trim(rawEmail) == "") {
 			return LiveView.putFlash(socket, FlashType.Error, "Invite email is required.");
@@ -439,8 +423,7 @@ class OrganizationLive {
 			return LiveView.putFlash(socket, FlashType.Error, "Only admins can manage invites.");
 		}
 
-		var idTerm:Term = ElixirMap.get(params, "id");
-		var id:Int = idTerm != null ? cast idTerm : 0;
+		var id = Params.getIntDefault(params, "id", 0);
 		if (id <= 0) {
 			return LiveView.putFlash(socket, FlashType.Error, "Invite id is required.");
 		}

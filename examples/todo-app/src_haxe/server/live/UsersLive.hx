@@ -1,13 +1,12 @@
 package server.live;
 
 import contexts.Users;
-import elixir.ElixirMap;
-import elixir.Kernel;
 import elixir.types.Term;
 import haxe.Constraints.Function;
 import haxe.functional.Result;
 import phoenix.Component;
 import phoenix.LiveSocket;
+import phoenix.Params;
 import phoenix.Phoenix.HandleEventResult;
 import phoenix.Phoenix.LiveView;
 import phoenix.Phoenix.MountResult;
@@ -133,11 +132,10 @@ class UsersLive {
 	}
 
 	static function applyFilters(params:Term, socket:LiveSocket<UsersLiveAssigns>):LiveSocket<UsersLiveAssigns> {
-		var queryTerm:Term = ElixirMap.get(params, "query");
-		var statusTerm:Term = ElixirMap.get(params, "status");
-
-		var searchQuery = queryTerm != null ? StringTools.trim(cast queryTerm) : socket.assigns.search_query;
-		var statusFilter = statusTerm != null ? cast statusTerm : socket.assigns.status_filter;
+		var query = Params.getString(params, "query");
+		var status = Params.getString(params, "status");
+		var searchQuery = query != null ? StringTools.trim(query) : socket.assigns.search_query;
+		var statusFilter = status != null ? status : socket.assigns.status_filter;
 		if (statusFilter != "all" && statusFilter != "active" && statusFilter != "inactive")
 			statusFilter = "all";
 
@@ -157,7 +155,7 @@ class UsersLive {
 			return LiveView.putFlash(socket, FlashType.Error, "Sign in to manage users.");
 		}
 
-		var idValue = parseId(ElixirMap.get(params, "id"));
+		var idValue = Params.getInt(params, "id");
 		if (idValue == null) {
 			return LiveView.putFlash(socket, FlashType.Error, "Invalid user id.");
 		}
@@ -187,18 +185,6 @@ class UsersLive {
 			case Error(_changeset):
 				LiveView.putFlash(socket, FlashType.Error, "Could not update user.");
 		};
-	}
-
-	static function parseId(value:Term):Null<Int> {
-		if (value == null)
-			return null;
-		if (Kernel.isInteger(value))
-			return cast value;
-		if (Kernel.isFloat(value))
-			return Kernel.trunc(value);
-		if (Kernel.isBinary(value))
-			return Std.parseInt(cast value);
-		return null;
 	}
 
 	static function loadUsers(organizationId:Int):Array<User> {
