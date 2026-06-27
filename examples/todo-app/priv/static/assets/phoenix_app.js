@@ -6833,7 +6833,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
     }
     static copyText(text, done) {
       let clipboard = Register.$global.navigator.clipboard;
-      if (clipboard != null && Object.prototype.hasOwnProperty.call(clipboard, "writeText")) {
+      if (clipboard != null) {
         try {
           let promise = clipboard.writeText(text);
           promise.then(function(_) {

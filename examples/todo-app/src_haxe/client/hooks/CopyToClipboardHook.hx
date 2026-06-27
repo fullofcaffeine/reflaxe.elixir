@@ -40,10 +40,10 @@ class CopyToClipboardHook {
 	}
 
 	static function copyText(text:String, done:Bool->Void):Void {
-		var clipboard:Dynamic = untyped Browser.navigator.clipboard;
-		if (clipboard != null && Reflect.hasField(clipboard, "writeText")) {
+		var clipboard = Browser.navigator.clipboard;
+		if (clipboard != null) {
 			try {
-				var promise:Promise<Dynamic> = cast clipboard.writeText(text);
+				var promise:Promise<Dynamic> = clipboard.writeText(text);
 				promise.then(function(_):Dynamic {
 					done(true);
 					return null;
