@@ -21,6 +21,14 @@ These are the immediate follow-ups selected from the audit:
 | 2 | Phoenix | `haxe.elixir-944.15` - reduce LiveView callback naming boilerplate | Implemented: exact Haxe-style LiveView callback names now emit Phoenix callback names by default; function-level `@:native` remains the explicit interop escape hatch. |
 | 3 | Interop | `haxe.elixir-944.16` - app-local extern boundary scaffold/checklist | Implemented: `mix haxe.gen.extern --boundary` now scaffolds app-local module-reference externs without loading the Elixir module; strict-mode diagnostics and docs point to the scaffolded `@:native` + `@:unsafeExtern` shape. |
 
+## Adopted Design Plans
+
+- PhoenixHx typed LiveView event protocols: adopt a protocol-first,
+  explicit-dispatch, handler-validated macro layer for hook/server events. The
+  v1 plan is tracked in
+  [`phoenixhx-live-event-protocols.md`](phoenixhx-live-event-protocols.md) and
+  Bead `haxe.elixir.codex-7on`.
+
 ## Prioritized Papercuts
 
 | Rank | Area | Location | Pain | Proposal | Impact / Effort |

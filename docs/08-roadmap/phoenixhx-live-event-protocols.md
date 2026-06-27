@@ -1,0 +1,270 @@
+# PhoenixHx Live Event Protocols
+
+Status: adopted v1 design plan, not shipped API.
+
+PhoenixHx should provide an opt-in, framework-level macro layer for typed
+LiveView events that cross the browser hook/server LiveView boundary.
+
+The goal is not to replace Phoenix. The goal is to let Haxe-authored frontend
+and backend code share one event contract, then generate the small pieces of
+boundary code that are otherwise stringly and repetitive.
+
+## Design Position
+
+Adopt v1 as protocol-first, explicit-dispatch, and handler-validated.
+
+- Developers declare a shared Haxe event protocol once.
+- PhoenixHx generates event names, payload encoders/decoders, browser push
+  helpers, and server dispatch helpers.
+- LiveView modules keep a normal Phoenix-shaped `handleEvent(event, params,
+  socket)` and explicitly call the generated dispatcher.
+- No metadata means no generated behavior and no validation.
+- Compiler defines may affect diagnostics, but must not silently switch runtime
+  behavior or create a separate backend/profile.
+
+This fits the authoring profile contract: direct Phoenix interop remains the
+floor, while typed Haxe macros improve the authoring ceiling.
+
+## v1 Source API
+
+Prefer a shared enum protocol as the source of truth:
+
+```haxe
+package shared.liveview;
+
+@:liveEventProtocol
+enum ProfileHookEvent {
+  @:event("clipboard_copied")
+  ClipboardCopied(message:String);
+
+  @:event("ping")
+  Ping;
+}
+```
+
+The macro should derive defaults:
+
+- companion module: `ProfileHookEvents`
+- dispatch method: `dispatchProfileHookEvent`
+- handler names: `handleClipboardCopied`, `handlePing`
+
+String overrides should remain available for interop or naming conflicts:
+
+```haxe
+@:liveEventProtocol("ProfileHookEvents")
+enum ProfileHookEvent { ... }
+
+@:liveEvents(ProfileHookEvent, "dispatchProfileHookEvent")
+class ProfileLive { ... }
+```
+
+Bind a LiveView separately:
+
+```haxe
+@:liveEvents(ProfileHookEvent)
+class ProfileLive {
+  public static function handleEvent(
+    event:String,
+    params:Payload,
+    socket:Socket<ProfileLiveAssigns>
+  ):HandleEventResult<ProfileLiveAssigns> {
+    var handled = dispatchProfileHookEvent(event, params, socket);
+    if (handled != null) {
+      return handled;
+    }
+
+    return switch (event) {
+      case EventName.SaveProfile:
+        NoReply(saveProfile(params, socket));
+      case _:
+        NoReply(socket);
+    };
+  }
+
+  static function handleClipboardCopied(
+    message:String,
+    socket:Socket<ProfileLiveAssigns>
+  ):HandleEventResult<ProfileLiveAssigns> {
+    return NoReply(LiveView.putFlash(socket, FlashType.Info, message));
+  }
+
+  static function handlePing(
+    socket:Socket<ProfileLiveAssigns>
+  ):HandleEventResult<ProfileLiveAssigns> {
+    return NoReply(socket);
+  }
+}
+```
+
+The explicit dispatch call is intentional. It keeps the Phoenix callback visible
+and makes fallback behavior obvious.
+
+## Generated Surface
+
+For the protocol above, PhoenixHx should generate a companion class:
+
+```haxe
+class ProfileHookEvents {
+  public static inline var ClipboardCopiedEvent:String = "clipboard_copied";
+  public static inline var PingEvent:String = "ping";
+
+  public static function encode(event:ProfileHookEvent):EncodedEvent;
+  public static function decode(eventName:String, payload:Payload):Null<ProfileHookEvent>;
+
+  #if js
+  public static function push(hook:HookContext, event:ProfileHookEvent):Void;
+  public static function pushClipboardCopied(hook:HookContext, message:String):Void;
+  public static function pushPing(hook:HookContext):Void;
+  #end
+}
+```
+
+Server binding should generate a private dispatch helper in the LiveView module
+or an equivalent helper with the same readable target shape:
+
+```elixir
+defp dispatch_profile_hook_event(event_name, params, socket) do
+  case event_name do
+    "clipboard_copied" ->
+      case decode_clipboard_copied_payload(params) do
+        {:ok, message} -> handle_clipboard_copied(message, socket)
+        :error -> {:noreply, socket}
+      end
+
+    "ping" ->
+      handle_ping(socket)
+
+    _ ->
+      nil
+  end
+end
+```
+
+Known events with invalid payloads should be consumed safely. They should not
+fall through as "unhandled" and accidentally trigger unrelated event logic.
+`nil` from dispatch should mean "this event name is not part of this protocol."
+
+## Payload Rules
+
+Support these first:
+
+- empty constructors: `Ping`
+- scalar constructor arguments: `ClipboardCopied(message:String)`
+- named typedef payloads
+- `String`, `Int`, `Bool`, `Float`
+- `Array<String>` and `Array<Int>`
+- `Null<T>` only for explicitly optional fields
+- custom codecs through `@:codec(...)` after the direct built-ins are stable
+
+Avoid these in v1 protocol declarations:
+
+- `Dynamic`
+- `Map<String, Dynamic>`
+- `haxe.ds.Map`
+- `Reflect.field` payload access
+- raw `__elixir__`
+- custom class instances without an explicit codec
+
+Generate direct helper functions for the built-in payload types. Prefer clear
+`WirePayload.getString/putString`, `getInt/putInt`, etc. over runtime codec
+objects in the default path. The current manual todo-app `HookEvents` prototype
+showed that direct helpers produce clearer Elixir than a generic codec value
+when the compiler has to lower enum decoding.
+
+## Diagnostics
+
+Protocol diagnostics should catch:
+
+- duplicate event names
+- unsupported payload field types
+- duplicate wire keys after name conversion
+- `Dynamic` or unsafe map payloads
+- invalid `@:event`, `@:wire`, or `@:codec` metadata
+
+LiveView binding diagnostics should catch:
+
+- missing handler method
+- wrong handler argument list
+- wrong handler return type
+- duplicate handler bindings
+- protocol binding without an explicit dispatcher call
+
+Dispatcher-call validation should be a warning by default and an error under a
+strict define such as:
+
+```text
+-D phoenixhx_live_events_strict
+```
+
+JS and server builds run separately, so cross-build drift should be caught with
+a deterministic protocol manifest/hash generated from the shared enum and
+validated in snapshots or todo-app CI.
+
+## Todo-App Migration
+
+Use the todo-app as the first example, but keep the migration small:
+
+1. Replace manual `shared.liveview.HookEvents` with `ProfileHookEvent`.
+2. Generate `ProfileHookEvents` for both Genes JS and Haxe -> Elixir builds.
+3. Change `CopyToClipboardHook` to call
+   `ProfileHookEvents.pushClipboardCopied(hook, message)`.
+4. Change `PingHook` to call `ProfileHookEvents.pushPing(hook)`.
+5. Add `@:liveEvents(ProfileHookEvent)` to `ProfileLive`.
+6. Call `dispatchProfileHookEvent(event, params, socket)` first in
+   `ProfileLive.handleEvent`.
+7. Keep ordinary `EventName` values for template-driven Phoenix events.
+8. Remove hook-only event names from `EventName` once generated event names are
+   registered with HXX/HEEx strict event checks.
+
+Docs should show the direct Phoenix alternative next to the generated path:
+
+```haxe
+public static function handleEvent(
+  event:String,
+  params:Term,
+  socket:Socket<ProfileLiveAssigns>
+):HandleEventResult<ProfileLiveAssigns> {
+  return switch (event) {
+    case "clipboard_copied":
+      var message = Params.getStringDefault(params, "message", "Copied.");
+      NoReply(LiveView.putFlash(socket, FlashType.Info, message));
+    case _:
+      NoReply(socket);
+  };
+}
+```
+
+That comparison keeps the value proposition honest: typed protocols reduce
+drift, but raw Phoenix remains available.
+
+## Implementation Phases
+
+1. Add protocol metadata and generate only the shared companion.
+2. Migrate client hooks from manual `HookEvents.encodeClientPush(...)` to
+   generated per-event push helpers.
+3. Add LiveView binding metadata and generated dispatch helper.
+4. Migrate `ProfileLive` to explicit dispatch-first handling.
+5. Add diagnostics and strict-mode escalation.
+6. Add protocol manifest/hash generation for cross-build drift checks.
+7. Register generated event names with HXX/HEEx strict event validation.
+8. Document the generated path in the user guide after the API is implemented.
+
+## Required Validation
+
+- Snapshot coverage for generated companion code.
+- Snapshot coverage for generated dispatch code and generated Elixir shape.
+- Diagnostic tests for duplicate event names, missing handlers, bad payload
+  types, and unsafe dynamic payloads.
+- Todo-app Haxe client and server builds.
+- Todo-app ExUnit coverage for the LiveView dispatch path.
+- Todo-app QA sentinel with Playwright coverage for clipboard copied flash and
+  ping no-op behavior.
+
+## Not v1
+
+- Automatically wrapping or replacing `handleEvent`.
+- Inferring protocols from arbitrary `handleEvent` bodies.
+- Typed replies from hook pushes.
+- App-wide profile/backend switches.
+- Custom runtime event systems that do not lower to Phoenix `pushEvent` and
+  `handle_event/3`.
