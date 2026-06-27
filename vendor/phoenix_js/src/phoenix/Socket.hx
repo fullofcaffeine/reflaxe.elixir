@@ -26,12 +26,18 @@ extern class Socket {
   public function connect(): Void;
   public function disconnect(?code: Int, ?reason: String): Void;
   public function isConnected(): Bool;
-  public function channel(topic: String, ?params: JsObject): Channel;
+  public function channel(topic: String, ?params: ChannelParams): Channel;
   public function remove(channel: Channel): Void;
   public function connectionState(): String;
   public function makeRef(): String;
   public function sendHeartbeat(): Void;
 }
+
+typedef SocketParams = {
+  @:optional var _csrf_token: String;
+}
+
+typedef ChannelParams = {}
 
 typedef SocketOptions = {
   @:optional var transport: JsFunction;
@@ -41,7 +47,7 @@ typedef SocketOptions = {
   @:optional var rejoinAfterMs: Int -> Int;
   @:optional var logger: String -> String -> JsObject -> Void;
   @:optional var longpollerTimeout: Int;
-  @:optional var params: JsObject;
+  @:optional var params: SocketParams;
   @:optional var binaryType: String;
   @:optional var vsn: String;
 }

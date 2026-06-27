@@ -2,6 +2,8 @@ package client.channels;
 
 #if js
 import phoenix.Socket;
+import phoenix.Socket.ChannelParams;
+import phoenix.Socket.SocketParams;
 import phoenix.channels.TypedChannelClient;
 import shared.channels.PingProtocol;
 import shared.channels.PingProtocol.PingClientEvent;
@@ -17,15 +19,16 @@ class PingChannelClient {
 
 	public static function bootstrap():Void {
 		var csrf = readCsrfToken();
-		var params:js.lib.Object = cast {};
+		var params:SocketParams = {};
 		if (csrf != null && StringTools.trim(csrf) != "") {
-			Reflect.setField(cast params, "_csrf_token", csrf);
+			params._csrf_token = csrf;
 		}
 
-		var socket = new Socket("/socket", {params: cast params});
+		var socket = new Socket("/socket", {params: params});
 		socket.connect();
 
-		var channel = socket.channel(PingProtocol.Topic, cast {});
+		var channelParams:ChannelParams = {};
+		var channel = socket.channel(PingProtocol.Topic, channelParams);
 		var client = TypedChannelClient.fromProtocol(channel, PingProtocol.clientProtocol());
 
 		client.onMessage(function(message:PingServerEvent):Void {

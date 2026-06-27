@@ -7176,12 +7176,13 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
       let csrf = PingChannelClient2.readCsrfToken();
       let params = {};
       if (csrf != null && StringTools.trim(csrf) != "") {
-        params["_csrf_token"] = csrf;
+        params._csrf_token = csrf;
       }
       ;
       let socket = new Socket("/socket", { "params": params });
       socket.connect();
-      let channel = socket.channel("typed:lobby", {});
+      let channelParams = {};
+      let channel = socket.channel("typed:lobby", channelParams);
       let protocol = PingProtocol.clientProtocol();
       let client = new TypedChannelClient(channel, protocol.encodeSend, protocol.decodeRecv, protocol.eventNames);
       client.onMessage(function(message) {
