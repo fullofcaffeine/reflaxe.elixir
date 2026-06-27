@@ -1,8 +1,10 @@
 package client.hooks;
 
 import phoenix.live_view.HookContext;
+import phoenix.live_view.HookContextTools;
 import js.Browser;
 import js.html.Event;
+import shared.liveview.HookEvents;
 
 class CopyToClipboardHook {
 	public static function mounted(hook:HookContext):Void {
@@ -14,22 +16,17 @@ class CopyToClipboardHook {
 			}
 
 			copyText(text, function(_success:Bool):Void {
-				var eventName = el.getAttribute("data-copied-event");
-				if (eventName == null || eventName == "") {
-					eventName = "clipboard_copied";
-				}
-
 				var message = el.getAttribute("data-copied-message");
 				if (message == null || message == "") {
-					message = "Copied.";
+					message = HookEvents.DefaultClipboardCopiedMessage;
 				}
 
 				// LiveView hook callbacks can throw host JS values; local UI feedback still runs.
 				try {
-					if (hook.pushEvent != null) {
-						hook.pushEvent(eventName, {message: message});
-					}
-				} catch (_:Dynamic) {}
+					HookContextTools.pushEncoded(hook, HookEvents.encodeClientPush(HookEvents.clipboardCopied(message)));
+				} catch (_:Dynamic) {
+					// JS hook callback failures are host values; ignore to preserve local copy feedback.
+				}
 
 				el.classList.add("copied");
 				Browser.window.setTimeout(function():Void {
@@ -51,7 +48,9 @@ class CopyToClipboardHook {
 					fallbackCopy(text, done);
 				});
 				return;
-			} catch (_:Dynamic) {}
+			} catch (_:Dynamic) {
+				// Browser clipboard errors are host values; fall back to the legacy copy path.
+			}
 		}
 
 		fallbackCopy(text, done);
@@ -70,7 +69,9 @@ class CopyToClipboardHook {
 		// execCommand is a legacy browser API and may throw host JS values.
 		try {
 			ok = Browser.document.execCommand("copy");
-		} catch (_:Dynamic) {}
+		} catch (_:Dynamic) {
+			// Legacy browser copy errors are host values; report failure through `ok`.
+		}
 
 		// DOM removal can throw host JS values; parentNode fallback keeps cleanup deterministic.
 		try {

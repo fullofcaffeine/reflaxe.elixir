@@ -1,3 +1,4 @@
+import {HookEvents} from "../../shared/liveview/HookEvents.js"
 import {Register} from "../../genes/Register.js"
 
 const $global = Register.$global
@@ -12,17 +13,14 @@ class CopyToClipboardHook {
 				return;
 			};
 			CopyToClipboardHook.copyText(text, function (_success) {
-				let eventName = el.getAttribute("data-copied-event");
-				if (eventName == null || eventName == "") {
-					eventName = "clipboard_copied";
-				};
 				let message = el.getAttribute("data-copied-message");
 				if (message == null || message == "") {
 					message = "Copied.";
 				};
 				try {
+					let event = HookEvents.encodeClientPush(HookEvents.clipboardCopied(message));
 					if (hook.pushEvent != null) {
-						hook.pushEvent(eventName, {"message": message});
+						hook.pushEvent(event.event, event.payload);
 					};
 				}catch (_g) {
 				};

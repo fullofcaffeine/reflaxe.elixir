@@ -1,6 +1,5 @@
 package phoenix.live_view;
 
-import haxe.DynamicAccess;
 import phoenix.Socket;
 
 /**
@@ -23,7 +22,7 @@ typedef LiveSocketParams = {
 
 typedef LiveSocketOptions = {
   @:optional var params: LiveSocketParams;
-  @:optional var hooks: DynamicAccess<Hook>;
+  @:optional var hooks: HookMap;
 }
 
 #if js
@@ -35,4 +34,3 @@ extern class LiveSocket {
   public function isConnected(): Bool;
 }
 #end
-

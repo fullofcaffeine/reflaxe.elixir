@@ -1,11 +1,11 @@
 package server.live;
 
-import elixir.ElixirMap;
 import elixir.types.Term;
 import haxe.Constraints.Function;
 import haxe.functional.Result;
 import phoenix.Component;
 import phoenix.LiveSocket;
+import phoenix.Params;
 import phoenix.Phoenix.HandleEventResult;
 import phoenix.Phoenix.LiveView;
 import phoenix.Phoenix.MountResult;
@@ -17,6 +17,8 @@ import phoenix.types.Flash.FlashType;
 import plug.CSRFProtection;
 import shared.AvatarTools;
 import shared.liveview.EventName;
+import shared.liveview.HookEvents;
+import shared.liveview.HookEvents.HookClientEvent;
 import shared.liveview.HookName;
 import server.infrastructure.Repo;
 import server.infrastructure.TodoAppWeb;
@@ -24,7 +26,6 @@ import server.pubsub.TodoPubSub;
 import server.support.OrganizationTools;
 import server.pubsub.TodoPubSub.TodoPubSubMessage;
 import server.pubsub.TodoPubSub.TodoPubSubTopic;
-import server.types.Types.EventParams;
 import server.types.Types.MountParams;
 import server.types.Types.Session;
 import StringTools;
@@ -94,32 +95,36 @@ class ProfileLive {
 		return Ok(sock);
 	}
 
-	public static function handleEvent(event:String, params:EventParams, socket:Socket<ProfileLiveAssigns>):HandleEventResult<ProfileLiveAssigns> {
+	public static function handleEvent(event:String, params:Term, socket:Socket<ProfileLiveAssigns>):HandleEventResult<ProfileLiveAssigns> {
 		var sock:LiveSocket<ProfileLiveAssigns> = socket;
 		return switch (event) {
 			case EventName.SaveProfile:
 				NoReply(saveProfile(params, sock));
-			case "clipboard_copied":
-				var paramsTerm:Term = cast params;
-				var messageTerm:Term = ElixirMap.get(paramsTerm, "message");
-				var message:String = messageTerm != null ? cast messageTerm : "Copied.";
-				NoReply(LiveView.putFlash(sock, FlashType.Info, message));
+			case EventName.ClipboardCopied:
+				NoReply(handleHookEvent(HookEvents.decodeServerRecv(event, params), sock));
 			case _:
 				NoReply(sock);
 		};
 	}
 
-	static function saveProfile(params:EventParams, socket:LiveSocket<ProfileLiveAssigns>):LiveSocket<ProfileLiveAssigns> {
+	static function handleHookEvent(event:Null<HookClientEvent>, socket:LiveSocket<ProfileLiveAssigns>):LiveSocket<ProfileLiveAssigns> {
+		return switch (event) {
+			case ClipboardCopied(payload):
+				LiveView.putFlash(socket, FlashType.Info, payload.message);
+			case HookPing:
+				socket;
+			case null:
+				socket;
+		};
+	}
+
+	static function saveProfile(params:Term, socket:LiveSocket<ProfileLiveAssigns>):LiveSocket<ProfileLiveAssigns> {
 		if (!socket.assigns.signed_in || socket.assigns.user == null) {
 			return LiveView.putFlash(socket, FlashType.Error, "You must sign in to update your profile.");
 		}
 
-		var paramsTerm:Term = cast params;
-		var nameTerm:Term = ElixirMap.get(paramsTerm, "name");
-		var bioTerm:Term = ElixirMap.get(paramsTerm, "bio");
-
-		var name = nameTerm != null ? StringTools.trim(cast nameTerm) : "";
-		var bio = bioTerm != null ? StringTools.trim(cast bioTerm) : "";
+		var name = StringTools.trim(Params.getStringDefault(params, "name", ""));
+		var bio = StringTools.trim(Params.getStringDefault(params, "bio", ""));
 		var bioValue:Null<String> = bio != "" ? bio : null;
 		var updateParams:Term = {name: name, bio: bioValue};
 
@@ -221,7 +226,6 @@ class ProfileLive {
                                                 type="button"
                                                 phx-hook=${HookName.CopyToClipboard}
                                                 data-copy-text={assigns.email}
-                                                data-copied-event="clipboard_copied"
                                                 data-copied-message="Email copied."
                                                 class="px-2 py-1 rounded-md bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
                                                 Copy

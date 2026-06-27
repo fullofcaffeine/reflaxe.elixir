@@ -1,15 +1,16 @@
 package phoenix.live_view;
 
 import js.html.DOMElement;
+import phoenix.channels.Payload;
 
 /**
  * Object-shaped payload sent through Phoenix LiveView hook pushEvent.
  *
- * Phoenix's JS API expects a JSON-serializable object payload, not an arbitrary
- * Haxe Dynamic term. `{}` keeps the extern honest while still accepting typed
- * object literals such as `{message: "copied"}`.
+ * Phoenix's JS API expects a JSON-serializable object payload. Reuse the shared
+ * Phoenix payload type so LiveView hooks and Channels can share codecs across
+ * the JS and Elixir sides of the app.
  */
-typedef HookPayload = {};
+typedef HookPayload = Payload;
 
 /**
  * phoenix.live_view.HookContext (JS)

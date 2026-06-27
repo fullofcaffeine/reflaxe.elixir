@@ -1,7 +1,7 @@
 package client;
 
 import phoenix.live_view.Hook;
-import haxe.DynamicAccess;
+import phoenix.live_view.HookMap;
 #if macro
 import haxe.macro.Context;
 import haxe.macro.Expr;
@@ -25,10 +25,10 @@ import haxe.macro.TypeTools;
  *   (e.g. `AutoFocus`, `ThemeToggle`). The macro:
  *   - errors on unknown keys
  *   - errors if any HookName entries are missing
- 	 *   - emits a `DynamicAccess<Hook>` keyed by the HookName *string values*
+ *   - emits a `HookMap` keyed by the HookName *string values*
  */
 class HookRegistry {
-	public static macro function build(defs:Expr):ExprOf<DynamicAccess<Hook>> {
+	public static macro function build(defs:Expr):ExprOf<HookMap> {
 		var pos = defs.pos;
 
 		var provided:Map<String, Expr> = new Map();
@@ -75,12 +75,12 @@ class HookRegistry {
 		}
 
 		var statements:Array<Expr> = [];
-		statements.push(macro var hooks:DynamicAccess<Hook> = {});
+		statements.push(macro var hooks:HookMap = new HookMap());
 
 		// Stable emission order: preserve HookName declaration order
 		for (d in declared) {
 			var valueExpr = provided.get(d.name);
-			statements.push(macro hooks[$v{d.value}] = $valueExpr);
+			statements.push(macro hooks.set($v{d.value}, $valueExpr));
 		}
 
 		statements.push(macro hooks);

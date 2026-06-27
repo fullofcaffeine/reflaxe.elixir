@@ -1,8 +1,8 @@
 package client;
 
 import phoenix.Socket;
-import phoenix.live_view.Hook;
 import phoenix.live_view.HookContext;
+import phoenix.live_view.HookMap;
 import phoenix.live_view.LiveSocket;
 import phoenix.live_view.LiveSocket.LiveSocketParams;
 import client.hooks.AutoFocusHook;
@@ -11,7 +11,6 @@ import client.hooks.PingHook;
 import client.hooks.ThemeToggleHook;
 import client.utils.Theme;
 import client.channels.PingChannelClient;
-import haxe.DynamicAccess;
 import StringTools;
 
 /**
@@ -30,7 +29,7 @@ class Boot {
 		return meta == null ? null : meta.getAttribute("content");
 	}
 
-	static function connectLiveView(hooks:DynamicAccess<Hook>):Void {
+	static function connectLiveView(hooks:HookMap):Void {
 		var csrfToken = readCsrfToken();
 		var params:LiveSocketParams = {};
 		if (csrfToken != null && StringTools.trim(csrfToken) != "") {
@@ -46,7 +45,7 @@ class Boot {
 		js.Syntax.code("window.liveSocket = {0}", liveSocket);
 	}
 
-	static function buildHooks():DynamicAccess<Hook> {
+	static function buildHooks():HookMap {
 		return HookRegistry.build({
 			AutoFocus: {
 				mounted: function():Void {

@@ -392,6 +392,8 @@ class TodoLive {
 		} else if (event == EventName.BulkSetPriority) {
 			var priorityValue = Params.getString(params, "priority");
 			bulk_set_priority(priorityValue != null ? priorityValue : "", socket);
+		} else if (event == EventName.HookPing) {
+			socket;
 		} else {
 			socket;
 		};
