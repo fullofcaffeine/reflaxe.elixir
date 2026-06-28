@@ -104,6 +104,17 @@ We use many small, ordered AST transforms because Haxe→Elixir spans imperative
 
 When adding/updating a pass: include hxdoc WHAT/WHY/HOW/EXAMPLES, keep it shape‑based and under 2,000 LOC, and link snapshots in the hxdoc block.
 
+General documentation threshold:
+- Every new or materially changed compiler module/class/abstract/enum/public
+  typedef must have hxdoc or module-level documentation.
+- Any function that handles AST shape recognition, macro/type reflection,
+  target interop, boundary decoding, pass ordering, non-obvious invariants, or
+  reusable helper behavior must have hxdoc once it is more than a trivial local
+  expression.
+- Short private helpers can stay undocumented only when their name and immediate
+  caller make the behavior obvious. If the reader needs generated Elixir,
+  snapshots, or multiple call sites to understand the helper, document it.
+
 ## 🔁 Stateful Receiver Lowering
 
 When compiler work touches mutation, method calls, binary expressions, function arguments, or loop lowering, preserve Haxe side effects through same-scope immutable Elixir rebinding. Do not hide persistent receiver rebinding inside IIFEs/anonymous functions.
@@ -402,6 +413,9 @@ function build(): String {
 
 ### Code Quality Standards
 - **Comprehensive documentation** - explain WHY, HOW, and architectural context
+- **Document modules/classes by default** - every meaningful compiler entity
+  should explain why it exists; functions gain hxdoc when they cross the
+  complexity threshold above
 - **Professional debugging** - use DebugHelper, not trace statements
 - **Pattern consistency** - follow established compiler patterns
 - **Type safety** - avoid `Dynamic` and untyped code

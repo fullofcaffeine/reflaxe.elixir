@@ -469,6 +469,25 @@ Use `reflaxe.ruby` / RailsHx as a UX and cross-target learning reference when it
 - Do not leak target-specific runtime details into the Haxe types unless strictly required by shape.
 - Comment clarity is a hard rule: comments must be beginner-friendly by default, explaining the plain-language what/why/how without labeling themselves as “beginner-friendly.”
 
+### Documentation Coverage Threshold (Hard Rule)
+
+- Every new or materially changed module, class, abstract, enum, and public
+  typedef must have hxdoc or module-level documentation explaining what it is
+  for and why it exists.
+- Add hxdoc to any function once it passes a reasonable complexity threshold:
+  multiple branches, non-obvious invariants, macro/type reflection, AST/codegen
+  shaping, boundary decoding, target interop, performance-sensitive behavior, or
+  a helper that other modules are expected to reuse.
+- Public APIs, generated helper surfaces, extern boundaries, and framework DSL
+  entrypoints should be documented even when short, because their docs teach the
+  intended authoring shape.
+- Private one-line helpers may stay undocumented only when their name and local
+  context make the behavior obvious. If a reader would need to inspect callers
+  or generated output to understand why the helper exists, document it.
+- Function docs should explain purpose, inputs/outputs, invariants, side
+  effects, target-code shape, and examples when useful. Do not add comments that
+  merely restate the implementation line by line.
+
 ### Variable Naming (Hard Rules)
 
 - Use descriptive variable names. Avoid cryptic abbreviations (e.g., `fq`, `fn`, `args`) unless they are canonical API terms.

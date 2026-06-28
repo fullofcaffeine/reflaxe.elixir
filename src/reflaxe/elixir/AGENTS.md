@@ -35,6 +35,11 @@ Pre-merge checks:
 - [ ] No literal example-name checks in logic
 - [ ] No suffix/prefix heuristics against variable names
 - [ ] hxdoc WHAT/WHY/HOW + generic examples included
+- [ ] New or materially changed modules/classes/abstracts/enums/public typedefs
+      are documented; functions that handle AST shape recognition, macro/type
+      reflection, target interop, boundary decoding, pass ordering, non-obvious
+      invariants, or reusable helper behavior have hxdoc once they are more than
+      trivial local expressions
 - [ ] `rg -n "todo_|toggle_todo|cancel_edit|presenceSocket|live_socket|updated_todo" src/` returns zero (docs allowed)
 - Pass ordering: Builders expose structure first, then generic normalizations, then cleanups. Don’t rely on ordering to paper over misdesigns.
 - Enforce hxdoc and <2000 LOC per transformer; extract domain modules when needed.
@@ -741,5 +746,8 @@ Every compiler change must meet these standards:
 - **Type Safety**: Preserve Haxe's compile-time guarantees in generated code
 - **Performance**: Generated code should be efficient and not wasteful
 - **Maintainability**: Compiler code itself must be clear and well-documented
+- **Documentation**: Modules/classes always explain purpose and rationale;
+  functions are documented when they carry complexity, cross boundaries, encode
+  invariants, or are reused beyond one obvious local caller
 
 **Remember**: We're not just generating syntactically correct Elixir - we're generating IDIOMATIC Elixir that Elixir developers would be proud to write themselves.
