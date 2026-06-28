@@ -205,6 +205,172 @@ enum HookClientEvent {
 typedef HookEvents = LiveEventProtocolCompanion<HookClientEvent>;
 ```
 
+### Where The Protocol Lives
+
+Put protocol declarations in app-owned shared Haxe code that is visible to both
+the Genes JS build and the Haxe-to-Elixir server build. In the todo app, that
+means `src_haxe/shared/liveview/HookEvents.hx`:
+
+```text
+src_haxe/
+  shared/
+    liveview/
+      HookEvents.hx        # shared protocol enum + generated companion typedef
+      HookName.hx          # shared phx-hook names, if used by HXX and JS
+      EventName.hx         # ordinary template-driven LiveView events
+  client/
+    hooks/
+      CopyToClipboardHook.hx
+  server/
+    live/
+      ProfileLive.hx
+```
+
+The shared protocol module owns the cross-target contract:
+
+```haxe
+package shared.liveview;
+
+import phoenix.live_view.LiveEventProtocolCompanion;
+
+@:liveEventProtocol("HookEvents")
+enum HookClientEvent {
+  @:event("clipboard_copied")
+  ClipboardCopied(message:String);
+
+  @:event("ping")
+  HookPing;
+}
+
+typedef HookEvents = LiveEventProtocolCompanion<HookClientEvent>;
+```
+
+Client hook code imports the generated companion typedef and calls generated
+push helpers:
+
+```haxe
+package client.hooks;
+
+import phoenix.live_view.HookContext;
+import shared.liveview.HookEvents;
+
+class CopyToClipboardHook {
+  public static function mounted(hook:HookContext):Void {
+    HookEvents.pushClipboardCopied(hook, "Copied.");
+  }
+}
+```
+
+Server LiveView code imports the protocol enum from the shared module and binds
+it with `@:liveEvents(...)`:
+
+```haxe
+package server.live;
+
+import elixir.types.Term;
+import phoenix.Phoenix.HandleEventResult;
+import phoenix.Phoenix.Socket;
+import shared.liveview.HookEvents.HookClientEvent;
+
+@:liveview
+@:liveEvents(HookClientEvent, "dispatchHookEvent")
+class ProfileLive {
+  public static function handleEvent(
+    event:String,
+    params:Term,
+    socket:Socket<ProfileLiveAssigns>
+  ):HandleEventResult<ProfileLiveAssigns> {
+    var handled = dispatchHookEvent(event, params, socket);
+    if (handled != null) {
+      return handled;
+    }
+
+    return NoReply(socket);
+  }
+
+  static function handleClipboardCopied(
+    message:String,
+    socket:Socket<ProfileLiveAssigns>
+  ):HandleEventResult<ProfileLiveAssigns> {
+    return NoReply(socket);
+  }
+
+  static function handleHookPing(
+    socket:Socket<ProfileLiveAssigns>
+  ):HandleEventResult<ProfileLiveAssigns> {
+    return NoReply(socket);
+  }
+}
+```
+
+That import shape is a Haxe module detail: `HookEvents.hx` is the module, while
+`HookClientEvent` is a type declared inside that module. The JS hook usually
+imports `shared.liveview.HookEvents` because it calls the companion helpers; the
+server LiveView usually imports `shared.liveview.HookEvents.HookClientEvent`
+because the metadata binds the protocol enum. If server code also calls
+`HookEvents.encode/decode`, it can import `shared.liveview.HookEvents` too.
+
+Keep protocol payload typedefs next to the protocol enum when both targets need
+them. Keep handler-only helper functions in `server/`, browser-only DOM code in
+`client/`, and only move a type into `shared/` when it is part of a real
+cross-target contract. Both build hxml files should include the app `src_haxe`
+root so `shared.*` resolves in JS and Elixir builds.
+
+The same feature without a protocol stays regular Phoenix/PhoenixHx. There is
+no shared `HookEvents.hx`, no generated companion, and no `@:liveEvents`
+binding:
+
+```haxe
+package client.hooks;
+
+import js.html.Event;
+import phoenix.live_view.HookContext;
+
+class CopyToClipboardHook {
+  public static function mounted(hook:HookContext):Void {
+    hook.el.addEventListener("click", function(_:Event):Void {
+      if (hook.pushEvent != null) {
+        hook.pushEvent("clipboard_copied", {message: "Copied."});
+      }
+    });
+  }
+}
+```
+
+```haxe
+package server.live;
+
+import elixir.types.Term;
+import phoenix.Phoenix.HandleEventResult;
+import phoenix.Phoenix.Socket;
+import phoenix.Params;
+import phoenix.live_view.LiveView;
+
+@:liveview
+class ProfileLive {
+  public static function handleEvent(
+    event:String,
+    params:Term,
+    socket:Socket<ProfileLiveAssigns>
+  ):HandleEventResult<ProfileLiveAssigns> {
+    return switch (event) {
+      case "clipboard_copied":
+        var message = Params.getStringDefault(params, "message", "Copied.");
+        NoReply(LiveView.putFlash(socket, FlashType.Info, message));
+
+      case _:
+        NoReply(socket);
+    };
+  }
+}
+```
+
+That direct version is the right shape for one-off code, Elixir-only migration
+work, or events that are not really a shared frontend/server contract. The
+protocol version earns its keep when the duplicated event string, payload keys,
+payload types, generated JS helper, generated server decoder, and handler
+signature should all move together under Haxe's compiler.
+
 For richer payloads, use a named typedef. PhoenixHx keeps the Haxe side as one
 typed value and flattens the typedef fields into the wire payload:
 
@@ -248,7 +414,11 @@ For domain values that are not native JSON/Phoenix payload scalars, put an
 explicit codec on the typedef field:
 
 ```haxe
-abstract ResourceId(Int) from Int to Int {}
+abstract ResourceId(Int) from Int to Int {
+  public inline function new(value:Int) {
+    this = value;
+  }
+}
 
 typedef ResourceSelectedPayload = {
   @:codec(ResourceIdCodec.codec())
@@ -267,6 +437,44 @@ enum ResourceEvent {
 The generated helpers keep `resourceId` typed as `ResourceId` in Haxe while
 encoding it as a nested wire payload with `ResourceIdCodec` on both JS and
 server paths.
+
+`@:codec(...)` is ordinary Haxe metadata, not a runtime annotation and not a
+separate PhoenixHx subsystem. It points the protocol macro at a
+`WireCodec<T>` value for a field whose Haxe type is stronger than the plain
+wire shape. Most fields do not need one: `String`, `Int`, `Bool`, `Float`,
+`Array<String>`, `Array<Int>`, and explicit optional variants use built-in
+wire readers and writers. Add a codec only when the app-facing type is a domain
+type such as `ResourceId` but the browser/Phoenix payload must remain plain
+data.
+
+```haxe
+import phoenix.channels.Payload;
+import phoenix.channels.WireCodec;
+import phoenix.channels.WirePayload;
+
+class ResourceIdCodec {
+  public static function codec():WireCodec<ResourceId> {
+    return {
+      encode: function(resourceId:ResourceId):Payload {
+        return WirePayload.putInt(WirePayload.empty(), "value", resourceId);
+      },
+      decode: function(payload:Payload):Null<ResourceId> {
+        var value = WirePayload.getInt(payload, "value");
+        return value == null ? null : new ResourceId(value);
+      }
+    };
+  }
+}
+```
+
+The layering is:
+
+- `WirePayload` is the low-level payload map reader/writer at the JS/Elixir
+  boundary.
+- `WireCodec<T>` converts a custom Haxe type to and from a `WirePayload`.
+- `@:codec(...)` attaches that converter to one protocol payload field.
+- Live Event Protocols use those pieces to generate typed push helpers and
+  LiveView dispatch helpers.
 
 Nullable payload fields must be explicit. Use an optional constructor argument
 or `@:optional` typedef field when missing/null is part of the wire contract;
@@ -357,6 +565,181 @@ Use this decision guide:
 | Reused hook protocol across multiple LiveViews | Live Event Protocol | Each LiveView binds explicitly with `@:liveEvents`, while the shared hook callsites stay typed. |
 | Domain values such as `ResourceId`, `OrganizationSlug`, or non-primitive IDs | Live Event Protocol plus `@:codec(...)` | The Haxe API remains domain-typed while the wire shape stays explicit and snapshot-testable. |
 | Hook push expects a typed reply | Direct PhoenixHx for now | Typed replies are a future Live Event Protocol extension, not part of v1. |
+
+### Scenario Snippets
+
+For an existing Elixir LiveView or migration code copied from Phoenix docs, keep
+the vanilla Phoenix code. There is no Haxe browser/server contract to share yet:
+
+```elixir
+def handle_event("close_modal", _params, socket) do
+  {:noreply, assign(socket, :modal_open, false)}
+end
+```
+
+For a local template event, keep the direct Phoenix shape. A protocol would add
+an enum and dispatcher for an event that is already local to one LiveView:
+
+```haxe
+public static function handleEvent(
+  event:String,
+  _params:Term,
+  socket:Socket<ProfileLiveAssigns>
+):HandleEventResult<ProfileLiveAssigns> {
+  return switch (event) {
+    case "close_modal":
+      NoReply(LiveView.assign(socket, "modal_open", false));
+    case _:
+      NoReply(socket);
+  };
+}
+```
+
+For a Haxe hook pushing a simple scalar payload to a Haxe LiveView, use a Live
+Event Protocol. The raw Phoenix version repeats the event name and payload key:
+
+```haxe
+// Hook
+if (hook.pushEvent != null) {
+  hook.pushEvent("clipboard_copied", {message: message});
+}
+
+// LiveView
+case "clipboard_copied":
+  var message = Params.getStringDefault(params, "message", "Copied.");
+  NoReply(LiveView.putFlash(socket, FlashType.Info, message));
+```
+
+The protocol version makes the event and payload contract shared:
+
+```haxe
+@:liveEventProtocol("HookEvents")
+enum HookClientEvent {
+  @:event("clipboard_copied")
+  ClipboardCopied(message:String);
+}
+
+typedef HookEvents = LiveEventProtocolCompanion<HookClientEvent>;
+
+// Hook
+HookEvents.pushClipboardCopied(hook, message);
+
+// LiveView
+@:liveEvents(HookClientEvent, "dispatchHookEvent")
+class ProfileLive {
+  static function handleClipboardCopied(
+    message:String,
+    socket:Socket<ProfileLiveAssigns>
+  ):HandleEventResult<ProfileLiveAssigns> {
+    return NoReply(LiveView.putFlash(socket, FlashType.Info, message));
+  }
+}
+```
+
+For a structured payload, use a named typedef so the handler receives one typed
+value while the generated wire code still reads concrete payload fields:
+
+```haxe
+typedef ClipboardCopiedPayload = {
+  var message:String;
+
+  @:wire("copied_at")
+  var copiedAt:String;
+}
+
+@:liveEventProtocol("HookEvents")
+enum HookClientEvent {
+  @:event("clipboard_copied")
+  ClipboardCopied(payload:ClipboardCopiedPayload);
+}
+
+HookEvents.pushClipboardCopied(hook, {
+  message: "Copied.",
+  copiedAt: "2026-06-28T16:00:00Z"
+});
+```
+
+For domain values, keep the app API domain-typed and make the wire conversion
+explicit with a codec:
+
+```haxe
+abstract ResourceId(Int) from Int to Int {
+  public inline function new(value:Int) {
+    this = value;
+  }
+}
+
+typedef ResourceSelectedPayload = {
+  @:codec(ResourceIdCodec.codec())
+  var resourceId:ResourceId;
+
+  var source:String;
+}
+
+@:liveEventProtocol("ResourceEvents")
+enum ResourceEvent {
+  @:event("resource_selected")
+  ResourceSelected(payload:ResourceSelectedPayload);
+}
+
+ResourceEvents.pushResourceSelected(hook, {
+  resourceId: new ResourceId(42),
+  source: "keyboard"
+});
+```
+
+For a shared hook used by multiple LiveViews, keep one protocol but bind each
+LiveView explicitly. This avoids global magic while still sharing the contract:
+
+```haxe
+@:liveEvents(HookClientEvent, "dispatchHookEvent")
+class ProfileLive {
+  public static function handleEvent(event:String, params:Term, socket:Socket<ProfileLiveAssigns>) {
+    var handled = dispatchHookEvent(event, params, socket);
+    if (handled != null) return handled;
+    return NoReply(socket);
+  }
+
+  static function handleClipboardCopied(message:String, socket:Socket<ProfileLiveAssigns>) {
+    return NoReply(LiveView.putFlash(socket, FlashType.Info, message));
+  }
+}
+
+@:liveEvents(HookClientEvent, "dispatchHookEvent")
+class TodoLive {
+  static function handleClipboardCopied(_message:String, socket:Socket<TodoLiveAssigns>) {
+    return NoReply(socket);
+  }
+}
+```
+
+The `_message` parameter is intentional. The protocol says
+`ClipboardCopied(message:String)`, so every bound LiveView handler must accept
+that payload. A LiveView that does not need the value can prefix the parameter
+with `_` to mark it as intentionally unused while keeping the handler signature
+compatible with the shared protocol.
+
+For malformed known protocol payloads, the generated dispatcher consumes the
+event with `NoReply(socket)`. Unknown events still fall through:
+
+```haxe
+var handled = dispatchHookEvent(event, params, socket);
+if (handled != null) {
+  return handled;
+}
+
+// Only unknown events reach this fallback.
+return NoReply(socket);
+```
+
+For typed replies from hooks, stay direct for now. This is intentionally not a
+v1 Live Event Protocol feature:
+
+```haxe
+if (hook.pushEvent != null) {
+  hook.pushEvent("check_status", {});
+}
+```
 
 The feature is an improvement when Haxe owns both sides of the event boundary.
 It is not always better than vanilla Phoenix. For a simple local event, the
