@@ -69,6 +69,12 @@ class LiveEventProtocolCompanionBuilder {
 		}
 		fields.push(buildEncodeFunction(protocol));
 		fields.push(buildDecodeFunction(protocol));
+		if (Context.defined("js")) {
+			fields.push(buildPushFunction(protocol));
+			for (event in protocol.events) {
+				fields.push(buildPerEventPushFunction(protocol, event));
+			}
+		}
 		return fields;
 	}
 
@@ -107,6 +113,47 @@ class LiveEventProtocolCompanionBuilder {
 				expr: buildDecodeFunctionBlock(protocol)
 			}),
 			pos: Context.currentPos()
+		};
+	}
+
+	static function buildPushFunction(protocol:LiveEventProtocolData):Field {
+		return {
+			name: "push",
+			access: [APublic, AStatic],
+			kind: FFun({
+				args: [
+					{name: "hook", type: macro:phoenix.live_view.HookContext},
+					{name: "event", type: protocolComplexType(protocol)}
+				],
+				ret: macro:Void,
+				expr: macro {
+					phoenix.live_view.HookContextTools.pushEncoded(hook, encode(event));
+				}
+			}),
+			pos: Context.currentPos()
+		};
+	}
+
+	static function buildPerEventPushFunction(protocol:LiveEventProtocolData, event:LiveEventData):Field {
+		var args:Array<FunctionArg> = [{name: "hook", type: macro:phoenix.live_view.HookContext}];
+		var constructorArgs:Array<Expr> = [];
+		for (field in event.fields) {
+			args.push({name: field.name, type: fieldValueType(field)});
+			constructorArgs.push({expr: EConst(CIdent(field.name)), pos: field.pos});
+		}
+
+		var eventExpr = constructorCall(protocol, event, constructorArgs);
+		return {
+			name: "push" + event.constructorName,
+			access: [APublic, AStatic],
+			kind: FFun({
+				args: args,
+				ret: macro:Void,
+				expr: macro {
+					push(hook, $eventExpr);
+				}
+			}),
+			pos: event.pos
 		};
 	}
 
@@ -291,7 +338,16 @@ class LiveEventProtocolCompanionBuilder {
 	}
 
 	static function fieldComplexType(field:LiveEventFieldData):ComplexType {
-		var base = switch (field.kind) {
+		return TPath({pack: [], name: "Null", params: [TPType(fieldBaseType(field))]});
+	}
+
+	static function fieldValueType(field:LiveEventFieldData):ComplexType {
+		var base = fieldBaseType(field);
+		return field.optional ? TPath({pack: [], name: "Null", params: [TPType(base)]}) : base;
+	}
+
+	static function fieldBaseType(field:LiveEventFieldData):ComplexType {
+		return switch (field.kind) {
 			case WireString: macro:String;
 			case WireInt: macro:Int;
 			case WireBool: macro:Bool;
@@ -301,7 +357,6 @@ class LiveEventProtocolCompanionBuilder {
 			case WirePayload: macro:phoenix.channels.Payload;
 			case Unsupported(_): macro:Dynamic;
 		};
-		return TPath({pack: [], name: "Null", params: [TPType(base)]});
 	}
 
 	static function protocolComplexType(protocol:LiveEventProtocolData):ComplexType {
