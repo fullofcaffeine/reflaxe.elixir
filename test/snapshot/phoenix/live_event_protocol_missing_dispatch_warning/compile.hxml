@@ -5,7 +5,6 @@
 -lib reflaxe
 -D reflaxe_runtime
 -D phoenix_shared=0.1.0
--D phoenixhx_live_events_strict
 -D elixir_output=out
 --macro reflaxe.elixir.CompilerInit.Start()
 Main

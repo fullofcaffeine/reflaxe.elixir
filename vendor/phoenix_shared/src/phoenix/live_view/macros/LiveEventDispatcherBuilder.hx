@@ -48,9 +48,14 @@ class LiveEventDispatcherBuilder {
 			var protocol = LiveEventProtocolModel.fromTypeRef(binding.protocolRef);
 			validateNoFieldCollision(fields, binding.dispatchName, entry.pos);
 			var handleEvent = findHandleEvent(fields, entry.pos);
-			ensureHandleEventCallsDispatcher(handleEvent, binding.dispatchName, entry.pos);
 			for (event in protocol.events) {
 				validateHandler(fields, event, handleEvent, cls);
+			}
+			if (!handleEventCallsDispatcher(handleEvent, binding.dispatchName)) {
+				reportMissingDispatcherCall(binding.dispatchName, entry.pos);
+				continue;
+			}
+			for (event in protocol.events) {
 				generatedEventNames.push(event.eventName);
 			}
 			fields.push(buildDispatchFunction(protocol, binding.dispatchName, handleEvent));
@@ -133,15 +138,21 @@ class LiveEventDispatcherBuilder {
 		}
 	}
 
-	static function ensureHandleEventCallsDispatcher(handleEvent:Field, dispatchName:String, pos:Position):Void {
+	static function handleEventCallsDispatcher(handleEvent:Field, dispatchName:String):Bool {
 		var expr = switch (handleEvent.kind) {
 			case FFun(f): f.expr;
 			case _: null;
 		}
-		if (expr == null || !containsCallTo(expr, dispatchName)) {
-			Context.error('LiveView declares @:liveEvents but handleEvent does not call ${dispatchName}(...). Add the explicit dispatch call or remove @:liveEvents.',
-				pos);
+		return expr != null && containsCallTo(expr, dispatchName);
+	}
+
+	static function reportMissingDispatcherCall(dispatchName:String, pos:Position):Void {
+		var message = 'LiveView declares @:liveEvents but handleEvent does not call ${dispatchName}(...). Add the explicit dispatch call or remove @:liveEvents.';
+		if (Context.defined("phoenixhx_live_events_strict")) {
+			Context.error(message, pos);
 		}
+		Context.warning(message + " Dispatcher generation is skipped until the explicit call is present. Pass -D phoenixhx_live_events_strict to enforce this as an error.",
+			pos);
 	}
 
 	static function buildDispatchFunction(protocol:LiveEventProtocolData, dispatchName:String, handleEvent:Field):Field {

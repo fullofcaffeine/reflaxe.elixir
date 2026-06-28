@@ -2,8 +2,9 @@
 
 Status: adopted v1 design plan, with model/manifest, generated companion
 encode/decode, JS push helpers, first explicit LiveView dispatcher binding, and
-todo-app hook protocol migration in place. Richer payload typedef/custom codec
-support is not shipped.
+todo-app hook protocol migration in place. Dispatcher-call validation now warns
+by default and escalates under `-D phoenixhx_live_events_strict`. Richer payload
+typedef/custom codec support is not shipped.
 
 PhoenixHx should provide an opt-in, framework-level macro layer for typed
 LiveView events that cross the browser hook/server LiveView boundary.
@@ -375,9 +376,11 @@ strict define such as:
 -D phoenixhx_live_events_strict
 ```
 
-Current implementation note: dispatcher-call validation is a hard compile error
-while the API is still experimental. Revisit this before documenting the feature
-as stable.
+Current implementation note: dispatcher-call validation warns by default. When
+the explicit call is missing, PhoenixHx skips generating the dispatcher helper
+for that binding so generated Elixir does not contain an unused private
+function. Under `-D phoenixhx_live_events_strict`, the same condition is a hard
+compile error.
 
 JS and server builds run separately, so cross-build drift should be caught with
 a deterministic protocol manifest/hash generated from the shared enum and
@@ -417,9 +420,9 @@ snapshot the drift-detection layer, and `LiveEventProtocolCompanion<T>` generate
 event constants, direct `WirePayload`-based `encode`/`decode` helpers, and JS-only
 hook push helpers. `@:liveEvents(Protocol, "dispatchName")` now adds the first
 server-side dispatcher binding from the same model, emitting straight-line
-`WirePayload` reads and private handler calls in the LiveView module. The next
-slices should migrate the todo-app prototype and add payload typedef/custom codec
-support without adding a second parser.
+`WirePayload` reads and private handler calls in the LiveView module when the
+LiveView explicitly calls the dispatcher. The next slices should add payload
+typedef/custom codec support without adding a second parser.
 
 Avoid copying these Tink patterns into v1:
 
