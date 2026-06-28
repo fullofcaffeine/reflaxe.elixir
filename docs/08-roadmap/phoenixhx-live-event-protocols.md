@@ -1,7 +1,8 @@
 # PhoenixHx Live Event Protocols
 
-Status: adopted v1 design plan, model/manifest plus generated companion
-encode/decode and JS push helpers started, not shipped dispatch API.
+Status: adopted v1 design plan, with model/manifest, generated companion
+encode/decode, JS push helpers, and first explicit LiveView dispatcher binding
+started. Todo-app migration and richer payload/codec support are not shipped.
 
 PhoenixHx should provide an opt-in, framework-level macro layer for typed
 LiveView events that cross the browser hook/server LiveView boundary.
@@ -59,10 +60,11 @@ enum ProfileHookEvent { ... }
 class ProfileLive { ... }
 ```
 
-Bind a LiveView separately:
+Bind a LiveView separately. The current implementation requires an explicit
+dispatch helper name:
 
 ```haxe
-@:liveEvents(ProfileHookEvent)
+@:liveEvents(ProfileHookEvent, "dispatchProfileHookEvent")
 class ProfileLive {
   public static function handleEvent(
     event:String,
@@ -130,33 +132,43 @@ typedef ProfileHookEvents = LiveEventProtocolCompanion<ProfileHookEvent>;
 That typedef already exposes event constants plus `encode` and `decode` helpers
 generated from the shared protocol model. On JS builds, it also exposes
 `push(hook, event)` plus per-event helpers such as
-`pushClipboardCopied(hook, message)`. The next surface should add the explicit
-LiveView dispatcher binding.
+`pushClipboardCopied(hook, message)`.
+
+LiveView classes can opt into the first server binding with:
+
+```haxe
+@:liveview
+@:liveEvents(ProfileHookEvent, "dispatchProfileHookEvent")
+class ProfileLive { ... }
+```
+
+That binding validates the explicit dispatcher call in `handleEvent`, validates
+matching handler names and return types, registers generated event names for HXX
+`phx-*` checks, and generates a private helper in the LiveView module.
 
 Server binding should generate a private dispatch helper in the LiveView module
 or an equivalent helper with the same readable target shape:
 
 ```elixir
 defp dispatch_profile_hook_event(event_name, params, socket) do
-  case event_name do
-    "clipboard_copied" ->
-      case decode_clipboard_copied_payload(params) do
-        {:ok, message} -> handle_clipboard_copied(message, socket)
-        :error -> {:noreply, socket}
-      end
+  cond do
+    event_name == "clipboard_copied" ->
+      message = Phoenix.Channels.WirePayload.get_string(params, "message")
+      if is_nil(message), do: nil, else: handle_clipboard_copied(message, socket)
 
-    "ping" ->
+    event_name == "ping" ->
       handle_ping(socket)
 
-    _ ->
+    true ->
       nil
   end
 end
 ```
 
-Known events with invalid payloads should be consumed safely. They should not
-fall through as "unhandled" and accidentally trigger unrelated event logic.
-`nil` from dispatch should mean "this event name is not part of this protocol."
+Current dispatcher output returns `nil` both for unknown protocol events and for
+known events whose required payload fields fail to decode. A later iteration may
+split "unknown" from "known but invalid" if todo-app coverage shows that
+fallback handling needs a tri-state result.
 
 ## Payload Rules
 
@@ -210,6 +222,10 @@ strict define such as:
 -D phoenixhx_live_events_strict
 ```
 
+Current implementation note: dispatcher-call validation is a hard compile error
+while the API is still experimental. Revisit this before documenting the feature
+as stable.
+
 JS and server builds run separately, so cross-build drift should be caught with
 a deterministic protocol manifest/hash generated from the shared enum and
 validated in snapshots or todo-app CI.
@@ -246,8 +262,11 @@ now normalizes a `@:liveEventProtocol` enum into a deterministic protocol
 manifest/hash and generated companion helpers. `LiveEventProtocol.manifest/hash`
 snapshot the drift-detection layer, and `LiveEventProtocolCompanion<T>` generates
 event constants, direct `WirePayload`-based `encode`/`decode` helpers, and JS-only
-hook push helpers. The next slice should add the LiveView dispatcher binding from
-the same model instead of adding a second parser.
+hook push helpers. `@:liveEvents(Protocol, "dispatchName")` now adds the first
+server-side dispatcher binding from the same model, emitting straight-line
+`WirePayload` reads and private handler calls in the LiveView module. The next
+slices should migrate the todo-app prototype and add payload typedef/custom codec
+support without adding a second parser.
 
 Avoid copying these Tink patterns into v1:
 
@@ -265,7 +284,8 @@ Use the todo-app as the first example, but keep the migration small:
 3. Change `CopyToClipboardHook` to call
    `ProfileHookEvents.pushClipboardCopied(hook, message)`.
 4. Change `PingHook` to call `ProfileHookEvents.pushPing(hook)`.
-5. Add `@:liveEvents(ProfileHookEvent)` to `ProfileLive`.
+5. Add `@:liveEvents(ProfileHookEvent, "dispatchProfileHookEvent")` to
+   `ProfileLive`.
 6. Call `dispatchProfileHookEvent(event, params, socket)` first in
    `ProfileLive.handleEvent`.
 7. Keep ordinary `EventName` values for template-driven Phoenix events.

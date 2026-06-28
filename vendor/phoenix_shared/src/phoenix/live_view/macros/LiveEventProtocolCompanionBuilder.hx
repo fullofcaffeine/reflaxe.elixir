@@ -36,6 +36,15 @@ class LiveEventProtocolCompanionBuilder {
 	public static function build():ComplexType {
 		var protocolType = resolveProtocolType(Context.getLocalType());
 		var protocol = LiveEventProtocolModel.fromType(protocolType, Context.currentPos());
+		var companionPath = ensureGeneratedType(protocol);
+
+		return TPath({pack: companionPath.pack, name: companionPath.name});
+	}
+
+	/**
+	 * Ensures the concrete helper module exists and returns its Haxe type path.
+	 */
+	public static function ensureGeneratedType(protocol:LiveEventProtocolData):{pack:Array<String>, name:String} {
 		var companionPath = companionPath(protocol);
 
 		if (tryResolveType(typePath(companionPath.pack, companionPath.name)) == null) {
@@ -49,7 +58,7 @@ class LiveEventProtocolCompanionBuilder {
 			});
 		}
 
-		return TPath({pack: companionPath.pack, name: companionPath.name});
+		return companionPath;
 	}
 
 	static function resolveProtocolType(localType:Type):Type {

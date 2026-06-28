@@ -1,0 +1,1 @@
+LiveView declares @:liveEvents but handleEvent does not call dispatchBadHookEvent(...). Add the explicit dispatch call or remove @:liveEvents.

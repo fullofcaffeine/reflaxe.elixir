@@ -9,6 +9,9 @@ import reflaxe.elixir.macros.LiveViewEventRegistry;
 import reflaxe.elixir.macros.LiveViewTemplateUsageRegistry;
 import reflaxe.elixir.macros.EctoSchemaAssociationValidator;
 import reflaxe.elixir.macros.ModuleFieldMetadataRegistry;
+#if phoenix_shared
+import phoenix.live_view.macros.LiveEventDispatcherBuilder;
+#end
 
 /**
  * AnnotatedModuleEnumerator
@@ -52,6 +55,7 @@ class AnnotatedModuleEnumerator {
 		":channel",
 		":socket",
 		":liveview",
+		":liveEvents",
 		":phxHookNames",
 		":phxEventNames",
 		":application",
@@ -75,6 +79,9 @@ class AnnotatedModuleEnumerator {
 		neutralizeModuleLevelRoutesFieldInitializer(cls, fields);
 		final isSchema = meta.has(":schema");
 		final isLiveView = meta.has(":liveview");
+		if (meta.has(":liveEvents") && !isLiveView) {
+			Context.error("@:liveEvents can only be used on @:liveview classes.", cls.pos);
+		}
 
 		if (isSchema) {
 			normalizeSchemaMetadata(cls);
@@ -91,6 +98,11 @@ class AnnotatedModuleEnumerator {
 		}
 
 		if (isLiveView) {
+			final generatedProtocolEvents = applyLiveEventDispatchers(cls, fields);
+			if (generatedProtocolEvents.length > 0) {
+				final moduleName = (cls.pack.length > 0) ? (cls.pack.join(".") + "." + cls.name) : cls.name;
+				LiveViewEventRegistry.registerMany(moduleName, generatedProtocolEvents, cls.pos);
+			}
 			registerLiveViewEvents(cls, fields);
 			registerLiveViewTemplatePhxUsage(cls, fields);
 		}
@@ -203,6 +215,18 @@ class AnnotatedModuleEnumerator {
 				default:
 			}
 		}
+	}
+
+	static function applyLiveEventDispatchers(cls:haxe.macro.Type.ClassType, fields:Array<Field>):Array<String> {
+		if (cls.meta == null || !cls.meta.has(":liveEvents"))
+			return [];
+
+		#if phoenix_shared
+		return LiveEventDispatcherBuilder.apply(cls, fields);
+		#else
+		Context.error("@:liveEvents requires the phoenix_shared library support on the classpath.", cls.pos);
+		return [];
+		#end
 	}
 
 	static function registerLiveViewEvents(cls:haxe.macro.Type.ClassType, fields:Array<Field>):Void {

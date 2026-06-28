@@ -1,0 +1,27 @@
+defmodule ProfileLive do
+  use Phoenix.Component
+  use Phoenix.LiveView, layout: {ProfileLive.Layouts, :app}
+  defp handle_clipboard_copied(message, socket) do
+    {:noreply, Phoenix.Component.assign(socket, :flash_message, message)}
+  end
+  defp handle_ping(socket) do
+    {:noreply, socket}
+  end
+  defp dispatch_profile_hook_event(event_name, payload, socket) do
+    cond do
+      event_name == "clipboard_copied" ->
+        message = Phoenix.Channels.WirePayload.get_string(payload, "message")
+        if (Kernel.is_nil(message)), do: nil, else: handle_clipboard_copied(message, socket)
+      event_name == "ping" -> handle_ping(socket)
+      :true -> nil
+    end
+  end
+  def handle_event(event, params, socket) do
+    hook_result = dispatch_profile_hook_event(event, params, socket)
+    if (not Kernel.is_nil(hook_result)) do
+      hook_result
+    else
+      if (event == "save_profile"), do: {:noreply, Phoenix.Component.assign(socket, :flash_message, "Saved.")}, else: {:noreply, socket}
+    end
+  end
+end

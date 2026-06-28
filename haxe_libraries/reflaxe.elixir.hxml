@@ -28,6 +28,7 @@
 
 # Shared cross-target Phoenix helpers (used by both JS + Elixir sides of Channels)
 -cp ${SCOPE_DIR}/vendor/phoenix_shared/src
+-D phoenix_shared=0.1.0
 
 # Depend on the base Reflaxe framework
 -lib reflaxe
