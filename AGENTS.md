@@ -493,12 +493,19 @@ Examples
 - Keep app-local externs tiny and API-faithful; move reusable Phoenix/Ecto/OTP surfaces into `std/` instead of duplicating project-local wrappers.
 - Update the relevant docs/examples when adding or changing an interop boundary.
 
-### Module-Level Fields Over Empty Classes (Hard Rule)
+### Module-Level Fields/Functions Over Shell Classes (Hard Rule)
 
-- For API design and code style, default to module-level fields whenever a class would otherwise be empty (for example, annotation/config containers with no meaningful fields/functions).
-- This keeps user-facing Haxe APIs shorter and clearer, and maps naturally through Haxe’s `KModuleFields` model.
-- Prefer this in docs/examples and new framework DSL surfaces unless a concrete type is required.
-- Keep explicit classes when they are required for behavior, inheritance, interfaces, or user-facing type APIs.
+- For API design and code style, default to module-level fields and functions
+  whenever a class would only be a static namespace or otherwise empty.
+- Avoid needless shell classes that exist only to hold `public static`
+  functions, constants, annotation/config values, or DSL entrypoints.
+- This keeps user-facing Haxe APIs shorter and clearer, and maps naturally
+  through Haxe's `KModuleFields` model.
+- Prefer module-level APIs in docs/examples, generated helper modules, and new
+  framework DSL surfaces unless a concrete type is required.
+- Keep explicit classes when they are required for behavior, inheritance,
+  interfaces, extern fidelity, macro entrypoints that require class fields, or
+  user-facing type APIs.
 
 ## 📚 Complete Documentation Index
 
