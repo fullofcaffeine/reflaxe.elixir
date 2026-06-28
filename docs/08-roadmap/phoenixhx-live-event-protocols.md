@@ -4,8 +4,8 @@ Status: adopted v1 design plan, with model/manifest, generated companion
 encode/decode, JS push helpers, first explicit LiveView dispatcher binding, and
 todo-app hook protocol migration in place. Dispatcher-call validation now warns
 by default and escalates under `-D phoenixhx_live_events_strict`. Named typedef
-payloads with direct built-in field decoding are in place; custom codec support
-is not shipped.
+payloads with direct built-in field decoding are in place. `@:codec(...)` is
+implemented for named typedef payload fields that need explicit domain codecs.
 
 PhoenixHx should provide an opt-in, framework-level macro layer for typed
 LiveView events that cross the browser hook/server LiveView boundary.
@@ -337,7 +337,7 @@ Support these first:
 - `String`, `Int`, `Bool`, `Float`
 - `Array<String>` and `Array<Int>`
 - `Null<T>` only for explicitly optional fields
-- custom codecs through `@:codec(...)` after the direct built-ins are stable
+- custom codecs through `@:codec(...)` on named typedef payload fields
 
 Avoid these in v1 protocol declarations:
 
@@ -353,6 +353,23 @@ Generate direct helper functions for the built-in payload types. Prefer clear
 objects in the default path. The current manual todo-app `HookEvents` prototype
 showed that direct helpers produce clearer Elixir than a generic codec value
 when the compiler has to lower enum decoding.
+
+Use `@:codec(...)` only where the wire value is genuinely domain-specific:
+
+```haxe
+typedef TodoSelectedPayload = {
+  @:codec(TodoIdCodec.codec())
+  var todoId:TodoId;
+
+  var source:String;
+}
+```
+
+The expression must return `phoenix.channels.WireCodec<T>`. Generated code
+pre-binds the encoded nested payload before calling `WirePayload.putPayload`,
+and decodes by reading a nested payload with `WirePayload.getPayload` before
+calling the codec. This keeps the common built-in path direct while still
+allowing precise domain types at the boundary.
 
 ## Diagnostics
 
@@ -427,8 +444,9 @@ server-side dispatcher binding from the same model, emitting straight-line
 LiveView explicitly calls the dispatcher. The model distinguishes Haxe
 constructor/handler arguments from flattened wire fields, so a named typedef
 payload remains one typed Haxe value while generated JS and Elixir helpers still
-emit direct per-field `WirePayload` calls. The next slices should add custom
-codec support without adding a second parser.
+emit direct per-field `WirePayload` calls. Custom codec support is now part of
+the same model for named typedef payload fields, so domain-specific fields can
+cross the wire without introducing `Dynamic` or a second parser.
 
 Avoid copying these Tink patterns into v1:
 

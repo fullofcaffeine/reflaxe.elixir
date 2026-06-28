@@ -4,6 +4,7 @@ package phoenix.live_view.macros;
 import haxe.crypto.Sha1;
 import haxe.macro.Context;
 import haxe.macro.Expr;
+import haxe.macro.Printer;
 import haxe.macro.Type;
 
 using haxe.macro.Tools;
@@ -54,6 +55,7 @@ typedef LiveEventFieldData = {
 	var name:String;
 	var wireName:String;
 	var typeName:String;
+	var type:Type;
 	var kind:LiveEventFieldKind;
 	var optional:Bool;
 	var pos:Position;
@@ -78,6 +80,7 @@ enum LiveEventFieldKind {
 	WireStringArray;
 	WireIntArray;
 	WirePayload;
+	CustomCodec(codec:Expr, label:String);
 	Unsupported(reason:String);
 }
 
@@ -237,8 +240,9 @@ class LiveEventProtocolModel {
 		payloadFields.sort((a, b) -> Reflect.compare(a.name, b.name));
 		for (payloadField in payloadFields) {
 			var wireName = readWireName(payloadField);
+			var codec = readCodec(payloadField);
 			var field = buildField(enumPath, constructor.name, payloadField.name, wireName, payloadField.type, fieldIsOptional(payloadField),
-				payloadField.pos);
+				payloadField.pos, codec);
 			registerWireKey(enumPath, constructor.name, field, seenWireKeys);
 			fields.push(field);
 		}
@@ -275,13 +279,14 @@ class LiveEventProtocolModel {
 	}
 
 	static function buildField(enumPath:String, constructorName:String, name:String, wireName:String, type:Type, optional:Bool,
-			pos:Position):LiveEventFieldData {
+			pos:Position, ?codec:Expr):LiveEventFieldData {
 		var typeName = type.toString();
 		var field = {
 			name: name,
 			wireName: wireName,
 			typeName: typeName,
-			kind: classifyFieldType(typeName),
+			type: type,
+			kind: codec == null ? classifyFieldType(typeName) : CustomCodec(codec, new Printer().printExpr(codec)),
 			optional: optional || typeName.startsWith("Null<"),
 			pos: pos
 		};
@@ -348,6 +353,7 @@ class LiveEventProtocolModel {
 			case WireStringArray: "string_array";
 			case WireIntArray: "int_array";
 			case WirePayload: "payload";
+			case CustomCodec(_, label): 'codec:${label}';
 			case Unsupported(_): "unsupported";
 		};
 	}
@@ -374,6 +380,17 @@ class LiveEventProtocolModel {
 			Context.error("@:wire expects a non-empty string literal.", entry.pos);
 		}
 		return explicit;
+	}
+
+	static function readCodec(field:ClassField):Null<Expr> {
+		var entry = findMeta(field.meta.get(), ":codec");
+		if (entry == null) {
+			return null;
+		}
+		if (entry.params == null || entry.params.length != 1) {
+			Context.error("@:codec expects one expression returning phoenix.channels.WireCodec<T>.", entry.pos);
+		}
+		return entry.params[0];
 	}
 
 	static function fieldIsOptional(field:ClassField):Bool {

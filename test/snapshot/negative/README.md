@@ -51,6 +51,8 @@ To update the expected error output:
 - **Purpose**: Ensures shared LiveView event protocols reject unsafe payload types such as `Dynamic`.
 - **Location**: `test/snapshot/negative/live_event_protocol_unsupported_typedef_payload/`
 - **Purpose**: Ensures named Live Event Protocol payload typedefs reject unsafe fields such as `Dynamic`.
+- **Location**: `test/snapshot/negative/live_event_protocol_invalid_codec_metadata/`
+- **Purpose**: Ensures `@:codec` metadata on Live Event Protocol typedef fields includes exactly one codec expression.
 
 ## Adding New Negative Tests
 
