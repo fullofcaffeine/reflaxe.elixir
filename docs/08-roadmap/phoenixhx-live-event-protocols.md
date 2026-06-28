@@ -1,8 +1,9 @@
 # PhoenixHx Live Event Protocols
 
 Status: adopted v1 design plan, with model/manifest, generated companion
-encode/decode, JS push helpers, and first explicit LiveView dispatcher binding
-started. Todo-app migration and richer payload/codec support are not shipped.
+encode/decode, JS push helpers, first explicit LiveView dispatcher binding, and
+todo-app hook protocol migration in place. Richer payload typedef/custom codec
+support is not shipped.
 
 PhoenixHx should provide an opt-in, framework-level macro layer for typed
 LiveView events that cross the browser hook/server LiveView boundary.
@@ -277,20 +278,25 @@ Avoid copying these Tink patterns into v1:
 
 ## Todo-App Migration
 
-Use the todo-app as the first example, but keep the migration small:
+The todo-app is the first migrated example:
 
-1. Replace manual `shared.liveview.HookEvents` with `ProfileHookEvent`.
-2. Generate `ProfileHookEvents` for both Genes JS and Haxe -> Elixir builds.
+1. Replace manual `shared.liveview.HookEvents` codecs with
+   `HookClientEvent` plus generated `HookEvents`.
+2. Generate `HookEvents` for the Genes JS hook path.
 3. Change `CopyToClipboardHook` to call
-   `ProfileHookEvents.pushClipboardCopied(hook, message)`.
-4. Change `PingHook` to call `ProfileHookEvents.pushPing(hook)`.
-5. Add `@:liveEvents(ProfileHookEvent, "dispatchProfileHookEvent")` to
-   `ProfileLive`.
-6. Call `dispatchProfileHookEvent(event, params, socket)` first in
-   `ProfileLive.handleEvent`.
-7. Keep ordinary `EventName` values for template-driven Phoenix events.
+   `HookEvents.pushClipboardCopied(hook, message)`.
+4. Change `PingHook` to call `HookEvents.pushHookPing(hook)`.
+5. Add `@:liveEvents(HookClientEvent, "dispatchHookEvent")` to `ProfileLive`
+   and `TodoLive`.
+6. Call `dispatchHookEvent(event, params, socket)` first in each bound
+   `handleEvent`.
+7. Keep ordinary `EventName` values only for template-driven Phoenix events.
 8. Remove hook-only event names from `EventName` once generated event names are
    registered with HXX/HEEx strict event checks.
+
+Current todo-app validation: `haxe build-client.hxml`, `haxe
+build-server.hxml`, `haxe build-tests.hxml`, `mix test`, and async QA sentinel
+with Playwright smoke/auth coverage.
 
 Docs should show the direct Phoenix alternative next to the generated path:
 
@@ -321,7 +327,7 @@ drift, but raw Phoenix remains available.
 3. Migrate client hooks from manual `HookEvents.encodeClientPush(...)` to
    generated per-event push helpers.
 4. Add LiveView binding metadata and generated dispatch helper.
-5. Migrate `ProfileLive` to explicit dispatch-first handling.
+5. Migrate todo-app LiveViews to explicit dispatch-first handling.
 6. Add diagnostics and strict-mode escalation.
 7. Add protocol manifest/hash generation for cross-build drift checks.
 8. Register generated event names with HXX/HEEx strict event validation.

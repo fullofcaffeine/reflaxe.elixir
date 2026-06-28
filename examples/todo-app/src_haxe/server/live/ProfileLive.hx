@@ -17,7 +17,6 @@ import phoenix.types.Flash.FlashType;
 import plug.CSRFProtection;
 import shared.AvatarTools;
 import shared.liveview.EventName;
-import shared.liveview.HookEvents;
 import shared.liveview.HookEvents.HookClientEvent;
 import shared.liveview.HookName;
 import server.infrastructure.Repo;
@@ -70,6 +69,7 @@ typedef ProfileLiveRenderAssigns = {
 @:native("TodoAppWeb.ProfileLive")
 // @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
 @:liveview
+@:liveEvents(HookClientEvent, "dispatchHookEvent")
 class ProfileLive {
 	public static function mount(params:MountParams, session:Session, socket:Socket<ProfileLiveAssigns>):MountResult<ProfileLiveAssigns> {
 		var sock:LiveSocket<ProfileLiveAssigns> = socket;
@@ -96,26 +96,26 @@ class ProfileLive {
 	}
 
 	public static function handleEvent(event:String, params:Term, socket:Socket<ProfileLiveAssigns>):HandleEventResult<ProfileLiveAssigns> {
+		var hookResult = dispatchHookEvent(event, params, socket);
+		if (hookResult != null) {
+			return hookResult;
+		}
+
 		var sock:LiveSocket<ProfileLiveAssigns> = socket;
 		return switch (event) {
 			case EventName.SaveProfile:
 				NoReply(saveProfile(params, sock));
-			case EventName.ClipboardCopied:
-				NoReply(handleHookEvent(HookEvents.decodeServerRecv(event, params), sock));
 			case _:
 				NoReply(sock);
 		};
 	}
 
-	static function handleHookEvent(event:Null<HookClientEvent>, socket:LiveSocket<ProfileLiveAssigns>):LiveSocket<ProfileLiveAssigns> {
-		return switch (event) {
-			case ClipboardCopied(payload):
-				LiveView.putFlash(socket, FlashType.Info, payload.message);
-			case HookPing:
-				socket;
-			case null:
-				socket;
-		};
+	static function handleClipboardCopied(message:String, socket:Socket<ProfileLiveAssigns>):HandleEventResult<ProfileLiveAssigns> {
+		return NoReply(LiveView.putFlash(socket, FlashType.Info, message));
+	}
+
+	static function handleHookPing(socket:Socket<ProfileLiveAssigns>):HandleEventResult<ProfileLiveAssigns> {
+		return NoReply(socket);
 	}
 
 	static function saveProfile(params:Term, socket:LiveSocket<ProfileLiveAssigns>):LiveSocket<ProfileLiveAssigns> {

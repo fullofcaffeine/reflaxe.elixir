@@ -55,6 +55,7 @@ import server.types.Types.User;
 import server.types.Types.AlertLevel;
 import shared.AvatarTools;
 import shared.liveview.EventName;
+import shared.liveview.HookEvents.HookClientEvent;
 import shared.liveview.HookName;
 import StringTools;
 
@@ -81,6 +82,7 @@ enum ActivityKind {
 @:native("TodoAppWeb.TodoLive")
 // @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
 @:liveview
+@:liveEvents(HookClientEvent, "dispatchHookEvent")
 class TodoLive {
 	// All socket state is now defined in TodoLiveAssigns typedef for type safety
 	static inline function presenceUsersTopic(organizationId:Int):String {
@@ -340,6 +342,11 @@ class TodoLive {
 	// @:native (function): pins the emitted function/callback name to match an exact Elixir API.
 
 	public static function handleEvent(event:String, params:Term, socket:Socket<TodoLiveAssigns>):HandleEventResult<TodoLiveAssigns> {
+		var hookResult = dispatchHookEvent(event, params, socket);
+		if (hookResult != null) {
+			return hookResult;
+		}
+
 		var nextSocket:Socket<TodoLiveAssigns> = if (event == EventName.CreateTodo) {
 			create_todo(params, socket);
 		} else if (event == EventName.ToggleTodo) {
@@ -392,13 +399,19 @@ class TodoLive {
 		} else if (event == EventName.BulkSetPriority) {
 			var priorityValue = Params.getString(params, "priority");
 			bulk_set_priority(priorityValue != null ? priorityValue : "", socket);
-		} else if (event == EventName.HookPing) {
-			socket;
 		} else {
 			socket;
 		};
 
 		return NoReply(nextSocket);
+	}
+
+	static function handleClipboardCopied(_message:String, socket:Socket<TodoLiveAssigns>):HandleEventResult<TodoLiveAssigns> {
+		return NoReply(socket);
+	}
+
+	static function handleHookPing(socket:Socket<TodoLiveAssigns>):HandleEventResult<TodoLiveAssigns> {
+		return NoReply(socket);
 	}
 
 	public static function extract_id(params:Term):Int {

@@ -1,12 +1,13 @@
 package client.hooks;
 
 import phoenix.live_view.HookContext;
-import phoenix.live_view.HookContextTools;
 import js.Browser;
 import js.html.Event;
 import shared.liveview.HookEvents;
 
 class CopyToClipboardHook {
+	static inline var DefaultCopiedMessage = "Copied.";
+
 	public static function mounted(hook:HookContext):Void {
 		var el = hook.el;
 		el.addEventListener("click", function(_:Event):Void {
@@ -18,12 +19,12 @@ class CopyToClipboardHook {
 			copyText(text, function(_success:Bool):Void {
 				var message = el.getAttribute("data-copied-message");
 				if (message == null || message == "") {
-					message = HookEvents.DefaultClipboardCopiedMessage;
+					message = DefaultCopiedMessage;
 				}
 
 				// LiveView hook callbacks can throw host JS values; local UI feedback still runs.
 				try {
-					HookContextTools.pushEncoded(hook, HookEvents.encodeClientPush(HookEvents.clipboardCopied(message)));
+					HookEvents.pushClipboardCopied(hook, message);
 				} catch (_:Dynamic) {
 					// JS hook callback failures are host values; ignore to preserve local copy feedback.
 				}

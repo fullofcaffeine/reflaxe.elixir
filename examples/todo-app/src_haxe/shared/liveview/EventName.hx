@@ -51,10 +51,6 @@ enum abstract EventName(String) from String to String {
 
 	// ProfileLive
 	var SaveProfile = "save_profile";
-	var ClipboardCopied = "clipboard_copied";
-
-	// Hook diagnostics
-	var HookPing = "ping";
 
 	// AuditLogLive
 	var FilterAudit = "filter_audit";

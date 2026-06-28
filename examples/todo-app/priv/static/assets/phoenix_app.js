@@ -6728,39 +6728,48 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   var $global4 = Register.$global;
   var HookClientEvent = Register.global("$hxEnums")["shared.liveview.HookClientEvent"] = {
     __ename__: "shared.liveview.HookClientEvent",
-    ClipboardCopied: Object.assign((payload) => ({ _hx_index: 0, __enum__: "shared.liveview.HookClientEvent", "payload": payload }), { _hx_name: "ClipboardCopied", __params__: ["payload"] }),
+    ClipboardCopied: Object.assign((message) => ({ _hx_index: 0, __enum__: "shared.liveview.HookClientEvent", "message": message }), { _hx_name: "ClipboardCopied", __params__: ["message"] }),
     HookPing: { _hx_name: "HookPing", _hx_index: 1, __enum__: "shared.liveview.HookClientEvent" }
   };
   HookClientEvent.__constructs__ = [HookClientEvent.ClipboardCopied, HookClientEvent.HookPing];
   HookClientEvent.__empty_constructs__ = [HookClientEvent.HookPing];
-  var HookEvents = Register.global("$hxClasses")["shared.liveview.HookEvents"] = class HookEvents2 {
-    static clipboardCopied(message) {
-      return HookClientEvent.ClipboardCopied({ "message": message == "" ? "Copied." : message });
-    }
-    static encodeClientPush(event) {
+
+  // js/shared/liveview/_HookEventsGenerated.js
+  var $global5 = Register.$global;
+  var HookEvents = Register.global("$hxClasses")["HookEvents"] = class HookEvents2 {
+    static encode(event) {
       switch (event._hx_index) {
         case 0:
-          let payload = event.payload;
-          return { "event": "clipboard_copied", "payload": HookEvents2.encodeClipboardCopiedPayload(payload) };
+          let message = event.message;
+          let wire = {};
+          if (wire != null) {
+            wire["message"] = message;
+          }
+          ;
+          return { "event": "clipboard_copied", "payload": wire };
           break;
         case 1:
-          return { "event": "ping", "payload": {} };
+          let wire1 = {};
+          return { "event": "ping", "payload": wire1 };
           break;
       }
       ;
     }
-    static encodeClipboardCopiedPayload(payload) {
-      let wire = {};
-      if (wire == null) {
-        return wire;
-      } else {
-        wire["message"] = payload.message;
-        return wire;
+    static push(hook, event) {
+      let event1 = HookEvents2.encode(event);
+      if (hook.pushEvent != null) {
+        hook.pushEvent(event1.event, event1.payload);
       }
       ;
     }
+    static pushClipboardCopied(hook, message) {
+      HookEvents2.push(hook, HookClientEvent.ClipboardCopied(message));
+    }
+    static pushHookPing(hook) {
+      HookEvents2.push(hook, HookClientEvent.HookPing);
+    }
     static get __name__() {
-      return "shared.liveview.HookEvents";
+      return "HookEvents";
     }
     get __class__() {
       return HookEvents2;
@@ -6768,15 +6777,11 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   };
 
   // js/client/hooks/PingHook.js
-  var $global5 = Register.$global;
+  var $global6 = Register.$global;
   var PingHook = Register.global("$hxClasses")["client.hooks.PingHook"] = class PingHook2 {
     static mounted(hook) {
       try {
-        let event = HookEvents.encodeClientPush(HookClientEvent.HookPing);
-        if (hook.pushEvent != null) {
-          hook.pushEvent(event.event, event.payload);
-        }
-        ;
+        HookEvents.pushHookPing(hook);
       } catch (_g) {
       }
       ;
@@ -6790,7 +6795,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   };
 
   // js/client/hooks/CopyToClipboardHook.js
-  var $global6 = Register.$global;
+  var $global7 = Register.$global;
   var CopyToClipboardHook = Register.global("$hxClasses")["client.hooks.CopyToClipboardHook"] = class CopyToClipboardHook2 {
     static mounted(hook) {
       let el = hook.el;
@@ -6807,11 +6812,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
           }
           ;
           try {
-            let event = HookEvents.encodeClientPush(HookEvents.clipboardCopied(message));
-            if (hook.pushEvent != null) {
-              hook.pushEvent(event.event, event.payload);
-            }
-            ;
+            HookEvents.pushClipboardCopied(hook, message);
           } catch (_g) {
           }
           ;
@@ -6874,7 +6875,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   };
 
   // js/client/hooks/AutoFocusHook.js
-  var $global7 = Register.$global;
+  var $global8 = Register.$global;
   var AutoFocusHook = Register.global("$hxClasses")["client.hooks.AutoFocusHook"] = class AutoFocusHook2 {
     static mounted(hook) {
       try {
@@ -6892,7 +6893,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   };
 
   // js/shared/channels/PingProtocol.js
-  var $global8 = Register.$global;
+  var $global9 = Register.$global;
   var PingClientEvent = Register.global("$hxEnums")["shared.channels.PingClientEvent"] = {
     __ename__: "shared.channels.PingClientEvent",
     Ping: Object.assign((payload) => ({ _hx_index: 0, __enum__: "shared.channels.PingClientEvent", "payload": payload }), { _hx_name: "Ping", __params__: ["payload"] })
@@ -6981,7 +6982,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   }(void 0);
 
   // js/phoenix/channels/TypedChannelClient.js
-  var $global9 = Register.$global;
+  var $global10 = Register.$global;
   var TypedChannelClient = Register.global("$hxClasses")["phoenix.channels.TypedChannelClient"] = class TypedChannelClient2 extends Register.inherits() {
     [Register.new](channel, encodeSend, decodeRecv, eventNames) {
       this.channel = channel;
@@ -7034,7 +7035,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   TypedChannelClient.prototype.handlers = null;
 
   // js/HxOverrides.js
-  var $global10 = Register.$global;
+  var $global11 = Register.$global;
   var HxOverrides = Register.global("$hxClasses")["HxOverrides"] = class HxOverrides2 {
     static cca(s, index) {
       let x = s.charCodeAt(index);
@@ -7071,7 +7072,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   (typeof performance != "undefined" ? typeof performance.now == "function" : false) ? HxOverrides.now = performance.now.bind(performance) : null;
 
   // js/StringTools.js
-  var $global11 = Register.$global;
+  var $global12 = Register.$global;
   var StringTools = Register.global("$hxClasses")["StringTools"] = class StringTools2 {
     /**
     Tells if the character in the string `s` at position `pos` is a space.
@@ -7150,7 +7151,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   };
 
   // js/client/channels/PingChannelClient.js
-  var $global12 = Register.$global;
+  var $global13 = Register.$global;
   var PingChannelClient = Register.global("$hxClasses")["client.channels.PingChannelClient"] = class PingChannelClient2 {
     static readCsrfToken() {
       let meta = window.document.querySelector("meta[name='csrf-token']");
@@ -7193,7 +7194,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   };
 
   // js/client/Boot.js
-  var $global13 = Register.$global;
+  var $global14 = Register.$global;
   var Boot = Register.global("$hxClasses")["client.Boot"] = class Boot2 {
     static readCsrfToken() {
       let meta = window.document.querySelector("meta[name='csrf-token']");
@@ -7249,7 +7250,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   };
 
   // js/hx_app.js
-  var $global14 = Register.$global;
+  var $global15 = Register.$global;
   Boot.main();
 
   // js/phoenix_app.js
