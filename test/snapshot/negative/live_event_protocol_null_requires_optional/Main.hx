@@ -1,10 +1,7 @@
 import phoenix.live_view.LiveEventProtocol;
 
-abstract ResourceId(Int) from Int to Int {}
-
 typedef BadPayload = {
-	@:codec
-	var resourceId:ResourceId;
+	var message:Null<String>;
 }
 
 @:liveEventProtocol("BadHookEvents")

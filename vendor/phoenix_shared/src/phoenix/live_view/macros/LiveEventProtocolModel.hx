@@ -281,13 +281,18 @@ class LiveEventProtocolModel {
 	static function buildField(enumPath:String, constructorName:String, name:String, wireName:String, type:Type, optional:Bool,
 			pos:Position, ?codec:Expr):LiveEventFieldData {
 		var typeName = type.toString();
+		if (isNullTypeName(typeName) && !optional) {
+			var owner = enumPath == "" ? "LiveView event" : '${enumPath}.${constructorName}';
+			Context.error('${owner} payload field "${name}" uses Null<T> without an explicit optional marker. Use an optional constructor argument or @:optional typedef field so nullable wire data is deliberate.',
+				pos);
+		}
 		var field = {
 			name: name,
 			wireName: wireName,
 			typeName: typeName,
 			type: type,
 			kind: codec == null ? classifyFieldType(typeName) : CustomCodec(codec, new Printer().printExpr(codec)),
-			optional: optional || typeName.startsWith("Null<"),
+			optional: optional,
 			pos: pos
 		};
 		switch (field.kind) {
@@ -313,6 +318,10 @@ class LiveEventProtocolModel {
 			case _:
 				Unsupported("Use String, Int, Bool, Float, Array<String>, Array<Int>, Payload, or add an explicit codec in the generator layer.");
 		};
+	}
+
+	static function isNullTypeName(typeName:String):Bool {
+		return typeName.startsWith("Null<") && typeName.endsWith(">");
 	}
 
 	static function buildManifest(enumPath:String, companionName:String, events:Array<LiveEventData>):String {

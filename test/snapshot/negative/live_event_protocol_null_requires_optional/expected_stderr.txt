@@ -1,0 +1,1 @@
+BadHookEvent.Bad payload field "message" uses Null<T> without an explicit optional marker. Use an optional constructor argument or @:optional typedef field so nullable wire data is deliberate.

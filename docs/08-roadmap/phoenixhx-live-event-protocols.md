@@ -6,6 +6,8 @@ todo-app hook protocol migration in place. Dispatcher-call validation now warns
 by default and escalates under `-D phoenixhx_live_events_strict`. Named typedef
 payloads with direct built-in field decoding are in place. `@:codec(...)` is
 implemented for named typedef payload fields that need explicit domain codecs.
+Payload fields typed as `Null<T>` now require an explicit optional marker so
+nullable wire contracts stay deliberate.
 
 PhoenixHx should provide an opt-in, framework-level macro layer for typed
 LiveView events that cross the browser hook/server LiveView boundary.
@@ -13,6 +15,28 @@ LiveView events that cross the browser hook/server LiveView boundary.
 The goal is not to replace Phoenix. The goal is to let Haxe-authored frontend
 and backend code share one event contract, then generate the small pieces of
 boundary code that are otherwise stringly and repetitive.
+
+## Adopted Review Direction
+
+The accepted v1 direction is protocol-first, explicit-dispatch, and
+handler-validated:
+
+- The shared enum is the source of truth for generated event names, payload
+  codecs, JS hook push helpers, server decode helpers, and manifest hashes.
+- LiveViews keep the normal Phoenix-shaped `handleEvent(event, params, socket)`
+  callback and call the generated dispatcher explicitly.
+- The macro validates handlers and payload declarations at compile time, but it
+  does not infer protocols from arbitrary handler bodies.
+- Compiler defines may tighten diagnostics, but they must not turn this into a
+  separate backend/profile or silently change runtime behavior.
+- Runtime additions after compilation should stay minimal: app code still calls
+  Phoenix `pushEvent`, and generated server code still lowers to ordinary
+  `handle_event/3` helper clauses/conditionals.
+
+This is a Haxe-layer improvement over vanilla Phoenix when Haxe owns both sides
+of the boundary. For one-off template events, Elixir-only LiveViews, or
+migration code that intentionally mirrors Phoenix docs, the vanilla/direct
+PhoenixHx path remains the better default.
 
 ## Name and Positioning
 
@@ -153,6 +177,22 @@ end
 The value proposition is therefore not "Phoenix events are bad." It is:
 Phoenix already gives us a clean runtime protocol, and Haxe lets PhoenixHx make
 that protocol compile-time visible on both sides.
+
+The improvement over raw Phoenix is specifically a shared-boundary improvement.
+Raw Phoenix is string/map based at the hook boundary: the hook pushes
+`"event_name"` and a payload map, and the LiveView separately matches the same
+string and reads the same keys. Live Event Protocols collapse those duplicated
+facts into one shared Haxe enum. The generated code should then give the hook a
+typed `pushX(...)` helper, give the LiveView a typed handler signature, and make
+renames or payload-shape changes fail at compile time instead of at the next
+browser interaction.
+
+That does not make the protocol path universally better. For a local
+`phx-click`, Elixir-only LiveView, migration step copied from Phoenix docs, or
+server-only Haxe event, raw Phoenix or direct PhoenixHx is still lower ceremony
+and often the better DevEx. The framework should present Live Event Protocols
+as an opt-in upgrade for shared Haxe browser/server contracts, not as a
+replacement for ordinary Phoenix event handling.
 
 | Approach | Best fit | Tradeoff |
 | --- | --- | --- |
@@ -325,6 +365,12 @@ known events whose required payload fields fail to decode. A later iteration may
 split "unknown" from "known but invalid" if todo-app coverage shows that
 fallback handling needs a tri-state result.
 
+That later iteration should preserve the explicit-dispatch ergonomics. A likely
+shape is a generated result enum/abstract that lets `handleEvent` distinguish
+`Unhandled`, `Handled(result)`, and `InvalidPayload`, while still keeping the
+simple `Null<HandleEventResult<T>>` path available if the tri-state proves too
+ceremonial.
+
 ## Payload Rules
 
 Support these first:
@@ -338,6 +384,10 @@ Support these first:
 - `Array<String>` and `Array<Int>`
 - `Null<T>` only for explicitly optional fields
 - custom codecs through `@:codec(...)` on named typedef payload fields
+
+`Null<T>` is intentionally not enough by itself. Use an optional constructor
+argument or an `@:optional` typedef field so optionality is visible in the
+protocol declaration and reflected in the generated manifest.
 
 Avoid these in v1 protocol declarations:
 
@@ -433,6 +483,17 @@ the protocol metadata. The public API should stay stable either way. The
 important constraints are deterministic type generation, deterministic manifest
 hashes, and generated Elixir/JS that remains easy to snapshot and review.
 
+Current API note: the implemented entrypoint is still:
+
+```haxe
+typedef HookEvents = LiveEventProtocolCompanion<HookClientEvent>;
+```
+
+The `@:liveEventProtocol("HookEvents")` name feeds the generated native/module
+name and manifest. A future polish pass may remove the typedef ceremony by
+generating an importable `HookEvents` type directly from metadata, but that
+should be treated as public API design work rather than a hidden refactor.
+
 Initial implementation note: `phoenix.live_view.macros.LiveEventProtocolModel`
 now normalizes a `@:liveEventProtocol` enum into a deterministic protocol
 manifest/hash and generated companion helpers. `LiveEventProtocol.manifest/hash`
@@ -511,6 +572,17 @@ drift, but raw Phoenix remains available.
 7. Add protocol manifest/hash generation for cross-build drift checks.
 8. Register generated event names with HXX/HEEx strict event validation.
 9. Document the generated path in the user guide after the API is implemented.
+
+Current remaining v1 polish:
+
+- Decide whether to add metadata-only generated companion imports or keep the
+  explicit `typedef FooEvents = LiveEventProtocolCompanion<FooEvent>` shape.
+- Decide whether known-but-invalid payloads should return a distinct dispatcher
+  result instead of `null`.
+- Add optional-field examples once the final optional marker syntax is settled
+  for both scalar constructor arguments and named typedef payload fields.
+- Add typed replies only after fire-and-forget hook events remain stable in the
+  todo-app and generated snapshots.
 
 ## Required Validation
 

@@ -154,6 +154,21 @@ Phoenix's `handle_event/3`.
 Use the direct PhoenixHx path for simple events:
 
 ```haxe
+class CopyToClipboardHook {
+  public static function mounted(hook:HookContext):Void {
+    var message = hook.el.getAttribute("data-copied-message");
+    if (message == null || message == "") {
+      message = "Copied.";
+    }
+
+    if (hook.pushEvent != null) {
+      hook.pushEvent("clipboard_copied", {message: message});
+    }
+  }
+}
+```
+
+```haxe
 public static function handleEvent(
   event:String,
   params:Term,
@@ -168,6 +183,11 @@ public static function handleEvent(
   };
 }
 ```
+
+This is the right shape for one-off events because it mirrors Phoenix directly.
+The cost is that `"clipboard_copied"` and `"message"` now exist in two places:
+the hook and the LiveView must be edited together, and the compiler cannot prove
+that they still match.
 
 Use a Live Event Protocol when the event is shared between Haxe-generated JS
 hooks and Haxe-authored LiveViews:
@@ -210,6 +230,11 @@ above:
 HookEvents.pushClipboardCopied(hook, message);
 ```
 
+The generated helper replaces both the raw event string and the ad hoc payload
+object in app code. If the protocol changes, the hook callsite and the server
+handler are checked by the Haxe compiler instead of drifting until a browser
+event is clicked.
+
 With the typedef payload version:
 
 ```haxe
@@ -242,6 +267,11 @@ enum ResourceEvent {
 The generated helpers keep `resourceId` typed as `ResourceId` in Haxe while
 encoding it as a nested wire payload with `ResourceIdCodec` on both JS and
 server paths.
+
+Nullable payload fields must be explicit. Use an optional constructor argument
+or `@:optional` typedef field when missing/null is part of the wire contract;
+plain `Null<T>` without that marker is rejected so accidental nullable payloads
+do not become invisible protocol behavior.
 
 The LiveView remains Phoenix-shaped and explicitly calls the generated
 dispatcher before falling back to ordinary events:
@@ -286,10 +316,46 @@ browser push helpers, generated server decoding, handler validation, and
 manifest/hash drift checks across the JS and Elixir builds. The cost is an
 explicit protocol enum plus an explicit dispatcher call.
 
-Prefer Live Event Protocols for Haxe-authored browser/server boundaries with
-real payload shape. Prefer vanilla Phoenix or direct PhoenixHx for one-off
-template events, gradual adoption, and code that intentionally mirrors Phoenix
-examples as closely as possible.
+### Better Than Raw Phoenix When...
+
+Live Event Protocols improve on raw Phoenix when an event contract crosses the
+Haxe frontend/server boundary. In raw Phoenix, the browser side owns a string
+event name and a map-shaped payload, while the LiveView separately owns another
+copy of the same string and manual map decoding. PhoenixHx can do better there
+because both sides are Haxe: one enum becomes the event registry, the hook push
+API, the payload encoder, the server decoder, and the handler signature.
+
+That changes the failure mode. With raw Phoenix, renaming
+`"clipboard_copied"` or changing `"message"` to `"body"` can compile and fail
+only when the browser pushes the event. With a Live Event Protocol, the hook
+callsite, generated codec, and LiveView handler stop compiling until they agree.
+That is the DevEx win: less repeated boundary code, safer refactors, and fewer
+string/map synchronization bugs.
+
+It is not automatically better than raw Phoenix. If the event is a one-off
+template event, if the LiveView is Elixir-only, if the code is being kept close
+to Phoenix docs during migration, or if there is no shared Haxe JS hook involved,
+plain Phoenix or direct PhoenixHx is simpler. In those cases, use
+`handleEvent(event, params, socket)` plus the typed `Params`/`WirePayload`
+helpers where useful, and skip the protocol.
+
+Use this decision guide:
+
+| Scenario | Prefer | Why |
+| --- | --- | --- |
+| One-off `phx-click` or `phx-submit` handled only by the LiveView | Vanilla Phoenix or direct PhoenixHx | A protocol enum would add ceremony without removing much duplication. |
+| Existing Elixir LiveView or code copied from Phoenix docs | Vanilla Phoenix | Keeping the original idiom is easier to debug and migrate. |
+| Haxe LiveView receiving template events only | Direct PhoenixHx | You get typed boundary helpers without introducing a shared browser/server contract. |
+| Haxe JS hook pushes an event to a Haxe LiveView | Live Event Protocol | The event name, payload shape, JS push helper, server decode, and handler signature come from one enum. |
+| Reused hook protocol across multiple LiveViews | Live Event Protocol | Each LiveView binds explicitly with `@:liveEvents`, while the shared hook callsites stay typed. |
+| Domain values such as `ResourceId`, `OrganizationSlug`, or non-primitive IDs | Live Event Protocol plus `@:codec(...)` | The Haxe API remains domain-typed while the wire shape stays explicit and snapshot-testable. |
+| Hook push expects a typed reply | Direct PhoenixHx for now | Typed replies are a future Live Event Protocol extension, not part of v1. |
+
+The feature is an improvement when Haxe owns both sides of the event boundary.
+It is not always better than vanilla Phoenix. For a simple local event, the
+plain Phoenix-shaped code is often the better DevEx; for cross-boundary Haxe
+events, the protocol removes repeated string/payload bookkeeping and turns
+rename/refactor mistakes into compile-time feedback.
 
 Deep dive:
 

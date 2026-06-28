@@ -27,7 +27,13 @@ These are the immediate follow-ups selected from the audit:
   explicit-dispatch, handler-validated macro layer for hook/server events. The
   implementation should follow the Tink-style macro pattern of normalizing a
   typed declaration into a shared model before generating client and server
-  helpers. The v1 plan is tracked in
+  helpers. Initial v1 slices are in place: manifest/hash generation, generated
+  encode/decode, Genes JS push helpers, explicit LiveView dispatch binding,
+  todo-app migration, typedef payloads, custom codecs, and stricter nullable
+  payload diagnostics. Remaining polish is API-shape work: direct companion
+  imports versus the current `LiveEventProtocolCompanion<T>` typedef,
+  known-invalid-payload results, optional-field examples, and eventual typed
+  replies. The v1 plan is tracked in
   [`phoenixhx-live-event-protocols.md`](phoenixhx-live-event-protocols.md) and
   Bead `haxe.elixir.codex-7on`.
 

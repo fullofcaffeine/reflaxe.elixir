@@ -53,6 +53,8 @@ To update the expected error output:
 - **Purpose**: Ensures named Live Event Protocol payload typedefs reject unsafe fields such as `Dynamic`.
 - **Location**: `test/snapshot/negative/live_event_protocol_invalid_codec_metadata/`
 - **Purpose**: Ensures `@:codec` metadata on Live Event Protocol typedef fields includes exactly one codec expression.
+- **Location**: `test/snapshot/negative/live_event_protocol_null_requires_optional/`
+- **Purpose**: Ensures nullable Live Event Protocol payload fields must use an explicit optional marker.
 
 ## Adding New Negative Tests
 
