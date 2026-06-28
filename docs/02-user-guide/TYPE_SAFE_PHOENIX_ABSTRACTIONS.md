@@ -316,6 +316,13 @@ browser push helpers, generated server decoding, handler validation, and
 manifest/hash drift checks across the JS and Elixir builds. The cost is an
 explicit protocol enum plus an explicit dispatcher call.
 
+Known protocol events with malformed required payloads are consumed safely by
+the generated dispatcher as `NoReply(socket)`. Unknown event names still return
+`null` so ordinary `handleEvent` fallback code can run. That distinction matters
+when a raw fallback branch happens to share a protocol event name: bad protocol
+payloads should not silently fall through as if they were unrelated Phoenix
+events.
+
 ### Better Than Raw Phoenix When...
 
 Live Event Protocols improve on raw Phoenix when an event contract crosses the

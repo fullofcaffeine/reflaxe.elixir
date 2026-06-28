@@ -21,7 +21,7 @@ defmodule ProfileLive do
         raw = Phoenix.Channels.WirePayload.get_payload(payload, "resource_id")
         resource_id = if (not Kernel.is_nil(raw)), do: ResourceIdCodec.codec().decode.(raw), else: nil
         source = Phoenix.Channels.WirePayload.get_string(payload, "source")
-        if (Kernel.is_nil(resource_id) or Kernel.is_nil(source)), do: nil, else: handle_resource_selected(%{:resource_id => resource_id, :source => source}, socket)
+        if (Kernel.is_nil(resource_id) or Kernel.is_nil(source)), do: {:noreply, socket}, else: handle_resource_selected(%{:resource_id => resource_id, :source => source}, socket)
       :true -> nil
     end
   end

@@ -7,7 +7,9 @@ by default and escalates under `-D phoenixhx_live_events_strict`. Named typedef
 payloads with direct built-in field decoding are in place. `@:codec(...)` is
 implemented for named typedef payload fields that need explicit domain codecs.
 Payload fields typed as `Null<T>` now require an explicit optional marker so
-nullable wire contracts stay deliberate.
+nullable wire contracts stay deliberate. Known protocol events with malformed
+required payloads are consumed by the dispatcher with `NoReply(socket)` instead
+of falling through as unknown events.
 
 PhoenixHx should provide an opt-in, framework-level macro layer for typed
 LiveView events that cross the browser hook/server LiveView boundary.
@@ -360,16 +362,15 @@ defp dispatch_profile_hook_event(event_name, params, socket) do
 end
 ```
 
-Current dispatcher output returns `nil` both for unknown protocol events and for
-known events whose required payload fields fail to decode. A later iteration may
-split "unknown" from "known but invalid" if todo-app coverage shows that
-fallback handling needs a tri-state result.
+Current dispatcher output returns `nil` only for unknown protocol event names.
+Known events whose required payload fields fail to decode return
+`NoReply(socket)` so malformed protocol payloads are consumed safely and cannot
+fall through into ordinary fallback handling.
 
-That later iteration should preserve the explicit-dispatch ergonomics. A likely
-shape is a generated result enum/abstract that lets `handleEvent` distinguish
-`Unhandled`, `Handled(result)`, and `InvalidPayload`, while still keeping the
-simple `Null<HandleEventResult<T>>` path available if the tri-state proves too
-ceremonial.
+A later diagnostic/telemetry iteration may still split the public dispatcher
+result into `Unhandled`, `Handled(result)`, and `InvalidPayload`, but v1 keeps
+the simple `Null<HandleEventResult<T>>` helper API and uses no-op `NoReply` for
+known invalid payloads.
 
 ## Payload Rules
 
@@ -577,8 +578,8 @@ Current remaining v1 polish:
 
 - Decide whether to add metadata-only generated companion imports or keep the
   explicit `typedef FooEvents = LiveEventProtocolCompanion<FooEvent>` shape.
-- Decide whether known-but-invalid payloads should return a distinct dispatcher
-  result instead of `null`.
+- Decide whether known-but-invalid payloads need a distinct diagnostic/telemetry
+  result beyond the current safe `NoReply(socket)` behavior.
 - Add optional-field examples once the final optional marker syntax is settled
   for both scalar constructor arguments and named typedef payload fields.
 - Add typed replies only after fire-and-forget hook events remain stable in the

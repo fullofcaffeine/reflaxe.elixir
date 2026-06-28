@@ -19,7 +19,7 @@ defmodule ProfileLive do
       event_name == "clipboard_copied" ->
         copied_at = Phoenix.Channels.WirePayload.get_string(payload, "copied_at")
         message = Phoenix.Channels.WirePayload.get_string(payload, "message")
-        if (Kernel.is_nil(copied_at) or Kernel.is_nil(message)), do: nil, else: handle_clipboard_copied(%{:copied_at => copied_at, :message => message}, socket)
+        if (Kernel.is_nil(copied_at) or Kernel.is_nil(message)), do: {:noreply, socket}, else: handle_clipboard_copied(%{:copied_at => copied_at, :message => message}, socket)
       event_name == "ping" -> handle_ping(socket)
       :true -> nil
     end

@@ -223,13 +223,17 @@ class LiveEventDispatcherBuilder {
 
 		if (missingChecks.length > 0) {
 			expressions.push({
-				expr: EIf(anyOf(missingChecks), macro null, buildHandlerCall(event)),
+				expr: EIf(anyOf(missingChecks), buildInvalidPayloadResult(), buildHandlerCall(event)),
 				pos: event.pos
 			});
 		} else {
 			expressions.push(buildHandlerCall(event));
 		}
 		return {expr: EBlock(expressions), pos: event.pos};
+	}
+
+	static function buildInvalidPayloadResult():Expr {
+		return macro NoReply(socket);
 	}
 
 	static function buildHandlerCall(event:LiveEventData):Expr {

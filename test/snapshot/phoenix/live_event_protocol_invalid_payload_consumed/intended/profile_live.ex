@@ -4,16 +4,12 @@ defmodule ProfileLive do
   defp handle_clipboard_copied(message, socket) do
     {:noreply, Phoenix.Component.assign(socket, :flash_message, message)}
   end
-  defp handle_ping(socket) do
-    {:noreply, socket}
-  end
   defp dispatch_profile_hook_event(event_name, payload, socket) do
-    cond do
-      event_name == "clipboard_copied" ->
-        message = Phoenix.Channels.WirePayload.get_string(payload, "message")
-        if (Kernel.is_nil(message)), do: {:noreply, socket}, else: handle_clipboard_copied(message, socket)
-      event_name == "ping" -> handle_ping(socket)
-      :true -> nil
+    if (event_name == "clipboard_copied") do
+      message = Phoenix.Channels.WirePayload.get_string(payload, "message")
+      if (Kernel.is_nil(message)), do: {:noreply, socket}, else: handle_clipboard_copied(message, socket)
+    else
+      nil
     end
   end
   def handle_event(event, params, socket) do
@@ -21,7 +17,7 @@ defmodule ProfileLive do
     if (not Kernel.is_nil(hook_result)) do
       hook_result
     else
-      if (event == "save_profile"), do: {:noreply, Phoenix.Component.assign(socket, :flash_message, "Saved.")}, else: {:noreply, socket}
+      if (event == "clipboard_copied"), do: {:noreply, Phoenix.Component.assign(socket, :flash_message, "fallback should not handle malformed protocol payloads")}, else: {:noreply, socket}
     end
   end
 end
