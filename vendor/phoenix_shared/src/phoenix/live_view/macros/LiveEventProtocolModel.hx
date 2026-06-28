@@ -14,6 +14,9 @@ using StringTools;
  */
 typedef LiveEventProtocolData = {
 	var enumPath:String;
+	var enumModule:String;
+	var enumPack:Array<String>;
+	var enumName:String;
 	var companionName:String;
 	var events:Array<LiveEventData>;
 	var manifest:String;
@@ -89,14 +92,21 @@ class LiveEventProtocolModel {
 			null;
 		}
 
+		return fromType(protocolType, protocolRef.pos);
+	}
+
+	/**
+	 * Normalizes an already resolved protocol enum type.
+	 */
+	public static function fromType(protocolType:Type, pos:Position):LiveEventProtocolData {
 		return switch (protocolType.follow()) {
 			case TEnum(enumRef, params):
 				if (params.length > 0) {
-					Context.error("LiveView event protocol enums cannot be generic in v1.", protocolRef.pos);
+					Context.error("LiveView event protocol enums cannot be generic in v1.", pos);
 				}
 				fromEnum(enumRef.get());
 			case _:
-				Context.error("LiveView event protocols must be enum declarations.", protocolRef.pos);
+				Context.error("LiveView event protocols must be enum declarations.", pos);
 				null;
 		};
 	}
@@ -137,6 +147,9 @@ class LiveEventProtocolModel {
 		var manifest = buildManifest(enumPath, companionName, events);
 		return {
 			enumPath: enumPath,
+			enumModule: enumType.module,
+			enumPack: enumType.pack,
+			enumName: enumType.name,
 			companionName: companionName,
 			events: events,
 			manifest: manifest,

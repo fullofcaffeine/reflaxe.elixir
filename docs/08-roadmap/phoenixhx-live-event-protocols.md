@@ -1,7 +1,7 @@
 # PhoenixHx Live Event Protocols
 
-Status: adopted v1 design plan, model/manifest foundation started, not shipped
-companion/dispatch API.
+Status: adopted v1 design plan, model/manifest plus first companion encode/decode
+surface started, not shipped JS push/dispatch API.
 
 PhoenixHx should provide an opt-in, framework-level macro layer for typed
 LiveView events that cross the browser hook/server LiveView boundary.
@@ -120,6 +120,17 @@ class ProfileHookEvents {
 }
 ```
 
+Current implementation uses a generic-build typedef as the first companion
+entrypoint while the final metadata-only naming flow is still being designed:
+
+```haxe
+typedef ProfileHookEvents = LiveEventProtocolCompanion<ProfileHookEvent>;
+```
+
+That typedef already exposes event constants plus `encode` and `decode` helpers
+generated from the shared protocol model. The next surface should add JS-only
+hook push helpers and then the explicit LiveView dispatcher binding.
+
 Server binding should generate a private dispatch helper in the LiveView module
 or an equivalent helper with the same readable target shape:
 
@@ -230,10 +241,11 @@ hashes, and generated Elixir/JS that remains easy to snapshot and review.
 
 Initial implementation note: `phoenix.live_view.macros.LiveEventProtocolModel`
 now normalizes a `@:liveEventProtocol` enum into a deterministic protocol
-manifest and hash, exposed through `phoenix.live_view.LiveEventProtocol` macro
-helpers for snapshot coverage. This is intentionally a foundation slice. The
-next slices should generate the companion helper surface, then the LiveView
-dispatcher binding, from the same model instead of adding a second parser.
+manifest/hash and generated companion helpers. `LiveEventProtocol.manifest/hash`
+snapshot the drift-detection layer, and `LiveEventProtocolCompanion<T>` generates
+event constants plus direct `WirePayload`-based `encode`/`decode` helpers. The
+next slices should add JS hook push helpers, then the LiveView dispatcher binding,
+from the same model instead of adding a second parser.
 
 Avoid copying these Tink patterns into v1:
 
