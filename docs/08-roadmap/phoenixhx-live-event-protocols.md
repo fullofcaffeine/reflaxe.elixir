@@ -200,6 +200,40 @@ JS and server builds run separately, so cross-build drift should be caught with
 a deterministic protocol manifest/hash generated from the shared enum and
 validated in snapshots or todo-app CI.
 
+## Macro Architecture Notes
+
+Tink Web is the closest Haxe macro reference for this work, but the lesson is
+architectural rather than semantic. PhoenixHx should not import Tink Web's HTTP
+router complexity; it should borrow the shape of the implementation:
+
+- Normalize the declaration before emitting code. Build a small typed model such
+  as `LiveEventCollection`, `LiveEventSignature`, `LiveEventPayload`, and
+  `LiveEventField` from the protocol enum and LiveView metadata.
+- Generate browser helpers and server dispatch helpers from the same model so
+  the hook push path and LiveView receive path cannot drift.
+- Keep the metadata grammar narrow and validated: `@:event(...)`,
+  `@:wire(...)`, `@:codec(...)`, handler overrides, and nothing inferred from
+  arbitrary handler bodies.
+- Keep generated default payload code direct. Built-in field types should lower
+  to readable `WirePayload` helpers, not a generic runtime codec object path.
+- Prefer source-positioned macro diagnostics for duplicate event names, duplicate
+  wire keys, unsupported types, invalid metadata, and missing handlers.
+- Use warnings for inferential checks such as "does `handleEvent` call the
+  dispatcher?", then escalate under `-D phoenixhx_live_events_strict`.
+
+Implementation should evaluate whether the generated companion is best produced
+through a `@:genericBuild` placeholder type or through `Context.defineType` from
+the protocol metadata. The public API should stay stable either way. The
+important constraints are deterministic type generation, deterministic manifest
+hashes, and generated Elixir/JS that remains easy to snapshot and review.
+
+Avoid copying these Tink patterns into v1:
+
+- HTTP path/query/header/body routing machinery.
+- Protocol inference from handler bodies.
+- Global generated counters that make output or manifests unstable.
+- Invisible replacement of the user's Phoenix callback.
+
 ## Todo-App Migration
 
 Use the todo-app as the first example, but keep the migration small:
@@ -239,20 +273,24 @@ drift, but raw Phoenix remains available.
 
 ## Implementation Phases
 
-1. Add protocol metadata and generate only the shared companion.
-2. Migrate client hooks from manual `HookEvents.encodeClientPush(...)` to
+1. Add protocol metadata parsing and the normalized macro model
+   (`LiveEventCollection`, signatures, payload fields, diagnostics).
+2. Generate only the shared companion from that model.
+3. Migrate client hooks from manual `HookEvents.encodeClientPush(...)` to
    generated per-event push helpers.
-3. Add LiveView binding metadata and generated dispatch helper.
-4. Migrate `ProfileLive` to explicit dispatch-first handling.
-5. Add diagnostics and strict-mode escalation.
-6. Add protocol manifest/hash generation for cross-build drift checks.
-7. Register generated event names with HXX/HEEx strict event validation.
-8. Document the generated path in the user guide after the API is implemented.
+4. Add LiveView binding metadata and generated dispatch helper.
+5. Migrate `ProfileLive` to explicit dispatch-first handling.
+6. Add diagnostics and strict-mode escalation.
+7. Add protocol manifest/hash generation for cross-build drift checks.
+8. Register generated event names with HXX/HEEx strict event validation.
+9. Document the generated path in the user guide after the API is implemented.
 
 ## Required Validation
 
 - Snapshot coverage for generated companion code.
 - Snapshot coverage for generated dispatch code and generated Elixir shape.
+- Snapshot or macro-unit coverage for the normalized protocol model so client
+  helpers and server dispatch are proven to share one source of truth.
 - Diagnostic tests for duplicate event names, missing handlers, bad payload
   types, and unsafe dynamic payloads.
 - Todo-app Haxe client and server builds.

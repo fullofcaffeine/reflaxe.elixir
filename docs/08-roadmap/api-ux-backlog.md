@@ -25,7 +25,9 @@ These are the immediate follow-ups selected from the audit:
 
 - PhoenixHx typed LiveView event protocols: adopt a protocol-first,
   explicit-dispatch, handler-validated macro layer for hook/server events. The
-  v1 plan is tracked in
+  implementation should follow the Tink-style macro pattern of normalizing a
+  typed declaration into a shared model before generating client and server
+  helpers. The v1 plan is tracked in
   [`phoenixhx-live-event-protocols.md`](phoenixhx-live-event-protocols.md) and
   Bead `haxe.elixir.codex-7on`.
 
