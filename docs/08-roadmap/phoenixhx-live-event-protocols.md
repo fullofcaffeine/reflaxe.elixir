@@ -12,6 +12,158 @@ The goal is not to replace Phoenix. The goal is to let Haxe-authored frontend
 and backend code share one event contract, then generate the small pieces of
 boundary code that are otherwise stringly and repetitive.
 
+## Name and Positioning
+
+Call the approach **PhoenixHx Live Event Protocols** in public docs and API
+names. When explaining the motivation, it is reasonable to say "tRPC-like" as a
+short analogy: one typed declaration drives the client helper and the server
+receiver. Avoid naming the feature after tRPC, because PhoenixHx is not adding a
+new RPC runtime and should not imply request/response semantics for v1.
+
+More precise vocabulary:
+
+- **Live Event Protocol**: the shared Haxe enum that declares event names and
+  payload shapes.
+- **Generated companion**: the generated Haxe module with event constants,
+  encoders/decoders, and JS hook push helpers.
+- **Generated dispatcher**: the private LiveView helper that decodes protocol
+  events and calls typed handlers.
+- **Vanilla Phoenix path**: ordinary `pushEvent`/`handle_event/3` with string
+  event names and map payload decoding.
+- **Direct PhoenixHx path**: Haxe-authored `handleEvent(event, params, socket)`
+  using typed externs such as `Params.getString`, but without a shared protocol
+  declaration.
+
+The feature should be described as a typed protocol layer around Phoenix's
+existing event contract, not as a replacement for LiveView events.
+
+## Why Not Just Vanilla Phoenix?
+
+Vanilla Phoenix is excellent at the runtime boundary: browser hooks push an
+event name plus a payload, and the LiveView receives `handle_event/3`. That
+shape is simple, observable, and well understood. The weak spot appears when
+both sides are authored in Haxe but the boundary remains stringly:
+
+```javascript
+hook.pushEvent("clipboard_copied", { message: message })
+```
+
+```elixir
+def handle_event("clipboard_copied", params, socket) do
+  message = Map.get(params, "message")
+  {:noreply, put_flash(socket, :info, message)}
+end
+```
+
+The direct PhoenixHx version is already better because the server can use typed
+extern helpers instead of raw map access:
+
+```haxe
+public static function handleEvent(
+  event:String,
+  params:Term,
+  socket:Socket<ProfileLiveAssigns>
+):HandleEventResult<ProfileLiveAssigns> {
+  return switch (event) {
+    case "clipboard_copied":
+      var message = Params.getStringDefault(params, "message", "Copied.");
+      NoReply(LiveView.putFlash(socket, FlashType.Info, message));
+    case _:
+      NoReply(socket);
+  };
+}
+```
+
+That still leaves two independent sources of truth: the hook must remember the
+event string and payload key, and the LiveView must decode matching strings.
+Renaming the event, changing a payload field, or moving a hook to another
+LiveView can drift silently until runtime.
+
+Live Event Protocols move that contract into shared Haxe:
+
+```haxe
+@:liveEventProtocol("HookEvents")
+enum HookClientEvent {
+  @:event("clipboard_copied")
+  ClipboardCopied(message:String);
+
+  @:event("ping")
+  HookPing;
+}
+
+typedef HookEvents = LiveEventProtocolCompanion<HookClientEvent>;
+```
+
+Client hook code becomes:
+
+```haxe
+HookEvents.pushClipboardCopied(hook, message);
+```
+
+Server LiveView code stays Phoenix-shaped but dispatches through the generated
+boundary helper:
+
+```haxe
+@:liveEvents(HookClientEvent, "dispatchHookEvent")
+class ProfileLive {
+  public static function handleEvent(
+    event:String,
+    params:Term,
+    socket:Socket<ProfileLiveAssigns>
+  ):HandleEventResult<ProfileLiveAssigns> {
+    var handled = dispatchHookEvent(event, params, socket);
+    if (handled != null) {
+      return handled;
+    }
+
+    return switch (event) {
+      case EventName.SaveProfile:
+        NoReply(saveProfile(params, socket));
+      case _:
+        NoReply(socket);
+    };
+  }
+
+  static function handleClipboardCopied(
+    message:String,
+    socket:Socket<ProfileLiveAssigns>
+  ):HandleEventResult<ProfileLiveAssigns> {
+    return NoReply(LiveView.putFlash(socket, FlashType.Info, message));
+  }
+}
+```
+
+The generated Elixir should still read like handwritten Phoenix code:
+
+```elixir
+defp dispatch_hook_event(event_name, params, socket) do
+  cond do
+    event_name == "clipboard_copied" ->
+      message = Phoenix.Channels.WirePayload.get_string(params, "message")
+      if is_nil(message), do: nil, else: handle_clipboard_copied(message, socket)
+
+    true ->
+      nil
+  end
+end
+```
+
+The value proposition is therefore not "Phoenix events are bad." It is:
+Phoenix already gives us a clean runtime protocol, and Haxe lets PhoenixHx make
+that protocol compile-time visible on both sides.
+
+| Approach | Best fit | Tradeoff |
+| --- | --- | --- |
+| Vanilla Phoenix | Existing Elixir apps, one-off events, direct interop, fastest local debugging | Event names and payload keys are strings/maps; drift is caught at runtime |
+| Direct PhoenixHx | Haxe-authored LiveViews that mostly receive template events | Server-side decoding is typed, but client/server hook contracts are still manually synchronized |
+| Live Event Protocols | Haxe-authored hooks and LiveViews sharing an event boundary | Requires an explicit protocol enum and dispatcher call, but gives one source of truth, generated helpers, handler validation, and manifest/hash drift checks |
+
+Use Live Event Protocols when an event crosses a Haxe-authored browser/server
+boundary or when the payload has enough shape that duplication would be risky.
+Keep vanilla Phoenix or direct PhoenixHx for simple local `phx-click` style
+events, gradual adoption, and places where matching Phoenix examples exactly is
+more important than shared compile-time typing.
+
 ## Design Position
 
 Adopt v1 as protocol-first, explicit-dispatch, and handler-validated.

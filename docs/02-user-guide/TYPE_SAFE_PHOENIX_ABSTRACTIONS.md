@@ -6,6 +6,7 @@ This document covers the practical surfaces you’ll use most often:
 - `phoenix.Phoenix.Socket<TAssigns>` (default callback + assign surface) and `phoenix.LiveSocket<TAssigns>` (optional wrapper)
 - `phoenix.types.Assigns<T>`
 - `phoenix.types.Flash.FlashMap`
+- Experimental typed LiveView hook event protocols
 
 ## Typed Assigns (Recommended)
 
@@ -136,3 +137,104 @@ Event params and assigns originate from a dynamic runtime world (Phoenix). Keep 
 
 If you need a Phoenix helper that doesn’t exist yet, don’t use `untyped __elixir__()` in the app:
 - add a typed extern/shim under `std/phoenix/**` and reuse it across apps.
+
+## Typed LiveView Hook Events (Experimental)
+
+Phoenix LiveView's vanilla event model is still the runtime contract:
+browser hooks call `pushEvent`, and LiveViews receive
+`handle_event(event, params, socket)`. PhoenixHx keeps that model visible. The
+typed protocol layer is an opt-in macro surface for cases where both sides of a
+hook/server boundary are authored in Haxe.
+
+Call this feature **PhoenixHx Live Event Protocols**. It is "tRPC-like" only in
+the narrow sense that one shared typed declaration generates helpers for both
+ends of the boundary. It is not a new RPC runtime, and v1 does not replace
+Phoenix's `handle_event/3`.
+
+Use the direct PhoenixHx path for simple events:
+
+```haxe
+public static function handleEvent(
+  event:String,
+  params:Term,
+  socket:Socket<ProfileLiveAssigns>
+):HandleEventResult<ProfileLiveAssigns> {
+  return switch (event) {
+    case "clipboard_copied":
+      var message = Params.getStringDefault(params, "message", "Copied.");
+      NoReply(LiveView.putFlash(socket, FlashType.Info, message));
+    case _:
+      NoReply(socket);
+  };
+}
+```
+
+Use a Live Event Protocol when the event is shared between Haxe-generated JS
+hooks and Haxe-authored LiveViews:
+
+```haxe
+@:liveEventProtocol("HookEvents")
+enum HookClientEvent {
+  @:event("clipboard_copied")
+  ClipboardCopied(message:String);
+
+  @:event("ping")
+  HookPing;
+}
+
+typedef HookEvents = LiveEventProtocolCompanion<HookClientEvent>;
+```
+
+Client hook code then calls generated helpers:
+
+```haxe
+HookEvents.pushClipboardCopied(hook, message);
+```
+
+The LiveView remains Phoenix-shaped and explicitly calls the generated
+dispatcher before falling back to ordinary events:
+
+```haxe
+@:liveEvents(HookClientEvent, "dispatchHookEvent")
+class ProfileLive {
+  public static function handleEvent(
+    event:String,
+    params:Term,
+    socket:Socket<ProfileLiveAssigns>
+  ):HandleEventResult<ProfileLiveAssigns> {
+    var handled = dispatchHookEvent(event, params, socket);
+    if (handled != null) {
+      return handled;
+    }
+
+    return switch (event) {
+      case EventName.SaveProfile:
+        NoReply(saveProfile(params, socket));
+      case _:
+        NoReply(socket);
+    };
+  }
+
+  static function handleClipboardCopied(
+    message:String,
+    socket:Socket<ProfileLiveAssigns>
+  ):HandleEventResult<ProfileLiveAssigns> {
+    return NoReply(LiveView.putFlash(socket, FlashType.Info, message));
+  }
+}
+```
+
+Compared with vanilla Phoenix or direct PhoenixHx event handling, the protocol
+path gives you one source of truth for event names and payload fields, generated
+browser push helpers, generated server decoding, handler validation, and
+manifest/hash drift checks across the JS and Elixir builds. The cost is an
+explicit protocol enum plus an explicit dispatcher call.
+
+Prefer Live Event Protocols for Haxe-authored browser/server boundaries with
+real payload shape. Prefer vanilla Phoenix or direct PhoenixHx for one-off
+template events, gradual adoption, and code that intentionally mirrors Phoenix
+examples as closely as possible.
+
+Deep dive:
+
+- [PhoenixHx Live Event Protocols](../08-roadmap/phoenixhx-live-event-protocols.md)
