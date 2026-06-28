@@ -46,6 +46,10 @@ To update the expected error output:
 - **Location**: `test/snapshot/negative/router_dsl_missing_params_contract/`
 - **Purpose**: Ensures typed `RouterDsl.*` routes with path params require `paramsContract`.
 
+### LiveEvent protocol validations
+- **Location**: `test/snapshot/negative/live_event_protocol_unsupported_payload/`
+- **Purpose**: Ensures shared LiveView event protocols reject unsafe payload types such as `Dynamic`.
+
 ## Adding New Negative Tests
 
 When adding a negative test:

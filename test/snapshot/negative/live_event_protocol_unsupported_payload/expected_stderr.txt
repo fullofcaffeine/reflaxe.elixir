@@ -1,0 +1,1 @@
+BadHookEvent.Bad payload field "value" uses unsupported type Dynamic. Use String, Int, Bool, Float, Array<String>, Array<Int>, Payload, or add an explicit codec in the generator layer.

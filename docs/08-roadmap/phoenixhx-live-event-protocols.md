@@ -1,6 +1,7 @@
 # PhoenixHx Live Event Protocols
 
-Status: adopted v1 design plan, not shipped API.
+Status: adopted v1 design plan, model/manifest foundation started, not shipped
+companion/dispatch API.
 
 PhoenixHx should provide an opt-in, framework-level macro layer for typed
 LiveView events that cross the browser hook/server LiveView boundary.
@@ -226,6 +227,13 @@ through a `@:genericBuild` placeholder type or through `Context.defineType` from
 the protocol metadata. The public API should stay stable either way. The
 important constraints are deterministic type generation, deterministic manifest
 hashes, and generated Elixir/JS that remains easy to snapshot and review.
+
+Initial implementation note: `phoenix.live_view.macros.LiveEventProtocolModel`
+now normalizes a `@:liveEventProtocol` enum into a deterministic protocol
+manifest and hash, exposed through `phoenix.live_view.LiveEventProtocol` macro
+helpers for snapshot coverage. This is intentionally a foundation slice. The
+next slices should generate the companion helper surface, then the LiveView
+dispatcher binding, from the same model instead of adding a second parser.
 
 Avoid copying these Tink patterns into v1:
 
