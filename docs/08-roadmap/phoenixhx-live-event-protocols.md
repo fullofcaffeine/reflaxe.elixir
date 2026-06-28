@@ -357,9 +357,9 @@ when the compiler has to lower enum decoding.
 Use `@:codec(...)` only where the wire value is genuinely domain-specific:
 
 ```haxe
-typedef TodoSelectedPayload = {
-  @:codec(TodoIdCodec.codec())
-  var todoId:TodoId;
+typedef ResourceSelectedPayload = {
+  @:codec(ResourceIdCodec.codec())
+  var resourceId:ResourceId;
 
   var source:String;
 }

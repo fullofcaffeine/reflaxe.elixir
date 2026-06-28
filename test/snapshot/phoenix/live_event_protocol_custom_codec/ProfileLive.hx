@@ -6,41 +6,41 @@ import phoenix.channels.EncodedEvent;
 import phoenix.channels.Payload;
 import phoenix.live_view.LiveEventProtocolCompanion;
 
-typedef TodoSelectedPayload = {
-	@:codec(TodoIdCodec.codec())
-	var todoId:TodoId;
+typedef ResourceSelectedPayload = {
+	@:codec(ResourceIdCodec.codec())
+	var resourceId:ResourceId;
 
 	var source:String;
 }
 
-@:liveEventProtocol("TodoHookEvents")
-enum TodoHookEvent {
-	@:event("todo_selected")
-	TodoSelected(payload:TodoSelectedPayload);
+@:liveEventProtocol("ResourceHookEvents")
+enum ResourceHookEvent {
+	@:event("resource_selected")
+	ResourceSelected(payload:ResourceSelectedPayload);
 
 	Ping;
 }
 
-typedef TodoHookEvents = LiveEventProtocolCompanion<TodoHookEvent>;
+typedef ResourceHookEvents = LiveEventProtocolCompanion<ResourceHookEvent>;
 
-typedef TodoAssigns = {
-	var selectedTodoId:Int;
+typedef ResourceAssigns = {
+	var selectedResourceId:Int;
 }
 
 @:liveview
-@:liveEvents(TodoHookEvent, "dispatchTodoHookEvent")
+@:liveEvents(ResourceHookEvent, "dispatchResourceHookEvent")
 class ProfileLive {
-	public static function encodeSelected(todoId:TodoId, source:String):EncodedEvent {
-		var payload:TodoSelectedPayload = {todoId: todoId, source: source};
-		return TodoHookEvents.encode(TodoSelected(payload));
+	public static function encodeSelected(resourceId:ResourceId, source:String):EncodedEvent {
+		var payload:ResourceSelectedPayload = {resourceId: resourceId, source: source};
+		return ResourceHookEvents.encode(ResourceSelected(payload));
 	}
 
-	public static function decodeSelected(payload:Payload):Null<TodoHookEvent> {
-		return TodoHookEvents.decode(TodoHookEvents.TodoSelectedEvent, payload);
+	public static function decodeSelected(payload:Payload):Null<ResourceHookEvent> {
+		return ResourceHookEvents.decode(ResourceHookEvents.ResourceSelectedEvent, payload);
 	}
 
-	public static function handleEvent(event:String, params:Term, socket:Socket<TodoAssigns>):HandleEventResult<TodoAssigns> {
-		var hookResult = dispatchTodoHookEvent(event, params, socket);
+	public static function handleEvent(event:String, params:Term, socket:Socket<ResourceAssigns>):HandleEventResult<ResourceAssigns> {
+		var hookResult = dispatchResourceHookEvent(event, params, socket);
 		if (hookResult != null) {
 			return hookResult;
 		}
@@ -48,11 +48,11 @@ class ProfileLive {
 		return NoReply(socket);
 	}
 
-	static function handleTodoSelected(payload:TodoSelectedPayload, socket:Socket<TodoAssigns>):HandleEventResult<TodoAssigns> {
-		return NoReply(LiveView.assign(socket, "selected_todo_id", payload.todoId));
+	static function handleResourceSelected(payload:ResourceSelectedPayload, socket:Socket<ResourceAssigns>):HandleEventResult<ResourceAssigns> {
+		return NoReply(LiveView.assign(socket, "selected_resource_id", payload.resourceId));
 	}
 
-	static function handlePing(socket:Socket<TodoAssigns>):HandleEventResult<TodoAssigns> {
+	static function handlePing(socket:Socket<ResourceAssigns>):HandleEventResult<ResourceAssigns> {
 		return NoReply(socket);
 	}
 }

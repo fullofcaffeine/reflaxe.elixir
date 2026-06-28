@@ -2,13 +2,13 @@ import phoenix.channels.Payload;
 import phoenix.channels.WireCodec;
 import phoenix.channels.WirePayload;
 
-class TodoIdCodec {
-	public static function codec():WireCodec<TodoId> {
+class ResourceIdCodec {
+	public static function codec():WireCodec<ResourceId> {
 		return {
-			encode: function(value:TodoId):Payload {
+			encode: function(value:ResourceId):Payload {
 				return WirePayload.putInt(WirePayload.empty(), "value", value);
 			},
-			decode: function(payload:Payload):Null<TodoId> {
+			decode: function(payload:Payload):Null<ResourceId> {
 				var value = WirePayload.getInt(payload, "value");
 				return value == null ? null : value;
 			}

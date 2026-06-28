@@ -223,24 +223,25 @@ For domain values that are not native JSON/Phoenix payload scalars, put an
 explicit codec on the typedef field:
 
 ```haxe
-abstract TodoId(Int) from Int to Int {}
+abstract ResourceId(Int) from Int to Int {}
 
-typedef TodoSelectedPayload = {
-  @:codec(TodoIdCodec.codec())
-  var todoId:TodoId;
+typedef ResourceSelectedPayload = {
+  @:codec(ResourceIdCodec.codec())
+  var resourceId:ResourceId;
 
   var source:String;
 }
 
-@:liveEventProtocol("TodoEvents")
-enum TodoEvent {
-  @:event("todo_selected")
-  TodoSelected(payload:TodoSelectedPayload);
+@:liveEventProtocol("ResourceEvents")
+enum ResourceEvent {
+  @:event("resource_selected")
+  ResourceSelected(payload:ResourceSelectedPayload);
 }
 ```
 
-The generated helpers keep `todoId` typed as `TodoId` in Haxe while encoding it
-as a nested wire payload with `TodoIdCodec` on both JS and server paths.
+The generated helpers keep `resourceId` typed as `ResourceId` in Haxe while
+encoding it as a nested wire payload with `ResourceIdCodec` on both JS and
+server paths.
 
 The LiveView remains Phoenix-shaped and explicitly calls the generated
 dispatcher before falling back to ordinary events:

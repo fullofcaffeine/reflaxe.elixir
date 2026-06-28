@@ -1,4 +1,4 @@
-defmodule TodoIdCodec do
+defmodule ResourceIdCodec do
   def codec() do
     %{:encode => fn value -> Map.put(%{}, "value", value) end, :decode => fn payload ->
   value = Phoenix.Channels.WirePayload.get_int(payload, "value")

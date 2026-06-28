@@ -7,35 +7,35 @@ function $extend(from, fields) {
 	if( fields.toString !== Object.prototype.toString ) proto.toString = fields.toString;
 	return proto;
 }
-var TodoHookEvent = $hxEnums["TodoHookEvent"] = { __ename__:true,__constructs__:null
-	,TodoSelected: ($_=function(payload) { return {_hx_index:0,payload:payload,__enum__:"TodoHookEvent",toString:$estr}; },$_._hx_name="TodoSelected",$_.__params__ = ["payload"],$_)
-	,Ping: {_hx_name:"Ping",_hx_index:1,__enum__:"TodoHookEvent",toString:$estr}
+var ResourceHookEvent = $hxEnums["ResourceHookEvent"] = { __ename__:true,__constructs__:null
+	,ResourceSelected: ($_=function(payload) { return {_hx_index:0,payload:payload,__enum__:"ResourceHookEvent",toString:$estr}; },$_._hx_name="ResourceSelected",$_.__params__ = ["payload"],$_)
+	,Ping: {_hx_name:"Ping",_hx_index:1,__enum__:"ResourceHookEvent",toString:$estr}
 };
-TodoHookEvent.__constructs__ = [TodoHookEvent.TodoSelected,TodoHookEvent.Ping];
+ResourceHookEvent.__constructs__ = [ResourceHookEvent.ResourceSelected,ResourceHookEvent.Ping];
 var Main = function() { };
 Main.__name__ = true;
 Main.main = function() {
 	var pushed = [];
 	var hook = { el : null, pushEvent : function(event,payload) {
-		var nested = payload == null ? null : ((p,k)=>{var v=p[k]; if(v!=null && typeof v==='object' && !Array.isArray(v)) return v; return null;})(payload,"todo_id");
+		var nested = payload == null ? null : ((p,k)=>{var v=p[k]; if(v!=null && typeof v==='object' && !Array.isArray(v)) return v; return null;})(payload,"resource_id");
 		var id = nested == null ? null : nested == null ? null : ((p,k)=>{var v=p[k]; if(v==null) return null; if(typeof v==='number') return (v|0); if(typeof v==='string'){var n=parseInt(v,10); return Number.isFinite(n)?(n|0):null;} return null;})(nested,"value");
 		pushed.push(event + ":" + id + ":" + (payload == null ? null : ((p,k)=>{var v=p[k]; return (typeof v==='string') ? v : null;})(payload,"source")));
 	}};
-	TodoHookEvents.pushTodoSelected(hook,{ todoId : 42, source : "row"});
-	TodoHookEvents.push(hook,TodoHookEvent.TodoSelected({ todoId : 43, source : "keyboard"}));
-	TodoHookEvents.pushPing(hook);
+	ResourceHookEvents.pushResourceSelected(hook,{ resourceId : 42, source : "row"});
+	ResourceHookEvents.push(hook,ResourceHookEvent.ResourceSelected({ resourceId : 43, source : "keyboard"}));
+	ResourceHookEvents.pushPing(hook);
 	if(pushed.length != 3) {
 		throw haxe_Exception.thrown("expected three pushed events");
 	}
 };
 Math.__name__ = true;
-var TodoId = {};
-TodoId._new = function(value) {
+var ResourceId = {};
+ResourceId._new = function(value) {
 	return value;
 };
-var TodoIdCodec = function() { };
-TodoIdCodec.__name__ = true;
-TodoIdCodec.codec = function() {
+var ResourceIdCodec = function() { };
+ResourceIdCodec.__name__ = true;
+ResourceIdCodec.codec = function() {
 	return { encode : function(value) {
 		var payload = { };
 		if(payload == null) {
@@ -53,55 +53,55 @@ TodoIdCodec.codec = function() {
 		}
 	}};
 };
-var TodoHookEvents = function() { };
-TodoHookEvents.__name__ = true;
-TodoHookEvents.encode = function(event) {
+var ResourceHookEvents = function() { };
+ResourceHookEvents.__name__ = true;
+ResourceHookEvents.encode = function(event) {
 	switch(event._hx_index) {
 	case 0:
 		var payload = event.payload;
 		var wire = { };
+		var resourceId = payload.resourceId;
+		var resourceIdWirePayload = ResourceIdCodec.codec().encode(resourceId);
+		if(wire != null) {
+			wire["resource_id"] = resourceIdWirePayload;
+		}
 		var source = payload.source;
 		if(wire != null) {
 			wire["source"] = source;
 		}
-		var todoId = payload.todoId;
-		var todoIdWirePayload = TodoIdCodec.codec().encode(todoId);
-		if(wire != null) {
-			wire["todo_id"] = todoIdWirePayload;
-		}
-		return { event : "todo_selected", payload : wire};
+		return { event : "resource_selected", payload : wire};
 	case 1:
 		var wire = { };
 		return { event : "ping", payload : wire};
 	}
 };
-TodoHookEvents.decode = function(eventName,payload) {
+ResourceHookEvents.decode = function(eventName,payload) {
 	if(eventName == "ping") {
-		return TodoHookEvent.Ping;
+		return ResourceHookEvent.Ping;
 	}
-	if(eventName == "todo_selected") {
+	if(eventName == "resource_selected") {
+		var raw = payload == null ? null : ((p,k)=>{var v=p[k]; if(v!=null && typeof v==='object' && !Array.isArray(v)) return v; return null;})(payload,"resource_id");
+		var resourceId = raw != null ? ResourceIdCodec.codec().decode(raw) : null;
 		var source = payload == null ? null : ((p,k)=>{var v=p[k]; return (typeof v==='string') ? v : null;})(payload,"source");
-		var raw = payload == null ? null : ((p,k)=>{var v=p[k]; if(v!=null && typeof v==='object' && !Array.isArray(v)) return v; return null;})(payload,"todo_id");
-		var todoId = raw != null ? TodoIdCodec.codec().decode(raw) : null;
-		if(source != null && todoId != null) {
-			return TodoHookEvent.TodoSelected({ source : source, todoId : todoId});
+		if(resourceId != null && source != null) {
+			return ResourceHookEvent.ResourceSelected({ resourceId : resourceId, source : source});
 		} else {
 			return null;
 		}
 	}
 	return null;
 };
-TodoHookEvents.push = function(hook,event) {
-	var event1 = TodoHookEvents.encode(event);
+ResourceHookEvents.push = function(hook,event) {
+	var event1 = ResourceHookEvents.encode(event);
 	if(hook.pushEvent != null) {
 		hook.pushEvent(event1.event,event1.payload);
 	}
 };
-TodoHookEvents.pushPing = function(hook) {
-	TodoHookEvents.push(hook,TodoHookEvent.Ping);
+ResourceHookEvents.pushPing = function(hook) {
+	ResourceHookEvents.push(hook,ResourceHookEvent.Ping);
 };
-TodoHookEvents.pushTodoSelected = function(hook,payload) {
-	TodoHookEvents.push(hook,TodoHookEvent.TodoSelected(payload));
+ResourceHookEvents.pushResourceSelected = function(hook,payload) {
+	ResourceHookEvents.push(hook,ResourceHookEvent.ResourceSelected(payload));
 };
 var haxe_Exception = function(message,previous,native) {
 	Error.call(this,message);
@@ -349,7 +349,7 @@ phoenix_live_$view_LiveEventProtocolCompanion.__name__ = true;
 String.__name__ = true;
 Array.__name__ = true;
 js_Boot.__toStr = ({ }).toString;
-TodoHookEvents.PingEvent = "ping";
-TodoHookEvents.TodoSelectedEvent = "todo_selected";
+ResourceHookEvents.PingEvent = "ping";
+ResourceHookEvents.ResourceSelectedEvent = "resource_selected";
 Main.main();
 })({});
