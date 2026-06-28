@@ -417,6 +417,37 @@ Use `reflaxe.ruby` / RailsHx as a UX and cross-target learning reference when it
   - External APIs that are inherently dynamic (e.g., Map-like payloads) may use `Dynamic` locally, but public surfaces should remain typed.
   - Transitional refactors require an issue and a TODO linked to the proper fix — not allowed for 1.0 scope.
 
+### JSON and Unknown Boundary Policy (Hard Rule)
+- Learn from `tink_json`'s typed parser/writer shape, but adapt it to this
+  project: JSON-ish BEAM boundaries usually enter as `elixir.types.Term`,
+  Phoenix channel `Payload`, or a typed `DynamicAccess<T>`, and JS interop may
+  use `reflaxe.js.Unknown` only at the edge.
+- Keep this distinct from the Tink Web-inspired LiveView protocol plan:
+  Tink Web informs the declaration -> normalized model -> generated helper
+  architecture; this rule governs how JSON-ish payload values are typed inside
+  those helpers. Do not replace PhoenixHx `Payload`/`WirePayload` boundaries
+  with a generic JSON abstraction just because the payload is JSON-like.
+- Before introducing or preserving an `Unknown`-backed wrapper for JSON-like
+  data, choose the strongest practical model in this order:
+  1. a precise domain typedef/enum plus a decoder,
+  2. a generated codec or macro-backed parser/writer,
+  3. PhoenixHx wire helpers such as `WirePayload` / `WireCodec` for event or
+     channel payloads,
+  4. a recursive JSON value enum/abstract for genuinely open JSON,
+  5. `Term` or `Unknown` only for uninspected runtime boundaries or lossless
+     passthrough.
+- A wrapper around `Unknown` is not sufficient by itself. It must restrict the
+  allowed operations, emit or expose a narrower target type, or force decoding
+  before app logic can read from it.
+- If `Unknown` remains, add a nearby comment explaining why a domain type,
+  typed JSON value, schema-derived decoder, `TermDecoder`, `WirePayload`, or
+  `tink_json`-style codec is not practical there; which operations are allowed
+  (for example pass through, store, compare identity, encode, or immediately
+  narrow); and what contains the unsafety so it cannot spread into app-facing
+  APIs.
+- Do not name a broad `Unknown` wrapper as if it were a modeled domain value
+  unless that wrapper documents and enforces its boundary contract.
+
 ### Cast Boundary Policy (Hard Rule)
 - Treat `cast` as a boundary escape hatch, not normal application or compiler logic.
 - Prefer typed decoders, abstracts, extern signatures, pattern matching, or target predicates before narrowing opaque BEAM values. For example, use PhoenixHx helpers like `phoenix.LiveSession.getInt(...)` for session values instead of app-local `cast`.
@@ -506,6 +537,11 @@ Examples
 - Keep explicit classes when they are required for behavior, inheritance,
   interfaces, extern fidelity, macro entrypoints that require class fields, or
   user-facing type APIs.
+- Generated companion APIs such as PhoenixHx LiveView protocol helpers may use
+  a named class/abstract when that gives users a stable import, a clear protocol
+  namespace, cross-target `#if js` members, or the required macro generation
+  shape. Avoiding shell classes should not make generated APIs less discoverable
+  or less faithful to the shared protocol model.
 
 ## 📚 Complete Documentation Index
 
