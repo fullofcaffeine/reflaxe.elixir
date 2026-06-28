@@ -29,7 +29,21 @@ typedef LiveEventProtocolData = {
 typedef LiveEventData = {
 	var constructorName:String;
 	var eventName:String;
+	var args:Array<LiveEventArgumentData>;
 	var fields:Array<LiveEventFieldData>;
+	var pos:Position;
+}
+
+/**
+ * Normalized Haxe constructor/handler argument metadata.
+ */
+typedef LiveEventArgumentData = {
+	var name:String;
+	var typeName:String;
+	var type:Type;
+	var kind:LiveEventArgumentKind;
+	var fields:Array<LiveEventFieldData>;
+	var optional:Bool;
 	var pos:Position;
 }
 
@@ -43,6 +57,14 @@ typedef LiveEventFieldData = {
 	var kind:LiveEventFieldKind;
 	var optional:Bool;
 	var pos:Position;
+}
+
+/**
+ * Haxe-side payload argument shapes supported by the v1 generator.
+ */
+enum LiveEventArgumentKind {
+	FieldArguments;
+	TypedefPayload;
 }
 
 /**
@@ -139,9 +161,11 @@ class LiveEventProtocolModel {
 			events.push({
 				constructorName: constructorName,
 				eventName: eventName,
-				fields: readFields(enumPath, constructor),
+				args: readArguments(enumPath, constructor),
+				fields: [],
 				pos: constructor.pos
 			});
+			events[events.length - 1].fields = flattenFields(events[events.length - 1].args);
 		}
 
 		var manifest = buildManifest(enumPath, companionName, events);
@@ -169,35 +193,91 @@ class LiveEventProtocolModel {
 		return camelToSnake(constructor.name);
 	}
 
-	static function readFields(enumPath:String, constructor:EnumField):Array<LiveEventFieldData> {
+	static function readArguments(enumPath:String, constructor:EnumField):Array<LiveEventArgumentData> {
 		return switch (constructor.type.follow()) {
 			case TFun(args, _):
 				var seenWireKeys = new Map<String, Position>();
-				var fields:Array<LiveEventFieldData> = [];
-				for (arg in args) {
-					var wireName = camelToSnake(arg.name);
-					if (seenWireKeys.exists(wireName)) {
-						Context.error('LiveView event ${enumPath}.${constructor.name} has duplicate payload wire key "$wireName".', constructor.pos);
+				if (args.length == 1) {
+					var typedefArg = buildTypedefPayloadArgument(enumPath, constructor, args[0], seenWireKeys);
+					if (typedefArg != null) {
+						return [typedefArg];
 					}
-					seenWireKeys.set(wireName, constructor.pos);
-
-					var field = buildField(arg.name, wireName, arg.t, arg.opt, constructor.pos);
-					switch (field.kind) {
-						case Unsupported(reason):
-							Context.error('${enumPath}.${constructor.name} payload field "${arg.name}" uses unsupported type ${field.typeName}. ${reason}', constructor.pos);
-						case _:
-					}
-					fields.push(field);
 				}
-				fields;
+				[for (arg in args) buildFieldArgument(enumPath, constructor, arg, seenWireKeys)];
 			case _:
 				[];
 		};
 	}
 
-	static function buildField(name:String, wireName:String, type:Type, optional:Bool, pos:Position):LiveEventFieldData {
-		var typeName = type.toString();
+	static function buildFieldArgument(enumPath:String, constructor:EnumField, arg:{name:String, opt:Bool, t:Type},
+			seenWireKeys:Map<String, Position>):LiveEventArgumentData {
+		var wireName = camelToSnake(arg.name);
+		var field = buildField(enumPath, constructor.name, arg.name, wireName, arg.t, arg.opt, constructor.pos);
+		registerWireKey(enumPath, constructor.name, field, seenWireKeys);
 		return {
+			name: arg.name,
+			typeName: field.typeName,
+			type: arg.t,
+			kind: FieldArguments,
+			fields: [field],
+			optional: field.optional,
+			pos: constructor.pos
+		};
+	}
+
+	static function buildTypedefPayloadArgument(enumPath:String, constructor:EnumField, arg:{name:String, opt:Bool, t:Type},
+			seenWireKeys:Map<String, Position>):Null<LiveEventArgumentData> {
+		var payload = typedefPayloadFields(arg.t);
+		if (payload == null) {
+			return null;
+		}
+
+		var fields:Array<LiveEventFieldData> = [];
+		var payloadFields = payload.fields.copy();
+		payloadFields.sort((a, b) -> Reflect.compare(a.name, b.name));
+		for (payloadField in payloadFields) {
+			var wireName = readWireName(payloadField);
+			var field = buildField(enumPath, constructor.name, payloadField.name, wireName, payloadField.type, fieldIsOptional(payloadField),
+				payloadField.pos);
+			registerWireKey(enumPath, constructor.name, field, seenWireKeys);
+			fields.push(field);
+		}
+
+		return {
+			name: arg.name,
+			typeName: payload.typeName,
+			type: arg.t,
+			kind: TypedefPayload,
+			fields: fields,
+			optional: arg.opt || payload.typeName.startsWith("Null<"),
+			pos: constructor.pos
+		};
+	}
+
+	static function typedefPayloadFields(type:Type):Null<{typeName:String, fields:Array<ClassField>}> {
+		return switch (type) {
+			case TType(typeRef, params):
+				if (params.length > 0) {
+					Context.error("LiveView event payload typedefs cannot be generic in v1.", typeRef.get().pos);
+				}
+				var typeDef = typeRef.get();
+				switch (typeDef.type.follow()) {
+					case TAnonymous(anonRef):
+						{typeName: type.toString(), fields: anonRef.get().fields};
+					case _:
+						null;
+				}
+			case TLazy(resolve):
+				typedefPayloadFields(resolve());
+			case _:
+				null;
+		};
+	}
+
+	static function buildField(enumPath:String, constructorName:String, name:String, wireName:String, type:Type, optional:Bool,
+			pos:Position):LiveEventFieldData {
+		var typeName = type.toString();
+		var field = {
 			name: name,
 			wireName: wireName,
 			typeName: typeName,
@@ -205,6 +285,13 @@ class LiveEventProtocolModel {
 			optional: optional || typeName.startsWith("Null<"),
 			pos: pos
 		};
+		switch (field.kind) {
+			case Unsupported(reason):
+				var owner = enumPath == "" ? "LiveView event" : '${enumPath}.${constructorName}';
+				Context.error('${owner} payload field "${name}" uses unsupported type ${field.typeName}. ${reason}', pos);
+			case _:
+		}
+		return field;
 	}
 
 	static function classifyFieldType(typeName:String):LiveEventFieldKind {
@@ -229,17 +316,27 @@ class LiveEventProtocolModel {
 		buf.add('companion ${companionName}\n');
 		for (event in events) {
 			buf.add('event ${event.constructorName} ${event.eventName}');
-			if (event.fields.length == 0) {
+			if (event.args.length == 0) {
 				buf.add(' ()\n');
 			} else {
-				var encodedFields = [
-					for (field in event.fields)
-						'${field.name}:${field.typeName}->${field.wireName}:${kindName(field.kind)}${field.optional ? "?" : ""}'
-				];
-				buf.add(' (${encodedFields.join(", ")})\n');
+				buf.add(' (${[for (arg in event.args) manifestArgument(arg)].join(", ")})\n');
 			}
 		}
 		return buf.toString();
+	}
+
+	static function manifestArgument(arg:LiveEventArgumentData):String {
+		return switch (arg.kind) {
+			case FieldArguments:
+				var field = arg.fields[0];
+				'${arg.name}:${arg.typeName}->${field.wireName}:${kindName(field.kind)}${field.optional ? "?" : ""}';
+			case TypedefPayload:
+				var fields = [
+					for (field in arg.fields)
+						'${field.name}:${field.typeName}->${field.wireName}:${kindName(field.kind)}${field.optional ? "?" : ""}'
+				];
+				'${arg.name}:${arg.typeName}{${fields.join(";")}}${arg.optional ? "?" : ""}';
+		};
 	}
 
 	static function kindName(kind:LiveEventFieldKind):String {
@@ -265,6 +362,39 @@ class LiveEventProtocolModel {
 				Context.error('${entry.name} expects a string literal parameter.', entry.params[index].pos);
 				null;
 		};
+	}
+
+	static function readWireName(field:ClassField):String {
+		var entry = findMeta(field.meta.get(), ":wire");
+		if (entry == null) {
+			return camelToSnake(field.name);
+		}
+		var explicit = metadataStringParam(entry, 0);
+		if (explicit == null || explicit.trim() == "") {
+			Context.error("@:wire expects a non-empty string literal.", entry.pos);
+		}
+		return explicit;
+	}
+
+	static function fieldIsOptional(field:ClassField):Bool {
+		return findMeta(field.meta.get(), ":optional") != null;
+	}
+
+	static function registerWireKey(enumPath:String, constructorName:String, field:LiveEventFieldData, seenWireKeys:Map<String, Position>):Void {
+		if (seenWireKeys.exists(field.wireName)) {
+			Context.error('LiveView event ${enumPath}.${constructorName} has duplicate payload wire key "${field.wireName}".', field.pos);
+		}
+		seenWireKeys.set(field.wireName, field.pos);
+	}
+
+	static function flattenFields(args:Array<LiveEventArgumentData>):Array<LiveEventFieldData> {
+		var fields:Array<LiveEventFieldData> = [];
+		for (arg in args) {
+			for (field in arg.fields) {
+				fields.push(field);
+			}
+		}
+		return fields;
 	}
 
 	static function findMeta(entries:Metadata, name:String):Null<MetadataEntry> {

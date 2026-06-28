@@ -49,6 +49,8 @@ To update the expected error output:
 ### LiveEvent protocol validations
 - **Location**: `test/snapshot/negative/live_event_protocol_unsupported_payload/`
 - **Purpose**: Ensures shared LiveView event protocols reject unsafe payload types such as `Dynamic`.
+- **Location**: `test/snapshot/negative/live_event_protocol_unsupported_typedef_payload/`
+- **Purpose**: Ensures named Live Event Protocol payload typedefs reject unsafe fields such as `Dynamic`.
 
 ## Adding New Negative Tests
 

@@ -185,10 +185,38 @@ enum HookClientEvent {
 typedef HookEvents = LiveEventProtocolCompanion<HookClientEvent>;
 ```
 
-Client hook code then calls generated helpers:
+For richer payloads, use a named typedef. PhoenixHx keeps the Haxe side as one
+typed value and flattens the typedef fields into the wire payload:
+
+```haxe
+typedef ClipboardCopiedPayload = {
+  var message:String;
+
+  @:wire("copied_at")
+  var copiedAt:String;
+}
+
+@:liveEventProtocol("HookEvents")
+enum HookClientEvent {
+  @:event("clipboard_copied")
+  ClipboardCopied(payload:ClipboardCopiedPayload);
+}
+```
+
+Client hook code then calls generated helpers. With the scalar constructor
+above:
 
 ```haxe
 HookEvents.pushClipboardCopied(hook, message);
+```
+
+With the typedef payload version:
+
+```haxe
+HookEvents.pushClipboardCopied(hook, {
+  message: "Copied.",
+  copiedAt: "2026-06-28T16:00:00Z"
+});
 ```
 
 The LiveView remains Phoenix-shaped and explicitly calls the generated
@@ -223,6 +251,10 @@ class ProfileLive {
   }
 }
 ```
+
+If the constructor uses `ClipboardCopied(payload:ClipboardCopiedPayload)`, the
+handler convention becomes `handleClipboardCopied(payload, socket)` and the
+payload is typed as `ClipboardCopiedPayload`.
 
 Compared with vanilla Phoenix or direct PhoenixHx event handling, the protocol
 path gives you one source of truth for event names and payload fields, generated

@@ -6,6 +6,8 @@ import haxe.macro.Expr;
 import haxe.macro.ExprTools;
 import haxe.macro.Printer;
 import haxe.macro.Type;
+import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventArgumentData;
+import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventArgumentKind;
 import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventData;
 import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventFieldData;
 import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventFieldKind;
@@ -117,7 +119,7 @@ class LiveEventDispatcherBuilder {
 			Context.error('${className} declares @:liveEvents but does not define ${handlerName}(${handlerArgsDescription(event)}).', event.pos);
 		}
 
-		var expectedArgs = event.fields.length + 1;
+		var expectedArgs = event.args.length + 1;
 		var actualArgs = switch (handler.kind) {
 			case FFun(f) if (f != null && f.args != null): f.args.length;
 			case _: -1;
@@ -229,12 +231,42 @@ class LiveEventDispatcherBuilder {
 	}
 
 	static function buildHandlerCall(event:LiveEventData):Expr {
-		var args:Array<Expr> = [for (field in event.fields) {expr: EConst(CIdent(field.name)), pos: field.pos}];
+		var args:Array<Expr> = decodedHandlerArgs(event);
 		args.push(macro socket);
 		return {
 			expr: ECall({expr: EConst(CIdent("handle" + event.constructorName)), pos: event.pos}, args),
 			pos: event.pos
 		};
+	}
+
+	static function decodedHandlerArgs(event:LiveEventData):Array<Expr> {
+		return switch (findPayloadArgument(event)) {
+			case null:
+				[for (arg in event.args) {expr: EConst(CIdent(arg.name)), pos: arg.pos}];
+			case arg:
+				[buildPayloadObject(arg)];
+		};
+	}
+
+	static function buildPayloadObject(arg:LiveEventArgumentData):Expr {
+		return {
+			expr: EObjectDecl([
+				for (field in arg.fields)
+					{field: field.name, expr: {expr: EConst(CIdent(field.name)), pos: field.pos}}
+			]),
+			pos: arg.pos
+		};
+	}
+
+	static function findPayloadArgument(event:LiveEventData):Null<LiveEventArgumentData> {
+		for (arg in event.args) {
+			switch (arg.kind) {
+				case TypedefPayload:
+					return arg;
+				case FieldArguments:
+			}
+		}
+		return null;
 	}
 
 	static function fieldTypeLabel(field:LiveEventFieldData):String {
@@ -306,9 +338,19 @@ class LiveEventDispatcherBuilder {
 	}
 
 	static function handlerArgsDescription(event:LiveEventData):String {
-		var args = [for (field in event.fields) '${field.name}:${field.optional ? "Null<" + fieldTypeLabel(field) + ">" : fieldTypeLabel(field)}'];
+		var args = [for (arg in event.args) argumentDescription(arg)];
 		args.push("socket");
 		return args.join(", ");
+	}
+
+	static function argumentDescription(arg:LiveEventArgumentData):String {
+		return switch (arg.kind) {
+			case FieldArguments:
+				var field = arg.fields[0];
+				'${arg.name}:${field.optional ? "Null<" + fieldTypeLabel(field) + ">" : fieldTypeLabel(field)}';
+			case TypedefPayload:
+				'${arg.name}:${arg.typeName}';
+		};
 	}
 
 	static function containsCallTo(expr:Expr, functionName:String):Bool {

@@ -1,0 +1,5 @@
+-cp .
+-cp ../../../../vendor/phoenix_shared/src
+-cp ../../../../vendor/phoenix_js/src
+--js out/main.js
+-main Main

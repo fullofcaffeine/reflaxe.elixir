@@ -3,8 +3,9 @@
 Status: adopted v1 design plan, with model/manifest, generated companion
 encode/decode, JS push helpers, first explicit LiveView dispatcher binding, and
 todo-app hook protocol migration in place. Dispatcher-call validation now warns
-by default and escalates under `-D phoenixhx_live_events_strict`. Richer payload
-typedef/custom codec support is not shipped.
+by default and escalates under `-D phoenixhx_live_events_strict`. Named typedef
+payloads with direct built-in field decoding are in place; custom codec support
+is not shipped.
 
 PhoenixHx should provide an opt-in, framework-level macro layer for typed
 LiveView events that cross the browser hook/server LiveView boundary.
@@ -330,7 +331,9 @@ Support these first:
 
 - empty constructors: `Ping`
 - scalar constructor arguments: `ClipboardCopied(message:String)`
-- named typedef payloads
+- named typedef payloads: `ClipboardCopied(payload:ClipboardCopiedPayload)`
+- `@:wire("wire_name")` on typedef payload fields when the wire key should not
+  be the default snake_case field name
 - `String`, `Int`, `Bool`, `Float`
 - `Array<String>` and `Array<Int>`
 - `Null<T>` only for explicitly optional fields
@@ -421,8 +424,11 @@ event constants, direct `WirePayload`-based `encode`/`decode` helpers, and JS-on
 hook push helpers. `@:liveEvents(Protocol, "dispatchName")` now adds the first
 server-side dispatcher binding from the same model, emitting straight-line
 `WirePayload` reads and private handler calls in the LiveView module when the
-LiveView explicitly calls the dispatcher. The next slices should add payload
-typedef/custom codec support without adding a second parser.
+LiveView explicitly calls the dispatcher. The model distinguishes Haxe
+constructor/handler arguments from flattened wire fields, so a named typedef
+payload remains one typed Haxe value while generated JS and Elixir helpers still
+emit direct per-field `WirePayload` calls. The next slices should add custom
+codec support without adding a second parser.
 
 Avoid copying these Tink patterns into v1:
 

@@ -4,6 +4,8 @@ package phoenix.live_view.macros;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
+import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventArgumentData;
+import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventArgumentKind;
 import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventData;
 import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventFieldData;
 import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventFieldKind;
@@ -146,9 +148,9 @@ class LiveEventProtocolCompanionBuilder {
 	static function buildPerEventPushFunction(protocol:LiveEventProtocolData, event:LiveEventData):Field {
 		var args:Array<FunctionArg> = [{name: "hook", type: macro:phoenix.live_view.HookContext}];
 		var constructorArgs:Array<Expr> = [];
-		for (field in event.fields) {
-			args.push({name: field.name, type: fieldValueType(field)});
-			constructorArgs.push({expr: EConst(CIdent(field.name)), pos: field.pos});
+		for (arg in event.args) {
+			args.push({name: arg.name, type: argumentValueType(arg)});
+			constructorArgs.push({expr: EConst(CIdent(arg.name)), pos: arg.pos});
 		}
 
 		var eventExpr = constructorCall(protocol, event, constructorArgs);
@@ -190,9 +192,18 @@ class LiveEventProtocolCompanionBuilder {
 
 	static function buildEncodeCase(event:LiveEventData):Expr {
 		var expressions:Array<Expr> = [macro var wire = phoenix.channels.WirePayload.empty()];
+		var payloadArg = findPayloadArgument(event);
 		for (field in event.fields) {
+			var value = encodeFieldValue(event, field);
+			if (payloadArg != null) {
+				expressions.push({
+					expr: EVars([{name: field.name, type: fieldBaseType(field), expr: value}]),
+					pos: field.pos
+				});
+				value = {expr: EConst(CIdent(field.name)), pos: field.pos};
+			}
 			expressions.push({
-				expr: EBinop(OpAssign, macro wire, callWirePayloadPut(field, macro wire, {expr: EConst(CIdent(field.name)), pos: field.pos})),
+				expr: EBinop(OpAssign, macro wire, callWirePayloadPut(field, macro wire, value)),
 				pos: field.pos
 			});
 		}
@@ -235,7 +246,6 @@ class LiveEventProtocolCompanionBuilder {
 	static function buildDecodeCase(protocol:LiveEventProtocolData, event:LiveEventData):Expr {
 		var expressions:Array<Expr> = [];
 		var decodedChecks:Array<Expr> = [];
-		var constructorArgs:Array<Expr> = [];
 		for (field in event.fields) {
 			var fieldIdent = {expr: EConst(CIdent(field.name)), pos: field.pos};
 			expressions.push({
@@ -248,9 +258,9 @@ class LiveEventProtocolCompanionBuilder {
 					pos: field.pos
 				});
 			}
-			constructorArgs.push(fieldIdent);
 		}
 
+		var constructorArgs = decodedConstructorArgs(event);
 		var constructed = constructorCall(protocol, event, constructorArgs);
 		var result = decodedChecks.length == 0 ? constructed : guardAll(decodedChecks, constructed);
 		expressions.push(result);
@@ -273,23 +283,62 @@ class LiveEventProtocolCompanionBuilder {
 
 	static function constructorPattern(protocol:LiveEventProtocolData, event:LiveEventData):Expr {
 		var constructor = constructorRef(protocol, event);
-		if (event.fields.length == 0) {
+		if (event.args.length == 0) {
 			return constructor;
 		}
 		return {
-			expr: ECall(constructor, [for (field in event.fields) {expr: EConst(CIdent(field.name)), pos: field.pos}]),
+			expr: ECall(constructor, [for (arg in event.args) {expr: EConst(CIdent(arg.name)), pos: arg.pos}]),
 			pos: event.pos
 		};
 	}
 
 	static function constructorCall(protocol:LiveEventProtocolData, event:LiveEventData, args:Array<Expr>):Expr {
-		if (event.fields.length == 0) {
+		if (event.args.length == 0) {
 			return constructorRef(protocol, event);
 		}
 		return {
 			expr: ECall(constructorRef(protocol, event), args),
 			pos: event.pos
 		};
+	}
+
+	static function encodeFieldValue(event:LiveEventData, field:LiveEventFieldData):Expr {
+		return switch (findPayloadArgument(event)) {
+			case null:
+				{expr: EConst(CIdent(field.name)), pos: field.pos};
+			case arg:
+				{expr: EField({expr: EConst(CIdent(arg.name)), pos: arg.pos}, field.name), pos: field.pos};
+		};
+	}
+
+	static function decodedConstructorArgs(event:LiveEventData):Array<Expr> {
+		return switch (findPayloadArgument(event)) {
+			case null:
+				[for (arg in event.args) {expr: EConst(CIdent(arg.name)), pos: arg.pos}];
+			case arg:
+				[buildPayloadObject(arg)];
+		};
+	}
+
+	static function buildPayloadObject(arg:LiveEventArgumentData):Expr {
+		return {
+			expr: EObjectDecl([
+				for (field in arg.fields)
+					{field: field.name, expr: {expr: EConst(CIdent(field.name)), pos: field.pos}}
+			]),
+			pos: arg.pos
+		};
+	}
+
+	static function findPayloadArgument(event:LiveEventData):Null<LiveEventArgumentData> {
+		for (arg in event.args) {
+			switch (arg.kind) {
+				case TypedefPayload:
+					return arg;
+				case FieldArguments:
+			}
+		}
+		return null;
 	}
 
 	static function constructorRef(protocol:LiveEventProtocolData, event:LiveEventData):Expr {
@@ -353,6 +402,15 @@ class LiveEventProtocolCompanionBuilder {
 	static function fieldValueType(field:LiveEventFieldData):ComplexType {
 		var base = fieldBaseType(field);
 		return field.optional ? TPath({pack: [], name: "Null", params: [TPType(base)]}) : base;
+	}
+
+	static function argumentValueType(arg:LiveEventArgumentData):ComplexType {
+		return switch (arg.kind) {
+			case FieldArguments:
+				fieldValueType(arg.fields[0]);
+			case TypedefPayload:
+				arg.type.toComplexType();
+		};
 	}
 
 	static function fieldBaseType(field:LiveEventFieldData):ComplexType {
