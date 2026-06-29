@@ -10,7 +10,7 @@ test('bulk set priority applies to visible todos only and persists', async ({ pa
     const form = page.locator('form[phx-submit="create_todo"]').first()
     await expect(form).toBeVisible({ timeout: 15000 })
     await form.getByTestId('input-title').fill(title)
-    await form.locator('select[name="priority"]').selectOption(priority)
+    await form.locator('select[name="todo[priority]"]').selectOption(priority)
     await form.getByTestId('btn-create-todo').click()
     await expect(page.locator('[data-testid="todo-card"] h3', { hasText: title })).toBeVisible({ timeout: 15000 })
   }

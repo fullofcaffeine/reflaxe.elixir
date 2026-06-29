@@ -13,7 +13,7 @@ test('clicking a tag chip filters by tags', async ({ page }) => {
     const titleInput = page.getByTestId('input-title')
     await expect(titleInput).toBeVisible({ timeout: 20000 })
     await titleInput.fill(title)
-    await page.locator('input[name="tags"]').fill(tag)
+    await page.locator('input[name="todo[tags]"]').fill(tag)
     await page.getByTestId('btn-create-todo').click()
     await expect(page.locator('[data-testid="todo-card"] h3', { hasText: title })).toBeVisible({ timeout: 20000 })
   }
@@ -60,7 +60,7 @@ test('clicking a todo tag filters by tags', async ({ page }) => {
     const titleInput = page.getByTestId('input-title')
     await expect(titleInput).toBeVisible({ timeout: 20000 })
     await titleInput.fill(title)
-    await page.locator('input[name="tags"]').fill(tag)
+    await page.locator('input[name="todo[tags]"]').fill(tag)
     await page.getByTestId('btn-create-todo').click()
     await expect(page.locator('[data-testid="todo-card"] h3', { hasText: title })).toBeVisible({ timeout: 20000 })
   }

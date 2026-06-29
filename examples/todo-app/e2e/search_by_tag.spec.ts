@@ -15,7 +15,7 @@ test('search matches tags', async ({ page }) => {
     const form = page.locator('form[phx-submit="create_todo"]').first()
     await expect(form).toBeVisible({ timeout: 20000 })
     await page.getByTestId('input-title').fill(title)
-    await page.locator('input[name="tags"]').fill(tags)
+    await page.locator('input[name="todo[tags]"]').fill(tags)
     await page.getByTestId('btn-create-todo').click()
     await expect(page.locator('[data-testid="todo-card"] h3', { hasText: title })).toBeVisible({ timeout: 20000 })
   }

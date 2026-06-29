@@ -12,7 +12,7 @@ test('sort by due date orders earliest first', async ({ page }) => {
     await expect(form).toBeVisible()
     await page.getByTestId('input-title').fill(title)
     // Set due date (scoped to the create form) using fill for better compatibility
-    const dueInput = form.locator('input[name="due_date"]').first()
+    const dueInput = form.locator('input[name="todo[due_date]"]').first()
     await dueInput.evaluate((el, val) => {
       const input = el as HTMLInputElement
       input.setAttribute('value', val as string)
@@ -21,7 +21,7 @@ test('sort by due date orders earliest first', async ({ page }) => {
       input.dispatchEvent(new Event('input', { bubbles: true }))
       input.dispatchEvent(new Event('change', { bubbles: true }))
     }, due)
-    await form.locator('input[name="tags"]').fill(group)
+    await form.locator('input[name="todo[tags]"]').fill(group)
     await page.getByTestId('btn-create-todo').click()
     await expect.poll(async () => await page.locator('[data-testid="todo-card"] h3', { hasText: title }).count(), { timeout: 20000 }).toBeGreaterThan(0)
   }
@@ -31,7 +31,7 @@ test('sort by due date orders earliest first', async ({ page }) => {
     const form = page.locator('form[phx-submit="create_todo"]').first()
     await expect(form).toBeVisible()
     await page.getByTestId('input-title').fill(title)
-    await form.locator('input[name="tags"]').fill(group)
+    await form.locator('input[name="todo[tags]"]').fill(group)
     await page.getByTestId('btn-create-todo').click()
     await expect.poll(async () => await page.locator('[data-testid="todo-card"] h3', { hasText: title }).count(), { timeout: 20000 }).toBeGreaterThan(0)
   }

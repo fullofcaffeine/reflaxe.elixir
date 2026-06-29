@@ -58,6 +58,7 @@ import shared.liveview.EventName;
 import shared.liveview.HookEvents.HookClientEvent;
 import shared.liveview.HookName;
 import shared.liveview.TodoEvents.TodoEvent;
+import shared.liveview.TodoEvents.CreateTodoForm;
 import shared.liveview.TodoEvents;
 import StringTools;
 
@@ -355,9 +356,7 @@ class TodoLive {
 			return todoEventResult;
 		}
 
-		var nextSocket:Socket<TodoLiveAssigns> = if (event == EventName.CreateTodo) {
-			create_todo(params, socket);
-		} else if (event == EventName.DeleteTodo) {
+		var nextSocket:Socket<TodoLiveAssigns> = if (event == EventName.DeleteTodo) {
 			delete_todo(extract_id(params), socket);
 		} else if (event == EventName.EditTodo) {
 			start_editing(extract_id(params), socket);
@@ -422,6 +421,10 @@ class TodoLive {
 
 	static function handleToggleTodo(id:Int, socket:Socket<TodoLiveAssigns>):HandleEventResult<TodoLiveAssigns> {
 		return NoReply(toggle_todo_status(id, socket));
+	}
+
+	static function handleCreateTodo(payload:CreateTodoForm, socket:Socket<TodoLiveAssigns>):HandleEventResult<TodoLiveAssigns> {
+		return NoReply(createTodoFromForm(payload, socket));
 	}
 
 	public static function extract_id(params:Term):Int {
@@ -613,22 +616,17 @@ class TodoLive {
 	}
 
 	/**
-	 * Create a new todo using typed TodoParams.
+	 * Creates a todo from the typed Live Event Protocol form payload.
+	 *
+	 * The macro-generated dispatcher has already decoded `%{"todo" => ...}` into
+	 * `CreateTodoForm`; this function handles domain defaults and persistence.
 	 */
-	public static function create_todo(params:Term, socket:Socket<TodoLiveAssigns>):Socket<TodoLiveAssigns> {
-		// LiveView form params arrive as a map with string keys; extract safely.
-		var rawTitle = Params.getString(params, "title");
-		var rawDesc = Params.getString(params, "description");
-		var rawPriority = Params.getString(params, "priority");
-		var rawDue = Params.getString(params, "due_date");
-		var rawTags = Params.getString(params, "tags");
-
-		// Normalize values and convert shapes
-		var title = (rawTitle != null) ? rawTitle : "";
-		var description = (rawDesc != null) ? rawDesc : "";
-		var priority = (rawPriority != null && rawPriority != "") ? rawPriority : "medium";
-		var tagsArr:Array<String> = (rawTags != null && rawTags != "") ? parseTags(rawTags) : [];
-		var dueDate = parseDueDate(rawDue);
+	static function createTodoFromForm(payload:CreateTodoForm, socket:Socket<TodoLiveAssigns>):Socket<TodoLiveAssigns> {
+		var title = payload.title;
+		var description = payload.description != null ? payload.description : "";
+		var priority = payload.priority != null && payload.priority != "" ? payload.priority : "medium";
+		var tagsArr:Array<String> = payload.tags != null && payload.tags != "" ? parseTags(payload.tags) : [];
+		var dueDate = parseDueDate(payload.dueDate);
 
 		// Build the todo struct for changeset
 		var todoStruct = new server.schemas.Todo();
@@ -1442,12 +1440,12 @@ class TodoLive {
 							<!-- New Todo Form -->
 							<if {assigns.show_form}>
 							<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 border-l-4 border-blue-500">
-								<form phx-submit=${EventName.CreateTodo} class="space-y-4">
+								<form phx-submit=${TodoEvents.CreateTodoEvent} class="space-y-4">
 								<div>
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 										Title *
 									</label>
-									<input type="text" name="title" required data-testid="input-title"
+									<input type="text" name="todo[title]" required data-testid="input-title"
 										class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
 										placeholder="What needs to be done?" />
 								</div>
@@ -1456,7 +1454,7 @@ class TodoLive {
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 										Description
 									</label>
-									<textarea name="description" rows="3"
+									<textarea name="todo[description]" rows="3"
 										class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
 										placeholder="Add more details..."></textarea>
 								</div>
@@ -1466,7 +1464,7 @@ class TodoLive {
 										<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 											Priority
 										</label>
-										<select name="priority"
+										<select name="todo[priority]"
 											class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
 											<option value="low">Low</option>
 											<option value="medium" selected>Medium</option>
@@ -1478,9 +1476,9 @@ class TodoLive {
 										<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 											Due Date
 										</label>
-                            <input type="date" name="due_date"
-                                placeholder="YYYY-MM-DD"
-                                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
+										<input type="date" name="todo[due_date]"
+											placeholder="YYYY-MM-DD"
+											class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
 									</div>
 								</div>
 
@@ -1488,7 +1486,7 @@ class TodoLive {
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 										Tags (comma-separated)
 									</label>
-									<input type="text" name="tags"
+									<input type="text" name="todo[tags]"
 										class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
 										placeholder="work, personal, urgent" />
 								</div>

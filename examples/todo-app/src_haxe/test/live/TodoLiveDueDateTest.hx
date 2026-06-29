@@ -5,6 +5,7 @@ import exunit.Assert.*;
 import phoenix.test.ConnTest;
 import phoenix.test.LiveViewTest;
 import phoenix.test.LiveView;
+import elixir.ElixirMap;
 import elixir.types.Term;
 
 /**
@@ -26,7 +27,10 @@ class TodoLiveDueDateTest extends TestCase {
 		var lvTuple:Term = LiveViewTest.live(conn, "/todos");
 		var lv:LiveView = LiveViewTest.view(lvTuple);
 		LiveViewTest.render_click(LiveViewTest.element(lv, "button[phx-click='toggle_form']"));
-		var data:Term = {title: "DueEarly", due_date: "2025-11-01"};
+		var todoParams = ElixirMap.new_();
+		todoParams = ElixirMap.put(todoParams, "title", "DueEarly");
+		todoParams = ElixirMap.put(todoParams, "due_date", "2025-11-01");
+		var data = ElixirMap.put(ElixirMap.new_(), "todo", todoParams);
 		var formEl:Term = LiveViewTest.element(lv, "form[phx-submit='create_todo']");
 		LiveViewTest.render_submit(formEl, data);
 		var html = LiveViewTest.render(lv);

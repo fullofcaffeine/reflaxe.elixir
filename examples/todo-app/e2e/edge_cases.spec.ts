@@ -13,7 +13,7 @@ test('edge: tag parsing trims and drops empty entries', async ({ page }) => {
   const form = page.locator('form[phx-submit="create_todo"]').first()
   await expect(form).toBeVisible({ timeout: 20000 })
   await page.getByTestId('input-title').fill(title)
-  await form.locator('input[name="tags"]').fill(`  ${tagA}  , ,  ${tagB} ,   ,`)
+  await form.locator('input[name="todo[tags]"]').fill(`  ${tagA}  , ,  ${tagB} ,   ,`)
   await page.getByTestId('btn-create-todo').click()
 
   const card = page.locator('[data-testid="todo-card"]', { has: page.locator('h3', { hasText: title }) }).first()
@@ -49,7 +49,7 @@ test('edge: selected tags use OR semantics and compose with search', async ({ pa
     const form = page.locator('form[phx-submit="create_todo"]').first()
     await expect(form).toBeVisible({ timeout: 20000 })
     await page.getByTestId('input-title').fill(title)
-    await form.locator('input[name="tags"]').fill(tags)
+    await form.locator('input[name="todo[tags]"]').fill(tags)
     await page.getByTestId('btn-create-todo').click()
     await expect(page.locator('[data-testid="todo-card"] h3', { hasText: title })).toBeVisible({ timeout: 20000 })
   }
@@ -209,7 +209,7 @@ test('edge: search matches description case-insensitively and clearing restores 
   const form = page.locator('form[phx-submit="create_todo"]').first()
   await expect(form).toBeVisible({ timeout: 20000 })
   await form.getByTestId('input-title').fill(title)
-  await form.locator('textarea[name="description"]').fill(`Some ${marker} text`)
+  await form.locator('textarea[name="todo[description]"]').fill(`Some ${marker} text`)
   await page.getByTestId('btn-create-todo').click()
   await expect(page.locator('h3', { hasText: title })).toBeVisible({ timeout: 20000 })
 

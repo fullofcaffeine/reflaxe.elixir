@@ -18,8 +18,48 @@ on either side.
 - **Shared LiveView protocols** for cross-boundary events
   - Hook events: `shared.liveview.HookEvents`
   - Repeated template events with `phx-value-*` params: `shared.liveview.TodoEvents`
+  - Form events whose params should decode into typed payloads, such as
+    `TodoEvent.CreateTodo(payload:CreateTodoForm)`
 - **Shared channel protocols** (typed encode/decode)
   - Example: `shared.channels.PingProtocol`
+
+## LiveView protocol example
+
+Put the protocol in `src_haxe/shared/liveview/` when both the template/server boundary and any client-side code
+should agree on event names or payload shapes. The todo-app uses `TodoEvents` for two cases:
+
+```haxe
+@:liveEventProtocol("TodoEvents")
+enum TodoEvent {
+	@:templateEvent("toggle_todo")
+	ToggleTodo(id:Int);
+
+	@:submitEvent("create_todo", "todo")
+	CreateTodo(payload:CreateTodoForm);
+}
+```
+
+The create form remains normal Phoenix markup after compilation:
+
+```haxe
+<form phx-submit=${TodoEvents.CreateTodoEvent}>
+	<input type="text" name="todo[title]" value="" />
+</form>
+```
+
+The server binds the protocol with `@:liveEvents(TodoEvent, "dispatchTodoEvent")` and handles the typed payload:
+
+```haxe
+static function handleCreateTodo(
+	payload:CreateTodoForm,
+	socket:Socket<TodoLiveAssigns>
+):HandleEventResult<TodoLiveAssigns> {
+	return NoReply(createTodoFromForm(payload, socket));
+}
+```
+
+Keep direct PhoenixHx for smaller one-off events. In this app, edit/save still uses `EventName.SaveTodo` and
+explicit param reads, which is shorter and clearer for that local flow.
 
 ## What should *not* belong here
 

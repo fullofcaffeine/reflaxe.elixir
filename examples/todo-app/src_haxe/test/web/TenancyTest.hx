@@ -5,6 +5,7 @@ import exunit.TestCase;
 import phoenix.test.ConnTest;
 import phoenix.test.LiveViewTest;
 import phoenix.test.LiveView;
+import elixir.ElixirMap;
 import elixir.types.Term;
 
 /**
@@ -38,7 +39,9 @@ class TenancyTest extends TestCase {
 		var lvTupleA:Term = LiveViewTest.live(connA, "/todos");
 		var lvA:LiveView = LiveViewTest.view(lvTupleA);
 		LiveViewTest.render_click(LiveViewTest.element(lvA, "button[phx-click='toggle_form']"));
-		LiveViewTest.render_submit(LiveViewTest.element(lvA, "form[phx-submit='create_todo']"), {title: title});
+		var todoParams = ElixirMap.put(ElixirMap.new_(), "title", title);
+		var data = ElixirMap.put(ElixirMap.new_(), "todo", todoParams);
+		LiveViewTest.render_submit(LiveViewTest.element(lvA, "form[phx-submit='create_todo']"), data);
 		var htmlA = LiveViewTest.render(lvA);
 		assertTrue(htmlA.indexOf(title) != -1);
 

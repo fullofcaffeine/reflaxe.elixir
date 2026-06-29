@@ -21,7 +21,6 @@ package shared.liveview;
 enum abstract EventName(String) from String to String {
 	// TodoLive
 	var ToggleForm = "toggle_form";
-	var CreateTodo = "create_todo";
 	var SaveTodo = "save_todo";
 	var EditTodo = "edit_todo";
 	var DeleteTodo = "delete_todo";

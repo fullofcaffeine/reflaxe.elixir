@@ -13,7 +13,7 @@ test('edit todo updates title', async ({ page }) => {
   await expect(titleInput).toBeVisible({ timeout: 15000 })
   await titleInput.fill(original)
   // Set description so we can verify clearing it works too
-  await page.locator('form[phx-submit="create_todo"] textarea[name="description"]').fill(originalDesc)
+  await page.locator('form[phx-submit="create_todo"] textarea[name="todo[description]"]').fill(originalDesc)
   await page.getByTestId('btn-create-todo').click()
   const heading = page.locator('h3', { hasText: original }).first()
   const card = heading.locator('xpath=ancestor::*[@data-testid="todo-card"][1]')

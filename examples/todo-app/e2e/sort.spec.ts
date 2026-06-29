@@ -19,9 +19,9 @@ test('sort by priority reorders list', async ({ page }) => {
     await expect(titleInput).toBeVisible({ timeout: 15000 })
     await titleInput.fill(title)
     // Set priority
-    await page.selectOption('select[name="priority"]', priority)
+    await page.selectOption('select[name="todo[priority]"]', priority)
     // Stamp with a unique tag to scope assertions
-    await page.locator('input[name="tags"]').fill(group)
+    await page.locator('input[name="todo[tags]"]').fill(group)
     await page.getByTestId('btn-create-todo').click()
     await expect(page.locator('[data-testid="todo-card"]', { hasText: group }).locator('h3', { hasText: title })).toBeVisible({ timeout: 20000 })
   }

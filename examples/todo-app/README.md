@@ -190,6 +190,13 @@ The todo-app is designed to demonstrate **end-to-end Haxe→Elixir** for applica
 Shared code note:
 - `src_haxe/shared/` is the place to put typed client/server boundary contracts (payload typedefs, event names,
   and channel protocols). See `examples/todo-app/src_haxe/shared/README.md`.
+- The create-todo form demonstrates a typed form-origin Live Event Protocol:
+  `shared.liveview.TodoEvent.CreateTodo` declares `@:submitEvent("create_todo", "todo")`, the template still
+  renders normal Phoenix `phx-submit="create_todo"` with `name="todo[title]"` style fields, and `TodoLive`
+  receives a typed `CreateTodoForm`.
+- The edit/save flow intentionally remains direct PhoenixHx (`EventName.SaveTodo` plus explicit param reads).
+  That keeps the example honest: protocols are useful when the event contract is shared or payload-heavy, while
+  a small one-off LiveView event can stay closer to vanilla Phoenix.
 
 **Hand-written (Elixir/Phoenix conventions)**
 - Phoenix project scaffolding and configuration: `mix.exs`, `config/*.exs`

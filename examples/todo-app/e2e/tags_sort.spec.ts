@@ -18,9 +18,9 @@ test('tags filter + search-by-tag + sort works', async ({ page }) => {
     const form = page.locator('form[phx-submit="create_todo"]').first()
     await expect(form).toBeVisible({ timeout: 15000 })
     await form.getByTestId('input-title').fill(title)
-    await form.locator('select[name="priority"]').selectOption(opts.priority)
-    await form.locator('input[name="due_date"]').fill(opts.dueDate)
-    await form.locator('input[name="tags"]').fill(opts.tags.join(', '))
+    await form.locator('select[name="todo[priority]"]').selectOption(opts.priority)
+    await form.locator('input[name="todo[due_date]"]').fill(opts.dueDate)
+    await form.locator('input[name="todo[tags]"]').fill(opts.tags.join(', '))
     await form.getByTestId('btn-create-todo').click()
     await expect(page.locator('[data-testid="todo-card"] h3', { hasText: title })).toBeVisible({ timeout: 15000 })
   }
