@@ -254,6 +254,10 @@ class LiveEventDispatcherBuilder {
 	}
 
 	static function buildEventDispatchValue(event:LiveEventData):Expr {
+		if (event.fields.length == 0) {
+			return buildHandlerCall(event);
+		}
+
 		var expressions:Array<Expr> = [];
 		var missingChecks:Array<Expr> = [];
 		var payloadSource:Expr = macro payload;
@@ -281,9 +285,28 @@ class LiveEventDispatcherBuilder {
 				pos: event.pos
 			});
 		} else {
-			expressions.push(buildHandlerCall(event));
+			var resultName = handlerResultLocalName(event);
+			// Optional-only payload events need an explicit final value after decode bindings.
+			expressions.push({
+				expr: EVars([{name: resultName, type: null, expr: buildHandlerCall(event)}]),
+				pos: event.pos
+			});
+			expressions.push({expr: EConst(CIdent(resultName)), pos: event.pos});
 		}
 		return {expr: EBlock(expressions), pos: event.pos};
+	}
+
+	static function handlerResultLocalName(event:LiveEventData):String {
+		var used = new Map<String, Bool>();
+		for (field in event.fields) {
+			used.set(field.name, true);
+		}
+		for (candidate in ["handlerResult", "protocolResult", "liveEventResult", "dispatchResult", "eventResult"]) {
+			if (!used.exists(candidate)) {
+				return candidate;
+			}
+		}
+		return "liveEventHandlerResult";
 	}
 
 	static function isFormEvent(event:LiveEventData):Bool {

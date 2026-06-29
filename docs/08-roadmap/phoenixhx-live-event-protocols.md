@@ -7,9 +7,11 @@ by default and escalates under `-D phoenixhx_live_events_strict`. Named typedef
 payloads with direct built-in field decoding are in place. `@:codec(...)` is
 implemented for named typedef payload fields that need explicit domain codecs.
 Payload fields typed as `Null<T>` now require an explicit optional marker so
-nullable wire contracts stay deliberate. Known protocol events with malformed
-required payloads are consumed by the dispatcher with `NoReply(socket)` instead
-of falling through as unknown events. Protocol constructors can now distinguish
+nullable wire contracts stay deliberate. Optional scalar constructor arguments
+use Haxe's `?field:Type` syntax; optional named payload fields use
+`@:optional var field:Null<Type>`. Known protocol events with malformed required
+payloads are consumed by the dispatcher with `NoReply(socket)` instead of
+falling through as unknown events. Protocol constructors can now distinguish
 hook-origin events from simple template-origin events with `@:hookEvent(...)`
 and `@:templateEvent(...)`; template `Int` fields decode DOM string params on
 the server. Form-origin events now use `@:submitEvent("event", "root")` and
@@ -412,6 +414,19 @@ Support these first:
 argument or an `@:optional` typedef field so optionality is visible in the
 protocol declaration and reflected in the generated manifest.
 
+```haxe
+@:templateEvent("search")
+Search(?query:String);
+
+typedef ProfileForm = {
+  var name:String;
+  @:optional var bio:Null<String>;
+}
+
+@:submitEvent("save_profile", "profile")
+SaveProfile(payload:ProfileForm);
+```
+
 Avoid these in v1 protocol declarations:
 
 - `Dynamic`
@@ -739,8 +754,6 @@ Current remaining v1 polish:
   explicit `typedef FooEvents = LiveEventProtocolCompanion<FooEvent>` shape.
 - Decide whether known-but-invalid payloads need a distinct diagnostic/telemetry
   result beyond the current safe `NoReply(socket)` behavior.
-- Add optional-field examples once the final optional marker syntax is settled
-  for both scalar constructor arguments and named typedef payload fields.
 - Add typed replies only after fire-and-forget hook events remain stable in the
   todo-app and generated snapshots.
 

@@ -744,6 +744,33 @@ or `@:optional` typedef field when missing/null is part of the wire contract;
 plain `Null<T>` without that marker is rejected so accidental nullable payloads
 do not become invisible protocol behavior.
 
+For scalar constructor arguments, use Haxe's optional argument syntax:
+
+```haxe
+@:templateEvent("search")
+Search(?query:String);
+```
+
+That event can be used without `phx-value-query`; the generated dispatcher calls
+`handleSearch(query:Null<String>, socket)` with `null` when the value is absent.
+
+For named form or hook payloads, keep optionality on the field:
+
+```haxe
+typedef ProfileForm = {
+  var name:String;
+  @:optional var bio:Null<String>;
+}
+
+@:submitEvent("save_profile", "profile")
+SaveProfile(payload:ProfileForm);
+```
+
+The generated server decoder still requires `profile[name]`, but missing
+`profile[bio]` is accepted and passed as `null`. This mirrors the plain Phoenix
+code you would otherwise write by hand: required fields guard the handler call;
+optional fields are read only when present.
+
 The LiveView remains Phoenix-shaped and explicitly calls the generated
 dispatcher before falling back to ordinary events:
 
