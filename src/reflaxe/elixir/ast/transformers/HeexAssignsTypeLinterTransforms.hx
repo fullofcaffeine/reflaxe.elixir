@@ -16,6 +16,7 @@ import haxe.macro.Expr;
 import haxe.macro.Type;
 import haxe.macro.TypeTools;
 import reflaxe.elixir.macros.LiveViewEventRegistry;
+import reflaxe.elixir.macros.LiveViewEventRegistry.LiveViewEventContract;
 import reflaxe.elixir.macros.RepoDiscovery;
 #end
 
@@ -682,6 +683,7 @@ class HeexAssignsTypeLinterTransforms {
 			validateAttribute(tag, parentTag, attr, fields, typeName, ctx, attrNameErrPos, attrValueErrPos, enableAssignsChecks, letScopes);
 		}
 		validatePhxHookRequiresId(tag, attributes, ctx, tagPos);
+		validateLiveEventProtocolAttributes(tag, attributes, ctx, tagPos);
 		validateSlotInvocation(tag, parentTag, attributes, children, fields, ctx, tagPos);
 		// Component-level checks (requires full attribute set + children)
 		validateComponentInvocation(tag, attributes, children, fields, ctx, tagPos);
@@ -722,6 +724,149 @@ class HeexAssignsTypeLinterTransforms {
 			error(ctx, 'HEEx phx-hook error: <' + tag + '> uses phx-hook but is missing required attribute \"id\"', pos);
 		}
 	}
+
+	static function validateLiveEventProtocolAttributes(tag:String, attributes:Array<EAttribute>, ctx:Null<reflaxe.elixir.CompilationContext>,
+			pos:haxe.macro.Expr.Position):Void {
+		#if macro
+		if (attributes == null || attributes.length == 0)
+			return;
+
+		var valueKeys = collectPhxValueKeys(attributes);
+		for (attr in attributes) {
+			if (attr == null || attr.name == null || attr.name.length == 0)
+				continue;
+			if (attr.name.startsWith(":"))
+				continue;
+
+			var canonical = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(attr.name));
+			if (canonical == null || !isPhxEventAttribute(canonical))
+				continue;
+
+			var eventName = extractConstStringFromHeexExpr(attr.value);
+			if (eventName == null)
+				continue;
+			eventName = eventName.trim();
+			if (eventName.length == 0)
+				continue;
+
+			var contract = getLiveViewEventContractForContext(ctx, eventName);
+			if (contract == null)
+				continue;
+
+			var attrPos = attributeValuePos(attr, attributeNamePos(attr, pos));
+			validateLiveEventOrigin(canonical, eventName, contract, ctx, attrPos);
+			validateLiveEventValueKeys(tag, eventName, contract, valueKeys, ctx, attrPos);
+		}
+		#end
+	}
+
+	#if macro
+	static function collectPhxValueKeys(attributes:Array<EAttribute>):Map<String, Bool> {
+		var keys:Map<String, Bool> = new Map();
+		if (attributes == null)
+			return keys;
+
+		for (attr in attributes) {
+			if (attr == null || attr.name == null || attr.name.length == 0)
+				continue;
+			if (attr.name.startsWith(":"))
+				continue;
+			var canonical = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(attr.name));
+			if (canonical == null)
+				continue;
+			if (canonical.startsWith("phx-value-")) {
+				var key = canonical.substr("phx-value-".length);
+				if (key.length > 0)
+					keys.set(key, true);
+			}
+		}
+
+		return keys;
+	}
+
+	static function validateLiveEventOrigin(canonicalAttr:String, eventName:String, contract:LiveViewEventContract,
+			ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Expr.Position):Void {
+		if (contract == null || contract.origin == null)
+			return;
+
+		var ok = switch (contract.origin) {
+			case "template":
+				isTemplateOriginEventAttribute(canonicalAttr);
+			case "submit":
+				canonicalAttr == "phx-submit";
+			case "change":
+				canonicalAttr == "phx-change";
+			case "hook":
+				false;
+			default:
+				true;
+		}
+
+		if (!ok) {
+			error(ctx,
+				'HEEx '
+				+ canonicalAttr
+				+ ' error: Live Event Protocol event "'
+				+ eventName
+				+ '" is declared as '
+				+ contract.origin
+				+ '-origin and cannot be used on '
+				+ canonicalAttr,
+				pos);
+		}
+	}
+
+	static function validateLiveEventValueKeys(tag:String, eventName:String, contract:LiveViewEventContract, valueKeys:Map<String, Bool>,
+			ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Expr.Position):Void {
+		if (contract == null || contract.origin != "template")
+			return;
+
+		if (contract.requiredValueKeys != null) {
+			for (key in contract.requiredValueKeys) {
+				if (key == null || key.length == 0)
+					continue;
+				if (!valueKeys.exists(key)) {
+					error(ctx,
+						'HEEx phx-value error: Live Event Protocol event "'
+						+ eventName
+						+ '" requires phx-value-'
+						+ key
+						+ ' on <'
+						+ (tag == null ? "?" : tag)
+						+ '>',
+						pos);
+				}
+			}
+		}
+
+		if (strictPhxEventPayloadTypingEnabled() && contract.allowedValueKeys != null) {
+			var allowed:Map<String, Bool> = new Map();
+			for (key in contract.allowedValueKeys)
+				if (key != null && key.length > 0)
+					allowed.set(key, true);
+
+			for (key in valueKeys.keys()) {
+				if (!allowed.exists(key)) {
+					error(ctx,
+						'HEEx phx-value error: under -D hxx_strict_phx_event_payloads, Live Event Protocol event "'
+						+ eventName
+						+ '" does not declare phx-value-'
+						+ key,
+						pos);
+				}
+			}
+		}
+	}
+
+	static function isTemplateOriginEventAttribute(canonicalAttr:String):Bool {
+		return switch (canonicalAttr) {
+			case "phx-click", "phx-blur", "phx-focus", "phx-keydown", "phx-keyup", "phx-window-keydown", "phx-window-keyup", "phx-click-away":
+				true;
+			default:
+				false;
+		};
+	}
+	#end
 
 	static function validateAttribute(tag:String, parentTag:Null<String>, attr:EAttribute, fields:Map<String, String>, typeName:String,
 			ctx:Null<reflaxe.elixir.CompilationContext>, attrNamePosValue:haxe.macro.Expr.Position, attrValuePosValue:haxe.macro.Expr.Position,
@@ -2982,7 +3127,8 @@ class HeexAssignsTypeLinterTransforms {
 		if (canonicalAttr == null)
 			return false;
 		return switch (canonicalAttr) {
-			case "phx-click", "phx-submit", "phx-change", "phx-blur", "phx-focus", "phx-keydown", "phx-keyup", "phx-window-keydown", "phx-window-keyup":
+			case "phx-click", "phx-submit", "phx-change", "phx-blur", "phx-focus", "phx-keydown", "phx-keyup", "phx-window-keydown", "phx-window-keyup",
+				"phx-click-away":
 				true;
 			default:
 				false;
@@ -3156,6 +3302,14 @@ class HeexAssignsTypeLinterTransforms {
 		#end
 	}
 
+	static function strictPhxEventPayloadTypingEnabled():Bool {
+		#if macro
+		return Context.defined("hxx_strict_phx_event_payloads");
+		#else
+		return false;
+		#end
+	}
+
 	#if macro
 	static function getAllowedPhxHookNames():Null<Map<String, Bool>> {
 		if (phxHookNameCache != null)
@@ -3182,20 +3336,31 @@ class HeexAssignsTypeLinterTransforms {
 		// - If we're compiling a @:liveview module and any derived events exist for it, use those
 		//   (optionally unioned with any explicit @:phxEventNames registries).
 		// - Otherwise, fall back to explicit @:phxEventNames registries (global).
-		if (ctx != null && ctx.currentClass != null && ctx.currentClass.meta != null && ctx.currentClass.meta.has(":liveview")) {
-			var moduleTypePath = (ctx.currentClass.pack != null && ctx.currentClass.pack.length > 0) ? (ctx.currentClass.pack.join(".") + "."
-				+ ctx.currentClass.name) : ctx.currentClass.name;
-			if (moduleTypePath != null && moduleTypePath.length > 0) {
-				var derived = LiveViewEventRegistry.getEventsForModule(moduleTypePath);
-				if (derived != null && derived.keys().hasNext()) {
-					// For @:liveview modules, keep the check local: only accept events that
-					// this module can actually handle.
-					return derived;
-				}
+		var moduleTypePath = getCurrentLiveViewModuleTypePath(ctx);
+		if (moduleTypePath != null && moduleTypePath.length > 0) {
+			var derived = LiveViewEventRegistry.getEventsForModule(moduleTypePath);
+			if (derived != null && derived.keys().hasNext()) {
+				// For @:liveview modules, keep the check local: only accept events that
+				// this module can actually handle.
+				return derived;
 			}
 		}
 
 		return getAllowedPhxEventNames();
+	}
+
+	static function getLiveViewEventContractForContext(ctx:Null<reflaxe.elixir.CompilationContext>, eventName:String):Null<LiveViewEventContract> {
+		var moduleTypePath = getCurrentLiveViewModuleTypePath(ctx);
+		if (moduleTypePath == null || moduleTypePath.length == 0)
+			return null;
+		return LiveViewEventRegistry.getContractForModule(moduleTypePath, eventName);
+	}
+
+	static function getCurrentLiveViewModuleTypePath(ctx:Null<reflaxe.elixir.CompilationContext>):Null<String> {
+		if (ctx == null || ctx.currentClass == null || ctx.currentClass.meta == null || !ctx.currentClass.meta.has(":liveview"))
+			return null;
+		return (ctx.currentClass.pack != null && ctx.currentClass.pack.length > 0) ? (ctx.currentClass.pack.join(".") + "." +
+			ctx.currentClass.name) : ctx.currentClass.name;
 	}
 
 	static function buildAllowedPhxHookNames():Null<Map<String, Bool>> {

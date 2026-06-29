@@ -474,6 +474,17 @@ The template stays ordinary PhoenixHx/HXX:
 </button>
 ```
 
+When the event name is statically known, HXX validates the protocol contract at
+compile time:
+
+- `@:templateEvent` is valid on DOM event attributes such as `phx-click`,
+  `phx-blur`, `phx-focus`, and key events, but not on `phx-submit` or
+  `phx-change`.
+- Required constructor fields must appear as sibling `phx-value-*` attributes.
+  `ToggleTodo(id:Int)` requires `phx-value-id`.
+- Under `-D hxx_strict_phx_event_payloads`, extra `phx-value-*` keys are
+  rejected when the event is protocol-owned.
+
 The generated server dispatcher reads `"id"` from the Phoenix params map and
 parses the DOM string before calling the typed handler:
 
@@ -534,6 +545,12 @@ event constants for HXX authoring and validation:
 </form>
 ```
 
+HXX also validates event origin for form events when the event name is
+statically known: `@:submitEvent` belongs on `phx-submit`, and `@:changeEvent`
+belongs on `phx-change`. Full form field inference remains intentionally out of
+scope for v1; the durable payload guarantee comes from generated server-side
+decoding and typed handler signatures.
+
 Use direct PhoenixHx instead for one-off local forms where manual params code is
 shorter and clearer.
 
@@ -568,6 +585,14 @@ LiveView binding diagnostics should catch:
 - wrong handler return type
 - duplicate handler bindings
 - protocol binding without an explicit dispatcher call
+
+HXX diagnostics should catch:
+
+- protocol event origin mismatches, such as `@:submitEvent` used on
+  `phx-click`
+- missing required `phx-value-*` attributes for statically known
+  `@:templateEvent` usage
+- extra `phx-value-*` keys under `-D hxx_strict_phx_event_payloads`
 
 Dispatcher-call validation should be a warning by default and an error under a
 strict define such as:

@@ -147,6 +147,8 @@ Start here:
 Recommended strict profile for new Phoenix apps (defaults remain permissive for adoption):
 - `-D hxx_strict_phx_hook`
 - `-D hxx_strict_phx_events`
+- `-D hxx_strict_phx_event_payloads` when using Live Event Protocol template
+  events and you want extra `phx-value-*` keys rejected
 - `-D hxx_strict_components`
 - `-D hxx_strict_slots`
 - `-D hxx_strict_attr_values`

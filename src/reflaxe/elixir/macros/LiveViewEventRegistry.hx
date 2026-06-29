@@ -7,6 +7,16 @@ import haxe.macro.Expr.Position;
 using StringTools;
 
 /**
+ * Compile-time HXX validation contract for one Live Event Protocol event.
+ */
+typedef LiveViewEventContract = {
+	var eventName:String;
+	var origin:String;
+	var requiredValueKeys:Array<String>;
+	var allowedValueKeys:Array<String>;
+}
+
+/**
  * LiveViewEventRegistry
  *
  * WHAT
@@ -42,6 +52,7 @@ using StringTools;
  */
 class LiveViewEventRegistry {
 	static var moduleToEvents:Map<String, Map<String, Bool>> = new Map();
+	static var moduleToContracts:Map<String, Map<String, LiveViewEventContract>> = new Map();
 	static var moduleToPos:Map<String, Position> = new Map();
 
 	public static function register(moduleName:String, event:String, pos:Position):Void {
@@ -72,6 +83,29 @@ class LiveViewEventRegistry {
 			register(moduleName, e, pos);
 	}
 
+	public static function registerContracts(moduleName:String, contracts:Array<LiveViewEventContract>, pos:Position):Void {
+		if (moduleName == null || moduleName.length == 0)
+			return;
+		if (contracts == null)
+			return;
+
+		var byEvent = moduleToContracts.get(moduleName);
+		if (byEvent == null) {
+			byEvent = new Map();
+			moduleToContracts.set(moduleName, byEvent);
+		}
+
+		for (contract in contracts) {
+			if (contract == null || contract.eventName == null)
+				continue;
+			var eventName = contract.eventName.trim();
+			if (eventName.length == 0)
+				continue;
+			byEvent.set(eventName, contract);
+			register(moduleName, eventName, pos);
+		}
+	}
+
 	public static function getAllEventNames():Map<String, Bool> {
 		var out:Map<String, Bool> = new Map();
 		for (moduleName in moduleToEvents.keys()) {
@@ -87,6 +121,15 @@ class LiveViewEventRegistry {
 	public static function getEventsForModule(moduleName:String):Map<String, Bool> {
 		var events = moduleToEvents.get(moduleName);
 		return events != null ? events : new Map();
+	}
+
+	public static function getContractForModule(moduleName:String, eventName:String):Null<LiveViewEventContract> {
+		if (moduleName == null || moduleName.length == 0)
+			return null;
+		if (eventName == null || eventName.length == 0)
+			return null;
+		var contracts = moduleToContracts.get(moduleName);
+		return contracts != null ? contracts.get(eventName) : null;
 	}
 
 	public static function getSummary():String {

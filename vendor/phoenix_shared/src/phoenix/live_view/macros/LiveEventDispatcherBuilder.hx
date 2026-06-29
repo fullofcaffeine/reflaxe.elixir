@@ -15,6 +15,16 @@ import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventOrigin;
 import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventProtocolData;
 
 using haxe.macro.Tools;
+
+/**
+ * Compile-time contract exported to HXX validation for one generated LiveView event.
+ */
+typedef GeneratedLiveEventContract = {
+	var eventName:String;
+	var origin:String;
+	var requiredValueKeys:Array<String>;
+	var allowedValueKeys:Array<String>;
+}
 #end
 
 /**
@@ -40,12 +50,12 @@ class LiveEventDispatcherBuilder {
 #if macro
 	/**
 	 * Mutates `fields` by appending generated dispatch helpers and returns the
-	 * protocol event names registered for HXX `phx-*` validation.
+	 * protocol event contracts registered for HXX `phx-*` validation.
 	 */
-	public static function apply(cls:ClassType, fields:Array<Field>):Array<String> {
-		var generatedEventNames:Array<String> = [];
+	public static function apply(cls:ClassType, fields:Array<Field>):Array<GeneratedLiveEventContract> {
+		var generatedEventContracts:Array<GeneratedLiveEventContract> = [];
 		if (cls.meta == null)
-			return generatedEventNames;
+			return generatedEventContracts;
 
 		for (entry in cls.meta.get()) {
 			if (entry.name != ":liveEvents")
@@ -63,12 +73,48 @@ class LiveEventDispatcherBuilder {
 				continue;
 			}
 			for (event in protocol.events) {
-				generatedEventNames.push(event.eventName);
+				generatedEventContracts.push(buildGeneratedContract(event));
 			}
 			fields.push(buildDispatchFunction(protocol, binding.dispatchName, handleEvent));
 		}
 
-		return generatedEventNames;
+		return generatedEventContracts;
+	}
+
+	static function buildGeneratedContract(event:LiveEventData):GeneratedLiveEventContract {
+		var requiredValueKeys:Array<String> = [];
+		var allowedValueKeys:Array<String> = [];
+
+		if (isTemplateEvent(event)) {
+			for (field in event.fields) {
+				allowedValueKeys.push(field.wireName);
+				if (!field.optional)
+					requiredValueKeys.push(field.wireName);
+			}
+		}
+
+		return {
+			eventName: event.eventName,
+			origin: originName(event.origin),
+			requiredValueKeys: requiredValueKeys,
+			allowedValueKeys: allowedValueKeys
+		};
+	}
+
+	static function isTemplateEvent(event:LiveEventData):Bool {
+		return switch (event.origin) {
+			case TemplateEvent: true;
+			default: false;
+		};
+	}
+
+	static function originName(origin:LiveEventOrigin):String {
+		return switch (origin) {
+			case HookEvent: "hook";
+			case TemplateEvent: "template";
+			case SubmitEvent(_): "submit";
+			case ChangeEvent(_): "change";
+		};
 	}
 
 	static function readBinding(entry:MetadataEntry):{protocolRef:Expr, dispatchName:String} {

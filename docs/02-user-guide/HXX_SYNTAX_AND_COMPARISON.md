@@ -223,6 +223,11 @@ In strict mode:
 Rejected in strict mode:
 - Fully dynamic event expressions (e.g. `phx-click={@event}`) are rejected because they cannot be validated.
 
+Typed Live Event Protocol contracts add a second layer when the event name is statically known:
+- `@:templateEvent` usage checks required sibling `phx-value-*` attributes.
+- `@:submitEvent` must be used on `phx-submit`, and `@:changeEvent` must be used on `phx-change`.
+- Extra `phx-value-*` keys are rejected only when `-D hxx_strict_phx_event_payloads` is enabled.
+
 #### Opt-in: strict literal values for selected attributes
 
 If you want stricter TSX-like checks for known string-literal vocabularies, enable globally with `-D hxx_strict_attr_values` or locally with `@:hxx_strict_attr_values`:

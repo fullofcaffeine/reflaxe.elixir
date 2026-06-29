@@ -6,6 +6,7 @@ import haxe.macro.Expr;
 import haxe.macro.Type;
 import reflaxe.elixir.macros.MigrationRegistry;
 import reflaxe.elixir.macros.LiveViewEventRegistry;
+import reflaxe.elixir.macros.LiveViewEventRegistry.LiveViewEventContract;
 import reflaxe.elixir.macros.LiveViewTemplateUsageRegistry;
 import reflaxe.elixir.macros.EctoSchemaAssociationValidator;
 import reflaxe.elixir.macros.ModuleFieldMetadataRegistry;
@@ -98,10 +99,10 @@ class AnnotatedModuleEnumerator {
 		}
 
 		if (isLiveView) {
-			final generatedProtocolEvents = applyLiveEventDispatchers(cls, fields);
-			if (generatedProtocolEvents.length > 0) {
+			final generatedProtocolContracts = applyLiveEventDispatchers(cls, fields);
+			if (generatedProtocolContracts.length > 0) {
 				final moduleName = (cls.pack.length > 0) ? (cls.pack.join(".") + "." + cls.name) : cls.name;
-				LiveViewEventRegistry.registerMany(moduleName, generatedProtocolEvents, cls.pos);
+				LiveViewEventRegistry.registerContracts(moduleName, generatedProtocolContracts, cls.pos);
 			}
 			registerLiveViewEvents(cls, fields);
 			registerLiveViewTemplatePhxUsage(cls, fields);
@@ -217,7 +218,7 @@ class AnnotatedModuleEnumerator {
 		}
 	}
 
-	static function applyLiveEventDispatchers(cls:haxe.macro.Type.ClassType, fields:Array<Field>):Array<String> {
+	static function applyLiveEventDispatchers(cls:haxe.macro.Type.ClassType, fields:Array<Field>):Array<LiveViewEventContract> {
 		if (cls.meta == null || !cls.meta.has(":liveEvents"))
 			return [];
 

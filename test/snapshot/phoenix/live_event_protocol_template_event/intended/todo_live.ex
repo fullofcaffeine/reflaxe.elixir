@@ -1,6 +1,11 @@
 defmodule TodoLive do
   use Phoenix.Component
   use Phoenix.LiveView, layout: {TodoLive.Layouts, :app}
+  def render(assigns) do
+    ~H"""
+<button phx-click={"toggle_todo"} phx-value-id="1"><%= @last_id %></button>
+"""
+  end
   def toggle_event_name() do
     "toggle_todo"
   end

@@ -1,0 +1,1 @@
+HEEx phx-value error: under -D hxx_strict_phx_event_payloads, Live Event Protocol event "toggle_todo" does not declare phx-value-extra
