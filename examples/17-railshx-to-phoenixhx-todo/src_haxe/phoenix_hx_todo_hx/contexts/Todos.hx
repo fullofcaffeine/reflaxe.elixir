@@ -2,9 +2,9 @@ package phoenix_hx_todo_hx.contexts;
 
 import StringTools;
 import ecto.Changeset;
+import ecto.SchemaStruct;
 import ecto.TypedQuery;
 import elixir.Enum;
-import elixir.Kernel;
 import elixir.types.Term;
 import haxe.functional.Result;
 import phoenix_hx_todo_hx.data.Todo;
@@ -44,7 +44,7 @@ class Todos {
 	public static function createForUser(user:User, title:String, notes:String):Result<Todo, Changeset<Todo, Term>> {
 		var trimmedTitle = StringTools.trim(title);
 		var trimmedNotes = StringTools.trim(notes);
-		var data:Todo = cast Kernel.struct(Todo);
+		var data = SchemaStruct.empty(Todo);
 		var params:Term = {
 			title: trimmedTitle,
 			notes: trimmedNotes,

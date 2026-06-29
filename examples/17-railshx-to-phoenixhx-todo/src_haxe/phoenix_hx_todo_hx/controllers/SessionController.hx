@@ -1,8 +1,8 @@
 package phoenix_hx_todo_hx.controllers;
 
 import StringTools;
-import elixir.ElixirMap;
 import elixir.types.Term;
+import phoenix.Params;
 import phoenix_hx_todo_hx.contexts.Accounts;
 import phoenix_hx_todo_hx.contexts.Todos;
 import plug.Conn;
@@ -42,7 +42,6 @@ class SessionController {
 	}
 
 	static function stringParam(params:Term, key:String, fallback:String):String {
-		var value:Term = ElixirMap.get(params, key);
-		return value != null ? cast value : fallback;
+		return Params.getStringDefault(params, key, fallback);
 	}
 }

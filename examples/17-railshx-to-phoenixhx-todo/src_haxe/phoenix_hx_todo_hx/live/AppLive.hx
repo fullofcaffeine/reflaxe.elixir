@@ -2,10 +2,10 @@ package phoenix_hx_todo_hx.live;
 
 import StringTools;
 import elixir.Atom;
-import elixir.ElixirMap;
 import elixir.Kernel;
 import elixir.Tuple;
 import elixir.types.Term;
+import haxe.functional.Result;
 import phoenix_hx_todo_hx.contexts.Accounts;
 import phoenix_hx_todo_hx.contexts.ChatMessages;
 import phoenix_hx_todo_hx.contexts.Todos;
@@ -18,6 +18,7 @@ import phoenix.Phoenix.MountParams;
 import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.Session;
 import phoenix.Phoenix.Socket;
+import phoenix.Params;
 import phoenix.PubSub;
 import phoenix_hx_todo_hx.live.AppLiveTypes.AppLiveAssigns;
 import plug.CSRFProtection;
@@ -306,8 +307,7 @@ class AppLive {
 		if (user == null)
 			return NoReply(socket.assign(_.status, "Sign in again before posting to the room."));
 
-		var result:Term = cast ChatMessages.createForUser(user, body);
-		if (Tuple.isOkTuple(result)) {
+		if (ChatMessages.createForUserOk(user, body)) {
 			var refreshed = refreshChat(socket.assign(_.chat_input, ""), "Room note persisted through Ecto.");
 			var payload = Tuple.make2(Atom.create("chat_message_created"), body);
 			PubSub.broadcastFrom(pubsubModule(), Kernel.self(), chatTopic(), payload);
@@ -353,8 +353,8 @@ class AppLive {
 	}
 
 	static function currentUser(session:Session):Null<User> {
-		var userId:Term = ElixirMap.get(session, "user_id");
-		return userId != null ? Accounts.getUser(cast userId) : null;
+		var userId = Params.getInt(session, "user_id");
+		return userId != null ? Accounts.getUser(userId) : null;
 	}
 
 	static function refreshTodos(socket:LiveSocket<AppLiveAssigns>, status:String):LiveSocket<AppLiveAssigns> {
@@ -378,13 +378,10 @@ class AppLive {
 	}
 
 	static function stringParam(params:Term, key:String):String {
-		var value:Null<String> = cast Reflect.field(params, key);
-		return value != null ? value : "";
+		return Params.getStringDefault(params, key, "");
 	}
 
 	static function intParam(params:Term, key:String):Int {
-		var value = stringParam(params, key);
-		var parsed = Std.parseInt(value);
-		return parsed != null ? parsed : 0;
+		return Params.getIntDefault(params, key, 0);
 	}
 }

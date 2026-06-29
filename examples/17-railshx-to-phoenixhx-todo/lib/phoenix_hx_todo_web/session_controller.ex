@@ -27,7 +27,6 @@ defmodule PhoenixHxTodoWeb.SessionController do
     Phoenix.Controller.redirect(this1, to: "/")
   end
   defp string_param(params, key, fallback) do
-    value = Map.get(params, key)
-    if (Reflaxe.Elixir.HaxeFloat.neq(value, nil)), do: value, else: fallback
+    PhoenixHx.Params.get_string_default(params, key, fallback)
   end
 end

@@ -7,8 +7,7 @@ defmodule PhoenixHxTodo.AuthFlowTest do
     conn = Phoenix.ConnTest.post(conn, "/auth/demo", %{:name => "Guest Workspace", :email => "guest@example.test"})
     actual = conn.status
     assert actual == 302
-    plug_conn = conn
-    user_id = Plug.Conn.get_session(plug_conn, String.to_atom("user_id"))
+    user_id = Plug.Conn.get_session(conn, String.to_atom("user_id"))
     assert Reflaxe.Elixir.HaxeFloat.neq(user_id, nil)
   end
 end

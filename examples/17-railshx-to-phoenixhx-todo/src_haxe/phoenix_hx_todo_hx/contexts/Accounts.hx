@@ -2,9 +2,9 @@ package phoenix_hx_todo_hx.contexts;
 
 import StringTools;
 import ecto.Changeset;
+import ecto.SchemaStruct;
 import ecto.TypedQuery;
 import elixir.Enum;
-import elixir.Kernel;
 import elixir.types.Term;
 import haxe.functional.Result;
 import phoenix_hx_todo_hx.data.User;
@@ -50,7 +50,7 @@ class Accounts {
 		if (existing != null)
 			return Ok(existing);
 
-		var data:User = cast Kernel.struct(User);
+		var data = SchemaStruct.empty(User);
 		var params:Term = {name: normalizedName, email: normalizedEmail};
 		return Repo.insert(User.changeset(data, params));
 	}

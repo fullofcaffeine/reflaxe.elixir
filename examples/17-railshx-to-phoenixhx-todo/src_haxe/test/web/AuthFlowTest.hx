@@ -13,8 +13,7 @@ class AuthFlowTest extends TestCase {
 
 		assertEqual(302, conn.status);
 
-		var plugConn:plug.Conn<{}> = cast conn;
-		var userId = plugConn.getSession("user_id");
+		var userId = ConnTest.getSession(conn, "user_id");
 		assertTrue(userId != null);
 	}
 }

@@ -2,9 +2,9 @@ package phoenix_hx_todo_hx.contexts;
 
 import StringTools;
 import ecto.Changeset;
+import ecto.SchemaStruct;
 import ecto.TypedQuery;
 import elixir.ElixirEnum;
-import elixir.Kernel;
 import elixir.types.Term;
 import haxe.functional.Result;
 import phoenix_hx_todo_hx.data.ChatMessage;
@@ -35,9 +35,16 @@ class ChatMessages {
 
 	public static function createForUser(user:User, body:String):Result<ChatMessage, Changeset<ChatMessage, Term>> {
 		var trimmedBody = StringTools.trim(body);
-		var data:ChatMessage = cast Kernel.struct(ChatMessage);
+		var data = SchemaStruct.empty(ChatMessage);
 		var params:Term = {body: trimmedBody, userId: user.id};
 		return Repo.insert(ChatMessage.changeset(data, params));
+	}
+
+	public static function createForUserOk(user:User, body:String):Bool {
+		return switch (createForUser(user, body)) {
+			case Ok(_): true;
+			case Error(_): false;
+		};
 	}
 
 	public static function viewItems():Array<ChatMessageItem> {

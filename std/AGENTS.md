@@ -25,10 +25,15 @@ of copying app-local `cast`, `Reflect.field`, tuple-unwrapping, or ad hoc
   real Phoenix modules or functions.
 - Prefer compile-time assistance where practical: macro-generated field readers,
   typed refs, inferred assigns/forms/params surfaces, and generated accessors.
-- Each new helper should migrate at least one real call site and include focused
-  docs or snapshot coverage.
+- Each new helper should migrate at least one real call site when it improves
+  that call site. If no real call site becomes clearer or shorter yet, use
+  focused docs/snapshot coverage and do not force adoption.
 - Boundary casts are acceptable only inside the helper after target-shape checks;
   app code should call the typed helper.
+- Convenience pipe helpers such as `reflaxe.elixir.Pipe` are only for real
+  multi-step dataflow. Do not use or recommend them when a direct typed helper is
+  shorter, clearer, or more specific. If the pipe adds lines, hides a stronger
+  helper, or makes a single operation look more abstract, leave the code direct.
 
 ### Macro-First Protocol Boundaries
 

@@ -12,6 +12,12 @@ defmodule PhoenixHxTodo.ChatMessages do
     params = %{:body => trimmed_body, :user_id => user.id}
     _ = PhoenixHxTodo.Repo.insert(PhoenixHxTodo.ChatMessage.changeset(data, params))
   end
+  def create_for_user_ok(user, body) do
+    (case create_for_user(user, body) do
+      {:ok, _value} -> true
+      {:error, _error} -> false
+    end)
+  end
   def view_items() do
     Enum.map(list_recent(), &to_item/1)
   end

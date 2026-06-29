@@ -534,6 +534,35 @@ public static function handleEvent(
 That version mirrors raw Phoenix's `Map.get(params, "...")`, but the handoff
 from `Term` to `Null<String>` / `Null<ResourceId>` remains explicit.
 
+If you want the same left-to-right dataflow as Elixir `|>` while staying inside
+valid Haxe syntax, use `reflaxe.elixir.Pipe`:
+
+```haxe
+import elixir.ElixirMap;
+import elixir.types.Term;
+import phoenix.Params;
+
+using reflaxe.elixir.Pipe;
+
+case "resource_selected":
+  var resourceId:Null<ResourceId> = params.pipe()
+    >> (p -> ElixirMap.get(p, "resource_id"))
+    >> Params.stringFromTerm
+    >> ResourceIds.fromParam;
+
+  var source = Params.getString(params, "source");
+
+  if (resourceId == null || source == null) {
+    NoReply(socket);
+  } else {
+    NoReply(selectResource(resourceId, source, socket));
+  }
+```
+
+This is the PhoenixHx equivalent of the raw Elixir pipeline above. It is still
+ordinary app code: no generated event protocol, no codec object, and no runtime
+pipe layer. The compiler lowers it to direct map reads and rebinding.
+
 For day-to-day PhoenixHx app code, the shorter helper form is usually nicer:
 `Params.getString(params, "source")` and `Params.getInt(params, "resource_id")`
 wrap the same boundary read plus type narrowing.

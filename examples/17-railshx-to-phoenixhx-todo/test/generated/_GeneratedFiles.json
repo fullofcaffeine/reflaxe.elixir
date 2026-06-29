@@ -5,7 +5,6 @@
   "web/auth_flow_test.exs",
   "string_tools.exs",
   "std.exs",
-  "reflect.exs",
   "reflaxe/exception.exs",
   "reflaxe/elixir/macros/http_method.exs",
   "reflaxe/elixir/haxe_throw.exs",
@@ -25,6 +24,7 @@
   "phoenix_hx_todo/chat_message.exs",
   "phoenix_hx_todo/application.exs",
   "phoenix_hx_todo/accounts.exs",
+  "phoenix_hx/params.exs",
   "phoenix/types/socket_transport.exs",
   "phoenix/types/flash_type_tools.exs",
   "phoenix/types/flash_type.exs",
@@ -66,7 +66,7 @@
   "e_reg.exs",
   "phoenix_hx_todo/postgrex_types.ex"
 ],
-  "id": 39,
+  "id": 44,
   "wasCached": false,
   "version": 1
 }

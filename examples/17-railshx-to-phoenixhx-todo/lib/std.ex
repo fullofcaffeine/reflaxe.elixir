@@ -10,4 +10,7 @@ defmodule Std do
                 end
 
   end
+  def int(value) do
+    trunc(value)
+  end
 end

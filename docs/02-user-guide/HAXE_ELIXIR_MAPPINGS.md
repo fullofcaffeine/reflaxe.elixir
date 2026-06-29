@@ -215,6 +215,22 @@ Those values are **not guaranteed** to be a Haxe `Map<K,V>` runtime object, even
 When dealing with boundary terms, prefer Elixir-native helpers like `elixir.ElixirMap.get/3` (and typed
 decode helpers such as `WirePayload`) instead of calling Haxe `Map` instance methods.
 
+For multi-step boundary reads, `reflaxe.elixir.Pipe` gives Haxe a typed spelling
+that is close to Elixir's `|>` while still compiling through normal Haxe syntax:
+
+```haxe
+using reflaxe.elixir.Pipe;
+
+var resourceId:Null<ResourceId> = params.pipe()
+  >> (p -> ElixirMap.get(p, "resource_id"))
+  >> Params.stringFromTerm
+  >> ResourceIds.fromParam;
+```
+
+Use it when the dataflow matters. A direct helper such as
+`Params.getString(params, "name")` is still the lighter choice for one-off
+reads.
+
 ### Special Type Compilations
 
 **Option<T> Pattern**:

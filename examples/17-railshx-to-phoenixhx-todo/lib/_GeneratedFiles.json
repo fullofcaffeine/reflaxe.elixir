@@ -2,7 +2,6 @@
   "filesGenerated": [
   "string_tools.ex",
   "std.ex",
-  "reflect.ex",
   "reflaxe/exception.ex",
   "reflaxe/elixir/macros/http_method.ex",
   "reflaxe/elixir/haxe_throw.ex",
@@ -22,6 +21,7 @@
   "phoenix_hx_todo/chat_message.ex",
   "phoenix_hx_todo/application.ex",
   "phoenix_hx_todo/accounts.ex",
+  "phoenix_hx/params.ex",
   "phoenix/types/socket_transport.ex",
   "phoenix/types/flash_type_tools.ex",
   "phoenix/types/flash_type.ex",
@@ -55,7 +55,7 @@
   "e_reg.ex",
   "phoenix_hx_todo/postgrex_types.ex"
 ],
-  "id": 68,
+  "id": 76,
   "wasCached": false,
   "version": 1
 }

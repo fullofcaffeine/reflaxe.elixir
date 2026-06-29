@@ -333,6 +333,102 @@ x = x |> f(...) |> g(...)
 
 This is a readability optimization only; it doesn’t change semantics.
 
+### Haxe-authored pipe chains with `>>`
+
+Use `reflaxe.elixir.Pipe` when a boundary value is being narrowed through a few
+small, typed steps and the code reads better left-to-right. This is especially
+useful for Phoenix params, JSON-ish terms, and domain ID parsing.
+
+Haxe cannot parse Elixir's literal `|>` operator, so PhoenixHx uses `>>` as a
+typed authoring helper:
+
+```haxe
+using reflaxe.elixir.Pipe;
+
+var resourceId:Null<ResourceId> = params.pipe()
+  >> (p -> ElixirMap.get(p, "resource_id"))
+  >> Params.stringFromTerm
+  >> ResourceIds.fromParam;
+```
+
+This is not a runtime protocol object and it does not invent a Phoenix API. The
+compiler lowers the chain to ordinary calls or straight-line rebinding. A
+typical generated shape is:
+
+```elixir
+value = params
+value = Map.get(value, "resource_id")
+value = PhoenixHx.Params.string_from_term(value)
+value = ResourceIds.from_param(value)
+value
+```
+
+The same boundary read can be written several ways. Pick the lightest shape that
+keeps the intent obvious.
+
+Imperative Haxe is often best when you want names for each boundary step:
+
+```haxe
+var raw = ElixirMap.get(params, "resource_id");
+var text = Params.stringFromTerm(raw);
+var resourceId = ResourceIds.fromParam(text);
+```
+
+Nested calls are compact, but become harder to scan as the chain grows:
+
+```haxe
+var resourceId = ResourceIds.fromParam(
+  Params.stringFromTerm(
+    ElixirMap.get(params, "resource_id")
+  )
+);
+```
+
+Without a `using` import, start the typed chain with `Pipe.of(...)`:
+
+```haxe
+import reflaxe.elixir.Pipe;
+
+var resourceId:Null<ResourceId> = Pipe.of(params)
+  >> (p -> ElixirMap.get(p, "resource_id"))
+  >> Params.stringFromTerm
+  >> ResourceIds.fromParam;
+```
+
+With `using reflaxe.elixir.Pipe`, the closest Haxe spelling to Elixir `|>` is
+`value.pipe() >> step`:
+
+```haxe
+using reflaxe.elixir.Pipe;
+
+var resourceId:Null<ResourceId> = params.pipe()
+  >> (p -> ElixirMap.get(p, "resource_id"))
+  >> Params.stringFromTerm
+  >> ResourceIds.fromParam;
+```
+
+The raw Elixir equivalent would be:
+
+```elixir
+resource_id =
+  params
+  |> Map.get("resource_id")
+  |> PhoenixHx.Params.string_from_term()
+  |> ResourceIds.from_param()
+```
+
+Each `>>` stage must be unary (`T -> U`), so the Haxe compiler rejects wrong
+arity or incompatible step types before the code reaches Elixir. If Haxe cannot
+infer the final type from the assignment or return position, call `.value()` to
+unwrap the last `Pipe<T>` explicitly.
+
+Do not use this for every function call. Plain locals or a direct helper such as
+`Params.getString(params, "name")` are simpler for one-off reads. If the pipe
+adds lines, hides a good helper, or makes a single operation look more abstract,
+leave the code direct. Reach for a pipe when the dataflow is the point: a
+runtime boundary term becomes a typed app value through several named
+transformations.
+
 ### `switch` → `case` (expression-preserving)
 
 Haxe `switch` is an expression; Elixir `case` is also an expression, but compilation sometimes needs

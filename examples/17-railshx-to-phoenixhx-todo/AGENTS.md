@@ -35,6 +35,12 @@ user journey comparable, but keep the implementation Phoenix-native.
   templates.
 - Keep Haxe code typed. Avoid `Dynamic` except at unavoidable framework
   boundaries.
+- Prefer direct typed PhoenixHx helpers for one-step boundary reads. Use
+  `reflaxe.elixir.Pipe` / `>>` only when it makes a real transformation chain
+  shorter or clearer, not merely to imitate Elixir `|>`. If the pipe adds lines
+  or hides the simpler PhoenixHx helper, keep the code direct.
+- App call sites must stay cast-free; replace hidden `cast`/`Reflect` boundary
+  reads with typed PhoenixHx helpers or framework-level helpers.
 - Keep generated Elixir committed when source changes intentionally alter
   generated output.
 

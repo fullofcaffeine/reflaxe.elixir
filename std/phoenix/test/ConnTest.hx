@@ -149,6 +149,22 @@ extern class ConnTest {
 	public static function fetch_session(conn:Conn):Conn;
 
 	/**
+	 * Read a Plug session key from a test connection.
+	 *
+	 * WHY
+	 * - `Phoenix.ConnTest` returns a real `%Plug.Conn{}` at runtime, but this
+	 *   Haxe test facade exposes only the fields commonly asserted in tests.
+	 * - Session reads should not force tests to cast to `plug.Conn`.
+	 *
+	 * HOW
+	 * - Calls the real `Plug.Conn.get_session/2` API with the atom key shape
+	 *   used by Phoenix controllers.
+	 */
+	extern public static inline function getSession(conn:Conn, key:String):Term {
+		return untyped __elixir__('Plug.Conn.get_session({0}, String.to_atom({1}))', conn, key);
+	}
+
+	/**
 	 * Fetch flash messages from the connection.
 	 */
 	public static function fetch_flash(conn:Conn):Conn;

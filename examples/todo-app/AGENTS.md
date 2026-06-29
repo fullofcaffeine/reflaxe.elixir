@@ -195,6 +195,16 @@ Execution wiring:
 
 This file contains todo-app specific instructions for AI assistants working on this Phoenix LiveView example.
 
+## Haxe Authoring Ergonomics
+
+- Prefer direct typed PhoenixHx helpers for one-step framework boundary reads
+  (`Params.getString`, `Params.getInt`, session helpers, etc.).
+- Use `reflaxe.elixir.Pipe` / `>>` only when it makes a real transformation
+  chain shorter or clearer. Do not use it merely to mimic Elixir `|>`, and leave
+  direct helper calls alone when a pipe would add lines or hide the simpler API.
+- App call sites must stay cast-free; if a direct-looking snippet needs `cast`,
+  replace it with a typed helper or add one in the framework layer.
+
 ## ⚠️ CRITICAL: Never Edit Generated Files
 
 **The `lib/*.ex` files are GENERATED OUTPUT from the Haxe→Elixir compiler.**

@@ -242,8 +242,7 @@ defmodule PhoenixHxTodoWeb.AppLive do
       if (Kernel.is_nil(user)) do
         {:noreply, Phoenix.Component.assign(socket, :status, "Sign in again before posting to the room.")}
       else
-        result = PhoenixHxTodo.ChatMessages.create_for_user(user, body)
-        if (match?({:ok, _}, result)) do
+        if (PhoenixHxTodo.ChatMessages.create_for_user_ok(user, body)) do
           refreshed = refresh_chat(Phoenix.Component.assign(socket, :chat_input, ""), "Room note persisted through Ecto.")
           a = :erlang.binary_to_atom("chat_message_created")
           payload = {a, body}
@@ -264,8 +263,8 @@ defmodule PhoenixHxTodoWeb.AppLive do
     _ = Phoenix.Component.assign(socket, %{:authenticated => true, :current_user_id => user.id, :current_user_name => PhoenixHxTodo.User.display_name(user), :current_user_email => user.email, :csrf_token => Plug.CSRFProtection.get_csrf_token(), :title_input => "", :notes_input => "", :todos => todos, :chat_input => "", :chat_messages => PhoenixHxTodo.ChatMessages.view_items(), :status => "Phoenix session active. Todos are persisted through Ecto.", :stats => PhoenixHxTodoHx.Live.TodoState.stats(todos)})
   end
   defp current_user(session) do
-    user_id = Map.get(session, "user_id")
-    if (Reflaxe.Elixir.HaxeFloat.neq(user_id, nil)) do
+    user_id = PhoenixHx.Params.get_int(session, "user_id")
+    if (not Kernel.is_nil(user_id)) do
       PhoenixHxTodo.Accounts.get_user(user_id)
     else
       nil
@@ -290,32 +289,10 @@ defmodule PhoenixHxTodoWeb.AppLive do
     "railshx-port:ship-room"
   end
   defp string_param(params, key) do
-    value = (case {params, key} do
-      {reflect_obj, reflect_field} ->
-        (case Map.fetch(reflect_obj, reflect_field) do
-          {:ok, reflect_value} -> reflect_value
-          _ ->
-            (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
-              nil -> nil
-              reflect_atom ->
-                Map.get(reflect_obj, reflect_atom)
-            end)
-        end)
-    end)
-    if (not Kernel.is_nil(value)), do: value, else: ""
+    PhoenixHx.Params.get_string_default(params, key, "")
   end
   defp int_param(params, key) do
-    value = string_param(params, key)
-    parsed = (case Integer.parse(value) do
-      {num, _} -> num
-      :error -> nil
-    end)
-    if (not Kernel.is_nil(parsed)), do: parsed, else: 0
+    PhoenixHx.Params.get_int_default(params, key, 0)
   end
   def handle_event(event, params, socket) do
     live = socket

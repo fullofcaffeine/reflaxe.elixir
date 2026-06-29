@@ -28,6 +28,8 @@ import StringTools;
 @:controller
 class SessionController {
 	public static function create(conn:Conn<{}>, params:Term):Conn<{}> {
+		// Direct helper style: one Phoenix param read plus a default stays clearer
+		// as ordinary Haxe, and the compiler lowers it to the same Params call.
 		var email = Params.getStringDefault(params, "email", "");
 		var name = Params.getStringDefault(params, "name", "");
 

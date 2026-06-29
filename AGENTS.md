@@ -395,6 +395,22 @@ For Haxe-to-Elixir compiler and framework surfaces, Elixir/Phoenix/Ecto/OTP comp
 - Do not invent fake Elixir/Phoenix APIs. Haxe conveniences must lower to real target APIs or documented compiler/runtime semantics.
 - Document both paths when both exist: typed/semantic path first, direct target facade second.
 
+### Pipe Authoring Ergonomics (Hard Rule)
+
+Use `reflaxe.elixir.Pipe` / `>>` only when it makes a real transformation chain
+shorter or clearer, usually because a boundary value flows through several typed
+steps. Do not replace a simple direct helper such as
+`Params.getString(params, "name")`, `Params.getInt(session, "user_id")`, or one
+well-named local binding with a pipe just to look closer to Elixir `|>`.
+
+- Direct typed PhoenixHx/helpers are preferred for one-step reads and ordinary
+  app code.
+- Pipe chains must remain typed and cast-free at app call sites.
+- The helper is compile-time authoring sugar; generated code must be ordinary
+  target calls or straight-line rebinding, with no runtime pipe object.
+- If using a pipe adds lines, hides a stronger helper, or makes the code more
+  abstract without improving dataflow readability, leave the code direct.
+
 ### RailsHx Reference, PhoenixHx Ownership (Hard Rule)
 
 Use `reflaxe.ruby` / RailsHx as a UX and cross-target learning reference when it improves examples, docs, migration explanations, or product polish:
