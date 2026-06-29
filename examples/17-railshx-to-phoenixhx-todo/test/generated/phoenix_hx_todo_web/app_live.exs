@@ -167,7 +167,7 @@ defmodule PhoenixHxTodoWeb.AppLive do
 													<small>Owner: <%= todo.owner %></small>
 												</div>
 												<div class="todo-actions">
-													<button type="button" class="icon-action" phx-click="toggle_todo" phx-value-id={Reflaxe.Elixir.HaxeFloat.to_string(todo.id)}>
+													<button type="button" class="icon-action" phx-click={"toggle_todo"} phx-value-id={Reflaxe.Elixir.HaxeFloat.to_string(todo.id)}>
 														<%= (if (todo.completed), do: "Reopen", else: "Done") %>
 													</button>
 													<button type="button" class="icon-action danger" phx-click="delete_todo" phx-value-id={Reflaxe.Elixir.HaxeFloat.to_string(todo.id)}>
@@ -223,8 +223,11 @@ defmodule PhoenixHxTodoWeb.AppLive do
       end
     end
   end
-  defp toggle_todo(params, socket) do
-    id = int_param(params, "id")
+  defp handle_toggle_todo(id, socket) do
+    live = socket
+    _ = toggle_todo_by_id(id, live)
+  end
+  defp toggle_todo_by_id(id, socket) do
     did_toggle = PhoenixHxTodo.Todos.toggle_for_user(socket.assigns.current_user_id, id)
     if (did_toggle), do: {:noreply, refresh_todos(socket, "Updated through Ecto and a LiveView diff.")}, else: {:noreply, Phoenix.Component.assign(socket, :status, "Could not update that task.")}
   end
@@ -294,21 +297,45 @@ defmodule PhoenixHxTodoWeb.AppLive do
   defp int_param(params, key) do
     PhoenixHx.Params.get_int_default(params, key, 0)
   end
+  defp dispatch_todo_event(event_name, payload, socket) do
+    if (event_name == "toggle_todo") do
+      id_raw = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)) do
+        Map.get(payload, "id")
+      else
+        nil
+      end
+      id = cond do
+        Kernel.is_integer(id_raw) -> id_raw
+        Kernel.is_binary(id_raw) ->
+          (case Integer.parse(id_raw) do
+            {num, _} -> num
+            :error -> nil
+          end)
+        :true -> nil
+      end
+      if (Kernel.is_nil(id)), do: {:noreply, socket}, else: handle_toggle_todo(id, socket)
+    else
+      nil
+    end
+  end
   def handle_event(event, params, socket) do
     live = socket
-    switch_result_5 = (case event do
-      "create_chat_message" ->
-        create_chat_message(params, live)
-      "create_todo" ->
-        create_todo(params, live)
-      "delete_todo" ->
-        delete_todo(params, live)
-      "toggle_todo" ->
-        toggle_todo(params, live)
-      "update_chat" -> {:noreply, Phoenix.Component.assign(live, :chat_input, string_param(params, "body"))}
-      "update_form" -> {:noreply, Phoenix.Component.assign(live, %{:title_input => string_param(params, "title"), :notes_input => string_param(params, "notes")})}
-      _ -> {:noreply, live}
-    end)
-    switch_result_5
+    protocol_result = dispatch_todo_event(event, params, socket)
+    if (not Kernel.is_nil(protocol_result)) do
+      protocol_result
+    else
+      switch_result_5 = (case event do
+        "create_chat_message" ->
+          create_chat_message(params, live)
+        "create_todo" ->
+          create_todo(params, live)
+        "delete_todo" ->
+          delete_todo(params, live)
+        "update_chat" -> {:noreply, Phoenix.Component.assign(live, :chat_input, string_param(params, "body"))}
+        "update_form" -> {:noreply, Phoenix.Component.assign(live, %{:title_input => string_param(params, "title"), :notes_input => string_param(params, "notes")})}
+        _ -> {:noreply, live}
+      end)
+      switch_result_5
+    end
   end
 end

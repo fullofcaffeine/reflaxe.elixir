@@ -5,6 +5,7 @@
   "web/auth_flow_test.exs",
   "string_tools.exs",
   "std.exs",
+  "shared/liveview/todo_event.exs",
   "reflaxe/exception.exs",
   "reflaxe/elixir/macros/http_method.exs",
   "reflaxe/elixir/haxe_throw.exs",
@@ -37,6 +38,7 @@
   "phoenix/test/_live_view_event_name/live_view_event_name_impl_.exs",
   "phoenix/route_helper.exs",
   "phoenix/mount_result.exs",
+  "phoenix/live_view/live_event_protocol_companion.exs",
   "phoenix/live_session.exs",
   "phoenix/http_status.exs",
   "phoenix/http_method.exs",
@@ -66,7 +68,7 @@
   "e_reg.exs",
   "phoenix_hx_todo/postgrex_types.ex"
 ],
-  "id": 44,
+  "id": 46,
   "wasCached": false,
   "version": 1
 }

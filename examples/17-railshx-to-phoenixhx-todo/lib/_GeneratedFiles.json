@@ -2,6 +2,7 @@
   "filesGenerated": [
   "string_tools.ex",
   "std.ex",
+  "shared/liveview/todo_event.ex",
   "reflaxe/exception.ex",
   "reflaxe/elixir/macros/http_method.ex",
   "reflaxe/elixir/haxe_throw.ex",
@@ -28,6 +29,7 @@
   "phoenix/types/_live_stream_name/live_stream_name_impl_.ex",
   "phoenix/route_helper.ex",
   "phoenix/mount_result.ex",
+  "phoenix/live_view/live_event_protocol_companion.ex",
   "phoenix/live_session.ex",
   "phoenix/http_status.ex",
   "phoenix/http_method.ex",
@@ -55,7 +57,7 @@
   "e_reg.ex",
   "phoenix_hx_todo/postgrex_types.ex"
 ],
-  "id": 76,
+  "id": 81,
   "wasCached": false,
   "version": 1
 }

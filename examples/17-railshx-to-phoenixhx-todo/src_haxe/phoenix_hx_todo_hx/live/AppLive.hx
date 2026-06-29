@@ -22,9 +22,12 @@ import phoenix.Params;
 import phoenix.PubSub;
 import phoenix_hx_todo_hx.live.AppLiveTypes.AppLiveAssigns;
 import plug.CSRFProtection;
+import shared.liveview.TodoEvents;
+import shared.liveview.TodoEvents.TodoEvent;
 
 @:native("PhoenixHxTodoWeb.AppLive")
 @:liveview
+@:liveEvents(TodoEvent, "dispatchTodoEvent")
 class AppLive {
 	public static function mount(_params:MountParams, session:Session, socket:Socket<AppLiveAssigns>):MountResult<AppLiveAssigns> {
 		var user = currentUser(session);
@@ -37,6 +40,10 @@ class AppLive {
 
 	public static function handleEvent(event:String, params:EventParams, socket:Socket<AppLiveAssigns>):HandleEventResult<AppLiveAssigns> {
 		var live:LiveSocket<AppLiveAssigns> = socket;
+		var protocolResult = dispatchTodoEvent(event, params, socket);
+		if (protocolResult != null) {
+			return protocolResult;
+		}
 
 		return switch (event) {
 			case "update_form":
@@ -50,8 +57,6 @@ class AppLive {
 				createTodo(params, live);
 			case "create_chat_message":
 				createChatMessage(params, live);
-			case "toggle_todo":
-				toggleTodo(params, live);
 			case "delete_todo":
 				deleteTodo(params, live);
 			default:
@@ -217,7 +222,7 @@ class AppLive {
 													<small>Owner: ${todo.owner}</small>
 												</div>
 												<div class="todo-actions">
-													<button type="button" class="icon-action" phx-click="toggle_todo" phx-value-id=${Std.string(todo.id)}>
+													<button type="button" class="icon-action" phx-click=${TodoEvents.ToggleTodoEvent} phx-value-id=${Std.string(todo.id)}>
 														${todo.completed ? "Reopen" : "Done"}
 													</button>
 													<button type="button" class="icon-action danger" phx-click="delete_todo" phx-value-id=${Std.string(todo.id)}>
@@ -279,8 +284,12 @@ class AppLive {
 		};
 	}
 
-	static function toggleTodo(params:Term, socket:LiveSocket<AppLiveAssigns>):HandleEventResult<AppLiveAssigns> {
-		var id = intParam(params, "id");
+	static function handleToggleTodo(id:Int, socket:Socket<AppLiveAssigns>):HandleEventResult<AppLiveAssigns> {
+		var live:LiveSocket<AppLiveAssigns> = socket;
+		return toggleTodoById(id, live);
+	}
+
+	static function toggleTodoById(id:Int, socket:LiveSocket<AppLiveAssigns>):HandleEventResult<AppLiveAssigns> {
 		var didToggle = Todos.toggleForUser(socket.assigns.current_user_id, id);
 		if (didToggle) {
 			return NoReply(refreshTodos(socket, "Updated through Ecto and a LiveView diff."));
