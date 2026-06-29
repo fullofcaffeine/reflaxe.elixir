@@ -410,8 +410,31 @@ HookEvents.pushClipboardCopied(hook, {
 });
 ```
 
-For domain values that are not native JSON/Phoenix payload scalars, put an
-explicit codec on the typedef field:
+### Do You Need `@:codec(...)`?
+
+Usually, no.
+
+Use the built-in field types first:
+
+```haxe
+@:event("clipboard_copied")
+ClipboardCopied(message:String);
+
+@:event("set_visible")
+SetVisible(visible:Bool);
+
+@:event("select_index")
+SelectIndex(index:Int);
+```
+
+For these fields the protocol macro generates the boundary code directly. On
+the browser side it writes a plain JS object. On the server side it reads from
+the Phoenix params map with direct `Map.get` and `Kernel.is_*` checks. There is
+no runtime protocol object and no generic wire layer in the happy path.
+
+Add `@:codec(...)` only when your app-facing Haxe type has domain rules that
+the macro cannot infer. A good example is an ID, slug, token, or value object
+that must be parsed or validated before the LiveView handler should see it:
 
 ```haxe
 abstract ResourceId(Int) from Int to Int {
@@ -440,14 +463,41 @@ protocol code around that field still uses direct JS object and Elixir map
 access; any lower-level wire helper usage is isolated inside the codec you
 explicitly chose.
 
+This is not extra machinery compared with plain Phoenix. In a handwritten
+LiveView you would still parse or validate the runtime params somewhere:
+
+```haxe
+case "resource_selected":
+  var raw = Params.get(params, "resource_id");
+  var resourceId = ResourceIdCodec.decode(raw);
+  if (resourceId == null) {
+    NoReply(socket);
+  } else {
+    NoReply(selectResource(resourceId, socket));
+  }
+```
+
+The protocol version moves that same domain conversion into the generated
+decoder, then calls a typed handler:
+
+```haxe
+static function handleResourceSelected(
+  payload:ResourceSelectedPayload,
+  socket:Socket<ResourceAssigns>
+):HandleEventResult<ResourceAssigns> {
+  return NoReply(selectResource(payload.resourceId, socket));
+}
+```
+
+So the runtime cost is only the domain conversion you opted into. Built-in
+fields have no codec call. Custom codecs should be rare and deliberate.
+
 `@:codec(...)` is ordinary Haxe metadata, not a runtime annotation and not a
-separate PhoenixHx subsystem. It points the protocol macro at a
-`WireCodec<T>` value for a field whose Haxe type is stronger than the plain
-wire shape. Most fields do not need one: `String`, `Int`, `Bool`, `Float`,
-`Array<String>`, `Array<Int>`, and explicit optional variants use built-in
-wire readers and writers. Add a codec only when the app-facing type is a domain
-type such as `ResourceId` but the browser/Phoenix payload must remain plain
-data.
+separate PhoenixHx subsystem. In the current v1 implementation it points the
+protocol macro at a `WireCodec<T>` value for a field whose Haxe type is
+stronger than the plain wire shape. Most fields do not need one: `String`,
+`Int`, `Bool`, `Float`, `Array<String>`, `Array<Int>`, and explicit optional
+variants use built-in wire readers and writers.
 
 ```haxe
 import phoenix.channels.Payload;
@@ -468,6 +518,12 @@ class ResourceIdCodec {
   }
 }
 ```
+
+This `WireCodec<T>` example is the low-level shape used by the current custom
+codec hook. It is not the pattern for normal protocol fields. If the conversion
+is just "read a string" or "read an int", let the macro generate it. Reach for a
+codec when the value has business meaning that deserves one named conversion
+point.
 
 The layering is:
 

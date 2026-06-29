@@ -431,6 +431,19 @@ typedef ResourceSelectedPayload = {
 }
 ```
 
+Most protocol fields should not use a codec. `String`, `Int`, `Bool`, `Float`,
+simple arrays, and explicit optional fields are generated directly. For the
+planned typed template-event extension, ordinary DOM params such as
+`phx-value-id` for an `Int` should also use generated parsing rather than a
+custom codec.
+
+The runtime call introduced by a custom codec is not a new protocol runtime.
+It is the same domain parse/validate call a handwritten Phoenix
+`handle_event/3` would already need before using a value object such as
+`ResourceId`, `OrganizationSlug`, or an opaque token. The protocol macro moves
+that conversion into the generated decoder so app handlers receive typed values
+instead of open params.
+
 The expression currently returns `phoenix.channels.WireCodec<T>`. Generated code
 inserts the codec output with direct payload map/object writes and reads the raw
 field with direct map/object access before calling the codec. The codec itself
