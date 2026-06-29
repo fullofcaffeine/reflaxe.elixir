@@ -1,3 +1,10 @@
+# [0.12.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.11.0...v0.12.0) (2026-06-29)
+
+
+### Features
+
+* **phoenix:** lower live event protocols natively ([5157af9](https://github.com/fullofcaffeine/reflaxe.elixir/commit/5157af95543a44d7f453213e7a7865a23aab5a4d))
+
 # [0.11.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.10.2...v0.11.0) (2026-06-19)
 
 
