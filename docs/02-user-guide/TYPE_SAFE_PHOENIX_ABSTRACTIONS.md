@@ -467,7 +467,25 @@ This is not extra machinery compared with plain Phoenix. Without the typed
 protocol, you would still decide how `ResourceId` crosses the browser/Phoenix
 boundary and call that conversion by hand.
 
-For example, plain PhoenixHx hook code might push the same event directly:
+For example, plain PhoenixHx code would use ordinary app helpers. These helpers
+are not Phoenix APIs; they are just where your app decides how a `ResourceId`
+becomes a plain payload value and how a runtime param becomes a typed
+`ResourceId` again:
+
+```haxe
+class ResourceIds {
+  public static function toParam(resourceId:ResourceId):String {
+    var value:Int = resourceId;
+    return Std.string(value);
+  }
+
+  public static function fromParam(value:Null<Int>):Null<ResourceId> {
+    return value == null || value <= 0 ? null : new ResourceId(value);
+  }
+}
+```
+
+The hook can then push the event directly with a plain Phoenix payload:
 
 ```haxe
 class ResourceSelectHook {
@@ -476,11 +494,9 @@ class ResourceSelectHook {
     resourceId:ResourceId,
     source:String
   ):Void {
-    var codec = ResourceIdCodec.codec();
-
     if (hook.pushEvent != null) {
       hook.pushEvent("resource_selected", {
-        resource_id: codec.encode(resourceId),
+        resource_id: ResourceIds.toParam(resourceId),
         source: source
       });
     }
@@ -499,10 +515,8 @@ public static function handleEvent(
 ):HandleEventResult<ResourceAssigns> {
   return switch (event) {
     case "resource_selected":
-      var resourceIdPayload = Params.get(params, "resource_id");
+      var resourceId = ResourceIds.fromParam(Params.getInt(params, "resource_id"));
       var source = Params.getString(params, "source");
-      var codec = ResourceIdCodec.codec();
-      var resourceId = resourceIdPayload == null ? null : codec.decode(resourceIdPayload);
 
       if (resourceId == null || source == null) {
         NoReply(socket);
@@ -516,9 +530,10 @@ public static function handleEvent(
 }
 ```
 
-The typed protocol version keeps the domain conversion, but moves the repeated
-event-string, payload-key, and decode plumbing into generated code. Your
-LiveView handler receives the typed value directly:
+The typed protocol version keeps that same domain conversion idea, but attaches
+it to the field with `@:codec(...)` so the macro can generate the repeated
+event-string, payload-key, and decode plumbing. Your LiveView handler receives
+the typed value directly:
 
 ```haxe
 static function handleResourceSelected(
