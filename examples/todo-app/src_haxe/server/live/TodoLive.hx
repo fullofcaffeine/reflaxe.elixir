@@ -57,6 +57,8 @@ import shared.AvatarTools;
 import shared.liveview.EventName;
 import shared.liveview.HookEvents.HookClientEvent;
 import shared.liveview.HookName;
+import shared.liveview.TodoEvents.TodoEvent;
+import shared.liveview.TodoEvents;
 import StringTools;
 
 using reflaxe.elixir.macros.TypedQueryLambda;
@@ -83,6 +85,7 @@ enum ActivityKind {
 // @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
 @:liveview
 @:liveEvents(HookClientEvent, "dispatchHookEvent")
+@:liveEvents(TodoEvent, "dispatchTodoEvent")
 class TodoLive {
 	// All socket state is now defined in TodoLiveAssigns typedef for type safety
 	static inline function presenceUsersTopic(organizationId:Int):String {
@@ -334,10 +337,10 @@ class TodoLive {
 	}
 
 	/**
-	 * Handle events with fully typed event system.
-	 * 
-	 * No more string matching or raw params!
-	 * Each event carries its own typed parameters.
+	 * Handles LiveView events through two layers:
+	 *
+	 * - shared protocols for repeated cross-boundary contracts
+	 * - direct PhoenixHx branches for local one-off events
 	 */
 	// @:native (function): pins the emitted function/callback name to match an exact Elixir API.
 
@@ -347,10 +350,13 @@ class TodoLive {
 			return hookResult;
 		}
 
+		var todoEventResult = dispatchTodoEvent(event, params, socket);
+		if (todoEventResult != null) {
+			return todoEventResult;
+		}
+
 		var nextSocket:Socket<TodoLiveAssigns> = if (event == EventName.CreateTodo) {
 			create_todo(params, socket);
-		} else if (event == EventName.ToggleTodo) {
-			toggle_todo_status(extract_id(params), socket);
 		} else if (event == EventName.DeleteTodo) {
 			delete_todo(extract_id(params), socket);
 		} else if (event == EventName.EditTodo) {
@@ -412,6 +418,10 @@ class TodoLive {
 
 	static function handleHookPing(socket:Socket<TodoLiveAssigns>):HandleEventResult<TodoLiveAssigns> {
 		return NoReply(socket);
+	}
+
+	static function handleToggleTodo(id:Int, socket:Socket<TodoLiveAssigns>):HandleEventResult<TodoLiveAssigns> {
+		return NoReply(toggle_todo_status(id, socket));
 	}
 
 	public static function extract_id(params:Term):Int {
@@ -1665,7 +1675,7 @@ class TodoLive {
 	                                    class={v.container_class}>
 	                                    <div class="flex items-start space-x-4">
 	                                        <!-- Checkbox -->
-	                                        <button type="button" phx-click=${EventName.ToggleTodo} phx-value-id={v.id} data-testid="btn-toggle-todo"
+	                                        <button type="button" phx-click=${TodoEvents.ToggleTodoEvent} phx-value-id={v.id} data-testid="btn-toggle-todo"
 	                                            class="mt-1 w-6 h-6 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-blue-500 transition-colors">
                                             <if {v.completed_for_view}>
                                                 <span class="text-green-500">✓</span>

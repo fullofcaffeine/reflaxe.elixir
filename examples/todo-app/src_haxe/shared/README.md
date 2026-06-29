@@ -15,7 +15,10 @@ on either side.
 - **Stable names** for boundary strings
   - LiveView: `shared.liveview.EventName`, `shared.liveview.HookName`
   - Channels: protocol topics + event names
-- **Shared wire protocols** (typed encode/decode)
+- **Shared LiveView protocols** for cross-boundary events
+  - Hook events: `shared.liveview.HookEvents`
+  - Repeated template events with `phx-value-*` params: `shared.liveview.TodoEvents`
+- **Shared channel protocols** (typed encode/decode)
   - Example: `shared.channels.PingProtocol`
 
 ## What should *not* belong here

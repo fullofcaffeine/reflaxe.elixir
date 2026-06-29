@@ -26,7 +26,6 @@ enum abstract EventName(String) from String to String {
 	var EditTodo = "edit_todo";
 	var DeleteTodo = "delete_todo";
 	var CancelEdit = "cancel_edit";
-	var ToggleTodo = "toggle_todo";
 
 	var FilterTodos = "filter_todos";
 	var SearchTodos = "search_todos";

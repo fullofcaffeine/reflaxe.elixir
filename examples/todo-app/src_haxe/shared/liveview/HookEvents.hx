@@ -17,10 +17,10 @@ import phoenix.live_view.LiveEventProtocolCompanion;
  */
 @:liveEventProtocol("HookEvents")
 enum HookClientEvent {
-	@:event("clipboard_copied")
+	@:hookEvent("clipboard_copied")
 	ClipboardCopied(message:String);
 
-	@:event("ping")
+	@:hookEvent("ping")
 	HookPing;
 }
 
