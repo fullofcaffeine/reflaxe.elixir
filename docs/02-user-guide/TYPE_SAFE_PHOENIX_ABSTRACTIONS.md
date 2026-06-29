@@ -500,10 +500,47 @@ def handle_event("resource_selected", params, socket) do
 end
 ```
 
-Direct PhoenixHx is the same Phoenix shape, but Haxe-authored. It can use
-ordinary app helpers. These helpers are not Phoenix APIs; they are just where
-your app decides how a `ResourceId` becomes a plain payload value and how a
-runtime param becomes a typed `ResourceId` again:
+Direct PhoenixHx can stay very close to that Elixir shape while still narrowing
+the boundary into typed Haxe values:
+
+```haxe
+import elixir.ElixirMap;
+import elixir.types.Term;
+import phoenix.Params;
+
+public static function handleEvent(
+  event:String,
+  params:Term,
+  socket:Socket<ResourceAssigns>
+):HandleEventResult<ResourceAssigns> {
+  return switch (event) {
+    case "resource_selected":
+      var resourceIdRaw = ElixirMap.get(params, "resource_id");
+      var resourceId = ResourceIds.fromParam(Params.stringFromTerm(resourceIdRaw));
+      var source = Params.stringFromTerm(ElixirMap.get(params, "source"));
+
+      if (resourceId == null || source == null) {
+        NoReply(socket);
+      } else {
+        NoReply(selectResource(resourceId, source, socket));
+      }
+
+    case _:
+      NoReply(socket);
+  }
+}
+```
+
+That version mirrors raw Phoenix's `Map.get(params, "...")`, but the handoff
+from `Term` to `Null<String>` / `Null<ResourceId>` remains explicit.
+
+For day-to-day PhoenixHx app code, the shorter helper form is usually nicer:
+`Params.getString(params, "source")` and `Params.getInt(params, "resource_id")`
+wrap the same boundary read plus type narrowing.
+
+The conversion itself can live in ordinary app helpers. These helpers are not
+Phoenix APIs; they are just where your app decides how a `ResourceId` becomes a
+plain payload value and how a runtime param becomes a typed `ResourceId` again:
 
 ```haxe
 class ResourceIds {
@@ -512,8 +549,9 @@ class ResourceIds {
     return Std.string(value);
   }
 
-  public static function fromParam(value:Null<Int>):Null<ResourceId> {
-    return value == null || value <= 0 ? null : new ResourceId(value);
+  public static function fromParam(value:Null<String>):Null<ResourceId> {
+    var id = value == null ? null : Std.parseInt(value);
+    return id == null || id <= 0 ? null : new ResourceId(id);
   }
 }
 ```
@@ -548,7 +586,7 @@ public static function handleEvent(
 ):HandleEventResult<ResourceAssigns> {
   return switch (event) {
     case "resource_selected":
-      var resourceId = ResourceIds.fromParam(Params.getInt(params, "resource_id"));
+      var resourceId = ResourceIds.fromParam(Params.getString(params, "resource_id"));
       var source = Params.getString(params, "source");
 
       if (resourceId == null || source == null) {
