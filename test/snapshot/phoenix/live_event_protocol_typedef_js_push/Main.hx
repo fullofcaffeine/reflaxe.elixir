@@ -1,6 +1,5 @@
 import phoenix.live_view.HookContext;
 import phoenix.live_view.LiveEventProtocolCompanion;
-import phoenix.channels.WirePayload;
 
 typedef ClipboardCopiedPayload = {
 	var message:String;
@@ -25,7 +24,9 @@ class Main {
 		var hook:HookContext = cast {
 			el: null,
 			pushEvent: function(event:String, payload:phoenix.channels.Payload):Void {
-				pushed.push(event + ":" + WirePayload.getString(payload, "message") + ":" + WirePayload.getString(payload, "copied_at"));
+				var message:Null<String> = js.Syntax.code("{0}[{1}]", payload, "message");
+				var copiedAt:Null<String> = js.Syntax.code("{0}[{1}]", payload, "copied_at");
+				pushed.push(event + ":" + message + ":" + copiedAt);
 			}
 		};
 		var payload:ClipboardCopiedPayload = {message: "Copied.", copiedAt: "2026-06-28T16:00:00Z"};

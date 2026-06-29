@@ -28,8 +28,8 @@ using haxe.macro.Tools;
  * HOW
  * - Resolves `LiveEventProtocolCompanion<ProtocolEnum>`.
  * - Reuses `LiveEventProtocolModel` as the single parser/validator.
- * - Emits direct `WirePayload.getX/putX` calls for built-in field kinds so the
- *   generated Elixir stays close to handwritten boundary code.
+ * - Emits direct JS object and Elixir map access for built-in field kinds so
+ *   generated protocol code stays close to handwritten Phoenix boundary code.
  */
 class LiveEventProtocolCompanionBuilder {
 	/**
@@ -138,7 +138,10 @@ class LiveEventProtocolCompanionBuilder {
 				],
 				ret: macro:Void,
 				expr: macro {
-					phoenix.live_view.HookContextTools.pushEncoded(hook, encode(event));
+					var encoded = encode(event);
+					if (hook.pushEvent != null) {
+						hook.pushEvent(encoded.event, encoded.payload);
+					}
 				}
 			}),
 			pos: Context.currentPos()
@@ -147,22 +150,17 @@ class LiveEventProtocolCompanionBuilder {
 
 	static function buildPerEventPushFunction(protocol:LiveEventProtocolData, event:LiveEventData):Field {
 		var args:Array<FunctionArg> = [{name: "hook", type: macro:phoenix.live_view.HookContext}];
-		var constructorArgs:Array<Expr> = [];
 		for (arg in event.args) {
 			args.push({name: arg.name, type: argumentValueType(arg)});
-			constructorArgs.push({expr: EConst(CIdent(arg.name)), pos: arg.pos});
 		}
 
-		var eventExpr = constructorCall(protocol, event, constructorArgs);
 		return {
 			name: "push" + event.constructorName,
 			access: [APublic, AStatic],
 			kind: FFun({
 				args: args,
 				ret: macro:Void,
-				expr: macro {
-					push(hook, $eventExpr);
-				}
+				expr: LiveEventPayloadExprs.buildPushBody(event)
 			}),
 			pos: event.pos
 		};
@@ -191,43 +189,14 @@ class LiveEventProtocolCompanionBuilder {
 	}
 
 	static function buildEncodeCase(event:LiveEventData):Expr {
-		var expressions:Array<Expr> = [macro var wire = phoenix.channels.WirePayload.empty()];
-		var payloadArg = findPayloadArgument(event);
-		for (field in event.fields) {
-			var value = encodeFieldValue(event, field);
-			if (payloadArg != null) {
-				expressions.push({
-					expr: EVars([{name: field.name, type: fieldBaseType(field), expr: value}]),
-					pos: field.pos
-				});
-				value = {expr: EConst(CIdent(field.name)), pos: field.pos};
-			}
-			var putValue = value;
-			var putMethodName = putMethod(field.kind);
-			switch (field.kind) {
-				case CustomCodec(codec, _):
-					var encodedName = field.name + "WirePayload";
-					expressions.push({
-						expr: EVars([{name: encodedName, type: macro:phoenix.channels.Payload, expr: callCodecMethod(codec, "encode", [value])}]),
-						pos: field.pos
-					});
-					putValue = {expr: EConst(CIdent(encodedName)), pos: field.pos};
-					putMethodName = "putPayload";
-				case _:
-			}
-			expressions.push({
-				expr: EBinop(OpAssign, macro wire, callWirePayloadPut(field, macro wire, putValue, putMethodName)),
-				pos: field.pos
-			});
-		}
-		expressions.push({
+		var payload = LiveEventPayloadExprs.buildPayload(event);
+		return {
 			expr: EObjectDecl([
 				{field: "event", expr: macro $v{event.eventName}},
-				{field: "payload", expr: macro wire}
+				{field: "payload", expr: payload}
 			]),
 			pos: event.pos
-		});
-		return {expr: EBlock(expressions), pos: event.pos};
+		};
 	}
 
 	static function buildDecodeFunctionBlock(protocol:LiveEventProtocolData):Expr {
@@ -262,7 +231,7 @@ class LiveEventProtocolCompanionBuilder {
 		for (field in event.fields) {
 			var fieldIdent = {expr: EConst(CIdent(field.name)), pos: field.pos};
 			expressions.push({
-				expr: EVars([{name: field.name, type: fieldComplexType(field), expr: callWirePayloadGet(field, macro payload)}]),
+				expr: EVars([{name: field.name, type: fieldComplexType(field), expr: LiveEventPayloadExprs.decodeField(field, macro payload)}]),
 				pos: field.pos
 			});
 			if (!field.optional) {
@@ -361,87 +330,6 @@ class LiveEventProtocolCompanionBuilder {
 		};
 	}
 
-	static function callWirePayloadPut(field:LiveEventFieldData, payload:Expr, value:Expr, methodName:String):Expr {
-		return {
-			expr: ECall(wirePayloadMethod(methodName), [payload, macro $v{field.wireName}, value]),
-			pos: field.pos
-		};
-	}
-
-	static function callWirePayloadGet(field:LiveEventFieldData, payload:Expr):Expr {
-		switch (field.kind) {
-			case CustomCodec(codec, _):
-				var raw = {expr: EVars([{name: "raw", type: macro:phoenix.channels.Payload, expr: rawPayloadGet(field, payload)}]), pos: field.pos};
-				var decoded = {
-					expr: EIf(notNil({expr: EConst(CIdent("raw")), pos: field.pos}, field.pos),
-						callCodecMethod(codec, "decode", [{expr: EConst(CIdent("raw")), pos: field.pos}]), macro null),
-					pos: field.pos
-				};
-				return {expr: EBlock([raw, decoded]), pos: field.pos};
-			case _:
-		}
-		return {
-			expr: ECall(wirePayloadMethod(getMethod(field.kind)), [payload, macro $v{field.wireName}]),
-			pos: field.pos
-		};
-	}
-
-	static function rawPayloadGet(field:LiveEventFieldData, payload:Expr):Expr {
-		return {
-			expr: ECall(wirePayloadMethod("getPayload"), [payload, macro $v{field.wireName}]),
-			pos: field.pos
-		};
-	}
-
-	static function callCodecMethod(codec:Expr, method:String, args:Array<Expr>):Expr {
-		return {
-			expr: ECall({expr: EField(codec, method), pos: codec.pos}, args),
-			pos: codec.pos
-		};
-	}
-
-	static function notNil(value:Expr, pos:Position):Expr {
-		if (Context.defined("js")) {
-			return {expr: EBinop(OpNotEq, value, macro null), pos: pos};
-		}
-		return macro !elixir.Kernel.isNil($value);
-	}
-
-	static function wirePayloadMethod(methodName:String):Expr {
-		return {
-			expr: EField(typeExpr(["phoenix", "channels"], "WirePayload"), methodName),
-			pos: Context.currentPos()
-		};
-	}
-
-	static function getMethod(kind:LiveEventFieldKind):String {
-		return switch (kind) {
-			case WireString: "getString";
-			case WireInt: "getInt";
-			case WireBool: "getBool";
-			case WireFloat: "getFloat";
-			case WireStringArray: "getStringArray";
-			case WireIntArray: "getIntArray";
-			case WirePayload: "getPayload";
-			case CustomCodec(_, _): "getPayload";
-			case Unsupported(_): "get";
-		};
-	}
-
-	static function putMethod(kind:LiveEventFieldKind):String {
-		return switch (kind) {
-			case WireString: "putString";
-			case WireInt: "putInt";
-			case WireBool: "putBool";
-			case WireFloat: "putFloat";
-			case WireStringArray: "putStringArray";
-			case WireIntArray: "putIntArray";
-			case WirePayload: "putPayload";
-			case CustomCodec(_, _): "putPayload";
-			case Unsupported(_): "putPayload";
-		};
-	}
-
 	static function fieldComplexType(field:LiveEventFieldData):ComplexType {
 		return TPath({pack: [], name: "Null", params: [TPType(fieldBaseType(field))]});
 	}
@@ -468,7 +356,7 @@ class LiveEventProtocolCompanionBuilder {
 			case WireFloat: macro:Float;
 			case WireStringArray: macro:Array<String>;
 			case WireIntArray: macro:Array<Int>;
-			case WirePayload: macro:phoenix.channels.Payload;
+			case RawPayload: macro:phoenix.channels.Payload;
 			case CustomCodec(_, _): field.type.toComplexType();
 			case Unsupported(_): macro:Dynamic;
 		};

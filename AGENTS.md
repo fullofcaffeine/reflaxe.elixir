@@ -431,8 +431,9 @@ Use `reflaxe.ruby` / RailsHx as a UX and cross-target learning reference when it
   data, choose the strongest practical model in this order:
   1. a precise domain typedef/enum plus a decoder,
   2. a generated codec or macro-backed parser/writer,
-  3. PhoenixHx wire helpers such as `WirePayload` / `WireCodec` for event or
-     channel payloads,
+  3. PhoenixHx wire helpers such as `WirePayload` / `WireCodec` only for
+     genuinely manual or dynamic event/channel payload boundaries where a macro
+     cannot know the schema,
   4. a recursive JSON value enum/abstract for genuinely open JSON,
   5. `Term` or `Unknown` only for uninspected runtime boundaries or lossless
      passthrough.
@@ -460,6 +461,24 @@ Use `reflaxe.ruby` / RailsHx as a UX and cross-target learning reference when it
 - Keep the source shape close to Phoenix: helpers must lower to real Phoenix/Elixir APIs such as `Map.get`, `Phoenix.LiveView.*`, `Phoenix.PubSub.*`, or `Ecto.Changeset.*`.
 - Prefer compile-time help where possible: generated field accessors, typed refs, macro-derived readers, and inference should reduce boilerplate without hiding the target API or creating a Rails-shaped compatibility layer.
 - When adding a framework helper, migrate at least one real call site and update docs/examples in the same task so the improved UX is visible and validated.
+
+### PhoenixHx Macro-First Protocol Boundaries (Hard Rule)
+- Typed PhoenixHx protocols are a compile-time Haxe feature first. When the
+  event/channel contract is known to Haxe, use macros to generate ordinary
+  Phoenix/Elixir/JS code rather than routing through runtime payload helper
+  objects.
+- Generated LiveView and Channel protocol happy paths must lower to real target
+  calls such as `hook.pushEvent(...)`, `Phoenix.Channel.push/broadcast`, direct
+  map construction, `Map.fetch/get`, and target predicates. They should not emit
+  `WirePayload`, `WireField`, `WireCodec`, or `WireCodecs` unless the specific
+  payload shape cannot be generated statically.
+- `WirePayload`, `WireField`, `WireCodec`, and `WireCodecs` are low-level manual
+  boundary utilities. New usage outside their own implementation/tests must add
+  a nearby comment explaining why macro generation cannot model that schema and
+  why a direct Phoenix-shaped helper would be worse.
+- Do not add a public "wire mode" flag for typed protocols without a concrete
+  unique use case. Protocol APIs should stay small, typed, and target-shaped;
+  wire helpers belong in advanced/manual interop documentation only.
 
 ## Code Style and Conventions
 

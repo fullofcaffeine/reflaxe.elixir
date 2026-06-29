@@ -435,8 +435,10 @@ enum ResourceEvent {
 ```
 
 The generated helpers keep `resourceId` typed as `ResourceId` in Haxe while
-encoding it as a nested wire payload with `ResourceIdCodec` on both JS and
-server paths.
+encoding it through `ResourceIdCodec` on both JS and server paths. The generated
+protocol code around that field still uses direct JS object and Elixir map
+access; any lower-level wire helper usage is isolated inside the codec you
+explicitly chose.
 
 `@:codec(...)` is ordinary Haxe metadata, not a runtime annotation and not a
 separate PhoenixHx subsystem. It points the protocol macro at a
@@ -469,12 +471,18 @@ class ResourceIdCodec {
 
 The layering is:
 
-- `WirePayload` is the low-level payload map reader/writer at the JS/Elixir
-  boundary.
-- `WireCodec<T>` converts a custom Haxe type to and from a `WirePayload`.
-- `@:codec(...)` attaches that converter to one protocol payload field.
-- Live Event Protocols use those pieces to generate typed push helpers and
-  LiveView dispatch helpers.
+- Live Event Protocols are the high-level API. For built-in field types, the
+  macro emits ordinary JS object literals/bracket reads and Elixir `%{}`,
+  `Map.put`, `Map.get`, and `Kernel.is_*` checks. The happy path does not route
+  through `WirePayload` or a runtime codec object.
+- `WirePayload` is the low-level payload map reader/writer for manual/open
+  channel or LiveView interop when no protocol schema can be generated.
+- `WireCodec<T>` converts a custom Haxe type to and from an explicit payload
+  representation. Use it for `@:codec(...)` fields only when a domain type
+  cannot be represented by the built-in protocol field types.
+- `@:codec(...)` attaches that converter to one protocol payload field. Its
+  unsafety and runtime helper usage should stay inside the codec, not spread
+  into hook or LiveView code.
 
 Nullable payload fields must be explicit. Use an optional constructor argument
 or `@:optional` typedef field when missing/null is part of the wire contract;
@@ -551,8 +559,9 @@ It is not automatically better than raw Phoenix. If the event is a one-off
 template event, if the LiveView is Elixir-only, if the code is being kept close
 to Phoenix docs during migration, or if there is no shared Haxe JS hook involved,
 plain Phoenix or direct PhoenixHx is simpler. In those cases, use
-`handleEvent(event, params, socket)` plus the typed `Params`/`WirePayload`
-helpers where useful, and skip the protocol.
+`handleEvent(event, params, socket)` plus typed `Params` helpers, or a clearly
+justified low-level `WirePayload` helper at a manual/open boundary, and skip the
+protocol.
 
 Use this decision guide:
 

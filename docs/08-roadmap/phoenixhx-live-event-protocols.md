@@ -167,7 +167,14 @@ The generated Elixir should still read like handwritten Phoenix code:
 defp dispatch_hook_event(event_name, params, socket) do
   cond do
     event_name == "clipboard_copied" ->
-      message = Phoenix.Channels.WirePayload.get_string(params, "message")
+      message_raw =
+        if not is_nil(params) and is_map(params) do
+          Map.get(params, "message")
+        else
+          nil
+        end
+
+      message = if is_binary(message_raw), do: message_raw, else: nil
       if is_nil(message), do: nil, else: handle_clipboard_copied(message, socket)
 
     true ->
@@ -350,7 +357,14 @@ or an equivalent helper with the same readable target shape:
 defp dispatch_profile_hook_event(event_name, params, socket) do
   cond do
     event_name == "clipboard_copied" ->
-      message = Phoenix.Channels.WirePayload.get_string(params, "message")
+      message_raw =
+        if not is_nil(params) and is_map(params) do
+          Map.get(params, "message")
+        else
+          nil
+        end
+
+      message = if is_binary(message_raw), do: message_raw, else: nil
       if is_nil(message), do: nil, else: handle_clipboard_copied(message, socket)
 
     event_name == "ping" ->
@@ -399,11 +413,12 @@ Avoid these in v1 protocol declarations:
 - raw `__elixir__`
 - custom class instances without an explicit codec
 
-Generate direct helper functions for the built-in payload types. Prefer clear
-`WirePayload.getString/putString`, `getInt/putInt`, etc. over runtime codec
-objects in the default path. The current manual todo-app `HookEvents` prototype
-showed that direct helpers produce clearer Elixir than a generic codec value
-when the compiler has to lower enum decoding.
+Generate direct helper functions for the built-in payload types. Prefer
+macro-emitted JS object access and Elixir `%{}`/`Map.put`/`Map.get` plus
+`Kernel.is_*` predicates over both `WirePayload` calls and generic runtime
+codec objects in the default path. The manual todo-app `HookEvents` prototype
+proved the value of a shared contract, but the framework macro should now lower
+that contract directly to Phoenix-shaped code.
 
 Use `@:codec(...)` only where the wire value is genuinely domain-specific:
 
@@ -416,11 +431,11 @@ typedef ResourceSelectedPayload = {
 }
 ```
 
-The expression must return `phoenix.channels.WireCodec<T>`. Generated code
-pre-binds the encoded nested payload before calling `WirePayload.putPayload`,
-and decodes by reading a nested payload with `WirePayload.getPayload` before
-calling the codec. This keeps the common built-in path direct while still
-allowing precise domain types at the boundary.
+The expression currently returns `phoenix.channels.WireCodec<T>`. Generated code
+inserts the codec output with direct payload map/object writes and reads the raw
+field with direct map/object access before calling the codec. The codec itself
+may use `WirePayload` when it owns an open or nested boundary shape, but the
+generated protocol scaffolding should not.
 
 ## Diagnostics
 
@@ -472,7 +487,8 @@ router complexity; it should borrow the shape of the implementation:
   `@:wire(...)`, `@:codec(...)`, handler overrides, and nothing inferred from
   arbitrary handler bodies.
 - Keep generated default payload code direct. Built-in field types should lower
-  to readable `WirePayload` helpers, not a generic runtime codec object path.
+  to target-native JS object and Elixir map operations, not `WirePayload` calls
+  and not a generic runtime codec object path.
 - Prefer source-positioned macro diagnostics for duplicate event names, duplicate
   wire keys, unsupported types, invalid metadata, and missing handlers.
 - Use warnings for inferential checks such as "does `handleEvent` call the
@@ -499,16 +515,19 @@ Initial implementation note: `phoenix.live_view.macros.LiveEventProtocolModel`
 now normalizes a `@:liveEventProtocol` enum into a deterministic protocol
 manifest/hash and generated companion helpers. `LiveEventProtocol.manifest/hash`
 snapshot the drift-detection layer, and `LiveEventProtocolCompanion<T>` generates
-event constants, direct `WirePayload`-based `encode`/`decode` helpers, and JS-only
-hook push helpers. `@:liveEvents(Protocol, "dispatchName")` now adds the first
-server-side dispatcher binding from the same model, emitting straight-line
-`WirePayload` reads and private handler calls in the LiveView module when the
-LiveView explicitly calls the dispatcher. The model distinguishes Haxe
+event constants, direct `encode`/`decode` helpers, and JS-only hook push
+helpers. Built-in fields now generate JS object literals/bracket reads and
+Elixir `%{}`/`Map.put`/`Map.get` plus `Kernel.is_*` checks instead of
+`WirePayload` helper calls. `@:liveEvents(Protocol, "dispatchName")` now adds
+the first server-side dispatcher binding from the same model, emitting
+straight-line map reads and private handler calls in the LiveView module when
+the LiveView explicitly calls the dispatcher. The model distinguishes Haxe
 constructor/handler arguments from flattened wire fields, so a named typedef
 payload remains one typed Haxe value while generated JS and Elixir helpers still
-emit direct per-field `WirePayload` calls. Custom codec support is now part of
-the same model for named typedef payload fields, so domain-specific fields can
-cross the wire without introducing `Dynamic` or a second parser.
+emit direct per-field code. Custom codec support is now part of the same model
+for named typedef payload fields; v1 keeps `WireCodec<T>` as the explicit
+manual-domain escape hatch, while built-in protocol fields stay macro-first and
+runtime-minimal.
 
 Avoid copying these Tink patterns into v1:
 

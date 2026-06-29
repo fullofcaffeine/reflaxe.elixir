@@ -29,9 +29,11 @@ using haxe.macro.Tools;
  *   visible. The LiveView still opts in by calling the generated helper.
  *
  * HOW
- * - Reuses `LiveEventProtocolModel` and the generated companion `decode`.
+ * - Reuses `LiveEventProtocolModel`.
  * - Validates that each protocol constructor has a matching handler method.
  * - Validates that `handleEvent` explicitly calls the generated dispatcher.
+ * - Emits direct map reads and BEAM predicate checks for generated payload
+ *   decoding instead of depending on the lower-level wire helper layer.
  */
 class LiveEventDispatcherBuilder {
 #if macro
@@ -210,7 +212,7 @@ class LiveEventDispatcherBuilder {
 		for (field in event.fields) {
 			var fieldIdent = {expr: EConst(CIdent(field.name)), pos: field.pos};
 			expressions.push({
-				expr: EVars([{name: field.name, type: fieldComplexType(field), expr: callWirePayloadGet(field, macro payload)}]),
+				expr: EVars([{name: field.name, type: fieldComplexType(field), expr: LiveEventPayloadExprs.decodeField(field, macro payload)}]),
 				pos: field.pos
 			});
 			if (!field.optional) {
@@ -283,7 +285,7 @@ class LiveEventDispatcherBuilder {
 			case WireFloat: "Float";
 			case WireStringArray: "Array<String>";
 			case WireIntArray: "Array<Int>";
-			case WirePayload: "phoenix.channels.Payload";
+			case RawPayload: "phoenix.channels.Payload";
 			case CustomCodec(_, _): field.typeName;
 			case Unsupported(_): field.typeName;
 		};
@@ -301,66 +303,9 @@ class LiveEventDispatcherBuilder {
 			case WireFloat: macro:Float;
 			case WireStringArray: macro:Array<String>;
 			case WireIntArray: macro:Array<Int>;
-			case WirePayload: macro:phoenix.channels.Payload;
+			case RawPayload: macro:phoenix.channels.Payload;
 			case CustomCodec(_, _): field.type.toComplexType();
 			case Unsupported(_): macro:String;
-		};
-	}
-
-	static function callWirePayloadGet(field:LiveEventFieldData, payload:Expr):Expr {
-		switch (field.kind) {
-			case CustomCodec(codec, _):
-				var raw = {expr: EVars([{name: "raw", type: macro:phoenix.channels.Payload, expr: rawPayloadGet(field, payload)}]), pos: field.pos};
-				var decoded = {
-					expr: EIf(notNil({expr: EConst(CIdent("raw")), pos: field.pos}, field.pos),
-						callCodecMethod(codec, "decode", [{expr: EConst(CIdent("raw")), pos: field.pos}]), macro null),
-					pos: field.pos
-				};
-				return {expr: EBlock([raw, decoded]), pos: field.pos};
-			case _:
-		}
-		return {
-			expr: ECall(wirePayloadMethod(getMethod(field.kind)), [payload, macro $v{field.wireName}]),
-			pos: field.pos
-		};
-	}
-
-	static function rawPayloadGet(field:LiveEventFieldData, payload:Expr):Expr {
-		return {
-			expr: ECall(wirePayloadMethod("getPayload"), [payload, macro $v{field.wireName}]),
-			pos: field.pos
-		};
-	}
-
-	static function callCodecMethod(codec:Expr, method:String, args:Array<Expr>):Expr {
-		return {
-			expr: ECall({expr: EField(codec, method), pos: codec.pos}, args),
-			pos: codec.pos
-		};
-	}
-
-	static function notNil(value:Expr, pos:Position):Expr {
-		return macro !elixir.Kernel.isNil($value);
-	}
-
-	static function wirePayloadMethod(methodName:String):Expr {
-		return {
-			expr: EField(typeExpr(["phoenix", "channels"], "WirePayload"), methodName),
-			pos: Context.currentPos()
-		};
-	}
-
-	static function getMethod(kind:LiveEventFieldKind):String {
-		return switch (kind) {
-			case WireString: "getString";
-			case WireInt: "getInt";
-			case WireBool: "getBool";
-			case WireFloat: "getFloat";
-			case WireStringArray: "getStringArray";
-			case WireIntArray: "getIntArray";
-			case WirePayload: "getPayload";
-			case CustomCodec(_, _): "getPayload";
-			case Unsupported(_): "getString";
 		};
 	}
 

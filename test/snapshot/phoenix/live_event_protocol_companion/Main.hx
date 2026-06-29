@@ -1,7 +1,8 @@
 import elixir.types.Term;
+import elixir.ElixirMap;
+import elixir.Kernel;
 import phoenix.channels.EncodedEvent;
 import phoenix.channels.Payload;
-import phoenix.channels.WirePayload;
 import phoenix.live_view.LiveEventProtocolCompanion;
 
 @:liveEventProtocol("ProfileHookEvents")
@@ -30,19 +31,20 @@ class Main {
 
 		var copied:EncodedEvent = ProfileHookEvents.encode(ClipboardCopied("Copied."));
 		assertThat(copied.event == "clipboard_copied", "clipboard encode event failed");
-		assertThat(WirePayload.getString(copied.payload, "message") == "Copied.", "clipboard encode payload failed");
+		var copiedMessage:Term = ElixirMap.get(copied.payload, "message");
+		assertThat(Kernel.isBinary(copiedMessage) && Kernel.toString(copiedMessage) == "Copied.", "clipboard encode payload failed");
 
 		var copiedDecoded = ProfileHookEvents.decode("clipboard_copied", copied.payload);
 		assertThat(copiedDecoded != null, "clipboard decode failed");
 
-		var selectedPayload:Term = WirePayload.empty();
-		selectedPayload = WirePayload.putInt(selectedPayload, "todo_id", 42);
-		selectedPayload = WirePayload.putBool(selectedPayload, "from_hook", true);
+		var selectedPayload:Term = ElixirMap.new_();
+		selectedPayload = ElixirMap.put(selectedPayload, "todo_id", 42);
+		selectedPayload = ElixirMap.put(selectedPayload, "from_hook", true);
 
 		var selectedDecoded = ProfileHookEvents.decode("todo_selected", selectedPayload);
 		assertThat(selectedDecoded != null, "todo decode failed");
 
-		var invalidPayload:Payload = WirePayload.empty();
+		var invalidPayload:Payload = ElixirMap.new_();
 		assertThat(ProfileHookEvents.decode("clipboard_copied", invalidPayload) == null, "invalid payload should fail");
 		assertThat(ProfileHookEvents.decode("unknown", invalidPayload) == null, "unknown event should fail");
 	}

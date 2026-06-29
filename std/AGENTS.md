@@ -30,6 +30,19 @@ of copying app-local `cast`, `Reflect.field`, tuple-unwrapping, or ad hoc
 - Boundary casts are acceptable only inside the helper after target-shape checks;
   app code should call the typed helper.
 
+### Macro-First Protocol Boundaries
+
+PhoenixHx typed protocols should use Haxe macros to generate ordinary
+Phoenix/Elixir/JS code whenever the schema is known at compile time.
+
+- LiveView and Channel protocol happy paths should emit direct target calls,
+  map/object construction, and target predicates instead of runtime
+  `WirePayload`, `WireField`, `WireCodec`, or `WireCodecs` plumbing.
+- Keep `WirePayload`/`WireCodec` as low-level manual interop tools only. New
+  std/framework usage must justify why macro generation cannot model the schema.
+- Do not expose a public wire-helper mode for typed protocols until there is a
+  concrete unique use case that cannot be solved by macro code generation.
+
 ## 📚 Standard Library Architecture Overview
 
 ### Directory Structure Philosophy

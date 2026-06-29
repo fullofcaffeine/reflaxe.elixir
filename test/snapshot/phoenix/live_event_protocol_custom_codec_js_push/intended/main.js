@@ -59,20 +59,9 @@ ResourceHookEvents.encode = function(event) {
 	switch(event._hx_index) {
 	case 0:
 		var payload = event.payload;
-		var wire = { };
-		var resourceId = payload.resourceId;
-		var resourceIdWirePayload = ResourceIdCodec.codec().encode(resourceId);
-		if(wire != null) {
-			wire["resource_id"] = resourceIdWirePayload;
-		}
-		var source = payload.source;
-		if(wire != null) {
-			wire["source"] = source;
-		}
-		return { event : "resource_selected", payload : wire};
+		return { event : "resource_selected", payload : { resource_id : ResourceIdCodec.codec().encode(payload.resourceId), source : payload.source}};
 	case 1:
-		var wire = { };
-		return { event : "ping", payload : wire};
+		return { event : "ping", payload : { }};
 	}
 };
 ResourceHookEvents.decode = function(eventName,payload) {
@@ -80,9 +69,10 @@ ResourceHookEvents.decode = function(eventName,payload) {
 		return ResourceHookEvent.Ping;
 	}
 	if(eventName == "resource_selected") {
-		var raw = payload == null ? null : ((p,k)=>{var v=p[k]; if(v!=null && typeof v==='object' && !Array.isArray(v)) return v; return null;})(payload,"resource_id");
-		var resourceId = raw != null ? ResourceIdCodec.codec().decode(raw) : null;
-		var source = payload == null ? null : ((p,k)=>{var v=p[k]; return (typeof v==='string') ? v : null;})(payload,"source");
+		var resourceIdRaw = (payload == null ? null : payload["resource_id"]);
+		var resourceId = resourceIdRaw != null ? ResourceIdCodec.codec().decode(resourceIdRaw) : null;
+		var sourceRaw = (payload == null ? null : payload["source"]);
+		var source = (typeof sourceRaw === 'string' ? sourceRaw : null);
 		if(resourceId != null && source != null) {
 			return ResourceHookEvent.ResourceSelected({ resourceId : resourceId, source : source});
 		} else {
@@ -92,16 +82,21 @@ ResourceHookEvents.decode = function(eventName,payload) {
 	return null;
 };
 ResourceHookEvents.push = function(hook,event) {
-	var event1 = ResourceHookEvents.encode(event);
+	var encoded = ResourceHookEvents.encode(event);
 	if(hook.pushEvent != null) {
-		hook.pushEvent(event1.event,event1.payload);
+		hook.pushEvent(encoded.event,encoded.payload);
 	}
 };
 ResourceHookEvents.pushPing = function(hook) {
-	ResourceHookEvents.push(hook,ResourceHookEvent.Ping);
+	if(hook.pushEvent != null) {
+		hook.pushEvent("ping",{ });
+	}
 };
 ResourceHookEvents.pushResourceSelected = function(hook,payload) {
-	ResourceHookEvents.push(hook,ResourceHookEvent.ResourceSelected(payload));
+	if(hook.pushEvent != null) {
+		var tmp = ResourceIdCodec.codec().encode(payload.resourceId);
+		hook.pushEvent("resource_selected",{ resource_id : tmp, source : payload.source});
+	}
 };
 var haxe_Exception = function(message,previous,native) {
 	Error.call(this,message);
@@ -336,13 +331,6 @@ phoenix_channels_WirePayload.getIntArray = function(payload,key) {
 		return null;
 	}
 	return ((p,k)=>{var v=p[k]; if(!Array.isArray(v)) return null; var out=[]; for(var i=0;i<v.length;i++){var x=v[i]; if(typeof x==='number'){out.push(x|0); continue;} if(typeof x==='string'){var n=parseInt(x,10); if(Number.isFinite(n)){out.push(n|0); continue;} } return null;} return out;})(payload,key);
-};
-var phoenix_live_$view_HookContextTools = function() { };
-phoenix_live_$view_HookContextTools.__name__ = true;
-phoenix_live_$view_HookContextTools.pushEncoded = function(hook,event) {
-	if(hook.pushEvent != null) {
-		hook.pushEvent(event.event,event.payload);
-	}
 };
 var phoenix_live_$view_LiveEventProtocolCompanion = function() { };
 phoenix_live_$view_LiveEventProtocolCompanion.__name__ = true;

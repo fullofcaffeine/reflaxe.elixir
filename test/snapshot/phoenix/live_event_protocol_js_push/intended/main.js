@@ -33,19 +33,15 @@ ProfileHookEvents.encode = function(event) {
 	switch(event._hx_index) {
 	case 0:
 		var message = event.message;
-		var wire = { };
-		if(wire != null) {
-			wire["message"] = message;
-		}
-		return { event : "clipboard_copied", payload : wire};
+		return { event : "clipboard_copied", payload : { message : message}};
 	case 1:
-		var wire = { };
-		return { event : "ping", payload : wire};
+		return { event : "ping", payload : { }};
 	}
 };
 ProfileHookEvents.decode = function(eventName,payload) {
 	if(eventName == "clipboard_copied") {
-		var message = payload == null ? null : ((p,k)=>{var v=p[k]; return (typeof v==='string') ? v : null;})(payload,"message");
+		var messageRaw = (payload == null ? null : payload["message"]);
+		var message = (typeof messageRaw === 'string' ? messageRaw : null);
 		if(message != null) {
 			return ProfileHookEvent.ClipboardCopied(message);
 		} else {
@@ -58,16 +54,20 @@ ProfileHookEvents.decode = function(eventName,payload) {
 	return null;
 };
 ProfileHookEvents.push = function(hook,event) {
-	var event1 = ProfileHookEvents.encode(event);
+	var encoded = ProfileHookEvents.encode(event);
 	if(hook.pushEvent != null) {
-		hook.pushEvent(event1.event,event1.payload);
+		hook.pushEvent(encoded.event,encoded.payload);
 	}
 };
 ProfileHookEvents.pushClipboardCopied = function(hook,message) {
-	ProfileHookEvents.push(hook,ProfileHookEvent.ClipboardCopied(message));
+	if(hook.pushEvent != null) {
+		hook.pushEvent("clipboard_copied",{ message : message});
+	}
 };
 ProfileHookEvents.pushPing = function(hook) {
-	ProfileHookEvents.push(hook,ProfileHookEvent.Ping);
+	if(hook.pushEvent != null) {
+		hook.pushEvent("ping",{ });
+	}
 };
 var haxe_Exception = function(message,previous,native) {
 	Error.call(this,message);
@@ -205,109 +205,6 @@ js_Boot.__string_rec = function(o,s) {
 		return o;
 	default:
 		return String(o);
-	}
-};
-var phoenix_channels_WirePayload = function() { };
-phoenix_channels_WirePayload.__name__ = true;
-phoenix_channels_WirePayload.empty = function() {
-	return { };
-};
-phoenix_channels_WirePayload.putPayload = function(payload,key,value) {
-	if(payload == null || key == null) {
-		return payload;
-	}
-	payload[key] = value;
-	return payload;
-};
-phoenix_channels_WirePayload.putString = function(payload,key,value) {
-	if(payload == null || key == null) {
-		return payload;
-	}
-	payload[key] = value;
-	return payload;
-};
-phoenix_channels_WirePayload.putInt = function(payload,key,value) {
-	if(payload == null || key == null) {
-		return payload;
-	}
-	payload[key] = value;
-	return payload;
-};
-phoenix_channels_WirePayload.putBool = function(payload,key,value) {
-	if(payload == null || key == null) {
-		return payload;
-	}
-	payload[key] = value;
-	return payload;
-};
-phoenix_channels_WirePayload.putFloat = function(payload,key,value) {
-	if(payload == null || key == null) {
-		return payload;
-	}
-	payload[key] = value;
-	return payload;
-};
-phoenix_channels_WirePayload.putStringArray = function(payload,key,value) {
-	if(payload == null || key == null) {
-		return payload;
-	}
-	payload[key] = value;
-	return payload;
-};
-phoenix_channels_WirePayload.putIntArray = function(payload,key,value) {
-	if(payload == null || key == null) {
-		return payload;
-	}
-	payload[key] = value;
-	return payload;
-};
-phoenix_channels_WirePayload.getPayload = function(payload,key) {
-	if(payload == null || key == null) {
-		return null;
-	}
-	return ((p,k)=>{var v=p[k]; if(v!=null && typeof v==='object' && !Array.isArray(v)) return v; return null;})(payload,key);
-};
-phoenix_channels_WirePayload.getString = function(payload,key) {
-	if(payload == null || key == null) {
-		return null;
-	}
-	return ((p,k)=>{var v=p[k]; return (typeof v==='string') ? v : null;})(payload,key);
-};
-phoenix_channels_WirePayload.getInt = function(payload,key) {
-	if(payload == null || key == null) {
-		return null;
-	}
-	return ((p,k)=>{var v=p[k]; if(v==null) return null; if(typeof v==='number') return (v|0); if(typeof v==='string'){var n=parseInt(v,10); return Number.isFinite(n)?(n|0):null;} return null;})(payload,key);
-};
-phoenix_channels_WirePayload.getBool = function(payload,key) {
-	if(payload == null || key == null) {
-		return null;
-	}
-	return ((p,k)=>{var v=p[k]; if(typeof v==='boolean') return v; return null;})(payload,key);
-};
-phoenix_channels_WirePayload.getFloat = function(payload,key) {
-	if(payload == null || key == null) {
-		return null;
-	}
-	return ((p,k)=>{var v=p[k]; if(v==null) return null; if(typeof v==='number') return v; if(typeof v==='string'){var n=parseFloat(v); return Number.isFinite(n)?n:null;} return null;})(payload,key);
-};
-phoenix_channels_WirePayload.getStringArray = function(payload,key) {
-	if(payload == null || key == null) {
-		return null;
-	}
-	return ((p,k)=>{var v=p[k]; if(!Array.isArray(v)) return null; for(var i=0;i<v.length;i++){if(typeof v[i] !== 'string') return null;} return v;})(payload,key);
-};
-phoenix_channels_WirePayload.getIntArray = function(payload,key) {
-	if(payload == null || key == null) {
-		return null;
-	}
-	return ((p,k)=>{var v=p[k]; if(!Array.isArray(v)) return null; var out=[]; for(var i=0;i<v.length;i++){var x=v[i]; if(typeof x==='number'){out.push(x|0); continue;} if(typeof x==='string'){var n=parseInt(x,10); if(Number.isFinite(n)){out.push(n|0); continue;} } return null;} return out;})(payload,key);
-};
-var phoenix_live_$view_HookContextTools = function() { };
-phoenix_live_$view_HookContextTools.__name__ = true;
-phoenix_live_$view_HookContextTools.pushEncoded = function(hook,event) {
-	if(hook.pushEvent != null) {
-		hook.pushEvent(event.event,event.payload);
 	}
 };
 var phoenix_live_$view_LiveEventProtocolCompanion = function() { };

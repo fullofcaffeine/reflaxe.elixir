@@ -79,7 +79,7 @@ enum LiveEventFieldKind {
 	WireFloat;
 	WireStringArray;
 	WireIntArray;
-	WirePayload;
+	RawPayload;
 	CustomCodec(codec:Expr, label:String);
 	Unsupported(reason:String);
 }
@@ -312,7 +312,7 @@ class LiveEventProtocolModel {
 			case "Float": WireFloat;
 			case "Array<String>": WireStringArray;
 			case "Array<Int>": WireIntArray;
-			case "phoenix.channels.Payload" | "elixir.types.Term" | "js.lib.Object": WirePayload;
+			case "phoenix.channels.Payload" | "elixir.types.Term" | "js.lib.Object": RawPayload;
 			case name if (name.startsWith("Null<") && name.endsWith(">")):
 				classifyFieldType(name.substr(5, name.length - 6));
 			case _:
@@ -361,7 +361,7 @@ class LiveEventProtocolModel {
 			case WireFloat: "float";
 			case WireStringArray: "string_array";
 			case WireIntArray: "int_array";
-			case WirePayload: "payload";
+			case RawPayload: "payload";
 			case CustomCodec(_, label): 'codec:${label}';
 			case Unsupported(_): "unsupported";
 		};

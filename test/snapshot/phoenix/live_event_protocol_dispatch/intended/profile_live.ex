@@ -10,7 +10,12 @@ defmodule ProfileLive do
   defp dispatch_profile_hook_event(event_name, payload, socket) do
     cond do
       event_name == "clipboard_copied" ->
-        message = Phoenix.Channels.WirePayload.get_string(payload, "message")
+        message_raw = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)) do
+          Map.get(payload, "message")
+        else
+          nil
+        end
+        message = if (Kernel.is_binary(message_raw)), do: message_raw, else: nil
         if (Kernel.is_nil(message)), do: {:noreply, socket}, else: handle_clipboard_copied(message, socket)
       event_name == "ping" -> handle_ping(socket)
       :true -> nil
