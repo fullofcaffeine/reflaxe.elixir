@@ -9,6 +9,7 @@ import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventArgumentKind;
 import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventData;
 import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventFieldData;
 import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventFieldKind;
+import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventOrigin;
 import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventProtocolData;
 
 using haxe.macro.Tools;
@@ -81,9 +82,13 @@ class LiveEventProtocolCompanionBuilder {
 		fields.push(buildEncodeFunction(protocol));
 		fields.push(buildDecodeFunction(protocol));
 		if (Context.defined("js")) {
-			fields.push(buildPushFunction(protocol));
+			if (allEventsAreHookEvents(protocol)) {
+				fields.push(buildPushFunction(protocol));
+			}
 			for (event in protocol.events) {
-				fields.push(buildPerEventPushFunction(protocol, event));
+				if (isHookEvent(event)) {
+					fields.push(buildPerEventPushFunction(protocol, event));
+				}
 			}
 		}
 		return fields;
@@ -95,6 +100,24 @@ class LiveEventProtocolCompanionBuilder {
 			access: [APublic, AStatic, AInline],
 			kind: FVar(macro:String, macro $v{event.eventName}),
 			pos: event.pos
+		};
+	}
+
+	static function allEventsAreHookEvents(protocol:LiveEventProtocolData):Bool {
+		for (event in protocol.events) {
+			if (!isHookEvent(event)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	static function isHookEvent(event:LiveEventData):Bool {
+		return switch (event.origin) {
+			case HookEvent:
+				true;
+			case TemplateEvent | SubmitEvent(_) | ChangeEvent(_):
+				false;
 		};
 	}
 

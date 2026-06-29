@@ -30,6 +30,7 @@ typedef LiveEventProtocolData = {
 typedef LiveEventData = {
 	var constructorName:String;
 	var eventName:String;
+	var origin:LiveEventOrigin;
 	var args:Array<LiveEventArgumentData>;
 	var fields:Array<LiveEventFieldData>;
 	var pos:Position;
@@ -56,9 +57,20 @@ typedef LiveEventFieldData = {
 	var wireName:String;
 	var typeName:String;
 	var type:Type;
+	var origin:LiveEventOrigin;
 	var kind:LiveEventFieldKind;
 	var optional:Bool;
 	var pos:Position;
+}
+
+/**
+ * Runtime origin of a LiveView event constructor.
+ */
+enum LiveEventOrigin {
+	HookEvent;
+	TemplateEvent;
+	SubmitEvent(root:String);
+	ChangeEvent(root:String);
 }
 
 /**
@@ -100,7 +112,8 @@ enum LiveEventFieldKind {
  * HOW
  * - Resolves the provided type expression to an enum.
  * - Reads `@:liveEventProtocol("CompanionName")` from the enum.
- * - Reads optional `@:event("wire_name")` metadata from constructors.
+ * - Reads optional `@:event("wire_name")` / `@:hookEvent("wire_name")` /
+ *   `@:templateEvent("wire_name")` metadata from constructors.
  * - Validates duplicate event names, duplicate payload wire keys, and
  *   unsupported payload field types.
  */
@@ -155,6 +168,7 @@ class LiveEventProtocolModel {
 		var events:Array<LiveEventData> = [];
 		for (constructorName in eventNames) {
 			var constructor = enumType.constructs.get(constructorName);
+			var origin = readEventOrigin(constructor);
 			var eventName = readEventName(constructor);
 			if (seenEvents.exists(eventName)) {
 				Context.error('Duplicate LiveView event name "$eventName" in ${enumPath}.', constructor.pos);
@@ -164,7 +178,8 @@ class LiveEventProtocolModel {
 			events.push({
 				constructorName: constructorName,
 				eventName: eventName,
-				args: readArguments(enumPath, constructor),
+				origin: origin,
+				args: readArguments(enumPath, constructor, origin),
 				fields: [],
 				pos: constructor.pos
 			});
@@ -184,38 +199,74 @@ class LiveEventProtocolModel {
 		};
 	}
 
+	static function readEventOrigin(constructor:EnumField):LiveEventOrigin {
+		var entries = constructor.meta.get();
+		var hookEntry = findMeta(entries, ":hookEvent");
+		var legacyEntry = findMeta(entries, ":event");
+		var templateEntry = findMeta(entries, ":templateEvent");
+		var submitEntry = findMeta(entries, ":submitEvent");
+		var changeEntry = findMeta(entries, ":changeEvent");
+		var matched = 0;
+		for (entry in [hookEntry, legacyEntry, templateEntry, submitEntry, changeEntry]) {
+			if (entry != null)
+				matched++;
+		}
+		if (matched > 1) {
+			Context.error('LiveView event ${constructor.name} must use only one event-origin metadata annotation.', constructor.pos);
+		}
+		if (hookEntry != null || legacyEntry != null) {
+			return HookEvent;
+		}
+		if (templateEntry != null) {
+			return TemplateEvent;
+		}
+		if (submitEntry != null) {
+			Context.error("@:submitEvent form payload decoding is planned but not implemented yet. Use direct PhoenixHx for forms or @:templateEvent for phx-value-* events in this slice.",
+				submitEntry.pos);
+			return SubmitEvent(metadataStringParam(submitEntry, 1) ?? "");
+		}
+		if (changeEntry != null) {
+			Context.error("@:changeEvent form payload decoding is planned but not implemented yet. Use direct PhoenixHx for forms or @:templateEvent for phx-value-* events in this slice.",
+				changeEntry.pos);
+			return ChangeEvent(metadataStringParam(changeEntry, 1) ?? "");
+		}
+		return HookEvent;
+	}
+
 	static function readEventName(constructor:EnumField):String {
-		var entry = findMeta(constructor.meta.get(), ":event");
-		if (entry != null) {
+		for (name in [":hookEvent", ":event", ":templateEvent", ":submitEvent", ":changeEvent"]) {
+			var entry = findMeta(constructor.meta.get(), name);
+			if (entry == null)
+				continue;
 			var explicit = metadataStringParam(entry, 0);
 			if (explicit == null || explicit.trim() == "") {
-				Context.error("@:event expects a non-empty string literal.", entry.pos);
+				Context.error('${entry.name} expects a non-empty string literal.', entry.pos);
 			}
 			return explicit;
 		}
 		return camelToSnake(constructor.name);
 	}
 
-	static function readArguments(enumPath:String, constructor:EnumField):Array<LiveEventArgumentData> {
+	static function readArguments(enumPath:String, constructor:EnumField, origin:LiveEventOrigin):Array<LiveEventArgumentData> {
 		return switch (constructor.type.follow()) {
 			case TFun(args, _):
 				var seenWireKeys = new Map<String, Position>();
 				if (args.length == 1) {
-					var typedefArg = buildTypedefPayloadArgument(enumPath, constructor, args[0], seenWireKeys);
+					var typedefArg = buildTypedefPayloadArgument(enumPath, constructor, args[0], seenWireKeys, origin);
 					if (typedefArg != null) {
 						return [typedefArg];
 					}
 				}
-				[for (arg in args) buildFieldArgument(enumPath, constructor, arg, seenWireKeys)];
+				[for (arg in args) buildFieldArgument(enumPath, constructor, arg, seenWireKeys, origin)];
 			case _:
 				[];
 		};
 	}
 
 	static function buildFieldArgument(enumPath:String, constructor:EnumField, arg:{name:String, opt:Bool, t:Type},
-			seenWireKeys:Map<String, Position>):LiveEventArgumentData {
+			seenWireKeys:Map<String, Position>, origin:LiveEventOrigin):LiveEventArgumentData {
 		var wireName = camelToSnake(arg.name);
-		var field = buildField(enumPath, constructor.name, arg.name, wireName, arg.t, arg.opt, constructor.pos);
+		var field = buildField(enumPath, constructor.name, arg.name, wireName, arg.t, arg.opt, constructor.pos, origin);
 		registerWireKey(enumPath, constructor.name, field, seenWireKeys);
 		return {
 			name: arg.name,
@@ -229,7 +280,7 @@ class LiveEventProtocolModel {
 	}
 
 	static function buildTypedefPayloadArgument(enumPath:String, constructor:EnumField, arg:{name:String, opt:Bool, t:Type},
-			seenWireKeys:Map<String, Position>):Null<LiveEventArgumentData> {
+			seenWireKeys:Map<String, Position>, origin:LiveEventOrigin):Null<LiveEventArgumentData> {
 		var payload = typedefPayloadFields(arg.t);
 		if (payload == null) {
 			return null;
@@ -242,7 +293,7 @@ class LiveEventProtocolModel {
 			var wireName = readWireName(payloadField);
 			var codec = readCodec(payloadField);
 			var field = buildField(enumPath, constructor.name, payloadField.name, wireName, payloadField.type, fieldIsOptional(payloadField),
-				payloadField.pos, codec);
+				payloadField.pos, origin, codec);
 			registerWireKey(enumPath, constructor.name, field, seenWireKeys);
 			fields.push(field);
 		}
@@ -279,7 +330,7 @@ class LiveEventProtocolModel {
 	}
 
 	static function buildField(enumPath:String, constructorName:String, name:String, wireName:String, type:Type, optional:Bool,
-			pos:Position, ?codec:Expr):LiveEventFieldData {
+			pos:Position, origin:LiveEventOrigin, ?codec:Expr):LiveEventFieldData {
 		var typeName = type.toString();
 		if (isNullTypeName(typeName) && !optional) {
 			var owner = enumPath == "" ? "LiveView event" : '${enumPath}.${constructorName}';
@@ -291,6 +342,7 @@ class LiveEventProtocolModel {
 			wireName: wireName,
 			typeName: typeName,
 			type: type,
+			origin: origin,
 			kind: codec == null ? classifyFieldType(typeName) : CustomCodec(codec, new Printer().printExpr(codec)),
 			optional: optional,
 			pos: pos
@@ -329,7 +381,7 @@ class LiveEventProtocolModel {
 		buf.add('protocol ${enumPath}\n');
 		buf.add('companion ${companionName}\n');
 		for (event in events) {
-			buf.add('event ${event.constructorName} ${event.eventName}');
+			buf.add('event ${originName(event.origin)} ${event.constructorName} ${event.eventName}');
 			if (event.args.length == 0) {
 				buf.add(' ()\n');
 			} else {
@@ -337,6 +389,15 @@ class LiveEventProtocolModel {
 			}
 		}
 		return buf.toString();
+	}
+
+	static function originName(origin:LiveEventOrigin):String {
+		return switch (origin) {
+			case HookEvent: "hook";
+			case TemplateEvent: "template";
+			case SubmitEvent(root): 'submit:${root}';
+			case ChangeEvent(root): 'change:${root}';
+		};
 	}
 
 	static function manifestArgument(arg:LiveEventArgumentData):String {

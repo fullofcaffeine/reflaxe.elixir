@@ -9,7 +9,11 @@ implemented for named typedef payload fields that need explicit domain codecs.
 Payload fields typed as `Null<T>` now require an explicit optional marker so
 nullable wire contracts stay deliberate. Known protocol events with malformed
 required payloads are consumed by the dispatcher with `NoReply(socket)` instead
-of falling through as unknown events.
+of falling through as unknown events. Protocol constructors can now distinguish
+hook-origin events from simple template-origin events with `@:hookEvent(...)`
+and `@:templateEvent(...)`; template `Int` fields decode DOM string params on
+the server. Full `@:submitEvent` / `@:changeEvent` form payload validation is
+still planned.
 
 PhoenixHx should provide an opt-in, framework-level macro layer for typed
 LiveView events that cross the browser hook/server LiveView boundary.
@@ -53,7 +57,7 @@ More precise vocabulary:
 - **Live Event Protocol**: the shared Haxe enum that declares event names and
   payload shapes.
 - **Generated companion**: the generated Haxe module with event constants,
-  encoders/decoders, and JS hook push helpers.
+  encoders/decoders, and hook-origin JS push helpers.
 - **Generated dispatcher**: the private LiveView helper that decodes protocol
   events and calls typed handlers.
 - **Vanilla Phoenix path**: ordinary `pushEvent`/`handle_event/3` with string
@@ -112,10 +116,10 @@ Live Event Protocols move that contract into shared Haxe:
 ```haxe
 @:liveEventProtocol("HookEvents")
 enum HookClientEvent {
-  @:event("clipboard_copied")
+  @:hookEvent("clipboard_copied")
   ClipboardCopied(message:String);
 
-  @:event("ping")
+  @:hookEvent("ping")
   HookPing;
 }
 
@@ -240,10 +244,10 @@ package shared.liveview;
 
 @:liveEventProtocol
 enum ProfileHookEvent {
-  @:event("clipboard_copied")
+  @:hookEvent("clipboard_copied")
   ClipboardCopied(message:String);
 
-  @:event("ping")
+  @:hookEvent("ping")
   Ping;
 }
 ```
@@ -334,9 +338,12 @@ typedef ProfileHookEvents = LiveEventProtocolCompanion<ProfileHookEvent>;
 ```
 
 That typedef already exposes event constants plus `encode` and `decode` helpers
-generated from the shared protocol model. On JS builds, it also exposes
-`push(hook, event)` plus per-event helpers such as
-`pushClipboardCopied(hook, message)`.
+generated from the shared protocol model. On JS builds, all-hook protocols also
+expose `push(hook, event)` plus per-event helpers such as
+`pushClipboardCopied(hook, message)`. Mixed protocols only expose per-event push
+helpers for `@:hookEvent(...)` constructors; `@:templateEvent(...)`
+constructors are driven by Phoenix's DOM event attributes and do not get hook
+push helpers.
 
 LiveView classes can opt into the first server binding with:
 
@@ -432,10 +439,64 @@ typedef ResourceSelectedPayload = {
 ```
 
 Most protocol fields should not use a codec. `String`, `Int`, `Bool`, `Float`,
-simple arrays, and explicit optional fields are generated directly. For the
-planned typed template-event extension, ordinary DOM params such as
-`phx-value-id` for an `Int` should also use generated parsing rather than a
-custom codec.
+simple arrays, and explicit optional fields are generated directly. For
+template-origin events, ordinary DOM params such as `phx-value-id` for an `Int`
+also use generated parsing rather than a custom codec.
+
+## Template-Origin Events
+
+Use `@:templateEvent(...)` when a normal Phoenix template event has a small,
+important `phx-value-*` contract that should be checked and decoded with the
+same protocol machinery:
+
+```haxe
+@:liveEventProtocol("TodoEvents")
+enum TodoEvent {
+  @:templateEvent("toggle_todo")
+  ToggleTodo(id:Int);
+
+  @:hookEvent("clipboard_copied")
+  ClipboardCopied(message:String);
+}
+
+typedef TodoEvents = LiveEventProtocolCompanion<TodoEvent>;
+```
+
+The template stays ordinary PhoenixHx/HXX:
+
+```haxe
+<button
+  type="button"
+  phx-click=${TodoEvents.ToggleTodoEvent}
+  phx-value-id=${Std.string(todo.id)}>
+  Done
+</button>
+```
+
+The generated server dispatcher reads `"id"` from the Phoenix params map and
+parses the DOM string before calling the typed handler:
+
+```haxe
+static function handleToggleTodo(
+  id:Int,
+  socket:Socket<TodoAssigns>
+):HandleEventResult<TodoAssigns> {
+  return NoReply(toggleTodo(id, socket));
+}
+```
+
+No JS helper is generated for `ToggleTodo` because Phoenix already sends
+template events from the DOM. The generated companion still provides
+`TodoEvents.ToggleTodoEvent` for template authoring and event-name validation.
+
+Use this when the template event is repeated, payload-bearing, or domain
+important. For a one-off local button such as `phx-click="close_modal"`, direct
+PhoenixHx is still clearer.
+
+Full `@:submitEvent(...)` and `@:changeEvent(...)` form-root decoding remains a
+planned extension. In the current implementation those annotations are rejected
+with a macro diagnostic so users do not accidentally rely on incomplete form
+behavior.
 
 The runtime call introduced by a custom codec is not a new protocol runtime.
 It is the same domain parse/validate call a handwritten Phoenix
@@ -458,7 +519,8 @@ Protocol diagnostics should catch:
 - unsupported payload field types
 - duplicate wire keys after name conversion
 - `Dynamic` or unsafe map payloads
-- invalid `@:event`, `@:wire`, or `@:codec` metadata
+- invalid `@:hookEvent`, `@:event`, `@:templateEvent`, `@:wire`, or
+  `@:codec` metadata
 
 LiveView binding diagnostics should catch:
 
@@ -496,9 +558,10 @@ router complexity; it should borrow the shape of the implementation:
   `LiveEventField` from the protocol enum and LiveView metadata.
 - Generate browser helpers and server dispatch helpers from the same model so
   the hook push path and LiveView receive path cannot drift.
-- Keep the metadata grammar narrow and validated: `@:event(...)`,
-  `@:wire(...)`, `@:codec(...)`, handler overrides, and nothing inferred from
-  arbitrary handler bodies.
+- Keep the metadata grammar narrow and validated: `@:hookEvent(...)`,
+  legacy `@:event(...)`, `@:templateEvent(...)`, `@:wire(...)`,
+  `@:codec(...)`, handler overrides, and nothing inferred from arbitrary
+  handler bodies.
 - Keep generated default payload code direct. Built-in field types should lower
   to target-native JS object and Elixir map operations, not `WirePayload` calls
   and not a generic runtime codec object path.

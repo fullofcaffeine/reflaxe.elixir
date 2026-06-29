@@ -195,15 +195,19 @@ hooks and Haxe-authored LiveViews:
 ```haxe
 @:liveEventProtocol("HookEvents")
 enum HookClientEvent {
-  @:event("clipboard_copied")
+  @:hookEvent("clipboard_copied")
   ClipboardCopied(message:String);
 
-  @:event("ping")
+  @:hookEvent("ping")
   HookPing;
 }
 
 typedef HookEvents = LiveEventProtocolCompanion<HookClientEvent>;
 ```
+
+`@:hookEvent(...)` is the explicit spelling for events pushed from a LiveView
+hook. Older examples may use `@:event(...)`; that remains a compatibility alias
+for hook-origin events, but new code should prefer the origin-specific metadata.
 
 ### Where The Protocol Lives
 
@@ -235,10 +239,10 @@ import phoenix.live_view.LiveEventProtocolCompanion;
 
 @:liveEventProtocol("HookEvents")
 enum HookClientEvent {
-  @:event("clipboard_copied")
+  @:hookEvent("clipboard_copied")
   ClipboardCopied(message:String);
 
-  @:event("ping")
+  @:hookEvent("ping")
   HookPing;
 }
 
@@ -384,7 +388,7 @@ typedef ClipboardCopiedPayload = {
 
 @:liveEventProtocol("HookEvents")
 enum HookClientEvent {
-  @:event("clipboard_copied")
+  @:hookEvent("clipboard_copied")
   ClipboardCopied(payload:ClipboardCopiedPayload);
 }
 ```
@@ -417,13 +421,13 @@ Usually, no.
 Use the built-in field types first:
 
 ```haxe
-@:event("clipboard_copied")
+@:hookEvent("clipboard_copied")
 ClipboardCopied(message:String);
 
-@:event("set_visible")
+@:hookEvent("set_visible")
 SetVisible(visible:Bool);
 
-@:event("select_index")
+@:hookEvent("select_index")
 SelectIndex(index:Int);
 ```
 
@@ -452,7 +456,7 @@ typedef ResourceSelectedPayload = {
 
 @:liveEventProtocol("ResourceEvents")
 enum ResourceEvent {
-  @:event("resource_selected")
+  @:hookEvent("resource_selected")
   ResourceSelected(payload:ResourceSelectedPayload);
 }
 ```
@@ -792,12 +796,12 @@ events.
 
 ### Better Than Raw Phoenix When...
 
-Live Event Protocols improve on raw Phoenix when an event contract crosses the
-Haxe frontend/server boundary. In raw Phoenix, the browser side owns a string
+Live Event Protocols improve on raw Phoenix when an event contract crosses a
+Haxe-authored boundary. In raw Phoenix, the browser/template side owns a string
 event name and a map-shaped payload, while the LiveView separately owns another
 copy of the same string and manual map decoding. PhoenixHx can do better there
-because both sides are Haxe: one enum becomes the event registry, the hook push
-API, the payload encoder, the server decoder, and the handler signature.
+because both sides are Haxe: one enum becomes the event registry, optional hook
+push API, payload encoder/decoder, server dispatcher, and handler signature.
 
 That changes the failure mode. With raw Phoenix, renaming
 `"clipboard_copied"` or changing `"message"` to `"body"` can compile and fail
@@ -807,9 +811,9 @@ That is the DevEx win: less repeated boundary code, safer refactors, and fewer
 string/map synchronization bugs.
 
 It is not automatically better than raw Phoenix. If the event is a one-off
-template event, if the LiveView is Elixir-only, if the code is being kept close
-to Phoenix docs during migration, or if there is no shared Haxe JS hook involved,
-plain Phoenix or direct PhoenixHx is simpler. In those cases, use
+template event, if the LiveView is Elixir-only, or if the code is being kept
+close to Phoenix docs during migration, plain Phoenix or direct PhoenixHx is
+simpler. In those cases, use
 `handleEvent(event, params, socket)` plus typed `Params` helpers, or a clearly
 justified low-level `WirePayload` helper at a manual/open boundary, and skip the
 protocol.
@@ -820,7 +824,9 @@ Use this decision guide:
 | --- | --- | --- |
 | One-off `phx-click` or `phx-submit` handled only by the LiveView | Vanilla Phoenix or direct PhoenixHx | A protocol enum would add ceremony without removing much duplication. |
 | Existing Elixir LiveView or code copied from Phoenix docs | Vanilla Phoenix | Keeping the original idiom is easier to debug and migrate. |
-| Haxe LiveView receiving template events only | Direct PhoenixHx | You get typed boundary helpers without introducing a shared browser/server contract. |
+| Haxe LiveView receiving a one-off template event | Direct PhoenixHx | You get typed boundary helpers without introducing a protocol for local code. |
+| Repeated or payload-bearing `phx-click` with `phx-value-*` keys | Live Event Protocol with `@:templateEvent(...)` | The event constant, generated server param decode, and handler signature move together. |
+| `phx-submit` / `phx-change` form payloads | Direct PhoenixHx for now | Form-root protocol decoding is planned, but v1 keeps forms in the normal Phoenix path. |
 | Haxe JS hook pushes an event to a Haxe LiveView | Live Event Protocol | The event name, payload shape, JS push helper, server decode, and handler signature come from one enum. |
 | Reused hook protocol across multiple LiveViews | Live Event Protocol | Each LiveView binds explicitly with `@:liveEvents`, while the shared hook callsites stay typed. |
 | Domain values such as `ResourceId`, `OrganizationSlug`, or non-primitive IDs | Live Event Protocol plus `@:codec(...)` | The Haxe API remains domain-typed while the wire shape stays explicit and snapshot-testable. |
@@ -855,6 +861,70 @@ public static function handleEvent(
 }
 ```
 
+For a repeated template event with a required `phx-value-*` payload, start with
+direct PhoenixHx when it is still simple:
+
+```haxe
+<button
+  type="button"
+  phx-click="toggle_todo"
+  phx-value-id=${Std.string(todo.id)}>
+  Done
+</button>
+```
+
+```haxe
+case "toggle_todo":
+  var id = Params.getInt(params, "id");
+  if (id == null) {
+    NoReply(socket);
+  } else {
+    NoReply(toggleTodo(id, socket));
+  }
+```
+
+Upgrade to `@:templateEvent(...)` when that event appears in several templates,
+has required payload keys, or should participate in generated event-name and
+handler checks:
+
+```haxe
+@:liveEventProtocol("TodoEvents")
+enum TodoEvent {
+  @:templateEvent("toggle_todo")
+  ToggleTodo(id:Int);
+}
+
+typedef TodoEvents = LiveEventProtocolCompanion<TodoEvent>;
+```
+
+```haxe
+<button
+  type="button"
+  phx-click=${TodoEvents.ToggleTodoEvent}
+  phx-value-id=${Std.string(todo.id)}>
+  Done
+</button>
+```
+
+```haxe
+@:liveEvents(TodoEvent, "dispatchTodoEvent")
+class TodoLive {
+  public static function handleEvent(event:String, params:Term, socket:Socket<TodoAssigns>) {
+    var handled = dispatchTodoEvent(event, params, socket);
+    if (handled != null) return handled;
+    return NoReply(socket);
+  }
+
+  static function handleToggleTodo(id:Int, socket:Socket<TodoAssigns>) {
+    return NoReply(toggleTodo(id, socket));
+  }
+}
+```
+
+No hook push helper is generated for `ToggleTodo`: Phoenix sends the DOM event
+from the template. The protocol contributes the event constant, generated
+server decoding, handler validation, and manifest/snapshot stability.
+
 For a Haxe hook pushing a simple scalar payload to a Haxe LiveView, use a Live
 Event Protocol. The raw Phoenix version repeats the event name and payload key:
 
@@ -875,7 +945,7 @@ The protocol version makes the event and payload contract shared:
 ```haxe
 @:liveEventProtocol("HookEvents")
 enum HookClientEvent {
-  @:event("clipboard_copied")
+  @:hookEvent("clipboard_copied")
   ClipboardCopied(message:String);
 }
 
@@ -909,7 +979,7 @@ typedef ClipboardCopiedPayload = {
 
 @:liveEventProtocol("HookEvents")
 enum HookClientEvent {
-  @:event("clipboard_copied")
+  @:hookEvent("clipboard_copied")
   ClipboardCopied(payload:ClipboardCopiedPayload);
 }
 
@@ -938,7 +1008,7 @@ typedef ResourceSelectedPayload = {
 
 @:liveEventProtocol("ResourceEvents")
 enum ResourceEvent {
-  @:event("resource_selected")
+  @:hookEvent("resource_selected")
   ResourceSelected(payload:ResourceSelectedPayload);
 }
 

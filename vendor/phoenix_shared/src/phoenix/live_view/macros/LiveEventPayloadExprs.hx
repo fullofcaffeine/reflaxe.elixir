@@ -8,6 +8,7 @@ import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventArgumentKind;
 import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventData;
 import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventFieldData;
 import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventFieldKind;
+import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventOrigin;
 
 /**
  * Shared payload expression generator for LiveView event protocol macros.
@@ -181,6 +182,9 @@ class LiveEventPayloadExprs {
 			case WireString:
 				kernelPredicate("isBinary", raw, field.pos);
 			case WireInt:
+				if (isTemplateEvent(field)) {
+					return narrowTemplateIntRaw(field, raw);
+				}
 				kernelPredicate("isInteger", raw, field.pos);
 			case WireBool:
 				kernelPredicate("isBoolean", raw, field.pos);
@@ -199,6 +203,26 @@ class LiveEventPayloadExprs {
 		return {
 			expr: EIf(predicate, {expr: ECast(raw, null), pos: field.pos}, macro null),
 			pos: field.pos
+		};
+	}
+
+	static function narrowTemplateIntRaw(field:LiveEventFieldData, raw:Expr):Expr {
+		var parsed = macro Std.parseInt($raw);
+		return {
+			expr: EIf(kernelPredicate("isInteger", raw, field.pos), {expr: ECast(raw, null), pos: field.pos}, {
+				expr: EIf(kernelPredicate("isBinary", raw, field.pos), parsed, macro null),
+				pos: field.pos
+			}),
+			pos: field.pos
+		};
+	}
+
+	static function isTemplateEvent(field:LiveEventFieldData):Bool {
+		return switch (field.origin) {
+			case TemplateEvent:
+				true;
+			case HookEvent | SubmitEvent(_) | ChangeEvent(_):
+				false;
 		};
 	}
 

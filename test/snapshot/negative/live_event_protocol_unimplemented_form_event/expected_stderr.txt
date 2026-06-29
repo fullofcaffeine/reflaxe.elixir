@@ -1,0 +1,1 @@
+@:submitEvent form payload decoding is planned but not implemented yet. Use direct PhoenixHx for forms or @:templateEvent for phx-value-* events in this slice.
