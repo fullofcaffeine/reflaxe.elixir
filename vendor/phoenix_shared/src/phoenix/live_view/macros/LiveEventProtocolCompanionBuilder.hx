@@ -251,17 +251,22 @@ class LiveEventProtocolCompanionBuilder {
 	static function buildDecodeCase(protocol:LiveEventProtocolData, event:LiveEventData):Expr {
 		var expressions:Array<Expr> = [];
 		var decodedChecks:Array<Expr> = [];
+		var payloadSource:Expr = macro payload;
+		if (isFormEvent(event) && event.fields.length > 0) {
+			payloadSource = macro eventPayload;
+			expressions.push({
+				expr: EVars([{name: "eventPayload", type: macro:phoenix.channels.Payload, expr: LiveEventPayloadExprs.payloadSource(event, macro payload)}]),
+				pos: event.pos
+			});
+		}
 		for (field in event.fields) {
 			var fieldIdent = {expr: EConst(CIdent(field.name)), pos: field.pos};
 			expressions.push({
-				expr: EVars([{name: field.name, type: fieldComplexType(field), expr: LiveEventPayloadExprs.decodeField(field, macro payload)}]),
+				expr: EVars([{name: field.name, type: fieldComplexType(field), expr: LiveEventPayloadExprs.decodeField(field, payloadSource)}]),
 				pos: field.pos
 			});
 			if (!field.optional) {
-				decodedChecks.push({
-					expr: EBinop(OpNotEq, fieldIdent, macro null),
-					pos: field.pos
-				});
+				decodedChecks.push(notNil(fieldIdent, field.pos));
 			}
 		}
 
@@ -270,6 +275,28 @@ class LiveEventProtocolCompanionBuilder {
 		var result = decodedChecks.length == 0 ? constructed : guardAll(decodedChecks, constructed);
 		expressions.push(result);
 		return {expr: EBlock(expressions), pos: event.pos};
+	}
+
+	static function isFormEvent(event:LiveEventData):Bool {
+		return switch (event.origin) {
+			case SubmitEvent(_) | ChangeEvent(_):
+				true;
+			case HookEvent | TemplateEvent:
+				false;
+		};
+	}
+
+	static function notNil(value:Expr, pos:Position):Expr {
+		if (Context.defined("js")) {
+			return {expr: EBinop(OpNotEq, value, macro null), pos: pos};
+		}
+		return {
+			expr: EUnop(OpNot, false, {
+				expr: ECall({expr: EField(typeExpr(["elixir"], "Kernel"), "isNil"), pos: pos}, [value]),
+				pos: pos
+			}),
+			pos: pos
+		};
 	}
 
 	static function guardAll(checks:Array<Expr>, success:Expr):Expr {

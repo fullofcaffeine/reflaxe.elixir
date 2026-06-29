@@ -12,8 +12,9 @@ required payloads are consumed by the dispatcher with `NoReply(socket)` instead
 of falling through as unknown events. Protocol constructors can now distinguish
 hook-origin events from simple template-origin events with `@:hookEvent(...)`
 and `@:templateEvent(...)`; template `Int` fields decode DOM string params on
-the server. Full `@:submitEvent` / `@:changeEvent` form payload validation is
-still planned.
+the server. Form-origin events now use `@:submitEvent("event", "root")` and
+`@:changeEvent("event", "root")` to generate form-root decoders for typed
+handlers while keeping ordinary Phoenix form params at runtime.
 
 PhoenixHx should provide an opt-in, framework-level macro layer for typed
 LiveView events that cross the browser hook/server LiveView boundary.
@@ -493,10 +494,48 @@ Use this when the template event is repeated, payload-bearing, or domain
 important. For a one-off local button such as `phx-click="close_modal"`, direct
 PhoenixHx is still clearer.
 
-Full `@:submitEvent(...)` and `@:changeEvent(...)` form-root decoding remains a
-planned extension. In the current implementation those annotations are rejected
-with a macro diagnostic so users do not accidentally rely on incomplete form
-behavior.
+## Form-Origin Events
+
+Use `@:submitEvent(...)` and `@:changeEvent(...)` when a Phoenix form event has
+a repeated or important params contract:
+
+```haxe
+typedef TodoForm = {
+  var title:String;
+
+  @:optional
+  var notes:Null<String>;
+}
+
+@:liveEventProtocol("TodoEvents")
+enum TodoEvent {
+  @:submitEvent("create_todo", "todo")
+  CreateTodo(payload:TodoForm);
+
+  @:changeEvent("update_form", "todo")
+  UpdateForm(payload:TodoForm);
+}
+```
+
+The first string is the Phoenix event name. The second string is the form root,
+matching input names such as `todo[title]`. Generated server code still lowers
+to plain Phoenix params handling: read `Map.get(params, "todo")`, read fields
+from that map, parse primitives, and call the typed handler.
+
+No JS helper is generated for form-origin events because Phoenix sends
+`phx-submit` and `phx-change` from the DOM. The generated companion provides
+event constants for HXX authoring and validation:
+
+```haxe
+<form
+  phx-change=${TodoEvents.UpdateFormEvent}
+  phx-submit=${TodoEvents.CreateTodoEvent}>
+  <input type="text" name="todo[title]" value={@form.title} />
+</form>
+```
+
+Use direct PhoenixHx instead for one-off local forms where manual params code is
+shorter and clearer.
 
 The runtime call introduced by a custom codec is not a new protocol runtime.
 It is the same domain parse/validate call a handwritten Phoenix

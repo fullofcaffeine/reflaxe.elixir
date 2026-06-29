@@ -826,7 +826,8 @@ Use this decision guide:
 | Existing Elixir LiveView or code copied from Phoenix docs | Vanilla Phoenix | Keeping the original idiom is easier to debug and migrate. |
 | Haxe LiveView receiving a one-off template event | Direct PhoenixHx | You get typed boundary helpers without introducing a protocol for local code. |
 | Repeated or payload-bearing `phx-click` with `phx-value-*` keys | Live Event Protocol with `@:templateEvent(...)` | The event constant, generated server param decode, and handler signature move together. |
-| `phx-submit` / `phx-change` form payloads | Direct PhoenixHx for now | Form-root protocol decoding is planned, but v1 keeps forms in the normal Phoenix path. |
+| Reused or payload-bearing `phx-submit` / `phx-change` form payloads | Live Event Protocol with `@:submitEvent(...)` / `@:changeEvent(...)` | The form root, fields, server decoder, and handler signature move together. |
+| One-off `phx-submit` with local params | Direct PhoenixHx | Manual `Params.get*` code is still lighter when the form contract is not shared or repeated. |
 | Haxe JS hook pushes an event to a Haxe LiveView | Live Event Protocol | The event name, payload shape, JS push helper, server decode, and handler signature come from one enum. |
 | Reused hook protocol across multiple LiveViews | Live Event Protocol | Each LiveView binds explicitly with `@:liveEvents`, while the shared hook callsites stay typed. |
 | Domain values such as `ResourceId`, `OrganizationSlug`, or non-primitive IDs | Live Event Protocol plus `@:codec(...)` | The Haxe API remains domain-typed while the wire shape stays explicit and snapshot-testable. |
@@ -924,6 +925,97 @@ class TodoLive {
 No hook push helper is generated for `ToggleTodo`: Phoenix sends the DOM event
 from the template. The protocol contributes the event constant, generated
 server decoding, handler validation, and manifest/snapshot stability.
+
+For a one-off form, direct PhoenixHx is still the simplest code. The form root
+and field names are just Phoenix params:
+
+```haxe
+<form phx-submit="create_todo">
+  <input type="text" name="todo[title]" value={@form.title} />
+  <button type="submit">Create</button>
+</form>
+```
+
+```haxe
+case "create_todo":
+  var todo = Params.get(params, "todo");
+  var title = Params.getString(todo, "title");
+  if (title == null || title == "") {
+    NoReply(socket);
+  } else {
+    NoReply(createTodo(title, socket));
+  }
+```
+
+Upgrade to `@:submitEvent(...)` or `@:changeEvent(...)` when the form contract
+is reused, has required fields, or should become a typed handler boundary:
+
+```haxe
+typedef CreateTodoForm = {
+  var title:String;
+
+  @:optional
+  var notes:Null<String>;
+}
+
+@:liveEventProtocol("TodoEvents")
+enum TodoEvent {
+  @:submitEvent("create_todo", "todo")
+  CreateTodo(payload:CreateTodoForm);
+
+  @:changeEvent("update_form", "todo")
+  UpdateForm(payload:CreateTodoForm);
+}
+
+typedef TodoEvents = LiveEventProtocolCompanion<TodoEvent>;
+```
+
+```haxe
+<form
+  phx-change=${TodoEvents.UpdateFormEvent}
+  phx-submit=${TodoEvents.CreateTodoEvent}>
+  <input type="text" name="todo[title]" value={@form.title} />
+  <textarea name="todo[notes]">{@form.notes}</textarea>
+  <button type="submit">Create</button>
+</form>
+```
+
+```haxe
+@:liveEvents(TodoEvent, "dispatchTodoEvent")
+class TodoLive {
+  public static function handleEvent(event:String, params:Term, socket:Socket<TodoAssigns>) {
+    var handled = dispatchTodoEvent(event, params, socket);
+    if (handled != null) return handled;
+    return NoReply(socket);
+  }
+
+  static function handleCreateTodo(
+    payload:CreateTodoForm,
+    socket:Socket<TodoAssigns>
+  ):HandleEventResult<TodoAssigns> {
+    return NoReply(createTodo(payload, socket));
+  }
+
+  static function handleUpdateForm(
+    payload:CreateTodoForm,
+    socket:Socket<TodoAssigns>
+  ):HandleEventResult<TodoAssigns> {
+    return NoReply(validateTodo(payload, socket));
+  }
+}
+```
+
+The only string keys in the protocol declaration are the Phoenix boundary
+names: `"create_todo"` / `"update_form"` and the form root `"todo"`. Field
+keys such as `"title"` and `"notes"` come from the Haxe typedef, or from
+`@:wire("...")` when the wire key needs to differ. The generated server helper
+lowers to ordinary Phoenix-style `Map.get(params, "todo")`, field reads, and
+primitive parsing before calling the typed handler. No hook push helper is
+generated for submit/change events because Phoenix sends them from the form.
+When the LiveView is bound with `@:liveEvents(...)`, these event names also feed
+the existing HXX `phx-*` event-name registry, so strict HXX checks can validate
+`phx-submit=${TodoEvents.CreateTodoEvent}` and
+`phx-change=${TodoEvents.UpdateFormEvent}` as compile-time constants.
 
 For a Haxe hook pushing a simple scalar payload to a Haxe LiveView, use a Live
 Event Protocol. The raw Phoenix version repeats the event name and payload key:

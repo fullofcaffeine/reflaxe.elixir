@@ -2,7 +2,7 @@ import phoenix.live_view.LiveEventProtocol;
 
 @:liveEventProtocol("BadFormEvents")
 enum BadFormEvent {
-	@:submitEvent("create_todo", "todo")
+	@:submitEvent("create_todo")
 	CreateTodo(title:String);
 }
 

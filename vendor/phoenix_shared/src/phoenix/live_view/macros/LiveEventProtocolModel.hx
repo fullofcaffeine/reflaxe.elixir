@@ -113,7 +113,8 @@ enum LiveEventFieldKind {
  * - Resolves the provided type expression to an enum.
  * - Reads `@:liveEventProtocol("CompanionName")` from the enum.
  * - Reads optional `@:event("wire_name")` / `@:hookEvent("wire_name")` /
- *   `@:templateEvent("wire_name")` metadata from constructors.
+ *   `@:templateEvent("wire_name")`, `@:submitEvent("wire_name", "root")`,
+ *   and `@:changeEvent("wire_name", "root")` metadata from constructors.
  * - Validates duplicate event names, duplicate payload wire keys, and
  *   unsupported payload field types.
  */
@@ -221,16 +222,21 @@ class LiveEventProtocolModel {
 			return TemplateEvent;
 		}
 		if (submitEntry != null) {
-			Context.error("@:submitEvent form payload decoding is planned but not implemented yet. Use direct PhoenixHx for forms or @:templateEvent for phx-value-* events in this slice.",
-				submitEntry.pos);
-			return SubmitEvent(metadataStringParam(submitEntry, 1) ?? "");
+			return SubmitEvent(readFormRoot(submitEntry));
 		}
 		if (changeEntry != null) {
-			Context.error("@:changeEvent form payload decoding is planned but not implemented yet. Use direct PhoenixHx for forms or @:templateEvent for phx-value-* events in this slice.",
-				changeEntry.pos);
-			return ChangeEvent(metadataStringParam(changeEntry, 1) ?? "");
+			return ChangeEvent(readFormRoot(changeEntry));
 		}
 		return HookEvent;
+	}
+
+	static function readFormRoot(entry:MetadataEntry):String {
+		var root = metadataStringParam(entry, 1);
+		if (root == null || root.trim() == "") {
+			Context.error('${entry.name} expects an event name and non-empty form root, for example ${entry.name}("create_todo", "todo").',
+				entry.pos);
+		}
+		return root;
 	}
 
 	static function readEventName(constructor:EnumField):String {

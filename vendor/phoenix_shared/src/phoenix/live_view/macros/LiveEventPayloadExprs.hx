@@ -55,6 +55,15 @@ class LiveEventPayloadExprs {
 		return {expr: EBlock([rawVar, decoded]), pos: field.pos};
 	}
 
+	public static function payloadSource(event:LiveEventData, payload:Expr):Expr {
+		return switch (event.origin) {
+			case SubmitEvent(root) | ChangeEvent(root):
+				formRootGet(root, payload, event.pos);
+			case HookEvent | TemplateEvent:
+				payload;
+		};
+	}
+
 	public static function buildPushBody(event:LiveEventData):Expr {
 		var payload = buildPayload(event);
 		return macro {
@@ -74,12 +83,18 @@ class LiveEventPayloadExprs {
 	}
 
 	static function buildJsPayload(event:LiveEventData):Expr {
-		var objectLiteral = {
+		var fieldsLiteral = {
 			expr: EObjectDecl([
 				for (field in event.fields)
 					{field: field.wireName, expr: encodePayloadValue(event, field)}
 			]),
 			pos: event.pos
+		};
+		var objectLiteral = switch (event.origin) {
+			case SubmitEvent(root) | ChangeEvent(root):
+				{expr: EObjectDecl([{field: root, expr: fieldsLiteral}]), pos: event.pos};
+			case HookEvent | TemplateEvent:
+				fieldsLiteral;
 		};
 		return {
 			expr: ECheckType({
@@ -92,6 +107,12 @@ class LiveEventPayloadExprs {
 
 	static function buildElixirPayload(event:LiveEventData):Expr {
 		var emptyPayload:Expr = {expr: EObjectDecl([]), pos: event.pos};
+		switch (event.origin) {
+			case SubmitEvent(root) | ChangeEvent(root):
+				return buildElixirFormPayload(event, root, emptyPayload);
+			case HookEvent | TemplateEvent:
+		}
+
 		var expressions:Array<Expr> = [{
 			expr: EVars([{name: "wirePayload", type: macro:phoenix.channels.Payload, expr: emptyPayload}]),
 			pos: event.pos
@@ -102,6 +123,31 @@ class LiveEventPayloadExprs {
 				pos: field.pos
 			});
 		}
+		expressions.push(macro wirePayload);
+		return {expr: EBlock(expressions), pos: event.pos};
+	}
+
+	static function buildElixirFormPayload(event:LiveEventData, root:String, emptyPayload:Expr):Expr {
+		var expressions:Array<Expr> = [
+			{
+				expr: EVars([{name: "formPayload", type: macro:phoenix.channels.Payload, expr: emptyPayload}]),
+				pos: event.pos
+			},
+			{
+				expr: EVars([{name: "wirePayload", type: macro:phoenix.channels.Payload, expr: emptyPayload}]),
+				pos: event.pos
+			}
+		];
+		for (field in event.fields) {
+			expressions.push({
+				expr: EBinop(OpAssign, macro formPayload, putPayloadField(field, macro formPayload, encodePayloadValue(event, field))),
+				pos: field.pos
+			});
+		}
+		expressions.push({
+			expr: EBinop(OpAssign, macro wirePayload, putPayloadRoot(root, macro wirePayload, macro formPayload, event.pos)),
+			pos: event.pos
+		});
 		expressions.push(macro wirePayload);
 		return {expr: EBlock(expressions), pos: event.pos};
 	}
@@ -127,6 +173,17 @@ class LiveEventPayloadExprs {
 		};
 	}
 
+	static function putPayloadRoot(root:String, payload:Expr, value:Expr, pos:Position):Expr {
+		return {
+			expr: ECall({expr: EField(typeExpr(["elixir"], "ElixirMap"), "put"), pos: pos}, [
+				payload,
+				macro $v{root},
+				value
+			]),
+			pos: pos
+		};
+	}
+
 	static function rawPayloadGet(field:LiveEventFieldData, payload:Expr):Expr {
 		if (Context.defined("js")) {
 			return {
@@ -149,6 +206,31 @@ class LiveEventPayloadExprs {
 		return {
 			expr: EIf(isElixirMap(payload, field.pos), mapRead, macro null),
 			pos: field.pos
+		};
+	}
+
+	static function formRootGet(root:String, payload:Expr, pos:Position):Expr {
+		if (Context.defined("js")) {
+			return {
+				expr: ECall({expr: EField(typeExpr(["js"], "Syntax"), "code"), pos: pos}, [
+					macro $v{"({0} == null ? null : {0}[{1}])"},
+					payload,
+					macro $v{root}
+				]),
+				pos: pos
+			};
+		}
+
+		var rootRead = {
+			expr: ECall({expr: EField(typeExpr(["elixir"], "ElixirMap"), "get"), pos: pos}, [
+				payload,
+				macro $v{root}
+			]),
+			pos: pos
+		};
+		return {
+			expr: EIf(isElixirMap(payload, pos), rootRead, macro null),
+			pos: pos
 		};
 	}
 
@@ -182,13 +264,19 @@ class LiveEventPayloadExprs {
 			case WireString:
 				kernelPredicate("isBinary", raw, field.pos);
 			case WireInt:
-				if (isTemplateEvent(field)) {
+				if (isDomStringOrigin(field)) {
 					return narrowTemplateIntRaw(field, raw);
 				}
 				kernelPredicate("isInteger", raw, field.pos);
 			case WireBool:
+				if (isFormEvent(field)) {
+					return narrowFormBoolRaw(field, raw);
+				}
 				kernelPredicate("isBoolean", raw, field.pos);
 			case WireFloat:
+				if (isFormEvent(field)) {
+					return narrowFormFloatRaw(field, raw);
+				}
 				{
 					expr: EBinop(OpBoolOr, kernelPredicate("isFloat", raw, field.pos), kernelPredicate("isInteger", raw, field.pos)),
 					pos: field.pos
@@ -217,11 +305,53 @@ class LiveEventPayloadExprs {
 		};
 	}
 
-	static function isTemplateEvent(field:LiveEventFieldData):Bool {
+	static function narrowFormBoolRaw(field:LiveEventFieldData, raw:Expr):Expr {
+		var rawText = {
+			expr: ECall({expr: EField(typeExpr(["elixir"], "Kernel"), "toString"), pos: field.pos}, [raw]),
+			pos: field.pos
+		};
+		return {
+			expr: EIf(kernelPredicate("isBoolean", raw, field.pos), raw, {
+				expr: EIf(kernelPredicate("isBinary", raw, field.pos), {
+					expr: EIf({expr: EBinop(OpEq, rawText, macro "true"), pos: field.pos}, macro true, {
+						expr: EIf({expr: EBinop(OpEq, rawText, macro "false"), pos: field.pos}, macro false, macro null),
+						pos: field.pos
+					}),
+					pos: field.pos
+				}, macro null),
+				pos: field.pos
+			}),
+			pos: field.pos
+		};
+	}
+
+	static function narrowFormFloatRaw(field:LiveEventFieldData, raw:Expr):Expr {
+		return {
+			expr: EIf({
+				expr: EBinop(OpBoolOr, kernelPredicate("isFloat", raw, field.pos), kernelPredicate("isInteger", raw, field.pos)),
+				pos: field.pos
+			}, {expr: ECast(raw, null), pos: field.pos}, {
+				expr: EIf(kernelPredicate("isBinary", raw, field.pos), macro Std.parseFloat($raw), macro null),
+				pos: field.pos
+			}),
+			pos: field.pos
+		};
+	}
+
+	static function isDomStringOrigin(field:LiveEventFieldData):Bool {
 		return switch (field.origin) {
-			case TemplateEvent:
+			case TemplateEvent | SubmitEvent(_) | ChangeEvent(_):
 				true;
-			case HookEvent | SubmitEvent(_) | ChangeEvent(_):
+			case HookEvent:
+				false;
+		};
+	}
+
+	static function isFormEvent(field:LiveEventFieldData):Bool {
+		return switch (field.origin) {
+			case SubmitEvent(_) | ChangeEvent(_):
+				true;
+			case HookEvent | TemplateEvent:
 				false;
 		};
 	}

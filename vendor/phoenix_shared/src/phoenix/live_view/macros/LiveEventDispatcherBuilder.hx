@@ -11,6 +11,7 @@ import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventArgumentKind;
 import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventData;
 import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventFieldData;
 import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventFieldKind;
+import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventOrigin;
 import phoenix.live_view.macros.LiveEventProtocolModel.LiveEventProtocolData;
 
 using haxe.macro.Tools;
@@ -209,17 +210,22 @@ class LiveEventDispatcherBuilder {
 	static function buildEventDispatchValue(event:LiveEventData):Expr {
 		var expressions:Array<Expr> = [];
 		var missingChecks:Array<Expr> = [];
+		var payloadSource:Expr = macro payload;
+		if (isFormEvent(event) && event.fields.length > 0) {
+			payloadSource = macro eventPayload;
+			expressions.push({
+				expr: EVars([{name: "eventPayload", type: macro:phoenix.channels.Payload, expr: LiveEventPayloadExprs.payloadSource(event, macro payload)}]),
+				pos: event.pos
+			});
+		}
 		for (field in event.fields) {
 			var fieldIdent = {expr: EConst(CIdent(field.name)), pos: field.pos};
 			expressions.push({
-				expr: EVars([{name: field.name, type: fieldComplexType(field), expr: LiveEventPayloadExprs.decodeField(field, macro payload)}]),
+				expr: EVars([{name: field.name, type: fieldComplexType(field), expr: LiveEventPayloadExprs.decodeField(field, payloadSource)}]),
 				pos: field.pos
 			});
 			if (!field.optional) {
-				missingChecks.push({
-					expr: EBinop(OpEq, fieldIdent, macro null),
-					pos: field.pos
-				});
+				missingChecks.push(isNil(fieldIdent, field.pos));
 			}
 		}
 
@@ -232,6 +238,22 @@ class LiveEventDispatcherBuilder {
 			expressions.push(buildHandlerCall(event));
 		}
 		return {expr: EBlock(expressions), pos: event.pos};
+	}
+
+	static function isFormEvent(event:LiveEventData):Bool {
+		return switch (event.origin) {
+			case SubmitEvent(_) | ChangeEvent(_):
+				true;
+			case HookEvent | TemplateEvent:
+				false;
+		};
+	}
+
+	static function isNil(value:Expr, pos:Position):Expr {
+		return {
+			expr: ECall({expr: EField(typeExpr(["elixir"], "Kernel"), "isNil"), pos: pos}, [value]),
+			pos: pos
+		};
 	}
 
 	static function buildInvalidPayloadResult():Expr {
