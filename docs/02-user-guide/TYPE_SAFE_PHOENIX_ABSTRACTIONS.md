@@ -467,10 +467,43 @@ This is not extra machinery compared with plain Phoenix. Without the typed
 protocol, you would still decide how `ResourceId` crosses the browser/Phoenix
 boundary and call that conversion by hand.
 
-For example, plain PhoenixHx code would use ordinary app helpers. These helpers
-are not Phoenix APIs; they are just where your app decides how a `ResourceId`
-becomes a plain payload value and how a runtime param becomes a typed
-`ResourceId` again:
+In a raw Elixir/Phoenix app, the hook pushes a plain event name and payload:
+
+```javascript
+let ResourceSelectHook = {
+  selected(resourceId, source) {
+    this.pushEvent("resource_selected", {
+      resource_id: String(resourceId),
+      source: source
+    })
+  }
+}
+```
+
+The LiveView then matches the string event, reads the string-keyed params map,
+and performs the domain parse/validation by hand:
+
+```elixir
+def handle_event("resource_selected", params, socket) do
+  resource_id =
+    params
+    |> Map.get("resource_id")
+    |> ResourceIds.from_param()
+
+  source = Map.get(params, "source")
+
+  if is_nil(resource_id) or is_nil(source) do
+    {:noreply, socket}
+  else
+    {:noreply, select_resource(socket, resource_id, source)}
+  end
+end
+```
+
+Direct PhoenixHx is the same Phoenix shape, but Haxe-authored. It can use
+ordinary app helpers. These helpers are not Phoenix APIs; they are just where
+your app decides how a `ResourceId` becomes a plain payload value and how a
+runtime param becomes a typed `ResourceId` again:
 
 ```haxe
 class ResourceIds {
@@ -530,10 +563,50 @@ public static function handleEvent(
 }
 ```
 
-The typed protocol version keeps that same domain conversion idea, but attaches
-it to the field with `@:codec(...)` so the macro can generate the repeated
-event-string, payload-key, and decode plumbing. Your LiveView handler receives
-the typed value directly:
+Some teams prefer to package the same conversion as a small codec object even
+when they are not using Live Event Protocols. That is also plain PhoenixHx app
+code, not a Phoenix API. The hook and LiveView still call the converter
+manually:
+
+```haxe
+class ResourceSelectHook {
+  public static function selected(
+    hook:HookContext,
+    resourceId:ResourceId,
+    source:String
+  ):Void {
+    // App/PhoenixHx converter, called by hand in the direct PhoenixHx path.
+    var codec = ResourceIdCodec.codec();
+
+    if (hook.pushEvent != null) {
+      hook.pushEvent("resource_selected", {
+        resource_id: codec.encode(resourceId),
+        source: source
+      });
+    }
+  }
+}
+```
+
+```haxe
+case "resource_selected":
+  var codec = ResourceIdCodec.codec();
+  var resourceIdPayload = Params.get(params, "resource_id");
+  var resourceId = resourceIdPayload == null ? null : codec.decode(resourceIdPayload);
+  var source = Params.getString(params, "source");
+
+  if (resourceId == null || source == null) {
+    NoReply(socket);
+  } else {
+    NoReply(selectResource(resourceId, source, socket));
+  }
+```
+
+The typed protocol version keeps that same domain conversion idea. If you use
+`@:codec(...)`, the macro calls the codec in the generated push/decode path for
+you, so app code no longer repeats the event string, payload key, converter
+call, and null-check plumbing. Your LiveView handler receives the typed value
+directly:
 
 ```haxe
 static function handleResourceSelected(
