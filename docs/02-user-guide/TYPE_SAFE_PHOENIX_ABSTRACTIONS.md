@@ -463,29 +463,69 @@ protocol code around that field still uses direct JS object and Elixir map
 access; any lower-level wire helper usage is isolated inside the codec you
 explicitly chose.
 
-This is not extra machinery compared with plain Phoenix. In a handwritten
-LiveView you would still parse or validate the runtime params somewhere:
+This is not extra machinery compared with plain Phoenix. Without the typed
+protocol, you would still decide how `ResourceId` crosses the browser/Phoenix
+boundary and call that conversion by hand.
+
+For example, plain PhoenixHx hook code might push the same event directly:
 
 ```haxe
-case "resource_selected":
-  var raw = Params.get(params, "resource_id");
-  var resourceId = ResourceIdCodec.decode(raw);
-  if (resourceId == null) {
-    NoReply(socket);
-  } else {
-    NoReply(selectResource(resourceId, socket));
+class ResourceSelectHook {
+  public static function selected(
+    hook:HookContext,
+    resourceId:ResourceId,
+    source:String
+  ):Void {
+    var codec = ResourceIdCodec.codec();
+
+    if (hook.pushEvent != null) {
+      hook.pushEvent("resource_selected", {
+        resource_id: codec.encode(resourceId),
+        source: source
+      });
+    }
   }
+}
 ```
 
-The protocol version moves that same domain conversion into the generated
-decoder, then calls a typed handler:
+Then the LiveView would manually match the event string, read the same payload
+keys, call the same domain decoder, and only then enter typed app logic:
+
+```haxe
+public static function handleEvent(
+  event:String,
+  params:Term,
+  socket:Socket<ResourceAssigns>
+):HandleEventResult<ResourceAssigns> {
+  return switch (event) {
+    case "resource_selected":
+      var resourceIdPayload = Params.get(params, "resource_id");
+      var source = Params.getString(params, "source");
+      var codec = ResourceIdCodec.codec();
+      var resourceId = resourceIdPayload == null ? null : codec.decode(resourceIdPayload);
+
+      if (resourceId == null || source == null) {
+        NoReply(socket);
+      } else {
+        NoReply(selectResource(resourceId, source, socket));
+      }
+
+    case _:
+      NoReply(socket);
+  }
+}
+```
+
+The typed protocol version keeps the domain conversion, but moves the repeated
+event-string, payload-key, and decode plumbing into generated code. Your
+LiveView handler receives the typed value directly:
 
 ```haxe
 static function handleResourceSelected(
   payload:ResourceSelectedPayload,
   socket:Socket<ResourceAssigns>
 ):HandleEventResult<ResourceAssigns> {
-  return NoReply(selectResource(payload.resourceId, socket));
+  return NoReply(selectResource(payload.resourceId, payload.source, socket));
 }
 ```
 
