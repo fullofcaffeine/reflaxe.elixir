@@ -565,6 +565,10 @@ def processItems(items) do
 end
 ```
 
+Apply the root `Generated Target Output Hygiene` rule to every compiler change: if generated Elixir exposes a
+Haxe-shaped artifact, either improve the lowering or justify the artifact through an inline generated comment or a
+documented central lowering contract plus snapshot coverage.
+
 ### Pattern Matching Generation
 ```haxe
 // Generate proper Elixir pattern matching

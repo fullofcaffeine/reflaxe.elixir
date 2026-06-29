@@ -19,6 +19,10 @@ When translating Haxe to Elixir, we must consider:
 
 **FUNDAMENTAL PRINCIPLE**: ALL generated code, including standard library implementations, MUST be idiomatic Elixir.
 
+Apply the root `Generated Target Output Hygiene` rule: snapshots should drive compiler fixes toward handwritten-looking
+Elixir, and any intentionally visible Haxism must include its inline generated comment or documented central lowering
+contract.
+
 This directive applies to:
 - **Main test files** - Primary test logic (already completed in Phase 0A)
 - **Standard library files** - All Haxe stdlib implementations (balanced_tree.ex, string_tools.ex, bytes.ex, etc.)

@@ -381,8 +381,29 @@ Source of truth: `docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md` and `
 - **Framework-Agnostic Architecture**: Support any Elixir application pattern (Phoenix, Nerves, pure OTP) without compiler assumptions
 - **⚠️ API Faithfulness**: Follow Elixir and Phoenix APIs exactly - never invent functions that don't exist. Provide Haxe conveniences via proper overloads, not fake APIs
 - **Hand-Written Quality**: Generated code should look like it was written by an Elixir expert, not a machine
-- **Transparent Bridge Variables**: When compiler-generated variables are needed (like `g` for switch expressions), add comments explaining their purpose
+- **No Unexplained Source-Language Artifacts**: Haxisms in generated Elixir are defects unless required for semantics and justified by the generated-output hygiene rule below.
 - **🔥 Pragmatic Stdlib Implementation**: Use `__elixir__()` for efficient native stdlib - [see Standard Library Philosophy](#standard-library-philosophy--pragmatic-native-implementation)
+
+### Generated Target Output Hygiene (Hard Rule)
+
+Generated Elixir must be reviewed as if it were hand-written Phoenix/Elixir code. Prefer target-native forms such as
+`case`, `cond`, `with`, pattern matching, pipelines, `Map.*`, `Enum.*`, Phoenix callbacks, Ecto changesets, OTP
+callbacks, and normal module functions over Haxe-runtime-looking wrappers.
+
+Source-language artifacts ("Haxisms") are allowed only when they are truly semantic: preserving Haxe mutation,
+evaluation order, exceptions, runtime type checks, stdlib contracts, or cross-target behavior. This includes synthetic
+bridge variables, Haxe-shaped helper calls, wrappers, mutable-state bridges, runtime shims, and exception/type
+machinery.
+
+When a Haxism is unavoidable:
+- Keep it as small and localized as possible.
+- Prefer a documented compiler/runtime helper over repeated noisy call-site machinery.
+- If the artifact is visible in generated Elixir, add a short inline generated Elixir comment explaining why it
+  exists.
+- If commenting every generated site would harm readability, document the central lowering/helper with hxdoc and name
+  that contract in nearby source comments or tests.
+- Snapshot intended output must lock the handwritten-looking target shape and include the justification comment or
+  reference when the artifact is intentionally visible.
 
 ### Target Compatibility Floor, Haxe API Ceiling (Hard Rule)
 

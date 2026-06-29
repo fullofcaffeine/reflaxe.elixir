@@ -97,6 +97,8 @@ test/
 - **Test-driven development** - The test drives the compiler implementation
 - **Quality assurance** - Forces you to think about idiomatic Elixir patterns
 - **Prevents perpetuating bugs** - Old "intended" outputs may contain bugs
+- **Generated-output hygiene** - Apply the root rule: intended output should look hand-written, and any intentionally
+  visible Haxism must carry its inline comment or documented central lowering contract.
 
 **Example Workflow:**
 ```bash
