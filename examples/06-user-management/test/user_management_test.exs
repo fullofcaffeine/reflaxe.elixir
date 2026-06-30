@@ -1,5 +1,6 @@
 defmodule UserManagementExampleTest do
   use ExUnit.Case, async: true
+  alias MyApp.{Post, User, Users}
 
   test "generated Ecto user changeset accepts valid user attributes" do
     changeset =

@@ -9,6 +9,7 @@
 
 # Output directory for generated .ex files
 -D elixir_output=lib
+-D app_name=MyApp
 
 # Required for Reflaxe targets
 -D reflaxe_runtime

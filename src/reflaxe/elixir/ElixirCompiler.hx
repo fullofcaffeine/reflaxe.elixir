@@ -3115,9 +3115,9 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 				}
 			}
 
-			if (assocModule == null) {
-				assocModule = inferAssociationModuleFromType(field.type);
-			}
+			var typedAssocModule = inferAssociationModuleFromType(field.type);
+			if (typedAssocModule != null)
+				assocModule = typedAssocModule;
 
 			if (assocModule == null)
 				continue;
@@ -3156,7 +3156,13 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 				} else if (cls.name == "Dynamic") {
 					null;
 				} else {
-					cls.name;
+					var nativeAlias = PhoenixTargetNames.nativeAlias(cls);
+					if (nativeAlias != null)
+						nativeAlias;
+					else {
+						var targetAlias = PhoenixTargetNames.classTargetAlias(cls);
+						targetAlias != null ? targetAlias : cls.name;
+					}
 				}
 			case TAnonymous(_):
 				null;

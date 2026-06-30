@@ -1,4 +1,4 @@
-defmodule User do
+defmodule MyApp.User do
   use Ecto.Schema
   schema "users" do
     _ = field(:name, :string)

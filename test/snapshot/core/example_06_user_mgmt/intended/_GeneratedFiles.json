@@ -5,12 +5,12 @@
   "reflaxe/exception.ex",
   "reflaxe/elixir/haxe_throw.ex",
   "reflaxe/elixir/haxe_float.ex",
+  "my_app/user.ex",
   "main.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/_call_stack/call_stack_impl_.ex",
   "contexts/users.ex",
-  "contexts/user_changeset.ex",
-  "contexts/user.ex"
+  "contexts/user_changeset.ex"
 ],
   "id": 0,
   "wasCached": false,

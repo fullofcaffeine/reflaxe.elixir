@@ -75,6 +75,57 @@ import reflaxe.elixir.ast.NameUtils;
  */
 @:nullSafety(Off)
 class AnnotationTransforms {
+	static function collectDotComponents(node:ElixirAST):Map<String, Bool> {
+		var components:Map<String, Bool> = new Map();
+		ASTUtils.walk(node, function(n:ElixirAST):Void {
+			if (n == null || n.def == null)
+				return;
+			switch (n.def) {
+				case ESigil(type, content, _mods) if (type == "H" && content != null):
+					var matcher = ~/<\.([a-zA-Z_][a-zA-Z0-9_]*)/g;
+					var remaining = content;
+					while (matcher.match(remaining)) {
+						components.set(matcher.matched(1), true);
+						remaining = matcher.matchedRight();
+					}
+				default:
+			}
+		});
+		return components;
+	}
+
+	static function collectLocalFunctionNames(node:ElixirAST):Map<String, Bool> {
+		var names:Map<String, Bool> = new Map();
+		ASTUtils.walk(node, function(n:ElixirAST):Void {
+			if (n == null || n.def == null)
+				return;
+			switch (n.def) {
+				case EDef(name, _, _, _) | EDefp(name, _, _, _):
+					names.set(name, true);
+				default:
+			}
+		});
+		return names;
+	}
+
+	static function hasNonLocalDotComponents(node:ElixirAST):Bool {
+		var components = collectDotComponents(node);
+		var localFunctions = collectLocalFunctionNames(node);
+		for (component in components.keys())
+			if (!localFunctions.exists(component) && !isPhoenixComponentBuiltin(component))
+				return true;
+		return false;
+	}
+
+	static function isPhoenixComponentBuiltin(name:String):Bool {
+		return switch (name) {
+			case "form" | "inputs_for" | "link" | "live_file_input" | "live_img_preview":
+				true;
+			default:
+				false;
+		}
+	}
+
 	/**
 	 * Transform @:endpoint modules into Phoenix.Endpoint structure
 	 * 
@@ -406,20 +457,7 @@ class AnnotationTransforms {
 				// Shape-matched LiveView module using direct Phoenix.LiveView use
 				var webIndex = name.indexOf("Web");
 				var appWebModule = if (webIndex > 0) name.substring(0, webIndex + "Web".length) else name;
-				var usesDotComponents = false;
-				for (stmt in body)
-					if (!usesDotComponents) {
-						ASTUtils.walk(stmt, function(n:ElixirAST):Void {
-							if (usesDotComponents || n == null || n.def == null)
-								return;
-							switch (n.def) {
-								case ESigil(type, content, _mods) if (type == "H"):
-									if (content != null && content.indexOf("<.") != -1)
-										usesDotComponents = true;
-								default:
-							}
-						});
-					}
+				var usesDotComponents = hasNonLocalDotComponents(makeAST(EBlock(body)));
 				var liveViewOptions = makeAST(EKeywordList([
 					{
 						key: "layout",
@@ -533,17 +571,7 @@ class AnnotationTransforms {
 		// Extract AppWeb module name from module name (e.g., TodoAppWeb.TodoLive -> TodoAppWeb)
 		var webIndex = moduleName.indexOf("Web");
 		var appWebModule = if (webIndex > 0) moduleName.substring(0, webIndex + "Web".length) else moduleName;
-		var usesDotComponents = false;
-		ASTUtils.walk(existingBody, function(n:ElixirAST):Void {
-			if (usesDotComponents || n == null || n.def == null)
-				return;
-			switch (n.def) {
-				case ESigil(type, content, _mods) if (type == "H"):
-					if (content != null && content.indexOf("<.") != -1)
-						usesDotComponents = true;
-				default:
-			}
-		});
+		var usesDotComponents = hasNonLocalDotComponents(existingBody);
 
 		// use Phoenix.LiveView, layout: {AppWeb.Layouts, :app}
 		var liveViewOptions = makeAST(EKeywordList([

@@ -2327,8 +2327,12 @@ class ElixirASTTransformer {
 	 * version takes precedence for dot-notation components (<.label> uses CoreComponents.label/1)
 	 */
 	static function liveViewCoreComponentsImportPass(ast:ElixirAST):ElixirAST {
-		// Phase 1: Detect if component functions are used
-		var needsCoreComponents = false;
+		// Phase 1: Detect component functions used in HEEx and local component
+		// functions already defined by the module. Local function components are
+		// valid Phoenix syntax, so importing CoreComponents is only needed for
+		// dot-components that are not implemented locally.
+		var usedComponents:Map<String, Bool> = new Map();
+		var localFunctions:Map<String, Bool> = new Map();
 		var moduleName = "";
 
 		#if debug_liveview_components
@@ -2345,6 +2349,9 @@ class ElixirASTTransformer {
 				case EDefmodule(name, _):
 					moduleName = name;
 					return;
+				case EModule(name, _, _):
+					moduleName = name;
+					return;
 				default:
 					iterateAST(node, findModuleName);
 			}
@@ -2357,6 +2364,28 @@ class ElixirASTTransformer {
 			return ast; // Not a LiveView module
 		}
 
+		function recordUsedComponents(content:String):Void {
+			var matcher = ~/<\.([a-zA-Z_][a-zA-Z0-9_]*)/g;
+			var remaining = content;
+			while (matcher.match(remaining)) {
+				usedComponents.set(matcher.matched(1), true);
+				remaining = matcher.matchedRight();
+			}
+		}
+
+		function collectLocalFunctions(node:ElixirAST):Void {
+			if (node == null || node.def == null)
+				return;
+			switch (node.def) {
+				case EDef(name, _, _, _) | EDefp(name, _, _, _):
+					localFunctions.set(name, true);
+				default:
+					iterateAST(node, collectLocalFunctions);
+			}
+		}
+
+		collectLocalFunctions(ast);
+
 		// Recursive function to check for component usage in ~H sigils
 		function checkForComponents(node:ElixirAST):Void {
 			switch (node.def) {
@@ -2366,7 +2395,7 @@ class ElixirASTTransformer {
 						if (content.indexOf("<.") != -1) {
 							#if debug_liveview_components
 							#end
-							needsCoreComponents = true;
+							recordUsedComponents(content);
 						}
 					}
 				default:
@@ -2378,10 +2407,6 @@ class ElixirASTTransformer {
 
 		#if debug_liveview_components
 		#end
-
-		// Phase 2: Add import if needed
-		if (!needsCoreComponents)
-			return ast;
 
 		// Extract app name from module name (e.g., TodoAppWeb.UserLive -> TodoAppWeb)
 		var appWebName = "";
@@ -2396,6 +2421,55 @@ class ElixirASTTransformer {
 			return ast; // Can't determine app name
 
 		var coreComponentsModule = appWebName + ".CoreComponents";
+
+		function removeCoreComponentsImport(node:ElixirAST):ElixirAST {
+			return transformNode(node, function(current:ElixirAST):ElixirAST {
+				switch (current.def) {
+					case EDefmodule(name, doBlock):
+						switch (doBlock.def) {
+							case EBlock(statements):
+								var newStatements = [];
+								for (stmt in statements) {
+									switch (stmt.def) {
+										case EImport(module, _, _, _) if (module == coreComponentsModule):
+											// Local function components cover every <.component> used by this module.
+										default:
+											newStatements.push(stmt);
+									}
+								}
+								var newDoBlock = makeASTWithMeta(EBlock(newStatements), doBlock.metadata, doBlock.pos);
+								return makeASTWithMeta(EDefmodule(name, newDoBlock), current.metadata, current.pos);
+							default:
+								return current;
+						}
+					case EModule(name, attrs, statements):
+						var newStatements = [];
+						for (stmt in statements) {
+							switch (stmt.def) {
+								case EImport(module, _, _, _) if (module == coreComponentsModule):
+									// Local function components cover every <.component> used by this module.
+								default:
+									newStatements.push(stmt);
+							}
+						}
+						return makeASTWithMeta(EModule(name, attrs, newStatements), current.metadata, current.pos);
+					default:
+						return current;
+				}
+			});
+		}
+
+		// Phase 2: Add or remove import if needed
+		var needsCoreComponents = false;
+		for (componentName in usedComponents.keys()) {
+			if (!localFunctions.exists(componentName) && !isPhoenixComponentBuiltin(componentName)) {
+				needsCoreComponents = true;
+				break;
+			}
+		}
+
+		if (!needsCoreComponents)
+			return usedComponents.keys().hasNext() ? removeCoreComponentsImport(ast) : ast;
 
 		return transformNode(ast, function(node:ElixirAST):ElixirAST {
 			switch (node.def) {
@@ -2461,11 +2535,50 @@ class ElixirASTTransformer {
 							// Single expression body, unlikely for LiveView
 							return node;
 					}
+				case EModule(name, attrs, statements):
+					var hasImport = false;
+					for (stmt in statements) {
+						switch (stmt.def) {
+							case EImport(module, _, _, _) if (module == coreComponentsModule):
+								hasImport = true;
+								break;
+							default:
+						}
+					}
+					if (hasImport)
+						return node;
+
+					var importStmt = makeAST(EImport(coreComponentsModule, null, [{name: "label", arity: 1}]));
+					var newStatements = [];
+					var importAdded = false;
+					for (stmt in statements) {
+						newStatements.push(stmt);
+						if (!importAdded) {
+							switch (stmt.def) {
+								case EUse(_, _):
+									newStatements.push(importStmt);
+									importAdded = true;
+								default:
+							}
+						}
+					}
+					if (!importAdded)
+						newStatements = [importStmt].concat(statements);
+					return makeASTWithMeta(EModule(name, attrs, newStatements), node.metadata, node.pos);
 
 				default:
 					return node;
 			}
 		});
+	}
+
+	static function isPhoenixComponentBuiltin(name:String):Bool {
+		return switch (name) {
+			case "form" | "inputs_for" | "link" | "live_file_input" | "live_img_preview":
+				true;
+			default:
+				false;
+		}
 	}
 
 	/**
