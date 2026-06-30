@@ -1,7 +1,7 @@
 {
   "filesGenerated": [
-  "20240102120000_add_user_bio.exs",
-  "20240101120000_create_users.exs"
+  "test_app/repo/migrations/create_users.exs",
+  "test_app/repo/migrations/add_user_bio.exs"
 ],
   "id": 0,
   "wasCached": false,

@@ -31,6 +31,7 @@
   "phoenix/conn_state.ex",
   "phoenix/_to_form_options/to_form_options_impl_.ex",
   "my_app_web/router.ex",
+  "my_app_web/app_live.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/exceptions/pos_exception.ex",
   "haxe/exceptions/not_implemented_exception.ex",
@@ -39,8 +40,7 @@
   "ecto/option.ex",
   "ecto/changeset_utils.ex",
   "ecto/changeset_action.ex",
-  "e_reg.ex",
-  "app_live.ex"
+  "e_reg.ex"
 ],
   "id": 0,
   "wasCached": false,

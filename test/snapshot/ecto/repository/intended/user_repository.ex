@@ -1,12 +1,12 @@
 defmodule UserRepository do
   def get_all_users() do
-    MyApp.Repo.all(User)
+    MyApp.Repo.all(MyApp.User)
   end
   def get_user(id) do
     MyApp.Repo.get(MyApp.User, id)
   end
   def get_user_bang(id) do
-    MyApp.Repo.get!(User, id)
+    MyApp.Repo.get!(MyApp.User, id)
   end
   def create_user(attrs) do
     changeset = UserChangeset.changeset(nil, attrs)
@@ -23,7 +23,7 @@ defmodule UserRepository do
     MyApp.Repo.preload(user, ["posts"])
   end
   def count_users() do
-    MyApp.Repo.aggregate(User, "count")
+    MyApp.Repo.aggregate(MyApp.User, "count")
   end
   def get_first_user() do
     MyApp.Repo.one(MyApp.User)

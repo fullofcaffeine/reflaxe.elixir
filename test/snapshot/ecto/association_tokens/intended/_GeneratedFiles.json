@@ -1,12 +1,12 @@
 {
   "filesGenerated": [
-  "user.ex",
   "type.ex",
   "std.ex",
   "reflaxe/exception.ex",
   "reflaxe/elixir/haxe_throw.ex",
   "reflaxe/elixir/haxe_float.ex",
-  "post.ex",
+  "my_app/user.ex",
+  "my_app/post.ex",
   "main.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/exceptions/pos_exception.ex",

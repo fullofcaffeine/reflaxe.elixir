@@ -1,12 +1,12 @@
 defmodule Accounts do
   def list_users() do
-    MyApp.Repo.all(User)
+    MyApp.Repo.all(MyApp.User)
   end
   def get_user(id) do
     MyApp.Repo.get(MyApp.User, id)
   end
   def create_user(attrs) do
-    user = %User{}
+    user = %MyApp.User{}
     changeset = UserChangeset.changeset(user, attrs)
     _ = MyApp.Repo.insert(changeset)
   end

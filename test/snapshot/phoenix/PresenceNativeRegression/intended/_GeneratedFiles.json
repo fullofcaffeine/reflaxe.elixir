@@ -2,18 +2,16 @@
   "filesGenerated": [
   "type.ex",
   "test_more_edge_cases.ex",
-  "string_buf.ex",
   "std.ex",
-  "standard_presence.ex",
-  "regular_presence.ex",
   "reflaxe/exception.ex",
   "reflaxe/elixir/haxe_throw.ex",
+  "reflaxe/elixir/haxe_float.ex",
   "phoenix/presence.ex",
   "my_app_web/presence.ex",
   "my_app/custom_presence.ex",
   "main.ex",
-  "int_iterator.ex",
-  "haxe/iterators/array_iterator.ex"
+  "haxe/iterators/array_iterator.ex",
+  "haxe/_call_stack/call_stack_impl_.ex"
 ],
   "id": 0,
   "wasCached": false,
