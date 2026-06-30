@@ -10,6 +10,26 @@ If you already have an existing Phoenix app, use `docs/06-guides/PHOENIX_GRADUAL
 - Add Haxe **incrementally**: start with one module, then expand.
 - Generate Elixir code that looks hand-written.
 
+## Output And Deployment Mental Model
+
+The generated project is still a Phoenix app. Haxe source files are build inputs;
+Phoenix deploys the generated Elixir app the same way it would deploy a vanilla
+Phoenix app.
+
+```text
+src_haxe/**      # Haxe source you edit
+src_shared/**    # shared Haxe contracts, when used
+lib/**           # generated and/or handwritten Elixir that Mix compiles
+assets/**        # Phoenix assets pipeline, including generated JS imports
+priv/**          # migrations, static files, seeds
+```
+
+Before release/deploy, make sure the Haxe server and client builds have run,
+then use normal Phoenix commands such as `mix assets.deploy`, `mix compile`, and
+`mix release`. See the
+[Phoenix Output Model](../05-architecture/PHOENIX_OUTPUT_MODEL.md) for the
+full in-place vs materialized layout comparison.
+
 ## Option A (recommended): scaffold via the project generator
 
 If you have Haxe + Node installed, you can generate a ready-to-run Phoenix+Haxe project in one go:

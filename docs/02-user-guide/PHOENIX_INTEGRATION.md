@@ -17,6 +17,34 @@ For step-by-step setup, start here:
 - **No app-specific hacks**: the compiler should not “know about” your app’s domain.
 - **Avoid `__elixir__()` in apps**: if an escape hatch is needed, prefer a reusable helper in `std/phoenix/**` (typed extern/shim) instead of per-app injections.
 
+## Output Layout At A Glance
+
+PhoenixHx is a build-time layer over a Phoenix app. You may write a LiveView in
+Haxe, but after compilation Phoenix should still see a normal module under
+`lib/my_app_web/live/**`.
+
+```text
+# Haxe source
+src_haxe/server/live/TodoLive.hx
+src_shared/shared/liveview/TodoEvents.hx
+
+# Generated/compiled Phoenix app
+lib/my_app_web/live/todo_live.ex
+```
+
+For existing apps, this is **in-place Phoenix mode**: generated files live in
+the working Phoenix app, guarded by ownership rules. For generated demos or
+future dogfood artifacts, **materialized Phoenix app mode** writes a complete
+Phoenix tree under a build root such as `build/phoenix`.
+
+You deploy the Phoenix app or release, not the Haxe source tree. Haxe/Reflaxe and
+Genes are build-time tools; production runs the generated Elixir, BEAM bytecode,
+assets, config, and documented runtime dependencies.
+
+For the full directory comparison with vanilla Phoenix, compile commands, and
+deployment rules, see the
+[Phoenix Output Model](../05-architecture/PHOENIX_OUTPUT_MODEL.md).
+
 ## What You Typically Write in Haxe
 
 You can author any of these in Haxe (incrementally, if desired):
