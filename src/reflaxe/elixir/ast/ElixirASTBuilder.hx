@@ -4609,9 +4609,8 @@ class ElixirASTBuilder {
 	 * Handles package-based module naming (e.g., ecto.Query → Query for non-externs, Ecto.Query for externs)
 	 */
 	static function moduleTypeToString(m:ModuleType):String {
-		// Respect explicit module names for both extern and non-extern types.
-		// This is required for stdlib bridge modules like ecto.ChangesetBridge which
-		// are implemented in Haxe but must compile to Ecto.ChangesetBridge (via @:native).
+		// Respect explicit module names first. PhoenixHx derivation is the
+		// default path, while @:native remains the exact interop escape hatch.
 		var nativeModuleName:Null<String> = switch (m) {
 			case TClassDecl(c):
 				extractNativeModuleName(c.get().meta);
@@ -4624,6 +4623,14 @@ class ElixirASTBuilder {
 		};
 		if (nativeModuleName != null)
 			return nativeModuleName;
+
+		switch (m) {
+			case TClassDecl(c):
+				var derived = reflaxe.elixir.PhoenixTargetNames.classTargetAlias(c.get());
+				if (derived != null)
+					return derived;
+			default:
+		}
 
 		// Get the basic name first
 		var name = switch (m) {
@@ -4655,18 +4662,8 @@ class ElixirASTBuilder {
 				return name; // Return just the name without package prefix
 			}
 
-			// For non-extern application classes, optionally qualify with the configured app module prefix.
-			// e.g., server.schemas.Todo → TodoApp.Todo (using -D app_name)
-			//
-			// IMPORTANT: Only apply the prefix when `-D app_name=...` is present. For minimal, non-Phoenix
-			// examples we keep the historical behavior of emitting unqualified module names.
 			if (!isExtern) {
-				// Never prefix Haxe stdlib/runtime modules (haxe.* / sys.*); they are emitted and referenced
-				// as unqualified modules (e.g., `Log`, `BalancedTree`) regardless of app_name.
-				if (pack[0] == "haxe" || pack[0] == "sys" || pack[0] == "elixir" || pack[0] == "ecto" || pack[0] == "phoenix" || pack[0] == "plug")
-					return name;
-				var appName = Context.definedValue("app_name");
-				return (appName != null && appName.length > 0 ? (appName + "." + name) : name);
+				return name;
 			}
 
 			// For extern classes, add the package prefix for proper Elixir module references

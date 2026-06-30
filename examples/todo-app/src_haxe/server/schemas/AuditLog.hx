@@ -19,8 +19,6 @@ import elixir.types.Term;
  * - Store `organization_id` and `actor_id` to support multi-tenant scoping.
  * - Keep `metadata` flexible via JSON (`Term`) for small event payloads.
  */
-// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
-@:native("TodoApp.AuditLog")
 // @:schema: marks this class as an Ecto schema and declares its table.
 @:schema("audit_logs")
 // @:timestamps: enables Ecto timestamp fields (`inserted_at`/`updated_at`).

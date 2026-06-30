@@ -218,17 +218,12 @@ class CallExprBuilder {
 						switch (args[1].expr) {
 							case TTypeExpr(TClassDecl(classRef)):
 								var cls = classRef.get();
-								var nativeName:Null<String> = null;
-								if (cls.meta.has(":native")) {
-									var meta = cls.meta.extract(":native");
-									if (meta != null && meta.length > 0 && meta[0].params != null && meta[0].params.length > 0) {
-										switch (meta[0].params[0].expr) {
-											case EConst(CString(s, _)): nativeName = s;
-											default:
-										}
-									}
-								}
-								var moduleName = nativeName != null ? nativeName : cls.name;
+								var moduleName = ModuleBuilder.extractModuleName(cls);
+								schemaModuleAst = makeAST(EVar(moduleName));
+							case TConst(TString(moduleName)):
+								// EctoQueryMacros.from derives the Phoenix target alias at macro
+								// time and passes it through this injection boundary as a string.
+								// Treat that value as an Elixir module alias, not as a runtime string.
 								schemaModuleAst = makeAST(EVar(moduleName));
 							default:
 								// Fallback: build expression normally (covers already-built module refs)
@@ -1191,17 +1186,7 @@ class CallExprBuilder {
 								switch (args[0].expr) {
 									case TTypeExpr(TClassDecl(classDecl)):
 										var cls = classDecl.get();
-										var nativeName:Null<String> = null;
-										if (cls.meta.has(":native")) {
-											var meta = cls.meta.extract(":native");
-											if (meta != null && meta.length > 0 && meta[0].params != null && meta[0].params.length > 0) {
-												switch (meta[0].params[0].expr) {
-													case EConst(CString(s, _)): nativeName = s;
-													default:
-												}
-											}
-										}
-										var moduleName = nativeName != null ? nativeName : cls.name;
+										var moduleName = ModuleBuilder.extractModuleName(cls);
 										schemaModuleAst = makeAST(EVar(moduleName));
 									default:
 										schemaModuleAst = buildExpression(args[0]);

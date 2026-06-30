@@ -10,7 +10,7 @@
   "phoenix_chat_web/router.ex",
   "phoenix_chat_web/presence.ex",
   "phoenix_chat_web/app_live.ex",
-  "phoenix_chat_hx/live/chat_state.ex",
+  "phoenix_chat/chat_state.ex",
   "phoenix_chat/application.ex",
   "phoenix/types/socket_transport.ex",
   "phoenix/types/flash_type_tools.ex",
@@ -37,8 +37,7 @@
   "elixir/otp/application_result.ex",
   "ecto/option.ex",
   "ecto/changeset_action.ex",
-  "e_reg.ex",
-  "phoenix_chat_web/presence.ex"
+  "e_reg.ex"
 ],
   "id": 21,
   "wasCached": false,

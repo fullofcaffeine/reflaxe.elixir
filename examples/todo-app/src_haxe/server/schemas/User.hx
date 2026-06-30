@@ -12,8 +12,6 @@ import elixir.types.Term;
  * Provides a simple user model with basic authentication fields
  * and relationship to todos for user-specific task management.
  */
-// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
-@:native("TodoApp.User")
 // @:schema: marks this class as an Ecto schema and declares its table.
 @:schema("users")
 // @:timestamps: enables Ecto timestamp fields (`inserted_at`/`updated_at`).

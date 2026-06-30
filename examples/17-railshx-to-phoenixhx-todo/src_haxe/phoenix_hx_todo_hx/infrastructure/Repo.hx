@@ -18,7 +18,6 @@ import haxe.functional.Result;
  * HOW
  * - `@:repo` emits a standard `Ecto.Repo` module and companion Postgrex types module.
  */
-@:native("PhoenixHxTodo.Repo")
 @:repo({
 	adapter: Postgres,
 	json: Jason,

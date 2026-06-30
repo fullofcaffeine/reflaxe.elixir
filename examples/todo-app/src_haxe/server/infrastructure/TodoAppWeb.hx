@@ -17,8 +17,6 @@ import server.types.Types.Session;
  */
 // @:phoenixWebModule: generates the `AppWeb` helper module used by Phoenix `use AppWeb, ...` calls.
 @:phoenixWebModule
-// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
-@:native("TodoAppWeb")
 class TodoAppWeb {
 	/**
 	 * Returns the static paths for the application.

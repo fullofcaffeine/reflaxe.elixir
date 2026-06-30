@@ -26,10 +26,8 @@ typedef UserIdPathParams = {
 /**
  * Type-safe Router DSL example demonstrating module-level typed route declarations.
  */
-// @:native: pins emitted naming to a specific Elixir symbol/module.
-
-@:native("TodoAppWeb.Router")
 // @:router: marks this module as a Phoenix router and enables route emission transforms.
+
 @:router
 final routes = [
 	pipeline(browser, [

@@ -16,7 +16,7 @@ const $global = Register.$global
 * Avoids raw JS strings; uses typed Haxe that compiles via Genes.
 * Only uses dynamic interop at the Phoenix Hook boundary (`this` context).
 */
-export const Boot = Register.global("$hxClasses")["client.Boot"] = 
+export const Boot = Register.global("$hxClasses")["client.Boot"] =
 class Boot {
 	static readCsrfToken() {
 		let meta = window.document.querySelector("meta[name='csrf-token']");

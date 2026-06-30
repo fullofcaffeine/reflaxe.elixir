@@ -47,8 +47,6 @@ import elixir.List;
  * If you want stronger completion in Haxe 4.3.7, use the typed-key API:
  * `assignKey` / `assignNewKey` / `updateKey`.
  */
-// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
-@:native("TodoApp.SafeAssigns")
 class SafeAssigns {
 	/**
 	 * Set the editingTodo field using socket assign helpers

@@ -33,7 +33,6 @@ class UserController {
   public static function show():String return "ok";
 }
 
-@:native("MyAppWeb.Router")
 @:router
 final routes = [
   pipeline(browser, [

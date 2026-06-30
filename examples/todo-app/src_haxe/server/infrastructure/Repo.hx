@@ -26,8 +26,6 @@ import haxe.functional.Result;
  * end
  * ```
  */
-// @:native: pins emitted naming to a specific Elixir symbol/module.
-@:native("TodoApp.Repo")
 // @:repo: configures a typed Ecto repository module (adapter/json/extensions/pool).
 @:repo({
 	adapter: Postgres,

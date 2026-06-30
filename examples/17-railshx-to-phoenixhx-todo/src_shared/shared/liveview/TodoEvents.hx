@@ -9,9 +9,9 @@ import phoenix.live_view.LiveEventProtocolCompanion;
  * branches, but uses a protocol for the repeated toggle button so the event
  * name, `phx-value-id` decode, and handler signature stay in sync.
  */
-@:liveEventProtocol("TodoEvents")
+@:liveEventProtocol
 enum TodoEvent {
-	@:templateEvent("toggle_todo")
+	@:templateEvent
 	ToggleTodo(id:Int);
 }
 

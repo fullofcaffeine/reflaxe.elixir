@@ -5,7 +5,6 @@ import phoenix_hx_todo_hx.infrastructure.LiveSession;
 import phoenix_hx_todo_hx.live.AppLive;
 import reflaxe.elixir.macros.RouterDsl.*;
 
-@:native("PhoenixHxTodoWeb.Router")
 @:router
 final routes = [
 	pipeline(browser, [

@@ -11,7 +11,7 @@ to the `String` class.
 If the first argument to any of the methods is null, the result is
 unspecified.
 */
-export const StringTools = Register.global("$hxClasses")["StringTools"] = 
+export const StringTools = Register.global("$hxClasses")["StringTools"] =
 class StringTools {
 	
 	/**

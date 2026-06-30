@@ -124,7 +124,7 @@ Register.globals = {}
 Register["new"] = Symbol()
 Register.init = Symbol()
 Register.fid = 0
-export const ArrayIterator = Register.global("$hxClasses")["genes._Register.ArrayIterator"] = 
+export const ArrayIterator = Register.global("$hxClasses")["genes._Register.ArrayIterator"] =
 class ArrayIterator extends Register.inherits() {
 	[Register.new](array) {
 		this.current = 0;

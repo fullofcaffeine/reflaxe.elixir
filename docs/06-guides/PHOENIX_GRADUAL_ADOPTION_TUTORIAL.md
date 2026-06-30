@@ -246,7 +246,9 @@ scope "/", MyAppWeb do
 end
 ```
 
-The generated Haxe LiveView uses `@:native("MyAppWeb.DiscountLive")`, so Phoenix sees a normal `MyAppWeb.DiscountLive` module.
+With `-D app_name=MyApp`, the generated Haxe LiveView uses `@:liveview` to derive
+the normal Phoenix module `MyAppWeb.DiscountLive`. Use class-level `@:native(...)`
+only when you need an exact legacy or interop module name.
 
 ## 8) Verify the LiveView Route
 

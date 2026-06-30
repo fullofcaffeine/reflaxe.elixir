@@ -76,10 +76,8 @@ typedef UsersLiveRenderAssigns = {
  * - Loads users from the database, derives stats, and keeps rendering “zero-logic” by
  *   precomputing a row view model (UserRowView) for the template.
  */
-// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
-
-@:native("TodoAppWeb.UsersLive")
 // @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
+
 @:liveview
 class UsersLive {
 	public static function mount(params:MountParams, session:Session, socket:Socket<UsersLiveAssigns>):MountResult<UsersLiveAssigns> {

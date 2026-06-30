@@ -3,7 +3,7 @@ import {ThemePreference} from "./ThemePreference.js"
 
 const $global = Register.$global
 
-export const Theme = Register.global("$hxClasses")["client.utils.Theme"] = 
+export const Theme = Register.global("$hxClasses")["client.utils.Theme"] =
 class Theme {
 	static getMediaQuery() {
 		if (window != null) {

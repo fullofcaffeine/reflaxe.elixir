@@ -18,7 +18,7 @@ const $global = Register.$global
 * - Register `channel.on(eventName, ...)` handlers for the selected event names.
 * - Each inbound payload is decoded and broadcast to all registered `onMessage` handlers.
 */
-export const TypedChannelClient = Register.global("$hxClasses")["phoenix.channels.TypedChannelClient"] = 
+export const TypedChannelClient = Register.global("$hxClasses")["phoenix.channels.TypedChannelClient"] =
 class TypedChannelClient extends Register.inherits() {
 	[Register.new](channel, encodeSend, decodeRecv, eventNames) {
 		this.channel = channel;

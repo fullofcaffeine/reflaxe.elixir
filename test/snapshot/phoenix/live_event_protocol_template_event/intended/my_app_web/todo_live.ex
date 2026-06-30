@@ -1,6 +1,6 @@
-defmodule TodoLive do
+defmodule MyAppWeb.TodoLive do
   use Phoenix.Component
-  use Phoenix.LiveView, layout: {TodoLive.Layouts, :app}
+  use Phoenix.LiveView, layout: {MyAppWeb.Layouts, :app}
   def render(assigns) do
     ~H"""
 <button phx-click={"toggle_todo"} phx-value-id="1"><%= @last_id %></button>
@@ -10,7 +10,7 @@ defmodule TodoLive do
     "toggle_todo"
   end
   def decode_toggle(payload) do
-    TodoEvents.decode("toggle_todo", payload)
+    MyApp.TodoEvents.decode("toggle_todo", payload)
   end
   defp handle_toggle_todo(id, socket) do
     {:noreply, Phoenix.Component.assign(socket, :last_id, Reflaxe.Elixir.HaxeFloat.to_string(id))}

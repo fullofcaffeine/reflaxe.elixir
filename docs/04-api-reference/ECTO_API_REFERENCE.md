@@ -24,7 +24,6 @@ Core schema tags:
 - associations such as `@:has_many`
 
 ```haxe
-@:native("TodoApp.User")
 @:schema("users")
 @:timestamps
 class User {
@@ -35,6 +34,10 @@ class User {
   @:virtual @:field public var password:String;
 }
 ```
+
+With `-D app_name=TodoApp`, `@:schema class User` emits `TodoApp.User`.
+Use class-level `@:native("Exact.Module")` only when the schema must keep an
+existing or non-derived module name.
 
 ## Changeset Metadata
 

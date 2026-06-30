@@ -14,9 +14,10 @@ payloads are consumed by the dispatcher with `NoReply(socket)` instead of
 falling through as unknown events. Protocol constructors can now distinguish
 hook-origin events from simple template-origin events with `@:hookEvent(...)`
 and `@:templateEvent(...)`; template `Int` fields decode DOM string params on
-the server. Form-origin events now use `@:submitEvent("event", "root")` and
-`@:changeEvent("event", "root")` to generate form-root decoders for typed
-handlers while keeping ordinary Phoenix form params at runtime.
+the server. Form-origin events can derive the event name from the constructor
+and use `@:submitEvent("root")` / `@:changeEvent("root")` to generate form-root
+decoders for typed handlers while keeping ordinary Phoenix form params at
+runtime. The two-string form remains an exact wire-name escape hatch.
 
 PhoenixHx should provide an opt-in, framework-level macro layer for typed
 LiveView events that cross the browser hook/server LiveView boundary.
@@ -117,11 +118,12 @@ LiveView can drift silently until runtime.
 Live Event Protocols move that contract into shared Haxe:
 
 ```haxe
-@:liveEventProtocol("HookEvents")
+@:liveEventProtocol
 enum HookClientEvent {
-  @:hookEvent("clipboard_copied")
+  @:hookEvent
   ClipboardCopied(message:String);
 
+  // Explicit only because the wire event is "ping", not "hook_ping".
   @:hookEvent("ping")
   HookPing;
 }
@@ -139,7 +141,7 @@ Server LiveView code stays Phoenix-shaped but dispatches through the generated
 boundary helper:
 
 ```haxe
-@:liveEvents(HookClientEvent, "dispatchHookEvent")
+@:liveEvents(HookClientEvent, dispatchHookEvent)
 class ProfileLive {
   public static function handleEvent(
     event:String,
@@ -247,10 +249,10 @@ package shared.liveview;
 
 @:liveEventProtocol
 enum ProfileHookEvent {
-  @:hookEvent("clipboard_copied")
+  @:hookEvent
   ClipboardCopied(message:String);
 
-  @:hookEvent("ping")
+  @:hookEvent
   Ping;
 }
 ```
@@ -261,21 +263,28 @@ The macro should derive defaults:
 - dispatch method: `dispatchProfileHookEvent`
 - handler names: `handleClipboardCopied`, `handlePing`
 
-String overrides should remain available for interop or naming conflicts:
+String overrides should remain available for external wire names that cannot be
+derived cleanly:
 
 ```haxe
-@:liveEventProtocol("ProfileHookEvents")
-enum ProfileHookEvent { ... }
+enum ProfileHookEvent {
+  @:hookEvent("ping")
+  HookPing;
+}
+```
 
-@:liveEvents(ProfileHookEvent, "dispatchProfileHookEvent")
+Dispatcher overrides should use identifiers rather than strings:
+
+```haxe
+@:liveEvents(ProfileHookEvent, dispatchProfileHookEvent)
 class ProfileLive { ... }
 ```
 
 Bind a LiveView separately. The current implementation requires an explicit
-dispatch helper name:
+dispatcher call, but the helper name can be derived:
 
 ```haxe
-@:liveEvents(ProfileHookEvent, "dispatchProfileHookEvent")
+@:liveEvents(ProfileHookEvent)
 class ProfileLive {
   public static function handleEvent(
     event:String,
@@ -352,7 +361,7 @@ LiveView classes can opt into the first server binding with:
 
 ```haxe
 @:liveview
-@:liveEvents(ProfileHookEvent, "dispatchProfileHookEvent")
+@:liveEvents(ProfileHookEvent)
 class ProfileLive { ... }
 ```
 
@@ -415,7 +424,7 @@ argument or an `@:optional` typedef field so optionality is visible in the
 protocol declaration and reflected in the generated manifest.
 
 ```haxe
-@:templateEvent("search")
+@:templateEvent
 Search(?query:String);
 
 typedef ProfileForm = {
@@ -423,7 +432,7 @@ typedef ProfileForm = {
   @:optional var bio:Null<String>;
 }
 
-@:submitEvent("save_profile", "profile")
+@:submitEvent("profile")
 SaveProfile(payload:ProfileForm);
 ```
 
@@ -461,17 +470,17 @@ also use generated parsing rather than a custom codec.
 
 ## Template-Origin Events
 
-Use `@:templateEvent(...)` when a normal Phoenix template event has a small,
+Use `@:templateEvent` when a normal Phoenix template event has a small,
 important `phx-value-*` contract that should be checked and decoded with the
 same protocol machinery:
 
 ```haxe
-@:liveEventProtocol("TodoEvents")
+@:liveEventProtocol
 enum TodoEvent {
-  @:templateEvent("toggle_todo")
+  @:templateEvent
   ToggleTodo(id:Int);
 
-  @:hookEvent("clipboard_copied")
+  @:hookEvent
   ClipboardCopied(message:String);
 }
 
@@ -533,12 +542,12 @@ typedef TodoForm = {
   var notes:Null<String>;
 }
 
-@:liveEventProtocol("TodoEvents")
+@:liveEventProtocol
 enum TodoEvent {
-  @:submitEvent("create_todo", "todo")
+  @:submitEvent("todo")
   CreateTodo(payload:TodoForm);
 
-  @:changeEvent("update_form", "todo")
+  @:changeEvent("todo")
   UpdateForm(payload:TodoForm);
 }
 ```
@@ -661,10 +670,9 @@ Current API note: the implemented entrypoint is still:
 typedef HookEvents = LiveEventProtocolCompanion<HookClientEvent>;
 ```
 
-The `@:liveEventProtocol("HookEvents")` name feeds the generated native/module
-name and manifest. A future polish pass may remove the typedef ceremony by
-generating an importable `HookEvents` type directly from metadata, but that
-should be treated as public API design work rather than a hidden refactor.
+The companion name should come from the `typedef HookEvents =
+LiveEventProtocolCompanion<HookClientEvent>` alias or the enum default, not from
+a required string parameter.
 
 Initial implementation note: `phoenix.live_view.macros.LiveEventProtocolModel`
 now normalizes a `@:liveEventProtocol` enum into a deterministic protocol
@@ -673,7 +681,7 @@ snapshot the drift-detection layer, and `LiveEventProtocolCompanion<T>` generate
 event constants, direct `encode`/`decode` helpers, and JS-only hook push
 helpers. Built-in fields now generate JS object literals/bracket reads and
 Elixir `%{}`/`Map.put`/`Map.get` plus `Kernel.is_*` checks instead of
-`WirePayload` helper calls. `@:liveEvents(Protocol, "dispatchName")` now adds
+`WirePayload` helper calls. `@:liveEvents(Protocol)` now adds
 the first server-side dispatcher binding from the same model, emitting
 straight-line map reads and private handler calls in the LiveView module when
 the LiveView explicitly calls the dispatcher. The model distinguishes Haxe
@@ -701,7 +709,7 @@ The todo-app is the first migrated example:
 3. Change `CopyToClipboardHook` to call
    `HookEvents.pushClipboardCopied(hook, message)`.
 4. Change `PingHook` to call `HookEvents.pushHookPing(hook)`.
-5. Add `@:liveEvents(HookClientEvent, "dispatchHookEvent")` to `ProfileLive`
+5. Add `@:liveEvents(HookClientEvent, dispatchHookEvent)` to `ProfileLive`
    and `TodoLive`.
 6. Call `dispatchHookEvent(event, params, socket)` first in each bound
    `handleEvent`.

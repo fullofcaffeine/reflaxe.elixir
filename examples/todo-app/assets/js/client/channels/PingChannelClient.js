@@ -6,7 +6,7 @@ import {StringTools} from "../../StringTools.js"
 
 const $global = Register.$global
 
-export const PingChannelClient = Register.global("$hxClasses")["client.channels.PingChannelClient"] = 
+export const PingChannelClient = Register.global("$hxClasses")["client.channels.PingChannelClient"] =
 class PingChannelClient {
 	static readCsrfToken() {
 		let meta = window.document.querySelector("meta[name='csrf-token']");

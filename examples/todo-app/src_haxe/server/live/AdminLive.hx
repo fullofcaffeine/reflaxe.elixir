@@ -54,10 +54,8 @@ typedef AdminLiveRenderAssigns = {
  * - Reads the signed-in user from the LiveView session and redirects non-admins back to `/todos`.
  * - Loads and summarizes users for a small dashboard view model.
  */
-// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
-
-@:native("TodoAppWeb.AdminLive")
 // @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
+
 @:liveview
 class AdminLive {
 	public static function mount(params:MountParams, session:Session, socket:Socket<AdminLiveAssigns>):MountResult<AdminLiveAssigns> {

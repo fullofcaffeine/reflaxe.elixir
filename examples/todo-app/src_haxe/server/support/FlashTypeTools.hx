@@ -8,8 +8,6 @@ import phoenix.types.Flash.FlashType;
  */
 // @:keep: these conversion helpers are used through generated/runtime call paths, so DCE may not see direct Haxe references.
 @:keep
-// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
-@:native("TodoApp.FlashTypeTools")
 class FlashTypeTools {
 	public static function to_string(type:FlashType):String {
 		return switch (type) {

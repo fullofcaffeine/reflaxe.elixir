@@ -131,7 +131,6 @@ package;
 import phoenix_chat_hx.live.AppLive;
 import reflaxe.elixir.macros.RouterDsl.*;
 
-@:native("PhoenixChatWeb.Router")
 @:router
 final routes = [
   pipeline(browser, [

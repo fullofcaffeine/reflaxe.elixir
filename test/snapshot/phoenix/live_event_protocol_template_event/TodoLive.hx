@@ -9,19 +9,19 @@ typedef TodoAssigns = {
 	var last_id:String;
 }
 
-@:liveEventProtocol("TodoEvents")
+@:liveEventProtocol
 enum TodoEvent {
-	@:templateEvent("toggle_todo")
+	@:templateEvent
 	ToggleTodo(id:Int);
 
-	@:hookEvent("clipboard_copied")
+	@:hookEvent
 	ClipboardCopied(message:String);
 }
 
 typedef TodoEvents = LiveEventProtocolCompanion<TodoEvent>;
 
 @:liveview
-@:liveEvents(TodoEvent, "dispatchTodoEvent")
+@:liveEvents(TodoEvent)
 class TodoLive {
 	public static function render(assigns:TodoAssigns):String {
 		return <button phx-click=${TodoEvents.ToggleTodoEvent} phx-value-id="1">${assigns.last_id}</button>;

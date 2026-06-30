@@ -111,17 +111,31 @@ Reference implementation:
 
 ## Naming & Module Mapping
 
-Use `@:native("MyAppWeb.SomeModule")` to select the Elixir module name the Haxe class compiles to. This is the primary mechanism for Phoenix-friendly naming.
+For ordinary PhoenixHx app modules, prefer derived names:
+
+- Set `-D app_name=MyApp` in the server HXML.
+- Optionally set `-D app_web_name=MyCustomWeb` when the web module is not `MyAppWeb`.
+- Add role metadata such as `@:liveview`, `@:controller`, `@:schema`, `@:repo`,
+  `@:router`, `@:endpoint`, `@:socket`, or `@:presence`.
+
+The compiler derives the Phoenix module and path from that information. This
+keeps app code out of fragile string metadata while still producing normal
+Phoenix modules.
 
 Example:
 
 ```haxe
-@:native("MyAppWeb.TodoLive")
 @:liveview
 class TodoLive {
   // mount/3, handle_event/3, handle_info/2, render/1, etc.
 }
 ```
+
+With `-D app_name=MyApp`, that class emits `MyAppWeb.TodoLive`.
+
+Use `@:native("MyAppWeb.SomeExactModule")` only as an exact interop escape hatch:
+for legacy module names, externs, or places where PhoenixHx cannot yet derive
+the target module.
 
 ## Gradual Adoption Pattern (recommended)
 
@@ -130,7 +144,9 @@ If you have an existing Phoenix app, start by generating modules into a separate
 - Compile Haxe to `lib/my_app_hx/**`
 - Generate modules under `MyAppHx.*` first
 - Call from Elixir (`MyAppHx.SomeModule.some_fun(...)`)
-- Later, when ready, you can `@:native` into `MyApp.*` / `MyAppWeb.*` and switch routing/delegation
+- Later, when ready, move specific modules into app-native roles with PhoenixHx
+  metadata (`@:liveview`, `@:controller`, `@:schema`, etc.) and `-D app_name=MyApp`.
+  Keep `@:native` for exact interop names only.
 
 Important: `-D app_name` is independent of this isolation pattern.
 

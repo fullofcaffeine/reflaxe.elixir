@@ -521,6 +521,14 @@ Use `reflaxe.ruby` / RailsHx as a UX and cross-target learning reference when it
   event/channel contract is known to Haxe, use macros to generate ordinary
   Phoenix/Elixir/JS code rather than routing through runtime payload helper
   objects.
+- Avoid string-based PhoenixHx API surfaces when the framework can derive the
+  name. App-facing modules should derive from annotations such as `@:liveview`,
+  `@:controller`, `@:schema`, `@:repo`, `@:router`, plus `-D app_name` /
+  `-D app_web_name`; Live Event companions, dispatcher helpers, and event names
+  should derive from protocol/constructor names by default. Use explicit strings
+  only for real external protocol values such as route paths, DB table names,
+  form roots, non-derived wire event names, and exact extern `@:native`
+  boundaries, and validate or document those escape hatches near the boundary.
 - Generated LiveView and Channel protocol happy paths must lower to real target
   calls such as `hook.pushEvent(...)`, `Phoenix.Channel.push/broadcast`, direct
   map construction, `Map.fetch/get`, and target predicates. They should not emit

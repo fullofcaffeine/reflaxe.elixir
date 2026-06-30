@@ -150,7 +150,6 @@ import phoenix.Phoenix.Socket;
 
 typedef CounterAssigns = { count: Int };
 
-@:native("MyAppWeb.CounterLive")
 @:liveview
 class CounterLive {
   public static function mount(params: Term, session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
@@ -160,6 +159,10 @@ class CounterLive {
 ```
 
 Notes:
+- With `-D app_name=MyApp`, `@:liveview class CounterLive` derives the normal Phoenix module
+  `MyAppWeb.CounterLive` and output path `lib/my_app_web/counter_live.ex`.
+- Use class-level `@:native("MyAppWeb.SomeExactModule")` only as an exact interop escape hatch
+  when the derived Phoenix name is not the module you need.
 - `socket` in LiveView callbacks is `Socket<TAssigns>` (the Phoenix callback shape), and you can call assign helpers on it directly (`socket.assign(...)`).
 - `LiveSocket<TAssigns>` is still available as an explicit wrapper when you prefer pipe-style chaining or helper signatures that use `LiveSocket`.
 - `_.count` can look odd at first because `_` usually means “unused variable.” Here, `_` is a macro marker.

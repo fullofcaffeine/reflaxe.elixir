@@ -30,8 +30,6 @@ using reflaxe.elixir.macros.TypedQueryLambda;
  * - `record(...)` inserts an immutable AuditLog row.
  * - `listRecent(...)` provides a small, admin-facing query surface with simple filters.
  */
-// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
-@:native("TodoApp.AuditLogs")
 class AuditLogs {
 	public static function record(params:AuditLogEntryParams):Result<AuditLog, Changeset<AuditLog, Term>> {
 		var data = SchemaStruct.empty(AuditLog);

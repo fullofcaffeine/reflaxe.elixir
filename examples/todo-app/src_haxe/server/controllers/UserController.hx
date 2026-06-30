@@ -24,14 +24,10 @@ import StringTools;
  * 
  * ## Annotations Explained
  * 
- * @:native("TodoAppWeb.UserController")
- * - **Purpose**: Specifies the exact Elixir module name to generate
- * - **Why**: Phoenix expects controllers in the `AppNameWeb` namespace
- * - **Benefit**: Follows Phoenix conventions while keeping Haxe package structure clean
- * - **Generated**: `defmodule TodoAppWeb.UserController do`
- * 
  * @:controller  
  * - **Purpose**: Marks this class as a Phoenix controller
+ * - **Generated**: `defmodule TodoAppWeb.UserController do`
+ * - **Why**: PhoenixHx derives the web namespace from `-D app_name=TodoApp`
  * - **Why**: Triggers controller-specific compilation (adds `use TodoAppWeb, :controller`)
  * - **Benefit**: Automatic Phoenix controller boilerplate and proper action signatures
  * - **Generated**: Includes all Phoenix.Controller functionality
@@ -57,8 +53,6 @@ import StringTools;
  * 
  * @see https://hexdocs.pm/phoenix/Phoenix.Controller.html
  */
-// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
-@:native("TodoAppWeb.UserController")
 // @:controller: marks this module as a Phoenix controller for HTTP actions.
 @:controller
 class UserController {

@@ -79,10 +79,8 @@ typedef AuditLogLiveRenderAssigns = {
  * - On mount, enforce admin access and load the most recent audit entries for the current org.
  * - Filter form uses `phx-change` to reload rows by action/entity/actor_id.
  */
-// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
-
-@:native("TodoAppWeb.AuditLogLive")
 // @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
+
 @:liveview
 class AuditLogLive {
 	static inline var DEFAULT_LIMIT = 50;

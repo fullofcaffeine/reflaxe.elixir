@@ -1,6 +1,6 @@
-defmodule FormLive do
+defmodule MyAppWeb.FormLive do
   use Phoenix.Component
-  use Phoenix.LiveView, layout: {FormLive.Layouts, :app}
+  use Phoenix.LiveView, layout: {MyAppWeb.Layouts, :app}
   def render(assigns) do
     ~H"""
 <form phx-submit={"create_todo"} phx-change={"update_form"}>
@@ -12,7 +12,7 @@ defmodule FormLive do
     "create_todo"
   end
   def decode_create(payload) do
-    TodoFormEvents.decode("create_todo", payload)
+    MyApp.TodoFormEvents.decode("create_todo", payload)
   end
   defp handle_create_todo(payload, socket) do
     {:noreply, Phoenix.Component.assign(socket, :summary, payload.title <> ":" <> Reflaxe.Elixir.HaxeFloat.to_string(payload.priority))}

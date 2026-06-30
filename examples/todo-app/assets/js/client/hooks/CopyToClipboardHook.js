@@ -1,9 +1,9 @@
-import {HookEvents} from "../../shared/liveview/_HookEventsGenerated.js"
+import {HookClientEvents} from "../../shared/liveview/_HookClientEventsGenerated.js"
 import {Register} from "../../genes/Register.js"
 
 const $global = Register.$global
 
-export const CopyToClipboardHook = Register.global("$hxClasses")["client.hooks.CopyToClipboardHook"] = 
+export const CopyToClipboardHook = Register.global("$hxClasses")["client.hooks.CopyToClipboardHook"] =
 class CopyToClipboardHook {
 	static mounted(hook) {
 		let el = hook.el;
@@ -18,7 +18,7 @@ class CopyToClipboardHook {
 					message = "Copied.";
 				};
 				try {
-					HookEvents.pushClipboardCopied(hook, message);
+					HookClientEvents.pushClipboardCopied(hook, message);
 				}catch (_g) {
 				};
 				el.classList.add("copied");

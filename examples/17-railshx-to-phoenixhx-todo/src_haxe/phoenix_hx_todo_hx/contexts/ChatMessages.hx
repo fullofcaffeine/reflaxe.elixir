@@ -22,7 +22,6 @@ import phoenix_hx_todo_hx.live.AppLiveTypes.ChatMessageItem;
  * - Phoenix code keeps writes in contexts and uses PubSub as a realtime signal.
  *   The LiveView refreshes from Ecto instead of accepting client-owned state.
  */
-@:native("PhoenixHxTodo.ChatMessages")
 class ChatMessages {
 	static inline final maxRecentMessages = 6;
 

@@ -193,7 +193,7 @@ Shared code note:
   tightened. New app-facing generated Elixir should prefer `TodoApp.*` / `TodoAppWeb.*` modules under
   Phoenix-native paths; see the [Phoenix output model](../../docs/05-architecture/PHOENIX_OUTPUT_MODEL.md).
 - The create-todo form demonstrates a typed form-origin Live Event Protocol:
-  `shared.liveview.TodoEvent.CreateTodo` declares `@:submitEvent("create_todo", "todo")`, the template still
+  `shared.liveview.TodoEvent.CreateTodo` declares `@:submitEvent("todo")`, the template still
   renders normal Phoenix `phx-submit="create_todo"` with `name="todo[title]"` style fields, and `TodoLive`
   receives a typed `CreateTodoForm`.
 - The edit/save flow intentionally remains direct PhoenixHx (`EventName.SaveTodo` plus explicit param reads).
@@ -303,7 +303,6 @@ typedef TodoChangesetParams = {
     ?tags: Term
 }
 
-@:native("TodoApp.Todo")
 @:schema("todos")
 @:timestamps
 @:changeset(["title", "completed", "priority", "dueDate", "tags"], ["title"])
@@ -316,6 +315,10 @@ class Todo {
     @:field public var tags: Null<Array<String>>;
 }
 ```
+
+With `-D app_name=TodoApp`, `@:schema class Todo` derives the normal Phoenix app
+module `TodoApp.Todo`. Use class-level `@:native(...)` only when you need an
+exact legacy or interop module name.
 
 `@:schema` auto-injects a typed `changeset<Params>(schema, params)` declaration, so no manual
 `extern` method is required.

@@ -275,10 +275,14 @@ follow Phoenix conventions:
 | Migration | `TodoApp.Repo.Migrations.CreateTodos` | `priv/repo/migrations/<timestamp>_create_todos.exs` |
 | Haxe-authored ExUnit test | `TodoAppWeb.TodoLiveGeneratedTest` | `test/generated/**/*_test.exs` initially |
 
-The mapping rule is target-module first. `@:native("TodoAppWeb.TodoLive")`,
-Phoenix annotations, and future namespace mappings should decide the target
-module and therefore the output path. Haxe packages are an authoring aid, not the
-last word on app-facing Elixir layout.
+The mapping rule is target-module first. PhoenixHx should derive app-facing
+modules from Phoenix annotations plus `-D app_name` / `-D app_web_name` whenever
+it can: `@:liveview class TodoLive` targets `TodoAppWeb.TodoLive`,
+`@:controller class SessionController` targets `TodoAppWeb.SessionController`,
+and `@:schema class Todo` targets `TodoApp.Todo`. `@:native("Exact.Module")`
+remains the low-level escape hatch for externs and unusual interop, not the
+default app-authoring API. Haxe packages are an authoring aid, not the last word
+on app-facing Elixir layout.
 
 ## Shared Contracts
 
@@ -334,10 +338,10 @@ Emission policy for shared contracts:
 
 ## Configuration And Metadata Direction
 
-The current compiler already supports `@:native("Target.Module")` for many
-module mappings. The output model should make that rule universal across
-classes, enums, abstracts, generated companions, extra files, Live Event
-Protocol artifacts, Repo companion modules, and migrations.
+The compiler supports `@:native("Target.Module")` for exact interop, but
+PhoenixHx-owned app modules should prefer derived target names. Any remaining
+string module target should be either a true extern boundary or a documented
+temporary gap where no typed PhoenixHx marker exists yet.
 
 Future PhoenixHx configuration can make larger apps less annotation-heavy:
 
@@ -374,7 +378,8 @@ Future PhoenixHx configuration can make larger apps less annotation-heavy:
 
 Useful metadata concepts:
 
-- `@:native("TodoApp.SomeModule")`: authoritative target module and output path.
+- `@:native("TodoApp.SomeModule")`: exact interop escape hatch for externs or
+  unusual modules that cannot yet be derived from PhoenixHx metadata.
 - `@:compileTimeOnly`: no `.ex` / `.exs` output; useful for shared typedefs,
   phantom protocol declarations, and macro-only declarations.
 - `@:runtimeSupport`: marks compiler/framework runtime modules so they go to a

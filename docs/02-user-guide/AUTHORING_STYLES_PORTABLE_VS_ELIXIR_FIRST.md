@@ -153,7 +153,6 @@ typedef ChatAssigns = {
   draft:String
 };
 
-@:native("MyAppWeb.ChatLive")
 @:liveview
 class ChatLive {
   public static function handleEvent(event:String, params:Term, socket:Socket<ChatAssigns>):HandleEventResult<ChatAssigns> {

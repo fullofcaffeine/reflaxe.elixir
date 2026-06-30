@@ -338,6 +338,9 @@ class PresenceMacro {
 						}
 					}
 				}
+				var derived = reflaxe.elixir.PhoenixTargetNames.classTargetAlias(ct);
+				if (derived != null)
+					return derived;
 				var parts = ct.pack.copy();
 				parts.push(ct.name);
 				return parts.join(".");
@@ -345,15 +348,9 @@ class PresenceMacro {
 			return "__MODULE__";
 		})();
 
-		// Register a minimal Presence bootstrap so the backend emits the module.
-		if (localClass != null) {
-			var ct = localClass.get();
-			#if debug_presence
-			reflaxe.elixir.PhoenixMapper.registerPresenceModule(deriveBootstrap(ct, fqModule));
-			#else
-			reflaxe.elixir.PhoenixMapper.registerPresenceModule(deriveBootstrap(ct, fqModule));
-			#end
-		}
+		// The implementing class is marked `@:keep` above and emits the concrete
+		// Presence module itself. Do not also register a minimal bootstrap module
+		// for the same target; that would overwrite generated helper functions.
 
 		// Generate internal methods (with self())
 		newFields.push(generateInternalTrack(fqModule));

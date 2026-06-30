@@ -14,6 +14,8 @@ import plug.Conn;
  *   not the whole Plug connection. Keeping this as a small Haxe module shows the
  *   Phoenix pattern without replacing the scaffolded `PhoenixHxTodoWeb` helper.
  */
+// Exact interop escape hatch: this helper is a plain app web module, not a
+// Phoenix behavior with a dedicated PhoenixHx derivation marker yet.
 @:native("PhoenixHxTodoWeb.LiveSession")
 class LiveSession {
 	public static function live_session(conn:Conn<{}>):Term {

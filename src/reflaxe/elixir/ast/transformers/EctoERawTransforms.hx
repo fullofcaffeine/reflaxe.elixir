@@ -15,7 +15,8 @@ using StringTools;
  *   rewriting `t in :user` to `t in <App>.User`.
  *
  * WHY
- * - Some builders emit `require Ecto.Query; Ecto.Query.from(t in :user, ...)` as ERaw.
+ * - Some builders emit `require Ecto.Query; Ecto.Query.from(t in :user, ...)` or
+ *   `Ecto.Query.from(t in User, ...)` as ERaw.
  *   Elixir warns because `:user.__schema__/1` is undefined. Using the schema module
  *   (<App>.User) is idiomatic and removes warnings.
  *
@@ -27,6 +28,7 @@ using StringTools;
  *
  * EXAMPLES
  *   Ecto.Query.from(t in :user, [])      -> Ecto.Query.from(t in MyApp.User, [])
+ *   Ecto.Query.from(t in User, [])       -> Ecto.Query.from(t in MyApp.User, [])
  */
 class EctoERawTransforms {
 	static inline function toSnakeAtom(s:String):String {
@@ -378,6 +380,12 @@ class EctoERawTransforms {
 		inline function qualify(code:String, app:String):String {
 			if (code.indexOf("Ecto.Query.from(") == -1)
 				return code;
+			inline function isIdentChar(ch:String):Bool {
+				return ~/^[A-Za-z0-9_]$/.match(ch);
+			}
+			inline function isUpper(ch:String):Bool {
+				return ch >= "A" && ch <= "Z";
+			}
 			var out = new StringBuf();
 			var i = 0;
 			while (i < code.length) {
@@ -407,6 +415,28 @@ class EctoERawTransforms {
 						out.add(pas.join(""));
 						i = j;
 						continue;
+					}
+				}
+				if (i + 4 < code.length && code.substr(i, 4) == " in ") {
+					var j = i + 4;
+					if (j < code.length && isUpper(code.charAt(j))) {
+						var name = new StringBuf();
+						while (j < code.length) {
+							var ch = code.charAt(j);
+							if (!isIdentChar(ch))
+								break;
+							name.add(ch);
+							j++;
+						}
+						var moduleName = name.toString();
+						if (moduleName.length > 0 && moduleName.indexOf("_") == -1 && (j >= code.length || code.charAt(j) != ".")) {
+							out.add(" in ");
+							out.add(app);
+							out.add(".");
+							out.add(moduleName);
+							i = j;
+							continue;
+						}
 					}
 				}
 				out.add(code.charAt(i));

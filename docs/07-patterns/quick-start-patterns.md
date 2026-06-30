@@ -30,7 +30,6 @@ typedef ProductEventParams = {
     var ?id: Int;
 }
 
-@:native("MyAppWeb.ProductLive")
 @:liveview
 class ProductLive {
     public static function mount(params: Term, session: Term, socket: Socket<ProductAssigns>): MountResult<ProductAssigns> {

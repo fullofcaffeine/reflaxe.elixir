@@ -22,7 +22,6 @@ using reflaxe.elixir.macros.TypedQueryLambda;
  * - Phoenix apps usually keep authentication/session decisions outside LiveViews.
  *   This mirrors that boundary without emulating Devise or Rails controllers.
  */
-@:native("PhoenixHxTodo.Accounts")
 class Accounts {
 	public static function normalizeEmail(email:String):String {
 		return StringTools.trim(email).toLowerCase();

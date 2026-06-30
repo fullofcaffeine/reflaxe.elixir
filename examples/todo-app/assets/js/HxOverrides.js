@@ -2,7 +2,7 @@ import {Register} from "./genes/Register.js"
 
 const $global = Register.$global
 
-export const HxOverrides = Register.global("$hxClasses")["HxOverrides"] = 
+export const HxOverrides = Register.global("$hxClasses")["HxOverrides"] =
 class HxOverrides {
 	static cca(s, index) {
 		let x = s.charCodeAt(index);

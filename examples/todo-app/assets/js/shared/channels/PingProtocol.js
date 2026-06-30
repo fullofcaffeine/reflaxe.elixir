@@ -2,8 +2,8 @@ import {Register} from "../../genes/Register.js"
 
 const $global = Register.$global
 
-export const PingClientEvent = 
-Register.global("$hxEnums")["shared.channels.PingClientEvent"] = 
+export const PingClientEvent =
+Register.global("$hxEnums")["shared.channels.PingClientEvent"] =
 {
 	__ename__: "shared.channels.PingClientEvent",
 	
@@ -12,8 +12,8 @@ Register.global("$hxEnums")["shared.channels.PingClientEvent"] =
 PingClientEvent.__constructs__ = [PingClientEvent.Ping]
 PingClientEvent.__empty_constructs__ = []
 
-export const PingServerEvent = 
-Register.global("$hxEnums")["shared.channels.PingServerEvent"] = 
+export const PingServerEvent =
+Register.global("$hxEnums")["shared.channels.PingServerEvent"] =
 {
 	__ename__: "shared.channels.PingServerEvent",
 	
@@ -22,7 +22,7 @@ Register.global("$hxEnums")["shared.channels.PingServerEvent"] =
 PingServerEvent.__constructs__ = [PingServerEvent.Pong]
 PingServerEvent.__empty_constructs__ = []
 
-export const PingProtocol = Register.global("$hxClasses")["shared.channels.PingProtocol"] = 
+export const PingProtocol = Register.global("$hxClasses")["shared.channels.PingProtocol"] =
 class PingProtocol {
 	static encodeClientSend(event) {
 		let payload = event.payload;

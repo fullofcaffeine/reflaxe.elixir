@@ -7,9 +7,11 @@
 ### Design Pattern
 ```haxe
 // ✅ CORRECT: Framework conventions via annotations
-@:native("AppNameWeb.TodoLive")
 @:liveview
 class TodoLive {}
+
+// With -D app_name=AppName, this derives AppNameWeb.TodoLive.
+// Use class-level @:native only for exact interop names the framework cannot derive.
 
 // ❌ WRONG: Hardcoded framework detection in compiler
 // Don't make assumptions about Phoenix in core compiler
@@ -28,8 +30,12 @@ Todo.hx @:schema           → lib/todo_app/schemas/todo.ex    # Domain models
 
 ### Snake_Case Conversion Rules
 - **ALL files get proper Elixir naming**: TodoApp → todo_app
-- **Package-to-directory mapping**: Haxe packages become snake_case directories  
-- **Single source of truth**: `getComprehensiveNamingRule()` handles ALL cases
+- **Target-module-first placement**: app-facing Phoenix output follows the
+  derived `MyApp.*` / `MyAppWeb.*` target module, not raw Haxe source roots.
+- **Package-to-directory fallback**: Haxe packages become snake_case directories
+  only for plain modules where that package is intentionally the Elixir API.
+- **Single source of truth**: `PhoenixTargetNames` derives Phoenix target
+  aliases and converts them to paths.
 
 ## 🔧 Annotation System
 

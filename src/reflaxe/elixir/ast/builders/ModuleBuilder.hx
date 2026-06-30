@@ -73,18 +73,23 @@ class ModuleBuilder {
 			}
 		}
 
+		var derivedPhoenixTarget = reflaxe.elixir.PhoenixTargetNames.classTargetAlias(classType);
+		if (derivedPhoenixTarget != null)
+			return derivedPhoenixTarget;
+
 		var appName = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+		var webName = reflaxe.elixir.PhoenixMapper.getAppWebModuleName();
 		if (hasClassOrModuleMetadata(classType, ":router", "router") && appName != null && appName != "") {
-			return appName + "Web.Router";
+			return webName + ".Router";
 		}
 		if (hasClassOrModuleMetadata(classType, ":endpoint", "endpoint") && appName != null && appName != "") {
-			return appName + "Web.Endpoint";
+			return webName + ".Endpoint";
 		}
 		if ((hasClassOrModuleMetadata(classType, ":phoenixWebModule", "phoenixWebModule")
 			|| hasClassOrModuleMetadata(classType, ":phoenixWeb", "phoenixWeb"))
 			&& appName != null
 			&& appName != "") {
-			return appName + "Web";
+			return webName;
 		}
 
 		// For @:application classes without @:native, append ".Application" to module name
@@ -101,21 +106,6 @@ class ModuleBuilder {
 		if (Context.defined("ecto_migrations_exs") && classType.meta.has(":migration")) {
 			var migrationAppName = reflaxe.elixir.PhoenixMapper.getAppModuleName();
 			return migrationAppName + ".Repo.Migrations." + classType.name;
-		}
-
-		// For non-extern project code in a packaged namespace, qualify with the configured app module prefix.
-		//
-		// This is intentionally conservative: we only apply the prefix when `-D app_name=...` is present.
-		// Without app_name, keep prior behavior (emit unqualified module names) for minimal examples.
-		//
-		// IMPORTANT: Do not prefix Haxe stdlib/runtime modules (haxe.* / sys.*). Those are emitted as
-		// unqualified modules (e.g., `Log`, `BalancedTree`) and are referenced unqualified by the runtime.
-		if (!classType.isExtern && classType.pack.length > 0 && classType.pack[0] != "haxe" && classType.pack[0] != "sys" && classType.pack[0] != "elixir"
-			&& classType.pack[0] != "ecto" && classType.pack[0] != "phoenix" && classType.pack[0] != "plug") {
-			var configuredAppName = Context.definedValue("app_name");
-			if (configuredAppName != null && configuredAppName != "") {
-				return configuredAppName + "." + classType.name;
-			}
 		}
 
 		// Default to class name

@@ -22,8 +22,6 @@ import StringTools;
  * - `create/2` find-or-creates a user by email and stores `:user_id` in the session.
  * - `delete/2` clears `:user_id`.
  */
-// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
-@:native("TodoAppWeb.SessionController")
 // @:controller: marks this module as a Phoenix controller for HTTP actions.
 @:controller
 class SessionController {

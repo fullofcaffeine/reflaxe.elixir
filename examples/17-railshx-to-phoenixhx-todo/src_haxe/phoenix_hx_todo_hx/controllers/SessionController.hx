@@ -17,7 +17,6 @@ import plug.Conn;
  * - Phoenix LiveViews receive a LiveView session map, not the Plug session itself.
  *   A controller action is the normal place to mutate the browser session.
  */
-@:native("PhoenixHxTodoWeb.SessionController")
 @:controller
 class SessionController {
 	public static function create(conn:Conn<{}>, params:Term):Conn<{}> {

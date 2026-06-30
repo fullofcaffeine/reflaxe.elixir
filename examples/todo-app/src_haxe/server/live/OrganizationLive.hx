@@ -99,10 +99,8 @@ typedef OrganizationLiveRenderAssigns = {
  * - If the organization doesn't exist, it's created.
  * - Switching updates `users.organization_id` (and demo role) then redirects back to `/todos`.
  */
-// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
-
-@:native("TodoAppWeb.OrganizationLive")
 // @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
+
 @:liveview
 class OrganizationLive {
 	public static function mount(params:MountParams, session:Session, socket:Socket<OrganizationLiveAssigns>):MountResult<OrganizationLiveAssigns> {

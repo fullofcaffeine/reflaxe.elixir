@@ -90,7 +90,6 @@ import phoenix.Phoenix.Socket;
 
 typedef CounterAssigns = { count: Int };
 
-@:native("MyAppWeb.CounterLive")
 @:liveview
 class CounterLive {
   public static function mount(params: Term, session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
@@ -110,6 +109,9 @@ class CounterLive {
 ```
 
 Notes:
+- With `-D app_name=MyApp`, `@:liveview class CounterLive` emits
+  `MyAppWeb.CounterLive`. Use `@:native(...)` only for exact interop names that
+  cannot be derived.
 - `_.count` is a compile-time field selector for typed assigns updates.
 - You can keep Haxe argument names plain (`params`, `session`). The compiler adds Elixir-style `_` prefixes when those arguments are unused.
 - `LiveSocket<TAssigns>` is still available as an explicit wrapper when you want wrapper-specific helper signatures.
@@ -119,7 +121,7 @@ Notes:
 Compiles to:
 
 ```elixir
-defmodule CounterLive do
+defmodule MyAppWeb.CounterLive do
   use Phoenix.LiveView
 
   def mount(_params, _session, socket), do: {:ok, assign(socket, :count, 0)}

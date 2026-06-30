@@ -23,7 +23,6 @@ For the example-driven parity backlog, see `docs/08-roadmap/phoenix-surface-pari
 Typical metadata + callback shape:
 
 ```haxe
-@:native("MyAppWeb.TodoLive")
 @:liveview
 class TodoLive {
   public static function mount(params:Term, session:Term, socket:Socket<TodoAssigns>):MountResult<TodoAssigns> {
@@ -38,6 +37,9 @@ class TodoLive {
 
 Key points:
 
+- With `-D app_name=MyApp`, `@:liveview class TodoLive` emits
+  `MyAppWeb.TodoLive`. Set `-D app_web_name=...` only for nonstandard web module
+  names, and use class-level `@:native(...)` only for exact interop.
 - In `@:liveview` modules, exact Haxe-style callbacks emit canonical Phoenix names:
   `handleEvent -> handle_event`, `handleInfo -> handle_info`, `handleParams -> handle_params`, and `handleAsync -> handle_async`.
 - Use function-level `@:native("...")` only for explicit interop with an existing Elixir API or unusual callback name.
@@ -151,7 +153,6 @@ data.
 - function-level: discoverable component entrypoint
 
 ```haxe
-@:native("MyAppWeb.CoreComponents")
 @:component
 class CoreComponents {
   @:component

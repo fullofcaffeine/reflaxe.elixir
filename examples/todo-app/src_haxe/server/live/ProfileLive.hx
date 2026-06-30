@@ -64,12 +64,10 @@ typedef ProfileLiveRenderAssigns = {
  * - Reads `user_id` from the LiveView session (provided by TodoAppWeb.live_session/1).
  * - Loads the user schema and allows editing name/email.
  */
-// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
-
-@:native("TodoAppWeb.ProfileLive")
 // @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
+
 @:liveview
-@:liveEvents(HookClientEvent, "dispatchHookEvent")
+@:liveEvents(HookClientEvent, dispatchHookEvent)
 class ProfileLive {
 	public static function mount(params:MountParams, session:Session, socket:Socket<ProfileLiveAssigns>):MountResult<ProfileLiveAssigns> {
 		var sock:LiveSocket<ProfileLiveAssigns> = socket;

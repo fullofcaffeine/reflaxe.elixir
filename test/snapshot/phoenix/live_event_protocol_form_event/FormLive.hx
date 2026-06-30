@@ -17,22 +17,22 @@ typedef TodoForm = {
 	var estimate:Float;
 }
 
-@:liveEventProtocol("TodoFormEvents")
+@:liveEventProtocol
 enum TodoFormEvent {
-	@:submitEvent("create_todo", "todo")
+	@:submitEvent("todo")
 	CreateTodo(payload:TodoForm);
 
-	@:changeEvent("update_form", "todo")
+	@:changeEvent("todo")
 	UpdateForm(payload:TodoForm);
 
-	@:submitEvent("clear_completed", "todo")
+	@:submitEvent("todo")
 	ClearCompleted;
 }
 
 typedef TodoFormEvents = LiveEventProtocolCompanion<TodoFormEvent>;
 
 @:liveview
-@:liveEvents(TodoFormEvent, "dispatchTodoFormEvent")
+@:liveEvents(TodoFormEvent)
 class FormLive {
 	public static function render(assigns:FormAssigns):String {
 		return <form phx-submit=${TodoFormEvents.CreateTodoEvent} phx-change=${TodoFormEvents.UpdateFormEvent}>

@@ -737,12 +737,10 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 
 		// Endpoint modules: map to lib/<app_snake>_web/endpoint.ex
 		if (classType.meta.has(":endpoint")) {
-			var appModuleName = reflaxe.elixir.PhoenixMapper.getAppModuleName();
-			var appSnake = reflaxe.elixir.ast.NameUtils.toSnakeCase(appModuleName);
-			var webSnake = appSnake + "_web";
+			var webModuleName = reflaxe.elixir.PhoenixMapper.getAppWebModuleName();
+			var webSnake = reflaxe.elixir.ast.NameUtils.toSnakeCase(webModuleName);
 
-			// Final Elixir module name (TodoAppWeb.Endpoint)
-			var finalModuleName = appModuleName + "Web.Endpoint";
+			var finalModuleName = webModuleName + ".Endpoint";
 			var finalPack:Array<String> = [webSnake];
 
 			// File placement: lib/todo_app_web/endpoint.ex
@@ -761,12 +759,10 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 
 		// Router modules: map to lib/<app_snake>_web/router.ex
 		if (hasClassOrStaticMetadata(classType, ":router", "router")) {
-			var appModuleName = reflaxe.elixir.PhoenixMapper.getAppModuleName();
-			var appSnake = reflaxe.elixir.ast.NameUtils.toSnakeCase(appModuleName);
-			var webSnake = appSnake + "_web";
+			var webModuleName = reflaxe.elixir.PhoenixMapper.getAppWebModuleName();
+			var webSnake = reflaxe.elixir.ast.NameUtils.toSnakeCase(webModuleName);
 
-			// Final Elixir module name (TodoAppWeb.Router)
-			var finalModuleName = appModuleName + "Web.Router";
+			var finalModuleName = webModuleName + ".Router";
 			var finalPack:Array<String> = [webSnake];
 
 			// File placement: lib/todo_app_web/router.ex
@@ -785,18 +781,17 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 
 		// PhoenixWeb modules: map to lib/<app_snake>_web.ex
 		if (classType.meta.has(":phoenixWebModule") || classType.meta.has(":phoenixWeb")) {
-			var appModuleName = reflaxe.elixir.PhoenixMapper.getAppModuleName();
-			var appSnake = reflaxe.elixir.ast.NameUtils.toSnakeCase(appModuleName);
+			var webModuleName = reflaxe.elixir.PhoenixMapper.getAppWebModuleName();
+			var webSnake = reflaxe.elixir.ast.NameUtils.toSnakeCase(webModuleName);
 
-			// Final Elixir module name (TodoAppWeb)
-			var finalModuleName = appModuleName + "Web";
+			var finalModuleName = webModuleName;
 			var finalPack:Array<String> = [];
 
 			// File placement: lib/todo_app_web.ex (at lib root)
-			setOutputFileName(appSnake + "_web");
+			setOutputFileName(webSnake);
 			setOutputFileDir("");
 
-			var outputPath = appSnake + "_web.ex";
+			var outputPath = webSnake + ".ex";
 			#if debug_annotation_transforms
 			#end
 			return {
@@ -829,6 +824,14 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			case EConst(CInt(value, _)): value;
 			default: null;
 		};
+	}
+
+	static function isAppFacingModule(moduleAlias:String):Bool {
+		if (moduleAlias == null || moduleAlias == "")
+			return false;
+		var app = reflaxe.elixir.PhoenixTargetNames.appModule();
+		var web = reflaxe.elixir.PhoenixTargetNames.webModule();
+		return moduleAlias == app || moduleAlias.indexOf(app + ".") == 0 || moduleAlias == web || moduleAlias.indexOf(web + ".") == 0;
 	}
 
 	/**
@@ -904,27 +907,16 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			return null;
 		}
 
-		// Check for @:native annotation to determine base module name/pack
+		// `@:native` is an exact interop escape hatch. Otherwise derive
+		// PhoenixHx target aliases for framework-owned modules.
 		var moduleName = classType.name;
 		var modulePack = classType.pack;
-
-		var nativeMetaEntries = collectClassAndStaticMetadata(classType, ":native", "native");
-
-		if (nativeMetaEntries != null && nativeMetaEntries.length > 0 && nativeMetaEntries[0].params != null && nativeMetaEntries[0].params.length > 0) {
-			switch (nativeMetaEntries[0].params[0].expr) {
-				case EConst(CString(s, _)):
-					// Parse the native module name for package and name
-					var parts = s.split(".");
-					if (parts.length > 1) {
-						moduleName = parts[parts.length - 1];
-						modulePack = parts.slice(0, parts.length - 1).map(p -> reflaxe.elixir.ast.NameUtils.toSnakeCase(p));
-					} else {
-						moduleName = s;
-						modulePack = [];
-					}
-				default:
-					// Keep original if annotation is malformed
-			}
+		var targetAlias = reflaxe.elixir.PhoenixTargetNames.nativeAlias(classType);
+		if (targetAlias == null)
+			targetAlias = reflaxe.elixir.PhoenixTargetNames.classTargetAlias(classType);
+		if (targetAlias != null) {
+			moduleName = reflaxe.elixir.PhoenixTargetNames.nameForAlias(targetAlias);
+			modulePack = reflaxe.elixir.PhoenixTargetNames.packForAlias(targetAlias);
 		}
 
 		// Apply framework-aware naming (e.g., @:application → TodoApp.Application,
@@ -933,6 +925,11 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		var frameworkNaming = setFrameworkAwareOutputPath(classType, moduleName, modulePack);
 		moduleName = frameworkNaming.moduleName;
 		modulePack = frameworkNaming.modulePack;
+		var extractedModuleName = reflaxe.elixir.ast.builders.ModuleBuilder.extractModuleName(classType);
+		if (isAppFacingModule(extractedModuleName)) {
+			moduleName = extractedModuleName;
+			modulePack = reflaxe.elixir.PhoenixTargetNames.packForAlias(extractedModuleName);
+		}
 
 		// Set current module for dependency tracking using the final module name
 		currentCompiledModule = moduleName;
@@ -944,6 +941,13 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		// Track the output path for this module. Use the framework override when
 		// provided; otherwise fall back to universal naming rules.
 		var outputPath = frameworkNaming.outputPath != null ? frameworkNaming.outputPath : getModuleOutputPath(moduleName, modulePack);
+		if (isAppFacingModule(extractedModuleName)) {
+			outputPath = reflaxe.elixir.PhoenixTargetNames.aliasToPath(extractedModuleName);
+			var pathParts = outputPath.split("/");
+			var file = pathParts.pop();
+			setOutputFileName(file.substr(0, file.length - ".ex".length));
+			setOutputFileDir(pathParts.join("/"));
+		}
 		moduleOutputPaths.set(moduleName, outputPath);
 		// Track BaseType for synthetic outputs
 		moduleBaseTypes.set(moduleName, classType);
@@ -1291,6 +1295,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		}
 		if (queryAst == null || rhsAst == null)
 			return null;
+		queryAst = reflaxe.elixir.ast.transformers.EctoERawTransforms.fromInModuleQualificationPass(queryAst);
 		// Build AST: Ecto.Query.where(queryAst, [t], t.field <op> ^(rhs))
 		var mod = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.ERemoteCall(reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EVar("Kernel")),
 			"require", [

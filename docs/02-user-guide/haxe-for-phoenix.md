@@ -29,7 +29,6 @@ import phoenix.Phoenix.Socket;
 
 typedef CounterAssigns = { count: Int };
 
-@:native("MyAppWeb.CounterLive")
 @:liveview
 class CounterLive {
   public static function mount(params: Term, session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {

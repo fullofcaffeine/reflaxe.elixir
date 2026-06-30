@@ -4,6 +4,7 @@ package reflaxe.elixir.macros;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
+import reflaxe.elixir.PhoenixTargetNames;
 import reflaxe.elixir.schema.SchemaIntrospection;
 #if hxx_instrument_sys
 import reflaxe.elixir.macros.MacroTimingHelper;
@@ -26,8 +27,13 @@ class EctoQueryMacros {
 	static function fromInternal<T>(schemaClass:ExprOf<Class<T>>):ExprOf<ecto.TypedQuery.TypedQuery<T>> {
 		try {
 			var classType = getClassType(schemaClass);
+			var schemaModule = PhoenixTargetNames.nativeAlias(classType);
+			if (schemaModule == null || schemaModule == "")
+				schemaModule = PhoenixTargetNames.classTargetAlias(classType);
+			if (schemaModule == null || schemaModule == "")
+				schemaModule = classType.name;
 			var __result:ExprOf<ecto.TypedQuery.TypedQuery<T>> = macro {
-				var query = untyped __elixir__('(require Ecto.Query; Ecto.Query.from(t in {0}, []))', $v{classType.name});
+				var query = untyped __elixir__('(require Ecto.Query; Ecto.Query.from(t in {0}, []))', $v{schemaModule});
 				new ecto.TypedQuery.TypedQuery(query);
 			};
 			return __result;

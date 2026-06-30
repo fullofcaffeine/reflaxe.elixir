@@ -25,10 +25,8 @@ typedef OrganizationInviteParams = {
  * - Invitations are matched by normalized email.
  * - `accepted_at` / `accepted_by_user_id` mark acceptance for auditability.
  */
-// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
-
-@:native("TodoApp.OrganizationInvite")
 // @:schema: marks this class as an Ecto schema and declares its table.
+
 @:schema("organization_invites")
 // @:timestamps: enables Ecto timestamp fields (`inserted_at`/`updated_at`).
 @:timestamps

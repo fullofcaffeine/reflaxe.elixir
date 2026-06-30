@@ -35,12 +35,12 @@ Put the protocol in `src_shared/shared/liveview/` when both the template/server 
 should agree on event names or payload shapes. The todo-app uses `TodoEvents` for two cases:
 
 ```haxe
-@:liveEventProtocol("TodoEvents")
+@:liveEventProtocol
 enum TodoEvent {
-	@:templateEvent("toggle_todo")
+	@:templateEvent
 	ToggleTodo(id:Int);
 
-	@:submitEvent("create_todo", "todo")
+	@:submitEvent("todo")
 	CreateTodo(payload:CreateTodoForm);
 }
 ```
@@ -53,7 +53,7 @@ The create form remains normal Phoenix markup after compilation:
 </form>
 ```
 
-The server binds the protocol with `@:liveEvents(TodoEvent, "dispatchTodoEvent")` and handles the typed payload:
+The server binds the protocol with `@:liveEvents(TodoEvent)` and handles the typed payload:
 
 ```haxe
 static function handleCreateTodo(

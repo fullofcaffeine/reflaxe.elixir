@@ -23,9 +23,9 @@ import phoenix.live_view.macros.LiveEventProtocolModel;
  * - `hash(ProfileHookEvent)` returns the deterministic hash of that manifest.
  *
  * EXAMPLES
- *   @:liveEventProtocol("ProfileHookEvents")
+ *   @:liveEventProtocol
  *   enum ProfileHookEvent {
- *     @:event("clipboard_copied")
+ *     @:event
  *     ClipboardCopied(message:String);
  *   }
  *

@@ -111,10 +111,12 @@ enum LiveEventFieldKind {
  *
  * HOW
  * - Resolves the provided type expression to an enum.
- * - Reads `@:liveEventProtocol("CompanionName")` from the enum.
+ * - Reads `@:liveEventProtocol` from the enum.
  * - Reads optional `@:event("wire_name")` / `@:hookEvent("wire_name")` /
  *   `@:templateEvent("wire_name")`, `@:submitEvent("wire_name", "root")`,
  *   and `@:changeEvent("wire_name", "root")` metadata from constructors.
+ *   When a constructor origin has no explicit wire name, it derives one from
+ *   the constructor name.
  * - Validates duplicate event names, duplicate payload wire keys, and
  *   unsupported payload field types.
  */
@@ -154,7 +156,7 @@ class LiveEventProtocolModel {
 		var enumPath = typePath(enumType.pack, enumType.name);
 		var protocolEntry = findMeta(enumType.meta.get(), ":liveEventProtocol");
 		if (protocolEntry == null) {
-			Context.error('${enumPath} must be marked with @:liveEventProtocol("GeneratedCompanionName").', enumType.pos);
+			Context.error('${enumPath} must be marked with @:liveEventProtocol.', enumType.pos);
 		}
 
 		var companionName = metadataStringParam(protocolEntry, 0);
@@ -231,9 +233,10 @@ class LiveEventProtocolModel {
 	}
 
 	static function readFormRoot(entry:MetadataEntry):String {
-		var root = metadataStringParam(entry, 1);
+		var rootIndex = (entry.params != null && entry.params.length == 1) ? 0 : 1;
+		var root = metadataStringParam(entry, rootIndex);
 		if (root == null || root.trim() == "") {
-			Context.error('${entry.name} expects an event name and non-empty form root, for example ${entry.name}("create_todo", "todo").',
+			Context.error('${entry.name} expects a non-empty form root, for example ${entry.name}("todo") or ${entry.name}("create_todo", "todo").',
 				entry.pos);
 		}
 		return root;
@@ -244,10 +247,15 @@ class LiveEventProtocolModel {
 			var entry = findMeta(constructor.meta.get(), name);
 			if (entry == null)
 				continue;
-			var explicit = metadataStringParam(entry, 0);
-			if (explicit == null || explicit.trim() == "") {
-				Context.error('${entry.name} expects a non-empty string literal.', entry.pos);
+			if ((name == ":submitEvent" || name == ":changeEvent") && entry.params != null && entry.params.length == 1) {
+				return camelToSnake(constructor.name);
 			}
+			var explicit = metadataStringParam(entry, 0);
+			if (explicit == null) {
+				return camelToSnake(constructor.name);
+			}
+			if (explicit.trim() == "")
+				Context.error('${entry.name} expects a non-empty string literal when an explicit wire name is provided.', entry.pos);
 			return explicit;
 		}
 		return camelToSnake(constructor.name);

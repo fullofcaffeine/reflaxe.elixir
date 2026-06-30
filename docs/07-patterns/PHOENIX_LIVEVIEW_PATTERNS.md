@@ -23,7 +23,6 @@ import phoenix.Phoenix.Socket;
 
 typedef CounterAssigns = { count: Int };
 
-@:native("MyAppWeb.CounterLive")
 @:liveview
 class CounterLive {
   public static function mount(params: Term, session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
@@ -55,7 +54,7 @@ class CounterLive {
 Compiles to:
 
 ```elixir
-defmodule CounterLive do
+defmodule MyAppWeb.CounterLive do
   use Phoenix.LiveView
 
   def mount(_params, _session, socket) do

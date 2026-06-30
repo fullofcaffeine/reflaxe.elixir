@@ -29,12 +29,12 @@ typedef CreateTodoForm = {
  *   The generated companion keeps event names and server decoding in sync while
  *   the template remains ordinary Phoenix markup.
  */
-@:liveEventProtocol("TodoEvents")
+@:liveEventProtocol
 enum TodoEvent {
-	@:templateEvent("toggle_todo")
+	@:templateEvent
 	ToggleTodo(id:Int);
 
-	@:submitEvent("create_todo", "todo")
+	@:submitEvent("todo")
 	CreateTodo(payload:CreateTodoForm);
 }
 

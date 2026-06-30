@@ -165,11 +165,7 @@ class PhoenixMapper {
 	 * Configurable via -D app_name compiler flag, defaults to MyApp.Repo
 	 */
 	public static function getRepoModuleName():String {
-		#if app_name
-		return haxe.macro.Compiler.getDefine("app_name") + ".Repo";
-		#else
-		return "MyApp.Repo";
-		#end
+		return PhoenixTargetNames.repoModule();
 	}
 
 	/**
@@ -177,15 +173,17 @@ class PhoenixMapper {
 	 * Configurable via -D app_name compiler flag, defaults to MyApp
 	 */
 	public static function getAppModuleName():String {
-		var v = Context.definedValue("app_name");
-		if (v == null || v == "") {
-			#if debug_presence
-			#end
-			return "MyApp";
-		}
-		#if debug_presence
-		#end
-		return v;
+		return PhoenixTargetNames.appModule();
+	}
+
+	/**
+	 * Get the application's Phoenix web module name.
+	 *
+	 * Defaults to `<app_name>Web`, but can be set with
+	 * `-D app_web_name=CustomWeb`.
+	 */
+	public static function getAppWebModuleName():String {
+		return PhoenixTargetNames.webModule();
 	}
 
 	/**

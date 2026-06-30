@@ -15,9 +15,9 @@ import phoenix.live_view.LiveEventProtocolCompanion;
  *   companion keeps hook pushes and server dispatchers in sync without
  *   handwritten payload codecs.
  */
-@:liveEventProtocol("HookEvents")
+@:liveEventProtocol
 enum HookClientEvent {
-	@:hookEvent("clipboard_copied")
+	@:hookEvent
 	ClipboardCopied(message:String);
 
 	@:hookEvent("ping")

@@ -587,8 +587,8 @@ If this fails, the compiler has hardcoded dependencies that must be removed.
 
 ### LiveView Component Pattern
 ```haxe
-// Framework-agnostic with explicit Phoenix module naming
-@:native("TodoAppWeb.TodoLive")  // Generates TodoAppWeb.TodoLive module
+// Framework-agnostic with derived Phoenix module naming.
+// With -D app_name=TodoApp, @:liveview derives TodoAppWeb.TodoLive.
 @:liveview
 class TodoLive {
     public static function mount(params, session, socket) {
@@ -609,12 +609,12 @@ class TodoLive {
 ```
 
 ### Module Naming Convention
-**CRITICAL**: The compiler generates plain Elixir modules by default. Use class-level `@:native` to pin Phoenix module names. In `@:liveview` modules, exact Haxe-style callback names such as `handleEvent` and `handleInfo` emit canonical Phoenix callback names automatically.
+**CRITICAL**: The compiler generates plain Elixir modules by default. For PhoenixHx app modules, prefer role metadata such as `@:liveview`, `@:controller`, `@:schema`, `@:repo`, `@:router`, plus `-D app_name=TodoApp` / optional `-D app_web_name=TodoAppWeb`. Class-level `@:native` is an exact interop escape hatch for externs, legacy modules, or names the framework cannot derive. In `@:liveview` modules, exact Haxe-style callback names such as `handleEvent` and `handleInfo` emit canonical Phoenix callback names automatically.
 
 ```haxe
-@:native("TodoAppWeb.TodoLive")    // Phoenix web module
-@:native("TodoApp.User")           // Phoenix app module  
-@:native("MyDeviceWeb.SensorLive") // Works with any framework
+@:liveview     // TodoAppWeb.TodoLive when the class is TodoLive
+@:schema       // TodoApp.User when the class is User
+@:native("MyDeviceWeb.SensorLive") // Exact interop escape hatch
 ```
 
 This framework-agnostic approach works with Phoenix, Nerves, pure OTP, or custom frameworks.
@@ -791,7 +791,7 @@ class TodoApp {
 // src_haxe/server/schemas/Todo.hx
 import ecto.Field;
 
-@:native("TodoApp.Todo")  // Control module name
+// With -D app_name=TodoApp, this derives TodoApp.Todo.
 @:schema("todos")
 @:timestamps
 class Todo {
@@ -838,7 +838,7 @@ typedef Assigns = {
     search_query: String
 }
 
-@:native("TodoAppWeb.TodoLive")
+// With -D app_name=TodoApp, this derives TodoAppWeb.TodoLive.
 @:liveview
 class TodoLive {
     public static function mount(_params: Term, _session: Term, socket: Socket<Assigns>): MountResult<Assigns> {

@@ -31,7 +31,7 @@ typedef GeneratedLiveEventContract = {
  * Generates explicit server-side LiveView dispatch helpers for shared protocols.
  *
  * WHAT
- * - Reads `@:liveEvents(ProfileHookEvent, "dispatchProfileHookEvent")` from a
+ * - Reads `@:liveEvents(ProfileHookEvent)` from a
  *   `@:liveview` class and injects the named static dispatch helper.
  *
  * WHY
@@ -63,19 +63,20 @@ class LiveEventDispatcherBuilder {
 
 			var binding = readBinding(entry);
 			var protocol = LiveEventProtocolModel.fromTypeRef(binding.protocolRef);
-			validateNoFieldCollision(fields, binding.dispatchName, entry.pos);
+			var dispatchName = binding.dispatchName != null ? binding.dispatchName : defaultDispatchName(protocol);
+			validateNoFieldCollision(fields, dispatchName, entry.pos);
 			var handleEvent = findHandleEvent(fields, entry.pos);
 			for (event in protocol.events) {
 				validateHandler(fields, event, handleEvent, cls);
 			}
-			if (!handleEventCallsDispatcher(handleEvent, binding.dispatchName)) {
-				reportMissingDispatcherCall(binding.dispatchName, entry.pos);
+			if (!handleEventCallsDispatcher(handleEvent, dispatchName)) {
+				reportMissingDispatcherCall(dispatchName, entry.pos);
 				continue;
 			}
 			for (event in protocol.events) {
 				generatedEventContracts.push(buildGeneratedContract(event));
 			}
-			fields.push(buildDispatchFunction(protocol, binding.dispatchName, handleEvent));
+			fields.push(buildDispatchFunction(protocol, dispatchName, handleEvent));
 		}
 
 		return generatedEventContracts;
@@ -117,23 +118,39 @@ class LiveEventDispatcherBuilder {
 		};
 	}
 
-	static function readBinding(entry:MetadataEntry):{protocolRef:Expr, dispatchName:String} {
-		if (entry.params == null || entry.params.length < 2) {
-			Context.error('@:liveEvents expects a protocol enum and dispatch helper name, for example @:liveEvents(ProfileHookEvent, "dispatchProfileHookEvent").',
-				entry.pos);
+	static function readBinding(entry:MetadataEntry):{protocolRef:Expr, dispatchName:Null<String>} {
+		if (entry.params == null || entry.params.length < 1) {
+			Context.error("@:liveEvents expects a protocol enum, for example @:liveEvents(ProfileHookEvent).", entry.pos);
+		}
+
+		if (entry.params.length == 1) {
+			return {protocolRef: entry.params[0], dispatchName: null};
 		}
 
 		var dispatchName = switch (entry.params[1].expr) {
+			case EConst(CIdent(value)): value;
 			case EConst(CString(value, _)): value;
 			case _:
-				Context.error("@:liveEvents dispatch helper name must be a string literal.", entry.params[1].pos);
+				Context.error("@:liveEvents dispatch helper override must be an identifier, for example @:liveEvents(ProfileHookEvent, dispatchProfileHookEvent).",
+					entry.params[1].pos);
 				"";
 		}
-		if (StringTools.trim(dispatchName) == "") {
-			Context.error("@:liveEvents dispatch helper name must not be empty.", entry.params[1].pos);
-		}
+		validateDispatchName(dispatchName, entry.params[1].pos);
 
 		return {protocolRef: entry.params[0], dispatchName: dispatchName};
+	}
+
+	static function defaultDispatchName(protocol:LiveEventProtocolData):String {
+		return "dispatch" + protocol.enumName;
+	}
+
+	static function validateDispatchName(dispatchName:String, pos:Position):Void {
+		if (StringTools.trim(dispatchName) == "") {
+			Context.error("@:liveEvents dispatch helper name must not be empty.", pos);
+		}
+		if (!~/^[A-Za-z_][A-Za-z0-9_]*$/.match(dispatchName)) {
+			Context.error('@:liveEvents dispatch helper "$dispatchName" must be a valid Haxe identifier.', pos);
+		}
 	}
 
 	static function validateNoFieldCollision(fields:Array<Field>, dispatchName:String, pos:Position):Void {

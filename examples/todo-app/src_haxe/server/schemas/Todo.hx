@@ -55,10 +55,8 @@ typedef TodoChangesetParams = {
 	?organization_id:Int
 }
 
-// @:native: pins emitted naming to a specific Elixir symbol/module.
-
-@:native("TodoApp.Todo")
 // @:schema: marks this class as an Ecto schema and declares its table.
+
 @:schema("todos")
 // @:timestamps: enables Ecto timestamp fields (`inserted_at`/`updated_at`).
 @:timestamps

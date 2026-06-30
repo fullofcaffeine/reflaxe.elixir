@@ -27,9 +27,10 @@ typedef PresenceMeta = {
 	var editingStartedAt:Null<Float>;
 }
 
-// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
+// @:presence: emits a Phoenix.Presence module for realtime presence tracking.
+// Exact interop escape hatch: PresenceBehavior still needs this app web module
+// target until its macro emitter is fully target-name-first.
 
 @:native("TodoAppWeb.Presence")
-// @:presence: emits a Phoenix.Presence module for realtime presence tracking.
 @:presence
 class TodoPresence implements PresenceBehavior {}

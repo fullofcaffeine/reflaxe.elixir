@@ -241,7 +241,7 @@ class ModuleEmitter extends ExprEmitter {
       write('[');
       emitString(id);
       write(']');
-      write(' = ');
+      write(' =');
       writeNewline();
     }
 
@@ -285,10 +285,12 @@ class ModuleEmitter extends ExprEmitter {
               emitComment(field.doc);
               emitPos(field.pos);
               // Check for async metadata
-              var isAsync = field.meta != null && (field.meta.has(':async') || field.meta.has(':jsAsync'));
+              var isAsync = field.meta != null
+                && (field.meta.has(':async') || field.meta.has(':jsAsync'));
               if (field.isStatic) {
                 write('static ');
-                if (isAsync) write('async ');
+                if (isAsync)
+                  write('async ');
                 write(staticName(cl, field));
               } else if (field.kind.equals(Constructor)) {
                 // Constructors can't be async
@@ -296,7 +298,8 @@ class ModuleEmitter extends ExprEmitter {
                 write(ctx.typeAccessor(registerType));
                 write('.new]');
               } else {
-                if (isAsync) write('async ');
+                if (isAsync)
+                  write('async ');
                 write(field.name);
               }
               write('(');
@@ -307,11 +310,12 @@ class ModuleEmitter extends ExprEmitter {
                 var body = getFunctionBody(f);
                 switch (body.expr) {
                   case TBlock(exprs):
-                    var filtered = exprs.filter(e -> switch(e.expr) {
+                    var filtered = exprs.filter(e -> switch (e.expr) {
                       case TVar(v, _) if (v.name == '__async_marker__'): false;
                       case _: true;
                     });
-                    emitExpr({expr: TBlock(filtered), pos: body.pos, t: body.t});
+                    emitExpr({expr: TBlock(filtered), pos: body.pos,
+                      t: body.t});
                   case _:
                     emitExpr(body);
                 }
@@ -437,13 +441,13 @@ class ModuleEmitter extends ExprEmitter {
     emitPos(et.pos);
     write('export const ');
     write(et.name);
-    write(' = ');
+    write(' =');
     writeNewline();
     writeGlobalVar("$hxEnums");
     write('[');
     emitString(id);
     write(']');
-    write(' = ');
+    write(' =');
     writeNewline();
     write('{');
     increaseIndent();

@@ -78,15 +78,16 @@ enum ActivityKind {
 }
 
 /**
- * LiveView component for todo management with real-time updates
+ * LiveView component for todo management with real-time updates.
+ *
+ * PhoenixHx derives the generated module as `TodoAppWeb.TodoLive` from
+ * `@:liveview` plus `-D app_name=TodoApp`.
  */
-// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
-
-@:native("TodoAppWeb.TodoLive")
 // @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
+
 @:liveview
-@:liveEvents(HookClientEvent, "dispatchHookEvent")
-@:liveEvents(TodoEvent, "dispatchTodoEvent")
+@:liveEvents(HookClientEvent, dispatchHookEvent)
+@:liveEvents(TodoEvent)
 class TodoLive {
 	// All socket state is now defined in TodoLiveAssigns typedef for type safety
 	static inline function presenceUsersTopic(organizationId:Int):String {

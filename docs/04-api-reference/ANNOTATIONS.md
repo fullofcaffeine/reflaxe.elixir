@@ -6,6 +6,13 @@ Complete guide to using annotations in Reflaxe.Elixir for generating Elixir/Phoe
 
 Reflaxe.Elixir uses Haxe metadata annotations to control code generation. Annotations tell the compiler how to transform Haxe classes into specific Elixir modules and patterns.
 
+For PhoenixHx app modules, prefer role metadata plus `-D app_name=<AppModule>`
+over class-level `@:native(...)`. For example, `@:liveview class TodoLive`
+derives `<AppModule>Web.TodoLive`, and `@:schema class User` derives
+`<AppModule>.User`. Use class-level `@:native("Exact.Module")` as an exact
+interop escape hatch for legacy names, externs, or modules the framework cannot
+derive yet.
+
 ## Supported Annotations
 
 ### @:socket - Phoenix Socket (Channels)
@@ -20,7 +27,6 @@ This is used alongside `@:socketChannels([...])` to declare topic routing. The c
 
 **Usage**:
 ```haxe
-@:native("MyAppWeb.UserSocket")
 @:socket
 @:socketChannels([{topic: "typed:*", channel: server.channels.PingChannel}])
 class UserSocket {}
@@ -39,7 +45,6 @@ Adds one or more `socket/3` mounts to a `@:endpoint` module (for example, to mou
 
 **Usage**:
 ```haxe
-@:native("MyAppWeb.Endpoint")
 @:endpoint
 @:endpointSockets([{path: "/socket", socket: server.infrastructure.UserSocket, session: true}])
 class Endpoint {}
@@ -58,7 +63,6 @@ Current options:
 
 **Usage**:
 ```haxe
-@:native("MyAppWeb.Endpoint")
 @:endpoint({liveLongpoll: false})
 class Endpoint {}
 ```
@@ -97,7 +101,6 @@ typedef UserPathParams = {
   var id:Int;
 }
 
-@:native("MyAppWeb.Router")
 @:router
 final routes = [
   pipeline(browser, [
@@ -1523,7 +1526,6 @@ The sections above cover the core Phoenix/Ecto/OTP annotations. This section clo
   - These functions participate in dot-component resolution (`<.name ...>`) and typed props/slots validation.
 
 ```haxe
-@:native("MyAppWeb.CoreComponents")
 @:component
 class CoreComponents {
   @:component
@@ -1545,7 +1547,6 @@ If strict component checks are enabled (`-D hxx_strict_components`), missing/amb
 Marks a module as a Phoenix channel callback module and enables channel-oriented transformation behavior.
 
 ```haxe
-@:native("MyAppWeb.PingChannel")
 @:channel
 class PingChannel {
   public static function join(topic:String, payload:Term, socket:Term):JoinResult {
@@ -1559,7 +1560,6 @@ class PingChannel {
 Generates the Phoenix Web helper module (for `use AppWeb, :controller | :html | :live_view | ...`).
 
 ```haxe
-@:native("MyAppWeb")
 @:phoenixWebModule
 class MyAppWeb {}
 ```
@@ -1574,7 +1574,7 @@ Use this when you need typed ownership of the app web namespace module itself.
 - **Function-level**: pins emitted function name for explicit interop with an existing Elixir API.
 
 ```haxe
-@:native("MyAppWeb.UserLive")
+@:native("LegacyWeb.UserLive")
 @:liveview
 class UserLive {
   public static function handleEvent(event:String, params:Term, socket:Socket<UserAssigns>):HandleEventResult<UserAssigns> {

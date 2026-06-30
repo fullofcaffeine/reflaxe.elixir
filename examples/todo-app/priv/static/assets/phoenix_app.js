@@ -6724,9 +6724,9 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   };
   ThemeToggleHook.handlers = /* @__PURE__ */ new WeakMap();
 
-  // js/shared/liveview/_HookEventsGenerated.js
+  // js/shared/liveview/_HookClientEventsGenerated.js
   var $global4 = Register.$global;
-  var HookEvents = Register.global("$hxClasses")["HookEvents"] = class HookEvents2 {
+  var HookClientEvents = Register.global("$hxClasses")["HookClientEvents"] = class HookClientEvents2 {
     static pushClipboardCopied(hook, message) {
       if (hook.pushEvent != null) {
         hook.pushEvent("clipboard_copied", { message });
@@ -6740,10 +6740,10 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
       ;
     }
     static get __name__() {
-      return "HookEvents";
+      return "HookClientEvents";
     }
     get __class__() {
-      return HookEvents2;
+      return HookClientEvents2;
     }
   };
 
@@ -6752,7 +6752,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   var PingHook = Register.global("$hxClasses")["client.hooks.PingHook"] = class PingHook2 {
     static mounted(hook) {
       try {
-        HookEvents.pushHookPing(hook);
+        HookClientEvents.pushHookPing(hook);
       } catch (_g) {
       }
       ;
@@ -6783,7 +6783,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
           }
           ;
           try {
-            HookEvents.pushClipboardCopied(hook, message);
+            HookClientEvents.pushClipboardCopied(hook, message);
           } catch (_g) {
           }
           ;

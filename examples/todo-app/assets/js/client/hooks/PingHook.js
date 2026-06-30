@@ -1,13 +1,13 @@
-import {HookEvents} from "../../shared/liveview/_HookEventsGenerated.js"
+import {HookClientEvents} from "../../shared/liveview/_HookClientEventsGenerated.js"
 import {Register} from "../../genes/Register.js"
 
 const $global = Register.$global
 
-export const PingHook = Register.global("$hxClasses")["client.hooks.PingHook"] = 
+export const PingHook = Register.global("$hxClasses")["client.hooks.PingHook"] =
 class PingHook {
 	static mounted(hook) {
 		try {
-			HookEvents.pushHookPing(hook);
+			HookClientEvents.pushHookPing(hook);
 		}catch (_g) {
 		};
 	}

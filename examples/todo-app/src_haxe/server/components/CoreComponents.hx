@@ -135,10 +135,8 @@ typedef LabelAssigns = {
  * These components follow Phoenix LiveView conventions and compile to proper
  * Phoenix.Component functions.
  */
-// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
-
-@:native("TodoAppWeb.CoreComponents")
 // @:component (class): marks this module as a Phoenix component container so component functions are preserved and discoverable.
+
 @:component
 class CoreComponents {
 	static function iconClass(name:String, className:Null<String>):String {

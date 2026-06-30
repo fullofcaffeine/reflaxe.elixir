@@ -2,7 +2,10 @@
 
 ## Overview
 
-This document describes the comprehensive file naming system that transforms Haxe PascalCase class names and package structures into Elixir snake_case file paths. The system ensures **100% consistency** across all generated files while respecting Phoenix framework conventions.
+This document describes the file naming system that maps Haxe modules to
+reviewable Elixir/Phoenix source paths. For Phoenix app-facing code, the target
+Elixir module is the source of truth; Haxe package layout is an authoring
+concern, not something that should leak into `lib/server/**` or `lib/shared/**`.
 
 ## Core Principles
 
@@ -14,42 +17,52 @@ This document describes the comprehensive file naming system that transforms Hax
 
 ## Architecture Components
 
-### 1. Central Naming Function: `getComprehensiveNamingRule()`
+### 1. Central Target Naming Helpers
 
-Located in `ElixirCompiler.hx`, this function handles ALL naming scenarios:
+Phoenix naming starts in `PhoenixTargetNames.hx` and is applied by
+`ModuleBuilder` / `ElixirCompiler`:
 
 ```haxe
-private function getComprehensiveNamingRule(classType: ClassType): {fileName: String, dirPath: String}
+PhoenixTargetNames.classTargetAlias(classType): Null<String>
+PhoenixTargetNames.aliasToPath("TodoAppWeb.TodoLive")
 ```
 
 **Inputs:**
 - `classType`: Complete Haxe class information including name, package, and metadata
 
 **Outputs:**
-- `fileName`: Snake_case file name (without extension)
-- `dirPath`: Directory path relative to lib/
+- target module alias, such as `TodoAppWeb.TodoLive`
+- physical path relative to the configured Elixir output root, such as
+  `todo_app_web/live/todo_live.ex`
 
 ### 2. Naming Pipeline
 
 ```
-Haxe Class → Extract Components → Apply Rules → Generate Path
+Haxe Class → Derive Target Module → Convert Alias To Phoenix Path
 ```
 
 #### Step 1: Extract Components
-- Class name: `TodoApp`
+- Class name: `TodoLive`
 - Package: `["server", "infrastructure"]`
 - Annotations: `@:application`, `@:router`, etc.
+- Defines: `-D app_name=TodoApp`, optional `-D app_web_name=TodoAppWeb`
 
-#### Step 2: Apply Base Rules
-- Convert class name to snake_case: `TodoApp` → `todo_app`
-- Convert package parts to snake_case: `["server", "infrastructure"]` → `["server", "infrastructure"]`
-- Create default path: `server/infrastructure/todo_app.ex`
+#### Step 2: Derive Target Module
+- `@:liveview class TodoLive` → `TodoAppWeb.TodoLive`
+- `@:controller class UserController` → `TodoAppWeb.UserController`
+- `@:schema class Todo` → `TodoApp.Todo`
+- `@:native("Exact.Module")` keeps the exact target module when interop requires it
 
-#### Step 3: Apply Framework Overrides
-If framework annotations are present, override the default path:
-- `@:application` → `todo_app/application.ex`
-- `@:router` → `todo_app_web/router.ex`
-- `@:endpoint` → `todo_app_web/endpoint.ex`
+#### Step 3: Convert Target Module To Path
+Target aliases are converted with normal Elixir/Phoenix snake_case rules:
+- `TodoApp.Application` → `todo_app/application.ex`
+- `TodoAppWeb.Router` → `todo_app_web/router.ex`
+- `TodoAppWeb.TodoLive` → `todo_app_web/todo_live.ex`
+
+Phoenix role metadata can add conventional subdirectories:
+- `@:liveview` → `todo_app_web/live/todo_live.ex`
+- `@:controller` → `todo_app_web/controllers/user_controller.ex`
+- `@:component` → `todo_app_web/components/core_components.ex`
 
 ## Comprehensive Naming Rules
 
@@ -59,6 +72,11 @@ Class: MyComplexClassName
 Package: com.example.models
 Result: lib/com/example/models/my_complex_class_name.ex
 ```
+
+This fallback is for plain Elixir modules where the Haxe package is
+intentionally the Elixir namespace. Phoenix app-facing code should prefer role
+metadata plus `-D app_name` / `-D app_web_name` so output lands under normal
+`MyApp.*` and `MyAppWeb.*` paths.
 
 ### Framework Annotation Rules
 
@@ -140,30 +158,16 @@ Result: lib/my_company/data_models/customer_order.ex
 ### The DRY Naming System
 
 ```haxe
-private function getComprehensiveNamingRule(classType: ClassType): {fileName: String, dirPath: String} {
-    var className = classType.name;
-    var packageParts = classType.pack;
-    var annotationInfo = reflaxe.elixir.helpers.AnnotationSystem.detectAnnotations(classType);
-    
-    // 1. Start with base snake_case conversion
-    var baseFileName = NamingHelper.toSnakeCase(className);
-    
-    // 2. Convert package parts to snake_case directories
-    var snakePackageParts = packageParts.map(part -> NamingHelper.toSnakeCase(part));
-    var packagePath = snakePackageParts.length > 0 ? snakePackageParts.join("/") : "";
-    
-    // 3. Create default rule
-    var rule = {
-        fileName: baseFileName,
-        dirPath: packagePath
-    };
-    
-    // 4. Apply framework-specific overrides
-    if (annotationInfo.primaryAnnotation != null) {
-        // ... annotation-specific logic
+function classTargetAlias(classType: ClassType): Null<String> {
+    if (hasNativeAlias(classType)) {
+        return nativeAlias(classType);
     }
-    
-    return rule;
+
+    if (hasPhoenixRole(classType) && hasAppNameDefine()) {
+        return derivePhoenixAlias(classType);
+    }
+
+    return null;
 }
 ```
 
@@ -173,18 +177,24 @@ The naming system integrates with Reflaxe's file output system:
 
 ```haxe
 private function setFrameworkAwareOutputPath(classType: ClassType): Void {
-    var namingRule = getComprehensiveNamingRule(classType);
-    
-    // Tell Reflaxe where to put the file
-    setOutputFileName(namingRule.fileName);
-    setOutputFileDir(namingRule.dirPath);
+    var targetAlias = PhoenixTargetNames.classTargetAlias(classType);
+
+    if (targetAlias != null) {
+        setOutputPath(PhoenixTargetNames.aliasToPath(targetAlias));
+        return;
+    }
+
+    setOutputPath(packageFallbackPath(classType));
 }
 ```
 
 ## Edge Cases and Special Handling
 
 ### 1. @:native Annotations
-Classes with `@:native("Module.Name")` keep their native module name in the generated code. For app-facing Phoenix output, the native module should also drive the physical output path:
+Classes with `@:native("Module.Name")` keep their native module name in the
+generated code. Use this as an exact interop escape hatch, not the normal way to
+name Phoenix app modules. For app-facing Phoenix output, the native module also
+drives the physical output path:
 ```
 @:native("TodoApp.Application")
 class TodoApp
@@ -284,7 +294,8 @@ find lib -name "*.ex" | head -20
 **Discovery**: User observation that file names weren't following Elixir conventions
 **Root Cause**: The @:application annotation case wasn't being handled in file naming logic
 **Initial Attempt**: Added @:application case but had early return bug preventing snake_case conversion
-**Final Fix**: Comprehensive DRY naming system that handles all cases without early returns
+**Final Fix**: Target-module-first naming with a shared alias-to-path mapper and
+a package fallback for plain Elixir modules.
 
 ### Pattern of Naming Issues
 These bugs revealed a systemic issue:
@@ -294,14 +305,15 @@ These bugs revealed a systemic issue:
 4. Inconsistent handling between different compiler helpers
 
 ### The DRY Solution
-Created getComprehensiveNamingRule() function that:
-- Centralizes ALL naming logic in one place
-- Handles package-to-directory conversion
-- Supports all framework annotations
-- Always applies snake_case transformation (no early returns)
-- Follows idiomatic Elixir/Phoenix conventions
+Created the `PhoenixTargetNames` target mapper and routed framework-aware output
+through it. The mapper:
+- derives app/web modules from Phoenix role annotations plus `-D app_name`
+- preserves exact `@:native` names only when interop requires them
+- converts target aliases to normal Elixir/Phoenix paths
+- leaves package-to-directory conversion as the fallback for plain modules
 
-This eliminated an entire class of bugs by having a single source of truth for file naming.
+This eliminates an entire class of bugs by having a single source of truth for
+app-facing Phoenix module and path naming.
 
 ## Future Enhancements
 

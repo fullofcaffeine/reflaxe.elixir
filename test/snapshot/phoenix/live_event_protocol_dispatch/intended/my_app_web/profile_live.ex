@@ -1,6 +1,6 @@
-defmodule ProfileLive do
+defmodule MyAppWeb.ProfileLive do
   use Phoenix.Component
-  use Phoenix.LiveView, layout: {ProfileLive.Layouts, :app}
+  use Phoenix.LiveView, layout: {MyAppWeb.Layouts, :app}
   defp handle_clipboard_copied(message, socket) do
     {:noreply, Phoenix.Component.assign(socket, :flash_message, message)}
   end

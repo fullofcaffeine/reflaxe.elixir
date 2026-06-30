@@ -1,8 +1,8 @@
 import phoenix.live_view.LiveEventProtocol;
 
-@:liveEventProtocol("ProfileHookEvents")
+@:liveEventProtocol
 enum ProfileHookEvent {
-	@:hookEvent("clipboard_copied")
+	@:hookEvent
 	ClipboardCopied(message:String);
 
 	Ping;

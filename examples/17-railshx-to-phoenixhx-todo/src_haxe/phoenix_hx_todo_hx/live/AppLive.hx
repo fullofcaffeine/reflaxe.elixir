@@ -25,9 +25,8 @@ import plug.CSRFProtection;
 import shared.liveview.TodoEvents;
 import shared.liveview.TodoEvents.TodoEvent;
 
-@:native("PhoenixHxTodoWeb.AppLive")
 @:liveview
-@:liveEvents(TodoEvent, "dispatchTodoEvent")
+@:liveEvents(TodoEvent)
 class AppLive {
 	public static function mount(_params:MountParams, session:Session, socket:Socket<AppLiveAssigns>):MountResult<AppLiveAssigns> {
 		var user = currentUser(session);

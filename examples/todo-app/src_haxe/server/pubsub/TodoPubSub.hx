@@ -16,9 +16,6 @@ import elixir.types.Term;
  * Type-safe PubSub bridge for the todo-app.
  * Converts typed Haxe enums to Phoenix.PubSub calls.
  */
-// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
-
-@:native("TodoApp.TodoPubSub")
 class TodoPubSub {
 	/**
 	 * Subscribe to a topic.

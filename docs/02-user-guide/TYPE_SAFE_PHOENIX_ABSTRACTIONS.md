@@ -193,11 +193,12 @@ Use a Live Event Protocol when the event is shared between Haxe-generated JS
 hooks and Haxe-authored LiveViews:
 
 ```haxe
-@:liveEventProtocol("HookEvents")
+@:liveEventProtocol
 enum HookClientEvent {
-  @:hookEvent("clipboard_copied")
+  @:hookEvent
   ClipboardCopied(message:String);
 
+  // Explicit only because the wire event is "ping", not the derived "hook_ping".
   @:hookEvent("ping")
   HookPing;
 }
@@ -205,9 +206,12 @@ enum HookClientEvent {
 typedef HookEvents = LiveEventProtocolCompanion<HookClientEvent>;
 ```
 
-`@:hookEvent(...)` is the explicit spelling for events pushed from a LiveView
-hook. Older examples may use `@:event(...)`; that remains a compatibility alias
-for hook-origin events, but new code should prefer the origin-specific metadata.
+`@:hookEvent` marks events pushed from a LiveView hook. PhoenixHx derives the
+wire event name from the constructor (`ClipboardCopied` -> `"clipboard_copied"`).
+Pass a string only when the external wire name cannot be derived, such as
+`@:hookEvent("ping")` for `HookPing`. Older examples may use `@:event(...)`;
+that remains a compatibility alias for hook-origin events, but new code should
+prefer the origin-specific metadata.
 
 ### Where The Protocol Lives
 
@@ -238,9 +242,9 @@ package shared.liveview;
 
 import phoenix.live_view.LiveEventProtocolCompanion;
 
-@:liveEventProtocol("HookEvents")
+@:liveEventProtocol
 enum HookClientEvent {
-  @:hookEvent("clipboard_copied")
+  @:hookEvent
   ClipboardCopied(message:String);
 
   @:hookEvent("ping")
@@ -278,7 +282,7 @@ import phoenix.Phoenix.Socket;
 import shared.liveview.HookEvents.HookClientEvent;
 
 @:liveview
-@:liveEvents(HookClientEvent, "dispatchHookEvent")
+@:liveEvents(HookClientEvent, dispatchHookEvent)
 class ProfileLive {
   public static function handleEvent(
     event:String,
@@ -387,9 +391,9 @@ typedef ClipboardCopiedPayload = {
   var copiedAt:String;
 }
 
-@:liveEventProtocol("HookEvents")
+@:liveEventProtocol
 enum HookClientEvent {
-  @:hookEvent("clipboard_copied")
+  @:hookEvent
   ClipboardCopied(payload:ClipboardCopiedPayload);
 }
 ```
@@ -422,13 +426,13 @@ Usually, no.
 Use the built-in field types first:
 
 ```haxe
-@:hookEvent("clipboard_copied")
+@:hookEvent
 ClipboardCopied(message:String);
 
-@:hookEvent("set_visible")
+@:hookEvent
 SetVisible(visible:Bool);
 
-@:hookEvent("select_index")
+@:hookEvent
 SelectIndex(index:Int);
 ```
 
@@ -455,9 +459,9 @@ typedef ResourceSelectedPayload = {
   var source:String;
 }
 
-@:liveEventProtocol("ResourceEvents")
+@:liveEventProtocol
 enum ResourceEvent {
-  @:hookEvent("resource_selected")
+  @:hookEvent
   ResourceSelected(payload:ResourceSelectedPayload);
 }
 ```
@@ -748,7 +752,7 @@ do not become invisible protocol behavior.
 For scalar constructor arguments, use Haxe's optional argument syntax:
 
 ```haxe
-@:templateEvent("search")
+@:templateEvent
 Search(?query:String);
 ```
 
@@ -763,7 +767,7 @@ typedef ProfileForm = {
   @:optional var bio:Null<String>;
 }
 
-@:submitEvent("save_profile", "profile")
+@:submitEvent("profile")
 SaveProfile(payload:ProfileForm);
 ```
 
@@ -776,7 +780,7 @@ The LiveView remains Phoenix-shaped and explicitly calls the generated
 dispatcher before falling back to ordinary events:
 
 ```haxe
-@:liveEvents(HookClientEvent, "dispatchHookEvent")
+@:liveEvents(HookClientEvent, dispatchHookEvent)
 class ProfileLive {
   public static function handleEvent(
     event:String,
@@ -917,9 +921,9 @@ has required payload keys, or should participate in generated event-name and
 handler checks:
 
 ```haxe
-@:liveEventProtocol("TodoEvents")
+@:liveEventProtocol
 enum TodoEvent {
-  @:templateEvent("toggle_todo")
+  @:templateEvent
   ToggleTodo(id:Int);
 }
 
@@ -936,7 +940,7 @@ typedef TodoEvents = LiveEventProtocolCompanion<TodoEvent>;
 ```
 
 ```haxe
-@:liveEvents(TodoEvent, "dispatchTodoEvent")
+@:liveEvents(TodoEvent)
 class TodoLive {
   public static function handleEvent(event:String, params:Term, socket:Socket<TodoAssigns>) {
     var handled = dispatchTodoEvent(event, params, socket);
@@ -986,12 +990,12 @@ typedef CreateTodoForm = {
   var notes:Null<String>;
 }
 
-@:liveEventProtocol("TodoEvents")
+@:liveEventProtocol
 enum TodoEvent {
-  @:submitEvent("create_todo", "todo")
+  @:submitEvent("todo")
   CreateTodo(payload:CreateTodoForm);
 
-  @:changeEvent("update_form", "todo")
+  @:changeEvent("todo")
   UpdateForm(payload:CreateTodoForm);
 }
 
@@ -1009,7 +1013,7 @@ typedef TodoEvents = LiveEventProtocolCompanion<TodoEvent>;
 ```
 
 ```haxe
-@:liveEvents(TodoEvent, "dispatchTodoEvent")
+@:liveEvents(TodoEvent)
 class TodoLive {
   public static function handleEvent(event:String, params:Term, socket:Socket<TodoAssigns>) {
     var handled = dispatchTodoEvent(event, params, socket);
@@ -1033,13 +1037,14 @@ class TodoLive {
 }
 ```
 
-The only string keys in the protocol declaration are the Phoenix boundary
-names: `"create_todo"` / `"update_form"` and the form root `"todo"`. Field
-keys such as `"title"` and `"notes"` come from the Haxe typedef, or from
-`@:wire("...")` when the wire key needs to differ. The generated server helper
-lowers to ordinary Phoenix-style `Map.get(params, "todo")`, field reads, and
-primitive parsing before calling the typed handler. No hook push helper is
-generated for submit/change events because Phoenix sends them from the form.
+The only string left in the protocol declaration is the Phoenix form root
+`"todo"`. Event names derive from constructors (`CreateTodo` ->
+`"create_todo"` and `UpdateForm` -> `"update_form"`). Field keys such as
+`"title"` and `"notes"` come from the Haxe typedef, or from `@:wire("...")`
+when the wire key needs to differ. The generated server helper lowers to
+ordinary Phoenix-style `Map.get(params, "todo")`, field reads, and primitive
+parsing before calling the typed handler. No hook push helper is generated for
+submit/change events because Phoenix sends them from the form.
 When the LiveView is bound with `@:liveEvents(...)`, these event names also feed
 the existing HXX `phx-*` event-name registry, so strict HXX checks can validate
 `phx-submit=${TodoEvents.CreateTodoEvent}` and
@@ -1063,9 +1068,9 @@ case "clipboard_copied":
 The protocol version makes the event and payload contract shared:
 
 ```haxe
-@:liveEventProtocol("HookEvents")
+@:liveEventProtocol
 enum HookClientEvent {
-  @:hookEvent("clipboard_copied")
+  @:hookEvent
   ClipboardCopied(message:String);
 }
 
@@ -1075,7 +1080,7 @@ typedef HookEvents = LiveEventProtocolCompanion<HookClientEvent>;
 HookEvents.pushClipboardCopied(hook, message);
 
 // LiveView
-@:liveEvents(HookClientEvent, "dispatchHookEvent")
+@:liveEvents(HookClientEvent, dispatchHookEvent)
 class ProfileLive {
   static function handleClipboardCopied(
     message:String,
@@ -1097,9 +1102,9 @@ typedef ClipboardCopiedPayload = {
   var copiedAt:String;
 }
 
-@:liveEventProtocol("HookEvents")
+@:liveEventProtocol
 enum HookClientEvent {
-  @:hookEvent("clipboard_copied")
+  @:hookEvent
   ClipboardCopied(payload:ClipboardCopiedPayload);
 }
 
@@ -1126,9 +1131,9 @@ typedef ResourceSelectedPayload = {
   var source:String;
 }
 
-@:liveEventProtocol("ResourceEvents")
+@:liveEventProtocol
 enum ResourceEvent {
-  @:hookEvent("resource_selected")
+  @:hookEvent
   ResourceSelected(payload:ResourceSelectedPayload);
 }
 
@@ -1142,7 +1147,7 @@ For a shared hook used by multiple LiveViews, keep one protocol but bind each
 LiveView explicitly. This avoids global magic while still sharing the contract:
 
 ```haxe
-@:liveEvents(HookClientEvent, "dispatchHookEvent")
+@:liveEvents(HookClientEvent, dispatchHookEvent)
 class ProfileLive {
   public static function handleEvent(event:String, params:Term, socket:Socket<ProfileLiveAssigns>) {
     var handled = dispatchHookEvent(event, params, socket);
@@ -1155,7 +1160,7 @@ class ProfileLive {
   }
 }
 
-@:liveEvents(HookClientEvent, "dispatchHookEvent")
+@:liveEvents(HookClientEvent, dispatchHookEvent)
 class TodoLive {
   static function handleClipboardCopied(_message:String, socket:Socket<TodoLiveAssigns>) {
     return NoReply(socket);

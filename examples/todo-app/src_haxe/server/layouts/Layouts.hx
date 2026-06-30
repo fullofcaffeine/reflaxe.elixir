@@ -10,8 +10,6 @@ import server.types.Types.User;
  * Main layouts module for Phoenix application
  * Provides the layout functions that Phoenix expects
  */
-// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
-@:native("TodoAppWeb.Layouts")
 // @:component (class): marks this module as a Phoenix component container so component functions are preserved and discoverable.
 @:component
 class Layouts {

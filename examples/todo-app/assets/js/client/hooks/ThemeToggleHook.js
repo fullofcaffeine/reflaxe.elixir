@@ -3,7 +3,7 @@ import {Theme} from "../utils/Theme.js"
 
 const $global = Register.$global
 
-export const ThemeToggleHook = Register.global("$hxClasses")["client.hooks.ThemeToggleHook"] = 
+export const ThemeToggleHook = Register.global("$hxClasses")["client.hooks.ThemeToggleHook"] =
 class ThemeToggleHook {
 	static labelFor(preference) {
 		switch (preference) {

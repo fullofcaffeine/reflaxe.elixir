@@ -26,7 +26,6 @@ using reflaxe.elixir.macros.TypedQueryLambda;
  * - RailsHx can place most CRUD close to an ActiveRecord model/controller pair.
  *   Phoenix code is clearer when LiveView delegates persistence to a context.
  */
-@:native("PhoenixHxTodo.Todos")
 class Todos {
 	public static function listForUser(userId:Int):Array<Todo> {
 		var query = TypedQuery.from(Todo).where(todo -> todo.userId == userId);

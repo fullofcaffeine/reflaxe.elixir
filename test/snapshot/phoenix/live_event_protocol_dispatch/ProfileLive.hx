@@ -7,16 +7,16 @@ typedef ProfileAssigns = {
 	var flash_message:String;
 }
 
-@:liveEventProtocol("ProfileHookEvents")
+@:liveEventProtocol
 enum ProfileHookEvent {
-	@:event("clipboard_copied")
+	@:event
 	ClipboardCopied(message:String);
 
 	Ping;
 }
 
 @:liveview
-@:liveEvents(ProfileHookEvent, "dispatchProfileHookEvent")
+@:liveEvents(ProfileHookEvent)
 class ProfileLive {
 	public static function handleEvent(event:String, params:Term, socket:Socket<ProfileAssigns>):HandleEventResult<ProfileAssigns> {
 		var hookResult = dispatchProfileHookEvent(event, params, socket);

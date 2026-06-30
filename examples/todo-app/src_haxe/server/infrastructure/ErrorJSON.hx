@@ -16,8 +16,6 @@ import elixir.types.Term;
  * HOW
  * - Delegate `render/2` to the shared implementation.
  */
-// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
-@:native("TodoAppWeb.ErrorJSON")
 class ErrorJSON {
 	public static function render(template:String, assigns:Term):phoenix.errors.DefaultErrorJSON.ErrorPayload {
 		return phoenix.errors.DefaultErrorJSON.render(template, assigns);
