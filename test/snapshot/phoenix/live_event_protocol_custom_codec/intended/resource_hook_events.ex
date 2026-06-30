@@ -15,17 +15,10 @@ defmodule ResourceHookEvents do
       {:ping}
     else
       if (event_name == "resource_selected") do
-        resource_id_raw = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)) do
-          Map.get(payload, "resource_id")
-        else
-          nil
-        end
+        event_payload = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)), do: payload, else: %{}
+        resource_id_raw = Map.get(event_payload, "resource_id")
         resource_id = if (not Kernel.is_nil(resource_id_raw)), do: ResourceIdCodec.codec().decode.(resource_id_raw), else: nil
-        source_raw = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)) do
-          Map.get(payload, "source")
-        else
-          nil
-        end
+        source_raw = Map.get(event_payload, "source")
         source = if (Kernel.is_binary(source_raw)), do: source_raw, else: nil
         if (not Kernel.is_nil(resource_id) and not Kernel.is_nil(source)), do: {:resource_selected, %{:resource_id => resource_id, :source => source}}, else: nil
       else

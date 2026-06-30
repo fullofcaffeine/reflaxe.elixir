@@ -34,11 +34,11 @@ class LiveEventPayloadExprs {
 		return Context.defined("js") ? buildJsPayload(event) : buildElixirPayload(event);
 	}
 
-	public static function decodeField(field:LiveEventFieldData, payload:Expr):Expr {
+	public static function decodeField(field:LiveEventFieldData, payload:Expr, payloadKnownMap:Bool = false):Expr {
 		var rawName = field.name + "Raw";
 		var rawIdent = ident(rawName, field.pos);
 		var rawVar = {
-			expr: EVars([{name: rawName, type: null, expr: rawPayloadGet(field, payload)}]),
+			expr: EVars([{name: rawName, type: null, expr: rawPayloadGet(field, payload, payloadKnownMap)}]),
 			pos: field.pos
 		};
 
@@ -61,6 +61,29 @@ class LiveEventPayloadExprs {
 				formRootGet(root, payload, event.pos);
 			case HookEvent | TemplateEvent:
 				payload;
+		};
+	}
+
+	/**
+	 * Normalize an incoming boundary payload once so generated decoders can use
+	 * direct field reads. This keeps invalid payloads safe without repeating a
+	 * map/object guard before every generated `Map.get` or bracket access.
+	 */
+	public static function mapOrEmpty(value:Expr, pos:Position):Expr {
+		if (Context.defined("js")) {
+			return {
+				expr: ECall({expr: EField(typeExpr(["js"], "Syntax"), "code"), pos: pos}, [
+					macro $v{"({0} != null && typeof {0} === 'object' && !Array.isArray({0}) ? {0} : {})"},
+					value
+				]),
+				pos: pos
+			};
+		}
+
+		var emptyPayload:Expr = {expr: EObjectDecl([]), pos: pos};
+		return {
+			expr: EIf(isElixirMap(value, pos), value, emptyPayload),
+			pos: pos
 		};
 	}
 
@@ -184,7 +207,7 @@ class LiveEventPayloadExprs {
 		};
 	}
 
-	static function rawPayloadGet(field:LiveEventFieldData, payload:Expr):Expr {
+	static function rawPayloadGet(field:LiveEventFieldData, payload:Expr, payloadKnownMap:Bool):Expr {
 		if (Context.defined("js")) {
 			return {
 				expr: ECall({expr: EField(typeExpr(["js"], "Syntax"), "code"), pos: field.pos}, [
@@ -203,6 +226,9 @@ class LiveEventPayloadExprs {
 			]),
 			pos: field.pos
 		};
+		if (payloadKnownMap) {
+			return mapRead;
+		}
 		return {
 			expr: EIf(isElixirMap(payload, field.pos), mapRead, macro null),
 			pos: field.pos

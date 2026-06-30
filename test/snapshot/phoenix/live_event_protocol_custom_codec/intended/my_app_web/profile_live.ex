@@ -18,17 +18,10 @@ defmodule MyAppWeb.ProfileLive do
     cond do
       event_name == "ping" -> handle_ping(socket)
       event_name == "resource_selected" ->
-        resource_id_raw = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)) do
-          Map.get(payload, "resource_id")
-        else
-          nil
-        end
+        event_payload = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)), do: payload, else: %{}
+        resource_id_raw = Map.get(event_payload, "resource_id")
         resource_id = if (not Kernel.is_nil(resource_id_raw)), do: MyApp.ResourceIdCodec.codec().decode.(resource_id_raw), else: nil
-        source_raw = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)) do
-          Map.get(payload, "source")
-        else
-          nil
-        end
+        source_raw = Map.get(event_payload, "source")
         source = if (Kernel.is_binary(source_raw)), do: source_raw, else: nil
         if (Kernel.is_nil(resource_id) or Kernel.is_nil(source)), do: {:noreply, socket}, else: handle_resource_selected(%{:resource_id => resource_id, :source => source}, socket)
       true -> nil

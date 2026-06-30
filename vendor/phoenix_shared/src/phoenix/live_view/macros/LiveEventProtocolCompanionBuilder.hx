@@ -252,17 +252,42 @@ class LiveEventProtocolCompanionBuilder {
 		var expressions:Array<Expr> = [];
 		var decodedChecks:Array<Expr> = [];
 		var payloadSource:Expr = macro payload;
-		if (isFormEvent(event) && event.fields.length > 0) {
-			payloadSource = macro eventPayload;
-			expressions.push({
-				expr: EVars([{name: "eventPayload", type: macro:phoenix.channels.Payload, expr: LiveEventPayloadExprs.payloadSource(event, macro payload)}]),
-				pos: event.pos
-			});
+		var payloadKnownMap = false;
+		if (event.fields.length > 0) {
+			if (Context.defined("js")) {
+				if (isFormEvent(event)) {
+					payloadSource = macro eventPayload;
+					expressions.push({
+						expr: EVars([{name: "eventPayload", type: macro:phoenix.channels.Payload, expr: LiveEventPayloadExprs.payloadSource(event, macro payload)}]),
+						pos: event.pos
+					});
+				}
+			} else {
+				var payloadLocal = localNameAvoidingFields(event, "eventPayload");
+				payloadSource = ident(payloadLocal, event.pos);
+				payloadKnownMap = true;
+				if (isFormEvent(event)) {
+					var rootLocal = localNameAvoidingFields(event, "eventPayloadRoot");
+					expressions.push({
+						expr: EVars([{name: rootLocal, type: macro:phoenix.channels.Payload, expr: LiveEventPayloadExprs.payloadSource(event, macro payload)}]),
+						pos: event.pos
+					});
+					expressions.push({
+						expr: EVars([{name: payloadLocal, type: macro:phoenix.channels.Payload, expr: LiveEventPayloadExprs.mapOrEmpty(ident(rootLocal, event.pos), event.pos)}]),
+						pos: event.pos
+					});
+				} else {
+					expressions.push({
+						expr: EVars([{name: payloadLocal, type: macro:phoenix.channels.Payload, expr: LiveEventPayloadExprs.mapOrEmpty(macro payload, event.pos)}]),
+						pos: event.pos
+					});
+				}
+			}
 		}
 		for (field in event.fields) {
 			var fieldIdent = {expr: EConst(CIdent(field.name)), pos: field.pos};
 			expressions.push({
-				expr: EVars([{name: field.name, type: fieldComplexType(field), expr: LiveEventPayloadExprs.decodeField(field, payloadSource)}]),
+				expr: EVars([{name: field.name, type: fieldComplexType(field), expr: LiveEventPayloadExprs.decodeField(field, payloadSource, payloadKnownMap)}]),
 				pos: field.pos
 			});
 			if (!field.optional) {
@@ -373,6 +398,22 @@ class LiveEventProtocolCompanionBuilder {
 		return null;
 	}
 
+	static function localNameAvoidingFields(event:LiveEventData, base:String):String {
+		var used = new Map<String, Bool>();
+		for (field in event.fields) {
+			used.set(field.name, true);
+			used.set(field.name + "Raw", true);
+		}
+		if (!used.exists(base)) {
+			return base;
+		}
+		var index = 2;
+		while (used.exists(base + index)) {
+			index++;
+		}
+		return base + index;
+	}
+
 	static function constructorRef(protocol:LiveEventProtocolData, event:LiveEventData):Expr {
 		return {
 			expr: EField(protocolTypeExpr(protocol), event.constructorName),
@@ -449,6 +490,10 @@ class LiveEventProtocolCompanionBuilder {
 
 	static function typePath(pack:Array<String>, name:String):String {
 		return pack.length == 0 ? name : pack.join(".") + "." + name;
+	}
+
+	static function ident(name:String, pos:Position):Expr {
+		return {expr: EConst(CIdent(name)), pos: pos};
 	}
 
 	static function tryResolveType(path:String):Null<Type> {

@@ -13,20 +13,14 @@ defmodule TodoEvents do
   end
   def decode(event_name, payload) do
     if (event_name == "clipboard_copied") do
-      message_raw = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)) do
-        Map.get(payload, "message")
-      else
-        nil
-      end
+      event_payload = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)), do: payload, else: %{}
+      message_raw = Map.get(event_payload, "message")
       message = if (Kernel.is_binary(message_raw)), do: message_raw, else: nil
       if (not Kernel.is_nil(message)), do: {:clipboard_copied, message}, else: nil
     else
       if (event_name == "toggle_todo") do
-        id_raw = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)) do
-          Map.get(payload, "id")
-        else
-          nil
-        end
+        event_payload = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)), do: payload, else: %{}
+        id_raw = Map.get(event_payload, "id")
         id = cond do
           Kernel.is_integer(id_raw) -> id_raw
           Kernel.is_binary(id_raw) ->
