@@ -77,7 +77,7 @@ defmodule PatternMatchingTest do
           if (n > 0), do: "true positive", else: "other combination"
         end
       count == 0 -> "false zero"
-      :true ->
+      true ->
         n = count
         if (n > 0), do: "false positive", else: "other combination"
     end

@@ -64,6 +64,47 @@ static function handleCreateTodo(
 }
 ```
 
+The raw Phoenix/Elixir equivalent is still the familiar `handle_event/3`
+shape: the event name is a string, `params` is a map, form fields are nested
+under `"todo"`, and the handler decodes the boundary values before calling app
+logic.
+
+```elixir
+def handle_event("toggle_todo", %{"id" => id_param}, socket) do
+  case Integer.parse(id_param) do
+    {id, ""} ->
+      {:noreply, toggle_todo_status(id, socket)}
+
+    _ ->
+      {:noreply, socket}
+  end
+end
+
+def handle_event("create_todo", %{"todo" => todo_params}, socket) do
+  payload = %{
+    title: Map.get(todo_params, "title"),
+    description: Map.get(todo_params, "description"),
+    priority: Map.get(todo_params, "priority"),
+    due_date: Map.get(todo_params, "due_date"),
+    tags: Map.get(todo_params, "tags")
+  }
+
+  if is_binary(payload.title) and payload.title != "" do
+    {:noreply, create_todo_from_form(payload, socket)}
+  else
+    {:noreply, socket}
+  end
+end
+```
+
+PhoenixHx keeps that same runtime model. The protocol macro generates event
+constants, HXX event-name checks, Phoenix-shaped param reads, primitive parsing,
+and the explicit dispatcher call so the Haxe handler receives `id:Int` or
+`payload:CreateTodoForm` instead of hand-reading string keys at every call site.
+That is the UX win: one shared declaration gives editor completion, fewer
+duplicated event/key strings, generated decode boilerplate, and compile-time
+feedback when a handler, template event, or payload field drifts.
+
 Keep direct PhoenixHx for smaller one-off events. In this app, edit/save still uses `EventName.SaveTodo` and
 explicit param reads, which is shorter and clearer for that local flow.
 

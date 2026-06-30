@@ -31,7 +31,7 @@ defmodule AbstractionLab.ProcessBoundary do
       Kernel.is_port(term) -> "port"
       Kernel.is_reference(term) -> "reference"
       Kernel.is_tuple(term) -> "tuple"
-      :true -> "unknown"
+      true -> "unknown"
     end
   end
 end

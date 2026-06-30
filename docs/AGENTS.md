@@ -76,6 +76,7 @@ docs/
 - **Reference examples** from patterns section when explaining concepts
 - **Point to troubleshooting** for common issues
 - **Connect theory (user-guide) with practice (patterns)**
+- **Show target equivalents for Haxe/PhoenixHx abstractions**: when a docs page teaches a non-trivial Haxe→Elixir or PhoenixHx idiom, include the raw Elixir/Phoenix equivalent or generated target shape nearby so users can see that the abstraction lowers to ordinary target APIs. When the abstraction improves UX, name the win plainly: types, less duplicated glue, generated code, completion, or compile-time feedback.
 
 ### Context Awareness for AI Assistants
 - **Know the user's level**: Beginner vs experienced developer vs compiler contributor

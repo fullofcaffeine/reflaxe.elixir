@@ -34,7 +34,7 @@ defmodule TodoEvents do
               {num, _} -> num
               :error -> nil
             end)
-          :true -> nil
+          true -> nil
         end
         if (not Kernel.is_nil(id)), do: {:toggle_todo, id}, else: nil
       else

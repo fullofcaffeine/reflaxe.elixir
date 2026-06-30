@@ -43,7 +43,7 @@ defmodule TodoFormEvents do
             else
               if (Kernel.to_string(done_raw) == "false"), do: false, else: nil
             end
-          :true -> nil
+          true -> nil
         end
         estimate_raw = if (not Kernel.is_nil(event_payload) and Kernel.is_map(event_payload)) do
           Map.get(event_payload, "estimate")
@@ -53,7 +53,7 @@ defmodule TodoFormEvents do
         estimate = cond do
           Kernel.is_float(estimate_raw) or Kernel.is_integer(estimate_raw) -> estimate_raw
           Kernel.is_binary(estimate_raw) -> Reflaxe.Elixir.HaxeFloat.parse(estimate_raw)
-          :true -> nil
+          true -> nil
         end
         notes_raw = if (not Kernel.is_nil(event_payload) and Kernel.is_map(event_payload)) do
           Map.get(event_payload, "notes")
@@ -73,7 +73,7 @@ defmodule TodoFormEvents do
               {num, _} -> num
               :error -> nil
             end)
-          :true -> nil
+          true -> nil
         end
         title_raw = if (not Kernel.is_nil(event_payload) and Kernel.is_map(event_payload)) do
           Map.get(event_payload, "title")
@@ -102,7 +102,7 @@ defmodule TodoFormEvents do
               else
                 if (Kernel.to_string(done_raw) == "false"), do: false, else: nil
               end
-            :true -> nil
+            true -> nil
           end
           estimate_raw = if (not Kernel.is_nil(event_payload) and Kernel.is_map(event_payload)) do
             Map.get(event_payload, "estimate")
@@ -112,7 +112,7 @@ defmodule TodoFormEvents do
           estimate = cond do
             Kernel.is_float(estimate_raw) or Kernel.is_integer(estimate_raw) -> estimate_raw
             Kernel.is_binary(estimate_raw) -> Reflaxe.Elixir.HaxeFloat.parse(estimate_raw)
-            :true -> nil
+            true -> nil
           end
           notes_raw = if (not Kernel.is_nil(event_payload) and Kernel.is_map(event_payload)) do
             Map.get(event_payload, "notes")
@@ -132,7 +132,7 @@ defmodule TodoFormEvents do
                 {num, _} -> num
                 :error -> nil
               end)
-            :true -> nil
+            true -> nil
           end
           title_raw = if (not Kernel.is_nil(event_payload) and Kernel.is_map(event_payload)) do
             Map.get(event_payload, "title")

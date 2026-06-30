@@ -1524,8 +1524,8 @@ class SwitchBuilder {
 						return PLiteral(makeAST(EInteger(i)));
 					case TFloat(f): return PLiteral(makeAST(EFloat(Std.parseFloat(Std.string(f)))));
 					case TString(s): return PLiteral(makeAST(EString(s)));
-					case TBool(true): return PLiteral(makeAST(EAtom("true")));
-					case TBool(false): return PLiteral(makeAST(EAtom("false")));
+					case TBool(true): return PLiteral(makeAST(EBoolean(true)));
+					case TBool(false): return PLiteral(makeAST(EBoolean(false)));
 					case TNull: return PLiteral(makeAST(ENil));
 					default: return null;
 				}

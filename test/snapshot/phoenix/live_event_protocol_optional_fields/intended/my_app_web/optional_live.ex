@@ -56,7 +56,7 @@ defmodule MyAppWeb.OptionalLive do
         query = if (Kernel.is_binary(query_raw)), do: query_raw, else: nil
         handler_result = handle_search(query, socket)
         handler_result
-      :true -> nil
+      true -> nil
     end
   end
   def handle_event(event, params, socket) do

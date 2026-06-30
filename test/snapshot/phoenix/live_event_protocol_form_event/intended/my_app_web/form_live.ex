@@ -45,7 +45,7 @@ defmodule MyAppWeb.FormLive do
             else
               if (Kernel.to_string(done_raw) == "false"), do: false, else: nil
             end
-          :true -> nil
+          true -> nil
         end
         estimate_raw = if (not Kernel.is_nil(event_payload) and Kernel.is_map(event_payload)) do
           Map.get(event_payload, "estimate")
@@ -55,7 +55,7 @@ defmodule MyAppWeb.FormLive do
         estimate = cond do
           Kernel.is_float(estimate_raw) or Kernel.is_integer(estimate_raw) -> estimate_raw
           Kernel.is_binary(estimate_raw) -> Reflaxe.Elixir.HaxeFloat.parse(estimate_raw)
-          :true -> nil
+          true -> nil
         end
         notes_raw = if (not Kernel.is_nil(event_payload) and Kernel.is_map(event_payload)) do
           Map.get(event_payload, "notes")
@@ -75,7 +75,7 @@ defmodule MyAppWeb.FormLive do
               {num, _} -> num
               :error -> nil
             end)
-          :true -> nil
+          true -> nil
         end
         title_raw = if (not Kernel.is_nil(event_payload) and Kernel.is_map(event_payload)) do
           Map.get(event_payload, "title")
@@ -103,7 +103,7 @@ defmodule MyAppWeb.FormLive do
             else
               if (Kernel.to_string(done_raw) == "false"), do: false, else: nil
             end
-          :true -> nil
+          true -> nil
         end
         estimate_raw = if (not Kernel.is_nil(event_payload) and Kernel.is_map(event_payload)) do
           Map.get(event_payload, "estimate")
@@ -113,7 +113,7 @@ defmodule MyAppWeb.FormLive do
         estimate = cond do
           Kernel.is_float(estimate_raw) or Kernel.is_integer(estimate_raw) -> estimate_raw
           Kernel.is_binary(estimate_raw) -> Reflaxe.Elixir.HaxeFloat.parse(estimate_raw)
-          :true -> nil
+          true -> nil
         end
         notes_raw = if (not Kernel.is_nil(event_payload) and Kernel.is_map(event_payload)) do
           Map.get(event_payload, "notes")
@@ -133,7 +133,7 @@ defmodule MyAppWeb.FormLive do
               {num, _} -> num
               :error -> nil
             end)
-          :true -> nil
+          true -> nil
         end
         title_raw = if (not Kernel.is_nil(event_payload) and Kernel.is_map(event_payload)) do
           Map.get(event_payload, "title")
@@ -142,7 +142,7 @@ defmodule MyAppWeb.FormLive do
         end
         title = if (Kernel.is_binary(title_raw)), do: title_raw, else: nil
         if (Kernel.is_nil(done) or Kernel.is_nil(estimate) or Kernel.is_nil(priority) or Kernel.is_nil(title)), do: {:noreply, socket}, else: handle_update_form(%{:done => done, :estimate => estimate, :notes => notes, :priority => priority, :title => title}, socket)
-      :true -> nil
+      true -> nil
     end
   end
   def handle_event(event, params, socket) do

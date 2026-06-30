@@ -52,7 +52,7 @@ defmodule Main do
       Std.is(value, Float) -> "Float: " <> Reflaxe.Elixir.HaxeFloat.to_string(value)
       Std.is(value, String) -> "String: " <> Reflaxe.Elixir.HaxeFloat.to_string(value)
       Std.is(value, Array) -> "Array of length: " <> Reflaxe.Elixir.HaxeFloat.to_string(length(value))
-      :true -> "Unknown type"
+      true -> "Unknown type"
     end
   end
   def dynamic_method_calls() do

@@ -780,9 +780,9 @@ class ControlFlowBuilder {
 					current = single;
 
 				default:
-					// Final else becomes true -> body
+					// Final else becomes Elixir's boolean true guard.
 					clauses.push({
-						condition: makeAST(EAtom("true")),
+						condition: makeAST(EBoolean(true)),
 						body: buildExpression(current)
 					});
 					hasFinalElse = true;
@@ -790,11 +790,11 @@ class ControlFlowBuilder {
 			}
 		}
 
-		// If no else was present, add default true -> nil
+		// If no else was present, add default true -> nil.
 		if (!hasFinalElse) {
 			clauses.push({
-				condition: makeAST(EAtom("true")),
-				body: makeAST(EAtom("nil"))
+				condition: makeAST(EBoolean(true)),
+				body: makeAST(ENil)
 			});
 		}
 

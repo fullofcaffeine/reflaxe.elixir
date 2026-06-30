@@ -111,7 +111,7 @@ end)
             x > 0 and y < 0 -> "fourth"
             point_x == 0 -> "axis"
             point_y == 0 -> "axis"
-            :true -> "origin"
+            true -> "origin"
           end
         end
       end

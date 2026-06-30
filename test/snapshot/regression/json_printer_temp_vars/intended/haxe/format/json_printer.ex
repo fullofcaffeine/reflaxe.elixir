@@ -21,7 +21,7 @@ defmodule JsonPrinter do
         end
       Std.is(v, String) -> quote_string(struct, v)
       Std.is(v, Array) -> write_array(struct, v)
-      :true -> write_object(struct, v)
+      true -> write_object(struct, v)
     end
   end
   defp write_array(struct, arr) do

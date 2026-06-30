@@ -49,13 +49,13 @@ defmodule Main do
       "Child account"
     else
       (case user_verified do
-        :false when age >= 13 and age < 18 -> "Unverified teen"
-        :false when age >= 18 -> "Unverified adult"
-        :false -> "Unknown user type"
-        :true when age >= 13 and age < 18 -> "Verified teen"
-        :true when age >= 18 and age < 65 -> "Verified adult"
-        :true when age >= 65 -> "Senior user"
-        :true -> "Unknown user type"
+        false when age >= 13 and age < 18 -> "Unverified teen"
+        false when age >= 18 -> "Unverified adult"
+        false -> "Unknown user type"
+        true when age >= 13 and age < 18 -> "Verified teen"
+        true when age >= 18 and age < 65 -> "Verified adult"
+        true when age >= 65 -> "Senior user"
+        true -> "Unknown user type"
         _ -> "Unknown user type"
       end)
     end
@@ -75,7 +75,7 @@ defmodule Main do
         cond do
           other != 254 -> "Invalid magic byte: 0x" <> StringTools.hex(other, 2)
           false -> "Incomplete packet header"
-          :true -> "Unknown packet format"
+          true -> "Unknown packet format"
         end
       3 when false -> "Incomplete packet header"
       3 -> "Unknown packet format"
@@ -92,11 +92,11 @@ defmodule Main do
               cond do
                 version > 0 -> "Future protocol v" <> Reflaxe.Elixir.HaxeFloat.to_string(version)
                 false -> "Incomplete packet header"
-                :true -> "Unknown packet format"
+                true -> "Unknown packet format"
               end
             end
           false -> "Incomplete packet header"
-          :true -> "Unknown packet format"
+          true -> "Unknown packet format"
         end
       4 when false -> "Incomplete packet header"
       4 -> "Unknown packet format"

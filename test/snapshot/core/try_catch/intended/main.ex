@@ -66,7 +66,7 @@ end), haxe_exception} do
         type == 2 -> "int:42"
         type == 3 -> "exception:Exception error"
         type == 4 -> "dynamic"
-        :true -> "none"
+        true -> "none"
       end
       if (expected != outcome) do
         raise Reflaxe.Elixir.HaxeThrow, [value: "Assertion failed: " <> "multipleCatch type=" <> Reflaxe.Elixir.HaxeFloat.to_string(type) <> " (expected \"" <> expected <> "\", got \"" <> outcome <> "\")"]

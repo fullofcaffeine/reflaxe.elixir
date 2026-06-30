@@ -274,7 +274,7 @@ end) do
         end)
         {:noreply, Phoenix.Component.assign(live, :message_input, (if (not Kernel.is_nil(msg)), do: msg, else: ""))}
       event == "send_message" -> handle_send_message(params, live)
-      :true -> {:noreply, socket}
+      true -> {:noreply, socket}
     end
   end
 end

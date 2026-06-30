@@ -285,7 +285,7 @@ end).(), ",") end).()}"
                 cond do
                   Std.is(v, Array) -> "Array with " <> Reflaxe.Elixir.HaxeFloat.to_string(length(v)) <> " elements"
                   Reflaxe.Elixir.HaxeFloat.eq(value, nil) -> "Null value"
-                  :true -> "Unknown type"
+                  true -> "Unknown type"
                 end
               end
             end

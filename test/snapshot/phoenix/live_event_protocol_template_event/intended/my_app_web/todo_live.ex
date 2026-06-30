@@ -41,10 +41,10 @@ defmodule MyAppWeb.TodoLive do
               {num, _} -> num
               :error -> nil
             end)
-          :true -> nil
+          true -> nil
         end
         if (Kernel.is_nil(id)), do: {:noreply, socket}, else: handle_toggle_todo(id, socket)
-      :true -> nil
+      true -> nil
     end
   end
   def handle_event(event, params, socket) do

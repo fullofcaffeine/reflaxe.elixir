@@ -41,7 +41,7 @@ defmodule Main do
           cond do
             Enum.at(arr, mid) == target -> true
             Enum.at(arr, mid) < target -> acc_left = mid + 1
-            :true -> acc_right = (mid - 1)
+            true -> acc_right = (mid - 1)
           end
           {:cont, {acc_left, acc_right}}
         else

@@ -139,6 +139,16 @@ such as `Reflaxe.*`, Haxe stdlib compatibility, or PhoenixHx shims are the
 exception, not the model for app modules. The canonical policy is
 `../../docs/05-architecture/PHOENIX_OUTPUT_MODEL.md`.
 
+When todo-app docs demonstrate a Haxe/PhoenixHx abstraction, especially shared
+protocols, HXX event helpers, typed params, generated LiveView dispatch, or
+Genes hooks, also show the raw Phoenix/Elixir equivalent or generated target
+shape unless it is completely obvious. The todo-app is a teaching artifact:
+users should be able to see both the typed Haxe authoring surface and the
+ordinary Phoenix code model it maps to. When the Haxe layer is better than the
+raw shape, call out why in practical terms: stronger types, less repeated
+string/key plumbing, generated boilerplate, editor completion, or earlier
+compile-time diagnostics.
+
 Execution wiring:
 
 - Explicit compile list: `build-tests.hxml`

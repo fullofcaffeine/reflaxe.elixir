@@ -147,13 +147,13 @@ end) do
   end
   def match_object_patterns(data) do
     (case data.active do
-      :false ->
+      false ->
         age = data.age
         name = data.name
         "Inactive user: #{name} (#{Reflaxe.Elixir.HaxeFloat.to_string(age)})"
-      :true when age >= 18 -> "Active adult: #{name} (#{Reflaxe.Elixir.HaxeFloat.to_string(age)})"
-      :true when age < 18 -> "Active minor: #{name} (#{Reflaxe.Elixir.HaxeFloat.to_string(age)})"
-      :true -> "unknown pattern"
+      true when age >= 18 -> "Active adult: #{name} (#{Reflaxe.Elixir.HaxeFloat.to_string(age)})"
+      true when age < 18 -> "Active minor: #{name} (#{Reflaxe.Elixir.HaxeFloat.to_string(age)})"
+      true -> "unknown pattern"
       _ -> "unknown pattern"
     end)
   end

@@ -31,7 +31,7 @@ defmodule MyAppWeb.ProfileLive do
         end
         source = if (Kernel.is_binary(source_raw)), do: source_raw, else: nil
         if (Kernel.is_nil(resource_id) or Kernel.is_nil(source)), do: {:noreply, socket}, else: handle_resource_selected(%{:resource_id => resource_id, :source => source}, socket)
-      :true -> nil
+      true -> nil
     end
   end
   def handle_event(event, params, socket) do

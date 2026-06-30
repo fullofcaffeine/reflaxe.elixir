@@ -108,7 +108,7 @@ defmodule Main do
         verified ->
           if (premium), do: "full access", else: "verified user"
         premium -> "unverified premium"
-        :true -> "basic user"
+        true -> "basic user"
       end
     else
       "inactive"
@@ -190,16 +190,16 @@ defmodule Main do
         "child"
       else
         (case has_permission do
-          :false when age >= 13 and age < 18 -> "teen without permission"
-          :false when age >= 18 and age < 21 -> "young adult"
-          :false when age >= 21 and age < 65 -> "adult"
-          :false when age >= 65 -> "senior"
-          :false -> "unknown"
-          :true when age >= 13 and age < 18 -> "teen with permission"
-          :true when age >= 18 and age < 21 -> "young adult"
-          :true when age >= 21 and age < 65 -> "adult"
-          :true when age >= 65 -> "senior"
-          :true -> "unknown"
+          false when age >= 13 and age < 18 -> "teen without permission"
+          false when age >= 18 and age < 21 -> "young adult"
+          false when age >= 21 and age < 65 -> "adult"
+          false when age >= 65 -> "senior"
+          false -> "unknown"
+          true when age >= 13 and age < 18 -> "teen with permission"
+          true when age >= 18 and age < 21 -> "young adult"
+          true when age >= 21 and age < 65 -> "adult"
+          true when age >= 65 -> "senior"
+          true -> "unknown"
           _ ->
             a = age
             if (a >= 18 and a < 21) do
@@ -238,7 +238,7 @@ defmodule Main do
             cond do
               Std.is(v, Array) -> "array of length " <> Reflaxe.Elixir.HaxeFloat.to_string(length(v))
               Reflaxe.Elixir.HaxeFloat.eq(value, nil) -> "null value"
-              :true -> "unknown type"
+              true -> "unknown type"
             end
           end
         end

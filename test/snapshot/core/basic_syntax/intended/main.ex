@@ -38,7 +38,7 @@ defmodule Main do
     cond do
       n < 0 -> "negative"
       n == 0 -> "zero"
-      :true -> "positive"
+      true -> "positive"
     end
   end
   def sum_range(_struct, start, end_param) do

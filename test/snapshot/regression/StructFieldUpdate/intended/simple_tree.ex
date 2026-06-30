@@ -17,7 +17,7 @@ defmodule SimpleTree do
       cond do
         key < node.key -> TreeNode.new(node.key, node.value, insert_node(struct, node.left, key, value), node.right)
         key > node.key -> TreeNode.new(node.key, node.value, node.left, insert_node(struct, node.right, key, value))
-        :true -> TreeNode.new(key, value, node.left, node.right)
+        true -> TreeNode.new(key, value, node.left, node.right)
       end
     end
   end
@@ -28,7 +28,7 @@ defmodule SimpleTree do
       cond do
         key < node.key -> find_node(struct, node.left, key)
         key > node.key -> find_node(struct, node.right, key)
-        :true -> node.value
+        true -> node.value
       end
     end
   end
