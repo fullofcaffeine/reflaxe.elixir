@@ -31,7 +31,19 @@ import phoenix.live_view.macros.LiveEventProtocolModel;
  *
  *   static final hash = LiveEventProtocol.hash(ProfileHookEvent);
  */
+@:compileTimeOnly
 class LiveEventProtocol {
+	/**
+	 * Internal compile-time marker used by PhoenixHx-generated protocol helpers.
+	 *
+	 * The Haxe->Elixir compiler erases this identity call and uses it only as a
+	 * printer hint for object literals that should render like handwritten Elixir
+	 * maps (`%{event: name}`) when their atom keys are safe for that syntax.
+	 */
+	public static function keywordMap<T>(value:T):T {
+		return value;
+	}
+
 	/**
 	 * Validates `protocolRef` and returns its deterministic text manifest.
 	 */

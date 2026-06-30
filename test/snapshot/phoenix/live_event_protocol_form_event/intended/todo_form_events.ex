@@ -62,7 +62,7 @@ defmodule TodoFormEvents do
         end
         title_raw = Map.get(event_payload, "title")
         title = if (Kernel.is_binary(title_raw)), do: title_raw, else: nil
-        if (not Kernel.is_nil(done) and not Kernel.is_nil(estimate) and not Kernel.is_nil(priority) and not Kernel.is_nil(title)), do: {:create_todo, %{:done => done, :estimate => estimate, :notes => notes, :priority => priority, :title => title}}, else: nil
+        if (not Kernel.is_nil(done) and not Kernel.is_nil(estimate) and not Kernel.is_nil(priority) and not Kernel.is_nil(title)), do: {:create_todo, %{done: done, estimate: estimate, notes: notes, priority: priority, title: title}}, else: nil
       else
         if (event_name == "update_form") do
           event_payload_root = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)) do
@@ -102,7 +102,7 @@ defmodule TodoFormEvents do
           end
           title_raw = Map.get(event_payload, "title")
           title = if (Kernel.is_binary(title_raw)), do: title_raw, else: nil
-          if (not Kernel.is_nil(done) and not Kernel.is_nil(estimate) and not Kernel.is_nil(priority) and not Kernel.is_nil(title)), do: {:update_form, %{:done => done, :estimate => estimate, :notes => notes, :priority => priority, :title => title}}, else: nil
+          if (not Kernel.is_nil(done) and not Kernel.is_nil(estimate) and not Kernel.is_nil(priority) and not Kernel.is_nil(title)), do: {:update_form, %{done: done, estimate: estimate, notes: notes, priority: priority, title: title}}, else: nil
         else
           nil
         end

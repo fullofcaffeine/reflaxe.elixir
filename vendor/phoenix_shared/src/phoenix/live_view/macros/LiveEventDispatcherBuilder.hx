@@ -391,13 +391,13 @@ class LiveEventDispatcherBuilder {
 	}
 
 	static function buildPayloadObject(arg:LiveEventArgumentData):Expr {
-		return {
+		return keywordMap({
 			expr: EObjectDecl([
 				for (field in arg.fields)
 					{field: field.name, expr: {expr: EConst(CIdent(field.name)), pos: field.pos}}
 			]),
 			pos: arg.pos
-		};
+		});
 	}
 
 	static function findPayloadArgument(event:LiveEventData):Null<LiveEventArgumentData> {
@@ -533,6 +533,13 @@ class LiveEventDispatcherBuilder {
 
 	static function ident(name:String, pos:Position):Expr {
 		return {expr: EConst(CIdent(name)), pos: pos};
+	}
+
+	static function keywordMap(expr:Expr):Expr {
+		if (Context.defined("js")) {
+			return expr;
+		}
+		return macro phoenix.live_view.LiveEventProtocol.keywordMap($expr);
 	}
 
 	static function typePath(pack:Array<String>, name:String):String {

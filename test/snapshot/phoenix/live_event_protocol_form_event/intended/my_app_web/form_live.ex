@@ -64,7 +64,7 @@ defmodule MyAppWeb.FormLive do
         end
         title_raw = Map.get(event_payload, "title")
         title = if (Kernel.is_binary(title_raw)), do: title_raw, else: nil
-        if (Kernel.is_nil(done) or Kernel.is_nil(estimate) or Kernel.is_nil(priority) or Kernel.is_nil(title)), do: {:noreply, socket}, else: handle_create_todo(%{:done => done, :estimate => estimate, :notes => notes, :priority => priority, :title => title}, socket)
+        if (Kernel.is_nil(done) or Kernel.is_nil(estimate) or Kernel.is_nil(priority) or Kernel.is_nil(title)), do: {:noreply, socket}, else: handle_create_todo(%{done: done, estimate: estimate, notes: notes, priority: priority, title: title}, socket)
       event_name == "update_form" ->
         event_payload_root = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)) do
           Map.get(payload, "todo")
@@ -103,7 +103,7 @@ defmodule MyAppWeb.FormLive do
         end
         title_raw = Map.get(event_payload, "title")
         title = if (Kernel.is_binary(title_raw)), do: title_raw, else: nil
-        if (Kernel.is_nil(done) or Kernel.is_nil(estimate) or Kernel.is_nil(priority) or Kernel.is_nil(title)), do: {:noreply, socket}, else: handle_update_form(%{:done => done, :estimate => estimate, :notes => notes, :priority => priority, :title => title}, socket)
+        if (Kernel.is_nil(done) or Kernel.is_nil(estimate) or Kernel.is_nil(priority) or Kernel.is_nil(title)), do: {:noreply, socket}, else: handle_update_form(%{done: done, estimate: estimate, notes: notes, priority: priority, title: title}, socket)
       true -> nil
     end
   end

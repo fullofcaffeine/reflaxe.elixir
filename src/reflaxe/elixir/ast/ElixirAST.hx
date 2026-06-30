@@ -809,6 +809,7 @@ typedef ElixirMetadata = {
 	?inGuard:Bool, // Inside guard clause
 	?redundantEnumExtraction:Bool, // Marks redundant enum extraction for removal
 	?noIifeWrap:Bool, // Printer hint: do not wrap expression in an IIFE when used as an argument
+	?preferKeywordMapSyntax:Bool, // Printer hint: render simple atom-keyed maps as %{key: value}
 
 	// Payload binder canonicalization locks (Phoenix/LiveView transforms)
 	?lockPayloadBinder:Bool, // Prevent later passes from rewriting payload binder names

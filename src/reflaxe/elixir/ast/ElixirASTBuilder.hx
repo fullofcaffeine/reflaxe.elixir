@@ -3575,6 +3575,10 @@ class ElixirASTBuilder {
 	 * Create metadata from TypedExpr
 	 */
 	static function createMetadata(expr:TypedExpr):ElixirMetadata {
+		var preferKeywordMapSyntax = switch (expr.expr) {
+			case TCall(e, [arg]) if (isLiveEventKeywordMapMarker(e)): true;
+			default: false;
+		};
 		var fromReturn = switch (expr.expr) {
 			case TReturn(_): true;
 			default: false;
@@ -3614,10 +3618,24 @@ class ElixirASTBuilder {
 			inPipeline: false, // Will be set by transformer
 			inComprehension: false, // Will be set by context
 			inGuard: false, // Will be set by context
+			preferKeywordMapSyntax: preferKeywordMapSyntax,
 			canInline: canBeInlined(expr),
 			isConstant: PatternDetector.isConstant(expr),
 			sideEffects: hasSideEffects(expr)
 		};
+	}
+
+	static function isLiveEventKeywordMapMarker(e:TypedExpr):Bool {
+		return switch (e.expr) {
+			case TMeta(_, inner):
+				isLiveEventKeywordMapMarker(inner);
+			case TParenthesis(inner):
+				isLiveEventKeywordMapMarker(inner);
+			case TField(_, FStatic(classRef, fieldRef)): var cls = classRef.get(); fieldRef.get()
+					.name == "keywordMap" && cls.name == "LiveEventProtocol" && cls.pack.join(".") == "phoenix.live_view";
+			default:
+				false;
+		}
 	}
 
 	/**

@@ -983,6 +983,16 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			}
 		}
 
+		// Compile-time-only framework surfaces can participate in Haxe typing and
+		// macro-generated code but must not leak as runtime Elixir modules.
+		if (classType.meta.has(":compileTimeOnly") || classType.meta.has("compileTimeOnly")) {
+			if (moduleAST != null) {
+				if (moduleAST.metadata == null)
+					moduleAST.metadata = {};
+				Reflect.setField(moduleAST.metadata, "suppressEmission", true);
+			}
+		}
+
 		#if debug_compilation_flow
 		#end
 

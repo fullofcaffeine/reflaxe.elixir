@@ -70,6 +70,15 @@ class CallExprBuilder {
 		return false;
 	}
 
+	static function isLiveEventKeywordMapMarker(e:TypedExpr):Bool {
+		return switch (unwrapMeta(e).expr) {
+			case TField(_, FStatic(classRef, fieldRef)): var cls = classRef.get(); fieldRef.get()
+					.name == "keywordMap" && cls.name == "LiveEventProtocol" && cls.pack.join(".") == "phoenix.live_view";
+			default:
+				false;
+		}
+	}
+
 	/**
 	 * Build a call expression
 	 * 
@@ -92,6 +101,8 @@ class CallExprBuilder {
 		// Normalize common Array operations early (target-idiomatic)
 		if (e != null) {
 			switch (e.expr) {
+				case _ if (args != null && args.length == 1 && isLiveEventKeywordMapMarker(e)):
+					return buildExpression(args[0]).def;
 				case TField(target, FInstance(_, _, cf)) if (cf.get().name == "concat" && args != null && args.length >= 1):
 					// Array.concat(other) → list ++ other (list concatenation)
 					var left = buildExpression(target);

@@ -25,7 +25,7 @@ defmodule OptionalEvents do
       bio = if (Kernel.is_binary(bio_raw)), do: bio_raw, else: nil
       name_raw = Map.get(event_payload, "name")
       name = if (Kernel.is_binary(name_raw)), do: name_raw, else: nil
-      if (not Kernel.is_nil(name)), do: {:save_profile, %{:bio => bio, :name => name}}, else: nil
+      if (not Kernel.is_nil(name)), do: {:save_profile, %{bio: bio, name: name}}, else: nil
     else
       if (event_name == "search") do
         event_payload = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)), do: payload, else: %{}

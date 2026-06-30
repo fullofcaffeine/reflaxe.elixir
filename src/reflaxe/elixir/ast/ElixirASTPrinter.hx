@@ -659,7 +659,7 @@ class ElixirASTPrinter {
 				}
 
 			default:
-				printNode(ast.def, indent);
+				printNode(ast.def, indent, ast.metadata);
 		};
 
 		#if debug_ast_printer
@@ -671,7 +671,7 @@ class ElixirASTPrinter {
 	/**
 	 * Print a single AST node
 	 */
-	static function printNode(node:ElixirASTDef, indent:Int):String {
+	static function printNode(node:ElixirASTDef, indent:Int, ?metadata:ElixirMetadata):String {
 		return switch (node) {
 			// ================================================================
 			// Modules and Structure
@@ -1287,6 +1287,7 @@ class ElixirASTPrinter {
 				].join(', ') + '}';
 
 			case EMap(pairs):
+				var useKeywordMapSyntax = metadata != null && metadata.preferKeywordMapSyntax == true;
 				'%{' + [
 					for (p in pairs) {
 						var key = print(p.key, 0);
@@ -1305,7 +1306,12 @@ class ElixirASTPrinter {
 								print(value, 0);
 						};
 
-						key + ' => ' + valueStr;
+						switch (useKeywordMapSyntax ? simpleAtomMapKey(p.key) : null) {
+							case null:
+								key + ' => ' + valueStr;
+							case atomKey:
+								atomKey + ': ' + valueStr;
+						}
 					}
 				].join(', ') + '}';
 
@@ -3864,6 +3870,57 @@ class ElixirASTPrinter {
 			return false;
 		var code = c.charCodeAt(0);
 		return code >= 48 && code <= 57; // 0-9
+	}
+
+	/**
+	 * Return the keyword-style map key for atom keys that are safe to print as
+	 * `%{key: value}`. Keep explicit `%{:key => value}` for camelCase, quoted,
+	 * operator, or otherwise unusual atoms so runtime/support artifacts remain
+	 * exact and readable.
+	 */
+	static function simpleAtomMapKey(key:ElixirAST):Null<String> {
+		return switch (key.def) {
+			case EAtom(value):
+				var atomStr:String = value;
+				if (atomStr != null && atomStr.length > 0 && atomStr.charAt(0) == ':') {
+					atomStr = atomStr.substr(1);
+				}
+				if (isLowerSnakeAtomKey(atomStr)) atomStr else null;
+			case _:
+				null;
+		}
+	}
+
+	static function isLowerSnakeAtomKey(value:String):Bool {
+		if (value == null || value.length == 0) {
+			return false;
+		}
+		var last = value.charAt(value.length - 1);
+		var end = (last == "!" || last == "?") ? value.length - 1 : value.length;
+		if (end <= 0) {
+			return false;
+		}
+		var first = value.charAt(0);
+		if (!(isLowercaseAscii(first) || first == "_")) {
+			return false;
+		}
+		var i = 1;
+		while (i < end) {
+			var c = value.charAt(i);
+			if (!(isLowercaseAscii(c) || isDigit(c) || c == "_")) {
+				return false;
+			}
+			i++;
+		}
+		return true;
+	}
+
+	static function isLowercaseAscii(c:String):Bool {
+		if (c.length != 1) {
+			return false;
+		}
+		var code = c.charCodeAt(0);
+		return code >= 97 && code <= 122;
 	}
 }
 #end

@@ -20,7 +20,7 @@ defmodule ResourceHookEvents do
         resource_id = if (not Kernel.is_nil(resource_id_raw)), do: ResourceIdCodec.codec().decode.(resource_id_raw), else: nil
         source_raw = Map.get(event_payload, "source")
         source = if (Kernel.is_binary(source_raw)), do: source_raw, else: nil
-        if (not Kernel.is_nil(resource_id) and not Kernel.is_nil(source)), do: {:resource_selected, %{:resource_id => resource_id, :source => source}}, else: nil
+        if (not Kernel.is_nil(resource_id) and not Kernel.is_nil(source)), do: {:resource_selected, %{resource_id: resource_id, source: source}}, else: nil
       else
         nil
       end

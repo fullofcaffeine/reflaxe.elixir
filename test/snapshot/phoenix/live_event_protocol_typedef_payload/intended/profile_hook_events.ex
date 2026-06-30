@@ -17,7 +17,7 @@ defmodule ProfileHookEvents do
       copied_at = if (Kernel.is_binary(copied_at_raw)), do: copied_at_raw, else: nil
       message_raw = Map.get(event_payload, "message")
       message = if (Kernel.is_binary(message_raw)), do: message_raw, else: nil
-      if (not Kernel.is_nil(copied_at) and not Kernel.is_nil(message)), do: {:clipboard_copied, %{:copied_at => copied_at, :message => message}}, else: nil
+      if (not Kernel.is_nil(copied_at) and not Kernel.is_nil(message)), do: {:clipboard_copied, %{copied_at: copied_at, message: message}}, else: nil
     else
       if (event_name == "ping"), do: {:ping}, else: nil
     end
