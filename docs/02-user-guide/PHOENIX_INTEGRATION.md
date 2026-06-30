@@ -44,7 +44,7 @@ Reflaxe.Elixir supports the server-side pieces via annotations so your generated
 - `@:socketChannels([{topic, channel}])` emits `channel "<topic>", <ChannelModule>` routes on the socket.
 - `@:endpointSockets([{path, socket, session?}])` mounts one or more sockets on your `@:endpoint` (e.g. `"/socket"`).
 
-See a working end-to-end reference (Haxe→Elixir server + Haxe→JS client) in `examples/todo-app/src_haxe/shared/channels/` and `examples/todo-app/src_haxe/server/channels/`.
+See a working end-to-end reference (Haxe→Elixir server + Haxe→JS client) in `examples/todo-app/src_shared/shared/channels/` and `examples/todo-app/src_haxe/server/channels/`.
 
 ### Shared Protocol Types (Client + Server)
 
@@ -78,7 +78,7 @@ On the server, prefer keeping your code Phoenix-native while using typed helpers
 - `phoenix.channels.TypedChannelServer.broadcast/push(..., typedMessage)` → encodes to `{event, payload}` then calls `Phoenix.Channel.*`
 
 Reference implementation:
-- `examples/todo-app/src_haxe/shared/channels/PingProtocol.hx`
+- `examples/todo-app/src_shared/shared/channels/PingProtocol.hx`
 - `examples/todo-app/src_haxe/server/channels/PingChannel.hx`
 
 ## Naming & Module Mapping

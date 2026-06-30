@@ -65,5 +65,6 @@ Migrations are authored in Haxe via the typed DSL in `std/ecto/Migration.hx` and
 - `docs/05-architecture/AST_PIPELINE_MIGRATION.md` (migration rationale + ordering)
 - `docs/03-compiler-development/COMPILATION_PIPELINE_ARCHITECTURE.md` (TypedExpr → AST details)
 - `docs/05-architecture/AUTHORING_PROFILE_CONTRACT.md` (portable vs Elixir-first compiler contract)
+- `docs/05-architecture/PHOENIX_OUTPUT_MODEL.md` (Phoenix app source roots, target namespaces, and output modes)
 - `docs/05-architecture/HAXE_FLOAT_SPECIAL_VALUES.md` (NaN/Infinity representation and numeric lowering contract)
 - `docs/05-architecture/HXML_ARCHITECTURE.md` (build configuration patterns)

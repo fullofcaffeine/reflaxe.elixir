@@ -6,6 +6,7 @@ This audit tracks developer ergonomics papercuts across Phoenix, Ecto, and gener
 
 - Prefer typed handles over raw strings for finite or schema-derived names.
 - Keep Phoenix/Ecto API faithfulness in the generated Elixir; improve Haxe authoring with typed overloads, helpers, and clearer diagnostics.
+- Treat generated module/file layout as part of API faithfulness: app-facing output should look like a handwritten Phoenix app under `lib/my_app/**` and `lib/my_app_web/**`, not like Haxe source buckets mirrored into `lib/shared/**` or `lib/server/**`.
 - Make unsafe/dynamic paths explicit with `*Unsafe`, metadata, or strict-mode escape hatches.
 - Add compile-time suggestions where the compiler can infer the intended fix.
 - Keep examples on the recommended path first; show compatibility paths only in migration sections.
@@ -38,6 +39,15 @@ These are the immediate follow-ups selected from the audit:
   is tracked in
   [`phoenixhx-live-event-protocols.md`](phoenixhx-live-event-protocols.md) and
   Bead `haxe.elixir.codex-7on`.
+- PhoenixHx generated app layout: audit and remove app-facing Haxe package
+  leakage from generated Elixir paths. Source roots such as `src_shared` are
+  useful for Haxe classpath hygiene, but emitted app modules should still be
+  `MyApp.*` / `MyAppWeb.*` unless a separate namespace is intentionally part of
+  the Elixir API. Current todo-app debt includes top-level `lib/shared/**` and
+  `lib/server/**` modules; framework/runtime support such as `Reflaxe.*`, Haxe
+  stdlib compatibility, and PhoenixHx shims can remain separate when documented.
+  Adopt the policy in
+  [`PHOENIX_OUTPUT_MODEL.md`](../05-architecture/PHOENIX_OUTPUT_MODEL.md).
 
 ## Prioritized Papercuts
 

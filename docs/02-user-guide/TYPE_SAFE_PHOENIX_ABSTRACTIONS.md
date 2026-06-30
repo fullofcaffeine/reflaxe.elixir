@@ -213,15 +213,16 @@ for hook-origin events, but new code should prefer the origin-specific metadata.
 
 Put protocol declarations in app-owned shared Haxe code that is visible to both
 the Genes JS build and the Haxe-to-Elixir server build. In the todo app, that
-means `src_haxe/shared/liveview/HookEvents.hx`:
+means `src_shared/shared/liveview/HookEvents.hx`:
 
 ```text
-src_haxe/
+src_shared/
   shared/
     liveview/
       HookEvents.hx        # shared protocol enum + generated companion typedef
       HookName.hx          # shared phx-hook names, if used by HXX and JS
       EventName.hx         # ordinary template-driven LiveView events
+src_haxe/
   client/
     hooks/
       CopyToClipboardHook.hx

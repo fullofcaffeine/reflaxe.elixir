@@ -1,4 +1,4 @@
-# `src_haxe/shared/` (todo-app)
+# `src_shared/shared/` (todo-app)
 
 This folder contains Haxe modules intended to be used from **both** compilation targets:
 
@@ -7,6 +7,12 @@ This folder contains Haxe modules intended to be used from **both** compilation 
 
 The goal is a single source of truth at client/server boundaries without losing idiomatic output
 on either side.
+
+This folder is a Haxe classpath boundary, not the target Elixir namespace. A
+shared protocol may be imported by both targets from `src_shared`, but generated
+app-facing Elixir should still target `TodoApp.*` / `TodoAppWeb.*` modules and
+Phoenix-native paths unless `Shared.*` is deliberately part of the Elixir API.
+See the [Phoenix output model](../../../../docs/05-architecture/PHOENIX_OUTPUT_MODEL.md).
 
 ## What belongs here
 
@@ -25,7 +31,7 @@ on either side.
 
 ## LiveView protocol example
 
-Put the protocol in `src_haxe/shared/liveview/` when both the template/server boundary and any client-side code
+Put the protocol in `src_shared/shared/liveview/` when both the template/server boundary and any client-side code
 should agree on event names or payload shapes. The todo-app uses `TodoEvents` for two cases:
 
 ```haxe

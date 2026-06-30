@@ -71,7 +71,7 @@ npm run perf:todo-watch
 
 This writes `tmp/perf/watch-cycle-times.json` and keeps watcher/dependency logs under
 `tmp/perf/todo-watch/logs/`. The harness runs in an isolated git worktree, starts `mix haxe.watch`,
-waits for the initial compile, atomically rewrites `src_haxe/shared/TodoTypes.hx` with a harmless
+waits for the initial compile, atomically rewrites `src_shared/shared/TodoTypes.hx` with a harmless
 comment, waits for the watch task’s `✅ Haxe compilation successful` marker, and repeats the cycle.
 It reports p50/p95 plus min/max/mean.
 

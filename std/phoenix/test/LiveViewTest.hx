@@ -172,10 +172,16 @@ extern class LiveViewTest {
 	public static function render_focus(liveView:LiveView, element:String):LiveView;
 
 	/**
-	 * Simulate hook event (JavaScript hooks).
+	 * Simulate a JavaScript hook event and return the rendered LiveView HTML.
+	 *
+	 * Phoenix.LiveViewTest.render_hook/3 receives the event name, not the hook
+	 * module name. Hook-to-component tests should pass an element as the first
+	 * argument; view-level hook events pass the LiveView directly.
 	 */
-	@:overload(function(liveView:LiveView, hook:String, event:String, data:Map<String, Term>):LiveView {})
-	public static function render_hook(liveView:LiveView, hook:String, event:String):LiveView;
+	@:overload(function(liveView:LiveView, event:String, data:Term):String {})
+	@:overload(function(element:Term, event:String, data:Term):String {})
+	@:overload(function(element:Term, event:String):String {})
+	public static function render_hook(liveView:LiveView, event:String):String;
 
 	/**
 	 * Send a message to the LiveView process.

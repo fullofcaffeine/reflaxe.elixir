@@ -117,8 +117,26 @@ Source files under `src_haxe/test/**`:
 - `src_haxe/test/web/UsersLiveTest.hx`
 - `src_haxe/test/web/UsersApiTest.hx`
 - `src_haxe/test/web/ProfileLiveTest.hx`
+- `src_haxe/test/web/LiveEventProtocolDispatchTest.hx`
 - `src_haxe/test/web/TenancyTest.hx`
 - `src_haxe/test/live/TodoLiveDueDateTest.hx`
+
+Shared front/back contracts live under `src_shared/shared/**`, not under
+`src_haxe/shared/**`. Keep `src_shared` as its own classpath root in server,
+client, and test builds so ExUnit tests can import `shared.*` protocols without
+typing the full app root (`src_haxe/TodoAppRouter.hx`, LiveViews, controllers,
+or client modules). Do not add broad `-cp src_haxe` to `build-tests.hxml` just to
+reach shared protocol types.
+
+Source layout and generated Elixir layout are separate concerns. `src_shared`
+is for Haxe classpath hygiene; generated app-facing Elixir should still look
+like a normal Phoenix app. Prefer `TodoApp.*` / `TodoAppWeb.*` modules and
+`lib/todo_app/**` / `lib/todo_app_web/**` paths for app code. Top-level
+`lib/shared/**` or `lib/server/**` output is layout debt unless the namespace is
+explicitly intentional and documented. Framework/runtime support namespaces
+such as `Reflaxe.*`, Haxe stdlib compatibility, or PhoenixHx shims are the
+exception, not the model for app modules. The canonical policy is
+`../../docs/05-architecture/PHOENIX_OUTPUT_MODEL.md`.
 
 Execution wiring:
 
@@ -217,12 +235,12 @@ This file contains todo-app specific instructions for AI assistants working on t
 
 ### INSTEAD:
 - ✅ Fix issues in the compiler source at `/src/reflaxe/elixir/`
-- ✅ Edit Haxe source files in `src_haxe/`
+- ✅ Edit Haxe source files in `src_haxe/` and shared contracts in `src_shared/`
 - ✅ Write migrations in Haxe using @:migration annotation
 - ✅ Regenerate with `haxe build-server.hxml` after fixing the compiler (`build.hxml` remains a thin alias)
 
 ### Why This Matters:
-Generated files are overwritten every time you compile. Any manual edits will be lost. All fixes must be made at the source - either in the Haxe code (`src_haxe/`) or in the compiler itself (`/src/reflaxe/elixir/`).
+Generated files are overwritten every time you compile. Any manual edits will be lost. All fixes must be made at the source - either in the Haxe code (`src_haxe/` / `src_shared/`) or in the compiler itself (`/src/reflaxe/elixir/`).
 
 ## 📝 IMPORTANT: Migrations Must Be Written in Haxe
 

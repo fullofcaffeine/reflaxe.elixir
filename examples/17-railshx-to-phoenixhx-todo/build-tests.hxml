@@ -4,6 +4,7 @@
 
 -cp src_haxe
 -cp src_haxe/test
+-cp src_shared
 
 -D elixir_output=test/generated
 -D elixir_output_exs

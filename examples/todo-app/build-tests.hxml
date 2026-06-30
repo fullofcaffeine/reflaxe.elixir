@@ -5,6 +5,7 @@
 
 # Test sources only (avoid compiling app/server code into test output)
 -cp src_haxe/test
+-cp src_shared
 
 # Output directory for generated test modules (isolated)
 -D elixir_output=test/generated
@@ -30,5 +31,6 @@ web.TodoLiveCrudTest
 web.UsersLiveTest
 web.UsersApiTest
 web.ProfileLiveTest
+web.LiveEventProtocolDispatchTest
 web.TenancyTest
 live.TodoLiveDueDateTest

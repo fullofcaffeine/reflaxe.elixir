@@ -11,6 +11,7 @@ module.exports = {
     
     // Haxe source files (for HXX templates and className usage)
     "../src_haxe/**/*.hx",
+    "../src_shared/**/*.hx",
     
     // Static HTML files if any
     "../priv/static/**/*.html"

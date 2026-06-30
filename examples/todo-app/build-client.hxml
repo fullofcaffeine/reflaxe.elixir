@@ -4,6 +4,7 @@
 # Source directories (client only)
 -cp src_haxe/client
 -cp src_haxe
+-cp src_shared
 # Enable Genes ES6 module generator (uses haxe_libraries/genes.hxml)
 -lib genes
 # Typed Phoenix JS externs (Channels + LiveView)

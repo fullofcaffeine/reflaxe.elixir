@@ -7,7 +7,7 @@
 # Source directories
 -cp src_haxe
 -cp src_haxe/server
--cp src_haxe/shared
+-cp src_shared
 
 # Output directory for generated .ex files
 -D elixir_output=lib

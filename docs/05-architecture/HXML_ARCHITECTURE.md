@@ -53,9 +53,8 @@ reflaxe.elixir/
 -lib reflaxe.elixir
 
 # Source directories
--cp src_haxe           # Main source directory
--cp src_haxe/server    # Server-specific code
--cp src_haxe/shared    # Shared client-server code
+-cp src_haxe           # App source package root
+-cp src_shared         # Shared client/server contracts
 
 # Output directory for generated .ex files
 -D elixir_output=lib
@@ -87,6 +86,7 @@ server.live.TodoLive
 # Source directories (client only)
 -cp src_haxe/client
 -cp src_haxe
+-cp src_shared
 
 # Enable Genes ES6 module generator (uses haxe_libraries/genes.hxml)
 -lib genes
@@ -119,6 +119,11 @@ server.live.TodoLive
 # Main client entry point (hooks registry)
 -main client.Boot
 ```
+
+For Phoenix apps, source roots and output paths are separate concerns:
+`src_shared` is a Haxe import root, while app-facing generated modules should
+still target Phoenix-native namespaces and paths. See the
+[Phoenix Output Model](PHOENIX_OUTPUT_MODEL.md).
 
 ## Modern Haxe Best Practices for HXML
 
@@ -368,8 +373,7 @@ CounterLive               # Main class to compile
 ```hxml
 -lib reflaxe.elixir
 -cp src_haxe
--cp src_haxe/server
--cp src_haxe/shared
+-cp src_shared
 -D elixir_output=lib
 -D reflaxe_runtime
 -D app_name=TodoApp
@@ -381,6 +385,7 @@ TodoApp
 ```hxml
 -cp src_haxe/client
 -cp src_haxe
+-cp src_shared
 -lib genes
 
 # NOTE: Our vendored `-lib genes` does not automatically apply genes/extraParams.hxml,
@@ -418,7 +423,8 @@ unexpected macro errors (e.g., “no field setCustomJSGenerator” on
 `haxe.macro.Compiler`).
 
 Rules for JS client HXML (e.g., `examples/todo-app/build-client.hxml`):
-- Only include application client sources (e.g., `-cp src_haxe`, `-cp src_haxe/client`).
+- Only include application client sources and dedicated shared roots (e.g., `-cp src_haxe`,
+  `-cp src_haxe/client`, `-cp src_shared`).
 - Pull generators/libraries via `-lib` (e.g., `-lib genes`), letting
   `haxe_libraries/<lib>.hxml` provide their classpaths and macros.
 - Do not include repo-level `std/` or `src/` in client builds.

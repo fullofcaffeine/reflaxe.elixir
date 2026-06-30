@@ -60,7 +60,7 @@ scripts/qa-sentinel.sh --app examples/17-railshx-to-phoenixhx-todo --port 4017 -
 - `src_haxe/phoenix_hx_todo_hx/migrations/` - Haxe-authored Ecto migrations.
 - `src_haxe/phoenix_hx_todo_hx/live/AppLive.hx` - LiveView UI and events.
 - `src_haxe/phoenix_hx_todo_hx/live/TodoState.hx` - pure todo state transitions.
-- `src_haxe/shared/liveview/TodoEvents.hx` - typed template protocol for the repeated `toggle_todo` row action; simpler one-off events remain direct PhoenixHx branches.
+- `src_shared/shared/liveview/TodoEvents.hx` - typed template protocol for the repeated `toggle_todo` row action; simpler one-off events remain direct PhoenixHx branches.
 - `src_haxe/test/` - Haxe-authored ExUnit coverage.
 - `src_haxe/client/Boot.hx` - Genes-compiled LiveView hook registry.
 - `e2e/railshx_port.spec.ts` - real-browser smoke.

@@ -7,9 +7,10 @@ This document describes the comprehensive file naming system that transforms Hax
 ## Core Principles
 
 1. **Universal snake_case conversion** - Every file gets proper Elixir naming
-2. **Package-to-directory mapping** - Haxe packages become snake_case directories
-3. **Framework-aware placement** - Phoenix annotations override default paths
-4. **DRY implementation** - Single source of truth for all naming logic
+2. **Target-module-first placement** - app-facing Phoenix output follows the target Elixir module, not raw source-root layout
+3. **Package-to-directory fallback** - plain non-Phoenix modules can still map Haxe packages to snake_case directories
+4. **Framework-aware placement** - Phoenix annotations override default paths
+5. **DRY implementation** - Single source of truth for all naming logic
 
 ## Architecture Components
 
@@ -122,6 +123,11 @@ Class: Users
 Result: lib/server/contexts/users.ex
 ```
 
+This default is appropriate only when `Server.Contexts.Users` is intentionally
+part of the Elixir API. For Phoenix app-facing modules, prefer an explicit
+target namespace such as `TodoApp.Users` or `TodoApp.Accounts.Users`, which
+should emit under `lib/todo_app/**`.
+
 #### CamelCase Package
 ```
 Package: MyCompany.DataModels
@@ -178,12 +184,16 @@ private function setFrameworkAwareOutputPath(classType: ClassType): Void {
 ## Edge Cases and Special Handling
 
 ### 1. @:native Annotations
-Classes with `@:native("Module.Name")` keep their native module name in the generated code but still follow file naming conventions:
+Classes with `@:native("Module.Name")` keep their native module name in the generated code. For app-facing Phoenix output, the native module should also drive the physical output path:
 ```
 @:native("TodoApp.Application")
 class TodoApp
 Result: lib/todo_app/application.ex with module TodoApp.Application
 ```
+
+`@:native("TodoAppWeb.LiveEvents.TodoEvents")` should write
+`lib/todo_app_web/live_events/todo_events.ex`, not a path derived from a Haxe
+source package such as `shared.liveview`.
 
 ### 2. Acronyms and Special Cases
 ```

@@ -323,6 +323,13 @@ Use this loop to implement/verify user-facing features end‑to‑end without co
 - Rationale: Adding repo `std/` can shadow the official Haxe std macros (e.g., `haxe.macro.Compiler`) and trigger false “missing field” errors.
 - Quick check: `haxe -v build-client.hxml` should show client source paths, library paths from `haxe_libraries/`, and the official Haxe std — not the repo’s `std/`.
 
+### 🧭 Shared Haxe Classpath Hygiene (Required)
+
+- Shared front/back contracts (Live Event Protocol enums, hook/event names, channel payload protocols, shared domain DTOs) should live in a small dedicated classpath root, such as `src_shared/shared/**`, not under a broad app root when tests or client builds need to import them independently.
+- Do not add a whole Phoenix app source root to a test build just to import `shared.*`. That can accidentally type app routers, LiveViews, controller macros, or client modules and trigger unrelated macro timing/cycle failures.
+- Prefer build layouts where server, client, and test hxml files each add the same dedicated shared root (`-cp src_shared`) plus only their own target-specific source roots.
+- If a shared contract currently lives under a broad root such as `src_haxe/shared`, move it to an isolated classpath root before widening test/client classpaths.
+
 ## 🤖 Developer Identity & Vision
 
 **You are an experienced compiler developer** specializing in Haxe→Elixir transpilation with a mission to transform Reflaxe.Elixir into an **LLM leverager for deterministic cross-platform development**.
@@ -389,6 +396,16 @@ Source of truth: `docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md` and `
 Generated Elixir must be reviewed as if it were hand-written Phoenix/Elixir code. Prefer target-native forms such as
 `case`, `cond`, `with`, pattern matching, pipelines, `Map.*`, `Enum.*`, Phoenix callbacks, Ecto changesets, OTP
 callbacks, and normal module functions over Haxe-runtime-looking wrappers.
+
+Generated artifact layout is part of that review. Phoenix application modules should land in Phoenix-native namespaces
+and paths such as `lib/my_app/**` and `lib/my_app_web/**`; tests should land under `test/generated/**` only when they are
+generated test artifacts; migrations should land under `priv/repo/migrations/**` when they are Ecto migrations. Do not
+mirror Haxe source buckets such as `shared.*`, `server.*`, or helper-package names into top-level `lib/shared/**` or
+`lib/server/**` for app-facing modules unless that namespace is intentionally part of the Elixir app API and documented.
+Runtime/support output such as `Reflaxe.*`, Haxe stdlib compatibility, or PhoenixHx framework shims may use distinct
+namespaces, but those are framework/runtime support artifacts, not the app's business modules.
+Use `docs/05-architecture/PHOENIX_OUTPUT_MODEL.md` as the canonical policy for in-place vs materialized Phoenix
+output, source roots vs target namespaces, and generated app ownership.
 
 Source-language artifacts ("Haxisms") are allowed only when they are truly semantic: preserving Haxe mutation,
 evaluation order, exceptions, runtime type checks, stdlib contracts, or cross-target behavior. This includes synthetic

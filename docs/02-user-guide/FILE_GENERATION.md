@@ -13,6 +13,16 @@ Your `.hxml` sets the target output directory via:
 Reflaxe.Elixir will emit one Elixir source file per compiled module under that directory, using
 package/module naming rules (snake_case paths, Phoenix conventions when applicable).
 
+For Phoenix applications, `lib` is a normal in-place output root. The important
+question is not whether generated app code lives under `lib`, but whether the
+target modules and paths look like a handwritten Phoenix app. App-facing modules
+should generally be `MyApp.*` / `MyAppWeb.*` under `lib/my_app/**` and
+`lib/my_app_web/**`; source roots such as `src_shared` should not automatically
+become `lib/shared/**`.
+
+See the [Phoenix Output Model](../05-architecture/PHOENIX_OUTPUT_MODEL.md) for
+the in-place and materialized Phoenix app modes.
+
 ## Pipeline Context
 
 File writing happens after the AST pipeline finishes:
