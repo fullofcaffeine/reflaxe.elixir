@@ -443,9 +443,11 @@ App-facing generated files should carry a short header:
 
 ## Current Debt And Guardrails
 
-Existing examples may still emit some app-facing modules under top-level
-`lib/shared/**` or `lib/server/**`. Treat that as migration debt, not as the
-desired architecture.
+The todo-app server build now avoids app-facing modules under top-level
+`lib/shared/**` and `lib/server/**`; shared Haxe contracts that need runtime
+modules are emitted under `TodoApp.*` / `TodoAppWeb.*`. If another example emits
+top-level `lib/shared/**` or `lib/server/**`, treat that as migration debt, not
+as the desired architecture.
 
 New app-facing output should avoid:
 
@@ -458,8 +460,8 @@ lib/ecto/**
 lib/plug/**
 ```
 
-Allowlist only documented runtime support namespaces. Once the todo-app output
-is migrated, CI should fail on new app-facing leakage into those paths.
+Allowlist only documented runtime support namespaces. A follow-up CI guard
+should fail on new todo-app app-facing leakage into those paths.
 
 ## Tests To Add
 
@@ -469,7 +471,7 @@ The implementation should be protected at these layers:
   LiveView, controller, schema, native enum, generated companion, and migration.
 - Negative layout guards for forbidden app-facing paths.
 - Todo-app WAE/runtime checks that also assert no app-facing `lib/shared/**` or
-  `lib/server/**` remains after migration.
+  `lib/server/**` remains.
 - Materialized app tests that generate into a temporary `build/phoenix`, then
   run `mix compile --warnings-as-errors` and `mix test`.
 - Ownership tests for first write, manifest-owned rewrite, unowned collision,

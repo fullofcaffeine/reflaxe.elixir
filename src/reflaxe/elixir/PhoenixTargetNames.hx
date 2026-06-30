@@ -132,12 +132,60 @@ class PhoenixTargetNames {
 		return null;
 	}
 
+	public static function enumTargetAlias(enumType:EnumType):Null<String> {
+		if (enumType == null)
+			return null;
+
+		var native = enumNativeAlias(enumType);
+		if (native != null)
+			return native;
+		if (Context.definedValue("app_name") == null || !isProjectPackagePath(enumType.pack))
+			return null;
+
+		var app = appModule();
+		var web = webModule();
+		var pack = enumType.pack == null ? [] : enumType.pack.copy();
+		var root = pack.length > 0 ? pack.shift() : "";
+		var base = switch (root) {
+			case "server":
+				(pack.length > 0 && isWebPackageSegment(pack[0])) ? web : app;
+			case "shared":
+				(pack.length > 0 && (pack[0] == "liveview" || pack[0] == "live_view")) ? web : app;
+			default:
+				app;
+		};
+
+		var aliasParts = [];
+		for (part in pack) {
+			if (part == "liveview" || part == "live_view")
+				aliasParts.push("LiveEvents");
+			else
+				aliasParts.push(packageSegmentToAlias(part));
+		}
+		aliasParts.push(enumType.name);
+		return base + "." + aliasParts.join(".");
+	}
+
 	public static function nativeAlias(classType:ClassType):Null<String> {
 		var entry = firstMeta(classType, ":native", "native");
 		if (entry == null || entry.params == null || entry.params.length == 0)
 			return null;
 		return switch (entry.params[0].expr) {
 			case EConst(CString(value, _)):
+				value;
+			default:
+				Context.error("@:native expects an Elixir module alias string literal.", entry.params[0].pos);
+				null;
+		};
+	}
+
+	public static function enumNativeAlias(enumType:EnumType):Null<String> {
+		var entry = firstEnumMeta(enumType, ":native", "native");
+		if (entry == null || entry.params == null || entry.params.length == 0)
+			return null;
+		return switch (entry.params[0].expr) {
+			case EConst(CString(value, _)):
+				validateAlias(value, entry.params[0].pos, "@:native");
 				value;
 			default:
 				Context.error("@:native expects an Elixir module alias string literal.", entry.params[0].pos);
@@ -178,14 +226,41 @@ class PhoenixTargetNames {
 		return false;
 	}
 
+	static function isWebPackageSegment(part:String):Bool {
+		return switch (part) {
+			case "live" | "controllers" | "channels" | "components" | "layouts" | "i18n" | "presence" | "web" | "infrastructure":
+				true;
+			default:
+				false;
+		};
+	}
+
+	static function packageSegmentToAlias(part:String):String {
+		if (part == null || part == "")
+			return "";
+		var words = part.split("_");
+		var out = new StringBuf();
+		for (word in words) {
+			if (word == "")
+				continue;
+			out.add(word.charAt(0).toUpperCase());
+			out.add(word.substr(1));
+		}
+		return out.toString();
+	}
+
 	static function isProjectPackage(classType:ClassType):Bool {
 		if (classType.isExtern)
 			return false;
 		if (classType.name != null && StringTools.startsWith(classType.name, "_"))
 			return false;
-		if (classType.pack == null || classType.pack.length == 0)
+		return isProjectPackagePath(classType.pack);
+	}
+
+	static function isProjectPackagePath(pack:Array<String>):Bool {
+		if (pack == null || pack.length == 0)
 			return false;
-		return switch (classType.pack[0]) {
+		return switch (pack[0]) {
 			case "haxe" | "sys" | "elixir" | "ecto" | "phoenix" | "plug" | "reflaxe": false;
 			default: true;
 		};
@@ -202,6 +277,18 @@ class PhoenixTargetNames {
 		if (primaryEntries != null && primaryEntries.length > 0)
 			return primaryEntries[0];
 		var alternateEntries = classType.meta.extract(alternate);
+		if (alternateEntries != null && alternateEntries.length > 0)
+			return alternateEntries[0];
+		return null;
+	}
+
+	static function firstEnumMeta(enumType:EnumType, primary:String, alternate:String):Null<MetadataEntry> {
+		if (enumType == null || enumType.meta == null)
+			return null;
+		var primaryEntries = enumType.meta.extract(primary);
+		if (primaryEntries != null && primaryEntries.length > 0)
+			return primaryEntries[0];
+		var alternateEntries = enumType.meta.extract(alternate);
 		if (alternateEntries != null && alternateEntries.length > 0)
 			return alternateEntries[0];
 		return null;

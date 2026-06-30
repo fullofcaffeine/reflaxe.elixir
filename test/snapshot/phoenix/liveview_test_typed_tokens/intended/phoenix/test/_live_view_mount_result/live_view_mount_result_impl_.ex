@@ -1,5 +1,4 @@
 defmodule LiveViewMountResult_Impl_ do
-  use Phoenix.Component
   def view(this1) do
     elem(this1, 1)
   end

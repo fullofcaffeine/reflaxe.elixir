@@ -6,8 +6,6 @@
   "reflaxe/elixir/haxe_throw.ex",
   "reflaxe/elixir/haxe_float.ex",
   "phoenix/test/live_view_state.ex",
-  "phoenix/test/live_view_navigation.ex",
-  "phoenix/test/live_view_events.ex",
   "phoenix/test/conn_state.ex",
   "phoenix/test/_live_view_mount_result/live_view_mount_result_impl_.ex",
   "phoenix/test/_live_view_event_name/live_view_event_name_impl_.ex",
@@ -17,7 +15,7 @@
   "elixir/types/_atom/atom_impl_.ex",
   "elixir/tuple_result.ex"
 ],
-  "id": 1,
+  "id": 0,
   "wasCached": false,
   "version": 1
 }

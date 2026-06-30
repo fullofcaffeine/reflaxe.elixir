@@ -43,10 +43,13 @@ These are the immediate follow-ups selected from the audit:
   leakage from generated Elixir paths. Source roots such as `src_shared` are
   useful for Haxe classpath hygiene, but emitted app modules should still be
   `MyApp.*` / `MyAppWeb.*` unless a separate namespace is intentionally part of
-  the Elixir API. Current todo-app debt includes top-level `lib/shared/**` and
-  `lib/server/**` modules; framework/runtime support such as `Reflaxe.*`, Haxe
-  stdlib compatibility, and PhoenixHx shims can remain separate when documented.
-  Adopt the policy in
+  the Elixir API. First slice implemented: project enums now use app/web target
+  namespaces, so the todo-app server build no longer emits app-facing
+  top-level `lib/shared/**` or `lib/server/**` modules. Remaining layout work is
+  runtime-support packaging: framework/runtime support such as `Reflaxe.*`,
+  Haxe stdlib compatibility, and PhoenixHx shims can remain separate when
+  documented, but should eventually come from a runtime dependency or explicit
+  vendored-runtime mode. Adopt the policy in
   [`PHOENIX_OUTPUT_MODEL.md`](../05-architecture/PHOENIX_OUTPUT_MODEL.md).
 
 ## Prioritized Papercuts

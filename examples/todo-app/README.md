@@ -189,9 +189,9 @@ Shared code note:
 - `src_shared/shared/` is the place to put typed client/server boundary contracts (payload typedefs, event names,
   and channel protocols). Keeping it on its own classpath lets tests import shared contracts without compiling
   the full app/router tree. See `examples/todo-app/src_shared/shared/README.md`.
-- Some generated `lib/shared/**` output still exists as layout debt while the Phoenix output model is being
-  tightened. New app-facing generated Elixir should prefer `TodoApp.*` / `TodoAppWeb.*` modules under
-  Phoenix-native paths; see the [Phoenix output model](../../docs/05-architecture/PHOENIX_OUTPUT_MODEL.md).
+- Normal server builds should not emit app-facing `lib/shared/**` or `lib/server/**` modules. Shared Haxe
+  contracts lower to `TodoApp.*` / `TodoAppWeb.*` modules when runtime support is needed, while purely
+  compile-time contracts stay out of the app tree. See the [Phoenix output model](../../docs/05-architecture/PHOENIX_OUTPUT_MODEL.md).
 - The create-todo form demonstrates a typed form-origin Live Event Protocol:
   `shared.liveview.TodoEvent.CreateTodo` declares `@:submitEvent("todo")`, the template still
   renders normal Phoenix `phx-submit="create_todo"` with `name="todo[title]"` style fields, and `TodoLive`

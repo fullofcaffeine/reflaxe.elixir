@@ -12,7 +12,6 @@
   "phoenix/types/flash.ex",
   "phoenix/route_helper.ex",
   "phoenix/mount_result.ex",
-  "phoenix/live_streams.ex",
   "phoenix/http_status.ex",
   "phoenix/http_method.ex",
   "phoenix/handle_info_result.ex",

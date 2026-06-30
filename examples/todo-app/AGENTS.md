@@ -133,7 +133,8 @@ is for Haxe classpath hygiene; generated app-facing Elixir should still look
 like a normal Phoenix app. Prefer `TodoApp.*` / `TodoAppWeb.*` modules and
 `lib/todo_app/**` / `lib/todo_app_web/**` paths for app code. Top-level
 `lib/shared/**` or `lib/server/**` output is layout debt unless the namespace is
-explicitly intentional and documented. Framework/runtime support namespaces
+explicitly intentional and documented; normal server builds should not emit those
+paths for app-facing modules. Framework/runtime support namespaces
 such as `Reflaxe.*`, Haxe stdlib compatibility, or PhoenixHx shims are the
 exception, not the model for app modules. The canonical policy is
 `../../docs/05-architecture/PHOENIX_OUTPUT_MODEL.md`.

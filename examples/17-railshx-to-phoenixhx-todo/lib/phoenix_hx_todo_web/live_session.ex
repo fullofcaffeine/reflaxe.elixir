@@ -1,6 +1,4 @@
 defmodule PhoenixHxTodoWeb.LiveSession do
-  use Phoenix.Component
-  use Phoenix.LiveView, layout: {PhoenixHxTodoWeb.Layouts, :app}
   def live_session(conn) do
 
               Enum.reduce(["user_id"], %{}, fn key, acc ->

@@ -997,8 +997,17 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		if (enumType == null)
 			return null;
 
-		// Set output file path with snake_case naming
-		setUniversalOutputPath(enumType.name, enumType.pack);
+		var targetAlias = reflaxe.elixir.PhoenixTargetNames.enumTargetAlias(enumType);
+		if (targetAlias != null) {
+			var outputPath = reflaxe.elixir.PhoenixTargetNames.aliasToPath(targetAlias);
+			var pathParts = outputPath.split("/");
+			var file = pathParts.pop();
+			setOutputFileName(file.substr(0, file.length - ".ex".length));
+			setOutputFileDir(pathParts.join("/"));
+		} else {
+			// Set output file path with snake_case naming
+			setUniversalOutputPath(enumType.name, enumType.pack);
+		}
 
 		// Use AST pipeline for enum compilation
 		var enumAST = buildEnumAST(enumType, options);
@@ -3317,24 +3326,12 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		// Check if this enum has @:elixirIdiomatic metadata
 		var isIdiomatic = enumType.meta.has(":elixirIdiomatic");
 
-		// In Elixir, enums become modules with functions that return tagged tuples
-		// Extract module name - check for @:native annotation first
-		var moduleName = if (enumType.meta.has(":native")) {
-			// Use explicit @:native module name if provided
-			var nativeMeta = enumType.meta.extract(":native");
-			if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
-				switch (nativeMeta[0].params[0].expr) {
-					case EConst(CString(s, _)):
-						s;
-					default:
-						// Fall back to package-based name if annotation is malformed
-						buildEnumModuleName(enumType);
-				}
-			} else {
-				buildEnumModuleName(enumType);
-			}
-		} else {
-			buildEnumModuleName(enumType);
+		// In Elixir, enums become modules with functions that return tagged tuples.
+		// App-facing enums use the same target-module mapper as Phoenix classes, so
+		// source roots such as `shared` and `server` do not leak as top-level modules.
+		var moduleName = {
+			var targetAlias = reflaxe.elixir.PhoenixTargetNames.enumTargetAlias(enumType);
+			targetAlias != null ? targetAlias : buildEnumModuleName(enumType);
 		};
 		var functions = [];
 

@@ -1,5 +1,4 @@
 defmodule PhoenixHxTodoHx.Live.TodoState do
-  use Phoenix.Component
   def seed(owner) do
     [item(1, "Ship typed Rails templates", "Port the HHX partial shape to inline HXX components.", owner, false), item(2, "Map strong params to changesets", "Document where Phoenix validates data differently.", owner, false), item(3, "Compare Turbo Streams and LiveView", "Keep DOM ownership on the server in both versions.", owner, true)]
   end

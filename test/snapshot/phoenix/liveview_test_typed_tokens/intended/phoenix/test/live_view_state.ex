@@ -1,5 +1,4 @@
 defmodule Phoenix.Test.LiveViewState do
-  use Phoenix.Component
   def mounted() do
     {:mounted}
   end

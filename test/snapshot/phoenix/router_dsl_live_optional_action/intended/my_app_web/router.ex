@@ -1,5 +1,4 @@
 defmodule LiveOptionalActionRouter do
-  use Phoenix.Component
   use Phoenix.Router
   import Phoenix.LiveView.Router
   pipeline :browser do

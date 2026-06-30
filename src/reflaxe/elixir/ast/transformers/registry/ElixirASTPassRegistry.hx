@@ -4,6 +4,7 @@ package reflaxe.elixir.ast.transformers.registry;
 import reflaxe.elixir.ast.ElixirAST; // makeAST, makeASTWithMeta
 import reflaxe.elixir.ast.ElixirASTPrinter; // for debug prints in inline passes
 import reflaxe.elixir.ast.ElixirASTTransformer; // qualify local pass fns
+import StringTools;
 
 /**
  * ElixirASTPassRegistry
@@ -1609,15 +1610,21 @@ class ElixirASTPassRegistry {
 			pass: reflaxe.elixir.ast.transformers.UnusedDefpPrune.prunePass
 		});
 
-		// Ensure Phoenix.Component is used in LiveView modules to make assign/2 available even in ERaw code
+		// Ensure Phoenix.Component is used in real LiveView modules to make assign/2 available even in ERaw code.
+		// Guard on explicit metadata or modules ending in `Live`; namespace segments like
+		// `TodoAppWeb.LiveEvents.*` are protocol/support modules, not LiveViews.
 		passes.push({
 			name: "EnsurePhoenixComponentUseInLive",
 			description: "Inject `use Phoenix.Component` into modules ending with Live",
 			enabled: true,
 			pass: function(ast:ElixirAST):ElixirAST {
 				return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+					inline function shouldTreatAsLiveViewModule(name:String):Bool {
+						return (n.metadata != null && Reflect.field(n.metadata, "isLiveView") == true)
+							|| (name != null && StringTools.endsWith(name, "Live"));
+					}
 					return switch (n.def) {
-						case EModule(name, attrs, body) if (name != null && (name.indexOf("Live") != -1)):
+						case EModule(name, attrs, body) if (shouldTreatAsLiveViewModule(name)):
 							var hasUse = false;
 							for (b in body)
 								switch (b.def) {
@@ -1630,7 +1637,7 @@ class ElixirASTPassRegistry {
 									newBody.push(b);
 								makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
 							} else n;
-						case EDefmodule(name, doBlock) if (name != null && (name.indexOf("Live") != -1)):
+						case EDefmodule(name, doBlock) if (shouldTreatAsLiveViewModule(name)):
 							// Inject at top of doBlock if missing
 							var hasUse = false;
 							switch (doBlock.def) {

@@ -49,7 +49,7 @@ class BinderTransforms {
 			return idx > 0 ? moduleName.substring(0, idx) : null;
 		}
 		inline function looksLikeLiveModule(name:String):Bool {
-			return name != null && (name.indexOf("Web.") > 0) && (StringTools.endsWith(name, "Live") || name.indexOf(".Live") != -1);
+			return name != null && (name.indexOf("Web.") > 0) && StringTools.endsWith(name, "Live");
 		}
 		function hasLiveUse(body:Array<ElixirAST>, appPrefix:String):Bool {
 			var found = false;

@@ -4629,6 +4629,10 @@ class ElixirASTBuilder {
 				var derived = reflaxe.elixir.PhoenixTargetNames.classTargetAlias(c.get());
 				if (derived != null)
 					return derived;
+			case TEnumDecl(e):
+				var derived = reflaxe.elixir.PhoenixTargetNames.enumTargetAlias(e.get());
+				if (derived != null)
+					return derived;
 			default:
 		}
 

@@ -6,7 +6,6 @@
   "reflaxe/elixir/haxe_throw.ex",
   "reflaxe/elixir/haxe_float.ex",
   "profile_hook_event.ex",
-  "phoenix/live_view/live_event_protocol.ex",
   "main.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/_call_stack/call_stack_impl_.ex"

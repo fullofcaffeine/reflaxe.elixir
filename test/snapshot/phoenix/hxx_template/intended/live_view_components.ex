@@ -1,5 +1,4 @@
 defmodule LiveViewComponents do
-  use Phoenix.Component
   def render_counter(count) do
     "<div class='counter'><h3>Count: #{Reflaxe.Elixir.HaxeFloat.to_string(count)}</h3><button phx-click='increment'>+</button><button phx-click='decrement'>-</button><button phx-click='reset'>Reset</button></div>"
   end

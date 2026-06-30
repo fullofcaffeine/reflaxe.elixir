@@ -1,5 +1,4 @@
 defmodule LiveViewEventName_Impl_ do
-  use Phoenix.Component
   def of(event) do
     event
   end

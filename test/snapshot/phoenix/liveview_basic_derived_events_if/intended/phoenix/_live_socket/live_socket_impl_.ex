@@ -1,5 +1,4 @@
 defmodule LiveSocket_Impl_ do
-  use Phoenix.Component
   def _new(socket) do
     socket
   end

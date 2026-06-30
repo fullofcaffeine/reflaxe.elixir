@@ -1,5 +1,4 @@
 defmodule LiveSession do
-  use Phoenix.Component
   def empty() do
     %{}
   end
