@@ -45,7 +45,9 @@ defmodule PhoenixHx.Params do
     int_from_term(get_nested(params, key, nested_key))
   end
   def get_bool(params, key) do
-    value = get(params, key)
+    bool_from_term(get(params, key))
+  end
+  def bool_from_term(value) do
     if (Kernel.is_nil(value)) do
       nil
     else
