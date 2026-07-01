@@ -147,8 +147,14 @@ Goal: make `Map` usage predictable and eliminate “native map vs Haxe map” tr
 - Coverage: `test/snapshot/stdlib/haxe_callstack` and Haxe-authored ExUnit runtime tests in `test:haxe-exunit-stdlib`.
 
 **Task: `haxe.Int64`**
-- Implement minimal correct semantics for arithmetic/comparison/printing.
-- Runtime tests: parse/print, comparisons, arithmetic edge cases (document expectations).
+- Status: implemented for deterministic 64-bit wrapping, parsing/printing,
+  comparison, high/low construction, shifts, and overflow-aware `toInt`.
+- Contract: BEAM integers are arbitrary precision, but the Haxe-facing
+  `Int64` abstract normalizes operations back to Haxe's signed 64-bit range so
+  portable Haxe code sees wrapping semantics instead of unbounded integers.
+- Coverage: Haxe-authored ExUnit runtime tests in `test:haxe-exunit-stdlib`
+  cover overflow/underflow wrapping, high/low round-trip, unsigned shift, and
+  `toInt` overflow behavior.
 
 **Task cluster: `haxe.Serializer` + `haxe.Unserializer`**
 - Status: portable data subset implemented for BEAM (`null`/bool/int/float/string, arrays/lists, native maps/anonymous objects).
@@ -231,14 +237,9 @@ Create one task per module (or small module cluster) with:
 - Snapshot(s) added/updated that lock in the intended Elixir shape and semantics.
 - A runtime ExUnit test that executes on BEAM for key behavior (avoid “snapshot-only” confidence).
 
-## Next actions (turn this into BD work)
+## Future Task Checklist
 
-1) **Create the BD epic** using the template below.
-2) **Generate a prioritized task list** from `gap-report.json`:
-   - Tier 0 (DX unblockers): maps/iterators/callstack/exceptions/bytes/json
-   - Tier 1 (ecosystem blockers): serializer/unserializer/template/http
-   - Tier 2 (BEAM integration): `sys.net.*`, `sys.ssl.*`, `sys.thread.*`
-3) **Open one BD task per module/cluster**, each including:
+For new stdlib parity work, open one task per module/cluster, each including:
    - Reference link(s) to `haxe.compilerdev.reference`
    - Snapshots + Haxe-authored ExUnit runtime semantics test(s)
    - WAE criteria: `npm run test:mix-fast`, `npm run test:examples-elixir`, and todo-app QA sentinel

@@ -98,6 +98,8 @@ Top-level:
 - `haxe.CallStack` (BEAM stack capture/formatting)
 - `haxe.DynamicAccess` (Reflect-backed dynamic maps)
 - `haxe.Http`
+- `haxe.Int64` (signed 64-bit wrapping semantics on BEAM integers)
+- `haxe.Int64Helper`
 - `haxe.Log`
 - `haxe.Serializer` (portable data subset)
 - `haxe.Template` (portable rendering subset)
