@@ -1,3 +1,10 @@
+## [0.12.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.12.0...v0.12.1) (2026-07-01)
+
+
+### Bug Fixes
+
+* **todo-app:** decode boundary bools without casts ([a767142](https://github.com/fullofcaffeine/reflaxe.elixir/commit/a76714298395bc41bbda88f91f20a826409fe013))
+
 # [0.12.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.11.0...v0.12.0) (2026-06-29)
 
 
