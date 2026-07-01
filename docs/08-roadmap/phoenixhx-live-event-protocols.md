@@ -658,21 +658,22 @@ router complexity; it should borrow the shape of the implementation:
 - Use warnings for inferential checks such as "does `handleEvent` call the
   dispatcher?", then escalate under `-D phoenixhx_live_events_strict`.
 
-Implementation should evaluate whether the generated companion is best produced
-through a `@:genericBuild` placeholder type or through `Context.defineType` from
-the protocol metadata. The public API should stay stable either way. The
-important constraints are deterministic type generation, deterministic manifest
-hashes, and generated Elixir/JS that remains easy to snapshot and review.
-
-Current API note: the implemented entrypoint is still:
+The generated companion is intentionally produced through an explicit
+`@:genericBuild` placeholder type in v1:
 
 ```haxe
 typedef HookEvents = LiveEventProtocolCompanion<HookClientEvent>;
 ```
 
-The companion name should come from the `typedef HookEvents =
-LiveEventProtocolCompanion<HookClientEvent>` alias or the enum default, not from
-a required string parameter.
+That typedef is not just syntactic ceremony: it gives Haxe a local type
+reference that deterministically triggers companion generation in both JS and
+Elixir builds. Metadata-only generation would require a broader global
+discovery hook or enum-side build macro, which is more sensitive to macro timing
+and DCE. Keep the typedef form for v1; revisit direct generated imports only if
+a real app shows the alias is a recurring source of mistakes.
+
+The companion module name should come from the typedef alias or the enum
+default, not from a required string parameter.
 
 Initial implementation note: `phoenix.live_view.macros.LiveEventProtocolModel`
 now normalizes a `@:liveEventProtocol` enum into a deterministic protocol
@@ -758,8 +759,6 @@ drift, but raw Phoenix remains available.
 
 Current remaining v1 polish:
 
-- Decide whether to add metadata-only generated companion imports or keep the
-  explicit `typedef FooEvents = LiveEventProtocolCompanion<FooEvent>` shape.
 - Decide whether known-but-invalid payloads need a distinct diagnostic/telemetry
   result beyond the current safe `NoReply(socket)` behavior.
 - Add typed replies only after fire-and-forget hook events remain stable in the

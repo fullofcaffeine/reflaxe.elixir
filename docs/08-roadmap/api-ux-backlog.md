@@ -32,10 +32,11 @@ These are the immediate follow-ups selected from the audit:
   encode/decode, Genes JS push helpers, explicit LiveView dispatch binding,
   todo-app migration, typedef payloads, custom codecs, and stricter nullable
   payload diagnostics. Known invalid payloads are now consumed safely as
-  no-op replies instead of falling through as unknown events. Remaining polish
-  is API-shape work: direct companion imports versus the current
-  `LiveEventProtocolCompanion<T>` typedef, optional-field examples, richer
-  invalid-payload diagnostics/telemetry, and eventual typed replies. The v1 plan
+  no-op replies instead of falling through as unknown events. The v1 companion
+  shape intentionally stays as an explicit
+  `typedef FooEvents = LiveEventProtocolCompanion<FooEvent>` trigger because it
+  keeps macro generation local and deterministic. Remaining polish is richer
+  invalid-payload diagnostics/telemetry and eventual typed replies. The v1 plan
   is tracked in
   [`phoenixhx-live-event-protocols.md`](phoenixhx-live-event-protocols.md) and
   Bead `haxe.elixir.codex-7on`.

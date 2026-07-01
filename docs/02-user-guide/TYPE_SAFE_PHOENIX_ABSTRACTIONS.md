@@ -254,6 +254,11 @@ enum HookClientEvent {
 typedef HookEvents = LiveEventProtocolCompanion<HookClientEvent>;
 ```
 
+The companion typedef is the v1 generation trigger. It gives both the JS and
+Elixir builds an explicit local type reference, so PhoenixHx can generate the
+same companion helpers deterministically without relying on project-wide
+metadata discovery.
+
 Client hook code imports the generated companion typedef and calls generated
 push helpers:
 
