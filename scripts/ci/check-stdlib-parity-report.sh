@@ -171,8 +171,8 @@ md_expectations = {
         r"Intersection \(local provides\):\s+\*\*(\d+)\*\*",
         len(intersection),
     ),
-    "Missing locally": (
-        r"Missing locally\s+\(reference-only\):\s+\*\*(\d+)\*\*",
+    "Still to port": (
+        r"Still to port:\s+\*\*(\d+)\*\*",
         len(reference_only),
     ),
     "Local-only": (
