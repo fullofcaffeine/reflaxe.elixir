@@ -3,7 +3,7 @@ defmodule TestAppWeb.GoldenLive do
   use Phoenix.LiveView, layout: {TestAppWeb.Layouts, :app}
   def mount(_params, _session, socket) do
     live = socket
-    live = Phoenix.Component.assign(live, %{:counter => 0, :search_query => "", :sort_by => "created", :selected_tags => []})
+    live = Phoenix.Component.assign(live, %{counter: 0, search_query: "", sort_by: "created", selected_tags: []})
     {:ok, live}
   end
   def handle_info(msg, socket) do
@@ -12,7 +12,7 @@ defmodule TestAppWeb.GoldenLive do
       {:external_increment, amount} ->
         Phoenix.Component.update(live, :counter, fn n -> n + amount end)
       {:external_reset} ->
-        Phoenix.Component.assign(live, %{:counter => 0, :search_query => "", :selected_tags => []})
+        Phoenix.Component.assign(live, %{counter: 0, search_query: "", selected_tags: []})
     end)
     {:noreply, next_socket}
   end
