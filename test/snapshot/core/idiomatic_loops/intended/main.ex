@@ -275,9 +275,6 @@ end) do
       acc_product_acc = acc_product_acc * n
       {acc_sum_acc, acc_count_acc, acc_product_acc}
     end)
-    _ = "start"
-    _ = "processing"
-    _ = "done"
     current_state = 0
     events = ["begin", "work", "work", "finish"]
     _g = 0

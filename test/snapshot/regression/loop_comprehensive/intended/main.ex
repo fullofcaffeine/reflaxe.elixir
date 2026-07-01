@@ -21,10 +21,6 @@ end)
   end
   nil
 end)
-    _ = 1
-    _ = 2
-    _ = 3
-    _ = 4
     count = 0
     {_count} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count}, fn _, {acc_count} ->
       try do

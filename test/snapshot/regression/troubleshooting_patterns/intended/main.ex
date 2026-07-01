@@ -65,11 +65,6 @@ defmodule Main do
     header_1 = 254
     header_2 = 4
     header_3 = 0
-    _ = 72
-    _ = 101
-    _ = 108
-    _ = 108
-    _ = 111
     switch_result_2 = (case 9 do
       3 when header_0 == 255 ->
         cond do

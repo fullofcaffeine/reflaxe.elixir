@@ -64,11 +64,6 @@ defmodule Main do
       std_random_max when std_random_max <= 0 -> 0
       std_random_max -> (:rand.uniform(std_random_max) - 1)
     end)
-    _ = 3
-    _ = 3
-    _ = -2
-    _ = -2
-    _ = 0
     nil
   end
 end

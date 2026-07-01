@@ -12,7 +12,6 @@ defmodule Main do
     _ = t__3
     nested__1__1 = "nested"
     nested__1__2 = 99
-    _ = "outer"
     _inner_first = nested__1__1
     _inner_second = nested__1__2
     _result = get_tuple()

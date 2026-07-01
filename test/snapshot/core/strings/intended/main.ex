@@ -6,9 +6,6 @@ defmodule Main do
     nil
   end
   def string_interpolation() do
-    _ = "apple"
-    _ = "banana"
-    _ = "orange"
     nil
   end
   def string_methods() do
@@ -25,7 +22,6 @@ defmodule Main do
   def string_comparison() do
     str1 = "apple"
     str2 = "Apple"
-    _ = "apple"
     str4 = "banana"
     if (str1 < str4), do: nil
     if (String.downcase(str1) == String.downcase(str2)), do: nil

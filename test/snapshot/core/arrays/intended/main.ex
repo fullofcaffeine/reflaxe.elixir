@@ -5,10 +5,6 @@ defmodule Main do
     _ = apply(Map.get(numbers, :__reflaxe_class__) || Map.get(numbers, :__struct__), :unshift, [numbers, 0])
     _popped = apply(Map.get(numbers, :__reflaxe_class__) || Map.get(numbers, :__struct__), :pop, [numbers])
     _shifted = apply(Map.get(numbers, :__reflaxe_class__) || Map.get(numbers, :__struct__), :shift, [numbers])
-    _ = 1
-    _ = "hello"
-    _ = true
-    _ = 3.14
     nil
   end
   def array_iteration() do

@@ -15,11 +15,7 @@ defmodule Main do
     _ = assert("Hello" == "Hello", "String equality should work")
     _ = assert(true == true, "Boolean equality should work")
     arr1_0 = 1
-    _ = 2
-    _ = 3
     arr2_0 = 1
-    _ = 2
-    _ = 3
     _ = assert(3 == 3, "Array lengths should be equal")
     _ = assert(arr1_0 == arr2_0, "First elements should be equal")
   end
@@ -83,9 +79,6 @@ defmodule Main do
   end
   test "complex scenarios" do
     data_name = "Test"
-    _ = 10
-    _ = 20
-    _ = 30
     data_nested_flag = true
     data_nested_count = 3
     _ = assert(data_name == "Test", "Name field should be 'Test'")

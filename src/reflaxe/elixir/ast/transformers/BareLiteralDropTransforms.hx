@@ -11,6 +11,8 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHAT
  * - Removes standalone literal expressions from statement lists (`EBlock`/`EDo`) when they are not
  *   the final expression of the block.
+ * - Also removes non-final wildcard matches to pure literals, such as `_ = 1`, because those are
+ *   explicit discard statements with no side effects.
  *
  * WHY
  * - Elixir warns on “code block contains unused literal …” when a literal appears in statement
@@ -18,8 +20,9 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   used for its side-effects (e.g. `DynamicAccess.set("y", 7);` returns `7`).
  *
  * HOW
- * - Walk `EBlock` and `EDo` and filter out non-final statements that are pure literals
- *   (`EInteger`, `EFloat`, `EString`, `EBoolean`, `ENil`, `EAtom`, `ECharlist`).
+ * - Walk `EBlock` and `EDo` and filter out non-final statements that are either pure literals
+ *   (`EInteger`, `EFloat`, `EString`, `EBoolean`, `ENil`, `EAtom`, `ECharlist`) or wildcard
+ *   matches whose RHS is one of those pure literals.
  *
  * EXAMPLES
  * Haxe:
@@ -50,12 +53,27 @@ class BareLiteralDropTransforms {
 		var out:Array<ElixirAST> = [];
 		for (i in 0...stmts.length) {
 			var s = stmts[i];
-			if (i < stmts.length - 1 && isPureLiteral(s)) {
+			if (i < stmts.length - 1 && isDiscardedPureLiteral(s)) {
 				continue;
 			}
 			out.push(s);
 		}
 		return out;
+	}
+
+	static function isDiscardedPureLiteral(ast:ElixirAST):Bool {
+		if (ast == null)
+			return false;
+		return switch (ast.def) {
+			case EParen(inner):
+				isDiscardedPureLiteral(inner);
+			case EMatch(pattern, rhs) if (isWildcardPattern(pattern)):
+				isPureLiteral(rhs);
+			case EBinary(Match, lhs, rhs) if (isWildcardExpr(lhs)):
+				isPureLiteral(rhs);
+			default:
+				isPureLiteral(ast);
+		}
 	}
 
 	static function isPureLiteral(ast:ElixirAST):Bool {
@@ -66,6 +84,28 @@ class BareLiteralDropTransforms {
 				isPureLiteral(inner);
 			case EBlock(exprs): exprs != null && exprs.length == 1 && isPureLiteral(exprs[0]);
 			case EAtom(_) | EString(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil | ECharlist(_):
+				true;
+			default:
+				false;
+		}
+	}
+
+	static function isWildcardPattern(pattern:EPattern):Bool {
+		return switch (pattern) {
+			case PWildcard | PVar("_"):
+				true;
+			default:
+				false;
+		}
+	}
+
+	static function isWildcardExpr(ast:ElixirAST):Bool {
+		if (ast == null)
+			return false;
+		return switch (ast.def) {
+			case EParen(inner):
+				isWildcardExpr(inner);
+			case EVar("_"):
 				true;
 			default:
 				false;

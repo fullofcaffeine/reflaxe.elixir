@@ -24,7 +24,6 @@ defmodule Main do
     read = 1
     write = 2
     _result2 = Bitwise.bor(read, write)
-    _ = 15
     nil
   end
   defp test_bitwise_xor() do
@@ -39,7 +38,6 @@ defmodule Main do
   defp test_shift_left() do
     value = 1
     _result1 = Bitwise.bsl(value, 4)
-    _ = 256
     shift_by = 3
     _result3 = Bitwise.bsl(value, shift_by)
     nil
@@ -47,7 +45,6 @@ defmodule Main do
   defp test_shift_right() do
     value = 256
     _result1 = Bitwise.bsr(value, 4)
-    _ = 256
     shift_by = 3
     _result3 = Bitwise.bsr(value, shift_by)
     nil

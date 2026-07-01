@@ -335,9 +335,6 @@ end).(), ",") end).()}"
       3 -> "Error"
       _ -> "Unknown status"
     end)
-    _ = 1
-    _ = 2
-    _ = 3
     array_result = (case 3 do
       0 -> "Empty"
       1 -> "Single: #{Reflaxe.Elixir.HaxeFloat.to_string(x)}"
@@ -354,8 +351,6 @@ end).(), ",") end).()}"
   def test_nested_patterns_with_guards() do
     data_user_age = 28
     data_user_active = true
-    _ = "read"
-    _ = "write"
     age = data_user_age
     perms = 2
     active = data_user_active

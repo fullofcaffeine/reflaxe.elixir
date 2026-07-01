@@ -5,8 +5,6 @@ defmodule DataStructureTest do
     array = Array.new()
     array = array ++ ["first"]
     _ = array ++ ["second"]
-    _ = 1
-    _ = 2
     _ = 3
   end
 end

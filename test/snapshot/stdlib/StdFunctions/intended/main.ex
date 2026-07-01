@@ -37,9 +37,6 @@ defmodule Main do
       std_random_max when std_random_max <= 0 -> 0
       std_random_max -> (:rand.uniform(std_random_max) - 1)
     end)
-    _ = 3
-    _ = 9
-    _ = -4
     _int_max = (case Integer.parse("2147483647") do
       {num, _} -> num
       :error -> nil
