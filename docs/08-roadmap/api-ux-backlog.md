@@ -38,8 +38,10 @@ These are the immediate follow-ups selected from the audit:
   keeps macro generation local and deterministic. Invalid-payload
   diagnostics/telemetry are deferred past v1 until the dispatcher API can expose
   an explicit invalid-payload result instead of adding side effects to the
-  current `Null<HandleEventResult<T>>` helper. Remaining polish is eventual
-  typed replies. The v1 plan
+  current `Null<HandleEventResult<T>>` helper. Typed replies from hook pushes
+  are also deferred past v1; direct PhoenixHx remains the recommended path for
+  reply-shaped flows until there is a separate reply payload and timeout/error
+  handling design. The v1 plan
   is tracked in
   [`phoenixhx-live-event-protocols.md`](phoenixhx-live-event-protocols.md) and
   Bead `haxe.elixir.codex-7on`.

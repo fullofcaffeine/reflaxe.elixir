@@ -760,10 +760,10 @@ drift, but raw Phoenix remains available.
 8. Register generated event names with HXX/HEEx strict event validation.
 9. Document the generated path in the user guide after the API is implemented.
 
-Current remaining v1 polish:
-
-- Add typed replies only after fire-and-forget hook events remain stable in the
-  todo-app and generated snapshots.
+Current remaining v1 polish: none. The implemented v1 scope is the
+fire-and-forget protocol path: generated event names, encode/decode helpers,
+JS hook push helpers, explicit LiveView dispatch, handler validation, and safe
+consumption of malformed known payloads.
 
 ## Required Validation
 
@@ -782,7 +782,9 @@ Current remaining v1 polish:
 
 - Automatically wrapping or replacing `handleEvent`.
 - Inferring protocols from arbitrary `handleEvent` bodies.
-- Typed replies from hook pushes.
+- Typed replies from hook pushes. Keep direct PhoenixHx `hook.pushEvent(...)`
+  code for reply-shaped flows until there is a separate v2 design for reply
+  payload typing and timeout/error handling.
 - App-wide profile/backend switches.
 - Custom runtime event systems that do not lower to Phoenix `pushEvent` and
   `handle_event/3`.
