@@ -61,7 +61,7 @@ defmodule Main do
 
     this1 = _ = Ecto.Changeset.cast(this1, Map.get(this1, :params, %{}) || %{}, [:name, :email, :age, :role])
     this1 = Ecto.Changeset.validate_required(this1, [:name, :email])
-    this1 = Ecto.Changeset.validate_length(this1, :name, Enum.filter([min: Map.get(%{:min => 2, :max => 80}, :min), max: Map.get(%{:min => 2, :max => 80}, :max), is: Map.get(%{:min => 2, :max => 80}, :is)], fn {_, v} -> v != nil end))
+    this1 = Ecto.Changeset.validate_length(this1, :name, Enum.filter([min: Map.get(%{min: 2, max: 80}, :min), max: Map.get(%{min: 2, max: 80}, :max), is: Map.get(%{min: 2, max: 80}, :is)], fn {_, v} -> v != nil end))
     field = :email
     pattern = EReg.new("@", "")
     message = nil
@@ -93,7 +93,7 @@ defmodule Main do
                not_equal_to: Map.get(opts, :not_equal_to)
              ]
              |> Enum.filter(fn {_, value} -> value != nil end)
-           end).(%{:min => 18, :max => 120})
+           end).(%{min: 18, max: 120})
 )
     cs = Ecto.Changeset.validate_inclusion(this1, :role, ["admin", "user"])
     cs = Ecto.Changeset.validate_exclusion(cs, :role, ["blocked"])
@@ -158,7 +158,7 @@ defmodule Main do
 
     this1 = _ = Ecto.Changeset.cast(this1, Map.get(this1, :params, %{}) || %{}, [:name, :email])
     cs = Ecto.Changeset.validate_required(this1, [:name])
-    cs = Ecto.Changeset.validate_length(cs, :name, Enum.filter([min: Map.get(%{:min => 2}, :min), max: Map.get(%{:min => 2}, :max), is: Map.get(%{:min => 2}, :is)], fn {_, v} -> v != nil end))
+    cs = Ecto.Changeset.validate_length(cs, :name, Enum.filter([min: Map.get(%{min: 2}, :min), max: Map.get(%{min: 2}, :max), is: Map.get(%{min: 2}, :is)], fn {_, v} -> v != nil end))
     cs
   end
 end

@@ -1,7 +1,7 @@
 defmodule Main do
   use ExUnit.Case, async: :true
   setup_all context do
-    %{:shared_resource => "database_connection", :test_environment => "test"}
+    %{shared_resource: "database_connection", test_environment: "test"}
   end
   setup context do
     shared_resource = (case context do
@@ -12,7 +12,7 @@ defmodule Main do
             Map.get(dyn_obj, :shared_resource)
         end)
     end)
-    %{:test_id => :rand.uniform(), :timestamp => DateTime.utc_now()}
+    %{test_id: :rand.uniform(), timestamp: DateTime.utc_now()}
   end
   setup context do
     _ = on_exit(fn -> nil end)

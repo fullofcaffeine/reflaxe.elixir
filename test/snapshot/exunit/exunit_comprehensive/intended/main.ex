@@ -1,11 +1,11 @@
 defmodule Main do
   use ExUnit.Case
   setup_all context do
-    %{:shared_data => "test_data"}
+    %{shared_data: "test_data"}
   end
   setup context do
     context[:test_counter] + 1
-    %{:test_number => context[:test_counter]}
+    %{test_number: context[:test_counter]}
   end
   setup context do
     _ = on_exit(fn -> setup_called = false end)
@@ -54,7 +54,7 @@ end) > 0, "Should contain 'World'")
     _ = assert(15 == sum, "Sum should be 15")
   end
   test "pattern matching" do
-    result = %{:type => "ok", :value => "success"}
+    result = %{type: "ok", value: "success"}
     (case (case result do
   dyn_obj ->
     (case Map.fetch(dyn_obj, "type") do
@@ -167,7 +167,7 @@ end), haxe_exception} do
     end
   end
   test "data driven" do
-    test_cases = [%{:input => 1, :expected => 2}, %{:input => 2, :expected => 4}, %{:input => 3, :expected => 6}, %{:input => 4, :expected => 8}, %{:input => 5, :expected => 10}]
+    test_cases = [%{input: 1, expected: 2}, %{input: 2, expected: 4}, %{input: 3, expected: 6}, %{input: 4, expected: 8}, %{input: 5, expected: 10}]
     _g = 0
     _ = Enum.each(test_cases, fn test_case ->
   result = test_case.input * 2

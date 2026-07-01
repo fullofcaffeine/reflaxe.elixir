@@ -6,7 +6,7 @@ defmodule Main do
     _ = test_supervision_tree()
   end
   defp test_supervisor() do
-    children = [%{:id => "worker1", :start => {MyWorker, :start_link, [%{:name => "worker1"}]}, :restart => {:permanent}, :type => {:worker}}, %{:id => "worker2", :start => {MyWorker, :start_link, [%{:name => "worker2"}]}, :restart => {:temporary}, :type => {:worker}}, %{:id => "sub_supervisor", :start => {SubSupervisor, :start_link, [%{}]}, :restart => {:permanent}, :type => {:supervisor}}]
+    children = [%{id: "worker1", start: {MyWorker, :start_link, [%{name: "worker1"}]}, restart: {:permanent}, type: {:worker}}, %{id: "worker2", start: {MyWorker, :start_link, [%{name: "worker2"}]}, restart: {:temporary}, type: {:worker}}, %{id: "sub_supervisor", start: {SubSupervisor, :start_link, [%{}]}, restart: {:permanent}, type: {:supervisor}}]
     options = [strategy: :one_for_one, max_restarts: 5, max_seconds: 10]
     result = Supervisor.start_link(children, options)
     supervisor = result
@@ -15,7 +15,7 @@ defmodule Main do
     _ = Supervisor.restart_child(supervisor, "worker1")
     _ = Supervisor.terminate_child(supervisor, "worker2")
     _ = Supervisor.delete_child(supervisor, "worker2")
-    new_child = %{:id => "dynamic", :start => {DynamicWorker, :start_link, [%{}]}, :restart => {:transient}, :type => {:worker}}
+    new_child = %{id: "dynamic", start: {DynamicWorker, :start_link, [%{}]}, restart: {:transient}, type: {:worker}}
     _ = Supervisor.start_child(supervisor, new_child)
     _stats = Supervisor.count_children(supervisor)
     if (Process.alive?(supervisor)), do: nil
@@ -93,7 +93,7 @@ end)
     end
   end
   defp test_supervision_tree() do
-    children = [%{:id => "worker1", :start => {Worker1, :start_link, [%{}]}, :restart => {:permanent}, :type => {:worker}}, %{:id => "worker2", :start => {Worker2, :start_link, [%{}]}, :restart => {:temporary}, :type => {:worker}}, %{:id => "worker3", :start => {Worker3, :start_link, [%{}]}, :restart => {:transient}, :type => {:worker}}]
+    children = [%{id: "worker1", start: {Worker1, :start_link, [%{}]}, restart: {:permanent}, type: {:worker}}, %{id: "worker2", start: {Worker2, :start_link, [%{}]}, restart: {:temporary}, type: {:worker}}, %{id: "worker3", start: {Worker3, :start_link, [%{}]}, restart: {:transient}, type: {:worker}}]
     options = [strategy: :one_for_all, max_restarts: 10, max_seconds: 60]
     result = Supervisor.start_link(children, options)
     supervisor = result

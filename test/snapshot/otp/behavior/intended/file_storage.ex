@@ -24,7 +24,7 @@ end)}
     else
       struct
     end
-    %{:ok => struct}
+    %{ok: struct}
   end
   def get(_struct, _key) do
     nil

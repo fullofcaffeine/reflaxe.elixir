@@ -5,7 +5,7 @@ defmodule MemoryStorage do
     struct
   end
   def init(struct, _config) do
-    %{:ok => struct}
+    %{ok: struct}
   end
   def get(struct, key) do
     this1 = struct.data

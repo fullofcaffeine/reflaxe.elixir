@@ -79,7 +79,7 @@ defmodule Main do
                not_equal_to: Map.get(opts, :not_equal_to)
              ]
              |> Enum.filter(fn {_, value} -> value != nil end)
-           end).(%{:greater_than_or_equal_to => 18, :less_than_or_equal_to => 120})
+           end).(%{greater_than_or_equal_to: 18, less_than_or_equal_to: 120})
 )
     _ = Ecto.Changeset.validate_number(this1, :score,
           (fn opts ->
@@ -104,7 +104,7 @@ defmodule Main do
                not_equal_to: Map.get(opts, :not_equal_to)
              ]
              |> Enum.filter(fn {_, value} -> value != nil end)
-           end).(%{:greater_than => 0, :less_than => 100, :not_equal_to => 13})
+           end).(%{greater_than: 0, less_than: 100, not_equal_to: 13})
 )
     cs
   end
@@ -188,7 +188,7 @@ defmodule Main do
                not_equal_to: Map.get(opts, :not_equal_to)
              ]
              |> Enum.filter(fn {_, value} -> value != nil end)
-           end).(%{:min => 18, :max => 120})
+           end).(%{min: 18, max: 120})
 )
     cs
   end

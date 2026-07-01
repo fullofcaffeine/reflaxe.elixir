@@ -9,23 +9,23 @@ defmodule TableBuilder do
     struct
   end
   def add_column(struct, name, type, options_param) do
-    %{struct | columns: struct.columns ++ [%{:name => name, :type => type, :options => (if (not Kernel.is_nil(options_param)), do: options_param, else: nil)}]}
+    %{struct | columns: struct.columns ++ [%{name: name, type: type, options: (if (not Kernel.is_nil(options_param)), do: options_param, else: nil)}]}
   end
   def add_id(struct, name, type) do
     if (type == {:auto_increment}) do
-      apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :add_column, [struct, name, {:integer}, %{:primary_key => true, :auto_generate => true}])
+      apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :add_column, [struct, name, {:integer}, %{primary_key: true, auto_generate: true}])
     else
-      apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :add_column, [struct, name, {:uuid}, %{:primary_key => true, :auto_generate => true}])
+      apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :add_column, [struct, name, {:uuid}, %{primary_key: true, auto_generate: true}])
     end
   end
   def add_timestamps(struct) do
-    _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :add_column, [struct, "inserted_at", {:date_time}, %{:nullable => false}])
-    _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :add_column, [struct, "updated_at", {:date_time}, %{:nullable => false}])
+    _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :add_column, [struct, "inserted_at", {:date_time}, %{nullable: false}])
+    _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :add_column, [struct, "updated_at", {:date_time}, %{nullable: false}])
     struct
   end
   def add_reference(struct, column_name, referenced_table, options_param) do
     column_options = nil
-    column_options = if (not Kernel.is_nil(options_param)), do: %{:nullable => false, :on_delete => options_param.on_delete, :on_update => options_param.on_update}, else: column_options
+    column_options = if (not Kernel.is_nil(options_param)), do: %{nullable: false, on_delete: options_param.on_delete, on_update: options_param.on_update}, else: column_options
     _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :add_column, [struct, column_name, {:references, referenced_table}, column_options])
     struct
   end
@@ -33,12 +33,12 @@ defmodule TableBuilder do
     apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :add_reference, [struct, column_name, referenced_table, options_param])
   end
   def add_index(struct, columns_param, options_param) do
-    %{struct | indexes: struct.indexes ++ [%{:columns => columns_param, :options => options_param}]}
+    %{struct | indexes: struct.indexes ++ [%{columns: columns_param, options: options_param}]}
   end
   def add_unique_constraint(struct, columns_param, name) do
-    %{struct | constraints: struct.constraints ++ [%{:type => {:unique}, :columns => columns_param, :name => name, :expression => nil}]}
+    %{struct | constraints: struct.constraints ++ [%{type: {:unique}, columns: columns_param, name: name, expression: nil}]}
   end
   def add_check_constraint(struct, name, expression) do
-    %{struct | constraints: struct.constraints ++ [%{:type => {:check}, :name => name, :expression => expression, :columns => nil}]}
+    %{struct | constraints: struct.constraints ++ [%{type: {:check}, name: name, expression: expression, columns: nil}]}
   end
 end

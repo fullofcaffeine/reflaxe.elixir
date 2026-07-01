@@ -60,7 +60,7 @@ defmodule Main do
            end).(user, params)
 
     this1 = Ecto.Changeset.validate_required(this1, [:name])
-    this1 = Ecto.Changeset.validate_length(this1, :name, Enum.filter([min: Map.get(%{:min => 2}, :min), max: Map.get(%{:min => 2}, :max), is: Map.get(%{:min => 2}, :is)], fn {_, v} -> v != nil end))
+    this1 = Ecto.Changeset.validate_length(this1, :name, Enum.filter([min: Map.get(%{min: 2}, :min), max: Map.get(%{min: 2}, :max), is: Map.get(%{min: 2}, :is)], fn {_, v} -> v != nil end))
     cs = Ecto.Changeset.validate_inclusion(this1, :role, ["admin", "user"])
     cs = Ecto.Changeset.validate_exclusion(cs, :role, ["blocked"])
     cs
@@ -182,7 +182,7 @@ defmodule Main do
              Ecto.Changeset.cast(data, normalized_params, Map.keys(normalized_params))
            end).(user, params)
 
-    changeset = changeset |> Ecto.Changeset.validate_required([:name]) |> Ecto.Changeset.validate_length(:name, Enum.filter([min: Map.get(%{:min => 2}, :min), max: Map.get(%{:min => 2}, :max), is: Map.get(%{:min => 2}, :is)], fn {_, v} -> v != nil end)) |> Ecto.Changeset.validate_inclusion(:role, ["admin", "user"]) |> Ecto.Changeset.validate_exclusion(:role, ["blocked"])
+    changeset = changeset |> Ecto.Changeset.validate_required([:name]) |> Ecto.Changeset.validate_length(:name, Enum.filter([min: Map.get(%{min: 2}, :min), max: Map.get(%{min: 2}, :max), is: Map.get(%{min: 2}, :is)], fn {_, v} -> v != nil end)) |> Ecto.Changeset.validate_inclusion(:role, ["admin", "user"]) |> Ecto.Changeset.validate_exclusion(:role, ["blocked"])
     changeset
   end
 end

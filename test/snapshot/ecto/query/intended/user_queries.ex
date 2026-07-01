@@ -2,44 +2,44 @@ defmodule UserQueries do
   @compile {:nowarn_unused_function, [from: 3, where: 3]}
 
   def get_all_users() do
-    from("users", "u", %{:select => "u"})
+    from("users", "u", %{select: "u"})
   end
   def get_active_users() do
-    from("users", "u", %{:where => %{:active => true}, :select => "u"})
+    from("users", "u", %{where: %{active: true}, select: "u"})
   end
   def get_users_by_age(min_age, max_age) do
-    from("users", "u", %{:where => %{:age_gte => min_age, :age_lte => max_age}, :select => "u"})
+    from("users", "u", %{where: %{age_gte: min_age, age_lte: max_age}, select: "u"})
   end
   def get_recent_users(limit) do
-    from("users", "u", %{:order_by => %{:created_at => "desc"}, :limit => limit, :select => "u"})
+    from("users", "u", %{order_by: %{created_at: "desc"}, limit: limit, select: "u"})
   end
   def get_users_with_posts() do
-    from("users", "u", %{:join => %{:table => "posts", :alias => "p", :on => "p.user_id == u.id"}, :select => %{:user => "u", :posts => "p"}})
+    from("users", "u", %{join: %{table: "posts", alias: "p", on: "p.user_id == u.id"}, select: %{user: "u", posts: "p"}})
   end
   def get_users_with_optional_profile() do
-    from("users", "u", %{:left_join => %{:table => "profiles", :alias => "pr", :on => "pr.user_id == u.id"}, :select => %{:user => "u", :profile => "pr"}})
+    from("users", "u", %{left_join: %{table: "profiles", alias: "pr", on: "pr.user_id == u.id"}, select: %{user: "u", profile: "pr"}})
   end
   def get_user_post_counts() do
-    from("users", "u", %{:left_join => %{:table => "posts", :alias => "p", :on => "p.user_id == u.id"}, :group_by => "u.id", :select => %{:user => "u", :post_count => "count(p.id)"}})
+    from("users", "u", %{left_join: %{table: "posts", alias: "p", on: "p.user_id == u.id"}, group_by: "u.id", select: %{user: "u", post_count: "count(p.id)"}})
   end
   def get_active_posters(min_posts) do
-    from("users", "u", %{:left_join => %{:table => "posts", :alias => "p", :on => "p.user_id == u.id"}, :group_by => "u.id", :having => "count(p.id) >= " <> Reflaxe.Elixir.HaxeFloat.to_string(min_posts), :select => %{:user => "u", :post_count => "count(p.id)"}})
+    from("users", "u", %{left_join: %{table: "posts", alias: "p", on: "p.user_id == u.id"}, group_by: "u.id", having: "count(p.id) >= " <> Reflaxe.Elixir.HaxeFloat.to_string(min_posts), select: %{user: "u", post_count: "count(p.id)"}})
   end
   def get_top_users() do
-    subquery = from("posts", "p", %{:group_by => "p.user_id", :select => %{:user_id => "p.user_id", :count => "count(p.id)"}})
-    _ = from("users", "u", %{:join => %{:table => subquery, :alias => "s", :on => "s.user_id == u.id"}, :where => %{:count_gt => 10}, :select => "u"})
+    subquery = from("posts", "p", %{group_by: "p.user_id", select: %{user_id: "p.user_id", count: "count(p.id)"}})
+    _ = from("users", "u", %{join: %{table: subquery, alias: "s", on: "s.user_id == u.id"}, where: %{count_gt: 10}, select: "u"})
   end
   def get_users_with_associations() do
-    from("users", "u", %{:preload => ["posts", "profile", "comments"], :select => "u"})
+    from("users", "u", %{preload: ["posts", "profile", "comments"], select: "u"})
   end
   def deactivate_old_users(days) do
-    from("users", "u", %{:where => %{:last_login_lt => "ago(" <> Reflaxe.Elixir.HaxeFloat.to_string(days) <> ", \"day\")"}, :update => %{:active => false}})
+    from("users", "u", %{where: %{last_login_lt: "ago(" <> Reflaxe.Elixir.HaxeFloat.to_string(days) <> ", \"day\")"}, update: %{active: false}})
   end
   def delete_inactive_users() do
-    from("users", "u", %{:where => %{:active => false}, :delete_all => true})
+    from("users", "u", %{where: %{active: false}, delete_all: true})
   end
   def search_users(filters) do
-    query = from("users", "u", %{:select => "u"})
+    query = from("users", "u", %{select: "u"})
     query = if ((Reflaxe.Elixir.HaxeFloat.neq(((case filters do
   dyn_obj ->
     (case Map.fetch(dyn_obj, "name") do
@@ -48,7 +48,7 @@ defmodule UserQueries do
         Map.get(dyn_obj, :name)
     end)
 end)), nil))) do
-      where(query, "u", (fn -> %{:name_ilike => (case filters do
+      where(query, "u", (fn -> %{name_ilike: (case filters do
   dyn_obj ->
     (case Map.fetch(dyn_obj, "name") do
       {:ok, dyn_value} -> dyn_value
@@ -67,7 +67,7 @@ end)} end).())
         Map.get(dyn_obj, :email)
     end)
 end)), nil))) do
-      where(query, "u", (fn -> %{:email => (case filters do
+      where(query, "u", (fn -> %{email: (case filters do
   dyn_obj ->
     (case Map.fetch(dyn_obj, "email") do
       {:ok, dyn_value} -> dyn_value
@@ -86,7 +86,7 @@ end)} end).())
         Map.get(dyn_obj, :min_age)
     end)
 end)), nil))) do
-      where(query, "u", (fn -> %{:age_gte => (case filters do
+      where(query, "u", (fn -> %{age_gte: (case filters do
   dyn_obj ->
     (case Map.fetch(dyn_obj, "min_age") do
       {:ok, dyn_value} -> dyn_value

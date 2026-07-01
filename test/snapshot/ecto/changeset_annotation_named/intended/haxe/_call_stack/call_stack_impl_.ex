@@ -10,7 +10,12 @@ end
   end
   def exception_stack(full_stack) do
     exception_stack = stack_trace_to_haxe(Process.get(:__reflaxe_last_stacktrace__, []))
-    if (full_stack), do: exception_stack, else: subtract(exception_stack, call_stack())
+    if (full_stack) do
+      exception_stack
+    else
+      this1 = subtract(exception_stack, call_stack())
+      this1
+    end
   end
   defp stack_trace_to_haxe(stack_trace) do
 

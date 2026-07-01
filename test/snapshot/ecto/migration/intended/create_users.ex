@@ -8,7 +8,7 @@ defmodule CreateUsers do
     _ = add_column(struct, "users", "bio", "text", nil, nil)
     _ = add_column(struct, "users", "active", "boolean", nil, true)
     _ = add_timestamps(struct, "users")
-    _ = add_index(struct, "users", ["email"], %{:unique => true})
+    _ = add_index(struct, "users", ["email"], %{unique: true})
     _ = add_index(struct, "users", ["name", "active"], nil)
     _ = add_check_constraint(struct, "users", "age_check", "age >= 0 AND age <= 150")
   end
