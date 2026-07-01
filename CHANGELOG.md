@@ -1,3 +1,10 @@
+## [0.12.2](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.12.1...v0.12.2) (2026-07-01)
+
+
+### Bug Fixes
+
+* **codegen:** drop wildcard literal discards ([1a343be](https://github.com/fullofcaffeine/reflaxe.elixir/commit/1a343be0772773fd488748ae940c974d1bedbb57))
+
 ## [0.12.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.12.0...v0.12.1) (2026-07-01)
 
 
