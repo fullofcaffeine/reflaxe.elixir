@@ -4,11 +4,11 @@ defmodule TodoEvents do
       {:toggle_todo, id} ->
         wire_payload = %{}
         wire_payload = Map.put(wire_payload, "id", id)
-        %{:event => "toggle_todo", :payload => wire_payload}
+        %{event: "toggle_todo", payload: wire_payload}
       {:clipboard_copied, message} ->
         wire_payload = %{}
         wire_payload = Map.put(wire_payload, "message", message)
-        %{:event => "clipboard_copied", :payload => wire_payload}
+        %{event: "clipboard_copied", payload: wire_payload}
     end)
   end
   def decode(event_name, payload) do

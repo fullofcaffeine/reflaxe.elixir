@@ -2,7 +2,7 @@ defmodule MyAppWeb.ProfileLive do
   use Phoenix.Component
   use Phoenix.LiveView, layout: {MyAppWeb.Layouts, :app}
   def encode_selected(resource_id, source) do
-    payload = %{:resource_id => resource_id, :source => source}
+    payload = %{resource_id: resource_id, source: source}
     _ = MyApp.ResourceHookEvents.encode({:resource_selected, payload})
   end
   def decode_selected(payload) do

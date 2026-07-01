@@ -15,7 +15,7 @@ defmodule Main do
     nil
   end
   defp test_shadowing_in_if_blocks() do
-    filter = %{:name => "John", :email => "john@example.com", :is_active => true}
+    filter = %{name: "John", email: "john@example.com", is_active: true}
     if (not Kernel.is_nil(filter)) do
       query = this1
       query = if (not Kernel.is_nil(filter.name)) do
@@ -60,6 +60,6 @@ defmodule Main do
     nil
   end
   defp create_abstract_value(value) do
-    %{:type => "abstract", :value => value}
+    %{type: "abstract", value: value}
   end
 end

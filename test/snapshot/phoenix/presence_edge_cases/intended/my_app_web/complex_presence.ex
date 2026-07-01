@@ -10,7 +10,7 @@ defmodule MyAppWeb.ComplexPresence do
     end)
 end))) end).()}_#{Reflaxe.Elixir.HaxeFloat.to_string(DateTime.to_unix(DateTime.utc_now(), :millisecond))}", (fn ->
       v = Reflaxe.Elixir.HaxeFloat.divide(DateTime.to_iso8601(DateTime.utc_now()), 1000)
-      %{:name => Reflaxe.Elixir.HaxeFloat.to_string(((case user do
+      %{name: Reflaxe.Elixir.HaxeFloat.to_string(((case user do
   dyn_obj ->
     (case Map.fetch(dyn_obj, "first_name") do
       {:ok, dyn_value} -> dyn_value
@@ -24,7 +24,7 @@ end))) <> " " <> Reflaxe.Elixir.HaxeFloat.to_string(((case user do
       _ ->
         Map.get(dyn_obj, :last_name)
     end)
-end))), :timestamp => Reflaxe.Elixir.HaxeFloat.floor_int(v), :computed => (if ((Reflaxe.Elixir.HaxeFloat.gt(((case user do
+end))), timestamp: Reflaxe.Elixir.HaxeFloat.floor_int(v), computed: (if ((Reflaxe.Elixir.HaxeFloat.gt(((case user do
   dyn_obj ->
     (case Map.fetch(dyn_obj, "score") do
       {:ok, dyn_value} -> dyn_value
@@ -35,6 +35,6 @@ end)), 100))), do: "expert", else: "novice")}
     end).())
   end
   def track_nested(socket, users) do
-    Enum.map(users, fn user -> MyApp.Presence.track(self(), socket, user.id, %{:status => "online"}) end)
+    Enum.map(users, fn user -> MyApp.Presence.track(self(), socket, user.id, %{status: "online"}) end)
   end
 end

@@ -14,7 +14,7 @@ defmodule TestAppWeb.StreamTokensLive do
     [todo(1, "First")]
   end
   defp todo(id, title) do
-    %{:id => id, :title => title}
+    %{id: id, title: title}
   end
   def handle_event(event, _params, socket) do
     switch_result_1 = (case event do

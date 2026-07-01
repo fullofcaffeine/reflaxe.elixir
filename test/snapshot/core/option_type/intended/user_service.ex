@@ -15,7 +15,7 @@ defmodule UserService do
     value
   end
   def users() do
-    __haxe_static_get__(:users, [%{:name => "Alice", :email => {:some, "alice@example.com"}}, %{:name => "Bob", :email => {:none}}])
+    __haxe_static_get__(:users, [%{name: "Alice", email: {:some, "alice@example.com"}}, %{name: "Bob", email: {:none}}])
   end
   def users(value) do
     __haxe_static_put__(:users, value)

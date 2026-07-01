@@ -2,12 +2,12 @@ defmodule TestApp.Presence do
   use Phoenix.Presence, otp_app: :test_app, pubsub_server: TestApp.PubSub
   def test_simple_track() do
     key = "user:123"
-    meta = %{:online_at => DateTime.to_iso8601(DateTime.utc_now()), :status => "active"}
+    meta = %{online_at: DateTime.to_iso8601(DateTime.utc_now()), status: "active"}
     TestApp.Presence.track(self(), "test:presence", key, meta)
   end
   def test_simple_update() do
     key = "user:123"
-    meta = %{:online_at => DateTime.to_iso8601(DateTime.utc_now()), :status => "away"}
+    meta = %{online_at: DateTime.to_iso8601(DateTime.utc_now()), status: "away"}
     TestApp.Presence.update(self(), "test:presence", key, meta)
   end
   def test_simple_untrack() do
@@ -16,16 +16,16 @@ defmodule TestApp.Presence do
   end
   def test_chainable_methods(socket) do
     key = "user:456"
-    meta = %{:online_at => DateTime.to_iso8601(DateTime.utc_now()), :device => "mobile"}
+    meta = %{online_at: DateTime.to_iso8601(DateTime.utc_now()), device: "mobile"}
     TestApp.Presence.track(self(), "custom:topic", key, meta)
-    meta = %{:online_at => DateTime.to_iso8601(DateTime.utc_now()), :device => "desktop"}
+    meta = %{online_at: DateTime.to_iso8601(DateTime.utc_now()), device: "desktop"}
     TestApp.Presence.update(self(), "custom:topic", key, meta)
     TestApp.Presence.untrack(self(), "custom:topic", key)
     socket
   end
   def test_tracker_compatibility() do
-    TestApp.Presence.track(self(), "test:presence", "critical:test", %{:test => true})
-    TestApp.Presence.update(self(), "test:presence", "critical:test", %{:test => false})
+    TestApp.Presence.track(self(), "test:presence", "critical:test", %{test: true})
+    TestApp.Presence.update(self(), "test:presence", "critical:test", %{test: false})
     TestApp.Presence.untrack(self(), "test:presence", "critical:test")
   end
   def track_internal(topic, key, meta) do

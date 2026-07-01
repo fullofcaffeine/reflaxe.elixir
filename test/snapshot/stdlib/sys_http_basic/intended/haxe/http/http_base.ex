@@ -28,7 +28,7 @@ defmodule HttpBase do
     HttpBaseRuntime.set_post_bytes(struct.http_base_ref, data)
   end
   def request(_struct, _post) do
-    raise Reflaxe.Elixir.HaxeThrow, [value: NotImplementedException.new(nil, nil, %{:file_name => "../../../../std/haxe/http/HttpBase.hx", :line_number => 74, :class_name => "haxe.http.HttpBase", :method_name => "request"})]
+    raise Reflaxe.Elixir.HaxeThrow, [value: NotImplementedException.new(nil, nil, %{file_name: "../../../../std/haxe/http/HttpBase.hx", line_number: 74, class_name: "haxe.http.HttpBase", method_name: "request"})]
   end
   def success(struct, data) do
     _ = HttpBaseRuntime.set_response_bytes(struct.http_base_ref, data)
@@ -59,15 +59,15 @@ defmodule HttpBase do
     end
   end
   defp default_on_data(_data) do
-    
+
   end
   defp default_on_bytes(_data) do
-    
+
   end
   defp default_on_error(_msg) do
-    
+
   end
   defp default_on_status(_status) do
-    
+
   end
 end

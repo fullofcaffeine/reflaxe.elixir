@@ -2,9 +2,9 @@ defmodule Main do
   defp parse_message(msg) do
     (case msg do
       "alert" -> {:some, {:system_alert, "Warning"}}
-      "create" -> {:some, {:todo_created, %{:id => 1, :title => "Test"}}}
+      "create" -> {:some, {:todo_created, %{id: 1, title: "Test"}}}
       "delete" -> {:some, {:todo_deleted, 1}}
-      "update" -> {:some, {:todo_updated, %{:id => 1, :title => "Updated"}}}
+      "update" -> {:some, {:todo_updated, %{id: 1, title: "Updated"}}}
       _ -> {:none}
     end)
   end

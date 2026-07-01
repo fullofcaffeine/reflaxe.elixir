@@ -1,6 +1,6 @@
 defmodule Main do
   def main() do
-    obj = %{:name => "John", :age => 30, :active => true}
+    obj = %{name: "John", age: 30, active: true}
     name = (case {obj, "name"} do
       {reflect_obj, reflect_field} ->
         (case Map.fetch(reflect_obj, reflect_field) do
@@ -249,7 +249,7 @@ end) do
     result = Reflect.call_method(nil, test_func, [5, 3])
     _ = assert(result == 8, "Function should be called with arguments")
     calculator_base = 10
-    calculator = %{:base => calculator_base, :add => fn x -> calculator_base + x end}
+    calculator = %{base: calculator_base, add: fn x -> calculator_base + x end}
     method_result = Reflect.call_method(calculator, calculator.add, [5])
     _ = assert(method_result == 15, "Method should use object context")
     option = {:some, 42}

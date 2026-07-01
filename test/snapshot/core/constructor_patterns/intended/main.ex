@@ -18,7 +18,7 @@ defmodule Main do
     nil
   end
   defp test_gen_server() do
-    _worker = TodoWorker.new(%{:todos => []})
+    _worker = TodoWorker.new(%{todos: []})
     nil
   end
   defp test_data_structures() do

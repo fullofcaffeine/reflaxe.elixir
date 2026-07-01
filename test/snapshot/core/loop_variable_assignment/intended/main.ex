@@ -16,14 +16,14 @@ defmodule Main do
     g = []
     x = 1
     y = "a"
-    g = g ++ [%{:x => x, :y => y}]
+    g = g ++ [%{x: x, y: y}]
     y = "b"
-    g = g ++ [%{:x => x, :y => y}]
+    g = g ++ [%{x: x, y: y}]
     x = 2
     y = "a"
-    g = g ++ [%{:x => x, :y => y}]
+    g = g ++ [%{x: x, y: y}]
     y = "b"
-    g = g ++ [%{:x => x, :y => y}]
+    g = g ++ [%{x: x, y: y}]
     _pairs = g
     i = 0
     collected = []

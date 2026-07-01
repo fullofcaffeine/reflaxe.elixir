@@ -79,11 +79,11 @@ end), level}}
     end)
   end
   def main() do
-    msg1 = %{:action => "complete_all", :message => nil, :level => nil}
+    msg1 = %{action: "complete_all", message: nil, level: nil}
     _ = parse_message("bulk_update", msg1)
-    msg2 = %{:action => nil, :message => "System maintenance", :level => "info"}
+    msg2 = %{action: nil, message: "System maintenance", level: "info"}
     _ = parse_message("system_alert", msg2)
-    msg3 = %{:action => nil, :message => nil, :level => nil}
+    msg3 = %{action: nil, message: nil, level: nil}
     _ = parse_message("unknown", msg3)
     nil
   end

@@ -8,7 +8,7 @@ defmodule Main do
   defp test_string_conversion() do
     _float_str = Reflaxe.Elixir.HaxeFloat.to_string(3.14)
     _null_str = Reflaxe.Elixir.HaxeFloat.to_string(nil)
-    obj = %{:name => "test", :value => 123}
+    obj = %{name: "test", value: 123}
     _obj_str = Reflaxe.Elixir.HaxeFloat.to_string(obj)
     arr = [1, 2, 3]
     _arr_str = Reflaxe.Elixir.HaxeFloat.to_string(arr)

@@ -1287,7 +1287,8 @@ class ElixirASTPrinter {
 				].join(', ') + '}';
 
 			case EMap(pairs):
-				var useKeywordMapSyntax = metadata != null && metadata.preferKeywordMapSyntax == true;
+				var useKeywordMapSyntax = (metadata != null && metadata.preferKeywordMapSyntax == true)
+					|| shouldUseKeywordMapSyntax(pairs);
 				'%{' + [
 					for (p in pairs) {
 						var key = print(p.key, 0);
@@ -3923,8 +3924,26 @@ class ElixirASTPrinter {
 		}
 	}
 
+	static function shouldUseKeywordMapSyntax(pairs:Array<EMapPair>):Bool {
+		if (pairs == null || pairs.length == 0) {
+			return false;
+		}
+		// Prefer handwritten Elixir map syntax only when every key can be
+		// printed as a safe atom identifier; mixed or runtime-tag maps stay
+		// explicit with `=>` to avoid changing odd boundary shapes.
+		for (pair in pairs) {
+			if (simpleAtomMapKey(pair.key) == null) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	static function isLowerSnakeAtomKey(value:String):Bool {
 		if (value == null || value.length == 0) {
+			return false;
+		}
+		if (StringTools.startsWith(value, "__") || isReservedKeywordMapKey(value)) {
 			return false;
 		}
 		var last = value.charAt(value.length - 1);
@@ -3945,6 +3964,15 @@ class ElixirASTPrinter {
 			i++;
 		}
 		return true;
+	}
+
+	static function isReservedKeywordMapKey(value:String):Bool {
+		return switch (value) {
+			case "after" | "and" | "catch" | "do" | "else" | "end" | "fn" | "in" | "not" | "or" | "rescue" | "true" | "false" | "nil" | "when":
+				true;
+			default:
+				false;
+		}
 	}
 
 	static function isLowercaseAscii(c:String):Bool {

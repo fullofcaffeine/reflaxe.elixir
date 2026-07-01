@@ -11,7 +11,7 @@ defmodule Main do
     end)
   end
   def main() do
-    todo = %{:id => 1, :text => "x"}
+    todo = %{id: 1, text: "x"}
     r = {:ok, todo}
     _ = process(r)
   end

@@ -1,6 +1,6 @@
 defmodule Main do
   def test_temp_variable_scoping() do
-    obj = %{:finite_number => 42.5, :infinite_number => Reflaxe.Elixir.HaxeFloat.positive_infinity(), :string_value => "test"}
+    obj = %{finite_number: 42.5, infinite_number: Reflaxe.Elixir.HaxeFloat.positive_infinity(), string_value: "test"}
     _result = JsonPrinter.print(obj, nil, nil)
     nil
   end

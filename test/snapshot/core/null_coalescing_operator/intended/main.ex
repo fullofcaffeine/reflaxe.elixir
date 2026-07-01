@@ -82,7 +82,7 @@ end))), do: tmp, else: "default"
     nil
   end
   defp get_data() do
-    %{:title => nil, :description => "Has value", :active => nil}
+    %{title: nil, description: "Has value", active: nil}
   end
   defp do_something(_value) do
 

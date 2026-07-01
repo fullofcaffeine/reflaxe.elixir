@@ -4,13 +4,13 @@ defmodule OptionalEvents do
       {:search, query} ->
         wire_payload = %{}
         wire_payload = Map.put(wire_payload, "query", query)
-        %{:event => "search", :payload => wire_payload}
+        %{event: "search", payload: wire_payload}
       {:save_profile, payload} ->
         form_payload = %{}
         wire_payload = %{}
         form_payload = form_payload |> Map.put("bio", payload.bio) |> Map.put("name", payload.name)
         wire_payload = Map.put(wire_payload, "profile", form_payload)
-        %{:event => "save_profile", :payload => wire_payload}
+        %{event: "save_profile", payload: wire_payload}
     end)
   end
   def decode(event_name, payload) do

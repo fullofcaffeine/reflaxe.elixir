@@ -179,7 +179,7 @@ end)
     end)
   end
   defp test_error_handling() do
-    invalid_inputs = [%{:email => "invalid-email", :user_id => "ab", :score => "0"}, %{:email => "user@domain", :user_id => "user@123", :score => "-5"}, %{:email => "", :user_id => "", :score => "not-a-number"}]
+    invalid_inputs = [%{email: "invalid-email", user_id: "ab", score: "0"}, %{email: "user@domain", user_id: "user@123", score: "-5"}, %{email: "", user_id: "", score: "not-a-number"}]
     _g = 0
     _ = Enum.each(invalid_inputs, fn input ->
   (case build_user_profile(input.user_id, input.email, input.score) do
@@ -187,7 +187,7 @@ end)
     {:error, _error} -> nil
   end)
 end)
-    edge_cases = [%{:email => "a@b.co", :user_id => "usr", :score => "1"}, %{:email => "very.long.email.address@very.long.domain.name.example.com", :user_id => "user123456789", :score => "999"}]
+    edge_cases = [%{email: "a@b.co", user_id: "usr", score: "1"}, %{email: "very.long.email.address@very.long.domain.name.example.com", user_id: "user123456789", score: "999"}]
     _g = 0
     _ = Enum.each(edge_cases, fn edge_case ->
   (case build_user_profile(edge_case.user_id, edge_case.email, edge_case.score) do
@@ -197,7 +197,7 @@ end)
 end)
   end
   defp test_real_world_scenarios() do
-    registration_data = [%{:user_id => "alice123", :email => "alice@example.com", :preferred_name => "Alice Smith"}, %{:user_id => "bob456", :email => "bob.jones@company.org", :preferred_name => "Bob"}, %{:user_id => "charlie", :email => "charlie@test.dev", :preferred_name => "Charlie Brown"}]
+    registration_data = [%{user_id: "alice123", email: "alice@example.com", preferred_name: "Alice Smith"}, %{user_id: "bob456", email: "bob.jones@company.org", preferred_name: "Bob"}, %{user_id: "charlie", email: "charlie@test.dev", preferred_name: "Charlie Brown"}]
     valid_users = []
     _g = 0
     _ = Enum.reduce(registration_data, valid_users, fn user_data, valid_users_acc ->
@@ -209,7 +209,7 @@ end)
         {:error, error} -> error
       end)
     end)
-    config_data = [%{:timeout => "30", :retries => "3", :name => "production"}, %{:timeout => "0", :retries => "5", :name => ""}, %{:timeout => "60", :retries => "-1", :name => "test"}]
+    config_data = [%{timeout: "30", retries: "3", name: "production"}, %{timeout: "0", retries: "5", name: ""}, %{timeout: "60", retries: "-1", name: "test"}]
     _g = 0
     _ = Enum.each(config_data, fn config ->
   config_result = validate_configuration(config.timeout, config.retries, config.name)
@@ -229,13 +229,13 @@ end)
         if (Kernel.is_nil(score_int)) do
           {:error, "Invalid score: " <> score_str}
         else
-          ResultTools.map(ResultTools.map_error(PositiveInt_Impl_.parse(score_int), fn e -> "Invalid score: " <> e end), fn score -> %{:user_id => user_id, :email => email, :score => score} end)
+          ResultTools.map(ResultTools.map_error(PositiveInt_Impl_.parse(score_int), fn e -> "Invalid score: " <> e end), fn score -> %{user_id: user_id, email: email, score: score} end)
         end
       end)
     end)
   end
   defp create_user(user_id_str, email_str, name_str) do
-    ResultTools.flat_map(ResultTools.map_error(UserId_Impl_.parse(user_id_str), fn e -> "Invalid UserId: " <> e end), fn user_id -> ResultTools.flat_map(ResultTools.map_error(Email_Impl_.parse(email_str), fn e -> "Invalid Email: " <> e end), fn email -> ResultTools.map(ResultTools.map_error(NonEmptyString_Impl_.parse_and_trim(name_str), fn e -> "Invalid Name: " <> e end), fn display_name -> %{:user_id => user_id, :email => email, :display_name => display_name} end) end) end)
+    ResultTools.flat_map(ResultTools.map_error(UserId_Impl_.parse(user_id_str), fn e -> "Invalid UserId: " <> e end), fn user_id -> ResultTools.flat_map(ResultTools.map_error(Email_Impl_.parse(email_str), fn e -> "Invalid Email: " <> e end), fn email -> ResultTools.map(ResultTools.map_error(NonEmptyString_Impl_.parse_and_trim(name_str), fn e -> "Invalid Name: " <> e end), fn display_name -> %{user_id: user_id, email: email, display_name: display_name} end) end) end)
   end
   defp validate_configuration(timeout_str, retries_str, name_str) do
     timeout_int = (case Integer.parse(timeout_str) do
@@ -252,7 +252,7 @@ end)
       if (Kernel.is_nil(retries_int)) do
         {:error, "Retries must be a number: " <> retries_str}
       else
-        ResultTools.flat_map(ResultTools.map_error(PositiveInt_Impl_.parse(timeout_int), fn e -> "Invalid timeout: " <> e end), fn timeout -> ResultTools.flat_map(ResultTools.map_error(PositiveInt_Impl_.parse(retries_int), fn e -> "Invalid retries: " <> e end), fn retries -> ResultTools.map(ResultTools.map_error(NonEmptyString_Impl_.parse_and_trim(name_str), fn e -> "Invalid name: " <> e end), fn name -> %{:timeout => timeout, :retries => retries, :name => name} end) end) end)
+        ResultTools.flat_map(ResultTools.map_error(PositiveInt_Impl_.parse(timeout_int), fn e -> "Invalid timeout: " <> e end), fn timeout -> ResultTools.flat_map(ResultTools.map_error(PositiveInt_Impl_.parse(retries_int), fn e -> "Invalid retries: " <> e end), fn retries -> ResultTools.map(ResultTools.map_error(NonEmptyString_Impl_.parse_and_trim(name_str), fn e -> "Invalid name: " <> e end), fn name -> %{timeout: timeout, retries: retries, name: name} end) end) end)
       end
     end
   end

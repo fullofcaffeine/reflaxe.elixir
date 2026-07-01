@@ -4,7 +4,7 @@ defmodule Main do
     nil
   end
   def dynamic_field_access() do
-    obj = %{:name => "Alice", :age => 25, :greet => fn -> "Hello!" end}
+    obj = %{name: "Alice", age: 25, greet: fn -> "Hello!" end}
     _ = Map.put(obj, :city, "New York")
     nil
   end
@@ -37,7 +37,7 @@ defmodule Main do
     value
   end
   def dynamic_collections() do
-    dyn_array = [1, "two", 3, true, %{:x => 10}]
+    dyn_array = [1, "two", 3, true, %{x: 10}]
     _g = 0
     _ = Enum.each(dyn_array, fn _ -> nil end)
     dyn_obj = %{}

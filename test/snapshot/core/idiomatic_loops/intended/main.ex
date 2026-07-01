@@ -258,12 +258,12 @@ end) do
   end
   defp test_complex_patterns() do
     pairs = []
-    pairs = pairs ++ [%{:x => 1, :y => 2}]
-    pairs = pairs ++ [%{:x => 1, :y => 3}]
-    pairs = pairs ++ [%{:x => 2, :y => 1}]
-    pairs = pairs ++ [%{:x => 2, :y => 3}]
-    pairs = pairs ++ [%{:x => 3, :y => 1}]
-    _ = pairs ++ [%{:x => 3, :y => 2}]
+    pairs = pairs ++ [%{x: 1, y: 2}]
+    pairs = pairs ++ [%{x: 1, y: 3}]
+    pairs = pairs ++ [%{x: 2, y: 1}]
+    pairs = pairs ++ [%{x: 2, y: 3}]
+    pairs = pairs ++ [%{x: 3, y: 1}]
+    _ = pairs ++ [%{x: 3, y: 2}]
     data = [1, 2, 3, 4, 5]
     acc_sum = 0
     acc_count = 0

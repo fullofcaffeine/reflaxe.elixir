@@ -33,7 +33,7 @@ defmodule Main do
     nil
   end
   defp test_filter_with_indexing() do
-    items = [%{:id => 1, :name => "one"}, %{:id => 2, :name => "two"}, %{:id => 3, :name => "three"}]
+    items = [%{id: 1, name: "one"}, %{id: 2, name: "two"}, %{id: 3, name: "three"}]
     names = []
     _g = 0
     items_length = length(items)
@@ -76,7 +76,7 @@ defmodule Main do
     nil
   end
   defp test_result_pattern_matching() do
-    results = [%{:status => "ok", :value => 42}, %{:status => "error", :value => -1}]
+    results = [%{status: "ok", value: 42}, %{status: "error", value: -1}]
     _g = 0
     _ = Enum.each(results, fn result ->
   _output = (case result.status do
@@ -88,7 +88,7 @@ defmodule Main do
 end)
   end
   defp test_message_parsing() do
-    messages = [%{:type => "created", :content => "New item"}, %{:type => "updated", :content => "Changed item"}, %{:type => "deleted", :content => "Removed item"}]
+    messages = [%{type: "created", content: "New item"}, %{type: "updated", content: "Changed item"}, %{type: "deleted", content: "Removed item"}]
     parsed = Enum.map(messages, fn msg ->
       (case msg.type do
         "created" -> "Created: " <> msg.content
@@ -101,7 +101,7 @@ end)
     _ = Enum.each(parsed, fn _ -> nil end)
   end
   defp test_mixed_real_world_patterns() do
-    todos = [%{:id => 1, :title => "First", :completed => false}, %{:id => 2, :title => "Second", :completed => true}, %{:id => 3, :title => "Third", :completed => false}]
+    todos = [%{id: 1, title: "First", completed: false}, %{id: 2, title: "Second", completed: true}, %{id: 3, title: "Third", completed: false}]
     target_id = 2
     found = nil
     _g = 0

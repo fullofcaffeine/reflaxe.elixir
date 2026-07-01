@@ -5,7 +5,7 @@ defmodule TableBuilder do
     struct
   end
   def add_column(struct, struct, name, type, options) do
-    new_columns = struct.columns ++ [%{:name => name, :type => type, :options => options}]
-    %{:columns => new_columns}
+    new_columns = struct.columns ++ [%{name: name, type: type, options: options}]
+    %{columns: new_columns}
   end
 end

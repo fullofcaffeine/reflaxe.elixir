@@ -21,7 +21,7 @@ defmodule Main do
     _info = Process.info(pid)
   end
   defp test_registry_externs() do
-    _registry_spec = Registry.start_link(%{:keys => {:unique}, :name => String.to_atom("MyRegistry")})
+    _registry_spec = Registry.start_link(%{keys: {:unique}, name: String.to_atom("MyRegistry")})
     _register_result = Registry.register("MyRegistry", "user:123", "user_data")
     _lookup_result = Registry.lookup("MyRegistry", "user:123")
     _count = Registry.count("MyRegistry")

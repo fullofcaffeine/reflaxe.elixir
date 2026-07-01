@@ -4,7 +4,7 @@ defmodule Main do
     _ = test_optional("MyApp", nil)
     _ = test_optional("MyApp", 8080)
     _result = build_name("Phoenix", "App")
-    _processed = process_config(%{:name => "test"})
+    _processed = process_config(%{name: "test"})
     nil
   end
   defp test_function(app_name, port, enabled) do

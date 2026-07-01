@@ -41,7 +41,7 @@ defmodule Http do
   end
   def file_transfer(struct, argname, filename, file_input, size, mime_type) do
     _ = HttpRuntime.mark_file_transfer(struct.http_base_ref)
-    struct = %{struct | file: %{:param => argname, :filename => filename, :io => file_input, :size => size, :mime_type => mime_type}}
+    struct = %{struct | file: %{param: argname, filename: filename, io: file_input, size: size, mime_type: mime_type}}
     struct
   end
   def custom_request(struct, post, api, sock, method) do

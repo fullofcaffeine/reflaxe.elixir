@@ -7,6 +7,6 @@ defmodule Main do
   other -> Kernel.to_string(other)
 end)
     parsed = iso
-    _ = Log.trace(Reflaxe.Elixir.HaxeFloat.to_string(%{:iso => iso, :y => parsed.year, :m => (parsed.month - 1), :dd => parsed.day}), nil)
+    _ = Log.trace(Reflaxe.Elixir.HaxeFloat.to_string(%{iso: iso, y: parsed.year, m: (parsed.month - 1), dd: parsed.day}), nil)
   end
 end

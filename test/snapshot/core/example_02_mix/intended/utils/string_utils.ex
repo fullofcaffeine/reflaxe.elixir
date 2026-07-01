@@ -37,13 +37,13 @@ defmodule StringUtils do
   end
   def process_email(email) do
     if (Kernel.is_nil(email)) do
-      %{:valid => false, :error => "Email is required"}
+      %{valid: false, error: "Email is required"}
     else
       trimmed = StringTools.ltrim(StringTools.rtrim(email))
       if (String.length(trimmed) == 0) do
-        %{:valid => false, :error => "Email cannot be empty"}
+        %{valid: false, error: "Email cannot be empty"}
       else
-        if (not is_valid_email_format(trimmed)), do: %{:valid => false, :error => "Invalid email format"}, else: %{:valid => true, :email => String.downcase(trimmed), :domain => extract_domain(trimmed), :username => extract_username(trimmed)}
+        if (not is_valid_email_format(trimmed)), do: %{valid: false, error: "Invalid email format"}, else: %{valid: true, email: String.downcase(trimmed), domain: extract_domain(trimmed), username: extract_username(trimmed)}
       end
     end
   end

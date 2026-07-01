@@ -3,7 +3,7 @@ defmodule TestApp.LegacyPresence do
   def test_legacy_methods() do
     topic = "legacy:topic"
     key = "user:789"
-    meta = %{:status => "online"}
+    meta = %{status: "online"}
     _ = Phoenix.Presence.track(self(), topic, key, meta)
   end
   def track_internal(topic, key, meta) do

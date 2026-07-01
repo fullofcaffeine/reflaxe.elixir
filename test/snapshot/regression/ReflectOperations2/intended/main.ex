@@ -1,6 +1,6 @@
 defmodule Main do
   def main() do
-    obj = %{:name => "John", :age => 30, :is_active => true, :nested_data => %{:street_address => "123 Main St", :zip_code => "12345"}}
+    obj = %{name: "John", age: 30, is_active: true, nested_data: %{street_address: "123 Main St", zip_code: "12345"}}
     _has_name = (case {obj, "name"} do
       {reflect_obj, reflect_field} ->
         (case Map.has_key?(reflect_obj, reflect_field) do
@@ -120,7 +120,7 @@ end) do
             end)
         end)
     end)
-    mutable_obj = %{:x => 10, :y => 20}
+    mutable_obj = %{x: 10, y: 20}
     mutable_obj = (case {mutable_obj, "z", 30} do
       {reflect_obj, reflect_field, reflect_value} ->
         (case Map.has_key?(reflect_obj, reflect_field) do
@@ -174,7 +174,7 @@ end) do
             end)
         end)
     end)
-    deletable_obj = %{:a => 1, :b => 2, :c => 3}
+    deletable_obj = %{a: 1, b: 2, c: 3}
     {deletable_obj, _reflaxe_receiver_value_0} = (case {deletable_obj, "b"} do
       {reflect_obj, reflect_field} ->
         (case Map.has_key?(reflect_obj, reflect_field) do

@@ -4,7 +4,7 @@ defmodule Input do
     b
   end
   def read_byte(_struct) do
-    raise Reflaxe.Elixir.HaxeThrow, [value: NotImplementedException.new(nil, nil, %{:file_name => "../../../../std/haxe/io/Input.hx", :line_number => 38, :class_name => "haxe.io.Input", :method_name => "readByte"})]
+    raise Reflaxe.Elixir.HaxeThrow, [value: NotImplementedException.new(nil, nil, %{file_name: "../../../../std/haxe/io/Input.hx", line_number: 38, class_name: "haxe.io.Input", method_name: "readByte"})]
   end
   def read_bytes(struct, s, pos, len) do
     if (pos < 0 or len < 0 or pos + len > s.length) do
@@ -52,7 +52,7 @@ end), haxe_exception} do
     (len - k)
   end
   def close(_struct) do
-    
+
   end
   def read_all(struct, bufsize) do
     bufsize = if (Kernel.is_nil(bufsize)), do: 16384, else: bufsize

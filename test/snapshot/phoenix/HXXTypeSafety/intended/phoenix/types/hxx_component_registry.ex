@@ -17,85 +17,85 @@ defmodule HXXComponentRegistry do
   def html_elements() do
     __haxe_static_get__(:html_elements, (fn ->
         g = %{}
-        value = %{:name => "input", :attribute_type => "InputAttributes", :allowed_attributes => get_input_attributes(), :void_element => true}
+        value = %{name: "input", attribute_type: "InputAttributes", allowed_attributes: get_input_attributes(), void_element: true}
         g = Map.put(g, "input", value)
-        value = %{:name => "button", :attribute_type => "ButtonAttributes", :allowed_attributes => get_button_attributes(), :void_element => false}
+        value = %{name: "button", attribute_type: "ButtonAttributes", allowed_attributes: get_button_attributes(), void_element: false}
         g = Map.put(g, "button", value)
-        value = %{:name => "form", :attribute_type => "FormAttributes", :allowed_attributes => get_form_attributes(), :void_element => false}
+        value = %{name: "form", attribute_type: "FormAttributes", allowed_attributes: get_form_attributes(), void_element: false}
         g = Map.put(g, "form", value)
-        value = %{:name => "select", :attribute_type => "SelectAttributes", :allowed_attributes => get_select_attributes(), :void_element => false}
+        value = %{name: "select", attribute_type: "SelectAttributes", allowed_attributes: get_select_attributes(), void_element: false}
         g = Map.put(g, "select", value)
-        value = %{:name => "option", :attribute_type => "OptionAttributes", :allowed_attributes => get_option_attributes(), :void_element => false}
+        value = %{name: "option", attribute_type: "OptionAttributes", allowed_attributes: get_option_attributes(), void_element: false}
         g = Map.put(g, "option", value)
-        value = %{:name => "textarea", :attribute_type => "TextAreaAttributes", :allowed_attributes => get_text_area_attributes(), :void_element => false}
+        value = %{name: "textarea", attribute_type: "TextAreaAttributes", allowed_attributes: get_text_area_attributes(), void_element: false}
         g = Map.put(g, "textarea", value)
-        value = %{:name => "label", :attribute_type => "LabelAttributes", :allowed_attributes => get_label_attributes(), :void_element => false}
+        value = %{name: "label", attribute_type: "LabelAttributes", allowed_attributes: get_label_attributes(), void_element: false}
         g = Map.put(g, "label", value)
-        value = %{:name => "a", :attribute_type => "AnchorAttributes", :allowed_attributes => get_anchor_attributes(), :void_element => false}
+        value = %{name: "a", attribute_type: "AnchorAttributes", allowed_attributes: get_anchor_attributes(), void_element: false}
         g = Map.put(g, "a", value)
-        value = %{:name => "p", :attribute_type => "ParagraphAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
+        value = %{name: "p", attribute_type: "ParagraphAttributes", allowed_attributes: get_global_attributes(), void_element: false}
         g = Map.put(g, "p", value)
-        value = %{:name => "div", :attribute_type => "DivAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
+        value = %{name: "div", attribute_type: "DivAttributes", allowed_attributes: get_global_attributes(), void_element: false}
         g = Map.put(g, "div", value)
-        value = %{:name => "span", :attribute_type => "SpanAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
+        value = %{name: "span", attribute_type: "SpanAttributes", allowed_attributes: get_global_attributes(), void_element: false}
         g = Map.put(g, "span", value)
-        value = %{:name => "h1", :attribute_type => "HeadingAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
+        value = %{name: "h1", attribute_type: "HeadingAttributes", allowed_attributes: get_global_attributes(), void_element: false}
         g = Map.put(g, "h1", value)
-        value = %{:name => "h2", :attribute_type => "HeadingAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
+        value = %{name: "h2", attribute_type: "HeadingAttributes", allowed_attributes: get_global_attributes(), void_element: false}
         g = Map.put(g, "h2", value)
-        value = %{:name => "h3", :attribute_type => "HeadingAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
+        value = %{name: "h3", attribute_type: "HeadingAttributes", allowed_attributes: get_global_attributes(), void_element: false}
         g = Map.put(g, "h3", value)
-        value = %{:name => "h4", :attribute_type => "HeadingAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
+        value = %{name: "h4", attribute_type: "HeadingAttributes", allowed_attributes: get_global_attributes(), void_element: false}
         g = Map.put(g, "h4", value)
-        value = %{:name => "h5", :attribute_type => "HeadingAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
+        value = %{name: "h5", attribute_type: "HeadingAttributes", allowed_attributes: get_global_attributes(), void_element: false}
         g = Map.put(g, "h5", value)
-        value = %{:name => "h6", :attribute_type => "HeadingAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
+        value = %{name: "h6", attribute_type: "HeadingAttributes", allowed_attributes: get_global_attributes(), void_element: false}
         g = Map.put(g, "h6", value)
-        value = %{:name => "img", :attribute_type => "ImageAttributes", :allowed_attributes => get_image_attributes(), :void_element => true}
+        value = %{name: "img", attribute_type: "ImageAttributes", allowed_attributes: get_image_attributes(), void_element: true}
         g = Map.put(g, "img", value)
-        value = %{:name => "video", :attribute_type => "VideoAttributes", :allowed_attributes => get_video_attributes(), :void_element => false}
+        value = %{name: "video", attribute_type: "VideoAttributes", allowed_attributes: get_video_attributes(), void_element: false}
         g = Map.put(g, "video", value)
-        value = %{:name => "audio", :attribute_type => "AudioAttributes", :allowed_attributes => get_audio_attributes(), :void_element => false}
+        value = %{name: "audio", attribute_type: "AudioAttributes", allowed_attributes: get_audio_attributes(), void_element: false}
         g = Map.put(g, "audio", value)
-        value = %{:name => "ul", :attribute_type => "ListAttributes", :allowed_attributes => get_list_attributes(), :void_element => false}
+        value = %{name: "ul", attribute_type: "ListAttributes", allowed_attributes: get_list_attributes(), void_element: false}
         g = Map.put(g, "ul", value)
-        value = %{:name => "ol", :attribute_type => "ListAttributes", :allowed_attributes => get_list_attributes(), :void_element => false}
+        value = %{name: "ol", attribute_type: "ListAttributes", allowed_attributes: get_list_attributes(), void_element: false}
         g = Map.put(g, "ol", value)
-        value = %{:name => "li", :attribute_type => "ListItemAttributes", :allowed_attributes => get_list_item_attributes(), :void_element => false}
+        value = %{name: "li", attribute_type: "ListItemAttributes", allowed_attributes: get_list_item_attributes(), void_element: false}
         g = Map.put(g, "li", value)
-        value = %{:name => "table", :attribute_type => "TableAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
+        value = %{name: "table", attribute_type: "TableAttributes", allowed_attributes: get_global_attributes(), void_element: false}
         g = Map.put(g, "table", value)
-        value = %{:name => "tr", :attribute_type => "TableRowAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
+        value = %{name: "tr", attribute_type: "TableRowAttributes", allowed_attributes: get_global_attributes(), void_element: false}
         g = Map.put(g, "tr", value)
-        value = %{:name => "td", :attribute_type => "TableCellAttributes", :allowed_attributes => get_table_cell_attributes(), :void_element => false}
+        value = %{name: "td", attribute_type: "TableCellAttributes", allowed_attributes: get_table_cell_attributes(), void_element: false}
         g = Map.put(g, "td", value)
-        value = %{:name => "th", :attribute_type => "TableCellAttributes", :allowed_attributes => get_table_cell_attributes(), :void_element => false}
+        value = %{name: "th", attribute_type: "TableCellAttributes", allowed_attributes: get_table_cell_attributes(), void_element: false}
         g = Map.put(g, "th", value)
-        value = %{:name => "meta", :attribute_type => "MetaAttributes", :allowed_attributes => get_meta_attributes(), :void_element => true}
+        value = %{name: "meta", attribute_type: "MetaAttributes", allowed_attributes: get_meta_attributes(), void_element: true}
         g = Map.put(g, "meta", value)
-        value = %{:name => "link", :attribute_type => "LinkAttributes", :allowed_attributes => get_link_attributes(), :void_element => true}
+        value = %{name: "link", attribute_type: "LinkAttributes", allowed_attributes: get_link_attributes(), void_element: true}
         g = Map.put(g, "link", value)
-        value = %{:name => "script", :attribute_type => "ScriptAttributes", :allowed_attributes => get_script_attributes(), :void_element => false}
+        value = %{name: "script", attribute_type: "ScriptAttributes", allowed_attributes: get_script_attributes(), void_element: false}
         g = Map.put(g, "script", value)
-        value = %{:name => "style", :attribute_type => "StyleAttributes", :allowed_attributes => get_style_attributes(), :void_element => false}
+        value = %{name: "style", attribute_type: "StyleAttributes", allowed_attributes: get_style_attributes(), void_element: false}
         g = Map.put(g, "style", value)
-        value = %{:name => "article", :attribute_type => "SemanticAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
+        value = %{name: "article", attribute_type: "SemanticAttributes", allowed_attributes: get_global_attributes(), void_element: false}
         g = Map.put(g, "article", value)
-        value = %{:name => "section", :attribute_type => "SemanticAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
+        value = %{name: "section", attribute_type: "SemanticAttributes", allowed_attributes: get_global_attributes(), void_element: false}
         g = Map.put(g, "section", value)
-        value = %{:name => "nav", :attribute_type => "SemanticAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
+        value = %{name: "nav", attribute_type: "SemanticAttributes", allowed_attributes: get_global_attributes(), void_element: false}
         g = Map.put(g, "nav", value)
-        value = %{:name => "aside", :attribute_type => "SemanticAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
+        value = %{name: "aside", attribute_type: "SemanticAttributes", allowed_attributes: get_global_attributes(), void_element: false}
         g = Map.put(g, "aside", value)
-        value = %{:name => "header", :attribute_type => "SemanticAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
+        value = %{name: "header", attribute_type: "SemanticAttributes", allowed_attributes: get_global_attributes(), void_element: false}
         g = Map.put(g, "header", value)
-        value = %{:name => "footer", :attribute_type => "SemanticAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
+        value = %{name: "footer", attribute_type: "SemanticAttributes", allowed_attributes: get_global_attributes(), void_element: false}
         g = Map.put(g, "footer", value)
-        value = %{:name => "main", :attribute_type => "SemanticAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
+        value = %{name: "main", attribute_type: "SemanticAttributes", allowed_attributes: get_global_attributes(), void_element: false}
         g = Map.put(g, "main", value)
-        value = %{:name => "br", :attribute_type => "GlobalAttributes", :allowed_attributes => get_global_attributes(), :void_element => true}
+        value = %{name: "br", attribute_type: "GlobalAttributes", allowed_attributes: get_global_attributes(), void_element: true}
         g = Map.put(g, "br", value)
-        value = %{:name => "hr", :attribute_type => "GlobalAttributes", :allowed_attributes => get_global_attributes(), :void_element => true}
+        value = %{name: "hr", attribute_type: "GlobalAttributes", allowed_attributes: get_global_attributes(), void_element: true}
         g = Map.put(g, "hr", value)
         g
       end).())

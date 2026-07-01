@@ -27,6 +27,6 @@ defmodule Main do
     nil
   end
   defp get_some_value() do
-    {:some, %{:value => 42, :metadata => "test"}}
+    {:some, %{value: 42, metadata: "test"}}
   end
 end

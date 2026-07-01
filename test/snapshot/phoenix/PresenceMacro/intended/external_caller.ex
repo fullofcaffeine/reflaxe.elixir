@@ -1,6 +1,6 @@
 defmodule ExternalCaller do
   def call_from_outside(_socket) do
-    meta = %{:online_at => DateTime.to_iso8601(DateTime.utc_now()), :user_name => "External User", :status => "online"}
+    meta = %{online_at: DateTime.to_iso8601(DateTime.utc_now()), user_name: "External User", status: "online"}
     topic = "presence:test"
     key = "external_user"
     TestApp.Presence.track(self(), topic, key, meta)

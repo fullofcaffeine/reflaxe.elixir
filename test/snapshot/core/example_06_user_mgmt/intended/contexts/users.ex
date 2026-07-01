@@ -3,7 +3,7 @@ defmodule Users do
     []
   end
   def change_user(_user) do
-    %{:valid => true}
+    %{valid: true}
   end
   def main() do
     nil
@@ -16,14 +16,14 @@ defmodule Users do
   end
   def create_user(attrs) do
     changeset = UserChangeset.changeset(nil, attrs)
-    if (Reflaxe.Elixir.HaxeFloat.neq(changeset, nil)), do: %{:status => "ok", :user => nil}, else: %{:status => "error", :changeset => changeset}
+    if (Reflaxe.Elixir.HaxeFloat.neq(changeset, nil)), do: %{status: "ok", user: nil}, else: %{status: "error", changeset: changeset}
   end
   def update_user(user, attrs) do
     changeset = UserChangeset.changeset(user, attrs)
-    if (Reflaxe.Elixir.HaxeFloat.neq(changeset, nil)), do: %{:status => "ok", :user => user}, else: %{:status => "error", :changeset => changeset}
+    if (Reflaxe.Elixir.HaxeFloat.neq(changeset, nil)), do: %{status: "ok", user: user}, else: %{status: "error", changeset: changeset}
   end
   def delete_user(user) do
-    update_user(user, %{:active => false})
+    update_user(user, %{active: false})
   end
   def search_users(_term) do
     []
@@ -32,6 +32,6 @@ defmodule Users do
     []
   end
   def user_stats() do
-    %{:total => 0, :active => 0, :inactive => 0}
+    %{total: 0, active: 0, inactive: 0}
   end
 end

@@ -8,8 +8,8 @@ defmodule Main do
     _ = test_method_calling()
   end
   defp test_field_operations() do
-    obj = %{:name => "Alice", :age => 30, :active => true}
-    nested = %{:user => %{:id => 1, :name => "Bob"}, :settings => %{:theme => "dark", :notifications => true}}
+    obj = %{name: "Alice", age: 30, active: true}
+    nested = %{user: %{id: 1, name: "Bob"}, settings: %{theme: "dark", notifications: true}}
     _name = (case {obj, "name"} do
       {reflect_obj, reflect_field} ->
         (case Map.fetch(reflect_obj, reflect_field) do
@@ -228,8 +228,8 @@ end) do
     nil
   end
   defp test_field_listing() do
-    simple = %{:x => 10, :y => 20}
-    complex = %{:id => 1, :name => "Test", :active => true, :data => [1, 2, 3], :meta => %{:created => "2024-01-01"}}
+    simple = %{x: 10, y: 20}
+    complex = %{id: 1, name: "Test", active: true, data: [1, 2, 3], meta: %{created: "2024-01-01"}}
     empty = %{}
     _simple_fields = Reflect.fields(simple)
     _complex_fields = Reflect.fields(complex)
@@ -237,7 +237,7 @@ end) do
     nil
   end
   defp test_object_checking() do
-    obj = %{:field => "value"}
+    obj = %{field: "value"}
     str = "string"
     num = 42
     arr = [1, 2, 3]
@@ -266,7 +266,7 @@ end) do
     res1 = {:ok, 42}
     res2 = {:error, "failed"}
     str = "not an enum"
-    obj = %{:field => "value"}
+    obj = %{field: "value"}
     num = 123
     _opt1_is_enum = Reflect.is_enum_value(opt1)
     _opt2_is_enum = Reflect.is_enum_value(opt2)
@@ -286,7 +286,7 @@ end) do
     _product = Reflect.call_method(nil, multiply, [5, 6])
     _greeting = Reflect.call_method(nil, greet, ["World"])
     _no_args_result = Reflect.call_method(nil, no_args, [])
-    calculator = %{:value => 100, :add_to => fn n -> n + 100 end, :multiply_by => fn n -> n * 2 end}
+    calculator = %{value: 100, add_to: fn n -> n + 100 end, multiply_by: fn n -> n * 2 end}
     _added = Reflect.call_method(calculator, ((case {calculator, "addTo"} do
       {reflect_obj, reflect_field} ->
         (case Map.fetch(reflect_obj, reflect_field) do

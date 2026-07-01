@@ -7,7 +7,7 @@ defmodule FileSystem do
   end
   def stat(path) do
     stat_struct = File.stat!(path)
-    %{:gid => Map.fetch!(stat_struct, :gid), :uid => Map.fetch!(stat_struct, :uid), :atime => to_utc_date(Map.fetch!(stat_struct, :atime)), :mtime => to_utc_date(Map.fetch!(stat_struct, :mtime)), :ctime => to_utc_date(Map.fetch!(stat_struct, :ctime)), :size => Map.fetch!(stat_struct, :size), :dev => Map.fetch!(stat_struct, :dev), :ino => Map.fetch!(stat_struct, :ino), :nlink => Map.fetch!(stat_struct, :nlink), :rdev => Map.fetch!(stat_struct, :rdev), :mode => Map.fetch!(stat_struct, :mode)}
+    %{gid: Map.fetch!(stat_struct, :gid), uid: Map.fetch!(stat_struct, :uid), atime: to_utc_date(Map.fetch!(stat_struct, :atime)), mtime: to_utc_date(Map.fetch!(stat_struct, :mtime)), ctime: to_utc_date(Map.fetch!(stat_struct, :ctime)), size: Map.fetch!(stat_struct, :size), dev: Map.fetch!(stat_struct, :dev), ino: Map.fetch!(stat_struct, :ino), nlink: Map.fetch!(stat_struct, :nlink), rdev: Map.fetch!(stat_struct, :rdev), mode: Map.fetch!(stat_struct, :mode)}
   end
   def full_path(rel_path) do
     File.realpath!(rel_path)

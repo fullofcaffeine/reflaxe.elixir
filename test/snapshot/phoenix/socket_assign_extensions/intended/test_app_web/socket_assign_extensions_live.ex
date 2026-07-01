@@ -2,7 +2,7 @@ defmodule TestAppWeb.SocketAssignExtensionsLive do
   use Phoenix.Component
   use Phoenix.LiveView, layout: {TestAppWeb.Layouts, :app}
   def mount(_params, _session, socket) do
-    socket = socket |> Phoenix.Component.assign(%{:count => 0, :search_query => ""}) |> Phoenix.Component.assign(:count, 1) |> Phoenix.Component.update(:count, fn n -> n + 1 end) |> Phoenix.Component.assign_new(:search_query, fn -> "initial" end)
+    socket = socket |> Phoenix.Component.assign(%{count: 0, search_query: ""}) |> Phoenix.Component.assign(:count, 1) |> Phoenix.Component.update(:count, fn n -> n + 1 end) |> Phoenix.Component.assign_new(:search_query, fn -> "initial" end)
     {:ok, socket}
   end
   def render(assigns) do

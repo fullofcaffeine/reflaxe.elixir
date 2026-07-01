@@ -1,6 +1,6 @@
 defmodule Main do
   defp decode_search_params(params) do
-    ResultTools.flat_map(ResultTools.flat_map(TermDecoder.fetch_string_key(params, "query"), &TermDecoder.as_string/1), fn query -> ResultTools.map(TermDecoder.optional_string_key_as(params, "page", &TermDecoder.as_int/1), fn page -> %{:query => query, :page => page} end) end)
+    ResultTools.flat_map(ResultTools.flat_map(TermDecoder.fetch_string_key(params, "query"), &TermDecoder.as_string/1), fn query -> ResultTools.map(TermDecoder.optional_string_key_as(params, "page", &TermDecoder.as_int/1), fn page -> %{query: query, page: page} end) end)
   end
   defp decode_changeset_field(changeset) do
     field = "email"

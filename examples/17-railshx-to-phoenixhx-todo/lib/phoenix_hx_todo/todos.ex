@@ -19,7 +19,7 @@ defmodule PhoenixHxTodo.Todos do
     trimmed_title = StringTools.ltrim(StringTools.rtrim(title))
     trimmed_notes = StringTools.ltrim(StringTools.rtrim(notes))
     data = Kernel.struct(PhoenixHxTodo.Todo)
-    params = %{:title => trimmed_title, :notes => trimmed_notes, :completed => false, :user_id => user.id}
+    params = %{title: trimmed_title, notes: trimmed_notes, completed: false, user_id: user.id}
     _ = PhoenixHxTodo.Repo.insert(PhoenixHxTodo.Todo.changeset(data, params))
   end
   def toggle_for_user(user_id, id) do

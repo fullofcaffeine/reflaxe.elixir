@@ -37,7 +37,7 @@ defmodule Main do
     value
   end
   def process_user(user_data) do
-    ResultTools.map(parse_number(user_data.age), fn parsed_age -> %{:name => user_data.name, :age => parsed_age} end)
+    ResultTools.map(parse_number(user_data.age), fn parsed_age -> %{name: user_data.name, age: parsed_age} end)
   end
   def demonstrate_utilities() do
     success = {:ok, 42}
@@ -49,7 +49,7 @@ defmodule Main do
     success_value = ResultTools.unwrap_or(success, 0)
     failure_value = ResultTools.unwrap_or(failure, 0)
     mapped_error = ResultTools.map_error(failure, fn err -> "Mapped: " <> err end)
-    %{:is_success_ok => is_success_ok, :is_failure_ok => is_failure_ok, :is_success_error => is_success_error, :is_failure_error => is_failure_error, :success_value => success_value, :failure_value => failure_value, :mapped_error => mapped_error}
+    %{is_success_ok: is_success_ok, is_failure_ok: is_failure_ok, is_success_error: is_success_error, is_failure_error: is_failure_error, success_value: success_value, failure_value: failure_value, mapped_error: mapped_error}
   end
   def process_multiple_numbers(inputs) do
     results = Enum.map(inputs, &parse_number/1)
@@ -68,7 +68,7 @@ defmodule Main do
     _ = handle_result(result2)
     _ = get_value_or_default(result1)
     _ = get_value_or_default(result2)
-    _user = process_user(%{:name => "Alice", :age => "25"})
+    _user = process_user(%{name: "Alice", age: "25"})
     _utils = demonstrate_utilities()
     _numbers = process_multiple_numbers(["1", "2", "3"])
     _numbers_error = process_multiple_numbers(["1", "x", "3"])

@@ -89,7 +89,7 @@ defmodule SslSocket do
   defp endpoint_to_record(info) do
     host_object = Host.new("127.0.0.1")
     host_object = %{host_object | ip: SocketState.endpoint_host(info)}
-    %{:host => host_object, :port => SocketState.endpoint_port(info)}
+    %{host: host_object, port: SocketState.endpoint_port(info)}
   end
   def close(struct) do
     Socket.close(struct)

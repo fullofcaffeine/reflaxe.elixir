@@ -4,10 +4,10 @@ defmodule ProfileHookEvents do
       {:clipboard_copied, payload} ->
         wire_payload = %{}
         wire_payload = wire_payload |> Map.put("copied_at", payload.copied_at) |> Map.put("message", payload.message)
-        %{:event => "clipboard_copied", :payload => wire_payload}
+        %{event: "clipboard_copied", payload: wire_payload}
       {:ping} ->
         wire_payload = %{}
-        %{:event => "ping", :payload => wire_payload}
+        %{event: "ping", payload: wire_payload}
     end)
   end
   def decode(event_name, payload) do

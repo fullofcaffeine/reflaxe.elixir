@@ -11,14 +11,14 @@ defmodule PhoenixChatWeb.AppLive do
     end
     current_user_name = display_name_from_id(current_user_id)
     online_at = DateTime.to_iso8601(DateTime.utc_now())
-    assigns = %{:room => room, :current_user_id => current_user_id, :current_user_name => current_user_name, :message_input => "", :messages => [], :next_message_id => 1, :presence_initialized => false, :online_users => %{}, :online_user_views => [], :online_user_count => 0, :status => nil}
+    assigns = %{room: room, current_user_id: current_user_id, current_user_name: current_user_name, message_input: "", messages: [], next_message_id: 1, presence_initialized: false, online_users: %{}, online_user_views: [], online_user_count: 0, status: nil}
     live = Phoenix.Component.assign(socket, assigns)
     live = if (connected) do
       pubsub = pubsub_module()
       _ = Phoenix.PubSub.subscribe(pubsub, chat_topic(room))
       _ = Phoenix.PubSub.subscribe(pubsub, presence_topic(room))
       topic = presence_topic(room)
-      PhoenixChatWeb.Presence.track(self(), topic, current_user_id, %{:online_at => online_at, :name => current_user_name})
+      PhoenixChatWeb.Presence.track(self(), topic, current_user_id, %{online_at: online_at, name: current_user_name})
       topic = presence_topic(room)
       list = PhoenixChatWeb.Presence.list(topic)
       live |> Phoenix.Component.assign(:online_users, list) |> Phoenix.Component.assign(:presence_initialized, true) |> recompute_online_views()
@@ -121,7 +121,7 @@ defmodule PhoenixChatWeb.AppLive do
       topic = presence_topic(socket.assigns.room)
       updated_users = PhoenixChatWeb.Presence.list(topic)
       next_socket = if (not socket.assigns.presence_initialized) do
-        Phoenix.Component.assign(socket, %{:online_users => updated_users, :presence_initialized => true})
+        Phoenix.Component.assign(socket, %{online_users: updated_users, presence_initialized: true})
       else
         Phoenix.Component.assign(socket, :online_users, updated_users)
       end
@@ -140,8 +140,8 @@ defmodule PhoenixChatWeb.AppLive do
           body = elem(payload, 3)
           at = elem(payload, 4)
           next_id = socket.assigns.next_message_id
-          message = %{:id => next_id, :user_id => user_id, :user_name => user_name, :body => body, :at => at, :row_class => (if (user_id == socket.assigns.current_user_id), do: "msg mine", else: "msg")}
-          updated = Phoenix.Component.assign(socket, %{:messages => PhoenixChat.ChatState.append_message(socket.assigns.messages, message), :next_message_id => next_id + 1, :status => nil})
+          message = %{id: next_id, user_id: user_id, user_name: user_name, body: body, at: at, row_class: (if (user_id == socket.assigns.current_user_id), do: "msg mine", else: "msg")}
+          updated = Phoenix.Component.assign(socket, %{messages: PhoenixChat.ChatState.append_message(socket.assigns.messages, message), next_message_id: next_id + 1, status: nil})
           {:noreply, updated}
         end
       end
@@ -172,8 +172,8 @@ end) do
     else
       now = DateTime.to_iso8601(DateTime.utc_now())
       next_id = socket.assigns.next_message_id
-      message = %{:id => next_id, :user_id => socket.assigns.current_user_id, :user_name => socket.assigns.current_user_name, :body => body, :at => now, :row_class => "msg mine"}
-      updated = Phoenix.Component.assign(socket, %{:messages => PhoenixChat.ChatState.append_message(socket.assigns.messages, message), :next_message_id => next_id + 1, :message_input => "", :status => nil})
+      message = %{id: next_id, user_id: socket.assigns.current_user_id, user_name: socket.assigns.current_user_name, body: body, at: now, row_class: "msg mine"}
+      updated = Phoenix.Component.assign(socket, %{messages: PhoenixChat.ChatState.append_message(socket.assigns.messages, message), next_message_id: next_id + 1, message_input: "", status: nil})
       a = :erlang.binary_to_atom("chat_msg")
       b = socket.assigns.current_user_id
       c = socket.assigns.current_user_name
@@ -192,7 +192,7 @@ end) do
       if (not Kernel.is_nil(entry) and not Kernel.is_nil(entry.metas) and length(entry.metas) > 0) do
         meta = Enum.at(entry.metas, 0)
         is_me = key == socket.assigns.current_user_id
-        Enum.concat(views_acc, [%{:user_id => key, :name => meta.name, :online_at => meta.online_at, :is_me => is_me, :row_class => (if (is_me), do: "online-row is-me", else: "online-row")}])
+        Enum.concat(views_acc, [%{user_id: key, name: meta.name, online_at: meta.online_at, is_me: is_me, row_class: (if (is_me), do: "online-row is-me", else: "online-row")}])
       else
         views_acc
       end
@@ -213,7 +213,7 @@ end) do
   end
 end).(a, b) < 0
     end)
-    _ = Phoenix.Component.assign(socket, %{:online_user_views => views, :online_user_count => length(views)})
+    _ = Phoenix.Component.assign(socket, %{online_user_views: views, online_user_count: length(views)})
   end
   defp is_presence_diff_broadcast(msg) do
     if (not Kernel.is_map(msg)) do

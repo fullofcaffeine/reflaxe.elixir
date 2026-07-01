@@ -27,7 +27,7 @@ defmodule PhoenixHxTodo.Accounts do
       {:ok, existing}
     else
       data = Kernel.struct(PhoenixHxTodo.User)
-      params = %{:name => normalized_name, :email => normalized_email}
+      params = %{name: normalized_name, email: normalized_email}
       _ = PhoenixHxTodo.Repo.insert(PhoenixHxTodo.User.changeset(data, params))
     end
   end

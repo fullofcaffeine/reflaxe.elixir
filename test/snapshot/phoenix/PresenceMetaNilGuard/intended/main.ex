@@ -23,7 +23,7 @@ defmodule Main do
     if (Kernel.is_nil(current_meta)) do
       Presence.track(self(), socket, key, %{})
     end
-    current_meta = %{:online_at => 0, :user_name => "x"}
+    current_meta = %{online_at: 0, user_name: "x"}
     current_meta.online_at
   end
   def negative_no_field_access(socket, key) do

@@ -26,7 +26,7 @@ end)
     {_views} = Enum.reduce_while(Map.keys(users), {views}, fn k, {acc_views} ->
       try do
         v = Map.get(users, k)
-        acc_views = if (not Kernel.is_nil(v)), do: acc_views ++ [%{:key => k, :value => v}], else: acc_views
+        acc_views = if (not Kernel.is_nil(v)), do: acc_views ++ [%{key: k, value: v}], else: acc_views
         {:cont, {acc_views}}
       catch
         :throw, {:break, break_state} ->

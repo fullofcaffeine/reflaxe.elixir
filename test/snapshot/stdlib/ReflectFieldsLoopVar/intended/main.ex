@@ -1,6 +1,6 @@
 defmodule Main do
   def main() do
-    all_users = %{:user_123 => %{:metas => [%{:online_at => 1234567890, :user_name => "Alice", :editing_todo_id => 42}]}, :user_456 => %{:metas => [%{:online_at => 1234567891, :user_name => "Bob", :editing_todo_id => nil}]}}
+    all_users = %{user_123: %{metas: [%{online_at: 1234567890, user_name: "Alice", editing_todo_id: 42}]}, user_456: %{metas: [%{online_at: 1234567891, user_name: "Bob", editing_todo_id: nil}]}}
     editing_users = []
     _g = 0
     g_value = Reflect.fields(all_users)
@@ -88,7 +88,7 @@ end) do
       g_value = length(user_entry.metas)
       Enum.reduce(0..(g_value - 1)//1, all_metadata_acc, fn i, all_metadata_acc ->
         meta_item = Enum.at(user_entry.metas, i)
-        processed_meta = %{:id => user_id, :index => i, :data => meta_item}
+        processed_meta = %{id: user_id, index: i, data: meta_item}
         Enum.concat(all_metadata_acc, [processed_meta])
       end)
     end)

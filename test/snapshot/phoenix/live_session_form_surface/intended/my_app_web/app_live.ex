@@ -2,10 +2,10 @@ defmodule MyAppWeb.AppLive do
   use Phoenix.Component
   use Phoenix.LiveView, layout: {MyAppWeb.Layouts, :app}
   def mount(params, session, socket) do
-    user = %{:id => 1, :name => "Ada"}
-    params = %{:name => user.name}
+    user = %{id: 1, name: "Ada"}
+    params = %{name: user.name}
     changeset = Ecto.Changeset.change(user, params)
-    socket = Phoenix.Component.assign(socket, (fn -> %{:form => Phoenix.Component.to_form(changeset, (fn ->
+    socket = Phoenix.Component.assign(socket, (fn -> %{form: Phoenix.Component.to_form(changeset, (fn ->
   errors = nil
   action = nil
   method = nil
@@ -21,7 +21,7 @@ defmodule MyAppWeb.AppLive do
           ]
           |> Enum.filter(fn {_, value} -> value != nil end)
 
-end).()), :search_form => Phoenix.Component.to_form(%{:query => ""}, (fn ->
+end).()), search_form: Phoenix.Component.to_form(%{query: ""}, (fn ->
   id = nil
   errors = nil
   action = nil
@@ -38,7 +38,7 @@ end).()), :search_form => Phoenix.Component.to_form(%{:query => ""}, (fn ->
           ]
           |> Enum.filter(fn {_, value} -> value != nil end)
 
-end).()), :user_id =>
+end).()), user_id:
           case Map.get(session, "user_id") do
             value when is_integer(value) -> value
             _ -> nil

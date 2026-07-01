@@ -4,10 +4,10 @@ defmodule ResourceHookEvents do
       {:resource_selected, payload} ->
         wire_payload = %{}
         wire_payload = wire_payload |> Map.put("resource_id", ResourceIdCodec.codec().encode.(payload.resource_id)) |> Map.put("source", payload.source)
-        %{:event => "resource_selected", :payload => wire_payload}
+        %{event: "resource_selected", payload: wire_payload}
       {:ping} ->
         wire_payload = %{}
-        %{:event => "ping", :payload => wire_payload}
+        %{event: "ping", payload: wire_payload}
     end)
   end
   def decode(event_name, payload) do

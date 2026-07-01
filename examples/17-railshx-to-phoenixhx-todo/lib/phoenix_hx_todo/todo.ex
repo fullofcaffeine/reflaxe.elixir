@@ -14,7 +14,7 @@ defmodule PhoenixHxTodo.Todo do
     struct
   end
   def toggle_completed(todo) do
-    params = %{:completed => not todo.completed}
+    params = %{completed: not todo.completed}
     Ecto.Changeset.change(todo, params)
   end
 

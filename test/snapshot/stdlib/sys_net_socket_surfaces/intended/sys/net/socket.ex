@@ -68,7 +68,7 @@ defmodule Socket do
     SocketState.tcp_set_fast_send(struct.socket_ref, b)
   end
   def select(read, write, others, timeout) do
-    %{:read => select_ready(read, :read, timeout), :write => select_ready(write, :write, timeout), :others => select_ready(others, :error, timeout)}
+    %{read: select_ready(read, :read, timeout), write: select_ready(write, :write, timeout), others: select_ready(others, :error, timeout)}
   end
   defp select_ready(sockets, kind, timeout) do
     if (Kernel.is_nil(sockets)) do
@@ -80,6 +80,6 @@ defmodule Socket do
   defp endpoint_to_record(info) do
     host_object = Host.new("127.0.0.1")
     host_object = %{host_object | ip: SocketState.endpoint_host(info)}
-    %{:host => host_object, :port => SocketState.endpoint_port(info)}
+    %{host: host_object, port: SocketState.endpoint_port(info)}
   end
 end

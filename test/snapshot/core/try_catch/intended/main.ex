@@ -45,7 +45,7 @@ end), haxe_exception} do
           1 -> raise Reflaxe.Elixir.HaxeThrow, [value: "String error"]
           2 -> raise Reflaxe.Elixir.HaxeThrow, [value: 42]
           3 -> raise Reflaxe.Elixir.HaxeThrow, [value: Reflaxe.Exception.new("Exception error", nil, nil)]
-          4 -> raise Reflaxe.Elixir.HaxeThrow, [value: %{:error => "Object error"}]
+          4 -> raise Reflaxe.Elixir.HaxeThrow, [value: %{error: "Object error"}]
           _ -> "none"
         end)
       rescue

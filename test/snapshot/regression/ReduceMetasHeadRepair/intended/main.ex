@@ -1,6 +1,6 @@
 defmodule Main do
   def main() do
-    presences = %{"user-a" => %{:metas => [%{:name => "A", :online_at => 1}]}, "user-b" => %{:metas => [%{:name => "B", :online_at => 2}]}}
+    presences = %{"user-a" => %{metas: [%{name: "A", online_at: 1}]}, "user-b" => %{metas: [%{name: "B", online_at: 2}]}}
     names = []
     keys = Map.keys(presences)
     _g = 0

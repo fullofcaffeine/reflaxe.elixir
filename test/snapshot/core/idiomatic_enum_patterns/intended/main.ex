@@ -6,13 +6,13 @@ defmodule Main do
   end
   defp message_to_elixir(message) do
     base_payload = (case message do
-      {:todo_created, todo} -> %{:type => "todo_created", :todo => todo}
-      {:todo_updated, todo} -> %{:type => "todo_updated", :todo => todo}
-      {:todo_deleted, id} -> %{:type => "todo_deleted", :todo_id => id}
-      {:bulk_update, action} -> %{:type => "bulk_update", :action => action}
-      {:user_online, user_id} -> %{:type => "user_online", :user_id => user_id}
-      {:user_offline, user_id} -> %{:type => "user_offline", :user_id => user_id}
-      {:system_alert, message, level} -> %{:type => "system_alert", :message => message, :level => level}
+      {:todo_created, todo} -> %{type: "todo_created", todo: todo}
+      {:todo_updated, todo} -> %{type: "todo_updated", todo: todo}
+      {:todo_deleted, id} -> %{type: "todo_deleted", todo_id: id}
+      {:bulk_update, action} -> %{type: "bulk_update", action: action}
+      {:user_online, user_id} -> %{type: "user_online", user_id: user_id}
+      {:user_offline, user_id} -> %{type: "user_offline", user_id: user_id}
+      {:system_alert, message, level} -> %{type: "system_alert", message: message, level: level}
     end)
     _ = add_timestamp(base_payload)
   end
@@ -79,7 +79,7 @@ defmodule Main do
     end)
   end
   defp test_message_conversion() do
-    msg1 = {:todo_created, %{:id => 1, :title => "Test"}}
+    msg1 = {:todo_created, %{id: 1, title: "Test"}}
     msg2 = {:todo_deleted, 42}
     msg3 = {:system_alert, "Server restarting", "warning"}
     _ = message_to_elixir(msg1)

@@ -36,9 +36,9 @@ defmodule PhoenixHxTodoHx.Live.TodoState do
         {open_acc, completed_acc}
       end
     end)
-    %{:open_count => open, :completed_count => completed, :typed_column_count => 5}
+    %{open_count: open, completed_count: completed, typed_column_count: 5}
   end
   def item(id, title, notes, owner, completed) do
-    %{:id => id, :title => title, :notes => notes, :owner => owner, :completed => completed, :row_class => (if (completed), do: "todo-item is-complete", else: "todo-item")}
+    %{id: id, title: title, notes: notes, owner: owner, completed: completed, row_class: (if (completed), do: "todo-item is-complete", else: "todo-item")}
   end
 end

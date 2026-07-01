@@ -1,6 +1,6 @@
 defmodule Main do
   def main() do
-    msg = %{:type => "test", :value => 42}
+    msg = %{type: "test", value: 42}
     _ = parse_message1(msg)
     _ = parse_message2(msg)
     nil

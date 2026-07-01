@@ -16,7 +16,7 @@ defmodule Main do
     nil
   end
   defp test_message_patterns() do
-    message = {:todo_created, %{:id => 1, :title => "Test"}}
+    message = {:todo_created, %{id: 1, title: "Test"}}
     _result = (case message do
       {:todo_created, todo} -> "Created todo: #{Reflaxe.Elixir.HaxeFloat.to_string(todo)}"
       {:todo_updated, todo} -> "Updated todo: #{Reflaxe.Elixir.HaxeFloat.to_string(todo)}"

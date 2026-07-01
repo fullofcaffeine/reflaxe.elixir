@@ -5,7 +5,7 @@ defmodule Main do
     _ = test_ternary_in_function()
   end
   defp test_basic_ternary() do
-    config = %{:name => "test"}
+    config = %{name: "test"}
     _id = if (Reflaxe.Elixir.HaxeFloat.neq(config, nil)) do
       (case config do
         dyn_obj ->
@@ -39,6 +39,6 @@ defmodule Main do
   end
   defp create_spec(module, args, id) do
     actual_id = if (not Kernel.is_nil(id)), do: id, else: module
-    %{:id => actual_id, :module => module, :args => args}
+    %{id: actual_id, module: module, args: args}
   end
 end

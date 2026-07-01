@@ -6,7 +6,7 @@ defmodule MyAppWeb.DeleteLive do
   end
   def mount(_params, _session, socket) do
     socket = Phoenix.Component.assign(socket, :count, 0)
-    %{:ok => socket}
+    %{ok: socket}
     {:ok, socket}
   end
   def delete_todo(_id, socket) do
@@ -14,8 +14,8 @@ defmodule MyAppWeb.DeleteLive do
     (case MyApp.Repo.delete(todo) do
       {:ok, _deleted} ->
         s2 = remove_todo_from_list(_id, socket)
-        %{:noreply => s2}
-      {:error, _reason} -> %{:noreply => socket}
+        %{noreply: s2}
+      {:error, _reason} -> %{noreply: socket}
     end)
   end
   defp remove_todo_from_list(_id_like, socket) do

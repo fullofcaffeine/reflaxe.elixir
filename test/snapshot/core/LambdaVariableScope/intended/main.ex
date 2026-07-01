@@ -9,7 +9,7 @@ defmodule Main do
     items = ["apple", "banana", "cherry"]
     target_item = "banana"
     _filtered = Enum.filter(items, fn item -> item != target_item end)
-    todos = [%{:id => 1, :name => "first"}, %{:id => 2, :name => "second"}]
+    todos = [%{id: 1, name: "first"}, %{id: 2, name: "second"}]
     id = 2
     _filtered_todos = Enum.filter(todos, fn item -> item.id != id end)
   end

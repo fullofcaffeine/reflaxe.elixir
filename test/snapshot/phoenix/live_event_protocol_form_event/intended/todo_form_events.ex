@@ -6,18 +6,18 @@ defmodule TodoFormEvents do
         wire_payload = %{}
         form_payload = form_payload |> Map.put("done", payload.done) |> Map.put("estimate", payload.estimate) |> Map.put("notes", payload.notes) |> Map.put("priority", payload.priority) |> Map.put("title", payload.title)
         wire_payload = Map.put(wire_payload, "todo", form_payload)
-        %{:event => "create_todo", :payload => wire_payload}
+        %{event: "create_todo", payload: wire_payload}
       {:update_form, payload} ->
         form_payload = %{}
         wire_payload = %{}
         form_payload = form_payload |> Map.put("done", payload.done) |> Map.put("estimate", payload.estimate) |> Map.put("notes", payload.notes) |> Map.put("priority", payload.priority) |> Map.put("title", payload.title)
         wire_payload = Map.put(wire_payload, "todo", form_payload)
-        %{:event => "update_form", :payload => wire_payload}
+        %{event: "update_form", payload: wire_payload}
       {:clear_completed} ->
         form_payload = %{}
         wire_payload = %{}
         wire_payload = Map.put(wire_payload, "todo", form_payload)
-        %{:event => "clear_completed", :payload => wire_payload}
+        %{event: "clear_completed", payload: wire_payload}
     end)
   end
   def decode(event_name, payload) do

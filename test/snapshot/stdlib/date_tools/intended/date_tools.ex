@@ -116,7 +116,7 @@ defmodule DateTools do
         end).())
       "y" ->
         StringTools.lpad(Reflaxe.Elixir.HaxeFloat.to_string(rem(d.year, 100)), "0", 2)
-      _ -> raise Reflaxe.Elixir.HaxeThrow, [value: NotImplementedException.new("Date.format %" <> e <> "- not implemented yet.", nil, %{:file_name => "../../../../std/DateTools.cross.hx", :line_number => 82, :class_name => "DateTools", :method_name => "__format_get"})]
+      _ -> raise Reflaxe.Elixir.HaxeThrow, [value: NotImplementedException.new("Date.format %" <> e <> "- not implemented yet.", nil, %{file_name: "../../../../std/DateTools.cross.hx", line_number: 82, class_name: "DateTools", method_name: "__format_get"})]
     end)
   end
   defp __format(d, f) do
@@ -181,7 +181,7 @@ defmodule DateTools do
     s = Reflaxe.Elixir.HaxeFloat.divide(t, 1000)
     m = Reflaxe.Elixir.HaxeFloat.divide(s, 60)
     h = Reflaxe.Elixir.HaxeFloat.divide(m, 60)
-    %{:ms => Reflaxe.Elixir.HaxeFloat.remainder(t, 1000), :seconds => trunc(Reflaxe.Elixir.HaxeFloat.remainder(s, 60)), :minutes => trunc(Reflaxe.Elixir.HaxeFloat.remainder(m, 60)), :hours => trunc(Reflaxe.Elixir.HaxeFloat.remainder(h, 24)), :days => trunc(Reflaxe.Elixir.HaxeFloat.divide(h, 24))}
+    %{ms: Reflaxe.Elixir.HaxeFloat.remainder(t, 1000), seconds: trunc(Reflaxe.Elixir.HaxeFloat.remainder(s, 60)), minutes: trunc(Reflaxe.Elixir.HaxeFloat.remainder(m, 60)), hours: trunc(Reflaxe.Elixir.HaxeFloat.remainder(h, 24)), days: trunc(Reflaxe.Elixir.HaxeFloat.divide(h, 24))}
   end
   def make(o) do
     Reflaxe.Elixir.HaxeFloat.add(o.ms, Reflaxe.Elixir.HaxeFloat.mul(1000, Reflaxe.Elixir.HaxeFloat.add(o.seconds, Reflaxe.Elixir.HaxeFloat.mul(60, Reflaxe.Elixir.HaxeFloat.add(o.minutes, Reflaxe.Elixir.HaxeFloat.mul(60, Reflaxe.Elixir.HaxeFloat.add(o.hours, Reflaxe.Elixir.HaxeFloat.mul(24, o.days))))))))

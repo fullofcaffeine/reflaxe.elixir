@@ -1,6 +1,6 @@
 defmodule Main do
   def main() do
-    obj = %{:name => "John", :age => 30, :is_active => true, :nested_data => %{:street_address => "123 Main St"}}
+    obj = %{name: "John", age: 30, is_active: true, nested_data: %{street_address: "123 Main St"}}
     _has_name = (case {obj, "name"} do
       {reflect_obj, reflect_field} ->
         (case Map.has_key?(reflect_obj, reflect_field) do
