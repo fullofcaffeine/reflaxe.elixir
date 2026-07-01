@@ -85,7 +85,7 @@ class UsersLive {
 
 		var maybeUserId = TodoAppWeb.sessionUserId(session);
 		var signedIn = maybeUserId != null;
-		var currentUser:Null<User> = signedIn ? Repo.get(User, cast maybeUserId) : null;
+		var currentUser:Null<User> = signedIn ? Repo.get(User, maybeUserId) : null;
 		if (currentUser == null)
 			signedIn = false;
 

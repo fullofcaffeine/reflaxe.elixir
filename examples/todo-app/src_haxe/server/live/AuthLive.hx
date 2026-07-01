@@ -57,7 +57,7 @@ class AuthLive {
 
 		var maybeUserId = TodoAppWeb.sessionUserId(session);
 		var signedIn = maybeUserId != null;
-		var currentUser:Null<server.schemas.User> = signedIn ? Repo.get(server.schemas.User, cast maybeUserId) : null;
+		var currentUser:Null<server.schemas.User> = signedIn ? Repo.get(server.schemas.User, maybeUserId) : null;
 		if (currentUser == null)
 			signedIn = false;
 

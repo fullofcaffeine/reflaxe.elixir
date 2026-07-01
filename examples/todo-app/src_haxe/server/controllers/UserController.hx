@@ -5,12 +5,11 @@ import contexts.Accounts;
 import contexts.Users;
 import ecto.SchemaStruct;
 import elixir.ElixirMap;
-import elixir.Atom;
-import elixir.Kernel;
 import elixir.types.Term;
 import elixir.DateTime.NaiveDateTime;
 import elixir.DateTime.TimePrecision;
 import haxe.functional.Result;
+import phoenix.Params;
 import server.infrastructure.Repo;
 import server.schemas.User;
 import StringTools;
@@ -60,41 +59,20 @@ class UserController {
 		return conn.putStatus(status).json({error: message});
 	}
 
-	static function getParam(params:Term, key:String):Term {
-		if (params == null)
-			return null;
-
-		var value:Term = ElixirMap.get(params, key);
-		if (value != null)
-			return value;
-
-		// Test helpers and internal calls may use atom keys. Avoid creating atoms from request keys.
-		var atom = Atom.existingOrNull(key);
-		return atom != null ? ElixirMap.get(params, atom) : null;
-	}
-
 	static function getStringParam(params:Term, key:String):Null<String> {
-		var value = getParam(params, key);
-		return value != null ? cast value : null;
+		return Params.getString(params, key);
 	}
 
 	static function getBoolParam(params:Term, key:String):Null<Bool> {
-		var value = getParam(params, key);
-		return value != null ? cast value : null;
+		return Params.getBool(params, key);
 	}
 
 	static function parseParamId(params:Term):Null<Int> {
-		var idValue = getParam(params, "id");
-		if (idValue == null)
-			return null;
-		return Std.parseInt(Kernel.toString(idValue));
+		return Params.getInt(params, "id");
 	}
 
 	static function parseSessionUserId(term:Term):Null<Int> {
-		if (term == null)
-			return null;
-		var parsed = Std.parseInt(Kernel.toString(term));
-		return parsed;
+		return Params.intFromTerm(term);
 	}
 
 	static function currentUserFromSession<TParams>(conn:Conn<TParams>):Null<User> {
@@ -112,7 +90,7 @@ class UserController {
 	}
 
 	static function userJson(user:User):Term {
-		return cast {
+		return {
 			id: user.id,
 			name: user.name,
 			email: user.email,

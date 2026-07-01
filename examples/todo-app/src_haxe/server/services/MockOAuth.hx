@@ -37,7 +37,7 @@ class MockOAuth {
 		var app = Atom.createSafe("todo_app");
 		var key = Atom.createSafe("mock_oauth_enabled");
 		var enabled:Term = Application.get_env(app, key, false);
-		return enabled != null ? cast enabled : false;
+		return Params.boolFromTerm(enabled) ?? false;
 	}
 
 	public static function identityFromParams(params:Term):MockOAuthIdentity {

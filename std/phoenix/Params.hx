@@ -70,7 +70,10 @@ class Params {
 	}
 
 	public static function getBool(params:Term, key:String):Null<Bool> {
-		var value = get(params, key);
+		return boolFromTerm(get(params, key));
+	}
+
+	public static function boolFromTerm(value:Null<Term>):Null<Bool> {
 		if (Kernel.isNil(value))
 			return null;
 

@@ -22,6 +22,7 @@ class Main {
 		assertThat(Params.getInt(params, "id") == 42, "getInt string failed");
 		assertThat(Params.getNestedInt(params, "todo", "id") == 99, "getNestedInt failed");
 		assertThat(Params.getBool(params, "done") == true, "getBool string failed");
+		assertThat(Params.boolFromTerm(Params.get(params, "done")) == true, "boolFromTerm string failed");
 		assertThat(Params.getIntDefault(params, "missing", 7) == 7, "getIntDefault failed");
 		assertThat(Params.stringFromTerm(Params.get(params, "title")) == "Ship it", "stringFromTerm failed");
 		assertThat(Params.stringFromTermDefault(null, "fallback") == "fallback", "stringFromTermDefault failed");
