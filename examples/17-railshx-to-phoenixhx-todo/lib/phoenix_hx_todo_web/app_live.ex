@@ -298,8 +298,8 @@ defmodule PhoenixHxTodoWeb.AppLive do
     PhoenixHx.Params.get_int_default(params, key, 0)
   end
   defp dispatch_todo_event(event_name, payload, socket) do
-    if (event_name == "toggle_todo") do
-      event_payload = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)), do: payload, else: %{}
+    if event_name == "toggle_todo" do
+      event_payload = if not Kernel.is_nil(payload) and Kernel.is_map(payload), do: payload, else: %{}
       id_raw = Map.get(event_payload, "id")
       id = cond do
         Kernel.is_integer(id_raw) -> id_raw

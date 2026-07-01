@@ -29,19 +29,19 @@ defmodule MyAppWeb.OptionalLive do
   defp dispatch_optional_event(event_name, payload, socket) do
     cond do
       event_name == "save_profile" ->
-        event_payload_root = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)) do
+        event_payload_root = if not Kernel.is_nil(payload) and Kernel.is_map(payload) do
           Map.get(payload, "profile")
         else
           nil
         end
-        event_payload = if (not Kernel.is_nil(event_payload_root) and Kernel.is_map(event_payload_root)), do: event_payload_root, else: %{}
+        event_payload = if not Kernel.is_nil(event_payload_root) and Kernel.is_map(event_payload_root), do: event_payload_root, else: %{}
         bio_raw = Map.get(event_payload, "bio")
         bio = if (Kernel.is_binary(bio_raw)), do: bio_raw, else: nil
         name_raw = Map.get(event_payload, "name")
         name = if (Kernel.is_binary(name_raw)), do: name_raw, else: nil
         if (Kernel.is_nil(name)), do: {:noreply, socket}, else: handle_save_profile(%{bio: bio, name: name}, socket)
       event_name == "search" ->
-        event_payload = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)), do: payload, else: %{}
+        event_payload = if not Kernel.is_nil(payload) and Kernel.is_map(payload), do: payload, else: %{}
         query_raw = Map.get(event_payload, "query")
         query = if (Kernel.is_binary(query_raw)), do: query_raw, else: nil
         handler_result = handle_search(query, socket)

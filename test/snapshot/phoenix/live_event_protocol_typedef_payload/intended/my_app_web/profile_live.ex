@@ -17,12 +17,12 @@ defmodule MyAppWeb.ProfileLive do
   defp dispatch_profile_hook_event(event_name, payload, socket) do
     cond do
       event_name == "clipboard_copied" ->
-        event_payload = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)), do: payload, else: %{}
+        event_payload = if not Kernel.is_nil(payload) and Kernel.is_map(payload), do: payload, else: %{}
         copied_at_raw = Map.get(event_payload, "copied_at")
         copied_at = if (Kernel.is_binary(copied_at_raw)), do: copied_at_raw, else: nil
         message_raw = Map.get(event_payload, "message")
         message = if (Kernel.is_binary(message_raw)), do: message_raw, else: nil
-        if (Kernel.is_nil(copied_at) or Kernel.is_nil(message)), do: {:noreply, socket}, else: handle_clipboard_copied(%{copied_at: copied_at, message: message}, socket)
+        if Kernel.is_nil(copied_at) or Kernel.is_nil(message), do: {:noreply, socket}, else: handle_clipboard_copied(%{copied_at: copied_at, message: message}, socket)
       event_name == "ping" -> handle_ping(socket)
       true -> nil
     end

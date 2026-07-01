@@ -21,12 +21,12 @@ defmodule MyAppWeb.TodoLive do
   defp dispatch_todo_event(event_name, payload, socket) do
     cond do
       event_name == "clipboard_copied" ->
-        event_payload = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)), do: payload, else: %{}
+        event_payload = if not Kernel.is_nil(payload) and Kernel.is_map(payload), do: payload, else: %{}
         message_raw = Map.get(event_payload, "message")
         message = if (Kernel.is_binary(message_raw)), do: message_raw, else: nil
         if (Kernel.is_nil(message)), do: {:noreply, socket}, else: handle_clipboard_copied(message, socket)
       event_name == "toggle_todo" ->
-        event_payload = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)), do: payload, else: %{}
+        event_payload = if not Kernel.is_nil(payload) and Kernel.is_map(payload), do: payload, else: %{}
         id_raw = Map.get(event_payload, "id")
         id = cond do
           Kernel.is_integer(id_raw) -> id_raw

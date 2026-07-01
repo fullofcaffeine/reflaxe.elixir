@@ -5,8 +5,8 @@ defmodule MyAppWeb.ProfileLive do
     {:noreply, Phoenix.Component.assign(socket, :flash_message, message)}
   end
   defp dispatch_profile_hook_event(event_name, payload, socket) do
-    if (event_name == "clipboard_copied") do
-      event_payload = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)), do: payload, else: %{}
+    if event_name == "clipboard_copied" do
+      event_payload = if not Kernel.is_nil(payload) and Kernel.is_map(payload), do: payload, else: %{}
       message_raw = Map.get(event_payload, "message")
       message = if (Kernel.is_binary(message_raw)), do: message_raw, else: nil
       if (Kernel.is_nil(message)), do: {:noreply, socket}, else: handle_clipboard_copied(message, socket)

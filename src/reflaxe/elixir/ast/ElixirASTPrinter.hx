@@ -1032,9 +1032,9 @@ class ElixirASTPrinter {
 				#if debug_inline_if
 				#end
 
-				// Print condition without unnecessary parentheses
-				// Always parenthesize the condition to avoid parser ambiguity in complex shapes
-				var conditionStr = '(' + print(condition, 0) + ')';
+				// Default to defensive parens. Generated protocol conditions can opt
+				// into a narrower handwritten-looking form when their shape is known.
+				var conditionStr = prefersReadableConditionSyntax(condition) ? printReadableIfCondition(condition) : '(' + print(condition, 0) + ')';
 
 				if (isInline && elseBranch != null) { // Inline if-else expression: if condition, do: then_val, else: else_val
 					'if '
@@ -3397,6 +3397,38 @@ class ElixirASTPrinter {
 					return '(' + s + ')';
 				}
 				return s;
+		}
+	}
+
+	static function prefersReadableConditionSyntax(condition:ElixirAST):Bool {
+		return condition != null && condition.metadata != null && condition.metadata.preferReadableConditionSyntax == true;
+	}
+
+	static function printReadableIfCondition(condition:ElixirAST):String {
+		if (condition == null)
+			return "";
+
+		return switch (condition.def) {
+			case EBinary(op, left, right):
+				if (right == null)
+					return printIfCondition(condition);
+
+				var needsLeft = switch (left.def) {
+					case ECase(_, _) | ECond(_) | EWith(_, _, _) | EIf(_, _, _): true;
+					default: false;
+				};
+				var needsRight = switch (right) {
+					case null: false;
+					case _: switch (right.def) {
+							case ECase(_, _) | ECond(_) | EWith(_, _, _) | EIf(_, _, _): true;
+							default: false;
+						}
+				};
+				var leftStr = needsLeft ? '(' + print(left, 0) + ')' : print(left, 0);
+				var rightStr = needsRight ? '(' + print(right, 0) + ')' : print(right, 0);
+				leftStr + ' ' + binaryOpToString(op) + ' ' + rightStr;
+			case _:
+				printIfCondition(condition);
 		}
 	}
 

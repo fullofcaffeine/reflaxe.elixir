@@ -45,6 +45,19 @@ class LiveEventProtocol {
 	}
 
 	/**
+	 * Internal compile-time marker used by PhoenixHx-generated protocol helpers.
+	 *
+	 * The Haxe->Elixir compiler erases this identity call and uses it only as a
+	 * printer hint for conditions that are generated from target-native Phoenix
+	 * protocol code. It keeps generated Elixir close to handwritten style
+	 * (`if Kernel.is_binary(value), do: ...`) without changing ordinary Haxe
+	 * `if` lowering.
+	 */
+	public static function readableCondition(condition:Bool):Bool {
+		return condition;
+	}
+
+	/**
 	 * Validates `protocolRef` and returns its deterministic text manifest.
 	 */
 	public static macro function manifest(protocolRef:Expr):ExprOf<String> {

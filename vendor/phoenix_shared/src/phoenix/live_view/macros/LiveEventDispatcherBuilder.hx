@@ -262,10 +262,10 @@ class LiveEventDispatcherBuilder {
 			return macro null;
 		var event = events[index];
 		return {
-			expr: EIf({
+			expr: EIf(readableCondition({
 				expr: EBinop(OpEq, macro eventName, macro $v{event.eventName}),
 				pos: event.pos
-			}, buildEventDispatchValue(event), buildEventIfChain(events, index + 1)),
+			}), buildEventDispatchValue(event), buildEventIfChain(events, index + 1)),
 			pos: event.pos
 		};
 	}
@@ -308,7 +308,7 @@ class LiveEventDispatcherBuilder {
 
 		if (missingChecks.length > 0) {
 			expressions.push({
-				expr: EIf(anyOf(missingChecks), buildInvalidPayloadResult(), buildHandlerCall(event)),
+				expr: EIf(readableCondition(anyOf(missingChecks)), buildInvalidPayloadResult(), buildHandlerCall(event)),
 				pos: event.pos
 			});
 		} else {
@@ -540,6 +540,13 @@ class LiveEventDispatcherBuilder {
 			return expr;
 		}
 		return macro phoenix.live_view.LiveEventProtocol.keywordMap($expr);
+	}
+
+	static function readableCondition(expr:Expr):Expr {
+		if (Context.defined("js")) {
+			return expr;
+		}
+		return macro phoenix.live_view.LiveEventProtocol.readableCondition($expr);
 	}
 
 	static function typePath(pack:Array<String>, name:String):String {

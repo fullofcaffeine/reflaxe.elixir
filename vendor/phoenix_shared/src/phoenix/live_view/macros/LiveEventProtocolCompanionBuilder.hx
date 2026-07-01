@@ -227,10 +227,10 @@ class LiveEventProtocolCompanionBuilder {
 			return macro null;
 		var event = protocol.events[index];
 		return {
-			expr: EIf({
+			expr: EIf(readableCondition({
 				expr: EBinop(OpEq, macro eventName, macro $v{event.eventName}),
 				pos: event.pos
-			}, buildDecodeCase(protocol, event), buildDecodeIfChain(protocol, index + 1)),
+			}), buildDecodeCase(protocol, event), buildDecodeIfChain(protocol, index + 1)),
 			pos: event.pos
 		};
 	}
@@ -320,7 +320,7 @@ class LiveEventProtocolCompanionBuilder {
 			};
 		}
 		return {
-			expr: EIf(condition, success, macro null),
+			expr: EIf(readableCondition(condition), success, macro null),
 			pos: success.pos
 		};
 	}
@@ -488,6 +488,13 @@ class LiveEventProtocolCompanionBuilder {
 			return expr;
 		}
 		return macro phoenix.live_view.LiveEventProtocol.keywordMap($expr);
+	}
+
+	static function readableCondition(expr:Expr):Expr {
+		if (Context.defined("js")) {
+			return expr;
+		}
+		return macro phoenix.live_view.LiveEventProtocol.readableCondition($expr);
 	}
 
 	static function tryResolveType(path:String):Null<Type> {

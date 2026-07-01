@@ -45,7 +45,7 @@ class LiveEventPayloadExprs {
 		var decoded = switch (field.kind) {
 			case CustomCodec(codec, _):
 				{
-					expr: EIf(notNil(rawIdent, field.pos), callCodecMethod(codec, "decode", [rawIdent]), macro null),
+					expr: EIf(readableCondition(notNil(rawIdent, field.pos)), callCodecMethod(codec, "decode", [rawIdent]), macro null),
 					pos: field.pos
 				};
 			case _:
@@ -82,7 +82,7 @@ class LiveEventPayloadExprs {
 
 		var emptyPayload:Expr = {expr: EObjectDecl([]), pos: pos};
 		return {
-			expr: EIf(isElixirMap(value, pos), value, emptyPayload),
+			expr: EIf(readableCondition(isElixirMap(value, pos)), value, emptyPayload),
 			pos: pos
 		};
 	}
@@ -230,7 +230,7 @@ class LiveEventPayloadExprs {
 			return mapRead;
 		}
 		return {
-			expr: EIf(isElixirMap(payload, field.pos), mapRead, macro null),
+			expr: EIf(readableCondition(isElixirMap(payload, field.pos)), mapRead, macro null),
 			pos: field.pos
 		};
 	}
@@ -255,7 +255,7 @@ class LiveEventPayloadExprs {
 			pos: pos
 		};
 		return {
-			expr: EIf(isElixirMap(payload, pos), rootRead, macro null),
+			expr: EIf(readableCondition(isElixirMap(payload, pos)), rootRead, macro null),
 			pos: pos
 		};
 	}
@@ -315,7 +315,7 @@ class LiveEventPayloadExprs {
 				macro false;
 		};
 		return {
-			expr: EIf(predicate, {expr: ECast(raw, null), pos: field.pos}, macro null),
+			expr: EIf(readableCondition(predicate), {expr: ECast(raw, null), pos: field.pos}, macro null),
 			pos: field.pos
 		};
 	}
@@ -323,8 +323,8 @@ class LiveEventPayloadExprs {
 	static function narrowTemplateIntRaw(field:LiveEventFieldData, raw:Expr):Expr {
 		var parsed = macro Std.parseInt($raw);
 		return {
-			expr: EIf(kernelPredicate("isInteger", raw, field.pos), {expr: ECast(raw, null), pos: field.pos}, {
-				expr: EIf(kernelPredicate("isBinary", raw, field.pos), parsed, macro null),
+			expr: EIf(readableCondition(kernelPredicate("isInteger", raw, field.pos)), {expr: ECast(raw, null), pos: field.pos}, {
+				expr: EIf(readableCondition(kernelPredicate("isBinary", raw, field.pos)), parsed, macro null),
 				pos: field.pos
 			}),
 			pos: field.pos
@@ -337,10 +337,10 @@ class LiveEventPayloadExprs {
 			pos: field.pos
 		};
 		return {
-			expr: EIf(kernelPredicate("isBoolean", raw, field.pos), raw, {
-				expr: EIf(kernelPredicate("isBinary", raw, field.pos), {
-					expr: EIf({expr: EBinop(OpEq, rawText, macro "true"), pos: field.pos}, macro true, {
-						expr: EIf({expr: EBinop(OpEq, rawText, macro "false"), pos: field.pos}, macro false, macro null),
+			expr: EIf(readableCondition(kernelPredicate("isBoolean", raw, field.pos)), raw, {
+				expr: EIf(readableCondition(kernelPredicate("isBinary", raw, field.pos)), {
+					expr: EIf(readableCondition({expr: EBinop(OpEq, rawText, macro "true"), pos: field.pos}), macro true, {
+						expr: EIf(readableCondition({expr: EBinop(OpEq, rawText, macro "false"), pos: field.pos}), macro false, macro null),
 						pos: field.pos
 					}),
 					pos: field.pos
@@ -353,11 +353,11 @@ class LiveEventPayloadExprs {
 
 	static function narrowFormFloatRaw(field:LiveEventFieldData, raw:Expr):Expr {
 		return {
-			expr: EIf({
+			expr: EIf(readableCondition({
 				expr: EBinop(OpBoolOr, kernelPredicate("isFloat", raw, field.pos), kernelPredicate("isInteger", raw, field.pos)),
 				pos: field.pos
-			}, {expr: ECast(raw, null), pos: field.pos}, {
-				expr: EIf(kernelPredicate("isBinary", raw, field.pos), macro Std.parseFloat($raw), macro null),
+			}), {expr: ECast(raw, null), pos: field.pos}, {
+				expr: EIf(readableCondition(kernelPredicate("isBinary", raw, field.pos)), macro Std.parseFloat($raw), macro null),
 				pos: field.pos
 			}),
 			pos: field.pos
@@ -408,6 +408,13 @@ class LiveEventPayloadExprs {
 			return {expr: EBinop(OpNotEq, value, macro null), pos: pos};
 		}
 		return {expr: EUnop(OpNot, false, kernelPredicate("isNil", value, pos)), pos: pos};
+	}
+
+	static function readableCondition(expr:Expr):Expr {
+		if (Context.defined("js")) {
+			return expr;
+		}
+		return macro phoenix.live_view.LiveEventProtocol.readableCondition($expr);
 	}
 
 	static function findPayloadArgument(event:LiveEventData):Null<LiveEventArgumentData> {

@@ -70,13 +70,21 @@ class CallExprBuilder {
 		return false;
 	}
 
-	static function isLiveEventKeywordMapMarker(e:TypedExpr):Bool {
+	static function isLiveEventProtocolMarker(e:TypedExpr, markerName:String):Bool {
 		return switch (unwrapMeta(e).expr) {
 			case TField(_, FStatic(classRef, fieldRef)): var cls = classRef.get(); fieldRef.get()
-					.name == "keywordMap" && cls.name == "LiveEventProtocol" && cls.pack.join(".") == "phoenix.live_view";
+					.name == markerName && cls.name == "LiveEventProtocol" && cls.pack.join(".") == "phoenix.live_view";
 			default:
 				false;
 		}
+	}
+
+	static function isLiveEventKeywordMapMarker(e:TypedExpr):Bool {
+		return isLiveEventProtocolMarker(e, "keywordMap");
+	}
+
+	static function isLiveEventReadableConditionMarker(e:TypedExpr):Bool {
+		return isLiveEventProtocolMarker(e, "readableCondition");
 	}
 
 	/**
@@ -102,6 +110,8 @@ class CallExprBuilder {
 		if (e != null) {
 			switch (e.expr) {
 				case _ if (args != null && args.length == 1 && isLiveEventKeywordMapMarker(e)):
+					return buildExpression(args[0]).def;
+				case _ if (args != null && args.length == 1 && isLiveEventReadableConditionMarker(e)):
 					return buildExpression(args[0]).def;
 				case TField(target, FInstance(_, _, cf)) if (cf.get().name == "concat" && args != null && args.length >= 1):
 					// Array.concat(other) → list ++ other (list concatenation)
