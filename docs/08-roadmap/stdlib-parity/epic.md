@@ -37,7 +37,7 @@ Related work:
 
 ## Current status (rolling)
 
-- Latest gap report: **115 missing** modules (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
+- Latest gap report: **105 missing** reference-only modules (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
 - Recently closed (high leverage):
   - `haxe.Int32`, `haxe.Int64`, `haxe.Int64Helper` (deterministic overflow + bitwise semantics on BEAM)
   - `haxe.ds.Map` + `haxe.ds.StringMap`/`IntMap`/`ObjectMap` surfaces (native `%{}` backend; lowered to `Map.*`)
@@ -99,16 +99,17 @@ Stdlib runtime semantics are tested by compiling Haxe tests into ExUnit and exec
 
 The gap report is large; we focus on the smallest set that unlocks real-world libraries quickly while avoiding semantic traps.
 
-### Phase 0 — Parity harness + conventions (1–2 tasks)
+### Phase 0 — Parity harness + conventions (done)
 
 **Task: “Stdlib runtime parity harness (Haxe→ExUnit)”**
-- Add a tiny convention for stdlib runtime tests:
+- Status: implemented. The focused command is `npm run test:haxe-exunit-stdlib`,
+  and the CI `Tests` job runs the same lane.
+- Convention for stdlib runtime tests:
   - One test module per stdlib module touched (fast, deterministic).
   - Each module’s task must include at least one runtime test that exercises sharp edges.
-- Acceptance:
-  - Tests compile from Haxe and run on BEAM in CI.
-  - Documentation on where/how to add these tests.
-  - The focused harness command is visible in `package.json` and the CI `Tests` job.
+- Coverage: tests compile from Haxe and run on BEAM in CI; the command is
+  documented in `package.json`, `docs/02-user-guide/exunit-testing.md`, and
+  `docs/03-compiler-development/TESTING_INFRASTRUCTURE.md`.
 
 Notes learned from early parity work:
 - Prefer semantic tests that exercise real BEAM behaviors (immutability, exceptions, key types) rather than relying on print-shape snapshots alone.
@@ -116,7 +117,7 @@ Notes learned from early parity work:
 
 Suggested command coverage:
 - Snapshot layer: `make -C test summary`
-- Runtime layer (stdlib-focused): add a fast CI entry that runs only the stdlib parity ExUnit tests (to be defined as part of the harness).
+- Runtime layer (stdlib-focused): `npm run test:haxe-exunit-stdlib`
 
 ### Phase 1 — Map family parity (high leverage; removes gotchas)
 
