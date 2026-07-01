@@ -11,15 +11,16 @@ defmodule ProfileHookEvents do
     end)
   end
   def decode(event_name, payload) do
-    if (event_name == "clipboard_copied") do
-      event_payload = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)), do: payload, else: %{}
-      copied_at_raw = Map.get(event_payload, "copied_at")
-      copied_at = if (Kernel.is_binary(copied_at_raw)), do: copied_at_raw, else: nil
-      message_raw = Map.get(event_payload, "message")
-      message = if (Kernel.is_binary(message_raw)), do: message_raw, else: nil
-      if (not Kernel.is_nil(copied_at) and not Kernel.is_nil(message)), do: {:clipboard_copied, %{copied_at: copied_at, message: message}}, else: nil
-    else
-      if (event_name == "ping"), do: {:ping}, else: nil
+    cond do
+      event_name == "clipboard_copied" ->
+        event_payload = if (not Kernel.is_nil(payload) and Kernel.is_map(payload)), do: payload, else: %{}
+        copied_at_raw = Map.get(event_payload, "copied_at")
+        copied_at = if (Kernel.is_binary(copied_at_raw)), do: copied_at_raw, else: nil
+        message_raw = Map.get(event_payload, "message")
+        message = if (Kernel.is_binary(message_raw)), do: message_raw, else: nil
+        if (not Kernel.is_nil(copied_at) and not Kernel.is_nil(message)), do: {:clipboard_copied, %{copied_at: copied_at, message: message}}, else: nil
+      event_name == "ping" -> {:ping}
+      true -> nil
     end
   end
 end

@@ -47,11 +47,11 @@ ProfileHookEvents.decode = function(eventName,payload) {
 		} else {
 			return null;
 		}
-	}
-	if(eventName == "ping") {
+	} else if(eventName == "ping") {
 		return ProfileHookEvent.Ping;
+	} else {
+		return null;
 	}
-	return null;
 };
 ProfileHookEvents.push = function(hook,event) {
 	var encoded = ProfileHookEvents.encode(event);

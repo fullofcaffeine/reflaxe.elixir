@@ -67,8 +67,7 @@ ResourceHookEvents.encode = function(event) {
 ResourceHookEvents.decode = function(eventName,payload) {
 	if(eventName == "ping") {
 		return ResourceHookEvent.Ping;
-	}
-	if(eventName == "resource_selected") {
+	} else if(eventName == "resource_selected") {
 		var resourceIdRaw = (payload == null ? null : payload["resource_id"]);
 		var resourceId = resourceIdRaw != null ? ResourceIdCodec.codec().decode(resourceIdRaw) : null;
 		var sourceRaw = (payload == null ? null : payload["source"]);
@@ -78,8 +77,9 @@ ResourceHookEvents.decode = function(eventName,payload) {
 		} else {
 			return null;
 		}
+	} else {
+		return null;
 	}
-	return null;
 };
 ResourceHookEvents.push = function(hook,event) {
 	var encoded = ResourceHookEvents.encode(event);

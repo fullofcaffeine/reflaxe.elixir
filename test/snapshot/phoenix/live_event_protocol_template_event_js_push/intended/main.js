@@ -46,8 +46,7 @@ TodoEvents.decode = function(eventName,payload) {
 		} else {
 			return null;
 		}
-	}
-	if(eventName == "toggle_todo") {
+	} else if(eventName == "toggle_todo") {
 		var idRaw = (payload == null ? null : payload["id"]);
 		var id = (Number.isInteger(idRaw) ? idRaw : null);
 		if(id != null) {
@@ -55,8 +54,9 @@ TodoEvents.decode = function(eventName,payload) {
 		} else {
 			return null;
 		}
+	} else {
+		return null;
 	}
-	return null;
 };
 TodoEvents.pushClipboardCopied = function(hook,message) {
 	if(hook.pushEvent != null) {

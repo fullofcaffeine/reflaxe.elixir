@@ -144,7 +144,7 @@ class LiveEventProtocolCompanionBuilder {
 					{name: "payload", type: macro:phoenix.channels.Payload}
 				],
 				ret: TPath({pack: [], name: "Null", params: [TPType(protocolComplexType(protocol))]}),
-				expr: buildDecodeFunctionBlock(protocol)
+				expr: buildReturnBlock(buildDecodeIfChain(protocol, 0))
 			}),
 			pos: Context.currentPos()
 		};
@@ -222,30 +222,17 @@ class LiveEventProtocolCompanionBuilder {
 		});
 	}
 
-	static function buildDecodeFunctionBlock(protocol:LiveEventProtocolData):Expr {
-		var expressions:Array<Expr> = [];
-		for (event in protocol.events) {
-			expressions.push({
-				expr: EIf({
-					expr: EBinop(OpEq, macro eventName, macro $v{event.eventName}),
-					pos: event.pos
-				}, buildDecodeReturnBlock(protocol, event), null),
+	static function buildDecodeIfChain(protocol:LiveEventProtocolData, index:Int):Expr {
+		if (index >= protocol.events.length)
+			return macro null;
+		var event = protocol.events[index];
+		return {
+			expr: EIf({
+				expr: EBinop(OpEq, macro eventName, macro $v{event.eventName}),
 				pos: event.pos
-			});
-		}
-		expressions.push({expr: EReturn(macro null), pos: Context.currentPos()});
-		return {expr: EBlock(expressions), pos: Context.currentPos()};
-	}
-
-	static function buildDecodeReturnBlock(protocol:LiveEventProtocolData, event:LiveEventData):Expr {
-		var decoded = buildDecodeCase(protocol, event);
-		var expressions = switch (decoded.expr) {
-			case EBlock(items): items;
-			case _: [decoded];
-		}
-		var result = expressions.pop();
-		expressions.push({expr: EReturn(result), pos: event.pos});
-		return {expr: EBlock(expressions), pos: event.pos};
+			}, buildDecodeCase(protocol, event), buildDecodeIfChain(protocol, index + 1)),
+			pos: event.pos
+		};
 	}
 
 	static function buildDecodeCase(protocol:LiveEventProtocolData, event:LiveEventData):Expr {
