@@ -35,8 +35,11 @@ These are the immediate follow-ups selected from the audit:
   no-op replies instead of falling through as unknown events. The v1 companion
   shape intentionally stays as an explicit
   `typedef FooEvents = LiveEventProtocolCompanion<FooEvent>` trigger because it
-  keeps macro generation local and deterministic. Remaining polish is richer
-  invalid-payload diagnostics/telemetry and eventual typed replies. The v1 plan
+  keeps macro generation local and deterministic. Invalid-payload
+  diagnostics/telemetry are deferred past v1 until the dispatcher API can expose
+  an explicit invalid-payload result instead of adding side effects to the
+  current `Null<HandleEventResult<T>>` helper. Remaining polish is eventual
+  typed replies. The v1 plan
   is tracked in
   [`phoenixhx-live-event-protocols.md`](phoenixhx-live-event-protocols.md) and
   Bead `haxe.elixir.codex-7on`.

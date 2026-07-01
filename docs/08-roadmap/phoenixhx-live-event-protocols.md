@@ -400,10 +400,13 @@ Known events whose required payload fields fail to decode return
 `NoReply(socket)` so malformed protocol payloads are consumed safely and cannot
 fall through into ordinary fallback handling.
 
-A later diagnostic/telemetry iteration may still split the public dispatcher
-result into `Unhandled`, `Handled(result)`, and `InvalidPayload`, but v1 keeps
-the simple `Null<HandleEventResult<T>>` helper API and uses no-op `NoReply` for
-known invalid payloads.
+V1 intentionally does not emit logs or telemetry for known invalid payloads.
+Adding side-effectful diagnostics to the dispatcher would make the generated
+helper less predictable while its public return type is still
+`Null<HandleEventResult<T>>`. A later diagnostic/telemetry iteration should
+first split the public dispatcher result into explicit states such as
+`Unhandled`, `Handled(result)`, and `InvalidPayload`; v1 keeps the simple helper
+API and uses no-op `NoReply` for known invalid payloads.
 
 ## Payload Rules
 
@@ -759,8 +762,6 @@ drift, but raw Phoenix remains available.
 
 Current remaining v1 polish:
 
-- Decide whether known-but-invalid payloads need a distinct diagnostic/telemetry
-  result beyond the current safe `NoReply(socket)` behavior.
 - Add typed replies only after fire-and-forget hook events remain stable in the
   todo-app and generated snapshots.
 
