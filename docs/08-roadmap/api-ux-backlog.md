@@ -12,15 +12,26 @@ This audit tracks developer ergonomics papercuts across Phoenix, Ecto, and gener
 - Keep examples on the recommended path first; show compatibility paths only in migration sections.
 - Do not add broad profiles for local choices. Use orthogonal metadata/defines only when a compiler check needs a stable switch.
 
-## Top Follow-Up Tasks
+## Closed First Slices
 
-These are the immediate follow-ups selected from the audit:
+These were the immediate follow-ups selected from the audit. Their first slices
+are now implemented; see the prioritized papercuts table below for the exact
+surface and remaining compatibility notes.
 
-| Priority | Area | Task | Why first |
+| Priority | Area | Task | Status |
 | --- | --- | --- | --- |
-| 1 | Ecto | `haxe.elixir-944.14` - typed schema field tokens for changeset APIs | Highest repeated papercut: raw field strings appear in validation-heavy code and are easy to mistype during refactors. |
+| 1 | Ecto | `haxe.elixir-944.14` - typed schema field tokens for changeset APIs | Implemented: `Field.of((schema) -> schema.field)` tokens are the preferred changeset path, with string literals and `Field.unsafe<T>(...)` retained for compatibility/dynamic fields. |
 | 2 | Phoenix | `haxe.elixir-944.15` - reduce LiveView callback naming boilerplate | Implemented: exact Haxe-style LiveView callback names now emit Phoenix callback names by default; function-level `@:native` remains the explicit interop escape hatch. |
 | 3 | Interop | `haxe.elixir-944.16` - app-local extern boundary scaffold/checklist | Implemented: `mix haxe.gen.extern --boundary` now scaffolds app-local module-reference externs without loading the Elixir module; strict-mode diagnostics and docs point to the scaffolded `@:native` + `@:unsafeExtern` shape. |
+
+## Remaining Follow-Up
+
+The remaining layout work is runtime-support packaging. App-facing generated
+modules should stay under `MyApp.*` / `MyAppWeb.*`; framework/runtime support
+such as `Reflaxe.*`, Haxe stdlib compatibility, and PhoenixHx shims can remain
+separate only when documented, and should eventually come from a runtime
+dependency or explicit vendored-runtime mode. Adopt the policy in
+[`PHOENIX_OUTPUT_MODEL.md`](../05-architecture/PHOENIX_OUTPUT_MODEL.md).
 
 ## Adopted Design Plans
 
@@ -51,12 +62,8 @@ These are the immediate follow-ups selected from the audit:
   `MyApp.*` / `MyAppWeb.*` unless a separate namespace is intentionally part of
   the Elixir API. First slice implemented: project enums now use app/web target
   namespaces, so the todo-app server build no longer emits app-facing
-  top-level `lib/shared/**` or `lib/server/**` modules. Remaining layout work is
-  runtime-support packaging: framework/runtime support such as `Reflaxe.*`,
-  Haxe stdlib compatibility, and PhoenixHx shims can remain separate when
-  documented, but should eventually come from a runtime dependency or explicit
-  vendored-runtime mode. Adopt the policy in
-  [`PHOENIX_OUTPUT_MODEL.md`](../05-architecture/PHOENIX_OUTPUT_MODEL.md).
+  top-level `lib/shared/**` or `lib/server/**` modules. The remaining
+  runtime-support packaging follow-up is tracked above.
 
 ## Prioritized Papercuts
 
