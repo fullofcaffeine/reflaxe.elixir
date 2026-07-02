@@ -82,8 +82,10 @@ This document is both a policy and a target architecture.
   pipeline.
 - Target direction: materialized Phoenix app mode under `build/phoenix/**` with
   manifest ownership and the same target-module/path mapper.
-- Current debt: some examples still emit app-facing shared modules under
-  top-level `lib/shared/**`. Treat that as migration debt, not the model.
+- Current debt: some examples still vendor framework/runtime support under
+  top-level `lib/phoenix/**`, `lib/ecto/**`, or `lib/plug/**`. Treat that as
+  migration debt toward a documented runtime dependency or explicit
+  vendored-runtime output, not the model.
 
 ## Four Independent Axes
 
@@ -445,8 +447,10 @@ App-facing generated files should carry a short header:
 
 The todo-app server build now avoids app-facing modules under top-level
 `lib/shared/**` and `lib/server/**`; shared Haxe contracts that need runtime
-modules are emitted under `TodoApp.*` / `TodoAppWeb.*`. If another example emits
-top-level `lib/shared/**` or `lib/server/**`, treat that as migration debt, not
+modules are emitted under `TodoApp.*` / `TodoAppWeb.*`. Tracked example debt now
+mainly lives in vendored support modules under top-level `lib/phoenix/**`,
+`lib/ecto/**`, and `lib/plug/**`. If another example emits those paths, or
+top-level `lib/shared/**` / `lib/server/**`, treat that as migration debt, not
 as the desired architecture.
 
 New app-facing output should avoid:
