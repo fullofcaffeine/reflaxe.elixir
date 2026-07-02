@@ -23,7 +23,7 @@ In practice, this means:
 This is why we treat “Map parity” as a first-class workstream: it is the highest leverage way to remove gotchas while still generating idiomatic Elixir.
 
 Related work:
-- Iterator + `IMap` runtime canonicalization (BD `haxe.elixir-hm47.23`):
+- Iterator + `IMap` runtime canonicalization (task `haxe.elixir-hm47.23`):
   - canonical iterator runtime now lives in `std/haxe/iterators/ArrayIterator.cross.hx` and `std/haxe/iterators/MapKeyValueIterator.cross.hx`
   - transformer iterator fallback was removed; iterator behavior is owned by stdlib/runtime modules
   - map representation decision: built-in `Map`/`StringMap`/`IntMap` are native `%{}` backed on Elixir; `ObjectMap` identity semantics and parity tests are tracked as follow-ups
@@ -95,7 +95,7 @@ Stdlib runtime semantics are tested by compiling Haxe tests into ExUnit and exec
 - Primary command (fast CI-friendly):
   - `npm run test:mix-fast`
 
-## Priority / sequencing (BD-ready)
+## Priority / sequencing (task-ready)
 
 The gap report is large; we focus on the smallest set that unlocks real-world libraries quickly while avoiding semantic traps.
 
@@ -266,7 +266,7 @@ For each module/cluster task:
 - This epic does not imply 1:1 parity with hxcpp/js quirks—parity target is the reference Elixir stdlib + Haxe std semantics.
 - Prefer BEAM-native idioms where they preserve Haxe semantics; avoid runtime-only “string patch” fixes.
 
-## BD Epic (pasteable template)
+## Tracking Epic (copy/paste template)
 
 Title:
 - `Stdlib parity vs haxe.compilerdev.reference (phase 1–3)`
