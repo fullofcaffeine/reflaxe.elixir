@@ -41,6 +41,7 @@
     {"module": "haxe.crypto.Base64", "status": "enabled", "source": "haxe/crypto/Base64.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/crypto/Base64.unit.hx"},
     {"module": "haxe.crypto.Md5", "status": "enabled", "source": "haxe/crypto/Md5.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/crypto/Md5.unit.hx"},
     {"module": "haxe.crypto.Sha1", "status": "enabled", "source": "haxe/crypto/Sha1.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/crypto/Sha1.unit.hx"},
+    {"module": "haxe.crypto.Sha256", "status": "enabled", "source": "haxe/crypto/Sha256.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/crypto/Sha256.unit.hx"},
     {"module": "haxe.ds.BalancedTree", "status": "skipped-target-specific", "source": "haxe/ds/BalancedTree.unit.hx", "reason": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged."},
     {"module": "haxe.ds.EnumValueMap", "status": "skipped-target-specific", "source": "haxe/ds/EnumValueMap.unit.hx", "reason": "Upstream spec exists; enable after enum-key ordering semantics are triaged."},
     {"module": "haxe.ds.Option", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists."},

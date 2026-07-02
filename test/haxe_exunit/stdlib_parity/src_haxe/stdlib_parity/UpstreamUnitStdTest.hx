@@ -35,6 +35,12 @@ class UpstreamUnitStdTest extends TestCase {
 		UpstreamUnitStdMacro.assertSpec("haxe/crypto/Sha1.unit.hx");
 	}
 
+	@:describe("upstream Haxe unitstd: haxe.crypto.Sha256")
+	@:test
+	function testHaxeCryptoSha256():Void {
+		UpstreamUnitStdMacro.assertSpec("haxe/crypto/Sha256.unit.hx");
+	}
+
 	@:describe("upstream Haxe unitstd: haxe.CallStack")
 	@:test
 	function testHaxeCallStack():Void {
