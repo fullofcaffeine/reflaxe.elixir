@@ -82,10 +82,10 @@ This document is both a policy and a target architecture.
   pipeline.
 - Target direction: materialized Phoenix app mode under `build/phoenix/**` with
   manifest ownership and the same target-module/path mapper.
-- Current debt: some examples still vendor framework/runtime support under
-  top-level `lib/phoenix/**`, `lib/ecto/**`, or `lib/plug/**`. Treat that as
-  migration debt toward a documented runtime dependency or explicit
-  vendored-runtime output, not the model.
+- Current debt: some examples, including the todo-app, still vendor
+  framework/runtime support under top-level `lib/phoenix/**`, `lib/ecto/**`,
+  or `lib/plug/**`. Treat that as migration debt toward a documented runtime
+  dependency or explicit vendored-runtime output, not the model.
 
 ## Four Independent Axes
 
@@ -449,9 +449,9 @@ The todo-app server build now avoids app-facing modules under top-level
 `lib/shared/**` and `lib/server/**`; shared Haxe contracts that need runtime
 modules are emitted under `TodoApp.*` / `TodoAppWeb.*`. Tracked example debt now
 mainly lives in vendored support modules under top-level `lib/phoenix/**`,
-`lib/ecto/**`, and `lib/plug/**`. If another example emits those paths, or
-top-level `lib/shared/**` / `lib/server/**`, treat that as migration debt, not
-as the desired architecture.
+`lib/ecto/**`, and `lib/plug/**`, including in the todo-app. If another example
+emits those paths, or top-level `lib/shared/**` / `lib/server/**`, treat that as
+migration debt, not as the desired architecture.
 
 New app-facing output should avoid:
 
@@ -465,7 +465,8 @@ lib/plug/**
 ```
 
 Allowlist only documented runtime support namespaces. A follow-up CI guard
-should fail on new todo-app app-facing leakage into those paths.
+should first account for the current vendored-runtime baseline, then fail on
+new unowned app-facing leakage into those paths.
 
 ## Tests To Add
 
