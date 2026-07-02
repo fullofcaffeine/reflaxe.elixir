@@ -27,10 +27,11 @@ surface and remaining compatibility notes.
 ## Remaining Follow-Up
 
 The remaining layout work is runtime-support packaging. App-facing generated
-modules should stay under `MyApp.*` / `MyAppWeb.*`; framework/runtime support
-such as `Reflaxe.*`, Haxe stdlib compatibility, and PhoenixHx shims can remain
-separate only when documented, and should eventually come from a runtime
-dependency or explicit vendored-runtime mode. Adopt the policy in
+modules should stay under `MyApp.*` / `MyAppWeb.*`; current example debt still
+vendors framework/runtime support under top-level `lib/phoenix/**`,
+`lib/ecto/**`, and `lib/plug/**`. That support should eventually come from a
+documented runtime dependency or an explicit vendored-runtime output such as
+`lib/phoenix_hx_runtime/**`. Adopt the policy in
 [`PHOENIX_OUTPUT_MODEL.md`](../05-architecture/PHOENIX_OUTPUT_MODEL.md).
 
 ## Adopted Design Plans
