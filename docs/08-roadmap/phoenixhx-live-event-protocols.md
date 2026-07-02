@@ -746,19 +746,19 @@ public static function handleEvent(
 That comparison keeps the value proposition honest: typed protocols reduce
 drift, but raw Phoenix remains available.
 
-## Implementation Phases
+## Implemented V1 Slices
 
-1. Add protocol metadata parsing and the normalized macro model
+1. Protocol metadata parsing and the normalized macro model
    (`LiveEventCollection`, signatures, payload fields, diagnostics).
-2. Generate only the shared companion from that model.
-3. Migrate client hooks from manual `HookEvents.encodeClientPush(...)` to
+2. Shared companion generation from that model.
+3. Client hook migration from manual `HookEvents.encodeClientPush(...)` to
    generated per-event push helpers.
-4. Add LiveView binding metadata and generated dispatch helper.
-5. Migrate todo-app LiveViews to explicit dispatch-first handling.
-6. Add diagnostics and strict-mode escalation.
-7. Add protocol manifest/hash generation for cross-build drift checks.
-8. Register generated event names with HXX/HEEx strict event validation.
-9. Document the generated path in the user guide after the API is implemented.
+4. LiveView binding metadata and generated dispatch helper.
+5. Todo-app LiveViews migrated to explicit dispatch-first handling.
+6. Diagnostics and strict-mode escalation.
+7. Protocol manifest/hash generation for cross-build drift checks.
+8. Generated event names registered with HXX/HEEx strict event validation.
+9. Generated path documented in the user guide.
 
 Current remaining v1 polish: none. The implemented v1 scope is the
 fire-and-forget protocol path: generated event names, encode/decode helpers,
