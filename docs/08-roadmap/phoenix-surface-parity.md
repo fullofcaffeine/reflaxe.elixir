@@ -33,9 +33,9 @@ Use this decision rule for every Phoenix surface addition:
 | Phoenix tests | `phoenix.test.ConnTest`, `phoenix.test.LiveViewTest`, `LiveViewTest.view/initial_html` | `examples/13-elixir-first-liveview/test_haxe` | Covered with typed result follow-up |
 | Channels | `phoenix.Channel`, `phoenix.channels.*` | channel snapshots/docs | Covered, needs example-driven expansion only |
 | App-owned infra modules | app-local `@:unsafeExtern` for Endpoint/PubSub/Telemetry/DNSCluster | Haxe-first chat + Elixir-first LiveView examples | Intentional boundary |
-| RailsHx-to-PhoenixHx learning port | Phoenix-native LiveView/Ecto/PubSub/session implementation of a RailsHx-inspired UX | `examples/17-railshx-to-phoenixhx-todo/` | Covered, with follow-up parity tasks below |
+| RailsHx-to-PhoenixHx learning port | Phoenix-native LiveView/Ecto/PubSub/session implementation of a RailsHx-inspired UX | `examples/17-railshx-to-phoenixhx-todo/` | Covered; see follow-up sections below |
 
-## Open Gaps
+## Gap Details And Follow-Ups
 
 ### Done: Replace PubSubShim With API-Faithful PubSub Helpers
 
