@@ -1,3 +1,10 @@
+# [0.13.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.12.2...v0.13.0) (2026-07-02)
+
+
+### Features
+
+* **stdlib:** add haxe.crypto.Sha256 parity ([eeb24a5](https://github.com/fullofcaffeine/reflaxe.elixir/commit/eeb24a5ee0a77d4744ba4eb703dbcd29aaac136e))
+
 ## [0.12.2](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.12.1...v0.12.2) (2026-07-01)
 
 
