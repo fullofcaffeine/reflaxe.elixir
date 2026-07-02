@@ -107,6 +107,7 @@ Top-level:
 - `haxe.crypto.Base64`
 - `haxe.crypto.Md5`
 - `haxe.crypto.Sha1`
+- `haxe.crypto.Sha224`
 - `haxe.crypto.Sha256`
 - `haxe.ds.BalancedTree`
 - `haxe.ds.EnumValueMap` (bootstrap-safe override under `src/haxe/ds`)

@@ -11,6 +11,7 @@ import haxe.Unserializer;
 import haxe.crypto.Base64;
 import haxe.crypto.Md5;
 import haxe.crypto.Sha1;
+import haxe.crypto.Sha224;
 import haxe.crypto.Sha256;
 import haxe.ds.EnumValueMap;
 import haxe.ds.IntMap;
@@ -1080,5 +1081,19 @@ class StdlibParityTest extends TestCase {
 		binary.set(1, 0xFF);
 		binary.set(2, 0x10);
 		Assert.equals("2da45f2cd1f9c8e69a67abf7a6b26c282533d0a7686787a9533265418680d4d2", Sha256.make(binary).toHex());
+	}
+
+	@:describe("haxe.crypto.Sha224")
+	@:test
+	function testSha224EncodeAndMake():Void {
+		Assert.equals("23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7", Sha224.encode("abc"));
+		Assert.equals("d14a028c2a3a2bc9476102bb288234c415a2b01f828ea62ac5b3e42f", Sha224.encode(""));
+		Assert.equals("23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7", Sha224.make(Bytes.ofString("abc")).toHex());
+
+		var binary = Bytes.alloc(3);
+		binary.set(0, 0x00);
+		binary.set(1, 0xFF);
+		binary.set(2, 0x10);
+		Assert.equals("fb00d9d04bdeeb4c51a031ab62ad806c6b8d293efafb8456deae0320", Sha224.make(binary).toHex());
 	}
 }

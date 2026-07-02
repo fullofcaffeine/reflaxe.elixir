@@ -37,13 +37,13 @@ Related work:
 
 ## Current status (rolling)
 
-- Latest gap report: **104 Haxe stdlib modules/classes still to port** (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
+- Latest gap report: **103 Haxe stdlib modules/classes still to port** (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
 - Recently closed (high leverage):
   - `haxe.Int32`, `haxe.Int64`, `haxe.Int64Helper` (deterministic overflow + bitwise semantics on BEAM)
   - `haxe.ds.Map` + `haxe.ds.StringMap`/`IntMap`/`ObjectMap` surfaces (native `%{}` backend; lowered to `Map.*`)
   - `haxe.DynamicAccess` + iterators (typed dynamic map access for JSON/string-key payloads)
   - `Reflect` improvements for string-key JSON maps vs atom-key “object literal” maps
-  - `haxe.crypto.Md5`, `haxe.crypto.Sha1`, `haxe.crypto.Sha256` (BEAM-native `:crypto.hash/2` for runtime, pure Haxe fallback for macro context)
+  - `haxe.crypto.Md5`, `haxe.crypto.Sha1`, `haxe.crypto.Sha224`, `haxe.crypto.Sha256` (BEAM-native `:crypto.hash/2` for runtime, pure Haxe fallback for macro context)
   - `UnicodeString` (UTF-8 validation + codepoint/key-value iteration on BEAM strings)
   - `haxe.Http` / `sys.Http` / `haxe.http.HttpBase` (OTP `:httpc` mapping with Haxe callback/state semantics)
 
