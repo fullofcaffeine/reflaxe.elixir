@@ -475,8 +475,10 @@ The implementation should be protected at these layers:
 - Snapshot tests for module and path together: application, router, endpoint,
   LiveView, controller, schema, native enum, generated companion, and migration.
 - Negative layout guards for forbidden app-facing paths.
-- Todo-app WAE/runtime checks that also assert no app-facing `lib/shared/**` or
-  `lib/server/**` remains.
+- Todo-app WAE/runtime checks that assert no app-facing `lib/shared/**` or
+  `lib/server/**` remains, and no new unallowlisted runtime support appears
+  under `lib/phoenix/**`, `lib/ecto/**`, or `lib/plug/**` beyond the current
+  vendored-runtime baseline.
 - Materialized app tests that generate into a temporary `build/phoenix`, then
   run `mix compile --warnings-as-errors` and `mix test`.
 - Ownership tests for first write, manifest-owned rewrite, unowned collision,
