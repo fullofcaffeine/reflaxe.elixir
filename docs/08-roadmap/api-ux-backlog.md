@@ -56,7 +56,7 @@ documented runtime dependency or an explicit vendored-runtime output such as
   handling design. The v1 plan
   is tracked in
   [`phoenixhx-live-event-protocols.md`](phoenixhx-live-event-protocols.md) and
-  Bead `haxe.elixir.codex-7on`.
+  task `haxe.elixir.codex-7on`.
 - PhoenixHx generated app layout: audit and remove app-facing Haxe package
   leakage from generated Elixir paths. Source roots such as `src_shared` are
   useful for Haxe classpath hygiene, but emitted app modules should still be
@@ -85,7 +85,7 @@ documented runtime dependency or an explicit vendored-runtime output such as
 
 ## Follow-Up Task Acceptance Template
 
-Use this for each implementation bead created from the backlog:
+Use this for each implementation task created from the backlog:
 
 - Add or update the typed API without removing the current compatibility surface.
 - If a raw/dynamic path remains, name it or document it as an explicit migration/unsafe path.

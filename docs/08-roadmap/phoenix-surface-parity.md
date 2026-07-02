@@ -207,5 +207,5 @@ When a tutorial or example needs a missing Phoenix API:
 
 1. Add a row to **Open Gaps** with the exact app/doc that needs it.
 2. State whether the fix belongs in `std/phoenix/**`, an app-local extern, a compiler transform, or docs only.
-3. Create or update a bead task with acceptance criteria.
+3. Create or update a task with acceptance criteria.
 4. Add coverage before closing the task.
