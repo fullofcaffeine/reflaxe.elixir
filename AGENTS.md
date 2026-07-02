@@ -52,6 +52,13 @@ These failures usually come from running only a subset locally (e.g. `test:quick
   - CI includes: `core,stdlib,regression,phoenix,liveview,ecto,otp,exunit,bootstrap`
   - If you changed an AST pass or stdlib shaping, prefer running the full categories to avoid “works locally but CI fails” on later suites.
 - Stdlib runtime conformance: `npm run test:haxe-exunit-stdlib` and `npm run guard:upstream-unitstd`.
+  - Classify before implementing: a reference-only gap is not automatically a
+    target override to write. First decide whether the official Haxe stdlib
+    module already works through the normal classpath, whether it needs a real
+    BEAM-specific implementation, or whether it should be unsupported/fail-fast.
+    Do not copy an unchanged upstream stdlib file into `std/`, `std/_std/`, or
+    `src/haxe/` just to reduce the report count. If upstream fallback is OK,
+    track that as a classification/test task instead of adding a duplicate file.
   - When adding or changing any stdlib override, update `test/upstream_unitstd/manifest.json` in the same change.
   - If upstream Haxe has a matching `tests/unit/src/unitstd/**/*.unit.hx` spec, prefer checking in/enabling that fixture under `test/upstream_unitstd/upstream/**` so it compiles to ExUnit and runs on BEAM.
   - If the upstream spec is not yet runnable or no spec exists, record the explicit manifest reason and add local runtime coverage when appropriate. Snapshot coverage alone is not sufficient for stdlib semantics.

@@ -60,6 +60,19 @@ Local roots considered by the gap report:
 
 ## Definition of Done (incremental)
 
+### Phase 0 — Classification (required first)
+- A reference-only module in the gap report is not automatically an override to
+  add. First classify it as one of:
+  - upstream fallback works through the official Haxe stdlib; add tests/docs or
+    tracking only, not a duplicate local file
+  - BEAM-specific override needed for correct semantics or idiomatic generated
+    Elixir
+  - unsupported/fail-fast on the Elixir target, with diagnostics and docs
+- Do not copy an unchanged upstream stdlib file into `std/`, `std/_std/`, or
+  `src/haxe/` just to reduce the missing count.
+- If an upstream-fallback module needs confidence, add a Haxe-authored ExUnit
+  or upstream `unitstd` fixture and track the classification in Beads.
+
 ### Phase 1 — Coverage (modules exist)
 - Each priority module exists under `std/` / `std/_std/` (or `src/haxe/` for early-resolved consumer-install overrides).
 - Compiles cleanly in snapshot suite and todo-app under `--warnings-as-errors`.
@@ -241,6 +254,7 @@ Create one task per module (or small module cluster) with:
 ## Future Task Checklist
 
 For new stdlib parity work, open one task per module/cluster, each including:
+   - Classification: upstream fallback, BEAM-specific override, unsupported/fail-fast, or docs/tests-only
    - Reference link(s) to `haxe.compilerdev.reference`
    - Snapshots + Haxe-authored ExUnit runtime semantics test(s)
    - WAE criteria: `npm run test:mix-fast`, `npm run test:examples-elixir`, and todo-app QA sentinel
@@ -250,6 +264,7 @@ For new stdlib parity work, open one task per module/cluster, each including:
 For each module/cluster task:
 
 - Scope: which module(s), which functions are in-scope now (explicit).
+- Classification: upstream fallback vs BEAM-specific override vs unsupported/fail-fast.
 - Reference: link to `haxe.compilerdev.reference` source file(s) used.
 - Implementation:
   - `std/**/*.cross.hx` vs `std/_std/**/*.hx` vs `src/haxe/**/*.cross.hx` (if early-resolved)
