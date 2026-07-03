@@ -23,6 +23,26 @@ This is especially useful for:
 - It does **not** make Haxe code execute on the BEAM.
 - It does **not** mean “the compiler exists at runtime”.
   - The compiler runs at macro‑time and disappears after code generation.
+- It does **not** opt your program into a large Haxe compatibility runtime.
+  Reflaxe.Elixir prefers compile-time lowering and Elixir-native stdlib
+  mappings. Emitted runtime helpers are intentionally small and reserved for
+  cases where the BEAM cannot directly represent required Haxe semantics.
+
+Examples of legitimate emitted helpers:
+
+- `Reflaxe.Elixir.HaxeThrow` wraps arbitrary Haxe thrown values so they can move
+  through Elixir `raise` / `rescue` correctly.
+- `Reflaxe.Elixir.HaxeFloat` represents `NaN` and infinities, which are valid
+  Haxe `Float` values but not ordinary BEAM numbers.
+
+Examples that should not use a runtime helper:
+
+- Hashing APIs such as `haxe.crypto.Sha256` should call BEAM primitives like
+  `:crypto.hash/2`.
+- Map and iterator APIs should lower to ordinary Elixir data operations when
+  that preserves Haxe behavior.
+- Dynamic payload access should be contained at typed boundaries such as JSON,
+  params, or `DynamicAccess`, not spread through application code.
 
 ## Typical Build Configuration
 
@@ -52,4 +72,3 @@ Application code should **not** call `__elixir__` directly. Prefer:
 
 - `docs/05-architecture/TARGET_CONDITIONAL_STDLIB_GATING.md`
 - `docs/04-api-reference/ELIXIR_INJECTION_GUIDE.md`
-

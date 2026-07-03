@@ -171,8 +171,8 @@ md_expectations = {
         r"Intersection \(local provides\):\s+\*\*(\d+)\*\*",
         len(intersection),
     ),
-    "Still to port": (
-        r"Still to port:\s+\*\*(\d+)\*\*",
+    "Not yet covered by Elixir target stdlib surface": (
+        r"Not yet covered by Elixir target stdlib surface:\s+\*\*(\d+)\*\*",
         len(reference_only),
     ),
     "Local-only": (

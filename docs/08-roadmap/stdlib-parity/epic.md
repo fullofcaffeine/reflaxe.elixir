@@ -37,7 +37,7 @@ Related work:
 
 ## Current status (rolling)
 
-- Latest gap report: **103 Haxe stdlib modules/classes still to port** (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
+- Latest gap report: **103 Haxe stdlib modules/classes not yet covered by the Elixir target stdlib surface** (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
 - Recently closed (high leverage):
   - `haxe.Int32`, `haxe.Int64`, `haxe.Int64Helper` (deterministic overflow + bitwise semantics on BEAM)
   - `haxe.ds.Map` + `haxe.ds.StringMap`/`IntMap`/`ObjectMap` surfaces (native `%{}` backend; lowered to `Map.*`)
@@ -61,12 +61,15 @@ Local roots considered by the gap report:
 ## Definition of Done (incremental)
 
 ### Phase 0 — Classification (required first)
-- A reference-only module in the gap report is not automatically an override to
-  add. First classify it as one of:
+- A module listed as "not yet covered by the Elixir target stdlib surface" is
+  not automatically an override to add. First classify it as one of:
   - upstream fallback works through the official Haxe stdlib; add tests/docs or
     tracking only, not a duplicate local file
+  - compiler lowering should own the behavior and emit ordinary Elixir
   - BEAM-specific override needed for correct semantics or idiomatic generated
     Elixir
+  - small runtime helper needed because the BEAM cannot directly represent the
+    required Haxe semantics
   - unsupported/fail-fast on the Elixir target, with diagnostics and docs
 - Do not copy an unchanged upstream stdlib file into `std/`, `std/_std/`, or
   `src/haxe/` just to reduce the missing count.

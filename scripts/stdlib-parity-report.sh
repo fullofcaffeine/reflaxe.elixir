@@ -275,10 +275,10 @@ elif markdown_mode:
   print(f"- Reference std modules: **{report['reference']['total_modules']}**")
   print(f"- Local std modules present: **{report['local']['total_std_modules']}** (candidates scanned: {report['local']['total_candidates']})")
   print(f"- Intersection (local provides): **{report['diff']['intersection']['count']}**")
-  print(f"- Still to port: **{report['diff']['reference_only']['count']}**")
+  print(f"- Not yet covered by Elixir target stdlib surface: **{report['diff']['reference_only']['count']}**")
   print(f"- Local-only: **{report['diff']['local_only']['count']}**")
   print("")
-  print("## Missing modules (high-level)")
+  print("## Modules not yet covered (high-level)")
   missing = report['diff']['reference_only']['modules']
   top = [m for m in missing if '.' not in m]
   haxe_mods = [m for m in missing if m.startswith('haxe.')]
@@ -329,7 +329,7 @@ else:
 
   header("Coverage summary")
   print(f"- Intersection (local provides): {report['diff']['intersection']['count']}")
-  print(f"- Still to port (missing locally): {report['diff']['reference_only']['count']}")
+  print(f"- Not yet covered by Elixir target stdlib surface: {report['diff']['reference_only']['count']}")
   print(f"- Local-only (not in reference): {report['diff']['local_only']['count']}")
 
   header("Next steps suggestion")

@@ -1,6 +1,8 @@
 # Elixir Runtime API Reference (User-Facing)
 
-This page covers the Haxe extern/runtime surface that maps to core Elixir/Erlang APIs.
+This page covers the Haxe typed extern surface that maps to core Elixir/Erlang
+APIs. These modules are not a Haxe compatibility runtime; they are typed Haxe
+names for ordinary Elixir modules and BEAM primitives.
 
 ## Core Module Families
 
@@ -60,6 +62,11 @@ Why wrappers matter:
 - improve compile-time safety at boundary-heavy code
 - reduce accidental `Dynamic` spread in business logic
 - clarify runtime semantics in signatures
+
+Use these wrappers at interop boundaries, not as an excuse to route ordinary
+stdlib behavior through a generic runtime layer. When a Haxe stdlib API has a
+natural BEAM implementation, the target stdlib should call that implementation
+directly or let the compiler lower to idiomatic Elixir.
 
 ## Naming and Interop Metadata
 

@@ -22,10 +22,10 @@ scripts/stdlib-parity-report.sh --markdown > docs/08-roadmap/stdlib-parity/gap-r
 - Reference std modules: **204**
 - Local std modules present: **110** (candidates scanned: 113)
 - Intersection (local provides): **101**
-- Still to port: **103**
+- Not yet covered by Elixir target stdlib surface: **103**
 - Local-only: **9**
 
-## Missing modules (high-level)
+## Modules not yet covered (high-level)
 Top-level (5): `Any`, `Class`, `Enum`, `EnumValue`, `StdTypes`
 
 `haxe.*` (98): heavy gaps.

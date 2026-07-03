@@ -34,6 +34,37 @@ into your app’s generated `.ex` output even under `-dce full`.
 
 ## The core strategy
 
+### Minimal runtime, compiler-first lowering
+
+Reflaxe.Elixir does **not** aim to ship a broad Haxe runtime on the BEAM. The
+stdlib strategy is:
+
+1) Let the compiler lower Haxe constructs to ordinary Elixir when it can do so
+   correctly.
+2) Map stdlib APIs to idiomatic BEAM primitives when the target already has the
+   right abstraction.
+3) Use small emitted support modules only when Haxe semantics cannot be
+   represented cleanly as compile-time lowering or a thin native wrapper.
+
+Good examples:
+
+- `haxe.crypto.Sha224` / `Sha256` call `:crypto.hash/2` and
+  `Base.encode16/2` at runtime, with a pure-Haxe fallback only for macro/eval
+  contexts.
+- `haxe.ds.Map` and related map surfaces use native `%{}` storage and lower to
+  `Map.*` / `Enum.*` shapes where that preserves Haxe semantics.
+- `DynamicAccess` is a legitimate boundary case: JSON, params, and other
+  map-like values can arrive as native Elixir terms, so the target needs a
+  contained bridge for typed access. That does not make `Dynamic` a general app
+  programming model.
+- `Reflaxe.Elixir.HaxeThrow` and `Reflaxe.Elixir.HaxeFloat` are deliberately
+  small compatibility helpers for semantics the BEAM cannot directly represent:
+  throwing arbitrary Haxe values, and IEEE `NaN` / infinity values.
+
+Runtime support is a last resort. If a stdlib feature can be expressed by
+better AST lowering, an Elixir-native extern, or a targeted stdlib override, do
+that before adding another runtime helper.
+
 ### Don’t “re-implement the whole Haxe stdlib” blindly
 
 For many `haxe.*` modules, the upstream Haxe stdlib already compiles correctly for the Elixir target.
@@ -147,11 +178,18 @@ Rule of thumb:
 
 When you need to fix stdlib behavior for the Elixir target:
 
-1) Prefer adding/adjusting Haxe sources in:
+1) Classify the module first:
+   - upstream fallback works; add tests/docs/tracking, not a duplicate local file
+   - compiler lowering should own the behavior
+   - a BEAM-native stdlib override is needed
+   - a small runtime helper is unavoidable
+   - the feature should fail fast as unsupported on the Elixir target
+2) Prefer adding/adjusting Haxe sources in:
    - `std/*.cross.hx`, `std/haxe/**`, `std/sys/**`, or `std/_std/**`
-2) Add a snapshot test under:
+3) Add a snapshot test under:
    - `test/snapshot/stdlib/**`
-3) **Do not patch generated `.ex`** as a behavior change (generated outputs are not the source of truth).
+4) Add Haxe-authored ExUnit coverage when runtime semantics matter.
+5) **Do not patch generated `.ex`** as a behavior change (generated outputs are not the source of truth).
 
 If a change touches `std/_std`, keep it Elixir-target-only (it is injected conditionally).
 
