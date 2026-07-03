@@ -105,6 +105,7 @@ Top-level:
 - `haxe.Template` (portable rendering subset)
 - `haxe.Unserializer` (portable data subset)
 - `haxe.crypto.Adler32`
+- `haxe.crypto.BaseCode`
 - `haxe.crypto.Base64`
 - `haxe.crypto.Crc32`
 - `haxe.crypto.Hmac`

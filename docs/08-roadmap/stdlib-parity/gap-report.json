@@ -1,7 +1,7 @@
 {
   "diff": {
     "intersection": {
-      "count": 104,
+      "count": 105,
       "modules": [
         "Array",
         "Date",
@@ -36,6 +36,7 @@
         "haxe.Unserializer",
         "haxe.crypto.Adler32",
         "haxe.crypto.Base64",
+        "haxe.crypto.BaseCode",
         "haxe.crypto.Crc32",
         "haxe.crypto.Hmac",
         "haxe.crypto.Md5",
@@ -124,7 +125,7 @@
       ]
     },
     "reference_only": {
-      "count": 100,
+      "count": 99,
       "modules": [
         "Any",
         "Class",
@@ -148,7 +149,6 @@
         "haxe.atomic.AtomicBool",
         "haxe.atomic.AtomicInt",
         "haxe.atomic.AtomicObject",
-        "haxe.crypto.BaseCode",
         "haxe.display.Diagnostic",
         "haxe.display.Display",
         "haxe.display.FsPath",
@@ -232,7 +232,7 @@
   "local": {
     "counts_by_prefix": {
       "<top-level>": 19,
-      "haxe": 60,
+      "haxe": 61,
       "sys": 34
     },
     "nonstdlib_modules_under_std_dir": [
@@ -258,8 +258,8 @@
       "std",
       "src/haxe"
     ],
-    "total_candidates": 116,
-    "total_std_modules": 113
+    "total_candidates": 117,
+    "total_std_modules": 114
   },
   "reference": {
     "counts_by_prefix": {

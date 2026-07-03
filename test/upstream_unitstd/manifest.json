@@ -39,6 +39,7 @@
     {"module": "haxe.Template", "status": "skipped-target-specific", "source": "haxe/Template.unit.hx", "reason": "Upstream spec exists; local BEAM contract intentionally supports a portable subset first."},
     {"module": "haxe.Unserializer", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; runtime coverage uses local portable-subset tests."},
     {"module": "haxe.crypto.Adler32", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; one-shot, incremental, read/equals, toString, and signed 32-bit behavior are covered by local Haxe-authored ExUnit runtime tests."},
+    {"module": "haxe.crypto.BaseCode", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; arbitrary power-of-two dictionary encode/decode, string helpers, invalid dictionary length, and invalid encoded characters are covered by local Haxe-authored ExUnit runtime tests."},
     {"module": "haxe.crypto.Base64", "status": "enabled", "source": "haxe/crypto/Base64.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/crypto/Base64.unit.hx"},
     {"module": "haxe.crypto.Crc32", "status": "enabled", "source": "haxe/crypto/Crc32.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/crypto/Crc32.unit.hx"},
     {"module": "haxe.crypto.Hmac", "status": "enabled", "source": "haxe/crypto/Hmac.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/crypto/Hmac.unit.hx"},

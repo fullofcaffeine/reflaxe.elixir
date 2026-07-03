@@ -37,7 +37,7 @@ Related work:
 
 ## Current status (rolling)
 
-- Latest gap report: **100 Haxe stdlib modules/classes not yet covered by the Elixir target stdlib surface** (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
+- Latest gap report: **99 Haxe stdlib modules/classes not yet covered by the Elixir target stdlib surface** (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
 - Recently closed (high leverage):
   - `haxe.Int32`, `haxe.Int64`, `haxe.Int64Helper` (deterministic overflow + bitwise semantics on BEAM)
   - `haxe.ds.Map` + `haxe.ds.StringMap`/`IntMap`/`ObjectMap` surfaces (native `%{}` backend; lowered to `Map.*`)
@@ -45,6 +45,7 @@ Related work:
   - `Reflect` improvements for string-key JSON maps vs atom-key “object literal” maps
   - `haxe.crypto.Adler32`, `haxe.crypto.Crc32` (BEAM-native `:erlang.adler32/1,2` and `:erlang.crc32/1,2` for runtime, pure Haxe fallback for macro context)
   - `haxe.crypto.Md5`, `haxe.crypto.Sha1`, `haxe.crypto.Sha224`, `haxe.crypto.Sha256` (BEAM-native `:crypto.hash/2` for runtime, pure Haxe fallback for macro context)
+  - `haxe.crypto.BaseCode` (runtime BEAM binary construction plus pure-Haxe macro fallback for arbitrary power-of-two dictionaries)
   - `UnicodeString` (UTF-8 validation + codepoint/key-value iteration on BEAM strings)
   - `haxe.Http` / `sys.Http` / `haxe.http.HttpBase` (OTP `:httpc` mapping with Haxe callback/state semantics)
 

@@ -8,6 +8,7 @@ import haxe.Json;
 import haxe.Serializer;
 import haxe.Template;
 import haxe.Unserializer;
+import haxe.crypto.BaseCode;
 import haxe.crypto.Base64;
 import haxe.crypto.Adler32;
 import haxe.crypto.Crc32;
@@ -1046,6 +1047,33 @@ class StdlibParityTest extends TestCase {
 		Assert.equals("80070713463e7749b90c2dc24911e275", new Hmac(MD5).make(key, message).toHex());
 		Assert.equals("de7c9b85b8b78aa6bc8a7a36f70a90701c9db4d9", new Hmac(SHA1).make(key, message).toHex());
 		Assert.equals("f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8", new Hmac(SHA256).make(key, message).toHex());
+	}
+
+	@:describe("haxe.crypto.BaseCode")
+	@:test
+	function testBaseCodeArbitraryPowerOfTwoDictionaries():Void {
+		var hex = new BaseCode(Bytes.ofString("0123456789abcdef"));
+		var binary = Bytes.ofHex("00ff10");
+		var encodedHex = hex.encodeBytes(binary);
+		Assert.equals("00ff10", encodedHex.toString());
+		Assert.equals("00ff10", hex.decodeBytes(Bytes.ofString("00ff10")).toHex());
+
+		Assert.equals("01000001", BaseCode.encode("A", "01"));
+		Assert.equals("A", BaseCode.decode("01000001", "01"));
+
+		try {
+			new BaseCode(Bytes.ofString("abc"));
+			Assert.fail("BaseCode should reject non-power-of-two dictionaries");
+		} catch (error:Dynamic) {
+			Assert.equals("BaseCode : base length must be a power of two.", Std.string(error));
+		}
+
+		try {
+			hex.decodeBytes(Bytes.ofString("0g"));
+			Assert.fail("BaseCode should reject characters outside the dictionary");
+		} catch (error:Dynamic) {
+			Assert.equals("BaseCode : invalid encoded char", Std.string(error));
+		}
 	}
 
 	@:describe("haxe.crypto.Base64")
