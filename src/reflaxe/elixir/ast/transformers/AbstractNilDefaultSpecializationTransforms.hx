@@ -42,10 +42,20 @@ typedef NilDefaultReplacement = {
  *   - `temp` is not read before the next top-level rebind of the same local.
  * - If the target is already a discarded local (`_name`), the default is pure,
  *   and the target is not used later, drop the pair entirely.
+ * - Also collapse the same helper when it is isolated in a zero-argument IIFE:
+ *
+ *     (fn -> t = nil; if is_nil(t), do: %{}, else: t end).()
+ *
+ *   becomes:
+ *
+ *     %{}
  *
  * EXAMPLES
  * - Covered by the `core/maps` snapshot family, which should keep `new Map()`
  *   output as `map = %{}` rather than emitting the helper temporary.
+ * - Covered by `phoenix/HXXTypeSafety`, where static map defaults passed to
+ *   `__haxe_static_get__/2` should remain direct `%{}` defaults rather than
+ *   IIFE-wrapped abstract helper output.
  */
 class AbstractNilDefaultSpecializationTransforms {
 	public static function pass(ast:ElixirAST):ElixirAST {
@@ -55,6 +65,9 @@ class AbstractNilDefaultSpecializationTransforms {
 					makeASTWithMeta(EBlock(rewriteStatements(stmts)), n.metadata, n.pos);
 				case EDo(stmts):
 					makeASTWithMeta(EDo(rewriteStatements(stmts)), n.metadata, n.pos);
+				case ECall(target, funcName, args):
+					var collapsed = matchNilDefaultIife(target, funcName, args);
+					collapsed != null ? collapsed : n;
 				default:
 					n;
 			}
@@ -85,6 +98,37 @@ class AbstractNilDefaultSpecializationTransforms {
 			i++;
 		}
 		return out;
+	}
+
+	static function matchNilDefaultIife(target:ElixirAST, funcName:String, args:Array<ElixirAST>):Null<ElixirAST> {
+		if (target == null || target.def == null || funcName != "" || args == null || args.length != 0)
+			return null;
+
+		return switch (target.def) {
+			case EFn([cl]) if ((cl.args == null || cl.args.length == 0) && cl.guard == null):
+				var stmts = blockStatements(cl.body);
+				if (stmts == null || stmts.length != 2) {
+					null;
+				} else {
+					var tempName = matchNilAssignment(stmts[0]);
+					tempName != null ? matchNilDefaultValue(stmts[1], tempName) : null;
+				}
+			default:
+				null;
+		};
+	}
+
+	static function blockStatements(ast:ElixirAST):Null<Array<ElixirAST>> {
+		if (ast == null || ast.def == null)
+			return null;
+		return switch (ast.def) {
+			case EBlock(stmts) | EDo(stmts):
+				stmts;
+			case EParen(inner):
+				blockStatements(inner);
+			default:
+				null;
+		};
 	}
 
 	static function matchNilAssignment(ast:ElixirAST):Null<String> {
@@ -119,6 +163,22 @@ class AbstractNilDefaultSpecializationTransforms {
 					defaultExpr: defaultExpr,
 					assignment: markNilDefaultAssignment(makeASTWithMeta(EBinary(Match, left, defaultExpr), ast.metadata, ast.pos))
 				};
+			default:
+				null;
+		};
+	}
+
+	static function matchNilDefaultValue(ast:ElixirAST, tempName:String):Null<ElixirAST> {
+		if (ast == null || ast.def == null || tempName == null)
+			return null;
+
+		return switch (ast.def) {
+			case EIf(cond, defaultExpr, elseExpr) if (isNilCheckFor(cond, tempName) && isVar(elseExpr, tempName) && !containsVar(defaultExpr, tempName)):
+				defaultExpr;
+			case EParen(inner):
+				matchNilDefaultValue(inner, tempName);
+			case EBlock([inner]) | EDo([inner]):
+				matchNilDefaultValue(inner, tempName);
 			default:
 				null;
 		};
