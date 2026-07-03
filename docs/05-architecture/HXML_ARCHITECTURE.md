@@ -161,8 +161,8 @@ still target Phoenix-native namespaces and paths. See the
 
 ### 4. Library Management
 ```hxml
-# Modern: Use haxelib dependencies
--lib reflaxe
+# App/server builds use the target library
+-lib reflaxe.elixir
 -lib tink_macro
 
 # Include version constraints in haxelib.json
@@ -196,7 +196,9 @@ still target Phoenix-native namespaces and paths. See the
 
 ### 7. Macro Configuration
 ```hxml
-# Initialize macros properly
+# App builds normally get compiler init from reflaxe.elixir/extraParams.hxml.
+# Spell these macros directly only in repo-internal harnesses or advanced custom builds.
+--macro reflaxe.elixir.CompilerBootstrap.Start()
 --macro reflaxe.elixir.CompilerInit.Start()
 
 # Build macros
@@ -261,7 +263,15 @@ Most modern Haxe IDEs use HXML files for:
 
 ## Target-Conditional Stdlib Gating (Elixir)
 
-Elixir-specific staged overrides under `std/_std/` are added to the classpath only when compiling to the Elixir target. This is handled in `CompilerInit.Start()` and prevents `__elixir__()` usage from leaking into macro contexts or other targets.
+Elixir-specific stdlib paths (`std/`) are added to the active Haxe classpath by
+`CompilerBootstrap.Start()` only when compiling to the Elixir target. Nothing is
+copied or generated at that point; Haxe simply sees `std/` earlier in classpath
+resolution. This is loaded automatically through `extraParams.hxml` when an app
+uses `-lib reflaxe.elixir`.
+
+`extraParams.hxml` is a haxelib/lix package hook, not a user build file. It
+must stay cwd-agnostic, so it calls bootstrap/init macros instead of adding
+relative package classpaths that would be resolved from the consumer project.
 
 See: docs/05-architecture/TARGET_CONDITIONAL_STDLIB_GATING.md
 
@@ -285,7 +295,7 @@ See: docs/05-architecture/TARGET_CONDITIONAL_STDLIB_GATING.md
 
 --next
 -D elixir_output=lib
---macro reflaxe.elixir.CompilerInit.Start()
+-lib reflaxe.elixir
 ```
 
 ### Environment-Specific Builds
@@ -350,6 +360,7 @@ After analyzing 100+ HXML files in the project, here are the actual patterns we 
 -cp ../../../src          # Compiler source
 -cp .                     # Test source
 -lib reflaxe              # Framework dependency
+--macro reflaxe.elixir.CompilerBootstrap.Start()
 --macro reflaxe.elixir.CompilerInit.Start()
 -D elixir_output=out      # Output directory
 CounterLive               # Main class to compile
@@ -359,6 +370,7 @@ CounterLive               # Main class to compile
 - ✅ **Consistent structure** across all 40+ test directories
 - ✅ **Relative paths** for portability
 - ✅ **Clear purpose** per test
+- ⚠️ **Harness-specific**: application builds should prefer `-lib reflaxe.elixir`; snapshot harnesses may spell out compiler paths to test local source directly
 - ⚠️ **Repetitive**: Could use template inheritance
 
 ### 3. Application Build Pattern (`examples/todo-app/`)
@@ -478,7 +490,7 @@ Verification:
    - No hot reload setup
 
 4. **Unused/Orphaned Files**
-   - `extraParams.hxml` is consumed by haxelib/lix when a project uses `-lib reflaxe.elixir`; it must remain at the repo root and stay cwd-agnostic
+   - `extraParams.hxml` is not orphaned. It is consumed by haxelib/lix when a project uses `-lib reflaxe.elixir`; it must remain at the repo root and stay cwd-agnostic
    - Multiple `Test*.hxml` files with unclear purpose
    - Should audit and clean up
 
@@ -491,11 +503,15 @@ Verification:
 ### Reflaxe.Elixir Initialization
 Every Elixir compilation uses this pattern:
 ```hxml
--lib reflaxe
+-lib reflaxe.elixir
 -D reflaxe_runtime
---macro reflaxe.elixir.CompilerInit.Start()
 -D elixir_output=<directory>
 ```
+
+`-lib reflaxe.elixir` loads the package `extraParams.hxml`, which runs
+`CompilerBootstrap.Start()` and `CompilerInit.Start()`. Direct macro calls are
+reserved for repo-internal harnesses or unusual custom setups that intentionally
+avoid `-lib reflaxe.elixir`.
 
 ### Test Compilation Pattern
 Snapshot tests follow this structure:
@@ -504,6 +520,7 @@ Snapshot tests follow this structure:
 -cp ../../../src    # Compiler
 -cp .               # Test files
 -lib reflaxe
+--macro reflaxe.elixir.CompilerBootstrap.Start()
 --macro reflaxe.elixir.CompilerInit.Start()
 -D elixir_output=out
 MainClass           # Entry point

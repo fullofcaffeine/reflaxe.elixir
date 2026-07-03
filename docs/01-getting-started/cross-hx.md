@@ -1,10 +1,12 @@
 # .cross.hx Files — Beginner‑Friendly Guide
 
 > At a glance
-> - `.cross.hx` = target‑specific implementation of a familiar API (same surface, idiomatic target code)
+> - `.cross.hx` = target-specific implementation of a familiar API (same surface, idiomatic target code)
+> - The suffix is Haxe 4's target-specific file mechanism; `cross` is Haxe's generic custom-target platform, not a promise that the file is portable across all targets
 > - Usually lives under `std/` and is selected by Haxe when compiling for the `cross` platform (the mode used by Reflaxe targets on Haxe 4)
 >   - Exception: a small set of *early-resolved* overrides may live under the library `src/` classpath so consumer installs pick them up before bootstrap macros run (example: `src/haxe/Exception.cross.hx`)
-> - Elixir-only shims live under `std/_std/` and are classpath‑gated so only Elixir builds see them
+> - `std/` is a selective override root: modules we do not provide there keep resolving from the installed official Haxe stdlib
+> - Reflaxe's skeleton `build` command can generate `.cross.hx` files for package distribution, but this repo keeps the `.cross.hx` overrides checked in directly
 > - Prefer `.cross.hx` for stable API mappings; use macros for authoring ergonomics; use AST transforms for shape‑driven rewrites
 > - Transitional stubs (e.g., `std/HXX.cross.hx`) are allowed only with explicit removal criteria and gating
 
@@ -14,7 +16,15 @@ If you want the deeper, architecture‑level details (Haxe module resolution + t
 
 ## What Is a `.cross.hx` File?
 
-In Reflaxe compilers, a `.cross.hx` file is a Haxe source file that provides a target‑specific implementation of a library or function while preserving the same public API. Think of it as “the target‑optimized version of a familiar API.”
+In Reflaxe compilers, a `.cross.hx` file is a Haxe source file that provides a target-specific implementation of a library or function while preserving the same public API. Think of it as “the target-optimized version of a familiar API.”
+
+Haxe itself owns this mechanism. Since Haxe 4.0, the compiler can prefer `Module.<target>.hx`
+over `Module.hx` when compiling for a target named `<target>`. For Reflaxe targets on Haxe 4,
+that target name is `cross`, so the filename becomes `Module.cross.hx`.
+
+Important wording point: `cross` here means Haxe's **custom-target platform mode**. It does not
+mean "this file is portable across every Haxe target." Reflaxe.Elixir uses the `cross` platform
+because Elixir is not a built-in Haxe compiler target with its own suffix like `.js.hx` or `.cpp.hx`.
 
 - File naming: `Name.cross.hx` (examples: `String.cross.hx`, `Std.cross.hx`, `HXX.cross.hx`).
 - Purpose: generate clean, idiomatic code for the target (Elixir here) instead of post‑processing generic code later.
@@ -34,7 +44,8 @@ std/
 ```
 
 Practical note (consumer installs)
-- When installed via haxelib/lix, the library’s `src/` classpath is available immediately, but `std/` is injected via bootstrap macros.
+- When installed via haxelib/lix, the library’s `src/` classpath is available immediately, but `std/` is added by bootstrap macros.
+- "Added" means Haxe searches the installed package's `std/` directory before the official Haxe stdlib for that compile. No files are copied, generated, or renamed at that moment.
 - Some Haxe stdlib modules are resolved *very early* (before bootstrap can run). If a `.cross.hx` override must win for those modules, it needs to live on the initial classpath (under `src/`).
   - In rare cases we also use this “early override” pattern for plain `.hx` modules that must work in **both** macro/eval and Elixir target compilation. Those files are dual-mode (`#if macro` implementation, `#else` extern) and live under `src/haxe/**` (example: `src/haxe/ds/BalancedTree.hx`).
 
@@ -42,11 +53,38 @@ When compiling for the `cross` platform, Haxe treats files ending in `.cross.hx`
 module implementations. That is, these files participate in normal module resolution while still
 being visually distinct from upstream Haxe stdlib sources.
 
-Separately, we keep a small set of **Elixir-only** `.hx` shims under `std/_std/`. Those shims are
-not selected by the `cross` file-suffix mechanism; instead, they are made available only when we
-detect an Elixir build (see below).
+The override root is selective. If Reflaxe.Elixir does not provide a matching module in `std/`
+(`Foo.cross.hx`, `Foo.hx`, or a package equivalent), Haxe continues normal classpath resolution and
+uses the installed official Haxe stdlib module. Do not copy upstream stdlib files locally just to make
+the parity report count smaller; add a local file only when the Elixir target needs a target-specific
+implementation, a target-owned API, or a documented early bootstrap exception.
 
 See the full mechanism in docs/03-compiler-development/CROSS_FILES_STAGING_MECHANISM.md
+
+## Reflaxe Skeleton vs This Repository
+
+The upstream Reflaxe skeleton uses a packaging convention:
+
+- author compiler code under `src/`
+- author normal API files under `std/`
+- author target std overrides under a folder ending in `_std`, such as `std/LANG/_std/`
+- run `haxelib run reflaxe build` before publishing to haxelib
+
+During that packaging step, Reflaxe copies all configured std paths into the single published
+`classPath`. Files from paths ending in `_std` are copied with a `.cross.hx` extension.
+
+Reflaxe.Elixir uses a different working layout:
+
+- checked-in target overrides already use `.cross.hx`
+- `std/` is added to the active Haxe classpath by bootstrap macros for Elixir builds; this is only classpath order, not file copying
+- releases are installed by Lix from GitHub tags, not from a generated `_Build/` haxelib package
+
+So do not rename every file to `.cross.hx`, and do not assume adding `haxelib run reflaxe build`
+will change the normal repo/test/release path. The file name should describe the role of the file:
+
+- `.cross.hx`: target-specific replacement for an existing Haxe module
+- plain `.hx` in `std/`: target-owned public/support API such as `phoenix.*`, `ecto.*`, or `elixir.*`
+- plain `.hx` in `src/haxe/**`: rare early dual-mode override that must work in macro/eval and target compilation
 
 ## How Are They Loaded? (Target‑Conditional Gating)
 
@@ -56,10 +94,11 @@ exist in JS or macro contexts).
 
 This project implements target‑conditional gating in the compiler bootstrap macros (`CompilerBootstrap.Start()` and `CompilerInit.Start()`):
 
-- When building the Elixir target, `std/_std/` is added to the classpath by the bootstrap macro
-  (`CompilerBootstrap.Start()`). The `std/` path itself is provided by library configuration
-  (scoped libs via `haxe_libraries/*.hxml` in this repo; consumer installs may also inject it via bootstrap).
-- For other contexts (macro‑only tools, non-Elixir targets), those paths are not added.
+- When building the Elixir target, `std/` is added early to the active Haxe classpath by
+  `CompilerBootstrap.Start()` so
+  direct `.cross.hx` overrides and target-owned externs win over the official Haxe stdlib.
+- For other contexts (macro-only tools, non-Elixir targets), the library still exposes its normal
+  `src/` classpath, but does not add the Elixir target std root.
 
 ### What is `-D elixir_output`?
 
@@ -149,7 +188,8 @@ This macro path validates and transforms templates at compile time and feeds the
 
 ## Pitfalls and How We Avoid Them
 
-- “Leaking” target code into macro/other targets: handled by target‑conditional classpath gating (only add `std/_std/` for Elixir builds).
+- “Leaking” target code into macro/other targets: keep target std overrides under `std/`, which is
+  added to the classpath only for Elixir builds.
 - Using `.cross.hx` for app‑specific behavior: don’t. Keep overrides generic and API‑faithful; follow Phoenix and Elixir APIs exactly.
 - Using `Dynamic` as a shortcut: project follows a strict no‑Dynamic policy for public surfaces. Keep types precise.
 - Overusing late string rewriting: prefer early, structural approaches (overrides or AST passes) over fragile string surgery.
@@ -178,7 +218,8 @@ A: Build with Elixir target and inspect the generated `.ex`; the output should m
 
 ## Further Reading
 
-- docs/03-compiler-development/CROSS_FILES_STAGING_MECHANISM.md — How `.cross.hx` resolution + `std/_std` gating works
+- Haxe Manual: Target-Specific Files — https://haxe.org/manual/lf-target-specific-files.html
+- docs/03-compiler-development/CROSS_FILES_STAGING_MECHANISM.md — How `.cross.hx` resolution + target std classpath insertion works
 - docs/05-architecture/TARGET_CONDITIONAL_STDLIB_GATING.md — Why we gate `.cross.hx` by target and how it’s implemented
 - docs/05-architecture/HXX_ARCHITECTURE.md — How HXX authoring flows through the AST pipeline into HEEx (~H)
 

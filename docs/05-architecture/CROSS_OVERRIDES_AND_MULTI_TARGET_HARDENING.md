@@ -1,6 +1,6 @@
-# `.cross.hx`, `_std`, and Multi-Target Hardening
+# `.cross.hx` and Multi-Target Hardening
 
-This document explains how `reflaxe.elixir` currently uses `.cross.hx` and `_std`, and what needs to be hardened for safe family coexistence.
+This document explains how `reflaxe.elixir` currently uses `.cross.hx`, and what needs to be hardened for safe family coexistence.
 
 ## Why this document exists
 
@@ -10,7 +10,6 @@ That is not automatically wrong, but it does mean contributors need a clearer me
 
 - what `cross` means,
 - when `std/*.cross.hx` is the right tool,
-- what `std/_std/**` is still for,
 - and why same-compilation coexistence with sibling targets is risky today.
 
 ## Current model in this repo
@@ -19,8 +18,8 @@ That is not automatically wrong, but it does mean contributors need a clearer me
 
 1. `std/*.cross.hx`
    - normal target-conditional stdlib overrides
-2. `std/_std/**`
-   - Elixir-only staged shims
+2. `std/**/*.hx`
+   - target-owned APIs/support modules such as `elixir.*`, `phoenix.*`, and `ecto.*`
 3. `src/haxe/Exception.cross.hx`
    - early-visible bootstrap-safe override
 
@@ -30,8 +29,8 @@ That is a coherent design, but it is a different design from `reflaxe.ocaml`.
 
 | Question | Answer for this repo |
 | --- | --- |
-| Main override style | broad `std/*.cross.hx` plus `std/_std/**` plus one early `src/haxe/*` exception |
-| Is `_std` used? | yes |
+| Main override style | broad `std/*.cross.hx` plus target-owned `std/**/*.hx` APIs plus one early `src/haxe/*` exception |
+| Is `_std` used? | no |
 | Is `.cross.hx` used broadly? | yes |
 | Does this repo own early `src/haxe/*` modules? | yes, `src/haxe/Exception.cross.hx` |
 | Bootstrap activation currently keys off raw Haxe 4 `Cross`? | yes |
@@ -55,17 +54,11 @@ These are selected because the build is in Haxe's generic `cross` mode.
 
 That means `.cross.hx` here is primarily an ownership/resolution mechanism, not only an early-visibility mechanism.
 
-## What `_std` means here
+## What plain `.hx` under `std/` means here
 
-`std/_std/**` is still important.
-
-It is the repo's Elixir-only shim layer for modules that should be injected conditionally and kept clearly target-private.
-
-So in this repo:
-
-- `std/*.cross.hx` handles a large part of target-conditional stdlib behavior
-- `std/_std/**` handles staged Elixir-only shims
-- `src/haxe/*` handles the early bootstrap exception case
+Plain `.hx` files under `std/` are not upstream stdlib replacements. They are target-owned
+APIs/support modules or documented exceptions. Upstream Haxe stdlib replacements should use
+`.cross.hx` directly.
 
 ## Current coexistence risk
 

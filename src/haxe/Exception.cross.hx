@@ -30,7 +30,7 @@ package haxe;
  * Why `#if elixir_output`?
  *
  * This file lives under the library `src/` classpath so **consumer installs** pick it up
- * before bootstrap macros can inject `std/` and `std/_std/`.
+ * before bootstrap macros can inject the target `std/` root.
  *
  * That means this module can be seen in non-Elixir compilation contexts too (e.g. macro typing,
  * JS/genes builds, tooling). The `elixir_output` define is our stable “we are compiling for the

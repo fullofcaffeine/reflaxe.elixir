@@ -11,10 +11,10 @@ defmodule PhoenixHxTodo.TodoPersistenceTest do
     end)))
     title = "Persisted PhoenixHx todo " <> run_id
     conn = Phoenix.ConnTest.build_conn()
-    conn = Phoenix.ConnTest.post(conn, "/auth/demo", %{:name => "Persisted User", :email => "persisted-" <> run_id <> "@example.test"})
+    conn = Phoenix.ConnTest.post(conn, "/auth/demo", %{name: "Persisted User", email: "persisted-" <> run_id <> "@example.test"})
     mounted = Phoenix.LiveViewTest.live(conn, "/todos")
     lv = elem(mounted, 1)
-    _ = Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_todo']"), %{:title => title, :notes => "Ecto-backed"})
+    _ = Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_todo']"), %{title: title, notes: "Ecto-backed"})
     html = Phoenix.LiveViewTest.render(lv)
     condition = (case :binary.match(html, title) do
   {pos, _} -> pos

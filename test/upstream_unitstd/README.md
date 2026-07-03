@@ -24,8 +24,9 @@ Coverage policy:
 
 Current upstream runtime fixtures:
 - Enabled: `IntIterator`, `Math`, `StringBuf`, `haxe.crypto.Base64`,
-  `haxe.crypto.Md5`, `haxe.crypto.Sha1`, `haxe.io.BytesBuffer`,
-  `haxe.io.FPHelper`.
+  `haxe.crypto.Crc32`, `haxe.crypto.Md5`, `haxe.crypto.Sha1`,
+  `haxe.crypto.Sha224`, `haxe.crypto.Sha256`, `haxe.io.BytesBuffer`,
+  `haxe.io.FPHelper`, `haxe.CallStack`.
 - Adapted: `haxe.DynamicAccess` (membership syntax expansion),
   `haxe.io.Path` (path-hygiene-only Windows sample adjustment),
   `haxe.iterators.StringIteratorUnicode`, and

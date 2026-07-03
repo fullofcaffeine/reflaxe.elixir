@@ -3176,6 +3176,14 @@ class ElixirASTPassRegistry {
 			pass: reflaxe.elixir.ast.transformers.EFnTempChainSimplifyTransforms.pass
 		});
 
+		passes.push({
+			name: "AbstractNilDefaultSpecialization_AlwaysRun",
+			description: "Collapse nil-default temps emitted by inlined multi-type abstract specialization helpers",
+			enabled: true,
+			pass: reflaxe.elixir.ast.transformers.AbstractNilDefaultSpecializationTransforms.pass,
+			runAfter: ["EFnTempChainSimplify_AlwaysRun"]
+		});
+
 		// CRITICAL: Haxe can emit empty bodies for inline abstract impl stubs (e.g. Atom_Impl_._new/1).
 		// In strict Elixir builds (`--warnings-as-errors`) this triggers unused-argument warnings and fails compilation.
 		// Keep this pass outside fast_boot/hygiene guards so all builds stay warning-free.
@@ -4453,6 +4461,13 @@ class ElixirASTPassRegistry {
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.LocalAssignUnusedUnderscoreScopedTransforms.pass,
 			runAfter: ["EctoQueryBranchSelfAssignUnderscore_Final"]
+		});
+		passes.push({
+			name: "DropUnusedPureUnderscoreAssign_AbsoluteFinal",
+			description: "Drop non-final unused `_name = <pure literal/container>` assignments",
+			enabled: true,
+			pass: reflaxe.elixir.ast.transformers.DropUnusedPureUnderscoreAssignTransforms.pass,
+			runAfter: ["LocalAssignUnusedUnderscore_Scoped_Final"]
 		});
 
 		// Absolute final replay to fix any remaining param/body mismatches for underscored head params

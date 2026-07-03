@@ -9,6 +9,8 @@ import haxe.Serializer;
 import haxe.Template;
 import haxe.Unserializer;
 import haxe.crypto.Base64;
+import haxe.crypto.Adler32;
+import haxe.crypto.Crc32;
 import haxe.crypto.Md5;
 import haxe.crypto.Sha1;
 import haxe.crypto.Sha224;
@@ -1053,6 +1055,53 @@ class StdlibParityTest extends TestCase {
 		binary.set(2, 0x00);
 		Assert.equals("+/8A", Base64.encode(binary));
 		Assert.equals("-_8A", Base64.urlEncode(binary));
+	}
+
+	@:describe("haxe.crypto.Crc32")
+	@:test
+	function testCrc32StaticAndIncrementalSignedIntSemantics():Void {
+		Assert.equals(0, Crc32.make(Bytes.ofString("")));
+		Assert.equals(891568578, Crc32.make(Bytes.ofString("abc")));
+
+		var c = new Crc32();
+		var prefix = Bytes.ofString("ab");
+		c.update(prefix, 0, prefix.length);
+		c.byte("c".code);
+		Assert.equals(891568578, c.get());
+
+		c.update(Bytes.ofString("ignored"), 0, 0);
+		Assert.equals(891568578, c.get());
+
+		var highBit = Bytes.alloc(1);
+		highBit.set(0, 0);
+		Assert.equals(-771559539, Crc32.make(highBit));
+	}
+
+	@:describe("haxe.crypto.Adler32")
+	@:test
+	function testAdler32StaticIncrementalReadAndSignedIntSemantics():Void {
+		Assert.equals(1, Adler32.make(Bytes.ofString("")));
+		Assert.equals(38600999, Adler32.make(Bytes.ofString("abc")));
+
+		var a = new Adler32();
+		var prefix = Bytes.ofString("ab");
+		a.update(prefix, 0, prefix.length);
+		var suffix = Bytes.ofString("c");
+		a.update(suffix, 0, suffix.length);
+		Assert.equals(38600999, a.get());
+		Assert.equals("0000024D00000127", a.toString());
+
+		a.update(Bytes.ofString("ignored"), 0, 0);
+		Assert.equals(38600999, a.get());
+
+		var read = Adler32.read(new BytesInput(Bytes.ofHex("024d0127")));
+		Assert.equals(a.get(), read.get());
+		Assert.isTrue(read.equals(a));
+
+		var highBit = Bytes.alloc(16);
+		for (i in 0...highBit.length)
+			highBit.set(i, 255);
+		Assert.equals(-2021126159, Adler32.make(highBit));
 	}
 
 	@:describe("haxe.crypto.Sha1")

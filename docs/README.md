@@ -67,7 +67,7 @@ This index helps you find the right docs quickly, whether you're building apps w
 ### 🏗️ Architecture
 **[05-architecture/](05-architecture/)** - System design and implementation details
 - [Architecture](05-architecture/ARCHITECTURE.md) - Overall system design
-- [Cross Overrides & Multi-Target Hardening](05-architecture/CROSS_OVERRIDES_AND_MULTI_TARGET_HARDENING.md) - `.cross.hx` / `_std` ownership and sibling-target coexistence risks
+- [Cross Overrides & Multi-Target Hardening](05-architecture/CROSS_OVERRIDES_AND_MULTI_TARGET_HARDENING.md) - `.cross.hx` ownership and sibling-target coexistence risks
 - [Phoenix Output Model](05-architecture/PHOENIX_OUTPUT_MODEL.md) - In-place vs materialized Phoenix output, source roots vs target namespaces
 - [HXML Architecture](05-architecture/HXML_ARCHITECTURE.md) - Build file patterns and anti-patterns
 - [File Naming](05-architecture/FILE_NAMING_ARCHITECTURE.md) - snake_case conversion rules
@@ -119,8 +119,10 @@ Legacy guides (kept for link stability):
 - [RailsHx-to-PhoenixHx Migration Compiler RFC](08-roadmap/railshx-to-phoenixhx-migration-compiler.md) - Future R&D plan for evidence-driven RailsHx migration and coexistence
 
 ### 📜 History
-Historical notes and experiments are kept in git history to keep the working tree focused and current.
-Prefer [`CHANGELOG.md`](../CHANGELOG.md) and [`ROADMAP.md`](../ROADMAP.md) for curated history.
+**[09-history/](09-history/)** - Historical context for repository shape and decisions
+- [Reflaxe Layout and Packaging History](09-history/REFLAXE_LAYOUT_AND_PACKAGING_HISTORY.md) - Why this repo uses direct `.cross.hx` files instead of the Reflaxe skeleton `_std` + `reflaxe build` flow
+
+Prefer [`CHANGELOG.md`](../CHANGELOG.md) and [`ROADMAP.md`](../ROADMAP.md) for release/user-facing history.
 
 ### 🤝 Contributing
 **[10-contributing/](10-contributing/)** - Contribution guidelines and processes

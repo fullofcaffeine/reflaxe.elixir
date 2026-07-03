@@ -1,12 +1,11 @@
 # Stdlib Parity Gap Report (Module-Level)
 
-Generated: 2026-07-02
+Generated: 2026-07-03
 
 This report compares this repo’s Elixir-target stdlib overrides against the reference repository.
 
 Local roots considered:
 - `std`
-- `std/_std`
 - `src/haxe`
 
 To regenerate:
@@ -20,15 +19,15 @@ scripts/stdlib-parity-report.sh --markdown > docs/08-roadmap/stdlib-parity/gap-r
 ## Summary
 
 - Reference std modules: **204**
-- Local std modules present: **110** (candidates scanned: 113)
-- Intersection (local provides): **101**
-- Not yet covered by Elixir target stdlib surface: **103**
+- Local std modules present: **112** (candidates scanned: 115)
+- Intersection (local provides): **103**
+- Not yet covered by Elixir target stdlib surface: **101**
 - Local-only: **9**
 
 ## Modules not yet covered (high-level)
 Top-level (5): `Any`, `Class`, `Enum`, `EnumValue`, `StdTypes`
 
-`haxe.*` (98): heavy gaps.
+`haxe.*` (96): heavy gaps.
 `sys.*` (0): gaps across host/runtime integration surfaces.
 
 Note: This report counts the compiler-emitted runtime overrides as “present”: `EReg`, `haxe.exceptions.PosException`, `haxe.iterators.ArrayIterator`.

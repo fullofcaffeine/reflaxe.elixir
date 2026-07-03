@@ -56,8 +56,8 @@ These failures usually come from running only a subset locally (e.g. `test:quick
     target override to write. First decide whether the official Haxe stdlib
     module already works through the normal classpath, whether it needs a real
     BEAM-specific implementation, or whether it should be unsupported/fail-fast.
-    Do not copy an unchanged upstream stdlib file into `std/`, `std/_std/`, or
-    `src/haxe/` just to reduce the report count. If upstream fallback is OK,
+    Do not copy an unchanged upstream stdlib file into `std/` or `src/haxe/`
+    just to reduce the report count. If upstream fallback is OK,
     track that as a classification/test task instead of adding a duplicate file.
   - When adding or changing any stdlib override, update `test/upstream_unitstd/manifest.json` in the same change.
   - If upstream Haxe has a matching `tests/unit/src/unitstd/**/*.unit.hx` spec, prefer checking in/enabling that fixture under `test/upstream_unitstd/upstream/**` so it compiles to ExUnit and runs on BEAM.
@@ -77,7 +77,7 @@ These failures usually come from running only a subset locally (e.g. `test:quick
 ## 🧼 Path Hygiene (Required)
 
 - Never commit machine-local absolute paths in tracked files (docs, JSON reports, snapshots, generated metadata, scripts output).
-- Use workspace-relative paths instead (e.g., `std`, `std/_std`, `src/haxe`) so artifacts are portable across machines and CI.
+- Use workspace-relative paths instead (e.g., `std`, `src/haxe`) so artifacts are portable across machines and CI.
 - Before pushing, scan for leaked local paths and scrub them:
   - `rg -n "/Users/|/var/folders/|[A-Za-z]:\\\\Users\\\\" docs scripts test examples src std`
 
@@ -106,11 +106,12 @@ inlined into a statement list and left a bare literal behind (commonly from sett
   - `make -C test update-intended TEST=stdlib/<name>`
   - `make -C test update-intended TEST=phoenix/<name>` / `liveview/<name>` / etc.
 
-### Common CI failure mode: WAE examples + `std/_std` gating
+### Common CI failure mode: WAE examples + target std classpath
 
 If `CI / Examples (Elixir WAE)` fails with warnings in generated modules like `lib/haxe/ds/balanced_tree.ex`
-or `lib/haxe/ds/enum_value_map.ex`, it usually means the Elixir-only staged stdlib (`std/_std/`) was **not**
-on the classpath during the Haxe→Elixir compile. Fix by ensuring:
+or `lib/haxe/ds/enum_value_map.ex`, it usually means the Elixir target std root (`std/`) or the early
+dual-mode overrides under `src/haxe/**` were not visible early enough during the Haxe→Elixir compile.
+Fix by ensuring:
 
 - `CompilerBootstrap.Start()` runs for both consumer installs **and** repo-local scoped-lib builds:
   - consumer: `extraParams.hxml`
@@ -710,13 +711,13 @@ Examples
   - Repo root/runtime shims and any `*.ex` such as: `reflect.ex`, `std.ex`, `string_buf.ex`, `type.ex`, `int_iterator.ex`
   - Snapshot outputs under `test/snapshot/**/out/**/*.ex`
 - Make all behavior changes in the source-of-truth instead:
-  - Standard library Haxe sources: `std/_std/*.hx` and `std/*.cross.hx`
+  - Standard library Haxe sources: `std/**/*.cross.hx`, target-owned `std/**/*.hx`, and early dual-mode `src/haxe/**`
   - Compiler pipeline: `src/reflaxe/elixir/ast/**` (Builder → Transformer → Printer)
 - Only edit a `.ex` under `std/` directly if it is explicitly documented as the canonical runtime source (no corresponding `.hx` exists). If unsure, assume it is generated and fix upstream.
-- Example: Reflect.compare/2 — do not touch `reflect.ex`; change `std/_std/Reflect.hx` (or `std/Reflect.cross.hx`) and re-run snapshots.
+- Example: Reflect.compare/2 — do not touch `reflect.ex`; change `std/Reflect.cross.hx` and re-run snapshots.
 - No band-aids: Do not “clean up” outputs or add runtime-only conditionals to mask upstream issues. Fix the transform or std source.
 - Pre-merge checks for std/behavior fixes:
-  - `rg` should show diffs only in `std/_std/*.hx`, `std/*.cross.hx`, or `src/reflaxe/elixir/**`.
+  - `rg` should show diffs only in `std/**/*.cross.hx`, target-owned `std/**/*.hx`, early dual-mode `src/haxe/**`, or `src/reflaxe/elixir/**`.
   - No diffs to `reflect.ex`, `std.ex`, `string_buf.ex`, `type.ex`, `int_iterator.ex`, or `test/snapshot/**/out/**` unless accompanied by matching upstream `.hx` changes and a note explaining why the `.ex` is canonical.
 - Temporary runtime edits for debugging are allowed only if clearly annotated “DEBUG ONLY” and removed in the same PR after the proper upstream fix lands.
 - CI/WAE hygiene for stdlib overrides:
@@ -887,16 +888,19 @@ Checklist before merging a transform:
 - `std/**/*.cross.hx`
   - Cross-platform override files selected by Haxe when compiling in `cross` mode (Reflaxe targets on Haxe 4).
   - These shadow upstream Haxe stdlib by classpath precedence (Elixir builds only).
-- `std/_std/**/*.hx`
-  - Elixir-only shims/bridge modules (often `@:native(...)` wrappers or runtime helpers).
-  - These must be classpath-gated so non-Elixir builds never see `__elixir__()`.
+- Plain `std/**/*.hx`
+  - Target-owned APIs/support modules such as `phoenix.*`, `ecto.*`, `elixir.*`, and BEAM-backed `sys.*`.
+  - These are also visible only when bootstrap adds `std/` for Elixir builds.
+- `src/haxe/**`
+  - Rare early dual-mode stdlib overrides that must be available before bootstrap can add `std/`.
+  - Use `#if macro` for eval-safe host behavior and `#else` extern/target behavior when needed.
 
 ### How gating works
 
 - Consumer installs rely on `extraParams.hxml`, which runs:
   - `reflaxe.elixir.CompilerBootstrap.Start()` (earliest injection; also injects `vendor/reflaxe/src`)
   - `reflaxe.elixir.CompilerInit.Start()` (compiler registration + redundant early injection)
-- We only add `std/` and `std/_std/` to the classpath when we detect an Elixir build:
+- We only add `std/` to the classpath when we detect an Elixir build:
   - Haxe 4: `-D elixir_output=...` is the stable signal (platform is commonly `cross`)
   - Haxe 5: Elixir custom target (`CustomTarget("elixir")`) + `target.name == "elixir"`
 

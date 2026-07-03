@@ -34,7 +34,7 @@ This repo uses a layered approach:
 
 - `std/*.cross.hx`: Haxe-facing APIs that compile to idiomatic Elixir when targeting Elixir (may use `__elixir__()` where justified).
 - `std/elixir/**`: typed externs for existing Elixir/Erlang/Phoenix/Ecto modules (API-faithful; no invented functions).
-- `std/_std/`: target-specific std overrides are injected **only when compiling to Elixir** (see `src/reflaxe/elixir/CompilerInit.hx`).
+- `std/haxe/**/*.cross.hx`: target-specific std overrides are added to the active classpath **only when compiling to Elixir** (see `src/reflaxe/elixir/CompilerBootstrap.hx`).
 
 ## Phoenix App Stubs vs Framework Implementations
 

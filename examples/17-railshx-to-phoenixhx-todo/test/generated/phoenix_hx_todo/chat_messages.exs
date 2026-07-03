@@ -9,7 +9,7 @@ defmodule PhoenixHxTodo.ChatMessages do
   def create_for_user(user, body) do
     trimmed_body = StringTools.ltrim(StringTools.rtrim(body))
     data = Kernel.struct(PhoenixHxTodo.ChatMessage)
-    params = %{:body => trimmed_body, :user_id => user.id}
+    params = %{body: trimmed_body, user_id: user.id}
     _ = PhoenixHxTodo.Repo.insert(PhoenixHxTodo.ChatMessage.changeset(data, params))
   end
   def create_for_user_ok(user, body) do
@@ -28,6 +28,6 @@ defmodule PhoenixHxTodo.ChatMessages do
     else
       "Unknown user"
     end
-    %{:id => message.id, :body => message.body, :owner => owner, :row_class => "chat-message"}
+    %{id: message.id, body: message.body, owner: owner, row_class: "chat-message"}
   end
 end

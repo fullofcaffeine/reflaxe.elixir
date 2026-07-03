@@ -165,15 +165,12 @@ reference_std = resolve_reference_std(reference_input)
 reference_modules = collect_std_modules(reference_std, allow_cross=False)
 
 local_std_root = root_dir / "std"
-local_std_shadow_root = root_dir / "std" / "_std"
 local_src_haxe_root = root_dir / "src" / "haxe"
 local_src_sys_root = root_dir / "src" / "sys"
 
 local_candidates = set()
 if local_std_root.exists():
   local_candidates |= collect_std_modules(local_std_root, allow_cross=True)
-if local_std_shadow_root.exists():
-  local_candidates |= collect_std_modules(local_std_shadow_root, allow_cross=False)
 local_candidates |= collect_prefixed_modules("haxe", local_src_haxe_root, allow_cross=True)
 local_candidates |= collect_prefixed_modules("sys", local_src_sys_root, allow_cross=True)
 
@@ -227,7 +224,6 @@ report = {
       rel
       for rel, path in [
         ("std", local_std_root),
-        ("std/_std", local_std_shadow_root),
         ("src/haxe", local_src_haxe_root),
         ("src/sys", local_src_sys_root),
       ]

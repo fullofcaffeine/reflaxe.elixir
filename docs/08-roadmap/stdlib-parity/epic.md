@@ -37,12 +37,13 @@ Related work:
 
 ## Current status (rolling)
 
-- Latest gap report: **103 Haxe stdlib modules/classes not yet covered by the Elixir target stdlib surface** (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
+- Latest gap report: **101 Haxe stdlib modules/classes not yet covered by the Elixir target stdlib surface** (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
 - Recently closed (high leverage):
   - `haxe.Int32`, `haxe.Int64`, `haxe.Int64Helper` (deterministic overflow + bitwise semantics on BEAM)
   - `haxe.ds.Map` + `haxe.ds.StringMap`/`IntMap`/`ObjectMap` surfaces (native `%{}` backend; lowered to `Map.*`)
   - `haxe.DynamicAccess` + iterators (typed dynamic map access for JSON/string-key payloads)
   - `Reflect` improvements for string-key JSON maps vs atom-key “object literal” maps
+  - `haxe.crypto.Adler32`, `haxe.crypto.Crc32` (BEAM-native `:erlang.adler32/1,2` and `:erlang.crc32/1,2` for runtime, pure Haxe fallback for macro context)
   - `haxe.crypto.Md5`, `haxe.crypto.Sha1`, `haxe.crypto.Sha224`, `haxe.crypto.Sha256` (BEAM-native `:crypto.hash/2` for runtime, pure Haxe fallback for macro context)
   - `UnicodeString` (UTF-8 validation + codepoint/key-value iteration on BEAM strings)
   - `haxe.Http` / `sys.Http` / `haxe.http.HttpBase` (OTP `:httpc` mapping with Haxe callback/state semantics)
@@ -55,7 +56,6 @@ installs (because Haxe resolves some std modules very early).
 
 Local roots considered by the gap report:
 - `std/` — `.cross.hx` stdlib overrides + extern surfaces
-- `std/_std/` — Elixir-only shims (classpath-gated)
 - `src/haxe/` — early-resolved overrides needed by consumer installs (example: `haxe.Exception`)
 
 ## Definition of Done (incremental)
@@ -71,13 +71,13 @@ Local roots considered by the gap report:
   - small runtime helper needed because the BEAM cannot directly represent the
     required Haxe semantics
   - unsupported/fail-fast on the Elixir target, with diagnostics and docs
-- Do not copy an unchanged upstream stdlib file into `std/`, `std/_std/`, or
+- Do not copy an unchanged upstream stdlib file into `std/` or
   `src/haxe/` just to reduce the missing count.
 - If an upstream-fallback module needs confidence, add a Haxe-authored ExUnit
   or upstream `unitstd` fixture and track the classification in Beads.
 
 ### Phase 1 — Coverage (modules exist)
-- Each priority module exists under `std/` / `std/_std/` (or `src/haxe/` for early-resolved consumer-install overrides).
+- Each priority module exists under `std/` (or `src/haxe/` for early-resolved consumer-install overrides).
 - Compiles cleanly in snapshot suite and todo-app under `--warnings-as-errors`.
 
 ### Phase 2 — API parity (surface area)
@@ -270,7 +270,7 @@ For each module/cluster task:
 - Classification: upstream fallback vs BEAM-specific override vs unsupported/fail-fast.
 - Reference: link to `haxe.compilerdev.reference` source file(s) used.
 - Implementation:
-  - `std/**/*.cross.hx` vs `std/_std/**/*.hx` vs `src/haxe/**/*.cross.hx` (if early-resolved)
+  - `std/**/*.cross.hx` vs target-owned plain `std/**/*.hx` vs `src/haxe/**/*.cross.hx` (if early-resolved)
   - any compiler transforms required (shape-driven; no app-specific heuristics)
 - Tests:
   - Snapshot(s) updated/added (list)
@@ -297,7 +297,7 @@ Description:
   - `scripts/stdlib-parity-report.sh`
   - Reference repo: `$HAXE_ELIXIR_REFERENCE`
 - Acceptance:
-  - Priority modules implemented in `std/` / `std/_std/` (or `src/haxe/` when required by consumer-install ordering).
+  - Priority modules implemented in `std/` (or `src/haxe/` when required by consumer-install ordering).
   - Snapshot coverage + Haxe-authored ExUnit runtime tests for behaviors.
   - Todo-app + dogfood + sentinel remain green under `--warnings-as-errors`.
 

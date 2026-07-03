@@ -27,7 +27,7 @@ import sys.io.File;
  * - Invoked first from `extraParams.hxml`.
  * - If the current compilation appears to be an Elixir build (`-D elixir_output` or custom target),
  *   compute the library root from this file’s resolved path and add:
- *   - `std/` + `std/_std` (Phoenix/Ecto/etc externs + staged overrides)
+ *   - `std/` (Phoenix/Ecto/etc externs + `.cross.hx` stdlib overrides)
  *   - `vendor/reflaxe/src` (vendored Reflaxe framework)
  *
  * EXAMPLES
@@ -230,17 +230,10 @@ class CompilerBootstrap {
 				return;
 			}
 
-			// Inject `std/` (externs + `.cross.hx` overrides) and `std/_std/` (Elixir-only shims).
-			//
-			// This must run before `CompilerInit` and other macro modules are typed so that stdlib types
-			// (e.g. `haxe.ds.*`) resolve to our extern-backed surfaces rather than the canonical Haxe
-			// stdlib implementations (which can generate Elixir warnings under WAE).
+			// Inject `std/` early so target-owned externs and `.cross.hx` overrides win over the
+			// canonical Haxe stdlib before `CompilerInit` and other macro modules are typed.
 			var standardLibrary = Path.normalize(Path.join([libraryRoot, "std"]));
-			// Inject staged stdlib overrides early (before `CompilerInit` and other macro modules are typed)
-			// so that stdlib types (e.g. haxe.ds.*) resolve to our extern-backed surfaces rather than the
-			// canonical Haxe stdlib implementations (which can generate Elixir warnings under WAE).
-			var stagedStd = Path.normalize(Path.join([libraryRoot, "std/_std"]));
-			injectClassPathsFirst([stagedStd, standardLibrary, vendoredReflaxe]);
+			injectClassPathsFirst([standardLibrary, vendoredReflaxe]);
 		} catch (e:haxe.Exception) {
 			// If resolvePath fails in certain contexts, skip silently (non-Elixir targets)
 		}

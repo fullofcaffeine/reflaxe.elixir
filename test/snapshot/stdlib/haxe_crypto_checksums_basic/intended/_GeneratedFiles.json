@@ -1,0 +1,28 @@
+{
+  "filesGenerated": [
+  "type.ex",
+  "string_tools.ex",
+  "std.ex",
+  "reflaxe/exception.ex",
+  "reflaxe/elixir/haxe_throw.ex",
+  "reflaxe/elixir/haxe_float.ex",
+  "main.ex",
+  "int_iterator.ex",
+  "haxe/iterators/array_iterator.ex",
+  "haxe/io/input.ex",
+  "haxe/io/fp_helper.ex",
+  "haxe/io/eof.ex",
+  "haxe/io/bytes_input.ex",
+  "haxe/io/bytes_buffer.ex",
+  "haxe/io/bytes.ex",
+  "haxe/int64_helper.ex",
+  "haxe/exceptions/pos_exception.ex",
+  "haxe/exceptions/not_implemented_exception.ex",
+  "haxe/crypto/crc32.ex",
+  "haxe/crypto/adler32.ex",
+  "haxe/_call_stack/call_stack_impl_.ex"
+],
+  "id": 0,
+  "wasCached": false,
+  "version": 1
+}

@@ -402,5 +402,5 @@ extern class Presence {
  * Note: These are utility functions you can implement in your application
  */
 #if (reflaxe_runtime)
-// Runtime helpers moved to std/_std to avoid macro-time __elixir__ references
+// Runtime helpers live behind reflaxe_runtime so macro contexts never see target-only injections.
 #end

@@ -257,7 +257,7 @@ string-concatenated.
 - Missing FK field expectations in associations (`@:belongs_to`, `@:has_many`) when association validation is enabled
 - Overreliance on dynamic/untyped query snippets when typed query APIs exist
 - Assuming all migration DSL shapes are rewritten in `.exs` mode
-- Using generated runtime outputs as source-of-truth instead of changing `std/_std/*.hx` or compiler pipeline sources
+- Using generated runtime outputs as source-of-truth instead of changing `std/**/*.hx` or compiler pipeline sources
 
 ## Related Docs
 

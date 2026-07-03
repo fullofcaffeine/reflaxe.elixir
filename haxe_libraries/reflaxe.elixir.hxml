@@ -18,13 +18,8 @@
 # Include the compiler source code
 -cp ${SCOPE_DIR}/src/
 
-# Staged .cross.hx files are injected conditionally by the bootstrap macro
-# to avoid leaking __elixir__() into macro/other targets.
-
-# Include the Elixir standard library definitions (generic externs)
+# Include Elixir target std definitions and direct .cross.hx overrides.
 -cp ${SCOPE_DIR}/std/
-# Target-specific overrides in std/_std are injected conditionally by CompilerInit
-# (target-conditional stdlib gating) to avoid leaking __elixir__() into macro/other targets.
 
 # Shared cross-target Phoenix helpers (used by both JS + Elixir sides of Channels)
 -cp ${SCOPE_DIR}/vendor/phoenix_shared/src

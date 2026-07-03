@@ -477,6 +477,10 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 					var sub = classType.pack[1];
 					if (sub == "_CallStack" && classType.name == "CallStack_Impl_")
 						return false;
+					// `haxe.ds.Map` is a multi-type abstract. Its specialization helpers must inline
+					// into native map operations; the generated `Map_Impl_` module has no BEAM runtime role.
+					if (sub == "ds" && classType.pack.length > 2 && classType.pack[2] == "_Map" && classType.name == "Map_Impl_")
+						return true;
 					if (sub != null && StringTools.startsWith(sub, "_"))
 						return true; // _call_stack, _constraints, _int32, etc.
 				}
@@ -5973,16 +5977,93 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	 *   that relies on the final output set must happen here instead.
 	 */
 	public override function onOutputComplete() {
-		if (!sourceMapOutputEnabled)
+		if (sourceMapOutputEnabled) {
+			// Generate all pending source maps after output files are written.
+			for (writer in pendingSourceMapWriters) {
+				if (writer != null)
+					writer.generateSourceMap();
+			}
+			pendingSourceMapWriters = [];
+		}
+
+		pruneEmptyOutputDirectories();
+	}
+
+	function pruneEmptyOutputDirectories():Void {
+		#if sys
+		var root = resolveOutputDirectory();
+		if (root == null || root.length == 0 || !sys.FileSystem.exists(root) || !sys.FileSystem.isDirectory(root))
 			return;
 
-		// Generate all pending source maps after output files are written.
-		for (writer in pendingSourceMapWriters) {
-			if (writer != null)
-				writer.generateSourceMap();
-		}
-		pendingSourceMapWriters = [];
+		pruneEmptyDirectoryChildren(root, normalizeDirectoryPath(root));
+		#end
 	}
+
+	function resolveOutputDirectory():Null<String> {
+		var dir = output != null ? output.outputDir : null;
+		if (dir == null || dir.length == 0) {
+			var defineName = options != null ? options.outputDirDefineName : null;
+			if (defineName != null && defineName.length > 0) {
+				var defined = Context.definedValue(defineName);
+				if (defined != null && defined.length > 0)
+					dir = defined;
+			}
+		}
+		if (dir == null || dir.length == 0)
+			dir = outputDirectory;
+		return dir;
+	}
+
+	#if sys
+	static function pruneEmptyDirectoryChildren(dir:String, root:String):Bool {
+		var entries:Array<String> = [];
+		try {
+			entries = sys.FileSystem.readDirectory(dir);
+		} catch (_:Dynamic) {
+			return false;
+		}
+
+		for (entry in entries) {
+			var child = joinPath(dir, entry);
+			try {
+				if (sys.FileSystem.isDirectory(child))
+					pruneEmptyDirectoryChildren(child, root);
+			} catch (_:Dynamic) {}
+		}
+
+		try {
+			entries = sys.FileSystem.readDirectory(dir);
+		} catch (_:Dynamic) {
+			return false;
+		}
+
+		var normalized = normalizeDirectoryPath(dir);
+		if (normalized != root && entries.length == 0) {
+			try {
+				sys.FileSystem.deleteDirectory(dir);
+				return true;
+			} catch (_:Dynamic) {
+				return false;
+			}
+		}
+		return entries.length == 0;
+	}
+
+	static function joinPath(parent:String, child:String):String {
+		if (parent == null || parent.length == 0)
+			return child;
+		return parent.endsWith("/") ? parent + child : parent + "/" + child;
+	}
+
+	static function normalizeDirectoryPath(path:String):String {
+		if (path == null)
+			return "";
+		var result = path;
+		while (result.length > 1 && result.endsWith("/"))
+			result = result.substr(0, result.length - 1);
+		return result;
+	}
+	#end
 
 	static function applyReceiverReturnConvention(body:Null<reflaxe.elixir.ast.ElixirAST>, receiverName:String,
 			convention:ReceiverReturnConvention):Null<reflaxe.elixir.ast.ElixirAST> {

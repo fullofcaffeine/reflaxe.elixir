@@ -4,7 +4,7 @@ defmodule Output do
     b
   end
   def write_byte(_struct, _c) do
-    raise Reflaxe.Elixir.HaxeThrow, [value: NotImplementedException.new(nil, nil, %{:file_name => "haxe/io/Output.hx", :line_number => 38, :class_name => "haxe.io.Output", :method_name => "writeByte"})]
+    raise Reflaxe.Elixir.HaxeThrow, [value: NotImplementedException.new(nil, nil, %{file_name: "haxe/io/Output.hx", line_number: 38, class_name: "haxe.io.Output", method_name: "writeByte"})]
   end
   def write_bytes(struct, s, pos, len) do
     if (pos < 0 or len < 0 or pos + len > s.length) do
@@ -35,10 +35,10 @@ defmodule Output do
     len
   end
   def flush(_struct) do
-    
+
   end
   def close(_struct) do
-    
+
   end
   def write(struct, s) do
     l = s.length
@@ -180,7 +180,7 @@ end).()] end).())
     end
   end
   def prepare(_struct, _nbytes) do
-    
+
   end
   def write_input(struct, i, bufsize) do
     bufsize = if (Kernel.is_nil(bufsize)), do: 4096, else: bufsize
