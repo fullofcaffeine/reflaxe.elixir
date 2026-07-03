@@ -100,7 +100,7 @@ defmodule Main do
   end
   defp test_path_externs() do
     _joined = Path.join(["home", "user", "documents"])
-    _joined_two = Path.join((fn -> "/home" end).(), "user")
+    _joined_two = Path.join("/home", "user")
     _basename = Path.basename("/home/user/file.txt")
     _dirname = Path.dirname("/home/user/file.txt")
     _extension = Path.extname("/home/user/file.txt")
