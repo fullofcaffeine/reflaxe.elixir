@@ -1,3 +1,12 @@
+## [0.14.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.0...v0.14.1) (2026-07-03)
+
+
+### Bug Fixes
+
+* **compiler:** collapse nil-default iife helpers ([4cbcd31](https://github.com/fullofcaffeine/reflaxe.elixir/commit/4cbcd313cfd13cbb40c5103ae78237921beb5a3f))
+* **compiler:** simplify embedded nil-default helpers ([15c1d6e](https://github.com/fullofcaffeine/reflaxe.elixir/commit/15c1d6e6bc38182560207f98dff58ae6d59505e7))
+* **stdlib:** consolidate target std overrides ([8fc5cb9](https://github.com/fullofcaffeine/reflaxe.elixir/commit/8fc5cb947e6b067ac9cc6f9abcd6f5e0bbedda71))
+
 # [0.14.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.13.0...v0.14.0) (2026-07-02)
 
 
