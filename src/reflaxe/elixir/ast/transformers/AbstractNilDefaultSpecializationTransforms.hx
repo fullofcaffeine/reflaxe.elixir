@@ -42,6 +42,15 @@ typedef NilDefaultReplacement = {
  *   - `temp` is not read before the next top-level rebind of the same local.
  * - If the target is already a discarded local (`_name`), the default is pure,
  *   and the target is not used later, drop the pair entirely.
+ * - When the nil-default expression is embedded in the following statement,
+ *   remove the temporary and replace only the guarded expression:
+ *
+ *     t = nil
+ *     struct = %{struct | data: if is_nil(t), do: %{}, else: t}
+ *
+ *   becomes:
+ *
+ *     struct = %{struct | data: %{}}
  * - Also collapse the same helper when it is isolated in a zero-argument IIFE:
  *
  *     (fn -> t = nil; if is_nil(t), do: %{}, else: t end).()
@@ -50,12 +59,17 @@ typedef NilDefaultReplacement = {
  *
  *     %{}
  *
+ * - If an earlier rewrite has already reduced that IIFE body to a single pure
+ *   expression, remove the remaining wrapper too.
+ *
  * EXAMPLES
  * - Covered by the `core/maps` snapshot family, which should keep `new Map()`
  *   output as `map = %{}` rather than emitting the helper temporary.
  * - Covered by `phoenix/HXXTypeSafety`, where static map defaults passed to
  *   `__haxe_static_get__/2` should remain direct `%{}` defaults rather than
  *   IIFE-wrapped abstract helper output.
+ * - Covered by `otp/behavior`, where constructor field defaults should remain
+ *   direct struct updates rather than carrying an abstract-helper temporary.
  */
 class AbstractNilDefaultSpecializationTransforms {
 	public static function pass(ast:ElixirAST):ElixirAST {
@@ -93,11 +107,37 @@ class AbstractNilDefaultSpecializationTransforms {
 					i += 2;
 					continue;
 				}
+
+				var embeddedReplacement = tempName != null ? rewriteEmbeddedNilDefault(stmts[i + 1], tempName) : null;
+				if (embeddedReplacement != null
+					&& !containsVar(embeddedReplacement, tempName)
+					&& !isVarUsedBeforeRebind(stmts, tempName, i + 2)) {
+					out.push(embeddedReplacement);
+					i += 2;
+					continue;
+				}
 			}
 			out.push(stmts[i]);
 			i++;
 		}
 		return out;
+	}
+
+	static function rewriteEmbeddedNilDefault(ast:ElixirAST, tempName:String):Null<ElixirAST> {
+		if (ast == null || ast.def == null || tempName == null)
+			return null;
+
+		var changed = false;
+		var rewritten = ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			var defaultExpr = matchNilDefaultValue(n, tempName);
+			if (defaultExpr != null) {
+				changed = true;
+				return defaultExpr;
+			}
+			return n;
+		});
+
+		return changed ? rewritten : null;
 	}
 
 	static function matchNilDefaultIife(target:ElixirAST, funcName:String, args:Array<ElixirAST>):Null<ElixirAST> {
@@ -107,11 +147,15 @@ class AbstractNilDefaultSpecializationTransforms {
 		return switch (target.def) {
 			case EFn([cl]) if ((cl.args == null || cl.args.length == 0) && cl.guard == null):
 				var stmts = blockStatements(cl.body);
-				if (stmts == null || stmts.length != 2) {
-					null;
-				} else {
+				if (stmts == null) {
+					isPure(cl.body) ? cl.body : null;
+				} else if (stmts.length == 1) {
+					isPure(stmts[0]) ? stmts[0] : null;
+				} else if (stmts.length == 2) {
 					var tempName = matchNilAssignment(stmts[0]);
 					tempName != null ? matchNilDefaultValue(stmts[1], tempName) : null;
+				} else {
+					null;
 				}
 			default:
 				null;
