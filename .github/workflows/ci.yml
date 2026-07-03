@@ -126,6 +126,37 @@ jobs:
           set -euo pipefail
           cat hygiene-summary.md >> "$GITHUB_STEP_SUMMARY" || true
 
+  haxelib-package-smoke:
+    name: Haxelib Package Smoke
+    runs-on: ubuntu-latest
+    needs: [guards]
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - name: Cache Haxe toolchain (lix)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/haxe
+          key: ${{ runner.os }}-lix-haxe-${{ env.HAXE_VERSION }}-${{ hashFiles('.haxerc', 'haxe_libraries/*.hxml', 'package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-lix-haxe-${{ env.HAXE_VERSION }}-
+      - name: Install Haxe 4 haxelib runtime dependency
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends neko
+      - name: Run haxelib package smoke
+        run: npm run test:haxelib-package
+
   test:
     name: Tests
     runs-on: ubuntu-latest

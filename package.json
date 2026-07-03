@@ -42,6 +42,7 @@
     "test:mix-fast": "bash scripts/test-mix-fast.sh",
     "test:haxe-exunit-stdlib": "bash scripts/test-haxe-exunit-stdlib.sh",
     "test:haxe5": "bash scripts/test-haxe5-smoke.sh",
+    "test:haxelib-package": "bash scripts/ci/haxelib-package-smoke.sh",
     "test:core": "scripts/test-runner.sh --category core",
     "test:stdlib": "scripts/test-runner.sh --category stdlib",
     "test:regression": "scripts/test-runner.sh --category regression",

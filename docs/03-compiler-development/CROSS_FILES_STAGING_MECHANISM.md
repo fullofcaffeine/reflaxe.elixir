@@ -113,9 +113,10 @@ Haxelib can support this direct layout. `haxelib.json` can keep `classPath` poin
 `-lib reflaxe.elixir`. Those macros can then add sibling paths such as `std/` from the installed
 package root to the active classpath.
 
-If we add haxelib.org publishing, verify that packaging path explicitly with `haxelib install <zip>`
-in a clean project. That smoke should prove the submitted package includes `extraParams.hxml`, `std/`,
-and `vendor/reflaxe/src`, and that `-lib reflaxe.elixir` still adds the target classpaths correctly.
+The package artifact path is covered by `npm run test:haxelib-package`, which builds a zip from the
+tracked source, installs it with `haxelib install <zip>` in a clean temporary project, and proves the
+installed package includes `extraParams.hxml`, `std/`, and `vendor/reflaxe/src`. The same smoke compiles
+through `-lib reflaxe.elixir` so target classpath insertion is tested from the installed package root.
 
 ### Would the Reflaxe skeleton build path need these bootstrap macros?
 

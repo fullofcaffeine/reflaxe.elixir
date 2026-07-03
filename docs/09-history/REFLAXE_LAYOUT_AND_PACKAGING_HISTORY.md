@@ -139,7 +139,7 @@ Direct checked-in `.cross.hx` files:
 - Pro: it makes target overrides visually explicit in the working tree.
 - Con: contributors must understand that this repo intentionally does not mirror the skeleton `_std`
   authoring convention.
-- Con: haxelib.org publishing needs an explicit package smoke because we do not get the skeleton
+- Con: haxelib.org publishing needs the explicit package smoke because we do not get the skeleton
   build layout validation automatically.
 
 Skeleton `_std` plus `reflaxe build`:
@@ -167,15 +167,13 @@ Repo-local path:
 - `haxe_libraries/reflaxe.elixir.hxml` points at this checkout using `${SCOPE_DIR}`.
 - It also invokes bootstrap/init so local behavior matches consumer installs.
 
-Future haxelib.org path:
+Haxelib.org package artifact path:
 
-- Should be validated from the exact submitted package artifact, not just the working tree.
+- Is validated from the generated package artifact, not just the working tree.
 - The package must include `extraParams.hxml`, `std/`, and `vendor/reflaxe/src`.
 - A clean temp consumer project must compile with `-lib reflaxe.elixir` and no repo-local classpaths.
-
-Tracked follow-up:
-
-- `haxe.elixir.codex-8yh`: Packaging smoke: validate haxelib zip layout.
+- Run `npm run test:haxelib-package` to build the zip, install it into an isolated haxelib repo, and
+  compile the smoke fixture.
 
 ## Verdict
 
@@ -183,5 +181,5 @@ Do not add `haxelib run reflaxe build` to the normal Reflaxe.Elixir development 
 skeleton convention. The direct `.cross.hx` layout is acceptable and clearer for the current Lix/GitHub
 release path.
 
-Before publishing to haxelib.org, add and run the package smoke described above. That validates this
-repo's direct layout in the exact artifact users would install.
+Before publishing to haxelib.org, run the package smoke described above. That validates this repo's
+direct layout in the exact artifact users would install.

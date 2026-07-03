@@ -37,6 +37,7 @@ npm run ci:guards
 npm test
 npm run test:examples
 npm run test:examples-elixir
+npm run test:haxelib-package
 npm run ci:budgets
 scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --playwright --async --deadline 900 -v
 ```

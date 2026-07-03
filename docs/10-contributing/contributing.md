@@ -204,7 +204,7 @@ Your PR should:
 
 ## Docs drift guards (maintainers)
 
-We keep “new user” docs honest with two CI checks:
+We keep “new user” docs and package layout honest with three CI checks:
 
 1) **Markdown link guard**: ensures intra-repo links resolve (and catch case-only bugs that fail on Linux).
 
@@ -226,6 +226,16 @@ What it does (high level):
 - inside the generated project: `npm install`, `lix scope create`, `lix dev reflaxe.elixir <repo>`, `mix deps.get`, `mix compile`
 
 Runtime boot + browser E2E are intentionally **not** part of docs smoke; that’s covered by the todo-app QA sentinel.
+
+3) **Haxelib Package Smoke**: validates the actual package zip layout by installing it into an isolated
+temporary haxelib repo and compiling through `-lib reflaxe.elixir`.
+
+```bash
+npm run test:haxelib-package
+```
+
+This keeps `extraParams.hxml`, `std/` direct `.cross.hx` overrides, vendored Reflaxe staging, and
+official Haxe stdlib fallback honest for future haxelib.org publishing.
 
 Separately, a scheduled CI workflow (**README Release Smoke (scheduled)**) validates the
 “install from GitHub Release tag” path stays working without making PR CI flaky.
