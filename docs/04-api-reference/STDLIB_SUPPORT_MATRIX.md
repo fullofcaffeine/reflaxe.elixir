@@ -107,6 +107,7 @@ Top-level:
 - `haxe.crypto.Adler32`
 - `haxe.crypto.Base64`
 - `haxe.crypto.Crc32`
+- `haxe.crypto.Hmac`
 - `haxe.crypto.Md5`
 - `haxe.crypto.Sha1`
 - `haxe.crypto.Sha224`

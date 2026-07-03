@@ -48,9 +48,9 @@ stdlib strategy is:
 
 Good examples:
 
-- `haxe.crypto.Sha224` / `Sha256` call `:crypto.hash/2` and
-  `Base.encode16/2` at runtime, with a pure-Haxe fallback only for macro/eval
-  contexts.
+- `haxe.crypto.Hmac` calls `:crypto.mac(:hmac, ...)`; `haxe.crypto.Sha224` /
+  `Sha256` call `:crypto.hash/2` and `Base.encode16/2` at runtime, with a
+  pure-Haxe fallback only for macro/eval contexts.
 - `haxe.ds.Map` and related map surfaces use native `%{}` storage and lower to
   `Map.*` / `Enum.*` shapes where that preserves Haxe semantics.
 - `DynamicAccess` is a legitimate boundary case: JSON, params, and other

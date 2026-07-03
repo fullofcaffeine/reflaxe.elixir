@@ -11,6 +11,7 @@ import haxe.Unserializer;
 import haxe.crypto.Base64;
 import haxe.crypto.Adler32;
 import haxe.crypto.Crc32;
+import haxe.crypto.Hmac;
 import haxe.crypto.Md5;
 import haxe.crypto.Sha1;
 import haxe.crypto.Sha224;
@@ -1030,6 +1031,21 @@ class StdlibParityTest extends TestCase {
 	@:test
 	function testMd5EncodeLowerHex():Void {
 		Assert.equals("098f6bcd4621d373cade4e832627b4f6", Md5.encode("test"));
+	}
+
+	@:describe("haxe.crypto.Hmac")
+	@:test
+	function testHmacMakeUsesNativeDigestAlgorithms():Void {
+		var empty = Bytes.ofString("");
+		Assert.equals("74e6f7298a9c2d168935f58c001bad88", new Hmac(MD5).make(empty, empty).toHex());
+		Assert.equals("fbdb1d1b18aa6c08324b7d64b71fb76370690e1d", new Hmac(SHA1).make(empty, empty).toHex());
+		Assert.equals("b613679a0814d9ec772f95d778c35fc5ff1697c493715653c6c712144292c5ad", new Hmac(SHA256).make(empty, empty).toHex());
+
+		var key = Bytes.ofString("key");
+		var message = Bytes.ofString("The quick brown fox jumps over the lazy dog");
+		Assert.equals("80070713463e7749b90c2dc24911e275", new Hmac(MD5).make(key, message).toHex());
+		Assert.equals("de7c9b85b8b78aa6bc8a7a36f70a90701c9db4d9", new Hmac(SHA1).make(key, message).toHex());
+		Assert.equals("f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8", new Hmac(SHA256).make(key, message).toHex());
 	}
 
 	@:describe("haxe.crypto.Base64")
