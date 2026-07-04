@@ -100,6 +100,7 @@ class StdModuleWhitelist {
 			"HashMap",
 			"TreeNode",
 			// Framework roots
+			"Haxe",
 			"Ecto",
 			"Phoenix"
 		])

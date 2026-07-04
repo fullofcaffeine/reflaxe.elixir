@@ -15,7 +15,7 @@
     {"module": "EReg", "status": "skipped-target-specific", "source": "EReg.unit.hx", "reason": "Upstream spec exists; enable after Elixir Regex compatibility is triaged."},
     {"module": "IntIterator", "status": "enabled", "source": "IntIterator.unit.hx", "fixture": "test/upstream_unitstd/upstream/IntIterator.unit.hx"},
     {"module": "Lambda", "status": "skipped-target-specific", "source": "Lambda.unit.hx", "reason": "Upstream spec exists; enable after collection semantics are triaged."},
-    {"module": "List", "status": "skipped-target-specific", "source": "List.unit.hx", "reason": "Upstream spec exists; enable after List mutability semantics are triaged."},
+    {"module": "List", "status": "adapted", "source": "List.unit.hx", "fixture": "test/upstream_unitstd/upstream/List.unit.hx", "reason": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions."},
     {"module": "Map", "status": "skipped-target-specific", "source": "Map.unit.hx", "reason": "Upstream spec exists; enable after native BEAM map ordering/identity semantics are triaged."},
     {"module": "Math", "status": "enabled", "source": "Math.unit.hx", "fixture": "test/upstream_unitstd/upstream/Math.unit.hx"},
     {"module": "Reflect", "status": "skipped-target-specific", "source": "Reflect.unit.hx", "reason": "Upstream spec exists; enable after BEAM reflection semantics are triaged."},

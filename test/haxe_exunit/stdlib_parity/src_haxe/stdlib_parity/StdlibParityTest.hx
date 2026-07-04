@@ -23,6 +23,7 @@ import haxe.ds.EnumValueMap;
 import haxe.ds.GenericStack;
 import haxe.ds.HashMap;
 import haxe.ds.IntMap;
+import haxe.ds.List;
 import haxe.ds.StringMap;
 import haxe.exceptions.ArgumentException;
 import haxe.exceptions.NotImplementedException;
@@ -541,6 +542,64 @@ class StdlibParityTest extends TestCase {
 		Assert.isTrue(stack.isEmpty());
 		Assert.isFalse(stack.remove("missing"));
 		Assert.equals("{}", stack.toString());
+	}
+
+	@:describe("haxe.ds.List target override")
+	@:test
+	function testListMutationIterationFilterAndMap():Void {
+		var values = new List<String>();
+		Assert.isTrue(values.isEmpty());
+		Assert.equals(0, values.length);
+		Assert.isNull(values.first());
+		Assert.isNull(values.last());
+		Assert.isNull(values.pop());
+
+		values.add("one");
+		values.add("two");
+		values.push("zero");
+
+		Assert.equals(3, values.length);
+		Assert.equals("zero", values.first());
+		Assert.equals("two", values.last());
+		Assert.equals("{zero, one, two}", values.toString());
+		Assert.equals("zero|one|two", values.join("|"));
+
+		var seen:Array<String> = [];
+		var iterator = values.iterator();
+		while (iterator.hasNext()) {
+			seen.push(iterator.next());
+		}
+		Assert.equals("zero,one,two", seen.join(","));
+
+		var entries:Array<String> = [];
+		var kvi = values.keyValueIterator();
+		while (kvi.hasNext()) {
+			var entry = kvi.next();
+			entries.push(entry.key + ":" + entry.value);
+		}
+		Assert.equals("0:zero,1:one,2:two", entries.join(","));
+
+		Assert.isTrue(values.remove("one"));
+		Assert.isFalse(values.remove("missing"));
+		Assert.equals("{zero, two}", values.toString());
+		Assert.equals("zero", values.pop());
+		Assert.equals("{two}", values.toString());
+
+		values.clear();
+		Assert.isTrue(values.isEmpty());
+		Assert.equals(0, values.length);
+
+		var numbers = new List<Int>();
+		numbers.add(1);
+		numbers.add(2);
+		numbers.add(3);
+
+		var filtered = numbers.filter(function(value) return value > 1);
+		Assert.equals("{2, 3}", filtered.toString());
+		Assert.equals("{1, 2, 3}", numbers.toString());
+
+		var mapped = numbers.map(function(value) return value * 10);
+		Assert.equals("{10, 20, 30}", mapped.toString());
 	}
 
 	@:describe("haxe.Serializer / haxe.Unserializer")

@@ -21,6 +21,7 @@
   "option_patterns/bulk_notification_result.exs",
   "int_iterator.exs",
   "haxe/test/assert.exs",
+  "haxe/iterators/array_key_value_iterator.exs",
   "haxe/iterators/array_iterator.exs",
   "haxe/io/output.exs",
   "haxe/io/input.exs",

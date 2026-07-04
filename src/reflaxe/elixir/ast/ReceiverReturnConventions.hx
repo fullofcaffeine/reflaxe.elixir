@@ -39,6 +39,10 @@ class ReceiverReturnConventions {
 				UpdatedReceiver;
 			case ["haxe.ds", "GenericStack", "pop" | "remove"]:
 				UpdatedReceiverAndValue;
+			case ["haxe.ds", "List", "add" | "push" | "clear"]:
+				UpdatedReceiver;
+			case ["haxe.ds", "List", "pop" | "remove"]:
+				UpdatedReceiverAndValue;
 			case ["haxe.ds", "HashMap", "set" | "clear"]:
 				UpdatedReceiver;
 			case ["haxe.ds", "HashMap", "remove"]:

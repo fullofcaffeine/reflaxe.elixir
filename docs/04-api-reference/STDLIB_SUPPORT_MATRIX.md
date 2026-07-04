@@ -119,6 +119,7 @@ Top-level:
 - `haxe.ds.EnumValueMap` (bootstrap-safe override under `src/haxe/ds`)
 - `haxe.ds.GenericStack` (target override with receiver rebinding for `add`, `pop`, and `remove`; covered by upstream `unitstd` plus local iterator/toString runtime tests)
 - `haxe.ds.HashMap` (target override keyed by `hashCode()` with receiver rebinding for `set`, `remove`, and `clear`; covered by local runtime tests)
+- `haxe.ds.List` (target override with receiver rebinding for `add`, `push`, `pop`, `remove`, and `clear`; array-backed iterators use the canonical iterator runtimes; covered by adapted upstream `unitstd` plus local runtime tests)
 - `haxe.ds.ListSort` (explicit fail-fast unsupported surface)
 - `haxe.ds.Option`
 - `haxe.exceptions.ArgumentException` (official stdlib fallback; covered by local runtime tests)
@@ -185,6 +186,7 @@ Notes:
 - The AST pipeline still optimizes most loop patterns to idiomatic `Enum.*`; runtime iterators are primarily for manual iterator usage and stdlib/runtime compatibility.
 - `UnicodeString.validate` supports `UTF8`; UTF-16/UTF-32 validation fails fast because `haxe.io.Bytes` stores UTF-8 binaries on this target.
 - Built-in map surfaces (`haxe.ds.Map`, `StringMap`, `IntMap`) are represented as native Elixir `%{}` maps and lowered to idiomatic `Map.*` operations.
+- `haxe.ds.List` is represented as an ordered immutable snapshot with receiver rebinding for mutators; generated Elixir uses `Haxe.Ds.List` so it does not collide with Elixir's built-in `List` module.
 - `haxe.ds.ObjectMap` is intentionally unsupported for Elixir output code for now. Haxe ObjectMap requires object-identity keys, but BEAM map keys are structural terms. The compiler rejects construction and direct method calls instead of silently lowering them to structural `%{}` behavior. See `docs/05-architecture/ITERATOR_RUNTIME_MODEL.md`.
 - `haxe.ds.ListSort` is intentionally unsupported for Elixir output code for now. Its API mutates arbitrary linked-node `next`/`prev` fields in place; ordinary BEAM structs/maps are immutable values, so the compiler rejects calls instead of emitting misleading linked-list updates.
 - Some exist to avoid invalid Elixir from upstream inline patterns (notably parts of `haxe.io`).

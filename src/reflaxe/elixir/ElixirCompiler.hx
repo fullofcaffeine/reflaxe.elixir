@@ -905,7 +905,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			return null;
 
 		// Skip standard library/internal classes that shouldn't generate Elixir modules
-		if (isStandardLibraryClass(classType.name) || shouldSuppressStdEmission(classType)) {
+		if (isStandardLibraryClass(classType) || shouldSuppressStdEmission(classType)) {
 			#if debug_compilation_flow
 			#end
 			return null;
@@ -1724,7 +1724,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		#end
 
 		// Skip built-in types and std/internal classes that shouldn't generate modules
-		if (isBuiltinAbstractType(classType.name) || isStandardLibraryClass(classType.name) || shouldSuppressStdEmission(classType)) {
+		if (isBuiltinAbstractType(classType.name) || isStandardLibraryClass(classType) || shouldSuppressStdEmission(classType)) {
 			return null;
 		}
 
@@ -3318,10 +3318,12 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	/**
 	 * Check if this is a standard library class type that should NOT generate an Elixir module
 	 */
-	private function isStandardLibraryClass(name:String):Bool {
+	private function isStandardLibraryClass(classType:ClassType):Bool {
 		// Standard library classes handled elsewhere
-		return switch (name) {
-			case "String" | "Array" | "Map" | "Date" | "Math" | "List": true;
+		var pack = classType.pack != null ? classType.pack.join(".") : "";
+		return switch (classType.name) {
+			case "String" | "Array" | "Map" | "Date" | "Math": true;
+			case "List" if (pack == ""): true;
 			case "__Int64" | "Int64" | "Int64_Impl_": true; // Haxe Int64 internal types
 			case _: false;
 		}
