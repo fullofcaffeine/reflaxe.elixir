@@ -1,3 +1,10 @@
+## [0.14.11](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.10...v0.14.11) (2026-07-04)
+
+
+### Bug Fixes
+
+* **stdlib:** support haxe ds vector ([00fc40b](https://github.com/fullofcaffeine/reflaxe.elixir/commit/00fc40b61922236552ff4a08c4a10f9ee2b6e258))
+
 ## [0.14.10](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.9...v0.14.10) (2026-07-04)
 
 
