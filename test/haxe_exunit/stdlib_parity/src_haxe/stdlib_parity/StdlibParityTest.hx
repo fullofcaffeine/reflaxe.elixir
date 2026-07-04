@@ -21,6 +21,8 @@ import haxe.crypto.Sha256;
 import haxe.ds.EnumValueMap;
 import haxe.ds.IntMap;
 import haxe.ds.StringMap;
+import haxe.exceptions.ArgumentException;
+import haxe.exceptions.NotImplementedException;
 import haxe.io.Bytes;
 import haxe.io.BytesBuffer;
 import haxe.io.BytesInput;
@@ -406,6 +408,51 @@ class StdlibParityTest extends TestCase {
 		var details = exception.details();
 		Assert.containsString(details, "details-probe");
 		Assert.containsString(details, "Called from ");
+	}
+
+	@:describe("haxe.exceptions upstream fallback")
+	@:test
+	function testArgumentAndNotImplementedExceptionFallback():Void {
+		var previous = new haxe.Exception("previous-cause");
+
+		var argument = new ArgumentException("limit", null, previous);
+		Assert.equals("limit", argument.argument);
+		Assert.equals('Invalid argument "limit"', argument.message);
+		Assert.equals("previous-cause", argument.previous.message);
+		Assert.containsString(argument.toString(), 'Invalid argument "limit" in stdlib_parity.StdlibParityTest.testArgumentAndNotImplementedExceptionFallback');
+
+		var customArgument = new ArgumentException("path", "Bad path");
+		Assert.equals("Bad path", customArgument.message);
+		Assert.isNull(customArgument.previous);
+
+		var notImplementedDefault = new NotImplementedException();
+		Assert.equals("Not implemented", notImplementedDefault.message);
+		Assert.containsString(notImplementedDefault.toString(),
+			"Not implemented in stdlib_parity.StdlibParityTest.testArgumentAndNotImplementedExceptionFallback");
+		Assert.isNull(notImplementedDefault.previous);
+
+		var notImplementedCustom = new NotImplementedException("Missing BEAM hook", previous);
+		Assert.equals("Missing BEAM hook", notImplementedCustom.message);
+		Assert.equals("previous-cause", notImplementedCustom.previous.message);
+	}
+
+	@:describe("haxe.exceptions upstream fallback")
+	@:test
+	function testArgumentAndNotImplementedExceptionThrowCatch():Void {
+		try {
+			throw new ArgumentException("name");
+			Assert.fail("ArgumentException should be catchable by its concrete type");
+		} catch (error:ArgumentException) {
+			Assert.equals("name", error.argument);
+			Assert.equals('Invalid argument "name"', error.message);
+		}
+
+		try {
+			throw new NotImplementedException("not yet");
+			Assert.fail("NotImplementedException should be catchable by its concrete type");
+		} catch (error:NotImplementedException) {
+			Assert.equals("not yet", error.message);
+		}
 	}
 
 	@:describe("haxe.Serializer / haxe.Unserializer")

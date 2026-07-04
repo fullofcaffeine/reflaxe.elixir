@@ -12,19 +12,21 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * WHAT
  * - Provides minimal target-native fallbacks for select Haxe std runtime modules.
- * - Overrides `PosException` and `EReg` with known-safe runtime blocks.
+ * - Overrides `PosException`, `NotImplementedException`, and `EReg` with known-safe runtime blocks.
  *
  * WHY
  * - These modules need stable BEAM-native behavior that is easier to express as target runtime
  *   blocks than by compiling the upstream Haxe implementations directly.
  *
  * HOW
- * - For `PosException` and `EReg`, replace module bodies with stable runtime implementations.
+ * - For `PosException`, `NotImplementedException`, and `EReg`, replace module bodies with stable runtime implementations.
  *
  * See also: `docs/05-architecture/ITERATOR_RUNTIME_MODEL.md`.
  *
  * EXAMPLES
  * - Generated `PosException` module: replace body with runtime-safe constructor/formatter.
+ * - Generated `NotImplementedException` module: preserve the official default message when
+ *   callsites pass nil for omitted optional constructor args.
  * - Generated `EReg` module: replace body with BEAM `Regex`-backed implementation.
  */
 class StdHaxeRuntimeOverrideTransforms {
@@ -32,11 +34,15 @@ class StdHaxeRuntimeOverrideTransforms {
 		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
 			return switch (n.def) {
 				case EDefmodule(name, doBlock):
-					if (name == "PosException") posExceptionDef(n) else if (name == "EReg") eRegDef(n) else n;
+					if (name == "PosException") posExceptionDef(n) else if (name == "NotImplementedException") notImplementedExceptionDef(n) else
+						if (name == "EReg") eRegDef(n) else n;
 				case EModule(name, attrs, body):
 					if (name == "PosException") {
 						var posExceptionBlockNode = posExceptionBlock(n.metadata, n.pos);
 						makeASTWithMeta(EModule(name, attrs, [posExceptionBlockNode]), n.metadata, n.pos);
+					} else if (name == "NotImplementedException") {
+						var notImplementedExceptionBlockNode = notImplementedExceptionBlock(n.metadata, n.pos);
+						makeASTWithMeta(EModule(name, attrs, [notImplementedExceptionBlockNode]), n.metadata, n.pos);
 					} else if (name == "EReg") {
 						var eRegBlockNode = eRegBlock(n.metadata, n.pos);
 						makeASTWithMeta(EModule(name, attrs, [eRegBlockNode]), n.metadata, n.pos);
@@ -74,8 +80,33 @@ class StdHaxeRuntimeOverrideTransforms {
 			+ "      end\n"
 			+ "    %__MODULE__{message: message, previous: previous, native: nil, stack: [], pos_infos: pos_infos}\n"
 			+ "  end\n"
-			+
-			"  def to_string(struct), do: \"#{Kernel.to_string(struct.message)} in #{struct.pos_infos.className}.#{struct.pos_infos.methodName} at #{struct.pos_infos.fileName}:#{struct.pos_infos.lineNumber}\"\n"));
+			+ "  defp pos_field(pos_infos, camel_key, snake_key) do\n"
+			+ "    Map.get(pos_infos, camel_key) || Map.get(pos_infos, snake_key)\n"
+			+ "  end\n"
+			+ "  def to_string(struct) do\n"
+			+ "    class_name = pos_field(struct.pos_infos, :className, :class_name)\n"
+			+ "    method_name = pos_field(struct.pos_infos, :methodName, :method_name)\n"
+			+ "    file_name = pos_field(struct.pos_infos, :fileName, :file_name)\n"
+			+ "    line_number = pos_field(struct.pos_infos, :lineNumber, :line_number)\n"
+			+ "    \"#{Kernel.to_string(struct.message)} in #{class_name}.#{method_name} at #{file_name}:#{line_number}\"\n"
+			+ "  end\n"));
+		return makeASTWithMeta(EBlock([raw]), meta, pos);
+	}
+
+	static inline function notImplementedExceptionDef(orig:ElixirAST):ElixirAST {
+		return makeASTWithMeta(EDefmodule("NotImplementedException", notImplementedExceptionBlock(orig.metadata, orig.pos)), orig.metadata, orig.pos);
+	}
+
+	static inline function notImplementedExceptionBlock(meta:ElixirMetadata, pos:haxe.macro.Expr.Position):ElixirAST {
+		var raw = makeAST(ERaw("  def new(message_param, previous_param, pos) do\n"
+			+ "    message = if Kernel.is_nil(message_param), do: \"Not implemented\", else: message_param\n"
+			+ "    struct = %__MODULE__{}\n"
+			+ "    struct = Map.merge(struct, Map.drop(PosException.new(message, previous_param, pos), [:__struct__, :__reflaxe_class__]))\n"
+			+ "    struct\n"
+			+ "  end\n"
+			+ "  def to_string(struct) do\n"
+			+ "    PosException.to_string(struct)\n"
+			+ "  end\n"));
 		return makeASTWithMeta(EBlock([raw]), meta, pos);
 	}
 

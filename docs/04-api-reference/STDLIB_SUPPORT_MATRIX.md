@@ -117,6 +117,8 @@ Top-level:
 - `haxe.ds.BalancedTree`
 - `haxe.ds.EnumValueMap` (bootstrap-safe override under `src/haxe/ds`)
 - `haxe.ds.Option`
+- `haxe.exceptions.ArgumentException` (official stdlib fallback; covered by local runtime tests)
+- `haxe.exceptions.NotImplementedException` (official stdlib fallback; covered by local runtime tests)
 - `haxe.format.JsonPrinter`
 - `haxe.http.HttpBase`
 - `haxe.io.BufferInput`
