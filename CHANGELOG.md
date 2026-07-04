@@ -1,3 +1,11 @@
+## [0.14.9](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.8...v0.14.9) (2026-07-04)
+
+
+### Bug Fixes
+
+* **stdlib:** make timer delay one-shot deterministic ([76619a1](https://github.com/fullofcaffeine/reflaxe.elixir/commit/76619a1e75e16881de3143fae47d5b56af1a91b7))
+* **stdlib:** support haxe ds list ([53893c9](https://github.com/fullofcaffeine/reflaxe.elixir/commit/53893c9fa6eae5a5a4ae6643ab009f6aef1ee359))
+
 ## [0.14.8](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.7...v0.14.8) (2026-07-04)
 
 
