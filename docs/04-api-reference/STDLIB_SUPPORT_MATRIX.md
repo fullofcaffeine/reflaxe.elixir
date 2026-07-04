@@ -114,8 +114,10 @@ Top-level:
 - `haxe.crypto.Sha1`
 - `haxe.crypto.Sha224`
 - `haxe.crypto.Sha256`
+- `haxe.ds.ArraySort` (target override lowered to stable `Enum.sort/2` rebinding for local array bindings)
 - `haxe.ds.BalancedTree`
 - `haxe.ds.EnumValueMap` (bootstrap-safe override under `src/haxe/ds`)
+- `haxe.ds.ListSort` (explicit fail-fast unsupported surface)
 - `haxe.ds.Option`
 - `haxe.exceptions.ArgumentException` (official stdlib fallback; covered by local runtime tests)
 - `haxe.exceptions.NotImplementedException` (official stdlib fallback; covered by local runtime tests)
@@ -179,6 +181,7 @@ Notes:
 - `UnicodeString.validate` supports `UTF8`; UTF-16/UTF-32 validation fails fast because `haxe.io.Bytes` stores UTF-8 binaries on this target.
 - Built-in map surfaces (`haxe.ds.Map`, `StringMap`, `IntMap`) are represented as native Elixir `%{}` maps and lowered to idiomatic `Map.*` operations.
 - `haxe.ds.ObjectMap` is intentionally unsupported for Elixir output code for now. Haxe ObjectMap requires object-identity keys, but BEAM map keys are structural terms. The compiler rejects construction and direct method calls instead of silently lowering them to structural `%{}` behavior. See `docs/05-architecture/ITERATOR_RUNTIME_MODEL.md`.
+- `haxe.ds.ListSort` is intentionally unsupported for Elixir output code for now. Its API mutates arbitrary linked-node `next`/`prev` fields in place; ordinary BEAM structs/maps are immutable values, so the compiler rejects calls instead of emitting misleading linked-list updates.
 - Some exist to avoid invalid Elixir from upstream inline patterns (notably parts of `haxe.io`).
 
 ### `haxe.Serializer` / `haxe.Unserializer` BEAM contract

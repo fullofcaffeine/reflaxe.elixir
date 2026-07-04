@@ -1196,6 +1196,40 @@ class CallExprBuilder {
 						var moduleName = ModuleBuilder.extractModuleName(classType);
 						var methodName = cf.get().name;
 
+						if (classPack == "haxe.ds" && className == "ArraySort" && methodName == "sort" && args != null && args.length == 2) {
+							var arrayLocal:Null<TVar> = switch (args[0].expr) {
+								case TLocal(v): v;
+								default: null;
+							};
+							var arrayAst = buildExpression(args[0]);
+							var cmpAst = buildExpression(args[1]);
+							var left = makeAST(EVar("left"));
+							var right = makeAST(EVar("right"));
+							var cmpCall = makeAST(ECall(cmpAst, "", [left, right]));
+							var stableBeforeOrEqual = makeAST(EBinary(LessEqual, cmpCall, makeAST(EInteger(0))));
+							var wrapper = makeAST(EFn([
+								{
+									args: [PVar("left"), PVar("right")],
+									guard: null,
+									body: stableBeforeOrEqual
+								}
+							]));
+							var sortedCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "sort", [arrayAst, wrapper]));
+							if (arrayLocal != null) {
+								var arrayName = VariableBuilder.resolveVariableName(arrayLocal, context);
+								return EBlock([makeAST(EMatch(PVar(arrayName), sortedCall)), makeAST(ENil)]);
+							}
+							context.error(arraySortUnsupportedMessage(), e.pos);
+							return ENil;
+						}
+
+						if (classPack == "haxe.ds"
+							&& className == "ListSort"
+							&& (methodName == "sort" || methodName == "sortSingleLinked")) {
+							context.error(listSortUnsupportedMessage(), e.pos);
+							return ENil;
+						}
+
 						// Respect `@:native` on the field when present.
 						//
 						// WHY:
@@ -2014,6 +2048,16 @@ class CallExprBuilder {
 	static function objectMapUnsupportedMessage():String {
 		return "haxe.ds.ObjectMap is not supported on the Elixir target yet: Haxe ObjectMap requires object-identity keys, "
 			+ "while BEAM map keys are structural terms. Use StringMap/IntMap/Map for structural keys, or keep ObjectMap behind a target-specific abstraction.";
+	}
+
+	static function listSortUnsupportedMessage():String {
+		return "haxe.ds.ListSort is not supported on the Elixir target yet: it mutates arbitrary linked-node `next`/`prev` fields in place, "
+			+ "while ordinary BEAM structs and maps are immutable values. Use ArraySort.sort on Array values or sort an Array with Array.sort instead.";
+	}
+
+	static function arraySortUnsupportedMessage():String {
+		return "haxe.ds.ArraySort.sort on the Elixir target currently requires a local Array binding so the compiler can preserve Void mutating semantics "
+			+ "with same-scope immutable rebinding. Assign the array expression to a local variable before sorting it.";
 	}
 }
 #end

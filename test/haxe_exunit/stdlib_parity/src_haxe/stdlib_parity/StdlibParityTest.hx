@@ -18,6 +18,7 @@ import haxe.crypto.Md5;
 import haxe.crypto.Sha1;
 import haxe.crypto.Sha224;
 import haxe.crypto.Sha256;
+import haxe.ds.ArraySort;
 import haxe.ds.EnumValueMap;
 import haxe.ds.IntMap;
 import haxe.ds.StringMap;
@@ -50,6 +51,16 @@ import reflaxe.elixir.IMap as IMapRuntime;
 enum ParityColor {
 	Red;
 	Green;
+}
+
+class SortNode {
+	public var key:Int;
+	public var label:String;
+
+	public function new(key:Int, label:String) {
+		this.key = key;
+		this.label = label;
+	}
 }
 
 @:exunit
@@ -453,6 +464,28 @@ class StdlibParityTest extends TestCase {
 		} catch (error:NotImplementedException) {
 			Assert.equals("not yet", error.message);
 		}
+	}
+
+	@:describe("haxe.ds.ArraySort target override")
+	@:test
+	function testArraySortStableTargetOverride():Void {
+		var values = [
+			new SortNode(2, "two-a"),
+			new SortNode(1, "one-a"),
+			new SortNode(2, "two-b"),
+			new SortNode(1, "one-b"),
+			new SortNode(3, "three")
+		];
+
+		ArraySort.sort(values, function(left, right) {
+			return left.key - right.key;
+		});
+
+		Assert.equals("one-a", values[0].label);
+		Assert.equals("one-b", values[1].label);
+		Assert.equals("two-a", values[2].label);
+		Assert.equals("two-b", values[3].label);
+		Assert.equals("three", values[4].label);
 	}
 
 	@:describe("haxe.Serializer / haxe.Unserializer")

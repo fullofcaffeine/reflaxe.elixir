@@ -951,6 +951,8 @@ class BlockBuilder {
 		return switch (haxe.macro.TypeTools.follow(init.t)) {
 			case TInst(classRef, _):
 				var classType = classRef.get();
+				if (classType == null)
+					return false;
 				var classPack = classType.pack != null ? classType.pack.join(".") : "";
 				ReceiverReturnConventions.forMethod(classPack, classType.name, "next") == UpdatedReceiverAndValue;
 			default:
