@@ -1,7 +1,7 @@
 {
   "diff": {
     "intersection": {
-      "count": 106,
+      "count": 108,
       "modules": [
         "Array",
         "Date",
@@ -44,9 +44,11 @@
         "haxe.crypto.Sha1",
         "haxe.crypto.Sha224",
         "haxe.crypto.Sha256",
+        "haxe.ds.ArraySort",
         "haxe.ds.BalancedTree",
         "haxe.ds.EnumValueMap",
         "haxe.ds.IntMap",
+        "haxe.ds.ListSort",
         "haxe.ds.Map",
         "haxe.ds.ObjectMap",
         "haxe.ds.Option",
@@ -126,7 +128,7 @@
       ]
     },
     "reference_only": {
-      "count": 98,
+      "count": 96,
       "modules": [
         "Any",
         "Class",
@@ -156,12 +158,10 @@
         "haxe.display.Position",
         "haxe.display.Protocol",
         "haxe.display.Server",
-        "haxe.ds.ArraySort",
         "haxe.ds.Either",
         "haxe.ds.GenericStack",
         "haxe.ds.HashMap",
         "haxe.ds.List",
-        "haxe.ds.ListSort",
         "haxe.ds.ReadOnlyArray",
         "haxe.ds.Vector",
         "haxe.ds.WeakMap",
@@ -232,7 +232,7 @@
   "local": {
     "counts_by_prefix": {
       "<top-level>": 19,
-      "haxe": 62,
+      "haxe": 64,
       "sys": 34
     },
     "nonstdlib_modules_under_std_dir": [
@@ -259,8 +259,8 @@
       "std",
       "src/haxe"
     ],
-    "total_candidates": 119,
-    "total_std_modules": 115
+    "total_candidates": 121,
+    "total_std_modules": 117
   },
   "reference": {
     "counts_by_prefix": {
