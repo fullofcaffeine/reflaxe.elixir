@@ -95,6 +95,8 @@ class StdModuleWhitelist {
 			"MapKeyValueIterator",
 			"BalancedTree",
 			"EnumValueMap",
+			"GenericCell",
+			"GenericStack",
 			"TreeNode",
 			// Framework roots
 			"Ecto",

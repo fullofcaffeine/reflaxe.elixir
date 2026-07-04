@@ -35,6 +35,10 @@ class ReceiverReturnConventions {
 				UpdatedReceiver;
 			case ["haxe.crypto", "Adler32", "update"]:
 				UpdatedReceiver;
+			case ["haxe.ds", "GenericStack", "add"]:
+				UpdatedReceiver;
+			case ["haxe.ds", "GenericStack", "pop" | "remove"]:
+				UpdatedReceiverAndValue;
 			case ["", "IntIterator", "next"]:
 				UpdatedReceiverAndValue;
 			default:

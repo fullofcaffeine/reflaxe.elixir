@@ -117,6 +117,7 @@ Top-level:
 - `haxe.ds.ArraySort` (target override lowered to stable `Enum.sort/2` rebinding for local array bindings)
 - `haxe.ds.BalancedTree`
 - `haxe.ds.EnumValueMap` (bootstrap-safe override under `src/haxe/ds`)
+- `haxe.ds.GenericStack` (target override with receiver rebinding for `add`, `pop`, and `remove`; covered by upstream `unitstd` plus local iterator/toString runtime tests)
 - `haxe.ds.ListSort` (explicit fail-fast unsupported surface)
 - `haxe.ds.Option`
 - `haxe.exceptions.ArgumentException` (official stdlib fallback; covered by local runtime tests)

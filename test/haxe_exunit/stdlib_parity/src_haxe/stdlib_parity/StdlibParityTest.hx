@@ -20,6 +20,7 @@ import haxe.crypto.Sha224;
 import haxe.crypto.Sha256;
 import haxe.ds.ArraySort;
 import haxe.ds.EnumValueMap;
+import haxe.ds.GenericStack;
 import haxe.ds.IntMap;
 import haxe.ds.StringMap;
 import haxe.exceptions.ArgumentException;
@@ -486,6 +487,35 @@ class StdlibParityTest extends TestCase {
 		Assert.equals("two-a", values[2].label);
 		Assert.equals("two-b", values[3].label);
 		Assert.equals("three", values[4].label);
+	}
+
+	@:describe("haxe.ds.GenericStack target override")
+	@:test
+	function testGenericStackIteratorToStringAndReceiverRebinding():Void {
+		var stack = new GenericStack<String>();
+		stack.add("one");
+		stack.add("two");
+		stack.add("three");
+
+		var seen:Array<String> = [];
+		for (value in stack) {
+			seen.push(value);
+		}
+
+		Assert.equals(3, arrayLength(seen));
+		Assert.equals("three", seen[0]);
+		Assert.equals("two", seen[1]);
+		Assert.equals("one", seen[2]);
+		Assert.equals("{three,two,one}", stack.toString());
+
+		Assert.isTrue(stack.remove("two"));
+		Assert.equals("{three,one}", stack.toString());
+		Assert.equals("three", stack.pop());
+		Assert.equals("{one}", stack.toString());
+		Assert.equals("one", stack.pop());
+		Assert.isTrue(stack.isEmpty());
+		Assert.isFalse(stack.remove("missing"));
+		Assert.equals("{}", stack.toString());
 	}
 
 	@:describe("haxe.Serializer / haxe.Unserializer")
