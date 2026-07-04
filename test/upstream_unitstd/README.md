@@ -29,6 +29,8 @@ Current upstream runtime fixtures:
   `haxe.io.FPHelper`, `haxe.CallStack`.
 - Adapted: `haxe.DynamicAccess` (membership syntax expansion),
   `haxe.io.Path` (path-hygiene-only Windows sample adjustment),
+  `haxe.ds.Vector` (nil-backed erased cells, opaque backing-cell identity, and
+  local structural values),
   `haxe.iterators.StringIteratorUnicode`, and
   `haxe.iterators.StringKeyValueIteratorUnicode` (explicit Elixir UTF-8 branch).
 

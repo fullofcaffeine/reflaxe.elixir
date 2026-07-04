@@ -89,6 +89,12 @@ class UpstreamUnitStdTest extends TestCase {
 		UpstreamUnitStdMacro.assertSpec("haxe/ds/GenericStack.unit.hx");
 	}
 
+	@:describe("upstream Haxe unitstd: haxe.ds.Vector")
+	@:test
+	function testHaxeDsVector():Void {
+		UpstreamUnitStdMacro.assertSpec("haxe/ds/Vector.unit.hx");
+	}
+
 	@:describe("upstream Haxe unitstd: haxe.io.BytesBuffer")
 	@:test
 	function testHaxeIoBytesBuffer():Void {

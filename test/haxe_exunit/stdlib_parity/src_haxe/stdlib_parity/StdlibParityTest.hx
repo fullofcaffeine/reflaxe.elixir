@@ -1357,6 +1357,14 @@ class StdlibParityTest extends TestCase {
 		Assert.contains(fields, "baz");
 	}
 
+	@:describe("Reflect.compare")
+	@:test
+	function testReflectCompareUsesNumericOrdering():Void {
+		Assert.isTrue(Reflect.compare(99, 101) < 0);
+		Assert.isTrue(Reflect.compare(101, 99) > 0);
+		Assert.equals(0, Reflect.compare(42, 42));
+	}
+
 	@:describe("haxe.DynamicAccess (uses Reflect on Elixir)")
 	@:test
 	function testDynamicAccessJsonPayload():Void {

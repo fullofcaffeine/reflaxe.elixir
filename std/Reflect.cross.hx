@@ -407,18 +407,35 @@ class Reflect {
 	 * 
 	 * WHY: Needed for sorting and ordered data structures.
 	 * WHAT: Compares two values and returns their ordering.
-	 * HOW: Uses string comparison as a generic fallback.
+	 * HOW: Uses native numeric, boolean, and string ordering when both values
+	 * share that shape, then falls back to string comparison for opaque/mixed
+	 * terms.
 	 * 
 	 * @param a First value to compare
 	 * @param b Second value to compare
 	 * @return -1 if a < b, 0 if a == b, 1 if a > b
 	 */
 	public static function compare<T>(a:T, b:T):Int {
-		// Use string comparison and avoid early returns so the printer emits a
-		// single expression (maps to `cond`/`if ... else ... end` in Elixir) and
-		// preserves the final 0 fallback deterministically.
-		// Avoid locals to prevent late passes from demoting them to underscores.
-		return if (Std.string(a) < Std.string(b)) -1 else if (Std.string(a) > Std.string(b)) 1 else 0;
+		return untyped __elixir__('
+			cond do
+			  {0} == {1} ->
+			    0
+			  is_number({0}) and is_number({1}) ->
+			    if {0} < {1}, do: -1, else: 1
+			  is_boolean({0}) and is_boolean({1}) ->
+			    if {0} == false, do: -1, else: 1
+			  is_binary({0}) and is_binary({1}) ->
+			    if {0} < {1}, do: -1, else: 1
+			  true ->
+			    left = Reflaxe.Elixir.HaxeFloat.to_string({0})
+			    right = Reflaxe.Elixir.HaxeFloat.to_string({1})
+			    cond do
+			      left < right -> -1
+			      left > right -> 1
+			      true -> 0
+			    end
+			end
+		', a, b);
 	}
 
 	/**

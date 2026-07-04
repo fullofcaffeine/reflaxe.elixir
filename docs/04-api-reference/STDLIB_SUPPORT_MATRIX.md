@@ -122,6 +122,7 @@ Top-level:
 - `haxe.ds.List` (target override with receiver rebinding for `add`, `push`, `pop`, `remove`, and `clear`; array-backed iterators use the canonical iterator runtimes; covered by adapted upstream `unitstd` plus local runtime tests)
 - `haxe.ds.ListSort` (explicit fail-fast unsupported surface)
 - `haxe.ds.Option`
+- `haxe.ds.Vector` (target override with process-local backing cells for fixed-length indexed storage; covered by adapted upstream `unitstd`, local Reflect ordering runtime coverage, and `test/snapshot/stdlib/haxe_ds_vector`)
 - `haxe.exceptions.ArgumentException` (official stdlib fallback; covered by local runtime tests)
 - `haxe.exceptions.NotImplementedException` (official stdlib fallback; covered by local runtime tests)
 - `haxe.format.JsonParser` (BEAM-native `Jason.decode!/1` direct parser surface; covered by local runtime tests)
