@@ -1,0 +1,19 @@
+{
+  "filesGenerated": [
+  "type.ex",
+  "std.ex",
+  "reflect.ex",
+  "reflaxe/exception.ex",
+  "reflaxe/elixir/haxe_throw.ex",
+  "reflaxe/elixir/haxe_float.ex",
+  "main.ex",
+  "haxe/iterators/hash_map_key_value_iterator.ex",
+  "haxe/iterators/array_iterator.ex",
+  "haxe/ds/hash_map.ex",
+  "haxe/_call_stack/call_stack_impl_.ex",
+  "hash_iterator_key.ex"
+],
+  "id": 0,
+  "wasCached": false,
+  "version": 1
+}

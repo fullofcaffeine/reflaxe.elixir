@@ -141,6 +141,7 @@ Top-level:
 - `haxe.io.StringInput`
 - `haxe.iterators.ArrayIterator`
 - `haxe.iterators.ArrayKeyValueIterator`
+- `haxe.iterators.HashMapKeyValueIterator` (inline type-compatibility surface for explicit `HashMap` iterator construction)
 - `haxe.iterators.MapKeyValueIterator`
 - `haxe.iterators.StringIteratorUnicode`
 - `haxe.iterators.StringKeyValueIteratorUnicode`

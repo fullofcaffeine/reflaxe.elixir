@@ -35,6 +35,7 @@ import haxe.io.Error;
 import haxe.io.FPHelper;
 import haxe.io.Path;
 import haxe.io.StringInput;
+import haxe.iterators.HashMapKeyValueIterator;
 import haxe.iterators.MapKeyValueIterator;
 import sys.thread.Thread;
 import haxe.test.ExUnit.TestCase;
@@ -1020,6 +1021,16 @@ class StdlibParityTest extends TestCase {
 		Assert.equals(2, pairs.length);
 		Assert.contains(pairs, "alpha:one");
 		Assert.contains(pairs, "beta-replacement:twenty");
+
+		var explicitPairs:Array<String> = [];
+		var explicitIterator = new HashMapKeyValueIterator<HashKey, String>(map);
+		while (explicitIterator.hasNext()) {
+			var explicitPair = explicitIterator.next();
+			explicitPairs.push(explicitPair.key.label + ":" + explicitPair.value);
+		}
+		Assert.equals(2, explicitPairs.length);
+		Assert.contains(explicitPairs, "alpha:one");
+		Assert.contains(explicitPairs, "beta-replacement:twenty");
 
 		var snapshot = map.copy();
 		Assert.isTrue(map.remove(alpha));
