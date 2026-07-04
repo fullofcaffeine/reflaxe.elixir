@@ -16,7 +16,7 @@ end) != ""
     struct = %{struct | s: struct.s}
     {struct, reflaxe_receiver_value_0} = {%{struct | offset: struct.offset + 1}, struct.offset}
     index = reflaxe_receiver_value_0
-    %{:key => struct.offset, :value => (if (index < 0) do
+    %{key: struct.offset, value: (if (index < 0) do
   nil
 else
   Enum.at(String.to_charlist(struct.s), index)

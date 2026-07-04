@@ -28,7 +28,7 @@ defmodule Haxe.IO.Path do
           struct = %{struct | dir: String.slice(path, 0, slash_index)}
           path = String.slice(path, slash_index + 1..-1//1)
           {path, struct}
-        :true ->
+        true ->
           struct = %{struct | dir: nil}
           {path, struct}
       end
@@ -139,7 +139,7 @@ end
           part != "." ->
             target_acc = Enum.concat(target_acc, [part])
             target_acc
-          :true -> target_acc
+          true -> target_acc
         end
       end)
       collapsed = Enum.join(target, slash)
@@ -162,7 +162,7 @@ end
           code == 47 and not colon_acc ->
             slashes_acc = true
             {code, colon_acc, result_acc, slashes_acc}
-          :true ->
+          true ->
             colon_acc = false
             {result_acc, slashes_acc} = if (slashes_acc) do
               result_acc = result_acc <> "/"

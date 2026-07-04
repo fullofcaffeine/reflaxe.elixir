@@ -37,6 +37,8 @@ import haxe.io.Path;
 import haxe.io.StringInput;
 import haxe.iterators.HashMapKeyValueIterator;
 import haxe.iterators.MapKeyValueIterator;
+import haxe.iterators.StringIterator;
+import haxe.iterators.StringKeyValueIterator;
 import sys.thread.Thread;
 import haxe.test.ExUnit.TestCase;
 import haxe.test.Assert;
@@ -778,6 +780,39 @@ class StdlibParityTest extends TestCase {
 
 		var invalid = Bytes.ofData(cast untyped __elixir__('<<0xC0>>'));
 		Assert.isFalse(UnicodeString.validate(invalid, UTF8));
+	}
+
+	@:describe("haxe.iterators.StringIterator")
+	@:test
+	function testStringIteratorIteratesCodepoints():Void {
+		var iterator = new StringIterator("aé中");
+		var codes:Array<Int> = [];
+		while (iterator.hasNext()) {
+			codes.push(iterator.next());
+		}
+
+		Assert.equals(3, codes.length);
+		Assert.equals(97, codes[0]);
+		Assert.equals(233, codes[1]);
+		Assert.equals(0x4E2D, codes[2]);
+		Assert.isFalse(iterator.hasNext());
+	}
+
+	@:describe("haxe.iterators.StringKeyValueIterator")
+	@:test
+	function testStringKeyValueIteratorUsesCharacterIndices():Void {
+		var iterator = new StringKeyValueIterator("aé中");
+		var entries:Array<String> = [];
+		while (iterator.hasNext()) {
+			var entry = iterator.next();
+			entries.push(entry.key + ":" + entry.value);
+		}
+
+		Assert.equals(3, entries.length);
+		Assert.equals("0:97", entries[0]);
+		Assert.equals("1:233", entries[1]);
+		Assert.equals("2:20013", entries[2]);
+		Assert.isFalse(iterator.hasNext());
 	}
 
 	@:describe("haxe.io.Bytes")

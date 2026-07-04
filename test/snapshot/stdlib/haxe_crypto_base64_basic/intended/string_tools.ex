@@ -133,6 +133,12 @@ end).()
       Enum.at(String.to_charlist(s), index)
     end
   end
+  def unsafe_code_at(s, index) do
+    case Enum.at(String.to_charlist(s), index) do
+      nil -> 0
+      code -> code
+    end
+  end
   def contains(s, value) do
     (case :binary.match(s, value) do
   {pos, _} -> pos

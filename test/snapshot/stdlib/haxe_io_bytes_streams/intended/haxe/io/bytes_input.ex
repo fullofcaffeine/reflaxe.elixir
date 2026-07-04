@@ -10,13 +10,13 @@ defmodule BytesInput do
     struct = %{struct | total_length: len}
     struct = %{struct | ref_id: :erlang.unique_integer([:positive])}
     struct = %{struct | dict_key: {:reflaxe_bytes_input, struct.ref_id}}
-    Process.put(struct.dict_key, %{:pos => 0, :remaining => len})
+    Process.put(struct.dict_key, %{pos: 0, remaining: len})
     struct
   end
   def get_position(struct) do
     state = Process.get(struct.dict_key)
 state = if (Kernel.is_nil(state)) do
-  state = %{:pos => 0, :remaining => struct.total_length}
+  state = %{pos: 0, remaining: struct.total_length}
   Process.put(struct.dict_key, state)
   state
 else
@@ -35,11 +35,11 @@ state.pos
       p > struct.total_length ->
         p = struct.total_length
         p
-      :true -> p
+      true -> p
     end
     state = Process.get(struct.dict_key)
     state = if (Kernel.is_nil(state)) do
-      state = %{:pos => 0, :remaining => struct.total_length}
+      state = %{pos: 0, remaining: struct.total_length}
       Process.put(struct.dict_key, state)
       state
     else
@@ -52,7 +52,7 @@ state.pos
   def read_byte(struct) do
     state = Process.get(struct.dict_key)
     state = if (Kernel.is_nil(state)) do
-      state = %{:pos => 0, :remaining => struct.total_length}
+      state = %{pos: 0, remaining: struct.total_length}
       Process.put(struct.dict_key, state)
       state
     else
@@ -75,7 +75,7 @@ state.pos
     else
       state = Process.get(struct.dict_key)
       state = if (Kernel.is_nil(state)) do
-        state = %{:pos => 0, :remaining => struct.total_length}
+        state = %{pos: 0, remaining: struct.total_length}
         Process.put(struct.dict_key, state)
         state
       else
@@ -96,7 +96,7 @@ state.pos
   def read_all(struct, _bufsize) do
     state = Process.get(struct.dict_key)
     state = if (Kernel.is_nil(state)) do
-      state = %{:pos => 0, :remaining => struct.total_length}
+      state = %{pos: 0, remaining: struct.total_length}
       Process.put(struct.dict_key, state)
       state
     else
@@ -114,7 +114,7 @@ state.pos
   def read_line(struct) do
     state = Process.get(struct.dict_key)
     state = if (Kernel.is_nil(state)) do
-      state = %{:pos => 0, :remaining => struct.total_length}
+      state = %{pos: 0, remaining: struct.total_length}
       Process.put(struct.dict_key, state)
       state
     else

@@ -259,6 +259,25 @@ class StringTools {
 	}
 
 	/**
+	 * Returns the character code at `index` without exposing a nullable result.
+	 *
+	 * Elixir string access is codepoint-indexed in this target. The official
+	 * Haxe stdlib uses `unsafeCodeAt` in iterator/parser hot paths after doing
+	 * its own bounds checks, so this aliases the target's fast code access.
+	 */
+	public static function unsafeCodeAt(s:String, index:Int):Int {
+		#if (macro || (!reflaxe_runtime && !elixir))
+		var code = s.charCodeAt(index);
+		return code == null ? 0 : code;
+		#else
+		return untyped __elixir__('case Enum.at(String.to_charlist({0}), {1}) do
+  nil -> 0
+  code -> code
+end', s, index);
+		#end
+	}
+
+	/**
 	 * Returns `true` if `s` contains `value` and `false` otherwise.
 	 */
 	public static function contains(s:String, value:String):Bool {

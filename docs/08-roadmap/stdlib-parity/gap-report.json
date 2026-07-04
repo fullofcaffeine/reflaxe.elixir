@@ -1,7 +1,7 @@
 {
   "diff": {
     "intersection": {
-      "count": 111,
+      "count": 113,
       "modules": [
         "Array",
         "Date",
@@ -78,7 +78,9 @@
         "haxe.iterators.DynamicAccessKeyValueIterator",
         "haxe.iterators.HashMapKeyValueIterator",
         "haxe.iterators.MapKeyValueIterator",
+        "haxe.iterators.StringIterator",
         "haxe.iterators.StringIteratorUnicode",
+        "haxe.iterators.StringKeyValueIterator",
         "haxe.iterators.StringKeyValueIteratorUnicode",
         "sys.FileStat",
         "sys.FileSystem",
@@ -131,7 +133,7 @@
       ]
     },
     "reference_only": {
-      "count": 93,
+      "count": 91,
       "modules": [
         "Any",
         "Class",
@@ -187,8 +189,6 @@
         "haxe.io.UInt8Array",
         "haxe.iterators.RestIterator",
         "haxe.iterators.RestKeyValueIterator",
-        "haxe.iterators.StringIterator",
-        "haxe.iterators.StringKeyValueIterator",
         "haxe.macro.CompilationServer",
         "haxe.macro.Compiler",
         "haxe.macro.ComplexTypeTools",
@@ -232,7 +232,7 @@
   "local": {
     "counts_by_prefix": {
       "<top-level>": 19,
-      "haxe": 67,
+      "haxe": 69,
       "sys": 34
     },
     "nonstdlib_modules_under_std_dir": [
@@ -259,8 +259,8 @@
       "std",
       "src/haxe"
     ],
-    "total_candidates": 124,
-    "total_std_modules": 120
+    "total_candidates": 126,
+    "total_std_modules": 122
   },
   "reference": {
     "counts_by_prefix": {
