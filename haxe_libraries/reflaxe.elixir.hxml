@@ -29,7 +29,7 @@
 -lib reflaxe
 
 # Define the library version
--D reflaxe.elixir=0.14.7
+-D reflaxe.elixir=0.14.8
 # Bootstrap early (target-conditional stdlib gating + vendored reflaxe injection)
 --macro reflaxe.elixir.CompilerBootstrap.Start()
 

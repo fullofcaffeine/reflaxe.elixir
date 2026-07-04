@@ -1,3 +1,10 @@
+## [0.14.8](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.7...v0.14.8) (2026-07-04)
+
+
+### Bug Fixes
+
+* **stdlib:** support string iterators ([5be6482](https://github.com/fullofcaffeine/reflaxe.elixir/commit/5be6482d2084de3262b797c13b66d4364903b717))
+
 ## [0.14.7](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.6...v0.14.7) (2026-07-04)
 
 
