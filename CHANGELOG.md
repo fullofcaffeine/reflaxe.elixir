@@ -1,3 +1,10 @@
+## [0.14.10](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.9...v0.14.10) (2026-07-04)
+
+
+### Bug Fixes
+
+* **stdlib:** support haxe format json parser ([ad04b38](https://github.com/fullofcaffeine/reflaxe.elixir/commit/ad04b385a676ba9cc6c9fa5911248b1fbc6a1f49))
+
 ## [0.14.9](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.8...v0.14.9) (2026-07-04)
 
 
