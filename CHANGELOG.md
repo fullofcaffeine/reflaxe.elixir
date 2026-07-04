@@ -1,3 +1,10 @@
+## [0.14.6](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.5...v0.14.6) (2026-07-04)
+
+
+### Bug Fixes
+
+* **stdlib:** support haxe.ds HashMap ([0fc1beb](https://github.com/fullofcaffeine/reflaxe.elixir/commit/0fc1beb357211fb1fce4fe515df73c6567c0e198))
+
 ## [0.14.5](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.4...v0.14.5) (2026-07-04)
 
 
