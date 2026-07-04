@@ -1,3 +1,10 @@
+## [0.14.2](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.1...v0.14.2) (2026-07-04)
+
+
+### Bug Fixes
+
+* **stdlib:** implement haxe Timer runtime ([332ab16](https://github.com/fullofcaffeine/reflaxe.elixir/commit/332ab16f2eccaa73cd84f29fa2a5374ed9599e79))
+
 ## [0.14.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.0...v0.14.1) (2026-07-03)
 
 
