@@ -7,6 +7,7 @@ import haxe.DynamicAccess;
 import haxe.Json;
 import haxe.Serializer;
 import haxe.Template;
+import haxe.Timer;
 import haxe.Unserializer;
 import haxe.crypto.BaseCode;
 import haxe.crypto.Base64;
@@ -30,6 +31,7 @@ import haxe.io.FPHelper;
 import haxe.io.Path;
 import haxe.io.StringInput;
 import haxe.iterators.MapKeyValueIterator;
+import sys.thread.Thread;
 import haxe.test.ExUnit.TestCase;
 import haxe.test.Assert;
 import elixir.ErlangMath;
@@ -78,6 +80,13 @@ class StdlibParityTest extends TestCase {
 
 	static function throwPortableNan():Void {
 		throw Math.NaN;
+	}
+
+	static function progressCurrentThreadEvents(?timeout:Float):Void {
+		var actualTimeout = timeout == null ? 0.2 : timeout;
+		var events = Thread.current().events;
+		Assert.isTrue(events.wait(actualTimeout));
+		events.progress();
 	}
 
 	@:describe("Haxe Float special values")
@@ -1026,6 +1035,53 @@ class StdlibParityTest extends TestCase {
 		Assert.isTrue(payload.remove("x"));
 		Assert.isFalse(payload.exists("x"));
 		Assert.isNull(payload.get("x"));
+	}
+
+	@:describe("haxe.Timer")
+	@:test
+	function testTimerStampMeasureAndManualRunRebinding():Void {
+		var timer = new Timer(1000);
+		timer.run = function() {
+			Thread.current().sendMessage("timer-manual-1");
+		};
+		timer.run();
+		Assert.equals("timer-manual-1", Thread.readMessage(false));
+
+		var runRef = timer.run;
+		runRef();
+		Assert.equals("timer-manual-1", Thread.readMessage(false));
+
+		timer.run = function() {
+			Thread.current().sendMessage("timer-manual-2");
+		};
+		timer.run();
+		Assert.equals("timer-manual-2", Thread.readMessage(false));
+		timer.stop();
+
+		var startedAt = Timer.stamp();
+		Sys.sleep(0.001);
+		Assert.isTrue(Timer.stamp() >= startedAt);
+		Assert.equals("timer-result", Timer.measure(function() return "timer-result"));
+	}
+
+	@:describe("haxe.Timer")
+	@:test
+	function testTimerDelayAndRepeatUseEventLoop():Void {
+		var repeated = new Timer(1);
+		repeated.run = function() {
+			Thread.current().sendMessage("timer-repeat");
+		};
+		progressCurrentThreadEvents();
+		Assert.equals("timer-repeat", Thread.readMessage(false));
+		progressCurrentThreadEvents();
+		Assert.equals("timer-repeat", Thread.readMessage(false));
+		repeated.stop();
+
+		Timer.delay(function() {
+			Thread.current().sendMessage("timer-delay");
+		}, 1);
+		progressCurrentThreadEvents();
+		Assert.equals("timer-delay", Thread.readMessage(false));
 	}
 
 	@:describe("haxe.crypto.Md5")

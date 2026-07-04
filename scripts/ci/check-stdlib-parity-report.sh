@@ -110,10 +110,16 @@ if local_std_root.exists():
 local_candidates |= collect_prefixed_modules("haxe", local_src_haxe_root, allow_cross=True)
 local_candidates |= collect_prefixed_modules("sys", local_src_sys_root, allow_cross=True)
 
+internal_local_modules = {
+    "haxe.TimerRuntime",
+}
+
 local_std_modules = set()
 local_nonstdlib_modules = set()
 for module in local_candidates:
-    if module in reference_modules or module.startswith("haxe.") or module.startswith("sys."):
+    if module in internal_local_modules:
+        local_nonstdlib_modules.add(module)
+    elif module in reference_modules or module.startswith("haxe.") or module.startswith("sys."):
         local_std_modules.add(module)
     else:
         local_nonstdlib_modules.add(module)

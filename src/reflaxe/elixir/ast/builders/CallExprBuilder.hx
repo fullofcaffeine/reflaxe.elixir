@@ -87,6 +87,34 @@ class CallExprBuilder {
 		return isLiveEventProtocolMarker(e, "readableCondition");
 	}
 
+	static function fieldAccessName(fa:FieldAccess):String {
+		return switch (fa) {
+			case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
+				cf.get().name;
+			case FDynamic(s):
+				s;
+			case FEnum(_, ef):
+				ef.name;
+		}
+	}
+
+	static function isHaxeTimerExpr(e:TypedExpr):Bool {
+		var followed = haxe.macro.TypeTools.follow(e.t);
+		var typeName = haxe.macro.TypeTools.toString(followed);
+		if (typeName == "haxe.Timer" || typeName == "Haxe.Timer")
+			return true;
+		return switch (followed) {
+			case TInst(classRef, _):
+				var classType = classRef.get();
+				classType != null
+				&& classType.name == "Timer"
+				&& classType.pack != null
+				&& (classType.pack.join(".") == "haxe" || classType.pack.join(".") == "Haxe");
+			default:
+				false;
+		}
+	}
+
 	/**
 	 * Build a call expression
 	 * 
@@ -612,6 +640,11 @@ class CallExprBuilder {
 		// Determine the call type
 		switch (e.expr) {
 			case TField(obj, fa):
+				if (isHaxeTimerExpr(obj) && fieldAccessName(fa) == "run" && argASTs != null && argASTs.length == 0) {
+					var receiverAst = buildExpression(obj);
+					return ERemoteCall(makeAST(EVar("Haxe.Timer")), "__invoke_run", [receiverAst]);
+				}
+
 				// Method or field call
 				switch (fa) {
 					case FInstance(classRef, _, cf):

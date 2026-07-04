@@ -103,6 +103,7 @@ Top-level:
 - `haxe.Log`
 - `haxe.Serializer` (portable data subset)
 - `haxe.Template` (portable rendering subset)
+- `haxe.Timer` (BEAM event-loop backed delay/repeat, callback rebinding, stamp/measure)
 - `haxe.Unserializer` (portable data subset)
 - `haxe.crypto.Adler32`
 - `haxe.crypto.BaseCode`

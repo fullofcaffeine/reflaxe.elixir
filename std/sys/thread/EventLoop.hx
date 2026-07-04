@@ -75,7 +75,9 @@ class EventLoop {
 
 abstract EventHandler(Term) from Term to Term {}
 
+@:keep
 private class EventLoopRuntime {
+	@:keep
 	public static function create():Term {
 		return untyped __elixir__('(
             ref = make_ref()
@@ -84,6 +86,7 @@ private class EventLoopRuntime {
         )');
 	}
 
+	@:keep
 	public static function run(ref:Term, event:() -> Void):Void {
 		untyped __elixir__('(
             {_loop_ref, pid} = {0}
@@ -92,6 +95,7 @@ private class EventLoopRuntime {
         )', ref, event);
 	}
 
+	@:keep
 	public static function promise(ref:Term):Void {
 		untyped __elixir__('(
             {_loop_ref, pid} = {0}
@@ -100,6 +104,7 @@ private class EventLoopRuntime {
         )', ref);
 	}
 
+	@:keep
 	public static function runPromised(ref:Term, event:() -> Void):Void {
 		untyped __elixir__('(
             {_loop_ref, pid} = {0}
@@ -108,6 +113,7 @@ private class EventLoopRuntime {
         )', ref, event);
 	}
 
+	@:keep
 	public static function repeat(ref:Term, event:() -> Void, intervalMs:Int):EventHandler {
 		if (intervalMs < 0)
 			throw "sys.thread.EventLoop.repeat interval must be >= 0";
@@ -131,10 +137,12 @@ private class EventLoopRuntime {
         )', ref, event, intervalMs);
 	}
 
+	@:keep
 	public static function cancel(handler:EventHandler):Void {
 		untyped __elixir__('send({0}, :cancel)', handler);
 	}
 
+	@:keep
 	public static function drain(ref:Term):Term {
 		return untyped __elixir__('(
             {loop_ref, pid} = {0}
@@ -146,6 +154,7 @@ private class EventLoopRuntime {
         )', ref);
 	}
 
+	@:keep
 	public static function runDrainedEvents(info:Term):Bool {
 		return untyped __elixir__('(
             {events, _promised} = {0}
@@ -154,6 +163,7 @@ private class EventLoopRuntime {
         )', info);
 	}
 
+	@:keep
 	public static function hasPromisedEvents(info:Term):Bool {
 		return untyped __elixir__('(
             {_events, promised} = {0}
@@ -161,6 +171,7 @@ private class EventLoopRuntime {
         )', info);
 	}
 
+	@:keep
 	public static function wait(ref:Term, ?timeout:Float):Bool {
 		var timeoutMs:Term = secondsToTimeout(timeout);
 		return untyped __elixir__('(
@@ -185,6 +196,7 @@ private class EventLoopRuntime {
 		return Math.ceil(timeout * 1000);
 	}
 
+	@:keep
 	public static function server_loop(ref:Term, queue:Term, promised:Int, waiters:Term):Void {
 		untyped __elixir__('
             receive do
@@ -221,6 +233,7 @@ private class EventLoopRuntime {
         ', ref, queue, promised, waiters);
 	}
 
+	@:keep
 	public static function notify_waiters(ref:Term, queue:Term, promised:Int, waiters:Term):Void {
 		untyped __elixir__('(
             Enum.each(:queue.to_list({3}), fn {caller, token} ->

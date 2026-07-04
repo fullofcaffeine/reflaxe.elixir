@@ -66,6 +66,17 @@ class FieldAccessBuilder {
 		#if debug_ast_builder
 		#end
 
+		if (isHaxeTimerExpr(e) && extractFieldName(fa) == "run") {
+			var objAST = if (context.compiler != null) {
+				reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e, context);
+			} else {
+				null;
+			}
+			if (objAST == null)
+				return null;
+			return ERemoteCall(makeAST(EVar("Haxe.Timer")), "__get_run", [objAST]);
+		}
+
 		switch (fa) {
 			case FEnum(enumType, ef):
 				return buildEnumConstructor(enumType, ef, context);
@@ -73,7 +84,10 @@ class FieldAccessBuilder {
 			case FStatic(classRef, cf):
 				return buildStaticField(e, classRef, cf, context);
 
-			case FAnon(cf) | FInstance(_, _, cf):
+			case FInstance(classRef, _, cf):
+				return buildInstanceField(e, cf, context);
+
+			case FAnon(cf):
 				return buildInstanceField(e, cf, context);
 
 			case FDynamic(fieldName):
@@ -86,6 +100,23 @@ class FieldAccessBuilder {
 				#if debug_ast_builder
 				#end
 				return null;
+		}
+	}
+
+	static function isHaxeTimerExpr(e:TypedExpr):Bool {
+		var followed = haxe.macro.TypeTools.follow(e.t);
+		var typeName = haxe.macro.TypeTools.toString(followed);
+		if (typeName == "haxe.Timer" || typeName == "Haxe.Timer")
+			return true;
+		return switch (followed) {
+			case TInst(classRef, _):
+				var classType = classRef.get();
+				classType != null
+				&& classType.name == "Timer"
+				&& classType.pack != null
+				&& (classType.pack.join(".") == "haxe" || classType.pack.join(".") == "Haxe");
+			default:
+				false;
 		}
 	}
 

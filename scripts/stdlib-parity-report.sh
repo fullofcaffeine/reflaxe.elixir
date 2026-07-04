@@ -176,10 +176,17 @@ local_candidates |= collect_prefixed_modules("sys", local_src_sys_root, allow_cr
 
 # Focus “coverage” on modules that are actually part of the reference stdlib, plus
 # any haxe.* / sys.* modules we ship (useful for parity planning).
+internal_local_modules = {
+  # BEAM implementation detail for std/haxe/Timer.cross.hx, not a public Haxe
+  # standard-library surface.
+  "haxe.TimerRuntime",
+}
 local_std_modules = set()
 local_nonstdlib_modules = set()
 for module in local_candidates:
-  if module in reference_modules or module.startswith("haxe.") or module.startswith("sys."):
+  if module in internal_local_modules:
+    local_nonstdlib_modules.add(module)
+  elif module in reference_modules or module.startswith("haxe.") or module.startswith("sys."):
     local_std_modules.add(module)
   else:
     local_nonstdlib_modules.add(module)
