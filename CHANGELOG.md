@@ -1,3 +1,10 @@
+## [0.14.5](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.4...v0.14.5) (2026-07-04)
+
+
+### Bug Fixes
+
+* **stdlib:** support haxe.ds GenericStack ([2d80729](https://github.com/fullofcaffeine/reflaxe.elixir/commit/2d8072920b6f1d9d364d84d797a94367a26ad8ee))
+
 ## [0.14.4](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.3...v0.14.4) (2026-07-04)
 
 
