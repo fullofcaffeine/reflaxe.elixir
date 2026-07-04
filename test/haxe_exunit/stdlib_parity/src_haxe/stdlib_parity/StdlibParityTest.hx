@@ -21,6 +21,7 @@ import haxe.crypto.Sha256;
 import haxe.ds.ArraySort;
 import haxe.ds.EnumValueMap;
 import haxe.ds.GenericStack;
+import haxe.ds.HashMap;
 import haxe.ds.IntMap;
 import haxe.ds.StringMap;
 import haxe.exceptions.ArgumentException;
@@ -61,6 +62,27 @@ class SortNode {
 	public function new(key:Int, label:String) {
 		this.key = key;
 		this.label = label;
+	}
+}
+
+class HashKey {
+	public var id:Int;
+	public var label:String;
+
+	final hash:Int;
+
+	public function new(id:Int, label:String, hash:Int) {
+		this.id = id;
+		this.label = label;
+		this.hash = hash;
+	}
+
+	public function hashCode():Int {
+		return hash;
+	}
+
+	public function toString():String {
+		return label;
 	}
 }
 
@@ -951,6 +973,69 @@ class StdlibParityTest extends TestCase {
 		Assert.isTrue(m.remove(1));
 		Assert.isFalse(m.exists(1));
 		Assert.isNull(m.get(1));
+	}
+
+	@:describe("haxe.ds.HashMap target override")
+	@:test
+	function testHashMapHashCodeKeyedOpsAndIterators():Void {
+		var alpha = new HashKey(1, "alpha", 10);
+		var beta = new HashKey(2, "beta", 20);
+		var betaReplacement = new HashKey(3, "beta-replacement", 20);
+		var missing = new HashKey(4, "missing", 40);
+
+		var map = new HashMap<HashKey, String>();
+		Assert.isFalse(map.exists(alpha));
+		Assert.isNull(map.get(alpha));
+
+		map.set(alpha, "one");
+		map.set(beta, "two");
+		Assert.isTrue(map.exists(alpha));
+		Assert.equals("one", map.get(alpha));
+		Assert.equals("two", map.get(beta));
+
+		map.set(betaReplacement, "twenty");
+		Assert.equals("twenty", map.get(beta));
+		Assert.equals("twenty", map.get(betaReplacement));
+
+		var keys:Array<String> = [];
+		for (key in map.keys()) {
+			keys.push(key.label);
+		}
+		Assert.equals(2, keys.length);
+		Assert.contains(keys, "alpha");
+		Assert.contains(keys, "beta-replacement");
+
+		var values:Array<String> = [];
+		for (value in map.iterator()) {
+			values.push(value);
+		}
+		Assert.equals(2, values.length);
+		Assert.contains(values, "one");
+		Assert.contains(values, "twenty");
+
+		var pairs:Array<String> = [];
+		for (pair in map.keyValueIterator()) {
+			pairs.push(pair.key.label + ":" + pair.value);
+		}
+		Assert.equals(2, pairs.length);
+		Assert.contains(pairs, "alpha:one");
+		Assert.contains(pairs, "beta-replacement:twenty");
+
+		var snapshot = map.copy();
+		Assert.isTrue(map.remove(alpha));
+		Assert.isFalse(map.exists(alpha));
+		Assert.isFalse(map.remove(missing));
+		Assert.equals("one", snapshot.get(alpha));
+		Assert.equals("twenty", snapshot.get(beta));
+
+		var printed = map.toString();
+		Assert.containsString(printed, "beta-replacement");
+		Assert.containsString(printed, "twenty");
+
+		map.clear();
+		Assert.isFalse(map.exists(beta));
+		Assert.equals("{}", map.toString());
+		Assert.equals("twenty", snapshot.get(beta));
 	}
 
 	@:describe("haxe.ds.Map (native map backend)")

@@ -1,7 +1,7 @@
 {
   "diff": {
     "intersection": {
-      "count": 109,
+      "count": 110,
       "modules": [
         "Array",
         "Date",
@@ -48,6 +48,7 @@
         "haxe.ds.BalancedTree",
         "haxe.ds.EnumValueMap",
         "haxe.ds.GenericStack",
+        "haxe.ds.HashMap",
         "haxe.ds.IntMap",
         "haxe.ds.ListSort",
         "haxe.ds.Map",
@@ -129,7 +130,7 @@
       ]
     },
     "reference_only": {
-      "count": 95,
+      "count": 94,
       "modules": [
         "Any",
         "Class",
@@ -160,7 +161,6 @@
         "haxe.display.Protocol",
         "haxe.display.Server",
         "haxe.ds.Either",
-        "haxe.ds.HashMap",
         "haxe.ds.List",
         "haxe.ds.ReadOnlyArray",
         "haxe.ds.Vector",
@@ -232,7 +232,7 @@
   "local": {
     "counts_by_prefix": {
       "<top-level>": 19,
-      "haxe": 65,
+      "haxe": 66,
       "sys": 34
     },
     "nonstdlib_modules_under_std_dir": [
@@ -259,8 +259,8 @@
       "std",
       "src/haxe"
     ],
-    "total_candidates": 122,
-    "total_std_modules": 118
+    "total_candidates": 123,
+    "total_std_modules": 119
   },
   "reference": {
     "counts_by_prefix": {

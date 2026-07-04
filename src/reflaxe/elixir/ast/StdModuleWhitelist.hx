@@ -97,6 +97,7 @@ class StdModuleWhitelist {
 			"EnumValueMap",
 			"GenericCell",
 			"GenericStack",
+			"HashMap",
 			"TreeNode",
 			// Framework roots
 			"Ecto",
