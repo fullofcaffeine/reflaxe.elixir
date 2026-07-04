@@ -29,18 +29,20 @@ class Timer {
 	var eventHandler:Null<EventHandler>;
 	var callbackRef:Null<Term>;
 
-	public function new(time_ms:Int) {
+	public function new(time_ms:Int, ?deferStart:Bool) {
 		#if (macro || (!reflaxe_runtime && !elixir))
 		thread = null;
 		eventHandler = null;
 		callbackRef = null;
 		#else
 		callbackRef = TimerRuntime.create();
-		thread = Thread.current();
-		var ref = callbackRef;
-		eventHandler = thread.events.repeat(function() {
-			TimerRuntime.invoke(ref, function() {});
-		}, time_ms);
+		if (deferStart != true) {
+			thread = Thread.current();
+			var ref = callbackRef;
+			eventHandler = thread.events.repeat(function() {
+				TimerRuntime.invoke(ref, function() {});
+			}, time_ms);
+		}
 		#end
 	}
 
@@ -58,12 +60,26 @@ class Timer {
 	public dynamic function run():Void {}
 
 	public static function delay(f:Void->Void, time_ms:Int):Timer {
+		#if (macro || (!reflaxe_runtime && !elixir))
 		var timer = new Timer(time_ms);
 		timer.run = function() {
 			timer.stop();
 			f();
 		};
 		return timer;
+		#else
+		var timer = new Timer(time_ms, true);
+		var ref = timer.callbackRef;
+		TimerRuntime.storeCallback(ref, function() {
+			TimerRuntime.delete(ref);
+			f();
+		});
+		timer.thread = Thread.current();
+		var events = timer.thread.events;
+		timer.eventHandler = untyped __elixir__('apply(EventLoopRuntime, :run_delayed, [{0}.ref, fn -> Haxe.TimerRuntime.invoke({1}, fn -> nil end) end, {2}])',
+			events, ref, time_ms);
+		return timer;
+		#end
 	}
 
 	public static function measure<T>(f:Void->T, ?pos:PosInfos):T {

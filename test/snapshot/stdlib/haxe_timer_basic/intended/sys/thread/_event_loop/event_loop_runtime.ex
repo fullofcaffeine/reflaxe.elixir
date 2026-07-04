@@ -49,6 +49,22 @@ defmodule EventLoopRuntime do
             timer_pid
         )
   end
+  def run_delayed(ref, event, delay_ms) do
+    if (delay_ms < 0) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "sys.thread.EventLoop delayed event interval must be >= 0"]
+    end
+    (
+            loop_ref = ref
+            delay = max(delay_ms, 0)
+            spawn(fn ->
+              receive do
+                :cancel -> :ok
+              after
+                delay -> EventLoopRuntime.run(loop_ref, event)
+              end
+            end)
+        )
+  end
   def cancel(handler) do
     send(handler, :cancel)
   end

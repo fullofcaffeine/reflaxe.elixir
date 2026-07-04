@@ -17,6 +17,7 @@
   "haxe/timer_runtime.ex",
   "haxe/timer.ex",
   "haxe/log.ex",
+  "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/io/output.ex",
   "haxe/io/input.ex",

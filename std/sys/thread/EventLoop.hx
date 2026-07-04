@@ -138,6 +138,24 @@ private class EventLoopRuntime {
 	}
 
 	@:keep
+	public static function runDelayed(ref:Term, event:() -> Void, delayMs:Int):EventHandler {
+		if (delayMs < 0)
+			throw "sys.thread.EventLoop delayed event interval must be >= 0";
+
+		return untyped __elixir__('(
+            loop_ref = {0}
+            delay = max({2}, 0)
+            spawn(fn ->
+              receive do
+                :cancel -> :ok
+              after
+                delay -> EventLoopRuntime.run(loop_ref, {1})
+              end
+            end)
+        )', ref, event, delayMs);
+	}
+
+	@:keep
 	public static function cancel(handler:EventHandler):Void {
 		untyped __elixir__('send({0}, :cancel)', handler);
 	}

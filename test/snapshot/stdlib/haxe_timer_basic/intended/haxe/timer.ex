@@ -1,11 +1,15 @@
 defmodule Haxe.Timer do
-  def new(time_ms) do
+  def new(time_ms, defer_start) do
     struct = %{:__reflaxe_class__ => Haxe.Timer, :thread => nil, :event_handler => nil, :callback_ref => nil}
     struct = %{struct | callback_ref: Haxe.TimerRuntime.create()}
-    struct = %{struct | thread: Sys.Thread.Thread.current()}
-    ref = struct.callback_ref
-    reflaxe_dispatch_receiver = Sys.Thread.Thread.get_events(struct.thread)
-    struct = %{struct | event_handler: apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :repeat, [reflaxe_dispatch_receiver, fn -> Haxe.TimerRuntime.invoke(ref, fn -> nil end) end, time_ms])}
+    struct = if (defer_start != true) do
+      struct = %{struct | thread: Sys.Thread.Thread.current()}
+      ref = struct.callback_ref
+      reflaxe_dispatch_receiver = Sys.Thread.Thread.get_events(struct.thread)
+      %{struct | event_handler: apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :repeat, [reflaxe_dispatch_receiver, fn -> Haxe.TimerRuntime.invoke(ref, fn -> nil end) end, time_ms])}
+    else
+      struct
+    end
     struct
   end
   def stop(struct) do
@@ -24,11 +28,15 @@ defmodule Haxe.Timer do
 
   end
   def delay(f, time_ms) do
-    timer = Haxe.Timer.new(time_ms)
-    _ = Haxe.Timer.__set_run(timer, fn ->
-  _ = apply(Map.get(timer, :__reflaxe_class__) || Map.get(timer, :__struct__), :stop, [timer])
+    timer = Haxe.Timer.new(time_ms, true)
+    ref = timer.callback_ref
+    _ = Haxe.TimerRuntime.store_callback(ref, fn ->
+  _ = Haxe.TimerRuntime.delete(ref)
   _ = f.()
 end)
+    timer = %{timer | thread: Sys.Thread.Thread.current()}
+    events = Sys.Thread.Thread.get_events(timer.thread)
+    timer = %{timer | event_handler: apply(EventLoopRuntime, :run_delayed, [events.ref, fn -> Haxe.TimerRuntime.invoke(ref, fn -> nil end) end, time_ms])}
     timer
   end
   def measure(f, pos) do
