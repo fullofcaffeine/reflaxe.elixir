@@ -1,3 +1,10 @@
+## [0.14.3](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.2...v0.14.3) (2026-07-04)
+
+
+### Bug Fixes
+
+* **stdlib:** cover fallback haxe exceptions ([e369fb3](https://github.com/fullofcaffeine/reflaxe.elixir/commit/e369fb3af3e980b5ab31fcd61894f831b76c2c98))
+
 ## [0.14.2](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.1...v0.14.2) (2026-07-04)
 
 
