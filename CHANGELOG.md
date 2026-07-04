@@ -1,3 +1,10 @@
+## [0.14.7](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.6...v0.14.7) (2026-07-04)
+
+
+### Bug Fixes
+
+* **stdlib:** support HashMap key value iterator ([5aa9b10](https://github.com/fullofcaffeine/reflaxe.elixir/commit/5aa9b10609e3185e022cdd1a02b1c7d1abb5bcd6))
+
 ## [0.14.6](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.5...v0.14.6) (2026-07-04)
 
 
