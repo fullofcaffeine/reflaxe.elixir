@@ -58,6 +58,7 @@
     {"module": "haxe.ds.Option", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists."},
     {"module": "haxe.exceptions.ArgumentException", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged and constructor fields, inherited message/previous behavior, toString, and typed throw/catch behavior are covered by local Haxe-authored ExUnit runtime tests."},
     {"module": "haxe.exceptions.NotImplementedException", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged and default/custom messages, inherited previous behavior, toString, and typed throw/catch behavior are covered by local Haxe-authored ExUnit runtime tests."},
+    {"module": "haxe.format.JsonParser", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; direct parse behavior, native JSON terms, escaped strings/nulls, and invalid JSON raising are covered by local Haxe-authored ExUnit runtime tests."},
     {"module": "haxe.format.JsonPrinter", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists."},
     {"module": "haxe.http.HttpBase", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is covered through haxe.Http/sys.Http tests."},
     {"module": "haxe.io.BufferInput", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists."},

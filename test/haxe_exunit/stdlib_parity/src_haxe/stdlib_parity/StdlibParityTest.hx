@@ -27,6 +27,7 @@ import haxe.ds.List;
 import haxe.ds.StringMap;
 import haxe.exceptions.ArgumentException;
 import haxe.exceptions.NotImplementedException;
+import haxe.format.JsonParser;
 import haxe.io.Bytes;
 import haxe.io.BytesBuffer;
 import haxe.io.BytesInput;
@@ -1300,6 +1301,40 @@ class StdlibParityTest extends TestCase {
 
 		var withoutB = Reflect.deleteField(obj, "b");
 		Assert.isFalse(Reflect.hasField(withoutB, "b"));
+	}
+
+	@:describe("haxe.format.JsonParser")
+	@:test
+	function testJsonParserUsesNativeDecodeTerms():Void {
+		var obj:Dynamic = JsonParser.parse("{\"name\":\"Ada\",\"count\":3,\"items\":[1,true,null],\"escaped\":\"line\\nnext\"}");
+
+		Assert.equals("Ada", cast Reflect.field(obj, "name"));
+		Assert.equals(3, cast Reflect.field(obj, "count"));
+		Assert.equals("line\nnext", cast Reflect.field(obj, "escaped"));
+
+		var items:Array<Dynamic> = cast Reflect.field(obj, "items");
+		var firstItem:Dynamic = untyped __elixir__("Enum.at({0}, 0)", items);
+		var secondItem:Dynamic = untyped __elixir__("Enum.at({0}, 1)", items);
+		var thirdItem:Dynamic = untyped __elixir__("Enum.at({0}, 2)", items);
+		Assert.equals(3, arrayLength(items));
+		Assert.equals(1, firstItem);
+		Assert.equals(true, secondItem);
+		Assert.isNull(thirdItem);
+
+		var topLevelString:String = cast JsonParser.parse("\"ok\"");
+		Assert.equals("ok", topLevelString);
+		Assert.isNull(JsonParser.parse("null"));
+	}
+
+	@:describe("haxe.format.JsonParser")
+	@:test
+	function testJsonParserRaisesOnInvalidJson():Void {
+		try {
+			JsonParser.parse("{\"unterminated\":");
+			Assert.fail("JsonParser.parse should raise for invalid JSON");
+		} catch (error:Dynamic) {
+			Assert.isNotNull(error);
+		}
 	}
 
 	@:describe("Reflect + object literal atom keys")

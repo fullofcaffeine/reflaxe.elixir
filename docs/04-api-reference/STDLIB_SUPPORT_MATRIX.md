@@ -124,6 +124,7 @@ Top-level:
 - `haxe.ds.Option`
 - `haxe.exceptions.ArgumentException` (official stdlib fallback; covered by local runtime tests)
 - `haxe.exceptions.NotImplementedException` (official stdlib fallback; covered by local runtime tests)
+- `haxe.format.JsonParser` (BEAM-native `Jason.decode!/1` direct parser surface; covered by local runtime tests)
 - `haxe.format.JsonPrinter`
 - `haxe.http.HttpBase`
 - `haxe.io.BufferInput`
