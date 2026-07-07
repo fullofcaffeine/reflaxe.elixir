@@ -1,3 +1,10 @@
+## [0.14.13](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.12...v0.14.13) (2026-07-07)
+
+
+### Bug Fixes
+
+* **stdlib:** reject haxe entry point on elixir ([37e6191](https://github.com/fullofcaffeine/reflaxe.elixir/commit/37e6191344661785583d04091a62d2f3ae6f99bc))
+
 ## [0.14.12](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.11...v0.14.12) (2026-07-07)
 
 
