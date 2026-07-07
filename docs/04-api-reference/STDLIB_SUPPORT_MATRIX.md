@@ -111,6 +111,7 @@ Top-level:
 - `haxe.Template` (portable rendering subset)
 - `haxe.Timer` (BEAM event-loop backed delay/repeat, callback rebinding, stamp/measure)
 - `haxe.Unserializer` (portable data subset)
+- `haxe.ValueException` (official stdlib fallback; explicit value wrapper semantics covered by local runtime tests)
 - `haxe.crypto.Adler32`
 - `haxe.crypto.BaseCode`
 - `haxe.crypto.Base64`

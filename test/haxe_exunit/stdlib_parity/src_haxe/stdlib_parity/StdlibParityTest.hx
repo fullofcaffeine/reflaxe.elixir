@@ -11,6 +11,7 @@ import haxe.Serializer;
 import haxe.Template;
 import haxe.Timer;
 import haxe.Unserializer;
+import haxe.ValueException;
 import haxe.crypto.BaseCode;
 import haxe.crypto.Base64;
 import haxe.crypto.Adler32;
@@ -553,6 +554,51 @@ class StdlibParityTest extends TestCase {
 			Assert.fail("NotImplementedException should be catchable by its concrete type");
 		} catch (error:NotImplementedException) {
 			Assert.equals("not yet", error.message);
+		}
+	}
+
+	@:describe("haxe.ValueException upstream fallback")
+	@:test
+	function testValueExceptionFallback():Void {
+		var previous = new haxe.Exception("previous-cause");
+
+		var stringException = new ValueException("raw-value", previous);
+		var stringValue:String = cast stringException.value;
+		var base:haxe.Exception = stringException;
+
+		Assert.equals("raw-value", stringValue);
+		Assert.equals("raw-value", stringException.message);
+		Assert.equals("raw-value", stringException.toString());
+		Assert.equals("previous-cause", stringException.previous.message);
+		Assert.equals("raw-value", base.message);
+
+		var intException = new ValueException(42);
+		var intValue:Int = cast intException.value;
+
+		Assert.equals(42, intValue);
+		Assert.equals("42", intException.message);
+		Assert.isNull(intException.previous);
+	}
+
+	@:describe("haxe.ValueException upstream fallback")
+	@:test
+	function testValueExceptionThrowCatch():Void {
+		try {
+			throw new ValueException("typed-value");
+			Assert.fail("ValueException should be catchable by its concrete type");
+		} catch (error:ValueException) {
+			var value:String = cast error.value;
+			Assert.equals("typed-value", value);
+			Assert.equals("typed-value", error.message);
+		}
+
+		try {
+			throw new ValueException(7);
+			Assert.fail("ValueException should preserve arbitrary values when thrown");
+		} catch (error:ValueException) {
+			var value:Int = cast error.value;
+			Assert.equals(7, value);
+			Assert.equals("7", error.message);
 		}
 	}
 
