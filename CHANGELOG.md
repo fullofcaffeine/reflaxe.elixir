@@ -1,3 +1,10 @@
+## [0.14.12](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.11...v0.14.12) (2026-07-07)
+
+
+### Bug Fixes
+
+* **perf:** watch todo shared contracts ([8c6ef49](https://github.com/fullofcaffeine/reflaxe.elixir/commit/8c6ef49963d6be5de23b4ba80306b3e2a53cfb4c))
+
 ## [0.14.11](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.10...v0.14.11) (2026-07-04)
 
 
