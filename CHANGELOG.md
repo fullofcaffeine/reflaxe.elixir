@@ -1,3 +1,10 @@
+## [0.14.16](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.15...v0.14.16) (2026-07-07)
+
+
+### Bug Fixes
+
+* **stdlib:** preserve option all none semantics ([30d5d3b](https://github.com/fullofcaffeine/reflaxe.elixir/commit/30d5d3b9a1631258f5b637ef7d6023914a8190e0))
+
 ## [0.14.15](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.14...v0.14.15) (2026-07-07)
 
 
