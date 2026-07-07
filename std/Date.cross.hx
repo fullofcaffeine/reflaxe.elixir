@@ -131,23 +131,58 @@ abstract Date(DateTime) from DateTime to DateTime {
 		return cast haxe.Date.fromTime(t);
 		#else
 		// At runtime, use Elixir's DateTime
-		return untyped __elixir__('DateTime.from_unix!(Std.int({0}), :millisecond)', t);
+		return untyped __elixir__('DateTime.from_unix!(trunc({0}), :millisecond)', t);
 		#end
 	}
 
 	/**
-	 * Parse from ISO8601 string (Haxe standard API)
+	 * Parse from a Haxe Date string (Haxe standard API)
 	 */
 	public static function fromString(s:String):Date {
 		#if macro
 		// At macro time, explicitly use Haxe's built-in Date
 		return cast haxe.Date.fromString(s);
 		#else
-		// At runtime, use Elixir pattern matching
+		// Haxe accepts "YYYY-MM-DD HH:MM:SS", "YYYY-MM-DD", and "HH:MM:SS".
+		// Keep ISO8601 as an Elixir-target extension for existing native interop.
 		return untyped __elixir__('
-            case DateTime.from_iso8601({0}) do
-                {:ok, dt, _} -> dt
-                _ -> DateTime.utc_now()
+            date_string = {0}
+            case date_string do
+                <<year::binary-size(4), "-", month::binary-size(2), "-", day::binary-size(2), " ", hour::binary-size(2), ":", minute::binary-size(2), ":", second::binary-size(2)>> ->
+                    {:ok, naive} = NaiveDateTime.new(
+                        String.to_integer(year),
+                        String.to_integer(month),
+                        String.to_integer(day),
+                        String.to_integer(hour),
+                        String.to_integer(minute),
+                        String.to_integer(second)
+                    )
+                    DateTime.from_naive!(naive, "Etc/UTC")
+                <<year::binary-size(4), "-", month::binary-size(2), "-", day::binary-size(2)>> ->
+                    {:ok, naive} = NaiveDateTime.new(
+                        String.to_integer(year),
+                        String.to_integer(month),
+                        String.to_integer(day),
+                        String.to_integer("0"),
+                        String.to_integer("0"),
+                        String.to_integer("0")
+                    )
+                    DateTime.from_naive!(naive, "Etc/UTC")
+                <<hour::binary-size(2), ":", minute::binary-size(2), ":", second::binary-size(2)>> ->
+                    {:ok, naive} = NaiveDateTime.new(
+                        1970,
+                        1,
+                        1,
+                        String.to_integer(hour),
+                        String.to_integer(minute),
+                        String.to_integer(second)
+                    )
+                    DateTime.from_naive!(naive, "Etc/UTC")
+                _ ->
+                    case DateTime.from_iso8601(date_string) do
+                        {:ok, dt, _} -> dt
+                        _ -> raise ArgumentError, "Invalid date format: #{inspect(date_string)}"
+                    end
             end', s);
 		#end
 	}
@@ -270,10 +305,7 @@ abstract Date(DateTime) from DateTime to DateTime {
 		#if macro
 		return (cast this : haxe.Date).toString();
 		#else
-		// Robust runtime formatting compatible with DateTime and NaiveDateTime
-		return
-			untyped __elixir__('case {0} do\n  %NaiveDateTime{} = nd -> NaiveDateTime.to_iso8601(nd)\n  %DateTime{} = dt -> DateTime.to_iso8601(dt)\n  other -> Kernel.to_string(other)\nend',
-			this);
+		return untyped __elixir__('Calendar.strftime({0}, "%Y-%m-%d %H:%M:%S")', this);
 		#end
 	}
 
@@ -299,8 +331,15 @@ abstract Date(DateTime) from DateTime to DateTime {
 	public inline function getUTCSeconds():Int
 		return getSeconds();
 
-	public inline function getTimezoneOffset():Int
-		return 0;
+	public inline function getTimezoneOffset():Int {
+		#if macro
+		return (cast this : haxe.Date).getTimezoneOffset();
+		#else
+		return
+			untyped __elixir__('(fn date_time ->\n  case date_time do\n    %DateTime{} = dt -> -div(dt.utc_offset + dt.std_offset, 60)\n    _ -> String.to_integer("0")\n  end\nend).({0})',
+			this);
+		#end
+	}
 
 	// ==============================
 	// Elixir Native Extensions (Layer 2)

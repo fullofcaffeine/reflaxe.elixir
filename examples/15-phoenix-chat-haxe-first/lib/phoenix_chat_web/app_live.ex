@@ -7,10 +7,10 @@ defmodule PhoenixChatWeb.AppLive do
     current_user_id = if (not Kernel.is_nil(socket.id)) do
       socket.id
     else
-      Reflaxe.Elixir.HaxeFloat.to_string(DateTime.to_iso8601(DateTime.utc_now()))
+      Reflaxe.Elixir.HaxeFloat.to_string(DateTime.to_unix(DateTime.utc_now(), :millisecond))
     end
     current_user_name = display_name_from_id(current_user_id)
-    online_at = DateTime.to_iso8601(DateTime.utc_now())
+    online_at = DateTime.to_unix(DateTime.utc_now(), :millisecond)
     assigns = %{room: room, current_user_id: current_user_id, current_user_name: current_user_name, message_input: "", messages: [], next_message_id: 1, presence_initialized: false, online_users: %{}, online_user_views: [], online_user_count: 0, status: nil}
     live = Phoenix.Component.assign(socket, assigns)
     live = if (connected) do
@@ -170,7 +170,7 @@ end) do
     if (body == "") do
       {:noreply, Phoenix.Component.assign(socket, :status, "Type a message first.")}
     else
-      now = DateTime.to_iso8601(DateTime.utc_now())
+      now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
       next_id = socket.assigns.next_message_id
       message = %{id: next_id, user_id: socket.assigns.current_user_id, user_name: socket.assigns.current_user_name, body: body, at: now, row_class: "msg mine"}
       updated = Phoenix.Component.assign(socket, %{messages: PhoenixChat.ChatState.append_message(socket.assigns.messages, message), next_message_id: next_id + 1, message_input: "", status: nil})

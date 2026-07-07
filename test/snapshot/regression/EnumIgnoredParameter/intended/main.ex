@@ -21,6 +21,6 @@ defmodule Main do
     end)
   end
   defp process_data() do
-    {:data, 42, DateTime.to_iso8601(DateTime.utc_now()), "Test", nil}
+    {:data, 42, DateTime.to_unix(DateTime.utc_now(), :millisecond), "Test", nil}
   end
 end

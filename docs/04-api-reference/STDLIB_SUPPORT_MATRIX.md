@@ -95,6 +95,32 @@ Top-level:
 - `UnicodeString` (UTF-8 validation and codepoint iteration)
 - `Xml` (parse/print, attributes, child iteration, parent links)
 
+`Date` and `DateTools` use Haxe's normal millisecond timestamp and formatting
+contract while storing runtime values as BEAM `%DateTime{}` structs. For
+example:
+
+```haxe
+var d = Date.fromString("2026-07-07 12:30:45");
+var ms = d.getTime();
+var text = d.toString();
+```
+
+The generated Elixir shape is direct target code, not a wrapper object:
+
+```elixir
+date_time = DateTime.from_naive!(naive, "Etc/UTC")
+ms = DateTime.to_unix(date_time, :millisecond)
+text = Calendar.strftime(date_time, "%Y-%m-%d %H:%M:%S")
+```
+
+`Date.fromString` accepts the Haxe stdlib formats `YYYY-MM-DD HH:MM:SS`,
+`YYYY-MM-DD`, and `HH:MM:SS`; ISO8601 input remains supported as an
+Elixir-target extension for native interop. `Date.getTimezoneOffset()` derives
+minutes from `DateTime.utc_offset + DateTime.std_offset`, so UTC-backed Haxe
+`Date` values report `0`. `DateTools` remains a Haxe-compatible helper layer
+over this `Date` surface, including `format`, `delta`, timestamp unit helpers,
+and `makeUtc`.
+
 `haxe.*`:
 - `haxe.CallStack` (BEAM stack capture/formatting)
 - `haxe.Constraints` (official stdlib fallback for compile-time `Function` and `IMap` constraints; `IMap` values cross the runtime boundary through `Reflaxe.Elixir.IMap`)

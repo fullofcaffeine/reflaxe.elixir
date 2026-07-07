@@ -11,7 +11,7 @@ defmodule MyAppWeb.PresenceLive do
             Map.get(dyn_obj, :user_id)
         end)
     end)
-    socket = MyApp.Presence.track(self(), socket, user_id, %{joined_at: DateTime.to_iso8601(DateTime.utc_now())})
+    socket = MyApp.Presence.track(self(), socket, user_id, %{joined_at: DateTime.to_unix(DateTime.utc_now(), :millisecond)})
     %{ok: socket}
     {:ok, socket}
   end

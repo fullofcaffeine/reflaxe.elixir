@@ -103,7 +103,7 @@ defmodule DateTools do
       "r" ->
         __format(d, "%I:%M:%S %p")
       "s" ->
-        Reflaxe.Elixir.HaxeFloat.to_string(trunc(Reflaxe.Elixir.HaxeFloat.divide(d, 1000)))
+        Reflaxe.Elixir.HaxeFloat.to_string(trunc(Reflaxe.Elixir.HaxeFloat.divide(DateTime.to_unix(d, :millisecond), 1000)))
       "t" -> "\t"
       "u" when d == 0 -> "7"
       "u" ->
@@ -153,7 +153,7 @@ defmodule DateTools do
     __format(d, f)
   end
   def delta(d, t) do
-    Date_Impl_.from_time(Reflaxe.Elixir.HaxeFloat.add(d, t))
+    DateTime.from_unix!(trunc(Reflaxe.Elixir.HaxeFloat.add(DateTime.to_unix(d, :millisecond), t)), :millisecond)
   end
   def get_month_days(d) do
     month = (d.month - 1)
@@ -187,11 +187,11 @@ defmodule DateTools do
     Reflaxe.Elixir.HaxeFloat.add(o.ms, Reflaxe.Elixir.HaxeFloat.mul(1000, Reflaxe.Elixir.HaxeFloat.add(o.seconds, Reflaxe.Elixir.HaxeFloat.mul(60, Reflaxe.Elixir.HaxeFloat.add(o.minutes, Reflaxe.Elixir.HaxeFloat.mul(60, Reflaxe.Elixir.HaxeFloat.add(o.hours, Reflaxe.Elixir.HaxeFloat.mul(24, o.days))))))))
   end
   def make_utc(year, month, day, hour, min, sec) do
-    (fn ->
+    DateTime.to_unix((fn ->
       elixir_month = month + 1
 
             {:ok, naive} = NaiveDateTime.new(year, elixir_month, day, hour, min, sec)
             DateTime.from_naive!(naive, "Etc/UTC")
-    end).()
+    end).(), :millisecond)
   end
 end

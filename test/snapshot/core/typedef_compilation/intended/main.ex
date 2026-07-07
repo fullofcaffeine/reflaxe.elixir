@@ -6,7 +6,7 @@ defmodule Main do
     _api_response_data_value_0_name = username
     _callback = fn _msg, code -> code == 200 end
     _handler = fn -> nil end
-    _api_response_metadata_timestamp = DateTime.to_iso8601(DateTime.utc_now())
+    _api_response_metadata_timestamp = DateTime.to_unix(DateTime.utc_now(), :millisecond)
     nil
   end
 end

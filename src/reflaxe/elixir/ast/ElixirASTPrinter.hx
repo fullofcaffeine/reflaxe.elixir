@@ -1619,13 +1619,20 @@ class ElixirASTPrinter {
 				// Special remappings before generic remote call printing
 				switch (module.def) {
 					case EVar(m) if (m == "Date_Impl_"):
+						// Date_Impl_.from_time(x) -> DateTime.from_unix!(trunc(x), :millisecond)
+						if (funcName == "from_time" && args.length == 1) {
+							return 'DateTime.from_unix!(trunc(' + printFunctionArg(args[0], indent) + '), :millisecond)';
+						}
 						// Date_Impl_.get_time(x) -> DateTime.to_unix(x, :millisecond)
 						if (funcName == "get_time" && args.length == 1) {
 							return 'DateTime.to_unix(' + printFunctionArg(args[0], indent) + ', :millisecond)';
 						}
-						// Date_Impl_.from_string(x) -> x
-						if (funcName == "from_string" && args.length == 1) {
-							return printFunctionArg(args[0], indent);
+						// Date_Impl_.get_timezone_offset(x) -> DateTime offset minutes from local time to UTC
+						if (funcName == "get_timezone_offset" && args.length == 1) {
+							return
+								'(fn date_time ->\n  case date_time do\n    %DateTime{} = dt -> -div(dt.utc_offset + dt.std_offset, 60)\n    _ -> String.to_integer("0")\n  end\nend).('
+								+ printFunctionArg(args[0], indent)
+								+ ')';
 						}
 					default:
 				}

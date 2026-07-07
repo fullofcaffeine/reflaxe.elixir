@@ -1651,17 +1651,19 @@ class BinderTransforms {
 	 * DateImplRewrite
 	 *
 	 * WHAT
-	 * - Rewrites calls to Haxe Date_Impl_ helpers to existing Elixir APIs or pass-throughs
+	 * - Rewrites calls to Haxe Date_Impl_ helpers to native Elixir DateTime APIs
 	 *   to remove undefined-module warnings while preserving behavior.
 	 *
 	 * WHY
-	 * - Generated code may include Date_Impl_.from_string/1 and Date_Impl_.get_time/1 which
+	 * - Generated code may include Date_Impl_.from_time/1, Date_Impl_.from_string/1,
+	 *   and Date_Impl_.get_time/1 which
 	 *   are Haxe-side helpers, not Elixir modules. We map them to equivalent/benign forms.
 	 *
 	 * HOW
-	 * - Date_Impl_.from_string(x) -> x (string passthrough for string-typed fields)
-	 * - Date_Impl_.get_time(DateTime.utc_now()) -> DateTime.to_iso8601(DateTime.utc_now())
-	 *   (or leave as utc_now() if field is dynamic)
+	 * - Date_Impl_.from_time(x) -> DateTime.from_unix!(trunc(x), :millisecond)
+	 * - Date_Impl_.from_string(x) -> Haxe-compatible date parser returning a DateTime
+	 * - Date_Impl_.get_time(x) -> DateTime.to_unix(x, :millisecond)
+	 * - Date_Impl_.get_timezone_offset(x) -> offset minutes from local time to UTC
 	 */
 	public static function dateImplRewritePass(ast:ElixirAST):ElixirAST {
 		inline function isDateImplModule(modName:String):Bool {
@@ -1671,28 +1673,84 @@ class BinderTransforms {
 			var last = lastDot >= 0 ? modName.substring(lastDot + 1) : modName;
 			return last == "Date_Impl_";
 		}
+		inline function milliAtom():ElixirAST {
+			return makeAST(EAtom(ElixirAtom.raw("millisecond")));
+		}
+		inline function dateFromTime(value:ElixirAST):ElixirAST {
+			return makeAST(ERemoteCall(makeAST(EVar("DateTime")), "from_unix!", [makeAST(ECall(null, "trunc", [value])), milliAtom()]));
+		}
+		inline function dateGetTime(value:ElixirAST):ElixirAST {
+			return makeAST(ERemoteCall(makeAST(EVar("DateTime")), "to_unix", [value, milliAtom()]));
+		}
+		function dateGetTimezoneOffset(value:ElixirAST):ElixirAST {
+			return makeAST(EBlock([
+				makeAST(EMatch(PVar("reflaxe_date_time"), value)),
+				makeAST(ERaw('case reflaxe_date_time do
+  %DateTime{} = dt -> -div(dt.utc_offset + dt.std_offset, 60)
+  _ -> String.to_integer("0")
+end'))
+			]));
+		}
+		function dateFromString(value:ElixirAST):ElixirAST {
+			return makeAST(EBlock([
+				makeAST(EMatch(PVar("reflaxe_date_string"), value)),
+				makeAST(ERaw('case reflaxe_date_string do
+  <<year::binary-size(4), "-", month::binary-size(2), "-", day::binary-size(2), " ", hour::binary-size(2), ":", minute::binary-size(2), ":", second::binary-size(2)>> ->
+    {:ok, naive} = NaiveDateTime.new(
+      String.to_integer(year),
+      String.to_integer(month),
+      String.to_integer(day),
+      String.to_integer(hour),
+      String.to_integer(minute),
+      String.to_integer(second)
+    )
+    DateTime.from_naive!(naive, "Etc/UTC")
+  <<year::binary-size(4), "-", month::binary-size(2), "-", day::binary-size(2)>> ->
+    {:ok, naive} = NaiveDateTime.new(
+      String.to_integer(year),
+      String.to_integer(month),
+      String.to_integer(day),
+      String.to_integer("0"),
+      String.to_integer("0"),
+      String.to_integer("0")
+    )
+    DateTime.from_naive!(naive, "Etc/UTC")
+  <<hour::binary-size(2), ":", minute::binary-size(2), ":", second::binary-size(2)>> ->
+    {:ok, naive} = NaiveDateTime.new(
+      1970,
+      1,
+      1,
+      String.to_integer(hour),
+      String.to_integer(minute),
+      String.to_integer(second)
+    )
+    DateTime.from_naive!(naive, "Etc/UTC")
+  _ ->
+    case DateTime.from_iso8601(reflaxe_date_string) do
+      {:ok, dt, _} -> dt
+      _ -> raise ArgumentError, "Invalid date format: #{inspect(reflaxe_date_string)}"
+    end
+end'))
+			]));
+		}
 		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
 			return switch (n.def) {
+				case ERemoteCall({def: EVar(m)}, f, args) if (isDateImplModule(m) && f == "from_time" && args.length == 1):
+					dateFromTime(args[0]);
 				case ERemoteCall({def: EVar(m)}, f, args) if (isDateImplModule(m) && f == "from_string" && args.length == 1):
-					// Passthrough string
-					args[0];
+					dateFromString(args[0]);
 				case ERemoteCall({def: EVar(m)}, f, args) if (isDateImplModule(m) && f == "get_time" && args.length == 1):
-					// If arg is DateTime.utc_now(), normalize to DateTime.to_iso8601(DateTime.utc_now()) to match intended snapshots
-					switch (args[0].def) {
-						case ERemoteCall({def: EVar(dm)}, "utc_now", _) if (dm == "DateTime"):
-							makeAST(ERemoteCall(makeAST(EVar("DateTime")), "to_iso8601", [args[0]]));
-						default:
-							args[0];
-					}
+					dateGetTime(args[0]);
+				case ERemoteCall({def: EVar(m)}, f, args) if (isDateImplModule(m) && f == "get_timezone_offset" && args.length == 1):
+					dateGetTimezoneOffset(args[0]);
+				case ECall({def: EVar(m)}, f, args) if (isDateImplModule(m) && f == "from_time" && args.length == 1):
+					dateFromTime(args[0]);
 				case ECall({def: EVar(m)}, f, args) if (isDateImplModule(m) && f == "from_string" && args.length == 1):
-					args[0];
+					dateFromString(args[0]);
 				case ECall({def: EVar(m)}, f, args) if (isDateImplModule(m) && f == "get_time" && args.length == 1):
-					switch (args[0].def) {
-						case ERemoteCall({def: EVar(dm)}, "utc_now", _) if (dm == "DateTime"):
-							makeAST(ERemoteCall(makeAST(EVar("DateTime")), "to_iso8601", [args[0]]));
-						default:
-							args[0];
-					}
+					dateGetTime(args[0]);
+				case ECall({def: EVar(m)}, f, args) if (isDateImplModule(m) && f == "get_timezone_offset" && args.length == 1):
+					dateGetTimezoneOffset(args[0]);
 				default:
 					n;
 			}

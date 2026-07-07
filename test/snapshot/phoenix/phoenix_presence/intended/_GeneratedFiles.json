@@ -8,6 +8,7 @@
   "reflaxe/elixir/haxe_throw.ex",
   "reflaxe/elixir/haxe_float.ex",
   "main.ex",
+  "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/_call_stack/call_stack_impl_.ex",
   "elixir/types/_atom/atom_impl_.ex"

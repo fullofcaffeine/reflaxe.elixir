@@ -10,8 +10,8 @@
   ],
   "modules": [
     {"module": "Array", "status": "skipped-target-specific", "source": "Array.unit.hx", "reason": "Upstream spec exists; enable after BEAM array/list semantics are triaged in the runtime conformance lane."},
-    {"module": "Date", "status": "skipped-target-specific", "source": "Date.unit.hx", "reason": "Upstream spec exists; enable after BEAM date/time semantics are triaged."},
-    {"module": "DateTools", "status": "skipped-target-specific", "source": "DateTools.unit.hx", "reason": "Upstream spec exists; enable after BEAM date/time semantics are triaged."},
+    {"module": "Date", "status": "enabled", "source": "Date.unit.hx", "fixture": "test/upstream_unitstd/upstream/Date.unit.hx"},
+    {"module": "DateTools", "status": "enabled", "source": "DateTools.unit.hx", "fixture": "test/upstream_unitstd/upstream/DateTools.unit.hx"},
     {"module": "EReg", "status": "skipped-target-specific", "source": "EReg.unit.hx", "reason": "Upstream spec exists; enable after Elixir Regex compatibility is triaged."},
     {"module": "IntIterator", "status": "enabled", "source": "IntIterator.unit.hx", "fixture": "test/upstream_unitstd/upstream/IntIterator.unit.hx"},
     {"module": "Lambda", "status": "skipped-target-specific", "source": "Lambda.unit.hx", "reason": "Upstream spec exists; enable after collection semantics are triaged."},

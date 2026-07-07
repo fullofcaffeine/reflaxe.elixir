@@ -11,6 +11,18 @@ import stdlib_parity.upstream.UpstreamUnitStdMacro;
  */
 @:exunit
 class UpstreamUnitStdTest extends TestCase {
+	@:describe("upstream Haxe unitstd: Date")
+	@:test
+	function testDate():Void {
+		UpstreamUnitStdMacro.assertSpec("Date.unit.hx");
+	}
+
+	@:describe("upstream Haxe unitstd: DateTools")
+	@:test
+	function testDateTools():Void {
+		UpstreamUnitStdMacro.assertSpec("DateTools.unit.hx");
+	}
+
 	@:describe("upstream Haxe unitstd: StringBuf")
 	@:test
 	function testStringBuf():Void {

@@ -2626,7 +2626,7 @@ class ElixirASTPassRegistry {
 		// Rewrite Haxe Date_Impl_ helpers to Elixir forms
 		passes.push({
 			name: "DateImplRewrite",
-			description: "Map Date_Impl_.from_string/get_time to Elixir equivalents",
+			description: "Map Date_Impl_.from_time/from_string/get_time/get_timezone_offset to Elixir equivalents",
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.BinderTransforms.dateImplRewritePass
 		});

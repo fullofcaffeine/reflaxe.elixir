@@ -9,7 +9,7 @@ defmodule MyAppWeb.ComplexPresence do
         Map.get(_dyn_obj, :id)
     end)
 end))) end).()}_#{Reflaxe.Elixir.HaxeFloat.to_string(DateTime.to_unix(DateTime.utc_now(), :millisecond))}", (fn ->
-      v = Reflaxe.Elixir.HaxeFloat.divide(DateTime.to_iso8601(DateTime.utc_now()), 1000)
+      v = Reflaxe.Elixir.HaxeFloat.divide(DateTime.to_unix(DateTime.utc_now(), :millisecond), 1000)
       %{name: Reflaxe.Elixir.HaxeFloat.to_string(((case user do
   dyn_obj ->
     (case Map.fetch(dyn_obj, "first_name") do

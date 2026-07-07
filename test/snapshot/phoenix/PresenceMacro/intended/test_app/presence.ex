@@ -1,7 +1,7 @@
 defmodule TestApp.Presence do
   use Phoenix.Presence, otp_app: :test_app, pubsub_server: TestApp.PubSub
   def track_test_user(socket, user_id, name) do
-    meta = %{online_at: DateTime.to_iso8601(DateTime.utc_now()), user_name: name, status: "active"}
+    meta = %{online_at: DateTime.to_unix(DateTime.utc_now(), :millisecond), user_name: name, status: "active"}
     topic = "presence:test"
     key = user_id
     TestApp.Presence.track(self(), topic, key, meta)

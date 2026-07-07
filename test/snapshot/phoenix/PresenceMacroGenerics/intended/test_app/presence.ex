@@ -1,22 +1,22 @@
 defmodule TestApp.Presence do
   use Phoenix.Presence, otp_app: :test_app, pubsub_server: TestApp.PubSub
   def track_user_live_view(socket, user_id, user_name) do
-    meta = %{online_at: DateTime.to_iso8601(DateTime.utc_now()), user_name: user_name, status: "active"}
+    meta = %{online_at: DateTime.to_unix(DateTime.utc_now(), :millisecond), user_name: user_name, status: "active"}
     TestApp.Presence.track(self(), "presence:test", user_id, meta)
     socket
   end
   def track_user_custom(socket, user_id, user_name) do
-    meta = %{online_at: DateTime.to_iso8601(DateTime.utc_now()), user_name: user_name}
+    meta = %{online_at: DateTime.to_unix(DateTime.utc_now(), :millisecond), user_name: user_name}
     TestApp.Presence.track(self(), "presence:test", user_id, meta)
     socket
   end
   def track_with_anonymous(socket, key) do
-    meta = %{timestamp: DateTime.to_iso8601(DateTime.utc_now()), source: "test"}
+    meta = %{timestamp: DateTime.to_unix(DateTime.utc_now(), :millisecond), source: "test"}
     TestApp.Presence.track(self(), "presence:test", key, meta)
     socket
   end
   def update_user_status(socket, user_id, new_status) do
-    meta = %{online_at: DateTime.to_iso8601(DateTime.utc_now()), user_name: "test", status: new_status}
+    meta = %{online_at: DateTime.to_unix(DateTime.utc_now(), :millisecond), user_name: "test", status: new_status}
     TestApp.Presence.update(self(), "presence:test", user_id, meta)
     socket
   end
