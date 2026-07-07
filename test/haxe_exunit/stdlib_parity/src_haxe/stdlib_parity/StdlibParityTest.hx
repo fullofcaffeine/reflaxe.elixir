@@ -28,6 +28,8 @@ import haxe.ds.GenericStack;
 import haxe.ds.HashMap;
 import haxe.ds.IntMap;
 import haxe.ds.List;
+import haxe.ds.Option;
+import haxe.ds.OptionTools;
 import haxe.ds.StringMap;
 import haxe.exceptions.ArgumentException;
 import haxe.exceptions.NotImplementedException;
@@ -132,6 +134,34 @@ class StdlibParityTest extends TestCase {
 		return switch (either) {
 			case Left(value): value.key + ":" + value.value;
 			case Right(values): values.join(",");
+		};
+	}
+
+	static function describeStringOption(option:Option<String>):String {
+		return switch (option) {
+			case Some(value): "some:" + value;
+			case None: "none";
+		};
+	}
+
+	static function describePayloadOption(option:Option<{key:String, value:Int}>):String {
+		return switch (option) {
+			case Some(value): value.key + ":" + value.value;
+			case None: "none";
+		};
+	}
+
+	static function describeIntArrayOption(option:Option<Array<Int>>):String {
+		return switch (option) {
+			case Some(values): "some:" + values.join(",");
+			case None: "none";
+		};
+	}
+
+	static function describeIntResult(result:haxe.functional.Result<Int, String>):String {
+		return switch (result) {
+			case Ok(value): "ok:" + value;
+			case Error(message): "error:" + message;
 		};
 	}
 
@@ -681,6 +711,51 @@ class StdlibParityTest extends TestCase {
 
 		either = Right(["x", "y"]);
 		Assert.equals("x,y", describePayloadEither(either));
+	}
+
+	@:describe("haxe.ds.Option target surface")
+	@:test
+	function testOptionPatternMatchingAndPayloads():Void {
+		var some:Option<String> = Some("ready");
+		var none:Option<String> = None;
+
+		Assert.equals("some:ready", describeStringOption(some));
+		Assert.equals("none", describeStringOption(none));
+
+		var payload:Option<{key:String, value:Int}> = Some({key: "alpha", value: 5});
+		Assert.equals("alpha:5", describePayloadOption(payload));
+	}
+
+	@:describe("haxe.ds.Option target surface")
+	@:test
+	function testOptionToolsTransformAndExtractValues():Void {
+		var value:Option<Int> = Some(21);
+		var empty:Option<Int> = None;
+
+		Assert.isTrue(OptionTools.isSome(value));
+		Assert.isTrue(OptionTools.isNone(empty));
+		Assert.equals("some:42", describeStringOption(OptionTools.map(value, function(n) return Std.string(n * 2))));
+		Assert.equals(21, OptionTools.unwrap(value, 0));
+		Assert.equals(7, OptionTools.unwrap(empty, 7));
+		Assert.equals(99, OptionTools.lazyUnwrap(empty, function() return 99));
+	}
+
+	@:describe("haxe.ds.Option target surface")
+	@:test
+	function testOptionToolsCollectionAndResultBridges():Void {
+		var allPresent = OptionTools.all([Some(1), Some(2), Some(3)]);
+		var withMissing = OptionTools.all([Some(1), None, Some(3)]);
+		var values = OptionTools.values([Some(4), None, Some(6)]);
+
+		Assert.equals("some:1,2,3", describeIntArrayOption(allPresent));
+		Assert.equals("none", describeIntArrayOption(withMissing));
+		Assert.equals("4,6", values.join(","));
+		Assert.equals("some:from-nullable", describeStringOption(OptionTools.fromNullable("from-nullable")));
+		Assert.equals("none", describeStringOption(OptionTools.fromNullable(null)));
+		Assert.equals("ok:8", describeIntResult(OptionTools.toResult(Some(8), "missing")));
+		Assert.equals("error:missing", describeIntResult(OptionTools.toResult(None, "missing")));
+		Assert.equals("some:9", describeStringOption(OptionTools.map(OptionTools.fromResult(Ok(9)), function(n) return Std.string(n))));
+		Assert.equals("none", describeStringOption(OptionTools.fromResult(Error("bad"))));
 	}
 
 	@:describe("haxe.ds.GenericStack target override")

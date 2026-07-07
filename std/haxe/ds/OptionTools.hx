@@ -210,18 +210,8 @@ class OptionTools {
 	 * @return Some containing array of all values, or None if any option is None
 	 */
 	public static function all<T>(options:Array<Option<T>>):Option<Array<T>> {
-		var values:Array<T> = [];
-
-		for (option in options) {
-			switch (option) {
-				case Some(value):
-					values.push(value);
-				case None:
-					return None;
-			}
-		}
-
-		return Some(values);
+		var extracted = values(options);
+		return extracted.length == options.length ? Some(extracted) : None;
 	}
 
 	/**
