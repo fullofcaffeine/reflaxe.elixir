@@ -30,7 +30,7 @@ ROOT_DIR = Path(__file__).resolve().parents[2]
 DEFAULT_APP_REL = "examples/todo-app"
 DEFAULT_ARTIFACT_DIR_REL = "tmp/perf/todo-watch"
 DEFAULT_OUT_REL = "tmp/perf/watch-cycle-times.json"
-DEFAULT_SOURCE_REL = "src_haxe/shared/TodoTypes.hx"
+DEFAULT_SOURCE_REL = "src_shared/shared/TodoTypes.hx"
 WATCH_SUCCESS_MARKER = "✅ Haxe compilation successful"
 WATCHER_READY_MARKER = "HaxeWatcher started monitoring"
 INITIAL_SUCCESS_MARKERS = ("✓ Compiled ", WATCH_SUCCESS_MARKER)
@@ -296,7 +296,7 @@ def measure_watch_cycles(
         "--hxml",
         "build-server.hxml",
         "--dirs",
-        "src_haxe/server,src_haxe/shared,src_haxe/contexts",
+        "src_haxe/server,src_shared,src_haxe/contexts",
         "--debounce",
         str(args.debounce_ms),
         "--verbose",

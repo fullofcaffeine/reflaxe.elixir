@@ -15,7 +15,7 @@ REF="HEAD"
 ARTIFACT_DIR_REL="tmp/perf/todo-compile"
 OUT_REL="tmp/perf/compile-times.json"
 BUILD_FILE="build-server.hxml"
-INCREMENTAL_SOURCE_REL="src_haxe/shared/TodoTypes.hx"
+INCREMENTAL_SOURCE_REL="src_shared/shared/TodoTypes.hx"
 HAXE_BIN="${HAXE_BIN:-haxe}"
 
 DEPS_GET_TIMEOUT="${DEPS_GET_TIMEOUT:-300}"
