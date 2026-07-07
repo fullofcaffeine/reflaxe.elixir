@@ -22,6 +22,7 @@ import haxe.crypto.Sha1;
 import haxe.crypto.Sha224;
 import haxe.crypto.Sha256;
 import haxe.ds.ArraySort;
+import haxe.ds.Either;
 import haxe.ds.EnumValueMap;
 import haxe.ds.GenericStack;
 import haxe.ds.HashMap;
@@ -118,6 +119,20 @@ class StdlibParityTest extends TestCase {
 		var keyString:String = cast untyped __elixir__('Kernel.to_string({0})', pair.key);
 		var valueString:String = cast untyped __elixir__('Kernel.to_string({0})', pair.value);
 		return keyString + ":" + valueString;
+	}
+
+	static function describeStringIntEither(either:Either<String, Int>):String {
+		return switch (either) {
+			case Left(value): "left:" + value;
+			case Right(value): "right:" + value;
+		};
+	}
+
+	static function describePayloadEither(either:Either<{key:String, value:Int}, Array<String>>):String {
+		return switch (either) {
+			case Left(value): value.key + ":" + value.value;
+			case Right(values): values.join(",");
+		};
 	}
 
 	static function pairIntBool(value:Int, flag:Bool):String {
@@ -644,6 +659,28 @@ class StdlibParityTest extends TestCase {
 		Assert.equals("two-a", values[2].label);
 		Assert.equals("two-b", values[3].label);
 		Assert.equals("three", values[4].label);
+	}
+
+	@:describe("haxe.ds.Either upstream fallback")
+	@:test
+	function testEitherPatternMatchingAndPayloads():Void {
+		var left:Either<String, Int> = Left("missing");
+		var right:Either<String, Int> = Right(42);
+
+		Assert.equals("left:missing", describeStringIntEither(left));
+		Assert.equals("right:42", describeStringIntEither(right));
+	}
+
+	@:describe("haxe.ds.Either upstream fallback")
+	@:test
+	function testEitherPreservesGenericPayloads():Void {
+		var payload = {key: "alpha", value: 3};
+		var either:Either<{key:String, value:Int}, Array<String>> = Left(payload);
+
+		Assert.equals("alpha:3", describePayloadEither(either));
+
+		either = Right(["x", "y"]);
+		Assert.equals("x,y", describePayloadEither(either));
 	}
 
 	@:describe("haxe.ds.GenericStack target override")
