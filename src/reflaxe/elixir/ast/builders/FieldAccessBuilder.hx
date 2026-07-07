@@ -169,12 +169,18 @@ class FieldAccessBuilder {
 	 * HOW: Detects enum abstract fields and generates atoms when appropriate
 	 */
 	static function buildStaticField(e:TypedExpr, classRef:Ref<ClassType>, cf:Ref<ClassField>, context:CompilationContext):Null<ElixirASTDef> {
-		var className = classRef.get().name;
+		var classType = classRef.get();
+		var className = classType.name;
 		var field = cf.get();
 		var fieldName = field.name;
 
 		#if debug_ast_builder
 		#end
+
+		if (isHaxeEntryPoint(classType)) {
+			context.error(haxeEntryPointUnsupportedMessage(), e.pos);
+			return ENil;
+		}
 
 		// Check if this is an enum abstract field that should be an atom
 		var isAtomField = false;
@@ -498,6 +504,16 @@ class FieldAccessBuilder {
 			case FEnum(_, ef):
 				ef.name;
 		}
+	}
+
+	static function isHaxeEntryPoint(classType:ClassType):Bool {
+		return classType != null && classType.name == "EntryPoint" && classType.pack != null && classType.pack.join(".") == "haxe";
+	}
+
+	static function haxeEntryPointUnsupportedMessage():String {
+		return "haxe.EntryPoint is not supported on the Elixir target: it is Haxe's process main-loop bridge and assumes target-owned sleep/thread scheduling. "
+			+ "Use elixir.otp.Application, elixir.otp.Supervisor, and elixir.otp.TypeSafeChildSpec for OTP lifecycle/supervision, "
+			+ "phoenix.* modules and annotations for Phoenix callbacks, or sys.thread.EventLoop/haxe.Timer for callback scheduling instead.";
 	}
 }
 #end

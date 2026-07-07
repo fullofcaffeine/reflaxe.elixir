@@ -1196,6 +1196,11 @@ class CallExprBuilder {
 						var moduleName = ModuleBuilder.extractModuleName(classType);
 						var methodName = cf.get().name;
 
+						if (isHaxeEntryPoint(classType)) {
+							context.error(haxeEntryPointUnsupportedMessage(), e.pos);
+							return ENil;
+						}
+
 						if (classPack == "haxe.ds" && className == "ArraySort" && methodName == "sort" && args != null && args.length == 2) {
 							var arrayLocal:Null<TVar> = switch (args[0].expr) {
 								case TLocal(v): v;
@@ -2058,6 +2063,16 @@ class CallExprBuilder {
 	static function arraySortUnsupportedMessage():String {
 		return "haxe.ds.ArraySort.sort on the Elixir target currently requires a local Array binding so the compiler can preserve Void mutating semantics "
 			+ "with same-scope immutable rebinding. Assign the array expression to a local variable before sorting it.";
+	}
+
+	static function isHaxeEntryPoint(classType:ClassType):Bool {
+		return classType != null && classType.name == "EntryPoint" && classType.pack != null && classType.pack.join(".") == "haxe";
+	}
+
+	static function haxeEntryPointUnsupportedMessage():String {
+		return "haxe.EntryPoint is not supported on the Elixir target: it is Haxe's process main-loop bridge and assumes target-owned sleep/thread scheduling. "
+			+ "Use elixir.otp.Application, elixir.otp.Supervisor, and elixir.otp.TypeSafeChildSpec for OTP lifecycle/supervision, "
+			+ "phoenix.* modules and annotations for Phoenix callbacks, or sys.thread.EventLoop/haxe.Timer for callback scheduling instead.";
 	}
 }
 #end

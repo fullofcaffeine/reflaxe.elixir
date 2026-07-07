@@ -98,6 +98,7 @@ Top-level:
 - `haxe.CallStack` (BEAM stack capture/formatting)
 - `haxe.Constraints` (official stdlib fallback for compile-time `Function` and `IMap` constraints; `IMap` values cross the runtime boundary through `Reflaxe.Elixir.IMap`)
 - `haxe.DynamicAccess` (Reflect-backed dynamic maps)
+- `haxe.EntryPoint` (intentionally unsupported Haxe process main-loop bridge; use `elixir.otp.Application`, `elixir.otp.Supervisor`, and `elixir.otp.TypeSafeChildSpec` for OTP lifecycle/supervision, `phoenix.*` modules and annotations for Phoenix callbacks, or `sys.thread.EventLoop`/`haxe.Timer` for callback scheduling)
 - `haxe.Http`
 - `haxe.Int64` (signed 64-bit wrapping semantics on BEAM integers)
 - `haxe.Int64Helper`
@@ -315,6 +316,7 @@ Thread pools are BEAM-shaped:
 - `ElasticThreadPool` spawns per task while bounding concurrency with `Semaphore`; `threadsCount` reports `0` because workers are not retained as an OS-thread pool.
 
 Unsupported pieces fail explicitly:
+- `haxe.EntryPoint` is not a BEAM application lifecycle primitive. Direct output-code calls or static field reads fail at compile time. Use `elixir.otp.Application`, `elixir.otp.Supervisor`, and `elixir.otp.TypeSafeChildSpec` for OTP lifecycle/supervision, `phoenix.*` modules and annotations for Phoenix callbacks, or `sys.thread.EventLoop`/`haxe.Timer` for callback scheduling instead.
 - `Condition.wait`, `signal`, and `broadcast` are not implemented because POSIX condition-variable semantics depend on shared-memory mutation. Use `Thread` messages, `Deque`, `Lock`, or `Semaphore` instead.
 
 ## Additional modules shipped under `std/` (not part of upstream std)
