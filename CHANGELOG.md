@@ -1,3 +1,10 @@
+## [0.14.14](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.13...v0.14.14) (2026-07-07)
+
+
+### Bug Fixes
+
+* **compiler:** support typed enum helper reflection ([2cb5d93](https://github.com/fullofcaffeine/reflaxe.elixir/commit/2cb5d93cb589d81a3de05c7ffd51244a3d7cc4e8))
+
 ## [0.14.13](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.12...v0.14.13) (2026-07-07)
 
 
