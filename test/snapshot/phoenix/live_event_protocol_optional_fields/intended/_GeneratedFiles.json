@@ -19,6 +19,7 @@
   "phoenix/conn_state.ex",
   "optional_events.ex",
   "my_app_web/optional_live.ex",
+  "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/functional/optional_event.ex",
   "haxe/exceptions/pos_exception.ex",

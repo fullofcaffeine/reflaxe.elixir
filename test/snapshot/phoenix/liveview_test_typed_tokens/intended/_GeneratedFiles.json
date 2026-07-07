@@ -10,6 +10,7 @@
   "phoenix/test/_live_view_mount_result/live_view_mount_result_impl_.ex",
   "phoenix/test/_live_view_event_name/live_view_event_name_impl_.ex",
   "main.ex",
+  "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/_call_stack/call_stack_impl_.ex",
   "elixir/types/_atom/atom_impl_.ex",

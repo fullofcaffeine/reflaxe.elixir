@@ -4,6 +4,8 @@ import haxe.Int32;
 import haxe.Int64;
 import haxe.CallStack;
 import haxe.DynamicAccess;
+import haxe.EnumFlags;
+import haxe.EnumTools.EnumValueTools;
 import haxe.Json;
 import haxe.Serializer;
 import haxe.Template;
@@ -58,6 +60,12 @@ import reflaxe.elixir.IMap as IMapRuntime;
 enum ParityColor {
 	Red;
 	Green;
+}
+
+enum ParityTone {
+	Warm(label:String, intensity:Int);
+	Cool(label:String);
+	Neutral;
 }
 
 class SortNode {
@@ -132,6 +140,56 @@ class StdlibParityTest extends TestCase {
 		var events = Thread.current().events;
 		Assert.isTrue(events.wait(actualTimeout));
 		events.progress();
+	}
+
+	@:describe("haxe.EnumTools")
+	@:test
+	function testEnumToolsFallbackUsesTypeReflection():Void {
+		var constructors = haxe.EnumTools.getConstructors(ParityTone);
+		Assert.equals("Warm", constructors[0]);
+		Assert.equals("Cool", constructors[1]);
+		Assert.equals("Neutral", constructors[2]);
+
+		var warm = haxe.EnumTools.createByName(ParityTone, "Warm", ["amber", 7]);
+		Assert.equals("Warm", EnumValueTools.getName(warm));
+		Assert.equals(0, EnumValueTools.getIndex(warm));
+		Assert.equals("amber", EnumValueTools.getParameters(warm)[0]);
+		Assert.equals(7, EnumValueTools.getParameters(warm)[1]);
+
+		var cool = haxe.EnumTools.createByIndex(ParityTone, 1, ["blue"]);
+		Assert.equals("Cool", EnumValueTools.getName(cool));
+		Assert.isTrue(EnumValueTools.equals(cool, Cool("blue")));
+		Assert.isFalse(EnumValueTools.equals(cool, Cool("green")));
+
+		var noArg = haxe.EnumTools.createAll(ParityTone);
+		Assert.equals(1, noArg.length);
+		Assert.equals("Neutral", EnumValueTools.getName(noArg[0]));
+	}
+
+	@:describe("haxe.EnumFlags")
+	@:test
+	function testEnumFlagsFallbackUsesEnumIndices():Void {
+		var flags = new EnumFlags<ParityColor>();
+		Assert.isFalse(flags.has(Red));
+		Assert.isFalse(flags.has(Green));
+
+		flags.set(Red);
+		Assert.isTrue(flags.has(Red));
+		Assert.isFalse(flags.has(Green));
+		Assert.equals(1, flags.toInt());
+
+		flags.setTo(Green, true);
+		Assert.isTrue(flags.has(Green));
+		Assert.equals(3, flags.toInt());
+
+		flags.unset(Red);
+		Assert.isFalse(flags.has(Red));
+		Assert.isTrue(flags.has(Green));
+		Assert.equals(2, flags.toInt());
+
+		var restored:EnumFlags<ParityColor> = EnumFlags.ofInt(3);
+		Assert.isTrue(restored.has(Red));
+		Assert.isTrue(restored.has(Green));
 	}
 
 	@:describe("Haxe Float special values")

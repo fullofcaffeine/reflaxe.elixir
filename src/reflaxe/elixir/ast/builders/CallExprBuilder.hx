@@ -1449,6 +1449,36 @@ class CallExprBuilder {
 		}
 	}
 
+	static function enumModuleFromTypeExpr(expr:TypedExpr):Null<String> {
+		return switch (unwrapMeta(expr).expr) {
+			case TTypeExpr(TEnumDecl(enumRef)):
+				reflaxe.elixir.ElixirCompiler.enumModuleName(enumRef.get());
+			default:
+				null;
+		}
+	}
+
+	static function enumModuleFromValueExpr(expr:TypedExpr):Null<String> {
+		return switch (haxe.macro.TypeTools.follow(expr.t)) {
+			case TEnum(enumRef, _):
+				reflaxe.elixir.ElixirCompiler.enumModuleName(enumRef.get());
+			default:
+				null;
+		}
+	}
+
+	static function haxeEnumNameFromTypeExpr(expr:TypedExpr):Null<String> {
+		return switch (unwrapMeta(expr).expr) {
+			case TTypeExpr(TEnumDecl(enumRef)):
+				var enumType = enumRef.get();
+				var parts = enumType.pack == null ? [] : enumType.pack.copy();
+				parts.push(enumType.name);
+				parts.join(".");
+			default:
+				null;
+		}
+	}
+
 	/**
 	 * Handle special Haxe standard library calls
 	 * 
@@ -1587,10 +1617,68 @@ class CallExprBuilder {
 						}
 
 					case "getEnumName":
-						// Type.getEnumName(e) → elem(e, 0) for tagged tuples
 						if (args.length == 1) {
-							var enumValue = buildExpression(args[0]);
-							return ECall(null, "elem", [enumValue, makeAST(EInteger(0))]);
+							var haxeName = haxeEnumNameFromTypeExpr(args[0]);
+							if (haxeName != null)
+								return EString(haxeName);
+						}
+
+					case "enumIndex":
+						if (args.length == 1) {
+							var enumModule = enumModuleFromValueExpr(args[0]);
+							if (enumModule != null)
+								return ERemoteCall(makeAST(EVar(enumModule)), "__haxe_enum_index__", [buildExpression(args[0])]);
+						}
+
+					case "enumConstructor":
+						if (args.length == 1) {
+							var enumModule = enumModuleFromValueExpr(args[0]);
+							if (enumModule != null)
+								return ERemoteCall(makeAST(EVar(enumModule)), "__haxe_enum_constructor__", [buildExpression(args[0])]);
+						}
+
+					case "enumEq":
+						if (args.length == 2) {
+							var enumModule = enumModuleFromValueExpr(args[0]);
+							var rightEnumModule = enumModuleFromValueExpr(args[1]);
+							if (enumModule != null && rightEnumModule != null && enumModule != rightEnumModule)
+								return EBoolean(false);
+							if (enumModule == null)
+								enumModule = rightEnumModule;
+							if (enumModule != null)
+								return ERemoteCall(makeAST(EVar(enumModule)), "__haxe_enum_eq__", [buildExpression(args[0]), buildExpression(args[1])]);
+						}
+
+					case "createEnum":
+						if (args.length == 2 || args.length == 3) {
+							var enumModule = enumModuleFromTypeExpr(args[0]);
+							if (enumModule != null) {
+								var params = args.length == 3 ? buildExpression(args[2]) : makeAST(EList([]));
+								return ERemoteCall(makeAST(EVar(enumModule)), "__haxe_enum_create_by_name__", [buildExpression(args[1]), params]);
+							}
+						}
+
+					case "createEnumIndex":
+						if (args.length == 2 || args.length == 3) {
+							var enumModule = enumModuleFromTypeExpr(args[0]);
+							if (enumModule != null) {
+								var params = args.length == 3 ? buildExpression(args[2]) : makeAST(EList([]));
+								return ERemoteCall(makeAST(EVar(enumModule)), "__haxe_enum_create_by_index__", [buildExpression(args[1]), params]);
+							}
+						}
+
+					case "getEnumConstructs":
+						if (args.length == 1) {
+							var enumModule = enumModuleFromTypeExpr(args[0]);
+							if (enumModule != null)
+								return ERemoteCall(makeAST(EVar(enumModule)), "__haxe_enum_constructs__", []);
+						}
+
+					case "allEnums":
+						if (args.length == 1) {
+							var enumModule = enumModuleFromTypeExpr(args[0]);
+							if (enumModule != null)
+								return ERemoteCall(makeAST(EVar(enumModule)), "__haxe_enum_all__", []);
 						}
 				}
 

@@ -32,6 +32,7 @@
   "phoenix/_to_form_options/to_form_options_impl_.ex",
   "my_app_web/router.ex",
   "my_app_web/app_live.ex",
+  "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/exceptions/pos_exception.ex",
   "haxe/exceptions/not_implemented_exception.ex",

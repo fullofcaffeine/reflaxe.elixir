@@ -65,6 +65,13 @@ typedef RouterRoutesSource = {
 	var source:String;
 }
 
+typedef EnumConstructorMeta = {
+	var name:String;
+	var index:Int;
+	var atom:String;
+	var arity:Int;
+}
+
 /**
  * Reflaxe.Elixir compiler for generating idiomatic Elixir code from Haxe.
  * 
@@ -116,6 +123,11 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 
 	// File extension for generated Elixir files
 	public var fileExtension:String = ".ex";
+
+	public static function enumModuleName(enumType:EnumType):String {
+		var targetAlias = reflaxe.elixir.PhoenixTargetNames.enumTargetAlias(enumType);
+		return targetAlias != null ? targetAlias : defaultEnumModuleName(enumType);
+	}
 
 	// Output directory for generated files (dynamically set by Reflaxe)
 	public var outputDirectory:String = "lib/";
@@ -3345,10 +3357,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		// In Elixir, enums become modules with functions that return tagged tuples.
 		// App-facing enums use the same target-module mapper as Phoenix classes, so
 		// source roots such as `shared` and `server` do not leak as top-level modules.
-		var moduleName = {
-			var targetAlias = reflaxe.elixir.PhoenixTargetNames.enumTargetAlias(enumType);
-			targetAlias != null ? targetAlias : buildEnumModuleName(enumType);
-		};
+		var moduleName = enumModuleName(enumType);
 		var functions = [];
 
 		// Build an index map for enum constructors
@@ -3399,6 +3408,8 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			functions.push(reflaxe.elixir.ast.ElixirAST.makeAST(funcDef));
 		}
 
+		appendEnumMetadataFunctions(functions, moduleName, enumConstructorMetadata(enumType, options));
+
 		// Create module AST
 		var moduleBody = reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EBlock(functions));
 		var moduleAST = reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EDefmodule(moduleName, moduleBody));
@@ -3441,7 +3452,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	 * Build the full module name for an enum including package
 	 * Ensures proper capitalization for Elixir module names
 	 */
-	function buildEnumModuleName(enumType:EnumType):String {
+	static function defaultEnumModuleName(enumType:EnumType):String {
 		var parts = enumType.pack.copy();
 		parts.push(enumType.name);
 
@@ -3464,6 +3475,122 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		}
 
 		return processedParts.join(".");
+	}
+
+	function enumConstructorMetadata(enumType:EnumType, options:Array<EnumOptionData>):Array<EnumConstructorMeta> {
+		var infos:Array<EnumConstructorMeta> = [];
+		for (option in options) {
+			var constructor = enumType.constructs.get(option.name);
+			var index = constructor != null ? constructor.index : infos.length;
+			infos.push({
+				name: option.name,
+				index: index,
+				atom: reflaxe.elixir.ast.NameUtils.toSnakeCase(option.name),
+				arity: option.args.length
+			});
+		}
+		infos.sort((left, right) -> left.index - right.index);
+		return infos;
+	}
+
+	function appendEnumMetadataFunctions(functions:Array<reflaxe.elixir.ast.ElixirAST>, moduleName:String, infos:Array<EnumConstructorMeta>):Void {
+		var ast = reflaxe.elixir.ast.ElixirAST.makeAST;
+		functions.push(ast(EDef("__haxe_enum_constructs__", [], null, ast(EList([for (info in infos) ast(EString(info.name))])))));
+		functions.push(ast(EDef("__haxe_enum_index__", [EPattern.PVar("value")], null, ast(ERaw(enumIndexBody(infos, moduleName))))));
+		functions.push(ast(EDef("__haxe_enum_constructor__", [EPattern.PVar("value")], null, ast(ERaw(enumConstructorBody(infos, moduleName))))));
+		functions.push(ast(EDef("__haxe_enum_create_by_name__", [EPattern.PVar("constructor"), EPattern.PVar("params")], null,
+			ast(ERaw(enumCreateByNameBody(infos, moduleName))))));
+		functions.push(ast(EDef("__haxe_enum_create_by_index__", [EPattern.PVar("index"), EPattern.PVar("params")], null,
+			ast(ERaw(enumCreateByIndexBody(infos, moduleName))))));
+		functions.push(ast(EDef("__haxe_enum_all__", [], null, ast(ERaw(enumAllBody(infos))))));
+		functions.push(ast(EDef("__haxe_enum_eq__", [EPattern.PVar("left"), EPattern.PVar("right")], null, ast(ERaw(enumEqBody())))));
+	}
+
+	static function enumValuesVar():String {
+		return 'values = case params do
+  nil -> []
+  arr when is_list(arr) -> arr
+  other -> List.wrap(other)
+end';
+	}
+
+	static function enumTagCases(infos:Array<EnumConstructorMeta>, valueFor:EnumConstructorMeta->String, defaultValue:String):String {
+		var lines = [];
+		for (info in infos) {
+			lines.push('${info.index} -> ${valueFor(info)}');
+			lines.push(':${info.atom} -> ${valueFor(info)}');
+		}
+		lines.push('_ -> $defaultValue');
+		return lines.join("\n    ");
+	}
+
+	static function enumIndexBody(infos:Array<EnumConstructorMeta>, moduleName:String):String {
+		return 'tag = case value do
+  tuple when is_tuple(tuple) and tuple_size(tuple) > 0 -> elem(tuple, 0)
+  atom when is_atom(atom) -> atom
+  _ -> nil
+end
+case tag do
+    ${enumTagCases(infos, info -> Std.string(info.index), 'raise "Unknown enum value " <> Kernel.inspect(value) <> " for $moduleName"')}
+end';
+	}
+
+	static function enumConstructorBody(infos:Array<EnumConstructorMeta>, moduleName:String):String {
+		return 'tag = case value do
+  tuple when is_tuple(tuple) and tuple_size(tuple) > 0 -> elem(tuple, 0)
+  atom when is_atom(atom) -> atom
+  _ -> nil
+end
+case tag do
+    ${enumTagCases(infos, info -> '"' + info.name + '"', 'raise "Unknown enum value " <> Kernel.inspect(value) <> " for $moduleName"')}
+end';
+	}
+
+	static function enumCreateTuple(info:EnumConstructorMeta):String {
+		return 'List.to_tuple([:${info.atom} | values])';
+	}
+
+	static function enumArityGuard(info:EnumConstructorMeta):String {
+		return info.arity == 0 ? "values == []" : 'length(values) == ${info.arity}';
+	}
+
+	static function enumCreateByNameBody(infos:Array<EnumConstructorMeta>, moduleName:String):String {
+		var clauses = [];
+		for (info in infos) {
+			clauses.push('"${info.name}" when ${enumArityGuard(info)} -> ${enumCreateTuple(info)}');
+			clauses.push('"${info.name}" -> raise "Enum constructor ${info.name} expects ${info.arity} params for $moduleName"');
+		}
+		clauses.push('other -> raise "Unknown enum constructor " <> Kernel.inspect(other) <> " for $moduleName"');
+		return enumValuesVar() + "\ncase constructor do\n  " + clauses.join("\n  ") + "\nend";
+	}
+
+	static function enumCreateByIndexBody(infos:Array<EnumConstructorMeta>, moduleName:String):String {
+		var clauses = [];
+		for (info in infos) {
+			clauses.push('${info.index} when ${enumArityGuard(info)} -> ${enumCreateTuple(info)}');
+			clauses.push('${info.index} -> raise "Enum constructor ${info.name} expects ${info.arity} params for $moduleName"');
+		}
+		clauses.push('other -> raise "Unknown enum constructor index " <> Kernel.inspect(other) <> " for $moduleName"');
+		return enumValuesVar() + "\ncase index do\n  " + clauses.join("\n  ") + "\nend";
+	}
+
+	static function enumAllBody(infos:Array<EnumConstructorMeta>):String {
+		var values = [for (info in infos) if (info.arity == 0) '{:${info.atom}}'];
+		return "[" + values.join(", ") + "]";
+	}
+
+	static function enumEqBody():String {
+		return 'left_name = __haxe_enum_constructor__(left)
+right_name = __haxe_enum_constructor__(right)
+left_params = case left do
+  tuple when is_tuple(tuple) and tuple_size(tuple) > 1 -> tl(Tuple.to_list(tuple))
+  _ -> []
+end
+right_params = case right do
+  tuple when is_tuple(tuple) and tuple_size(tuple) > 1 -> tl(Tuple.to_list(tuple))
+  _ -> []
+end
+left_name == right_name and left_params == right_params';
 	}
 
 	public function generateFunctionReference(functionName:String):String {

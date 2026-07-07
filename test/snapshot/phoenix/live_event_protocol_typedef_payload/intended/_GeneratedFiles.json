@@ -20,6 +20,7 @@
   "phoenix/conn_state.ex",
   "my_app_web/profile_live.ex",
   "haxe/profile_hook_event.ex",
+  "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/exceptions/pos_exception.ex",
   "haxe/exceptions/not_implemented_exception.ex",

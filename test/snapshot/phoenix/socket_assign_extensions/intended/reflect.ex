@@ -74,11 +74,26 @@ defmodule Reflect do
     apply(func, args)
   end
   def compare(a, b) do
-    if (Reflaxe.Elixir.HaxeFloat.to_string(a) < Reflaxe.Elixir.HaxeFloat.to_string(b)) do
-      -1
-    else
-      if (Reflaxe.Elixir.HaxeFloat.to_string(a) > Reflaxe.Elixir.HaxeFloat.to_string(b)), do: 1, else: 0
-    end
+
+          cond do
+            a == b ->
+              0
+            is_number(a) and is_number(b) ->
+              if a < b, do: -1, else: 1
+            is_boolean(a) and is_boolean(b) ->
+              if a == false, do: -1, else: 1
+            is_binary(a) and is_binary(b) ->
+              if a < b, do: -1, else: 1
+            true ->
+              left = Reflaxe.Elixir.HaxeFloat.to_string(a)
+              right = Reflaxe.Elixir.HaxeFloat.to_string(b)
+              cond do
+                left < right -> -1
+                left > right -> 1
+                true -> 0
+              end
+          end
+
   end
   def is_enum_value(v) do
     is_tuple(v) and tuple_size(v) >= 1 and is_atom(elem(v, 0))

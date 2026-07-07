@@ -89,7 +89,8 @@ Top-level:
 - `StringBuf`
 - `StringTools`
 - `Sys`
-- `Type`
+- `Type` (target-specific; typed enum reflection calls used by `haxe.EnumTools`
+  and `haxe.EnumFlags` are backed by generated enum metadata)
 - `UInt`
 - `UnicodeString` (UTF-8 validation and codepoint iteration)
 - `Xml` (parse/print, attributes, child iteration, parent links)
@@ -99,6 +100,8 @@ Top-level:
 - `haxe.Constraints` (official stdlib fallback for compile-time `Function` and `IMap` constraints; `IMap` values cross the runtime boundary through `Reflaxe.Elixir.IMap`)
 - `haxe.DynamicAccess` (Reflect-backed dynamic maps)
 - `haxe.EntryPoint` (intentionally unsupported Haxe process main-loop bridge; use `elixir.otp.Application`, `elixir.otp.Supervisor`, and `elixir.otp.TypeSafeChildSpec` for OTP lifecycle/supervision, `phoenix.*` modules and annotations for Phoenix callbacks, or `sys.thread.EventLoop`/`haxe.Timer` for callback scheduling)
+- `haxe.EnumFlags` (official abstract fallback; dynamic flag operations use typed `Type.enumIndex` lowering backed by generated enum metadata)
+- `haxe.EnumTools` (official extern inline fallback; typed constructor/name/index/equality helpers lower through generated enum metadata)
 - `haxe.Http`
 - `haxe.Int64` (signed 64-bit wrapping semantics on BEAM integers)
 - `haxe.Int64Helper`
@@ -354,6 +357,8 @@ Most of the remaining Haxe stdlib is used as-is from the installed Haxe toolchai
 In practice, this works well for:
 
 - pure functional-ish code (pattern matching, enums, maps, arrays)
+- typed enum helper code that goes through `haxe.EnumTools`, `haxe.EnumValueTools`,
+  `haxe.EnumFlags`, or `Type.enum*` with a statically known enum type
 - many `haxe.*` utilities that don’t rely on target-specific host APIs
 
 If a given upstream std module produces invalid/non-idiomatic Elixir, it becomes a candidate for an override.

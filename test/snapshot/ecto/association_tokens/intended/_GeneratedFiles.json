@@ -8,6 +8,7 @@
   "my_app/user.ex",
   "my_app/post.ex",
   "main.ex",
+  "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/exceptions/pos_exception.ex",
   "haxe/exceptions/not_implemented_exception.ex",

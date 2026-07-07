@@ -10,6 +10,7 @@
   "reflaxe/elixir/haxe_float.ex",
   "main.ex",
   "int_iterator.ex",
+  "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/io/bytes.ex",
   "haxe/int64_helper.ex",

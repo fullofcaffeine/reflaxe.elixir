@@ -9,5 +9,14 @@ defmodule PosException do
       end
     %__MODULE__{message: message, previous: previous, native: nil, stack: [], pos_infos: pos_infos}
   end
-  def to_string(struct), do: "#{Kernel.to_string(struct.message)} in #{struct.pos_infos.className}.#{struct.pos_infos.methodName} at #{struct.pos_infos.fileName}:#{struct.pos_infos.lineNumber}"
+  defp pos_field(pos_infos, camel_key, snake_key) do
+    Map.get(pos_infos, camel_key) || Map.get(pos_infos, snake_key)
+  end
+  def to_string(struct) do
+    class_name = pos_field(struct.pos_infos, :className, :class_name)
+    method_name = pos_field(struct.pos_infos, :methodName, :method_name)
+    file_name = pos_field(struct.pos_infos, :fileName, :file_name)
+    line_number = pos_field(struct.pos_infos, :lineNumber, :line_number)
+    "#{Kernel.to_string(struct.message)} in #{class_name}.#{method_name} at #{file_name}:#{line_number}"
+  end
 end

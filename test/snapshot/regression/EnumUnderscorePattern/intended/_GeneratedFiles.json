@@ -7,6 +7,7 @@
   "reflaxe/elixir/haxe_float.ex",
   "main.ex",
   "http_status.ex",
+  "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/_call_stack/call_stack_impl_.ex"
 ],

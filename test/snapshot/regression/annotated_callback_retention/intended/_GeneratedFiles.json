@@ -5,6 +5,7 @@
   "reflaxe/elixir/haxe_float.ex",
   "my_app_web/telemetry.ex",
   "my_app/application.ex",
+  "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "elixir/otp/supervisor_strategy.ex",
   "elixir/otp/shutdown_type.ex",

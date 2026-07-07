@@ -8,6 +8,7 @@
   "option.ex",
   "message.ex",
   "main.ex",
+  "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/_call_stack/call_stack_impl_.ex",
   "bulk_action.ex"

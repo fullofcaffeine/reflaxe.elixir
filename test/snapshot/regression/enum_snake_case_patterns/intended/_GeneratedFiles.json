@@ -8,6 +8,7 @@
   "pub_sub_topic.ex",
   "pub_sub_message.ex",
   "main.ex",
+  "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/_call_stack/call_stack_impl_.ex",
   "complex_naming.ex"
