@@ -31,6 +31,29 @@ Phoenix coverage:
 
 - `examples/todo-app` pins Phoenix `~> 1.7.0` and is exercised via the QA sentinel workflow (boot + Playwright smoke).
 
+## Haxe 5 preview strategy
+
+Haxe `5.x` is treated as a preview toolchain for this repository. The CI source of truth remains Haxe `4.3.7`; Haxe 5 is available through a local smoke command:
+
+```bash
+npm run test:haxe5
+```
+
+That smoke switches Lix to `HAXE5_VERSION` (default: `nightly`), restores the previous `.haxerc` afterward, then runs:
+
+- snapshot compilation with `COMPARE_INTENDED=0`
+- generated Elixir syntax validation
+- `npm run test:mix-fast`
+
+Snapshot intended-output diffs are intentionally disabled for Haxe 5. Haxe 5 can produce different typed AST / `TypedExpr` shapes for equivalent source programs, and those differences can cascade into harmless generated-output ordering or helper-shape drift. Until Haxe 5 becomes part of the supported CI matrix, this repo should not maintain a separate Haxe 5 `intended/` baseline or normalize Haxe 5-only diffs in the compiler pipeline.
+
+The policy is:
+
+- Haxe `4.3.7` snapshots are the golden generated-output contract.
+- Haxe 5 preview validation proves the compiler still accepts the suite and emits parseable Elixir.
+- If a Haxe 5 run exposes a semantic bug, fix the shared compiler behavior and cover it with the normal Haxe `4.3.7` snapshot/runtime suites when possible.
+- Revisit separate Haxe 5 baselines only when Haxe 5 is stable enough to become a CI-supported toolchain.
+
 ## Minimum versions (documented)
 
 These are the minimum versions we **document**:
@@ -44,6 +67,6 @@ If you need support for a specific older version, open an issue and include your
 ## What is *not* tested (yet)
 
 - Phoenix `1.6.x` and earlier
-- Haxe `5.x` (intentionally deferred; not part of the current CI contract)
+- Haxe `5.x` in CI (local preview smoke only; see the Haxe 5 preview strategy above)
 
 If you run successfully on other versions, please report it so we can expand the matrix.
