@@ -119,6 +119,10 @@ class StdlibParityTest extends TestCase {
 		return Std.string(left) + ":" + Std.string(right);
 	}
 
+	static function callConstraintFunction(fn:haxe.Constraints.Function, left:Int, right:Int):Int {
+		return cast Reflect.callMethod(null, fn, [left, right]);
+	}
+
 	static function throwPortableNan():Void {
 		throw Math.NaN;
 	}
@@ -492,6 +496,28 @@ class StdlibParityTest extends TestCase {
 		} catch (error:NotImplementedException) {
 			Assert.equals("not yet", error.message);
 		}
+	}
+
+	@:describe("haxe.Constraints upstream fallback")
+	@:test
+	function testConstraintsFunctionAliasCallMethod():Void {
+		var fn:haxe.Constraints.Function = function(left:Int, right:Int):Int {
+			return left + right;
+		};
+
+		Assert.equals(7, callConstraintFunction(fn, 3, 4));
+	}
+
+	@:describe("haxe.Constraints upstream fallback")
+	@:test
+	function testConstraintsIMapAliasUsesTargetRuntimeBoundary():Void {
+		var nativeMap:haxe.Constraints.IMap<String, Int> = cast untyped __elixir__('%{"one" => 1, "two" => 2}');
+		var pairs:Array<{key:String, value:Int}> = IMapRuntime.unwrap(nativeMap);
+		var seenPairs = [pairToString(pairs[0]), pairToString(pairs[1])];
+
+		Assert.equals(2, pairs.length);
+		Assert.contains(seenPairs, "one:1");
+		Assert.contains(seenPairs, "two:2");
 	}
 
 	@:describe("haxe.ds.ArraySort target override")

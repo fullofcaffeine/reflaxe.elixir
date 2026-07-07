@@ -30,6 +30,7 @@
     {"module": "Xml", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; XML coverage is maintained by target tests."},
 
     {"module": "haxe.CallStack", "status": "enabled", "source": "haxe/CallStack.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/CallStack.unit.hx"},
+    {"module": "haxe.Constraints", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged for compile-time Function/IMap constraints, and local Haxe-authored ExUnit tests cover Function calls plus IMap values crossing through the Reflaxe.Elixir.IMap runtime boundary."},
     {"module": "haxe.DynamicAccess", "status": "adapted", "source": "haxe/DynamicAccess.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/DynamicAccess.unit.hx", "reason": "Upstream membership expressions (`value in array`) are expanded to explicit `t(value == a || value == b || ...)` assertions for the Haxe parser used by this checked-in fixture harness."},
     {"module": "haxe.Http", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is target/sys integration specific."},
     {"module": "haxe.Int64", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests."},

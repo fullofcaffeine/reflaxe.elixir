@@ -96,6 +96,7 @@ Top-level:
 
 `haxe.*`:
 - `haxe.CallStack` (BEAM stack capture/formatting)
+- `haxe.Constraints` (official stdlib fallback for compile-time `Function` and `IMap` constraints; `IMap` values cross the runtime boundary through `Reflaxe.Elixir.IMap`)
 - `haxe.DynamicAccess` (Reflect-backed dynamic maps)
 - `haxe.Http`
 - `haxe.Int64` (signed 64-bit wrapping semantics on BEAM integers)
