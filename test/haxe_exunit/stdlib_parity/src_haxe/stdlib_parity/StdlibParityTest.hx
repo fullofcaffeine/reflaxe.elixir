@@ -173,6 +173,17 @@ class StdlibParityTest extends TestCase {
 		return Std.string(left) + ":" + Std.string(right);
 	}
 
+	static function sumUntilNegative(values:Array<Int>):Int {
+		var total = 0;
+		for (value in values) {
+			if (value < 0) {
+				return -1;
+			}
+			total += value;
+		}
+		return total;
+	}
+
 	static function callConstraintFunction(fn:haxe.Constraints.Function, left:Int, right:Int):Int {
 		return cast Reflect.callMethod(null, fn, [left, right]);
 	}
@@ -353,6 +364,13 @@ class StdlibParityTest extends TestCase {
 		Assert.equals(2, counter);
 		Assert.equals("2:3", pairIntInt(counter++, counter));
 		Assert.equals(3, counter);
+	}
+
+	@:describe("Haxe loop return semantics")
+	@:test
+	function testReturnInsideAccumulatorLoopExitsEnclosingFunction():Void {
+		Assert.equals(6, sumUntilNegative([1, 2, 3]));
+		Assert.equals(-1, sumUntilNegative([1, -2, 3]));
 	}
 
 	@:describe("Haxe Float special values")

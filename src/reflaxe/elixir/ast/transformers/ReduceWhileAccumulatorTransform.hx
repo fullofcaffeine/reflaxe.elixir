@@ -46,6 +46,8 @@ using reflaxe.elixir.ast.ElixirASTTransformer;
  */
 @:nullSafety(Off)
 class ReduceWhileAccumulatorTransform {
+	static inline var CONTINUE_TAG:ElixirAtom = ElixirAtom.raw("__reflaxe_continue__");
+
 	/**
 	 * Main transformation pass for fixing reduce_while accumulators
 	 */
@@ -145,22 +147,23 @@ class ReduceWhileAccumulatorTransform {
 
 		// Usually pattern is [_, {var1, var2, ...}] for reduce_while
 		if (args.length >= 2) {
-			switch (args[1]) {
-				case PTuple(patterns):
-					for (p in patterns) {
-						switch (p) {
-							case PVar(name):
-								varNames.push(name);
-							default:
-						}
-					}
-				case PVar(name):
-					varNames.push(name);
-				default:
-			}
+			collectAccumulatorPatternVars(args[1], varNames);
 		}
 
 		return varNames;
+	}
+
+	static function collectAccumulatorPatternVars(pattern:EPattern, out:Array<String>):Void {
+		switch (pattern) {
+			case PTuple([PLiteral(tag), payload]) if (isContinueTagAst(tag)):
+				collectAccumulatorPatternVars(payload, out);
+			case PTuple(patterns):
+				for (p in patterns)
+					collectAccumulatorPatternVars(p, out);
+			case PVar(name):
+				out.push(name);
+			default:
+		}
 	}
 
 	/**
@@ -337,6 +340,25 @@ class ReduceWhileAccumulatorTransform {
 				return makeAST(EIf(condition, transformedThen, transformedElse));
 
 			case ECase(expr, branches):
+				var caseHasReturnTuple = false;
+				for (branch in branches) {
+					if (containsReturnTuple(branch.body)) {
+						caseHasReturnTuple = true;
+						break;
+					}
+				}
+				if (caseHasReturnTuple) {
+					var transformedBranches = [];
+					for (branch in branches) {
+						transformedBranches.push({
+							pattern: branch.pattern,
+							guard: branch.guard,
+							body: transformBodyRecursive(branch.body, accVarNames, accUpdates.copy(), true, outerToAccAliases)
+						});
+					}
+					return makeAST(ECase(expr, transformedBranches));
+				}
+
 				// Handle case statements with accumulator updates
 				var hasAccAssignments = false;
 				var accVarName:String = null;
@@ -604,9 +626,10 @@ class ReduceWhileAccumulatorTransform {
 		if (accVarNames == null || accVarNames.length == 0)
 			return out;
 
-		var elems:Array<ElixirAST> = switch (initialAcc.def) {
+		var initialPayload = unwrapContinueState(initialAcc);
+		var elems:Array<ElixirAST> = switch (initialPayload.def) {
 			case ETuple(items): items;
-			default: [initialAcc];
+			default: [initialPayload];
 		};
 		if (elems == null || elems.length != accVarNames.length)
 			return out;
@@ -627,6 +650,26 @@ class ReduceWhileAccumulatorTransform {
 		return out;
 	}
 
+	static function unwrapContinueState(ast:ElixirAST):ElixirAST {
+		if (ast == null || ast.def == null)
+			return ast;
+		return switch (ast.def) {
+			case ETuple([tag, payload]) if (isContinueTagAst(tag)):
+				payload;
+			default:
+				ast;
+		};
+	}
+
+	static function isContinueTagAst(ast:ElixirAST):Bool {
+		if (ast == null || ast.def == null)
+			return false;
+		return switch (ast.def) {
+			case EAtom(v): v == CONTINUE_TAG;
+			default: false;
+		};
+	}
+
 	/**
 	 * Apply accumulator updates to the return tuple
 	 */
@@ -643,6 +686,9 @@ class ReduceWhileAccumulatorTransform {
 		}
 
 		switch (accTuple.def) {
+			case ETuple([tag, payload]) if (isContinueTagAst(tag)):
+				return makeAST(ETuple([tag, applyAccumulatorUpdates(payload, varNames, updates)]));
+
 			case ETuple(elements):
 				// Update tuple elements
 				var newElements = [];
@@ -720,6 +766,12 @@ class ReduceWhileAccumulatorTransform {
 					return true;
 				if (elseBranch != null && containsReturnTuple(elseBranch))
 					return true;
+
+			case ECase(_, branches):
+				for (branch in branches) {
+					if (containsReturnTuple(branch.body))
+						return true;
+				}
 
 			default:
 		}

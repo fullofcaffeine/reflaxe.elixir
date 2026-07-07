@@ -8,9 +8,7 @@
   "main.ex",
   "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
-  "haxe/functional/result_tools.ex",
-  "haxe/_call_stack/call_stack_impl_.ex",
-  "array_tools.ex"
+  "haxe/_call_stack/call_stack_impl_.ex"
 ],
   "id": 0,
   "wasCached": false,

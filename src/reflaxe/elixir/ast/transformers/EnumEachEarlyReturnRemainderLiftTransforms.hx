@@ -64,6 +64,7 @@ private typedef EnumEachEarlyReturnTerminalCase = {
  */
 class EnumEachEarlyReturnRemainderLiftTransforms {
 	static inline var RETURN_TAG:ElixirAtom = ElixirAtom.raw("__reflaxe_return__");
+	static inline var CONTINUE_TAG:ElixirAtom = ElixirAtom.raw("__reflaxe_continue__");
 
 	public static function pass(ast:ElixirAST):ElixirAST {
 		return ElixirASTTransformer.transformNode(ast, function(node:ElixirAST):ElixirAST {
@@ -123,7 +124,7 @@ class EnumEachEarlyReturnRemainderLiftTransforms {
 			return null;
 
 		// Direct case expression statement
-		if (isReturnTaggedCase(stmt) && caseWildcardIsNil(stmt)) {
+		if (isReturnTaggedCase(stmt) && caseHasNilFallthrough(stmt)) {
 			return {
 				caseExpr: stmt,
 				rebuild: patched -> patched
@@ -150,7 +151,7 @@ class EnumEachEarlyReturnRemainderLiftTransforms {
 			return null;
 
 		var lastStmt = stmts[lastIndex];
-		if (!isReturnTaggedCase(lastStmt) || !caseWildcardIsNil(lastStmt))
+		if (!isReturnTaggedCase(lastStmt) || !caseHasNilFallthrough(lastStmt))
 			return null;
 
 		return {
@@ -200,18 +201,31 @@ class EnumEachEarlyReturnRemainderLiftTransforms {
 		};
 	}
 
-	static function caseWildcardIsNil(expr:ElixirAST):Bool {
+	static function caseHasNilFallthrough(expr:ElixirAST):Bool {
 		var core = unwrapParens(expr);
 		return switch (core.def) {
 			case ECase(_scrut, clauses) if (clauses != null):
 				for (clause in clauses) {
-					switch (clause.pattern) {
-						case PWildcard:
-							return isImplicitNil(clause.body);
-						default:
+					if (isFallthroughPattern(clause.pattern)) {
+						if (implicitNilPrefix(clause.body) != null)
+							return true;
 					}
 				}
 				false;
+			default:
+				false;
+		};
+	}
+
+	static function isFallthroughPattern(pattern:EPattern):Bool {
+		return switch (pattern) {
+			case PWildcard:
+				true;
+			case PTuple([PLiteral(lit), _]) if (lit != null && lit.def != null):
+				switch (lit.def) {
+					case EAtom(v): v == CONTINUE_TAG;
+					default: false;
+				}
 			default:
 				false;
 		};
@@ -242,8 +256,10 @@ class EnumEachEarlyReturnRemainderLiftTransforms {
 				var newClauses = [];
 				var changed = false;
 				for (clause in clauses) {
-					if (clause.pattern == PWildcard && isImplicitNil(clause.body)) {
-						newClauses.push({pattern: clause.pattern, guard: clause.guard, body: elseExpr});
+					var prefix = implicitNilPrefix(clause.body);
+					if (isFallthroughPattern(clause.pattern) && prefix != null) {
+						var body = prefix.length == 0 ? elseExpr : makeAST(EBlock(prefix.concat([elseExpr])));
+						newClauses.push({pattern: clause.pattern, guard: clause.guard, body: body});
 						changed = true;
 					} else {
 						newClauses.push(clause);
@@ -280,13 +296,37 @@ class EnumEachEarlyReturnRemainderLiftTransforms {
 	}
 
 	static function isImplicitNil(expr:ElixirAST):Bool {
+		return implicitNilPrefix(expr) != null;
+	}
+
+	static function implicitNilPrefix(expr:ElixirAST):Null<Array<ElixirAST>> {
 		if (expr == null || expr.def == null)
-			return true;
+			return [];
 		return switch (expr.def) {
-			case ENil: true;
-			case EBlock(stmts) if (stmts == null || stmts.length == 0): true;
-			case EDo(stmts2) if (stmts2 == null || stmts2.length == 0): true;
-			default: false;
+			case ENil:
+				[];
+			case EBlock(stmts) if (stmts == null || stmts.length == 0):
+				[];
+			case EBlock(stmts):
+				var last = stmts[stmts.length - 1];
+				switch (last.def) {
+					case ENil:
+						stmts.slice(0, stmts.length - 1);
+					default:
+						null;
+				}
+			case EDo(doStmts) if (doStmts == null || doStmts.length == 0):
+				[];
+			case EDo(doStmts):
+				var lastDoStmt = doStmts[doStmts.length - 1];
+				switch (lastDoStmt.def) {
+					case ENil:
+						doStmts.slice(0, doStmts.length - 1);
+					default:
+						null;
+				}
+			default:
+				null;
 		};
 	}
 

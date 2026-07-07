@@ -106,6 +106,8 @@ enum LoopTransform {
 class LoopBuilder {
 	// Confidence threshold for using new emission vs legacy
 	static inline var CONFIDENCE_THRESHOLD = 0.7;
+	static inline var RETURN_TAG:ElixirAtom = ElixirAtom.raw("__reflaxe_return__");
+	static inline var CONTINUE_TAG:ElixirAtom = ElixirAtom.raw("__reflaxe_continue__");
 
 	public static function containsNonLocalReturn(body:TypedExpr):Bool {
 		var found = false;
@@ -1854,6 +1856,11 @@ class LoopBuilder {
 
 		var iteratorPattern:EPattern = mentionsIterator(transformedBody) ? PVar(snakeIterator) : PWildcard;
 
+		if (containsNonLocalReturn(body)) {
+			return buildReturnAwareAccumulationLoop(source, initialValue, transformedBody, iteratorPattern, snakeAccum, snakeAccumInReducer, initializations,
+				toSnakeCase);
+		}
+
 		var reduceCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [
 			source,
 			initialValue,
@@ -1874,6 +1881,235 @@ class LoopBuilder {
 
 		// Wrap with any additional initializations
 		return wrapWithInitializations(reduceAst, initializations, toSnakeCase);
+	}
+
+	/**
+	 * Emit Enum.reduce_while for accumulator loops that contain source-level `return`.
+	 *
+	 * WHAT
+	 * - Converts a reducer body that may contain `metadata.fromReturn` expressions into a
+	 *   reduce_while body returning either `{:cont, {:__reflaxe_continue__, acc}}` or
+	 *   `{:halt, {:__reflaxe_return__, value}}`.
+	 * - Wraps the reduce_while result in a case so the enclosing Haxe function receives the
+	 *   returned value, while the no-return path rebinds the accumulator and continues.
+	 *
+	 * WHY
+	 * - Haxe `return` inside a `for` loop exits the enclosing function.
+	 * - Accumulator loops lower to anonymous reducer functions; a bare return value inside
+	 *   that lambda only returns from the lambda and is then discarded by the outer function.
+	 *
+	 * HOW
+	 * - Tag the reduce_while state as `{:__reflaxe_continue__, acc}` so zero-iteration loops
+	 *   have the same result shape as continuing iterations.
+	 * - Rewrite return-origin branches to `{:halt, {:__reflaxe_return__, value}}`.
+	 * - Rewrite normal terminal expressions to `{:cont, {:__reflaxe_continue__, value}}`.
+	 */
+	static function buildReturnAwareAccumulationLoop(source:ElixirAST, initialValue:ElixirAST, transformedBody:ElixirAST, iteratorPattern:EPattern,
+			snakeAccum:String, snakeAccumInReducer:String, initializations:Map<String, ElixirAST>, toSnakeCase:String->String):ElixirAST {
+		var taggedInitial = makeContinueState(initialValue);
+		var reducerBody = rewriteReducerBodyForReturnCarrier(transformedBody, makeAST(EVar(snakeAccumInReducer)), PVar(snakeAccumInReducer));
+
+		var reduceWhileCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce_while", [
+			source,
+			taggedInitial,
+			makeAST(EFn([
+				{
+					args: [
+						iteratorPattern,
+						PTuple([PLiteral(makeAST(EAtom(CONTINUE_TAG))), PVar(snakeAccumInReducer)])
+					],
+					body: reducerBody
+				}
+			]))
+		]));
+
+		var returnVarName = "reflaxe_return_value";
+		var continueFallthrough = makeContinueFallthrough(PVar(snakeAccum));
+		var caseExpr = makeAST(ECase(reduceWhileCall, [
+			{
+				pattern: PTuple([PLiteral(makeAST(EAtom(RETURN_TAG))), PVar(returnVarName)]),
+				guard: null,
+				body: makeAST(EVar(returnVarName))
+			},
+			{
+				pattern: PTuple([PLiteral(makeAST(EAtom(CONTINUE_TAG))), continueFallthrough.pattern]),
+				guard: null,
+				body: continueFallthrough.body
+			}
+		]));
+
+		return wrapWithInitializations(caseExpr, initializations, toSnakeCase);
+	}
+
+	static function makeContinueFallthrough(originalPattern:EPattern):{pattern:EPattern, body:ElixirAST} {
+		var fresh = freshenContinuePattern(originalPattern);
+		var rebind = patternValue(fresh.pattern) != null ? makeAST(EMatch(originalPattern, patternValue(fresh.pattern))) : null;
+		return {
+			pattern: fresh.pattern,
+			body: rebind == null ? makeAST(ENil) : makeAST(EBlock([rebind, makeAST(ENil)]))
+		};
+	}
+
+	static function freshenContinuePattern(pattern:EPattern):{pattern:EPattern} {
+		return switch (pattern) {
+			case PVar(name):
+				{pattern: PVar(makeContinueTempName(name))};
+			case PTuple(parts):
+				{pattern: PTuple([for (part in parts) freshenContinuePattern(part).pattern])};
+			default:
+				{pattern: pattern};
+		};
+	}
+
+	static function patternValue(pattern:EPattern):Null<ElixirAST> {
+		return switch (pattern) {
+			case PVar(name):
+				makeAST(EVar(name));
+			case PTuple(parts):
+				var values:Array<ElixirAST> = [];
+				for (part in parts) {
+					var value = patternValue(part);
+					if (value == null)
+						return null;
+					values.push(value);
+				}
+				makeAST(ETuple(values));
+			default:
+				null;
+		};
+	}
+
+	static function makeContinueTempName(name:String):String {
+		var base = name == null ? "" : name;
+		while (base.length > 0 && base.charAt(0) == "_")
+			base = base.substr(1);
+		if (base.length == 0)
+			base = "value";
+		return 'reflaxe_continue_${base}';
+	}
+
+	static inline function makeHaltReturn(value:ElixirAST):ElixirAST {
+		return makeAST(ETuple([
+			makeAST(EAtom(ElixirAtom.raw("halt"))),
+			makeAST(ETuple([makeAST(EAtom(RETURN_TAG)), value]))
+		]));
+	}
+
+	static inline function makeCont(value:ElixirAST):ElixirAST {
+		return makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("cont"))), makeContinueState(value)]));
+	}
+
+	static inline function makeContinueState(value:ElixirAST):ElixirAST {
+		return makeAST(ETuple([makeAST(EAtom(CONTINUE_TAG)), value]));
+	}
+
+	static function isFromReturnAst(ast:ElixirAST):Bool {
+		return ast != null && ast.metadata != null && ast.metadata.fromReturn == true;
+	}
+
+	static function subtreeContainsFromReturnAst(ast:ElixirAST):Bool {
+		if (ast == null || ast.def == null)
+			return false;
+		if (isFromReturnAst(ast))
+			return true;
+		var found = false;
+		ElixirASTTransformer.iterateAST(ast, function(child:ElixirAST):Void {
+			if (!found && subtreeContainsFromReturnAst(child))
+				found = true;
+		});
+		return found;
+	}
+
+	static function rewriteReducerBodyForReturnCarrier(body:ElixirAST, continueValue:ElixirAST, continuePattern:EPattern):ElixirAST {
+		if (body == null)
+			return makeCont(continueValue);
+
+		return switch (body.def) {
+			case EBlock(stmts):
+				rewriteReducerStatementSequence(stmts, continueValue, continuePattern);
+			case EDo(stmts):
+				rewriteReducerStatementSequence(stmts, continueValue, continuePattern);
+			default:
+				rewriteReducerTerminalForCarrier(body, continueValue, continuePattern);
+		};
+	}
+
+	static function rewriteReducerStatementSequence(stmts:Array<ElixirAST>, continueValue:ElixirAST, continuePattern:EPattern):ElixirAST {
+		if (stmts == null || stmts.length == 0)
+			return makeCont(continueValue);
+
+		function rewriteFrom(index:Int):ElixirAST {
+			if (index >= stmts.length)
+				return makeCont(continueValue);
+
+			var stmt = stmts[index];
+			var last = index == stmts.length - 1;
+
+			if (last)
+				return rewriteReducerTerminalForCarrier(stmt, continueValue, continuePattern);
+
+			if (subtreeContainsFromReturnAst(stmt)) {
+				var carrierStmt = rewriteReducerTerminalForCarrier(stmt, continueValue, continuePattern);
+				return makeAST(ECase(carrierStmt, [
+					{
+						pattern: PTuple([PLiteral(makeAST(EAtom(ElixirAtom.raw("halt")))), PVar("reflaxe_halt_payload")]),
+						guard: null,
+						body: makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("halt"))), makeAST(EVar("reflaxe_halt_payload"))]))
+					},
+					{
+						pattern: PTuple([
+							PLiteral(makeAST(EAtom(ElixirAtom.raw("cont")))),
+							PTuple([PLiteral(makeAST(EAtom(CONTINUE_TAG))), continuePattern])
+						]),
+						guard: null,
+						body: rewriteFrom(index + 1)
+					}
+				]));
+			}
+
+			return makeAST(EBlock([stmt, rewriteFrom(index + 1)]));
+		}
+
+		return rewriteFrom(0);
+	}
+
+	static function rewriteReducerTerminalForCarrier(expr:ElixirAST, continueValue:ElixirAST, continuePattern:EPattern):ElixirAST {
+		if (expr == null)
+			return makeCont(continueValue);
+		if (isFromReturnAst(expr))
+			return makeHaltReturn(expr);
+
+		return switch (expr.def) {
+			case EBlock(stmts):
+				rewriteReducerStatementSequence(stmts, continueValue, continuePattern);
+			case EDo(stmts):
+				rewriteReducerStatementSequence(stmts, continueValue, continuePattern);
+			case EIf(condition, thenBranch, elseBranch):
+				makeASTWithMeta(EIf(condition, rewriteReducerTerminalForCarrier(thenBranch, continueValue, continuePattern),
+					elseBranch != null ? rewriteReducerTerminalForCarrier(elseBranch, continueValue, continuePattern) : makeCont(continueValue)),
+					expr.metadata, expr.pos);
+			case EUnless(condition, body, elseBranch):
+				makeASTWithMeta(EUnless(condition, rewriteReducerTerminalForCarrier(body, continueValue, continuePattern),
+					elseBranch != null ? rewriteReducerTerminalForCarrier(elseBranch, continueValue, continuePattern) : makeCont(continueValue)),
+					expr.metadata, expr.pos);
+			case ECase(scrutinee, clauses):
+				makeASTWithMeta(ECase(scrutinee, [
+					for (clause in clauses)
+						{
+							pattern: clause.pattern,
+							guard: clause.guard,
+							body: rewriteReducerTerminalForCarrier(clause.body, continueValue, continuePattern)
+						}
+				]), expr.metadata, expr.pos);
+			case EMatch(_, _):
+				makeAST(EBlock([expr, makeCont(continueValue)]));
+			case EBinary(Match, _, _):
+				makeAST(EBlock([expr, makeCont(continueValue)]));
+			case EReceiverEffect(_):
+				makeAST(EBlock([expr, makeCont(continueValue)]));
+			default:
+				makeCont(expr);
+		};
 	}
 
 	/**
@@ -2507,7 +2743,37 @@ class LoopBuilder {
 				};
 			}
 
-			var reducerBody = ensureReturnsState(compiledBody, stateReturn);
+			var statefulBody = ensureReturnsState(compiledBody, stateReturn);
+			var bodyContainsReturn = containsNonLocalReturn(forInArrayPattern.userBody);
+			var reducerBody = bodyContainsReturn ? rewriteReducerBodyForReturnCarrier(statefulBody, stateReturn, statePattern) : statefulBody;
+
+			if (bodyContainsReturn) {
+				var reduceWhileCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce_while", [
+					arrayExpr,
+					makeContinueState(initialState),
+					makeAST(EFn([
+						{
+							args: [PVar(binderName), PTuple([PLiteral(makeAST(EAtom(CONTINUE_TAG))), statePattern])],
+							guard: null,
+							body: reducerBody
+						}
+					]))
+				]));
+				var continueFallthrough = makeContinueFallthrough(outerBindPattern);
+
+				return ECase(reduceWhileCall, [
+					{
+						pattern: PTuple([PLiteral(makeAST(EAtom(RETURN_TAG))), PVar("reflaxe_return_value")]),
+						guard: null,
+						body: makeAST(EVar("reflaxe_return_value"))
+					},
+					{
+						pattern: PTuple([PLiteral(makeAST(EAtom(CONTINUE_TAG))), continueFallthrough.pattern]),
+						guard: null,
+						body: continueFallthrough.body
+					}
+				]);
+			}
 
 			var reduceCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [
 				arrayExpr,
@@ -3062,7 +3328,37 @@ class LoopBuilder {
 			};
 		}
 
-		var reducerBody = ensureReturnsState(compiledBody, stateReturn);
+		var statefulBody = ensureReturnsState(compiledBody, stateReturn);
+		var bodyContainsReturn = containsNonLocalReturn(bodyInfo.userCode);
+		var reducerBody = bodyContainsReturn ? rewriteReducerBodyForReturnCarrier(statefulBody, stateReturn, statePattern) : statefulBody;
+
+		if (bodyContainsReturn) {
+			var reduceWhileCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce_while", [
+				rangeAst,
+				makeContinueState(initialState),
+				makeAST(EFn([
+					{
+						args: [PVar(binderName), PTuple([PLiteral(makeAST(EAtom(CONTINUE_TAG))), statePattern])],
+						guard: null,
+						body: reducerBody
+					}
+				]))
+			]));
+			var continueFallthrough = makeContinueFallthrough(outerBindPattern);
+
+			return ECase(reduceWhileCall, [
+				{
+					pattern: PTuple([PLiteral(makeAST(EAtom(RETURN_TAG))), PVar("reflaxe_return_value")]),
+					guard: null,
+					body: makeAST(EVar("reflaxe_return_value"))
+				},
+				{
+					pattern: PTuple([PLiteral(makeAST(EAtom(CONTINUE_TAG))), continueFallthrough.pattern]),
+					guard: null,
+					body: continueFallthrough.body
+				}
+			]);
+		}
 
 		var reduceCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [
 			rangeAst,
