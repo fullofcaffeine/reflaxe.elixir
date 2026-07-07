@@ -46,6 +46,13 @@ To update the expected error output:
 - **Location**: `test/snapshot/negative/router_dsl_missing_params_contract/`
 - **Purpose**: Ensures typed `RouterDsl.*` routes with path params require `paramsContract`.
 
+### Haxe lifecycle bridge validations
+- **Location**: `test/snapshot/negative/entry_point_unsupported/`
+- **Location**: `test/snapshot/negative/entry_point_static_field_unsupported/`
+- **Location**: `test/snapshot/negative/main_loop_unsupported/`
+- **Location**: `test/snapshot/negative/main_loop_static_field_unsupported/`
+- **Purpose**: Ensures Haxe target-owned process main-loop bridges fail fast with BEAM lifecycle guidance.
+
 ### LiveEvent protocol validations
 - **Location**: `test/snapshot/negative/live_event_protocol_unsupported_payload/`
 - **Purpose**: Ensures shared LiveView event protocols reject unsafe payload types such as `Dynamic`.

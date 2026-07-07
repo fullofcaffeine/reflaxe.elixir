@@ -106,6 +106,7 @@ Top-level:
 - `haxe.Int64` (signed 64-bit wrapping semantics on BEAM integers)
 - `haxe.Int64Helper`
 - `haxe.Log`
+- `haxe.MainLoop` (intentionally unsupported Haxe process main-loop/event queue bridge; use `elixir.otp.Application`, `elixir.otp.Supervisor`, and `elixir.otp.TypeSafeChildSpec` for OTP lifecycle/supervision, `phoenix.*` modules and annotations for Phoenix callbacks, or `sys.thread.EventLoop`/`haxe.Timer` for callback scheduling)
 - `haxe.Serializer` (portable data subset)
 - `haxe.Template` (portable rendering subset)
 - `haxe.Timer` (BEAM event-loop backed delay/repeat, callback rebinding, stamp/measure)
@@ -319,7 +320,7 @@ Thread pools are BEAM-shaped:
 - `ElasticThreadPool` spawns per task while bounding concurrency with `Semaphore`; `threadsCount` reports `0` because workers are not retained as an OS-thread pool.
 
 Unsupported pieces fail explicitly:
-- `haxe.EntryPoint` is not a BEAM application lifecycle primitive. Direct output-code calls or static field reads fail at compile time. Use `elixir.otp.Application`, `elixir.otp.Supervisor`, and `elixir.otp.TypeSafeChildSpec` for OTP lifecycle/supervision, `phoenix.*` modules and annotations for Phoenix callbacks, or `sys.thread.EventLoop`/`haxe.Timer` for callback scheduling instead.
+- `haxe.EntryPoint` and `haxe.MainLoop` are not BEAM application lifecycle primitives. Direct output-code calls or static field reads fail at compile time. Use `elixir.otp.Application`, `elixir.otp.Supervisor`, and `elixir.otp.TypeSafeChildSpec` for OTP lifecycle/supervision, `phoenix.*` modules and annotations for Phoenix callbacks, or `sys.thread.EventLoop`/`haxe.Timer` for callback scheduling instead.
 - `Condition.wait`, `signal`, and `broadcast` are not implemented because POSIX condition-variable semantics depend on shared-memory mutation. Use `Thread` messages, `Deque`, `Lock`, or `Semaphore` instead.
 
 ## Additional modules shipped under `std/` (not part of upstream std)

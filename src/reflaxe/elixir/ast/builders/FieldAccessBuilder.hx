@@ -181,6 +181,10 @@ class FieldAccessBuilder {
 			context.error(haxeEntryPointUnsupportedMessage(), e.pos);
 			return ENil;
 		}
+		if (isHaxeMainLoop(classType)) {
+			context.error(haxeMainLoopUnsupportedMessage(), e.pos);
+			return ENil;
+		}
 
 		// Check if this is an enum abstract field that should be an atom
 		var isAtomField = false;
@@ -510,8 +514,19 @@ class FieldAccessBuilder {
 		return classType != null && classType.name == "EntryPoint" && classType.pack != null && classType.pack.join(".") == "haxe";
 	}
 
+	static function isHaxeMainLoop(classType:ClassType):Bool {
+		return classType != null && classType.name == "MainLoop" && classType.pack != null && classType.pack.join(".") == "haxe";
+	}
+
 	static function haxeEntryPointUnsupportedMessage():String {
-		return "haxe.EntryPoint is not supported on the Elixir target: it is Haxe's process main-loop bridge and assumes target-owned sleep/thread scheduling. "
+		return
+			"haxe.EntryPoint and haxe.MainLoop are not supported on the Elixir target: they are Haxe's process main-loop bridges and assume target-owned sleep/thread scheduling. "
+			+ "Use elixir.otp.Application, elixir.otp.Supervisor, and elixir.otp.TypeSafeChildSpec for OTP lifecycle/supervision, "
+			+ "phoenix.* modules and annotations for Phoenix callbacks, or sys.thread.EventLoop/haxe.Timer for callback scheduling instead.";
+	}
+
+	static function haxeMainLoopUnsupportedMessage():String {
+		return "haxe.MainLoop is not supported on the Elixir target: it is Haxe's process main-loop/event queue bridge and depends on target-owned scheduling. "
 			+ "Use elixir.otp.Application, elixir.otp.Supervisor, and elixir.otp.TypeSafeChildSpec for OTP lifecycle/supervision, "
 			+ "phoenix.* modules and annotations for Phoenix callbacks, or sys.thread.EventLoop/haxe.Timer for callback scheduling instead.";
 	}
