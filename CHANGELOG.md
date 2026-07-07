@@ -1,3 +1,10 @@
+## [0.14.17](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.16...v0.14.17) (2026-07-07)
+
+
+### Bug Fixes
+
+* **compiler:** preserve returns in reducer loops ([ed55f98](https://github.com/fullofcaffeine/reflaxe.elixir/commit/ed55f98d66b14fbcdcb47ded7fdf11e3eca041e0))
+
 ## [0.14.16](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.15...v0.14.16) (2026-07-07)
 
 
