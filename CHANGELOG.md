@@ -1,3 +1,10 @@
+## [0.14.15](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.14...v0.14.15) (2026-07-07)
+
+
+### Bug Fixes
+
+* **stdlib:** reject haxe main loop on elixir ([8ed620c](https://github.com/fullofcaffeine/reflaxe.elixir/commit/8ed620c5cc5147bafd7da72b96f084776f667872))
+
 ## [0.14.14](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.13...v0.14.14) (2026-07-07)
 
 
