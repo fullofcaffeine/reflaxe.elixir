@@ -1,6 +1,7 @@
 -cp .
 -cp ../../../src
 -cp ../../../std
+-cp ../../../std/elixir/_std
 -lib reflaxe
 -main Main
 --macro reflaxe.elixir.OptimizationTestCompiler.Start()

@@ -20,12 +20,13 @@
  *    that doesn't work well with abstracts wrapping different underlying types.
  * 
  * 2. **Classpath Override Strategy**: We achieve cross-platform compatibility through
- *    classpath precedence (`-cp std` in compilation). Our Date.cross.hx is picked up
- *    automatically when compiling for Elixir, overriding the default Date.
+ *    classpath precedence (`std/elixir/_std` before the upstream stdlib). Our Date.hx
+ *    override is picked up automatically when compiling for Elixir, replacing the
+ *    default Date.
  * 
- * 3. **The .cross.hx Pattern**: This is Haxe's standard pattern for platform-specific
- *    implementations. Files with .cross.hx suffix provide platform-specific versions
- *    while maintaining the same public API.
+ * 3. **The Reflaxe `_std` Pattern**: Source overrides live under `std/elixir/_std`
+ *    as plain `.hx` files. Reflaxe package builds can publish them as `.cross.hx`
+ *    files while maintaining the same public API.
  * 
  * 4. **Flexibility for Extensions**: Without @:coreApi constraints, we can add
  *    Elixir-specific methods (add, diff, compare, format) that enhance the API

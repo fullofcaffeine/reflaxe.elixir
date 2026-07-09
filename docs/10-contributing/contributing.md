@@ -234,8 +234,9 @@ temporary haxelib repo and compiling through `-lib reflaxe.elixir`.
 npm run test:haxelib-package
 ```
 
-This keeps `extraParams.hxml`, `std/` direct `.cross.hx` overrides, vendored Reflaxe staging, and
-official Haxe stdlib fallback honest for future haxelib.org publishing.
+This keeps `extraParams.hxml`, Reflaxe-flattened `.cross.hx` package output from
+`std/elixir/_std/`, target-owned `std/` APIs, vendored Reflaxe/Phoenix shared staging, and official
+Haxe stdlib fallback honest for future haxelib.org publishing.
 
 Separately, a scheduled CI workflow (**README Release Smoke (scheduled)**) validates the
 “install from GitHub Release tag” path stays working without making PR CI flaky.

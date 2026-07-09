@@ -7,8 +7,8 @@ Terminology note: older discussions sometimes say "staging" for this mechanism. 
 read that as **prepending package directories to Haxe's active classpath**. It does not mean copying
 files, renaming files, or creating a generated package tree during a normal compile.
 
-For the historical reason this repo does not use the generated Reflaxe skeleton `_std` +
-`haxelib run reflaxe build` layout, see
+For the historical reason this repo now uses the generated Reflaxe skeleton `_std` source layout
+while still supporting GitHub/Lix installs directly from the source tree, see
 `docs/09-history/REFLAXE_LAYOUT_AND_PACKAGING_HISTORY.md`.
 
 It answers four questions:
@@ -44,22 +44,25 @@ The word `cross` is easy to misread. Here it means Haxe's generic **custom-targe
 not "portable across every Haxe target". Reflaxe.Elixir uses that platform because Elixir is not
 a built-in Haxe compiler target with its own suffix such as `.js.hx`, `.cpp.hx`, or `.python.hx`.
 
-This repo places these files under `std/` so they can shadow upstream Haxe stdlib modules by
-**classpath precedence** when (and only when) the Elixir target is active.
+In this source tree, upstream-colliding Elixir stdlib overrides are authored as plain `.hx` files
+under `std/elixir/_std/**`. Reflaxe package builds turn those authored files into packaged
+`.cross.hx` files. Repo-local and GitHub/Lix builds do not copy files during compilation; instead,
+bootstrap prepends `std/elixir/_std/` only for Elixir builds, so those plain `.hx` overrides shadow
+upstream Haxe stdlib modules by **classpath precedence**.
 
-Classpath precedence is not an all-or-nothing stdlib replacement. `std/` is searched before the
-official Haxe stdlib, but only modules that actually exist in this repo shadow upstream modules. If
-there is no `std/path/Module.cross.hx` or `std/path/Module.hx`, Haxe keeps searching later classpaths
-and resolves the module from the installed official Haxe stdlib. That is the intended fallback path
-for upstream stdlib code that already compiles and behaves correctly on BEAM.
+Classpath precedence is not an all-or-nothing stdlib replacement. `std/elixir/_std/` is searched
+before the official Haxe stdlib for Elixir builds, but only modules that actually exist in this repo
+shadow upstream modules. If there is no `std/elixir/_std/path/Module.hx`, Haxe keeps searching later
+classpaths and resolves the module from the installed official Haxe stdlib. That is the intended
+fallback path for upstream stdlib code that already compiles and behaves correctly on BEAM.
 
 Important distinction:
 
 - Haxe owns the target-specific file lookup rule.
-- Reflaxe owns the custom target framework and, in generated Reflaxe projects, provides a packaging
-  helper that can copy/rename target std files into `.cross.hx` form for distribution.
-- Reflaxe.Elixir currently keeps its `.cross.hx` overrides checked in directly under `std/` and uses
-  bootstrap macros to put that path on the classpath for Elixir builds.
+- Reflaxe owns the custom target framework and provides the packaging helper that copies configured
+  `_std` source roots into `.cross.hx` form for distribution.
+- Reflaxe.Elixir now follows that authored-source convention for stdlib overrides while still using
+  bootstrap macros to put the source root on the classpath for source-tree/GitHub/Lix builds.
 
 ### How to verify which file was selected
 
@@ -71,8 +74,8 @@ npx haxe -v --no-output <your.hxml>
 
 In an Elixir build, you should see things like:
 
-- `Parsed .../std/Std.cross.hx`
-- `Parsed .../std/StringTools.cross.hx` (and other `.cross.hx` overrides that apply)
+- `Parsed .../std/elixir/_std/Std.hx`
+- `Parsed .../std/elixir/_std/StringTools.hx` (and other authored std overrides that apply)
 - `Parsed .../src/haxe/Exception.cross.hx` (early-resolved override needed before bootstrap can inject `std/`)
 
 Note: some upstream Haxe stdlib modules may still appear as `Parsed .../std/<module>.hx` before
@@ -83,7 +86,7 @@ Macro typing uses a different platform (eval), so it will *not* select `.cross.h
 Seeing a later `Parsed .../haxe/std/.../Module.hx` line is expected for modules we intentionally
 leave to upstream fallback.
 
-## 2) Upstream Reflaxe `build` packaging vs this repo
+## 2) Upstream Reflaxe `build` packaging and this repo
 
 Upstream Reflaxe projects generated with `haxelib run reflaxe new` usually have multiple source
 roots: compiler sources plus one or more std/API roots listed in `haxelib.json` under
@@ -94,37 +97,42 @@ the single haxelib `classPath`. For std paths whose folder name ends in `_std`, 
 files with a `.cross.hx` extension so the published package exposes target-specific overrides on
 Haxe's normal target-file mechanism.
 
-Reflaxe.Elixir does not rely on that copy/rename step for normal repo, Lix, or generated-app builds:
+Reflaxe.Elixir follows that source convention for upstream-colliding stdlib overrides:
 
-- checked-in target overrides already use `.cross.hx` where appropriate
-- `extraParams.hxml` and `haxe_libraries/reflaxe.elixir.hxml` invoke our bootstrap/init macros
-- `CompilerBootstrap.Start()` prepends `std/` to the active Haxe classpath for Elixir builds
+- authored std overrides live in `std/elixir/_std/**/*.hx`
+- target-owned APIs and support modules live in `std/**/*.hx`
+- `extraParams.hxml` and `haxe_libraries/reflaxe.elixir.hxml` invoke bootstrap/init macros
+- `CompilerBootstrap.Start()` prepends `std/elixir/_std/`, then `std/`, to the active Haxe classpath
+  for Elixir builds
 
-The upstream Reflaxe `_std` convention is packaging input only. This repo does not keep a live
-`std/_std` source root; direct `.cross.hx` files under `std/` are the source of truth.
+The Reflaxe `_std` convention is still packaging input. Normal repo, GitHub-tag, and Lix builds do
+not run `haxelib run reflaxe build` before each compile; bootstrap makes the authored `_std` files
+visible directly. A Reflaxe package build can still materialize packaged `.cross.hx` files from the
+same authored source.
 
-Keeping the `.cross.hx` files checked in is intentional for this repo. It keeps the reviewed source,
-the compiled source, source maps, snapshots, and GitHub-tag Lix installs aligned. It also makes the
-override boundary explicit: true upstream Haxe replacements use `.cross.hx`; target-owned APIs such as
-`phoenix.*`, `ecto.*`, and `elixir.*` remain plain `.hx` files.
+This keeps the source tree close to a fresh Reflaxe target while preserving source-tree installs and
+the explicit ownership boundary: upstream Haxe replacements live under `_std`; target-owned APIs such
+as `phoenix.*`, `ecto.*`, and `elixir.*` remain plain `.hx` files under `std/`.
 
-Haxelib can support this direct layout. `haxelib.json` can keep `classPath` pointed at `src`, while
+Haxelib can support this source layout. `haxelib.json` can keep `classPath` pointed at `src`, while
 `extraParams.hxml` at the package root contributes bootstrap macros when users compile with
-`-lib reflaxe.elixir`. Those macros can then add sibling paths such as `std/` from the installed
-package root to the active classpath.
+`-lib reflaxe.elixir`. Those macros can then add sibling paths such as `std/elixir/_std/` and `std/`
+from the installed package root to the active classpath.
 
-The package artifact path is covered by `npm run test:haxelib-package`, which builds a zip from the
-tracked source, installs it with `haxelib install <zip>` in a clean temporary project, and proves the
-installed package includes `extraParams.hxml`, `std/`, and `vendor/reflaxe/src`. The same smoke compiles
-through `-lib reflaxe.elixir` so target classpath insertion is tested from the installed package root.
+The package artifact path is covered by `npm run test:haxelib-package`, which runs
+`scripts/release/package-haxelib.sh`, installs the generated zip with `haxelib install <zip>` in a
+clean temporary project, and proves the installed package has the Reflaxe-flattened layout:
+`stdPaths` are merged into `src/`, `_std` overrides appear as packaged `.cross.hx` files, and vendored
+framework roots remain available beside `src/`. The same smoke compiles through `-lib reflaxe.elixir`
+so target classpath insertion is tested from the installed package root.
 
 ### Would the Reflaxe skeleton build path need these bootstrap macros?
 
 It depends on what the target package needs.
 
 A simple skeleton-style Reflaxe target may not need a separate classpath-insertion bootstrap macro just
-to expose target std overrides, because `haxelib run reflaxe build` copies configured `_std` files into
-the published `classPath` as `.cross.hx` files.
+to expose target std overrides from a generated haxelib package, because `haxelib run reflaxe build`
+copies configured `_std` files into the published `classPath` as `.cross.hx` files.
 
 It still needs some way to initialize the compiler. Reflaxe targets usually do that with an init macro
 from `extraParams.hxml` or from the user's `.hxml`, because Reflaxe must be told which compiler to run
@@ -134,7 +142,8 @@ Reflaxe.Elixir keeps `CompilerBootstrap.Start()` because our package has extra c
 basic skeleton:
 
 - `haxelib.json` exposes only `src` as the initial package `classPath`
-- `std/` is a sibling package directory that must be added from the installed package root
+- `std/elixir/_std/` and `std/` are source-tree/GitHub/Lix roots that must be added from the installed
+  source package root when the package has not been flattened by Reflaxe build
 - stdlib overrides must be inserted before the official Haxe stdlib in classpath order
 - `vendor/reflaxe/src` must be visible for the patched vendored Reflaxe framework
 
@@ -177,12 +186,12 @@ It:
 - prepends `vendor/reflaxe/src` so consumers use the patched vendored Reflaxe framework
 - detects Elixir builds using `-D elixir_output`, Haxe 5 custom target metadata, or Haxe 4 `cross`
   platform fallback
-- for Elixir builds, prepends `std/`
+- for Elixir builds, prepends `std/elixir/_std/`, then `std/`
 - inserts these paths at the front of the classpath so our overrides win over the official Haxe stdlib
 
-Plain English version: after bootstrap runs, Haxe looks in this package's `std/` directory before it
-looks in the installed Haxe stdlib. If a module exists locally, the local module wins for that
-compile. If it does not exist locally, Haxe keeps searching and uses the official stdlib module.
+Plain English version: after bootstrap runs, Haxe looks in this package's Elixir std override root
+before it looks in the installed Haxe stdlib. If a module exists locally, the local module wins for
+that compile. If it does not exist locally, Haxe keeps searching and uses the official stdlib module.
 
 `CompilerInit.Start()` is the compiler-registration macro.
 
@@ -211,7 +220,7 @@ output:
   `haxe_libraries/reflaxe.elixir.hxml` also invokes `CompilerBootstrap.Start()` so local builds
   behave like consumer installs (stdlib overrides are present early).
 - Those macros detect an Elixir build (Haxe 4: `-D elixir_output=...`; Haxe 5: custom target)
-  and then add `std/` (externs + `.cross.hx` overrides).
+  and then add `std/elixir/_std/` (authored std overrides) plus `std/` (target-owned APIs/support).
 
 Important detail (Haxe 4 / `cross`)
 - Reflaxe targets compile under the `cross` platform on Haxe 4.
@@ -222,8 +231,8 @@ Important detail (Haxe 4 / `cross`)
 
 ### Why `elixir_output` shows up inside some `.cross.hx` files
 
-Most target-specific code is hidden from other contexts by classpath gating (`std/` is added to the
-active classpath only for Elixir builds). However, a small set of overrides must live on the library `src/` classpath
+Most target-specific code is hidden from other contexts by classpath gating (`std/elixir/_std/` and
+`std/` are added to the active classpath only for Elixir builds). However, a small set of overrides must live on the library `src/` classpath
 so consumer installs resolve them *before* bootstrap macros run (example: `src/haxe/Exception.cross.hx`).
 
 Because `src/` is visible in more situations (tools, JS/genes builds, etc.), those early overrides often use:
@@ -242,9 +251,10 @@ More context: `docs/05-architecture/TARGET_CONDITIONAL_STDLIB_GATING.md`.
 
 ## 6) Practical guidance (when adding/adjusting stdlib)
 
-- Prefer `std/**/*.cross.hx` when you are replacing a well-known Haxe API with an idiomatic Elixir mapping.
-- Keep plain `std/**/*.hx` for target-owned APIs/support modules and documented exceptions; do not rename
-  everything just because it lives under `std/`.
+- Prefer `std/elixir/_std/**/*.hx` when you are replacing a well-known Haxe API with an idiomatic
+  Elixir mapping. Reflaxe build turns these authored files into packaged `.cross.hx` files.
+- Keep plain `std/**/*.hx` for target-owned APIs/support modules and documented exceptions; do not put
+  upstream-colliding stdlib replacements directly under `std/`.
 - Leave a module absent from local `std/` when upstream Haxe stdlib is already the right implementation;
   track that decision with tests/docs instead of copying the upstream source.
 - Do not add repo-level classpaths like `../../std` to JS/genes builds; use `-lib` and library-provided hxml instead.

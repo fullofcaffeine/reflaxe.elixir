@@ -123,7 +123,7 @@ Common recipes:
 ## 3) Don’t use `untyped` / `__elixir__()` in applications
 
 `untyped __elixir__()` is reserved for:
-- Standard library implementations (`std/*.cross.hx`, framework shims)
+- Standard library implementations (`std/elixir/_std/**/*.hx`, framework shims)
 - Compiler/macro internals
 
 In apps, prefer:

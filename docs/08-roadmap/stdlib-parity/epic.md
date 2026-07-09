@@ -24,7 +24,7 @@ This is why we treat “Map parity” as a first-class workstream: it is the hig
 
 Related work:
 - Iterator + `IMap` runtime canonicalization (task `haxe.elixir-hm47.23`):
-  - canonical iterator runtime now lives in `std/haxe/iterators/*.cross.hx` for array, map key/value, and string iterator surfaces
+  - canonical iterator runtime now lives in `std/elixir/_std/haxe/iterators/*.hx` for array, map key/value, and string iterator surfaces
   - transformer iterator fallback was removed; iterator behavior is owned by stdlib/runtime modules
   - map representation decision: built-in `Map`/`StringMap`/`IntMap` are native `%{}` backed on Elixir; `ObjectMap` identity semantics and parity tests are tracked as follow-ups
 
@@ -52,12 +52,13 @@ Related work:
 
 ## Root Layout (source of truth)
 
-Most stdlib overrides live under `std/` and are injected only for Elixir builds via bootstrap macros.
+Most stdlib overrides live under `std/elixir/_std/` and are injected only for Elixir builds via bootstrap macros.
 However, a small subset of overrides may need to be visible **before** bootstrap runs in consumer
 installs (because Haxe resolves some std modules very early).
 
 Local roots considered by the gap report:
-- `std/` — `.cross.hx` stdlib overrides + extern surfaces
+- `std/elixir/_std/` — authored Elixir stdlib overrides; packaged Reflaxe builds can materialize them as `.cross.hx`
+- `std/` — target-owned extern/support surfaces
 - `src/haxe/` — early-resolved overrides needed by consumer installs (example: `haxe.Exception`)
 
 ## Definition of Done (incremental)
@@ -272,7 +273,7 @@ For each module/cluster task:
 - Classification: upstream fallback vs BEAM-specific override vs unsupported/fail-fast.
 - Reference: link to `haxe.compilerdev.reference` source file(s) used.
 - Implementation:
-  - `std/**/*.cross.hx` vs target-owned plain `std/**/*.hx` vs `src/haxe/**/*.cross.hx` (if early-resolved)
+  - `std/elixir/_std/**/*.hx` vs target-owned plain `std/**/*.hx` vs `src/haxe/**/*.cross.hx` (if early-resolved)
   - any compiler transforms required (shape-driven; no app-specific heuristics)
 - Tests:
   - Snapshot(s) updated/added (list)
@@ -321,6 +322,6 @@ Suggested repomix inputs (edit per module):
 - `docs/03-compiler-development/CROSS_FILES_STAGING_MECHANISM.md`
 - `src/reflaxe/elixir/CompilerBootstrap.hx`
 - `src/reflaxe/elixir/CompilerInit.hx`
-- `std/<Module>.cross.hx` (or `src/haxe/<Module>.cross.hx`)
+- `std/elixir/_std/<Module>.hx` (or `src/haxe/<Module>.cross.hx`)
 - `test/snapshot/**` cases relevant to the module
 - `docs/02-user-guide/exunit-testing.md`

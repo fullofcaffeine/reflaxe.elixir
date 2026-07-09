@@ -151,6 +151,32 @@ This patch is **absolutely necessary** and represents **best-practice defensive 
 
 This isn't a "hack" or "workaround" - it's **proper defensive programming** against an upstream bug that we cannot fix at its source.
 
+### 2. Reflaxe Build Root-File Copy Fix
+
+**Files Modified:**
+- `Run.hx` - Defensive fix in `copyDirContent()`
+
+**Bug Description:**
+The upstream Reflaxe `build` command copies `classPath` and `stdPaths` into a package build
+directory, flattening `_std` source roots into packaged `.cross.hx` files. If the source classpath
+contains files directly at its root, such as this repo's `src/Run.hx`, the copy helper can attempt to
+copy the file before creating the destination classpath directory:
+
+```text
+Uncaught exception .../_Build/src/Run.hx: No such file or directory
+```
+
+**Fix Implementation:**
+- Create the destination directory before walking a source directory.
+- Create each copied file's parent directory before `File.copy`.
+
+**Impact:**
+- Enables `scripts/release/package-haxelib.sh` to delegate package flattening to Reflaxe's own build
+  command.
+- Preserves the generated Reflaxe package convention where `std/elixir/_std/**/*.hx` becomes
+  packaged `src/**/*.cross.hx`.
+- Does not change compiler output or target semantics.
+
 ## Upstream Contribution Status
 
 **Goal:** Contribute these fixes back to the main Reflaxe project.
@@ -197,6 +223,7 @@ Once the fixes are merged and released in an official Reflaxe version:
 ```
 vendor/reflaxe/
 ├── PATCHES.md                     # This file
+├── Run.hx                         # Vendored Reflaxe build/new/test runner
 └── src/
     └── reflaxe/
         ├── BaseCompiler.hx

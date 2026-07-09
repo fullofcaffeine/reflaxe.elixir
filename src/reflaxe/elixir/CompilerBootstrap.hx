@@ -27,8 +27,10 @@ import sys.io.File;
  * - Invoked first from `extraParams.hxml`.
  * - If the current compilation appears to be an Elixir build (`-D elixir_output` or custom target),
  *   compute the library root from this file’s resolved path and add:
- *   - `std/` (Phoenix/Ecto/etc externs + `.cross.hx` stdlib overrides)
+ *   - `std/elixir/_std/` (source-layout Haxe stdlib overrides)
+ *   - `std/` (Phoenix/Ecto/etc externs + target-owned support APIs)
  *   - `vendor/reflaxe/src` (vendored Reflaxe framework)
+ *   - `vendor/phoenix_shared/src` (shared Phoenix channel/LiveEvent protocol types)
  *
  * EXAMPLES
  * Haxe build.hxml:
@@ -110,8 +112,21 @@ class CompilerBootstrap {
 		return false;
 	}
 
-	static function injectClassPathsFirst(paths:Array<String>):Void {
+	static function existingClassPaths(paths:Array<String>):Array<String> {
 		if (paths == null || paths.length == 0)
+			return [];
+
+		var existing:Array<String> = [];
+		for (p in paths) {
+			if (p != null && p.length > 0 && FileSystem.exists(p))
+				existing.push(p);
+		}
+		return existing;
+	}
+
+	static function injectClassPathsFirst(paths:Array<String>):Void {
+		paths = existingClassPaths(paths);
+		if (paths.length == 0)
 			return;
 
 		var config = Compiler.getConfiguration();
@@ -224,16 +239,22 @@ class CompilerBootstrap {
 			var libraryRoot = Path.directory(srcDir); // .../
 
 			var vendoredReflaxe = Path.normalize(Path.join([libraryRoot, "vendor", "reflaxe", "src"]));
+			var vendoredPhoenixShared = Path.normalize(Path.join([libraryRoot, "vendor", "phoenix_shared", "src"]));
+			if (FileSystem.exists(vendoredPhoenixShared))
+				Compiler.define("phoenix_shared", "0.1.0");
 
 			if (!shouldInjectStd) {
-				injectClassPathsFirst([vendoredReflaxe]);
+				injectClassPathsFirst([vendoredReflaxe, vendoredPhoenixShared]);
 				return;
 			}
 
-			// Inject `std/` early so target-owned externs and `.cross.hx` overrides win over the
-			// canonical Haxe stdlib before `CompilerInit` and other macro modules are typed.
+			// Inject source-layout `_std` overrides before `std/` so upstream-colliding Haxe
+			// modules win over the canonical stdlib before `CompilerInit` and other macro
+			// modules are typed. Reflaxe package builds later flatten this `_std` root into
+			// packaged `.cross.hx` files.
+			var targetStdOverrides = Path.normalize(Path.join([libraryRoot, "std", "elixir", "_std"]));
 			var standardLibrary = Path.normalize(Path.join([libraryRoot, "std"]));
-			injectClassPathsFirst([standardLibrary, vendoredReflaxe]);
+			injectClassPathsFirst([targetStdOverrides, standardLibrary, vendoredReflaxe, vendoredPhoenixShared]);
 		} catch (e:haxe.Exception) {
 			// If resolvePath fails in certain contexts, skip silently (non-Elixir targets)
 		}

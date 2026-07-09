@@ -1,6 +1,7 @@
 -cp .
 -cp ../../../../src
 -cp ../../../../std
+-cp ../../../../std/elixir/_std
 -lib reflaxe
 -lib reflaxe.elixir
 --no-output

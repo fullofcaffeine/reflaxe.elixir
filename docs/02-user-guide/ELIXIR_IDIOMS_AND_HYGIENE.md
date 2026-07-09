@@ -195,7 +195,7 @@ These shapes are intentionally “Elixir-native”:
 - `array.filter(f)` → `Enum.filter(array, f)`
 - `array.contains(x)` → `Enum.member?(array, x)`
 
-This is implemented in `std/Array.cross.hx` and is designed to read like hand-written Elixir.
+This is implemented in `std/elixir/_std/Array.hx` and is designed to read like hand-written Elixir.
 
 ### Anonymous structures are maps (atom keys)
 

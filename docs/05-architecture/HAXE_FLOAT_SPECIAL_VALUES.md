@@ -173,9 +173,9 @@ guard-safe rewrite exists.
 
 The implementation must update these source-of-truth areas:
 
-- `std/Math.cross.hx`: runtime-backed special constants and Math functions.
-- `std/Std.cross.hx`: `parseFloat`, `string`, and type checks.
-- `std/Type.cross.hx`: `Type.typeof` must classify HaxeFloat before generic
+- `std/elixir/_std/Math.hx`: runtime-backed special constants and Math functions.
+- `std/elixir/_std/Std.hx`: `parseFloat`, `string`, and type checks.
+- `std/elixir/_std/Type.hx`: `Type.typeof` must classify HaxeFloat before generic
   tuples/enums.
 - `src/reflaxe/elixir/ElixirTyper.hx`: Haxe `Float` typespecs should include native
   numbers plus the tagged special tuple. Today this is emitted as an inline union

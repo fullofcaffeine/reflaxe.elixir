@@ -37,12 +37,24 @@ def module_id_from_relpath(rel: Path) -> str:
     return name.replace("/", ".")
 
 
-def collect_std_modules(std_root: Path, allow_cross: bool):
+def collect_std_modules(std_root: Path, allow_cross: bool, exclude_roots=()):
     modules = set()
     suffixes = [".hx"] + ([".cross.hx"] if allow_cross else [])
+    excluded = []
+    for root in exclude_roots:
+        try:
+            excluded.append(root.resolve())
+        except FileNotFoundError:
+            continue
 
     for file in std_root.rglob("*"):
         if not file.is_file():
+            continue
+        try:
+            resolved_file = file.resolve()
+        except FileNotFoundError:
+            continue
+        if any(root == resolved_file or root in resolved_file.parents for root in excluded):
             continue
         if not any(str(file).endswith(suffix) for suffix in suffixes):
             continue
@@ -101,12 +113,15 @@ expected_local_only = sorted(report["diff"]["local_only"]["modules"])
 reference_modules = set(expected_intersection) | set(expected_reference_only)
 
 local_std_root = root_dir / "std"
+local_elixir_std_override_root = root_dir / "std" / "elixir" / "_std"
 local_src_haxe_root = root_dir / "src" / "haxe"
 local_src_sys_root = root_dir / "src" / "sys"
 
 local_candidates = set()
 if local_std_root.exists():
-    local_candidates |= collect_std_modules(local_std_root, allow_cross=True)
+    local_candidates |= collect_std_modules(local_std_root, allow_cross=True, exclude_roots=[local_elixir_std_override_root])
+if local_elixir_std_override_root.exists():
+    local_candidates |= collect_std_modules(local_elixir_std_override_root, allow_cross=False)
 local_candidates |= collect_prefixed_modules("haxe", local_src_haxe_root, allow_cross=True)
 local_candidates |= collect_prefixed_modules("sys", local_src_sys_root, allow_cross=True)
 

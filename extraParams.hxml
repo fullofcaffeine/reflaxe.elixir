@@ -7,8 +7,12 @@
 # - Do not add relative classpaths like `-cp src` or `-cp std` here: those would
 #   be resolved relative to the *consumer project*, not this library.
 #
-# Bootstraps the target by registering the compiler and injecting any
-# target-conditional classpaths (e.g. std overrides) in a macro-safe way.
+# Bootstraps the target after Haxe has resolved the library classpath.
+# Source-checkout std override paths must be supplied before typing via
+# haxe_libraries/reflaxe.elixir.hxml or direct repo-local hxml files; macros in
+# this file run too late to guarantee ownership of every upstream-colliding std
+# module. Reflaxe package builds flatten std/elixir/_std into packaged
+# .cross.hx files, so installed consumers only need `-lib reflaxe.elixir`.
 --macro reflaxe.elixir.CompilerBootstrap.Start()
 --macro reflaxe.elixir.CompilerInit.Start()
 

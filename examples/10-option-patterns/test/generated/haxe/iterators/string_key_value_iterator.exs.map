@@ -5,6 +5,6 @@
   "version": 3,
   "file": "string_key_value_iterator.exs",
   "sources": [
-  "std/haxe/iterators/StringKeyValueIterator.cross.hx"
+  "std/elixir/_std/haxe/iterators/StringKeyValueIterator.hx"
 ]
 }

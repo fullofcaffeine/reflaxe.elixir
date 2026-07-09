@@ -1,4 +1,5 @@
 -cp ../../../std
+-cp ../../../std/elixir/_std
 -lib reflaxe
 -cp ../../../src
 --macro reflaxe.elixir.CompilerInit.Start()

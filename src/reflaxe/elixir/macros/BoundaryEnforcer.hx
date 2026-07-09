@@ -29,7 +29,7 @@ import haxe.macro.TypedExprTools;
  *   var now = untyped __elixir__("DateTime.utc_now()");
  *
  * Allowed (framework/stdlib code):
- *   // `std/*.cross.hx` may use `untyped __elixir__()` for native stdlib implementations.
+ *   // std/elixir/_std override sources may use `untyped __elixir__()` for native stdlib implementations.
  *
  * Allowed (example app boundary module):
  *   @:repo extern class Repo {}

@@ -696,7 +696,7 @@ class CallExprBuilder {
 						var methodName = cf.get().name;
 
 						// ------------------------------------------------------------
-						// String instance methods (extern declarations in std/String.cross.hx)
+						// String instance methods (extern declarations in std/elixir/_std/String.hx)
 						//
 						// WHY:
 						// - Elixir has no `obj.method()` dispatch. Emitting ECall for String
@@ -1730,7 +1730,7 @@ class CallExprBuilder {
 								context) : effectiveReceiverVarName(receiverLocal, objExpr, context);
 							var positionFile = Context.getPosInfos(args[0].pos).file;
 							var isDynamicAccessReceiver = positionFile != null
-								&& StringTools.replace(positionFile, "\\", "/").indexOf("std/haxe/DynamicAccess.cross.hx") >= 0;
+								&& StringTools.replace(positionFile, "\\", "/").indexOf("std/elixir/_std/haxe/DynamicAccess.hx") >= 0;
 							if (isDynamicAccessReceiver) {
 								var visibleReceiverName = effectiveReceiverVarName(null, objExpr, context);
 								if (visibleReceiverName != null)
@@ -1884,7 +1884,7 @@ class CallExprBuilder {
 								context) : effectiveReceiverVarName(receiverLocal, objExpr, context);
 							var positionFile = Context.getPosInfos(args[0].pos).file;
 							var isDynamicAccessReceiver = positionFile != null
-								&& StringTools.replace(positionFile, "\\", "/").indexOf("std/haxe/DynamicAccess.cross.hx") >= 0;
+								&& StringTools.replace(positionFile, "\\", "/").indexOf("std/elixir/_std/haxe/DynamicAccess.hx") >= 0;
 							if (isDynamicAccessReceiver) {
 								var visibleReceiverName = effectiveReceiverVarName(null, objExpr, context);
 								if (visibleReceiverName != null)

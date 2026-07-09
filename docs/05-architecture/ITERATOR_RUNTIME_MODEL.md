@@ -60,8 +60,8 @@ Some iterator modules intentionally keep the Haxe surface convention where `next
 
 The canonical iterator runtime is implemented in:
 
-- `std/haxe/iterators/ArrayIterator.cross.hx`
-- `std/haxe/iterators/MapKeyValueIterator.cross.hx`
+- `std/elixir/_std/haxe/iterators/ArrayIterator.hx`
+- `std/elixir/_std/haxe/iterators/MapKeyValueIterator.hx`
 
 Both iterators preserve stateful Haxe semantics by storing the current index in the **process dictionary**, keyed by a unique reference created at iterator construction time:
 
@@ -141,7 +141,7 @@ A future supported implementation needs explicit identity tokens or a wrapper ru
 
 ## Source-of-truth locations
 
-- Canonical runtime: `std/haxe/iterators/*.cross.hx`
+- Canonical runtime: `std/elixir/_std/haxe/iterators/*.hx`
 - Canonical `IMap` unwrap API: `std/reflaxe/elixir/IMap.hx`
 - `StdHaxeRuntimeOverrideTransforms` no longer owns iterator behavior. If iterator output regresses,
   fix the stdlib/runtime modules rather than adding transformer-side replacement blocks.

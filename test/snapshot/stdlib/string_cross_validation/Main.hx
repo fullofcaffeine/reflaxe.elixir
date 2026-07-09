@@ -2,7 +2,7 @@ package;
 
 class Main {
 	public static function main() {
-		// Test String.cross.hx methods
+		// Test String std override methods
 		var text = "Hello, World!";
 
 		// Test indexOf

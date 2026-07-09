@@ -2,6 +2,7 @@
 -cp .
 -cp ../../../src
 -cp ../../../std
+-cp ../../../std/elixir/_std
 -lib reflaxe
 -D reflaxe_runtime
 -D elixir_output=simple_out

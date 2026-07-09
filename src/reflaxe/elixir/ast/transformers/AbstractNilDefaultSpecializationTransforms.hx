@@ -26,7 +26,7 @@ typedef NilDefaultReplacement = {
  *     map = %{}
  *
  * WHY
- * - `haxe.ds.Map` is a multi-type abstract. When the target-owned `Map.cross.hx`
+ * - `haxe.ds.Map` is a multi-type abstract. When the target-owned `std/elixir/_std/Map.hx`
  *   is selected directly, Haxe can inline its specialization helper for
  *   `new Map()` as an absent source receiver (`t = nil`) followed by a default
  *   fallback. Keeping that helper shape produces noisier Elixir and can make an

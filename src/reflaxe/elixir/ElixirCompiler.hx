@@ -519,6 +519,8 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		if (file == null)
 			return false;
 		var normalized = file.split("\\").join("/");
+		if (normalized.indexOf("/std/elixir/_std/") != -1)
+			return true;
 		return normalized.indexOf("/std/") != -1
 			&& (StringTools.endsWith(normalized, ".cross.hx") || normalized.indexOf("/haxe/versions/") != -1);
 	}

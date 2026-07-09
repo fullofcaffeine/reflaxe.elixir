@@ -5,6 +5,6 @@
   "version": 3,
   "file": "int64_helper.exs",
   "sources": [
-  "std/haxe/Int64Helper.cross.hx"
+  "std/elixir/_std/haxe/Int64Helper.hx"
 ]
 }

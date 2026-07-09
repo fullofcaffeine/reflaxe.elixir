@@ -116,7 +116,7 @@ defmodule DateTools do
         end).())
       "y" ->
         StringTools.lpad(Reflaxe.Elixir.HaxeFloat.to_string(rem(d.year, 100)), "0", 2)
-      _ -> raise Reflaxe.Elixir.HaxeThrow, [value: NotImplementedException.new("Date.format %" <> e <> "- not implemented yet.", nil, %{file_name: "../../../../std/DateTools.cross.hx", line_number: 82, class_name: "DateTools", method_name: "__format_get"})]
+      _ -> raise Reflaxe.Elixir.HaxeThrow, [value: NotImplementedException.new("Date.format %" <> e <> "- not implemented yet.", nil, %{file_name: "../../../../std/elixir/_std/DateTools.hx", line_number: 82, class_name: "DateTools", method_name: "__format_get"})]
     end)
   end
   defp __format(d, f) do

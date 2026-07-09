@@ -10,13 +10,14 @@ roles of `extraParams.hxml`, `CompilerBootstrap.Start()`, and `CompilerInit.Star
 
 ## WHAT
 
-- Elixir-specific stdlib work in this repo lives under `std/`:
-  - `std/**/*.cross.hx`: target-specific overrides selected by Haxe when compiling in `cross` mode (Reflaxe targets on Haxe 4).
+- Elixir-specific stdlib work in this repo uses two source roots:
+  - `std/elixir/_std/**/*.hx`: authored target-specific overrides for upstream Haxe stdlib modules.
   - plain `std/**/*.hx`: target-owned APIs/support modules such as `elixir.*`, `phoenix.*`, and `ecto.*`.
 - Additionally, a tiny set of **bootstrap-safe overrides** live under `src/haxe/**`:
   - These are resolved *very early* (before bootstrap macros run) and must work in both macro/eval and target compilation.
   - Example: `src/haxe/ds/BalancedTree.hx`, `src/haxe/ds/EnumValueMap.hx`.
-- `std/` is added to the active Haxe classpath for Elixir builds by `CompilerBootstrap.Start()`.
+- `std/elixir/_std/` and `std/` are added to the active Haxe classpath for Elixir builds by
+  `CompilerBootstrap.Start()`.
 - Macro contexts and non-Elixir targets use the upstream Haxe stdlib (no `__elixir__()` leaks).
 
 ## WHY
@@ -54,10 +55,11 @@ var bootstrapPath = Context.resolvePath("reflaxe/elixir/CompilerBootstrap.hx");
 var libraryRoot = ...; // derived from the resolved installed package path
 
 var vendoredReflaxe = Path.normalize(Path.join([libraryRoot, "vendor", "reflaxe", "src"]));
+var targetStdOverrides = Path.normalize(Path.join([libraryRoot, "std", "elixir", "_std"]));
 var standardLibrary = Path.normalize(Path.join([libraryRoot, "std"]));
 
 if (isElixirBuild()) {
-  injectClassPathsFirst([standardLibrary, vendoredReflaxe]);
+  injectClassPathsFirst([targetStdOverrides, standardLibrary, vendoredReflaxe]);
 } else {
   injectClassPathsFirst([vendoredReflaxe]);
 }
@@ -68,13 +70,16 @@ must shadow the official Haxe stdlib in Elixir builds.
 
 ### Library configuration update
 
-- Kept `-cp ${SCOPE_DIR}/std/` for repo-local scoped-lib ergonomics; `CompilerBootstrap.Start()` still prepends the target paths for Elixir builds so ordering matches consumer installs.
+- Kept `-cp ${SCOPE_DIR}/std/` for repo-local scoped-lib ergonomics and added
+  `-cp ${SCOPE_DIR}/std/elixir/_std/` so source-tree builds see authored std overrides directly;
+  `CompilerBootstrap.Start()` still prepends the target paths for Elixir builds so ordering matches
+  consumer installs.
 - Added `--macro reflaxe.elixir.CompilerBootstrap.Start()` so repo-local scoped-lib builds get the same package-root classpath insertion behavior as consumer installs.
 - For the handful of modules that must be available before macros run, we place a bootstrap-safe dual-mode implementation under `src/`.
 
 ## Activation Scenarios
 
-Gating activates (i.e., `std/` is added to the active Haxe classpath) in these scenarios:
+Gating activates (i.e., `std/elixir/_std/` and `std/` are added to the active Haxe classpath) in these scenarios:
 
 - Haxe 5 + Elixir custom target:
   - `--macro reflaxe.elixir.CompilerInit.Start()` is present

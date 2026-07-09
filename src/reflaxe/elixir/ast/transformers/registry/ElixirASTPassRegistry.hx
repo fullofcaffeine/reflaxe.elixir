@@ -292,7 +292,7 @@ class ElixirASTPassRegistry {
 			pass: reflaxe.elixir.ast.transformers.ControlFlowStateHoistTransforms.pass
 		});
 
-		// String method rewrites are handled in String.cross.hx (generate idiomatic code directly).
+		// String method rewrites are handled in std/elixir/_std/String.hx (generate idiomatic code directly).
 
 		// Pipeline optimization pass
 		#if !disable_pipeline_optimization

@@ -51,9 +51,10 @@ scan_tree "src/" \
 
 # Standard library sources: we enforce the same No-Dynamic/No-Any policy for
 # app-facing std modules, while allowing known/required exceptions.
-scan_tree "std/ (excluding macro/cross/boundaries)" \
+scan_tree "std/ (excluding macro/stdlib-override/boundaries)" \
   std \
   --glob '!**/*.cross.hx' \
+  --glob '!std/elixir/_std/**' \
   --glob '!std/elixir/types/Term.hx' \
   --glob '!std/reflaxe/js/Unknown.hx' \
   --glob '!std/haxe/macro/**'

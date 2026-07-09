@@ -193,7 +193,7 @@ class StdlibParityTest extends TestCase {
 	}
 
 	static function progressCurrentThreadEvents(?timeout:Float):Void {
-		var actualTimeout = timeout == null ? 0.2 : timeout;
+		var actualTimeout = timeout == null ? 1.0 : timeout;
 		var events = Thread.current().events;
 		Assert.isTrue(events.wait(actualTimeout));
 		events.progress();

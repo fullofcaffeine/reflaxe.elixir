@@ -218,7 +218,7 @@ and `makeUtc`.
 - `sys.thread.Tls`
 
 Notes:
-- Iterator modules (`haxe.iterators.ArrayIterator`, `haxe.iterators.MapKeyValueIterator`, and the string iterator pair) now have canonical Elixir-target runtime implementations under `std/haxe/iterators/*.cross.hx` and are no longer transformer-only runtime stubs.
+- Iterator modules (`haxe.iterators.ArrayIterator`, `haxe.iterators.MapKeyValueIterator`, and the string iterator pair) now have canonical Elixir-target runtime implementations under `std/elixir/_std/haxe/iterators/*.hx` and are no longer transformer-only runtime stubs.
 - The AST pipeline still optimizes most loop patterns to idiomatic `Enum.*`; runtime iterators are primarily for manual iterator usage and stdlib/runtime compatibility.
 - `UnicodeString.validate` supports `UTF8`; UTF-16/UTF-32 validation fails fast because `haxe.io.Bytes` stores UTF-8 binaries on this target.
 - Built-in map surfaces (`haxe.ds.Map`, `StringMap`, `IntMap`) are represented as native Elixir `%{}` maps and lowered to idiomatic `Map.*` operations.

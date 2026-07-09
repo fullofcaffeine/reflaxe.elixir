@@ -83,7 +83,7 @@ import os
 import sys
 import datetime
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, Iterable, List, Set
 
 root_dir = Path(sys.argv[1])
 reference_input = Path(sys.argv[2])
@@ -118,12 +118,24 @@ def module_id_from_relpath(rel: Path) -> str:
     raise ValueError(f"Unexpected path (not .hx/.cross.hx): {rel}")
   return name.replace("/", ".")
 
-def collect_std_modules(std_root: Path, allow_cross: bool) -> Set[str]:
+def collect_std_modules(std_root: Path, allow_cross: bool, exclude_roots: Iterable[Path] = ()) -> Set[str]:
   modules: Set[str] = set()
   suffixes = [".hx"] + ([".cross.hx"] if allow_cross else [])
+  excluded = []
+  for root in exclude_roots:
+    try:
+      excluded.append(root.resolve())
+    except FileNotFoundError:
+      continue
 
   for file in std_root.rglob("*"):
     if not file.is_file():
+      continue
+    try:
+      resolved_file = file.resolve()
+    except FileNotFoundError:
+      continue
+    if any(root == resolved_file or root in resolved_file.parents for root in excluded):
       continue
     if not any(str(file).endswith(suf) for suf in suffixes):
       continue
@@ -165,19 +177,22 @@ reference_std = resolve_reference_std(reference_input)
 reference_modules = collect_std_modules(reference_std, allow_cross=False)
 
 local_std_root = root_dir / "std"
+local_elixir_std_override_root = root_dir / "std" / "elixir" / "_std"
 local_src_haxe_root = root_dir / "src" / "haxe"
 local_src_sys_root = root_dir / "src" / "sys"
 
 local_candidates = set()
 if local_std_root.exists():
-  local_candidates |= collect_std_modules(local_std_root, allow_cross=True)
+  local_candidates |= collect_std_modules(local_std_root, allow_cross=True, exclude_roots=[local_elixir_std_override_root])
+if local_elixir_std_override_root.exists():
+  local_candidates |= collect_std_modules(local_elixir_std_override_root, allow_cross=False)
 local_candidates |= collect_prefixed_modules("haxe", local_src_haxe_root, allow_cross=True)
 local_candidates |= collect_prefixed_modules("sys", local_src_sys_root, allow_cross=True)
 
 # Focus “coverage” on modules that are actually part of the reference stdlib, plus
 # any haxe.* / sys.* modules we ship (useful for parity planning).
 internal_local_modules = {
-  # BEAM implementation detail for std/haxe/Timer.cross.hx, not a public Haxe
+  # BEAM implementation detail for std/elixir/_std/haxe/TimerRuntime.hx, not a public Haxe
   # standard-library surface.
   "haxe.TimerRuntime",
 }
@@ -231,6 +246,7 @@ report = {
       rel
       for rel, path in [
         ("std", local_std_root),
+        ("std/elixir/_std", local_elixir_std_override_root),
         ("src/haxe", local_src_haxe_root),
         ("src/sys", local_src_sys_root),
       ]

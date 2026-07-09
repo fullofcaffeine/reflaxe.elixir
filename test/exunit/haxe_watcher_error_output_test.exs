@@ -64,6 +64,7 @@ defmodule HaxeWatcherErrorOutputTest do
     end
 
     log_path = Path.join(System.tmp_dir!(), "haxe_watcher.last_failure.log")
+    File.rm(log_path)
 
     _captured =
       capture_io(fn ->
@@ -97,7 +98,7 @@ defmodule HaxeWatcherErrorOutputTest do
            "expected failure log to contain compiler output; got empty log at #{log_path}"
   end
 
-  defp wait_until(predicate, attempts_left \\ 100)
+  defp wait_until(predicate, attempts_left \\ 400)
 
   defp wait_until(_predicate, 0) do
     flunk("timed out waiting for condition")

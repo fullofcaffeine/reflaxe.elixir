@@ -18,8 +18,13 @@
 # Include the compiler source code
 -cp ${SCOPE_DIR}/src/
 
-# Include Elixir target std definitions and direct .cross.hx overrides.
+# Include Elixir target std definitions and framework/API surfaces.
 -cp ${SCOPE_DIR}/std/
+
+# Include source-layout Elixir std overrides after std in hxml order so Haxe's
+# effective classpath resolves them first. Reflaxe package builds copy
+# std/elixir/_std/**/*.hx into packaged .cross.hx files.
+-cp ${SCOPE_DIR}/std/elixir/_std/
 
 # Shared cross-target Phoenix helpers (used by both JS + Elixir sides of Channels)
 -cp ${SCOPE_DIR}/vendor/phoenix_shared/src

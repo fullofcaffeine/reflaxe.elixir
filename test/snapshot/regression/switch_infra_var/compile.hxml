@@ -3,6 +3,7 @@
 -lib reflaxe
 -cp ../../../../src
 -cp ../../../../std
+-cp ../../../../std/elixir/_std
 --macro reflaxe.elixir.CompilerInit.Start()
 --no-output
 -D elixir_output=out

@@ -26,7 +26,7 @@
     "abbv": "ex",
     "stdPaths": [
       "std",
-      "std/elixir"
+      "std/elixir/_std"
     ]
   }
 }

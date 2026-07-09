@@ -272,7 +272,7 @@ class StdHaxeRuntimeOverrideTransforms {
 		return makeASTWithMeta(EBlock([raw]), meta, pos);
 	}
 
-	// Reflect and Type overrides were transitional. They now live in std/*.cross.hx
+	// Reflect and Type overrides were transitional. They now live in std/elixir/_std
 	// and are gated via target-conditional classpath injection.
 }
 #end

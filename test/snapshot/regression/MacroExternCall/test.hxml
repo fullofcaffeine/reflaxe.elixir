@@ -1,4 +1,5 @@
 -cp ../../../../std
+-cp ../../../../std/elixir/_std
 -cp ../../../..
 --library reflaxe
 -D elixir_output

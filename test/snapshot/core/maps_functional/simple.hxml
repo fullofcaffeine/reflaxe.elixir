@@ -1,5 +1,6 @@
 # Simple test compilation
 -cp ../../../std
+-cp ../../../std/elixir/_std
 -cp ../../../src
 -cp .
 -lib reflaxe

@@ -13,8 +13,9 @@ set -euo pipefail
 #   4) checking direct target overrides and official stdlib fallback both work.
 #
 # WHY
-# - Repo-local scoped libs and GitHub-tag Lix installs can pass while the haxelib
-#   package layout is wrong. This smoke exercises the installed package root.
+# - Repo-local scoped libs and GitHub-tag Lix installs can pass while the
+#   Reflaxe-flattened haxelib package layout is wrong. This smoke exercises the
+#   installed package root.
 #
 # HOW
 # - Uses a temp workspace under $TMPDIR.
@@ -26,7 +27,6 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 TIMEOUT="$ROOT_DIR/scripts/with-timeout.sh"
 
 HAXE_VERSION="${HAXE_VERSION:-4.3.7}"
-SOURCE_REF="${SOURCE_REF:-HEAD}"
 KEEP_DIR=0
 VERBOSE=0
 
@@ -36,7 +36,6 @@ Usage: $0 [options]
 
 Options:
   --haxe VERSION      Haxe version to pin via lix (default: ${HAXE_VERSION})
-  --source-ref REF    Git ref/tree to package via git archive (default: ${SOURCE_REF})
   --keep-dir          Keep temp workspace (prints path)
   --verbose           Print extra package and compile details
 EOF
@@ -45,7 +44,6 @@ EOF
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --haxe) HAXE_VERSION="$2"; shift 2 ;;
-    --source-ref) SOURCE_REF="$2"; shift 2 ;;
     --keep-dir) KEEP_DIR=1; shift 1 ;;
     --verbose) VERBOSE=1; shift 1 ;;
     -h|--help) usage; exit 0 ;;
@@ -124,15 +122,13 @@ cleanup() {
 trap cleanup EXIT
 
 export HAXE_VERSION
-export SOURCE_REF
 export PACKAGE_ZIP="$package_zip"
 
 say "Workspace: $tmp_base"
-say "Source ref: $SOURCE_REF"
 say "Haxe: $HAXE_VERSION"
 
-run_step "build haxelib package zip" 60 "$ROOT_DIR" \
-  'git archive --format=zip --output "$PACKAGE_ZIP" "$SOURCE_REF"'
+run_step "build haxelib package zip" 180 "$ROOT_DIR" \
+  'bash scripts/release/package-haxelib.sh "$PACKAGE_ZIP"'
 
 run_step "npm init -y" 60 "$work_dir" "npm init -y"
 run_step "npm install lix" 300 "$work_dir" "npm install --save-dev lix --no-audit --no-fund"
@@ -172,14 +168,27 @@ fi
 require_file "$installed_root/haxelib.json"
 require_file "$installed_root/extraParams.hxml"
 require_file "$installed_root/src/reflaxe/elixir/CompilerBootstrap.hx"
-require_file "$installed_root/std/StringBuf.cross.hx"
-require_file "$installed_root/std/haxe/crypto/Sha256.cross.hx"
-require_dir "$installed_root/std"
+require_file "$installed_root/src/StringBuf.cross.hx"
+require_file "$installed_root/src/haxe/crypto/Sha256.cross.hx"
+require_file "$installed_root/src/elixir/DateTime.hx"
 require_dir "$installed_root/vendor/reflaxe/src"
+require_dir "$installed_root/vendor/phoenix_shared/src"
 
-cross_count="$(find "$installed_root/std" -maxdepth 1 -name '*.cross.hx' | wc -l | tr -d ' ')"
-if [[ "${cross_count:-0}" -le 0 ]]; then
-  fail "installed package std/ has no direct .cross.hx overrides"
+if [[ -d "$installed_root/std" ]]; then
+  fail "installed package must not contain top-level std/; Reflaxe build should flatten stdPaths into src/"
+fi
+
+if python3 - "$installed_root/haxelib.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    data = json.load(handle)
+
+raise SystemExit(0 if "reflaxe" in data else 1)
+PY
+then
+  fail "installed package haxelib.json still contains source-only reflaxe metadata"
 fi
 
 if [[ "$VERBOSE" -eq 1 ]]; then
@@ -255,8 +264,13 @@ export HAXELIB_PACKAGE_REPO="$haxelib_repo"
 export HAXELIB_WRAPPER_DIR="$haxelib_wrapper_dir"
 
 cat > "$work_dir/src/Main.hx" <<'HX'
+#if !phoenix_shared
+#error "phoenix_shared define missing"
+#end
+
 import haxe.crypto.Sha256;
 import haxe.ds.Either;
+import phoenix.channels.WirePayload;
 
 class Main {
   static function main() {
@@ -271,6 +285,10 @@ class Main {
       case Right(v): Std.string(v);
     };
 
+    var payload = WirePayload.putString(WirePayload.empty(), "value", value);
+    var payloadValue = WirePayload.getString(payload, "value");
+
+    trace(payloadValue);
     trace(Sha256.encode(value));
   }
 }
@@ -293,9 +311,13 @@ require_file "$work_dir/out/_GeneratedFiles.json"
 require_file "$work_dir/out/main.ex"
 require_file "$work_dir/out/string_buf.ex"
 require_file "$work_dir/out/haxe/crypto/sha256.ex"
+require_file "$work_dir/out/phoenix/channels/wire_payload.ex"
 
 require_contains "$work_dir/out/haxe/crypto/sha256.ex" ":crypto.hash(:sha256"
+require_contains "$work_dir/compile.log" "src/StringBuf.cross.hx"
+require_contains "$work_dir/compile.log" "src/haxe/crypto/Sha256.cross.hx"
 require_contains "$work_dir/compile.log" "std/haxe/ds/Either.hx"
+require_contains "$work_dir/compile.log" "vendor/phoenix_shared/src/phoenix/channels/WirePayload.hx"
 require_tree_not_contains "$work_dir/compile.log" "$canonical_root"
 require_tree_not_contains "$work_dir/out" "$canonical_root"
 

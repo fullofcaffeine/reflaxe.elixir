@@ -1,6 +1,7 @@
 -cp .
 -cp ../../../../src
 -cp ../../../../std
+-cp ../../../../std/elixir/_std
 -cp ../../../../vendor/phoenix_shared/src
 -lib reflaxe
 -D reflaxe_runtime

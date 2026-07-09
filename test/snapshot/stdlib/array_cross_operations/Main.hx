@@ -1,5 +1,5 @@
 /**
- * Test Array.cross.hx inline methods with __elixir__ injection
+ * Test Array std override inline methods with __elixir__ injection
  * Verifies that array operations generate idiomatic Elixir code
  */
 class Main {

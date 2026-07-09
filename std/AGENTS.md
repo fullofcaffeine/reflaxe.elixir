@@ -53,12 +53,10 @@ Phoenix/Elixir/JS code whenever the schema is known at compile time.
 ### Directory Structure Philosophy
 ```
 std/
-├── ArrayTools.hx          # Core Haxe type extensions
-├── StringTools.hx         # Cross-platform string utilities
-├── MapTools.hx           # Map/object manipulation tools
 ├── HXX.hx                # Template system core
 ├── ecto/                 # Ecto ORM integration
 ├── elixir/              # Elixir standard library externs
+│   ├── _std/            # Elixir implementations of upstream Haxe std modules
 │   └── otp/             # OTP/BEAM abstractions (Application, Supervisor)
 ├── haxe/                # Haxe standard library extensions
 ├── phoenix/             # Phoenix framework integration
@@ -181,16 +179,16 @@ abstract Result<T,E> {
 // with proper Elixir module generation
 ```
 
-## ⚠️ CRITICAL: Architectural Hierarchy - .cross.hx → Externs → Transformations
+## ⚠️ CRITICAL: Architectural Hierarchy - `_std` / Packaged `.cross.hx` → Externs → Transformations
 
 **FUNDAMENTAL PRINCIPLE: Generate idiomatic code at the EARLIEST possible stage in the compilation pipeline.**
 
 ### The Three-Layer Architecture (In Priority Order)
 
-#### 1. **FIRST CHOICE: .cross.hx Override Files (Compile-Time Generation)**
+#### 1. **FIRST CHOICE: `_std` Override Sources (Compile-Time Generation)**
 
 **When to Use**: When you control the type definition and need idiomatic output
-**How it Works**: Replaces Haxe's standard implementation entirely
+**How it Works**: Replaces Haxe's standard implementation entirely for Elixir builds
 **Advantages**:
 - Zero runtime overhead with `extern inline`
 - Generates perfect Elixir code from the start
@@ -200,7 +198,8 @@ abstract Result<T,E> {
 
 **Example**:
 ```haxe
-// String.cross.hx - Replaces ALL String methods
+// std/elixir/_std/String.hx - Replaces String for Elixir builds.
+// Reflaxe package builds can publish this as String.cross.hx.
 extern inline function toUpperCase(): String {
     return untyped __elixir__('String.upcase({0})', this);
 }
@@ -275,21 +274,21 @@ for (i in 0...10) { result.push(i * 2); }
 ```
 1. Haxe Parsing
 2. Type Checking
-3. .cross.hx Override ← EARLIEST INTERVENTION (Best)
+3. `_std` / packaged `.cross.hx` override <- EARLIEST INTERVENTION (Best)
 4. Macro Expansion
 5. TypedExpr Generation
 6. ElixirASTBuilder
-7. AST Transformations ← LATEST INTERVENTION (Worst)
+7. AST Transformations <- LATEST INTERVENTION (Worst)
 8. Code Printing
 ```
 
 #### Performance Impact:
-- **.cross.hx**: ~0ms overhead (compile-time inline)
+- **`_std` / packaged `.cross.hx`**: ~0ms overhead (compile-time inline)
 - **Externs**: ~0ms overhead (direct mapping)
 - **Transformations**: 10-100ms per pass (AST traversal + pattern matching)
 
 #### Code Quality Impact:
-- **.cross.hx**: Perfect idiomatic code
+- **`_std` / packaged `.cross.hx`**: Perfect idiomatic code
 - **Externs**: Native library calls
 - **Transformations**: Risk of edge cases, ordering issues
 
@@ -298,12 +297,12 @@ for (i in 0...10) { result.push(i * 2); }
 ```
 Need to change how a type generates code?
 ├─ Do you control the type definition?
-│  ├─ YES → Use .cross.hx override
+│  ├─ YES → Use `std/elixir/_std/**/*.hx` for upstream Haxe std replacements
 │  └─ NO → Is it an external library?
 │     ├─ YES → Use extern with @:native
 │     └─ NO → Is it context-dependent?
 │        ├─ YES → Use AST transformation (last resort)
-│        └─ NO → Reconsider - probably needs .cross.hx
+│        └─ NO → Reconsider - probably needs `_std` or a target-owned std API
 ```
 
 ### Real-World Example: String Methods Problem
@@ -318,9 +317,9 @@ case ECall(target, "length", []):
 ```
 Problems: Complexity, missed edge cases, runs on EVERY compilation
 
-**✅ Right Solution (Using .cross.hx)**:
+**✅ Right Solution (Using `_std`)**:
 ```haxe
-// String.cross.hx
+// std/elixir/_std/String.hx
 @:coreApi
 extern class String {
     extern inline var length(get, never): Int;
@@ -333,7 +332,7 @@ Benefits: Zero overhead, always correct, generates `String.length(str)` directly
 
 ### Lessons from Other Reflaxe Compilers
 
-**Reflaxe.CPP**: Uses extensive .cross.hx overrides for entire stdlib
+**Reflaxe.CPP**: Uses `_std` source roots that package as `.cross.hx` overrides
 **Reflaxe.CS**: Minimal transformations, mostly externs
 **Reflaxe.Py**: Heavy transformation use (and it's their biggest pain point)
 
@@ -342,7 +341,7 @@ The most successful Reflaxe compilers minimize AST transformations.
 ## 🎯 Standard Library Development Rules ⚠️ CRITICAL
 
 ### ❌ NEVER Do This:
-- **Create Std.hx, Log.hx or other core Haxe classes in std/** - These are handled by the compiler
+- **Create upstream Haxe std replacements directly in plain `std/`** - use `std/elixir/_std/**`
 - Define test infrastructure types in application code
 - Create duplicated functionality across different std modules
 - Leak `Dynamic` in new public standard-library APIs (except where the Haxe Std API requires it)
@@ -350,25 +349,23 @@ The most successful Reflaxe compilers minimize AST transformations.
 - Break type safety for convenience
 
 ### ⚠️ CRITICAL: Core Haxe Classes Rule
-**NEVER create these files in std/ directory:**
-- `Std.hx` - Core Haxe class handled by compiler
-- `Log.hx` - Trace/logging handled by compiler transformation
-- `Math.hx` - Core math functions handled by compiler
-- Any other core Haxe standard library class
+**NEVER create upstream Haxe replacements in the plain std root.** Put them under
+`std/elixir/_std/` so source-tree builds can load them explicitly and Reflaxe package
+builds can flatten them into `.cross.hx` files.
 
 **How Core Classes Are Actually Generated:**
 
 The compiler automatically generates runtime support modules from different sources:
 
-1. **`Std` module** → Generated from `/std/Std.cross.hx`
+1. **`Std` module** -> Generated from `std/elixir/_std/Std.hx`
    - Our custom implementation with Elixir-specific optimizations
    - Compiles to `std.ex` with methods like `string()`, `int()`, `parseFloat()`
    - Uses `untyped __elixir__()` for native Elixir implementations
-   - Located at: `std/Std.cross.hx`
+   - Packaged Reflaxe builds can expose the same source as `Std.cross.hx`
 
-2. **`Log` module** → Generated from our override `/std/haxe/Log.cross.hx`
-   - **OVERRIDE PATTERN**: We use `.cross.hx` files to override Haxe's standard library behavior
-   - Our Log.cross.hx implementation generates idiomatic `IO.inspect()` calls instead of `Log.trace()`
+2. **`Log` module** -> Generated from our override `std/elixir/_std/haxe/Log.hx`
+   - **OVERRIDE PATTERN**: We use `_std` sources to override Haxe's standard library behavior
+   - Our Log implementation generates idiomatic `IO.inspect()` calls instead of `Log.trace()`
    - When you call `trace("hello")` in Haxe, it becomes `IO.inspect("hello")` in Elixir
    - The override uses `untyped __elixir__()` to generate native Elixir code
    - This produces cleaner, more idiomatic Elixir output for better debugging experience
@@ -377,7 +374,7 @@ The compiler automatically generates runtime support modules from different sour
    - Haxe has a built-in `trace()` function that's part of the language
    - The Haxe compiler (not our Reflaxe compiler) transforms `trace()` calls into calls to `haxe.Log.trace()`
    - Our Reflaxe.Elixir compiler sees these as static method calls to the Log module
-   - Our override `std/haxe/Log.cross.hx` shadows upstream `haxe/Log.hx` for Elixir builds and compiles to `haxe/log.ex`
+   - Our override `std/elixir/_std/haxe/Log.hx` shadows upstream `haxe/Log.hx` for Elixir builds and compiles to `haxe/log.ex`
 
 4. **Dependency Tracking**:
    - `ElixirASTBuilder.trackDependency()` tracks which modules are used
@@ -388,21 +385,22 @@ The compiler automatically generates runtime support modules from different sour
 ```
 out/
 ├── main.ex           # Your compiled code
-├── std.ex            # From std/Std.cross.hx (our custom implementation)
+├── std.ex            # From std/elixir/_std/Std.hx (our custom implementation)
 ├── haxe/
-│   └── log.ex        # From std/haxe/Log.cross.hx (shadows upstream haxe/Log.hx)
-└── map_tools.ex      # From std/MapTools.cross.hx (if used)
+│   └── log.ex        # From std/elixir/_std/haxe/Log.hx (shadows upstream haxe/Log.hx)
+└── map_tools.ex      # From std/elixir/_std/MapTools.hx (if used)
 ```
 
-**Cross-Platform Files (.cross.hx)**:
-- Use `.cross.hx` for `cross`-platform overrides (Reflaxe targets on Haxe 4).
-- Examples: `MapTools.cross.hx`, `Std.cross.hx`, `haxe/Log.cross.hx`
+**Reflaxe `_std` / packaged `.cross.hx` files**:
+- Use `std/elixir/_std/**/*.hx` for upstream Haxe stdlib replacements.
+- Reflaxe package builds can turn those files into `*.cross.hx` package output.
+- Do not check in generated `std/**/*.cross.hx` package mirrors.
 - These shadow or extend upstream Haxe implementations for Elixir builds.
 - Many overrides inject native Elixir via `__elixir__()` to stay idiomatic and efficient.
 
 **Instead of Creating Core Classes in std/**:
-- Never create `Log.hx` - it comes from Haxe's standard library
-- Use `Std.cross.hx` for custom Std implementation (already exists)
+- Never create upstream replacements in the plain `std/` root
+- Use `std/elixir/_std/Std.hx` for the custom Std implementation
 - The compiler automatically handles the compilation and inclusion
 
 ### ✅ ALWAYS Do This:

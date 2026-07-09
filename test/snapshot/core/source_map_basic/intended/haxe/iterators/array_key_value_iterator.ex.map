@@ -5,6 +5,6 @@
   "version": 3,
   "file": "array_key_value_iterator.ex",
   "sources": [
-  "std/haxe/iterators/ArrayKeyValueIterator.cross.hx"
+  "std/elixir/_std/haxe/iterators/ArrayKeyValueIterator.hx"
 ]
 }

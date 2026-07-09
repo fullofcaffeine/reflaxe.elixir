@@ -29,6 +29,11 @@ class CompilerInit {
 	 * Use --macro reflaxe.elixir.CompilerInit.Start() in your hxml
 	 */
 	public static function Start() {
+		// Direct repo-local hxml files often invoke CompilerInit without going through
+		// `-lib reflaxe.elixir`. Run the idempotent bootstrap here too so source-layout
+		// `_std` overrides and vendored Reflaxe are visible in dev/test mode.
+		CompilerBootstrap.Start();
+
 		// Platform check for Haxe 5.0+ only: ensures compiler only runs when
 		// --custom-target elixir=output_dir is specified in compilation command.
 		// This prevents Reflaxe targets from activating on every compilation.
