@@ -127,9 +127,6 @@ export PACKAGE_ZIP="$package_zip"
 say "Workspace: $tmp_base"
 say "Haxe: $HAXE_VERSION"
 
-run_step "build haxelib package zip" 180 "$ROOT_DIR" \
-  'bash scripts/release/package-haxelib.sh "$PACKAGE_ZIP"'
-
 run_step "npm init -y" 60 "$work_dir" "npm init -y"
 run_step "npm install lix" 300 "$work_dir" "npm install --save-dev lix --no-audit --no-fund"
 run_step "lix scope create" 60 "$work_dir" "npx lix scope create"
@@ -142,6 +139,8 @@ export HAXELIB_SHIM="$work_dir/node_modules/.bin/haxelib"
 [[ -x "$HAXELIB_SHIM" ]] || fail "missing haxelib shim: $HAXELIB_SHIM"
 
 run_step "haxe --version (real binary)" 60 "$work_dir" '"$HAXE_BIN" -version'
+run_step "build haxelib package zip" 180 "$ROOT_DIR" \
+  'HAXE_BIN="$HAXE_BIN" bash scripts/release/package-haxelib.sh "$PACKAGE_ZIP"'
 run_step "haxelib newrepo (isolated)" 60 "$work_dir" '"$HAXELIB_SHIM" newrepo'
 run_step "haxelib install package zip" 600 "$work_dir" \
   '"$HAXELIB_SHIM" install "$PACKAGE_ZIP" --always'

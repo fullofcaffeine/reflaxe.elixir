@@ -15,8 +15,14 @@ if ! command -v zip >/dev/null 2>&1; then
   exit 2
 fi
 
-if ! command -v haxe >/dev/null 2>&1; then
-  echo "error: haxe not found in PATH" >&2
+haxe_cmd="${HAXE_BIN:-haxe}"
+if [[ "$haxe_cmd" == */* ]]; then
+  if [[ ! -x "$haxe_cmd" ]]; then
+    echo "error: HAXE_BIN is not executable: $haxe_cmd" >&2
+    exit 2
+  fi
+elif ! command -v "$haxe_cmd" >/dev/null 2>&1; then
+  echo "error: haxe not found in PATH; set HAXE_BIN to the real Haxe binary" >&2
   exit 2
 fi
 
@@ -134,7 +140,7 @@ copy_file_optional_to_work "run.n"
 (
   cd "$work_dir"
   log "Running Reflaxe build into _Build/"
-  haxe -cp "$root_dir/vendor/reflaxe" --run Run build _Build --deleteOldFolder "$work_dir"
+  "$haxe_cmd" -cp "$root_dir/vendor/reflaxe" --run Run build _Build --deleteOldFolder "$work_dir"
 )
 
 # The generic Reflaxe build handles classPath/stdPaths flattening. These vendored
