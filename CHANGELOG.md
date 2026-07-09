@@ -1,3 +1,10 @@
+## [0.14.19](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.18...v0.14.19) (2026-07-09)
+
+
+### Bug Fixes
+
+* **stdlib:** enable String runtime parity ([ba39d06](https://github.com/fullofcaffeine/reflaxe.elixir/commit/ba39d06687c6e5795e13dba544a7af7eb402167e))
+
 ## [0.14.18](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.17...v0.14.18) (2026-07-07)
 
 
