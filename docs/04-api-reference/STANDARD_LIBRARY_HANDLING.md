@@ -114,7 +114,9 @@ Packaging note:
 - Adding these paths means Haxe searches the installed package's override/API directories earlier for
   this compile. It does not copy files, generate files, or rewrite `.hx` filenames during compilation.
 - If we publish to haxelib.org, validate the generated package path separately with
-  `npm run test:haxelib-package`.
+  `npm run test:haxelib-package`. That smoke test asserts that release artifacts use the
+  Reflaxe-flattened shape: no raw `std/` or `src/elixir/_std/` source tree is published, while
+  upstream-colliding overrides are present as packaged `src/**/*.cross.hx` files.
 
 ### Bootstrap-safe overrides (early source-classpath modules)
 

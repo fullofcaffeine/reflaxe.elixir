@@ -84,6 +84,11 @@ require_dir() {
   [[ -d "$path" ]] || fail "missing directory: $path"
 }
 
+require_absent() {
+  local path="$1"
+  [[ ! -e "$path" ]] || fail "unexpected path exists: $path"
+}
+
 require_contains() {
   local path="$1"
   local needle="$2"
@@ -167,15 +172,21 @@ fi
 require_file "$installed_root/haxelib.json"
 require_file "$installed_root/extraParams.hxml"
 require_file "$installed_root/src/reflaxe/elixir/CompilerBootstrap.hx"
+require_file "$installed_root/src/Std.cross.hx"
+require_file "$installed_root/src/String.cross.hx"
 require_file "$installed_root/src/StringBuf.cross.hx"
+require_file "$installed_root/src/haxe/Exception.cross.hx"
 require_file "$installed_root/src/haxe/crypto/Sha256.cross.hx"
 require_file "$installed_root/src/elixir/DateTime.hx"
 require_dir "$installed_root/vendor/reflaxe/src"
 require_dir "$installed_root/vendor/phoenix_shared/src"
 
-if [[ -d "$installed_root/std" ]]; then
-  fail "installed package must not contain top-level std/; Reflaxe build should flatten stdPaths into src/"
-fi
+require_absent "$installed_root/std"
+require_absent "$installed_root/src/elixir/_std"
+require_absent "$installed_root/src/Std.hx"
+require_absent "$installed_root/src/String.hx"
+require_absent "$installed_root/src/StringBuf.hx"
+require_absent "$installed_root/src/haxe/crypto/Sha256.hx"
 
 if python3 - "$installed_root/haxelib.json" <<'PY'
 import json
