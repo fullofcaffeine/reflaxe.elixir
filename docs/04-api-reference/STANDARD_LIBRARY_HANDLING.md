@@ -118,6 +118,11 @@ Packaging note:
   Reflaxe-flattened shape: no raw `std/` or `src/elixir/_std/` source tree is published, while
   upstream-colliding overrides are present as packaged `src/**/*.cross.hx` files.
 
+`haxe.Exception` is a normal `_std` override at `std/elixir/_std/haxe/Exception.hx`. Source-checkout
+HXML files make that root visible before typing, and Reflaxe build publishes the same implementation
+as `src/haxe/Exception.cross.hx`. The executable implementation and its `elixir_output` guard are the
+same in both modes.
+
 ### Bootstrap-safe overrides (early source-classpath modules)
 
 Some stdlib modules are resolved **very early** during compilation, and Haxe runs macros using the `eval` interpreter.
@@ -130,13 +135,8 @@ That combination means a few modules must satisfy two requirements at once:
 For those specific modules, we use an early override under `src/haxe/**`, the package classpath that
 is available immediately when a project uses `-lib reflaxe.elixir`.
 
-There are three current shapes:
+There are two current shapes:
 
-- `src/haxe/Exception.cross.hx` is intentionally still target-suffixed. Upstream `haxe.Exception`
-  is extern, so macro/eval and non-cross targets can keep resolving upstream. Elixir output needs a
-  concrete base module for exception structs, so the `.cross.hx` file provides `Reflaxe.Exception`
-  behind `#if elixir_output ... #else extern ... #end`. The source layout guard enforces that this
-  is the only checked-in `src/**/*.cross.hx` file.
 - `src/haxe/ds/{ArraySort,BalancedTree,EnumValueMap,ListSort}.hx` are dual-mode plain `.hx` modules:
   `#if macro` gives eval a small implementation, while `#else` exposes an extern surface or target
   diagnostic surface so generated Elixir does not emit the canonical mutable stdlib implementation.
@@ -175,9 +175,8 @@ Is this a Reflaxe convention?
 - The dual-mode approach (`#if macro` implementation, `#else` extern) is specific to our constraints:
   Haxe eval must be able to instantiate the type, but we don’t want to emit the upstream implementation
   into Elixir output when it is non-idiomatic or breaks `--warnings-as-errors`.
-- `haxe.Exception` is different: because upstream is already extern, the target-specific `.cross.hx`
-  file can stay out of macro/eval resolution while still giving Elixir builds the concrete base module
-  they need.
+- `haxe.Exception` does not need this initial-classpath exception. It is selected from `_std` in
+  source builds and generated as `.cross.hx` in release packages, matching other Reflaxe targets.
 
 The injection point is macro-time, in:
 - `src/reflaxe/elixir/CompilerBootstrap.hx:1` (early injection, invoked from `extraParams.hxml`)

@@ -22,6 +22,7 @@
 		"phoenix/handle_event_result.exs",
 		"phoenix/form_field_value.exs",
 		"phoenix/conn_state.exs",
+		"haxe/iterators/array_key_value_iterator.exs",
 		"haxe/iterators/array_iterator.exs",
 		"haxe/exceptions/pos_exception.exs",
 		"haxe/exceptions/not_implemented_exception.exs",

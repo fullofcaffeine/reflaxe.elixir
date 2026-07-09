@@ -8,40 +8,44 @@ fail() {
   exit 1
 }
 
-tracked_std_cross="$(
-  git -C "$ROOT_DIR" ls-files 'std/**/*.cross.hx' 'std/*.cross.hx' 2>/dev/null || true
-)"
-if [[ -n "$tracked_std_cross" ]]; then
+existing_source_cross_files() {
+  local root="$1"
+  while IFS= read -r rel; do
+    if [[ -f "$ROOT_DIR/$rel" ]]; then
+      printf '%s\n' "$rel"
+    fi
+  done < <(git -C "$ROOT_DIR" ls-files --cached --others --exclude-standard "$root/**/*.cross.hx" "$root/*.cross.hx" 2>/dev/null || true)
+}
+
+source_std_cross="$(existing_source_cross_files std)"
+if [[ -n "$source_std_cross" ]]; then
   {
     echo "checked-in std sources must not use .cross.hx; author upstream-colliding"
     echo "Elixir std overrides as std/elixir/_std/**/*.hx and let Reflaxe build"
     echo "generate packaged .cross.hx files. Found:"
-    printf '%s\n' "$tracked_std_cross" | sed -n '1,80p'
+    printf '%s\n' "$source_std_cross" | sed -n '1,80p'
   } >&2
   exit 1
 fi
 
-tracked_src_cross="$(
-  git -C "$ROOT_DIR" ls-files 'src/**/*.cross.hx' 'src/*.cross.hx' 2>/dev/null || true
-)"
-if [[ -n "$tracked_src_cross" ]]; then
-  unexpected_src_cross="$(
-    printf '%s\n' "$tracked_src_cross" | grep -Fxv 'src/haxe/Exception.cross.hx' || true
-  )"
-  if [[ -n "$unexpected_src_cross" ]]; then
-    {
-      echo "checked-in src/**/*.cross.hx files must not grow beyond the documented"
-      echo "early haxe.Exception override. Put ordinary std replacements under"
-      echo "std/elixir/_std/**/*.hx and let Reflaxe build generate packaged"
-      echo ".cross.hx files. Found unexpected source-tree cross files:"
-      printf '%s\n' "$unexpected_src_cross" | sed -n '1,80p'
-    } >&2
-    exit 1
-  fi
+source_src_cross="$(existing_source_cross_files src)"
+if [[ -n "$source_src_cross" ]]; then
+  {
+    echo "checked-in src/**/*.cross.hx files are generated-package artifacts, not"
+    echo "source-layout inputs. Put upstream std replacements under"
+    echo "std/elixir/_std/**/*.hx and let Reflaxe build generate packaged"
+    echo ".cross.hx files. Found source-tree cross files:"
+    printf '%s\n' "$source_src_cross" | sed -n '1,80p'
+  } >&2
+  exit 1
 fi
 
 if [[ ! -d "$ROOT_DIR/std/elixir/_std" ]]; then
   fail "missing std/elixir/_std source override root"
+fi
+
+if [[ ! -f "$ROOT_DIR/std/elixir/_std/haxe/Exception.hx" ]]; then
+  fail "haxe.Exception must be authored at std/elixir/_std/haxe/Exception.hx"
 fi
 
 duplicate_modules="$(
@@ -155,4 +159,28 @@ then
   fail "haxelib.json reflaxe.stdPaths does not match the source-layout convention"
 fi
 
-echo "[guard:stdlib-layout] OK: std overrides use std/elixir/_std source layout and source cross-file convention"
+scoped_hxml_files="$(
+  git -C "$ROOT_DIR" ls-files 'haxe_libraries/reflaxe.elixir.hxml' '*/haxe_libraries/reflaxe.elixir.hxml'
+)"
+if [[ -z "$scoped_hxml_files" ]]; then
+  fail "missing scoped source-checkout HXML: haxe_libraries/reflaxe.elixir.hxml"
+fi
+
+while IFS= read -r rel; do
+  [[ -n "$rel" ]] || continue
+  dev_hxml="$ROOT_DIR/$rel"
+  std_line="$(grep -nE '^-cp .*/std/?$' "$dev_hxml" | head -1 | cut -d: -f1 || true)"
+  target_std_line="$(grep -nE '^-cp .*/std/elixir/_std/?$' "$dev_hxml" | head -1 | cut -d: -f1 || true)"
+  if [[ -z "$std_line" || -z "$target_std_line" ]]; then
+    fail "$rel must include std/ and std/elixir/_std/ source classpaths"
+  fi
+  if (( target_std_line <= std_line )); then
+    fail "$rel must list std/elixir/_std after std so it has effective precedence"
+  fi
+done <<<"$scoped_hxml_files"
+
+if grep -Eq '^[[:space:]]*-cp[[:space:]]+' "$ROOT_DIR/extraParams.hxml"; then
+  fail "extraParams.hxml must remain cwd-agnostic; source classpaths belong in the scoped library HXML"
+fi
+
+echo "[guard:stdlib-layout] OK: std overrides use Reflaxe _std source layout"

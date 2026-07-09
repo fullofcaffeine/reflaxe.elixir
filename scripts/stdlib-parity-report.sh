@@ -153,11 +153,10 @@ def collect_prefixed_modules(prefix: str, root: Path, allow_cross: bool) -> Set[
   Collect modules from a subtree that is *not* laid out like std/ itself.
 
   Example:
-    root_dir/src/haxe/Exception.cross.hx should be reported as `haxe.Exception`.
     root_dir/src/haxe/ds/List.hx should be reported as `haxe.ds.List`.
 
-  This is needed because consumer installs always have the library `src/` classpath
-  immediately, while `std/` is injected later via bootstrap macros.
+  This is needed for the small set of macro/eval-safe modules that intentionally
+  live on the library's initial `src/` classpath.
   """
   modules: Set[str] = set()
   if not root.exists():

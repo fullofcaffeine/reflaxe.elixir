@@ -1,6 +1,10 @@
 -lib tink_macro
 -lib tink_parse
+# This app-local scoped entry overrides the repository entry, so it must carry
+# the complete Reflaxe source-checkout classpath contract.
 -cp ${SCOPE_DIR}/../../src
+-cp ${SCOPE_DIR}/../../std
+-cp ${SCOPE_DIR}/../../std/elixir/_std
 -D reflaxe.elixir=1.14.1
 ${SCOPE_DIR}/../../extraParams.hxml
---macro Sys.println("haxe_libraries/reflaxe.elixir.hxml:4: [Warning] Using dev version of library reflaxe.elixir")
+--macro Sys.println("haxe_libraries/reflaxe.elixir.hxml:10: [Warning] Using dev version of library reflaxe.elixir")

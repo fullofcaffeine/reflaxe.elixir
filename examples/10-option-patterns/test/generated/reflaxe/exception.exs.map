@@ -5,6 +5,6 @@
   "version": 3,
   "file": "exception.exs",
   "sources": [
-    "src/haxe/Exception.cross.hx"
+    "std/elixir/_std/haxe/Exception.hx"
   ]
 }

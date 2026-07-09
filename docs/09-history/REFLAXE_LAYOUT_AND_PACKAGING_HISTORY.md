@@ -18,8 +18,8 @@ The important practical difference is stdlib packaging:
   `_std` source root, then uses `haxelib run reflaxe build` to copy/rename them into final
   `.cross.hx` files for publishing.
 - This repo now authors upstream-colliding stdlib overrides under `std/elixir/_std/**/*.hx`, and
-  uses bootstrap macros to add that source root from the installed package root to the active Haxe
-  classpath for source-tree/GitHub/Lix Elixir builds.
+  uses scoped HXML to add that source root before typing in source-tree/GitHub/Lix Elixir builds,
+  with bootstrap fallback for supported consumer paths.
 
 That keeps Reflaxe-style authored std sources while still supporting direct source-tree consumption
 without requiring a generated `_Build/` package in the edit/test loop.
@@ -32,8 +32,8 @@ and a vendored Reflaxe framework. Earlier versions kept direct, checked-in `.cro
 
 The current layout moves those upstream-colliding stdlib overrides into `std/elixir/_std/**/*.hx`.
 That matches the Reflaxe skeleton convention and sibling compiler layouts more closely. The tradeoff
-is that source-tree builds need bootstrap classpath insertion for `_std`, while packaged Reflaxe builds
-can still materialize `.cross.hx` files.
+is that source-tree builds need scoped classpath wiring for `_std`, while packaged Reflaxe builds can
+materialize `.cross.hx` files in the single published classpath.
 
 The current layout optimizes for:
 
@@ -129,7 +129,7 @@ The difference is how the `.cross.hx` files get there:
 | Topic | Reflaxe skeleton build | Reflaxe.Elixir current repo |
 | --- | --- | --- |
 | Target std override authoring | Plain `.hx` under `_std` input roots | Plain `.hx` under `std/elixir/_std/` |
-| Packaging step | `haxelib run reflaxe build` copies/renames | Source-tree builds use bootstrap; package builds can copy/rename |
+| Packaging step | `haxelib run reflaxe build` copies/renames | Source builds use scoped HXML; package builds copy/rename |
 | Published source path | Generated package layout | GitHub/Lix installs consume checked-in source layout directly |
 | Source maps/snapshots | May point at generated package paths | Source-tree builds point at `std/elixir/_std/**` |
 | Missing std modules | Fall through to official Haxe stdlib | Fall through to official Haxe stdlib |
@@ -146,8 +146,7 @@ Source-tree `_std` layout:
 - Pro: matches the generated Reflaxe skeleton and sibling compiler conventions more closely.
 - Pro: target overrides are grouped away from target-owned APIs/support modules.
 - Pro: GitHub/Lix installs and repo-local tests still consume the checked-in source layout directly.
-- Con: bootstrap must prepend `std/elixir/_std/` in source-tree/dev mode so the authored files win over
-  the official Haxe stdlib.
+- Con: source-tree/dev mode must resolve scoped HXML so `std/elixir/_std/` is present before typing.
 - Con: source-tree source maps reference `_std` paths, while a generated package may reference packaged
   `.cross.hx` paths.
 
@@ -164,7 +163,7 @@ Skeleton `_std` plus `reflaxe build`:
 
 Current supported path:
 
-- GitHub tag + Lix install.
+- GitHub tag + scoped Lix install, or a built haxelib package.
 - Consumers use `-lib reflaxe.elixir`.
 - `extraParams.hxml` runs bootstrap/init macros.
 - Bootstrap prepends `std/elixir/_std/`, `std/`, and `vendor/reflaxe/src` from the installed package
@@ -175,6 +174,13 @@ Repo-local path:
 - Tests/examples use scoped library files under `haxe_libraries/`.
 - `haxe_libraries/reflaxe.elixir.hxml` points at this checkout using `${SCOPE_DIR}`.
 - It also invokes bootstrap/init so local behavior matches consumer installs.
+
+Unsupported raw source path:
+
+- Do not point bare global `haxelib dev` at the unbuilt checkout. Haxelib exposes only the package's
+  single `src` classpath, while `_std` must be present before early upstream module resolution.
+- Use the scoped Lix configuration, explicit direct-HXML classpaths, or build/install the package
+  artifact before testing through haxelib.
 
 Haxelib.org package artifact path:
 
@@ -194,8 +200,9 @@ Haxelib.org package artifact path:
 Use `std/elixir/_std/**/*.hx` for upstream-colliding stdlib overrides. Do not add new checked-in
 `std/**/*.cross.hx` files for ordinary stdlib work. Keep plain `std/**/*.hx` for target-owned
 APIs/support modules that do not replace upstream Haxe std namespaces; BEAM `sys.*` implementations
-belong under `std/elixir/_std/sys/**`. Keep rare early overrides under `src/haxe/**` only when
-bootstrap timing requires it.
+belong under `std/elixir/_std/sys/**`. Keep rare early plain overrides under `src/haxe/**` only when
+macro/eval timing requires them. Checked-in `.cross.hx` files are not permitted; they are generated
+package artifacts.
 
 Before publishing to haxelib.org, run the package smoke described above. That validates the exact
 artifact users would install.

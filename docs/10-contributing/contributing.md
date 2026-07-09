@@ -238,6 +238,19 @@ This keeps `extraParams.hxml`, Reflaxe-flattened `.cross.hx` package output from
 `std/elixir/_std/`, target-owned `std/` APIs, vendored Reflaxe/Phoenix shared staging, and official
 Haxe stdlib fallback honest for future haxelib.org publishing.
 
+For source-checkout development, use the repository's scoped
+`haxe_libraries/reflaxe.elixir.hxml`; it supplies `std` and `std/elixir/_std` before Haxe types
+upstream-colliding modules. Do not use bare global `haxelib dev` against the unbuilt checkout.
+When testing haxelib consumption, build/install the package artifact so Reflaxe has generated the
+single-classpath `src/**/*.cross.hx` layout. Keep `extraParams.hxml` free of relative `-cp` entries,
+which would resolve from the consumer project's working directory.
+
+An example or generated project that checks in its own `haxe_libraries/reflaxe.elixir.hxml` replaces
+the repository-scoped entry. It must therefore include the complete source-checkout roots (`src`,
+`std`, then `std/elixir/_std`) rather than relying on bootstrap to recover an upstream-colliding
+module after typing has started. `npm run guard:stdlib-layout` enforces this for every checked-in
+scoped entry.
+
 Separately, a scheduled CI workflow (**README Release Smoke (scheduled)**) validates the
 “install from GitHub Release tag” path stays working without making PR CI flaky.
 

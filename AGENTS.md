@@ -711,17 +711,17 @@ Examples
   - Repo root/runtime shims and any `*.ex` such as: `reflect.ex`, `std.ex`, `string_buf.ex`, `type.ex`, `int_iterator.ex`
   - Snapshot outputs under `test/snapshot/**/out/**/*.ex`
 - Make all behavior changes in the source-of-truth instead:
-  - Standard library Haxe sources: `std/**/*.cross.hx`, target-owned `std/**/*.hx`, and early dual-mode `src/haxe/**`
+  - Standard library Haxe sources: `std/elixir/_std/**/*.hx`, target-owned `std/**/*.hx`, and early plain dual-mode `src/haxe/**`
   - Compiler pipeline: `src/reflaxe/elixir/ast/**` (Builder → Transformer → Printer)
 - Only edit a `.ex` under `std/` directly if it is explicitly documented as the canonical runtime source (no corresponding `.hx` exists). If unsure, assume it is generated and fix upstream.
-- Example: Reflect.compare/2 — do not touch `reflect.ex`; change `std/Reflect.cross.hx` and re-run snapshots.
+- Example: Reflect.compare/2 — do not touch `reflect.ex`; change its authored `_std` Haxe source and re-run snapshots.
 - No band-aids: Do not “clean up” outputs or add runtime-only conditionals to mask upstream issues. Fix the transform or std source.
 - Pre-merge checks for std/behavior fixes:
-  - `rg` should show diffs only in `std/**/*.cross.hx`, target-owned `std/**/*.hx`, early dual-mode `src/haxe/**`, or `src/reflaxe/elixir/**`.
+  - `rg` should show diffs only in `std/elixir/_std/**/*.hx`, target-owned `std/**/*.hx`, early plain dual-mode `src/haxe/**`, or `src/reflaxe/elixir/**`.
   - No diffs to `reflect.ex`, `std.ex`, `string_buf.ex`, `type.ex`, `int_iterator.ex`, or `test/snapshot/**/out/**` unless accompanied by matching upstream `.hx` changes and a note explaining why the `.ex` is canonical.
 - Temporary runtime edits for debugging are allowed only if clearly annotated “DEBUG ONLY” and removed in the same PR after the proper upstream fix lands.
 - CI/WAE hygiene for stdlib overrides:
-  - When adding/overriding a stdlib module in `std/**/*.cross.hx`, keep the public API (signatures + overloads) identical to upstream Haxe stdlib.
+  - When adding/overriding a stdlib module in `std/elixir/_std/**/*.hx`, keep the public API (signatures + overloads) identical to upstream Haxe stdlib.
   - Avoid adding `@:coreApi` unless the upstream module is `@:coreApi` (core types get special treatment).
   - Verify locally before pushing: `npm run test:quick` + `npm run test:mix-fast` + `npm run test:examples-elixir` (WAE gate).
 - CI/WAE hygiene for `Examples (Elixir WAE)`:
@@ -885,15 +885,24 @@ Checklist before merging a transform:
 
 ### What lives where
 
-- `std/**/*.cross.hx`
-  - Cross-platform override files selected by Haxe when compiling in `cross` mode (Reflaxe targets on Haxe 4).
-  - These shadow upstream Haxe stdlib by classpath precedence (Elixir builds only).
+- `std/elixir/_std/**/*.hx`
+  - Authored upstream-colliding Elixir stdlib overrides, including `haxe.Exception`.
+  - Reflaxe package builds flatten these into generated `src/**/*.cross.hx`; never check those generated files into the source tree.
 - Plain `std/**/*.hx`
-  - Target-owned APIs/support modules such as `phoenix.*`, `ecto.*`, `elixir.*`, and BEAM-backed `sys.*`.
-  - These are also visible only when bootstrap adds `std/` for Elixir builds.
+  - Target-owned APIs/support modules such as `phoenix.*`, `ecto.*`, and `elixir.*`.
+  - Upstream `haxe.*` and `sys.*` replacements belong under `std/elixir/_std`.
 - `src/haxe/**`
-  - Rare early dual-mode stdlib overrides that must be available before bootstrap can add `std/`.
+  - Rare early plain `.hx` dual-mode stdlib overrides that must be available to macro/eval before bootstrap can add `std/`.
   - Use `#if macro` for eval-safe host behavior and `#else` extern/target behavior when needed.
+
+### Source checkout contract
+
+- Repo-local, GitHub, and Lix development must resolve `-lib reflaxe.elixir` through the scoped `haxe_libraries/reflaxe.elixir.hxml`, which adds `std`, then `std/elixir/_std`, before typing.
+- An app-local `haxe_libraries/reflaxe.elixir.hxml` overrides the repository entry instead of extending it. It must repeat the complete `src`, `std`, then `std/elixir/_std` contract; `npm run guard:stdlib-layout` audits every checked-in scoped entry.
+- Direct compiler HXML files that bypass `-lib reflaxe.elixir` must add those same classpaths explicitly.
+- Do not point bare global `haxelib dev` at the unbuilt checkout for compiler testing: haxelib exposes only the single `src` classpath, so early upstream-colliding `_std` modules may already be cached before a macro can add the path.
+- To test through haxelib, build/install the package artifact first. Reflaxe then places generated `.cross.hx` files inside the package `src` classpath.
+- Keep `extraParams.hxml` cwd-agnostic. Relative `-cp` entries there resolve from the consumer project, not this library.
 
 ### How gating works
 
@@ -1573,6 +1582,7 @@ haxe.elixir/                          # Project root (Reflaxe convention)
 │       ├── ElixirCompiler.hx         # Main compiler extending GenericCompiler<ElixirAST>
 │       └── ast/                      # AST builder, transformer, and printer
 ├── std/                              # 📚 STANDARD LIBRARY (compile-time classpath)
+│   ├── elixir/_std/                  # Authored upstream std overrides; packaged as .cross.hx
 │   ├── elixir/                       # Elixir stdlib externs (IO, File, etc.)
 │   ├── phoenix/                      # Phoenix framework externs  
 │   └── ecto/                         # Ecto ORM externs
@@ -1604,7 +1614,7 @@ haxe.elixir/                          # Project root (Reflaxe convention)
    - This is where ElixirCompiler.hx lives - the actual transpiler
    - Only exists at macro-time, not in generated output
 
-2. **`std/`** - Standard library (added to the classpath by `CompilerInit.Start()` for Elixir builds)
+2. **`std/`** - Standard library (added by scoped HXML before typing, with bootstrap fallback for Elixir builds)
    - Provides Haxe externs for Elixir/Phoenix/Ecto functionality
    - Available to all user code during compilation
    - Similar to how Reflaxe.CPP has `std/` for C++ standard library
@@ -3662,12 +3672,12 @@ See also: docs/03-compiler-development/transformers-overview.md (updated with th
 
 - Do not land a temporary “unblocker” if the correct long‑term solution is known and in scope. Implement the proper solution even if it takes longer.
 - Prefer earliest, architectural fixes over late compensating passes:
-  - stdlib behavior/shape → use `.cross.hx` overrides with typed externs and `__elixir__()`; avoid transformer overrides for stdlib.
+  - stdlib behavior/shape → author `_std` overrides with typed externs and `__elixir__()`; let Reflaxe generate package `.cross.hx` files and avoid transformer overrides for stdlib.
   - Code generation issues → fix in Builder/AST generation rather than printer or post‑hoc transformer hacks.
   - Classpath/availability → use target‑conditional classpath gating (CompilerInit.Start), never global inclusion.
 - Exception: short‑lived debug instrumentation (behind `-D debug_*` flags) solely to investigate an issue and removed in the same PR as the permanent fix. No “temporary” hacks are allowed to merge into main.
 - Review gate: PRs proposing stopgaps must include the proper fix in the same PR. Otherwise, reject the PR.
-- Example: Implement Reflect.* and Type.* via `std/Reflect.cross.hx` and `std/Type.cross.hx` rather than overriding them in `StdHaxeRuntimeOverrideTransforms`.
+- Example: Implement Reflect.* and Type.* in their `std/elixir/_std` Haxe sources rather than overriding them in `StdHaxeRuntimeOverrideTransforms`.
 ## Testing Discipline: No Test-Only Behavior Gates
 
 - Tests must validate the exact behavior we ship. Do not add compiler conditionals, flags, or alternate code paths whose sole purpose is to make tests pass.

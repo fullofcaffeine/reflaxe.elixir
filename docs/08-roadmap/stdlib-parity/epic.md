@@ -52,14 +52,15 @@ Related work:
 
 ## Root Layout (source of truth)
 
-Most stdlib overrides live under `std/elixir/_std/` and are injected only for Elixir builds via bootstrap macros.
+Stdlib overrides live under `std/elixir/_std/` and are supplied before typing by scoped source HXML,
+with bootstrap fallback for supported consumer paths.
 However, a small subset of overrides may need to be visible **before** bootstrap runs in consumer
 installs (because Haxe resolves some std modules very early).
 
 Local roots considered by the gap report:
 - `std/elixir/_std/` — authored Elixir stdlib overrides; packaged Reflaxe builds can materialize them as `.cross.hx`
 - `std/` — target-owned extern/support surfaces
-- `src/haxe/` — early-resolved overrides needed by consumer installs (example: `haxe.Exception`)
+- `src/haxe/` — selected early plain dual-mode overrides needed by macro/eval (for example, `haxe.ds.BalancedTree`)
 
 ## Definition of Done (incremental)
 
@@ -275,7 +276,7 @@ For each module/cluster task:
 - Implementation:
   - `std/elixir/_std/**/*.hx` for normal upstream-colliding stdlib overrides
   - target-owned plain `std/**/*.hx` for Elixir/Phoenix/Ecto/API support modules
-  - selected `src/haxe/**` early overrides only when consumer-install ordering or macro/eval timing requires it; `src/haxe/Exception.cross.hx` is the intentional lone source-tree `.cross.hx`
+  - selected plain `src/haxe/**` early overrides only when macro/eval timing requires them; never check in source-tree `.cross.hx` files
   - any compiler transforms required (shape-driven; no app-specific heuristics)
 - Tests:
   - Snapshot(s) updated/added (list)
@@ -325,6 +326,6 @@ Suggested repomix inputs (edit per module):
 - `src/reflaxe/elixir/CompilerBootstrap.hx`
 - `src/reflaxe/elixir/CompilerInit.hx`
 - `std/elixir/_std/<Module>.hx` for normal stdlib overrides
-- `src/haxe/<Module>.hx` for early plain Haxe overrides, or `src/haxe/Exception.cross.hx` for the exception base
+- `src/haxe/<Module>.hx` only for documented early plain Haxe overrides
 - `test/snapshot/**` cases relevant to the module
 - `docs/02-user-guide/exunit-testing.md`

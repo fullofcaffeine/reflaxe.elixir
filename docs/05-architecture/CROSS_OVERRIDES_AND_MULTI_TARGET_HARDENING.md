@@ -24,8 +24,7 @@ That is not automatically wrong, but it does mean contributors need a clearer me
    - target-owned APIs/support modules such as `elixir.*`, `phoenix.*`, and `ecto.*`
    - not for upstream Haxe std namespaces such as `sys.*`
 3. `src/haxe/**`
-   - early-visible bootstrap-safe overrides, including `src/haxe/Exception.cross.hx` and selected
-     `src/haxe/ds/*.hx` stdlib surfaces
+   - selected early-visible plain `src/haxe/ds/*.hx` dual-mode stdlib surfaces
 
 That is a coherent design, but it is a different design from `reflaxe.ocaml`.
 
@@ -36,7 +35,7 @@ That is a coherent design, but it is a different design from `reflaxe.ocaml`.
 | Main override style | broad `std/elixir/_std/**/*.hx` plus target-owned plain `std/**/*.hx` APIs plus selected early `src/haxe/**` overrides |
 | Is `_std` used? | yes |
 | Is `.cross.hx` used broadly? | yes in packaged output; source-tree overrides are plain `.hx` |
-| Does this repo own early `src/haxe/*` modules? | yes, `src/haxe/Exception.cross.hx` and selected `src/haxe/ds/*.hx` modules |
+| Does this repo own early `src/haxe/*` modules? | yes, selected plain `src/haxe/ds/*.hx` modules |
 | Bootstrap activation currently keys off raw Haxe 4 `Cross`? | yes |
 | Same-compilation sibling-target coexistence safe today? | no |
 | Highest-priority hardening item | narrow Haxe 4 bootstrap activation and add mixed-target fail-fast |
@@ -54,7 +53,8 @@ Examples include:
 - `std/elixir/_std/Std.hx`
 - `std/elixir/_std/StringTools.hx`
 
-Source-tree builds select these because bootstrap prepends `std/elixir/_std/` only for Elixir builds.
+Source-tree builds select these because scoped HXML supplies `std/elixir/_std/` before typing, with
+bootstrap fallback for supported consumer paths.
 Packaged Reflaxe builds can select their generated `.cross.hx` equivalents because the build is in
 Haxe's generic `cross` mode.
 
@@ -78,17 +78,9 @@ It means this repo can inject Elixir stdlib classpaths earlier and more broadly 
 
 ## Early ownership collision
 
-This repo currently owns:
-
-- `src/haxe/Exception.cross.hx`
-- selected `src/haxe/ds/*.hx` modules
-
-The sharpest known collision is `src/haxe/Exception.cross.hx`, which collides directly with the same
-early module path in `reflaxe.ocaml`.
-
-If both libraries are loaded in one compile, classpath order decides which `haxe.Exception` wins.
-
-The target-specific `#if elixir_output` guard is not enough to make that safe, because the wrong file can still win resolution first and expose only its fallback `extern` surface.
+This repo now authors `haxe.Exception` under `std/elixir/_std`, matching Rust and OCaml, so it no
+longer owns an exceptional checked-in `src/haxe/Exception.cross.hx` path. Selected plain
+`src/haxe/ds/*.hx` modules still occupy the initial classpath for documented macro/eval reasons.
 
 ## Risk level
 
@@ -96,7 +88,7 @@ Current status:
 
 - default one-target-at-a-time use: acceptable
 - same-compilation multi-target coexistence: unsafe today
-- primary reason: broad Haxe 4 `Cross` bootstrap activation plus early `haxe.Exception` ownership
+- primary reason: broad Haxe 4 `Cross` bootstrap activation and remaining early plain overrides
 
 ## Hardening direction
 
@@ -104,9 +96,8 @@ Recommended next steps:
 
 1. Narrow Haxe 4 bootstrap activation so raw `Cross` is not treated as sufficient target identity.
 2. Add explicit mixed-target detection/fail-fast behavior when sibling target libraries are active together.
-3. Keep `src/haxe/Exception.cross.hx` documented as the intentional lone source-tree `.cross.hx`
-   early override, not just another stdlib file. `npm run guard:stdlib-layout` enforces that no
-   additional checked-in `src/**/*.cross.hx` files are added.
+3. Keep the source-layout guard strict: no checked-in `src/**/*.cross.hx` or `std/**/*.cross.hx`
+   files; Reflaxe build owns those generated package artifacts.
 4. Add a focused coexistence smoke or regression test if a deterministic test shape can be designed.
 
 ## Local sibling references

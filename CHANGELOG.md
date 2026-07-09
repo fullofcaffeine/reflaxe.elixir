@@ -4,14 +4,17 @@
 
 * **reflaxe:** align stdlib override sources with the Reflaxe `_std` layout; source-tree and GitHub/Lix builds now load `std/elixir/_std` before target-owned `std` APIs so PhoenixHx/examples keep using the Elixir stdlib overrides in dev mode.
 * **reflaxe:** move remaining upstream-colliding `std/haxe/**` replacement modules into `std/elixir/_std`, leaving plain `std/haxe/**` for target-owned support surfaces.
+* **reflaxe:** move the authored `haxe.Exception` override into `std/elixir/_std/haxe/Exception.hx`; Reflaxe now creates `src/haxe/Exception.cross.hx` only in built release packages, matching the Rust and OCaml target layout without changing exception semantics.
 * **reflaxe:** align package entrypoint HXML files with Reflaxe-generated targets by applying package-scoped `nullSafety("reflaxe.elixir")` before bootstrap/init macros.
-* **reflaxe:** enforce the source-tree `.cross.hx` convention so the only checked-in `src/**/*.cross.hx` file remains the documented early `haxe.Exception` override.
+* **reflaxe:** enforce that checked-in source trees contain no `.cross.hx` package artifacts; upstream-colliding overrides must be authored under `std/elixir/_std` and flattened by Reflaxe at release time.
 * **reflaxe:** move BEAM `sys.*` stdlib replacements into `std/elixir/_std/sys` so Reflaxe packages them as `.cross.hx` files instead of shadowing host/eval `sys.*` during package CLI runs.
 * **ci:** strengthen the haxelib package smoke to assert the installed artifact keeps Reflaxe-flattened `src/**/*.cross.hx` overrides and does not publish source-only `_std` layout roots.
+* **ci:** audit every checked-in scoped `reflaxe.elixir.hxml` so nested example/PhoenixHx development cannot silently omit the target `_std` root and fall back to upstream modules.
+* **examples:** align the Phoenix chat app-local scoped library entry with the full Reflaxe source-checkout classpath contract and refresh its generated test helper output.
 * **ci:** validate the installed package CLI entrypoint so `main: "Run"` and `src/Run.hx` stay aligned in release artifacts.
 * **reflaxe:** audit vendored framework patches against upstream Reflaxe plus the Rust/OCaml converted targets, documenting which local fixes remain required, which are upstream candidates, and which drift needs a separate sync task.
 * **reflaxe:** remove debug-only vendored framework drift while preserving required local Reflaxe patches.
-* **docs:** clarify the remaining early `src/haxe/**` overrides, including why `src/haxe/Exception.cross.hx` intentionally remains the lone source-tree `.cross.hx` file.
+* **docs:** document the source-checkout contract: use the scoped `haxe_libraries/reflaxe.elixir.hxml` (or explicit `_std` classpaths), and build/install the Reflaxe package artifact instead of pointing bare `haxelib dev` at the unbuilt checkout.
 * **docs:** update stdlib parity task templates to use the current `_std` / target-owned `std/**` / early `src/haxe/**` ownership model.
 
 ## [0.14.20](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.19...v0.14.20) (2026-07-09)
