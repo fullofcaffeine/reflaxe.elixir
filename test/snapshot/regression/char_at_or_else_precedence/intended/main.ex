@@ -3,14 +3,6 @@ defmodule Main do
     nil
   end
   def has_unsafe_edge(value) do
-    (String.at(value, 0) || "") == "." or (String.at(value, 0) || "") == "-" or (if ((String.length(value) - 1) < 0) do
-  ""
-else
-  String.at(value, (String.length(value) - 1)) || ""
-end) == "." or (if ((String.length(value) - 1) < 0) do
-  ""
-else
-  String.at(value, (String.length(value) - 1)) || ""
-end) == "-"
+    StringTools.haxe_char_at(value, 0) == "." or StringTools.haxe_char_at(value, 0) == "-" or StringTools.haxe_char_at(value, (String.length(value) - 1)) == "." or StringTools.haxe_char_at(value, (String.length(value) - 1)) == "-"
   end
 end

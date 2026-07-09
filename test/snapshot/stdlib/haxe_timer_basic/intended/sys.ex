@@ -55,16 +55,16 @@ defmodule Sys do
   def command(cmd, args) do
     if (Kernel.is_nil(args) or length(args) == 0) do
 
-                case System.cmd("sh", ["-c", cmd]) do
-                    {_, 0} -> 0
-                    {_, code} -> code
-                end
+                      case System.cmd("sh", ["-c", cmd]) do
+                          {_, 0} -> 0
+                          {_, code} -> code
+                      end
     else
 
-                case System.cmd(cmd, args) do
-                    {_, 0} -> 0
-                    {_, code} -> code
-                end
+                      case System.cmd(cmd, args) do
+                          {_, 0} -> 0
+                          {_, code} -> code
+                      end
     end
   end
   def time() do
@@ -104,7 +104,7 @@ defmodule Sys do
   end
   def set_time_locale(loc) do
 
-            Application.put_env(:elixir, :locale, loc)
+                Application.put_env(:elixir, :locale, loc)
 
     true
   end

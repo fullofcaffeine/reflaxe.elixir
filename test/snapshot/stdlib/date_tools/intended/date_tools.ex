@@ -124,15 +124,12 @@ defmodule DateTools do
     p = 0
     {result, p} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, p}, fn _, {acc_result, acc_p} ->
       try do
-        next_percent = (case :binary.match(String.slice(f, acc_p..-1), "%") do
-          {pos, _} -> pos + acc_p
-          :nomatch -> -1
-        end)
+        next_percent = StringTools.haxe_index_of(f, "%", acc_p)
         if (next_percent < 0) do
           throw({:break, {acc_result, acc_p}})
         end
         acc_result = apply(Map.get(acc_result, :__reflaxe_class__) || Map.get(acc_result, :__struct__), :add_sub, [acc_result, f, acc_p, (next_percent - acc_p)])
-        acc_result = apply(Map.get(acc_result, :__reflaxe_class__) || Map.get(acc_result, :__struct__), :add, [acc_result, __format_get(d, String.slice(f, next_percent + 1, 1))])
+        acc_result = apply(Map.get(acc_result, :__reflaxe_class__) || Map.get(acc_result, :__struct__), :add, [acc_result, __format_get(d, StringTools.haxe_substr_non_nil_len(f, next_percent + 1, 1))])
         acc_p = next_percent + 2
         {:cont, {acc_result, acc_p}}
       catch
@@ -190,8 +187,8 @@ defmodule DateTools do
     DateTime.to_unix((fn ->
       elixir_month = month + 1
 
-            {:ok, naive} = NaiveDateTime.new(year, elixir_month, day, hour, min, sec)
-            DateTime.from_naive!(naive, "Etc/UTC")
+                  {:ok, naive} = NaiveDateTime.new(year, elixir_month, day, hour, min, sec)
+                  DateTime.from_naive!(naive, "Etc/UTC")
     end).(), :millisecond)
   end
 end

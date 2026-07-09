@@ -15,11 +15,11 @@ defmodule Assigns_Impl_ do
           {:ok, reflect_value} -> reflect_value
           _ ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -35,11 +35,11 @@ end) do
             Map.put(reflect_obj, reflect_field, reflect_value)
           false ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil ->
                 Map.put(reflect_obj, reflect_field, reflect_value)
               reflect_atom ->
@@ -56,11 +56,11 @@ end) do
           {:ok, reflect_value} -> reflect_value
           _ ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -76,11 +76,11 @@ end) do
             Map.put(reflect_obj, reflect_field, reflect_value)
           false ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil ->
                 Map.put(reflect_obj, reflect_field, reflect_value)
               reflect_atom ->
@@ -97,11 +97,11 @@ end) do
           true -> true
           false ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> false
               reflect_atom ->
                 Map.has_key?(reflect_obj, reflect_atom)

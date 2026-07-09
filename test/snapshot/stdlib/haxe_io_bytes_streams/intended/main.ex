@@ -65,9 +65,9 @@ defmodule Main do
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+          %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+          _ -> haxe_exception
+        end), haxe_exception} do
           {haxe_catch_value, _} when is_struct(haxe_catch_value, Eof) or is_map(haxe_catch_value) and is_map_key(haxe_catch_value, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, haxe_catch_value) == Eof -> nil
           _ ->
             reraise(haxe_exception, __STACKTRACE__)
@@ -76,10 +76,11 @@ end), haxe_exception} do
     src = BytesInput.new(Bytes.of_string("xyz", nil), nil, nil)
     sink = BytesOutput.new()
     _ = apply(Map.get(sink, :__reflaxe_class__) || Map.get(sink, :__struct__), :write_input, [sink, src, 2])
-    _ = assert_that((fn ->
-  reflaxe_dispatch_receiver = apply(Map.get(sink, :__reflaxe_class__) || Map.get(sink, :__struct__), :get_bytes, [sink])
-  _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
-end).() == "xyz", "writeInput failed")
+    _ =
+      assert_that((fn ->
+        reflaxe_dispatch_receiver = apply(Map.get(sink, :__reflaxe_class__) || Map.get(sink, :__struct__), :get_bytes, [sink])
+        _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+      end).() == "xyz", "writeInput failed")
     out = BytesOutput.new()
     _ = Output.set_big_endian(out, false)
     _ = apply(Map.get(out, :__reflaxe_class__) || Map.get(out, :__struct__), :write_double, [out, 3.25])
@@ -99,9 +100,9 @@ end).() == "xyz", "writeInput failed")
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+          %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+          _ -> haxe_exception
+        end), haxe_exception} do
           {haxe_catch_value, _} when is_struct(haxe_catch_value, Eof) or is_map(haxe_catch_value) and is_map_key(haxe_catch_value, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, haxe_catch_value) == Eof -> nil
           _ ->
             reraise(haxe_exception, __STACKTRACE__)

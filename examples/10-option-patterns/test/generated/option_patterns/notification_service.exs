@@ -137,11 +137,7 @@ defmodule OptionPatterns.NotificationService do
     if (not apply(Map.get(user, :__reflaxe_class__) || Map.get(user, :__struct__), :has_valid_email, [user]) and type == {:email}) do
       {:error, "User has invalid email address"}
     else
-      cond_value = (case :binary.match(message, "FAIL") do
-        {pos, _} -> pos
-        :nomatch -> -1
-      end)
-      if (cond_value >= 0) do
+      if (StringTools.haxe_index_of(message, "FAIL", 0) >= 0) do
         {:error, "Simulated delivery failure"}
       else
         record = OptionPatterns.NotificationRecord.new(user.id, message, type, System.system_time(:second), true)

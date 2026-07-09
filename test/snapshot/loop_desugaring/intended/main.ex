@@ -19,7 +19,6 @@ defmodule Main do
       try do
         if (acc_count < 10) do
           acc_sum = acc_sum + acc_count
-          _old_count = acc_count
           acc_count = acc_count + 1
           {:cont, {acc_count, acc_sum}}
         else
@@ -52,22 +51,18 @@ defmodule Main do
     _g = 0
     input_length = String.length(input)
     result = Enum.reduce(0..(input_length - 1)//1, result, fn i, result_acc ->
-      c = if (i < 0) do
-        nil
-      else
-        Enum.at(String.to_charlist(input), i)
-      end
+      c = StringTools.haxe_char_code_at(input, i)
       cond do
         c >= 65 and c <= 90 or c >= 97 and c <= 122 or c >= 48 and c <= 57 ->
           result_acc = result_acc <> (fn ->
-  code = c
-  <<code::utf8>>
-end).()
+            code = c
+            <<code::utf8>>
+          end).()
           result_acc
         c == 32 ->
           result_acc = result_acc <> "+"
           result_acc
-        :true ->
+        true ->
           result_acc = result_acc <> "%" <> String.upcase(StringTools.hex(c, 2))
           result_acc
       end
@@ -76,15 +71,15 @@ end).()
   end
   defp test_nested_loops() do
     result = []
-    result = result ++ ["(#{Kernel.to_string(0)}, #{Kernel.to_string(0)})"]
-    result = result ++ ["(#{Kernel.to_string(0)}, #{Kernel.to_string(1)})"]
-    result = result ++ ["(#{Kernel.to_string(0)}, #{Kernel.to_string(2)})"]
-    result = result ++ ["(#{Kernel.to_string(1)}, #{Kernel.to_string(0)})"]
-    result = result ++ ["(#{Kernel.to_string(1)}, #{Kernel.to_string(1)})"]
-    result = result ++ ["(#{Kernel.to_string(1)}, #{Kernel.to_string(2)})"]
-    result = result ++ ["(#{Kernel.to_string(2)}, #{Kernel.to_string(0)})"]
-    result = result ++ ["(#{Kernel.to_string(2)}, #{Kernel.to_string(1)})"]
-    result = result ++ ["(#{Kernel.to_string(2)}, #{Kernel.to_string(2)})"]
+    result = result ++ ["(#{Reflaxe.Elixir.HaxeFloat.to_string(0)}, #{Reflaxe.Elixir.HaxeFloat.to_string(0)})"]
+    result = result ++ ["(#{Reflaxe.Elixir.HaxeFloat.to_string(0)}, #{Reflaxe.Elixir.HaxeFloat.to_string(1)})"]
+    result = result ++ ["(#{Reflaxe.Elixir.HaxeFloat.to_string(0)}, #{Reflaxe.Elixir.HaxeFloat.to_string(2)})"]
+    result = result ++ ["(#{Reflaxe.Elixir.HaxeFloat.to_string(1)}, #{Reflaxe.Elixir.HaxeFloat.to_string(0)})"]
+    result = result ++ ["(#{Reflaxe.Elixir.HaxeFloat.to_string(1)}, #{Reflaxe.Elixir.HaxeFloat.to_string(1)})"]
+    result = result ++ ["(#{Reflaxe.Elixir.HaxeFloat.to_string(1)}, #{Reflaxe.Elixir.HaxeFloat.to_string(2)})"]
+    result = result ++ ["(#{Reflaxe.Elixir.HaxeFloat.to_string(2)}, #{Reflaxe.Elixir.HaxeFloat.to_string(0)})"]
+    result = result ++ ["(#{Reflaxe.Elixir.HaxeFloat.to_string(2)}, #{Reflaxe.Elixir.HaxeFloat.to_string(1)})"]
+    result = result ++ ["(#{Reflaxe.Elixir.HaxeFloat.to_string(2)}, #{Reflaxe.Elixir.HaxeFloat.to_string(2)})"]
     result
   end
   defp test_loop_with_break() do

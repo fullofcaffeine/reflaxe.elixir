@@ -3,10 +3,10 @@ defmodule HashMap do
   def new(entries_param) do
     struct = %{:__reflaxe_class__ => HashMap, :entries => nil}
     struct = %{struct | entries: if (Reflaxe.Elixir.HaxeFloat.eq(entries_param, nil)) do
-  %{}
-else
-  entries_param
-end}
+      %{}
+    else
+      entries_param
+    end}
     struct
   end
   def set(struct, k, v) do
@@ -25,32 +25,32 @@ end}
   end
   def remove(struct, k) do
     result = (
-      hash = hash(k)
-      {Map.delete(struct.entries, hash), Map.has_key?(struct.entries, hash)}
-)
+          hash = hash(k)
+          {Map.delete(struct.entries, hash), Map.has_key?(struct.entries, hash)}
+    )
     struct = %{struct | entries: elem(result, 0)}
     {struct, elem(result, 1)}
   end
   def keys(struct) do
     iterator_from_list((fn ->
-      struct.entries
-      |> Map.values()
-      |> Enum.map(fn %{key: key} -> key end)
- end).())
+          struct.entries
+          |> Map.values()
+          |> Enum.map(fn %{key: key} -> key end)
+     end).())
   end
   def iterator(struct) do
     iterator_from_list((fn ->
-      struct.entries
-      |> Map.values()
-      |> Enum.map(fn %{value: value} -> value end)
- end).())
+          struct.entries
+          |> Map.values()
+          |> Enum.map(fn %{value: value} -> value end)
+     end).())
   end
   def key_value_iterator(struct) do
     iterator_from_list((fn ->
-      struct.entries
-      |> Map.values()
-      |> Enum.map(fn %{key: key, value: value} -> %{key: key, value: value} end)
- end).())
+          struct.entries
+          |> Map.values()
+          |> Enum.map(fn %{key: key, value: value} -> %{key: key, value: value} end)
+     end).())
   end
   def copy(struct) do
     HashMap.new(struct.entries)

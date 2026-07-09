@@ -8,10 +8,10 @@ defmodule Reflaxe.Elixir.HaxeThrow do
   end
   def exception(opts) do
 
-value = Keyword.get(opts, :value)
-message = Keyword.get(opts, :message)
-message = if message == nil, do: inspect(value), else: message
-struct(__MODULE__, Keyword.put(opts, :message, message))
+    value = Keyword.get(opts, :value)
+    message = Keyword.get(opts, :message)
+    message = if message == nil, do: inspect(value), else: message
+    struct(__MODULE__, Keyword.put(opts, :message, message))
 
   end
   def get_message(struct) do

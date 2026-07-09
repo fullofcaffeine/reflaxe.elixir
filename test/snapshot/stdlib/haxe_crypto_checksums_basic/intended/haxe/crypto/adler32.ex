@@ -12,7 +12,7 @@ defmodule Haxe.Crypto.Adler32 do
     if (len != 0) do
       slice = :binary.part(apply(Map.get(b, :__reflaxe_class__) || Map.get(b, :__struct__), :get_data, [b]), pos, len)
       updated = (:erlang.adler32((fn -> value = struct.adler
-if value < 0, do: value + 4294967296, else: value end).(), slice))
+      if value < 0, do: value + 4294967296, else: value end).(), slice))
       struct = %{struct | adler: (if :erlang.band(updated, 4294967295) >= 2147483648, do: :erlang.band(updated, 4294967295) - 4294967296, else: :erlang.band(updated, 4294967295))}
       struct
     else

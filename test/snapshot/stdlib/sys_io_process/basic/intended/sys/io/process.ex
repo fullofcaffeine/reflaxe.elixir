@@ -36,13 +36,13 @@ defmodule Sys.IO.Process do
       struct.exit_code_cache
     else
       maybe = (
-            port = struct.port
-            receive do
-              {^port, {:exit_status, status}} -> status
-            after 0 ->
-              nil
-            end
-)
+                  port = struct.port
+                  receive do
+                    {^port, {:exit_status, status}} -> status
+                  after 0 ->
+                    nil
+                  end
+      )
       if (not Kernel.is_nil(maybe)) do
         _ = %{struct | exit_code_cache: maybe}
         maybe
@@ -51,11 +51,11 @@ defmodule Sys.IO.Process do
           nil
         else
           status = (
-            port = struct.port
-            receive do
-              {^port, {:exit_status, status}} -> status
-            end
-)
+                      port = struct.port
+                      receive do
+                        {^port, {:exit_status, status}} -> status
+                      end
+          )
           _ = %{struct | exit_code_cache: status}
           status
         end
@@ -68,10 +68,10 @@ defmodule Sys.IO.Process do
     else
       struct = %{struct | is_closed: true}
 
-            port = struct.port
-            if Port.info(port) != nil do
-              Port.close(port)
-            end
+                  port = struct.port
+                  if Port.info(port) != nil do
+                    Port.close(port)
+                  end
 
     end
   end
@@ -84,10 +84,10 @@ defmodule Sys.IO.Process do
       raise Reflaxe.Elixir.HaxeThrow, [value: "sys.io.Process: executable not found: " <> cmd]
     end
 
-            stdio_opt = if use_stdio, do: :use_stdio, else: :nouse_stdio
-            opts = [:binary, :exit_status, stdio_opt, {:args, args}]
-            opts = if use_stdio, do: [:stderr_to_stdout | opts], else: opts
-            Port.open({:spawn_executable, executable}, opts)
+                stdio_opt = if use_stdio, do: :use_stdio, else: :nouse_stdio
+                opts = [:binary, :exit_status, stdio_opt, {:args, args}]
+                opts = if use_stdio, do: [:stderr_to_stdout | opts], else: opts
+                Port.open({:spawn_executable, executable}, opts)
 
   end
   defp open_shell_command(cmd, use_stdio) do
@@ -96,10 +96,10 @@ defmodule Sys.IO.Process do
       raise Reflaxe.Elixir.HaxeThrow, [value: "sys.io.Process: shell executable not found (sh)"]
     end
 
-            stdio_opt = if use_stdio, do: :use_stdio, else: :nouse_stdio
-            opts = [:binary, :exit_status, stdio_opt, {:args, ["-c", cmd]}]
-            opts = if use_stdio, do: [:stderr_to_stdout | opts], else: opts
-            Port.open({:spawn_executable, shell}, opts)
+                stdio_opt = if use_stdio, do: :use_stdio, else: :nouse_stdio
+                opts = [:binary, :exit_status, stdio_opt, {:args, ["-c", cmd]}]
+                opts = if use_stdio, do: [:stderr_to_stdout | opts], else: opts
+                Port.open({:spawn_executable, shell}, opts)
 
   end
 end

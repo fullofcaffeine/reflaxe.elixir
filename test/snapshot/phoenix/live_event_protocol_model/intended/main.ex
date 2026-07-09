@@ -32,12 +32,12 @@ defmodule Main do
     end
   end
   def main() do
-    _ = assert_that(:binary.match(Main.manifest(), "protocol ProfileHookEvent") != :nomatch, "protocol name missing")
-    _ = assert_that(:binary.match(Main.manifest(), "companion ProfileHookEvents") != :nomatch, "companion name missing")
-    _ = assert_that(:binary.match(Main.manifest(), "event hook ClipboardCopied clipboard_copied (message:String->message:string)") != :nomatch, "clipboard event missing")
-    _ = assert_that(:binary.match(Main.manifest(), "event hook Ping ping ()") != :nomatch, "ping event missing")
-    _ = assert_that(:binary.match(Main.manifest(), "event hook TodoSelected todo_selected (todoId:Int->todo_id:int, fromHook:Bool->from_hook:bool)") != :nomatch, "multi-field event missing")
-    _ = assert_that(:binary.match(Main.manifest(), "event hook TagsChanged tags_changed (tags:Array<String>->tags:string_array)") != :nomatch, "array field missing")
+    _ = assert_that(StringTools.haxe_index_of(Main.manifest(), "protocol ProfileHookEvent", 0) >= 0, "protocol name missing")
+    _ = assert_that(StringTools.haxe_index_of(Main.manifest(), "companion ProfileHookEvents", 0) >= 0, "companion name missing")
+    _ = assert_that(StringTools.haxe_index_of(Main.manifest(), "event hook ClipboardCopied clipboard_copied (message:String->message:string)", 0) >= 0, "clipboard event missing")
+    _ = assert_that(StringTools.haxe_index_of(Main.manifest(), "event hook Ping ping ()", 0) >= 0, "ping event missing")
+    _ = assert_that(StringTools.haxe_index_of(Main.manifest(), "event hook TodoSelected todo_selected (todoId:Int->todo_id:int, fromHook:Bool->from_hook:bool)", 0) >= 0, "multi-field event missing")
+    _ = assert_that(StringTools.haxe_index_of(Main.manifest(), "event hook TagsChanged tags_changed (tags:Array<String>->tags:string_array)", 0) >= 0, "array field missing")
     _ = assert_that(String.length(Main.hash()) == 40, "manifest hash should be sha1")
   end
 end

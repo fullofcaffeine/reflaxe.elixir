@@ -83,16 +83,16 @@ defmodule ResultTools do
     values = []
     _g = 0
     (case Enum.reduce_while(results, {:__reflaxe_continue__, values}, fn result, {:__reflaxe_continue__, values_acc} ->
-  (case ((case result do
-  {:ok, value} ->
-    values_acc = values_acc ++ [value]
-    {:cont, {:__reflaxe_continue__, values_acc}}
-  {:error, error} -> {:halt, {:__reflaxe_return__, {:error, error}}}
-end)) do
-    {:halt, reflaxe_halt_payload} -> {:halt, reflaxe_halt_payload}
-    {:cont, {:__reflaxe_continue__, values_acc}} -> {:cont, {:__reflaxe_continue__, values_acc}}
-  end)
-end) do
+      (case ((case result do
+        {:ok, value} ->
+          values_acc = values_acc ++ [value]
+          {:cont, {:__reflaxe_continue__, values_acc}}
+        {:error, error} -> {:halt, {:__reflaxe_return__, {:error, error}}}
+      end)) do
+        {:halt, reflaxe_halt_payload} -> {:halt, reflaxe_halt_payload}
+        {:cont, {:__reflaxe_continue__, values_acc}} -> {:cont, {:__reflaxe_continue__, values_acc}}
+      end)
+    end) do
       {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
       {:__reflaxe_continue__, reflaxe_continue_values} ->
         values = reflaxe_continue_values

@@ -21,6 +21,8 @@
   "option_patterns/bulk_notification_result.exs",
   "int_iterator.exs",
   "haxe/test/assert.exs",
+  "haxe/iterators/string_key_value_iterator.exs",
+  "haxe/iterators/string_iterator.exs",
   "haxe/iterators/array_key_value_iterator.exs",
   "haxe/iterators/array_iterator.exs",
   "haxe/io/output.exs",
@@ -36,7 +38,7 @@
   "haxe/ds/option_tools.exs",
   "haxe/_call_stack/call_stack_impl_.exs"
 ],
-  "id": 15,
+  "id": 18,
   "wasCached": false,
   "version": 1
 }

@@ -17,17 +17,19 @@ defmodule Main do
   end
   defp test_function_arguments() do
     optional = nil
-    _ = do_something((fn ->
-    tmp = optional
-    if (not Kernel.is_nil(tmp)), do: tmp, else: "default"
-  end).())
-    _ = do_multiple((fn ->
-    tmp = optional
-    if (not Kernel.is_nil(tmp)), do: tmp, else: "first"
-  end).(), (fn ->
-    tmp = get_value()
-    if (not Kernel.is_nil(tmp)), do: tmp, else: "second"
-  end).())
+    _ =
+      do_something((fn ->
+          tmp = optional
+          if (not Kernel.is_nil(tmp)), do: tmp, else: "default"
+        end).())
+    _ =
+      do_multiple((fn ->
+          tmp = optional
+          if (not Kernel.is_nil(tmp)), do: tmp, else: "first"
+        end).(), (fn ->
+          tmp = get_value()
+          if (not Kernel.is_nil(tmp)), do: tmp, else: "second"
+        end).())
   end
   defp test_object_literals() do
     optional = nil
@@ -56,27 +58,27 @@ defmodule Main do
     third = "final"
     _result = if (not Kernel.is_nil((tmp = if (not Kernel.is_nil((tmp = first))), do: tmp, else: second))), do: tmp, else: third
     _complex = ("#{(fn -> tmp = first
-if (tmp != nil), do: tmp, else: "a" end).()}#{(fn -> tmp = second
-if (tmp != nil), do: tmp, else: "b" end).()}")
+    if (tmp != nil), do: tmp, else: "a" end).()}#{(fn -> tmp = second
+    if (tmp != nil), do: tmp, else: "b" end).()}")
   end
   defp test_method_calls() do
     obj = nil
     _name = if (not Kernel.is_nil((tmp = if (not Kernel.is_nil(obj)) do
-  apply(Map.get(obj, :__reflaxe_class__) || Map.get(obj, :__struct__), :get_name, [obj])
-else
-  nil
-end))), do: tmp, else: "Anonymous"
+      apply(Map.get(obj, :__reflaxe_class__) || Map.get(obj, :__struct__), :get_name, [obj])
+    else
+      nil
+    end))), do: tmp, else: "Anonymous"
     _value = if (not Kernel.is_nil((tmp = if (not Kernel.is_nil(obj)) do
-  apply(Map.get(obj, :__reflaxe_class__) || Map.get(obj, :__struct__), :get_value, [obj])
-else
-  nil
-end))), do: tmp, else: 100
+      apply(Map.get(obj, :__reflaxe_class__) || Map.get(obj, :__struct__), :get_value, [obj])
+    else
+      nil
+    end))), do: tmp, else: 100
     opt = get_optional()
     _result = if (not Kernel.is_nil((tmp = if (not Kernel.is_nil(opt)) do
-  apply(Map.get(opt, :__reflaxe_class__) || Map.get(opt, :__struct__), :process, [opt])
-else
-  nil
-end))), do: tmp, else: "default"
+      apply(Map.get(opt, :__reflaxe_class__) || Map.get(opt, :__struct__), :process, [opt])
+    else
+      nil
+    end))), do: tmp, else: "default"
   end
   defp get_value() do
     nil

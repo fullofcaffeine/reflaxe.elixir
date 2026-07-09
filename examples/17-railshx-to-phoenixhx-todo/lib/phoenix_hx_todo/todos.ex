@@ -50,16 +50,17 @@ defmodule PhoenixHxTodo.Todos do
     else
       defaults = PhoenixHxTodoHx.Live.TodoState.seed(PhoenixHxTodo.User.display_name(user))
       _g = 0
-      _ = Enum.each(defaults, fn item ->
-  (case create_for_user(user, item.title, item.notes) do
-    {:ok, created} ->
-      cond do
-        created.completed -> PhoenixHxTodo.Repo.update(PhoenixHxTodo.Todo.toggle_completed(created))
-        true -> nil
-      end
-    {:error, _error} -> nil
-  end)
-end)
+      _ =
+        Enum.each(defaults, fn item ->
+          (case create_for_user(user, item.title, item.notes) do
+            {:ok, created} ->
+              cond do
+                created.completed -> PhoenixHxTodo.Repo.update(PhoenixHxTodo.Todo.toggle_completed(created))
+                true -> nil
+              end
+            {:error, _error} -> nil
+          end)
+        end)
     end
   end
   def view_items_for_user(user) do

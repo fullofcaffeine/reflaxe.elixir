@@ -31,105 +31,105 @@ defmodule Haxe.Crypto.BaseCode do
   end
   def encode_bytes(struct, bytes) do
     data = (
-      reflaxe_basecode_input = apply(Map.get(bytes, :__reflaxe_class__) || Map.get(bytes, :__struct__), :get_data, [bytes])
-      reflaxe_basecode_base = (fn -> reflaxe_dispatch_receiver = struct.base
-apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get_data, [reflaxe_dispatch_receiver]) end).()
-      reflaxe_basecode_nbits = struct.nbits
-      reflaxe_basecode_bit_count = byte_size(reflaxe_basecode_input) * 8
-      reflaxe_basecode_size = div(reflaxe_basecode_bit_count, reflaxe_basecode_nbits)
-      reflaxe_basecode_mask = Bitwise.bsl(1, reflaxe_basecode_nbits) - 1
+          reflaxe_basecode_input = apply(Map.get(bytes, :__reflaxe_class__) || Map.get(bytes, :__struct__), :get_data, [bytes])
+          reflaxe_basecode_base = (fn -> reflaxe_dispatch_receiver = struct.base
+    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get_data, [reflaxe_dispatch_receiver]) end).()
+          reflaxe_basecode_nbits = struct.nbits
+          reflaxe_basecode_bit_count = byte_size(reflaxe_basecode_input) * 8
+          reflaxe_basecode_size = div(reflaxe_basecode_bit_count, reflaxe_basecode_nbits)
+          reflaxe_basecode_mask = Bitwise.bsl(1, reflaxe_basecode_nbits) - 1
 
-      reflaxe_basecode_read = fn reflaxe_basecode_read, buf, curbits, pin ->
-        if curbits < reflaxe_basecode_nbits do
-          reflaxe_basecode_read.(
-            reflaxe_basecode_read,
-            Bitwise.bor(Bitwise.bsl(buf, 8), :binary.at(reflaxe_basecode_input, pin)),
-            curbits + 8,
-            pin + 1
-          )
-        else
-          {buf, curbits, pin}
-        end
-      end
+          reflaxe_basecode_read = fn reflaxe_basecode_read, buf, curbits, pin ->
+            if curbits < reflaxe_basecode_nbits do
+              reflaxe_basecode_read.(
+                reflaxe_basecode_read,
+                Bitwise.bor(Bitwise.bsl(buf, 8), :binary.at(reflaxe_basecode_input, pin)),
+                curbits + 8,
+                pin + 1
+              )
+            else
+              {buf, curbits, pin}
+            end
+          end
 
-      reflaxe_basecode_encode = fn reflaxe_basecode_encode, remaining, out, buf, curbits, pin ->
-        if remaining == 0 do
-          {out, buf, curbits, pin}
-        else
-          {buf, curbits, pin} = reflaxe_basecode_read.(reflaxe_basecode_read, buf, curbits, pin)
-          curbits = curbits - reflaxe_basecode_nbits
-          value = :binary.at(reflaxe_basecode_base, Bitwise.band(Bitwise.bsr(buf, curbits), reflaxe_basecode_mask))
-          reflaxe_basecode_encode.(reflaxe_basecode_encode, remaining - 1, [value | out], buf, curbits, pin)
-        end
-      end
+          reflaxe_basecode_encode = fn reflaxe_basecode_encode, remaining, out, buf, curbits, pin ->
+            if remaining == 0 do
+              {out, buf, curbits, pin}
+            else
+              {buf, curbits, pin} = reflaxe_basecode_read.(reflaxe_basecode_read, buf, curbits, pin)
+              curbits = curbits - reflaxe_basecode_nbits
+              value = :binary.at(reflaxe_basecode_base, Bitwise.band(Bitwise.bsr(buf, curbits), reflaxe_basecode_mask))
+              reflaxe_basecode_encode.(reflaxe_basecode_encode, remaining - 1, [value | out], buf, curbits, pin)
+            end
+          end
 
-      {reflaxe_basecode_out, reflaxe_basecode_buf, reflaxe_basecode_curbits, _} =
-        reflaxe_basecode_encode.(reflaxe_basecode_encode, reflaxe_basecode_size, [], 0, 0, 0)
+          {reflaxe_basecode_out, reflaxe_basecode_buf, reflaxe_basecode_curbits, _} =
+            reflaxe_basecode_encode.(reflaxe_basecode_encode, reflaxe_basecode_size, [], 0, 0, 0)
 
-      reflaxe_basecode_out =
-        if reflaxe_basecode_curbits > 0 do
-          value =
-            :binary.at(
-              reflaxe_basecode_base,
-              Bitwise.band(Bitwise.bsl(reflaxe_basecode_buf, reflaxe_basecode_nbits - reflaxe_basecode_curbits), reflaxe_basecode_mask)
-            )
-          [value | reflaxe_basecode_out]
-        else
-          reflaxe_basecode_out
-        end
+          reflaxe_basecode_out =
+            if reflaxe_basecode_curbits > 0 do
+              value =
+                :binary.at(
+                  reflaxe_basecode_base,
+                  Bitwise.band(Bitwise.bsl(reflaxe_basecode_buf, reflaxe_basecode_nbits - reflaxe_basecode_curbits), reflaxe_basecode_mask)
+                )
+              [value | reflaxe_basecode_out]
+            else
+              reflaxe_basecode_out
+            end
 
-      :erlang.list_to_binary(Enum.reverse(reflaxe_basecode_out))
-)
+          :erlang.list_to_binary(Enum.reverse(reflaxe_basecode_out))
+    )
     _ = Bytes.of_data(data)
   end
   def decode_bytes(struct, bytes) do
     data = (
-      reflaxe_basecode_input = apply(Map.get(bytes, :__reflaxe_class__) || Map.get(bytes, :__struct__), :get_data, [bytes])
-      reflaxe_basecode_base = (fn -> reflaxe_dispatch_receiver = struct.base
-apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get_data, [reflaxe_dispatch_receiver]) end).()
-      reflaxe_basecode_nbits = struct.nbits
-      reflaxe_basecode_size = div(byte_size(reflaxe_basecode_input) * reflaxe_basecode_nbits, 8)
+          reflaxe_basecode_input = apply(Map.get(bytes, :__reflaxe_class__) || Map.get(bytes, :__struct__), :get_data, [bytes])
+          reflaxe_basecode_base = (fn -> reflaxe_dispatch_receiver = struct.base
+    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get_data, [reflaxe_dispatch_receiver]) end).()
+          reflaxe_basecode_nbits = struct.nbits
+          reflaxe_basecode_size = div(byte_size(reflaxe_basecode_input) * reflaxe_basecode_nbits, 8)
 
-      reflaxe_basecode_find = fn byte ->
-        Enum.find_value(0..(byte_size(reflaxe_basecode_base) - 1)//1, -1, fn index ->
-          if :binary.at(reflaxe_basecode_base, index) == byte do
-            index
-          else
-            false
+          reflaxe_basecode_find = fn byte ->
+            Enum.find_value(0..(byte_size(reflaxe_basecode_base) - 1)//1, -1, fn index ->
+              if :binary.at(reflaxe_basecode_base, index) == byte do
+                index
+              else
+                false
+              end
+            end)
           end
-        end)
-      end
 
-      reflaxe_basecode_read = fn reflaxe_basecode_read, buf, curbits, pin ->
-        if curbits < 8 do
-          value = reflaxe_basecode_find.(:binary.at(reflaxe_basecode_input, pin))
-          if value == -1 do
-            raise Reflaxe.Elixir.HaxeThrow, [value: "BaseCode : invalid encoded char"]
+          reflaxe_basecode_read = fn reflaxe_basecode_read, buf, curbits, pin ->
+            if curbits < 8 do
+              value = reflaxe_basecode_find.(:binary.at(reflaxe_basecode_input, pin))
+              if value == -1 do
+                raise Reflaxe.Elixir.HaxeThrow, [value: "BaseCode : invalid encoded char"]
+              end
+              reflaxe_basecode_read.(
+                reflaxe_basecode_read,
+                Bitwise.bor(Bitwise.bsl(buf, reflaxe_basecode_nbits), value),
+                curbits + reflaxe_basecode_nbits,
+                pin + 1
+              )
+            else
+              {buf, curbits, pin}
+            end
           end
-          reflaxe_basecode_read.(
-            reflaxe_basecode_read,
-            Bitwise.bor(Bitwise.bsl(buf, reflaxe_basecode_nbits), value),
-            curbits + reflaxe_basecode_nbits,
-            pin + 1
-          )
-        else
-          {buf, curbits, pin}
-        end
-      end
 
-      reflaxe_basecode_decode = fn reflaxe_basecode_decode, remaining, out, buf, curbits, pin ->
-        if remaining == 0 do
-          out
-        else
-          {buf, curbits, pin} = reflaxe_basecode_read.(reflaxe_basecode_read, buf, curbits, pin)
-          curbits = curbits - 8
-          value = Bitwise.band(Bitwise.bsr(buf, curbits), 0xFF)
-          reflaxe_basecode_decode.(reflaxe_basecode_decode, remaining - 1, [value | out], buf, curbits, pin)
-        end
-      end
+          reflaxe_basecode_decode = fn reflaxe_basecode_decode, remaining, out, buf, curbits, pin ->
+            if remaining == 0 do
+              out
+            else
+              {buf, curbits, pin} = reflaxe_basecode_read.(reflaxe_basecode_read, buf, curbits, pin)
+              curbits = curbits - 8
+              value = Bitwise.band(Bitwise.bsr(buf, curbits), 0xFF)
+              reflaxe_basecode_decode.(reflaxe_basecode_decode, remaining - 1, [value | out], buf, curbits, pin)
+            end
+          end
 
-      :erlang.list_to_binary(Enum.reverse(reflaxe_basecode_decode.(reflaxe_basecode_decode, reflaxe_basecode_size, [], 0, 0, 0)))
-)
+          :erlang.list_to_binary(Enum.reverse(reflaxe_basecode_decode.(reflaxe_basecode_decode, reflaxe_basecode_size, [], 0, 0, 0)))
+    )
     _ = Bytes.of_data(data)
   end
   def encode_string(struct, s) do

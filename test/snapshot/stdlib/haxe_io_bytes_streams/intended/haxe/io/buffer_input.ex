@@ -16,9 +16,9 @@ defmodule BufferInput do
       struct
     end
     struct = %{struct | available: struct.available + (fn ->
-  reflaxe_dispatch_receiver = struct.i
-  _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :read_bytes, [reflaxe_dispatch_receiver, struct.buf, struct.available, (struct.buf.length - struct.available)])
-end).()}
+      reflaxe_dispatch_receiver = struct.i
+      _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :read_bytes, [reflaxe_dispatch_receiver, struct.buf, struct.available, (struct.buf.length - struct.available)])
+    end).()}
     struct
   end
   def read_byte(struct) do

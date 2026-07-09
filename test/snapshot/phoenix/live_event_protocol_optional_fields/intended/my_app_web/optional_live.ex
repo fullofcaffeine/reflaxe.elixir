@@ -3,13 +3,13 @@ defmodule MyAppWeb.OptionalLive do
   use Phoenix.LiveView, layout: {MyAppWeb.Layouts, :app}
   def render(assigns) do
     ~H"""
-<section>
-			<button phx-click={"search"}>Search</button>
-			<form phx-submit={"save_profile"}>
-				<input type="text" name="profile[name]" value={@summary} />
-			</form>
-		</section>
-"""
+    <section>
+          <button phx-click={"search"}>Search</button>
+          <form phx-submit={"save_profile"}>
+            <input type="text" name="profile[name]" value={@summary} />
+          </form>
+        </section>
+    """
   end
   def decode_search(payload) do
     MyApp.OptionalEvents.decode("search", payload)

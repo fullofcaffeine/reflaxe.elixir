@@ -130,6 +130,10 @@ class ConstructorBuilder {
 			return EMap([]);
 		}
 
+		if (isStringType(classType) && args.length == 1) {
+			return args[0].def;
+		}
+
 		// ====================================================================
 		// PATTERN 3: Regular Classes
 		// ====================================================================
@@ -207,6 +211,10 @@ class ConstructorBuilder {
 
 	static function isHaxeDsClass(classType:ClassType, className:String):Bool {
 		return classType != null && classType.name == className && classType.pack != null && classType.pack.join(".") == "haxe.ds";
+	}
+
+	static function isStringType(classType:ClassType):Bool {
+		return classType != null && classType.name == "String" && classType.pack != null && classType.pack.length == 0;
 	}
 
 	static function objectMapUnsupportedMessage():String {

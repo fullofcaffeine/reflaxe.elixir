@@ -72,11 +72,7 @@ defmodule Main do
       try do
         if (acc_n > 0) do
           digit = Bitwise.band(acc_n, 15)
-          acc_s = (if (digit < 0) do
-  ""
-else
-  String.at(hex_chars, digit) || ""
-end) <> acc_s
+          acc_s = StringTools.haxe_char_at(hex_chars, digit) <> acc_s
           acc_n = Bitwise.bsr(acc_n, 4)
           {:cont, {acc_n, acc_s}}
         else

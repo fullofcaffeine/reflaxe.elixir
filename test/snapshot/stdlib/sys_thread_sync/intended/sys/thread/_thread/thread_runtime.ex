@@ -32,18 +32,18 @@ defmodule ThreadRuntime do
   def read_message(block) do
     if (block) do
       (
-                receive do
-                  {:reflaxe_sys_thread_message, msg} -> msg
-                end
-            )
+                      receive do
+                        {:reflaxe_sys_thread_message, msg} -> msg
+                      end
+                  )
     else
       (
-            receive do
-              {:reflaxe_sys_thread_message, msg} -> msg
-            after
-              0 -> nil
-            end
-        )
+                  receive do
+                    {:reflaxe_sys_thread_message, msg} -> msg
+                  after
+                    0 -> nil
+                  end
+              )
     end
   end
   def ensure_event_loop() do

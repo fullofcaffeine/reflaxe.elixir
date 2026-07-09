@@ -7,8 +7,8 @@ defmodule TestAppWeb.StreamTokensLive do
   end
   def render(assigns) do
     ~H"""
-<ul id="todos" phx-update="stream"></ul>
-"""
+    <ul id="todos" phx-update="stream"></ul>
+    """
   end
   defp seed_todos() do
     [todo(1, "First")]

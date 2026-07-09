@@ -1,4 +1,8 @@
 defmodule ArrayIterator do
-  def has_next(struct), do: struct.current < length(struct.array)
-  def next(struct), do: struct.array[struct.current + 1]
+  def new(array_param) do
+    struct = %{:__reflaxe_class__ => ArrayIterator, :array => nil, :ref => nil}
+    struct = %{struct | array: array_param}
+    struct = %{struct | ref: make_ref()}
+    struct
+  end
 end

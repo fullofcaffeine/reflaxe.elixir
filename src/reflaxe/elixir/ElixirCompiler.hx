@@ -124,6 +124,8 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	// File extension for generated Elixir files
 	public var fileExtension:String = ".ex";
 
+	var forceStringToolsRuntime:Bool = false;
+
 	public static function enumModuleName(enumType:EnumType):String {
 		var targetAlias = reflaxe.elixir.PhoenixTargetNames.enumTargetAlias(enumType);
 		return targetAlias != null ? targetAlias : defaultEnumModuleName(enumType);
@@ -332,6 +334,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	public override function filterTypes(moduleTypes:Array<haxe.macro.Type.ModuleType>):Array<haxe.macro.Type.ModuleType> {
 		#if eval
 		var result = moduleTypes != null ? moduleTypes.copy() : [];
+		forceStringToolsRuntime = false;
 
 		// Migration-only compilation mode:
 		// When emitting `.exs` migrations, we must avoid writing non-migration helper modules
@@ -351,10 +354,202 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			}
 			return migrations;
 		}
+		if (moduleTypesNeedStringToolsRuntime(result)) {
+			addStringToolsModuleIfMissing(result);
+		}
 		return result;
 		#else
 		return moduleTypes != null ? moduleTypes : [];
 		#end
+	}
+
+	private function moduleTypesNeedStringToolsRuntime(moduleTypes:Array<haxe.macro.Type.ModuleType>):Bool {
+		if (moduleTypes == null)
+			return false;
+		for (moduleType in moduleTypes) {
+			if (moduleTypeNeedsStringToolsRuntime(moduleType))
+				return true;
+		}
+		return false;
+	}
+
+	private function moduleTypeNeedsStringToolsRuntime(moduleType:haxe.macro.Type.ModuleType):Bool {
+		return switch (moduleType) {
+			case TClassDecl(classRef):
+				var classType = classRef.get();
+				if (classType == null) false; else classTypeNeedsStringToolsRuntime(classType);
+			default:
+				false;
+		}
+	}
+
+	private function classTypeNeedsStringToolsRuntime(classType:ClassType):Bool {
+		if (classType.constructor != null && classFieldNeedsStringToolsRuntime(classType.constructor.get()))
+			return true;
+		for (field in classType.fields.get()) {
+			if (classFieldNeedsStringToolsRuntime(field))
+				return true;
+		}
+		for (field in classType.statics.get()) {
+			if (classFieldNeedsStringToolsRuntime(field))
+				return true;
+		}
+		if (classSourceMentionsStringToolsRuntime(classType))
+			return true;
+		return false;
+	}
+
+	private function classFieldNeedsStringToolsRuntime(field:ClassField):Bool {
+		if (field == null)
+			return false;
+		var expr = field.expr();
+		return expr != null && typedExprNeedsStringToolsRuntime(expr);
+	}
+
+	private function typedExprNeedsStringToolsRuntime(expr:TypedExpr):Bool {
+		var found = false;
+		function visit(node:TypedExpr):Void {
+			if (found || node == null)
+				return;
+			switch (node.expr) {
+				case TCall(callTarget, _):
+					switch (callTarget.expr) {
+						case TField(_, fieldAccess):
+							var fieldName = runtimeFieldAccessName(fieldAccess);
+							if (isStringRuntimeLoweredMethod(fieldName)) {
+								found = true;
+								return;
+							}
+						default:
+					}
+				default:
+			}
+			haxe.macro.TypedExprTools.iter(node, visit);
+		}
+		visit(expr);
+		return found;
+	}
+
+	private function runtimeFieldAccessName(fieldAccess:FieldAccess):Null<String> {
+		return switch (fieldAccess) {
+			case FInstance(_, _, fieldRef) | FStatic(_, fieldRef) | FAnon(fieldRef) | FClosure(_, fieldRef):
+				var field = fieldRef.get();
+				field != null ? field.name : null;
+			case FDynamic(name):
+				name;
+			case FEnum(_, enumField):
+				enumField != null ? enumField.name : null;
+		}
+	}
+
+	private function isStringRuntimeLoweredMethod(name:Null<String>):Bool {
+		return switch (name) {
+			case "split" | "substr" | "substring" | "charAt" | "charCodeAt" | "fastCodeAt" | "unsafeCodeAt" | "indexOf" | "lastIndexOf":
+				true;
+			default:
+				false;
+		}
+	}
+
+	/**
+	 * Detects direct source use of String methods that the backend lowers to StringTools helpers.
+	 *
+	 * Legacy HXX string templates can retain private helper functions for Elixir output even when
+	 * those helper bodies are not visible through ClassType field expressions during filterTypes.
+	 * This keeps the target runtime module available for the later, real codegen path.
+	 */
+	private function classSourceMentionsStringToolsRuntime(classType:ClassType):Bool {
+		#if eval
+		var checked = new Map<String, Bool>();
+		if (sourcePositionMentionsStringToolsRuntime(classType.pos, checked))
+			return true;
+		if (classType.constructor != null) {
+			var ctor = classType.constructor.get();
+			if (ctor != null && sourcePositionMentionsStringToolsRuntime(ctor.pos, checked))
+				return true;
+		}
+		for (field in classType.fields.get()) {
+			if (field != null && sourcePositionMentionsStringToolsRuntime(field.pos, checked))
+				return true;
+		}
+		for (field in classType.statics.get()) {
+			if (field != null && sourcePositionMentionsStringToolsRuntime(field.pos, checked))
+				return true;
+		}
+		#end
+		return false;
+	}
+
+	private function sourcePositionMentionsStringToolsRuntime(pos:haxe.macro.Expr.Position, checked:Map<String, Bool>):Bool {
+		#if eval
+		try {
+			var info = Context.getPosInfos(pos);
+			if (info == null || info.file == null || info.file == "")
+				return false;
+			var file = info.file;
+			try {
+				file = Context.resolvePath(file);
+			} catch (_:Dynamic) {}
+			if (!sys.FileSystem.exists(file) || checked.exists(file))
+				return false;
+			checked.set(file, true);
+			if (isStdRuntimeSourceFile(file))
+				return false;
+			var source = sys.io.File.getContent(file);
+			for (method in [
+				"split",
+				"substr",
+				"substring",
+				"charAt",
+				"charCodeAt",
+				"fastCodeAt",
+				"unsafeCodeAt",
+				"indexOf",
+				"lastIndexOf"
+			]) {
+				if (source.indexOf("." + method + "(") != -1)
+					return true;
+			}
+		} catch (_:Dynamic) {}
+		#end
+		return false;
+	}
+
+	private function isStdRuntimeSourceFile(file:String):Bool {
+		if (file == null)
+			return false;
+		var normalized = file.split("\\").join("/");
+		return normalized.indexOf("/std/") != -1
+			&& (StringTools.endsWith(normalized, ".cross.hx") || normalized.indexOf("/haxe/versions/") != -1);
+	}
+
+	private function addStringToolsModuleIfMissing(moduleTypes:Array<haxe.macro.Type.ModuleType>):Void {
+		forceStringToolsRuntime = true;
+		if (moduleTypes == null || hasStringToolsModule(moduleTypes))
+			return;
+		try {
+			switch (Context.getType("StringTools")) {
+				case TInst(classRef, _):
+					var classType = classRef.get();
+					if (classType != null && classType.name == "StringTools" && (classType.pack == null || classType.pack.length == 0)) {
+						moduleTypes.push(TClassDecl(classRef));
+					}
+				default:
+			}
+		} catch (_:Dynamic) {}
+	}
+
+	private function hasStringToolsModule(moduleTypes:Array<haxe.macro.Type.ModuleType>):Bool {
+		for (moduleType in moduleTypes) {
+			switch (moduleType) {
+				case TClassDecl(classRef):
+					var classType = classRef.get();
+					if (classType != null && classType.name == "StringTools" && (classType.pack == null || classType.pack.length == 0))
+						return true;
+				default:
+			}
+		}
+		return false;
 	}
 
 	// Note: Directory scanning moved to RepoDiscovery (macro phase)
@@ -442,6 +637,10 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		// Force compilation of Date class when used
 		// This ensures Date module with __elixir__() implementations is available
 		if (classType.name == "Date" && classType.pack.length == 0) {
+			return true;
+		}
+
+		if (forceStringToolsRuntime && classType.name == "StringTools" && classType.pack.length == 0) {
 			return true;
 		}
 

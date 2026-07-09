@@ -27,8 +27,8 @@ defmodule OptionPatterns.UserRepository do
       _g = 0
       g_value = OptionPatterns.UserRepository.users()
       (case Enum.reduce_while(g_value, :__reflaxe_no_return__, fn user, _ ->
-  if (user.id == id), do: {:halt, {:__reflaxe_return__, {:some, user}}}, else: {:cont, :__reflaxe_no_return__}
-end) do
+        if (user.id == id), do: {:halt, {:__reflaxe_return__, {:some, user}}}, else: {:cont, :__reflaxe_no_return__}
+      end) do
         {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
         _ -> {:none}
       end)
@@ -41,8 +41,8 @@ end) do
       _g = 0
       g_value = OptionPatterns.UserRepository.users()
       (case Enum.reduce_while(g_value, :__reflaxe_no_return__, fn user, _ ->
-  if (user.email == email), do: {:halt, {:__reflaxe_return__, {:some, user}}}, else: {:cont, :__reflaxe_no_return__}
-end) do
+        if (user.email == email), do: {:halt, {:__reflaxe_return__, {:some, user}}}, else: {:cont, :__reflaxe_no_return__}
+      end) do
         {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
         _ -> {:none}
       end)
@@ -52,8 +52,8 @@ end) do
     _g = 0
     g_value = OptionPatterns.UserRepository.users()
     (case Enum.reduce_while(g_value, :__reflaxe_no_return__, fn user, _ ->
-  if (user.active), do: {:halt, {:__reflaxe_return__, {:some, user}}}, else: {:cont, :__reflaxe_no_return__}
-end) do
+      if (user.active), do: {:halt, {:__reflaxe_return__, {:some, user}}}, else: {:cont, :__reflaxe_no_return__}
+    end) do
       {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
       _ -> {:none}
     end)
@@ -68,11 +68,7 @@ end) do
     OptionTools.unwrap(OptionTools.map(find(id), fn user -> user.active end), false)
   end
   def update_email(id, new_email) do
-    cond_value = (case :binary.match(new_email, "@") do
-  {pos, _} -> pos
-  :nomatch -> -1
-end) < 0
-    if (Kernel.is_nil(new_email) or cond_value) do
+    if (Kernel.is_nil(new_email) or StringTools.haxe_index_of(new_email, "@", 0) < 0) do
       {:error, "Invalid email format"}
     else
       ResultTools.map(OptionTools.to_result(find(id), "User not found"), fn user -> %{user | email: new_email} end)
@@ -96,11 +92,7 @@ end) < 0
     if (Kernel.is_nil(name) or name == "") do
       {:error, "Name is required"}
     else
-      cond_value = (case :binary.match(email, "@") do
-  {pos, _} -> pos
-  :nomatch -> -1
-end) < 0
-      if (Kernel.is_nil(email) or cond_value) do
+      if (Kernel.is_nil(email) or StringTools.haxe_index_of(email, "@", 0) < 0) do
         {:error, "Valid email is required"}
       else
         email_exists = (case find_by_email(email) do

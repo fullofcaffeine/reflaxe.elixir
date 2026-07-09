@@ -8,11 +8,11 @@ defmodule Main do
     _result = x + y
     date_str = "2025-01-29T12:00:00Z"
     parsed_date = (
-            case DateTime.from_iso8601(date_str) do
-                {:ok, dt, _} -> dt
-                _ -> DateTime.utc_now()
-            end
-)
+                case DateTime.from_iso8601(date_str) do
+                    {:ok, dt, _} -> dt
+                    _ -> DateTime.utc_now()
+                end
+    )
     parsed_date
   end
 end

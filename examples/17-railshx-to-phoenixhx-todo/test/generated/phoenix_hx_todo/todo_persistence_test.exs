@@ -16,15 +16,9 @@ defmodule PhoenixHxTodo.TodoPersistenceTest do
     lv = elem(mounted, 1)
     _ = Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_todo']"), %{title: title, notes: "Ecto-backed"})
     html = Phoenix.LiveViewTest.render(lv)
-    condition = (case :binary.match(html, title) do
-  {pos, _} -> pos
-  :nomatch -> -1
-end) != -1
+    condition = StringTools.haxe_index_of(html, title, 0) != -1
     assert condition
-    condition = (case :binary.match(html, "Task added through Ecto") do
-  {pos, _} -> pos
-  :nomatch -> -1
-end) != -1
+    condition = StringTools.haxe_index_of(html, "Task added through Ecto", 0) != -1
     assert condition
   end
 end

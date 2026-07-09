@@ -19,14 +19,14 @@ defmodule MapKeyValueIterator do
     current_index(struct) < length(struct.pairs)
   end
   def next(struct) do
-    
-            index = current_index(struct)
-            Process.put(state_key(struct), index + 1)
-            case Enum.at(struct.pairs, index) do
-                %{key: key, value: value} -> %{key: key, value: value}
-                {key, value} -> %{key: key, value: value}
-                _ -> %{key: nil, value: nil}
-            end
-        
+
+                index = current_index(struct)
+                Process.put(state_key(struct), index + 1)
+                case Enum.at(struct.pairs, index) do
+                    %{key: key, value: value} -> %{key: key, value: value}
+                    {key, value} -> %{key: key, value: value}
+                    _ -> %{key: nil, value: nil}
+                end
+
   end
 end

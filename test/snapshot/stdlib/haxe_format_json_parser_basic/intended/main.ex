@@ -6,68 +6,71 @@ defmodule Main do
   end
   def main() do
     obj = Jason.decode!("{\"name\":\"Ada\",\"count\":3,\"items\":[1,true,null],\"escaped\":\"line\\nnext\"}")
-    _ = assert_that((fn -> Reflaxe.Elixir.HaxeFloat.eq(((case {obj, "name"} do
-    {reflect_obj, reflect_field} ->
-      (case Map.fetch(reflect_obj, reflect_field) do
-        {:ok, reflect_value} -> reflect_value
-        _ ->
-          (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
-            nil -> nil
-            reflect_atom ->
-              Map.get(reflect_obj, reflect_atom)
-          end)
-      end)
-  end)), "Ada") end).(), "json object string field failed")
-    _ = assert_that((fn -> Reflaxe.Elixir.HaxeFloat.eq(((case {obj, "count"} do
-    {reflect_obj, reflect_field} ->
-      (case Map.fetch(reflect_obj, reflect_field) do
-        {:ok, reflect_value} -> reflect_value
-        _ ->
-          (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
-            nil -> nil
-            reflect_atom ->
-              Map.get(reflect_obj, reflect_atom)
-          end)
-      end)
-  end)), 3) end).(), "json object int field failed")
-    _ = assert_that((fn -> Reflaxe.Elixir.HaxeFloat.eq(((case {obj, "escaped"} do
-    {reflect_obj, reflect_field} ->
-      (case Map.fetch(reflect_obj, reflect_field) do
-        {:ok, reflect_value} -> reflect_value
-        _ ->
-          (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
-            nil -> nil
-            reflect_atom ->
-              Map.get(reflect_obj, reflect_atom)
-          end)
-      end)
-  end)), "line\nnext") end).(), "json escaped string failed")
+    _ =
+      assert_that((fn -> Reflaxe.Elixir.HaxeFloat.eq(((case {obj, "name"} do
+          {reflect_obj, reflect_field} ->
+            (case Map.fetch(reflect_obj, reflect_field) do
+              {:ok, reflect_value} -> reflect_value
+              _ ->
+                (case (try do
+                  String.to_existing_atom(reflect_field)
+                rescue
+                  _ ->
+                    nil
+                end) do
+                  nil -> nil
+                  reflect_atom ->
+                    Map.get(reflect_obj, reflect_atom)
+                end)
+            end)
+        end)), "Ada") end).(), "json object string field failed")
+    _ =
+      assert_that((fn -> Reflaxe.Elixir.HaxeFloat.eq(((case {obj, "count"} do
+          {reflect_obj, reflect_field} ->
+            (case Map.fetch(reflect_obj, reflect_field) do
+              {:ok, reflect_value} -> reflect_value
+              _ ->
+                (case (try do
+                  String.to_existing_atom(reflect_field)
+                rescue
+                  _ ->
+                    nil
+                end) do
+                  nil -> nil
+                  reflect_atom ->
+                    Map.get(reflect_obj, reflect_atom)
+                end)
+            end)
+        end)), 3) end).(), "json object int field failed")
+    _ =
+      assert_that((fn -> Reflaxe.Elixir.HaxeFloat.eq(((case {obj, "escaped"} do
+          {reflect_obj, reflect_field} ->
+            (case Map.fetch(reflect_obj, reflect_field) do
+              {:ok, reflect_value} -> reflect_value
+              _ ->
+                (case (try do
+                  String.to_existing_atom(reflect_field)
+                rescue
+                  _ ->
+                    nil
+                end) do
+                  nil -> nil
+                  reflect_atom ->
+                    Map.get(reflect_obj, reflect_atom)
+                end)
+            end)
+        end)), "line\nnext") end).(), "json escaped string failed")
     items = (case {obj, "items"} do
       {reflect_obj, reflect_field} ->
         (case Map.fetch(reflect_obj, reflect_field) do
           {:ok, reflect_value} -> reflect_value
           _ ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -87,9 +90,9 @@ end) do
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+          %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+          _ -> haxe_exception
+        end), haxe_exception} do
           {error, _} ->
             assert_that(Reflaxe.Elixir.HaxeFloat.neq(error, nil), "invalid json should expose an error")
         end)

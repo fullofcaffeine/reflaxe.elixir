@@ -87,11 +87,7 @@ defmodule Main do
     result = File.read("multi_line.txt")
     content = if (result._0 == "ok"), do: result._1, else: nil
     _lines = if (not Kernel.is_nil(content)) do
-      if ("\n" == "") do
-        String.graphemes(content)
-      else
-        String.split(content, "\n")
-      end
+      StringTools.haxe_split(content, "\n")
     else
       nil
     end
@@ -113,9 +109,8 @@ defmodule Main do
     _filename = Path.basename("/home/user/file.txt")
     _filename_no_ext = Path.rootname(Path.basename("/home/user/file.txt"))
     ext = Path.extname("/home/user/file.txt")
-    cond_value = (String.at(ext, 0) || "") == "."
-    _ext = if (String.length(ext) > 0 and cond_value) do
-      String.slice(ext, 1..-1//1)
+    _ = if (String.length(ext) > 0 and StringTools.haxe_char_at(ext, 0) == ".") do
+      StringTools.haxe_substr(ext, 1, nil)
     else
       ext
     end

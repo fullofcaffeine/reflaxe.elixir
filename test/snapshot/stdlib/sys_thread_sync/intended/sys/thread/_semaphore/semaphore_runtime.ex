@@ -4,10 +4,10 @@ defmodule SemaphoreRuntime do
       raise Reflaxe.Elixir.HaxeThrow, [value: "sys.thread.Semaphore initial value must be >= 0"]
     end
     (
-            ref = make_ref()
-            pid = spawn(fn -> SemaphoreRuntime.server_loop(ref, value, :queue.new()) end)
-            {ref, pid}
-        )
+                ref = make_ref()
+                pid = spawn(fn -> SemaphoreRuntime.server_loop(ref, value, :queue.new()) end)
+                {ref, pid}
+            )
   end
   def acquire(ref) do
     acquire_with_timeout(ref, :infinity, nil)

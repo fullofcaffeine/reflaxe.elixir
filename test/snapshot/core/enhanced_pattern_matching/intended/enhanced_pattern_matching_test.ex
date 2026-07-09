@@ -71,12 +71,12 @@ defmodule EnhancedPatternMatchingTest do
   def chain_result_operations(input) do
     step1 = validate_input(input)
     (case (case step1 do
-  {:success, validated} ->
-    process_data(validated)
-  {:error, error, context} ->
-    context = if (Kernel.is_nil(context)), do: "", else: context
-    _result = {:error, error, context}
-end) do
+      {:success, validated} ->
+        process_data(validated)
+      {:error, error, context} ->
+        context = if (Kernel.is_nil(context)), do: "", else: context
+        _result = {:error, error, context}
+    end) do
       {:success, processed} ->
         format_output(processed)
       {:error, error, context} ->
@@ -117,19 +117,15 @@ end) do
         "single character: \"#{s}\""
       else
         s = input
-        if (String.slice(s, 0, 7) == "prefix_") do
+        if (StringTools.haxe_substr_non_nil_len(s, 0, 7) == "prefix_") do
           "has prefix: \"#{s}\""
         else
           s = input
-          if (String.slice(s, (String.length(s) - 7)..-1//1) == "_suffix") do
+          if (StringTools.haxe_substr(s, (String.length(s) - 7), nil) == "_suffix") do
             "has suffix: \"#{s}\""
           else
             s = input
-            cond_value = (case :binary.match(s, "@") do
-              {pos, _} -> pos
-              :nomatch -> -1
-            end)
-            if (cond_value > -1) do
+            if (StringTools.haxe_index_of(s, "@", 0) > -1) do
               "contains @: \"#{s}\""
             else
               s = input
@@ -205,11 +201,7 @@ end) do
     end
   end
   defp process_data(data) do
-    cond_value = (case :binary.match(data, "error") do
-      {pos, _} -> pos
-      :nomatch -> -1
-    end)
-    if (cond_value >= 0) do
+    if (StringTools.haxe_index_of(data, "error", 0) >= 0) do
       context = "processing"
       context = if (Kernel.is_nil(context)), do: "", else: context
       _result = {:error, "Data contains error keyword", context}

@@ -33,9 +33,9 @@ defmodule Main do
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+          %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+          _ -> haxe_exception
+        end), haxe_exception} do
           {error, _} when is_tuple(error) and elem(error, 0) in [:overflow, :outside_bounds, :custom, :blocked] ->
             (case error do
               {:custom, message} ->

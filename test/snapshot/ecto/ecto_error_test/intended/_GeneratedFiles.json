@@ -8,6 +8,7 @@
   "my_app/invalid_schema.ex",
   "main.ex",
   "invalid_changeset.ex",
+  "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/_call_stack/call_stack_impl_.ex"
 ],

@@ -37,9 +37,9 @@ defmodule Phoenix.Channels.WirePayload do
           haxe_exception ->
             Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
             (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+              %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+              _ -> haxe_exception
+            end), haxe_exception} do
               {haxe_catch_value, _} when is_struct(haxe_catch_value, Reflaxe.Exception) or is_map(haxe_catch_value) and is_map_key(haxe_catch_value, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, haxe_catch_value) == Reflaxe.Exception -> nil
               _ ->
                 reraise(haxe_exception, __STACKTRACE__)
@@ -151,28 +151,28 @@ end), haxe_exception} do
       nil
     else
 
-            Enum.reduce_while(value, [], fn v, acc ->
-              cond do
-                is_integer(v) ->
-                  {:cont, [v | acc]}
+                  Enum.reduce_while(value, [], fn v, acc ->
+                    cond do
+                      is_integer(v) ->
+                        {:cont, [v | acc]}
 
-                is_float(v) and v == trunc(v) ->
-                  {:cont, [trunc(v) | acc]}
+                      is_float(v) and v == trunc(v) ->
+                        {:cont, [trunc(v) | acc]}
 
-                is_binary(v) ->
-                  case Integer.parse(v) do
-                    {n, ""} -> {:cont, [n | acc]}
-                    _ -> {:halt, :error}
+                      is_binary(v) ->
+                        case Integer.parse(v) do
+                          {n, ""} -> {:cont, [n | acc]}
+                          _ -> {:halt, :error}
+                        end
+
+                      true ->
+                        {:halt, :error}
+                    end
+                  end)
+                  |> case do
+                    :error -> nil
+                    acc -> Enum.reverse(acc)
                   end
-
-                true ->
-                  {:halt, :error}
-              end
-            end)
-            |> case do
-              :error -> nil
-              acc -> Enum.reverse(acc)
-            end
 
     end
   end

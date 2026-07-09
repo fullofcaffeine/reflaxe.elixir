@@ -84,6 +84,10 @@ class TypeUtils {
 		return isElixirAtomTypeInner(t, 0);
 	}
 
+	public static function mayBeNil(t:Null<Type>):Bool {
+		return mayBeNilInner(t, 0);
+	}
+
 	static function followNullable(t:Null<Type>):Null<Type> {
 		if (t == null)
 			return null;
@@ -188,6 +192,35 @@ class TypeUtils {
 				isElixirAtomTypeInner(td.get().type, depth + 1);
 			case TLazy(f):
 				isElixirAtomTypeInner(f(), depth + 1);
+			default:
+				false;
+		}
+	}
+
+	static function mayBeNilInner(t:Null<Type>, depth:Int):Bool {
+		if (t == null)
+			return true;
+		if (depth > 20)
+			return true;
+
+		var followed = TypeTools.follow(t);
+		return switch (followed) {
+			case TAbstract(ref, params):
+				var abstractType = ref.get();
+				if (abstractType.name == "Null" && params != null && params.length == 1) {
+					true;
+				} else if (abstractType.name == "Int" || abstractType.name == "Float" || abstractType.name == "Bool" || abstractType.name == "String") {
+					false;
+				} else {
+					mayBeNilInner(abstractType.type, depth + 1);
+				}
+			case TDynamic(_):
+				true;
+			case TMono(monoRef): var resolved = monoRef.get(); resolved == null || mayBeNilInner(resolved, depth + 1);
+			case TLazy(thunk):
+				mayBeNilInner(thunk(), depth + 1);
+			case TType(typeRef, _):
+				mayBeNilInner(typeRef.get().type, depth + 1);
 			default:
 				false;
 		}

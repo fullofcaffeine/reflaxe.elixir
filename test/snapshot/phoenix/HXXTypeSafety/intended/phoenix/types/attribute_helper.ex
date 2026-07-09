@@ -12,15 +12,15 @@ defmodule AttributeHelper do
       s ->
         s = name
         if (StringTools.starts_with(s, "phx")) do
-          "phx-#{String.downcase(String.slice(s, 3..-1//1))}"
+          "phx-#{String.downcase(StringTools.haxe_substring(s, 3, nil))}"
         else
           s = name
           if (StringTools.starts_with(s, "aria")) do
-            "aria-#{String.downcase(String.slice(s, 4..-1//1))}"
+            "aria-#{String.downcase(StringTools.haxe_substring(s, 4, nil))}"
           else
             s = name
             if (StringTools.starts_with(s, "data")) do
-              "data-#{String.downcase(String.slice(s, 4..-1//1))}"
+              "data-#{String.downcase(StringTools.haxe_substring(s, 4, nil))}"
             else
               String.downcase(name)
             end

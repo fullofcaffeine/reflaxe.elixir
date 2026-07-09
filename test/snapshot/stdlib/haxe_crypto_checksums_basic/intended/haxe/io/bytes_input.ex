@@ -15,14 +15,14 @@ defmodule BytesInput do
   end
   def get_position(struct) do
     state = Process.get(struct.dict_key)
-state = if (Kernel.is_nil(state)) do
-  state = %{pos: 0, remaining: struct.total_length}
-  Process.put(struct.dict_key, state)
-  state
-else
-  state
-end
-state.pos
+    state = if (Kernel.is_nil(state)) do
+      state = %{pos: 0, remaining: struct.total_length}
+      Process.put(struct.dict_key, state)
+      state
+    else
+      state
+    end
+    state.pos
   end
   def get_length(struct) do
     struct.total_length
@@ -124,14 +124,14 @@ state.pos
       raise Reflaxe.Elixir.HaxeThrow, [value: Eof.new()]
     end
     result = (fn ->
-  rem = :binary.part(struct.data, state.pos, state.remaining)
-  case :binary.match(rem, "\n") do
-    :nomatch -> {rem, byte_size(rem)}
-    {idx, _} ->
-      line_len = if idx > 0 and :binary.at(rem, idx - 1) == 13, do: idx - 1, else: idx
-      {:binary.part(rem, 0, line_len), idx + 1}
-  end
-end).()
+      rem = :binary.part(struct.data, state.pos, state.remaining)
+      case :binary.match(rem, "\n") do
+        :nomatch -> {rem, byte_size(rem)}
+        {idx, _} ->
+          line_len = if idx > 0 and :binary.at(rem, idx - 1) == 13, do: idx - 1, else: idx
+          {:binary.part(rem, 0, line_len), idx + 1}
+      end
+    end).()
     line = elem(result, 0)
     advance = elem(result, 1)
     state = state |> Map.put(:pos, state.pos + advance) |> Map.put(:remaining, (state.remaining - advance))

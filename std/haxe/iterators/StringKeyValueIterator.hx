@@ -7,6 +7,7 @@ package haxe.iterators;
  * macro/bootstrap compilation from caching the canonical stdlib iterator before
  * the Elixir target std roots are active.
  */
+@:ifFeature("haxe.iterators.StringKeyValueIterator.*", "StringTools.keyValueIterator")
 class StringKeyValueIterator {
 	var offset = 0;
 	var s:String;

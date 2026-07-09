@@ -8,8 +8,8 @@
   "reflaxe/elixir/haxe_float.ex",
   "main.ex",
   "haxe/iterators/map_key_value_iterator.ex",
+  "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
-  "haxe/ds/_map/map_impl_.ex",
   "haxe/_call_stack/call_stack_impl_.ex"
 ],
   "id": 0,

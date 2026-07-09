@@ -47,7 +47,7 @@ defmodule NonEmptyString_Impl_ do
       if (start_index >= String.length(this1)) do
         {:error, "Start index beyond string length"}
       else
-        result = String.slice(this1, start_index..-1//1)
+        result = StringTools.haxe_substring(this1, start_index, nil)
         if (String.length(result) == 0), do: {:error, "Substring would be empty"}, else: {:ok, result}
       end
     end
@@ -62,7 +62,7 @@ defmodule NonEmptyString_Impl_ do
         if (start_index >= String.length(this1)) do
           {:error, "Start index beyond string length"}
         else
-          result = String.slice(this1, start_index, (end_index - start_index))
+          result = StringTools.haxe_substring(this1, start_index, end_index)
           if (String.length(result) == 0), do: {:error, "Substring would be empty"}, else: {:ok, result}
         end
       end
@@ -75,21 +75,14 @@ defmodule NonEmptyString_Impl_ do
     StringTools.ends_with(this1, suffix)
   end
   def contains(this1, substring) do
-    (case :binary.match(this1, substring) do
-  {pos, _} -> pos
-  :nomatch -> -1
-end) != -1
+    StringTools.haxe_index_of(this1, substring, 0) != -1
   end
   def safe_replace(this1, search, replacement) do
     result = StringTools.replace(this1, search, replacement)
     if (String.length(result) == 0), do: {:error, "Replacement would result in empty string"}, else: {:ok, result}
   end
   def split_non_empty(this1, delimiter) do
-    parts = if (delimiter == "") do
-      String.graphemes(this1)
-    else
-      String.split(this1, delimiter)
-    end
+    parts = StringTools.haxe_split(this1, delimiter)
     result = []
     _g = 0
     result = Enum.reduce(parts, result, fn part, result_acc ->
@@ -103,14 +96,10 @@ end) != -1
     result
   end
   def first_char(this1) do
-    String.at(this1, 0) || ""
+    StringTools.haxe_char_at(this1, 0)
   end
   def last_char(this1) do
-    if ((String.length(this1) - 1) < 0) do
-      ""
-    else
-      String.at(this1, (String.length(this1) - 1)) || ""
-    end
+    StringTools.haxe_char_at(this1, (String.length(this1) - 1))
   end
   def to_string(this1) do
     this1

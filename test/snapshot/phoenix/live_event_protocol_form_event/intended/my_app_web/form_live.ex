@@ -3,10 +3,10 @@ defmodule MyAppWeb.FormLive do
   use Phoenix.LiveView, layout: {MyAppWeb.Layouts, :app}
   def render(assigns) do
     ~H"""
-<form phx-submit={"create_todo"} phx-change={"update_form"}>
-			<input type="text" name="todo[title]" value={@summary} />
-		</form>
-"""
+    <form phx-submit={"create_todo"} phx-change={"update_form"}>
+          <input type="text" name="todo[title]" value={@summary} />
+        </form>
+    """
   end
   def create_event_name() do
     "create_todo"

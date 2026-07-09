@@ -7,9 +7,9 @@ defmodule Main do
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+          %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+          _ -> haxe_exception
+        end), haxe_exception} do
           {e, _} when is_binary(e) -> e
           _ ->
             reraise(haxe_exception, __STACKTRACE__)
@@ -25,9 +25,9 @@ end), haxe_exception} do
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+          %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+          _ -> haxe_exception
+        end), haxe_exception} do
           {e, _} when is_struct(e, Reflaxe.Exception) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == Reflaxe.Exception ->
             Reflaxe.Exception.get_message(e)
           _ ->
@@ -52,9 +52,9 @@ end), haxe_exception} do
         haxe_exception ->
           Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
           (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+            %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+            _ -> haxe_exception
+          end), haxe_exception} do
             {e, _} when is_binary(e) -> "string:" <> e
             {e, _} when is_integer(e) -> "int:" <> Reflaxe.Elixir.HaxeFloat.to_string(e)
             {e, _} when is_struct(e, Reflaxe.Exception) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == Reflaxe.Exception -> "exception:" <> Reflaxe.Exception.get_message(e)
@@ -85,9 +85,9 @@ end), haxe_exception} do
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+          %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+          _ -> haxe_exception
+        end), haxe_exception} do
           {e, _} when is_binary(e) -> nil
           _ ->
             reraise(haxe_exception, __STACKTRACE__)
@@ -99,9 +99,9 @@ end), haxe_exception} do
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+          %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+          _ -> haxe_exception
+        end), haxe_exception} do
           {_e, _} -> nil
         end)
     end
@@ -115,9 +115,9 @@ end), haxe_exception} do
         haxe_exception ->
           Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
           (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+            %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+            _ -> haxe_exception
+          end), haxe_exception} do
             {e, _} when is_binary(e) -> raise Reflaxe.Elixir.HaxeThrow, [value: "Rethrow from inner"]
             _ ->
               reraise(haxe_exception, __STACKTRACE__)
@@ -128,9 +128,9 @@ end), haxe_exception} do
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+          %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+          _ -> haxe_exception
+        end), haxe_exception} do
           {e, _} when is_binary(e) -> e
           _ ->
             reraise(haxe_exception, __STACKTRACE__)
@@ -148,9 +148,9 @@ end), haxe_exception} do
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+          %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+          _ -> haxe_exception
+        end), haxe_exception} do
           {e, _} when is_struct(e, CustomException) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == CustomException -> "" <> Reflaxe.Exception.get_message(e) <> ":" <> Reflaxe.Elixir.HaxeFloat.to_string(e.code)
           _ ->
             reraise(haxe_exception, __STACKTRACE__)
@@ -178,9 +178,9 @@ end), haxe_exception} do
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+          %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+          _ -> haxe_exception
+        end), haxe_exception} do
           {e, _} when is_struct(e, Reflaxe.Exception) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == Reflaxe.Exception ->
             Reflaxe.Exception.get_message(e)
           _ ->
@@ -199,9 +199,9 @@ end), haxe_exception} do
         haxe_exception ->
           Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
           (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+            %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+            _ -> haxe_exception
+          end), haxe_exception} do
             {e, _} when is_struct(e, Reflaxe.Exception) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == Reflaxe.Exception -> raise Reflaxe.Elixir.HaxeThrow, [value: e]
             _ ->
               reraise(haxe_exception, __STACKTRACE__)
@@ -212,9 +212,9 @@ end), haxe_exception} do
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+          %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+          _ -> haxe_exception
+        end), haxe_exception} do
           {e, _} when is_struct(e, Reflaxe.Exception) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == Reflaxe.Exception ->
             Reflaxe.Exception.get_message(e)
           _ ->
@@ -236,9 +236,9 @@ end), haxe_exception} do
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+          %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+          _ -> haxe_exception
+        end), haxe_exception} do
           {e, _} when is_struct(e, Reflaxe.Exception) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == Reflaxe.Exception ->
             Reflaxe.Exception.get_message(e)
           _ ->
@@ -263,9 +263,9 @@ end), haxe_exception} do
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+          %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+          _ -> haxe_exception
+        end), haxe_exception} do
           {_e, _} -> 0
         end)
     end
@@ -285,9 +285,9 @@ end), haxe_exception} do
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+          %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+          _ -> haxe_exception
+        end), haxe_exception} do
           {_e, _} -> -1
         end)
     end

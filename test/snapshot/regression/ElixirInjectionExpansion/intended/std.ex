@@ -5,10 +5,10 @@ defmodule Std do
   end
   def parse_int(str) do
 
-            case Integer.parse(str) do
-                {num, _} -> num
-                :error -> nil
-            end
+                case Integer.parse(str) do
+                    {num, _} -> num
+                    :error -> nil
+                end
 
     item
   end
@@ -18,31 +18,31 @@ defmodule Std do
   end
   def is(value, type) do
 
-            # Convert type to string for comparison
-            type_str =
-                type
-                |> to_string()
-                |> String.split(".")
-                |> List.last()
+                # Convert type to string for comparison
+                type_str =
+                    type
+                    |> to_string()
+                    |> String.split(".")
+                    |> List.last()
 
-            case type_str do
-                "String" -> is_binary(value)
-                "Float" -> Reflaxe.Elixir.HaxeFloat.is_haxe_float(value)
-                "Int" -> is_integer(value)
-                "Bool" -> is_boolean(value)
-                "Array" -> is_list(value)
-                "Map" -> is_map(value)
-                _ ->
-                    # For user-defined types, check if it's a struct with matching __struct__ field
-                    case value do
-                        %{__struct__: struct_type} -> struct_type == type
-                        # For enums (tagged tuples), check if first element matches the type atom
-                        {tag, _} when is_atom(tag) -> tag == type
-                        {tag, _, _} when is_atom(tag) -> tag == type
-                        {tag, _, _, _} when is_atom(tag) -> tag == type
-                        _ -> false
-                    end
-            end
+                case type_str do
+                    "String" -> is_binary(value)
+                    "Float" -> Reflaxe.Elixir.HaxeFloat.is_haxe_float(value)
+                    "Int" -> is_integer(value)
+                    "Bool" -> is_boolean(value)
+                    "Array" -> is_list(value)
+                    "Map" -> is_map(value)
+                    _ ->
+                        # For user-defined types, check if it's a struct with matching __struct__ field
+                        case value do
+                            %{__struct__: struct_type} -> struct_type == type
+                            # For enums (tagged tuples), check if first element matches the type atom
+                            {tag, _} when is_atom(tag) -> tag == type
+                            {tag, _, _} when is_atom(tag) -> tag == type
+                            {tag, _, _, _} when is_atom(tag) -> tag == type
+                            _ -> false
+                        end
+                end
 
     item
   end

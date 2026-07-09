@@ -6,6 +6,7 @@ package haxe.iterators;
  * Keys are character indices and values are codepoints, matching this target's
  * codepoint-indexed `String.length` and `StringTools.fastCodeAt` lowering.
  */
+@:ifFeature("haxe.iterators.StringKeyValueIterator.*", "StringTools.keyValueIterator")
 class StringKeyValueIterator {
 	final s:String;
 	final ref:Any;

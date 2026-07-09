@@ -30,10 +30,11 @@ defmodule Haxe.Timer do
   def delay(f, time_ms) do
     timer = Haxe.Timer.new(time_ms, true)
     ref = timer.callback_ref
-    _ = Haxe.TimerRuntime.store_callback(ref, fn ->
-  _ = Haxe.TimerRuntime.delete(ref)
-  _ = f.()
-end)
+    _ =
+      Haxe.TimerRuntime.store_callback(ref, fn ->
+        _ = Haxe.TimerRuntime.delete(ref)
+        _ = f.()
+      end)
     timer = %{timer | thread: Sys.Thread.Thread.current()}
     events = Sys.Thread.Thread.get_events(timer.thread)
     timer = %{timer | event_handler: apply(EventLoopRuntime, :run_delayed, [events.ref, fn -> Haxe.TimerRuntime.invoke(ref, fn -> nil end) end, time_ms])}

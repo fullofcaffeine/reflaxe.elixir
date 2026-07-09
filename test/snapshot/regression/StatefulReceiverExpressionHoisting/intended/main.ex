@@ -23,11 +23,11 @@ defmodule Main do
             Map.put(reflect_obj, reflect_field, reflect_value)
           false ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil ->
                 Map.put(reflect_obj, reflect_field, reflect_value)
               reflect_atom ->
@@ -43,11 +43,11 @@ end) do
             Map.put(reflect_obj, reflect_field, reflect_value)
           false ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil ->
                 Map.put(reflect_obj, reflect_field, reflect_value)
               reflect_atom ->
@@ -62,11 +62,11 @@ end) do
             Map.put(reflect_obj, reflect_field, reflect_value)
           false ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil ->
                 Map.put(reflect_obj, reflect_field, reflect_value)
               reflect_atom ->
@@ -81,11 +81,11 @@ end) do
           true -> true
           false ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> false
               reflect_atom ->
                 Map.has_key?(reflect_obj, reflect_atom)
@@ -98,11 +98,11 @@ end) do
           true -> {Map.delete(reflect_obj, reflect_field), true}
           false ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> {reflect_obj, false}
               reflect_atom ->
                 (case Map.has_key?(reflect_obj, reflect_atom) do
@@ -119,11 +119,11 @@ end) do
           true -> true
           false ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> false
               reflect_atom ->
                 Map.has_key?(reflect_obj, reflect_atom)
@@ -136,11 +136,11 @@ end) do
           true -> {Map.delete(reflect_obj, reflect_field), true}
           false ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> {reflect_obj, false}
               reflect_atom ->
                 (case Map.has_key?(reflect_obj, reflect_atom) do
@@ -153,57 +153,60 @@ end) do
     removed_second = had_key
     _ = require_true(bracket_result, "bracket result")
     _ = require_true(method_result, "method result")
-    _ = require_true(((case {map, "foo"} do
-    {reflect_obj, reflect_field} ->
-      (case Map.has_key?(reflect_obj, reflect_field) do
-        true -> true
-        false ->
-          (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
-            nil -> false
-            reflect_atom ->
-              Map.has_key?(reflect_obj, reflect_atom)
-          end)
-      end)
-  end)), "foo exists")
-    _ = require_false(((case {map, "bar"} do
-    {reflect_obj, reflect_field} ->
-      (case Map.has_key?(reflect_obj, reflect_field) do
-        true -> true
-        false ->
-          (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
-            nil -> false
-            reflect_atom ->
-              Map.has_key?(reflect_obj, reflect_atom)
-          end)
-      end)
-  end)), "bar removed")
-    _ = require_true(((case {map, "baz"} do
-    {reflect_obj, reflect_field} ->
-      (case Map.has_key?(reflect_obj, reflect_field) do
-        true -> true
-        false ->
-          (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
-            nil -> false
-            reflect_atom ->
-              Map.has_key?(reflect_obj, reflect_atom)
-          end)
-      end)
-  end)), "baz exists")
+    _ =
+      require_true(((case {map, "foo"} do
+          {reflect_obj, reflect_field} ->
+            (case Map.has_key?(reflect_obj, reflect_field) do
+              true -> true
+              false ->
+                (case (try do
+                  String.to_existing_atom(reflect_field)
+                rescue
+                  _ ->
+                    nil
+                end) do
+                  nil -> false
+                  reflect_atom ->
+                    Map.has_key?(reflect_obj, reflect_atom)
+                end)
+            end)
+        end)), "foo exists")
+    _ =
+      require_false(((case {map, "bar"} do
+          {reflect_obj, reflect_field} ->
+            (case Map.has_key?(reflect_obj, reflect_field) do
+              true -> true
+              false ->
+                (case (try do
+                  String.to_existing_atom(reflect_field)
+                rescue
+                  _ ->
+                    nil
+                end) do
+                  nil -> false
+                  reflect_atom ->
+                    Map.has_key?(reflect_obj, reflect_atom)
+                end)
+            end)
+        end)), "bar removed")
+    _ =
+      require_true(((case {map, "baz"} do
+          {reflect_obj, reflect_field} ->
+            (case Map.has_key?(reflect_obj, reflect_field) do
+              true -> true
+              false ->
+                (case (try do
+                  String.to_existing_atom(reflect_field)
+                rescue
+                  _ ->
+                    nil
+                end) do
+                  nil -> false
+                  reflect_atom ->
+                    Map.has_key?(reflect_obj, reflect_atom)
+                end)
+            end)
+        end)), "baz exists")
     _ = require_true(removed_first, "first remove")
     _ = require_false(removed_second, "second remove")
   end

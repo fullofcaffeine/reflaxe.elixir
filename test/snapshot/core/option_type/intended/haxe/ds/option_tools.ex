@@ -68,19 +68,8 @@ defmodule OptionTools do
     end)
   end
   def all(options) do
-    values = []
-    _g = 0
-    values = Enum.reduce(options, values, fn option, values_acc ->
-      (case option do
-        {:some, value} ->
-          values_acc = Enum.concat(values_acc, [value])
-          values_acc
-        {:none} ->
-          {:none}
-          values_acc
-      end)
-    end)
-    {:some, values}
+    extracted = values(options)
+    if (length(extracted) == length(options)), do: {:some, extracted}, else: {:none}
   end
   def values(options) do
     result = []

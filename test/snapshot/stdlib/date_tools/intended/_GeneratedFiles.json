@@ -9,6 +9,8 @@
   "reflaxe/elixir/haxe_float.ex",
   "main.ex",
   "int_iterator.ex",
+  "haxe/iterators/string_key_value_iterator.ex",
+  "haxe/iterators/string_iterator.ex",
   "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/exceptions/pos_exception.ex",

@@ -6,6 +6,7 @@ package haxe.iterators;
  * Elixir strings are immutable binaries, so the stateful Haxe iterator offset
  * is stored in the process dictionary under an iterator-local reference.
  */
+@:ifFeature("haxe.iterators.StringIterator.*", "StringTools.iterator")
 class StringIterator {
 	final s:String;
 	final ref:Any;

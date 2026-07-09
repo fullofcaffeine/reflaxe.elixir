@@ -8,38 +8,26 @@ defmodule Haxe.IO.Path do
       struct = %{struct | file: ""}
       %{struct | ext: nil}
     else
-      slash_index = (case String.split(String.slice(path, 0, String.length(path)), "/") do
-        parts when Kernel.length(parts) > 1 ->
-          String.length(Enum.join((fn -> Enum.slice(parts, 0..-2//1) end).(), "/"))
-        _ -> -1
-      end)
-      backslash_index = (case String.split(String.slice(path, 0, String.length(path)), "\\") do
-        parts when Kernel.length(parts) > 1 ->
-          String.length(Enum.join((fn -> Enum.slice(parts, 0..-2//1) end).(), "\\"))
-        _ -> -1
-      end)
+      slash_index = StringTools.haxe_last_index_of(path, "/", nil)
+      backslash_index = StringTools.haxe_last_index_of(path, "\\", nil)
       {path, struct} = cond do
         slash_index < backslash_index ->
-          struct = %{struct | dir: String.slice(path, 0, backslash_index)}
-          path = String.slice(path, backslash_index + 1..-1//1)
+          struct = %{struct | dir: StringTools.haxe_substr_non_nil_len(path, 0, backslash_index)}
+          path = StringTools.haxe_substr(path, backslash_index + 1, nil)
           struct = %{struct | backslash: true}
           {path, struct}
         backslash_index < slash_index ->
-          struct = %{struct | dir: String.slice(path, 0, slash_index)}
-          path = String.slice(path, slash_index + 1..-1//1)
+          struct = %{struct | dir: StringTools.haxe_substr_non_nil_len(path, 0, slash_index)}
+          path = StringTools.haxe_substr(path, slash_index + 1, nil)
           {path, struct}
         true ->
           struct = %{struct | dir: nil}
           {path, struct}
       end
-      dot_index = (case String.split(String.slice(path, 0, String.length(path)), ".") do
-        parts when Kernel.length(parts) > 1 ->
-          String.length(Enum.join((fn -> Enum.slice(parts, 0..-2//1) end).(), "."))
-        _ -> -1
-      end)
+      dot_index = StringTools.haxe_last_index_of(path, ".", nil)
       if (dot_index != -1) do
-        struct = %{struct | ext: String.slice(path, dot_index + 1..-1//1)}
-        %{struct | file: String.slice(path, 0, dot_index)}
+        struct = %{struct | ext: StringTools.haxe_substr(path, dot_index + 1, nil)}
+        %{struct | file: StringTools.haxe_substr_non_nil_len(path, 0, dot_index)}
       else
         struct = %{struct | ext: nil}
         %{struct | file: path}
@@ -106,35 +94,25 @@ defmodule Haxe.IO.Path do
   end
   def normalize(path) do
     slash = "/"
-    path = Enum.join((fn ->
-      if ("\\" == "") do
-        String.graphemes(path)
-      else
-        String.split(path, "\\")
-      end
-    end).(), slash)
+    path = Enum.join((fn -> StringTools.haxe_split(path, "\\") end).(), slash)
     if (path == slash) do
       slash
     else
       target = []
       _g = 0
-      g_value = if (slash == "") do
-        String.graphemes(path)
-      else
-        String.split(path, slash)
-      end
+      g_value = StringTools.haxe_split(path, slash)
       target = Enum.reduce(g_value, target, fn part, target_acc ->
         cond do
           part == ".." and length(target_acc) > 0 and Enum.at(target_acc, (length(target_acc) - 1)) != ".." ->
             target_acc = without_last_part(target_acc)
             target_acc
           part == "" ->
-            cond_value = Enum.at(String.to_charlist(path), 0) == Enum.at(String.to_charlist(slash), 0)
-            target_acc = if (length(target_acc) > 0 or cond_value) do
-  Enum.concat(target_acc, [part])
-else
-  target_acc
-end
+            target_acc =
+              if (length(target_acc) > 0 or StringTools.haxe_char_code_at(path, 0) == StringTools.haxe_char_code_at(slash, 0)) do
+                Enum.concat(target_acc, [part])
+              else
+                target_acc
+              end
             target_acc
           part != "." ->
             target_acc = Enum.concat(target_acc, [part])
@@ -149,11 +127,7 @@ end
       _g = 0
       collapsed_length = String.length(collapsed)
       {result, _colon, _slashes} = Enum.reduce(0..(collapsed_length - 1)//1, {result, colon, slashes}, fn index, {result_acc, colon_acc, slashes_acc} ->
-        code = if (index < 0) do
-          nil
-        else
-          Enum.at(String.to_charlist(collapsed), index)
-        end
+        code = StringTools.haxe_char_code_at(collapsed, index)
         {_code, colon_acc, result_acc, slashes_acc} = cond do
           code == 58 ->
             result_acc = result_acc <> ":"
@@ -172,8 +146,8 @@ end
               {result_acc, slashes_acc}
             end
             result_acc = result_acc <> (fn ->
-  <<code::utf8>>
-end).()
+              <<code::utf8>>
+            end).()
             {code, colon_acc, result_acc, slashes_acc}
         end
         {result_acc, colon_acc, slashes_acc}
@@ -198,16 +172,8 @@ end).()
     if (String.length(path) == 0) do
       "/"
     else
-      slash_index = (case String.split(String.slice(path, 0, String.length(path)), "/") do
-        parts when Kernel.length(parts) > 1 ->
-          String.length(Enum.join((fn -> Enum.slice(parts, 0..-2//1) end).(), "/"))
-        _ -> -1
-      end)
-      backslash_index = (case String.split(String.slice(path, 0, String.length(path)), "\\") do
-        parts when Kernel.length(parts) > 1 ->
-          String.length(Enum.join((fn -> Enum.slice(parts, 0..-2//1) end).(), "\\"))
-        _ -> -1
-      end)
+      slash_index = StringTools.haxe_last_index_of(path, "/", nil)
+      backslash_index = StringTools.haxe_last_index_of(path, "\\", nil)
       if (slash_index < backslash_index) do
         if (backslash_index == (String.length(path) - 1)) do
           path
@@ -231,11 +197,7 @@ end).()
     {trimmed_length, _trimming} = Enum.reduce(0..(path_length - 1)//1, {trimmed_length, trimming}, fn offset, {trimmed_length_acc, trimming_acc} ->
       if (trimming_acc) do
         index = ((String.length(path) - 1) - offset)
-        code = if (index < 0) do
-          nil
-        else
-          Enum.at(String.to_charlist(path), index)
-        end
+        code = StringTools.haxe_char_code_at(path, index)
         {trimmed_length_acc, trimming_acc} = if (code == 47 or code == 92) do
           trimmed_length_acc = index
           {trimmed_length_acc, trimming_acc}
@@ -248,14 +210,13 @@ end).()
         {trimmed_length_acc, trimming_acc}
       end
     end)
-    _ = String.slice(path, 0, trimmed_length)
+    _ = StringTools.haxe_substr_non_nil_len(path, 0, trimmed_length)
   end
   def is_absolute(path) do
     if (StringTools.starts_with(path, "/")) do
       true
     else
-      cond_value = (String.at(path, 1) || "")
-      if (cond_value == ":") do
+      if (StringTools.haxe_char_at(path, 1) == ":") do
         true
       else
         StringTools.starts_with(path, "\\\\")

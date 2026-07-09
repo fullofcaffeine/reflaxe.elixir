@@ -55,17 +55,17 @@ defmodule Main do
   defp test_index_of_function() do
     numbers = [1, 2, 3, 4, 5, 3, 6]
     _first_three = (
-                case Enum.find_index(numbers, fn item -> item == 3 end) do
-                    nil -> -1
-                    idx -> idx
-                end
-)
+                    case Enum.find_index(numbers, fn item -> item == 3 end) do
+                        nil -> -1
+                        idx -> idx
+                    end
+    )
     _not_found = (
-                case Enum.find_index(numbers, fn item -> item == 10 end) do
-                    nil -> -1
-                    idx -> idx
-                end
-)
+                    case Enum.find_index(numbers, fn item -> item == 10 end) do
+                        nil -> -1
+                        idx -> idx
+                    end
+    )
     nil
   end
   defp test_join_function() do
@@ -85,19 +85,20 @@ defmodule Main do
     _g = 0
     _ = Enum.each(numbers, fn _ -> nil end)
     iter = ArrayIterator.new(numbers)
-    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
-  try do
-    if (apply(Map.get(iter, :__reflaxe_class__) || Map.get(iter, :__struct__), :has_next, [iter])), do: {:cont, acc}, else: {:halt, acc}
-  catch
-    :throw, {:break, break_state} ->
-      {:halt, break_state}
-    :throw, {:continue, continue_state} ->
-      {:cont, continue_state}
-    :throw, :break ->
-      {:halt, acc}
-    :throw, :continue ->
-      {:cont, acc}
-  end
-end)
+    _ =
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+        try do
+          if (apply(Map.get(iter, :__reflaxe_class__) || Map.get(iter, :__struct__), :has_next, [iter])), do: {:cont, acc}, else: {:halt, acc}
+        catch
+          :throw, {:break, break_state} ->
+            {:halt, break_state}
+          :throw, {:continue, continue_state} ->
+            {:cont, continue_state}
+          :throw, :break ->
+            {:halt, acc}
+          :throw, :continue ->
+            {:cont, acc}
+        end
+      end)
   end
 end

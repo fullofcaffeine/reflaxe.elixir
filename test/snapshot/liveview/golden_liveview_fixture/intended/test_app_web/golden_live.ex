@@ -18,14 +18,14 @@ defmodule TestAppWeb.GoldenLive do
   end
   def render(assigns) do
     ~H"""
-<div id="golden-live">
-  <h1>Counter: <%= Reflaxe.Elixir.HaxeFloat.to_string(@counter) %></h1>
-  <p>Sort: <%= @sort_by %></p>
-  <p>Query: <%= @search_query %></p>
-  <p>Tags: <%= Reflaxe.Elixir.HaxeFloat.to_string(@selected_tags) %></p>
-  <button phx-click="increment">+</button>
-</div>
-"""
+    <div id="golden-live">
+      <h1>Counter: <%= Reflaxe.Elixir.HaxeFloat.to_string(@counter) %></h1>
+      <p>Sort: <%= @sort_by %></p>
+      <p>Query: <%= @search_query %></p>
+      <p>Tags: <%= Reflaxe.Elixir.HaxeFloat.to_string(@selected_tags) %></p>
+      <button phx-click="increment">+</button>
+    </div>
+    """
   end
   defp extract_id(params) do
     id_value = (case {params, "id"} do
@@ -34,11 +34,11 @@ defmodule TestAppWeb.GoldenLive do
           {:ok, reflect_value} -> reflect_value
           _ ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -76,11 +76,11 @@ end) do
               {:ok, reflect_value} -> reflect_value
               _ ->
                 (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+                  String.to_existing_atom(reflect_field)
+                rescue
+                  _ ->
+                    nil
+                end) do
                   nil -> nil
                   reflect_atom ->
                     Map.get(reflect_obj, reflect_atom)
@@ -96,11 +96,11 @@ end) do
               {:ok, reflect_value} -> reflect_value
               _ ->
                 (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+                  String.to_existing_atom(reflect_field)
+                rescue
+                  _ ->
+                    nil
+                end) do
                   nil -> nil
                   reflect_atom ->
                     Map.get(reflect_obj, reflect_atom)
@@ -116,11 +116,11 @@ end) do
               {:ok, reflect_value} -> reflect_value
               _ ->
                 (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+                  String.to_existing_atom(reflect_field)
+                rescue
+                  _ ->
+                    nil
+                end) do
                   nil -> nil
                   reflect_atom ->
                     Map.get(reflect_obj, reflect_atom)

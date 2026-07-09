@@ -29,11 +29,12 @@ defmodule Main do
     _ = apply(Map.get(semaphore, :__reflaxe_class__) || Map.get(semaphore, :__struct__), :release, [semaphore])
     done = Sys.Thread.Lock.new()
     pool = Sys.Thread.FixedThreadPool.new(2)
-    _ = apply(Map.get(pool, :__reflaxe_class__) || Map.get(pool, :__struct__), :run, (fn -> [pool, fn ->
-  reflaxe_dispatch_receiver = Sys.Thread.Thread.current()
-  _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :send_message, [reflaxe_dispatch_receiver, "pool-local"])
-  _ = apply(Map.get(done, :__reflaxe_class__) || Map.get(done, :__struct__), :release, [done])
-end] end).())
+    _ =
+      apply(Map.get(pool, :__reflaxe_class__) || Map.get(pool, :__struct__), :run, (fn -> [pool, fn ->
+        reflaxe_dispatch_receiver = Sys.Thread.Thread.current()
+        _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :send_message, [reflaxe_dispatch_receiver, "pool-local"])
+        _ = apply(Map.get(done, :__reflaxe_class__) || Map.get(done, :__struct__), :release, [done])
+      end] end).())
     if (not apply(Map.get(done, :__reflaxe_class__) || Map.get(done, :__struct__), :wait, [done, 1])) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "FixedThreadPool task did not run"]
     end

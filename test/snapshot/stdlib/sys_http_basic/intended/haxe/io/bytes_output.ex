@@ -9,14 +9,14 @@ defmodule BytesOutput do
   end
   def get_length(struct) do
     state = Process.get(struct.dict_key)
-state = if (Kernel.is_nil(state)) do
-  state = %{parts_reversed: [], byte_length: 0}
-  Process.put(struct.dict_key, state)
-  state
-else
-  state
-end
-state.byte_length
+    state = if (Kernel.is_nil(state)) do
+      state = %{parts_reversed: [], byte_length: 0}
+      Process.put(struct.dict_key, state)
+      state
+    else
+      state
+    end
+    state.byte_length
   end
   def write_byte(struct, c) do
     state = Process.get(struct.dict_key)

@@ -16,10 +16,7 @@ defmodule OptionPatterns.User do
     end
   end
   def has_valid_email(struct) do
-    not Kernel.is_nil(struct.email) and (case :binary.match(struct.email, "@") do
-  {pos, _} -> pos
-  :nomatch -> -1
-end) > 0
+    not Kernel.is_nil(struct.email) and StringTools.haxe_index_of(struct.email, "@", 0) > 0
   end
   def to_string(struct) do
     "User(id=#{Reflaxe.Elixir.HaxeFloat.to_string(struct.id)}, name=\"#{struct.name}\", email=\"#{struct.email}\", active=#{Reflaxe.Elixir.HaxeFloat.to_string(struct.active)})"

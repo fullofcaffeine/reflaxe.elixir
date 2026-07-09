@@ -70,40 +70,42 @@ defmodule Main do
   defp test_map_transformations() do
     numbers = %{}
     numbers = numbers |> Map.put("one", 1) |> Map.put("two", 2) |> Map.put("three", 3)
-    _ = Enum.reduce_while(Map.keys(numbers), :ok, fn key, acc ->
-  try do
-    _value = Map.get(numbers, key)
-    {:cont, acc}
-  catch
-    :throw, {:break, break_state} ->
-      {:halt, break_state}
-    :throw, {:continue, continue_state} ->
-      {:cont, continue_state}
-    :throw, :break ->
-      {:halt, acc}
-    :throw, :continue ->
-      {:cont, acc}
-  end
-end)
+    _ =
+      Enum.reduce_while(Map.keys(numbers), :ok, fn key, acc ->
+        try do
+          _value = Map.get(numbers, key)
+          {:cont, acc}
+        catch
+          :throw, {:break, break_state} ->
+            {:halt, break_state}
+          :throw, {:continue, continue_state} ->
+            {:cont, continue_state}
+          :throw, :break ->
+            {:halt, acc}
+          :throw, :continue ->
+            {:cont, acc}
+        end
+      end)
     copied = numbers
     _copied_value = Map.get(copied, "one")
     int_map = %{}
     int_map = int_map |> Map.put(1, "first") |> Map.put(2, "second")
-    _ = Enum.reduce_while(Map.keys(int_map), :ok, fn key, acc ->
-  try do
-    _value = Map.get(int_map, key)
-    {:cont, acc}
-  catch
-    :throw, {:break, break_state} ->
-      {:halt, break_state}
-    :throw, {:continue, continue_state} ->
-      {:cont, continue_state}
-    :throw, :break ->
-      {:halt, acc}
-    :throw, :continue ->
-      {:cont, acc}
-  end
-end)
+    _ =
+      Enum.reduce_while(Map.keys(int_map), :ok, fn key, acc ->
+        try do
+          _value = Map.get(int_map, key)
+          {:cont, acc}
+        catch
+          :throw, {:break, break_state} ->
+            {:halt, break_state}
+          :throw, {:continue, continue_state} ->
+            {:cont, continue_state}
+          :throw, :break ->
+            {:halt, acc}
+          :throw, :continue ->
+            {:cont, acc}
+        end
+      end)
   end
   defp test_map_utilities() do
     map = %{}

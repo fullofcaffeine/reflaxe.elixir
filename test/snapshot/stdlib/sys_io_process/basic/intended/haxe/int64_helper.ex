@@ -26,11 +26,11 @@ defmodule Int64Helper do
     shift = 31
     x = :erlang.bsr(int32_value, shift)
     high = (reflaxe_i32_clamp = :erlang.band(x, 4294967295)
-if reflaxe_i32_clamp >= 2147483648, do: reflaxe_i32_clamp - 4294967296, else: reflaxe_i32_clamp)
+    if reflaxe_i32_clamp >= 2147483648, do: reflaxe_i32_clamp - 4294967296, else: reflaxe_i32_clamp)
     low_unsigned = if int32_value < 0, do: int32_value + 4294967296, else: int32_value
     value = :erlang.bsl(high, 32) + low_unsigned
     result = _this1 = (reflaxe_i64_clamp = :erlang.band(value, 18446744073709551615)
-if reflaxe_i64_clamp >= 9223372036854775808, do: reflaxe_i64_clamp - 18446744073709551616, else: reflaxe_i64_clamp)
+    if reflaxe_i64_clamp >= 9223372036854775808, do: reflaxe_i64_clamp - 18446744073709551616, else: reflaxe_i64_clamp)
     neg = Reflaxe.Elixir.HaxeFloat.lt(no_fractions, 0)
     rest = if (neg) do
       Reflaxe.Elixir.HaxeFloat.neg(no_fractions)
@@ -43,25 +43,26 @@ if reflaxe_i64_clamp >= 9223372036854775808, do: reflaxe_i64_clamp - 18446744073
         if (Reflaxe.Elixir.HaxeFloat.gte(acc_rest, 1)) do
           curr = Reflaxe.Elixir.HaxeFloat.remainder(acc_rest, 2)
           acc_rest = Reflaxe.Elixir.HaxeFloat.divide(acc_rest, 2)
-          acc_result = (if (Reflaxe.Elixir.HaxeFloat.gte(curr, 1)) do
-  int32_value = 1
-  shift = 31
-  x = :erlang.bsr(int32_value, shift)
-  high = (reflaxe_i32_clamp = :erlang.band(x, 4294967295)
-if reflaxe_i32_clamp >= 2147483648, do: reflaxe_i32_clamp - 4294967296, else: reflaxe_i32_clamp)
-  low_unsigned = if int32_value < 0, do: int32_value + 4294967296, else: int32_value
-  value = :erlang.bsl(high, 32) + low_unsigned
-  a = _this1 = (reflaxe_i64_clamp = :erlang.band(value, 18446744073709551615)
-if reflaxe_i64_clamp >= 9223372036854775808, do: reflaxe_i64_clamp - 18446744073709551616, else: reflaxe_i64_clamp)
-  shift = Bitwise.band(acc_i, 63)
-  v = :erlang.bsl(a, shift)
-  b = _this1 = (reflaxe_i64_clamp = :erlang.band(v, 18446744073709551615)
-if reflaxe_i64_clamp >= 9223372036854775808, do: reflaxe_i64_clamp - 18446744073709551616, else: reflaxe_i64_clamp)
-  _this1 = (reflaxe_i64_clamp = :erlang.band(result + b, 18446744073709551615)
-if reflaxe_i64_clamp >= 9223372036854775808, do: reflaxe_i64_clamp - 18446744073709551616, else: reflaxe_i64_clamp)
-else
-  acc_result
-end)
+          acc_result =
+            (if (Reflaxe.Elixir.HaxeFloat.gte(curr, 1)) do
+              int32_value = 1
+              shift = 31
+              x = :erlang.bsr(int32_value, shift)
+              high = (reflaxe_i32_clamp = :erlang.band(x, 4294967295)
+              if reflaxe_i32_clamp >= 2147483648, do: reflaxe_i32_clamp - 4294967296, else: reflaxe_i32_clamp)
+              low_unsigned = if int32_value < 0, do: int32_value + 4294967296, else: int32_value
+              value = :erlang.bsl(high, 32) + low_unsigned
+              a = _this1 = (reflaxe_i64_clamp = :erlang.band(value, 18446744073709551615)
+              if reflaxe_i64_clamp >= 9223372036854775808, do: reflaxe_i64_clamp - 18446744073709551616, else: reflaxe_i64_clamp)
+              shift = Bitwise.band(acc_i, 63)
+              v = :erlang.bsl(a, shift)
+              b = _this1 = (reflaxe_i64_clamp = :erlang.band(v, 18446744073709551615)
+              if reflaxe_i64_clamp >= 9223372036854775808, do: reflaxe_i64_clamp - 18446744073709551616, else: reflaxe_i64_clamp)
+              _this1 = (reflaxe_i64_clamp = :erlang.band(result + b, 18446744073709551615)
+              if reflaxe_i64_clamp >= 9223372036854775808, do: reflaxe_i64_clamp - 18446744073709551616, else: reflaxe_i64_clamp)
+            else
+              acc_result
+            end)
           acc_i = acc_i + 1
           {:cont, {acc_result, acc_rest, acc_i}}
         else
@@ -80,7 +81,7 @@ end)
     end)
     if (neg) do
       _this1 = (reflaxe_i64_clamp = :erlang.band(-result, 18446744073709551615)
-if reflaxe_i64_clamp >= 9223372036854775808, do: reflaxe_i64_clamp - 18446744073709551616, else: reflaxe_i64_clamp)
+      if reflaxe_i64_clamp >= 9223372036854775808, do: reflaxe_i64_clamp - 18446744073709551616, else: reflaxe_i64_clamp)
     else
       result
     end

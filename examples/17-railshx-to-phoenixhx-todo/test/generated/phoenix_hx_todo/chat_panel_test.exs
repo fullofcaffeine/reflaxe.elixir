@@ -16,15 +16,9 @@ defmodule PhoenixHxTodo.ChatPanelTest do
     lv = elem(mounted, 1)
     _ = Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{body: body})
     html = Phoenix.LiveViewTest.render(lv)
-    condition = (case :binary.match(html, body) do
-  {pos, _} -> pos
-  :nomatch -> -1
-end) != -1
+    condition = StringTools.haxe_index_of(html, body, 0) != -1
     assert condition
-    condition = (case :binary.match(html, "Room note persisted through Ecto") do
-  {pos, _} -> pos
-  :nomatch -> -1
-end) != -1
+    condition = StringTools.haxe_index_of(html, "Room note persisted through Ecto", 0) != -1
     assert condition
   end
   test "ship room shows six most recent notes" do
@@ -44,20 +38,11 @@ end) != -1
     _ = Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{body: "Recent note " <> run_id <> "-" <> Reflaxe.Elixir.HaxeFloat.to_string(5)})
     _ = Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{body: "Recent note " <> run_id <> "-" <> Reflaxe.Elixir.HaxeFloat.to_string(6)})
     html = Phoenix.LiveViewTest.render(lv)
-    condition = (case :binary.match(html, "Recent note " <> run_id <> "-6") do
-  {pos, _} -> pos
-  :nomatch -> -1
-end) != -1
+    condition = StringTools.haxe_index_of(html, "Recent note " <> run_id <> "-6", 0) != -1
     assert condition
-    condition = (case :binary.match(html, "Recent note " <> run_id <> "-1") do
-  {pos, _} -> pos
-  :nomatch -> -1
-end) != -1
+    condition = StringTools.haxe_index_of(html, "Recent note " <> run_id <> "-1", 0) != -1
     assert condition
-    condition = (case :binary.match(html, "Recent note " <> run_id <> "-0") do
-  {pos, _} -> pos
-  :nomatch -> -1
-end) == -1
+    condition = StringTools.haxe_index_of(html, "Recent note " <> run_id <> "-0", 0) == -1
     assert condition
   end
 end

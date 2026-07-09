@@ -6,11 +6,11 @@ defmodule Main do
   end
   def main() do
     params = (%{
-          "title" => "Ship it",
-          "id" => "42",
-          "done" => "true",
-          "todo" => %{"id" => 99}
-        })
+              "title" => "Ship it",
+              "id" => "42",
+              "done" => "true",
+              "todo" => %{"id" => 99}
+            })
     _ = assert_that(PhoenixHx.Params.get_string(params, "title") == "Ship it", "getString failed")
     _ = assert_that(Kernel.is_nil(PhoenixHx.Params.get_string(params, "missing")), "missing getString failed")
     _ = assert_that(PhoenixHx.Params.get_string_default(params, "missing", "fallback") == "fallback", "getStringDefault failed")
@@ -22,11 +22,11 @@ defmodule Main do
     _ = assert_that(PhoenixHx.Params.string_from_term(PhoenixHx.Params.get(params, "title")) == "Ship it", "stringFromTerm failed")
     _ = assert_that(PhoenixHx.Params.string_from_term_default(nil, "fallback") == "fallback", "stringFromTermDefault failed")
     atom_params = (%{
-          title: "Atom title",
-          id: 13,
-          done: false,
-          todo: %{id: "11"}
-        })
+              title: "Atom title",
+              id: 13,
+              done: false,
+              todo: %{id: "11"}
+            })
     _ = assert_that(PhoenixHx.Params.get_string(atom_params, "title") == "Atom title", "atom getString failed")
     _ = assert_that(PhoenixHx.Params.get_int(atom_params, "id") == 13, "atom getInt failed")
     _ = assert_that(PhoenixHx.Params.get_nested_int(atom_params, "todo", "id") == 11, "atom getNestedInt failed")

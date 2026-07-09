@@ -14,6 +14,15 @@
  */
 extern class String {
 	/**
+	 * Creates a String from another String value.
+	 *
+	 * Haxe exposes `new String(value)` as a copy-like constructor. Strings are
+	 * immutable BEAM binaries on this target, so the compiler lowers this
+	 * constructor to the original value.
+	 */
+	extern public function new(value:String):Void;
+
+	/**
 	 * The number of characters in `this` String.
 	 * Maps to String.length/1 in Elixir
 	 */

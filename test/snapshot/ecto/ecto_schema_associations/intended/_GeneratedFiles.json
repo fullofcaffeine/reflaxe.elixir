@@ -9,6 +9,7 @@
   "my_app/post.ex",
   "my_app/organization.ex",
   "main.ex",
+  "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/_call_stack/call_stack_impl_.ex"
 ],

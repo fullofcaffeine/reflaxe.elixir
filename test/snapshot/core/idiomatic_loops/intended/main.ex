@@ -13,26 +13,27 @@ defmodule Main do
     _ = Enum.each(fruits, fn _ -> nil end)
     scores = %{"Alice" => 95, "Bob" => 87, "Charlie" => 92}
     g = Reflaxe.Elixir.IMap.key_value_iterator(scores)
-    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
-  try do
-    if (g.has_next.()) do
-      _name = g.next.().key
-      _score = g.next.().value
-      {:cont, acc}
-    else
-      {:halt, acc}
-    end
-  catch
-    :throw, {:break, break_state} ->
-      {:halt, break_state}
-    :throw, {:continue, continue_state} ->
-      {:cont, continue_state}
-    :throw, :break ->
-      {:halt, acc}
-    :throw, :continue ->
-      {:cont, acc}
-  end
-end)
+    _ =
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+        try do
+          if (g.has_next.()) do
+            _name = g.next.().key
+            _score = g.next.().value
+            {:cont, acc}
+          else
+            {:halt, acc}
+          end
+        catch
+          :throw, {:break, break_state} ->
+            {:halt, break_state}
+          :throw, {:continue, continue_state} ->
+            {:cont, continue_state}
+          :throw, :break ->
+            {:halt, acc}
+          :throw, :continue ->
+            {:cont, acc}
+        end
+      end)
   end
   defp test_while_loops() do
     i = 0
@@ -218,22 +219,24 @@ end)
     end)
     matrix = [[1, 2], [3, 4], [5, 6]]
     _g = 0
-    _ = Enum.each(matrix, fn row ->
-  _doubled = Enum.map(row, fn n -> n * 2 end)
-  nil
-end)
+    _ =
+      Enum.each(matrix, fn row ->
+        _doubled = Enum.map(row, fn n -> n * 2 end)
+        nil
+      end)
   end
   defp test_loop_control_flow() do
     _g = 0
-    _ = Enum.each(0..4//1, fn i ->
-  _g = 0
-  _ = Enum.each(0..4//1, fn j ->
-    if (i + j > 4) do
-      throw(:break)
-    end
-    nil
-  end)
-end)
+    _ =
+      Enum.each(0..4//1, fn i ->
+        _g = 0
+        _ = Enum.each(0..4//1, fn j ->
+          if (i + j > 4) do
+            throw(:break)
+          end
+          nil
+        end)
+      end)
     numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     processed = []
     _g = 0
@@ -247,8 +250,8 @@ end)
       _g = 0
       arr_length = length(arr)
       (case Enum.reduce_while(0..(arr_length - 1)//1, :__reflaxe_no_return__, fn i, _ ->
-  if (Enum.at(arr, i) == target), do: {:halt, {:__reflaxe_return__, i}}, else: {:cont, :__reflaxe_no_return__}
-end) do
+        if (Enum.at(arr, i) == target), do: {:halt, {:__reflaxe_return__, i}}, else: {:cont, :__reflaxe_no_return__}
+      end) do
         {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
         _ -> -1
       end)
@@ -295,11 +298,7 @@ end) do
     errors = []
     _g = 0
     {_results, _errors} = Enum.reduce(items, {results, errors}, fn item, {results_acc, errors_acc} ->
-      cond_value = (case :binary.match(item, "error") do
-        {pos, _} -> pos
-        :nomatch -> -1
-      end)
-      errors_acc = if (cond_value >= 0) do
+      errors_acc = if (StringTools.haxe_index_of(item, "error", 0) >= 0) do
         errors_acc = errors_acc ++ ["Failed: " <> item]
         throw(:continue)
         errors_acc

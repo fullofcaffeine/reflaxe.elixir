@@ -11,191 +11,191 @@ defmodule PhoenixHxTodoWeb.AppLive do
   end
   def render(assigns) do
     ~H"""
-<div id="phoenixhx-root" class="phoenixhx-page" phx-hook="PhoenixHxTodoFocus">
-			<%= if not assigns.authenticated do %>
-				<main class="login-shell">
-					<section class="login-hero panel">
-						<div class="login-copy">
-							<span class="eyebrow">RailsHx to PhoenixHx</span>
-							<h1>Same todo room, Phoenix rules.</h1>
-							<p>
-								This page keeps the RailsHx todo app's guest-entry workflow and warm editorial shell,
-								then swaps Rails controllers, ERB partials, Devise, and Turbo Streams for Phoenix LiveView events.
-							</p>
-						</div>
-						<div class="credential-card">
-							<span>Seeded demo</span>
-							<strong>guest@example.test</strong>
-							<em>Use the guest button for this first Phoenix slice.</em>
-						</div>
-					</section>
+    <div id="phoenixhx-root" class="phoenixhx-page" phx-hook="PhoenixHxTodoFocus">
+          <%= if not assigns.authenticated do %>
+            <main class="login-shell">
+              <section class="login-hero panel">
+                <div class="login-copy">
+                  <span class="eyebrow">RailsHx to PhoenixHx</span>
+                  <h1>Same todo room, Phoenix rules.</h1>
+                  <p>
+                    This page keeps the RailsHx todo app's guest-entry workflow and warm editorial shell,
+                    then swaps Rails controllers, ERB partials, Devise, and Turbo Streams for Phoenix LiveView events.
+                  </p>
+                </div>
+                <div class="credential-card">
+                  <span>Seeded demo</span>
+                  <strong>guest@example.test</strong>
+                  <em>Use the guest button for this first Phoenix slice.</em>
+                </div>
+              </section>
 
-					<section class="login-panel panel" id="phoenixhx-session-panel">
-						<span class="eyebrow">Demo session</span>
-						<h2>Open the converted board.</h2>
-						<p>
-							RailsHx delegates the real sample to Devise. This PhoenixHx slice keeps auth deliberately small:
-							a controller action creates a Plug session, then the LiveView consumes the derived session map.
-						</p>
-						<%= if @status != nil do %>
-							<div class="status" role="status"><%= @status %></div>
-						<% end %>
-						<form action="/auth/demo" method="post">
-							<input type="hidden" name="_csrf_token" value={@csrf_token} />
-							<input type="hidden" name="name" value="Guest Workspace" />
-							<input type="hidden" name="email" value="guest@example.test" />
-							<button type="submit" class="primary-action" data-testid="continue-guest" data-phoenixhx-autofocus>
-								Continue as guest
-							</button>
-						</form>
-					</section>
-				</main>
-			<% else %>
-				<main class="todo-shell">
-					<header class="app-topbar">
-						<div class="brand-mark">
-							<span>PHX</span>
-							<div>
-								<strong>PhoenixHx Todo</strong>
-								<em>LiveView session active</em>
-							</div>
-						</div>
-						<nav class="topbar-links" aria-label="Conversion map">
-							<a href="#open-work">Open work</a>
-							<a href="#ship-room">Ship room</a>
-							<a href="#conversion-notes">Rails to Phoenix</a>
-						</nav>
-						<div class="session-chip">
-							<span><%= @current_user_name %></span>
-							<small><%= @current_user_email %></small>
-							<form action="/auth/logout" method="post">
-								<input type="hidden" name="_csrf_token" value={@csrf_token} />
-								<button type="submit" class="secondary-action">Log out</button>
-							</form>
-						</div>
-					</header>
+              <section class="login-panel panel" id="phoenixhx-session-panel">
+                <span class="eyebrow">Demo session</span>
+                <h2>Open the converted board.</h2>
+                <p>
+                  RailsHx delegates the real sample to Devise. This PhoenixHx slice keeps auth deliberately small:
+                  a controller action creates a Plug session, then the LiveView consumes the derived session map.
+                </p>
+                <%= if @status != nil do %>
+                  <div class="status" role="status"><%= @status %></div>
+                <% end %>
+                <form action="/auth/demo" method="post">
+                  <input type="hidden" name="_csrf_token" value={@csrf_token} />
+                  <input type="hidden" name="name" value="Guest Workspace" />
+                  <input type="hidden" name="email" value="guest@example.test" />
+                  <button type="submit" class="primary-action" data-testid="continue-guest" data-phoenixhx-autofocus>
+                    Continue as guest
+                  </button>
+                </form>
+              </section>
+            </main>
+          <% else %>
+            <main class="todo-shell">
+              <header class="app-topbar">
+                <div class="brand-mark">
+                  <span>PHX</span>
+                  <div>
+                    <strong>PhoenixHx Todo</strong>
+                    <em>LiveView session active</em>
+                  </div>
+                </div>
+                <nav class="topbar-links" aria-label="Conversion map">
+                  <a href="#open-work">Open work</a>
+                  <a href="#ship-room">Ship room</a>
+                  <a href="#conversion-notes">Rails to Phoenix</a>
+                </nav>
+                <div class="session-chip">
+                  <span><%= @current_user_name %></span>
+                  <small><%= @current_user_email %></small>
+                  <form action="/auth/logout" method="post">
+                    <input type="hidden" name="_csrf_token" value={@csrf_token} />
+                    <button type="submit" class="secondary-action">Log out</button>
+                  </form>
+                </div>
+              </header>
 
-					<section class="hero">
-						<div class="panel hero-copy">
-							<span class="eyebrow">RailsHx sample, Phoenix implementation</span>
-							<h1>Typed Phoenix, live BEAM state.</h1>
-							<p>
-								The RailsHx source renders ERB and Turbo Streams from Haxe. This port renders HEEx
-								from inline HXX and persists mutations through Ecto contexts.
-							</p>
-						</div>
-						<aside class="panel stat-panel" aria-label="Todo stats">
-							<div class="stat">
-								<strong><%= @stats.open_count %></strong>
-								<span>open tasks</span>
-							</div>
-							<div class="stat">
-								<strong><%= @stats.typed_column_count %></strong>
-								<span>typed fields</span>
-							</div>
-						</aside>
-					</section>
+              <section class="hero">
+                <div class="panel hero-copy">
+                  <span class="eyebrow">RailsHx sample, Phoenix implementation</span>
+                  <h1>Typed Phoenix, live BEAM state.</h1>
+                  <p>
+                    The RailsHx source renders ERB and Turbo Streams from Haxe. This port renders HEEx
+                    from inline HXX and persists mutations through Ecto contexts.
+                  </p>
+                </div>
+                <aside class="panel stat-panel" aria-label="Todo stats">
+                  <div class="stat">
+                    <strong><%= @stats.open_count %></strong>
+                    <span>open tasks</span>
+                  </div>
+                  <div class="stat">
+                    <strong><%= @stats.typed_column_count %></strong>
+                    <span>typed fields</span>
+                  </div>
+                </aside>
+              </section>
 
-					<section class="workspace">
-						<div class="side-stack">
-							<div class="panel composer-card">
-								<h2>Add a task</h2>
-								<form phx-submit="create_todo" phx-change="update_form" class="todo-form" data-testid="todo-form">
-									<p class="form-owner-note">New tasks will be assigned to <%= @current_user_name %>.</p>
-									<label>
-										<span>What should ship next?</span>
-										<input type="text" name="title" value={@title_input} placeholder="Write the Phoenix LiveView port" required data-phoenixhx-autofocus />
-									</label>
-									<label>
-										<span>Why does it matter?</span>
-										<textarea name="notes" rows="3" placeholder="Add a short implementation note"><%= @notes_input %></textarea>
-									</label>
-									<button type="submit" class="primary-action">Add task</button>
-								</form>
-								<%= if @status != nil do %>
-									<div class="status" role="status"><%= @status %></div>
-								<% end %>
-							</div>
+              <section class="workspace">
+                <div class="side-stack">
+                  <div class="panel composer-card">
+                    <h2>Add a task</h2>
+                    <form phx-submit="create_todo" phx-change="update_form" class="todo-form" data-testid="todo-form">
+                      <p class="form-owner-note">New tasks will be assigned to <%= @current_user_name %>.</p>
+                      <label>
+                        <span>What should ship next?</span>
+                        <input type="text" name="title" value={@title_input} placeholder="Write the Phoenix LiveView port" required data-phoenixhx-autofocus />
+                      </label>
+                      <label>
+                        <span>Why does it matter?</span>
+                        <textarea name="notes" rows="3" placeholder="Add a short implementation note"><%= @notes_input %></textarea>
+                      </label>
+                      <button type="submit" class="primary-action">Add task</button>
+                    </form>
+                    <%= if @status != nil do %>
+                      <div class="status" role="status"><%= @status %></div>
+                    <% end %>
+                  </div>
 
-							<section id="ship-room" class="panel chat-panel" aria-label="PhoenixHx typed ship room">
-								<span class="eyebrow">Phoenix PubSub room</span>
-								<h2>Ship room</h2>
-								<p>
-									RailsHx broadcasts server-rendered Turbo Stream partials. This slice persists
-									room notes through Ecto and broadcasts a PubSub refresh signal to LiveViews.
-								</p>
-								<form phx-submit="create_chat_message" phx-change="update_chat" class="chat-form" data-testid="chat-form">
-									<label>
-										<span>Add a typed room note</span>
-										<textarea name="body" rows="3" placeholder="Share what changed or what shipped"><%= @chat_input %></textarea>
-									</label>
-									<button type="submit" class="secondary-action">Post note</button>
-								</form>
+                  <section id="ship-room" class="panel chat-panel" aria-label="PhoenixHx typed ship room">
+                    <span class="eyebrow">Phoenix PubSub room</span>
+                    <h2>Ship room</h2>
+                    <p>
+                      RailsHx broadcasts server-rendered Turbo Stream partials. This slice persists
+                      room notes through Ecto and broadcasts a PubSub refresh signal to LiveViews.
+                    </p>
+                    <form phx-submit="create_chat_message" phx-change="update_chat" class="chat-form" data-testid="chat-form">
+                      <label>
+                        <span>Add a typed room note</span>
+                        <textarea name="body" rows="3" placeholder="Share what changed or what shipped"><%= @chat_input %></textarea>
+                      </label>
+                      <button type="submit" class="secondary-action">Post note</button>
+                    </form>
 
-								<div id="phoenixhx-chat-list" class="chat-list">
-									<%= if length(assigns.chat_messages) == 0 do %>
-										<div class="empty-state">No room notes yet.</div>
-									<% else %>
-										<ul>
-											<%= for message <- @chat_messages do %>
-												<li class={message.row_class} data-testid="chat-message">
-													<strong><%= message.owner %></strong>
-													<p><%= message.body %></p>
-												</li>
-											<% end %>
-										</ul>
-									<% end %>
-								</div>
-							</section>
-						</div>
+                    <div id="phoenixhx-chat-list" class="chat-list">
+                      <%= if length(assigns.chat_messages) == 0 do %>
+                        <div class="empty-state">No room notes yet.</div>
+                      <% else %>
+                        <ul>
+                          <%= for message <- @chat_messages do %>
+                            <li class={message.row_class} data-testid="chat-message">
+                              <strong><%= message.owner %></strong>
+                              <p><%= message.body %></p>
+                            </li>
+                          <% end %>
+                        </ul>
+                      <% end %>
+                    </div>
+                  </section>
+                </div>
 
-						<div id="open-work" class="panel open-work-card" tabindex="-1">
-							<h2>Open work</h2>
-							<div id="phoenixhx-todo-list" class="todo-list-frame">
-								<%= if length(assigns.todos) == 0 do %>
-									<div class="empty-state">No open tasks. Serene, but suspicious.</div>
-								<% else %>
-									<ul class="todo-list">
-										<%= for todo <- @todos do %>
-											<li class={todo.row_class} data-testid="todo-item">
-												<span class="todo-dot" aria-hidden="true"></span>
-												<div class="todo-body">
-													<span><%= todo.title %></span>
-													<%= if todo.notes != "" do %>
-														<p class="todo-notes"><%= todo.notes %></p>
-													<% end %>
-													<small>Owner: <%= todo.owner %></small>
-												</div>
-												<div class="todo-actions">
-													<button type="button" class="icon-action" phx-click={"toggle_todo"} phx-value-id={Reflaxe.Elixir.HaxeFloat.to_string(todo.id)}>
-														<%= (if (todo.completed), do: "Reopen", else: "Done") %>
-													</button>
-													<button type="button" class="icon-action danger" phx-click="delete_todo" phx-value-id={Reflaxe.Elixir.HaxeFloat.to_string(todo.id)}>
-														Delete
-													</button>
-												</div>
-											</li>
-										<% end %>
-									</ul>
-								<% end %>
-							</div>
-						</div>
-					</section>
+                <div id="open-work" class="panel open-work-card" tabindex="-1">
+                  <h2>Open work</h2>
+                  <div id="phoenixhx-todo-list" class="todo-list-frame">
+                    <%= if length(assigns.todos) == 0 do %>
+                      <div class="empty-state">No open tasks. Serene, but suspicious.</div>
+                    <% else %>
+                      <ul class="todo-list">
+                        <%= for todo <- @todos do %>
+                          <li class={todo.row_class} data-testid="todo-item">
+                            <span class="todo-dot" aria-hidden="true"></span>
+                            <div class="todo-body">
+                              <span><%= todo.title %></span>
+                              <%= if todo.notes != "" do %>
+                                <p class="todo-notes"><%= todo.notes %></p>
+                              <% end %>
+                              <small>Owner: <%= todo.owner %></small>
+                            </div>
+                            <div class="todo-actions">
+                              <button type="button" class="icon-action" phx-click={"toggle_todo"} phx-value-id={Reflaxe.Elixir.HaxeFloat.to_string(todo.id)}>
+                                <%= (if (todo.completed), do: "Reopen", else: "Done") %>
+                              </button>
+                              <button type="button" class="icon-action danger" phx-click="delete_todo" phx-value-id={Reflaxe.Elixir.HaxeFloat.to_string(todo.id)}>
+                                Delete
+                              </button>
+                            </div>
+                          </li>
+                        <% end %>
+                      </ul>
+                    <% end %>
+                  </div>
+                </div>
+              </section>
 
-					<section id="conversion-notes" class="panel conversion-panel">
-						<span class="eyebrow">Conversion notes</span>
-						<h2>The Rails API is not being emulated.</h2>
-						<div class="crosswalk-grid">
-							<div><strong>ActiveRecord model</strong><span>Ecto schema + context boundary</span></div>
-							<div><strong>ActionController action</strong><span>Controller session action + LiveView callbacks</span></div>
-							<div><strong>HHX ERB partial</strong><span>Inline HXX function/component shape</span></div>
-							<div><strong>Turbo Stream mutation</strong><span>LiveView event diff and PubSub refresh</span></div>
-						</div>
-					</section>
-				</main>
-			<% end %>
-		</div>
-"""
+              <section id="conversion-notes" class="panel conversion-panel">
+                <span class="eyebrow">Conversion notes</span>
+                <h2>The Rails API is not being emulated.</h2>
+                <div class="crosswalk-grid">
+                  <div><strong>ActiveRecord model</strong><span>Ecto schema + context boundary</span></div>
+                  <div><strong>ActionController action</strong><span>Controller session action + LiveView callbacks</span></div>
+                  <div><strong>HHX ERB partial</strong><span>Inline HXX function/component shape</span></div>
+                  <div><strong>Turbo Stream mutation</strong><span>LiveView event diff and PubSub refresh</span></div>
+                </div>
+              </section>
+            </main>
+          <% end %>
+        </div>
+    """
   end
   def handle_info(msg, socket) do
     live = socket

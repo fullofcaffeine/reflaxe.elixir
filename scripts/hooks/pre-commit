@@ -62,6 +62,7 @@ while IFS= read -r staged_file; do
 done < <(
   git diff --cached --name-only --diff-filter=ACMR \
     | rg '\.hx$' \
+    | rg -v '^test/upstream_unitstd/upstream/' \
     || true
 )
 

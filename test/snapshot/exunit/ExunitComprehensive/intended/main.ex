@@ -36,13 +36,9 @@ defmodule Main do
     _ = assert(context[:test_string].length == 11, "String length should be 11")
     _ = assert(String.upcase(context[:test_string]) == "HELLO WORLD", "Uppercase conversion should work")
     _ = assert(String.downcase(context[:test_string]) == "hello world", "Lowercase conversion should work")
-    _ = assert(:binary.match(context[:test_string], "World") != :nomatch, "String should contain 'World'")
-    _ = assert((String.at(context[:test_string], 0) || "") == "H", "First character should be 'H'")
-    parts = if (" " == "") do
-      String.graphemes(context[:test_string])
-    else
-      String.split(context[:test_string], " ")
-    end
+    _ = assert(StringTools.haxe_index_of(context[:test_string], "World", 0) >= 0, "String should contain 'World'")
+    _ = assert(StringTools.haxe_char_at(context[:test_string], 0) == "H", "First character should be 'H'")
+    parts = StringTools.haxe_split(context[:test_string], " ")
     _ = assert(length(parts) == 2, "Split should produce 2 parts")
     _ = assert(Enum.at(parts, 0) == "Hello", "First part should be 'Hello'")
     _ = assert(Enum.at(parts, 1) == "World", "Second part should be 'World'")

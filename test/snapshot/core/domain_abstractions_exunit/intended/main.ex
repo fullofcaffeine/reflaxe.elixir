@@ -145,7 +145,7 @@ defmodule Main do
     (case invalid_email do
       {:ok, _value} -> flunk("Invalid email should not parse")
       {:error, message} ->
-        condition = :binary.match(message, "Invalid email") != :nomatch
+        condition = StringTools.haxe_index_of(message, "Invalid email", 0) >= 0
         assert condition
     end)
     large_int = PositiveInt_Impl_.parse(1000000)

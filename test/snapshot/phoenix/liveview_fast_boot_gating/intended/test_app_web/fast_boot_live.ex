@@ -7,11 +7,11 @@ defmodule TestAppWeb.FastBootLive do
   end
   def render(assigns) do
     ~H"""
-<div>
-  <span data-testid="count"><%= @count %></span>
-  <span data-testid="status" class={if @active, do: "on", else: "off"}>status</span>
-</div>
-"""
+    <div>
+      <span data-testid="count"><%= @count %></span>
+      <span data-testid="status" class={if @active, do: "on", else: "off"}>status</span>
+    </div>
+    """
   end
   def handle_event(event, _params, socket) do
     socket = (case event do

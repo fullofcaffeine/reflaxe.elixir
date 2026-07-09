@@ -1,0 +1,10 @@
+{
+  "sourceRoot": "",
+  "names": [],
+  "mappings": "AASC,AAAA;AAKC,EAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAKA,EAAA;AACC,IAAA;AAAA;AAGD,EAAA;AACC,IAAA;AAAA;AAGD,EAAA;AACC,IAAA;AAAA;AAID,EAAA;AAAA;AAES,IAAA;AACR,IAAA,qBAAmC;AAAA;AAAA;AAAA",
+  "version": 3,
+  "file": "string_key_value_iterator.exs",
+  "sources": [
+  "std/haxe/iterators/StringKeyValueIterator.cross.hx"
+]
+}

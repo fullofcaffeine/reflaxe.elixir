@@ -2,11 +2,11 @@ defmodule CallStack_Impl_ do
   import Kernel, except: [to_string: 1], warn: false
   def call_stack() do
     stack_trace_to_haxe((fn ->
-case Process.info(self(), :current_stacktrace) do
-  {:current_stacktrace, stacktrace} -> stacktrace
-  _ -> []
-end
- end).())
+    case Process.info(self(), :current_stacktrace) do
+      {:current_stacktrace, stacktrace} -> stacktrace
+      _ -> []
+    end
+     end).())
   end
   def exception_stack(full_stack) do
     exception_stack = stack_trace_to_haxe(Process.get(:__reflaxe_last_stacktrace__, []))

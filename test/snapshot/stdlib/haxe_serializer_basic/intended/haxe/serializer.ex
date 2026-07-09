@@ -39,74 +39,81 @@ defmodule Serializer do
     Process.get({:haxe_serializer_parts, struct.serializer_id}, []) |> Enum.join("")
   end
   def serialize(struct, value) do
-    
-key = {:haxe_serializer_parts, struct.serializer_id}
-Process.put(key, Process.get(key, []) ++ [encode(value)])
+
+    key = {:haxe_serializer_parts, struct.serializer_id}
+    Process.put(key, Process.get(key, []) ++ [encode(value)])
 
   end
   def serialize_exception(struct, value) do
-    
-key = {:haxe_serializer_parts, struct.serializer_id}
-Process.put(key, Process.get(key, []) ++ ["x" <> encode(value)])
+
+    key = {:haxe_serializer_parts, struct.serializer_id}
+    Process.put(key, Process.get(key, []) ++ ["x" <> encode(value)])
 
   end
   def run(value) do
     encode(value)
   end
   defp encode(value) do
-    
-encode = fn encode, value ->
-  cond do
-    value == nil ->
-      "n"
 
-    value == true ->
-      "t"
+    encode = fn encode, value ->
+      case value do
+        {Reflaxe.Elixir.HaxeFloat, :nan} ->
+          "k"
 
-    value == false ->
-      "f"
+        {Reflaxe.Elixir.HaxeFloat, :positive_infinity} ->
+          "p"
 
-    is_integer(value) ->
-      if value == 0, do: "z", else: "i" <> Kernel.to_string(value)
+        {Reflaxe.Elixir.HaxeFloat, :negative_infinity} ->
+          "m"
 
-    is_float(value) ->
-      cond do
-        value != value -> "k"
-        value == :math.pow(1.0, 309) -> "p"
-        value == -:math.pow(1.0, 309) -> "m"
-        true -> "d" <> Kernel.to_string(value)
+        value ->
+          cond do
+            value == nil ->
+              "n"
+
+            value == true ->
+              "t"
+
+            value == false ->
+              "f"
+
+            is_integer(value) ->
+              if value == 0, do: "z", else: "i" <> Kernel.to_string(value)
+
+            is_float(value) ->
+              "d" <> Kernel.to_string(value)
+
+            is_binary(value) ->
+              encoded = URI.encode_www_form(value)
+              "y" <> Kernel.to_string(byte_size(encoded)) <> ":" <> encoded
+
+            is_list(value) ->
+              "a" <> Enum.map_join(value, "", fn item -> encode.(encode, item) end) <> "h"
+
+            is_map(value) ->
+              body =
+                value
+                |> Map.drop([:__reflaxe_class__, :__struct__])
+                |> Enum.map_join("", fn {key, item} ->
+                  key_text =
+                    case key do
+                      atom when is_atom(atom) -> Atom.to_string(atom)
+                      binary when is_binary(binary) -> binary
+                      other -> Kernel.to_string(other)
+                    end
+
+                  encode.(encode, key_text) <> encode.(encode, item)
+                end)
+
+              "o" <> body <> "g"
+
+            true ->
+              raise Reflaxe.Elixir.HaxeThrow, [value: "Cannot serialize " <> Kernel.inspect(value)]
+          end
       end
+    end
 
-    is_binary(value) ->
-      encoded = URI.encode_www_form(value)
-      "y" <> Kernel.to_string(byte_size(encoded)) <> ":" <> encoded
-
-    is_list(value) ->
-      "a" <> Enum.map_join(value, "", fn item -> encode.(encode, item) end) <> "h"
-
-    is_map(value) ->
-      body =
-        value
-        |> Map.drop([:__reflaxe_class__, :__struct__])
-        |> Enum.map_join("", fn {key, item} ->
-          key_text =
-            case key do
-              atom when is_atom(atom) -> Atom.to_string(atom)
-              binary when is_binary(binary) -> binary
-              other -> Kernel.to_string(other)
-            end
-
-          encode.(encode, key_text) <> encode.(encode, item)
-        end)
-
-      "o" <> body <> "g"
-
-    true ->
-      raise Reflaxe.Elixir.HaxeThrow, [value: "Cannot serialize " <> Kernel.inspect(value)]
-  end
-end
-
-encode.(encode, value)
+    encode.(encode, value)
 
   end
 end

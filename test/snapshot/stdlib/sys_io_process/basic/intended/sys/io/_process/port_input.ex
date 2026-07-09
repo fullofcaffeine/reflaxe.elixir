@@ -17,17 +17,17 @@ defmodule PortInput do
   end
   def read_all(struct, _bufsize) do
     data = (
-            port = struct.port
-            chunks = Enum.reduce_while(Stream.repeatedly(fn -> :ok end), [], fn _, acc ->
-              receive do
-                {^port, {:data, chunk}} -> {:cont, [chunk | acc]}
-                {^port, {:exit_status, status}} ->
-                  send(self(), {port, {:exit_status, status}})
-                  {:halt, acc}
-              end
-            end)
-            :erlang.iolist_to_binary(Enum.reverse(chunks))
-        )
+                port = struct.port
+                chunks = Enum.reduce_while(Stream.repeatedly(fn -> :ok end), [], fn _, acc ->
+                  receive do
+                    {^port, {:data, chunk}} -> {:cont, [chunk | acc]}
+                    {^port, {:exit_status, status}} ->
+                      send(self(), {port, {:exit_status, status}})
+                      {:halt, acc}
+                  end
+                end)
+                :erlang.iolist_to_binary(Enum.reverse(chunks))
+            )
     _ = Bytes.of_data(data)
   end
   def read_bytes(struct, buf, pos, len) do

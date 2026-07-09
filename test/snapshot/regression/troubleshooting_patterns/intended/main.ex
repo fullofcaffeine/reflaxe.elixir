@@ -123,12 +123,12 @@ defmodule Main do
                   arr = request
                   if (length(arr) >= 9) do
                     "Full HTTP request: " <> Enum.join((fn ->
-  (fn ->
-    g = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
-    g = Enum.reduce(g, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
-    g
-  end).()
-end).(), "") <> " + more data"
+                      (fn ->
+                        g = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
+                        g = Enum.reduce(g, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
+                        g
+                      end).()
+                    end).(), "") <> " + more data"
                   else
                     "Invalid HTTP request"
                   end
@@ -145,12 +145,12 @@ end).(), "") <> " + more data"
                 arr = request
                 if (length(arr) >= 9) do
                   "Full HTTP request: " <> Enum.join((fn ->
-  (fn ->
-    g = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
-    g = Enum.reduce(g, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
-    g
-  end).()
-end).(), "") <> " + more data"
+                    (fn ->
+                      g = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
+                      g = Enum.reduce(g, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
+                      g
+                    end).()
+                  end).(), "") <> " + more data"
                 else
                   "Invalid HTTP request"
                 end
@@ -159,15 +159,15 @@ end).(), "") <> " + more data"
         71 when length(request) >= 4 -> "Other method: #{<<method1::utf8>>}#{<<method2::utf8>>}#{<<method3::utf8>>}#{<<method4::utf8>>}"
         71 when length(arr) >= 9 ->
           "Full HTTP request: #{(fn -> Enum.join((fn ->
-  _g = []
-  g_value = 0
-  _g2 = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
-  _g = Enum.reduce(_g2, _g, fn b, _g_acc ->
-    _g_acc = _g_acc ++ [<<b::utf8>>]
-    _g_acc
-  end)
-  _g
-end).(), "") end).()} + more data"
+            _g = []
+            g_value = 0
+            _g2 = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
+            _g = Enum.reduce(_g2, _g, fn b, _g_acc ->
+              _g_acc = _g_acc ++ [<<b::utf8>>]
+              _g_acc
+            end)
+            _g
+          end).(), "") end).()} + more data"
         71 -> "Invalid HTTP request"
         80 ->
           cond do
@@ -185,12 +185,12 @@ end).(), "") end).()} + more data"
                   arr = request
                   if (length(arr) >= 9) do
                     "Full HTTP request: " <> Enum.join((fn ->
-  (fn ->
-    g = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
-    g = Enum.reduce(g, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
-    g
-  end).()
-end).(), "") <> " + more data"
+                      (fn ->
+                        g = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
+                        g = Enum.reduce(g, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
+                        g
+                      end).()
+                    end).(), "") <> " + more data"
                   else
                     "Invalid HTTP request"
                   end
@@ -207,12 +207,12 @@ end).(), "") <> " + more data"
                 arr = request
                 if (length(arr) >= 9) do
                   "Full HTTP request: " <> Enum.join((fn ->
-  (fn ->
-    g = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
-    g = Enum.reduce(g, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
-    g
-  end).()
-end).(), "") <> " + more data"
+                    (fn ->
+                      g = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
+                      g = Enum.reduce(g, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
+                      g
+                    end).()
+                  end).(), "") <> " + more data"
                 else
                   "Invalid HTTP request"
                 end
@@ -221,15 +221,15 @@ end).(), "") <> " + more data"
         80 when length(request) >= 4 -> "Other method: #{<<method1::utf8>>}#{<<method2::utf8>>}#{<<method3::utf8>>}#{<<method4::utf8>>}"
         80 when length(arr) >= 9 ->
           "Full HTTP request: #{(fn -> Enum.join((fn ->
-  _g = []
-  g_value = 0
-  _g2 = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
-  _g = Enum.reduce(_g2, _g, fn b, _g_acc ->
-    _g_acc = _g_acc ++ [<<b::utf8>>]
-    _g_acc
-  end)
-  _g
-end).(), "") end).()} + more data"
+            _g = []
+            g_value = 0
+            _g2 = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
+            _g = Enum.reduce(_g2, _g, fn b, _g_acc ->
+              _g_acc = _g_acc ++ [<<b::utf8>>]
+              _g_acc
+            end)
+            _g
+          end).(), "") end).()} + more data"
         80 -> "Invalid HTTP request"
         _ ->
           method1 = Enum.at(request, 0)
@@ -242,15 +242,15 @@ end).(), "") end).()} + more data"
             arr = request
             if (length(arr) >= 9) do
               "Full HTTP request: #{(fn -> Enum.join((fn ->
-  _g = []
-  g_value = 0
-  _g2 = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
-  _g = Enum.reduce(_g2, _g, fn b, _g_acc ->
-    _g_acc = _g_acc ++ [<<b::utf8>>]
-    _g_acc
-  end)
-  _g
-end).(), "") end).()} + more data"
+                _g = []
+                g_value = 0
+                _g2 = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
+                _g = Enum.reduce(_g2, _g, fn b, _g_acc ->
+                  _g_acc = _g_acc ++ [<<b::utf8>>]
+                  _g_acc
+                end)
+                _g
+              end).(), "") end).()} + more data"
             else
               "Invalid HTTP request"
             end
@@ -260,15 +260,15 @@ end).(), "") end).()} + more data"
       arr = request
       if (length(arr) >= 9) do
         "Full HTTP request: #{(fn -> Enum.join((fn ->
-  _g = []
-  g_value = 0
-  _g2 = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
-  _g = Enum.reduce(_g2, _g, fn b, _g_acc ->
-    _g_acc = _g_acc ++ [<<b::utf8>>]
-    _g_acc
-  end)
-  _g
-end).(), "") end).()} + more data"
+          _g = []
+          g_value = 0
+          _g2 = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
+          _g = Enum.reduce(_g2, _g, fn b, _g_acc ->
+            _g_acc = _g_acc ++ [<<b::utf8>>]
+            _g_acc
+          end)
+          _g
+        end).(), "") end).()} + more data"
       else
         "Invalid HTTP request"
       end
@@ -296,13 +296,13 @@ end).(), "") end).()} + more data"
         y = data[1]
         if (Std.is(x, Int) and Std.is(y, Array)) do
           "Integer and array: #{Reflaxe.Elixir.HaxeFloat.to_string(x)}, [#{(fn -> Reflaxe.Elixir.HaxeFloat.to_string((case y do
-  _dyn_obj ->
-    (case Map.fetch(_dyn_obj, "join") do
-      {:ok, _dyn_value} -> _dyn_value
-      _ ->
-        Map.get(_dyn_obj, :join)
-    end)
-end).(",")) end).()}]"
+            _dyn_obj ->
+              (case Map.fetch(_dyn_obj, "join") do
+                {:ok, _dyn_value} -> _dyn_value
+                _ ->
+                  Map.get(_dyn_obj, :join)
+              end)
+          end).(",")) end).()}]"
         else
           arr = data
           if (Std.is(arr, Array) and Reflaxe.Elixir.HaxeFloat.gt(length(arr), 3)) do
@@ -325,13 +325,13 @@ end).(",")) end).()}]"
         end)), nil)
         if (Std.is(z, Dynamic) and cond_value) do
           "Three elements ending with object: #{(fn -> Reflaxe.Elixir.HaxeFloat.to_string(((case z do
-  _dyn_obj ->
-    (case Map.fetch(_dyn_obj, "name") do
-      {:ok, _dyn_value} -> _dyn_value
-      _ ->
-        Map.get(_dyn_obj, :name)
-    end)
-end))) end).()}"
+            _dyn_obj ->
+              (case Map.fetch(_dyn_obj, "name") do
+                {:ok, _dyn_value} -> _dyn_value
+                _ ->
+                  Map.get(_dyn_obj, :name)
+              end)
+          end))) end).()}"
         else
           arr = data
           if (Std.is(arr, Array) and Reflaxe.Elixir.HaxeFloat.gt(length(arr), 3)) do

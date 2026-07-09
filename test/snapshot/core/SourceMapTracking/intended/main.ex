@@ -15,9 +15,10 @@ defmodule Main do
     doubled = Enum.map(items, fn item -> item * 2 end)
     is_even = fn n -> rem(n, 2) == 0 end
     _g = 0
-    _ = Enum.each(doubled, fn item ->
-  if (is_even.(item)), do: nil, else: nil
-end)
+    _ =
+      Enum.each(doubled, fn item ->
+        if (is_even.(item)), do: nil, else: nil
+      end)
   end
   defp test_class_tracking() do
     calc = Calculator.new()

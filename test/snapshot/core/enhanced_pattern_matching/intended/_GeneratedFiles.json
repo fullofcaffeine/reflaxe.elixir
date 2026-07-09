@@ -8,6 +8,8 @@
   "reflaxe/elixir/haxe_throw.ex",
   "reflaxe/elixir/haxe_float.ex",
   "int_iterator.ex",
+  "haxe/iterators/string_key_value_iterator.ex",
+  "haxe/iterators/string_iterator.ex",
   "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/io/status.ex",

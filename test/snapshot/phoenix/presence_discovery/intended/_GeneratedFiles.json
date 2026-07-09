@@ -4,6 +4,7 @@
   "reflaxe/elixir/haxe_throw.ex",
   "reflaxe/elixir/haxe_float.ex",
   "my_app_web/presence.ex",
+  "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex"
 ],
   "id": 0,

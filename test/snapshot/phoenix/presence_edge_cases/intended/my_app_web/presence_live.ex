@@ -19,22 +19,22 @@ defmodule MyAppWeb.PresenceLive do
     (case event do
       "user_stopped_typing" ->
         %{noreply: MyApp.Presence.update(self(), socket, ((case params do
-  dyn_obj ->
-    (case Map.fetch(dyn_obj, "user_id") do
-      {:ok, dyn_value} -> dyn_value
-      _ ->
-        Map.get(dyn_obj, :user_id)
-    end)
-end)), %{typing: false})}
+          dyn_obj ->
+            (case Map.fetch(dyn_obj, "user_id") do
+              {:ok, dyn_value} -> dyn_value
+              _ ->
+                Map.get(dyn_obj, :user_id)
+            end)
+        end)), %{typing: false})}
       "user_typing" ->
         %{noreply: MyApp.Presence.update(self(), socket, ((case params do
-  dyn_obj ->
-    (case Map.fetch(dyn_obj, "user_id") do
-      {:ok, dyn_value} -> dyn_value
-      _ ->
-        Map.get(dyn_obj, :user_id)
-    end)
-end)), %{typing: true})}
+          dyn_obj ->
+            (case Map.fetch(dyn_obj, "user_id") do
+              {:ok, dyn_value} -> dyn_value
+              _ ->
+                Map.get(dyn_obj, :user_id)
+            end)
+        end)), %{typing: true})}
       _ -> %{noreply: socket}
     end)
   end

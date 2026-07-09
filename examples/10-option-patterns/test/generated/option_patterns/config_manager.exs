@@ -37,27 +37,29 @@ defmodule OptionPatterns.ConfigManager do
   end
   def get_int(key) do
     option = get(key)
-    _ = OptionTools.then(option, (fn -> fn value ->
-  parsed = (case Integer.parse(value) do
-    {num, _} -> num
-    :error -> nil
-  end)
-  if (not Kernel.is_nil(parsed)), do: {:some, parsed}, else: {:none}
-end end).())
+    _ =
+      OptionTools.then(option, (fn -> fn value ->
+        parsed = (case Integer.parse(value) do
+          {num, _} -> num
+          :error -> nil
+        end)
+        if (not Kernel.is_nil(parsed)), do: {:some, parsed}, else: {:none}
+      end end).())
   end
   def get_bool(key) do
     option = get(key)
-    _ = OptionTools.then(option, (fn -> fn value ->
-  (case String.downcase(value) do
-    "0" -> {:some, false}
-    "false" -> {:some, false}
-    "no" -> {:some, false}
-    "1" -> {:some, true}
-    "true" -> {:some, true}
-    "yes" -> {:some, true}
-    _ -> {:none}
-  end)
-end end).())
+    _ =
+      OptionTools.then(option, (fn -> fn value ->
+        (case String.downcase(value) do
+          "0" -> {:some, false}
+          "false" -> {:some, false}
+          "no" -> {:some, false}
+          "1" -> {:some, true}
+          "true" -> {:some, true}
+          "yes" -> {:some, true}
+          _ -> {:none}
+        end)
+      end end).())
   end
   def get_int_with_range(key, min, max) do
     ResultTools.flat_map(OptionTools.to_result(get_int(key), "Configuration \"#{key}\" is missing or not a valid number"), (fn -> fn value ->
@@ -70,11 +72,7 @@ end end).())
   end
   def get_database_url() do
     ResultTools.flat_map(get_required("database_url"), (fn -> fn url ->
-      cond_value = (case :binary.match(url, "://") do
-        {pos, _} -> pos
-        :nomatch -> -1
-      end)
-      if (cond_value <= 0) do
+      if (StringTools.haxe_index_of(url, "://", 0) <= 0) do
         {:error, "Database URL must contain protocol (e.g., postgres://)"}
       else
         if (String.length(url) < 10), do: {:error, "Database URL appears to be too short"}, else: {:ok, url}
@@ -92,11 +90,12 @@ end end).())
     this1 = OptionPatterns.ConfigManager.config()
     {result} = Enum.reduce_while(Map.keys(this1), {result}, fn key, {acc_result} ->
       try do
-        acc_result = (case get(key) do
-  {:some, value} ->
-    Map.put(acc_result, key, value)
-  {:none} -> acc_result
-end)
+        acc_result =
+          (case get(key) do
+            {:some, value} ->
+              Map.put(acc_result, key, value)
+            {:none} -> acc_result
+          end)
         {:cont, {acc_result}}
       catch
         :throw, {:break, break_state} ->

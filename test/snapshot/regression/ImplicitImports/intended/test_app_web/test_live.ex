@@ -6,20 +6,20 @@ defmodule TestAppWeb.TestLive do
   end
   def render(assigns) do
     ~H"""
-<div>
-    <.header title="Test Page" />
+    <div>
+        <.header title="Test Page" />
 
-    <.button type="submit">
-        Submit Form
-    </.button>
+        <.button type="submit">
+            Submit Form
+        </.button>
 
-    <.input field={@form["name"]} label="Name" />
+        <.input field={@form["name"]} label="Name" />
 
-    <.modal id="test-modal" show={@show_modal}>
-        Modal Content Here
-    </.modal>
-</div>
-"""
+        <.modal id="test-modal" show={@show_modal}>
+            Modal Content Here
+        </.modal>
+    </div>
+    """
   end
   def handle_event(_event, _params, socket) do
     {:noreply, socket}

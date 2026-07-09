@@ -7,13 +7,13 @@ defmodule Main do
   end
   defp parse_message1(msg) do
     (case (case msg do
-  dyn_obj ->
-    (case Map.fetch(dyn_obj, "type") do
-      {:ok, dyn_value} -> dyn_value
-      _ ->
-        Map.get(dyn_obj, :type)
-    end)
-end) do
+      dyn_obj ->
+        (case Map.fetch(dyn_obj, "type") do
+          {:ok, dyn_value} -> dyn_value
+          _ ->
+            Map.get(dyn_obj, :type)
+        end)
+    end) do
       "other" -> {:some, "found other"}
       "test" -> {:some, "found test"}
       _ -> {:none}
@@ -24,13 +24,13 @@ end) do
       {:none}
     else
       (case (case msg do
-  dyn_obj ->
-    (case Map.fetch(dyn_obj, "type") do
-      {:ok, dyn_value} -> dyn_value
-      _ ->
-        Map.get(dyn_obj, :type)
-    end)
-end) do
+        dyn_obj ->
+          (case Map.fetch(dyn_obj, "type") do
+            {:ok, dyn_value} -> dyn_value
+            _ ->
+              Map.get(dyn_obj, :type)
+          end)
+      end) do
         "other" -> {:some, "found other"}
         "test" -> {:some, "found test"}
         _ -> {:none}

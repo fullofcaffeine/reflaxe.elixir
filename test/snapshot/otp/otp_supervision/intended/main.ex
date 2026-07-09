@@ -40,9 +40,10 @@ defmodule Main do
     tasks = [Task.async(fn -> nil end), Task.async(fn -> 2 end), Task.async(fn -> 3 end)]
     results = Task.yield_many(tasks)
     g = 0
-    _ = Enum.each(results, fn task_result ->
-  if (not Kernel.is_nil(task_result.result)), do: nil
-end)
+    _ =
+      Enum.each(results, fn task_result ->
+        if (not Kernel.is_nil(task_result.result)), do: nil
+      end)
     task = Task.async(fn -> "quick" end)
     _quick_result = _ = Task.await(task)
     funs = [fn -> "a" end, fn -> "b" end, fn -> "c" end]

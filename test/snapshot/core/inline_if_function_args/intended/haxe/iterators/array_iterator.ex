@@ -17,7 +17,7 @@ defmodule ArrayIterator do
   end
   def next(struct) do
     index = current_index(struct)
-    Process.put(state_key(struct), index + 1)
-    Enum.at(struct.array, index)
+        Process.put(state_key(struct), index + 1)
+        Enum.at(struct.array, index)
   end
 end

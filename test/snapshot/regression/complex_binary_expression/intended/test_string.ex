@@ -6,11 +6,7 @@ defmodule TestString do
   end
   def cca(struct, index) do
     if (index < String.length(struct.str)) do
-      if (index < 0) do
-        nil
-      else
-        Enum.at(String.to_charlist(struct.str), index)
-      end
+      StringTools.haxe_char_code_at(struct.str, index)
     else
       0
     end

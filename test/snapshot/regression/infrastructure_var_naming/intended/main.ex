@@ -12,11 +12,7 @@ defmodule Main do
     _g = 0
     input_length = String.length(input)
     result = Enum.reduce(0..(input_length - 1)//1, result, fn i, result_acc ->
-      c = if (i < 0) do
-        ""
-      else
-        String.at(input, i) || ""
-      end
+      c = StringTools.haxe_char_at(input, i)
       result_acc <> c
     end)
     result

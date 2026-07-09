@@ -49,8 +49,8 @@ defmodule Main do
   defp find_in_array(_struct, arr, item) do
     _g = 0
     (case Enum.reduce_while(arr, :__reflaxe_no_return__, fn element, _ ->
-  if (element == item), do: {:halt, {:__reflaxe_return__, {:some, element}}}, else: {:cont, :__reflaxe_no_return__}
-end) do
+      if (element == item), do: {:halt, {:__reflaxe_return__, {:some, element}}}, else: {:cont, :__reflaxe_no_return__}
+    end) do
       {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
       _ -> {:none}
     end)
@@ -113,9 +113,9 @@ end) do
         haxe_exception ->
           Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
           (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+            %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+            _ -> haxe_exception
+          end), haxe_exception} do
             {_e, _} -> assert true
           end)
       end

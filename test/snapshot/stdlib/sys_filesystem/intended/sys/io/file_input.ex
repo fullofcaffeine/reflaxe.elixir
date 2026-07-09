@@ -17,9 +17,9 @@ defmodule FileInput do
   def eof(struct) do
     result = :file.read(struct.device, 1)
     tag = (case result do
-            :eof -> :eof
-            {t, _} -> t
-        end)
+                :eof -> :eof
+                {t, _} -> t
+            end)
     if (tag == :eof) do
       true
     else
@@ -36,9 +36,9 @@ defmodule FileInput do
   def read_byte(struct) do
     result = :file.read(struct.device, 1)
     tag = (case result do
-            :eof -> :eof
-            {t, _} -> t
-        end)
+                :eof -> :eof
+                {t, _} -> t
+            end)
     if (tag == :eof) do
       raise Reflaxe.Elixir.HaxeThrow, [value: Eof.new()]
     end
@@ -59,9 +59,9 @@ defmodule FileInput do
     else
       result = :file.read(struct.device, len)
       tag = (case result do
-            :eof -> :eof
-            {t, _} -> t
-        end)
+                  :eof -> :eof
+                  {t, _} -> t
+              end)
       if (tag == :eof) do
         raise Reflaxe.Elixir.HaxeThrow, [value: Eof.new()]
       end

@@ -96,14 +96,14 @@ defmodule Type do
   end
   def create_enum(enum, constructor, params) do
     _ignore_enum = enum
-    
-      tag = String.to_atom(constructor)
-      values = case params do
-        nil -> []
-        arr when is_list(arr) -> arr
-        other -> List.wrap(other)
-      end
-      List.to_tuple([tag | values])
+
+          tag = String.to_atom(constructor)
+          values = case params do
+            nil -> []
+            arr when is_list(arr) -> arr
+            other -> List.wrap(other)
+          end
+          List.to_tuple([tag | values])
 
   end
   def create_enum_index(enum, index, params) do

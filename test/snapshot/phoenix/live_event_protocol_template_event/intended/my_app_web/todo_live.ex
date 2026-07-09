@@ -3,8 +3,8 @@ defmodule MyAppWeb.TodoLive do
   use Phoenix.LiveView, layout: {MyAppWeb.Layouts, :app}
   def render(assigns) do
     ~H"""
-<button phx-click={"toggle_todo"} phx-value-id="1"><%= @last_id %></button>
-"""
+    <button phx-click={"toggle_todo"} phx-value-id="1"><%= @last_id %></button>
+    """
   end
   def toggle_event_name() do
     "toggle_todo"

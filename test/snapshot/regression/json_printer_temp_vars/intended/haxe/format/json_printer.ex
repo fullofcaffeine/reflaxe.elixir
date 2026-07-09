@@ -31,8 +31,8 @@ defmodule JsonPrinter do
     items = Enum.reduce(0..(arr_length - 1)//1, items, fn i, items_acc -> Enum.concat(items_acc, [write_value(struct, Enum.at(arr, i), Reflaxe.Elixir.HaxeFloat.to_string(i))]) end)
     if (not Kernel.is_nil(struct.space) and length(items) > 0) do
       "[
-  #{Enum.join(items, ",\n  ")}
-]"
+        #{Enum.join(items, ",\n  ")}
+      ]"
     else
       "[#{Enum.join(items, ",")}]"
     end
@@ -48,11 +48,11 @@ defmodule JsonPrinter do
             {:ok, reflect_value} -> reflect_value
             _ ->
               (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+                String.to_existing_atom(reflect_field)
+              rescue
+                _ ->
+                  nil
+              end) do
                 nil -> nil
                 reflect_atom ->
                   Map.get(reflect_obj, reflect_atom)
@@ -69,8 +69,8 @@ end) do
     end)
     if (not Kernel.is_nil(struct.space) and length(pairs) > 0) do
       "{
-  #{Enum.join(pairs, ",\n  ")}
-}"
+        #{Enum.join(pairs, ",\n  ")}
+      }"
     else
       "{#{Enum.join(pairs, ",")}}"
     end
@@ -80,21 +80,13 @@ end) do
     _g = 0
     s_length = String.length(s)
     result = Enum.reduce(0..(s_length - 1)//1, result, fn i, result_acc ->
-      c = if (i < 0) do
-        nil
-      else
-        Enum.at(String.to_charlist(s), i)
-      end
+      c = StringTools.haxe_char_code_at(s, i)
       if (Kernel.is_nil(c)) do
         if (c < 32) do
           hex = StringTools.hex(c, 4)
           result_acc <> "\\u" <> hex
         else
-          result_acc <> (if (i < 0) do
-  ""
-else
-  String.at(s, i) || ""
-end)
+          result_acc <> StringTools.haxe_char_at(s, i)
         end
       else
         (case c do
@@ -124,11 +116,7 @@ end)
               hex = StringTools.hex(c, 4)
               result_acc <> "\\u" <> hex
             else
-              result_acc <> (if (i < 0) do
-  ""
-else
-  String.at(s, i) || ""
-end)
+              result_acc <> StringTools.haxe_char_at(s, i)
             end
             result_acc
         end)

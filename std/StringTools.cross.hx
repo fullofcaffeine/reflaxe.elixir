@@ -52,7 +52,7 @@ class StringTools {
 		// Basic URL encoding implementation
 		var result = "";
 		for (i in 0...s.length) {
-			var c = s.charCodeAt(i);
+			var c = fastCodeAt(s, i);
 			if ((c >= 65 && c <= 90)
 				|| // A-Z
 				(c >= 97 && c <= 122)
@@ -63,9 +63,9 @@ class StringTools {
 				|| c == 95
 				|| c == 46
 				|| c == 126) { // - _ . ~
-				result += String.fromCharCode(c);
+				result += haxeCharAt(s, i);
 			} else {
-				result += "%" + hex(c, 2).toUpperCase();
+				result += "%" + hex(c, 2);
 			}
 		}
 		return result;
@@ -131,7 +131,7 @@ class StringTools {
 	 * Tells if the string `s` starts with the string `start`.
 	 */
 	public static function startsWith(s:String, start:String):Bool {
-		return s.length >= start.length && s.substr(0, start.length) == start;
+		return s.length >= start.length && haxeSubstr(s, 0, start.length) == start;
 	}
 
 	/**
@@ -140,15 +140,26 @@ class StringTools {
 	public static function endsWith(s:String, end:String):Bool {
 		var elen = end.length;
 		var slen = s.length;
-		return slen >= elen && s.substr(slen - elen, elen) == end;
+		return slen >= elen && haxeSubstr(s, slen - elen, elen) == end;
 	}
 
 	/**
 	 * Tells if the character in the string `s` at position `pos` is a space.
 	 */
 	public static function isSpace(s:String, pos:Int):Bool {
+		#if macro
 		var c = s.charCodeAt(pos);
 		return (c > 8 && c < 14) || c == 32;
+		#else
+		return untyped __elixir__('if {1} < 0 do
+  false
+else
+  case Enum.at(String.to_charlist({0}), {1}) do
+    nil -> false
+    code -> (code > 8 and code < 14) or code == 32
+  end
+end', s, pos);
+		#end
 	}
 
 	/**
@@ -161,7 +172,7 @@ class StringTools {
 			r++;
 		}
 		if (r > 0) {
-			return s.substr(r, l - r);
+			return haxeSubstr(s, r, l - r);
 		} else {
 			return s;
 		}
@@ -177,7 +188,7 @@ class StringTools {
 			r++;
 		}
 		if (r > 0) {
-			return s.substr(0, l - r);
+			return haxeSubstr(s, 0, l - r);
 		} else {
 			return s;
 		}
@@ -221,7 +232,7 @@ class StringTools {
 	 */
 	public static function replace(s:String, sub:String, by:String):String {
 		// Use split/join pattern for replacement
-		return s.split(sub).join(by);
+		return haxeSplit(s, sub).join(by);
 	}
 
 	/**
@@ -254,8 +265,16 @@ class StringTools {
 	/**
 	 * Provides fast integer matching for switches on strings
 	 */
-	public static inline function fastCodeAt(s:String, index:Int):Int {
-		return s.charCodeAt(index);
+	public static function fastCodeAt(s:String, index:Int):Int {
+		#if macro
+		var code = s.charCodeAt(index);
+		return code == null ? -1 : code;
+		#else
+		return untyped __elixir__('case Enum.at(String.to_charlist({0}), {1}) do
+  nil -> -1
+  code -> code
+end', s, index);
+		#end
 	}
 
 	/**
@@ -266,7 +285,7 @@ class StringTools {
 	 * its own bounds checks, so this aliases the target's fast code access.
 	 */
 	public static function unsafeCodeAt(s:String, index:Int):Int {
-		#if (macro || (!reflaxe_runtime && !elixir))
+		#if macro
 		var code = s.charCodeAt(index);
 		return code == null ? 0 : code;
 		#else
@@ -281,7 +300,243 @@ end', s, index);
 	 * Returns `true` if `s` contains `value` and `false` otherwise.
 	 */
 	public static function contains(s:String, value:String):Bool {
-		return s.indexOf(value) != -1;
+		return haxeIndexOf(s, value, 0) != -1;
+	}
+
+	/**
+	 * Haxe-compatible `String.charAt`.
+	 */
+	#if !macro
+	@:keep
+	#end
+	@:noCompletion
+	public static function haxeCharAt(s:String, index:Int):String {
+		#if macro
+		return s.charAt(index);
+		#else
+		return untyped __elixir__('if {1} < 0 do
+  ""
+else
+  String.at({0}, {1}) || ""
+end', s, index);
+		#end
+	}
+
+	/**
+	 * Haxe-compatible `String.charCodeAt`.
+	 */
+	#if !macro
+	@:keep
+	#end
+	@:noCompletion
+	public static function haxeCharCodeAt(s:String, index:Int):Null<Int> {
+		#if macro
+		return s.charCodeAt(index);
+		#else
+		return untyped __elixir__('if {1} < 0 do
+  nil
+else
+  Enum.at(String.to_charlist({0}), {1})
+end', s, index);
+		#end
+	}
+
+	/**
+	 * Haxe-compatible `String.indexOf`, including empty-pattern behavior.
+	 */
+	#if !macro
+	@:keep
+	#end
+	@:noCompletion
+	public static function haxeIndexOf(s:String, value:String, ?startIndex:Int):Int {
+		#if macro
+		return startIndex == null ? s.indexOf(value) : s.indexOf(value, startIndex);
+		#else
+		return untyped __elixir__('
+(fn ->
+  reflaxe_string_source = {0}
+  reflaxe_string_value = {1}
+  reflaxe_string_length = String.length(reflaxe_string_source)
+  reflaxe_string_start = if Kernel.is_nil({2}), do: 0, else: max({2}, 0)
+
+  cond do
+    reflaxe_string_value == "" ->
+      min(reflaxe_string_start, reflaxe_string_length)
+    reflaxe_string_start > reflaxe_string_length ->
+      -1
+    true ->
+      reflaxe_string_slice = String.slice(reflaxe_string_source, reflaxe_string_start, reflaxe_string_length - reflaxe_string_start)
+      case :binary.match(reflaxe_string_slice, reflaxe_string_value) do
+        {byte_pos, _} -> String.length(binary_part(reflaxe_string_slice, 0, byte_pos)) + reflaxe_string_start
+        :nomatch -> -1
+      end
+  end
+end).()
+', s, value, startIndex);
+		#end
+	}
+
+	/**
+	 * Haxe-compatible `String.lastIndexOf`, including empty-pattern behavior.
+	 */
+	#if !macro
+	@:keep
+	#end
+	@:noCompletion
+	public static function haxeLastIndexOf(s:String, value:String, ?startIndex:Int):Int {
+		#if macro
+		return s.lastIndexOf(value, startIndex);
+		#else
+		return untyped __elixir__('
+(fn ->
+  reflaxe_string_source = {0}
+  reflaxe_string_value = {1}
+  reflaxe_string_length = String.length(reflaxe_string_source)
+  reflaxe_string_start = if Kernel.is_nil({2}), do: reflaxe_string_length, else: min(max({2}, 0), reflaxe_string_length)
+
+  if reflaxe_string_value == "" do
+    reflaxe_string_start
+  else
+    reflaxe_string_graphemes = String.graphemes(reflaxe_string_source)
+    reflaxe_string_needle = String.graphemes(reflaxe_string_value)
+    reflaxe_string_needle_length = length(reflaxe_string_needle)
+
+    if reflaxe_string_needle_length > reflaxe_string_length do
+      -1
+    else
+      reflaxe_string_max_start = min(reflaxe_string_start, reflaxe_string_length - reflaxe_string_needle_length)
+      Enum.find(reflaxe_string_max_start..0//-1, -1, fn reflaxe_string_index ->
+        Enum.slice(reflaxe_string_graphemes, reflaxe_string_index, reflaxe_string_needle_length) == reflaxe_string_needle
+      end)
+    end
+  end
+end).()
+', s, value, startIndex);
+		#end
+	}
+
+	/**
+	 * Haxe-compatible `String.split`.
+	 */
+	#if !macro
+	@:keep
+	#end
+	@:noCompletion
+	public static function haxeSplit(s:String, delimiter:String):Array<String> {
+		#if macro
+		return s.split(delimiter);
+		#else
+		return untyped __elixir__('if {1} == "", do: String.graphemes({0}), else: String.split({0}, {1})', s, delimiter);
+		#end
+	}
+
+	/**
+	 * Haxe-compatible `String.substr`.
+	 */
+	#if !macro
+	@:keep
+	#end
+	@:noCompletion
+	public static function haxeSubstr(s:String, pos:Int, ?len:Int):String {
+		#if macro
+		return s.substr(pos, len);
+		#else
+		return untyped __elixir__('
+(fn ->
+  reflaxe_string_source = {0}
+  reflaxe_string_length = String.length(reflaxe_string_source)
+  reflaxe_string_start =
+    cond do
+      {1} < 0 -> max(reflaxe_string_length + {1}, 0)
+      {1} > reflaxe_string_length -> reflaxe_string_length
+      true -> {1}
+    end
+  reflaxe_string_count =
+    cond do
+      Kernel.is_nil({2}) -> reflaxe_string_length - reflaxe_string_start
+      {2} < 0 -> max(reflaxe_string_length + {2} - reflaxe_string_start, 0)
+      true -> {2}
+    end
+
+  String.slice(reflaxe_string_source, reflaxe_string_start, reflaxe_string_count)
+end).()
+', s, pos, len);
+		#end
+	}
+
+	/**
+	 * Haxe-compatible `String.substr` for calls whose length argument is a concrete `Int`.
+	 */
+	#if !macro
+	@:keep
+	#end
+	@:noCompletion
+	public static function haxeSubstrNonNilLen(s:String, pos:Int, len:Int):String {
+		#if macro
+		return s.substr(pos, len);
+		#else
+		return untyped __elixir__('
+(fn ->
+  reflaxe_string_source = {0}
+  reflaxe_string_length = String.length(reflaxe_string_source)
+  reflaxe_string_start =
+    cond do
+      {1} < 0 -> max(reflaxe_string_length + {1}, 0)
+      {1} > reflaxe_string_length -> reflaxe_string_length
+      true -> {1}
+    end
+  reflaxe_string_count =
+    cond do
+      {2} < 0 -> max(reflaxe_string_length + {2} - reflaxe_string_start, 0)
+      true -> {2}
+    end
+
+  String.slice(reflaxe_string_source, reflaxe_string_start, reflaxe_string_count)
+end).()
+', s, pos, len);
+		#end
+	}
+
+	/**
+	 * Haxe-compatible `String.substring`.
+	 */
+	#if !macro
+	@:keep
+	#end
+	@:noCompletion
+	public static function haxeSubstring(s:String, startIndex:Int, ?endIndex:Int):String {
+		#if macro
+		return s.substring(startIndex, endIndex);
+		#else
+		return untyped __elixir__('
+(fn ->
+  reflaxe_string_source = {0}
+  reflaxe_string_length = String.length(reflaxe_string_source)
+  reflaxe_string_start = min(max({1}, 0), reflaxe_string_length)
+  reflaxe_string_end = if Kernel.is_nil({2}), do: reflaxe_string_length, else: min(max({2}, 0), reflaxe_string_length)
+  reflaxe_string_from = min(reflaxe_string_start, reflaxe_string_end)
+  reflaxe_string_count = abs(reflaxe_string_end - reflaxe_string_start)
+  String.slice(reflaxe_string_source, reflaxe_string_from, reflaxe_string_count)
+end).()
+', s, startIndex, endIndex);
+		#end
+	}
+
+	/**
+	 * Returns a codepoint iterator for `s`.
+	 */
+	@:ifFeature("StringTools.iterator")
+	extern inline public static function iterator(s:String):haxe.iterators.StringIterator {
+		return untyped __elixir__('StringIterator.new({0})', s);
+	}
+
+	/**
+	 * Returns a key/value iterator whose keys are character indices and values
+	 * are codepoints.
+	 */
+	@:ifFeature("StringTools.keyValueIterator")
+	extern inline public static function keyValueIterator(s:String):haxe.iterators.StringKeyValueIterator {
+		return untyped __elixir__('StringKeyValueIterator.new({0})', s);
 	}
 
 	/**
@@ -297,7 +552,7 @@ end', s, index);
 	 * This is a compatibility function for unicode iterators
 	 */
 	public static function utf16CodePointAt(s:String, index:Int):Int {
-		return s.charCodeAt(index);
+		return fastCodeAt(s, index);
 	}
 
 	/**
@@ -395,7 +650,10 @@ end', s, index);
 	 * Convert a string to a float value, returning null if not possible
 	 */
 	public static function parseFloat(str:String):Null<Float> {
-		// Simple float parsing
+		#if macro
 		return Std.parseFloat(str);
+		#else
+		return untyped __elixir__('Reflaxe.Elixir.HaxeFloat.parse({0})', str);
+		#end
 	}
 }

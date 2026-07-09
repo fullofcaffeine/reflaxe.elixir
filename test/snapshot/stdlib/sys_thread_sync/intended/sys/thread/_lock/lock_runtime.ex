@@ -10,17 +10,17 @@ defmodule LockRuntime do
     should_queue = Reflaxe.Elixir.HaxeFloat.eq(timeout, nil) or Reflaxe.Elixir.HaxeFloat.gt(timeout, 0)
     timeout_ms = if (should_queue), do: seconds_to_timeout(timeout), else: 5000
     (
-            {lock_ref, pid} = ref
-            token = make_ref()
-            send(pid, {:wait, self(), token, should_queue})
-            receive do
-              {:lock_wait, ^lock_ref, ^token, ok} -> ok
-            after
-              timeout_ms ->
-                send(pid, {:cancel, token})
-                false
-            end
-        )
+                {lock_ref, pid} = ref
+                token = make_ref()
+                send(pid, {:wait, self(), token, should_queue})
+                receive do
+                  {:lock_wait, ^lock_ref, ^token, ok} -> ok
+                after
+                  timeout_ms ->
+                    send(pid, {:cancel, token})
+                    false
+                end
+            )
   end
   def release(ref) do
     (

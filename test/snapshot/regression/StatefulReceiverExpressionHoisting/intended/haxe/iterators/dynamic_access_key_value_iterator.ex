@@ -12,22 +12,22 @@ defmodule DynamicAccessKeyValueIterator do
   def next(struct) do
     key = Enum.at(struct.keys, struct.index)
     struct = %{struct | index: struct.index + 1}
-    %{:value => (case {struct.access, key} do
-  {reflect_obj, reflect_field} ->
-    (case Map.fetch(reflect_obj, reflect_field) do
-      {:ok, reflect_value} -> reflect_value
-      _ ->
-        (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
-          nil -> nil
-          reflect_atom ->
-            Map.get(reflect_obj, reflect_atom)
+    %{value: (case {struct.access, key} do
+      {reflect_obj, reflect_field} ->
+        (case Map.fetch(reflect_obj, reflect_field) do
+          {:ok, reflect_value} -> reflect_value
+          _ ->
+            (case (try do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
+              nil -> nil
+              reflect_atom ->
+                Map.get(reflect_obj, reflect_atom)
+            end)
         end)
-    end)
-end), :key => key}
+    end), key: key}
   end
 end

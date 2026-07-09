@@ -54,10 +54,11 @@ defmodule Sys.Thread.FixedThreadPool do
       _ = ThreadPoolRuntime.mark_shutdown(struct.state_ref)
       _g = 0
       g_value = get_threads_count(struct)
-      _ = Enum.each(0..(g_value - 1)//1, fn _ ->
-  reflaxe_dispatch_receiver = struct.queue
-  _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :add, [reflaxe_dispatch_receiver, &shutdown_task/0])
-end)
+      _ =
+        Enum.each(0..(g_value - 1)//1, fn _ ->
+          reflaxe_dispatch_receiver = struct.queue
+          _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :add, [reflaxe_dispatch_receiver, &shutdown_task/0])
+        end)
     end
   end
   defp shutdown_task() do

@@ -46,7 +46,7 @@ defmodule OptionPatterns.ConfigManagerTest do
       {:ok, _value} ->
         flunk("Expected error for missing required key")
       {:error, msg} ->
-        assert(:binary.match(msg, "missing_key") != :nomatch, "Error should mention the missing key")
+        assert(StringTools.haxe_index_of(msg, "missing_key", 0) >= 0, "Error should mention the missing key")
     end)
   end
   test "get int returns value for valid number" do
@@ -92,7 +92,7 @@ defmodule OptionPatterns.ConfigManagerTest do
       {:ok, _value} ->
         flunk("Expected error for value below minimum")
       {:error, msg} ->
-        assert(:binary.match(msg, "below minimum") != :nomatch, "Error should mention minimum value")
+        assert(StringTools.haxe_index_of(msg, "below minimum", 0) >= 0, "Error should mention minimum value")
     end)
   end
   test "get int with range fails for value above max" do
@@ -102,7 +102,7 @@ defmodule OptionPatterns.ConfigManagerTest do
       {:ok, _value} ->
         flunk("Expected error for value above maximum")
       {:error, msg} ->
-        assert(:binary.match(msg, "above maximum") != :nomatch, "Error should mention maximum value")
+        assert(StringTools.haxe_index_of(msg, "above maximum", 0) >= 0, "Error should mention maximum value")
     end)
   end
   test "get int with range fails for missing key" do
@@ -112,7 +112,7 @@ defmodule OptionPatterns.ConfigManagerTest do
       {:ok, _value} ->
         flunk("Expected error for missing key")
       {:error, msg} ->
-        assert(:binary.match(msg, "missing or not a valid number") != :nomatch, "Error should mention missing/invalid")
+        assert(StringTools.haxe_index_of(msg, "missing or not a valid number", 0) >= 0, "Error should mention missing/invalid")
     end)
   end
   test "get database url succeeds for valid url" do
@@ -120,8 +120,7 @@ defmodule OptionPatterns.ConfigManagerTest do
     _ = assert(match?({:ok, _}, result), "Should succeed for valid database URL")
     (case result do
       {:ok, url} ->
-        _pos = url
-        assert(:binary.match(url, "postgres://") != :nomatch, "Should contain protocol")
+        assert(StringTools.haxe_index_of(url, "postgres://", 0) >= 0, "Should contain protocol")
       {:error, msg} ->
         flunk("Unexpected error: " <> msg)
     end)
@@ -140,22 +139,23 @@ defmodule OptionPatterns.ConfigManagerTest do
     _ = assert(Map.has_key?(all_values, "app_name"), "Should include app_name")
     _ = assert(Map.has_key?(all_values, "timeout"), "Should include timeout")
     _ = refute(Map.has_key?(all_values, "empty_value"), "Should not include empty values")
-    _ = Enum.reduce_while(Map.keys(all_values), :ok, fn key, acc ->
-  try do
-    value = Map.get(all_values, key)
-    _ = assert(not Kernel.is_nil(value) and value != "", "Value for " <> key <> " should not be empty")
-    {:cont, acc}
-  catch
-    :throw, {:break, break_state} ->
-      {:halt, break_state}
-    :throw, {:continue, continue_state} ->
-      {:cont, continue_state}
-    :throw, :break ->
-      {:halt, acc}
-    :throw, :continue ->
-      {:cont, acc}
-  end
-end)
+    _ =
+      Enum.reduce_while(Map.keys(all_values), :ok, fn key, acc ->
+        try do
+          value = Map.get(all_values, key)
+          _ = assert(not Kernel.is_nil(value) and value != "", "Value for " <> key <> " should not be empty")
+          {:cont, acc}
+        catch
+          :throw, {:break, break_state} ->
+            {:halt, break_state}
+          :throw, {:continue, continue_state} ->
+            {:cont, continue_state}
+          :throw, :break ->
+            {:halt, acc}
+          :throw, :continue ->
+            {:cont, acc}
+        end
+      end)
   end
   test "validate required succeeds when all keys present" do
     result = OptionPatterns.ConfigManager.validate_required(["app_name", "timeout", "debug"])
@@ -174,8 +174,8 @@ end)
       {:ok, _value} ->
         flunk("Expected error for missing required keys")
       {:error, msg} ->
-        _ = assert(:binary.match(msg, "missing_key1") != :nomatch, "Error should mention first missing key")
-        _ = assert(:binary.match(msg, "missing_key2") != :nomatch, "Error should mention second missing key")
+        _ = assert(StringTools.haxe_index_of(msg, "missing_key1", 0) >= 0, "Error should mention first missing key")
+        _ = assert(StringTools.haxe_index_of(msg, "missing_key2", 0) >= 0, "Error should mention second missing key")
     end)
   end
   test "validate required succeeds for empty array" do

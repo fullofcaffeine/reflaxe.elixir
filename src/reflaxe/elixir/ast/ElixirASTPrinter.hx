@@ -877,7 +877,7 @@ class ElixirASTPrinter {
 				var clauseStrs = [];
 				for (clause in clauses) {
 					var conditionStr = print(clause.condition, 0);
-					var bodyStr = print(clause.body, indent + 2);
+					var bodyStr = print(clause.body, 0);
 
 					// Check if body needs multi-line formatting
 					var isMultiLine = switch (clause.body.def) {
@@ -891,7 +891,7 @@ class ElixirASTPrinter {
 
 					if (isMultiLine) {
 						// Multi-line format: condition on one line, body indented on next
-						clauseStrs.push(indentStr(indent + 1) + conditionStr + ' ->\n' + indentStr(indent + 2) + bodyStr);
+						clauseStrs.push(indentStr(indent + 1) + conditionStr + ' ->\n' + indentBody(bodyStr, indent + 2));
 					} else {
 						// Single-line format: condition and body on same line
 						clauseStrs.push(indentStr(indent + 1) + conditionStr + ' -> ' + bodyStr);
@@ -1027,7 +1027,11 @@ class ElixirASTPrinter {
 			case EIf(condition, thenBranch, elseBranch):
 				// Check if this should be an inline if expression
 				// Use inline format when the branches are simple expressions
-				var isInline = isSimpleExpression(thenBranch) && (elseBranch == null || isSimpleExpression(elseBranch));
+				var thenInlinePreview = print(thenBranch, 0);
+				var elseInlinePreview = elseBranch != null ? print(elseBranch, 0) : "";
+				var isInline = isSimpleExpression(thenBranch)
+					&& thenInlinePreview.indexOf('\n') == -1
+					&& (elseBranch == null || (isSimpleExpression(elseBranch) && elseInlinePreview.indexOf('\n') == -1));
 
 				#if debug_inline_if
 				#end
@@ -1047,13 +1051,11 @@ class ElixirASTPrinter {
 					'if '
 					+ conditionStr
 					+ ' do\n'
-					+ indentStr(indent + 1)
-					+ print(thenBranch, indent + 1)
+					+ indentBody(print(thenBranch, 0), indent + 1)
 					+ '\n'
 					+ indentStr(indent)
 					+ 'else\n'
-					+ indentStr(indent + 1)
-					+ print(elseBranch, indent + 1)
+					+ indentBody(print(elseBranch, 0), indent + 1)
 					+ '\n'
 					+ indentStr(indent)
 					+ 'end';
@@ -1069,8 +1071,7 @@ class ElixirASTPrinter {
 					'if '
 					+ conditionStr
 					+ ' do\n'
-					+ indentStr(indent + 1)
-					+ print(thenBranch, indent + 1)
+					+ indentBody(print(thenBranch, 0), indent + 1)
 					+ '\n'
 					+ indentStr(indent)
 					+ 'end';
@@ -1080,24 +1081,16 @@ class ElixirASTPrinter {
 				if (elseBranch != null) {'unless '
 					+ print(condition, 0)
 					+ ' do\n'
-					+ indentStr(indent + 1)
-					+ print(body, indent + 1)
+					+ indentBody(print(body, 0), indent + 1)
 					+ '\n'
 					+ indentStr(indent)
 					+ 'else\n'
-					+ indentStr(indent + 1)
-					+ print(elseBranch, indent + 1)
+					+ indentBody(print(elseBranch, 0), indent + 1)
 					+ '\n'
 					+ indentStr(indent)
 					+ 'end';
-				} else {'unless '
-					+ print(condition, 0)
-					+ ' do\n'
-					+ indentStr(indent + 1)
-					+ print(body, indent + 1)
-					+ '\n'
-					+ indentStr(indent)
-					+ 'end';
+				} else {
+					'unless ' + print(condition, 0) + ' do\n' + indentBody(print(body, 0), indent + 1) + '\n' + indentStr(indent) + 'end';
 				}
 
 			case ETry(body, rescue, catchClauses, afterBlock, elseBlock):
@@ -2000,7 +1993,11 @@ class ElixirASTPrinter {
 					}
 					if (rightStr == null || rightStr.length == 0)
 						rightStr = '0';
-					var result = leftStr + ' ' + opStr + ' ' + rightStr;
+					var result = if (op == Match && rightStr.indexOf('\n') >= 0) {
+						leftStr + ' ' + opStr + '\n' + indentBody(rightStr, indent + 1);
+					} else {
+						leftStr + ' ' + opStr + ' ' + rightStr;
+					}
 					needsParens ? '(' + result + ')' : result;
 				}
 
@@ -2325,7 +2322,7 @@ class ElixirASTPrinter {
 					var paramPart = clause.args.length == 0 ? '' : ' ' + argStr;
 
 					// Check if body is complex and needs multi-line formatting
-					var bodyStr = print(clause.body, indent + 1);
+					var bodyStr = print(clause.body, 0);
 					// Remove bare numeric sentinel lines within anonymous function bodies
 					inline function stripBareNumericLines(s:String):String {
 						if (s == null || s.length == 0)
@@ -2359,8 +2356,7 @@ class ElixirASTPrinter {
 						'fn'
 						+ paramPart
 						+ ' ->\n'
-						+ indentStr(indent + 1)
-						+ bodyStr
+						+ indentBody(bodyStr, indent + 1)
 						+ '\n'
 						+ indentStr(indent)
 						+ 'end';
@@ -2916,7 +2912,7 @@ class ElixirASTPrinter {
 
 		// Prefer single-line format for simple bodies, multi-line for complex ones
 		var body = clause.body;
-		var bodyStr = print(body, indent + 1);
+		var bodyStr = print(body, 0);
 		if (StringTools.trim(bodyStr) == '')
 			bodyStr = 'nil';
 
@@ -2933,7 +2929,7 @@ class ElixirASTPrinter {
 		var preferSingle = !isBlock && !isMulti && (bodyStr.length <= 120);
 
 		if (!preferSingle && isMulti) {
-			return head + ' ->\n' + indentStr(indent + 1) + bodyStr;
+			return head + ' ->\n' + indentBody(bodyStr, indent + 1);
 		} else {
 			return head + ' -> ' + bodyStr;
 		}
@@ -2947,10 +2943,10 @@ class ElixirASTPrinter {
 		if (clause.varName != null) {
 			result += ' -> ' + clause.varName;
 		}
-		var bodyStr = print(clause.body, indent + 1);
+		var bodyStr = print(clause.body, 0);
 		if (bodyStr == null || StringTools.trim(bodyStr).length == 0)
 			bodyStr = 'nil';
-		result += ' ->\n' + indentStr(indent + 1) + bodyStr;
+		result += ' ->\n' + indentBody(bodyStr, indent + 1);
 		return result;
 	}
 
@@ -2964,10 +2960,10 @@ class ElixirASTPrinter {
 			case Throw: ':throw';
 			case Any: '_';
 		};
-		var bodyStr = print(clause.body, indent + 1);
+		var bodyStr = print(clause.body, 0);
 		if (bodyStr == null || StringTools.trim(bodyStr).length == 0)
 			bodyStr = 'nil';
-		return kindStr + ', ' + printPattern(clause.pattern) + ' ->\n' + indentStr(indent + 1) + bodyStr;
+		return kindStr + ', ' + printPattern(clause.pattern) + ' ->\n' + indentBody(bodyStr, indent + 1);
 	}
 
 	/**
@@ -3243,7 +3239,7 @@ class ElixirASTPrinter {
 		var lines = body.split("\n");
 		for (i in 0...lines.length) {
 			if (StringTools.trim(lines[i]).length > 0) {
-				lines[i] = padding + lines[i];
+				lines[i] = padding + normalizeRawLineIndent(lines[i]);
 			}
 		}
 		return lines.join("\n");
@@ -3279,17 +3275,17 @@ class ElixirASTPrinter {
 	}
 
 	static function printDefBody(body:ElixirAST, level:Int):String {
-		var printed = print(body, level);
+		var printed = print(body, 0);
 		return switch (body != null ? body.def : null) {
 			case ERaw(_):
 				indentBody(printed, level);
 			case EBlock(statements) if (statements.length == 1):
 				switch (statements[0].def) {
 					case ERaw(_): indentBody(printed, level);
-					default: indentStr(level) + printed;
+					default: printed.indexOf("\n") >= 0 ? indentBody(printed, level) : indentStr(level) + printed;
 				}
 			default:
-				indentStr(level) + printed;
+				printed.indexOf("\n") >= 0 ? indentBody(printed, level) : indentStr(level) + printed;
 		}
 	}
 

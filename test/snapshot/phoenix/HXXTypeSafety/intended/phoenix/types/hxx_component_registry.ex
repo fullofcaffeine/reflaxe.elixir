@@ -134,24 +134,24 @@ defmodule HXXComponentRegistry do
     end)
     out = Enum.sort(out, fn a, b ->
       (fn a, b ->
-  if (a < b) do
-    -1
-  else
-    if (a > b), do: 1, else: 0
-  end
-end).(a, b) < 0
+        if (a < b) do
+          -1
+        else
+          if (a > b), do: 1, else: 0
+        end
+      end).(a, b) < 0
     end)
     out
   end
   def is_registered_element(element_name) do
     (fn ->
-  this1 = HXXComponentRegistry.html_elements()
-  key = String.downcase(element_name)
-  _ = Map.has_key?(this1, key)
-end).() or (fn ->
-  this1 = HXXComponentRegistry.phoenix_components()
-  _ = Map.has_key?(this1, element_name)
-end).()
+      this1 = HXXComponentRegistry.html_elements()
+      key = String.downcase(element_name)
+      _ = Map.has_key?(this1, key)
+    end).() or (fn ->
+      this1 = HXXComponentRegistry.phoenix_components()
+      _ = Map.has_key?(this1, element_name)
+    end).()
   end
   def validate_attribute(element_name, attribute_name) do
     this = HXXComponentRegistry.html_elements()
@@ -162,24 +162,24 @@ end).()
       component = _ = Map.get(this, element_name)
       if (not Kernel.is_nil(component)), do: validate_component_attribute(component, attribute_name), else: false
       (fn ->
-  this = element.allowedAttributes
+        this = element.allowedAttributes
 
-                case Enum.find_index(_this, fn item -> item == attribute_name end) do
-                    nil -> -1
-                    idx -> idx
-                end
+                        case Enum.find_index(_this, fn item -> item == attribute_name end) do
+                            nil -> -1
+                            idx -> idx
+                        end
 
-end).() != -1
+      end).() != -1
     else
       (fn ->
-  this = element.allowedAttributes
+        this = element.allowedAttributes
 
-                case Enum.find_index(_this, fn item -> item == attribute_name end) do
-                    nil -> -1
-                    idx -> idx
-                end
+                        case Enum.find_index(_this, fn item -> item == attribute_name end) do
+                            nil -> -1
+                            idx -> idx
+                        end
 
-end).() != -1
+      end).() != -1
     end
   end
   def get_allowed_attributes(element_name) do
@@ -223,12 +223,12 @@ end).() != -1
     end)
     out = Enum.sort(out, fn a, b ->
       (fn a, b ->
-  if (a < b) do
-    -1
-  else
-    if (a > b), do: 1, else: 0
-  end
-end).(a, b) < 0
+        if (a < b) do
+          -1
+        else
+          if (a > b), do: 1, else: 0
+        end
+      end).(a, b) < 0
     end)
     out
   end
@@ -269,80 +269,36 @@ end).(a, b) < 0
       "useMap" -> "usemap"
       s ->
         s = name
-        cond_value = (case :binary.match(s, "-") do
-          {pos, _} -> pos
-          :nomatch -> -1
-        end)
-        if (cond_value != -1) do
+        if (StringTools.haxe_index_of(s, "-", 0) != -1) do
           s
         else
           s = name
           if (StringTools.starts_with(s, "phx_")) do
-            Enum.join((fn ->
-              if ("_" == "") do
-                String.graphemes(s)
-              else
-                String.split(s, "_")
-              end
-            end).(), "-")
+            Enum.join((fn -> StringTools.haxe_split(s, "_") end).(), "-")
           else
             s = name
-            cond_value = (case :binary.match(s, "_") do
-  {pos, _} -> pos
-  :nomatch -> -1
-end) == -1
-            if (StringTools.starts_with(s, "phx") and cond_value) do
-              "phx-#{camel_to_kebab(String.slice(s, 3..-1//1))}"
+            if (StringTools.starts_with(s, "phx") and StringTools.haxe_index_of(s, "_", 0) == -1) do
+              "phx-#{camel_to_kebab(StringTools.haxe_substring(s, 3, nil))}"
             else
               s = name
               if (StringTools.starts_with(s, "aria_")) do
-                Enum.join((fn ->
-                  if ("_" == "") do
-                    String.graphemes(s)
-                  else
-                    String.split(s, "_")
-                  end
-                end).(), "-")
+                Enum.join((fn -> StringTools.haxe_split(s, "_") end).(), "-")
               else
                 s = name
-                cond_value = (case :binary.match(s, "_") do
-  {pos, _} -> pos
-  :nomatch -> -1
-end) == -1
-                if (StringTools.starts_with(s, "aria") and cond_value) do
-                  "aria-#{camel_to_kebab(String.slice(s, 4..-1//1))}"
+                if (StringTools.starts_with(s, "aria") and StringTools.haxe_index_of(s, "_", 0) == -1) do
+                  "aria-#{camel_to_kebab(StringTools.haxe_substring(s, 4, nil))}"
                 else
                   s = name
                   if (StringTools.starts_with(s, "data_")) do
-                    Enum.join((fn ->
-                      if ("_" == "") do
-                        String.graphemes(s)
-                      else
-                        String.split(s, "_")
-                      end
-                    end).(), "-")
+                    Enum.join((fn -> StringTools.haxe_split(s, "_") end).(), "-")
                   else
                     s = name
-                    cond_value = (case :binary.match(s, "_") do
-  {pos, _} -> pos
-  :nomatch -> -1
-end) == -1
-                    if (StringTools.starts_with(s, "data") and cond_value) do
-                      "data-#{camel_to_kebab(String.slice(s, 4..-1//1))}"
+                    if (StringTools.starts_with(s, "data") and StringTools.haxe_index_of(s, "_", 0) == -1) do
+                      "data-#{camel_to_kebab(StringTools.haxe_substring(s, 4, nil))}"
                     else
                       s = name
-                      cond_value = (case :binary.match(s, "_") do
-                        {pos, _} -> pos
-                        :nomatch -> -1
-                      end)
-                      if (cond_value != -1) do
-                        Enum.join((fn ->
-                          if ("_" == "") do
-                            String.graphemes(s)
-                          else
-                            String.split(s, "_")
-                          end
-                        end).(), "-")
+                      if (StringTools.haxe_index_of(s, "_", 0) != -1) do
+                        Enum.join((fn -> StringTools.haxe_split(s, "_") end).(), "-")
                       else
                         s = name
                         if (s == String.downcase(s)), do: s, else: camel_to_kebab(name)
@@ -361,11 +317,7 @@ end) == -1
     _g = 0
     str_length = String.length(str)
     result = Enum.reduce(0..(str_length - 1)//1, result, fn i, result_acc ->
-      char = if (i < 0) do
-        ""
-      else
-        String.at(str, i) || ""
-      end
+      char = StringTools.haxe_char_at(str, i)
       if (char == String.upcase(char) and i > 0) do
         result_acc <> "-" <> String.downcase(char)
       else
@@ -378,18 +330,18 @@ end) == -1
     _g = 0
     component_attributes = component.attributes
     (case Enum.reduce_while(component_attributes, :__reflaxe_no_return__, fn attr, _ ->
-  if (attr.name == attribute_name), do: {:halt, {:__reflaxe_return__, true}}, else: {:cont, :__reflaxe_no_return__}
-end) do
+      if (attr.name == attribute_name), do: {:halt, {:__reflaxe_return__, true}}, else: {:cont, :__reflaxe_no_return__}
+    end) do
       {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
       _ ->
         (fn ->
 
-                case Enum.find_index(_this, fn item -> item == attribute_name end) do
-                    nil -> -1
-                    idx -> idx
-                end
+                          case Enum.find_index(_this, fn item -> item == attribute_name end) do
+                              nil -> -1
+                              idx -> idx
+                          end
 
-end).() != -1
+        end).() != -1
     end)
   end
   defp get_global_attributes() do

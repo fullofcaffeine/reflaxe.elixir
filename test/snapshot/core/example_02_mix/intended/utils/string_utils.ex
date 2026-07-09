@@ -16,16 +16,12 @@ defmodule StringUtils do
     if (Kernel.is_nil(name) or String.length(StringTools.ltrim(StringTools.rtrim(name))) == 0) do
       "Anonymous User"
     else
-      parts = if (" " == "") do
-        String.graphemes(StringTools.ltrim(StringTools.rtrim(name)))
-      else
-        String.split(StringTools.ltrim(StringTools.rtrim(name)), " ")
-      end
+      parts = StringTools.haxe_split(StringTools.ltrim(StringTools.rtrim(name)), " ")
       formatted = []
       _g = 0
       formatted = Enum.reduce(parts, formatted, fn part, formatted_acc ->
         if (String.length(part) > 0) do
-          capitalized = String.upcase(String.at(part, 0) || "") <> String.downcase(String.slice(part, 1..-1//1))
+          capitalized = String.upcase(StringTools.haxe_char_at(part, 0)) <> String.downcase(StringTools.haxe_substr(part, 1, nil))
           formatted_acc = Enum.concat(formatted_acc, [capitalized])
           formatted_acc
         else
@@ -61,9 +57,8 @@ defmodule StringUtils do
       slug = _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, slug, "-"])
       {slug} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, fn _, {acc_slug} ->
         try do
-          cond_value = (String.at(acc_slug, 0) || "")
-          if (cond_value == "-") do
-            acc_slug = String.slice(acc_slug, 1..-1//1)
+          if (StringTools.haxe_char_at(acc_slug, 0) == "-") do
+            acc_slug = StringTools.haxe_substr(acc_slug, 1, nil)
             {:cont, {acc_slug}}
           else
             {:halt, {acc_slug}}
@@ -81,13 +76,8 @@ defmodule StringUtils do
       end)
       {slug} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, fn _, {acc_slug} ->
         try do
-          cond_value = (if ((String.length(acc_slug) - 1) < 0) do
-            ""
-          else
-            String.at(acc_slug, (String.length(acc_slug) - 1)) || ""
-          end)
-          if (cond_value == "-") do
-            acc_slug = String.slice(acc_slug, 0, (String.length(acc_slug) - 1))
+          if (StringTools.haxe_char_at(acc_slug, (String.length(acc_slug) - 1)) == "-") do
+            acc_slug = StringTools.haxe_substr_non_nil_len(acc_slug, 0, (String.length(acc_slug) - 1))
             {:cont, {acc_slug}}
           else
             {:halt, {acc_slug}}
@@ -113,14 +103,10 @@ defmodule StringUtils do
       if (String.length(text) <= max_length) do
         text
       else
-        truncated = String.slice(text, 0, (max_length - 3))
-        last_space = (case String.split(String.slice(truncated, 0, String.length(truncated)), " ") do
-          parts when Kernel.length(parts) > 1 ->
-            String.length(Enum.join((fn -> Enum.slice(parts, 0..-2//1) end).(), " "))
-          _ -> -1
-        end)
+        truncated = StringTools.haxe_substr_non_nil_len(text, 0, (max_length - 3))
+        last_space = StringTools.haxe_last_index_of(truncated, " ", nil)
         truncated = if (last_space > trunc(Reflaxe.Elixir.HaxeFloat.mul(max_length, 0.7))) do
-          String.slice(truncated, 0, last_space)
+          StringTools.haxe_substr_non_nil_len(truncated, 0, last_space)
         else
           truncated
         end
@@ -141,7 +127,7 @@ defmodule StringUtils do
       result = Enum.reduce(0..(g_value - 1)//1, result, fn _i, result_acc -> result_acc <> "*" end)
       result
     else
-      visible = String.slice(text, 0, visible_chars)
+      visible = StringTools.haxe_substr_non_nil_len(text, 0, visible_chars)
       masked_count = (String.length(text) - visible_chars)
       masked = ""
       _g = 0
@@ -155,42 +141,31 @@ defmodule StringUtils do
     _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, text, " "])
   end
   defp normalize_case(text) do
-    "#{(fn -> String.upcase((fn -> if (0 < 0) do
-      ""
-    else
-      String.at(text, 0) || ""
-    end end).()) end).()}#{String.downcase(String.slice(text, 1..-1//1))}"
+    "#{String.upcase(StringTools.haxe_char_at(text, 0))}#{(fn -> String.downcase((fn ->
+      reflaxe_string_source = text
+      reflaxe_string_length = String.length(reflaxe_string_source)
+      reflaxe_string_start = min(1, reflaxe_string_length)
+      reflaxe_string_count = (reflaxe_string_length - reflaxe_string_start)
+      String.slice(reflaxe_string_source, reflaxe_string_start, reflaxe_string_count)
+    end).()) end).()}"
   end
   defp is_valid_email_format(email) do
-    at_index = (case :binary.match(email, "@") do
-      {pos, _} -> pos
-      :nomatch -> -1
-    end)
-    dot_index = (case String.split(String.slice(email, 0, String.length(email)), ".") do
-      parts when Kernel.length(parts) > 1 ->
-        String.length(Enum.join((fn -> Enum.slice(parts, 0..-2//1) end).(), "."))
-      _ -> -1
-    end)
+    at_index = StringTools.haxe_index_of(email, "@", 0)
+    dot_index = StringTools.haxe_last_index_of(email, ".", nil)
     at_index > 0 and dot_index > at_index and dot_index < (String.length(email) - 1)
   end
   defp extract_domain(email) do
-    at_index = (case :binary.match(email, "@") do
-      {pos, _} -> pos
-      :nomatch -> -1
-    end)
+    at_index = StringTools.haxe_index_of(email, "@", 0)
     if (at_index > 0) do
-      String.slice(email, at_index + 1..-1//1)
+      StringTools.haxe_substr(email, at_index + 1, nil)
     else
       ""
     end
   end
   defp extract_username(email) do
-    at_index = (case :binary.match(email, "@") do
-      {pos, _} -> pos
-      :nomatch -> -1
-    end)
+    at_index = StringTools.haxe_index_of(email, "@", 0)
     if (at_index > 0) do
-      String.slice(email, 0, at_index)
+      StringTools.haxe_substr_non_nil_len(email, 0, at_index)
     else
       email
     end

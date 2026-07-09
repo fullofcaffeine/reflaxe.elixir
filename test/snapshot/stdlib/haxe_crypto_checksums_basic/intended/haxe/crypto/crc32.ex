@@ -7,7 +7,7 @@ defmodule Haxe.Crypto.Crc32 do
   def byte(struct, b) do
     byte_value = :erlang.band(b, 255)
     updated = (:erlang.crc32((fn -> value = struct.crc
-if value < 0, do: value + 4294967296, else: value end).(), <<byte_value::unsigned-size(8)>>))
+    if value < 0, do: value + 4294967296, else: value end).(), <<byte_value::unsigned-size(8)>>))
     struct = %{struct | crc: (if :erlang.band(updated, 4294967295) >= 2147483648, do: :erlang.band(updated, 4294967295) - 4294967296, else: :erlang.band(updated, 4294967295))}
     struct
   end
@@ -15,7 +15,7 @@ if value < 0, do: value + 4294967296, else: value end).(), <<byte_value::unsigne
     if (len != 0) do
       slice = :binary.part(apply(Map.get(b, :__reflaxe_class__) || Map.get(b, :__struct__), :get_data, [b]), pos, len)
       updated = (:erlang.crc32((fn -> value = struct.crc
-if value < 0, do: value + 4294967296, else: value end).(), slice))
+      if value < 0, do: value + 4294967296, else: value end).(), slice))
       struct = %{struct | crc: (if :erlang.band(updated, 4294967295) >= 2147483648, do: :erlang.band(updated, 4294967295) - 4294967296, else: :erlang.band(updated, 4294967295))}
       struct
     else

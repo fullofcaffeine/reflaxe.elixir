@@ -1,0 +1,10 @@
+{
+  "sourceRoot": "",
+  "names": [],
+  "mappings": "AAUC,AAAA;AAKC,EAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAKA,EAAA;AACC,IAAA;AAAA;AAGD,EAAA;AACC,IAAA;AAAA;AAGD,EAAA;AACC,IAAA,+BAAwB;AAAA;AAGzB,EAAA;AAAA;AAES,IAAA;AACR,IAAA,qBAA2B;AAAA;AAAA;AAAA",
+  "version": 3,
+  "file": "array_key_value_iterator.ex",
+  "sources": [
+  "std/haxe/iterators/ArrayKeyValueIterator.cross.hx"
+]
+}

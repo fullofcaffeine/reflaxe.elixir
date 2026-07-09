@@ -9,9 +9,10 @@ defmodule Main do
     items = ["apple", "banana", "cherry"]
     _g = 0
     items_length = length(items)
-    _ = Enum.each(0..(items_length - 1)//1, fn idx ->
-  _item = Enum.at(items, idx)
-  nil
-end)
+    _ =
+      Enum.each(0..(items_length - 1)//1, fn idx ->
+        _item = Enum.at(items, idx)
+        nil
+      end)
   end
 end

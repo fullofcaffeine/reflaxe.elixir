@@ -250,20 +250,20 @@ defmodule Main do
     secondary_colors = ["orange", "purple", "yellow"]
     c = color
     if (
-                case Enum.find_index(primary_colors, fn item -> item == c end) do
-                    nil -> -1
-                    idx -> idx
-                end
- >= 0) do
+                    case Enum.find_index(primary_colors, fn item -> item == c end) do
+                        nil -> -1
+                        idx -> idx
+                    end
+     >= 0) do
       "primary color"
     else
       c = color
       if (
-                case Enum.find_index(secondary_colors, fn item -> item == c end) do
-                    nil -> -1
-                    idx -> idx
-                end
- >= 0) do
+                      case Enum.find_index(secondary_colors, fn item -> item == c end) do
+                          nil -> -1
+                          idx -> idx
+                      end
+       >= 0) do
         "secondary color"
       else
         (case color do

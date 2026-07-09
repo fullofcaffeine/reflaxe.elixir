@@ -41,59 +41,59 @@ defmodule UserQueries do
   def search_users(filters) do
     query = from("users", "u", %{select: "u"})
     query = if ((Reflaxe.Elixir.HaxeFloat.neq(((case filters do
-  dyn_obj ->
-    (case Map.fetch(dyn_obj, "name") do
-      {:ok, dyn_value} -> dyn_value
-      _ ->
-        Map.get(dyn_obj, :name)
-    end)
-end)), nil))) do
+      dyn_obj ->
+        (case Map.fetch(dyn_obj, "name") do
+          {:ok, dyn_value} -> dyn_value
+          _ ->
+            Map.get(dyn_obj, :name)
+        end)
+    end)), nil))) do
       where(query, "u", (fn -> %{name_ilike: (case filters do
-  dyn_obj ->
-    (case Map.fetch(dyn_obj, "name") do
-      {:ok, dyn_value} -> dyn_value
-      _ ->
-        Map.get(dyn_obj, :name)
-    end)
-end)} end).())
+        dyn_obj ->
+          (case Map.fetch(dyn_obj, "name") do
+            {:ok, dyn_value} -> dyn_value
+            _ ->
+              Map.get(dyn_obj, :name)
+          end)
+      end)} end).())
     else
       query
     end
     query = if ((Reflaxe.Elixir.HaxeFloat.neq(((case filters do
-  dyn_obj ->
-    (case Map.fetch(dyn_obj, "email") do
-      {:ok, dyn_value} -> dyn_value
-      _ ->
-        Map.get(dyn_obj, :email)
-    end)
-end)), nil))) do
+      dyn_obj ->
+        (case Map.fetch(dyn_obj, "email") do
+          {:ok, dyn_value} -> dyn_value
+          _ ->
+            Map.get(dyn_obj, :email)
+        end)
+    end)), nil))) do
       where(query, "u", (fn -> %{email: (case filters do
-  dyn_obj ->
-    (case Map.fetch(dyn_obj, "email") do
-      {:ok, dyn_value} -> dyn_value
-      _ ->
-        Map.get(dyn_obj, :email)
-    end)
-end)} end).())
+        dyn_obj ->
+          (case Map.fetch(dyn_obj, "email") do
+            {:ok, dyn_value} -> dyn_value
+            _ ->
+              Map.get(dyn_obj, :email)
+          end)
+      end)} end).())
     else
       query
     end
     query = if ((Reflaxe.Elixir.HaxeFloat.neq(((case filters do
-  dyn_obj ->
-    (case Map.fetch(dyn_obj, "min_age") do
-      {:ok, dyn_value} -> dyn_value
-      _ ->
-        Map.get(dyn_obj, :min_age)
-    end)
-end)), nil))) do
+      dyn_obj ->
+        (case Map.fetch(dyn_obj, "min_age") do
+          {:ok, dyn_value} -> dyn_value
+          _ ->
+            Map.get(dyn_obj, :min_age)
+        end)
+    end)), nil))) do
       where(query, "u", (fn -> %{age_gte: (case filters do
-  dyn_obj ->
-    (case Map.fetch(dyn_obj, "min_age") do
-      {:ok, dyn_value} -> dyn_value
-      _ ->
-        Map.get(dyn_obj, :min_age)
-    end)
-end)} end).())
+        dyn_obj ->
+          (case Map.fetch(dyn_obj, "min_age") do
+            {:ok, dyn_value} -> dyn_value
+            _ ->
+              Map.get(dyn_obj, :min_age)
+          end)
+      end)} end).())
     else
       query
     end

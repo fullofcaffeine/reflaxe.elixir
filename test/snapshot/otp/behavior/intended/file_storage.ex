@@ -6,21 +6,21 @@ defmodule FileStorage do
   end
   def init(struct, config) do
     struct = if ((Reflaxe.Elixir.HaxeFloat.neq(((case config do
-  dyn_obj ->
-    (case Map.fetch(dyn_obj, "path") do
-      {:ok, dyn_value} -> dyn_value
-      _ ->
-        Map.get(dyn_obj, :path)
-    end)
-end)), nil))) do
+      dyn_obj ->
+        (case Map.fetch(dyn_obj, "path") do
+          {:ok, dyn_value} -> dyn_value
+          _ ->
+            Map.get(dyn_obj, :path)
+        end)
+    end)), nil))) do
       %{struct | base_path: (case config do
-  dyn_obj ->
-    (case Map.fetch(dyn_obj, "path") do
-      {:ok, dyn_value} -> dyn_value
-      _ ->
-        Map.get(dyn_obj, :path)
-    end)
-end)}
+        dyn_obj ->
+          (case Map.fetch(dyn_obj, "path") do
+            {:ok, dyn_value} -> dyn_value
+            _ ->
+              Map.get(dyn_obj, :path)
+          end)
+      end)}
     else
       struct
     end

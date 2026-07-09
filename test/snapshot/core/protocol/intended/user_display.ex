@@ -4,13 +4,13 @@ defmodule UserDisplay do
   end
   def format(user, options) do
     if ((case options do
-  dyn_obj ->
-    (case Map.fetch(dyn_obj, "verbose") do
-      {:ok, dyn_value} -> dyn_value
-      _ ->
-        Map.get(dyn_obj, :verbose)
-    end)
-end)) do
+      dyn_obj ->
+        (case Map.fetch(dyn_obj, "verbose") do
+          {:ok, dyn_value} -> dyn_value
+          _ ->
+            Map.get(dyn_obj, :verbose)
+        end)
+    end)) do
       "User: #{user.name}, Age: #{Reflaxe.Elixir.HaxeFloat.to_string(user.age)}"
     else
       display(user)

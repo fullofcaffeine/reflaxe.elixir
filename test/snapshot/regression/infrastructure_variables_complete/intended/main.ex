@@ -78,14 +78,15 @@ defmodule Main do
   defp test_result_pattern_matching() do
     results = [%{status: "ok", value: 42}, %{status: "error", value: -1}]
     _g = 0
-    _ = Enum.each(results, fn result ->
-  _output = (case result.status do
-    "error" -> "Failed: " <> Reflaxe.Elixir.HaxeFloat.to_string(result.value)
-    "ok" -> "Success: " <> Reflaxe.Elixir.HaxeFloat.to_string(result.value)
-    _ -> "Unknown"
-  end)
-  nil
-end)
+    _ =
+      Enum.each(results, fn result ->
+        _output = (case result.status do
+          "error" -> "Failed: " <> Reflaxe.Elixir.HaxeFloat.to_string(result.value)
+          "ok" -> "Success: " <> Reflaxe.Elixir.HaxeFloat.to_string(result.value)
+          _ -> "Unknown"
+        end)
+        nil
+      end)
   end
   defp test_message_parsing() do
     messages = [%{type: "created", content: "New item"}, %{type: "updated", content: "Changed item"}, %{type: "deleted", content: "Removed item"}]

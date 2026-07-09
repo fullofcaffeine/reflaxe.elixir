@@ -4,12 +4,13 @@ defmodule Main do
     names = []
     {_names} = Enum.reduce_while(Map.keys(users), {names}, fn k, {acc_names} ->
       try do
-        acc_names = (if (k != "a") do
-  v = Map.get(users, k)
-  if (not Kernel.is_nil(v) and v > 0), do: acc_names ++ [k], else: acc_names
-else
-  acc_names
-end)
+        acc_names =
+          (if (k != "a") do
+            v = Map.get(users, k)
+            if (not Kernel.is_nil(v) and v > 0), do: acc_names ++ [k], else: acc_names
+          else
+            acc_names
+          end)
         {:cont, {acc_names}}
       catch
         :throw, {:break, break_state} ->

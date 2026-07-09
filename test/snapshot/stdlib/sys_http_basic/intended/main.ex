@@ -85,10 +85,11 @@ defmodule Main do
     _ = assert_that(get_callback_string("sys_http_data") == "get-ok", "GET should call onData")
     _ = assert_that(get_callback_string("sys_http_bytes") == "get-ok", "GET should call onBytes")
     _ = assert_that(HttpBase.get_response_data(http) == "get-ok", "GET should expose responseData")
-    _ = assert_that((fn ->
-  reflaxe_dispatch_receiver = HttpBase.get_response_bytes(http)
-  _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
-end).() == "get-ok", "GET should expose responseBytes")
+    _ =
+      assert_that((fn ->
+        reflaxe_dispatch_receiver = HttpBase.get_response_bytes(http)
+        _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+      end).() == "get-ok", "GET should expose responseBytes")
     _ = assert_that(map_value(Http.get_response_headers(http), "x-test") == "two", "duplicate responseHeaders should keep last value")
     values = apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :get_response_header_values, [http, "x-test"])
     _ = assert_that(not Kernel.is_nil(values) and length(values) == 2 and Enum.at(values, 0) == "one" and Enum.at(values, 1) == "two", "getResponseHeaderValues should preserve duplicate headers")
@@ -109,10 +110,11 @@ end).() == "get-ok", "GET should expose responseBytes")
     output = BytesOutput.new()
     _ = apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :set_post_data, [http, "payload"])
     _ = apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :custom_request, [http, false, output, nil, "PUT"])
-    _ = assert_that((fn ->
-  reflaxe_dispatch_receiver = apply(Map.get(output, :__reflaxe_class__) || Map.get(output, :__struct__), :get_bytes, [output])
-  _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
-end).() == "put-ok", "customRequest should support PUT through :httpc")
+    _ =
+      assert_that((fn ->
+        reflaxe_dispatch_receiver = apply(Map.get(output, :__reflaxe_class__) || Map.get(output, :__struct__), :get_bytes, [output])
+        _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+      end).() == "put-ok", "customRequest should support PUT through :httpc")
   end
   defp test_status_error() do
     port = start_server("GET", "/missing", 404, "missing")
@@ -122,10 +124,11 @@ end).() == "put-ok", "customRequest should support PUT through :httpc")
     _ = apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :request, [http, false])
     _ = assert_that(get_callback_int("sys_http_error_status") == 404, "HTTP errors should still report status")
     _ = assert_that(get_callback_string("sys_http_error") == "Http Error #404", "HTTP errors should call onError with Haxe-compatible message")
-    _ = assert_that((fn ->
-  reflaxe_dispatch_receiver = HttpBase.get_response_bytes(http)
-  _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
-end).() == "missing", "HTTP error should retain response body bytes")
+    _ =
+      assert_that((fn ->
+        reflaxe_dispatch_receiver = HttpBase.get_response_bytes(http)
+        _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+      end).() == "missing", "HTTP error should retain response body bytes")
   end
   def main() do
     _ = test_request_url()

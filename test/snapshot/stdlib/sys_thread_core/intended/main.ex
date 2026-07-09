@@ -16,10 +16,11 @@ defmodule Main do
     end
     mailbox = Sys.Thread.Thread.current()
     blocking_deque = Sys.Thread.Deque.new()
-    _ = Sys.Thread.Thread.create(fn ->
-  _ = apply(Map.get(blocking_deque, :__reflaxe_class__) || Map.get(blocking_deque, :__struct__), :add, [blocking_deque, "from-child"])
-  _ = apply(Map.get(mailbox, :__reflaxe_class__) || Map.get(mailbox, :__struct__), :send_message, [mailbox, "child-finished"])
-end)
+    _ =
+      Sys.Thread.Thread.create(fn ->
+        _ = apply(Map.get(blocking_deque, :__reflaxe_class__) || Map.get(blocking_deque, :__struct__), :add, [blocking_deque, "from-child"])
+        _ = apply(Map.get(mailbox, :__reflaxe_class__) || Map.get(mailbox, :__struct__), :send_message, [mailbox, "child-finished"])
+      end)
     if (apply(Map.get(blocking_deque, :__reflaxe_class__) || Map.get(blocking_deque, :__struct__), :pop, [blocking_deque, true]) != "from-child") do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Deque blocking pop mismatch"]
     end
@@ -29,10 +30,11 @@ end)
     tls = Sys.Thread.Tls.new()
     _ = Sys.Thread.Tls.set_value(tls, "main")
     tls_mailbox = Sys.Thread.Thread.current()
-    _ = Sys.Thread.Thread.create(fn ->
-  _ = Sys.Thread.Tls.set_value(tls, "child")
-  _ = apply(Map.get(tls_mailbox, :__reflaxe_class__) || Map.get(tls_mailbox, :__struct__), :send_message, [tls_mailbox, Sys.Thread.Tls.get_value(tls)])
-end)
+    _ =
+      Sys.Thread.Thread.create(fn ->
+        _ = Sys.Thread.Tls.set_value(tls, "child")
+        _ = apply(Map.get(tls_mailbox, :__reflaxe_class__) || Map.get(tls_mailbox, :__struct__), :send_message, [tls_mailbox, Sys.Thread.Tls.get_value(tls)])
+      end)
     if (Reflaxe.Elixir.HaxeFloat.neq(Sys.Thread.Thread.read_message(true), "child")) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Tls child value mismatch"]
     end

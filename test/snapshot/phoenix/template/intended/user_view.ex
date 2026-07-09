@@ -8,20 +8,20 @@ defmodule UserView do
   end
   def dashboard(assigns) do
     ~H"""
-<div class="dashboard">
-			<h1>Welcome, <%= @current_user.name %>!</h1>
-			<div class="stats">
-				<div>Posts: <%= @post_count %></div>
-				<div>Comments: <%= @comment_count %></div>
-				<div>Likes: <%= @like_count %></div>
-			</div>
-			<%= if @show_notifications do %>
-				<div class="notifications">
-					<%= render_notifications(@notifications) %>
-				</div>
-			<% end %>
-		</div>
-"""
+    <div class="dashboard">
+          <h1>Welcome, <%= @current_user.name %>!</h1>
+          <div class="stats">
+            <div>Posts: <%= @post_count %></div>
+            <div>Comments: <%= @comment_count %></div>
+            <div>Likes: <%= @like_count %></div>
+          </div>
+          <%= if @show_notifications do %>
+            <div class="notifications">
+              <%= render_notifications(@notifications) %>
+            </div>
+          <% end %>
+        </div>
+    """
   end
   def button(text, type, disabled) do
     "<button class=\"btn btn-<%= type %>\" <%= if disabled do %>disabled<% end %>>\n\t\t\t<%= text %>\n\t\t</button>"
@@ -31,35 +31,35 @@ defmodule UserView do
   end
   def app_layout(inner_content, assigns) do
     ~H"""
-<!DOCTYPE html>
-		<html>
-			<head>
-				<title><%= @page_title %></title>
-				<link rel="stylesheet" href="/css/app.css">
-			</head>
-			<body>
-				<header>
-					<nav>
-						<%= link("Home", to: "/") %>
-						<%= link("Users", to: "/users") %>
-						<%= if @current_user do %>
-							<%= link("Profile", to: "/profile") %>
-							<%= link("Logout", to: "/logout", method: :delete) %>
-						<% else %>
-							<%= link("Login", to: "/login") %>
-						<% end %>
-					</nav>
-				</header>
+    <!DOCTYPE html>
+        <html>
+          <head>
+            <title><%= @page_title %></title>
+            <link rel="stylesheet" href="/css/app.css">
+          </head>
+          <body>
+            <header>
+              <nav>
+                <%= link("Home", to: "/") %>
+                <%= link("Users", to: "/users") %>
+                <%= if @current_user do %>
+                  <%= link("Profile", to: "/profile") %>
+                  <%= link("Logout", to: "/logout", method: :delete) %>
+                <% else %>
+                  <%= link("Login", to: "/login") %>
+                <% end %>
+              </nav>
+            </header>
 
-				<main>
-					<%= inner_content %>
-				</main>
+            <main>
+              <%= inner_content %>
+            </main>
 
-				<footer>
-					<p>&copy; 2024 MyApp</p>
-				</footer>
-			</body>
-		</html>
-"""
+            <footer>
+              <p>&copy; 2024 MyApp</p>
+            </footer>
+          </body>
+        </html>
+    """
   end
 end

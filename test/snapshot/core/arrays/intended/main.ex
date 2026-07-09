@@ -68,29 +68,30 @@ defmodule Main do
   def multi_dimensional() do
     matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
     g = 0
-    _ = Enum.each(matrix, fn row ->
-  _g = 0
-  _ = Enum.each(row, fn _ -> nil end)
-end)
+    _ =
+      Enum.each(matrix, fn row ->
+        _g = 0
+        _ = Enum.each(row, fn _ -> nil end)
+      end)
     _grid = [(fn ->
-  g = []
-  g = g ++ [0]
-  g = g ++ [1]
-  g = g ++ [2]
-  g
-end).(), (fn ->
-  g = []
-  g = g ++ [3]
-  g = g ++ [4]
-  g = g ++ [5]
-  g
-end).(), (fn ->
-  g = []
-  g = g ++ [6]
-  g = g ++ [7]
-  g = g ++ [8]
-  g
-end).()]
+      g = []
+      g = g ++ [0]
+      g = g ++ [1]
+      g = g ++ [2]
+      g
+    end).(), (fn ->
+      g = []
+      g = g ++ [3]
+      g = g ++ [4]
+      g = g ++ [5]
+      g
+    end).(), (fn ->
+      g = []
+      g = g ++ [6]
+      g = g ++ [7]
+      g = g ++ [8]
+      g
+    end).()]
     nil
   end
   def process_array(arr) do

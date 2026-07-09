@@ -22,17 +22,10 @@ defmodule Main do
   test "string operations" do
     str = "Hello, World!"
     _ = assert(13 == String.length(str), "String length should be correct")
-    _ = assert((case :binary.match(str, "World") do
-  {pos, _} -> pos
-  :nomatch -> -1
-end) > 0, "Should contain 'World'")
+    _ = assert(StringTools.haxe_index_of(str, "World", 0) > 0, "Should contain 'World'")
     _ = assert("HELLO, WORLD!" == String.upcase(str), "Uppercase should work")
     _ = assert("hello, world!" == String.downcase(str), "Lowercase should work")
-    parts = if (", " == "") do
-      String.graphemes(str)
-    else
-      String.split(str, ", ")
-    end
+    parts = StringTools.haxe_split(str, ", ")
     _ = assert(2 == length(parts), "Should split into 2 parts")
     _ = assert("Hello" == Enum.at(parts, 0), "First part should be 'Hello'")
     _ = assert("World!" == Enum.at(parts, 1), "Second part should be 'World!'")
@@ -67,13 +60,13 @@ end) do
         flunk("Should not match error")
       "ok" ->
         assert("success" == ((case result do
-  dyn_obj ->
-    (case Map.fetch(dyn_obj, "value") do
-      {:ok, dyn_value} -> dyn_value
-      _ ->
-        Map.get(dyn_obj, :value)
-    end)
-end)), "Should match ok tuple")
+          dyn_obj ->
+            (case Map.fetch(dyn_obj, "value") do
+              {:ok, dyn_value} -> dyn_value
+              _ ->
+                Map.get(dyn_obj, :value)
+            end)
+        end)), "Should match ok tuple")
       _ ->
         flunk("Should match one of the patterns")
     end)
@@ -103,9 +96,9 @@ end)), "Should match ok tuple")
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+          %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+          _ -> haxe_exception
+        end), haxe_exception} do
           {e, _} when is_binary(e) -> _ = assert("Test exception" == e, "Exception message should match")
           _ ->
             reraise(haxe_exception, __STACKTRACE__)
@@ -119,9 +112,9 @@ end), haxe_exception} do
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+          %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+          _ -> haxe_exception
+        end), haxe_exception} do
           {_e, _} ->
             assert(true, "Assertion failure was caught")
         end)
@@ -143,11 +136,11 @@ end), haxe_exception} do
     end
     assert_contains = fn array, element, msg ->
       assert((fn ->
-                case Enum.find_index(array, fn item -> item == element end) do
-                    nil -> -1
-                    idx -> idx
-                end
- >= 0 end).(), (if (not Kernel.is_nil(msg)), do: msg, else: "Array should contain element"))
+                      case Enum.find_index(array, fn item -> item == element end) do
+                          nil -> -1
+                          idx -> idx
+                      end
+       >= 0 end).(), (if (not Kernel.is_nil(msg)), do: msg, else: "Array should contain element"))
     end
     _ = assert_between.(5, 1, 10, "5 should be between 1 and 10")
     _ = assert_contains.([1, 2, 3], 2, "Array should contain 2")
@@ -158,9 +151,9 @@ end), haxe_exception} do
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
         (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
+          %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+          _ -> haxe_exception
+        end), haxe_exception} do
           {_e, _} ->
             assert(true, "Custom assertion failed as expected")
         end)
@@ -169,10 +162,11 @@ end), haxe_exception} do
   test "data driven" do
     test_cases = [%{input: 1, expected: 2}, %{input: 2, expected: 4}, %{input: 3, expected: 6}, %{input: 4, expected: 8}, %{input: 5, expected: 10}]
     _g = 0
-    _ = Enum.each(test_cases, fn test_case ->
-  result = test_case.input * 2
-  _ = assert(test_case.expected == result, "Input " <> Reflaxe.Elixir.HaxeFloat.to_string(test_case.input) <> " should produce " <> Reflaxe.Elixir.HaxeFloat.to_string(test_case.expected))
-end)
+    _ =
+      Enum.each(test_cases, fn test_case ->
+        result = test_case.input * 2
+        _ = assert(test_case.expected == result, "Input " <> Reflaxe.Elixir.HaxeFloat.to_string(test_case.input) <> " should produce " <> Reflaxe.Elixir.HaxeFloat.to_string(test_case.expected))
+      end)
   end
   test "mocking patterns" do
     mock_calls = []

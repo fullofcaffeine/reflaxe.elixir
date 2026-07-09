@@ -200,13 +200,13 @@ defmodule SslSocketState do
       endpoint_info
     else
       (
-            state = SocketState.fetch_state(socket_ref)
-            if state.bind_host == nil or state.bind_port == nil do
-              nil
-            else
-              {SocketState.ipv4_to_int(state.bind_host), state.bind_port}
-            end
-        )
+                  state = SocketState.fetch_state(socket_ref)
+                  if state.bind_host == nil or state.bind_port == nil do
+                    nil
+                  else
+                    {SocketState.ipv4_to_int(state.bind_host), state.bind_port}
+                  end
+              )
     end
   end
   defp endpoint(socket_ref, peer_side) do

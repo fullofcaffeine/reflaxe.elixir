@@ -19,9 +19,9 @@ defmodule Main do
       end).())
     _ = if (c > 55296) do
       Bitwise.bor(Bitwise.bsl((c - 55232), 10), Bitwise.band(apply(Map.get(s, :__reflaxe_class__) || Map.get(s, :__struct__), :cca, (fn ->
-    index = i + 1
-    [s, index]
-  end).()), 1023))
+          index = i + 1
+          [s, index]
+        end).()), 1023))
     else
       c
     end

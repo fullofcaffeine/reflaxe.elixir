@@ -115,6 +115,46 @@ class CallExprBuilder {
 		}
 	}
 
+	static inline function stringRemote(fnName:String, callArgs:Array<ElixirAST>):ElixirASTDef {
+		return ERemoteCall(makeAST(EVar("String")), fnName, callArgs);
+	}
+
+	static inline function stringToolsRemote(fnName:String, callArgs:Array<ElixirAST>):ElixirASTDef {
+		return ERemoteCall(makeAST(EVar("StringTools")), fnName, callArgs);
+	}
+
+	static function buildStringHaxeCharAt(receiver:ElixirAST, index:ElixirAST):ElixirASTDef {
+		return stringToolsRemote("haxe_char_at", [receiver, index]);
+	}
+
+	static function buildStringHaxeCharCodeAt(receiver:ElixirAST, index:ElixirAST):ElixirASTDef {
+		return stringToolsRemote("haxe_char_code_at", [receiver, index]);
+	}
+
+	static function buildStringHaxeSplit(receiver:ElixirAST, delimiter:ElixirAST):ElixirASTDef {
+		return stringToolsRemote("haxe_split", [receiver, delimiter]);
+	}
+
+	static function buildStringHaxeSubstr(receiver:ElixirAST, pos:ElixirAST, len:ElixirAST, lenMayBeNil:Bool):ElixirASTDef {
+		return stringToolsRemote(lenMayBeNil ? "haxe_substr" : "haxe_substr_non_nil_len", [receiver, pos, len]);
+	}
+
+	static function buildStringHaxeSubstring(receiver:ElixirAST, startIndex:ElixirAST, endIndex:ElixirAST):ElixirASTDef {
+		return stringToolsRemote("haxe_substring", [receiver, startIndex, endIndex]);
+	}
+
+	static function buildStringHaxeIndexOf(receiver:ElixirAST, value:ElixirAST, startIndex:ElixirAST):ElixirASTDef {
+		return stringToolsRemote("haxe_index_of", [receiver, value, startIndex]);
+	}
+
+	static function buildStringHaxeLastIndexOf(receiver:ElixirAST, value:ElixirAST, startIndex:ElixirAST):ElixirASTDef {
+		return stringToolsRemote("haxe_last_index_of", [receiver, value, startIndex]);
+	}
+
+	static function providedArgMayBeNil(args:Array<TypedExpr>, index:Int):Bool {
+		return args == null || index >= args.length || TypeUtils.mayBeNil(args[index].t);
+	}
+
 	/**
 	 * Build a call expression
 	 * 
@@ -676,19 +716,6 @@ class CallExprBuilder {
 							var receiverAst = buildExpression(obj);
 							var lowered:Null<ElixirASTDef> = null;
 
-							inline function stringRemote(fnName:String, callArgs:Array<ElixirAST>):ElixirASTDef {
-								return ERemoteCall(makeAST(EVar("String")), fnName, callArgs);
-							}
-
-							inline function charCodeAt(receiver:ElixirAST, index:ElixirAST, fallback:ElixirAST):ElixirASTDef {
-								// Enum.at(String.to_charlist(str), idx) preserves character-index semantics.
-								var charlist = makeAST(stringRemote("to_charlist", [receiver]));
-								var enumAt = makeAST(ERemoteCall(makeAST(EVar("Enum")), "at", [charlist, index]));
-								var value = makeAST(EBinary(OrElse, enumAt, fallback));
-								var isNegativeIndex = makeAST(EBinary(Less, index, makeAST(EInteger(0))));
-								return EIf(isNegativeIndex, fallback, value);
-							}
-
 							switch (methodName) {
 								case "toString":
 									lowered = receiverAst.def;
@@ -700,117 +727,42 @@ class CallExprBuilder {
 									lowered = stringRemote("upcase", [receiverAst]);
 
 								case "split" if (argASTs != null && argASTs.length == 1):
-									var delim = argASTs[0];
-									// Haxe: "".split("") -> ["a","b","c"] (no empties)
-									// Elixir: String.split(str, "") includes empty segments unless we special-case.
-									var cond = makeAST(EBinary(Equal, delim, makeAST(EString(""))));
-									var graphemes = makeAST(stringRemote("graphemes", [receiverAst]));
-									var splitCall = makeAST(stringRemote("split", [receiverAst, delim]));
-									lowered = EIf(cond, graphemes, splitCall);
+									lowered = buildStringHaxeSplit(receiverAst, argASTs[0]);
 
 								case "substr" if (argASTs != null && (argASTs.length == 1 || argASTs.length == 2)):
-									var pos = argASTs[0];
-									var lenOpt:Null<ElixirAST> = (argASTs.length == 2) ? argASTs[1] : null;
-									var isOmitted = (lenOpt == null) || switch (lenOpt.def) {
-										case ENil: true;
-										default: false;
-									};
-									if (isOmitted) {
-										// Elixir 1.18 warns on descending default step for negative indices in String.slice/2.
-										// Use explicit positive step so String.slice treats -1 as "until end".
-										var range = makeAST(ERange(pos, makeAST(EInteger(-1)), false, makeAST(EInteger(1))));
-										lowered = stringRemote("slice", [receiverAst, range]);
-									} else {
-										lowered = stringRemote("slice", [receiverAst, pos, lenOpt]);
-									}
+									var lenOpt = (argASTs.length == 2) ? argASTs[1] : makeAST(ENil);
+									lowered = buildStringHaxeSubstr(receiverAst, argASTs[0], lenOpt, providedArgMayBeNil(args, 1));
 
 								case "substring" if (argASTs != null && (argASTs.length == 1 || argASTs.length == 2)):
-									var startIdx = argASTs[0];
-									var endOpt:Null<ElixirAST> = (argASTs.length == 2) ? argASTs[1] : null;
-									var endOmitted = (endOpt == null) || switch (endOpt.def) {
-										case ENil: true;
-										default: false;
-									};
-									if (endOmitted) {
-										// Elixir 1.18 warns on descending default step for negative indices in String.slice/2.
-										// Use explicit positive step so String.slice treats -1 as "until end".
-										var range = makeAST(ERange(startIdx, makeAST(EInteger(-1)), false, makeAST(EInteger(1))));
-										lowered = stringRemote("slice", [receiverAst, range]);
-									} else {
-										var lenExpr = makeAST(EBinary(Subtract, endOpt, startIdx));
-										lowered = stringRemote("slice", [receiverAst, startIdx, lenExpr]);
-									}
+									var endOpt = (argASTs.length == 2) ? argASTs[1] : makeAST(ENil);
+									lowered = buildStringHaxeSubstring(receiverAst, argASTs[0], endOpt);
 
 								case "charAt" if (argASTs != null && argASTs.length == 1):
-									var idx = argASTs[0];
-									var atCall = makeAST(stringRemote("at", [receiverAst, idx]));
-									var fallback = makeAST(EString(""));
-									var orElse = makeAST(EBinary(OrElse, atCall, fallback));
-									// Preserve Haxe semantics for negative indices: return "".
-									var isNegative = makeAST(EBinary(Less, idx, makeAST(EInteger(0))));
-									lowered = EIf(isNegative, fallback, orElse);
+									lowered = buildStringHaxeCharAt(receiverAst, argASTs[0]);
 
 								case "charCodeAt" if (argASTs != null && argASTs.length == 1):
-									var index = argASTs[0];
-									// Enum.at(String.to_charlist(str), idx) returns nil when out-of-range.
-									var charlist = makeAST(stringRemote("to_charlist", [receiverAst]));
-									var enumAt = makeAST(ERemoteCall(makeAST(EVar("Enum")), "at", [charlist, index]));
-									var isNegativeIndex = makeAST(EBinary(Less, index, makeAST(EInteger(0))));
-									lowered = EIf(isNegativeIndex, makeAST(ENil), enumAt);
+									lowered = buildStringHaxeCharCodeAt(receiverAst, argASTs[0]);
 
-								case "fastCodeAt" | "unsafeCodeAt" if (argASTs != null && argASTs.length == 1):
-									lowered = charCodeAt(receiverAst, argASTs[0], makeAST(EInteger(0)));
+								case "fastCodeAt" if (argASTs != null && argASTs.length == 1):
+									lowered = stringToolsRemote("fast_code_at", [receiverAst, argASTs[0]]);
+
+								case "unsafeCodeAt" if (argASTs != null && argASTs.length == 1):
+									lowered = stringToolsRemote("unsafe_code_at", [receiverAst, argASTs[0]]);
 
 								case "indexOf" if (argASTs != null && (argASTs.length == 1 || argASTs.length == 2)):
-									var needle = argASTs[0];
-									var startOpt:Null<ElixirAST> = (argASTs.length == 2) ? argASTs[1] : null;
-									var startIsZero = (startOpt == null) || switch (startOpt.def) {
-										case ENil: true;
-										case EInteger(n) if (n == 0): true;
-										default: false;
-									};
-									var subject = receiverAst;
-									var offset:Null<ElixirAST> = null;
-									if (!startIsZero && startOpt != null) {
-										// Slice from start index and search within the slice, then add offset.
-										var sliceRange = makeAST(ERange(startOpt, makeAST(EInteger(-1)), false, null));
-										subject = makeAST(stringRemote("slice", [receiverAst, sliceRange]));
-										offset = startOpt;
+									var startOpt = if (argASTs.length == 2) {
+										switch (argASTs[1].def) {
+											case ENil: makeAST(EInteger(0));
+											default: argASTs[1];
+										}
+									} else {
+										makeAST(EInteger(0));
 									}
-									var matchCall = makeAST(ERemoteCall(makeAST(EAtom("binary")), "match", [subject, needle]));
-									var clauses:Array<reflaxe.elixir.ast.ElixirAST.ECaseClause> = [
-										{
-											pattern: PTuple([PVar("pos"), PWildcard]),
-											guard: null,
-											body: makeAST(offset != null ? EBinary(Add, makeAST(EVar("pos")), offset) : EVar("pos"))
-										},
-										{pattern: PLiteral(makeAST(EAtom("nomatch"))), guard: null, body: makeAST(EInteger(-1))}
-									];
-									lowered = ECase(matchCall, clauses);
+									lowered = buildStringHaxeIndexOf(receiverAst, argASTs[0], startOpt);
 
 								case "lastIndexOf" if (argASTs != null && (argASTs.length == 1 || argASTs.length == 2)):
-									// Best-effort: mirror previous std/String.cross.hx behavior using split/join.
-									var needle = argASTs[0];
-									var startOpt:Null<ElixirAST> = (argASTs.length == 2) ? argASTs[1] : null;
-									var startExpr = (startOpt == null || switch (startOpt.def) {
-										case ENil: true;
-										default: false;
-									}) ? makeAST(stringRemote("length", [receiverAst])) : startOpt;
-									var sub = makeAST(stringRemote("slice", [receiverAst, makeAST(EInteger(0)), startExpr]));
-									var parts = makeAST(stringRemote("split", [sub, needle]));
-									// case parts do [..] when length(parts) > 1 -> String.length(Enum.join(Enum.slice(parts, 0..-2), needle)); _ -> -1 end
-									var partsVar = makeAST(EVar("parts"));
-									var condLen = makeAST(EBinary(Greater, makeAST(ERemoteCall(makeAST(EVar("Kernel")), "length", [partsVar])),
-										makeAST(EInteger(1))));
-									// Enum.slice/2 warns on descending default step for negative indices; force step 1.
-									var sliceRange = makeAST(ERange(makeAST(EInteger(0)), makeAST(EInteger(-2)), false, makeAST(EInteger(1))));
-									var sliced = makeAST(ERemoteCall(makeAST(EVar("Enum")), "slice", [partsVar, sliceRange]));
-									var joined = makeAST(ERemoteCall(makeAST(EVar("Enum")), "join", [sliced, needle]));
-									var lenJoined = makeAST(stringRemote("length", [joined]));
-									lowered = ECase(parts, [
-										{pattern: PVar("parts"), guard: condLen, body: lenJoined},
-										{pattern: PWildcard, guard: null, body: makeAST(EInteger(-1))}
-									]);
+									var startOpt = (argASTs.length == 2) ? argASTs[1] : makeAST(ENil);
+									lowered = buildStringHaxeLastIndexOf(receiverAst, argASTs[0], startOpt);
 
 								default:
 							}

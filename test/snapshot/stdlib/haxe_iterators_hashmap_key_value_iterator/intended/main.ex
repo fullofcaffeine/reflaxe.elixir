@@ -17,9 +17,9 @@ defmodule Main do
         if (apply(Map.get(iterator, :__reflaxe_class__) || Map.get(iterator, :__struct__), :has_next, [iterator])) do
           pair = apply(Map.get(iterator, :__reflaxe_class__) || Map.get(iterator, :__struct__), :next, [iterator])
           acc_seen = acc_seen ++ [(fn ->
-  reflaxe_dispatch_receiver = pair.key
-  _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
-end).() <> "=" <> pair.value]
+            reflaxe_dispatch_receiver = pair.key
+            _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+          end).() <> "=" <> pair.value]
           {:cont, {acc_seen}}
         else
           {:halt, {acc_seen}}

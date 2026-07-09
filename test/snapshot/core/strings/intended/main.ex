@@ -10,11 +10,7 @@ defmodule Main do
   end
   def string_methods() do
     text = "Hello, World!"
-    parts = if (", " == "") do
-      String.graphemes(text)
-    else
-      String.split(text, ", ")
-    end
+    parts = StringTools.haxe_split(text, ", ")
     _joined = Enum.join(parts, " - ")
     _replaced = StringTools.replace(text, "World", "Haxe")
     nil

@@ -173,11 +173,7 @@ defmodule Http do
     end
   end
   defp append_query(base_url, encoded_params) do
-    cond_value = (case :binary.match(base_url, "?") do
-      {pos, _} -> pos
-      :nomatch -> -1
-    end)
-    if (cond_value >= 0) do
+    if (StringTools.haxe_index_of(base_url, "?", 0) >= 0) do
       "#{base_url}&#{encoded_params}"
     else
       "#{base_url}?#{encoded_params}"

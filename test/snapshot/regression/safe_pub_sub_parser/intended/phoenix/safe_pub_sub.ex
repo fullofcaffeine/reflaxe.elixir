@@ -5,10 +5,10 @@ defmodule Phoenix.SafePubSub do
       {:error, "SafePubSub could not determine the PubSub server module (no Phoenix Endpoint detected)."}
     else
 
-          case Phoenix.PubSub.subscribe(pubsub_mod, topic_string) do
-            :ok -> {:ok, nil}
-            {:error, reason} -> {:error, to_string(reason)}
-          end
+                case Phoenix.PubSub.subscribe(pubsub_mod, topic_string) do
+                  :ok -> {:ok, nil}
+                  {:error, reason} -> {:error, to_string(reason)}
+                end
 
     end
   end
@@ -21,22 +21,22 @@ defmodule Phoenix.SafePubSub do
       {:error, "SafePubSub could not determine the PubSub server module (no Phoenix Endpoint detected)."}
     else
 
-          normalized = if is_map(payload) do
-            Enum.reduce(Map.keys(payload), payload, fn k, acc ->
-              cond do
-                is_atom(k) ->
-                  sk = Atom.to_string(k)
-                  if Map.has_key?(acc, sk), do: acc, else: Map.put(acc, sk, Map.get(acc, k))
-                true -> acc
-              end
-            end)
-          else
-            payload
-          end
-          case Phoenix.PubSub.broadcast(pubsub_mod, topic_string, normalized) do
-            :ok -> {:ok, nil}
-            {:error, reason} -> {:error, to_string(reason)}
-          end
+                normalized = if is_map(payload) do
+                  Enum.reduce(Map.keys(payload), payload, fn k, acc ->
+                    cond do
+                      is_atom(k) ->
+                        sk = Atom.to_string(k)
+                        if Map.has_key?(acc, sk), do: acc, else: Map.put(acc, sk, Map.get(acc, k))
+                      true -> acc
+                    end
+                  end)
+                else
+                  payload
+                end
+                case Phoenix.PubSub.broadcast(pubsub_mod, topic_string, normalized) do
+                  :ok -> {:ok, nil}
+                  {:error, reason} -> {:error, to_string(reason)}
+                end
 
     end
   end

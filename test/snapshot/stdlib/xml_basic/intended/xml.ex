@@ -67,7 +67,7 @@ defmodule Xml do
   def set_node_name(struct, value) do
     _ = ensure_element(struct)
     node = Process.get({:reflaxe_xml_node, struct.xml_ref}, struct)
-      Process.put({:reflaxe_xml_node, struct.xml_ref}, %{node | node_name: value})
+          Process.put({:reflaxe_xml_node, struct.xml_ref}, %{node | node_name: value})
     value
   end
   def get_node_value(struct) do
@@ -77,7 +77,7 @@ defmodule Xml do
   def set_node_value(struct, value) do
     _ = ensure_value(struct)
     node = Process.get({:reflaxe_xml_node, struct.xml_ref}, struct)
-      Process.put({:reflaxe_xml_node, struct.xml_ref}, %{node | node_value: value})
+          Process.put({:reflaxe_xml_node, struct.xml_ref}, %{node | node_value: value})
     value
   end
   def get(struct, att) do
@@ -87,14 +87,14 @@ defmodule Xml do
   def set(struct, att, value) do
     _ = ensure_element(struct)
     node = Process.get({:reflaxe_xml_node, struct.xml_ref}, struct)
-      attrs = Map.put(Map.fetch!(node, :attribute_map), att, value)
-      Process.put({:reflaxe_xml_node, struct.xml_ref}, %{node | attribute_map: attrs})
+          attrs = Map.put(Map.fetch!(node, :attribute_map), att, value)
+          Process.put({:reflaxe_xml_node, struct.xml_ref}, %{node | attribute_map: attrs})
   end
   def remove(struct, att) do
     _ = ensure_element(struct)
     node = Process.get({:reflaxe_xml_node, struct.xml_ref}, struct)
-      attrs = Map.delete(Map.fetch!(node, :attribute_map), att)
-      Process.put({:reflaxe_xml_node, struct.xml_ref}, %{node | attribute_map: attrs})
+          attrs = Map.delete(Map.fetch!(node, :attribute_map), att)
+          Process.put({:reflaxe_xml_node, struct.xml_ref}, %{node | attribute_map: attrs})
   end
   def exists(struct, att) do
     _ = ensure_element(struct)
@@ -131,35 +131,35 @@ defmodule Xml do
   def add_child(struct, child) do
     _ = ensure_element_type(struct)
     parent = Process.get({:reflaxe_xml_node, struct.xml_ref}, struct)
-      stored_child = Process.get({:reflaxe_xml_node, child.xml_ref}, child)
-      child = %{stored_child | parent: parent}
-      Process.put({:reflaxe_xml_node, child.xml_ref}, child)
-      Process.put({:reflaxe_xml_node, struct.xml_ref}, %{parent | children: Map.fetch!(parent, :children) ++ [child]})
+          stored_child = Process.get({:reflaxe_xml_node, child.xml_ref}, child)
+          child = %{stored_child | parent: parent}
+          Process.put({:reflaxe_xml_node, child.xml_ref}, child)
+          Process.put({:reflaxe_xml_node, struct.xml_ref}, %{parent | children: Map.fetch!(parent, :children) ++ [child]})
   end
   def remove_child(struct, child) do
     _ = ensure_element_type(struct)
     (fn ->
-        parent = Process.get({:reflaxe_xml_node, struct.xml_ref}, struct)
-        children = Map.fetch!(parent, :children)
-        existed = Enum.any?(children, fn existing -> existing.xml_ref == child.xml_ref end)
-        next_children = Enum.reject(children, fn existing -> existing.xml_ref == child.xml_ref end)
-        Process.put({:reflaxe_xml_node, struct.xml_ref}, %{parent | children: next_children})
-        if existed do
-          stored_child = Process.get({:reflaxe_xml_node, child.xml_ref}, child)
-          Process.put({:reflaxe_xml_node, child.xml_ref}, %{stored_child | parent: nil})
-        end
-        existed
-      end).()
+            parent = Process.get({:reflaxe_xml_node, struct.xml_ref}, struct)
+            children = Map.fetch!(parent, :children)
+            existed = Enum.any?(children, fn existing -> existing.xml_ref == child.xml_ref end)
+            next_children = Enum.reject(children, fn existing -> existing.xml_ref == child.xml_ref end)
+            Process.put({:reflaxe_xml_node, struct.xml_ref}, %{parent | children: next_children})
+            if existed do
+              stored_child = Process.get({:reflaxe_xml_node, child.xml_ref}, child)
+              Process.put({:reflaxe_xml_node, child.xml_ref}, %{stored_child | parent: nil})
+            end
+            existed
+          end).()
   end
   def insert_child(struct, child, pos) do
     _ = ensure_element_type(struct)
     parent = Process.get({:reflaxe_xml_node, struct.xml_ref}, struct)
-      stored_child = Process.get({:reflaxe_xml_node, child.xml_ref}, child)
-      child = %{stored_child | parent: parent}
-      Process.put({:reflaxe_xml_node, child.xml_ref}, child)
-      children = Map.fetch!(parent, :children)
-      next_children = List.insert_at(children, pos, child)
-      Process.put({:reflaxe_xml_node, struct.xml_ref}, %{parent | children: next_children})
+          stored_child = Process.get({:reflaxe_xml_node, child.xml_ref}, child)
+          child = %{stored_child | parent: parent}
+          Process.put({:reflaxe_xml_node, child.xml_ref}, child)
+          children = Map.fetch!(parent, :children)
+          next_children = List.insert_at(children, pos, child)
+          Process.put({:reflaxe_xml_node, struct.xml_ref}, %{parent | children: next_children})
   end
   def to_string(struct) do
     (fn ->

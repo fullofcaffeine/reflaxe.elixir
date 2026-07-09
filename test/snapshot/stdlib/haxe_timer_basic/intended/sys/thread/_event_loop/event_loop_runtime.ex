@@ -32,38 +32,38 @@ defmodule EventLoopRuntime do
       raise Reflaxe.Elixir.HaxeThrow, [value: "sys.thread.EventLoop.repeat interval must be >= 0"]
     end
     (
-            loop_ref = ref
-            interval = max(interval_ms, 0)
-            timer_pid = spawn(fn ->
-              repeat_fn = fn repeat_fn ->
-                receive do
-                  :cancel -> :ok
-                after
-                  interval ->
-                    EventLoopRuntime.run(loop_ref, event)
-                    repeat_fn.(repeat_fn)
-                end
-              end
-              repeat_fn.(repeat_fn)
-            end)
-            timer_pid
-        )
+                loop_ref = ref
+                interval = max(interval_ms, 0)
+                timer_pid = spawn(fn ->
+                  repeat_fn = fn repeat_fn ->
+                    receive do
+                      :cancel -> :ok
+                    after
+                      interval ->
+                        EventLoopRuntime.run(loop_ref, event)
+                        repeat_fn.(repeat_fn)
+                    end
+                  end
+                  repeat_fn.(repeat_fn)
+                end)
+                timer_pid
+            )
   end
   def run_delayed(ref, event, delay_ms) do
     if (delay_ms < 0) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "sys.thread.EventLoop delayed event interval must be >= 0"]
     end
     (
-            loop_ref = ref
-            delay = max(delay_ms, 0)
-            spawn(fn ->
-              receive do
-                :cancel -> :ok
-              after
-                delay -> EventLoopRuntime.run(loop_ref, event)
-              end
-            end)
-        )
+                loop_ref = ref
+                delay = max(delay_ms, 0)
+                spawn(fn ->
+                  receive do
+                    :cancel -> :ok
+                  after
+                    delay -> EventLoopRuntime.run(loop_ref, event)
+                  end
+                end)
+            )
   end
   def cancel(handler) do
     send(handler, :cancel)
@@ -94,17 +94,17 @@ defmodule EventLoopRuntime do
   def wait(ref, timeout) do
     timeout_ms = seconds_to_timeout(timeout)
     (
-            {loop_ref, pid} = ref
-            token = make_ref()
-            send(pid, {:wait, self(), token})
-            receive do
-              {:event_loop_wait, ^loop_ref, ^token, ok} -> ok
-            after
-              timeout_ms ->
-                send(pid, {:cancel_wait, token})
-                false
-            end
-        )
+                {loop_ref, pid} = ref
+                token = make_ref()
+                send(pid, {:wait, self(), token})
+                receive do
+                  {:event_loop_wait, ^loop_ref, ^token, ok} -> ok
+                after
+                  timeout_ms ->
+                    send(pid, {:cancel_wait, token})
+                    false
+                end
+            )
   end
   defp seconds_to_timeout(timeout) do
     if (Reflaxe.Elixir.HaxeFloat.eq(timeout, nil)) do

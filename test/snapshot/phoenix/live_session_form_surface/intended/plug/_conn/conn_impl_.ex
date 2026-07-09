@@ -12,11 +12,11 @@ defmodule Conn_Impl_ do
           {:ok, reflect_value} -> reflect_value
           _ ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -42,11 +42,11 @@ end) do
           {:ok, reflect_value} -> reflect_value
           _ ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -61,11 +61,11 @@ end) do
           {:ok, reflect_value} -> reflect_value
           _ ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -80,11 +80,11 @@ end) do
           {:ok, reflect_value} -> reflect_value
           _ ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -101,11 +101,11 @@ end) do
             {:ok, reflect_value} -> reflect_value
             _ ->
               (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+                String.to_existing_atom(reflect_field)
+              rescue
+                _ ->
+                  nil
+              end) do
                 nil -> nil
                 reflect_atom ->
                   Map.get(reflect_obj, reflect_atom)
@@ -128,11 +128,11 @@ end) do
           {:ok, reflect_value} -> reflect_value
           _ ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -147,11 +147,11 @@ end) do
           {:ok, reflect_value} -> reflect_value
           _ ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -166,11 +166,11 @@ end) do
           {:ok, reflect_value} -> reflect_value
           _ ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -185,11 +185,11 @@ end) do
           {:ok, reflect_value} -> reflect_value
           _ ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -204,11 +204,11 @@ end) do
           {:ok, reflect_value} -> reflect_value
           _ ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -224,11 +224,11 @@ end) do
           {:ok, reflect_value} -> reflect_value
           _ ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -243,11 +243,11 @@ end) do
           {:ok, reflect_value} -> reflect_value
           _ ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -262,11 +262,11 @@ end) do
           {:ok, reflect_value} -> reflect_value
           _ ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -281,11 +281,11 @@ end) do
           {:ok, reflect_value} -> reflect_value
           _ ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -302,11 +302,11 @@ end) do
             {:ok, reflect_value} -> reflect_value
             _ ->
               (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+                String.to_existing_atom(reflect_field)
+              rescue
+                _ ->
+                  nil
+              end) do
                 nil -> nil
                 reflect_atom ->
                   Map.get(reflect_obj, reflect_atom)
@@ -324,11 +324,11 @@ end) do
           {:ok, reflect_value} -> reflect_value
           _ ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)

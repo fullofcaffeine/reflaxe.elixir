@@ -71,7 +71,7 @@ defmodule OptionPatterns.NotificationServiceTest do
       {:ok, _value} ->
         flunk("Expected error for nonexistent email")
       {:error, msg} ->
-        assert(:binary.match(msg, "No user found with email") != :nomatch, "Should mention email not found")
+        assert(StringTools.haxe_index_of(msg, "No user found with email", 0) >= 0, "Should mention email not found")
     end)
   end
   test "get user preferences returns preferences for configured user" do
@@ -175,8 +175,8 @@ defmodule OptionPatterns.NotificationServiceTest do
       {:ok, _value} ->
         flunk("Expected error for disabled notification type")
       {:error, msg} ->
-        _ = assert(:binary.match(msg, "disabled") != :nomatch, "Should mention disabled notification type")
-        _ = assert(:binary.match(msg, "notifications") != :nomatch, "Should mention notifications")
+        _ = assert(StringTools.haxe_index_of(msg, "disabled", 0) >= 0, "Should mention disabled notification type")
+        _ = assert(StringTools.haxe_index_of(msg, "notifications", 0) >= 0, "Should mention notifications")
     end)
   end
   test "simulated delivery failure is handled" do

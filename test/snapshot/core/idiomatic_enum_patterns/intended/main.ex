@@ -53,27 +53,15 @@ defmodule Main do
       "delete_completed" -> {:delete_completed}
       str ->
         str = action
-        cond_value = (case :binary.match(str, "set_priority:") do
-          {pos, _} -> pos
-          :nomatch -> -1
-        end)
-        if (cond_value == 0) do
-          {:set_priority, String.slice(str, 13..-1//1)}
+        if (StringTools.haxe_index_of(str, "set_priority:", 0) == 0) do
+          {:set_priority, StringTools.haxe_substr(str, 13, nil)}
         else
           str = action
-          cond_value = (case :binary.match(str, "add_tag:") do
-            {pos, _} -> pos
-            :nomatch -> -1
-          end)
-          if (cond_value == 0) do
-            {:add_tag, String.slice(str, 8..-1//1)}
+          if (StringTools.haxe_index_of(str, "add_tag:", 0) == 0) do
+            {:add_tag, StringTools.haxe_substr(str, 8, nil)}
           else
             str = action
-            cond_value = (case :binary.match(str, "remove_tag:") do
-              {pos, _} -> pos
-              :nomatch -> -1
-            end)
-            if (cond_value == 0), do: {:remove_tag, String.slice(str, 11..-1//1)}, else: {:complete_all}
+            if (StringTools.haxe_index_of(str, "remove_tag:", 0) == 0), do: {:remove_tag, StringTools.haxe_substr(str, 11, nil)}, else: {:complete_all}
           end
         end
     end)

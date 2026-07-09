@@ -29,88 +29,88 @@ defmodule PhoenixChatWeb.AppLive do
   end
   def render(assigns) do
     ~H"""
-<div class="chat-shell min-h-[calc(100vh-4rem)] p-4 md:p-8">
-            <div class="chat-frame mx-auto grid max-w-6xl grid-cols-1 gap-4 md:grid-cols-12">
-                <aside class="md:col-span-4">
-                    <div class="panel">
-                        <div class="panel-h">
-                            <div>
-                                <div class="kicker">Presence</div>
-                                <div class="title">Online</div>
+    <div class="chat-shell min-h-[calc(100vh-4rem)] p-4 md:p-8">
+                <div class="chat-frame mx-auto grid max-w-6xl grid-cols-1 gap-4 md:grid-cols-12">
+                    <aside class="md:col-span-4">
+                        <div class="panel">
+                            <div class="panel-h">
+                                <div>
+                                    <div class="kicker">Presence</div>
+                                    <div class="title">Online</div>
+                                </div>
+                                <div class="badge" title="online users" data-testid="online-count">
+                                    <%= @online_user_count %>
+                                </div>
                             </div>
-                            <div class="badge" title="online users" data-testid="online-count">
-                                <%= @online_user_count %>
+
+                            <div class="panel-b">
+                                <div class="online-list" data-testid="online-list">
+                                    <%= if @online_user_count == 0 do %>
+                                        <div class="muted">No one is online yet.</div>
+                                    <% else %>
+                                        <%= for u <- @online_user_views do %>
+                                            <div class={u.row_class} data-testid="online-row">
+                                                <div class="dot" aria-hidden="true"></div>
+                                                <div class="name"><%= u.name %></div>
+                                                <%= if u.is_me do %>
+                                                    <div class="me">you</div>
+                                                <% end %>
+                                            </div>
+                                        <% end %>
+                                    <% end %>
+                                </div>
+
+                                <div class="meta">
+                                    <div class="label">room</div>
+                                    <div class="value"><%= @room %></div>
+                                </div>
                             </div>
                         </div>
+                    </aside>
 
-                        <div class="panel-b">
-                            <div class="online-list" data-testid="online-list">
-                                <%= if @online_user_count == 0 do %>
-                                    <div class="muted">No one is online yet.</div>
-                                <% else %>
-                                    <%= for u <- @online_user_views do %>
-                                        <div class={u.row_class} data-testid="online-row">
-                                            <div class="dot" aria-hidden="true"></div>
-                                            <div class="name"><%= u.name %></div>
-                                            <%= if u.is_me do %>
-                                                <div class="me">you</div>
-                                            <% end %>
+                    <main class="md:col-span-8">
+                        <div class="panel">
+                            <div class="panel-h">
+                                <div>
+                                    <div class="kicker">PhoenixChat</div>
+                                    <div class="title">Lobby</div>
+                                </div>
+                                <div class="who">
+                                    <div class="who-label">as</div>
+                                    <div class="who-name"><%= @current_user_name %></div>
+                                </div>
+                            </div>
+
+                            <div class="panel-b">
+                                <div id="chat-messages" phx-hook="AutoScroll" class="messages">
+                                    <%= if length(assigns.messages) == 0 do %>
+                                        <div class="muted">Say something. It will broadcast to everyone in the room.</div>
+                                    <% end %>
+                                    <%= for m <- @messages do %>
+                                        <div class={m.row_class}>
+                                            <div class="msg-h">
+                                                <div class="msg-user"><%= m.user_name %></div>
+                                                <div class="msg-id">#<%= m.id %></div>
+                                            </div>
+                                            <div class="msg-b"><%= m.body %></div>
                                         </div>
                                     <% end %>
+                                </div>
+
+                                <form phx-submit="send_message" class="composer">
+                                    <input type="text" name="message" value={@message_input} placeholder="Message the room..." autocomplete="off" class="composer-input" phx-change="update_input" />
+                                    <button type="submit" class="composer-btn">Send</button>
+                                </form>
+
+                                <%= if @status != nil do %>
+                                    <div class="status"><%= @status %></div>
                                 <% end %>
                             </div>
-
-                            <div class="meta">
-                                <div class="label">room</div>
-                                <div class="value"><%= @room %></div>
-                            </div>
                         </div>
-                    </div>
-                </aside>
-
-                <main class="md:col-span-8">
-                    <div class="panel">
-                        <div class="panel-h">
-                            <div>
-                                <div class="kicker">PhoenixChat</div>
-                                <div class="title">Lobby</div>
-                            </div>
-                            <div class="who">
-                                <div class="who-label">as</div>
-                                <div class="who-name"><%= @current_user_name %></div>
-                            </div>
-                        </div>
-
-                        <div class="panel-b">
-                            <div id="chat-messages" phx-hook="AutoScroll" class="messages">
-                                <%= if length(assigns.messages) == 0 do %>
-                                    <div class="muted">Say something. It will broadcast to everyone in the room.</div>
-                                <% end %>
-                                <%= for m <- @messages do %>
-                                    <div class={m.row_class}>
-                                        <div class="msg-h">
-                                            <div class="msg-user"><%= m.user_name %></div>
-                                            <div class="msg-id">#<%= m.id %></div>
-                                        </div>
-                                        <div class="msg-b"><%= m.body %></div>
-                                    </div>
-                                <% end %>
-                            </div>
-
-                            <form phx-submit="send_message" class="composer">
-                                <input type="text" name="message" value={@message_input} placeholder="Message the room..." autocomplete="off" class="composer-input" phx-change="update_input" />
-                                <button type="submit" class="composer-btn">Send</button>
-                            </form>
-
-                            <%= if @status != nil do %>
-                                <div class="status"><%= @status %></div>
-                            <% end %>
-                        </div>
-                    </div>
-                </main>
+                    </main>
+                </div>
             </div>
-        </div>
-"""
+    """
   end
   def handle_info(msg, socket) do
     live = socket
@@ -154,11 +154,11 @@ defmodule PhoenixChatWeb.AppLive do
           {:ok, reflect_value} -> reflect_value
           _ ->
             (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -199,19 +199,19 @@ end) do
     end)
     views = Enum.sort(views, fn a, b ->
       (fn a, b ->
-  if (a.is_me and not b.is_me) do
-    -1
-  else
-    if (not a.is_me and b.is_me) do
-    else
-      if (a.name < b.name) do
-        -1
-      else
-        if (a.name > b.name), do: 1, else: 0
-      end
-    end
-  end
-end).(a, b) < 0
+        if (a.is_me and not b.is_me) do
+          -1
+        else
+          if (not a.is_me and b.is_me) do
+          else
+            if (a.name < b.name) do
+              -1
+            else
+              if (a.name > b.name), do: 1, else: 0
+            end
+          end
+        end
+      end).(a, b) < 0
     end)
     _ = Phoenix.Component.assign(socket, %{online_user_views: views, online_user_count: length(views)})
   end
@@ -245,7 +245,7 @@ end).(a, b) < 0
   defp display_name_from_id(id) do
     clean = id
     clean = if (String.length(clean) > 8) do
-      String.slice(clean, (String.length(clean) - 8)..-1//1)
+      StringTools.haxe_substr(clean, (String.length(clean) - 8), nil)
     else
       clean
     end
@@ -261,11 +261,11 @@ end).(a, b) < 0
               {:ok, reflect_value} -> reflect_value
               _ ->
                 (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
+                  String.to_existing_atom(reflect_field)
+                rescue
+                  _ ->
+                    nil
+                end) do
                   nil -> nil
                   reflect_atom ->
                     Map.get(reflect_obj, reflect_atom)

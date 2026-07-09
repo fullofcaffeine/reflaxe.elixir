@@ -21,16 +21,10 @@ defmodule UserId_Impl_ do
     String.downcase(this1)
   end
   def starts_with(this1, prefix) do
-    (case :binary.match(this1, prefix) do
-  {pos, _} -> pos
-  :nomatch -> -1
-end) == 0
+    StringTools.haxe_index_of(this1, prefix, 0) == 0
   end
   def starts_with_ignore_case(this1, prefix) do
-    (case :binary.match(String.downcase(this1), String.downcase(prefix)) do
-  {pos, _} -> pos
-  :nomatch -> -1
-end) == 0
+    StringTools.haxe_index_of(String.downcase(this1), String.downcase(prefix), 0) == 0
   end
   def to_string(this1) do
     this1
@@ -59,14 +53,11 @@ end) == 0
           else
             _g = 0
             user_id_length = String.length(user_id)
-            _ = Enum.each(0..(user_id_length - 1)//1, fn i ->
-  char = if (i < 0) do
-    ""
-  else
-    String.at(user_id, i) || ""
-  end
-  if (not is_alpha_numeric(char)), do: {:error, "User ID contains invalid character: \"" <> char <> "\" at position " <> Reflaxe.Elixir.HaxeFloat.to_string(i) <> ". Only alphanumeric characters allowed."}
-end)
+            _ =
+              Enum.each(0..(user_id_length - 1)//1, fn i ->
+                char = StringTools.haxe_char_at(user_id, i)
+                if (not is_alpha_numeric(char)), do: {:error, "User ID contains invalid character: \"" <> char <> "\" at position " <> Reflaxe.Elixir.HaxeFloat.to_string(i) <> ". Only alphanumeric characters allowed."}
+              end)
             {:ok, nil}
           end
         end
@@ -77,7 +68,7 @@ end)
     if (String.length(char) != 1) do
       false
     else
-      code = Enum.at(String.to_charlist(char), 0)
+      code = StringTools.haxe_char_code_at(char, 0)
       code >= 48 and code <= 57 or code >= 65 and code <= 90 or code >= 97 and code <= 122
     end
   end

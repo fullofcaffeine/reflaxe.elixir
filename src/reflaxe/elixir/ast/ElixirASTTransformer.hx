@@ -2922,6 +2922,7 @@ class ElixirASTTransformer {
 									}
 								}
 								exprToInterpolate = simplifyInterpolationExpr(exprToInterpolate);
+								exprToInterpolate = reflaxe.elixir.ast.transformers.StringToolsNativeRewrite.rewriteRuntimeCalls(exprToInterpolate);
 
 								// Sanitize inline expression for interpolation: ensure no raw multi-statement
 								// blocks appear in function arguments (e.g., Enum.join(<block>, ",")).
@@ -2964,12 +2965,21 @@ class ElixirASTTransformer {
 										default: false;
 									}
 								}
+								function isIifeCall(x:ElixirAST):Bool {
+									if (x == null)
+										return false;
+									return switch (x.def) {
+										case ECall({def: EFn(_)}, "", []): true;
+										default: false;
+									}
+								}
 								var sanitizedExpr = sanitizeForInterpolation(exprToInterpolate);
 								var exprStr = ElixirASTPrinter.printAST(sanitizedExpr);
 								var trivial = isTrivialForInterpolation(sanitizedExpr);
 								// Only wrap when non-trivial and the printed expression clearly spans multiple
 								// statements or contains a standalone assignment (not a comparison).
 								var needsWrapIife = !trivial
+									&& !isIifeCall(sanitizedExpr)
 									&& ((exprStr.indexOf('\n') != -1) || (exprStr.indexOf(' = ') != -1 && exprStr.indexOf('==') == -1));
 								var printable = needsWrapIife ? '(fn -> ' + exprStr + ' end).()' : exprStr;
 								result += '#{' + printable + '}';
