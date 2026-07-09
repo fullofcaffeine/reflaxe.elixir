@@ -1,381 +1,299 @@
-# Reflaxe Framework Patches
+# Reflaxe Framework Patch Audit
 
-This directory contains a vendored copy of Reflaxe framework v4.0.0-beta with critical bug fixes applied by the reflaxe.elixir project.
+This directory vendors Reflaxe framework sources so Reflaxe.Elixir can use a
+known framework baseline while carrying a small number of fixes required by the
+Elixir target and the repository-local release/package flow.
 
-## Applied Patches
+## Audit Status
 
-### 1. Filesystem Error Fix (Critical)
+Last audit: 2026-07-09
 
-**Files Modified:**
-- `src/reflaxe/helpers/BaseTypeHelper.hx` - Primary fix in `moduleId()` function
-- `src/reflaxe/output/OutputManager.hx` - Defensive fix in `saveFile()` function
+Compared against:
 
-**Bug Description:**
-During compilation, Reflaxe would attempt to write files with malformed absolute paths like `/e_reg.ex` to the filesystem root, causing:
-```
-Uncaught exception /e_reg.ex: Read-only file system
-```
+- Vendored base recorded by the previous patch notes:
+  `430b4187a6bf4813cf618fc3a73ccf494a2ab9f5`
+  (`Fix secret null-safety issue`)
+- Current upstream `SomeRanDev/reflaxe` `main` at audit time:
+  `73a983112e039daad46b37912ab238df6bf0cf53`
 
-**Root Cause - Why EReg Specifically Has This Issue:**
+Result:
 
-EReg is uniquely vulnerable to module name corruption because it's the **ONLY standard library class with compiler-integrated literal syntax** (`~/pattern/`). This special status causes it to go through a different resolution path than any other type.
+- None of the required local fixes below are upstreamed in current upstream
+  `main`.
+- No vendored patch was removed in this audit.
+- `EnumIntrospectionCompiler` is target-owned Reflaxe.Elixir code, not a
+  vendored framework patch, so it is intentionally not tracked here.
 
-**The Module Corruption Mechanism:**
+## Required Local Patches
 
-1. **Special Syntax Recognition**: When Haxe encounters `~/pattern/`, the parser recognizes this as regex literal syntax
-2. **Implicit Type Resolution**: The compiler must implicitly reference EReg without an explicit import statement
-3. **Special Resolution Path**: This triggers a different code path than normal type imports
-4. **Path Transformation Error**: During this special resolution, incorrect transformations are applied:
-   - Expected: `BaseType.module = "EReg"`
-   - Actual: `BaseType.module = "/e_reg"`
-   - Shows: snake_case conversion + leading slash addition
-5. **Filesystem Path Confusion**: The leading "/" makes Reflaxe think this is an absolute filesystem path
+### 1. `Run.hx`: Build Root File Copy
 
-**What "Internal Module Name Normalization" Means:**
+Status: local patch, not upstreamed.
 
-Haxe needs to convert type references to module identifiers for code generation:
-- **Normal types**: "MyClass" → module "MyClass" → file "MyClass.ex"
-- **Package types**: "my.package.Class" → module "my.package.Class" → file "my/package/Class.ex"
-- **EReg (corrupted)**: "EReg" → module "/e_reg" → attempts to write "/e_reg.ex" (filesystem root!)
+Files:
 
-The normalization process for EReg incorrectly applies filesystem-oriented transformations (snake_case + leading slash) to what should remain a simple module name.
+- `Run.hx`
 
-**What "Reflaxe Expectations" Are:**
+Why it exists:
 
-Reflaxe's `BaseTypeHelper.moduleId()` function expects `BaseType.module` to contain:
-- Simple names: "EReg", "String", "Array"
-- Dot-separated packages: "haxe.io.Bytes", "my.package.Class"
-- NO leading slashes - these aren't filesystem paths yet
+The upstream `reflaxe build` command recursively copies `classPath` and
+`stdPaths` into a package build directory. If a source root contains files
+directly at its root, such as this repo's `src/Run.hx`, the copy helper can try
+to copy the file before the destination root exists.
 
-When Reflaxe receives "/e_reg", it doesn't match these expectations and gets passed through unchanged, eventually causing filesystem errors.
-
-**Why Other Reflaxe Targets Don't Have This Issue:**
-
-Other Reflaxe targets (like Reflaxe.CPP) avoid this bug entirely by **providing their own EReg implementation**:
-- **Reflaxe.CPP**: Has `std/cxx/_std/EReg.hx` with C++ std::regex binding
-- **Custom Override**: Their EReg completely replaces Haxe's standard library version
-- **Clean Resolution**: When Haxe sees `~/pattern/`, it resolves to their custom EReg
-- **No Corruption**: Module name stays "EReg", generates clean "EReg.h" and "EReg.cpp"
-
-**Reflaxe.Elixir** is vulnerable because:
-- We don't provide a custom EReg implementation
-- We inherit Haxe's standard library EReg
-- We hit the problematic resolution path that corrupts the module name
-
-**When This Bug Occurs:**
-- ✅ Using regex literals: `var r = ~/pattern/;`
-- ✅ Implicit EReg usage: `"text".split(~/\s+/)`  
-- ✅ Pattern matching: `switch(str) { case _.match(~/\d+/) => ... }`
-- ❌ Direct EReg constructor: `new EReg("pattern", "i")` (usually works fine)
-- ❌ Most user-defined classes (unaffected by this specific bug)
-
-**Problem Flow:**
-1. `BaseType.module = "/e_reg"` (should be `"EReg"`)
-2. `BaseTypeHelper.moduleId()` returns `"/e_reg"`
-3. `OutputManager.getFileName()` returns `"/e_reg.ex"`
-4. `haxe.io.Path.isAbsolute("/e_reg.ex")` returns `true`
-5. `OutputManager.saveFile()` tries to write to filesystem root
-6. System denies permission → compilation fails
-
-**Fix Implementation:**
-Applied layered defensive programming approach:
-
-1. **Primary Fix** (BaseTypeHelper.hx):
-   ```haxe
-   // Remove leading slash from malformed module names
-   if (StringTools.startsWith(module, "/")) {
-       module = module.substring(1);
-   }
-   ```
-
-2. **Secondary Fix** (OutputManager.hx):
-   ```haxe
-   // Distinguish malformed paths from legitimate absolute paths
-   var isRealAbsolutePath = StringTools.startsWith(path, "/Users/") || 
-                           StringTools.startsWith(path, "/tmp/") || 
-                           StringTools.startsWith(path, "/var/") || 
-                           StringTools.startsWith(path, "/home/") ||
-                           StringTools.startsWith(path, "/opt/");
-   if (!isRealAbsolutePath) {
-       sanitizedPath = path.substring(1); // Remove malformed leading slash
-   }
-   ```
-
-**Impact:**
-- ✅ Fixes compilation errors for projects using EReg or other affected types
-- ✅ Ensures all generated files are written to the correct output directory  
-- ✅ No impact on code generation quality or performance
-- ✅ Preserves legitimate absolute paths (like `/tmp/output.ex`)
-
-**Test Verification:**
-```bash
-# Before fix: Compilation fails with filesystem error
-npx haxe build.hxml
-# Error: Uncaught exception /e_reg.ex: Read-only file system
-
-# After fix: Compilation succeeds
-npx haxe build.hxml
-# Success: Files generated including lib/e_reg.ex
-```
-
-**Strong Justification for This Patch:**
-
-This patch is **absolutely necessary** and represents **best-practice defensive programming**:
-
-1. **Critical Production Impact**: Without this fix, ANY Haxe code using regex literals (`~/pattern/`) fails to compile. Regex is fundamental to most applications.
-
-2. **No Workaround Available**: 
-   - Users cannot avoid `~/pattern/` syntax - it's idiomatic Haxe
-   - Converting all regex to `new EReg()` is impractical and loses compile-time syntax checking
-   - No way for users to fix this themselves
-
-3. **Root Cause Outside Our Control**:
-   - Bug originates in Haxe compiler's EReg special handling
-   - We can't modify Haxe compiler behavior
-   - We must handle the symptom since we can't fix the cause
-
-4. **Two-Layer Defense is Correct**:
-   - **Layer 1 (BaseTypeHelper)**: Catches and fixes the specific EReg issue
-   - **Layer 2 (OutputManager)**: Protects against any future similar issues
-   - This redundancy is intentional and follows defensive programming principles
-
-5. **Minimal Risk, Maximum Safety**:
-   - Only sanitizes clearly malformed paths (leading "/" on non-absolute paths)
-   - Preserves all legitimate paths unchanged
-   - No impact on correct module names
-
-6. **Alternative Would Be More Complex**:
-   - We could create our own EReg implementation like other Reflaxe targets
-   - But this would require maintaining a complete regex implementation
-   - The patch is simpler and more maintainable
-
-This isn't a "hack" or "workaround" - it's **proper defensive programming** against an upstream bug that we cannot fix at its source.
-
-### 2. Reflaxe Build Root-File Copy Fix
-
-**Files Modified:**
-- `Run.hx` - Defensive fix in `copyDirContent()`
-
-**Bug Description:**
-The upstream Reflaxe `build` command copies `classPath` and `stdPaths` into a package build
-directory, flattening `_std` source roots into packaged `.cross.hx` files. If the source classpath
-contains files directly at its root, such as this repo's `src/Run.hx`, the copy helper can attempt to
-copy the file before creating the destination classpath directory:
+Observed failure shape:
 
 ```text
 Uncaught exception .../_Build/src/Run.hx: No such file or directory
 ```
 
-**Fix Implementation:**
+Local fix:
+
 - Create the destination directory before walking a source directory.
 - Create each copied file's parent directory before `File.copy`.
 
-**Impact:**
-- Enables `scripts/release/package-haxelib.sh` to delegate package flattening to Reflaxe's own build
-  command.
-- Preserves the generated Reflaxe package convention where `std/elixir/_std/**/*.hx` becomes
-  packaged `src/**/*.cross.hx`.
-- Does not change compiler output or target semantics.
+Current decision:
 
-## Upstream Contribution Status
+Keep. This is needed by `scripts/release/package-haxelib.sh`, which delegates
+package flattening to Reflaxe's own build command.
 
-**Goal:** Contribute these fixes back to the main Reflaxe project.
+Upstream action:
 
-**Actions Needed:**
-1. Create PR against [Reflaxe repository](https://github.com/SomeRanDev/reflaxe)
-2. Include comprehensive test cases demonstrating the bug
-3. Document the root cause investigation findings
-4. Propose additional safeguards or diagnostics
+Good upstream PR candidate. The patch is small, target-agnostic, and should be
+safe for all Reflaxe targets.
 
-**Migration Path:**
-Once the fixes are merged and released in an official Reflaxe version:
-1. Update `haxe_libraries/reflaxe.hxml` to use the official version
-2. Remove this vendored directory
-3. Verify the fixes work in the official release
-4. Update documentation to reference the official fix
+Validation before removal:
 
-## Why We Vendored
+- `npm run test:haxelib-package`
+- `npm run test:quick`
 
-**Reasons for vendoring instead of patching globally:**
+### 2. `BaseTypeHelper.hx`: Leading Slash Module Sanitization
 
-1. **Persistence:** Patches to global Haxe libraries get lost on updates
-2. **Portability:** Works across all development environments
-3. **Version Control:** Patches are tracked in our repository
-4. **Collaboration:** Other contributors get the fixes automatically
-5. **Testing:** We can validate fixes work with our specific use cases
+Status: local patch, not upstreamed.
 
-## Development Workflow
+Files:
 
-**Using the vendored version:**
-- The project automatically uses `../../vendor/reflaxe/src/` via `haxe_libraries/reflaxe.hxml`
-- Relative path works from both project root and examples/todo-app directory
-- No special setup required - works out of the box across all development environments
-- All compilation uses our patched version
+- `src/reflaxe/helpers/BaseTypeHelper.hx`
 
-**Updating the vendored version:**
-1. Only update if critical upstream fixes are needed
-2. Carefully merge our patches with new upstream code
-3. Test thoroughly with our examples and test suite
-4. Update this documentation with any changes
+Why it exists:
 
-## File Structure
+Reflaxe.Elixir has historically seen malformed module names for some standard
+library paths, most visibly `EReg` from regex literal use. The malformed module
+name can contain a leading slash, producing a module id that later looks like an
+absolute filesystem path.
 
-```
-vendor/reflaxe/
-├── PATCHES.md                     # This file
-├── Run.hx                         # Vendored Reflaxe build/new/test runner
-└── src/
-    └── reflaxe/
-        ├── BaseCompiler.hx
-        ├── ReflectCompiler.hx
-        ├── helpers/
-        │   └── BaseTypeHelper.hx     # 🔧 PATCHED - moduleId() fix
-        ├── output/
-        │   ├── OutputManager.hx      # 🔧 PATCHED - saveFile() fix
-        │   └── StringOrBytes.hx
-        └── ... (other Reflaxe files)
+Observed failure shape:
+
+```text
+Uncaught exception /e_reg.ex: Read-only file system
 ```
 
-### 2. RemoveTemporaryVariablesImpl Null Safety Fix (Critical)
+Local fix:
 
-**Files Modified:**
-- `src/reflaxe/preprocessors/implementations/RemoveTemporaryVariablesImpl.hx` - Line 181
+- Strip one leading slash from `BaseType.module` before Reflaxe converts module
+  dots to underscores.
 
-**Bug Description:**
-During preprocessing, the compiler throws `Uncaught exception Trusted on null value` when encountering variables declared without initialization.
+Current decision:
 
-**Root Cause:**
-The `RemoveTemporaryVariablesImpl` preprocessor attempts to remove temporary variables as an optimization. When processing variable declarations:
-1. It checks if a variable should be removed via `shouldRemoveVariable()`
-2. If yes, it processes the initialization expression with `maybeExpr.trustMe()`
-3. **BUG**: `maybeExpr` can be null for uninitialized variables (e.g., `var x: Int;`)
-4. `trustMe()` throws an exception when called on null values
+Keep. Reflaxe.Elixir still relies on this defensive normalization while it uses
+normal Haxe stdlib resolution for affected classes.
 
-**The trustMe() Function:**
+Upstream action:
+
+Needs a focused upstream repro before PR. The upstreamable version should
+probably be framed as defensive module-id normalization, not as an
+Elixir-specific `EReg` workaround.
+
+Validation before removal:
+
+- Snapshot coverage using regex literals.
+- `npm run test:quick`
+- `npm run test:examples`
+
+### 3. `OutputManager.hx`: Last-Chance Malformed Path Guard
+
+Status: local patch, not upstreamed.
+
+Files:
+
+- `src/reflaxe/output/OutputManager.hx`
+
+Why it exists:
+
+This is a second defensive layer for malformed generated filenames that begin
+with `/` but are intended to be relative output filenames. Without the guard,
+the output manager can attempt to write generated target files to the filesystem
+root.
+
+Local fix:
+
+- If a path starts with `/` but does not look like an intentional absolute path,
+  strip the leading slash before resolving it against the output directory.
+
+Current decision:
+
+Keep, but treat it as a defensive backstop. The preferred root fix is to prevent
+malformed module ids before filenames are computed.
+
+Upstream action:
+
+Possible upstream PR, but the current heuristic should be refined before
+submission. A better upstream shape would be an explicit distinction between
+module-relative output paths and caller-provided absolute paths.
+
+Validation before removal:
+
+- Same regex-literal snapshot/runtime coverage as `BaseTypeHelper`.
+- `npm run test:quick`
+- `npm run test:examples`
+
+### 4. `RemoveTemporaryVariablesImpl.hx`: Null Initializer Guard
+
+Status: local patch, not upstreamed.
+
+Files:
+
+- `src/reflaxe/preprocessors/implementations/RemoveTemporaryVariablesImpl.hx`
+
+Why it exists:
+
+The temporary-variable remover can inspect valid Haxe declarations without
+initializers, for example:
+
 ```haxe
-// From reflaxe/helpers/NullHelper.hx
-public static inline function trustMe<T>(maybe: Null<T>): T {
-    if(maybe == null) throw "Trusted on null value.";
-    return maybe;
-}
-```
-This helper converts `Null<T>` to `T` by asserting non-null at runtime.
-
-**Problem Flow:**
-1. Code contains: `var temp: String;` (no initialization)
-2. `shouldRemoveVariable(tvar, null)` returns true for mode `AllVariables`
-3. Attempts `mapTypedExpr(null.trustMe(), false)`
-4. `trustMe(null)` throws exception
-5. Compilation fails
-
-**Fix Implementation:**
-```haxe
-// Before (line 181)
-if(shouldRemoveVariable(tvar, maybeExpr)) {
-    tvarMap.set(tvar.id, mapTypedExpr(maybeExpr.trustMe(), false));
-
-// After (line 181)
-if(maybeExpr != null && shouldRemoveVariable(tvar, maybeExpr)) {
-    tvarMap.set(tvar.id, mapTypedExpr(maybeExpr.trustMe(), false));
+var value:Int;
+value = 42;
 ```
 
-**Why This Fix is Necessary:**
-- Variables without initialization are valid Haxe code
-- The optimization should skip uninitialized variables, not crash
-- This affects any code using the preprocessor with uninitialized variables
+Upstream calls `maybeExpr.trustMe()` after `shouldRemoveVariable(...)`. In modes
+such as `AllVariables`, `shouldRemoveVariable(...)` can return `true` even when
+`maybeExpr` is null, causing `Trusted on null value`.
 
-**Test Case:**
-```haxe
-// This would crash without the fix:
-class Test {
-    static function main() {
-        var temp: Int;  // Uninitialized variable
-        temp = 42;
-        trace(temp);
-    }
-}
-```
+Local fix:
 
-### 3. EnumIntrospectionCompiler Null Pointer Fix (Critical)
+- Only attempt temporary removal when `maybeExpr != null`.
 
-**Files Modified:**
-- `src/reflaxe/elixir/helpers/EnumIntrospectionCompiler.hx` - Line 248
+Current decision:
 
-**Bug Description:**
-Null pointer exception when compiling switch statements on non-enum types: `Uncaught exception field access on null`.
+Keep. Uninitialized local variables are valid Haxe and the optimizer should skip
+them rather than crash.
 
-**Root Cause:**
-The `EnumIntrospectionCompiler` generates Elixir code for enum pattern matching. When processing atom-only enums:
-1. It attempts to iterate through `typeInfo.enumType.names`
-2. **BUG**: When the type is not actually an enum, `typeInfo.enumType` is null
-3. Accessing `.names` on null causes immediate failure
+Upstream action:
 
-**Problem Flow:**
-1. Switch expression on a non-enum type (edge case in complex pattern matching)
-2. `typeInfo` is created with `enumType: null` for non-enum types (line 184)
-3. Later code assumes `enumType` is not null (line 248)
-4. Attempts `for (name in typeInfo.enumType.names)` on null
-5. Compilation fails
+Good upstream PR candidate with a minimal Reflaxe test covering an uninitialized
+local variable under the affected preprocessor mode.
 
-**The TypeInfo Structure:**
-```haxe
-// Line 141-185: typeInfo creation
-var typeInfo = switch (e.t) {
-    case TEnum(enumType, _):
-        // ... enum processing ...
-        {
-            isResult: ...,
-            isOption: ...,
-            enumType: enumTypeRef,  // Valid enum reference
-            hasParameters: ...
-        };
-    case _:
-        // Non-enum types get null enumType
-        {isResult: false, isOption: false, enumType: null, hasParameters: false};
-};
-```
+Validation before removal:
 
-**Fix Implementation:**
-```haxe
-// Before (line 248)
-for (name in typeInfo.enumType.names) {
-    var atomName = NamingHelper.toSnakeCase(name);
+- Focused snapshot/regression using an uninitialized local variable.
+- `npm run test:quick`
 
-// After (line 248)
-if (typeInfo.enumType != null) {
-    for (name in typeInfo.enumType.names) {
-        var atomName = NamingHelper.toSnakeCase(name);
-```
+### 5. `TargetCodeInjection.hx`: Local Identifier Injection Calls
 
-**Why This Fix is Necessary:**
-- Pattern matching can occur on various types during compilation
-- The compiler should handle non-enum types gracefully
-- This prevents crashes when enum introspection is attempted on wrong types
+Status: local patch, not upstreamed.
 
-**Test Case:**
-```haxe
-// This pattern could trigger the bug:
-class Test {
-    static function process(value: Dynamic) {
-        // Complex pattern matching that triggers enum introspection
-        // on non-enum types
-        switch(value) {
-            case _: trace("handled");
-        }
-    }
-}
-```
+Files:
 
-**Impact of Both Fixes:**
-- ✅ Fixes compilation failures in domain_abstractions test
-- ✅ Fixes compilation failures in enhanced_pattern_matching test  
-- ✅ Makes the compiler more robust against edge cases
-- ✅ No impact on correct code generation
-- ✅ Follows defensive programming best practices
+- `src/reflaxe/compiler/TargetCodeInjection.hx`
 
----
+Why it exists:
 
-**Last Updated:** 2025-08-27  
-**Reflaxe Version:** 4.0.0-beta  
-**Commit:** 430b4187a6bf4813cf618fc3a73ccf494a2ab9f5  
-**Applied By:** reflaxe.elixir project
+Reflaxe upstream detects target-code injection calls only when the callee is a
+typed identifier (`TIdent`). Reflaxe.Elixir also accepts the callee when Haxe
+types it as a local (`TLocal`) with the configured injection name. This protects
+raw target-code injection such as `untyped __elixir__(...)` across Haxe typing
+shapes.
+
+Local fix:
+
+- In both direct and generic injection detection, accept `TLocal(v)` when
+  `v.name == injectFunctionName`.
+
+Current decision:
+
+Keep. Reflaxe.Elixir uses target-code injection heavily inside stdlib and
+framework shims.
+
+Upstream action:
+
+Potential upstream PR, but it needs a target-agnostic repro that demonstrates
+when Haxe emits a `TLocal` callee for a configured injection function.
+
+Validation before removal:
+
+- `test/snapshot/core/elixir_injection_test`
+- `test/snapshot/regression/ElixirInjectionExpansion`
+- `npm run test:quick`
+- `npm run test:examples`
+
+### 6. `ClassModifier.hx`: Haxe 4.3 Compatibility
+
+Status: local patch, not upstreamed.
+
+Files:
+
+- `src/reflaxe/input/ClassModifier.hx`
+
+Why it exists:
+
+Reflaxe upstream calls `Compiler.addMetadata(...)`. Reflaxe.Elixir still
+supports Haxe 4.3.x in CI/package smoke lanes, and Haxe 4.3 does not provide
+that API. The local patch falls back to `Compiler.addGlobalMetadata(...)` for
+Haxe versions before 4.4.
+
+Local fix:
+
+- Use `Compiler.addMetadata(...)` on Haxe 4.4+.
+- Use `Compiler.addGlobalMetadata(...)` on Haxe 4.3.x.
+
+Current decision:
+
+Keep while Haxe 4.3.x remains supported.
+
+Upstream action:
+
+Upstream PR only makes sense if upstream Reflaxe intends to keep Haxe 4.3.x
+compatibility. Otherwise this remains a Reflaxe.Elixir compatibility patch.
+
+Validation before removal:
+
+- Minimum-toolchain CI lane.
+- `npm run test:haxelib-package`
+
+## Local Non-Framework Metadata
+
+These files are local to this vendored copy and are not framework patches:
+
+- `PATCHES.md` - this audit document.
+- `FUTURE_MODIFICATIONS.md` - notes for possible future framework integration
+  of target syntax helpers.
+- `haxelib.json` - local vendored-package metadata used for clarity; the active
+  scoped hxml still pins `-D reflaxe=4.0.0-beta`.
+
+## Cleanup Candidates
+
+The audit found local differences that are not required framework fixes:
+
+- `src/reflaxe/ReflectCompiler.hx` contains debug-only instrumentation guarded
+  by `debug_function_collection` / `debug_preprocessor`.
+- `src/reflaxe/preprocessors/ExpressionPreprocessor.hx` contains debug-only
+  instrumentation guarded by `debug_preprocessor`.
+- `src/reflaxe/preprocessors/implementations/everything_is_expr/EverythingIsExprSanitizer.hx`
+  differs by whitespace only.
+
+These can be reverted to upstream shape in a separate cleanup commit. Because
+they are vendored framework edits, still validate with:
+
+- `npm run test:haxelib-package`
+- `npm run test:quick`
+
+## Upstream Migration Path
+
+When a required patch is merged and released upstream:
+
+1. Update the scoped Reflaxe dependency to the upstream version.
+2. Remove only the matching local vendored patch.
+3. Run that patch's validation checklist.
+4. Run `npm run test:haxelib-package`.
+5. Update this document with the upstream commit/release that made the local
+   patch unnecessary.

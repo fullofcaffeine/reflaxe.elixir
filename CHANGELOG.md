@@ -10,6 +10,7 @@
 ### Changed
 
 * **reflaxe:** align stdlib override sources with the Reflaxe `_std` layout; source-tree and GitHub/Lix builds now load `std/elixir/_std` before target-owned `std` APIs so PhoenixHx/examples keep using the Elixir stdlib overrides in dev mode.
+* **reflaxe:** audit vendored framework patches against upstream Reflaxe and document which local fixes remain required before they can be removed or upstreamed.
 
 ## [0.14.19](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.18...v0.14.19) (2026-07-09)
 
