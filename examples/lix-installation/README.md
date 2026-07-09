@@ -15,7 +15,7 @@ npx lix scope create
 # 2. Install the Reflaxe-built package from a GitHub release (recommended)
 REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
 REFLAXE_ELIXIR_VERSION="${REFLAXE_ELIXIR_TAG#v}"
-npx lix install "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
+npx lix install "https://www.github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
 
 # 3. Download pinned Haxe libraries for the project
 npx lix download
@@ -119,7 +119,7 @@ Make sure you installed the library and downloaded dependencies:
 npx lix scope create
 REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
 REFLAXE_ELIXIR_VERSION="${REFLAXE_ELIXIR_TAG#v}"
-npx lix install "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
+npx lix install "https://www.github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
 npx lix download
 ```
 
@@ -133,7 +133,7 @@ Ensure your `-lib reflaxe.elixir` directive is present in your .hxml file.
 # Update to a newer tag (recommended)
 REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
 REFLAXE_ELIXIR_VERSION="${REFLAXE_ELIXIR_TAG#v}"
-npx lix install "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip" --force
+npx lix install "https://www.github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip" --force
 ```
 
 Raw GitHub branches and tags are source checkouts, not Reflaxe-built packages. For compiler

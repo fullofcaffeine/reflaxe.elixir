@@ -36,7 +36,7 @@ npm install --save-dev lix
 npx lix scope create
 REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
 REFLAXE_ELIXIR_VERSION="${REFLAXE_ELIXIR_TAG#v}"
-npx lix install "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
+npx lix install "https://www.github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
 npx lix download
 ```
 
@@ -60,7 +60,7 @@ npm install --save-dev lix
 npx lix scope create
 REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
 REFLAXE_ELIXIR_VERSION="${REFLAXE_ELIXIR_TAG#v}"
-npx lix install "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
+npx lix install "https://www.github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
 npx lix download
 ```
 
@@ -583,7 +583,7 @@ This was fixed in the latest compiler version. If you still encounter this:
 npx lix scope create
 REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
 REFLAXE_ELIXIR_VERSION="${REFLAXE_ELIXIR_TAG#v}"
-npx lix install "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip" --force
+npx lix install "https://www.github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip" --force
 npx lix download
 ```
 
@@ -1046,7 +1046,7 @@ npm install --save-dev lix
 npx lix scope create
 REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
 REFLAXE_ELIXIR_VERSION="${REFLAXE_ELIXIR_TAG#v}"
-npx lix install "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
+npx lix install "https://www.github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
 npx lix download
 ```
 

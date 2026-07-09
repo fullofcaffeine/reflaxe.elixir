@@ -212,3 +212,10 @@ jobs:
           set -euo pipefail
           echo "[release] Publishing (semantic-release decides whether a new version is required)"
           npx semantic-release
+
+      - name: Verify published Reflaxe package
+        if: steps.release_context.outputs.should_skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: scripts/release/verify-published-package.sh

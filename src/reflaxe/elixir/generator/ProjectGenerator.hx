@@ -517,7 +517,7 @@ ${phoenixFlags}--main ${haxeNamespace}.Main
 	function releasePackageUrl(versionOrTag:String):String {
 		var version = StringTools.startsWith(versionOrTag, "v") ? versionOrTag.substr(1) : versionOrTag;
 		var tag = "v" + version;
-		return 'https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/$tag/reflaxe.elixir-$version.zip';
+		return 'https://www.github.com/fullofcaffeine/reflaxe.elixir/releases/download/$tag/reflaxe.elixir-$version.zip';
 	}
 
 	function generatePackageJson(projectName:String):String {

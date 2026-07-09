@@ -41,6 +41,7 @@ class TestProjectGeneratorTemplates {
 		assertExists(Path.join([runDir, "AGENTS.md"]), "AGENTS.md was created");
 		assertExists(Path.join([runDir, "CLAUDE.md"]), "CLAUDE.md was created");
 		assertExists(Path.join([runDir, "src_haxe", "demo_hx", "Main.hx"]), "src_haxe/demo_hx/Main.hx was created");
+		assertReleaseInstallUrl(Path.join([runDir, "package.json"]), "package.json");
 
 		var mixExs = File.getContent(Path.join([runDir, "mix.exs"]));
 		assertContains(mixExs, "compilers: [:haxe]", "mix.exs includes :haxe compiler");
@@ -80,6 +81,7 @@ class TestProjectGeneratorTemplates {
 		assertExists(Path.join([runDir, "src_haxe", "demo_hx", "Main.hx"]), "mix task created src_haxe/demo_hx/Main.hx");
 		assertExists(Path.join([runDir, "src_haxe", "demo_hx", "utils", "StringUtils.hx"]), "mix task created utils/StringUtils.hx");
 		assertExists(Path.join([runDir, "src_haxe", "demo_hx", "live", "AppLive.hx"]), "mix task created live/AppLive.hx");
+		assertReleaseInstallUrl(Path.join([runDir, "package.json"]), "mix task package.json");
 
 		var mixExs = File.getContent(Path.join([runDir, "mix.exs"]));
 		assertContains(mixExs, "compilers: [:haxe]", "mix task updated mix.exs compilers");
@@ -97,6 +99,14 @@ class TestProjectGeneratorTemplates {
 		assertContains(buildHxml, "demo_hx.live.AppLive", "mix task build.hxml compiles demo_hx.live.AppLive");
 
 		rmrf(runDir);
+	}
+
+	private static function assertReleaseInstallUrl(path:String, label:String):Void {
+		var packageJson = File.getContent(path);
+		var metadata:{version:String} = cast haxe.Json.parse(File.getContent(Path.join([Sys.getCwd(), "haxelib.json"])));
+		var packageUrl = 'https://www.github.com/fullofcaffeine/reflaxe.elixir/releases/download/v${metadata.version}/reflaxe.elixir-${metadata.version}.zip';
+		assertContains(packageJson, packageUrl, label + " pins the current compiler package using a Lix-compatible release URL");
+		assertNotContains(packageJson, "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/", label + " avoids Lix's GitHub repository URL handling");
 	}
 
 	private static function ensureHexRebarInstalled():Void {

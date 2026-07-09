@@ -21,6 +21,7 @@
 * **ci:** compile the same fixture from source and from the installed Reflaxe package, requiring byte-identical generated Elixir outside volatile/source-path metadata.
 * **qa:** make `qa-logpeek --until-done` recognize completed logs and follow new lines without a `tail -f` pipeline race.
 * **release:** attach the Reflaxe-built haxelib zip to every GitHub Release and use that immutable package for Lix installs; raw GitHub tags remain source checkouts rather than pretending to be flattened packages.
+* **release:** use a fixed semantic-release asset path with a versioned upload name, then download and inspect the published package so a missing or malformed release asset fails the workflow; use GitHub's `www` release URL so Lix resolves the zip as an HTTPS archive instead of source, and make both project generators pin their installed compiler version.
 * **examples:** align the Phoenix chat app-local scoped library entry with the full Reflaxe source-checkout classpath contract and refresh its generated test helper output.
 * **ci:** validate the installed package CLI entrypoint so `main: "Run"` and `src/Run.hx` stay aligned in release artifacts.
 * **reflaxe:** audit vendored framework patches against upstream Reflaxe plus the Rust/OCaml converted targets, documenting which local fixes remain required, which are upstream candidates, and which drift needs a separate sync task.

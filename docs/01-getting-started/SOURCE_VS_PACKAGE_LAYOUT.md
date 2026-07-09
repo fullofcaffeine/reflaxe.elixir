@@ -59,6 +59,11 @@ can then write only:
 -lib reflaxe.elixir
 ```
 
+Consumer install commands use `www.github.com` for the release asset URL. Lix 15.12.x intercepts
+bare `github.com` HTTPS URLs as repository dependencies, but the release download path is a built
+Haxelib archive rather than source. The `www` host follows GitHub's normal release redirect through
+Lix's generic HTTPS archive resolver.
+
 Raw `haxelib dev` or `lix dev` points at the unbuilt source layout. By itself, that exposes `src` but
 not `_std` early enough to replace every upstream module. External source-checkout testing must run:
 

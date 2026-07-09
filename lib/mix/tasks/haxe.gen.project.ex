@@ -313,13 +313,19 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
 
   # Generate package.json content
   defp package_json_content(config) do
+    version = reflaxe_elixir_version!()
+
+    package_url =
+      "https://www.github.com/fullofcaffeine/reflaxe.elixir/releases/download/v#{version}/reflaxe.elixir-#{version}.zip"
+
     Jason.encode!(
       %{
         name: to_string(config.app_name),
         version: "0.1.0",
         description: "Elixir project with Reflaxe.Elixir support",
         scripts: %{
-          "setup:haxe": "npx lix download",
+          "setup:haxe":
+            "npx lix scope create && npx lix install #{package_url} && npx lix download",
           compile: "haxe build.hxml",
           watch: "nodemon --watch #{config.haxe_dir} --ext hx --exec \"haxe build.hxml\"",
           test: "mix test"
@@ -331,6 +337,15 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
       },
       pretty: true
     )
+  end
+
+  defp reflaxe_elixir_version! do
+    _ = Application.load(:reflaxe_elixir)
+
+    case Application.spec(:reflaxe_elixir, :vsn) do
+      nil -> raise "unable to determine the installed Reflaxe.Elixir version"
+      version -> to_string(version)
+    end
   end
 
   # Update mix.exs to include Haxe compiler

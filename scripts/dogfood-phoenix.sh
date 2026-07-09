@@ -103,7 +103,7 @@ release_package_url() {
   local tag
   tag="$(normalize_tag "$1")"
   local version="${tag#v}"
-  echo "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${tag}/reflaxe.elixir-${version}.zip"
+  echo "https://www.github.com/fullofcaffeine/reflaxe.elixir/releases/download/${tag}/reflaxe.elixir-${version}.zip"
 }
 
 configure_source_checkout() {

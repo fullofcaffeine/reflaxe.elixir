@@ -138,7 +138,7 @@
       [
         "@semantic-release/exec",
         {
-          "prepareCmd": "node scripts/release/sync-versions.js ${nextRelease.version} && bash scripts/release/package-haxelib.sh dist/reflaxe.elixir-${nextRelease.version}.zip"
+          "prepareCmd": "node scripts/release/sync-versions.js ${nextRelease.version} && bash scripts/release/package-haxelib.sh dist/reflaxe.elixir.zip"
         }
       ],
       [
@@ -162,7 +162,7 @@
         {
           "assets": [
             {
-              "path": "dist/reflaxe.elixir-${nextRelease.version}.zip",
+              "path": "dist/reflaxe.elixir.zip",
               "name": "reflaxe.elixir-${nextRelease.version}.zip",
               "label": "Reflaxe-built haxelib package (${nextRelease.gitTag})"
             }

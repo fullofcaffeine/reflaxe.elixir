@@ -44,7 +44,7 @@ npx lix scope create
 # If this fails (no `curl` / GitHub rate limit), pick a tag from the Releases page and set it manually.
 REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
 REFLAXE_ELIXIR_VERSION="${REFLAXE_ELIXIR_TAG#v}"
-npx lix install "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
+npx lix install "https://www.github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
 
 # Generate a Phoenix app
 # (Use `haxe --run Run` here because some lix/haxelib shim versions rely on an internal
@@ -80,7 +80,7 @@ npx lix scope create
 # If this fails (no `curl` / GitHub rate limit), pick a tag from the Releases page and set it manually.
 REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
 REFLAXE_ELIXIR_VERSION="${REFLAXE_ELIXIR_TAG#v}"
-npx lix install "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
+npx lix install "https://www.github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
 npx lix download
 mix setup
 mix haxe.phoenix.scaffold

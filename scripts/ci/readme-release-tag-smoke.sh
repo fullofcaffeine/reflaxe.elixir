@@ -121,7 +121,7 @@ if [[ -z "$tag" ]]; then
 fi
 echo "[readme-release-smoke] Ref: ${tag}"
 version="${tag#v}"
-package_url="https://github.com/${REPO}/releases/download/${tag}/reflaxe.elixir-${version}.zip"
+package_url="https://www.github.com/${REPO}/releases/download/${tag}/reflaxe.elixir-${version}.zip"
 echo "[readme-release-smoke] Package: ${package_url}"
 
 # Step 0: Ensure Mix tooling is available (required because the generator uses phx_new).

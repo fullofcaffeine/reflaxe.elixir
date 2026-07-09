@@ -93,7 +93,7 @@ npx lix scope create
 # Install the Reflaxe-built package from the latest GitHub release
 REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*"tag_name":[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)"
 REFLAXE_ELIXIR_VERSION="${REFLAXE_ELIXIR_TAG#v}"
-npx lix install "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
+npx lix install "https://www.github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
 
 # Download project-pinned Haxe deps
 npx lix download
@@ -101,6 +101,8 @@ npx lix download
 
 The release zip is the normal consumer package. Reflaxe builds it from the checked-in target stdlib
 sources and includes the generated `.cross.hx` files required by a single `-lib reflaxe.elixir`.
+The `www.github.com` host is intentional: it lets Lix treat the file as a generic immutable HTTPS
+archive instead of misclassifying the release URL as a GitHub source-repository dependency.
 
 ### Working from a source checkout
 

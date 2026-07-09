@@ -227,6 +227,11 @@ if git -C "$ROOT_DIR" grep -nE 'lix install .*github:fullofcaffeine/reflaxe\.eli
   fail "consumer Lix installs must use the Reflaxe-built release zip, not raw GitHub source"
 fi
 
+if git -C "$ROOT_DIR" grep -nE 'lix install .*https://github\.com/fullofcaffeine/reflaxe\.elixir/releases/download' -- README.md docs examples src lib scripts \
+  | grep -vE 'scripts/ci/check-stdlib-source-layout\.sh' >/dev/null; then
+  fail "Lix release installs must use www.github.com to bypass its GitHub source interceptor"
+fi
+
 if ! python3 - "$ROOT_DIR/package.json" <<'PY'
 import json
 import sys
@@ -246,11 +251,22 @@ for plugin in plugins:
         if name == "@semantic-release/github":
             assets = config.get("assets", [])
 
-expected = "dist/reflaxe.elixir-${nextRelease.version}.zip"
-if "scripts/release/package-haxelib.sh" not in prepare or expected not in prepare:
-    raise SystemExit("semantic-release prepareCmd does not build the versioned Reflaxe package")
-if not any(isinstance(asset, dict) and asset.get("path") == expected for asset in assets):
-    raise SystemExit("semantic-release does not upload the versioned Reflaxe package")
+expected_path = "dist/reflaxe.elixir.zip"
+expected_name = "reflaxe.elixir-${nextRelease.version}.zip"
+if "scripts/release/package-haxelib.sh" not in prepare or expected_path not in prepare:
+    raise SystemExit("semantic-release prepareCmd does not build the fixed-path Reflaxe package")
+if any(
+    isinstance(asset, dict) and "${nextRelease" in asset.get("path", "")
+    for asset in assets
+):
+    raise SystemExit("semantic-release asset paths are globs and must not contain templates")
+if not any(
+    isinstance(asset, dict)
+    and asset.get("path") == expected_path
+    and asset.get("name") == expected_name
+    for asset in assets
+):
+    raise SystemExit("semantic-release does not upload the fixed-path package with a versioned name")
 PY
 then
   fail "release configuration does not publish the Reflaxe-built package artifact"
@@ -258,5 +274,12 @@ fi
 
 grep -F 'HAXE_BIN=' "$ROOT_DIR/.github/workflows/release.yml" >/dev/null \
   || fail "release workflow must provide HAXE_BIN for Reflaxe package construction"
+
+published_verifier="$ROOT_DIR/scripts/release/verify-published-package.sh"
+if [[ ! -x "$published_verifier" ]]; then
+  fail "missing executable published-package verifier"
+fi
+grep -F 'scripts/release/verify-published-package.sh' "$ROOT_DIR/.github/workflows/release.yml" >/dev/null \
+  || fail "release workflow must verify the published package asset"
 
 echo "[guard:stdlib-layout] OK: std overrides use Reflaxe _std source layout"
