@@ -6,7 +6,7 @@ Elixir target and the repository-local release/package flow.
 
 ## Audit Status
 
-Last audit: 2026-07-09
+Last audit: 2026-07-09 (post Reflaxe layout cleanup)
 
 Compared against:
 
@@ -15,14 +15,44 @@ Compared against:
   (`Fix secret null-safety issue`)
 - Current upstream `SomeRanDev/reflaxe` `main` at audit time:
   `73a983112e039daad46b37912ab238df6bf0cf53`
+- Local reference checkout:
+  `../haxe.compilerdev.reference/reflaxe`
+- Recently converted sibling targets:
+  `../haxe.rust` and `../haxe.ocaml`
 
 Result:
 
+- Reflaxe.Elixir now follows the generated-target layout convention for
+  package metadata: `haxelib.json` owns `classPath` and `reflaxe.stdPaths`,
+  source-checkout builds use `haxe_libraries/reflaxe.elixir.hxml`, and
+  installed package builds rely on Reflaxe's `_std` flattening into packaged
+  `.cross.hx` files.
+- `CompilerBootstrap.Start()` remains a target-specific addition, not a
+  deviation to remove. The bare `reflaxe new` template only calls
+  `CompilerInit.Start()`, but Reflaxe.Elixir needs bootstrap to add
+  `std/elixir/_std`, target-owned `std`, `vendor/reflaxe/src`, and
+  `vendor/phoenix_shared/src` early enough for consumer installs and nested
+  repo-local builds.
 - None of the required local fixes below are upstreamed in current upstream
   `main`.
 - No vendored patch was removed in this audit.
+- No Elixir AST pipeline or target semantic pass was changed in this audit.
 - `EnumIntrospectionCompiler` is target-owned Reflaxe.Elixir code, not a
   vendored framework patch, so it is intentionally not tracked here.
+
+Sibling compiler findings:
+
+- `../haxe.rust` still vendors Reflaxe and carries a broader local patch set.
+  That confirms vendoring remains an accepted local pattern when a target needs
+  framework fixes before upstream Reflaxe has them.
+- `../haxe.ocaml` currently resolves Reflaxe from the haxelib cache in its root
+  scoped hxml. That is the desired long-term shape for Reflaxe.Elixir only after
+  the required local patches below are upstreamed, replaced, or proven obsolete.
+- The `reflaxe/newproject` template establishes the simple baseline:
+  `reflaxe.stdPaths`, package-scoped `nullSafety(...)`, and
+  `CompilerInit.Start()`. Reflaxe.Elixir intentionally adds bootstrap and
+  package smoke guards because its stdlib/framework surfaces have stricter
+  source-vs-package ordering requirements.
 
 ## Required Local Patches
 
@@ -270,14 +300,34 @@ These files are local to this vendored copy and are not framework patches:
 - `haxelib.json` - local vendored-package metadata used for clarity; the active
   scoped hxml still pins `-D reflaxe=4.0.0-beta`.
 
+## Upstream Drift To Track
+
+These differences are not required local patches and should not be folded into
+layout-only cleanup commits.
+
+- Upstream/reference Reflaxe now includes
+  `src/reflaxe/preprocessors/implementations/RemovePureExpressionsImpl.hx` and
+  a matching `RemovePureExpressions` enum case in
+  `ExpressionPreprocessor.hx`. The vendored Reflaxe copy does not include it.
+  Importing it could change preprocessor behavior, so it needs a separate
+  framework-sync task with snapshot/package validation.
+- `OutputManager.hx` still contains `#if debug_output_manager` trace blocks.
+  They are inactive in normal builds and are not required for target semantics.
+  They can be removed in a future diff-reduction cleanup if package smoke and
+  quick snapshots remain green.
+- `src/reflaxe/preprocessors/implementations/everything_is_expr/EverythingIsExprSanitizer.hx`
+  differs only by trailing-whitespace cleanup. Keep the local whitespace-clean
+  copy unless the vendored baseline is refreshed wholesale.
+
 ## Cleanup Notes
 
 2026-07-09 cleanup:
 
 - Removed local debug-only instrumentation from
   `src/reflaxe/ReflectCompiler.hx`.
-- Removed local debug-only instrumentation from
-  `src/reflaxe/preprocessors/ExpressionPreprocessor.hx`.
+- Rechecked `src/reflaxe/preprocessors/ExpressionPreprocessor.hx`; the current
+  diff is upstream/reference `RemovePureExpressions` drift, not an active
+  Reflaxe.Elixir patch.
 - Kept the whitespace-only difference in
   `src/reflaxe/preprocessors/implementations/everything_is_expr/EverythingIsExprSanitizer.hx`
   because matching upstream exactly would reintroduce trailing whitespace and

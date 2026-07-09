@@ -9,7 +9,7 @@
 * **reflaxe:** move BEAM `sys.*` stdlib replacements into `std/elixir/_std/sys` so Reflaxe packages them as `.cross.hx` files instead of shadowing host/eval `sys.*` during package CLI runs.
 * **ci:** strengthen the haxelib package smoke to assert the installed artifact keeps Reflaxe-flattened `src/**/*.cross.hx` overrides and does not publish source-only `_std` layout roots.
 * **ci:** validate the installed package CLI entrypoint so `main: "Run"` and `src/Run.hx` stay aligned in release artifacts.
-* **reflaxe:** audit vendored framework patches against upstream Reflaxe and document which local fixes remain required before they can be removed or upstreamed.
+* **reflaxe:** audit vendored framework patches against upstream Reflaxe plus the Rust/OCaml converted targets, documenting which local fixes remain required, which are upstream candidates, and which drift needs a separate sync task.
 * **reflaxe:** remove debug-only vendored framework drift while preserving required local Reflaxe patches.
 * **docs:** clarify the remaining early `src/haxe/**` overrides, including why `src/haxe/Exception.cross.hx` intentionally remains the lone source-tree `.cross.hx` file.
 * **docs:** update stdlib parity task templates to use the current `_std` / target-owned `std/**` / early `src/haxe/**` ownership model.
