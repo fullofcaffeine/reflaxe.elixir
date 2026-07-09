@@ -104,7 +104,8 @@ Recommended next steps:
 1. Narrow Haxe 4 bootstrap activation so raw `Cross` is not treated as sufficient target identity.
 2. Add explicit mixed-target detection/fail-fast behavior when sibling target libraries are active together.
 3. Keep `src/haxe/Exception.cross.hx` documented as the intentional lone source-tree `.cross.hx`
-   early override, not just another stdlib file.
+   early override, not just another stdlib file. `npm run guard:stdlib-layout` enforces that no
+   additional checked-in `src/**/*.cross.hx` files are added.
 4. Add a focused coexistence smoke or regression test if a deterministic test shape can be designed.
 
 ## Local sibling references

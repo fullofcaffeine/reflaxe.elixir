@@ -133,7 +133,8 @@ There are three current shapes:
 - `src/haxe/Exception.cross.hx` is intentionally still target-suffixed. Upstream `haxe.Exception`
   is extern, so macro/eval and non-cross targets can keep resolving upstream. Elixir output needs a
   concrete base module for exception structs, so the `.cross.hx` file provides `Reflaxe.Exception`
-  behind `#if elixir_output ... #else extern ... #end`.
+  behind `#if elixir_output ... #else extern ... #end`. The source layout guard enforces that this
+  is the only checked-in `src/**/*.cross.hx` file.
 - `src/haxe/ds/{ArraySort,BalancedTree,EnumValueMap,ListSort}.hx` are dual-mode plain `.hx` modules:
   `#if macro` gives eval a small implementation, while `#else` exposes an extern surface or target
   diagnostic surface so generated Elixir does not emit the canonical mutable stdlib implementation.

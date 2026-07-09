@@ -243,6 +243,9 @@ run.
 set. Upstream `haxe.Exception` is extern, so macro/eval and non-cross targets can keep resolving the
 official stdlib file. The Elixir target needs a concrete emitted base module for exception structs,
 so the early `.cross.hx` file provides that implementation only when `elixir_output` is active.
+`npm run guard:stdlib-layout` enforces that this remains the only checked-in `src/**/*.cross.hx`
+source file; ordinary target-specific std replacements should stay under `std/elixir/_std/**/*.hx`
+and be materialized as packaged `.cross.hx` files by Reflaxe build.
 
 Because `src/` is visible in more situations (tools, JS/genes builds, etc.), those early overrides often use:
 

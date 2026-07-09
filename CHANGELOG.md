@@ -5,6 +5,7 @@
 * **reflaxe:** align stdlib override sources with the Reflaxe `_std` layout; source-tree and GitHub/Lix builds now load `std/elixir/_std` before target-owned `std` APIs so PhoenixHx/examples keep using the Elixir stdlib overrides in dev mode.
 * **reflaxe:** move remaining upstream-colliding `std/haxe/**` replacement modules into `std/elixir/_std`, leaving plain `std/haxe/**` for target-owned support surfaces.
 * **reflaxe:** align package entrypoint HXML files with Reflaxe-generated targets by applying package-scoped `nullSafety("reflaxe.elixir")` before bootstrap/init macros.
+* **reflaxe:** enforce the source-tree `.cross.hx` convention so the only checked-in `src/**/*.cross.hx` file remains the documented early `haxe.Exception` override.
 * **reflaxe:** audit vendored framework patches against upstream Reflaxe and document which local fixes remain required before they can be removed or upstreamed.
 * **reflaxe:** remove debug-only vendored framework drift while preserving required local Reflaxe patches.
 * **docs:** clarify the remaining early `src/haxe/**` overrides, including why `src/haxe/Exception.cross.hx` intentionally remains the lone source-tree `.cross.hx` file.

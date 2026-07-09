@@ -21,6 +21,25 @@ if [[ -n "$tracked_std_cross" ]]; then
   exit 1
 fi
 
+tracked_src_cross="$(
+  git -C "$ROOT_DIR" ls-files 'src/**/*.cross.hx' 'src/*.cross.hx' 2>/dev/null || true
+)"
+if [[ -n "$tracked_src_cross" ]]; then
+  unexpected_src_cross="$(
+    printf '%s\n' "$tracked_src_cross" | grep -Fxv 'src/haxe/Exception.cross.hx' || true
+  )"
+  if [[ -n "$unexpected_src_cross" ]]; then
+    {
+      echo "checked-in src/**/*.cross.hx files must not grow beyond the documented"
+      echo "early haxe.Exception override. Put ordinary std replacements under"
+      echo "std/elixir/_std/**/*.hx and let Reflaxe build generate packaged"
+      echo ".cross.hx files. Found unexpected source-tree cross files:"
+      printf '%s\n' "$unexpected_src_cross" | sed -n '1,80p'
+    } >&2
+    exit 1
+  fi
+fi
+
 if [[ ! -d "$ROOT_DIR/std/elixir/_std" ]]; then
   fail "missing std/elixir/_std source override root"
 fi
@@ -112,4 +131,4 @@ then
   fail "haxelib.json reflaxe.stdPaths does not match the source-layout convention"
 fi
 
-echo "[guard:stdlib-layout] OK: std overrides use std/elixir/_std source layout"
+echo "[guard:stdlib-layout] OK: std overrides use std/elixir/_std source layout and source cross-file convention"
