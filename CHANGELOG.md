@@ -6,6 +6,7 @@
 * **reflaxe:** audit vendored framework patches against upstream Reflaxe and document which local fixes remain required before they can be removed or upstreamed.
 * **reflaxe:** remove debug-only vendored framework drift while preserving required local Reflaxe patches.
 * **docs:** clarify the remaining early `src/haxe/**` overrides, including why `src/haxe/Exception.cross.hx` intentionally remains the lone source-tree `.cross.hx` file.
+* **docs:** update stdlib parity task templates to use the current `_std` / target-owned `std/**` / early `src/haxe/**` ownership model.
 
 ## [0.14.20](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.19...v0.14.20) (2026-07-09)
 

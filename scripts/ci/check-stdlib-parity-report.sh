@@ -68,6 +68,7 @@ def collect_std_modules(std_root: Path, allow_cross: bool, exclude_roots=()):
 
 
 def collect_prefixed_modules(prefix: str, source_root: Path, allow_cross: bool):
+    """Collect early stdlib modules from src/haxe or src/sys style roots."""
     modules = set()
     if not source_root.exists():
         return modules

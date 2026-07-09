@@ -273,7 +273,9 @@ For each module/cluster task:
 - Classification: upstream fallback vs BEAM-specific override vs unsupported/fail-fast.
 - Reference: link to `haxe.compilerdev.reference` source file(s) used.
 - Implementation:
-  - `std/elixir/_std/**/*.hx` vs target-owned plain `std/**/*.hx` vs `src/haxe/**/*.cross.hx` (if early-resolved)
+  - `std/elixir/_std/**/*.hx` for normal upstream-colliding stdlib overrides
+  - target-owned plain `std/**/*.hx` for Elixir/Phoenix/Ecto/API support modules
+  - selected `src/haxe/**` early overrides only when consumer-install ordering or macro/eval timing requires it; `src/haxe/Exception.cross.hx` is the intentional lone source-tree `.cross.hx`
   - any compiler transforms required (shape-driven; no app-specific heuristics)
 - Tests:
   - Snapshot(s) updated/added (list)
@@ -322,6 +324,7 @@ Suggested repomix inputs (edit per module):
 - `docs/03-compiler-development/CROSS_FILES_STAGING_MECHANISM.md`
 - `src/reflaxe/elixir/CompilerBootstrap.hx`
 - `src/reflaxe/elixir/CompilerInit.hx`
-- `std/elixir/_std/<Module>.hx` (or `src/haxe/<Module>.cross.hx`)
+- `std/elixir/_std/<Module>.hx` for normal stdlib overrides
+- `src/haxe/<Module>.hx` for early plain Haxe overrides, or `src/haxe/Exception.cross.hx` for the exception base
 - `test/snapshot/**` cases relevant to the module
 - `docs/02-user-guide/exunit-testing.md`
