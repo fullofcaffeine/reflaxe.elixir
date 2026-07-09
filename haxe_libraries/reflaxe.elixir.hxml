@@ -35,6 +35,11 @@
 
 # Define the library version
 -D reflaxe.elixir=0.14.20
+
+# Match Reflaxe-generated target entrypoints: type the compiler package with
+# Haxe null-safety metadata before bootstrap/init macros run.
+--macro nullSafety("reflaxe.elixir")
+
 # Bootstrap early (target-conditional stdlib gating + vendored reflaxe injection)
 --macro reflaxe.elixir.CompilerBootstrap.Start()
 

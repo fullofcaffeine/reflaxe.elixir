@@ -168,11 +168,14 @@ there would point at the user's project, not at the installed library. Instead, 
 does cwd-independent setup:
 
 ```hxml
+--macro nullSafety("reflaxe.elixir")
 --macro reflaxe.elixir.CompilerBootstrap.Start()
 --macro reflaxe.elixir.CompilerInit.Start()
 -D loop_unroll_max_cost=0
 ```
 
+The null-safety macro is scoped to the compiler package (`reflaxe.elixir`), matching Reflaxe-generated
+target entrypoints without applying null-safety metadata to user application packages.
 For repo-local scoped-lib builds, `haxe_libraries/reflaxe.elixir.hxml` plays the same role, but it can
 use `${SCOPE_DIR}` because Lix expands that to this repository's library root.
 

@@ -198,6 +198,7 @@ still target Phoenix-native namespaces and paths. See the
 ```hxml
 # App builds normally get compiler init from reflaxe.elixir/extraParams.hxml.
 # Spell these macros directly only in repo-internal harnesses or advanced custom builds.
+--macro nullSafety("reflaxe.elixir")
 --macro reflaxe.elixir.CompilerBootstrap.Start()
 --macro reflaxe.elixir.CompilerInit.Start()
 

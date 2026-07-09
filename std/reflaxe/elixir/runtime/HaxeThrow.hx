@@ -46,7 +46,7 @@ import elixir.types.Term;
  */
 @:native("Reflaxe.Elixir.HaxeThrow")
 class HaxeThrow extends haxe.Exception {
-	public var value:Term;
+	public var value:Null<Term>;
 
 	public function new(message:String, ?previous:haxe.Exception, ?native:Any) {
 		super(message, previous, native);

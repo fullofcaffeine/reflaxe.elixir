@@ -82,6 +82,8 @@ must shadow the official Haxe stdlib in Elixir builds.
   `-cp ${SCOPE_DIR}/std/elixir/_std/` so source-tree builds see authored std overrides directly;
   `CompilerBootstrap.Start()` still prepends the target paths for Elixir builds so ordering matches
   consumer installs.
+- Added package-scoped `--macro nullSafety("reflaxe.elixir")` before bootstrap/init so the entrypoint
+  HXML files match Reflaxe-generated target conventions without changing user application packages.
 - Added `--macro reflaxe.elixir.CompilerBootstrap.Start()` so repo-local scoped-lib builds get the same package-root classpath insertion behavior as consumer installs.
 - For the handful of modules that must be available before macros run, we place a documented
   bootstrap-safe implementation under `src/haxe/**`. Use this only for concrete early-resolution
@@ -92,11 +94,13 @@ must shadow the official Haxe stdlib in Elixir builds.
 Gating activates (i.e., `std/elixir/_std/` and `std/` are added to the active Haxe classpath) in these scenarios:
 
 - Haxe 5 + Elixir custom target:
+  - `--macro nullSafety("reflaxe.elixir")` may be present through the package entrypoint
   - `--macro reflaxe.elixir.CompilerInit.Start()` is present
   - Platform is `CustomTarget("elixir")`
   - Result: classpath injection runs; Elixir-only overrides are available
 
 - Haxe 4 + Reflaxe.Elixir builds (tests/examples):
+  - `--macro nullSafety("reflaxe.elixir")` may be present through the package entrypoint
   - `--macro reflaxe.elixir.CompilerBootstrap.Start()` is present
   - Elixir build signals:
     - Preferred: `-D elixir_output=...` (stable signal used throughout the harness)
