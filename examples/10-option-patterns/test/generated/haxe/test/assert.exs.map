@@ -5,6 +5,6 @@
   "version": 3,
   "file": "assert.exs",
   "sources": [
-  "std/haxe/test/Assert.hx"
-]
+    "std/haxe/test/Assert.hx"
+  ]
 }

@@ -5,6 +5,6 @@
   "version": 3,
   "file": "pos_exception.exs",
   "sources": [
-  "std/haxe/exceptions/PosException.hx"
-]
+    "std/haxe/exceptions/PosException.hx"
+  ]
 }

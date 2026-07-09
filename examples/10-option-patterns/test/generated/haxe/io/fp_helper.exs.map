@@ -5,6 +5,6 @@
   "version": 3,
   "file": "fp_helper.exs",
   "sources": [
-  "std/elixir/_std/haxe/io/FPHelper.hx"
-]
+    "std/elixir/_std/haxe/io/FPHelper.hx"
+  ]
 }

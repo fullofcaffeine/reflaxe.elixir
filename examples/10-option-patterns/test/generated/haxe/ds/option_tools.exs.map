@@ -5,6 +5,6 @@
   "version": 3,
   "file": "option_tools.exs",
   "sources": [
-  "std/haxe/ds/OptionTools.hx"
-]
+    "std/haxe/ds/OptionTools.hx"
+  ]
 }

@@ -4,7 +4,7 @@ defmodule Output do
     b
   end
   def write_byte(_struct, _c) do
-    raise Reflaxe.Elixir.HaxeThrow, [value: NotImplementedException.new(nil, nil, %{file_name: "haxe/io/Output.hx", line_number: 38, class_name: "haxe.io.Output", method_name: "writeByte"})]
+    raise Reflaxe.Elixir.HaxeThrow, [value: NotImplementedException.new(nil, nil, %{file_name: "elixir/_std/haxe/io/Output.hx", line_number: 38, class_name: "haxe.io.Output", method_name: "writeByte"})]
   end
   def write_bytes(struct, s, pos, len) do
     if (pos < 0 or len < 0 or pos + len > s.length) do

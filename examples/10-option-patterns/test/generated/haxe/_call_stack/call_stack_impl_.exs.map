@@ -5,6 +5,6 @@
   "version": 3,
   "file": "call_stack_impl_.exs",
   "sources": [
-  "std/elixir/_std/haxe/CallStack.hx"
-]
+    "std/elixir/_std/haxe/CallStack.hx"
+  ]
 }

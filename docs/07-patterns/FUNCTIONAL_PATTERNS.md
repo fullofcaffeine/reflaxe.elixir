@@ -714,7 +714,7 @@ function getUserOrFallback(primaryId: Int, fallbackId: Int): Option<User> {
 5. **Performance**: Zero-cost abstractions with optimal code generation
 6. **BEAM Integration**: Seamless integration with Elixir/OTP patterns
 
-**See**: [`std/haxe/ds/Option.hx`](../../std/haxe/ds/Option.hx) and [`std/haxe/ds/OptionTools.hx`](../../std/haxe/ds/OptionTools.hx) for complete API documentation.
+**See**: [`std/elixir/_std/haxe/ds/Option.hx`](../../std/elixir/_std/haxe/ds/Option.hx) and [`std/haxe/ds/OptionTools.hx`](../../std/haxe/ds/OptionTools.hx) for complete API documentation.
 
 ## Error Handling with Result<T,E>
 

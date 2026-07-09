@@ -5,6 +5,6 @@
   "version": 3,
   "file": "eof.exs",
   "sources": [
-  "std/haxe/io/Eof.hx"
-]
+    "std/elixir/_std/haxe/io/Eof.hx"
+  ]
 }

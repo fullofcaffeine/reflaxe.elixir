@@ -5,6 +5,6 @@
   "version": 3,
   "file": "notification_service.exs",
   "sources": [
-  "NotificationService.hx"
-]
+    "NotificationService.hx"
+  ]
 }

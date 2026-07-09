@@ -5,6 +5,6 @@
   "version": 3,
   "file": "config_manager_test.exs",
   "sources": [
-  "ConfigManagerTest.hx"
-]
+    "ConfigManagerTest.hx"
+  ]
 }

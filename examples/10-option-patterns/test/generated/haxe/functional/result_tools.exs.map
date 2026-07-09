@@ -5,6 +5,6 @@
   "version": 3,
   "file": "result_tools.exs",
   "sources": [
-  "std/haxe/functional/ResultTools.hx"
-]
+    "std/haxe/functional/ResultTools.hx"
+  ]
 }

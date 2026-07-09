@@ -59,6 +59,43 @@ if [[ -n "$duplicate_modules" ]]; then
   exit 1
 fi
 
+unexpected_plain_haxe_modules="$(
+  python3 - "$ROOT_DIR" <<'PY'
+from pathlib import Path
+import sys
+
+root = Path(sys.argv[1])
+plain_haxe_root = root / "std" / "haxe"
+allowed = {
+    "haxe/ds/OptionTools.hx",
+    "haxe/functional/Result.hx",
+    "haxe/functional/ResultTools.hx",
+    "haxe/test/Assert.hx",
+    "haxe/test/ExUnit.hx",
+    "haxe/validation/Email.hx",
+    "haxe/validation/NonEmptyString.hx",
+    "haxe/validation/PositiveInt.hx",
+    "haxe/validation/UserId.hx",
+}
+
+if plain_haxe_root.exists():
+    for path in sorted(plain_haxe_root.rglob("*.hx")):
+        module = path.relative_to(root / "std").as_posix()
+        if module not in allowed:
+            print(module)
+PY
+)"
+if [[ -n "$unexpected_plain_haxe_modules" ]]; then
+  {
+    echo "plain std/haxe/** files are reserved for documented target-owned support"
+    echo "surfaces. Upstream Haxe stdlib replacements must live under"
+    echo "std/elixir/_std/** so Reflaxe build can package them as .cross.hx files."
+    echo "Found unexpected plain std/haxe modules:"
+    printf '%s\n' "$unexpected_plain_haxe_modules" | sed -n '1,80p'
+  } >&2
+  exit 1
+fi
+
 if ! python3 - "$ROOT_DIR/haxelib.json" <<'PY'
 import json
 import sys

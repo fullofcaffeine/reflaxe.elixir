@@ -5,6 +5,6 @@
   "version": 3,
   "file": "output.exs",
   "sources": [
-  "std/haxe/io/Output.hx"
-]
+    "std/elixir/_std/haxe/io/Output.hx"
+  ]
 }
