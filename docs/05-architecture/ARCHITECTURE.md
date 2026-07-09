@@ -34,7 +34,7 @@ This repo uses a layered approach:
 
 - `std/elixir/_std/**/*.hx`: Haxe-facing stdlib overrides that compile to idiomatic Elixir when targeting Elixir (may use `__elixir__()` where justified).
 - `std/elixir/**` excluding `_std`: typed externs for existing Elixir/Erlang/Phoenix/Ecto modules (API-faithful; no invented functions).
-- `std/**/*.hx`: target-owned support APIs are added to the active classpath **only when compiling to Elixir** (see `src/reflaxe/elixir/CompilerBootstrap.hx`).
+- plain `std/**/*.hx`: target-owned support APIs that do not replace upstream Haxe std namespaces are added to the active classpath **only when compiling to Elixir** (see `src/reflaxe/elixir/CompilerBootstrap.hx`).
 
 ## Phoenix App Stubs vs Framework Implementations
 

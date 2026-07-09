@@ -192,8 +192,10 @@ Haxelib.org package artifact path:
 ## Verdict
 
 Use `std/elixir/_std/**/*.hx` for upstream-colliding stdlib overrides. Do not add new checked-in
-`std/**/*.cross.hx` files for ordinary stdlib work. Keep `std/**/*.hx` for target-owned APIs/support
-modules, and keep rare early overrides under `src/haxe/**` only when bootstrap timing requires it.
+`std/**/*.cross.hx` files for ordinary stdlib work. Keep plain `std/**/*.hx` for target-owned
+APIs/support modules that do not replace upstream Haxe std namespaces; BEAM `sys.*` implementations
+belong under `std/elixir/_std/sys/**`. Keep rare early overrides under `src/haxe/**` only when
+bootstrap timing requires it.
 
 Before publishing to haxelib.org, run the package smoke described above. That validates the exact
 artifact users would install.

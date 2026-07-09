@@ -89,7 +89,7 @@ This repo ships a small set of Elixir-target overrides using the Reflaxe source-
 
 - `std/elixir/_std/*.hx`: core Haxe stdlib overrides (`Array`, `String`, `Std`, etc.)
 - `std/elixir/_std/haxe/**/*.hx`: selected Haxe std modules implemented/adjusted for Elixir
-- `std/sys/**`: BEAM-backed `sys.*` surfaces
+- `std/elixir/_std/sys/**/*.hx`: BEAM-backed `sys.*` surfaces
 
 Layout rule:
 
@@ -162,7 +162,7 @@ What does this “replace”?
 - Only the specific modules we place under `src/haxe/**` are shadowed early.
 - Everything else still comes from the upstream Haxe stdlib unless we explicitly override it via:
   - `std/elixir/_std/**/*.hx` (Elixir stdlib override source), or
-  - `std/**/*.hx` / `std/sys/**` (Elixir-target additions/shims).
+  - `std/**/*.hx` excluding upstream std namespaces (Elixir-target additions/shims).
 
 Why the path looks like the Haxe stdlib (`src/haxe/ds/...`)?
 - This is intentional: Haxe module resolution is path-based. Putting a file at `haxe/ds/BalancedTree.hx`
@@ -240,7 +240,7 @@ When you need to fix stdlib behavior for the Elixir target:
    - a small runtime helper is unavoidable
    - the feature should fail fast as unsupported on the Elixir target
 2) Prefer adding/adjusting Haxe sources in:
-   - `std/elixir/_std/**/*.hx` or `std/sys/**`
+   - `std/elixir/_std/**/*.hx`
    - plain `std/**/*.hx` only for new target-owned support modules or documented
      exceptions, not unchanged upstream copies
 3) Add a snapshot test under:

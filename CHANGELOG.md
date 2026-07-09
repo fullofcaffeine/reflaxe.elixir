@@ -6,7 +6,9 @@
 * **reflaxe:** move remaining upstream-colliding `std/haxe/**` replacement modules into `std/elixir/_std`, leaving plain `std/haxe/**` for target-owned support surfaces.
 * **reflaxe:** align package entrypoint HXML files with Reflaxe-generated targets by applying package-scoped `nullSafety("reflaxe.elixir")` before bootstrap/init macros.
 * **reflaxe:** enforce the source-tree `.cross.hx` convention so the only checked-in `src/**/*.cross.hx` file remains the documented early `haxe.Exception` override.
+* **reflaxe:** move BEAM `sys.*` stdlib replacements into `std/elixir/_std/sys` so Reflaxe packages them as `.cross.hx` files instead of shadowing host/eval `sys.*` during package CLI runs.
 * **ci:** strengthen the haxelib package smoke to assert the installed artifact keeps Reflaxe-flattened `src/**/*.cross.hx` overrides and does not publish source-only `_std` layout roots.
+* **ci:** validate the installed package CLI entrypoint so `main: "Run"` and `src/Run.hx` stay aligned in release artifacts.
 * **reflaxe:** audit vendored framework patches against upstream Reflaxe and document which local fixes remain required before they can be removed or upstreamed.
 * **reflaxe:** remove debug-only vendored framework drift while preserving required local Reflaxe patches.
 * **docs:** clarify the remaining early `src/haxe/**` overrides, including why `src/haxe/Exception.cross.hx` intentionally remains the lone source-tree `.cross.hx` file.

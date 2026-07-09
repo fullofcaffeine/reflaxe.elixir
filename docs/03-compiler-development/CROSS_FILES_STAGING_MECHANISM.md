@@ -100,7 +100,8 @@ Haxe's normal target-file mechanism.
 Reflaxe.Elixir follows that source convention for upstream-colliding stdlib overrides:
 
 - authored std overrides live in `std/elixir/_std/**/*.hx`
-- target-owned APIs and support modules live in `std/**/*.hx`
+- target-owned APIs and support modules live in plain `std/**/*.hx` when they do not replace an
+  upstream Haxe std namespace
 - `extraParams.hxml` and `haxe_libraries/reflaxe.elixir.hxml` invoke bootstrap/init macros
 - `CompilerBootstrap.Start()` prepends `std/elixir/_std/`, then `std/`, to the active Haxe classpath
   for Elixir builds
@@ -271,7 +272,8 @@ More context: `docs/05-architecture/TARGET_CONDITIONAL_STDLIB_GATING.md`.
 - Prefer `std/elixir/_std/**/*.hx` when you are replacing a well-known Haxe API with an idiomatic
   Elixir mapping. Reflaxe build turns these authored files into packaged `.cross.hx` files.
 - Keep plain `std/**/*.hx` for target-owned APIs/support modules and documented exceptions; do not put
-  upstream-colliding stdlib replacements directly under `std/`.
+  upstream-colliding stdlib replacements directly under `std/`. That includes `sys.*`, which is an
+  upstream Haxe std namespace even when the implementation is BEAM-backed.
 - Leave a module absent from local `std/` when upstream Haxe stdlib is already the right implementation;
   track that decision with tests/docs instead of copying the upstream source.
 - Do not add repo-level classpaths like `../../std` to JS/genes builds; use `-lib` and library-provided hxml instead.

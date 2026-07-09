@@ -8,9 +8,10 @@ set -euo pipefail
 # - Validates the actual zip artifact we would submit to haxelib.org by:
 #   1) creating a fresh npm+lix workspace,
 #   2) installing the generated package zip into an isolated haxelib repo,
-#   3) compiling a minimal `-lib reflaxe.elixir` program with no repo-local
+#   3) checking the installed `Run` CLI entrypoint used by haxelib metadata,
+#   4) compiling a minimal `-lib reflaxe.elixir` program with no repo-local
 #      classpaths,
-#   4) checking direct target overrides and official stdlib fallback both work.
+#   5) checking direct target overrides and official stdlib fallback both work.
 #
 # WHY
 # - Repo-local scoped libs and GitHub-tag Lix installs can pass while the
@@ -171,12 +172,15 @@ fi
 
 require_file "$installed_root/haxelib.json"
 require_file "$installed_root/extraParams.hxml"
+require_file "$installed_root/src/Run.hx"
 require_file "$installed_root/src/reflaxe/elixir/CompilerBootstrap.hx"
 require_file "$installed_root/src/Std.cross.hx"
 require_file "$installed_root/src/String.cross.hx"
 require_file "$installed_root/src/StringBuf.cross.hx"
 require_file "$installed_root/src/haxe/Exception.cross.hx"
 require_file "$installed_root/src/haxe/crypto/Sha256.cross.hx"
+require_file "$installed_root/src/sys/FileSystem.cross.hx"
+require_file "$installed_root/src/sys/io/File.cross.hx"
 require_file "$installed_root/src/elixir/DateTime.hx"
 require_dir "$installed_root/vendor/reflaxe/src"
 require_dir "$installed_root/vendor/phoenix_shared/src"
@@ -187,19 +191,30 @@ require_absent "$installed_root/src/Std.hx"
 require_absent "$installed_root/src/String.hx"
 require_absent "$installed_root/src/StringBuf.hx"
 require_absent "$installed_root/src/haxe/crypto/Sha256.hx"
+require_absent "$installed_root/src/sys/FileSystem.hx"
+require_absent "$installed_root/src/sys/io/File.hx"
 
-if python3 - "$installed_root/haxelib.json" <<'PY'
+if ! python3 - "$installed_root/haxelib.json" <<'PY'
 import json
 import sys
 
 with open(sys.argv[1], encoding="utf-8") as handle:
     data = json.load(handle)
 
-raise SystemExit(0 if "reflaxe" in data else 1)
+if "reflaxe" in data:
+    raise SystemExit("installed haxelib.json still contains source-only reflaxe metadata")
+
+if data.get("main") != "Run":
+    raise SystemExit(f"installed haxelib.json must keep main=Run, found {data.get('main')!r}")
 PY
 then
-  fail "installed package haxelib.json still contains source-only reflaxe metadata"
+  fail "installed package haxelib.json does not match runnable package metadata"
 fi
+
+export INSTALLED_ROOT="$installed_root"
+run_step "run installed CLI entrypoint" 120 "$work_dir" \
+  '"$HAXE_BIN" -cp "$INSTALLED_ROOT/src" --run Run version > cli.log 2>&1 || { cat cli.log; exit 1; }'
+require_contains "$work_dir/cli.log" "Reflaxe.Elixir v"
 
 if [[ "$VERBOSE" -eq 1 ]]; then
   say "Installed top-level files:"

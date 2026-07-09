@@ -20,8 +20,9 @@ That is not automatically wrong, but it does mean contributors need a clearer me
 
 1. `std/elixir/_std/**/*.hx`
    - normal target-conditional stdlib override sources
-2. `std/**/*.hx`
+2. plain `std/**/*.hx`
    - target-owned APIs/support modules such as `elixir.*`, `phoenix.*`, and `ecto.*`
+   - not for upstream Haxe std namespaces such as `sys.*`
 3. `src/haxe/**`
    - early-visible bootstrap-safe overrides, including `src/haxe/Exception.cross.hx` and selected
      `src/haxe/ds/*.hx` stdlib surfaces
@@ -32,7 +33,7 @@ That is a coherent design, but it is a different design from `reflaxe.ocaml`.
 
 | Question | Answer for this repo |
 | --- | --- |
-| Main override style | broad `std/elixir/_std/**/*.hx` plus target-owned `std/**/*.hx` APIs plus selected early `src/haxe/**` overrides |
+| Main override style | broad `std/elixir/_std/**/*.hx` plus target-owned plain `std/**/*.hx` APIs plus selected early `src/haxe/**` overrides |
 | Is `_std` used? | yes |
 | Is `.cross.hx` used broadly? | yes in packaged output; source-tree overrides are plain `.hx` |
 | Does this repo own early `src/haxe/*` modules? | yes, `src/haxe/Exception.cross.hx` and selected `src/haxe/ds/*.hx` modules |

@@ -115,6 +115,30 @@ if [[ -n "$unexpected_plain_haxe_modules" ]]; then
   exit 1
 fi
 
+unexpected_plain_sys_modules="$(
+  python3 - "$ROOT_DIR" <<'PY'
+from pathlib import Path
+import sys
+
+root = Path(sys.argv[1])
+plain_sys_root = root / "std" / "sys"
+
+if plain_sys_root.exists():
+    for path in sorted(plain_sys_root.rglob("*.hx")):
+        print(path.relative_to(root / "std").as_posix())
+PY
+)"
+if [[ -n "$unexpected_plain_sys_modules" ]]; then
+  {
+    echo "plain std/sys/** files shadow Haxe host/eval sys modules in packaged"
+    echo "Reflaxe builds. BEAM sys.* replacements must live under"
+    echo "std/elixir/_std/sys/** so Reflaxe build packages them as .cross.hx files."
+    echo "Found unexpected plain std/sys modules:"
+    printf '%s\n' "$unexpected_plain_sys_modules" | sed -n '1,80p'
+  } >&2
+  exit 1
+fi
+
 if ! python3 - "$ROOT_DIR/haxelib.json" <<'PY'
 import json
 import sys

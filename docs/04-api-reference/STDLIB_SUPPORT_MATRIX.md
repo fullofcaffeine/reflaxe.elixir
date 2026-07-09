@@ -15,7 +15,7 @@ Reflaxe.Elixir does *not* ship a full fork of Haxe stdlib.
 Instead:
 - Most modules come from the official Haxe stdlib.
 - We provide **selective upstream stdlib replacements** under `std/elixir/_std/**` when needed.
-- Target-owned additions remain under `std/haxe/**` and `std/sys/**` when they provide BEAM-backed behavior or Elixir-specific helper surfaces.
+- Target-owned additions remain under plain `std/**` only when they do not replace an upstream Haxe std namespace. BEAM-backed `sys.*` replacements live under `std/elixir/_std/sys/**` so Reflaxe package builds publish them as `.cross.hx`.
 
 The canonical local audit command is:
 
