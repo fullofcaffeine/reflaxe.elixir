@@ -116,7 +116,7 @@ Packaging note:
 - If we publish to haxelib.org, validate the generated package path separately with
   `npm run test:haxelib-package`.
 
-### Bootstrap-safe overrides (early, dual-mode)
+### Bootstrap-safe overrides (early source-classpath modules)
 
 Some stdlib modules are resolved **very early** during compilation, and Haxe runs macros using the `eval` interpreter.
 That combination means a few modules must satisfy two requirements at once:
@@ -125,7 +125,22 @@ That combination means a few modules must satisfy two requirements at once:
 2) **Elixir output phase (target-side)**: we must avoid emitting the canonical Haxe stdlib implementation when it is
    non-idiomatic for BEAM or produces Elixir warnings that fail CI under `--warnings-as-errors` (WAE).
 
-For those specific modules, we use a **dual-mode override** under `src/`:
+For those specific modules, we use an early override under `src/haxe/**`, the package classpath that
+is available immediately when a project uses `-lib reflaxe.elixir`.
+
+There are three current shapes:
+
+- `src/haxe/Exception.cross.hx` is intentionally still target-suffixed. Upstream `haxe.Exception`
+  is extern, so macro/eval and non-cross targets can keep resolving upstream. Elixir output needs a
+  concrete base module for exception structs, so the `.cross.hx` file provides `Reflaxe.Exception`
+  behind `#if elixir_output ... #else extern ... #end`.
+- `src/haxe/ds/{ArraySort,BalancedTree,EnumValueMap,ListSort}.hx` are dual-mode plain `.hx` modules:
+  `#if macro` gives eval a small implementation, while `#else` exposes an extern surface or target
+  diagnostic surface so generated Elixir does not emit the canonical mutable stdlib implementation.
+- `src/haxe/ds/{GenericStack,HashMap,List}.hx` are early BEAM-safe implementations whose observable
+  mutation semantics depend on the compiler's receiver-rebinding rules.
+
+For dual-mode plain `.hx` modules, the usual pattern is:
 
 - `#if macro`: small in-memory implementation (keeps macro/eval happy).
 - `#else`: `@:nativeGen extern` surface (prevents canonical stdlib code from being emitted into generated `.ex`).
@@ -133,6 +148,8 @@ For those specific modules, we use a **dual-mode override** under `src/`:
 Examples:
 - `src/haxe/ds/BalancedTree.hx`
 - `src/haxe/ds/EnumValueMap.hx`
+- `src/haxe/ds/ArraySort.hx`
+- `src/haxe/ds/ListSort.hx`
 
 Why `src/`?
 - For haxelib installs, `src/` is the only path guaranteed to be on the initial classpath for `-lib reflaxe.elixir`.
@@ -152,9 +169,12 @@ Why the path looks like the Haxe stdlib (`src/haxe/ds/...`)?
 Is this a Reflaxe convention?
 - It’s a common pattern across target compilers (including Reflaxe-based ones): when a module must be
   resolved before bootstrap/injection can run, it needs to live on the library’s initial classpath.
-- The “dual-mode” approach (`#if macro` implementation, `#else` extern) is specific to our constraints:
+- The dual-mode approach (`#if macro` implementation, `#else` extern) is specific to our constraints:
   Haxe eval must be able to instantiate the type, but we don’t want to emit the upstream implementation
   into Elixir output when it is non-idiomatic or breaks `--warnings-as-errors`.
+- `haxe.Exception` is different: because upstream is already extern, the target-specific `.cross.hx`
+  file can stay out of macro/eval resolution while still giving Elixir builds the concrete base module
+  they need.
 
 The injection point is macro-time, in:
 - `src/reflaxe/elixir/CompilerBootstrap.hx:1` (early injection, invoked from `extraParams.hxml`)

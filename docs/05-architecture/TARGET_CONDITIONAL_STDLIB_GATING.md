@@ -13,12 +13,20 @@ roles of `extraParams.hxml`, `CompilerBootstrap.Start()`, and `CompilerInit.Star
 - Elixir-specific stdlib work in this repo uses two source roots:
   - `std/elixir/_std/**/*.hx`: authored target-specific overrides for upstream Haxe stdlib modules.
   - plain `std/**/*.hx`: target-owned APIs/support modules such as `elixir.*`, `phoenix.*`, and `ecto.*`.
-- Additionally, a tiny set of **bootstrap-safe overrides** live under `src/haxe/**`:
-  - These are resolved *very early* (before bootstrap macros run) and must work in both macro/eval and target compilation.
-  - Example: `src/haxe/ds/BalancedTree.hx`, `src/haxe/ds/EnumValueMap.hx`.
+- Additionally, a tiny set of **bootstrap-safe overrides** live under the initial `src/haxe/**`
+  classpath because they are resolved *very early* (before bootstrap macros can guarantee target
+  std insertion):
+  - `src/haxe/Exception.cross.hx` is the lone source-tree `.cross.hx` override. It keeps macro/eval
+    and non-cross targets on upstream's extern `haxe.Exception`, while Elixir output gets the concrete
+    `Reflaxe.Exception` runtime base.
+  - `src/haxe/ds/{ArraySort,BalancedTree,EnumValueMap,ListSort}.hx` are plain `.hx` dual-mode
+    surfaces for macro/eval plus Elixir output.
+  - `src/haxe/ds/{GenericStack,HashMap,List}.hx` are early BEAM-safe stdlib implementations whose
+    receiver semantics are tied to compiler lowering.
 - `std/elixir/_std/` and `std/` are added to the active Haxe classpath for Elixir builds by
   `CompilerBootstrap.Start()`.
-- Macro contexts and non-Elixir targets use the upstream Haxe stdlib (no `__elixir__()` leaks).
+- Macro contexts and non-Elixir targets normally use the upstream Haxe stdlib, except for the
+  explicitly documented early `src/haxe/**` overrides above.
 
 ## WHY
 
@@ -75,7 +83,9 @@ must shadow the official Haxe stdlib in Elixir builds.
   `CompilerBootstrap.Start()` still prepends the target paths for Elixir builds so ordering matches
   consumer installs.
 - Added `--macro reflaxe.elixir.CompilerBootstrap.Start()` so repo-local scoped-lib builds get the same package-root classpath insertion behavior as consumer installs.
-- For the handful of modules that must be available before macros run, we place a bootstrap-safe dual-mode implementation under `src/`.
+- For the handful of modules that must be available before macros run, we place a documented
+  bootstrap-safe implementation under `src/haxe/**`. Use this only for concrete early-resolution
+  constraints; ordinary stdlib replacements belong in `std/elixir/_std/**`.
 
 ## Activation Scenarios
 

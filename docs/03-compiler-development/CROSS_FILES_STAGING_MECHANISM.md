@@ -232,8 +232,14 @@ Important detail (Haxe 4 / `cross`)
 ### Why `elixir_output` shows up inside some `.cross.hx` files
 
 Most target-specific code is hidden from other contexts by classpath gating (`std/elixir/_std/` and
-`std/` are added to the active classpath only for Elixir builds). However, a small set of overrides must live on the library `src/` classpath
-so consumer installs resolve them *before* bootstrap macros run (example: `src/haxe/Exception.cross.hx`).
+`std/` are added to the active classpath only for Elixir builds). However, a small set of overrides
+must live on the library `src/` classpath so consumer installs resolve them *before* bootstrap macros
+run.
+
+`src/haxe/Exception.cross.hx` is intentionally the lone source-tree `.cross.hx` file in that early
+set. Upstream `haxe.Exception` is extern, so macro/eval and non-cross targets can keep resolving the
+official stdlib file. The Elixir target needs a concrete emitted base module for exception structs,
+so the early `.cross.hx` file provides that implementation only when `elixir_output` is active.
 
 Because `src/` is visible in more situations (tools, JS/genes builds, etc.), those early overrides often use:
 
@@ -241,6 +247,11 @@ Because `src/` is visible in more situations (tools, JS/genes builds, etc.), tho
 
 This ensures they only emit Elixir-specific implementations (including `__elixir__()` injections) when the
 Elixir backend is actually active, while remaining harmless type surfaces elsewhere.
+
+The plain `.hx` early overrides under `src/haxe/ds/**` are the other side of the same constraint:
+they must be visible to macro/eval when Haxe needs constructors or WAE-safe stdlib surfaces before
+target std insertion can run. See `docs/04-api-reference/STANDARD_LIBRARY_HANDLING.md` for the
+current inventory and ownership rules.
 
 Implementation:
 

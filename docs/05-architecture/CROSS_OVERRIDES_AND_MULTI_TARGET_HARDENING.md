@@ -22,8 +22,9 @@ That is not automatically wrong, but it does mean contributors need a clearer me
    - normal target-conditional stdlib override sources
 2. `std/**/*.hx`
    - target-owned APIs/support modules such as `elixir.*`, `phoenix.*`, and `ecto.*`
-3. `src/haxe/Exception.cross.hx`
-   - early-visible bootstrap-safe override
+3. `src/haxe/**`
+   - early-visible bootstrap-safe overrides, including `src/haxe/Exception.cross.hx` and selected
+     `src/haxe/ds/*.hx` stdlib surfaces
 
 That is a coherent design, but it is a different design from `reflaxe.ocaml`.
 
@@ -31,10 +32,10 @@ That is a coherent design, but it is a different design from `reflaxe.ocaml`.
 
 | Question | Answer for this repo |
 | --- | --- |
-| Main override style | broad `std/elixir/_std/**/*.hx` plus target-owned `std/**/*.hx` APIs plus one early `src/haxe/*` exception |
+| Main override style | broad `std/elixir/_std/**/*.hx` plus target-owned `std/**/*.hx` APIs plus selected early `src/haxe/**` overrides |
 | Is `_std` used? | yes |
 | Is `.cross.hx` used broadly? | yes in packaged output; source-tree overrides are plain `.hx` |
-| Does this repo own early `src/haxe/*` modules? | yes, `src/haxe/Exception.cross.hx` |
+| Does this repo own early `src/haxe/*` modules? | yes, `src/haxe/Exception.cross.hx` and selected `src/haxe/ds/*.hx` modules |
 | Bootstrap activation currently keys off raw Haxe 4 `Cross`? | yes |
 | Same-compilation sibling-target coexistence safe today? | no |
 | Highest-priority hardening item | narrow Haxe 4 bootstrap activation and add mixed-target fail-fast |
@@ -79,8 +80,10 @@ It means this repo can inject Elixir stdlib classpaths earlier and more broadly 
 This repo currently owns:
 
 - `src/haxe/Exception.cross.hx`
+- selected `src/haxe/ds/*.hx` modules
 
-That collides directly with the same early module path in `reflaxe.ocaml`.
+The sharpest known collision is `src/haxe/Exception.cross.hx`, which collides directly with the same
+early module path in `reflaxe.ocaml`.
 
 If both libraries are loaded in one compile, classpath order decides which `haxe.Exception` wins.
 
@@ -100,7 +103,8 @@ Recommended next steps:
 
 1. Narrow Haxe 4 bootstrap activation so raw `Cross` is not treated as sufficient target identity.
 2. Add explicit mixed-target detection/fail-fast behavior when sibling target libraries are active together.
-3. Keep `src/haxe/Exception.cross.hx` documented as an early exception-path override, not just another stdlib file.
+3. Keep `src/haxe/Exception.cross.hx` documented as the intentional lone source-tree `.cross.hx`
+   early override, not just another stdlib file.
 4. Add a focused coexistence smoke or regression test if a deterministic test shape can be designed.
 
 ## Local sibling references

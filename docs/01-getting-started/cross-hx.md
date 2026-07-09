@@ -4,7 +4,7 @@
 > - `.cross.hx` = target-specific implementation of a familiar API (same surface, idiomatic target code)
 > - The suffix is Haxe 4's target-specific file mechanism; `cross` is Haxe's generic custom-target platform, not a promise that the file is portable across all targets
 > - In this repo, authored stdlib replacements live as plain `.hx` files under `std/elixir/_std/**`; Reflaxe build can package them as `.cross.hx`
->   - Exception: a small set of *early-resolved* overrides may live under the library `src/` classpath so consumer installs pick them up before bootstrap macros run (example: `src/haxe/Exception.cross.hx`)
+>   - Exception: a small set of *early-resolved* overrides may live under the library `src/` classpath so consumer installs pick them up before bootstrap macros run. `src/haxe/Exception.cross.hx` is the intentional lone source-tree `.cross.hx`; selected `src/haxe/ds/*.hx` files are early plain `.hx` overrides.
 > - `std/elixir/_std/` is a selective override root: modules we do not provide there keep resolving from the installed official Haxe stdlib
 > - Reflaxe's skeleton `build` command generates packaged `.cross.hx` files from `_std` source roots; checked-in `std/**/*.cross.hx` is no longer the source layout
 > - Prefer `_std` overrides for stable API mappings; use macros for authoring ergonomics; use AST transforms for shape-driven rewrites
@@ -48,7 +48,7 @@ Practical note (consumer installs)
 - When installed via haxelib/lix, the library’s `src/` classpath is available immediately, but `std/elixir/_std/` and `std/` are added by bootstrap macros for Elixir builds.
 - "Added" means Haxe searches the installed package's override/API directories before the official Haxe stdlib for that compile. No files are copied, generated, or renamed at that moment.
 - Some Haxe stdlib modules are resolved *very early* (before bootstrap can run). If a `.cross.hx` override must win for those modules, it needs to live on the initial classpath (under `src/`).
-  - In rare cases we also use this “early override” pattern for plain `.hx` modules that must work in **both** macro/eval and Elixir target compilation. Those files are dual-mode (`#if macro` implementation, `#else` extern) and live under `src/haxe/**` (example: `src/haxe/ds/BalancedTree.hx`).
+  - In rare cases we also use this “early override” pattern for plain `.hx` modules that must work in **both** macro/eval and Elixir target compilation, or whose receiver semantics are tied to compiler lowering. Those files live under `src/haxe/**` (examples: `src/haxe/ds/BalancedTree.hx`, `src/haxe/ds/List.hx`).
 
 When compiling for the `cross` platform from a packaged Reflaxe build, Haxe treats files ending in
 `.cross.hx` as platform-specific module implementations. During normal source-tree/GitHub/Lix builds,
