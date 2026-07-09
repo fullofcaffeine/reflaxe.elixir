@@ -183,4 +183,80 @@ if grep -Eq '^[[:space:]]*-cp[[:space:]]+' "$ROOT_DIR/extraParams.hxml"; then
   fail "extraParams.hxml must remain cwd-agnostic; source classpaths belong in the scoped library HXML"
 fi
 
+source_hxml_helper="$ROOT_DIR/scripts/dev/configure-source-checkout-hxml.sh"
+if [[ ! -x "$source_hxml_helper" ]]; then
+  fail "missing executable source-checkout HXML configurator"
+fi
+
+helper_tmp="$(mktemp -d "${TMPDIR:-/tmp}/reflaxe-elixir-source-hxml.XXXXXX")"
+cleanup_helper_tmp() {
+  rm -rf "$helper_tmp"
+}
+trap cleanup_helper_tmp EXIT
+mkdir -p "$helper_tmp/haxe_libraries"
+printf '%s\n' '-lib tink_macro' '-lib tink_parse' > "$helper_tmp/haxe_libraries/reflaxe.elixir.hxml"
+"$source_hxml_helper" "$helper_tmp" "$ROOT_DIR" >/dev/null
+
+rendered_target="$helper_tmp/haxe_libraries/reflaxe.elixir.hxml"
+rendered_reflaxe="$helper_tmp/haxe_libraries/reflaxe.hxml"
+grep -Fx -- "-cp $ROOT_DIR/std/" "$rendered_target" >/dev/null \
+  || fail "source-HXML helper did not render the target std root"
+grep -Fx -- "-cp $ROOT_DIR/std/elixir/_std/" "$rendered_target" >/dev/null \
+  || fail "source-HXML helper did not render the target _std root"
+grep -Fx -- '-lib tink_macro' "$rendered_target" >/dev/null \
+  || fail "source-HXML helper did not preserve Lix dependency lines"
+grep -Fx -- "-cp $ROOT_DIR/vendor/reflaxe/src/" "$rendered_reflaxe" >/dev/null \
+  || fail "source-HXML helper did not render vendored Reflaxe"
+for dependency in tink_core tink_macro tink_parse; do
+  [[ -f "$helper_tmp/haxe_libraries/$dependency.hxml" ]] \
+    || fail "source-HXML helper did not render pinned $dependency configuration"
+done
+if grep -F '${SCOPE_DIR}' "$rendered_target" "$rendered_reflaxe" >/dev/null; then
+  fail "source-HXML helper left unresolved SCOPE_DIR placeholders"
+fi
+cleanup_helper_tmp
+trap - EXIT
+
+for source_consumer in scripts/dogfood-phoenix.sh scripts/ci/docs-smoke.sh; do
+  grep -F 'configure-source-checkout-hxml.sh' "$ROOT_DIR/$source_consumer" >/dev/null \
+    || fail "$source_consumer must render the canonical scoped HXML after lix dev"
+done
+
+if git -C "$ROOT_DIR" grep -nE 'lix install .*github:fullofcaffeine/reflaxe\.elixir' -- README.md docs examples src lib scripts \
+  | grep -vE 'scripts/ci/check-stdlib-source-layout\.sh' >/dev/null; then
+  fail "consumer Lix installs must use the Reflaxe-built release zip, not raw GitHub source"
+fi
+
+if ! python3 - "$ROOT_DIR/package.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    data = json.load(handle)
+
+plugins = data.get("release", {}).get("plugins", [])
+prepare = ""
+assets = []
+for plugin in plugins:
+    if isinstance(plugin, list) and plugin:
+        name = plugin[0]
+        config = plugin[1] if len(plugin) > 1 and isinstance(plugin[1], dict) else {}
+        if name == "@semantic-release/exec":
+            prepare = config.get("prepareCmd", "")
+        if name == "@semantic-release/github":
+            assets = config.get("assets", [])
+
+expected = "dist/reflaxe.elixir-${nextRelease.version}.zip"
+if "scripts/release/package-haxelib.sh" not in prepare or expected not in prepare:
+    raise SystemExit("semantic-release prepareCmd does not build the versioned Reflaxe package")
+if not any(isinstance(asset, dict) and asset.get("path") == expected for asset in assets):
+    raise SystemExit("semantic-release does not upload the versioned Reflaxe package")
+PY
+then
+  fail "release configuration does not publish the Reflaxe-built package artifact"
+fi
+
+grep -F 'HAXE_BIN=' "$ROOT_DIR/.github/workflows/release.yml" >/dev/null \
+  || fail "release workflow must provide HAXE_BIN for Reflaxe package construction"
+
 echo "[guard:stdlib-layout] OK: std overrides use Reflaxe _std source layout"

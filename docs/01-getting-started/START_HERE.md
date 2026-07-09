@@ -88,10 +88,11 @@ npm init -y
 npm install --save-dev lix
 npx lix scope create
 
-# Install the generator (latest GitHub release tag)
+# Install the Reflaxe-built package from the latest GitHub release
 # If this fails (no `curl` / GitHub rate limit), pick a tag from the Releases page and set it manually.
 REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
-npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
+REFLAXE_ELIXIR_VERSION="${REFLAXE_ELIXIR_TAG#v}"
+npx lix install "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
 
 # Generate a Phoenix app
 REFLAXE_ELIXIR_SRC="$(./node_modules/.bin/haxelib path reflaxe.elixir | tr -d '\r' | grep -E 'reflaxe\.elixir/.*/src/?$' | head -n 1)"
@@ -105,6 +106,9 @@ mix phx.server
 Then open `http://localhost:4000`.
 
 More details: `docs/06-guides/PHOENIX_NEW_APP.md`.
+Compiler contributors should also read
+[`Source Checkout vs Release Package Layout`](SOURCE_VS_PACKAGE_LAYOUT.md), which explains why local
+tests use explicit source paths while normal applications install a Reflaxe-built package.
 
 ## 3) The mental model (Haxe → Elixir → Phoenix)
 

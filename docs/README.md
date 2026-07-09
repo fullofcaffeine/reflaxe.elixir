@@ -15,6 +15,7 @@ This index helps you find the right docs quickly, whether you're building apps w
 - [Start Here (Beginner Quickstart)](01-getting-started/START_HERE.md) - Run the todo-app and learn the mental model (Haxe/Phoenix newcomers)
 - [Installation Guide](01-getting-started/installation.md) - Setup Haxe, Reflaxe, and dependencies
 - [Development Workflow](01-getting-started/development-workflow.md) - Day-to-day development practices
+- [Source Checkout vs Release Package](01-getting-started/SOURCE_VS_PACKAGE_LAYOUT.md) - Why Reflaxe uses two filesystem layouts for one implementation
 - [Compiler Flags Guide](01-getting-started/compiler-flags-guide.md) - Recommended flags and anti-patterns
 - [Cross-hx Guide](01-getting-started/cross-hx.md) - Target-conditional stdlib overrides
 - [Quickstart](06-guides/QUICKSTART.md) - Fast track to productivity
@@ -120,7 +121,7 @@ Legacy guides (kept for link stability):
 
 ### 📜 History
 **[09-history/](09-history/)** - Historical context for repository shape and decisions
-- [Reflaxe Layout and Packaging History](09-history/REFLAXE_LAYOUT_AND_PACKAGING_HISTORY.md) - Why this repo uses Reflaxe `_std` sources with bootstrap support for GitHub/Lix dev mode
+- [Reflaxe Layout and Packaging History](09-history/REFLAXE_LAYOUT_AND_PACKAGING_HISTORY.md) - Why source checkouts use `_std` while releases contain generated `.cross.hx` files
 
 Prefer [`CHANGELOG.md`](../CHANGELOG.md) and [`ROADMAP.md`](../ROADMAP.md) for release/user-facing history.
 

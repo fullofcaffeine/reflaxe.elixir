@@ -120,6 +120,9 @@ if [[ -z "$tag" ]]; then
   tag="$(github_latest_tag "$REPO")"
 fi
 echo "[readme-release-smoke] Ref: ${tag}"
+version="${tag#v}"
+package_url="https://github.com/${REPO}/releases/download/${tag}/reflaxe.elixir-${version}.zip"
+echo "[readme-release-smoke] Package: ${package_url}"
 
 # Step 0: Ensure Mix tooling is available (required because the generator uses phx_new).
 run_step "mix local.hex --force" 120 "$work_dir" "mix local.hex --force"
@@ -137,7 +140,7 @@ run_step "lix use haxe ${HAXE_VERSION}" 60 "$work_dir" "npx lix use haxe '${HAXE
 run_step "haxe --version (lix shim)" 60 "$work_dir" "./node_modules/.bin/haxe -version"
 
 # Step 2: Install library from the latest release tag and download its pinned deps.
-run_step "lix install reflaxe.elixir @ ${tag}" 300 "$work_dir" "npx lix install 'github:${REPO}#${tag}'"
+run_step "lix install reflaxe.elixir package @ ${tag}" 300 "$work_dir" "npx lix install '${package_url}'"
 run_step "lix download (workspace libs)" 600 "$work_dir" "npx lix download"
 
 # Step 3: Generate a Phoenix app (skip installs so we can keep bounded steps).
@@ -163,7 +166,7 @@ fi
 # Step 4: Install deps in the generated app and compile (compile-only; no servers).
 run_step "npm install (generated app)" 600 "$app_dir" "npm install --no-audit --no-fund"
 run_step "lix scope create (generated app)" 60 "$app_dir" "npx lix scope create"
-run_step "lix install reflaxe.elixir (generated app)" 300 "$app_dir" "npx lix install 'github:${REPO}#${tag}'"
+run_step "lix install reflaxe.elixir package (generated app)" 300 "$app_dir" "npx lix install '${package_url}'"
 run_step "lix download (generated app)" 600 "$app_dir" "npx lix download"
 run_step "mix deps.get" 600 "$app_dir" "mix deps.get"
 run_step "mix compile" 900 "$app_dir" "mix compile"

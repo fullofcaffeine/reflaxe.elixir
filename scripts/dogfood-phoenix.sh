@@ -23,9 +23,15 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TIMEOUT="$ROOT_DIR/scripts/with-timeout.sh"
 SENTINEL="$ROOT_DIR/scripts/qa-sentinel.sh"
 LOGPEEK="$ROOT_DIR/scripts/qa-logpeek.sh"
+SOURCE_HXML="$ROOT_DIR/scripts/dev/configure-source-checkout-hxml.sh"
 
 if [[ ! -x "$TIMEOUT" ]]; then
   echo "[dogfood] ERROR: missing timeout wrapper: $TIMEOUT" >&2
+  exit 2
+fi
+
+if [[ ! -x "$SOURCE_HXML" ]]; then
+  echo "[dogfood] ERROR: missing source-checkout HXML configurator: $SOURCE_HXML" >&2
   exit 2
 fi
 
@@ -91,6 +97,20 @@ normalize_tag() {
   else
     echo "$tag"
   fi
+}
+
+release_package_url() {
+  local tag
+  tag="$(normalize_tag "$1")"
+  local version="${tag#v}"
+  echo "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${tag}/reflaxe.elixir-${version}.zip"
+}
+
+configure_source_checkout() {
+  local project_dir="$1"
+  local checkout_dir="$2"
+  run_step "configure source-checkout HXML ($(basename "$checkout_dir"))" 30 "$ROOT_DIR" \
+    "'$SOURCE_HXML' '$project_dir' '$checkout_dir'"
 }
 
 FROM_TAG="$(normalize_tag "$FROM_TAG")"
@@ -250,7 +270,8 @@ run_step "lix scope create (workspace)" 30 "$work_dir" "npx lix scope create"
 # - github mode: install via lix and run the library as a normal consumer would.
 # - local mode: compile + run the CLI entrypoint from the extracted tag source (no GitHub access required).
 if [[ "$MODE" == "github" ]]; then
-  run_step "lix install reflaxe.elixir (${FROM_TAG})" 600 "$work_dir" "npx lix install github:fullofcaffeine/reflaxe.elixir#${FROM_TAG}"
+  from_package_url="$(release_package_url "$FROM_TAG")"
+  run_step "lix install reflaxe.elixir package (${FROM_TAG})" 600 "$work_dir" "npx lix install '$from_package_url'"
   # Prefer invoking the generator directly via `haxe --run Run` from the installed library's
   # resolved `src/` path. Some lix/haxelib shim versions rely on an internal `run-dir` command
   # which is not reliable across environments.
@@ -289,8 +310,10 @@ if [[ "$MODE" == "local" ]]; then
   update_mix_exs_path "$app_dir" "$from_src"
   run_step "verify mix.exs uses path dep (baseline, local)" 10 "$app_dir" "if rg -q 'github: \"fullofcaffeine/reflaxe.elixir\"' mix.exs; then echo '[dogfood] ERROR: mix.exs still uses github dep'; rg -n 'reflaxe_elixir' mix.exs; exit 1; fi"
   run_step "lix dev reflaxe.elixir (${FROM_TAG}) (project, local)" 60 "$app_dir" "npx lix dev reflaxe.elixir '${from_src}'"
+  configure_source_checkout "$app_dir" "$from_src"
 else
-  run_step "lix install reflaxe.elixir (${FROM_TAG}) (project)" 600 "$app_dir" "npx lix install github:fullofcaffeine/reflaxe.elixir#${FROM_TAG}"
+  from_package_url="$(release_package_url "$FROM_TAG")"
+  run_step "lix install reflaxe.elixir package (${FROM_TAG}) (project)" 600 "$app_dir" "npx lix install '$from_package_url'"
 fi
 run_step "lix download (project)" 900 "$app_dir" "npx lix download"
 # Avoid starting the Haxe compilation server during DB setup; the sentinel will
@@ -311,13 +334,15 @@ if [[ "$MODE" == "local" ]]; then
   run_step "verify mix.exs uses path dep (upgrade, local)" 10 "$app_dir" "if rg -q 'github: \"fullofcaffeine/reflaxe.elixir\"' mix.exs; then echo '[dogfood] ERROR: mix.exs still uses github dep'; rg -n 'reflaxe_elixir' mix.exs; exit 1; fi"
   run_step "lix dev haxe deps (reflaxe, upgraded vendored)" 60 "$app_dir" "npx lix dev reflaxe '${to_src}/vendor/reflaxe'"
   run_step "lix dev reflaxe.elixir (${TO_TAG}) (project, local)" 60 "$app_dir" "npx lix dev reflaxe.elixir '${to_src}'"
+  configure_source_checkout "$app_dir" "$to_src"
   run_step "lix download (project, upgraded)" 900 "$app_dir" "npx lix download"
   run_step "mix deps.clean reflaxe_elixir (project)" 300 "$app_dir" "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 mix deps.clean reflaxe_elixir"
   run_step "mix deps.get (project, upgraded)" 900 "$app_dir" "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 mix deps.get"
   run_step "mix ecto.create (project, upgraded)" 300 "$app_dir" "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 mix ecto.create --quiet || true"
   run_step "mix ecto.migrate (project, upgraded)" 300 "$app_dir" "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 mix ecto.migrate"
 else
-  run_step "lix install reflaxe.elixir (${TO_TAG}) (project)" 600 "$app_dir" "npx lix install github:fullofcaffeine/reflaxe.elixir#${TO_TAG}"
+  to_package_url="$(release_package_url "$TO_TAG")"
+  run_step "lix install reflaxe.elixir package (${TO_TAG}) (project)" 600 "$app_dir" "npx lix install '$to_package_url'"
   run_step "lix download (project, upgraded)" 900 "$app_dir" "npx lix download"
   update_mix_exs_tag "$app_dir" "$TO_TAG"
   run_step "mix deps.update reflaxe_elixir (project)" 900 "$app_dir" "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 mix deps.update reflaxe_elixir"

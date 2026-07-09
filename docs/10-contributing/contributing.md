@@ -223,7 +223,7 @@ bash scripts/ci/docs-smoke.sh --verbose
 What it does (high level):
 - installs the Phoenix generator (`phx_new`) and ensures the repo’s lix toolchain is downloaded
 - runs `reflaxe.elixir create --type phoenix` into a temp workspace
-- inside the generated project: `npm install`, `lix scope create`, `lix dev reflaxe.elixir <repo>`, `mix deps.get`, `mix compile`
+- inside the generated project: `npm install`, `lix scope create`, `lix dev reflaxe.elixir <repo>`, render the scoped source HXML, then `mix deps.get` and `mix compile`
 
 Runtime boot + browser E2E are intentionally **not** part of docs smoke; that’s covered by the todo-app QA sentinel.
 
@@ -240,7 +240,8 @@ Haxe stdlib fallback honest for future haxelib.org publishing.
 
 For source-checkout development, use the repository's scoped
 `haxe_libraries/reflaxe.elixir.hxml`; it supplies `std` and `std/elixir/_std` before Haxe types
-upstream-colliding modules. Do not use bare global `haxelib dev` against the unbuilt checkout.
+upstream-colliding modules. Raw `haxelib dev` or `lix dev` alone is insufficient; for an external
+project, run `scripts/dev/configure-source-checkout-hxml.sh <project> <checkout>` after `lix dev`.
 When testing haxelib consumption, build/install the package artifact so Reflaxe has generated the
 single-classpath `src/**/*.cross.hx` layout. Keep `extraParams.hxml` free of relative `-cp` entries,
 which would resolve from the consumer project's working directory.
@@ -250,6 +251,10 @@ the repository-scoped entry. It must therefore include the complete source-check
 `std`, then `std/elixir/_std`) rather than relying on bootstrap to recover an upstream-colliding
 module after typing has started. `npm run guard:stdlib-layout` enforces this for every checked-in
 scoped entry.
+
+For the rationale, including why normal local tests use current source while package parity is a
+separate required gate, see
+[`Source Checkout vs Release Package Layout`](../01-getting-started/SOURCE_VS_PACKAGE_LAYOUT.md).
 
 Separately, a scheduled CI workflow (**README Release Smoke (scheduled)**) validates the
 “install from GitHub Release tag” path stays working without making PR CI flaky.

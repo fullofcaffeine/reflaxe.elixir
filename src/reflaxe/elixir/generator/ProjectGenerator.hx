@@ -391,9 +391,10 @@ class ProjectGenerator {
 			}
 
 			// Install Reflaxe.Elixir as a Haxe library in this project (via lix)
-			var haxeLibVersion = "v" + readLibraryVersion();
-			Sys.println('  Installing Haxe library: reflaxe.elixir#${haxeLibVersion} ...');
-			Sys.command("npx", ["lix", "install", 'github:fullofcaffeine/reflaxe.elixir#${haxeLibVersion}']);
+			var haxeLibVersion = readLibraryVersion();
+			var haxeLibPackage = releasePackageUrl(haxeLibVersion);
+			Sys.println('  Installing Haxe library package: reflaxe.elixir ${haxeLibVersion} ...');
+			Sys.command("npx", ["lix", "install", haxeLibPackage]);
 			Sys.command("npx", ["lix", "download"]);
 
 			// Install Mix dependencies
@@ -513,15 +514,22 @@ ${phoenixFlags}--main ${haxeNamespace}.Main
 		return "latest";
 	}
 
+	function releasePackageUrl(versionOrTag:String):String {
+		var version = StringTools.startsWith(versionOrTag, "v") ? versionOrTag.substr(1) : versionOrTag;
+		var tag = "v" + version;
+		return 'https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/$tag/reflaxe.elixir-$version.zip';
+	}
+
 	function generatePackageJson(projectName:String):String {
 		var name = projectName.toLowerCase().split(" ").join("-");
 		var tag = getLibraryVersionTag();
+		var packageUrl = releasePackageUrl(tag);
 		return '{
   "name": "$name",
   "version": "0.1.0",
   "description": "A Reflaxe.Elixir project",
   "scripts": {
-    "setup:haxe": "npx lix scope create && npx lix install github:fullofcaffeine/reflaxe.elixir#$tag && npx lix download",
+    "setup:haxe": "npx lix scope create && npx lix install $packageUrl && npx lix download",
     "compile": "haxe build.hxml",
     "watch": "nodemon --watch src_haxe --ext hx --exec \\"haxe build.hxml\\"",
     "test": "mix test"

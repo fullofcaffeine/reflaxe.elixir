@@ -16,6 +16,7 @@ concurrency:
 
 env:
   NODE_VERSION: "20"
+  HAXE_VERSION: "4.3.7"
 
 jobs:
   release:
@@ -184,6 +185,17 @@ jobs:
       - name: Install npm dependencies
         if: steps.release_context.outputs.should_skip != 'true'
         run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Install Haxe for Reflaxe package build
+        if: steps.release_context.outputs.should_skip != 'true'
+        run: |
+          set -euo pipefail
+          npx lix download haxe "${HAXE_VERSION}"
+          npx lix use haxe "${HAXE_VERSION}"
+          haxe_bin="$HOME/haxe/versions/${HAXE_VERSION}/haxe"
+          test -x "$haxe_bin"
+          "$haxe_bin" -version
+          echo "HAXE_BIN=$haxe_bin" >> "$GITHUB_ENV"
 
       - name: Configure git identity (for release commits)
         if: steps.release_context.outputs.should_skip != 'true'

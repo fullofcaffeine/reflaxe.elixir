@@ -2,7 +2,7 @@
 
 ### Changed
 
-* **reflaxe:** align stdlib override sources with the Reflaxe `_std` layout; source-tree and GitHub/Lix builds now load `std/elixir/_std` before target-owned `std` APIs so PhoenixHx/examples keep using the Elixir stdlib overrides in dev mode.
+* **reflaxe:** align stdlib override sources with the Reflaxe `_std` layout; scoped source-tree builds now load `std/elixir/_std` before target-owned `std` APIs so PhoenixHx/examples keep using the Elixir stdlib overrides in dev mode.
 * **reflaxe:** move remaining upstream-colliding `std/haxe/**` replacement modules into `std/elixir/_std`, leaving plain `std/haxe/**` for target-owned support surfaces.
 * **reflaxe:** move the authored `haxe.Exception` override into `std/elixir/_std/haxe/Exception.hx`; Reflaxe now creates `src/haxe/Exception.cross.hx` only in built release packages, matching the Rust and OCaml target layout without changing exception semantics.
 * **reflaxe:** align package entrypoint HXML files with Reflaxe-generated targets by applying package-scoped `nullSafety("reflaxe.elixir")` before bootstrap/init macros.
@@ -10,11 +10,15 @@
 * **reflaxe:** move BEAM `sys.*` stdlib replacements into `std/elixir/_std/sys` so Reflaxe packages them as `.cross.hx` files instead of shadowing host/eval `sys.*` during package CLI runs.
 * **ci:** strengthen the haxelib package smoke to assert the installed artifact keeps Reflaxe-flattened `src/**/*.cross.hx` overrides and does not publish source-only `_std` layout roots.
 * **ci:** audit every checked-in scoped `reflaxe.elixir.hxml` so nested example/PhoenixHx development cannot silently omit the target `_std` root and fall back to upstream modules.
+* **ci:** make local dogfood and docs smoke render the canonical scoped HXML after `lix dev`, covering external source-checkout projects instead of relying on late bootstrap insertion.
+* **ci:** compile the same fixture from source and from the installed Reflaxe package, requiring byte-identical generated Elixir outside volatile/source-path metadata.
+* **qa:** make `qa-logpeek --until-done` recognize completed logs and follow new lines without a `tail -f` pipeline race.
+* **release:** attach the Reflaxe-built haxelib zip to every GitHub Release and use that immutable package for Lix installs; raw GitHub tags remain source checkouts rather than pretending to be flattened packages.
 * **examples:** align the Phoenix chat app-local scoped library entry with the full Reflaxe source-checkout classpath contract and refresh its generated test helper output.
 * **ci:** validate the installed package CLI entrypoint so `main: "Run"` and `src/Run.hx` stay aligned in release artifacts.
 * **reflaxe:** audit vendored framework patches against upstream Reflaxe plus the Rust/OCaml converted targets, documenting which local fixes remain required, which are upstream candidates, and which drift needs a separate sync task.
 * **reflaxe:** remove debug-only vendored framework drift while preserving required local Reflaxe patches.
-* **docs:** document the source-checkout contract: use the scoped `haxe_libraries/reflaxe.elixir.hxml` (or explicit `_std` classpaths), and build/install the Reflaxe package artifact instead of pointing bare `haxelib dev` at the unbuilt checkout.
+* **docs:** document the source-checkout contract: use the scoped `haxe_libraries/reflaxe.elixir.hxml` (or the source-HXML helper), and install the versioned Reflaxe package artifact instead of consuming an unbuilt checkout through raw `haxelib dev` or `lix dev`.
 * **docs:** update stdlib parity task templates to use the current `_std` / target-owned `std/**` / early `src/haxe/**` ownership model.
 
 ## [0.14.20](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.19...v0.14.20) (2026-07-09)

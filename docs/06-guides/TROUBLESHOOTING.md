@@ -31,11 +31,12 @@ Error: Library reflaxe.elixir is not installed
 
 **Solution:**
 ```bash
-# Install via lix from a GitHub release tag (recommended)
+# Install the Reflaxe-built package from a GitHub release (recommended)
 npm install --save-dev lix
 npx lix scope create
 REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
-npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
+REFLAXE_ELIXIR_VERSION="${REFLAXE_ELIXIR_TAG#v}"
+npx lix install "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
 npx lix download
 ```
 
@@ -58,7 +59,8 @@ npm install --save-dev lix
 # If using local installation, use npx
 npx lix scope create
 REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
-npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
+REFLAXE_ELIXIR_VERSION="${REFLAXE_ELIXIR_TAG#v}"
+npx lix install "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
 npx lix download
 ```
 
@@ -580,7 +582,8 @@ This was fixed in the latest compiler version. If you still encounter this:
 ```bash
 npx lix scope create
 REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
-npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}" --force
+REFLAXE_ELIXIR_VERSION="${REFLAXE_ELIXIR_TAG#v}"
+npx lix install "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip" --force
 npx lix download
 ```
 
@@ -1042,7 +1045,8 @@ end
 npm install --save-dev lix
 npx lix scope create
 REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
-npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
+REFLAXE_ELIXIR_VERSION="${REFLAXE_ELIXIR_TAG#v}"
+npx lix install "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
 npx lix download
 ```
 

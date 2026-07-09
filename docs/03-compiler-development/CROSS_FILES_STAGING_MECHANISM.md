@@ -8,7 +8,7 @@ read that as **prepending package directories to Haxe's active classpath**. It d
 files, renaming files, or creating a generated package tree during a normal compile.
 
 For the historical reason this repo now uses the generated Reflaxe skeleton `_std` source layout
-while still supporting GitHub/Lix installs directly from the source tree, see
+while still supporting explicitly wired source-checkout development, see
 `docs/09-history/REFLAXE_LAYOUT_AND_PACKAGING_HISTORY.md`.
 
 It answers four questions:
@@ -46,7 +46,7 @@ a built-in Haxe compiler target with its own suffix such as `.js.hx`, `.cpp.hx`,
 
 In this source tree, upstream-colliding Elixir stdlib overrides are authored as plain `.hx` files
 under `std/elixir/_std/**`. Reflaxe package builds turn those authored files into packaged
-`.cross.hx` files. Repo-local and GitHub/Lix builds do not copy files during compilation; the scoped
+`.cross.hx` files. Scoped source-checkout builds do not copy files during compilation; the scoped
 `haxe_libraries/reflaxe.elixir.hxml` adds `std/elixir/_std/` before typing, and bootstrap retains a
 package-root fallback. Those plain `.hx` overrides shadow upstream Haxe stdlib modules by
 **classpath precedence**.
@@ -146,7 +146,7 @@ Reflaxe.Elixir keeps `CompilerBootstrap.Start()` because our package has extra c
 basic skeleton:
 
 - `haxelib.json` exposes only `src` as the initial package `classPath`
-- `std/elixir/_std/` and `std/` are source-tree/GitHub/Lix roots that must be added from the installed
+- `std/elixir/_std/` and `std/` are source-checkout roots that must be added from the checkout
   source package root when the package has not been flattened by Reflaxe build
 - stdlib overrides must be inserted before the official Haxe stdlib in classpath order
 - `vendor/reflaxe/src` must be visible for the patched vendored Reflaxe framework
@@ -255,10 +255,11 @@ current inventory and ownership rules.
 
 ### Source-checkout rule
 
-Do not use bare global `haxelib dev reflaxe.elixir <checkout>` as the normal development setup. Haxelib
-exposes only `haxelib.json`'s single `src` classpath, and a macro can run too late to replace an
-upstream module already cached by Haxe. Use the repository's scoped Lix library file, add the source
-roots explicitly in a direct test HXML, or build/install the Reflaxe package artifact first. Relative
+Do not use raw `haxelib dev` or `lix dev` alone as the normal development setup. Both expose
+`haxelib.json`'s single `src` classpath, and a macro can run too late to replace an upstream module
+already cached by Haxe. Use the repository's scoped Lix library file, run
+`scripts/dev/configure-source-checkout-hxml.sh` for an external source project, add the roots explicitly,
+or build/install the Reflaxe package artifact first. Relative
 `-cp` entries must not be added to `extraParams.hxml`, because they resolve from the consumer's current
 working directory rather than the installed library root.
 

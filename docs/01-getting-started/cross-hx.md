@@ -47,12 +47,12 @@ std/elixir/_std/
 Practical note (source checkout versus package)
 - Scoped source-checkout builds resolve `haxe_libraries/reflaxe.elixir.hxml`, which adds `std/` and `std/elixir/_std/` before typing; bootstrap retains package-root fallback setup.
 - Built haxelib packages already contain generated `src/**/*.cross.hx` files, so installed consumers need only `-lib reflaxe.elixir`.
-- A bare global `haxelib dev` pointing at the unbuilt checkout is not a supported compiler-development path. Use the scoped Lix configuration, explicit source classpaths, or build/install the package artifact first.
+- Raw `haxelib dev` or `lix dev` alone is not a supported compiler-development path. Use the repository scope, run the source-HXML helper for an external project, add explicit source classpaths, or build/install the package artifact first.
 - "Added" means Haxe searches the installed package's override/API directories before the official Haxe stdlib for that compile. No files are copied, generated, or renamed at that moment.
 - In rare cases we use an early plain `.hx` override for modules that must work in **both** macro/eval and Elixir target compilation, or whose receiver semantics are tied to compiler lowering. Those files live under `src/haxe/**` (examples: `src/haxe/ds/BalancedTree.hx`, `src/haxe/ds/List.hx`).
 
 When compiling for the `cross` platform from a packaged Reflaxe build, Haxe treats files ending in
-`.cross.hx` as platform-specific module implementations. During normal source-tree/GitHub/Lix builds,
+`.cross.hx` as platform-specific module implementations. During scoped source-tree builds,
 the same authored overrides are selected because bootstrap prepends `std/elixir/_std/` only for
 Elixir builds.
 
@@ -81,7 +81,7 @@ Reflaxe.Elixir now uses that same source layout for stdlib replacements:
 - checked-in upstream-colliding target overrides live under `std/elixir/_std/**/*.hx`
 - scoped source HXML adds `std/elixir/_std/` before typing, with bootstrap fallback for supported consumer paths; this is only classpath order, not file copying
 - Reflaxe build can still generate packaged `.cross.hx` files when creating a haxelib-style package
-- releases installed by Lix from GitHub tags consume the authored source layout directly
+- versioned GitHub Release assets contain the Reflaxe-built, flattened package layout
 
 So do not add checked-in `std/**/*.cross.hx` files for ordinary stdlib work. The path should describe
 the role of the file:

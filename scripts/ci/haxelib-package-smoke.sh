@@ -9,9 +9,10 @@ set -euo pipefail
 #   1) creating a fresh npm+lix workspace,
 #   2) installing the generated package zip into an isolated haxelib repo,
 #   3) checking the installed `Run` CLI entrypoint used by haxelib metadata,
-#   4) compiling a minimal `-lib reflaxe.elixir` program with no repo-local
-#      classpaths,
-#   5) checking direct target overrides and official stdlib fallback both work.
+#   4) compiling one fixture from the explicitly wired source checkout,
+#   5) compiling the same fixture through installed `-lib reflaxe.elixir`,
+#   6) comparing generated Elixir and checking target overrides plus official
+#      stdlib fallback both work.
 #
 # WHY
 # - Repo-local scoped libs and GitHub-tag Lix installs can pass while the
@@ -111,6 +112,27 @@ require_tree_not_contains() {
   if grep -F "$needle" "$path" >/dev/null 2>&1; then
     fail "unexpected checkout-local path leaked into $path: $needle"
   fi
+}
+
+compare_generated_elixir() {
+  local source_dir="$1"
+  local package_dir="$2"
+  local source_list package_list
+  source_list="$(cd "$source_dir" && find . -type f -name '*.ex' | sort)"
+  package_list="$(cd "$package_dir" && find . -type f -name '*.ex' | sort)"
+
+  if [[ "$source_list" != "$package_list" ]]; then
+    diff -u <(printf '%s\n' "$source_list") <(printf '%s\n' "$package_list") || true
+    fail "source and package modes emitted different Elixir file sets"
+  fi
+
+  while IFS= read -r rel; do
+    [[ -n "$rel" ]] || continue
+    if ! cmp -s "$source_dir/$rel" "$package_dir/$rel"; then
+      diff -u "$source_dir/$rel" "$package_dir/$rel" || true
+      fail "source and package modes emitted different Elixir: $rel"
+    fi
+  done <<< "$source_list"
 }
 
 tmp_base="$(mktemp -d "${TMPDIR:-/tmp}/reflaxe-elixir-haxelib-package-smoke.XXXXXX")"
@@ -330,6 +352,24 @@ cat > "$work_dir/build.hxml" <<'HXML'
 -v
 HXML
 
+cat > "$work_dir/build-source.hxml" <<'HXML'
+-lib reflaxe.elixir
+-cp src
+-D elixir_output=out_source
+-D reflaxe_runtime
+-D no-utf16
+-main Main
+-v
+HXML
+
+run_step "register source checkout with lix" 120 "$work_dir" \
+  "npx lix dev reflaxe.elixir '$ROOT_DIR'"
+run_step "render source-checkout scoped HXML" 60 "$ROOT_DIR" \
+  "scripts/dev/configure-source-checkout-hxml.sh '$work_dir' '$ROOT_DIR'"
+run_step "download source-checkout dependencies" 600 "$work_dir" "npx lix download"
+run_step "compile fixture through source checkout" 300 "$work_dir" \
+  '"$PWD/node_modules/.bin/haxe" build-source.hxml > compile-source.log 2>&1 || { tail -200 compile-source.log; exit 1; }'
+
 run_step "compile fixture through installed package" 300 "$work_dir" \
   'PATH="$HAXELIB_WRAPPER_DIR:$(dirname "$HAXE_BIN"):$PATH" "$HAXE_BIN" build.hxml > compile.log 2>&1 || { tail -200 compile.log; exit 1; }'
 
@@ -338,12 +378,18 @@ require_file "$work_dir/out/main.ex"
 require_file "$work_dir/out/string_buf.ex"
 require_file "$work_dir/out/haxe/crypto/sha256.ex"
 require_file "$work_dir/out/phoenix/channels/wire_payload.ex"
+require_file "$work_dir/out_source/_GeneratedFiles.json"
+
+compare_generated_elixir "$work_dir/out_source" "$work_dir/out"
+say "Source/package generated Elixir parity: OK"
 
 require_contains "$work_dir/out/haxe/crypto/sha256.ex" ":crypto.hash(:sha256"
 require_contains "$work_dir/compile.log" "src/StringBuf.cross.hx"
 require_contains "$work_dir/compile.log" "src/haxe/crypto/Sha256.cross.hx"
 require_contains "$work_dir/compile.log" "std/haxe/ds/Either.hx"
 require_contains "$work_dir/compile.log" "vendor/phoenix_shared/src/phoenix/channels/WirePayload.hx"
+require_contains "$work_dir/compile-source.log" "std/elixir/_std/StringBuf.hx"
+require_contains "$work_dir/compile-source.log" "std/elixir/_std/haxe/crypto/Sha256.hx"
 require_tree_not_contains "$work_dir/compile.log" "$canonical_root"
 require_tree_not_contains "$work_dir/out" "$canonical_root"
 
@@ -355,4 +401,4 @@ if [[ "$VERBOSE" -eq 1 ]]; then
 fi
 
 echo ""
-say "OK (haxelib package artifact install + compile)"
+say "OK (source + installed haxelib package parity)"

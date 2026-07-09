@@ -90,13 +90,33 @@ If you're new to this stack, begin with:
 ```bash
 npx lix scope create
 
-# Install latest GitHub release tag
+# Install the Reflaxe-built package from the latest GitHub release
 REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*"tag_name":[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)"
-npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
+REFLAXE_ELIXIR_VERSION="${REFLAXE_ELIXIR_TAG#v}"
+npx lix install "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
 
 # Download project-pinned Haxe deps
 npx lix download
 ```
+
+The release zip is the normal consumer package. Reflaxe builds it from the checked-in target stdlib
+sources and includes the generated `.cross.hx` files required by a single `-lib reflaxe.elixir`.
+
+### Working from a source checkout
+
+Use this only when developing the compiler itself or testing an unreleased change:
+
+```bash
+REFLAXE_ELIXIR_CHECKOUT=/absolute/path/to/reflaxe.elixir
+npx lix dev reflaxe.elixir "$REFLAXE_ELIXIR_CHECKOUT"
+"$REFLAXE_ELIXIR_CHECKOUT/scripts/dev/configure-source-checkout-hxml.sh" . "$REFLAXE_ELIXIR_CHECKOUT"
+npx lix download
+```
+
+The helper gives the external project the same scoped classpaths used by this repository. Do not use
+a raw `lix dev` or `haxelib dev` entry by itself: source `_std` overrides must be visible before Haxe
+starts typing. See [Source checkout vs release package](docs/01-getting-started/SOURCE_VS_PACKAGE_LAYOUT.md)
+for a beginner-friendly explanation of why the layouts differ and how output parity is tested.
 
 ### Minimal `build.hxml`
 

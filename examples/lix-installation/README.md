@@ -12,9 +12,10 @@ npm init -y
 npm install --save-dev lix
 npx lix scope create
 
-# 2. Install Reflaxe.Elixir from a GitHub release tag (recommended)
+# 2. Install the Reflaxe-built package from a GitHub release (recommended)
 REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
-npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
+REFLAXE_ELIXIR_VERSION="${REFLAXE_ELIXIR_TAG#v}"
+npx lix install "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
 
 # 3. Download pinned Haxe libraries for the project
 npx lix download
@@ -117,7 +118,8 @@ Make sure you installed the library and downloaded dependencies:
 ```bash
 npx lix scope create
 REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
-npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
+REFLAXE_ELIXIR_VERSION="${REFLAXE_ELIXIR_TAG#v}"
+npx lix install "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
 npx lix download
 ```
 
@@ -130,8 +132,10 @@ Ensure your `-lib reflaxe.elixir` directive is present in your .hxml file.
 ```bash
 # Update to a newer tag (recommended)
 REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
-npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}" --force
-
-# Or install from main (bleeding edge; not necessarily a release)
-# npx lix install github:fullofcaffeine/reflaxe.elixir --force
+REFLAXE_ELIXIR_VERSION="${REFLAXE_ELIXIR_TAG#v}"
+npx lix install "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip" --force
 ```
+
+Raw GitHub branches and tags are source checkouts, not Reflaxe-built packages. For compiler
+development, follow the source-checkout helper workflow in the repository README instead of
+installing `main` as a normal consumer dependency.

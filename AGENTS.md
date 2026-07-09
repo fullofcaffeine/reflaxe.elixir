@@ -900,8 +900,8 @@ Checklist before merging a transform:
 - Repo-local, GitHub, and Lix development must resolve `-lib reflaxe.elixir` through the scoped `haxe_libraries/reflaxe.elixir.hxml`, which adds `std`, then `std/elixir/_std`, before typing.
 - An app-local `haxe_libraries/reflaxe.elixir.hxml` overrides the repository entry instead of extending it. It must repeat the complete `src`, `std`, then `std/elixir/_std` contract; `npm run guard:stdlib-layout` audits every checked-in scoped entry.
 - Direct compiler HXML files that bypass `-lib reflaxe.elixir` must add those same classpaths explicitly.
-- Do not point bare global `haxelib dev` at the unbuilt checkout for compiler testing: haxelib exposes only the single `src` classpath, so early upstream-colliding `_std` modules may already be cached before a macro can add the path.
-- To test through haxelib, build/install the package artifact first. Reflaxe then places generated `.cross.hx` files inside the package `src` classpath.
+- Do not consume an unbuilt checkout through raw `haxelib dev` or `lix dev` alone: both expose the single `src` classpath, so early upstream-colliding `_std` modules may already be cached before a macro can add the path. External source-checkout projects must run `scripts/dev/configure-source-checkout-hxml.sh <project> <checkout>` after `lix dev`.
+- Normal consumers install the versioned Reflaxe-built zip attached to each GitHub Release. To test through haxelib directly, build/install the package artifact first. Reflaxe places generated `.cross.hx` files inside the package `src` classpath.
 - Keep `extraParams.hxml` cwd-agnostic. Relative `-cp` entries there resolve from the consumer project, not this library.
 
 ### How gating works

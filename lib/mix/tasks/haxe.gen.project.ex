@@ -904,9 +904,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     Mix.shell().info("🎉 Reflaxe.Elixir setup complete!")
     Mix.shell().info("")
     Mix.shell().info("Next steps:")
-    Mix.shell().info("  1. Install Reflaxe.Elixir (Haxe library):")
-    Mix.shell().info("     npx lix scope create   # if you don't already have a lix scope")
-    Mix.shell().info("     npx lix install github:fullofcaffeine/reflaxe.elixir")
+    Mix.shell().info("  1. Install the versioned Reflaxe.Elixir Haxe package:")
     Mix.shell().info("     npm run setup:haxe")
     Mix.shell().info("")
 

@@ -88,9 +88,10 @@ must shadow the official Haxe stdlib in Elixir builds.
   constraints; ordinary stdlib replacements belong in `std/elixir/_std/**`.
 
 Source development must use the scoped `haxe_libraries/reflaxe.elixir.hxml` or equivalent explicit
-classpaths. A bare `haxelib dev` of the unbuilt checkout cannot expose `_std` early enough for every
-upstream-colliding module; build/install the Reflaxe package artifact when testing that consumption
-path.
+classpaths. Raw `haxelib dev` or `lix dev` alone cannot expose `_std` early enough for every
+upstream-colliding module; external source projects must render the scoped HXML with
+`scripts/dev/configure-source-checkout-hxml.sh`. Normal consumers install the Reflaxe-built release
+package.
 
 ## Activation Scenarios
 

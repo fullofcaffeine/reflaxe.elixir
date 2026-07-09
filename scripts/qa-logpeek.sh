@@ -48,36 +48,27 @@ tail -n "$LAST" "$LOGFILE" || true
 # Optionally follow until DONE (bounded), else follow for a fixed duration
 if [[ "$UNTIL_DONE" -eq 1 ]]; then
   echo "[qa-logpeek] Following ${LOGFILE} until '[QA] DONE status=' or ${UNTIL_SECS}s (bounded)" >&2
-  PAT='\[QA\] DONE status='
-  if command -v timeout >/dev/null 2>&1; then
-    # Use timeout with a small awk filter that exits when the DONE line appears
-    timeout "${UNTIL_SECS}s" bash -lc "tail -f '$LOGFILE' | awk '{print; fflush(); if (index(\$0,\"[QA] DONE status=\")>0) exit 0 }'" || true
-  elif command -v gtimeout >/dev/null 2>&1; then
-    gtimeout "${UNTIL_SECS}s" bash -lc "tail -f '$LOGFILE' | awk '{print; fflush(); if (index(\$0,\"[QA] DONE status=\")>0) exit 0 }'" || true
-  else
-    # Portable fallback using a FIFO and a watchdog timer
-    pipe=$(mktemp -u)
-    mkfifo "$pipe"
-    tail -f "$LOGFILE" > "$pipe" &
-    tpid=$!
-    (
-      sleep "$UNTIL_SECS" || true
-      kill -TERM "$tpid" 2>/dev/null || true
-    ) &
-    kpid=$!
-    # Read and echo lines until DONE appears
-    set +e
-    found=0
-    while IFS= read -r line; do
-      printf '%s\n' "$line"
-      case "$line" in
-        *"[QA] DONE status="*) found=1; kill -TERM "$tpid" >/dev/null 2>&1 || true; break ;;
-      esac
-    done < "$pipe"
-    set -e
-    kill -TERM "$kpid" >/dev/null 2>&1 || true
-    wait "$kpid" 2>/dev/null || true
-    rm -f "$pipe" || true
+  if ! grep -F '[QA] DONE status=' "$LOGFILE" >/dev/null 2>&1; then
+    printed_lines="$(wc -l < "$LOGFILE" | tr -d ' ')"
+    deadline=$((SECONDS + UNTIL_SECS))
+
+    while (( SECONDS < deadline )); do
+      current_lines="$(wc -l < "$LOGFILE" | tr -d ' ')"
+      if (( current_lines < printed_lines )); then
+        printed_lines=0
+      fi
+
+      if (( current_lines > printed_lines )); then
+        start_line=$((printed_lines + 1))
+        sed -n "${start_line},${current_lines}p" "$LOGFILE"
+        if sed -n "${start_line},${current_lines}p" "$LOGFILE" | grep -F '[QA] DONE status=' >/dev/null 2>&1; then
+          break
+        fi
+        printed_lines="$current_lines"
+      fi
+
+      sleep 1
+    done
   fi
   echo "[qa-logpeek] Follow finished (until-done)" >&2
 elif [[ "${FOLLOW}" != "0" ]]; then

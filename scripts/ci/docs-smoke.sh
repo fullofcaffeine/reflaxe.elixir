@@ -105,6 +105,8 @@ fi
 run_step "npm install (project)" 600 "$app_dir" "npm install --no-audit --no-fund"
 run_step "lix scope create (project)" 60 "$app_dir" "npx lix scope create"
 run_step "lix dev reflaxe.elixir (project)" 60 "$app_dir" "npx lix dev reflaxe.elixir '${ROOT_DIR}'"
+run_step "configure source-checkout HXML (project)" 30 "$ROOT_DIR" \
+  "scripts/dev/configure-source-checkout-hxml.sh '$app_dir' '$ROOT_DIR'"
 run_step "lix install haxe deps (tink_macro)" 300 "$app_dir" "npx lix install haxelib:tink_macro"
 run_step "lix install haxe deps (tink_parse)" 300 "$app_dir" "npx lix install haxelib:tink_parse"
 run_step "lix download (project)" 600 "$app_dir" "npx lix download"

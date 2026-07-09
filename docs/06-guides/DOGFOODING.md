@@ -27,9 +27,10 @@ What it does:
 1) Creates a temporary workspace under `$TMPDIR`
 2) Installs `lix`
 3) Generates a Phoenix project
-   - `--mode github`: installs `reflaxe.elixir` at `--from-tag` and runs the generator via `haxe --run Run`
-     (resolved via `haxelib path` for reliability across environments)
-   - `--mode local`: uses the current repo generator (to-tag) to scaffold, then validates the app across tags via Mix + lix path/dev deps
+   - `--mode github`: installs the versioned Reflaxe-built zip attached to `--from-tag` and runs the
+     generator via `haxe --run Run` (resolved via `haxelib path` for reliability across environments)
+   - `--mode local`: uses checked-out tag sources with Mix path deps, then renders each checkout's
+     scoped HXML so its source `std` and `_std` roots are available before Haxe typing begins
 4) Installs app deps + Haxe libs (`npm install`, `npx lix download`, `mix deps.get`)
 5) Ensures the dev database exists (`mix ecto.create`, `mix ecto.migrate`)
 6) Runs the repo QA sentinel against the generated app (`--hxml build.hxml`) for the baseline tag
@@ -42,7 +43,8 @@ What it does:
 # Use local tag archives + Mix path deps (works even before the repo is public)
 scripts/dogfood-phoenix.sh --mode local
 
-# Use GitHub tags for both lix + Mix deps (requires public repo access)
+# Use immutable GitHub Release package assets for Lix and tagged GitHub Mix deps
+# (requires public repo access and a release asset for both tags)
 scripts/dogfood-phoenix.sh --mode github
 
 # Override upgrade path
@@ -65,4 +67,7 @@ scripts/dogfood-phoenix.sh --keep-dir
 
 - The script uses the repo QA sentinel in **async** mode with a deadline, then checks the final
   `[QA] DONE status=` line in the sentinel log.
+- A raw GitHub tag is a multi-root compiler source checkout, not the flattened Haxelib package.
+  GitHub mode therefore installs the Reflaxe-built release zip; local mode explicitly configures
+  source roots with `scripts/dev/configure-source-checkout-hxml.sh`.
 - Generated Phoenix apps use `build.hxml` (not `build-server.hxml`), so the sentinel run uses `--hxml build.hxml`.
