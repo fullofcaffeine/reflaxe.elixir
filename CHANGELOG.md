@@ -1,3 +1,10 @@
+## [0.14.21](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.20...v0.14.21) (2026-07-09)
+
+
+### Bug Fixes
+
+* **reflaxe:** publish built packages for consumers ([4b3345f](https://github.com/fullofcaffeine/reflaxe.elixir/commit/4b3345f350272972905d478d3cf02212c6dab56c))
+
 ## Unreleased
 
 ### Changed
