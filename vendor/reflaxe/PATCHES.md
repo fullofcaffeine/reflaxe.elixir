@@ -270,19 +270,20 @@ These files are local to this vendored copy and are not framework patches:
 - `haxelib.json` - local vendored-package metadata used for clarity; the active
   scoped hxml still pins `-D reflaxe=4.0.0-beta`.
 
-## Cleanup Candidates
+## Cleanup Notes
 
-The audit found local differences that are not required framework fixes:
+2026-07-09 cleanup:
 
-- `src/reflaxe/ReflectCompiler.hx` contains debug-only instrumentation guarded
-  by `debug_function_collection` / `debug_preprocessor`.
-- `src/reflaxe/preprocessors/ExpressionPreprocessor.hx` contains debug-only
-  instrumentation guarded by `debug_preprocessor`.
-- `src/reflaxe/preprocessors/implementations/everything_is_expr/EverythingIsExprSanitizer.hx`
-  differs by whitespace only.
+- Removed local debug-only instrumentation from
+  `src/reflaxe/ReflectCompiler.hx`.
+- Removed local debug-only instrumentation from
+  `src/reflaxe/preprocessors/ExpressionPreprocessor.hx`.
+- Kept the whitespace-only difference in
+  `src/reflaxe/preprocessors/implementations/everything_is_expr/EverythingIsExprSanitizer.hx`
+  because matching upstream exactly would reintroduce trailing whitespace and
+  violate this repo's diff hygiene.
 
-These can be reverted to upstream shape in a separate cleanup commit. Because
-they are vendored framework edits, still validate with:
+Vendored framework cleanup commits should still validate with:
 
 - `npm run test:haxelib-package`
 - `npm run test:quick`

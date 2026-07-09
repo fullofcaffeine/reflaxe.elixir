@@ -1,16 +1,17 @@
-## [0.14.20](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.19...v0.14.20) (2026-07-09)
-
-
-### Bug Fixes
-
-* **ci:** use pinned Haxe for package smoke ([d5299f4](https://github.com/fullofcaffeine/reflaxe.elixir/commit/d5299f4eb0d86c903aa4e33923886219ba8f65ce))
-
 ## Unreleased
 
 ### Changed
 
 * **reflaxe:** align stdlib override sources with the Reflaxe `_std` layout; source-tree and GitHub/Lix builds now load `std/elixir/_std` before target-owned `std` APIs so PhoenixHx/examples keep using the Elixir stdlib overrides in dev mode.
 * **reflaxe:** audit vendored framework patches against upstream Reflaxe and document which local fixes remain required before they can be removed or upstreamed.
+* **reflaxe:** remove debug-only vendored framework drift while preserving required local Reflaxe patches.
+
+## [0.14.20](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.19...v0.14.20) (2026-07-09)
+
+
+### Bug Fixes
+
+* **ci:** use pinned Haxe for package smoke ([d5299f4](https://github.com/fullofcaffeine/reflaxe.elixir/commit/d5299f4eb0d86c903aa4e33923886219ba8f65ce))
 
 ## [0.14.19](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.18...v0.14.19) (2026-07-09)
 

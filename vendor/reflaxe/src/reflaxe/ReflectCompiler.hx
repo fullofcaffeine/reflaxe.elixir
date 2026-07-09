@@ -511,31 +511,6 @@ class ReflectCompiler {
 	// * transpileClass
 	// =======================================================
 	static function transpileClass(cls: ClassType, compiler: BaseCompiler) {
-		#if debug_function_collection
-		trace("[XRay ReflectCompiler] transpileClass called for: " + cls.name);
-		trace("[XRay ReflectCompiler]   isExtern: " + cls.isExtern);
-		trace("[XRay ReflectCompiler]   fields count: " + cls.fields.get().length);
-		trace("[XRay ReflectCompiler]   statics count: " + cls.statics.get().length);
-		
-		// Special debug for TodoLive
-		if (cls.name == "TodoLive") {
-			trace("[XRay ReflectCompiler] TodoLive special debug:");
-			trace("[XRay ReflectCompiler]   module: " + cls.module);
-			trace("[XRay ReflectCompiler]   pack: " + cls.pack);
-			trace("[XRay ReflectCompiler]   pos: " + cls.pos);
-			// Check if statics are being added after initial typing
-			var statics = cls.statics.get();
-			trace("[XRay ReflectCompiler]   statics.get() result: " + statics);
-			if (statics != null && statics.length == 0) {
-				// Check class metadata
-				trace("[XRay ReflectCompiler]   class metadata:");
-				for (meta in cls.meta.get()) {
-					trace("[XRay ReflectCompiler]     @" + meta.name + " with params: " + meta.params);
-				}
-			}
-		}
-		#end
-		
 		final varFields: Array<ClassVarData> = [];
 		final funcFields: Array<ClassFuncData> = [];
 
@@ -564,26 +539,11 @@ class ReflectCompiler {
 					}
 				}
 				case FMethod(methodKind): {
-					#if debug_function_collection
-					if (cls.name == "TodoLive") {
-						trace("[XRay ReflectCompiler] TodoLive method: " + field.name + " shouldGenerate: " + shouldGenerateFunc(field, compiler, isStatic, methodKind));
-					}
-					#end
 					if(shouldGenerateFunc(field, compiler, isStatic, methodKind)) {
 						final data = field.findFuncData(cls, isStatic);
-						#if debug_function_collection
-						if (cls.name == "TodoLive") {
-							trace("[XRay ReflectCompiler]   findFuncData returned: " + (data != null ? "data" : "null"));
-						}
-						#end
 						if(data != null) {
 							funcFields.push(preprocessFunction(compiler, field, data));
 						} else {
-							#if debug_function_collection
-							if (cls.name == "TodoLive") {
-								trace("[XRay ReflectCompiler]   WARNING: Function info not found for " + field.name);
-							}
-							#end
 							if(!compiler.options.ignoreBodilessFunctions) {
 								#if eval
 								Context.warning("Function information not found.", field.pos);
@@ -605,24 +565,10 @@ class ReflectCompiler {
 		}
 
 		for(field in cls.statics.get()) {
-			#if debug_function_collection
-			if (cls.name == "TodoLive") {
-				trace("[XRay ReflectCompiler] TodoLive static field: " + field.name);
-				trace("[XRay ReflectCompiler]   kind: " + field.kind);
-				trace("[XRay ReflectCompiler]   isExtern: " + field.isExtern);
-				trace("[XRay ReflectCompiler]   has expr: " + (field.expr() != null));
-			}
-			#end
 			addField(field, true);
 		}
 	
-		#if debug_function_collection
-	if (cls.name == "TodoLive") {
-		trace("[XRay ReflectCompiler] TodoLive final counts - varFields: " + varFields.length + ", funcFields: " + funcFields.length);
-	}
-	#end
-	
-	compiler.compileClass(cls, varFields, funcFields);
+		compiler.compileClass(cls, varFields, funcFields);
 	}
 
 	static function preprocessFunction(compiler: BaseCompiler, field: ClassField, data: ClassFuncData): ClassFuncData {
@@ -632,14 +578,7 @@ class ReflectCompiler {
 		if(compiler.options.enforceNullTyping) {
 			NullTypeEnforcer.modifyExpression(data.expr);
 		}
-		#if debug_preprocessor
-		trace("[XRay ReflectCompiler] Processing preprocessors for function");
-		trace("[XRay ReflectCompiler] Number of preprocessors: " + compiler.expressionPreprocessors.length);
-		#end
 		for(preprocessor in compiler.expressionPreprocessors) {
-			#if debug_preprocessor
-			trace("[XRay ReflectCompiler] Processing preprocessor: " + preprocessor);
-			#end
 			preprocessor.process(data, compiler);
 		}
 		return data;
