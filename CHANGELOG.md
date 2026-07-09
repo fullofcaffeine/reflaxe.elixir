@@ -1,3 +1,10 @@
+## [0.14.20](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.19...v0.14.20) (2026-07-09)
+
+
+### Bug Fixes
+
+* **ci:** use pinned Haxe for package smoke ([d5299f4](https://github.com/fullofcaffeine/reflaxe.elixir/commit/d5299f4eb0d86c903aa4e33923886219ba8f65ce))
+
 ## Unreleased
 
 ### Changed
