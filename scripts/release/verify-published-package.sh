@@ -69,6 +69,18 @@ package_zip="$tmp_dir/$asset_name"
 package_metadata="$tmp_dir/haxelib.json"
 package_files="$tmp_dir/files.txt"
 
+if git -C "$ROOT_DIR" cat-file -e "$tag:release/manifest.json" 2>/dev/null; then
+  node "$ROOT_DIR/scripts/release/verify-release-state.js" tagged \
+    --version "$version" \
+    --tag "$tag" \
+    --package "$package_zip"
+elif [[ "${ALLOW_LEGACY_RELEASE:-0}" == "1" ]]; then
+  echo "[release-verify] Legacy tag $tag predates release/manifest.json; checking package structure only"
+else
+  echo "[release-verify] ERROR: $tag is missing release/manifest.json" >&2
+  exit 1
+fi
+
 unzip -p "$package_zip" haxelib.json > "$package_metadata"
 unzip -Z1 "$package_zip" > "$package_files"
 

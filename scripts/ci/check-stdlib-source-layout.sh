@@ -245,6 +245,9 @@ const configured = new Map(
     .filter((plugin) => Array.isArray(plugin))
     .map(([name, config]) => [name, config || {}])
 )
+const pluginNames = releaseConfig.plugins.map((plugin) =>
+  Array.isArray(plugin) ? plugin[0] : plugin
+)
 const prepare = configured.get('@semantic-release/exec')?.prepareCmd || ''
 const githubAssets = configured.get('@semantic-release/github')?.assets || []
 const gitAssets = configured.get('@semantic-release/git')?.assets || []
@@ -265,6 +268,13 @@ const manifest = loadReleaseManifest('release/manifest.json', root)
 const expectedGitAssets = generatedReleaseAssets(manifest, 'release/manifest.json', root)
 if (JSON.stringify(gitAssets) !== JSON.stringify(expectedGitAssets)) {
   throw new Error('semantic-release git assets do not match the release generator')
+}
+
+const gitIndex = pluginNames.indexOf('@semantic-release/git')
+const verifierIndex = pluginNames.indexOf('./scripts/release/verify-release-stages.js')
+const githubIndex = pluginNames.indexOf('@semantic-release/github')
+if (gitIndex < 0 || verifierIndex <= gitIndex || githubIndex <= verifierIndex) {
+  throw new Error('release-stage verifier must run after git prepare and before GitHub publish')
 }
 JS
 then

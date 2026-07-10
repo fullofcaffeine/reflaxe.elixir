@@ -31,7 +31,14 @@ module.exports = {
       '@semantic-release/git',
       {
         assets: generatedReleaseAssets(manifest, DEFAULT_MANIFEST_PATH, root),
-        message: 'chore(release): ${nextRelease.version} [skip ci]\\n\\n${nextRelease.notes}',
+        message: 'chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}',
+      },
+    ],
+    [
+      './scripts/release/verify-release-stages.js',
+      {
+        manifestPath: 'release/manifest.json',
+        packagePath: 'dist/reflaxe.elixir.zip',
       },
     ],
     [

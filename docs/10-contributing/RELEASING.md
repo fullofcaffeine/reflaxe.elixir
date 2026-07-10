@@ -76,6 +76,42 @@ list from the same generator through `release.config.js` instead of maintaining 
 `package.json`. The JavaScript config still uses the official semantic-release analyzer and git
 plugins; local code only supplies validated rules and assets.
 
+## Staged release verification
+
+Release verification runs at three boundaries:
+
+1. After the official git plugin creates and pushes the release commit, but before semantic-release
+   creates a tag, the prepared-state verifier checks committed generated assets, changelog version,
+   clean tracked state, and package contents. Failure here prevents tag creation.
+2. After semantic-release creates the tag, but before the GitHub plugin publishes, the tag verifier
+   checks that the tag targets the prepared commit and that tagged metadata/docs and package contents
+   agree.
+3. After semantic-release returns, the workflow downloads the GitHub Release asset and verifies the
+   published release state, exact asset name, non-empty upload, tagged generated state, and package
+   contents.
+
+### Partial-publication recovery
+
+- **Failure before tag creation:** fix the cause and rerun the Release workflow. Do not create a tag
+  manually; no public release identity exists yet.
+- **Tag exists but the GitHub Release or asset is missing:** do not move or recreate the tag. Check
+  out that exact tag in a temporary clone, run `scripts/release/package-haxelib.sh`, verify the zip,
+  then create the missing GitHub Release or upload the exact `reflaxe.elixir-X.Y.Z.zip` asset with
+  `gh release create` / `gh release upload --clobber` as appropriate.
+- **Published metadata is wrong:** treat the release as immutable until the discrepancy is understood.
+  Prefer correcting GitHub Release notes/assets against the existing tag. Delete or move a public tag
+  only as an explicitly reviewed release revocation.
+
+Finish every recovery with:
+
+```bash
+scripts/release/verify-published-package.sh vX.Y.Z
+```
+
+Tags created before the structured release manifest can be audited with
+`ALLOW_LEGACY_RELEASE=1`; this bypasses only tagged generated-state comparison and is never set by
+the Release workflow.
+
 ## Token / permissions notes
 
 The release job uses the built-in GitHub Actions token (`github.token`) with `contents: write`.
