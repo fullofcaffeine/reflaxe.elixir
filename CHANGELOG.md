@@ -45,7 +45,7 @@
 * **docs:** reconcile current-facing release language with the real pre-1.0 lineage; label old `v1.0.x`/`v1.1.x` milestones as unshipped historical plans and point entrypoints to the canonical generated posture.
 * **test:** add adversarial release-artifact coverage for metadata mismatch, missing/unexpected/unsafe entries, duplicate names, symlinks, unsafe modes, and environment-independent archive bytes.
 * **generator:** resolve scaffold package URLs from staged release metadata or the source checkout's nearest immutable tag, never from tracked development sentinels.
-* **ci:** install the locked Node dependency tree in the dedicated Haxelib package job before invoking the canonical ZIP writer.
+* **ci:** install the locked Node and Beam toolchains in package/release jobs before invoking canonical ZIP and exact-ZIP Mix/Phoenix verification.
 * **stdlib:** classify `haxe.io.Mime` and `haxe.io.Scheme` as verified official Haxe fallback modules; add runtime, snapshot, and source-versus-package coverage without duplicating their String enum-abstract definitions in the target stdlib.
 * **compiler:** preserve omitted Haxe method defaults from Reflaxe's typed `ClassFuncData` instead of always passing `nil`, and keep multi-expression constructor blocks grouped when they are assigned as values.
 * **stdlib:** enable all upstream `haxe.io.ArrayBufferView` and typed-array runtime specs through the official Haxe fallback; preserve shared Bytes views while keeping source and built-package output identical.

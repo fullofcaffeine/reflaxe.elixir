@@ -17,6 +17,8 @@ concurrency:
 env:
   NODE_VERSION: "20"
   HAXE_VERSION: "4.3.7"
+  ELIXIR_VERSION: "1.18.3"
+  OTP_VERSION: "27.2"
 
 jobs:
   release:
@@ -181,6 +183,13 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
+
+      - name: Setup Erlang/Elixir
+        if: steps.release_context.outputs.should_skip != 'true'
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Install npm dependencies
         if: steps.release_context.outputs.should_skip != 'true'

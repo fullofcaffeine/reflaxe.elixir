@@ -325,8 +325,9 @@ function main() {
     assert(packageJob, 'CI must contain the dedicated haxelib package job')
     assert.match(
       packageJob[1],
-      /npm ci --ignore-scripts --no-audit --no-fund[\s\S]*npm run test:haxelib-package/
+      /erlef\/setup-beam@v1[\s\S]*npm ci --ignore-scripts --no-audit --no-fund[\s\S]*npm run test:haxelib-package/
     )
+    assert.match(workflow, /uses: erlef\/setup-beam@v1/)
     console.log(
       '[release-artifact] OK: canonical archive and adversarial validation contracts'
     )
