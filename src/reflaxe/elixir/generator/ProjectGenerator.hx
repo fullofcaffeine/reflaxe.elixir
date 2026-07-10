@@ -499,19 +499,7 @@ ${phoenixFlags}--main ${haxeNamespace}.Main
 	}
 
 	function getLibraryVersionTag():String {
-		try {
-			var libPath = getLibraryPath();
-			var haxelibPath = Path.join([libPath, "haxelib.json"]);
-			if (FileSystem.exists(haxelibPath)) {
-				var parsed:{version:String} = cast haxe.Json.parse(File.getContent(haxelibPath));
-				var version = parsed.version;
-				if (version != null && version != "") {
-					return "v" + version;
-				}
-			}
-		} catch (e:haxe.Exception) {}
-
-		return "latest";
+		return "v" + readLibraryVersion();
 	}
 
 	function releasePackageUrl(versionOrTag:String):String {
@@ -1465,16 +1453,48 @@ ${endMarker}
 	}
 
 	function readLibraryVersion():String {
+		var libPath = getLibraryPath();
 		try {
-			var libPath = getLibraryPath();
 			var content = File.getContent(Path.join([libPath, "haxelib.json"]));
 			var parsed = haxe.Json.parse(content);
 			var version:Null<String> = Reflect.field(parsed, "version");
-			if (version != null && version != "")
+			if (version != null && version != "" && version != "0.0.0")
 				return version;
 		} catch (_:haxe.Exception) {}
 
-		return "1.0.0";
+		var sourceVersion = readSourceCheckoutReleaseVersion(libPath);
+		if (sourceVersion != null)
+			return sourceVersion;
+
+		throw "Cannot determine a released Reflaxe.Elixir version. Installed release packages carry staged version metadata; source checkouts require a reachable vMAJOR.MINOR.PATCH Git tag.";
+	}
+
+	/** Resolve the package to install without turning tracked development sentinels into release URLs. */
+	function readSourceCheckoutReleaseVersion(libPath:String):Null<String> {
+		var process:Null<sys.io.Process> = null;
+		try {
+			process = new sys.io.Process("git", [
+				"-C",
+				libPath,
+				"describe",
+				"--tags",
+				"--abbrev=0",
+				"--match",
+				"v[0-9]*.[0-9]*.[0-9]*",
+				"HEAD"
+			]);
+			var tag = process.stdout.readAll().toString().trim();
+			process.stderr.readAll();
+			var exitCode = process.exitCode();
+			process.close();
+			process = null;
+			if (exitCode == 0 && ~/^v[0-9]+\.[0-9]+\.[0-9]+$/.match(tag))
+				return tag.substr(1);
+		} catch (_:haxe.Exception) {
+			if (process != null)
+				process.close();
+		}
+		return null;
 	}
 
 	function phoenixClientMode(options:GeneratorOptions):String {

@@ -197,29 +197,24 @@ jobs:
           "$haxe_bin" -version
           echo "HAXE_BIN=$haxe_bin" >> "$GITHUB_ENV"
 
-      - name: Configure git identity (for release commits)
-        if: steps.release_context.outputs.should_skip != 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
       - name: Release
         id: semantic_release
         if: steps.release_context.outputs.should_skip != 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GH_TOKEN: ${{ github.token }}
+          RELEASE_SOURCE_SHA: ${{ steps.release_context.outputs.target_sha }}
         run: |
           set -euo pipefail
-          before_version="$(node -e "process.stdout.write(require('./scripts/release/sync-versions').latestReachableVersion())")"
+          before_tag="$(git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*' HEAD)"
           echo "[release] Publishing (semantic-release decides whether a new version is required)"
           npx semantic-release
-          after_version="$(node -e "process.stdout.write(require('./scripts/release/sync-versions').latestReachableVersion())")"
+          after_tag="$(git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*' HEAD)"
           published=false
           tag=""
-          if [[ "$after_version" != "$before_version" ]]; then
+          if [[ "$after_tag" != "$before_tag" ]]; then
             published=true
-            tag="v$after_version"
+            tag="$after_tag"
           fi
           {
             echo "published=$published"

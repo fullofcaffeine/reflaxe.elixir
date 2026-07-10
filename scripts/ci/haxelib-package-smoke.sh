@@ -137,7 +137,17 @@ compare_generated_elixir() {
 
 tmp_base="$(mktemp -d "${TMPDIR:-/tmp}/reflaxe-elixir-haxelib-package-smoke.XXXXXX")"
 work_dir="$tmp_base/work"
-package_zip="$tmp_base/reflaxe.elixir.zip"
+if [[ "${PACKAGE_SMOKE_USE_EXISTING:-0}" == "1" ]]; then
+  package_zip_rel="${PACKAGE_ZIP_REL:-dist/reflaxe.elixir.zip}"
+  if [[ "$package_zip_rel" == /* ]]; then
+    package_zip="$package_zip_rel"
+  else
+    package_zip="$ROOT_DIR/$package_zip_rel"
+  fi
+  require_file "$package_zip"
+else
+  package_zip="$tmp_base/reflaxe.elixir.zip"
+fi
 mkdir -p "$work_dir/src"
 
 cleanup() {
@@ -167,8 +177,12 @@ export HAXELIB_SHIM="$work_dir/node_modules/.bin/haxelib"
 [[ -x "$HAXELIB_SHIM" ]] || fail "missing haxelib shim: $HAXELIB_SHIM"
 
 run_step "haxe --version (real binary)" 60 "$work_dir" '"$HAXE_BIN" -version'
-run_step "build haxelib package zip" 180 "$ROOT_DIR" \
-  'HAXE_BIN="$HAXE_BIN" bash scripts/release/package-haxelib.sh "$PACKAGE_ZIP"'
+if [[ "${PACKAGE_SMOKE_USE_EXISTING:-0}" == "1" ]]; then
+  say "Using existing package artifact: $package_zip"
+else
+  run_step "build haxelib package zip" 180 "$ROOT_DIR" \
+    'HAXE_BIN="$HAXE_BIN" bash scripts/release/package-haxelib.sh "$PACKAGE_ZIP"'
+fi
 run_step "haxelib newrepo (isolated)" 60 "$work_dir" '"$HAXELIB_SHIM" newrepo'
 run_step "haxelib install package zip" 600 "$work_dir" \
   '"$HAXELIB_SHIM" install "$PACKAGE_ZIP" --always'
@@ -193,6 +207,7 @@ if [[ "$canonical_installed" == "$canonical_root" ]]; then
 fi
 
 require_file "$installed_root/haxelib.json"
+require_file "$installed_root/release-metadata.json"
 require_file "$installed_root/extraParams.hxml"
 require_file "$installed_root/src/Run.hx"
 require_file "$installed_root/src/reflaxe/elixir/CompilerBootstrap.hx"
@@ -217,18 +232,26 @@ require_absent "$installed_root/src/haxe/crypto/Sha256.hx"
 require_absent "$installed_root/src/sys/FileSystem.hx"
 require_absent "$installed_root/src/sys/io/File.hx"
 
-if ! python3 - "$installed_root/haxelib.json" <<'PY'
+if ! python3 - "$installed_root/haxelib.json" "$installed_root/release-metadata.json" <<'PY'
 import json
+import re
 import sys
 
 with open(sys.argv[1], encoding="utf-8") as handle:
     data = json.load(handle)
+with open(sys.argv[2], encoding="utf-8") as handle:
+    metadata = json.load(handle)
 
 if "reflaxe" in data:
     raise SystemExit("installed haxelib.json still contains source-only reflaxe metadata")
 
 if data.get("main") != "Run":
     raise SystemExit(f"installed haxelib.json must keep main=Run, found {data.get('main')!r}")
+
+if metadata.get("schemaVersion") != 1 or metadata.get("version") != data.get("version"):
+    raise SystemExit("release-metadata.json does not match staged haxelib metadata")
+if not re.fullmatch(r"[0-9a-f]{40}", metadata.get("sourceCommit", "")):
+    raise SystemExit("release-metadata.json does not contain a full source commit")
 PY
 then
   fail "installed package haxelib.json does not match runnable package metadata"
@@ -407,6 +430,22 @@ require_absent "$work_dir/out_source/haxe/io/scheme.ex"
 compare_generated_elixir "$work_dir/out_source" "$work_dir/out"
 say "Source/package generated Elixir parity: OK"
 
+mix_project="$work_dir/package_mix"
+mkdir -p "$mix_project/lib"
+cp -R "$work_dir/out/." "$mix_project/lib/"
+cat > "$mix_project/mix.exs" <<'EX'
+defmodule ReflaxeElixirPackageSmoke.MixProject do
+  use Mix.Project
+
+  def project do
+    [app: :reflaxe_elixir_package_smoke, version: "0.0.0", elixir: "~> 1.14", deps: []]
+  end
+end
+EX
+run_step "compile installed-package Phoenix fixture with Mix" 180 "$mix_project" \
+  'mix compile > mix-compile.log 2>&1 || { tail -200 mix-compile.log; exit 1; }'
+require_file "$mix_project/_build/dev/lib/reflaxe_elixir_package_smoke/ebin/Elixir.Phoenix.Channels.WirePayload.beam"
+
 require_contains "$work_dir/out/haxe/crypto/sha256.ex" ":crypto.hash(:sha256"
 require_contains "$work_dir/compile.log" "src/StringBuf.cross.hx"
 require_contains "$work_dir/compile.log" "src/haxe/crypto/Sha256.cross.hx"
@@ -440,4 +479,4 @@ if [[ "$VERBOSE" -eq 1 ]]; then
 fi
 
 echo ""
-say "OK (source + installed haxelib package parity)"
+say "OK (source/package parity + exact-ZIP Mix/Phoenix compile)"

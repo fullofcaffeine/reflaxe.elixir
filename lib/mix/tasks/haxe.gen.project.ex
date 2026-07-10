@@ -37,6 +37,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   @requirements ["app.config"]
   @haxe_test_helper_begin "# BEGIN reflaxe_elixir haxe_exunit_require"
   @haxe_test_helper_end "# END reflaxe_elixir haxe_exunit_require"
+  @reflaxe_elixir_source_root Path.expand("../../..", __DIR__)
 
   @doc """
   Entry point for the Mix task
@@ -344,7 +345,40 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
 
     case Application.spec(:reflaxe_elixir, :vsn) do
       nil -> raise "unable to determine the installed Reflaxe.Elixir version"
-      version -> to_string(version)
+      version -> resolve_reflaxe_elixir_version!(to_string(version))
+    end
+  end
+
+  defp resolve_reflaxe_elixir_version!(version)
+       when version not in ["0.0.0", "0.0.0-development"],
+       do: version
+
+  defp resolve_reflaxe_elixir_version!(_development_sentinel) do
+    case System.cmd(
+           "git",
+           [
+             "-C",
+             @reflaxe_elixir_source_root,
+             "describe",
+             "--tags",
+             "--abbrev=0",
+             "--match",
+             "v[0-9]*.[0-9]*.[0-9]*",
+             "HEAD"
+           ],
+           stderr_to_stdout: true
+         ) do
+      {"v" <> version, 0} ->
+        version = String.trim(version)
+
+        if Regex.match?(~r/^\d+\.\d+\.\d+$/, version) do
+          version
+        else
+          raise "source checkout resolved a non-release Reflaxe.Elixir tag"
+        end
+
+      {_output, _status} ->
+        raise "cannot determine a released Reflaxe.Elixir version: installed releases carry staged version metadata; source checkouts require a reachable vMAJOR.MINOR.PATCH Git tag"
     end
   end
 

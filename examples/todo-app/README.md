@@ -518,7 +518,8 @@ CMD ["_build/prod/rel/todo_app/bin/todo_app", "start"]
 
 ## 🤝 Contributing
 
-This example is part of Reflaxe.Elixir v1.1.x. Contributions welcome!
+This example tracks the current pre-1.0 Reflaxe.Elixir source tree and is part of the repository's
+compiler, Phoenix runtime, and browser QA.
 
 1. Fork the repository
 2. Create your feature branch
@@ -531,7 +532,7 @@ GPL-3.0 - See LICENSE file in project root
 
 ---
 
-**Built with Reflaxe.Elixir v1.1.x** - Write once in Haxe, run everywhere! 🚀
+**Built with Reflaxe.Elixir** - Haxe authoring with Phoenix and LiveView on the BEAM.
 
 ## Template Mode
 

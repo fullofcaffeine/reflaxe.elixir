@@ -1,155 +1,100 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-out="${1:-dist/reflaxe.elixir.zip}"
-
 root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+out="${1:-dist/reflaxe.elixir.zip}"
+version="${2:-$(node -p "require('$root_dir/haxelib.json').version")}"
+tag="${3:-development}"
+source_sha="${4:-$(git -C "$root_dir" rev-parse HEAD^{commit})}"
+
 if [[ "$out" == /* ]]; then
   out_abs="$out"
 else
   out_abs="$root_dir/$out"
 fi
 
-if ! command -v zip >/dev/null 2>&1; then
-  echo "error: zip not found in PATH" >&2
-  exit 2
-fi
-
 haxe_cmd="${HAXE_BIN:-haxe}"
-if [[ "$haxe_cmd" == */* ]]; then
-  if [[ ! -x "$haxe_cmd" ]]; then
-    echo "error: HAXE_BIN is not executable: $haxe_cmd" >&2
+for command_name in node git tar; do
+  command -v "$command_name" >/dev/null 2>&1 || {
+    echo "error: $command_name not found in PATH" >&2
     exit 2
-  fi
-elif ! command -v "$haxe_cmd" >/dev/null 2>&1; then
-  echo "error: haxe not found in PATH; set HAXE_BIN to the real Haxe binary" >&2
-  exit 2
+  }
+done
+if [[ "$haxe_cmd" == */* ]]; then
+  [[ -x "$haxe_cmd" ]] || { echo "error: HAXE_BIN is not executable: $haxe_cmd" >&2; exit 2; }
+else
+  command -v "$haxe_cmd" >/dev/null 2>&1 || {
+    echo "error: haxe not found in PATH; set HAXE_BIN to the real Haxe binary" >&2
+    exit 2
+  }
 fi
 
-reflaxe_run="$root_dir/vendor/reflaxe/Run.hx"
-if [[ ! -f "$reflaxe_run" ]]; then
-  echo "error: vendored Reflaxe build runner missing: vendor/reflaxe/Run.hx" >&2
-  exit 2
-fi
+resolved_source="$(git -C "$root_dir" rev-parse "$source_sha^{commit}")"
+[[ "$resolved_source" =~ ^[0-9a-f]{40}$ ]] || { echo "error: invalid source commit" >&2; exit 2; }
+source_sha="$resolved_source"
 
 mkdir -p "$(dirname "$out_abs")"
 rm -f "$out_abs"
-
 tmp="$(mktemp -d "${TMPDIR:-/tmp}/reflaxe.elixir-haxelib.XXXXXX")"
 cleanup() { rm -rf "$tmp"; }
 trap cleanup EXIT
 
+source_root="$tmp/source"
 work_dir="$tmp/work/reflaxe.elixir"
 build_dir="$work_dir/_Build"
-mkdir -p "$work_dir"
+mkdir -p "$source_root" "$work_dir"
 
-log() {
-  echo "[package] $*"
-}
+log() { echo "[package] $*"; }
 
-strip_trailing_slashes() {
-  local p="$1"
-  while [[ "$p" != "/" && "$p" == */ ]]; do
-    p="${p%/}"
-  done
-  printf '%s' "$p"
-}
+log "Exporting tracked source commit $source_sha"
+git -C "$root_dir" archive "$source_sha" | tar -x -C "$source_root"
 
-copy_tree_content() {
-  local from_raw="$1"
-  local to_raw="$2"
-  local from to
-  from="$(strip_trailing_slashes "$from_raw")"
-  to="$(strip_trailing_slashes "$to_raw")"
-
-  if [[ ! -d "$from" ]]; then
-    echo "[package] error: source directory does not exist: $from" >&2
-    exit 2
-  fi
-
-  mkdir -p "$to"
-
-  while IFS= read -r -d '' dir; do
-    local rel="${dir#"$from"/}"
-    if [[ "$dir" == "$from" ]]; then
-      continue
-    fi
-    mkdir -p "$to/$rel"
-  done < <(find "$from" -type d -print0)
-
-  while IFS= read -r -d '' file; do
-    local rel="${file#"$from"/}"
-    mkdir -p "$to/$(dirname "$rel")"
-    cp "$file" "$to/$rel"
-  done < <(find "$from" -type f -print0)
-}
-
-copy_file_required_to_work() {
+copy_file_to_work() {
   local rel="$1"
-  local src="$root_dir/$rel"
-  if [[ ! -f "$src" ]]; then
-    echo "[package] error: required file missing: $rel" >&2
-    exit 2
-  fi
+  [[ -f "$source_root/$rel" ]] || { echo "[package] error: required file missing: $rel" >&2; exit 2; }
   mkdir -p "$work_dir/$(dirname "$rel")"
-  cp "$src" "$work_dir/$rel"
-  log "Copying file: $rel"
+  cp "$source_root/$rel" "$work_dir/$rel"
 }
 
-copy_file_optional_to_work() {
+copy_dir_to_work() {
   local rel="$1"
-  local src="$root_dir/$rel"
-  if [[ ! -f "$src" ]]; then
-    return
-  fi
-  mkdir -p "$work_dir/$(dirname "$rel")"
-  cp "$src" "$work_dir/$rel"
-  log "Copying file: $rel"
+  [[ -d "$source_root/$rel" ]] || { echo "[package] error: required directory missing: $rel" >&2; exit 2; }
+  mkdir -p "$work_dir/$rel"
+  cp -R "$source_root/$rel/." "$work_dir/$rel/"
 }
 
-copy_dir_required_to_work() {
+copy_dir_to_build() {
   local rel="$1"
-  local src="$root_dir/$rel"
-  if [[ ! -d "$src" ]]; then
-    echo "[package] error: required directory missing: $rel" >&2
-    exit 2
-  fi
-  copy_tree_content "$src" "$work_dir/$rel"
-  log "Copying directory: $rel/"
+  [[ -d "$source_root/$rel" ]] || { echo "[package] error: required directory missing: $rel" >&2; exit 2; }
+  mkdir -p "$build_dir/$rel"
+  cp -R "$source_root/$rel/." "$build_dir/$rel/"
 }
 
-copy_dir_required_to_build() {
-  local rel="$1"
-  local src="$root_dir/$rel"
-  if [[ ! -d "$src" ]]; then
-    echo "[package] error: required directory missing: $rel" >&2
-    exit 2
-  fi
-  copy_tree_content "$src" "$build_dir/$rel"
-  log "Copying directory: $rel/"
-}
+copy_dir_to_work src
+copy_dir_to_work std
+for rel in haxelib.json extraParams.hxml LICENSE README.md; do copy_file_to_work "$rel"; done
+if [[ -f "$source_root/run.n" ]]; then copy_file_to_work run.n; fi
 
-copy_dir_required_to_work "src"
-copy_dir_required_to_work "std"
-copy_file_required_to_work "haxelib.json"
-copy_file_required_to_work "extraParams.hxml"
-copy_file_required_to_work "LICENSE"
-copy_file_required_to_work "README.md"
-copy_file_optional_to_work "run.n"
-
+reflaxe_run="$source_root/vendor/reflaxe/Run.hx"
+[[ -f "$reflaxe_run" ]] || { echo "error: vendored Reflaxe build runner missing" >&2; exit 2; }
 (
   cd "$work_dir"
   log "Running Reflaxe build into _Build/"
-  "$haxe_cmd" -cp "$root_dir/vendor/reflaxe" --run Run build _Build --deleteOldFolder "$work_dir"
+  "$haxe_cmd" -cp "$source_root/vendor/reflaxe" --run Run build _Build --deleteOldFolder "$work_dir"
 )
 
-# The generic Reflaxe build handles classPath/stdPaths flattening. These vendored
-# sources remain package siblings because CompilerBootstrap injects them by path.
-copy_dir_required_to_build "vendor"
+node "$root_dir/scripts/release/prepare-package-metadata.js" \
+  "$build_dir/haxelib.json" \
+  "$build_dir/release-metadata.json" \
+  "$version" \
+  "$tag" \
+  "$source_sha"
 
-(
-  cd "$build_dir"
-  zip -r -X "$out_abs" . >/dev/null
-)
+# CompilerBootstrap loads these package siblings by path; generic Reflaxe build owns src/_std flattening.
+copy_dir_to_build vendor
+# The source tree's contributor-instruction link is not package runtime content; prior copy logic
+# also omitted symlinks, and release archives reject them explicitly.
+rm -f "$build_dir/vendor/CLAUDE.md"
 
+LC_ALL=C TZ=UTC node "$root_dir/scripts/release/deterministic-zip.js" "$build_dir" "$out_abs"
 log "wrote: $out"

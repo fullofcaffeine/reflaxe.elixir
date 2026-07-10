@@ -10,9 +10,9 @@
     "macro"
   ],
   "description": "A Haxe compilation target for Elixir/BEAM enabling gradual typing in Phoenix applications with compile-time type-safe Ecto queries and HXX→HEEx template transformation.",
-  "version": "0.14.25",
+  "version": "0.0.0",
   "classPath": "src",
-  "releasenote": "v0.14.25: See CHANGELOG.md",
+  "releasenote": "Development checkout; release metadata is injected during package staging",
   "contributors": [
     "fullofcaffeine"
   ],

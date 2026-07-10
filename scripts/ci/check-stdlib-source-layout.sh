@@ -238,7 +238,6 @@ const path = require('path')
 const root = process.argv[2]
 const releaseConfig = require(path.join(root, 'release.config.js'))
 const { loadReleasePolicy } = require(path.join(root, 'scripts/release/release-policy.js'))
-const { generatedReleaseAssets } = require(path.join(root, 'scripts/release/sync-versions.js'))
 
 const configured = new Map(
   releaseConfig.plugins
@@ -248,14 +247,14 @@ const configured = new Map(
 const pluginNames = releaseConfig.plugins.map((plugin) =>
   Array.isArray(plugin) ? plugin[0] : plugin
 )
-const prepare = configured.get('@semantic-release/exec')?.prepareCmd || ''
 const githubAssets = configured.get('@semantic-release/github')?.assets || []
-const gitAssets = configured.get('@semantic-release/git')?.assets || []
 const expectedPath = 'dist/reflaxe.elixir.zip'
 const expectedName = 'reflaxe.elixir-${nextRelease.version}.zip'
+const checksumPath = 'dist/reflaxe.elixir.zip.sha256'
+const checksumName = 'reflaxe.elixir-${nextRelease.version}.zip.sha256'
 
-if (!prepare.includes('scripts/release/package-haxelib.sh') || !prepare.includes(expectedPath)) {
-  throw new Error('semantic-release prepareCmd does not build the fixed-path Reflaxe package')
+for (const forbidden of ['@semantic-release/changelog', '@semantic-release/exec', '@semantic-release/git']) {
+  if (pluginNames.includes(forbidden)) throw new Error(`normal publication must not use ${forbidden}`)
 }
 if (githubAssets.some((asset) => asset.path?.includes('${nextRelease'))) {
   throw new Error('semantic-release asset paths are globs and must not contain templates')
@@ -263,19 +262,23 @@ if (githubAssets.some((asset) => asset.path?.includes('${nextRelease'))) {
 if (!githubAssets.some((asset) => asset.path === expectedPath && asset.name === expectedName)) {
   throw new Error('semantic-release does not upload the fixed-path package with a versioned name')
 }
+if (!githubAssets.some((asset) => asset.path === checksumPath && asset.name === checksumName)) {
+  throw new Error('semantic-release does not upload the package checksum sidecar')
+}
 
 loadReleasePolicy('release/manifest.json', root)
-const expectedGitAssets = generatedReleaseAssets('release/manifest.json', root)
-if (JSON.stringify(gitAssets) !== JSON.stringify(expectedGitAssets)) {
-  throw new Error('semantic-release git assets do not match the release generator')
+const artifactIndex = pluginNames.indexOf('./scripts/release/haxelib-artifact-plugin.cjs')
+const githubIndex = pluginNames.indexOf('@semantic-release/github')
+if (artifactIndex < 0 || githubIndex <= artifactIndex) {
+  throw new Error('deterministic artifact preparation must run before GitHub publication')
 }
 
-const gitIndex = pluginNames.indexOf('@semantic-release/git')
-const verifierIndex = pluginNames.indexOf('./scripts/release/verify-release-stages.js')
-const githubIndex = pluginNames.indexOf('@semantic-release/github')
-if (gitIndex < 0 || verifierIndex <= gitIndex || githubIndex <= verifierIndex) {
-  throw new Error('release-stage verifier must run after git prepare and before GitHub publish')
+const packageJson = require(path.join(root, 'package.json'))
+const haxelib = require(path.join(root, 'haxelib.json'))
+if (packageJson.version !== '0.0.0-development' || haxelib.version !== '0.0.0') {
+  throw new Error('tracked package metadata must remain development sentinels')
 }
+if (packageJson.devDependencies.fflate !== '0.8.3') throw new Error('fflate must be exactly locked')
 JS
 then
   fail "release configuration does not publish the Reflaxe-built package artifact"
@@ -296,9 +299,13 @@ grep -F "steps.semantic_release.outputs.published == 'true'" "$ROOT_DIR/.github/
   || fail "published-package verification must skip semantic-release no-op runs"
 grep -F 'steps.semantic_release.outputs.tag' "$ROOT_DIR/.github/workflows/release.yml" >/dev/null \
   || fail "published-package verification must receive the exact newly published tag"
-grep -F 'manifest_schema' "$published_verifier" >/dev/null \
-  || fail "published-package verifier must distinguish current and legacy release policy schemas"
+grep -F 'verify-release-artifact.js' "$published_verifier" >/dev/null \
+  || fail "published-package verifier must validate staged release metadata"
 grep -F 'ALLOW_LEGACY_RELEASE' "$published_verifier" >/dev/null \
   || fail "published-package verifier must keep legacy-tag auditing explicit"
+grep -F 'git -C "$root_dir" archive' "$ROOT_DIR/scripts/release/package-haxelib.sh" >/dev/null \
+  || fail "release package must be staged from an explicit tracked source commit"
+grep -F 'deterministic-zip.js' "$ROOT_DIR/scripts/release/package-haxelib.sh" >/dev/null \
+  || fail "release package must use the canonical ZIP writer"
 
 echo "[guard:stdlib-layout] OK: std overrides use Reflaxe _std source layout"

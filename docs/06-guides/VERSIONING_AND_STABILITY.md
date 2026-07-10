@@ -3,12 +3,10 @@
 Reflaxe.Elixir uses **semantic versioning** (`MAJOR.MINOR.PATCH`) and a **stability tier** model to
 make it clear what is safe to depend on and what may change.
 
-<!-- BEGIN GENERATED: release-posture -->
-> Current version: **v0.14.25**<br>
 > Current release line: **pre-1.0 (`v0.x`)**<br>
 > Breaking stable-surface changes produce a **minor** release on this line.<br>
-> Stable graduation: **not approved**.
-<!-- END GENERATED: release-posture -->
+> Stable graduation: **not approved**.<br>
+> Exact released version: the latest immutable `vMAJOR.MINOR.PATCH` GitHub Release tag.
 
 Experimental features remain opt-in and may evolve in minor releases. Breaking changes on the
 current line must still be documented clearly.
@@ -17,8 +15,8 @@ Reachable immutable `vMAJOR.MINOR.PATCH` Git tags are the source of truth for re
 [`release/manifest.json`](../../release/manifest.json) is intentionally version-independent: it
 contains only release-line policy and durable approval records. Semantic-release delegates
 Conventional Commit parsing to its official analyzer, then applies that small policy layer.
-Tracked package versions and current-version prose are compatibility mirrors during the release
-protocol migration; they do not decide the next version.
+Tracked package and HXML versions are development sentinels. They do not decide or mirror the
+current release; exact release metadata is injected only into temporary package staging.
 
 The current policy shape is deliberately small:
 

@@ -1,9 +1,11 @@
-const { generatedReleaseAssets } = require('./scripts/release/sync-versions')
-
-const root = __dirname
-
+/**
+ * Semantic-release derives V from immutable tags and Conventional Commits, builds the exact
+ * Reflaxe package from tested source commit S, tags S directly, and publishes those approved bytes.
+ * Normal publication never writes tracked metadata or creates a release commit.
+ */
 module.exports = {
   branches: ['main'],
+  tagFormat: 'v${version}',
   plugins: [
     [
       './scripts/release/semantic-release-policy.cjs',
@@ -17,38 +19,27 @@ module.exports = {
         },
       },
     ],
-    '@semantic-release/release-notes-generator',
-    '@semantic-release/changelog',
     [
-      '@semantic-release/exec',
-      {
-        prepareCmd:
-          'node scripts/release/sync-versions.js ${nextRelease.version} && bash scripts/release/package-haxelib.sh dist/reflaxe.elixir.zip',
-      },
+      '@semantic-release/release-notes-generator',
+      { preset: 'conventionalcommits' },
     ],
-    [
-      '@semantic-release/git',
-      {
-        assets: generatedReleaseAssets('release/manifest.json', root),
-        message:
-          'chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}',
-      },
-    ],
-    [
-      './scripts/release/verify-release-stages.js',
-      {
-        manifestPath: 'release/manifest.json',
-        packagePath: 'dist/reflaxe.elixir.zip',
-      },
-    ],
+    './scripts/release/haxelib-artifact-plugin.cjs',
     [
       '@semantic-release/github',
       {
+        successComment: false,
+        failComment: false,
+        releasedLabels: false,
         assets: [
           {
             path: 'dist/reflaxe.elixir.zip',
             name: 'reflaxe.elixir-${nextRelease.version}.zip',
-            label: 'Reflaxe-built haxelib package (${nextRelease.gitTag})',
+            label: 'Reflaxe.Elixir haxelib package (${nextRelease.gitTag})',
+          },
+          {
+            path: 'dist/reflaxe.elixir.zip.sha256',
+            name: 'reflaxe.elixir-${nextRelease.version}.zip.sha256',
+            label: 'SHA-256 checksum',
           },
         ],
       },

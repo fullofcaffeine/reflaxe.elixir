@@ -6,8 +6,8 @@ High level:
 
 - Merge changes to `main` using **Conventional Commits** (`feat:`, `fix:`, etc.)
 - When `CI` completes successfully on `main`, the separate **Release** workflow runs automatically
-- `semantic-release` determines the next version (if any), creates a `vX.Y.Z` tag, publishes a GitHub Release,
-  and updates repo version strings + `CHANGELOG.md`
+- `semantic-release` determines the next version (if any), builds the package from that tested commit,
+  creates a `vX.Y.Z` tag on the same commit, and publishes a GitHub Release
 
 ## What triggers a release?
 
@@ -54,55 +54,59 @@ Use clear, scoped messages (examples):
 
 3) **Let semantic-release do the rest**
 
-Immutable reachable tags are the source of truth for released versions.
-`release/manifest.json` contains only release-line policy and per-major approvals; it does not own a
-current version or generated-file inventory. During the release-protocol migration,
-`scripts/release/sync-versions.js` remains a compatibility bridge that writes the derived tag version
-to these tracked mirrors:
+Immutable reachable tags are the source of truth for released versions. `release/manifest.json`
+contains only release-line policy and per-major approvals. Tracked `package.json`, `haxelib.json`,
+`mix.exs`, and scoped HXML versions are development sentinels, not release mirrors.
 
-- `package.json` / `package-lock.json`
-- `haxelib.json`
-- `mix.exs`
-- `README.md` version badge
-- generated release-posture blocks in `README.md` and `VERSIONING_AND_STABILITY.md`
-- `CHANGELOG.md` (generated)
+The artifact plugin exports the exact tested Git commit to temporary storage, runs that commit's
+vendored Reflaxe builder, and injects the derived version, tag, and source SHA only into package
+staging. It builds the complete package twice under varied environment settings, requires identical
+bytes, validates the ZIP layout and metadata, runs installed-package parity against that exact ZIP,
+and emits `dist/reflaxe.elixir.zip.sha256`. Normal publication leaves tracked files unchanged and
+does not create a release commit. GitHub Release notes are the current release changelog.
 
-Check for drift without modifying files:
-
-```bash
-npm run guard:release-state
-```
-
-The bridge rejects unsafe paths, missing or duplicate generated markers, and stable versions without
-an approval for that exact major. Semantic-release obtains its transitional release-commit asset
-list from the same module through `release.config.js`. The local policy plugin delegates commit
-classification to the official semantic-release analyzer and changes only the explicit pre-1.0
-breaking rule; its verification hook enforces stable-major approval.
+Project scaffolding also respects that split. An installed Haxelib release reads the exact version
+injected into its staged `haxelib.json`; Haxe and Mix scaffolds running from a repository checkout
+resolve the nearest reachable immutable release tag when they encounter a development sentinel.
+They fail clearly when neither identity exists instead of generating a fake `v0.0.0`,
+`v0.0.0-development`, or `vlatest` download URL.
 
 ## Staged release verification
 
 Release verification runs at three boundaries:
 
-1. After the official git plugin creates and pushes the release commit, but before semantic-release
-   creates a tag, the prepared-state verifier checks committed generated assets, changelog version,
-   clean tracked state, and package contents. Failure here prevents tag creation.
-2. After semantic-release creates the tag, but before the GitHub plugin publishes, the tag verifier
-   checks that the tag targets the prepared commit and that tagged metadata/docs and package contents
-   agree.
+1. Before tag creation, the artifact plugin proves two complete builds are byte-identical, validates
+   canonical entries/modes/metadata, smokes the exact ZIP, records byte count and SHA-256, and checks
+   that the tracked tree stayed clean. Failure here prevents tag creation.
+2. After semantic-release creates the tag, but before GitHub upload, the plugin re-validates the
+   approved ZIP and checksum and confirms that tracked source was not modified.
 3. After semantic-release returns, the workflow downloads the GitHub Release asset and verifies the
-   published release state, exact asset name, non-empty upload, tagged generated state, and package
-   contents. This step receives the exact tag created by that run. If commit analysis produces no new
-   version, the workflow records a no-op and does not re-audit an older release as though it had just
-   been published.
+   exact asset, checksum, staged package metadata, and source SHA. This step receives the exact tag
+   created by that run. A no-op does not re-audit an older release as newly published.
 
 ### Partial-publication recovery
 
 - **Failure before tag creation:** fix the cause and rerun the Release workflow. Do not create a tag
   manually; no public release identity exists yet.
 - **Tag exists but the GitHub Release or asset is missing:** do not move or recreate the tag. Check
-  out that exact tag in a temporary clone, run `scripts/release/package-haxelib.sh`, verify the zip,
-  then create the missing GitHub Release or upload the exact `reflaxe.elixir-X.Y.Z.zip` asset with
-  `gh release create` / `gh release upload --clobber` as appropriate.
+  out that exact tag in a temporary clone, then rebuild with the release identity explicitly:
+
+  ```bash
+  tag=vX.Y.Z
+  version=${tag#v}
+  source_sha=$(git rev-parse "${tag}^{commit}")
+  scripts/release/package-haxelib.sh dist/reflaxe.elixir.zip "$version" "$tag" "$source_sha"
+  archive="reflaxe.elixir-${version}.zip"
+  mv dist/reflaxe.elixir.zip "dist/${archive}"
+  node scripts/release/verify-release-artifact.js \
+    --zip "dist/${archive}" --version "$version" --tag "$tag" --source-sha "$source_sha"
+  hash=$(node -e 'const c=require("crypto"),f=require("fs");process.stdout.write(c.createHash("sha256").update(f.readFileSync(process.argv[1])).digest("hex"))' "dist/${archive}")
+  printf '%s  %s\n' "$hash" "$archive" > "dist/${archive}.sha256"
+  ```
+
+  Compare the rebuilt SHA-256 with the release job record before creating the missing GitHub Release
+  or uploading the exact `reflaxe.elixir-X.Y.Z.zip` and checksum assets. Never rebuild with the
+  script defaults for recovery: those intentionally produce development metadata.
 - **Published metadata is wrong:** treat the release as immutable until the discrepancy is understood.
   Prefer correcting GitHub Release notes/assets against the existing tag. Delete or move a public tag
   only as an explicitly reviewed release revocation.
@@ -113,10 +117,9 @@ Finish every recovery with:
 scripts/release/verify-published-package.sh vX.Y.Z
 ```
 
-Tags created before release policy schema v2, including tags with the earlier generated-state
-manifest, can be audited with `ALLOW_LEGACY_RELEASE=1`; this bypasses only tagged policy/generated-
-state comparison and is never set by the Release workflow. Package structure and hosted-asset checks
-still run.
+Tags created before package provenance/checksum metadata can be audited with
+`ALLOW_LEGACY_RELEASE=1`; this keeps legacy package-structure checks explicit and is never set by the
+Release workflow.
 
 ## Token / permissions notes
 

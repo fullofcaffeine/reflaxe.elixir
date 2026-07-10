@@ -103,10 +103,21 @@ class TestProjectGeneratorTemplates {
 
 	private static function assertReleaseInstallUrl(path:String, label:String):Void {
 		var packageJson = File.getContent(path);
-		var metadata:{version:String} = cast haxe.Json.parse(File.getContent(Path.join([Sys.getCwd(), "haxelib.json"])));
-		var packageUrl = 'https://www.github.com/fullofcaffeine/reflaxe.elixir/releases/download/v${metadata.version}/reflaxe.elixir-${metadata.version}.zip';
+		var process = new sys.io.Process("git", ["describe", "--tags", "--abbrev=0", "--match", "v[0-9]*.[0-9]*.[0-9]*", "HEAD"]);
+		var tag = StringTools.trim(process.stdout.readAll().toString());
+		process.stderr.readAll();
+		var exitCode = process.exitCode();
+		process.close();
+		if (exitCode != 0 || !~/^v[0-9]+\.[0-9]+\.[0-9]+$/.match(tag)) {
+			Sys.println("FAIL: unable to resolve the source checkout's release tag");
+			Sys.exit(1);
+		}
+		var version = tag.substr(1);
+		var packageUrl = 'https://www.github.com/fullofcaffeine/reflaxe.elixir/releases/download/$tag/reflaxe.elixir-$version.zip';
 		assertContains(packageJson, packageUrl, label + " pins the current compiler package using a Lix-compatible release URL");
-		assertNotContains(packageJson, "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/", label + " avoids Lix's GitHub repository URL handling");
+		assertNotContains(packageJson, "/v0.0.0/", label + " never treats the tracked development sentinel as a release");
+		assertNotContains(packageJson, "https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/",
+			label + " avoids Lix's GitHub repository URL handling");
 	}
 
 	private static function ensureHexRebarInstalled():Void {

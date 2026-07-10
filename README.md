@@ -4,7 +4,7 @@
 
 # Reflaxe.Elixir (aka Haxir)
 
-[![Version](https://img.shields.io/badge/version-0.14.25-blue)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
+[![Release](https://img.shields.io/github/v/release/fullofcaffeine/reflaxe.elixir)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![CI](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml/badge.svg)](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml)
 [![Haxe](https://img.shields.io/badge/Haxe-4.3.7+-orange)](https://haxe.org)
@@ -13,12 +13,10 @@
 **[Haxe](https://haxe.org) -> [Elixir](https://elixir-lang.org) compiler for the BEAM ecosystem, with first-class [Phoenix](https://phoenixframework.org)/[LiveView](https://www.phoenixframework.org/liveview) support.**
 Write application code in Haxe and compile to conventional Elixir shapes for pure Elixir/OTP services and Phoenix applications.
 
-<!-- BEGIN GENERATED: release-posture -->
 > [!WARNING]
-> **Stability**: v0.14.25 is on the pre-1.0 (`v0.x`) release line.
+> **Stability**: Reflaxe.Elixir is on the pre-1.0 (`v0.x`) release line.
 > Breaking changes to documented stable surfaces use minor releases until an explicitly reviewed stable graduation.
 > Some features remain experimental/opt-in; see [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md) and [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).
-<!-- END GENERATED: release-posture -->
 
 Immutable Git tags identify released versions. The
 [release policy manifest](release/manifest.json) contains only release-line approvals; it is not a
@@ -110,6 +108,9 @@ The release zip is the normal consumer package. Reflaxe builds it from the check
 sources and includes the generated `.cross.hx` files required by a single `-lib reflaxe.elixir`.
 The `www.github.com` host is intentional: it lets Lix treat the file as a generic immutable HTTPS
 archive instead of misclassifying the release URL as a GitHub source-repository dependency.
+Each release also publishes a `.sha256` sidecar, and the ZIP embeds its exact version, tag, and source
+commit. The release job builds the complete package twice and requires byte-identical output before
+it tags that already-tested source commit.
 
 ### Working from a source checkout
 

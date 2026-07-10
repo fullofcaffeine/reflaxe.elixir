@@ -3558,6 +3558,10 @@ identify shipped versions; `release/manifest.json` owns only release-line policy
 approval. Do not infer a shipped version or stable graduation from package metadata, generated
 current-version prose, or roadmap completion labels.
 
+Tracked npm, Haxelib, Mix, and scoped-HXML versions are development sentinels. Semantic-release
+injects an exact version, tag, and source SHA only into temporary Reflaxe package staging; normal
+publication must leave the tested commit unchanged and must not create a release commit.
+
 ## Test Status Summary
 **See**: [`docs/03-compiler-development/testing-infrastructure.md`](docs/03-compiler-development/testing-infrastructure.md) - Complete test architecture and status
 
