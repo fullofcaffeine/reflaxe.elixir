@@ -315,6 +315,18 @@ function main() {
       workflow,
       /RELEASE_SOURCE_SHA: \$\{\{ steps\.release_context\.outputs\.target_sha \}\}/
     )
+    const ciWorkflow = fs.readFileSync(
+      path.join(ROOT, '.github/workflows/ci.yml'),
+      'utf8'
+    )
+    const packageJob = ciWorkflow.match(
+      /  haxelib-package-smoke:\n([\s\S]*?)\n  [a-z][a-z0-9-]+:\n/
+    )
+    assert(packageJob, 'CI must contain the dedicated haxelib package job')
+    assert.match(
+      packageJob[1],
+      /npm ci --ignore-scripts --no-audit --no-fund[\s\S]*npm run test:haxelib-package/
+    )
     console.log(
       '[release-artifact] OK: canonical archive and adversarial validation contracts'
     )
