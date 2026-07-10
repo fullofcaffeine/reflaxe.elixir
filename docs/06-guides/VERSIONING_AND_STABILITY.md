@@ -4,7 +4,7 @@ Reflaxe.Elixir uses **semantic versioning** (`MAJOR.MINOR.PATCH`) and a **stabil
 make it clear what is safe to depend on and what may change.
 
 <!-- BEGIN GENERATED: release-posture -->
-> Current version: **v0.14.24**<br>
+> Current version: **v0.14.25**<br>
 > Current release line: **pre-1.0 (`v0.x`)**<br>
 > Breaking stable-surface changes produce a **minor** release on this line.<br>
 > Stable graduation: **not approved**.
