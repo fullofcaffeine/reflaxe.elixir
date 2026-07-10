@@ -64,9 +64,10 @@ appropriate. Refresh checked-in enabled, unmodified fixtures from a local Haxe c
 scripts/sync-upstream-unitstd-specs.sh
 ```
 
-## Implemented/overridden by Reflaxe.Elixir (core set)
+## Explicitly supported by Reflaxe.Elixir (core set)
 
-These modules are implemented/overridden in this repo (and covered by snapshot tests where relevant):
+These modules have an explicit support decision and test coverage. Most use a local target override;
+entries marked as official fallback intentionally use the installed Haxe stdlib unchanged.
 
 Top-level:
 - `Array`
@@ -173,8 +174,10 @@ and `makeUtc`.
 - `haxe.io.Eof`
 - `haxe.io.FPHelper`
 - `haxe.io.Input`
+- `haxe.io.Mime` (official String enum-abstract fallback; constants and custom values compile to binaries)
 - `haxe.io.Output`
 - `haxe.io.Path`
+- `haxe.io.Scheme` (official String enum-abstract fallback; constants and custom values compile to binaries)
 - `haxe.io.StringInput`
 - `haxe.iterators.ArrayIterator`
 - `haxe.iterators.ArrayKeyValueIterator`
@@ -391,6 +394,12 @@ In practice, this works well for:
 - many `haxe.*` utilities that don’t rely on target-specific host APIs
 
 If a given upstream std module produces invalid/non-idiomatic Elixir, it becomes a candidate for an override.
+
+`haxe.io.Mime` and `haxe.io.Scheme` are verified examples of this fallback model. Their official
+Haxe definitions are `enum abstract ... (String)` declarations, so constants and custom values erase
+to ordinary Elixir binaries and do not emit `Mime` or `Scheme` runtime modules. They remain visible
+in the module-level gap report because that report inventories local target ownership, not because
+the APIs are unsupported.
 
 ## Known high-impact gaps (planned parity work)
 

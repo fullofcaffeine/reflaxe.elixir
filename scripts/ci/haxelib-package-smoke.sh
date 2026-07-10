@@ -318,6 +318,8 @@ cat > "$work_dir/src/Main.hx" <<'HX'
 
 import haxe.crypto.Sha256;
 import haxe.ds.Either;
+import haxe.io.Mime;
+import haxe.io.Scheme;
 import phoenix.channels.WirePayload;
 
 class Main {
@@ -335,9 +337,14 @@ class Main {
 
     var payload = WirePayload.putString(WirePayload.empty(), "value", value);
     var payloadValue = WirePayload.getString(payload, "value");
+    var mime:String = Mime.ApplicationJson;
+    var customMime:Mime = "application/vnd.example+json";
+    var scheme:String = Scheme.Https;
+    var customScheme:Scheme = "web+demo";
 
     trace(payloadValue);
     trace(Sha256.encode(value));
+    trace([mime, (customMime:String), scheme, (customScheme:String)].join("|"));
   }
 }
 HX
@@ -379,6 +386,10 @@ require_file "$work_dir/out/string_buf.ex"
 require_file "$work_dir/out/haxe/crypto/sha256.ex"
 require_file "$work_dir/out/phoenix/channels/wire_payload.ex"
 require_file "$work_dir/out_source/_GeneratedFiles.json"
+require_absent "$work_dir/out/haxe/io/mime.ex"
+require_absent "$work_dir/out/haxe/io/scheme.ex"
+require_absent "$work_dir/out_source/haxe/io/mime.ex"
+require_absent "$work_dir/out_source/haxe/io/scheme.ex"
 
 compare_generated_elixir "$work_dir/out_source" "$work_dir/out"
 say "Source/package generated Elixir parity: OK"
@@ -387,9 +398,13 @@ require_contains "$work_dir/out/haxe/crypto/sha256.ex" ":crypto.hash(:sha256"
 require_contains "$work_dir/compile.log" "src/StringBuf.cross.hx"
 require_contains "$work_dir/compile.log" "src/haxe/crypto/Sha256.cross.hx"
 require_contains "$work_dir/compile.log" "std/haxe/ds/Either.hx"
+require_contains "$work_dir/compile.log" "std/haxe/io/Mime.hx"
+require_contains "$work_dir/compile.log" "std/haxe/io/Scheme.hx"
 require_contains "$work_dir/compile.log" "vendor/phoenix_shared/src/phoenix/channels/WirePayload.hx"
 require_contains "$work_dir/compile-source.log" "std/elixir/_std/StringBuf.hx"
 require_contains "$work_dir/compile-source.log" "std/elixir/_std/haxe/crypto/Sha256.hx"
+require_contains "$work_dir/compile-source.log" "std/haxe/io/Mime.hx"
+require_contains "$work_dir/compile-source.log" "std/haxe/io/Scheme.hx"
 require_tree_not_contains "$work_dir/compile.log" "$canonical_root"
 require_tree_not_contains "$work_dir/out" "$canonical_root"
 
@@ -398,6 +413,8 @@ if [[ "$VERBOSE" -eq 1 ]]; then
   find "$work_dir/out" -type f | sort
   say "Fallback proof:"
   grep -n -F "std/haxe/ds/Either.hx" "$work_dir/compile.log" | sed -n '1,5p'
+  grep -n -F "std/haxe/io/Mime.hx" "$work_dir/compile.log" | sed -n '1,5p'
+  grep -n -F "std/haxe/io/Scheme.hx" "$work_dir/compile.log" | sed -n '1,5p'
 fi
 
 echo ""

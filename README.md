@@ -77,6 +77,7 @@ Reflaxe.Elixir takes a different approach:
 For exact boundaries, use:
 - [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md)
 - [Support Matrix](docs/06-guides/SUPPORT_MATRIX.md)
+- [Stdlib Support Matrix](docs/04-api-reference/STDLIB_SUPPORT_MATRIX.md)
 - [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md)
 
 ## Quick Start

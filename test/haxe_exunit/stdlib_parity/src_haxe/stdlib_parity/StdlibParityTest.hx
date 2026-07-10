@@ -41,7 +41,9 @@ import haxe.io.BytesOutput;
 import haxe.io.Eof;
 import haxe.io.Error;
 import haxe.io.FPHelper;
+import haxe.io.Mime;
 import haxe.io.Path;
+import haxe.io.Scheme;
 import haxe.io.StringInput;
 import haxe.iterators.HashMapKeyValueIterator;
 import haxe.iterators.MapKeyValueIterator;
@@ -1247,6 +1249,27 @@ class StdlibParityTest extends TestCase {
 		Assert.isTrue(Path.isAbsolute("C:/tmp"));
 		Assert.isTrue(Path.isAbsolute("\\\\server\\share"));
 		Assert.isFalse(Path.isAbsolute("relative/path"));
+	}
+
+	@:describe("haxe.io.Mime and haxe.io.Scheme")
+	@:test
+	function testMimeAndSchemeOfficialFallback():Void {
+		var json:String = Mime.ApplicationJson;
+		var html:String = Mime.TextHtml;
+		var customMime:Mime = "application/vnd.example+json";
+		var customMimeText:String = customMime;
+
+		var https:String = Scheme.Https;
+		var mailTo:String = Scheme.MailTo;
+		var customScheme:Scheme = "web+demo";
+		var customSchemeText:String = customScheme;
+
+		Assert.equals("application/json", json);
+		Assert.equals("text/html", html);
+		Assert.equals("application/vnd.example+json", customMimeText);
+		Assert.equals("https", https);
+		Assert.equals("mailto", mailTo);
+		Assert.equals("web+demo", customSchemeText);
 	}
 
 	@:describe("haxe.Int64")

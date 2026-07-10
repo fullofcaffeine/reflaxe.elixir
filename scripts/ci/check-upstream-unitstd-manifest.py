@@ -23,7 +23,7 @@ def core_matrix_modules() -> list[str]:
     in_core_set = False
 
     for line in MATRIX.read_text(encoding="utf-8").splitlines():
-        if line.startswith("## Implemented/overridden by Reflaxe.Elixir"):
+        if line.startswith("## Explicitly supported by Reflaxe.Elixir"):
             in_core_set = True
             continue
 

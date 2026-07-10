@@ -60,7 +60,7 @@ This index helps you find the right docs quickly, whether you're building apps w
 - [Type-Safe ChildSpec API](04-api-reference/TYPE_SAFE_CHILD_SPEC.md) - Typed OTP child-spec surfaces and explicit `*Unsafe` escape hatches
 - [Atom Type](04-api-reference/ATOM_TYPE.md) - Type-safe atoms for Elixir APIs
 - [Standard Library](04-api-reference/STANDARD_LIBRARY_HANDLING.md) - Stdlib strategy + guidance
-- [Stdlib Support Matrix](04-api-reference/STDLIB_SUPPORT_MATRIX.md) - What’s overridden vs upstream vs missing
+- [Stdlib Support Matrix](04-api-reference/STDLIB_SUPPORT_MATRIX.md) - Target overrides, verified official fallback, and known gaps
 - [Feature Flags](04-api-reference/FEATURE_FLAGS.md) - User-facing codegen toggles (gradual rollout / debugging)
 - [Haxe Macro APIs](04-api-reference/HAXE_MACRO_APIS.md) - Correct macro API usage
 - [Source Mapping](04-api-reference/SOURCE_MAPPING.md) - Experimental source map design/status

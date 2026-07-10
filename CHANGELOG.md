@@ -28,6 +28,7 @@
 * **release:** verify the prepared release commit and package before tag creation, verify the tag and tagged generated state before GitHub publication, and validate the downloaded GitHub Release asset afterward; document fail-closed partial-publication recovery.
 * **docs:** reconcile current-facing release language with the real pre-1.0 lineage; label old `v1.0.x`/`v1.1.x` milestones as unshipped historical plans and point entrypoints to the canonical generated posture.
 * **test:** derive synthetic release versions from the manifest so release-generation and staged-verification contracts remain valid after each real publication.
+* **stdlib:** classify `haxe.io.Mime` and `haxe.io.Scheme` as verified official Haxe fallback modules; add runtime, snapshot, and source-versus-package coverage without duplicating their String enum-abstract definitions in the target stdlib.
 * **reflaxe:** align stdlib override sources with the Reflaxe `_std` layout; scoped source-tree builds now load `std/elixir/_std` before target-owned `std` APIs so PhoenixHx/examples keep using the Elixir stdlib overrides in dev mode.
 * **reflaxe:** move remaining upstream-colliding `std/haxe/**` replacement modules into `std/elixir/_std`, leaving plain `std/haxe/**` for target-owned support surfaces.
 * **reflaxe:** move the authored `haxe.Exception` override into `std/elixir/_std/haxe/Exception.hx`; Reflaxe now creates `src/haxe/Exception.cross.hx` only in built release packages, matching the Rust and OCaml target layout without changing exception semantics.
