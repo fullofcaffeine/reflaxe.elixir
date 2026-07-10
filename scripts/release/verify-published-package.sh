@@ -69,15 +69,20 @@ package_zip="$tmp_dir/$asset_name"
 package_metadata="$tmp_dir/haxelib.json"
 package_files="$tmp_dir/files.txt"
 
-if git -C "$ROOT_DIR" cat-file -e "$tag:release/manifest.json" 2>/dev/null; then
+manifest_schema="$(git -C "$ROOT_DIR" show "$tag:release/manifest.json" 2>/dev/null \
+  | jq -r '.schemaVersion // empty' 2>/dev/null || true)"
+if [[ "$manifest_schema" == "2" ]]; then
   node "$ROOT_DIR/scripts/release/verify-release-state.js" tagged \
     --version "$version" \
     --tag "$tag" \
     --package "$package_zip"
 elif [[ "${ALLOW_LEGACY_RELEASE:-0}" == "1" ]]; then
-  echo "[release-verify] Legacy tag $tag predates release/manifest.json; checking package structure only"
+  echo "[release-verify] Legacy tag $tag predates release policy schema v2; checking package structure only"
+elif [[ -n "$manifest_schema" ]]; then
+  echo "[release-verify] ERROR: $tag uses unsupported release policy schema $manifest_schema" >&2
+  exit 1
 else
-  echo "[release-verify] ERROR: $tag is missing release/manifest.json" >&2
+  echo "[release-verify] ERROR: $tag is missing a readable release/manifest.json" >&2
   exit 1
 fi
 

@@ -3,8 +3,14 @@ const childProcess = require('child_process')
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
-const { validateReleaseManifest } = require('./release-manifest')
-const { generateReleaseState, generatedReleaseAssets } = require('./sync-versions')
+const {
+  validateReleasePolicy,
+  verifyReleaseVersion,
+} = require('./release-policy')
+const {
+  generateReleaseState,
+  generatedReleaseAssets,
+} = require('./sync-versions')
 
 const DEFAULT_MANIFEST_PATH = 'release/manifest.json'
 const DEFAULT_PACKAGE_PATH = 'dist/reflaxe.elixir.zip'
@@ -18,7 +24,9 @@ function command(commandName, args, options = {}) {
   if (result.error) throw result.error
   if (result.status !== 0 && !options.allowFailure) {
     const detail = String(result.stderr || result.stdout || '').trim()
-    throw new Error(`${commandName} ${args.join(' ')} failed${detail ? `: ${detail}` : ''}`)
+    throw new Error(
+      `${commandName} ${args.join(' ')} failed${detail ? `: ${detail}` : ''}`
+    )
   }
   return result
 }
@@ -35,10 +43,14 @@ function gitFile(root, ref, relativePath) {
 }
 
 function gitRef(root, ref) {
-  const result = command('git', ['rev-parse', '-q', '--verify', `${ref}^{commit}`], {
-    cwd: root,
-    allowFailure: true,
-  })
+  const result = command(
+    'git',
+    ['rev-parse', '-q', '--verify', `${ref}^{commit}`],
+    {
+      cwd: root,
+      allowFailure: true,
+    }
+  )
   return result.status === 0 ? result.stdout.trim() : null
 }
 
@@ -46,25 +58,21 @@ function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-function manifestAtRef(root, ref, manifestPath) {
-  let manifest
+function policyAtRef(root, ref, policyPath) {
+  let policy
   try {
-    manifest = JSON.parse(gitFile(root, ref, manifestPath).toString('utf8'))
+    policy = JSON.parse(gitFile(root, ref, policyPath).toString('utf8'))
   } catch (error) {
-    throw new Error(`${ref}:${manifestPath} is not valid JSON: ${error.message}`)
+    throw new Error(`${ref}:${policyPath} is not valid JSON: ${error.message}`)
   }
-  return validateReleaseManifest(manifest)
+  return validateReleasePolicy(policy)
 }
 
 function verifyGeneratedStateAtRef({ root, ref, version, manifestPath }) {
-  const manifest = manifestAtRef(root, ref, manifestPath)
-  if (manifest.package.version !== version) {
-    throw new Error(
-      `${ref}:${manifestPath} version ${manifest.package.version} does not match ${version}`
-    )
-  }
+  const policy = policyAtRef(root, ref, manifestPath)
+  verifyReleaseVersion(policy, version)
 
-  const assets = generatedReleaseAssets(manifest, manifestPath, root)
+  const assets = generatedReleaseAssets(manifestPath, root)
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'reflaxe-tag-state-'))
   try {
     for (const relativePath of assets) {
@@ -72,17 +80,27 @@ function verifyGeneratedStateAtRef({ root, ref, version, manifestPath }) {
       fs.mkdirSync(path.dirname(target), { recursive: true })
       fs.writeFileSync(target, gitFile(root, ref, relativePath))
     }
-    generateReleaseState({ root: tempRoot, manifestPath, check: true })
+    generateReleaseState({
+      root: tempRoot,
+      policyPath: manifestPath,
+      version,
+      check: true,
+    })
 
-    const changelog = fs.readFileSync(path.join(tempRoot, 'CHANGELOG.md'), 'utf8')
+    const changelog = fs.readFileSync(
+      path.join(tempRoot, 'CHANGELOG.md'),
+      'utf8'
+    )
     const heading = new RegExp(`^## \\[${escapeRegExp(version)}\\]`, 'm')
     if (!heading.test(changelog)) {
-      throw new Error(`${ref}:CHANGELOG.md is missing the ${version} release heading`)
+      throw new Error(
+        `${ref}:CHANGELOG.md is missing the ${version} release heading`
+      )
     }
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true })
   }
-  return { manifest, assets }
+  return { policy, assets }
 }
 
 function verifyPackageArchive(packagePath, version) {
@@ -92,21 +110,33 @@ function verifyPackageArchive(packagePath, version) {
 
   let metadata
   try {
-    metadata = JSON.parse(command('unzip', ['-p', packagePath, 'haxelib.json']).stdout)
+    metadata = JSON.parse(
+      command('unzip', ['-p', packagePath, 'haxelib.json']).stdout
+    )
   } catch (error) {
-    throw new Error(`Release package has invalid haxelib.json: ${error.message}`)
+    throw new Error(
+      `Release package has invalid haxelib.json: ${error.message}`
+    )
   }
   if (metadata.version !== version) {
-    throw new Error(`Package version ${metadata.version} does not match ${version}`)
+    throw new Error(
+      `Package version ${metadata.version} does not match ${version}`
+    )
   }
   if (metadata.classPath !== 'src') {
-    throw new Error(`Package classPath must be src, found ${metadata.classPath}`)
+    throw new Error(
+      `Package classPath must be src, found ${metadata.classPath}`
+    )
   }
   if (metadata.reflaxe !== undefined) {
-    throw new Error('Package metadata still contains source-only reflaxe configuration')
+    throw new Error(
+      'Package metadata still contains source-only reflaxe configuration'
+    )
   }
 
-  const files = command('unzip', ['-Z1', packagePath]).stdout.split(/\r?\n/).filter(Boolean)
+  const files = command('unzip', ['-Z1', packagePath])
+    .stdout.split(/\r?\n/)
+    .filter(Boolean)
   if (!files.includes('src/haxe/Exception.cross.hx')) {
     throw new Error('Package is missing src/haxe/Exception.cross.hx')
   }
@@ -133,19 +163,24 @@ function verifyWorkingAssetsMatchCommit(root, ref, assets) {
   for (const relativePath of assets) {
     const workingPath = path.join(root, relativePath)
     if (!fs.existsSync(workingPath)) {
-      throw new Error(`Prepared release is missing working file ${relativePath}`)
+      throw new Error(
+        `Prepared release is missing working file ${relativePath}`
+      )
     }
     const committed = gitFile(root, ref, relativePath)
     const working = fs.readFileSync(workingPath)
     if (!working.equals(committed)) {
-      throw new Error(`Prepared release did not commit generated asset ${relativePath}`)
+      throw new Error(
+        `Prepared release did not commit generated asset ${relativePath}`
+      )
     }
   }
 }
 
 function validateTag(version, tag) {
   const expected = `v${version}`
-  if (tag !== expected) throw new Error(`Release tag ${tag} does not match ${expected}`)
+  if (tag !== expected)
+    throw new Error(`Release tag ${tag} does not match ${expected}`)
 }
 
 function verifyPreparedRelease({
@@ -159,18 +194,24 @@ function verifyPreparedRelease({
   validateTag(version, tag)
   const head = gitText(root, ['rev-parse', 'HEAD'])
   if (expectedHead && head !== expectedHead) {
-    throw new Error(`Prepared HEAD ${head} does not match semantic-release gitHead ${expectedHead}`)
+    throw new Error(
+      `Prepared HEAD ${head} does not match semantic-release gitHead ${expectedHead}`
+    )
   }
   if (gitRef(root, `refs/tags/${tag}`)) {
-    throw new Error(`Release tag ${tag} exists before prepared-state verification`)
+    throw new Error(
+      `Release tag ${tag} exists before prepared-state verification`
+    )
   }
   const subject = gitText(root, ['log', '-1', '--format=%s', 'HEAD'])
   if (subject !== `chore(release): ${version} [skip ci]`) {
-    throw new Error(`Prepared release commit has unexpected subject: ${subject}`)
+    throw new Error(
+      `Prepared release commit has unexpected subject: ${subject}`
+    )
   }
 
   verifyTrackedTreeClean(root)
-  generateReleaseState({ root, manifestPath, check: true })
+  generateReleaseState({ root, policyPath: manifestPath, version, check: true })
   const { assets } = verifyGeneratedStateAtRef({
     root,
     ref: 'HEAD',
@@ -195,11 +236,14 @@ function verifyTaggedRelease({
   const tagCommit = gitRef(root, `refs/tags/${tag}`)
   if (!tagCommit) throw new Error(`Release tag does not exist: ${tag}`)
   if (expectedHead && tagCommit !== expectedHead) {
-    throw new Error(`Tag ${tag} points to ${tagCommit}, expected ${expectedHead}`)
+    throw new Error(
+      `Tag ${tag} points to ${tagCommit}, expected ${expectedHead}`
+    )
   }
   if (requireHead) {
     const head = gitText(root, ['rev-parse', 'HEAD'])
-    if (tagCommit !== head) throw new Error(`Tag ${tag} must point to HEAD ${head}`)
+    if (tagCommit !== head)
+      throw new Error(`Tag ${tag} must point to HEAD ${head}`)
   }
 
   verifyGeneratedStateAtRef({ root, ref: tag, version, manifestPath })
@@ -210,7 +254,9 @@ function verifyTaggedRelease({
 function parseArgs(argv) {
   const [stage, ...rest] = argv
   if (stage !== 'prepared' && stage !== 'tagged') {
-    throw new Error('Usage: verify-release-state.js <prepared|tagged> --version X --tag vX')
+    throw new Error(
+      'Usage: verify-release-state.js <prepared|tagged> --version X --tag vX'
+    )
   }
   const values = {}
   for (let index = 0; index < rest.length; index += 1) {
@@ -225,7 +271,8 @@ function parseArgs(argv) {
     values[option.slice(2)] = rest[index + 1]
     index += 1
   }
-  if (!values.version || !values.tag) throw new Error('--version and --tag are required')
+  if (!values.version || !values.tag)
+    throw new Error('--version and --tag are required')
   return { stage, values }
 }
 

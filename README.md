@@ -20,6 +20,10 @@ Write application code in Haxe and compile to conventional Elixir shapes for pur
 > Some features remain experimental/opt-in; see [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md) and [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).
 <!-- END GENERATED: release-posture -->
 
+Immutable Git tags identify released versions. The
+[release policy manifest](release/manifest.json) contains only release-line approvals; it is not a
+second mutable version file. See [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).
+
 ## Why Reflaxe.Elixir
 
 Reflaxe.Elixir is for teams that want standard Elixir/OTP runtime behavior, while authoring with stronger compile-time feedback.

@@ -25,7 +25,8 @@
     "@semantic-release/release-notes-generator": "^14.0.3",
     "conventional-changelog-conventionalcommits": "^8.0.0",
     "lix": "^15.12.4",
-    "semantic-release": "^24.2.5"
+    "semantic-release": "^24.2.5",
+    "semver": "7.8.5"
   },
   "scripts": {
     "postinstall": "lix download",

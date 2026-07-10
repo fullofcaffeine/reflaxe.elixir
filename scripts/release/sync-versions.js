@@ -1,16 +1,22 @@
 #!/usr/bin/env node
 /**
- * Deterministically generate release metadata and current-posture blocks from
- * release/manifest.json. All outputs are computed before any file is written.
+ * Transitional generator for tracked release mirrors. Release policy remains
+ * version-independent; callers must supply a version explicitly or derive it
+ * from a reachable tag. Artifact child haxe.elixir.codex-83h.2 removes these
+ * tracked release writes in favor of staging-only metadata.
  */
 const fs = require('fs')
 const path = require('path')
+const childProcess = require('child_process')
+const semver = require('semver')
 const {
-  DEFAULT_MANIFEST_PATH,
-  assertVersionAllowed,
-  loadReleaseManifest,
-  validateReleaseManifest,
-} = require('./release-manifest')
+  DEFAULT_POLICY_PATH,
+  isStableMajorApproved,
+  loadReleasePolicy,
+  parseSemanticVersion,
+  releaseLine,
+  verifyReleaseVersion,
+} = require('./release-policy')
 
 const ROOT_DIR = path.resolve(__dirname, '../..')
 const VERSION_FILE_KINDS = new Set([
@@ -22,6 +28,32 @@ const VERSION_FILE_KINDS = new Set([
   'hxml-library-version',
 ])
 const POSTURE_BLOCK_KINDS = new Set(['readme-stability', 'versioning-summary'])
+const LEGACY_GENERATION = {
+  versionFiles: [
+    { path: 'package.json', kind: 'package-json' },
+    { path: 'package-lock.json', kind: 'package-lock-json' },
+    { path: 'haxelib.json', kind: 'haxelib-json' },
+    { path: 'mix.exs', kind: 'mix-version' },
+    { path: 'README.md', kind: 'readme-version-badge' },
+    {
+      path: 'haxe_libraries/reflaxe.elixir.hxml',
+      kind: 'hxml-library-version',
+    },
+    {
+      path: 'test/support/test_reflaxe_elixir.hxml',
+      kind: 'hxml-library-version',
+    },
+  ],
+  postureBlocks: [
+    { path: 'README.md', marker: 'release-posture', kind: 'readme-stability' },
+    {
+      path: 'docs/06-guides/VERSIONING_AND_STABILITY.md',
+      marker: 'release-posture',
+      kind: 'versioning-summary',
+    },
+  ],
+  releaseCommitExtraAssets: ['CHANGELOG.md'],
+}
 
 function readUtf8(filePath) {
   return fs.readFileSync(filePath, 'utf8')
@@ -39,46 +71,63 @@ function safeRelativePath(root, relativePath, label) {
     throw new Error(`${label} must not be absolute: ${relativePath}`)
   }
   if (relativePath.includes('\\')) {
-    throw new Error(`${label} must use portable forward slashes: ${relativePath}`)
+    throw new Error(
+      `${label} must use portable forward slashes: ${relativePath}`
+    )
   }
   if (relativePath.split('/').includes('..')) {
-    throw new Error(`${label} must not contain parent traversal: ${relativePath}`)
+    throw new Error(
+      `${label} must not contain parent traversal: ${relativePath}`
+    )
   }
 
   const normalized = path.normalize(relativePath)
   const absolute = path.resolve(root, normalized)
   const relative = path.relative(root, absolute)
-  if (relative === '' || relative.startsWith('..') || path.isAbsolute(relative)) {
+  if (
+    relative === '' ||
+    relative.startsWith('..') ||
+    path.isAbsolute(relative)
+  ) {
     throw new Error(`${label} escapes the repository root: ${relativePath}`)
   }
   return { absolute, relative: normalized.split(path.sep).join('/') }
 }
 
-function validateGenerationConfig(manifest, root, manifestPath) {
-  const generation = manifest.generation
-  if (!generation || typeof generation !== 'object' || Array.isArray(generation)) {
-    throw new Error('Invalid release manifest: generation must be an object')
+function validateGenerationConfig(root, policyPath) {
+  const generation = LEGACY_GENERATION
+  if (
+    !Array.isArray(generation.versionFiles) ||
+    generation.versionFiles.length === 0
+  ) {
+    throw new Error('Legacy release generation versionFiles must be non-empty')
   }
-  if (!Array.isArray(generation.versionFiles) || generation.versionFiles.length === 0) {
-    throw new Error('Invalid release manifest: generation.versionFiles must be non-empty')
-  }
-  if (!Array.isArray(generation.postureBlocks) || generation.postureBlocks.length === 0) {
-    throw new Error('Invalid release manifest: generation.postureBlocks must be non-empty')
+  if (
+    !Array.isArray(generation.postureBlocks) ||
+    generation.postureBlocks.length === 0
+  ) {
+    throw new Error('Legacy release generation postureBlocks must be non-empty')
   }
   if (!Array.isArray(generation.releaseCommitExtraAssets)) {
-    throw new Error('Invalid release manifest: generation.releaseCommitExtraAssets must be an array')
+    throw new Error(
+      'Legacy release generation releaseCommitExtraAssets must be an array'
+    )
   }
 
-  safeRelativePath(root, manifestPath, 'manifest path')
+  safeRelativePath(root, policyPath, 'policy path')
   const seenVersionKinds = new Set()
   for (const [index, spec] of generation.versionFiles.entries()) {
     if (!spec || !VERSION_FILE_KINDS.has(spec.kind)) {
-      throw new Error(`Invalid release manifest: unsupported versionFiles[${index}].kind`)
+      throw new Error(
+        `Legacy release generation has unsupported versionFiles[${index}].kind`
+      )
     }
     safeRelativePath(root, spec.path, `generation.versionFiles[${index}].path`)
     const key = `${spec.path}\0${spec.kind}`
     if (seenVersionKinds.has(key)) {
-      throw new Error(`Invalid release manifest: duplicate version generator ${spec.kind} for ${spec.path}`)
+      throw new Error(
+        `Legacy release generation duplicates ${spec.kind} for ${spec.path}`
+      )
     }
     seenVersionKinds.add(key)
   }
@@ -86,28 +135,40 @@ function validateGenerationConfig(manifest, root, manifestPath) {
   const seenMarkers = new Set()
   for (const [index, spec] of generation.postureBlocks.entries()) {
     if (!spec || !POSTURE_BLOCK_KINDS.has(spec.kind)) {
-      throw new Error(`Invalid release manifest: unsupported postureBlocks[${index}].kind`)
+      throw new Error(
+        `Legacy release generation has unsupported postureBlocks[${index}].kind`
+      )
     }
     safeRelativePath(root, spec.path, `generation.postureBlocks[${index}].path`)
     if (typeof spec.marker !== 'string' || !/^[a-z0-9-]+$/.test(spec.marker)) {
-      throw new Error(`Invalid release manifest: postureBlocks[${index}].marker is unsafe`)
+      throw new Error(
+        `Legacy release generation postureBlocks[${index}].marker is unsafe`
+      )
     }
     const key = `${spec.path}\0${spec.marker}`
     if (seenMarkers.has(key)) {
-      throw new Error(`Invalid release manifest: duplicate marker ${spec.marker} for ${spec.path}`)
+      throw new Error(
+        `Legacy release generation duplicates marker ${spec.marker} for ${spec.path}`
+      )
     }
     seenMarkers.add(key)
   }
 
   for (const [index, asset] of generation.releaseCommitExtraAssets.entries()) {
-    safeRelativePath(root, asset, `generation.releaseCommitExtraAssets[${index}]`)
+    safeRelativePath(
+      root,
+      asset,
+      `generation.releaseCommitExtraAssets[${index}]`
+    )
   }
 }
 
 function replaceExactlyOnce(text, pattern, replacement, label) {
   const matches = text.match(pattern) || []
   if (matches.length !== 1) {
-    throw new Error(`${label} must match exactly once (found ${matches.length})`)
+    throw new Error(
+      `${label} must match exactly once (found ${matches.length})`
+    )
   }
   return text.replace(pattern, replacement)
 }
@@ -160,28 +221,30 @@ function updateVersionFile(text, kind, version, filePath) {
   throw new Error(`Unsupported version generator kind: ${kind}`)
 }
 
-function postureLabel(manifest) {
-  return manifest.releasePolicy.currentLine === 'pre1'
+function postureLabel(version) {
+  return parseSemanticVersion(version).major === 0
     ? 'pre-1.0 (`v0.x`)'
     : 'stable (`v1.x` and later)'
 }
 
-function renderPostureBlock(kind, manifest) {
-  const version = manifest.package.version
-  const line = manifest.releasePolicy.currentLine
-  const graduation = manifest.releasePolicy.graduation
+function renderPostureBlock(kind, policy, version) {
+  const parsed = parseSemanticVersion(version)
 
   if (kind === 'readme-stability') {
-    if (line === 'pre1') {
+    if (parsed.major === 0) {
       return `> [!WARNING]\n> **Stability**: v${version} is on the pre-1.0 (\`v0.x\`) release line.\n> Breaking changes to documented stable surfaces use minor releases until an explicitly reviewed stable graduation.\n> Some features remain experimental/opt-in; see [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md) and [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).`
     }
     return `> [!NOTE]\n> **Stability**: v${version} is on the stable release line.\n> Breaking changes to documented stable surfaces require a major release.\n> See [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md) and [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).`
   }
 
   if (kind === 'versioning-summary') {
-    const breakingRelease = manifest.releasePolicy.lines[line].breakingRelease
-    const graduationStatus = graduation.approved ? 'approved' : 'not approved'
-    return `> Current version: **v${version}**<br>\n> Current release line: **${postureLabel(manifest)}**<br>\n> Breaking stable-surface changes produce a **${breakingRelease}** release on this line.<br>\n> Stable graduation: **${graduationStatus}**.`
+    const breakingRelease =
+      parsed.major === 0 ? releaseLine(policy, 0).breakingBump : 'major'
+    const targetMajor = parsed.major === 0 ? 1 : parsed.major
+    const graduationStatus = isStableMajorApproved(policy, targetMajor)
+      ? 'approved'
+      : 'not approved'
+    return `> Current version: **v${version}**<br>\n> Current release line: **${postureLabel(version)}**<br>\n> Breaking stable-surface changes produce a **${breakingRelease}** release on this line.<br>\n> Stable graduation: **${graduationStatus}**.`
   }
 
   throw new Error(`Unsupported posture block kind: ${kind}`)
@@ -207,23 +270,22 @@ function replaceGeneratedBlock(text, marker, body, filePath) {
   )}`
 }
 
-function generatedReleaseAssets(manifest, manifestPath = DEFAULT_MANIFEST_PATH, root = ROOT_DIR) {
-  validateReleaseManifest(manifest)
-  validateGenerationConfig(manifest, root, manifestPath)
-  const paths = [manifestPath]
-  for (const spec of manifest.generation.versionFiles) paths.push(spec.path)
-  for (const spec of manifest.generation.postureBlocks) paths.push(spec.path)
-  paths.push(...manifest.generation.releaseCommitExtraAssets)
+function generatedReleaseAssets(
+  policyPath = DEFAULT_POLICY_PATH,
+  root = ROOT_DIR
+) {
+  validateGenerationConfig(root, policyPath)
+  const paths = [policyPath]
+  for (const spec of LEGACY_GENERATION.versionFiles) paths.push(spec.path)
+  for (const spec of LEGACY_GENERATION.postureBlocks) paths.push(spec.path)
+  paths.push(...LEGACY_GENERATION.releaseCommitExtraAssets)
   return [...new Set(paths)]
 }
 
-function computeExpectedOutputs({ root, manifestPath, version }) {
-  const manifest = loadReleaseManifest(manifestPath, root)
-  validateGenerationConfig(manifest, root, manifestPath)
-  assertVersionAllowed(manifest, version)
-
-  const nextManifest = JSON.parse(JSON.stringify(manifest))
-  nextManifest.package.version = version
+function computeExpectedOutputs({ root, policyPath, version }) {
+  const policy = loadReleasePolicy(policyPath, root)
+  validateGenerationConfig(root, policyPath)
+  verifyReleaseVersion(policy, version)
   const outputs = new Map()
 
   function currentText(relativePath) {
@@ -232,40 +294,39 @@ function computeExpectedOutputs({ root, manifestPath, version }) {
     return readUtf8(absolute)
   }
 
-  for (const spec of nextManifest.generation.versionFiles) {
+  for (const spec of LEGACY_GENERATION.versionFiles) {
     outputs.set(
       spec.path,
       updateVersionFile(currentText(spec.path), spec.kind, version, spec.path)
     )
   }
-  for (const spec of nextManifest.generation.postureBlocks) {
+  for (const spec of LEGACY_GENERATION.postureBlocks) {
     outputs.set(
       spec.path,
       replaceGeneratedBlock(
         currentText(spec.path),
         spec.marker,
-        renderPostureBlock(spec.kind, nextManifest),
+        renderPostureBlock(spec.kind, policy, version),
         spec.path
       )
     )
   }
 
-  outputs.set(manifestPath, formatJson(nextManifest))
-  return { manifest: nextManifest, outputs }
+  return { policy, version, outputs }
 }
 
 function generateReleaseState({
   root = ROOT_DIR,
-  manifestPath = DEFAULT_MANIFEST_PATH,
+  policyPath = DEFAULT_POLICY_PATH,
   version,
   check = false,
 }) {
-  const currentManifest = loadReleaseManifest(manifestPath, root)
-  const targetVersion = version || currentManifest.package.version
-  const { manifest, outputs } = computeExpectedOutputs({
+  if (!version)
+    throw new Error('An explicit or tag-derived version is required')
+  const { policy, outputs } = computeExpectedOutputs({
     root,
-    manifestPath,
-    version: targetVersion,
+    policyPath,
+    version,
   })
 
   const drift = []
@@ -279,14 +340,46 @@ function generateReleaseState({
     if (drift.length > 0) {
       throw new Error(`Generated release state is stale: ${drift.join(', ')}`)
     }
-    return { manifest, changed: [] }
+    return { policy, version, changed: [] }
   }
 
   for (const relativePath of drift.sort()) {
     const { absolute } = safeRelativePath(root, relativePath, relativePath)
     fs.writeFileSync(absolute, outputs.get(relativePath))
   }
-  return { manifest, changed: drift.sort() }
+  return { policy, version, changed: drift.sort() }
+}
+
+function latestReachableVersion(root = ROOT_DIR) {
+  const result = childProcess.spawnSync(
+    'git',
+    ['tag', '--merged', 'HEAD', '--list', 'v*'],
+    {
+      cwd: root,
+      encoding: 'utf8',
+    }
+  )
+  if (result.status !== 0) {
+    throw new Error(
+      `Unable to read reachable release tags: ${String(result.stderr || '').trim()}`
+    )
+  }
+  const versions = result.stdout
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .map((tag) => (tag.startsWith('v') ? tag.slice(1) : tag))
+    .filter((version) => {
+      try {
+        parseSemanticVersion(version)
+        return true
+      } catch (_error) {
+        return false
+      }
+    })
+  versions.sort(semver.rcompare)
+  if (versions.length === 0)
+    throw new Error('No supported semantic-version tag is reachable from HEAD')
+  return versions[0]
 }
 
 function parseArgs(argv) {
@@ -294,36 +387,52 @@ function parseArgs(argv) {
   const check = args.includes('--check')
   const printAssets = args.includes('--print-assets')
   const positional = args.filter((arg) => !arg.startsWith('--'))
-  if (args.some((arg) => arg.startsWith('--') && arg !== '--check' && arg !== '--print-assets')) {
+  if (
+    args.some(
+      (arg) =>
+        arg.startsWith('--') && arg !== '--check' && arg !== '--print-assets'
+    )
+  ) {
     throw new Error(`Unknown option in: ${args.join(' ')}`)
   }
-  if (check && printAssets) throw new Error('--check and --print-assets are mutually exclusive')
-  if (positional.length > 1) throw new Error('Expected at most one version argument')
+  if (check && printAssets)
+    throw new Error('--check and --print-assets are mutually exclusive')
+  if (positional.length > 1)
+    throw new Error('Expected at most one version argument')
   return { check, printAssets, version: positional[0] }
 }
 
 function main() {
-  const { check, printAssets, version } = parseArgs(process.argv.slice(2))
-  const manifest = loadReleaseManifest(DEFAULT_MANIFEST_PATH, ROOT_DIR)
+  const {
+    check,
+    printAssets,
+    version: requestedVersion,
+  } = parseArgs(process.argv.slice(2))
 
   if (printAssets) {
-    if (version) throw new Error('--print-assets does not accept a version')
-    process.stdout.write(`${JSON.stringify(generatedReleaseAssets(manifest), null, 2)}\n`)
+    if (requestedVersion)
+      throw new Error('--print-assets does not accept a version')
+    process.stdout.write(
+      `${JSON.stringify(generatedReleaseAssets(), null, 2)}\n`
+    )
     return
   }
-  if (!check && !version) {
+  if (!check && !requestedVersion) {
     throw new Error(
       'Usage: node scripts/release/sync-versions.js <version> | --check | --print-assets'
     )
   }
 
+  const version = requestedVersion || latestReachableVersion(ROOT_DIR)
   const result = generateReleaseState({ version, check })
   if (check) {
-    console.log(`[release-generate] OK: v${result.manifest.package.version} is current`)
+    console.log(
+      `[release-generate] OK: tracked metadata matches reachable v${result.version}`
+    )
   } else if (result.changed.length === 0) {
-    console.log(`[release-generate] Already current: v${result.manifest.package.version}`)
+    console.log(`[release-generate] Already current: v${result.version}`)
   } else {
-    console.log(`[release-generate] Updated to v${result.manifest.package.version}:`)
+    console.log(`[release-generate] Updated to v${result.version}:`)
     for (const file of result.changed) console.log(`  ${file}`)
   }
 }
@@ -341,6 +450,7 @@ module.exports = {
   computeExpectedOutputs,
   generateReleaseState,
   generatedReleaseAssets,
+  latestReachableVersion,
   parseArgs,
   renderPostureBlock,
   replaceGeneratedBlock,

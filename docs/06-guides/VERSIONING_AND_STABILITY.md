@@ -13,9 +13,24 @@ make it clear what is safe to depend on and what may change.
 Experimental features remain opt-in and may evolve in minor releases. Breaking changes on the
 current line must still be documented clearly.
 
-The machine-readable source of truth is [`release/manifest.json`](../../release/manifest.json).
-Semantic-release reads that policy when classifying commits; the breaking-change rule is not copied
-into release configuration by hand.
+Reachable immutable `vMAJOR.MINOR.PATCH` Git tags are the source of truth for released versions.
+[`release/manifest.json`](../../release/manifest.json) is intentionally version-independent: it
+contains only release-line policy and durable approval records. Semantic-release delegates
+Conventional Commit parsing to its official analyzer, then applies that small policy layer.
+Tracked package versions and current-version prose are compatibility mirrors during the release
+protocol migration; they do not decide the next version.
+
+The current policy shape is deliberately small:
+
+```json
+{
+  "schemaVersion": 2,
+  "releaseLines": {
+    "0": { "stage": "initial-development", "breakingBump": "minor" },
+    "1": { "stage": "stable", "approval": null }
+  }
+}
+```
 
 ## Stability tiers
 
@@ -88,19 +103,26 @@ breaks move to MAJOR.
 ## Stable graduation gate
 
 The project cannot enter the stable release line merely by changing a version string. Before
-`releasePolicy.currentLine` can become `stable`, the manifest must contain all of the following:
+semantic-release may verify a release in stable major `N`, `releaseLines.N.approval` must contain:
 
-- an approved, reviewed Bead that owns the graduation decision;
-- the approval date;
-- evidence for the supported platform and toolchain matrix;
-- compatibility evidence for documented stable surfaces;
-- application-runtime evidence, including representative Phoenix/OTP QA;
-- an independent review record.
+- a durable reviewed record, such as the Bead or ADR that owns the decision;
+- a real, non-future approval date.
 
-The release-policy test rejects stable commit analysis without that complete record. Version
-generation separately rejects `1.x` while the policy is `pre1`, and rejects further `0.x` generation
-after the approved stable line is selected. This makes graduation an explicit reviewed event rather
-than an accidental semantic-release side effect.
+Approval alone does not manufacture a release. The approval change is non-releasing; a subsequent
+new breaking Conventional Commit is still required to derive `1.0.0`. After graduation, each later
+stable major has an independent approval entry, so approving major 1 does not authorize major 2.
+Unknown majors, malformed or unsafe SemVer components, prereleases, and build-metadata channels fail
+closed. Prerelease/build syntax is valid SemVer, but those channels remain unsupported until their
+own reviewed policy is added.
+
+The release policy is tested through the real `@semantic-release/commit-analyzer`, not a local
+approximation:
+
+- `fix:` derives a patch;
+- `feat:` derives a minor;
+- a breaking commit on unapproved `0.x` derives the next minor;
+- an approved stable graduation plus a new breaking commit may derive `1.0.0`;
+- a breaking commit targeting an unapproved stable major is rejected during release verification.
 
 ## Deprecation policy
 

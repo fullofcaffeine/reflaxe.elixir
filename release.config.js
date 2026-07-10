@@ -1,21 +1,20 @@
-const {
-  DEFAULT_MANIFEST_PATH,
-  loadReleaseManifest,
-  releaseRulesForManifest,
-} = require('./scripts/release/release-manifest')
 const { generatedReleaseAssets } = require('./scripts/release/sync-versions')
 
 const root = __dirname
-const manifest = loadReleaseManifest(DEFAULT_MANIFEST_PATH, root)
 
 module.exports = {
   branches: ['main'],
   plugins: [
     [
-      '@semantic-release/commit-analyzer',
+      './scripts/release/semantic-release-policy.cjs',
       {
-        preset: 'conventionalcommits',
-        releaseRules: releaseRulesForManifest(manifest),
+        policyPath: 'release/manifest.json',
+        commitAnalyzer: {
+          releaseRules: [
+            { type: 'perf', release: 'patch' },
+            { type: 'revert', release: 'patch' },
+          ],
+        },
       },
     ],
     '@semantic-release/release-notes-generator',
@@ -30,8 +29,9 @@ module.exports = {
     [
       '@semantic-release/git',
       {
-        assets: generatedReleaseAssets(manifest, DEFAULT_MANIFEST_PATH, root),
-        message: 'chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}',
+        assets: generatedReleaseAssets('release/manifest.json', root),
+        message:
+          'chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}',
       },
     ],
     [

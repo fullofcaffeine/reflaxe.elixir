@@ -30,11 +30,12 @@
 
 ### Changed
 
-* **release:** define the intentional pre-1.0 release line in a structured manifest; semantic-release now derives breaking-change bumps from that policy and refuses stable-line analysis or `1.x` generation without a dated approval Bead plus platform, compatibility, application-runtime, and independent-review evidence.
-* **release:** generate version metadata, scoped HXML versions, and current-posture documentation in one validated pass from the release manifest; add byte-for-byte check mode and derive semantic-release commit assets from the generator.
+* **release:** replace mutable manifest-owned version/generation state with a tag-owned SemVer policy core; delegate Conventional Commit classification to the pinned official analyzer, validate versions with locked `semver`, keep `0.x` breaking changes minor until an independently approved graduation change, and require a durable approval for every stable major.
+* **release:** replace the original single graduation-evidence gate with independent, dated per-major approval records; approval remains non-releasing, and a subsequent new breaking commit is required to derive the authorized stable major.
+* **release:** keep the existing version metadata, scoped HXML, and current-posture generator as a compatibility bridge while release artifacts migrate to deterministic staging; release policy no longer contains its file inventory or mutable current version.
 * **release:** verify the prepared release commit and package before tag creation, verify the tag and tagged generated state before GitHub publication, and validate the downloaded GitHub Release asset afterward; document fail-closed partial-publication recovery.
 * **docs:** reconcile current-facing release language with the real pre-1.0 lineage; label old `v1.0.x`/`v1.1.x` milestones as unshipped historical plans and point entrypoints to the canonical generated posture.
-* **test:** derive synthetic release versions from the manifest so release-generation and staged-verification contracts remain valid after each real publication.
+* **test:** derive synthetic release versions independently of release policy so generation and staged-verification contracts remain valid after each real publication.
 * **stdlib:** classify `haxe.io.Mime` and `haxe.io.Scheme` as verified official Haxe fallback modules; add runtime, snapshot, and source-versus-package coverage without duplicating their String enum-abstract definitions in the target stdlib.
 * **compiler:** preserve omitted Haxe method defaults from Reflaxe's typed `ClassFuncData` instead of always passing `nil`, and keep multi-expression constructor blocks grouped when they are assigned as values.
 * **stdlib:** enable all upstream `haxe.io.ArrayBufferView` and typed-array runtime specs through the official Haxe fallback; preserve shared Bytes views while keeping source and built-package output identical.

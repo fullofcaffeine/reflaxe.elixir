@@ -17,9 +17,9 @@ Semantic-release looks at commit messages since the last release:
 - `feat:` → minor release (`0.1.2` → `0.2.0`)
 - `feat!:` or `BREAKING CHANGE:` → **minor release while pre-1.0** (`0.2.0` → `0.3.0`)
 
-The current release manifest intentionally keeps breaking changes on the minor line while the
-project is pre-1.0. Stable graduation changes the manifest policy only after its evidence gate is
-approved; semantic-release then derives major breaking releases from that policy.
+The version-independent release policy intentionally keeps breaking changes on the minor line while
+the project is pre-1.0. Stable graduation requires an approval record for the target major; that
+approval is non-releasing, so a subsequent new breaking commit must still authorize the release.
 
 If there are no release-worthy commits, the workflow runs but produces no new release.
 
@@ -54,8 +54,11 @@ Use clear, scoped messages (examples):
 
 3) **Let semantic-release do the rest**
 
-Version strings and current-status blocks are updated in one validated generation pass via
-`scripts/release/sync-versions.js`, using `release/manifest.json` as the source of truth, including:
+Immutable reachable tags are the source of truth for released versions.
+`release/manifest.json` contains only release-line policy and per-major approvals; it does not own a
+current version or generated-file inventory. During the release-protocol migration,
+`scripts/release/sync-versions.js` remains a compatibility bridge that writes the derived tag version
+to these tracked mirrors:
 
 - `package.json` / `package-lock.json`
 - `haxelib.json`
@@ -70,11 +73,11 @@ Check for drift without modifying files:
 npm run guard:release-state
 ```
 
-The generator rejects unsafe paths, missing or duplicate generated markers, and `1.x` versions that
-do not have an approved stable-graduation record. Semantic-release obtains its release-commit asset
-list from the same generator through `release.config.js` instead of maintaining another list in
-`package.json`. The JavaScript config still uses the official semantic-release analyzer and git
-plugins; local code only supplies validated rules and assets.
+The bridge rejects unsafe paths, missing or duplicate generated markers, and stable versions without
+an approval for that exact major. Semantic-release obtains its transitional release-commit asset
+list from the same module through `release.config.js`. The local policy plugin delegates commit
+classification to the official semantic-release analyzer and changes only the explicit pre-1.0
+breaking rule; its verification hook enforces stable-major approval.
 
 ## Staged release verification
 
@@ -108,9 +111,10 @@ Finish every recovery with:
 scripts/release/verify-published-package.sh vX.Y.Z
 ```
 
-Tags created before the structured release manifest can be audited with
-`ALLOW_LEGACY_RELEASE=1`; this bypasses only tagged generated-state comparison and is never set by
-the Release workflow.
+Tags created before release policy schema v2, including tags with the earlier generated-state
+manifest, can be audited with `ALLOW_LEGACY_RELEASE=1`; this bypasses only tagged policy/generated-
+state comparison and is never set by the Release workflow. Package structure and hosted-asset checks
+still run.
 
 ## Token / permissions notes
 

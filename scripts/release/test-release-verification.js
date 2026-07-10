@@ -4,8 +4,11 @@ const childProcess = require('child_process')
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
-const { loadReleaseManifest, parseSemver } = require('./release-manifest')
-const { generateReleaseState, generatedReleaseAssets } = require('./sync-versions')
+const { loadReleasePolicy, parseSemanticVersion } = require('./release-policy')
+const {
+  generateReleaseState,
+  generatedReleaseAssets,
+} = require('./sync-versions')
 const {
   verifyPreparedRelease,
   verifyTaggedRelease,
@@ -33,7 +36,10 @@ function createPackage(repoRoot, version, includeCross = true) {
     `${JSON.stringify({ name: 'reflaxe.elixir', version, classPath: 'src' }, null, 2)}\n`
   )
   if (includeCross) {
-    fs.writeFileSync(path.join(packageRoot, 'src/haxe/Exception.cross.hx'), 'package haxe;\n')
+    fs.writeFileSync(
+      path.join(packageRoot, 'src/haxe/Exception.cross.hx'),
+      'package haxe;\n'
+    )
   }
   fs.mkdirSync(path.join(repoRoot, 'dist'), { recursive: true })
   const packagePath = path.join(repoRoot, 'dist/reflaxe.elixir.zip')
@@ -43,9 +49,11 @@ function createPackage(repoRoot, version, includeCross = true) {
 }
 
 function createReleaseRepo() {
-  const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'reflaxe-release-verify-'))
-  const manifest = loadReleaseManifest('release/manifest.json', root)
-  for (const file of generatedReleaseAssets(manifest)) copyFile(root, repoRoot, file)
+  const repoRoot = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'reflaxe-release-verify-')
+  )
+  loadReleasePolicy('release/manifest.json', root)
+  for (const file of generatedReleaseAssets()) copyFile(root, repoRoot, file)
 
   run('git', ['init', '-q'], repoRoot)
   run('git', ['config', 'user.name', 'Release Test'], repoRoot)
@@ -53,9 +61,11 @@ function createReleaseRepo() {
   run('git', ['add', '.'], repoRoot)
   run('git', ['commit', '-q', '-m', 'baseline'], repoRoot)
 
-  const parsedVersion = parseSemver(manifest.package.version)
-  const version =
-    `${parsedVersion.major}.${parsedVersion.minor}.${parsedVersion.patch + 1}`
+  const currentVersion = JSON.parse(
+    fs.readFileSync(path.join(root, 'package.json'), 'utf8')
+  ).version
+  const parsedVersion = parseSemanticVersion(currentVersion)
+  const version = `${parsedVersion.major}.${parsedVersion.minor}.${parsedVersion.patch + 1}`
   const tag = `v${version}`
   generateReleaseState({ root: repoRoot, version })
   const changelogPath = path.join(repoRoot, 'CHANGELOG.md')
@@ -67,25 +77,37 @@ function createReleaseRepo() {
     )}`
   )
   run('git', ['add', '.'], repoRoot)
-  run('git', ['commit', '-q', '-m', `chore(release): ${version} [skip ci]\n\nnotes`], repoRoot)
+  run(
+    'git',
+    ['commit', '-q', '-m', `chore(release): ${version} [skip ci]\n\nnotes`],
+    repoRoot
+  )
   createPackage(repoRoot, version)
   return { repoRoot, version, tag }
 }
 
 function main() {
   const verifierIndex = releaseConfig.plugins.findIndex(
-    (plugin) => Array.isArray(plugin) && plugin[0] === './scripts/release/verify-release-stages.js'
+    (plugin) =>
+      Array.isArray(plugin) &&
+      plugin[0] === './scripts/release/verify-release-stages.js'
   )
   const gitIndex = releaseConfig.plugins.findIndex(
     (plugin) => Array.isArray(plugin) && plugin[0] === '@semantic-release/git'
   )
   const githubIndex = releaseConfig.plugins.findIndex(
-    (plugin) => Array.isArray(plugin) && plugin[0] === '@semantic-release/github'
+    (plugin) =>
+      Array.isArray(plugin) && plugin[0] === '@semantic-release/github'
   )
-  assert(gitIndex >= 0 && verifierIndex > gitIndex && githubIndex > verifierIndex)
+  assert(
+    gitIndex >= 0 && verifierIndex > gitIndex && githubIndex > verifierIndex
+  )
 
   const gitPlugin = releaseConfig.plugins[gitIndex]
-  assert(gitPlugin[1].message.includes('\n\n'), 'release commit template must use real newlines')
+  assert(
+    gitPlugin[1].message.includes('\n\n'),
+    'release commit template must use real newlines'
+  )
   assert(
     !gitPlugin[1].message.includes('\\n'),
     'release commit template must not use literal backslash-n text'
@@ -103,20 +125,30 @@ function main() {
     const readmePath = path.join(fixture.repoRoot, 'README.md')
     const readme = fs.readFileSync(readmePath)
     fs.appendFileSync(readmePath, '\nstale tracked state\n')
-    assert.throws(() => verifyPreparedRelease(options), /uncommitted tracked changes/)
+    assert.throws(
+      () => verifyPreparedRelease(options),
+      /uncommitted tracked changes/
+    )
     fs.writeFileSync(readmePath, readme)
 
     createPackage(fixture.repoRoot, fixture.version, false)
-    assert.throws(() => verifyPreparedRelease(options), /missing src\/haxe\/Exception\.cross\.hx/)
+    assert.throws(
+      () => verifyPreparedRelease(options),
+      /missing src\/haxe\/Exception\.cross\.hx/
+    )
     createPackage(fixture.repoRoot, fixture.version)
 
     run('git', ['tag', fixture.tag], fixture.repoRoot)
-    assert.throws(() => verifyPreparedRelease(options), /exists before prepared-state verification/)
-    assert.doesNotThrow(() => verifyTaggedRelease({ ...options, requireHead: true }))
+    assert.throws(
+      () => verifyPreparedRelease(options),
+      /exists before prepared-state verification/
+    )
+    assert.doesNotThrow(() =>
+      verifyTaggedRelease({ ...options, requireHead: true })
+    )
 
-    const parsedVersion = parseSemver(fixture.version)
-    const wrongVersion =
-      `${parsedVersion.major}.${parsedVersion.minor}.${parsedVersion.patch + 1}`
+    const parsedVersion = parseSemanticVersion(fixture.version)
+    const wrongVersion = `${parsedVersion.major}.${parsedVersion.minor}.${parsedVersion.patch + 1}`
     const wrongTag = `v${wrongVersion}`
     run('git', ['tag', wrongTag, 'HEAD^'], fixture.repoRoot)
     assert.throws(
@@ -130,7 +162,9 @@ function main() {
       /must point to HEAD/
     )
 
-    console.log('[release-verification] OK: prepared, tagged, and failure contracts')
+    console.log(
+      '[release-verification] OK: prepared, tagged, and failure contracts'
+    )
   } finally {
     fs.rmSync(fixture.repoRoot, { recursive: true, force: true })
   }

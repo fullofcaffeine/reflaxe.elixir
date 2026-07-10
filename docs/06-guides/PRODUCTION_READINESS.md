@@ -76,8 +76,9 @@ Readiness does **not** mean “bug-free”. It means:
 The root README describes stability in terms of the **documented subset** and calls out experimental/opt‑in
 features explicitly. The goal is that the public entrypoints never over‑promise “works everywhere”.
 
-The current release line and graduation state are generated from `release/manifest.json` and summarized
-in [Versioning & Stability](VERSIONING_AND_STABILITY.md).
+Reachable immutable tags identify released versions. Release-line and per-major graduation policy
+live in `release/manifest.json` and are summarized in
+[Versioning & Stability](VERSIONING_AND_STABILITY.md).
 
 **Historical note (superseded July 2026):** earlier planning drafts used `v1.0.x` for an
 “API stabilized” milestone and `v1.1.x` for a “non-alpha” milestone. Those version lines were never

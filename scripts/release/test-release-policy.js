@@ -1,79 +1,296 @@
 #!/usr/bin/env node
+
 const assert = require('assert')
 const fs = require('fs')
+const os = require('os')
 const path = require('path')
-const { analyzeCommits } = require('@semantic-release/commit-analyzer')
-const {
-  assertGraduationApproved,
-  assertVersionAllowed,
-  loadReleaseManifest,
-  releaseRulesForManifest,
-} = require('./release-manifest')
 
 const root = path.resolve(__dirname, '../..')
-const manifest = loadReleaseManifest('release/manifest.json', root)
-const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'))
+const policyModulePath = path.join(
+  root,
+  'scripts',
+  'release',
+  'release-policy.js'
+)
+const pluginModulePath = path.join(
+  root,
+  'scripts',
+  'release',
+  'semantic-release-policy.cjs'
+)
 
-function approvedStableManifest() {
-  const stable = JSON.parse(JSON.stringify(manifest))
-  stable.releasePolicy.currentLine = 'stable'
-  stable.releasePolicy.graduation = {
-    approved: true,
-    approvalBead: 'haxe.elixir.codex-stable.1',
-    approvedAt: '2026-07-09',
-    evidence: {
-      platformToolchain: 'CI matrix evidence URL',
-      compatibility: 'compatibility report URL',
-      applicationRuntime: 'application QA report URL',
-      independentReview: 'independent review URL',
-    },
-  }
-  return stable
+function writeJson(filePath, value) {
+  fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`)
 }
 
-async function analyze(manifestFixture, message) {
-  return analyzeCommits(
+function approval(record) {
+  return { record, date: '2026-07-10' }
+}
+
+function policy(options = {}) {
+  const lines = {
+    0: { stage: 'initial-development', breakingBump: 'minor' },
+    1: {
+      stage: 'stable',
+      approval: options.major1Approved
+        ? approval('haxe.elixir.codex-major-1')
+        : null,
+    },
+  }
+  if (options.includeMajor2) {
+    lines[2] = {
+      stage: 'stable',
+      approval: options.major2Approved
+        ? approval('haxe.elixir.codex-major-2')
+        : null,
+    }
+  }
+  return { schemaVersion: 2, releaseLines: lines }
+}
+
+function logger() {
+  return { log() {}, error() {}, success() {} }
+}
+
+async function analyze(plugin, fixtureRoot, lastVersion, messages) {
+  return plugin.analyzeCommits(
     {
-      preset: 'conventionalcommits',
-      releaseRules: releaseRulesForManifest(manifestFixture),
+      policyPath: path.join(fixtureRoot, 'release', 'manifest.json'),
+      commitAnalyzer: {
+        releaseRules: [
+          { type: 'perf', release: 'patch' },
+          { type: 'revert', release: 'patch' },
+        ],
+      },
     },
     {
-      cwd: root,
-      commits: [{ message }],
-      logger: { log() {} },
+      cwd: fixtureRoot,
+      commits: messages.map((message, index) => ({
+        message,
+        hash: String(index + 1).padStart(40, '0'),
+      })),
+      lastRelease: { version: lastVersion },
+      logger: logger(),
     }
   )
 }
 
+async function verify(plugin, fixtureRoot, version) {
+  return plugin.verifyRelease(
+    { policyPath: path.join(fixtureRoot, 'release', 'manifest.json') },
+    { cwd: fixtureRoot, nextRelease: { version }, logger: logger() }
+  )
+}
+
 async function main() {
-  assert.strictEqual(manifest.package.version, packageJson.version)
-  assert.strictEqual(manifest.releasePolicy.currentLine, 'pre1')
-  const releaseConfig = require(path.join(root, 'release.config.js'))
-  const analyzerPlugin = releaseConfig.plugins[0]
-  assert.strictEqual(analyzerPlugin[0], '@semantic-release/commit-analyzer')
-  assert.deepStrictEqual(analyzerPlugin[1].releaseRules, releaseRulesForManifest(manifest))
-  assert.strictEqual(releaseRulesForManifest(manifest)[0].release, 'minor')
-  assert.strictEqual(await analyze(manifest, 'feat!: change stable behavior'), 'minor')
-  assert.strictEqual(await analyze(manifest, 'fix: preserve behavior'), 'patch')
-  assert.doesNotThrow(() => assertVersionAllowed(manifest, '0.15.0'))
-  assert.throws(() => assertVersionAllowed(manifest, '1.0.0'), /requires.*stable/)
-
-  const stable = approvedStableManifest()
-  assert.doesNotThrow(() => assertGraduationApproved(stable))
-  assert.strictEqual(releaseRulesForManifest(stable)[0].release, 'major')
-  assert.strictEqual(await analyze(stable, 'feat!: change stable behavior'), 'major')
-  assert.doesNotThrow(() => assertVersionAllowed(stable, '1.0.0'))
-  assert.throws(() => assertVersionAllowed(stable, '0.15.0'), /cannot generate a 0\.x/)
-
-  const unapprovedStable = approvedStableManifest()
-  unapprovedStable.releasePolicy.graduation.approved = false
-  unapprovedStable.releasePolicy.graduation.evidence.independentReview = null
-  assert.throws(
-    () => releaseRulesForManifest(unapprovedStable),
-    /Stable graduation is not approved.*approved=true.*independentReview/
+  assert(fs.existsSync(policyModulePath), 'release policy module must exist')
+  assert(
+    fs.existsSync(pluginModulePath),
+    'semantic-release policy plugin must exist'
   )
 
-  console.log('[release-policy] OK: pre-1.0 and stable graduation contracts')
+  const policyApi = require(policyModulePath)
+  const plugin = require(pluginModulePath)
+  const fixtureRoot = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'reflaxe-elixir-release-policy-')
+  )
+  const manifestPath = path.join(fixtureRoot, 'release', 'manifest.json')
+  fs.mkdirSync(path.dirname(manifestPath), { recursive: true })
+
+  try {
+    writeJson(manifestPath, policy())
+
+    assert.strictEqual(
+      await analyze(plugin, fixtureRoot, '0.14.23', ['fix: repair output']),
+      'patch'
+    )
+    assert.strictEqual(
+      await analyze(plugin, fixtureRoot, '0.14.23', ['feat: add facade']),
+      'minor'
+    )
+    assert.strictEqual(
+      await analyze(plugin, fixtureRoot, '0.14.23', [
+        'perf: reduce allocations',
+      ]),
+      'patch'
+    )
+    assert.strictEqual(
+      await analyze(plugin, fixtureRoot, '0.14.23', ['docs: clarify usage']),
+      null
+    )
+    assert.strictEqual(
+      await analyze(plugin, fixtureRoot, '0.14.23', [
+        'feat!: replace an unstable API',
+      ]),
+      'minor',
+      'unapproved breaking changes on 0.x must remain on the initial-development line'
+    )
+
+    await verify(plugin, fixtureRoot, '0.15.0')
+    await assert.rejects(
+      verify(plugin, fixtureRoot, '1.0.0'),
+      /stable major 1 requires an approved release record/
+    )
+
+    writeJson(manifestPath, policy({ major1Approved: true }))
+    assert.strictEqual(
+      await analyze(plugin, fixtureRoot, '0.15.0', [
+        'chore(release): approve stable graduation',
+      ]),
+      null,
+      'approval state alone must not manufacture a 1.0.0 release'
+    )
+    assert.strictEqual(
+      await analyze(plugin, fixtureRoot, '0.15.0', [
+        'feat!: graduate the stable contract',
+      ]),
+      'major',
+      'a new breaking graduation change may derive 1.0.0 after approval'
+    )
+    await verify(plugin, fixtureRoot, '1.0.0')
+
+    writeJson(
+      manifestPath,
+      policy({
+        major1Approved: true,
+        includeMajor2: true,
+        major2Approved: false,
+      })
+    )
+    assert.strictEqual(
+      await analyze(plugin, fixtureRoot, '1.4.2', [
+        'feat!: replace the stable API',
+      ]),
+      'major'
+    )
+    await assert.rejects(
+      verify(plugin, fixtureRoot, '2.0.0'),
+      /stable major 2 requires an approved release record/
+    )
+
+    writeJson(
+      manifestPath,
+      policy({
+        major1Approved: true,
+        includeMajor2: true,
+        major2Approved: true,
+      })
+    )
+    await verify(plugin, fixtureRoot, '1.9.0')
+    await verify(plugin, fixtureRoot, '2.0.0')
+
+    await assert.rejects(
+      verify(plugin, fixtureRoot, '3.0.0'),
+      /no release policy for major 3/
+    )
+    await assert.rejects(
+      verify(plugin, fixtureRoot, '1.0.0-rc.1'),
+      /prerelease channels are not enabled/
+    )
+    await assert.rejects(
+      verify(plugin, fixtureRoot, '1.0.0+build.7'),
+      /build metadata is not enabled/
+    )
+    await assert.rejects(
+      verify(plugin, fixtureRoot, '1.0.0-alpha..1'),
+      /invalid semantic version/
+    )
+    await assert.rejects(
+      verify(plugin, fixtureRoot, '1.0.0-01'),
+      /invalid semantic version/
+    )
+    await assert.rejects(
+      verify(plugin, fixtureRoot, '9007199254740993.0.0'),
+      /invalid semantic version/
+    )
+
+    const malformed = policy()
+    malformed.releaseLines['0'] = {
+      stage: 'stable',
+      approval: approval('wrong-stage'),
+    }
+    writeJson(manifestPath, malformed)
+    assert.throws(
+      () => policyApi.loadReleasePolicy('release/manifest.json', fixtureRoot),
+      /major 0 must use stage initial-development/
+    )
+
+    const incomplete = policy({ major1Approved: true })
+    incomplete.releaseLines['1'].approval.date = '2026-02-30'
+    writeJson(manifestPath, incomplete)
+    assert.throws(
+      () => policyApi.loadReleasePolicy('release/manifest.json', fixtureRoot),
+      /releaseLines\.1\.approval\.date must be a real YYYY-MM-DD date/
+    )
+
+    const futureDated = policy({ major1Approved: true })
+    futureDated.releaseLines['1'].approval.date = '2999-01-01'
+    writeJson(manifestPath, futureDated)
+    assert.throws(
+      () => policyApi.loadReleasePolicy('release/manifest.json', fixtureRoot),
+      /releaseLines\.1\.approval\.date must not be future-dated/
+    )
+
+    const unsafeMajor = policy()
+    unsafeMajor.releaseLines['9007199254740993'] = {
+      stage: 'stable',
+      approval: null,
+    }
+    writeJson(manifestPath, unsafeMajor)
+    assert.throws(
+      () => policyApi.loadReleasePolicy('release/manifest.json', fixtureRoot),
+      /releaseLines contains unsafe major 9007199254740993/
+    )
+
+    const trackedPolicy = require(path.join(root, 'release', 'manifest.json'))
+    assert.deepStrictEqual(Object.keys(trackedPolicy).sort(), [
+      'releaseLines',
+      'schemaVersion',
+    ])
+    assert(!JSON.stringify(trackedPolicy).includes('versionFiles'))
+    assert(!JSON.stringify(trackedPolicy).includes('postureBlocks'))
+    assert(!JSON.stringify(trackedPolicy).includes('0.14.23'))
+
+    const configPath = path.join(root, 'release.config.js')
+    const originalReadFileSync = fs.readFileSync
+    fs.readFileSync = function blockedDevelopmentMetadata(filePath, ...args) {
+      const relative = path
+        .relative(root, String(filePath))
+        .split(path.sep)
+        .join('/')
+      if (
+        relative === 'package.json' ||
+        relative === 'haxelib.json' ||
+        relative === 'mix.exs' ||
+        relative === 'haxe_libraries/reflaxe.elixir.hxml'
+      ) {
+        throw new Error(`development metadata is unavailable: ${relative}`)
+      }
+      return originalReadFileSync.call(fs, filePath, ...args)
+    }
+    let releaseConfig
+    try {
+      delete require.cache[require.resolve(configPath)]
+      releaseConfig = require(configPath)
+    } finally {
+      fs.readFileSync = originalReadFileSync
+      delete require.cache[require.resolve(configPath)]
+    }
+
+    const analyzerPlugin = releaseConfig.plugins[0]
+    assert.strictEqual(
+      analyzerPlugin[0],
+      './scripts/release/semantic-release-policy.cjs'
+    )
+    assert.strictEqual(analyzerPlugin[1].policyPath, 'release/manifest.json')
+    assert(!fs.readFileSync(configPath, 'utf8').includes('release-manifest'))
+
+    console.log(
+      '[release-policy] OK: tag-owned SemVer and per-major approval contracts'
+    )
+  } finally {
+    fs.rmSync(fixtureRoot, { recursive: true, force: true })
+  }
 }
 
 main().catch((error) => {

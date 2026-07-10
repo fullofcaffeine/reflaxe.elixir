@@ -237,7 +237,7 @@ const path = require('path')
 
 const root = process.argv[2]
 const releaseConfig = require(path.join(root, 'release.config.js'))
-const { loadReleaseManifest } = require(path.join(root, 'scripts/release/release-manifest.js'))
+const { loadReleasePolicy } = require(path.join(root, 'scripts/release/release-policy.js'))
 const { generatedReleaseAssets } = require(path.join(root, 'scripts/release/sync-versions.js'))
 
 const configured = new Map(
@@ -264,8 +264,8 @@ if (!githubAssets.some((asset) => asset.path === expectedPath && asset.name === 
   throw new Error('semantic-release does not upload the fixed-path package with a versioned name')
 }
 
-const manifest = loadReleaseManifest('release/manifest.json', root)
-const expectedGitAssets = generatedReleaseAssets(manifest, 'release/manifest.json', root)
+loadReleasePolicy('release/manifest.json', root)
+const expectedGitAssets = generatedReleaseAssets('release/manifest.json', root)
 if (JSON.stringify(gitAssets) !== JSON.stringify(expectedGitAssets)) {
   throw new Error('semantic-release git assets do not match the release generator')
 }
@@ -290,5 +290,9 @@ if [[ ! -x "$published_verifier" ]]; then
 fi
 grep -F 'scripts/release/verify-published-package.sh' "$ROOT_DIR/.github/workflows/release.yml" >/dev/null \
   || fail "release workflow must verify the published package asset"
+grep -F 'manifest_schema' "$published_verifier" >/dev/null \
+  || fail "published-package verifier must distinguish current and legacy release policy schemas"
+grep -F 'ALLOW_LEGACY_RELEASE' "$published_verifier" >/dev/null \
+  || fail "published-package verifier must keep legacy-tag auditing explicit"
 
 echo "[guard:stdlib-layout] OK: std overrides use Reflaxe _std source layout"

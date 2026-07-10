@@ -3553,9 +3553,10 @@ scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 60
 [`docs/06-guides/VERSIONING_AND_STABILITY.md`](docs/06-guides/VERSIONING_AND_STABILITY.md) for
 current release posture.
 
-**Release status**: Reflaxe.Elixir is on the pre-1.0 (`v0.x`) line. Do not infer a shipped version or
-stable graduation from roadmap completion labels; the structured release manifest and canonical
-versioning page are authoritative.
+**Release status**: Reflaxe.Elixir is on the pre-1.0 (`v0.x`) line. Reachable immutable release tags
+identify shipped versions; `release/manifest.json` owns only release-line policy and per-major
+approval. Do not infer a shipped version or stable graduation from package metadata, generated
+current-version prose, or roadmap completion labels.
 
 ## Test Status Summary
 **See**: [`docs/03-compiler-development/testing-infrastructure.md`](docs/03-compiler-development/testing-infrastructure.md) - Complete test architecture and status

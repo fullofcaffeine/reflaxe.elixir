@@ -1,13 +1,16 @@
 #!/usr/bin/env node
+
 const assert = require('assert')
 const crypto = require('crypto')
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
-const { loadReleaseManifest, parseSemver } = require('./release-manifest')
+const { loadReleasePolicy, parseSemanticVersion } = require('./release-policy')
 const {
   generateReleaseState,
   generatedReleaseAssets,
+  latestReachableVersion,
+  safeRelativePath,
 } = require('./sync-versions')
 
 const root = path.resolve(__dirname, '../..')
@@ -21,9 +24,10 @@ function copyFile(sourceRoot, targetRoot, relativePath) {
 }
 
 function tempRepo() {
-  const targetRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'reflaxe-release-generation-'))
-  const manifest = loadReleaseManifest('release/manifest.json', root)
-  for (const file of generatedReleaseAssets(manifest)) copyFile(root, targetRoot, file)
+  const targetRoot = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'reflaxe-release-generation-')
+  )
+  for (const file of generatedReleaseAssets()) copyFile(root, targetRoot, file)
   return targetRoot
 }
 
@@ -38,58 +42,86 @@ function digestFiles(targetRoot, files) {
   return digest.digest('hex')
 }
 
-function expectFailure(fn, pattern) {
-  assert.throws(fn, pattern)
-}
-
 function main() {
   const targetRoot = tempRepo()
   try {
-    const manifest = loadReleaseManifest('release/manifest.json', targetRoot)
-    const assets = generatedReleaseAssets(manifest)
+    const policy = loadReleasePolicy('release/manifest.json', targetRoot)
+    const policyBefore = fs.readFileSync(
+      path.join(targetRoot, 'release/manifest.json'),
+      'utf8'
+    )
+    const assets = generatedReleaseAssets()
     assert(assets.includes('release/manifest.json'))
     assert(assets.includes('CHANGELOG.md'))
     assert(assets.includes('docs/06-guides/VERSIONING_AND_STABILITY.md'))
     assert.strictEqual(new Set(assets).size, assets.length)
+    assert.deepStrictEqual(Object.keys(policy).sort(), [
+      'releaseLines',
+      'schemaVersion',
+    ])
+
     const commitPlugin = releaseConfig.plugins.find(
       (plugin) => Array.isArray(plugin) && plugin[0] === '@semantic-release/git'
     )
-    assert(commitPlugin, 'semantic-release must use its official git plugin')
+    assert(
+      commitPlugin,
+      'legacy release generation must remain wired until the artifact child'
+    )
     assert.deepStrictEqual(commitPlugin[1].assets, assets)
 
-    const currentVersion = manifest.package.version
-    const parsedVersion = parseSemver(currentVersion)
-    const generatedVersion =
-      `${parsedVersion.major}.${parsedVersion.minor}.${parsedVersion.patch + 1}`
+    const currentVersion = JSON.parse(
+      fs.readFileSync(path.join(targetRoot, 'package.json'), 'utf8')
+    ).version
+    const parsedVersion = parseSemanticVersion(currentVersion)
+    const generatedVersion = `${parsedVersion.major}.${parsedVersion.minor}.${parsedVersion.patch + 1}`
     assert.notStrictEqual(generatedVersion, currentVersion)
-    const first = generateReleaseState({ root: targetRoot, version: generatedVersion })
-    assert(first.changed.includes('release/manifest.json'))
+
+    const first = generateReleaseState({
+      root: targetRoot,
+      version: generatedVersion,
+    })
+    assert(!first.changed.includes('release/manifest.json'))
     assert(first.changed.includes('package.json'))
     assert(first.changed.includes('README.md'))
     assert.strictEqual(
-      loadReleaseManifest('release/manifest.json', targetRoot).package.version,
-      generatedVersion
+      fs.readFileSync(path.join(targetRoot, 'release/manifest.json'), 'utf8'),
+      policyBefore,
+      'release policy must not become generated version state'
     )
     assert.strictEqual(
-      JSON.parse(fs.readFileSync(path.join(targetRoot, 'package.json'), 'utf8')).version,
-      generatedVersion
-    )
-    assert.strictEqual(
-      JSON.parse(fs.readFileSync(path.join(targetRoot, 'package-lock.json'), 'utf8')).packages['']
+      JSON.parse(fs.readFileSync(path.join(targetRoot, 'package.json'), 'utf8'))
         .version,
       generatedVersion
     )
     assert.strictEqual(
-      JSON.parse(fs.readFileSync(path.join(targetRoot, 'haxelib.json'), 'utf8')).version,
+      JSON.parse(
+        fs.readFileSync(path.join(targetRoot, 'package-lock.json'), 'utf8')
+      ).packages[''].version,
       generatedVersion
     )
-    assert(fs.readFileSync(path.join(targetRoot, 'mix.exs'), 'utf8').includes(`version: "${generatedVersion}"`))
+    assert.strictEqual(
+      JSON.parse(fs.readFileSync(path.join(targetRoot, 'haxelib.json'), 'utf8'))
+        .version,
+      generatedVersion
+    )
     assert(
       fs
-        .readFileSync(path.join(targetRoot, 'haxe_libraries/reflaxe.elixir.hxml'), 'utf8')
+        .readFileSync(path.join(targetRoot, 'mix.exs'), 'utf8')
+        .includes(`version: "${generatedVersion}"`)
+    )
+    assert(
+      fs
+        .readFileSync(
+          path.join(targetRoot, 'haxe_libraries/reflaxe.elixir.hxml'),
+          'utf8'
+        )
         .includes(`-D reflaxe.elixir=${generatedVersion}`)
     )
-    assert(fs.readFileSync(path.join(targetRoot, 'README.md'), 'utf8').includes(`v${generatedVersion} is on`))
+    assert(
+      fs
+        .readFileSync(path.join(targetRoot, 'README.md'), 'utf8')
+        .includes(`v${generatedVersion} is on`)
+    )
     assert(
       fs
         .readFileSync(
@@ -98,12 +130,22 @@ function main() {
         )
         .includes(`Current version: **v${generatedVersion}**`)
     )
+
     const firstDigest = digestFiles(targetRoot, assets)
-    const second = generateReleaseState({ root: targetRoot, version: generatedVersion })
+    const second = generateReleaseState({
+      root: targetRoot,
+      version: generatedVersion,
+    })
     const secondDigest = digestFiles(targetRoot, assets)
     assert.deepStrictEqual(second.changed, [])
     assert.strictEqual(firstDigest, secondDigest)
-    assert.doesNotThrow(() => generateReleaseState({ root: targetRoot, check: true }))
+    assert.doesNotThrow(() =>
+      generateReleaseState({
+        root: targetRoot,
+        version: generatedVersion,
+        check: true,
+      })
+    )
 
     const readmePath = path.join(targetRoot, 'README.md')
     fs.writeFileSync(
@@ -113,8 +155,13 @@ function main() {
         .replace(`version-${generatedVersion}-blue`, 'version-0.0.0-blue')
     )
     const drifted = fs.readFileSync(readmePath, 'utf8')
-    expectFailure(
-      () => generateReleaseState({ root: targetRoot, check: true }),
+    assert.throws(
+      () =>
+        generateReleaseState({
+          root: targetRoot,
+          version: generatedVersion,
+          check: true,
+        }),
       /Generated release state is stale: README\.md/
     )
     assert.strictEqual(fs.readFileSync(readmePath, 'utf8'), drifted)
@@ -124,8 +171,13 @@ function main() {
       .readFileSync(readmePath, 'utf8')
       .replace('<!-- END GENERATED: release-posture -->', '')
     fs.writeFileSync(readmePath, missingMarker)
-    expectFailure(
-      () => generateReleaseState({ root: targetRoot, check: true }),
+    assert.throws(
+      () =>
+        generateReleaseState({
+          root: targetRoot,
+          version: generatedVersion,
+          check: true,
+        }),
       /must contain exactly one.*END GENERATED: release-posture/
     )
     copyFile(root, targetRoot, 'README.md')
@@ -137,23 +189,26 @@ function main() {
         '<!-- BEGIN GENERATED: release-posture -->\n<!-- BEGIN GENERATED: release-posture -->'
       )
     fs.writeFileSync(readmePath, duplicateMarker)
-    expectFailure(
-      () => generateReleaseState({ root: targetRoot, check: true }),
+    assert.throws(
+      () =>
+        generateReleaseState({
+          root: targetRoot,
+          version: generatedVersion,
+          check: true,
+        }),
       /must contain exactly one.*BEGIN GENERATED: release-posture/
     )
-    copyFile(root, targetRoot, 'README.md')
 
-    const unsafeManifestPath = path.join(targetRoot, 'release/manifest.json')
-    const unsafeManifest = JSON.parse(fs.readFileSync(unsafeManifestPath, 'utf8'))
-    unsafeManifest.generation.versionFiles[0].path = '../outside.json'
-    fs.writeFileSync(unsafeManifestPath, `${JSON.stringify(unsafeManifest, null, 2)}\n`)
-    expectFailure(
-      () => generateReleaseState({ root: targetRoot, check: true }),
+    assert.throws(
+      () => safeRelativePath(targetRoot, '../outside.json', 'test path'),
       /must not contain parent traversal/
     )
+    const reachableVersion = latestReachableVersion(root)
+    assert.doesNotThrow(() => parseSemanticVersion(reachableVersion))
 
-    assert(Array.isArray(first.changed))
-    console.log('[release-generation] OK: deterministic generation and fail-closed checks')
+    console.log(
+      '[release-generation] OK: policy-independent legacy generation remains deterministic'
+    )
   } finally {
     fs.rmSync(targetRoot, { recursive: true, force: true })
   }
