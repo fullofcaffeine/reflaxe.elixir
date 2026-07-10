@@ -91,7 +91,9 @@ Release verification runs at three boundaries:
    agree.
 3. After semantic-release returns, the workflow downloads the GitHub Release asset and verifies the
    published release state, exact asset name, non-empty upload, tagged generated state, and package
-   contents.
+   contents. This step receives the exact tag created by that run. If commit analysis produces no new
+   version, the workflow records a no-op and does not re-audit an older release as though it had just
+   been published.
 
 ### Partial-publication recovery
 

@@ -290,6 +290,12 @@ if [[ ! -x "$published_verifier" ]]; then
 fi
 grep -F 'scripts/release/verify-published-package.sh' "$ROOT_DIR/.github/workflows/release.yml" >/dev/null \
   || fail "release workflow must verify the published package asset"
+grep -F 'id: semantic_release' "$ROOT_DIR/.github/workflows/release.yml" >/dev/null \
+  || fail "release workflow must expose whether semantic-release published a new tag"
+grep -F "steps.semantic_release.outputs.published == 'true'" "$ROOT_DIR/.github/workflows/release.yml" >/dev/null \
+  || fail "published-package verification must skip semantic-release no-op runs"
+grep -F 'steps.semantic_release.outputs.tag' "$ROOT_DIR/.github/workflows/release.yml" >/dev/null \
+  || fail "published-package verification must receive the exact newly published tag"
 grep -F 'manifest_schema' "$published_verifier" >/dev/null \
   || fail "published-package verifier must distinguish current and legacy release policy schemas"
 grep -F 'ALLOW_LEGACY_RELEASE' "$published_verifier" >/dev/null \

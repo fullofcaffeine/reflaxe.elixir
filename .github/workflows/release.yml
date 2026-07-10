@@ -204,18 +204,31 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Release
+        id: semantic_release
         if: steps.release_context.outputs.should_skip != 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          before_version="$(node -e "process.stdout.write(require('./scripts/release/sync-versions').latestReachableVersion())")"
           echo "[release] Publishing (semantic-release decides whether a new version is required)"
           npx semantic-release
+          after_version="$(node -e "process.stdout.write(require('./scripts/release/sync-versions').latestReachableVersion())")"
+          published=false
+          tag=""
+          if [[ "$after_version" != "$before_version" ]]; then
+            published=true
+            tag="v$after_version"
+          fi
+          {
+            echo "published=$published"
+            echo "tag=$tag"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Verify published Reflaxe package
-        if: steps.release_context.outputs.should_skip != 'true'
+        if: steps.release_context.outputs.should_skip != 'true' && steps.semantic_release.outputs.published == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-        run: scripts/release/verify-published-package.sh
+        run: scripts/release/verify-published-package.sh "${{ steps.semantic_release.outputs.tag }}"

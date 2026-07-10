@@ -113,6 +113,21 @@ function main() {
     'release commit template must not use literal backslash-n text'
   )
 
+  const releaseWorkflow = fs.readFileSync(
+    path.join(root, '.github/workflows/release.yml'),
+    'utf8'
+  )
+  assert.match(releaseWorkflow, /id: semantic_release/)
+  assert.match(releaseWorkflow, /latestReachableVersion/)
+  assert.match(
+    releaseWorkflow,
+    /steps\.semantic_release\.outputs\.published == 'true'/
+  )
+  assert.match(
+    releaseWorkflow,
+    /verify-published-package\.sh "\$\{\{ steps\.semantic_release\.outputs\.tag \}\}"/
+  )
+
   const fixture = createReleaseRepo()
   const options = {
     root: fixture.repoRoot,
