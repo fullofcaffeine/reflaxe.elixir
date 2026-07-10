@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "package": {
     "name": "reflaxe.elixir",
-    "version": "0.14.23"
+    "version": "0.14.24"
   },
   "releasePolicy": {
     "currentLine": "pre1",
