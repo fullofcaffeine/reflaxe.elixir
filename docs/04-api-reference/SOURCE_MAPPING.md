@@ -25,8 +25,9 @@ Source mapping is implemented, but remains **experimental**:
   - Compiler‑injected lines (bootstrapping, helper shims) map to the nearest reasonable Haxe
     context.
 
-Non‑alpha / production‑ready status for Reflaxe.Elixir does **not** require source mapping; it is
-opt‑in and intended as a debugging aid.
+Stable graduation does **not** require source mapping; it remains opt-in and is intended as a
+debugging aid. See [Versioning & Stability](../06-guides/VERSIONING_AND_STABILITY.md) for current
+release posture.
 
 ## Where the Pieces Live
 

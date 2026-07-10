@@ -4,7 +4,7 @@ const crypto = require('crypto')
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
-const { loadReleaseManifest } = require('./release-manifest')
+const { loadReleaseManifest, parseSemver } = require('./release-manifest')
 const {
   generateReleaseState,
   generatedReleaseAssets,
@@ -57,7 +57,11 @@ function main() {
     assert(commitPlugin, 'semantic-release must use its official git plugin')
     assert.deepStrictEqual(commitPlugin[1].assets, assets)
 
-    const generatedVersion = '0.14.23'
+    const currentVersion = manifest.package.version
+    const parsedVersion = parseSemver(currentVersion)
+    const generatedVersion =
+      `${parsedVersion.major}.${parsedVersion.minor}.${parsedVersion.patch + 1}`
+    assert.notStrictEqual(generatedVersion, currentVersion)
     const first = generateReleaseState({ root: targetRoot, version: generatedVersion })
     assert(first.changed.includes('release/manifest.json'))
     assert(first.changed.includes('package.json'))

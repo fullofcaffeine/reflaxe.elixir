@@ -8,9 +8,11 @@ This guide is for beginners:
 
 Goal: run a real Phoenix LiveView app written in Haxe and understand the “mental model” in under ~15 minutes.
 
-> [!NOTE]
-> The documented subset is considered stable in `v1.x`.
-> Experimental/opt‑in features remain clearly labeled; see `docs/06-guides/PRODUCTION_READINESS.md` for the hardening checklist.
+> [!WARNING]
+> Reflaxe.Elixir is currently pre-1.0. Documented stable surfaces follow the pre-1.0
+> compatibility policy, and experimental/opt-in features remain clearly labeled. Check
+> [Versioning & Stability](../06-guides/VERSIONING_AND_STABILITY.md) for the current release
+> posture before adopting it.
 
 ## 0) Install prerequisites (one-time)
 

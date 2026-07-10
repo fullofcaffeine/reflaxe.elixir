@@ -1,13 +1,17 @@
 # Known Limitations
 
 This page documents the remaining sharp edges and experimental surfaces that may surprise early adopters.
-Reflaxe.Elixir `v1.1.x` is considered **non‑alpha** for the documented subset. Some features remain opt‑in/experimental.
+Reflaxe.Elixir is currently on the pre-1.0 (`v0.x`) release line. Some features remain
+opt-in/experimental. See [Versioning & Stability](VERSIONING_AND_STABILITY.md) for the canonical
+current version, release line, and compatibility policy.
 
 If you hit something not covered here, please open an issue and include your **Haxe/Elixir/OTP/Phoenix versions** and a small repro.
 
 ## Stability expectations
 
-- **API surface (std/phoenix + std/ecto)**: intended to be stable within `v1.x` for the documented subset, but may still evolve where Phoenix/Elixir idioms (or correctness fixes) require it.
+- **API surface (`std/phoenix` + `std/ecto`)**: documented surfaces use the stable compatibility
+  tier. While the project is pre-1.0, incompatible changes require an explicitly documented minor
+  release; stable graduation has not yet been approved.
 - **Compiler output**: intended to be idiomatic and readable, but edge‑case semantics may change as the transformer passes mature.
 - **Examples**: treated as “living docs”; they may evolve as patterns improve.
 

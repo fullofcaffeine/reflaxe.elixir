@@ -245,7 +245,9 @@ class Date {
 - **todo-app**: Tests dual-target compilation, LiveView, Ecto integration
 - **Test suite**: Validates basic language features and edge cases  
 - **Real-world patterns**: Drive compiler to handle complex scenarios
-- **Production readiness**: Examples must compile cleanly for the current non‑alpha subset (`v1.1.x`)
+- **Release readiness**: Examples must compile cleanly for the documented subset and CI-supported
+  toolchains; release posture comes from
+  [Versioning & Stability](../06-guides/VERSIONING_AND_STABILITY.md), not a hard-coded version claim
 
 ### Compiler-Example Development Feedback Loop Rules
 ✅ **Example fails to compile**: This is compiler feedback, not user error

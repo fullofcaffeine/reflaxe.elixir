@@ -1,12 +1,16 @@
-# Production Hardening (Non‑Alpha Criteria)
+# Production Hardening and Stable Graduation
 
-Reflaxe.Elixir `v1.1.x` is considered **non‑alpha** for the documented subset. This page defines the project’s
-hardening criteria (what we mean by “production‑ready”) and provides a checklist to keep changes honest as the
-compiler and framework layers evolve.
+> [!IMPORTANT]
+> This page is a readiness checklist, not a declaration that stable graduation has happened.
+> Reflaxe.Elixir is currently on the pre-1.0 (`v0.x`) release line, and graduation is not approved.
+> [Versioning & Stability](VERSIONING_AND_STABILITY.md) is the canonical current status.
 
-This page defines what “non‑alpha / production‑ready” means for this project and provides an actionable checklist to get there.
+This page defines the evidence expected before the project can claim stable graduation and provides
+an actionable checklist for keeping the documented subset production-capable as the compiler and
+framework layers evolve.
 
 Related docs:
+- [Versioning & Stability](VERSIONING_AND_STABILITY.md)
 - [Known Limitations](KNOWN_LIMITATIONS.md)
 - [Support Matrix (CI toolchains)](SUPPORT_MATRIX.md)
 - [Production Deployment](PRODUCTION_DEPLOYMENT.md)
@@ -15,9 +19,9 @@ Related docs:
 
 ---
 
-## What “non‑alpha” means here
+## What readiness means here
 
-“Non‑alpha” does **not** mean “bug‑free”. It means:
+Readiness does **not** mean “bug-free”. It means:
 
 1. **Correctness first**: the compiler reliably preserves semantics for the documented subset of Haxe and framework integrations.
 2. **Stable output contracts**: generated Elixir is idiomatic and does not depend on example‑specific hacks.
@@ -67,10 +71,15 @@ Related docs:
 
 ---
 
-## Stability messaging (current policy)
+## Current status and historical labels
 
 The root README describes stability in terms of the **documented subset** and calls out experimental/opt‑in
 features explicitly. The goal is that the public entrypoints never over‑promise “works everywhere”.
 
-`v1.0.x` remains the historical “API stabilized, not production‑hardened” line. `v1.1.x` is the first line that
-claims non‑alpha status for the documented subset, while continuing to iterate on experimental surfaces.
+The current release line and graduation state are generated from `release/manifest.json` and summarized
+in [Versioning & Stability](VERSIONING_AND_STABILITY.md).
+
+**Historical note (superseded July 2026):** earlier planning drafts used `v1.0.x` for an
+“API stabilized” milestone and `v1.1.x` for a “non-alpha” milestone. Those version lines were never
+shipped. The actual public lineage remained `v0.x`, so those labels are planning history rather than
+release claims.

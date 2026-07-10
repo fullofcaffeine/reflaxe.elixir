@@ -5,6 +5,7 @@
  * WHAT
  * - Scans all `docs/` markdown (excluding `docs/09-history/archive/`) and checks that relative links
  *   point to existing files/directories in the repo.
+ * - Requires current-facing entrypoints to link to the canonical versioning and stability page.
  *
  * WHY
  * - Docs cleanup often leaves broken relative links (especially case-only mismatches that fail on CI).
@@ -24,6 +25,16 @@ const path = require("path");
 const repoRoot = process.cwd();
 const docsRoot = path.join(repoRoot, "docs");
 const archiveRoot = path.join(docsRoot, "09-history", "archive");
+const canonicalPosturePath = path.join(docsRoot, "06-guides", "VERSIONING_AND_STABILITY.md");
+const postureEntrypoints = [
+  "README.md",
+  "docs/README.md",
+  "docs/01-getting-started/START_HERE.md",
+  "docs/02-user-guide/haxe-for-phoenix.md",
+  "docs/06-guides/QUICKSTART.md",
+  "docs/06-guides/KNOWN_LIMITATIONS.md",
+  "docs/06-guides/PRODUCTION_READINESS.md",
+];
 
 function isMarkdownFile(filePath) {
   return filePath.endsWith(".md");
@@ -170,6 +181,15 @@ function lineNumberAt(text, index) {
   return line;
 }
 
+function linksToCanonicalPosture(filePath) {
+  const text = stripFencedCodeBlocks(fs.readFileSync(filePath, "utf8"));
+  return extractLinkTargets(text).some(({ raw }) => {
+    const target = raw.trim();
+    if (target.length === 0 || target.startsWith("#") || isExternalLink(target)) return false;
+    return resolveTargetPath(filePath, target) === canonicalPosturePath;
+  });
+}
+
 function main() {
  if (!fs.existsSync(docsRoot) || !fs.statSync(docsRoot).isDirectory()) {
     console.error("Docs directory not found:", docsRoot);
@@ -212,11 +232,21 @@ function main() {
     }
   }
 
-  if (missing.length > 0) {
+  const missingPostureLinks = postureEntrypoints.filter((relativePath) => {
+    const filePath = path.join(repoRoot, relativePath);
+    return !fs.existsSync(filePath) || !linksToCanonicalPosture(filePath);
+  });
+
+  if (missing.length > 0 || missingPostureLinks.length > 0) {
     console.error(`Markdown link guard failed (${missing.length} broken link(s)):\n`);
     for (const m of missing) {
       const extra = m.caseMismatch && m.corrected ? ` (case mismatch; expected: ${m.corrected})` : "";
       console.error(`- ${m.file}:${m.line} -> ${m.target} (resolved: ${m.resolved})${extra}`);
+    }
+    for (const relativePath of missingPostureLinks) {
+      console.error(
+        `- ${relativePath} must link to docs/06-guides/VERSIONING_AND_STABILITY.md`
+      );
     }
     process.exit(1);
   }

@@ -141,7 +141,8 @@ git push origin v0.1.0
 ## Backfilling releases for existing tags
 
 If tags already exist but the GitHub **Releases** list is empty (or older tags predate the workflow),
-run the workflow **Release (Backfill Existing Tag)** and provide the tag (for example `v1.1.5`).
+run the workflow **Release (Backfill Existing Tag)** and provide an existing tag (for example
+`v0.14.23`).
 
 If you want to backfill *all* semver tags in one run, use the same workflow with `all_tags=true`.
 

@@ -148,7 +148,7 @@ hook/server boundary are authored in Haxe.
 
 Call this feature **PhoenixHx Live Event Protocols**. It is "tRPC-like" only in
 the narrow sense that one shared typed declaration generates helpers for both
-ends of the boundary. It is not a new RPC runtime, and v1 does not replace
+ends of the boundary. It is not a new RPC runtime, and protocol v1 does not replace
 Phoenix's `handle_event/3`.
 
 Use the direct PhoenixHx path for simple events:
@@ -702,7 +702,7 @@ So the runtime cost is only the domain conversion you opted into. Built-in
 fields have no codec call. Custom codecs should be rare and deliberate.
 
 `@:codec(...)` is ordinary Haxe metadata, not a runtime annotation and not a
-separate PhoenixHx subsystem. In the current v1 implementation it points the
+separate PhoenixHx subsystem. In the current protocol v1 implementation it points the
 protocol macro at a `WireCodec<T>` value for a field whose Haxe type is
 stronger than the plain wire shape. Most fields do not need one: `String`,
 `Int`, `Bool`, `Float`, `Array<String>`, `Array<Int>`, and explicit optional

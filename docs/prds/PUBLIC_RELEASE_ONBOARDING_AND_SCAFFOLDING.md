@@ -1,8 +1,17 @@
-# PRD: Public Release Onboarding + Scaffolding (Post‑1.0)
+# PRD: Public Release Onboarding + Scaffolding (Historical Post-1.0 Plan)
+
+> [!CAUTION]
+> **Historical planning record, superseded July 2026.** This PRD assumed a post-1.0 milestone,
+> but no `v1.0.x` release was shipped. Individual onboarding goals may have been implemented or
+> replaced since it was written. Use [Versioning & Stability](../06-guides/VERSIONING_AND_STABILITY.md)
+> for current release truth and the current onboarding guides for supported workflows.
 
 ## Context
 
-Reflaxe.Elixir reached `v1.0.x`, but “new user” onboarding still relies on manual setup (or brittle generator outputs). To prepare for a public release, we need repeatable, tested scaffolding for Phoenix projects and a clear path to *gradual adoption* inside existing Elixir/Phoenix apps.
+At the time this PRD was drafted, it incorrectly assumed Reflaxe.Elixir had reached `v1.0.x`.
+The underlying need was valid: new-user onboarding relied on manual setup or brittle generator
+outputs, and the project needed repeatable, tested Phoenix scaffolding plus a clear path to
+*gradual adoption* inside existing Elixir/Phoenix apps.
 
 This PRD intentionally focuses on **developer UX** and **public-repo readiness** rather than new compiler features.
 

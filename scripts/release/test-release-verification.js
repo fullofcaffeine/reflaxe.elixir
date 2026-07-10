@@ -4,7 +4,7 @@ const childProcess = require('child_process')
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
-const { loadReleaseManifest } = require('./release-manifest')
+const { loadReleaseManifest, parseSemver } = require('./release-manifest')
 const { generateReleaseState, generatedReleaseAssets } = require('./sync-versions')
 const {
   verifyPreparedRelease,
@@ -53,7 +53,9 @@ function createReleaseRepo() {
   run('git', ['add', '.'], repoRoot)
   run('git', ['commit', '-q', '-m', 'baseline'], repoRoot)
 
-  const version = '0.14.23'
+  const parsedVersion = parseSemver(manifest.package.version)
+  const version =
+    `${parsedVersion.major}.${parsedVersion.minor}.${parsedVersion.patch + 1}`
   const tag = `v${version}`
   generateReleaseState({ root: repoRoot, version })
   const changelogPath = path.join(repoRoot, 'CHANGELOG.md')
@@ -112,13 +114,17 @@ function main() {
     assert.throws(() => verifyPreparedRelease(options), /exists before prepared-state verification/)
     assert.doesNotThrow(() => verifyTaggedRelease({ ...options, requireHead: true }))
 
-    run('git', ['tag', 'v0.14.24', 'HEAD^'], fixture.repoRoot)
+    const parsedVersion = parseSemver(fixture.version)
+    const wrongVersion =
+      `${parsedVersion.major}.${parsedVersion.minor}.${parsedVersion.patch + 1}`
+    const wrongTag = `v${wrongVersion}`
+    run('git', ['tag', wrongTag, 'HEAD^'], fixture.repoRoot)
     assert.throws(
       () =>
         verifyTaggedRelease({
           ...options,
-          version: '0.14.24',
-          tag: 'v0.14.24',
+          version: wrongVersion,
+          tag: wrongTag,
           requireHead: true,
         }),
       /must point to HEAD/

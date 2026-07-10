@@ -4,9 +4,12 @@
 
 This index helps you find the right docs quickly, whether you're building apps with Phoenix or working on the compiler.
 
-> [!NOTE]
-> Reflaxe.Elixir's documented subset is considered stable in `v1.x`.
-> Experimental/opt‑in features remain clearly labeled; see `docs/06-guides/PRODUCTION_READINESS.md` for the hardening checklist.
+> [!WARNING]
+> Reflaxe.Elixir is currently on the pre-1.0 (`v0.x`) release line. Documented stable
+> surfaces follow the project's pre-1.0 compatibility policy, while experimental/opt-in
+> features remain clearly labeled. [Versioning & Stability](06-guides/VERSIONING_AND_STABILITY.md)
+> is the canonical current status; [Production Hardening](06-guides/PRODUCTION_READINESS.md)
+> is a graduation checklist, not a declaration that graduation has happened.
 
 ## 📚 Documentation Sections
 
@@ -88,7 +91,7 @@ This index helps you find the right docs quickly, whether you're building apps w
 - [Portable Chat Tutorial](06-guides/PORTABLE_CHAT_TUTORIAL.md) - Shared Haxe domain logic pattern
 - [Dogfooding](06-guides/DOGFOODING.md) - External Phoenix app upgrade validation
 - [Todo-app Cowboy Toolchain](06-guides/TODOAPP_COWBOY_TOOLCHAIN.md) - Why the todo-app pins Cowboy deps
-- [Production Hardening](06-guides/PRODUCTION_READINESS.md) - Non‑alpha criteria + checklist
+- [Production Hardening](06-guides/PRODUCTION_READINESS.md) - Stable-graduation criteria + checklist
 - [Strict Mode](06-guides/STRICT_MODE.md) - Opt-in Gleam-like safety profile
 - [Versioning & Stability](06-guides/VERSIONING_AND_STABILITY.md) - SemVer + stability tiers + deprecation policy
 - [Production Deployment](06-guides/PRODUCTION_DEPLOYMENT.md) - CI/Docker/release patterns
@@ -154,6 +157,7 @@ This documentation is optimized for AI assistant development with **AGENTS.md** 
 - **[Troubleshooting](06-guides/TROUBLESHOOTING.md)** - Solve common issues
 - **[Known Limitations](06-guides/KNOWN_LIMITATIONS.md)** - Sharp edges and experimental surfaces
 - **[Support Matrix](06-guides/SUPPORT_MATRIX.md)** - CI-tested versions
+- **[Versioning & Stability](06-guides/VERSIONING_AND_STABILITY.md)** - Canonical release line and compatibility policy
 - **[Contributing](10-contributing/contributing.md)** - Help improve the project
 
 ## 📞 Support

@@ -2,7 +2,9 @@
 
 Phoenix is already a highly productive framework. Reflaxe.Elixir lets you keep Phoenix’s runtime and conventions while writing the application logic in Haxe with compile-time types and IDE tooling.
 
-This page focuses on what exists in Reflaxe.Elixir **today** (v1.x): how to build Phoenix apps in Haxe, and how to adopt it gradually in an existing Elixir codebase.
+This page focuses on the current documented feature set: how to build Phoenix apps in Haxe and how
+to adopt it gradually in an existing Elixir codebase. Reflaxe.Elixir remains pre-1.0; see
+[Versioning & Stability](../06-guides/VERSIONING_AND_STABILITY.md) for current release posture.
 
 ## Start Here
 

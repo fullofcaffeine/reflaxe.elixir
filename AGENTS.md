@@ -478,7 +478,8 @@ Use `reflaxe.ruby` / RailsHx as a UX and cross-target learning reference when it
 - Snapshot tests must be strictly typed: do not change return types to `Dynamic` to placate compilation; correct the logic or test inputs instead.
 - Exceptions (must be documented):
   - External APIs that are inherently dynamic (e.g., Map-like payloads) may use `Dynamic` locally, but public surfaces should remain typed.
-  - Transitional refactors require an issue and a TODO linked to the proper fix — not allowed for 1.0 scope.
+  - Transitional refactors require an issue and a TODO linked to the proper fix; they are not
+    acceptable in the current supported scope.
 
 ### JSON and Unknown Boundary Policy (Hard Rule)
 - Learn from `tink_json`'s typed parser/writer shape, but adapt it to this
@@ -3548,9 +3549,13 @@ scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 60
 **Rule**: If ANY step in this loop fails, the development change is incomplete.
 
 ## Implementation Status
-**See**: [`docs/08-roadmap/`](docs/08-roadmap/) - Complete feature status and production readiness
+**See**: [`docs/08-roadmap/`](docs/08-roadmap/) for plans and
+[`docs/06-guides/VERSIONING_AND_STABILITY.md`](docs/06-guides/VERSIONING_AND_STABILITY.md) for
+current release posture.
 
-**v1.0 Status**: ALL COMPLETE ✅ - Core features, Phoenix Router DSL, LiveView, Ecto, OTP patterns, Mix integration, Testing
+**Release status**: Reflaxe.Elixir is on the pre-1.0 (`v0.x`) line. Do not infer a shipped version or
+stable graduation from roadmap completion labels; the structured release manifest and canonical
+versioning page are authoritative.
 
 ## Test Status Summary
 **See**: [`docs/03-compiler-development/testing-infrastructure.md`](docs/03-compiler-development/testing-infrastructure.md) - Complete test architecture and status

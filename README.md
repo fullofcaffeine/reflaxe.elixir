@@ -60,7 +60,7 @@ Reflaxe.Elixir takes a different approach:
 
 ## Current Support
 
-### Stable (documented subset)
+### Documented stable tier (pre-1.0 policy)
 
 - Phoenix integration ([LiveView](https://www.phoenixframework.org/liveview)/controllers/templates/routers) for documented paths
 - HEEx-oriented inline markup authoring (`return <div>...</div>`) with strict `tsx` mode as the default path for new code; legacy `balanced` string templates and `metal` raw-HEEx escapes are documented in [HXX Syntax & Comparison](docs/02-user-guide/HXX_SYNTAX_AND_COMPARISON.md)

@@ -1,6 +1,8 @@
 # Quick Start Patterns - Copy-Paste Ready
 
-Copy‑paste patterns aligned with **Reflaxe.Elixir v1.0+** and the repo’s **No‑Dynamic** policy.
+Copy-paste patterns aligned with the current documented Reflaxe.Elixir subset and the repo's
+**No-Dynamic** policy. Check [Versioning & Stability](../06-guides/VERSIONING_AND_STABILITY.md)
+for the current release line rather than inferring compatibility from this undated pattern page.
 
 > When Phoenix/Ecto hand you “raw params” maps, model them as typed `typedef`s (preferred) or use `elixir.types.Term` as the explicit boundary type (never `Dynamic`).
 

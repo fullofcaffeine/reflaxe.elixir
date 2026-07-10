@@ -302,7 +302,10 @@ user = %{user | name: "New Name"}
 user = %{user | age: user.age + 1}
 ```
 
-✅ **Compiler Support**: As of v1.0, the Reflaxe.Elixir compiler automatically generates proper Elixir struct update syntax for field assignments. You can write natural Haxe field assignment code and the compiler will produce idiomatic functional Elixir patterns.
+**Compiler support:** The current documented subset generates proper Elixir struct-update syntax for
+field assignments. You can write natural Haxe field assignment code and the compiler will produce
+idiomatic functional Elixir patterns. Release guarantees are defined by
+[Versioning & Stability](../06-guides/VERSIONING_AND_STABILITY.md).
 
 ## Best Practices
 

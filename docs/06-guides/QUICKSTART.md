@@ -1,6 +1,8 @@
 # Quickstart (Phoenix-first)
 
-The documented subset is considered stable in `v1.x`. This quickstart helps Phoenix developers get productive quickly while clearly flagging experimental surfaces.
+Reflaxe.Elixir is currently on the pre-1.0 release line. This quickstart helps Phoenix developers
+use the documented stable surfaces while clearly flagging experimental ones. See
+[Versioning & Stability](VERSIONING_AND_STABILITY.md) for the current compatibility policy.
 
 If you’re new to Haxe and/or new to Phoenix, start here first:
 
