@@ -139,8 +139,11 @@ for a beginner-friendly explanation of why the layouts differ and how output par
 ```
 
 Important compiler flag note:
+- Keep `-D reflaxe_runtime` in application HXML files for now. It is a Reflaxe
+  compiler-compilation define, not an Elixir runtime mode or production dependency.
 - Do **not** use `-D analyzer-optimize` when targeting Elixir.
-- See [Compiler Flags Guide](docs/01-getting-started/compiler-flags-guide.md).
+- See [Compiler Flags Guide](docs/01-getting-started/compiler-flags-guide.md#reflaxe_runtime-reflaxe-compiler-context)
+  for the convention and current source/package contract.
 
 ### New Phoenix app (greenfield)
 

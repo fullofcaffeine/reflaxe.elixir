@@ -170,7 +170,7 @@ defmodule EnhancedPatternMatchingTest do
     end)
   end
   def match_binary_pattern(data) do
-    bytes = Bytes.of_string(data, nil)
+    bytes = Bytes.of_string(data, {:utf8})
     (case bytes.length do
       0 -> "empty"
       1 -> "single byte: #{Reflaxe.Elixir.HaxeFloat.to_string(apply(Map.get(bytes, :__reflaxe_class__) || Map.get(bytes, :__struct__), :get, [bytes, 0]))}"

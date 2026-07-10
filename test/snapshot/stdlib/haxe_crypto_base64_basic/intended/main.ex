@@ -5,7 +5,7 @@ defmodule Main do
     end
   end
   def main() do
-    hello = Bytes.of_string("hello", nil)
+    hello = Bytes.of_string("hello", {:utf8})
     _ = assert_that(Haxe.Crypto.Base64.encode(hello, nil) == "aGVsbG8=", "standard padded encode failed")
     _ = assert_that(Haxe.Crypto.Base64.encode(hello, false) == "aGVsbG8", "standard unpadded encode failed")
     _ =
@@ -18,14 +18,14 @@ defmodule Main do
         reflaxe_dispatch_receiver = Haxe.Crypto.Base64.decode("aGVsbG8", false)
         _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
       end).() == "hello", "standard unpadded decode failed")
-    url = Bytes.of_string("fo?", nil)
+    url = Bytes.of_string("fo?", {:utf8})
     _ = assert_that(Haxe.Crypto.Base64.url_encode(url, nil) == "Zm8_", "url unpadded encode failed")
     _ =
       assert_that((fn ->
         reflaxe_dispatch_receiver = Haxe.Crypto.Base64.url_decode("Zm8_", nil)
         _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
       end).() == "fo?", "url unpadded decode failed")
-    short_url = Bytes.of_string("fo", nil)
+    short_url = Bytes.of_string("fo", {:utf8})
     _ = assert_that(Haxe.Crypto.Base64.url_encode(short_url, true) == "Zm8=", "url padded encode failed")
     _ =
       assert_that((fn ->

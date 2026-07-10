@@ -1,7 +1,7 @@
 defmodule StringInput do
   def new(source) do
     struct = %{:__reflaxe_class__ => StringInput, :data => nil, :total_length => nil, :ref_id => nil, :dict_key => nil, :position => nil, :length => nil, :big_endian => nil}
-    struct = Map.merge(struct, Map.drop(BytesInput.new(Bytes.of_string(source, nil), nil, nil), [:__struct__, :__reflaxe_class__]))
+    struct = Map.merge(struct, Map.drop(BytesInput.new(Bytes.of_string(source, {:utf8}), nil, nil), [:__struct__, :__reflaxe_class__]))
     struct
   end
   def get_position(struct) do

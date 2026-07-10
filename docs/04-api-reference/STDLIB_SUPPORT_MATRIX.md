@@ -163,6 +163,7 @@ and `makeUtc`.
 - `haxe.format.JsonParser` (BEAM-native `Jason.decode!/1` direct parser surface; covered by local runtime tests)
 - `haxe.format.JsonPrinter`
 - `haxe.http.HttpBase`
+- `haxe.io.ArrayBufferView` (official portable implementation; BEAM conformance covered with the typed-array cluster)
 - `haxe.io.BufferInput`
 - `haxe.io.Bytes`
 - `haxe.io.BytesBuffer`
@@ -173,12 +174,18 @@ and `makeUtc`.
 - `haxe.io.Error`
 - `haxe.io.Eof`
 - `haxe.io.FPHelper`
+- `haxe.io.Float32Array` (official portable implementation over `haxe.io.Bytes`)
+- `haxe.io.Float64Array` (official portable implementation over `haxe.io.Bytes`)
 - `haxe.io.Input`
+- `haxe.io.Int32Array` (official portable implementation over `haxe.io.Bytes`)
 - `haxe.io.Mime` (official String enum-abstract fallback; constants and custom values compile to binaries)
 - `haxe.io.Output`
 - `haxe.io.Path`
 - `haxe.io.Scheme` (official String enum-abstract fallback; constants and custom values compile to binaries)
 - `haxe.io.StringInput`
+- `haxe.io.UInt8Array` (official portable implementation over `haxe.io.Bytes`)
+- `haxe.io.UInt16Array` (official portable implementation over `haxe.io.Bytes`)
+- `haxe.io.UInt32Array` (official portable implementation over `haxe.io.Bytes`)
 - `haxe.iterators.ArrayIterator`
 - `haxe.iterators.ArrayKeyValueIterator`
 - `haxe.iterators.HashMapKeyValueIterator` (inline type-compatibility surface for explicit `HashMap` iterator construction)
@@ -400,6 +407,14 @@ Haxe definitions are `enum abstract ... (String)` declarations, so constants and
 to ordinary Elixir binaries and do not emit `Mime` or `Scheme` runtime modules. They remain visible
 in the module-level gap report because that report inventories local target ownership, not because
 the APIs are unsupported.
+
+The typed-buffer cluster (`haxe.io.ArrayBufferView`, `Float32Array`, `Float64Array`, `Int32Array`,
+`UInt8Array`, `UInt16Array`, and `UInt32Array`) also uses the official Haxe implementation unchanged.
+The portable classes and abstracts layer views over the target `haxe.io.Bytes` implementation, whose
+process-local storage preserves shared mutation across `sub`, `subarray`, and `fromBytes` aliases on
+immutable BEAM binaries. The compiler groups inlined multi-expression abstract constructors as value
+expressions and obtains omitted Haxe defaults from Reflaxe's typed `ClassFuncData`; all seven upstream
+`unitstd` specs execute on BEAM, and source/package parity is checked by the haxelib package smoke.
 
 ## Known high-impact gaps (planned parity work)
 

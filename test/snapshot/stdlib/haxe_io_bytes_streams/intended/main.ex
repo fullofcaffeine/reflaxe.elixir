@@ -34,7 +34,7 @@ defmodule Main do
     nil
   end
   defp buffer_input() do
-    bytes = Bytes.of_string("hello", nil)
+    bytes = Bytes.of_string("hello", {:utf8})
     base = BytesInput.new(bytes, nil, nil)
     buf = Bytes.alloc(2)
     _buffered = BufferInput.new(base, buf, nil, nil)
@@ -51,11 +51,11 @@ defmodule Main do
     nil
   end
   defp io_semantics() do
-    all_input = BytesInput.new(Bytes.of_string("hello", nil), nil, nil)
+    all_input = BytesInput.new(Bytes.of_string("hello", {:utf8}), nil, nil)
     reflaxe_dispatch_receiver = apply(Map.get(all_input, :__reflaxe_class__) || Map.get(all_input, :__struct__), :read_all, [all_input, 2])
     all = _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
     _ = assert_that(all == "hello", "readAll chunked failed")
-    line_input = BytesInput.new(Bytes.of_string("a\r\nb\n", nil), nil, nil)
+    line_input = BytesInput.new(Bytes.of_string("a\r\nb\n", {:utf8}), nil, nil)
     _ = assert_that(apply(Map.get(line_input, :__reflaxe_class__) || Map.get(line_input, :__struct__), :read_line, [line_input]) == "a", "readLine CRLF failed")
     _ = assert_that(apply(Map.get(line_input, :__reflaxe_class__) || Map.get(line_input, :__struct__), :read_line, [line_input]) == "b", "readLine LF failed")
     try do
@@ -73,7 +73,7 @@ defmodule Main do
             reraise(haxe_exception, __STACKTRACE__)
         end)
     end
-    src = BytesInput.new(Bytes.of_string("xyz", nil), nil, nil)
+    src = BytesInput.new(Bytes.of_string("xyz", {:utf8}), nil, nil)
     sink = BytesOutput.new()
     _ = apply(Map.get(sink, :__reflaxe_class__) || Map.get(sink, :__struct__), :write_input, [sink, src, 2])
     _ =

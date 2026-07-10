@@ -17,7 +17,7 @@ defmodule Main do
     destination = Address.new()
     _ = Address.set_host(destination, host.ip)
     _ = Address.set_port(destination, 9)
-    bytes = Bytes.of_string("ping", nil)
+    bytes = Bytes.of_string("ping", {:utf8})
     sent = apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :send_to, [socket, bytes, 0, bytes.length, destination])
     if (sent != bytes.length) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "UdpSocket.sendTo should report the sent length"]

@@ -318,8 +318,11 @@ cat > "$work_dir/src/Main.hx" <<'HX'
 
 import haxe.crypto.Sha256;
 import haxe.ds.Either;
+import haxe.io.Bytes;
+import haxe.io.Float32Array;
 import haxe.io.Mime;
 import haxe.io.Scheme;
+import haxe.io.UInt8Array;
 import phoenix.channels.WirePayload;
 
 class Main {
@@ -341,10 +344,16 @@ class Main {
     var customMime:Mime = "application/vnd.example+json";
     var scheme:String = Scheme.Https;
     var customScheme:Scheme = "web+demo";
+    var floats = new Float32Array(2);
+    floats[0] = 1.25;
+    var sharedBytes = Bytes.alloc(2);
+    var octets = UInt8Array.fromBytes(sharedBytes);
+    octets[0] = 55;
 
     trace(payloadValue);
     trace(Sha256.encode(value));
     trace([mime, (customMime:String), scheme, (customScheme:String)].join("|"));
+    trace([Std.string(floats[0]), Std.string(sharedBytes.get(0))].join("|"));
   }
 }
 HX
@@ -385,7 +394,11 @@ require_file "$work_dir/out/main.ex"
 require_file "$work_dir/out/string_buf.ex"
 require_file "$work_dir/out/haxe/crypto/sha256.ex"
 require_file "$work_dir/out/phoenix/channels/wire_payload.ex"
+require_file "$work_dir/out/haxe/io/array_buffer_view_impl.ex"
+require_file "$work_dir/out/haxe/io/_u_int8_array/u_int8_array_impl_.ex"
 require_file "$work_dir/out_source/_GeneratedFiles.json"
+require_file "$work_dir/out_source/haxe/io/array_buffer_view_impl.ex"
+require_file "$work_dir/out_source/haxe/io/_u_int8_array/u_int8_array_impl_.ex"
 require_absent "$work_dir/out/haxe/io/mime.ex"
 require_absent "$work_dir/out/haxe/io/scheme.ex"
 require_absent "$work_dir/out_source/haxe/io/mime.ex"
@@ -400,11 +413,17 @@ require_contains "$work_dir/compile.log" "src/haxe/crypto/Sha256.cross.hx"
 require_contains "$work_dir/compile.log" "std/haxe/ds/Either.hx"
 require_contains "$work_dir/compile.log" "std/haxe/io/Mime.hx"
 require_contains "$work_dir/compile.log" "std/haxe/io/Scheme.hx"
+require_contains "$work_dir/compile.log" "std/haxe/io/ArrayBufferView.hx"
+require_contains "$work_dir/compile.log" "std/haxe/io/Float32Array.hx"
+require_contains "$work_dir/compile.log" "std/haxe/io/UInt8Array.hx"
 require_contains "$work_dir/compile.log" "vendor/phoenix_shared/src/phoenix/channels/WirePayload.hx"
 require_contains "$work_dir/compile-source.log" "std/elixir/_std/StringBuf.hx"
 require_contains "$work_dir/compile-source.log" "std/elixir/_std/haxe/crypto/Sha256.hx"
 require_contains "$work_dir/compile-source.log" "std/haxe/io/Mime.hx"
 require_contains "$work_dir/compile-source.log" "std/haxe/io/Scheme.hx"
+require_contains "$work_dir/compile-source.log" "std/haxe/io/ArrayBufferView.hx"
+require_contains "$work_dir/compile-source.log" "std/haxe/io/Float32Array.hx"
+require_contains "$work_dir/compile-source.log" "std/haxe/io/UInt8Array.hx"
 require_tree_not_contains "$work_dir/compile.log" "$canonical_root"
 require_tree_not_contains "$work_dir/out" "$canonical_root"
 
@@ -415,6 +434,9 @@ if [[ "$VERBOSE" -eq 1 ]]; then
   grep -n -F "std/haxe/ds/Either.hx" "$work_dir/compile.log" | sed -n '1,5p'
   grep -n -F "std/haxe/io/Mime.hx" "$work_dir/compile.log" | sed -n '1,5p'
   grep -n -F "std/haxe/io/Scheme.hx" "$work_dir/compile.log" | sed -n '1,5p'
+  grep -n -F "std/haxe/io/ArrayBufferView.hx" "$work_dir/compile.log" | sed -n '1,5p'
+  grep -n -F "std/haxe/io/Float32Array.hx" "$work_dir/compile.log" | sed -n '1,5p'
+  grep -n -F "std/haxe/io/UInt8Array.hx" "$work_dir/compile.log" | sed -n '1,5p'
 fi
 
 echo ""

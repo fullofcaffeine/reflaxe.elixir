@@ -1004,6 +1004,14 @@ class ElixirASTPrinter {
 					// the assignment captures the last expression value:
 					//   x = (a = 1\n a + 1)
 					rhsPrinted = maybeWrapRawMultilineRhs(expr, rhsPrinted);
+					// A multi-expression AST block has the same binding requirement as raw
+					// injected code: without a value wrapper, `x = first\nlast` binds only
+					// `first`. Use the standard IIFE form so scope and indentation stay clear.
+					switch (expr.def) {
+						case EBlock(expressions) if (expressions.length > 1):
+							rhsPrinted = '(fn ->\n' + indentBody(rhsPrinted, indent + 1) + '\n' + indentStr(indent) + 'end).()';
+						default:
+					}
 					patternStr + ' = ' + rhsPrinted;
 				}
 

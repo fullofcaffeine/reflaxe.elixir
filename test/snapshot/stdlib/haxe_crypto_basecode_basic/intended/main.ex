@@ -5,19 +5,19 @@ defmodule Main do
     end
   end
   def main() do
-    hex = Haxe.Crypto.BaseCode.new(Bytes.of_string("0123456789abcdef", nil))
+    hex = Haxe.Crypto.BaseCode.new(Bytes.of_string("0123456789abcdef", {:utf8}))
     binary = Bytes.of_hex("00ff10")
     encoded_hex = apply(Map.get(hex, :__reflaxe_class__) || Map.get(hex, :__struct__), :encode_bytes, [hex, binary])
     _ = assert_that(apply(Map.get(encoded_hex, :__reflaxe_class__) || Map.get(encoded_hex, :__struct__), :to_string, [encoded_hex]) == "00ff10", "hex encode failed")
     _ =
       assert_that((fn ->
-        reflaxe_dispatch_receiver = apply(Map.get(hex, :__reflaxe_class__) || Map.get(hex, :__struct__), :decode_bytes, [hex, Bytes.of_string("00ff10", nil)])
+        reflaxe_dispatch_receiver = apply(Map.get(hex, :__reflaxe_class__) || Map.get(hex, :__struct__), :decode_bytes, [hex, Bytes.of_string("00ff10", {:utf8})])
         _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_hex, [reflaxe_dispatch_receiver])
       end).() == "00ff10", "hex decode failed")
     _ = assert_that(Haxe.Crypto.BaseCode.encode("A", "01") == "01000001", "binary string encode failed")
     _ = assert_that(Haxe.Crypto.BaseCode.decode("01000001", "01") == "A", "binary string decode failed")
     try do
-      _ = Haxe.Crypto.BaseCode.new(Bytes.of_string("abc", nil))
+      _ = Haxe.Crypto.BaseCode.new(Bytes.of_string("abc", {:utf8}))
       _ = assert_that(false, "non-power-of-two dictionary should throw")
     rescue
       haxe_exception ->
@@ -31,7 +31,7 @@ defmodule Main do
         end)
     end
     try do
-      _ = apply(Map.get(hex, :__reflaxe_class__) || Map.get(hex, :__struct__), :decode_bytes, [hex, Bytes.of_string("0g", nil)])
+      _ = apply(Map.get(hex, :__reflaxe_class__) || Map.get(hex, :__struct__), :decode_bytes, [hex, Bytes.of_string("0g", {:utf8})])
       _ = assert_that(false, "invalid encoded character should throw")
     rescue
       haxe_exception ->

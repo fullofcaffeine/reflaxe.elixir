@@ -19,6 +19,8 @@ import reflaxe.elixir.ast.heex.HeexTsxAstLowerer;
 import reflaxe.elixir.macros.HxxMode;
 import reflaxe.elixir.macros.HxxModeResolver;
 
+using reflaxe.helpers.ClassFieldHelper;
+
 /**
  * CallExprBuilder: Handles function/method call expression building
  * 
@@ -645,6 +647,19 @@ class CallExprBuilder {
 			default:
 		}
 
+		var defaultArgExprs:Null<Array<Null<TypedExpr>>> = switch (e.expr) {
+			case TField(_, FStatic(classRef, fieldRef)):
+				var field = fieldRef.get();
+				var data = field.isMethodKind() ? field.findFuncData(classRef.get(), true) : null;
+				data != null ? [for (arg in data.args) arg.expr] : null;
+			case TField(_, FInstance(classRef, _, fieldRef)):
+				var field = fieldRef.get();
+				var data = field.isMethodKind() ? field.findFuncData(classRef.get(), false) : null;
+				data != null ? [for (arg in data.args) arg.expr] : null;
+			default:
+				null;
+		};
+
 		inline function isAtomType(t:Null<Type>):Bool {
 			return TypeUtils.isElixirAtomType(t);
 		}
@@ -664,7 +679,8 @@ class CallExprBuilder {
 		}
 
 		// Optional args: Haxe typed calls can omit trailing optional parameters.
-		// Elixir requires exact arity, so pad omitted trailing optionals with `nil`.
+		// Elixir requires exact arity, so preserve typed default expressions when
+		// Reflaxe can recover them and use `nil` only for optionals without defaults.
 		//
 		// Example (Haxe):
 		//   getString(pos, len) // where getString(pos, len, ?encoding)
@@ -673,7 +689,8 @@ class CallExprBuilder {
 		if (expectedFunArgs != null && args.length < expectedFunArgs.length) {
 			for (i in args.length...expectedFunArgs.length) {
 				if (expectedFunArgs[i].opt) {
-					argASTs.push(makeAST(ENil));
+					var defaultExpr = defaultArgExprs != null && i < defaultArgExprs.length ? defaultArgExprs[i] : null;
+					argASTs.push(defaultExpr != null ? buildExpression(defaultExpr) : makeAST(ENil));
 				}
 			}
 		}

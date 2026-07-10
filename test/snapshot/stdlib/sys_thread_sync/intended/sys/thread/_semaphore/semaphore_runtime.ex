@@ -10,7 +10,7 @@ defmodule SemaphoreRuntime do
             )
   end
   def acquire(ref) do
-    acquire_with_timeout(ref, :infinity, nil)
+    acquire_with_timeout(ref, :infinity, true)
   end
   def try_acquire(ref, timeout) do
     should_queue = Reflaxe.Elixir.HaxeFloat.neq(timeout, nil) and Reflaxe.Elixir.HaxeFloat.gt(timeout, 0)

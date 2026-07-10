@@ -5,7 +5,7 @@ defmodule Main do
     tmp_path = "/tmp/reflaxe_elixir_stdlib_sys_test.txt"
     _ = Sys.IO.File.save_content(tmp_path, "hello")
     _content = Sys.IO.File.get_content(tmp_path)
-    bytes = Bytes.of_string("bin", nil)
+    bytes = Bytes.of_string("bin", {:utf8})
     _ = Sys.IO.File.save_bytes(tmp_path, bytes)
     _read_bytes = Sys.IO.File.get_bytes(tmp_path)
     nil

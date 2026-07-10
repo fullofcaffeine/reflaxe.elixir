@@ -60,6 +60,51 @@ end)
 
 ## ✅ Recommended Compiler Configuration
 
+### `reflaxe_runtime`: Reflaxe compiler context
+
+`-D reflaxe_runtime` is a Haxe compilation define used by the Reflaxe framework. It is
+not an Elixir application runtime, deployment profile, or extra production service.
+In practical terms, a build has both your application code and the Reflaxe.Elixir
+compiler code that translates it. This define tells Haxe to make the compiler's own
+helpers available while that translation runs. It is consumed during the build and
+does not create a Reflaxe runtime mode in the generated Elixir application.
+
+Reflaxe compiler implementations commonly guard shared compiler code with:
+
+```haxe
+#if (macro || reflaxe_runtime)
+// Compiler implementation and helpers.
+#end
+```
+
+Macro execution supplies the first context. The define supplies the second context
+when Haxe types the compiler implementation as normal code, including the path used
+by Reflaxe target initialization. This is a Reflaxe convention: the upstream
+`reflaxe new` template includes it in the generated compiler project's
+`DevEnv.hxml` so editor completion and development builds see the same code.
+Targets differ in whether they expose that convention to application authors:
+Reflaxe.Ruby documents the define in consumer commands, while the Rust and OCaml
+compilers use the guard internally without advertising it in normal consumer HXMLs.
+Reflaxe.Elixir currently follows the explicit Ruby-style contract.
+
+For Reflaxe.Elixir applications, keep the following line in `build.hxml`:
+
+```hxml
+-D reflaxe_runtime
+```
+
+Use it only for Haxe builds that invoke Reflaxe.Elixir to generate Elixir. It is not
+needed when running the generated application with Mix, compiling an unrelated Haxe
+target such as the Phoenix JavaScript client, or including another HXML that already
+defines it. Do not configure it as a global Haxe define.
+
+The current `reflaxe.elixir` library HXML does not add the define automatically, so
+source-checkout and installed-package examples declare it explicitly. That explicit
+line makes the compilation contract visible and keeps both layouts equivalent; it
+does not select different generated Elixir semantics. Whether a future release can
+supply the define internally is a separate compatibility decision that must preserve
+source/package parity and non-Elixir Haxe builds.
+
 ### Basic Configuration
 ```hxml
 # build.hxml - Recommended settings
@@ -68,6 +113,7 @@ end)
 -lib reflaxe
 -lib reflaxe.elixir
 --no-output
+-D reflaxe_runtime
 -D elixir_output=lib
 
 # Good optimizations
@@ -111,6 +157,7 @@ You *can* temporarily disable DCE when debugging, but it’s not the recommended
 
 | Flag | Impact on Elixir Output | Recommendation |
 |------|------------------------|----------------|
+| `-D reflaxe_runtime` | Includes the Reflaxe compiler implementation during target typing | ✅ **Required by current application HXML contract** |
 | `-D analyzer-optimize` | Destroys functional patterns, unrolls loops | ❌ **Never use** |
 | `-dce full` | Removes unused code cleanly | ✅ **Always use** |
 | `-D loop_unroll_max_cost=N` | Controls unrolling threshold | ✅ **Prefer `0` (disable)** |

@@ -21,7 +21,7 @@ defmodule Haxe.Crypto.Base64 do
     __haxe_static_put__(:chars, value)
   end
   def bytes() do
-    __haxe_static_get__(:bytes, Bytes.of_string(Haxe.Crypto.Base64.chars(), nil))
+    __haxe_static_get__(:bytes, Bytes.of_string(Haxe.Crypto.Base64.chars(), {:utf8}))
   end
   def bytes(value) do
     __haxe_static_put__(:bytes, value)
@@ -33,7 +33,7 @@ defmodule Haxe.Crypto.Base64 do
     __haxe_static_put__(:url_chars, value)
   end
   def url_bytes() do
-    __haxe_static_get__(:url_bytes, Bytes.of_string(Haxe.Crypto.Base64.url_chars(), nil))
+    __haxe_static_get__(:url_bytes, Bytes.of_string(Haxe.Crypto.Base64.url_chars(), {:utf8}))
   end
   def url_bytes(value) do
     __haxe_static_put__(:url_bytes, value)

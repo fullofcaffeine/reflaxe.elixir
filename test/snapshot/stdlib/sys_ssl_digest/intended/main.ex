@@ -6,7 +6,7 @@ defmodule Main do
   end
   defp reject_unsupported_sign() do
     try do
-      _ = Digest.sign(Bytes.of_string("abc", nil), nil, "SHA256")
+      _ = Digest.sign(Bytes.of_string("abc", {:utf8}), nil, "SHA256")
       raise Reflaxe.Elixir.HaxeThrow, [value: "Digest.sign should fail explicitly on the Elixir target"]
     rescue
       haxe_exception ->
@@ -27,7 +27,7 @@ defmodule Main do
     end
   end
   def main() do
-    digest = Digest.make(Bytes.of_string("abc", nil), "SHA256")
+    digest = Digest.make(Bytes.of_string("abc", {:utf8}), "SHA256")
     _ = assert_that(apply(Map.get(digest, :__reflaxe_class__) || Map.get(digest, :__struct__), :to_hex, [digest]) == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad", "SHA256 digest should match :crypto.hash output")
     _ = reject_unsupported_sign()
   end

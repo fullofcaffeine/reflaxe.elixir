@@ -125,16 +125,58 @@ class UpstreamUnitStdTest extends TestCase {
 		UpstreamUnitStdMacro.assertSpec("haxe/io/BytesBuffer.unit.hx");
 	}
 
+	@:describe("upstream Haxe unitstd: haxe.io.ArrayBufferView")
+	@:test
+	function testHaxeIoArrayBufferView():Void {
+		UpstreamUnitStdMacro.assertSpec("haxe/io/ArrayBufferView.unit.hx");
+	}
+
 	@:describe("upstream Haxe unitstd: haxe.io.FPHelper")
 	@:test
 	function testHaxeIoFPHelper():Void {
 		UpstreamUnitStdMacro.assertSpec("haxe/io/FPHelper.unit.hx");
 	}
 
+	@:describe("upstream Haxe unitstd: haxe.io.Float32Array")
+	@:test
+	function testHaxeIoFloat32Array():Void {
+		UpstreamUnitStdMacro.assertSpec("haxe/io/Float32Array.unit.hx");
+	}
+
+	@:describe("upstream Haxe unitstd: haxe.io.Float64Array")
+	@:test
+	function testHaxeIoFloat64Array():Void {
+		UpstreamUnitStdMacro.assertSpec("haxe/io/Float64Array.unit.hx");
+	}
+
+	@:describe("upstream Haxe unitstd: haxe.io.Int32Array")
+	@:test
+	function testHaxeIoInt32Array():Void {
+		UpstreamUnitStdMacro.assertSpec("haxe/io/Int32Array.unit.hx");
+	}
+
 	@:describe("upstream Haxe unitstd: haxe.io.Path")
 	@:test
 	function testHaxeIoPath():Void {
 		UpstreamUnitStdMacro.assertSpec("haxe/io/Path.unit.hx");
+	}
+
+	@:describe("upstream Haxe unitstd: haxe.io.UInt8Array")
+	@:test
+	function testHaxeIoUInt8Array():Void {
+		UpstreamUnitStdMacro.assertSpec("haxe/io/UInt8Array.unit.hx");
+	}
+
+	@:describe("upstream Haxe unitstd: haxe.io.UInt16Array")
+	@:test
+	function testHaxeIoUInt16Array():Void {
+		UpstreamUnitStdMacro.assertSpec("haxe/io/UInt16Array.unit.hx");
+	}
+
+	@:describe("upstream Haxe unitstd: haxe.io.UInt32Array")
+	@:test
+	function testHaxeIoUInt32Array():Void {
+		UpstreamUnitStdMacro.assertSpec("haxe/io/UInt32Array.unit.hx");
 	}
 
 	@:describe("upstream Haxe unitstd: haxe.iterators.StringIteratorUnicode")

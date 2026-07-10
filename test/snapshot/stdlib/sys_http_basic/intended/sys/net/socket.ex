@@ -19,7 +19,7 @@ defmodule Socket do
   end
   def write(struct, content) do
     SocketState.send_binary(struct.socket_ref, (fn ->
-      reflaxe_dispatch_receiver = Bytes.of_string(content, nil)
+      reflaxe_dispatch_receiver = Bytes.of_string(content, {:utf8})
       _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get_data, [reflaxe_dispatch_receiver])
     end).())
   end

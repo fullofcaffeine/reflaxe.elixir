@@ -106,7 +106,7 @@ defmodule Http do
   defp request_body_for(struct, post) do
     post_data = HttpBaseRuntime.take_post_data(struct.http_base_ref)
     if (not Kernel.is_nil(post_data)) do
-      body = Bytes.of_string(post_data, nil)
+      body = Bytes.of_string(post_data, {:utf8})
       body
     else
       post_bytes = HttpBaseRuntime.post_bytes(struct.http_base_ref)
@@ -114,7 +114,7 @@ defmodule Http do
         post_bytes
       else
         if (post) do
-          Bytes.of_string(encode_params(struct), nil)
+          Bytes.of_string(encode_params(struct), {:utf8})
         else
           nil
         end

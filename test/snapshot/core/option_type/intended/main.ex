@@ -56,7 +56,7 @@ defmodule Main do
     error_result = {:error, "Not found"}
     _option_from_ok = OptionTools.from_result(ok_result)
     _option_from_error = OptionTools.from_result(error_result)
-    _reply = OptionTools.to_reply(user, nil)
+    _reply = OptionTools.to_reply(user, "none")
     valid_user = {:some, "Grace"}
     _confirmed_user = OptionTools.expect(valid_user, "Expected valid user")
   end

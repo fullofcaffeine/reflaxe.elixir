@@ -5,7 +5,7 @@ defmodule Main do
     end
   end
   def main() do
-    empty = Bytes.of_string("", nil)
+    empty = Bytes.of_string("", {:utf8})
     _ =
       assert_that((fn ->
         reflaxe_dispatch_receiver = Haxe.Crypto.Hmac.new({:md5})
@@ -24,8 +24,8 @@ defmodule Main do
         reflaxe_dispatch_receiver = _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :make, [reflaxe_dispatch_receiver, empty, empty])
         _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_hex, [reflaxe_dispatch_receiver])
       end).() == "b613679a0814d9ec772f95d778c35fc5ff1697c493715653c6c712144292c5ad", "hmac sha256 empty failed")
-    key = Bytes.of_string("key", nil)
-    msg = Bytes.of_string("The quick brown fox jumps over the lazy dog", nil)
+    key = Bytes.of_string("key", {:utf8})
+    msg = Bytes.of_string("The quick brown fox jumps over the lazy dog", {:utf8})
     _ =
       assert_that((fn ->
         reflaxe_dispatch_receiver = Haxe.Crypto.Hmac.new({:md5})

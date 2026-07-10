@@ -237,6 +237,7 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
 2) **`haxe.io` + core utilities**
    - Done (core building blocks): `haxe.io.BufferInput`, `haxe.io.BytesBuffer`, `haxe.io.BytesInput`, `haxe.io.BytesOutput`, `haxe.io.FPHelper`, `haxe.Json`
    - Done (verified official fallback): `haxe.io.Mime`, `haxe.io.Scheme`; both are String enum abstracts and need no target override or runtime module
+   - Done (verified official fallback): `haxe.io.ArrayBufferView` and the six typed arrays; shared Bytes views and all upstream `unitstd` specs run on BEAM without target stdlib duplication
    - Done: `haxe.Exception`
    - Done: `haxe.Int32`, `haxe.Int64`, `haxe.Int64Helper`
    - Done: `haxe.CallStack`

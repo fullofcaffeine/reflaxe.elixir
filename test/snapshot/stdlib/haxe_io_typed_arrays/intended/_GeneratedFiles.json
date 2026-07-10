@@ -1,0 +1,18 @@
+{
+	"filesGenerated": [
+		"string_tools.ex",
+		"reflaxe/exception.ex",
+		"reflaxe/elixir/haxe_throw.ex",
+		"reflaxe/elixir/haxe_float.ex",
+		"main.ex",
+		"haxe/iterators/array_key_value_iterator.ex",
+		"haxe/iterators/array_iterator.ex",
+		"haxe/io/bytes.ex",
+		"haxe/io/array_buffer_view_impl.ex",
+		"haxe/io/_u_int8_array/u_int8_array_impl_.ex",
+		"haxe/io/_array_buffer_view/array_buffer_view_impl_.ex"
+	],
+	"id": 0,
+	"wasCached": false,
+	"version": 1
+}

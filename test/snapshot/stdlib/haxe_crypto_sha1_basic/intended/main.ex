@@ -9,7 +9,7 @@ defmodule Main do
     _ = assert_that(Haxe.Crypto.Sha1.encode("") == "da39a3ee5e6b4b0d3255bfef95601890afd80709", "sha1 encode empty failed")
     _ =
       assert_that((fn ->
-        reflaxe_dispatch_receiver = Haxe.Crypto.Sha1.make(Bytes.of_string("abc", nil))
+        reflaxe_dispatch_receiver = Haxe.Crypto.Sha1.make(Bytes.of_string("abc", {:utf8}))
         _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_hex, [reflaxe_dispatch_receiver])
       end).() == "a9993e364706816aba3e25717850c26c9cd0d89d", "sha1 make abc failed")
     binary = Bytes.alloc(3)
