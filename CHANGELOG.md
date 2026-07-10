@@ -1,3 +1,10 @@
+## [0.14.22](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.21...v0.14.22) (2026-07-10)
+
+
+### Bug Fixes
+
+* **release:** verify published compiler packages ([8b2bcf1](https://github.com/fullofcaffeine/reflaxe.elixir/commit/8b2bcf1f7b53a137a98aec6984c53608d0db813f))
+
 ## [0.14.21](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.20...v0.14.21) (2026-07-09)
 
 
