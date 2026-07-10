@@ -3,9 +3,15 @@
 Reflaxe.Elixir uses **semantic versioning** (`MAJOR.MINOR.PATCH`) and a **stability tier** model to
 make it clear what is safe to depend on and what may change.
 
-> Reflaxe.Elixir is currently in the **pre-1.0 (`v0.x`)** phase.
-> Experimental features remain opt‑in and may evolve in minor releases.
-> For now, even breaking changes are released on the `0.x` minor line and documented clearly.
+<!-- BEGIN GENERATED: release-posture -->
+> Current version: **v0.14.22**<br>
+> Current release line: **pre-1.0 (`v0.x`)**<br>
+> Breaking stable-surface changes produce a **minor** release on this line.<br>
+> Stable graduation: **not approved**.
+<!-- END GENERATED: release-posture -->
+
+Experimental features remain opt-in and may evolve in minor releases. Breaking changes on the
+current line must still be documented clearly.
 
 The machine-readable source of truth is [`release/manifest.json`](../../release/manifest.json).
 Semantic-release reads that policy when classifying commits; the breaking-change rule is not copied

@@ -27,5 +27,52 @@
         "independentReview": null
       }
     }
+  },
+  "generation": {
+    "versionFiles": [
+      {
+        "path": "package.json",
+        "kind": "package-json"
+      },
+      {
+        "path": "package-lock.json",
+        "kind": "package-lock-json"
+      },
+      {
+        "path": "haxelib.json",
+        "kind": "haxelib-json"
+      },
+      {
+        "path": "mix.exs",
+        "kind": "mix-version"
+      },
+      {
+        "path": "README.md",
+        "kind": "readme-version-badge"
+      },
+      {
+        "path": "haxe_libraries/reflaxe.elixir.hxml",
+        "kind": "hxml-library-version"
+      },
+      {
+        "path": "test/support/test_reflaxe_elixir.hxml",
+        "kind": "hxml-library-version"
+      }
+    ],
+    "postureBlocks": [
+      {
+        "path": "README.md",
+        "marker": "release-posture",
+        "kind": "readme-stability"
+      },
+      {
+        "path": "docs/06-guides/VERSIONING_AND_STABILITY.md",
+        "marker": "release-posture",
+        "kind": "versioning-summary"
+      }
+    ],
+    "releaseCommitExtraAssets": [
+      "CHANGELOG.md"
+    ]
   }
 }

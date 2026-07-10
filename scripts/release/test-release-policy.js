@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 const assert = require('assert')
 const fs = require('fs')
-const os = require('os')
 const path = require('path')
-const { analyzeCommits } = require('./analyze-commits')
+const { analyzeCommits } = require('@semantic-release/commit-analyzer')
 const {
   assertGraduationApproved,
   assertVersionAllowed,
@@ -33,31 +32,26 @@ function approvedStableManifest() {
 }
 
 async function analyze(manifestFixture, message) {
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reflaxe-release-policy-'))
-  const manifestPath = path.join(tempDir, 'manifest.json')
-  fs.writeFileSync(manifestPath, `${JSON.stringify(manifestFixture, null, 2)}\n`)
-  try {
-    return await analyzeCommits(
-      { manifestPath },
-      {
-        cwd: root,
-        commits: [{ message }],
-        logger: { log() {} },
-      }
-    )
-  } finally {
-    fs.rmSync(tempDir, { recursive: true, force: true })
-  }
+  return analyzeCommits(
+    {
+      preset: 'conventionalcommits',
+      releaseRules: releaseRulesForManifest(manifestFixture),
+    },
+    {
+      cwd: root,
+      commits: [{ message }],
+      logger: { log() {} },
+    }
+  )
 }
 
 async function main() {
   assert.strictEqual(manifest.package.version, packageJson.version)
   assert.strictEqual(manifest.releasePolicy.currentLine, 'pre1')
-  const analyzerPlugin = packageJson.release.plugins[0]
-  assert.deepStrictEqual(analyzerPlugin, [
-    './scripts/release/analyze-commits.js',
-    { manifestPath: 'release/manifest.json' },
-  ])
+  const releaseConfig = require(path.join(root, 'release.config.js'))
+  const analyzerPlugin = releaseConfig.plugins[0]
+  assert.strictEqual(analyzerPlugin[0], '@semantic-release/commit-analyzer')
+  assert.deepStrictEqual(analyzerPlugin[1].releaseRules, releaseRulesForManifest(manifest))
   assert.strictEqual(releaseRulesForManifest(manifest)[0].release, 'minor')
   assert.strictEqual(await analyze(manifest, 'feat!: change stable behavior'), 'minor')
   assert.strictEqual(await analyze(manifest, 'fix: preserve behavior'), 'patch')

@@ -232,42 +232,41 @@ if git -C "$ROOT_DIR" grep -nE 'lix install .*https://github\.com/fullofcaffeine
   fail "Lix release installs must use www.github.com to bypass its GitHub source interceptor"
 fi
 
-if ! python3 - "$ROOT_DIR/package.json" <<'PY'
-import json
-import sys
+if ! node - "$ROOT_DIR" <<'JS'
+const path = require('path')
 
-with open(sys.argv[1], encoding="utf-8") as handle:
-    data = json.load(handle)
+const root = process.argv[2]
+const releaseConfig = require(path.join(root, 'release.config.js'))
+const { loadReleaseManifest } = require(path.join(root, 'scripts/release/release-manifest.js'))
+const { generatedReleaseAssets } = require(path.join(root, 'scripts/release/sync-versions.js'))
 
-plugins = data.get("release", {}).get("plugins", [])
-prepare = ""
-assets = []
-for plugin in plugins:
-    if isinstance(plugin, list) and plugin:
-        name = plugin[0]
-        config = plugin[1] if len(plugin) > 1 and isinstance(plugin[1], dict) else {}
-        if name == "@semantic-release/exec":
-            prepare = config.get("prepareCmd", "")
-        if name == "@semantic-release/github":
-            assets = config.get("assets", [])
+const configured = new Map(
+  releaseConfig.plugins
+    .filter((plugin) => Array.isArray(plugin))
+    .map(([name, config]) => [name, config || {}])
+)
+const prepare = configured.get('@semantic-release/exec')?.prepareCmd || ''
+const githubAssets = configured.get('@semantic-release/github')?.assets || []
+const gitAssets = configured.get('@semantic-release/git')?.assets || []
+const expectedPath = 'dist/reflaxe.elixir.zip'
+const expectedName = 'reflaxe.elixir-${nextRelease.version}.zip'
 
-expected_path = "dist/reflaxe.elixir.zip"
-expected_name = "reflaxe.elixir-${nextRelease.version}.zip"
-if "scripts/release/package-haxelib.sh" not in prepare or expected_path not in prepare:
-    raise SystemExit("semantic-release prepareCmd does not build the fixed-path Reflaxe package")
-if any(
-    isinstance(asset, dict) and "${nextRelease" in asset.get("path", "")
-    for asset in assets
-):
-    raise SystemExit("semantic-release asset paths are globs and must not contain templates")
-if not any(
-    isinstance(asset, dict)
-    and asset.get("path") == expected_path
-    and asset.get("name") == expected_name
-    for asset in assets
-):
-    raise SystemExit("semantic-release does not upload the fixed-path package with a versioned name")
-PY
+if (!prepare.includes('scripts/release/package-haxelib.sh') || !prepare.includes(expectedPath)) {
+  throw new Error('semantic-release prepareCmd does not build the fixed-path Reflaxe package')
+}
+if (githubAssets.some((asset) => asset.path?.includes('${nextRelease'))) {
+  throw new Error('semantic-release asset paths are globs and must not contain templates')
+}
+if (!githubAssets.some((asset) => asset.path === expectedPath && asset.name === expectedName)) {
+  throw new Error('semantic-release does not upload the fixed-path package with a versioned name')
+}
+
+const manifest = loadReleaseManifest('release/manifest.json', root)
+const expectedGitAssets = generatedReleaseAssets(manifest, 'release/manifest.json', root)
+if (JSON.stringify(gitAssets) !== JSON.stringify(expectedGitAssets)) {
+  throw new Error('semantic-release git assets do not match the release generator')
+}
+JS
 then
   fail "release configuration does not publish the Reflaxe-built package artifact"
 fi

@@ -17,6 +17,7 @@
 ### Changed
 
 * **release:** define the intentional pre-1.0 release line in a structured manifest; semantic-release now derives breaking-change bumps from that policy and refuses stable-line analysis or `1.x` generation without a dated approval Bead plus platform, compatibility, application-runtime, and independent-review evidence.
+* **release:** generate version metadata, scoped HXML versions, and current-posture documentation in one validated pass from the release manifest; add byte-for-byte check mode and derive semantic-release commit assets from the generator.
 * **reflaxe:** align stdlib override sources with the Reflaxe `_std` layout; scoped source-tree builds now load `std/elixir/_std` before target-owned `std` APIs so PhoenixHx/examples keep using the Elixir stdlib overrides in dev mode.
 * **reflaxe:** move remaining upstream-colliding `std/haxe/**` replacement modules into `std/elixir/_std`, leaving plain `std/haxe/**` for target-owned support surfaces.
 * **reflaxe:** move the authored `haxe.Exception` override into `std/elixir/_std/haxe/Exception.hx`; Reflaxe now creates `src/haxe/Exception.cross.hx` only in built release packages, matching the Rust and OCaml target layout without changing exception semantics.

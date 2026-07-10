@@ -17,8 +17,9 @@ Semantic-release looks at commit messages since the last release:
 - `feat:` → minor release (`0.1.2` → `0.2.0`)
 - `feat!:` or `BREAKING CHANGE:` → **minor release while pre-1.0** (`0.2.0` → `0.3.0`)
 
-Current release config intentionally keeps all breaking changes on the minor line while the project is pre-1.0.
-When the project is ready for stable `1.x` majors, update the commit-analyzer rules in `package.json`.
+The current release manifest intentionally keeps breaking changes on the minor line while the
+project is pre-1.0. Stable graduation changes the manifest policy only after its evidence gate is
+approved; semantic-release then derives major breaking releases from that policy.
 
 If there are no release-worthy commits, the workflow runs but produces no new release.
 
@@ -53,13 +54,27 @@ Use clear, scoped messages (examples):
 
 3) **Let semantic-release do the rest**
 
-Version strings are updated automatically via `scripts/release/sync-versions.js`, including:
+Version strings and current-status blocks are updated in one validated generation pass via
+`scripts/release/sync-versions.js`, using `release/manifest.json` as the source of truth, including:
 
 - `package.json` / `package-lock.json`
 - `haxelib.json`
 - `mix.exs`
 - `README.md` version badge
+- generated release-posture blocks in `README.md` and `VERSIONING_AND_STABILITY.md`
 - `CHANGELOG.md` (generated)
+
+Check for drift without modifying files:
+
+```bash
+npm run guard:release-state
+```
+
+The generator rejects unsafe paths, missing or duplicate generated markers, and `1.x` versions that
+do not have an approved stable-graduation record. Semantic-release obtains its release-commit asset
+list from the same generator through `release.config.js` instead of maintaining another list in
+`package.json`. The JavaScript config still uses the official semantic-release analyzer and git
+plugins; local code only supplies validated rules and assets.
 
 ## Token / permissions notes
 

@@ -13,10 +13,12 @@
 **[Haxe](https://haxe.org) -> [Elixir](https://elixir-lang.org) compiler for the BEAM ecosystem, with first-class [Phoenix](https://phoenixframework.org)/[LiveView](https://www.phoenixframework.org/liveview) support.**
 Write application code in Haxe and compile to conventional Elixir shapes for pure Elixir/OTP services and Phoenix applications.
 
+<!-- BEGIN GENERATED: release-posture -->
 > [!WARNING]
-> **Stability**: the project is currently pre-1.0 (`v0.x`) and actively evolving.
-> Some features remain experimental/opt-in (for example source mapping, migrations `.exs` emission, `fast_boot`).
-> See [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md) and [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).
+> **Stability**: v0.14.22 is on the pre-1.0 (`v0.x`) release line.
+> Breaking changes to documented stable surfaces use minor releases until an explicitly reviewed stable graduation.
+> Some features remain experimental/opt-in; see [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md) and [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).
+<!-- END GENERATED: release-posture -->
 
 ## Why Reflaxe.Elixir
 
@@ -56,7 +58,7 @@ Reflaxe.Elixir takes a different approach:
 - You integrate directly with Phoenix/[LiveView](https://www.phoenixframework.org/liveview)/Ecto through typed extern surfaces.
 - You can reuse Haxe tooling/macros and keep cross-target options where they make sense.
 
-## Current Support (v0.x pre-1.0)
+## Current Support
 
 ### Stable (documented subset)
 
