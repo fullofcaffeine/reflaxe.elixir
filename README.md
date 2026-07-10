@@ -4,7 +4,7 @@
 
 # Reflaxe.Elixir (aka Haxir)
 
-[![Version](https://img.shields.io/badge/version-0.14.22-blue)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
+[![Version](https://img.shields.io/badge/version-0.14.23-blue)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![CI](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml/badge.svg)](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml)
 [![Haxe](https://img.shields.io/badge/Haxe-4.3.7+-orange)](https://haxe.org)
@@ -15,7 +15,7 @@ Write application code in Haxe and compile to conventional Elixir shapes for pur
 
 <!-- BEGIN GENERATED: release-posture -->
 > [!WARNING]
-> **Stability**: v0.14.22 is on the pre-1.0 (`v0.x`) release line.
+> **Stability**: v0.14.23 is on the pre-1.0 (`v0.x`) release line.
 > Breaking changes to documented stable surfaces use minor releases until an explicitly reviewed stable graduation.
 > Some features remain experimental/opt-in; see [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md) and [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).
 <!-- END GENERATED: release-posture -->

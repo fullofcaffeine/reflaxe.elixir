@@ -1,3 +1,10 @@
+## [0.14.23](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.22...v0.14.23) (2026-07-10)
+
+
+### Bug Fixes
+
+* **release:** verify staged release state ([212be20](https://github.com/fullofcaffeine/reflaxe.elixir/commit/212be207e99c925c1aa897ff3f03a2cfe8b731ed))
+
 ## [0.14.22](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.21...v0.14.22) (2026-07-10)
 
 
