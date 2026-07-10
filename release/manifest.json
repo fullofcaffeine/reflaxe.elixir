@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "package": {
+    "name": "reflaxe.elixir",
+    "version": "0.14.22"
+  },
+  "releasePolicy": {
+    "currentLine": "pre1",
+    "lines": {
+      "pre1": {
+        "major": 0,
+        "breakingRelease": "minor"
+      },
+      "stable": {
+        "minimumMajor": 1,
+        "breakingRelease": "major"
+      }
+    },
+    "graduation": {
+      "approved": false,
+      "approvalBead": null,
+      "approvedAt": null,
+      "evidence": {
+        "platformToolchain": null,
+        "compatibility": null,
+        "applicationRuntime": null,
+        "independentReview": null
+      }
+    }
+  }
+}

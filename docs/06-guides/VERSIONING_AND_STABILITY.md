@@ -7,6 +7,10 @@ make it clear what is safe to depend on and what may change.
 > Experimental features remain opt‑in and may evolve in minor releases.
 > For now, even breaking changes are released on the `0.x` minor line and documented clearly.
 
+The machine-readable source of truth is [`release/manifest.json`](../../release/manifest.json).
+Semantic-release reads that policy when classifying commits; the breaking-change rule is not copied
+into release configuration by hand.
+
 ## Stability tiers
 
 ### ✅ Stable (SemVer protected, with pre-1.0 policy)
@@ -74,6 +78,23 @@ Used for:
 If a bug fix changes behavior in a way that could break a real app, it must be clearly called out
 in `CHANGELOG.md`. While pre-1.0, this can still ship as a MINOR; once `1.0.0` is reached, stable-surface
 breaks move to MAJOR.
+
+## Stable graduation gate
+
+The project cannot enter the stable release line merely by changing a version string. Before
+`releasePolicy.currentLine` can become `stable`, the manifest must contain all of the following:
+
+- an approved, reviewed Bead that owns the graduation decision;
+- the approval date;
+- evidence for the supported platform and toolchain matrix;
+- compatibility evidence for documented stable surfaces;
+- application-runtime evidence, including representative Phoenix/OTP QA;
+- an independent review record.
+
+The release-policy test rejects stable commit analysis without that complete record. Version
+generation separately rejects `1.x` while the policy is `pre1`, and rejects further `0.x` generation
+after the approved stable line is selected. This makes graduation an explicit reviewed event rather
+than an accidental semantic-release side effect.
 
 ## Deprecation policy
 
