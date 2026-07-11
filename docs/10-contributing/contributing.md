@@ -270,7 +270,9 @@ npm run audit:examples-hex
 ```
 
 Run this after changing a Mix dependency or lockfile. The command fails when any example has an
-unacknowledged advisory; CI runs it in the dependency-audit job alongside `npm audit`.
+unacknowledged advisory; CI runs it in the dependency-audit job alongside `npm audit`. It resolves
+each locked graph in an isolated temporary dependency directory with `--check-locked`, so the audit
+works from a clean checkout without changing lockfiles or relying on a contributor's existing deps.
 
 The compiler's minimum-toolchain smoke remains Elixir `1.14` / OTP `25`. The runnable examples are
 tested on the primary Elixir `1.18.3` / OTP `27.2` toolchain and currently require Elixir `1.16+`
