@@ -5,11 +5,13 @@ that remains useful across versions; released version identity comes from protec
 
 ## Unreleased
 
+No entries yet.
+
+## [0.14.27](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.26...v0.14.27) (2026-07-11)
+
 ### Bug Fixes
 
-* **release:** restore complete GitHub Release notes by keeping the Conventional Commits preset on
-  the writer contract supported by the pinned semantic-release generator; exercise the real notes
-  pipeline in tests and stop publication before tagging when generated notes contain only a heading.
+* **release:** restore complete GitHub Release notes by keeping the Conventional Commits preset on the writer contract supported by the pinned semantic-release generator; exercise the real notes pipeline in tests and stop publication before tagging when generated notes contain only a heading ([4a15d2a](https://github.com/fullofcaffeine/reflaxe.elixir/commit/4a15d2a552235ef79578112633f400b2cfe7e686))
 
 ## [0.14.26](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.25...v0.14.26) (2026-07-11)
 

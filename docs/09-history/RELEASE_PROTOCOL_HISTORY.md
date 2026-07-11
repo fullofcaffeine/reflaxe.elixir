@@ -84,3 +84,26 @@ package build and tag boundary.
 
 The commit immediately following `v0.14.26` is documentation/test evidence only. Its exact CI and
 semantic-release no-op result passed in CI run `29158403187`; CodeQL run `29158403127` also passed.
+
+## Corrective release-note evidence
+
+`v0.14.27` proves the release-note correction without weakening immutability or changing compiler
+behavior:
+
+| Identity | Verified value |
+| --- | --- |
+| Source commit `S` | `4a15d2a552235ef79578112633f400b2cfe7e686` (`fix(release): restore complete release notes`) |
+| Full CI run | `29160260486`, 31/31 jobs successful |
+| CodeQL run | `29160260396`, successful |
+| Release job | `86566689945` (`Release exact CI-tested commit`) |
+| Version/tag | `0.14.27` / `v0.14.27`; local tag, origin tag, and checked-out HEAD all resolved to `S` |
+| GitHub Release | `https://github.com/fullofcaffeine/reflaxe.elixir/releases/tag/v0.14.27`; published, non-prerelease, and immutable |
+| Rendered notes | `Bug Fixes` contains the scoped release entry and link to `S` |
+| ZIP | `reflaxe.elixir-0.14.27.zip`, 2,502,009 bytes, SHA-256 `6b052fd9f002590f9f035d7b1c31e634537cbca75e96fa426735800dcbef52c9` |
+| Checksum sidecar | `reflaxe.elixir-0.14.27.zip.sha256`, 93 bytes, SHA-256 `2937a3a76e2a8278c647df635fae643c594cc068d66a66b56ad3c4c17bdcf5e0` |
+
+Both assets reported `uploaded`, and the published-package verifier accepted their embedded
+version/tag/source metadata plus GitHub's signed immutable-release attestations. This shows the
+appropriate recovery for an immutable release-note defect: preserve the valid prior release, fix
+and test the generator compatibility contract, then publish a new patch version from a fully tested
+commit.
