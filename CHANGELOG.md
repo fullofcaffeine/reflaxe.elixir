@@ -47,6 +47,7 @@
 * **generator:** resolve scaffold package URLs from staged release metadata or the source checkout's nearest immutable tag, never from tracked development sentinels.
 * **ci:** install the locked Node and Beam toolchains in package/release jobs before invoking canonical ZIP and exact-ZIP Mix/Phoenix verification.
 * **ci:** make normal publication the final same-SHA `main` CI job with explicit compiler, package, examples, dogfood, sentinel, and security dependencies; remove detached `workflow_run` polling and the manual normal-release bypass.
+* **release:** bind checked-out HEAD, local/origin version tags, staged package metadata, approved ZIP/checksum bytes, and immutable hosted asset digests; replace unverified backfill with reviewer-gated existing-tag-only repair and signed GitHub release-attestation verification.
 * **security:** pin every third-party GitHub Action to a reviewed full commit SHA, lock Node and all direct npm tools exactly, upgrade the release/Haxe toolchain dependency graph, and enforce a zero-high-severity npm audit before publication.
 * **ci:** preserve the CI-selected Node/Haxe `PATH` in the example compiler runner and force direct Haxe compilation so compiler-server macro state cannot leak between example projects.
 * **examples:** align the Phoenix chat app's local scoped libraries with the canonical Reflaxe pair so `vendor/reflaxe/src` and the Elixir stdlib roots are present before compiler typing in clean development builds.

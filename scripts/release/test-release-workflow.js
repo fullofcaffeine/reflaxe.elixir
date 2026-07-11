@@ -93,6 +93,11 @@ function main() {
     false,
     'normal publication must not use a detached privileged workflow'
   )
+  assert.strictEqual(
+    fs.existsSync(path.join(WORKFLOWS, 'release-backfill.yml')),
+    false,
+    'unverified historical release backfill must not exist'
+  )
 
   const ci = fs.readFileSync(CI_PATH, 'utf8')
   assert.doesNotMatch(ci, /workflow_run|workflow_dispatch/)
@@ -151,6 +156,29 @@ function main() {
   assert.strictEqual(githubPlugin[1].successComment, false)
   assert.strictEqual(githubPlugin[1].failComment, false)
   assert.strictEqual(githubPlugin[1].releasedLabels, false)
+  assert(
+    releaseConfig.plugins.includes(
+      './scripts/release/published-verifier-plugin.cjs'
+    )
+  )
+
+  const repair = fs.readFileSync(
+    path.join(WORKFLOWS, 'release-repair.yml'),
+    'utf8'
+  )
+  assert.match(repair, /workflow_dispatch:\n\s+inputs:\n\s+tag:/)
+  assert.doesNotMatch(repair, /all_tags|overwrite_existing|skip_verify/)
+  assert.match(repair, /environment: release-repair/)
+  assert.match(repair, /group: release-\$\{\{ github\.repository \}\}/)
+  assert.match(repair, /permissions:\n\s+contents: read/)
+  assert.match(repair, /permissions:\n\s+contents: write/)
+  assert.match(
+    repair,
+    /ref: refs\/tags\/\$\{\{ inputs\.tag \}\}/
+  )
+  assert.match(repair, /Repair accepts only vMAJOR\.MINOR\.PATCH/)
+  assert.match(repair, /node scripts\/release\/repair-release\.js/)
+  assert.doesNotMatch(repair, /semantic-release|git tag|git push|--clobber/)
 
   assertTriggerMatrix()
   assertPinnedActions()

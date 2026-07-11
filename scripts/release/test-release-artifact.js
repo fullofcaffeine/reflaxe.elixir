@@ -118,6 +118,9 @@ function main() {
     )
   }
   assert(pluginNames.includes('./scripts/release/haxelib-artifact-plugin.cjs'))
+  assert(
+    pluginNames.includes('./scripts/release/published-verifier-plugin.cjs')
+  )
   const github = releaseConfig.plugins.find(
     (plugin) =>
       Array.isArray(plugin) && plugin[0] === '@semantic-release/github'

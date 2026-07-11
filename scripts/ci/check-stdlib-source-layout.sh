@@ -309,8 +309,10 @@ grep -F 'steps.semantic_release.outputs.tag' "$ROOT_DIR/.github/workflows/ci.yml
   || fail "published-package verification must receive the exact newly published tag"
 grep -F 'verify-release-artifact.js' "$published_verifier" >/dev/null \
   || fail "published-package verifier must validate staged release metadata"
-grep -F 'ALLOW_LEGACY_RELEASE' "$published_verifier" >/dev/null \
-  || fail "published-package verifier must keep legacy-tag auditing explicit"
+grep -F 'isImmutable' "$published_verifier" >/dev/null \
+  || fail "published-package verifier must require immutable GitHub Releases"
+grep -F 'gh release verify-asset' "$published_verifier" >/dev/null \
+  || fail "published-package verifier must check GitHub release attestations"
 grep -F 'git -C "$root_dir" archive' "$ROOT_DIR/scripts/release/package-haxelib.sh" >/dev/null \
   || fail "release package must be staged from an explicit tracked source commit"
 grep -F 'deterministic-zip.js' "$ROOT_DIR/scripts/release/package-haxelib.sh" >/dev/null \

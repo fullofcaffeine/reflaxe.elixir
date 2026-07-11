@@ -3565,8 +3565,13 @@ publication must leave the tested commit unchanged and must not create a release
 Normal publication is the final job in the same `CI` run for a `main` push. It has explicit `needs`
 edges to compiler, package, examples, dogfood, sentinel, and security gates; checks out only
 `github.sha`; consumes no CI cache/artifact; and receives only job-scoped `contents: write`.
-Diagnostic workflow dispatches and repair/backfill workflows must never become normal publication
-bypasses. See `docs/10-contributing/RELEASING.md` for the trust model and recovery procedure.
+Diagnostic workflow dispatches and repair workflows must never become normal publication
+bypasses. The only write-capable dispatch is the reviewer-gated existing-tag repair workflow: it
+must reject branches/SHAs, derive no version, create/move/delete no tag, preserve verified partial
+assets, and fail on mismatched bytes. Audit immutable releases, `v*` update/deletion protection,
+and the protected repair environment with `node scripts/release/verify-host-controls.js
+fullofcaffeine/reflaxe.elixir`. See `docs/10-contributing/RELEASING.md` for the trust model and
+recovery procedure.
 
 ## Test Status Summary
 **See**: [`docs/03-compiler-development/testing-infrastructure.md`](docs/03-compiler-development/testing-infrastructure.md) - Complete test architecture and status

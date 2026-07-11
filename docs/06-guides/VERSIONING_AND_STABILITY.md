@@ -6,17 +6,28 @@ make it clear what is safe to depend on and what may change.
 > Current release line: **pre-1.0 (`v0.x`)**<br>
 > Breaking stable-surface changes produce a **minor** release on this line.<br>
 > Stable graduation: **not approved**.<br>
-> Exact released version: the latest immutable `vMAJOR.MINOR.PATCH` GitHub Release tag.
+> Exact released version: the latest protected `vMAJOR.MINOR.PATCH` tag with a GitHub Release.
 
 Experimental features remain opt-in and may evolve in minor releases. Breaking changes on the
 current line must still be documented clearly.
 
-Reachable immutable `vMAJOR.MINOR.PATCH` Git tags are the source of truth for released versions.
+Reachable protected `vMAJOR.MINOR.PATCH` Git tags are the source of truth for released versions.
 [`release/manifest.json`](../../release/manifest.json) is intentionally version-independent: it
 contains only release-line policy and durable approval records. Semantic-release delegates
 Conventional Commit parsing to its official analyzer, then applies that small policy layer.
 Tracked package and HXML versions are development sentinels. They do not decide or mirror the
 current release; exact release metadata is injected only into temporary package staging.
+
+GitHub release immutability applies to releases published after the host control was enabled. The
+historical `v0.14.25` release object predates that control, while its version tag is protected by the
+repository's active `v*` update/deletion ruleset. The first immutable release and its evidence are
+recorded as part of the release-protocol rollout rather than retroactively rewriting history.
+
+For each new release, checked-out source, local/origin tag, embedded package metadata, ZIP/checksum
+bytes, and GitHub's immutable asset digests must identify the same commit and version. An interrupted
+publication can only be completed by the reviewer-gated existing-tag repair workflow; repair never
+derives a version or creates, moves, or deletes a tag. See
+[Releasing](../10-contributing/RELEASING.md) for the full trust and recovery model.
 
 The current policy shape is deliberately small:
 

@@ -4,6 +4,7 @@ const os = require('os')
 const path = require('path')
 const { execFileSync } = require('child_process')
 const { verifyReleaseArtifact } = require('./verify-release-artifact.js')
+const { verifyTagIdentity } = require('./release-provenance.js')
 
 function run(command, args, options = {}) {
   return execFileSync(command, args, {
@@ -168,9 +169,10 @@ async function publish(_pluginConfig, context) {
     tag,
     source,
   })
+  verifyTagIdentity({ tag, sourceCommit: source, cwd })
   assertTrackedTreeClean(cwd)
   context.logger.success(
-    `Verified the approved ${tag} artifact before GitHub publication`
+    `Verified the approved ${tag} artifact and local/origin tag identity before GitHub publication`
   )
 }
 

@@ -1,0 +1,82 @@
+name: Repair Existing Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing immutable version tag to repair (for example v0.15.0)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.repository }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "22.14.0"
+  HAXE_VERSION: "4.3.7"
+  ELIXIR_VERSION: "1.18.3"
+  OTP_VERSION: "27.2"
+
+jobs:
+  repair:
+    name: Complete publication for an existing tag
+    environment: release-repair
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - name: Validate existing-tag-only input
+        env:
+          REPAIR_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$REPAIR_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::Repair accepts only vMAJOR.MINOR.PATCH, never a branch or SHA."
+            exit 2
+          fi
+          git ls-remote --exit-code --tags "https://github.com/${{ github.repository }}.git" "refs/tags/$REPAIR_TAG" >/dev/null
+
+      - name: Checkout supplied tag
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          ref: refs/tags/${{ inputs.tag }}
+
+      - name: Setup exact Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup exact Erlang and Elixir
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      - name: Install and audit locked npm dependencies
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm audit --audit-level=high --omit=optional
+
+      - name: Install exact Haxe
+        run: |
+          set -euo pipefail
+          npx lix download haxe "${HAXE_VERSION}"
+          npx lix use haxe "${HAXE_VERSION}"
+          haxe_bin="$HOME/haxe/versions/${HAXE_VERSION}/haxe"
+          test -x "$haxe_bin"
+          "$haxe_bin" -version
+          echo "HAXE_BIN=$haxe_bin" >> "$GITHUB_ENV"
+
+      - name: Repair only the supplied tag
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
+          REPAIR_TAG: ${{ inputs.tag }}
+        run: node scripts/release/repair-release.js "$REPAIR_TAG"

@@ -44,5 +44,6 @@ module.exports = {
         ],
       },
     ],
+    './scripts/release/published-verifier-plugin.cjs',
   ],
 }

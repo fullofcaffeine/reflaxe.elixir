@@ -111,9 +111,12 @@ The release zip is the normal consumer package. Reflaxe builds it from the check
 sources and includes the generated `.cross.hx` files required by a single `-lib reflaxe.elixir`.
 The `www.github.com` host is intentional: it lets Lix treat the file as a generic immutable HTTPS
 archive instead of misclassifying the release URL as a GitHub source-repository dependency.
-Each release also publishes a `.sha256` sidecar, and the ZIP embeds its exact version, tag, and source
+Each new release also publishes a `.sha256` sidecar, and the ZIP embeds its exact version, tag, and source
 commit. The release job builds the complete package twice and requires byte-identical output before
-it tags that already-tested source commit.
+it tags that already-tested source commit. GitHub first creates a draft, uploads both approved files,
+then publishes them as an immutable release with a signed release attestation. A reviewer-gated
+repair workflow may finish an interrupted draft for an existing tag; it cannot choose a branch,
+derive a version, create or move a tag, or replace mismatched bytes.
 
 ### Working from a source checkout
 

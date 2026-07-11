@@ -7,7 +7,7 @@ High level:
 - Merge changes to `main` using **Conventional Commits** (`feat:`, `fix:`, etc.)
 - The final `CI` job on a `main` push releases only after its explicit same-run gates succeed
 - `semantic-release` determines the next version (if any), builds the package from that tested commit,
-  creates a `vX.Y.Z` tag on the same commit, and publishes a GitHub Release
+  creates a `vX.Y.Z` tag on the same commit, and publishes a complete immutable GitHub Release
 
 ## Same-commit publication boundary
 
@@ -23,8 +23,8 @@ the locked dependency graph. The artifact plugin then performs the source/packag
 byte-reproducibility checks again before a tag or hosted asset is created.
 
 The called Dogfood, Example Compilation, and QA Sentinel workflows remain manually runnable for
-diagnosis, but those read-only runs cannot publish. Manual release backfill is a separate repair path
-for an existing immutable tag; it is not a way to select an arbitrary new release commit.
+diagnosis, but those read-only runs cannot publish. The protected manual workflow is only a repair
+path for an existing immutable tag; it cannot select an arbitrary new release commit.
 
 ## What triggers a release?
 
@@ -57,6 +57,7 @@ npm test
 npm run test:examples
 npm run test:examples-elixir
 npm run test:haxelib-package
+npm run test:release-recovery
 npm run package:haxelib
 npm run ci:budgets
 scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --playwright --async --deadline 900 -v
@@ -97,10 +98,14 @@ Release verification runs at three boundaries:
    canonical entries/modes/metadata, smokes the exact ZIP, records byte count and SHA-256, and checks
    that the tracked tree stayed clean. Failure here prevents tag creation.
 2. After semantic-release creates the tag, but before GitHub upload, the plugin re-validates the
-   approved ZIP and checksum and confirms that tracked source was not modified.
-3. After semantic-release returns, the workflow downloads the GitHub Release asset and verifies the
-   exact asset, checksum, staged package metadata, and source SHA. This step receives the exact tag
-   created by that run. A no-op does not re-audit an older release as newly published.
+   approved ZIP/checksum, confirms that tracked source was not modified, and requires checked-out
+   HEAD plus the local and origin tags to resolve to the tested source SHA.
+3. The GitHub publisher creates a draft, uploads both approved assets, and only then publishes it.
+   The provenance plugin requires the release tag, complete custom-asset set, uploaded states,
+   byte counts, SHA-256 digests, and immutable status to agree with the approved local files.
+4. The final consumer check downloads both assets, validates embedded package version/tag/source
+   metadata, and verifies GitHub's signed immutable-release attestation for the release and files.
+   A no-op does not re-audit an older release as newly published.
 
 ### Partial-publication recovery
 
@@ -108,28 +113,14 @@ Release verification runs at three boundaries:
   `CI` run so the release still targets the same `github.sha`. If source must change, push the fix and
   let the new complete CI graph decide publication. Do not create a tag manually; no public release
   identity exists yet.
-- **Tag exists but the GitHub Release or asset is missing:** do not move or recreate the tag. Check
-  out that exact tag in a temporary clone, then rebuild with the release identity explicitly:
-
-  ```bash
-  tag=vX.Y.Z
-  version=${tag#v}
-  source_sha=$(git rev-parse "${tag}^{commit}")
-  scripts/release/package-haxelib.sh dist/reflaxe.elixir.zip "$version" "$tag" "$source_sha"
-  archive="reflaxe.elixir-${version}.zip"
-  mv dist/reflaxe.elixir.zip "dist/${archive}"
-  node scripts/release/verify-release-artifact.js \
-    --zip "dist/${archive}" --version "$version" --tag "$tag" --source-sha "$source_sha"
-  hash=$(node -e 'const c=require("crypto"),f=require("fs");process.stdout.write(c.createHash("sha256").update(f.readFileSync(process.argv[1])).digest("hex"))' "dist/${archive}")
-  printf '%s  %s\n' "$hash" "$archive" > "dist/${archive}.sha256"
-  ```
-
-  Compare the rebuilt SHA-256 with the release job record before creating the missing GitHub Release
-  or uploading the exact `reflaxe.elixir-X.Y.Z.zip` and checksum assets. Never rebuild with the
-  script defaults for recovery: those intentionally produce development metadata.
-- **Published metadata is wrong:** treat the release as immutable until the discrepancy is understood.
-  Prefer correcting GitHub Release notes/assets against the existing tag. Delete or move a public tag
-  only as an explicitly reviewed release revocation.
+- **Tag exists but its GitHub Release is absent or still draft:** run the protected **Repair Existing
+  Release** workflow with that exact `vMAJOR.MINOR.PATCH` tag. A required reviewer must approve the
+  environment. The workflow checks out `refs/tags/<tag>`, verifies local/origin tag identity,
+  rebuilds twice, smokes the exact ZIP, preserves any already-correct draft assets, uploads only
+  missing assets, publishes the complete draft, and verifies immutable hosted digests.
+- **Published bytes, tag identity, or immutable state are wrong:** treat this as a release incident.
+  Repair refuses published mutable releases, unexpected assets, and same-name assets with different
+  bytes. Never move/delete the remote tag or reuse the version; ship a corrective version.
 
 Finish every recovery with:
 
@@ -137,18 +128,35 @@ Finish every recovery with:
 scripts/release/verify-published-package.sh vX.Y.Z
 ```
 
-Tags created before package provenance/checksum metadata can be audited with
-`ALLOW_LEGACY_RELEASE=1`; this keeps legacy package-structure checks explicit and is never set by the
-normal CI release job.
+The repair path never invokes semantic-release, analyzes commits, creates a version, or creates,
+moves, or deletes a tag. Re-running it after a lost API response is safe: an already-complete
+immutable release becomes a read-only verification.
+
+## Repository host controls
+
+The repository enables GitHub immutable releases for all future publications and has an active
+`Immutable semantic version tags` ruleset for `refs/tags/v*` that blocks update and deletion. The
+`release-repair` environment requires reviewer approval. Audit all three controls with an
+administrator-capable token:
+
+```bash
+node scripts/release/verify-host-controls.js fullofcaffeine/reflaxe.elixir
+```
+
+This is a personal repository, so normal tag creation uses the short-lived same-run
+`GITHUB_TOKEN`; there is no separate long-lived release credential. Organization-owned forks with
+multiple writers must add a dedicated GitHub App (or equivalent release identity), restrict
+version-tag creation to that identity, and keep update/deletion protection. The host verifier fails
+closed for an organization-owned repository without that creation restriction.
 
 ## Token / permissions notes
 
 The release job uses the built-in GitHub Actions token (`github.token`) with `contents: write`.
 This avoids failures caused by stale or under-scoped personal tokens.
 
-If your org/repo policy blocks tag or release publishing with `github.token`, update
-the `release` job in `.github/workflows/ci.yml` to use a dedicated PAT secret explicitly for that
-environment. Keep that permission job-scoped and preserve the same-run `needs` graph.
+If an organization policy blocks `github.token`, use a dedicated GitHub App identity allowed by the
+tag ruleset. Keep authority job-scoped and preserve the same-run `needs` graph; do not fall back to
+a broad personal token.
 
 ## Baseline tag guard
 
@@ -161,24 +169,5 @@ Quick diagnostic:
 git tag --merged main | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'
 ```
 
-If this returns nothing, create and push a baseline tag on a commit in current `main` ancestry:
-
-```bash
-git tag -a v0.1.0 <commit-on-main-history> -m "Baseline release tag v0.1.0"
-git push origin v0.1.0
-```
-
-## Backfilling releases for existing tags
-
-If tags already exist but the GitHub **Releases** list is empty (or older tags predate the workflow),
-run the workflow **Release (Backfill Existing Tag)** and provide an existing tag (for example
-`v0.14.23`).
-
-If you want to backfill *all* semver tags in one run, use the same workflow with `all_tags=true`.
-
-Notes:
-
-- Backfill prefers the corresponding `CHANGELOG.md` section for a tag (curated, human-readable notes).
-- If a changelog section is missing, it generates “semantic-release style” notes from git history (Conventional Commits).
-- If notes generation fails for a tag, it falls back to GitHub auto-generated release notes.
-- To update existing releases, run backfill with `overwrite_existing=true`.
+If this returns nothing, stop publication and investigate the repository history. Baseline creation
+is a one-time migration operation, not a recovery action and not part of the repair workflow.
