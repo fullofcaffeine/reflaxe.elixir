@@ -135,6 +135,19 @@ function main() {
     '0.0.0-development'
   )
   assert.strictEqual(require(path.join(ROOT, 'haxelib.json')).version, '0.0.0')
+  assert.doesNotThrow(() =>
+    artifactPlugin.assertMeaningfulReleaseNotes(
+      '## 0.15.0\n\n### Bug Fixes\n\n* **release:** restore notes\n'
+    )
+  )
+  assert.throws(
+    () => artifactPlugin.assertMeaningfulReleaseNotes('## 0.15.0\n'),
+    /heading-only release/
+  )
+  assert.throws(
+    () => artifactPlugin.assertMeaningfulReleaseNotes(undefined),
+    /heading-only release/
+  )
 
   const temp = fs.mkdtempSync(
     path.join(os.tmpdir(), 'reflaxe-elixir-release-artifact-')

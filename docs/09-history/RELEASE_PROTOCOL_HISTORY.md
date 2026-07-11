@@ -73,6 +73,14 @@ embedded version, tag, and source metadata plus GitHub's signed release/asset at
 consumer smoke downloaded both assets, reported the ZIP checksum `OK`, installed it through Lix,
 generated a Phoenix app, and compiled its Haxe and Elixir sources.
 
+The published GitHub Release body contains its generated version heading but no commit entries. The
+release-notes generator and Conventional Commits preset were individually valid packages but used
+incompatible writer-template contracts, and the old release test checked configuration rather than
+rendered output. This is a presentation defect, not an artifact or compiler defect: the tag,
+package, checksum, source identity, and signed attestations above remain valid. Immutability correctly
+prevents silently rewriting that public record, so a normal corrective patch release restores notes.
+Publication now renders representative commits in tests and rejects heading-only notes before the
+package build and tag boundary.
+
 The commit immediately following `v0.14.26` is documentation/test evidence only. Its exact CI and
-semantic-release no-op result are appended after that run completes; a commit cannot include its own
-future SHA or GitHub run ID.
+semantic-release no-op result passed in CI run `29158403187`; CodeQL run `29158403127` also passed.

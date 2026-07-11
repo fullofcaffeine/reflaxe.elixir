@@ -51,6 +51,17 @@ function assertTrackedTreeClean(cwd) {
     throw new Error('release preparation modified tracked repository files')
 }
 
+function assertMeaningfulReleaseNotes(notes) {
+  const contentLines = String(notes || '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line && !/^#{1,6}\s/.test(line))
+  if (contentLines.length === 0)
+    throw new Error(
+      'generated release notes contain no entries; refusing to publish a heading-only release'
+    )
+}
+
 function artifactNames(version) {
   return {
     archive: `reflaxe.elixir-${version}.zip`,
@@ -93,6 +104,7 @@ async function prepare(_pluginConfig, context) {
   const cwd = context.cwd
   const version = context.nextRelease.version
   const tag = context.nextRelease.gitTag
+  assertMeaningfulReleaseNotes(context.nextRelease.notes)
   const source = sourceCommit(cwd)
   const dist = path.join(cwd, 'dist')
   const zipPath = path.join(dist, 'reflaxe.elixir.zip')
@@ -178,6 +190,7 @@ async function publish(_pluginConfig, context) {
 
 module.exports = {
   artifactNames,
+  assertMeaningfulReleaseNotes,
   prepare,
   publish,
   sourceCommit,

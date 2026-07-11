@@ -285,6 +285,53 @@ async function main() {
     assert.strictEqual(analyzerPlugin[1].policyPath, 'release/manifest.json')
     assert(!fs.readFileSync(configPath, 'utf8').includes('release-manifest'))
 
+    const notesPlugin = releaseConfig.plugins.find(
+      (entry) =>
+        Array.isArray(entry) &&
+        entry[0] === '@semantic-release/release-notes-generator'
+    )
+    assert(notesPlugin, 'release notes generator must be configured')
+    const { generateNotes } = await import(
+      '@semantic-release/release-notes-generator'
+    )
+    const notes = await generateNotes(notesPlugin[1], {
+      cwd: root,
+      commits: [
+        {
+          hash: '1234567890abcdef1234567890abcdef12345678',
+          message: 'fix(release): restore complete release notes',
+        },
+        {
+          hash: 'abcdef1234567890abcdef1234567890abcdef12',
+          message: 'docs: keep non-release changes out of generated notes',
+        },
+      ],
+      lastRelease: {
+        version: '0.14.26',
+        gitTag: 'v0.14.26',
+        gitHead: '0000000000000000000000000000000000000000',
+      },
+      nextRelease: {
+        version: '0.14.27',
+        gitTag: 'v0.14.27',
+        gitHead: '1234567890abcdef1234567890abcdef12345678',
+      },
+      options: {
+        repositoryUrl:
+          'https://github.com/fullofcaffeine/reflaxe.elixir.git',
+        tagFormat: 'v${version}',
+      },
+      branch: { name: 'main' },
+      logger: logger(),
+    })
+    assert.match(notes, /### Bug Fixes/)
+    assert.match(notes, /\* \*\*release:\*\* restore complete release notes/)
+    assert.match(notes, /\/commit\/1234567890abcdef1234567890abcdef12345678/)
+    assert(
+      !notes.includes('keep non-release changes out of generated notes'),
+      'generated release notes must omit non-release commits'
+    )
+
     console.log(
       '[release-policy] OK: tag-owned SemVer and per-major approval contracts'
     )

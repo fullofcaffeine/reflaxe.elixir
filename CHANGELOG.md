@@ -5,13 +5,23 @@ that remains useful across versions; released version identity comes from protec
 
 ## Unreleased
 
-No entries yet.
+### Bug Fixes
+
+* **release:** restore complete GitHub Release notes by keeping the Conventional Commits preset on
+  the writer contract supported by the pinned semantic-release generator; exercise the real notes
+  pipeline in tests and stop publication before tagging when generated notes contain only a heading.
 
 ## [0.14.26](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.25...v0.14.26) (2026-07-11)
 
 ### Bug Fixes
 
 * **release:** activate the immutable tested-commit publication protocol and document consumer digest verification plus the superseded `haxe.elixir.codex-m81` / `v0.14.23` release-commit design as historical predecessor evidence ([0b82ba8](https://github.com/fullofcaffeine/reflaxe.elixir/commit/0b82ba82180cc51b4adc1b2ce825f7feab391ab7))
+
+The package, checksum, tag identity, and signed provenance for this release are valid. Its GitHub
+Release body contains only the generated version heading because the then-pinned Conventional
+Commits preset used a newer writer-template contract than the release-notes generator. Because the
+release is immutable, the body is preserved as published; the next patch release carries the fix and
+complete notes instead of rewriting `v0.14.26`.
 
 ## [0.14.25](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.24...v0.14.25) (2026-07-10)
 

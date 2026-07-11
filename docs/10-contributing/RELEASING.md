@@ -84,6 +84,13 @@ bytes, validates the ZIP layout and metadata, runs installed-package parity agai
 and emits `dist/reflaxe.elixir.zip.sha256`. Normal publication leaves tracked files unchanged and
 does not create a release commit. GitHub Release notes are the current release changelog.
 
+Release notes are generated before packaging from the same Conventional Commits used to choose the
+version. The guard suite runs that real generator with representative release and non-release
+commits. The artifact plugin also requires at least one non-heading note before doing expensive
+package work, so a preset/writer compatibility regression fails before semantic-release creates the
+tag. Direct release-tool dependencies stay exact-pinned as one tested compatibility set; do not
+upgrade the preset independently just because a newer major exists.
+
 Project scaffolding also respects that split. An installed Haxelib release reads the exact version
 injected into its staged `haxelib.json`; Haxe and Mix scaffolds running from a repository checkout
 resolve the nearest reachable immutable release tag when they encounter a development sentinel.
@@ -92,11 +99,12 @@ They fail clearly when neither identity exists instead of generating a fake `v0.
 
 ## Staged release verification
 
-Release verification runs at three boundaries:
+Release verification runs at four boundaries:
 
-1. Before tag creation, the artifact plugin proves two complete builds are byte-identical, validates
-   canonical entries/modes/metadata, smokes the exact ZIP, records byte count and SHA-256, and checks
-   that the tracked tree stayed clean. Failure here prevents tag creation.
+1. Before tag creation, the artifact plugin requires meaningful generated release notes, proves two
+   complete builds are byte-identical, validates canonical entries/modes/metadata, smokes the exact
+   ZIP, records byte count and SHA-256, and checks that the tracked tree stayed clean. Failure here
+   prevents tag creation.
 2. After semantic-release creates the tag, but before GitHub upload, the plugin re-validates the
    approved ZIP/checksum, confirms that tracked source was not modified, and requires checked-out
    HEAD plus the local and origin tags to resolve to the tested source SHA.
