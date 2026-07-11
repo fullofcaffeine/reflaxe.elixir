@@ -1,9 +1,7 @@
 name: QA Sentinel Smoke
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
+  workflow_call:
   workflow_dispatch:
 
 permissions:
@@ -29,25 +27,25 @@ jobs:
           --health-retries 5
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: '20'
+          node-version: '22.14.0'
           cache: 'npm'
           cache-dependency-path: |
             package-lock.json
             examples/todo-app/package-lock.json
 
       - name: Setup Erlang/Elixir
-        uses: erlef/setup-beam@v1
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
         with:
           otp-version: '27.2'
           elixir-version: '1.18.3'
 
       - name: Cache mix deps
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: |
             ~/.mix
@@ -57,7 +55,7 @@ jobs:
           key: ${{ runner.os }}-mix-${{ hashFiles('examples/todo-app/mix.lock') }}
 
       - name: Cache Haxe toolchain (lix)
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: |
             ~/haxe
@@ -104,7 +102,7 @@ jobs:
           fi
 
       - name: Cache Playwright browsers
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: |
             ~/.cache/ms-playwright
@@ -128,7 +126,7 @@ jobs:
 
       - name: Upload QA logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: qa-logs
           path: |
@@ -154,25 +152,25 @@ jobs:
           --health-retries 5
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: '20'
+          node-version: '22.14.0'
           cache: 'npm'
           cache-dependency-path: |
             package-lock.json
             examples/todo-app/package-lock.json
 
       - name: Setup Erlang/Elixir
-        uses: erlef/setup-beam@v1
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
         with:
           otp-version: '27.2'
           elixir-version: '1.18.3'
 
       - name: Cache mix deps
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: |
             ~/.mix
@@ -182,7 +180,7 @@ jobs:
           key: ${{ runner.os }}-mix-${{ hashFiles('examples/todo-app/mix.lock') }}
 
       - name: Cache Haxe toolchain (lix)
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: |
             ~/haxe
@@ -220,7 +218,7 @@ jobs:
 
       - name: Upload todo-app mix test logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: todo-app-mix-test-logs
           path: |
@@ -231,25 +229,25 @@ jobs:
     timeout-minutes: 25
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: '20'
+          node-version: '22.14.0'
           cache: 'npm'
           cache-dependency-path: |
             package-lock.json
             examples/12-phoenix-chat/package-lock.json
 
       - name: Setup Erlang/Elixir
-        uses: erlef/setup-beam@v1
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
         with:
           otp-version: '27.2'
           elixir-version: '1.18.3'
 
       - name: Cache mix deps
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: |
             ~/.mix
@@ -259,7 +257,7 @@ jobs:
           key: ${{ runner.os }}-mix-phoenix-chat-${{ hashFiles('examples/12-phoenix-chat/mix.lock') }}
 
       - name: Cache Haxe toolchain (lix)
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: |
             ~/haxe
@@ -284,7 +282,7 @@ jobs:
         run: npx lix download
 
       - name: Cache Playwright browsers
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: |
             ~/.cache/ms-playwright
@@ -302,7 +300,7 @@ jobs:
 
       - name: Upload Phoenix chat QA logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: qa-logs-phoenix-chat
           path: |

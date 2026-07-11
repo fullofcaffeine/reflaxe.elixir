@@ -5,9 +5,26 @@ This repo uses **semantic-release** to publish GitHub Releases using **semantic 
 High level:
 
 - Merge changes to `main` using **Conventional Commits** (`feat:`, `fix:`, etc.)
-- When `CI` completes successfully on `main`, the separate **Release** workflow runs automatically
+- The final `CI` job on a `main` push releases only after its explicit same-run gates succeed
 - `semantic-release` determines the next version (if any), builds the package from that tested commit,
   creates a `vX.Y.Z` tag on the same commit, and publishes a GitHub Release
+
+## Same-commit publication boundary
+
+Normal publication is deliberately part of `.github/workflows/ci.yml`, not a later
+`workflow_run` workflow. The release job has explicit `needs` edges to compiler tests, the package
+smoke, examples, dogfood, the QA sentinel, dependency audit, secret scan, and supporting gates. It
+checks out `github.sha` with full history and receives `contents: write` only at the job level.
+
+This means a pull request, fork event, feature-branch push, manual dispatch, failed/cancelled gate,
+or unrelated workflow result cannot enter normal publication. The release job does not download CI
+artifacts or restore caches: it reconstructs the already-tested package from the exact commit and
+the locked dependency graph. The artifact plugin then performs the source/package parity and
+byte-reproducibility checks again before a tag or hosted asset is created.
+
+The called Dogfood, Example Compilation, and QA Sentinel workflows remain manually runnable for
+diagnosis, but those read-only runs cannot publish. Manual release backfill is a separate repair path
+for an existing immutable tag; it is not a way to select an arbitrary new release commit.
 
 ## What triggers a release?
 
@@ -34,6 +51,7 @@ CI is the source of truth; locally you can sanity-check with:
 
 ```bash
 npm ci
+npm audit --audit-level=high --omit=optional
 npm run ci:guards
 npm test
 npm run test:examples
@@ -86,8 +104,10 @@ Release verification runs at three boundaries:
 
 ### Partial-publication recovery
 
-- **Failure before tag creation:** fix the cause and rerun the Release workflow. Do not create a tag
-  manually; no public release identity exists yet.
+- **Failure before tag creation:** if the failure was transient, rerun the failed jobs in that same
+  `CI` run so the release still targets the same `github.sha`. If source must change, push the fix and
+  let the new complete CI graph decide publication. Do not create a tag manually; no public release
+  identity exists yet.
 - **Tag exists but the GitHub Release or asset is missing:** do not move or recreate the tag. Check
   out that exact tag in a temporary clone, then rebuild with the release identity explicitly:
 
@@ -119,7 +139,7 @@ scripts/release/verify-published-package.sh vX.Y.Z
 
 Tags created before package provenance/checksum metadata can be audited with
 `ALLOW_LEGACY_RELEASE=1`; this keeps legacy package-structure checks explicit and is never set by the
-Release workflow.
+normal CI release job.
 
 ## Token / permissions notes
 
@@ -127,11 +147,12 @@ The release job uses the built-in GitHub Actions token (`github.token`) with `co
 This avoids failures caused by stale or under-scoped personal tokens.
 
 If your org/repo policy blocks tag or release publishing with `github.token`, update
-`.github/workflows/release.yml` to use a dedicated PAT secret explicitly for that environment.
+the `release` job in `.github/workflows/ci.yml` to use a dedicated PAT secret explicitly for that
+environment. Keep that permission job-scoped and preserve the same-run `needs` graph.
 
 ## Baseline tag guard
 
-The release workflow now fails fast if no semver tag is reachable from current `main` history.
+The CI release job fails fast if no semver tag is reachable from current `main` history.
 This prevents semantic-release from incorrectly treating the repo as an initial `1.0.0` release.
 
 Quick diagnostic:

@@ -8,25 +8,38 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # A newer main push must not cancel a tested commit while its release job is running.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:
   contents: read
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: '22.14.0'
   HAXE_VERSION: '4.3.7'
   ELIXIR_VERSION: '1.18.3'
   OTP_VERSION: '27.2'
 
 jobs:
+  dogfood-gate:
+    name: Dogfood gate
+    uses: ./.github/workflows/dogfood.yml
+
+  example-compilation-gate:
+    name: Example compilation gate
+    uses: ./.github/workflows/examples.yml
+
+  sentinel-gate:
+    name: QA sentinel gate
+    uses: ./.github/workflows/sentinel.yml
+
   secret-scan:
     name: Secret Scan (gitleaks)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Install gitleaks
@@ -49,7 +62,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Install ripgrep (rg)
@@ -58,12 +71,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ripgrep
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
       - name: Cache Haxe toolchain (lix)
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: |
             ~/haxe
@@ -92,6 +105,25 @@ jobs:
       - name: Run guardrails
         run: npm run ci:guards
 
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-24.04
+    needs: [guards]
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install exact npm dependency graph
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Reject high and critical advisories
+        run: npm audit --audit-level=high --omit=optional
+
   repo-hygiene:
     name: Repo Hygiene (dead-code audit)
     runs-on: ubuntu-latest
@@ -99,7 +131,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Install ripgrep (rg)
@@ -113,7 +145,7 @@ jobs:
           scripts/repo-dead-code-audit.sh --scope src --limit 200 --json > dead-code-audit.json
           python3 scripts/ci/repo-hygiene-check.py --in dead-code-audit.json --out hygiene-summary.md
       - name: Upload dead-code audit report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: dead-code-audit
           path: |
@@ -133,23 +165,23 @@ jobs:
     timeout-minutes: 25
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
       - name: Setup Erlang/Elixir
-        uses: erlef/setup-beam@v1
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
       - name: Install npm dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Cache Haxe toolchain (lix)
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: |
             ~/haxe
@@ -171,21 +203,21 @@ jobs:
     timeout-minutes: 45
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
       - name: Setup Erlang/Elixir
-        uses: erlef/setup-beam@v1
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
       - name: Cache Mix deps
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: |
             ~/.mix
@@ -196,7 +228,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-mix-
       - name: Cache Haxe toolchain (lix)
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: |
             ~/haxe
@@ -229,18 +261,18 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
       - name: Install npm dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Cache Haxe toolchain (lix)
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: |
             ~/haxe
@@ -351,21 +383,21 @@ jobs:
       EXAMPLES_ELIXIR_WAE_ONLY: ${{ matrix.only }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
       - name: Setup Erlang/Elixir
-        uses: erlef/setup-beam@v1
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
       - name: Cache Hex/Mix (reduce deps.get flakiness)
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: |
             ~/.hex
@@ -374,7 +406,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-mix-hex-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-
       - name: Cache example deps/_build (speed up WAE shards)
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: ${{ matrix.cache_paths }}
           key: ${{ runner.os }}-examples-elixir-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ matrix.shard }}-${{ hashFiles('**/mix.lock') }}
@@ -384,7 +416,7 @@ jobs:
       - name: Install npm dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Cache Haxe toolchain (lix)
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: |
             ~/haxe
@@ -407,7 +439,7 @@ jobs:
         run: npm run test:examples-elixir
       - name: Upload examples-elixir logs (failure only)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: examples-elixir-wae-logs-${{ matrix.shard }}
           path: _tmp/examples-elixir-wae
@@ -419,18 +451,18 @@ jobs:
     timeout-minutes: 25
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
       - name: Install npm dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Cache Haxe toolchain (lix)
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: |
             ~/haxe
@@ -459,21 +491,21 @@ jobs:
     timeout-minutes: 35
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
       - name: Setup Erlang/Elixir (minimum supported)
-        uses: erlef/setup-beam@v1
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
         with:
           otp-version: '25'
           elixir-version: '1.14'
       - name: Cache Mix deps
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: |
             ~/.mix
@@ -484,7 +516,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-mix-min-
       - name: Cache Haxe toolchain (lix)
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: |
             ~/haxe
@@ -520,21 +552,21 @@ jobs:
     timeout-minutes: 75
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
       - name: Setup Erlang/Elixir
-        uses: erlef/setup-beam@v1
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
       - name: Cache Mix deps
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: |
             ~/.mix
@@ -545,7 +577,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-mix-macos-
       - name: Cache Haxe toolchain (lix)
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: |
             ~/haxe
@@ -588,21 +620,21 @@ jobs:
     timeout-minutes: 35
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
       - name: Setup Erlang/Elixir
-        uses: erlef/setup-beam@v1
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
       - name: Cache Haxe toolchain (lix)
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: |
             ~/haxe
@@ -627,5 +659,104 @@ jobs:
           set -euo pipefail
           bash scripts/ci/docs-smoke.sh --verbose
 
-  # NOTE: Releases are handled by `.github/workflows/release.yml` (workflow_run + workflow_dispatch)
-  # to keep CI read-only and avoid double-running semantic-release.
+  release:
+    name: Release exact CI-tested commit
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs:
+      - dogfood-gate
+      - example-compilation-gate
+      - sentinel-gate
+      - secret-scan
+      - guards
+      - dependency-audit
+      - repo-hygiene
+      - haxelib-package-smoke
+      - test
+      - examples
+      - examples-elixir
+      - budgets
+      - smoke-min-toolchain
+      - smoke-macos
+      - docs-smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    concurrency:
+      group: release-${{ github.repository }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout exact tested commit
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Guard reachable semver baseline tag
+        run: |
+          set -euo pipefail
+          semver_tags="$(git tag --merged HEAD | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$' || true)"
+          if [ -z "$semver_tags" ]; then
+            echo "::error::No semver tag is reachable from current main history."
+            echo "::error::semantic-release would treat this as an initial release (typically 1.0.0)."
+            exit 1
+          fi
+          echo "[release] Reachable semver tags (latest 5):"
+          echo "$semver_tags" | sort -V | tail -n 5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup Erlang/Elixir
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      - name: Install and audit exact npm dependency graph
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm audit --audit-level=high --omit=optional
+
+      - name: Install Haxe for Reflaxe package build
+        run: |
+          set -euo pipefail
+          npx lix download haxe "${HAXE_VERSION}"
+          npx lix use haxe "${HAXE_VERSION}"
+          haxe_bin="$HOME/haxe/versions/${HAXE_VERSION}/haxe"
+          test -x "$haxe_bin"
+          "$haxe_bin" -version
+          echo "HAXE_BIN=$haxe_bin" >> "$GITHUB_ENV"
+
+      - name: Release
+        id: semantic_release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          before_tag="$(git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*' HEAD)"
+          echo "[release] Publishing (semantic-release decides whether a new version is required)"
+          npx semantic-release
+          after_tag="$(git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*' HEAD)"
+          published=false
+          tag=""
+          if [[ "$after_tag" != "$before_tag" ]]; then
+            published=true
+            tag="$after_tag"
+          fi
+          {
+            echo "published=$published"
+            echo "tag=$tag"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Verify published Reflaxe package
+        if: steps.semantic_release.outputs.published == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: scripts/release/verify-published-package.sh "${{ steps.semantic_release.outputs.tag }}"

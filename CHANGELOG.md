@@ -46,6 +46,10 @@
 * **test:** add adversarial release-artifact coverage for metadata mismatch, missing/unexpected/unsafe entries, duplicate names, symlinks, unsafe modes, and environment-independent archive bytes.
 * **generator:** resolve scaffold package URLs from staged release metadata or the source checkout's nearest immutable tag, never from tracked development sentinels.
 * **ci:** install the locked Node and Beam toolchains in package/release jobs before invoking canonical ZIP and exact-ZIP Mix/Phoenix verification.
+* **ci:** make normal publication the final same-SHA `main` CI job with explicit compiler, package, examples, dogfood, sentinel, and security dependencies; remove detached `workflow_run` polling and the manual normal-release bypass.
+* **security:** pin every third-party GitHub Action to a reviewed full commit SHA, lock Node and all direct npm tools exactly, upgrade the release/Haxe toolchain dependency graph, and enforce a zero-high-severity npm audit before publication.
+* **ci:** preserve the CI-selected Node/Haxe `PATH` in the example compiler runner and force direct Haxe compilation so compiler-server macro state cannot leak between example projects.
+* **examples:** align the Phoenix chat app's local scoped libraries with the canonical Reflaxe pair so `vendor/reflaxe/src` and the Elixir stdlib roots are present before compiler typing in clean development builds.
 * **stdlib:** classify `haxe.io.Mime` and `haxe.io.Scheme` as verified official Haxe fallback modules; add runtime, snapshot, and source-versus-package coverage without duplicating their String enum-abstract definitions in the target stdlib.
 * **compiler:** preserve omitted Haxe method defaults from Reflaxe's typed `ClassFuncData` instead of always passing `nil`, and keep multi-expression constructor blocks grouped when they are assigned as values.
 * **stdlib:** enable all upstream `haxe.io.ArrayBufferView` and typed-array runtime specs through the official Haxe fallback; preserve shared Bytes views while keeping source and built-package output identical.

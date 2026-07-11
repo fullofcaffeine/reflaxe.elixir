@@ -177,6 +177,14 @@ while IFS= read -r rel; do
   if (( target_std_line <= std_line )); then
     fail "$rel must list std/elixir/_std after std so it has effective precedence"
   fi
+  grep -Fx -- '-lib reflaxe' "$dev_hxml" >/dev/null \
+    || fail "$rel must load the base Reflaxe scoped library before compiler typing"
+  scoped_dir="$(dirname "$dev_hxml")"
+  base_reflaxe_hxml="$scoped_dir/reflaxe.hxml"
+  [[ -f "$base_reflaxe_hxml" ]] \
+    || fail "$rel requires companion $(dirname "$rel")/reflaxe.hxml"
+  grep -E '^-cp .*/vendor/reflaxe/src/?$' "$base_reflaxe_hxml" >/dev/null \
+    || fail "$(dirname "$rel")/reflaxe.hxml must load the vendored Reflaxe source root"
 done <<<"$scoped_hxml_files"
 
 if grep -Eq '^[[:space:]]*-cp[[:space:]]+' "$ROOT_DIR/extraParams.hxml"; then
@@ -284,20 +292,20 @@ then
   fail "release configuration does not publish the Reflaxe-built package artifact"
 fi
 
-grep -F 'HAXE_BIN=' "$ROOT_DIR/.github/workflows/release.yml" >/dev/null \
+grep -F 'HAXE_BIN=' "$ROOT_DIR/.github/workflows/ci.yml" >/dev/null \
   || fail "release workflow must provide HAXE_BIN for Reflaxe package construction"
 
 published_verifier="$ROOT_DIR/scripts/release/verify-published-package.sh"
 if [[ ! -x "$published_verifier" ]]; then
   fail "missing executable published-package verifier"
 fi
-grep -F 'scripts/release/verify-published-package.sh' "$ROOT_DIR/.github/workflows/release.yml" >/dev/null \
+grep -F 'scripts/release/verify-published-package.sh' "$ROOT_DIR/.github/workflows/ci.yml" >/dev/null \
   || fail "release workflow must verify the published package asset"
-grep -F 'id: semantic_release' "$ROOT_DIR/.github/workflows/release.yml" >/dev/null \
+grep -F 'id: semantic_release' "$ROOT_DIR/.github/workflows/ci.yml" >/dev/null \
   || fail "release workflow must expose whether semantic-release published a new tag"
-grep -F "steps.semantic_release.outputs.published == 'true'" "$ROOT_DIR/.github/workflows/release.yml" >/dev/null \
+grep -F "steps.semantic_release.outputs.published == 'true'" "$ROOT_DIR/.github/workflows/ci.yml" >/dev/null \
   || fail "published-package verification must skip semantic-release no-op runs"
-grep -F 'steps.semantic_release.outputs.tag' "$ROOT_DIR/.github/workflows/release.yml" >/dev/null \
+grep -F 'steps.semantic_release.outputs.tag' "$ROOT_DIR/.github/workflows/ci.yml" >/dev/null \
   || fail "published-package verification must receive the exact newly published tag"
 grep -F 'verify-release-artifact.js' "$published_verifier" >/dev/null \
   || fail "published-package verifier must validate staged release metadata"

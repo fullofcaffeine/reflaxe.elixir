@@ -899,7 +899,7 @@ Checklist before merging a transform:
 ### Source checkout contract
 
 - Repo-local, GitHub, and Lix development must resolve `-lib reflaxe.elixir` through the scoped `haxe_libraries/reflaxe.elixir.hxml`, which adds `std`, then `std/elixir/_std`, before typing.
-- An app-local `haxe_libraries/reflaxe.elixir.hxml` overrides the repository entry instead of extending it. It must repeat the complete `src`, `std`, then `std/elixir/_std` contract; `npm run guard:stdlib-layout` audits every checked-in scoped entry.
+- An app-local `haxe_libraries/reflaxe.elixir.hxml` overrides the repository entry instead of extending it. It must repeat the complete `src`, `std`, then `std/elixir/_std` contract, load `-lib reflaxe`, and provide a companion `haxe_libraries/reflaxe.hxml` that exposes `vendor/reflaxe/src` before compiler typing; `npm run guard:stdlib-layout` audits every checked-in scoped entry.
 - Direct compiler HXML files that bypass `-lib reflaxe.elixir` must add those same classpaths explicitly.
 - Do not consume an unbuilt checkout through raw `haxelib dev` or `lix dev` alone: both expose the single `src` classpath, so early upstream-colliding `_std` modules may already be cached before a macro can add the path. External source-checkout projects must run `scripts/dev/configure-source-checkout-hxml.sh <project> <checkout>` after `lix dev`.
 - Normal consumers install the versioned Reflaxe-built zip attached to each GitHub Release. To test through haxelib directly, build/install the package artifact first. Reflaxe places generated `.cross.hx` files inside the package `src` classpath.
@@ -3561,6 +3561,12 @@ current-version prose, or roadmap completion labels.
 Tracked npm, Haxelib, Mix, and scoped-HXML versions are development sentinels. Semantic-release
 injects an exact version, tag, and source SHA only into temporary Reflaxe package staging; normal
 publication must leave the tested commit unchanged and must not create a release commit.
+
+Normal publication is the final job in the same `CI` run for a `main` push. It has explicit `needs`
+edges to compiler, package, examples, dogfood, sentinel, and security gates; checks out only
+`github.sha`; consumes no CI cache/artifact; and receives only job-scoped `contents: write`.
+Diagnostic workflow dispatches and repair/backfill workflows must never become normal publication
+bypasses. See `docs/10-contributing/RELEASING.md` for the trust model and recovery procedure.
 
 ## Test Status Summary
 **See**: [`docs/03-compiler-development/testing-infrastructure.md`](docs/03-compiler-development/testing-infrastructure.md) - Complete test architecture and status

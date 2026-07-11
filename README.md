@@ -21,6 +21,9 @@ Write application code in Haxe and compile to conventional Elixir shapes for pur
 Immutable Git tags identify released versions. The
 [release policy manifest](release/manifest.json) contains only release-line approvals; it is not a
 second mutable version file. See [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).
+Normal publication is the final job of the same `main` CI run: it can tag only that run's exact
+`github.sha` after compiler, package, examples, dogfood, QA, and security gates succeed. There is no
+manual normal-release bypass. See [Releasing](docs/10-contributing/RELEASING.md).
 
 ## Why Reflaxe.Elixir
 

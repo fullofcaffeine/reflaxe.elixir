@@ -308,26 +308,22 @@ function main() {
     )
 
     const workflow = fs.readFileSync(
-      path.join(ROOT, '.github/workflows/release.yml'),
+      path.join(ROOT, '.github/workflows/ci.yml'),
       'utf8'
     )
     assert.match(
       workflow,
-      /RELEASE_SOURCE_SHA: \$\{\{ steps\.release_context\.outputs\.target_sha \}\}/
+      /RELEASE_SOURCE_SHA: \$\{\{ github\.sha \}\}/
     )
-    const ciWorkflow = fs.readFileSync(
-      path.join(ROOT, '.github/workflows/ci.yml'),
-      'utf8'
-    )
-    const packageJob = ciWorkflow.match(
+    const packageJob = workflow.match(
       /  haxelib-package-smoke:\n([\s\S]*?)\n  [a-z][a-z0-9-]+:\n/
     )
     assert(packageJob, 'CI must contain the dedicated haxelib package job')
     assert.match(
       packageJob[1],
-      /erlef\/setup-beam@v1[\s\S]*npm ci --ignore-scripts --no-audit --no-fund[\s\S]*npm run test:haxelib-package/
+      /erlef\/setup-beam@[0-9a-f]{40}[\s\S]*npm ci --ignore-scripts --no-audit --no-fund[\s\S]*npm run test:haxelib-package/
     )
-    assert.match(workflow, /uses: erlef\/setup-beam@v1/)
+    assert.match(workflow, /uses: erlef\/setup-beam@[0-9a-f]{40}/)
     console.log(
       '[release-artifact] OK: canonical archive and adversarial validation contracts'
     )

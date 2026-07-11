@@ -31,7 +31,7 @@ permissions:
   contents: write
 
 env:
-  NODE_VERSION: "20"
+  NODE_VERSION: "22.14.0"
   HAXE_VERSION: "4.3.7"
   ELIXIR_VERSION: "1.18.3"
   OTP_VERSION: "27.2"
@@ -80,21 +80,21 @@ jobs:
 
       - name: Checkout (main)
         if: ${{ inputs.all_tags == true }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
           ref: main
 
       - name: Checkout (tag)
         if: ${{ inputs.all_tags != true }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
           ref: ${{ steps.meta.outputs.tag }}
 
       - name: Setup Node.js (backfill)
         if: ${{ inputs.all_tags == true }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -224,21 +224,21 @@ jobs:
 
       - name: Setup Node.js
         if: ${{ steps.meta.outputs.skip_verify != 'true' }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
 
       - name: Setup Erlang/Elixir
         if: ${{ steps.meta.outputs.skip_verify != 'true' }}
-        uses: erlef/setup-beam@v1
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Setup Haxe
         if: ${{ steps.meta.outputs.skip_verify != 'true' }}
-        uses: krdlab/setup-haxe@v1
+        uses: krdlab/setup-haxe@e834a6f802e0c518100ee7ffcf4344a6b8fbc4e7 # v1.1.7
         with:
           haxe-version: ${{ env.HAXE_VERSION }}
 
