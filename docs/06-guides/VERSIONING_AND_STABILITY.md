@@ -3,6 +3,11 @@
 Reflaxe.Elixir uses **semantic versioning** (`MAJOR.MINOR.PATCH`) and a **stability tier** model to
 make it clear what is safe to depend on and what may change.
 
+The `0` in a version such as `0.14.26` means SemVer **initial development**. It is still a normal
+release version, not a SemVer prerelease. Prerelease syntax has a hyphen, for example
+`1.0.0-rc.1`; Reflaxe.Elixir does not publish prerelease channels unless a separate reviewed policy
+adds one. On the current `0.x` line, documented breaking changes advance the minor component.
+
 > Current release line: **pre-1.0 (`v0.x`)**<br>
 > Breaking stable-surface changes produce a **minor** release on this line.<br>
 > Stable graduation: **not approved**.<br>
@@ -22,6 +27,11 @@ GitHub release immutability applies to releases published after the host control
 historical `v0.14.25` release object predates that control, while its version tag is protected by the
 repository's active `v*` update/deletion ruleset. The first immutable release and its evidence are
 recorded as part of the release-protocol rollout rather than retroactively rewriting history.
+
+The superseded manifest-generated release-commit design and its successful `v0.14.23` publication
+remain documented as predecessor evidence in
+[Release Protocol History](../09-history/RELEASE_PROTOCOL_HISTORY.md). They prove that design worked;
+they are not the current reference protocol.
 
 For each new release, checked-out source, local/origin tag, embedded package metadata, ZIP/checksum
 bytes, and GitHub's immutable asset digests must identify the same commit and version. An interrupted

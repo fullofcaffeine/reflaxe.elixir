@@ -132,6 +132,27 @@ The repair path never invokes semantic-release, analyzes commits, creates a vers
 moves, or deletes a tag. Re-running it after a lost API response is safe: an already-complete
 immutable release becomes a read-only verification.
 
+## Consumer verification
+
+Every release publishes exactly two custom assets:
+
+- `reflaxe.elixir-X.Y.Z.zip`
+- `reflaxe.elixir-X.Y.Z.zip.sha256`
+
+Consumers can download both from the same immutable release and run `sha256sum --check` on Linux or
+`shasum -a 256 --check` on macOS, as shown in the [README](../../README.md#install-with-lix-recommended).
+The sidecar names the versioned ZIP, so a checksum copied from another version fails. GitHub's
+immutable-release control prevents the verified asset from being replaced under the same tag.
+
+Maintainer verification is stricter:
+
+```bash
+scripts/release/verify-published-package.sh vX.Y.Z
+```
+
+That command also checks embedded version/tag/source metadata, exact hosted asset names and sizes,
+GitHub's hosted SHA-256 digests, and signed release/asset attestations.
+
 ## Repository host controls
 
 The repository enables GitHub immutable releases for all future publications and has an active
@@ -171,3 +192,6 @@ git tag --merged main | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'
 
 If this returns nothing, stop publication and investigate the repository history. Baseline creation
 is a one-time migration operation, not a recovery action and not part of the repair workflow.
+
+For the predecessor protocol and live reference-rollout evidence, see
+[Release Protocol History](../09-history/RELEASE_PROTOCOL_HISTORY.md).

@@ -105,6 +105,10 @@ mix setup
 mix phx.server
 ```
 
+For security-sensitive or reproducible setup, verify the release ZIP against its `.sha256`
+sidecar before installing it. The canonical cross-platform commands are in the
+[README package verification step](../../README.md#install-with-lix-recommended).
+
 Then open `http://localhost:4000`.
 
 More details: `docs/06-guides/PHOENIX_NEW_APP.md`.

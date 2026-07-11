@@ -107,6 +107,25 @@ npx lix install "https://www.github.com/fullofcaffeine/reflaxe.elixir/releases/d
 npx lix download
 ```
 
+To verify the package bytes before installation, download the ZIP and its release-owned checksum
+from the same immutable release:
+
+```bash
+PACKAGE="reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
+RELEASE_URL="https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}"
+curl -fL -o "$PACKAGE" "$RELEASE_URL/$PACKAGE"
+curl -fL -o "$PACKAGE.sha256" "$RELEASE_URL/$PACKAGE.sha256"
+if command -v sha256sum >/dev/null 2>&1; then
+  sha256sum --check "$PACKAGE.sha256"
+else
+  shasum -a 256 --check "$PACKAGE.sha256"
+fi
+```
+
+The check must report `OK`. Lix then fetches that same immutable release asset in the install
+command above. Maintainers additionally verify GitHub's signed release and asset attestations; see
+[Releasing](docs/10-contributing/RELEASING.md#consumer-verification).
+
 The release zip is the normal consumer package. Reflaxe builds it from the checked-in target stdlib
 sources and includes the generated `.cross.hx` files required by a single `-lib reflaxe.elixir`.
 The `www.github.com` host is intentional: it lets Lix treat the file as a generic immutable HTTPS

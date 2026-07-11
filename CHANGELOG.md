@@ -1,3 +1,14 @@
+# Changelog
+
+GitHub Releases are the version-specific release notes. This file keeps curated migration context
+that remains useful across versions; released version identity comes from protected Git tags.
+
+## Unreleased
+
+### Changed
+
+* **release:** document consumer digest verification, the tested-commit publication protocol, and the superseded `haxe.elixir.codex-m81` / `v0.14.23` release-commit design as historical predecessor evidence.
+
 ## [0.14.25](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.24...v0.14.25) (2026-07-10)
 
 
@@ -33,7 +44,7 @@
 
 * **reflaxe:** publish built packages for consumers ([4b3345f](https://github.com/fullofcaffeine/reflaxe.elixir/commit/4b3345f350272972905d478d3cf02212c6dab56c))
 
-## Unreleased
+## Release protocol migration record (July 2026)
 
 ### Changed
 

@@ -121,7 +121,9 @@ if [[ -z "$tag" ]]; then
 fi
 echo "[readme-release-smoke] Ref: ${tag}"
 version="${tag#v}"
-package_url="https://www.github.com/${REPO}/releases/download/${tag}/reflaxe.elixir-${version}.zip"
+package_name="reflaxe.elixir-${version}.zip"
+package_url="https://www.github.com/${REPO}/releases/download/${tag}/${package_name}"
+checksum_url="${package_url}.sha256"
 echo "[readme-release-smoke] Package: ${package_url}"
 
 # Step 0: Ensure Mix tooling is available (required because the generator uses phx_new).
@@ -140,6 +142,8 @@ run_step "lix use haxe ${HAXE_VERSION}" 60 "$work_dir" "npx lix use haxe '${HAXE
 run_step "haxe --version (lix shim)" 60 "$work_dir" "./node_modules/.bin/haxe -version"
 
 # Step 2: Install library from the latest release tag and download its pinned deps.
+run_step "verify release package checksum @ ${tag}" 300 "$work_dir" \
+  "curl -fL --retry 3 --retry-all-errors -o '${package_name}' '${package_url}' && curl -fL --retry 3 --retry-all-errors -o '${package_name}.sha256' '${checksum_url}' && if command -v sha256sum >/dev/null 2>&1; then sha256sum --check '${package_name}.sha256'; else shasum -a 256 --check '${package_name}.sha256'; fi"
 run_step "lix install reflaxe.elixir package @ ${tag}" 300 "$work_dir" "npx lix install '${package_url}'"
 run_step "lix download (workspace libs)" 600 "$work_dir" "npx lix download"
 

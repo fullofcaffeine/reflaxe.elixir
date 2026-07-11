@@ -3558,6 +3558,12 @@ identify shipped versions; `release/manifest.json` owns only release-line policy
 approval. Do not infer a shipped version or stable graduation from package metadata, generated
 current-version prose, or roadmap completion labels.
 
+In SemVer, `0.x` means initial development; it is not prerelease syntax. A prerelease contains a
+hyphen such as `1.0.0-rc.1`, and this repository does not publish prerelease channels without a
+separate reviewed policy. The superseded `haxe.elixir.codex-m81` / `v0.14.23` generated
+release-commit flow is predecessor evidence only; the durable comparison is documented in
+`docs/09-history/RELEASE_PROTOCOL_HISTORY.md`.
+
 Tracked npm, Haxelib, Mix, and scoped-HXML versions are development sentinels. Semantic-release
 injects an exact version, tag, and source SHA only into temporary Reflaxe package staging; normal
 publication must leave the tested commit unchanged and must not create a release commit.
@@ -3572,6 +3578,10 @@ assets, and fail on mismatched bytes. Audit immutable releases, `v*` update/dele
 and the protected repair environment with `node scripts/release/verify-host-controls.js
 fullofcaffeine/reflaxe.elixir`. See `docs/10-contributing/RELEASING.md` for the trust model and
 recovery procedure.
+
+The scheduled README release smoke must download the published ZIP and its `.sha256` sidecar and
+verify the digest before exercising the Lix install/generator path. Consumer documentation must keep
+both `sha256sum --check` and the macOS `shasum -a 256 --check` fallback visible.
 
 ## Test Status Summary
 **See**: [`docs/03-compiler-development/testing-infrastructure.md`](docs/03-compiler-development/testing-infrastructure.md) - Complete test architecture and status

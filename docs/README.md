@@ -125,6 +125,7 @@ Legacy guides (kept for link stability):
 ### 📜 History
 **[09-history/](09-history/)** - Historical context for repository shape and decisions
 - [Reflaxe Layout and Packaging History](09-history/REFLAXE_LAYOUT_AND_PACKAGING_HISTORY.md) - Why source checkouts use `_std` while releases contain generated `.cross.hx` files
+- [Release Protocol History](09-history/RELEASE_PROTOCOL_HISTORY.md) - Predecessor release-commit evidence and the current tested-commit protocol
 
 Prefer [`CHANGELOG.md`](../CHANGELOG.md) and [`ROADMAP.md`](../ROADMAP.md) for release/user-facing history.
 
