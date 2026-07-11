@@ -47,6 +47,7 @@
     "test:release-artifact": "node scripts/release/test-release-artifact.js",
     "test:release-recovery": "node scripts/release/test-release-recovery.js",
     "test:release-workflow": "node scripts/release/test-release-workflow.js",
+    "audit:examples-hex": "bash scripts/ci/audit-example-hex.sh",
     "package:haxelib": "bash scripts/release/package-haxelib.sh",
     "test:core": "scripts/test-runner.sh --category core",
     "test:stdlib": "scripts/test-runner.sh --category stdlib",

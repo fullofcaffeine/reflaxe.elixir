@@ -12,6 +12,7 @@ defmodule TodoApp.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      hex: [ignore_advisories: ["CVE-2026-43966", "CVE-2026-43969"]],
       haxe: [
         # Use the full server build to ensure all modules are generated together.
         # Legacy "multipass" / micro-pass build configs were removed during cleanup.
@@ -44,10 +45,10 @@ defmodule TodoApp.MixProject do
     [
       # Add parent project as dependency for Haxe compilation functionality
       {:reflaxe_elixir, path: "../..", only: [:dev, :test, :e2e]},
-      {:phoenix, "~> 1.7.0"},
+      {:phoenix, "~> 1.7.24"},
       {:phoenix_ecto, "~> 4.4"},
-      {:ecto_sql, "~> 3.10"},
-      {:postgrex, ">= 0.0.0"},
+      {:ecto_sql, "~> 3.14"},
+      {:postgrex, "~> 0.22.3"},
       {:phoenix_html, "~> 3.3"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 0.20.0"},
@@ -60,12 +61,11 @@ defmodule TodoApp.MixProject do
       {:telemetry_metrics_prometheus_core, "~> 1.0"},
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
-      {:swoosh, "~> 1.20"},
-      {:hackney, "~> 1.25"},
+      {:swoosh, "~> 1.26.3"},
       # Webserver stack pinned for OTP/toolchain compatibility (see docs/06-guides/TODOAPP_COWBOY_TOOLCHAIN.md)
-      {:plug_cowboy, "~> 2.7.5", override: true},
-      {:cowboy, "~> 2.14.2", override: true},
-      {:cowlib, "~> 2.16.0", override: true},
+      {:plug_cowboy, "~> 2.8.1", override: true},
+      {:cowboy, "~> 2.15", override: true},
+      {:cowlib, "~> 2.18", override: true},
       {:ranch, "~> 2.2", override: true},
       {:file_system, "~> 1.1", only: [:dev, :test]}
     ]

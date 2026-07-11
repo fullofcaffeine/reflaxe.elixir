@@ -29,7 +29,11 @@ Additionally, the **QA Sentinel Smoke** workflow boots the todo-app on Ubuntu (P
 
 Phoenix coverage:
 
-- `examples/todo-app` pins Phoenix `~> 1.7.0` and is exercised via the QA sentinel workflow (boot + Playwright smoke).
+- `examples/todo-app` pins Phoenix `~> 1.7.24` and is exercised via the QA sentinel workflow (boot + Playwright smoke).
+- The runnable Phoenix/Ecto examples use the primary Elixir `1.18.3` / OTP `27.2` toolchain. Their
+  current security-patched dependency graph requires Elixir `1.16+` (notably Swoosh `1.26.3`).
+  This does not raise the compiler's Elixir `1.14+` minimum: the minimum-toolchain job validates the
+  compiler and runtime libraries, while application dependencies set their own higher requirements.
 
 ## Haxe 5 preview strategy
 
@@ -60,7 +64,8 @@ These are the minimum versions we **document**:
 
 - Haxe `4.3.7+`
 - Node `16+` (Node `20` recommended)
-- Elixir `1.14+`
+- Elixir `1.14+` for the compiler and generated runtime
+- Elixir `1.16+` for the checked-in Phoenix/Ecto examples' current dependency graph
 
 If you need support for a specific older version, open an issue and include your constraints.
 

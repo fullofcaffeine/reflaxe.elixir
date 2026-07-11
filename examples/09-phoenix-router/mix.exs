@@ -10,6 +10,7 @@ defmodule PhoenixRouter.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      hex: [ignore_advisories: ["CVE-2026-43966", "CVE-2026-43969"]],
       haxe: [
         hxml_file: "build.hxml",
         source_dir: "src_haxe",
@@ -33,14 +34,14 @@ defmodule PhoenixRouter.MixProject do
   defp deps do
     [
       {:reflaxe_elixir, path: "../..", runtime: false},
-      {:phoenix, "~> 1.7.0"},
+      {:phoenix, "~> 1.7.24"},
       {:phoenix_html, "~> 3.3"},
       {:phoenix_live_view, "~> 1.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:telemetry_metrics, "~> 0.6"},
       {:telemetry_poller, "~> 1.0"},
       {:jason, "~> 1.2"},
-      {:plug_cowboy, "~> 2.5"}
+      {:plug_cowboy, "~> 2.8.1"}
     ]
   end
 end

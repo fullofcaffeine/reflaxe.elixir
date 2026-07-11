@@ -41,10 +41,10 @@ defmodule PhoenixHxTodo.MixProject do
   defp deps do
     [
       {:reflaxe_elixir, path: "../..", runtime: false},
-      {:phoenix, "~> 1.7.12"},
+      {:phoenix, "~> 1.7.24"},
       {:phoenix_ecto, "~> 4.4"},
-      {:ecto_sql, "~> 3.10"},
-      {:postgrex, ">= 0.0.0"},
+      {:ecto_sql, "~> 3.14"},
+      {:postgrex, "~> 0.22.3"},
       {:phoenix_html, "~> 4.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 0.20.2"},
@@ -63,7 +63,7 @@ defmodule PhoenixHxTodo.MixProject do
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
-      {:bandit, "~> 1.2"}
+      {:bandit, "~> 1.11.1"}
     ]
   end
 

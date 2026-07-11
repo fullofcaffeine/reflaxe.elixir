@@ -30,8 +30,11 @@ config :phoenix, :json_library, Jason
 #
 # The todo-app uses a lightweight "invite by email" flow. In dev/e2e we use the
 # Local adapter so you can preview emails in the browser (via /dev/mailbox).
-config :todo_app, TodoApp.Mailer,
-  adapter: Swoosh.Adapters.Local
+config :todo_app, TodoApp.Mailer, adapter: Swoosh.Adapters.Local
+
+# Local/Test adapters do not make provider API calls. Disable Swoosh's default
+# Hackney API client so the app does not carry an unused outbound HTTP stack.
+config :swoosh, :api_client, false
 
 # Configure esbuild for Haxe→JavaScript + Phoenix integration
 config :esbuild,

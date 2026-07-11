@@ -119,10 +119,19 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
+      - name: Setup Erlang/Elixir
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+      - name: Install Hex
+        run: mix local.hex --force
       - name: Install exact npm dependency graph
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Reject high and critical advisories
         run: npm audit --audit-level=high --omit=optional
+      - name: Reject unacknowledged example Hex advisories
+        run: npm run audit:examples-hex
 
   repo-hygiene:
     name: Repo Hygiene (dead-code audit)

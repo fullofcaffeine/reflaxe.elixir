@@ -18,6 +18,10 @@ To keep the reference app reliable:
   - `cowlib`
   - `ranch`
 
+The pins are secure minimum lines, not frozen historical versions. The current lock uses
+`plug_cowboy 2.8.1`, `cowboy 2.17.0`, `cowlib 2.18.0`, and `ranch 2.2.0`; dependency refreshes must
+preserve the isolated-build behavior below and pass `npm run audit:examples-hex`.
+
 ## QA Sentinel mitigation (CI + bounded local runs)
 
 The QA sentinel (`scripts/qa-sentinel.sh`) runs the todo-app in an isolated build root for
@@ -40,4 +44,3 @@ scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4011 --playwrigh
 
 Prior investigation notes were previously stored under `docs/09-history/` but are now kept in
 git history to keep the working tree focused and current.
-

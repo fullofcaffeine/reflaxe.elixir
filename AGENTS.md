@@ -69,6 +69,7 @@ These failures usually come from running only a subset locally (e.g. `test:quick
 - Examples (strict warnings): `npm run test:examples-elixir` (mix compile `--warnings-as-errors`, no deps check)
 - Examples (runtime tests): `npm run test:examples-runtime`
 - Examples (full QA): `npm run test:examples-qa`
+- Example Hex dependency audit: `npm run audit:examples-hex`
 - Mix tests (fast): `npm run test:mix-fast`
 - Stdlib runtime semantics (Haxe→ExUnit): `npm run test:haxe-exunit-stdlib`
 - Todo-app runtime smoke (non-blocking): `npm run qa:sentinel` then `scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 120`

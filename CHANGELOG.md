@@ -5,7 +5,12 @@ that remains useful across versions; released version identity comes from protec
 
 ## Unreleased
 
-No entries yet.
+### Security
+
+* **examples:** move Phoenix, Plug, Cowboy, Bandit, Mint, HPAX, Postgrex, Decimal, and Swoosh lockfiles
+  to patched releases; explicitly disable Swoosh's unused API client in the todo app and remove its
+  Hackney dependency; and audit every example lockfile in CI with explicit documentation for the two
+  lower-severity Cowlib advisories that do not yet have a patched release.
 
 ## [0.14.27](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.26...v0.14.27) (2026-07-11)
 

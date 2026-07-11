@@ -28,8 +28,8 @@ defmodule EctoMigrationsExample.MixProject do
   defp deps do
     [
       {:reflaxe_elixir, path: "../..", runtime: false},
-      {:ecto_sql, "~> 3.10"},
-      {:postgrex, ">= 0.0.0"}
+      {:ecto_sql, "~> 3.14"},
+      {:postgrex, "~> 0.22.3"}
     ]
   end
 end

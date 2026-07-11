@@ -30,7 +30,7 @@ Please be respectful and considerate in all interactions. We aim to maintain a w
 
 ### Prerequisites
 - Node.js 16+ (for lix package management)
-- Elixir 1.14+ (for Phoenix/Ecto ecosystem)
+- Elixir 1.14+ for compiler development; Elixir 1.16+ to run every Phoenix/Ecto example
 - Git
 
 ### Installation
@@ -259,6 +259,30 @@ separate required gate, see
 
 Separately, a scheduled CI workflow (**README Release Smoke (scheduled)**) validates the
 “install from GitHub Release tag” path stays working without making PR CI flaky.
+
+### Example dependency security
+
+Every checked-in example `mix.lock` is audited against Hex's current retirement and security
+advisory database:
+
+```bash
+npm run audit:examples-hex
+```
+
+Run this after changing a Mix dependency or lockfile. The command fails when any example has an
+unacknowledged advisory; CI runs it in the dependency-audit job alongside `npm audit`.
+
+The compiler's minimum-toolchain smoke remains Elixir `1.14` / OTP `25`. The runnable examples are
+tested on the primary Elixir `1.18.3` / OTP `27.2` toolchain and currently require Elixir `1.16+`
+because their security-patched Phoenix ecosystem dependencies have raised their own minimums. An
+example dependency floor is not a change to the generated-code or compiler compatibility contract.
+
+The Cowboy-based examples currently acknowledge `CVE-2026-43966` and `CVE-2026-43969`. Cowlib
+`2.18.0` is its newest release and Hex/OSV lists no patched version for either advisory. The affected
+structured-header and outbound-cookie encoders are not called directly by these examples, while all
+high-severity Cowboy/Cowlib server findings are fixed by the locked `cowboy 2.17.0` / `cowlib
+2.18.0` stack. These acknowledgements are narrow, version-independent advisory IDs: remove each one
+as soon as Cowlib publishes a fixed release, and never add an ignore merely to make CI green.
 
 ## Repo hygiene helpers (contributors)
 
