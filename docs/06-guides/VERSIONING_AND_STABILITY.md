@@ -25,8 +25,10 @@ current release; exact release metadata is injected only into temporary package 
 
 GitHub release immutability applies to releases published after the host control was enabled. The
 historical `v0.14.25` release object predates that control, while its version tag is protected by the
-repository's active `v*` update/deletion ruleset. The first immutable release and its evidence are
-recorded as part of the release-protocol rollout rather than retroactively rewriting history.
+repository's active `v*` update/deletion ruleset. `v0.14.26` is the first immutable release under the
+tested-commit protocol. Its exact evidence is recorded in
+[Release Protocol History](../09-history/RELEASE_PROTOCOL_HISTORY.md); older releases were not
+rewritten.
 
 The superseded manifest-generated release-commit design and its successful `v0.14.23` publication
 remain documented as predecessor evidence in

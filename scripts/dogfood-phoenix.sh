@@ -141,7 +141,7 @@ update_mix_exs_tag() {
   local to_tag="$1"; shift
 
   run_step "update mix.exs tag to ${to_tag}" 30 "$cwd" \
-    "python3 -c 'import re,sys; p=\"mix.exs\"; to=sys.argv[1]; t=open(p,\"r\",encoding=\"utf-8\").read(); n=re.sub(r\"tag: \\\"v\\\\d+\\\\.\\\\d+\\\\.\\\\d+\\\"\", \"tag: \\\"%s\\\"\" % to, t, count=1);  (n!=t) or sys.exit(\"No reflaxe_elixir tag found to update in mix.exs\"); open(p,\"w\",encoding=\"utf-8\").write(n)' \"$to_tag\""
+    "python3 -c 'import re,sys; p=\"mix.exs\"; to=sys.argv[1]; t=open(p,\"r\",encoding=\"utf-8\").read(); pat=r\"(\\{:reflaxe_elixir,[^}]*?tag:\\s*\\\")v\\d+\\.\\d+\\.\\d+(\\\")\"; n,count=re.subn(pat, r\"\\g<1>%s\\g<2>\" % to, t, count=1); count==1 or sys.exit(\"No reflaxe_elixir tag found to update in mix.exs\"); open(p,\"w\",encoding=\"utf-8\").write(n)' \"$to_tag\""
 }
 
 update_mix_exs_path() {

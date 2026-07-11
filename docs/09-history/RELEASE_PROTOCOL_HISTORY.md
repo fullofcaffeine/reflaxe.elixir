@@ -53,12 +53,26 @@ current-version prose.
 
 ## Live reference evidence
 
-The rollout evidence records:
+`v0.14.26` is the first reference release:
 
-- source commit and exact local/origin/tag relationship;
-- CI run and release job IDs;
-- version tag and immutable GitHub Release URL;
-- exact asset names, byte counts, and SHA-256 digests;
-- the immediately subsequent documentation commit and its no-release CI result.
+| Identity | Verified value |
+| --- | --- |
+| Source commit `S` | `0b82ba82180cc51b4adc1b2ce825f7feab391ab7` (`fix(release): activate immutable publication protocol`) |
+| Full CI run | `29139653073` |
+| Release job | `86512689271` (`Release exact CI-tested commit`) |
+| Version/tag | `0.14.26` / `v0.14.26` |
+| GitHub Release | `https://github.com/fullofcaffeine/reflaxe.elixir/releases/tag/v0.14.26` |
+| ZIP | `reflaxe.elixir-0.14.26.zip`, 2,502,008 bytes, SHA-256 `4d896af5d45d1cc5730aa4fd6aae8fc08b1f09aacf447844fa7377eec10a4280` |
+| Checksum sidecar | `reflaxe.elixir-0.14.26.zip.sha256`, 93 bytes, SHA-256 `005e3a663ccbf6571033080a12e7425791b89e82c59a2bcbac1000005372e9aa` |
+| Hosted state | Both assets `uploaded`; release published, non-prerelease, and immutable |
+| Host controls | Immutable releases enabled; active ruleset `18796523` blocks `v*` update/deletion; `release-repair` requires review |
 
-This section is completed only from GitHub's published state after the first reference release.
+After fetching the tag, checked-out HEAD, `v0.14.26^{}`, and `origin`'s
+`refs/tags/v0.14.26` all resolved to `S`. The published-package verifier also checked the ZIP's
+embedded version, tag, and source metadata plus GitHub's signed release/asset attestations. A fresh
+consumer smoke downloaded both assets, reported the ZIP checksum `OK`, installed it through Lix,
+generated a Phoenix app, and compiled its Haxe and Elixir sources.
+
+The commit immediately following `v0.14.26` is documentation/test evidence only. Its exact CI and
+semantic-release no-op result are appended after that run completes; a commit cannot include its own
+future SHA or GitHub run ID.

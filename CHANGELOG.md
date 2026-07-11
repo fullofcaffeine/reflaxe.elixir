@@ -5,9 +5,13 @@ that remains useful across versions; released version identity comes from protec
 
 ## Unreleased
 
-### Changed
+No entries yet.
 
-* **release:** document consumer digest verification, the tested-commit publication protocol, and the superseded `haxe.elixir.codex-m81` / `v0.14.23` release-commit design as historical predecessor evidence.
+## [0.14.26](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.25...v0.14.26) (2026-07-11)
+
+### Bug Fixes
+
+* **release:** activate the immutable tested-commit publication protocol and document consumer digest verification plus the superseded `haxe.elixir.codex-m81` / `v0.14.23` release-commit design as historical predecessor evidence ([0b82ba8](https://github.com/fullofcaffeine/reflaxe.elixir/commit/0b82ba82180cc51b4adc1b2ce825f7feab391ab7))
 
 ## [0.14.25](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v0.14.24...v0.14.25) (2026-07-10)
 
