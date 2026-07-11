@@ -13,7 +13,7 @@ while IFS= read -r lockfile; do
   if ! (cd "$example_dir" && mix hex.audit </dev/null); then
     status=1
   fi
-done < <(rg --files examples -g 'mix.lock' | sort)
+done < <(git ls-files 'examples/**/mix.lock' | sort)
 
 if [[ "$count" -eq 0 ]]; then
   echo "[hex-audit] ERROR: no example mix.lock files found" >&2

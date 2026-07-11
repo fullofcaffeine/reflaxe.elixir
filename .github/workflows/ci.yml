@@ -124,8 +124,6 @@ jobs:
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
-      - name: Install Hex
-        run: mix local.hex --force
       - name: Install exact npm dependency graph
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Reject high and critical advisories
