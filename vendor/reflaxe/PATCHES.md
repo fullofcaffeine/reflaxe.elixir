@@ -6,7 +6,7 @@ Elixir target and the repository-local release/package flow.
 
 ## Audit Status
 
-Last audit: 2026-07-12 (lazy function-type patch upstream submission)
+Last audit: 2026-07-12 (framework sync drift decision)
 
 Compared against:
 
@@ -362,21 +362,35 @@ These files are local to this vendored copy and are not framework patches:
 - `haxelib.json` - local vendored-package metadata used for clarity; the active
   scoped hxml still pins `-D reflaxe=4.0.0-beta`.
 
-## Upstream Drift To Track
+## Upstream Drift Decisions
 
-These differences are not required local patches and should not be folded into
-layout-only cleanup commits.
+The selected framework baseline remains the vendored
+`430b4187a6bf4813cf618fc3a73ccf494a2ab9f5` base plus the required local patches
+documented above. Current upstream `73a983112e039daad46b37912ab238df6bf0cf53`
+is not imported wholesale.
 
-- Upstream/reference Reflaxe now includes
-  `src/reflaxe/preprocessors/implementations/RemovePureExpressionsImpl.hx` and
-  a matching `RemovePureExpressions` enum case in
-  `ExpressionPreprocessor.hx`. The vendored Reflaxe copy does not include it.
-  Importing it could change preprocessor behavior, so it needs a separate
-  framework-sync task with snapshot/package validation.
-- `OutputManager.hx` still contains `#if debug_output_manager` trace blocks.
-  They are inactive in normal builds and are not required for target semantics.
-  They can be removed in a future diff-reduction cleanup if package smoke and
-  quick snapshots remain green.
+- Upstream/reference Reflaxe adds the 429-line
+  `RemovePureExpressionsImpl.hx`, a matching `RemovePureExpressions` enum case,
+  and that preprocessor to Reflaxe's default list. Reflaxe.Elixir deliberately
+  provides its own explicit preprocessor list in `CompilerInit.hx`, so the new
+  upstream default would not activate unless the target opts into it.
+- Do not import the pass as dormant vendored code. Its broad purity and control-
+  flow rewriting goes beyond the inline-return artifact that motivated
+  [`SomeRanDev/reflaxe#47`](https://github.com/SomeRanDev/reflaxe/pull/47), and
+  the current `hasSideEffects` composite-expression branch returns a variable
+  named `isPure`. That result needs upstream clarification and focused semantic
+  tests before this target depends on it.
+- Reflaxe.Elixir already removes its actual warning-producing artifact with
+  `BareLiteralDrop_AbsoluteLast`, a narrow target-AST pass that drops only
+  non-final pure literals after all semantic rewrites. Keep that tested behavior
+  rather than replacing it with a broader typed-expression optimizer.
+- The checked sibling Rust and OCaml compilers do not carry or select
+  `RemovePureExpressions` either. Revisit this decision when a future selected
+  Reflaxe baseline includes upstream regression coverage and the Elixir target
+  has a concrete reason to adopt the pass.
+- Removed the inactive local `#if debug_output_manager` trace blocks from
+  `OutputManager.hx`. They were not part of normal compiler behavior or a
+  required patch; removing them only reduces framework diff noise.
 - `src/reflaxe/preprocessors/implementations/everything_is_expr/EverythingIsExprSanitizer.hx`
   differs only by trailing-whitespace cleanup. Keep the local whitespace-clean
   copy unless the vendored baseline is refreshed wholesale.
@@ -394,6 +408,13 @@ layout-only cleanup commits.
   `src/reflaxe/preprocessors/implementations/everything_is_expr/EverythingIsExprSanitizer.hx`
   because matching upstream exactly would reintroduce trailing whitespace and
   violate this repo's diff hygiene.
+
+2026-07-12 framework sync audit:
+
+- Kept the selected vendored baseline instead of importing upstream's broad,
+  currently unused `RemovePureExpressions` optimizer.
+- Removed inactive `debug_output_manager` traces from `OutputManager.hx` to
+  match upstream in those code paths without changing generated output.
 
 Vendored framework cleanup commits should still validate with:
 

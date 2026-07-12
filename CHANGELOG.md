@@ -14,6 +14,10 @@ that remains useful across versions; released version identity comes from protec
 * **fast_boot:** keep `Enum.reduce_while` result binding enabled so mutable Haxe locals retain their final accumulator state; `StringTools.lpad` and `rpad` now behave identically in fast and full compiler profiles.
 * **reflaxe:** resolve lazy Haxe class-field types before Reflaxe extracts function signatures, removing repeated `StringTools` "Function information not found" warnings and emitting the required `string_tools.ex` runtime module wherever generated calls already depend on it. The target-agnostic regression and framework fix are tracked upstream in [`SomeRanDev/reflaxe#52`](https://github.com/SomeRanDev/reflaxe/pull/52); the vendored patch remains until an accepted upstream baseline passes source and built-package parity.
 
+### Changed
+
+* **reflaxe:** retain the audited vendored framework baseline instead of importing upstream's broad, currently unused `RemovePureExpressions` optimizer; document the adoption criteria and remove inactive `debug_output_manager` trace blocks without changing normal compiler behavior.
+
 ### Security
 
 * **examples:** move Phoenix, Plug, Cowboy, Bandit, Mint, HPAX, Postgrex, Decimal, and Swoosh lockfiles
