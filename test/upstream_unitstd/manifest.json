@@ -12,7 +12,7 @@
     {"module": "Array", "status": "skipped-target-specific", "source": "Array.unit.hx", "reason": "Upstream spec exists; enable after BEAM array/list semantics are triaged in the runtime conformance lane."},
     {"module": "Date", "status": "enabled", "source": "Date.unit.hx", "fixture": "test/upstream_unitstd/upstream/Date.unit.hx"},
     {"module": "DateTools", "status": "enabled", "source": "DateTools.unit.hx", "fixture": "test/upstream_unitstd/upstream/DateTools.unit.hx"},
-    {"module": "EReg", "status": "skipped-target-specific", "source": "EReg.unit.hx", "reason": "Upstream spec exists; enable after Elixir Regex compatibility is triaged."},
+    {"module": "EReg", "status": "enabled", "source": "EReg.unit.hx", "fixture": "test/upstream_unitstd/upstream/EReg.unit.hx"},
     {"module": "IntIterator", "status": "enabled", "source": "IntIterator.unit.hx", "fixture": "test/upstream_unitstd/upstream/IntIterator.unit.hx"},
     {"module": "Lambda", "status": "skipped-target-specific", "source": "Lambda.unit.hx", "reason": "Upstream spec exists; enable after collection semantics are triaged."},
     {"module": "List", "status": "adapted", "source": "List.unit.hx", "fixture": "test/upstream_unitstd/upstream/List.unit.hx", "reason": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions."},

@@ -23,7 +23,7 @@ Coverage policy:
   unsupported for this target, or target-specific triage is still required.
 
 Current upstream runtime fixtures:
-- Enabled: `IntIterator`, `Math`, `StringBuf`,
+- Enabled: `EReg`, `IntIterator`, `Math`, `StringBuf`,
   `haxe.crypto.Base64`,
   `haxe.crypto.Crc32`, `haxe.crypto.Hmac`, `haxe.crypto.Md5`, `haxe.crypto.Sha1`,
   `haxe.crypto.Sha224`, `haxe.crypto.Sha256`, `haxe.io.BytesBuffer`,
@@ -37,6 +37,11 @@ Current upstream runtime fixtures:
   local structural values),
   `haxe.iterators.StringIteratorUnicode`, and
   `haxe.iterators.StringKeyValueIteratorUnicode` (explicit Elixir UTF-8 branch).
+
+EReg note:
+- `EReg.unit.hx` is the unchanged Haxe 4.3.7 fixture. It verifies the existing
+  BEAM `Regex`-backed runtime, including match state, first/global split and
+  replacement behavior, capture substitution, mapping, and escaping.
 
 Iterator note:
 - `IntIterator.unit.hx` is enabled. It validates persistent receiver threading:

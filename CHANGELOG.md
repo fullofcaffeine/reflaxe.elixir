@@ -17,6 +17,7 @@ that remains useful across versions; released version identity comes from protec
 ### Changed
 
 * **reflaxe:** retain the audited vendored framework baseline instead of importing upstream's broad, currently unused `RemovePureExpressions` optimizer; document the adoption criteria and remove inactive `debug_output_manager` trace blocks without changing normal compiler behavior.
+* **stdlib:** enable the unchanged upstream Haxe 4.3.7 `EReg` runtime fixture on BEAM, verifying the existing Regex-backed implementation across matching, captured state, split, replacement, mapping, and escaping semantics.
 
 ### Security
 

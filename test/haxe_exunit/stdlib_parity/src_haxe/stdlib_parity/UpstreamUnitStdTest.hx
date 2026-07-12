@@ -23,6 +23,12 @@ class UpstreamUnitStdTest extends TestCase {
 		UpstreamUnitStdMacro.assertSpec("DateTools.unit.hx");
 	}
 
+	@:describe("upstream Haxe unitstd: EReg")
+	@:test
+	function testEReg():Void {
+		UpstreamUnitStdMacro.assertSpec("EReg.unit.hx");
+	}
+
 	@:describe("upstream Haxe unitstd: StringBuf")
 	@:test
 	function testStringBuf():Void {

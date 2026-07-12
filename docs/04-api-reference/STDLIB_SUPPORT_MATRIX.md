@@ -122,6 +122,33 @@ minutes from `DateTime.utc_offset + DateTime.std_offset`, so UTC-backed Haxe
 over this `Date` surface, including `format`, `delta`, timestamp unit helpers,
 and `makeUtc`.
 
+`EReg` uses Elixir's `Regex` engine while preserving Haxe's first-match versus
+global `g` behavior. The official Haxe 4.3.7 runtime fixture verifies matching,
+captured groups, `matchedLeft` / `matchedRight` / `matchedPos`, split, capture
+replacement and dollar escaping, `map`, and `escape` on BEAM.
+
+```haxe
+var words = ~/([a-z]+)/gi;
+if (words.match("One TWO")) {
+  trace(words.matched(1));
+}
+```
+
+The generated runtime delegates pattern compilation and matching to BEAM
+`Regex`, while retaining the last Haxe match state under a reference unique to
+the `EReg` value:
+
+```elixir
+regex = Regex.compile!(pattern, "i")
+indices = Regex.run(regex, subject, return: :index)
+Process.put({:reflaxe_ereg, ref}, match_state)
+```
+
+Call `match` / `matchSub` and the subsequent `matched*` methods in the same BEAM
+process. This is the natural request/process boundary for Phoenix and OTP code;
+last-match state is intentionally process-local rather than shared mutable
+state across processes.
+
 `haxe.*`:
 - `haxe.CallStack` (BEAM stack capture/formatting)
 - `haxe.Constraints` (official stdlib fallback for compile-time `Function` and `IMap` constraints; `IMap` values cross the runtime boundary through `Reflaxe.Elixir.IMap`)
