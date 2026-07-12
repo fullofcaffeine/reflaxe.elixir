@@ -146,10 +146,10 @@
     },
     "14-abstraction-lab": {
       "compile": { "required": true },
-      "strictElixir": { "mode": "skipped", "reason": "Haxe-only abstraction lab; strict Elixir compile is covered by generated examples and snapshots that exercise these APIs." },
+      "strictElixir": { "mode": "skipped", "reason": "Haxe-only abstraction catalog without a Mix project; generated syntax is covered by example validation and exact snapshots, while scalar return semantics are executed by the non_void_tail_values runtime smoke fixture." },
       "runtime": {
         "mode": "compile-only",
-        "reason": "Abstraction catalog. Behavior is primarily macro/codegen shape coverage, so compile and snapshots are the useful signal."
+        "reason": "The catalog remains compile-only, but its non-Void instance-method return contract is mirrored by test/snapshot/regression/non_void_tail_values and executed by npm run test:runtime-smoke."
       }
     },
     "15-phoenix-chat-haxe-first": {

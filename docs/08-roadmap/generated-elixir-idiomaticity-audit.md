@@ -82,6 +82,12 @@ This was not only stale checked-in output. The current compiler reproduced it.
 The example's compile-only QA classification did not execute the method, so
 strict compilation could not detect the changed return value.
 
+Resolution: `haxe.elixir.codex-3qh.1` preserves the original scalar function-
+body value context after unused-local analysis and adds snapshot plus runtime
+coverage for literal, collection, local, call, and branch tail values. The
+coverage includes native list, map, and tuple target shapes. The broader phase-
+level invariant remains tracked separately by `3qh.2`.
+
 This is the P0 item because output polish must not proceed on top of a known
 value-preservation hole:
 

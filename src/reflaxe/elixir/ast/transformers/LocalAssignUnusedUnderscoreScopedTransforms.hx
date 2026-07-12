@@ -22,10 +22,13 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 	* HOW
 	* - For each EDef/EDefp whose name != "mount", rewrite EBlock/EDo children so
 	*   that `name = expr` becomes `_name = expr` when `name` is not referenced in
-	*   any subsequent statement within the same block.
+	*   any subsequent statement within the same block. Scalar function bodies are
+	*   analyzed through a synthetic block and then restored to scalar value context.
 
 	*
 	* EXAMPLES
+	* - `defp unused_param(_t), do: 1` must retain `1`; the analysis block is
+	*   internal and must not turn the scalar return into a discarded statement.
 	* - Covered by snapshot tests under `test/snapshot/**`.
  */
 class LocalAssignUnusedUnderscoreScopedTransforms {
@@ -42,7 +45,7 @@ class LocalAssignUnusedUnderscoreScopedTransforms {
 						if (!isRender && !isHandleEvent && !isHandleInfo)
 							return n;
 					}
-					var newBody = rewriteWithScope(ensureBlock(body), collectPatternVars(args), new Map<String, Bool>());
+					var newBody = rewriteFunctionBody(body, collectPatternVars(args));
 					makeASTWithMeta(EDef(name, args, guards, newBody), n.metadata, n.pos);
 				case EDefp(name, args, guards, body) if (name != "mount"):
 					if (n.metadata != null && (Reflect.field(n.metadata, "isLiveView") == true)) {
@@ -52,7 +55,7 @@ class LocalAssignUnusedUnderscoreScopedTransforms {
 						if (!isRender && !isHandleEvent && !isHandleInfo)
 							return n;
 					}
-					var newBody = rewriteWithScope(ensureBlock(body), collectPatternVars(args), new Map<String, Bool>());
+					var newBody = rewriteFunctionBody(body, collectPatternVars(args));
 					makeASTWithMeta(EDefp(name, args, guards, newBody), n.metadata, n.pos);
 				case EMacroCall("test", macroArgs, doBlock):
 					// ExUnit "test" blocks are macro do-blocks, not def bodies, but they compile as
@@ -63,6 +66,32 @@ class LocalAssignUnusedUnderscoreScopedTransforms {
 					n;
 			}
 		});
+	}
+
+	/**
+	 * Rewrites a function body without changing its value context.
+	 *
+	 * A scalar body such as `0` or `false` is a function return value. The unused-
+	 * binder analysis needs block boundaries, but returning its synthetic EBlock
+	 * makes the printer treat that scalar as a discardable statement. Analyze in a
+	 * block, then unwrap the single statement when the input was not already a block.
+	 */
+	static function rewriteFunctionBody(body:ElixirAST, outerScope:Map<String, Bool>):ElixirAST {
+		if (body == null || body.def == null)
+			return body;
+
+		var hasRealBlock = switch (body.def) {
+			case EBlock(_) | EDo(_): true;
+			default: false;
+		};
+		var rewritten = rewriteWithScope(ensureBlock(body), outerScope, new Map<String, Bool>());
+		if (hasRealBlock || rewritten == null || rewritten.def == null)
+			return rewritten;
+
+		return switch (rewritten.def) {
+			case EBlock(statements) if (statements.length == 1): statements[0];
+			default: rewritten;
+		};
 	}
 
 	static function ensureBlock(node:ElixirAST):ElixirAST {

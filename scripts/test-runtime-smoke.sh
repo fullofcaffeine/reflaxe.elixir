@@ -23,6 +23,7 @@ TEST_DIRS=(
   "test/snapshot/core/try_catch"
   "test/snapshot/stdlib/sys_io_process/basic"
   "test/runtime/fast_boot/string_tools_rebinding"
+  "test/snapshot/regression/non_void_tail_values"
   "test/snapshot/stdlib/uint_32bit_semantics"
 )
 
