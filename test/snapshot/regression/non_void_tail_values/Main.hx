@@ -55,8 +55,7 @@ class Main {
 			throw "bool tail value lost";
 		if (values.stringLiteral() != "tail")
 			throw "string tail value lost";
-		var floatOk:Bool = untyped __elixir__('{0} == 1.5', values.floatLiteral());
-		if (!floatOk)
+		if (values.floatLiteral() != 1.5)
 			throw "float tail value lost";
 		if (values.nullLiteral() != null)
 			throw "null tail value lost";
@@ -70,6 +69,7 @@ class Main {
 			throw "object tail value lost";
 
 		var tupleValue = values.tupleLiteral();
+		// No typed tuple accessor exists yet; 3qh.19 tracks the source-level gap.
 		var tupleOk:Bool = untyped __elixir__('is_tuple({0}) and elem({0}, 0) == "tuple" and elem({0}, 1) == 4', tupleValue);
 		if (!tupleOk)
 			throw "tuple tail value lost";

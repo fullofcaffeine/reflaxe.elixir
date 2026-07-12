@@ -10,8 +10,7 @@ defmodule Main do
     if (apply(Map.get(values, :__reflaxe_class__) || Map.get(values, :__struct__), :string_literal, [values]) != "tail") do
       raise Reflaxe.Elixir.HaxeThrow, [value: "string tail value lost"]
     end
-    float_ok = apply(Map.get(values, :__reflaxe_class__) || Map.get(values, :__struct__), :float_literal, [values]) == 1.5
-    if (not float_ok) do
+    if (Reflaxe.Elixir.HaxeFloat.neq(apply(Map.get(values, :__reflaxe_class__) || Map.get(values, :__struct__), :float_literal, [values]), 1.5)) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "float tail value lost"]
     end
     if (not Kernel.is_nil(apply(Map.get(values, :__reflaxe_class__) || Map.get(values, :__struct__), :null_literal, [values]))) do
