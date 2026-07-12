@@ -6,7 +6,7 @@ Elixir target and the repository-local release/package flow.
 
 ## Audit Status
 
-Last audit: 2026-07-09 (post Reflaxe layout cleanup)
+Last audit: 2026-07-12 (lazy function-type patch upstream submission)
 
 Compared against:
 
@@ -58,7 +58,8 @@ Sibling compiler findings:
 
 ### 1. `Run.hx`: Build Root File Copy
 
-Status: local patch, not upstreamed.
+Status: local patch, submitted upstream in
+[`SomeRanDev/reflaxe#52`](https://github.com/SomeRanDev/reflaxe/pull/52).
 
 Files:
 
@@ -320,13 +321,28 @@ Current decision:
 
 Keep. Adding module types in `filterTypes` is part of Reflaxe's documented
 compiler API, and resolving Haxe's lazy wrapper preserves the method's existing
-typed expression and semantics.
+typed expression and semantics. Do not remove the vendored patch merely because
+the pull request is merged: first select an upstream commit or release that
+contains the fix, then run the source-versus-package parity checks below.
 
 Upstream action:
 
-Good upstream PR candidate. Add a framework regression where a target appends a
-class returned by `Context.getType(...)` from `filterTypes`, then remove this
-patch only after the fix is released in the selected Reflaxe baseline.
+Submitted the target-agnostic fix and regression as
+[`SomeRanDev/reflaxe#52`](https://github.com/SomeRanDev/reflaxe/pull/52):
+
+- Upstream baseline: `73a983112e039daad46b37912ab238df6bf0cf53`.
+- Pull-request commit: `024937acffd242f129265d969a840d3779f02bcd`.
+- Reproduction: load an otherwise unused class with `Context.getType(...)`,
+  append its `TClassDecl` from `filterTypes`, and ask `ClassFieldHelper` for a
+  static method's `ClassFuncData`.
+- Baseline result on Haxe 4.3.7: compilation fails with
+  `Function information not found for lazily typed field.`
+- Patched result on Haxe 4.3.7: the same upstream `haxe Test.hxml` fixture
+  passes.
+
+The regression is intentionally part of Reflaxe's own test compiler rather
+than an Elixir fixture. This proves that resolving `TLazy(TFun)` is framework
+behavior and does not depend on the Elixir AST pipeline or semantic passes.
 
 Validation before removal:
 
