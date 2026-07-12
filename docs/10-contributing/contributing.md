@@ -257,6 +257,19 @@ For the rationale, including why normal local tests use current source while pac
 separate required gate, see
 [`Source Checkout vs Release Package Layout`](../01-getting-started/SOURCE_VS_PACKAGE_LAYOUT.md).
 
+### Why example builds reject missing function information
+
+Reflaxe receives typed Haxe classes, reads each method's arguments, return type, and body, then hands
+that information to the target compiler. Haxe may keep a method signature behind a lazy `TLazy`
+wrapper, especially when a target adds a class through Reflaxe's `filterTypes` hook. The method is
+still valid and fully typed; Reflaxe must unwrap the lazy node before looking for the underlying
+`TFun` signature.
+
+`npm run test:examples` rejects Reflaxe's `Function information not found` diagnostic. Treat that
+message as lost compiler input, not as harmless log noise and not as a reason to suppress warnings.
+The current framework patch and its upstream/removal checklist are documented in
+[`vendor/reflaxe/PATCHES.md`](../../vendor/reflaxe/PATCHES.md).
+
 Separately, a scheduled CI workflow (**README Release Smoke (scheduled)**) validates the
 “install from GitHub Release tag” path stays working without making PR CI flaky.
 

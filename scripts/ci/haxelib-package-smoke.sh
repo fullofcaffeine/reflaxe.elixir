@@ -99,6 +99,14 @@ require_contains() {
   fi
 }
 
+require_not_contains() {
+  local path="$1"
+  local needle="$2"
+  if grep -F "$needle" "$path" >/dev/null 2>&1; then
+    fail "expected '$path' not to contain: $needle"
+  fi
+}
+
 require_tree_not_contains() {
   local path="$1"
   local needle="$2"
@@ -375,6 +383,7 @@ class Main {
 
     trace(payloadValue);
     trace(Sha256.encode(value));
+    trace(value.split("i").join("|"));
     trace([mime, (customMime:String), scheme, (customScheme:String)].join("|"));
     trace([Std.string(floats[0]), Std.string(sharedBytes.get(0))].join("|"));
   }
@@ -415,11 +424,13 @@ run_step "compile fixture through installed package" 300 "$work_dir" \
 require_file "$work_dir/out/_GeneratedFiles.json"
 require_file "$work_dir/out/main.ex"
 require_file "$work_dir/out/string_buf.ex"
+require_file "$work_dir/out/string_tools.ex"
 require_file "$work_dir/out/haxe/crypto/sha256.ex"
 require_file "$work_dir/out/phoenix/channels/wire_payload.ex"
 require_file "$work_dir/out/haxe/io/array_buffer_view_impl.ex"
 require_file "$work_dir/out/haxe/io/_u_int8_array/u_int8_array_impl_.ex"
 require_file "$work_dir/out_source/_GeneratedFiles.json"
+require_file "$work_dir/out_source/string_tools.ex"
 require_file "$work_dir/out_source/haxe/io/array_buffer_view_impl.ex"
 require_file "$work_dir/out_source/haxe/io/_u_int8_array/u_int8_array_impl_.ex"
 require_absent "$work_dir/out/haxe/io/mime.ex"
@@ -463,6 +474,8 @@ require_contains "$work_dir/compile-source.log" "std/haxe/io/Scheme.hx"
 require_contains "$work_dir/compile-source.log" "std/haxe/io/ArrayBufferView.hx"
 require_contains "$work_dir/compile-source.log" "std/haxe/io/Float32Array.hx"
 require_contains "$work_dir/compile-source.log" "std/haxe/io/UInt8Array.hx"
+require_not_contains "$work_dir/compile.log" "Function information not found."
+require_not_contains "$work_dir/compile-source.log" "Function information not found."
 require_tree_not_contains "$work_dir/compile.log" "$canonical_root"
 require_tree_not_contains "$work_dir/out" "$canonical_root"
 

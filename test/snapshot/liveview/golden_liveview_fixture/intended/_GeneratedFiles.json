@@ -2,6 +2,7 @@
   "filesGenerated": [
   "type.ex",
   "test_app_web/golden_live.ex",
+  "string_tools.ex",
   "std.ex",
   "reflect.ex",
   "reflaxe/exception.ex",

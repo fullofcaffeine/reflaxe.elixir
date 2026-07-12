@@ -3,6 +3,7 @@
   "type.ex",
   "todo_events.ex",
   "todo_event.ex",
+  "string_tools.ex",
   "std.ex",
   "reflaxe/exception.ex",
   "reflaxe/elixir/haxe_throw.ex",

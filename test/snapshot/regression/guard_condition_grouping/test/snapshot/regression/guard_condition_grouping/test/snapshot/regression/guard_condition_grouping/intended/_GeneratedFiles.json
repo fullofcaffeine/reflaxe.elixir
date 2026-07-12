@@ -1,6 +1,7 @@
 {
   "filesGenerated": [
   "type.ex",
+  "string_tools.ex",
   "std.ex",
   "reflaxe/exception.ex",
   "reflaxe/elixir/haxe_throw.ex",

@@ -5,6 +5,10 @@ that remains useful across versions; released version identity comes from protec
 
 ## Unreleased
 
+### Bug Fixes
+
+* **reflaxe:** resolve lazy Haxe class-field types before Reflaxe extracts function signatures, removing repeated `StringTools` "Function information not found" warnings and emitting the required `string_tools.ex` runtime module wherever generated calls already depend on it.
+
 ### Security
 
 * **examples:** move Phoenix, Plug, Cowboy, Bandit, Mint, HPAX, Postgrex, Decimal, and Swoosh lockfiles

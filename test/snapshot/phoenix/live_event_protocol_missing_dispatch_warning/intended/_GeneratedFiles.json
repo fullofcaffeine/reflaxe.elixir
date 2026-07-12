@@ -1,6 +1,7 @@
 {
   "filesGenerated": [
   "type.ex",
+  "string_tools.ex",
   "std.ex",
   "soft_hook_event.ex",
   "reflaxe/exception.ex",

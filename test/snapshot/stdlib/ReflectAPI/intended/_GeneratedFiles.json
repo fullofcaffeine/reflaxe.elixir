@@ -1,6 +1,7 @@
 {
   "filesGenerated": [
   "type.ex",
+  "string_tools.ex",
   "std.ex",
   "reflect.ex",
   "reflaxe/exception.ex",

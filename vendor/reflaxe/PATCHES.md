@@ -290,6 +290,52 @@ Validation before removal:
 - Minimum-toolchain CI lane.
 - `npm run test:haxelib-package`
 
+### 7. `ClassFieldHelper.hx`: Lazy Function-Type Resolution
+
+Status: local patch, not upstreamed.
+
+Files:
+
+- `src/reflaxe/helpers/ClassFieldHelper.hx`
+
+Why it exists:
+
+Reflaxe lets targets add already-typed modules from `BaseCompiler.filterTypes`.
+Haxe can expose method signatures on those modules as `TLazy(TFun)` while still
+providing a complete `TFunction` expression. Reflaxe matched only a direct
+`TFun`, so it discarded valid methods and emitted one `Function information not
+found` warning per method. Reflaxe.Elixir exposed this with its conditional
+`StringTools` runtime inclusion. Generated callers could then reference
+`StringTools.*` without a generated `string_tools.ex` module, so the diagnostic
+was a correctness signal rather than harmless noise.
+
+Local fix:
+
+- Recursively unwrap only `TLazy` field-type nodes before extracting function
+  arguments and return types.
+- Use the same resolved type for overloaded-method cache keys so overloads do
+  not collide when Haxe leaves their signatures lazy.
+
+Current decision:
+
+Keep. Adding module types in `filterTypes` is part of Reflaxe's documented
+compiler API, and resolving Haxe's lazy wrapper preserves the method's existing
+typed expression and semantics.
+
+Upstream action:
+
+Good upstream PR candidate. Add a framework regression where a target appends a
+class returned by `Context.getType(...)` from `filterTypes`, then remove this
+patch only after the fix is released in the selected Reflaxe baseline.
+
+Validation before removal:
+
+- `npm run test:examples`
+- `npm run test:examples-output`
+- `npm run test:haxelib-package`
+- `npm run test:quick`
+- `npm test`
+
 ## Local Non-Framework Metadata
 
 These files are local to this vendored copy and are not framework patches:

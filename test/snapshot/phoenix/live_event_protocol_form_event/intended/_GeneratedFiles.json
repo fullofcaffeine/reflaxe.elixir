@@ -2,6 +2,7 @@
   "filesGenerated": [
   "type.ex",
   "todo_form_events.ex",
+  "string_tools.ex",
   "std.ex",
   "reflaxe/exception.ex",
   "reflaxe/elixir/haxe_throw.ex",

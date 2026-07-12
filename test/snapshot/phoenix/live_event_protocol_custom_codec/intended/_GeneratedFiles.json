@@ -1,6 +1,7 @@
 {
   "filesGenerated": [
   "type.ex",
+  "string_tools.ex",
   "std.ex",
   "resource_id_codec.ex",
   "resource_hook_events.ex",
