@@ -59,8 +59,7 @@ reflaxe.elixir/
 # Output directory for generated .ex files
 -D elixir_output=lib
 
-# Required for Reflaxe targets
--D reflaxe_runtime
+# `-lib reflaxe.elixir` supplies target selection and compiler initialization.
 
 # Platform-specific flags
 -D no-utf16            # Elixir is not UTF-16
@@ -240,7 +239,7 @@ still target Phoenix-native namespaces and paths. See the
 
 ```bash
 # Without HXML (hard to maintain)
-haxe -cp src_haxe -lib reflaxe.elixir -D reflaxe_runtime -D elixir_output=lib TodoApp
+haxe -cp src_haxe -lib reflaxe.elixir -D elixir_output=lib TodoApp
 
 # With HXML (clean and versioned)
 haxe build.hxml
@@ -325,10 +324,10 @@ build.hxml
 ## Reflaxe-Specific Considerations
 
 For Reflaxe targets like Reflaxe.Elixir:
-1. Always include `-D reflaxe_runtime`
-2. Initialize with target-specific macro
-3. Specify output directory with target's define
-4. Include target's standard library extensions
+1. Load the target library with `-lib reflaxe.elixir`
+2. Let the library configuration initialize the compiler and target marker
+3. Specify the output directory with `-D elixir_output=...`
+4. Include only application-specific classpaths and options
 5. Handle platform differences (UTF-16, line endings, etc.)
 
 ## Actual Project Usage Analysis
@@ -388,7 +387,6 @@ CounterLive               # Main class to compile
 -cp src_haxe
 -cp src_shared
 -D elixir_output=lib
--D reflaxe_runtime
 -D app_name=TodoApp
 --macro exclude('client')
 TodoApp
@@ -468,7 +466,7 @@ Verification:
 4. **Proper Use of Defines**
    - `-D elixir_output=lib` for output control
    - `-D app_name=TodoApp` for configuration
-   - `-D reflaxe_runtime` for framework features
+   - target selection comes from `-lib reflaxe.elixir`
 
 5. **Path Organization**
    - Clear separation: `src/`, `std/`, `test/`
@@ -505,7 +503,6 @@ Verification:
 Every Elixir compilation uses this pattern:
 ```hxml
 -lib reflaxe.elixir
--D reflaxe_runtime
 -D elixir_output=<directory>
 ```
 

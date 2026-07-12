@@ -248,7 +248,8 @@ which would resolve from the consumer project's working directory.
 
 An example or generated project that checks in its own `haxe_libraries/reflaxe.elixir.hxml` replaces
 the repository-scoped entry. It must therefore include the complete source-checkout roots (`src`,
-`std`, then `std/elixir/_std`), load `-lib reflaxe`, and include a companion
+`std`, then `std/elixir/_std`), load `-lib reflaxe`, define the library-owned `-D elixir` target
+marker, and include a companion
 `haxe_libraries/reflaxe.hxml` for `vendor/reflaxe/src`. Do not rely on bootstrap to recover either an
 upstream-colliding stdlib module or the base compiler framework after typing has started.
 `npm run guard:stdlib-layout` enforces this for every checked-in scoped entry.

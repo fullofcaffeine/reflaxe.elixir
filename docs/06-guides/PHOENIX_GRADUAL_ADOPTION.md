@@ -122,7 +122,6 @@ Minimal `build.hxml` (server-side Haxe→Elixir):
 -lib reflaxe.elixir
 -cp src_haxe
 
--D reflaxe_runtime
 -D no-utf16
 
 # Keep generated Elixir isolated during gradual adoption

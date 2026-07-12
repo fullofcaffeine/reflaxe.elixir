@@ -746,8 +746,8 @@ haxe --version
 3. **Check build configuration:**
 ```hxml
 -lib reflaxe.elixir
--D reflaxe_runtime
-# Make sure these are present
+-D elixir_output=lib
+# These select and configure the Elixir target.
 ```
 
 ### Problem: Phoenix events not working in HXX templates

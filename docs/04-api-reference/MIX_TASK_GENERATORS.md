@@ -159,7 +159,6 @@ Output (defaults; configurable via flags):
 - `build.hxml` — aligned with current compiler flags:
   - `-lib reflaxe.elixir`
   - `-D elixir_output=lib/<app>_hx`
-  - `-D reflaxe_runtime`
   - `-D no-utf16`
   - `-D app_name=<ModuleName>`
   - `-dce full`

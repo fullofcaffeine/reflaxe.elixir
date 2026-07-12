@@ -1,6 +1,6 @@
 package phoenix.channels;
 
-#if (macro || reflaxe_runtime)
+#if (macro || reflaxe_runtime || elixir)
 import elixir.types.Term;
 import haxe.functional.Result;
 

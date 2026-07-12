@@ -1,6 +1,6 @@
 package reflaxe.elixir.macros;
 
-#if (macro || reflaxe_runtime)
+#if (macro || reflaxe_runtime || elixir)
 #if macro
 import haxe.macro.Context;
 import haxe.macro.Expr;

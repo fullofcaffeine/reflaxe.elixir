@@ -5,6 +5,10 @@ that remains useful across versions; released version identity comes from protec
 
 ## Unreleased
 
+### Features
+
+* **configuration:** make `-lib reflaxe.elixir` own the `elixir` target marker and expose public Elixir/Phoenix APIs through that marker. Generated projects, examples, and normal consumer HXML files no longer declare Reflaxe's compiler-development `-D reflaxe_runtime` define; existing explicit definitions remain compatible.
+
 ### Bug Fixes
 
 * **fast_boot:** keep `Enum.reduce_while` result binding enabled so mutable Haxe locals retain their final accumulator state; `StringTools.lpad` and `rpad` now behave identically in fast and full compiler profiles.

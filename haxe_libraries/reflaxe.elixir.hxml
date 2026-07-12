@@ -35,6 +35,11 @@
 
 # Define the library version
 -D reflaxe.elixir=0.0.0-development
+
+# Match the target define supplied by packaged extraParams.hxml. Application
+# HXML files should not need Reflaxe's compiler-development `reflaxe_runtime` define.
+-D elixir
+
 # Match Reflaxe-generated target entrypoints: type the compiler package with
 # Haxe null-safety metadata before bootstrap/init macros run.
 --macro nullSafety("reflaxe.elixir")

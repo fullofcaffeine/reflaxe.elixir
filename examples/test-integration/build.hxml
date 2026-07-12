@@ -10,8 +10,7 @@
 # Output directory for generated .ex files
 -D elixir_output=lib
 
-# Required for Reflaxe targets
--D reflaxe_runtime
+# Target selection is supplied by `-lib reflaxe.elixir`.
 -D reflaxe_elixir_strict_examples
 
 # Main class to compile (entry point)

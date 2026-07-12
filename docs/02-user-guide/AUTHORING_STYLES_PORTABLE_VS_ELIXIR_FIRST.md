@@ -195,7 +195,6 @@ The whole build still uses one HXML and one compiler pipeline:
 -cp src_haxe
 -main web.App
 
--D reflaxe_runtime
 -D elixir_output=lib/my_app_hx
 -D app_name=MyApp
 

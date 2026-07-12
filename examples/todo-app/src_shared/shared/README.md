@@ -117,19 +117,19 @@ explicit param reads, which is shorter and clearer for that local flow.
 ## Build defines you’ll see
 
 - Server build (`build-server.hxml`):
+  - `-lib reflaxe.elixir` (supplies the `elixir` target marker)
   - `-D elixir_output=...` (selects the Elixir target output dir)
-  - `-D reflaxe_runtime` (required by Reflaxe targets; also used as a stable “Elixir build” signal)
 - Client build (`build-client.hxml`):
   - `-lib genes` (JS generator)
   - `-lib phoenix_js` (typed Phoenix JS externs)
 
 In shared code, you’ll sometimes see:
-- `#if (elixir || reflaxe_runtime)` guards
+- `#if elixir` guards
 
 Why:
-- `elixir` is the obvious signal when compiling with the Elixir target.
-- `reflaxe_runtime` is a stable signal in this repo’s tooling/harness for “Elixir build context”
-  (including some snapshot/interop compiles) where `elixir` may not be defined yet.
+- `elixir` is supplied by the server target library and is absent from the Genes client build.
+- `reflaxe_runtime` is reserved for compiler-development HXML files and should not be
+  used to select an application target.
 
 Rule of thumb:
 - Prefer writing truly portable code in `shared/` with no `#if`.

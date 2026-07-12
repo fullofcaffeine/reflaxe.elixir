@@ -44,6 +44,52 @@ if [[ ! -d "$ROOT_DIR/std/elixir/_std" ]]; then
   fail "missing std/elixir/_std source override root"
 fi
 
+runtime_only_target_modules="$(
+  python3 - "$ROOT_DIR" <<'PY'
+from pathlib import Path
+import sys
+
+root = Path(sys.argv[1])
+for path in sorted((root / "std").rglob("*.hx")):
+    lines = path.read_text(encoding="utf-8").splitlines()
+    if "#if (macro || reflaxe_runtime)" in lines[:20]:
+        print(path.relative_to(root).as_posix())
+PY
+)"
+if [[ -n "$runtime_only_target_modules" ]]; then
+  {
+    echo "target API modules must be visible under the library-owned elixir define;"
+    echo "reflaxe_runtime is reserved for typing compiler implementation code. Found:"
+    printf '%s\n' "$runtime_only_target_modules" | sed -n '1,80p'
+  } >&2
+  exit 1
+fi
+
+consumer_runtime_hxml="$(
+  python3 - "$ROOT_DIR" <<'PY'
+from pathlib import Path
+import subprocess
+import sys
+
+root = Path(sys.argv[1])
+tracked = subprocess.check_output(
+    ["git", "-C", str(root), "ls-files", "*.hxml"], text=True
+).splitlines()
+for relative in tracked:
+    text = (root / relative).read_text(encoding="utf-8").splitlines()
+    if "-lib reflaxe.elixir" in text and "-D reflaxe_runtime" in text:
+        print(relative)
+PY
+)"
+if [[ -n "$consumer_runtime_hxml" ]]; then
+  {
+    echo "consumer HXML files must rely on -lib reflaxe.elixir for target selection;"
+    echo "reflaxe_runtime is reserved for direct compiler-source fixtures. Found:"
+    printf '%s\n' "$consumer_runtime_hxml" | sed -n '1,80p'
+  } >&2
+  exit 1
+fi
+
 if [[ ! -f "$ROOT_DIR/std/elixir/_std/haxe/Exception.hx" ]]; then
   fail "haxe.Exception must be authored at std/elixir/_std/haxe/Exception.hx"
 fi
@@ -179,6 +225,8 @@ while IFS= read -r rel; do
   fi
   grep -Fx -- '-lib reflaxe' "$dev_hxml" >/dev/null \
     || fail "$rel must load the base Reflaxe scoped library before compiler typing"
+  grep -Fx -- '-D elixir' "$dev_hxml" >/dev/null \
+    || fail "$rel must define the Elixir target marker owned by -lib reflaxe.elixir"
   scoped_dir="$(dirname "$dev_hxml")"
   base_reflaxe_hxml="$scoped_dir/reflaxe.hxml"
   [[ -f "$base_reflaxe_hxml" ]] \
@@ -213,6 +261,8 @@ grep -Fx -- "-cp $ROOT_DIR/std/elixir/_std/" "$rendered_target" >/dev/null \
   || fail "source-HXML helper did not render the target _std root"
 grep -Fx -- '-lib tink_macro' "$rendered_target" >/dev/null \
   || fail "source-HXML helper did not preserve Lix dependency lines"
+grep -Fx -- '-D elixir' "$rendered_target" >/dev/null \
+  || fail "source-HXML helper did not render the Elixir target marker"
 grep -Fx -- "-cp $ROOT_DIR/vendor/reflaxe/src/" "$rendered_reflaxe" >/dev/null \
   || fail "source-HXML helper did not render vendored Reflaxe"
 for dependency in tink_core tink_macro tink_parse; do

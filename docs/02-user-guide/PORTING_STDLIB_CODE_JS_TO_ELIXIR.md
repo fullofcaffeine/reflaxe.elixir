@@ -87,7 +87,6 @@ You typically use an `hxml` so flags don’t drift. Minimal example:
 ```hxml
 -cp src
 -lib reflaxe.elixir
--D reflaxe_runtime
 -D elixir_output=out_elixir
 --macro reflaxe.elixir.CompilerInit.Start()
 --main Main

@@ -113,7 +113,6 @@ defmodule HaxeTestHelper do
         "# Test project build configuration",
         "-cp #{source_dir}",
         "-lib reflaxe.elixir",
-        "-D reflaxe_runtime",
         "-D elixir_output=#{output_dir}",
         "--main #{main_class}"
       ]

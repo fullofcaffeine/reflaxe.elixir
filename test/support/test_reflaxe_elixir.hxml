@@ -20,6 +20,8 @@
 
 # Define the library version
 -D reflaxe.elixir=0.0.0-development
+# Match the target marker owned by packaged extraParams.hxml.
+-D elixir
 # Bootstrap and initialize the Elixir compiler
 --macro reflaxe.elixir.CompilerBootstrap.Start()
 --macro reflaxe.elixir.CompilerInit.Start()

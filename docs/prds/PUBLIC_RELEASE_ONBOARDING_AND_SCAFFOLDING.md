@@ -87,7 +87,7 @@ Alternative: keep the existing `mix haxe.gen.project` but fix its output and ext
 1. Fix generator output
    - Update `src/Run.hx` output strings and version plumbing.
    - Update `lib/mix/tasks/haxe.gen.project.ex` to emit:
-     - correct `build.hxml` (`-lib reflaxe.elixir`, `-D elixir_output=...`, `-D reflaxe_runtime`, `--macro reflaxe.elixir.CompilerInit.Start()`)
+     - correct `build.hxml` (`-lib reflaxe.elixir`, `-D elixir_output=...`; library config owns compiler initialization and target selection)
      - correct scripts (no `npx lix run haxe ...`)
      - correct “next steps” instructions
 

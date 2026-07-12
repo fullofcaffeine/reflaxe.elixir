@@ -69,8 +69,6 @@ if File.dir?(haxe_test_src) do
       "-dce",
       "full",
       "-D",
-      "reflaxe_runtime",
-      "-D",
       "elixir_output=#{generated_dir}"
     ] ++ haxe_test_modules, cd: project_root, stderr_to_stdout: true)
 

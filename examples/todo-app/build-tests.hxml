@@ -13,8 +13,7 @@
 # ExUnit tests are executed as scripts; emit `.exs` files (must end with *_test.exs).
 -D elixir_output_exs
 
-# Required flags
--D reflaxe_runtime
+# Target selection is supplied by `-lib reflaxe.elixir`.
 -D reflaxe_elixir_strict_examples
 -D no-utf16
 -D app_name=TodoApp

@@ -9,7 +9,7 @@ import elixir.types.MessageQueueData;
 import elixir.types.Term;
 import elixir.types.Atom;
 
-#if (macro || reflaxe_runtime)
+#if (macro || reflaxe_runtime || elixir)
 /**
  * Process module extern definitions for Elixir standard library
  * Provides type-safe interfaces for basic OTP process operations

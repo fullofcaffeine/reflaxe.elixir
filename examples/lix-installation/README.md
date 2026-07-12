@@ -57,7 +57,6 @@ class Main {
 -lib reflaxe.elixir
 -cp src_haxe
 -D elixir_output=lib
--D reflaxe_runtime
 Main
 ```
 

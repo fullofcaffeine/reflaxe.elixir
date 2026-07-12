@@ -262,8 +262,6 @@ Notes:
 All examples use project lix dependencies:
 ```hxml
 -lib reflaxe.elixir
--lib reflaxe
--D reflaxe_runtime
 ```
 
 ## 🛠 Requirements

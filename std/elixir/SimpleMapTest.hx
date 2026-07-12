@@ -1,6 +1,6 @@
 package elixir;
 
-#if (macro || reflaxe_runtime)
+#if (macro || reflaxe_runtime || elixir)
 /**
  * Simple Map extern for testing
  */

@@ -111,8 +111,8 @@ After mastering simple modules, continue to:
 
 **Compilation errors?**
 - Ensure Haxe 4.3.7+ is installed
-- Check that `reflaxe_runtime` flag is set in .hxml files
-- Verify src/ directory is in classpath
+- Check that `-lib reflaxe.elixir` is present in the HXML
+- Verify `src_haxe/` is in the classpath
 
 **Output doesn't match expected?**
 - This is normal as compiler output may include additional metadata

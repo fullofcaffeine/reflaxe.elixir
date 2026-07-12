@@ -5,7 +5,7 @@ import elixir.types.Pid;
 import elixir.types.Term;
 import haxe.functional.Result;
 
-#if (macro || reflaxe_runtime)
+#if (macro || reflaxe_runtime || elixir)
 /**
  * Agent module extern definitions for Elixir OTP
  * Provides type-safe interfaces for Agent operations

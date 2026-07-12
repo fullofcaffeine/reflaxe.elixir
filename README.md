@@ -160,7 +160,6 @@ for a beginner-friendly explanation of why the layouts differ and how output par
 -cp src_haxe
 -main my_app_hx.Main
 
--D reflaxe_runtime
 -D no-utf16
 -D elixir_output=lib/my_app_hx
 -D app_name=MyApp
@@ -169,11 +168,11 @@ for a beginner-friendly explanation of why the layouts differ and how output par
 ```
 
 Important compiler flag note:
-- Keep `-D reflaxe_runtime` in application HXML files for now. It is a Reflaxe
-  compiler-compilation define, not an Elixir runtime mode or production dependency.
+- `-lib reflaxe.elixir` supplies the target marker and compiler initialization;
+  application HXML files do not need `-D reflaxe_runtime`.
 - Do **not** use `-D analyzer-optimize` when targeting Elixir.
-- See [Compiler Flags Guide](docs/01-getting-started/compiler-flags-guide.md#reflaxe_runtime-reflaxe-compiler-context)
-  for the convention and current source/package contract.
+- See [Compiler Flags Guide](docs/01-getting-started/compiler-flags-guide.md#reflaxe_runtime-compiler-development-context)
+  for the compiler-development convention and source/package contract.
 
 ### New Phoenix app (greenfield)
 

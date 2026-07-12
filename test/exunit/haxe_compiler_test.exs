@@ -51,7 +51,6 @@ defmodule HaxeCompilerTest do
       File.write!(build_hxml, """
       -cp #{source_dir}
       -lib reflaxe.elixir
-      -D reflaxe_runtime
       -D elixir_output=#{target_dir}
       Main
       """)

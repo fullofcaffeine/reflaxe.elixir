@@ -2,7 +2,7 @@ package shared;
 
 import StringTools;
 import haxe.crypto.Md5;
-#if (elixir || reflaxe_runtime)
+#if elixir
 import elixir.Enum;
 #end
 
@@ -54,7 +54,7 @@ class AvatarTools {
 	 * JS: arrays are native and can be indexed directly.
 	 */
 	static inline function safeArrayAt<T>(array:Array<T>, index:Int):Null<T> {
-		#if (elixir || reflaxe_runtime)
+		#if elixir
 		return Enum.at(array, index);
 		#else
 		if (index < 0 || index >= array.length)

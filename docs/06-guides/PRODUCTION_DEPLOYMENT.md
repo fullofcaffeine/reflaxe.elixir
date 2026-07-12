@@ -23,7 +23,6 @@ In your server `build.hxml`:
 - ✅ Recommended:
   - `-dce full`
   - `-D no-traces` / `-D no_traces`
-  - `-D reflaxe_runtime`
   - `-D elixir_output=...` (choose a stable output directory inside `lib/`)
 - ❌ Do not use:
   - `-D analyzer-optimize` (it breaks functional/idiomatic Elixir shapes)

@@ -49,6 +49,7 @@ defmodule Mix.Tasks.Haxe.Gen.ProjectTest do
 
     assert hxml =~ "-D hxx_string_to_sigil"
     assert hxml =~ "-D hxx_mode=tsx"
+    refute hxml =~ "-D reflaxe_runtime"
   end
 
   test "build.hxml does not inject TSX flag for non-phoenix scaffolds" do
@@ -69,6 +70,7 @@ defmodule Mix.Tasks.Haxe.Gen.ProjectTest do
     assert test_hxml =~ "-D elixir_output_exs"
     assert test_hxml =~ "-D exunit"
     assert test_hxml =~ "-D app_name=MyApp"
+    refute test_hxml =~ "-D reflaxe_runtime"
   end
 
   test "directory plan avoids example-only dirs when examples are skipped" do

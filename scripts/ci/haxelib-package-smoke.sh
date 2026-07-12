@@ -394,7 +394,6 @@ cat > "$work_dir/build.hxml" <<'HXML'
 -lib reflaxe.elixir
 -cp src
 -D elixir_output=out
--D reflaxe_runtime
 -D no-utf16
 -main Main
 -v
@@ -404,7 +403,6 @@ cat > "$work_dir/build-source.hxml" <<'HXML'
 -lib reflaxe.elixir
 -cp src
 -D elixir_output=out_source
--D reflaxe_runtime
 -D no-utf16
 -main Main
 -v

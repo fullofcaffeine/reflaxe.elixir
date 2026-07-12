@@ -7,7 +7,6 @@
 
 -D elixir_output=test/generated
 -D elixir_output_exs
--D reflaxe_runtime
 -D no-utf16
 -D app_name=PhoenixChat
 -dce full

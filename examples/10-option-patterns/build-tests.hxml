@@ -10,7 +10,6 @@
 -D elixir_output=test/generated
 -D elixir_output_exs
 
--D reflaxe_runtime
 -D reflaxe_elixir_strict_examples
 -D exunit
 -D app_name=OptionPatterns

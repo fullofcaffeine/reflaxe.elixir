@@ -23,7 +23,8 @@ There are two configurations:
 File: `haxe_libraries/reflaxe.elixir.hxml`
 
 - Used whenever you compile Haxe (in this repo) with `-lib reflaxe.elixir`.
-- Points `-cp` to the repo’s `src/` and `std/` (repo-relative).
+- Points `-cp` to the repo’s `src/`, `std/`, and source-layout `_std/` roots.
+- Defines `-D elixir`, the target marker normally supplied by the installed package.
 - Intended for contributor builds where the Haxe CWD is the repo root.
 
 If you need to run the generator in a clean consumer environment and `npx lix run reflaxe.elixir ...` is unreliable
@@ -45,6 +46,7 @@ The helper:
 - sets `REFLAXE_ELIXIR_PROJECT_ROOT` to the repo root
 - copies `test/support/test_reflaxe_elixir.hxml` into the temp project as `haxe_libraries/reflaxe.elixir.hxml`
 - copies the base `reflaxe` library into the temp project’s `haxe_libraries/` (needed for `-lib reflaxe`)
+- preserves the same `-D elixir` target marker as the repo-local and packaged library configurations
 
 This avoids symlinking the entire compiler source tree into the temp project (which can cause “compiled the whole compiler” surprises).
 

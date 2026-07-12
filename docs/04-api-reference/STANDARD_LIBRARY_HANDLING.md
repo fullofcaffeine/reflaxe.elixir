@@ -15,14 +15,16 @@ See also:
 - `docs/02-user-guide/REFLAXE_RUNTIME_EXPLAINED.md`
 - `docs/06-guides/KNOWN_LIMITATIONS.md`
 
-## “reflaxe_runtime” is not a Mix project
+## Target selection vs compiler development
 
-`reflaxe_runtime` is a **Haxe compilation define**, not an Elixir/Mix project.
+Application builds select this target through `-lib reflaxe.elixir`; the library supplies
+the `elixir` define used by typed target APIs and stdlib overrides. Applications do not
+need to define `reflaxe_runtime`.
 
-You will see it in `.hxml` files and docs because it gates code that should type-check during compilation
-(`#if (macro || reflaxe_runtime)` / `#if (elixir || reflaxe_runtime)`) even though it does not exist at runtime
-in other targets (and should not leak into the Haxe macro/interp contexts). See
-`docs/02-user-guide/REFLAXE_RUNTIME_EXPLAINED.md`.
+`reflaxe_runtime` remains a compiler-development define for typing implementation code
+guarded by `#if (macro || reflaxe_runtime)` outside macro mode. It is not an Elixir/Mix
+project and does not exist in the generated application. See
+[`REFLAXE_RUNTIME_EXPLAINED.md`](../02-user-guide/REFLAXE_RUNTIME_EXPLAINED.md).
 
 Runtime helpers that *must exist as emitted Elixir* (for example, the exception/throw bridge used by the
 Elixir lowering pipeline) live as Haxe sources under:

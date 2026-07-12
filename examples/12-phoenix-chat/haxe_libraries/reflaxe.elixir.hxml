@@ -9,6 +9,7 @@
 -D phoenix_shared=0.1.0
 -lib reflaxe
 -D reflaxe.elixir=0.0.0-development
+-D elixir
 --macro nullSafety("reflaxe.elixir")
 --macro reflaxe.elixir.CompilerBootstrap.Start()
 --macro reflaxe.elixir.CompilerInit.Start()

@@ -1,6 +1,6 @@
 package elixir;
 
-#if (macro || reflaxe_runtime)
+#if (macro || reflaxe_runtime || elixir)
 import elixir.types.Pid;
 import elixir.types.TaskRef;
 import elixir.types.Term;

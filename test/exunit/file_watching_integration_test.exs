@@ -26,7 +26,6 @@ defmodule FileWatchingIntegrationTest do
     -lib reflaxe.elixir
     -cp #{source_dir}
     -D elixir_output=#{target_dir}
-    -D reflaxe_runtime
     """)
     
     on_exit(fn ->

@@ -13,6 +13,7 @@
 # this file run too late to guarantee ownership of every upstream-colliding std
 # module. Reflaxe package builds flatten std/elixir/_std into packaged
 # .cross.hx files, so installed consumers only need `-lib reflaxe.elixir`.
+-D elixir
 --macro nullSafety("reflaxe.elixir")
 --macro reflaxe.elixir.CompilerBootstrap.Start()
 --macro reflaxe.elixir.CompilerInit.Start()

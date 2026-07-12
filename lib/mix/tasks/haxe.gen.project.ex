@@ -269,9 +269,6 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     # Output directory for generated .ex files
     -D elixir_output=#{config.output_dir}
 
-    # Required for Reflaxe targets
-    -D reflaxe_runtime
-
     # Elixir is not a UTF-16 platform
     -D no-utf16
 
@@ -542,9 +539,6 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     # Output test modules as .exs so ExUnit can require them directly
     -D elixir_output=test/generated
     -D elixir_output_exs
-
-    # Required for Reflaxe targets
-    -D reflaxe_runtime
 
     # Enable ExUnit test codegen
     -D exunit
