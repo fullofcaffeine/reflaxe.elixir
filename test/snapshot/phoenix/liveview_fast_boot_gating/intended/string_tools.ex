@@ -57,7 +57,7 @@ defmodule StringTools do
       s
     else
       buf = ""
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {buf}, fn _, {acc_buf} ->
+      {buf} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {buf}, fn _, {acc_buf} ->
         try do
           if (String.length(acc_buf) + String.length(s) < l) do
             acc_buf = acc_buf <> c
@@ -84,7 +84,7 @@ defmodule StringTools do
       s
     else
       buf = s
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {buf}, fn _, {acc_buf} ->
+      {buf} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {buf}, fn _, {acc_buf} ->
         try do
           if (String.length(acc_buf) < l) do
             acc_buf = acc_buf <> c

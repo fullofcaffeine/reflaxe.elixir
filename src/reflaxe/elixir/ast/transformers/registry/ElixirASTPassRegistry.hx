@@ -530,8 +530,8 @@ class ElixirASTPassRegistry {
 		// Ensure reduce_while results are bound back to local accumulator variables
 		passes.push({
 			name: "ReduceWhileResultBinding",
-			description: "Bind Enum.reduce_while result to original accumulator locals",
-			enabled: #if fast_boot false #else true #end,
+			description: "Bind Enum.reduce_while result to original accumulator locals (required in fast_boot)",
+			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.ReduceWhileResultBindingTransforms.bindReduceWhileResultPass,
 			runAfter: ["ReduceWhileAccumulator"]
 		});

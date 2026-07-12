@@ -48,6 +48,8 @@ In general: if you feel you “need `Dynamic`”, that’s a signal a missing ex
 What it does:
 
 - Enables `-D fast_boot`, which **disables or simplifies** some expensive macro/transform work.
+- Keeps semantic correctness passes active. Fast builds may differ in cosmetic output hygiene, but
+  must preserve the same Haxe program behavior as full builds.
 
 What it does *not* guarantee:
 

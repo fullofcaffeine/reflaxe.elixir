@@ -254,6 +254,9 @@ Common hot spots and mitigations:
 `fast_boot` is an **opt‑in** profile designed to speed up iteration on large modules by skipping
 or simplifying selected expensive macro/transform work.
 
+It may skip cosmetic output cleanup, but it does not relax semantic correctness. Passes that carry
+state across Elixir closures, including returned `Enum.reduce_while` accumulators, remain enabled.
+
 - Enable in Haxe: `-D fast_boot`
 - Enable in Mix (this repo’s convention): `HAXE_FAST_BOOT=1 mix compile`
 

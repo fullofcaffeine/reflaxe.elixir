@@ -3,7 +3,7 @@
 #
 # Purpose:
 # - Snapshot tests validate generated Elixir output shapes.
-# - This script additionally executes a few key snapshots to catch runtime regressions
+# - This script additionally executes a few key fixtures to catch runtime regressions
 #   (exception dispatch, Process ports, etc.) without running the full suite.
 #
 # Bounded execution:
@@ -22,6 +22,7 @@ RUNTIME_TIMEOUT_SECS="${RUNTIME_TIMEOUT_SECS:-20}"
 TEST_DIRS=(
   "test/snapshot/core/try_catch"
   "test/snapshot/stdlib/sys_io_process/basic"
+  "test/runtime/fast_boot/string_tools_rebinding"
   "test/snapshot/stdlib/uint_32bit_semantics"
 )
 

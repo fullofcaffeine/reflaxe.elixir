@@ -174,6 +174,8 @@ Reflaxe.Elixir uses two compilation profiles that affect **macros** and **AST tr
     - Template processing uses memoization and cheap shape checks when enabled.
   - Core semantic transforms only:
     - Phoenix/Ecto/OTP shape‑driven transforms remain active.
+    - Correctness passes that preserve Haxe state across Elixir closures remain active. For example,
+      a lowered `Enum.reduce_while` must bind its returned accumulator back to the surrounding local.
     - Ultra‑late cosmetic hygiene passes (naming, underscore promotion, unused assignment cleanup) are skipped when `fast_boot` and `disable_hygiene_final` are defined.
   - Goal: keep cold todo‑app builds bounded and responsive during day‑to‑day work.
   - Implementation:

@@ -7,6 +7,7 @@ that remains useful across versions; released version identity comes from protec
 
 ### Bug Fixes
 
+* **fast_boot:** keep `Enum.reduce_while` result binding enabled so mutable Haxe locals retain their final accumulator state; `StringTools.lpad` and `rpad` now behave identically in fast and full compiler profiles.
 * **reflaxe:** resolve lazy Haxe class-field types before Reflaxe extracts function signatures, removing repeated `StringTools` "Function information not found" warnings and emitting the required `string_tools.ex` runtime module wherever generated calls already depend on it.
 
 ### Security
