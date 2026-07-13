@@ -212,10 +212,14 @@ Use this loop when a compile feels slow or a CI budget starts drifting.
    haxe build-server.hxml -D debug_pass_metrics
    rm -f /tmp/passF-macro.log
    haxe build-server.hxml -D profile_passes
+   npm run profile:passes:baseline
    ```
 
    `debug_pass_metrics` prints which passes changed the AST. `profile_passes` writes pass timings to
-   `/tmp/passF-macro.log`; narrow noisy output with `-D hxx_pass_timing_filter=<substring>` when needed.
+   `/tmp/passF-macro.log` by default. Use `-D hxx_pass_timing_module_filter=<module>` to select one
+   module, `-D hxx_pass_timing_filter=<pass>` to select pass names, and
+   `-D hxx_pass_timing_output=<path>` to avoid shared append-only logs. The baseline command wraps
+   these defines in a bounded report across representative compiler scopes.
 
 7. If the slow phase is generated Elixir compilation, inspect generated shape instead of patching
    outputs:

@@ -4,6 +4,17 @@ package reflaxe.elixir.ast.transformers.registry;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 
+typedef MissingPassDependency = {
+	var name:String;
+	var users:Array<String>;
+}
+
+typedef RegistryDiagnostics = {
+	var duplicateNames:Array<String>;
+	var missingDependencies:Array<MissingPassDependency>;
+	var cycleNodes:Array<String>;
+}
+
 /**
 	* RegistryCore
 	*
@@ -24,6 +35,23 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 	* - Covered by snapshot tests under `test/snapshot/**`.
  */
 class RegistryCore {
+	static var lastDiagnostics:RegistryDiagnostics = {
+		duplicateNames: [],
+		missingDependencies: [],
+		cycleNodes: []
+	};
+
+	public static function diagnostics():RegistryDiagnostics {
+		return {
+			duplicateNames: lastDiagnostics.duplicateNames.copy(),
+			missingDependencies: [
+				for (entry in lastDiagnostics.missingDependencies)
+					{name: entry.name, users: entry.users.copy()}
+			],
+			cycleNodes: lastDiagnostics.cycleNodes.copy()
+		};
+	}
+
 	public static function validate(passes:Array<ElixirASTTransformer.PassConfig>):Array<ElixirASTTransformer.PassConfig> {
 		// Unique names (dedupe by first occurrence to avoid double-running a pass)
 		var seen = new Map<String, Bool>();
@@ -63,10 +91,13 @@ class RegistryCore {
 		}
 		var visiting = new Map<String, Bool>();
 		var visited = new Map<String, Bool>();
+		var cycleNodes:Array<String> = [];
 		function dfs(n:String, path:Array<String>):Void {
 			if (visited.exists(n))
 				return;
 			if (visiting.exists(n)) {
+				if (cycleNodes.indexOf(n) < 0)
+					cycleNodes.push(n);
 				return;
 			}
 			visiting.set(n, true);
@@ -79,6 +110,21 @@ class RegistryCore {
 		}
 		for (k in graph.keys())
 			dfs(k, []);
+
+		duplicateNames.sort(Reflect.compare);
+		cycleNodes.sort(Reflect.compare);
+		var missingDependencyList:Array<MissingPassDependency> = [];
+		for (dependency in missingDeps.keys()) {
+			var users = missingDeps.get(dependency);
+			users.sort(Reflect.compare);
+			missingDependencyList.push({name: dependency, users: users});
+		}
+		missingDependencyList.sort(function(left, right) return Reflect.compare(left.name, right.name));
+		lastDiagnostics = {
+			duplicateNames: duplicateNames,
+			missingDependencies: missingDependencyList,
+			cycleNodes: cycleNodes
+		};
 
 		// Emit compact diagnostics only when explicitly requested
 		#if (sys && debug_pass_order)

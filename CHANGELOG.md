@@ -19,6 +19,7 @@ that remains useful across versions; released version identity comes from protec
 
 ### Changed
 
+* **compiler:** inventory all 578 effective Elixir AST passes by deterministic phase, ownership scope, replay family, ordering dependency, and representative tests; replace source-text order parsing with typed macro introspection and add bounded per-module timing/count baselines without changing generated Elixir.
 * **reflaxe:** retain the audited vendored framework baseline instead of importing upstream's broad, currently unused `RemovePureExpressions` optimizer; document the adoption criteria and remove inactive `debug_output_manager` trace blocks without changing normal compiler behavior.
 * **stdlib:** enable the unchanged upstream Haxe 4.3.7 `EReg` runtime fixture on BEAM, verifying the existing Regex-backed implementation across matching, captured state, split, replacement, mapping, and escaping semantics.
 

@@ -500,6 +500,7 @@ grep "undefined variable" test/tests/orphaned_enum_params/out/*.ex
 **See Also**:
 - [`COMPILATION_PIPELINE_ARCHITECTURE.md`](COMPILATION_PIPELINE_ARCHITECTURE.md) - Pipeline understanding
 - [`TRANSFORM_PASS_REGISTRY_ORDER.md`](../05-architecture/TRANSFORM_PASS_REGISTRY_ORDER.md) - Pass ordering reference
+- [`PASS_REGISTRY_INVENTORY.md`](../05-architecture/PASS_REGISTRY_INVENTORY.md) - Phase/scope ownership, replay families, diagnostics, and bounded baseline
 - [`COMPILATION_FLOW.md`](../05-architecture/COMPILATION_FLOW.md) - End-to-end compilation flow
 
 **⚠️ CRITICAL RULE**: Never remove test code to fix failures - fix the underlying compiler issue instead.

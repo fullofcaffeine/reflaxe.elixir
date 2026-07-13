@@ -240,15 +240,27 @@ class ElixirASTTransformer {
 		#end
 
 		#if ((hxx_pass_timing || profile_passes) && !hxx_disable_timing)
-		var __pipelineStart = haxe.Timer.stamp();
+		var __pipelineStart = passTimingStamp();
 		// Optional substring filter to reduce timing noise:
 		//   -D hxx_pass_timing_filter=Reduce
 		var __passTimingFilter = getDefineString("hxx_pass_timing_filter");
 		if (__passTimingFilter != null && __passTimingFilter == "")
 			__passTimingFilter = null;
+		var __passTimingModuleFilter = getDefineString("hxx_pass_timing_module_filter");
+		if (__passTimingModuleFilter != null && __passTimingModuleFilter == "")
+			__passTimingModuleFilter = null;
+		var __passTimingOutput = getDefineString("hxx_pass_timing_output");
+		if (__passTimingOutput == null || __passTimingOutput == "")
+			__passTimingOutput = "/tmp/passF-macro.log";
+		var __shouldLogModule = __passTimingModuleFilter == null || (rootName != null && rootName.indexOf(__passTimingModuleFilter) != -1);
+		var __passTimingIndex = 0;
+		var __executedPassCount = 0;
 		#end
 
 		for (passConfig in passes) {
+			#if ((hxx_pass_timing || profile_passes) && !hxx_disable_timing)
+			__passTimingIndex++;
+			#end
 			// Skip disabled passes - the enabled flag MUST be respected
 			if (!passConfig.enabled) {
 				#if debug_ast_transformer
@@ -322,7 +334,7 @@ class ElixirASTTransformer {
 			// - Non-contextual passes continue working unchanged
 			// - No null pointer errors when context not provided
 			#if ((hxx_pass_timing || profile_passes) && !hxx_disable_timing)
-			var __t0 = haxe.Timer.stamp();
+			var __t0 = passTimingStamp();
 			#end
 			#if debug_transformer_hang
 			// Reset cycle detector per pass so visit counts reflect only the current pass.
@@ -364,7 +376,8 @@ class ElixirASTTransformer {
 				functionResultStates);
 			#end
 			#if ((hxx_pass_timing || profile_passes) && !hxx_disable_timing)
-			var __elapsedPass = (haxe.Timer.stamp() - __t0) * 1000.0;
+			__executedPassCount++;
+			var __elapsedPass = (passTimingStamp() - __t0) * 1000.0;
 
 			// Apply optional substring filter when present.
 			var __shouldLogPass = true;
@@ -372,13 +385,15 @@ class ElixirASTTransformer {
 				__shouldLogPass = (passConfig.name.indexOf(__passTimingFilter) != -1);
 			}
 
-			if (__shouldLogPass) {
+			if (__shouldLogModule && __shouldLogPass) {
 				#if sys
-				// Append timing to a deterministic file so partial logs survive.
+				// Append one bounded, parseable record per pass. Callers can select one
+				// module and a temporary output path for deterministic inventory reports.
 				try {
-					var __log = sys.io.File.append("/tmp/passF-macro.log", false);
+					var __log = sys.io.File.append(__passTimingOutput, false);
 					var __ms = Math.round(__elapsedPass * 100.0) / 100.0;
-					__log.writeString("[PassTiming] module=" + rootName + " name=" + passConfig.name + " ms=" + Std.string(__ms) + "\n");
+					__log.writeString("[PassTiming] module=" + rootName + " index=" + __passTimingIndex + " name=" + passConfig.name + " ms="
+						+ Std.string(__ms) + "\n");
 					__log.close();
 				} catch (e) {
 					// Fallback to stdout if append fails.
@@ -421,14 +436,15 @@ class ElixirASTTransformer {
 		}
 
 		#if ((hxx_pass_timing || profile_passes) && !hxx_disable_timing)
-		var __pipelineElapsed = (haxe.Timer.stamp() - __pipelineStart) * 1000.0;
+		var __pipelineElapsed = (passTimingStamp() - __pipelineStart) * 1000.0;
 		#if sys
-		try {
-			var __totalLog = sys.io.File.append("/tmp/passF-macro.log", false);
-			var __ms = Math.round(__pipelineElapsed * 100.0) / 100.0;
-			__totalLog.writeString("[PassTiming] module=" + rootName + " name=ElixirASTTransformer.total ms=" + Std.string(__ms) + "\n");
-			__totalLog.close();
-		} catch (e) {}
+		if (__shouldLogModule)
+			try {
+				var __totalLog = sys.io.File.append(__passTimingOutput, false);
+				var __ms = Math.round(__pipelineElapsed * 100.0) / 100.0;
+				__totalLog.writeString("[PassTimingSummary] module=" + rootName + " passes=" + __executedPassCount + " total_ms=" + Std.string(__ms) + "\n");
+				__totalLog.close();
+			} catch (e) {}
 		#else
 		#end
 		#end
@@ -550,6 +566,14 @@ class ElixirASTTransformer {
 		}
 		#else
 		return null;
+		#end
+	}
+
+	static inline function passTimingStamp():Float {
+		#if (macro || sys)
+		return Sys.time();
+		#else
+		return 0.0;
 		#end
 	}
 

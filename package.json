@@ -92,7 +92,7 @@
     "guard:stdlib-parity": "bash scripts/ci/check-stdlib-parity-report.sh",
     "guard:upstream-unitstd": "python3 scripts/ci/check-upstream-unitstd-manifest.py",
     "guard:hx-format": "bash scripts/lint/hx_format_guard.sh",
-    "ci:guards": "npm run guard:hx-format && npm run guard:names && npm run guard:numeric && npm run guard:sloppy-pattern-numeric && npm run guard:no-elixir-in-app && npm run guard:no-dynamic && npm run guard:no-disabled-debug && npm run guard:examples-hxx-mode && npm run guard:hxx-raw-heex && npm run guard:examples-qa && npm run guard:filesize && npm run guard:stdlib-layout && npm run guard:stdlib-parity && npm run guard:upstream-unitstd && npm run guard:docs-links && npm run test:qa-logpeek && npm run test:release-policy && npm run test:release-artifact && npm run test:release-recovery && npm run test:release-workflow && echo 'Guards passed'",
+    "ci:guards": "npm run guard:hx-format && npm run guard:names && npm run guard:numeric && npm run guard:sloppy-pattern-numeric && npm run guard:no-elixir-in-app && npm run guard:no-dynamic && npm run guard:no-disabled-debug && npm run guard:examples-hxx-mode && npm run guard:hxx-raw-heex && npm run guard:examples-qa && npm run guard:filesize && npm run guard:stdlib-layout && npm run guard:stdlib-parity && npm run guard:upstream-unitstd && npm run guard:pass-inventory && npm run guard:docs-links && npm run test:qa-logpeek && npm run test:release-policy && npm run test:release-artifact && npm run test:release-recovery && npm run test:release-workflow && echo 'Guards passed'",
     "ci:dead-code-audit": "bash -lc 'mkdir -p tmp && scripts/repo-dead-code-audit.sh --scope src --limit 200 --json > tmp/dead-code-audit.json && echo \"Wrote tmp/dead-code-audit.json\"'",
     "ci:acceptance": "bash scripts/ci/acceptance_gate.sh",
     "ci:budgets": "bash scripts/ci/perf-determinism-budgets.sh",
@@ -102,7 +102,11 @@
     "hooks:install": "bash scripts/install-git-hooks.sh",
     "qa:sentinel": "bash scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 600 --verbose",
     "demo:todo": "bash scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --keep-alive -v --deadline 900",
-    "docs:order:haxe": "haxe -lib reflaxe -cp src -cp . -D reflaxe_runtime -main tools.RegistryOrderDoc --interp",
+    "docs:order:haxe": "haxe -lib reflaxe -cp std -cp src -cp . --macro \"tools.RegistryOrderDoc.generate()\" --no-output",
+    "docs:order:haxe:granular": "haxe -lib reflaxe -cp std -cp src -cp . -D hxx_granular_pass_registry --macro \"tools.RegistryOrderDoc.generate()\" --no-output",
+    "docs:passes": "npm run docs:order:haxe && npm run docs:order:haxe:granular",
+    "guard:pass-inventory": "haxe -lib reflaxe -cp std -cp src -cp . -D registry_order_check --macro \"tools.RegistryOrderDoc.generate()\" --no-output && haxe -lib reflaxe -cp std -cp src -cp . -D hxx_granular_pass_registry -D registry_order_check --macro \"tools.RegistryOrderDoc.generate()\" --no-output",
+    "profile:passes:baseline": "python3 scripts/compiler/pass_inventory_baseline.py",
     "docs:hxx:index": "haxe tools/HxxRegistryIndex.hxml"
   },
   "engines": {

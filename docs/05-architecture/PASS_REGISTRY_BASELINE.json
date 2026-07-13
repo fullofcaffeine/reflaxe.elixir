@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 1,
+  "mode": "granular",
+  "effectivePassCount": 578,
+  "maxRecordsPerModule": 579,
+  "toolchain": "Haxe 4.3.7",
+  "profiles": [
+    {
+      "scope": "core",
+      "fixture": "test/snapshot/core/basic_syntax",
+      "module": "Main",
+      "expectedPassCount": 578,
+      "referenceTotalMs": 138.2,
+      "referenceSlowestPasses": [
+        {
+          "name": "FinalUnderscoreRepair",
+          "ms": 1.34
+        },
+        {
+          "name": "RedundantAssignmentCleanup",
+          "ms": 1.16
+        },
+        {
+          "name": "HeexAssignsLocalVarRename_AbsoluteLast",
+          "ms": 1.03
+        },
+        {
+          "name": "PhoenixComponentModuleNormalize_AbsoluteLast",
+          "ms": 0.97
+        },
+        {
+          "name": "SocketPutFlashAssignDrop_Final",
+          "ms": 0.91
+        }
+      ]
+    },
+    {
+      "scope": "stdlib",
+      "fixture": "test/snapshot/stdlib/stdlib_externs",
+      "module": "AgentRef_Impl_",
+      "expectedPassCount": 578,
+      "referenceTotalMs": 40.47,
+      "referenceSlowestPasses": [
+        {
+          "name": "FinalUnderscoreRepair",
+          "ms": 0.25
+        },
+        {
+          "name": "LocalUnderscoreGenericPromotion",
+          "ms": 0.19
+        },
+        {
+          "name": "FinalLocalReferenceAlign_PreInterpolation",
+          "ms": 0.18
+        },
+        {
+          "name": "NumericSuffixVarNormalize",
+          "ms": 0.15
+        },
+        {
+          "name": "FinalLocalReferenceAlign",
+          "ms": 0.14
+        }
+      ]
+    },
+    {
+      "scope": "phoenix",
+      "fixture": "test/snapshot/phoenix/router",
+      "module": "MyAppWeb.Router",
+      "expectedPassCount": 578,
+      "referenceTotalMs": 103.68,
+      "referenceSlowestPasses": [
+        {
+          "name": "CaseClauseSuccessBodyBinderRewrite_AbsoluteLast",
+          "ms": 1.37
+        },
+        {
+          "name": "CasePayloadBinderAvoidReserved_Final",
+          "ms": 1.36
+        },
+        {
+          "name": "RepoAtomToSchema",
+          "ms": 1.07
+        },
+        {
+          "name": "IfConditionBinaryCaseParen",
+          "ms": 0.99
+        },
+        {
+          "name": "ConcatSelfAssignBinderUnderscore_Final",
+          "ms": 0.85
+        }
+      ]
+    },
+    {
+      "scope": "liveview",
+      "fixture": "test/snapshot/liveview/golden_liveview_fixture",
+      "module": "TestAppWeb.GoldenLive",
+      "expectedPassCount": 578,
+      "referenceTotalMs": 189.19,
+      "referenceSlowestPasses": [
+        {
+          "name": "LocalUnderscoreGenericPromotion_UltraFinal",
+          "ms": 2.52
+        },
+        {
+          "name": "FinalUnderscoreRepair",
+          "ms": 1.67
+        },
+        {
+          "name": "CaseClauseCamelAliasToSnakeBinder",
+          "ms": 1.55
+        },
+        {
+          "name": "HeexAssignsTypeLinter",
+          "ms": 1.53
+        },
+        {
+          "name": "FinalLocalReferenceAlign",
+          "ms": 1.46
+        }
+      ]
+    },
+    {
+      "scope": "ecto",
+      "fixture": "test/snapshot/ecto/changeset",
+      "module": "User",
+      "expectedPassCount": 578,
+      "referenceTotalMs": 59.14,
+      "referenceSlowestPasses": [
+        {
+          "name": "HandleInfoDropUnusedAssign",
+          "ms": 0.96
+        },
+        {
+          "name": "IfBranchDowncaseTempInline_Final",
+          "ms": 0.29
+        },
+        {
+          "name": "DropStandaloneVarRef",
+          "ms": 0.25
+        },
+        {
+          "name": "EFnUnusedArgUnderscore_Final",
+          "ms": 0.23
+        },
+        {
+          "name": "ReduceWhileThenBranchNormalize_Final",
+          "ms": 0.23
+        }
+      ]
+    },
+    {
+      "scope": "hxx",
+      "fixture": "test/snapshot/phoenix/hxx_inline_markup_basic",
+      "module": "Main",
+      "expectedPassCount": 578,
+      "referenceTotalMs": 64.62,
+      "referenceSlowestPasses": [
+        {
+          "name": "DropSelfAssignNoop",
+          "ms": 2.11
+        },
+        {
+          "name": "SplitChainedAssignments",
+          "ms": 1.87
+        },
+        {
+          "name": "HeexEventNameNormalization",
+          "ms": 1.79
+        },
+        {
+          "name": "HandleInfoReturnSocketNormalize_UltraFinal",
+          "ms": 1.21
+        },
+        {
+          "name": "HeexAssignsTypeLinter",
+          "ms": 0.72
+        }
+      ]
+    },
+    {
+      "scope": "exunit",
+      "fixture": "test/snapshot/exunit/exunit_comprehensive",
+      "module": "Main",
+      "expectedPassCount": 578,
+      "referenceTotalMs": 405.48,
+      "referenceSlowestPasses": [
+        {
+          "name": "HoistNestedAssignFromStringConcat",
+          "ms": 15.62
+        },
+        {
+          "name": "LocalCamelToSnakeDecl_AfterEventBridge",
+          "ms": 11.54
+        },
+        {
+          "name": "ConditionalReassignment",
+          "ms": 7.34
+        },
+        {
+          "name": "HandleEventParamRepair_AfterEventBridge",
+          "ms": 6.16
+        },
+        {
+          "name": "ClauseCamelRefToSnake",
+          "ms": 5.43
+        }
+      ]
+    }
+  ]
+}

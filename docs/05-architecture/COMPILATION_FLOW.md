@@ -90,4 +90,5 @@ benefit from checking every phase. For exact granular pass names during compiler
 - `docs/05-architecture/AST_PIPELINE_MIGRATION.md` — rationale and migration notes.
 - `docs/05-architecture/UNIFIED_AST_PIPELINE.md` — conceptual overview of the AST pipeline.
 - `docs/05-architecture/TRANSFORM_PASS_REGISTRY_ORDER.md` — pass ordering and safety rules.
+- `docs/05-architecture/PASS_REGISTRY_INVENTORY.md` — effective phase contracts, ownership scopes, replay families, and bounded profiling baseline.
 - `docs/03-compiler-development/COMPILATION_PIPELINE_ARCHITECTURE.md` — contributor‑level detail.

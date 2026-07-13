@@ -2,6 +2,7 @@ package reflaxe.elixir.ast.transformers.registry;
 
 #if (macro || reflaxe_runtime)
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.transformers.registry.RegistryCore.RegistryDiagnostics;
 
 /**
 	* PassIntrospection
@@ -11,8 +12,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 	*   without leaking internal PassConfig or requiring Dynamic.
 	*
 	* WHY
-	* - Tools (run under --interp) should avoid depending on compiler internals
-	*   and must honor the No‑Dynamic policy.
+	* - Tools run this API in Haxe macro context so compiler-only function
+	*   references remain valid without parsing registry source text.
+	* - The DTO keeps generators independent of executable PassConfig internals
+	*   and honors the No-Dynamic policy.
 	*
 	* HOW
 	* - Maps ElixirASTPassRegistry.getEnabledPasses() → Array<PassInfo>
@@ -23,8 +26,13 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 	* - Covered by snapshot tests under `test/snapshot/**`.
  */
 typedef PassInfo = {
+	var index:Int;
 	var name:String;
-	@:optional var phase:String;
+	var description:String;
+	var phase:String;
+	var scope:String;
+	var family:String;
+	@:optional var replayFamily:String;
 	@:optional var runAfter:Array<String>;
 	@:optional var runBefore:Array<String>;
 }
@@ -32,16 +40,36 @@ typedef PassInfo = {
 class PassIntrospection {
 	public static function list():Array<PassInfo> {
 		var enabled:Array<ElixirASTTransformer.PassConfig> = ElixirASTPassRegistry.getEnabledPasses();
+		var phases = PassInventory.phaseAssignments(enabled);
+		var replayCounts = new Map<String, Int>();
+		for (pass in enabled) {
+			var canonical = PassInventory.canonicalReplayName(pass.name);
+			replayCounts.set(canonical, replayCounts.exists(canonical) ? replayCounts.get(canonical) + 1 : 1);
+		}
 		var out:Array<PassInfo> = [];
-		for (p in enabled) {
+		for (index in 0...enabled.length) {
+			var pass = enabled[index];
+			var phase = pass.phase != null && pass.phase.length > 0 ? pass.phase : phases[index];
+			var scope = PassInventory.scopeFor(pass.name);
+			var replayFamily = PassInventory.canonicalReplayName(pass.name);
+			var replayCount = replayCounts.get(replayFamily);
 			out.push({
-				name: p.name,
-				phase: p.phase,
-				runAfter: p.runAfter,
-				runBefore: p.runBefore
+				index: index + 1,
+				name: pass.name,
+				description: pass.description,
+				phase: phase,
+				scope: scope,
+				family: phase + "." + scope,
+				replayFamily: replayCount != null && replayCount > 1 ? replayFamily : null,
+				runAfter: pass.runAfter,
+				runBefore: pass.runBefore
 			});
 		}
 		return out;
+	}
+
+	public static function diagnostics():RegistryDiagnostics {
+		return RegistryCore.diagnostics();
 	}
 }
 #end

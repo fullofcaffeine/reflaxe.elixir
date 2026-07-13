@@ -18,15 +18,24 @@ shapes are already normalized by earlier passes. This document explains:
 
 ## Inspect the effective pass order
 
-The repository maintains a generated, deterministic pass ordering doc:
+The repository maintains generated, deterministic registry artifacts:
 
-- `docs/05-architecture/TRANSFORM_PASS_REGISTRY_ORDER.md`
+- `docs/05-architecture/TRANSFORM_PASS_REGISTRY_ORDER.md` (seven default bundles)
+- `docs/05-architecture/TRANSFORM_PASS_REGISTRY_ORDER_GRANULAR.md` (every effective pass)
+- `docs/05-architecture/PASS_REGISTRY_INVENTORY.md` (phase/scope contracts, replay families, and registry diagnostics)
+- `docs/05-architecture/PASS_REGISTRY_BASELINE.json` (representative pass counts and reference timings)
 
-Regenerate it (pure Haxe `--interp`, no Node required):
+Regenerate the documentation from typed registry data:
 
 ```bash
-haxe --interp tools/RegistryOrderDoc.hx
+npm run docs:passes
+npm run guard:pass-inventory
 ```
+
+The generator runs as a Haxe macro. That is intentional: the registry references compiler and
+`haxe.macro.*` APIs that are valid in macro context, while a normal `--interp` main would type those
+APIs as application runtime code. The old source-text parser could overcount disabled or deduplicated
+registrations; structured introspection reports the effective validated order instead.
 
 ### Granular vs lean registry
 
@@ -36,6 +45,23 @@ opt into the full granular list:
 
 - Build flag: `-D hxx_granular_pass_registry`
 - Doc output: `docs/05-architecture/TRANSFORM_PASS_REGISTRY_ORDER_GRANULAR.md`
+
+### Inventory and bounded timing baseline
+
+The current validated granular registry contains 578 effective passes per transformed module. Scope
+labels describe ownership only; they do not yet skip execution. This is why a core, stdlib, Phoenix,
+LiveView, Ecto, HXX, and ExUnit representative all report the same pass count.
+
+Run the bounded baseline report with:
+
+```bash
+npm run profile:passes:baseline
+```
+
+Each scenario selects one module, writes at most 579 temporary records (578 indexed passes plus one
+summary), validates contiguous deterministic indexes, and removes its log afterward. Checked-in
+milliseconds are reference observations, not performance thresholds; compare them directionally on
+the same machine. Pass counts and report shape are the stable contract.
 
 The non-`Void` result invariant follows the same boundary model:
 
