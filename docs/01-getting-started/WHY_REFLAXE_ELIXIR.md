@@ -75,6 +75,7 @@ A portable Haxe float operation must still preserve Haxe's special-value behavio
 not represent every value in the same way. Correctness wins over cosmetic similarity in that case.
 
 The relevant architecture contracts are [Authoring Profiles](../02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md),
+[`reflaxe_runtime` and Generated Helpers](../02-user-guide/REFLAXE_RUNTIME_EXPLAINED.md),
 [Imperative to Functional Lowering](../02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md), and
 [Generated Output Quality](../03-compiler-development/GENERATED_OUTPUT_QUALITY_CORPUS.md).
 

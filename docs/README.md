@@ -30,6 +30,7 @@ This index helps you find the right docs quickly, whether you're building apps w
 - [Imperative→Functional Lowering](02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md) - How mutation/loops become immutable Elixir
 - [Writing Idiomatic Haxe](02-user-guide/WRITING_IDIOMATIC_HAXE_FOR_ELIXIR.md) - Guidelines for clean, idiomatic Elixir output
 - [Authoring Profiles: Portable vs Elixir-First](02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md) - Choose module-level strategy without changing compiler mode
+- [`reflaxe_runtime` and Generated Elixir Helpers](02-user-guide/REFLAXE_RUNTIME_EXPLAINED.md) - Compiler-development define, native-lowering order, and current helper inclusion policy
 - [Interop With Existing Elixir Modules](02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md) - Typed extern-first workflow for calling hand-written Elixir from Haxe
 - [Haxe→Elixir Mappings](02-user-guide/HAXE_ELIXIR_MAPPINGS.md) - Language conversion guide
 - [Elixir Idioms & Hygiene](02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md) - Naming, unused vars, enum shapes, loop semantics

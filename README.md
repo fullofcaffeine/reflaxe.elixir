@@ -20,12 +20,14 @@
 <p align="center">
   <a href="docs/01-getting-started/WHY_REFLAXE_ELIXIR.md">Why Reflaxe.Elixir?</a> ·
   <a href="#try-it">Try it</a> ·
+  <a href="#phoenixhx">PhoenixHx</a> ·
   <a href="docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md">Gradual adoption</a> ·
   <a href="examples/README.md">Examples</a> ·
   <a href="docs/README.md">Docs</a>
 </p>
 
-Reflaxe.Elixir compiles typed Haxe into `.ex` source for the normal Mix and BEAM pipeline.
+**Reflaxe.Elixir** compiles typed Haxe into `.ex` source for the normal Mix and BEAM pipeline.
+**PhoenixHx** adds typed Phoenix, LiveView, Ecto, and OTP authoring while Phoenix remains the runtime.
 
 **For Elixir developers:** add static types, closed domain states, typed Phoenix boundaries, and
 compile-time DSL checks one module or feature at a time. Generated and hand-written Elixir coexist
@@ -49,8 +51,8 @@ their behavior through explicit lowering. Haxe is a build dependency, not a seco
   specs, and existing Elixir calls before generated code reaches Mix.
 - **Adopt in either direction.** Add one typed island to an Elixir app, or author a larger bounded
   context in Haxe while Phoenix and the BEAM remain the platform.
-- **Keep the output recognizable.** Emit normal modules, functions, maps, tuples, pattern matches,
-  `Enum`, Phoenix, Ecto, and OTP calls when semantics allow.
+- **Keep the output recognizable.** Prefer normal modules, functions, maps, tuples, pattern matches,
+  `Enum`, Phoenix, Ecto, and OTP calls whenever Haxe semantics can be preserved.
 - **Build typed project DSLs.** Use Haxe macros, metadata, algebraic enums, and structural types to
   remove duplicated strings and invalid framework combinations.
 - **Share selected behavior.** Compile a deliberately portable domain layer to Elixir and JavaScript;
@@ -59,7 +61,7 @@ their behavior through explicit lowering. Haxe is a build dependency, not a seco
   ordinary Mix and BEAM tools.
 
 ```text
-Haxe source -> Haxe typer/macros -> Reflaxe.Elixir -> .ex -> Mix -> BEAM
+Haxe / HXX -> Reflaxe.Elixir + PhoenixHx -> ordinary .ex / ~H -> Mix -> BEAM
 ```
 
 Reflaxe.Elixir has one compiler pipeline and two authoring styles: **Typed Elixir-first** favors
@@ -69,40 +71,105 @@ semantics. They are source-design choices, not separate backends. See
 
 ## See The Output
 
-This pair is checked by [`01-simple-modules`](examples/01-simple-modules/).
+These are checked excerpts from executable examples. The links contain the complete imports, types,
+build files, and canonical generated output.
+
+### Elixir-first Haxe stays direct
+
+[`SearchDomain.hx`](examples/13-elixir-first-liveview/src_haxe/live/SearchDomain.hx) uses typed
+Elixir APIs and Haxe's typed `Result`:
 
 ```haxe
-@:module
-class BasicModule {
-  public static function calculate(x:Int, y:Int, operation:String):Int {
-    return switch (operation) {
-      case "add": x + y;
-      case "subtract": x - y;
-      case "multiply": x * y;
-      case "divide": y != 0 ? Std.int(x / y) : 0;
-      case _: 0;
-    };
-  }
-}
+var normalized = ElixirString.trim(query);
+var needle = ElixirString.downcase(normalized);
+var visible = Enum.filter(catalog,
+  item -> item != null &&
+    ElixirString.contains(ElixirString.downcase(item), needle));
+return Ok({query: normalized, visible: visible, result_count: visible.length});
 ```
 
 ```elixir
-defmodule BasicModule do
-  def calculate(x, y, operation) do
-    case operation do
-      "add" -> x + y
-      "subtract" -> x - y
-      "multiply" -> x * y
-      "divide" when y != 0 -> div(x, y)
-      "divide" -> 0
-      _ -> 0
-    end
-  end
-end
+normalized = String.trim(query)
+needle = String.downcase(normalized)
+
+visible =
+  Enum.filter(catalog, fn item ->
+    not Kernel.is_nil(item) and String.contains?(String.downcase(item), needle)
+  end)
+
+{:ok, %{query: normalized, visible: visible, result_count: length(visible)}}
 ```
 
-Correctness wins when Haxe and Elixir semantics differ. Required helpers remain visible, centralized,
-and tested instead of being disguised as native syntax.
+The externs become direct `String` and `Enum` calls, `Result` becomes `{:ok, value}` / `{:error, reason}`,
+and the structural record becomes a map. See the
+[reviewed output](test/quality/handwritten-output/generated/elixir-first-liveview/elixir_first_liveview/search_domain.ex).
+
+### Imperative Haxe can lower functionally
+
+This portable [`Transcript.render`](examples/16-portable-chat-domain/src_haxe/shared/chat/Transcript.hx)
+uses a normal Haxe loop and `Array.push`:
+
+```haxe
+var lines = [];
+for (message in history) {
+  lines.push(MessageRules.format(message));
+}
+return lines;
+```
+
+The compiler proves that it is a fresh, ordered, one-value projection and emits:
+
+```elixir
+Enum.map(history, fn message ->
+  PortableChatDomain.MessageRules.format(message)
+end)
+```
+
+More complex mutation uses explicit immutable rebinding or reducers so behavior is preserved. See
+[Imperative to Functional Lowering](docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md) and the
+[reviewed output](test/quality/handwritten-output/generated/portable-chat-domain/portable_chat_domain/transcript.ex).
+
+## PhoenixHx
+
+PhoenixHx is a build-time typed authoring layer, not a replacement web runtime. LiveViews use typed
+`Socket<TAssigns>` and callback result types. Haxe parses inline HXX and type-checks assigns and
+embedded expressions before emitting Phoenix `~H`; strict options also check registered components,
+slots, hooks, and events. This excerpt is from the checked
+[`SearchLive`](examples/13-elixir-first-liveview/src_haxe/live/SearchLive.hx):
+
+```haxe
+return <p data-testid="result-count">
+  ${assigns.result_count} result(s)
+</p>;
+```
+
+```elixir
+~H"""
+<p data-testid="result-count">
+  {@result_count} result(s)
+</p>
+"""
+```
+
+Phoenix still compiles the resulting HEEx, and there is no separate template runtime. The same example's typed
+[`final routes` DSL](examples/13-elixir-first-liveview/src_haxe/ElixirFirstLiveviewRouter.hx) emits a
+normal [`Phoenix.Router`](examples/13-elixir-first-liveview/lib/elixir_first_liveview_web/router.ex),
+including pipelines, scopes, and `live_session`. See [Phoenix Integration](docs/02-user-guide/PHOENIX_INTEGRATION.md)
+and the complete
+[`SearchLive` output](test/quality/handwritten-output/generated/elixir-first-liveview/elixir_first_liveview_web/search_live.ex).
+
+## Native First, Compatibility When Required
+
+The compiler tries, in order: proven native lowering such as `Int` operators and `Enum.map`; direct
+typed Elixir/Phoenix/Ecto/OTP APIs; Haxe stdlib overrides backed by `String`, `Map`, `:crypto`, and
+other BEAM primitives; then explicit compatibility lowering or small helpers when semantics differ.
+Special floats, unresolved numeric values, and arbitrary Haxe `throw` values are examples of the last case.
+
+Correctness wins when source and target semantics differ. Today the two core helper modules are kept
+in generated builds even when a particular application has no call site for one of them; generated
+calls remain selective, but module inclusion is not yet fully demand-driven. This is tracked footprint
+work, not an application mode. Normal applications do not use `-D reflaxe_runtime`; see
+[`reflaxe_runtime` And Generated Helpers](docs/02-user-guide/REFLAXE_RUNTIME_EXPLAINED.md).
 
 ## Start Where It Pays
 
@@ -111,7 +178,7 @@ and tested instead of being disguised as native syntax.
 | Compile the smallest Haxe modules | [`01-simple-modules`](examples/01-simple-modules/) |
 | Bring a Haxe service or library to the BEAM | [`02-mix-project`](examples/02-mix-project/) |
 | Add one feature to an existing Phoenix app | [Gradual Adoption Tutorial](docs/06-guides/PHOENIX_GRADUAL_ADOPTION_TUTORIAL.md) |
-| Call hand-written Elixir from typed Haxe | [`13-elixir-first-liveview`](examples/13-elixir-first-liveview/) |
+| Author typed LiveViews or call hand-written Elixir | [`13-elixir-first-liveview`](examples/13-elixir-first-liveview/) |
 | Share selected browser/server domain logic | [`16-portable-chat-domain`](examples/16-portable-chat-domain/) |
 | Explore the full reference app | [`todo-app`](examples/todo-app/) |
 | Install a verified release package | [Installation](docs/01-getting-started/installation.md) |
@@ -120,13 +187,9 @@ No all-at-once rewrite is required.
 
 ## Reflaxe.Elixir And Gleam
 
-This is not a universal “better than Gleam” claim. Reflaxe.Elixir can be the better fit when generated
-Elixir, Phoenix macro/DSL integration, module-by-module adoption, Haxe macros, or existing Haxe and
-JavaScript sharing are central. Gleam is the safer fit when a small immutable language, a cohesive
-Erlang/JavaScript model, mature 1.x stability, and its dedicated ecosystem matter more.
-
-Read the [full comparison](docs/01-getting-started/WHY_REFLAXE_ELIXIR.md#reflaxeelixir-and-gleam),
-including tradeoffs and primary sources.
+Reflaxe.Elixir fits best when generated Elixir, Phoenix integration, gradual adoption, Haxe macros,
+or existing Haxe/JavaScript sharing matter. Gleam favors a smaller immutable language and mature 1.x
+ecosystem. Read the [honest comparison](docs/01-getting-started/WHY_REFLAXE_ELIXIR.md#reflaxeelixir-and-gleam).
 
 ## Try It
 
@@ -158,6 +221,8 @@ lifecycle scope, licensing, a frozen support contract, and external install/upgr
 | Product thesis and tradeoffs | [Why Reflaxe.Elixir?](docs/01-getting-started/WHY_REFLAXE_ELIXIR.md) |
 | Setup and first application | [Start Here](docs/01-getting-started/START_HERE.md) |
 | Elixir-friendly Haxe | [Writing Idiomatic Haxe](docs/02-user-guide/WRITING_IDIOMATIC_HAXE_FOR_ELIXIR.md) |
+| Portable vs Elixir-first source design | [Authoring Styles](docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md) |
+| Native lowering and compatibility helpers | [`reflaxe_runtime` And Generated Helpers](docs/02-user-guide/REFLAXE_RUNTIME_EXPLAINED.md) |
 | Phoenix, LiveView, Ecto, and API references | [Documentation Index](docs/README.md) |
 | Supported versions and sharp edges | [Support Matrix](docs/06-guides/SUPPORT_MATRIX.md) |
 | Contributor architecture and tests | [Contributing](docs/10-contributing/contributing.md) |

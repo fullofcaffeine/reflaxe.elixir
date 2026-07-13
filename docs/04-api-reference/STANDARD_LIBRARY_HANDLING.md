@@ -26,13 +26,17 @@ guarded by `#if (macro || reflaxe_runtime)` outside macro mode. It is not an Eli
 project and does not exist in the generated application. See
 [`REFLAXE_RUNTIME_EXPLAINED.md`](../02-user-guide/REFLAXE_RUNTIME_EXPLAINED.md).
 
-Runtime helpers that *must exist as emitted Elixir* (for example, the exception/throw bridge used by the
-Elixir lowering pipeline) live as Haxe sources under:
+Runtime helpers that *must exist as emitted Elixir* live as Haxe sources under:
 
 - `std/reflaxe/elixir/runtime/**` (native modules like `Reflaxe.Elixir.HaxeThrow`)
 
-They are forcibly included/kept at macro-time by `src/reflaxe/elixir/CompilerInit.hx`, so they are emitted
-into your app’s generated `.ex` output even under `-dce full`.
+The two core helpers, `Reflaxe.Elixir.HaxeThrow` and
+`Reflaxe.Elixir.HaxeFloat`, are currently force-typed and kept at macro time by
+`src/reflaxe/elixir/CompilerInit.hx`. They are therefore emitted into normal
+generated `.ex` output even under `-dce full`. Their call sites remain
+selective, but module inclusion is not yet fully demand-driven. See
+[`reflaxe_runtime` and Generated Elixir Helpers](../02-user-guide/REFLAXE_RUNTIME_EXPLAINED.md)
+for the reason and the tracked footprint work.
 
 ## The core strategy
 
@@ -65,9 +69,12 @@ Good examples:
   small compatibility helpers for semantics the BEAM cannot directly represent:
   throwing arbitrary Haxe values, and IEEE `NaN` / infinity values.
 
-Runtime support is a last resort. If a stdlib feature can be expressed by
-better AST lowering, an Elixir-native extern, or a targeted stdlib override, do
-that before adding another runtime helper.
+Runtime support is a last resort for generated call shapes and new compiler
+design. If a stdlib feature can be expressed by better AST lowering, an
+Elixir-native extern, or a targeted stdlib override, do that before adding
+another runtime helper. This design rule is separate from the current
+conservative policy that retains the two core helper modules in every normal
+build.
 
 ### Don’t “re-implement the whole Haxe stdlib” blindly
 
