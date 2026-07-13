@@ -16,7 +16,8 @@ private typedef LocalFieldAssign = {
 	baseVarName:String,
 	baseVarId:Int,
 	fieldNameSnake:String,
-	isStruct:Bool
+	isStruct:Bool,
+	tupleIndex:Null<Int>
 };
 
 /**
@@ -31,7 +32,8 @@ private typedef LocalFieldAssign = {
  * - Elixir is immutable; assignments to local variables are always rebinding.
  * - "Field assignment" on a local (e.g. `spec.restart = Temporary`) must become an immutable
  *   update of the base value (`spec = Map.put(spec, :restart, ...)` or `%{spec | restart: ...}`).
- * - Typed anonymous objects compile as atom-keyed maps; using string keys breaks access (`spec.restart`).
+ * - Regular typed anonymous objects compile as atom-keyed maps; tuple-shaped
+ *   anonymous objects require `put_elem/3` instead of a map update.
  *
  * HOW
  * - Detect local-field assignment shapes:
@@ -39,6 +41,7 @@ private typedef LocalFieldAssign = {
  * - Rewrite to:
  *   - Struct (`TInst`): `%{base | field: rhs}`
  *   - Map/anonymous (`TAnonymous`): `Map.put(base, :field, rhs)`
+ *   - Tuple-shaped anonymous: `put_elem(base, index, rhs)`
  * - Apply the same update strategy to compound assignments by computing the new field value.
  *
  * EXAMPLES
@@ -223,6 +226,7 @@ class AssignmentBuilder {
 						};
 
 						var fieldNameSnake = NameUtils.toSnakeCase(rawFieldName);
+						var tupleIndex = AnonymousTupleShape.fieldIndexForType(baseExpr.t, rawFieldName);
 						var isStruct = switch (baseExpr.t) {
 							case TInst(_, _): true;
 							default: false;
@@ -232,7 +236,8 @@ class AssignmentBuilder {
 							baseVarName: baseVarName,
 							baseVarId: v.id,
 							fieldNameSnake: fieldNameSnake,
-							isStruct: isStruct
+							isStruct: isStruct,
+							tupleIndex: tupleIndex
 						};
 					case TConst(TThis):
 						var compilationCtx = context;
@@ -253,7 +258,8 @@ class AssignmentBuilder {
 							baseVarName: baseVarName,
 							baseVarId: -1,
 							fieldNameSnake: NameUtils.toSnakeCase(rawFieldName),
-							isStruct: true
+							isStruct: true,
+							tupleIndex: null
 						};
 					default:
 						null;
@@ -269,6 +275,14 @@ class AssignmentBuilder {
 	}
 
 	static function buildLocalFieldAssignUpdateFromValue(localField:LocalFieldAssign, valueAST:ElixirAST):ElixirAST {
+		if (localField.tupleIndex != null) {
+			return makeAST(ECall(null, "put_elem", [
+				makeAST(EVar(localField.baseVarName)),
+				makeAST(EInteger(localField.tupleIndex)),
+				valueAST
+			]));
+		}
+
 		if (localField.isStruct) {
 			// %{base | field: value}
 			return makeAST(EStructUpdate(makeAST(EVar(localField.baseVarName)), [{key: localField.fieldNameSnake, value: valueAST}]));

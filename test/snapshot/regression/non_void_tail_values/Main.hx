@@ -69,9 +69,7 @@ class Main {
 			throw "object tail value lost";
 
 		var tupleValue = values.tupleLiteral();
-		// No typed tuple accessor exists yet; 3qh.19 tracks the source-level gap.
-		var tupleOk:Bool = untyped __elixir__('is_tuple({0}) and elem({0}, 0) == "tuple" and elem({0}, 1) == 4', tupleValue);
-		if (!tupleOk)
+		if (tupleValue._1 != "tuple" || tupleValue._2 != 4)
 			throw "tuple tail value lost";
 		if (values.localValue(11) != 11)
 			throw "local tail value lost";

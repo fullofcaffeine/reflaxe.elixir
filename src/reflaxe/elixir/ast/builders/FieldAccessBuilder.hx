@@ -25,7 +25,7 @@ using StringTools;
  * - TField expressions with various field access types
  * - Enum constructor references (with/without parameters)
  * - Static field access (including enum abstracts)
- * - Instance and anonymous field access
+ * - Instance and anonymous field access, including typed tuple fields
  * - Special handling for @:elixirIdiomatic enums
  * 
  * HOW: Pattern-based field access compilation
@@ -330,6 +330,11 @@ class FieldAccessBuilder {
 			#if debug_ast_builder
 			#end
 			return null;
+		}
+
+		var tupleIndex = AnonymousTupleShape.fieldIndexForType(e.t, fieldName);
+		if (tupleIndex != null) {
+			return ECall(null, "elem", [objAST, makeAST(EInteger(tupleIndex))]);
 		}
 
 		var receiverType = haxe.macro.TypeTools.follow(e.t);

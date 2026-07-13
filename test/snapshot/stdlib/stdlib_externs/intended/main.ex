@@ -81,18 +81,18 @@ defmodule Main do
     _copy_result = File.copy("source.txt", "dest.txt")
     _rename_result = File.rename("old.txt", "new.txt")
     result = File.read("text_file.txt")
-    _text_content = if (result._0 == "ok"), do: result._1, else: nil
+    _text_content = if (elem(result, 0) == "ok"), do: elem(result, 1), else: nil
     result = File.write("output.txt", "content")
-    _write_success = result._0 == "ok"
+    _write_success = elem(result, 0) == "ok"
     result = File.read("multi_line.txt")
-    content = if (result._0 == "ok"), do: result._1, else: nil
+    content = if (elem(result, 0) == "ok"), do: elem(result, 1), else: nil
     _lines = if (not Kernel.is_nil(content)) do
       StringTools.haxe_split(content, "\n")
     else
       nil
     end
     result = File.mkdir_p("new_dir")
-    _dir_created = result._0 == "ok"
+    _dir_created = elem(result, 0) == "ok"
   end
   defp test_path_externs() do
     _joined = Path.join(["home", "user", "documents"])

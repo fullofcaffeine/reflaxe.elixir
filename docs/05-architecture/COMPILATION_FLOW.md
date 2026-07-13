@@ -62,6 +62,38 @@ ordinary source and package builds. The snapshot harness enables it by default b
 benefit from checking every phase. For exact granular pass names during compiler debugging, combine it with
 `-D hxx_granular_pass_registry`; otherwise diagnostics name the lean bundle boundary.
 
+## Anonymous Tuple-Shaped Object Contract
+
+Haxe does not have a single built-in tuple syntax, so typed surfaces commonly
+model positional values with anonymous fields. Reflaxe.Elixir recognizes two
+canonical layouts:
+
+- `_1.._N` for portable, one-based Haxe tuple shapes.
+- `_0.._N-1` for zero-based Elixir extern shapes.
+
+The complete followed anonymous type must contain one of those contiguous field
+sets. A mixed shape such as `{_1, label}` or a gapped shape such as `{_1, _3}`
+is a map, not a tuple.
+
+`AnonymousTupleShape` owns this decision for the build phase. `ObjectBuilder`
+emits `ETuple`, `FieldAccessBuilder` emits zero-based `elem/2` reads, and
+`AssignmentBuilder` emits `put_elem/3` followed by normal local rebinding.
+Haxe object-pattern lowering also reaches the typed field-access path, so its
+tests and binds use the same indices. For example:
+
+```text
+Haxe {_1: "ok", _2: 4}  -> Elixir {"ok", 4}
+Haxe value._1            -> Elixir elem(value, 0)
+Haxe value._2 = 5        -> Elixir value = put_elem(value, 1, 5)
+```
+
+This is a typed-AST representation rule, not a printed-text repair. A field
+name alone is insufficient evidence: the builder must prove the receiver's
+complete anonymous shape before emitting tuple access. The executable
+`regression/tuple_elem_access` fixture covers zero- and one-based reads,
+updates, nesting, object-pattern matching, and map-shaped negative cases;
+`regression/non_void_tail_values` covers a function-returned tuple.
+
 ## Key Code Locations
 
 - Compiler bootstrap and preprocessor registration:
@@ -70,6 +102,7 @@ benefit from checking every phase. For exact granular pass names during compiler
   - `src/reflaxe/elixir/ElixirCompiler.hx`
 - TypedExpr → ElixirAST build:
   - `src/reflaxe/elixir/ast/ElixirASTBuilder.hx`
+  - `src/reflaxe/elixir/ast/builders/AnonymousTupleShape.hx`
 - Pass registry + ordered transforms:
   - `src/reflaxe/elixir/ast/transformers/registry/ElixirASTPassRegistry.hx`
   - `src/reflaxe/elixir/ast/ElixirASTTransformer.hx`

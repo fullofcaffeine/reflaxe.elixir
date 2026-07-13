@@ -380,12 +380,19 @@ class Main {
     var sharedBytes = Bytes.alloc(2);
     var octets = UInt8Array.fromBytes(sharedBytes);
     octets[0] = 55;
+    var tupleValue = packageTuple();
+    if (tupleValue._1 != "tuple" || tupleValue._2 != 4)
+      throw "installed package tuple lowering failed";
 
     trace(payloadValue);
     trace(Sha256.encode(value));
     trace(value.split("i").join("|"));
     trace([mime, (customMime:String), scheme, (customScheme:String)].join("|"));
     trace([Std.string(floats[0]), Std.string(sharedBytes.get(0))].join("|"));
+  }
+
+  static function packageTuple():{_1:String, _2:Int} {
+    return {_1: "tuple", _2: 4};
   }
 }
 HX
@@ -431,6 +438,8 @@ require_file "$work_dir/out_source/_GeneratedFiles.json"
 require_file "$work_dir/out_source/string_tools.ex"
 require_file "$work_dir/out_source/haxe/io/array_buffer_view_impl.ex"
 require_file "$work_dir/out_source/haxe/io/_u_int8_array/u_int8_array_impl_.ex"
+require_contains "$work_dir/out/main.ex" "elem(tuple_value, 0)"
+require_contains "$work_dir/out/main.ex" "elem(tuple_value, 1)"
 require_absent "$work_dir/out/haxe/io/mime.ex"
 require_absent "$work_dir/out/haxe/io/scheme.ex"
 require_absent "$work_dir/out_source/haxe/io/mime.ex"

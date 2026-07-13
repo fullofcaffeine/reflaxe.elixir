@@ -11,6 +11,7 @@ that remains useful across versions; released version identity comes from protec
 
 ### Bug Fixes
 
+* **compiler:** lower canonical tuple-shaped anonymous objects consistently: contiguous `_1.._N` portable shapes and `_0.._N-1` native-extern shapes now use `elem/2` for typed reads and `put_elem/3` for immutable updates, while mixed or gapped numeric fields remain maps.
 * **compiler:** preserve scalar non-`Void` function bodies through final unused-local hygiene, so instance methods returning literals such as `0`, `false`, strings, floats, `nil`, lists, maps, or tuples no longer compile to empty Elixir functions returning `nil`.
 * **compiler:** retain authored `Void`/value return contracts as compiler metadata and opt in to non-`Void` result-carrier validation at every snapshot-test AST phase; diagnostics now identify the affected function and pass, while ordinary source/package builds and generated Elixir remain unchanged.
 * **compiler:** restore identity values for empty one-argument abstract implementation stubs, so generated `AgentRef`, `GenServerRef`, and `RegistryKey` conversion functions return their wrapped argument instead of silently returning `nil`.

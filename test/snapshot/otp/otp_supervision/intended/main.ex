@@ -72,8 +72,8 @@ defmodule Main do
   end
   defp test_task_supervisor() do
     supervisor_result = Task.Supervisor.start_link()
-    if (supervisor_result._0 == "ok") do
-      supervisor = supervisor_result._1
+    if (elem(supervisor_result, 0) == "ok") do
+      supervisor = elem(supervisor_result, 1)
       task = Task.Supervisor.async(supervisor, fn -> "supervised" end)
       _result = Task.await(task)
       nolink_task = Task.Supervisor.async_nolink(supervisor, fn -> "not linked" end)

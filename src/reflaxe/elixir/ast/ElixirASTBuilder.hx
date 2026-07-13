@@ -28,6 +28,7 @@ import reflaxe.elixir.ast.builders.ControlFlowBuilder;
 import reflaxe.elixir.ast.builders.CallExprBuilder;
 import reflaxe.elixir.ast.builders.VariableBuilder;
 import reflaxe.elixir.ast.builders.FieldAccessBuilder;
+import reflaxe.elixir.ast.builders.AnonymousTupleShape;
 import reflaxe.elixir.ast.builders.AssignmentBuilder;
 import reflaxe.elixir.ast.builders.SwitchBuilder;
 import reflaxe.elixir.ast.builders.ExceptionBuilder;
@@ -2160,10 +2161,8 @@ class ElixirASTBuilder {
 							var fieldName = cf.get().name;
 							var target = buildFromTypedExpr(e, currentContext);
 
-							if (~/^_\d+$/.match(fieldName)) {
-								// This is a tuple field access like tuple._1, tuple._2
-								// Convert to elem(tuple, index) where index is 0-based
-								var index = Std.parseInt(fieldName.substr(1)) - 1; // _1 -> 0, _2 -> 1
+							var index = AnonymousTupleShape.fieldIndexForType(e.t, fieldName);
+							if (index != null) {
 								ECall(null, "elem", [target, makeAST(EInteger(index))]);
 							} else {
 								// Regular anonymous field access - convert to snake_case

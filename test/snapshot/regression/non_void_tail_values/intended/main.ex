@@ -25,8 +25,7 @@ defmodule Main do
       raise Reflaxe.Elixir.HaxeThrow, [value: "object tail value lost"]
     end
     tuple_value = apply(Map.get(values, :__reflaxe_class__) || Map.get(values, :__struct__), :tuple_literal, [values])
-    tuple_ok = is_tuple(tuple_value) and elem(tuple_value, 0) == "tuple" and elem(tuple_value, 1) == 4
-    if (not tuple_ok) do
+    if (elem(tuple_value, 0) != "tuple" or elem(tuple_value, 1) != 4) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "tuple tail value lost"]
     end
     if (apply(Map.get(values, :__reflaxe_class__) || Map.get(values, :__struct__), :local_value, [values, 11]) != 11) do

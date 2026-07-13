@@ -54,6 +54,19 @@ Sibling compiler findings:
   package smoke guards because its stdlib/framework surfaces have stricter
   source-vs-package ordering requirements.
 
+## External Contribution Policy
+
+This audit may call a patch an "upstream candidate," but that classification is
+only a maintenance assessment. Do not open or update an upstream Reflaxe pull
+request or issue unless the user explicitly asks for that external action.
+
+Until then, keep the fix in this audited vendored baseline. A backup branch may
+also be pushed to the project-owned `fullofcaffeine/reflaxe` fork without
+opening a pull request. Existing upstream PR
+[`SomeRanDev/reflaxe#52`](https://github.com/SomeRanDev/reflaxe/pull/52) predates
+this policy; its status remains historical patch evidence, not a default for
+future work.
+
 ## Required Local Patches
 
 ### 1. `Run.hx`: Build Root File Copy

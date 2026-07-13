@@ -23,7 +23,7 @@ import reflaxe.elixir.ast.NameUtils;
  * - Detects and transforms special OTP patterns
  * 
  * WHAT: Transforms Haxe TObjectDecl to appropriate Elixir structures
- * - Anonymous objects with _1, _2 fields → Tuples
+ * - Anonymous objects with contiguous _0... or _1... fields → Tuples
  * - Supervisor option objects → Keyword lists
  * - Child spec objects → Maps with special handling
  * - Regular objects → Maps with snake_case keys
@@ -71,7 +71,7 @@ class ObjectBuilder {
 		// ====================================================================
 		// PATTERN 1: Tuple Pattern (Anonymous structure with _1, _2, etc.)
 		// ====================================================================
-		if (isTuplePattern(fields)) {
+		if (AnonymousTupleShape.isTupleFieldNames([for (field in fields) field.name])) {
 			#if debug_ast_builder
 			#end
 			return buildTuple(fields, context);
@@ -104,25 +104,6 @@ class ObjectBuilder {
 	}
 
 	/**
-	 * Check if fields represent a tuple pattern
-	 * 
-	 * WHY: Anonymous objects with _1, _2 fields are Haxe's tuple representation
-	 * WHAT: Checks if all fields follow _N naming pattern
-	 * HOW: Regex matching on field names
-	 */
-	static function isTuplePattern(fields:Array<{name:String, expr:TypedExpr}>):Bool {
-		if (fields.length == 0)
-			return false;
-
-		for (field in fields) {
-			if (!~/^_\d+$/.match(field.name)) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	/**
 	 * Build tuple from ordered fields
 	 * 
 	 * WHY: Tuples need elements in correct numerical order
@@ -133,8 +114,8 @@ class ObjectBuilder {
 		// Sort fields by index to ensure correct order
 		var sortedFields = fields.copy();
 		sortedFields.sort(function(a, b) {
-			var aIndex = Std.parseInt(a.name.substr(1));
-			var bIndex = Std.parseInt(b.name.substr(1));
+			var aIndex = AnonymousTupleShape.fieldOrdinal(a.name);
+			var bIndex = AnonymousTupleShape.fieldOrdinal(b.name);
 			return aIndex - bIndex;
 		});
 

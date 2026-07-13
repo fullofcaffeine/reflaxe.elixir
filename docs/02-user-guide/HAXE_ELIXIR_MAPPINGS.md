@@ -190,6 +190,46 @@ typedef User = {
 }
 ```
 
+### Tuple-Shaped Anonymous Objects
+
+Ordinary Haxe anonymous objects compile to Elixir maps. Two deliberately
+positional field layouts compile to tuples instead:
+
+- `_1.._N` is the portable Haxe tuple convention.
+- `_0.._N-1` is the zero-based convention used by typed Elixir externs.
+
+For example:
+
+```haxe
+typedef Pair = {
+    var _1:String;
+    var _2:Int;
+}
+
+var pair:Pair = {_1: "ok", _2: 4};
+pair._2 = 5;
+var label = pair._1;
+```
+
+Generated Elixir keeps the same positional representation through construction,
+access, and immutable update:
+
+```elixir
+pair = {"ok", 4}
+pair = put_elem(pair, 1, 5)
+label = elem(pair, 0)
+```
+
+The compiler checks the complete typed field set. The numeric fields must be
+contiguous and start at zero or one; `{_1: "map", label: "named"}` and
+`{_1: "map", _3: 3}` therefore remain normal atom-keyed maps. This avoids
+silently changing a named record into a positional value merely because one
+field begins with an underscore and a number.
+
+Use tuple-shaped objects when a typed Haxe surface must model a positional
+Elixir value. Prefer named structural types for application records, and prefer
+the typed `Result`, Phoenix, or OTP return surfaces for common tagged tuples.
+
 ## Type System Mappings
 
 | Haxe Type | Elixir Type | Notes |
