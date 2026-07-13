@@ -187,6 +187,13 @@ Formatting is off by default, so Haxe-only environments do not need Mix. See
 for `off`/`write`/`check`, Phoenix LiveView configuration, CI version pinning,
 source-map safety, and the distinction between formatting and semantic code generation.
 
+Formatting is only the presentation layer. The repository also keeps a small
+[generated Elixir quality corpus](docs/03-compiler-development/GENERATED_OUTPUT_QUALITY_CORPUS.md)
+that places representative Haxe source, canonical generated output, and a
+handwritten Elixir comparison side by side. CI rejects unexplained helper
+calls, IIFEs, discarded matches, reducer appends, and support-module growth,
+while preserving narrow allowances when Haxe semantics genuinely require them.
+
 ### New Phoenix app (greenfield)
 
 Use the guided flow:
@@ -291,6 +298,7 @@ The compiler keeps one ordered Elixir AST pipeline for source checkouts and buil
 - [Compiler Compilation Flow](docs/05-architecture/COMPILATION_FLOW.md)
 - [AST Pass Registry Inventory and parity contract](docs/05-architecture/PASS_REGISTRY_INVENTORY.md)
 - [Compiler Testing Infrastructure](docs/03-compiler-development/TESTING_INFRASTRUCTURE.md)
+- [Generated Elixir Quality Corpus](docs/03-compiler-development/GENERATED_OUTPUT_QUALITY_CORPUS.md)
 - [Development Workflow](docs/01-getting-started/development-workflow.md)
 
 ## License

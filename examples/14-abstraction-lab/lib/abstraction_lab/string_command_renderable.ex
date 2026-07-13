@@ -1,4 +1,7 @@
 defmodule AbstractionLab.StringCommandRenderable do
+  def new() do
+    %{:__reflaxe_class__ => AbstractionLab.StringCommandRenderable}
+  end
   def render_command(_struct, value) do
     "run:#{value}"
   end

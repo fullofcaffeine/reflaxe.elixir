@@ -43,6 +43,7 @@ These failures usually come from running only a subset locally (e.g. `test:quick
   - After compiler/std/framework/example changes, validate the relevant layers: Haxe compile (`npm run test:examples`), generated expected-output drift (`npm run test:examples-output`), strict generated Elixir (`npm run test:examples-elixir`), and runtime example tests (`npm run test:examples-runtime`) when behavior can change.
   - Run `npm run guard:examples-qa` after adding/removing an example or changing example test coverage.
   - If example generated output changes intentionally, review and commit the generated output alongside the source/docs change; do not leave examples regenerating differently from checked-in files.
+- Handwritten-output corpus changes: `test/quality/handwritten-output/manifest.json` is a review policy, not a suppression list. New `_ =`, IIFE, helper, reducer-append, or support-footprint growth should be fixed at the compiler source when possible. Add an allowance only when the artifact is semantically or architecturally required, scope it to one file/helper/count, explain why, and link the owning bead. Run `npm run test:handwritten-output`; use `npm run update:handwritten-output` only after reviewing the Haxe source, generated diff, handwritten comparison, and runtime/WAE evidence.
 - Deep compiler/runtime semantics: if a fix becomes too complex, ambiguous, or architectural to reason about locally with confidence, stop before broad changes and ask the human to query GPT 5.5 Pro with the whole repo. Provide a precise prompt describing the failing Haxe source, generated Elixir shape, expected semantics, suspected pipeline files, and adjacent risks. Do not land speculative broad repairs while waiting for that external review.
 - Bugs: when you fix a bug, add a regression test/snapshot when it fits (and keep it minimal).
 - Regression fidelity: exercise the same public Haxe/source-language operation that failed in production. Do not replace ordinary Haxe behavior with `__elixir__()`, `untyped`, raw target syntax, or a lower-level helper merely to reduce generated support files, warnings, snapshot size, or test complexity; that can bypass the compiler path the test claims to protect. Target escape hatches are allowed only when the target representation/boundary itself is under test or no typed Haxe surface exists. Document that reason beside the escape hatch and track any source-level semantic gap it bypasses.
@@ -75,6 +76,7 @@ These failures usually come from running only a subset locally (e.g. `test:quick
 - Examples (expected generated output): `npm run test:examples-output`
 - Examples (strict warnings): `npm run test:examples-elixir` (mix compile `--warnings-as-errors`, no deps check)
 - Examples (runtime tests): `npm run test:examples-runtime`
+- Generated Elixir structural corpus: `npm run test:handwritten-output`
 - Examples (full QA): `npm run test:examples-qa`
 - Example Hex dependency audit: `npm run audit:examples-hex`
 - Mix tests (fast): `npm run test:mix-fast`

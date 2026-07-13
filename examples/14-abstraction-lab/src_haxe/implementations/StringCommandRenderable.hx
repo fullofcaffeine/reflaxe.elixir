@@ -7,6 +7,8 @@ import protocols.CommandRenderable;
  */
 @:impl
 class StringCommandRenderable {
+	public function new() {}
+
 	public function renderCommand(value:String):String {
 		return "run:" + value;
 	}

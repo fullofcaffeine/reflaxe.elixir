@@ -107,6 +107,13 @@ Full testing policy and test inventory live in:
 
 Use this section for quick commands.
 
+The Ecto `Todo` schema is also a reviewed slice in the
+[generated Elixir quality corpus](../../docs/03-compiler-development/GENERATED_OUTPUT_QUALITY_CORPUS.md).
+That check compares the Haxe schema, canonical generated module, and a concise
+handwritten Ecto version while measuring the full application's generated
+support footprint. It complements the runtime checks below; it does not
+replace them.
+
 ### QA Sentinel (non-blocking)
 
 Compile + boot + readiness smoke:

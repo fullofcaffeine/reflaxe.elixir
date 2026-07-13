@@ -50,6 +50,7 @@ This index helps you find the right docs quickly, whether you're building apps w
 - [AST Pass Registry Inventory](05-architecture/PASS_REGISTRY_INVENTORY.md) - Effective phases, typed ownership scopes, scoped/all-pass byte parity, replay families, diagnostics, and profiling baseline
 - [Macro Principles](03-compiler-development/MACRO_PRINCIPLES.md) - Macro-time compilation rules
 - [Testing Infrastructure](03-compiler-development/TESTING_INFRASTRUCTURE.md) - Snapshot + integration testing system
+- [Generated Elixir Quality Corpus](03-compiler-development/GENERATED_OUTPUT_QUALITY_CORPUS.md) - Handwritten comparisons, structural allowances, support footprint, and source/package parity
 - [XRay Debugging](03-compiler-development/DEBUG_XRAY_SYSTEM.md) - Debugging methodology
 - [Best Practices](03-compiler-development/COMPILER_BEST_PRACTICES.md) - Development patterns
 

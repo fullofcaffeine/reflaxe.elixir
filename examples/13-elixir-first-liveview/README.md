@@ -86,3 +86,21 @@ This example keeps app logic close to Elixir/Phoenix APIs:
 - Use `Result` for explicit success/error flow.
 
 It still uses basic Haxe language constructs (types, enums/results, functions), but avoids portability-first patterns where a BEAM-native API is clearer.
+
+## Generated output quality contract
+
+This example is the Elixir-first and LiveView slice of the repository's
+[handwritten-output corpus](../../docs/03-compiler-development/GENERATED_OUTPUT_QUALITY_CORPUS.md).
+The review keeps these artifacts side by side:
+
+- Haxe: `src_haxe/live/SearchDomain.hx` and `src_haxe/live/SearchLive.hx`
+- generated Elixir: `lib/elixir_first_liveview/search_domain.ex` and
+  `lib/elixir_first_liveview_web/search_live.ex`
+- concise handwritten comparisons under
+  `../../test/quality/handwritten-output/handwritten/elixir-first-liveview/`
+
+`mix test` executes the domain and LiveView behavior from Haxe-authored ExUnit
+tests. CI also applies warnings-as-errors, the Phoenix LiveView formatter, and
+the structural corpus gate. The one visible `HaxeFloat` comparison is reviewed
+separately because the incoming value is an untrusted Elixir `Term`; it is not
+a general application helper allowance.

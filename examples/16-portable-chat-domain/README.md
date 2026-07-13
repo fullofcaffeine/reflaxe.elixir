@@ -18,10 +18,15 @@ It is intentionally not a full Phoenix chat app. For Phoenix wiring, see:
 
 ```bash
 cd examples/16-portable-chat-domain
-haxe build.hxml
-elixirc --warnings-as-errors -o _build/elixirc_validate $(find lib -type f -name "*.ex" | sort)
+mix deps.get
+mix test
+haxe build-js.hxml
 node dist/portable_chat_domain.js
 ```
+
+`mix test` compiles Haxe-authored ExUnit coverage for normalization, rejection,
+long previews, transcript order, and the Elixir adapter. The final two commands
+execute the same portable domain through JavaScript.
 
 ## Key files
 
@@ -33,3 +38,13 @@ node dist/portable_chat_domain.js
 ## Boundary rule
 
 The portable domain does not import `elixir.*`, `phoenix.*`, or `js.*`. Target-specific code belongs in adapters at the edge.
+
+## Generated output quality contract
+
+This example supplies the portable and imperative slices of the
+[handwritten-output corpus](../../docs/03-compiler-development/GENERATED_OUTPUT_QUALITY_CORPUS.md).
+The generated `MessageRules`, `Transcript`, and `PortableChatServer` modules
+are compared with concise handwritten Elixir. Current `StringTools` calls,
+three expression IIFEs, and one reducer append are counted and linked to
+separate optimization beads. They remain visible because the corpus does not
+trade portable Haxe semantics for a prettier snapshot.

@@ -6,14 +6,18 @@ This lab collects three abstraction patterns and explains each one against a dir
 
 The goal is not to replace Elixir style. The goal is to show where a typed Haxe authoring layer can remove drift or repeated boundary code while still compiling to regular Elixir modules.
 
-## Compile
+## Run and test
 
 ```bash
 cd examples/14-abstraction-lab
-haxe build.hxml
+mix deps.get
+mix test
 ```
 
-Generated files are emitted to `examples/14-abstraction-lab/lib/`.
+The Mix compiler builds Haxe to `lib/`, and the test alias compiles
+`test_haxe/quality/AbstractionLabRuntimeTest.hx` to ExUnit. The runtime tests
+exercise both retry strategies, both renderers, and the process boundary; this
+example is no longer compile-only.
 
 ## 1) Protocol-style contract + implementations
 
@@ -156,3 +160,13 @@ Wrappers can hide details if overused; for one-off low-level calls, direct Haxe-
 - `examples/14-abstraction-lab/src_haxe/behaviors/RetryPolicy.hx`
 - `examples/14-abstraction-lab/src_haxe/abstractions/ProcessBoundary.hx`
 - `examples/14-abstraction-lab/src_haxe/implementations/*.hx`
+
+## Generated output quality contract
+
+The retry policy and process boundary are reviewed in the
+[handwritten-output corpus](../../docs/03-compiler-development/GENERATED_OUTPUT_QUALITY_CORPUS.md).
+It compares the canonical generated modules with small native Elixir versions
+and measures the support footprint. This keeps the tradeoff explicit: the
+typed Haxe class/protocol model currently retains receiver dispatch metadata,
+while direct Kernel boundary calls compile without application-visible
+Reflaxe helpers.

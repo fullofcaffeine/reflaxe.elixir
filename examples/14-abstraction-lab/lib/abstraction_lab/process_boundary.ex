@@ -19,9 +19,9 @@ defmodule AbstractionLab.ProcessBoundary do
   def term_type(term) do
     cond do
       Kernel.is_nil(term) -> "nil"
+      Kernel.is_boolean(term) -> "boolean"
       Kernel.is_atom(term) -> "atom"
       Kernel.is_binary(term) -> "binary"
-      Kernel.is_boolean(term) -> "boolean"
       Kernel.is_float(term) -> "float"
       Kernel.is_function(term) -> "function"
       Kernel.is_integer(term) -> "integer"

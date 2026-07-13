@@ -9,12 +9,15 @@ that remains useful across versions; released version identity comes from protec
 
 * **configuration:** make `-lib reflaxe.elixir` own the `elixir` target marker and expose public Elixir/Phoenix APIs through that marker. Generated projects, examples, and normal consumer HXML files no longer declare Reflaxe's compiler-development `-D reflaxe_runtime` define; existing explicit definitions remain compatible.
 * **compiler:** add an optional Reflaxe `onOutputComplete` formatting lifecycle with explicit `off`, `write`, and non-mutating `check` modes; use `_GeneratedFiles.json` to protect handwritten files, discover project-owned Mix/Phoenix formatter configuration, preflight writes, reject stale source-map combinations, and verify deterministic source/package parity under the pinned Elixir 1.18.3 toolchain.
+* **quality:** add a reviewed handwritten-output corpus across Elixir-first, portable, abstraction, imperative, LiveView, and Ecto code; keep Haxe source, canonical generated snapshots, and concise handwritten comparisons connected while CI rejects unexplained `_ =`, IIFE, helper, reducer-append, and support-footprint growth.
 
 ### Bug Fixes
 
 * **compiler:** lower canonical tuple-shaped anonymous objects consistently: contiguous `_1.._N` portable shapes and `_0.._N-1` native-extern shapes now use `elem/2` for typed reads and `put_elem/3` for immutable updates, while mixed or gapped numeric fields remain maps.
 * **compiler:** preserve scalar non-`Void` function bodies through final unused-local hygiene, so instance methods returning literals such as `0`, `false`, strings, floats, `nil`, lists, maps, or tuples no longer compile to empty Elixir functions returning `nil`.
 * **compiler:** retain authored `Void`/value return contracts as compiler metadata and opt in to non-`Void` result-carrier validation at every snapshot-test AST phase; diagnostics now identify the affected function and pass, while ordinary source/package builds and generated Elixir remain unchanged.
+* **compiler:** avoid binding an unused source-length temporary when inline `String.substr(0, positiveLength)` needs only fixed bounds, preserving Haxe substring behavior while keeping strict generated Elixir warning-free.
+* **elixir:** classify booleans before general atoms in `Kernel.typeOf`, making its documented `"boolean"` result reachable on the BEAM.
 * **compiler:** restore identity values for empty one-argument abstract implementation stubs, so generated `AgentRef`, `GenServerRef`, and `RegistryKey` conversion functions return their wrapped argument instead of silently returning `nil`.
 * **fast_boot:** keep `Enum.reduce_while` result binding enabled so mutable Haxe locals retain their final accumulator state; `StringTools.lpad` and `rpad` now behave identically in fast and full compiler profiles.
 * **reflaxe:** resolve lazy Haxe class-field types before Reflaxe extracts function signatures, removing repeated `StringTools` "Function information not found" warnings and emitting the required `string_tools.ex` runtime module wherever generated calls already depend on it. The target-agnostic regression and framework fix are tracked upstream in [`SomeRanDev/reflaxe#52`](https://github.com/SomeRanDev/reflaxe/pull/52); the vendored patch remains until an accepted upstream baseline passes source and built-package parity.
@@ -26,6 +29,7 @@ that remains useful across versions; released version identity comes from protec
 * **compiler:** inventory all 578 effective Elixir AST passes by deterministic phase, ownership scope, replay family, ordering dependency, and representative tests; replace source-text order parsing with typed macro introspection and add bounded per-module timing/count baselines without changing generated Elixir.
 * **reflaxe:** retain the audited vendored framework baseline instead of importing upstream's broad, currently unused `RemovePureExpressions` optimizer; document the adoption criteria and remove inactive `debug_output_manager` trace blocks without changing normal compiler behavior.
 * **stdlib:** enable the unchanged upstream Haxe 4.3.7 `EReg` runtime fixture on BEAM, verifying the existing Regex-backed implementation across matching, captured state, split, replacement, mapping, and escaping semantics.
+* **examples:** make the abstraction lab and portable chat domain first-class Mix projects with Haxe-authored ExUnit runtime coverage and warnings-as-errors CI; execute the portable domain through JavaScript as an additional cross-target check.
 
 ### Security
 

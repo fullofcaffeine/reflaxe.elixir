@@ -234,6 +234,7 @@ function transformToEnumCall(pattern: LoopPattern): ElixirASTDef
 - **Mix tests**: Validate generated code actually runs
 - **Integration tests**: Validate real applications work
 - **Performance tests**: Ensure compilation speed
+- **Handwritten-output corpus**: Review canonical target structure and justified support/runtime footprint
 
 ## 🐛 Debugging Methodology
 
@@ -393,6 +394,7 @@ function build(): String {
   - `npm run test:examples-output` proves checked-in example outputs regenerate without drift.
   - `npm run test:examples-elixir` strict-compiles generated Elixir under warnings-as-errors.
   - `npm run test:examples-runtime` runs examples that have meaningful runtime tests.
+  - `npm run test:handwritten-output` rebuilds the selected quality corpus and checks formatting, reviewed target shape, structural allowances, and support footprint.
   - Do not duplicate full examples into `test/snapshot/**` unless a tiny focused compiler fixture is needed. The committed example outputs are already the broad golden files.
 - **Todo-app must compile cleanly** - integration validation
 - **No performance regressions** - watch for timeout increases

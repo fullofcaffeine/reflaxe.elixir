@@ -124,6 +124,10 @@ mode non-mutating. See
 for the project discovery, Phoenix plugin, source-map, and pinned-toolchain
 contracts.
 
+The representative output is now kept canonical by the project-owned Mix
+formatter and locked in the reviewed handwritten-output corpus described in
+[Generated Elixir Quality Corpus](../03-compiler-development/GENERATED_OUTPUT_QUALITY_CORPUS.md).
+
 ### Discarded effect calls
 
 Resolved by `haxe.elixir.codex-3qh.5`.
@@ -215,9 +219,11 @@ different concerns:
 - Some runtime and facade modules remain because the compiler currently treats
   them as required.
 
-Examples 14 and 16 cannot simply enable full DCE today because their
-compile-only application modules have no reachable runtime entry. They need a
-meaningful runtime harness before DCE can become a trustworthy test.
+Examples 14 and 16 now have Haxe-authored ExUnit runtime harnesses, and example
+16 also executes its JavaScript target. That closes the original compile-only
+coverage gap. The right whole-application DCE/support policy remains separate:
+the quality corpus records current support groups and fails on unexplained
+growth, while reductions remain tracked by the footprint task.
 
 Tracked by `haxe.elixir.codex-3qh.14`.
 
@@ -238,6 +244,23 @@ Tracked by:
 - `haxe.elixir.codex-3qh.15` - explicit native behaviour surface.
 - `haxe.elixir.codex-3qh.16` - protocol representation decision.
 - `haxe.elixir.codex-3qh.17` - useful public typespecs.
+
+### Reviewed handwritten-output corpus
+
+Implemented by `haxe.elixir.codex-3qh.7`.
+
+The durable corpus covers examples 13, 14, and 16 plus the todo Ecto schema.
+For every selected fixture it links the actual Haxe source, canonical generated
+Elixir, a concise handwritten target comparison, and an explanation of any
+intentional difference. CI separately checks Mix formatting, WAE, Haxe-authored
+runtime behavior, structural signals, and support footprint.
+
+Current selected allowances are deliberately narrow: one conservative
+`HaxeFloat` comparison at an untrusted `Term` boundary, five portable
+`StringTools` calls, three pure-expression IIFEs, and one reducer append. Each
+is file-scoped and linked to its follow-up bead. The haxelib package smoke runs
+the same scanner against source-checkout and built-package output and requires
+identical reports in addition to byte-identical Elixir.
 
 ## Cross-Target Comparison
 

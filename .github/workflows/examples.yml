@@ -133,5 +133,8 @@ jobs:
       - name: Run example runtime tests
         run: npm run test:examples-runtime
 
+      - name: Verify handwritten-output quality corpus
+        run: npm run test:handwritten-output
+
       - name: Verify generated Phoenix formatting lifecycle
         run: npm run test:generated-formatting -- --example examples/15-phoenix-chat-haxe-first --require-liveview-formatter

@@ -146,10 +146,13 @@
     },
     "14-abstraction-lab": {
       "compile": { "required": true },
-      "strictElixir": { "mode": "skipped", "reason": "Haxe-only abstraction catalog without a Mix project; generated syntax is covered by example validation and exact snapshots, while scalar return semantics are executed by the non_void_tail_values runtime smoke fixture." },
+      "strictElixir": { "mode": "ci" },
       "runtime": {
-        "mode": "compile-only",
-        "reason": "The catalog remains compile-only, but its non-Void instance-method return contract is mirrored by test/snapshot/regression/non_void_tail_values and executed by npm run test:runtime-smoke."
+        "mode": "mix-test",
+        "command": "mix deps.get && mix test",
+        "timeoutSeconds": 900,
+        "ci": true,
+        "evidence": ["test_haxe", "test"]
       }
     },
     "15-phoenix-chat-haxe-first": {
@@ -171,10 +174,13 @@
     },
     "16-portable-chat-domain": {
       "compile": { "required": true },
-      "strictElixir": { "mode": "skipped", "reason": "Portable domain-only sample without a Mix app; Haxe compile covers both target adapters." },
+      "strictElixir": { "mode": "ci" },
       "runtime": {
-        "mode": "compile-only",
-        "reason": "Portable domain sample. Runtime parity should be added when the sample grows executable target adapters."
+        "mode": "mix-test",
+        "command": "mix deps.get && mix test && haxe build-js.hxml && node dist/portable_chat_domain.js",
+        "timeoutSeconds": 900,
+        "ci": true,
+        "evidence": ["test_haxe", "test", "src_haxe/client"]
       }
     },
     "17-railshx-to-phoenixhx-todo": {

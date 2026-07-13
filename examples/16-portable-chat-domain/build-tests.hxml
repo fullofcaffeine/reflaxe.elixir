@@ -1,0 +1,17 @@
+# Haxe -> ExUnit runtime coverage for the portable chat domain.
+
+-lib reflaxe.elixir
+
+-cp src_haxe
+-cp test_haxe
+
+-D elixir_output=test/generated
+-D elixir_output_exs
+-D reflaxe_elixir_format=write
+-D reflaxe_elixir_strict_examples
+-D exunit
+-D app_name=PortableChatDomain
+
+-dce full
+
+quality.PortableChatDomainRuntimeTest

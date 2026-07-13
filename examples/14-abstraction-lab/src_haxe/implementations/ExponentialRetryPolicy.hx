@@ -7,6 +7,8 @@ import behaviors.RetryPolicy;
  */
 @:use(RetryPolicy)
 class ExponentialRetryPolicy {
+	public function new() {}
+
 	public function shouldRetry(attempt:Int, _lastError:String):Bool {
 		return attempt < maxAttempts();
 	}

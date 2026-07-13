@@ -7,6 +7,8 @@ import protocols.CommandRenderable;
  */
 @:impl
 class IntCommandRenderable {
+	public function new() {}
+
 	public function renderCommand(value:Int):String {
 		return "retry:" + value;
 	}

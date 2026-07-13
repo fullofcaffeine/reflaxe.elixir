@@ -22,6 +22,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Detect def ltrim(s) and def rtrim(s) in module StringTools and replace their
  *   bodies with a single call to String.trim_leading(s) or String.trim_trailing(s).
  * - is_space/2 is left intact; new ltrim/rtrim no longer depend on it.
+ * - Inline `substr` calls evaluate their source exactly once and calculate the
+ *   source length only when negative, omitted, dynamic, or clamped bounds need
+ *   it. A fixed `substr(0, positiveLength)` lowers directly to `String.slice/3`
+ *   without an unused length binding.
  *
  * EXAMPLES
  * Haxe (caller):
@@ -108,12 +112,18 @@ class StringToolsNativeRewrite {
 		var lengthVar = makeAST(EVar("reflaxe_string_length"));
 		var startVar = makeAST(EVar("reflaxe_string_start"));
 		var countVar = makeAST(EVar("reflaxe_string_count"));
-		var statements:Array<ElixirAST> = [
-			makeAST(EMatch(PVar("reflaxe_string_source"), source)),
-			makeAST(EMatch(PVar("reflaxe_string_length"), makeAST(ERemoteCall(makeAST(EVar("String")), "length", [sourceVar]))))
-		];
-
 		var posInt = intLiteral(pos);
+		var lenInt = intLiteral(len);
+		var lenIsNil = switch (len.def) {
+			case ENil: true;
+			default: false;
+		}
+		var lengthNeeded = posInt == null || posInt != 0 || lenIsNil || lenInt == null || lenInt < 0;
+		var statements:Array<ElixirAST> = [makeAST(EMatch(PVar("reflaxe_string_source"), source))];
+		if (lengthNeeded) {
+			statements.push(makeAST(EMatch(PVar("reflaxe_string_length"), makeAST(ERemoteCall(makeAST(EVar("String")), "length", [sourceVar])))));
+		}
+
 		var posExpr:ElixirAST;
 		if (posInt == null) {
 			statements.push(makeAST(EMatch(PVar("reflaxe_string_pos"), pos)));
@@ -122,11 +132,6 @@ class StringToolsNativeRewrite {
 			posExpr = makeAST(EInteger(posInt));
 		}
 
-		var lenInt = intLiteral(len);
-		var lenIsNil = switch (len.def) {
-			case ENil: true;
-			default: false;
-		}
 		var lenExpr:ElixirAST = null;
 		if (!lenIsNil) {
 			if (lenInt == null) {

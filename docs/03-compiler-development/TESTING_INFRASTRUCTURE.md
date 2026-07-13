@@ -20,6 +20,27 @@ GitHub Actions runs a few higher-level “integration” checks in addition to s
 
 The same WAE philosophy is used by the todo-app QA sentinel when it runs `mix compile --warnings-as-errors`.
 
+## Handwritten-output quality corpus
+
+Snapshots, WAE, and runtime tests answer different questions. The focused
+handwritten-output corpus adds a structural review layer for representative
+Elixir-first, portable, abstraction-heavy, LiveView, and Ecto output:
+
+```bash
+npm run test:handwritten-output
+```
+
+It rebuilds into temporary directories, checks project-owned Mix formatting,
+compares selected canonical output with reviewed snapshots and handwritten
+Elixir examples, and rejects unexplained `_ =`, IIFE, helper, reducer-append,
+or support-footprint growth. File-scoped allowances include reasons and beads;
+they are not repository-wide exemptions.
+
+Use `npm run update:handwritten-output` only after reviewing an intentional
+compiler change. The full design, current baseline, and source-vs-package proof
+are documented in
+[Generated Elixir Quality Corpus](GENERATED_OUTPUT_QUALITY_CORPUS.md).
+
 ## Haxe-authored ExUnit stdlib runtime harness
 
 Snapshot tests validate emitted Elixir shape. Stdlib parity also needs executable BEAM semantics tests for

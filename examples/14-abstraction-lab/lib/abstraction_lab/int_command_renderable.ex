@@ -1,4 +1,7 @@
 defmodule AbstractionLab.IntCommandRenderable do
+  def new() do
+    %{:__reflaxe_class__ => AbstractionLab.IntCommandRenderable}
+  end
   def render_command(_struct, value) do
     "retry:#{Reflaxe.Elixir.HaxeFloat.to_string(value)}"
   end

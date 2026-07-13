@@ -291,12 +291,12 @@ extern class Kernel {
 	public static inline function typeOf(value:Term):String {
 		if (isNil(value))
 			return "nil";
+		if (isBoolean(value))
+			return "boolean";
 		if (isAtom(value))
 			return "atom";
 		if (isBinary(value))
 			return "binary";
-		if (isBoolean(value))
-			return "boolean";
 		if (isFloat(value))
 			return "float";
 		if (isFunction(value))

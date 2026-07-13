@@ -12,7 +12,8 @@ set -euo pipefail
 #   4) compiling one fixture from the explicitly wired source checkout,
 #   5) compiling the same fixture through installed `-lib reflaxe.elixir`,
 #   6) comparing canonical Mix-formatted generated Elixir from both layouts,
-#   7) checking target overrides plus official stdlib fallback both work.
+#   7) comparing path-independent structural quality reports,
+#   8) checking target overrides plus official stdlib fallback both work.
 #
 # WHY
 # - Repo-local scoped libs and GitHub-tag Lix installs can pass while the
@@ -463,6 +464,17 @@ require_absent "$work_dir/out_source/haxe/io/scheme.ex"
 
 compare_generated_elixir "$work_dir/out_source" "$work_dir/out"
 say "Source/package generated Elixir parity: OK"
+source_quality_report="$work_dir/source-quality.json"
+package_quality_report="$work_dir/package-quality.json"
+run_step "inspect source-checkout structural output" 60 "$ROOT_DIR" \
+  "node '$ROOT_DIR/scripts/ci/generated-output-quality.js' --project package-parity --output '$work_dir/out_source' --application main.ex --quality-file main.ex > '$source_quality_report'"
+run_step "inspect installed-package structural output" 60 "$ROOT_DIR" \
+  "node '$ROOT_DIR/scripts/ci/generated-output-quality.js' --project package-parity --output '$work_dir/out' --application main.ex --quality-file main.ex > '$package_quality_report'"
+if ! cmp -s "$source_quality_report" "$package_quality_report"; then
+  diff -u "$source_quality_report" "$package_quality_report" || true
+  fail "source and package modes produced different structural quality reports"
+fi
+say "Source/package structural quality parity: OK"
 run_step "check source-checkout output uses canonical Mix formatting" 120 "$work_dir" \
   'mix format --force --check-formatted "out_source/**/*.ex"'
 run_step "check installed-package output uses canonical Mix formatting" 120 "$work_dir" \
