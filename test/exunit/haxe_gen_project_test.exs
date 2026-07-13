@@ -49,6 +49,7 @@ defmodule Mix.Tasks.Haxe.Gen.ProjectTest do
 
     assert hxml =~ "-D hxx_string_to_sigil"
     assert hxml =~ "-D hxx_mode=tsx"
+    assert hxml =~ "# -D reflaxe_elixir_format=write"
     refute hxml =~ "-D reflaxe_runtime"
   end
 
@@ -58,6 +59,7 @@ defmodule Mix.Tasks.Haxe.Gen.ProjectTest do
 
     refute hxml =~ "-D hxx_string_to_sigil"
     refute hxml =~ "-D hxx_mode=tsx"
+    assert hxml =~ "# -D reflaxe_elixir_format=write"
   end
 
   test "build-tests.hxml includes ExUnit and generated test output wiring" do

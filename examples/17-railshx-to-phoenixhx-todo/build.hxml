@@ -27,6 +27,9 @@
 # so framework transforms (Presence/Endpoint/Router/etc.) derive correct otp_app and PubSub modules.
 -D app_name=PhoenixHxTodo
 
+# Optional canonical Mix formatting after code generation (off by default)
+# -D reflaxe_elixir_format=write
+
 # Enable dead code elimination to remove unused functions and reduce output noise
 -dce full
 

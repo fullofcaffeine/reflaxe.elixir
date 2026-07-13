@@ -8,6 +8,7 @@ that remains useful across versions; released version identity comes from protec
 ### Features
 
 * **configuration:** make `-lib reflaxe.elixir` own the `elixir` target marker and expose public Elixir/Phoenix APIs through that marker. Generated projects, examples, and normal consumer HXML files no longer declare Reflaxe's compiler-development `-D reflaxe_runtime` define; existing explicit definitions remain compatible.
+* **compiler:** add an optional Reflaxe `onOutputComplete` formatting lifecycle with explicit `off`, `write`, and non-mutating `check` modes; use `_GeneratedFiles.json` to protect handwritten files, discover project-owned Mix/Phoenix formatter configuration, preflight writes, reject stale source-map combinations, and verify deterministic source/package parity under the pinned Elixir 1.18.3 toolchain.
 
 ### Bug Fixes
 

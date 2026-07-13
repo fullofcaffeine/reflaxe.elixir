@@ -6358,6 +6358,10 @@ left_name == right_name and left_params == right_params';
 	 *   that relies on the final output set must happen here instead.
 	 */
 	public override function onOutputComplete() {
+		// Reflaxe writes `_GeneratedFiles.json` before this hook, giving the formatter
+		// an exact ownership list without scanning or touching handwritten project files.
+		GeneratedOutputFormatter.run(resolveOutputDirectory(), sourceMapOutputEnabled);
+
 		if (sourceMapOutputEnabled) {
 			// Generate all pending source maps after output files are written.
 			for (writer in pendingSourceMapWriters) {

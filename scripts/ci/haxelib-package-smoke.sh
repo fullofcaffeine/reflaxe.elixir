@@ -11,8 +11,8 @@ set -euo pipefail
 #   3) checking the installed `Run` CLI entrypoint used by haxelib metadata,
 #   4) compiling one fixture from the explicitly wired source checkout,
 #   5) compiling the same fixture through installed `-lib reflaxe.elixir`,
-#   6) comparing generated Elixir and checking target overrides plus official
-#      stdlib fallback both work.
+#   6) comparing canonical Mix-formatted generated Elixir from both layouts,
+#   7) checking target overrides plus official stdlib fallback both work.
 #
 # WHY
 # - Repo-local scoped libs and GitHub-tag Lix installs can pass while the
@@ -401,6 +401,7 @@ cat > "$work_dir/build.hxml" <<'HXML'
 -lib reflaxe.elixir
 -cp src
 -D elixir_output=out
+-D reflaxe_elixir_format=write
 -D no-utf16
 -main Main
 -v
@@ -410,10 +411,25 @@ cat > "$work_dir/build-source.hxml" <<'HXML'
 -lib reflaxe.elixir
 -cp src
 -D elixir_output=out_source
+-D reflaxe_elixir_format=write
 -D no-utf16
 -main Main
 -v
 HXML
+
+cat > "$work_dir/mix.exs" <<'EX'
+defmodule ReflaxeElixirFormatterParity.MixProject do
+  use Mix.Project
+
+  def project do
+    [app: :reflaxe_elixir_formatter_parity, version: "0.0.0", elixir: "~> 1.14", deps: []]
+  end
+end
+EX
+
+cat > "$work_dir/.formatter.exs" <<'EX'
+[inputs: ["{out,out_source}/**/*.{ex,exs}"]]
+EX
 
 run_step "register source checkout with lix" 120 "$work_dir" \
   "npx lix dev reflaxe.elixir '$ROOT_DIR'"
@@ -447,6 +463,10 @@ require_absent "$work_dir/out_source/haxe/io/scheme.ex"
 
 compare_generated_elixir "$work_dir/out_source" "$work_dir/out"
 say "Source/package generated Elixir parity: OK"
+run_step "check source-checkout output uses canonical Mix formatting" 120 "$work_dir" \
+  'mix format --force --check-formatted "out_source/**/*.ex"'
+run_step "check installed-package output uses canonical Mix formatting" 120 "$work_dir" \
+  'mix format --force --check-formatted "out/**/*.ex"'
 
 mix_project="$work_dir/package_mix"
 mkdir -p "$mix_project/lib"

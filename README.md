@@ -175,6 +175,18 @@ Important compiler flag note:
 - See [Compiler Flags Guide](docs/01-getting-started/compiler-flags-guide.md#reflaxe_runtime-compiler-development-context)
   for the compiler-development convention and source/package contract.
 
+To have the compiler run the project's canonical Mix formatter over only the
+files Reflaxe generated, opt in with:
+
+```hxml
+-D reflaxe_elixir_format=write
+```
+
+Formatting is off by default, so Haxe-only environments do not need Mix. See
+[Canonical Formatting for Generated Elixir](docs/02-user-guide/GENERATED_OUTPUT_FORMATTING.md)
+for `off`/`write`/`check`, Phoenix LiveView configuration, CI version pinning,
+source-map safety, and the distinction between formatting and semantic code generation.
+
 ### New Phoenix app (greenfield)
 
 Use the guided flow:
@@ -261,6 +273,7 @@ Start at [docs/README.md](docs/README.md).
 - [Installation](docs/01-getting-started/installation.md)
 - [Writing Idiomatic Haxe for Elixir](docs/02-user-guide/WRITING_IDIOMATIC_HAXE_FOR_ELIXIR.md)
 - [Elixir Idioms & Hygiene](docs/02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md)
+- [Canonical Formatting for Generated Elixir](docs/02-user-guide/GENERATED_OUTPUT_FORMATTING.md)
 - [Haxe->Elixir Mappings](docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md)
 - [Interop With Existing Elixir](docs/02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md)
 - [Phoenix Integration](docs/02-user-guide/PHOENIX_INTEGRATION.md)

@@ -161,6 +161,7 @@ Output (defaults; configurable via flags):
   - `-D elixir_output=lib/<app>_hx`
   - `-D no-utf16`
   - `-D app_name=<ModuleName>`
+  - commented `-D reflaxe_elixir_format=write` opt-in (formatting remains off by default)
   - `-dce full`
   - `-D hxx_string_to_sigil` (when `--phoenix` is enabled)
   - No `-D hxx_mode=tsx` is emitted; strict typed HXX is the compiler default for new scaffolds
@@ -174,6 +175,7 @@ Output (defaults; configurable via flags):
 Notes:
 - `-D app_name` should match your Phoenix app module (e.g. `MyApp`). It is used to derive framework modules (`MyApp.Repo`, `MyAppWeb.Endpoint`, Presence `otp_app`/PubSub, etc). It does not need to match your generated Haxe module namespace (which is controlled by your Haxe packages, e.g. `my_app_hx.*` → `MyAppHx.*`).
 - This task is intended for **gradual adoption**: start by compiling helper modules into an isolated namespace (by default `MyAppHx.*`, derived from `src_haxe/<app>_hx/**` + `-D elixir_output=lib/<app>_hx`), call them from Elixir, and only later replace Phoenix-facing modules.
+- The generated HXML leaves Mix formatting disabled until you opt in. See [Canonical Formatting for Generated Elixir](../02-user-guide/GENERATED_OUTPUT_FORMATTING.md) for write/check behavior and Phoenix formatter plugins.
 - It does not install Haxe libraries for you. Use `npx lix install ...` + `npx lix download` (see `docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md`).
 - `--phoenix` is meant to be run from a **Phoenix app root**.
   - If the project does not look like Phoenix (missing `assets/js/app.js` or `config/dev.exs`), the task will still scaffold the server-side parts and print instructions to run `mix haxe.phoenix.scaffold` once Phoenix files exist.

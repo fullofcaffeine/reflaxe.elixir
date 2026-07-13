@@ -116,7 +116,13 @@ output. Reflaxe.Elixir can use the same lifecycle with explicit off, write, and
 check behavior. Formatting must remain a post-generation presentation step,
 not a semantic repair mechanism.
 
-Tracked by `haxe.elixir.codex-3qh.6`.
+Implemented by `haxe.elixir.codex-3qh.6`. The integration uses Reflaxe's
+generated-file manifest as its ownership boundary, preserves an explicit
+no-Mix `off` path, preflights `write` mode before mutation, and keeps `check`
+mode non-mutating. See
+[Canonical Formatting for Generated Elixir](../02-user-guide/GENERATED_OUTPUT_FORMATTING.md)
+for the project discovery, Phoenix plugin, source-map, and pinned-toolchain
+contracts.
 
 ### Discarded effect calls
 

@@ -23,8 +23,10 @@ ElixirASTTransformer (ordered, shape‑based passes)
 ElixirASTPrinter (ElixirAST → Elixir source text)
   ↓ output
 ElixirOutputIterator + Reflaxe output manager
-  ↓
+  ↓ write files + `_GeneratedFiles.json`
 Generated `.ex` / `.exs` files
+  ↓ optional `GeneratedOutputFormatter` from `onOutputComplete`
+Project `mix format` over Reflaxe-owned files only
 ```
 
 ## Where “Desugaring” and “Re‑Sugaring” Happen
@@ -34,6 +36,8 @@ Generated `.ex` / `.exs` files
 - Reflaxe.Elixir **re‑sugars** those shapes inside **transformer passes** to recover idiomatic,
   Elixir‑native patterns (e.g., `Enum.*`, pipes, comprehensions, Phoenix‑friendly shapes).
 - The **printer is formatting‑only**; semantic decisions belong in builder/transformer.
+- Optional canonical Mix formatting runs only after output succeeds. It is a presentation stage,
+  never an AST repair stage; see [Canonical Formatting for Generated Elixir](../02-user-guide/GENERATED_OUTPUT_FORMATTING.md).
 
 ## Statement Position And Call Results
 
@@ -133,6 +137,8 @@ updates, nesting, object-pattern matching, and map-shaped negative cases;
   - `src/reflaxe/elixir/ast/ElixirASTPrinter.hx`
 - Final output bridging (AST → string per file):
   - `src/reflaxe/elixir/ElixirOutputIterator.hx`
+- Optional post-output canonical formatting (Reflaxe ownership manifest + Mix):
+  - `src/reflaxe/elixir/GeneratedOutputFormatter.hx`
 
 ## Debugging & Introspection
 

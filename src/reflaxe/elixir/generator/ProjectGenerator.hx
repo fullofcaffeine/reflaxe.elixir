@@ -488,6 +488,9 @@ class ProjectGenerator {
 # Application module prefix
 -D app_name=${appName}
 
+# Optional canonical Mix formatting after code generation (off by default)
+# -D reflaxe_elixir_format=write
+
 # Enable dead code elimination to remove unused functions and reduce output noise
 -dce full
 

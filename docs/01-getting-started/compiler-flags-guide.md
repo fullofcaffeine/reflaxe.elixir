@@ -83,6 +83,28 @@ Application HXML files should not define it. `-lib reflaxe.elixir` supplies the
 `elixir` target marker and compiler initialization for both source checkouts and
 installed packages. Existing explicit definitions remain compatible but are redundant.
 
+### `reflaxe_elixir_format`: optional target formatting
+
+Generated Elixir formatting is off by default. Applications with Mix available
+can opt into canonical project formatting after successful code generation:
+
+```hxml
+-D reflaxe_elixir_format=write
+```
+
+The supported values are `off`, `write`, and `check`. The compiler formats only
+the files in Reflaxe's `_GeneratedFiles.json`; it does not scan or alter
+handwritten files. Mix is discovered from `PATH`, and the nearest `mix.exs` or
+`.formatter.exs` supplies project configuration. Use
+`-D reflaxe_elixir_format_project=/path/to/app` when output is outside the Mix
+project.
+
+`write` is incompatible with generated source maps because formatter changes
+would invalidate line and column mappings. Formatter output also varies by
+Elixir release, so pin the toolchain when generated files are committed. See
+[Canonical Formatting for Generated Elixir](../02-user-guide/GENERATED_OUTPUT_FORMATTING.md)
+for mode semantics, Phoenix configuration, CI usage, and tradeoffs.
+
 ### Basic Configuration
 ```hxml
 # build.hxml - Recommended settings
@@ -134,6 +156,7 @@ You *can* temporarily disable DCE when debugging, but it’s not the recommended
 | Flag | Impact on Elixir Output | Recommendation |
 |------|------------------------|----------------|
 | `-D reflaxe_runtime` | Types compiler implementation outside macro mode | 🔧 **Compiler development only** |
+| `-D reflaxe_elixir_format=write` | Runs project `mix format` on Reflaxe-owned output | Optional; pin Elixir and review generated diffs |
 | `-D analyzer-optimize` | Destroys functional patterns, unrolls loops | ❌ **Never use** |
 | `-dce full` | Removes unused code cleanly | ✅ **Always use** |
 | `-D loop_unroll_max_cost=N` | Controls unrolling threshold | ✅ **Prefer `0` (disable)** |
