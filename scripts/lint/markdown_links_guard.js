@@ -4,7 +4,7 @@
  *
  * WHAT
  * - Scans all `docs/` markdown (excluding `docs/09-history/archive/`) and checks that relative links
- *   point to existing files/directories in the repo.
+ *   point to tracked files/directories in the repo.
  * - Requires current-facing entrypoints to link to the canonical versioning and stability page.
  *
  * WHY
@@ -21,6 +21,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const childProcess = require("child_process");
 
 const repoRoot = process.cwd();
 const docsRoot = path.join(repoRoot, "docs");
@@ -35,6 +36,21 @@ const postureEntrypoints = [
   "docs/06-guides/KNOWN_LIMITATIONS.md",
   "docs/06-guides/PRODUCTION_READINESS.md",
 ];
+
+const trackedFiles = new Set(
+  childProcess
+    .execFileSync("git", ["ls-files", "-z"], { cwd: repoRoot, encoding: "utf8" })
+    .split("\0")
+    .filter(Boolean)
+);
+const trackedDirectories = new Set();
+for (const trackedFile of trackedFiles) {
+  let directory = path.posix.dirname(trackedFile);
+  while (directory !== ".") {
+    trackedDirectories.add(directory);
+    directory = path.posix.dirname(directory);
+  }
+}
 
 function isMarkdownFile(filePath) {
   return filePath.endsWith(".md");
@@ -165,6 +181,15 @@ function checkTargetExists(resolvedPath) {
     if (!caseCheck.exact) {
       return { exists: false, caseMismatch: true, corrected: caseCheck.corrected };
     }
+
+    const relativeCandidate = path.relative(repoRoot, candidate).split(path.sep).join("/");
+    const insideRepo = relativeCandidate !== ".." && !relativeCandidate.startsWith("../");
+    const tracked =
+      insideRepo &&
+      (fs.statSync(candidate).isDirectory()
+        ? trackedDirectories.has(relativeCandidate)
+        : trackedFiles.has(relativeCandidate));
+    if (!tracked) continue;
 
     return { exists: true, caseMismatch: false, corrected: caseCheck.corrected };
   }

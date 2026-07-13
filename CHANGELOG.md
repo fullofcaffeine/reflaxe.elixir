@@ -18,6 +18,7 @@ for the exact changes attached to each version.
 
 ### Bug Fixes
 
+* **docs:** require local Markdown links to resolve to Git-tracked files or directories, so generated artifacts in a dirty checkout cannot hide links that are broken in clean CI and on GitHub.
 * **compiler:** lower canonical tuple-shaped anonymous objects consistently: contiguous `_1.._N` portable shapes and `_0.._N-1` native-extern shapes now use `elem/2` for typed reads and `put_elem/3` for immutable updates, while mixed or gapped numeric fields remain maps.
 * **compiler:** preserve scalar non-`Void` function bodies through final unused-local hygiene, so instance methods returning literals such as `0`, `false`, strings, floats, `nil`, lists, maps, or tuples no longer compile to empty Elixir functions returning `nil`.
 * **compiler:** retain authored `Void`/value return contracts as compiler metadata and opt in to non-`Void` result-carrier validation at every snapshot-test AST phase; diagnostics now identify the affected function and pass, while ordinary source/package builds and generated Elixir remain unchanged.

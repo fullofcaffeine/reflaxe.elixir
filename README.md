@@ -151,11 +151,12 @@ return <p data-testid="result-count">
 """
 ```
 
-Phoenix still compiles the resulting HEEx, and there is no separate template runtime. The same example's typed
-[`final routes` DSL](examples/13-elixir-first-liveview/src_haxe/ElixirFirstLiveviewRouter.hx) emits a
-normal [`Phoenix.Router`](examples/13-elixir-first-liveview/lib/elixir_first_liveview_web/router.ex),
-including pipelines, scopes, and `live_session`. See [Phoenix Integration](docs/02-user-guide/PHOENIX_INTEGRATION.md)
-and the complete
+Phoenix still compiles the resulting HEEx, and there is no separate template runtime. The same
+example's typed [`final routes` DSL](examples/13-elixir-first-liveview/src_haxe/ElixirFirstLiveviewRouter.hx)
+emits normal `Phoenix.Router` pipelines, scopes, and `live_session` declarations. See the tracked
+Haxe-first router [source](examples/15-phoenix-chat-haxe-first/src_haxe/PhoenixChatRouter.hx) and
+[generated output](examples/15-phoenix-chat-haxe-first/lib/phoenix_chat_web/router.ex),
+[Phoenix Integration](docs/02-user-guide/PHOENIX_INTEGRATION.md), and the complete
 [`SearchLive` output](test/quality/handwritten-output/generated/elixir-first-liveview/elixir_first_liveview_web/search_live.ex).
 
 ## Native First, Compatibility When Required
