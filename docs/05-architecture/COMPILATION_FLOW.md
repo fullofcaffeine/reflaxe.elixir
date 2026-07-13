@@ -35,6 +35,27 @@ Generated `.ex` / `.exs` files
   Elixir‑native patterns (e.g., `Enum.*`, pipes, comprehensions, Phoenix‑friendly shapes).
 - The **printer is formatting‑only**; semantic decisions belong in builder/transformer.
 
+## Statement Position And Call Results
+
+`EBlock` and `EDo` preserve target statement order. An `ECall` or `ERemoteCall` placed directly in either list is
+therefore the complete AST representation of an effectful statement; Elixir evaluates the call without an assignment.
+
+For example, an authored statement lowers to:
+
+```elixir
+Supervisor.start_link(children, options)
+```
+
+not to `_ = Supervisor.start_link(children, options)`. The wildcard match does not preserve any extra effect, and it
+obscures normal handwritten Elixir. A final bare call also remains a value carrier because Elixir functions return the
+last expression.
+
+Transformers may introduce a match only when it carries real semantics, such as immutable receiver rebinding, a
+pattern assertion, or an explicit non-call discard needed for warning-free target code. Framework consumers that parse
+statement sequences must accept direct calls and prove receiver/order relationships from structured AST; they must not
+depend on a synthetic wildcard wrapper. `regression/function_result_invariants`, the Ecto migration snapshots, and the
+Phoenix router snapshots cover these boundaries.
+
 ## Non-Void Function Result Contracts
 
 Haxe knows whether each authored function returns `Void` or a value. During AST construction,

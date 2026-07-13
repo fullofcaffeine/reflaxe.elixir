@@ -53,7 +53,7 @@ defmodule Main do
   end
   def process_multiple_numbers(inputs) do
     results = Enum.map(inputs, &parse_number/1)
-    _ = ResultTools.sequence(results)
+    ResultTools.sequence(results)
   end
   def validate_and_double(inputs) do
     ResultTools.traverse(inputs, fn input -> ResultTools.map(parse_number(input), fn num -> num * 2 end) end)

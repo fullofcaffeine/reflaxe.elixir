@@ -13,14 +13,14 @@ defmodule PhoenixHxTodo.Todos do
   defp get_for_user(user_id, id) do
     query = (require Ecto.Query; Ecto.Query.where(Ecto.Query.from(t in PhoenixHxTodo.Todo, []), [t], (t.user_id == ^(user_id)) and (t.id == ^(id))))
     todos = PhoenixHxTodo.Repo.all(query)
-    _ = Enum.at(todos, 0)
+    Enum.at(todos, 0)
   end
   def create_for_user(user, title, notes) do
     trimmed_title = StringTools.ltrim(StringTools.rtrim(title))
     trimmed_notes = StringTools.ltrim(StringTools.rtrim(notes))
     data = Kernel.struct(PhoenixHxTodo.Todo)
     params = %{title: trimmed_title, notes: trimmed_notes, completed: false, user_id: user.id}
-    _ = PhoenixHxTodo.Repo.insert(PhoenixHxTodo.Todo.changeset(data, params))
+    PhoenixHxTodo.Repo.insert(PhoenixHxTodo.Todo.changeset(data, params))
   end
   def toggle_for_user(user_id, id) do
     todo = get_for_user(user_id, id)
@@ -50,17 +50,16 @@ defmodule PhoenixHxTodo.Todos do
     else
       defaults = PhoenixHxTodoHx.Live.TodoState.seed(PhoenixHxTodo.User.display_name(user))
       _g = 0
-      _ =
-        Enum.each(defaults, fn item ->
-          (case create_for_user(user, item.title, item.notes) do
-            {:ok, created} ->
-              cond do
-                created.completed -> PhoenixHxTodo.Repo.update(PhoenixHxTodo.Todo.toggle_completed(created))
-                true -> nil
-              end
-            {:error, _error} -> nil
-          end)
+      Enum.each(defaults, fn item ->
+        (case create_for_user(user, item.title, item.notes) do
+          {:ok, created} ->
+            cond do
+              created.completed -> PhoenixHxTodo.Repo.update(PhoenixHxTodo.Todo.toggle_completed(created))
+              true -> nil
+            end
+          {:error, _error} -> nil
         end)
+      end)
     end
   end
   def view_items_for_user(user) do

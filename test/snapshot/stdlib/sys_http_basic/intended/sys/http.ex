@@ -5,13 +5,13 @@ defmodule Http do
       {:set, value} -> value
       nil ->
         value = init
-        _ = Process.put(static_key, {:set, value})
+        Process.put(static_key, {:set, value})
         value
     end)
   end
   defp __haxe_static_put__(key, value) do
     static_key = {:__haxe_static__, Http, key}
-    _ = Process.put(static_key, {:set, value})
+    Process.put(static_key, {:set, value})
     value
   end
   def proxy() do
@@ -25,13 +25,13 @@ defmodule Http do
     struct = %{struct | no_shutdown: false}
     struct = %{struct | cnx_timeout: 10}
     struct = Map.merge(struct, Map.drop(HttpBase.new(url_param), [:__struct__, :__reflaxe_class__]))
-    _ = HttpRuntime.reset_response_headers(struct.http_base_ref)
+    HttpRuntime.reset_response_headers(struct.http_base_ref)
     struct
   end
   def request(struct, post) do
     output = BytesOutput.new()
     is_post = post == true or HttpBaseRuntime.has_request_body(struct.http_base_ref)
-    _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :custom_request, [struct, is_post, output, nil, nil])
+    apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :custom_request, [struct, is_post, output, nil, nil])
     if (not HttpBaseRuntime.failed(struct.http_base_ref)) do
       apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :success, [struct, apply(Map.get(output, :__reflaxe_class__) || Map.get(output, :__struct__), :get_bytes, [output])])
     end
@@ -40,12 +40,12 @@ defmodule Http do
     apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :file_transfer, [struct, argname, filename, file_param, size, mime_type])
   end
   def file_transfer(struct, argname, filename, file_input, size, mime_type) do
-    _ = HttpRuntime.mark_file_transfer(struct.http_base_ref)
+    HttpRuntime.mark_file_transfer(struct.http_base_ref)
     struct = %{struct | file: %{param: argname, filename: filename, io: file_input, size: size, mime_type: mime_type}}
     struct
   end
   def custom_request(struct, post, api, sock, method) do
-    _ = reset_response_state(struct)
+    reset_response_state(struct)
     unsupported_message = unsupported_request_message(struct, sock)
     if (not Kernel.is_nil(unsupported_message)) do
       apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :on_error, [struct, unsupported_message])
@@ -57,7 +57,7 @@ defmodule Http do
       request_url = request_url_for(struct, post, request_body)
       request_content_type = content_type_for(struct, post, request_body, had_explicit_body)
       result = HttpRuntime.request(request_method, request_url, header_pairs(struct), request_body_data, request_content_type, timeout_millis(struct.cnx_timeout))
-      _ = handle_result(struct, result, api)
+      handle_result(struct, result, api)
     end
   end
   defp handle_result(struct, result, api) do
@@ -65,11 +65,11 @@ defmodule Http do
       fail(struct, HttpRuntime.error_message(result))
     else
       status = HttpRuntime.status(result)
-      _ = store_response_headers(struct, HttpRuntime.headers(result))
-      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :on_status, [struct, status])
+      store_response_headers(struct, HttpRuntime.headers(result))
+      apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :on_status, [struct, status])
       body = Bytes.of_data(HttpRuntime.body(result))
-      _ = HttpBaseRuntime.set_response_bytes(struct.http_base_ref, body)
-      _ = write_response_body(api, body)
+      HttpBaseRuntime.set_response_bytes(struct.http_base_ref, body)
+      write_response_body(api, body)
       if (status < 200 or status >= 400), do: fail(struct, "Http Error ##{Reflaxe.Elixir.HaxeFloat.to_string(status)}")
     end
   end
@@ -77,12 +77,12 @@ defmodule Http do
     HttpRuntime.response_header_values(struct.http_base_ref, key)
   end
   defp reset_response_state(struct) do
-    _ = HttpBaseRuntime.reset_response(struct.http_base_ref)
-    _ = HttpRuntime.reset_response_headers(struct.http_base_ref)
+    HttpBaseRuntime.reset_response(struct.http_base_ref)
+    HttpRuntime.reset_response_headers(struct.http_base_ref)
   end
   defp fail(struct, message) do
-    _ = HttpBaseRuntime.mark_failed(struct.http_base_ref, message)
-    _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :on_error, [struct, message])
+    HttpBaseRuntime.mark_failed(struct.http_base_ref, message)
+    apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :on_error, [struct, message])
   end
   defp unsupported_request_message(struct, sock) do
     if (not Kernel.is_nil(sock)) do
@@ -152,15 +152,15 @@ defmodule Http do
     if (body.length > 0) do
       apply(Map.get(api, :__reflaxe_class__) || Map.get(api, :__struct__), :write_full_bytes, [api, body, 0, body.length])
     end
-    _ = apply(Map.get(api, :__reflaxe_class__) || Map.get(api, :__struct__), :close, [api])
+    apply(Map.get(api, :__reflaxe_class__) || Map.get(api, :__struct__), :close, [api])
   end
   def request_url(url_param) do
     http = Http.new(url_param)
-    _ = apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :request, [http, false])
+    apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :request, [http, false])
     if (HttpBaseRuntime.failed(http.http_base_ref)) do
       raise Reflaxe.Elixir.HaxeThrow, [value: HttpBaseRuntime.last_error(http.http_base_ref)]
     end
-    _ = HttpBase.get_response_data(http)
+    HttpBase.get_response_data(http)
   end
   defp default_method(post) do
     if (post), do: "POST", else: "GET"

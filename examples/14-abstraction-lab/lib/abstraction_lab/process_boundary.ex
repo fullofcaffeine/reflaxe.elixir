@@ -9,7 +9,7 @@ defmodule AbstractionLab.ProcessBoundary do
     if (not Kernel.is_pid(destination)) do
       false
     else
-      _ = Kernel.send(destination, message)
+      Kernel.send(destination, message)
       true
     end
   end

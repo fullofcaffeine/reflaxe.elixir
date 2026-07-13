@@ -1,8 +1,8 @@
 defmodule Main do
   def main() do
-    _ = test_mutable_ops()
-    _ = test_variable_reassignment()
-    _ = test_loop_counters()
+    test_mutable_ops()
+    test_variable_reassignment()
+    test_loop_counters()
   end
   defp test_mutable_ops() do
     x = 10

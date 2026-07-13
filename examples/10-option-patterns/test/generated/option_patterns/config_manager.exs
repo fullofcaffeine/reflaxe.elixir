@@ -5,13 +5,13 @@ defmodule OptionPatterns.ConfigManager do
       {:set, value} -> value
       nil ->
         value = init
-        _ = Process.put(static_key, {:set, value})
+        Process.put(static_key, {:set, value})
         value
     end)
   end
   defp __haxe_static_put__(key, value) do
     static_key = {:__haxe_static__, OptionPatterns.ConfigManager, key}
-    _ = Process.put(static_key, {:set, value})
+    Process.put(static_key, {:set, value})
     value
   end
   def config() do
@@ -25,7 +25,7 @@ defmodule OptionPatterns.ConfigManager do
       {:none}
     else
       this1 = OptionPatterns.ConfigManager.config()
-      value = _ = Map.get(this1, key)
+      value = Map.get(this1, key)
       if (Kernel.is_nil(value) or value == ""), do: {:none}, else: {:some, value}
     end
   end
@@ -37,29 +37,27 @@ defmodule OptionPatterns.ConfigManager do
   end
   def get_int(key) do
     option = get(key)
-    _ =
-      OptionTools.then(option, (fn -> fn value ->
-        parsed = (case Integer.parse(value) do
-          {num, _} -> num
-          :error -> nil
-        end)
-        if (not Kernel.is_nil(parsed)), do: {:some, parsed}, else: {:none}
-      end end).())
+    OptionTools.then(option, (fn -> fn value ->
+      parsed = (case Integer.parse(value) do
+        {num, _} -> num
+        :error -> nil
+      end)
+      if (not Kernel.is_nil(parsed)), do: {:some, parsed}, else: {:none}
+    end end).())
   end
   def get_bool(key) do
     option = get(key)
-    _ =
-      OptionTools.then(option, (fn -> fn value ->
-        (case String.downcase(value) do
-          "0" -> {:some, false}
-          "false" -> {:some, false}
-          "no" -> {:some, false}
-          "1" -> {:some, true}
-          "true" -> {:some, true}
-          "yes" -> {:some, true}
-          _ -> {:none}
-        end)
-      end end).())
+    OptionTools.then(option, (fn -> fn value ->
+      (case String.downcase(value) do
+        "0" -> {:some, false}
+        "false" -> {:some, false}
+        "no" -> {:some, false}
+        "1" -> {:some, true}
+        "true" -> {:some, true}
+        "yes" -> {:some, true}
+        _ -> {:none}
+      end)
+    end end).())
   end
   def get_int_with_range(key, min, max) do
     ResultTools.flat_map(OptionTools.to_result(get_int(key), "Configuration \"#{key}\" is missing or not a valid number"), (fn -> fn value ->

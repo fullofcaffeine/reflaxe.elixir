@@ -1,8 +1,8 @@
 defmodule PropertySetterTest do
   def new() do
     struct = %{:__reflaxe_class__ => PropertySetterTest, :value => nil, :name => nil}
-    _ = set_value(struct, 0)
-    _ = set_name(struct, "")
+    set_value(struct, 0)
+    set_name(struct, "")
     struct
   end
   def set_value(_struct, v) do

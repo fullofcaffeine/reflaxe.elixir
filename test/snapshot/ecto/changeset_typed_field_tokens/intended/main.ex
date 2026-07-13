@@ -59,7 +59,7 @@ defmodule Main do
                  Ecto.Changeset.cast(data, normalized_params, Map.keys(normalized_params))
                end).(user, params)
 
-    this1 = _ = Ecto.Changeset.cast(this1, Map.get(this1, :params, %{}) || %{}, [:name, :email, :age, :role])
+    this1 = Ecto.Changeset.cast(this1, Map.get(this1, :params, %{}) || %{}, [:name, :email, :age, :role])
     this1 = Ecto.Changeset.validate_required(this1, [:name, :email])
     this1 = Ecto.Changeset.validate_length(this1, :name, Enum.filter([min: Map.get(%{min: 2, max: 80}, :min), max: Map.get(%{min: 2, max: 80}, :max), is: Map.get(%{min: 2, max: 80}, :is)], fn {_, v} -> v != nil end))
     field = :email
@@ -70,32 +70,31 @@ defmodule Main do
     else
       Ecto.Changeset.validate_format(this1, field, pattern)
     end
-    this1 = _ =
-      Ecto.Changeset.validate_number(this1, :age,
-                (fn opts ->
-                   greater_than_or_equal_to =
-                     case Map.fetch(opts, :greater_than_or_equal_to) do
-                       {:ok, value} -> value
-                       :error -> Map.get(opts, :min)
-                     end
+    this1 = Ecto.Changeset.validate_number(this1, :age,
+              (fn opts ->
+                 greater_than_or_equal_to =
+                   case Map.fetch(opts, :greater_than_or_equal_to) do
+                     {:ok, value} -> value
+                     :error -> Map.get(opts, :min)
+                   end
 
-                   less_than_or_equal_to =
-                     case Map.fetch(opts, :less_than_or_equal_to) do
-                       {:ok, value} -> value
-                       :error -> Map.get(opts, :max)
-                     end
+                 less_than_or_equal_to =
+                   case Map.fetch(opts, :less_than_or_equal_to) do
+                     {:ok, value} -> value
+                     :error -> Map.get(opts, :max)
+                   end
 
-                   [
-                     greater_than: Map.get(opts, :greater_than),
-                     greater_than_or_equal_to: greater_than_or_equal_to,
-                     less_than: Map.get(opts, :less_than),
-                     less_than_or_equal_to: less_than_or_equal_to,
-                     equal_to: Map.get(opts, :equal_to),
-                     not_equal_to: Map.get(opts, :not_equal_to)
-                   ]
-                   |> Enum.filter(fn {_, value} -> value != nil end)
-                 end).(%{min: 18, max: 120})
-      )
+                 [
+                   greater_than: Map.get(opts, :greater_than),
+                   greater_than_or_equal_to: greater_than_or_equal_to,
+                   less_than: Map.get(opts, :less_than),
+                   less_than_or_equal_to: less_than_or_equal_to,
+                   equal_to: Map.get(opts, :equal_to),
+                   not_equal_to: Map.get(opts, :not_equal_to)
+                 ]
+                 |> Enum.filter(fn {_, value} -> value != nil end)
+               end).(%{min: 18, max: 120})
+    )
     cs = Ecto.Changeset.validate_inclusion(this1, :role, ["admin", "user"])
     cs = Ecto.Changeset.validate_exclusion(cs, :role, ["blocked"])
     cs
@@ -157,7 +156,7 @@ defmodule Main do
                  Ecto.Changeset.cast(data, normalized_params, Map.keys(normalized_params))
                end).(user, params)
 
-    this1 = _ = Ecto.Changeset.cast(this1, Map.get(this1, :params, %{}) || %{}, [:name, :email])
+    this1 = Ecto.Changeset.cast(this1, Map.get(this1, :params, %{}) || %{}, [:name, :email])
     cs = Ecto.Changeset.validate_required(this1, [:name])
     cs = Ecto.Changeset.validate_length(cs, :name, Enum.filter([min: Map.get(%{min: 2}, :min), max: Map.get(%{min: 2}, :max), is: Map.get(%{min: 2}, :is)], fn {_, v} -> v != nil end))
     cs

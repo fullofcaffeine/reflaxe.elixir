@@ -1,10 +1,10 @@
 defmodule Main do
   def main() do
-    _ = test_result_unwrap_or()
-    _ = test_result_map()
-    _ = test_option_unwrap()
-    _ = test_option_map()
-    _ = test_nested_patterns()
+    test_result_unwrap_or()
+    test_result_map()
+    test_option_unwrap()
+    test_option_map()
+    test_nested_patterns()
   end
   defp unwrap_or(result, default_value) do
     (case result do

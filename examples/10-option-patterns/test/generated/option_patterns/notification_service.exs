@@ -5,13 +5,13 @@ defmodule OptionPatterns.NotificationService do
       {:set, value} -> value
       nil ->
         value = init
-        _ = Process.put(static_key, {:set, value})
+        Process.put(static_key, {:set, value})
         value
     end)
   end
   defp __haxe_static_put__(key, value) do
     static_key = {:__haxe_static__, OptionPatterns.NotificationService, key}
-    _ = Process.put(static_key, {:set, value})
+    Process.put(static_key, {:set, value})
     value
   end
   def preferences() do
@@ -49,7 +49,7 @@ defmodule OptionPatterns.NotificationService do
   end
   def get_user_preferences(user_id) do
     this1 = OptionPatterns.NotificationService.preferences()
-    prefs = _ = Map.get(this1, user_id)
+    prefs = Map.get(this1, user_id)
     if (not Kernel.is_nil(prefs)), do: {:some, prefs}, else: {:none}
   end
   def is_notification_allowed(user_id, type) do
@@ -59,7 +59,7 @@ defmodule OptionPatterns.NotificationService do
     attempts = Enum.map(user_ids, fn user_id -> OptionPatterns.NotificationAttempt.new(user_id, send_to_user(user_id, message, type)) end)
     successful = Enum.map(Enum.filter(attempts, fn attempt -> is_successful_attempt(attempt) end), fn attempt -> successful_record(attempt) end)
     failed = Enum.map(Enum.filter(attempts, fn attempt -> is_failed_attempt(attempt) end), fn attempt -> failed_entry(attempt) end)
-    _ = OptionPatterns.BulkNotificationResult.new(successful, failed)
+    OptionPatterns.BulkNotificationResult.new(successful, failed)
   end
   def get_user_notification_history(user_id) do
     result = []

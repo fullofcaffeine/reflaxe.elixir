@@ -1,11 +1,11 @@
 defmodule Main do
   def main() do
-    _ = test_simple_interpolation()
-    _ = test_complex_conditional()
-    _ = test_nested_function_calls()
-    _ = test_multiple_interpolations()
-    _ = test_nil_handling()
-    _ = test_in_raise()
+    test_simple_interpolation()
+    test_complex_conditional()
+    test_nested_function_calls()
+    test_multiple_interpolations()
+    test_nil_handling()
+    test_in_raise()
   end
   defp test_simple_interpolation() do
     try do

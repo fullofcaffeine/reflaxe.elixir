@@ -225,7 +225,7 @@ defmodule PhoenixHxTodoWeb.AppLive do
   end
   defp handle_toggle_todo(id, socket) do
     live = socket
-    _ = toggle_todo_by_id(id, live)
+    toggle_todo_by_id(id, live)
   end
   defp toggle_todo_by_id(id, socket) do
     did_toggle = PhoenixHxTodo.Todos.toggle_for_user(socket.assigns.current_user_id, id)
@@ -249,7 +249,7 @@ defmodule PhoenixHxTodoWeb.AppLive do
           refreshed = refresh_chat(Phoenix.Component.assign(socket, :chat_input, ""), "Room note persisted through Ecto.")
           a = :erlang.binary_to_atom("chat_message_created")
           payload = {a, body}
-          _ = Phoenix.PubSub.broadcast_from(pubsub_module(), Kernel.self(), chat_topic(), payload)
+          Phoenix.PubSub.broadcast_from(pubsub_module(), Kernel.self(), chat_topic(), payload)
           {:noreply, refreshed}
         else
           {:noreply, Phoenix.Component.assign(socket, :status, "Could not post that room note.")}
@@ -259,11 +259,11 @@ defmodule PhoenixHxTodoWeb.AppLive do
   end
   defp assign_signed_out(socket) do
     owner = "Guest Workspace"
-    _ = Phoenix.Component.assign(socket, %{authenticated: false, current_user_id: nil, current_user_name: owner, current_user_email: "guest@example.test", csrf_token: Plug.CSRFProtection.get_csrf_token(), title_input: "", notes_input: "", todos: [], chat_input: "", chat_messages: [], status: "Sign in or continue as guest to open the PhoenixHx board.", stats: PhoenixHxTodoHx.Live.TodoState.stats([])})
+    Phoenix.Component.assign(socket, %{authenticated: false, current_user_id: nil, current_user_name: owner, current_user_email: "guest@example.test", csrf_token: Plug.CSRFProtection.get_csrf_token(), title_input: "", notes_input: "", todos: [], chat_input: "", chat_messages: [], status: "Sign in or continue as guest to open the PhoenixHx board.", stats: PhoenixHxTodoHx.Live.TodoState.stats([])})
   end
   defp assign_signed_in(socket, user) do
     todos = PhoenixHxTodo.Todos.view_items_for_user(user)
-    _ = Phoenix.Component.assign(socket, %{authenticated: true, current_user_id: user.id, current_user_name: PhoenixHxTodo.User.display_name(user), current_user_email: user.email, csrf_token: Plug.CSRFProtection.get_csrf_token(), title_input: "", notes_input: "", todos: todos, chat_input: "", chat_messages: PhoenixHxTodo.ChatMessages.view_items(), status: "Phoenix session active. Todos are persisted through Ecto.", stats: PhoenixHxTodoHx.Live.TodoState.stats(todos)})
+    Phoenix.Component.assign(socket, %{authenticated: true, current_user_id: user.id, current_user_name: PhoenixHxTodo.User.display_name(user), current_user_email: user.email, csrf_token: Plug.CSRFProtection.get_csrf_token(), title_input: "", notes_input: "", todos: todos, chat_input: "", chat_messages: PhoenixHxTodo.ChatMessages.view_items(), status: "Phoenix session active. Todos are persisted through Ecto.", stats: PhoenixHxTodoHx.Live.TodoState.stats(todos)})
   end
   defp current_user(session) do
     user_id = PhoenixHx.Params.get_int(session, "user_id")
@@ -279,7 +279,7 @@ defmodule PhoenixHxTodoWeb.AppLive do
       Phoenix.Component.assign(socket, :status, "Sign in again to reload tasks.")
     else
       todos = PhoenixHxTodo.Todos.view_items_for_user(user)
-      _ = Phoenix.Component.assign(socket, %{todos: todos, stats: PhoenixHxTodoHx.Live.TodoState.stats(todos), status: status})
+      Phoenix.Component.assign(socket, %{todos: todos, stats: PhoenixHxTodoHx.Live.TodoState.stats(todos), status: status})
     end
   end
   defp refresh_chat(socket, status) do

@@ -2,7 +2,7 @@ defmodule Main do
   def main() do
     pos1 = 10
     pos2 = 20
-    _ = test_params(pos1, pos2)
+    test_params(pos1, pos2)
     nil
   end
   defp test_params(pos1, pos2) do

@@ -20,6 +20,7 @@ that remains useful across versions; released version identity comes from protec
 
 ### Changed
 
+* **compiler:** emit effectful calls and Phoenix/Ecto/OTP DSL calls as normal bare Elixir statements instead of synthetic `_ = call(...)` matches; remove the redundant global and Presence-specific wrapper passes, preserve tail-call values and evaluation order, and teach Ecto migration/changeset consumers to accept the canonical bare-call AST shape.
 * **compiler:** scope Phoenix/OTP, LiveView, Ecto, HXX, and ExUnit AST passes through exact registry ownership plus typed module capabilities, reducing representative core execution from 578 to 407 passes without changing generated output; add scoped-versus-legacy byte-parity CI, enforce scope-manifest integrity, and remove 50 same-name registrations plus three missing ordering edges that the registry already ignored while retaining unproven distinct replay chains.
 * **compiler:** inventory all 578 effective Elixir AST passes by deterministic phase, ownership scope, replay family, ordering dependency, and representative tests; replace source-text order parsing with typed macro introspection and add bounded per-module timing/count baselines without changing generated Elixir.
 * **reflaxe:** retain the audited vendored framework baseline instead of importing upstream's broad, currently unused `RemovePureExpressions` optimizer; document the adoption criteria and remove inactive `debug_output_manager` trace blocks without changing normal compiler behavior.

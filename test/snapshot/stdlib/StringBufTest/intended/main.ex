@@ -1,9 +1,9 @@
 defmodule Main do
   def main() do
-    _ = test_basic_operations()
-    _ = test_add_char()
-    _ = test_add_sub()
-    _ = test_complex_building()
+    test_basic_operations()
+    test_add_char()
+    test_add_sub()
+    test_complex_building()
   end
   defp test_basic_operations() do
     buf = StringBuf.new()

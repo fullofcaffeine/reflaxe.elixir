@@ -223,14 +223,6 @@ class ElixirASTPassRegistry {
 		// Guard + interpolation prelude (order preserved via group)
 		passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.CoreGuardsAndInterpolation.build());
 
-		// Normalize bare calls in statement position to `_ = call(...)` (effects with unused result)
-		passes.push({
-			name: "BareCallToUnderscoreAssign",
-			description: "Rewrite bare ECall/ERemoteCall statements to `_ = <call>`",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.BareCallToUnderscoreAssignTransforms.pass
-		});
-
 		// Loop variable restoration pass (must run after string interpolation)
 		passes.push({
 			name: "LoopVariableRestore",
@@ -1652,14 +1644,6 @@ class ElixirASTPassRegistry {
 			description: "Rewrite <App>.Presence.* calls to <App>Web.Presence.*",
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.PresenceQualifiedModuleRewriteTransforms.transformPass
-		});
-
-		// Preserve effectful Presence statements even when results are unused
-		passes.push({
-			name: "PresenceBareCallPreserve",
-			description: "Rewrite bare Presence.track/update/untrack statements to `_ = ...` to preserve effects",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.PresenceBareCallPreserveTransforms.transformPass
 		});
 
 		// Normalize bare Presence.* call before trailing `socket` to `socket = Presence.*(...)` within presence modules
@@ -4415,7 +4399,7 @@ class ElixirASTPassRegistry {
 		// Key boundaries (stable in the pipeline and expected to exist in normal builds).
 		var phoenixStart = indexOfPass("PhoenixWebTransform");
 		var guardsStart = indexOfPass("GuardGrouping");
-		var coreStart = indexOfPass("BareCallToUnderscoreAssign");
+		var coreStart = indexOfPass("LoopVariableRestore");
 		var heexStart = indexOfPass("HeexStringReturnToSigil");
 		var absoluteFinalStart = indexOfPass("EFnTempChainSimplify_AlwaysRun");
 

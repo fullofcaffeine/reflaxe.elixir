@@ -61,6 +61,6 @@ defmodule BytesBuffer do
     struct = %{struct | parts_reversed: nil}
     _ = %{struct | byte_length: 0}
     binary = :erlang.iolist_to_binary(:lists.reverse(reversed))
-    _ = Bytes.of_data(binary)
+    Bytes.of_data(binary)
   end
 end

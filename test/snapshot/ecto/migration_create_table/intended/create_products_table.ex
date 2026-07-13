@@ -1,12 +1,12 @@
 defmodule CreateProductsTable do
   def up(struct) do
-    _ = create_table(struct, "products")
-    _ = add_column(struct, "products", "name", "string")
-    _ = add_column(struct, "products", "price", "decimal")
+    create_table(struct, "products")
+    add_column(struct, "products", "name", "string")
+    add_column(struct, "products", "price", "decimal")
     if (should_add_inventory(struct)) do
       add_column(struct, "products", "inventory_count", "integer")
     end
-    _ = timestamps(struct)
+    timestamps(struct)
   end
   def down(struct) do
     drop_table(struct, "products")

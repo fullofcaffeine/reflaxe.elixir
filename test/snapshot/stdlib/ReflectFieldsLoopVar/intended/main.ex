@@ -94,72 +94,70 @@ defmodule Main do
     end)
     _g = 0
     g_value = Reflect.fields(all_users)
-    _ =
-      Enum.each(g_value, fn user_id ->
-        _entry = (case {all_users, user_id} do
-          {reflect_obj, reflect_field} ->
-            (case Map.fetch(reflect_obj, reflect_field) do
-              {:ok, reflect_value} -> reflect_value
-              _ ->
-                (case (try do
-                  String.to_existing_atom(reflect_field)
-                rescue
-                  _ ->
-                    nil
-                end) do
-                  nil -> nil
-                  reflect_atom ->
-                    Map.get(reflect_obj, reflect_atom)
-                end)
-            end)
-        end)
-        nil
+    Enum.each(g_value, fn user_id ->
+      _entry = (case {all_users, user_id} do
+        {reflect_obj, reflect_field} ->
+          (case Map.fetch(reflect_obj, reflect_field) do
+            {:ok, reflect_value} -> reflect_value
+            _ ->
+              (case (try do
+                String.to_existing_atom(reflect_field)
+              rescue
+                _ ->
+                  nil
+              end) do
+                nil -> nil
+                reflect_atom ->
+                  Map.get(reflect_obj, reflect_atom)
+              end)
+          end)
       end)
+      nil
+    end)
     user_name_map = %{}
     _g = 0
     g_value = Reflect.fields(all_users)
-    _ =
-      Enum.each(g_value, fn user_id ->
-        entry = (case {all_users, user_id} do
-          {reflect_obj, reflect_field} ->
-            (case Map.fetch(reflect_obj, reflect_field) do
-              {:ok, reflect_value} -> reflect_value
-              _ ->
+    Enum.each(g_value, fn user_id ->
+      entry = (case {all_users, user_id} do
+        {reflect_obj, reflect_field} ->
+          (case Map.fetch(reflect_obj, reflect_field) do
+            {:ok, reflect_value} -> reflect_value
+            _ ->
+              (case (try do
+                String.to_existing_atom(reflect_field)
+              rescue
+                _ ->
+                  nil
+              end) do
+                nil -> nil
+                reflect_atom ->
+                  Map.get(reflect_obj, reflect_atom)
+              end)
+          end)
+      end)
+      if (length(entry.metas) > 0) do
+        meta = Enum.at(entry.metas, 0)
+        (case {user_name_map, user_id, meta.user_name} do
+          {reflect_obj, reflect_field, reflect_value} ->
+            (case Map.has_key?(reflect_obj, reflect_field) do
+              true ->
+                Map.put(reflect_obj, reflect_field, reflect_value)
+              false ->
                 (case (try do
                   String.to_existing_atom(reflect_field)
                 rescue
                   _ ->
                     nil
                 end) do
-                  nil -> nil
+                  nil ->
+                    Map.put(reflect_obj, reflect_field, reflect_value)
                   reflect_atom ->
-                    Map.get(reflect_obj, reflect_atom)
+                    Map.put(reflect_obj, reflect_atom, reflect_value)
                 end)
             end)
         end)
-        if (length(entry.metas) > 0) do
-          meta = Enum.at(entry.metas, 0)
-          (case {user_name_map, user_id, meta.user_name} do
-            {reflect_obj, reflect_field, reflect_value} ->
-              (case Map.has_key?(reflect_obj, reflect_field) do
-                true ->
-                  Map.put(reflect_obj, reflect_field, reflect_value)
-                false ->
-                  (case (try do
-                    String.to_existing_atom(reflect_field)
-                  rescue
-                    _ ->
-                      nil
-                  end) do
-                    nil ->
-                      Map.put(reflect_obj, reflect_field, reflect_value)
-                    reflect_atom ->
-                      Map.put(reflect_obj, reflect_atom, reflect_value)
-                  end)
-              end)
-          end)
-        end
-      end)
+      end
+    end)
     nil
   end
 end

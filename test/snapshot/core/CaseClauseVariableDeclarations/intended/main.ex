@@ -5,7 +5,7 @@ defmodule Main do
       tripled = x * 3
       doubled + tripled
     end
-    _ = fn_.(5)
+    fn_.(5)
   end
   defp perform_risky_operation() do
     if (Reflaxe.Elixir.HaxeFloat.gt(:rand.uniform(), 0.5)) do
@@ -14,7 +14,7 @@ defmodule Main do
     "Success"
   end
   def main() do
-    _ = test_function_body()
+    test_function_body()
     nil
   end
 end

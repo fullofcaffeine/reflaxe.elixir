@@ -4,14 +4,14 @@ defmodule Main do
     setup = true
   end
   setup context do
-    _ = on_exit(fn -> nil end)
+    on_exit(fn -> nil end)
     :ok
   end
   setup_all context do
     global = "initialized"
   end
   setup_all context do
-    _ = on_exit(fn -> global = nil end)
+    on_exit(fn -> global = nil end)
     :ok
   end
   defp helper_method(_struct) do
@@ -27,7 +27,7 @@ defmodule Main do
     assert true
   end
   test "async with lifecycle" do
-    _ = Process.sleep(1)
+    Process.sleep(1)
     assert true
   end
   test "with underscores and caps" do
@@ -85,7 +85,7 @@ defmodule Main do
   end
   describe "Full featured" do
     test "everything" do
-      _ = Process.sleep(1)
+      Process.sleep(1)
       assert true
     end
   end

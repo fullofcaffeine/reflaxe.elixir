@@ -1,10 +1,10 @@
 defmodule Main do
   def main() do
-    _ = test_schema_constructor()
-    _ = test_regular_class()
-    _ = test_gen_server()
-    _ = test_data_structures()
-    _ = test_multiple_instances()
+    test_schema_constructor()
+    test_regular_class()
+    test_gen_server()
+    test_data_structures()
+    test_multiple_instances()
   end
   defp test_schema_constructor() do
     user = %ConstructorTest.User{}
@@ -22,7 +22,7 @@ defmodule Main do
     nil
   end
   defp test_data_structures() do
-    _ = DataStructureTest.test_collections()
+    DataStructureTest.test_collections()
     nil
   end
   defp test_multiple_instances() do

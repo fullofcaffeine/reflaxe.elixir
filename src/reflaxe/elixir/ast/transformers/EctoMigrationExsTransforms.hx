@@ -722,12 +722,28 @@ class EctoMigrationExsTransforms {
 	// Sequential-chain extraction (reflaxe_dispatch_receiver threading)
 	// ======================================================================
 
+	/**
+	 * Extracts one migration builder chain from consecutive statements.
+	 *
+	 * WHAT
+	 * - Recognizes the initial receiver assignment plus subsequent calls that operate
+	 *   on that receiver, whether those calls are bare statements or real matches.
+	 *
+	 * WHY
+	 * - Fluent Haxe migration calls are lowered into sequential Elixir AST statements.
+	 *   Statement position is already represented by the containing block; requiring
+	 *   `_ = call(...)` would couple migration parsing to an artificial discard binder.
+	 *
+	 * HOW
+	 * - Requires `create_table` or `alter_table` to establish a named receiver.
+	 * - Accepts bare calls, explicit receiver rebindings, and intentional wildcard
+	 *   matches only when each next call consumes that exact receiver.
+	 *
+	 * EXAMPLES
+	 * - `receiver = create_table(...); add_column(receiver, ...)` becomes one chain.
+	 * - A call using another receiver terminates the chain without being consumed.
+	 */
 	static function extractSequentialCallChain(statements:Array<ElixirAST>, startIndex:Int):Null<MigrationSequentialChainExtract> {
-		// This is the normalized shape produced by the AST pipeline for fluent builder DSL:
-		//
-		//   receiver = apply(..., :create_table/:alter_table, [struct, ...])
-		//   receiver = _ = apply(..., :add_column, [receiver, ...])
-		//   _ = apply(..., :add_timestamps, [receiver])
 		//
 		// We stitch these statement-level calls into a single MigrationCallChain so the DSL
 		// conversion logic can operate on a stable representation.
@@ -759,12 +775,10 @@ class EctoMigrationExsTransforms {
 			}
 
 			var assignment = extractAssignment(statement);
-			if (assignment == null)
-				break;
-			if (assignment.name != "_" && assignment.name != receiverVarName)
+			if (assignment != null && assignment.name != "_" && assignment.name != receiverVarName)
 				break;
 
-			var callExpr = unwrapCallExpr(assignment.value);
+			var callExpr = unwrapCallExpr(assignment != null ? assignment.value : statement);
 			var step = extractCallStep(callExpr);
 			if (step == null)
 				break;

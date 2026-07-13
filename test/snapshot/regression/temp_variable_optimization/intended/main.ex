@@ -1,8 +1,8 @@
 defmodule Main do
   def main() do
-    _ = test_basic_ternary()
-    _ = test_nested_ternary()
-    _ = test_ternary_in_function()
+    test_basic_ternary()
+    test_nested_ternary()
+    test_ternary_in_function()
   end
   defp test_basic_ternary() do
     config = %{name: "test"}

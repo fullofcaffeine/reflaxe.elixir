@@ -1,8 +1,8 @@
 defmodule MyApp.InvalidSchema do
   use Ecto.Schema
   schema "items" do
-    _ = field(:valid_field, :string)
-    _ = field(:invalid_type_field, :string)
+    field(:valid_field, :string)
+    field(:invalid_type_field, :string)
   end
 
   def changeset(invalidschema, attrs) do

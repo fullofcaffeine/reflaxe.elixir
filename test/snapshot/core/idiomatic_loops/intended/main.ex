@@ -1,39 +1,38 @@
 defmodule Main do
   def main() do
-    _ = test_basic_for_loops()
-    _ = test_while_loops()
-    _ = test_array_operations()
-    _ = test_nested_loops()
-    _ = test_loop_control_flow()
-    _ = test_complex_patterns()
+    test_basic_for_loops()
+    test_while_loops()
+    test_array_operations()
+    test_nested_loops()
+    test_loop_control_flow()
+    test_complex_patterns()
   end
   defp test_basic_for_loops() do
     fruits = ["apple", "banana", "orange"]
     g = 0
-    _ = Enum.each(fruits, fn _ -> nil end)
+    Enum.each(fruits, fn _ -> nil end)
     scores = %{"Alice" => 95, "Bob" => 87, "Charlie" => 92}
     g = Reflaxe.Elixir.IMap.key_value_iterator(scores)
-    _ =
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
-        try do
-          if (g.has_next.()) do
-            _name = g.next.().key
-            _score = g.next.().value
-            {:cont, acc}
-          else
-            {:halt, acc}
-          end
-        catch
-          :throw, {:break, break_state} ->
-            {:halt, break_state}
-          :throw, {:continue, continue_state} ->
-            {:cont, continue_state}
-          :throw, :break ->
-            {:halt, acc}
-          :throw, :continue ->
-            {:cont, acc}
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+      try do
+        if (g.has_next.()) do
+          _name = g.next.().key
+          _score = g.next.().value
+          {:cont, acc}
+        else
+          {:halt, acc}
         end
-      end)
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, acc}
+        :throw, :continue ->
+          {:cont, acc}
+      end
+    end)
   end
   defp test_while_loops() do
     i = 0
@@ -131,7 +130,7 @@ defmodule Main do
       if (n > 3), do: n * 10, else: n + 100
     end)
     _has_even = Lambda.exists(numbers, fn n -> rem(n, 2) == 0 end)
-    _ = Lambda.iter(numbers, fn _n -> nil end)
+    Lambda.iter(numbers, fn _n -> nil end)
     _found = Lambda.find(numbers, fn n -> n > 3 end)
     _count_evens = Lambda.count(numbers, fn n -> rem(n, 2) == 0 end)
     nil
@@ -219,24 +218,22 @@ defmodule Main do
     end)
     matrix = [[1, 2], [3, 4], [5, 6]]
     _g = 0
-    _ =
-      Enum.each(matrix, fn row ->
-        _doubled = Enum.map(row, fn n -> n * 2 end)
-        nil
-      end)
+    Enum.each(matrix, fn row ->
+      _doubled = Enum.map(row, fn n -> n * 2 end)
+      nil
+    end)
   end
   defp test_loop_control_flow() do
     _g = 0
-    _ =
-      Enum.each(0..4//1, fn i ->
-        _g = 0
-        _ = Enum.each(0..4//1, fn j ->
-          if (i + j > 4) do
-            throw(:break)
-          end
-          nil
-        end)
+    Enum.each(0..4//1, fn i ->
+      _g = 0
+      Enum.each(0..4//1, fn j ->
+        if (i + j > 4) do
+          throw(:break)
+        end
+        nil
       end)
+    end)
     numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     processed = []
     _g = 0

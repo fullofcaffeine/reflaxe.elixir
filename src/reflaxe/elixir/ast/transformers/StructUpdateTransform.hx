@@ -212,11 +212,12 @@ class StructUpdateTransform {
 
 		switch (expr.def) {
 			case EBinary(Match, left, rhs):
-				// Handle statement-form `_ = call(...)` emitted as a binary match.
+				// Handle explicitly discarded fluent calls represented as binary matches.
 				//
 				// WHY:
-				// - BareCallToUnderscoreAssignTransforms emits `_ = call(...)` as `EBinary(Match, EVar("_"), call)`.
-				// - Fluent/struct-mutating calls must still thread the updated struct to preserve semantics.
+				// - Assignment hygiene or an explicit target expression may retain `_ = call(...)`.
+				// - Fluent/struct-mutating calls must still thread the updated struct even when their
+				//   source-level result is discarded.
 				//
 				// HOW:
 				// - Detect discard binders (`_`) and, when the RHS is a fluent API call whose first

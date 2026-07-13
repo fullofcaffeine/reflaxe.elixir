@@ -1,10 +1,10 @@
 defmodule Main do
   def main() do
-    _ = test_basic_shadowing()
-    _ = test_shadowing_with_intervening_statements()
-    _ = test_shadowing_in_if_blocks()
-    _ = test_query_builder_pattern()
-    _ = test_abstract_constructor_pattern()
+    test_basic_shadowing()
+    test_shadowing_with_intervening_statements()
+    test_shadowing_in_if_blocks()
+    test_query_builder_pattern()
+    test_abstract_constructor_pattern()
     nil
   end
   defp test_basic_shadowing() do

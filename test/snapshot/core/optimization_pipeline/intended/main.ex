@@ -8,7 +8,7 @@ defmodule Main do
     temp1 = 42
     temp2 = temp1
     _result = temp2 + 1
-    _ = dead_code_example()
+    dead_code_example()
   end
   defp dead_code_example() do
     42

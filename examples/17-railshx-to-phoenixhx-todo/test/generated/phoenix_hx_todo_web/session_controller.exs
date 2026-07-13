@@ -9,7 +9,7 @@ defmodule PhoenixHxTodoWeb.SessionController do
     else
       (case PhoenixHxTodo.Accounts.get_or_create_demo_user(name, email) do
         {:ok, user} ->
-          _ = PhoenixHxTodo.Todos.seed_defaults_for_user(user)
+          PhoenixHxTodo.Todos.seed_defaults_for_user(user)
           value = user.id
           this1 = Plug.Conn.put_session(conn, String.to_atom("user_id"), value)
           message = "Signed in as #{user.name}."

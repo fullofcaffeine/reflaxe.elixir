@@ -1,9 +1,9 @@
 defmodule Main do
   def main() do
-    _ = unused_parameter("test")
-    _ = partially_used("used", 42, true)
-    _ = all_unused("a", 1, false)
-    _ = handle_result({:error, "boom"})
+    unused_parameter("test")
+    partially_used("used", 42, true)
+    all_unused("a", 1, false)
+    handle_result({:error, "boom"})
   end
   defp unused_parameter(_unused) do
     nil

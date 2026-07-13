@@ -1,8 +1,8 @@
 defmodule Main do
   def main() do
-    _ = test_unused_variable()
-    _ = test_unused_enum_extraction()
-    _ = test_unused_parameter(42)
+    test_unused_variable()
+    test_unused_enum_extraction()
+    test_unused_parameter(42)
   end
   defp test_unused_variable() do
     nil

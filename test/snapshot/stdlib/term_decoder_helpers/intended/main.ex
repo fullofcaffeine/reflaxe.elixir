@@ -4,7 +4,7 @@ defmodule Main do
   end
   defp decode_changeset_field(changeset) do
     field = "email"
-    _ = ResultTools.flat_map(TermDecoder.fetch_atom_key(changeset, field), &TermDecoder.as_string/1)
+    ResultTools.flat_map(TermDecoder.fetch_atom_key(changeset, field), &TermDecoder.as_string/1)
   end
   defp decode_repo_result(result) do
     TermDecoder.ok_error(result, &TermDecoder.as_string/1, &TermDecoder.as_string/1)

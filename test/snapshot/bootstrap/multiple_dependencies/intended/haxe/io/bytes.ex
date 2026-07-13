@@ -101,7 +101,7 @@ defmodule Bytes do
       Process.put(struct.dict_key, data)
     end
     data end).(), pos, len))
-    _ = new(len, sub_binary)
+    new(len, sub_binary)
   end
   def fill(struct, pos, len, value) do
     if (pos < 0 or len < 0 or pos + len > struct.length) do
@@ -162,13 +162,12 @@ defmodule Bytes do
     if (pos < 0 or pos + 8 > struct.length) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
-    _ =
-      Reflaxe.Elixir.HaxeFloat.decode64((fn -> :binary.part((fn -> data = Process.get(struct.dict_key)
-      if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
-        data = struct.b
-        Process.put(struct.dict_key, data)
-      end
-      data end).(), pos, 8) end).())
+    Reflaxe.Elixir.HaxeFloat.decode64((fn -> :binary.part((fn -> data = Process.get(struct.dict_key)
+    if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
+      data = struct.b
+      Process.put(struct.dict_key, data)
+    end
+    data end).(), pos, 8) end).())
   end
   def set_double(struct, pos, v) do
     if (pos < 0 or pos + 8 > struct.length) do
@@ -201,13 +200,12 @@ defmodule Bytes do
     if (pos < 0 or pos + 4 > struct.length) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
-    _ =
-      Reflaxe.Elixir.HaxeFloat.decode32((fn -> :binary.part((fn -> data = Process.get(struct.dict_key)
-      if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
-        data = struct.b
-        Process.put(struct.dict_key, data)
-      end
-      data end).(), pos, 4) end).())
+    Reflaxe.Elixir.HaxeFloat.decode32((fn -> :binary.part((fn -> data = Process.get(struct.dict_key)
+    if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
+      data = struct.b
+      Process.put(struct.dict_key, data)
+    end
+    data end).(), pos, 4) end).())
   end
   def set_float(struct, pos, v) do
     if (pos < 0 or pos + 4 > struct.length) do
@@ -360,12 +358,12 @@ defmodule Bytes do
   end
   def alloc(length_param) do
     b = :binary.copy(<<0>>, length_param)
-    _ = new(length_param, b)
+    new(length_param, b)
   end
   def of_string(s, _encoding) do
     binary = :unicode.characters_to_binary(s, :utf8)
     length = byte_size(binary)
-    _ = new(length, binary)
+    new(length, binary)
   end
   def fast_get(b_param, pos) do
     :binary.at(b_param, pos)
@@ -373,10 +371,10 @@ defmodule Bytes do
   def of_hex(s) do
     binary = Base.decode16!(s, case: :mixed)
     length = byte_size(binary)
-    _ = new(length, binary)
+    new(length, binary)
   end
   def of_data(b_param) do
     length = byte_size(b_param)
-    _ = new(length, b_param)
+    new(length, b_param)
   end
 end

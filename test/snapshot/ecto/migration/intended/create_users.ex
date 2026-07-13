@@ -1,16 +1,16 @@
 defmodule CreateUsers do
   def up(struct) do
-    _ = create_table(struct, "users")
-    _ = add_column(struct, "users", "id", "serial", true, nil)
-    _ = add_column(struct, "users", "name", "string", false, nil)
-    _ = add_column(struct, "users", "email", "string", false, nil)
-    _ = add_column(struct, "users", "age", "integer", nil, 0)
-    _ = add_column(struct, "users", "bio", "text", nil, nil)
-    _ = add_column(struct, "users", "active", "boolean", nil, true)
-    _ = add_timestamps(struct, "users")
-    _ = add_index(struct, "users", ["email"], %{unique: true})
-    _ = add_index(struct, "users", ["name", "active"], nil)
-    _ = add_check_constraint(struct, "users", "age_check", "age >= 0 AND age <= 150")
+    create_table(struct, "users")
+    add_column(struct, "users", "id", "serial", true, nil)
+    add_column(struct, "users", "name", "string", false, nil)
+    add_column(struct, "users", "email", "string", false, nil)
+    add_column(struct, "users", "age", "integer", nil, 0)
+    add_column(struct, "users", "bio", "text", nil, nil)
+    add_column(struct, "users", "active", "boolean", nil, true)
+    add_timestamps(struct, "users")
+    add_index(struct, "users", ["email"], %{unique: true})
+    add_index(struct, "users", ["name", "active"], nil)
+    add_check_constraint(struct, "users", "age_check", "age >= 0 AND age <= 150")
   end
   def down(struct) do
     drop_table(struct, "users")

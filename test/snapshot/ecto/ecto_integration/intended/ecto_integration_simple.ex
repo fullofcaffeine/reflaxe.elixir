@@ -4,7 +4,7 @@ defmodule EctoIntegrationSimple do
     user = %{user | name: "Test User"}
     user = %{user | email: "test@example.com"}
     _changeset = UserChangeset.changeset(user, %{name: "Updated", email: "new@example.com"})
-    _ = CreateUsersTable.up()
+    CreateUsersTable.up()
     _active_users = UserQueries.active_users()
     _users = MyApp.Repo.all(MyApp.User)
     _account_users = Accounts.list_users()

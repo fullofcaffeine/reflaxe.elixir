@@ -302,20 +302,20 @@ defmodule Main do
     end).()]
   end
   def main() do
-    _ = simple_nested()
-    _ = constant_range_unrolled()
-    _ = nested_with_condition()
-    _ = deeply_nested()
-    _ = four_level_nesting()
-    _ = nested_with_expression()
-    _ = nested_with_block()
-    _ = mixed_constant_variable()
-    _ = nested_in_expression()
-    _ = with_meta_and_parens()
-    _ = mixed_with_literals()
-    _ = comprehension_from_iterable()
-    _ = empty_comprehensions()
-    _ = single_element_nested()
+    simple_nested()
+    constant_range_unrolled()
+    nested_with_condition()
+    deeply_nested()
+    four_level_nesting()
+    nested_with_expression()
+    nested_with_block()
+    mixed_constant_variable()
+    nested_in_expression()
+    with_meta_and_parens()
+    mixed_with_literals()
+    comprehension_from_iterable()
+    empty_comprehensions()
+    single_element_nested()
     nil
   end
 end

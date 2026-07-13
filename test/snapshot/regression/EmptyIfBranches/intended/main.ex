@@ -18,8 +18,8 @@ defmodule Main do
     end
   end
   def main() do
-    _ = test_both_empty(true)
-    _ = test_nested_empty(true, false)
+    test_both_empty(true)
+    test_nested_empty(true, false)
     nil
   end
 end

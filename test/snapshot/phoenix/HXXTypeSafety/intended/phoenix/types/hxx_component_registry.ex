@@ -5,13 +5,13 @@ defmodule HXXComponentRegistry do
       {:set, value} -> value
       nil ->
         value = init
-        _ = Process.put(static_key, {:set, value})
+        Process.put(static_key, {:set, value})
         value
     end)
   end
   defp __haxe_static_put__(key, value) do
     static_key = {:__haxe_static__, HXXComponentRegistry, key}
-    _ = Process.put(static_key, {:set, value})
+    Process.put(static_key, {:set, value})
     value
   end
   def html_elements() do
@@ -112,7 +112,7 @@ defmodule HXXComponentRegistry do
   def get_element_type(element_name) do
     this1 = HXXComponentRegistry.html_elements()
     key = String.downcase(element_name)
-    _ = Map.get(this1, key)
+    Map.get(this1, key)
   end
   def list_html_elements() do
     out = []
@@ -147,19 +147,19 @@ defmodule HXXComponentRegistry do
     (fn ->
       this1 = HXXComponentRegistry.html_elements()
       key = String.downcase(element_name)
-      _ = Map.has_key?(this1, key)
+      Map.has_key?(this1, key)
     end).() or (fn ->
       this1 = HXXComponentRegistry.phoenix_components()
-      _ = Map.has_key?(this1, element_name)
+      Map.has_key?(this1, element_name)
     end).()
   end
   def validate_attribute(element_name, attribute_name) do
     this = HXXComponentRegistry.html_elements()
     key = String.downcase(element_name)
-    element = _ = Map.get(this, key)
+    element = Map.get(this, key)
     if (Kernel.is_nil(element)) do
       this = HXXComponentRegistry.phoenix_components()
-      component = _ = Map.get(this, element_name)
+      component = Map.get(this, element_name)
       if (not Kernel.is_nil(component)), do: validate_component_attribute(component, attribute_name), else: false
       (fn ->
         this = element.allowedAttributes
@@ -185,12 +185,12 @@ defmodule HXXComponentRegistry do
   def get_allowed_attributes(element_name) do
     this1 = HXXComponentRegistry.html_elements()
     key = String.downcase(element_name)
-    element = _ = Map.get(this1, key)
+    element = Map.get(this1, key)
     if (not Kernel.is_nil(element)) do
       element.allowedAttributes
     else
       this1 = HXXComponentRegistry.phoenix_components()
-      component = _ = Map.get(this1, element_name)
+      component = Map.get(this1, element_name)
       if (not Kernel.is_nil(component)) do
         Enum.map(component.attributes, fn a -> a.name end)
       else
@@ -201,7 +201,7 @@ defmodule HXXComponentRegistry do
   def register_component(component) do
     this1 = HXXComponentRegistry.phoenix_components()
     key = component.name
-    _ = apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :set, [this1, key, component])
+    apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :set, [this1, key, component])
   end
   def list_phoenix_components() do
     out = []

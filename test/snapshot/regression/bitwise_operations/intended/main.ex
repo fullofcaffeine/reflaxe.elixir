@@ -1,13 +1,13 @@
 defmodule Main do
   def main() do
-    _ = test_bitwise_and()
-    _ = test_bitwise_or()
-    _ = test_bitwise_xor()
-    _ = test_shift_left()
-    _ = test_shift_right()
-    _ = test_nested_operations()
-    _ = test_operator_precedence()
-    _ = test_complex_expressions()
+    test_bitwise_and()
+    test_bitwise_or()
+    test_bitwise_xor()
+    test_shift_left()
+    test_shift_right()
+    test_nested_operations()
+    test_operator_precedence()
+    test_complex_expressions()
   end
   defp test_bitwise_and() do
     n = 255

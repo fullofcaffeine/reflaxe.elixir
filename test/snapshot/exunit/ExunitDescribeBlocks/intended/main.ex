@@ -1,11 +1,11 @@
 defmodule Main do
   use ExUnit.Case, async: :true
   test "async operation" do
-    _ = Process.sleep(10)
+    Process.sleep(10)
     assert true
   end
   test "slow operation" do
-    _ = Process.sleep(100)
+    Process.sleep(100)
     assert true
   end
   test "integration" do

@@ -1,8 +1,8 @@
 defmodule Main do
   def main() do
-    _ = test_basic_operations()
-    _ = test_chaining()
-    _ = test_list_operations()
+    test_basic_operations()
+    test_chaining()
+    test_list_operations()
   end
   defp test_basic_operations() do
     numbers = [1, 2, 3, 4, 5]

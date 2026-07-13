@@ -4,14 +4,14 @@ defmodule VectorData do
     struct = %{struct | length: length_param}
     struct = %{struct | ref: :erlang.unique_integer([:positive])}
     struct = %{struct | dict_key: {:reflaxe_vector, struct.ref}}
-    _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :put_items, [struct, items])
+    apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :put_items, [struct, items])
     struct
   end
   def items(struct) do
     stored = Process.get(struct.dict_key)
     stored = if (Kernel.is_nil(stored)) do
       stored = []
-      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :put_items, [struct, stored])
+      apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :put_items, [struct, stored])
       stored
     else
       stored
@@ -25,7 +25,7 @@ defmodule VectorData do
     Enum.at(apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :items, [struct]), index)
   end
   def set(struct, index, value) do
-    _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :put_items, [struct, List.replace_at(apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :items, [struct]), index, value)])
+    apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :put_items, [struct, List.replace_at(apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :items, [struct]), index, value)])
     value
   end
 end

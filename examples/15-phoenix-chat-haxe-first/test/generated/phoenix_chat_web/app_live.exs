@@ -15,8 +15,8 @@ defmodule PhoenixChatWeb.AppLive do
     live = Phoenix.Component.assign(socket, assigns)
     live = if (connected) do
       pubsub = pubsub_module()
-      _ = Phoenix.PubSub.subscribe(pubsub, chat_topic(room))
-      _ = Phoenix.PubSub.subscribe(pubsub, presence_topic(room))
+      Phoenix.PubSub.subscribe(pubsub, chat_topic(room))
+      Phoenix.PubSub.subscribe(pubsub, presence_topic(room))
       topic = presence_topic(room)
       PhoenixChatWeb.Presence.track(self(), topic, current_user_id, %{online_at: online_at, name: current_user_name})
       topic = presence_topic(room)
@@ -114,7 +114,7 @@ defmodule PhoenixChatWeb.AppLive do
   end
   def handle_info(msg, socket) do
     live = socket
-    _ = handle_pub_sub(msg, live)
+    handle_pub_sub(msg, live)
   end
   defp handle_pub_sub(payload, socket) do
     if (is_presence_diff_broadcast(payload)) do
@@ -178,7 +178,7 @@ defmodule PhoenixChatWeb.AppLive do
       b = socket.assigns.current_user_id
       c = socket.assigns.current_user_name
       payload = {a, b, c, body, now}
-      _ = Phoenix.PubSub.broadcast_from(pubsub_module(), Kernel.self(), chat_topic(socket.assigns.room), payload)
+      Phoenix.PubSub.broadcast_from(pubsub_module(), Kernel.self(), chat_topic(socket.assigns.room), payload)
       {:noreply, updated}
     end
   end
@@ -213,7 +213,7 @@ defmodule PhoenixChatWeb.AppLive do
         end
       end).(a, b) < 0
     end)
-    _ = Phoenix.Component.assign(socket, %{online_user_views: views, online_user_count: length(views)})
+    Phoenix.Component.assign(socket, %{online_user_views: views, online_user_count: length(views)})
   end
   defp is_presence_diff_broadcast(msg) do
     if (not Kernel.is_map(msg)) do

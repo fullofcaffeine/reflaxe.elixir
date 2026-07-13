@@ -9,7 +9,7 @@ defmodule TupleResult do
     if (elem(result, 0) != "ok") do
       raise Reflaxe.Elixir.HaxeThrow, [value: Reflaxe.Exception.new("Expected ok tuple, got " <> elem(result, 0), nil, nil)]
     end
-    _ = elem(result, 1)
+    elem(result, 1)
   end
   def unwrap_or(result, default_value) do
     if (elem(result, 0) == "ok"), do: elem(result, 1), else: default_value

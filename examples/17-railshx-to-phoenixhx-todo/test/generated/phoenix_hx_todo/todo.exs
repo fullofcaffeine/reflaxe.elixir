@@ -1,11 +1,11 @@
 defmodule PhoenixHxTodo.Todo do
   use Ecto.Schema
   schema "todos" do
-    _ = field(:title, :string)
-    _ = field(:notes, :string)
-    _ = field(:completed, :boolean)
-    _ = field(:user_id, :integer)
-    _ = timestamps()
+    field(:title, :string)
+    field(:notes, :string)
+    field(:completed, :boolean)
+    field(:user_id, :integer)
+    timestamps()
   end
   def new() do
     struct = %{:__reflaxe_class__ => PhoenixHxTodo.Todo, :id => nil, :title => nil, :notes => nil, :completed => nil, :user_id => nil}

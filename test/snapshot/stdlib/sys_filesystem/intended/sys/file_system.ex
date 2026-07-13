@@ -33,6 +33,6 @@ defmodule FileSystem do
   end
   defp to_utc_date(erl_datetime) do
     naive = NaiveDateTime.from_erl!(erl_datetime, nil)
-    _ = DateTime.from_naive!(naive, "Etc/UTC")
+    DateTime.from_naive!(naive, "Etc/UTC")
   end
 end

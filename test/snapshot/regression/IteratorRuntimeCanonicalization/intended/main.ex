@@ -45,8 +45,8 @@ defmodule Main do
       end
     end)
     balanced_tree = BalancedTree.new()
-    _ = apply(Map.get(balanced_tree, :__reflaxe_class__) || Map.get(balanced_tree, :__struct__), :set, [balanced_tree, "left", 10])
-    _ = apply(Map.get(balanced_tree, :__reflaxe_class__) || Map.get(balanced_tree, :__struct__), :set, [balanced_tree, "right", 20])
+    apply(Map.get(balanced_tree, :__reflaxe_class__) || Map.get(balanced_tree, :__struct__), :set, [balanced_tree, "left", 10])
+    apply(Map.get(balanced_tree, :__reflaxe_class__) || Map.get(balanced_tree, :__struct__), :set, [balanced_tree, "right", 20])
     tree_pairs = []
     tree_iterator = apply(Map.get(balanced_tree, :__reflaxe_class__) || Map.get(balanced_tree, :__struct__), :key_value_iterator, [balanced_tree])
     {_tree_pairs} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {tree_pairs}, fn _, {acc_tree_pairs} ->

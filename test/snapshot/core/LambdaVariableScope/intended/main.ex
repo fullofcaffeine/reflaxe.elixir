@@ -1,9 +1,9 @@
 defmodule Main do
   def main() do
-    _ = test_array_filter_with_outer_variable()
-    _ = test_array_map_with_outer_variable()
-    _ = test_nested_array_operations()
-    _ = test_multiple_outer_variables()
+    test_array_filter_with_outer_variable()
+    test_array_map_with_outer_variable()
+    test_nested_array_operations()
+    test_multiple_outer_variables()
   end
   defp test_array_filter_with_outer_variable() do
     items = ["apple", "banana", "cherry"]

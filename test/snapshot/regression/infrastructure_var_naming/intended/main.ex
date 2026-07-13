@@ -1,7 +1,7 @@
 defmodule Main do
   def main() do
-    _ = test_simple_loop()
-    _ = test_string_iteration()
+    test_simple_loop()
+    test_string_iteration()
   end
   defp test_simple_loop() do
     nil

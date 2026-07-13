@@ -1,11 +1,11 @@
 defmodule Main do
   def main() do
-    _ = test_option_construction()
-    _ = test_pattern_matching()
-    _ = test_functional_operations()
-    _ = test_beam_integration()
-    _ = test_null_safety()
-    _ = test_collection_operations()
+    test_option_construction()
+    test_pattern_matching()
+    test_functional_operations()
+    test_beam_integration()
+    test_null_safety()
+    test_collection_operations()
   end
   defp test_option_construction() do
     name = "world"
@@ -25,8 +25,8 @@ defmodule Main do
         length(score_list)
       {:none} -> 0
     end)
-    _ = process_user({:some, "Charlie"})
-    _ = process_user({:none})
+    process_user({:some, "Charlie"})
+    process_user({:none})
   end
   defp process_user(user) do
     (case user do

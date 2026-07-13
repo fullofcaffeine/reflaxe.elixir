@@ -19,10 +19,10 @@ defmodule Main do
     end)
   end
   def main() do
-    _ = test_idiomatic_option()
-    _ = test_literal_option()
-    _ = test_idiomatic_result()
-    _ = test_pattern_matching()
+    test_idiomatic_option()
+    test_literal_option()
+    test_idiomatic_result()
+    test_pattern_matching()
     nil
   end
 end

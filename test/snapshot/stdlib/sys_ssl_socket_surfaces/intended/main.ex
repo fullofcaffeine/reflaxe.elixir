@@ -6,7 +6,7 @@ defmodule Main do
   end
   defp reject_unsupported_certificate_metadata(cert) do
     try do
-      _ = apply(Map.get(cert, :__reflaxe_class__) || Map.get(cert, :__struct__), :subject, [cert, "CN"])
+      apply(Map.get(cert, :__reflaxe_class__) || Map.get(cert, :__struct__), :subject, [cert, "CN"])
       raise Reflaxe.Elixir.HaxeThrow, [value: "Certificate.subject should fail explicitly on the Elixir target"]
     rescue
       haxe_exception ->
@@ -28,14 +28,14 @@ defmodule Main do
   end
   def main() do
     cert = Certificate.load_defaults()
-    _ = reject_unsupported_certificate_metadata(cert)
+    reject_unsupported_certificate_metadata(cert)
     socket = SslSocket.new()
     socket = %{socket | verify_cert: false}
-    _ = apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :set_timeout, [socket, 0.01])
-    _ = apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :set_blocking, [socket, false])
-    _ = apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :set_hostname, [socket, "localhost"])
-    _ = apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :set_ca, [socket, cert])
-    _ = apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :bind, [socket, Host.new("127.0.0.1"), 0])
-    _ = apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :close, [socket])
+    apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :set_timeout, [socket, 0.01])
+    apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :set_blocking, [socket, false])
+    apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :set_hostname, [socket, "localhost"])
+    apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :set_ca, [socket, cert])
+    apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :bind, [socket, Host.new("127.0.0.1"), 0])
+    apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :close, [socket])
   end
 end

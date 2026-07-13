@@ -1,10 +1,10 @@
 defmodule TestApp.Application do
   use Application
   def main() do
-    _ = test_type_safe_child_specs()
-    _ = test_child_spec_builders()
-    _ = test_complex_child_specs()
-    _ = test_application_children()
+    test_type_safe_child_specs()
+    test_child_spec_builders()
+    test_complex_child_specs()
+    test_application_children()
   end
   defp test_type_safe_child_specs() do
     _pubsub_children_0 = {Phoenix.PubSub, [name: TestApp.PubSub]}

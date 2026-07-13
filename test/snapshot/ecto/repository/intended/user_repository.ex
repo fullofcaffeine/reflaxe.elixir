@@ -10,11 +10,11 @@ defmodule UserRepository do
   end
   def create_user(attrs) do
     changeset = UserChangeset.changeset(nil, attrs)
-    _ = MyApp.Repo.insert(changeset)
+    MyApp.Repo.insert(changeset)
   end
   def update_user(user, attrs) do
     changeset = UserChangeset.changeset(user, attrs)
-    _ = MyApp.Repo.update(changeset)
+    MyApp.Repo.update(changeset)
   end
   def delete_user(user) do
     MyApp.Repo.delete(user)

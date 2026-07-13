@@ -9,16 +9,16 @@ defmodule MemoryStorage do
   end
   def get(struct, key) do
     this1 = struct.data
-    _ = Map.get(this1, key)
+    Map.get(this1, key)
   end
   def put(struct, key, value) do
     this1 = struct.data
-    _ = apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :set, [this1, key, value])
+    apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :set, [this1, key, value])
     true
   end
   def delete(struct, key) do
     this1 = struct.data
-    _ = apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :remove, [this1, key])
+    apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :remove, [this1, key])
   end
   def list(struct) do
     this1 = struct.data

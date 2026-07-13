@@ -7,6 +7,6 @@ defmodule Main do
   def main() do
     value_value = "second"
     box = Box.new(value_value)
-    _ = assert_that(box.value == "second", "constructor argument numeric suffix was rewritten")
+    assert_that(box.value == "second", "constructor argument numeric suffix was rewritten")
   end
 end

@@ -11,11 +11,11 @@ defmodule Email_Impl_ do
   end
   def get_domain(this1) do
     at_index = StringTools.haxe_last_index_of(this1, "@", nil)
-    _ = StringTools.haxe_substring(this1, at_index + 1, nil)
+    StringTools.haxe_substring(this1, at_index + 1, nil)
   end
   def get_local_part(this1) do
     at_index = StringTools.haxe_last_index_of(this1, "@", nil)
-    _ = StringTools.haxe_substring(this1, 0, at_index)
+    StringTools.haxe_substring(this1, 0, at_index)
   end
   def has_domain(this1, domain) do
     String.downcase(get_domain(this1)) == String.downcase(domain)

@@ -1,9 +1,9 @@
 defmodule Main do
   def main() do
-    _ = test_supervisor()
-    _ = test_task()
-    _ = test_task_supervisor()
-    _ = test_supervision_tree()
+    test_supervisor()
+    test_task()
+    test_task_supervisor()
+    test_supervision_tree()
   end
   defp test_supervisor() do
     children = [%{id: "worker1", start: {MyWorker, :start_link, [%{name: "worker1"}]}, restart: {:permanent}, type: {:worker}}, %{id: "worker2", start: {MyWorker, :start_link, [%{name: "worker2"}]}, restart: {:temporary}, type: {:worker}}, %{id: "sub_supervisor", start: {SubSupervisor, :start_link, [%{}]}, restart: {:permanent}, type: {:supervisor}}]
@@ -12,40 +12,39 @@ defmodule Main do
     supervisor = result
     _children_list = Supervisor.which_children(supervisor)
     _counts = Supervisor.count_children(supervisor)
-    _ = Supervisor.restart_child(supervisor, "worker1")
-    _ = Supervisor.terminate_child(supervisor, "worker2")
-    _ = Supervisor.delete_child(supervisor, "worker2")
+    Supervisor.restart_child(supervisor, "worker1")
+    Supervisor.terminate_child(supervisor, "worker2")
+    Supervisor.delete_child(supervisor, "worker2")
     new_child = %{id: "dynamic", start: {DynamicWorker, :start_link, [%{}]}, restart: {:transient}, type: {:worker}}
-    _ = Supervisor.start_child(supervisor, new_child)
+    Supervisor.start_child(supervisor, new_child)
     _stats = Supervisor.count_children(supervisor)
     if (Process.alive?(supervisor)), do: nil
-    _ = Process.exit(supervisor, "normal")
+    Process.exit(supervisor, "normal")
   end
   defp test_task() do
     task = Task.async(fn ->
-      _ = Process.sleep(100)
+      Process.sleep(100)
       42
     end)
     result = Task.await(task)
     slow_task = Task.async(fn ->
-      _ = Process.sleep(5000)
+      Process.sleep(5000)
       "slow"
     end)
     yield_result = Task.yield(slow_task, 100)
     if (Kernel.is_nil(yield_result)) do
       Task.shutdown(slow_task)
     end
-    _ = Task.start(fn -> nil end)
+    Task.start(fn -> nil end)
     _linked_result = Task.start_link(fn -> nil end)
     tasks = [Task.async(fn -> nil end), Task.async(fn -> 2 end), Task.async(fn -> 3 end)]
     results = Task.yield_many(tasks)
     g = 0
-    _ =
-      Enum.each(results, fn task_result ->
-        if (not Kernel.is_nil(task_result.result)), do: nil
-      end)
+    Enum.each(results, fn task_result ->
+      if (not Kernel.is_nil(task_result.result)), do: nil
+    end)
     task = Task.async(fn -> "quick" end)
-    _quick_result = _ = Task.await(task)
+    _quick_result = Task.await(task)
     funs = [fn -> "a" end, fn -> "b" end, fn -> "c" end]
     g = []
     g = Enum.reduce(funs, g, fn fun, g_acc -> Enum.concat(g_acc, [Task.async(fun)]) end)
@@ -54,12 +53,12 @@ defmodule Main do
     g = Enum.reduce(tasks, g, fn task, g_acc -> Enum.concat(g_acc, [Task.await(task)]) end)
     _concurrent_results = g
     task = Task.async(fn ->
-      _ = Process.sleep(50)
+      Process.sleep(50)
       "timed"
     end)
     result = Task.yield(task, 100)
     _timed_result = if (Kernel.is_nil(result)) do
-      _ = Task.shutdown(task)
+      Task.shutdown(task)
       nil
     else
       (case result do
@@ -67,7 +66,7 @@ defmodule Main do
         {:exit, _reason} -> nil
       end)
     end
-    _ = Task.start(fn -> nil end)
+    Task.start(fn -> nil end)
     _stream = Task.async_stream([1, 2, 3, 4, 5], fn x -> x * 2 end)
   end
   defp test_task_supervisor() do
@@ -77,12 +76,12 @@ defmodule Main do
       task = Task.Supervisor.async(supervisor, fn -> "supervised" end)
       _result = Task.await(task)
       nolink_task = Task.Supervisor.async_nolink(supervisor, fn -> "not linked" end)
-      _ = Task.await(nolink_task)
-      _ = Task.Supervisor.start_child(supervisor, fn -> nil end)
+      Task.await(nolink_task)
+      Task.Supervisor.start_child(supervisor, fn -> nil end)
       children = Task.Supervisor.children(supervisor)
       _stream = Task.Supervisor.async_stream(supervisor, [10, 20, 30], fn x -> Reflaxe.Elixir.HaxeFloat.add(x, 1) end)
       task = Task.Supervisor.async(supervisor, fn -> "helper result" end)
-      _supervised_result = _ = Task.await(task)
+      _supervised_result = Task.await(task)
       funs = [fn -> 100 end, fn -> 200 end, fn -> 300 end]
       g = []
       g = Enum.reduce(funs, g, fn fun, g_acc -> Enum.concat(g_acc, [Task.Supervisor.async(supervisor, fun)]) end)
@@ -90,7 +89,7 @@ defmodule Main do
       g = []
       g = Enum.reduce(tasks, g, fn task, g_acc -> Enum.concat(g_acc, [Task.await(task)]) end)
       _concurrent_results = g
-      _ = Task.Supervisor.start_child(supervisor, fn -> nil end)
+      Task.Supervisor.start_child(supervisor, fn -> nil end)
     end
   end
   defp test_supervision_tree() do
@@ -101,8 +100,8 @@ defmodule Main do
     _stats = Supervisor.count_children(supervisor)
     children_list = Supervisor.which_children(supervisor)
     _g = 0
-    _ = Enum.each(children_list, fn _ -> nil end)
-    _ = Supervisor.restart_child(supervisor, "worker1")
-    _ = Supervisor.terminate_child(supervisor, "normal")
+    Enum.each(children_list, fn _ -> nil end)
+    Supervisor.restart_child(supervisor, "worker1")
+    Supervisor.terminate_child(supervisor, "normal")
   end
 end

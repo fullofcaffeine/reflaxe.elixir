@@ -69,7 +69,7 @@ defmodule BytesOutput do
     end
     Process.delete(struct.dict_key)
     binary = :erlang.iolist_to_binary(:lists.reverse(state.parts_reversed))
-    _ = Bytes.of_data(binary)
+    Bytes.of_data(binary)
   end
   def set_big_endian(struct, b) do
     Output.set_big_endian(struct, b)

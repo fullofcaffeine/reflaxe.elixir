@@ -14,7 +14,7 @@ defmodule PhoenixHxTodo.ChatPanelTest do
     conn = Phoenix.ConnTest.post(conn, "/auth/demo", %{name: "Chat User", email: "chat-" <> run_id <> "@example.test"})
     mounted = Phoenix.LiveViewTest.live(conn, "/todos")
     lv = elem(mounted, 1)
-    _ = Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{body: body})
+    Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{body: body})
     html = Phoenix.LiveViewTest.render(lv)
     condition = StringTools.haxe_index_of(html, body, 0) != -1
     assert condition
@@ -30,13 +30,13 @@ defmodule PhoenixHxTodo.ChatPanelTest do
     conn = Phoenix.ConnTest.post(conn, "/auth/demo", %{name: "Recent Chat User", email: "recent-chat-" <> run_id <> "@example.test"})
     mounted = Phoenix.LiveViewTest.live(conn, "/todos")
     lv = elem(mounted, 1)
-    _ = Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{body: "Recent note " <> run_id <> "-" <> Reflaxe.Elixir.HaxeFloat.to_string(0)})
-    _ = Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{body: "Recent note " <> run_id <> "-" <> Reflaxe.Elixir.HaxeFloat.to_string(1)})
-    _ = Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{body: "Recent note " <> run_id <> "-" <> Reflaxe.Elixir.HaxeFloat.to_string(2)})
-    _ = Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{body: "Recent note " <> run_id <> "-" <> Reflaxe.Elixir.HaxeFloat.to_string(3)})
-    _ = Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{body: "Recent note " <> run_id <> "-" <> Reflaxe.Elixir.HaxeFloat.to_string(4)})
-    _ = Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{body: "Recent note " <> run_id <> "-" <> Reflaxe.Elixir.HaxeFloat.to_string(5)})
-    _ = Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{body: "Recent note " <> run_id <> "-" <> Reflaxe.Elixir.HaxeFloat.to_string(6)})
+    Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{body: "Recent note " <> run_id <> "-" <> Reflaxe.Elixir.HaxeFloat.to_string(0)})
+    Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{body: "Recent note " <> run_id <> "-" <> Reflaxe.Elixir.HaxeFloat.to_string(1)})
+    Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{body: "Recent note " <> run_id <> "-" <> Reflaxe.Elixir.HaxeFloat.to_string(2)})
+    Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{body: "Recent note " <> run_id <> "-" <> Reflaxe.Elixir.HaxeFloat.to_string(3)})
+    Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{body: "Recent note " <> run_id <> "-" <> Reflaxe.Elixir.HaxeFloat.to_string(4)})
+    Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{body: "Recent note " <> run_id <> "-" <> Reflaxe.Elixir.HaxeFloat.to_string(5)})
+    Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_chat_message']"), %{body: "Recent note " <> run_id <> "-" <> Reflaxe.Elixir.HaxeFloat.to_string(6)})
     html = Phoenix.LiveViewTest.render(lv)
     condition = StringTools.haxe_index_of(html, "Recent note " <> run_id <> "-6", 0) != -1
     assert condition

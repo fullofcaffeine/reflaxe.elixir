@@ -4,13 +4,13 @@ defmodule PhoenixHxTodo.ChatMessages do
     query = Ecto.Query.from(t in PhoenixHxTodo.ChatMessage, [])
     messages = PhoenixHxTodo.Repo.all(query)
     messages = Enum.sort(messages, fn a, b -> (fn left, right -> (right.id - left.id) end).(a, b) < 0 end)
-    _ = Enum.take(messages, 6)
+    Enum.take(messages, 6)
   end
   def create_for_user(user, body) do
     trimmed_body = StringTools.ltrim(StringTools.rtrim(body))
     data = Kernel.struct(PhoenixHxTodo.ChatMessage)
     params = %{body: trimmed_body, user_id: user.id}
-    _ = PhoenixHxTodo.Repo.insert(PhoenixHxTodo.ChatMessage.changeset(data, params))
+    PhoenixHxTodo.Repo.insert(PhoenixHxTodo.ChatMessage.changeset(data, params))
   end
   def create_for_user_ok(user, body) do
     (case create_for_user(user, body) do

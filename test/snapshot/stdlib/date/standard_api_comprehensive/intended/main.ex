@@ -1,9 +1,9 @@
 defmodule Main do
   def main() do
-    _ = test_constructors()
-    _ = test_getters()
-    _ = test_utc_methods()
-    _ = test_conversions()
+    test_constructors()
+    test_getters()
+    test_utc_methods()
+    test_conversions()
   end
   defp test_constructors() do
     elixir_month = 1

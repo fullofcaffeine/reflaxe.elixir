@@ -87,7 +87,7 @@ defmodule BytesInput do
       len = if (len > state.remaining), do: state.remaining, else: len
       slice = :binary.part(struct.data, state.pos, len)
       src = Bytes.of_data(slice)
-      _ = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :blit, [buf, pos, src, 0, len])
+      apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :blit, [buf, pos, src, 0, len])
       state = state |> Map.put(:pos, state.pos + len) |> Map.put(:remaining, (state.remaining - len))
       Process.put(struct.dict_key, state)
       len
@@ -108,7 +108,7 @@ defmodule BytesInput do
       slice = :binary.part(struct.data, state.pos, state.remaining)
       state = state |> Map.put(:pos, state.pos + state.remaining) |> Map.put(:remaining, 0)
       Process.put(struct.dict_key, state)
-      _ = Bytes.of_data(slice)
+      Bytes.of_data(slice)
     end
   end
   def read_line(struct) do

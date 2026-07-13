@@ -1,19 +1,19 @@
 defmodule MyAppWeb.Router do
   use Phoenix.Router
   pipeline :browser do
-    _ = plug(:accepts, ["html"])
-    _ = plug(:fetch_session)
-    _ = plug(:fetch_live_flash)
-    _ = plug(:put_root_layout, {MyAppWeb.Layouts, :root})
-    _ = plug(:protect_from_forgery)
-    _ = plug(:put_secure_browser_headers)
+    plug(:accepts, ["html"])
+    plug(:fetch_session)
+    plug(:fetch_live_flash)
+    plug(:put_root_layout, {MyAppWeb.Layouts, :root})
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
   end
   scope "/", MyAppWeb do
-    _ = pipe_through(:browser)
-    _ = get("/valid", ValidController, :index)
-    _ = get("/invalid-controller", NonExistentController, :some_action)
-    _ = post("/invalid-action", PartialController, :create)
-    _ = delete("/another-invalid", AnotherMissingController, :destroy)
+    pipe_through(:browser)
+    get("/valid", ValidController, :index)
+    get("/invalid-controller", NonExistentController, :some_action)
+    post("/invalid-action", PartialController, :create)
+    delete("/another-invalid", AnotherMissingController, :destroy)
   end
   def valid_route() do
     "/valid"

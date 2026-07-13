@@ -101,7 +101,7 @@ defmodule ResultTools do
   end
   def traverse(array, transform) do
     results = Enum.map(array, transform)
-    _ = sequence(results)
+    sequence(results)
   end
   def to_option(result) do
     (case result do

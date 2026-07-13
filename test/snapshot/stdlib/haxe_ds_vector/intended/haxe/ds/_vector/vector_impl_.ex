@@ -20,12 +20,11 @@ defmodule Vector_Impl_ do
     dest_data = dest
     src_items = apply(Map.get(src_data, :__reflaxe_class__) || Map.get(src_data, :__struct__), :items, [src_data])
     dest_items = apply(Map.get(dest_data, :__reflaxe_class__) || Map.get(dest_data, :__struct__), :items, [dest_data])
-    _ =
-      apply(Map.get(dest_data, :__reflaxe_class__) || Map.get(dest_data, :__struct__), :put_items, (fn -> [dest_data,
-            Enum.reduce(0..(len - 1)//1, dest_items, fn offset, acc ->
-              List.replace_at(acc, dest_pos + offset, Enum.at(src_items, src_pos + offset))
-            end)
-      ] end).())
+    apply(Map.get(dest_data, :__reflaxe_class__) || Map.get(dest_data, :__struct__), :put_items, (fn -> [dest_data,
+          Enum.reduce(0..(len - 1)//1, dest_items, fn offset, acc ->
+            List.replace_at(acc, dest_pos + offset, Enum.at(src_items, src_pos + offset))
+          end)
+    ] end).())
   end
   def to_array(this1) do
     apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :items, [this1])
@@ -47,14 +46,14 @@ defmodule Vector_Impl_ do
   end
   def map(this1, f) do
     mapped = Enum.map(apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :items, [this1]), f)
-    _ = VectorData.new(this1.length, mapped)
+    VectorData.new(this1.length, mapped)
   end
   def sort(this1, f) do
     comparator = fn left, right -> f.(left, right) < 0 end
-    _ = apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :put_items, [this1, Enum.sort(apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :items, [this1]), comparator)])
+    apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :put_items, [this1, Enum.sort(apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :items, [this1]), comparator)])
   end
   def iterator(this1) do
     snapshot = apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :items, [this1])
-    _ = Type.create_instance(ArrayIterator, [snapshot])
+    Type.create_instance(ArrayIterator, [snapshot])
   end
 end

@@ -2,7 +2,7 @@ defmodule Main do
   def basic_array_ops() do
     numbers = [1, 2, 3, 4, 5]
     numbers = numbers ++ [6]
-    _ = apply(Map.get(numbers, :__reflaxe_class__) || Map.get(numbers, :__struct__), :unshift, [numbers, 0])
+    apply(Map.get(numbers, :__reflaxe_class__) || Map.get(numbers, :__struct__), :unshift, [numbers, 0])
     _popped = apply(Map.get(numbers, :__reflaxe_class__) || Map.get(numbers, :__struct__), :pop, [numbers])
     _shifted = apply(Map.get(numbers, :__reflaxe_class__) || Map.get(numbers, :__struct__), :shift, [numbers])
     nil
@@ -10,10 +10,10 @@ defmodule Main do
   def array_iteration() do
     fruits = ["apple", "banana", "orange", "grape"]
     _g = 0
-    _ = Enum.each(fruits, fn _ -> nil end)
+    Enum.each(fruits, fn _ -> nil end)
     _g = 0
     fruits_length = length(fruits)
-    _ = Enum.each(0..(fruits_length - 1)//1, fn _ -> nil end)
+    Enum.each(0..(fruits_length - 1)//1, fn _ -> nil end)
     i = 0
     {_i} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i}, fn _, {acc_i} ->
       try do
@@ -44,7 +44,7 @@ defmodule Main do
     words = ["Hello", "World", "from", "Haxe"]
     _sentence = Enum.join(words, " ")
     reversed = numbers
-    _ = apply(Map.get(reversed, :__reflaxe_class__) || Map.get(reversed, :__struct__), :reverse, [reversed])
+    apply(Map.get(reversed, :__reflaxe_class__) || Map.get(reversed, :__struct__), :reverse, [reversed])
     unsorted = [3, 1, 4, 1, 5, 9, 2, 6]
     _ = Enum.sort(unsorted, fn a, b -> (fn a, b -> (a - b) end).(a, b) < 0 end)
     nil
@@ -68,11 +68,10 @@ defmodule Main do
   def multi_dimensional() do
     matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
     g = 0
-    _ =
-      Enum.each(matrix, fn row ->
-        _g = 0
-        _ = Enum.each(row, fn _ -> nil end)
-      end)
+    Enum.each(matrix, fn row ->
+      _g = 0
+      Enum.each(row, fn _ -> nil end)
+    end)
     _grid = [(fn ->
       g = []
       g = g ++ [0]
@@ -101,7 +100,7 @@ defmodule Main do
     g = []
     g_value = trunc((fn ->
         b = length(arr)
-        _ = Reflaxe.Elixir.HaxeFloat.min(n, b)
+        Reflaxe.Elixir.HaxeFloat.min(n, b)
       end).())
     g = Enum.reduce(0..(g_value - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Enum.at(arr, i)]) end)
     g
@@ -119,7 +118,7 @@ defmodule Main do
     _has_very_long = ArrayTools.any(strings, fn s -> String.length(s) > 10 end)
     _all_positive = ArrayTools.foreach(numbers, fn n -> n > 0 end)
     _all_short = ArrayTools.all(strings, fn s -> String.length(s) < 10 end)
-    _ = ArrayTools.for_each(numbers, fn _n -> nil end)
+    ArrayTools.for_each(numbers, fn _n -> nil end)
     _ = ArrayTools.take(numbers, 3)
     _ = ArrayTools.drop(numbers, 2)
     nested_arrays = [[1, 2], [3, 4], [5]]
@@ -128,13 +127,13 @@ defmodule Main do
     nil
   end
   def main() do
-    _ = basic_array_ops()
-    _ = array_iteration()
-    _ = array_methods()
-    _ = array_comprehensions()
-    _ = multi_dimensional()
+    basic_array_ops()
+    array_iteration()
+    array_methods()
+    array_comprehensions()
+    multi_dimensional()
     _result = process_array([1, 2, 3, 4, 5])
     _ = first_n(["a", "b", "c", "d", "e"], 3)
-    _ = functional_methods()
+    functional_methods()
   end
 end

@@ -5,7 +5,7 @@ defmodule Main do
   defp process(res) do
     (case res do
       {:ok, updated_todo} ->
-        _ = broadcast(updated_todo)
+        broadcast(updated_todo)
         "ok"
       {:error, reason} -> reason
     end)
@@ -13,6 +13,6 @@ defmodule Main do
   def main() do
     todo = %{id: 1, text: "x"}
     r = {:ok, todo}
-    _ = process(r)
+    process(r)
   end
 end

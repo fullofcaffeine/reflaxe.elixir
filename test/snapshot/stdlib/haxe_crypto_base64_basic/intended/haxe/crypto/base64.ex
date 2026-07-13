@@ -5,13 +5,13 @@ defmodule Haxe.Crypto.Base64 do
       {:set, value} -> value
       nil ->
         value = init
-        _ = Process.put(static_key, {:set, value})
+        Process.put(static_key, {:set, value})
         value
     end)
   end
   defp __haxe_static_put__(key, value) do
     static_key = {:__haxe_static__, Haxe.Crypto.Base64, key}
-    _ = Process.put(static_key, {:set, value})
+    Process.put(static_key, {:set, value})
     value
   end
   def chars() do
@@ -50,7 +50,7 @@ defmodule Haxe.Crypto.Base64 do
       str
     end
     decoded = Base.decode64!(encoded, padding: false)
-    _ = Bytes.of_data(decoded)
+    Bytes.of_data(decoded)
   end
   def url_encode(bytes, complement) do
     use_complement = if (Kernel.is_nil(complement)), do: false, else: complement
@@ -64,6 +64,6 @@ defmodule Haxe.Crypto.Base64 do
       str
     end
     decoded = Base.url_decode64!(encoded, padding: false)
-    _ = Bytes.of_data(decoded)
+    Bytes.of_data(decoded)
   end
 end

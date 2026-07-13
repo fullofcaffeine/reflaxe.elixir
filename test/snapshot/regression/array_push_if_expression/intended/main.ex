@@ -1,9 +1,9 @@
 defmodule Main do
   def main() do
-    _ = test_simple_if_push()
-    _ = test_if_else_push()
-    _ = test_conditional_accumulation()
-    _ = test_nested_if_push()
+    test_simple_if_push()
+    test_if_else_push()
+    test_conditional_accumulation()
+    test_nested_if_push()
   end
   defp test_simple_if_push() do
     errors = []

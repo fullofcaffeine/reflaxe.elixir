@@ -1,13 +1,13 @@
 defmodule Main do
   def main() do
-    _ = test_basic_switch()
-    _ = test_array_operations()
-    _ = test_nested_loops()
-    _ = test_filter_with_indexing()
-    _ = test_map_iterator()
-    _ = test_result_pattern_matching()
-    _ = test_message_parsing()
-    _ = test_mixed_real_world_patterns()
+    test_basic_switch()
+    test_array_operations()
+    test_nested_loops()
+    test_filter_with_indexing()
+    test_map_iterator()
+    test_result_pattern_matching()
+    test_message_parsing()
+    test_mixed_real_world_patterns()
   end
   defp test_basic_switch() do
     msg_type = "test"
@@ -78,15 +78,14 @@ defmodule Main do
   defp test_result_pattern_matching() do
     results = [%{status: "ok", value: 42}, %{status: "error", value: -1}]
     _g = 0
-    _ =
-      Enum.each(results, fn result ->
-        _output = (case result.status do
-          "error" -> "Failed: " <> Reflaxe.Elixir.HaxeFloat.to_string(result.value)
-          "ok" -> "Success: " <> Reflaxe.Elixir.HaxeFloat.to_string(result.value)
-          _ -> "Unknown"
-        end)
-        nil
+    Enum.each(results, fn result ->
+      _output = (case result.status do
+        "error" -> "Failed: " <> Reflaxe.Elixir.HaxeFloat.to_string(result.value)
+        "ok" -> "Success: " <> Reflaxe.Elixir.HaxeFloat.to_string(result.value)
+        _ -> "Unknown"
       end)
+      nil
+    end)
   end
   defp test_message_parsing() do
     messages = [%{type: "created", content: "New item"}, %{type: "updated", content: "Changed item"}, %{type: "deleted", content: "Removed item"}]
@@ -99,7 +98,7 @@ defmodule Main do
       end)
     end)
     _g = 0
-    _ = Enum.each(parsed, fn _ -> nil end)
+    Enum.each(parsed, fn _ -> nil end)
   end
   defp test_mixed_real_world_patterns() do
     todos = [%{id: 1, title: "First", completed: false}, %{id: 2, title: "Second", completed: true}, %{id: 3, title: "Third", completed: false}]

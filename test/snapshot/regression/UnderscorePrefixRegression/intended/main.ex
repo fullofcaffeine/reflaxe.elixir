@@ -1,8 +1,8 @@
 defmodule Main do
   def main() do
-    _ = test_simple_while_loop("test", 5)
+    test_simple_while_loop("test", 5)
     _result = binary_search([1, 3, 5, 7, 9], 5)
-    _ = process_items(["a", "b", "c"], 10, true)
+    process_items(["a", "b", "c"], 10, true)
   end
   defp test_simple_while_loop(key, limit) do
     count = 0

@@ -17,7 +17,7 @@ defmodule PhoenixHxTodo.Accounts do
       Ecto.Query.where(Ecto.Query.from(t in PhoenixHxTodo.User, []), [t], t.email == ^(normalized_email))
     end
     users = PhoenixHxTodo.Repo.all(query)
-    _ = Enum.at(users, 0)
+    Enum.at(users, 0)
   end
   def get_or_create_demo_user(name, email) do
     normalized_name = normalize_name(name)
@@ -28,7 +28,7 @@ defmodule PhoenixHxTodo.Accounts do
     else
       data = Kernel.struct(PhoenixHxTodo.User)
       params = %{name: normalized_name, email: normalized_email}
-      _ = PhoenixHxTodo.Repo.insert(PhoenixHxTodo.User.changeset(data, params))
+      PhoenixHxTodo.Repo.insert(PhoenixHxTodo.User.changeset(data, params))
     end
   end
 end

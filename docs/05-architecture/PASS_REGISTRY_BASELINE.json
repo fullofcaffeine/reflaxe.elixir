@@ -1,96 +1,96 @@
 {
   "schemaVersion": 2,
   "mode": "granular-scoped",
-  "effectivePassCount": 578,
-  "maxRecordsPerModule": 579,
+  "effectivePassCount": 576,
+  "maxRecordsPerModule": 577,
   "toolchain": "Haxe 4.3.7",
   "profiles": [
     {
       "scope": "core",
       "fixture": "test/snapshot/core/basic_syntax",
       "module": "Main",
-      "expectedPassCount": 407,
-      "referenceTotalMs": 83.26,
+      "expectedPassCount": 406,
+      "referenceTotalMs": 84.75,
       "referenceSlowestPasses": [
         {
-          "name": "FinalUnderscoreRepair",
-          "ms": 0.87
-        },
-        {
-          "name": "FinalLocalReferenceAlign",
-          "ms": 0.79
-        },
-        {
-          "name": "NumericSuffixVarNormalize",
-          "ms": 0.78
+          "name": "FinalLocalReferenceAlign_PreInterpolation",
+          "ms": 1.41
         },
         {
           "name": "RefDeclAlignment",
-          "ms": 0.76
+          "ms": 0.94
         },
         {
-          "name": "FinalLocalReferenceAlign_PreInterpolation",
-          "ms": 0.74
+          "name": "FinalUnderscoreRepair",
+          "ms": 0.91
+        },
+        {
+          "name": "FinalLocalReferenceAlign",
+          "ms": 0.86
+        },
+        {
+          "name": "NumericSuffixVarNormalize",
+          "ms": 0.85
         }
       ],
-      "expectedSkippedCount": 171
+      "expectedSkippedCount": 170
     },
     {
       "scope": "stdlib",
       "fixture": "test/snapshot/stdlib/stdlib_externs",
       "module": "AgentRef_Impl_",
-      "expectedPassCount": 407,
-      "referenceTotalMs": 22.19,
+      "expectedPassCount": 406,
+      "referenceTotalMs": 20.5,
       "referenceSlowestPasses": [
         {
-          "name": "FinalUnderscoreRepair",
-          "ms": 0.33
-        },
-        {
-          "name": "BlockAssignChainSimplify",
-          "ms": 0.29
-        },
-        {
-          "name": "DefParamHeadUnderscoreWhenUnused_Final",
-          "ms": 0.27
-        },
-        {
-          "name": "FinalLocalReferenceAlign_PreInterpolation",
+          "name": "CaseScrutineeVarToTupleBinder",
           "ms": 0.25
         },
         {
-          "name": "CaseExprParenthesizeInExpr",
-          "ms": 0.23
+          "name": "FinalLocalReferenceAlign_PreInterpolation",
+          "ms": 0.18
+        },
+        {
+          "name": "FinalUnderscoreRepair",
+          "ms": 0.13
+        },
+        {
+          "name": "NumericSuffixVarNormalize",
+          "ms": 0.13
+        },
+        {
+          "name": "SelfReferenceTransform",
+          "ms": 0.13
         }
       ],
-      "expectedSkippedCount": 171
+      "expectedSkippedCount": 170
     },
     {
       "scope": "phoenix",
       "fixture": "test/snapshot/phoenix/router",
       "module": "MyAppWeb.Router",
-      "expectedPassCount": 571,
-      "referenceTotalMs": 53.33,
+      "expectedPassCount": 569,
+      "referenceTotalMs": 41.71,
       "referenceSlowestPasses": [
         {
           "name": "SocketPutFlashAssignDrop_Final",
-          "ms": 0.32
-        },
-        {
-          "name": "CaseUnderscoreCaseHoistBlock_Final",
-          "ms": 0.29
-        },
-        {
-          "name": "WebJsonSecondArgRewrite_Ultimate",
-          "ms": 0.28
-        },
-        {
-          "name": "UnusedImportCleanup",
           "ms": 0.22
         },
         {
+          "name": "WebJsonSecondArgRewrite_Ultimate",
+          "ms": 0.18
+        },
+        {
+          "name": "CaseUnderscoreCaseHoistBlock_Final",
+          "ms": 0.17
+        },
+        {
           "name": "FPHelperDoubleToI64FieldAccessRewrite",
-          "ms": 0.16
+          "ms": 0.14
+        },
+        {
+          "name": "JoinArgBlockScopedFix",
+          "ms": 0.14
         }
       ],
       "expectedSkippedCount": 7
@@ -99,28 +99,28 @@
       "scope": "liveview",
       "fixture": "test/snapshot/liveview/golden_liveview_fixture",
       "module": "TestAppWeb.GoldenLive",
-      "expectedPassCount": 575,
-      "referenceTotalMs": 153.7,
+      "expectedPassCount": 573,
+      "referenceTotalMs": 145.09,
       "referenceSlowestPasses": [
         {
           "name": "FinalUnderscoreRepair",
-          "ms": 2.01
-        },
-        {
-          "name": "WebJsonSecondArgRewrite_Ultimate",
-          "ms": 1.75
-        },
-        {
-          "name": "HeexAssignsTypeLinter",
-          "ms": 1.72
-        },
-        {
-          "name": "FinalLocalReferenceAlign_PreInterpolation",
-          "ms": 1.51
+          "ms": 1.83
         },
         {
           "name": "CaseClauseCamelAliasToSnakeBinder",
-          "ms": 1.43
+          "ms": 1.68
+        },
+        {
+          "name": "HeexAssignsTypeLinter",
+          "ms": 1.62
+        },
+        {
+          "name": "WebJsonSecondArgRewrite_Ultimate",
+          "ms": 1.58
+        },
+        {
+          "name": "UndefinedRefInlineDiscardedMapGet_Final",
+          "ms": 1.45
         }
       ],
       "expectedSkippedCount": 3
@@ -129,8 +129,8 @@
       "scope": "ecto",
       "fixture": "test/snapshot/ecto/changeset",
       "module": "User",
-      "expectedPassCount": 454,
-      "referenceTotalMs": 15.86,
+      "expectedPassCount": 453,
+      "referenceTotalMs": 18.01,
       "referenceSlowestPasses": [
         {
           "name": "NumericSuffixVarNormalize",
@@ -142,40 +142,40 @@
         },
         {
           "name": "FinalLocalReferenceAlign_PreInterpolation",
-          "ms": 0.06
-        },
-        {
-          "name": "LocalAssignUnusedUnderscore_Scoped_Final",
-          "ms": 0.04
+          "ms": 0.05
         },
         {
           "name": "CaseOkBinderAlign",
-          "ms": 0.03
+          "ms": 0.04
+        },
+        {
+          "name": "ExtractTupleInlineAssignments",
+          "ms": 0.04
         }
       ],
-      "expectedSkippedCount": 124
+      "expectedSkippedCount": 123
     },
     {
       "scope": "hxx",
       "fixture": "test/snapshot/phoenix/hxx_inline_markup_basic",
       "module": "Main",
-      "expectedPassCount": 469,
-      "referenceTotalMs": 15.98,
+      "expectedPassCount": 468,
+      "referenceTotalMs": 19.47,
       "referenceSlowestPasses": [
         {
           "name": "HeexAssignsTypeLinter",
-          "ms": 0.53
+          "ms": 0.5
         },
         {
           "name": "HeexLetUnusedBinderUnderscore",
           "ms": 0.08
         },
         {
-          "name": "HeexControlTagTransforms",
-          "ms": 0.05
+          "name": "HeexEventNameNormalization",
+          "ms": 0.06
         },
         {
-          "name": "HeexEventNameNormalization",
+          "name": "HeexControlTagTransforms",
           "ms": 0.05
         },
         {
@@ -183,37 +183,37 @@
           "ms": 0.05
         }
       ],
-      "expectedSkippedCount": 109
+      "expectedSkippedCount": 108
     },
     {
       "scope": "exunit",
       "fixture": "test/snapshot/exunit/exunit_comprehensive",
       "module": "Main",
-      "expectedPassCount": 410,
-      "referenceTotalMs": 187.27,
+      "expectedPassCount": 409,
+      "referenceTotalMs": 186.16,
       "referenceSlowestPasses": [
         {
           "name": "FinalUnderscoreRepair",
-          "ms": 2.65
+          "ms": 2.7
         },
         {
-          "name": "CaseUnderscoreCaseHoistBlock_Final",
-          "ms": 2.07
+          "name": "UnusedImportCleanup",
+          "ms": 1.88
         },
         {
           "name": "LocalAssignUnusedUnderscore_Scoped_Final",
-          "ms": 1.78
+          "ms": 1.79
         },
         {
-          "name": "JoinArgBlockScopedFix",
-          "ms": 1.47
+          "name": "CaseUnderscoreCaseHoistBlock_Final",
+          "ms": 1.75
         },
         {
-          "name": "ListUpdateAndFilterFix",
-          "ms": 1.41
+          "name": "FinalAssignRewrite",
+          "ms": 1.64
         }
       ],
-      "expectedSkippedCount": 168
+      "expectedSkippedCount": 167
     }
   ]
 }

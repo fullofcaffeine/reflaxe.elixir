@@ -8,21 +8,19 @@ defmodule Main do
     evens = evens ++ [8]
     _ = evens
     _g = 0
-    _ =
-      Enum.each(0..9//1, fn i ->
-        if (i == 5) do
-          throw(:break)
-        end
-        nil
-      end)
+    Enum.each(0..9//1, fn i ->
+      if (i == 5) do
+        throw(:break)
+      end
+      nil
+    end)
     _g = 0
-    _ =
-      Enum.each(0..4//1, fn i ->
-        if (i == 2) do
-          throw(:continue)
-        end
-        nil
-      end)
+    Enum.each(0..4//1, fn i ->
+      if (i == 2) do
+        throw(:continue)
+      end
+      nil
+    end)
     count = 0
     {_count} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count}, fn _, {acc_count} ->
       try do

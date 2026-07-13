@@ -40,6 +40,6 @@ defmodule Main do
           _ -> raise ArgumentError, "Invalid date format: #{inspect(reflaxe_date_string)}"
         end
     end)
-    _ = Log.trace(Reflaxe.Elixir.HaxeFloat.to_string(%{iso: iso, y: parsed.year, m: (parsed.month - 1), dd: parsed.day}), nil)
+    Log.trace(Reflaxe.Elixir.HaxeFloat.to_string(%{iso: iso, y: parsed.year, m: (parsed.month - 1), dd: parsed.day}), nil)
   end
 end

@@ -1,9 +1,9 @@
 defmodule MyApp.Post do
   use Ecto.Schema
   schema "posts" do
-    _ = field(:title, :string)
-    _ = field(:user_id, :integer)
-    _ = belongs_to(:user, MyApp.User)
+    field(:title, :string)
+    field(:user_id, :integer)
+    belongs_to(:user, MyApp.User)
   end
 
   def changeset(post, attrs) do

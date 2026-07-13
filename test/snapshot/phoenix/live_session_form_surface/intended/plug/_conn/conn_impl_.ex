@@ -119,7 +119,7 @@ defmodule Conn_Impl_ do
   def get_header(this1, name) do
     headers = get_headers(this1)
     key = String.downcase(name)
-    _ = Map.get(headers, key)
+    Map.get(headers, key)
   end
   def get_body_params(this1) do
     (case {this1, "body_params"} do

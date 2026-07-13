@@ -1,11 +1,11 @@
 defmodule Main do
   def main() do
-    _ = test_basic_enum()
-    _ = test_multiple_parameters()
-    _ = test_empty_cases()
-    _ = test_fall_through()
-    _ = test_nested_enums()
-    _ = test_mixed_cases()
+    test_basic_enum()
+    test_multiple_parameters()
+    test_empty_cases()
+    test_fall_through()
+    test_nested_enums()
+    test_mixed_cases()
   end
   defp test_basic_enum() do
     _msg = (case {:created, "item"} do

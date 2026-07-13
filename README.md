@@ -30,6 +30,7 @@ manual normal-release bypass. See [Releasing](docs/10-contributing/RELEASING.md)
 Reflaxe.Elixir is for teams that want standard Elixir/OTP runtime behavior, while authoring with stronger compile-time feedback.
 
 - **Keep standard Elixir runtime semantics**: generated code follows normal module/function/tuple/map conventions.
+- **Keep generated code reviewable**: ordinary calls and Phoenix/Ecto/OTP DSL statements stay ordinary Elixir calls; synthetic matches remain only where source semantics require them.
 - **Add a typed authoring layer**: catch shape mismatches (assigns, params, tagged results) before runtime.
 - **Improve large refactors**: typed Haxe APIs and compiler checks help keep changes coherent across modules.
 - **Build ergonomic abstractions**: Haxe macros/typing can encode reusable authoring patterns without changing your BEAM deployment model.

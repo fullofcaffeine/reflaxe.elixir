@@ -14,7 +14,7 @@ defmodule PhoenixHxTodo.TodoPersistenceTest do
     conn = Phoenix.ConnTest.post(conn, "/auth/demo", %{name: "Persisted User", email: "persisted-" <> run_id <> "@example.test"})
     mounted = Phoenix.LiveViewTest.live(conn, "/todos")
     lv = elem(mounted, 1)
-    _ = Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_todo']"), %{title: title, notes: "Ecto-backed"})
+    Phoenix.LiveViewTest.render_submit(Phoenix.LiveViewTest.element(lv, "form[phx-submit='create_todo']"), %{title: title, notes: "Ecto-backed"})
     html = Phoenix.LiveViewTest.render(lv)
     condition = StringTools.haxe_index_of(html, title, 0) != -1
     assert condition

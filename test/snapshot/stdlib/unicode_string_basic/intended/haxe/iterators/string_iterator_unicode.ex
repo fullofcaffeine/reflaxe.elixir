@@ -10,7 +10,7 @@ defmodule StringIteratorUnicode do
   end
   def next(struct) do
     {struct, reflaxe_receiver_value_0} = {%{struct | offset: struct.offset + 1}, struct.offset}
-    _ = StringTools.fast_code_at(struct.s, reflaxe_receiver_value_0)
+    StringTools.fast_code_at(struct.s, reflaxe_receiver_value_0)
   end
   def unicode_iterator(s_param) do
     StringIteratorUnicode.new(s_param)

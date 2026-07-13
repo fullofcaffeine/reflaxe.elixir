@@ -72,11 +72,11 @@ defmodule Main do
         raise Reflaxe.Elixir.HaxeThrow, [value: "Assertion failed: " <> "multipleCatch type=" <> Reflaxe.Elixir.HaxeFloat.to_string(type) <> " (expected \"" <> expected <> "\", got \"" <> outcome <> "\")"]
       end
     end
-    _ = test_error.(1)
-    _ = test_error.(2)
-    _ = test_error.(3)
-    _ = test_error.(4)
-    _ = test_error.(0)
+    test_error.(1)
+    test_error.(2)
+    test_error.(3)
+    test_error.(4)
+    test_error.(0)
   end
   def try_catch_finally() do
     try do
@@ -164,7 +164,7 @@ defmodule Main do
     if (Reflaxe.Elixir.HaxeFloat.eq(b, 0)) do
       raise Reflaxe.Elixir.HaxeThrow, [value: Reflaxe.Exception.new("Division by zero", nil, nil)]
     end
-    _ = Reflaxe.Elixir.HaxeFloat.divide(a, b)
+    Reflaxe.Elixir.HaxeFloat.divide(a, b)
   end
   def test_division() do
     ok = divide(10, 2)
@@ -172,7 +172,7 @@ defmodule Main do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Assertion failed: divide(10, 2) == 5"]
     end
     caught_division_message = try do
-      _ = divide(10, 0)
+      divide(10, 0)
       "no_error"
     rescue
       haxe_exception ->
@@ -230,7 +230,7 @@ defmodule Main do
       level3 = fn -> raise Reflaxe.Elixir.HaxeThrow, [value: Reflaxe.Exception.new("Deep error", nil, nil)] end
       level2 = fn -> level3.() end
       level1 = fn -> level2.() end
-      _ = level1.()
+      level1.()
       "no_error"
     rescue
       haxe_exception ->
@@ -296,14 +296,14 @@ defmodule Main do
     end
   end
   def main() do
-    _ = basic_try_catch()
-    _ = multiple_catch()
-    _ = try_catch_finally()
-    _ = nested_try_catch()
-    _ = custom_exception()
-    _ = test_division()
-    _ = rethrow_example()
-    _ = stack_trace_example()
-    _ = try_as_expression()
+    basic_try_catch()
+    multiple_catch()
+    try_catch_finally()
+    nested_try_catch()
+    custom_exception()
+    test_division()
+    rethrow_example()
+    stack_trace_example()
+    try_as_expression()
   end
 end

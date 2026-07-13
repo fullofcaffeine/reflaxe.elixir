@@ -13,7 +13,7 @@ defmodule PortInput do
     end
     struct = %{struct | buffer_offset: struct.buffer_offset + 1}
     reflaxe_dispatch_receiver = struct.buffer
-    _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get, [reflaxe_dispatch_receiver, struct.buffer_offset])
+    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get, [reflaxe_dispatch_receiver, struct.buffer_offset])
   end
   def read_all(struct, _bufsize) do
     data = (
@@ -28,7 +28,7 @@ defmodule PortInput do
                 end)
                 :erlang.iolist_to_binary(Enum.reverse(chunks))
             )
-    _ = Bytes.of_data(data)
+    Bytes.of_data(data)
   end
   def read_bytes(struct, buf, pos, len) do
     if (pos < 0 or len < 0 or pos + len > buf.length) do
@@ -47,7 +47,7 @@ defmodule PortInput do
             available = (struct.buffer.length - struct.buffer_offset)
             remaining = (len - acc_total_read)
             to_copy = if (remaining < available), do: remaining, else: available
-            _ = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :blit, [buf, pos + acc_total_read, struct.buffer, struct.buffer_offset, to_copy])
+            apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :blit, [buf, pos + acc_total_read, struct.buffer, struct.buffer_offset, to_copy])
             _ = %{struct | buffer_offset: struct.buffer_offset + to_copy}
             acc_total_read = acc_total_read + to_copy
             {:cont, {acc_total_read}}

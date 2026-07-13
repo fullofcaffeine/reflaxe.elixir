@@ -15,11 +15,11 @@ defmodule Main do
     %{test_id: :rand.uniform(), timestamp: DateTime.utc_now()}
   end
   setup context do
-    _ = on_exit(fn -> nil end)
+    on_exit(fn -> nil end)
     :ok
   end
   setup_all context do
-    _ = on_exit(fn -> module_state = nil end)
+    on_exit(fn -> module_state = nil end)
     :ok
   end
   defp __haxe_static_get__(key, init) do
@@ -28,13 +28,13 @@ defmodule Main do
       {:set, value} -> value
       nil ->
         value = init
-        _ = Process.put(static_key, {:set, value})
+        Process.put(static_key, {:set, value})
         value
     end)
   end
   defp __haxe_static_put__(key, value) do
     static_key = {:__haxe_static__, Main, key}
-    _ = Process.put(static_key, {:set, value})
+    Process.put(static_key, {:set, value})
     value
   end
   def module_state() do
@@ -107,7 +107,7 @@ defmodule Main do
   describe "Error Handling" do
     test "exception handling" do
       try do
-        _ = throw_error(context, "Test error")
+        throw_error(context, "Test error")
         flunk("Should have thrown an error")
       rescue
         haxe_exception ->

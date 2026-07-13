@@ -2,7 +2,22 @@ defmodule Main do
   def main() do
     cases = NativeResultCases.new()
     concrete = cases
-    _ = apply(Map.get(concrete, :__reflaxe_class__) || Map.get(concrete, :__struct__), :void_result, [concrete])
+    apply(Map.get(concrete, :__reflaxe_class__) || Map.get(concrete, :__struct__), :void_result, [concrete])
+    StatementEffectProbe.reset()
+    StatementEffectProbe.record(1)
+    StatementEffectProbe.record(2)
+    if (StatementEffectProbe.current() != 12) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "statement effects were dropped"]
+    end
+    StatementEffectProbe.reset()
+    difference = (StatementEffectProbe.record(4) - StatementEffectProbe.record(1))
+    if (difference != 3 or StatementEffectProbe.current() != 41) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "embedded call order changed"]
+    end
+    StatementEffectProbe.reset()
+    if (StatementEffectProbe.tail_record(7) != 7 or StatementEffectProbe.current() != 7) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "tail call value lost"]
+    end
     if (apply(Map.get(concrete, :__reflaxe_class__) || Map.get(concrete, :__struct__), :branch_value, [concrete, true]) != 3) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "branch result lost"]
     end

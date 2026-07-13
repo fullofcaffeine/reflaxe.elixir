@@ -1,7 +1,7 @@
 defmodule Main do
   def main() do
-    _ = test_array_concatenation()
-    _ = test_nested_array_building()
+    test_array_concatenation()
+    test_nested_array_building()
   end
   defp test_array_concatenation() do
     arr = []

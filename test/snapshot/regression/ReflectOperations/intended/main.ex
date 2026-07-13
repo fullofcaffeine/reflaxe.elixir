@@ -1,11 +1,11 @@
 defmodule Main do
   def main() do
-    _ = test_field_operations()
-    _ = test_field_listing()
-    _ = test_object_checking()
-    _ = test_comparison()
-    _ = test_enum_detection()
-    _ = test_method_calling()
+    test_field_operations()
+    test_field_listing()
+    test_object_checking()
+    test_comparison()
+    test_enum_detection()
+    test_method_calling()
   end
   defp test_field_operations() do
     obj = %{name: "Alice", age: 30, active: true}

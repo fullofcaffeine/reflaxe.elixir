@@ -1,15 +1,15 @@
 defmodule Main do
   def main() do
-    _ = test_map_function()
-    _ = test_filter_function()
-    _ = test_concat_function()
-    _ = test_reverse_function()
-    _ = test_sort_function()
-    _ = test_contains_function()
-    _ = test_index_of_function()
-    _ = test_join_function()
-    _ = test_slice_function()
-    _ = test_iterator_function()
+    test_map_function()
+    test_filter_function()
+    test_concat_function()
+    test_reverse_function()
+    test_sort_function()
+    test_contains_function()
+    test_index_of_function()
+    test_join_function()
+    test_slice_function()
+    test_iterator_function()
   end
   defp test_map_function() do
     numbers = [1, 2, 3, 4, 5]
@@ -37,7 +37,7 @@ defmodule Main do
   defp test_reverse_function() do
     numbers = [1, 2, 3, 4, 5]
     copy = numbers
-    _ = apply(Map.get(copy, :__reflaxe_class__) || Map.get(copy, :__struct__), :reverse, [copy])
+    apply(Map.get(copy, :__reflaxe_class__) || Map.get(copy, :__struct__), :reverse, [copy])
     nil
   end
   defp test_sort_function() do
@@ -83,22 +83,21 @@ defmodule Main do
   defp test_iterator_function() do
     numbers = [1, 2, 3]
     _g = 0
-    _ = Enum.each(numbers, fn _ -> nil end)
+    Enum.each(numbers, fn _ -> nil end)
     iter = ArrayIterator.new(numbers)
-    _ =
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
-        try do
-          if (apply(Map.get(iter, :__reflaxe_class__) || Map.get(iter, :__struct__), :has_next, [iter])), do: {:cont, acc}, else: {:halt, acc}
-        catch
-          :throw, {:break, break_state} ->
-            {:halt, break_state}
-          :throw, {:continue, continue_state} ->
-            {:cont, continue_state}
-          :throw, :break ->
-            {:halt, acc}
-          :throw, :continue ->
-            {:cont, acc}
-        end
-      end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+      try do
+        if (apply(Map.get(iter, :__reflaxe_class__) || Map.get(iter, :__struct__), :has_next, [iter])), do: {:cont, acc}, else: {:halt, acc}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, acc}
+        :throw, :continue ->
+          {:cont, acc}
+      end
+    end)
   end
 end

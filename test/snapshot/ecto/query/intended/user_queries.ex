@@ -27,7 +27,7 @@ defmodule UserQueries do
   end
   def get_top_users() do
     subquery = from("posts", "p", %{group_by: "p.user_id", select: %{user_id: "p.user_id", count: "count(p.id)"}})
-    _ = from("users", "u", %{join: %{table: subquery, alias: "s", on: "s.user_id == u.id"}, where: %{count_gt: 10}, select: "u"})
+    from("users", "u", %{join: %{table: subquery, alias: "s", on: "s.user_id == u.id"}, where: %{count_gt: 10}, select: "u"})
   end
   def get_users_with_associations() do
     from("users", "u", %{preload: ["posts", "profile", "comments"], select: "u"})

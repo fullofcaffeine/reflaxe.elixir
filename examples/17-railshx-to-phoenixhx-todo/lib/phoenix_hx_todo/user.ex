@@ -1,9 +1,9 @@
 defmodule PhoenixHxTodo.User do
   use Ecto.Schema
   schema "users" do
-    _ = field(:name, :string)
-    _ = field(:email, :string)
-    _ = timestamps()
+    field(:name, :string)
+    field(:email, :string)
+    timestamps()
   end
   def new() do
     %{:__reflaxe_class__ => PhoenixHxTodo.User, :id => nil, :name => nil, :email => nil}

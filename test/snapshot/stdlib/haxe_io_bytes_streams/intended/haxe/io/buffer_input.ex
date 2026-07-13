@@ -10,14 +10,14 @@ defmodule BufferInput do
   def refill(struct) do
     struct = if (struct.pos > 0) do
       reflaxe_dispatch_receiver = struct.buf
-      _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :blit, [reflaxe_dispatch_receiver, 0, struct.buf, struct.pos, struct.available])
+      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :blit, [reflaxe_dispatch_receiver, 0, struct.buf, struct.pos, struct.available])
       %{struct | pos: 0}
     else
       struct
     end
     struct = %{struct | available: struct.available + (fn ->
       reflaxe_dispatch_receiver = struct.i
-      _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :read_bytes, [reflaxe_dispatch_receiver, struct.buf, struct.available, (struct.buf.length - struct.available)])
+      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :read_bytes, [reflaxe_dispatch_receiver, struct.buf, struct.available, (struct.buf.length - struct.available)])
     end).()}
     struct
   end
@@ -28,14 +28,14 @@ defmodule BufferInput do
     struct = %{struct | pos: struct.pos + 1}
     struct = %{struct | available: (struct.available - 1)}
     reflaxe_dispatch_receiver = struct.buf
-    _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get, [reflaxe_dispatch_receiver, struct.pos])
+    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get, [reflaxe_dispatch_receiver, struct.pos])
   end
   def read_bytes(struct, buf_param, pos_param, len) do
     if (struct.available == 0) do
       apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :refill, [struct])
     end
     size = if (len > struct.available), do: struct.available, else: len
-    _ = apply(Map.get(buf_param, :__reflaxe_class__) || Map.get(buf_param, :__struct__), :blit, [buf_param, pos_param, struct.buf, struct.pos, size])
+    apply(Map.get(buf_param, :__reflaxe_class__) || Map.get(buf_param, :__struct__), :blit, [buf_param, pos_param, struct.buf, struct.pos, size])
     struct = %{struct | pos: struct.pos + size}
     _ = %{struct | available: (struct.available - size)}
     size

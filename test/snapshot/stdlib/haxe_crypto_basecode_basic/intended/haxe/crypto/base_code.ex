@@ -80,7 +80,7 @@ defmodule Haxe.Crypto.BaseCode do
 
           :erlang.list_to_binary(Enum.reverse(reflaxe_basecode_out))
     )
-    _ = Bytes.of_data(data)
+    Bytes.of_data(data)
   end
   def decode_bytes(struct, bytes) do
     data = (
@@ -130,22 +130,22 @@ defmodule Haxe.Crypto.BaseCode do
 
           :erlang.list_to_binary(Enum.reverse(reflaxe_basecode_decode.(reflaxe_basecode_decode, reflaxe_basecode_size, [], 0, 0, 0)))
     )
-    _ = Bytes.of_data(data)
+    Bytes.of_data(data)
   end
   def encode_string(struct, s) do
     reflaxe_dispatch_receiver = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :encode_bytes, [struct, Bytes.of_string(s, {:utf8})])
-    _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
   end
   def decode_string(struct, s) do
     reflaxe_dispatch_receiver = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :decode_bytes, [struct, Bytes.of_string(s, {:utf8})])
-    _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
   end
   def encode(s, base_param) do
     b = Haxe.Crypto.BaseCode.new(Bytes.of_string(base_param, {:utf8}))
-    _ = apply(Map.get(b, :__reflaxe_class__) || Map.get(b, :__struct__), :encode_string, [b, s])
+    apply(Map.get(b, :__reflaxe_class__) || Map.get(b, :__struct__), :encode_string, [b, s])
   end
   def decode(s, base_param) do
     b = Haxe.Crypto.BaseCode.new(Bytes.of_string(base_param, {:utf8}))
-    _ = apply(Map.get(b, :__reflaxe_class__) || Map.get(b, :__struct__), :decode_string, [b, s])
+    apply(Map.get(b, :__reflaxe_class__) || Map.get(b, :__struct__), :decode_string, [b, s])
   end
 end

@@ -1,11 +1,11 @@
 defmodule Main do
   def main() do
-    _ = test_attribute_conversion()
-    _ = test_snake_case_support()
-    _ = test_type_validation()
-    _ = test_phoenix_directives()
-    _ = test_complex_templates()
-    _ = test_error_messages()
+    test_attribute_conversion()
+    test_snake_case_support()
+    test_type_validation()
+    test_phoenix_directives()
+    test_complex_templates()
+    test_error_messages()
   end
   defp test_attribute_conversion() do
     div1 = "<div class=\"container\">Content</div>"

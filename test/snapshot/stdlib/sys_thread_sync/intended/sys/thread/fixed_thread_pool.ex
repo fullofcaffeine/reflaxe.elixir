@@ -12,7 +12,7 @@ defmodule Sys.Thread.FixedThreadPool do
     {_created} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {created}, fn _, {acc_created} ->
       try do
         if (acc_created < threads_count_param) do
-          _ = Sys.Thread.Thread.create(fn -> worker_loop(worker_queue) end)
+          Sys.Thread.Thread.create(fn -> worker_loop(worker_queue) end)
           acc_created = acc_created + 1
           {:cont, {acc_created}}
         else
@@ -45,20 +45,19 @@ defmodule Sys.Thread.FixedThreadPool do
       raise Reflaxe.Elixir.HaxeThrow, [value: ThreadPoolException.new("Task to run must not be null.", nil, nil)]
     end
     reflaxe_dispatch_receiver = struct.queue
-    _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :add, [reflaxe_dispatch_receiver, task])
+    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :add, [reflaxe_dispatch_receiver, task])
   end
   def shutdown(struct) do
     if (ThreadPoolRuntime.is_shutdown(struct.state_ref)) do
       nil
     else
-      _ = ThreadPoolRuntime.mark_shutdown(struct.state_ref)
+      ThreadPoolRuntime.mark_shutdown(struct.state_ref)
       _g = 0
       g_value = get_threads_count(struct)
-      _ =
-        Enum.each(0..(g_value - 1)//1, fn _ ->
-          reflaxe_dispatch_receiver = struct.queue
-          _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :add, [reflaxe_dispatch_receiver, &shutdown_task/0])
-        end)
+      Enum.each(0..(g_value - 1)//1, fn _ ->
+        reflaxe_dispatch_receiver = struct.queue
+        apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :add, [reflaxe_dispatch_receiver, &shutdown_task/0])
+      end)
     end
   end
   defp shutdown_task() do
@@ -71,7 +70,7 @@ defmodule Sys.Thread.FixedThreadPool do
         if (Reflaxe.Elixir.HaxeFloat.eq(task, &shutdown_task/0)) do
           throw({:break, {acc_worker_queue}})
         end
-        _ = task.()
+        task.()
         {:cont, {acc_worker_queue}}
       catch
         :throw, {:break, break_state} ->

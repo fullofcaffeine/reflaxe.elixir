@@ -18,7 +18,7 @@ defmodule Main do
           pair = apply(Map.get(iterator, :__reflaxe_class__) || Map.get(iterator, :__struct__), :next, [iterator])
           acc_seen = acc_seen ++ [(fn ->
             reflaxe_dispatch_receiver = pair.key
-            _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+            apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
           end).() <> "=" <> pair.value]
           {:cont, {acc_seen}}
         else
@@ -36,6 +36,6 @@ defmodule Main do
       end
     end)
     seen = Enum.sort(seen, fn a, b -> &Reflect.compare/2.(a, b) < 0 end)
-    _ = assert_that(Enum.join(seen, ",") == "key:1=one,key:2=two", "explicit HashMapKeyValueIterator should preserve key/value pairs")
+    assert_that(Enum.join(seen, ",") == "key:1=one,key:2=two", "explicit HashMapKeyValueIterator should preserve key/value pairs")
   end
 end

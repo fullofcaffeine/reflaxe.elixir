@@ -185,7 +185,7 @@ class PassInventory {
 
 		var annotationsStart = indexOfPass(passes, "PhoenixWebTransform");
 		var guardsStart = indexOfPass(passes, "GuardGrouping");
-		var coreStart = indexOfPass(passes, "BareCallToUnderscoreAssign");
+		var coreStart = indexOfPass(passes, "LoopVariableRestore");
 		var heexStart = indexOfPass(passes, "HeexStringReturnToSigil");
 		var hygieneStart = indexOfPass(passes, "AccAliasLateRewrite");
 		var absoluteFinalStart = indexOfPass(passes, "EFnTempChainSimplify_AlwaysRun");

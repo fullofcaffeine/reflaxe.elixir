@@ -14,7 +14,7 @@ defmodule Main do
     nil
   end
   def main() do
-    _ = test_temp_variable_scoping()
-    _ = test_ternary_with_temp_vars()
+    test_temp_variable_scoping()
+    test_ternary_with_temp_vars()
   end
 end

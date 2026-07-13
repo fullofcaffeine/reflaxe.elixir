@@ -2,22 +2,22 @@ defmodule Address do
   def new() do
     struct = %{:__reflaxe_class__ => Address, :host => nil, :port => nil, :address_ref => nil}
     struct = %{struct | address_ref: AddressState.create()}
-    _ = set_host(struct, 0)
-    _ = set_port(struct, 0)
+    set_host(struct, 0)
+    set_port(struct, 0)
     struct
   end
   def get_host(struct) do
     AddressState.get_host(struct.address_ref)
   end
   def set_host(struct, value) do
-    _ = AddressState.set_host(struct.address_ref, value)
+    AddressState.set_host(struct.address_ref, value)
     value
   end
   def get_port(struct) do
     AddressState.get_port(struct.address_ref)
   end
   def set_port(struct, value) do
-    _ = AddressState.set_port(struct.address_ref, value)
+    AddressState.set_port(struct.address_ref, value)
     value
   end
   def to_host(struct) do
@@ -36,8 +36,8 @@ defmodule Address do
   end
   def clone(struct) do
     cloned = Address.new()
-    _ = set_host(cloned, get_host(struct))
-    _ = set_port(cloned, get_port(struct))
+    set_host(cloned, get_host(struct))
+    set_port(cloned, get_port(struct))
     cloned
   end
 end

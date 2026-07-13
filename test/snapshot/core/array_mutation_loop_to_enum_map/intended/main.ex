@@ -32,8 +32,8 @@ defmodule Main do
     i
   end
   def main() do
-    _ = double_in_place([1, 2, 3])
-    _ = add_index_in_place([1, 2, 3])
-    _ = keep_stateful_when_counter_observed([1, 2, 3])
+    double_in_place([1, 2, 3])
+    add_index_in_place([1, 2, 3])
+    keep_stateful_when_counter_observed([1, 2, 3])
   end
 end

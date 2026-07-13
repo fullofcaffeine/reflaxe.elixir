@@ -1,8 +1,8 @@
 defmodule Main do
   def main() do
-    _ = test_message_conversion()
-    _ = test_bulk_action_to_string()
-    _ = test_nested_enum_patterns()
+    test_message_conversion()
+    test_bulk_action_to_string()
+    test_nested_enum_patterns()
   end
   defp message_to_elixir(message) do
     base_payload = (case message do
@@ -14,7 +14,7 @@ defmodule Main do
       {:user_offline, user_id} -> %{type: "user_offline", user_id: user_id}
       {:system_alert, message, level} -> %{type: "system_alert", message: message, level: level}
     end)
-    _ = add_timestamp(base_payload)
+    add_timestamp(base_payload)
   end
   defp bulk_action_to_string(action) do
     (case action do

@@ -5,12 +5,12 @@ defmodule Main do
     end
   end
   def main() do
-    _ = bytes_buffer()
-    _ = bytes_input_output()
-    _ = buffer_input()
-    _ = string_input()
-    _ = fp_helper()
-    _ = io_semantics()
+    bytes_buffer()
+    bytes_input_output()
+    buffer_input()
+    string_input()
+    fp_helper()
+    io_semantics()
   end
   defp bytes_buffer() do
     buffer = BytesBuffer.new()
@@ -24,13 +24,13 @@ defmodule Main do
   end
   defp bytes_input_output() do
     out = BytesOutput.new()
-    _ = apply(Map.get(out, :__reflaxe_class__) || Map.get(out, :__struct__), :write_byte, [out, 0])
-    _ = apply(Map.get(out, :__reflaxe_class__) || Map.get(out, :__struct__), :write_string, [out, "hi", nil])
+    apply(Map.get(out, :__reflaxe_class__) || Map.get(out, :__struct__), :write_byte, [out, 0])
+    apply(Map.get(out, :__reflaxe_class__) || Map.get(out, :__struct__), :write_string, [out, "hi", nil])
     bytes = apply(Map.get(out, :__reflaxe_class__) || Map.get(out, :__struct__), :get_bytes, [out])
     input = BytesInput.new(bytes, nil, nil)
     _first = apply(Map.get(input, :__reflaxe_class__) || Map.get(input, :__struct__), :read_byte, [input])
     tmp = Bytes.alloc(2)
-    _ = apply(Map.get(input, :__reflaxe_class__) || Map.get(input, :__struct__), :read_bytes, [input, tmp, 0, 2])
+    apply(Map.get(input, :__reflaxe_class__) || Map.get(input, :__struct__), :read_bytes, [input, tmp, 0, 2])
     nil
   end
   defp buffer_input() do
@@ -53,14 +53,14 @@ defmodule Main do
   defp io_semantics() do
     all_input = BytesInput.new(Bytes.of_string("hello", {:utf8}), nil, nil)
     reflaxe_dispatch_receiver = apply(Map.get(all_input, :__reflaxe_class__) || Map.get(all_input, :__struct__), :read_all, [all_input, 2])
-    all = _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
-    _ = assert_that(all == "hello", "readAll chunked failed")
+    all = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+    assert_that(all == "hello", "readAll chunked failed")
     line_input = BytesInput.new(Bytes.of_string("a\r\nb\n", {:utf8}), nil, nil)
-    _ = assert_that(apply(Map.get(line_input, :__reflaxe_class__) || Map.get(line_input, :__struct__), :read_line, [line_input]) == "a", "readLine CRLF failed")
-    _ = assert_that(apply(Map.get(line_input, :__reflaxe_class__) || Map.get(line_input, :__struct__), :read_line, [line_input]) == "b", "readLine LF failed")
+    assert_that(apply(Map.get(line_input, :__reflaxe_class__) || Map.get(line_input, :__struct__), :read_line, [line_input]) == "a", "readLine CRLF failed")
+    assert_that(apply(Map.get(line_input, :__reflaxe_class__) || Map.get(line_input, :__struct__), :read_line, [line_input]) == "b", "readLine LF failed")
     try do
-      _ = apply(Map.get(line_input, :__reflaxe_class__) || Map.get(line_input, :__struct__), :read_line, [line_input])
-      _ = assert_that(false, "readLine should throw Eof on empty input")
+      apply(Map.get(line_input, :__reflaxe_class__) || Map.get(line_input, :__struct__), :read_line, [line_input])
+      assert_that(false, "readLine should throw Eof on empty input")
     rescue
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
@@ -75,27 +75,26 @@ defmodule Main do
     end
     src = BytesInput.new(Bytes.of_string("xyz", {:utf8}), nil, nil)
     sink = BytesOutput.new()
-    _ = apply(Map.get(sink, :__reflaxe_class__) || Map.get(sink, :__struct__), :write_input, [sink, src, 2])
-    _ =
-      assert_that((fn ->
-        reflaxe_dispatch_receiver = apply(Map.get(sink, :__reflaxe_class__) || Map.get(sink, :__struct__), :get_bytes, [sink])
-        _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
-      end).() == "xyz", "writeInput failed")
+    apply(Map.get(sink, :__reflaxe_class__) || Map.get(sink, :__struct__), :write_input, [sink, src, 2])
+    assert_that((fn ->
+      reflaxe_dispatch_receiver = apply(Map.get(sink, :__reflaxe_class__) || Map.get(sink, :__struct__), :get_bytes, [sink])
+      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+    end).() == "xyz", "writeInput failed")
     out = BytesOutput.new()
-    _ = Output.set_big_endian(out, false)
-    _ = apply(Map.get(out, :__reflaxe_class__) || Map.get(out, :__struct__), :write_double, [out, 3.25])
+    Output.set_big_endian(out, false)
+    apply(Map.get(out, :__reflaxe_class__) || Map.get(out, :__struct__), :write_double, [out, 3.25])
     bytes = apply(Map.get(out, :__reflaxe_class__) || Map.get(out, :__struct__), :get_bytes, [out])
-    _ = assert_that(bytes.length == 8, "writeDouble length should be 8")
+    assert_that(bytes.length == 8, "writeDouble length should be 8")
     inp = BytesInput.new(bytes, nil, nil)
-    _ = Input.set_big_endian(inp, false)
+    Input.set_big_endian(inp, false)
     got = apply(Map.get(inp, :__reflaxe_class__) || Map.get(inp, :__struct__), :read_double, [inp])
-    _ = assert_that(Reflaxe.Elixir.HaxeFloat.lt(Reflaxe.Elixir.HaxeFloat.abs(Reflaxe.Elixir.HaxeFloat.sub(got, 3.25)), 1.0e-12), "double roundtrip failed")
+    assert_that(Reflaxe.Elixir.HaxeFloat.lt(Reflaxe.Elixir.HaxeFloat.abs(Reflaxe.Elixir.HaxeFloat.sub(got, 3.25)), 1.0e-12), "double roundtrip failed")
     string_input = StringInput.new("red\r\nblue\n")
-    _ = assert_that(apply(Map.get(string_input, :__reflaxe_class__) || Map.get(string_input, :__struct__), :read_line, [string_input]) == "red", "StringInput readLine CRLF failed")
-    _ = assert_that(apply(Map.get(string_input, :__reflaxe_class__) || Map.get(string_input, :__struct__), :read_line, [string_input]) == "blue", "StringInput readLine LF failed")
+    assert_that(apply(Map.get(string_input, :__reflaxe_class__) || Map.get(string_input, :__struct__), :read_line, [string_input]) == "red", "StringInput readLine CRLF failed")
+    assert_that(apply(Map.get(string_input, :__reflaxe_class__) || Map.get(string_input, :__struct__), :read_line, [string_input]) == "blue", "StringInput readLine LF failed")
     try do
-      _ = apply(Map.get(string_input, :__reflaxe_class__) || Map.get(string_input, :__struct__), :read_byte, [string_input])
-      _ = assert_that(false, "StringInput should throw Eof after readLine consumes content")
+      apply(Map.get(string_input, :__reflaxe_class__) || Map.get(string_input, :__struct__), :read_byte, [string_input])
+      assert_that(false, "StringInput should throw Eof after readLine consumes content")
     rescue
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)

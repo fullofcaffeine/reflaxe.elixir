@@ -19,14 +19,14 @@ defmodule TableBuilder do
     end
   end
   def add_timestamps(struct) do
-    _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :add_column, [struct, "inserted_at", {:date_time}, %{nullable: false}])
-    _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :add_column, [struct, "updated_at", {:date_time}, %{nullable: false}])
+    apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :add_column, [struct, "inserted_at", {:date_time}, %{nullable: false}])
+    apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :add_column, [struct, "updated_at", {:date_time}, %{nullable: false}])
     struct
   end
   def add_reference(struct, column_name, referenced_table, options_param) do
     column_options = nil
     column_options = if (not Kernel.is_nil(options_param)), do: %{nullable: false, on_delete: options_param.on_delete, on_update: options_param.on_update}, else: column_options
-    _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :add_column, [struct, column_name, {:references, referenced_table}, column_options])
+    apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :add_column, [struct, column_name, {:references, referenced_table}, column_options])
     struct
   end
   def add_foreign_key(struct, column_name, referenced_table, options_param) do

@@ -1,10 +1,10 @@
 defmodule Main do
   def main() do
-    _ = test_simple_map()
-    _ = test_map_with_enum_construction()
-    _ = test_nested_operations()
-    _ = test_array_filter()
-    _ = test_complex_transformations()
+    test_simple_map()
+    test_map_with_enum_construction()
+    test_nested_operations()
+    test_array_filter()
+    test_complex_transformations()
   end
   defp test_simple_map() do
     numbers = [1, 2, 3, 4, 5]

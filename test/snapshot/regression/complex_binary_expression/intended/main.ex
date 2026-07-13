@@ -1,7 +1,7 @@
 defmodule Main do
   def main() do
-    _ = test_complex_assignment_with_binary()
-    _ = test_method_call_in_binary_expression()
+    test_complex_assignment_with_binary()
+    test_method_call_in_binary_expression()
   end
   defp test_complex_assignment_with_binary() do
     c = 60000

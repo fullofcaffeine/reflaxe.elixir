@@ -1,10 +1,10 @@
 defmodule Main do
   def main() do
-    _ = test_arithmetic()
-    _ = test_comparisons()
-    _ = test_conversions()
-    _ = test_utility_methods()
-    _ = test_operators()
+    test_arithmetic()
+    test_comparisons()
+    test_conversions()
+    test_utility_methods()
+    test_operators()
   end
   defp test_arithmetic() do
     elixir_month = 1

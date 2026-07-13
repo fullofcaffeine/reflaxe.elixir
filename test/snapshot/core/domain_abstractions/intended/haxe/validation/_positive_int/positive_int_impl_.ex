@@ -83,6 +83,6 @@ defmodule PositiveInt_Impl_ do
     else
       value
     end
-    _ = parse(abs)
+    parse(abs)
   end
 end

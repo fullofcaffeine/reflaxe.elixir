@@ -2,7 +2,7 @@ defmodule Main do
   def from_imperative(params) do
     raw = Map.get(params, "resource_id")
     text = PhoenixHx.Params.string_from_term(raw)
-    _ = ResourceIds.from_param(text)
+    ResourceIds.from_param(text)
   end
   def from_nested(params) do
     ResourceIds.from_param(PhoenixHx.Params.string_from_term(Map.get(params, "resource_id")))

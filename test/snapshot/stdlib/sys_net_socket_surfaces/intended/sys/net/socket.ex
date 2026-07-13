@@ -7,20 +7,20 @@ defmodule Socket do
     struct
   end
   def close(struct) do
-    _ = SocketState.close(struct.socket_ref)
+    SocketState.close(struct.socket_ref)
     reflaxe_dispatch_receiver = struct.input
-    _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :close, [reflaxe_dispatch_receiver])
+    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :close, [reflaxe_dispatch_receiver])
     reflaxe_dispatch_receiver = struct.output
-    _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :close, [reflaxe_dispatch_receiver])
+    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :close, [reflaxe_dispatch_receiver])
   end
   def read(struct) do
     reflaxe_dispatch_receiver = Bytes.of_data(SocketState.recv_all(struct.socket_ref))
-    _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
   end
   def write(struct, content) do
     SocketState.send_binary(struct.socket_ref, (fn ->
       reflaxe_dispatch_receiver = Bytes.of_string(content, {:utf8})
-      _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get_data, [reflaxe_dispatch_receiver])
+      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get_data, [reflaxe_dispatch_receiver])
     end).())
   end
   def connect(struct, host, port) do
@@ -38,7 +38,7 @@ defmodule Socket do
   def accept(struct) do
     accepted = SocketState.tcp_accept(struct.socket_ref)
     socket = Socket.new()
-    _ = SocketState.attach(socket.socket_ref, accepted)
+    SocketState.attach(socket.socket_ref, accepted)
     socket
   end
   def peer(struct) do

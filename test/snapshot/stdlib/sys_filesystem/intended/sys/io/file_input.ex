@@ -68,7 +68,7 @@ defmodule FileInput do
       if (tag == :ok) do
         data = elem(result, 1)
         bytes = Bytes.of_data(data)
-        _ = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :blit, [buf, pos, bytes, 0, bytes.length])
+        apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :blit, [buf, pos, bytes, 0, bytes.length])
         bytes.length
       else
         reason = elem(result, 1)

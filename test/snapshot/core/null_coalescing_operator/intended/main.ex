@@ -1,11 +1,11 @@
 defmodule Main do
   def main() do
-    _ = test_simple_assignment()
-    _ = test_function_arguments()
-    _ = test_object_literals()
-    _ = test_array_literals()
-    _ = test_nested_coalescing()
-    _ = test_method_calls()
+    test_simple_assignment()
+    test_function_arguments()
+    test_object_literals()
+    test_array_literals()
+    test_nested_coalescing()
+    test_method_calls()
   end
   defp test_simple_assignment() do
     maybe_null = nil
@@ -17,19 +17,17 @@ defmodule Main do
   end
   defp test_function_arguments() do
     optional = nil
-    _ =
-      do_something((fn ->
-          tmp = optional
-          if (not Kernel.is_nil(tmp)), do: tmp, else: "default"
-        end).())
-    _ =
-      do_multiple((fn ->
-          tmp = optional
-          if (not Kernel.is_nil(tmp)), do: tmp, else: "first"
-        end).(), (fn ->
-          tmp = get_value()
-          if (not Kernel.is_nil(tmp)), do: tmp, else: "second"
-        end).())
+    do_something((fn ->
+        tmp = optional
+        if (not Kernel.is_nil(tmp)), do: tmp, else: "default"
+      end).())
+    do_multiple((fn ->
+        tmp = optional
+        if (not Kernel.is_nil(tmp)), do: tmp, else: "first"
+      end).(), (fn ->
+        tmp = get_value()
+        if (not Kernel.is_nil(tmp)), do: tmp, else: "second"
+      end).())
   end
   defp test_object_literals() do
     optional = nil

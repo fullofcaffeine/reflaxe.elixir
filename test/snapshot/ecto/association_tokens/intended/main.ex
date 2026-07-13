@@ -2,7 +2,7 @@ defmodule Main do
   require Ecto.Query
   def typed_query_preload() do
     query = Ecto.Query.from(t in MyApp.User, [])
-    query = _ = Ecto.Query.preload(query, [:posts])
+    query = Ecto.Query.preload(query, [:posts])
     query
   end
   def typed_query_join() do

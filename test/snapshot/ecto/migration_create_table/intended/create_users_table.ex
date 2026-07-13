@@ -1,11 +1,11 @@
 defmodule CreateUsersTable do
   def up(struct) do
-    _ = create_table(struct, "users")
-    _ = add_column(struct, "users", "name", "string")
-    _ = add_column(struct, "users", "email", "string")
-    _ = add_column(struct, "users", "age", "integer")
-    _ = add_index(struct, "users", ["email"])
-    _ = timestamps(struct)
+    create_table(struct, "users")
+    add_column(struct, "users", "name", "string")
+    add_column(struct, "users", "email", "string")
+    add_column(struct, "users", "age", "integer")
+    add_index(struct, "users", ["email"])
+    timestamps(struct)
   end
   def down(struct) do
     drop_table(struct, "users")

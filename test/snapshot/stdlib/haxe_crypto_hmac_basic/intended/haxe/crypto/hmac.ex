@@ -6,7 +6,7 @@ defmodule Haxe.Crypto.Hmac do
   end
   def make(struct, key, msg) do
     digest = :crypto.mac(:hmac, native_algorithm(struct), apply(Map.get(key, :__reflaxe_class__) || Map.get(key, :__struct__), :get_data, [key]), apply(Map.get(msg, :__reflaxe_class__) || Map.get(msg, :__struct__), :get_data, [msg]))
-    _ = Bytes.of_data(digest)
+    Bytes.of_data(digest)
   end
   defp native_algorithm(struct) do
     (case struct.method do

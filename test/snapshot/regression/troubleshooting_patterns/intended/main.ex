@@ -400,7 +400,7 @@ defmodule Main do
       end)
       Enum.concat(results_acc, [result])
     end)
-    _ = Enum.join(results, "; ")
+    Enum.join(results, "; ")
   end
   def main() do
     nil

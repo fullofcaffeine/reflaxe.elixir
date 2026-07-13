@@ -46,11 +46,53 @@ extern class ExternalResultProvider {
 	static function value():Int;
 }
 
+@:native("Process")
+extern class StatementProcess {
+	@:native("Process.put")
+	static function put(key:String, value:Int):Dynamic;
+
+	@:native("Process.get")
+	static function get(key:String, defaultValue:Int):Int;
+}
+
+@:native("StatementEffectProbe")
+class StatementEffectProbe {
+	public static function reset():Void {
+		StatementProcess.put("reflaxe_statement_effect_probe", 0);
+	}
+
+	public static function record(value:Int):Int {
+		var current = StatementProcess.get("reflaxe_statement_effect_probe", 0);
+		StatementProcess.put("reflaxe_statement_effect_probe", current * 10 + value);
+		return value;
+	}
+
+	public static function tailRecord(value:Int):Int {
+		return record(value);
+	}
+
+	public static function current():Int {
+		return StatementProcess.get("reflaxe_statement_effect_probe", 0);
+	}
+}
+
 class Main {
 	static function main():Void {
 		var cases:ResultCallback = new ResultCases();
 		var concrete:ResultCases = cast cases;
 		concrete.voidResult();
+		StatementEffectProbe.reset();
+		StatementEffectProbe.record(1);
+		StatementEffectProbe.record(2);
+		if (StatementEffectProbe.current() != 12)
+			throw "statement effects were dropped";
+		StatementEffectProbe.reset();
+		var difference = StatementEffectProbe.record(4) - StatementEffectProbe.record(1);
+		if (difference != 3 || StatementEffectProbe.current() != 41)
+			throw "embedded call order changed";
+		StatementEffectProbe.reset();
+		if (StatementEffectProbe.tailRecord(7) != 7 || StatementEffectProbe.current() != 7)
+			throw "tail call value lost";
 		if (concrete.branchValue(true) != 3)
 			throw "branch result lost";
 		if (concrete.caseValue(2) != "two")

@@ -1,23 +1,23 @@
 defmodule Main do
   def main() do
-    _ = test_nested_call_argument()
-    _ = test_deep_nesting()
-    _ = test_mixed_operations()
-    _ = test_write_only()
-    _ = test_shadowing()
-    _ = test_function_params()
-    _ = test_for_loop()
-    _ = test_string_concatenation()
-    _ = test_field_vs_ident()
-    _ = test_unused_parameters()
+    test_nested_call_argument()
+    test_deep_nesting()
+    test_mixed_operations()
+    test_write_only()
+    test_shadowing()
+    test_function_params()
+    test_for_loop()
+    test_string_concatenation()
+    test_field_vs_ident()
+    test_unused_parameters()
   end
   defp from_time(t) do
     Date.from_unix(trunc(t), "millisecond")
   end
   defp deep_nesting(t) do
     v = Reflaxe.Elixir.HaxeFloat.abs(t)
-    v = _ = Reflaxe.Elixir.HaxeFloat.ceil_int(v)
-    _ = Reflaxe.Elixir.HaxeFloat.floor_int(v)
+    v = Reflaxe.Elixir.HaxeFloat.ceil_int(v)
+    Reflaxe.Elixir.HaxeFloat.floor_int(v)
   end
   defp mixed_ops(t, u) do
     if (t > 0), do: t + u, else: u
@@ -27,7 +27,7 @@ defmodule Main do
   end
   defp shadowing() do
     t = 2
-    _ = process(t)
+    process(t)
   end
   defp used_param(t) do
     t + 1
@@ -88,7 +88,7 @@ defmodule Main do
     nil
   end
   defp test_field_vs_ident() do
-    _ = field_vs_ident(%{}, 5)
+    field_vs_ident(%{}, 5)
     nil
   end
   defp test_unused_parameters() do

@@ -1,7 +1,7 @@
 defmodule Main do
   def main() do
-    _ = test_while_loop()
-    _ = test_for_loop()
+    test_while_loop()
+    test_for_loop()
   end
   defp test_while_loop() do
     k = 10

@@ -5,6 +5,6 @@ defmodule MyAppWeb.SpecialPresence do
   end
   def track_with_string_op(socket, user_id, meta) do
     user_key = if (String.length(user_id) > 0), do: user_id, else: "anonymous"
-    _ = MyApp.Presence.track(self(), socket, user_key, meta)
+    MyApp.Presence.track(self(), socket, user_key, meta)
   end
 end

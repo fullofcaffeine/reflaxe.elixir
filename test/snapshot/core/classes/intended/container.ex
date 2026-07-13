@@ -18,7 +18,7 @@ defmodule Container do
     _g = 0
     g_value = struct.items
     result = Enum.reduce(g_value, result, fn item, result_acc ->
-      _ = apply(Map.get(result_acc, :__reflaxe_class__) || Map.get(result_acc, :__struct__), :add, [result_acc, fn_param.(item)])
+      apply(Map.get(result_acc, :__reflaxe_class__) || Map.get(result_acc, :__struct__), :add, [result_acc, fn_param.(item)])
       result_acc
     end)
     result

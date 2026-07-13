@@ -18,8 +18,8 @@ defmodule Sys.Thread.Thread do
   end
   def run_with_event_loop(job) do
     loop = ThreadRuntime.ensure_event_loop()
-    _ = job.()
-    _ = apply(Map.get(loop, :__reflaxe_class__) || Map.get(loop, :__struct__), :loop, [loop])
+    job.()
+    apply(Map.get(loop, :__reflaxe_class__) || Map.get(loop, :__struct__), :loop, [loop])
   end
   def create_with_event_loop(job) do
     create(fn -> run_with_event_loop(job) end)

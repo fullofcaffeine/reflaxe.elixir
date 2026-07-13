@@ -1,8 +1,8 @@
 defmodule MyApp.UserExplicit do
   use Ecto.Schema
   schema "users_explicit" do
-    _ = field(:name, :string)
-    _ = field(:email, :string)
+    field(:name, :string)
+    field(:email, :string)
   end
   def new() do
     %{:__reflaxe_class__ => MyApp.UserExplicit, :id => nil, :name => nil, :email => nil}

@@ -17,12 +17,21 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 	*
 	* HOW
 	* - For each EDef body, detect if the body contains calls to Ecto.Changeset.* and assignments to a variable.
-	*   If the last statement is not a reference to an assigned variable, append the last assigned variable as
-	*   the final expression of the block.
+	* - If the final statement is already an Ecto.Changeset call, preserve it: Elixir returns the value of a bare
+	*   final call, so appending an earlier local would replace the authored result.
+	* - Otherwise, if the last statement is not a reference to an assigned variable, append the last assigned
+	*   variable as the final expression of the block.
 
 	*
 	* EXAMPLES
-	* - Covered by snapshot tests under `test/snapshot/**`.
+	* Haxe:
+	*   return changeset.validateNumber(field, options);
+	*
+	* Elixir:
+	*   Ecto.Changeset.validate_number(changeset, field, options)
+	*
+	* The bare call remains the tail expression; this pass must not append an earlier `opts` or `this1` local.
+	* Covered by `ecto/changeset_validation_options` and `ecto/validate_length_options` snapshots.
  */
 class ChangesetEnsureReturnTransforms {
 	public static function pass(ast:ElixirAST):ElixirAST {
@@ -94,18 +103,35 @@ class ChangesetEnsureReturnTransforms {
 		return switch (body.def) {
 			case EBlock(stmts):
 				var lastStmt = stmts.length > 0 ? stmts[stmts.length - 1] : null;
-				var alreadyReturns = (lastStmt != null) && switch (lastStmt.def) {
-					case EVar(nm) if (nm == varName): true;
-					default: false;
-				};
-				if (alreadyReturns) body else makeASTWithMeta(EBlock(stmts.concat([makeAST(EVar(varName))])), body.metadata, body.pos);
+				if (isChangesetCall(lastStmt)) body else {
+					var alreadyReturns = (lastStmt != null) && switch (lastStmt.def) {
+						case EVar(nm) if (nm == varName): true;
+						default: false;
+					};
+					if (alreadyReturns)
+						body
+					else
+						makeASTWithMeta(EBlock(stmts.concat([makeAST(EVar(varName))])), body.metadata, body.pos);
+				}
 			default:
-				var already = switch (body.def) {
-					case EVar(nm) if (nm == varName): true;
-					default: false;
-				};
-				already ? body : makeAST(EBlock([body, makeAST(EVar(varName))]));
+				if (isChangesetCall(body)) body else {
+					var already = switch (body.def) {
+						case EVar(nm) if (nm == varName): true;
+						default: false;
+					};
+					already ? body : makeAST(EBlock([body, makeAST(EVar(varName))]));
+				}
 		}
+	}
+
+	static function isChangesetCall(node:Null<ElixirAST>):Bool {
+		if (node == null || node.def == null)
+			return false;
+		return switch (node.def) {
+			case ERemoteCall({def: EVar("Ecto.Changeset")}, _, _): true;
+			case EParen(inner): isChangesetCall(inner);
+			default: false;
+		};
 	}
 }
 #end

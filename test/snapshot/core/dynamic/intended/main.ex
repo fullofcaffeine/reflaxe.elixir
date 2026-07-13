@@ -39,7 +39,7 @@ defmodule Main do
   def dynamic_collections() do
     dyn_array = [1, "two", 3, true, %{x: 10}]
     _g = 0
-    _ = Enum.each(dyn_array, fn _ -> nil end)
+    Enum.each(dyn_array, fn _ -> nil end)
     dyn_obj = %{}
     _ = dyn_obj |> Map.put(:field1, "value1") |> Map.put(:field2, 42) |> Map.put(:field3, [1, 2, 3])
     nil
@@ -76,43 +76,41 @@ defmodule Main do
           end)
       end)
     end)
-    _ =
-      (case obj do
-        dyn_obj ->
-          (case Map.fetch(dyn_obj, "increment") do
-            {:ok, dyn_value} -> dyn_value
-            _ ->
-              Map.get(dyn_obj, :increment)
-          end)
-      end).()
+    (case obj do
+      dyn_obj ->
+        (case Map.fetch(dyn_obj, "increment") do
+          {:ok, dyn_value} -> dyn_value
+          _ ->
+            Map.get(dyn_obj, :increment)
+        end)
+    end).()
     method_name = "increment"
-    _ =
-      Reflect.call_method(obj, ((case {obj, method_name} do
-        {reflect_obj, reflect_field} ->
-          (case Map.fetch(reflect_obj, reflect_field) do
-            {:ok, reflect_value} -> reflect_value
-            _ ->
-              (case (try do
-                String.to_existing_atom(reflect_field)
-              rescue
-                _ ->
-                  nil
-              end) do
-                nil -> nil
-                reflect_atom ->
-                  Map.get(reflect_obj, reflect_atom)
-              end)
-          end)
-      end)), [])
+    Reflect.call_method(obj, ((case {obj, method_name} do
+      {reflect_obj, reflect_field} ->
+        (case Map.fetch(reflect_obj, reflect_field) do
+          {:ok, reflect_value} -> reflect_value
+          _ ->
+            (case (try do
+              String.to_existing_atom(reflect_field)
+            rescue
+              _ ->
+                nil
+            end) do
+              nil -> nil
+              reflect_atom ->
+                Map.get(reflect_obj, reflect_atom)
+            end)
+        end)
+    end)), [])
     nil
   end
   def main() do
-    _ = dynamic_vars()
-    _ = dynamic_field_access()
-    _ = dynamic_functions()
-    _ = type_checking()
-    _ = dynamic_collections()
-    _ = dynamic_method_calls()
+    dynamic_vars()
+    dynamic_field_access()
+    dynamic_functions()
+    type_checking()
+    dynamic_collections()
+    dynamic_method_calls()
     _str = dynamic_generics("Hello from dynamic")
     nil
   end

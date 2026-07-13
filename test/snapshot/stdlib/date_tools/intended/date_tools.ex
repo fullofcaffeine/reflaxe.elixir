@@ -5,13 +5,13 @@ defmodule DateTools do
       {:set, value} -> value
       nil ->
         value = init
-        _ = Process.put(static_key, {:set, value})
+        Process.put(static_key, {:set, value})
         value
     end)
   end
   defp __haxe_static_put__(key, value) do
     static_key = {:__haxe_static__, DateTools, key}
-    _ = Process.put(static_key, {:set, value})
+    Process.put(static_key, {:set, value})
     value
   end
   def day_short_names() do
@@ -91,10 +91,10 @@ defmodule DateTools do
         StringTools.lpad(Reflaxe.Elixir.HaxeFloat.to_string(d.hour), (if (e == "H"), do: "0", else: " "), 2)
       "I" ->
         hour = rem(d.hour, 12)
-        _ = StringTools.lpad(Reflaxe.Elixir.HaxeFloat.to_string((if (hour == 0), do: 12, else: hour)), (if (e == "I"), do: "0", else: " "), 2)
+        StringTools.lpad(Reflaxe.Elixir.HaxeFloat.to_string((if (hour == 0), do: 12, else: hour)), (if (e == "I"), do: "0", else: " "), 2)
       "l" ->
         hour = rem(d.hour, 12)
-        _ = StringTools.lpad(Reflaxe.Elixir.HaxeFloat.to_string((if (hour == 0), do: 12, else: hour)), (if (e == "I"), do: "0", else: " "), 2)
+        StringTools.lpad(Reflaxe.Elixir.HaxeFloat.to_string((if (hour == 0), do: 12, else: hour)), (if (e == "I"), do: "0", else: " "), 2)
       "m" ->
         StringTools.lpad(Reflaxe.Elixir.HaxeFloat.to_string((d.month - 1) + 1), "0", 2)
       "n" -> "\n"
@@ -144,7 +144,7 @@ defmodule DateTools do
       end
     end)
     result = apply(Map.get(result, :__reflaxe_class__) || Map.get(result, :__struct__), :add_sub, [result, f, p, (String.length(f) - p)])
-    _ = apply(Map.get(result, :__reflaxe_class__) || Map.get(result, :__struct__), :to_string, [result])
+    apply(Map.get(result, :__reflaxe_class__) || Map.get(result, :__struct__), :to_string, [result])
   end
   def format(d, f) do
     __format(d, f)

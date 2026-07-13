@@ -1,11 +1,11 @@
 defmodule Main do
   def main() do
-    _ = test_simple_enum_pattern()
-    _ = test_complex_enum_pattern()
-    _ = test_result_pattern()
-    _ = test_guard_patterns()
-    _ = test_array_patterns()
-    _ = test_object_patterns()
+    test_simple_enum_pattern()
+    test_complex_enum_pattern()
+    test_result_pattern()
+    test_guard_patterns()
+    test_array_patterns()
+    test_object_patterns()
     nil
   end
   defp test_simple_enum_pattern() do
@@ -43,51 +43,49 @@ defmodule Main do
   defp test_guard_patterns() do
     numbers = [1, 5, 10, 15, 20]
     _g = 0
-    _ =
-      Enum.each(numbers, fn num ->
+    Enum.each(numbers, fn num ->
+      n = num
+      _category = if (n < 5) do
+        "small"
+      else
         n = num
-        _category = if (n < 5) do
-          "small"
+        if (n >= 5 and n < 15) do
+          "medium"
         else
           n = num
-          if (n >= 5 and n < 15) do
-            "medium"
-          else
-            n = num
-            if (n >= 15), do: "large", else: "unknown"
-          end
+          if (n >= 15), do: "large", else: "unknown"
         end
-        nil
-      end)
+      end
+      nil
+    end)
   end
   defp test_array_patterns() do
     arrays = [[], [1], [1, 2], [1, 2, 3], [1, 2, 3, 4, 5]]
     _g = 0
-    _ =
-      Enum.each(arrays, fn arr ->
-        _description = (case arr do
-          [] -> "empty"
-          [_head | _tail] ->
-            x = Enum.at(arr, 0)
-            "single: " <> Reflaxe.Elixir.HaxeFloat.to_string(x)
-          2 ->
-            x = Enum.at(arr, 0)
-            y = Enum.at(arr, 1)
-            "pair: " <> Reflaxe.Elixir.HaxeFloat.to_string(x) <> ", " <> Reflaxe.Elixir.HaxeFloat.to_string(y)
-          3 ->
-            x = Enum.at(arr, 0)
-            y = Enum.at(arr, 1)
-            z = Enum.at(arr, 2)
-            "triple: " <> Reflaxe.Elixir.HaxeFloat.to_string(x) <> ", " <> Reflaxe.Elixir.HaxeFloat.to_string(y) <> ", " <> Reflaxe.Elixir.HaxeFloat.to_string(z)
-          _ ->
-            "length=" <> Reflaxe.Elixir.HaxeFloat.to_string(length(arr)) <> ", first=" <> (if (length(arr) > 0) do
-              Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, 0))
-            else
-              "none"
-            end)
-        end)
-        nil
+    Enum.each(arrays, fn arr ->
+      _description = (case arr do
+        [] -> "empty"
+        [_head | _tail] ->
+          x = Enum.at(arr, 0)
+          "single: " <> Reflaxe.Elixir.HaxeFloat.to_string(x)
+        2 ->
+          x = Enum.at(arr, 0)
+          y = Enum.at(arr, 1)
+          "pair: " <> Reflaxe.Elixir.HaxeFloat.to_string(x) <> ", " <> Reflaxe.Elixir.HaxeFloat.to_string(y)
+        3 ->
+          x = Enum.at(arr, 0)
+          y = Enum.at(arr, 1)
+          z = Enum.at(arr, 2)
+          "triple: " <> Reflaxe.Elixir.HaxeFloat.to_string(x) <> ", " <> Reflaxe.Elixir.HaxeFloat.to_string(y) <> ", " <> Reflaxe.Elixir.HaxeFloat.to_string(z)
+        _ ->
+          "length=" <> Reflaxe.Elixir.HaxeFloat.to_string(length(arr)) <> ", first=" <> (if (length(arr) > 0) do
+            Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, 0))
+          else
+            "none"
+          end)
       end)
+      nil
+    end)
   end
   defp test_object_patterns() do
     point_x = 10

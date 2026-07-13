@@ -1,22 +1,22 @@
 defmodule Main do
   defp configure_tcp(socket, host) do
-    _ = apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :set_timeout, [socket, 0.01])
-    _ = apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :set_blocking, [socket, false])
-    _ = apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :set_fast_send, [socket, true])
-    _ = apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :bind, [socket, host, 0])
-    _ = apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :listen, [socket, 1])
+    apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :set_timeout, [socket, 0.01])
+    apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :set_blocking, [socket, false])
+    apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :set_fast_send, [socket, true])
+    apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :bind, [socket, host, 0])
+    apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :listen, [socket, 1])
     endpoint = apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :host, [socket])
     if (not Kernel.is_nil(endpoint) and endpoint.port < 0) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Socket.host returned an invalid port"]
     end
   end
   defp configure_udp(socket, host) do
-    _ = apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :set_timeout, [socket, 0.01])
-    _ = apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :set_broadcast, [socket, false])
-    _ = apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :bind, [socket, host, 0])
+    apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :set_timeout, [socket, 0.01])
+    apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :set_broadcast, [socket, false])
+    apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :bind, [socket, host, 0])
     destination = Address.new()
-    _ = Address.set_host(destination, host.ip)
-    _ = Address.set_port(destination, 9)
+    Address.set_host(destination, host.ip)
+    Address.set_port(destination, 9)
     bytes = Bytes.of_string("ping", {:utf8})
     sent = apply(Map.get(socket, :__reflaxe_class__) || Map.get(socket, :__struct__), :send_to, [socket, bytes, 0, bytes.length, destination])
     if (sent != bytes.length) do
@@ -25,9 +25,9 @@ defmodule Main do
   end
   defp reject_unsupported_udp_read(host) do
     receiver = UdpSocket.new()
-    _ = apply(Map.get(receiver, :__reflaxe_class__) || Map.get(receiver, :__struct__), :bind, [receiver, host, 0])
+    apply(Map.get(receiver, :__reflaxe_class__) || Map.get(receiver, :__struct__), :bind, [receiver, host, 0])
     try do
-      _ = apply(Map.get(receiver, :__reflaxe_class__) || Map.get(receiver, :__struct__), :read_from, [receiver, Bytes.alloc(16), 0, 16, Address.new()])
+      apply(Map.get(receiver, :__reflaxe_class__) || Map.get(receiver, :__struct__), :read_from, [receiver, Bytes.alloc(16), 0, 16, Address.new()])
       raise Reflaxe.Elixir.HaxeThrow, [value: "UdpSocket.readFrom should fail explicitly on the Elixir target"]
     rescue
       haxe_exception ->
@@ -48,16 +48,16 @@ defmodule Main do
             reraise(haxe_exception, __STACKTRACE__)
         end)
     end
-    _ = apply(Map.get(receiver, :__reflaxe_class__) || Map.get(receiver, :__struct__), :close, [receiver])
+    apply(Map.get(receiver, :__reflaxe_class__) || Map.get(receiver, :__struct__), :close, [receiver])
   end
   def main() do
     host = Host.new("127.0.0.1")
     tcp = Socket.new()
-    _ = configure_tcp(tcp, host)
-    _ = apply(Map.get(tcp, :__reflaxe_class__) || Map.get(tcp, :__struct__), :close, [tcp])
+    configure_tcp(tcp, host)
+    apply(Map.get(tcp, :__reflaxe_class__) || Map.get(tcp, :__struct__), :close, [tcp])
     udp = UdpSocket.new()
-    _ = configure_udp(udp, host)
-    _ = apply(Map.get(udp, :__reflaxe_class__) || Map.get(udp, :__struct__), :close, [udp])
-    _ = reject_unsupported_udp_read(host)
+    configure_udp(udp, host)
+    apply(Map.get(udp, :__reflaxe_class__) || Map.get(udp, :__struct__), :close, [udp])
+    reject_unsupported_udp_read(host)
   end
 end

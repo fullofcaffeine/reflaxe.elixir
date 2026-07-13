@@ -4,6 +4,6 @@ defmodule Haxe.Crypto.Sha1 do
   end
   def make(b) do
     digest = :crypto.hash(:sha, apply(Map.get(b, :__reflaxe_class__) || Map.get(b, :__struct__), :get_data, [b]))
-    _ = Bytes.of_data(digest)
+    Bytes.of_data(digest)
   end
 end

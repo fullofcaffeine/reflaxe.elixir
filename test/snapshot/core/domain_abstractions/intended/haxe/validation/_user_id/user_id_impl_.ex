@@ -53,11 +53,10 @@ defmodule UserId_Impl_ do
           else
             _g = 0
             user_id_length = String.length(user_id)
-            _ =
-              Enum.each(0..(user_id_length - 1)//1, fn i ->
-                char = StringTools.haxe_char_at(user_id, i)
-                if (not is_alpha_numeric(char)), do: {:error, "User ID contains invalid character: \"" <> char <> "\" at position " <> Reflaxe.Elixir.HaxeFloat.to_string(i) <> ". Only alphanumeric characters allowed."}
-              end)
+            Enum.each(0..(user_id_length - 1)//1, fn i ->
+              char = StringTools.haxe_char_at(user_id, i)
+              if (not is_alpha_numeric(char)), do: {:error, "User ID contains invalid character: \"" <> char <> "\" at position " <> Reflaxe.Elixir.HaxeFloat.to_string(i) <> ". Only alphanumeric characters allowed."}
+            end)
             {:ok, nil}
           end
         end

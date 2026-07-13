@@ -31,9 +31,9 @@ defmodule HttpBase do
     raise Reflaxe.Elixir.HaxeThrow, [value: NotImplementedException.new(nil, nil, %{file_name: "../../../../std/elixir/_std/haxe/http/HttpBase.hx", line_number: 74, class_name: "haxe.http.HttpBase", method_name: "request"})]
   end
   def success(struct, data) do
-    _ = HttpBaseRuntime.set_response_bytes(struct.http_base_ref, data)
-    _ = HttpBaseRuntime.call_on_data(struct, get_response_data(struct))
-    _ = HttpBaseRuntime.call_on_bytes(struct, data)
+    HttpBaseRuntime.set_response_bytes(struct.http_base_ref, data)
+    HttpBaseRuntime.call_on_data(struct, get_response_data(struct))
+    HttpBaseRuntime.call_on_bytes(struct, data)
   end
   def on_data(struct, data) do
     HttpBaseRuntime.call_on_data(struct, data)

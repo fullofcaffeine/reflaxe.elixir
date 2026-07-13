@@ -12,26 +12,26 @@ defmodule TestAppWeb do
       use Phoenix.Router
       import Phoenix.LiveView.Router
       import TestAppWeb, except: [controller: 0, live_view: 0, live_component: 0]
-      _ = unquote(verified_routes())
+      unquote(verified_routes())
     end
   end
   def controller() do
     quote do
       use Phoenix.Controller, formats: [:html, :json], layouts: [html: {TestAppWeb.Layouts, :app}]
       import Plug.Conn
-      _ = unquote(verified_routes())
+      unquote(verified_routes())
     end
   end
   def live_view() do
     quote do
       use Phoenix.LiveView, layout: {TestAppWeb.Layouts, :app}
-      _ = unquote(html_helpers())
+      unquote(html_helpers())
     end
   end
   def live_component() do
     quote do
       use Phoenix.LiveComponent
-      _ = unquote(html_helpers())
+      unquote(html_helpers())
     end
   end
   def html() do
@@ -39,8 +39,8 @@ defmodule TestAppWeb do
       use Phoenix.Component
       import TestAppWeb.CoreComponents
       import TestAppWeb.Gettext
-      _ = unquote(html_helpers())
-      _ = unquote(verified_routes())
+      unquote(html_helpers())
+      unquote(verified_routes())
     end
   end
   defp html_helpers() do
@@ -51,7 +51,7 @@ defmodule TestAppWeb do
       import TestAppWeb.CoreComponents
       import TestAppWeb.Gettext
       alias Phoenix.LiveView.JS, as: JS
-      _ = unquote(verified_routes())
+      unquote(verified_routes())
     end
   end
   def verified_routes() do
@@ -85,26 +85,26 @@ defmodule AlternateAppWeb do
       use Phoenix.Router
       import Phoenix.LiveView.Router
       import AlternateAppWeb, except: [controller: 0, live_view: 0, live_component: 0]
-      _ = unquote(verified_routes())
+      unquote(verified_routes())
     end
   end
   def controller() do
     quote do
       use Phoenix.Controller, formats: [:html, :json], layouts: [html: {AlternateAppWeb.Layouts, :app}]
       import Plug.Conn
-      _ = unquote(verified_routes())
+      unquote(verified_routes())
     end
   end
   def live_view() do
     quote do
       use Phoenix.LiveView, layout: {AlternateAppWeb.Layouts, :app}
-      _ = unquote(html_helpers())
+      unquote(html_helpers())
     end
   end
   def live_component() do
     quote do
       use Phoenix.LiveComponent
-      _ = unquote(html_helpers())
+      unquote(html_helpers())
     end
   end
   def html() do
@@ -112,8 +112,8 @@ defmodule AlternateAppWeb do
       use Phoenix.Component
       import AlternateAppWeb.CoreComponents
       import AlternateAppWeb.Gettext
-      _ = unquote(html_helpers())
-      _ = unquote(verified_routes())
+      unquote(html_helpers())
+      unquote(verified_routes())
     end
   end
   defp html_helpers() do
@@ -124,7 +124,7 @@ defmodule AlternateAppWeb do
       import AlternateAppWeb.CoreComponents
       import AlternateAppWeb.Gettext
       alias Phoenix.LiveView.JS, as: JS
-      _ = unquote(verified_routes())
+      unquote(verified_routes())
     end
   end
   def verified_routes() do

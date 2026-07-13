@@ -143,6 +143,36 @@ generated code keeps an underscored name such as `{:pair, _x, _x}`.
 Phoenix function components and `~H` templates expect the parameter to be named `assigns`.
 Even if it’s unused, the compiler keeps it as `assigns` (it will not be rewritten to `_assigns`).
 
+## Statement calls: bare by default
+
+Elixir evaluates expressions in a block from top to bottom. A function or macro call therefore does not need a
+wildcard match just because its return value is unused.
+
+Haxe:
+
+```haxe
+import elixir.Process;
+
+var worker = Process.self();
+Process.send(worker, "refresh");
+Process.monitor(worker);
+```
+
+Generated Elixir (shape):
+
+```elixir
+worker = Process.self()
+Process.send(worker, "refresh")
+Process.monitor(worker)
+```
+
+The same rule applies to Phoenix router macros such as `plug`, `live`, and `get`, and to Ecto schema and migration
+DSL calls. A bare call still runs and keeps normal Elixir exception behavior. When it is the final expression, its
+value is also the function's return value.
+
+You may still see `_ = expression` where the compiler intentionally needs an Elixir wildcard match or must make a
+discarded non-call value explicit. It is not the default representation of an effectful statement.
+
 ## Enums: tagged tuples everywhere
 
 Reflaxe.Elixir represents Haxe enums as **tagged tuples**, so pattern matching is uniform:

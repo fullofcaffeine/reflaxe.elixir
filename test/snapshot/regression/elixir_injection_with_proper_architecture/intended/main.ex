@@ -5,7 +5,7 @@ defmodule Main do
     doubled = Enum.map(numbers, fn n -> n * 2 end)
     if (length(doubled) > 0) do
       _g = 0
-      _ = Enum.each(doubled, fn _ -> nil end)
+      Enum.each(doubled, fn _ -> nil end)
     end
   end
 end

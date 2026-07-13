@@ -1,18 +1,18 @@
 defmodule MyAppWeb.Router do
   use Phoenix.Router
   pipeline :browser do
-    _ = plug(:accepts, ["html"])
-    _ = plug(:fetch_session)
-    _ = plug(:fetch_live_flash)
-    _ = plug(:put_root_layout, {MyAppWeb.Layouts, :root})
-    _ = plug(:protect_from_forgery)
-    _ = plug(:put_secure_browser_headers)
+    plug(:accepts, ["html"])
+    plug(:fetch_session)
+    plug(:fetch_live_flash)
+    plug(:put_root_layout, {MyAppWeb.Layouts, :root})
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
   end
   scope "/", MyAppWeb do
-    _ = pipe_through(:browser)
-    _ = get("/users", UserController, :index)
-    _ = get("/users/:id", UserController, :show)
-    _ = post("/users", UserController, :create)
+    pipe_through(:browser)
+    get("/users", UserController, :index)
+    get("/users/:id", UserController, :show)
+    post("/users", UserController, :create)
   end
   def user_index() do
     "/users"

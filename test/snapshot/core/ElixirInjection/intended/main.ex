@@ -8,7 +8,7 @@ defmodule Main do
                 y = 20
                 x + y
     )
-    _ = test_injection_in_function()
+    test_injection_in_function()
   end
   defp test_injection_in_function() do
     Logger.info("Injection works in functions!")

@@ -69,7 +69,7 @@ defmodule Main do
       end
     end)
     reflaxe_dispatch_receiver = EReg.new("\\d+", "")
-    _replaced = _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, text, "XXX"])
+    _replaced = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, text, "XXX"])
     _email_regex = EReg.new("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", "")
     nil
   end
@@ -88,13 +88,13 @@ defmodule Main do
     nil
   end
   def main() do
-    _ = string_basics()
-    _ = string_interpolation()
-    _ = string_methods()
-    _ = string_comparison()
-    _ = string_building()
-    _ = regex_operations()
-    _ = string_formatting()
-    _ = unicode_strings()
+    string_basics()
+    string_interpolation()
+    string_methods()
+    string_comparison()
+    string_building()
+    regex_operations()
+    string_formatting()
+    unicode_strings()
   end
 end

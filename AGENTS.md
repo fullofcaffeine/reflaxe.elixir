@@ -439,6 +439,12 @@ When a Haxism is unavoidable:
 - Snapshot intended output must lock the handwritten-looking target shape and include the justification comment or
   reference when the artifact is intentionally visible.
 
+Statement-position calls are represented by their position in `EBlock`/`EDo` and must print as bare Elixir calls.
+Do not wrap an `ECall`/`ERemoteCall` in `_ = call(...)` merely because its result is unused: Elixir still evaluates a
+bare call, and the wrapper adds no semantic protection. Keep `_ =` only when a real target match/discard decision is
+required. If a downstream pass expects the synthetic wrapper, teach it the bare statement shape at that ownership
+boundary instead of adding a final textual unwrap pass.
+
 ### Target Compatibility Floor, Haxe API Ceiling (Hard Rule)
 
 For Haxe-to-Elixir compiler and framework surfaces, Elixir/Phoenix/Ecto/OTP compatibility is the floor, not the Haxe API design ceiling. Target-shaped Haxe APIs are useful for migration, interop, predictability, and escape hatches, but canonical user-facing APIs should also leverage Haxe's strengths: precise types, macros, generated references, properties, completion, and compile-time diagnostics.

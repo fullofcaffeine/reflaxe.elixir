@@ -809,8 +809,7 @@ class PresenceMacro {
 				ret: macro :T,
 				expr: macro {
 					// Direct call to the Presence module (safe even when inlined).
-					// This surfaces as a statement before the trailing socket and
-					// will be preserved by PresenceBareCallPreserveTransforms.
+					// Its block position preserves the effect before the trailing socket.
 					untyped __elixir__('{0}.track(self(), {1}, {2}, {3})', untyped __elixir__($v{fqModule}), topic, key, meta);
 					return socket;
 				}

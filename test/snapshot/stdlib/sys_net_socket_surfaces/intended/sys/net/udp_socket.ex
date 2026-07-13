@@ -2,7 +2,7 @@ defmodule UdpSocket do
   def new() do
     struct = %{:__reflaxe_class__ => UdpSocket, :input => nil, :output => nil, :custom => nil, :socket_ref => nil}
     struct = Map.merge(struct, Map.drop(Socket.new(), [:__struct__, :__reflaxe_class__]))
-    _ = UdpSocketState.open(struct.socket_ref, 0, nil)
+    UdpSocketState.open(struct.socket_ref, 0, nil)
     struct
   end
   def set_broadcast(struct, b) do
@@ -18,11 +18,10 @@ defmodule UdpSocket do
     if (len == 0) do
       0
     else
-      _ =
-        UdpSocketState.send_to(struct.socket_ref, (fn ->
-          reflaxe_dispatch_receiver = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :sub, [buf, pos, len])
-          _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get_data, [reflaxe_dispatch_receiver])
-        end).(), Address.get_host(addr), Address.get_port(addr))
+      UdpSocketState.send_to(struct.socket_ref, (fn ->
+        reflaxe_dispatch_receiver = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :sub, [buf, pos, len])
+        apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get_data, [reflaxe_dispatch_receiver])
+      end).(), Address.get_host(addr), Address.get_port(addr))
       len
     end
   end

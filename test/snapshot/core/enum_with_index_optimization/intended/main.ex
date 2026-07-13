@@ -1,9 +1,9 @@
 defmodule Main do
   def main() do
-    _ = test_basic_indexed_iteration()
-    _ = test_indexed_map()
-    _ = test_indexed_filter()
-    _ = test_complex_indexed_operation()
+    test_basic_indexed_iteration()
+    test_indexed_map()
+    test_indexed_filter()
+    test_complex_indexed_operation()
   end
   defp test_basic_indexed_iteration() do
     items = ["apple", "banana", "cherry"]

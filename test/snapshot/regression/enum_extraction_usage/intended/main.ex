@@ -1,11 +1,11 @@
 defmodule Main do
   def main() do
-    _ = test_unused_extraction()
-    _ = test_used_extraction()
-    _ = test_mixed_usage()
-    _ = test_nested_extraction()
-    _ = test_multiple_extractions()
-    _ = test_tree_extraction()
+    test_unused_extraction()
+    test_used_extraction()
+    test_mixed_usage()
+    test_nested_extraction()
+    test_multiple_extractions()
+    test_tree_extraction()
   end
   defp test_unused_extraction() do
     result = {:ok, "hello"}

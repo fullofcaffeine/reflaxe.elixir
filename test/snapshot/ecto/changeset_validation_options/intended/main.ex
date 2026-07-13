@@ -57,34 +57,7 @@ defmodule Main do
                end).(user, params)
 
     cs =
-      _ =
-        Ecto.Changeset.validate_number(this1, :age,
-                  (fn opts ->
-                     greater_than_or_equal_to =
-                       case Map.fetch(opts, :greater_than_or_equal_to) do
-                         {:ok, value} -> value
-                         :error -> Map.get(opts, :min)
-                       end
-
-                     less_than_or_equal_to =
-                       case Map.fetch(opts, :less_than_or_equal_to) do
-                         {:ok, value} -> value
-                         :error -> Map.get(opts, :max)
-                       end
-
-                     [
-                       greater_than: Map.get(opts, :greater_than),
-                       greater_than_or_equal_to: greater_than_or_equal_to,
-                       less_than: Map.get(opts, :less_than),
-                       less_than_or_equal_to: less_than_or_equal_to,
-                       equal_to: Map.get(opts, :equal_to),
-                       not_equal_to: Map.get(opts, :not_equal_to)
-                     ]
-                     |> Enum.filter(fn {_, value} -> value != nil end)
-                   end).(%{greater_than_or_equal_to: 18, less_than_or_equal_to: 120})
-        )
-    _ =
-      Ecto.Changeset.validate_number(this1, :score,
+      Ecto.Changeset.validate_number(this1, :age,
                 (fn opts ->
                    greater_than_or_equal_to =
                      case Map.fetch(opts, :greater_than_or_equal_to) do
@@ -107,8 +80,33 @@ defmodule Main do
                      not_equal_to: Map.get(opts, :not_equal_to)
                    ]
                    |> Enum.filter(fn {_, value} -> value != nil end)
-                 end).(%{greater_than: 0, less_than: 100, not_equal_to: 13})
+                 end).(%{greater_than_or_equal_to: 18, less_than_or_equal_to: 120})
       )
+    Ecto.Changeset.validate_number(this1, :score,
+              (fn opts ->
+                 greater_than_or_equal_to =
+                   case Map.fetch(opts, :greater_than_or_equal_to) do
+                     {:ok, value} -> value
+                     :error -> Map.get(opts, :min)
+                   end
+
+                 less_than_or_equal_to =
+                   case Map.fetch(opts, :less_than_or_equal_to) do
+                     {:ok, value} -> value
+                     :error -> Map.get(opts, :max)
+                   end
+
+                 [
+                   greater_than: Map.get(opts, :greater_than),
+                   greater_than_or_equal_to: greater_than_or_equal_to,
+                   less_than: Map.get(opts, :less_than),
+                   less_than_or_equal_to: less_than_or_equal_to,
+                   equal_to: Map.get(opts, :equal_to),
+                   not_equal_to: Map.get(opts, :not_equal_to)
+                 ]
+                 |> Enum.filter(fn {_, value} -> value != nil end)
+               end).(%{greater_than: 0, less_than: 100, not_equal_to: 13})
+    )
     cs
   end
   def shorthand_aliases(user, params) do
@@ -169,32 +167,31 @@ defmodule Main do
                    Ecto.Changeset.cast(data, normalized_params, Map.keys(normalized_params))
                  end).(user, params)
 
-    _ =
-      Ecto.Changeset.validate_number(this1, :age,
-                (fn opts ->
-                   greater_than_or_equal_to =
-                     case Map.fetch(opts, :greater_than_or_equal_to) do
-                       {:ok, value} -> value
-                       :error -> Map.get(opts, :min)
-                     end
+    Ecto.Changeset.validate_number(this1, :age,
+              (fn opts ->
+                 greater_than_or_equal_to =
+                   case Map.fetch(opts, :greater_than_or_equal_to) do
+                     {:ok, value} -> value
+                     :error -> Map.get(opts, :min)
+                   end
 
-                   less_than_or_equal_to =
-                     case Map.fetch(opts, :less_than_or_equal_to) do
-                       {:ok, value} -> value
-                       :error -> Map.get(opts, :max)
-                     end
+                 less_than_or_equal_to =
+                   case Map.fetch(opts, :less_than_or_equal_to) do
+                     {:ok, value} -> value
+                     :error -> Map.get(opts, :max)
+                   end
 
-                   [
-                     greater_than: Map.get(opts, :greater_than),
-                     greater_than_or_equal_to: greater_than_or_equal_to,
-                     less_than: Map.get(opts, :less_than),
-                     less_than_or_equal_to: less_than_or_equal_to,
-                     equal_to: Map.get(opts, :equal_to),
-                     not_equal_to: Map.get(opts, :not_equal_to)
-                   ]
-                   |> Enum.filter(fn {_, value} -> value != nil end)
-                 end).(%{min: 18, max: 120})
-      )
+                 [
+                   greater_than: Map.get(opts, :greater_than),
+                   greater_than_or_equal_to: greater_than_or_equal_to,
+                   less_than: Map.get(opts, :less_than),
+                   less_than_or_equal_to: less_than_or_equal_to,
+                   equal_to: Map.get(opts, :equal_to),
+                   not_equal_to: Map.get(opts, :not_equal_to)
+                 ]
+                 |> Enum.filter(fn {_, value} -> value != nil end)
+               end).(%{min: 18, max: 120})
+    )
     cs
   end
 end

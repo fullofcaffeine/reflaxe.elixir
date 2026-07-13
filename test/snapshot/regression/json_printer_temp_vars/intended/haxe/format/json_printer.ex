@@ -130,6 +130,6 @@ defmodule JsonPrinter do
   end
   def print(o, replacer_param, space_param) do
     printer = JsonPrinter.new(replacer_param, space_param)
-    _ = write_value(printer, o, "")
+    write_value(printer, o, "")
   end
 end

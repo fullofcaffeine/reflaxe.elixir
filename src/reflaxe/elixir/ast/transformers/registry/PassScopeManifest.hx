@@ -81,7 +81,6 @@ class PassScopeManifest {
 			"LiveViewErrorBinderRenameLate",
 			"LiveViewReduceWhileErrorBinderNormalization",
 			"LiveViewAssignCallRewrite",
-			"PresenceBareCallPreserve",
 			"PresenceWithSocketAssignNormalize",
 			"PresenceEFnShadowedBinderRename",
 			"PresenceRouteLocalize",

@@ -1,9 +1,9 @@
 defmodule Main do
   def main() do
-    _ = test_string_conversion()
-    _ = test_parsing()
-    _ = test_type_checking()
-    _ = test_random_and_int()
+    test_string_conversion()
+    test_parsing()
+    test_type_checking()
+    test_random_and_int()
   end
   defp test_string_conversion() do
     _float_str = Reflaxe.Elixir.HaxeFloat.to_string(3.14)

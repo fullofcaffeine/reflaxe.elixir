@@ -1,8 +1,8 @@
 defmodule Main do
   def main() do
-    _ = test_function("TodoApp", 42, true)
-    _ = test_optional("MyApp", nil)
-    _ = test_optional("MyApp", 8080)
+    test_function("TodoApp", 42, true)
+    test_optional("MyApp", nil)
+    test_optional("MyApp", 8080)
     _result = build_name("Phoenix", "App")
     _processed = process_config(%{name: "test"})
     nil

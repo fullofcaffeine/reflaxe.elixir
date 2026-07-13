@@ -1,8 +1,8 @@
 defmodule Main do
   def main() do
-    _ = test_topic_conversion()
-    _ = test_message_patterns()
-    _ = test_complex_names()
+    test_topic_conversion()
+    test_message_patterns()
+    test_complex_names()
   end
   defp test_topic_conversion() do
     topic = {:todo_updates}

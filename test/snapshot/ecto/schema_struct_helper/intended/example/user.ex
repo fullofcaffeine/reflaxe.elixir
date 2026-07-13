@@ -1,7 +1,7 @@
 defmodule Example.User do
   use Ecto.Schema
   schema "users" do
-    _ = field(:email, :string)
+    field(:email, :string)
   end
 
   def changeset(user, attrs) do

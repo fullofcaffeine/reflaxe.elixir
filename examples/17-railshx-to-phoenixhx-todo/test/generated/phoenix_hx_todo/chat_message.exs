@@ -1,9 +1,9 @@
 defmodule PhoenixHxTodo.ChatMessage do
   use Ecto.Schema
   schema "chat_messages" do
-    _ = field(:body, :string)
-    _ = field(:user_id, :integer)
-    _ = timestamps()
+    field(:body, :string)
+    field(:user_id, :integer)
+    timestamps()
   end
   def new() do
     %{:__reflaxe_class__ => PhoenixHxTodo.ChatMessage, :id => nil, :body => nil, :user_id => nil}

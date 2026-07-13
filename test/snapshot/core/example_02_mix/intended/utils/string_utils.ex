@@ -28,7 +28,7 @@ defmodule StringUtils do
           formatted_acc
         end
       end)
-      _ = Enum.join(formatted, " ")
+      Enum.join(formatted, " ")
     end
   end
   def process_email(email) do
@@ -48,13 +48,13 @@ defmodule StringUtils do
       ""
     else
       s = String.downcase(text)
-      slug = _ = StringTools.ltrim(StringTools.rtrim(s))
+      slug = StringTools.ltrim(StringTools.rtrim(s))
       reflaxe_dispatch_receiver = EReg.new("[^a-z0-9\\s-]", "g")
-      slug = _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, slug, ""])
+      slug = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, slug, ""])
       reflaxe_dispatch_receiver = EReg.new("\\s+", "g")
-      slug = _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, slug, "-"])
+      slug = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, slug, "-"])
       reflaxe_dispatch_receiver = EReg.new("-+", "g")
-      slug = _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, slug, "-"])
+      slug = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, slug, "-"])
       {slug} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, fn _, {acc_slug} ->
         try do
           if (StringTools.haxe_char_at(acc_slug, 0) == "-") do
@@ -138,7 +138,7 @@ defmodule StringUtils do
   end
   defp remove_excess_whitespace(text) do
     reflaxe_dispatch_receiver = EReg.new("\\s+", "g")
-    _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, text, " "])
+    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, text, " "])
   end
   defp normalize_case(text) do
     "#{String.upcase(StringTools.haxe_char_at(text, 0))}#{(fn -> String.downcase((fn ->

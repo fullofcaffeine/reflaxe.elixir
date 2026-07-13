@@ -1,12 +1,12 @@
 defmodule MyApp.User do
   use Ecto.Schema
   schema "users" do
-    _ = field(:name, :string)
-    _ = field(:email, :string)
-    _ = field(:age, :integer)
-    _ = field(:active, :boolean)
-    _ = has_many(:posts, Post)
-    _ = timestamps()
+    field(:name, :string)
+    field(:email, :string)
+    field(:age, :integer)
+    field(:active, :boolean)
+    has_many(:posts, Post)
+    timestamps()
   end
 
   def changeset(user, attrs) do

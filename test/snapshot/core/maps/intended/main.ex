@@ -4,41 +4,39 @@ defmodule Main do
     map = map |> Map.put("one", 1) |> Map.put("two", 2) |> Map.put("three", 3)
     map_remove_key_node_0 = "two"
     {map, _reflaxe_receiver_value_0} = {Map.delete(map, map_remove_key_node_0), Map.has_key?(map, map_remove_key_node_0)}
-    _ =
-      Enum.reduce_while(Map.keys(map), :ok, fn _key, acc ->
-        try do
+    Enum.reduce_while(Map.keys(map), :ok, fn _key, acc ->
+      try do
+        {:cont, acc}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, acc}
+        :throw, :continue ->
           {:cont, acc}
-        catch
-          :throw, {:break, break_state} ->
-            {:halt, break_state}
-          :throw, {:continue, continue_state} ->
-            {:cont, continue_state}
-          :throw, :break ->
-            {:halt, acc}
-          :throw, :continue ->
-            {:cont, acc}
-        end
-      end)
+      end
+    end)
     nil
   end
   def int_map() do
     map = %{}
     map = map |> Map.put(1, "first") |> Map.put(2, "second") |> Map.put(10, "tenth") |> Map.put(100, "hundredth")
-    _ =
-      Enum.reduce_while(Map.keys(map), :ok, fn _key, acc ->
-        try do
+    Enum.reduce_while(Map.keys(map), :ok, fn _key, acc ->
+      try do
+        {:cont, acc}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, acc}
+        :throw, :continue ->
           {:cont, acc}
-        catch
-          :throw, {:break, break_state} ->
-            {:halt, break_state}
-          :throw, {:continue, continue_state} ->
-            {:cont, continue_state}
-          :throw, :break ->
-            {:halt, acc}
-          :throw, :continue ->
-            {:cont, acc}
-        end
-      end)
+      end
+    end)
     Enum.reduce_while(Map.keys(map), {[]}, fn k, {acc__g} ->
       try do
         acc__g = acc__g ++ [k]
@@ -75,38 +73,36 @@ defmodule Main do
   end
   def map_literals() do
     colors = %{"red" => 16711680, "green" => 65280, "blue" => 255}
-    _ =
-      Enum.reduce_while(Map.keys(colors), :ok, fn color, acc ->
-        try do
-          _hex = StringTools.hex(Map.get(colors, color), 6)
+    Enum.reduce_while(Map.keys(colors), :ok, fn color, acc ->
+      try do
+        _hex = StringTools.hex(Map.get(colors, color), 6)
+        {:cont, acc}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, acc}
+        :throw, :continue ->
           {:cont, acc}
-        catch
-          :throw, {:break, break_state} ->
-            {:halt, break_state}
-          :throw, {:continue, continue_state} ->
-            {:cont, continue_state}
-          :throw, :break ->
-            {:halt, acc}
-          :throw, :continue ->
-            {:cont, acc}
-        end
-      end)
+      end
+    end)
     squares = %{1 => 1, 2 => 4, 3 => 9, 4 => 16, 5 => 25}
-    _ =
-      Enum.reduce_while(Map.keys(squares), :ok, fn _n, acc ->
-        try do
+    Enum.reduce_while(Map.keys(squares), :ok, fn _n, acc ->
+      try do
+        {:cont, acc}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, acc}
+        :throw, :continue ->
           {:cont, acc}
-        catch
-          :throw, {:break, break_state} ->
-            {:halt, break_state}
-          :throw, {:continue, continue_state} ->
-            {:cont, continue_state}
-          :throw, :break ->
-            {:halt, acc}
-          :throw, :continue ->
-            {:cont, acc}
-        end
-      end)
+      end
+    end)
   end
   def nested_maps() do
     users = %{}
@@ -115,36 +111,35 @@ defmodule Main do
     bob = %{}
     bob = bob |> Map.put("age", 25) |> Map.put("email", "bob@example.com") |> Map.put("active", false)
     users = users |> Map.put("alice", alice) |> Map.put("bob", bob)
-    _ =
-      Enum.reduce_while(Map.keys(users), :ok, fn username, acc ->
-        try do
-          user_data = Map.get(users, username)
-          _ = Enum.reduce_while(Map.keys(user_data), :ok, fn _field, acc ->
-            try do
-              {:cont, acc}
-            catch
-              :throw, {:break, break_state} ->
-                {:halt, break_state}
-              :throw, {:continue, continue_state} ->
-                {:cont, continue_state}
-              :throw, :break ->
-                {:halt, acc}
-              :throw, :continue ->
-                {:cont, acc}
-            end
-          end)
-          {:cont, acc}
-        catch
-          :throw, {:break, break_state} ->
-            {:halt, break_state}
-          :throw, {:continue, continue_state} ->
-            {:cont, continue_state}
-          :throw, :break ->
-            {:halt, acc}
-          :throw, :continue ->
+    Enum.reduce_while(Map.keys(users), :ok, fn username, acc ->
+      try do
+        user_data = Map.get(users, username)
+        Enum.reduce_while(Map.keys(user_data), :ok, fn _field, acc ->
+          try do
             {:cont, acc}
-        end
-      end)
+          catch
+            :throw, {:break, break_state} ->
+              {:halt, break_state}
+            :throw, {:continue, continue_state} ->
+              {:cont, continue_state}
+            :throw, :break ->
+              {:halt, acc}
+            :throw, :continue ->
+              {:cont, acc}
+          end
+        end)
+        {:cont, acc}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, acc}
+        :throw, :continue ->
+          {:cont, acc}
+      end
+    end)
   end
   def map_transformations() do
     original = %{"a" => 1, "b" => 2, "c" => 3, "d" => 4}
@@ -165,21 +160,20 @@ defmodule Main do
           {:cont, {acc_doubled}}
       end
     end)
-    _ =
-      Enum.reduce_while(Map.keys(doubled), :ok, fn _key, acc ->
-        try do
+    Enum.reduce_while(Map.keys(doubled), :ok, fn _key, acc ->
+      try do
+        {:cont, acc}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, acc}
+        :throw, :continue ->
           {:cont, acc}
-        catch
-          :throw, {:break, break_state} ->
-            {:halt, break_state}
-          :throw, {:continue, continue_state} ->
-            {:cont, continue_state}
-          :throw, :break ->
-            {:halt, acc}
-          :throw, :continue ->
-            {:cont, acc}
-        end
-      end)
+      end
+    end)
     filtered = %{}
     {filtered} = Enum.reduce_while(Map.keys(original), {filtered}, fn key, {acc_filtered} ->
       try do
@@ -201,21 +195,20 @@ defmodule Main do
           {:cont, {acc_filtered}}
       end
     end)
-    _ =
-      Enum.reduce_while(Map.keys(filtered), :ok, fn _key, acc ->
-        try do
+    Enum.reduce_while(Map.keys(filtered), :ok, fn _key, acc ->
+      try do
+        {:cont, acc}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, acc}
+        :throw, :continue ->
           {:cont, acc}
-        catch
-          :throw, {:break, break_state} ->
-            {:halt, break_state}
-          :throw, {:continue, continue_state} ->
-            {:cont, continue_state}
-          :throw, :break ->
-            {:halt, acc}
-          :throw, :continue ->
-            {:cont, acc}
-        end
-      end)
+      end
+    end)
     map1 = %{"a" => 1, "b" => 2}
     map2 = %{"c" => 3, "d" => 4, "a" => 10}
     merged = %{}
@@ -251,40 +244,38 @@ defmodule Main do
           {:cont, {acc_merged}}
       end
     end)
-    _ =
-      Enum.reduce_while(Map.keys(merged), :ok, fn _key, acc ->
-        try do
+    Enum.reduce_while(Map.keys(merged), :ok, fn _key, acc ->
+      try do
+        {:cont, acc}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, acc}
+        :throw, :continue ->
           {:cont, acc}
-        catch
-          :throw, {:break, break_state} ->
-            {:halt, break_state}
-          :throw, {:continue, continue_state} ->
-            {:cont, continue_state}
-          :throw, :break ->
-            {:halt, acc}
-          :throw, :continue ->
-            {:cont, acc}
-        end
-      end)
+      end
+    end)
   end
   def enum_map() do
     map = %{}
     map = map |> Map.put({:red}, "FF0000") |> Map.put({:green}, "00FF00") |> Map.put({:blue}, "0000FF")
-    _ =
-      Enum.reduce_while(Map.keys(map), :ok, fn _color, acc ->
-        try do
+    Enum.reduce_while(Map.keys(map), :ok, fn _color, acc ->
+      try do
+        {:cont, acc}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, acc}
+        :throw, :continue ->
           {:cont, acc}
-        catch
-          :throw, {:break, break_state} ->
-            {:halt, break_state}
-          :throw, {:continue, continue_state} ->
-            {:cont, continue_state}
-          :throw, :break ->
-            {:halt, acc}
-          :throw, :continue ->
-            {:cont, acc}
-        end
-      end)
+      end
+    end)
     if (Map.has_key?(map, {:red})), do: nil
   end
   def process_map(input) do
@@ -308,28 +299,27 @@ defmodule Main do
     result
   end
   def main() do
-    _ = string_map()
-    _ = int_map()
-    _ = map_literals()
-    _ = nested_maps()
-    _ = map_transformations()
-    _ = enum_map()
+    string_map()
+    int_map()
+    map_literals()
+    nested_maps()
+    map_transformations()
+    enum_map()
     input = %{"x" => 10, "y" => 20, "z" => 30}
     output = process_map(input)
-    _ =
-      Enum.reduce_while(Map.keys(output), :ok, fn _key, acc ->
-        try do
+    Enum.reduce_while(Map.keys(output), :ok, fn _key, acc ->
+      try do
+        {:cont, acc}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, acc}
+        :throw, :continue ->
           {:cont, acc}
-        catch
-          :throw, {:break, break_state} ->
-            {:halt, break_state}
-          :throw, {:continue, continue_state} ->
-            {:cont, continue_state}
-          :throw, :break ->
-            {:halt, acc}
-          :throw, :continue ->
-            {:cont, acc}
-        end
-      end)
+      end
+    end)
   end
 end

@@ -9,7 +9,7 @@ defmodule Main do
     end)
   end
   def main() do
-    _ = process_result({:ok, "success"})
-    _ = process_result({:error, "something went wrong"})
+    process_result({:ok, "success"})
+    process_result({:error, "something went wrong"})
   end
 end

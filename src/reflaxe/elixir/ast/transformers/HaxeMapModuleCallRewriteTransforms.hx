@@ -24,7 +24,9 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - `exists/2` → `Map.has_key?/2`
  *   - `get/2`    → `Map.get/2`
  *   - `keys/1`   → `Map.keys/1`
- * - For `set/3`, preserve Haxe "mutation" semantics by rebinding when the result is discarded:
+ * - For `set/3`, preserve Haxe "mutation" semantics by rebinding statement calls and
+ *   explicitly discarded calls:
+ *   - `IntMap.set(map, k, v)` → `map = Map.put(map, k, v)`
  *   - `_ = IntMap.set(map, k, v)` → `map = Map.put(map, k, v)`
  * - Special-case a common lowered field-extraction shape:
  *   - `tmp = state.field; _ = IntMap.set(tmp, k, v)` → `state = %{state | field: Map.put(state.field, k, v)}`
@@ -33,8 +35,8 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * Haxe:
  *   if (state.userCache.exists(id)) state.userCache.set(id, user);
  * Elixir (before):
- *   if (_ = IntMap.exists(state.user_cache, id)) do
- *     _ = IntMap.set(state.user_cache, id, user)
+ *   if IntMap.exists(state.user_cache, id) do
+ *     IntMap.set(state.user_cache, id, user)
  *   end
  * Elixir (after):
  *   if Map.has_key?(state.user_cache, id) do

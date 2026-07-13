@@ -1,9 +1,9 @@
 defmodule Main do
   def main() do
-    _ = test_changeset_pattern()
+    test_changeset_pattern()
     _result = process_data("unused", 42)
-    _ = test_pattern_matching_unused()
-    _ = test_lambda_unused()
+    test_pattern_matching_unused()
+    test_lambda_unused()
   end
   defp test_changeset_pattern() do
 

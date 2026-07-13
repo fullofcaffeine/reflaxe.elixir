@@ -5,8 +5,8 @@ defmodule Main do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Host.toString should preserve IPv4 loopback"]
     end
     address = Address.new()
-    _ = Address.set_host(address, host.ip)
-    _ = Address.set_port(address, 4001)
+    Address.set_host(address, host.ip)
+    Address.set_port(address, 4001)
     cloned = apply(Map.get(address, :__reflaxe_class__) || Map.get(address, :__struct__), :clone, [address])
     if (apply(Map.get(address, :__reflaxe_class__) || Map.get(address, :__struct__), :compare, [address, cloned]) != 0) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Address.clone should preserve host and port"]

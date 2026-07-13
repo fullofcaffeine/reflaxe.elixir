@@ -1,9 +1,9 @@
 defmodule Main do
   def main() do
-    _ = test_simple_injection()
-    _ = test_injection_with_parameters()
-    _ = test_injection_with_return()
-    _ = test_inline_injection()
+    test_simple_injection()
+    test_injection_with_parameters()
+    test_injection_with_return()
+    test_inline_injection()
   end
   defp test_simple_injection() do
     IO.puts("Simple injection test")

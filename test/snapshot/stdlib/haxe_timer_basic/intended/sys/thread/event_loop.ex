@@ -42,7 +42,7 @@ defmodule Sys.Thread.EventLoop do
           {:at, time} ->
             apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :wait, (fn -> [struct, (fn ->
               b = Reflaxe.Elixir.HaxeFloat.sub(time, System.system_time(:second))
-              _ = Reflaxe.Elixir.HaxeFloat.max(0, b)
+              Reflaxe.Elixir.HaxeFloat.max(0, b)
             end).()] end).())
         end)
         {:cont, acc}

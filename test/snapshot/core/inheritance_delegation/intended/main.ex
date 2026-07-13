@@ -1,8 +1,8 @@
 defmodule Main do
   def main() do
-    _ = test_basic_inheritance()
-    _ = test_exception_inheritance()
-    _ = test_method_override()
+    test_basic_inheritance()
+    test_exception_inheritance()
+    test_method_override()
   end
   defp test_basic_inheritance() do
     _child = Child.new("Alice", 25)

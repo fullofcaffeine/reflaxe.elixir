@@ -120,27 +120,38 @@ Tracked by `haxe.elixir.codex-3qh.6`.
 
 ### Discarded effect calls
 
-The compiler often emits:
+Resolved by `haxe.elixir.codex-3qh.5`.
+
+The compiler previously emitted:
 
 ```elixir
 _ = Supervisor.start_link(children, opts)
 ```
 
-or wraps Phoenix router DSL calls in `_ =`. Ordinary Elixir uses the bare call
-in statement position. The current `BareCallToUnderscoreAssign` policy treats
-the match as idiomatic, and later passes depend on that artificial shape.
+and wrapped Phoenix router DSL calls in `_ =`. Ordinary Elixir uses the bare
+call in statement position.
 
-The fix belongs in statement-context lowering. A final pass that merely unwraps
-the generated text would add another fragile repair stage.
+The cleanup removed `BareCallToUnderscoreAssign` and the redundant
+`PresenceBareCallPreserve` pass. Calls now remain direct `ECall`/`ERemoteCall`
+nodes in `EBlock`/`EDo`; their list position already preserves execution order,
+and a tail call remains the function result. Ecto migration sequence parsing
+now accepts direct calls, and `ChangesetEnsureReturn` preserves a bare final
+Ecto call instead of replacing its result with an earlier local.
 
-Tracked by `haxe.elixir.codex-3qh.5`.
+This was intentionally not implemented as an absolute-final unwrap. Real
+wildcard matches used by mutation, pattern, or explicit discard lowering remain
+available, and each residual origin can be audited on its own semantics.
 
 ### Pass breadth and interaction risk
 
-A granular trace of the tiny `ImmediateRetryPolicy` module produced 578 pass
+A granular trace of the tiny `ImmediateRetryPolicy` module originally produced 578 pass
 snapshots. Most framework-specific passes were no-ops for that module, but they
 still illustrate the breadth of the registry and the number of late final,
 repair, replay, alignment, and cleanup interactions.
+
+After the discarded-call cleanup, the effective granular registry contains 576
+passes; the two removed registrations were the synthetic call-wrapper passes
+described above.
 
 The default registry presents a small set of bundles, but those bundles execute
 large contiguous portions of the granular registry. The right response is not

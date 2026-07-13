@@ -1,22 +1,22 @@
 defmodule Main do
   def main() do
-    _ = test_process_externs()
-    _ = test_registry_externs()
-    _ = test_agent_externs()
-    _ = test_io_externs()
-    _ = test_file_externs()
-    _ = test_path_externs()
-    _ = test_enum_externs()
-    _ = test_string_externs()
-    _ = test_gen_server_externs()
+    test_process_externs()
+    test_registry_externs()
+    test_agent_externs()
+    test_io_externs()
+    test_file_externs()
+    test_path_externs()
+    test_enum_externs()
+    test_string_externs()
+    test_gen_server_externs()
   end
   defp test_process_externs() do
     pid = Process.self()
-    _ = Process.send(pid, "hello")
-    _ = Process.exit(pid, "normal")
+    Process.send(pid, "hello")
+    Process.exit(pid, "normal")
     new_pid = Process.spawn(fn -> IO.puts("Hello from spawned process") end)
-    _ = Process.monitor(new_pid)
-    _ = Process.link(new_pid)
+    Process.monitor(new_pid)
+    Process.link(new_pid)
     _alive = Process.alive?(pid)
     _info = Process.info(pid)
   end
@@ -30,34 +30,34 @@ defmodule Main do
   defp test_agent_externs() do
     _agent_result = Agent.start_link(fn -> nil end)
     _state = Agent.get(nil, fn count -> count end)
-    _ = Agent.update(nil, fn count -> count + 1 end)
-    _ = Agent.cast(nil, fn count -> count + 1 end)
+    Agent.update(nil, fn count -> count + 1 end)
+    Agent.cast(nil, fn count -> count + 1 end)
     _counter_agent = Agent.start_link(fn -> 10 end)
     agent = nil
-    _ = Agent.update(agent, fn count -> count + 5 end)
+    Agent.update(agent, fn count -> count + 5 end)
     agent = nil
-    _current_count = _ = Agent.get(agent, fn count -> count end)
+    _current_count = Agent.get(agent, fn count -> count end)
   end
   defp test_io_externs() do
-    _ = IO.puts("Hello, World!")
-    _ = IO.write("Hello ")
-    _ = IO.inspect([1, 2, 3])
+    IO.puts("Hello, World!")
+    IO.write("Hello ")
+    IO.inspect([1, 2, 3])
     _input = IO.gets("Enter something: ")
     _char = IO.read(1)
-    _ = IO.puts("Using helper function")
-    _ = IO.puts("stderr", "This is an error message")
+    IO.puts("Using helper function")
+    IO.puts("stderr", "This is an error message")
     label = "label"
     label = if (Kernel.is_nil(label)), do: "", else: label
     if (label != "") do
       IO.puts("#{label}: ")
     end
-    _ = IO.inspect("Debug value")
+    IO.inspect("Debug value")
     color = IO.io.ansi.red()
-    _ = IO.write("#{color}Error text#{IO.io.ansi.reset()}")
+    IO.write("#{color}Error text#{IO.io.ansi.reset()}")
     color = IO.io.ansi.green()
-    _ = IO.write("#{color}Success text#{IO.io.ansi.reset()}")
+    IO.write("#{color}Success text#{IO.io.ansi.reset()}")
     color = IO.io.ansi.blue()
-    _ = IO.write("#{color}Info text#{IO.io.ansi.reset()}")
+    IO.write("#{color}Info text#{IO.io.ansi.reset()}")
     label = "Array"
     label = if (Kernel.is_nil(label)), do: "", else: label
     result = IO.iodata_to_binary(IO.inspect([1, 2, 3]))
@@ -71,7 +71,7 @@ defmodule Main do
     _read_result = File.read("test.txt")
     content = File.read!("test.txt")
     _write_result = File.write("output.txt", "Hello, File!")
-    _ = File.write!("output2.txt", "Hello again!")
+    File.write!("output2.txt", "Hello again!")
     _stat_result = File.stat("test.txt")
     _exists = File.exists?("test.txt")
     _is_file = File.regular?("test.txt")
@@ -179,8 +179,8 @@ defmodule Main do
     _start_result = GenServer.start_link("MyGenServer", "init_arg")
     server_ref = nil
     _call_result = GenServer.call(server_ref, "get_state")
-    _ = GenServer.cast(server_ref, "update_state")
-    _ = GenServer.stop(server_ref)
+    GenServer.cast(server_ref, "update_state")
+    GenServer.stop(server_ref)
     _pid = GenServer.whereis(server_ref)
     _infinity = :infinity
     _normal = :normal

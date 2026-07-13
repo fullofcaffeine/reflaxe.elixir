@@ -51,12 +51,12 @@ defmodule Haxe.IO.Path do
   def without_extension(path) do
     parsed_path = Haxe.IO.Path.new(path)
     parsed_path = %{parsed_path | ext: nil}
-    _ = apply(Map.get(parsed_path, :__reflaxe_class__) || Map.get(parsed_path, :__struct__), :to_string, [parsed_path])
+    apply(Map.get(parsed_path, :__reflaxe_class__) || Map.get(parsed_path, :__struct__), :to_string, [parsed_path])
   end
   def without_directory(path) do
     parsed_path = Haxe.IO.Path.new(path)
     parsed_path = %{parsed_path | dir: nil}
-    _ = apply(Map.get(parsed_path, :__reflaxe_class__) || Map.get(parsed_path, :__struct__), :to_string, [parsed_path])
+    apply(Map.get(parsed_path, :__reflaxe_class__) || Map.get(parsed_path, :__struct__), :to_string, [parsed_path])
   end
   def directory(path) do
     parsed_path = Haxe.IO.Path.new(path)
@@ -69,7 +69,7 @@ defmodule Haxe.IO.Path do
   def with_extension(path, extension) do
     parsed_path = Haxe.IO.Path.new(path)
     parsed_path = %{parsed_path | ext: extension}
-    _ = apply(Map.get(parsed_path, :__reflaxe_class__) || Map.get(parsed_path, :__struct__), :to_string, [parsed_path])
+    apply(Map.get(parsed_path, :__reflaxe_class__) || Map.get(parsed_path, :__struct__), :to_string, [parsed_path])
   end
   def join(paths) do
     filtered_paths = []
@@ -89,7 +89,7 @@ defmodule Haxe.IO.Path do
       _g = 1
       filtered_paths_length = length(filtered_paths)
       result = Enum.reduce(1..(filtered_paths_length - 1)//1, result, fn index, result_acc -> add_trailing_slash(result_acc) <> Enum.at(filtered_paths, index) end)
-      _ = normalize(result)
+      normalize(result)
     end
   end
   def normalize(path) do
@@ -210,7 +210,7 @@ defmodule Haxe.IO.Path do
         {trimmed_length_acc, trimming_acc}
       end
     end)
-    _ = StringTools.haxe_substr_non_nil_len(path, 0, trimmed_length)
+    StringTools.haxe_substr_non_nil_len(path, 0, trimmed_length)
   end
   def is_absolute(path) do
     if (StringTools.starts_with(path, "/")) do
