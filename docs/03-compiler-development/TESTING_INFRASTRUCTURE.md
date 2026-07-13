@@ -67,6 +67,26 @@ When a bug is found in a real app (especially `examples/todo-app/`), add a focus
 These tests are intentionally small and deterministic. They lock in compiler behavior at the AST/lowering level and prevent
 “it works in the todo-app but regresses in a later refactor” outcomes.
 
+### Phase-Level Function Result Validation
+
+All snapshot commands run with `-D reflaxe_elixir_validate_results`. Authored functions carry their
+Haxe `Void`/value return contract as compiler metadata, and the AST transformer records value-carrier
+state after each lean pass bundle. At the pre-print boundary it rejects unresolved valid-to-invalid
+transitions and reports the first bundle that caused the degradation. This is stronger than checking that generated Elixir parses:
+an accidentally empty Elixir function is valid syntax but returns `nil`.
+
+Focused coverage lives in:
+
+- `test/snapshot/regression/function_result_invariants/` for Void, raise-only, branch, case,
+  nullable, loop-carrier, callback, native-named, and extern surfaces.
+- `test/snapshot/negative/result_contract_invariant/` for an intentional test-only tail mutation.
+- `npm run test:result-invariant` for the diagnostic assertion. It requires the message to name
+  `Main.invariant_target/0` and `LocalAssignUnusedUnderscore_Scoped_Final`.
+
+The invariant is compiler QA, not a runtime feature. It is disabled for ordinary source/package
+consumers and does not change generated Elixir. A developer can opt in on any local compiler build;
+add `-D hxx_granular_pass_registry` when an exact inner pass name is more useful than a lean bundle.
+
 ### Case Study: reduce_while Accumulator Updates (Todo-App Presence)
 
 The todo-app “online users” UI exposed a correctness bug in the `Enum.reduce_while` lowering pipeline.

@@ -44,6 +44,8 @@ This index helps you find the right docs quickly, whether you're building apps w
 ### ⚙️ Compiler Development
 **[03-compiler-development/](03-compiler-development/)** - For contributors to the compiler itself
 - [Compilation Pipeline](03-compiler-development/COMPILATION_PIPELINE_ARCHITECTURE.md) - How TypedExpr becomes Elixir
+- [Compilation Flow](05-architecture/COMPILATION_FLOW.md) - Current builder, transformer, result-invariant, printer, and output stages
+- [Lean Pass Pipeline](03-compiler-development/LEAN_PASS_PIPELINE.md) - Bundle boundaries, granular debugging, and pass-order guardrails
 - [Macro Principles](03-compiler-development/MACRO_PRINCIPLES.md) - Macro-time compilation rules
 - [Testing Infrastructure](03-compiler-development/TESTING_INFRASTRUCTURE.md) - Snapshot + integration testing system
 - [XRay Debugging](03-compiler-development/DEBUG_XRAY_SYSTEM.md) - Debugging methodology

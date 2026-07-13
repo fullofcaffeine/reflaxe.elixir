@@ -73,6 +73,18 @@ enum ReceiverWriteback {
 	Always;
 }
 
+/**
+ * Source-level return contract retained on authored function definitions.
+ *
+ * The contract is compiler metadata only; it is never emitted to Elixir. It
+ * lets opt-in phase validation distinguish Haxe Void functions from functions
+ * whose target body must keep a value-producing tail expression.
+ */
+enum abstract FunctionResultContract(String) from String to String {
+	var Value = "value";
+	var Void = "void";
+}
+
 typedef ReceiverLValue = {
 	var varId:Int;
 	var name:String;
@@ -800,6 +812,9 @@ typedef ElixirMetadata = {
 	?tailPosition:Bool, // Is in tail position?
 	?fromReturn:Bool, // Node originates from a Haxe `return` statement (for early-return reconstruction)
 	?async:Bool, // Is async operation?
+	?functionResultContract:FunctionResultContract, // Source return contract for authored EDef/EDefp nodes
+	?functionResultMayBeNil:Bool, // Whether the source return type permits nil
+	?functionResultContractId:String, // Stable authored-function identity for invariant diagnostics
 
 	// Transformation Hints
 	?requiresReturn:Bool, // Needs explicit return value

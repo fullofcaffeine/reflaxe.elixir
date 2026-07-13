@@ -4,13 +4,13 @@ defmodule GenServerRef_Impl_ do
     ref
   end
   def from_pid(pid) do
-
+    pid
   end
   def from_name(name) do
-
+    name
   end
   def from_via(via) do
-
+    via
   end
   def global(name) do
     ref = elixir__.("{:global, #{if (name == nil), do: "null", else: name}}")

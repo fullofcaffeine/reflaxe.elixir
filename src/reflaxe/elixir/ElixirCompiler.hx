@@ -33,6 +33,7 @@ import reflaxe.elixir.ast.ElixirAST.RouterOptionMeta;
 import reflaxe.elixir.ast.ElixirAST.RouterMetaValue;
 import reflaxe.elixir.ast.ElixirAST.SocketChannelMeta;
 import reflaxe.elixir.ast.ElixirAST.EndpointSocketMeta;
+import reflaxe.elixir.ast.ElixirAST.FunctionResultContract;
 import reflaxe.elixir.ast.ReceiverReturnConventions;
 import reflaxe.elixir.ast.ReceiverReturnConventions.ReceiverReturnConvention;
 import reflaxe.elixir.ast.builders.ModuleBuilder;
@@ -1930,6 +1931,21 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	}
 
 	/**
+	 * Conservatively classifies whether an authored result contract permits nil.
+	 *
+	 * Only Haxe's Int, Float, and Bool primitives are definitely non-nullable.
+	 * Generic, dynamic, class (including String), enum, and unresolved result types remain nullable
+	 * for invariant purposes so target-specific fallback branches do not produce
+	 * false positives. Empty result carriers are rejected for every non-Void type.
+	 */
+	static function functionResultMayBeNil(type:Type):Bool {
+		if (type == null || type.isNull())
+			return true;
+
+		return !haxe.macro.TypeTools.follow(type).isPrimitive();
+	}
+
+	/**
 	 * Build AST for a class (generates Elixir module)
 	 */
 	function buildClassAST(classType:ClassType, varFields:Array<ClassVarData>, funcFields:Array<ClassFuncData>):Null<reflaxe.elixir.ast.ElixirAST> {
@@ -2684,6 +2700,11 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 				// Check for test-related metadata on the function field
 				var funcMetadata:reflaxe.elixir.ast.ElixirAST.ElixirMetadata = {};
 				funcMetadata.receiverReturnConvention = ReceiverReturnConventions.toMetadataValue(receiverConvention);
+				funcMetadata.functionResultContract = funcData.ret.isVoid() ? FunctionResultContract.Void : FunctionResultContract.Value;
+				#if reflaxe_elixir_validate_results
+				funcMetadata.functionResultMayBeNil = functionResultMayBeNil(funcData.ret);
+				funcMetadata.functionResultContractId = funcData.id;
+				#end
 
 				// Set ExUnit-related metadata flags directly (accept both forms with and without ':')
 				inline function hasMeta(name:String):Bool {

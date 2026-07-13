@@ -272,6 +272,7 @@ Start at [docs/README.md](docs/README.md).
 ## Contributing
 
 - [Contributing Guide](docs/10-contributing/contributing.md)
+- [Compiler Compilation Flow](docs/05-architecture/COMPILATION_FLOW.md)
 - [Compiler Testing Infrastructure](docs/03-compiler-development/TESTING_INFRASTRUCTURE.md)
 - [Development Workflow](docs/01-getting-started/development-workflow.md)
 

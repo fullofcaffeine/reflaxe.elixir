@@ -1,9 +1,9 @@
 defmodule AgentRef_Impl_ do
   def from_pid(pid) do
-
+    pid
   end
   def named(name) do
-
+    name
   end
   def to_pid(this1) do
     this1

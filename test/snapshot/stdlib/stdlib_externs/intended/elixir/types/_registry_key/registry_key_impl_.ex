@@ -7,10 +7,10 @@ defmodule RegistryKey_Impl_ do
     str
   end
   def from_int(i) do
-
+    i
   end
   def from_tuple2(t) do
-
+    t
   end
   def tuple(a, b) do
     _this1 = {a, b}

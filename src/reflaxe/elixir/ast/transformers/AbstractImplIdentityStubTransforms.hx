@@ -2,6 +2,7 @@ package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirAST.FunctionResultContract;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 
@@ -10,7 +11,8 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
  *
  * WHAT
  * - Repairs empty bodies for trivial abstract-impl stubs in `*_Impl_` modules:
- *   `_new/1` and `from_string/1` become identity functions when their body is empty.
+ *   one-argument, value-returning functions become identity functions when their
+ *   body is empty.
  *
  * WHY
  * - Haxe can emit empty bodies for inline abstract constructors / @:from functions after
@@ -19,8 +21,9 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
  *
  * HOW
  * - Detect `EModule` / `EDefmodule` names ending with `_Impl_`.
- * - For `def _new(arg)` and `def from_string(arg)`, if the body prints empty (empty block,
- *   or only numeric sentinels that the printer elides), replace the body with `arg`.
+ * - For one-argument definitions carrying a non-Void source result contract, if
+ *   the body prints empty (empty block or only printer-elided numeric sentinels),
+ *   replace the body with `arg`.
  *
  * EXAMPLES
  * Elixir (before):
@@ -68,7 +71,8 @@ class AbstractImplIdentityStubTransforms {
 		return switch (node.def) {
 			case EDef(name, args, guards, body):
 				var argName = singleVarArgName(args);
-				if (argName != null && isTargetStubName(name) && isPrintedEmpty(body)) {
+				var returnsValue = node.metadata != null && node.metadata.functionResultContract == FunctionResultContract.Value;
+				if (argName != null && returnsValue && isPrintedEmpty(body)) {
 					var newBody = makeASTWithMeta(EVar(argName), body.metadata, body.pos);
 					makeASTWithMeta(EDef(name, args, guards, newBody), node.metadata, node.pos);
 				} else {
@@ -77,10 +81,6 @@ class AbstractImplIdentityStubTransforms {
 			default:
 				node;
 		}
-	}
-
-	static function isTargetStubName(name:String):Bool {
-		return name == "_new" || name == "from_string" || name == "fromString";
 	}
 
 	static function singleVarArgName(args:Array<EPattern>):Null<String> {

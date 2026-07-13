@@ -42,10 +42,10 @@ UPDATE_TIMEOUT_SECS := $(patsubst %s,%,$(UPDATE_TIMEOUT))
 # Pipeline Selection
 # By default uses AST pipeline. Set USE_LEGACY=1 to use old string pipeline for comparison
 ifdef USE_LEGACY
-HAXE_FLAGS := -D use_legacy_string_pipeline
+HAXE_FLAGS := -D use_legacy_string_pipeline -D reflaxe_elixir_validate_results
 PIPELINE_MODE := (Legacy String Pipeline)
 else
-HAXE_FLAGS :=
+HAXE_FLAGS := -D reflaxe_elixir_validate_results
 PIPELINE_MODE := (AST Pipeline)
 endif
 

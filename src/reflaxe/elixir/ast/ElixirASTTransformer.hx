@@ -229,8 +229,15 @@ class ElixirASTTransformer {
 		#end
 
 		var passes = getEnabledPasses();
+		#if reflaxe_elixir_validate_results
+		var functionResultStates = reflaxe.elixir.ast.validation.FunctionResultInvariant.capture(ast, rootName);
+		#end
 		var result = context != null ? reflaxe.elixir.ast.transformers.ReceiverEffectLoweringTransforms.contextualPass(ast,
 			context) : reflaxe.elixir.ast.transformers.ReceiverEffectLoweringTransforms.pass(ast);
+		#if reflaxe_elixir_validate_results
+		functionResultStates = reflaxe.elixir.ast.validation.FunctionResultInvariant.validateTransition(result, rootName, "ReceiverEffectLowering_Initial",
+			functionResultStates);
+		#end
 
 		#if ((hxx_pass_timing || profile_passes) && !hxx_disable_timing)
 		var __pipelineStart = haxe.Timer.stamp();
@@ -334,6 +341,28 @@ class ElixirASTTransformer {
 
 				result = passConfig.pass(result);
 			}
+
+			#if reflaxe_elixir_test_result_invariant_mutation
+			if (passConfig.name == "LocalAssignUnusedUnderscore_Scoped_Final") {
+				result = transformNode(result, function(node:ElixirAST):ElixirAST {
+					return switch (node.def) {
+						case EDef("invariant_target", args, guards, body):
+							makeASTWithMeta(EDef("invariant_target", args, guards, makeASTWithMeta(EBlock([]), body.metadata, body.pos)), node.metadata,
+								node.pos);
+						case EDefp("invariant_target", args, guards, body):
+							makeASTWithMeta(EDefp("invariant_target", args, guards, makeASTWithMeta(EBlock([]), body.metadata, body.pos)), node.metadata,
+								node.pos);
+						default:
+							node;
+					};
+				});
+			}
+			#end
+
+			#if reflaxe_elixir_validate_results
+			functionResultStates = reflaxe.elixir.ast.validation.FunctionResultInvariant.validateTransition(result, rootName, passConfig.name,
+				functionResultStates);
+			#end
 			#if ((hxx_pass_timing || profile_passes) && !hxx_disable_timing)
 			var __elapsedPass = (haxe.Timer.stamp() - __t0) * 1000.0;
 
@@ -409,12 +438,21 @@ class ElixirASTTransformer {
 
 		result = context != null ? reflaxe.elixir.ast.transformers.ReceiverEffectLoweringTransforms.contextualPass(result,
 			context) : reflaxe.elixir.ast.transformers.ReceiverEffectLoweringTransforms.pass(result);
+		#if reflaxe_elixir_validate_results
+		functionResultStates = reflaxe.elixir.ast.validation.FunctionResultInvariant.validateTransition(result, rootName, "ReceiverEffectLowering_Final",
+			functionResultStates);
+		#end
 
 		// ReceiverEffectLowering can expose local `i++`/`i--` matches inside reducer
 		// bodies after the normal pass registry has already run. Run the accumulator
 		// pass once more so those late matches update `acc_i` in the reducer scope
 		// instead of rebinding the outer `i` and getting lost on the next iteration.
 		result = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.reduceWhileAccumulatorPass(result);
+		#if reflaxe_elixir_validate_results
+		functionResultStates = reflaxe.elixir.ast.validation.FunctionResultInvariant.validateTransition(result, rootName, "ReduceWhileAccumulator_Final",
+			functionResultStates);
+		reflaxe.elixir.ast.validation.FunctionResultInvariant.assertNoDegradedResults(functionResultStates);
+		#end
 
 		// ------------------------------------------------------------------
 		// AbsoluteFinal Snapshot (debug_ast_snapshots)

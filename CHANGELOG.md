@@ -12,6 +12,8 @@ that remains useful across versions; released version identity comes from protec
 ### Bug Fixes
 
 * **compiler:** preserve scalar non-`Void` function bodies through final unused-local hygiene, so instance methods returning literals such as `0`, `false`, strings, floats, `nil`, lists, maps, or tuples no longer compile to empty Elixir functions returning `nil`.
+* **compiler:** retain authored `Void`/value return contracts as compiler metadata and opt in to non-`Void` result-carrier validation at every snapshot-test AST phase; diagnostics now identify the affected function and pass, while ordinary source/package builds and generated Elixir remain unchanged.
+* **compiler:** restore identity values for empty one-argument abstract implementation stubs, so generated `AgentRef`, `GenServerRef`, and `RegistryKey` conversion functions return their wrapped argument instead of silently returning `nil`.
 * **fast_boot:** keep `Enum.reduce_while` result binding enabled so mutable Haxe locals retain their final accumulator state; `StringTools.lpad` and `rpad` now behave identically in fast and full compiler profiles.
 * **reflaxe:** resolve lazy Haxe class-field types before Reflaxe extracts function signatures, removing repeated `StringTools` "Function information not found" warnings and emitting the required `string_tools.ex` runtime module wherever generated calls already depend on it. The target-agnostic regression and framework fix are tracked upstream in [`SomeRanDev/reflaxe#52`](https://github.com/SomeRanDev/reflaxe/pull/52); the vendored patch remains until an accepted upstream baseline passes source and built-package parity.
 

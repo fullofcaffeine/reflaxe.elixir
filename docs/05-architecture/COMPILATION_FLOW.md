@@ -18,6 +18,7 @@ ElixirCompiler (GenericCompiler<ElixirAST>)
 ElixirASTBuilder (TypedExpr → ElixirAST)
   ↓ transform
 ElixirASTTransformer (ordered, shape‑based passes)
+  ↓ validate authored function result contracts (test/opt-in builds)
   ↓ print
 ElixirASTPrinter (ElixirAST → Elixir source text)
   ↓ output
@@ -33,6 +34,33 @@ Generated `.ex` / `.exs` files
 - Reflaxe.Elixir **re‑sugars** those shapes inside **transformer passes** to recover idiomatic,
   Elixir‑native patterns (e.g., `Enum.*`, pipes, comprehensions, Phoenix‑friendly shapes).
 - The **printer is formatting‑only**; semantic decisions belong in builder/transformer.
+
+## Non-Void Function Result Contracts
+
+Haxe knows whether each authored function returns `Void` or a value. During AST construction,
+Reflaxe.Elixir retains that fact as compiler-only metadata on the generated `EDef`/`EDefp` node.
+When `-D reflaxe_elixir_validate_results` is enabled, the transformer records that contract after
+each pass boundary and detects valid-to-invalid result transitions.
+
+In practical terms, this catches a dangerous class of compiler bug early: a cleanup pass may turn
+an `Int` function ending in `0` into an empty target block. Elixir accepts an empty function and
+returns `nil`, so syntax validation alone cannot identify the lost Haxe value. The invariant reports
+the Haxe function and the pass or lean pass bundle that first exposes the invalid result shape.
+
+The check is intentionally an AST check, not a generated-text comparison. It understands scalar
+tails, blocks, `if`, `case`, `cond`, `with`, `try`, `receive`, raise/throw termination, nullable
+returns, and loop result carriers. It does not inspect the contents of `ERaw`; a non-empty raw target
+expression is opaque and remains the responsibility of the target-injection boundary. Some upstream
+stdlib modules begin with placeholder bodies that target semantic passes replace later, and a few
+established transforms temporarily remove then restore an abstract identity body. The validator
+therefore reports a degradation only if it remains unresolved at the pre-print boundary; its
+diagnostic still names the first pass that degraded the previously valid carrier.
+
+Normal users do not need this define. The small `Void`/value contract metadata also supports normal
+abstract identity shaping, but transition tracking adds no generated Elixir and is disabled in
+ordinary source and package builds. The snapshot harness enables it by default because compiler tests
+benefit from checking every phase. For exact granular pass names during compiler debugging, combine it with
+`-D hxx_granular_pass_registry`; otherwise diagnostics name the lean bundle boundary.
 
 ## Key Code Locations
 
@@ -54,6 +82,7 @@ Generated `.ex` / `.exs` files
 
 - `-D debug_pass_metrics` — prints which passes changed the AST.
 - `-D debug_ast_pipeline` / `-D debug_ast_transformer` — focused traces for builder/transformer.
+- `-D reflaxe_elixir_validate_results` — validate authored non-`Void` result carriers after AST pass boundaries.
 - `--times` / `-D macro-times` — Haxe macro timing breakdown.
 
 ## Related Documentation
@@ -62,4 +91,3 @@ Generated `.ex` / `.exs` files
 - `docs/05-architecture/UNIFIED_AST_PIPELINE.md` — conceptual overview of the AST pipeline.
 - `docs/05-architecture/TRANSFORM_PASS_REGISTRY_ORDER.md` — pass ordering and safety rules.
 - `docs/03-compiler-development/COMPILATION_PIPELINE_ARCHITECTURE.md` — contributor‑level detail.
-

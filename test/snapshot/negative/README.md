@@ -53,6 +53,11 @@ To update the expected error output:
 - **Location**: `test/snapshot/negative/main_loop_static_field_unsupported/`
 - **Purpose**: Ensures Haxe target-owned process main-loop bridges fail fast with BEAM lifecycle guidance.
 
+### Function result invariant
+- **Location**: `test/snapshot/negative/result_contract_invariant/`
+- **Purpose**: Applies a compile-time-only AST mutation and proves the result invariant names both the affected function and the responsible pass.
+- **Diagnostic check**: `npm run test:result-invariant`
+
 ### LiveEvent protocol validations
 - **Location**: `test/snapshot/negative/live_event_protocol_unsupported_payload/`
 - **Purpose**: Ensures shared LiveView event protocols reject unsafe payload types such as `Dynamic`.

@@ -37,6 +37,17 @@ opt into the full granular list:
 - Build flag: `-D hxx_granular_pass_registry`
 - Doc output: `docs/05-architecture/TRANSFORM_PASS_REGISTRY_ORDER_GRANULAR.md`
 
+The non-`Void` result invariant follows the same boundary model:
+
+- `-D reflaxe_elixir_validate_results` with the default lean registry reports the bundle that exposed a lost result.
+- Adding `-D hxx_granular_pass_registry` reports the exact granular pass, which is slower but better for diagnosis.
+- Snapshot tests enable result validation automatically through `test/Makefile`; ordinary compiler consumers do not pay this diagnostic cost.
+
+Use `npm run test:result-invariant` to run the compile-time-only mutation fixture. It deliberately
+removes one function result after a known pass and verifies that the diagnostic names both the pass
+and function. The mutation code is excluded from every build that does not define
+`reflaxe_elixir_test_result_invariant_mutation`.
+
 ## LiveView “golden” fixture
 
 The todo-app is a great integration test, but it’s too large and app-specific for a stable
@@ -66,3 +77,4 @@ make -C test update-intended TEST=liveview/golden_liveview_fixture
 - Prefer **shape-based** transforms over name-based heuristics.
 - Avoid ERaw-dependent rewrites (passes can’t “see” inside raw strings).
 - Fix root causes in builder/transformer; keep the printer as a pretty-printer only.
+- Preserve function value context. A cleanup pass may remove a non-final no-op, but it must keep the RHS when that expression is the function or block result.
