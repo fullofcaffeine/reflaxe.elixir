@@ -3,6 +3,7 @@ package tools;
 import haxe.io.Path;
 import reflaxe.elixir.ast.transformers.registry.PassIntrospection;
 import reflaxe.elixir.ast.transformers.registry.PassInventory;
+import reflaxe.elixir.ast.transformers.registry.PassScopeManifest;
 import reflaxe.elixir.ast.transformers.registry.RegistryCore.RegistryDiagnostics;
 
 using StringTools;
@@ -31,6 +32,7 @@ class RegistryOrderDoc {
 		var diagnostics = PassIntrospection.diagnostics();
 		#if hxx_granular_pass_registry
 		validateBaselineContract(passes.length);
+		validateRegistryContract(passes, diagnostics);
 		writeOrCheck(OUT_GRANULAR, renderOrderDoc("granular (`-D hxx_granular_pass_registry`)", passes));
 		writeOrCheck(OUT_INVENTORY, renderInventory(passes, diagnostics));
 		#else
@@ -57,11 +59,12 @@ class RegistryOrderDoc {
 		var out = new StringBuf();
 		out.add("# Elixir AST Pass Registry Inventory\n\n");
 		out.add("Generated from the validated granular registry by `tools/RegistryOrderDoc.hx`; do not edit manually.\n\n");
-		out.add("The inventory is descriptive and output-preserving. Scope labels record semantic ownership, but every effective pass is currently invoked for every module and self-gates on AST shape, metadata, or compile-time defines. Scoping execution is a separate reviewed task.\n\n");
+		out.add("Scope labels are executable semantic ownership. `PassScopeManifest` maps exact stable pass IDs to scopes, while `PassApplicability` derives module capabilities only from typed annotation metadata and structured ElixirAST. The verification-only `-D reflaxe_elixir_disable_pass_scopes` switch restores legacy all-pass execution for byte-parity checks.\n\n");
 		out.add("- Effective granular passes per transformed module: **" + passes.length + "**\n");
 		out.add("- Full deterministic order: [TRANSFORM_PASS_REGISTRY_ORDER_GRANULAR.md](TRANSFORM_PASS_REGISTRY_ORDER_GRANULAR.md)\n");
 		out.add("- Rebuild: `npm run docs:passes`\n");
 		out.add("- Drift guard: `npm run guard:pass-inventory`\n");
+		out.add("- Scoped/legacy byte parity: `npm run test:pass-scope-parity`\n");
 		out.add("- Representative timing/count baseline: `npm run profile:passes:baseline`\n");
 		out.add("- Checked-in reference data: [PASS_REGISTRY_BASELINE.json](PASS_REGISTRY_BASELINE.json)\n\n");
 
@@ -74,7 +77,7 @@ class RegistryOrderDoc {
 		}
 
 		out.add("\n## Scope Ownership\n\n");
-		out.add("| Scope | Current applicability predicate | Representative tests |\n");
+		out.add("| Scope | Applicability predicate | Representative tests |\n");
 		out.add("|---|---|---|\n");
 		for (scope in PassInventory.scopeContracts()) {
 			out.add("| `" + escape(scope.id) + "` " + escape(scope.title) + " | " + escape(scope.applicability) + " | "
@@ -109,7 +112,7 @@ class RegistryOrderDoc {
 			out.add("| `" + escape(name) + "` | " + escape(replayGroups.get(name).join(", ")) + " |\n");
 
 		out.add("\n## Registry Diagnostics\n\n");
-		out.add("`RegistryCore` validates registrations before execution. Same-name registrations below are deterministically deduplicated by first occurrence; they do not run twice.\n\n");
+		out.add("`RegistryCore` validates registrations before execution and still deduplicates defensively. The inventory guard requires zero duplicate registrations and zero ordering cycles.\n\n");
 		var uniqueDuplicates = new Map<String, Bool>();
 		for (name in diagnostics.duplicateNames)
 			uniqueDuplicates.set(name, true);
@@ -171,5 +174,23 @@ class RegistryOrderDoc {
 			throw 'Effective pass count changed from ${baseline.effectivePassCount} to $effectivePassCount; review the registry and update the baseline explicitly.';
 		if (baseline.maxRecordsPerModule != effectivePassCount + 1)
 			throw 'Pass baseline maxRecordsPerModule must equal effectivePassCount + one summary record.';
+	}
+
+	static function validateRegistryContract(passes:Array<PassInfo>, diagnostics:RegistryDiagnostics):Void {
+		if (diagnostics.duplicateNames.length > 0)
+			throw 'Pass registry contains ${diagnostics.duplicateNames.length} duplicate registrations; remove later same-name entries.';
+		if (diagnostics.cycleNodes.length > 0)
+			throw 'Pass registry contains ordering cycles: ${diagnostics.cycleNodes.join(", ")}';
+
+		var effectiveNames = new Map<String, Bool>();
+		for (pass in passes)
+			effectiveNames.set(pass.name, true);
+		var missingScopedPasses:Array<String> = [];
+		for (passName in PassScopeManifest.declarations().keys())
+			if (!effectiveNames.exists(passName))
+				missingScopedPasses.push(passName);
+		missingScopedPasses.sort(Reflect.compare);
+		if (missingScopedPasses.length > 0)
+			throw 'Pass scope manifest references missing registry IDs: ${missingScopedPasses.join(", ")}';
 	}
 }

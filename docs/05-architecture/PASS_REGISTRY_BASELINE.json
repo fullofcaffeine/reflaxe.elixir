@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 1,
-  "mode": "granular",
+  "schemaVersion": 2,
+  "mode": "granular-scoped",
   "effectivePassCount": 578,
   "maxRecordsPerModule": 579,
   "toolchain": "Haxe 4.3.7",
@@ -9,204 +9,211 @@
       "scope": "core",
       "fixture": "test/snapshot/core/basic_syntax",
       "module": "Main",
-      "expectedPassCount": 578,
-      "referenceTotalMs": 138.2,
+      "expectedPassCount": 407,
+      "referenceTotalMs": 83.26,
       "referenceSlowestPasses": [
         {
           "name": "FinalUnderscoreRepair",
-          "ms": 1.34
+          "ms": 0.87
         },
         {
-          "name": "RedundantAssignmentCleanup",
-          "ms": 1.16
+          "name": "FinalLocalReferenceAlign",
+          "ms": 0.79
         },
         {
-          "name": "HeexAssignsLocalVarRename_AbsoluteLast",
-          "ms": 1.03
+          "name": "NumericSuffixVarNormalize",
+          "ms": 0.78
         },
         {
-          "name": "PhoenixComponentModuleNormalize_AbsoluteLast",
-          "ms": 0.97
+          "name": "RefDeclAlignment",
+          "ms": 0.76
         },
         {
-          "name": "SocketPutFlashAssignDrop_Final",
-          "ms": 0.91
+          "name": "FinalLocalReferenceAlign_PreInterpolation",
+          "ms": 0.74
         }
-      ]
+      ],
+      "expectedSkippedCount": 171
     },
     {
       "scope": "stdlib",
       "fixture": "test/snapshot/stdlib/stdlib_externs",
       "module": "AgentRef_Impl_",
-      "expectedPassCount": 578,
-      "referenceTotalMs": 40.47,
+      "expectedPassCount": 407,
+      "referenceTotalMs": 22.19,
       "referenceSlowestPasses": [
         {
           "name": "FinalUnderscoreRepair",
-          "ms": 0.25
+          "ms": 0.33
         },
         {
-          "name": "LocalUnderscoreGenericPromotion",
-          "ms": 0.19
+          "name": "BlockAssignChainSimplify",
+          "ms": 0.29
+        },
+        {
+          "name": "DefParamHeadUnderscoreWhenUnused_Final",
+          "ms": 0.27
         },
         {
           "name": "FinalLocalReferenceAlign_PreInterpolation",
-          "ms": 0.18
+          "ms": 0.25
         },
         {
-          "name": "NumericSuffixVarNormalize",
-          "ms": 0.15
-        },
-        {
-          "name": "FinalLocalReferenceAlign",
-          "ms": 0.14
+          "name": "CaseExprParenthesizeInExpr",
+          "ms": 0.23
         }
-      ]
+      ],
+      "expectedSkippedCount": 171
     },
     {
       "scope": "phoenix",
       "fixture": "test/snapshot/phoenix/router",
       "module": "MyAppWeb.Router",
-      "expectedPassCount": 578,
-      "referenceTotalMs": 103.68,
+      "expectedPassCount": 571,
+      "referenceTotalMs": 53.33,
       "referenceSlowestPasses": [
         {
-          "name": "CaseClauseSuccessBodyBinderRewrite_AbsoluteLast",
-          "ms": 1.37
+          "name": "SocketPutFlashAssignDrop_Final",
+          "ms": 0.32
         },
         {
-          "name": "CasePayloadBinderAvoidReserved_Final",
-          "ms": 1.36
+          "name": "CaseUnderscoreCaseHoistBlock_Final",
+          "ms": 0.29
         },
         {
-          "name": "RepoAtomToSchema",
-          "ms": 1.07
+          "name": "WebJsonSecondArgRewrite_Ultimate",
+          "ms": 0.28
         },
         {
-          "name": "IfConditionBinaryCaseParen",
-          "ms": 0.99
+          "name": "UnusedImportCleanup",
+          "ms": 0.22
         },
         {
-          "name": "ConcatSelfAssignBinderUnderscore_Final",
-          "ms": 0.85
+          "name": "FPHelperDoubleToI64FieldAccessRewrite",
+          "ms": 0.16
         }
-      ]
+      ],
+      "expectedSkippedCount": 7
     },
     {
       "scope": "liveview",
       "fixture": "test/snapshot/liveview/golden_liveview_fixture",
       "module": "TestAppWeb.GoldenLive",
-      "expectedPassCount": 578,
-      "referenceTotalMs": 189.19,
+      "expectedPassCount": 575,
+      "referenceTotalMs": 153.7,
       "referenceSlowestPasses": [
         {
-          "name": "LocalUnderscoreGenericPromotion_UltraFinal",
-          "ms": 2.52
-        },
-        {
           "name": "FinalUnderscoreRepair",
-          "ms": 1.67
+          "ms": 2.01
         },
         {
-          "name": "CaseClauseCamelAliasToSnakeBinder",
-          "ms": 1.55
+          "name": "WebJsonSecondArgRewrite_Ultimate",
+          "ms": 1.75
         },
         {
           "name": "HeexAssignsTypeLinter",
-          "ms": 1.53
+          "ms": 1.72
         },
         {
-          "name": "FinalLocalReferenceAlign",
-          "ms": 1.46
+          "name": "FinalLocalReferenceAlign_PreInterpolation",
+          "ms": 1.51
+        },
+        {
+          "name": "CaseClauseCamelAliasToSnakeBinder",
+          "ms": 1.43
         }
-      ]
+      ],
+      "expectedSkippedCount": 3
     },
     {
       "scope": "ecto",
       "fixture": "test/snapshot/ecto/changeset",
       "module": "User",
-      "expectedPassCount": 578,
-      "referenceTotalMs": 59.14,
+      "expectedPassCount": 454,
+      "referenceTotalMs": 15.86,
       "referenceSlowestPasses": [
         {
-          "name": "HandleInfoDropUnusedAssign",
-          "ms": 0.96
+          "name": "NumericSuffixVarNormalize",
+          "ms": 0.08
         },
         {
-          "name": "IfBranchDowncaseTempInline_Final",
-          "ms": 0.29
+          "name": "FinalLocalReferenceAlign",
+          "ms": 0.06
         },
         {
-          "name": "DropStandaloneVarRef",
-          "ms": 0.25
+          "name": "FinalLocalReferenceAlign_PreInterpolation",
+          "ms": 0.06
         },
         {
-          "name": "EFnUnusedArgUnderscore_Final",
-          "ms": 0.23
+          "name": "LocalAssignUnusedUnderscore_Scoped_Final",
+          "ms": 0.04
         },
         {
-          "name": "ReduceWhileThenBranchNormalize_Final",
-          "ms": 0.23
+          "name": "CaseOkBinderAlign",
+          "ms": 0.03
         }
-      ]
+      ],
+      "expectedSkippedCount": 124
     },
     {
       "scope": "hxx",
       "fixture": "test/snapshot/phoenix/hxx_inline_markup_basic",
       "module": "Main",
-      "expectedPassCount": 578,
-      "referenceTotalMs": 64.62,
+      "expectedPassCount": 469,
+      "referenceTotalMs": 15.98,
       "referenceSlowestPasses": [
         {
-          "name": "DropSelfAssignNoop",
-          "ms": 2.11
+          "name": "HeexAssignsTypeLinter",
+          "ms": 0.53
         },
         {
-          "name": "SplitChainedAssignments",
-          "ms": 1.87
+          "name": "HeexLetUnusedBinderUnderscore",
+          "ms": 0.08
+        },
+        {
+          "name": "HeexControlTagTransforms",
+          "ms": 0.05
         },
         {
           "name": "HeexEventNameNormalization",
-          "ms": 1.79
+          "ms": 0.05
         },
         {
-          "name": "HandleInfoReturnSocketNormalize_UltraFinal",
-          "ms": 1.21
-        },
-        {
-          "name": "HeexAssignsTypeLinter",
-          "ms": 0.72
+          "name": "LocalAssignUnusedUnderscore_Scoped_Final",
+          "ms": 0.05
         }
-      ]
+      ],
+      "expectedSkippedCount": 109
     },
     {
       "scope": "exunit",
       "fixture": "test/snapshot/exunit/exunit_comprehensive",
       "module": "Main",
-      "expectedPassCount": 578,
-      "referenceTotalMs": 405.48,
+      "expectedPassCount": 410,
+      "referenceTotalMs": 187.27,
       "referenceSlowestPasses": [
         {
-          "name": "HoistNestedAssignFromStringConcat",
-          "ms": 15.62
+          "name": "FinalUnderscoreRepair",
+          "ms": 2.65
         },
         {
-          "name": "LocalCamelToSnakeDecl_AfterEventBridge",
-          "ms": 11.54
+          "name": "CaseUnderscoreCaseHoistBlock_Final",
+          "ms": 2.07
         },
         {
-          "name": "ConditionalReassignment",
-          "ms": 7.34
+          "name": "LocalAssignUnusedUnderscore_Scoped_Final",
+          "ms": 1.78
         },
         {
-          "name": "HandleEventParamRepair_AfterEventBridge",
-          "ms": 6.16
+          "name": "JoinArgBlockScopedFix",
+          "ms": 1.47
         },
         {
-          "name": "ClauseCamelRefToSnake",
-          "ms": 5.43
+          "name": "ListUpdateAndFilterFix",
+          "ms": 1.41
         }
-      ]
+      ],
+      "expectedSkippedCount": 168
     }
   ]
 }

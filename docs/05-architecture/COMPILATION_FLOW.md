@@ -73,6 +73,8 @@ benefit from checking every phase. For exact granular pass names during compiler
 - Pass registry + ordered transforms:
   - `src/reflaxe/elixir/ast/transformers/registry/ElixirASTPassRegistry.hx`
   - `src/reflaxe/elixir/ast/ElixirASTTransformer.hx`
+  - `src/reflaxe/elixir/ast/PassApplicability.hx` (typed module capabilities)
+  - `src/reflaxe/elixir/ast/transformers/registry/PassScopeManifest.hx` (exact pass ownership)
 - ElixirAST pretty‑printing:
   - `src/reflaxe/elixir/ast/ElixirASTPrinter.hx`
 - Final output bridging (AST → string per file):
@@ -83,6 +85,7 @@ benefit from checking every phase. For exact granular pass names during compiler
 - `-D debug_pass_metrics` — prints which passes changed the AST.
 - `-D debug_ast_pipeline` / `-D debug_ast_transformer` — focused traces for builder/transformer.
 - `-D reflaxe_elixir_validate_results` — validate authored non-`Void` result carriers after AST pass boundaries.
+- `npm run test:pass-scope-parity` — prove scoped and legacy all-pass execution emit byte-identical file trees for representative modules.
 - `--times` / `-D macro-times` — Haxe macro timing breakdown.
 
 ## Related Documentation

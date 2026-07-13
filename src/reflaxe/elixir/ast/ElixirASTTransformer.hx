@@ -11,6 +11,8 @@ import reflaxe.elixir.ast.ElixirAST.VarOrigin;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTBuilder;
+import reflaxe.elixir.ast.PassApplicability;
+import reflaxe.elixir.ast.PassApplicability.PassScope;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.ast.transformers.GuardConditionFlattener;
 import reflaxe.elixir.ast.transformers.LoopVariableRestorer;
@@ -67,6 +69,8 @@ typedef PassConfig = {
 	description:String,
 	enabled:Bool,
 	pass:TransformPass,
+	/** Explicit semantic ownership used by the typed applicability gate. */
+	?scope:PassScope,
 	/**
 	 * Optional contextual variant of the pass (receives CompilationContext)
 	 */
@@ -229,11 +233,13 @@ class ElixirASTTransformer {
 		#end
 
 		var passes = getEnabledPasses();
+		var currentPassPhase:Null<String> = null;
 		#if reflaxe_elixir_validate_results
 		var functionResultStates = reflaxe.elixir.ast.validation.FunctionResultInvariant.capture(ast, rootName);
 		#end
 		var result = context != null ? reflaxe.elixir.ast.transformers.ReceiverEffectLoweringTransforms.contextualPass(ast,
 			context) : reflaxe.elixir.ast.transformers.ReceiverEffectLoweringTransforms.pass(ast);
+		var passCapabilities = PassApplicability.analyze(result, context);
 		#if reflaxe_elixir_validate_results
 		functionResultStates = reflaxe.elixir.ast.validation.FunctionResultInvariant.validateTransition(result, rootName, "ReceiverEffectLowering_Initial",
 			functionResultStates);
@@ -253,17 +259,28 @@ class ElixirASTTransformer {
 		if (__passTimingOutput == null || __passTimingOutput == "")
 			__passTimingOutput = "/tmp/passF-macro.log";
 		var __shouldLogModule = __passTimingModuleFilter == null || (rootName != null && rootName.indexOf(__passTimingModuleFilter) != -1);
-		var __passTimingIndex = 0;
+		var __passTimingRegistryIndex = 0;
 		var __executedPassCount = 0;
+		var __skippedPassCount = 0;
 		#end
 
 		for (passConfig in passes) {
 			#if ((hxx_pass_timing || profile_passes) && !hxx_disable_timing)
-			__passTimingIndex++;
+			__passTimingRegistryIndex++;
 			#end
 			// Skip disabled passes - the enabled flag MUST be respected
 			if (!passConfig.enabled) {
 				#if debug_ast_transformer
+				#end
+				continue;
+			}
+			if (passConfig.phase != null && passConfig.phase != currentPassPhase) {
+				passCapabilities = PassApplicability.analyze(result, context);
+				currentPassPhase = passConfig.phase;
+			}
+			if (!PassApplicability.shouldRun(passConfig.scope, passCapabilities)) {
+				#if ((hxx_pass_timing || profile_passes) && !hxx_disable_timing)
+				__skippedPassCount++;
 				#end
 				continue;
 			}
@@ -392,8 +409,8 @@ class ElixirASTTransformer {
 				try {
 					var __log = sys.io.File.append(__passTimingOutput, false);
 					var __ms = Math.round(__elapsedPass * 100.0) / 100.0;
-					__log.writeString("[PassTiming] module=" + rootName + " index=" + __passTimingIndex + " name=" + passConfig.name + " ms="
-						+ Std.string(__ms) + "\n");
+					__log.writeString("[PassTiming] module=" + rootName + " index=" + __executedPassCount + " registry_index=" + __passTimingRegistryIndex
+						+ " name=" + passConfig.name + " ms=" + Std.string(__ms) + "\n");
 					__log.close();
 				} catch (e) {
 					// Fallback to stdout if append fails.
@@ -442,7 +459,8 @@ class ElixirASTTransformer {
 			try {
 				var __totalLog = sys.io.File.append(__passTimingOutput, false);
 				var __ms = Math.round(__pipelineElapsed * 100.0) / 100.0;
-				__totalLog.writeString("[PassTimingSummary] module=" + rootName + " passes=" + __executedPassCount + " total_ms=" + Std.string(__ms) + "\n");
+				__totalLog.writeString("[PassTimingSummary] module=" + rootName + " passes=" + __executedPassCount + " skipped=" + __skippedPassCount
+					+ " registry_passes=" + passes.length + " total_ms=" + Std.string(__ms) + "\n");
 				__totalLog.close();
 			} catch (e) {}
 		#else

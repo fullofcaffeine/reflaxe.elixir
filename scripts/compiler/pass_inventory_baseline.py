@@ -16,11 +16,14 @@ ROOT = Path(__file__).resolve().parents[2]
 BASELINE_PATH = ROOT / "docs/05-architecture/PASS_REGISTRY_BASELINE.json"
 PASS_LINE = re.compile(
     r"^\[PassTiming\] module=(?P<module>\S+) index=(?P<index>\d+) "
-    r"name=(?P<name>\S+) ms=(?P<ms>\d+(?:\.\d+)?)$"
+    r"registry_index=(?P<registry_index>\d+) name=(?P<name>\S+) "
+    r"ms=(?P<ms>\d+(?:\.\d+)?)$"
 )
 SUMMARY_LINE = re.compile(
     r"^\[PassTimingSummary\] module=(?P<module>\S+) "
-    r"passes=(?P<passes>\d+) total_ms=(?P<ms>\d+(?:\.\d+)?)$"
+    r"passes=(?P<passes>\d+) skipped=(?P<skipped>\d+) "
+    r"registry_passes=(?P<registry_passes>\d+) "
+    r"total_ms=(?P<ms>\d+(?:\.\d+)?)$"
 )
 
 
@@ -57,7 +60,12 @@ def command_output(command: list[str]) -> str:
     return result.stdout
 
 
-def profile_scenario(profile: dict, effective_pass_count: int, max_records: int) -> dict:
+def profile_scenario(
+    profile: dict,
+    effective_pass_count: int,
+    max_records: int,
+    update_counts: bool,
+) -> dict:
     with tempfile.TemporaryDirectory(prefix="reflaxe-pass-inventory-") as temp_dir:
         log_path = Path(temp_dir) / "passes.log"
         command = [
@@ -96,6 +104,7 @@ def profile_scenario(profile: dict, effective_pass_count: int, max_records: int)
             pass_rows.append(
                 {
                     "index": int(pass_match.group("index")),
+                    "registryIndex": int(pass_match.group("registry_index")),
                     "name": pass_match.group("name"),
                     "ms": float(pass_match.group("ms")),
                 }
@@ -108,27 +117,60 @@ def profile_scenario(profile: dict, effective_pass_count: int, max_records: int)
             summary = {
                 "module": summary_match.group("module"),
                 "passCount": int(summary_match.group("passes")),
+                "skippedCount": int(summary_match.group("skipped")),
+                "registryPassCount": int(summary_match.group("registry_passes")),
                 "totalMs": float(summary_match.group("ms")),
             }
             continue
         raise RuntimeError(f"unrecognized timing record for {profile['scope']}: {line}")
 
-    expected = profile.get("expectedPassCount", effective_pass_count)
     if summary is None:
         raise RuntimeError(f"missing timing summary for {profile['scope']}")
     if summary["module"] != profile["module"]:
         raise RuntimeError(
             f"{profile['scope']} expected module {profile['module']}, got {summary['module']}"
         )
-    if summary["passCount"] != expected or len(pass_rows) != expected:
+    if summary["registryPassCount"] != effective_pass_count:
         raise RuntimeError(
-            f"{profile['scope']} expected {expected} passes, got "
-            f"summary={summary['passCount']} records={len(pass_rows)}"
+            f"{profile['scope']} expected {effective_pass_count} registry passes, got "
+            f"{summary['registryPassCount']}"
         )
-    expected_indexes = list(range(1, expected + 1))
+    if summary["passCount"] + summary["skippedCount"] != summary["registryPassCount"]:
+        raise RuntimeError(
+            f"{profile['scope']} executed + skipped does not equal the registry count"
+        )
+    if len(pass_rows) != summary["passCount"]:
+        raise RuntimeError(
+            f"{profile['scope']} summary reports {summary['passCount']} executed passes, "
+            f"but the log contains {len(pass_rows)} pass records"
+        )
+
+    expected_indexes = list(range(1, summary["passCount"] + 1))
     actual_indexes = [row["index"] for row in pass_rows]
     if actual_indexes != expected_indexes:
         raise RuntimeError(f"{profile['scope']} pass indexes are not deterministic and contiguous")
+    registry_indexes = [row["registryIndex"] for row in pass_rows]
+    if registry_indexes != sorted(set(registry_indexes)):
+        raise RuntimeError(f"{profile['scope']} registry indexes are not unique and ascending")
+    if registry_indexes and (
+        registry_indexes[0] < 1 or registry_indexes[-1] > summary["registryPassCount"]
+    ):
+        raise RuntimeError(f"{profile['scope']} registry index is outside the registry bounds")
+
+    if not update_counts:
+        expected_passes = profile.get("expectedPassCount", effective_pass_count)
+        expected_skipped = profile.get(
+            "expectedSkippedCount", effective_pass_count - expected_passes
+        )
+        if (
+            summary["passCount"] != expected_passes
+            or summary["skippedCount"] != expected_skipped
+        ):
+            raise RuntimeError(
+                f"{profile['scope']} expected executed/skipped "
+                f"{expected_passes}/{expected_skipped}, got "
+                f"{summary['passCount']}/{summary['skippedCount']}"
+            )
 
     slowest = sorted(pass_rows, key=lambda row: (-row["ms"], row["name"]))[:5]
     return {
@@ -136,6 +178,8 @@ def profile_scenario(profile: dict, effective_pass_count: int, max_records: int)
         "fixture": profile["fixture"],
         "module": profile["module"],
         "passCount": summary["passCount"],
+        "skippedCount": summary["skippedCount"],
+        "registryPassCount": summary["registryPassCount"],
         "recordCount": len(lines),
         "totalMs": summary["totalMs"],
         "slowestPasses": [{"name": row["name"], "ms": row["ms"]} for row in slowest],
@@ -160,20 +204,22 @@ def main() -> int:
             profile,
             baseline["effectivePassCount"],
             baseline["maxRecordsPerModule"],
+            args.write_baseline,
         )
         for profile in profiles
     ]
     report = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "mode": baseline["mode"],
         "toolchain": command_output([os.environ.get("HAXE_BIN", "haxe"), "--version"]).strip(),
         "profiles": results,
     }
 
-    print("scope\tmodule\tpasses\trecords\ttotal_ms")
+    print("scope\tmodule\texecuted\tskipped\tregistry\trecords\ttotal_ms")
     for result in results:
         print(
             f"{result['scope']}\t{result['module']}\t{result['passCount']}\t"
+            f"{result['skippedCount']}\t{result['registryPassCount']}\t"
             f"{result['recordCount']}\t{result['totalMs']:.2f}"
         )
 
@@ -185,11 +231,15 @@ def main() -> int:
 
     if args.write_baseline:
         by_scope = {result["scope"]: result for result in results}
+        baseline["schemaVersion"] = 2
+        baseline["mode"] = "granular-scoped"
         baseline["toolchain"] = f"Haxe {report['toolchain']}"
         for profile in baseline["profiles"]:
             result = by_scope.get(profile["scope"])
             if result is None:
                 continue
+            profile["expectedPassCount"] = result["passCount"]
+            profile["expectedSkippedCount"] = result["skippedCount"]
             profile["referenceTotalMs"] = result["totalMs"]
             profile["referenceSlowestPasses"] = result["slowestPasses"]
         BASELINE_PATH.write_text(json.dumps(baseline, indent=2) + "\n", encoding="utf-8")

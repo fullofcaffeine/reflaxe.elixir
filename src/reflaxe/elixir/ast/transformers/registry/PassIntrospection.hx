@@ -50,7 +50,7 @@ class PassIntrospection {
 		for (index in 0...enabled.length) {
 			var pass = enabled[index];
 			var phase = pass.phase != null && pass.phase.length > 0 ? pass.phase : phases[index];
-			var scope = PassInventory.scopeFor(pass.name);
+			var scope:String = pass.scope == null ? "core" : pass.scope;
 			var replayFamily = PassInventory.canonicalReplayName(pass.name);
 			var replayCount = replayCounts.get(replayFamily);
 			out.push({

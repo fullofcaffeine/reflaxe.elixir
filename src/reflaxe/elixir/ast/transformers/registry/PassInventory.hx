@@ -108,43 +108,43 @@ class PassInventory {
 			{
 				id: "core",
 				title: "Core language",
-				applicability: "Currently invoked for every module; individual transforms gate on ElixirAST shape.",
+				applicability: "Always eligible; individual transforms still gate on typed ElixirAST shape.",
 				representativeTests: ["core/basic_syntax", "regression/non_void_tail_values"]
 			},
 			{
 				id: "stdlib",
 				title: "Target stdlib/runtime",
-				applicability: "Currently invoked for every module; transforms recognize Haxe stdlib modules, abstract impls, or target runtime call shapes.",
+				applicability: "Reserved for future typed stdlib ownership; current shared runtime transforms remain core until module-local eligibility is proven.",
 				representativeTests: ["stdlib/stdlib_externs", "test:haxe-exunit-stdlib"]
 			},
 			{
 				id: "phoenix",
 				title: "Phoenix and OTP",
-				applicability: "Currently invoked for every module; transforms self-gate on Phoenix/OTP annotations, metadata, callback heads, or target call shapes.",
+				applicability: "Phoenix/OTP annotations, compiler metadata, or structured Phoenix module references.",
 				representativeTests: ["phoenix/router", "otp/otp_supervision"]
 			},
 			{
 				id: "liveview",
 				title: "Phoenix LiveView",
-				applicability: "Currently invoked for every module; transforms self-gate on LiveView metadata, callbacks, socket shapes, or presence/event AST.",
+				applicability: "LiveView/Presence annotations or metadata, or structured Phoenix.LiveView references; also enables Phoenix and HXX capabilities.",
 				representativeTests: ["liveview/golden_liveview_fixture", "phoenix/liveview_basic"]
 			},
 			{
 				id: "ecto",
 				title: "Ecto",
-				applicability: "Currently invoked for every module; transforms self-gate on Ecto annotations, changeset/query calls, migration mode, or Repo shapes.",
+				applicability: "Ecto annotations/context or structured Ecto references; Phoenix/OTP-owned modules remain conservatively eligible for generated or unqualified Repo shapes.",
 				representativeTests: ["ecto/changeset", "ecto/typed_query_basic"]
 			},
 			{
 				id: "hxx",
 				title: "HXX and HEEx",
-				applicability: "Currently invoked for every module; transforms self-gate on HEEx sigils, HXX metadata, component calls, or assigns usage.",
+				applicability: "Typed HXX metadata, HEEx fragments/sigils, assigns nodes, or an authored assigns function argument.",
 				representativeTests: ["phoenix/hxx_inline_markup_basic", "liveview/golden_liveview_fixture"]
 			},
 			{
 				id: "exunit",
 				title: "ExUnit",
-				applicability: "Currently invoked for every module; transforms self-gate on ExUnit annotations, test definitions, or assertion call shapes.",
+				applicability: "ExUnit annotation/metadata or structured ExUnit module references.",
 				representativeTests: ["exunit/exunit_comprehensive"]
 			},
 			{
@@ -156,7 +156,7 @@ class PassInventory {
 			{
 				id: "mixed",
 				title: "Mixed bundle",
-				applicability: "Lean-mode bundle containing multiple granular ownership scopes.",
+				applicability: "Lean-mode phase bundle; each contained granular pass evaluates its own typed scope before execution.",
 				representativeTests: ["test:quick"]
 			}
 		];
@@ -210,72 +210,6 @@ class PassInventory {
 		return phases;
 	}
 
-	public static function scopeFor(passName:String):String {
-		if (passName == null || passName.length == 0)
-			return "core";
-		if (passName.startsWith("Bundle"))
-			return "mixed";
-		if (containsAny(passName, ["Debug", "Diagnostic", "Invariant", "Trace"]))
-			return "diagnostics";
-		if (containsAny(passName, ["Heex", "HEEx", "HXX", "Hxx", "InlineMarkup", "PhoenixComponent"]))
-			return "hxx";
-		if (containsAny(passName, ["ExUnit", "Assert", "TestCase"]))
-			return "exunit";
-		if (containsAny(passName, [
-			"Changeset",
-			"Ecto",
-			"Repo",
-			"Schema",
-			"Migration",
-			"Postgrex",
-			"DbTypes",
-			"ValidateLength",
-			"Queryable",
-			"QueryBinder"
-		]))
-			return "ecto";
-		if (containsAny(passName, [
-			"LiveView",
-			"LiveMount",
-			"LiveNoreply",
-			"HandleEvent",
-			"HandleInfo",
-			"Mount",
-			"Presence",
-			"SocketPutFlash",
-			"SocketAssign",
-			"LiveSession"
-		]))
-			return "liveview";
-		if (containsAny(passName, [
-			"Phoenix",
-			"Controller",
-			"Web",
-			"Endpoint",
-			"Router",
-			"Channel",
-			"Supervisor",
-			"Application",
-			"Telemetry",
-			"PubSub",
-			"Gettext"
-		]))
-			return "phoenix";
-		if (containsAny(passName, [
-			"StdHaxe",
-			"StringTools",
-			"StringBuf",
-			"FPHelper",
-			"DateTime",
-			"HaxeMap",
-			"HaxeFloat",
-			"AbstractImpl",
-			"AbstractNilDefault"
-		]))
-			return "stdlib";
-		return "core";
-	}
-
 	public static function canonicalReplayName(passName:String):String {
 		if (passName == null)
 			return "";
@@ -321,13 +255,6 @@ class PassInventory {
 			if (passes[index].name == name)
 				return index;
 		return -1;
-	}
-
-	static function containsAny(value:String, fragments:Array<String>):Bool {
-		for (fragment in fragments)
-			if (value.indexOf(fragment) >= 0)
-				return true;
-		return false;
 	}
 }
 #end

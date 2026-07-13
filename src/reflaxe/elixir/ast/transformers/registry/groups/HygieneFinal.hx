@@ -51,13 +51,6 @@ class HygieneFinal {
 			pass: reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.pass
 		});
 
-		// Numeric sentinel and temp-nil cleanup
-		passes.push({
-			name: "DropTempNilAssign",
-			description: "Drop thisN/_thisN = nil sentinel assignments",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.DropTempNilAssignTransforms.pass
-		});
 		passes.push({
 			name: "DropStandaloneVarRef",
 			description: "Drop standalone var references in statement position inside blocks/do-blocks (ultra-final)",
@@ -129,14 +122,6 @@ class HygieneFinal {
 			description: "Rewrite bodies that return an undeclared var v to Repo.get(schema(v), firstParam)",
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.RepoGetBinderRepairTransforms.pass
-		});
-
-		// App start helper
-		passes.push({
-			name: "ApplicationEnsureStartLink",
-			description: "Ensure Application.start/2 appends Supervisor.start_link(children, opts) (ultra final)",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.ApplicationEnsureStartLinkTransforms.transformPass
 		});
 
 		// Wildcard and pinned var promotions

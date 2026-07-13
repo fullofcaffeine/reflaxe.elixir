@@ -34,6 +34,7 @@ import reflaxe.elixir.ast.ElixirAST.RouterMetaValue;
 import reflaxe.elixir.ast.ElixirAST.SocketChannelMeta;
 import reflaxe.elixir.ast.ElixirAST.EndpointSocketMeta;
 import reflaxe.elixir.ast.ElixirAST.FunctionResultContract;
+import reflaxe.elixir.ast.ElixirAST.EctoContext;
 import reflaxe.elixir.ast.ReceiverReturnConventions;
 import reflaxe.elixir.ast.ReceiverReturnConventions.ReceiverReturnConvention;
 import reflaxe.elixir.ast.builders.ModuleBuilder;
@@ -2799,6 +2800,35 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 
 		// Prepare metadata for special module types BEFORE building the module
 		var metadata:ElixirMetadata = {};
+		// Retain source annotations as compiler-only capability facts. Pass scoping
+		// consumes these fields; neither flag is rendered into generated Elixir.
+		var usesHxx = classType.meta.has(":template")
+			|| classType.meta.has(":component")
+			|| classType.meta.has(":layout")
+			|| classType.meta.has(":hxx_mode")
+			|| classType.meta.has(":hxx_inline_markup")
+			|| classType.meta.has(":allow_heex");
+		if (!usesHxx) {
+			var hxxMetadataFields = classType.fields.get().concat(classType.statics.get());
+			for (field in hxxMetadataFields) {
+				if (field.meta.has(":template")
+					|| field.meta.has(":component")
+					|| field.meta.has(":layout")
+					|| field.meta.has(":hxx_mode")
+					|| field.meta.has(":hxx_inline_markup")
+					|| field.meta.has(":allow_heex")) {
+					usesHxx = true;
+					break;
+				}
+			}
+		}
+		metadata.usesHxx = usesHxx;
+		if (classType.meta.has(":migration"))
+			metadata.ectoContext = EctoContext.Migration;
+		else if (classType.meta.has(":query"))
+			metadata.ectoContext = EctoContext.Query;
+		else if (classType.meta.has(":changeset"))
+			metadata.ectoContext = EctoContext.Changeset;
 
 		// Detect and store parent class information for inheritance handling
 		if (classType.superClass != null) {

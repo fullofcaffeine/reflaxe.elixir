@@ -2,12 +2,13 @@
 
 Generated from the validated granular registry by `tools/RegistryOrderDoc.hx`; do not edit manually.
 
-The inventory is descriptive and output-preserving. Scope labels record semantic ownership, but every effective pass is currently invoked for every module and self-gates on AST shape, metadata, or compile-time defines. Scoping execution is a separate reviewed task.
+Scope labels are executable semantic ownership. `PassScopeManifest` maps exact stable pass IDs to scopes, while `PassApplicability` derives module capabilities only from typed annotation metadata and structured ElixirAST. The verification-only `-D reflaxe_elixir_disable_pass_scopes` switch restores legacy all-pass execution for byte-parity checks.
 
 - Effective granular passes per transformed module: **578**
 - Full deterministic order: [TRANSFORM_PASS_REGISTRY_ORDER_GRANULAR.md](TRANSFORM_PASS_REGISTRY_ORDER_GRANULAR.md)
 - Rebuild: `npm run docs:passes`
 - Drift guard: `npm run guard:pass-inventory`
+- Scoped/legacy byte parity: `npm run test:pass-scope-parity`
 - Representative timing/count baseline: `npm run profile:passes:baseline`
 - Checked-in reference data: [PASS_REGISTRY_BASELINE.json](PASS_REGISTRY_BASELINE.json)
 
@@ -25,17 +26,17 @@ The inventory is descriptive and output-preserving. Scope labels record semantic
 
 ## Scope Ownership
 
-| Scope | Current applicability predicate | Representative tests |
+| Scope | Applicability predicate | Representative tests |
 |---|---|---|
-| `core` Core language | Currently invoked for every module; individual transforms gate on ElixirAST shape. | core/basic_syntax, regression/non_void_tail_values |
-| `stdlib` Target stdlib/runtime | Currently invoked for every module; transforms recognize Haxe stdlib modules, abstract impls, or target runtime call shapes. | stdlib/stdlib_externs, test:haxe-exunit-stdlib |
-| `phoenix` Phoenix and OTP | Currently invoked for every module; transforms self-gate on Phoenix/OTP annotations, metadata, callback heads, or target call shapes. | phoenix/router, otp/otp_supervision |
-| `liveview` Phoenix LiveView | Currently invoked for every module; transforms self-gate on LiveView metadata, callbacks, socket shapes, or presence/event AST. | liveview/golden_liveview_fixture, phoenix/liveview_basic |
-| `ecto` Ecto | Currently invoked for every module; transforms self-gate on Ecto annotations, changeset/query calls, migration mode, or Repo shapes. | ecto/changeset, ecto/typed_query_basic |
-| `hxx` HXX and HEEx | Currently invoked for every module; transforms self-gate on HEEx sigils, HXX metadata, component calls, or assigns usage. | phoenix/hxx_inline_markup_basic, liveview/golden_liveview_fixture |
-| `exunit` ExUnit | Currently invoked for every module; transforms self-gate on ExUnit annotations, test definitions, or assertion call shapes. | exunit/exunit_comprehensive |
+| `core` Core language | Always eligible; individual transforms still gate on typed ElixirAST shape. | core/basic_syntax, regression/non_void_tail_values |
+| `stdlib` Target stdlib/runtime | Reserved for future typed stdlib ownership; current shared runtime transforms remain core until module-local eligibility is proven. | stdlib/stdlib_externs, test:haxe-exunit-stdlib |
+| `phoenix` Phoenix and OTP | Phoenix/OTP annotations, compiler metadata, or structured Phoenix module references. | phoenix/router, otp/otp_supervision |
+| `liveview` Phoenix LiveView | LiveView/Presence annotations or metadata, or structured Phoenix.LiveView references; also enables Phoenix and HXX capabilities. | liveview/golden_liveview_fixture, phoenix/liveview_basic |
+| `ecto` Ecto | Ecto annotations/context or structured Ecto references; Phoenix/OTP-owned modules remain conservatively eligible for generated or unqualified Repo shapes. | ecto/changeset, ecto/typed_query_basic |
+| `hxx` HXX and HEEx | Typed HXX metadata, HEEx fragments/sigils, assigns nodes, or an authored assigns function argument. | phoenix/hxx_inline_markup_basic, liveview/golden_liveview_fixture |
+| `exunit` ExUnit | ExUnit annotation/metadata or structured ExUnit module references. | exunit/exunit_comprehensive |
 | `diagnostics` Diagnostics | Compile-time define gated; production builds retain no diagnostic output. | test:result-invariant, guard:pass-inventory |
-| `mixed` Mixed bundle | Lean-mode bundle containing multiple granular ownership scopes. | test:quick |
+| `mixed` Mixed bundle | Lean-mode phase bundle; each contained granular pass evaluates its own typed scope before execution. | test:quick |
 
 ## Effective Families
 
@@ -43,34 +44,32 @@ A family is the intersection of a phase contract and semantic ownership scope. E
 
 | Family | Effective passes |
 |---|---:|
-| `absolute-final.core` | 108 |
-| `absolute-final.diagnostics` | 4 |
+| `absolute-final.core` | 117 |
 | `absolute-final.ecto` | 7 |
 | `absolute-final.exunit` | 2 |
 | `absolute-final.hxx` | 6 |
 | `absolute-final.liveview` | 33 |
-| `absolute-final.phoenix` | 21 |
-| `absolute-final.stdlib` | 2 |
+| `absolute-final.phoenix` | 18 |
 | `bootstrap.core` | 18 |
-| `core-lowering.core` | 144 |
+| `core-lowering.core` | 163 |
 | `core-lowering.ecto` | 27 |
-| `core-lowering.hxx` | 15 |
-| `core-lowering.liveview` | 18 |
-| `core-lowering.phoenix` | 14 |
-| `core-lowering.stdlib` | 8 |
-| `final-hygiene.core` | 13 |
-| `final-hygiene.ecto` | 6 |
-| `framework-annotations.core` | 2 |
+| `core-lowering.hxx` | 13 |
+| `core-lowering.liveview` | 15 |
+| `core-lowering.phoenix` | 8 |
+| `final-hygiene.core` | 14 |
+| `final-hygiene.ecto` | 5 |
+| `framework-annotations.core` | 4 |
 | `framework-annotations.ecto` | 5 |
 | `framework-annotations.exunit` | 1 |
-| `framework-annotations.liveview` | 5 |
-| `framework-annotations.phoenix` | 8 |
+| `framework-annotations.hxx` | 1 |
+| `framework-annotations.liveview` | 3 |
+| `framework-annotations.phoenix` | 7 |
 | `guards-interpolation.core` | 21 |
 | `guards-interpolation.liveview` | 1 |
-| `hxx-heex.core` | 69 |
+| `hxx-heex.core` | 70 |
 | `hxx-heex.ecto` | 3 |
 | `hxx-heex.hxx` | 12 |
-| `hxx-heex.phoenix` | 5 |
+| `hxx-heex.phoenix` | 4 |
 
 ## Replay And Repair Families
 
@@ -134,14 +133,8 @@ These are naming-related candidates for later consolidation, not proof that a pa
 
 ## Registry Diagnostics
 
-`RegistryCore` validates registrations before execution. Same-name registrations below are deterministically deduplicated by first occurrence; they do not run twice.
+`RegistryCore` validates registrations before execution and still deduplicates defensively. The inventory guard requires zero duplicate registrations and zero ordering cycles.
 
-- Duplicate registrations removed: **50** across **38** names (`AnonFnArgBinderFix`, `ApplicationEnsureStartLink`, `ArithmeticIncrementCleanup`, `CasePatternTempAssignmentRemoval`, `CaseSuccessVarRenameCollisionFix`, `CaseSuccessVarRenameCollisionFix_AbsoluteFinal`, `CaseSuccessVarUnifier`, `CaseSuccessVarUnify`, `ChangesetFieldAtomNormalize`, `ClauseUndefinedVarBindToBinder_Final`, `ControllerEnsureConnParam`, `DefParamBinderAlignByBodyUse`, `DefParamUnusedUnderscore`, `DropStandaloneLiteralOne`, `DropTempNilAssign`, `EFnBinderReferenceAlign`, `EFnNumericSentinelCleanup`, `EFnScopedUnderscoreRefCleanup`, `EctoSchemaBinderFix`, `EnumEachSentinelCleanup`, `EqNilToIsNil`, `FnArgBodyRefNormalize`, `GlobalNumericSentinelCleanup`, `HeexAssignsCapture`, `HeexControlTagTransforms`, `ListPushRewrite`, `LocalUnderscoreBinderPromote`, `MapSetRewrite`, `ModuleQualification`, `ReduceWhileSentinelCleanup`, `RepoQualification`, `SafePubSubAliasInject`, `SelfAssignCompression`, `StringToAtomLiteral`, `StringToolsLocalFix`, `SwitchInnerCaseBinderRepair`, `UnusedDefpPrune`, `ValidateLengthOptsAccessRewrite`)
-- Missing ordering dependencies: **3**
+- Duplicate registrations removed: **0** across **0** names
+- Missing ordering dependencies: **0**
 - Detected ordering cycle nodes: **0**
-
-| Missing dependency | Referenced by |
-|---|---|
-| `DefParamUnusedUnderscoreSafe` | HandleEventParamsPromote, HandleEventParamsUltraFinal_Last, HeexAssignsParamRename_Final |
-| `DowncaseInlineFromPriorAssign_Final` | IfBranchDowncaseTempInline_Final |
-| `UnderscoreTempInlineDowncase` | IfBranchDowncaseTempInline_Final |

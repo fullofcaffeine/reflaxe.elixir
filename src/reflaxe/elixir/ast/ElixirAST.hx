@@ -912,6 +912,7 @@ typedef ElixirMetadata = {
 	?needsPostgrexTypes:Bool, // Whether to generate companion PostgrexTypes module
 
 	// HEEx/HXX annotation (experimental; analysis only)
+	?usesHxx:Bool, // Class/function metadata declares a template/component/HXX authoring surface
 	?heexFragments:Array<HeexFragmentMeta>, // Parsed fragments from ~H content for analysis (not used for emission)
 
 	// Schema metadata (for @:schema)

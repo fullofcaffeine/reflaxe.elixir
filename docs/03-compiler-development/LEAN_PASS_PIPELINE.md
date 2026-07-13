@@ -48,9 +48,16 @@ opt into the full granular list:
 
 ### Inventory and bounded timing baseline
 
-The current validated granular registry contains 578 effective passes per transformed module. Scope
-labels describe ownership only; they do not yet skip execution. This is why a core, stdlib, Phoenix,
-LiveView, Ecto, HXX, and ExUnit representative all report the same pass count.
+The validated granular registry contains 578 effective passes, but normal compilation no longer walks
+every framework transform for every module. `PassScopeManifest` assigns exact stable pass IDs to an
+ownership scope. `PassApplicability` then derives module capabilities from Haxe annotations, retained
+compiler metadata, and structured ElixirAST nodes. It does not classify by pass-name fragments,
+generated module names, file paths, or application names.
+
+The runner re-evaluates capabilities at phase boundaries because an earlier phase can introduce a
+structured target call used by a later phase. The default lean bundles and granular debugging mode
+use the same pass functions, order, scopes, and capability analysis; bundles only make the registry
+easier to inspect.
 
 Run the bounded baseline report with:
 
@@ -58,10 +65,35 @@ Run the bounded baseline report with:
 npm run profile:passes:baseline
 ```
 
-Each scenario selects one module, writes at most 579 temporary records (578 indexed passes plus one
-summary), validates contiguous deterministic indexes, and removes its log afterward. Checked-in
+Each scenario selects one module and records only executed passes plus one summary. The summary also
+records skipped and total registry counts, and the guard requires `executed + skipped = 578` with
+stable registry indexes. Current representative counts are 407 executed passes for core and stdlib,
+571 for Phoenix, 575 for LiveView, 454 for Ecto, 469 for HXX, and 410 for ExUnit. Checked-in
 milliseconds are reference observations, not performance thresholds; compare them directionally on
-the same machine. Pass counts and report shape are the stable contract.
+the same machine. Counts and report shape are the stable contract.
+
+### Why scoped and all-pass builds do not drift
+
+Scoped execution is not a second compiler or a source-versus-package difference. Source checkouts and
+built packages both use the same scoped pipeline. The verification-only
+`-D reflaxe_elixir_disable_pass_scopes` switch asks that pipeline to execute every pass as it did
+before scoping; framework passes still self-gate on their own semantic shape.
+
+Run the cross-check with:
+
+```bash
+npm run test:pass-scope-parity
+```
+
+The guard compiles representative core, stdlib, Phoenix, LiveView, Ecto, HXX, and ExUnit fixtures in
+both modes, compares the complete generated file trees byte-for-byte, and restores each fixture's
+prior output directory. CI runs the timing/count and byte-parity checks together through
+`npm run guard:pass-scopes`.
+
+This cleanup removed 50 same-name registrations that `RegistryCore` had already discarded before
+ordering or execution. Distinctly named final/replay passes were retained: similar names do not prove
+equivalence because a later phase may create a shape the earlier pass could not see. Consolidate those
+only after an idempotence test and focused regression demonstrate that the later execution is dead.
 
 The non-`Void` result invariant follows the same boundary model:
 
@@ -101,6 +133,7 @@ make -C test update-intended TEST=liveview/golden_liveview_fixture
 ## Design guardrails (reminders)
 
 - Prefer **shape-based** transforms over name-based heuristics.
+- Declare framework ownership by exact pass ID and typed module capability; do not derive scope from names.
 - Avoid ERaw-dependent rewrites (passes can’t “see” inside raw strings).
 - Fix root causes in builder/transformer; keep the printer as a pretty-printer only.
 - Preserve function value context. A cleanup pass may remove a non-final no-op, but it must keep the RHS when that expression is the function or block result.

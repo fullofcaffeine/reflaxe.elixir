@@ -271,9 +271,11 @@ Start at [docs/README.md](docs/README.md).
 
 ## Contributing
 
+The compiler keeps one ordered Elixir AST pipeline for source checkouts and built packages. Framework-owned passes are selected from typed annotations and structured AST facts; CI also recompiles representative modules with legacy all-pass execution and requires byte-identical generated Elixir. Start with the inventory when changing pass ownership or order.
+
 - [Contributing Guide](docs/10-contributing/contributing.md)
 - [Compiler Compilation Flow](docs/05-architecture/COMPILATION_FLOW.md)
-- [AST Pass Registry Inventory](docs/05-architecture/PASS_REGISTRY_INVENTORY.md)
+- [AST Pass Registry Inventory and parity contract](docs/05-architecture/PASS_REGISTRY_INVENTORY.md)
 - [Compiler Testing Infrastructure](docs/03-compiler-development/TESTING_INFRASTRUCTURE.md)
 - [Development Workflow](docs/01-getting-started/development-workflow.md)
 
