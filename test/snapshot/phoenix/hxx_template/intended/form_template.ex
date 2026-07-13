@@ -7,9 +7,7 @@ defmodule FormTemplate do
     if (length(errors) == 0) do
       "<div class='no-errors'></div>"
     else
-      error_items = []
-      _g = 0
-      error_items = Enum.reduce(errors, error_items, fn error, error_items_acc -> Enum.concat(error_items_acc, ["<li class='error-item'>" <> error <> "</li>"]) end)
+      error_items = Enum.map(errors, fn error -> "<li class='error-item'>" <> error <> "</li>" end)
       "<div class='form-errors'><ul class='error-list'>#{Enum.join(error_items, "")}</ul></div>"
     end
   end

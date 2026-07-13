@@ -194,6 +194,14 @@ handwritten Elixir comparison side by side. CI rejects unexplained helper
 calls, IIFEs, discarded matches, reducer appends, and support-module growth,
 while preserving narrow allowances when Haxe semantics genuinely require them.
 
+For example, a fresh portable projection loop such as
+`for (message in history) lines.push(format(message))` compiles to direct
+`Enum.map(history, fn message -> format(message) end)`. The compiler uses this
+shape only when it proves one ordered output per input with no partial
+accumulator, control-flow, iterator, or receiver state. See
+[Imperative to Functional Lowering](docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md#fresh-one-to-one-array-projections)
+for the generated shape and conservative fallback rules.
+
 ### New Phoenix app (greenfield)
 
 Use the guided flow:

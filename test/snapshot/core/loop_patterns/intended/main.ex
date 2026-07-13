@@ -11,9 +11,7 @@ defmodule Main do
         evens_acc
       end
     end)
-    doubled = []
-    _g = 0
-    _ = Enum.reduce(numbers, doubled, fn n, doubled_acc -> Enum.concat(doubled_acc, [n * 2]) end)
+    _doubled = Enum.map(numbers, fn n -> n * 2 end)
     nil
   end
 end

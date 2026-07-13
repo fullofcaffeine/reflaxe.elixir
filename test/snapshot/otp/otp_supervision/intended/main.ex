@@ -39,19 +39,15 @@ defmodule Main do
     _linked_result = Task.start_link(fn -> nil end)
     tasks = [Task.async(fn -> nil end), Task.async(fn -> 2 end), Task.async(fn -> 3 end)]
     results = Task.yield_many(tasks)
-    g = 0
+    _g = 0
     Enum.each(results, fn task_result ->
       if (not Kernel.is_nil(task_result.result)), do: nil
     end)
     task = Task.async(fn -> "quick" end)
     _quick_result = Task.await(task)
     funs = [fn -> "a" end, fn -> "b" end, fn -> "c" end]
-    g = []
-    g = Enum.reduce(funs, g, fn fun, g_acc -> Enum.concat(g_acc, [Task.async(fun)]) end)
-    tasks = g
-    g = []
-    g = Enum.reduce(tasks, g, fn task, g_acc -> Enum.concat(g_acc, [Task.await(task)]) end)
-    _concurrent_results = g
+    tasks = Enum.map(funs, fn fun -> Task.async(fun) end)
+    _concurrent_results = Enum.map(tasks, fn task -> Task.await(task) end)
     task = Task.async(fn ->
       Process.sleep(50)
       "timed"
@@ -83,12 +79,8 @@ defmodule Main do
       task = Task.Supervisor.async(supervisor, fn -> "helper result" end)
       _supervised_result = Task.await(task)
       funs = [fn -> 100 end, fn -> 200 end, fn -> 300 end]
-      g = []
-      g = Enum.reduce(funs, g, fn fun, g_acc -> Enum.concat(g_acc, [Task.Supervisor.async(supervisor, fun)]) end)
-      tasks = g
-      g = []
-      g = Enum.reduce(tasks, g, fn task, g_acc -> Enum.concat(g_acc, [Task.await(task)]) end)
-      _concurrent_results = g
+      tasks = Enum.map(funs, fn fun -> Task.Supervisor.async(supervisor, fun) end)
+      _concurrent_results = Enum.map(tasks, fn task -> Task.await(task) end)
       Task.Supervisor.start_child(supervisor, fn -> nil end)
     end
   end

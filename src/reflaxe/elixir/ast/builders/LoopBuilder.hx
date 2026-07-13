@@ -2909,6 +2909,185 @@ class LoopBuilder {
 		return makeAST(EMatch(PVar(arrayName), mapped));
 	}
 
+	/**
+	 * Build Enum.map for a proven fresh-array, one-append-per-input loop.
+	 *
+	 * WHAT
+	 * - Converts `var output = []; for (item in input) output.push(project(item));` to
+	 *   `output = Enum.map(input, fn item -> project(item) end)`.
+	 *
+	 * WHY
+	 * - The generic Haxe mutation lowering uses Enum.reduce plus append, which is correct for
+	 *   arbitrary accumulator programs but obscures a simple projection and repeatedly copies the
+	 *   growing list.
+	 * - Enum.map is equivalent only when the output starts empty and every input contributes exactly
+	 *   one value without observing partial output or threading additional mutable receiver state.
+	 *
+	 * HOW
+	 * - Require an empty Array initializer and an Array iterator, accepting both TFor and Haxe's
+	 *   canonical indexed-while desugaring for Array iteration.
+	 * - Require the entire loop body to be exactly one append to that accumulator.
+	 * - Reject accumulator reads, assignments, nested control flow, local functions, explicit
+	 *   throw/return/break/continue, and instance/dynamic calls whose receiver behavior is not proven.
+	 * - Static projection calls are allowed: Enum.map and Enum.reduce evaluate them once per input,
+	 *   in source order, and stop at the same thrown exception.
+	 * - Return null on any uncertainty so the established reducer path remains authoritative.
+	 *
+	 * EXAMPLES
+	 * - `output.push(value * 2)` qualifies.
+	 * - `if (keep(value)) output.push(value)`, two pushes, `output.length`, and
+	 *   `output.push(receiver.method())` do not qualify.
+	 */
+	public static function tryBuildFreshArrayAppendMapLoop(accumulator:TVar, accumulatorInit:TypedExpr, loopExpr:TypedExpr, context:BuildContext,
+			toElixirVarName:String->String):Null<ElixirAST> {
+		if (accumulator == null || accumulatorInit == null || loopExpr == null || context == null)
+			return null;
+		if (!isEmptyArrayLiteral(accumulatorInit))
+			return null;
+
+		var loop:Null<{loopVarName:String, iterator:TypedExpr, body:TypedExpr}> = switch (unwrapTypedExpr(loopExpr).expr) {
+			case TFor(loopVar, iterator, body):
+				{loopVarName: loopVar.name, iterator: iterator, body: body};
+			case TBlock(statements) if (statements.length == 2):
+				var counterVar:Null<TVar> = switch (unwrapTypedExpr(statements[0]).expr) {
+					case TVar(counter, init) if (init != null && isZeroInt(init)):
+						counter;
+					default:
+						null;
+				};
+				if (counterVar == null) {
+					null;
+				} else switch (unwrapTypedExpr(statements[1]).expr) {
+					case TWhile(condition, whileBody, _): var forInArray = detectForInArrayPattern(condition,
+							whileBody); forInArray == null || forInArray.counterVar.id != counterVar.id || !forInArray.isExclusive ? null : {
+							loopVarName: forInArray.elementVarName,
+							iterator: forInArray.arrayExpr,
+							body: forInArray.userBody
+						};
+					default:
+						null;
+				}
+			default:
+				null;
+		};
+		if (loop == null)
+			return null;
+
+		if (!isArrayTypedExpr(loop.iterator) || typedExprUsesLocal(loop.iterator, accumulator))
+			return null;
+
+		var value = extractSingleAppendValue(loop.body, accumulator);
+		if (value == null || !isSafeFreshArrayMapValue(value, accumulator))
+			return null;
+
+		var accumulatorName = toElixirVarName(accumulator.name);
+		var loopVarName = toElixirVarName(loop.loopVarName);
+		if (accumulatorName == null || accumulatorName.length == 0 || accumulatorName == "_" || loopVarName == null || loopVarName.length == 0)
+			return null;
+
+		var buildExpression = context.getExpressionBuilder();
+		var iteratorAst = buildExpression(loop.iterator);
+		var valueAst = buildExpression(value);
+		if (iteratorAst == null || valueAst == null)
+			return null;
+
+		var mapper = makeAST(EFn([
+			{
+				args: [PVar(loopVarName)],
+				guard: null,
+				body: valueAst
+			}
+		]));
+		var mapped = makeAST(ERemoteCall(makeAST(EVar("Enum")), "map", [iteratorAst, mapper]));
+		return makeAST(EMatch(PVar(accumulatorName), mapped));
+	}
+
+	static function isEmptyArrayLiteral(expr:TypedExpr):Bool {
+		return switch (unwrapTypedExpr(expr).expr) {
+			case TArrayDecl(values): values.length == 0;
+			default: false;
+		};
+	}
+
+	static function isArrayTypedExpr(expr:TypedExpr):Bool {
+		if (expr == null || expr.t == null)
+			return false;
+		return switch (haxe.macro.TypeTools.follow(expr.t)) {
+			case TInst(classRef, _): var classType = classRef.get(); classType != null && classType.name == "Array" && (classType.pack == null
+					|| classType.pack.length == 0);
+			default:
+				false;
+		};
+	}
+
+	static function extractSingleAppendValue(body:TypedExpr, accumulator:TVar):Null<TypedExpr> {
+		var unwrapped = unwrapTypedExpr(body);
+		return switch (unwrapped.expr) {
+			case TBlock(statements) if (statements.length == 1):
+				extractSingleAppendValue(statements[0], accumulator);
+			case TCall({expr: TField({expr: TLocal(receiver)}, FInstance(_, _, methodRef))}, [value])
+				if (receiver.id == accumulator.id && methodRef.get().name == "push"):
+				value;
+			case TBinop(OpAssignOp(OpAdd), {expr: TLocal(target)}, {expr: TArrayDecl([value])}) if (target.id == accumulator.id):
+				value;
+			case TBinop(OpAssign, {expr: TLocal(target)}, {expr: TBinop(OpAdd, {expr: TLocal(previous)}, {expr: TArrayDecl([value])})})
+				if (target.id == accumulator.id && previous.id == accumulator.id):
+				value;
+			default:
+				null;
+		};
+	}
+
+	static function typedExprUsesLocal(expr:TypedExpr, local:TVar):Bool {
+		if (expr == null || local == null)
+			return false;
+		var found = false;
+		function walk(current:TypedExpr):Void {
+			if (found || current == null)
+				return;
+			switch (unwrapTypedExpr(current).expr) {
+				case TLocal(v) if (v.id == local.id):
+					found = true;
+				default:
+					TypedExprTools.iter(current, walk);
+			}
+		}
+		walk(expr);
+		return found;
+	}
+
+	static function isSafeFreshArrayMapValue(value:TypedExpr, accumulator:TVar):Bool {
+		if (typedExprUsesLocal(value, accumulator))
+			return false;
+		if (Lambda.count(MutabilityDetector.detectMutatedVariables(value)) > 0)
+			return false;
+
+		var unsafe = false;
+		function walk(expr:TypedExpr):Void {
+			if (unsafe || expr == null)
+				return;
+			var current = unwrapTypedExpr(expr);
+			switch (current.expr) {
+				case TVar(_, _) | TFunction(_) | TIf(_, _, _) | TSwitch(_, _, _) | TTry(_, _) | TWhile(_, _, _) | TFor(_, _, _) | TThrow(_) | TReturn(_) |
+					TBreak | TContinue | TNew(_, _, _):
+					unsafe = true;
+				case TBinop(OpAssign | OpAssignOp(_), _, _) | TUnop(OpIncrement | OpDecrement, _, _):
+					unsafe = true;
+				case TCall(target, _):
+					switch (unwrapTypedExpr(target).expr) {
+						case TField(_, FStatic(_, _)):
+						default:
+							unsafe = true;
+					}
+				default:
+			}
+			if (!unsafe)
+				TypedExprTools.iter(current, walk);
+		}
+		walk(value);
+		return !unsafe;
+	}
+
 	static function analyzeArrayMutationMapLoop(counterVar:TVar, condition:TypedExpr, body:TypedExpr):Null<{
 		arrayVar:TVar,
 		rhs:TypedExpr
@@ -3377,7 +3556,9 @@ class LoopBuilder {
 
 	static function detectForInArrayPattern(econd:TypedExpr, body:TypedExpr):Null<{
 		arrayExpr:TypedExpr,
+		counterVar:TVar,
 		elementVarName:String,
+		isExclusive:Bool,
 		userBody:TypedExpr
 	}> {
 		// Condition: <counter> < array.length
@@ -3388,8 +3569,9 @@ class LoopBuilder {
 
 		var counterVar:Null<TVar> = null;
 		var arrayExpr:Null<TypedExpr> = null;
+		var isExclusive = false;
 		switch (actualCond.expr) {
-			case TBinop(OpLt | OpLte, {expr: TLocal(counter)}, {expr: TField(arr, fieldAccess)}):
+			case TBinop(op, {expr: TLocal(counter)}, {expr: TField(arr, fieldAccess)}) if (op == OpLt || op == OpLte):
 				var isLength = switch (fieldAccess) {
 					case FInstance(_, _, cf): cf.get().name == "length";
 					case FAnon(cf): cf.get().name == "length";
@@ -3399,6 +3581,7 @@ class LoopBuilder {
 				if (isLength) {
 					counterVar = counter;
 					arrayExpr = arr;
+					isExclusive = op == OpLt;
 				}
 			default:
 		}
@@ -3499,7 +3682,9 @@ class LoopBuilder {
 
 		return {
 			arrayExpr: arrayExpr,
+			counterVar: counterVar,
 			elementVarName: elementVarName,
+			isExclusive: isExclusive,
 			userBody: userBody
 		};
 	}

@@ -45,6 +45,8 @@ This example supplies the portable and imperative slices of the
 [handwritten-output corpus](../../docs/03-compiler-development/GENERATED_OUTPUT_QUALITY_CORPUS.md).
 The generated `MessageRules`, `Transcript`, and `PortableChatServer` modules
 are compared with concise handwritten Elixir. Current `StringTools` calls,
-three expression IIFEs, and one reducer append are counted and linked to
-separate optimization beads. They remain visible because the corpus does not
-trade portable Haxe semantics for a prettier snapshot.
+and three expression IIFEs are counted and linked to separate optimization
+beads. `Transcript.render` demonstrates the safe improvement path: its fresh,
+one-append-per-message Haxe loop emits direct `Enum.map`. More complex loops
+keep their semantic reducer lowering rather than trading portable behavior for
+a prettier snapshot.

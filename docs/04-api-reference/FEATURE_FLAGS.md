@@ -19,8 +19,8 @@ They are **not** intended as "performance optimizations". In particular, do **no
 Feature flags are set via Haxe defines in your `.hxml`:
 
 ```hxml
--D elixir.feature.idiomatic_comprehensions=true
 -D elixir.feature.loop_builder_enabled=false
+-D elixir.feature.pattern_extraction=true
 ```
 
 If a flag is omitted, the compiler uses its default.
@@ -32,10 +32,18 @@ These are the user-facing flags wired by the compiler (see `src/reflaxe/elixir/E
 | Define | Default | What it changes |
 | --- | --- | --- |
 | `-D elixir.feature.loop_builder_enabled=<bool>` | `true` | Enables the LoopBuilder lowering for loop constructs (more robust idiomatic loop emission with safety guards). |
-| `-D elixir.feature.idiomatic_comprehensions=<bool>` | `false` | Prefer list comprehensions (`for`) in places where the compiler can prove it preserves semantics (vs `Enum.reduce_while`/rebinding-heavy loops). |
 | `-D elixir.feature.pattern_extraction=<bool>` | `false` | Enables newer pattern-variable extraction strategies (helps match/case ergonomics and reduces temporary bindings where safe). |
 | `-D elixir.feature.new_module_builder=<bool>` | `false` | Routes more compilation through newer module-building infrastructure (primarily for compiler development and migration). |
 | `-D elixir.feature.experimental=<bool>` | `false` | Enables all the above experimental flags at once. Use for testing only; prefer enabling flags individually when bisecting. |
+
+### Retired no-op define
+
+`-D elixir.feature.idiomatic_comprehensions` was documented experimentally but
+never selected a code-generation path. It has been retired. Remove it from
+project HXML files: proven fresh-array projections now emit `Enum.map`
+automatically, while loops that need accumulator, control-flow, iterator, or
+receiver state keep their semantic reducer lowering. There is no separate
+"idiomatic" backend to enable.
 
 ## When to Use Flags
 

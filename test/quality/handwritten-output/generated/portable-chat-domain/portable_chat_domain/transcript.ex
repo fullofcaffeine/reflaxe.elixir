@@ -20,14 +20,6 @@ defmodule PortableChatDomain.Transcript do
   end
 
   def render(history) do
-    lines = []
-    _g = 0
-
-    lines =
-      Enum.reduce(history, lines, fn message, lines_acc ->
-        Enum.concat(lines_acc, [PortableChatDomain.MessageRules.format(message)])
-      end)
-
-    lines
+    Enum.map(history, fn message -> PortableChatDomain.MessageRules.format(message) end)
   end
 end

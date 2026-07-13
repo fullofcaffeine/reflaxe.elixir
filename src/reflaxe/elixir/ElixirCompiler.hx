@@ -1611,7 +1611,6 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	 * Examples:
 	 * - -D elixir.feature.new_module_builder=true
 	 * - -D elixir.feature.loop_builder_enabled=true
-	 * - -D elixir.feature.idiomatic_comprehensions=true
 	 */
 	private function initializeFeatureFlags(context:CompilationContext):Void {
 		// Check for individual feature flags
@@ -1629,11 +1628,6 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			context.setFeatureFlag("loop_builder_enabled", true);
 		}
 
-		if (haxe.macro.Context.defined("elixir.feature.idiomatic_comprehensions")) {
-			var value = haxe.macro.Context.definedValue("elixir.feature.idiomatic_comprehensions");
-			context.setFeatureFlag("idiomatic_comprehensions", value != "false");
-		}
-
 		if (haxe.macro.Context.defined("elixir.feature.pattern_extraction")) {
 			var value = haxe.macro.Context.definedValue("elixir.feature.pattern_extraction");
 			context.setFeatureFlag("pattern_extraction", value != "false");
@@ -1645,7 +1639,6 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			if (value != "false") {
 				context.setFeatureFlag("new_module_builder", true);
 				context.setFeatureFlag("loop_builder_enabled", true);
-				context.setFeatureFlag("idiomatic_comprehensions", true);
 				context.setFeatureFlag("pattern_extraction", true);
 			}
 		}

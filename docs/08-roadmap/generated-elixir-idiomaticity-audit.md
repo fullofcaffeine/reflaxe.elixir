@@ -177,16 +177,22 @@ Tracked by:
 
 ### Portable collection lowering
 
+Resolved by `haxe.elixir.codex-3qh.8`.
+
 The portable chat `Transcript` example builds an array with `push` in a loop.
-Current output uses `Enum.reduce` plus repeated `Enum.concat`. A handwritten
-equivalent is normally `Enum.map`, and repeated append can be O(n squared).
+It previously used `Enum.reduce` plus repeated `Enum.concat`. The generated
+output now uses direct `Enum.map`, matching the normal handwritten shape and
+avoiding repeated growth-copy cost.
 
-That rewrite is only valid when the accumulator is fresh, partial state is not
-observed, each iteration contributes exactly one ordered value, and there is no
-break, continue, non-local return, mutation threading, or stateful iterator
-behavior. The compiler must retain its reducer fallback whenever proof fails.
+The typed proof requires a fresh empty Array accumulator, Array iteration, one
+ordered append per input, no partial accumulator read, and no control-flow,
+iterator, or receiver state crossing the mapper. Conditional/multiple appends,
+partial reads, explicit exceptions, non-local returns, persistent iterators,
+and unproven receiver calls retain the reducer fallback.
 
-Tracked by `haxe.elixir.codex-3qh.8`.
+The old `elixir.feature.idiomatic_comprehensions` define was retired: it was
+parsed and documented but never read by code generation. Safe collection idioms
+now belong to the one normal pipeline rather than a second mode.
 
 ### Expression and control-flow artifacts
 
@@ -257,8 +263,8 @@ runtime behavior, structural signals, and support footprint.
 
 Current selected allowances are deliberately narrow: one conservative
 `HaxeFloat` comparison at an untrusted `Term` boundary, five portable
-`StringTools` calls, three pure-expression IIFEs, and one reducer append. Each
-is file-scoped and linked to its follow-up bead. The haxelib package smoke runs
+`StringTools` calls, and three pure-expression IIFEs. Each is file-scoped and
+linked to its follow-up bead. The haxelib package smoke runs
 the same scanner against source-checkout and built-package output and requires
 identical reports in addition to byte-identical Elixir.
 
@@ -320,8 +326,10 @@ The audit used:
 The full generic Reflaxe prepass set did not materially change the
 representative output or fix the return regression. The experimental
 idiomatic-comprehensions define also did not change the portable Transcript
-output. These results support targeted Elixir IR improvements rather than a
-blanket framework switch.
+output because no codegen path consumed it; `3qh.8` retired that no-op define
+and implemented the improvement as a targeted, always-on typed proof. These
+results support targeted Elixir IR improvements rather than a blanket framework
+switch.
 
 ## Completion Contract
 

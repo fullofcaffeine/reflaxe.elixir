@@ -108,7 +108,7 @@ not permission to add the same shape elsewhere.
 | --- | ---: | ---: | ---: | --- |
 | Elixir-first LiveView | 58 | 11 | 47 | one conservative `HaxeFloat` comparison at an untrusted `Term` boundary |
 | Abstraction lab | 15 | 7 | 8 | none in the selected retry/process files |
-| Portable chat domain | 16 | 4 | 12 | five `StringTools` calls, three IIFEs, one reducer append |
+| Portable chat domain | 16 | 4 | 12 | five `StringTools` calls and three IIFEs; the proven transcript projection is direct `Enum.map` |
 | Todo/Phoenix | 114 | 67 | 47 | none in the selected Ecto schema |
 
 Lower counts are allowed, but a stale structural allowance still fails so its

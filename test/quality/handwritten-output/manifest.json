@@ -162,7 +162,7 @@
           "source": "examples/16-portable-chat-domain/src_haxe/shared/chat/Transcript.hx",
           "generated": "portable_chat_domain/transcript.ex",
           "handwritten": "handwritten/portable-chat-domain/transcript.ex",
-          "expectation": "Immutable transcript behavior is preserved; the current reduce-plus-concat shape is measured as a future pure-append optimization."
+          "expectation": "The fresh one-append-per-message loop is proven equivalent to Enum.map while preserving portable transcript order and content."
         },
         {
           "id": "portable-server-adapter",
@@ -224,14 +224,6 @@
           "count": 1,
           "reason": "The expression-valued sample_lines call is currently isolated before Enum.join.",
           "tracking": "haxe.elixir.codex-3qh.9"
-        },
-        {
-          "metric": "reducerAppend",
-          "file": "portable_chat_domain/transcript.ex",
-          "key": "",
-          "count": 1,
-          "reason": "Portable Array push lowering preserves order through a reduce-plus-append accumulator until purity analysis can select Enum.map.",
-          "tracking": "haxe.elixir.codex-3qh.8"
         }
       ]
     },

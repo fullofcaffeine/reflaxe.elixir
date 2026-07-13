@@ -7,9 +7,7 @@ defmodule UserProfileTemplate do
     "<div class='user-info'><h2>#{user.name}</h2><span class='badge'>#{badge}</span></div>"
   end
   def render_user_list(users) do
-    items = []
-    _g = 0
-    items = Enum.reduce(users, items, fn user, items_acc -> Enum.concat(items_acc, ["<li><strong>" <> user.name <> "</strong> - " <> user.email <> "</li>"]) end)
+    items = Enum.map(users, fn user -> "<li><strong>" <> user.name <> "</strong> - " <> user.email <> "</li>" end)
     "<ul class='user-list'>#{Enum.join(items, "")}</ul>"
   end
   def render_complex_layout(title, content) do

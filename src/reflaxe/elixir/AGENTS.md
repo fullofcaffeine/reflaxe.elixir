@@ -600,7 +600,6 @@ The feature flag system has three layers:
 |-----------|---------|---------|
 | `new_module_builder` | Use new ModuleBuilder system | false |
 | `loop_builder_enabled` | Enable LoopBuilder with safety guards | true |
-| `idiomatic_comprehensions` | Generate comprehensions instead of reduce_while | false |
 | `pattern_extraction` | Use new pattern variable extraction | false |
 
 ### Usage via Command Line
@@ -629,15 +628,19 @@ if (context.isFeatureEnabled("loop_builder_enabled")) {
 }
 
 // Set a feature programmatically
-context.setFeatureFlag("idiomatic_comprehensions", true);
+context.setFeatureFlag("pattern_extraction", true);
 ```
 
 ### Implementation Details
 - Feature flags are initialized in `ElixirCompiler.initializeFeatureFlags()`
-- Flags default to `false` (old behavior) for safety
+- Defaults are explicit; `loop_builder_enabled` is on and experimental flags are off
 - The `experimental` flag enables all new features at once
 - Flags are stored in `ElixirASTContext.featureFlags` map
 - All builders and transformers can check flags via `BuildContext`
+
+The retired `idiomatic_comprehensions` flag was never consumed by codegen.
+Semantics-proven collection idioms are always-on compiler behavior; uncertain
+loops retain their reducer or iterator lowering.
 
 ### Why This Architecture?
 1. **Gradual Migration**: Fix tests incrementally without breaking everything

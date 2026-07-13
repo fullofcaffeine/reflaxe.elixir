@@ -99,6 +99,40 @@ Haxe “field assignment” and “map-like updates” lower into:
 
 See: `docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md`
 
+### Fresh one-to-one array projections
+
+A common portable Haxe shape uses `push` to build one output value for every
+input value:
+
+```haxe
+var lines = [];
+for (message in history) {
+	lines.push(MessageRules.format(message));
+}
+return lines;
+```
+
+When the compiler can prove that `lines` is a fresh empty array, the body has
+exactly one ordered append per input, and no partial accumulator or receiver
+state is involved, it emits the same structure an Elixir developer normally
+writes:
+
+```elixir
+Enum.map(history, fn message -> MessageRules.format(message) end)
+```
+
+This proof is deliberately narrow. Conditional or multiple appends, reads such
+as `lines.length`, non-empty accumulators, `break`/`continue`/non-local return,
+explicit exception control flow, stateful iterators, and unproven instance
+receiver calls stay on the general reducer path. Static projection calls are
+safe here because `Enum.map` evaluates them once per input, in the same order,
+and stops at the same thrown exception as `Enum.reduce`.
+
+No feature flag is required. The former
+`elixir.feature.idiomatic_comprehensions` define never controlled emission and
+has been retired; semantics-proven output improvements belong to the single
+normal compiler pipeline.
+
 ### Loops + break/continue semantics
 
 Key idea:

@@ -1,9 +1,7 @@
 defmodule Main do
   def main() do
     numbers = [1, 2, 3, 4, 5]
-    g = []
-    g = Enum.reduce(numbers, g, fn n, g_acc -> Enum.concat(g_acc, [n * 2]) end)
-    _doubled = g
+    _doubled = Enum.map(numbers, fn n -> n * 2 end)
     g = []
     g = Enum.reduce(numbers, g, fn n, g_acc ->
       if (rem(n, 2) == 0) do

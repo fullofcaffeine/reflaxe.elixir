@@ -101,6 +101,13 @@ class BlockBuilder {
 				return inlineAbstractValue;
 
 			// ====================================================================
+			// PATTERN DETECTION: Fresh array append loops
+			// ====================================================================
+			var freshArrayAppendMapBlock = rewriteFreshArrayAppendMapLoops(el, context);
+			if (freshArrayAppendMapBlock != null)
+				return freshArrayAppendMapBlock;
+
+			// ====================================================================
 			// PATTERN DETECTION: Safe array mutation loops
 			// ====================================================================
 			//
@@ -256,6 +263,94 @@ class BlockBuilder {
 
 			return buildRegularBlock(el, context);
 		});
+	}
+
+	/**
+	 * Rewrite block-scoped fresh-array projection loops as one Enum.map assignment.
+	 *
+	 * WHAT
+	 * - Recognizes adjacent `var output = []; for (item in input) output.push(project(item));`.
+	 * - Consumes both source statements and emits `output = Enum.map(input, fn item -> project(item) end)`.
+	 *
+	 * WHY
+	 * - Freshness is a property of the accumulator declaration, not the loop node. Keeping the
+	 *   rewrite at block scope prevents a non-empty or previously observed accumulator from being
+	 *   mistaken for a map.
+	 * - The generic reducer remains responsible for every shape that the typed proof rejects.
+	 *
+	 * HOW
+	 * - LoopBuilder validates the iterator, append count, accumulator isolation, control flow, and
+	 *   receiver effects. This scanner only supplies the adjacent declaration/loop pair and rebuilds
+	 *   the surrounding block without changing unrelated statements.
+	 * - If the accumulator is the block's final typed value, the binding and tail collapse to the
+	 *   map expression. An inherited name-only remap without this accumulator's TVar.id is ambiguous,
+	 *   so the rewrite falls back instead of capturing an outer reducer accumulator.
+	 */
+	static function rewriteFreshArrayAppendMapLoops(el:Array<TypedExpr>, context:CompilationContext):Null<ElixirASTDef> {
+		if (el == null || el.length < 2 || context == null || context.compiler == null)
+			return null;
+
+		var expressions:Array<ElixirAST> = [];
+		var changed = false;
+		var index = 0;
+
+		while (index < el.length) {
+			if (index + 1 < el.length) {
+				var accumulatorInfo:Null<{accumulator:TVar, init:TypedExpr}> = switch (unwrapTypedExpr(el[index]).expr) {
+					case TVar(accumulator, init) if (init != null):
+						{accumulator: accumulator, init: init};
+					default:
+						null;
+				};
+				if (accumulatorInfo != null) {
+					var returnsAccumulator = index + 3 == el.length && isLocalReferenceTo(el[index + 2], accumulatorInfo.accumulator);
+					var inheritedNameRemap = context.tempVarRenameMap != null
+						&& context.tempVarRenameMap.exists(accumulatorInfo.accumulator.name)
+						&& !context.tempVarRenameMap.exists(Std.string(accumulatorInfo.accumulator.id));
+					var mapped = inheritedNameRemap ? null : LoopBuilder.tryBuildFreshArrayAppendMapLoop(accumulatorInfo.accumulator, accumulatorInfo.init,
+						unwrapTypedExpr(el[index + 1]), context, name -> VariableAnalyzer.toElixirVarName(name));
+					if (mapped != null) {
+						if (returnsAccumulator) {
+							var mappedValue = switch (mapped.def) {
+								case EMatch(_, value): value;
+								default: null;
+							};
+							if (mappedValue == null)
+								return null;
+							expressions.push(mappedValue);
+							index += 3;
+						} else {
+							expressions.push(mapped);
+							index += 2;
+						}
+						changed = true;
+						continue;
+					}
+				}
+			}
+
+			var compiled = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(el[index], context);
+			if (compiled != null)
+				expressions.push(compiled);
+			index++;
+		}
+
+		if (!changed)
+			return null;
+		if (expressions.length == 0)
+			return ENil;
+		if (expressions.length == 1)
+			return expressions[0].def;
+		return EBlock(expressions);
+	}
+
+	static function isLocalReferenceTo(expr:TypedExpr, local:TVar):Bool {
+		if (expr == null || local == null)
+			return false;
+		return switch (unwrapTypedExpr(expr).expr) {
+			case TLocal(candidate): candidate.id == local.id;
+			default: false;
+		};
 	}
 
 	static function rewriteArrayMutationMapLoops(el:Array<TypedExpr>, context:CompilationContext):Null<ElixirASTDef> {
