@@ -1,178 +1,133 @@
-# Vision: The AI-Native Universal Application Platform
+# Vision: Typed Elixir Without Leaving Elixir Behind
 
-## The Revolutionary Vision
+Reflaxe.Elixir aims to make static typing, compile-time abstractions, and selected cross-target code
+sharing available to Elixir teams without asking them to abandon the Elixir/Phoenix application
+model.
 
-Stop learning multiple languages. Stop maintaining fragmented codebases. Stop building the same business logic five different ways.
+This is a direction document, not a release contract. Current stability and support boundaries live
+in [Production Readiness](../06-guides/PRODUCTION_READINESS.md) and
+[Versioning & Stability](../06-guides/VERSIONING_AND_STABILITY.md).
 
-**Reflaxe.Elixir is the first AI-native development platform** that lets you leverage every modern runtime ecosystem through a single, powerful language: Haxe.
+## The Thesis
 
-Write once, deploy everywhere, with built-in AI that understands your entire stack.
+Many teams do not need a new runtime or an all-or-nothing language migration. They need stronger
+feedback at a few expensive boundaries:
 
-> Note on status
->
-> This document describes long-term direction, including experimental and planned work; it is not a
-> release or stability contract. Reflaxe.Elixir is currently pre-1.0. Earlier `v1.1.x` “non-alpha”
-> wording was an unshipped planning label and was superseded in July 2026. See
-> [Versioning & Stability](../06-guides/VERSIONING_AND_STABILITY.md) for current release truth.
+- framework callbacks and assigns;
+- application data shapes and result values;
+- route, schema, changeset, and query declarations;
+- OTP child specs and message contracts;
+- browser/server domain rules;
+- repetitive project-specific glue that drifts during refactors.
 
-## The Three Pillars
+Haxe can provide that authoring layer. Reflaxe.Elixir's job is to lower it into conventional Elixir
+source that enters the normal Mix build and remains understandable to Elixir developers.
 
-### 1. Runtime Ecosystem Leveraging
+## The Product Promise
 
-Access the full power of every modern runtime without language fragmentation:
+### Adopt It Gradually
 
-- **BEAM Runtime**: Phoenix, LiveView, Ecto, OTP, GenServers (✅ Feature complete)
-- **JavaScript Runtime**: React, npm ecosystem, TypeScript libraries (🚧 In Development)  
-- **Mobile Runtime**: iOS/Android via Capacitor, then React Native/Expo (🔮 Planned)
-- **Desktop Runtime**: Cross-platform via Electron/Tauri (🔮 Planned)
+A team should be able to start with one generated module in an isolated namespace, test it from
+Elixir, inspect the output, and remove it without restructuring the application. Haxe-first Phoenix
+applications are supported, but they are a destination a team can choose, not an entry requirement.
 
-### 2. Unified AI-Enhanced Tooling
+### Generate Target-Native Code
 
-The `rex` CLI provides seamless development across all platforms:
+Generated Elixir should look like a capable Elixir developer wrote it whenever source and target
+semantics agree: normal `case`, `cond`, pattern matching, maps, tuples, `Enum`, pipelines, framework
+callbacks, and Mix-compatible files. Required Haxe semantic machinery must be centralized, bounded,
+and visible rather than hidden behind a marketing claim.
 
-```bash
-rex new my-app --template phoenix-live-capacitor
-rex ai "create user auth with email verification"
-rex dev                    # Starts everything: Phoenix + JS + hot reload
-rex ai debug "LiveView not updating"
-rex add platform mobile    # Adds Capacitor with zero config
-rex ai optimize "this Ecto query"
-rex deploy all             # Deploy to web + submit to app stores
-```
+### Type The Boundaries That Matter
 
-### 3. Knowledge Centralization
+Types should prevent duplicated strings, invalid field selectors, mismatched callback returns, unsafe
+child specs, and unreviewed external terms before they reach a deployed system. The compiler should
+not wrap every Elixir call merely to say it is typed; abstractions must remove real drift or risk.
 
-80% of your code lives in Haxe. 20% optimizes for each runtime:
+### Keep Elixir Interoperability First-Class
 
-- **Shared Business Logic**: Validation, algorithms, data transformations
-- **Platform Optimizations**: BEAM concurrency, JS async, mobile native APIs
-- **Unified Development**: One language, one debugger, one mental model
+Hand-written Elixir is not legacy code. Existing modules, dependencies, and operational tools remain
+normal parts of the system. Typed externs describe stable boundaries to Haxe; generated modules expose
+ordinary function/arity contracts back to Elixir.
 
-## Why This Changes Everything
+### Share Only Portable Logic
 
-### The Traditional Problem
+Haxe's JavaScript and other targets create a valuable option for selected domain logic. Portability
+must be explicit: deterministic data rules can be shared, while Phoenix, Ecto, OTP, DOM, and platform
+integration stay in target-specific edges. The goal is less duplicated business logic, not one giant
+lowest-common-denominator application.
 
-Modern applications require multiple runtime strengths:
-- **Backend**: BEAM's unmatched concurrency and fault tolerance
-- **Frontend**: JavaScript's massive ecosystem and UI frameworks
-- **Mobile**: Native platform APIs and performance
-- **Desktop**: Cross-platform reach with native integration
+## Why Haxe
 
-Traditional solutions force you to choose one runtime OR maintain expertise across 4+ languages, fragmenting team knowledge and duplicating business logic.
+Haxe combines several useful traits in one mature compiler front end:
 
-### The Unified Solution
+- static type inference and structural records;
+- algebraic enums and pattern matching;
+- expression-oriented control flow and higher-order functions;
+- compile-time macros, metadata, and typed DSL construction;
+- typed externs for native ecosystem APIs;
+- established JavaScript and other source/runtime targets;
+- enough imperative and object-oriented support to adopt existing Haxe code, with functional style
+  available where it maps naturally to Elixir.
 
-**Reflaxe.Elixir + AI Tooling** gives you all runtime ecosystems through a single development experience:
+That breadth is also a cost. Reflaxe.Elixir must preserve semantics for source features that have no
+direct Elixir equivalent. The project therefore supports both Elixir-first and portable authoring
+through one compiler pipeline and makes their tradeoffs explicit.
 
-1. **Write core logic once** in type-safe Haxe
-2. **Access platform ecosystems** through intelligent compilation
-3. **Use AI assistance** that understands the entire pipeline
-4. **Deploy everywhere** with idiomatic, performant code
+## An LLM Lever, Not An AI Runtime
 
-## The AI Integration Advantage
+The project does not need a proprietary AI service or generated-code magic to improve AI-assisted
+development. Its leverage comes from deterministic structure:
 
-### Built-in Intelligence That Understands Your Stack
+- typed Phoenix/Ecto/OTP vocabulary narrows valid completions;
+- macros replace repeated stringly boilerplate with compiler-checked declarations;
+- Haxe source, generated Elixir, tests, and snapshots provide multiple reviewable representations;
+- compile errors and runtime suites catch invalid suggestions before deployment;
+- one portable domain model can give an assistant shared client/server context without duplicating
+  rules by hand.
 
-Unlike general-purpose AI coding assistants, our integrated AI understands:
+LLMs remain fallible. The compiler and tests are the verification layer; generated suggestions are
+not evidence by themselves.
 
-- **Your Haxe patterns** and how they map to each runtime
-- **Platform-specific optimizations** for BEAM vs JavaScript vs mobile
-- **Error tracing** from runtime back to Haxe source
-- **Performance implications** of different compilation strategies
+## Design Principles
 
-### AI-Enhanced Development Workflow
+1. **Correctness before aesthetics.** Handwritten-looking output is valuable only when behavior is
+   preserved.
+2. **Elixir remains the runtime model.** Supervision, processes, messages, framework callbacks, and
+   Mix releases are not hidden behind a foreign runtime.
+3. **Gradual adoption and rollback are product features.** Generated modules must coexist cleanly
+   with hand-written code and immutable release pins.
+4. **One semantic pipeline.** Portable and Elixir-first are authoring profiles, not divergent
+   backends that silently change behavior.
+5. **Abstractions must pay rent.** Add a macro or wrapper only when it removes meaningful duplication,
+   unsafe states, or maintenance drift.
+6. **Target output is a public artifact.** Naming, formatting, file placement, warnings, runtime
+   footprint, and source/package parity receive direct CI review.
+7. **Support claims follow executable evidence.** Examples, runtime tests, package smoke, upgrade
+   dogfood, and browser sentinels define the supported subset more credibly than feature lists.
 
-```bash
-# AI that understands Haxe → Elixir patterns
-rex ai "create a GenServer for user sessions"
+## Long-Term Directions
 
-# AI that traces errors across compilation boundaries  
-rex ai debug "Phoenix.LiveView.Socket assignment error"
+After a defensible 1.0, the project can expand in measured steps:
 
-# AI that suggests platform-specific optimizations
-rex ai optimize "this validation for mobile offline use"
+- improve native Elixir lowering where semantic proofs permit it;
+- broaden stable Phoenix/Ecto/OTP externs based on real application needs;
+- emit useful typespecs for target-native public surfaces;
+- reduce avoidable runtime footprint while preserving Haxe behavior;
+- graduate source maps only after end-to-end debugging works reliably;
+- expand stdlib conformance through upstream runtime fixtures;
+- strengthen portable server/browser examples and protocol tooling;
+- evaluate Haxe 5 and additional host platforms only with dedicated CI contracts.
 
-# AI that helps migrate existing codebases
-rex ai convert "this React component to Haxe LiveView"
-```
+Mobile, desktop, additional Reflaxe targets, or migration compilers may be useful future projects, but
+they are not current Reflaxe.Elixir capabilities and do not belong in the 1.0 promise.
 
-## The Progressive Platform Strategy
+## Success Looks Like
 
-### Phase 1: BEAM Foundation (✅ Feature complete)
-- **Phoenix/LiveView**: Type-safe web applications
-- **Ecto**: Database schemas and migrations
-- **OTP**: GenServers, Supervisors, fault tolerance
-- **Source Maps**: Debug at Haxe level while running on BEAM
+The vision is working when an Elixir developer can review a generated module without learning a
+private runtime, a Haxe developer can use familiar typed tools without fighting BEAM conventions, and
+a team can adopt or remove the compiler one bounded feature at a time.
 
-### Phase 2: JavaScript Integration (🚧 Active)
-- **Standard Haxe→JS**: Basic client-side compilation
-- **genes compiler**: ES6 modules + TypeScript definitions
-- **dts2hx tool**: Consume npm packages in Haxe
-- **Unified frontend/backend**: Share validation and business logic
-
-### Phase 3: Unified Tooling (🔜 Next)
-- **rex CLI**: One tool for all platforms
-- **AI integration**: Built-in intelligent assistance
-- **Project templates**: Phoenix + JS + mobile + desktop
-- **Unified watch/build/deploy**: Seamless development experience
-
-### Phase 4: Universal Deployment (🔮 Future)
-- **Capacitor**: Quick mobile deployment from web code
-- **React Native/Expo**: Native mobile performance when needed
-- **Electron/Tauri**: Cross-platform desktop applications
-- **Component abstractions**: Write UI once, render everywhere
-
-## The Competitive Revolution
-
-### vs. Traditional Approaches
-
-| Approach | Languages | Ecosystems | Knowledge Base | AI Integration |
-|----------|-----------|------------|---------------|----------------|
-| **Polyglot Teams** | 4+ languages | Limited by expertise | Fragmented | Generic tools |
-| **Single Runtime** | 1 language | 1 ecosystem | Unified but limited | Platform-specific |
-| **Reflaxe.Elixir** | 1 language (Haxe) | All ecosystems | Unified & expansive | Native integration |
-
-### vs. Other Cross-Platform Solutions
-
-- **Flutter/React Native**: Mobile-first, limited backend integration
-- **Electron**: Desktop-focused, heavy resource usage
-- **Progressive Web Apps**: Web-first, limited native capabilities
-- **Reflaxe.Elixir**: Backend-first, progressive platform expansion
-
-## Success Metrics: The Universal Platform
-
-### Developer Experience
-- **Learning Curve**: Months to learn Haxe vs years to master 4+ languages
-- **Development Speed**: 3x faster with shared business logic + AI assistance
-- **Code Reuse**: 80% shared across all platforms
-- **Bug Reduction**: Type safety catches errors before runtime
-
-### Technical Excellence
-- **Performance**: Native-level on each platform through idiomatic compilation
-- **Ecosystem Access**: Full npm + hex + platform-specific libraries
-- **Deployment Flexibility**: Any combination of web + mobile + desktop
-- **Maintenance**: Single codebase, multiple deployment targets
-
-### Business Impact
-- **Team Efficiency**: Frontend/backend developers work in same language
-- **Time to Market**: Rapid prototyping across all platforms
-- **Cost Reduction**: One team instead of platform-specific specialists
-- **Innovation Speed**: AI-assisted development with full-stack understanding
-
-## The Future of Development
-
-Imagine a development workflow where:
-
-1. **You define business logic** in type-safe Haxe
-2. **AI generates boilerplate** for Phoenix + React + mobile + desktop
-3. **You access any ecosystem** without learning new languages
-4. **You deploy everywhere** with platform-optimized code
-5. **You maintain everything** through a single, unified codebase
-
-This isn't just about Elixir or JavaScript or mobile. It's about fundamentally changing how we build software in a multi-platform, AI-assisted world.
-
-**The future is one language, every runtime, with AI that understands it all.**
-
----
-
-**Ready to build the future?** See [`ROADMAP.md`](../../ROADMAP.md) and [`PRODUCTION_READINESS.md`](../06-guides/PRODUCTION_READINESS.md).
+The best outcome is not the largest amount of Haxe. It is the smallest typed layer that makes the
+system safer, easier to refactor, and less repetitive while leaving a normal Elixir application
+behind.

@@ -95,11 +95,11 @@ haxe build-server.hxml   # Regenerate fresh
 
 ### Prerequisites
 
-- **Haxe 4.3+** - The source language
+- **Haxe 4.3.7** - The supported source-language baseline
 - **Elixir 1.14+** - Runtime for backend
 - **Phoenix 1.7+** - Web framework
 - **PostgreSQL** - Database
-- **Node.js 16+** - For JavaScript tooling
+- **Node.js 22.14.0+** - For the supported JavaScript and repository tooling path
 
 ### Initial Setup
 

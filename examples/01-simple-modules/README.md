@@ -110,7 +110,7 @@ After mastering simple modules, continue to:
 ## Troubleshooting
 
 **Compilation errors?**
-- Ensure Haxe 4.3.7+ is installed
+- Ensure Haxe 4.3.7 is installed (the supported baseline)
 - Check that `-lib reflaxe.elixir` is present in the HXML
 - Verify `src_haxe/` is in the classpath
 

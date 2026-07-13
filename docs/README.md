@@ -15,6 +15,7 @@ This index helps you find the right docs quickly, whether you're building apps w
 
 ### 🚀 Getting Started
 **[01-getting-started/](01-getting-started/)** - Setup, quickstart, and basic concepts
+- [Why Reflaxe.Elixir?](01-getting-started/WHY_REFLAXE_ELIXIR.md) - Product model, gradual adoption, Elixir-flavored Haxe, and an honest Gleam comparison
 - [Start Here (Beginner Quickstart)](01-getting-started/START_HERE.md) - Run the todo-app and learn the mental model (Haxe/Phoenix newcomers)
 - [Installation Guide](01-getting-started/installation.md) - Setup Haxe, Reflaxe, and dependencies
 - [Development Workflow](01-getting-started/development-workflow.md) - Day-to-day development practices
@@ -96,7 +97,7 @@ This index helps you find the right docs quickly, whether you're building apps w
 - [Portable Chat Tutorial](06-guides/PORTABLE_CHAT_TUTORIAL.md) - Shared Haxe domain logic pattern
 - [Dogfooding](06-guides/DOGFOODING.md) - External Phoenix app upgrade validation
 - [Todo-app Cowboy Toolchain](06-guides/TODOAPP_COWBOY_TOOLCHAIN.md) - Why the todo-app pins Cowboy deps
-- [Production Hardening](06-guides/PRODUCTION_READINESS.md) - Stable-graduation criteria + checklist
+- [Production Readiness](06-guides/PRODUCTION_READINESS.md) - Current evidence scorecard, known blockers, and stable-graduation gate
 - [Strict Mode](06-guides/STRICT_MODE.md) - Opt-in Gleam-like safety profile
 - [Versioning & Stability](06-guides/VERSIONING_AND_STABILITY.md) - SemVer + stability tiers + deprecation policy
 - [Production Deployment](06-guides/PRODUCTION_DEPLOYMENT.md) - CI/Docker/release patterns
@@ -122,7 +123,8 @@ Legacy guides (kept for link stability):
 
 ### 🗺️ Roadmap & Planning
 **[08-roadmap/](08-roadmap/)** - Planning notes and long-term ideas
-- [Vision](08-roadmap/vision.md) - Long-term ideas (not a stability contract)
+- [Vision](08-roadmap/vision.md) - Grounded product principles and long-term directions (not a stability contract)
+- [1.0 Production Readiness Review](08-roadmap/1.0-production-readiness-review.md) - Independent adversarial baseline, evidence gaps, product position, and execution graph
 - [Generated Elixir Idiomaticity Audit](08-roadmap/generated-elixir-idiomaticity-audit.md) - Evidence, tradeoffs, and the prioritized path toward handwritten-quality output
 - [Phoenix Surface Parity](08-roadmap/phoenix-surface-parity.md) - Example-driven Phoenix/PubSub/Presence/LiveView API gap checklist
 - [PhoenixHx Live Event Protocols](08-roadmap/phoenixhx-live-event-protocols.md) - Typed hook/server event protocols around Phoenix `pushEvent` and `handle_event/3`
@@ -154,6 +156,7 @@ This documentation is optimized for AI assistant development with **AGENTS.md** 
 ## 🔗 Quick Links
 
 - **[Start Here](01-getting-started/START_HERE.md)** - Beginner quickstart (Haxe/Phoenix newcomers)
+- **[Why Reflaxe.Elixir?](01-getting-started/WHY_REFLAXE_ELIXIR.md)** - Decide whether the adoption model and tradeoffs fit your project
 - **[Installation](01-getting-started/installation.md)** - Get started in 5 minutes
 - **[Quickstart](06-guides/QUICKSTART.md)** - Your first Haxe→Elixir project
 - **[Phoenix (New App)](06-guides/PHOENIX_NEW_APP.md)** - Greenfield Phoenix setup

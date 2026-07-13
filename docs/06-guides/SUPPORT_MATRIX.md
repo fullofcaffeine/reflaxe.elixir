@@ -7,19 +7,20 @@ This page describes what toolchain versions Reflaxe.Elixir is **known to work wi
 Our GitHub Actions CI runs primarily on **Ubuntu**, plus a macOS smoke job. CI currently tests:
 
 - Full suite (primary toolchain, Ubuntu):
-  - Node.js: `20`
+  - Node.js: `22.14.0`
   - Haxe: `4.3.7`
   - Elixir: `1.18.3`
   - Erlang/OTP: `27.2`
 
 - Minimum toolchain smoke (compat check, Ubuntu):
+  - Node.js: `22.14.0`
   - Elixir: `1.14.x`
   - Erlang/OTP: `25.x`
   - Runs a bounded subset (`npm run test:quick` + `npm run test:mix-fast`)
   - Note: `npm run test:mix-fast` feature-detects newer Mix flags (e.g. `--stale`) to stay compatible with Elixir `1.14`.
 
 - macOS smoke (bounded):
-  - Node.js: `20`
+  - Node.js: `22.14.0`
   - Haxe: `4.3.7`
   - Elixir: `1.18.3`
   - Erlang/OTP: `27.2`
@@ -34,6 +35,9 @@ Phoenix coverage:
   current security-patched dependency graph requires Elixir `1.16+` (notably Swoosh `1.26.3`).
   This does not raise the compiler's Elixir `1.14+` minimum: the minimum-toolchain job validates the
   compiler and runtime libraries, while application dependencies set their own higher requirements.
+
+Windows is not currently tested and is outside the supported 1.0 operating-system contract. This is
+an explicit scope boundary, not a claim that the compiler cannot work there.
 
 ## Haxe 5 preview strategy
 
@@ -60,12 +64,16 @@ The policy is:
 
 ## Minimum versions (documented)
 
-These are the minimum versions we **document**:
+These are the minimum versions we **document and test** for repository tooling and generated code:
 
-- Haxe `4.3.7+`
-- Node `16+` (Node `20` recommended)
+- Haxe `4.3.7` (the golden typed-AST and generated-output contract)
+- Node `22.14.0+` for the supported repository/Lix tooling path
 - Elixir `1.14+` for the compiler and generated runtime
+- Erlang/OTP `25+` for the compiler and generated runtime
 - Elixir `1.16+` for the checked-in Phoenix/Ecto examples' current dependency graph
+
+Later Haxe `4.x` versions may work, but CI does not sweep them and this page does not imply their
+typed AST is byte-for-byte equivalent to `4.3.7`. Haxe 5 remains preview-only as described above.
 
 If you need support for a specific older version, open an issue and include your constraints.
 
@@ -73,5 +81,6 @@ If you need support for a specific older version, open an issue and include your
 
 - Phoenix `1.6.x` and earlier
 - Haxe `5.x` in CI (local preview smoke only; see the Haxe 5 preview strategy above)
+- Windows
 
 If you run successfully on other versions, please report it so we can expand the matrix.

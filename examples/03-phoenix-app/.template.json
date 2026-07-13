@@ -12,10 +12,10 @@
     "Development tools and live reload"
   ],
   "requirements": {
-    "haxe": "4.3+",
+    "haxe": "4.3.7",
     "elixir": "1.14+", 
     "phoenix": "1.7+",
-    "node": "16+"
+    "node": "22.14.0+"
   },
   "placeholders": {
     "__PROJECT_NAME__": "Project name in snake_case",

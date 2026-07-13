@@ -3,7 +3,11 @@
 GitHub Releases are the version-specific release notes. This file keeps curated migration context
 that remains useful across versions; released version identity comes from protected Git tags.
 
-## Unreleased
+## Curated Migration Context After v0.14.27
+
+The entries in this section are not an unreleased queue. They summarize migrations that may span one
+or more already published releases. Use [GitHub Releases](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
+for the exact changes attached to each version.
 
 ### Features
 
@@ -25,6 +29,7 @@ that remains useful across versions; released version identity comes from protec
 
 ### Changed
 
+* **docs:** redesign the README around two-way adoption for Elixir and Haxe developers, reviewable generated source, and an honest Gleam comparison; publish an evidence-based 1.0 readiness review and scorecard; replace broad production claims with explicit semantic, build-invalidation, generated-file ownership, OTP, licensing, security, support-contract, and external-soak gates tracked under `haxe.elixir.codex-0yn`.
 * **compiler:** emit effectful calls and Phoenix/Ecto/OTP DSL calls as normal bare Elixir statements instead of synthetic `_ = call(...)` matches; remove the redundant global and Presence-specific wrapper passes, preserve tail-call values and evaluation order, and teach Ecto migration/changeset consumers to accept the canonical bare-call AST shape.
 * **compiler:** scope Phoenix/OTP, LiveView, Ecto, HXX, and ExUnit AST passes through exact registry ownership plus typed module capabilities, reducing representative core execution from 578 to 407 passes without changing generated output; add scoped-versus-legacy byte-parity CI, enforce scope-manifest integrity, and remove 50 same-name registrations plus three missing ordering edges that the registry already ignored while retaining unproven distinct replay chains.
 * **compiler:** inventory all 578 effective Elixir AST passes by deterministic phase, ownership scope, replay family, ordering dependency, and representative tests; replace source-text order parsing with typed macro introspection and add bounded per-module timing/count baselines without changing generated Elixir.
@@ -324,7 +329,7 @@ complete notes instead of rewriting `v0.14.26`.
 
 * advance stdlib parity and typed API surfaces ([9c9a5e5](https://github.com/fullofcaffeine/reflaxe.elixir/commit/9c9a5e57a638ae120a85693d05e8013f088f4cd6))
 
-## Unreleased
+## Legacy Unversioned Migration Note
 
 ### Features
 

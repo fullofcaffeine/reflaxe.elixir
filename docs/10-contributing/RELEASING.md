@@ -148,7 +148,8 @@ Every release publishes exactly two custom assets:
 - `reflaxe.elixir-X.Y.Z.zip.sha256`
 
 Consumers can download both from the same immutable release and run `sha256sum --check` on Linux or
-`shasum -a 256 --check` on macOS, as shown in the [README](../../README.md#install-with-lix-recommended).
+`shasum -a 256 --check` on macOS, as shown in the
+[installation guide](../01-getting-started/installation.md#verify-the-package).
 The sidecar names the versioned ZIP, so a checksum copied from another version fails. GitHub's
 immutable-release control prevents the verified asset from being replaced under the same tag.
 

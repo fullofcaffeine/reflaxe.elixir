@@ -17,8 +17,8 @@ If you’re new to Haxe and/or new to Phoenix, start here first:
 ## Prerequisites
 
 - Elixir 1.14+
-- Node.js 16+ (for `lix` and JS toolchain)
-- Haxe 4.3.7+ on your PATH
+- Node.js 22.14.0+ (supported `lix` and repository tooling path)
+- Haxe 4.3.7 on your PATH (supported baseline)
 - Postgres (required for `examples/todo-app` and any Phoenix app using Ecto)
 
 If you don’t have Haxe installed yet, start here: `docs/01-getting-started/installation.md`.

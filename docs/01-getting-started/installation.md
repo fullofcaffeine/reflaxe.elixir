@@ -1,30 +1,82 @@
-# Installation & Setup Guide
+# Installation And Setup
 
-Setup guide for Reflaxe.Elixir development with lix package management and dual-ecosystem workflows.
+Use the immutable release package when building an application. Clone the repository only when
+developing the compiler or testing an unreleased change.
 
 **⚠️ Having trouble with tests or compilation?** See the troubleshooting section below.
 
 ## Prerequisites
 
 ### Required Software
-- **Node.js 16+** - For lix package management and npm scripts
+- **Node.js 22.14.0+** - For the supported lix/package tooling path and npm scripts
 - **Elixir 1.14+** - For Phoenix/Ecto ecosystem and generated code testing
-- **Git** - For repository cloning and dependency management
+- **Git** - Required for compiler contributors and some dependency sources
 - **Neko runtime on Linux** - Required by the `haxelib` executable bundled with Haxe 4 toolchains installed through lix. On Ubuntu/Debian, install it with `sudo apt-get install neko`.
 
 ### Installation Check
 ```bash
 # Verify prerequisites
-node --version    # Should be 16.0.0 or higher
+node --version    # Should be 22.14.0 or higher
 elixir --version  # Should be 1.14.0 or higher
 git --version     # Any recent version
 ```
 
-## Step-by-Step Installation
+## Application Installation (Recommended)
+
+Create or enter your application workspace, then install the latest Reflaxe-built package through
+Lix:
+
+```bash
+npm install --save-dev lix
+npx lix scope create
+
+REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*"tag_name":[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)"
+REFLAXE_ELIXIR_VERSION="${REFLAXE_ELIXIR_TAG#v}"
+PACKAGE="reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
+RELEASE_URL="https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}"
+```
+
+### Verify The Package
+
+For a reproducible or security-sensitive installation, verify the versioned ZIP before asking Lix to
+install the same immutable asset:
+
+```bash
+curl -fL -o "$PACKAGE" "$RELEASE_URL/$PACKAGE"
+curl -fL -o "$PACKAGE.sha256" "$RELEASE_URL/$PACKAGE.sha256"
+
+if command -v sha256sum >/dev/null 2>&1; then
+  sha256sum --check "$PACKAGE.sha256"
+else
+  shasum -a 256 --check "$PACKAGE.sha256"
+fi
+```
+
+The command must report `OK`. Each package embeds its exact version, release tag, and source commit;
+maintainers additionally verify GitHub's hosted digest and signed immutable-release attestation. See
+[Releasing](../10-contributing/RELEASING.md#consumer-verification).
+
+### Install With Lix
+
+After the optional verification step, install the same immutable asset:
+
+```bash
+npx lix install "https://www.github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/${PACKAGE}"
+npx lix download
+```
+
+The `www.github.com` host is intentional: it keeps the release ZIP on Lix's generic
+immutable-archive path instead of treating the URL as a source repository dependency.
+
+Continue with the [Quickstart](../06-guides/QUICKSTART.md),
+[Phoenix New App](../06-guides/PHOENIX_NEW_APP.md), or
+[Gradual Adoption](../06-guides/PHOENIX_GRADUAL_ADOPTION.md) guide.
+
+## Compiler Checkout Setup
 
 ### 1. Clone Repository
 ```bash
-git clone <repository-url>
+git clone https://github.com/fullofcaffeine/reflaxe.elixir.git
 cd reflaxe.elixir
 ```
 
@@ -326,7 +378,7 @@ This setup ensures that both the compiler development and generated code quality
 After successful installation:
 
 1. **[Quickstart Tutorial](../06-guides/QUICKSTART.md)** - Build your first Haxe→Elixir project in 5 minutes
-2. **[Project Structure](../../README.md#Project-Structure)** - Understand the directory layout and conventions
+2. **[Source and Package Layout](SOURCE_VS_PACKAGE_LAYOUT.md)** - Understand consumer and compiler-checkout layout conventions
 3. **[Development Workflow](development-workflow.md)** - Learn day-to-day development practices
 4. **[Phoenix Integration](../02-user-guide/PHOENIX_INTEGRATION.md)** - Build Phoenix applications with Haxe
 

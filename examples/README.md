@@ -266,7 +266,7 @@ All examples use project lix dependencies:
 
 ## 🛠 Requirements
 
-- **Haxe**: 4.3.7+ (install the compiler; dependencies are managed via lix)
+- **Haxe**: 4.3.7 (supported baseline; dependencies are managed via lix)
 - **Elixir**: 1.14+
 - **Phoenix**: 1.7+ (for Phoenix examples)
 - **PostgreSQL**: For Ecto examples

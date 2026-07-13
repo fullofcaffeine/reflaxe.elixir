@@ -29,7 +29,7 @@ Please be respectful and considerate in all interactions. We aim to maintain a w
 ## Development Setup
 
 ### Prerequisites
-- Node.js 16+ (for lix package management)
+- Node.js 22.14.0+ (supported repository and lix tooling path)
 - Elixir 1.14+ for compiler development; Elixir 1.16+ to run every Phoenix/Ecto example
 - Git
 

@@ -36,8 +36,8 @@ The client is intentionally kept “thin”: most logic stays on the server (Liv
 - Elixir 1.14+
 - Phoenix 1.7+
 - PostgreSQL
-- Node.js 16+
-- Haxe 4.3+
+- Node.js 22.14.0+
+- Haxe 4.3.7
 
 ### Installation
 

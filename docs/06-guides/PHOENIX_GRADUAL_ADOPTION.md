@@ -19,8 +19,8 @@ For a concrete copy-paste walkthrough with a domain module, an Elixir call path,
 ## What You Need
 
 - Elixir 1.14+
-- Node.js 16+
-- Haxe 4.3.7+ (installed on your PATH)
+- Node.js 22.14.0+
+- Haxe 4.3.7 (supported baseline; installed on your PATH)
 
 ## 1) Add `lix` and the Haxe libraries
 

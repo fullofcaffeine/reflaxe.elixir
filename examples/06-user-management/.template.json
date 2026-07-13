@@ -12,11 +12,11 @@
     "Advanced Phoenix patterns"
   ],
   "requirements": {
-    "haxe": "4.3+",
+    "haxe": "4.3.7",
     "elixir": "1.14+",
     "phoenix": "1.7+", 
     "phoenix_live_view": "0.20+",
-    "node": "16+"
+    "node": "22.14.0+"
   },
   "placeholders": {
     "__PROJECT_NAME__": "Project name in snake_case",

@@ -1,323 +1,177 @@
 <p align="center">
-  <img src="assets/haxir-logo.png" alt="Haxir logo" width="280" />
+  <img src="assets/haxir-logo.png" alt="Haxir logo" width="170" />
 </p>
 
-# Reflaxe.Elixir (aka Haxir)
+<h1 align="center">Reflaxe.Elixir</h1>
 
-[![Release](https://img.shields.io/github/v/release/fullofcaffeine/reflaxe.elixir)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
-[![License: GPL-3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![CI](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml/badge.svg)](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml)
-[![Haxe](https://img.shields.io/badge/Haxe-4.3.7+-orange)](https://haxe.org)
-[![Elixir](https://img.shields.io/badge/Elixir-1.14+-purple)](https://elixir-lang.org)
+<p align="center">
+  <strong>Write typed Haxe. Ship reviewable Elixir.</strong><br />
+  Bring Haxe to the BEAM, or add typed Haxe gradually to an existing Elixir app.
+</p>
 
-**[Haxe](https://haxe.org) -> [Elixir](https://elixir-lang.org) compiler for the BEAM ecosystem, with first-class [Phoenix](https://phoenixframework.org)/[LiveView](https://www.phoenixframework.org/liveview) support.**
-Write application code in Haxe and compile to conventional Elixir shapes for pure Elixir/OTP services and Phoenix applications.
+<p align="center">
+  <a href="https://github.com/fullofcaffeine/reflaxe.elixir/releases"><img alt="Release" src="https://img.shields.io/github/v/release/fullofcaffeine/reflaxe.elixir" /></a>
+  <a href="https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml/badge.svg" /></a>
+  <a href="https://haxe.org"><img alt="Haxe 4.3.7" src="https://img.shields.io/badge/Haxe-4.3.7-orange" /></a>
+  <a href="https://elixir-lang.org"><img alt="Elixir 1.14+" src="https://img.shields.io/badge/Elixir-1.14%2B-purple" /></a>
+  <a href="LICENSE"><img alt="GPL-3.0 license" src="https://img.shields.io/badge/license-GPL--3.0-2563eb" /></a>
+</p>
 
-> [!WARNING]
-> **Stability**: Reflaxe.Elixir is on the pre-1.0 (`v0.x`) release line.
-> Breaking changes to documented stable surfaces use minor releases until an explicitly reviewed stable graduation.
-> Some features remain experimental/opt-in; see [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md) and [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).
+<p align="center">
+  <a href="docs/01-getting-started/WHY_REFLAXE_ELIXIR.md">Why Reflaxe.Elixir?</a> ·
+  <a href="#try-it">Try it</a> ·
+  <a href="docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md">Gradual adoption</a> ·
+  <a href="examples/README.md">Examples</a> ·
+  <a href="docs/README.md">Docs</a>
+</p>
 
-Immutable Git tags identify released versions. The
-[release policy manifest](release/manifest.json) contains only release-line approvals; it is not a
-second mutable version file. See [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).
-Normal publication is the final job of the same `main` CI run: it can tag only that run's exact
-`github.sha` after compiler, package, examples, dogfood, QA, and security gates succeed. There is no
-manual normal-release bypass. See [Releasing](docs/10-contributing/RELEASING.md).
+Reflaxe.Elixir compiles typed Haxe into `.ex` source for the normal Mix and BEAM pipeline.
 
-## Why Reflaxe.Elixir
+**For Elixir developers:** add static types, closed domain states, typed Phoenix boundaries, and
+compile-time DSL checks one module or feature at a time. Generated and hand-written Elixir coexist
+through ordinary module/function contracts.
 
-Reflaxe.Elixir is for teams that want standard Elixir/OTP runtime behavior, while authoring with stronger compile-time feedback.
+**For Haxe developers:** use Haxe as the primary language for BEAM services and Phoenix applications
+while keeping Mix, Hex packages, Elixir interop, OTP operations, and standard deployment. Functional,
+Elixir-flavored Haxe maps closest to direct target code; covered portable and imperative forms keep
+their behavior through explicit lowering. Haxe is a build dependency, not a second production VM.
 
-- **Keep standard Elixir runtime semantics**: generated code follows normal module/function/tuple/map conventions.
-- **Keep generated code reviewable**: ordinary calls and Phoenix/Ecto/OTP DSL statements stay ordinary Elixir calls; synthetic matches remain only where source semantics require them.
-- **Add a typed authoring layer**: catch shape mismatches (assigns, params, tagged results) before runtime.
-- **Improve large refactors**: typed Haxe APIs and compiler checks help keep changes coherent across modules.
-- **Build ergonomic abstractions**: Haxe macros/typing can encode reusable authoring patterns without changing your BEAM deployment model.
-- **Use it with or without Phoenix**: works for pure Elixir/OTP codebases and Phoenix apps.
+> [!IMPORTANT]
+> **Pre-1.0:** suitable for controlled pilots inside documented, pinned paths, not a general stability
+> promise. See [Production Readiness](docs/06-guides/PRODUCTION_READINESS.md), the
+> [independent 1.0 review](docs/08-roadmap/1.0-production-readiness-review.md),
+> [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md), and
+> [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).
 
-Elixir's failure model is still the foundation (supervision, process isolation, let-it-crash where appropriate).
-The typed layer helps you decide more deliberately what should crash, what should return data, and where boundaries should be explicit.
+## Why It Exists
 
-## Build Higher-Level Abstractions (Haxe + Elixir)
+- **Type the risky boundaries.** Check assigns, params, routes, results, schemas, changesets, child
+  specs, and existing Elixir calls before generated code reaches Mix.
+- **Adopt in either direction.** Add one typed island to an Elixir app, or author a larger bounded
+  context in Haxe while Phoenix and the BEAM remain the platform.
+- **Keep the output recognizable.** Emit normal modules, functions, maps, tuples, pattern matches,
+  `Enum`, Phoenix, Ecto, and OTP calls when semantics allow.
+- **Build typed project DSLs.** Use Haxe macros, metadata, algebraic enums, and structural types to
+  remove duplicated strings and invalid framework combinations.
+- **Share selected behavior.** Compile a deliberately portable domain layer to Elixir and JavaScript;
+  target-specific Phoenix and browser code stays at the edges.
+- **Keep normal operations.** Format, test, inspect, profile, and deploy the resulting Elixir with
+  ordinary Mix and BEAM tools.
 
-These abstractions should earn their place. The question is not "can Haxe do this?", but "does this reduce drift, duplication, or unsafe boundaries compared to direct Haxe->Elixir authoring without this extra layer?"
-
-| Haxe authoring surface | Direct Haxe->Elixir baseline | Edge over that baseline | Example |
-| --- | --- | --- | --- |
-| Module-level `final routes = [...]` | Hand-maintained route/controller wiring in direct modules | Typed route declarations reduce path/action drift during refactors | [`examples/09-phoenix-router`](examples/09-phoenix-router/README.md) |
-| `@:schema` + `@:changeset` | Manually keeping schema/changeset field surfaces aligned | Typed field/params surfaces catch boundary mismatches earlier | [`examples/06-user-management`](examples/06-user-management/README.md) |
-| `TypedQueryLambda` | Ad-hoc query composition with repeated field assumptions | Typed query lambdas keep predicates aligned with source model shapes | [`examples/todo-app`](examples/todo-app/README.md) |
-| `@:protocol` / `@:impl` / `@:behaviour` | Repeated contract maintenance across implementation modules | One typed contract surface, multiple implementations, less signature drift | [`examples/14-abstraction-lab`](examples/14-abstraction-lab/README.md) |
-| Typed wrappers over Elixir externs (for example `elixir.Kernel`) | Repeated low-level guard/send/type-check boilerplate | Centralized boundary helpers with explicit typed call surfaces | [`examples/14-abstraction-lab`](examples/14-abstraction-lab/README.md) |
-
-For a focused walkthrough of these patterns in one place, see [`examples/14-abstraction-lab`](examples/14-abstraction-lab/README.md).
-
-Tradeoff: you add a compile step and should still read generated Elixir for hot paths and debugging. If an abstraction does not remove real duplication or drift, direct Haxe->Elixir modules are usually the simpler choice.
-
-### How this differs from [Gleam](https://gleam.run) (briefly)
-
-Gleam is a strong typed BEAM language with its own language/runtime story.
-Reflaxe.Elixir takes a different approach:
-
-- You author in Haxe and compile to Elixir.
-- You integrate directly with Phoenix/[LiveView](https://www.phoenixframework.org/liveview)/Ecto through typed extern surfaces.
-- You can reuse Haxe tooling/macros and keep cross-target options where they make sense.
-
-## Current Support
-
-### Documented stable tier (pre-1.0 policy)
-
-- Phoenix integration ([LiveView](https://www.phoenixframework.org/liveview)/controllers/templates/routers) for documented paths
-- HEEx-oriented inline markup authoring (`return <div>...</div>`) with strict `tsx` mode as the default path for new code; legacy `balanced` string templates and `metal` raw-HEEx escapes are documented in [HXX Syntax & Comparison](docs/02-user-guide/HXX_SYNTAX_AND_COMPARISON.md)
-- Ecto schemas/changesets/typed query surfaces
-- OTP patterns (GenServer/Supervisor/Registry)
-- Mix integration (`mix compile.haxe`, watcher workflows) and client hook builds with [Genes](https://github.com/benmerckx/genes)
-
-### Experimental / opt-in
-
-- Source mapping (`.ex.map`, `mix haxe.source_map`)
-- Migration `.exs` emission
-- `fast_boot`
-
-For exact boundaries, use:
-- [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md)
-- [Support Matrix](docs/06-guides/SUPPORT_MATRIX.md)
-- [Stdlib Support Matrix](docs/04-api-reference/STDLIB_SUPPORT_MATRIX.md)
-- [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md)
-
-## Quick Start
-
-### Start here
-
-If you're new to this stack, begin with:
-- [Start Here](docs/01-getting-started/START_HERE.md)
-- [Quickstart](docs/06-guides/QUICKSTART.md)
-
-### Install with [Lix](https://github.com/lix-pm/lix.client) (recommended)
-
-```bash
-npx lix scope create
-
-# Install the Reflaxe-built package from the latest GitHub release
-REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*"tag_name":[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)"
-REFLAXE_ELIXIR_VERSION="${REFLAXE_ELIXIR_TAG#v}"
-npx lix install "https://www.github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}/reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
-
-# Download project-pinned Haxe deps
-npx lix download
+```text
+Haxe source -> Haxe typer/macros -> Reflaxe.Elixir -> .ex -> Mix -> BEAM
 ```
 
-To verify the package bytes before installation, download the ZIP and its release-owned checksum
-from the same immutable release:
+Reflaxe.Elixir has one compiler pipeline and two authoring styles: **Typed Elixir-first** favors
+BEAM/Phoenix-native APIs and direct output; **portable stdlib-first** prioritizes cross-target Haxe
+semantics. They are source-design choices, not separate backends. See
+[Authoring Styles](docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md).
 
-```bash
-PACKAGE="reflaxe.elixir-${REFLAXE_ELIXIR_VERSION}.zip"
-RELEASE_URL="https://github.com/fullofcaffeine/reflaxe.elixir/releases/download/${REFLAXE_ELIXIR_TAG}"
-curl -fL -o "$PACKAGE" "$RELEASE_URL/$PACKAGE"
-curl -fL -o "$PACKAGE.sha256" "$RELEASE_URL/$PACKAGE.sha256"
-if command -v sha256sum >/dev/null 2>&1; then
-  sha256sum --check "$PACKAGE.sha256"
-else
-  shasum -a 256 --check "$PACKAGE.sha256"
-fi
-```
+## See The Output
 
-The check must report `OK`. Lix then fetches that same immutable release asset in the install
-command above. Maintainers additionally verify GitHub's signed release and asset attestations; see
-[Releasing](docs/10-contributing/RELEASING.md#consumer-verification).
-
-The release zip is the normal consumer package. Reflaxe builds it from the checked-in target stdlib
-sources and includes the generated `.cross.hx` files required by a single `-lib reflaxe.elixir`.
-The `www.github.com` host is intentional: it lets Lix treat the file as a generic immutable HTTPS
-archive instead of misclassifying the release URL as a GitHub source-repository dependency.
-Each new release also publishes a `.sha256` sidecar, and the ZIP embeds its exact version, tag, and source
-commit. The release job builds the complete package twice and requires byte-identical output before
-it tags that already-tested source commit. GitHub first creates a draft, uploads both approved files,
-then publishes them as an immutable release with a signed release attestation. A reviewer-gated
-repair workflow may finish an interrupted draft for an existing tag; it cannot choose a branch,
-derive a version, create or move a tag, or replace mismatched bytes.
-
-### Working from a source checkout
-
-Use this only when developing the compiler itself or testing an unreleased change:
-
-```bash
-REFLAXE_ELIXIR_CHECKOUT=/absolute/path/to/reflaxe.elixir
-npx lix dev reflaxe.elixir "$REFLAXE_ELIXIR_CHECKOUT"
-"$REFLAXE_ELIXIR_CHECKOUT/scripts/dev/configure-source-checkout-hxml.sh" . "$REFLAXE_ELIXIR_CHECKOUT"
-npx lix download
-```
-
-The helper gives the external project the same scoped classpaths used by this repository. Do not use
-a raw `lix dev` or `haxelib dev` entry by itself: source `_std` overrides must be visible before Haxe
-starts typing. See [Source checkout vs release package](docs/01-getting-started/SOURCE_VS_PACKAGE_LAYOUT.md)
-for a beginner-friendly explanation of why the layouts differ and how output parity is tested.
-
-### Minimal `build.hxml`
-
-```hxml
--lib reflaxe.elixir
--cp src_haxe
--main my_app_hx.Main
-
--D no-utf16
--D elixir_output=lib/my_app_hx
--D app_name=MyApp
-
--dce full
-```
-
-Important compiler flag note:
-- `-lib reflaxe.elixir` supplies the target marker and compiler initialization;
-  application HXML files do not need `-D reflaxe_runtime`.
-- Do **not** use `-D analyzer-optimize` when targeting Elixir.
-- See [Compiler Flags Guide](docs/01-getting-started/compiler-flags-guide.md#reflaxe_runtime-compiler-development-context)
-  for the compiler-development convention and source/package contract.
-
-To have the compiler run the project's canonical Mix formatter over only the
-files Reflaxe generated, opt in with:
-
-```hxml
--D reflaxe_elixir_format=write
-```
-
-Formatting is off by default, so Haxe-only environments do not need Mix. See
-[Canonical Formatting for Generated Elixir](docs/02-user-guide/GENERATED_OUTPUT_FORMATTING.md)
-for `off`/`write`/`check`, Phoenix LiveView configuration, CI version pinning,
-source-map safety, and the distinction between formatting and semantic code generation.
-
-Formatting is only the presentation layer. The repository also keeps a small
-[generated Elixir quality corpus](docs/03-compiler-development/GENERATED_OUTPUT_QUALITY_CORPUS.md)
-that places representative Haxe source, canonical generated output, and a
-handwritten Elixir comparison side by side. CI rejects unexplained helper
-calls, IIFEs, discarded matches, reducer appends, and support-module growth,
-while preserving narrow allowances when Haxe semantics genuinely require them.
-
-For example, a fresh portable projection loop such as
-`for (message in history) lines.push(format(message))` compiles to direct
-`Enum.map(history, fn message -> format(message) end)`. The compiler uses this
-shape only when it proves one ordered output per input with no partial
-accumulator, control-flow, iterator, or receiver state. See
-[Imperative to Functional Lowering](docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md#fresh-one-to-one-array-projections)
-for the generated shape and conservative fallback rules.
-
-### New Phoenix app (greenfield)
-
-Use the guided flow:
-- [Phoenix New App Guide](docs/06-guides/PHOENIX_NEW_APP.md)
-
-For gradual adoption in an existing Phoenix codebase:
-- [Phoenix Gradual Adoption](docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md)
-
-### Pure Elixir / OTP (no Phoenix)
-
-Start from the Mix-based examples and author regular Elixir modules in Haxe:
-- [Examples Index](examples/README.md)
-- [`examples/02-mix-project`](examples/02-mix-project/)
-
-### Todo app smoke (repo)
-
-```bash
-npm run qa:sentinel
-scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 120
-```
-
-## Example (LiveView)
-
-Haxe:
+This pair is checked by [`01-simple-modules`](examples/01-simple-modules/).
 
 ```haxe
-import elixir.types.Term;
-import phoenix.Phoenix.HandleEventResult;
-import phoenix.Phoenix.MountResult;
-import phoenix.Phoenix.Socket;
-
-typedef CounterAssigns = { count: Int };
-
-@:liveview
-class CounterLive {
-  public static function mount(params: Term, session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
-    return Ok(socket.assign(_.count, 0));
+@:module
+class BasicModule {
+  public static function calculate(x:Int, y:Int, operation:String):Int {
+    return switch (operation) {
+      case "add": x + y;
+      case "subtract": x - y;
+      case "multiply": x * y;
+      case "divide": y != 0 ? Std.int(x / y) : 0;
+      case _: 0;
+    };
   }
 }
 ```
 
-Notes:
-- With `-D app_name=MyApp`, `@:liveview class CounterLive` derives the normal Phoenix module
-  `MyAppWeb.CounterLive` and output path `lib/my_app_web/counter_live.ex`.
-- Use class-level `@:native("MyAppWeb.SomeExactModule")` only as an exact interop escape hatch
-  when the derived Phoenix name is not the module you need.
-- `socket` in LiveView callbacks is `Socket<TAssigns>` (the Phoenix callback shape), and you can call assign helpers on it directly (`socket.assign(...)`).
-- `LiveSocket<TAssigns>` is still available as an explicit wrapper when you prefer pipe-style chaining or helper signatures that use `LiveSocket`.
-- `_.count` can look odd at first because `_` usually means “unused variable.” Here, `_` is a macro marker.
-- Why the API looks like this: Haxe has no built-in “field reference literal” for typedef fields, so `LiveSocket.assign` uses `_.field` as a compact compile-time selector.
-- What you get from it: the compiler validates the field name, converts to Phoenix atom style, and emits `assign(socket, :count, value)`. `_` does not exist at runtime.
-- Phoenix-style bulk assigns are available as `assign({ ... })`, which emits `assign(socket, %{...})`.
-- Typed-key APIs (`assignKey`/`assignNewKey`/`updateKey`) are optional advanced mode with `var keys = phoenix.AssignKeys.of(MyAssigns)`.
-  Use default `assign(_.field, value)` / `assign({ ... })` for shortest code; use typed keys when you want explicit key tokens in APIs.
-  Tiny comparison:
-  `var keys = phoenix.AssignKeys.of(CounterAssigns);`
-  `return Ok(socket.assignKey(keys.count, 0));`
-- In Haxe, write callback args naturally (`params`, `session`). If they are unused, generated Elixir is automatically normalized to `_params`, `_session`.
-- API deep dive: `docs/04-api-reference/LIVE_SOCKET_ASSIGN_API.md`
-
-Generated Elixir shape:
-
 ```elixir
-defmodule CounterLive do
-  use Phoenix.LiveView
-
-  def mount(_params, _session, socket) do
-    {:ok, assign(socket, :count, 0)}
+defmodule BasicModule do
+  def calculate(x, y, operation) do
+    case operation do
+      "add" -> x + y
+      "subtract" -> x - y
+      "multiply" -> x * y
+      "divide" when y != 0 -> div(x, y)
+      "divide" -> 0
+      _ -> 0
+    end
   end
 end
 ```
 
-More examples:
-- [Examples Index](examples/README.md)
-- [Phoenix Chat Tutorial](docs/06-guides/PHOENIX_CHAT_TUTORIAL.md)
-- [Functional Patterns](docs/07-patterns/FUNCTIONAL_PATTERNS.md)
+Correctness wins when Haxe and Elixir semantics differ. Required helpers remain visible, centralized,
+and tested instead of being disguised as native syntax.
 
-## Documentation
+## Start Where It Pays
 
-Start at [docs/README.md](docs/README.md).
+| Goal | Start here |
+| --- | --- |
+| Compile the smallest Haxe modules | [`01-simple-modules`](examples/01-simple-modules/) |
+| Bring a Haxe service or library to the BEAM | [`02-mix-project`](examples/02-mix-project/) |
+| Add one feature to an existing Phoenix app | [Gradual Adoption Tutorial](docs/06-guides/PHOENIX_GRADUAL_ADOPTION_TUTORIAL.md) |
+| Call hand-written Elixir from typed Haxe | [`13-elixir-first-liveview`](examples/13-elixir-first-liveview/) |
+| Share selected browser/server domain logic | [`16-portable-chat-domain`](examples/16-portable-chat-domain/) |
+| Explore the full reference app | [`todo-app`](examples/todo-app/) |
+| Install a verified release package | [Installation](docs/01-getting-started/installation.md) |
 
-### Recommended links
+No all-at-once rewrite is required.
 
-- [Installation](docs/01-getting-started/installation.md)
-- [Writing Idiomatic Haxe for Elixir](docs/02-user-guide/WRITING_IDIOMATIC_HAXE_FOR_ELIXIR.md)
-- [Elixir Idioms & Hygiene](docs/02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md)
-- [Canonical Formatting for Generated Elixir](docs/02-user-guide/GENERATED_OUTPUT_FORMATTING.md)
-- [Haxe->Elixir Mappings](docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md)
-- [Interop With Existing Elixir](docs/02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md)
-- [Phoenix Integration](docs/02-user-guide/PHOENIX_INTEGRATION.md)
-- [API Index](docs/04-api-reference/API_INDEX.md)
-- [LiveSocket Assign API](docs/04-api-reference/LIVE_SOCKET_ASSIGN_API.md)
-- [Mix Tasks](docs/04-api-reference/MIX_TASKS.md)
-- [Elixir Injection Guide](docs/04-api-reference/ELIXIR_INJECTION_GUIDE.md)
-- [Troubleshooting](docs/06-guides/TROUBLESHOOTING.md)
+## Reflaxe.Elixir And Gleam
 
-## Contributing
+This is not a universal “better than Gleam” claim. Reflaxe.Elixir can be the better fit when generated
+Elixir, Phoenix macro/DSL integration, module-by-module adoption, Haxe macros, or existing Haxe and
+JavaScript sharing are central. Gleam is the safer fit when a small immutable language, a cohesive
+Erlang/JavaScript model, mature 1.x stability, and its dedicated ecosystem matter more.
 
-The compiler keeps one ordered Elixir AST pipeline for source checkouts and built packages. Framework-owned passes are selected from typed annotations and structured AST facts; CI also recompiles representative modules with legacy all-pass execution and requires byte-identical generated Elixir. Start with the inventory when changing pass ownership or order.
+Read the [full comparison](docs/01-getting-started/WHY_REFLAXE_ELIXIR.md#reflaxeelixir-and-gleam),
+including tradeoffs and primary sources.
 
-- [Contributing Guide](docs/10-contributing/contributing.md)
-- [Compiler Compilation Flow](docs/05-architecture/COMPILATION_FLOW.md)
-- [AST Pass Registry Inventory and parity contract](docs/05-architecture/PASS_REGISTRY_INVENTORY.md)
-- [Compiler Testing Infrastructure](docs/03-compiler-development/TESTING_INFRASTRUCTURE.md)
-- [Generated Elixir Quality Corpus](docs/03-compiler-development/GENERATED_OUTPUT_QUALITY_CORPUS.md)
-- [Development Workflow](docs/01-getting-started/development-workflow.md)
+## Try It
+
+```bash
+git clone https://github.com/fullofcaffeine/reflaxe.elixir.git
+cd reflaxe.elixir
+npm install
+npm run test:quick
+```
+
+For application use, install and checksum a pinned release ZIP rather than depending on a source
+checkout. Continue with [Installation](docs/01-getting-started/installation.md) and
+[Start Here](docs/01-getting-started/START_HERE.md).
+
+## Evidence And Maturity
+
+CI covers full codegen snapshots and negative cases, Haxe-authored ExUnit semantics, selected upstream
+stdlib fixtures, strict generated-Elixir compilation, runtime examples, source/package parity,
+reproducible release artifacts, and Phoenix browser smoke.
+
+That evidence supports the documented subset, not arbitrary Haxe programs. The 1.0 gate currently
+tracks known semantic defects, complete Mix invalidation, fail-closed generated-file ownership, OTP
+lifecycle scope, licensing, a frozen support contract, and external install/upgrade/rollback evidence.
+
+## Explore
+
+| Topic | Guide |
+| --- | --- |
+| Product thesis and tradeoffs | [Why Reflaxe.Elixir?](docs/01-getting-started/WHY_REFLAXE_ELIXIR.md) |
+| Setup and first application | [Start Here](docs/01-getting-started/START_HERE.md) |
+| Elixir-friendly Haxe | [Writing Idiomatic Haxe](docs/02-user-guide/WRITING_IDIOMATIC_HAXE_FOR_ELIXIR.md) |
+| Phoenix, LiveView, Ecto, and API references | [Documentation Index](docs/README.md) |
+| Supported versions and sharp edges | [Support Matrix](docs/06-guides/SUPPORT_MATRIX.md) |
+| Contributor architecture and tests | [Contributing](docs/10-contributing/contributing.md) |
+
+## Development
+
+```bash
+npm test
+```
+
+Compiler changes must preserve source/package behavior, runtime semantics, generated-output quality,
+examples, and browser QA. See [Testing Infrastructure](docs/03-compiler-development/TESTING_INFRASTRUCTURE.md).
 
 ## License
 
-GPL-3.0 - see [LICENSE](LICENSE).
-
-## Links
-
-- [Haxe](https://haxe.org/)
-- [Reflaxe](https://github.com/SomeRanDev/reflaxe)
-- [Elixir](https://elixir-lang.org/)
-- [Phoenix](https://www.phoenixframework.org/)
-- [Lix](https://github.com/lix-pm/lix.client)
-- [Genes](https://github.com/benmerckx/genes)
+[GPL-3.0](LICENSE). Generated applications can include support code from this repository; review
+[Licensing & Distribution](docs/06-guides/LICENSING_AND_DISTRIBUTION.md) before commercial distribution.

@@ -176,7 +176,7 @@ docs/
 ## 🚀 Quick Access by Common Tasks
 
 ### For New Users
-**Learning Path**: [installation.md](01-getting-started/installation.md) → [QUICKSTART.md](06-guides/QUICKSTART.md) → [Project Structure](../README.md#Project-Structure)
+**Learning Path**: [WHY_REFLAXE_ELIXIR.md](01-getting-started/WHY_REFLAXE_ELIXIR.md) → [installation.md](01-getting-started/installation.md) → [QUICKSTART.md](06-guides/QUICKSTART.md)
 
 ### For Application Developers
 **Learning Path**: [HAXE_LANGUAGE_FUNDAMENTALS.md](02-user-guide/HAXE_LANGUAGE_FUNDAMENTALS.md) → [PHOENIX_INTEGRATION.md](02-user-guide/PHOENIX_INTEGRATION.md) → [quick-start-patterns.md](07-patterns/quick-start-patterns.md)

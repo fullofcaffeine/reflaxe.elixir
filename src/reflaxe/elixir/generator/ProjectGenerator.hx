@@ -543,9 +543,9 @@ $description
 
 ### Prerequisites
 
-- Haxe 4.3+
+- Haxe 4.3.7
 - Elixir 1.14+
-- Node.js 16+
+- Node.js 22.14.0+
 
 ### Installation
 

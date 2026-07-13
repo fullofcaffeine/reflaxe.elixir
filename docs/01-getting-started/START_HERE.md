@@ -19,7 +19,7 @@ Goal: run a real Phoenix LiveView app written in Haxe and understand the “ment
 You need these tools installed on your machine:
 
 - **Git** (clone repos)
-- **Node.js 16+** (for `lix`, the Haxe toolchain manager)
+- **Node.js 22.14.0+** (supported `lix` and repository tooling path)
 - **Elixir 1.14+** (includes Erlang/OTP; runs Phoenix)
 - **PostgreSQL** (required for the todo-app example; most Phoenix apps use it)
 
@@ -107,7 +107,7 @@ mix phx.server
 
 For security-sensitive or reproducible setup, verify the release ZIP against its `.sha256`
 sidecar before installing it. The canonical cross-platform commands are in the
-[README package verification step](../../README.md#install-with-lix-recommended).
+[installation guide package verification step](installation.md#verify-the-package).
 
 Then open `http://localhost:4000`.
 
@@ -131,7 +131,7 @@ In a typical project you’ll see a server build (Elixir output) and often a cli
 
 ### `haxe: command not found`
 
-Install Haxe 4.3.7+ (or add it to your PATH). If you’re using lix in this repo, the project-local shim is:
+Install Haxe 4.3.7 (or add it to your PATH). If you’re using lix in this repo, the project-local shim is:
 
 ```bash
 ./node_modules/.bin/haxe --version
