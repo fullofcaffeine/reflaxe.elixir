@@ -283,8 +283,10 @@ class BlockBuilder {
 	 *   receiver effects. This scanner only supplies the adjacent declaration/loop pair and rebuilds
 	 *   the surrounding block without changing unrelated statements.
 	 * - If the accumulator is the block's final typed value, the binding and tail collapse to the
-	 *   map expression. An inherited name-only remap without this accumulator's TVar.id is ambiguous,
-	 *   so the rewrite falls back instead of capturing an outer reducer accumulator.
+	 *   map expression. That value-only form is safe under an inherited name-only remap because the
+	 *   temporary binding is eliminated and both the append receiver and tail were proven by TVar.id.
+	 * - A non-tail binding under such a remap remains ambiguous, so it falls back instead of
+	 *   capturing an outer reducer accumulator.
 	 */
 	static function rewriteFreshArrayAppendMapLoops(el:Array<TypedExpr>, context:CompilationContext):Null<ElixirASTDef> {
 		if (el == null || el.length < 2 || context == null || context.compiler == null)
@@ -307,8 +309,9 @@ class BlockBuilder {
 					var inheritedNameRemap = context.tempVarRenameMap != null
 						&& context.tempVarRenameMap.exists(accumulatorInfo.accumulator.name)
 						&& !context.tempVarRenameMap.exists(Std.string(accumulatorInfo.accumulator.id));
-					var mapped = inheritedNameRemap ? null : LoopBuilder.tryBuildFreshArrayAppendMapLoop(accumulatorInfo.accumulator, accumulatorInfo.init,
-						unwrapTypedExpr(el[index + 1]), context, name -> VariableAnalyzer.toElixirVarName(name));
+					var mapped = inheritedNameRemap
+						&& !returnsAccumulator ? null : LoopBuilder.tryBuildFreshArrayAppendMapLoop(accumulatorInfo.accumulator, accumulatorInfo.init,
+							unwrapTypedExpr(el[index + 1]), context, name -> VariableAnalyzer.toElixirVarName(name));
 					if (mapped != null) {
 						if (returnsAccumulator) {
 							var mappedValue = switch (mapped.def) {

@@ -284,12 +284,7 @@ defmodule Main do
   def comprehension_from_iterable() do
     source = [1, 2, 3]
     g = []
-    g = Enum.reduce(source, g, fn x, g_acc ->
-      Enum.concat(g_acc, (fn -> [(fn ->
-        _ = Enum.reduce(source, g, fn y, g_acc -> Enum.concat(g_acc, [x * y]) end)
-        []
-      end).()] end).())
-    end)
+    g = Enum.reduce(source, g, fn x, g_acc -> Enum.concat(g_acc, [Enum.map(source, fn y -> x * y end)]) end)
     g
   end
   def empty_comprehensions() do
