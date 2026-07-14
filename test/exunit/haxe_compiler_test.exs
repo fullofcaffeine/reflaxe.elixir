@@ -169,17 +169,23 @@ defmodule HaxeCompilerTest do
       assert HaxeCompiler.needs_recompilation?(opts) == true
     end
 
-    test "returns false when no Haxe files exist", %{source_dir: source_dir, target_dir: target_dir} do
-      # Create target directory but no source files
-      File.mkdir_p!(target_dir)
-      
+    test "returns true when no manifest exists, even without primary Haxe files", %{
+      test_dir: test_dir,
+      source_dir: source_dir,
+      target_dir: target_dir
+    } do
+      build_hxml = Path.join(test_dir, "build.hxml")
+      File.write!(build_hxml, "-cp #{source_dir}\n")
+
       opts = [
+        hxml_file: build_hxml,
         source_dir: source_dir,
         target_dir: target_dir,
+        manifest_path: Path.join(test_dir, "compile.haxe"),
         force: false
       ]
-      
-      assert HaxeCompiler.needs_recompilation?(opts) == false
+
+      assert HaxeCompiler.needs_recompilation?(opts)
     end
 
     test "returns true when Haxe files exist but no target files", %{source_dir: source_dir, target_dir: target_dir} do
@@ -195,33 +201,47 @@ defmodule HaxeCompilerTest do
       assert HaxeCompiler.needs_recompilation?(opts) == true
     end
 
-    test "compares timestamps correctly", %{source_dir: source_dir, target_dir: target_dir} do
-      # Create Haxe file
+    test "detects same-timestamp content changes", %{
+      test_dir: test_dir,
+      source_dir: source_dir,
+      target_dir: target_dir
+    } do
       haxe_file = Path.join(source_dir, "Test.hx")
       File.write!(haxe_file, "class Test {}")
-      
-      # Create corresponding Elixir file
+      fixed_time = {{2020, 1, 1}, {0, 0, 0}}
+      File.touch!(haxe_file, fixed_time)
+
       elixir_file = Path.join(target_dir, "Test.ex")
       File.write!(elixir_file, "defmodule Test do end")
-      
+      build_hxml = Path.join(test_dir, "build.hxml")
+      File.write!(build_hxml, "-cp #{source_dir}\n")
+      manifest_path = Path.join(test_dir, "compile.haxe")
+
       opts = [
+        hxml_file: build_hxml,
         source_dir: source_dir,
         target_dir: target_dir,
+        manifest_path: manifest_path,
         force: false
       ]
-      
-      # Initially should not need recompilation (target newer or equal)
-      needs_recompile_1 = HaxeCompiler.needs_recompilation?(opts)
-      
-      # Wait a bit and touch the Haxe file to make it newer
-      Process.sleep(10)
-      File.touch!(haxe_file)
-      
-      # Now should need recompilation
-      needs_recompile_2 = HaxeCompiler.needs_recompilation?(opts)
-      
-      # At least one of these should be true (depending on filesystem timestamp resolution)
-      assert needs_recompile_1 == false or needs_recompile_2 == true
+
+      File.write!(
+        manifest_path,
+        :erlang.term_to_binary(%{
+          version: 2,
+          timestamp: System.system_time(:second),
+          config_hash: HaxeCompiler.config_hash(opts),
+          input_fingerprint: HaxeBuildInputs.fingerprint(opts),
+          files: [elixir_file]
+        })
+      )
+
+      refute HaxeCompiler.needs_recompilation?(opts)
+      original_mtime = File.stat!(haxe_file, time: :posix).mtime
+      File.write!(haxe_file, "class Best {}")
+      File.touch!(haxe_file, fixed_time)
+      assert File.stat!(haxe_file, time: :posix).mtime == original_mtime
+      assert HaxeCompiler.needs_recompilation?(opts)
     end
   end
 

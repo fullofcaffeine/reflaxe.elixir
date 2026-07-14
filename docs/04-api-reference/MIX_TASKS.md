@@ -44,11 +44,49 @@ mix compile.haxe --force
 
 **Environment Variables:**
 - `MIX_QUIET=1` - Suppress all output except errors
+- `HAXE_PATH=/path/to/haxe` - Use an explicit Haxe command instead of project/PATH discovery
+- `HAXELIB_CMD=/path/to/haxelib` - Use an explicit `haxelib` command for library resolution
 - `HAXE_SERVER_PORT=6116` - Preferred port for the Haxe compilation server (default: 6116). If the port is busy, the server relocates unless attach is explicitly enabled.
 - `HAXE_SERVER_ALLOW_ATTACH=1` - Allow attaching to an externally-started compatible `haxe --wait` server (including a prior compatible server recorded in the cookie) (default: off)
 - `HAXE_SERVER_AUTOSTART=dev|always|never` - Control when Mix should auto-start `haxe --wait` (default: `dev`)
 - `HAXE_NO_SERVER=1` - Disable the Haxe `--wait` server and compile directly
 - `HAXE_NO_COMPILE=1` - Skip Haxe compilation entirely (useful for CI/sentinels)
+
+**Mix configuration:**
+
+```elixir
+def project do
+  [
+    compilers: [:haxe] ++ Mix.compilers(),
+    haxe: [
+      hxml_file: "build-server.hxml",
+      source_dir: "src_haxe",
+      target_dir: "lib",
+      # Only needed for files read by macros outside HXML/classpath discovery:
+      extra_inputs: ["config/haxe/**/*.json"]
+    ]
+  ]
+end
+```
+
+**Incremental freshness:**
+
+`mix compile` stores a deterministic content fingerprint for the effective Haxe build. It includes
+recursive HXML files and their options/defines, every direct classpath (including roots such as
+`src_shared`), resources, resolved `-lib` roots and descriptors, package `haxelib.json` and
+`extraParams.hxml`, the selected Haxe/haxelib commands, `.haxerc`, the Haxe standard library, relevant
+toolchain environment, `HAXE_FAST_BOOT`, and output-affecting Mix configuration.
+
+The check hashes content rather than modification times. Editing a file invalidates even when its
+timestamp is unchanged; merely touching unchanged content does not rebuild. Missing or legacy
+manifests fail closed and force compilation.
+
+Haxe macros can read arbitrary non-Haxe files that are not declared as HXML resources. Declare those
+paths with `:extra_inputs`, even when they live below a classpath or library root; each entry may be a
+file, directory, or glob and may use `${ENV_NAME}` expansion.
+The watcher monitors direct classpaths, HXML locations, and configured extra-input roots. Library and
+toolchain changes outside the project are still detected on the next `mix compile`, but do not rely on
+the project watcher to observe an external package cache in real time.
 
 ## Source Mapping Tasks
 
@@ -478,7 +516,7 @@ Set in your `build.hxml` or `compile.hxml`:
 MIX_QUIET=1 mix haxe.source_map lib/User.ex 10 5
 
 # Custom Haxe command
-HAXE_CMD="haxe" mix compile.haxe
+HAXE_PATH="/path/to/haxe" mix compile.haxe
 
 # Haxe compilation server configuration
 HAXE_SERVER_PORT=7000 mix haxe.watch

@@ -110,6 +110,7 @@ defmodule HaxeWatcher do
       debounce_ms: debounce_ms,
       auto_compile: auto_compile,
       build_file: build_file,
+      compiler_opts: opts,
       promote_files: promote_files,
       watcher_pid: nil,
       debounce_timer: nil,
@@ -332,13 +333,9 @@ defmodule HaxeWatcher do
     build_file_path = find_build_file(state)
     
     result =
-      case HaxeServer.running?() do
-        true ->
-          compile_with_server_or_fallback(build_file_path)
-
-        false ->
-          compile_direct(build_file_path)
-      end
+      state.compiler_opts
+      |> Keyword.put(:hxml_file, build_file_path)
+      |> HaxeCompiler.compile()
     
     # Log compilation result
     case result do
@@ -419,92 +416,6 @@ defmodule HaxeWatcher do
     else
       {:error, _reason} ->
         :ok
-    end
-  end
-
-  defp compile_with_server_or_fallback(build_file_path) do
-    case HaxeServer.compile([build_file_path]) do
-      {:ok, _} = ok ->
-        ok
-
-      {:error, error} when is_binary(error) ->
-        {exit_code, _output} = parse_compilation_failure(error)
-        # The compilation server can get into a bad state (or a stale external server may be
-        # bound to the port). Try a direct compile so the developer sees the actual Haxe error,
-        # then restart the server in the background for the next incremental build.
-        if is_integer(exit_code) do
-          Logger.warning("Haxe server compilation failed (exit #{exit_code}); retrying without the server...")
-        else
-          Logger.warning("Haxe server compilation failed; retrying without the server...")
-        end
-
-        Task.start(fn ->
-          try do
-            HaxeServer.stop()
-          rescue
-            _ -> :ok
-          end
-
-          try do
-            HaxeServer.start_link([])
-          rescue
-            _ -> :ok
-          end
-        end)
-
-        compile_direct(build_file_path)
-
-      {:error, error} ->
-        Logger.error("❌ Haxe server compilation failed: #{inspect(error)}; retrying without the server...")
-        compile_direct(build_file_path)
-    end
-  end
-
-  defp compile_direct(build_file_path) do
-    # Change to the directory containing the build file so relative paths work correctly
-    build_dir = Path.dirname(build_file_path)
-    build_file_name = Path.basename(build_file_path)
-
-    compile_opts =
-      case build_dir do
-        "." -> [stderr_to_stdout: true, env: build_haxe_env()]
-        dir -> [cd: dir, stderr_to_stdout: true, env: build_haxe_env()]
-      end
-
-    # Use just the filename if we're changing directory
-    final_build_file =
-      if Keyword.has_key?(compile_opts, :cd) do
-        build_file_name
-      else
-        build_file_path
-      end
-
-    # Use the project's lix-managed haxe if available
-    {haxe_cmd, haxe_args} = get_haxe_command()
-    final_args = haxe_args ++ [final_build_file]
-
-    case System.cmd(haxe_cmd, final_args, compile_opts) do
-      {output, 0} ->
-        {:ok, output}
-
-      {output, exit_code} ->
-        # Store structured error information for `mix haxe.errors`
-        structured_errors = HaxeCompiler.parse_haxe_errors(output)
-        HaxeCompiler.store_compilation_errors(structured_errors)
-        {:error, {exit_code, output}}
-    end
-  rescue
-    error ->
-      {:error, "Failed to execute Haxe: #{Exception.message(error)}"}
-  end
-
-  defp build_haxe_env() do
-    _ = HaxeServer.ensure_haxeshim_server_port_env()
-
-    # Include HAXELIB_PATH if set (important for tests and some CI setups)
-    case System.get_env("HAXELIB_PATH") do
-      nil -> System.get_env() |> Enum.into([])
-      path -> System.get_env() |> Map.put("HAXELIB_PATH", path) |> Enum.into([])
     end
   end
 
@@ -600,6 +511,8 @@ defmodule HaxeWatcher do
           case pattern do
             "**/*.hx" -> String.ends_with?(filename, ".hx")
             "*.hx" -> String.ends_with?(filename, ".hx")
+            "**/*.hxml" -> String.ends_with?(filename, ".hxml")
+            "*.hxml" -> String.ends_with?(filename, ".hxml")
             ^filename -> true
             _ -> false
           end
@@ -645,48 +558,4 @@ defmodule HaxeWatcher do
   defp event_to_string(:renamed), do: "renamed"
   defp event_to_string(other), do: to_string(other)
   
-  defp get_haxe_command() do
-    # Try to find the project's lix-managed haxe binary
-    # This ensures we use the correct version even when running from temp directories
-    project_root = find_project_root()
-    project_haxe = Path.join([project_root, "node_modules", ".bin", "haxe"])
-    
-    cond do
-      # Check for project's lix-managed haxe
-      File.exists?(project_haxe) ->
-        {project_haxe, []}
-      
-      # Check if haxe is directly available
-      System.find_executable("haxe") != nil ->
-        {"haxe", []}
-        
-      true ->
-        # Final fallback - will likely fail but provides clear error
-        {"haxe", []}
-    end
-  end
-  
-  defp find_project_root() do
-    # Try to find the project root by looking for mix.exs or package.json
-    # Start from current directory and walk up
-    find_project_root_from(File.cwd!())
-  end
-  
-  defp find_project_root_from(dir) do
-    cond do
-      # Found project markers
-      File.exists?(Path.join(dir, "mix.exs")) or 
-      File.exists?(Path.join(dir, "package.json")) ->
-        dir
-      
-      # Reached root directory
-      dir == "/" or dir == Path.dirname(dir) ->
-        # Default to current directory if we can't find project root
-        File.cwd!()
-      
-      # Keep searching up
-      true ->
-        find_project_root_from(Path.dirname(dir))
-    end
-  end
 end

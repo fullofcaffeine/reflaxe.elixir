@@ -14,6 +14,7 @@ defmodule HaxeCompiler do
     * `:hxml_file` - Path to the HXML build file (default: "build.hxml")
     * `:source_dir` - Source directory for Haxe files (default: "src_haxe")
     * `:target_dir` - Target directory for compiled files (default: "lib")
+    * `:extra_inputs` - Files, directories, or globs read by build macros outside the HXML graph
     * `:verbose` - Enable verbose output (default: false)
     * `:force` - Force full recompilation (default: false)
     
@@ -42,13 +43,23 @@ defmodule HaxeCompiler do
         {:error, "Source directory not found: #{source_dir}"}
 
       true ->
+        input_fingerprint =
+          HaxeTimings.measure("haxe.fingerprint_inputs", fn ->
+            HaxeBuildInputs.fingerprint(opts)
+          end)
+
         case execute_haxe_compilation(hxml_file, source_dir, target_dir, verbose) do
           {:ok, compiled_files} ->
-            HaxeTimings.measure("haxe.persist_manifest", fn ->
-              persist_manifest(opts, compiled_files)
-            end)
+            case HaxeTimings.measure("haxe.persist_manifest", fn ->
+                   persist_manifest(opts, compiled_files, input_fingerprint)
+                 end) do
+              :ok ->
+                {:ok, compiled_files}
 
-            {:ok, compiled_files}
+              {:error, reason} ->
+                {:error,
+                 "Haxe compiled successfully but its Mix manifest could not be written: #{reason}"}
+            end
 
           other ->
             other
@@ -69,9 +80,13 @@ defmodule HaxeCompiler do
     force = Keyword.get(opts, :force, false)
     source_dir = Keyword.get(opts, :source_dir, "src_haxe")
     target_dir = Keyword.get(opts, :target_dir, "lib")
+    hxml_file = Keyword.get(opts, :hxml_file, "build.hxml")
 
     cond do
       force ->
+        true
+
+      not File.exists?(hxml_file) ->
         true
 
       not File.exists?(source_dir) ->
@@ -80,24 +95,20 @@ defmodule HaxeCompiler do
       not File.exists?(target_dir) ->
         true
 
-      Enum.empty?(find_haxe_files(source_dir)) ->
-        false
-
-      not File.exists?(manifest_path()) ->
+      not File.exists?(manifest_path(opts)) ->
         true
 
       true ->
-        case read_manifest() do
+        case read_manifest(opts) do
           {:ok, manifest} ->
-            current_hash = config_hash(opts)
-            stored_hash = Map.get(manifest, :config_hash)
             stored_files = Map.get(manifest, :files, [])
+            stored_fingerprint = Map.get(manifest, :input_fingerprint)
 
             cond do
-              stored_hash == nil ->
+              Map.get(manifest, :version) != 2 ->
                 true
 
-              stored_hash != current_hash ->
+              not is_binary(stored_fingerprint) ->
                 true
 
               is_list(stored_files) and stored_files != [] and
@@ -105,9 +116,7 @@ defmodule HaxeCompiler do
                 true
 
               true ->
-                manifest_ts = Map.get(manifest, :timestamp, 0)
-                newest_source_mtime = newest_source_mtime_posix(source_dir)
-                newest_source_mtime > manifest_ts
+                HaxeBuildInputs.fingerprint(opts) != stored_fingerprint
             end
 
           {:error, _} ->
@@ -125,7 +134,7 @@ defmodule HaxeCompiler do
   """
   @spec config_hash(keyword()) :: integer()
   def config_hash(opts) do
-    :erlang.phash2(normalize_config_for_hash(opts))
+    :erlang.phash2(HaxeBuildInputs.normalize_config(opts))
   end
 
   @doc """
@@ -133,26 +142,23 @@ defmodule HaxeCompiler do
   """
   @spec source_files(keyword()) :: [binary()]
   def source_files(opts \\ []) do
-    source_dir = Keyword.get(opts, :source_dir, "src_haxe")
-
-    if File.exists?(source_dir) do
-      find_haxe_files(source_dir)
-    else
-      []
-    end
+    HaxeBuildInputs.source_files(opts)
   end
 
   # Private helper functions
 
-  defp manifest_path do
-    Mix.Project.manifest_path()
-    |> Path.join("compile.haxe")
+  @doc false
+  def manifest_path(opts \\ []) do
+    Keyword.get_lazy(opts, :manifest_path, fn ->
+      Mix.Project.manifest_path()
+      |> Path.join("compile.haxe")
+    end)
   end
 
-  defp read_manifest do
+  defp read_manifest(opts) do
     try do
       manifest =
-        manifest_path()
+        manifest_path(opts)
         |> File.read!()
         |> :erlang.binary_to_term()
 
@@ -166,24 +172,33 @@ defmodule HaxeCompiler do
     end
   end
 
-  defp normalize_config_for_hash(opts) do
-    opts
-    |> Keyword.take([:hxml_file, :source_dir, :target_dir])
-  end
-
-  defp persist_manifest(opts, compiled_files) when is_list(compiled_files) do
+  defp persist_manifest(opts, compiled_files, input_fingerprint)
+       when is_list(compiled_files) and is_binary(input_fingerprint) do
     manifest =
       %{
+        version: 2,
         timestamp: System.system_time(:second),
         config_hash: config_hash(opts),
+        # Capture this before invoking Haxe. If an input changes while the compiler is
+        # running, the next freshness check must rebuild rather than bless stale output.
+        input_fingerprint: input_fingerprint,
         files: compiled_files
       }
 
-    File.mkdir_p!(Mix.Project.manifest_path())
-    File.write!(manifest_path(), :erlang.term_to_binary(manifest))
-    :ok
+    path = manifest_path(opts)
+    temporary_path = path <> ".tmp.#{System.unique_integer([:positive, :monotonic])}"
+
+    with :ok <- File.mkdir_p(Path.dirname(path)),
+         :ok <- File.write(temporary_path, :erlang.term_to_binary(manifest, [:deterministic])),
+         :ok <- File.rename(temporary_path, path) do
+      :ok
+    else
+      {:error, reason} ->
+        _ = File.rm(temporary_path)
+        {:error, reason |> :file.format_error() |> to_string()}
+    end
   rescue
-    _ -> :ok
+    error -> {:error, Exception.message(error)}
   end
 
   defp execute_haxe_compilation(hxml_file, source_dir, target_dir, verbose) do
@@ -192,46 +207,24 @@ defmodule HaxeCompiler do
       Mix.shell().info("Using build file: #{hxml_file}")
     end
 
-    # Find source files for tracking
-    source_files = HaxeTimings.measure("haxe.find_sources", fn -> find_haxe_files(source_dir) end)
-
-    if Enum.empty?(source_files) do
-      {:ok, []}
-    else
-      # Use real Haxe compilation with Reflaxe.Elixir target
-      case compile_with_real_haxe(hxml_file, source_dir, target_dir, verbose) do
-        {:ok, compiled_files} ->
-          if verbose do
-            Mix.shell().info("Successfully compiled #{length(compiled_files)} file(s)")
-          end
-
-          {:ok, compiled_files}
-
-        {:error, reason} ->
-          {:error, reason}
-      end
-    end
-  end
-
-  defp newest_source_mtime_posix(source_dir) do
-    if File.exists?(source_dir) do
-      source_dir
-      |> Path.join("**/*.hx")
-      |> Path.wildcard()
-      |> Enum.reduce(0, fn file, acc ->
-        mtime = File.stat!(file, time: :posix).mtime
-        if mtime > acc, do: mtime, else: acc
+    _source_files =
+      HaxeTimings.measure("haxe.find_sources", fn ->
+        source_files(hxml_file: hxml_file, source_dir: source_dir, target_dir: target_dir)
       end)
-    else
-      0
-    end
-  end
 
-  defp find_haxe_files(dir) do
-    dir
-    |> Path.join("**/*.hx")
-    |> Path.wildcard()
-    |> Enum.sort()
+    # HXML may compile entry points supplied entirely by another classpath or a
+    # library, so an empty primary source directory is not a valid no-op signal.
+    case compile_with_real_haxe(hxml_file, source_dir, target_dir, verbose) do
+      {:ok, compiled_files} ->
+        if verbose do
+          Mix.shell().info("Successfully compiled #{length(compiled_files)} file(s)")
+        end
+
+        {:ok, compiled_files}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   defp compile_with_real_haxe(hxml_file, _source_dir, target_dir, verbose) do
@@ -330,7 +323,7 @@ defmodule HaxeCompiler do
   end
 
   defp compile_with_direct_haxe(hxml_file, verbose, common_args) do
-    {haxe_cmd, cmd_args} = get_haxe_command()
+    {haxe_cmd, cmd_args} = HaxeToolchain.haxe_command()
     args = cmd_args ++ common_args ++ [hxml_file]
 
     if verbose do
@@ -338,7 +331,7 @@ defmodule HaxeCompiler do
     end
 
     # Build environment for Haxe command
-    env = HaxeTimings.measure("haxe.build_env", fn -> build_haxe_env() end)
+    env = HaxeTimings.measure("haxe.build_env", fn -> HaxeToolchain.environment() end)
 
     # Change to the directory containing the hxml file so relative paths work
     cmd_opts =
@@ -649,110 +642,5 @@ defmodule HaxeCompiler do
     # Also store with timestamp for history
     timestamp = System.system_time(:microsecond)
     :ets.insert(:haxe_errors, {{:errors_at, timestamp}, errors})
-  end
-
-  defp get_haxe_command() do
-    # First check if HAXE_PATH environment variable is set (used in tests)
-    # This allows tests to explicitly control which Haxe binary to use
-    env_haxe = System.get_env("HAXE_PATH")
-
-    # Try to find a lix-managed `node_modules/.bin/haxe` by walking up from cwd.
-    #
-    # Why:
-    # - Mix tasks often run from nested directories (examples/*), which have their own `mix.exs`
-    #   but rely on the repo root `node_modules/.bin/haxe` installed by lix.
-    # - Using `npx haxe` as a fallback can implicitly download an npm "haxe" package which is
-    #   both slow and may not support the current platform (e.g. darwin/arm64).
-    project_haxe = find_haxe_in_ancestors(File.cwd!())
-
-    cond do
-      # Respect HAXE_PATH environment variable if set (highest priority)
-      env_haxe && File.exists?(env_haxe) ->
-        {env_haxe, []}
-
-      # Prefer the nearest lix-managed haxe shim when available
-      is_binary(project_haxe) ->
-        {project_haxe, []}
-
-      # Check if haxe is directly available
-      System.find_executable("haxe") != nil ->
-        {"haxe", []}
-
-      # Try common installation paths
-      File.exists?("/opt/homebrew/bin/haxe") ->
-        {"/opt/homebrew/bin/haxe", []}
-
-      File.exists?("/usr/local/bin/haxe") ->
-        {"/usr/local/bin/haxe", []}
-
-      true ->
-        # Final fallback - will likely fail but provides clear error
-        {"haxe", []}
-    end
-  end
-
-  defp find_haxe_in_ancestors(start_dir) do
-    candidate = Path.join([start_dir, "node_modules", ".bin", "haxe"])
-
-    cond do
-      File.exists?(candidate) ->
-        candidate
-
-      start_dir == "/" or start_dir == Path.dirname(start_dir) ->
-        nil
-
-      true ->
-        find_haxe_in_ancestors(Path.dirname(start_dir))
-    end
-  end
-
-  defp build_haxe_env() do
-    _ = HaxeServer.ensure_haxeshim_server_port_env()
-
-    # Start with current environment
-    base_env = System.get_env() |> Enum.into([])
-
-    haxe_libraries_dir = find_haxe_libraries_in_ancestors(File.cwd!())
-    resolved_haxelib_path = System.get_env("HAXELIB_PATH") || haxe_libraries_dir
-
-    # Add or override specific Haxe environment variables
-    # NOTE: Mix tasks often run from nested directories (examples/*) and need to resolve `-lib` via the
-    # repo's scoped `haxe_libraries/`. Use the nearest ancestor `haxe_libraries/` as the fallback.
-    haxe_env =
-      [
-        {"HAXELIB_PATH", resolved_haxelib_path}
-      ]
-      |> Enum.filter(fn {_key, value} -> value != nil end)
-      |> Enum.into(%{})
-
-    # Merge with base environment
-    Map.merge(base_env |> Enum.into(%{}), haxe_env)
-    |> Enum.into([])
-  end
-
-  defp find_haxe_libraries_in_ancestors(start_dir) do
-    candidate = Path.join(start_dir, "haxe_libraries")
-
-    cond do
-      File.dir?(candidate) and haxe_libraries_usable?(candidate) ->
-        candidate
-
-      start_dir == "/" or start_dir == Path.dirname(start_dir) ->
-        nil
-
-      true ->
-        find_haxe_libraries_in_ancestors(Path.dirname(start_dir))
-    end
-  end
-
-  defp haxe_libraries_usable?(dir) when is_binary(dir) do
-    # Some example/template projects include an empty `haxe_libraries/` directory.
-    # Treating that as authoritative breaks `-lib` resolution (it can fall back to a globally
-    # installed library) and can cause CI-only drift where stdlib gating/macros don't run.
-    #
-    # Only accept a directory as a scoped lib root when it actually contains hxml entries.
-    not Enum.empty?(Path.wildcard(Path.join(dir, "*.hxml")))
-  rescue
-    _ -> false
   end
 end

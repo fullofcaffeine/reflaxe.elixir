@@ -34,6 +34,7 @@ defmodule Mix.Tasks.Haxe.Watch do
         [
           haxe: [
             watch_dirs: ["src", "test"],
+            watch_patterns: ["**/*.hx", "**/*.hxml"],
             debounce_ms: 200,
             hxml_file: "build.hxml"
           ]
@@ -88,7 +89,7 @@ defmodule Mix.Tasks.Haxe.Watch do
     end
   end
   
-	  defp get_watch_config(opts) do
+  defp get_watch_config(opts) do
     # Start with project config
     project_config = Mix.Project.config()[:haxe] || []
 
@@ -100,32 +101,49 @@ defmodule Mix.Tasks.Haxe.Watch do
     # use the same build configuration.
     hxml_file = opts[:hxml] || Keyword.get(project_config, :hxml_file, "build.hxml")
 
-	    dirs =
+    build_config =
+      project_config
+      |> Keyword.put(:hxml_file, hxml_file)
+      |> Keyword.put_new(:source_dir, source_dir)
+      |> Keyword.put_new(:target_dir, "lib")
+
+    dirs =
       case opts[:dirs] do
         nil ->
-          # Prefer explicit watch_dirs; otherwise default to the project source_dir.
-          Keyword.get(project_config, :watch_dirs, [source_dir])
+          # Prefer explicit watch_dirs; otherwise cover every direct HXML classpath and
+          # configured extra-input root used by the same Mix freshness graph.
+          Keyword.get_lazy(project_config, :watch_dirs, fn ->
+            case HaxeBuildInputs.watch_dirs(build_config) do
+              [] -> [source_dir]
+              discovered -> discovered
+            end
+          end)
 
         dirs_string ->
           String.split(dirs_string, ",") |> Enum.map(&String.trim/1)
-	      end
+      end
 
-	    promote_files = parse_promote_spec(opts[:promote])
+    promote_files = parse_promote_spec(opts[:promote])
 
-	    # Build final configuration
-	    [
-	      dirs: dirs,
-	      debounce_ms: opts[:debounce] || Keyword.get(project_config, :debounce_ms, 100),
+    # Preserve all compiler-affecting project options, including extra_inputs.
+    Keyword.merge(build_config,
+      dirs: dirs,
+      patterns:
+        Keyword.get(project_config, :watch_patterns, [
+          "**/*.hx",
+          "**/*.hxml",
+          "haxelib.json",
+          ".haxerc"
+        ]),
+      debounce_ms: opts[:debounce] || Keyword.get(project_config, :debounce_ms, 100),
       # HaxeWatcher expects :build_file; HaxeCompiler expects :hxml_file
       build_file: hxml_file,
       hxml_file: hxml_file,
-	      verbose: opts[:verbose] || false,
-	      auto_compile: true,
-	      promote_files: promote_files,
-	      source_dir: source_dir,
-	      target_dir: Keyword.get(project_config, :target_dir, "lib")
-	    ]
-	  end
+      verbose: opts[:verbose] || false,
+      auto_compile: true,
+      promote_files: promote_files
+    )
+  end
 
 	  defp parse_promote_spec(nil), do: []
 	  defp parse_promote_spec(""), do: []

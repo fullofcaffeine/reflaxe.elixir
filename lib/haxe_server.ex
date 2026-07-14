@@ -46,31 +46,7 @@ defmodule HaxeServer do
 
   # Don't set a default here, will determine at runtime
   defp default_haxe_cmd() do
-    project_root = find_project_root()
-    project_haxe = Path.join([project_root, "node_modules", ".bin", "haxe"])
-    project_lix = Path.join([project_root, "node_modules", ".bin", "lix"])
-
-    cond do
-      # Prefer a project-local haxe shim if present.
-      File.exists?(project_haxe) ->
-        {project_haxe, []}
-
-      # Prefer an already-installed haxe on PATH to avoid implicit npm installs.
-      (haxe_exe = System.find_executable("haxe")) != nil ->
-        {haxe_exe, []}
-
-      # If lix is installed locally, use it to run the configured haxe toolchain.
-      File.exists?(project_lix) ->
-        {project_lix, ["run", "haxe"]}
-
-      # Fall back to any globally installed lix.
-      (lix_exe = System.find_executable("lix")) != nil ->
-        {lix_exe, ["run", "haxe"]}
-
-      # Final fallback: try "haxe" and let startup fail fast if unavailable.
-      true ->
-        {"haxe", []}
-    end
+    HaxeToolchain.haxe_command()
   end
 
   # Client API
@@ -1077,9 +1053,9 @@ defmodule HaxeServer do
   end
 
   defp lix_haxe_binary_from_project(project_root) do
-    haxerc_path = Path.join(project_root, ".haxerc")
+    haxerc_path = find_haxerc_in_ancestors(Path.expand(project_root))
 
-    with true <- File.exists?(haxerc_path),
+    with true <- is_binary(haxerc_path) and File.exists?(haxerc_path),
          {:ok, body} <- File.read(haxerc_path),
          {:ok, %{"version" => version}} <- Jason.decode(body),
          true <- is_binary(version) and version != "" do
@@ -1101,5 +1077,15 @@ defmodule HaxeServer do
     end
   rescue
     _ -> {:error, :failed_to_resolve}
+  end
+
+  defp find_haxerc_in_ancestors(dir) do
+    candidate = Path.join(dir, ".haxerc")
+
+    cond do
+      File.exists?(candidate) -> candidate
+      dir == Path.dirname(dir) -> nil
+      true -> find_haxerc_in_ancestors(Path.dirname(dir))
+    end
   end
 end

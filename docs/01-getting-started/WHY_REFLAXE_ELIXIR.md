@@ -195,9 +195,12 @@ modules are expected to coexist.
 - **Compiler surface:** Haxe is broader than Elixir, so not every construct can become a direct target
   form without semantic machinery.
 - **Build complexity:** projects add Haxe, Lix, Reflaxe, and generated-source ownership rules. The
-  current pre-1.0 Mix integration does not yet fingerprint every effective Haxe input, and in-place
-  generation does not yet provide one fail-closed ownership protocol for every application module.
-  Prefer an isolated generated root and clean regeneration in CI while those 1.0 blockers are open.
+  Mix integration fingerprints recursive HXML, Haxe sources on classpaths, resources, libraries,
+  toolchain state, and declared macro inputs; macros that read arbitrary non-Haxe files must list
+  them with `:extra_inputs`.
+  In-place generation does not yet provide one fail-closed ownership protocol for every application
+  module. Prefer an isolated generated root and retain clean regeneration in CI as defense in depth
+  while that ownership blocker is open.
 - **Debugging:** generated Elixir is readable, but experimental source maps do not yet provide a
   complete source-level debugger experience.
 - **Ecosystem size:** the compiler and typed Elixir extern ecosystem are much smaller than Elixir's

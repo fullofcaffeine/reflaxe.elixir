@@ -4,11 +4,12 @@ This page is the current evidence-based readiness contract for Reflaxe.Elixir. I
 every Haxe program is supported, and it is not approval to publish `1.0.0`.
 
 > [!IMPORTANT]
-> **Current verdict (reviewed 2026-07-13): suitable for controlled production pilots, not general
+> **Current verdict (reviewed 2026-07-14): suitable for controlled production pilots, not general
 > 1.0 stability.** The pinned and documented paths have substantial project-local evidence. Stable
-> graduation is still blocked by known semantic defects, incomplete build invalidation and generated
-> output ownership, an unfrozen support contract, unbounded OTP wording, a licensing decision, and an
-> external stabilization run. The `1` release line remains unapproved in
+> graduation is still blocked by generated-output ownership, an unfrozen support contract, unbounded
+> OTP wording, a licensing decision, and an external stabilization run. The known P1 reducer and
+> comprehension defects are closed, and Mix now fingerprints the effective Haxe build graph. The `1`
+> release line remains unapproved in
 > [`release/manifest.json`](../../release/manifest.json).
 
 The durable findings and rationale are in the
@@ -40,15 +41,15 @@ versions, operating systems, third-party libraries, or deployment conditions.
 
 | Dimension | Status | Evidence | Remaining condition or gap |
 | --- | --- | --- | --- |
-| Compiler semantics | **Blocked** | Full snapshot categories, negative cases, function-result invariants, generated Elixir validation, Mix runtime tests, reducer loop-control runtime smoke | P1 defect `haxe.elixir.codex-3qh.24` affects nested dynamic comprehensions. Reducer `break`/`continue` preservation is fixed. |
-| Mix build invalidation | **Blocked** | Mix compiler tests and example builds | The current freshness model does not fingerprint every effective HXML, define, library/toolchain, or additional classpath input. A normal incremental compile can retain stale output. Tracked by `haxe.elixir.codex-0yn.1`. |
+| Compiler semantics | **Conditional** | Full snapshot categories, negative cases, function-result invariants, generated Elixir validation, Mix runtime tests, reducer loop-control and nested-comprehension runtime suites | No known P1 defect remains in the tested corpus; the exact stable language/stdlib/framework surface still must be frozen. |
+| Mix build invalidation | **Ready** | Deterministic fingerprint regressions cover same-timestamp edits, timestamp-only touches, recursive HXML, `src_shared`, resources, libraries/package descriptors, toolchain identity, explicit macro inputs, removed roots, and no-op behavior | Macro filesystem reads outside the discoverable graph must be declared with `:extra_inputs`; project watchers do not monitor external package/toolchain caches, but the next `mix compile` detects them. |
 | Generated-file ownership | **Blocked** | Isolated output, generated-file metadata in selected paths, package and upgrade tests | In-place writes, clean, stale deletion, and collision handling do not yet share one fail-closed ownership protocol for all generated app modules. Tracked by `haxe.elixir.codex-0yn.2`. |
 | Generated Elixir quality | **Conditional** | Warnings-as-errors examples, canonical `mix format` integration, handwritten-output corpus, support-footprint checks | Some semantics require visible helpers or conservative reducers. Style work can continue after 1.0; unexplained semantic repairs cannot. |
 | Haxe stdlib behavior | **Conditional** | Classified manifest, Haxe-authored ExUnit, selected upstream `unitstd`, snapshots | Only the classified subset is claimed. The stable set must be frozen, and the runtime suite should become warning-clean (`haxe.elixir.codex-0yn.7`). |
 | Phoenix and LiveView | **Conditional** | Compile/runtime examples, strict Elixir compilation, todo-app Mix tests, browser sentinels, dogfood upgrades | This is the strongest framework surface, but only pinned versions and documented paths are covered. |
 | Ecto | **Conditional** | Schema, changeset, repository, query, compile, and runtime fixtures | Selected APIs are covered. Migration `.exs` generation remains experimental. |
 | OTP | **Blocked for a broad claim** | Typed APIs, snapshots, and selected runtime examples | 1.0 must prove a bounded lifecycle/failure subset or narrow the stable wording. Tracked by `haxe.elixir.codex-0yn.3`. |
-| Gradual Elixir adoption | **Conditional** | Existing-app guide, isolated namespaces, typed extern generation, hand-written/generated interop example | The model is sound, but production use must account for the open invalidation and ownership gaps. |
+| Gradual Elixir adoption | **Conditional** | Existing-app guide, isolated namespaces, typed extern generation, hand-written/generated interop example | The model is sound, but production use must still account for the generated-file ownership gap. |
 | Shared browser/server logic | **Conditional** | [`16-portable-chat-domain`](../../examples/16-portable-chat-domain/) runs selected domain logic on Elixir and JavaScript | Only a deliberately portable classpath is demonstrated; arbitrary cross-target parity is not claimed. |
 | Source checkout vs release package | **Ready** | Reflaxe `_std` staging contract, package smoke, installed-package codegen parity, deterministic artifacts | Consumers should use a release ZIP. Contributors must use the scoped source-checkout HXML, not bare global `haxelib dev`. |
 | Release integrity and rollback | **Ready** | Same-CI-commit publication, protected tags, reproducible package builds, checksums and hosted attestations | Host controls remain part of the trust boundary and must be audited at approval time. |
@@ -59,33 +60,33 @@ versions, operating systems, third-party libraries, or deployment conditions.
 | Build performance | **Conditional** | Bounded CI, compile/watch benchmark harnesses, scheduled trend artifacts | There is a diagnostic baseline, not a universal compile-latency SLO. Record a candidate regression comparison before approval. |
 | Stability governance | **Blocked** | SemVer policy, deprecation rules, fail-closed per-major manifest | External soak evidence and an explicit graduation decision are absent. Tracked by `haxe.elixir.codex-0yn.8` and `.9`. |
 
+## Recently Closed 1.0 Gates
+
+### Compiler Correctness Defects
+
+`haxe.elixir.codex-3qh.23`, `.24`, and `.25` are closed. Reducer-lowered loops now retain exact state
+across `break`/`continue`; nested dynamic comprehensions retain inner results; nested reducer callbacks
+preserve their own lexical accumulator. The Haxe-authored
+`test/runtime/loop_control_accumulators` and `test/runtime/nested_dynamic_comprehensions` suites cover
+the failed source operations directly.
+
+### Effective Mix Build Inputs
+
+`haxe.elixir.codex-0yn.1` replaces the single-root/mtime freshness check with a deterministic content
+fingerprint of recursive HXML, direct classpaths, resources, resolved libraries and package metadata,
+toolchain identity and standard library, relevant environment, explicit macro inputs, and
+output-affecting configuration. Legacy or unreadable manifests fail closed. The normal no-op path and
+the todo app's `src_shared` graph have regression coverage.
+
 ## Known 1.0 Blockers
 
-### 1. Close The Remaining P1 Correctness Defect
-
-- `haxe.elixir.codex-3qh.24`: nested array comprehensions over dynamic iterables can lose the inner
-  result tail.
-
-`haxe.elixir.codex-3qh.23` is closed: reducer-lowered accumulator loops now catch compiler-owned
-control carriers and retain the exact scalar or tuple state across `break` and `continue`. The
-Haxe-authored `test/runtime/loop_control_accumulators` suite covers state updates, ranges, and loops
-that also contain non-local returns. The remaining comprehension defect requires the same standard:
-a source-level runtime test and a fix at the typed/Elixir AST lowering boundary, not target injection
-or generated-text cleanup.
-
-### 2. Make Incremental Builds Complete
-
-`haxe.elixir.codex-0yn.1` must replace the single-root/mtime-oriented freshness decision with a
-deterministic model of all effective source roots, nested HXML files, defines, libraries, compiler
-identity, and relevant configuration. Tests must prove both rebuild and no-op behavior.
-
-### 3. Make Generated Output Fail Closed
+### 1. Make Generated Output Fail Closed
 
 `haxe.elixir.codex-0yn.2` must give generation, formatting, clean, upgrade, stale deletion, and
 rollback one atomic ownership protocol. An existing hand-written file must never be overwritten or
 deleted merely because its target path matches generated output.
 
-### 4. Bound The OTP Contract
+### 2. Bound The OTP Contract
 
 `haxe.elixir.codex-0yn.3` can be resolved in either of two honest ways:
 
@@ -94,14 +95,14 @@ deleted merely because its target path matches generated output.
 
 API-shaped output or compilation alone is not enough evidence for supervision behavior.
 
-### 5. Decide Licensing And Distribution
+### 3. Decide Licensing And Distribution
 
 `haxe.elixir.codex-0yn.4` requires qualified review of the GPL-3.0 compiler, externs, generated
 source, and support/runtime modules that may ship in an application. The result may keep the current
 license, add an exception, separate runtime licensing, or adopt another lawful model. Engineering
 documentation must not improvise the legal answer.
 
-### 6. Freeze One Enumerable Stable Surface
+### 4. Freeze One Enumerable Stable Surface
 
 `haxe.elixir.codex-0yn.5` must inventory language forms, stdlib modules, annotations, externs, flags,
 Mix tasks, generated ABI/naming, framework APIs, versions, and exclusions. Every stable item needs
@@ -110,7 +111,7 @@ executable evidence or a precise bounded behavior statement.
 This does not require implementing every Haxe or Elixir API. It requires making the claimed subset
 true and discoverable.
 
-### 7. Run External Stabilization
+### 5. Run External Stabilization
 
 After the product contract is complete, `haxe.elixir.codex-0yn.8` must use immutable packages and
 clean workspaces to prove:
@@ -126,7 +127,7 @@ clean workspaces to prove:
 The stabilization window must be long enough to receive and resolve package/adopter feedback without
 casually changing the proposed stable contract.
 
-### 8. Approve Graduation Explicitly
+### 6. Approve Graduation Explicitly
 
 `haxe.elixir.codex-0yn.9` reviews the completed evidence and either approves or rejects graduation.
 Only an approval may populate `releaseLines.1.approval`. Approval does not publish a release; a later
@@ -154,8 +155,9 @@ Use the compiler in a production pilot only when all of these conditions are acc
 2. Pin a tested toolchain from the [Support Matrix](SUPPORT_MATRIX.md).
 3. Prefer an isolated generated root; if output shares a tree with hand-written Elixir, review
    ownership and collisions explicitly.
-4. Run a clean full generation in CI instead of relying only on incremental freshness.
-5. Stay inside documented surfaces and confirm the app does not depend on either known P1 bug shape.
+4. Declare any out-of-graph macro reads with `:extra_inputs`; retain a clean full generation in CI as
+   defense in depth.
+5. Stay inside the documented supported surface.
 6. Compile generated Elixir with warnings as errors and review the target diff.
 7. Add runtime tests around important generated and extern boundaries.
 8. Keep the previous release tag as the rollback pin.

@@ -16,6 +16,7 @@ defmodule Mix.Tasks.Compile.Haxe do
             hxml_file: "build.hxml",
             source_dir: "src",
             target_dir: "lib",
+            extra_inputs: ["config/haxe/**/*.json"],
             watch: true,
             verbose: false
           ]
@@ -27,6 +28,7 @@ defmodule Mix.Tasks.Compile.Haxe do
     * `:hxml_file` - Path to HXML build file (default: "build.hxml")
     * `:source_dir` - Source directory for Haxe files (default: "src")
     * `:target_dir` - Target directory for Elixir files (default: "lib")
+    * `:extra_inputs` - Files, directories, or globs read by build macros outside the HXML graph
     * `:watch` - Enable file watching in dev environment (default: true)
     * `:verbose` - Enable verbose output (default: false)
     * `:force` - Force recompilation (default: false)
@@ -186,9 +188,6 @@ defmodule Mix.Tasks.Compile.Haxe do
     # Perform compilation
     case HaxeCompiler.compile(config) do
       {:ok, compiled_files} ->
-        # Store manifest for incremental compilation
-        HaxeTimings.measure("mix.write_manifest", fn -> write_manifest(compiled_files, config) end)
-
         # Report success
         if config[:verbose] || !Enum.empty?(compiled_files) do
           Mix.shell().info("Compiled #{length(compiled_files)} Haxe file(s)")
@@ -290,11 +289,12 @@ defmodule Mix.Tasks.Compile.Haxe do
     # HaxeWatcher is a named GenServer (name: HaxeWatcher). Avoid re-starting it.
     case Process.whereis(HaxeWatcher) do
       nil ->
-        source_dir = Keyword.get(config, :source_dir, "src_haxe")
+        dirs = Keyword.get_lazy(config, :dirs, fn -> HaxeBuildInputs.watch_dirs(config) end)
 
         watcher_opts =
           config
-          |> Keyword.put_new(:dirs, [source_dir])
+          |> Keyword.put(:dirs, dirs)
+          |> Keyword.put_new(:patterns, ["**/*.hx", "**/*.hxml", "haxelib.json", ".haxerc"])
           |> Keyword.put(:build_file, Keyword.get(config, :hxml_file, "build.hxml"))
 
         {:ok, _pid} = HaxeWatcher.start_link(watcher_opts)
@@ -308,23 +308,7 @@ defmodule Mix.Tasks.Compile.Haxe do
   end
 
   defp manifest_path do
-    Mix.Project.manifest_path()
-    |> Path.join("compile.haxe")
-  end
-
-  defp write_manifest(compiled_files, config) do
-    manifest = %{
-      version: 1,
-      timestamp: System.system_time(:second),
-      files: compiled_files,
-      config_hash: HaxeCompiler.config_hash(config)
-    }
-
-    manifest_path()
-    |> Path.dirname()
-    |> File.mkdir_p!()
-
-    File.write!(manifest_path(), :erlang.term_to_binary(manifest))
+    HaxeCompiler.manifest_path()
   end
 
   defp generated_file?(file_path) do

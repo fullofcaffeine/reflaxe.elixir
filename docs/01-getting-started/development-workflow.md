@@ -432,6 +432,29 @@ Notes:
 - The QA sentinel also uses a compile server and falls back to direct compilation
   under strict timeouts. It uses the same default port (`6116`) and relocates when busy.
 
+### Incremental Freshness
+
+Server caching and Mix freshness are separate. Before a no-op, Mix fingerprints the effective Haxe
+build by content: recursive HXML, direct classpaths such as `src_shared`, resources, resolved Haxe
+libraries and their configuration, the selected toolchain and standard library, relevant environment,
+and output-affecting Mix options. A same-timestamp edit rebuilds; a timestamp-only touch does not.
+
+If a macro reads a non-Haxe file that is not declared as an HXML resource, declare it explicitly in
+`mix.exs` (even when that file happens to live below a classpath or library root):
+
+```elixir
+haxe: [
+  hxml_file: "build-server.hxml",
+  source_dir: "src_haxe",
+  target_dir: "lib",
+  extra_inputs: ["config/haxe/**/*.json"]
+]
+```
+
+The default watcher covers the discovered project classpaths, HXML locations, and these extra-input
+roots. A normal `mix compile` also detects external library or toolchain changes that a project-local
+filesystem watcher cannot observe directly.
+
 ### Cleanup (if ports keep relocating)
 
 If you repeatedly see messages like:

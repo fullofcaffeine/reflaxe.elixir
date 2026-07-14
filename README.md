@@ -307,9 +307,10 @@ CI covers full codegen snapshots and negative cases, Haxe-authored ExUnit semant
 stdlib fixtures, strict generated-Elixir compilation, runtime examples, source/package parity,
 reproducible release artifacts, and Phoenix browser smoke.
 
-That evidence supports the documented subset, not arbitrary Haxe programs. The 1.0 gate currently
-tracks known semantic defects, complete Mix invalidation, fail-closed generated-file ownership, OTP
-lifecycle scope, licensing, a frozen support contract, and external install/upgrade/rollback evidence.
+That evidence supports the documented subset, not arbitrary Haxe programs. The reviewed P1 semantic
+defects are closed and effective Mix invalidation now has content-fingerprint regressions. The
+remaining 1.0 gate tracks fail-closed generated-file ownership, OTP lifecycle scope, licensing, a
+frozen support contract, and external install/upgrade/rollback evidence.
 
 ## Explore
 

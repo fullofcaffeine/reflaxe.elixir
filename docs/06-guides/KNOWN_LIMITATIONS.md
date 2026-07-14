@@ -15,31 +15,40 @@ If you hit something not covered here, please open an issue and include your **H
 - **Compiler output**: intended to be idiomatic and readable, but edge‑case semantics may change as the transformer passes mature.
 - **Examples**: treated as “living docs”; they may evolve as patterns improve.
 
-## Known P1 correctness blocker
+## Recently closed correctness defects
 
-This defect remains a blocker for stable graduation, even though its shape is not common in ordinary
-Phoenix-facing code:
+The reducer/comprehension defects found during the 1.0 review are closed:
 
-- `haxe.elixir.codex-3qh.24`: nested array comprehensions over dynamic iterables can lose the inner
-  result tail.
+- reducer-lowered accumulators preserve state across `break` and `continue` (`3qh.23`);
+- nested dynamic comprehensions preserve their inner results (`3qh.24`);
+- nested reducer callbacks retain their own lexical accumulator state (`3qh.25`).
 
-Do not classify an application that depends on this shape as inside the production-capable subset
-until its runtime regression suite and compiler fix have landed. Reducer-lowered accumulator loops
-now preserve state across `break` and `continue`, with Haxe-authored runtime coverage under
-`test/runtime/loop_control_accumulators`. See
+The Haxe-authored runtime suites under `test/runtime/loop_control_accumulators` and
+`test/runtime/nested_dynamic_comprehensions` exercise the source-language operations directly. This
+evidence closes those known bugs; it does not imply that every Haxe program is supported. The stable
+surface is still being enumerated under `haxe.elixir.codex-0yn.5`. See
 [Production Readiness](PRODUCTION_READINESS.md) for the full 1.0 gate.
 
-## Incremental build invalidation
+## Macro inputs outside the build graph
 
-The current Mix compiler does not yet fingerprint every effective Haxe input. Changes to nested HXML
-content, defines, library/compiler identity, or an additional classpath such as `src_shared` may not
-always force regeneration through a normal incremental `mix compile`.
+Mix freshness now fingerprints the effective discoverable build: recursive HXML and defines, all
+direct classpaths such as `src_shared`, resources, resolved libraries and package configuration, the
+Haxe toolchain/standard library, relevant environment, and output-affecting Mix options. Fingerprints
+use file content rather than timestamps.
 
-Until `haxe.elixir.codex-0yn.1` closes:
+Haxe macros can still read arbitrary non-Haxe files that are not declared as HXML resources. Mix
+cannot infer those reads, even when a file lives below a classpath or resolved library. Declare them
+explicitly:
 
-- use clean, full Haxe generation in CI and release builds;
-- review generated diffs after build configuration or dependency changes;
-- do not use an incremental no-op as the only proof that generated Elixir is current.
+```elixir
+haxe: [
+  # ...
+  extra_inputs: ["config/haxe/**/*.json"]
+]
+```
+
+Files, directories, and globs are accepted. Keep clean full generation in release validation as a
+defense-in-depth check, not as a substitute for declaring macro inputs.
 
 ## Generated file ownership
 
