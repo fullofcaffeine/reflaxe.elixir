@@ -3636,7 +3636,7 @@ both `sha256sum --check` and the macOS `shasum -a 256 --check` fallback visible.
 ---
 
 **Remember**: All detailed information is in the organized [docs/](docs/) structure. This file provides navigation and critical rules only.
-## Documentation Directive (hxdoc Required)
+## Documentation Directive (Plain Language And hxdoc Required)
 
 To maintain high-quality, self-explanatory compiler code, the following rules are mandatory for all changes under `src/reflaxe/elixir/**` (builders, transformers, analyzers, printer rules, macros, shims) and for vendor edits:
 
@@ -3650,7 +3650,14 @@ To maintain high-quality, self-explanatory compiler code, the following rules ar
   2) Generated Elixir shape (what the compiler emitted)
   3) Why this shape preserves semantics
 - Do not force a rigid template when a section is already clear; each fragment should teach one useful thing and justify why it exists.
-- Define jargon on first use (for example, "pin `^` matches an existing value instead of creating a new binding").
+- Plain-language documentation is a hard rule. Write user-facing docs for an interested newcomer by
+  default, including status, roadmap, readiness, and release pages.
+- Define unavoidable jargon on first use (for example, "pin `^` matches an existing value instead of
+  creating a new binding"). Translate internal shorthand such as "graduation", "gate", "support
+  contract", "bounded claim", "soak", "P1", "fail closed", and "build graph" into the concrete
+  user-visible meaning. A reader must not need Beads/issue context to understand a public paragraph.
+- Lead status summaries with what works now, what does not work or remains undecided, why that matters
+  to a user, and what concrete work remains.
 - Avoid Elixir-only explanations detached from source intent; anchor behavior notes to concrete Haxe examples.
 - Do not write standalone Elixir tutorials in compiler docs unless explicitly requested; keep Elixir notes brief and tied to generated output behavior from shown Haxe code.
 - Cross-reference the snapshot(s) that cover the change and intended behavior; note limitations/non‑goals

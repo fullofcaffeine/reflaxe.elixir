@@ -1,22 +1,31 @@
-# Production Readiness And The 1.0 Gate
+# Production Readiness: What Still Blocks 1.0
 
-This page is the current evidence-based readiness contract for Reflaxe.Elixir. It does not claim that
-every Haxe program is supported, and it is not approval to publish `1.0.0`.
+This page summarizes what current tests and reviews prove about using Reflaxe.Elixir in production.
+It does not claim that every Haxe program is supported, and it is not approval to publish `1.0.0`.
 
 > [!IMPORTANT]
-> **Current verdict (reviewed 2026-07-14): suitable for controlled production pilots, not general
-> 1.0 stability.** The pinned and documented paths have substantial project-local evidence. Stable
-> graduation is still blocked by an unfrozen support contract, unbounded OTP wording, a licensing
-> decision, and an external stabilization run. The known P1 semantic defects, effective Mix build
-> graph invalidation, and fail-closed generated-output ownership are now closed. The `1` release line
-> remains unapproved in
-> [`release/manifest.json`](../../release/manifest.json).
+> **Current status (reviewed 2026-07-14): ready for limited, closely monitored production trials,
+> but not ready to promise 1.0 stability.** The documented configurations have strong automated test
+> coverage. Before 1.0, the project still needs to:
+>
+> - publish an exact list of APIs and version combinations that 1.0 promises to support;
+> - either prove a small, named set of OTP behavior—the Erlang/Elixir tools for processes,
+>   supervision, and fault handling—or narrow the OTP claims in the documentation to match what has
+>   actually been tested;
+> - get a qualified licensing review for generated files and bundled runtime/support code; and
+> - test one unchanged proposed release build (a release candidate) in independent real-world
+>   projects for a defined period.
+>
+> The previously known high-priority compiler bugs are fixed. Mix now notices when known Haxe build
+> inputs change, and the compiler refuses to overwrite or delete files that it cannot prove it
+> generated. However,
+> [`release/manifest.json`](../../release/manifest.json) does not yet authorize a `1.x` release.
 
-The durable findings and rationale are in the
+Detailed findings and reasons are in the
 [1.0 Production Readiness Review](../08-roadmap/1.0-production-readiness-review.md). Execution is
 tracked by Beads epic `haxe.elixir.codex-0yn`.
 
-Related contracts:
+Related policies and support pages:
 
 - [Versioning & Stability](VERSIONING_AND_STABILITY.md)
 - [Support Matrix](SUPPORT_MATRIX.md)
@@ -28,11 +37,12 @@ Related contracts:
 
 ## How To Read The Scorecard
 
-- **Ready:** the stated, bounded contract has direct automated evidence and no known blocker.
-- **Conditional:** useful and substantially tested, but use requires an explicit constraint or
-  operational safeguard.
-- **Blocked:** a known defect or missing decision prevents the stated 1.0 claim.
-- **Out of scope:** intentionally excluded from 1.0 and documented as such.
+- **Ready:** the specific claim in this row has direct automated tests and no known blocker.
+- **Conditional:** useful and substantially tested, but safe use still requires the listed limit or
+  precaution.
+- **Blocked:** a known defect or unanswered decision prevents the project from making this 1.0
+  promise.
+- **Out of scope:** version 1.0 deliberately does not promise this feature.
 
 Green CI means the tested cases passed. It does not prove untested Haxe semantics, framework
 versions, operating systems, third-party libraries, or deployment conditions.
@@ -91,12 +101,14 @@ version 2 ownership manifests from source and installed-package builds. See
 
 ## Known 1.0 Blockers
 
-### 1. Bound The OTP Contract
+### 1. Decide Exactly Which OTP Behavior 1.0 Supports
 
-`haxe.elixir.codex-0yn.3` can be resolved in either of two honest ways:
+OTP is the Erlang/Elixir set of tools for processes, supervision, and fault handling.
+`haxe.elixir.codex-0yn.3` can be completed in either of two honest ways:
 
-- prove selected lifecycle and failure semantics with runtime conformance tests; or
-- remove unproved OTP paths from the stable tier.
+- prove a small, named set of startup, shutdown, supervision, and failure behavior with runtime tests;
+  or
+- clearly mark unproved OTP APIs as experimental or outside the 1.0 promise.
 
 API-shaped output or compilation alone is not enough evidence for supervision behavior.
 
@@ -107,16 +119,16 @@ source, and support/runtime modules that may ship in an application. The result 
 license, add an exception, separate runtime licensing, or adopt another lawful model. Engineering
 documentation must not improvise the legal answer.
 
-### 3. Freeze One Enumerable Stable Surface
+### 3. Publish One Exact 1.0 Support List
 
-`haxe.elixir.codex-0yn.5` must inventory language forms, stdlib modules, annotations, externs, flags,
-Mix tasks, generated ABI/naming, framework APIs, versions, and exclusions. Every stable item needs
-executable evidence or a precise bounded behavior statement.
+`haxe.elixir.codex-0yn.5` must list the language features, standard-library modules, annotations,
+externs, flags, Mix tasks, generated naming rules, framework APIs, versions, and exclusions covered
+by 1.0. Every promised item needs an executable test or a precise description of its limits.
 
 This does not require implementing every Haxe or Elixir API. It requires making the claimed subset
 true and discoverable.
 
-### 4. Run External Stabilization
+### 4. Test One Unchanged Release Candidate Outside This Repository
 
 After the product contract is complete, `haxe.elixir.codex-0yn.8` must use immutable packages and
 clean workspaces to prove:
@@ -129,16 +141,16 @@ clean workspaces to prove:
 - rollback by restoring the previous immutable tag;
 - warning-clean stdlib evidence and verified CI security-tool provenance.
 
-The stabilization window must be long enough to receive and resolve package/adopter feedback without
-casually changing the proposed stable contract.
+Run the same release candidate long enough to receive and address feedback from real users. Do not
+quietly change the proposed 1.0 promise during that test period.
 
-### 5. Approve Graduation Explicitly
+### 5. Explicitly Approve Or Reject 1.0
 
-`haxe.elixir.codex-0yn.9` reviews the completed evidence and either approves or rejects graduation.
+`haxe.elixir.codex-0yn.9` reviews the completed evidence and either approves or rejects a 1.0 release.
 Only an approval may populate `releaseLines.1.approval`. Approval does not publish a release; a later
 reviewed breaking Conventional Commit allows semantic-release to derive `1.0.0`.
 
-## What Does Not Block A Bounded 1.0
+## Features 1.0 Does Not Need To Promise
 
 These can remain deferred when the support contract says so clearly:
 
@@ -150,7 +162,8 @@ These can remain deferred when the support contract says so clearly:
 - internal AST pass API compatibility;
 - a universal compile-time performance promise.
 
-A bounded 1.0 can be stable without being universal.
+Version 1.0 can make a reliable, limited promise without supporting every possible Haxe or Elixir
+feature.
 
 ## Production Pilots Before 1.0
 
@@ -168,8 +181,8 @@ Use the compiler in a production pilot only when all of these conditions are acc
 7. Add runtime tests around important generated and extern boundaries.
 8. Keep the previous release tag as the rollback pin.
 
-This is a controlled-adoption contract, not the assurance of a mature compiler with years of
-independent production use.
+These precautions make an early production trial safer. They do not provide the same confidence as
+years of independent production use.
 
 ## Required Evidence
 
