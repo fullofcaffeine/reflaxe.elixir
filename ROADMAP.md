@@ -20,9 +20,9 @@ duplicating issue state.
 - Reject generated-text cleanup and test escape hatches as substitutes for fixing typed/Elixir AST
   ownership.
 
-The currently known P1 defects are reducer `break`/`continue`
-(`haxe.elixir.codex-3qh.23`) and nested dynamic array comprehensions
-(`haxe.elixir.codex-3qh.24`).
+The remaining known P1 defect is nested dynamic array comprehensions losing their inner result
+(`haxe.elixir.codex-3qh.24`). Reducer `break`/`continue` state preservation
+(`haxe.elixir.codex-3qh.23`) is now covered by Haxe-authored runtime and generated-output regressions.
 
 ### 2. Make Build And Generated Output Lifecycles Safe
 

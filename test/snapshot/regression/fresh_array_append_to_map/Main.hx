@@ -81,6 +81,55 @@ class Main {
 		return output;
 	}
 
+	public static function carriedStateFallback(values:Array<Int>):Array<Int> {
+		var output = [];
+		var visited = 0;
+		for (value in values) {
+			visited++;
+			output.push(value);
+			if (value == 2) {
+				continue;
+			}
+			if (value == 3) {
+				break;
+			}
+			output.push(value * 10);
+		}
+		output.push(visited);
+		return output;
+	}
+
+	public static function rangeControlFallback(limit:Int):Array<Int> {
+		var output = [];
+		for (value in 0...limit) {
+			if (value == 1) {
+				continue;
+			}
+			output.push(value);
+			if (value == 3) {
+				break;
+			}
+		}
+		return output;
+	}
+
+	public static function controlAndReturnFallback(values:Array<Int>):Array<Int> {
+		var output = [];
+		for (value in values) {
+			if (value == -1) {
+				continue;
+			}
+			if (value == -2) {
+				break;
+			}
+			if (value == -3) {
+				return output;
+			}
+			output.push(value);
+		}
+		return output;
+	}
+
 	public static function returnFallback(values:Array<Int>):Array<Int> {
 		var output = [];
 		for (value in values) {
@@ -145,6 +194,9 @@ class Main {
 		partialAccumulatorRead([1, 2]);
 		breakFallback([1, -1, 2]);
 		continueFallback([1, -1, 2]);
+		carriedStateFallback([1, 2, 3, 4]);
+		rangeControlFallback(6);
+		controlAndReturnFallback([1, -1, 2, -2, 3]);
 		returnFallback([1, -1, 2]);
 		throwFallback([1, 2]);
 		statefulReceiverFallback([1, 2]);

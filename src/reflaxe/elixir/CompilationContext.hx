@@ -13,6 +13,31 @@ import haxe.macro.Expr.Position;
 import haxe.ds.ObjectMap;
 
 /**
+ * LoopControlStateSpec: Exact reducer state carried by source `break`/`continue`.
+ *
+ * WHAT
+ * - Describes whether the innermost reducer threads one Elixir value or a tuple of values.
+ *
+ * WHY
+ * - Loop-control throws must capture the latest reducer state at the throw site.
+ * - A one-variable reducer uses `value`, while stateful while loops can deliberately use
+ *   `{value}`; inferring shape from the number of names would corrupt one of those forms.
+ *
+ * HOW
+ * - Loop builders push the exact state shape before compiling a loop body.
+ * - ExceptionBuilder materializes that shape in `throw({:break, state})` or
+ *   `throw({:continue, state})`; the owning `reduce_while` catches it.
+ *
+ * EXAMPLES
+ * - `LoopStateVar("output_acc")` carries `output_acc`.
+ * - `LoopStateTuple(["acc_count", "acc_sum"])` carries `{acc_count, acc_sum}`.
+ */
+enum LoopControlStateSpec {
+	LoopStateVar(name:String);
+	LoopStateTuple(names:Array<String>);
+}
+
+/**
  * CompilationContext: Instance-based compilation state container
  *
  * WHY: Eliminate static state contamination that causes variable shadowing bugs
@@ -201,11 +226,9 @@ class CompilationContext implements BuildContext {
 	 * - Top of stack is the innermost loop (supports nesting).
 	 *
 	 * HOW
-	 * - Each entry is either:
-	 *   - `null` for stateless loops (use reducer `acc` var), or
-	 *   - an ordered list of Elixir variable names to pack into a state tuple.
+	 * - Each entry records either one reducer variable or an ordered tuple of reducer variables.
 	 */
-	public var loopControlStateStack:Array<Null<Array<String>>>;
+	public var loopControlStateStack:Array<LoopControlStateSpec>;
 
 	/**
 	 * Infrastructure variable substitutions from TypedExprPreprocessor.

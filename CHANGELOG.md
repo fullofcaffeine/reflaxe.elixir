@@ -18,6 +18,7 @@ for the exact changes attached to each version.
 
 ### Bug Fixes
 
+* **compiler:** preserve reducer accumulator state across Haxe `break` and `continue`, including state updates immediately before either carrier and loops that also support non-local `return`; generated `Enum.reduce_while` functions now catch compiler-owned loop control locally instead of leaking throws at runtime.
 * **docs:** require local Markdown links to resolve to Git-tracked files or directories, so generated artifacts in a dirty checkout cannot hide links that are broken in clean CI and on GitHub.
 * **compiler:** lower canonical tuple-shaped anonymous objects consistently: contiguous `_1.._N` portable shapes and `_0.._N-1` native-extern shapes now use `elem/2` for typed reads and `put_elem/3` for immutable updates, while mixed or gapped numeric fields remain maps.
 * **compiler:** preserve scalar non-`Void` function bodies through final unused-local hygiene, so instance methods returning literals such as `0`, `false`, strings, floats, `nil`, lists, maps, or tuples no longer compile to empty Elixir functions returning `nil`.

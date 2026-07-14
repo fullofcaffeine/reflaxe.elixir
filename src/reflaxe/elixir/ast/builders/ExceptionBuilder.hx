@@ -12,6 +12,7 @@ import reflaxe.elixir.ast.ElixirAST.ECaseClause;
 import reflaxe.elixir.ast.ElixirAST.EPattern;
 import reflaxe.elixir.ast.builders.ModuleBuilder;
 import reflaxe.elixir.CompilationContext;
+import reflaxe.elixir.CompilationContext.LoopControlStateSpec;
 import reflaxe.elixir.ast.analyzers.VariableAnalyzer;
 
 /**
@@ -345,6 +346,33 @@ class ExceptionBuilder {
 	// NOTE: buildTry tracks presence inline.
 
 	/**
+	 * Build the current reducer state captured by a loop-control throw.
+	 *
+	 * WHAT
+	 * - Materializes the exact variable or tuple shape registered by the innermost loop builder.
+	 *
+	 * WHY
+	 * - `break` and `continue` can occur after state rebinding inside a reducer iteration, so the
+	 *   catch clause cannot safely fall back to the reducer's entry value.
+	 *
+	 * HOW
+	 * - Reads the top function-scoped LoopControlStateSpec and builds the corresponding Elixir AST.
+	 *
+	 * EXAMPLES
+	 * - `LoopStateVar("output_acc")` becomes `output_acc`.
+	 * - `LoopStateTuple(["acc_i", "acc_total"])` becomes `{acc_i, acc_total}`.
+	 */
+	static function buildCurrentLoopControlState(context:CompilationContext):ElixirAST {
+		var top = context.loopControlStateStack[context.loopControlStateStack.length - 1];
+		return switch (top) {
+			case LoopStateVar(name):
+				makeAST(EVar(name));
+			case LoopStateTuple(names):
+				makeAST(ETuple([for (name in names) makeAST(EVar(name))]));
+		};
+	}
+
+	/**
 	 * Build break control flow exception
 	 * 
 	 * WHY: Loops need break capability in Elixir
@@ -365,13 +393,7 @@ class ExceptionBuilder {
 			return EThrow(makeAST(EAtom("break")));
 		}
 
-		var top = context.loopControlStateStack[context.loopControlStateStack.length - 1];
-		var stateExpr:ElixirAST = if (top == null) {
-			// Stateless loops use `acc` as their reduce_while state.
-			makeAST(EVar("acc"));
-		} else {
-			makeAST(ETuple([for (name in top) makeAST(EVar(name))]));
-		};
+		var stateExpr = buildCurrentLoopControlState(context);
 
 		return EThrow(makeAST(ETuple([makeAST(EAtom("break")), stateExpr])));
 	}
@@ -397,12 +419,7 @@ class ExceptionBuilder {
 			return EThrow(makeAST(EAtom("continue")));
 		}
 
-		var top = context.loopControlStateStack[context.loopControlStateStack.length - 1];
-		var stateExpr:ElixirAST = if (top == null) {
-			makeAST(EVar("acc"));
-		} else {
-			makeAST(ETuple([for (name in top) makeAST(EVar(name))]));
-		};
+		var stateExpr = buildCurrentLoopControlState(context);
 
 		return EThrow(makeAST(ETuple([makeAST(EAtom("continue")), stateExpr])));
 	}

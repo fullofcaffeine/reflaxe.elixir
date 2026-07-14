@@ -23,6 +23,7 @@ import reflaxe.elixir.ast.loop_ir.LoopIR;
 import reflaxe.elixir.ast.analyzers.RangeIterationAnalyzer;
 import reflaxe.elixir.helpers.MutabilityDetector;
 import reflaxe.elixir.CompilationContext;
+import reflaxe.elixir.CompilationContext.LoopControlStateSpec;
 import reflaxe.elixir.ast.builders.ComprehensionBuilder; // for unwrap helpers
 import reflaxe.elixir.ast.builders.VariableBuilder;
 import reflaxe.elixir.ast.naming.ElixirNaming;
@@ -126,6 +127,45 @@ class LoopBuilder {
 		}
 		walk(body);
 		return found;
+	}
+
+	/**
+	 * Analyze source loop control owned by the current loop body.
+	 *
+	 * WHAT
+	 * - Reports direct `break` and `continue` expressions that target the loop whose body is passed.
+	 *
+	 * WHY
+	 * - Only reducers with source loop control need `reduce_while` and catch carriers.
+	 * - Control inside a nested loop belongs to that nested loop and must not change or halt the
+	 *   outer reducer.
+	 *
+	 * HOW
+	 * - Walks the typed body while treating nested functions, `for`, and `while` expressions as
+	 *   ownership boundaries.
+	 *
+	 * EXAMPLES
+	 * - `{ if (skip) continue; output.push(value); }` reports continue.
+	 * - `{ for (item in nested) break; output.push(value); }` reports no outer control.
+	 */
+	static function analyzeCurrentLoopControl(body:TypedExpr):{hasBreak:Bool, hasContinue:Bool} {
+		var result = {hasBreak: false, hasContinue: false};
+		function walk(expr:TypedExpr):Void {
+			if (expr == null || (result.hasBreak && result.hasContinue))
+				return;
+			switch (expr.expr) {
+				case TBreak:
+					result.hasBreak = true;
+				case TContinue:
+					result.hasContinue = true;
+				case TFunction(_) | TFor(_, _, _) | TWhile(_, _, _):
+					return;
+				default:
+					TypedExprTools.iter(expr, walk);
+			}
+		}
+		walk(body);
+		return result;
 	}
 
 	/**
@@ -255,7 +295,8 @@ class LoopBuilder {
 	 * ARCHITECTURE: This is called by ElixirASTBuilder with its buildExpr
 	 * function, maintaining control over recursive compilation.
 	 */
-	public static function buildFromTransform(transform:LoopTransform, buildExpr:TypedExpr->ElixirAST, toSnakeCase:String->String):ElixirAST {
+	public static function buildFromTransform(transform:LoopTransform, buildExpr:TypedExpr->ElixirAST, toSnakeCase:String->String,
+			?context:BuildContext):ElixirAST {
 		// Local helper: attempt lenient list extraction for TBlock bodies to
 		// reconstruct list literals instead of emitting invalid concatenations.
 		function tryLooseListFromBlock(body:TypedExpr):Null<ElixirAST> {
@@ -336,7 +377,7 @@ class LoopBuilder {
 					#if debug_loop_builder
 					#end
 					return buildAccumulationLoop(varName, makeAST(ERange(buildExpr(startExpr), buildExpr(endExpr), false, makeAST(EInteger(1)))), body,
-						accumulation, buildExpr, toSnakeCase);
+						accumulation, buildExpr, toSnakeCase, context);
 				}
 
 				// Track variables that need initialization (legacy approach for compatibility)
@@ -404,7 +445,7 @@ class LoopBuilder {
 				if (accumulation != null) {
 					#if debug_loop_builder
 					#end
-					return buildAccumulationLoop(varName, buildExpr(collection), body, accumulation, buildExpr, toSnakeCase);
+					return buildAccumulationLoop(varName, buildExpr(collection), body, accumulation, buildExpr, toSnakeCase, context);
 				}
 
 				// Track variables that need initialization
@@ -1771,14 +1812,29 @@ class LoopBuilder {
 	}
 
 	/**
-	 * Build accumulation loop using Enum.reduce
-	 * 
-	 * WHY: Accumulation patterns need Enum.reduce for semantic correctness
-	 * WHAT: Generates Enum.reduce with proper accumulator initialization
-	 * HOW: Creates reduce function that threads accumulator through loop
+	 * Build a reducer-backed source accumulation loop.
+	 *
+	 * WHAT
+	 * - Threads an Array/string accumulator through collection or range iteration and rebinds the
+	 *   completed value in the enclosing Elixir scope.
+	 *
+	 * WHY
+	 * - Haxe mutation must survive Elixir anonymous-function scope.
+	 * - Source `break`, `continue`, and non-local `return` need explicit reducer protocols without
+	 *   changing ordinary accumulation output.
+	 *
+	 * HOW
+	 * - Rewrites source append/concatenation operations to reducer-state results.
+	 * - Registers direct loop-control state while building the body, then delegates terminal protocol
+	 *   selection to buildStatefulReducerLoop.
+	 *
+	 * EXAMPLES
+	 * - `for (value in values) output.push(value)` uses `Enum.reduce/3`.
+	 * - Adding `if (skip(value)) continue` selects caught `Enum.reduce_while/3`.
 	 */
 	static function buildAccumulationLoop(iteratorVar:String, source:ElixirAST, body:TypedExpr,
-			accumulation:{varName:String, isStringConcat:Bool, isListAppend:Bool}, buildExpr:TypedExpr->ElixirAST, toSnakeCase:String->String):ElixirAST {
+			accumulation:{varName:String, isStringConcat:Bool, isListAppend:Bool}, buildExpr:TypedExpr->ElixirAST, toSnakeCase:String->String,
+			?context:BuildContext):ElixirAST {
 		var snakeIterator = toSnakeCase(iteratorVar);
 		var snakeAccum = toSnakeCase(accumulation.varName);
 		var snakeAccumInReducer = (snakeAccum == "_") ? "_acc" : snakeAccum + "_acc";
@@ -1807,9 +1863,24 @@ class LoopBuilder {
 		// Remove the accumulator variable itself from initializations (handled separately)
 		initializations.remove(accumulation.varName);
 
-		// Transform the body to use accumulator pattern
-		// We need to replace assignments with accumulator returns
+		var loopControl = analyzeCurrentLoopControl(body);
+		var bodyContainsLoopControl = loopControl.hasBreak || loopControl.hasContinue;
+		var compilationContext:Null<CompilationContext> = context != null
+			&& Std.isOfType(context, CompilationContext) ? cast context : null;
+		if (bodyContainsLoopControl && compilationContext != null && compilationContext.loopControlStateStack != null) {
+			compilationContext.loopControlStateStack.push(LoopStateVar(snakeAccumInReducer));
+		}
+
+		// Transform the body to use accumulator pattern while loop control can capture
+		// the reducer's latest value at the exact source break/continue site.
 		var transformedBody = transformBodyForReduce(body, accumulation, buildExpr, toSnakeCase, snakeAccumInReducer);
+
+		if (bodyContainsLoopControl
+			&& compilationContext != null
+			&& compilationContext.loopControlStateStack != null
+			&& compilationContext.loopControlStateStack.length > 0) {
+			compilationContext.loopControlStateStack.pop();
+		}
 
 		#if debug_loop_builder
 		if (Lambda.count(initializations) > 0) {}
@@ -1856,89 +1927,11 @@ class LoopBuilder {
 
 		var iteratorPattern:EPattern = mentionsIterator(transformedBody) ? PVar(snakeIterator) : PWildcard;
 
-		if (containsNonLocalReturn(body)) {
-			return buildReturnAwareAccumulationLoop(source, initialValue, transformedBody, iteratorPattern, snakeAccum, snakeAccumInReducer, initializations,
-				toSnakeCase);
-		}
-
-		var reduceCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [
-			source,
-			initialValue,
-			makeAST(EFn([
-				{
-					args: [iteratorPattern, PVar(snakeAccumInReducer)],
-					body: transformedBody
-				}
-			]))
-		]));
-
-		// Rebind the accumulator in the surrounding scope so the mutation survives beyond the reducer closure.
-		var reduceAst = if (snakeAccum != "_" && snakeAccum != null && snakeAccum.length > 0) {
-			makeAST(EMatch(PVar(snakeAccum), reduceCall));
-		} else {
-			reduceCall;
-		}
+		var reducerAst = buildStatefulReducerLoop(source, initialValue, iteratorPattern, PVar(snakeAccumInReducer), PVar(snakeAccum),
+			makeAST(EVar(snakeAccumInReducer)), transformedBody, containsNonLocalReturn(body), bodyContainsLoopControl);
 
 		// Wrap with any additional initializations
-		return wrapWithInitializations(reduceAst, initializations, toSnakeCase);
-	}
-
-	/**
-	 * Emit Enum.reduce_while for accumulator loops that contain source-level `return`.
-	 *
-	 * WHAT
-	 * - Converts a reducer body that may contain `metadata.fromReturn` expressions into a
-	 *   reduce_while body returning either `{:cont, {:__reflaxe_continue__, acc}}` or
-	 *   `{:halt, {:__reflaxe_return__, value}}`.
-	 * - Wraps the reduce_while result in a case so the enclosing Haxe function receives the
-	 *   returned value, while the no-return path rebinds the accumulator and continues.
-	 *
-	 * WHY
-	 * - Haxe `return` inside a `for` loop exits the enclosing function.
-	 * - Accumulator loops lower to anonymous reducer functions; a bare return value inside
-	 *   that lambda only returns from the lambda and is then discarded by the outer function.
-	 *
-	 * HOW
-	 * - Tag the reduce_while state as `{:__reflaxe_continue__, acc}` so zero-iteration loops
-	 *   have the same result shape as continuing iterations.
-	 * - Rewrite return-origin branches to `{:halt, {:__reflaxe_return__, value}}`.
-	 * - Rewrite normal terminal expressions to `{:cont, {:__reflaxe_continue__, value}}`.
-	 */
-	static function buildReturnAwareAccumulationLoop(source:ElixirAST, initialValue:ElixirAST, transformedBody:ElixirAST, iteratorPattern:EPattern,
-			snakeAccum:String, snakeAccumInReducer:String, initializations:Map<String, ElixirAST>, toSnakeCase:String->String):ElixirAST {
-		var taggedInitial = makeContinueState(initialValue);
-		var reducerBody = rewriteReducerBodyForReturnCarrier(transformedBody, makeAST(EVar(snakeAccumInReducer)), PVar(snakeAccumInReducer));
-
-		var reduceWhileCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce_while", [
-			source,
-			taggedInitial,
-			makeAST(EFn([
-				{
-					args: [
-						iteratorPattern,
-						PTuple([PLiteral(makeAST(EAtom(CONTINUE_TAG))), PVar(snakeAccumInReducer)])
-					],
-					body: reducerBody
-				}
-			]))
-		]));
-
-		var returnVarName = "reflaxe_return_value";
-		var continueFallthrough = makeContinueFallthrough(PVar(snakeAccum));
-		var caseExpr = makeAST(ECase(reduceWhileCall, [
-			{
-				pattern: PTuple([PLiteral(makeAST(EAtom(RETURN_TAG))), PVar(returnVarName)]),
-				guard: null,
-				body: makeAST(EVar(returnVarName))
-			},
-			{
-				pattern: PTuple([PLiteral(makeAST(EAtom(CONTINUE_TAG))), continueFallthrough.pattern]),
-				guard: null,
-				body: continueFallthrough.body
-			}
-		]));
-
-		return wrapWithInitializations(caseExpr, initializations, toSnakeCase);
+		return wrapWithInitializations(reducerAst, initializations, toSnakeCase);
 	}
 
 	static function makeContinueFallthrough(originalPattern:EPattern):{pattern:EPattern, body:ElixirAST} {
@@ -2110,6 +2103,168 @@ class LoopBuilder {
 			default:
 				makeCont(expr);
 		};
+	}
+
+	/**
+	 * Build one untagged `Enum.reduce_while/3` continue result.
+	 *
+	 * WHAT: Wraps reducer state as `{:cont, state}`.
+	 * WHY: Break/continue-only reducers use raw state rather than non-local-return tags.
+	 * HOW: Constructs the tuple as structured Elixir AST.
+	 * EXAMPLE: `output_acc` becomes `{:cont, output_acc}`.
+	 */
+	static inline function makeReducerCont(value:ElixirAST):ElixirAST {
+		return makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("cont"))), value]));
+	}
+
+	/**
+	 * Convert an ordinary reducer result into the `reduce_while` continue protocol.
+	 *
+	 * WHAT
+	 * - Rewrites every normal terminal path from `state` to `{:cont, state}`.
+	 *
+	 * WHY
+	 * - Reducers containing source `break`/`continue` must use `Enum.reduce_while/3`, while their
+	 *   non-control paths must keep returning the same accumulated value as `Enum.reduce/3` did.
+	 *
+	 * HOW
+	 * - Recurses through terminal blocks, `if`, `unless`, and `case` branches.
+	 * - Leaves preceding statements untouched so carried loop-control throws retain source order.
+	 *
+	 * EXAMPLES
+	 * - `output_acc ++ [value]` becomes `{:cont, output_acc ++ [value]}`.
+	 * - `if keep, do: next, else: output_acc` tags both terminal branches.
+	 */
+	static function rewriteReducerBodyForLoopControl(body:ElixirAST, continueValue:ElixirAST):ElixirAST {
+		if (body == null)
+			return makeReducerCont(continueValue);
+
+		return switch (body.def) {
+			case EBlock(stmts):
+				if (stmts == null || stmts.length == 0) {
+					makeReducerCont(continueValue);
+				} else {
+					var rewritten = stmts.copy();
+					rewritten[rewritten.length - 1] = rewriteReducerBodyForLoopControl(rewritten[rewritten.length - 1], continueValue);
+					makeAST(EBlock(rewritten));
+				}
+			case EDo(stmts):
+				if (stmts == null || stmts.length == 0) {
+					makeReducerCont(continueValue);
+				} else {
+					var rewritten = stmts.copy();
+					rewritten[rewritten.length - 1] = rewriteReducerBodyForLoopControl(rewritten[rewritten.length - 1], continueValue);
+					makeAST(EDo(rewritten));
+				}
+			case EIf(condition, thenBranch, elseBranch):
+				makeASTWithMeta(EIf(condition, rewriteReducerBodyForLoopControl(thenBranch, continueValue),
+					elseBranch == null ? makeReducerCont(continueValue) : rewriteReducerBodyForLoopControl(elseBranch, continueValue)),
+					body.metadata, body.pos);
+			case EUnless(condition, branch, elseBranch):
+				makeASTWithMeta(EUnless(condition, rewriteReducerBodyForLoopControl(branch, continueValue),
+					elseBranch == null ? makeReducerCont(continueValue) : rewriteReducerBodyForLoopControl(elseBranch, continueValue)),
+					body.metadata, body.pos);
+			case ECase(scrutinee, clauses):
+				makeASTWithMeta(ECase(scrutinee, [
+					for (clause in clauses)
+						{
+							pattern: clause.pattern,
+							guard: clause.guard,
+							body: rewriteReducerBodyForLoopControl(clause.body, continueValue)
+						}
+				]), body.metadata, body.pos);
+			default:
+				makeReducerCont(body);
+		};
+	}
+
+	/**
+	 * Build one semantically complete stateful collection reducer.
+	 *
+	 * WHAT
+	 * - Selects `Enum.reduce/3`, control-aware `Enum.reduce_while/3`, or the tagged non-local-return
+	 *   protocol for a loop that threads one or more outer locals.
+	 *
+	 * WHY
+	 * - Array, range, and accumulation builders previously duplicated reducer completion logic;
+	 *   only some paths understood return carriers and none consistently caught break/continue.
+	 * - One owner keeps state rebinding, loop control, and non-local return semantics aligned.
+	 *
+	 * HOW
+	 * - Leaves loops without return or loop control on their existing `Enum.reduce/3` shape.
+	 * - Uses raw reducer state for break/continue-only loops.
+	 * - Uses tagged continue/return states when a source return can exit the enclosing Haxe function,
+	 *   wrapping caught loop-control state with the continue tag so the protocols cannot collide.
+	 *
+	 * EXAMPLES
+	 * - A list append loop remains `Enum.reduce/3`.
+	 * - Adding `continue` changes only that loop to a caught `Enum.reduce_while/3`.
+	 * - A loop containing both `break` and `return value` keeps the two halt payloads distinct.
+	 */
+	static function buildStatefulReducerLoop(source:ElixirAST, initialState:ElixirAST, iteratorPattern:EPattern, statePattern:EPattern,
+			outerBindPattern:EPattern, stateReturn:ElixirAST, statefulBody:ElixirAST, bodyContainsReturn:Bool, bodyContainsLoopControl:Bool):ElixirAST {
+		if (bodyContainsReturn) {
+			var reducerBody = rewriteReducerBodyForReturnCarrier(statefulBody, stateReturn, statePattern);
+			if (bodyContainsLoopControl) {
+				reducerBody = wrapLoopControlTry(reducerBody, stateReturn, function(state) return makeContinueState(state));
+			}
+
+			var reduceWhileCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce_while", [
+				source,
+				makeContinueState(initialState),
+				makeAST(EFn([
+					{
+						args: [iteratorPattern, PTuple([PLiteral(makeAST(EAtom(CONTINUE_TAG))), statePattern])],
+						guard: null,
+						body: reducerBody
+					}
+				]))
+			]));
+			var continueFallthrough = makeContinueFallthrough(outerBindPattern);
+
+			return makeAST(ECase(reduceWhileCall, [
+				{
+					pattern: PTuple([PLiteral(makeAST(EAtom(RETURN_TAG))), PVar("reflaxe_return_value")]),
+					guard: null,
+					body: makeAST(EVar("reflaxe_return_value"))
+				},
+				{
+					pattern: PTuple([PLiteral(makeAST(EAtom(CONTINUE_TAG))), continueFallthrough.pattern]),
+					guard: null,
+					body: continueFallthrough.body
+				}
+			]));
+		}
+
+		if (bodyContainsLoopControl) {
+			var reducerBody = rewriteReducerBodyForLoopControl(statefulBody, stateReturn);
+			reducerBody = wrapLoopControlTry(reducerBody, stateReturn);
+			var reduceWhileCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce_while", [
+				source,
+				initialState,
+				makeAST(EFn([
+					{
+						args: [iteratorPattern, statePattern],
+						guard: null,
+						body: reducerBody
+					}
+				]))
+			]));
+			return makeAST(EMatch(outerBindPattern, reduceWhileCall));
+		}
+
+		var reduceCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [
+			source,
+			initialState,
+			makeAST(EFn([
+				{
+					args: [iteratorPattern, statePattern],
+					guard: null,
+					body: statefulBody
+				}
+			]))
+		]));
+		return makeAST(EMatch(outerBindPattern, reduceCall));
 	}
 
 	/**
@@ -2561,7 +2716,7 @@ class LoopBuilder {
 		// FIX: Use correct flag name - "loop_builder_enabled" not "loop_builder_enhanced"
 		if (context.isFeatureEnabled("loop_builder_enabled")) {
 			var transform = analyzeFor(v, e1, e2);
-			var ast = buildFromTransform(transform, e -> buildExpression(e), name -> toElixirVarName(name));
+			var ast = buildFromTransform(transform, e -> buildExpression(e), name -> toElixirVarName(name), context);
 
 			// Attach metadata
 			if (ast != null) {
@@ -2700,10 +2855,21 @@ class LoopBuilder {
 					}
 				}
 			}
+			var loopControl = analyzeCurrentLoopControl(forInArrayPattern.userBody);
+			var bodyContainsLoopControl = loopControl.hasBreak || loopControl.hasContinue;
+			if (bodyContainsLoopControl && compilationContext != null && compilationContext.loopControlStateStack != null) {
+				var stateNames = [for (m in mutatedList) m.accName];
+				compilationContext.loopControlStateStack.push(stateNames.length == 1 ? LoopStateVar(stateNames[0]) : LoopStateTuple(stateNames));
+			}
 
 			var compiledBody = buildExpression(forInArrayPattern.userBody);
 
 			if (compilationContext != null) {
+				if (bodyContainsLoopControl
+					&& compilationContext.loopControlStateStack != null
+					&& compilationContext.loopControlStateStack.length > 0) {
+					compilationContext.loopControlStateStack.pop();
+				}
 				for (s in savedMappings) {
 					if (s.had)
 						compilationContext.tempVarRenameMap.set(s.key, s.value);
@@ -2745,49 +2911,8 @@ class LoopBuilder {
 
 			var statefulBody = ensureReturnsState(compiledBody, stateReturn);
 			var bodyContainsReturn = containsNonLocalReturn(forInArrayPattern.userBody);
-			var reducerBody = bodyContainsReturn ? rewriteReducerBodyForReturnCarrier(statefulBody, stateReturn, statePattern) : statefulBody;
-
-			if (bodyContainsReturn) {
-				var reduceWhileCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce_while", [
-					arrayExpr,
-					makeContinueState(initialState),
-					makeAST(EFn([
-						{
-							args: [PVar(binderName), PTuple([PLiteral(makeAST(EAtom(CONTINUE_TAG))), statePattern])],
-							guard: null,
-							body: reducerBody
-						}
-					]))
-				]));
-				var continueFallthrough = makeContinueFallthrough(outerBindPattern);
-
-				return ECase(reduceWhileCall, [
-					{
-						pattern: PTuple([PLiteral(makeAST(EAtom(RETURN_TAG))), PVar("reflaxe_return_value")]),
-						guard: null,
-						body: makeAST(EVar("reflaxe_return_value"))
-					},
-					{
-						pattern: PTuple([PLiteral(makeAST(EAtom(CONTINUE_TAG))), continueFallthrough.pattern]),
-						guard: null,
-						body: continueFallthrough.body
-					}
-				]);
-			}
-
-			var reduceCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [
-				arrayExpr,
-				initialState,
-				makeAST(EFn([
-					{
-						args: [PVar(binderName), statePattern],
-						guard: null,
-						body: reducerBody
-					}
-				]))
-			]));
-
-			return EMatch(outerBindPattern, reduceCall);
+			return buildStatefulReducerLoop(arrayExpr, initialState, PVar(binderName), statePattern, outerBindPattern, stateReturn, statefulBody,
+				bodyContainsReturn, bodyContainsLoopControl).def;
 		}
 
 		// Check for array iteration patterns
@@ -3464,10 +3589,21 @@ class LoopBuilder {
 				}
 			}
 		}
+		var loopControl = analyzeCurrentLoopControl(bodyInfo.userCode);
+		var bodyContainsLoopControl = loopControl.hasBreak || loopControl.hasContinue;
+		if (bodyContainsLoopControl && compilationContext != null && compilationContext.loopControlStateStack != null) {
+			var stateNames = [for (m in mutatedList) m.accName];
+			compilationContext.loopControlStateStack.push(stateNames.length == 1 ? LoopStateVar(stateNames[0]) : LoopStateTuple(stateNames));
+		}
 
 		var compiledBody = buildExpression(bodyInfo.userCode);
 
 		if (compilationContext != null) {
+			if (bodyContainsLoopControl
+				&& compilationContext.loopControlStateStack != null
+				&& compilationContext.loopControlStateStack.length > 0) {
+				compilationContext.loopControlStateStack.pop();
+			}
 			for (s in savedMappings) {
 				if (s.had)
 					compilationContext.tempVarRenameMap.set(s.key, s.value);
@@ -3509,49 +3645,8 @@ class LoopBuilder {
 
 		var statefulBody = ensureReturnsState(compiledBody, stateReturn);
 		var bodyContainsReturn = containsNonLocalReturn(bodyInfo.userCode);
-		var reducerBody = bodyContainsReturn ? rewriteReducerBodyForReturnCarrier(statefulBody, stateReturn, statePattern) : statefulBody;
-
-		if (bodyContainsReturn) {
-			var reduceWhileCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce_while", [
-				rangeAst,
-				makeContinueState(initialState),
-				makeAST(EFn([
-					{
-						args: [PVar(binderName), PTuple([PLiteral(makeAST(EAtom(CONTINUE_TAG))), statePattern])],
-						guard: null,
-						body: reducerBody
-					}
-				]))
-			]));
-			var continueFallthrough = makeContinueFallthrough(outerBindPattern);
-
-			return ECase(reduceWhileCall, [
-				{
-					pattern: PTuple([PLiteral(makeAST(EAtom(RETURN_TAG))), PVar("reflaxe_return_value")]),
-					guard: null,
-					body: makeAST(EVar("reflaxe_return_value"))
-				},
-				{
-					pattern: PTuple([PLiteral(makeAST(EAtom(CONTINUE_TAG))), continueFallthrough.pattern]),
-					guard: null,
-					body: continueFallthrough.body
-				}
-			]);
-		}
-
-		var reduceCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [
-			rangeAst,
-			initialState,
-			makeAST(EFn([
-				{
-					args: [PVar(binderName), statePattern],
-					guard: null,
-					body: reducerBody
-				}
-			]))
-		]));
-
-		return EMatch(outerBindPattern, reduceCall);
+		return buildStatefulReducerLoop(rangeAst, initialState, PVar(binderName), statePattern, outerBindPattern, stateReturn, statefulBody,
+			bodyContainsReturn, bodyContainsLoopControl).def;
 	}
 
 	static function detectForInArrayPattern(econd:TypedExpr, body:TypedExpr):Null<{
@@ -3882,8 +3977,10 @@ class LoopBuilder {
 				saveAndSet(Std.string(entry.id), entry.accName);
 				saveAndSet(entry.originalName, entry.accName);
 			}
-			if (compilationContext.loopControlStateStack != null)
-				compilationContext.loopControlStateStack.push([for (entry in stateEntries) entry.accName]);
+			if (compilationContext.loopControlStateStack != null) {
+				var stateNames = [for (entry in stateEntries) entry.accName];
+				compilationContext.loopControlStateStack.push(stateNames.length == 1 ? LoopStateVar(stateNames[0]) : LoopStateTuple(stateNames));
+			}
 		}
 
 		var compiledUserBody = buildExpression(pattern.userBody);
@@ -3979,11 +4076,33 @@ class LoopBuilder {
 	}
 
 	/**
-	 * Build idiomatic while loop using reduce_while
+	 * Catch source loop-control carriers at their owning `reduce_while` boundary.
+	 *
+	 * WHAT
+	 * - Converts carried or legacy bare `break`/`continue` throws into `{:halt, state}` or
+	 *   `{:cont, state}` reducer results.
+	 *
+	 * WHY
+	 * - Elixir anonymous functions do not provide non-local loop control.
+	 * - The throw carrier preserves state rebound before the control expression; the optional state
+	 *   wrapper keeps non-local return state tags distinct from ordinary loop completion.
+	 *
+	 * HOW
+	 * - Catches only `:throw` values owned by compiler loop control and leaves raised Haxe/user
+	 *   exceptions untouched.
+	 * - Applies `wrapState` to caught state when a reducer uses a tagged outer protocol.
+	 *
+	 * EXAMPLES
+	 * - `throw({:break, output_acc})` becomes `{:halt, output_acc}`.
+	 * - In a return-aware reducer it becomes `{:halt, {:__reflaxe_continue__, output_acc}}`.
 	 */
-	static function wrapLoopControlTry(body:ElixirAST, currentAcc:ElixirAST):ElixirAST {
+	static function wrapLoopControlTry(body:ElixirAST, currentAcc:ElixirAST, ?wrapState:ElixirAST->ElixirAST):ElixirAST {
 		if (body == null)
 			return body;
+
+		function state(value:ElixirAST):ElixirAST {
+			return wrapState == null ? value : wrapState(value);
+		}
 
 		var breakAtom = makeAST(EAtom(ElixirAtom.raw("break")));
 		var continueAtom = makeAST(EAtom(ElixirAtom.raw("continue")));
@@ -3995,24 +4114,24 @@ class LoopBuilder {
 			{
 				kind: Throw,
 				pattern: PTuple([PLiteral(breakAtom), PVar("break_state")]),
-				body: makeAST(ETuple([haltAtom, makeAST(EVar("break_state"))]))
+				body: makeAST(ETuple([haltAtom, state(makeAST(EVar("break_state")))]))
 			},
 			{
 				kind: Throw,
 				pattern: PTuple([PLiteral(continueAtom), PVar("continue_state")]),
-				body: makeAST(ETuple([contAtom, makeAST(EVar("continue_state"))]))
+				body: makeAST(ETuple([contAtom, state(makeAST(EVar("continue_state")))]))
 			},
 
 			// Back-compat: bare atoms (state falls back to current accumulator).
 			{
 				kind: Throw,
 				pattern: PLiteral(breakAtom),
-				body: makeAST(ETuple([haltAtom, currentAcc]))
+				body: makeAST(ETuple([haltAtom, state(currentAcc)]))
 			},
 			{
 				kind: Throw,
 				pattern: PLiteral(continueAtom),
-				body: makeAST(ETuple([contAtom, currentAcc]))
+				body: makeAST(ETuple([contAtom, state(currentAcc)]))
 			}
 		];
 
@@ -4040,10 +4159,10 @@ class LoopBuilder {
 				for (id => v in mutatedVars)
 					accVarList.push({name: VariableBuilder.resolveVariableName(v, compilationContext), tvar: v});
 				accVarList.sort((a, b) -> Reflect.compare(a.tvar.id, b.tvar.id));
-				compilationContext.loopControlStateStack.push([for (it in accVarList) it.name]);
+				compilationContext.loopControlStateStack.push(LoopStateTuple([for (it in accVarList) it.name]));
 			} else {
 				// Stateless reduce_while uses `acc`.
-				compilationContext.loopControlStateStack.push(null);
+				compilationContext.loopControlStateStack.push(LoopStateVar("acc"));
 			}
 		}
 

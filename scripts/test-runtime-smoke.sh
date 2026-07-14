@@ -22,6 +22,7 @@ RUNTIME_TIMEOUT_SECS="${RUNTIME_TIMEOUT_SECS:-20}"
 TEST_DIRS=(
   "test/snapshot/core/try_catch"
   "test/snapshot/stdlib/sys_io_process/basic"
+  "test/runtime/loop_control_accumulators"
   "test/runtime/fast_boot/string_tools_rebinding"
   "test/snapshot/regression/non_void_tail_values"
   "test/snapshot/regression/function_result_invariants"

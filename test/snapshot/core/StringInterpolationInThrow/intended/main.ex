@@ -8,6 +8,7 @@ defmodule Main do
     test_in_raise()
   end
   defp test_simple_interpolation() do
+    error_code = 404
     try do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Error code: " <> Reflaxe.Elixir.HaxeFloat.to_string(error_code)]
     rescue
@@ -24,6 +25,7 @@ defmodule Main do
     end
   end
   defp test_complex_conditional() do
+    changeset = %{errors: ["name is required", "email is invalid"]}
     try do
       errors = get_errors_map(changeset)
       raise Reflaxe.Elixir.HaxeThrow, [value: "Changeset has errors: " <> (if (not Kernel.is_nil(errors)), do: errors.to_string.(), else: "null")]
@@ -41,6 +43,7 @@ defmodule Main do
     end
   end
   defp test_nested_function_calls() do
+    data = %{id: 123, name: "Test"}
     try do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Failed to process: " <> format_data(process_data(data))]
     rescue
@@ -57,6 +60,9 @@ defmodule Main do
     end
   end
   defp test_multiple_interpolations() do
+    user = "Alice"
+    action = "delete"
+    resource = "post"
     try do
       raise Reflaxe.Elixir.HaxeThrow, [value: "User " <> user <> " cannot " <> action <> " resource " <> resource]
     rescue
@@ -74,7 +80,7 @@ defmodule Main do
   end
   defp test_nil_handling() do
     try do
-      raise Reflaxe.Elixir.HaxeThrow, [value: "Value is: " <> (if (Kernel.is_nil(maybe_value)), do: "nil", else: maybe_value)]
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Value is: " <> ("nil")]
     rescue
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
@@ -89,6 +95,8 @@ defmodule Main do
     end
   end
   defp test_in_raise() do
+    module = "UserController"
+    func = "show"
     try do
       raise Reflaxe.Elixir.HaxeThrow, [value: CustomError.new("Error in " <> module <> "." <> func)]
     rescue

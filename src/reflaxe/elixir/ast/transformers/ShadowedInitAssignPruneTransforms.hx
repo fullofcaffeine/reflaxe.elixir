@@ -5,6 +5,13 @@ import haxe.ds.StringMap;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.ElixirCodeVarRefTokenizer;
+import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
+
+private typedef NameBindingFlow = {
+	var readsPrior:Bool;
+	var definitelyBound:Bool;
+}
 
 /**
  * ShadowedInitAssignPruneTransforms
@@ -188,99 +195,351 @@ class ShadowedInitAssignPruneTransforms {
 	}
 
 	static function exprReadsName(expr:ElixirAST, name:String):Bool {
-		var found = false;
+		return analyzeNameBindingFlow(expr, name, false).readsPrior;
+	}
 
-		function visit(e:ElixirAST):Void {
-			if (found || e == null || e.def == null)
+	/**
+	 * Determine whether evaluating an expression reads a binding before replacing it.
+	 *
+	 * WHAT
+	 * - Tracks an exact local name through source-order matches and nested anonymous functions.
+	 *
+	 * WHY
+	 * - A closure may read an outer initializer directly, or it may bind the same name before every
+	 *   read. A set-based collector cannot distinguish those cases: keeping the latter initializer
+	 *   creates an unused-variable warning, while dropping the former creates undefined Elixir.
+	 *
+	 * HOW
+	 * - Uses the shared closure-aware collector for subtrees with no relevant binding.
+	 * - Performs flow-sensitive evaluation only when the subtree can bind the name, threading definite
+	 *   bindings through sequential expressions and joining conditional branches conservatively.
+	 *
+	 * EXAMPLES
+	 * - `fn -> use(target_id) end` reads the prior `target_id` binding.
+	 * - `fn -> last = read_byte(); use(last) end` does not read the prior `last` binding.
+	 */
+	static function analyzeNameBindingFlow(expr:ElixirAST, name:String, definitelyBound:Bool):NameBindingFlow {
+		if (expr == null || expr.def == null)
+			return {readsPrior: false, definitelyBound: definitelyBound};
+		if (definitelyBound)
+			return {readsPrior: false, definitelyBound: true};
+		if (!subtreeBindsName(expr, name))
+			return {readsPrior: conservativelyReadsName(expr, name), definitelyBound: false};
+
+		return switch (expr.def) {
+			case EBlock(statements) | EDo(statements):
+				analyzeNameBindingSequence(statements, name, false);
+
+			case EBinary(Match, left, right):
+				var rhs = analyzeNameBindingFlow(right, name, false);
+				{
+					readsPrior: rhs.readsPrior,
+					definitelyBound: rhs.definitelyBound || astMatchBindsName(left, name)
+				};
+			case EMatch(pattern, right):
+				var rhs = analyzeNameBindingFlow(right, name, false);
+				{
+					readsPrior: rhs.readsPrior || (!rhs.definitelyBound && pinnedPatternReadsName(pattern, name)),
+					definitelyBound: rhs.definitelyBound || patternBindsName(pattern, name)
+				};
+
+			case EBinary(_, left, right) | EPipe(left, right):
+				analyzeNameBindingSequence([left, right], name, false);
+			case EUnary(_, inner) | EParen(inner) | EPin(inner) | ECapture(inner, _) | EThrow(inner) | EUnquote(inner) | EUnquoteSplicing(inner):
+				analyzeNameBindingFlow(inner, name, false);
+
+			case EIf(condition, thenBranch, elseBranch) | EUnless(condition, thenBranch, elseBranch):
+				var conditionFlow = analyzeNameBindingFlow(condition, name, false);
+				var thenFlow = analyzeNameBindingFlow(thenBranch, name, conditionFlow.definitelyBound);
+				var elseFlow = elseBranch == null ? null : analyzeNameBindingFlow(elseBranch, name, conditionFlow.definitelyBound);
+				{
+					readsPrior: conditionFlow.readsPrior || thenFlow.readsPrior || (elseFlow != null && elseFlow.readsPrior),
+					definitelyBound: conditionFlow.definitelyBound
+					|| (elseFlow != null && thenFlow.definitelyBound && elseFlow.definitelyBound)};
+
+			case ECase(subject, clauses):
+				var subjectFlow = analyzeNameBindingFlow(subject, name, false);
+				var readsPrior = subjectFlow.readsPrior;
+				var everyClauseBinds = clauses.length > 0;
+				for (clause in clauses) {
+					var clauseBound = subjectFlow.definitelyBound || patternBindsName(clause.pattern, name);
+					if (!clauseBound && pinnedPatternReadsName(clause.pattern, name))
+						readsPrior = true;
+					var clauseExpressions:Array<ElixirAST> = [];
+					if (clause.guard != null)
+						clauseExpressions.push(clause.guard);
+					clauseExpressions.push(clause.body);
+					var clauseFlow = analyzeNameBindingSequence(clauseExpressions, name, clauseBound);
+					readsPrior = readsPrior || clauseFlow.readsPrior;
+					everyClauseBinds = everyClauseBinds && clauseFlow.definitelyBound;
+				}
+				{
+					readsPrior: readsPrior,
+					definitelyBound: subjectFlow.definitelyBound || everyClauseBinds};
+
+			case EFn(clauses):
+				var readsPrior = false;
+				for (clause in clauses) {
+					var clauseBound = false;
+					for (argument in clause.args)
+						clauseBound = clauseBound || patternBindsName(argument, name);
+					var clauseExpressions:Array<ElixirAST> = [];
+					if (clause.guard != null)
+						clauseExpressions.push(clause.guard);
+					clauseExpressions.push(clause.body);
+					readsPrior = readsPrior || analyzeNameBindingSequence(clauseExpressions, name, clauseBound).readsPrior;
+				}
+				{readsPrior: readsPrior, definitelyBound: false};
+
+			case ECall(target, _, arguments):
+				var expressions = arguments.copy();
+				if (target != null)
+					expressions.unshift(target);
+				analyzeNameBindingSequence(expressions, name, false);
+			case ERemoteCall(module, _, arguments):
+				var expressions = [module];
+				for (argument in arguments)
+					expressions.push(argument);
+				analyzeNameBindingSequence(expressions, name, false);
+			case EMacroCall(_, arguments, doBlock):
+				var expressions = arguments.copy();
+				expressions.push(doBlock);
+				analyzeNameBindingSequence(expressions, name, false);
+
+			case EList(elements) | ETuple(elements):
+				analyzeNameBindingSequence(elements, name, false);
+			case EMap(pairs):
+				var expressions:Array<ElixirAST> = [];
+				for (pair in pairs) {
+					expressions.push(pair.key);
+					expressions.push(pair.value);
+				}
+				analyzeNameBindingSequence(expressions, name, false);
+			case EKeywordList(pairs):
+				analyzeNameBindingSequence([for (pair in pairs) pair.value], name, false);
+			case EStruct(_, fields):
+				analyzeNameBindingSequence([for (field in fields) field.value], name, false);
+			case EStructUpdate(base, fields):
+				var expressions = [base];
+				for (field in fields)
+					expressions.push(field.value);
+				analyzeNameBindingSequence(expressions, name, false);
+			case EBitstring(segments):
+				var expressions:Array<ElixirAST> = [];
+				for (segment in segments) {
+					expressions.push(segment.value);
+					if (segment.size != null)
+						expressions.push(segment.size);
+				}
+				analyzeNameBindingSequence(expressions, name, false);
+			case EField(target, _):
+				analyzeNameBindingFlow(target, name, false);
+			case EAccess(target, key):
+				analyzeNameBindingSequence([target, key], name, false);
+			case ERange(start, end, _, step):
+				var expressions = [start, end];
+				if (step != null)
+					expressions.push(step);
+				analyzeNameBindingSequence(expressions, name, false);
+			case EReceiverEffect(effect):
+				analyzeNameBindingFlow(effect.operation, name, false);
+
+			case ETry(body, rescueClauses, catchClauses, afterBlock, elseBlock):
+				var readsPrior = analyzeNameBindingFlow(body, name, false).readsPrior;
+				for (clause in rescueClauses) {
+					var clauseBound = patternBindsName(clause.pattern, name) || clause.varName == name;
+					readsPrior = readsPrior || analyzeNameBindingFlow(clause.body, name, clauseBound).readsPrior;
+				}
+				for (clause in catchClauses) {
+					var clauseBound = patternBindsName(clause.pattern, name);
+					readsPrior = readsPrior || analyzeNameBindingFlow(clause.body, name, clauseBound).readsPrior;
+				}
+				if (afterBlock != null)
+					readsPrior = readsPrior || analyzeNameBindingFlow(afterBlock, name, false).readsPrior;
+				if (elseBlock != null)
+					readsPrior = readsPrior || analyzeNameBindingFlow(elseBlock, name, false).readsPrior;
+				// Bindings created inside try/rescue/catch do not establish a safe outer value.
+				{readsPrior: readsPrior, definitelyBound: false};
+
+			default:
+				// Unknown binding-bearing shapes stay conservative: retain the initializer.
+				{readsPrior: conservativelyReadsName(expr, name), definitelyBound: false};
+		};
+	}
+
+	static function analyzeNameBindingSequence(expressions:Array<ElixirAST>, name:String, initialBound:Bool):NameBindingFlow {
+		var result:NameBindingFlow = {readsPrior: false, definitelyBound: initialBound};
+		for (expression in expressions) {
+			var next = analyzeNameBindingFlow(expression, name, result.definitelyBound);
+			result.readsPrior = result.readsPrior || next.readsPrior;
+			result.definitelyBound = next.definitelyBound;
+		}
+		return result;
+	}
+
+	static function subtreeBindsName(expr:ElixirAST, name:String):Bool {
+		if (expr == null || expr.def == null)
+			return false;
+
+		var direct = switch (expr.def) {
+			case EBinary(Match, left, _): astMatchBindsName(left, name);
+			case EMatch(pattern, _): patternBindsName(pattern, name);
+			case EFn(clauses):
+				var found = false;
+				for (clause in clauses)
+					for (argument in clause.args)
+						found = found || patternBindsName(argument, name);
+				found;
+			case ECase(_, clauses) | EReceive(clauses, _):
+				var found = false;
+				for (clause in clauses)
+					found = found || patternBindsName(clause.pattern, name);
+				found;
+			case EFor(generators, _, _, _, _):
+				var found = false;
+				for (generator in generators)
+					found = found || patternBindsName(generator.pattern, name);
+				found;
+			case EWith(clauses, _, _):
+				var found = false;
+				for (clause in clauses)
+					found = found || patternBindsName(clause.pattern, name);
+				found;
+			case ETry(_, rescueClauses, catchClauses, _, _):
+				var found = false;
+				for (clause in rescueClauses)
+					found = found || clause.varName == name || patternBindsName(clause.pattern, name);
+				for (clause in catchClauses)
+					found = found || patternBindsName(clause.pattern, name);
+				found;
+			default: false;
+		};
+		if (direct)
+			return true;
+
+		var found = false;
+		ElixirASTTransformer.iterateAST(expr, function(child:ElixirAST):Void {
+			if (!found && subtreeBindsName(child, name))
+				found = true;
+		});
+		return found;
+	}
+
+	static function astMatchBindsName(expr:ElixirAST, name:String):Bool {
+		if (expr == null || expr.def == null)
+			return false;
+		return switch (expr.def) {
+			case EVar(candidate): candidate == name;
+			case EParen(inner): astMatchBindsName(inner, name);
+			case ETuple(elements) | EList(elements):
+				var found = false;
+				for (element in elements)
+					found = found || astMatchBindsName(element, name);
+				found;
+			default: false;
+		};
+	}
+
+	static function patternBindsName(pattern:EPattern, name:String):Bool {
+		return switch (pattern) {
+			case PVar(candidate): candidate == name;
+			case PAlias(candidate, inner): candidate == name || patternBindsName(inner, name);
+			case PTuple(elements) | PList(elements):
+				var found = false;
+				for (element in elements)
+					found = found || patternBindsName(element, name);
+				found;
+			case PCons(head, tail): patternBindsName(head, name) || patternBindsName(tail, name);
+			case PMap(pairs):
+				var found = false;
+				for (pair in pairs)
+					found = found || patternBindsName(pair.value, name);
+				found;
+			case PStruct(_, fields):
+				var found = false;
+				for (field in fields)
+					found = found || patternBindsName(field.value, name);
+				found;
+			case PBinary(segments):
+				var found = false;
+				for (segment in segments)
+					found = found || patternBindsName(segment.pattern, name);
+				found;
+			case PPin(_) | PLiteral(_) | PWildcard: false;
+		};
+	}
+
+	static function pinnedPatternReadsName(pattern:EPattern, name:String):Bool {
+		return switch (pattern) {
+			case PPin(PVar(candidate)): candidate == name;
+			case PPin(inner): pinnedPatternReadsName(inner, name);
+			case PAlias(_, inner): pinnedPatternReadsName(inner, name);
+			case PTuple(elements) | PList(elements):
+				var found = false;
+				for (element in elements)
+					found = found || pinnedPatternReadsName(element, name);
+				found;
+			case PCons(head, tail): pinnedPatternReadsName(head, name) || pinnedPatternReadsName(tail, name);
+			case PMap(pairs):
+				var found = false;
+				for (pair in pairs)
+					found = found || pinnedPatternReadsName(pair.value, name);
+				found;
+			case PStruct(_, fields):
+				var found = false;
+				for (field in fields)
+					found = found || pinnedPatternReadsName(field.value, name);
+				found;
+			case PBinary(segments):
+				var found = false;
+				for (segment in segments)
+					found = found || pinnedPatternReadsName(segment.pattern, name);
+				found;
+			default: false;
+		};
+	}
+
+	static function conservativelyReadsName(expr:ElixirAST, name:String):Bool {
+		if (VariableUsageCollector.usedInFunctionScope(expr, name))
+			return true;
+
+		// Raw target snippets deliberately remain outside the shared structured
+		// analyzer. Keep this destructive pass conservative by scanning only the
+		// raw leaves that occur anywhere below the expression.
+		var rawRefs = new Map<String, Bool>();
+		function visitRaw(e:ElixirAST):Void {
+			if (e == null || e.def == null || rawRefs.exists(name))
 				return;
 			switch (e.def) {
-				case EVar(n) if (n == name):
-					found = true;
 				case ERaw(code):
-					// Conservative: avoid pruning when the raw block may reference the name.
-					if (code != null && code.indexOf(name) != -1)
-						found = true;
-				case EBlock(stmts):
-					for (s in stmts)
-						visit(s);
-				case EDo(statements):
-					for (statement in statements)
-						visit(statement);
-				case EIf(c, t, el):
-					visit(c);
-					visit(t);
-					if (el != null)
-						visit(el);
-				case ECond(clauses):
-					for (cl in clauses) {
-						visit(cl.condition);
-						visit(cl.body);
-					}
-				case ECase(subject, clauses):
-					visit(subject);
-					for (cl in clauses) {
-						if (cl.guard != null)
-							visit(cl.guard);
-						visit(cl.body);
-					}
-				case EBinary(_, l, r):
-					visit(l);
-					visit(r);
-				case EUnary(_, inner):
-					visit(inner);
-				case EMatch(_, rhs):
-					visit(rhs);
-				case EPipe(left, right):
-					visit(left);
-					visit(right);
-				case ECall(tgt, _, args):
-					if (tgt != null)
-						visit(tgt);
-					for (a in args)
-						visit(a);
-				case ERemoteCall(mod, _, args):
-					visit(mod);
-					for (arg in args)
-						visit(arg);
-				case EList(els):
-					for (el in els)
-						visit(el);
-				case ETuple(els):
-					for (el in els)
-						visit(el);
-				case EMap(pairs):
-					for (p in pairs) {
-						visit(p.key);
-						visit(p.value);
-					}
-				case EKeywordList(pairs):
-					for (p in pairs)
-						visit(p.value);
-				case EStructUpdate(base, fields):
-					visit(base);
-					for (f in fields)
-						visit(f.value);
-				case EField(t, _):
-					visit(t);
-				case EAccess(target, k):
-					visit(target);
-					visit(k);
-				case ERange(a, b, _, step):
-					visit(a);
-					visit(b);
-					if (step != null)
-						visit(step);
-				case EFn(clauses):
-					for (cl in clauses)
-						visit(cl.body);
-				case EParen(inner):
-					visit(inner);
+					ElixirCodeVarRefTokenizer.collectFromElixirCode(code, rawRefs);
+				case EModule(_, attributes, body):
+					for (attribute in attributes)
+						visitRaw(attribute.value);
+					for (statement in body)
+						visitRaw(statement);
+				case EDefmacro(_, _, guards, body) | EDefmacrop(_, _, guards, body):
+					if (guards != null)
+						visitRaw(guards);
+					visitRaw(body);
+				case EReceiverEffect(effect):
+					visitRaw(effect.operation);
+				case EPin(inner) | ECapture(inner, _) | EUnquote(inner) | EUnquoteSplicing(inner):
+					visitRaw(inner);
+				case EQuote(options, quoted):
+					for (option in options)
+						visitRaw(option);
+					visitRaw(quoted);
+				case ESend(target, message):
+					visitRaw(target);
+					visitRaw(message);
 				default:
+					ElixirASTTransformer.iterateAST(e, visitRaw);
 			}
 		}
 
-		visit(expr);
-		return found;
+		visitRaw(expr);
+		return rawRefs.exists(name);
 	}
 }
 #end

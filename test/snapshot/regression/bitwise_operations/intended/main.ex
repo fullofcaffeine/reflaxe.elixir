@@ -67,6 +67,7 @@ defmodule Main do
   end
   defp test_complex_expressions() do
     n = 255
+    hex_chars = "0123456789ABCDEF"
     s = ""
     {_n, _s} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, s}, fn _, {acc_n, acc_s} ->
       try do

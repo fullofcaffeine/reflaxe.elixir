@@ -39,24 +39,139 @@ defmodule Main do
   def break_fallback(values) do
     output = []
     _g = 0
-    output = Enum.reduce(values, output, fn value, output_acc ->
-      if (value < 0) do
-        throw(:break)
+    output = Enum.reduce_while(values, output, fn value, output_acc ->
+      try do
+        if (value < 0) do
+          throw({:break, output_acc})
+        end
+        output_acc = Enum.concat(output_acc, [value])
+        {:cont, output_acc}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, output_acc}
+        :throw, :continue ->
+          {:cont, output_acc}
       end
-      Enum.concat(output_acc, [value])
     end)
     output
   end
   def continue_fallback(values) do
     output = []
     _g = 0
-    output = Enum.reduce(values, output, fn value, output_acc ->
-      if (value < 0) do
-        throw(:continue)
+    output = Enum.reduce_while(values, output, fn value, output_acc ->
+      try do
+        if (value < 0) do
+          throw({:continue, output_acc})
+        end
+        output_acc = Enum.concat(output_acc, [value])
+        {:cont, output_acc}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, output_acc}
+        :throw, :continue ->
+          {:cont, output_acc}
       end
-      Enum.concat(output_acc, [value])
     end)
     output
+  end
+  def carried_state_fallback(values) do
+    output = []
+    visited = 0
+    _g = 0
+    {output, visited} = Enum.reduce_while(values, {output, visited}, fn value, {output_acc, visited_acc} ->
+      try do
+        visited_acc = visited_acc + 1
+        output_acc = output_acc ++ [value]
+        if (value == 2) do
+          throw({:continue, {output_acc, visited_acc}})
+        end
+        if (value == 3) do
+          throw({:break, {output_acc, visited_acc}})
+        end
+        output_acc = output_acc ++ [value * 10]
+        {:cont, {output_acc, visited_acc}}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, {output_acc, visited_acc}}
+        :throw, :continue ->
+          {:cont, {output_acc, visited_acc}}
+      end
+    end)
+    output = output ++ [visited]
+    output
+  end
+  def range_control_fallback(limit) do
+    output = []
+    _g = 0
+    g_value = limit
+    output = Enum.reduce_while(0..(g_value - 1)//1, output, fn value, output_acc ->
+      try do
+        if (value == 1) do
+          throw({:continue, output_acc})
+        end
+        output_acc = Enum.concat(output_acc, [value])
+        if (value == 3) do
+          throw({:break, output_acc})
+        end
+        {:cont, output_acc}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, output_acc}
+        :throw, :continue ->
+          {:cont, output_acc}
+      end
+    end)
+    output
+  end
+  def control_and_return_fallback(values) do
+    output = []
+    _g = 0
+    (case Enum.reduce_while(values, {:__reflaxe_continue__, output}, fn value, {:__reflaxe_continue__, output_acc} ->
+      try do
+        if (value == -1) do
+          throw({:continue, output_acc})
+        end
+        if (value == -2) do
+          throw({:break, output_acc})
+        end
+        (case (if (value == -3), do: {:halt, {:__reflaxe_return__, output_acc}}, else: {:cont, {:__reflaxe_continue__, output_acc}}) do
+          {:halt, reflaxe_halt_payload} -> {:halt, reflaxe_halt_payload}
+          {:cont, {:__reflaxe_continue__, output_acc}} ->
+            output_acc = output_acc ++ [value]
+            {:cont, {:__reflaxe_continue__, output_acc}}
+        end)
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, {:__reflaxe_continue__, break_state}}
+        :throw, {:continue, continue_state} ->
+          {:cont, {:__reflaxe_continue__, continue_state}}
+        :throw, :break ->
+          {:halt, {:__reflaxe_continue__, output_acc}}
+        :throw, :continue ->
+          {:cont, {:__reflaxe_continue__, output_acc}}
+      end
+    end) do
+      {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
+      {:__reflaxe_continue__, reflaxe_continue_output} ->
+        output = reflaxe_continue_output
+        output
+    end)
   end
   def return_fallback(values) do
     output = []
@@ -139,6 +254,9 @@ defmodule Main do
     partial_accumulator_read([1, 2])
     break_fallback([1, -1, 2])
     continue_fallback([1, -1, 2])
+    carried_state_fallback([1, 2, 3, 4])
+    range_control_fallback(6)
+    control_and_return_fallback([1, -1, 2, -2, 3])
     return_fallback([1, -1, 2])
     throw_fallback([1, 2])
     stateful_receiver_fallback([1, 2])

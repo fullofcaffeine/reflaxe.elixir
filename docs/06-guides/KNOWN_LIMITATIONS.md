@@ -15,18 +15,18 @@ If you hit something not covered here, please open an issue and include your **H
 - **Compiler output**: intended to be idiomatic and readable, but edge‑case semantics may change as the transformer passes mature.
 - **Examples**: treated as “living docs”; they may evolve as patterns improve.
 
-## Known P1 correctness blockers
+## Known P1 correctness blocker
 
-These defects are tracked as blockers for stable graduation, even though their shapes are not common
-in ordinary Phoenix-facing code:
+This defect remains a blocker for stable graduation, even though its shape is not common in ordinary
+Phoenix-facing code:
 
-- `haxe.elixir.codex-3qh.23`: accumulator loops lowered through `Enum.reduce` can leave internal
-  `break` or `continue` throws uncaught.
 - `haxe.elixir.codex-3qh.24`: nested array comprehensions over dynamic iterables can lose the inner
   result tail.
 
-Do not classify an application that depends on either shape as inside the production-capable subset
-until the corresponding runtime regression suite and compiler fix have landed. See
+Do not classify an application that depends on this shape as inside the production-capable subset
+until its runtime regression suite and compiler fix have landed. Reducer-lowered accumulator loops
+now preserve state across `break` and `continue`, with Haxe-authored runtime coverage under
+`test/runtime/loop_control_accumulators`. See
 [Production Readiness](PRODUCTION_READINESS.md) for the full 1.0 gate.
 
 ## Incremental build invalidation

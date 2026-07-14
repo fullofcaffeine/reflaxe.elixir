@@ -12,7 +12,6 @@ defmodule Main do
   defp test_method_call_in_binary_expression() do
     s = TestString.new("test")
     i = 0
-    index = 0
     c = apply(Map.get(s, :__reflaxe_class__) || Map.get(s, :__struct__), :cca, (fn ->
         index = i + 1
         [s, index]

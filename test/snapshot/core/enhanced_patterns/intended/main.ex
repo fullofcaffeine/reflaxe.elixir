@@ -364,13 +364,11 @@ defmodule Main do
         "Adult with full permissions"
       else
         age = data_user_age
-        perms = 2
         active = data_user_active
         if (age >= 65 and active) do
           "Senior user"
         else
           _ = data_user_age
-          perms = 2
           active = data_user_active
           if (not active) do
             "Inactive user"

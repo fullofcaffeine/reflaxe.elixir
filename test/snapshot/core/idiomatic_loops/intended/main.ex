@@ -237,11 +237,23 @@ defmodule Main do
     numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     processed = []
     _g = 0
-    _ = Enum.reduce(numbers, processed, fn n, processed_acc ->
-      if (rem(n, 3) == 0) do
-        throw(:continue)
+    _ = Enum.reduce_while(numbers, processed, fn n, processed_acc ->
+      try do
+        if (rem(n, 3) == 0) do
+          throw({:continue, processed_acc})
+        end
+        processed_acc = Enum.concat(processed_acc, [n * 2])
+        {:cont, processed_acc}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, processed_acc}
+        :throw, :continue ->
+          {:cont, processed_acc}
       end
-      Enum.concat(processed_acc, [n * 2])
     end)
     find_first = fn arr, target ->
       _g = 0
@@ -294,16 +306,24 @@ defmodule Main do
     results = []
     errors = []
     _g = 0
-    {_results, _errors} = Enum.reduce(items, {results, errors}, fn item, {results_acc, errors_acc} ->
-      errors_acc = if (StringTools.haxe_index_of(item, "error", 0) >= 0) do
-        errors_acc = errors_acc ++ ["Failed: " <> item]
-        throw(:continue)
-        errors_acc
-      else
-        errors_acc
+    {_results, _errors} = Enum.reduce_while(items, {results, errors}, fn item, {results_acc, errors_acc} ->
+      try do
+        if (StringTools.haxe_index_of(item, "error", 0) >= 0) do
+          errors_acc = errors_acc ++ ["Failed: " <> item]
+          throw({:continue, {results_acc, errors_acc}})
+        end
+        results_acc = results_acc ++ ["Processed: " <> item]
+        {:cont, {results_acc, errors_acc}}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, {results_acc, errors_acc}}
+        :throw, :continue ->
+          {:cont, {results_acc, errors_acc}}
       end
-      results_acc = results_acc ++ ["Processed: " <> item]
-      {results_acc, errors_acc}
     end)
     nil
   end

@@ -293,14 +293,15 @@ class ReduceWhileAccumulatorTransform {
 				return makeAST(ETry(transformedTryBody, transformedRescue, transformedCatch, transformedAfter, transformedElse));
 
 			case EIf(condition, thenBranch, elseBranch):
-				// ⚠️ FIX: Don't remove if-expressions that contain return tuples
-				// These are the lambda's main control flow (do-while pattern)
-				var hasReturnTuple = containsReturnTuple(thenBranch) || (elseBranch != null && containsReturnTuple(elseBranch));
+				// Do not value-lift assignments across reducer control transfer. Return tuples and
+				// carried break/continue throws terminate the current reducer path.
+				var hasReturnTuple = containsReducerControlTransfer(thenBranch)
+					|| (elseBranch != null && containsReducerControlTransfer(elseBranch));
 
 				#if debug_ast_transformer trace('[DEBUG] EIf processing - hasReturnTuple: $hasReturnTuple'); #end
-				#if debug_ast_transformer trace('[DEBUG] thenBranch containsReturnTuple: ${containsReturnTuple(thenBranch)}'); #end
+				#if debug_ast_transformer trace('[DEBUG] thenBranch containsReducerControlTransfer: ${containsReducerControlTransfer(thenBranch)}'); #end
 				if (elseBranch != null) {
-					#if debug_ast_transformer trace('[DEBUG] elseBranch containsReturnTuple: ${containsReturnTuple(elseBranch)}'); #end
+					#if debug_ast_transformer trace('[DEBUG] elseBranch containsReducerControlTransfer: ${containsReducerControlTransfer(elseBranch)}'); #end
 				}
 
 				if (hasReturnTuple) {
@@ -342,7 +343,7 @@ class ReduceWhileAccumulatorTransform {
 			case ECase(expr, branches):
 				var caseHasReturnTuple = false;
 				for (branch in branches) {
-					if (containsReturnTuple(branch.body)) {
+					if (containsReducerControlTransfer(branch.body)) {
 						caseHasReturnTuple = true;
 						break;
 					}
@@ -736,10 +737,26 @@ class ReduceWhileAccumulatorTransform {
 	}
 
 	/**
-	 * Check if an AST node contains return tuples {:cont/:halt, accumulator}
-	 * These indicate the node is part of the lambda's main control flow
+	 * Detect a reducer control transfer that forbids moving prior state updates past it.
+	 *
+	 * WHAT
+	 * - Recognizes `{:cont/:halt, state}` returns and compiler-owned break/continue throws.
+	 *
+	 * WHY
+	 * - Accumulator value lifting normally turns branch assignments into one terminal expression.
+	 * - Moving an update after `throw({:continue, state})` makes it unreachable and carries stale
+	 *   state, violating Haxe source order.
+	 *
+	 * HOW
+	 * - Recurses through blocks, conditionals, and cases used as reducer branch bodies.
+	 * - Matches only the compiler loop-control atom/tuple payloads; ordinary raised Haxe exceptions
+	 *   remain on the normal exception path.
+	 *
+	 * EXAMPLES
+	 * - `errors.push(message); continue;` keeps the `errors` rebind before the carrier throw.
+	 * - `{:halt, state}` remains a terminal reducer path.
 	 */
-	static function containsReturnTuple(node:ElixirAST):Bool {
+	static function containsReducerControlTransfer(node:ElixirAST):Bool {
 		if (node == null)
 			return false;
 
@@ -752,24 +769,34 @@ class ReduceWhileAccumulatorTransform {
 					default:
 				}
 
+			case EThrow(value):
+				return switch (value.def) {
+					case EAtom(atom) if (atom == "break" || atom == "continue"):
+						true;
+					case ETuple([{def: EAtom(atom)}, _]) if (atom == "break" || atom == "continue"):
+						true;
+					default:
+						false;
+				};
+
 			case EBlock(exprs):
 				// Check if any expression in the block is a return tuple
 				for (expr in exprs) {
-					if (containsReturnTuple(expr)) {
+					if (containsReducerControlTransfer(expr)) {
 						return true;
 					}
 				}
 
 			case EIf(_, thenBranch, elseBranch):
 				// Recursively check branches
-				if (containsReturnTuple(thenBranch))
+				if (containsReducerControlTransfer(thenBranch))
 					return true;
-				if (elseBranch != null && containsReturnTuple(elseBranch))
+				if (elseBranch != null && containsReducerControlTransfer(elseBranch))
 					return true;
 
 			case ECase(_, branches):
 				for (branch in branches) {
-					if (containsReturnTuple(branch.body))
+					if (containsReducerControlTransfer(branch.body))
 						return true;
 				}
 

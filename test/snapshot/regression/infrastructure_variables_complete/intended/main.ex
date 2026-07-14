@@ -106,13 +106,24 @@ defmodule Main do
     found = nil
     _g = 0
     todos_length = length(todos)
-    found = Enum.reduce(0..(todos_length - 1)//1, found, fn i, found_acc ->
-      if (Enum.at(todos, i).id == target_id) do
-        found_acc = Enum.at(todos, i)
-        throw(:break)
-        found_acc
-      else
-        found_acc
+    found = Enum.reduce_while(0..(todos_length - 1)//1, found, fn i, found_acc ->
+      try do
+        if (Enum.at(todos, i).id == target_id) do
+          found_acc = Enum.at(todos, i)
+          throw({:break, found_acc})
+          {:cont, found_acc}
+        else
+          {:cont, found_acc}
+        end
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, found_acc}
+        :throw, :continue ->
+          {:cont, found_acc}
       end
     end)
     if (not Kernel.is_nil(found)), do: nil

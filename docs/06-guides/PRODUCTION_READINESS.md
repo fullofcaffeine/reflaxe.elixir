@@ -40,7 +40,7 @@ versions, operating systems, third-party libraries, or deployment conditions.
 
 | Dimension | Status | Evidence | Remaining condition or gap |
 | --- | --- | --- | --- |
-| Compiler semantics | **Blocked** | Full snapshot categories, negative cases, function-result invariants, generated Elixir validation, Mix runtime tests | P1 defects `haxe.elixir.codex-3qh.23` and `.24` affect reducer control flow and nested dynamic comprehensions. |
+| Compiler semantics | **Blocked** | Full snapshot categories, negative cases, function-result invariants, generated Elixir validation, Mix runtime tests, reducer loop-control runtime smoke | P1 defect `haxe.elixir.codex-3qh.24` affects nested dynamic comprehensions. Reducer `break`/`continue` preservation is fixed. |
 | Mix build invalidation | **Blocked** | Mix compiler tests and example builds | The current freshness model does not fingerprint every effective HXML, define, library/toolchain, or additional classpath input. A normal incremental compile can retain stale output. Tracked by `haxe.elixir.codex-0yn.1`. |
 | Generated-file ownership | **Blocked** | Isolated output, generated-file metadata in selected paths, package and upgrade tests | In-place writes, clean, stale deletion, and collision handling do not yet share one fail-closed ownership protocol for all generated app modules. Tracked by `haxe.elixir.codex-0yn.2`. |
 | Generated Elixir quality | **Conditional** | Warnings-as-errors examples, canonical `mix format` integration, handwritten-output corpus, support-footprint checks | Some semantics require visible helpers or conservative reducers. Style work can continue after 1.0; unexplained semantic repairs cannot. |
@@ -61,15 +61,17 @@ versions, operating systems, third-party libraries, or deployment conditions.
 
 ## Known 1.0 Blockers
 
-### 1. Close Known P1 Correctness Defects
+### 1. Close The Remaining P1 Correctness Defect
 
-- `haxe.elixir.codex-3qh.23`: reducer-lowered accumulator loops can emit uncaught internal
-  `break`/`continue` throws.
 - `haxe.elixir.codex-3qh.24`: nested array comprehensions over dynamic iterables can lose the inner
   result tail.
 
-Both require Haxe-authored runtime tests and fixes at the typed/Elixir AST lowering boundary. Target
-injection in a regression test or generated-text cleanup is not an acceptable substitute.
+`haxe.elixir.codex-3qh.23` is closed: reducer-lowered accumulator loops now catch compiler-owned
+control carriers and retain the exact scalar or tuple state across `break` and `continue`. The
+Haxe-authored `test/runtime/loop_control_accumulators` suite covers state updates, ranges, and loops
+that also contain non-local returns. The remaining comprehension defect requires the same standard:
+a source-level runtime test and a fix at the typed/Elixir AST lowering boundary, not target injection
+or generated-text cleanup.
 
 ### 2. Make Incremental Builds Complete
 
