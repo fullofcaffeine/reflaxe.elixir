@@ -66,13 +66,34 @@ defmodule HaxeTestHelper do
     
     # Create the haxe_libraries directory structure
     File.mkdir_p!(target_libraries)
-    
-    # Copy the reflaxe directory (needed for -lib reflaxe)
-    source_reflaxe = Path.join(source_libraries, "reflaxe")
-    target_reflaxe = Path.join(target_libraries, "reflaxe")
-    if File.exists?(source_reflaxe) do
-      File.cp_r!(source_reflaxe, target_reflaxe)
+
+    # Lix chooses the Haxe version from the nearest `.haxerc`. Each fixture runs
+    # from its own temporary directory, so give it the same version pin as the
+    # repository instead of letting a developer's or CI runner's global setup
+    # choose a different compiler.
+    source_haxerc = Path.join(project_root, ".haxerc")
+    target_haxerc = Path.join(project_dir, ".haxerc")
+
+    unless File.regular?(source_haxerc) do
+      raise "Required Haxe scope configuration not found at #{source_haxerc}"
     end
+
+    File.cp!(source_haxerc, target_haxerc)
+    
+    # `-lib reflaxe` also needs a `reflaxe.hxml` file in this temporary project.
+    # Point that file back to the real source checkout; otherwise `${SCOPE_DIR}`
+    # would incorrectly point at the temporary directory.
+    source_reflaxe = Path.join(source_libraries, "reflaxe.hxml")
+    target_reflaxe = Path.join(target_libraries, "reflaxe.hxml")
+
+    unless File.regular?(source_reflaxe) do
+      raise "Required Reflaxe library configuration not found at #{source_reflaxe}"
+    end
+
+    source_reflaxe
+    |> File.read!()
+    |> String.replace("${SCOPE_DIR}", project_root)
+    |> then(&File.write!(target_reflaxe, &1))
     
     # Create test-specific reflaxe.elixir.hxml with absolute paths
     test_config_target = Path.join(target_libraries, "reflaxe.elixir.hxml")

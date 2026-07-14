@@ -44,6 +44,19 @@ defmodule HaxeCompilerTest do
     {:ok, test_dir: test_dir, source_dir: source_dir, target_dir: target_dir}
   end
 
+  describe "test project setup" do
+    test "pins isolated projects to the repository Haxe scope", %{test_dir: test_dir} do
+      project_root = System.fetch_env!("REFLAXE_ELIXIR_PROJECT_ROOT")
+
+      assert File.read!(Path.join(test_dir, ".haxerc")) ==
+               File.read!(Path.join(project_root, ".haxerc"))
+
+      reflaxe_hxml = File.read!(Path.join([test_dir, "haxe_libraries", "reflaxe.hxml"]))
+      assert reflaxe_hxml =~ "-cp #{project_root}/vendor/reflaxe/src/"
+      refute reflaxe_hxml =~ "${SCOPE_DIR}"
+    end
+  end
+
   describe "compile/1" do
     test "compiles successfully with valid configuration", %{source_dir: source_dir, target_dir: target_dir} do
       # Create a simple build.hxml file
