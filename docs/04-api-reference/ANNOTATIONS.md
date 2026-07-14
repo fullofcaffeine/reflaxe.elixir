@@ -562,52 +562,39 @@ online_users = TodoAppWeb.Presence.list("users")
 
 ### @:genserver - OTP GenServer
 
-Generates OTP GenServer modules for stateful processes.
+Experimental metadata for GenServer-shaped modules.
 
-**Basic Usage**:
+> [!WARNING]
+> `@:genserver` currently has compile-shape coverage only. It is not part of the 1.0 OTP lifecycle
+> promise, and successful compilation does not prove that a module can be started and operated as a
+> complete GenServer. Use the runtime-proven operations in the
+> [OTP Support Contract](OTP_SUPPORT_CONTRACT.md) for stable code.
+
+The checked compile-shape fixture currently looks like this:
+
 ```haxe
-import elixir.types.Term;
-import elixir.types.GenServerCallbackResults.HandleCallResult;
-import elixir.types.GenServerCallbackResults.InitResult;
-
 @:genserver
 class Counter {
-    private var count: Int = 0;
-    
-    public static function init(_args: Term): InitResult<Int> {
-        return Ok(0);
-    }
-    
-    public static function handle_call(msg: String, _from: Term, state: Int): HandleCallResult<Int, Int> {
-        return switch (msg) {
-            case "get": Reply(state, state);
-            case "increment": Reply(state + 1, state + 1);
-            case _: Reply(state, state);
-        };
-    }
+  var count:Int;
+
+  public function init(args:Dynamic):Dynamic {
+    return {ok: {count: 0}};
+  }
 }
 ```
 
-**Generated Elixir**:
+The current compiler preserves callback-shaped functions, but does not yet generate the complete
+`use GenServer`, client API, and lifecycle module that a production GenServer needs. A representative
+output shape is:
+
 ```elixir
 defmodule Counter do
-  use GenServer
-  
-  def init(_args) do
-    {:ok, 0}
+  def init(_struct, _args) do
+    %{ok: %{count: 0}}
   end
-  
-  def handle_call("get", _from, state) do
-    {:reply, state, state}
-  end
-  
-  def handle_call("increment", _from, state) do
-    {:reply, state + 1, state + 1}
-  end
-  
-  def handle_call(_, _from, state) do
-    {:reply, "unknown", state}
-  end
+
+  # Additional authored functions are emitted, but this is not yet a complete
+  # GenServer callback/lifecycle implementation.
 end
 ```
 
@@ -821,6 +808,10 @@ The following combinations are mutually exclusive:
 ### @:application - OTP Application Module
 
 Marks a class as an OTP Application module that defines a supervision tree.
+
+The documented application and typed-child-spec shapes have compile and Phoenix boot evidence. That
+does not make every supervisor restart, crash, or shutdown policy part of the 1.0 promise; see the
+[OTP Support Contract](OTP_SUPPORT_CONTRACT.md).
 
 **Basic Usage**:
 ```haxe
@@ -1682,7 +1673,11 @@ enum abstract HookName(String) from String to String {
 
 ### @:supervisor - OTP Supervisor Module
 
-Marks a module as a supervisor surface so child-spec normalization and supervisor-oriented behavior can be applied.
+Experimental marker that lets child-spec normalization and supervisor-oriented compilation apply to
+a module. Custom supervisor callbacks, restart behavior, and failure behavior are outside the 1.0
+promise. For the supported application-wiring boundary, see the
+[OTP Support Contract](OTP_SUPPORT_CONTRACT.md) and
+[Type-Safe OTP Child Specs](TYPE_SAFE_CHILD_SPEC.md).
 
 ### @:callback / @:optional_callback
 

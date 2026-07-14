@@ -1,0 +1,11 @@
+-cp .
+-cp ../../../../src
+-cp ../../../../std
+-cp ../../../../std/elixir/_std
+-main Main
+-lib reflaxe
+-D reflaxe_runtime
+-D elixir_output=out
+-D reflaxe_elixir_validate_results
+-dce full
+--macro reflaxe.elixir.CompilerInit.Start()

@@ -35,9 +35,9 @@ This directory contains the Reflaxe.Elixir compiler test suite, validating that 
 3. Users care about generated Elixir, not how we build it internally
 4. Snapshot tests catch real bugs that affect actual usage
 
-### Test Statistics (as of 2026-07-12)
-- **386 positive snapshot tests** validating compiler output
-- **79 negative snapshot tests** validating expected failures
+### Test Statistics (as of 2026-07-14)
+- **409 positive snapshot tests** validating compiler output
+- **91 negative snapshot tests** validating expected failures
 - **~8,000 test files** (source + intended + outputs)
 - **6 test categories** organizing tests by feature area
 
@@ -61,7 +61,7 @@ test/
 │   │   ├── schemas/      # Schema definitions
 │   │   ├── changesets/   # Validation
 │   │   └── migrations/   # Database migrations
-│   ├── otp/              # OTP patterns (4 tests)
+│   ├── otp/              # OTP patterns (6 tests)
 │   ├── stdlib/           # Standard library (~17 tests)
 │   ├── exunit/           # Test framework (~6 tests)
 │   ├── loops/            # Loop-specific tests (3 tests)

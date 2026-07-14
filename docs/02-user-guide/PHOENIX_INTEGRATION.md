@@ -53,7 +53,9 @@ You can author any of these in Haxe (incrementally, if desired):
 - Controllers (`@:controller`)
 - Router DSL (`@:router`)
 - Ecto schemas/queries/migrations (`@:schema`, query helpers, migrations)
-- OTP (GenServers/Supervisors) where it makes sense
+- the runtime-proven local OTP operations and typed application/child-spec wiring in the
+  [OTP Support Contract](../04-api-reference/OTP_SUPPORT_CONTRACT.md); custom GenServer/Supervisor
+  generation remains experimental
 - Pure business/domain logic modules (`@:module`)
 
 See working references:

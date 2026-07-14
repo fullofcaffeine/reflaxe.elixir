@@ -43,6 +43,7 @@ their behavior through explicit lowering. Haxe is a build dependency, not a seco
 > **Pre-1.0:** suitable for controlled pilots inside documented, pinned paths, not a general stability
 > promise. See [Production Readiness](docs/06-guides/PRODUCTION_READINESS.md), the
 > [independent 1.0 review](docs/08-roadmap/1.0-production-readiness-review.md),
+> [exact OTP support boundary](docs/04-api-reference/OTP_SUPPORT_CONTRACT.md),
 > [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md), and
 > [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).
 
@@ -250,7 +251,7 @@ at Haxe compile time. See the complete [event contract](examples/17-railshx-to-p
 | Check in Haxe | What ships to the target |
 | --- | --- |
 | [`final routes`](examples/15-phoenix-chat-haxe-first/src_haxe/PhoenixChatRouter.hx) with typed plugs, sessions, LiveViews, and params | Normal `Phoenix.Router` pipelines, scopes, and routes in [`router.ex`](examples/15-phoenix-chat-haxe-first/lib/phoenix_chat_web/router.ex) |
-| [`@:application` + typed child specs](examples/17-railshx-to-phoenixhx-todo/src_haxe/PhoenixHxTodo.hx) | An ordinary `Application` module and `Supervisor.start_link/2` child list in [`application.ex`](examples/17-railshx-to-phoenixhx-todo/lib/phoenix_hx_todo/application.ex) |
+| [`@:application` + typed child specs](examples/17-railshx-to-phoenixhx-todo/src_haxe/PhoenixHxTodo.hx) | An ordinary `Application` module and `Supervisor.start_link/2` child list in [`application.ex`](examples/17-railshx-to-phoenixhx-todo/lib/phoenix_hx_todo/application.ex); the [OTP contract](docs/04-api-reference/OTP_SUPPORT_CONTRACT.md) explains the tested boot boundary and restart/failure exclusions |
 | [`@:exunit`, `ConnTest`, and `LiveViewTest`](examples/17-railshx-to-phoenixhx-todo/src_haxe/test/web/TodoPersistenceTest.hx) | Normal ExUnit integration tests in [`todo_persistence_test.exs`](examples/17-railshx-to-phoenixhx-todo/test/generated/phoenix_hx_todo/todo_persistence_test.exs) |
 | [Closed domain enums and portable rules](examples/16-portable-chat-domain/src_haxe/shared/chat/MessageRules.hx) | The same selected behavior compiled and executed as [Elixir](test/quality/handwritten-output/generated/portable-chat-domain/portable_chat_domain/message_rules.ex) and [JavaScript](examples/16-portable-chat-domain/README.md#run) |
 
@@ -310,11 +311,13 @@ CI covers full codegen snapshots and negative cases, Haxe-authored ExUnit semant
 stdlib fixtures, strict generated-Elixir compilation, runtime examples, source/package parity,
 reproducible release artifacts, and Phoenix browser smoke.
 
-That evidence supports the documented subset, not arbitrary Haxe programs. The reviewed P1 semantic
-defects are closed; effective Mix invalidation has content-fingerprint regressions; and generated
-output now has fail-closed collision, cleanup, upgrade, rollback, and interruption evidence. The
-remaining 1.0 gate tracks OTP lifecycle scope, licensing, a frozen support contract, and external
-install/upgrade/rollback evidence.
+That evidence supports the documented subset, not arbitrary Haxe programs. The reducer and nested
+comprehension bugs found in the initial 1.0 review are fixed; effective Mix invalidation has
+content-fingerprint regressions; and generated output now has fail-closed collision, cleanup,
+upgrade, rollback, and interruption evidence. OTP now has a small, explicit runtime-tested subset
+instead of a broad lifecycle claim. One newly found callback-binder bug remains tracked outside that
+subset. Before 1.0 can be approved, the project still needs the complete support list, a licensing
+decision, and an unchanged release candidate tested in independent projects.
 
 ## Explore
 
@@ -325,6 +328,7 @@ install/upgrade/rollback evidence.
 | Elixir-friendly Haxe | [Writing Idiomatic Haxe](docs/02-user-guide/WRITING_IDIOMATIC_HAXE_FOR_ELIXIR.md) |
 | Portable vs Elixir-first source design | [Authoring Styles](docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md) |
 | Native lowering and compatibility helpers | [`reflaxe_runtime` And Generated Helpers](docs/02-user-guide/REFLAXE_RUNTIME_EXPLAINED.md) |
+| Runtime-tested OTP operations and exclusions | [OTP Support Contract](docs/04-api-reference/OTP_SUPPORT_CONTRACT.md) |
 | Phoenix, LiveView, Ecto, and API references | [Documentation Index](docs/README.md) |
 | Supported versions and sharp edges | [Support Matrix](docs/06-guides/SUPPORT_MATRIX.md) |
 | Contributor architecture and tests | [Contributing](docs/10-contributing/contributing.md) |

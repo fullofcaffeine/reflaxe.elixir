@@ -8,6 +8,7 @@ import elixir.types.Priority;
 import elixir.types.MessageQueueData;
 import elixir.types.Term;
 import elixir.types.Atom;
+import elixir.Kernel;
 
 #if (macro || reflaxe_runtime || elixir)
 /**
@@ -19,8 +20,19 @@ import elixir.types.Atom;
 @:native("Process")
 extern class Process {
 	// Process identification
-	@:native("Process.self")
-	public static function self():Pid;
+
+	/**
+	 * Return the current process.
+	 *
+	 * WHAT: Exposes Haxe `Process.self()` as Elixir `Kernel.self()`.
+	 * WHY: `self/0` is a Kernel function; `Process.self/0` does not exist.
+	 * HOW: An inline extern wrapper keeps the Haxe-facing Process namespace while
+	 * emitting the real target call with no runtime adapter.
+	 * EXAMPLE: `Process.self()` -> `Kernel.self()`.
+	 */
+	public static inline function self():Pid {
+		return cast Kernel.self();
+	}
 
 	@:native("Process.whereis")
 	public static function whereis(name:Atom):Null<Pid>;
@@ -29,8 +41,18 @@ extern class Process {
 	public static function pidFromString(string:String):Pid;
 
 	// Process spawning
-	@:native("Process.spawn")
-	public static function spawn(func:Void->Void):Pid;
+
+	/**
+	 * Start an unlinked local process.
+	 *
+	 * WHAT: Exposes Haxe `Process.spawn(fn)` as Elixir `Kernel.spawn(fn)`.
+	 * WHY: The one-function form belongs to Kernel; `Process.spawn/1` does not exist.
+	 * HOW: The inline wrapper delegates directly and narrows the returned term to `Pid`.
+	 * EXAMPLE: `Process.spawn(() -> work())` -> `Kernel.spawn(fn -> work() end)`.
+	 */
+	public static inline function spawn(func:Void->Void):Pid {
+		return cast Kernel.spawn(func);
+	}
 
 	@:native("Process.spawn")
 	public static function spawnModule(module:String, func:String, args:Array<Term>):Pid;

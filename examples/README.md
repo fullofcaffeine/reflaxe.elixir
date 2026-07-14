@@ -41,8 +41,8 @@ This directory contains progressive examples demonstrating Haxe→Elixir compila
 
 ### 8. [08-behaviors](./08-behaviors/)
 **Difficulty**: Advanced  
-**Features**: @:behaviour, @:use annotations, callback contracts, GenServer integration  
-**Use Case**: Compile-time behavior contracts with OTP integration and optional callbacks
+**Features**: @:behaviour, @:use annotations, typed callback contracts, runtime strategy dispatch
+**Use Case**: Compile-time behavior contracts and optional callbacks; this is not a GenServer lifecycle example
 
 ### 9. [09-phoenix-router](./09-phoenix-router/)
 **Difficulty**: Intermediate  
@@ -112,7 +112,7 @@ Reflaxe.Elixir supports two authoring styles on one compiler pipeline. This matr
 | `05-heex-templates` | Hybrid | Legacy/balanced HXX migration patterns plus Phoenix templates. |
 | `06-user-management` | Hybrid | Phoenix/Ecto integration plus broader app flow abstractions. |
 | `07-protocols` | Elixir-first | Focused on BEAM protocol/dispatch shapes. |
-| `08-behaviors` | Elixir-first | OTP behavior contracts and callback surfaces. |
+| `08-behaviors` | Elixir-first | Typed behavior-style contracts and runtime strategy dispatch; no GenServer lifecycle claim. |
 | `09-phoenix-router` | Elixir-first | Typed Phoenix router DSL and controller wiring. |
 | `10-option-patterns` | Portable-first | Domain Result/Option modeling independent of Phoenix runtime. |
 | `11-domain-validation` | Portable-first | Parse-don't-validate domain types that can remain target-agnostic. |
@@ -253,7 +253,7 @@ Notes:
 - `@:schema` - Define Ecto schemas
 - `@:changeset` - Create changeset functions  
 - `@:liveview` - Generate Phoenix LiveView modules
-- `@:genserver` - Create OTP GenServer modules
+- `@:genserver` - Experimental callback-shaped module generation; not part of the 1.0 OTP lifecycle promise
 - `@:migration` - Define database migrations (experimental)
 - `@:router` + module-level `routes` - Define typed Phoenix routes
 - `@:query` - Build type-safe Ecto queries

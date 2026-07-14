@@ -25,15 +25,14 @@ Why use these surfaces:
 
 ### Process/Concurrency/OTP
 
-- `elixir.Process`
-- `elixir.GenServer`
-- `elixir.Task`
-- `elixir.TaskSupervisor`
-- `elixir.Application`
-- `elixir.otp.Supervisor`
-- `elixir.otp.TypeSafeChildSpec`
+- Runtime-proven local subset: selected `elixir.Process`, `elixir.Task`, and `elixir.Agent` operations
+- Application wiring: `elixir.Application`, `elixir.otp.Supervisor`, and `elixir.otp.TypeSafeChildSpec`
+- Experimental surfaces: `elixir.GenServer`, `elixir.TaskSupervisor`, `elixir.Registry`, and custom
+  `@:genserver` / `@:supervisor` callback generation
 
-Use these for typed OTP process and supervision-tree composition in Haxe while emitting standard Elixir runtime patterns.
+Use these typed names to emit standard Elixir runtime calls, but do not treat every declared extern as
+a stable lifecycle promise. The exact supported operations, generated Elixir equivalents, evidence,
+and exclusions are in the [OTP Support Contract](OTP_SUPPORT_CONTRACT.md).
 
 `TypeSafeChildSpec` guidance:
 
@@ -41,6 +40,8 @@ Use these for typed OTP process and supervision-tree composition in Haxe while e
 - For pure Elixir modules, add a small `@:native("...") extern class ... {}` wrapper and keep callsites typed (add `@:unsafeExtern` where strict mode requires explicit app-local boundaries).
 - Use `*Unsafe` variants only for intentional dynamic/legacy strings.
 - Canonical API reference: `docs/04-api-reference/TYPE_SAFE_CHILD_SPEC.md`.
+- The covered 1.0 behavior is composition and documented application boot; arbitrary restart/failure
+  policy remains outside the stable OTP subset.
 
 ### IO/System/Utility
 
@@ -93,4 +94,5 @@ Most runtime interop modules use metadata such as:
 - `docs/04-api-reference/ANNOTATIONS.md`
 - `docs/04-api-reference/HAXE_MACRO_APIS.md`
 - `docs/04-api-reference/STDLIB_SUPPORT_MATRIX.md`
+- `docs/04-api-reference/OTP_SUPPORT_CONTRACT.md`
 - `docs/04-api-reference/TYPE_SAFE_CHILD_SPEC.md`

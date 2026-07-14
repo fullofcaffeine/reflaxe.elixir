@@ -89,4 +89,6 @@ for test_dir in "${TEST_DIRS[@]}"; do
   run_one "$test_dir"
 done
 
+bash "$ROOT_DIR/scripts/ci/runtime-smoke-otp-core.sh"
+
 echo "[runtime-smoke] All runtime smoke tests passed ✅"

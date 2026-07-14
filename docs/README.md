@@ -65,6 +65,7 @@ This index helps you find the right docs quickly, whether you're building apps w
 - [LiveSocket Assign API](04-api-reference/LIVE_SOCKET_ASSIGN_API.md) - `assign(_.field, value)` vs `assign({...})` vs typed keys
 - [Ecto API Reference](04-api-reference/ECTO_API_REFERENCE.md) - Schema/Changeset/Repo/Query/Migration user APIs
 - [Elixir Runtime API Reference](04-api-reference/ELIXIR_RUNTIME_API_REFERENCE.md) - Core runtime and OTP extern surfaces
+- [OTP Support Contract](04-api-reference/OTP_SUPPORT_CONTRACT.md) - Exact runtime-tested local Process/Task/Agent subset, application-wiring evidence, and 1.0 exclusions
 - [Type-Safe ChildSpec API](04-api-reference/TYPE_SAFE_CHILD_SPEC.md) - Typed OTP child-spec surfaces and explicit `*Unsafe` escape hatches
 - [Atom Type](04-api-reference/ATOM_TYPE.md) - Type-safe atoms for Elixir APIs
 - [Standard Library](04-api-reference/STANDARD_LIBRARY_HANDLING.md) - Stdlib strategy + guidance

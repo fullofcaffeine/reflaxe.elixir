@@ -558,6 +558,8 @@ jobs:
         run: npm run test:quick
       - name: Runtime smoke (stdlib IO)
         run: bash scripts/ci/runtime-smoke-stdlib-io.sh
+      - name: Runtime smoke (local OTP contract)
+        run: npm run test:otp-runtime
       - name: Run Mix tests (fast)
         run: npm run test:mix-fast
 

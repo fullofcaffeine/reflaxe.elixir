@@ -324,7 +324,7 @@ Annotations override default class→module mapping for specialized Elixir patte
 |------------|----------------------|------------------|
 | `@:module` | Plain module with functions | Utility functions, stateless services |
 | `@:struct` | Module with `defstruct` | Data containers, DTOs |
-| `@:genserver` | OTP GenServer | Stateful processes, caches |
+| `@:genserver` | Experimental callback-shaped module | Compile-shape experiments only; not a 1.0 lifecycle API |
 | `@:liveview` | Phoenix LiveView | Real-time UI components |
 | `@:controller` | Phoenix Controller | HTTP request handlers |
 | `@:router` | Phoenix Router | Request routing logic |
@@ -333,64 +333,36 @@ Annotations override default class→module mapping for specialized Elixir patte
 | `@:changeset` | Ecto Changeset | Data validation |
 | `@:protocol` | Elixir Protocol | Polymorphic behavior |
 | `@:behaviour` | Elixir Behaviour | Callback contracts |
-| `@:supervisor` | OTP Supervisor | Process supervision |
+| `@:supervisor` | Experimental supervisor marker | Compile-shape experiments only; restart/failure behavior is not promised |
 | `@:application` | OTP Application | Application entry point |
 
-### Example: GenServer Transformation
+### Example: Runtime-Proven Task Transformation
 
 **Haxe Input**:
 ```haxe
-@:genserver
-class Counter {
-    private var count: Int = 0;
-    
-    @:call
-    public function get(): Int {
-        return count;
-    }
-    
-    @:cast
-    public function increment(): Void {
-        count++;
-    }
+import elixir.Task;
+
+class Jobs {
+  public static function answer():Int {
+    final task = Task.async(() -> 21 * 2);
+    return Task.await(task);
+  }
 }
 ```
 
 **Generated Elixir**:
 ```elixir
-defmodule Counter do
-  use GenServer
-  
-  # Client API
-  def start_link(opts \\ []) do
-    GenServer.start_link(__MODULE__, :ok, opts)
-  end
-  
-  def get(pid) do
-    GenServer.call(pid, :get)
-  end
-  
-  def increment(pid) do
-    GenServer.cast(pid, :increment)
-  end
-  
-  # Server Callbacks
-  @impl true
-  def init(:ok) do
-    {:ok, %{count: 0}}
-  end
-  
-  @impl true
-  def handle_call(:get, _from, %{count: count} = state) do
-    {:reply, count, state}
-  end
-  
-  @impl true
-  def handle_cast(:increment, %{count: count} = state) do
-    {:noreply, %{state | count: count + 1}}
+defmodule Jobs do
+  def answer() do
+    task = Task.async(fn -> 21 * 2 end)
+    Task.await(task)
   end
 end
 ```
+
+The task runs on Elixir's normal `Task` implementation. The complete runtime-proven Process, Task,
+Agent, and application-wiring boundary—and the explicit GenServer/Supervisor exclusions—is in the
+[OTP Support Contract](../04-api-reference/OTP_SUPPORT_CONTRACT.md).
 
 ## Function and Method Mappings
 

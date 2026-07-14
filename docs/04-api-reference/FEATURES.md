@@ -31,8 +31,14 @@ If you’re evaluating the project, also read:
 - **Migrations (experimental/opt‑in)**: runnable via `.exs` emission (`-D ecto_migrations_exs` + `-D elixir_output=priv/repo/migrations`).
 
 ### OTP
-- **GenServer**: typed callback surfaces and child spec generation patterns.
-- **Supervision**: supervisor trees and registry patterns used in examples.
+- **Local processes**: runtime-proven `Process.self`, closure `spawn`, `alive`, `exit(:shutdown)`, and
+  `sleep` operations.
+- **Tasks**: runtime-proven local `async`/`await`, timeout via `yield`, and shutdown cleanup.
+- **Agents**: runtime-proven start, read, synchronous/asynchronous update, ordering, and stop behavior.
+- **Application wiring**: typed child-spec composition and documented Phoenix application boot.
+
+The exact source shapes, generated Elixir, and exclusions are in the
+[OTP Support Contract](OTP_SUPPORT_CONTRACT.md).
 
 ### Tooling & workflow
 - **Mix integration**: `mix compile` support via `Mix.Tasks.Compile.Haxe` and watchers for dev.
@@ -49,6 +55,9 @@ If you’re evaluating the project, also read:
 
 - **Performance profiles (`fast_boot`)**: opt‑in development profile that trades some late hygiene for faster iteration on very large modules.
 - **Advanced Router/LiveView ergonomics**: improvements land incrementally; expect some churn.
+- **Broad OTP lifecycle behavior**: custom `@:genserver` / `@:supervisor` callbacks, Registry,
+  TaskSupervisor, restart/failure policy, raw mailbox/monitor behavior, and distributed OTP are not
+  part of the 1.0 stable subset.
 
 ## 🧷 Known Limitations (read this first)
 

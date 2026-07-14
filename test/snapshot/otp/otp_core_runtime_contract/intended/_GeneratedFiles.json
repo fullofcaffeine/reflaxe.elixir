@@ -1,0 +1,56 @@
+{
+	"filesGenerated": [
+		"reflaxe/exception.ex",
+		"reflaxe/elixir/haxe_throw.ex",
+		"reflaxe/elixir/haxe_float.ex",
+		"main.ex",
+		"haxe/iterators/array_key_value_iterator.ex",
+		"haxe/iterators/array_iterator.ex",
+		"elixir/types/task_yield_result.ex",
+		"elixir/types/task_stream_result.ex",
+		"elixir/types/monitor_info.ex"
+	],
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 0,
+	"wasCached": false,
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "elixir/types/monitor_info.ex",
+			"sha256": "54d010a6cc91410a0a446c6f1639960cb9d0e88f91bb1cafc82b163f6988f35e"
+		},
+		{
+			"path": "elixir/types/task_stream_result.ex",
+			"sha256": "3c77c4204f40dc1f5deae7709dc007387906c94bc7a7e82fb320b1fa17d6a45a"
+		},
+		{
+			"path": "elixir/types/task_yield_result.ex",
+			"sha256": "a310a67e486fa25bf471656b43a45be2559aa0933186ce6c3e8705d5bc5dca5c"
+		},
+		{
+			"path": "haxe/iterators/array_iterator.ex",
+			"sha256": "bf879924ad145b575913240565bc19645add254693e0e7d1f87bee45a9ab0c56"
+		},
+		{
+			"path": "haxe/iterators/array_key_value_iterator.ex",
+			"sha256": "387d4592afd651337e15dda44716f25a7a7cdd97e1b6a43e9c2aba3f4029a3a3"
+		},
+		{
+			"path": "main.ex",
+			"sha256": "94210067167d859ff1b35597e988f67eaf475116732e75aa77d9ce562f2f64e4"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_float.ex",
+			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_throw.ex",
+			"sha256": "8dc2dbe6b6001a657b8bff0bcd435ecae72866301f5028baedf3c499a7f4a245"
+		},
+		{
+			"path": "reflaxe/exception.ex",
+			"sha256": "cb0fdc6ff6a8fb94da21e4ca791baed62e1c02b712ad5356c3e51103c3d94909"
+		}
+	],
+	"generation": "3f05cde3a129c157dde588e6e66dce39198c9580c8202d1ad531766d64787cde"
+}

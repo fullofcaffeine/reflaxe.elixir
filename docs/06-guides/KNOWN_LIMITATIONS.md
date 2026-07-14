@@ -29,6 +29,16 @@ evidence closes those known bugs; it does not imply that every Haxe program is s
 surface is still being enumerated under `haxe.elixir.codex-0yn.5`. See
 [Production Readiness](PRODUCTION_READINESS.md) for the full 1.0 gate.
 
+## Open callback-binder correctness defect
+
+A callback lambda written directly inside a `Result` switch branch can bind the branch value instead
+of the lambda's own parameter. For example, a callback such as `(value:Int) -> value + 1` inside
+`case Ok(agent)` can incorrectly use `agent` where it should use `value`. This is a compiler bug, not
+Agent behavior, and is tracked as `haxe.elixir.codex-3qh.26`.
+
+That source shape is not part of the proposed stable surface. It must be fixed or remain explicitly
+excluded when the full 1.0 support list is frozen.
+
 ## Macro inputs outside the build graph
 
 Mix freshness now fingerprints the effective discoverable build: recursive HXML and defines, all
@@ -66,11 +76,15 @@ than adding paths to the manifest by hand. See
 
 ## OTP support boundary
 
-The project exposes typed GenServer, Supervisor, Registry, process, and child-spec surfaces, but the
-1.0 lifecycle/failure contract is not yet frozen. Do not infer comprehensive parity for crash reasons,
-restart policy, supervision, mailbox behavior, or every OTP callback from successful compilation.
-`haxe.elixir.codex-0yn.3` will either add runtime evidence for a bounded subset or narrow the stable
-claim.
+The planned 1.0 promise now covers a small runtime-tested local subset: selected Process operations,
+Task success/timeout/shutdown, Agent state lifecycle and cast ordering, plus the documented
+application/typed-child-spec boot shapes. Those calls compile to normal Elixir/OTP functions.
+
+Custom `@:genserver` callbacks, `@:supervisor` lifecycle and restart/failure policy, Registry,
+TaskSupervisor, raw mailbox/monitor behavior, abnormal cross-process failures, distributed OTP, and
+hot upgrades remain experimental or outside 1.0. Successful compilation alone is not lifecycle
+evidence. See the [OTP Support Contract](../04-api-reference/OTP_SUPPORT_CONTRACT.md) for the exact
+operations, generated Elixir, tests, and exclusions.
 
 ## Licensing decision
 

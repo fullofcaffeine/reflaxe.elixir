@@ -9,16 +9,14 @@ It does not claim that every Haxe program is supported, and it is not approval t
 > coverage. Before 1.0, the project still needs to:
 >
 > - publish an exact list of APIs and version combinations that 1.0 promises to support;
-> - either prove a small, named set of OTP behavior—the Erlang/Elixir tools for processes,
->   supervision, and fault handling—or narrow the OTP claims in the documentation to match what has
->   actually been tested;
 > - get a qualified licensing review for generated files and bundled runtime/support code; and
 > - test one unchanged proposed release build (a release candidate) in independent real-world
 >   projects for a defined period.
 >
-> The previously known high-priority compiler bugs are fixed. Mix now notices when known Haxe build
-> inputs change, and the compiler refuses to overwrite or delete files that it cannot prove it
-> generated. However,
+> The three compiler bugs found in the initial review are fixed. A newly discovered callback-binder
+> bug remains open and is excluded from the runtime-tested OTP subset. Mix now notices when known
+> Haxe build inputs change, and the compiler refuses to overwrite or delete files that it cannot
+> prove it generated. However,
 > [`release/manifest.json`](../../release/manifest.json) does not yet authorize a `1.x` release.
 
 Detailed findings and reasons are in the
@@ -31,6 +29,7 @@ Related policies and support pages:
 - [Support Matrix](SUPPORT_MATRIX.md)
 - [Known Limitations](KNOWN_LIMITATIONS.md)
 - [Stdlib Support Matrix](../04-api-reference/STDLIB_SUPPORT_MATRIX.md)
+- [OTP Support Contract](../04-api-reference/OTP_SUPPORT_CONTRACT.md)
 - [Production Deployment](PRODUCTION_DEPLOYMENT.md)
 - [Security Policy](../../SECURITY.md)
 - [Releasing](../10-contributing/RELEASING.md)
@@ -51,14 +50,14 @@ versions, operating systems, third-party libraries, or deployment conditions.
 
 | Dimension | Status | Evidence | Remaining condition or gap |
 | --- | --- | --- | --- |
-| Compiler semantics | **Conditional** | Full snapshot categories, negative cases, function-result invariants, generated Elixir validation, Mix runtime tests, reducer loop-control and nested-comprehension runtime suites | No known P1 defect remains in the tested corpus; the exact stable language/stdlib/framework surface still must be frozen. |
+| Compiler semantics | **Conditional** | Full snapshot categories, negative cases, function-result invariants, generated Elixir validation, Mix runtime tests, reducer loop-control and nested-comprehension runtime suites | Callback lambdas written directly inside a `Result` switch branch have a known binder bug (`haxe.elixir.codex-3qh.26`). That shape is outside the proposed OTP subset; the final support list must fix or exclude it explicitly. |
 | Mix build invalidation | **Ready** | Deterministic fingerprint regressions cover same-timestamp edits, timestamp-only touches, recursive HXML, `src_shared`, resources, libraries/package descriptors, toolchain identity, explicit macro inputs, removed roots, and no-op behavior | Macro filesystem reads outside the discoverable graph must be declared with `:extra_inputs`; project watchers do not monitor external package/toolchain caches, but the next `mix compile` detects them. |
 | Generated-file ownership | **Ready** | Versioned path/digest manifests, staged formatting, unowned-collision and modified-owned rejection, stale/namespace cleanup, interrupted-transaction recovery, Mix clean, legacy upgrade, source rollback, in-place/isolated examples, and source/package manifest parity | Keep `_GeneratedFiles.json` and reserved transaction paths under compiler control; hand-editing ownership metadata is unsupported. |
 | Generated Elixir quality | **Conditional** | Warnings-as-errors examples, canonical `mix format` integration, handwritten-output corpus, support-footprint checks | Some semantics require visible helpers or conservative reducers. Style work can continue after 1.0; unexplained semantic repairs cannot. |
 | Haxe stdlib behavior | **Conditional** | Classified manifest, Haxe-authored ExUnit, selected upstream `unitstd`, snapshots | Only the classified subset is claimed. The stable set must be frozen, and the runtime suite should become warning-clean (`haxe.elixir.codex-0yn.7`). |
 | Phoenix and LiveView | **Conditional** | Compile/runtime examples, strict Elixir compilation, todo-app Mix tests, browser sentinels, dogfood upgrades | This is the strongest framework surface, but only pinned versions and documented paths are covered. |
 | Ecto | **Conditional** | Schema, changeset, repository, query, compile, and runtime fixtures | Selected APIs are covered. Migration `.exs` generation remains experimental. |
-| OTP | **Blocked for a broad claim** | Typed APIs, snapshots, and selected runtime examples | 1.0 must prove a bounded lifecycle/failure subset or narrow the stable wording. Tracked by `haxe.elixir.codex-0yn.3`. |
+| OTP | **Conditional** | Haxe-authored Process/Task/Agent lifecycle runtime test, warning-free generated Elixir, minimum and primary toolchain lanes, typed child-spec snapshots, and Phoenix application boot | Only the local operations and application-wiring shapes in the [OTP Support Contract](../04-api-reference/OTP_SUPPORT_CONTRACT.md) are covered. GenServer, Registry, broad supervisor failure behavior, and distributed OTP are outside the 1.0 promise. |
 | Gradual Elixir adoption | **Conditional** | Existing-app guide, fail-closed in-place and isolated output, typed extern generation, hand-written/generated interop example | The model is ownership-safe; the broader pre-1.0 support/version contract and external soak still bound production claims. |
 | Shared browser/server logic | **Conditional** | [`16-portable-chat-domain`](../../examples/16-portable-chat-domain/) runs selected domain logic on Elixir and JavaScript | Only a deliberately portable classpath is demonstrated; arbitrary cross-target parity is not claimed. |
 | Source checkout vs release package | **Ready** | Reflaxe `_std` staging contract, package smoke, installed-package codegen parity, deterministic artifacts | Consumers should use a release ZIP. Contributors must use the scoped source-checkout HXML, not bare global `haxelib dev`. |
@@ -99,27 +98,26 @@ moves, rollback, collision preservation, clean, and interruption. Package smoke 
 version 2 ownership manifests from source and installed-package builds. See
 [Generated Output Ownership And Safe Cleanup](../02-user-guide/GENERATED_OUTPUT_OWNERSHIP.md).
 
+### Bounded OTP Contract
+
+`haxe.elixir.codex-0yn.3` replaces broad OTP wording with an exact, testable boundary. A Haxe-authored
+runtime fixture starts and stops local processes, covers Task success/timeout/shutdown, and covers
+Agent start/read/update/cast ordering/stop. Generated Elixir must compile without warnings on the
+minimum and primary toolchains. Typed child specs and `@:application` retain their documented
+application-boot evidence, while custom GenServer callbacks, Registry, supervisor restart/failure
+policy, raw mailbox behavior, and distributed OTP are explicitly outside the 1.0 promise. See the
+[OTP Support Contract](../04-api-reference/OTP_SUPPORT_CONTRACT.md).
+
 ## Known 1.0 Blockers
 
-### 1. Decide Exactly Which OTP Behavior 1.0 Supports
-
-OTP is the Erlang/Elixir set of tools for processes, supervision, and fault handling.
-`haxe.elixir.codex-0yn.3` can be completed in either of two honest ways:
-
-- prove a small, named set of startup, shutdown, supervision, and failure behavior with runtime tests;
-  or
-- clearly mark unproved OTP APIs as experimental or outside the 1.0 promise.
-
-API-shaped output or compilation alone is not enough evidence for supervision behavior.
-
-### 2. Decide Licensing And Distribution
+### 1. Decide Licensing And Distribution
 
 `haxe.elixir.codex-0yn.4` requires qualified review of the GPL-3.0 compiler, externs, generated
 source, and support/runtime modules that may ship in an application. The result may keep the current
 license, add an exception, separate runtime licensing, or adopt another lawful model. Engineering
 documentation must not improvise the legal answer.
 
-### 3. Publish One Exact 1.0 Support List
+### 2. Publish One Exact 1.0 Support List
 
 `haxe.elixir.codex-0yn.5` must list the language features, standard-library modules, annotations,
 externs, flags, Mix tasks, generated naming rules, framework APIs, versions, and exclusions covered
@@ -128,7 +126,7 @@ by 1.0. Every promised item needs an executable test or a precise description of
 This does not require implementing every Haxe or Elixir API. It requires making the claimed subset
 true and discoverable.
 
-### 4. Test One Unchanged Release Candidate Outside This Repository
+### 3. Test One Unchanged Release Candidate Outside This Repository
 
 After the product contract is complete, `haxe.elixir.codex-0yn.8` must use immutable packages and
 clean workspaces to prove:
@@ -144,7 +142,7 @@ clean workspaces to prove:
 Run the same release candidate long enough to receive and address feedback from real users. Do not
 quietly change the proposed 1.0 promise during that test period.
 
-### 5. Explicitly Approve Or Reject 1.0
+### 4. Explicitly Approve Or Reject 1.0
 
 `haxe.elixir.codex-0yn.9` reviews the completed evidence and either approves or rejects a 1.0 release.
 Only an approval may populate `releaseLines.1.approval`. Approval does not publish a release; a later

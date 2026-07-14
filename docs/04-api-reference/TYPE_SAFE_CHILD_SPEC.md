@@ -9,6 +9,10 @@ Use `elixir.otp.TypeSafeChildSpec` when building supervision trees in Haxe.
 
 This page is the canonical reference for child-spec APIs used by app modules and tutorials.
 
+This API's stable promise is compile-time module checking, standard child-spec output, and booting the
+documented application shapes. It does not promise every supervisor restart, crash, or shutdown
+scenario. See the [OTP Support Contract](OTP_SUPPORT_CONTRACT.md) for that boundary.
+
 ## Why This Exists
 
 Supervision trees are critical app wiring. Raw strings are easy to mistype and hard to refactor safely.
@@ -50,7 +54,10 @@ children = [
 
 ## Why the Compiler Emits This
 
-Typed child-spec methods resolve class/extern module references at compile time and then emit standard OTP child-spec forms (`Module`, `{Module, kw}`, or full spec maps). Runtime behavior stays Phoenix/OTP-native.
+Typed child-spec methods resolve class/extern module references at compile time and then emit standard
+OTP child-spec forms (`Module`, `{Module, kw}`, or full spec maps). Elixir/OTP owns the runtime
+behavior; Reflaxe.Elixir's 1.0 evidence covers documented application boot, not arbitrary supervision
+failure policy.
 
 ## Typed vs Unsafe APIs
 
@@ -118,6 +125,7 @@ If you cannot add a typed wrapper yet, keep `*Unsafe` temporarily and document w
 ## Related Docs
 
 - `docs/04-api-reference/ELIXIR_RUNTIME_API_REFERENCE.md`
+- `docs/04-api-reference/OTP_SUPPORT_CONTRACT.md`
 - `docs/04-api-reference/ANNOTATIONS.md`
 - `docs/02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md`
 - `docs/06-guides/PHOENIX_CHAT_TUTORIAL_HAXE_FIRST.md`

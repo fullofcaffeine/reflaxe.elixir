@@ -364,7 +364,8 @@ Reflaxe.Elixir uses a **dual-ecosystem architecture**:
 
 ### ⚡ Elixir Side (mix)
 - **Purpose:** Test and run generated code
-- **Tools:** Phoenix, Ecto, ExUnit, GenServer
+- **Tools:** Phoenix, Ecto, ExUnit, and the Elixir/OTP runtime. See the
+  [OTP Support Contract](../04-api-reference/OTP_SUPPORT_CONTRACT.md) for the exact compiler-supported subset.
 - **Command:** `npm run test:mix`
 
 ### 🚀 Integration (npm orchestration)

@@ -11,10 +11,10 @@ defmodule Main do
     test_gen_server_externs()
   end
   defp test_process_externs() do
-    pid = Process.self()
+    pid = Kernel.self()
     Process.send(pid, "hello")
     Process.exit(pid, "normal")
-    new_pid = Process.spawn(fn -> IO.puts("Hello from spawned process") end)
+    new_pid = Kernel.spawn(fn -> IO.puts("Hello from spawned process") end)
     Process.monitor(new_pid)
     Process.link(new_pid)
     _alive = Process.alive?(pid)
@@ -25,7 +25,7 @@ defmodule Main do
     _register_result = Registry.register("MyRegistry", "user:123", "user_data")
     _lookup_result = Registry.lookup("MyRegistry", "user:123")
     _count = Registry.count("MyRegistry")
-    _keys = Registry.keys("MyRegistry", Process.self())
+    _keys = Registry.keys("MyRegistry", Kernel.self())
   end
   defp test_agent_externs() do
     _agent_result = Agent.start_link(fn -> nil end)

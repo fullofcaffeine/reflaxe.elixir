@@ -80,7 +80,7 @@ haxe TestMain.hxml      # Compile using your Haxe toolchain
 **Purpose**: Test and run the generated Elixir code
 
 - **Package Manager**: `mix` (native Elixir build system)
-- **Dependencies**: Phoenix, Ecto, GenServer, LiveView  
+- **Dependencies**: Phoenix, Ecto, and LiveView; OTP and GenServer are part of the Elixir runtime
 - **Output**: Running BEAM applications
 
 ```bash
@@ -92,7 +92,8 @@ mix ecto.migrate     # Runs database migrations
 **Why mix?**
 - ✅ **Native Elixir tooling** (industry standard)
 - ✅ **Phoenix integration** (LiveView, router, etc.)
-- ✅ **BEAM ecosystem** (OTP, GenServer, supervision trees)
+- ✅ **BEAM ecosystem** (the exact tested OTP boundary is documented in the
+  [OTP Support Contract](../04-api-reference/OTP_SUPPORT_CONTRACT.md))
 
 ## Testing Strategy
 
@@ -232,7 +233,7 @@ All compilation features meet <15ms performance requirements:
 - **Basic compilation**: 0.015ms ✅
 - **Ecto Changesets**: 0.006ms average ✅  
 - **Migration DSL**: 6.5μs per migration ✅
-- **OTP GenServer**: 0.07ms average ✅
+- **Experimental GenServer compile-shape fixture**: 0.07ms average ✅
 - **Phoenix LiveView**: <1ms average ✅
 
 ## Key Development Files

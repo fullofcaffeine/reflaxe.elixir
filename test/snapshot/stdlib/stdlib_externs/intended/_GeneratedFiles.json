@@ -1,37 +1,161 @@
 {
-  "filesGenerated": [
-  "type.ex",
-  "string_tools.ex",
-  "std.ex",
-  "reflaxe/exception.ex",
-  "reflaxe/elixir/haxe_throw.ex",
-  "reflaxe/elixir/haxe_float.ex",
-  "main.ex",
-  "haxe/iterators/array_key_value_iterator.ex",
-  "haxe/iterators/array_iterator.ex",
-  "haxe/_call_stack/call_stack_impl_.ex",
-  "elixir/types/registry_type.ex",
-  "elixir/types/registry_options_builder.ex",
-  "elixir/types/monitor_info.ex",
-  "elixir/types/init_result.ex",
-  "elixir/types/handle_cast_result.ex",
-  "elixir/types/handle_call_result.ex",
-  "elixir/types/gen_server_option_builder.ex",
-  "elixir/types/callback_result_builder.ex",
-  "elixir/types/_registry_key/registry_key_impl_.ex",
-  "elixir/types/_reference/reference_impl_.ex",
-  "elixir/types/_process_flag/process_flag_impl_.ex",
-  "elixir/types/_priority/priority_impl_.ex",
-  "elixir/types/_pid/pid_impl_.ex",
-  "elixir/types/_message_queue_data/message_queue_data_impl_.ex",
-  "elixir/types/_gen_server_ref/gen_server_ref_impl_.ex",
-  "elixir/types/_atom/atom_impl_.ex",
-  "elixir/types/_agent_ref/agent_ref_impl_.ex",
-  "elixir/registry_error.ex",
-  "elixir/comparison_result.ex",
-  "array_tools.ex"
-],
-  "id": 0,
-  "wasCached": false,
-  "version": 1
+	"filesGenerated": [
+		"type.ex",
+		"string_tools.ex",
+		"std.ex",
+		"reflaxe/exception.ex",
+		"reflaxe/elixir/haxe_throw.ex",
+		"reflaxe/elixir/haxe_float.ex",
+		"main.ex",
+		"haxe/iterators/array_key_value_iterator.ex",
+		"haxe/iterators/array_iterator.ex",
+		"haxe/_call_stack/call_stack_impl_.ex",
+		"elixir/types/registry_type.ex",
+		"elixir/types/registry_options_builder.ex",
+		"elixir/types/monitor_info.ex",
+		"elixir/types/init_result.ex",
+		"elixir/types/handle_cast_result.ex",
+		"elixir/types/handle_call_result.ex",
+		"elixir/types/gen_server_option_builder.ex",
+		"elixir/types/callback_result_builder.ex",
+		"elixir/types/_registry_key/registry_key_impl_.ex",
+		"elixir/types/_reference/reference_impl_.ex",
+		"elixir/types/_process_flag/process_flag_impl_.ex",
+		"elixir/types/_priority/priority_impl_.ex",
+		"elixir/types/_pid/pid_impl_.ex",
+		"elixir/types/_message_queue_data/message_queue_data_impl_.ex",
+		"elixir/types/_gen_server_ref/gen_server_ref_impl_.ex",
+		"elixir/types/_atom/atom_impl_.ex",
+		"elixir/types/_agent_ref/agent_ref_impl_.ex",
+		"elixir/registry_error.ex",
+		"elixir/comparison_result.ex",
+		"array_tools.ex"
+	],
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 0,
+	"wasCached": false,
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "array_tools.ex",
+			"sha256": "3ca3fb06b3e00f4a3f17ff6a90f93a73ff1c55ff43401475cbe2a446f87c0744"
+		},
+		{
+			"path": "elixir/comparison_result.ex",
+			"sha256": "9bc3cb8fcc91eb091285964b6172672283ae6350964392809d446b51c800fe04"
+		},
+		{
+			"path": "elixir/registry_error.ex",
+			"sha256": "5fd6bd8c3727d404190a8ccb0b25f68f52e87d289965fee01c4105b8b5f2acc8"
+		},
+		{
+			"path": "elixir/types/_agent_ref/agent_ref_impl_.ex",
+			"sha256": "b26c57d94f0459f596005417f0c304c9457f20f4375a169edffa7c399b97ae24"
+		},
+		{
+			"path": "elixir/types/_atom/atom_impl_.ex",
+			"sha256": "636c8a4d59dca34e5f379b6eda674304a3f4729099fb0fc017c7091c8751193a"
+		},
+		{
+			"path": "elixir/types/_gen_server_ref/gen_server_ref_impl_.ex",
+			"sha256": "c6dadfe1cce5fccbffd00919da67347e30b4b3df2ed3cd649c1f823c6416c36c"
+		},
+		{
+			"path": "elixir/types/_message_queue_data/message_queue_data_impl_.ex",
+			"sha256": "54576cb63a349ab6ec9cc54d5744c20cecb768992ef87cc31c6138a034fc8a61"
+		},
+		{
+			"path": "elixir/types/_pid/pid_impl_.ex",
+			"sha256": "f387d330024b7810e8608cf27e3d5d3af2e47193a96897b9758cedc7c61d8e82"
+		},
+		{
+			"path": "elixir/types/_priority/priority_impl_.ex",
+			"sha256": "c92e69283f73c17cef8514e5e5857d68e0473e31c84e3689d30d182c62b251b2"
+		},
+		{
+			"path": "elixir/types/_process_flag/process_flag_impl_.ex",
+			"sha256": "f9e3359ba4b2b253669bc6fce97f7f9dd6585d4c9b9488edd244c631f7766cc2"
+		},
+		{
+			"path": "elixir/types/_reference/reference_impl_.ex",
+			"sha256": "70044b49cccebf9f5a4802324643b60051f0edb80bb5ce707b533cdb05f432b5"
+		},
+		{
+			"path": "elixir/types/_registry_key/registry_key_impl_.ex",
+			"sha256": "bd0af93ee2c61a0232ed20bfad12a7de8f9d46e66a46437690b9634f0d843478"
+		},
+		{
+			"path": "elixir/types/callback_result_builder.ex",
+			"sha256": "ad1bf87192d8cf806ea191f7fff9f4f769b563aacedd7c1b0cdbe4152ca95b1e"
+		},
+		{
+			"path": "elixir/types/gen_server_option_builder.ex",
+			"sha256": "eb65f093ec7172d741d6dfae6e810c939f9d1ddce1736b816aa3932e5c92bb22"
+		},
+		{
+			"path": "elixir/types/handle_call_result.ex",
+			"sha256": "778df9c30a82b0e8439de9f837a2d49241d8c94795bf9394e864d4280c837b8e"
+		},
+		{
+			"path": "elixir/types/handle_cast_result.ex",
+			"sha256": "8e041d58ed1aa61639fe184dc5264493f7a8cf346179cca146556f09061ab8d9"
+		},
+		{
+			"path": "elixir/types/init_result.ex",
+			"sha256": "e470f9b8f7840d80b812412b7b4086466a45eaf026297f4023a24dbd442c00bf"
+		},
+		{
+			"path": "elixir/types/monitor_info.ex",
+			"sha256": "54d010a6cc91410a0a446c6f1639960cb9d0e88f91bb1cafc82b163f6988f35e"
+		},
+		{
+			"path": "elixir/types/registry_options_builder.ex",
+			"sha256": "b4261b75ac3d19626dac9fb81d330bcd1040b5b0fc98bdfe0126443054022839"
+		},
+		{
+			"path": "elixir/types/registry_type.ex",
+			"sha256": "d79448b9e596e7fe944c00ac3cd5d22ff7fc8e06eb4cbe7b00c54c4c244879b4"
+		},
+		{
+			"path": "haxe/_call_stack/call_stack_impl_.ex",
+			"sha256": "3eed6f8fd5edac09d87da343f278c2665d96efcb0acc4df243d44b9c6de2ceca"
+		},
+		{
+			"path": "haxe/iterators/array_iterator.ex",
+			"sha256": "3186b41d2124063a790c08804f1bfb9c3a7508de7f6a99ad2cdb1687f1c2b82d"
+		},
+		{
+			"path": "haxe/iterators/array_key_value_iterator.ex",
+			"sha256": "7c2a5a2cc281bb9a1c5ed1bb56e351bdb68b53a7d048fa70decc5bfdd527419e"
+		},
+		{
+			"path": "main.ex",
+			"sha256": "7a76b701b9b82e934d5eace91c7c6f8dadb8dacfb04c80af88a6fbb5787b4c32"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_float.ex",
+			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_throw.ex",
+			"sha256": "fc5d023670bb5726080ce33fc783821b07150587289df8b52b03874799f445b5"
+		},
+		{
+			"path": "reflaxe/exception.ex",
+			"sha256": "576685a232def363aa3e75205b37c0eb47c06876ebea52306879b731a0cd9b92"
+		},
+		{
+			"path": "std.ex",
+			"sha256": "cfc6ad389294bc64c9d82be070797b4e65041a3d225fc0741500ca7cc6c8f804"
+		},
+		{
+			"path": "string_tools.ex",
+			"sha256": "dbd25b1805726a7f5808cdb23b2887442125467919bd9d09cf511a1fc270f25a"
+		},
+		{
+			"path": "type.ex",
+			"sha256": "d75480a332d954a3254c46b53b6b688d080a51ff49a1b203ac06c2fcd1c9c556"
+		}
+	],
+	"generation": "b4969bead571bc8831e61d52f16ddbebc4563dbe3d2ad319b755ff611c54352c"
 }

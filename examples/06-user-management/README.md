@@ -13,7 +13,8 @@ This example demonstrates typed Phoenix app code in Haxe for a small CRUD-style 
 
 - `examples/06-user-management/src_haxe/contexts/Users.hx`
 - `examples/06-user-management/src_haxe/live/UserLive.hx`
-- `examples/06-user-management/src_haxe/services/UserGenServer.hx`
+- `examples/06-user-management/src_haxe/services/UserGenServer.hx` - experimental compile-shape
+  skeleton; it is not exercised as a GenServer lifecycle
 - `examples/06-user-management/test/user_management_test.exs`
 
 ## Run
@@ -88,6 +89,9 @@ end
 ## Notes
 
 - This example is intentionally compact and focuses on compiler surfaces, not full production UX.
+- The `UserGenServer` source is a skeleton kept for compile-shape coverage. It is outside the 1.0 OTP
+  promise; use the repository's [runtime-tested OTP contract](../../docs/04-api-reference/OTP_SUPPORT_CONTRACT.md)
+  when evaluating supported process behavior.
 - The default build path is strict TSX (compiler default).
 - For the intentional legacy/balanced migration demo, see `examples/05-heex-templates/README.md`.
 - For end-to-end Presence, PubSub, richer tests, and E2E smoke, see `examples/todo-app/README.md`.

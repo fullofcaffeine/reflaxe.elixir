@@ -29,6 +29,7 @@ Not included as primary reference surface:
 - LiveSocket assign API (consumer + technical): `docs/04-api-reference/LIVE_SOCKET_ASSIGN_API.md`
 - Ecto API deep dive: `docs/04-api-reference/ECTO_API_REFERENCE.md`
 - Elixir runtime API deep dive: `docs/04-api-reference/ELIXIR_RUNTIME_API_REFERENCE.md`
+- Exact OTP 1.0 boundary and runtime evidence: `docs/04-api-reference/OTP_SUPPORT_CONTRACT.md`
 - Type-safe OTP child-spec API: `docs/04-api-reference/TYPE_SAFE_CHILD_SPEC.md`
 - API UX backlog and prioritization: `docs/08-roadmap/api-ux-backlog.md`
 
@@ -69,7 +70,7 @@ Use this section as the concise contract for assistant/tooling retrieval.
 | `@:exunit` | ExUnit test module marker | `ANNOTATIONS.md` |
 | `@:field` | Ecto schema field marker | `ANNOTATIONS.md` |
 | `@:from` | Implicit conversion into type | `ANNOTATIONS.md` |
-| `@:genserver` | GenServer module behavior | `ANNOTATIONS.md` |
+| `@:genserver` | Experimental GenServer module generation; outside the 1.0 OTP promise | `ANNOTATIONS.md`, `OTP_SUPPORT_CONTRACT.md` |
 | `@:gettext` | Gettext integration surface marker | `ANNOTATIONS.md` |
 | `@:has_many` | Ecto has_many association marker | `ANNOTATIONS.md` |
 | `@:hxx_mode` | HXX mode selection | `ANNOTATIONS.md` |
@@ -99,7 +100,7 @@ Use this section as the concise contract for assistant/tooling retrieval.
 | `@:slot` | Component slot metadata | `ANNOTATIONS.md` |
 | `@:socket` | Phoenix socket module | `ANNOTATIONS.md` |
 | `@:socketChannels` | Socket topic routing metadata | `ANNOTATIONS.md` |
-| `@:supervisor` | OTP supervisor marker | `ANNOTATIONS.md` |
+| `@:supervisor` | Experimental supervisor marker; restart/failure behavior is outside the 1.0 OTP promise | `ANNOTATIONS.md`, `OTP_SUPPORT_CONTRACT.md` |
 | `@:template` | Template binding metadata | `ANNOTATIONS.md` |
 | `@:test` | ExUnit test method marker | `ANNOTATIONS.md` |
 | `@:timestamps` | Schema timestamps marker | `ANNOTATIONS.md` |
@@ -193,7 +194,8 @@ Core modules:
 
 - `std/elixir/Atom.hx`, `std/elixir/Kernel.hx`, `std/elixir/Enum.hx`, `std/elixir/List.hx`, `std/elixir/Tuple.hx`
 - `std/elixir/ElixirMap.hx`, `std/elixir/ElixirString.hx`, `std/elixir/ElixirEnum.hx`
-- `std/elixir/Application.hx`, `std/elixir/GenServer.hx`, `std/elixir/Process.hx`, `std/elixir/Task.hx`, `std/elixir/TaskSupervisor.hx`
+- `std/elixir/Agent.hx`, `std/elixir/Application.hx`, `std/elixir/GenServer.hx`,
+  `std/elixir/Process.hx`, `std/elixir/Task.hx`, `std/elixir/TaskSupervisor.hx`
 - `std/elixir/DateTime.hx`, `std/elixir/System.hx`, `std/elixir/Regex.hx`, `std/elixir/Stream.hx`
 - `std/elixir/File.hx`, `std/elixir/Path.hx`, `std/elixir/IO.hx`, `std/elixir/Code.hx`, `std/elixir/Module.hx`
 - `std/elixir/Registry.hx`, `std/elixir/Node.hx`, `std/elixir/HttpClient.hx`, `std/elixir/Jason.hx`
