@@ -5,8 +5,8 @@
 <h1 align="center">Reflaxe.Elixir</h1>
 
 <p align="center">
-  <strong>Write typed Haxe. Ship reviewable Elixir.</strong><br />
-  Bring Haxe to the BEAM, or add typed Haxe gradually to an existing Elixir app.
+  <strong>Typed at the source. At home on the BEAM.</strong><br />
+  Add Haxe's type system to Phoenix, Ecto, and OTP—then ship ordinary Elixir through Mix.
 </p>
 
 <p align="center">
@@ -19,6 +19,7 @@
 
 <p align="center">
   <a href="docs/01-getting-started/WHY_REFLAXE_ELIXIR.md">Why Reflaxe.Elixir?</a> ·
+  <a href="#ecto-queries-that-fail-before-mix">Typed Ecto</a> ·
   <a href="#try-it">Try it</a> ·
   <a href="#phoenixhx">PhoenixHx</a> ·
   <a href="docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md">Gradual adoption</a> ·
@@ -74,6 +75,63 @@ semantics. They are source-design choices, not separate backends. See
 These are checked excerpts from executable examples. The links contain the complete imports, types,
 build files, and canonical generated output.
 
+### Ecto queries that fail before Mix
+
+This real [`Todos` context](examples/17-railshx-to-phoenixhx-todo/src_haxe/phoenix_hx_todo_hx/contexts/Todos.hx)
+queries a typed [`Todo` schema](examples/17-railshx-to-phoenixhx-todo/src_haxe/phoenix_hx_todo_hx/data/Todo.hx).
+The lambda is ordinary Haxe, so the compiler knows which schema it is querying and which fields the
+predicate may use:
+
+```haxe
+import ecto.TypedQuery;
+import elixir.Enum;
+import phoenix_hx_todo_hx.data.Todo;
+import phoenix_hx_todo_hx.infrastructure.Repo;
+
+using reflaxe.elixir.macros.TypedQueryLambda;
+
+class Todos {
+  static function getForUser(userId:Int, id:Int):Null<Todo> {
+    var query = TypedQuery.from(Todo)
+      .where(todo -> todo.userId == userId && todo.id == id);
+    var todos:Array<Todo> = Repo.all(query);
+    return Enum.at(todos, 0);
+  }
+}
+```
+
+It becomes an ordinary Ecto query with normal pins and a normal Repo call (line-wrapped here):
+
+```elixir
+defp get_for_user(user_id, id) do
+  query =
+    (require Ecto.Query;
+     Ecto.Query.where(
+       Ecto.Query.from(t in PhoenixHxTodo.Todo, []),
+       [t],
+       (t.user_id == ^user_id) and (t.id == ^id)
+     ))
+
+  todos = PhoenixHxTodo.Repo.all(query)
+  Enum.at(todos, 0)
+end
+```
+
+There is no second query engine in production: Ecto executes the generated query. But mistakes stop
+earlier. The checked negative fixture deliberately writes:
+
+```haxe
+var query = TypedQuery.from(User);
+var value = 123;
+var q2 = query.where(user -> user.noSuchField == value);
+```
+
+and Haxe rejects it with `Field "noSuchField" does not exist in User`. Typed field and association
+selectors extend the same idea to changesets, preloads, and joins, while generating normal atoms such
+as `:email` and `:posts`. See the [negative fixture](test/snapshot/negative/typed_query_invalid_field/Main.hx),
+the exact [generated context](examples/17-railshx-to-phoenixhx-todo/lib/phoenix_hx_todo/todos.ex), and the
+[Ecto integration guide](docs/07-patterns/ECTO_INTEGRATION_PATTERNS.md).
+
 ### Elixir-first Haxe stays direct
 
 [`SearchDomain.hx`](examples/13-elixir-first-liveview/src_haxe/live/SearchDomain.hx) uses typed
@@ -128,6 +186,9 @@ end)
 More complex mutation uses explicit immutable rebinding or reducers so behavior is preserved. See
 [Imperative to Functional Lowering](docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md) and the
 [reviewed output](test/quality/handwritten-output/generated/portable-chat-domain/portable_chat_domain/transcript.ex).
+The same target-neutral [`MessageRules`](examples/16-portable-chat-domain/src_haxe/shared/chat/MessageRules.hx)
+is executed through Haxe-authored ExUnit on the BEAM and through the generated JavaScript in Node, so
+validation behavior is shared without pulling Phoenix or JavaScript APIs into the domain layer.
 
 ## PhoenixHx
 
@@ -159,6 +220,40 @@ Haxe-first router [source](examples/15-phoenix-chat-haxe-first/src_haxe/PhoenixC
 [Phoenix Integration](docs/02-user-guide/PHOENIX_INTEGRATION.md), and the complete
 [`SearchLive` output](test/quality/handwritten-output/generated/elixir-first-liveview/elixir_first_liveview_web/search_live.ex).
 
+Repeated client/server events can be one checked contract instead of three matching strings. This
+real shared declaration generates the event name companion, requires the LiveView binding, and owns
+the `id` decoder:
+
+```haxe
+@:liveEventProtocol
+enum TodoEvent {
+  @:templateEvent
+  ToggleTodo(id:Int);
+}
+
+@:liveEvents(TodoEvent)
+class AppLive {}
+```
+
+The inline template uses `phx-click=${TodoEvents.ToggleTodoEvent}` and the emitted HEEx uses
+`phx-click={"toggle_todo"}`. Phoenix still receives a normal `handle_event/3` boundary; PhoenixHx
+generates the string-to-`Int` decoding and rejects missing handlers or incompatible template payloads
+at Haxe compile time. See the complete [event contract](examples/17-railshx-to-phoenixhx-todo/src_shared/shared/liveview/TodoEvents.hx),
+[LiveView source](examples/17-railshx-to-phoenixhx-todo/src_haxe/phoenix_hx_todo_hx/live/AppLive.hx), and
+[generated LiveView](examples/17-railshx-to-phoenixhx-todo/lib/phoenix_hx_todo_web/app_live.ex).
+
+## One Type System Across the App
+
+| Check in Haxe | What ships to the target |
+| --- | --- |
+| [`final routes`](examples/15-phoenix-chat-haxe-first/src_haxe/PhoenixChatRouter.hx) with typed plugs, sessions, LiveViews, and params | Normal `Phoenix.Router` pipelines, scopes, and routes in [`router.ex`](examples/15-phoenix-chat-haxe-first/lib/phoenix_chat_web/router.ex) |
+| [`@:application` + typed child specs](examples/17-railshx-to-phoenixhx-todo/src_haxe/PhoenixHxTodo.hx) | An ordinary `Application` module and `Supervisor.start_link/2` child list in [`application.ex`](examples/17-railshx-to-phoenixhx-todo/lib/phoenix_hx_todo/application.ex) |
+| [`@:exunit`, `ConnTest`, and `LiveViewTest`](examples/17-railshx-to-phoenixhx-todo/src_haxe/test/web/TodoPersistenceTest.hx) | Normal ExUnit integration tests in [`todo_persistence_test.exs`](examples/17-railshx-to-phoenixhx-todo/test/generated/phoenix_hx_todo/todo_persistence_test.exs) |
+| [Closed domain enums and portable rules](examples/16-portable-chat-domain/src_haxe/shared/chat/MessageRules.hx) | The same selected behavior compiled and executed as [Elixir](test/quality/handwritten-output/generated/portable-chat-domain/portable_chat_domain/message_rules.ex) and [JavaScript](examples/16-portable-chat-domain/README.md#run) |
+
+The benefit is not new runtime machinery. It is one typed authoring vocabulary across the risky
+boundaries, followed by framework code that Elixir teams can still format, inspect, test, and operate.
+
 ## Native First, Compatibility When Required
 
 The compiler tries, in order: proven native lowering such as `Int` operators and `Enum.map`; direct
@@ -180,6 +275,7 @@ work, not an application mode. Normal applications do not use `-D reflaxe_runtim
 | Bring a Haxe service or library to the BEAM | [`02-mix-project`](examples/02-mix-project/) |
 | Add one feature to an existing Phoenix app | [Gradual Adoption Tutorial](docs/06-guides/PHOENIX_GRADUAL_ADOPTION_TUTORIAL.md) |
 | Author typed LiveViews or call hand-written Elixir | [`13-elixir-first-liveview`](examples/13-elixir-first-liveview/) |
+| See a complete typed Phoenix/Ecto vertical slice | [`17-railshx-to-phoenixhx-todo`](examples/17-railshx-to-phoenixhx-todo/) |
 | Share selected browser/server domain logic | [`16-portable-chat-domain`](examples/16-portable-chat-domain/) |
 | Explore the full reference app | [`todo-app`](examples/todo-app/) |
 | Install a verified release package | [Installation](docs/01-getting-started/installation.md) |

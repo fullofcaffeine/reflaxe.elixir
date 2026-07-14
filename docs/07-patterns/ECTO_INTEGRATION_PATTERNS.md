@@ -4,26 +4,30 @@ This document shows the current, supported patterns for using Ecto from Haxe in 
 
 See working references:
 
-- End-to-end LiveView + Ecto: `examples/todo-app/README.md`
-- Migrations DSL: `examples/04-ecto-migrations/README.md`
+- [End-to-end LiveView + Ecto](../../examples/todo-app/README.md)
+- [Migrations DSL](../../examples/04-ecto-migrations/README.md)
 
 ## Typed Queries (`ecto.TypedQuery`)
 
-The recommended query API is `ecto.TypedQuery`, which lets you build Ecto queries with compile-time field validation and idiomatic Elixir output.
+The recommended query API is `ecto.TypedQuery`, which builds ordinary Ecto queries while validating
+schema fields and predicate shapes during Haxe compilation. This excerpt is from the executable
+[`Todos` context](../../examples/17-railshx-to-phoenixhx-todo/src_haxe/phoenix_hx_todo_hx/contexts/Todos.hx):
 
 ```haxe
 import ecto.TypedQuery;
-import MyApp.Repo;
-import MyApp.Todo;
+import elixir.Enum;
+import phoenix_hx_todo_hx.data.Todo;
+import phoenix_hx_todo_hx.infrastructure.Repo;
 
-class TodoQueries {
-  public static function listTodosForUser(userId: Int): Array<Todo> {
-    var query = TypedQuery
-      .from(Todo)
-      .where(t -> t.userId == userId)
-      .orderBy(t -> [desc: t.insertedAt]);
+using reflaxe.elixir.macros.TypedQueryLambda;
 
-    return Repo.all(query);
+class Todos {
+  static function getForUser(userId:Int, id:Int):Null<Todo> {
+    var query = TypedQuery.from(Todo)
+      .where(todo -> todo.userId == userId && todo.id == id);
+    var todos:Array<Todo> = Repo.all(query);
+
+    return Enum.at(todos, 0);
   }
 }
 ```
@@ -31,22 +35,46 @@ class TodoQueries {
 Compiles to:
 
 ```elixir
-defmodule TodoQueries do
-  def list_todos_for_user(user_id) do
-    query =
-      from t in Todo,
-        where: t.user_id == ^user_id,
-        order_by: [desc: t.inserted_at]
+defmodule PhoenixHxTodo.Todos do
+  require Ecto.Query
 
-    Repo.all(query)
+  defp get_for_user(user_id, id) do
+    query =
+      (require Ecto.Query;
+       Ecto.Query.where(
+         Ecto.Query.from(t in PhoenixHxTodo.Todo, []),
+         [t],
+         (t.user_id == ^user_id) and (t.id == ^id)
+       ))
+
+    todos = PhoenixHxTodo.Repo.all(query)
+    Enum.at(todos, 0)
   end
 end
 ```
 
 Notes:
 
-- Field names use your Haxe schema fields (e.g. `userId`, `insertedAt`); output is snake_cased to match Ecto fields.
-- When a field doesn’t exist, compilation fails early with a schema validation error.
+- Field names use Haxe schema fields such as `userId`; generated query fields are snake-cased to
+  `user_id`.
+- Captured values become normal Ecto pins, and `TypedQuery<Todo>` keeps `Repo.all` typed as
+  `Array<Todo>` at the source boundary.
+- Ecto—not a Reflaxe query runtime—executes the generated `Ecto.Query` struct.
+
+When a field does not exist, compilation fails before Mix runs:
+
+```haxe
+var query = TypedQuery.from(User);
+var value = 123;
+var q2 = query.where(user -> user.noSuchField == value);
+```
+
+```text
+Field "noSuchField" does not exist in User
+```
+
+That failure is covered by the checked
+[`typed_query_invalid_field`](../../test/snapshot/negative/typed_query_invalid_field/Main.hx) fixture.
 
 ## Associations (Compile-Time Validation)
 

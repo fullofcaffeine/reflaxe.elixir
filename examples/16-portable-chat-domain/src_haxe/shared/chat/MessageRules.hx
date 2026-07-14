@@ -12,6 +12,8 @@ enum MessageDecision {
 }
 
 class MessageRules {
+	// These limits are compile-time constants on both targets. `inline` substitutes the literals at
+	// call sites; on Elixir it also avoids Haxe static-field accessor/state compatibility machinery.
 	static inline final MAX_AUTHOR_LENGTH = 32;
 	static inline final MAX_BODY_LENGTH = 280;
 	static inline final PREVIEW_LENGTH = 48;

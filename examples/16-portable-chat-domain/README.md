@@ -35,6 +35,18 @@ execute the same portable domain through JavaScript.
 - `src_haxe/server/PortableChatServer.hx` - Elixir compile proof.
 - `src_haxe/client/PortableChatClient.hx` - JavaScript compile/run proof.
 
+## Why `static inline final`?
+
+The validation limits in `MessageRules` are compile-time-only constants:
+
+- `static` keeps them on the rules type; no `MessageRules` instance is needed.
+- `final` prevents Haxe code from reassigning them.
+- `inline` substitutes the numeric literals at call sites on both targets. On Elixir, that also avoids
+  the accessor/state machinery needed to preserve general Haxe static-field behavior.
+
+`inline` is therefore an output-quality choice here, not a requirement for the validation logic to
+work. A static value whose identity, storage, or runtime initialization matters should not be inlined.
+
 ## Boundary rule
 
 The portable domain does not import `elixir.*`, `phoenix.*`, or `js.*`. Target-specific code belongs in adapters at the edge.
