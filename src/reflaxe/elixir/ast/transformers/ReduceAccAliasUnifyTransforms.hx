@@ -6,7 +6,6 @@ import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ElixirASTPrinter;
-import reflaxe.elixir.ast.ASTUtils;
 
 /**
  * ReduceAccAliasUnifyTransforms
@@ -24,12 +23,13 @@ import reflaxe.elixir.ast.ASTUtils;
  *   aliases without inventing APIs and preserves semantics.
  *
  * HOW
- * - For each reduce EFn with 2 args (binder, acc):
- *   1) Scan the body for assignments whose RHS self-appends the LHS via `Enum.concat/2`, `concat/2`, or `++`.
+ * - For each reduce EFn with 2 args (binder, acc), after nested reducers have been processed independently:
+ *   1) Scan only the current callback's lexical scope for assignments whose RHS self-appends the LHS via
+ *      `Enum.concat/2`, `concat/2`, or `++`.
  *      Collect these LHS names as accumulator aliases (excluding the real `acc`).
  *   2) Scan the body for trivial binder alias rebinds: `alias = binder` or `EMatch(PVar(alias), EVar(binder))` and
  *      collect `alias` as binder aliases (excluding the real `binder`).
- *   3) Rewrite body:
+ *   3) Rewrite only that same lexical scope:
  *      - Replace `EVar(alias)` with `acc` (for acc aliases) or `binder` (for binder aliases).
  *      - For alias assignments, drop the rebind by rewriting to the RHS expression (keeps value semantics without
  *        introducing sentinels) and still perform var replacement recursively.
@@ -51,11 +51,39 @@ import reflaxe.elixir.ast.ASTUtils;
  *   end)
  */
 class ReduceAccAliasUnifyTransforms {
+	/**
+	 * Transform one reducer callback without crossing a nested function boundary.
+	 *
+	 * WHAT
+	 * - Visits the callback body while treating every nested `EFn` as an opaque lexical owner.
+	 *
+	 * WHY
+	 * - Nested reducers own their binder and accumulator aliases. Letting an outer reducer inspect
+	 *   or rewrite the inner callback can replace `row_acc` with `rows_acc`, changing runtime state.
+	 *
+	 * HOW
+	 * - Delegates to the shared boundary-aware traversal. The enclosing callback body is supplied
+	 *   directly, so only functions nested beneath it are excluded; the whole AST pass remains
+	 *   children-first and processes those nested reducers independently before their parent.
+	 *
+	 * EXAMPLES
+	 * - While processing `fn x, rows_acc -> Enum.reduce(..., fn y, row_acc -> ... end) end`,
+	 *   the outer traversal sees `rows_acc` expressions but leaves the `row_acc` callback opaque.
+	 */
+	static function transformCurrentCallbackScope(body:ElixirAST, transformer:(ElixirAST) -> ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNodeUntil(body, transformer, function(node:ElixirAST):Bool {
+			return switch (node.def) {
+				case EFn(_): true;
+				default: false;
+			};
+		});
+	}
+
 	static function isSelfAppend(rhs:ElixirAST, lhs:String):Bool {
 		var result = false;
-		ASTUtils.walk(rhs, function(n:ElixirAST) {
+		transformCurrentCallbackScope(rhs, function(n:ElixirAST):ElixirAST {
 			if (result)
-				return; // early out
+				return n;
 			switch (n.def) {
 				case ERemoteCall(_, "concat", args) if (args.length == 2):
 					switch (args[0].def) {
@@ -74,6 +102,7 @@ class ReduceAccAliasUnifyTransforms {
 					}
 				default:
 			}
+			return n;
 		});
 		return result;
 	}
@@ -104,7 +133,7 @@ class ReduceAccAliasUnifyTransforms {
 							// Collect alias candidates
 							var accAliasSet = new Map<String, Bool>();
 							var binderAliasSet = new Map<String, Bool>();
-							ElixirASTTransformer.transformNode(cl.body, function(x:ElixirAST):ElixirAST {
+							transformCurrentCallbackScope(cl.body, function(x:ElixirAST):ElixirAST {
 								switch (x.def) {
 									case EBinary(Match, left, rhs):
 										#if debug_reduce_unify
@@ -156,7 +185,7 @@ class ReduceAccAliasUnifyTransforms {
 							// DEBUG: Sys.println('[ReduceAccAliasUnify] reducer acc=' + accName + (binderName != null ? (', binder=' + binderName) : '') + ', accAliases=' + accAliases.length + ', binderAliases=' + binderAliases.length);
 							if (accAliases.length == 0 && binderAliases.length == 0)
 								return n;
-							var newBody = ElixirASTTransformer.transformNode(cl.body, function(y:ElixirAST):ElixirAST {
+							var newBody = transformCurrentCallbackScope(cl.body, function(y:ElixirAST):ElixirAST {
 								return switch (y.def) {
 									case EVar(v):
 										if (accAliases.indexOf(v) != -1) {

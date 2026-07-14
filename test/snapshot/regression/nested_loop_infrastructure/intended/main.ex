@@ -1,4 +1,18 @@
 defmodule Main do
+  def paired_rows(source) do
+    rows = []
+    _g = 0
+    rows = Enum.reduce(source, rows, fn x, rows_acc ->
+      row = []
+      _g = 0
+      row = Enum.reduce(source, row, fn y, row_acc ->
+        row_acc = Enum.concat(row_acc, [x])
+        Enum.concat(row_acc, [y])
+      end)
+      Enum.concat(rows_acc, [row])
+    end)
+    rows
+  end
   def main() do
     matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
     results = []

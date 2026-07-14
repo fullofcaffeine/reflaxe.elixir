@@ -1,6 +1,19 @@
 package;
 
 class Main {
+	public static function pairedRows(source:Array<Int>):Array<Array<Int>> {
+		var rows:Array<Array<Int>> = [];
+		for (x in source) {
+			var row:Array<Int> = [];
+			for (y in source) {
+				row.push(x);
+				row.push(y);
+			}
+			rows.push(row);
+		}
+		return rows;
+	}
+
 	public static function main() {
 		// Test nested for-in loops with arrays
 		var matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
