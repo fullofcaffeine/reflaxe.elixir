@@ -52,6 +52,9 @@ their behavior through explicit lowering. Haxe is a build dependency, not a seco
   specs, and existing Elixir calls before generated code reaches Mix.
 - **Adopt in either direction.** Add one typed island to an Elixir app, or author a larger bounded
   context in Haxe while Phoenix and the BEAM remain the platform.
+- **Generate beside handwritten Elixir safely.** Manifest-owned, content-hashed output rejects
+  collisions and manual edits before publication; stale cleanup and interrupted builds recover
+  without scanning or deleting unowned Phoenix files.
 - **Keep the output recognizable.** Prefer normal modules, functions, maps, tuples, pattern matches,
   `Enum`, Phoenix, Ecto, and OTP calls whenever Haxe semantics can be preserved.
 - **Build typed project DSLs.** Use Haxe macros, metadata, algebraic enums, and structural types to
@@ -308,9 +311,10 @@ stdlib fixtures, strict generated-Elixir compilation, runtime examples, source/p
 reproducible release artifacts, and Phoenix browser smoke.
 
 That evidence supports the documented subset, not arbitrary Haxe programs. The reviewed P1 semantic
-defects are closed and effective Mix invalidation now has content-fingerprint regressions. The
-remaining 1.0 gate tracks fail-closed generated-file ownership, OTP lifecycle scope, licensing, a
-frozen support contract, and external install/upgrade/rollback evidence.
+defects are closed; effective Mix invalidation has content-fingerprint regressions; and generated
+output now has fail-closed collision, cleanup, upgrade, rollback, and interruption evidence. The
+remaining 1.0 gate tracks OTP lifecycle scope, licensing, a frozen support contract, and external
+install/upgrade/rollback evidence.
 
 ## Explore
 

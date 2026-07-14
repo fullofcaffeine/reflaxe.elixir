@@ -25,15 +25,15 @@ For normal local development, add write mode to the application HXML:
 -main my_app_hx.Main
 ```
 
-The compiler finishes code generation, reads Reflaxe's
-`_GeneratedFiles.json`, and runs the equivalent of:
+The compiler stages the complete generated set with a provisional
+`_GeneratedFiles.json`, then runs the equivalent of:
 
 ```bash
 mix format --force <generated files only>
 ```
 
-Handwritten files in the same `lib/` tree are not included unless Reflaxe
-recorded them as generated output.
+Only staged compiler candidates are included. Handwritten files in the live
+`lib/` tree are never passed to the formatter.
 
 ## Modes
 
@@ -111,14 +111,16 @@ include a commented `write` option so teams can opt in deliberately.
 
 ## Ownership and Failure Safety
 
-The integration uses Reflaxe's `_GeneratedFiles.json` as its ownership list.
-It never falls back to walking all `.ex` files under `lib/`, because that could
-format application code the Haxe compiler does not own.
+The integration uses `_GeneratedFiles.json` as its ownership list and never
+falls back to walking all `.ex` files under `lib/`. Version 2 records a digest
+for every owned output; see [Generated Output Ownership And Safe Cleanup](GENERATED_OUTPUT_OWNERSHIP.md).
 
-Before write mode changes any file, every generated batch is passed through
-`mix format --dry-run`. A syntax error or plugin error therefore fails before
-partial formatting is written. The compiler does not retry malformed output,
-rewrite strings, or treat formatting as a code-generation repair.
+Before write mode changes staged files, every generated batch is passed through
+`mix format --dry-run`. A syntax or plugin error therefore fails before the live
+output transaction begins. Successfully formatted staged bytes are hashed and
+published with the other generated files, so ownership metadata never describes
+the pre-format contents. The compiler does not retry malformed output, rewrite
+strings, or treat formatting as a code-generation repair.
 
 Source maps are line- and column-sensitive. `write` mode is rejected when
 generated source maps are enabled because formatting would make those maps
@@ -132,14 +134,13 @@ uses Elixir 1.18.3 on OTP 27.2 for the canonical formatting gate. Applications
 that commit generated output should pin their own formatter version in CI and
 developer tool configuration.
 
-Write mode performs a dry-run and a real formatter pass. It also means the
-compiler first writes its raw output and Mix then writes the canonical form.
-That adds process startup time and can update generated-file mtimes even when
-the final bytes are unchanged. The final bytes are deterministic and
-idempotent under one pinned formatter toolchain, but `off` is the faster choice
+Write mode performs a dry-run and a real formatter pass against staging. That
+adds process startup time, but unchanged live generated files are not rewritten
+after their final formatted hashes match. The final bytes are deterministic and
+idempotent under one pinned formatter toolchain; `off` remains the faster choice
 for snapshots, compiler-only hosts, and workflows that format elsewhere.
 
 The source checkout and built haxelib package use the same
-`BaseCompiler.onOutputComplete` implementation. Package CI compiles and
-formats the same fixture through both layouts, then requires byte-identical
-generated Elixir.
+transactional output manager and `BaseCompiler.onOutputPrepared` formatter hook.
+Package CI compiles and formats the same fixture through both layouts, then
+requires byte-identical generated Elixir and ownership manifests.

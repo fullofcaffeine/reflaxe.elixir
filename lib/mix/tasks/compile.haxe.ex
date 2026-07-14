@@ -39,6 +39,13 @@ defmodule Mix.Tasks.Compile.Haxe do
     * `--verbose` - Show detailed compilation output
     * `--no-watch` - Disable file watching even in dev
 
+  ## Generated-output ownership
+
+  The target root's `_GeneratedFiles.json` is authoritative. Compilation never
+  classifies handwritten modules by scanning `target_dir`, and clean removes
+  only validated manifest-owned files. Unowned target collisions, modified
+  hash-owned output, malformed paths, and interrupted transactions fail closed.
+
   """
 
   use Mix.Task.Compiler
@@ -93,18 +100,14 @@ defmodule Mix.Tasks.Compile.Haxe do
     config = get_haxe_config()
     target_dir = Keyword.get(config, :target_dir, "lib")
 
-    # Remove generated Elixir files
-    if File.exists?(target_dir) do
-      Mix.shell().info("Cleaning generated Elixir files from #{target_dir}")
+    Mix.shell().info("Cleaning manifest-owned Elixir files from #{target_dir}")
 
-      # Find all generated .ex files and remove them
-      generated_files =
-        Path.join(target_dir, "**/*.ex")
-        |> Path.wildcard()
-        |> Enum.filter(&generated_file?/1)
+    case HaxeGeneratedOutput.clean(target_dir) do
+      {:ok, count} ->
+        Mix.shell().info("Cleaned #{count} generated file(s)")
 
-      Enum.each(generated_files, &File.rm!/1)
-      Mix.shell().info("Cleaned #{length(generated_files)} generated files")
+      {:error, reason} ->
+        Mix.raise("Refusing unsafe Haxe clean: #{reason}")
     end
 
     # Clear compilation error cache
@@ -309,20 +312,6 @@ defmodule Mix.Tasks.Compile.Haxe do
 
   defp manifest_path do
     HaxeCompiler.manifest_path()
-  end
-
-  defp generated_file?(file_path) do
-    # Check if file contains Reflaxe.Elixir generation marker
-    case File.read(file_path) do
-      {:ok, content} ->
-        String.contains?(content, "# Generated from Haxe") ||
-          String.contains?(content, "generated from Haxe") ||
-          (String.contains?(content, "@moduledoc \"\"\"") &&
-             String.contains?(content, "module generated from Haxe"))
-
-      _ ->
-        false
-    end
   end
 
   defp parse_compilation_errors(reason) when is_binary(reason) do

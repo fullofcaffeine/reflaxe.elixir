@@ -96,6 +96,8 @@ src/reflaxe/elixir/
 ├── ElixirCompiler.hx             # Main transpiler (MUST stay <2000 lines)
 ├── ElixirPrinter.hx              # AST to string conversion
 ├── ElixirTyper.hx                # Type mapping (Haxe → Elixir)
+├── GeneratedOutputManager.hx     # Collects output for transactional publication
+├── GeneratedOutputOwnership.hx   # Manifest ownership + recovery protocol
 ├── AGENTS.md                     # THIS FILE - Keep updated!
 └── helpers/                      # Specialized compilers (Single Responsibility)
     ├── AnnotationSystem.hx       # @:annotation processing system

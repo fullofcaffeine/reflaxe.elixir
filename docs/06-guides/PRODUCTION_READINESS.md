@@ -6,10 +6,10 @@ every Haxe program is supported, and it is not approval to publish `1.0.0`.
 > [!IMPORTANT]
 > **Current verdict (reviewed 2026-07-14): suitable for controlled production pilots, not general
 > 1.0 stability.** The pinned and documented paths have substantial project-local evidence. Stable
-> graduation is still blocked by generated-output ownership, an unfrozen support contract, unbounded
-> OTP wording, a licensing decision, and an external stabilization run. The known P1 reducer and
-> comprehension defects are closed, and Mix now fingerprints the effective Haxe build graph. The `1`
-> release line remains unapproved in
+> graduation is still blocked by an unfrozen support contract, unbounded OTP wording, a licensing
+> decision, and an external stabilization run. The known P1 semantic defects, effective Mix build
+> graph invalidation, and fail-closed generated-output ownership are now closed. The `1` release line
+> remains unapproved in
 > [`release/manifest.json`](../../release/manifest.json).
 
 The durable findings and rationale are in the
@@ -43,13 +43,13 @@ versions, operating systems, third-party libraries, or deployment conditions.
 | --- | --- | --- | --- |
 | Compiler semantics | **Conditional** | Full snapshot categories, negative cases, function-result invariants, generated Elixir validation, Mix runtime tests, reducer loop-control and nested-comprehension runtime suites | No known P1 defect remains in the tested corpus; the exact stable language/stdlib/framework surface still must be frozen. |
 | Mix build invalidation | **Ready** | Deterministic fingerprint regressions cover same-timestamp edits, timestamp-only touches, recursive HXML, `src_shared`, resources, libraries/package descriptors, toolchain identity, explicit macro inputs, removed roots, and no-op behavior | Macro filesystem reads outside the discoverable graph must be declared with `:extra_inputs`; project watchers do not monitor external package/toolchain caches, but the next `mix compile` detects them. |
-| Generated-file ownership | **Blocked** | Isolated output, generated-file metadata in selected paths, package and upgrade tests | In-place writes, clean, stale deletion, and collision handling do not yet share one fail-closed ownership protocol for all generated app modules. Tracked by `haxe.elixir.codex-0yn.2`. |
+| Generated-file ownership | **Ready** | Versioned path/digest manifests, staged formatting, unowned-collision and modified-owned rejection, stale/namespace cleanup, interrupted-transaction recovery, Mix clean, legacy upgrade, source rollback, in-place/isolated examples, and source/package manifest parity | Keep `_GeneratedFiles.json` and reserved transaction paths under compiler control; hand-editing ownership metadata is unsupported. |
 | Generated Elixir quality | **Conditional** | Warnings-as-errors examples, canonical `mix format` integration, handwritten-output corpus, support-footprint checks | Some semantics require visible helpers or conservative reducers. Style work can continue after 1.0; unexplained semantic repairs cannot. |
 | Haxe stdlib behavior | **Conditional** | Classified manifest, Haxe-authored ExUnit, selected upstream `unitstd`, snapshots | Only the classified subset is claimed. The stable set must be frozen, and the runtime suite should become warning-clean (`haxe.elixir.codex-0yn.7`). |
 | Phoenix and LiveView | **Conditional** | Compile/runtime examples, strict Elixir compilation, todo-app Mix tests, browser sentinels, dogfood upgrades | This is the strongest framework surface, but only pinned versions and documented paths are covered. |
 | Ecto | **Conditional** | Schema, changeset, repository, query, compile, and runtime fixtures | Selected APIs are covered. Migration `.exs` generation remains experimental. |
 | OTP | **Blocked for a broad claim** | Typed APIs, snapshots, and selected runtime examples | 1.0 must prove a bounded lifecycle/failure subset or narrow the stable wording. Tracked by `haxe.elixir.codex-0yn.3`. |
-| Gradual Elixir adoption | **Conditional** | Existing-app guide, isolated namespaces, typed extern generation, hand-written/generated interop example | The model is sound, but production use must still account for the generated-file ownership gap. |
+| Gradual Elixir adoption | **Conditional** | Existing-app guide, fail-closed in-place and isolated output, typed extern generation, hand-written/generated interop example | The model is ownership-safe; the broader pre-1.0 support/version contract and external soak still bound production claims. |
 | Shared browser/server logic | **Conditional** | [`16-portable-chat-domain`](../../examples/16-portable-chat-domain/) runs selected domain logic on Elixir and JavaScript | Only a deliberately portable classpath is demonstrated; arbitrary cross-target parity is not claimed. |
 | Source checkout vs release package | **Ready** | Reflaxe `_std` staging contract, package smoke, installed-package codegen parity, deterministic artifacts | Consumers should use a release ZIP. Contributors must use the scoped source-checkout HXML, not bare global `haxelib dev`. |
 | Release integrity and rollback | **Ready** | Same-CI-commit publication, protected tags, reproducible package builds, checksums and hosted attestations | Host controls remain part of the trust boundary and must be audited at approval time. |
@@ -78,15 +78,20 @@ toolchain identity and standard library, relevant environment, explicit macro in
 output-affecting configuration. Legacy or unreadable manifests fail closed. The normal no-op path and
 the todo app's `src_shared` graph have regression coverage.
 
+### Generated Output Ownership
+
+`haxe.elixir.codex-0yn.2` replaces direct one-file-at-a-time publication and marker-based clean with
+one versioned manifest protocol. The compiler stages and optionally formats the complete output,
+rejects unowned collisions and modified hash-owned files, journals updates/stale deletions, and
+commits the manifest last. Haxe compilation and Mix clean recover interrupted transactions; version 1
+manifests upgrade in place. Lifecycle regressions cover first/unchanged generation, updates, namespace
+moves, rollback, collision preservation, clean, and interruption. Package smoke requires identical
+version 2 ownership manifests from source and installed-package builds. See
+[Generated Output Ownership And Safe Cleanup](../02-user-guide/GENERATED_OUTPUT_OWNERSHIP.md).
+
 ## Known 1.0 Blockers
 
-### 1. Make Generated Output Fail Closed
-
-`haxe.elixir.codex-0yn.2` must give generation, formatting, clean, upgrade, stale deletion, and
-rollback one atomic ownership protocol. An existing hand-written file must never be overwritten or
-deleted merely because its target path matches generated output.
-
-### 2. Bound The OTP Contract
+### 1. Bound The OTP Contract
 
 `haxe.elixir.codex-0yn.3` can be resolved in either of two honest ways:
 
@@ -95,14 +100,14 @@ deleted merely because its target path matches generated output.
 
 API-shaped output or compilation alone is not enough evidence for supervision behavior.
 
-### 3. Decide Licensing And Distribution
+### 2. Decide Licensing And Distribution
 
 `haxe.elixir.codex-0yn.4` requires qualified review of the GPL-3.0 compiler, externs, generated
 source, and support/runtime modules that may ship in an application. The result may keep the current
 license, add an exception, separate runtime licensing, or adopt another lawful model. Engineering
 documentation must not improvise the legal answer.
 
-### 4. Freeze One Enumerable Stable Surface
+### 3. Freeze One Enumerable Stable Surface
 
 `haxe.elixir.codex-0yn.5` must inventory language forms, stdlib modules, annotations, externs, flags,
 Mix tasks, generated ABI/naming, framework APIs, versions, and exclusions. Every stable item needs
@@ -111,7 +116,7 @@ executable evidence or a precise bounded behavior statement.
 This does not require implementing every Haxe or Elixir API. It requires making the claimed subset
 true and discoverable.
 
-### 5. Run External Stabilization
+### 4. Run External Stabilization
 
 After the product contract is complete, `haxe.elixir.codex-0yn.8` must use immutable packages and
 clean workspaces to prove:
@@ -127,7 +132,7 @@ clean workspaces to prove:
 The stabilization window must be long enough to receive and resolve package/adopter feedback without
 casually changing the proposed stable contract.
 
-### 6. Approve Graduation Explicitly
+### 5. Approve Graduation Explicitly
 
 `haxe.elixir.codex-0yn.9` reviews the completed evidence and either approves or rejects graduation.
 Only an approval may populate `releaseLines.1.approval`. Approval does not publish a release; a later
@@ -153,8 +158,9 @@ Use the compiler in a production pilot only when all of these conditions are acc
 
 1. Pin an immutable release tag, verify its checksum, and review GPL distribution implications.
 2. Pin a tested toolchain from the [Support Matrix](SUPPORT_MATRIX.md).
-3. Prefer an isolated generated root; if output shares a tree with hand-written Elixir, review
-   ownership and collisions explicitly.
+3. Choose an isolated or in-place generated root deliberately; retain `_GeneratedFiles.json`, and
+   treat any unowned collision or modified-owned error as a source-of-truth decision rather than
+   bypassing the check.
 4. Declare any out-of-graph macro reads with `:extra_inputs`; retain a clean full generation in CI as
    defense in depth.
 5. Stay inside the documented supported surface.

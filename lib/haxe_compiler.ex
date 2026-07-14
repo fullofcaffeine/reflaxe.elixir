@@ -290,13 +290,18 @@ defmodule HaxeCompiler do
 
     case compilation_result do
       {:ok, _output} ->
-        # Compilation succeeded, find generated .ex files
-        compiled_files =
-          HaxeTimings.measure("haxe.find_generated_files", fn ->
-            find_generated_elixir_files(target_dir)
-          end)
+        # The ownership manifest is authoritative. Scanning the target would
+        # accidentally classify handwritten Phoenix modules as compiler output.
+        HaxeTimings.measure("haxe.find_generated_files", fn ->
+          case HaxeGeneratedOutput.generated_files(target_dir) do
+            {:ok, compiled_files} ->
+              {:ok, compiled_files}
 
-        {:ok, compiled_files}
+            {:error, reason} ->
+              {:error,
+               "Haxe compilation completed, but generated-output ownership validation failed: #{reason}"}
+          end
+        end)
 
       {:error, reason} ->
         {:error, reason}
@@ -364,26 +369,6 @@ defmodule HaxeCompiler do
   rescue
     error ->
       {:error, "Failed to execute Haxe: #{Exception.message(error)}"}
-  end
-
-  defp find_generated_elixir_files(target_dir) do
-    if File.exists?(target_dir) do
-      ex_files =
-        target_dir
-        |> Path.join("**/*.ex")
-        |> Path.wildcard()
-
-      exs_files =
-        target_dir
-        |> Path.join("**/*.exs")
-        |> Path.wildcard()
-
-      (ex_files ++ exs_files)
-      |> Enum.uniq()
-      |> Enum.sort()
-    else
-      []
-    end
   end
 
   @doc """

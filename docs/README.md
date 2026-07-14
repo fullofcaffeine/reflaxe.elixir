@@ -34,6 +34,7 @@ This index helps you find the right docs quickly, whether you're building apps w
 - [Interop With Existing Elixir Modules](02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md) - Typed extern-first workflow for calling hand-written Elixir from Haxe
 - [Haxe→Elixir Mappings](02-user-guide/HAXE_ELIXIR_MAPPINGS.md) - Language conversion guide
 - [Elixir Idioms & Hygiene](02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md) - Naming, unused vars, enum shapes, loop semantics
+- [Generated Output Ownership](02-user-guide/GENERATED_OUTPUT_OWNERSHIP.md) - Collision rejection, hashed ownership, transactional recovery, safe clean, and isolated/in-place modes
 - [Canonical Generated Output Formatting](02-user-guide/GENERATED_OUTPUT_FORMATTING.md) - Optional Mix write/check lifecycle, ownership, Phoenix plugins, and CI pinning
 - [Porting stdlib code (JS→Elixir)](02-user-guide/PORTING_STDLIB_CODE_JS_TO_ELIXIR.md) - Practical portability example
 - [Phoenix Integration](02-user-guide/PHOENIX_INTEGRATION.md) - Building Phoenix applications

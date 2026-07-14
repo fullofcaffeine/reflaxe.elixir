@@ -10,12 +10,17 @@ This document is the canonical “how the compiler is structured today” overvi
 2. **Builder** converts `TypedExpr` → `ElixirAST` (structural IR).
 3. **Transformer** runs ordered passes over `ElixirAST` (normalize + rewrite + hygiene).
 4. **Printer** turns `ElixirAST` → Elixir source code (formatting + surface syntax).
-5. **Output** writes files (file-per-module/class, plus `_GeneratedFiles.json` build metadata).
+5. **Output** stages the complete file set, runs optional target formatting, validates manifest
+   ownership/collisions, then transactionally publishes files and commits a content-hashed
+   `_GeneratedFiles.json` last.
 
 ## Key Source Locations
 
 - `src/reflaxe/elixir/ElixirCompiler.hx`
   - Main `GenericCompiler<ElixirAST>` entrypoint (drives builder → transformer → printer → output).
+- `src/reflaxe/elixir/GeneratedOutputManager.hx` and `GeneratedOutputOwnership.hx`
+  - Complete-set staging, formatter hook, fail-closed path/digest ownership, stale deletion, and
+    interrupted-publication recovery.
 - `src/reflaxe/elixir/ast/`
   - `ElixirASTBuilder.hx`: TypedExpr → ElixirAST lowering.
   - `ElixirASTTransformer.hx`: pass runner + orchestration.

@@ -49,6 +49,13 @@ This app demonstrates a practical migration/adoption shape for Phoenix apps.
 - Phoenix scaffold modules in `lib/phoenix_chat*.ex` and `lib/phoenix_chat_web/**` provide conventional boot/runtime wiring.
 - Haxe-generated modules in `lib/phoenix_chat_hx/**` provide feature logic and typed LiveView behavior.
 
+This is the repository's isolated ownership example. The generated root has its own
+`lib/phoenix_chat_hx/_GeneratedFiles.json`, while handwritten Phoenix modules remain outside that
+root. Compiler publication, formatting, stale deletion, and Mix clean still use the same hashed
+ownership protocol as in-place output; isolation changes only the physical review boundary. The
+example compile, runtime Mix tests, and sentinel browser path exercise this layout. See
+[Generated Output Ownership](../../docs/02-user-guide/GENERATED_OUTPUT_OWNERSHIP.md).
+
 ### Why this approach exists
 
 - It keeps the app runnable as a conventional Phoenix project.

@@ -70,6 +70,20 @@ def home(conn, _params) do
 end
 ```
 
+## Ownership mode: in-place
+
+This example is the small in-place ownership fixture:
+
+- `build.hxml` sets `-D elixir_output=lib`;
+- `mix.exs` sets the Haxe compiler `target_dir: "lib"`;
+- `_GeneratedFiles.json` records the exact generated paths and content hashes.
+
+That is the same root a normal Phoenix project uses for handwritten modules. Reflaxe.Elixir stages
+the complete build and rejects an existing unowned target before publishing anything; stale
+manifest-owned paths may be deleted, while unrelated `.ex` files are never discovered by scanning.
+The repository's example compile/WAE lanes regenerate this in-place shape. See
+[Generated Output Ownership](../../docs/02-user-guide/GENERATED_OUTPUT_OWNERSHIP.md).
+
 ## Notes
 
 - Generated Elixir is written under `examples/03-phoenix-app/lib/` (not committed).

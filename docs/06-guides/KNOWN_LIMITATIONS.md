@@ -52,15 +52,17 @@ defense-in-depth check, not as a substitute for declaring macro inputs.
 
 ## Generated file ownership
 
-An isolated generated output root is the safest pre-1.0 adoption shape. In-place output beside
-hand-written Phoenix modules does not yet have one fail-closed ownership protocol shared by compiler
-writes, formatting, stale deletion, `mix clean`, upgrades, and rollback.
+Compiler writes, optional formatting, stale deletion, interrupted-build recovery, and `mix clean`
+now share the version 2 `_GeneratedFiles.json` ownership protocol. In-place output rejects an
+existing unowned target before publication, and clean deletes only validated manifest-owned paths.
+An isolated generated root is still useful because it makes review and source-of-truth boundaries
+more obvious; it is no longer required to compensate for marker-based cleanup.
 
-Until `haxe.elixir.codex-0yn.2` closes:
-
-- keep generated modules in a dedicated directory or namespace where practical;
-- review target-path collisions before generation;
-- avoid treating a broad clean operation as proof that only generated files will be removed.
+The intentional sharp edge is fail-closed behavior: hand-editing a generated file changes its
+recorded digest, deleting/corrupting the manifest removes overwrite authority, and a malformed
+reserved transaction path blocks recovery. Resolve the ownership/source decision explicitly rather
+than adding paths to the manifest by hand. See
+[Generated Output Ownership And Safe Cleanup](../02-user-guide/GENERATED_OUTPUT_OWNERSHIP.md).
 
 ## OTP support boundary
 

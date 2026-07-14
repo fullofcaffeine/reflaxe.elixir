@@ -365,6 +365,54 @@ Validation before removal:
 - `npm run test:quick`
 - `npm test`
 
+### 8. `BaseCompiler.hx`: Target-Owned Output Publication Hooks
+
+Status: local patch, not upstreamed.
+
+Files:
+
+- `src/reflaxe/BaseCompiler.hx`
+
+Why it exists:
+
+Reflaxe's default output manager publishes one file at a time directly into the
+configured destination. Reflaxe.Elixir also needs to format, validate, and
+ownership-check the complete generated tree before changing an in-place Phoenix
+source directory. The base compiler previously offered neither a target-owned
+output-manager factory nor a hook for operating on a prepared tree before
+publication.
+
+Local fix:
+
+- Construct the output manager through an overridable `createOutputManager()`
+  factory while preserving the existing default manager.
+- Expose `onOutputPrepared(outputDirectory)` for transactional target managers
+  to invoke after staging and before publication.
+- Keep the ownership manifest, collision checks, recovery journal, and atomic
+  publication protocol entirely target-owned; the framework patch adds only the
+  two generic extension points.
+
+Current decision:
+
+Keep. These extension points let Reflaxe.Elixir reject unowned collisions,
+format staged output, verify owned hashes, remove stale owned files, and commit
+the ownership manifest last without changing the default behavior of other
+targets.
+
+Upstream action:
+
+Good upstream candidate after the target protocol has accumulated release
+evidence. No external issue or pull request has been opened. Any proposal should
+remain target-agnostic and preserve the default `OutputManager` behavior.
+
+Validation before removal:
+
+- `mix test test/exunit/generated_output_ownership_test.exs`
+- `npm run test:generated-formatting`
+- `npm run test:haxelib-package`
+- `npm run test:quick`
+- `npm run test:examples-qa`
+
 ## Local Non-Framework Metadata
 
 These files are local to this vendored copy and are not framework patches:

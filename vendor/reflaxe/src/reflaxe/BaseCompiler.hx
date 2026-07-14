@@ -1,3 +1,13 @@
+// ⚠️ REFLAXE SOURCE MODIFIED FOR ELIXIR COMPILER
+//
+// MODIFICATION: Add overridable output-manager construction and a prepared-output hook.
+// WHY: Reflaxe.Elixir must stage and validate a complete generated file set before any
+//      in-place Phoenix source is replaced. The default OutputManager writes files one at a
+//      time and offers no pre-commit hook for formatting staged output.
+// DATE: 2026-07-14
+// AUTHOR: Reflaxe.Elixir maintainers
+// UPSTREAM: Local audited patch; no external issue or pull request opened.
+
 package reflaxe;
 
 #if (macro || reflaxe_runtime)
@@ -360,6 +370,17 @@ abstract class BaseCompiler {
 	// =======================================================
 	public function onCompileStart() {}
 	public function onCompileEnd() {}
+
+	/**
+		Called after an output manager has prepared a complete output tree but before it
+		publishes that tree to the configured destination.
+
+		The default Reflaxe output manager does not use this hook. Transactional target
+		output managers can invoke it so formatters and validators operate on staged files
+		without mutating live output.
+	**/
+	public function onOutputPrepared(outputDirectory: String) {}
+
 	public function onOutputComplete() {}
 	public function onClassAdded(cls: ClassType, output: Null<String>): Void {}
 	public function onEnumAdded(cls: EnumType, output: Null<String>): Void {}
@@ -427,11 +448,21 @@ abstract class BaseCompiler {
 	public abstract function generateOutputIterator(): Iterator<DataAndFileInfo<StringOrBytes>>;
 
 	/**
+		Constructs the output manager used by this compiler.
+
+		Targets may override this factory when they need stronger publication semantics
+		than the default incremental writer while keeping Reflaxe's output API.
+	**/
+	public function createOutputManager(): OutputManager {
+		return new OutputManager(this);
+	}
+
+	/**
 		Sets the directory files will be generated in.
 	**/
 	public function setOutputDir(outputDir: String) {
 		if(this.output == null) {
-			this.output = new OutputManager(this);
+			this.output = createOutputManager();
 		}
 		this.output.setOutputDir(outputDir);
 	}

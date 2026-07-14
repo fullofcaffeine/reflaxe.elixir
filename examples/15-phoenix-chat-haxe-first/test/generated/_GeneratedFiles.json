@@ -40,7 +40,167 @@
 		"ecto/changeset_action.exs",
 		"e_reg.exs"
 	],
-	"id": 5,
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 6,
 	"wasCached": false,
-	"version": 1
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "e_reg.exs",
+			"sha256": "c0d6f5906cc887fc266663c36e86836576fab02b58e6cc1604f2e4e26f948b14"
+		},
+		{
+			"path": "ecto/changeset_action.exs",
+			"sha256": "b94fcec4ed9faa02cbffc107cba294c95c7402260f2de74d6fc2f9245b418e4d"
+		},
+		{
+			"path": "ecto/option.exs",
+			"sha256": "327dc7217b3300f5fb391514f65f6a3569733c80fe6c3fb721eaabe67c87f6b1"
+		},
+		{
+			"path": "elixir/otp/application_result.exs",
+			"sha256": "e5eeaaf20d7c32c522b51ec64b55f666f7b07948049c68be17775250f4b97355"
+		},
+		{
+			"path": "elixir/otp/application_start_type.exs",
+			"sha256": "111cf4b1776b5ee5c6c5431835db5eb49789d9b6fd35d158066bf4737b61601f"
+		},
+		{
+			"path": "elixir/otp/child_spec_format.exs",
+			"sha256": "4f76007c88d1ba4281d83dcca8ffc22a12f9e2c2d0da0050de4f2b142544afc3"
+		},
+		{
+			"path": "elixir/otp/child_type.exs",
+			"sha256": "a933df8143ef501c6c3f658f4740d6f2f3e9a40e7ae5af48c70e090da4065ca9"
+		},
+		{
+			"path": "elixir/otp/restart_type.exs",
+			"sha256": "6d65661146381d0f4044eac200bf868ea3cdfb7cb0472c54341db8655a857cc4"
+		},
+		{
+			"path": "elixir/otp/shutdown_type.exs",
+			"sha256": "0de416287b9a0676e25df5ac7def869652d7b7a2fc0ff93baa559cdd7348d9ac"
+		},
+		{
+			"path": "elixir/otp/supervisor_strategy.exs",
+			"sha256": "0e3a75cf0ec36827542182526b8dad3495be7c0b38df4a77cf07f86dc8b30cea"
+		},
+		{
+			"path": "haxe/exceptions/not_implemented_exception.exs",
+			"sha256": "79e1169384c0e4040281af71c745bba63d1ca530105f2c290d880ad94b818273"
+		},
+		{
+			"path": "haxe/exceptions/pos_exception.exs",
+			"sha256": "1bf19747702bbde341c3a92e2fc6f137f2e04508952fc452a0ae73aa61b2b1dd"
+		},
+		{
+			"path": "haxe/iterators/array_iterator.exs",
+			"sha256": "3186b41d2124063a790c08804f1bfb9c3a7508de7f6a99ad2cdb1687f1c2b82d"
+		},
+		{
+			"path": "haxe/iterators/array_key_value_iterator.exs",
+			"sha256": "387d4592afd651337e15dda44716f25a7a7cdd97e1b6a43e9c2aba3f4029a3a3"
+		},
+		{
+			"path": "phoenix/conn_state.exs",
+			"sha256": "935c47dbe73927846fdc222467c2a0672d39479649d36286f17b4a3facf6eb9b"
+		},
+		{
+			"path": "phoenix/form_field_value.exs",
+			"sha256": "43240ead75f286077169adc587904d62bd3d336ea29e55f8db9610984fde3886"
+		},
+		{
+			"path": "phoenix/handle_event_result.exs",
+			"sha256": "38d182b776acba05b1fb32f50fe293461b693fe3127fec72402eeab8ed6fd450"
+		},
+		{
+			"path": "phoenix/handle_info_result.exs",
+			"sha256": "6d786d4a9e5a85080ae81028850620723c219423daab70fb65102677f0aff301"
+		},
+		{
+			"path": "phoenix/http_method.exs",
+			"sha256": "e2d263319d6716a5c4810eb6c0e921bd53bdd777c272fa1bbdd986df5835e4fc"
+		},
+		{
+			"path": "phoenix/http_status.exs",
+			"sha256": "1c25b33bfe12a05f4f0060c8ca13327aaf9511cc1df697aa23b5a442adf6ee44"
+		},
+		{
+			"path": "phoenix/mount_result.exs",
+			"sha256": "10596ff096753fc2e7f424cc918df43900ffa2dd14f3ab1c826268fe28e6efb3"
+		},
+		{
+			"path": "phoenix/route_helper.exs",
+			"sha256": "58f6d17ad94cd962e4395ed81d310d91376397bfb8821992dbc5e7622511474a"
+		},
+		{
+			"path": "phoenix/types/flash_type.exs",
+			"sha256": "a265549182273d8b20502aad77ae854825a06012b9955bb35c79e62490ce5f7b"
+		},
+		{
+			"path": "phoenix/types/flash_type_tools.exs",
+			"sha256": "978886ca88d00a57954786f83390fc51035ebd85cdf6c6f1ecb4f93dce88312a"
+		},
+		{
+			"path": "phoenix/types/socket_transport.exs",
+			"sha256": "5bcdad1611e8abdf88cf4949691ec12bab592503a4022034875aef1da969b056"
+		},
+		{
+			"path": "phoenix_chat/application.exs",
+			"sha256": "c19333c26dacc5a153ab7d329b1c9be005277b6e79dd9a45d8ee595915e68119"
+		},
+		{
+			"path": "phoenix_chat/chat_state.exs",
+			"sha256": "affc080fe1019b62d2fbd00298df55631ffd5fdbf125dd6de5869c73ceef2d49"
+		},
+		{
+			"path": "phoenix_chat/chat_state_test.exs",
+			"sha256": "d62626c51b729672921b38cdfe646613845ca123ade149a5ff3805d03220bbb1"
+		},
+		{
+			"path": "phoenix_chat/test_case.exs",
+			"sha256": "d44950d03bf4befc3f5cf79d1a4cccc4c774f63c4e9a9952b884c2b42f5253be"
+		},
+		{
+			"path": "phoenix_chat_web/app_live.exs",
+			"sha256": "6cd26a5be8616985033d1cffe93e08043e99c10d037be1f6d0b27899e79ee4ac"
+		},
+		{
+			"path": "phoenix_chat_web/presence.exs",
+			"sha256": "a89a098c46df2d773b64fb0ee7e32a433cb92dd4ffaf0d1793c2625afbe0156a"
+		},
+		{
+			"path": "phoenix_chat_web/router.exs",
+			"sha256": "5423c336c0df9962ef887acf53f619995dea95b9564552c66c8baadf67185049"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_float.exs",
+			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_throw.exs",
+			"sha256": "8dc2dbe6b6001a657b8bff0bcd435ecae72866301f5028baedf3c499a7f4a245"
+		},
+		{
+			"path": "reflaxe/elixir/macros/http_method.exs",
+			"sha256": "40c1a4ae5d55ce6b62b25c6e08eecdf8d0c40afe9d77c0935bd657a402739ad0"
+		},
+		{
+			"path": "reflaxe/exception.exs",
+			"sha256": "cb0fdc6ff6a8fb94da21e4ca791baed62e1c02b712ad5356c3e51103c3d94909"
+		},
+		{
+			"path": "reflect.exs",
+			"sha256": "ac3a06944aef2e06edf160b190285de0889ab232f6f85b8fe505acbe5d172158"
+		},
+		{
+			"path": "std.exs",
+			"sha256": "4ae2f11465f1a1ed428e1e9b939db6c5c58a26ba26d27de0450fdff27938444f"
+		},
+		{
+			"path": "string_tools.exs",
+			"sha256": "ae214ad9492951212417ffe539ed662d8ddd2d00bb73d50815803512a586de32"
+		}
+	],
+	"generation": "09a346a027cf4d4cbe935de9937930b71732ca8cc5ff31fa9bd041a60802e964"
 }

@@ -22,11 +22,13 @@ ElixirASTTransformer (ordered, shape‑based passes)
   ↓ print
 ElixirASTPrinter (ElixirAST → Elixir source text)
   ↓ output
-ElixirOutputIterator + Reflaxe output manager
-  ↓ write files + `_GeneratedFiles.json`
-Generated `.ex` / `.exs` files
-  ↓ optional `GeneratedOutputFormatter` from `onOutputComplete`
-Project `mix format` over Reflaxe-owned files only
+ElixirOutputIterator + transactional generated-output manager
+  ↓ stage complete file set + provisional manifest
+Optional `GeneratedOutputFormatter` from `onOutputPrepared`
+  ↓ project `mix format` over staged generated files only
+Ownership preflight + recoverable publication
+  ↓ publish `.ex` / `.exs`; atomically commit version 2 `_GeneratedFiles.json` last
+Generated, content-hash-owned Elixir files
 ```
 
 ## Where “Desugaring” and “Re‑Sugaring” Happen
@@ -36,8 +38,10 @@ Project `mix format` over Reflaxe-owned files only
 - Reflaxe.Elixir **re‑sugars** those shapes inside **transformer passes** to recover idiomatic,
   Elixir‑native patterns (e.g., `Enum.*`, pipes, comprehensions, Phoenix‑friendly shapes).
 - The **printer is formatting‑only**; semantic decisions belong in builder/transformer.
-- Optional canonical Mix formatting runs only after output succeeds. It is a presentation stage,
-  never an AST repair stage; see [Canonical Formatting for Generated Elixir](../02-user-guide/GENERATED_OUTPUT_FORMATTING.md).
+- Optional canonical Mix formatting runs after staging succeeds but before live publication. It is
+  a presentation stage, never an AST repair stage; see
+  [Canonical Formatting for Generated Elixir](../02-user-guide/GENERATED_OUTPUT_FORMATTING.md) and
+  [Generated Output Ownership](../02-user-guide/GENERATED_OUTPUT_OWNERSHIP.md).
 
 ## Statement Position And Call Results
 

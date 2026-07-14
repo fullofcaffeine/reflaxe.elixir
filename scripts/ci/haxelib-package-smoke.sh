@@ -466,6 +466,15 @@ require_file "$work_dir/out_source/_GeneratedFiles.json"
 require_file "$work_dir/out_source/string_tools.ex"
 require_file "$work_dir/out_source/haxe/io/array_buffer_view_impl.ex"
 require_file "$work_dir/out_source/haxe/io/_u_int8_array/u_int8_array_impl_.ex"
+require_contains "$work_dir/out/_GeneratedFiles.json" '"protocol": "reflaxe-elixir/generated-output"'
+require_contains "$work_dir/out/_GeneratedFiles.json" '"version": 2'
+require_contains "$work_dir/out/_GeneratedFiles.json" '"ownedFiles"'
+require_contains "$work_dir/out_source/_GeneratedFiles.json" '"protocol": "reflaxe-elixir/generated-output"'
+if ! cmp -s "$work_dir/out_source/_GeneratedFiles.json" "$work_dir/out/_GeneratedFiles.json"; then
+  diff -u "$work_dir/out_source/_GeneratedFiles.json" "$work_dir/out/_GeneratedFiles.json" || true
+  fail "source and package modes produced different generated-output ownership manifests"
+fi
+say "Source/package generated-output ownership parity: OK"
 require_contains "$work_dir/out/main.ex" "elem(tuple_value, 0)"
 require_contains "$work_dir/out/main.ex" "elem(tuple_value, 1)"
 require_contains "$work_dir/out/main.ex" "Enum.map"

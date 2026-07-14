@@ -38,7 +38,159 @@
 		"haxe/ds/option_tools.exs",
 		"haxe/_call_stack/call_stack_impl_.exs"
 	],
-	"id": 19,
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 20,
 	"wasCached": false,
-	"version": 1
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "haxe/_call_stack/call_stack_impl_.exs",
+			"sha256": "3eed6f8fd5edac09d87da343f278c2665d96efcb0acc4df243d44b9c6de2ceca"
+		},
+		{
+			"path": "haxe/ds/option_tools.exs",
+			"sha256": "79fc1f4a0cb5894b73cca05f732ae11ff3993ffc584c2b3707c3af8288246412"
+		},
+		{
+			"path": "haxe/exceptions/not_implemented_exception.exs",
+			"sha256": "1626a1b4284a0b7534ead4d0fb87bb1c11bb0675ed467ffe2c3ec94706733863"
+		},
+		{
+			"path": "haxe/exceptions/pos_exception.exs",
+			"sha256": "1bf19747702bbde341c3a92e2fc6f137f2e04508952fc452a0ae73aa61b2b1dd"
+		},
+		{
+			"path": "haxe/functional/result_tools.exs",
+			"sha256": "b0eb7d8fab7cad7a56aa6cf73b248a4a842bddd74efa7de8cc970ad2463112d4"
+		},
+		{
+			"path": "haxe/int64_helper.exs",
+			"sha256": "8327ac55d005a20bcfdab611fb9a672fadce5c938d4bbe1580db8637468edbc8"
+		},
+		{
+			"path": "haxe/io/bytes.exs",
+			"sha256": "682c2c068c4d5c19d58e5ab319ae5c363c15f9caea63a85e7768ab95a0db36a8"
+		},
+		{
+			"path": "haxe/io/bytes_buffer.exs",
+			"sha256": "1d4eecf76be5d62e776413f074266592a8938a221f1796cb65ddb9dcee694ae7"
+		},
+		{
+			"path": "haxe/io/eof.exs",
+			"sha256": "209a67120806bddd55fd2677ef52bc750f52e377be130a1bc58a9c73edcdd967"
+		},
+		{
+			"path": "haxe/io/fp_helper.exs",
+			"sha256": "5a654064f9fdd84290acc42f14b75158ae20de2f9ee2ea2de8c0fcaf0b017b4c"
+		},
+		{
+			"path": "haxe/io/input.exs",
+			"sha256": "6af8b392a73511d2b55ae8e437712677bb2cc2c6d54054e5c560aaa555b948fe"
+		},
+		{
+			"path": "haxe/io/output.exs",
+			"sha256": "4f3e6aa9887df50ae888e19e1765fc4d7afaacd720ce54fa8a4e47ea2a55db4d"
+		},
+		{
+			"path": "haxe/iterators/array_iterator.exs",
+			"sha256": "3186b41d2124063a790c08804f1bfb9c3a7508de7f6a99ad2cdb1687f1c2b82d"
+		},
+		{
+			"path": "haxe/iterators/array_key_value_iterator.exs",
+			"sha256": "7c2a5a2cc281bb9a1c5ed1bb56e351bdb68b53a7d048fa70decc5bfdd527419e"
+		},
+		{
+			"path": "haxe/iterators/string_iterator.exs",
+			"sha256": "4a863a6c490e8766194cfbbe673fb6b7b8b3ebb63c3b252b08b2c72bfacf40c1"
+		},
+		{
+			"path": "haxe/iterators/string_key_value_iterator.exs",
+			"sha256": "caeee1d7086475a2e8703e708d355974c11fa72e0df83f4190284d04bc00ba05"
+		},
+		{
+			"path": "haxe/test/assert.exs",
+			"sha256": "4a0851015f5ed4730e77e4be428134219a09645b0facd2b9872942a322143078"
+		},
+		{
+			"path": "int_iterator.exs",
+			"sha256": "b2835b6dc973f62d5e79732053e7944116c9c0032e0747206eff211183182f11"
+		},
+		{
+			"path": "option_patterns/bulk_notification_result.exs",
+			"sha256": "8a846a92ce9492f410c87931b4f3010583ea00c290e7e6433921f150d3b3e38b"
+		},
+		{
+			"path": "option_patterns/config_manager.exs",
+			"sha256": "0a12a6ab60d9c78c236bdfa797aa7bd37cbd3ea35833614a7c6ec305e6143911"
+		},
+		{
+			"path": "option_patterns/config_manager_test.exs",
+			"sha256": "16b73237d9db42cfc81e6d29fd54f3c5120622c8470927faa3bfc13924a2e0a3"
+		},
+		{
+			"path": "option_patterns/notification_attempt.exs",
+			"sha256": "7993306623113829f1df1b4f4f2f52d8e5528f46f5cdab2f0482bc184439cbd8"
+		},
+		{
+			"path": "option_patterns/notification_preferences.exs",
+			"sha256": "e7552dde4032ed200c0077816001d5f95966f3c48fda654ce9c655214a4601d9"
+		},
+		{
+			"path": "option_patterns/notification_record.exs",
+			"sha256": "69f8bc13d54e9a0dcae22c255622a52ef110de0bcb623783aa866b41558882aa"
+		},
+		{
+			"path": "option_patterns/notification_service.exs",
+			"sha256": "5e682972134e2b20f0c4fb58013de3488b8c706eb1cb20d2fb92626aa891e5f0"
+		},
+		{
+			"path": "option_patterns/notification_service_test.exs",
+			"sha256": "ccc92eb5b8bde800505f7f8fb28799bf225cc90227bdefd97e4618ac0e0f0473"
+		},
+		{
+			"path": "option_patterns/notification_type.exs",
+			"sha256": "83ec632eb22ec1e0ad06cadea75bdaf35c5e8be6ff6dbf5ca400f68f159ffcbe"
+		},
+		{
+			"path": "option_patterns/user.exs",
+			"sha256": "57b99473f4871ed7e029419792ed97fdf9a14e3560816b3403006c9d596c2478"
+		},
+		{
+			"path": "option_patterns/user_repository.exs",
+			"sha256": "6ff15c6874ce5b71cb23ebe248f2dade146ac9bdd519e5e6c07d0bf81f934f0c"
+		},
+		{
+			"path": "option_patterns/user_repository_test.exs",
+			"sha256": "8bb29897ccc28a9041703ab9011d49ed4de3aaf82e300e8d828f8c48905c2159"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_float.exs",
+			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_throw.exs",
+			"sha256": "fc5d023670bb5726080ce33fc783821b07150587289df8b52b03874799f445b5"
+		},
+		{
+			"path": "reflaxe/exception.exs",
+			"sha256": "576685a232def363aa3e75205b37c0eb47c06876ebea52306879b731a0cd9b92"
+		},
+		{
+			"path": "std.exs",
+			"sha256": "cfc6ad389294bc64c9d82be070797b4e65041a3d225fc0741500ca7cc6c8f804"
+		},
+		{
+			"path": "string_tools.exs",
+			"sha256": "dbd25b1805726a7f5808cdb23b2887442125467919bd9d09cf511a1fc270f25a"
+		},
+		{
+			"path": "sys.exs",
+			"sha256": "3dff1c8dae38a03fed3db8d56c19e3596ec6678dcceade986920d639eb64b040"
+		},
+		{
+			"path": "type.exs",
+			"sha256": "d75480a332d954a3254c46b53b6b688d080a51ff49a1b203ac06c2fcd1c9c556"
+		}
+	],
+	"generation": "e5fd3a0aeb4c65fc0ca4b4b49ad9aacb920ed4a91b329210ed51aba0a791c2eb"
 }

@@ -503,7 +503,8 @@ class ElixirOutputIterator {
 			extension = ".ex";
 
 		var baseName = astData.overrideFileName != null ? astData.overrideFileName : astData.baseType.moduleId();
-		var relativePath = (astData.overrideDirectory != null ? astData.overrideDirectory + "/" : "") + baseName + extension;
+		var directory = astData.overrideDirectory != null && astData.overrideDirectory.length > 0 ? astData.overrideDirectory + "/" : "";
+		var relativePath = directory + baseName + extension;
 
 		if (haxe.io.Path.isAbsolute(relativePath) || outputDir == null || outputDir.length == 0) {
 			return relativePath;

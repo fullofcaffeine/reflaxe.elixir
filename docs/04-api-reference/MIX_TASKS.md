@@ -88,6 +88,18 @@ The watcher monitors direct classpaths, HXML locations, and configured extra-inp
 toolchain changes outside the project are still detected on the next `mix compile`, but do not rely on
 the project watcher to observe an external package cache in real time.
 
+**Generated-output ownership and clean:**
+
+Compilation returns only paths listed by the validated target-root `_GeneratedFiles.json`; it does
+not scan all `.ex`/`.exs` files in `target_dir`. The version 2 manifest content-hashes each owned
+file, rejects unowned target collisions, removes stale owned paths, and recovers interrupted
+publication before Mix records compiler freshness.
+
+`mix clean` delegates to the same ownership protocol. It preflights the whole manifest, then deletes
+only owned regular files. A missing manifest owns nothing; an invalid path, symlink, unknown version,
+or manually modified generated file makes clean fail before another file is removed. See
+[Generated Output Ownership And Safe Cleanup](../02-user-guide/GENERATED_OUTPUT_OWNERSHIP.md).
+
 ## Source Mapping Tasks
 
 ### mix haxe.source_map
