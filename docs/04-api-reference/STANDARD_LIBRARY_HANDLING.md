@@ -8,6 +8,8 @@ Reflaxe.Elixir supports two complementary “stdlib” layers:
 You can use either layer (or both) in the same codebase. The choice is about **portability vs BEAM-first ergonomics**.
 
 See also:
+
+- [Haxe stdlib API inventory](../08-roadmap/stdlib-parity/api-inventory.md)
 - `docs/04-api-reference/STDLIB_SUPPORT_MATRIX.md`
 - `docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md`
 - `docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md`
@@ -20,6 +22,25 @@ Major 1 now requires complete support for every public Haxe stdlib API applicabl
 Elixir programs. That does not change the selective-override design below: a tested official Haxe
 fallback is support, and copying an unchanged file is not progress. See Beads epic
 `haxe.elixir.codex-0yn.10` for the API inventory and remaining semantics work.
+
+The checked inventory contains every public type, field, method signature, enum constructor, and
+overload found across the pinned Haxe target profiles. Its normal CI check catches surface or
+evidence drift:
+
+```bash
+npm run guard:stdlib-api-inventory
+```
+
+The stricter command answers the release question and is expected to fail until all stdlib work is
+finished:
+
+```bash
+npm run guard:stdlib-api-release-ready
+```
+
+See the [friendly inventory summary](../08-roadmap/stdlib-parity/api-inventory.md) for the current
+counts and definitions. The older module report remains useful for locating target-owned files, but
+it is not a support score.
 
 ## Target selection vs compiler development
 

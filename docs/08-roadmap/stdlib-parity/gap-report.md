@@ -4,6 +4,11 @@ Generated: 2026-07-04
 
 This report compares this repo’s Elixir-target stdlib overrides against the reference repository.
 
+> [!NOTE]
+> This is a file-ownership report, not a support score. The
+> [public API inventory](api-inventory.md) separately lists modules, API rows, runtime evidence, and
+> the exact gaps that still block 1.0.
+
 Local roots considered:
 - `std`
 - `src/haxe`

@@ -28,14 +28,22 @@ Instead:
 The canonical local audit command is:
 
 ```bash
-scripts/stdlib-parity-report.sh --reference /path/to/haxe/std
+npm run guard:stdlib-api-inventory
 ```
 
-CI parity drift guard (no external reference checkout required):
+This regenerates the complete pinned public surface and checks every API row against the reviewed
+policy. The generated report below carries the exact count, so this guide cannot quietly become
+stale when the pinned Haxe surface changes.
+Read the [Haxe stdlib API inventory](../08-roadmap/stdlib-parity/api-inventory.md) for the current
+module/API split, plain-language definitions, and open work. To ask the stricter 1.0 question, run:
 
 ```bash
-npm run guard:stdlib-parity
+npm run guard:stdlib-api-release-ready
 ```
+
+That release-readiness command must fail while any runtime row is unsupported, partial, unknown, or
+lacks exact ordinary-Haxe runtime evidence. The older file-ownership report is still available as
+`npm run guard:stdlib-parity`; it tells us which modules have local target code, not which APIs work.
 
 Runtime conformance guard:
 

@@ -3,6 +3,8 @@ const path = require('path')
 const semver = require('semver')
 
 const DEFAULT_POLICY_PATH = 'release/manifest.json'
+const STDLIB_INVENTORY_PATH =
+  'docs/08-roadmap/stdlib-parity/api-inventory.json'
 
 /**
  * Release-line policy is project policy; semantic-version parsing is a
@@ -146,6 +148,65 @@ function validateReleasePolicy(policy) {
   return policy
 }
 
+function validateCompletedStdlibRequirement(policy, cwd) {
+  const completedLines = Object.entries(policy.releaseLines).filter(
+    ([major, line]) =>
+      major !== '0' &&
+      line.requirements.some(
+        (requirement) =>
+          requirement.id === 'complete-haxe-stdlib' &&
+          requirement.status === 'complete'
+      )
+  )
+  if (completedLines.length === 0) return
+
+  const inventoryPath = path.resolve(cwd, STDLIB_INVENTORY_PATH)
+  let inventory
+  try {
+    inventory = JSON.parse(fs.readFileSync(inventoryPath, 'utf8'))
+  } catch (error) {
+    throw new Error(
+      `complete-haxe-stdlib requires a valid ${STDLIB_INVENTORY_PATH}: ${error.message}`
+    )
+  }
+  requireObject(inventory, STDLIB_INVENTORY_PATH)
+  if (inventory.schemaVersion !== 1) {
+    throw new Error(`${STDLIB_INVENTORY_PATH} schemaVersion must be 1`)
+  }
+  const counts = requireObject(
+    inventory.counts,
+    `${STDLIB_INVENTORY_PATH}.counts`
+  )
+  for (const field of [
+    'apiRows',
+    'runtimeApiRows',
+    'releaseBlockingRuntimeApiRows',
+  ]) {
+    if (!Number.isSafeInteger(counts[field]) || counts[field] < 0) {
+      throw new Error(
+        `${STDLIB_INVENTORY_PATH}.counts.${field} must be a non-negative safe integer`
+      )
+    }
+  }
+  if (counts.apiRows === 0 || counts.runtimeApiRows === 0) {
+    throw new Error(
+      `complete-haxe-stdlib cannot use an empty public or runtime API inventory`
+    )
+  }
+  if (counts.runtimeApiRows > counts.apiRows) {
+    throw new Error(
+      `${STDLIB_INVENTORY_PATH} has more runtime rows than public API rows`
+    )
+  }
+  if (counts.releaseBlockingRuntimeApiRows !== 0) {
+    const majors = completedLines.map(([major]) => major).join(', ')
+    throw new Error(
+      `release line(s) ${majors} cannot mark complete-haxe-stdlib complete while ` +
+        `${counts.releaseBlockingRuntimeApiRows} runtime API rows still block release`
+    )
+  }
+}
+
 function loadReleasePolicy(
   policyPath = DEFAULT_POLICY_PATH,
   cwd = process.cwd()
@@ -162,7 +223,9 @@ function loadReleasePolicy(
       `Unable to read release policy ${absolutePath}: ${error.message}`
     )
   }
-  return validateReleasePolicy(value)
+  const policy = validateReleasePolicy(value)
+  validateCompletedStdlibRequirement(policy, cwd)
+  return policy
 }
 
 function parseSemanticVersion(version) {
@@ -232,11 +295,13 @@ if (require.main === module) {
 
 module.exports = {
   DEFAULT_POLICY_PATH,
+  STDLIB_INVENTORY_PATH,
   isStableMajorApproved,
   loadReleasePolicy,
   parseSemanticVersion,
   pendingRequirementIds,
   releaseLine,
   validateReleasePolicy,
+  validateCompletedStdlibRequirement,
   verifyReleaseVersion,
 }

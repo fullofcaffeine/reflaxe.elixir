@@ -58,11 +58,14 @@ a target-specific file?” It does **not** answer “does this Haxe API work?”
 
 For example, a small enum abstract can work perfectly through the official Haxe implementation and
 correctly have no local override. Conversely, a local file can exist only to produce a clear
-unsupported diagnostic. The 1.0 inventory therefore has to work at public-API level and record
-runtime evidence; counting files is not enough.
+unsupported diagnostic. The checked 1.0 inventory now works at public-API level and records the
+support and evidence state for each row; counting files is not enough. It lists the 204 source
+modules separately from the generated public API-row total, so those two measurements cannot be
+confused.
 
 The current reports remain useful inputs:
 
+- [Public API Inventory](stdlib-parity/api-inventory.md)
 - [Stdlib Support Matrix](../04-api-reference/STDLIB_SUPPORT_MATRIX.md)
 - [Module-level Gap Report](stdlib-parity/gap-report.md)
 - [Stdlib Parity Work](stdlib-parity/epic.md)
@@ -71,6 +74,12 @@ The current reports remain useful inputs:
 Beads epic `haxe.elixir.codex-0yn.10` owns the complete-stdlib requirement. Its work is split into the
 API inventory, core/data semantics, host and IO semantics, warning cleanup, and a final
 installed-package audit.
+
+The normal inventory guard rejects a changed Haxe surface, a missing module decision, a stale API
+override, a missing evidence file, or a blocker that has already been closed. The separate
+`npm run guard:stdlib-api-release-ready` command rejects every remaining runtime support or evidence
+gap. Keeping these as two commands lets ordinary 0.x CI track honest work in progress while making
+the 1.0 requirement fail closed.
 
 ### The Release File Enforces The Decision
 

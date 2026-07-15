@@ -34,7 +34,10 @@ async function analyzeCommits(pluginConfig, context) {
 
   const lastVersion = context.lastRelease && context.lastRelease.version
   const last = parseSemanticVersion(lastVersion)
-  const policy = loadReleasePolicy(policyPath(pluginConfig, context))
+  const policy = loadReleasePolicy(
+    policyPath(pluginConfig, context),
+    context.cwd
+  )
   if (last.major === 0 && !isStableMajorApproved(policy, 1)) {
     return releaseLine(policy, 0).breakingBump
   }
@@ -42,7 +45,10 @@ async function analyzeCommits(pluginConfig, context) {
 }
 
 async function verifyRelease(pluginConfig, context) {
-  const policy = loadReleasePolicy(policyPath(pluginConfig, context))
+  const policy = loadReleasePolicy(
+    policyPath(pluginConfig, context),
+    context.cwd
+  )
   verifyReleaseVersion(policy, context.nextRelease.version)
 }
 

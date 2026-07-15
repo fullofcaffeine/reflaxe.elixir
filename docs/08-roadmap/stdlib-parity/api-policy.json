@@ -1,0 +1,2941 @@
+{
+  "schemaVersion": 1,
+  "haxeVersion": "4.3.7",
+  "meaning": {
+    "api-runtime": "Evidence names the ordinary-Haxe runtime assertion(s) for this exact API row.",
+    "module-runtime": "A runtime suite covers the module, but coverage has not yet been mapped to every API row.",
+    "missing": "No exact runtime evidence is recorded for this API row.",
+    "not-required": "The declaration does not run in generated Elixir; the applicability reason explains why."
+  },
+  "modules": [
+    {
+      "module": "Any",
+      "surfaceDigest": "3378c971914b23e144d94f8ac4ce7ce66cfba471cd1b976877b5c776c7ecda6a",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "Array",
+      "surfaceDigest": "a3f6d9adf4c7ba33ac754d468a83cd76935dc00a45d0ff87174c2f5b15950909",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "partial",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream spec exists; enable after BEAM array/list semantics are triaged in the runtime conformance lane."
+    },
+    {
+      "module": "Class",
+      "surfaceDigest": "8a66076f42dac3d91508c55b657415e4d61c687ceb9094c74730413f334b1a5b",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "Date",
+      "surfaceDigest": "17cb6994f5e647952efd3053e7eb0dc223f9b7acdd611ae1f8767ee5047ffb97",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/Date.unit.hx",
+          "selector": "Date.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "DateTools",
+      "surfaceDigest": "7ecaad54b7c50c42061d6f72d1632d480336bf8a460bb3b3c5e8305a017b595c",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/DateTools.unit.hx",
+          "selector": "DateTools.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "EReg",
+      "surfaceDigest": "b3fa4bf60873b77ed9e46654991a24331c00c4221ec1d61a1634e3d8ebe1263d",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/EReg.unit.hx",
+          "selector": "EReg.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "Enum",
+      "surfaceDigest": "1aeed513136655f2445349ed143de8aa8e5726aac8b4645ddf149c0ecf927026",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "EnumValue",
+      "surfaceDigest": "0e145755b3c27bbcf999426b35ebb52506a128371f311018d7d69f5c46979dda",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "IntIterator",
+      "surfaceDigest": "433e5944248098b954417e266dda29f0bb1c985d34035de198a9e33ce7abf735",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/IntIterator.unit.hx",
+          "selector": "IntIterator.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "Lambda",
+      "surfaceDigest": "0db3fc8ad187f1304f91470a06561d8f0df742981199e4efa1f90a90dbbffb18",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "partial",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream spec exists; enable after collection semantics are triaged."
+    },
+    {
+      "module": "List",
+      "surfaceDigest": "7005885c11353207be1f7fd71a973d6c8af8aa665c7670911e8b6c809fc0a58e",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/List.unit.hx",
+          "selector": "List.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions."
+    },
+    {
+      "module": "Map",
+      "surfaceDigest": "cc69428d9bde0527bc26c955be288e3f206f6f2beec4afb0dca84d24f139508d",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "partial",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream spec exists; enable after native BEAM map ordering/identity semantics are triaged."
+    },
+    {
+      "module": "Math",
+      "surfaceDigest": "28a6d723e3a961c14defd079103f9078f383b8b385317c01276842987c723c49",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/Math.unit.hx",
+          "selector": "Math.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "Reflect",
+      "surfaceDigest": "9d783f55f383bcfcbc3f4ba7da451746f1fbd656970bbc1891a71825c92d6ff9",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "partial",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream spec exists; enable after BEAM reflection semantics are triaged."
+    },
+    {
+      "module": "Std",
+      "surfaceDigest": "49cb463621233c1c571ff5bd2a7d866602fccd6c8a50a9bda3fdd333b57b30ba",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "partial",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream spec exists; enable after target string/parse/cast edge cases are triaged."
+    },
+    {
+      "module": "StdTypes",
+      "surfaceDigest": "8b56fedab40d67bf8526b83813e3e1f224037b38925111d76692ca56b18fdf73",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "String",
+      "surfaceDigest": "126800003aec60932d95a0fe21ddf692c8df39be2b62cdf0404466cc7e34e7bf",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/String.unit.hx",
+          "selector": "String.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "The upstream target.utf16-only string comparison branch is adapted for the Elixir runtime define because BEAM string comparison follows binary/codepoint ordering for this fixture."
+    },
+    {
+      "module": "StringBuf",
+      "surfaceDigest": "5f3219b011136e06a5644e791a81c9cd4348f725ec5d872a981c75e85fc80bc1",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/StringBuf.unit.hx",
+          "selector": "StringBuf.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "StringTools",
+      "surfaceDigest": "123e3a330b60769ca5afd2845012e46d9d1dc2e1c41146923cde90784751e62f",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/StringTools.unit.hx",
+          "selector": "StringTools.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "The upstream aeq(...) helper assertions are expanded to direct array equality expressions because this checked-in fixture harness only rewrites expression-level assertions; the EOF sentinel and iterator expected-code branches are made explicit for the Elixir runtime define ahead of JS/UTF-16 branches because this target uses -1 EOF and codepoint-indexed iterators; iterator comprehensions are expanded to explicit loops so this fixture validates StringTools.iterator/keyValueIterator without depending on unrelated comprehension lowering."
+    },
+    {
+      "module": "Sys",
+      "surfaceDigest": "d3ac1abe7e24c391b6df98cce4e9c7f58ec0688b6a58da99e97b731d009f95ea",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific."
+    },
+    {
+      "module": "Type",
+      "surfaceDigest": "c55c0bc9fde0eb84ae56967b9f786cd0062816e35019dbd54435f71b47eefad3",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "partial",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream spec exists; enable after BEAM runtime type semantics are triaged."
+    },
+    {
+      "module": "UInt",
+      "surfaceDigest": "00ab1b0413093d37a6a84424532278062ddfb543502012052c83e4c0016bb507",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists."
+    },
+    {
+      "module": "UnicodeString",
+      "surfaceDigest": "5f03e094e94d99ab96f1747d07a58b45614fea5e632460dec37b2bfaee85131c",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "partial",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream spec exists; enable after UTF-8 codepoint semantics are triaged."
+    },
+    {
+      "module": "Xml",
+      "surfaceDigest": "91eea26fad8a5738da1eb69cbeb647dc9e7b44117a2d279332b353cd43e7260b",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; XML coverage is maintained by target tests."
+    },
+    {
+      "module": "haxe.CallStack",
+      "surfaceDigest": "920b34d0c4ea40b37e3ca7e89f19e136cdb1e919f6cc7d8b65cb5a5bf24aa911",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/CallStack.unit.hx",
+          "selector": "haxe/CallStack.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "haxe.Constraints",
+      "surfaceDigest": "78ff19a5ff457018162d6b92ff567cd8c05a432c18cb40efea3b15f6a205537d",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged for compile-time Function/IMap constraints, and local Haxe-authored ExUnit tests cover Function calls plus IMap values crossing through the Reflaxe.Elixir.IMap runtime boundary."
+    },
+    {
+      "module": "haxe.DynamicAccess",
+      "surfaceDigest": "86ca8371765f696d96437e8ab429c357f7ceb41c7855c6851c705ecedc3d21cf",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/DynamicAccess.unit.hx",
+          "selector": "haxe/DynamicAccess.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream membership expressions (`value in array`) are expanded to explicit `t(value == a || value == b || ...)` assertions for the Haxe parser used by this checked-in fixture harness."
+    },
+    {
+      "module": "haxe.EntryPoint",
+      "surfaceDigest": "22a18afabc24b75d7488b0ad9a8096bc5643b0c5910510b9d1423c0b6f22f79a",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unsupported",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; haxe.EntryPoint is Haxe's target-owned process main-loop bridge and does not map to BEAM application lifecycle semantics. Direct output-code calls and static field reads fail fast with a target diagnostic; use elixir.otp.Application, elixir.otp.Supervisor, and elixir.otp.TypeSafeChildSpec for OTP lifecycle/supervision, phoenix.* modules and annotations for Phoenix callbacks, or sys.thread.EventLoop/haxe.Timer for callback scheduling instead."
+    },
+    {
+      "module": "haxe.EnumFlags",
+      "surfaceDigest": "ea04c0db0fcd27ed4005a93cb2bf8d22f8f3c432841be87b7c61c3b59df4b6e4",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; official Haxe abstract fallback is used unchanged, while dynamic flag operations lower through typed Type.enumIndex metadata. Local Haxe-authored ExUnit tests cover set, unset, setTo, has, ofInt, and toInt behavior."
+    },
+    {
+      "module": "haxe.EnumTools",
+      "surfaceDigest": "fde0eab56c28d6abf525aef8216dd4d952076d91c58cddf33f9879f001715d4d",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; official Haxe extern inline fallback is used unchanged, while typed Type enum reflection lowers through generated enum metadata. Local Haxe-authored ExUnit tests cover getConstructors, createByName, createByIndex, createAll, EnumValueTools name/index/params, and equality."
+    },
+    {
+      "module": "haxe.Exception",
+      "surfaceDigest": "9d24ffc4339d7c46327c5eb958394d36b87030eaba88bab5f663ca3a9a53d0bc",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.Http",
+      "surfaceDigest": "c9f7fc9a0693d19572500cf479b79fb8d7f82d0c8c5c7d97e3c0577a12fe4797",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific."
+    },
+    {
+      "module": "haxe.Int32",
+      "surfaceDigest": "9ec61240c9b9c2547cfeba1fefacf5aad9ecf7aef723f675045e82a6cd35be4a",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.Int64",
+      "surfaceDigest": "50cf34b16838524c979a05d512e4ca7286aa4a86ac466530f02819b210249349",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.Int64Helper",
+      "surfaceDigest": "f69f425675acc23fbb7f3730688927e82856e0a6c7a957cd2ef7ed04bbc3614c",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; helper parsing behavior is covered through local haxe.Int64 runtime tests."
+    },
+    {
+      "module": "haxe.Json",
+      "surfaceDigest": "d6103458a29a6c5f8c74ebd5296971f6ed3843217b22263538f872542e9ef62e",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.Log",
+      "surfaceDigest": "0cbb77d7998f3224522ee1979a238d0dffe751afe36bbb81a126aabbd3f393f4",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "partial",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream spec exists; enable after mutable static dynamic field hooks and closure-captured outer-local mutation semantics are implemented."
+    },
+    {
+      "module": "haxe.MainLoop",
+      "surfaceDigest": "89d82aa157fcb4e5a2b2836b9fb75a8172be519b3e32c103bacc458503ef4fec",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unsupported",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; haxe.MainLoop is Haxe's target-owned process main-loop/event queue bridge and does not map to BEAM application lifecycle semantics. Direct output-code calls and static field reads fail fast with a target diagnostic; use elixir.otp.Application, elixir.otp.Supervisor, and elixir.otp.TypeSafeChildSpec for OTP lifecycle/supervision, phoenix.* modules and annotations for Phoenix callbacks, or sys.thread.EventLoop/haxe.Timer for callback scheduling instead."
+    },
+    {
+      "module": "haxe.NativeStackTrace",
+      "surfaceDigest": "0e2158241478b056eafb014149bb5d14eee27d30bb65974f6287f9d16c4ff2c5",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.PosInfos",
+      "surfaceDigest": "8c76538e90dd2f2fd38aa398acac658de23ae9bed28bd25ef02588c6a30d6bd8",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.Resource",
+      "surfaceDigest": "db356fedd78d01882b28a6a35827411538f1c9048f657e0c0c3bcda0424d1dc4",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.Rest",
+      "surfaceDigest": "76ec839ae0aacd91d1fed4456fe10898d83060f135e0d2434b47a8b499dd3554",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.Serializer",
+      "surfaceDigest": "898345f3843a4733550989f7d13ed2001c2cd1fd48e0f865702348bfa8ee83d3",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; runtime coverage uses local portable-subset tests."
+    },
+    {
+      "module": "haxe.SysTools",
+      "surfaceDigest": "6e9c95a1815edc4169cc7ecdcdc444d198d4bccf612b867ebbf7fe79d9d1ee45",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.Template",
+      "surfaceDigest": "4c9f92a48a3427893a0c80bf7aa98fb37374366b6ccc487405ab635d910976ab",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "partial",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream spec exists; local BEAM contract intentionally supports a portable subset first."
+    },
+    {
+      "module": "haxe.Timer",
+      "surfaceDigest": "ac38554a518ae4d6052039d91e86d23944f6a915f8828b802e05b40a9f608976",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; stamp/measure, run rebinding, delay, repeated event-loop firing, and stop behavior are covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.Ucs2",
+      "surfaceDigest": "ef6af082fd7d244d9176fb0ddcc88db9e93b0aa22b1995d8a12d61ee8f0401d6",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.Unserializer",
+      "surfaceDigest": "0d2801fe7661965f96fd6950411537ffcd7c9cd097db3171b26206e0185bd1b8",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; runtime coverage uses local portable-subset tests."
+    },
+    {
+      "module": "haxe.Utf8",
+      "surfaceDigest": "1669378f1101988f248782ccfdba9df6ee4587ff52f744bac608e8e45abacf69",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.ValueException",
+      "surfaceDigest": "173294d7405db44bc0ab4a1d028e5676d33775e6f893c912890015a5fc25c162",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged and explicit value/message/previous/toString plus typed ValueException throw/catch behavior are covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.atomic.AtomicBool",
+      "surfaceDigest": "66fad4679767b32a15c70ef7d834102022f9406058f64239034affe94494c1cf",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.atomic.AtomicInt",
+      "surfaceDigest": "7e62bf3ada06d28c276c1ee76b344358ecf1a3bf5aa7f9f1a1206a295e903d80",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.atomic.AtomicObject",
+      "surfaceDigest": "71f1b566a162418f680b18de637b0919ef63999c7dcc6c8588b88a9648588629",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.crypto.Adler32",
+      "surfaceDigest": "c8a3929342bfbb8f430d1ddc0ab6b7d74020081d848ccffdaa3e9c52adc25a77",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; one-shot, incremental, read/equals, toString, and signed 32-bit behavior are covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.crypto.Base64",
+      "surfaceDigest": "27b4728a6325e9d89b1820367415f069531cf7e39d32ce10637c6177ef813817",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/crypto/Base64.unit.hx",
+          "selector": "haxe/crypto/Base64.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "haxe.crypto.BaseCode",
+      "surfaceDigest": "195a2c8f455d0d97592f61c8b072fe30157e78ca7b1651b5e53ea382f7752139",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; arbitrary power-of-two dictionary encode/decode, string helpers, invalid dictionary length, and invalid encoded characters are covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.crypto.Crc32",
+      "surfaceDigest": "98f368b4d43728337239823ec20f88618dc1ed4a08e5f6392ad3cadb869f9dc8",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/crypto/Crc32.unit.hx",
+          "selector": "haxe/crypto/Crc32.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "haxe.crypto.Hmac",
+      "surfaceDigest": "645509ba36676d11d3f6ea9121f5041c96ed57ab2a69bce68c9a2b0fed139ae2",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/crypto/Hmac.unit.hx",
+          "selector": "haxe/crypto/Hmac.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "haxe.crypto.Md5",
+      "surfaceDigest": "13d71193c6aa36df2f20acda50a611ca7999bbf31b826f6a7b0981470e429334",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/crypto/Md5.unit.hx",
+          "selector": "haxe/crypto/Md5.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "haxe.crypto.Sha1",
+      "surfaceDigest": "0ebab1de49e5786f822d126580eb4d8a60714dbf655dfa8500fb94aec955aed2",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/crypto/Sha1.unit.hx",
+          "selector": "haxe/crypto/Sha1.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "haxe.crypto.Sha224",
+      "surfaceDigest": "8b844c869e8754e745725e0121dad017a5709642f528a3e26a2b51c0417b8d13",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/crypto/Sha224.unit.hx",
+          "selector": "haxe/crypto/Sha224.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "haxe.crypto.Sha256",
+      "surfaceDigest": "bad27e7cf235006c06a6140f35c6c187ed211a2f369b82a24c34f1707b9a77d7",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/crypto/Sha256.unit.hx",
+          "selector": "haxe/crypto/Sha256.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "haxe.display.Diagnostic",
+      "surfaceDigest": "45c4f260e71f95de86a5554b33f9d1b37e3e616d1538267b9db777a2c61b4a45",
+      "applicability": "compiler-display",
+      "applicabilityReason": "Haxe editor/display-server API; it is not part of generated Elixir programs.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.display.Display",
+      "surfaceDigest": "c771d0c9d8de70ba1f1185c7a8818eb03f8680454cb9ac79f62f463afe531088",
+      "applicability": "compiler-display",
+      "applicabilityReason": "Haxe editor/display-server API; it is not part of generated Elixir programs.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.display.FsPath",
+      "surfaceDigest": "3c5cd414a9b44937927ad11ff6984fc425c83abe4b76a79b5860401ab02edcaf",
+      "applicability": "compiler-display",
+      "applicabilityReason": "Haxe editor/display-server API; it is not part of generated Elixir programs.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.display.JsonModuleTypes",
+      "surfaceDigest": "ceaf77bb4442f601d0ee35f953f23be7ddebdd323432294ef6965a5b3e333ff3",
+      "applicability": "compiler-display",
+      "applicabilityReason": "Haxe editor/display-server API; it is not part of generated Elixir programs.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.display.Position",
+      "surfaceDigest": "a582ddb4e501e1ee1e5203cfd23f50fa7ca657abac5dc8145c4c62cf8381e18c",
+      "applicability": "compiler-display",
+      "applicabilityReason": "Haxe editor/display-server API; it is not part of generated Elixir programs.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.display.Protocol",
+      "surfaceDigest": "b671092def6201e7424862046e69063c7f14835527e32d3ea307ae6d373ab3c3",
+      "applicability": "compiler-display",
+      "applicabilityReason": "Haxe editor/display-server API; it is not part of generated Elixir programs.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.display.Server",
+      "surfaceDigest": "205b69ff0112930a09a357623d82e292e7eb77e562093022ac028cebe43646f3",
+      "applicability": "compiler-display",
+      "applicabilityReason": "Haxe editor/display-server API; it is not part of generated Elixir programs.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.ds.ArraySort",
+      "surfaceDigest": "e777d2707471140f00862d0a30c7011378fea13cd0a78bb581cd8790b0ff98ba",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; the Elixir target uses a bootstrap-safe target override lowered to stable Enum.sort/2 rebinding for local array bindings, covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.ds.BalancedTree",
+      "surfaceDigest": "d32abb05c817ba4710198c87895eca0c042a88eb2a1c45579ff2742fd4fb25d0",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "partial",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged."
+    },
+    {
+      "module": "haxe.ds.Either",
+      "surfaceDigest": "a585e062fdd9b7c7952cf4655fa7c77d3f566d2d5999a773afc44103d9f5089a",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib enum fallback is used unchanged and Left/Right pattern matching plus generic payload preservation are covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.ds.EnumValueMap",
+      "surfaceDigest": "d95acfa507208bec5fa6944f8f87ad7269c4b7ea9acc0e5861e061462eaae8ee",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "partial",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream spec exists; enable after enum-key ordering semantics are triaged."
+    },
+    {
+      "module": "haxe.ds.GenericStack",
+      "surfaceDigest": "085f3b709f867d3aeff171093e0fd26118df08a95babbb278fc1debd5b92f69f",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/ds/GenericStack.unit.hx",
+          "selector": "haxe/ds/GenericStack.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "haxe.ds.HashMap",
+      "surfaceDigest": "3b7ed1d388118ea6180cd2090fead225f88ebae8b963db12e0fd8bc3425be771",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec is available in the local reference checkout; the Elixir target uses a BEAM-specific hashCode-keyed override with local Haxe-authored ExUnit runtime coverage."
+    },
+    {
+      "module": "haxe.ds.IntMap",
+      "surfaceDigest": "f15db6298d7a12c4ab79aad4302d907f200ff1481f6b207115e52841cff1d4c9",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.ds.List",
+      "surfaceDigest": "511a161d79469376079d780a4483a06e86c98ffbcd0684e7de0b87158623d229",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/List.unit.hx",
+          "selector": "List.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions."
+    },
+    {
+      "module": "haxe.ds.ListSort",
+      "surfaceDigest": "f4feff3be7307e171133849a6d58874fff91688456553372f8c432065ef1453d",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unsupported",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; the API mutates arbitrary linked-node next/prev fields in place, which ordinary immutable BEAM structs/maps cannot preserve. Calls fail fast with a target diagnostic and are covered by a negative snapshot."
+    },
+    {
+      "module": "haxe.ds.Map",
+      "surfaceDigest": "712944909be73388a4b6c5ac81f92de62d7e39fbaf16ea94020381b9cc1ad025",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.ds.ObjectMap",
+      "surfaceDigest": "fdfbef21ddeca95578f1f81724dddbb9322eeb822de39a7bc0dec6a76fa6e297",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.ds.Option",
+      "surfaceDigest": "53bb0e246e6ef4b62b9eb471b9caaef526e53de0a722c85c28c248cf80bc547b",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; the Elixir target uses a local @:elixirIdiomatic Option enum plus OptionTools helpers, and local Haxe-authored ExUnit runtime tests cover Some/None pattern matching, helper transforms/extraction, collection helpers, and Result/null bridges."
+    },
+    {
+      "module": "haxe.ds.ReadOnlyArray",
+      "surfaceDigest": "57feb32014b57451ea514905fb22a41756a1584a7c4748f34415ee2c1512450e",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.ds.StringMap",
+      "surfaceDigest": "8d3aa02456a6ac6137ce111d372868c3272f0d544b691607e6378ba81404334b",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.ds.Vector",
+      "surfaceDigest": "e56032a9822a97691a8a090e371fee84bc6e34690d05b61fdad4ede963689218",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/ds/Vector.unit.hx",
+          "selector": "haxe/ds/Vector.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "The upstream primitive default-value checks are made explicit for the Elixir target because erased generic Vector cells initialize as nil unless a default value is supplied; the reference-identity toData() assertion is rewritten as an observable no-alias mutation check because the target stores Vector data in an opaque process-state cell, and upstream harness helper classes are replaced with local structural values."
+    },
+    {
+      "module": "haxe.ds.WeakMap",
+      "surfaceDigest": "ed95934834645b8fa88f71e0b9f53d19e6ef42f8aebc7db5580def3b63b212a4",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.exceptions.ArgumentException",
+      "surfaceDigest": "b7d2464eb82c99d2389f5b147c239beafae3cc82b8641f04fb79aa1f6d16a588",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged and constructor fields, inherited message/previous behavior, toString, and typed throw/catch behavior are covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.exceptions.NotImplementedException",
+      "surfaceDigest": "8cd31d2432535a9ef940afc0f026431fc6f7b1b0d1f0f51c25dad77121abb80d",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged and default/custom messages, inherited previous behavior, toString, and typed throw/catch behavior are covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.exceptions.PosException",
+      "surfaceDigest": "6bd7f56d40c1f4cc714a31af7bf291ae2ec55973c5d409a3408e7dbbbccdc30c",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.extern.AsVar",
+      "surfaceDigest": "61a9bfed5ef756177902762a8f1442f70c98032f069df4e8589c44eca27878b4",
+      "applicability": "compile-time",
+      "applicabilityReason": "Typing helper for extern declarations; the compiler erases it before generated Elixir runs.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.extern.EitherType",
+      "surfaceDigest": "c95eb16f3e5a6576e1fd7ebf0bcdb5f6471101632f59683699deb2fb73cf850a",
+      "applicability": "compile-time",
+      "applicabilityReason": "Typing helper for extern declarations; the compiler erases it before generated Elixir runs.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.extern.Rest",
+      "surfaceDigest": "852fe4f028e3d8d01d09632e93b4b55c5955986842e2035da8fe1d9852dd38bd",
+      "applicability": "compile-time",
+      "applicabilityReason": "Typing helper for extern declarations; the compiler erases it before generated Elixir runs.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.format.JsonParser",
+      "surfaceDigest": "7ecec6684b208633be202945f760a61aead05ec64f6bd911ba44e3161fde8539",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; direct parse behavior, native JSON terms, escaped strings/nulls, and invalid JSON raising are covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.format.JsonPrinter",
+      "surfaceDigest": "442dafcd4a47a55aefc9dd37aa52cc0ea12dd8f328da07abbf0fd97869ac509c",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists."
+    },
+    {
+      "module": "haxe.http.HttpBase",
+      "surfaceDigest": "d48441e2ba25e46da5ae0efc5bec526752003c897cb189c292f3b38bc486dbe8",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is covered through haxe.Http/sys.Http tests."
+    },
+    {
+      "module": "haxe.http.HttpJs",
+      "surfaceDigest": "2d36546f97376a5abacb405477c1d3e798c4ef0611dde13b63daf2a94368e8fd",
+      "applicability": "other-target",
+      "applicabilityReason": "Browser XMLHttpRequest implementation selected only for the JavaScript target.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.http.HttpMethod",
+      "surfaceDigest": "1287599fd4e0e1ae2bb32086fef7085595f5e4d3e24d7808c86ae4735b40ef76",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.http.HttpNodeJs",
+      "surfaceDigest": "7453f0588f0a2b44676614e16db82499f931e923bae238bb5ecd4deffb5a0e11",
+      "applicability": "other-target",
+      "applicabilityReason": "Node.js HTTP implementation selected only when the nodejs define and hxnodejs types are present.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.http.HttpStatus",
+      "surfaceDigest": "7db2aa6a2847fec7274179a258d30a245ec14cc9403e8bca50ba7394cad3c79b",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.io.ArrayBufferView",
+      "surfaceDigest": "0e50d16b05e9453c14fa3e75455f3e2007f95001efb86e0bd3a8f57b28bafa11",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/io/ArrayBufferView.unit.hx",
+          "selector": "haxe/io/ArrayBufferView.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "haxe.io.BufferInput",
+      "surfaceDigest": "b4497064e48d5735e2fb0bf313096013e70ba90410bbb5ac17dcf59c0d1e47ab",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists."
+    },
+    {
+      "module": "haxe.io.Bytes",
+      "surfaceDigest": "0513c892acad1624d1721b14d45eb10649f263b8104f724dbab89d64315a0b63",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; Bytes behavior is covered by local runtime tests."
+    },
+    {
+      "module": "haxe.io.BytesBuffer",
+      "surfaceDigest": "4c831f8ff8b0e49d8b1f7211a38a1f04d287a8484505ff8d06074c32f15f261d",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/io/BytesBuffer.unit.hx",
+          "selector": "haxe/io/BytesBuffer.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "haxe.io.BytesData",
+      "surfaceDigest": "71eec30558e1f29110c6a7928b3fd48bad43c49a8c88e0b50794bde778521a49",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists."
+    },
+    {
+      "module": "haxe.io.BytesInput",
+      "surfaceDigest": "2b646713a458e0c35cec6bfa7eec329d72d418cf0bd249cc635e9ba67eed7a4c",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is covered by local runtime tests."
+    },
+    {
+      "module": "haxe.io.BytesOutput",
+      "surfaceDigest": "df3fb4c2c612f3bbeab302c182e422d96993454c48e57fb783ef81259b856d05",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is covered by local runtime tests."
+    },
+    {
+      "module": "haxe.io.Encoding",
+      "surfaceDigest": "e0f74e8fffee0aa32fabd90125a8b625fae03fa4fbf399959c1ea47add2b8310",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists."
+    },
+    {
+      "module": "haxe.io.Eof",
+      "surfaceDigest": "2f0ed9a49208a993f2438b81eb4fe68813109b1b79574c85a0cbba42ced999b4",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists."
+    },
+    {
+      "module": "haxe.io.Error",
+      "surfaceDigest": "bb45f713640655cf7f76c789fa23e97e31b63a9bed18c6f2b97f576a849034ee",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; IO error enum behavior is covered by local runtime tests."
+    },
+    {
+      "module": "haxe.io.FPHelper",
+      "surfaceDigest": "315004a5e93432e117e03572d754835c841a69041166ad112f673523e15ce67b",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/io/FPHelper.unit.hx",
+          "selector": "haxe/io/FPHelper.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "haxe.io.Float32Array",
+      "surfaceDigest": "3b88f1b41cbe44563fa3bc8169440604841c11d40b5a480e30dd760eb1f8f09a",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/io/Float32Array.unit.hx",
+          "selector": "haxe/io/Float32Array.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "haxe.io.Float64Array",
+      "surfaceDigest": "780bc6885cf4235e64fe1ea50d627d445454f2c866f0e7a8afc19dae96fb2347",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/io/Float64Array.unit.hx",
+          "selector": "haxe/io/Float64Array.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "haxe.io.Input",
+      "surfaceDigest": "1a421a4395272918dceb0fbc6147996ef447acf7b073304cee8f03a47fb0eb36",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; concrete input implementations carry coverage."
+    },
+    {
+      "module": "haxe.io.Int32Array",
+      "surfaceDigest": "7bf05869882944b1f2ae5d7664bbaac958fdf2b4b8970203704ecc92cef66c68",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/io/Int32Array.unit.hx",
+          "selector": "haxe/io/Int32Array.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "haxe.io.Mime",
+      "surfaceDigest": "9db15363c73591417e093a543213e11fe1492350607f0b30637f81ae559733b5",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; the official Haxe String enum-abstract fallback is used unchanged, with representative constants, custom values, and String conversion covered by local Haxe-authored ExUnit plus source/package parity tests."
+    },
+    {
+      "module": "haxe.io.Output",
+      "surfaceDigest": "51dbdeca0a61fe833882bb45c850710d8d6b447ac6edcdadfd3e38b86fb6f48e",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; concrete output implementations carry coverage."
+    },
+    {
+      "module": "haxe.io.Path",
+      "surfaceDigest": "497c703cd5357773acd93ae0772b97b7a9d80969463d551c863e0cf400e2bc06",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/io/Path.unit.hx",
+          "selector": "haxe/io/Path.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "One Windows normalization vector uses ProgramData instead of the upstream C:/Users sample to satisfy repository local-path hygiene while preserving path normalization semantics."
+    },
+    {
+      "module": "haxe.io.Scheme",
+      "surfaceDigest": "c615fece55ddd0668cb89663c1efc0bae392c56808b7ccfbec7b73c615d97ca0",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; the official Haxe String enum-abstract fallback is used unchanged, with representative constants, custom values, and String conversion covered by local Haxe-authored ExUnit plus source/package parity tests."
+    },
+    {
+      "module": "haxe.io.StringInput",
+      "surfaceDigest": "5db549bacbbf074f94c9e95f6667297062476f1103721da42b5264bd5c24ddbd",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is covered by local runtime tests."
+    },
+    {
+      "module": "haxe.io.UInt16Array",
+      "surfaceDigest": "046be4d3599502b9e289501b8d74e5dd3d44a9f5650965d02167b88be3d44f7b",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/io/UInt16Array.unit.hx",
+          "selector": "haxe/io/UInt16Array.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "haxe.io.UInt32Array",
+      "surfaceDigest": "d5113363309fe6facae14a5ae217a57fdd71ec3f34220da193188267a5b48fc2",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/io/UInt32Array.unit.hx",
+          "selector": "haxe/io/UInt32Array.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "haxe.io.UInt8Array",
+      "surfaceDigest": "7825bed5232de9e6bad9447b806c2e748dcab0c4d83714540e26ae756a1b0e8b",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/io/UInt8Array.unit.hx",
+          "selector": "haxe/io/UInt8Array.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream unitstd status: enabled."
+    },
+    {
+      "module": "haxe.iterators.ArrayIterator",
+      "surfaceDigest": "c51b2a91f54e15259bb0bce475b61c019fc5e7a6d6d4708df322ac29e21c7fcf",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; iterator behavior is covered by local runtime tests."
+    },
+    {
+      "module": "haxe.iterators.ArrayKeyValueIterator",
+      "surfaceDigest": "53c2ad3fa4d6752ab25628e9c59c733ad3e6d827dd72a58702ff3d3fa41c2aff",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists."
+    },
+    {
+      "module": "haxe.iterators.DynamicAccessIterator",
+      "surfaceDigest": "fc7aa42c78476766aa49352d8f634d721efecf0886968492c6aefa8993ab6cbb",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.iterators.DynamicAccessKeyValueIterator",
+      "surfaceDigest": "3176430af097e280fe44ceff7fa179234a5b98eba5a5a1469dd9e83718c6407c",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.iterators.HashMapKeyValueIterator",
+      "surfaceDigest": "894e13ac7f72ea7fd25ad7cadadc77e4c9c5edacd91b508e502eba10e2f5a185",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; the Elixir target provides an inline type-compatibility surface for explicit HashMap iterator construction, covered through local haxe.ds.HashMap runtime tests."
+    },
+    {
+      "module": "haxe.iterators.MapKeyValueIterator",
+      "surfaceDigest": "33d36c6be00e345a85d44c55c6e96d69611e0992024090d15f300914a42220d8",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; iterator behavior is covered by local runtime tests."
+    },
+    {
+      "module": "haxe.iterators.RestIterator",
+      "surfaceDigest": "fe2431fe128d47d44db2167df1d099270b60a6ede4f6a484c51f24e844427894",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.iterators.RestKeyValueIterator",
+      "surfaceDigest": "2e5c5948a530814c123a3dd7e68cc1668dfeaf1b87526ebe61d0cf8f9c29e695",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.iterators.StringIterator",
+      "surfaceDigest": "4b799a96348d599addc691711f55eb9ecd2f6cfae21340808f21a5ec083d1795",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; explicit iterator state, codepoint values, and end-of-iteration behavior are covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.iterators.StringIteratorUnicode",
+      "surfaceDigest": "ed69c3da71090ea59e20b4b86314d1a20e3dd293109df3feefa66f9aa03486b3",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/iterators/StringIteratorUnicode.unit.hx",
+          "selector": "haxe/iterators/StringIteratorUnicode.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "The upstream target.unicode conditional is made explicit so Elixir always exercises UTF-8 codepoint iteration."
+    },
+    {
+      "module": "haxe.iterators.StringKeyValueIterator",
+      "surfaceDigest": "23024b499df34d3b8e4702dbf69138ed335bad2fdb2240e050d729904dc2cfd8",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; explicit iterator state, character index keys, codepoint values, and end-of-iteration behavior are covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.iterators.StringKeyValueIteratorUnicode",
+      "surfaceDigest": "758e59e6a6f64d90df52824cde5620a32c843df680cc7286a4120fa231c4e8f5",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/iterators/StringKeyValueIteratorUnicode.unit.hx",
+          "selector": "haxe/iterators/StringKeyValueIteratorUnicode.unit.hx"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "The upstream target.unicode conditional is made explicit so Elixir always exercises UTF-8 codepoint key/value iteration."
+    },
+    {
+      "module": "haxe.macro.CompilationServer",
+      "surfaceDigest": "b2e0c3de4ab24bc0fec42a3a5c1d554bc68a711f905a3a2f87cf8731631a3967",
+      "applicability": "compile-time",
+      "applicabilityReason": "Haxe macro API; it runs inside the Haxe compiler, not in generated Elixir.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.macro.Compiler",
+      "surfaceDigest": "589d8a752f58c3034e7f5b8d4a5a1b1d540c463470da9f9bfd3837bf4e09f118",
+      "applicability": "compile-time",
+      "applicabilityReason": "Haxe macro API; it runs inside the Haxe compiler, not in generated Elixir.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.macro.ComplexTypeTools",
+      "surfaceDigest": "91daa1e0f070b1d4f164c5899d10f3d53c74135ccb6ea632de69729b651444a5",
+      "applicability": "compile-time",
+      "applicabilityReason": "Haxe macro API; it runs inside the Haxe compiler, not in generated Elixir.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.macro.Context",
+      "surfaceDigest": "384f0da8c9c82b5a78dbf1f81ccd3ec9f85f4ed51123501f4daacb2d95e76618",
+      "applicability": "compile-time",
+      "applicabilityReason": "Haxe macro API; it runs inside the Haxe compiler, not in generated Elixir.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.macro.DisplayMode",
+      "surfaceDigest": "ca3b086d8a050c98726d2da2dd3d6145136d6d90e84e3135d990822170cb833e",
+      "applicability": "compile-time",
+      "applicabilityReason": "Haxe macro API; it runs inside the Haxe compiler, not in generated Elixir.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.macro.ExampleJSGenerator",
+      "surfaceDigest": "5cb7ec35f93b0def02cb292d173daaa80912197015dbaeb792918fae333de25a",
+      "applicability": "compile-time",
+      "applicabilityReason": "Haxe macro API; it runs inside the Haxe compiler, not in generated Elixir.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.macro.Expr",
+      "surfaceDigest": "363a80a9ce22d6093a6981200b5c5560f83712fd6007b44d513903111fd429d6",
+      "applicability": "compile-time",
+      "applicabilityReason": "Haxe macro API; it runs inside the Haxe compiler, not in generated Elixir.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.macro.ExprTools",
+      "surfaceDigest": "2e894c10f883df320ccfc2741e9d32669474f8d0af21e47a184fae637cb39347",
+      "applicability": "compile-time",
+      "applicabilityReason": "Haxe macro API; it runs inside the Haxe compiler, not in generated Elixir.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.macro.Format",
+      "surfaceDigest": "aaa8b74290daec83e05542e15594fffefd443b44504bfa62fbd749fd5b35b9d2",
+      "applicability": "compile-time",
+      "applicabilityReason": "Haxe macro API; it runs inside the Haxe compiler, not in generated Elixir.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.macro.JSGenApi",
+      "surfaceDigest": "169df064bc7a0e34ed5721840f76716f40ac67db7afcffb08923de8340ef3143",
+      "applicability": "compile-time",
+      "applicabilityReason": "Haxe macro API; it runs inside the Haxe compiler, not in generated Elixir.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.macro.MacroStringTools",
+      "surfaceDigest": "957a14f25afcc5ce7465e0fd7f099b233b5edc462d43ef8c1cebfce062d45d89",
+      "applicability": "compile-time",
+      "applicabilityReason": "Haxe macro API; it runs inside the Haxe compiler, not in generated Elixir.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.macro.MacroType",
+      "surfaceDigest": "227bfae8681f0d2bd5b880a8c08f8b97a3e4d7a6b5d8401d0894c98f7bda9f8f",
+      "applicability": "compile-time",
+      "applicabilityReason": "Haxe macro API; it runs inside the Haxe compiler, not in generated Elixir.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.macro.PlatformConfig",
+      "surfaceDigest": "1a0ba89af37a7d38a0fdc7dbca77a3a26fab14b0dd00a5ab07a1a918c7a00942",
+      "applicability": "compile-time",
+      "applicabilityReason": "Haxe macro API; it runs inside the Haxe compiler, not in generated Elixir.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.macro.PositionTools",
+      "surfaceDigest": "0c6593547121eea6be22305a7c44bcdbb205a46266114f2caf98bf03849f06ac",
+      "applicability": "compile-time",
+      "applicabilityReason": "Haxe macro API; it runs inside the Haxe compiler, not in generated Elixir.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.macro.Printer",
+      "surfaceDigest": "e229cf6518da9a58b388e648456650878f6a1eb1b9d5dadde3a4d967211d7042",
+      "applicability": "compile-time",
+      "applicabilityReason": "Haxe macro API; it runs inside the Haxe compiler, not in generated Elixir.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.macro.Tools",
+      "surfaceDigest": "2ae0d03c320f6e3a2f1ee46ecf58500e913d32c9cd74e18dfab77d8b80e323b0",
+      "applicability": "compile-time",
+      "applicabilityReason": "Haxe macro API; it runs inside the Haxe compiler, not in generated Elixir.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.macro.Type",
+      "surfaceDigest": "8e7d9b70921ad1b4bc7a6a0e97b71b95fe344f14cbcd96417a5c1ec567b8187a",
+      "applicability": "compile-time",
+      "applicabilityReason": "Haxe macro API; it runs inside the Haxe compiler, not in generated Elixir.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.macro.TypeTools",
+      "surfaceDigest": "8959ce74739e04534c697440ce907e3bae021dbdc5165226cc9e228b0daca9cd",
+      "applicability": "compile-time",
+      "applicabilityReason": "Haxe macro API; it runs inside the Haxe compiler, not in generated Elixir.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.macro.TypedExprTools",
+      "surfaceDigest": "537185c9711095995260fbed84e517bae4d9a445b92c4e48e1481a9ddd6a8af8",
+      "applicability": "compile-time",
+      "applicabilityReason": "Haxe macro API; it runs inside the Haxe compiler, not in generated Elixir.",
+      "supportState": "not-applicable",
+      "evidenceState": "not-required",
+      "evidence": [],
+      "blockers": [],
+      "reviewNote": "Excluded only from the generated-Elixir runtime contract; the API remains inventoried."
+    },
+    {
+      "module": "haxe.rtti.CType",
+      "surfaceDigest": "dab06aa671952108e5486cb42418ad75203e0dc478832bb12db77ed9d81b9537",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.rtti.Meta",
+      "surfaceDigest": "05b1eecc308ee356a0ee695e4ab8b11925b072afb90badc4064c48adfc520304",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.rtti.Rtti",
+      "surfaceDigest": "a09902a639e3d854b07a76eadf61ac8f5c3de3fb51c0f277c02f7b41b33e1018",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.rtti.XmlParser",
+      "surfaceDigest": "daf4c5e85e6a3a5cbf453d17be6011d24551afeda980e47c00557737aaa85819",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.xml.Access",
+      "surfaceDigest": "ae3c23536a76e83db6de5986781f8d493ddf631e6060942ebc538207277de270",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.xml.Check",
+      "surfaceDigest": "b2f22fd497bc096cf8a1ae50e038811b475a50a7d8e101657a221af3a9ebc9d5",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.xml.Fast",
+      "surfaceDigest": "5c0d505de3e1c4b6ef16ceaf0765680c8a1c1734c850aa9925ad47b832d409c7",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.xml.Parser",
+      "surfaceDigest": "c6f1ae6357d42cd493310f23a799b7f7e5bc418dc74b7a4e947bb1e374219e04",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.xml.Printer",
+      "surfaceDigest": "592cbc11cfe542ebe439780a175f3fd16458520423458823a0cdd5595ff8e557",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.zip.Compress",
+      "surfaceDigest": "2ed6e9f6dc68333095c7cd1d09ad66f35628b390e8ad670d7715febe69bf225f",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.zip.Entry",
+      "surfaceDigest": "964c6bbb09ef475e0647403b12302c8380b55ebd3daf8b0620f75dea79d72f44",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.zip.FlushMode",
+      "surfaceDigest": "7d67105cba757a5723985f66bc766abc43898c7e8147dd51a6f66eba7eeebd35",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.zip.Huffman",
+      "surfaceDigest": "4af9c69fb921858a8a6640267ee50596fd7308d43e87f1019a2834815894d1aa",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.zip.InflateImpl",
+      "surfaceDigest": "b357fb02787377463ac6d7ebece35f7a61493457bb0291e2cf34ceecb4e6c1b5",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.zip.Reader",
+      "surfaceDigest": "7b92178f1b9e7052f6246dc575dbd8416397113e09378c9df116df29808f3f87",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.zip.Tools",
+      "surfaceDigest": "534684a61858f4351805569c9703cdd471fd6ac66a9c71cdf722b0abe7d7fcd9",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.zip.Uncompress",
+      "surfaceDigest": "8966fbd20fd09ed13f21abcc5092b9254a566b5077b1823b72b8247bfc25f9f1",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "haxe.zip.Writer",
+      "surfaceDigest": "90b554def854f6ee4d0a095242135ee25f9a040440674e019f02b88097824f5c",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "sys.FileStat",
+      "surfaceDigest": "c65b1d0f4c289077460b6475b7867d816246130f3c777321155904b776d91a35",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is sys-target integration specific."
+    },
+    {
+      "module": "sys.FileSystem",
+      "surfaceDigest": "d3a11926648deac36966bef377754b5f60a0196961d69e015b3580f8db2e927f",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is sys-target integration specific."
+    },
+    {
+      "module": "sys.Http",
+      "surfaceDigest": "cf0e9c31123d2f08a64e7f359e5a2cb6b128de5fde80ba3a1fd408f9cf8ad89a",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is sys-target integration specific."
+    },
+    {
+      "module": "sys.db.Connection",
+      "surfaceDigest": "226a86525756ffcbbf6e720ba19b1c645f952a250c5b34634eebefadc0e44253",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "sys.db.Mysql",
+      "surfaceDigest": "61c4c0b113287c8dda1f184cd107aeb07e8615655244d6c522fb27b6c43cb0e5",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "sys.db.ResultSet",
+      "surfaceDigest": "3784ebf13e97c4fc3eee32c46b54f7868a8a360b95121a902cdf0bf050531476",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "sys.db.Sqlite",
+      "surfaceDigest": "f3122d0a5e17e3de4ed22e8cc8b5c88c4c9122a68530e7f60fd8bb6cfb7514c3",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No module-level runtime-conformance decision exists yet."
+    },
+    {
+      "module": "sys.io.File",
+      "surfaceDigest": "b1954d22b209a62dd3f098b1f729ad223a50cd624ca737ed8e7de414ada38187",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "partial",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream spec exists; enable after filesystem temp-path and permissions semantics are triaged."
+    },
+    {
+      "module": "sys.io.FileInput",
+      "surfaceDigest": "82359d51eb595d790d43272981d9879849c4c5835c6c870a2872ac09db84e5e3",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is covered through sys.io.File."
+    },
+    {
+      "module": "sys.io.FileOutput",
+      "surfaceDigest": "c77e92331f755ad216df57e72fe307e61fef598029f4f74cb838e936a804aa95",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is covered through sys.io.File."
+    },
+    {
+      "module": "sys.io.FileSeek",
+      "surfaceDigest": "e4923aced7fc3d116057e2fc1f38b7df1b11d4a984000d4937cbecf55d5a1d56",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists."
+    },
+    {
+      "module": "sys.io.Process",
+      "surfaceDigest": "90eef7a4b5e03431ff0a7bf9ec0dd500cd77df661f19f3dbc327661b1b24c6d5",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is sys-target integration specific."
+    },
+    {
+      "module": "sys.net.Address",
+      "surfaceDigest": "d5424838faf0224226963355b29346530fdb46d39b545ed40f5a24d3bdce56d5",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM socket integration specific."
+    },
+    {
+      "module": "sys.net.Host",
+      "surfaceDigest": "4b7d73202d4d3fd03212320e20a9ac6602c6e3fbcfde95c4ab8b0010fe4c66f6",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM socket integration specific."
+    },
+    {
+      "module": "sys.net.Socket",
+      "surfaceDigest": "55e25f9de0f7d3fd90f3ae46421c2eca633015729998adb08be8e2db69df54a1",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "partial",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged."
+    },
+    {
+      "module": "sys.net.UdpSocket",
+      "surfaceDigest": "1cc5e7b9969bead66a45a7701540392ce80c2152a0a6f2e803cbe93c054da1c8",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM socket integration specific."
+    },
+    {
+      "module": "sys.ssl.Certificate",
+      "surfaceDigest": "3a6bca4083066a718613d4e000d81ee968fce4c40b7e3e3510ce8eed7a52b62d",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific."
+    },
+    {
+      "module": "sys.ssl.Digest",
+      "surfaceDigest": "8ef25f5d362c29d8b1110d40bc210f3c43d76f83832daa30700a0189de96115d",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific."
+    },
+    {
+      "module": "sys.ssl.DigestAlgorithm",
+      "surfaceDigest": "d546783aa83ac52c6b6a421cc3b67d8ced6ea247982303111304c9641ab615c6",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists."
+    },
+    {
+      "module": "sys.ssl.Key",
+      "surfaceDigest": "600cf266a8691d0ca7f15772e0890802c73a64ca6da00809be91a5853ef3b1ab",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific."
+    },
+    {
+      "module": "sys.ssl.Socket",
+      "surfaceDigest": "7b611da9b2c8d1121e99524ccbc9dca93118e31baef8191cbb99e597b998dab9",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific."
+    },
+    {
+      "module": "sys.thread.Condition",
+      "surfaceDigest": "142c95616b4e28a6ba3e780e3288dfce6bb18218549b1ee1268a8e38d6e86d55",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+    },
+    {
+      "module": "sys.thread.Deque",
+      "surfaceDigest": "2fd260046cdcbcd39bacd3311e8d9077add2e0a4ebee9bdc00af5633568be5c9",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+    },
+    {
+      "module": "sys.thread.ElasticThreadPool",
+      "surfaceDigest": "05ea7c92e0e52900c77cbc9292f607da3bd9e51fc2053d4ec078295f8b800ed9",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+    },
+    {
+      "module": "sys.thread.EventLoop",
+      "surfaceDigest": "6ff50b59c96377900076c940c1ff476ef79ed196c2a1d814eface27c02a8210d",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+    },
+    {
+      "module": "sys.thread.FixedThreadPool",
+      "surfaceDigest": "dcac3cf2472511741a727b48f08119cc2fa84c9f46f3523b8fd8d20369c817fd",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+    },
+    {
+      "module": "sys.thread.IThreadPool",
+      "surfaceDigest": "4f054faa12caed789afbb6e6019c2e6d885d7488b6b9a5bc54a9a982c58c180b",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+    },
+    {
+      "module": "sys.thread.Lock",
+      "surfaceDigest": "b922cf6e7900bab938c23f8dacbddcac09d197fddde22d8b64f30ae8074b16fd",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+    },
+    {
+      "module": "sys.thread.Mutex",
+      "surfaceDigest": "1ed68fff7b1897d6cc371c6f7dcdc1433286366785720e5d7e6efe43957db928",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+    },
+    {
+      "module": "sys.thread.NoEventLoopException",
+      "surfaceDigest": "e92f2f2e4b7c1d6b8c7c3ad17d2f4059b70f355c400ed92b4d55937ee213fa1d",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists."
+    },
+    {
+      "module": "sys.thread.Semaphore",
+      "surfaceDigest": "a7c9d4a15497c7be0fd5a8909c70bbe4bc3db32baccb1cdf536e84e309927d76",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+    },
+    {
+      "module": "sys.thread.Thread",
+      "surfaceDigest": "b95be6b25753808b4ae8a0b15ca10633d841c51c0c9db993744a373ce3a7a970",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+    },
+    {
+      "module": "sys.thread.ThreadPoolException",
+      "surfaceDigest": "1379a8e12c868ab252c661b164064e22a465a1920e87f278026548b11092748f",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists."
+    },
+    {
+      "module": "sys.thread.Tls",
+      "surfaceDigest": "6fe44d734f27813214438d80f67257e75d4f1330cfd065e08dfe063b1862522c",
+      "applicability": "runtime",
+      "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
+      "supportState": "unknown",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+    }
+  ],
+  "apiOverrides": []
+}

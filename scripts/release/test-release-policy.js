@@ -18,6 +18,12 @@ const pluginModulePath = path.join(
   'release',
   'semantic-release-policy.cjs'
 )
+const stdlibInventoryPath = path.join(
+  'docs',
+  '08-roadmap',
+  'stdlib-parity',
+  'api-inventory.json'
+)
 
 function writeJson(filePath, value) {
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`)
@@ -65,6 +71,17 @@ function policy(options = {}) {
     }
   }
   return { schemaVersion: 3, releaseLines: lines }
+}
+
+function stdlibInventory(releaseBlockingRuntimeApiRows) {
+  return {
+    schemaVersion: 1,
+    counts: {
+      apiRows: 10,
+      runtimeApiRows: 6,
+      releaseBlockingRuntimeApiRows,
+    },
+  }
 }
 
 function logger() {
@@ -162,6 +179,18 @@ async function main() {
     )
 
     writeJson(manifestPath, policy({ major1Approved: true }))
+    assert.throws(
+      () => policyApi.loadReleasePolicy('release/manifest.json', fixtureRoot),
+      /complete-haxe-stdlib requires a valid docs\/08-roadmap\/stdlib-parity\/api-inventory\.json/
+    )
+    const fixtureInventoryPath = path.join(fixtureRoot, stdlibInventoryPath)
+    fs.mkdirSync(path.dirname(fixtureInventoryPath), { recursive: true })
+    writeJson(fixtureInventoryPath, stdlibInventory(12))
+    assert.throws(
+      () => policyApi.loadReleasePolicy('release/manifest.json', fixtureRoot),
+      /cannot mark complete-haxe-stdlib complete while 12 runtime API rows still block release/
+    )
+    writeJson(fixtureInventoryPath, stdlibInventory(0))
     assert.strictEqual(
       await analyze(plugin, fixtureRoot, '0.15.0', [
         'chore(release): approve stable graduation',
