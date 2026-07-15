@@ -5,6 +5,12 @@
     "sourceFingerprint": "28334e6aeff873ac5d5c846bcac29380d663e2dc3f21dd2aa46f6ccbdda1df3b",
     "sourceRoot": "$HAXE_STD_PATH"
   },
+  "targetAdapters": {
+    "hxjava": {
+      "version": "4.2.0",
+      "scopeDescriptor": "haxe_libraries/hxjava.hxml"
+    }
+  },
   "profiles": [
     {
       "id": "macro",

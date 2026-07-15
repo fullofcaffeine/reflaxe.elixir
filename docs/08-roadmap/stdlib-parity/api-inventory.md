@@ -17,6 +17,7 @@ fails if the pinned source changes.
 ## Current result
 
 - Pinned Haxe version: **4.3.7**
+- Pinned Java typing adapter: **hxjava 4.2.0**
 - Reference modules: **204**
 - Public API rows: **3,692**
 - Public type rows: **494**

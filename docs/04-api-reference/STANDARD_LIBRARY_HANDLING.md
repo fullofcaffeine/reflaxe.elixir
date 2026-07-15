@@ -31,6 +31,12 @@ evidence drift:
 npm run guard:stdlib-api-inventory
 ```
 
+One of those profiles is Java. Haxe ships that compiler backend separately as `hxjava`, so this
+repository pins it in `haxe_libraries/hxjava.hxml`. A normal `npm install` fetches it through Lix.
+If you installed dependencies with lifecycle scripts disabled, run `npx lix download` once before
+the inventory guard. You do not need Java installed to generate Elixir; this dependency is only for
+typing the pinned Haxe API surface consistently on every machine.
+
 The stricter command answers the release question and is expected to fail until all stdlib work is
 finished:
 

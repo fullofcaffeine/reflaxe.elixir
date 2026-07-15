@@ -1,0 +1,9 @@
+# The stdlib API inventory types Haxe's Java-specific surface. The Java
+# compiler backend is external to the Haxe distribution, so keep it pinned in
+# the same Lix scope as the rest of this repository's Haxe dependencies.
+
+-D hxjava=4.2.0
+# @install: lix --silent download "haxelib:/hxjava#4.2.0" into hxjava/4.2.0/haxelib
+# @run: haxelib run-dir hxjava ${HAXE_LIBCACHE}/hxjava/4.2.0/haxelib
+-cp ${HAXE_LIBCACHE}/hxjava/4.2.0/haxelib/
+-java-lib lib/hxjava-std.jar

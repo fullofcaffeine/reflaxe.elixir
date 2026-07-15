@@ -20,6 +20,7 @@ from typing import Any, Iterable
 ROOT = Path(__file__).resolve().parents[1]
 HAXERC = ROOT / ".haxerc"
 MACRO_DIR = ROOT / "tools/stdlib_api_inventory"
+HXJAVA_DESCRIPTOR = ROOT / "haxe_libraries/hxjava.hxml"
 POLICY_PATH = ROOT / "docs/08-roadmap/stdlib-parity/api-policy.json"
 INVENTORY_PATH = ROOT / "docs/08-roadmap/stdlib-parity/api-inventory.json"
 SUMMARY_PATH = ROOT / "docs/08-roadmap/stdlib-parity/api-inventory.md"
@@ -76,6 +77,35 @@ def expected_haxe_version() -> str:
     return version
 
 
+def pinned_hxjava_version() -> str:
+    """Return the scoped Java backend version required by the Java profile."""
+    try:
+        descriptor = HXJAVA_DESCRIPTOR.read_text(encoding="utf-8")
+    except FileNotFoundError as error:
+        raise InventoryError(
+            "the Java inventory profile requires haxe_libraries/hxjava.hxml; "
+            "restore the pinned descriptor and run `npx lix download`"
+        ) from error
+
+    match = re.search(r"(?m)^-D hxjava=([^\s]+)$", descriptor)
+    if match is None:
+        raise InventoryError("haxe_libraries/hxjava.hxml must pin `-D hxjava=<version>`")
+    version = match.group(1)
+    required_fragments = (
+        f'haxelib:/hxjava#{version}',
+        f"hxjava/{version}/haxelib",
+        "# @run: haxelib run-dir hxjava ",
+        "-java-lib lib/hxjava-std.jar",
+    )
+    missing = [fragment for fragment in required_fragments if fragment not in descriptor]
+    if missing:
+        raise InventoryError(
+            "haxe_libraries/hxjava.hxml is incomplete for the pinned Java backend: "
+            + ", ".join(missing)
+        )
+    return version
+
+
 def haxe_command() -> list[str]:
     configured = os.environ.get("HAXE_BIN")
     if configured:
@@ -109,6 +139,7 @@ def command_output(command: list[str], *, cwd: Path | None = None, timeout: int 
 
 
 def generate_typed_profiles() -> tuple[dict[str, list[dict[str, Any]]], str]:
+    pinned_hxjava_version()
     haxe = haxe_command()
     expected = expected_haxe_version()
     actual = command_output(haxe + ["-version"], cwd=ROOT, timeout=20)
@@ -1382,6 +1413,12 @@ def build_inventory(
             "sourceFingerprint": source_fingerprint(modules, std_root),
             "sourceRoot": "$HAXE_STD_PATH",
         },
+        "targetAdapters": {
+            "hxjava": {
+                "version": pinned_hxjava_version(),
+                "scopeDescriptor": "haxe_libraries/hxjava.hxml",
+            }
+        },
         "profiles": [
             {"id": name, "description": description}
             for name, description, _arguments in PROFILE_DEFINITIONS
@@ -1454,6 +1491,7 @@ def render_summary(inventory: dict[str, Any]) -> str:
         "## Current result",
         "",
         f"- Pinned Haxe version: **{inventory['haxe']['version']}**",
+        f"- Pinned Java typing adapter: **hxjava {inventory['targetAdapters']['hxjava']['version']}**",
         f"- Reference modules: **{counts['modules']:,}**",
         f"- Public API rows: **{counts['apiRows']:,}**",
         f"- Public type rows: **{counts['typeRows']:,}**",

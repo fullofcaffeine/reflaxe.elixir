@@ -40,6 +40,9 @@ def sample_row(module: str = "Sample") -> dict:
 
 
 class StdlibApiInventoryTest(unittest.TestCase):
+    def test_java_profile_has_a_complete_scoped_backend_descriptor(self) -> None:
+        self.assertEqual(inventory.pinned_hxjava_version(), "4.2.0")
+
     def test_type_renderer_is_readable_and_stable(self) -> None:
         function_type = {
             "kind": "TFun",
