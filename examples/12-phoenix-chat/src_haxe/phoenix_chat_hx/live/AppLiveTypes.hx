@@ -1,6 +1,7 @@
 package phoenix_chat_hx.live;
 
 import phoenix_chat_hx.presence.ChatPresence.PresenceMeta;
+import phoenix_chat_hx.frontend.PreferenceDensity;
 
 typedef ChatMessage = {
 	var id:Int;
@@ -31,4 +32,6 @@ typedef AppLiveAssigns = {
 	online_user_views:Array<OnlineUserView>,
 	online_user_count:Int,
 	status:Null<String>,
+	preference_density:PreferenceDensity,
+	preference_status:Null<String>,
 }

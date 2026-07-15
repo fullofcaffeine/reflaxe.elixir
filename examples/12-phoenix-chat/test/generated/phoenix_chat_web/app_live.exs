@@ -11,7 +11,7 @@ defmodule PhoenixChatWeb.AppLive do
     end
     current_user_name = display_name_from_id(current_user_id)
     online_at = DateTime.to_unix(DateTime.utc_now(), :millisecond)
-    assigns = %{room: room, current_user_id: current_user_id, current_user_name: current_user_name, message_input: "", messages: [], next_message_id: 1, presence_initialized: false, online_users: %{}, online_user_views: [], online_user_count: 0, status: nil}
+    assigns = %{room: room, current_user_id: current_user_id, current_user_name: current_user_name, message_input: "", messages: [], next_message_id: 1, presence_initialized: false, online_users: %{}, online_user_views: [], online_user_count: 0, status: nil, preference_density: "focused", preference_status: nil}
     live = Phoenix.Component.assign(socket, assigns)
     live = if (connected) do
       pubsub = pubsub_module()
@@ -31,8 +31,8 @@ defmodule PhoenixChatWeb.AppLive do
     ~H"""
     <div class="chat-shell min-h-[calc(100vh-4rem)] p-4 md:p-8">
                 <div class="chat-frame mx-auto grid max-w-6xl grid-cols-1 gap-4 md:grid-cols-12">
-                    <aside class="md:col-span-4">
-                        <div class="panel">
+            <aside class="grid content-start gap-4 md:col-span-4">
+              <div class="panel">
                             <div class="panel-h">
                                 <div>
                                     <div class="kicker">Presence</div>
@@ -64,9 +64,36 @@ defmodule PhoenixChatWeb.AppLive do
                                     <div class="label">room</div>
                                     <div class="value"><%= @room %></div>
                                 </div>
-                            </div>
-                        </div>
-                    </aside>
+                </div>
+              </div>
+
+              <div class="panel preference-panel">
+                <div class="panel-h">
+                  <div>
+                    <div class="kicker">React island / trusted</div>
+                    <div class="title">Signal desk</div>
+                  </div>
+                  <div class="badge">Vite</div>
+                </div>
+                <div class="panel-b">
+                  <PhoenixChatWeb.ReactComponents.preference_studio id="preference-studio" title="Conversation density" density={@preference_density}></PhoenixChatWeb.ReactComponents.preference_studio>
+
+                  <details class="preference-fallback" data-testid="preference-fallback">
+                    <summary>Native LiveView controls</summary>
+                    <p>The same event remains usable if the React island is removed.</p>
+                    <div class="preference-fallback__actions">
+                      <button type="button" phx-click={"preference_changed_native"} phx-value-density="calm" aria-label="Use Calm native mode" aria-pressed={@preference_density == "calm"}>Calm</button>
+                      <button type="button" phx-click={"preference_changed_native"} phx-value-density="focused" aria-label="Use Focused native mode" aria-pressed={@preference_density == "focused"}>Focused</button>
+                      <button type="button" phx-click={"preference_changed_native"} phx-value-density="dense" aria-label="Use Dense native mode" aria-pressed={@preference_density == "dense"}>Dense</button>
+                    </div>
+                  </details>
+
+                  <%= if @preference_status != nil do %>
+                    <div class="preference-status" role="status" data-testid="preference-status"><%= @preference_status %></div>
+                  <% end %>
+                </div>
+              </div>
+            </aside>
 
                     <main class="md:col-span-8">
                         <div class="panel">
@@ -182,6 +209,20 @@ defmodule PhoenixChatWeb.AppLive do
       {:noreply, updated}
     end
   end
+  defp handle_preference_changed(params, socket) do
+    apply_preference_density(PhoenixChat.PreferenceStudioContract.decode_payload(params), socket)
+  end
+  defp handle_native_preference_changed(params, socket) do
+    apply_preference_density(PhoenixChat.PreferenceStudioContract.decode_native_button_payload(params), socket)
+  end
+  defp apply_preference_density(decoded, socket) do
+    if (Kernel.is_nil(decoded)) do
+      {:noreply, Phoenix.Component.assign(socket, :preference_status, "Preference payload rejected.")}
+    else
+      density = decoded
+      {:noreply, Phoenix.Component.assign(socket, %{preference_density: density, preference_status: "Density synchronized: " <> PhoenixChat.PreferenceDensity_Impl_.label(density) <> "."})}
+    end
+  end
   defp recompute_online_views(socket) do
     users = socket.assigns.online_users
     keys = Map.keys(users)
@@ -274,6 +315,8 @@ defmodule PhoenixChatWeb.AppLive do
         end)
         {:noreply, Phoenix.Component.assign(live, :message_input, (if (not Kernel.is_nil(msg)), do: msg, else: ""))}
       event == "send_message" -> handle_send_message(params, live)
+      event == "preference_changed" -> handle_preference_changed(params, live)
+      event == "preference_changed_native" -> handle_native_preference_changed(params, live)
       true -> {:noreply, socket}
     end
   end

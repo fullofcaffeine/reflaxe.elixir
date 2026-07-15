@@ -38,5 +38,8 @@
 phoenix_chat_hx.Main
 phoenix_chat_hx.utils.StringUtils
 phoenix_chat_hx.utils.MathHelper
+phoenix_chat_hx.frontend.PreferenceDensity
+phoenix_chat_hx.frontend.PreferenceStudioContract
+phoenix_chat_hx.components.ReactComponents
 phoenix_chat_hx.live.AppLive
 phoenix_chat_hx.presence.ChatPresence

@@ -8,6 +8,9 @@ const path = require("path")
 module.exports = {
   content: [
     "./js/**/*.js",
+    // BEGIN phoenix_chat vite_live_react_content
+    "./react-components/**/*.{ts,tsx}",
+    // END phoenix_chat vite_live_react_content
     "../lib/phoenix_chat_web.ex",
     "../lib/phoenix_chat_web/**/*.*ex"
   ],

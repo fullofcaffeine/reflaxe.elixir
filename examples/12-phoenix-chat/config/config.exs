@@ -21,15 +21,10 @@ config :phoenix_chat, PhoenixChatWeb.Endpoint,
   pubsub_server: PhoenixChat.PubSub,
   live_view: [signing_salt: "n6w0LkDj"]
 
-# Configure esbuild (the version is required)
-config :esbuild,
-  version: "0.17.11",
-  phoenix_chat: [
-    args:
-      ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
-    cd: Path.expand("../assets", __DIR__),
-    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
-  ]
+# BEGIN phoenix_chat vite_live_react_config
+# The first proof is client-only: stock live_react never starts an SSR runtime.
+config :live_react, ssr: false
+# END phoenix_chat vite_live_react_config
 
 # Configure tailwind (the version is required)
 config :tailwind,

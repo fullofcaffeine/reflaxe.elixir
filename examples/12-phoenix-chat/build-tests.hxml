@@ -12,3 +12,4 @@
 -dce full
 
 live.ChatStateTest
+web.ReactIslandLiveTest

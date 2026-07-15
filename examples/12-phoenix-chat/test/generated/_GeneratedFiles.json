@@ -6,14 +6,21 @@
 		"reflaxe/exception.exs",
 		"reflaxe/elixir/haxe_throw.exs",
 		"reflaxe/elixir/haxe_float.exs",
+		"phoenix_hx/params.exs",
+		"phoenix_chat_web/react_components.exs",
 		"phoenix_chat_web/presence.exs",
 		"phoenix_chat_web/app_live.exs",
 		"phoenix_chat/test_case.exs",
+		"phoenix_chat/react_island_live_test.exs",
+		"phoenix_chat/preference_studio_contract.exs",
+		"phoenix_chat/preference_density_impl_.exs",
 		"phoenix_chat/chat_state_test.exs",
 		"phoenix_chat/chat_state.exs",
 		"phoenix/types/socket_transport.exs",
 		"phoenix/types/flash_type_tools.exs",
 		"phoenix/types/flash_type.exs",
+		"phoenix/test/live_view_state.exs",
+		"phoenix/test/conn_state.exs",
 		"phoenix/route_helper.exs",
 		"phoenix/mount_result.exs",
 		"phoenix/http_status.exs",
@@ -31,7 +38,7 @@
 		"e_reg.exs"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 8,
+	"id": 9,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
@@ -96,6 +103,14 @@
 			"sha256": "58f6d17ad94cd962e4395ed81d310d91376397bfb8821992dbc5e7622511474a"
 		},
 		{
+			"path": "phoenix/test/conn_state.exs",
+			"sha256": "9b452c4b96b0d42c6bf35d408a847370446649252aad86ae546c4ab45dba3c9f"
+		},
+		{
+			"path": "phoenix/test/live_view_state.exs",
+			"sha256": "20e58a09a8efd7462b90ecc064a892165ba4786af276145423b3b2cea690e798"
+		},
+		{
 			"path": "phoenix/types/flash_type.exs",
 			"sha256": "a265549182273d8b20502aad77ae854825a06012b9955bb35c79e62490ce5f7b"
 		},
@@ -116,16 +131,36 @@
 			"sha256": "d62626c51b729672921b38cdfe646613845ca123ade149a5ff3805d03220bbb1"
 		},
 		{
+			"path": "phoenix_chat/preference_density_impl_.exs",
+			"sha256": "6d6ab4a4f053f6bd733313f0f0ad28ad07b9567f73e2a848c73f6168373f359b"
+		},
+		{
+			"path": "phoenix_chat/preference_studio_contract.exs",
+			"sha256": "ec6cb0119375e53f4ab54da524516e75dce46a812c4827d7346e3e462817aba0"
+		},
+		{
+			"path": "phoenix_chat/react_island_live_test.exs",
+			"sha256": "aa15539c414a2a1658359c92a2880779c8037c497169c59a3a63cce551f19090"
+		},
+		{
 			"path": "phoenix_chat/test_case.exs",
 			"sha256": "d44950d03bf4befc3f5cf79d1a4cccc4c774f63c4e9a9952b884c2b42f5253be"
 		},
 		{
 			"path": "phoenix_chat_web/app_live.exs",
-			"sha256": "6cd26a5be8616985033d1cffe93e08043e99c10d037be1f6d0b27899e79ee4ac"
+			"sha256": "e0c7dee88693bb003d76617415d98966f6cf32b178b802d0c0dfcac188dc0eba"
 		},
 		{
 			"path": "phoenix_chat_web/presence.exs",
 			"sha256": "a89a098c46df2d773b64fb0ee7e32a433cb92dd4ffaf0d1793c2625afbe0156a"
+		},
+		{
+			"path": "phoenix_chat_web/react_components.exs",
+			"sha256": "1a0878bed14d4b227dcf87f933af586257ce0b562130acb65a57089b1feb6650"
+		},
+		{
+			"path": "phoenix_hx/params.exs",
+			"sha256": "8521602221541cb365d9c301408462186c13297fcdb2da0507abd3f0dfae2111"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.exs",
@@ -152,5 +187,5 @@
 			"sha256": "ae214ad9492951212417ffe539ed662d8ddd2d00bb73d50815803512a586de32"
 		}
 	],
-	"generation": "a5d46001e425c522224baaa6470adc495f6acb230ac8607c536a65aec1ccfdda"
+	"generation": "42e2fdb44027e89ee25a8d6dec02b3bac74c80c048cba0a42866996bb432409b"
 }

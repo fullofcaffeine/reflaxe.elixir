@@ -33,28 +33,29 @@ config :phoenix_chat, PhoenixChatWeb.Endpoint,
        []
      else
        [
+         # BEGIN reflaxe_elixir haxe_client
+         # Haxe client JS build:
+         # - Compiles to assets/js/_hx_app_tmp.js (temp output Haxe may delete during rebuilds).
+         # - Promotes to assets/js/hx_app.js (stable import path for esbuild --watch).
+         haxe_client: [
+           "mix",
+           "haxe.watch",
+           "--hxml",
+           "build-client.hxml",
+           "--dirs",
+           "src_haxe",
+           "--debounce",
+           "150",
+           "--promote",
+           "assets/js/_hx_app_tmp.js:assets/js/hx_app.js,assets/js/_hx_app_tmp.js.map:assets/js/hx_app.js.map",
+           cd: Path.expand("../", __DIR__)
+         ],
+         # END reflaxe_elixir haxe_client
 
-    # BEGIN reflaxe_elixir haxe_client
-    # Haxe client JS build:
-    # - Compiles to assets/js/_hx_app_tmp.js (temp output Haxe may delete during rebuilds).
-    # - Promotes to assets/js/hx_app.js (stable import path for esbuild --watch).
-    haxe_client: [
-      "mix",
-      "haxe.watch",
-      "--hxml",
-      "build-client.hxml",
-      "--dirs",
-      "src_haxe",
-      "--debounce",
-      "150",
-      "--promote",
-      "assets/js/_hx_app_tmp.js:assets/js/hx_app.js,assets/js/_hx_app_tmp.js.map:assets/js/hx_app.js.map",
-      cd: Path.expand("../", __DIR__)
-    ],
-    # END reflaxe_elixir haxe_client
-
-    esbuild: {Esbuild, :install_and_run, [:phoenix_chat, ~w(--sourcemap=inline --watch)]},
-    tailwind: {Tailwind, :install_and_run, [:phoenix_chat, ~w(--watch)]}
+         # BEGIN phoenix_chat vite_live_react_watcher
+         vite: ["npm", "run", "assets:dev", cd: Path.expand("../", __DIR__)],
+         # END phoenix_chat vite_live_react_watcher
+         tailwind: {Tailwind, :install_and_run, [:phoenix_chat, ~w(--watch)]}
        ]
      end)
 
@@ -93,6 +94,13 @@ config :phoenix_chat, PhoenixChatWeb.Endpoint,
 
 # Enable dev routes for dashboard and mailbox
 config :phoenix_chat, dev_routes: true
+
+# BEGIN phoenix_chat vite_live_react_host
+config :live_react,
+  vite_host: if(disable_watchers, do: nil, else: "http://127.0.0.1:5173"),
+  ssr: false
+
+# END phoenix_chat vite_live_react_host
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"

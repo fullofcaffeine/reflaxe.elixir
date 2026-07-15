@@ -257,3 +257,213 @@
   font-size: 13px;
   color: rgba(11, 15, 20, 0.7);
 }
+
+.preference-panel {
+  box-shadow: 0 14px 32px rgba(11, 15, 20, 0.13);
+}
+
+.preference-studio {
+  display: grid;
+  gap: 14px;
+  color: var(--ink);
+}
+
+.preference-studio__header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.preference-studio__header h3 {
+  margin: 2px 0 0;
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.preference-studio__eyebrow,
+.preference-studio__rhythm,
+.preference-studio__readout {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+    monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.preference-studio__eyebrow {
+  margin: 0;
+  color: var(--muted);
+}
+
+.preference-studio__readout {
+  border: 1px solid var(--ink);
+  padding: 5px 7px;
+  background: var(--acid);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.preference-studio__options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.preference-studio__option {
+  min-width: 0;
+  min-height: 112px;
+  display: grid;
+  align-content: space-between;
+  gap: 7px;
+  padding: 10px 8px;
+  border: 1px solid var(--edge);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--ink);
+  text-align: left;
+  transition:
+    transform 140ms ease,
+    border-color 140ms ease,
+    background-color 140ms ease;
+}
+
+.preference-studio__option:hover {
+  transform: translateY(-2px);
+  border-color: rgba(11, 15, 20, 0.42);
+}
+
+.preference-studio__option:focus-visible,
+.preference-studio__apply:focus-visible,
+.preference-fallback button:focus-visible,
+.preference-fallback summary:focus-visible {
+  outline: 3px solid var(--acid-2);
+  outline-offset: 2px;
+}
+
+.preference-studio__option[aria-pressed="true"] {
+  border-color: var(--ink);
+  background: rgba(183, 255, 90, 0.35);
+  box-shadow: inset 0 -3px 0 var(--ink);
+}
+
+.preference-studio__option strong {
+  font-size: 13px;
+}
+
+.preference-studio__option > span:last-child {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.preference-studio__rhythm {
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.preference-studio__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px dashed var(--edge);
+  padding-top: 11px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.preference-studio__apply {
+  flex: 0 0 auto;
+  border: 1px solid var(--ink);
+  padding: 8px 10px;
+  background: var(--ink);
+  color: white;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.preference-studio__apply:disabled {
+  cursor: not-allowed;
+  border-color: var(--edge);
+  background: rgba(11, 15, 20, 0.08);
+  color: var(--muted);
+}
+
+.preference-studio--invalid {
+  border: 1px solid #9f1239;
+  padding: 12px;
+  background: #fff1f2;
+}
+
+.preference-studio--invalid span {
+  color: #881337;
+  font-size: 12px;
+}
+
+.preference-fallback {
+  margin-top: 14px;
+  border-top: 1px dashed var(--edge);
+  padding-top: 10px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.preference-fallback summary {
+  width: max-content;
+  cursor: pointer;
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+    monospace;
+}
+
+.preference-fallback p {
+  margin: 8px 0;
+  line-height: 1.4;
+}
+
+.preference-fallback__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.preference-fallback button {
+  border: 1px solid var(--edge);
+  padding: 5px 8px;
+  background: white;
+  color: var(--ink);
+}
+
+.preference-fallback button[aria-pressed="true"] {
+  border-color: var(--ink);
+  background: var(--acid);
+}
+
+.preference-status {
+  margin-top: 10px;
+  border-left: 3px solid var(--acid-2);
+  padding: 7px 9px;
+  background: rgba(45, 226, 230, 0.1);
+  color: var(--ink);
+  font-size: 11px;
+}
+
+@media (max-width: 430px) {
+  .preference-studio__options {
+    grid-template-columns: 1fr;
+  }
+
+  .preference-studio__option {
+    min-height: 84px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preference-studio__option {
+    transition: none;
+  }
+
+  .preference-studio__option:hover {
+    transform: none;
+  }
+}

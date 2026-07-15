@@ -1,0 +1,37 @@
+{
+  "schema": "phoenix-chat.live-react-binding@1",
+  "bindingId": "phoenix-chat-vite-live-react",
+  "assetMode": "vite-live-react",
+  "sourcePins": {
+    "phoenixHxBaseline": {
+      "repository": "https://github.com/fullofcaffeine/reflaxe.elixir",
+      "revision": "3bbedaa70af83b12dcc935a6e09d8e18ca38f656"
+    },
+    "liveReact": {
+      "repository": "https://github.com/mrdotb/live_react",
+      "revision": "055e80e6a4e6d009df5e229eb39e7f85f03fea22"
+    }
+  },
+  "runtimePolicy": {
+    "trustedFirstPartyOnly": true,
+    "ssr": false,
+    "slots": false,
+    "uploads": false,
+    "streams": false,
+    "maxPublicInputBytes": 512,
+    "maxEventPayloadBytes": 64
+  },
+  "components": [
+    {
+      "name": "PreferenceStudio",
+      "module": "./preference-studio-boundary",
+      "export": "PreferenceStudioBoundary",
+      "publicInputs": ["title", "density"],
+      "densityValues": ["calm", "focused", "dense"],
+      "event": {
+        "name": "preference_changed",
+        "payloadFields": ["density"]
+      }
+    }
+  ]
+}

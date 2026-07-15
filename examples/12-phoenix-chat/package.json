@@ -6,11 +6,39 @@
     "compile": "haxe build.hxml",
     "test": "mix test",
     "watch": "nodemon --watch src_haxe --ext hx --exec \"haxe build.hxml\"",
-    "setup:haxe": "npx lix download"
+    "setup:haxe": "npx lix download",
+    "assets:dev": "vite --host 127.0.0.1 --port 5173 --strictPort --logLevel warn",
+    "assets:build": "vite build",
+    "bind:live-react": "node scripts/apply-live-react-binding.mjs",
+    "bind:live-react:check": "node scripts/apply-live-react-binding.mjs --check",
+    "typecheck": "tsc --noEmit",
+    "test:frontend": "vitest run",
+    "test:binding": "node --test test/live-react-binding.test.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
     "lix": "^15.12.4",
-    "nodemon": "^3.0.0"
+    "nodemon": "^3.0.0",
+    "@testing-library/react": "16.3.0",
+    "@testing-library/user-event": "14.6.1",
+    "@types/node": "22.15.32",
+    "@types/react": "19.1.8",
+    "@types/react-dom": "19.1.6",
+    "@vitejs/plugin-react": "4.5.2",
+    "jsdom": "26.1.0",
+    "typescript": "5.8.3",
+    "vite": "7.2.7",
+    "vitest": "3.2.4"
+  },
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "live_react": "https://github.com/mrdotb/live_react/archive/055e80e6a4e6d009df5e229eb39e7f85f03fea22.tar.gz",
+    "phoenix": "1.7.24",
+    "phoenix_html": "4.3.0",
+    "phoenix_live_view": "0.20.17",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "topbar": "2.0.0"
   }
 }

@@ -8,8 +8,12 @@
       <%= assigns[:page_title] || "PhoenixChat" %>
     </.live_title>
     <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
-    <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}>
-    </script>
+    <%!-- BEGIN phoenix_chat vite_live_react_assets --%>
+    <LiveReact.Reload.vite_assets assets={["/js/app.js"]}>
+      <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}>
+      </script>
+    </LiveReact.Reload.vite_assets>
+    <%!-- END phoenix_chat vite_live_react_assets --%>
   </head>
   <body class="bg-white antialiased">
     <%= @inner_content %>

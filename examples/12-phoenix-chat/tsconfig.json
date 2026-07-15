@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["DOM", "DOM.Iterable", "ES2022", "ESNext.Disposable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "allowJs": false,
+    "skipLibCheck": false,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "live_react": ["assets/types/live-react-hooks.d.ts"]
+    },
+    "types": ["vite/client", "vitest/globals", "node"]
+  },
+  "include": [
+    "assets/js/**/*.ts",
+    "assets/react-components/**/*.ts",
+    "assets/react-components/**/*.tsx",
+    "assets/types/**/*.d.ts"
+  ]
+}

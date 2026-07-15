@@ -15,6 +15,8 @@ import elixir.Kernel;
 import elixir.Tuple;
 import elixir.types.Term;
 import phoenix.PubSub;
+import phoenix_chat_hx.frontend.PreferenceDensity;
+import phoenix_chat_hx.frontend.PreferenceStudioContract;
 import phoenix_chat_hx.presence.ChatPresence;
 import phoenix_chat_hx.presence.ChatPresence.PresenceMeta;
 import phoenix_chat_hx.live.AppLiveTypes.AppLiveAssigns;
@@ -52,6 +54,8 @@ class AppLive {
 			online_user_views: [],
 			online_user_count: 0,
 			status: null,
+			preference_density: PreferenceDensity.Focused,
+			preference_status: null,
 		};
 
 		var live:LiveSocket<AppLiveAssigns> = socket.assign(assigns);
@@ -81,6 +85,10 @@ class AppLive {
 			NoReply(live.assign(_.message_input, msg != null ? msg : ""));
 		} else if (event == "send_message") {
 			handleSendMessage(_params, live);
+		} else if (event == PreferenceStudioContract.EventName) {
+			handlePreferenceChanged(_params, live);
+		} else if (event == PreferenceStudioContract.NativeEventName) {
+			handleNativePreferenceChanged(_params, live);
 		} else {
 			NoReply(socket);
 		};
@@ -89,8 +97,8 @@ class AppLive {
 	public static function render(assigns:AppLiveAssigns):String {
 		return <div class="chat-shell min-h-[calc(100vh-4rem)] p-4 md:p-8">
             <div class="chat-frame mx-auto grid max-w-6xl grid-cols-1 gap-4 md:grid-cols-12">
-                <aside class="md:col-span-4">
-                    <div class="panel">
+				<aside class="grid content-start gap-4 md:col-span-4">
+					<div class="panel">
                         <div class="panel-h">
                             <div>
                                 <div class="kicker">Presence</div>
@@ -123,9 +131,40 @@ class AppLive {
                                 <div class="label">room</div>
                                 <div class="value">${assigns.room}</div>
                             </div>
-                        </div>
-                    </div>
-                </aside>
+						</div>
+					</div>
+
+					<div class="panel preference-panel">
+						<div class="panel-h">
+							<div>
+								<div class="kicker">React island / trusted</div>
+								<div class="title">Signal desk</div>
+							</div>
+							<div class="badge">Vite</div>
+						</div>
+						<div class="panel-b">
+							<PhoenixChatWeb.ReactComponents.preference_studio
+								id="preference-studio"
+								title="Conversation density"
+								density=${assigns.preference_density}
+							/>
+
+							<details class="preference-fallback" data-testid="preference-fallback">
+								<summary>Native LiveView controls</summary>
+								<p>The same event remains usable if the React island is removed.</p>
+								<div class="preference-fallback__actions">
+									<button type="button" phx-click=${PreferenceStudioContract.NativeEventName} phx-value-density="calm" aria-label="Use Calm native mode" aria-pressed=${assigns.preference_density == PreferenceDensity.Calm}>Calm</button>
+									<button type="button" phx-click=${PreferenceStudioContract.NativeEventName} phx-value-density="focused" aria-label="Use Focused native mode" aria-pressed=${assigns.preference_density == PreferenceDensity.Focused}>Focused</button>
+									<button type="button" phx-click=${PreferenceStudioContract.NativeEventName} phx-value-density="dense" aria-label="Use Dense native mode" aria-pressed=${assigns.preference_density == PreferenceDensity.Dense}>Dense</button>
+								</div>
+							</details>
+
+							<if ${assigns.preference_status != null}>
+								<div class="preference-status" role="status" data-testid="preference-status">${assigns.preference_status}</div>
+							</if>
+						</div>
+					</div>
+				</aside>
 
                 <main class="md:col-span-8">
                     <div class="panel">
@@ -266,6 +305,25 @@ class AppLive {
 		PubSub.broadcastFrom(pubsubModule(), Kernel.self(), chatTopic(socket.assigns.room), payload);
 
 		return NoReply(updated);
+	}
+
+	static function handlePreferenceChanged(params:Term, socket:LiveSocket<AppLiveAssigns>):HandleEventResult<AppLiveAssigns> {
+		return applyPreferenceDensity(PreferenceStudioContract.decodePayload(params), socket);
+	}
+
+	static function handleNativePreferenceChanged(params:Term, socket:LiveSocket<AppLiveAssigns>):HandleEventResult<AppLiveAssigns> {
+		return applyPreferenceDensity(PreferenceStudioContract.decodeNativeButtonPayload(params), socket);
+	}
+
+	static function applyPreferenceDensity(decoded:Null<PreferenceDensity>, socket:LiveSocket<AppLiveAssigns>):HandleEventResult<AppLiveAssigns> {
+		if (decoded == null) {
+			return NoReply(socket.assign(_.preference_status, "Preference payload rejected."));
+		}
+		var density:PreferenceDensity = decoded;
+		return NoReply(socket.merge({
+			preference_density: density,
+			preference_status: 'Density synchronized: ${density.label()}.'
+		}));
 	}
 
 	static function recomputeOnlineViews(socket:LiveSocket<AppLiveAssigns>):LiveSocket<AppLiveAssigns> {
