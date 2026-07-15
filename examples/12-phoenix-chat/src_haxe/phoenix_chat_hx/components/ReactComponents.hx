@@ -1,6 +1,5 @@
 package phoenix_chat_hx.components;
 
-import HXX;
 import phoenix.types.Assigns;
 
 typedef PreferenceStudioAssigns = {
@@ -18,12 +17,17 @@ typedef PreferenceStudioAssigns = {
 **/
 @:native("PhoenixChatWeb.ReactComponents")
 @:component
-@:hxx_mode("balanced")
 class ReactComponents {
 	@:component
 	public static function preferenceStudio(assigns:Assigns<PreferenceStudioAssigns>):String {
-		// Direct inline markup currently starts from ordinary tag identifiers;
-		// Phoenix remote components use the explicit, equivalent HXX fallback.
-		return HXX.hxx('<LiveReact.react id=${assigns.id} name="PreferenceStudio" title=${assigns.title} density=${assigns.density} ssr={false} />');
+		return <div class="react-island-host">
+			<LiveReact.react
+				id=${assigns.id}
+				name="PreferenceStudio"
+				title=${assigns.title}
+				density=${assigns.density}
+				ssr=${false}
+			/>
+		</div>;
 	}
 }

@@ -38,7 +38,7 @@
 		"e_reg.exs"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 9,
+	"id": 11,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
@@ -156,7 +156,7 @@
 		},
 		{
 			"path": "phoenix_chat_web/react_components.exs",
-			"sha256": "1a0878bed14d4b227dcf87f933af586257ce0b562130acb65a57089b1feb6650"
+			"sha256": "9cac071d7f1e580e4d92ff9e2e686755fccfb8b264ad1bb7cf48a7fb5ad7cd12"
 		},
 		{
 			"path": "phoenix_hx/params.exs",
@@ -187,5 +187,5 @@
 			"sha256": "ae214ad9492951212417ffe539ed662d8ddd2d00bb73d50815803512a586de32"
 		}
 	],
-	"generation": "42e2fdb44027e89ee25a8d6dec02b3bac74c80c048cba0a42866996bb432409b"
+	"generation": "81beef76bc56b6cf0306efb9d6a98efa7feece2d54862079901aadb924be8427"
 }

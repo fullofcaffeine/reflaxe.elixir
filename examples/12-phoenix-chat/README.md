@@ -139,10 +139,10 @@ then lowers to the same preference behavior. It does not widen the React event c
 
 ### HXX and native ownership
 
-The Haxe component wrapper emits a fully qualified `LiveReact.react` Phoenix component. Because a
-remote component is the wrapper's root, it uses the documented explicit `HXX.hxx(...)` fallback in
-one bounded location; the surrounding LiveView continues to use direct inline HXX. The output is
-ordinary HEEx and there is no HXX runtime.
+The Haxe component wrapper uses direct inline HXX with a normal source root around the fully
+qualified `LiveReact.react` Phoenix component. That source root satisfies Haxe's XML lexer while
+the HXX lowerer emits the module-qualified component as ordinary HEEx. The remote component remains
+explicit, no legacy HXX mode is enabled, and there is no HXX runtime.
 
 The handwritten TypeScript implementation is intentional for this first proof: it isolates the
 Phoenix/React boundary from code-generation risk. A Genes-generated implementation of the same
