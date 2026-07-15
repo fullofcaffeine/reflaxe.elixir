@@ -130,12 +130,19 @@ Options:
 - `--test-pointer` - Generate a minimal Haxe ExUnit test scaffold pointer
 
 Notes:
-- This generator is intended to keep app code away from untyped `__elixir__()` strings.
-- The generated extern uses `elixir.types.Term` at the boundary by default (safe, generic).
+- This is a single-module starter, not a typespec-driven dependency generator.
+- It is intended to keep app code away from untyped `__elixir__()` strings.
+- The generated extern uses `elixir.types.Term` at every boundary by default. That is a safe generic
+  scaffold, not proof that the native API has been precisely typed.
 - Functions with multiple arities are generated using Haxe overloads.
 - Erlang modules such as `:crypto` are supported through `module_info(:exports)`.
 - Use `--boundary` for strict-mode app-local module markers that are referenced by typed APIs but do not expose callable functions to Haxe.
+- The current task loads the selected module and writes files directly. Use a clean output path and
+  review `git diff` before keeping a rerun; dependency-level read-only discovery, typespec mapping,
+  ownership-safe updates, and dependency-version diagnostics are planned under Beads epic
+  `haxe.elixir.codex-5np`.
 - Canonical usage workflow (extern + wrapper + tests): `docs/06-guides/ADDING_ELIXIR_LIBS_FROM_HAXE.md`.
+- Dependency-adoption roadmap: `docs/08-roadmap/stdlib-and-package-ecosystem.md`.
 
 ### `mix haxe.gen.project`
 

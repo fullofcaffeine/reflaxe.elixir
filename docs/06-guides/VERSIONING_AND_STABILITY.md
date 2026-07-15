@@ -10,7 +10,7 @@ adds one. On the current `0.x` line, documented breaking changes advance the min
 
 > Current release line: **pre-1.0 (`v0.x`)**<br>
 > Breaking stable-surface changes produce a **minor** release on this line.<br>
-> Stable graduation: **not approved**.<br>
+> Releasing 1.0: **not approved**.<br>
 > Exact released version: the latest protected `vMAJOR.MINOR.PATCH` tag with a GitHub Release.
 
 Experimental features remain opt-in and may evolve in minor releases. Breaking changes on the
@@ -18,7 +18,8 @@ current line must still be documented clearly.
 
 Reachable protected `vMAJOR.MINOR.PATCH` Git tags are the source of truth for released versions.
 [`release/manifest.json`](../../release/manifest.json) is intentionally version-independent: it
-contains only release-line policy and durable approval records. Semantic-release delegates
+contains release-line policy, named release requirements, and durable approval records.
+Semantic-release delegates
 Conventional Commit parsing to its official analyzer, then applies that small policy layer.
 Tracked package and HXML versions are development sentinels. They do not decide or mirror the
 current release; exact release metadata is injected only into temporary package staging.
@@ -45,10 +46,20 @@ The current policy shape is deliberately small:
 
 ```json
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "releaseLines": {
     "0": { "stage": "initial-development", "breakingBump": "minor" },
-    "1": { "stage": "stable", "approval": null }
+    "1": {
+      "stage": "stable",
+      "requirements": [
+        {
+          "id": "complete-haxe-stdlib",
+          "status": "pending",
+          "record": "haxe.elixir.codex-0yn.10"
+        }
+      ],
+      "approval": null
+    }
   }
 }
 ```
@@ -121,16 +132,26 @@ If a bug fix changes behavior in a way that could break a real app, it must be c
 in `CHANGELOG.md`. While pre-1.0, this can still ship as a MINOR; once `1.0.0` is reached, stable-surface
 breaks move to MAJOR.
 
-## Stable graduation gate
+## Requirements before a stable major release
 
-The project cannot enter the stable release line merely by changing a version string. Before
-semantic-release may verify a release in stable major `N`, `releaseLines.N.approval` must contain:
+The project cannot enter the stable release line merely by changing a version string. Each stable
+major has a non-empty `requirements` list. Every requirement has a stable ID, a `pending` or
+`complete` status, and the tracked Beads task or architecture decision record (ADR) that owns its
+evidence. The validator rejects an approval while any requirement is pending.
 
-- a durable reviewed record, such as the Bead or ADR that owns the decision;
+For major 1, complete support for the applicable public Haxe standard library is explicitly required.
+Framework and toolchain promises may remain version-bounded, but an applicable Haxe stdlib runtime
+API cannot be excluded just to make 1.0 possible. See
+[Standard Libraries And Packages](../08-roadmap/stdlib-and-package-ecosystem.md).
+
+After all requirements are complete, `releaseLines.N.approval` must contain:
+
+- a durable reviewed record, such as the Beads task or architecture decision record that owns the
+  decision;
 - a real, non-future approval date.
 
 Approval alone does not manufacture a release. The approval change is non-releasing; a subsequent
-new breaking Conventional Commit is still required to derive `1.0.0`. After graduation, each later
+new breaking Conventional Commit is still required to derive `1.0.0`. After 1.0, each later
 stable major has an independent approval entry, so approving major 1 does not authorize major 2.
 Unknown majors, malformed or unsafe SemVer components, prereleases, and build-metadata channels fail
 closed. Prerelease/build syntax is valid SemVer, but those channels remain unsupported until their
@@ -142,7 +163,7 @@ approximation:
 - `fix:` derives a patch;
 - `feat:` derives a minor;
 - a breaking commit on unapproved `0.x` derives the next minor;
-- an approved stable graduation plus a new breaking commit may derive `1.0.0`;
+- completed stable-release approval plus a new breaking commit may derive `1.0.0`;
 - a breaking commit targeting an unapproved stable major is rejected during release verification.
 
 ## Deprecation policy

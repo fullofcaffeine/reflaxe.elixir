@@ -4,9 +4,17 @@ This page describes **how Haxe stdlib support works on the Elixir target**, and 
 
 - **Overridden / implemented by this repo** (because upstream breaks or is non-idiomatic)
 - **Provided by the upstream Haxe stdlib** (and generally expected to work)
-- **Not implemented yet** (mostly `sys.*` gaps or “native host” APIs that need BEAM mappings)
+- **Not implemented or only partially implemented yet** (these are now 1.0 blockers when the API
+  applies to generated Elixir programs)
 
 This matrix is intentionally practical. For toolchain versions, see `docs/06-guides/SUPPORT_MATRIX.md`.
+
+> [!IMPORTANT]
+> Major 1 requires complete support for every applicable public Haxe stdlib API. This page describes
+> the current state; it is not yet the final 1.0 contract. A verified official Haxe fallback counts as
+> support. A local override file does not count unless its public behavior is tested. See
+> [Standard Libraries And Packages](../08-roadmap/stdlib-and-package-ecosystem.md) and Beads epic
+> `haxe.elixir.codex-0yn.10`.
 
 ## How to read this
 
@@ -49,8 +57,9 @@ The coverage manifest is `test/upstream_unitstd/manifest.json`.
   `npm run test:haxe-exunit-stdlib`.
 - `skipped-target-specific`: an upstream spec exists, but the BEAM semantics or
   adapter support still need explicit triage before enabling it.
-- `skipped-unsupported`: the upstream spec targets behavior this Elixir target
-  intentionally does not support.
+- `skipped-unsupported`: legacy/current state for behavior this target rejects. Any applicable public
+  runtime API in this state blocks 1.0 and must be implemented and enabled or covered by equivalent
+  ordinary-Haxe runtime evidence.
 - `no-upstream-spec`: no matching upstream `unitstd` fixture exists, so runtime
   behavior must be covered by local Haxe-authored ExUnit or snapshot/runtime
   tests.
@@ -64,10 +73,11 @@ appropriate. Refresh checked-in enabled, unmodified fixtures from a local Haxe c
 scripts/sync-upstream-unitstd-specs.sh
 ```
 
-## Explicitly supported by Reflaxe.Elixir (core set)
+## Current classified core set
 
-These modules have an explicit support decision and test coverage. Most use a local target override;
-entries marked as official fallback intentionally use the installed Haxe stdlib unchanged.
+These modules have an explicit current decision. Many are supported and tested; entries that say
+unsupported or subset remain blockers. Most use a local target override; entries marked as official
+fallback intentionally use the installed Haxe stdlib unchanged.
 
 Top-level:
 - `Array`
@@ -153,25 +163,27 @@ state across processes.
 - `haxe.CallStack` (BEAM stack capture/formatting)
 - `haxe.Constraints` (official stdlib fallback for compile-time `Function` and `IMap` constraints; `IMap` values cross the runtime boundary through `Reflaxe.Elixir.IMap`)
 - `haxe.DynamicAccess` (Reflect-backed dynamic maps)
-- `haxe.EntryPoint` (intentionally unsupported Haxe process main-loop bridge; use the documented
+- `haxe.EntryPoint` (currently unsupported Haxe process main-loop bridge and therefore a 1.0 blocker;
+  meanwhile use the documented
   `elixir.otp.Application` + `TypeSafeChildSpec` application-wiring shape, `phoenix.*` modules and
   annotations for Phoenix callbacks, or `sys.thread.EventLoop`/`haxe.Timer` for callback scheduling;
   broader supervisor behavior is outside the [OTP Support Contract](OTP_SUPPORT_CONTRACT.md))
 - `haxe.EnumFlags` (official abstract fallback; dynamic flag operations use typed `Type.enumIndex` lowering backed by generated enum metadata)
 - `haxe.EnumTools` (official extern inline fallback; typed constructor/name/index/equality helpers lower through generated enum metadata)
-- `haxe.Http`
+- `haxe.Http` (current OTP-backed partial implementation; remaining APIs below block 1.0)
 - `haxe.Int64` (signed 64-bit wrapping semantics on BEAM integers)
 - `haxe.Int64Helper`
 - `haxe.Log`
-- `haxe.MainLoop` (intentionally unsupported Haxe process main-loop/event queue bridge; use the
+- `haxe.MainLoop` (currently unsupported Haxe process main-loop/event queue bridge and therefore a
+  1.0 blocker; meanwhile use the
   documented `elixir.otp.Application` + `TypeSafeChildSpec` application-wiring shape, `phoenix.*`
   modules and annotations for Phoenix callbacks, or `sys.thread.EventLoop`/`haxe.Timer` for callback
   scheduling; broader supervisor behavior is outside the
   [OTP Support Contract](OTP_SUPPORT_CONTRACT.md))
-- `haxe.Serializer` (portable data subset)
-- `haxe.Template` (portable rendering subset)
+- `haxe.Serializer` (portable data subset; missing behavior below blocks 1.0)
+- `haxe.Template` (portable rendering subset; missing behavior below blocks 1.0)
 - `haxe.Timer` (BEAM event-loop backed delay/repeat, callback rebinding, stamp/measure)
-- `haxe.Unserializer` (portable data subset)
+- `haxe.Unserializer` (portable data subset; missing behavior below blocks 1.0)
 - `haxe.ValueException` (official stdlib fallback; explicit value wrapper semantics covered by local runtime tests)
 - `haxe.crypto.Adler32`
 - `haxe.crypto.BaseCode`
@@ -189,7 +201,7 @@ state across processes.
 - `haxe.ds.GenericStack` (target override with receiver rebinding for `add`, `pop`, and `remove`; covered by upstream `unitstd` plus local iterator/toString runtime tests)
 - `haxe.ds.HashMap` (target override keyed by `hashCode()` with receiver rebinding for `set`, `remove`, and `clear`; covered by local runtime tests)
 - `haxe.ds.List` (target override with receiver rebinding for `add`, `push`, `pop`, `remove`, and `clear`; array-backed iterators use the canonical iterator runtimes; covered by adapted upstream `unitstd` plus local runtime tests)
-- `haxe.ds.ListSort` (explicit fail-fast unsupported surface)
+- `haxe.ds.ListSort` (current fail-fast unsupported surface and 1.0 blocker)
 - `haxe.ds.Option` (local `@:elixirIdiomatic` target surface with `OptionTools`; covered by local runtime tests)
 - `haxe.ds.Vector` (target override with process-local backing cells for fixed-length indexed storage; covered by adapted upstream `unitstd`, local Reflect ordering runtime coverage, and `test/snapshot/stdlib/haxe_ds_vector`)
 - `haxe.exceptions.ArgumentException` (official stdlib fallback; covered by local runtime tests)
@@ -232,7 +244,7 @@ state across processes.
 `sys.*` (BEAM mappings):
 - `sys.FileStat`
 - `sys.FileSystem`
-- `sys.Http`
+- `sys.Http` (current partial implementation; remaining APIs below block 1.0)
 - `sys.io.File`
 - `sys.io.FileInput`
 - `sys.io.FileOutput`
@@ -240,14 +252,14 @@ state across processes.
 - `sys.io.FileSeek`
 - `sys.net.Address`
 - `sys.net.Host`
-- `sys.net.Socket`
-- `sys.net.UdpSocket`
-- `sys.ssl.Certificate`
-- `sys.ssl.Digest`
+- `sys.net.Socket` (caller-buffer receive behavior below blocks 1.0)
+- `sys.net.UdpSocket` (caller-buffer receive behavior below blocks 1.0)
+- `sys.ssl.Certificate` (current partial implementation; remaining APIs below block 1.0)
+- `sys.ssl.Digest` (current partial implementation; remaining APIs below block 1.0)
 - `sys.ssl.DigestAlgorithm`
 - `sys.ssl.Key`
-- `sys.ssl.Socket`
-- `sys.thread.Condition`
+- `sys.ssl.Socket` (current partial implementation; remaining APIs below block 1.0)
+- `sys.thread.Condition` (current fail-fast partial implementation and 1.0 blocker)
 - `sys.thread.Deque`
 - `sys.thread.ElasticThreadPool`
 - `sys.thread.EventLoop`
@@ -264,11 +276,17 @@ state across processes.
 Notes:
 - Iterator modules (`haxe.iterators.ArrayIterator`, `haxe.iterators.MapKeyValueIterator`, and the string iterator pair) now have canonical Elixir-target runtime implementations under `std/elixir/_std/haxe/iterators/*.hx` and are no longer transformer-only runtime stubs.
 - The AST pipeline still optimizes most loop patterns to idiomatic `Enum.*`; runtime iterators are primarily for manual iterator usage and stdlib/runtime compatibility.
-- `UnicodeString.validate` supports `UTF8`; UTF-16/UTF-32 validation fails fast because `haxe.io.Bytes` stores UTF-8 binaries on this target.
+- `UnicodeString.validate` supports `UTF8`; UTF-16/UTF-32 validation currently fails fast because
+  `haxe.io.Bytes` stores UTF-8 binaries on this target. The missing encodings block 1.0.
 - Built-in map surfaces (`haxe.ds.Map`, `StringMap`, `IntMap`) are represented as native Elixir `%{}` maps and lowered to idiomatic `Map.*` operations.
 - `haxe.ds.List` is represented as an ordered immutable snapshot with receiver rebinding for mutators; generated Elixir uses `Haxe.Ds.List` so it does not collide with Elixir's built-in `List` module.
-- `haxe.ds.ObjectMap` is intentionally unsupported for Elixir output code for now. Haxe ObjectMap requires object-identity keys, but BEAM map keys are structural terms. The compiler rejects construction and direct method calls instead of silently lowering them to structural `%{}` behavior. See `docs/05-architecture/ITERATOR_RUNTIME_MODEL.md`.
-- `haxe.ds.ListSort` is intentionally unsupported for Elixir output code for now. Its API mutates arbitrary linked-node `next`/`prev` fields in place; ordinary BEAM structs/maps are immutable values, so the compiler rejects calls instead of emitting misleading linked-list updates.
+- `haxe.ds.ObjectMap` is currently unsupported and blocks 1.0. Haxe ObjectMap requires object-identity
+  keys, but BEAM map keys are structural terms. The compiler currently rejects construction and
+  direct method calls instead of silently lowering them to incorrect `%{}` behavior. See
+  `docs/05-architecture/ITERATOR_RUNTIME_MODEL.md`.
+- `haxe.ds.ListSort` is currently unsupported and blocks 1.0. Its API mutates arbitrary linked-node
+  `next`/`prev` fields in place; ordinary BEAM structs/maps are immutable values, so the current
+  compiler rejects calls instead of emitting misleading linked-list updates.
 - Some exist to avoid invalid Elixir from upstream inline patterns (notably parts of `haxe.io`).
 
 ### `haxe.Serializer` / `haxe.Unserializer` BEAM contract
@@ -283,7 +301,7 @@ Supported today:
 - `Serializer.run(value)` / `Unserializer.run(value)`
 - instance buffering through `new Serializer(); serialize(...); toString()`
 
-Not yet supported:
+Not yet supported (all are 1.0 blockers):
 - class instances, enum values, `Date`, `haxe.io.Bytes`, `haxe.ds.ObjectMap`, object/reference caches, and custom `hxSerialize` / `hxUnserialize`
 - class/enum resolver behavior in `Unserializer`
 
@@ -303,7 +321,7 @@ Supported today:
 - special Float values through `Std.string`-compatible rendering (`NaN`,
   `Infinity`, `-Infinity`) and Haxe-compatible numeric literal parsing
 
-Not yet supported:
+Not yet supported (all are 1.0 blockers):
 - the full upstream expression parser, including arithmetic/comparison operators inside template expressions
 - object-identity-sensitive iteration semantics; maps iterate over values in BEAM map order
 
@@ -340,7 +358,7 @@ Supported today:
 - `onStatus`, `onData`, `onBytes`, and `onError` remain assignable Haxe callback fields. The target runtime stores callbacks as struct fields and invokes them through explicit BEAM helper calls.
 - `responseData`, `responseBytes`, `responseHeaders`, and `getResponseHeaderValues` are populated from the OTP response. Duplicate response headers keep the last value in `responseHeaders` and preserve all values through `getResponseHeaderValues`.
 
-Unsupported pieces fail explicitly:
+Current unsupported pieces fail explicitly instead of corrupting data. Each remains a 1.0 blocker:
 - `customRequest` with a caller-supplied `sys.net.Socket` is not supported; use `sys.net.Socket` directly for manual protocol work.
 - `sys.Http.PROXY` is not supported on this target yet; configure an OTP `:httpc` profile or use a typed application HTTP boundary.
 - `fileTransfer` / `fileTransfert` multipart uploads are not supported yet; use an Elixir HTTP client boundary for multipart payloads.
@@ -356,7 +374,13 @@ Coverage:
 
 Blocking behavior is implemented with BEAM receive/socket timeouts. `setTimeout(seconds)` sets the timeout in milliseconds; `setBlocking(false)` uses zero-timeout receive behavior for read-style operations. Full POSIX `select(2)` semantics are not promised; `Socket.select()` is a lightweight readiness helper for generated Haxe compatibility.
 
-Unsupported buffer-mutating receive APIs fail explicitly instead of silently losing data: `Socket.input.readBytes(buf, pos, len)` and `UdpSocket.readFrom(buf, pos, len, addr)` currently raise `haxe.io.Error.Custom`. Generated Elixir `haxe.io.Bytes` values are immutable maps, so these APIs need a stateful Bytes backing or compiler-level out-parameter support before they can preserve Haxe’s caller-buffer mutation semantics. Supported paths today are TCP `Socket.read()`/`write()`, `Input.readByte()`, TCP bind/listen/accept/connect endpoint flows, and UDP bind/options/`sendTo()`.
+Unsupported buffer-mutating receive APIs fail explicitly instead of silently losing data:
+`Socket.input.readBytes(buf, pos, len)` and `UdpSocket.readFrom(buf, pos, len, addr)` currently raise
+`haxe.io.Error.Custom`. These missing operations block 1.0. Generated Elixir `haxe.io.Bytes` values
+are immutable maps, so the APIs need a stateful Bytes backing or compiler-level out-parameter support
+before they can preserve Haxe's caller-buffer mutation semantics. Supported paths today are TCP
+`Socket.read()`/`write()`, `Input.readByte()`, TCP bind/listen/accept/connect endpoint flows, and UDP
+bind/options/`sendTo()`.
 
 ### `sys.ssl.*` BEAM contract
 
@@ -368,7 +392,8 @@ Supported today:
 - `Key.loadFile`, `readPEM`, and `readDER` create opaque key containers for `:ssl` certificate configuration.
 - `Digest.make` maps Haxe digest names to `:crypto.hash/2`.
 
-Unsupported pieces fail explicitly with `haxe.io.Error.Custom` instead of pretending full native SSL parity:
+Current unsupported pieces fail explicitly with `haxe.io.Error.Custom` instead of pretending full
+native SSL parity. Each remains a 1.0 blocker:
 - `Certificate.subject`, `issuer`, `commonName`, `altNames`, `notBefore`, and `notAfter` are not implemented yet because Erlang decoded X.509 record shapes are version-sensitive.
 - `Digest.sign` and `Digest.verify` are not implemented yet because the generic Haxe `Key` API does not expose signing algorithm/padding semantics precisely enough.
 - `Socket.addSNICertificate` is not implemented yet; use `setCertificate` for a single cert/key pair.
@@ -391,7 +416,7 @@ Thread pools are BEAM-shaped:
 - `FixedThreadPool` starts a fixed number of worker processes and feeds them through `Deque`.
 - `ElasticThreadPool` spawns per task while bounding concurrency with `Semaphore`; `threadsCount` reports `0` because workers are not retained as an OS-thread pool.
 
-Unsupported pieces fail explicitly:
+Current unsupported pieces fail explicitly. Each remains a 1.0 blocker:
 - `haxe.EntryPoint` and `haxe.MainLoop` are not BEAM application lifecycle primitives. Direct
   output-code calls or static field reads fail at compile time. Use the documented
   `elixir.otp.Application` + `TypeSafeChildSpec` application-wiring shape, `phoenix.*` modules and
@@ -409,14 +434,21 @@ These are “extra” modules provided by the library (not present in upstream H
 - `haxe.test.Assert` / `haxe.test.ExUnit` (Haxe-authored ExUnit support)
 - `haxe.validation.*` (example-facing typed validation helpers)
 
-## Intentionally Unsupported: `sys.db.*`
+## Current 1.0 Blocker: `sys.db.*`
 
-`sys.db.Connection`, `sys.db.ResultSet`, `sys.db.Mysql`, and `sys.db.Sqlite` are deliberately rejected at Haxe compile time on the Elixir target.
+`sys.db.Connection`, `sys.db.ResultSet`, `sys.db.Mysql`, and `sys.db.Sqlite` are currently rejected at
+Haxe compile time on the Elixir target. That fail-fast behavior is safer than a broken runtime stub,
+but it no longer satisfies the planned 1.0 Haxe stdlib contract.
 
 Why:
 - Haxe `sys.db.*` models direct host-driver database access.
-- BEAM/Phoenix applications should use Ecto schemas, queries, changesets, migrations, and Repo boundaries.
+- BEAM/Phoenix applications should normally use Ecto schemas, queries, changesets, migrations, and
+  Repo boundaries.
 - Emitting runtime stubs would fail late and would encourage non-idiomatic database code.
+
+Ecto remains the recommended Elixir-first API. The complete-stdlib work must still provide the
+portable `sys.db.*` behavior through a real BEAM-compatible implementation before major 1; product
+guidance is not a compatibility implementation.
 
 Use these supported paths instead:
 - `@:schema` and `@:changeset` for Ecto schema modules and changesets.
@@ -459,7 +491,9 @@ expressions and obtains omitted Haxe defaults from Reflaxe's typed `ClassFuncDat
 
 Core top-level modules like `Any`, `Class`, `Enum`, `EnumValue`, and `StdTypes` are compiler/type-system surfaces rather than normal override targets.
 
-Remaining `sys.*` gaps should be evaluated case-by-case against BEAM/OTP semantics. `sys.db.*` is not a planned direct mapping; use Ecto instead.
+Remaining `sys.*` gaps must be evaluated and implemented against BEAM/OTP semantics. `sys.db.*` needs
+a real compatibility design for portable Haxe while Ecto remains the preferred Elixir-first surface.
 
 Track the ongoing parity roadmap in bd:
-- `haxe.elixir-hm47` (stdlib parity roadmap)
+- `haxe.elixir.codex-0yn.10` (complete Haxe stdlib before 1.0)
+- `haxe.elixir-hm47` (earlier stdlib parity roadmap and implementation history)

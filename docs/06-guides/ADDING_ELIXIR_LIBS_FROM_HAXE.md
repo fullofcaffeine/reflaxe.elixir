@@ -1,16 +1,40 @@
 # Adding Elixir APIs From Haxe (Externs + Wrappers + Tests)
 
-This is the canonical workflow for adding Elixir/Phoenix/Ecto/OTP APIs to Haxe code.
+This is the canonical workflow for calling an existing Elixir module from Haxe. The module can come
+from your own app, Elixir itself, Phoenix/Ecto/OTP, or a Hex dependency.
 
-It keeps code:
+If “extern” is new to you, the idea is simple: an extern is a Haxe declaration for code that already
+exists. It does not copy or reimplement the Elixir module. It teaches Haxe which calls are allowed,
+and the generated `.ex` calls the original module directly.
 
-- typed (no `Dynamic` as a “make it compile” escape hatch)
+The workflow keeps application code:
+
+- away from raw target-code strings and `Dynamic` escape hatches
+- progressively typed, using `Term` only at genuinely open or not-yet-refined boundaries
 - idiomatic in the generated Elixir
 - resilient to framework changes
 
 This same workflow also applies when the Elixir module is your own hand-written app code (not only Hex dependencies).
 
 If you are specifically integrating intentionally pure-Elixir modules in your app, read this together with `docs/02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md`.
+
+## What Works Today
+
+`mix haxe.gen.extern Module.Name` is a **single-module scaffold generator**. It can:
+
+- find an already available Elixir or Erlang module;
+- list its exported function names and arities;
+- create Haxe-safe names for Elixir `?` and `!` functions; and
+- optionally create a wrapper, decoder template, and test pointer.
+
+It does not currently read typespecs or understand a whole resolved Mix dependency. Generated arguments and
+results start as `elixir.types.Term`; you must replace those generic types with the real contract
+before presenting the layer as precise. The task also does not yet provide package-level ownership or
+upgrade handling, so use a clean output path and review `git diff` before keeping a rerun.
+
+The planned dependency-level discovery and generation flow is described in
+[Standard Libraries And Packages](../08-roadmap/stdlib-and-package-ecosystem.md). Do not copy the
+planned `mix haxe.adopt` command from that roadmap yet; it is not implemented today.
 
 ## The Pattern: Thin Extern + Optional Wrapper
 
@@ -231,9 +255,15 @@ If you want to avoid hand-writing boilerplate, use the generator:
 - `mix haxe.gen.extern` (see `docs/04-api-reference/MIX_TASK_GENERATORS.md`)
 - `mix haxe.gen.extern MyApp.PubSub --boundary` for app-local module-reference markers
 
+For a dependency with several modules, repeat this only for the small set of modules your app needs,
+then refine each signature from the dependency's official typespecs and documentation. Automated,
+typespec-driven dependency adoption is tracked by Beads epic `haxe.elixir.codex-5np`; the current
+generator must not be mistaken for that future dependency-level guarantee.
+
 Related docs:
 
 - `docs/02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md`
 - `docs/02-user-guide/ESCAPE_HATCHES.md`
 - `docs/04-api-reference/MIX_TASK_GENERATORS.md`
 - `docs/06-guides/STRICT_MODE.md`
+- `docs/08-roadmap/stdlib-and-package-ecosystem.md`

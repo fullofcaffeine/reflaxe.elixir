@@ -8,6 +8,8 @@ It does not claim that every Haxe program is supported, and it is not approval t
 > but not ready to promise 1.0 stability.** The documented configurations have strong automated test
 > coverage. Before 1.0, the project still needs to:
 >
+> - support and test every public Haxe standard-library API that applies to generated Elixir
+>   programs;
 > - publish an exact list of APIs and version combinations that 1.0 promises to support;
 > - get a qualified licensing review for generated files and bundled runtime/support code; and
 > - test one unchanged proposed release build (a release candidate) in independent real-world
@@ -16,7 +18,8 @@ It does not claim that every Haxe program is supported, and it is not approval t
 > The compiler bugs found during the review, including the callback-binder bug discovered during OTP
 > testing, are fixed. Mix now notices when known Haxe build inputs change, and the compiler refuses
 > to overwrite or delete files that it cannot prove it generated. However,
-> [`release/manifest.json`](../../release/manifest.json) does not yet authorize a `1.x` release.
+> [`release/manifest.json`](../../release/manifest.json) names complete Haxe stdlib support and the
+> other remaining decisions as pending requirements. It does not authorize a `1.x` release.
 
 Detailed findings and reasons are in the
 [1.0 Production Readiness Review](../08-roadmap/1.0-production-readiness-review.md). Execution is
@@ -53,7 +56,7 @@ versions, operating systems, third-party libraries, or deployment conditions.
 | Mix build invalidation | **Ready** | Deterministic fingerprint regressions cover same-timestamp edits, timestamp-only touches, recursive HXML, `src_shared`, resources, libraries/package descriptors, toolchain identity, explicit macro inputs, removed roots, and no-op behavior | Macro filesystem reads outside the discoverable graph must be declared with `:extra_inputs`; project watchers do not monitor external package/toolchain caches, but the next `mix compile` detects them. |
 | Generated-file ownership | **Ready** | Versioned path/digest manifests, staged formatting, unowned-collision and modified-owned rejection, stale/namespace cleanup, interrupted-transaction recovery, Mix clean, legacy upgrade, source rollback, in-place/isolated examples, and source/package manifest parity | Keep `_GeneratedFiles.json` and reserved transaction paths under compiler control; hand-editing ownership metadata is unsupported. |
 | Generated Elixir quality | **Conditional** | Warnings-as-errors examples, canonical `mix format` integration, handwritten-output corpus, support-footprint checks | Some semantics require visible helpers or conservative reducers. Style work can continue after 1.0; unexplained semantic repairs cannot. |
-| Haxe stdlib behavior | **Conditional** | Classified manifest, Haxe-authored ExUnit, selected upstream `unitstd`, snapshots | Only the classified subset is claimed. The stable set must be frozen, and the runtime suite should become warning-clean (`haxe.elixir.codex-0yn.7`). |
+| Haxe stdlib behavior | **Blocked** | Current matrix, Haxe-authored ExUnit, selected upstream `unitstd`, snapshots | Major 1 now requires every applicable public API, not a selected subset. Current docs still name unsupported and partial behavior, the inventory is module-level rather than API-level, and the runtime suite is not yet warning-clean. Tracked by `haxe.elixir.codex-0yn.10` and `.7`. |
 | Phoenix and LiveView | **Conditional** | Compile/runtime examples, strict Elixir compilation, todo-app Mix tests, browser sentinels, dogfood upgrades | This is the strongest framework surface, but only pinned versions and documented paths are covered. |
 | Ecto | **Conditional** | Schema, changeset, repository, query, compile, and runtime fixtures | Selected APIs are covered. Migration `.exs` generation remains experimental. |
 | OTP | **Conditional** | Haxe-authored Process/Task/Agent lifecycle runtime test, warning-free generated Elixir, minimum and primary toolchain lanes, typed child-spec snapshots, and Phoenix application boot | Only the local operations and application-wiring shapes in the [OTP Support Contract](../04-api-reference/OTP_SUPPORT_CONTRACT.md) are covered. GenServer, Registry, broad supervisor failure behavior, and distributed OTP are outside the 1.0 promise. |
@@ -64,7 +67,7 @@ versions, operating systems, third-party libraries, or deployment conditions.
 | Licensing and distribution | **Blocked** | GPL-3.0 repository license and current informational guide | A qualified decision must cover generated source and shipped runtime/support code before broad commercial positioning. Tracked by `haxe.elixir.codex-0yn.4`. |
 | Toolchains and operating systems | **Conditional** | Ubuntu CI, Elixir 1.14/OTP 25 minimum smoke, macOS smoke, Haxe 4.3.7 | Windows is out of scope. Haxe 5 is preview-only. Untested Haxe 4.x versions are not implied. |
 | Security and supply chain | **Conditional** | Gitleaks archive checksum verification with a tamper test, full-SHA Action guard, npm/Hex advisory gates, monthly manual dependency review, JS/TS CodeQL, release verification | No formal response time is promised; CodeQL does not cover Haxe/Elixir; upstream builds, GitHub infrastructure, advisory-database delay, and a small maintainer base remain part of the risk. |
-| Exact 1.0 support list | **Blocked** | Versioning tiers, API docs, feature and stdlib matrices | There is not yet one complete list connecting every 1.0 promise to its tests and clearly naming what is not supported. Tracked by `haxe.elixir.codex-0yn.5`. |
+| Exact 1.0 support list | **Blocked** | Versioning tiers, API docs, feature and stdlib matrices | There is not yet one complete list connecting every 1.0 promise to its tests. The Haxe stdlib part must reach zero unsupported, partial, unknown, or untested runtime APIs; framework and version bounds may remain explicit. Tracked by `haxe.elixir.codex-0yn.5` after `.10`. |
 | Build performance | **Conditional** | Bounded CI, compile/watch benchmark harnesses, scheduled trend artifacts | There is a diagnostic baseline, not a universal compile-latency SLO. Record a candidate regression comparison before approval. |
 | Final 1.0 approval | **Blocked** | SemVer policy, deprecation rules, and a release file that rejects unapproved stable versions | The same proposed release still needs a defined test period in independent projects, followed by an explicit decision to approve or reject 1.0. Tracked by `haxe.elixir.codex-0yn.8` and `.9`. |
 
@@ -113,23 +116,37 @@ policy, raw mailbox behavior, and distributed OTP are explicitly outside the 1.0
 
 ## Known 1.0 Blockers
 
-### 1. Decide Licensing And Distribution
+### 1. Complete The Applicable Haxe Standard Library
+
+`haxe.elixir.codex-0yn.10` replaces the old “classified subset” goal with a complete API-level
+contract for the pinned Haxe standard library. Every runtime-relevant public API must compile from
+ordinary Haxe, run correctly on the BEAM, and have direct evidence. Official Haxe fallback is valid
+when it works and is tested; a local override file is not required just to improve a count.
+
+Current fail-fast and partial behavior is blocking work. That includes identity collections,
+serialization and templates, caller-buffer IO, remaining SSL and lifecycle behavior, and `sys.db.*`.
+Compile-time and other-target-only declarations still belong in the inventory, but may use a narrow
+not-applicable classification when their source conditions prove that they are not Elixir runtime
+APIs. See [Standard Libraries And Packages](../08-roadmap/stdlib-and-package-ecosystem.md).
+
+### 2. Decide Licensing And Distribution
 
 `haxe.elixir.codex-0yn.4` requires qualified review of the GPL-3.0 compiler, externs, generated
 source, and support/runtime modules that may ship in an application. The result may keep the current
 license, add an exception, separate runtime licensing, or adopt another lawful model. Engineering
 documentation must not improvise the legal answer.
 
-### 2. Publish One Exact 1.0 Support List
+### 3. Publish One Exact 1.0 Support List
 
 `haxe.elixir.codex-0yn.5` must list the language features, standard-library modules, annotations,
 externs, flags, Mix tasks, generated naming rules, framework APIs, versions, and exclusions covered
 by 1.0. Every promised item needs an executable test or a precise description of its limits.
 
-This does not require implementing every Haxe or Elixir API. It requires making the claimed subset
-true and discoverable.
+For frameworks, tools, and supported versions, this means making a bounded claim true and
+discoverable. For the applicable Haxe standard library, the full public API is required by the first
+blocker and cannot be excluded from the list.
 
-### 3. Test One Unchanged Release Candidate Outside This Repository
+### 4. Test One Unchanged Release Candidate Outside This Repository
 
 After the product contract is complete, `haxe.elixir.codex-0yn.8` must use immutable packages and
 clean workspaces to prove:
@@ -140,12 +157,12 @@ clean workspaces to prove:
 - upgrade from the previous supported release;
 - todo-app and representative Phoenix runtime/browser behavior;
 - rollback by restoring the previous immutable tag;
-- warning-clean stdlib evidence and verified CI security-tool provenance.
+- complete warning-clean stdlib evidence and verified CI security-tool provenance.
 
 Run the same release candidate long enough to receive and address feedback from real users. Do not
 quietly change the proposed 1.0 promise during that test period.
 
-### 4. Explicitly Approve Or Reject 1.0
+### 5. Explicitly Approve Or Reject 1.0
 
 `haxe.elixir.codex-0yn.9` reviews the completed evidence and either approves or rejects a 1.0 release.
 Only an approval may populate `releaseLines.1.approval`. Approval does not publish a release; a later
@@ -153,18 +170,20 @@ reviewed breaking Conventional Commit allows semantic-release to derive `1.0.0`.
 
 ## Features 1.0 Does Not Need To Promise
 
-These can remain deferred when the support contract says so clearly:
+These can remain deferred when the published 1.0 support list says so clearly:
 
 - Haxe 5 and Windows support;
 - Phoenix 1.6 and older;
-- complete Haxe stdlib or BEAM ecosystem coverage;
-- source maps, migration `.exs` generation, and `fast_boot` graduating from experimental;
+- a complete typed Haxe facade for the Elixir standard library and automatic support for every
+  Hex/Mix dependency (both are planned 1.x work);
+- complete coverage of the wider BEAM ecosystem;
+- moving source maps, migration `.exs` generation, and `fast_boot` out of the experimental tier;
 - every idiomatic-output optimization or elimination of semantically required runtime helpers;
 - internal AST pass API compatibility;
 - a universal compile-time performance promise.
 
-Version 1.0 can make a reliable, limited promise without supporting every possible Haxe or Elixir
-feature.
+Version 1.0 can keep its framework, version, and platform promise limited. It cannot call the Haxe
+stdlib complete while leaving an applicable public runtime API unsupported.
 
 ## Production Pilots Before 1.0
 
@@ -211,11 +230,15 @@ be green; a nearby green commit is not evidence for a changed tree.
 
 The final decision must state:
 
-- the exact supported language, stdlib, framework, build, ABI, and toolchain subset;
+- the exact supported language, stdlib, framework, build, generated names/call shapes, and toolchain
+  subset;
+- the complete applicable Haxe stdlib inventory, with zero unsupported, partial, unknown, or
+  untested runtime entries;
 - every remaining known limitation and why none is a P0/P1 issue in that subset;
-- package provenance, source/package parity, and external install/upgrade/rollback evidence;
+- package origin and hashes, source/package parity, and external install/upgrade/rollback evidence;
 - generated-file ownership and complete invalidation evidence;
 - licensing/distribution policy and security residuals;
-- stabilization duration, candidate performance comparison, and reviewer approval.
+- the length and result of the release-candidate test, performance comparison, and reviewer
+  approval.
 
 Until that decision exists, README language remains pre-1.0 and conditional.

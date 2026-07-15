@@ -12,8 +12,8 @@ const DEFAULT_POLICY_PATH = 'release/manifest.json'
  * This module validates the small, version-independent policy manifest and
  * authorizes a version already derived from immutable tags. Major zero keeps
  * breaking changes on the configured minor line. Every stable major requires
- * its own durable approval. Prerelease and build channels fail closed until
- * the project explicitly models them.
+ * its own named requirements and durable approval. Prerelease and build
+ * channels fail closed until the project explicitly models them.
  */
 
 function requireObject(value, label) {
@@ -54,10 +54,46 @@ function validateApproval(approval, label) {
   requireRealDate(approval.date, `${label}.date`)
 }
 
+function validateRequirements(requirements, label) {
+  if (!Array.isArray(requirements) || requirements.length === 0) {
+    throw new Error(`${label} must be a non-empty array`)
+  }
+
+  const ids = new Set()
+  for (const [index, value] of requirements.entries()) {
+    const requirementLabel = `${label}[${index}]`
+    const requirement = requireObject(value, requirementLabel)
+    const id = requireString(requirement.id, `${requirementLabel}.id`)
+
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id)) {
+      throw new Error(`${requirementLabel}.id must use lowercase kebab-case`)
+    }
+    if (ids.has(id)) {
+      throw new Error(`${label} contains duplicate id ${id}`)
+    }
+    ids.add(id)
+
+    if (!['pending', 'complete'].includes(requirement.status)) {
+      throw new Error(
+        `${requirementLabel}.status must be pending or complete`
+      )
+    }
+    requireString(requirement.record, `${requirementLabel}.record`)
+  }
+
+  return requirements
+}
+
+function pendingRequirementIds(line) {
+  return line.requirements
+    .filter((requirement) => requirement.status !== 'complete')
+    .map((requirement) => requirement.id)
+}
+
 function validateReleasePolicy(policy) {
   requireObject(policy, 'release policy')
-  if (policy.schemaVersion !== 2) {
-    throw new Error('release/manifest.json schemaVersion must be 2')
+  if (policy.schemaVersion !== 3) {
+    throw new Error('release/manifest.json schemaVersion must be 3')
   }
   const lines = requireObject(policy.releaseLines, 'releaseLines')
   if (!Object.prototype.hasOwnProperty.call(lines, '0')) {
@@ -93,7 +129,18 @@ function validateReleasePolicy(policy) {
         `releaseLines.${major}.approval must be present (null until approved)`
       )
     }
+    validateRequirements(
+      line.requirements,
+      `releaseLines.${major}.requirements`
+    )
     validateApproval(line.approval, `releaseLines.${major}.approval`)
+
+    const pending = pendingRequirementIds(line)
+    if (line.approval !== null && pending.length > 0) {
+      throw new Error(
+        `releaseLines.${major} cannot be approved while requirements are pending: ${pending.join(', ')}`
+      )
+    }
   }
 
   return policy
@@ -149,7 +196,13 @@ function releaseLine(policy, major) {
 function isStableMajorApproved(policy, major) {
   if (major < 1) return false
   const line = policy.releaseLines[String(major)]
-  return Boolean(line && line.stage === 'stable' && line.approval)
+  return Boolean(
+    line &&
+      line.stage === 'stable' &&
+      line.approval &&
+      Array.isArray(line.requirements) &&
+      pendingRequirementIds(line).length === 0
+  )
 }
 
 function verifyReleaseVersion(policy, version) {
@@ -182,6 +235,7 @@ module.exports = {
   isStableMajorApproved,
   loadReleasePolicy,
   parseSemanticVersion,
+  pendingRequirementIds,
   releaseLine,
   validateReleasePolicy,
   verifyReleaseVersion,

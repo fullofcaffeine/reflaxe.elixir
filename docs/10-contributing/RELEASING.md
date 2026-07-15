@@ -35,8 +35,10 @@ Semantic-release looks at commit messages since the last release:
 - `feat!:` or `BREAKING CHANGE:` → **minor release while pre-1.0** (`0.2.0` → `0.3.0`)
 
 The version-independent release policy intentionally keeps breaking changes on the minor line while
-the project is pre-1.0. Stable graduation requires an approval record for the target major; that
-approval is non-releasing, so a subsequent new breaking commit must still authorize the release.
+the project is pre-1.0. A stable major release requires every named requirement plus an approval
+record for that major. For major 1, complete applicable Haxe stdlib support is one of those
+requirements. Approval is non-releasing, so a subsequent new breaking commit must still authorize
+the release.
 
 If there are no release-worthy commits, the workflow runs but produces no new release.
 
@@ -54,6 +56,8 @@ npm ci
 npm audit --audit-level=high --omit=optional
 npm run ci:guards
 npm test
+npm run test:haxe-exunit-stdlib
+npm run guard:upstream-unitstd
 npm run test:examples
 npm run test:examples-elixir
 npm run test:haxelib-package
@@ -74,7 +78,8 @@ Use clear, scoped messages (examples):
 3) **Let semantic-release do the rest**
 
 Immutable reachable tags are the source of truth for released versions. `release/manifest.json`
-contains only release-line policy and per-major approvals. Tracked `package.json`, `haxelib.json`,
+contains release-line policy, named release requirements, and per-major approvals. The validator
+rejects an approval while any requirement is pending. Tracked `package.json`, `haxelib.json`,
 `mix.exs`, and scoped HXML versions are development sentinels, not release mirrors.
 
 The artifact plugin exports the exact tested Git commit to temporary storage, runs that commit's

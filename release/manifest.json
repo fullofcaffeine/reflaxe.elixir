@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "releaseLines": {
     "0": {
       "stage": "initial-development",
@@ -7,6 +7,33 @@
     },
     "1": {
       "stage": "stable",
+      "requirements": [
+        {
+          "id": "complete-haxe-stdlib",
+          "status": "pending",
+          "record": "haxe.elixir.codex-0yn.10"
+        },
+        {
+          "id": "exact-support-list",
+          "status": "pending",
+          "record": "haxe.elixir.codex-0yn.5"
+        },
+        {
+          "id": "stdlib-warning-clean",
+          "status": "pending",
+          "record": "haxe.elixir.codex-0yn.7"
+        },
+        {
+          "id": "licensing-and-distribution",
+          "status": "pending",
+          "record": "haxe.elixir.codex-0yn.4"
+        },
+        {
+          "id": "external-release-candidate-test",
+          "status": "pending",
+          "record": "haxe.elixir.codex-0yn.8"
+        }
+      ],
       "approval": null
     }
   }

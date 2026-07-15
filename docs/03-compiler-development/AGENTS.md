@@ -215,7 +215,11 @@ function transformToEnumCall(pattern: LoopPattern): ElixirASTDef
 - If upstream Haxe has a matching `tests/unit/src/unitstd/**/*.unit.hx` spec, prefer enabling or adapting the checked-in fixture under `test/upstream_unitstd/upstream/**`.
 - Run `npm run test:haxe-exunit-stdlib` and `npm run guard:upstream-unitstd` for stdlib parity work.
 - Snapshots prove generated Elixir shape; upstream unitstd/ExUnit coverage proves runtime behavior on BEAM.
-- Runtime conformance failures can expose real compiler lowering or target stdlib bugs. Diagnose the generated Elixir and fix the compiler/std source first; only mark a spec skipped/adapted after confirming the upstream contract is intentionally unsupported or target-specific.
+- Runtime conformance failures can expose real compiler lowering or target stdlib bugs. Diagnose the
+  generated Elixir and fix the compiler/std source first. A spec may be skipped permanently only when
+  the API is provably compile-time-only or owned by another target. An applicable runtime API may be
+  skipped temporarily only with an open 1.0 blocker that names the missing behavior and evidence;
+  “intentionally unsupported” is not a completed stdlib classification.
 
 ### After ANY Compiler Change
 1. **Run full test suite**: `npm test` (ALL tests must pass)

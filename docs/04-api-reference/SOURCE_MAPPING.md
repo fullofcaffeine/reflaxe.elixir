@@ -25,9 +25,9 @@ Source mapping is implemented, but remains **experimental**:
   - Compiler‑injected lines (bootstrapping, helper shims) map to the nearest reasonable Haxe
     context.
 
-Stable graduation does **not** require source mapping; it remains opt-in and is intended as a
-debugging aid. See [Versioning & Stability](../06-guides/VERSIONING_AND_STABILITY.md) for current
-release posture.
+Version 1.0 does **not** require source mapping. It remains opt-in and is intended as a debugging
+aid. See [Versioning & Stability](../06-guides/VERSIONING_AND_STABILITY.md) for the current release
+status.
 
 ## Where the Pieces Live
 

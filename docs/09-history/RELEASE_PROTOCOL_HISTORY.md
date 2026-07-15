@@ -8,7 +8,7 @@ an operational runbook. Use [Releasing](../10-contributing/RELEASING.md) for cur
 
 The completed `haxe.elixir.codex-m81` epic established the first coherent release model. It replaced
 contradictory version files with a structured manifest, generated tracked package/version/changelog
-state, guarded stable-major graduation, and verified a prepared package and GitHub Release.
+state, prevented unapproved stable releases, and verified a prepared package and GitHub Release.
 
 Its live happy-path proof was `v0.14.23`:
 

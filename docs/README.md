@@ -9,7 +9,7 @@ This index helps you find the right docs quickly, whether you're building apps w
 > surfaces follow the project's pre-1.0 compatibility policy, while experimental/opt-in
 > features remain clearly labeled. [Versioning & Stability](06-guides/VERSIONING_AND_STABILITY.md)
 > is the canonical current status; [Production Hardening](06-guides/PRODUCTION_READINESS.md)
-> is a graduation checklist, not a declaration that graduation has happened.
+> explains what still has to be finished before 1.0. It does not claim that 1.0 is ready.
 
 ## 📚 Documentation Sections
 
@@ -94,13 +94,13 @@ This index helps you find the right docs quickly, whether you're building apps w
 - [Phoenix (Existing App)](06-guides/PHOENIX_GRADUAL_ADOPTION.md) - Gradual adoption in an existing app
 - [Phoenix Gradual Adoption Tutorial](06-guides/PHOENIX_GRADUAL_ADOPTION_TUTORIAL.md) - Concrete domain module, LiveView, and test path
 - [Scaffolding System](06-guides/SCAFFOLDING_SYSTEM.md) - How generators + marker blocks work
-- [Adding Elixir Libraries From Haxe](06-guides/ADDING_ELIXIR_LIBS_FROM_HAXE.md) - Thin extern + wrapper pattern
+- [Adding Elixir Libraries From Haxe](06-guides/ADDING_ELIXIR_LIBS_FROM_HAXE.md) - Beginner workflow for one-module externs, wrappers, type refinement, and tests
 - [Phoenix Chat Tutorial (Hybrid)](06-guides/PHOENIX_CHAT_TUTORIAL.md) - Gradual adoption: feature logic in Haxe, core app/router wiring in Elixir
 - [Phoenix Chat Tutorial (Haxe-First)](06-guides/PHOENIX_CHAT_TUTORIAL_HAXE_FIRST.md) - App/router/live/presence authored in Haxe
 - [Portable Chat Tutorial](06-guides/PORTABLE_CHAT_TUTORIAL.md) - Shared Haxe domain logic pattern
 - [Dogfooding](06-guides/DOGFOODING.md) - External Phoenix app upgrade validation
 - [Todo-app Cowboy Toolchain](06-guides/TODOAPP_COWBOY_TOOLCHAIN.md) - Why the todo-app pins Cowboy deps
-- [Production Readiness](06-guides/PRODUCTION_READINESS.md) - Current evidence scorecard, known blockers, and stable-graduation gate
+- [Production Readiness](06-guides/PRODUCTION_READINESS.md) - Current evidence, known blockers, and remaining requirements before 1.0
 - [Strict Mode](06-guides/STRICT_MODE.md) - Opt-in Gleam-like safety profile
 - [Versioning & Stability](06-guides/VERSIONING_AND_STABILITY.md) - SemVer + stability tiers + deprecation policy
 - [Production Deployment](06-guides/PRODUCTION_DEPLOYMENT.md) - CI/Docker/release patterns
@@ -128,6 +128,7 @@ Legacy guides (kept for link stability):
 **[08-roadmap/](08-roadmap/)** - Planning notes and long-term ideas
 - [Vision](08-roadmap/vision.md) - Grounded product principles and long-term directions (not a stability contract)
 - [1.0 Production Readiness Review](08-roadmap/1.0-production-readiness-review.md) - Independent adversarial baseline, evidence gaps, product position, and execution graph
+- [Standard Libraries And Packages](08-roadmap/stdlib-and-package-ecosystem.md) - Why 1.0 requires the full Haxe stdlib, plus typed Elixir and Mix dependency plans
 - [Generated Elixir Idiomaticity Audit](08-roadmap/generated-elixir-idiomaticity-audit.md) - Evidence, tradeoffs, and the prioritized path toward handwritten-quality output
 - [Phoenix Surface Parity](08-roadmap/phoenix-surface-parity.md) - Example-driven Phoenix/PubSub/Presence/LiveView API gap checklist
 - [PhoenixHx Live Event Protocols](08-roadmap/phoenixhx-live-event-protocols.md) - Typed hook/server event protocols around Phoenix `pushEvent` and `handle_event/3`

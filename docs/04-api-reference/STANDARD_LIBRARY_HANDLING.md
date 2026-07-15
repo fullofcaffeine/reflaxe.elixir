@@ -14,6 +14,12 @@ See also:
 - `docs/02-user-guide/WRITING_IDIOMATIC_HAXE_FOR_ELIXIR.md`
 - `docs/02-user-guide/REFLAXE_RUNTIME_EXPLAINED.md`
 - `docs/06-guides/KNOWN_LIMITATIONS.md`
+- `docs/08-roadmap/stdlib-and-package-ecosystem.md`
+
+Major 1 now requires complete support for every public Haxe stdlib API applicable to generated
+Elixir programs. That does not change the selective-override design below: a tested official Haxe
+fallback is support, and copying an unchanged file is not progress. See Beads epic
+`haxe.elixir.codex-0yn.10` for the API inventory and remaining semantics work.
 
 ## Target selection vs compiler development
 

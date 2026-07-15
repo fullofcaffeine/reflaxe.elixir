@@ -41,8 +41,10 @@ their behavior through explicit lowering. Haxe is a build dependency, not a seco
 
 > [!IMPORTANT]
 > **Pre-1.0:** suitable for controlled pilots inside documented, pinned paths, not a general stability
-> promise. See [Production Readiness](docs/06-guides/PRODUCTION_READINESS.md), the
+> promise. Major 1 will remain blocked until every applicable public Haxe standard-library API is
+> supported and tested. See [Production Readiness](docs/06-guides/PRODUCTION_READINESS.md), the
 > [independent 1.0 review](docs/08-roadmap/1.0-production-readiness-review.md),
+> [standard-library and package roadmap](docs/08-roadmap/stdlib-and-package-ecosystem.md),
 > [exact OTP support boundary](docs/04-api-reference/OTP_SUPPORT_CONTRACT.md),
 > [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md), and
 > [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).

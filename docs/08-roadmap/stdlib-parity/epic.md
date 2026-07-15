@@ -4,7 +4,10 @@ Owner: Compiler/stdlib
 
 ## Goal
 
-Close the Elixir-target stdlib parity gap so that “normal” Haxe code that relies on the standard library compiles and runs correctly on BEAM, with outputs that are idiomatic and maintainable.
+Close the Elixir-target stdlib parity gap so that every public Haxe standard-library API applicable to
+generated Elixir programs compiles and runs correctly on BEAM, with outputs that are idiomatic and
+maintainable. Version 1.0 now requires complete support; see
+[Standard Libraries And Packages](../stdlib-and-package-ecosystem.md).
 
 This epic is module-level scoped first (coverage), then drills into API/behavior parity within each module.
 
@@ -37,7 +40,9 @@ Related work:
 
 ## Current status (rolling)
 
-- Latest gap report: **90 Haxe stdlib modules/classes not yet covered by the Elixir target stdlib surface** (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
+- Latest gap report: **88 Haxe stdlib modules/classes without a local Elixir-target override** (see
+  `docs/08-roadmap/stdlib-parity/gap-report.md`). This is an ownership count, not a support score;
+  verified official fallback is valid support.
 - Recently closed (high leverage):
   - `haxe.Int32`, `haxe.Int64`, `haxe.Int64Helper` (deterministic overflow + bitwise semantics on BEAM)
   - `haxe.ds.Map` + `haxe.ds.StringMap`/`IntMap`/`ObjectMap` surfaces (native `%{}` backend; lowered to `Map.*`)
@@ -74,11 +79,14 @@ Local roots considered by the gap report:
     Elixir
   - small runtime helper needed because the BEAM cannot directly represent the
     required Haxe semantics
-  - unsupported/fail-fast on the Elixir target, with diagnostics and docs
+  - currently unsupported/fail-fast on the Elixir target, with diagnostics and docs while the real
+    implementation is developed
 - Do not copy an unchanged upstream stdlib file into `std/` or
   `src/haxe/` just to reduce the missing count.
 - If an upstream-fallback module needs confidence, add a Haxe-authored ExUnit
   or upstream `unitstd` fixture and track the classification in Beads.
+- A runtime-relevant API may be temporarily classified as unsupported or partial during development,
+  but `haxe.elixir.codex-0yn.10` and major 1 cannot close with that state.
 
 ### Phase 1 — Coverage (modules exist)
 - Each priority module exists under `std/` (or `src/haxe/` for early-resolved consumer-install overrides).
@@ -151,8 +159,9 @@ Goal: make `Map` usage predictable and eliminate “native map vs Haxe map” tr
 - Same, with integer keys.
 - Runtime tests for negative keys, key equality, iteration.
 
-**Task: `haxe.ds.ObjectMap` decision (explicit, separate)**
-- Decision: intentionally unsupported for Elixir output until there is a real identity-key runtime.
+**Task: `haxe.ds.ObjectMap` identity runtime (explicit, separate)**
+- Current state: rejected until there is a real identity-key runtime; this is a 1.0 blocker, not a
+  permanent exclusion.
 - Haxe’s object identity does not translate cleanly to BEAM structural terms, so the compiler rejects ObjectMap construction/calls instead of lowering them to `%{}` and silently merging distinct-but-equal objects.
 - Future implementation path: identity tokens/wrappers plus tests proving distinct objects with equal fields remain distinct keys.
 
@@ -191,7 +200,9 @@ Goal: make `Map` usage predictable and eliminate “native map vs Haxe map” tr
 
 ### Phase 3 — `sys.*` integration (BEAM/OTP idioms; explicitly scoped)
 
-The gap report shows remaining `sys.*` gaps are smaller host/process surfaces. `sys.db.*` is intentionally unsupported on the Elixir target; use Ecto instead.
+The gap report shows remaining `sys.*` gaps are smaller host/process surfaces. `sys.db.*` is currently
+unsupported; Ecto remains the recommended Elixir-first API, but portable `sys.db.*` compatibility is
+required before 1.0.
 These require careful design on BEAM; we should not “fake” POSIX semantics.
 
 **Task: `haxe.Http` / `sys.Http`**
@@ -223,8 +234,12 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
 - Coverage: snapshot coverage plus generated-runtime smoke for thread messages, blocking deque handoff, TLS isolation, event-loop progress, lock/mutex/semaphore behavior, and fixed-pool execution.
 
 **Task cluster: `sys.db.*`**
-- Status: intentionally unsupported with compile-time rejection for `sys.db.Connection`, `sys.db.ResultSet`, `sys.db.Mysql`, and `sys.db.Sqlite`.
-- Contract: direct Haxe host-driver database APIs are not mapped to BEAM. Generated Elixir applications should use Ecto schemas, changesets, typed queries, Repo externs, or Elixir boundary modules.
+- Status: currently unsupported with compile-time rejection for `sys.db.Connection`,
+  `sys.db.ResultSet`, `sys.db.Mysql`, and `sys.db.Sqlite`; complete compatibility is tracked by
+  `haxe.elixir.codex-0yn.10.4`.
+- Current guidance: generated Elixir applications should normally use Ecto schemas, changesets,
+  typed queries, Repo externs, or Elixir boundary modules while the compatibility implementation is
+  incomplete.
 - Coverage: `test/snapshot/negative/sys_db_unsupported` verifies the APIs fail to compile instead of emitting runtime stubs.
 - Docs: see `docs/04-api-reference/STDLIB_SUPPORT_MATRIX.md` and `docs/07-patterns/ECTO_INTEGRATION_PATTERNS.md`.
 
@@ -263,7 +278,9 @@ Create one task per module (or small module cluster) with:
 ## Future Task Checklist
 
 For new stdlib parity work, open one task per module/cluster, each including:
-   - Classification: upstream fallback, BEAM-specific override, unsupported/fail-fast, or docs/tests-only
+   - Current classification: upstream fallback, BEAM-specific override, temporarily
+     unsupported/fail-fast, or docs/tests-only. Any applicable temporary unsupported state must link
+     to its 1.0 implementation task.
    - Reference link(s) to `haxe.compilerdev.reference`
    - Snapshots + Haxe-authored ExUnit runtime semantics test(s)
    - WAE criteria: `npm run test:mix-fast`, `npm run test:examples-elixir`, and todo-app QA sentinel
@@ -273,7 +290,8 @@ For new stdlib parity work, open one task per module/cluster, each including:
 For each module/cluster task:
 
 - Scope: which module(s), which functions are in-scope now (explicit).
-- Classification: upstream fallback vs BEAM-specific override vs unsupported/fail-fast.
+- Classification: upstream fallback vs BEAM-specific override vs a temporary unsupported/fail-fast
+  state with an owning 1.0 implementation task.
 - Reference: link to `haxe.compilerdev.reference` source file(s) used.
 - Implementation:
   - `std/elixir/_std/**/*.hx` for normal upstream-colliding stdlib overrides

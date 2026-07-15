@@ -27,11 +27,29 @@ function approval(record) {
   return { record, date: '2026-07-10' }
 }
 
+function requirements(complete) {
+  return [
+    {
+      id: 'complete-haxe-stdlib',
+      status: complete ? 'complete' : 'pending',
+      record: 'haxe.elixir.codex-stdlib-contract',
+    },
+    {
+      id: 'external-release-candidate-test',
+      status: complete ? 'complete' : 'pending',
+      record: 'haxe.elixir.codex-release-candidate-test',
+    },
+  ]
+}
+
 function policy(options = {}) {
+  const major1Complete =
+    options.major1RequirementsComplete ?? options.major1Approved ?? false
   const lines = {
     0: { stage: 'initial-development', breakingBump: 'minor' },
     1: {
       stage: 'stable',
+      requirements: requirements(major1Complete),
       approval: options.major1Approved
         ? approval('haxe.elixir.codex-major-1')
         : null,
@@ -40,12 +58,13 @@ function policy(options = {}) {
   if (options.includeMajor2) {
     lines[2] = {
       stage: 'stable',
+      requirements: requirements(options.major2Approved ?? false),
       approval: options.major2Approved
         ? approval('haxe.elixir.codex-major-2')
         : null,
     }
   }
-  return { schemaVersion: 2, releaseLines: lines }
+  return { schemaVersion: 3, releaseLines: lines }
 }
 
 function logger() {
@@ -130,6 +149,16 @@ async function main() {
     await assert.rejects(
       verify(plugin, fixtureRoot, '1.0.0'),
       /stable major 1 requires an approved release record/
+    )
+
+    const prematureApproval = policy({
+      major1Approved: true,
+      major1RequirementsComplete: false,
+    })
+    writeJson(manifestPath, prematureApproval)
+    assert.throws(
+      () => policyApi.loadReleasePolicy('release/manifest.json', fixtureRoot),
+      /cannot be approved while requirements are pending: complete-haxe-stdlib, external-release-candidate-test/
     )
 
     writeJson(manifestPath, policy({ major1Approved: true }))
@@ -223,6 +252,50 @@ async function main() {
       /releaseLines\.1\.approval\.date must be a real YYYY-MM-DD date/
     )
 
+    const missingRequirements = policy()
+    delete missingRequirements.releaseLines['1'].requirements
+    writeJson(manifestPath, missingRequirements)
+    assert.throws(
+      () => policyApi.loadReleasePolicy('release/manifest.json', fixtureRoot),
+      /releaseLines\.1\.requirements must be a non-empty array/
+    )
+
+    const duplicateRequirement = policy()
+    duplicateRequirement.releaseLines['1'].requirements.push({
+      ...duplicateRequirement.releaseLines['1'].requirements[0],
+    })
+    writeJson(manifestPath, duplicateRequirement)
+    assert.throws(
+      () => policyApi.loadReleasePolicy('release/manifest.json', fixtureRoot),
+      /requirements contains duplicate id complete-haxe-stdlib/
+    )
+
+    const invalidRequirementId = policy()
+    invalidRequirementId.releaseLines['1'].requirements[0].id =
+      'Complete Haxe stdlib'
+    writeJson(manifestPath, invalidRequirementId)
+    assert.throws(
+      () => policyApi.loadReleasePolicy('release/manifest.json', fixtureRoot),
+      /requirements\[0\]\.id must use lowercase kebab-case/
+    )
+
+    const invalidRequirementStatus = policy()
+    invalidRequirementStatus.releaseLines['1'].requirements[0].status =
+      'waived'
+    writeJson(manifestPath, invalidRequirementStatus)
+    assert.throws(
+      () => policyApi.loadReleasePolicy('release/manifest.json', fixtureRoot),
+      /requirements\[0\]\.status must be pending or complete/
+    )
+
+    const missingRequirementRecord = policy()
+    missingRequirementRecord.releaseLines['1'].requirements[0].record = ''
+    writeJson(manifestPath, missingRequirementRecord)
+    assert.throws(
+      () => policyApi.loadReleasePolicy('release/manifest.json', fixtureRoot),
+      /requirements\[0\]\.record must be a non-empty string/
+    )
+
     const futureDated = policy({ major1Approved: true })
     futureDated.releaseLines['1'].approval.date = '2999-01-01'
     writeJson(manifestPath, futureDated)
@@ -250,6 +323,18 @@ async function main() {
     assert(!JSON.stringify(trackedPolicy).includes('versionFiles'))
     assert(!JSON.stringify(trackedPolicy).includes('postureBlocks'))
     assert(!JSON.stringify(trackedPolicy).includes('0.14.23'))
+    assert.strictEqual(trackedPolicy.schemaVersion, 3)
+    assert.deepStrictEqual(
+      policyApi.pendingRequirementIds(trackedPolicy.releaseLines['1']),
+      [
+        'complete-haxe-stdlib',
+        'exact-support-list',
+        'stdlib-warning-clean',
+        'licensing-and-distribution',
+        'external-release-candidate-test',
+      ]
+    )
+    assert.strictEqual(policyApi.isStableMajorApproved(trackedPolicy, 1), false)
 
     const configPath = path.join(root, 'release.config.js')
     const originalReadFileSync = fs.readFileSync
@@ -333,7 +418,7 @@ async function main() {
     )
 
     console.log(
-      '[release-policy] OK: tag-owned SemVer and per-major approval contracts'
+      '[release-policy] OK: tag-owned SemVer, release requirements, and per-major approval contracts'
     )
   } finally {
     fs.rmSync(fixtureRoot, { recursive: true, force: true })

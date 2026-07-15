@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Validate upstream unitstd runtime-conformance decisions.
 
-The stdlib support matrix is the user-facing list of modules this target
-implements or overrides. Every module in that core list must have an explicit
-entry in test/upstream_unitstd/manifest.json so runtime-conformance coverage
-does not silently drift behind stdlib work.
+The stdlib support matrix is the user-facing list of modules this target has
+classified so far, including current 1.0 blockers. Every module in that core
+list must have an explicit entry in test/upstream_unitstd/manifest.json so
+runtime-conformance decisions do not silently drift behind stdlib work.
 """
 
 import json
@@ -23,7 +23,7 @@ def core_matrix_modules() -> list[str]:
     in_core_set = False
 
     for line in MATRIX.read_text(encoding="utf-8").splitlines():
-        if line.startswith("## Explicitly supported by Reflaxe.Elixir"):
+        if line.startswith("## Current classified core set"):
             in_core_set = True
             continue
 

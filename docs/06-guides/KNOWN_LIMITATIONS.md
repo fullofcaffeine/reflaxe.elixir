@@ -35,6 +35,20 @@ callbacks directly inside the successful `Result` branch. This does not imply th
 program is supported. The stable surface is still being listed under `haxe.elixir.codex-0yn.5`. See
 [Production Readiness](PRODUCTION_READINESS.md) for the full 1.0 checklist.
 
+## The Haxe standard library is not complete yet
+
+Version 1.0 will not ship until every public Haxe standard-library API that belongs on an Elixir
+system target works and has a real behavior test. Many APIs already use either a Reflaxe.Elixir
+implementation or Haxe's own portable implementation, but some still fail early or implement only a
+subset. Current examples include `haxe.ds.ObjectMap`, `haxe.ds.ListSort`, parts of serialization and
+templates, caller-buffer socket reads, parts of SSL and lifecycle handling, and `sys.db.*`.
+
+Failing at compile time is safer than silently generating incorrect Elixir, but it is only the current
+pre-1.0 behavior—not the finished compatibility promise. The
+[Stdlib Support Matrix](../04-api-reference/STDLIB_SUPPORT_MATRIX.md) lists the known gaps, and
+[Standard Libraries And Packages](../08-roadmap/stdlib-and-package-ecosystem.md) explains what
+“complete” means and how the release policy enforces it.
+
 ## Macro inputs outside the build graph
 
 Mix freshness now fingerprints the effective discoverable build: recursive HXML and defines, all

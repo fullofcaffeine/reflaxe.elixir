@@ -19,8 +19,10 @@ Coverage policy:
   matrix.
 - `enabled` and `adapted` fixtures compile through Reflaxe.Elixir into ExUnit
   and run on BEAM via `npm run test:haxe-exunit-stdlib`.
-- Non-enabled entries must explain whether no upstream spec exists, the spec is
-  unsupported for this target, or target-specific triage is still required.
+- Non-enabled entries must explain whether no upstream spec exists, the current
+  implementation is unsupported, or target-specific triage is still required. A runtime-relevant
+  `skipped-unsupported` or unresolved target-specific entry is a 1.0 blocker under
+  `haxe.elixir.codex-0yn.10`; the manifest describes current evidence, not an allowed final exclusion.
 
 Current upstream runtime fixtures:
 - Enabled: `EReg`, `IntIterator`, `Math`, `StringBuf`,

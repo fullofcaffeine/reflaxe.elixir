@@ -114,7 +114,7 @@ After a defensible 1.0, the project can expand in measured steps:
 - broaden stable Phoenix/Ecto/OTP externs based on real application needs;
 - emit useful typespecs for target-native public surfaces;
 - reduce avoidable runtime footprint while preserving Haxe behavior;
-- graduate source maps only after end-to-end debugging works reliably;
+- move source maps into the supported tier only after end-to-end debugging works reliably;
 - expand stdlib conformance through upstream runtime fixtures;
 - strengthen portable server/browser examples and protocol tooling;
 - evaluate Haxe 5 and additional host platforms only with dedicated CI contracts.

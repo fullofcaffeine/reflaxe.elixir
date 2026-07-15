@@ -116,7 +116,10 @@ This is the chosen direction because these map types sit directly on common Phoe
 
 This choice is intentionally scoped:
 
-- `haxe.ds.ObjectMap<K,V>` is intentionally unsupported for Elixir output code until an identity-key implementation exists. Haxe ObjectMap expects two distinct object instances with equal fields to remain distinct keys; native BEAM maps compare key terms structurally, so lowering ObjectMap to `%{}` would silently merge those keys.
+- `haxe.ds.ObjectMap<K,V>` is currently rejected until an identity-key implementation exists, and
+  this is a 1.0 blocker. Haxe ObjectMap expects two distinct object instances with equal fields to
+  remain distinct keys; native BEAM maps compare key terms structurally, so lowering ObjectMap to
+  `%{}` would silently merge those keys.
 - `haxe.ds.BalancedTree` and `haxe.ds.EnumValueMap` remain bootstrap-safe dual-mode surfaces. They exist to satisfy macro/eval and WAE constraints, not because arbitrary tree-backed `IMap` values should be shape-sniffed as native maps.
 - Custom `IMap` implementations must use explicit APIs or normalized pair lists at runtime. `Reflaxe.Elixir.IMap.unwrap/1` is the only generic runtime boundary.
 
