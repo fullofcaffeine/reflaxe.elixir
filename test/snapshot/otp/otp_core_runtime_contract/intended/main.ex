@@ -58,19 +58,16 @@ defmodule Main do
   defp test_agent_state_and_stop() do
     _started = (case Agent.start(fn -> 10 end) do
       {:ok, agent} ->
-        test_started_agent(agent)
+        assert_equals("Agent.get reads initial state", 10, Agent.get(agent, fn value -> value end))
+        Agent.update(agent, fn value -> value + 5 end)
+        assert_equals("Agent.update changes state", 15, Agent.get(agent, fn value -> value end))
+        Agent.cast(agent, fn value -> value + 2 end)
+        assert_equals("Agent.cast is observed by a later call from the same process", 17, Agent.get(agent, fn value -> value end))
+        Agent.stop(agent)
+        assert_true("Agent.stop ends the process", not Process.alive?(agent))
       {:error, reason} ->
         Kernel.raise("OTP contract failed: Agent.start returned #{reason}")
     end)
-  end
-  defp test_started_agent(agent) do
-    assert_equals("Agent.get reads initial state", 10, Agent.get(agent, fn value -> value end))
-    Agent.update(agent, fn value -> value + 5 end)
-    assert_equals("Agent.update changes state", 15, Agent.get(agent, fn value -> value end))
-    Agent.cast(agent, fn value -> value + 2 end)
-    assert_equals("Agent.cast is observed by a later call from the same process", 17, Agent.get(agent, fn value -> value end))
-    Agent.stop(agent)
-    assert_true("Agent.stop ends the process", not Process.alive?(agent))
   end
   def main() do
     test_local_process_lifecycle()

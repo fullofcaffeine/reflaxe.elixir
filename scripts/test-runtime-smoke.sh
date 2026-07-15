@@ -27,6 +27,7 @@ TEST_DIRS=(
   "test/runtime/fast_boot/string_tools_rebinding"
   "test/snapshot/regression/non_void_tail_values"
   "test/snapshot/regression/function_result_invariants"
+  "test/snapshot/regression/result_switch_lambda_binders"
   "test/snapshot/regression/tuple_elem_access"
   "test/snapshot/stdlib/uint_32bit_semantics"
 )

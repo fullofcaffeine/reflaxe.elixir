@@ -5,19 +5,18 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
-import reflaxe.elixir.ast.ASTUtils;
+import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 
 /**
  * CaseOkBinderPrefixBindAllUndefinedTransforms
  *
  * WHAT
  * - In ECase clauses shaped `{:ok, binder}`, prefix-bind all undefined simple
- *   lowercase locals referenced in the clause body to `binder` (excluding
- *   reserved names like socket/params).
+ *   lowercase locals referenced in the clause body to `binder`.
  *
  * WHY
  * - Absolute-last safety net when align/rename passes did not land; ensures
- *   intended locals like `todo`/`updated_todo` resolve to the success binder.
+ *   intended clause-local references resolve to the success binder.
  */
 class CaseOkBinderPrefixBindAllUndefinedTransforms {
 	public static function pass(ast:ElixirAST):ElixirAST {
@@ -106,14 +105,12 @@ class CaseOkBinderPrefixBindAllUndefinedTransforms {
 		if (binder == null)
 			return cl;
 
-		var declared = new Map<String, Bool>();
-		collectPatternDecls(cl.pattern, declared);
-		collectLhsDeclsInBody(cl.body, declared);
-
-		var used = collectUsed(cl.body);
+		var available = cloneScope(outerScope);
+		collectPatternVarsInto(cl.pattern, available);
+		var free = VarUseAnalyzer.freeVarNames(cl.body, available);
 		var undef:Array<String> = [];
-		for (u in used.keys()) {
-			if (!declared.exists(u) && allow(u) && (outerScope == null || !outerScope.exists(u)))
+		for (u in free.keys()) {
+			if (allow(u))
 				undef.push(u);
 		}
 		if (undef.length == 0 || undef.length > 3)
@@ -229,67 +226,8 @@ class CaseOkBinderPrefixBindAllUndefinedTransforms {
 	static inline function allow(name:String):Bool {
 		if (name == null || name.length == 0)
 			return false;
-		if (name == 'socket' || name == 'params' || name == '_params' || name == 'event')
-			return false;
 		var c = name.charAt(0);
 		return c.toLowerCase() == c && c != '_';
-	}
-
-	static function collectPatternDecls(p:EPattern, vars:Map<String, Bool>):Void {
-		switch (p) {
-			case PVar(n):
-				vars.set(n, true);
-			case PTuple(es) | PList(es):
-				for (e in es)
-					collectPatternDecls(e, vars);
-			case PCons(h, t):
-				collectPatternDecls(h, vars);
-				collectPatternDecls(t, vars);
-			case PMap(kvs):
-				for (kv in kvs)
-					collectPatternDecls(kv.value, vars);
-			case PStruct(_, fs):
-				for (f in fs)
-					collectPatternDecls(f.value, vars);
-			case PPin(inner):
-				collectPatternDecls(inner, vars);
-			default:
-		}
-	}
-
-	static function collectLhsDeclsInBody(body:ElixirAST, vars:Map<String, Bool>):Void {
-		ASTUtils.walk(body, function(x:ElixirAST) {
-			switch (x.def) {
-				case EMatch(p, _):
-					collectPatternDecls(p, vars);
-				case EBinary(Match, l, _):
-					collectLhs(l, vars);
-				default:
-			}
-		});
-	}
-
-	static function collectLhs(lhs:ElixirAST, vars:Map<String, Bool>):Void {
-		switch (lhs.def) {
-			case EVar(n):
-				vars.set(n, true);
-			case EBinary(Match, l2, _):
-				collectLhs(l2, vars);
-			default:
-		}
-	}
-
-	static function collectUsed(body:ElixirAST):Map<String, Bool> {
-		var m = new Map<String, Bool>();
-		ASTUtils.walk(body, function(x:ElixirAST) {
-			switch (x.def) {
-				case EVar(n):
-					if (allow(n))
-						m.set(n, true);
-				default:
-			}
-		});
-		return m;
 	}
 }
 #end

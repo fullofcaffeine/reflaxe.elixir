@@ -4,7 +4,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
-import reflaxe.elixir.ast.ASTUtils;
+import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 
 /**
 	* SuccessVarAbsoluteReplaceUndefinedTransforms
@@ -20,9 +20,9 @@ import reflaxe.elixir.ast.ASTUtils;
 	*
 	* HOW
 	* - For each case clause with pattern `{:ok, PVar(binder)}`:
-	*   - Collect clause-local declared names (pattern binds, LHS assignments within the body).
-	*   - Replace all `EVar(name)` where `name` is lowercase, not declared, and not an env name
-	*     (socket/live_socket) with `EVar(binder)`.
+	*   - Use `VarUseAnalyzer` to find lowercase references that are genuinely free in
+	*     the clause's lexical scope.
+	*   - Replace those free references with `EVar(binder)` without crossing nested binders.
 	* - Runs at the absolute end of the pipeline.
 
 	*
@@ -122,25 +122,13 @@ class SuccessVarAbsoluteReplaceUndefinedTransforms {
 						continue;
 					}
 
-					var declared = new Map<String, Bool>();
-					collectPatternDecls(cl.pattern, declared);
-					collectLhsDeclsInBody(processedBody, declared);
-
-					// Collect used simple var names in body
-					var used = new Map<String, Bool>();
-					ASTUtils.walk(processedBody, function(u:ElixirAST) {
-						switch (u.def) {
-							case EVar(v):
-								used.set(v, true);
-							default:
-						}
-					});
+					var free = VarUseAnalyzer.freeVarNames(processedBody, clauseBound);
 
 					// Prefer binder promotion when body uses the trimmed name, as long as it doesn't
 					// capture a variable from the outer scope.
 					if (binder.length > 1 && binder.charAt(0) == '_') {
 						var trimmed = binder.substr(1);
-						if (used.exists(trimmed) && !declared.exists(trimmed) && !bound.exists(trimmed)) {
+						if (free.exists(trimmed)) {
 							var newPattern = rewriteOkBinder(cl.pattern, trimmed);
 							newClauses.push({pattern: newPattern, guard: newGuard, body: processedBody});
 							continue;
@@ -149,8 +137,8 @@ class SuccessVarAbsoluteReplaceUndefinedTransforms {
 
 					// Collect undefined lowercase vars (excluding those available from the outer scope).
 					var undef:Array<String> = [];
-					for (k in used.keys()) {
-						if (isLower(k) && allowReplace(k) && !declared.exists(k) && !bound.exists(k))
+					for (k in free.keys()) {
+						if (isLower(k) && !StringTools.startsWith(k, "_"))
 							undef.push(k);
 					}
 
@@ -163,44 +151,10 @@ class SuccessVarAbsoluteReplaceUndefinedTransforms {
 						continue;
 					}
 
-					var undefinedSet = new Map<String, Bool>();
-					for (u in undef)
-						undefinedSet.set(u, true);
-					var newBody = ElixirASTTransformer.transformNode(processedBody, function(x:ElixirAST):ElixirAST {
-						return switch (x.def) {
-							case EVar(v) if (isLower(v) && allowReplace(v) && !declared.exists(v) && !bound.exists(v)):
-								makeASTWithMeta(EVar(binder), x.metadata, x.pos);
-							case ERaw(s) if (s != null):
-								// Carefully replace undefined simple vars inside raw code fragments.
-								var updated = s;
-								for (k in undefinedSet.keys()) {
-									var u = k;
-									if (!allowReplace(u))
-										continue;
-									// Match whole-word u not preceded by ':' (avoid atoms)
-									var re = new EReg('(^|[^:A-Za-z0-9_])' + u + '([^A-Za-z0-9_]|$)', "g");
-									// Haxe EReg lacks global replace with groups; do manual loop
-									var buf = new StringBuf();
-									var pos = 0;
-									while (re.matchSub(updated, pos)) {
-										var mp = re.matchedPos();
-										var matchStr = re.matched(0);
-										var startIdx = matchStr.indexOf(u);
-										buf.add(updated.substr(pos, mp.pos - pos));
-										buf.add(matchStr.substr(0, startIdx));
-										buf.add(binder);
-										buf.add(matchStr.substr(startIdx + u.length));
-										pos = mp.pos + mp.len;
-									}
-									if (pos > 0) {
-										buf.add(updated.substr(pos));
-										updated = buf.toString();
-									}
-								}
-								if (updated != s) makeASTWithMeta(ERaw(updated), x.metadata, x.pos) else x;
-							default: x;
-						}
-					});
+					var replacements = new Map<String, String>();
+					for (name in undef)
+						replacements.set(name, binder);
+					var newBody = ScopedVarRewriter.rewrite(processedBody, replacements, clauseBound);
 
 					newClauses.push({pattern: cl.pattern, guard: newGuard, body: newBody});
 				}
@@ -310,23 +264,6 @@ class SuccessVarAbsoluteReplaceUndefinedTransforms {
 		}
 	}
 
-	static function collectLhsDeclsInBody(body:ElixirAST, vars:Map<String, Bool>):Void {
-		ASTUtils.walk(body, function(x:ElixirAST) {
-			if (x == null || x.def == null)
-				return;
-			switch (x.def) {
-				case EMatch(p, _):
-					collectPatternDecls(p, vars);
-				case EBinary(Match, l, _):
-					collectLhs(l, vars);
-				case ECase(_, cs):
-					for (c in cs)
-						collectPatternDecls(c.pattern, vars);
-				default:
-			}
-		});
-	}
-
 	static function collectLhs(lhs:ElixirAST, vars:Map<String, Bool>):Void {
 		switch (lhs.def) {
 			case EVar(n):
@@ -351,10 +288,6 @@ class SuccessVarAbsoluteReplaceUndefinedTransforms {
 			return false;
 		var c = s.charAt(0);
 		return c.toLowerCase() == c;
-	}
-
-	static inline function allowReplace(name:String):Bool {
-		return name != "socket" && name != "live_socket" && name != "liveSocket";
 	}
 }
 #end

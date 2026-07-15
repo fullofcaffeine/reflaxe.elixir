@@ -50,10 +50,8 @@ defmodule Main do
     assert match?({:ok, _}, pos2)
     (case pos1 do
       {:ok, a} ->
-        b = a
         (case pos2 do
           {:ok, b} ->
-            result = b
             a = b
             sum = PositiveInt_Impl_.add(a, b)
             actual = PositiveInt_Impl_.to_int(sum)
@@ -85,7 +83,6 @@ defmodule Main do
     assert match?({:ok, _}, str)
     (case str do
       {:ok, value} ->
-        trimmed_str = value
         s = value
         trimmed = NonEmptyString_Impl_.safe_trim(s)
         assert match?({:ok, _}, trimmed)
@@ -173,7 +170,6 @@ defmodule Main do
           {:ok, id} ->
             (case user_age do
               {:ok, age} ->
-                name = age
                 (case user_name do
                   {:ok, name} ->
                     id = name

@@ -311,13 +311,14 @@ CI covers full codegen snapshots and negative cases, Haxe-authored ExUnit semant
 stdlib fixtures, strict generated-Elixir compilation, runtime examples, source/package parity,
 reproducible release artifacts, and Phoenix browser smoke.
 
-That evidence supports the documented subset, not arbitrary Haxe programs. The reducer and nested
-comprehension bugs found in the initial 1.0 review are fixed; effective Mix invalidation has
-content-fingerprint regressions; and generated output now has fail-closed collision, cleanup,
-upgrade, rollback, and interruption evidence. OTP now has a small, explicit runtime-tested subset
-instead of a broad lifecycle claim. One newly found callback-binder bug remains tracked outside that
-subset. Before 1.0 can be approved, the project still needs the complete support list, a licensing
-decision, and an unchanged release candidate tested in independent projects.
+Those tests prove the features listed as supported; they do not guarantee that every Haxe program
+works yet. The loop and nested-comprehension bugs found during the 1.0 review are fixed. Mix now
+rebuilds when any tracked Haxe input changes, and the compiler refuses to overwrite or delete a file
+unless it can verify that it generated the file. The tested OTP feature set is deliberately small
+and clearly listed. Callback functions written directly inside `Result` branches also have source
+and runtime tests. Before the project can promise 1.0 stability, it still needs an exact list of
+supported APIs and versions, a qualified licensing decision, and one unchanged proposed release
+tested in independent projects for a defined period.
 
 ## Explore
 

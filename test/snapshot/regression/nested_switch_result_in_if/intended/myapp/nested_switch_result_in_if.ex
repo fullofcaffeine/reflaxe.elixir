@@ -13,7 +13,7 @@ defmodule NestedSwitchResultInIf do
           v
         else
           (case inner(v) do
-            {:ok, value} -> value
+            {:ok, updated} -> updated
             {:error, _error} -> 0
           end)
         end

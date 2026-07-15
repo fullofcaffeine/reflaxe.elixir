@@ -7,6 +7,7 @@ import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ElixirAST.PhoenixContext;
+import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 
 /**
 	* SuccessBinderPrefixMostUsedUndefinedTransforms
@@ -17,13 +18,13 @@ import reflaxe.elixir.ast.ElixirAST.PhoenixContext;
 	*     var = binder; <body>
 	*
 	* WHY
-	* - Complements rename-based alignment when renaming would shadow existing outer names
-	*   (e.g., `socket`). Prefix-binding preserves outer references and satisfies undefineds.
+	* - Complements rename-based alignment when renaming would shadow an existing outer name.
+	*   Prefix-binding preserves outer references and satisfies genuinely missing locals.
 	*
 	* HOW
 	* - For each ECase clause with `{:ok, PVar(binder)}`:
-	*   - Compute declared names (pattern + LHS binds in body)
-	*   - Count EVar occurrences in body; choose the most frequent name not declared/reserved
+	*   - Use `VarUseAnalyzer` to count references that remain free after lexical scope
+	*   - Choose the most frequent eligible local name
 	*   - Prefix `name = binder` and keep the original body unchanged
 
 	*
@@ -147,15 +148,13 @@ class SuccessBinderPrefixMostUsedUndefinedTransforms {
 		if (binder == null)
 			return cl;
 
-		var declared = new Map<String, Bool>();
-		collectPatternDecls(cl.pattern, declared);
-		collectLhsDeclsInBody(cl.body, declared);
-
-		var freq = countVars(cl.body);
+		var available = cloneScope(outerScope);
+		collectPatternVarsInto(cl.pattern, available);
+		var freq = VarUseAnalyzer.freeVarUseCounts(cl.body, available);
 		var best:Null<String> = null;
 		var bestCount = 0;
 		for (k in freq.keys()) {
-			if (!declared.exists(k) && allow(k) && (outerScope == null || !outerScope.exists(k))) {
+			if (allow(k)) {
 				var c = freq.get(k);
 				if (c > bestCount) {
 					bestCount = c;
@@ -270,67 +269,8 @@ class SuccessBinderPrefixMostUsedUndefinedTransforms {
 		}
 	}
 
-	static function collectPatternDecls(p:EPattern, vars:Map<String, Bool>):Void {
-		switch (p) {
-			case PVar(n):
-				vars.set(n, true);
-			case PTuple(es) | PList(es):
-				for (e in es)
-					collectPatternDecls(e, vars);
-			case PCons(h, t):
-				collectPatternDecls(h, vars);
-				collectPatternDecls(t, vars);
-			case PMap(kvs):
-				for (kv in kvs)
-					collectPatternDecls(kv.value, vars);
-			case PStruct(_, fs):
-				for (f in fs)
-					collectPatternDecls(f.value, vars);
-			case PPin(inner):
-				collectPatternDecls(inner, vars);
-			default:
-		}
-	}
-
-	static function collectLhsDeclsInBody(body:ElixirAST, vars:Map<String, Bool>):Void {
-		reflaxe.elixir.ast.ASTUtils.walk(body, function(x:ElixirAST) {
-			switch (x.def) {
-				case EMatch(p, _):
-					collectPatternDecls(p, vars);
-				case EBinary(Match, l, _):
-					collectLhs(l, vars);
-				default:
-			}
-		});
-	}
-
-	static function collectLhs(lhs:ElixirAST, vars:Map<String, Bool>):Void {
-		switch (lhs.def) {
-			case EVar(n):
-				vars.set(n, true);
-			case EBinary(Match, l2, _):
-				collectLhs(l2, vars);
-			default:
-		}
-	}
-
-	static function countVars(body:ElixirAST):haxe.ds.StringMap<Int> {
-		var m = new haxe.ds.StringMap<Int>();
-		reflaxe.elixir.ast.ASTUtils.walk(body, function(x:ElixirAST) {
-			switch (x.def) {
-				case EVar(n):
-					if (allow(n))
-						m.set(n, (m.exists(n) ? m.get(n) : 0) + 1);
-				default:
-			}
-		});
-		return m;
-	}
-
 	static inline function allow(name:String):Bool {
 		if (name == null || name.length == 0)
-			return false;
-		if (name == "socket" || name == "live_socket" || name == "params" || name == "_params")
 			return false;
 		var c = name.charAt(0);
 		return c.toLowerCase() == c && c != '_';

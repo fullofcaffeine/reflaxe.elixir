@@ -107,8 +107,8 @@ defmodule TermDecoder do
     (case fetch_string_key(map, key) do
       {:ok, value} ->
         (case decode.(value) do
-          {:ok, value} -> {:ok, {:some, value}}
-          {:error, value} -> {:error, value}
+          {:ok, decoded_value} -> {:ok, {:some, decoded_value}}
+          {:error, error} -> {:error, error}
         end)
       {:error, error} ->
         (case error do
@@ -121,8 +121,8 @@ defmodule TermDecoder do
     (case fetch_atom_key(map, key) do
       {:ok, value} ->
         (case decode.(value) do
-          {:ok, value} -> {:ok, {:some, value}}
-          {:error, value} -> {:error, value}
+          {:ok, decoded_value} -> {:ok, {:some, decoded_value}}
+          {:error, error} -> {:error, error}
         end)
       {:error, error} ->
         (case error do

@@ -4,6 +4,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
+import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 
 /**
  * CaseSuccessVarUnifier
@@ -73,7 +74,7 @@ class CaseSuccessVarUnifier {
 						#end
 						if (successVar != null) {
 							// Promote underscore binder when body uses the trimmed name
-							var pat2 = promoteUnderscoreBinder(c.pattern, c.body);
+							var pat2 = promoteUnderscoreBinder(c.pattern, c.body, funcDefined);
 							var effectiveVar = extractOkVar(pat2);
 							#if debug_success_unifier
 							#end
@@ -111,7 +112,7 @@ class CaseSuccessVarUnifier {
 		}
 	}
 
-	static function promoteUnderscoreBinder(p:EPattern, body:ElixirAST):EPattern {
+	static function promoteUnderscoreBinder(p:EPattern, body:ElixirAST, funcDefined:Map<String, Bool>):EPattern {
 		return switch (p) {
 			case PTuple(els) if (els.length == 2):
 				switch (els[0]) {
@@ -119,7 +120,7 @@ class CaseSuccessVarUnifier {
 						switch (els[1]) {
 							case PVar(n) if (n != null && n.length > 1 && n.charAt(0) == '_'):
 								var trimmed = n.substr(1);
-								if (bodyUsesName(body, trimmed)) PTuple([els[0], PVar(trimmed)]) else p;
+								if (VarUseAnalyzer.usesFreeVarExact(body, trimmed, funcDefined)) PTuple([els[0], PVar(trimmed)]) else p;
 							default: p;
 						}
 					default: p;
@@ -128,57 +129,29 @@ class CaseSuccessVarUnifier {
 		}
 	}
 
-	static function bodyUsesName(body:ElixirAST, name:String):Bool {
-		var used = false;
-		ElixirASTTransformer.transformNode(body, function(n:ElixirAST):ElixirAST {
-			switch (n.def) {
-				case EVar(v) if (v == name):
-					used = true;
-				default:
-			}
-			return n;
-		});
-		return used;
-	}
-
 	static function rewritePlaceholders(body:ElixirAST, successVar:String, funcDefined:Map<String, Bool>):ElixirAST {
-		// Collect declared names inside this clause body
-		var declared = new Map<String, Bool>();
-		var referenced = new Map<String, Bool>();
-		reflaxe.elixir.ast.ASTUtils.walk(body, function(n:ElixirAST) {
-			switch (n.def) {
-				case EMatch(p, _):
-					collectPatternDecls(p, declared);
-				case EBinary(Match, left, _):
-					collectLhsDecls(left, declared);
-				case EVar(v):
-					referenced.set(v, true);
-				default:
-			}
-		});
-
-		// Undefined references in body that look like simple local variables.
-		// IMPORTANT: Module names and dotted access (e.g. `TodoApp.Repo`, `socket.assigns.todos`) are
-		// represented as EVar in some builder shapes and must never be rewritten to the success binder.
-		var undefined = [
-			for (k in referenced.keys())
-				if (isCandidatePlaceholder(k) && !declared.exists(k) && !funcDefined.exists(k)) k
-		];
+		var bound = cloneVars(funcDefined);
+		bound.set(successVar, true);
+		var free = VarUseAnalyzer.freeVarNames(body, bound);
+		var undefined = [for (name in free.keys()) if (isCandidatePlaceholder(name)) name];
 		#if debug_success_unifier
 		if (undefined.length > 0) {}
 		#end
 		if (undefined.length == 0)
 			return body;
 
-		return ElixirASTTransformer.transformNode(body, function(n:ElixirAST):ElixirAST {
-			return switch (n.def) {
-				case EVar(name) if (!declared.exists(name) && !funcDefined.exists(name) && undefined.indexOf(name) != -1):
-					// Replace undefined placeholder local with successVar
-					makeASTWithMeta(EVar(successVar), n.metadata, n.pos);
-				default:
-					n;
-			}
-		});
+		var replacements = new Map<String, String>();
+		for (name in undefined)
+			replacements.set(name, successVar);
+		return ScopedVarRewriter.rewrite(body, replacements, bound);
+	}
+
+	static function cloneVars(vars:Map<String, Bool>):Map<String, Bool> {
+		var copy = new Map<String, Bool>();
+		if (vars != null)
+			for (name in vars.keys())
+				copy.set(name, true);
+		return copy;
 	}
 
 	static inline function isCandidatePlaceholder(name:String):Bool {
@@ -186,9 +159,6 @@ class CaseSuccessVarUnifier {
 			return false;
 		// Never treat modules or dotted access as placeholders.
 		if (name.indexOf(".") != -1)
-			return false;
-		// Exclude conventional environment bindings.
-		if (name == "socket" || name == "live_socket" || name == "liveSocket")
 			return false;
 		// Only lowercase-starting locals are eligible (avoid module aliases like `Repo`, `Enum`, `Phoenix`).
 		var c = name.charAt(0);

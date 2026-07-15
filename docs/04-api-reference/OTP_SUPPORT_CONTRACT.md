@@ -139,12 +139,37 @@ runtime evidence to be called stable:
 These are exclusions, not claims that the underlying Elixir features are broken. They mean the
 compiler project is not promising those Haxe source shapes for 1.0 until focused runtime tests exist.
 
-## Known Source-Shape Limitation
+## Callbacks Inside `Result` Branches
 
-A callback lambda written directly inside a `Result` switch branch can currently bind the wrong
-parameter. That compiler bug is tracked as `haxe.elixir.codex-3qh.26`; this source shape is not part
-of the stable subset until the bug is fixed. The runtime contract exercises the Agent callbacks in a
-separate typed function so the generated callback binders are checked directly.
+Agent callbacks can be written directly inside the successful branch of `Agent.start`. The callback
+parameter remains separate from the `agent` value bound by the switch:
+
+```haxe
+import elixir.Agent;
+import elixir.Kernel;
+import haxe.functional.Result;
+
+switch (Agent.start(() -> 10)) {
+  case Ok(agent):
+    Agent.update(agent, (value:Int) -> value + 5);
+    Agent.get(agent, (value:Int) -> value);
+  case Error(reason):
+    Kernel.raise('Agent failed: $reason');
+}
+```
+
+```elixir
+case Agent.start(fn -> 10 end) do
+  {:ok, agent} ->
+    Agent.update(agent, fn value -> value + 5 end)
+    Agent.get(agent, fn value -> value end)
+  {:error, reason} ->
+    Kernel.raise("Agent failed: #{reason}")
+end
+```
+
+The regression also checks intentional capture of the outer branch value and nested callbacks that
+reuse the same parameter name. This was fixed under `haxe.elixir.codex-3qh.26`.
 
 ## Executable Evidence
 

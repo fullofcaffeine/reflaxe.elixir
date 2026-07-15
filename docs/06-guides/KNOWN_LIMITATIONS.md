@@ -11,33 +11,29 @@ If you hit something not covered here, please open an issue and include your **H
 
 - **API surface (`std/phoenix` + `std/ecto`)**: documented surfaces use the stable compatibility
   tier. While the project is pre-1.0, incompatible changes require an explicitly documented minor
-  release; stable graduation has not yet been approved.
+  release; publishing 1.0 as stable has not yet been approved.
 - **Compiler output**: intended to be idiomatic and readable, but edge‑case semantics may change as the transformer passes mature.
 - **Examples**: treated as “living docs”; they may evolve as patterns improve.
 
-## Recently closed correctness defects
+## Recently fixed compiler bugs
 
-The reducer/comprehension defects found during the 1.0 review are closed:
+The compiler bugs found during the 1.0 review are fixed:
 
-- reducer-lowered accumulators preserve state across `break` and `continue` (`3qh.23`);
-- nested dynamic comprehensions preserve their inner results (`3qh.24`);
-- nested reducer callbacks retain their own lexical accumulator state (`3qh.25`).
+- loops keep the right accumulated value when they use `break` or `continue` (`3qh.23`);
+- a list comprehension inside another list comprehension keeps the inner results (`3qh.24`);
+- a loop inside another loop keeps its own accumulated value instead of mixing it up with the outer
+  loop's value (`3qh.25`); and
+- a callback written directly inside a `Result` switch branch keeps its own parameter. It can still
+  intentionally use the branch value, and nested callbacks can safely reuse a parameter name
+  (`3qh.26`).
 
 The Haxe-authored runtime suites under `test/runtime/loop_control_accumulators` and
 `test/runtime/nested_dynamic_comprehensions` exercise the source-language operations directly. This
-evidence closes those known bugs; it does not imply that every Haxe program is supported. The stable
-surface is still being enumerated under `haxe.elixir.codex-0yn.5`. See
-[Production Readiness](PRODUCTION_READINESS.md) for the full 1.0 gate.
-
-## Open callback-binder correctness defect
-
-A callback lambda written directly inside a `Result` switch branch can bind the branch value instead
-of the lambda's own parameter. For example, a callback such as `(value:Int) -> value + 1` inside
-`case Ok(agent)` can incorrectly use `agent` where it should use `value`. This is a compiler bug, not
-Agent behavior, and is tracked as `haxe.elixir.codex-3qh.26`.
-
-That source shape is not part of the proposed stable surface. It must be fixed or remain explicitly
-excluded when the full 1.0 support list is frozen.
+evidence closes those known bugs. The callback fix additionally has snapshot and runtime coverage in
+`test/snapshot/regression/result_switch_lambda_binders`, and the OTP runtime test now writes Agent
+callbacks directly inside the successful `Result` branch. This does not imply that every Haxe
+program is supported. The stable surface is still being listed under `haxe.elixir.codex-0yn.5`. See
+[Production Readiness](PRODUCTION_READINESS.md) for the full 1.0 checklist.
 
 ## Macro inputs outside the build graph
 

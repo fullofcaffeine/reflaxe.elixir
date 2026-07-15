@@ -184,7 +184,14 @@ Created in response to Map iterator transformation failures where pattern matchi
 - Multiple passes had ad‑hoc `usedLater`/`stmtUsesVar` implementations with inconsistent coverage (missed EFn closures, string interpolation, ERaw, map/keyword/struct fields, case clause bodies). This led to discarding locals actually used in closures/interpolations and produced undefined‑variable errors at runtime.
 
 ### HOW
-- All hygiene/binder passes MUST import and use `VarUseAnalyzer.usedLater` and `VarUseAnalyzer.stmtUsesVar`.
+- All hygiene/binder passes MUST import and use `VarUseAnalyzer`:
+  - `usedLater` / `stmtUsesVar` for broad usage checks;
+  - `freeVarNames` / `freeVarUseCounts` when a repair must distinguish a missing local from a
+    nested binder or an intentional outer capture. These APIs intentionally do not infer missing
+    locals from opaque `ERaw`; binder synthesis must fail closed unless the reference is structured
+    or the raw node is only a quoted interpolated string.
+- Scope-sensitive replacements MUST use `ScopedVarRewriter` so they do not cross anonymous-function,
+  case, receive, with, for, try, or sequential-assignment binders.
 - Analyzer responsibilities (non‑negotiable):
   - Traverse EFn clause bodies (closures)
   - Scan `"#{...}"` string interpolations
@@ -195,6 +202,7 @@ Created in response to Map iterator transformation failures where pattern matchi
 ### RULES (Do/Don’t)
 - Do
   - Use VarUseAnalyzer everywhere you need usage checks (discard, underscore, promotion, aliasing).
+  - Use ScopedVarRewriter for replacements selected from free-variable analysis.
   - Add missing coverage to VarUseAnalyzer first — never in individual passes.
   - Add focused tests for newly covered constructs before using them in passes.
 - Don’t

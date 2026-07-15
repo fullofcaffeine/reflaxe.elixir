@@ -5,7 +5,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
-import reflaxe.elixir.ast.analyzers.ElixirCodeVarRefTokenizer;
+import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 
 /**
  * ClauseUndefinedVarBindToBinderTransforms
@@ -15,14 +15,14 @@ import reflaxe.elixir.ast.analyzers.ElixirCodeVarRefTokenizer;
  *   undefined lower-case local `u`, prefix-bind `u = binder` inside the clause body.
  *
  * WHY
- * - Some earlier steps can leave the success binder with an unfortunate name (e.g., `socket`).
- *   The body, however, clearly uses a meaningful variable (e.g., `todo`), causing compile errors.
- *   Prefix-binding the intended local to the binder preserves semantics without renaming env vars.
+ * - Earlier steps can leave the success binder with an unfortunate generated name.
+ *   When the body clearly uses one different free local, aliasing it to the binder
+ *   repairs the mismatch without changing existing outer variables.
  *
  * HOW
  * - For each ECase clause:
- *   - If pattern is `{:atom, PVar(b)}` and body’s used lower-case locals contain exactly one
- *     undefined `u`, and `u` is not reserved (`socket`, `params`, ...), then make the clause body:
+ *   - If pattern is `{:atom, PVar(b)}` and the body contains exactly one eligible
+ *     free local `u`, then make the clause body:
  *       `u = b; <original body>`
  * - Runs absolute-final; no app coupling.
  */
@@ -113,11 +113,12 @@ class ClauseUndefinedVarBindToBinderTransforms {
 		if (b == null)
 			return cl;
 
-		var declared = collectDeclared(cl.pattern, cl.body);
-		var used = collectUsed(cl.body);
+		var available = cloneScope(outerScope);
+		collectPatternVarsInto(cl.pattern, available);
+		var free = VarUseAnalyzer.freeVarNames(cl.body, available);
 		var undef:Array<String> = [];
-		for (u in used.keys()) {
-			if (!declared.exists(u) && allow(u) && (outerScope == null || !outerScope.exists(u)))
+		for (u in free.keys()) {
+			if (allow(u))
 				undef.push(u);
 		}
 
@@ -224,8 +225,6 @@ class ClauseUndefinedVarBindToBinderTransforms {
 	static function allow(name:String):Bool {
 		if (name == null || name.length == 0)
 			return false;
-		if (name == "socket" || name == "params" || name == "_params" || name == "event")
-			return false;
 		// Filter out Elixir keywords and common language tokens that may appear in printed text
 		switch (name) {
 			case "end" | "do" | "case" | "fn" | "receive" | "after" | "else" | "catch" | "rescue" | "true" | "false" | "nil" | "when":
@@ -273,72 +272,6 @@ class ClauseUndefinedVarBindToBinderTransforms {
 				}
 			default: null;
 		}
-	}
-
-	static function collectDeclared(p:EPattern, body:ElixirAST):Map<String, Bool> {
-		var m = new Map<String, Bool>();
-		function pat(pt:EPattern):Void {
-			switch (pt) {
-				case PVar(n):
-					m.set(n, true);
-				case PTuple(es) | PList(es):
-					for (e in es)
-						pat(e);
-				case PCons(h, t):
-					pat(h);
-					pat(t);
-				case PMap(kvs):
-					for (kv in kvs)
-						pat(kv.value);
-				case PStruct(_, fs):
-					for (f in fs)
-						pat(f.value);
-				case PPin(inner):
-					pat(inner);
-				default:
-			}
-		}
-		pat(p);
-		// LHS inside body
-		reflaxe.elixir.ast.ASTUtils.walk(body, function(n:ElixirAST) {
-			if (n == null || n.def == null)
-				return;
-			switch (n.def) {
-				case EMatch(pt, _):
-					pat(pt);
-				case EBinary(Match, {def: EVar(lhs)}, _):
-					m.set(lhs, true);
-				default:
-			}
-		});
-		return m;
-	}
-
-	static function collectUsed(ast:ElixirAST):Map<String, Bool> {
-		var names = new Map<String, Bool>();
-		reflaxe.elixir.ast.ASTUtils.walk(ast, function(n:ElixirAST) {
-			if (n == null || n.def == null)
-				return;
-			switch (n.def) {
-				case EVar(v):
-					if (allow(v))
-						names.set(v, true);
-				case EString(s):
-					var tmp = new Map<String, Bool>();
-					ElixirCodeVarRefTokenizer.collectFromInterpolatedStringText(s, tmp);
-					for (k in tmp.keys())
-						if (allow(k))
-							names.set(k, true);
-				case ERaw(code) if (code != null && code.indexOf("#{") != -1):
-					var tmp2 = new Map<String, Bool>();
-					ElixirCodeVarRefTokenizer.collectFromElixirCode(code, tmp2);
-					for (k2 in tmp2.keys())
-						if (allow(k2))
-							names.set(k2, true);
-				default:
-			}
-		});
-		return names;
 	}
 
 	static function hasAliasInBody(body:ElixirAST, lhs:String, rhs:String):Bool {

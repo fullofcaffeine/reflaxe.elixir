@@ -3,7 +3,6 @@ package reflaxe.elixir.ast.analyzers;
 #if (macro || reflaxe_runtime)
 import Lambda;
 import reflaxe.elixir.ast.ElixirAST;
-import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 
 /**
  * VarUseAnalyzer
@@ -50,6 +49,322 @@ class VarUseAnalyzer {
 			if (stmtUsesVar(stmts[j], name))
 				return true;
 		return false;
+	}
+
+	/**
+	 * Collect references that are free relative to `initiallyBound`.
+	 *
+	 * Unlike the broad hygiene checks above, this method follows lexical binders:
+	 * anonymous-function arguments, case/receive patterns, with/for generators, and
+	 * sequential assignments. Binder-repair passes use it to distinguish a genuinely
+	 * missing reference from a same-named local inside a nested closure. Opaque `ERaw`
+	 * fragments are deliberately excluded because they do not expose lexical scope;
+	 * a raw node that is only a quoted interpolated string remains safe to inspect.
+	 */
+	public static function freeVarNames(n:ElixirAST, ?initiallyBound:Map<String, Bool>):Map<String, Bool> {
+		var names = new Map<String, Bool>();
+		for (name in freeVarUseCounts(n, initiallyBound).keys())
+			names.set(name, true);
+		return names;
+	}
+
+	/**
+	 * Count references that are free relative to `initiallyBound`.
+	 *
+	 * This is the frequency-preserving counterpart to `freeVarNames`. Passes that
+	 * must choose among several missing locals use these centralized counts rather
+	 * than flattening the AST and accidentally counting nested binders as uses.
+	 */
+	public static function freeVarUseCounts(n:ElixirAST, ?initiallyBound:Map<String, Bool>):Map<String, Int> {
+		var refs = new Map<String, Int>();
+
+		function recordReference(name:String):Void {
+			if (name == null || name.length == 0)
+				return;
+			refs.set(name, refs.exists(name) ? refs.get(name) + 1 : 1);
+		}
+
+		function cloneScope(scope:Map<String, Bool>):Map<String, Bool> {
+			var copy = new Map<String, Bool>();
+			if (scope != null)
+				for (name in scope.keys())
+					copy.set(name, true);
+			return copy;
+		}
+
+		function bindPattern(pattern:EPattern, scope:Map<String, Bool>):Void {
+			if (pattern == null)
+				return;
+			switch (pattern) {
+				case PVar(name) if (name != null && name.length > 0):
+					scope.set(name, true);
+				case PAlias(name, inner):
+					if (name != null && name.length > 0)
+						scope.set(name, true);
+					bindPattern(inner, scope);
+				case PTuple(elements) | PList(elements):
+					for (element in elements)
+						bindPattern(element, scope);
+				case PCons(head, tail):
+					bindPattern(head, scope);
+					bindPattern(tail, scope);
+				case PMap(pairs):
+					for (pair in pairs)
+						bindPattern(pair.value, scope);
+				case PStruct(_, fields):
+					for (field in fields)
+						bindPattern(field.value, scope);
+				case PBinary(segments):
+					for (segment in segments)
+						bindPattern(segment.pattern, scope);
+				case PPin(_):
+					// A pin reads an existing binding; it does not create one.
+				default:
+			}
+		}
+
+		function bindLhs(lhs:ElixirAST, scope:Map<String, Bool>):Void {
+			if (lhs == null || lhs.def == null)
+				return;
+			switch (lhs.def) {
+				case EVar(name) if (name != null && name.length > 0):
+					scope.set(name, true);
+				case ETuple(elements) | EList(elements):
+					for (element in elements)
+						bindLhs(element, scope);
+				case EKeywordList(pairs):
+					for (pair in pairs)
+						bindLhs(pair.value, scope);
+				case EMap(pairs):
+					for (pair in pairs)
+						bindLhs(pair.value, scope);
+				case EStruct(_, fields):
+					for (field in fields)
+						bindLhs(field.value, scope);
+				case EBinary(Match, left, right):
+					bindLhs(left, scope);
+					bindLhs(right, scope);
+				case EPin(_):
+					// Pinned values are references, not new bindings.
+				default:
+			}
+		}
+
+		function bindStatement(statement:ElixirAST, scope:Map<String, Bool>):Void {
+			if (statement == null || statement.def == null)
+				return;
+			switch (statement.def) {
+				case EMatch(pattern, _):
+					bindPattern(pattern, scope);
+				case EBinary(Match, lhs, _):
+					bindLhs(lhs, scope);
+				default:
+			}
+		}
+
+		function recordPatternPins(pattern:EPattern, scope:Map<String, Bool>, pinned:Bool = false):Void {
+			if (pattern == null)
+				return;
+			switch (pattern) {
+				case PVar(name) if (pinned && !scope.exists(name)):
+					recordReference(name);
+				case PPin(inner):
+					recordPatternPins(inner, scope, true);
+				case PAlias(_, inner):
+					recordPatternPins(inner, scope, pinned);
+				case PTuple(elements) | PList(elements):
+					for (element in elements)
+						recordPatternPins(element, scope, pinned);
+				case PCons(head, tail):
+					recordPatternPins(head, scope, pinned);
+					recordPatternPins(tail, scope, pinned);
+				case PMap(pairs):
+					for (pair in pairs)
+						recordPatternPins(pair.value, scope, pinned);
+				case PStruct(_, fields):
+					for (field in fields)
+						recordPatternPins(field.value, scope, pinned);
+				case PBinary(segments):
+					for (segment in segments)
+						recordPatternPins(segment.pattern, scope, pinned);
+				default:
+			}
+		}
+
+		function recordLhsPins(lhs:ElixirAST, scope:Map<String, Bool>, pinned:Bool = false):Void {
+			if (lhs == null || lhs.def == null)
+				return;
+			switch (lhs.def) {
+				case EVar(name) if (pinned && !scope.exists(name)):
+					recordReference(name);
+				case EPin(inner):
+					recordLhsPins(inner, scope, true);
+				case ETuple(elements) | EList(elements):
+					for (element in elements)
+						recordLhsPins(element, scope, pinned);
+				case EKeywordList(pairs):
+					for (pair in pairs)
+						recordLhsPins(pair.value, scope, pinned);
+				case EMap(pairs):
+					for (pair in pairs)
+						recordLhsPins(pair.value, scope, pinned);
+				case EStruct(_, fields):
+					for (field in fields)
+						recordLhsPins(field.value, scope, pinned);
+				case EBinary(Match, left, right):
+					recordLhsPins(left, scope, pinned);
+					recordLhsPins(right, scope, pinned);
+				default:
+			}
+		}
+
+		function recordInterpolated(code:String, scope:Map<String, Bool>):Void {
+			var names = new Map<String, Bool>();
+			ElixirCodeVarRefTokenizer.collectFromInterpolatedStringText(code, names);
+			for (name in names.keys())
+				if (!scope.exists(name))
+					recordReference(name);
+		}
+
+		function walk(node:ElixirAST, scope:Map<String, Bool>):Void {
+			if (node == null || node.def == null)
+				return;
+			switch (node.def) {
+				case EVar(name):
+					if (!scope.exists(name))
+						recordReference(name);
+
+				case EString(value):
+					recordInterpolated(value, scope);
+				case ERaw(code) if (looksLikeDoubleQuotedStringLiteral(code)):
+					recordInterpolated(stripOuterQuotes(code), scope);
+				case ERaw(_):
+					// Binder synthesis must fail closed on opaque target code. The broad
+					// stmtUsesVar APIs still scan ERaw for discard/underscore hygiene.
+
+				case EMatch(pattern, rhs):
+					recordPatternPins(pattern, scope);
+					walk(rhs, scope);
+				case EBinary(Match, lhs, rhs):
+					recordLhsPins(lhs, scope);
+					walk(rhs, scope);
+
+				case EBlock(statements) | EDo(statements):
+					var blockScope = cloneScope(scope);
+					for (statement in statements) {
+						walk(statement, blockScope);
+						bindStatement(statement, blockScope);
+					}
+
+				case EDef(_, args, guards, body) | EDefp(_, args, guards, body) | EDefmacro(_, args, guards, body) | EDefmacrop(_, args, guards, body):
+					var functionScope = new Map<String, Bool>();
+					for (arg in args) {
+						recordPatternPins(arg, functionScope);
+						bindPattern(arg, functionScope);
+					}
+					if (guards != null)
+						walk(guards, functionScope);
+					walk(body, functionScope);
+
+				case EFn(clauses):
+					for (clause in clauses) {
+						var functionScope = cloneScope(scope);
+						for (arg in clause.args) {
+							recordPatternPins(arg, functionScope);
+							bindPattern(arg, functionScope);
+						}
+						if (clause.guard != null)
+							walk(clause.guard, functionScope);
+						walk(clause.body, functionScope);
+					}
+
+				case ECase(target, clauses):
+					walk(target, scope);
+					for (clause in clauses) {
+						var clauseScope = cloneScope(scope);
+						recordPatternPins(clause.pattern, clauseScope);
+						bindPattern(clause.pattern, clauseScope);
+						if (clause.guard != null)
+							walk(clause.guard, clauseScope);
+						walk(clause.body, clauseScope);
+					}
+
+				case EReceive(clauses, afterClause):
+					for (clause in clauses) {
+						var clauseScope = cloneScope(scope);
+						recordPatternPins(clause.pattern, clauseScope);
+						bindPattern(clause.pattern, clauseScope);
+						if (clause.guard != null)
+							walk(clause.guard, clauseScope);
+						walk(clause.body, clauseScope);
+					}
+					if (afterClause != null) {
+						walk(afterClause.timeout, scope);
+						walk(afterClause.body, scope);
+					}
+
+				case EWith(clauses, doBlock, elseBlock):
+					var withScope = cloneScope(scope);
+					for (clause in clauses) {
+						walk(clause.expr, withScope);
+						recordPatternPins(clause.pattern, withScope);
+						bindPattern(clause.pattern, withScope);
+					}
+					walk(doBlock, withScope);
+					if (elseBlock != null)
+						walk(elseBlock, scope);
+
+				case EFor(generators, filters, body, into, _):
+					var forScope = cloneScope(scope);
+					for (generator in generators) {
+						walk(generator.expr, forScope);
+						recordPatternPins(generator.pattern, forScope);
+						bindPattern(generator.pattern, forScope);
+					}
+					for (filter in filters)
+						walk(filter, forScope);
+					walk(body, forScope);
+					if (into != null)
+						walk(into, scope);
+
+				case ETry(body, rescueClauses, catchClauses, afterBlock, elseBlock):
+					walk(body, scope);
+					if (rescueClauses != null)
+						for (clause in rescueClauses) {
+							var rescueScope = cloneScope(scope);
+							recordPatternPins(clause.pattern, rescueScope);
+							bindPattern(clause.pattern, rescueScope);
+							if (clause.varName != null)
+								rescueScope.set(clause.varName, true);
+							walk(clause.body, rescueScope);
+						}
+					if (catchClauses != null)
+						for (clause in catchClauses) {
+							var catchScope = cloneScope(scope);
+							recordPatternPins(clause.pattern, catchScope);
+							bindPattern(clause.pattern, catchScope);
+							walk(clause.body, catchScope);
+						}
+					if (afterBlock != null)
+						walk(afterBlock, scope);
+					if (elseBlock != null)
+						walk(elseBlock, scope);
+
+				default:
+					reflaxe.elixir.ast.ElixirASTTransformer.transformAST(node, child -> {
+						walk(child, scope);
+						child;
+					});
+			}
+		}
+
+		walk(n, cloneScope(initiallyBound));
+		return refs;
+	}
+
+	/** Return whether `name` has a reference that is free in the supplied lexical scope. */
+	public static function usesFreeVarExact(n:ElixirAST, name:String, ?initiallyBound:Map<String, Bool>):Bool {
+		return name != null && name.length > 0 && freeVarNames(n, initiallyBound).exists(name);
 	}
 
 	/**

@@ -13,10 +13,9 @@ It does not claim that every Haxe program is supported, and it is not approval t
 > - test one unchanged proposed release build (a release candidate) in independent real-world
 >   projects for a defined period.
 >
-> The three compiler bugs found in the initial review are fixed. A newly discovered callback-binder
-> bug remains open and is excluded from the runtime-tested OTP subset. Mix now notices when known
-> Haxe build inputs change, and the compiler refuses to overwrite or delete files that it cannot
-> prove it generated. However,
+> The compiler bugs found during the review, including the callback-binder bug discovered during OTP
+> testing, are fixed. Mix now notices when known Haxe build inputs change, and the compiler refuses
+> to overwrite or delete files that it cannot prove it generated. However,
 > [`release/manifest.json`](../../release/manifest.json) does not yet authorize a `1.x` release.
 
 Detailed findings and reasons are in the
@@ -50,7 +49,7 @@ versions, operating systems, third-party libraries, or deployment conditions.
 
 | Dimension | Status | Evidence | Remaining condition or gap |
 | --- | --- | --- | --- |
-| Compiler semantics | **Conditional** | Full snapshot categories, negative cases, function-result invariants, generated Elixir validation, Mix runtime tests, reducer loop-control and nested-comprehension runtime suites | Callback lambdas written directly inside a `Result` switch branch have a known binder bug (`haxe.elixir.codex-3qh.26`). That shape is outside the proposed OTP subset; the final support list must fix or exclude it explicitly. |
+| Haxe program behavior | **Conditional** | Generated-code checks and runtime tests cover normal and invalid inputs, loop control, nested list comprehensions, and callbacks inside `Result` branches | No known compiler bug affects the reviewed examples. The final support list must still say exactly which Haxe code patterns 1.0 promises to handle. |
 | Mix build invalidation | **Ready** | Deterministic fingerprint regressions cover same-timestamp edits, timestamp-only touches, recursive HXML, `src_shared`, resources, libraries/package descriptors, toolchain identity, explicit macro inputs, removed roots, and no-op behavior | Macro filesystem reads outside the discoverable graph must be declared with `:extra_inputs`; project watchers do not monitor external package/toolchain caches, but the next `mix compile` detects them. |
 | Generated-file ownership | **Ready** | Versioned path/digest manifests, staged formatting, unowned-collision and modified-owned rejection, stale/namespace cleanup, interrupted-transaction recovery, Mix clean, legacy upgrade, source rollback, in-place/isolated examples, and source/package manifest parity | Keep `_GeneratedFiles.json` and reserved transaction paths under compiler control; hand-editing ownership metadata is unsupported. |
 | Generated Elixir quality | **Conditional** | Warnings-as-errors examples, canonical `mix format` integration, handwritten-output corpus, support-footprint checks | Some semantics require visible helpers or conservative reducers. Style work can continue after 1.0; unexplained semantic repairs cannot. |
@@ -58,34 +57,38 @@ versions, operating systems, third-party libraries, or deployment conditions.
 | Phoenix and LiveView | **Conditional** | Compile/runtime examples, strict Elixir compilation, todo-app Mix tests, browser sentinels, dogfood upgrades | This is the strongest framework surface, but only pinned versions and documented paths are covered. |
 | Ecto | **Conditional** | Schema, changeset, repository, query, compile, and runtime fixtures | Selected APIs are covered. Migration `.exs` generation remains experimental. |
 | OTP | **Conditional** | Haxe-authored Process/Task/Agent lifecycle runtime test, warning-free generated Elixir, minimum and primary toolchain lanes, typed child-spec snapshots, and Phoenix application boot | Only the local operations and application-wiring shapes in the [OTP Support Contract](../04-api-reference/OTP_SUPPORT_CONTRACT.md) are covered. GenServer, Registry, broad supervisor failure behavior, and distributed OTP are outside the 1.0 promise. |
-| Gradual Elixir adoption | **Conditional** | Existing-app guide, fail-closed in-place and isolated output, typed extern generation, hand-written/generated interop example | The model is ownership-safe; the broader pre-1.0 support/version contract and external soak still bound production claims. |
+| Gradual Elixir adoption | **Conditional** | Existing-app guide, safe in-place and isolated output, typed extern generation, hand-written/generated interop example | The compiler protects files it did not generate. The project must still publish the exact pre-1.0 support and version promises and test an unchanged proposed release in an independent project. |
 | Shared browser/server logic | **Conditional** | [`16-portable-chat-domain`](../../examples/16-portable-chat-domain/) runs selected domain logic on Elixir and JavaScript | Only a deliberately portable classpath is demonstrated; arbitrary cross-target parity is not claimed. |
 | Source checkout vs release package | **Ready** | Reflaxe `_std` staging contract, package smoke, installed-package codegen parity, deterministic artifacts | Consumers should use a release ZIP. Contributors must use the scoped source-checkout HXML, not bare global `haxelib dev`. |
 | Release integrity and rollback | **Ready** | Same-CI-commit publication, protected tags, reproducible package builds, checksums and hosted attestations | Host controls remain part of the trust boundary and must be audited at approval time. |
 | Licensing and distribution | **Blocked** | GPL-3.0 repository license and current informational guide | A qualified decision must cover generated source and shipped runtime/support code before broad commercial positioning. Tracked by `haxe.elixir.codex-0yn.4`. |
 | Toolchains and operating systems | **Conditional** | Ubuntu CI, Elixir 1.14/OTP 25 minimum smoke, macOS smoke, Haxe 4.3.7 | Windows is out of scope. Haxe 5 is preview-only. Untested Haxe 4.x versions are not implied. |
 | Security and supply chain | **Conditional** | Gitleaks, npm/Hex advisory gates, pinned Actions, JS/TS CodeQL, release verification | No formal response SLA; CodeQL does not cover Haxe/Elixir; dependency PRs are disabled; downloaded scanner provenance needs verification (`haxe.elixir.codex-0yn.6`). |
-| Stable support contract | **Blocked** | Versioning tiers, API docs, feature and stdlib matrices | There is no single enumerable 1.0 inventory tying every stable claim to evidence and exclusions. Tracked by `haxe.elixir.codex-0yn.5`. |
+| Exact 1.0 support list | **Blocked** | Versioning tiers, API docs, feature and stdlib matrices | There is not yet one complete list connecting every 1.0 promise to its tests and clearly naming what is not supported. Tracked by `haxe.elixir.codex-0yn.5`. |
 | Build performance | **Conditional** | Bounded CI, compile/watch benchmark harnesses, scheduled trend artifacts | There is a diagnostic baseline, not a universal compile-latency SLO. Record a candidate regression comparison before approval. |
-| Stability governance | **Blocked** | SemVer policy, deprecation rules, fail-closed per-major manifest | External soak evidence and an explicit graduation decision are absent. Tracked by `haxe.elixir.codex-0yn.8` and `.9`. |
+| Final 1.0 approval | **Blocked** | SemVer policy, deprecation rules, and a release file that rejects unapproved stable versions | The same proposed release still needs a defined test period in independent projects, followed by an explicit decision to approve or reject 1.0. Tracked by `haxe.elixir.codex-0yn.8` and `.9`. |
 
-## Recently Closed 1.0 Gates
+## Recently Completed 1.0 Work
 
-### Compiler Correctness Defects
+### Compiler Bugs Fixed
 
-`haxe.elixir.codex-3qh.23`, `.24`, and `.25` are closed. Reducer-lowered loops now retain exact state
-across `break`/`continue`; nested dynamic comprehensions retain inner results; nested reducer callbacks
-preserve their own lexical accumulator. The Haxe-authored
-`test/runtime/loop_control_accumulators` and `test/runtime/nested_dynamic_comprehensions` suites cover
-the failed source operations directly.
+`haxe.elixir.codex-3qh.23`, `.24`, `.25`, and `.26` are closed. Loops now keep the right accumulated
+value when they use `break` or `continue`. Nested list comprehensions keep their inner results, and a
+loop inside another loop no longer mixes up the two loops' accumulated values. A callback inside a
+successful `Result` branch also keeps its own parameter. It can still intentionally use the branch
+value, and nested callbacks can safely reuse a parameter name. The Haxe-authored
+`test/runtime/loop_control_accumulators` and `test/runtime/nested_dynamic_comprehensions` suites test
+the failed loop behavior directly. `test/snapshot/regression/result_switch_lambda_binders` and the
+OTP runtime test cover the callback behavior directly.
 
 ### Effective Mix Build Inputs
 
-`haxe.elixir.codex-0yn.1` replaces the single-root/mtime freshness check with a deterministic content
-fingerprint of recursive HXML, direct classpaths, resources, resolved libraries and package metadata,
-toolchain identity and standard library, relevant environment, explicit macro inputs, and
-output-affecting configuration. Legacy or unreadable manifests fail closed. The normal no-op path and
-the todo app's `src_shared` graph have regression coverage.
+`haxe.elixir.codex-0yn.1` makes Mix rebuild whenever the actual inputs to a Haxe build change, instead
+of trusting one directory's modification time. It compares the contents of imported HXML files,
+source folders, resources, libraries, compiler versions, declared macro inputs, and settings that can
+change generated code. If the saved build record is old or unreadable, Mix rebuilds instead of
+incorrectly saying that everything is up to date. Tests cover both changed inputs and the normal case
+where nothing changed, including the todo app's shared source folder.
 
 ### Generated Output Ownership
 
@@ -204,7 +207,7 @@ Release-policy and package work additionally uses the exact commands in
 [Releasing](../10-contributing/RELEASING.md). The latest `main` CI for the exact reviewed commit must
 be green; a nearby green commit is not evidence for a changed tree.
 
-## Graduation Decision
+## Final 1.0 Approval
 
 The final decision must state:
 

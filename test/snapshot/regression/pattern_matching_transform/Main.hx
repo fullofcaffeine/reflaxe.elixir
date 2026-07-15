@@ -49,7 +49,7 @@ class Main {
 	static function handleNested(value:Option<Result<Int, String>>):String {
 		return switch (value) {
 			case Some(Ok(n)):
-				'Got number: $n';
+				'n=$n';
 			case Some(Error(e)):
 				'Got error: $e';
 			case None:

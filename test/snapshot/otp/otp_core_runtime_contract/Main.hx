@@ -67,20 +67,16 @@ class Main {
 		var started = Agent.start(() -> 10);
 		switch (started) {
 			case Ok(agent):
-				testStartedAgent(agent);
+				assertEquals("Agent.get reads initial state", 10, Agent.get(agent, (value:Int) -> value));
+				Agent.update(agent, (value:Int) -> value + 5);
+				assertEquals("Agent.update changes state", 15, Agent.get(agent, (value:Int) -> value));
+				Agent.sendCast(agent, (value:Int) -> value + 2);
+				assertEquals("Agent.cast is observed by a later call from the same process", 17, Agent.get(agent, (value:Int) -> value));
+				Agent.stop(agent);
+				assertTrue("Agent.stop ends the process", !Process.alive(cast agent));
 			case Error(reason):
 				Kernel.raise('OTP contract failed: Agent.start returned $reason');
 		}
-	}
-
-	static function testStartedAgent(agent:AgentRef):Void {
-		assertEquals("Agent.get reads initial state", 10, Agent.get(agent, (value:Int) -> value));
-		Agent.update(agent, (value:Int) -> value + 5);
-		assertEquals("Agent.update changes state", 15, Agent.get(agent, (value:Int) -> value));
-		Agent.sendCast(agent, (value:Int) -> value + 2);
-		assertEquals("Agent.cast is observed by a later call from the same process", 17, Agent.get(agent, (value:Int) -> value));
-		Agent.stop(agent);
-		assertTrue("Agent.stop ends the process", !Process.alive(cast agent));
 	}
 
 	public static function main():Void {
