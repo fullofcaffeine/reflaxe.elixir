@@ -1,5 +1,7 @@
 version: 2
 
+# Automatic update PRs stay disabled intentionally. The owner and monthly,
+# pre-release review process live in docs/10-contributing/DEPENDENCY_MAINTENANCE.md.
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"

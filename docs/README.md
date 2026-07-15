@@ -143,6 +143,7 @@ Prefer [`CHANGELOG.md`](../CHANGELOG.md) and [`ROADMAP.md`](../ROADMAP.md) for r
 ### 🤝 Contributing
 **[10-contributing/](10-contributing/)** - Contribution guidelines and processes
 - [Contributing Guide](10-contributing/contributing.md) - How to contribute
+- [Keeping Dependencies and Security Tools Current](10-contributing/DEPENDENCY_MAINTENANCE.md) - Who reviews updates, when, and how downloaded CI tools are verified
 - [Releasing](10-contributing/RELEASING.md) - semantic-release + GitHub Releases
 - [Updating AGENTS.md](10-contributing/updating-agents-md.md) - AI context and unified documentation strategy
 - [LLM Documentation Guide](10-contributing/llm-integration/LLM_DOCUMENTATION_GUIDE.md) - How to write LLM-friendly documentation

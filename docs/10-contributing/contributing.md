@@ -300,6 +300,9 @@ high-severity Cowboy/Cowlib server findings are fixed by the locked `cowboy 2.17
 2.18.0` stack. These acknowledgements are narrow, version-independent advisory IDs: remove each one
 as soon as Cowlib publishes a fixed release, and never add an ignore merely to make CI green.
 
+For the named owner, monthly review schedule, Action-pin checks, and safe Gitleaks update procedure,
+see [Keeping Dependencies and Security Tools Current](DEPENDENCY_MAINTENANCE.md).
+
 ## Repo hygiene helpers (contributors)
 
 These are **heuristic** audits intended to keep the repo tidy. They do not prove that something is unused.

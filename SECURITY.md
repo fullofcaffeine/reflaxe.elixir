@@ -19,31 +19,35 @@ status.
 
 The repository uses several bounded checks to reduce common supply-chain and source risks:
 
-- **Secret scanning:** `gitleaks` scans full history on CI pushes and pull requests. The optional
-  local hook scans staged changes.
+- **Secret scanning:** `gitleaks` scans full history on CI pushes and pull requests. CI verifies the
+  downloaded archive against a stored SHA-256 fingerprint (a cryptographic checksum) before extraction
+  or execution. A guard test proves that changed bytes are rejected. The optional local hook scans
+  staged changes.
 - **npm advisories:** CI rejects high and critical advisories in the locked dependency graph (with
   optional packages omitted by policy).
 - **Hex advisories:** CI rejects unacknowledged advisories in checked-in runnable examples.
 - **Static analysis:** CodeQL scans JavaScript/TypeScript. GitHub CodeQL does not cover this project's
   Haxe or Elixir source, so this is not whole-compiler static analysis.
-- **Pinned CI actions:** workflow actions are pinned to full commit SHAs.
+- **Pinned CI actions:** workflow actions are pinned to full commit SHAs, and a guard rejects a tag,
+  branch, or shortened SHA in any workflow.
 - **Release integrity:** normal releases are built from the exact fully gated CI commit, reproduced
   byte-for-byte, checksumed, attached to protected immutable tags, and verified against GitHub's
   hosted digests and attestations.
 - **Package parity:** installed release artifacts must generate the same representative Elixir as the
   tested source checkout.
 
-Dependabot configuration is present for inventory, but automated dependency-update pull requests are
-currently disabled (`open-pull-requests-limit: 0`). Maintainers must review and update pinned
-dependencies deliberately; the CI advisory gates remain the enforcement mechanism.
-
-The current gitleaks installer pins a version but does not independently authenticate the downloaded
-release artifact before execution. That supply-chain gap and the dependency-review cadence are tracked
-by `haxe.elixir.codex-0yn.6`; do not interpret the scanner as a complete trust boundary until it closes.
+Automated dependency-update pull requests are intentionally disabled (`open-pull-requests-limit: 0`)
+because this compiler needs coordinated Haxe, Elixir/OTP, Phoenix, and Node compatibility testing.
+`@fullofcaffeine` owns a manual review during the first seven days of each month and before selecting
+a stable release candidate. The exact checklist, update procedure, and deferral rules are in
+[Keeping Dependencies and Security Tools Current](docs/10-contributing/DEPENDENCY_MAINTENANCE.md).
 
 ## Scope Limits
 
 - Security scanning cannot prove semantic correctness of generated Elixir.
+- The pinned Gitleaks digest detects release bytes that differ from the reviewed archive. It does not
+  independently prove the security of Gitleaks's upstream build process or GitHub's infrastructure.
+- Advisory databases can lag behind new disclosures, and manual review can miss an available update.
 - Typed extern declarations describe external APIs but cannot prove that the external implementation
   matches the declaration; runtime boundary tests are required.
 - Raw target injection such as `__elixir__()` bypasses normal typed structure and should not be used
