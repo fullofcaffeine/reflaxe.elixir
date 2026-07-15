@@ -163,7 +163,10 @@ Goal: make `Map` usage predictable and eliminate “native map vs Haxe map” tr
 - Current state: rejected until there is a real identity-key runtime; this is a 1.0 blocker, not a
   permanent exclusion.
 - Haxe’s object identity does not translate cleanly to BEAM structural terms, so the compiler rejects ObjectMap construction/calls instead of lowering them to `%{}` and silently merging distinct-but-equal objects.
-- Future implementation path: identity tokens/wrappers plus tests proving distinct objects with equal fields remain distinct keys.
+- Accepted implementation direction: the gated selective managed-reference ABI in
+  `docs/05-architecture/MANAGED_REFERENCE_ABI.md`. Identity is assigned at allocation, fields are
+  shared through every alias, and ObjectMap is a managed mutable identity map. Insertion-time wrappers
+  and structural fallbacks are explicitly rejected.
 
 **Task: `Map<K,V>` dispatch rules (Elixir target)**
 - Ensure `Map<K,V>` chooses the correct backing implementation (StringMap/IntMap/…).

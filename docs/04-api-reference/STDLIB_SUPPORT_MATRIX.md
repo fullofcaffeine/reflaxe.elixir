@@ -291,10 +291,12 @@ Notes:
 - `haxe.ds.ObjectMap` is currently unsupported and blocks 1.0. Haxe ObjectMap requires object-identity
   keys, but BEAM map keys are structural terms. The compiler currently rejects construction and
   direct method calls instead of silently lowering them to incorrect `%{}` behavior. See
-  `docs/05-architecture/ITERATOR_RUNTIME_MODEL.md`.
+  `docs/05-architecture/ITERATOR_RUNTIME_MODEL.md`. The implementation direction is accepted in
+  `docs/05-architecture/MANAGED_REFERENCE_ABI.md`, but none of its support gates have shipped.
 - `haxe.ds.ListSort` is currently unsupported and blocks 1.0. Its API mutates arbitrary linked-node
   `next`/`prev` fields in place; ordinary BEAM structs/maps are immutable values, so the current
-  compiler rejects calls instead of emitting misleading linked-list updates.
+  compiler rejects calls instead of emitting misleading linked-list updates. It will be enabled only
+  after managed node aliases and original-node mutation have runtime evidence.
 - Some exist to avoid invalid Elixir from upstream inline patterns (notably parts of `haxe.io`).
 
 ### `haxe.Serializer` / `haxe.Unserializer` BEAM contract

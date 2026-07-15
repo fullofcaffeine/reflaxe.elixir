@@ -119,7 +119,9 @@ This choice is intentionally scoped:
 - `haxe.ds.ObjectMap<K,V>` is currently rejected until an identity-key implementation exists, and
   this is a 1.0 blocker. Haxe ObjectMap expects two distinct object instances with equal fields to
   remain distinct keys; native BEAM maps compare key terms structurally, so lowering ObjectMap to
-  `%{}` would silently merge those keys.
+  `%{}` would silently merge those keys. The selective managed-reference architecture is now accepted
+  in `MANAGED_REFERENCE_ABI.md`, but its feasibility, distribution, compiler, lifecycle, and runtime
+  gates have not shipped.
 - `haxe.ds.BalancedTree` and `haxe.ds.EnumValueMap` remain bootstrap-safe dual-mode surfaces. They exist to satisfy macro/eval and WAE constraints, not because arbitrary tree-backed `IMap` values should be shape-sniffed as native maps.
 - Custom `IMap` implementations must use explicit APIs or normalized pair lists at runtime. `Reflaxe.Elixir.IMap.unwrap/1` is the only generic runtime boundary.
 
@@ -134,13 +136,20 @@ Tradeoffs:
 - **Performance:** `%{}` storage gives O(1)-ish BEAM map operations and avoids conversion at Elixir boundaries. Iteration order follows BEAM map semantics and must not be treated as insertion order.
 - **Portability:** this is Elixir-target behavior only. Shared Haxe code should rely on the Haxe `Map` API, not on `%{}` identity.
 
-## ObjectMap decision
+## ObjectMap implementation status
 
 `haxe.ds.ObjectMap` is rejected at compile time on the Elixir target rather than supported with structural semantics.
 
 The rejected structural option would be deceptively convenient because `%{}` already accepts arbitrary BEAM terms as keys, but it would violate ObjectMap's identity contract. For example, two `new Key("same")` objects should occupy two entries even if their fields compare equal; as native BEAM map keys, equivalent generated struct/map terms would collide structurally. That is worse than an unsupported feature because it loses data silently.
 
-A future supported implementation needs explicit identity tokens or a wrapper runtime that assigns stable per-object identities and carries those identities through map operations. Until that design exists, construction and direct method calls fail with a compiler diagnostic.
+The accepted implementation direction is the selective managed-reference ABI in
+`MANAGED_REFERENCE_ABI.md`: identity is assigned at object allocation, shared fields live behind the
+carrier, and ObjectMap is itself a managed mutable identity map. An identity token added only at map
+insertion would not preserve aliases and is forbidden.
+
+The architecture decision does not enable the API. Construction and direct method calls continue to
+fail with the current compiler diagnostic until the managed runtime, compiler lowering, lifecycle,
+package, and ordinary-Haxe conformance gates are complete.
 
 ## Source-of-truth locations
 

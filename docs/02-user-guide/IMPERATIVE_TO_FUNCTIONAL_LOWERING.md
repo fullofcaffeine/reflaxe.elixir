@@ -200,6 +200,12 @@ Code that relies on shared mutable references should be refactored to:
 
 See: `docs/02-user-guide/PHOENIX_INTEGRATION.md` (OTP state patterns)
 
+For portable Haxe compatibility, the compiler has accepted a selective managed-reference ABI for
+ordinary objects. It is not implemented yet: `ObjectMap`, `ListSort`, `WeakMap`, and complete cyclic
+reference graphs still fail fast or remain incomplete. Until the gates in
+`docs/05-architecture/MANAGED_REFERENCE_ABI.md` ship, the refactoring guidance above describes the
+supported application path.
+
 ### 4) Escape hatches
 
 Using `__elixir__()` / `Syntax.code()` can bypass compiler hygiene and typing guarantees.

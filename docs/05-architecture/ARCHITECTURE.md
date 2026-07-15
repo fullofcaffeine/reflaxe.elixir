@@ -72,4 +72,5 @@ Migrations are authored in Haxe via the typed DSL in `std/ecto/Migration.hx` and
 - `docs/05-architecture/AUTHORING_PROFILE_CONTRACT.md` (portable vs Elixir-first compiler contract)
 - `docs/05-architecture/PHOENIX_OUTPUT_MODEL.md` (Phoenix app source roots, target namespaces, and output modes)
 - `docs/05-architecture/HAXE_FLOAT_SPECIAL_VALUES.md` (NaN/Infinity representation and numeric lowering contract)
+- `docs/05-architecture/MANAGED_REFERENCE_ABI.md` (accepted, gated object identity, alias mutation, lifecycle, and native-boundary contract)
 - `docs/05-architecture/HXML_ARCHITECTURE.md` (build configuration patterns)

@@ -117,15 +117,25 @@ General documentation threshold:
 
 ## 🔁 Stateful Receiver Lowering
 
-When compiler work touches mutation, method calls, binary expressions, function arguments, or loop lowering, preserve Haxe side effects through same-scope immutable Elixir rebinding. Do not hide persistent receiver rebinding inside IIFEs/anonymous functions.
+When compiler work touches mutation, method calls, binary expressions, function arguments, or loop
+lowering, distinguish persistent BEAM value receivers from managed Haxe reference carriers. Preserve
+persistent-value side effects through same-scope immutable Elixir rebinding. Do not hide persistent
+receiver rebinding inside IIFEs/anonymous functions. Managed carriers follow the selective
+managed-reference ABI and must not be approximated with structural updates or ad hoc state.
 
 - Use the receiver-return convention helper for persistent receiver methods.
 - `UpdatedReceiver`: rebind receiver only, e.g. `StringBuf.add(...)`, `haxe.io.BytesBuffer.add*`.
 - `UpdatedReceiverAndValue`: rebind receiver and expose the Haxe value, e.g. `IntIterator.next()` → `{iterator, value}`.
 - Desugared iterator loops over persistent receivers must thread the iterator through reducer state and rebind the outer iterator.
 - Runtime-state iterators such as `ArrayIterator` and `MapKeyValueIterator` use process-local runtime state; do not model them as persistent receiver mutators unless the receiver value actually changes.
+- Managed representation must be assigned through typed analysis, not names, file paths, app names, or
+  generated shapes. Managed field writes update shared storage and do not return an updated receiver.
+- Until the managed-reference gates ship, preserve the current fail-fast diagnostics for identity- and
+  alias-dependent APIs. Do not partially enable their public surface.
 
-Source docs: `docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md` and `docs/05-architecture/ITERATOR_RUNTIME_MODEL.md`.
+Source docs: `docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md`,
+`docs/05-architecture/ITERATOR_RUNTIME_MODEL.md`, and
+`docs/05-architecture/MANAGED_REFERENCE_ABI.md`.
 
 ## 📝 Code Quality Standards
 

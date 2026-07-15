@@ -28,8 +28,10 @@ binding choices.
 
 Reflaxe.Elixir is different:
 
-- BEAM values are immutable, so mutation-like Haxe code must be lowered through
-  explicit rebinding no matter which profile authored it.
+- Native BEAM values are immutable, so mutation-like operations on persistent
+  value receivers use explicit rebinding. Ordinary Haxe objects whose identity
+  or aliases are observable use the selective managed-reference ABI once its
+  gated implementation ships; profile declarations never select that ABI.
 - Phoenix/Ecto/OTP integration is better represented with typed Elixir-first
   externs than with raw target syntax.
 - Raw HEEx or Elixir injection is a local escape hatch, not a whole-application
@@ -82,6 +84,9 @@ Possible future checks:
 - Portable stdlib features such as Haxe special floats, Haxe serialization, and
   mutable-looking iterator code may require helper modules or heavier lowering.
   That is acceptable when it preserves the Haxe contract.
+- Exact object identity and alias-visible mutation may require the managed
+  runtime described in `MANAGED_REFERENCE_ABI.md`. Explicit Ecto, Phoenix, OTP,
+  JSON, and extern boundaries remain native in both profiles.
 
 ## CI matrix
 
@@ -99,7 +104,8 @@ jobs:
 
 ## Implementation phases
 
-1. Keep the current source-shape model as the default compiler contract.
+1. Keep the current source-shape model as the default compiler contract until
+   each managed-reference gate has complete runtime and package evidence.
 2. Keep docs and examples explicit about portable vs Elixir-first module
    organization.
 3. Add advisory lint metadata only after a real app demonstrates that warnings
@@ -114,3 +120,4 @@ jobs:
 - `docs/04-api-reference/ANNOTATIONS.md`
 - `docs/02-user-guide/INLINE_MARKUP.md`
 - `docs/05-architecture/HAXE_FLOAT_SPECIAL_VALUES.md`
+- `docs/05-architecture/MANAGED_REFERENCE_ABI.md`

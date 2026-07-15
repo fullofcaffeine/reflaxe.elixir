@@ -390,14 +390,26 @@ Use `docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md` as the sou
 
 ### Imperative Lowering Contract
 
-Reflaxe.Elixir supports both Elixir-first Haxe and normal imperative Haxe. When Haxe mutation semantics are required, preserve behavior through explicit immutable Elixir rebinding rather than runtime patches or generated-output cleanup.
+Reflaxe.Elixir supports both Elixir-first Haxe and normal imperative Haxe. Persistent BEAM value
+receivers preserve Haxe mutation-like behavior through explicit same-scope Elixir rebinding. Ordinary
+Haxe reference carriers that require allocation identity or alias-visible shared mutation follow the
+accepted selective managed-reference ABI; they must never be approximated with structural updates,
+insertion-time wrappers, or ad hoc runtime state.
 
-- Stateful receiver methods must use the centralized receiver-return convention. Examples: `StringBuf.add(...)` and `haxe.io.BytesBuffer.add*` return the updated receiver; `IntIterator.next()` returns `{updated_receiver, value}` and call sites must rebind the receiver in the same Elixir scope.
+- Stateful persistent-value receiver methods must use the centralized receiver-return convention. Examples: `StringBuf.add(...)` and `haxe.io.BytesBuffer.add*` return the updated receiver; `IntIterator.next()` returns `{updated_receiver, value}` and call sites must rebind the receiver in the same Elixir scope.
 - Stateful calls embedded in expressions must be hoisted before the surrounding expression, preserving Haxe left-to-right evaluation order and avoiding IIFE/anonymous-function isolation.
 - `for` loops over persistent receiver iterators must thread the iterator through `Enum.reduce_while` and rebind the outer iterator after the loop.
 - Do not classify process-dictionary-backed iterators (`ArrayIterator`, `MapKeyValueIterator`) as persistent receiver mutators.
+- Managed-reference classification must come from typed representation metadata, never module names,
+  paths, app names, or output-shape guesses. Managed field writes update the shared carrier and do not
+  use receiver-return rebinding.
+- The managed-reference ABI is accepted but not yet shipped. Keep current `ObjectMap`, `ListSort`,
+  `WeakMap`, and complete reference-graph behavior fail-fast until their gated tasks have exact runtime
+  and package evidence.
 
-Source of truth: `docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md` and `docs/05-architecture/ITERATOR_RUNTIME_MODEL.md`.
+Sources of truth: `docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md`,
+`docs/05-architecture/ITERATOR_RUNTIME_MODEL.md`, and
+`docs/05-architecture/MANAGED_REFERENCE_ABI.md`.
 
 ### Key Principles
 - **Idiomatic Code Generation**: Generated Elixir must pass human review as "natural"

@@ -80,6 +80,7 @@ This index helps you find the right docs quickly, whether you're building apps w
 ### 🏗️ Architecture
 **[05-architecture/](05-architecture/)** - System design and implementation details
 - [Architecture](05-architecture/ARCHITECTURE.md) - Overall system design
+- [Selective Managed-Reference ABI](05-architecture/MANAGED_REFERENCE_ABI.md) - Accepted, gated object identity, alias mutation, graph lifetime, and native-boundary design
 - [Cross Overrides & Multi-Target Hardening](05-architecture/CROSS_OVERRIDES_AND_MULTI_TARGET_HARDENING.md) - `_std` / packaged `.cross.hx` ownership and sibling-target coexistence risks
 - [Phoenix Output Model](05-architecture/PHOENIX_OUTPUT_MODEL.md) - In-place vs materialized Phoenix output, source roots vs target namespaces
 - [HXML Architecture](05-architecture/HXML_ARCHITECTURE.md) - Build file patterns and anti-patterns
