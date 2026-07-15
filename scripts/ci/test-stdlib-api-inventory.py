@@ -8,6 +8,7 @@ import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -42,6 +43,19 @@ def sample_row(module: str = "Sample") -> dict:
 class StdlibApiInventoryTest(unittest.TestCase):
     def test_java_profile_has_a_complete_scoped_backend_descriptor(self) -> None:
         self.assertEqual(inventory.pinned_hxjava_version(), "4.2.0")
+
+    def test_typed_profiles_run_inside_the_repository_lix_scope(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_temp:
+            json_path = Path(raw_temp) / "java.json"
+            json_path.write_text("[]", encoding="utf-8")
+            command = ["haxe", "-java", str(Path(raw_temp) / "java")]
+            with patch.object(inventory, "command_output") as run:
+                self.assertEqual(
+                    inventory.execute_typed_profile(command, json_path=json_path, name="java"),
+                    [],
+                )
+
+        run.assert_called_once_with(command, cwd=inventory.ROOT, timeout=60)
 
     def test_type_renderer_is_readable_and_stable(self) -> None:
         function_type = {

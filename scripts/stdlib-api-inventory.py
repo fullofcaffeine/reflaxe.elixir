@@ -138,6 +138,28 @@ def command_output(command: list[str], *, cwd: Path | None = None, timeout: int 
     return result.stdout.strip()
 
 
+def execute_typed_profile(
+    command: list[str], *, json_path: Path, name: str
+) -> list[dict[str, Any]]:
+    """Run one typing profile while preserving the repository's Lix scope.
+
+    Some Haxe backends launch their adapter through a nested ``haxelib run``
+    command. Lix resolves that command from the nearest ``.haxerc``, so the
+    compiler must run from the repository even though its output lives in a
+    temporary directory.
+    """
+    command_output(command, cwd=ROOT, timeout=60)
+    try:
+        profile = json.loads(json_path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError) as error:
+        raise InventoryError(
+            f"Haxe did not produce valid typed JSON for {name}: {error}"
+        ) from error
+    if not isinstance(profile, list):
+        raise InventoryError(f"typed JSON for {name} is not a list")
+    return profile
+
+
 def generate_typed_profiles() -> tuple[dict[str, list[dict[str, Any]]], str]:
     pinned_hxjava_version()
     haxe = haxe_command()
@@ -167,14 +189,7 @@ def generate_typed_profiles() -> tuple[dict[str, list[dict[str, Any]]], str]:
                 "--json",
                 str(json_path),
             ]
-            command_output(command, cwd=temp, timeout=60)
-            try:
-                profile = json.loads(json_path.read_text(encoding="utf-8"))
-            except (FileNotFoundError, json.JSONDecodeError) as error:
-                raise InventoryError(f"Haxe did not produce valid typed JSON for {name}: {error}") from error
-            if not isinstance(profile, list):
-                raise InventoryError(f"typed JSON for {name} is not a list")
-            profiles[name] = profile
+            profiles[name] = execute_typed_profile(command, json_path=json_path, name=name)
     return profiles, actual
 
 
