@@ -42,4 +42,5 @@ phoenix_chat_hx.frontend.PreferenceDensity
 phoenix_chat_hx.frontend.PreferenceStudioContract
 phoenix_chat_hx.components.ReactComponents
 phoenix_chat_hx.live.AppLive
+phoenix_chat_hx.live.CremaInviteLive
 phoenix_chat_hx.presence.ChatPresence

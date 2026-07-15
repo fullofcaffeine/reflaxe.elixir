@@ -19,6 +19,7 @@ defmodule PhoenixChatWeb.Router do
     pipe_through :browser
 
     live "/", AppLive, :index
+    live "/crema", CremaInviteLive, :index
   end
 
   # Other scopes may use custom stacks.

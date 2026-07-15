@@ -9,11 +9,13 @@
 		"phoenix_hx/params.exs",
 		"phoenix_chat_web/react_components.exs",
 		"phoenix_chat_web/presence.exs",
+		"phoenix_chat_web/crema_invite_live.exs",
 		"phoenix_chat_web/app_live.exs",
 		"phoenix_chat/test_case.exs",
 		"phoenix_chat/react_island_live_test.exs",
 		"phoenix_chat/preference_studio_contract.exs",
 		"phoenix_chat/preference_density_impl_.exs",
+		"phoenix_chat/crema_invite_live_test.exs",
 		"phoenix_chat/chat_state_test.exs",
 		"phoenix_chat/chat_state.exs",
 		"phoenix/types/socket_transport.exs",
@@ -38,7 +40,7 @@
 		"e_reg.exs"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 11,
+	"id": 15,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
@@ -131,6 +133,10 @@
 			"sha256": "d62626c51b729672921b38cdfe646613845ca123ade149a5ff3805d03220bbb1"
 		},
 		{
+			"path": "phoenix_chat/crema_invite_live_test.exs",
+			"sha256": "85e814ea8947e7a16365c48f4d96f67724c88c97e6d673e87cdf73de161f7455"
+		},
+		{
 			"path": "phoenix_chat/preference_density_impl_.exs",
 			"sha256": "6d6ab4a4f053f6bd733313f0f0ad28ad07b9567f73e2a848c73f6168373f359b"
 		},
@@ -149,6 +155,10 @@
 		{
 			"path": "phoenix_chat_web/app_live.exs",
 			"sha256": "e0c7dee88693bb003d76617415d98966f6cf32b178b802d0c0dfcac188dc0eba"
+		},
+		{
+			"path": "phoenix_chat_web/crema_invite_live.exs",
+			"sha256": "b75989bdd82889a0524d82166eea719fb75174bdfc13d41b5f94ede2c391a7b0"
 		},
 		{
 			"path": "phoenix_chat_web/presence.exs",
@@ -187,5 +197,5 @@
 			"sha256": "ae214ad9492951212417ffe539ed662d8ddd2d00bb73d50815803512a586de32"
 		}
 	],
-	"generation": "81beef76bc56b6cf0306efb9d6a98efa7feece2d54862079901aadb924be8427"
+	"generation": "8716e887a66f21742a5fa26ce497b60d5c26bed34dab01151f3eb938e625b2be"
 }

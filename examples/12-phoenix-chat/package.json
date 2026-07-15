@@ -16,6 +16,7 @@
     "test:binding": "node --test test/live-react-binding.test.mjs"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.12.1",
     "@playwright/test": "^1.56.1",
     "lix": "^15.12.4",
     "nodemon": "^3.0.0",
