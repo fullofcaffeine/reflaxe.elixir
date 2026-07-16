@@ -246,6 +246,27 @@ compile/runtime evidence.
 
 Beads epic `haxe.elixir.codex-5np` owns this package-adoption track.
 
+### LiveReact Is A Hand-Maintained Phoenix Companion Surface
+
+The planned PhoenixHx LiveReact integration is intentionally not generated
+dependency-adoption dogfood. It is a small, manually maintained Phoenix
+authoring and project-setup surface whose value comes from typed HXX wrappers,
+static application registries, safe setup/removal, and compatibility evidence.
+Stock `:live_react` remains the Mix/npm runtime owner; PhoenixHx must not copy
+its hook, renderer, Vite plugin, or DOM protocol.
+
+The integration may ship in the existing Haxelib initially because it is
+opt-in and tightly coupled to PhoenixHx component discovery, scaffolding, and
+Live Event Protocols. A separately versioned companion Haxelib becomes useful
+only when adoption or compatibility cadence demonstrates independent release
+pressure. Package separation would not, by itself, require a separate Git
+repository.
+
+The active decision and implementation graph live in
+[`plans/active/phoenixhx-live-react-integration.md`](../../plans/active/phoenixhx-live-react-integration.md)
+and Beads epic `haxe.elixir.codex-msb`. Generic dependency discovery remains a
+related ownership policy, not a prerequisite.
+
 ## Recommended Order
 
 1. Finish the API-level Haxe stdlib inventory and close every 1.0 runtime gap.

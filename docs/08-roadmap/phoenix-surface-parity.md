@@ -33,9 +33,28 @@ Use this decision rule for every Phoenix surface addition:
 | Phoenix tests | `phoenix.test.ConnTest`, `phoenix.test.LiveViewTest`, `LiveViewTest.view/initial_html` | `examples/13-elixir-first-liveview/test_haxe` | Covered with typed result follow-up |
 | Channels | `phoenix.Channel`, `phoenix.channels.*` | channel snapshots/docs | Covered, needs example-driven expansion only |
 | App-owned infra modules | app-local `@:unsafeExtern` for Endpoint/PubSub/Telemetry/DNSCluster | Haxe-first chat + Elixir-first LiveView examples | Intentional boundary |
+| Stock LiveReact islands | Project-local typed HXX wrapper, static registry, Vite, and upstream hook proof | `examples/12-phoenix-chat` | Project proof complete; first-class opt-in integration open |
 | RailsHx-to-PhoenixHx learning port | Phoenix-native LiveView/Ecto/PubSub/session implementation of a RailsHx-inspired UX | `examples/17-railshx-to-phoenixhx-todo/` | Covered; see follow-up sections below |
 
 ## Gap Details And Follow-Ups
+
+### Open: First-Class Stock LiveReact Integration
+
+`examples/12-phoenix-chat` proves that direct inline HXX can call stock
+`LiveReact.react` while a static application registry, Vite, and the upstream
+LiveReact hook own the browser path. That proof is still project-local; it is
+not yet a reusable PhoenixHx surface.
+
+The desired reusable owner is a small `std/phoenix/live_react/**` declaration
+surface, PhoenixHx Mix setup/check/remove tooling, and discoverable app-local
+typed component wrappers. Stock LiveReact remains the runtime owner. Promotion
+requires an independent second consumer and installed-package smoke, not just
+another route in the existing example.
+
+Planning is tracked by
+[`plans/active/phoenixhx-live-react-integration.md`](../../plans/active/phoenixhx-live-react-integration.md)
+and Beads epic `haxe.elixir.codex-msb`. It is experimental 1.x work and is not a
+1.0 approval requirement.
 
 ### Done: Replace PubSubShim With API-Faithful PubSub Helpers
 
