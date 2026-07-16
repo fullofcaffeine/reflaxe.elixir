@@ -550,6 +550,14 @@ and an invariant test must prove both.
 Compiler-inserted materialization is allowed only at a typed, known boundary. A
 general automatic conversion would destroy alias identity and is forbidden.
 
+The checked-in Ecto schema snapshot does not yet satisfy the first row for its
+generated `new/0`: it returns the ordinary tagged-map class shape. That is an
+observed generated-shape mismatch, not yet a runtime-verified interop failure.
+The reference-semantics audit must first add the focused Ecto runtime probe;
+the checked native-value/native-interop gate then owns the correction. Managed
+core work must neither preserve that mismatch as a contract nor wrap the schema
+in a managed handle.
+
 ### Conversion semantics
 
 - Passing a managed value through the same compatible managed ABI preserves its
@@ -596,8 +604,10 @@ Delivery must remain sliced so a feasibility result or semantic enum cannot be
 mistaken for public support. The representation-boundary review adds two
 blocking slices that were not explicit in the original task graph: the complete
 reference-semantics audit and ordinary mutable Haxe collections. The task graph
-now records both slices and their dependencies; neither enables compiler or
-runtime behavior by itself.
+now also gives checked native/value contracts and cross-module managed ABI work
+their own gates instead of hiding them inside scaffolding or final release
+evidence. None of these planning slices enables compiler or runtime behavior by
+itself.
 
 | Gate | Bead | Completion boundary |
 | --- | --- | --- |
@@ -606,12 +616,14 @@ runtime behavior by itself.
 | Reference-semantics audit | `haxe.elixir.codex-0yn.10.3.13` | Every ordinary Haxe reference/mutable collection surface in scope has a pinned contract, representation owner, alias regression plan, and explicit unknowns |
 | Distribution ABI | `haxe.elixir.codex-0yn.10.3.3` | Native/hybrid design, build, upgrade, license, artifact, and platform contracts are selected |
 | Semantic scaffolding | `haxe.elixir.codex-0yn.10.3.4` | Typed classification, package ABI descriptors, generic/dynamic constraints, semantic AST, and pre-receiver-effect invariants exist with byte-for-byte output parity |
+| Checked native/value contracts | `haxe.elixir.codex-0yn.10.3.15` | Checked native values and Ecto/Phoenix/OTP/JSON/exception/extern descriptors preserve exact raw BEAM ABIs and reject reference-sensitive conflicts |
 | Managed core | `haxe.elixir.codex-0yn.10.3.5` | Allocation identity and alias-visible fields work for managed classes and anonymous objects |
+| Cross-module managed ABI | `haxe.elixir.codex-0yn.10.3.16` | Dispatch, inheritance, interfaces, generics, handwritten facades, dependency manifests, and stale-artifact rejection preserve one handle ABI across packages |
 | Ordinary mutable Haxe collections | `haxe.elixir.codex-0yn.10.3.14` | Audited `Array`, map, list, buffer, and other mutable families preserve aliases end to end while explicit native collections remain raw values |
 | ObjectMap | `haxe.elixir.codex-0yn.10.3.6` | Complete identity-keyed mutable map behavior |
 | ListSort | `haxe.elixir.codex-0yn.10.3.7` | Original-node stable singly and doubly linked sorting |
 | WeakMap | `haxe.elixir.codex-0yn.10.3.8` | Collector-integrated weak identity keys |
-| Reflection and graphs | `haxe.elixir.codex-0yn.10.3.9` | RTTI, reflection, Haxe serialization, aliases, and direct cycles |
+| Dynamic, patterns, reflection, and graphs | `haxe.elixir.codex-0yn.10.3.9` | Dynamic capability dispatch, guard-safe projections, RTTI, reflection, Haxe serialization, aliases, and direct cycles |
 | Operational hardening | `haxe.elixir.codex-0yn.10.3.10` | Closure edges, GC stress, process, remote, interop, DCE, JSON, inspection, and upgrades |
 | Release evidence | `haxe.elixir.codex-0yn.10.3.11` | Inventory rows change only after complete source/package and runtime evidence |
 | Other `.10.3` APIs | `haxe.elixir.codex-0yn.10.3.12` | Value-semantic utility rows are classified and split independently |

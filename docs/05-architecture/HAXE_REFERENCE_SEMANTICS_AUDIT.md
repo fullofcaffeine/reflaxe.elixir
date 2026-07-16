@@ -177,7 +177,11 @@ least:
   `Dynamic`;
 - bound methods, closure capture graphs, reflection, RTTI, and constructor escape;
 - serializer alias/cache behavior and cyclic graphs;
-- generic representation constraints and separately compiled package ABIs; and
+- generic representation constraints and separately compiled package ABIs;
+- the current Ecto schema constructor boundary: the checked-in `new/0` snapshot
+  returns a tagged ordinary map rather than the schema struct, but a focused
+  Ecto runtime interop test must confirm the observable failure before the
+  native-interop correction is treated as verified; and
 - concurrency and lifetime behavior for each managed collection kind.
 
 An existing special representation may already satisfy a type's contract, as may be true for some
