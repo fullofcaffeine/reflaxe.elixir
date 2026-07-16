@@ -16,9 +16,7 @@ describe("PreferenceStudio", () => {
       <PreferenceStudio title="Conversation density" density="focused" onPreferenceChanged={onPreferenceChanged} />,
     )
 
-    expect(screen.getByTestId("preference-map").parentElement?.getAttribute("data-density")).toBe("focused")
     await user.click(screen.getByRole("button", {name: /Dense/}))
-    expect(screen.getByTestId("preference-map").parentElement?.getAttribute("data-density")).toBe("dense")
     expect(onPreferenceChanged).not.toHaveBeenCalled()
     await user.click(screen.getByRole("button", {name: "Apply dense"}))
     expect(onPreferenceChanged).toHaveBeenCalledWith({density: "dense"})

@@ -13,7 +13,6 @@ This example is intentionally **hybrid by design**: Haxe generates the app featu
 - Strict TSX template authoring in Haxe for LiveView render code
 - One closed, client-only React island through stock pinned `live_react` and Vite
 - A native LiveView fallback that preserves the same preference behavior when the island is removed
-- A separate `/crema` invitation surface that proves a frontend-quality workflow without replacing the chat app
 
 ## Run
 
@@ -23,8 +22,7 @@ mix setup
 mix phx.server
 ```
 
-Open `http://localhost:4000` for chat or `http://localhost:4000/crema` for the
-project-local Crema invitation proof.
+Open `http://localhost:4000`.
 
 ## Tests
 
@@ -42,7 +40,6 @@ The example includes a Haxe-authored ExUnit test:
 
 - `examples/12-phoenix-chat/src_haxe/test/live/ChatStateTest.hx`
 - `examples/12-phoenix-chat/src_haxe/test/web/ReactIslandLiveTest.hx`
-- `examples/12-phoenix-chat/src_haxe/test/web/CremaInviteLiveTest.hx`
 
 The bounded browser proof is the same command used by CI:
 
@@ -58,75 +55,6 @@ scripts/qa-sentinel.sh \
 ```
 
 Run that command from the repository root.
-
-## Project-local Crema invitation proof
-
-`/crema` is the native half of Cafetera's first wireframe-to-design proving
-slice. It is deliberately a second route inside the existing application: the
-original chat identity, build, debugging path, and React binding remain intact.
-The page does not establish a public Crema schema or a generic PhoenixHx theme.
-
-The same accepted low-fidelity flow was explored through two proposal-level
-visual directions before native implementation:
-
-| Direction | Visual premise | Disposition |
-| --- | --- | --- |
-| **Field Notes Atelier** | Archival paper, dark botanical ink, vermilion marks, editorial serif display type, offset rules, and a working-ledger composition | Selected for this native proof |
-| **Signal Bloom** | Near-black field, celadon diagrams, electric orange signals, soft geometric type, and animated botanical network forms | Retained as an unselected design-concept proposal |
-
-Those concepts preserve the same purpose, information hierarchy, invitation
-form, working-density choice, native fallback, responsive priorities, and
-accessibility requirements. A concept does not select itself because an agent
-described or rendered it; the Cafetera workspace records the owner-selected
-direction separately from both proposals and from this native source.
-
-### Native ownership and effect boundary
-
-- `CremaInviteLive.hx` owns LiveView form state, validation, status rendering,
-  and the server-side boundary for the existing exact preference event.
-- `PreferenceStudio` owns only trusted browser-local draft interaction. Its
-  public inputs and event remain `title`, `density`, and one exact
-  `preference_changed` payload.
-- `app.css` owns renderer-specific layout, typography, color, motion, and
-  responsive behavior. Caf design records describe semantic direction; they do
-  not own these selectors or claim the browser used them.
-- The submitted invitation is an in-memory conformance demonstration. The
-  success state explicitly stops before storage, email, provider mutation, or
-  any other external effect.
-- The handwritten Phoenix router and layouts remain ordinary native scaffold
-  source. The LiveView itself stays Haxe-authored and lowers through default
-  direct inline HXX to native HEEx.
-
-### Quality and recovery evidence
-
-The existing bounded sentinel now exercises chat, the Crema form, the trusted
-React event, the native fallback, an axe accessibility scan, and mobile/tablet/
-desktop overflow checks. It attaches full-page screenshots at 390, 768, and
-1440 pixels for owner visual review. Native Haxe, Mix, TypeScript, Vitest, Vite,
-Playwright, and source-map output remain the evidence owners; this README and
-the Caf CML do not turn a past green run into timeless runtime truth.
-
-Removing `CremaInviteLive`, its `/crema` route, tests, and the `.crema-*` CSS
-returns byte-for-byte to the prior chat surface. Removing only the React island
-leaves the native LiveView controls and invitation form useful. Promotion to a
-reusable Craft or Crema kit requires another product/target, stable fields,
-measured second-use leverage, and owner disposition.
-
-### Initial leverage measurement
-
-These timings are directional rather than a controlled benchmark because the
-two slices proved different risks. They are retained so the reuse claim can be
-challenged instead of inferred from generated volume.
-
-| Observed slice | Elapsed time | Correction rounds | Reusable result |
-| --- | ---: | ---: | --- |
-| First handwritten Phoenix/Vite/stock-`live_react` binding and island proof (`haxe.elixir.codex-cf4`) | about 52 minutes from task start to close, plus a 4-minute HXX correction | 1 post-close technical correction | Closed registry and contracts, idempotent binding, fallback, native tests, and recovery path |
-| Crema second surface reusing that exact binding (`haxe.elixir.codex-9ae`) | about 21 minutes from task creation to the first fully browser-green sentinel | 1 automated accessibility correction; 0 owner correction rounds at first visual review | Distinct branded route, form flow, reused island contract, responsive screenshots, accessibility and removal proof |
-
-The result is promising evidence that the native binding paid rent on its
-second use, not proof that every Craft surface will be faster. The stronger
-claim remains gated on another product or renderer preserving the semantic
-records without web-native fields and reducing owner-visible effort again.
 
 ## Architecture
 
