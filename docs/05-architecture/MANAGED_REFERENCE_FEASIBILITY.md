@@ -1,6 +1,6 @@
 # Managed-Reference Runtime Feasibility
 
-Status: **bounded prototype complete; minimum and primary CI confirmation pending**
+Status: **feasibility demonstrated; experimental only, not shipped**
 
 Decision record: `haxe.elixir.codex-0yn.10.3.2`
 
@@ -183,12 +183,12 @@ Cross-platform source builds are wired into the required CI workflow:
 
 | Lane | OS | OTP / Elixir | Status |
 | --- | --- | --- | --- |
-| Minimum | Ubuntu | OTP 25 / Elixir 1.14 | First exact-SHA run pending |
-| Primary Linux | Ubuntu | OTP 27.2 / Elixir 1.18.3 | First exact-SHA run pending |
-| Primary macOS | macOS | OTP 27.2 / Elixir 1.18.3 | Local equivalent passed; first exact-SHA run pending |
+| Minimum | Ubuntu | OTP 25 / Elixir 1.14 | [Passed](https://github.com/fullofcaffeine/reflaxe.elixir/actions/runs/29464983595/job/87516569837) |
+| Primary Linux | Ubuntu | OTP 27.2 / Elixir 1.18.3 | [Passed](https://github.com/fullofcaffeine/reflaxe.elixir/actions/runs/29464983595/job/87516569842) |
+| Primary macOS | macOS | OTP 27.2 / Elixir 1.18.3 | [Passed](https://github.com/fullofcaffeine/reflaxe.elixir/actions/runs/29464983595/job/87516569841) |
 
-The feasibility bead remains open until all three jobs pass on the pushed commit and their durable run
-URL is recorded here.
+All three source-build jobs passed on exact commit `e051c53ea879a8bf385f55adaa6581f5291caf0f` in
+[CI run 29464983595](https://github.com/fullofcaffeine/reflaxe.elixir/actions/runs/29464983595).
 
 ## Failure modes and limits
 
