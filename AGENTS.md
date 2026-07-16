@@ -3558,8 +3558,19 @@ cd examples/todo-app && npx haxe build-server.hxml && mix compile --force
 - **Hardcoded Application Dependencies**: Removed all hardcoded references
 - **Function Parameter Underscore Prefixing (August 2025)**: Fixed incorrect underscore prefixing of used function parameters in TypeSafeChildSpecBuilder and similar contexts. Implemented targeted priority check in VariableCompiler to ensure used parameters retain their correct names (see [`docs/03-compiler-development/FUNCTION_PARAMETER_UNDERSCORE_FIX.md`](docs/03-compiler-development/FUNCTION_PARAMETER_UNDERSCORE_FIX.md))
 
-## Commit Standards
+## Commit Messages
+
 **Follow [Conventional Commits](https://www.conventionalcommits.org/)**: `<type>(<scope>): <subject>`
+
+- Keep the conventional-commit subject concise, then add a useful commit body for every non-trivial
+  change. Write the body in friendly, beginner-readable language so someone who does not already know
+  the compiler internals can understand what problem was solved.
+- Explain what changed, why it matters, and how it was verified. Call out important behavior or output
+  changes and name any intentionally deferred scope so the commit does not imply broader closure than
+  it provides.
+- Prefer concrete descriptions of the old and new behavior over a list of filenames or internal type
+  names. Technical details are welcome, but introduce them in plain language and make the practical
+  outcome clear first.
 - **NO AI attribution**: Never add "Generated with Claude Code" or "Co-Authored-By: Claude"
 
 ## Development Loop ⚡ **CRITICAL WORKFLOW**
