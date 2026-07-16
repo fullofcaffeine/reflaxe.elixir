@@ -218,7 +218,8 @@ The selected direction is a GC-aware managed heap rooted by BEAM NIF resource
 leases. The feasibility and distribution gates choose the native language and
 whether field and graph storage lives entirely in native memory or behind a
 hybrid native-lease/Elixir heap. Those choices may vary without changing the
-semantic ABI below.
+semantic ABI below. The bounded comparison and its production constraints are
+recorded in the [managed-reference feasibility report](MANAGED_REFERENCE_FEASIBILITY.md).
 
 One logical heap exists per loaded runtime instance on a BEAM node. Each slot has
 an object ID, kind or class tag, visible fields or collection entries, internal

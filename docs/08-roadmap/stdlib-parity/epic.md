@@ -167,6 +167,9 @@ Goal: make `Map` usage predictable and eliminate “native map vs Haxe map” tr
   `docs/05-architecture/MANAGED_REFERENCE_ABI.md`. Identity is assigned at allocation, fields are
   shared through every alias, and ObjectMap is a managed mutable identity map. Insertion-time wrappers
   and structural fallbacks are explicitly rejected.
+- Bounded runtime feasibility evidence lives in
+  `docs/05-architecture/MANAGED_REFERENCE_FEASIBILITY.md`; it does not enable the API or remove the
+  current diagnostic.
 
 **Task: `Map<K,V>` dispatch rules (Elixir target)**
 - Ensure `Map<K,V>` chooses the correct backing implementation (StringMap/IntMap/…).

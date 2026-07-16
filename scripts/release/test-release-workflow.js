@@ -23,6 +23,7 @@ const REQUIRED_NEEDS = [
   'smoke-min-toolchain',
   'smoke-macos',
   'docs-smoke',
+  'managed-reference-spike',
 ]
 
 function normalReleaseEligible({ event, ref, conclusions }) {

@@ -208,6 +208,10 @@ while IFS= read -r manifest; do
 done < <(find "$haxelib_repo" -maxdepth 4 -name haxelib.json -type f | sort)
 [[ -n "$installed_root" ]] || fail "could not find installed reflaxe.elixir package under $haxelib_repo"
 
+if find "$installed_root" -path '*managed_reference_spike*' -print -quit | grep -q .; then
+  fail "experimental managed-reference spike leaked into the installed Haxelib package"
+fi
+
 canonical_root="$(cd "$ROOT_DIR" && pwd -P)"
 canonical_installed="$(cd "$installed_root" && pwd -P)"
 say "Installed root: $canonical_installed"
