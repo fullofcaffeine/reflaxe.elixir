@@ -36,6 +36,7 @@ mix test
 npm run typecheck
 npm run test:frontend
 npm run test:binding
+npm run test:crema-tokens
 ```
 
 The example includes a Haxe-authored ExUnit test:
@@ -71,14 +72,15 @@ visual directions before native implementation:
 
 | Direction | Visual premise | Disposition |
 | --- | --- | --- |
-| **Field Notes Atelier** | Archival paper, dark botanical ink, vermilion marks, editorial serif display type, offset rules, and a working-ledger composition | Selected for this native proof |
-| **Signal Bloom** | Near-black field, celadon diagrams, electric orange signals, soft geometric type, and animated botanical network forms | Retained as an unselected design-concept proposal |
+| **Field Notes Atelier** | Archival paper, dark botanical ink, vermilion marks, editorial serif display type, offset rules, and a working-ledger composition | Implemented as the current proposal; owner visual selection remains pending |
+| **Signal Bloom** | Near-black field, celadon diagrams, electric orange signals, soft geometric type, and animated botanical network forms | Retained as the alternative design-concept proposal |
 
 Those concepts preserve the same purpose, information hierarchy, invitation
 form, working-density choice, native fallback, responsive priorities, and
 accessibility requirements. A concept does not select itself because an agent
-described or rendered it; the Cafetera workspace records the owner-selected
-direction separately from both proposals and from this native source.
+described or rendered it. The Cafetera workspace keeps the current disposition
+candidate and every dependent design record at proposal authority until the
+owner explicitly selects a direction.
 
 ### Native ownership and effect boundary
 
@@ -87,9 +89,11 @@ direction separately from both proposals and from this native source.
 - `PreferenceStudio` owns only trusted browser-local draft interaction. Its
   public inputs and event remain `title`, `density`, and one exact
   `preference_changed` payload.
-- `app.css` owns renderer-specific layout, typography, color, motion, and
-  responsive behavior. Caf design records describe semantic direction; they do
-  not own these selectors or claim the browser used them.
+- Caf's project-local token CML owns the proposed semantic values.
+  `assets/css/crema-tokens.css` is their deterministic target projection, pinned
+  at `sha256:f9e622ab1acae8120dbc1595d6bcadc4a50e2bb0b6657933b26b526f3539ef28`.
+  `app.css` owns selector use, native font-stack mapping, layout, responsive
+  behavior, and derived shades; neither file claims the browser loaded them.
 - The submitted invitation is an in-memory conformance demonstration. The
   success state explicitly stops before storage, email, provider mutation, or
   any other external effect.
@@ -106,11 +110,12 @@ desktop overflow checks. It attaches full-page screenshots at 390, 768, and
 Playwright, and source-map output remain the evidence owners; this README and
 the Caf CML do not turn a past green run into timeless runtime truth.
 
-Removing `CremaInviteLive`, its `/crema` route, tests, and the `.crema-*` CSS
-returns byte-for-byte to the prior chat surface. Removing only the React island
-leaves the native LiveView controls and invitation form useful. Promotion to a
-reusable Craft or Crema kit requires another product/target, stable fields,
-measured second-use leverage, and owner disposition.
+Removing `CremaInviteLive`, its `/crema` route, tests, generated token CSS, and
+the `.crema-*` CSS returns byte-for-byte to the prior chat surface. Removing
+only the React island leaves the native LiveView controls and invitation form
+useful. Promotion to a reusable Craft or Crema kit requires another
+product/target, stable fields, measured second-use leverage, and owner
+disposition.
 
 ### Initial leverage measurement
 
@@ -121,7 +126,7 @@ challenged instead of inferred from generated volume.
 | Observed slice | Elapsed time | Correction rounds | Reusable result |
 | --- | ---: | ---: | --- |
 | First handwritten Phoenix/Vite/stock-`live_react` binding and island proof (`haxe.elixir.codex-cf4`) | about 52 minutes from task start to close, plus a 4-minute HXX correction | 1 post-close technical correction | Closed registry and contracts, idempotent binding, fallback, native tests, and recovery path |
-| Crema second surface reusing that exact binding (`haxe.elixir.codex-9ae`) | about 21 minutes from task creation to the first fully browser-green sentinel | 1 automated accessibility correction; 0 owner correction rounds at first visual review | Distinct branded route, form flow, reused island contract, responsive screenshots, accessibility and removal proof |
+| Crema second surface reusing that exact binding (`haxe.elixir.codex-9ae`) | about 21 minutes from task creation to the first fully browser-green sentinel | 1 automated accessibility correction; owner visual selection/corrections pending | Distinct branded route, form flow, reused island contract, responsive screenshots, accessibility and removal proof |
 
 The result is promising evidence that the native binding paid rent on its
 second use, not proof that every Craft surface will be faster. The stronger

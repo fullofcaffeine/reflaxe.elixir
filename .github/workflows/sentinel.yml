@@ -293,6 +293,14 @@ jobs:
           npm -C examples/12-phoenix-chat ci --prefer-offline --no-audit --no-fund
           npx -C examples/12-phoenix-chat playwright install chromium
 
+      - name: Verify Phoenix chat frontend and generated bindings
+        run: |
+          npm -C examples/12-phoenix-chat run bind:live-react:check
+          npm -C examples/12-phoenix-chat run test:binding
+          npm -C examples/12-phoenix-chat run test:crema-tokens
+          npm -C examples/12-phoenix-chat run typecheck
+          npm -C examples/12-phoenix-chat run test:frontend
+
       - name: Run Phoenix chat QA Sentinel smoke (bounded)
         run: |
           set -euo pipefail

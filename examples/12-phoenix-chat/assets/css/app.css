@@ -1,6 +1,7 @@
 @import "tailwindcss/base";
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
+@import "./crema-tokens.css";
 
 /* This file is for your main application CSS */
 
@@ -469,10 +470,11 @@
 }
 
 /*
- * Morrow Field Office — selected Crema direction: "Field Notes Atelier".
+ * Morrow Field Office — proposed Crema direction: "Field Notes Atelier".
  *
  * The visual system is intentionally native CSS. The project-local Crema CML
- * owns semantic direction and constraints; these renderer details remain in
+ * owns proposed semantic direction and constraints. The generated token file
+ * projects its exact values; selector use and browser behavior remain native
  * Phoenix/React source and are removable with the /crema surface.
  */
 
@@ -481,25 +483,20 @@
 }
 
 .crema-shell {
-  --crema-paper: #f2eee2;
   --crema-paper-deep: #e3dbc9;
-  --crema-ink: #15241e;
   --crema-ink-soft: #365048;
-  --crema-rule: rgba(21, 36, 30, 0.24);
-  --crema-vermilion: #d84a2f;
-  --crema-cobalt: #2455c3;
-  --crema-citron: #d7ed72;
+  --crema-rule: rgb(var(--crema-ink-rgb) / 0.24);
   --crema-shadow: rgba(40, 36, 27, 0.16);
   --ink: var(--crema-ink);
-  --muted: rgba(21, 36, 30, 0.66);
-  --edge: rgba(21, 36, 30, 0.22);
+  --muted: rgb(var(--crema-ink-rgb) / 0.66);
+  --edge: rgb(var(--crema-ink-rgb) / 0.22);
   --acid: var(--crema-citron);
   --acid-2: var(--crema-cobalt);
   position: relative;
   min-height: 100vh;
   overflow: hidden;
   background:
-    linear-gradient(90deg, transparent calc(50% - 0.5px), rgba(21, 36, 30, 0.045) 50%, transparent calc(50% + 0.5px)),
+    linear-gradient(90deg, transparent calc(50% - 0.5px), rgb(var(--crema-ink-rgb) / 0.045) 50%, transparent calc(50% + 0.5px)),
     var(--crema-paper);
   color: var(--crema-ink);
   font-family: "Avenir Next", "Gill Sans", "Trebuchet MS", sans-serif;
@@ -520,7 +517,7 @@
   pointer-events: none;
   opacity: 0.32;
   background-image:
-    repeating-radial-gradient(circle at 17% 31%, rgba(21, 36, 30, 0.09) 0 0.55px, transparent 0.7px 4px),
+    repeating-radial-gradient(circle at 17% 31%, rgb(var(--crema-ink-rgb) / 0.09) 0 0.55px, transparent 0.7px 4px),
     repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.12) 0 1px, transparent 1px 5px);
   background-size: 7px 7px, 100% 5px;
   mix-blend-mode: multiply;
@@ -753,7 +750,7 @@
   border-radius: 50%;
   background:
     radial-gradient(circle at 50% 50%, var(--crema-paper) 0 14%, transparent 14.3%),
-    repeating-radial-gradient(circle at 50% 50%, transparent 0 19%, rgba(21, 36, 30, 0.08) 19.3% 19.5%, transparent 19.8% 29%);
+    repeating-radial-gradient(circle at 50% 50%, transparent 0 19%, rgb(var(--crema-ink-rgb) / 0.08) 19.3% 19.5%, transparent 19.8% 29%);
   animation: crema-enter 700ms 120ms both cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -877,7 +874,7 @@
   gap: 0;
   margin: 0;
   padding: 0;
-  border-top: 1px solid rgba(242, 238, 226, 0.36);
+  border-top: 1px solid rgb(var(--crema-paper-rgb) / 0.36);
   list-style: none;
 }
 
@@ -886,7 +883,7 @@
   grid-template-columns: 46px 1fr;
   gap: 18px;
   padding-block: 20px;
-  border-bottom: 1px solid rgba(242, 238, 226, 0.36);
+  border-bottom: 1px solid rgb(var(--crema-paper-rgb) / 0.36);
 }
 
 .crema-manifesto li strong {
@@ -952,6 +949,7 @@
   gap: 30px 20px;
   padding: clamp(24px, 3vw, 44px);
   border: 1px solid var(--crema-ink);
+  border-radius: var(--crema-radius-paper);
   background: rgba(255, 252, 242, 0.54);
   box-shadow: 12px 12px 0 var(--crema-paper-deep);
 }
@@ -1007,7 +1005,7 @@
 
 .crema-field input::placeholder,
 .crema-field textarea::placeholder {
-  color: rgba(21, 36, 30, 0.42);
+  color: rgb(var(--crema-ink-rgb) / 0.42);
 }
 
 .crema-field input:focus,
@@ -1121,9 +1119,10 @@
   align-self: start;
   min-width: 0;
   border: 1px solid var(--crema-ink);
+  border-radius: var(--crema-radius-paper);
   padding: clamp(22px, 2.6vw, 34px);
   background:
-    linear-gradient(rgba(36, 85, 195, 0.07), rgba(36, 85, 195, 0.07)),
+    linear-gradient(rgb(var(--crema-cobalt-rgb) / 0.07), rgb(var(--crema-cobalt-rgb) / 0.07)),
     rgba(255, 252, 242, 0.58);
   box-shadow: -8px 8px 0 var(--crema-cobalt);
   transform: rotate(0.6deg);
@@ -1217,7 +1216,7 @@
   z-index: 1;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 8px;
+  gap: calc(var(--crema-space-working) / 2);
 }
 
 .preference-studio__signals i {
@@ -1226,7 +1225,9 @@
   border: 1px solid var(--crema-ink);
   border-radius: 50%;
   background: transparent;
-  transition: background-color 180ms ease, transform 180ms ease;
+  transition:
+    background-color var(--crema-motion-entry-duration) var(--crema-motion-entry-easing),
+    transform var(--crema-motion-entry-duration) var(--crema-motion-entry-easing);
 }
 
 .preference-studio__signals i[data-active="true"] {
@@ -1251,7 +1252,7 @@
   gap: 12px;
   border: 1px solid var(--crema-rule);
   border-radius: 0;
-  background: rgba(242, 238, 226, 0.42);
+  background: rgb(var(--crema-paper-rgb) / 0.42);
   padding: 11px 12px;
 }
 
@@ -1332,7 +1333,7 @@
 }
 
 .crema-request > :nth-child(3) {
-  animation-delay: 180ms;
+  animation-delay: var(--crema-motion-entry-duration);
 }
 
 @keyframes crema-enter {

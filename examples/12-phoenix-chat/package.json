@@ -13,7 +13,8 @@
     "bind:live-react:check": "node scripts/apply-live-react-binding.mjs --check",
     "typecheck": "tsc --noEmit",
     "test:frontend": "vitest run",
-    "test:binding": "node --test test/live-react-binding.test.mjs"
+    "test:binding": "node --test test/live-react-binding.test.mjs",
+    "test:crema-tokens": "node --test test/crema-token-projection.test.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.12.1",
