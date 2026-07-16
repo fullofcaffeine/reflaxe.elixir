@@ -93,7 +93,10 @@ not what changes; their runtime state changes through the process dictionary.
 
 The Elixir target contract is:
 
-- native `Map`/`StringMap`/`IntMap` values are represented as plain Elixir maps (`%{}`)
+- explicit target-native map values are represented as plain Elixir maps (`%{}`)
+- ordinary `Map`/`StringMap`/`IntMap` values currently also use `%{}`, but that
+  representation is partial because mutators do not update aliases; the
+  managed-collection audit owns the final representation
 - tree-backed or custom `IMap` implementations must expose key/value pairs through their own APIs
 - runtime helpers must unwrap through `Reflaxe.Elixir.IMap.unwrap/1`
 
@@ -104,15 +107,29 @@ The Elixir target contract is:
 
 It returns a normalized list of `%{key: k, value: v}` maps. Unsupported inputs raise `ArgumentError` instead of silently guessing. This keeps the representation contract centralized and prevents helpers from shape-sniffing arbitrary maps.
 
-## Decision: native map-backed built-in Haxe maps
+When managed ordinary Haxe maps ship, `IMap` needs an explicit typed managed-map
+path that snapshots entries through the runtime. A carrier must never be passed
+to this native unwrap helper and guessed from its outward term shape.
 
-The Elixir target uses native `%{}` maps as the runtime representation for the built-in Haxe map surfaces where BEAM semantics line up:
+## Current implementation: native map-backed built-in Haxe maps
+
+The current Elixir target uses native `%{}` maps for these built-in Haxe map surfaces:
 
 - `haxe.ds.Map<K,V>` as the abstract user-facing surface
 - `haxe.ds.StringMap<V>`
 - `haxe.ds.IntMap<V>`
 
-This is the chosen direction because these map types sit directly on common Phoenix/JSON/PubSub boundaries. Keeping them as `%{}` avoids boundary allocation, lets generated code call idiomatic `Map.*` functions, and makes values easier to inspect from hand-written Elixir.
+That implementation avoids boundary allocation, lets generated code call
+idiomatic `Map.*` functions, and is easy to inspect. It preserves many
+direct-receiver flows. It is **not** the final 1.0 semantic decision: the Haxe
+4.3.7 APIs mutate one map object, so another alias must observe `set`, `remove`,
+and `clear`. Rebinding one variable to a new `%{}` cannot provide that behavior.
+
+The representation-boundary review therefore distinguishes ordinary mutable
+Haxe maps from explicitly target-native immutable maps. The former join the
+managed-collection audit; the latter remain raw `%{}` values at
+Phoenix/JSON/PubSub and declared extern boundaries. See
+`HAXE_REFERENCE_SEMANTICS_AUDIT.md`.
 
 This choice is intentionally scoped:
 
@@ -125,16 +142,24 @@ This choice is intentionally scoped:
 - `haxe.ds.BalancedTree` and `haxe.ds.EnumValueMap` remain bootstrap-safe dual-mode surfaces. They exist to satisfy macro/eval and WAE constraints, not because arbitrary tree-backed `IMap` values should be shape-sniffed as native maps.
 - Custom `IMap` implementations must use explicit APIs or normalized pair lists at runtime. `Reflaxe.Elixir.IMap.unwrap/1` is the only generic runtime boundary.
 
-Map abstract conversions preserve the current backing value when one exists. For Elixir output, converting a populated `Map<String,V>` to `StringMap<V>`, `Map<Int,V>` to `IntMap<V>`, or a native-map-backed enum-value map surface must be a representation cast, not allocation of a fresh empty map. The only allocation path is the abstract constructor case where Haxe supplies a null backing value for `new Map()`.
+Map abstract conversions currently preserve the backing `%{}` when one exists.
+Converting a populated `Map<String,V>` to `StringMap<V>`, `Map<Int,V>` to
+`IntMap<V>`, or a native-map-backed enum-value map surface is currently a
+representation cast rather than allocation of a fresh empty map.
 
-These conversions do not create a mutable alias. Native map operations compile to persistent BEAM map updates that rebind the receiving Haxe variable, so later `set`, `remove`, or `clear` calls on the converted binding do not mutate earlier bindings. `copy()` follows the same value semantics: it can preserve the backing value directly because subsequent writes rebind rather than mutating in place.
+Under current persistent lowering, those conversions do not create a shared
+mutable alias: later `set`, `remove`, or `clear` calls update one receiving
+binding only, and `copy()` may return the same immutable term. That is an honest
+description of current output, not a claim of exact ordinary-Haxe behavior.
+The managed map design must define conversion and `copy()` semantics from Haxe
+4.3.7 evidence before this section can become a final contract.
 
 Tradeoffs:
 
 - **WAE:** native-map built-ins avoid emitting canonical Haxe stdlib map implementations that can produce Elixir warnings under `--warnings-as-errors`.
 - **Macro/eval:** dual-mode modules under `src/haxe/ds` remain required for stdlib classes that eval instantiates during macro compilation.
-- **Performance:** `%{}` storage gives O(1)-ish BEAM map operations and avoids conversion at Elixir boundaries. Iteration order follows BEAM map semantics and must not be treated as insertion order.
-- **Portability:** this is Elixir-target behavior only. Shared Haxe code should rely on the Haxe `Map` API, not on `%{}` identity.
+- **Performance:** `%{}` storage gives O(1)-ish BEAM map operations and avoids conversion at Elixir boundaries. Those benefits do not justify stale aliases for an ordinary Haxe map. Iteration order follows BEAM map semantics and must not be treated as insertion order.
+- **Portability:** explicit native maps may rely on persistent BEAM behavior. Shared Haxe code using ordinary `Map` must receive the audited Haxe contract rather than target folklore.
 
 ## ObjectMap implementation status
 

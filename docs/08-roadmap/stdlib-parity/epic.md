@@ -21,7 +21,11 @@ This epic optimizes for two properties:
 In practice, this means:
 
 - **Boundary terms stay native**: payloads coming from Phoenix/JSON (e.g. params, Presence) are native `%{}` maps/terms and should be accessed via Elixir-native helpers (`ElixirMap`, `WirePayload`, etc.).
-- **Haxe containers are honest**: if something is typed as `Map<K,V>` and you call `.get/.set`, it must be backed by a compatible map runtime (or we should provide a target override that safely maps `Map` operations to native `Map.*`).
+- **Haxe containers are honest**: if something is an ordinary mutable Haxe
+  `Array`, `Map`, `List`, or similar object, aliases must observe the writes
+  required by the pinned Haxe contract. A native `%{}`/list plus caller
+  rebinding is compatible only when aliasing is impossible or the type is an
+  explicitly target-native immutable value.
 
 This is why we treat “Map parity” as a first-class workstream: it is the highest leverage way to remove gotchas while still generating idiomatic Elixir.
 
@@ -29,7 +33,13 @@ Related work:
 - Iterator + `IMap` runtime canonicalization (task `haxe.elixir-hm47.23`):
   - canonical iterator runtime now lives in `std/elixir/_std/haxe/iterators/*.hx` for array, map key/value, and string iterator surfaces
   - transformer iterator fallback was removed; iterator behavior is owned by stdlib/runtime modules
-  - map representation decision: built-in `Map`/`StringMap`/`IntMap` are native `%{}` backed on Elixir; `ObjectMap` identity semantics and parity tests are tracked as follow-ups
+  - current map implementation: built-in `Map`/`StringMap`/`IntMap` lower to
+    native `%{}` and `Map.*`; this preserves many direct-receiver flows but is
+    not the final representation decision because aliases do not observe
+    discarded or one-binding updates
+  - accepted direction: ordinary mutable Haxe map families join the typed
+    managed-collection audit; explicit target-native immutable maps remain raw
+    `%{}` values
 
 ## Inputs
 
@@ -43,9 +53,11 @@ Related work:
 - Latest gap report: **88 Haxe stdlib modules/classes without a local Elixir-target override** (see
   `docs/08-roadmap/stdlib-parity/gap-report.md`). This is an ownership count, not a support score;
   verified official fallback is valid support.
-- Recently closed (high leverage):
+- Recently closed or implemented within their stated evidence boundary (high leverage):
   - `haxe.Int32`, `haxe.Int64`, `haxe.Int64Helper` (deterministic overflow + bitwise semantics on BEAM)
-  - `haxe.ds.Map` + `haxe.ds.StringMap`/`IntMap`/`ObjectMap` surfaces (native `%{}` backend; lowered to `Map.*`)
+  - structural `haxe.ds.Map` + `haxe.ds.StringMap`/`IntMap` lowering to native
+    `%{}`/`Map.*` for direct-receiver flows; shared-alias semantics remain a
+    1.0 blocker, and `ObjectMap` remains deliberately unsupported
   - `haxe.DynamicAccess` + iterators (typed dynamic map access for JSON/string-key payloads)
   - `Reflect` improvements for string-key JSON maps vs atom-key “object literal” maps
   - `haxe.crypto.Adler32`, `haxe.crypto.Crc32` (BEAM-native `:erlang.adler32/1,2` and `:erlang.crc32/1,2` for runtime, pure Haxe fallback for macro context)
@@ -53,7 +65,8 @@ Related work:
   - `haxe.crypto.BaseCode` (runtime BEAM binary construction plus pure-Haxe macro fallback for arbitrary power-of-two dictionaries)
   - `UnicodeString` (UTF-8 validation + codepoint/key-value iteration on BEAM strings)
   - `haxe.Http` / `sys.Http` / `haxe.http.HttpBase` (OTP `:httpc` mapping with Haxe callback/state semantics)
-  - `haxe.ds.List` (BEAM-safe ordered snapshot with receiver rebinding for mutators and upstream `unitstd` coverage)
+  - `haxe.ds.List` ordered-snapshot lowering with receiver rebinding and upstream
+    `unitstd` coverage; alias-visible mutators remain a 1.0 blocker
 
 ## Root Layout (source of truth)
 
@@ -87,6 +100,13 @@ Local roots considered by the gap report:
   or upstream `unitstd` fixture and track the classification in Beads.
 - A runtime-relevant API may be temporarily classified as unsupported or partial during development,
   but `haxe.elixir.codex-0yn.10` and major 1 cannot close with that state.
+- Classify reference behavior as well as module ownership. A passing direct
+  receiver test is insufficient for a mutator: copy the receiver to another
+  variable, mutate through one alias, and read through the other.
+- Complete the pinned first-party audit described in
+  `docs/05-architecture/HAXE_REFERENCE_SEMANTICS_AUDIT.md` before freezing the
+  managed/native representation table. Keep observed, inferred, proposed, and
+  unknown conclusions separate.
 
 ### Phase 1 — Coverage (modules exist)
 - Each priority module exists under `std/` (or `src/haxe/` for early-resolved consumer-install overrides).
@@ -149,15 +169,22 @@ Suggested command coverage:
 
 ### Phase 1 — Map family parity (high leverage; removes gotchas)
 
-Goal: make `Map` usage predictable and eliminate “native map vs Haxe map” traps without forcing conversions.
+Goal: make `Map` usage predictable without confusing an ordinary mutable Haxe
+map with an explicitly target-native immutable `%{}`.
 
-**Task: `haxe.ds.StringMap` (native `%{}` backend)**
-- Implement/override so `get/set/exists/remove/keys/iterator` map to Elixir-native `Map.*`.
-- Runtime tests: missing key, overwrite, deletion, iteration.
+**Current structural implementation: `haxe.ds.StringMap` and `IntMap`**
 
-**Task: `haxe.ds.IntMap` (native `%{}` backend)**
-- Same, with integer keys.
-- Runtime tests for negative keys, key equality, iteration.
+- `get/exists/keys/iterator` and direct-receiver flows lower to Elixir-native
+  `Map.*`.
+- Existing missing-key, overwrite, deletion, key, and iteration tests remain
+  useful but do not close shared alias semantics.
+- Add an alias regression for `set`, `remove`, and `clear`. Under the pinned Haxe
+  contract, `alias = map; map.set(...)` must be observable through `alias`.
+- Reclassify the ordinary Haxe map family as a managed mutable collection unless
+  the primary-source audit proves a narrower semantics-preserving
+  representation.
+- Keep raw `%{}` plus persistent updates for a distinct, explicit native map
+  boundary. Do not infer that boundary from Elixir-first style or local use.
 
 **Task: `haxe.ds.ObjectMap` identity runtime (explicit, separate)**
 - Current state: rejected until there is a real identity-key runtime; this is a 1.0 blocker, not a
@@ -172,8 +199,38 @@ Goal: make `Map` usage predictable and eliminate “native map vs Haxe map” tr
   current diagnostic.
 
 **Task: `Map<K,V>` dispatch rules (Elixir target)**
-- Ensure `Map<K,V>` chooses the correct backing implementation (StringMap/IntMap/…).
-- Ensure generated Elixir stays idiomatic (no wrapper allocations).
+
+- Ensure `Map<K,V>` chooses the correct managed/native backing and carries that
+  decision across generic and separately compiled boundaries.
+- Preserve idiomatic raw `Map.*` output for explicitly target-native values.
+- Do not prohibit managed handles or helper calls merely to optimize snapshot
+  appearance; exact aliases and identity come first.
+- Diagnose native values used where managed object-key identity is required
+  unless the developer performs an explicit future boxing operation.
+
+### Phase 1b — Ordinary mutable Haxe collections
+
+This is a new blocking slice from the representation-boundary review. It is not
+part of the feasibility spike and does not become supported merely because a
+managed heap exists.
+
+- Audit `Array`, `Map` specializations, `List`, `GenericStack`, `HashMap`,
+  `StringBuf`, `BytesBuffer`, checksums, iterators, and every other current
+  receiver-return convention against Haxe 4.3.7 primary sources and reference
+  targets.
+- Give each complete collection family one representation. Do not make `push`
+  shared while `sort` or indexed assignment still updates only one alias.
+- Test direct aliases, nested aliases, collection fields, generic helpers,
+  exceptions, callbacks, iteration, and separately compiled boundaries through
+  ordinary Haxe APIs.
+- Keep dedicated target representations when they independently prove the same
+  semantics; for example, process-backed storage may be valid for a specific
+  type even if it is not the general managed heap.
+- Define a distinct typed contract for explicitly target-native immutable lists
+  and maps. Current extern signatures that spell raw terms with ordinary
+  `Array`/`Map` types are an ABI ambiguity to resolve, not a final design.
+- Do not update inventory rows to complete/reference-ready until both runtime
+  behavior and generated representation evidence pass.
 
 ### Phase 2 — Core “ecosystem blockers” (small set; big payoff)
 

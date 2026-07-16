@@ -6,6 +6,55 @@ Decision record: `haxe.elixir.codex-0yn.10.3.2`
 
 Architecture contract: [Selective Managed-Reference ABI](MANAGED_REFERENCE_ABI.md)
 
+## What this experiment asked
+
+In plain language, Haxe can have two variables pointing to the same mutable
+object:
+
+```haxe
+var account = new Account("Grace");
+var alias = account;
+account.name = "Ada";
+trace(alias.name); // Ada
+```
+
+An immutable Elixir map cannot provide that behavior by itself. Rebinding
+`account` to a changed map leaves `alias` holding the old one. The compiler may
+therefore need a small runtime that gives a Haxe object one stable identity and
+shared storage while BEAM variables carry safe handles to it.
+
+The feasibility question was deliberately narrower than “is the feature done?”:
+
+> Can BEAM notice when the last ordinary handle disappears, share one object
+> safely between local processes, and reclaim object cycles without leaking or
+> pretending immutable maps mutate?
+
+The isolated spike answered **yes for that substrate**. It did not add fields,
+methods, classes, arrays, maps, reflection, closures, or a public compiler ABI.
+It did not make `ObjectMap` or `ListSort` supported.
+
+The need is also broader than those two APIs. An ordinary Haxe array alias must
+observe `push`, and an ordinary Haxe map alias must observe `set`. The separate
+[reference-semantics audit](HAXE_REFERENCE_SEMANTICS_AUDIT.md) owns that language
+classification; this report owns only the runtime-lifetime experiment.
+
+## What would fail without the substrate
+
+- A class alias could read stale fields after a mutating method.
+- Two equal-looking allocations could collapse into one structural
+  `ObjectMap` key.
+- Rebuilding a sorted linked list could leave external aliases pointing to
+  nodes with stale `next` and `prev` links.
+- Rebinding one `Array`, `Map`, `List`, or buffer variable could leave every
+  other alias unchanged.
+- A naïve resource-per-object implementation could leak a doubly linked cycle
+  forever because resource reference counting cannot see through the native
+  graph.
+
+These examples justify investigating managed storage. They do not prove that
+the experimental C implementation is safe, fast, distributable, or suitable
+for production.
+
 ## Outcome
 
 The managed-reference runtime is feasible on BEAM without changing every native map or struct. A
@@ -201,6 +250,8 @@ The following limits are intentional and must not be mistaken for solved product
 
 - The object slot stores an integer mutation probe and edge vectors, not complete Haxe field values,
   class metadata, `ObjectMap` entries, serializer state, or bound methods.
+- The spike does not classify or implement ordinary Haxe mutable collections. `Array`, `Map`,
+  `List`, buffers, and other candidate families still need pinned semantic and compiler evidence.
 - The node token is a process-local collision-resistant probe value, not a security credential or a
   stable distribution identifier.
 - Full tracing runs as a dirty CPU NIF, so ordinary schedulers remain available, but the spike holds
@@ -240,14 +291,16 @@ task `haxe.elixir.codex-0yn.4`; this report makes no legal or redistribution pol
 
 Advance the central native heap into `haxe.elixir.codex-0yn.10.3.3`, with these required decisions:
 
-1. Select the production implementation language and memory-safety strategy.
-2. Version the lease, heap, object-slot, and resource-takeover ABI.
-3. Design incremental marking/sweeping and weak processing without user callbacks under locks.
-4. Specify carrier encoding for scalars, nested containers, closures, and bound methods.
-5. Specify source-build and prebuilt artifact support for OTP 25 and the primary lane on Linux and
+1. Keep the reference-semantics audit as an independent prerequisite; do not size the runtime as an
+   `ObjectMap`-only helper.
+2. Select the production implementation language and memory-safety strategy.
+3. Version the lease, heap, object-slot, collection, and resource-takeover ABI.
+4. Design incremental marking/sweeping and weak processing without user callbacks under locks.
+5. Specify carrier encoding for scalars, nested containers, closures, and bound methods.
+6. Specify source-build and prebuilt artifact support for OTP 25 and the primary lane on Linux and
    macOS.
-6. Define node-local errors plus explicit distributed snapshot export/import.
-7. Keep the native Ecto, Phoenix, OTP, JSON, exception, and extern boundary contract unchanged.
+7. Define node-local errors plus explicit distributed snapshot export/import.
+8. Keep the native Ecto, Phoenix, OTP, JSON, exception, and extern boundary contract unchanged.
 
 Do not copy the experimental C file into a production runtime. Its value is the evidence that the
 semantic substrate works and the concrete list of obligations the real implementation must meet.

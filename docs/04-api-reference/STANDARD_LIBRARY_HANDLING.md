@@ -92,8 +92,11 @@ Good examples:
   pure-Haxe fallback only for macro/eval contexts.
 - `haxe.crypto.BaseCode` is a small emitted support module because BEAM has no
   native primitive for arbitrary caller-provided power-of-two dictionaries.
-- `haxe.ds.Map` and related map surfaces use native `%{}` storage and lower to
-  `Map.*` / `Enum.*` shapes where that preserves Haxe semantics.
+- `haxe.ds.Map` and related surfaces currently use native `%{}` storage and
+  lower to `Map.*` / `Enum.*` for many direct-receiver flows. That lowering is
+  partial: ordinary Haxe map aliases do not yet share mutating `set`, `remove`,
+  and `clear` operations. The managed-collection audit owns the final ordinary
+  map representation; explicitly target-native maps remain `%{}` values.
 - `DynamicAccess` is a legitimate boundary case: JSON, params, and other
   map-like values can arrive as native Elixir terms, so the target needs a
   contained bridge for typed access. That does not make `Dynamic` a general app
@@ -108,6 +111,12 @@ Elixir-native extern, or a targeted stdlib override, do that before adding
 another runtime helper. This design rule is separate from the current
 conservative policy that retains the two core helper modules in every normal
 build.
+
+The accepted managed-reference ABI is not a loophole for wrapping every BEAM
+value. It is compiler object-model support for ordinary Haxe values whose
+identity or shared mutation cannot be represented by local rebinding. Explicit
+native values remain raw, and future DCE/scalar replacement may remove managed
+support only when semantics and public ABI remain unchanged.
 
 ### Don’t “re-implement the whole Haxe stdlib” blindly
 
@@ -183,7 +192,10 @@ There are two current shapes:
   `#if macro` gives eval a small implementation, while `#else` exposes an extern surface or target
   diagnostic surface so generated Elixir does not emit the canonical mutable stdlib implementation.
 - `src/haxe/ds/{GenericStack,HashMap,List}.hx` are early BEAM-safe implementations whose observable
-  mutation semantics depend on the compiler's receiver-rebinding rules.
+  direct-receiver flows depend on the compiler's receiver-rebinding rules.
+  Shared-alias mutation is incomplete and belongs to the managed-collection
+  audit; these modules must not be described as full parity from rebinding
+  evidence alone.
 
 For dual-mode plain `.hx` modules, the usual pattern is:
 

@@ -26,12 +26,18 @@ Chat walkthroughs for both adoption styles:
 
 ## Choose an Authoring Profile
 
-You can build production Phoenix apps with either profile today:
+You can use either profile today within the documented pre-1.0 support surface:
 
 - Portable stdlib-first (cross-target domain emphasis)
 - Typed Elixir-first (BEAM/Phoenix extern emphasis)
 
-Both profiles compile through the same compiler pipeline and both aim to emit idiomatic Elixir. The difference is what wins when portability and target-native shape conflict: portable preserves Haxe semantics first; Elixir-first prioritizes BEAM/Phoenix/Ecto/OTP-native source shapes.
+Both profiles compile through the same compiler pipeline and both aim to emit
+idiomatic Elixir. The difference is which source APIs express the boundary:
+portable code asks the compiler to preserve Haxe semantics, while Elixir-first
+code chooses typed BEAM/Phoenix/Ecto/OTP-native values. Profiles never make the
+same ordinary Haxe mutation shared in one build and persistent in another.
+Shared reference/collection semantics are still a
+[known limitation](../06-guides/KNOWN_LIMITATIONS.md), not a second mode.
 
 This is a source-authoring choice, not a separate backend mode. `metal` is not an application profile in Reflaxe.Elixir; it is a local HXX/HEEx escape hatch.
 

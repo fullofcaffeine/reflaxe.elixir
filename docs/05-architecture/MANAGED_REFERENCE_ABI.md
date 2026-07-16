@@ -4,20 +4,61 @@ Status: **accepted for staged implementation; not yet shipped**
 
 Decision record: `haxe.elixir.codex-0yn.10.3.1`
 
-Review baseline: Haxe 4.3.7 and Reflaxe.Elixir commit
+Initial review baseline: Haxe 4.3.7 and Reflaxe.Elixir commit
 `6dc9c0dff1d8ca44c44394c0bd195eda17400ba7`
+
+Representation-boundary review baseline: Reflaxe.Elixir commit
+`7f8218d1368534d0867646d200a952858482b514`, including feasibility spike
+`e051c53ea879a8bf385f55adaa6581f5291caf0f`
+
+## Thirty-second explanation
+
+Haxe lets two variables point to the same object. If one alias changes the
+object, the other must see that change:
+
+```haxe
+var account = new Account("Grace");
+var alias = account;
+account.name = "Ada";
+trace(alias.name); // Ada
+```
+
+An Elixir map is an immutable value. `%{account | name: "Ada"}` creates a new
+map for one binding; `alias` still contains the old map. The planned managed
+representation gives the Haxe object one stable hidden identity and shared
+field storage, while Elixir variables carry opaque handles to it.
+
+This machinery is not only for `ObjectMap`. Ordinary mutable Haxe arrays, maps,
+lists, buffers, and similar objects can expose the same alias requirement:
+
+```haxe
+var values = [1];
+var alias = values;
+values.push(2);
+trace(alias.length); // 2
+```
+
+Rebinding only `values` to `[1, 2]` would leave `alias` at `[1]`. The
+[reference-semantics audit](HAXE_REFERENCE_SEMANTICS_AUDIT.md) records the
+confirmed first tranche and the still-unknown types.
+
+This design does not turn every BEAM value into a handle. Explicitly native
+Ecto/Phoenix/OTP/JSON values and explicitly target-native immutable lists/maps
+stay ordinary BEAM terms. It also does not ship the runtime yet.
 
 ## Outcome
 
 Reflaxe.Elixir will use one selective managed-reference ABI for ordinary Haxe
-reference objects whenever object identity or alias-visible mutation can be
-observed. Explicit BEAM-native values keep their native representation.
+reference objects and mutable collections whenever object identity or
+alias-visible mutation can be observed. Explicit BEAM-native values keep their
+native representation.
 
 The managed-reference ABI must provide:
 
 - allocation-time identity independent of visible fields;
 - shared field storage observed through every alias;
 - strong and weak graph edges with reclamation of unreachable cycles;
+- managed ordinary Haxe collections whose audited APIs expose shared mutation;
 - mutable identity-keyed `haxe.ds.ObjectMap` values;
 - same-node process sharing;
 - exact field mutation for the official `haxe.ds.ListSort` algorithms;
@@ -27,9 +68,11 @@ The managed-reference ABI must provide:
 This is a compiler and runtime object-model project. It is not a stdlib-only
 override, a second compiler backend, or an application-profile switch.
 
+Managed ordinary objects and collections are also not enabled today.
 `ObjectMap`, `ListSort`, `WeakMap`, and complete reference-graph serialization
-remain unsupported today. Their current diagnostics must stay in place until
-the independently gated implementation slices and runtime evidence pass.
+remain unsupported. Their current diagnostics and documented limitations must
+stay in place until the independently gated implementation slices and runtime
+evidence pass.
 
 ## Why this decision is necessary
 
@@ -49,6 +92,22 @@ Rebinding only `object` leaves `alias` pointing at the old term. A hidden
 visible fields shared. Adding identity when a value first reaches
 `ObjectMap.set()` is also too late: allocation identity has already been lost.
 
+The same counterexample applies to ordinary mutable Haxe collections:
+
+```haxe
+var values = [1];
+var alias = values;
+values.push(2);
+trace(alias.length); // 2 under the pinned Haxe contract
+```
+
+Lowering `push` as `values = values ++ [2]` preserves one local variable but
+not `alias`. `Map.set`, `List.add`, `GenericStack.add`, `StringBuf.add`, and
+other audited mutators expose the same distinction. Receiver-return conventions
+are therefore a valid mechanism only for explicitly persistent native values or
+as a proven local optimization; they are not the object model for an ordinary
+shared Haxe value.
+
 The same defect makes exact `ListSort` impossible over persistent maps. Rebuilding
 a sorted chain creates new values or updates only local bindings; aliases to the
 original nodes retain stale `next` and `prev` links. The upstream algorithm must
@@ -59,6 +118,11 @@ Process dictionaries, ETS, Agents, and PIDs do not by themselves reclaim an
 entry when the last ordinary BEAM term referring to one Haxe object disappears.
 An exact design therefore needs a term-lifetime hook plus graph tracing.
 
+The first evidence tranche is documented separately in
+[Haxe Reference-Semantics Audit](HAXE_REFERENCE_SEMANTICS_AUDIT.md). It confirms
+the broader forcing set without claiming that every stdlib type has already
+been classified.
+
 ## Representation contract
 
 The compiler will classify representation from typed metadata before building
@@ -68,16 +132,19 @@ The compiler will classify representation from typed metadata before building
 | --- | --- | --- |
 | Managed class | Opaque managed handle | Ordinary generated Haxe class instances |
 | Managed anonymous object | Opaque managed handle | Ordinary Haxe anonymous structures |
-| Managed collection | Opaque managed handle | `ObjectMap`; other identity-sensitive mutable objects when explicitly assigned |
-| Native value | Native BEAM term | numbers, atoms, strings, binaries, tuples, lists, value-semantic maps |
+| Managed mutable collection | Opaque managed handle | Ordinary `Array`, `List`, and Haxe map surfaces whose audited contract exposes alias-visible writes; `ObjectMap`; other confirmed mutable objects |
+| Native value | Native BEAM term | numbers, atoms, strings, binaries, tuples, enums/value records, and **explicitly target-native immutable** lists or maps |
 | Native interop | Declared native BEAM term | Ecto structs, Phoenix/OTP option maps, JSON payload maps, target exceptions, native externs |
+| Managed closure | Compiler-owned closure and traced environment | Bound methods or closures whose captures participate in managed graphs |
+| Representation variable or dynamic union | Compile-time descriptor plus checked runtime dispatch where needed | Generic `T`, narrowed `Dynamic`, composites containing managed leaves |
 | Representation conflict | Compile-time diagnostic | A native Ecto struct used as an identity key or mutable `ListSort` node without explicit boxing |
 
-Ordinary Haxe classes and anonymous structures default to the managed ABI at
-public and cross-module boundaries. A later optimization may scalarize a proven
-local, non-escaping allocation whose identity and mutation cannot be observed,
-but it must preserve the declared ABI and pass byte- and runtime-parity evidence.
-Demand-only wrapping at `ObjectMap` or `ListSort` call sites is forbidden.
+Ordinary Haxe classes, anonymous structures, and audited mutable collections
+default to the managed ABI at public and cross-module boundaries. A later
+optimization may scalarize a proven local, non-escaping allocation whose
+identity and mutation cannot be observed, but it must preserve the declared ABI
+and pass byte- and runtime-parity evidence. Demand-only wrapping at `ObjectMap`,
+`ListSort`, or a later mutator call site is forbidden.
 
 An explicitly native value is not silently promoted. A value cannot
 simultaneously remain a raw `%Schema{}` or `%{}` term, have identity independent
@@ -94,6 +161,39 @@ to structural equality.
 Portable and Elixir-first remain authoring profiles over one compiler pipeline.
 They do not choose the object backend. Portable code commonly needs managed Haxe
 semantics; Elixir-first boundary types commonly declare a native representation.
+The same typed expression cannot mean shared mutation in one profile and
+persistent copying in another.
+
+The word "native" in this decision describes an explicit typed representation,
+not an implementation guessed from coding style. `@:structInit`, `final` fields,
+an immutable-looking function body, or an Elixir-first module location do not by
+themselves prove that allocation identity is unobservable.
+
+### Generics, `Dynamic`, and package ABI
+
+An unconstrained generic value is not automatically native or managed. A helper
+that only passes `T` through can remain representation-polymorphic. An operation
+that needs identity, writable shared fields, or an exact native layout adds that
+capability to the generic ABI.
+
+For example, a generic helper that inserts `T` into `ObjectMap<T,V>` requires a
+managed-identity capability. An ordinary managed class can satisfy it. A native
+Ecto struct or checked value record cannot silently satisfy it; the caller must
+choose a structural key, use an explicit future box, or change the type contract.
+
+`Dynamic` is a bounded representation union, not “assume this is a map.” Its
+origin and typed extern signature narrow the possible representations. Reads,
+writes, equality, reflection, and calls dispatch only over defined cases; an
+ambiguous mutation or identity operation diagnoses instead of shape-sniffing or
+silently boxing.
+
+Every exported type and callable carries a versioned representation signature
+across separately compiled modules. That signature includes receiver,
+parameters, results, fields, generic constraints, callbacks, and required
+runtime ABI. DCE or a distant use may optimize an implementation but may not
+change the public representation. Legacy tagged-map class modules cannot link
+silently against managed-handle modules; migration requires a clean rebuild and
+an explicit ABI version change.
 
 ## Semantic invariants
 
@@ -130,6 +230,32 @@ different BEAM resource terms, so generated equality must use a semantic
 6. Writes completed before a constructor, setter, comparator, or callback throws
    remain visible. There is no implicit transaction or rollback.
 
+### Ordinary mutable Haxe collections
+
+1. A collection is classified from its pinned Haxe contract, not from the raw
+   BEAM term used by today's lowering.
+2. If an ordinary Haxe API says a mutator changes the collection, every alias to
+   that collection observes the change. Updating only the receiver's current
+   lexical binding is insufficient.
+3. `Array` indexed writes and mutators, ordinary Haxe `Map` specializations,
+   `List`, `GenericStack`, buffers, and other mutable surfaces enter the managed
+   set only after their exact API family is audited. The confirmed first tranche
+   is recorded in `HAXE_REFERENCE_SEMANTICS_AUDIT.md`.
+4. One collection kind must not mix managed and persistent mutation operations:
+   partial representation would make alias behavior depend on which method was
+   called.
+5. An explicitly target-native immutable list or map is a different typed
+   contract. Its update operation returns a new value and does not pretend to
+   mutate every alias.
+6. Current extern signatures that reuse Haxe `Array` or `Map` to describe raw
+   native terms need a representation descriptor or distinct typed surface
+   before the managed ABI is frozen. Source spelling alone cannot distinguish
+   the two contracts.
+7. A dedicated existing representation, such as process-backed storage, may
+   remain when it independently proves the same alias, lifetime, process, and
+   boundary invariants. The architecture requires semantics, not one universal
+   storage implementation.
+
 ### `ObjectMap`
 
 1. `ObjectMap` is itself a mutable managed object; aliases observe `set`,
@@ -141,7 +267,9 @@ different BEAM resource terms, so generated equality must use a semantic
 6. Iterators snapshot the entry vector under synchronization and release the
    heap lock before user code runs.
 7. `toString()` and inspection expose no IDs, leases, resources, or hidden tags.
-8. `Map<K,V>` selects this representation when `K` is an object-key type.
+8. `Map<K,V>` selects the audited managed map family, including identity-keyed
+   behavior when `K` is an object-key type. It never falls back to structural
+   `%{}` keys for managed objects.
 
 ### `WeakMap`
 
@@ -298,6 +426,30 @@ _ = Reflaxe.Elixir.ObjectMap.set(map, b, 2)
 
 There is no `map = Map.put(map, ...)`, `%{a | name: ...}`, or rebuilt key.
 
+An ordinary mutable Haxe array has the same alias rule:
+
+```haxe
+var values = [1];
+var alias = values;
+values.push(2);
+trace(alias.length); // 2
+```
+
+Its conceptual target shape uses shared collection storage:
+
+```elixir
+values = Reflaxe.Elixir.ManagedArray.new([1])
+alias_values = values
+_ = Reflaxe.Elixir.ManagedArray.push(values, 2)
+2 = Reflaxe.Elixir.ManagedArray.length(alias_values)
+```
+
+`ManagedArray` is an illustrative internal name, not a frozen public module.
+An explicitly target-native immutable list instead remains a normal BEAM list
+and exposes a persistent API that returns the replacement value. The compiler
+does not choose between these meanings from an authoring profile or local code
+style.
+
 The upstream `ListSort` body similarly remains generated Haxe control flow, but
 link access becomes managed operations:
 
@@ -315,13 +467,14 @@ The staged implementation has these owners:
 
 | Area | Responsibility |
 | --- | --- |
-| Pre-build analysis | Classify class types, anonymous shapes, allocations, variables, calls, and boundaries before AST construction |
-| `CompilationContext` | Store representation, class/shape IDs, promotion reason, native-boundary reason, conflicts, and runtime emission requirements |
-| `ElixirAST` | Carry semantic reference allocation, get, put, equality, and collection operations that cannot be mistaken for native maps |
+| Pre-build analysis | Classify declarations, class types, anonymous shapes, mutable collection kinds, allocations, variables, generics, closures, calls, and native boundaries before AST construction and before DCE can erase public ABI facts |
+| Package ABI metadata | Carry versioned representations for exported types, fields, call parameters/results, generic constraints, callbacks, and runtime requirements across separately compiled modules |
+| `CompilationContext` | Hold an immutable/shared representation registry plus current expression, variable, function, and closure IDs; child contexts must not reconstruct representation from target shape |
+| `ElixirAST` | Carry semantic managed allocation, get, put, equality, dispatch, collection, closure, dynamic, boxing, and materialization operations that cannot be mistaken for native maps |
 | Object and constructor builders | Allocate managed objects at birth; retain explicit native literals and structs |
-| Field and assignment builders | Emit managed reads/writes with single evaluation; preserve native persistent updates elsewhere |
+| Field and assignment builders | Emit managed reads/writes with single evaluation; preserve native persistent updates elsewhere; never emit receiver effects for managed values |
 | Binary and call builders | Emit identity equality, object-map operations, class-tag dispatch, and exact diagnostics |
-| Pattern/control-flow builders | Read carrier fields before patterns and guards |
+| Pattern/control-flow builders | Batch-read carrier fields before patterns and guards while keeping alias binders on the original handle |
 | Runtime facade | Validate handles and expose the selected managed heap without leaking implementation fields |
 | Printer | Print only lowered ordinary calls and reject surviving semantic nodes |
 
@@ -332,22 +485,56 @@ ERefAlloc(kind, classTag, fields)
 ERefGet(target, field)
 ERefPut(target, field, value)
 ERefSame(left, right)
-EObjectMapOp(operation, arguments)
+EManagedCollectionOp(kind, operation, arguments)
+EManagedClosure(codeId, environment)
+EDynamicManagedOp(domain, operation, arguments)
+EManagedBox(typeId, nativeValue)
+EMaterialize(projectionId, managedValue)
 ```
 
-`ManagedReferenceLowering` is a stable core/global pass. It runs before passes
-that assume instance fields are inline persistent values, including:
+Names remain conceptual until the semantic-scaffolding gate. The important rule
+is that managed meaning remains explicit in the IR until a dedicated lowering
+step; an ordinary `EMap`, `EField`, `EStructUpdate`, or `EReceiverEffect` must
+never carry hidden managed semantics.
 
-- `InstanceFieldLowering`;
-- `ControlFlowStateHoist`;
-- `AssignmentExtraction`;
-- `StructUpdateTransform`;
-- `HaxeMapModuleCallRewrite`.
+### Required ordering
 
-A validation pass rejects native field access, struct updates, `Map.put`, and
-receiver writeback whose typed target is managed. The printer rejects any
-unlowered managed semantic node. Pass eligibility follows typed representation
-metadata, never names or paths.
+The representation-boundary review found that merely placing
+`ManagedReferenceLowering` before several persistent-value transforms is not
+enough. The current pass inventory describes bootstrap input as builder output
+**after initial receiver-effect lowering**. A managed operation could therefore
+already have been turned into caller rebinding before a later managed pass saw
+it.
+
+The required order is:
+
+1. Load and validate dependency representation manifests.
+2. Run typed representation analysis before AST construction and before DCE
+   changes which bodies remain reachable.
+3. Preserve representation IDs through TypedExpr preprocessing and cloning.
+4. Build semantic managed, native, and dynamic operations directly.
+5. Validate that no managed receiver was emitted as native field access,
+   `EStructUpdate`, `Map.put`, or `EReceiverEffect`.
+6. Legalize managed pattern and guard projections outside target guards.
+7. Optionally scalar-replace only proven local, non-escaping managed
+   allocations while their identity/effects are still explicit.
+8. Run `ManagedReferenceLowering` through the versioned runtime facade.
+9. Validate again that no managed target remains in a persistent-value form.
+10. Run receiver-effect lowering only for explicitly persistent native values.
+11. Run existing passes that assume persistent values, including
+    `InstanceFieldLowering`, `ControlFlowStateHoist`, `AssignmentExtraction`,
+    `StructUpdateTransform`, and `HaxeMapModuleCallRewrite`.
+12. Perform final representation/ABI validation, then let the printer render
+    only ordinary lowered target constructs.
+
+Managed-aware builders must therefore never emit `EReceiverEffect`; the order
+protects that invariant rather than trying to repair it later. Pass eligibility
+follows typed representation metadata, never names, paths, generated module
+names, or authoring profiles.
+
+Registry dependency metadata is validation, not a topological scheduler. The
+actual registered list must obey this order as well as declaring the dependency,
+and an invariant test must prove both.
 
 ## Native boundary contract
 
@@ -362,6 +549,32 @@ metadata, never names or paths.
 
 Compiler-inserted materialization is allowed only at a typed, known boundary. A
 general automatic conversion would destroy alias identity and is forbidden.
+
+### Conversion semantics
+
+- Passing a managed value through the same compatible managed ABI preserves its
+  identity and live aliases.
+- Converting a managed graph to a native value is an explicit typed snapshot or
+  projection. It must document whether repeated references are rejected,
+  duplicated, or represented in a graph envelope; ordinary JSON/Ecto tree
+  projections reject cycles.
+- Giving a native value a managed identity is an explicit allocation. Two boxes
+  around the same `%Schema{}` or map are two different identities, and neither
+  is live-linked to the original native term.
+- A raw native value is never wrapped automatically at `ObjectMap.set`, a
+  generic call, a `Dynamic` operation, or a package boundary.
+
+A future source API may use concepts such as a checked native-value annotation,
+a managed box, and typed projection descriptors. Names shown in design reviews
+such as `@:elixirValue`, `@:elixirNativeAbi`, `@:elixirManaged`, or
+`ManagedBox<T>` are **provisional examples only**. They are not implemented,
+accepted public names, or valid guidance for application code today.
+
+Any checked native-value declaration must reject uses that make reference
+identity observable: writable shared state, `ObjectMap`/`WeakMap` keys, dynamic
+field mutation, identity-preserving graph serialization, constructor escape, or
+an incompatible class/interface hierarchy. Final fields or `@:structInit`
+syntax alone are not sufficient proof.
 
 ## Rejected alternatives
 
@@ -379,15 +592,22 @@ general automatic conversion would destroy alias identity and is forbidden.
 
 ## Delivery gates
 
-The task graph deliberately prevents a speculative broad rewrite:
+Delivery must remain sliced so a feasibility result or semantic enum cannot be
+mistaken for public support. The representation-boundary review adds two
+blocking slices that were not explicit in the original task graph: the complete
+reference-semantics audit and ordinary mutable Haxe collections. The task graph
+now records both slices and their dependencies; neither enables compiler or
+runtime behavior by itself.
 
 | Gate | Bead | Completion boundary |
 | --- | --- | --- |
 | Architecture decision | `haxe.elixir.codex-0yn.10.3.1` | This contract is reviewed; no behavior changes |
 | Feasibility | `haxe.elixir.codex-0yn.10.3.2` | Resource leases, tracing, cycles, process behavior, scheduler safety, and package implications are proven in a bounded spike |
+| Reference-semantics audit | `haxe.elixir.codex-0yn.10.3.13` | Every ordinary Haxe reference/mutable collection surface in scope has a pinned contract, representation owner, alias regression plan, and explicit unknowns |
 | Distribution ABI | `haxe.elixir.codex-0yn.10.3.3` | Native/hybrid design, build, upgrade, license, artifact, and platform contracts are selected |
-| Semantic scaffolding | `haxe.elixir.codex-0yn.10.3.4` | Typed classification and semantic AST exist with byte-for-byte output parity |
+| Semantic scaffolding | `haxe.elixir.codex-0yn.10.3.4` | Typed classification, package ABI descriptors, generic/dynamic constraints, semantic AST, and pre-receiver-effect invariants exist with byte-for-byte output parity |
 | Managed core | `haxe.elixir.codex-0yn.10.3.5` | Allocation identity and alias-visible fields work for managed classes and anonymous objects |
+| Ordinary mutable Haxe collections | `haxe.elixir.codex-0yn.10.3.14` | Audited `Array`, map, list, buffer, and other mutable families preserve aliases end to end while explicit native collections remain raw values |
 | ObjectMap | `haxe.elixir.codex-0yn.10.3.6` | Complete identity-keyed mutable map behavior |
 | ListSort | `haxe.elixir.codex-0yn.10.3.7` | Original-node stable singly and doubly linked sorting |
 | WeakMap | `haxe.elixir.codex-0yn.10.3.8` | Collector-integrated weak identity keys |
@@ -410,6 +630,10 @@ At minimum, the managed-reference project must prove:
 
 - distinct equal-looking class and anonymous allocations;
 - alias-visible field and method mutation;
+- alias-visible mutation for every audited ordinary Haxe collection operation,
+  including nested aliases and collections stored in managed fields;
+- unchanged raw output and persistent behavior for explicitly target-native
+  immutable collection APIs;
 - stable identity after mutation and through shallow copies;
 - constructor escape and exception behavior;
 - ObjectMap aliases, copy divergence, iteration, mutation, cycles, and liveness;
@@ -419,6 +643,8 @@ At minimum, the managed-reference project must prove:
 - shared subgraphs, self-cycles, mutual cycles, custom serialization, and wire
   output without hidden state;
 - closure cycles and nested carrier edges;
+- representation-aware generic constraints, `Dynamic` narrowing, mixed
+  composites, bound methods, and separately compiled package ABI mismatches;
 - same-node process sharing and concurrent primitive operations;
 - deterministic remote rejection and explicit snapshot import/export;
 - acyclic and cyclic reclamation under long-lived process stress;
@@ -430,6 +656,12 @@ runtime suite, upstream unitstd guard, all snapshot chunks, handwritten-output
 corpus, examples compile/output/WAE/runtime suites, package smoke, and bounded
 todo-app sentinel. Native code also needs the selected security and scheduler
 checks.
+
+Happy-path receiver tests are not enough: every mutable surface needs at least
+one test that copies the receiver to another variable before mutation and reads
+through the alias afterward. Generated-shape assertions must also prove that a
+managed mutation was not lowered to caller rebinding or a discarded persistent
+update.
 
 ## Consequences
 
@@ -458,6 +690,9 @@ unsupported diagnostics retained until each public surface is complete.
 
 - [Haxe 4.3.7 `ObjectMap`](https://raw.githubusercontent.com/HaxeFoundation/haxe/4.3.7/std/haxe/ds/ObjectMap.hx)
 - [Haxe 4.3.7 `ListSort`](https://raw.githubusercontent.com/HaxeFoundation/haxe/4.3.7/std/haxe/ds/ListSort.hx)
+- [Haxe 4.3.7 `Array`](https://raw.githubusercontent.com/HaxeFoundation/haxe/4.3.7/std/Array.hx)
+- [Haxe 4.3.7 `Map`](https://raw.githubusercontent.com/HaxeFoundation/haxe/4.3.7/std/haxe/ds/Map.hx)
+- [Haxe 4.3.7 `List`](https://raw.githubusercontent.com/HaxeFoundation/haxe/4.3.7/std/haxe/ds/List.hx)
 - [Haxe 4.3.7 `Serializer`](https://raw.githubusercontent.com/HaxeFoundation/haxe/4.3.7/std/haxe/Serializer.hx)
 - [Haxe 4.3.7 `Unserializer`](https://raw.githubusercontent.com/HaxeFoundation/haxe/4.3.7/std/haxe/Unserializer.hx)
 - [Erlang NIF resource documentation](https://www.erlang.org/doc/apps/erts/erl_nif.html)

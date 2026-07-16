@@ -189,7 +189,10 @@ Enum.map(history, fn message ->
 end)
 ```
 
-More complex mutation uses explicit immutable rebinding or reducers so behavior is preserved. See
+More complex mutation currently uses explicit immutable rebinding or reducers.
+That preserves many local flows, but it does not make another alias observe an
+ordinary Haxe object/collection mutation; shared-reference semantics remain a
+[known pre-1.0 gap](docs/06-guides/KNOWN_LIMITATIONS.md). See
 [Imperative to Functional Lowering](docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md) and the
 [reviewed output](test/quality/handwritten-output/generated/portable-chat-domain/portable_chat_domain/transcript.ex).
 The same target-neutral [`MessageRules`](examples/16-portable-chat-domain/src_haxe/shared/chat/MessageRules.hx)

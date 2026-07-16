@@ -49,6 +49,36 @@ pre-1.0 behavior—not the finished compatibility promise. The
 [Standard Libraries And Packages](../08-roadmap/stdlib-and-package-ecosystem.md) explains what
 “complete” means and how the release policy enforces it.
 
+## Shared Haxe references are not complete yet
+
+The current persistent map/list lowering can update one lexical variable without
+updating another variable that aliases the same ordinary Haxe object or
+collection:
+
+```haxe
+var values = [1];
+var alias = values;
+values.push(2);
+trace(alias.length); // Haxe requires 2
+```
+
+A lowering such as `values = values ++ [2]` leaves `alias` at `[1]`. The same
+class of bug can affect ordinary class fields, anonymous objects, Haxe maps,
+lists, stacks, and buffers. Existing direct-receiver tests or same-scope
+receiver rebinding do not prove alias behavior.
+
+The compiler has accepted one typed selective managed-reference direction, not
+two Portable/Elixir semantic modes. Ordinary reference-bearing Haxe values will
+use managed shared storage where their audited contract requires it; explicitly
+native Ecto/Phoenix/OTP/JSON and immutable collection values remain raw BEAM
+terms.
+
+None of that managed behavior is shipped yet. Use explicit BEAM state passing
+or OTP processes for application state today, and do not rely on ordinary Haxe
+aliases observing mutators until the relevant support gate is complete. See the
+[beginner explanation and architecture contract](../05-architecture/MANAGED_REFERENCE_ABI.md) and
+the [reference-semantics evidence audit](../05-architecture/HAXE_REFERENCE_SEMANTICS_AUDIT.md).
+
 ## Macro inputs outside the build graph
 
 Mix freshness now fingerprints the effective discoverable build: recursive HXML and defines, all

@@ -13,10 +13,11 @@ If you want the deep dive (with many examples), start here:
 
 ## The mental model
 
-### 1) “Mutation” becomes **rebinding**
+### 1) Local value updates become **rebinding**
 
-Elixir values are immutable, so Haxe-style mutation is lowered into a sequence of rebindings. Each step produces a new
-binding with the updated value, which preserves the original step-by-step behavior while staying idiomatic in Elixir.
+Elixir values are immutable, so a local scalar update or an explicitly native
+value update can become a sequence of rebindings. Each step produces a new value
+for that lexical binding while staying idiomatic in Elixir.
 
 Example:
 
@@ -31,17 +32,41 @@ total = total + 2
 ```
 
 Implication:
+
 - The output is still purely functional/immutable at runtime, but reads like idiomatic Elixir rebinding.
 - Generated code may rebind names to preserve Haxe mutation semantics; if you need "assign once" guarantees in source,
   use Haxe `final`.
 
+Rebinding is **not** a general implementation of shared Haxe mutation. Consider:
+
+```haxe
+var values = [1];
+var alias = values;
+values.push(2);
+trace(alias.length); // 2
+```
+
+```elixir
+values = [1]
+alias_values = values
+values = values ++ [2]
+length(alias_values) # 1, so this lowering is not equivalent
+```
+
+The current compiler does not yet preserve every alias-sensitive ordinary-Haxe
+case. The accepted managed-reference design will use shared storage where the
+Haxe contract requires it; it has not shipped yet. See
+[Haxe Reference-Semantics Audit](../05-architecture/HAXE_REFERENCE_SEMANTICS_AUDIT.md).
+
 ### 2) “Loops” become **Enum/reduce recursion**
 
 Haxe loops (`for`, `while`, `do/while`) are lowered into:
+
 - `Enum.each` / `Enum.reduce` / `Enum.reduce_while` shapes when idiomatic and semantics-safe
 - tail-recursive anonymous functions (when needed to preserve break/continue-like control flow)
 
 Implication:
+
 - Prefer writing Haxe code in “expression-first” style; the compiler has more room to emit clean `Enum.*` forms.
 
 ### 3) “Statements” become **expressions**
@@ -50,6 +75,7 @@ Elixir is expression-oriented; many things “return a value” naturally.
 Haxe blocks are lowered into Elixir blocks and `case`/`cond`/`if` expressions (plus temporary bindings when needed).
 
 Implication:
+
 - Returning values from `if` / `switch` in Haxe typically maps cleanly to Elixir expressions.
 
 ## Common lowerings (by category)
@@ -57,15 +83,19 @@ Implication:
 ### Variable updates
 
 Typical transformations:
+
 - `x += 1` → `x = x + 1`
 - `x = f(x)` remains rebinding, not mutation
-- `a.b = v` becomes a new struct/map value assigned back to `a` when targeting immutable BEAM data structures
+- `a.b = v` becomes a new struct/map value assigned back to `a` only when `a`
+  is an explicit native value (or a future optimization has proved the object
+  local and unobservable). An ordinary shared Haxe object requires managed field
+  mutation.
 
 See: `docs/07-patterns/FUNCTIONAL_PATTERNS.md`
 
 ### Stateful receiver methods
 
-Some Haxe APIs look like in-place mutation on an object:
+Some current target APIs thread persistent receiver state explicitly:
 
 ```haxe
 var iterator = new IntIterator(0, 2);
@@ -73,8 +103,8 @@ var first = iterator.next();
 var stillHasItems = iterator.hasNext();
 ```
 
-Elixir values are immutable, so receiver state must be threaded explicitly in generated code. When a method mutates the
-receiver and also returns a separate value, the compiler lowers it to a same-scope rebind:
+When such a method updates a persistent receiver and also returns a separate
+value, the compiler can lower it to a same-scope rebind:
 
 ```elixir
 iterator = IntIterator.new(0, 2)
@@ -82,10 +112,18 @@ iterator = IntIterator.new(0, 2)
 still_has_items = IntIterator.has_next(iterator)
 ```
 
-This same-scope rebind matters. The compiler must not hide it inside an anonymous function/IIFE, because that would update
-only the inner binding and leave the outer Haxe variable unchanged.
+This same-scope rebind matters for the variable being updated. The compiler must
+not hide it inside an anonymous function/IIFE, because that would update only
+the inner binding.
+
+It still does not update another alias to the old receiver. The convention is
+therefore complete only for explicitly persistent native APIs or for flows where
+aliasing has been ruled out. Existing uses for ordinary mutable Haxe objects and
+collections are compatibility machinery under audit, not proof of exact shared
+reference behavior.
 
 Current receiver conventions:
+
 - Pure methods return only their Haxe value, for example `iterator.hasNext()`.
 - Receiver mutators whose Haxe result is effectively `Void` return the updated receiver, for example `StringBuf.add(...)`
   and `haxe.io.BytesBuffer.add*`.
@@ -93,7 +131,8 @@ Current receiver conventions:
 
 ### Data structure updates
 
-Haxe “field assignment” and “map-like updates” lower into:
+Explicit native field and map-like updates lower into:
+
 - struct updates (`%Mod{struct | field: value}`) when the target is a struct
 - `Map.put` / functional update patterns when the target is a map-like structure
 
@@ -153,18 +192,21 @@ See: `docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md`
 ### Exceptions and error flow
 
 Haxe exceptions map to Elixir `raise`/`try`/`rescue` patterns, but Elixir codebases often prefer:
+
 - tagged return values (`{:ok, v}` / `{:error, reason}`)
 - `with` / `case` flows
 
 If you want “BEAM-first” error flow from Haxe, prefer `Result`/`Option`-style APIs.
 
 See:
+
 - `docs/07-patterns/FUNCTIONAL_PATTERNS.md`
 - `docs/02-user-guide/WRITING_IDIOMATIC_HAXE_FOR_ELIXIR.md`
 
 ### Unused variables and hygiene
 
 Elixir warnings around unused bindings are handled by:
+
 - emitting `_name` for unused function/callback parameters (readable signatures)
 - using `_` for true throwaway pattern slots in generated `case`/`with`, while keeping `_name` when a named binder is needed to preserve pattern semantics
 - applying naming collision rules to avoid keywords and built-in collisions
@@ -179,32 +221,44 @@ These are not necessarily “bugs” — they’re the places where the semantic
 
 Haxe code that mixes side effects inside complex expressions can constrain how idiomatic the Elixir lowering can be.
 If you want the cleanest output, prefer:
+
 - explicit intermediate bindings
 - expression-first code (pure functions where possible)
 
 ### 2) Mutation-heavy code (ports from other targets)
 
-Porting code that relies on pervasive mutation may still compile correctly, but:
+Porting code that relies on pervasive mutation may compile, but alias-sensitive
+behavior is not fully supported yet:
+
 - the generated Elixir may be rebinding-heavy
 - performance characteristics may differ (more allocations from immutable updates)
+- an alias to an ordinary class, array, map, list, or buffer can retain stale
+  state under current persistent lowering
 
 Recommendation:
+
 - treat “porting” as a starting point, then refactor toward BEAM-idiomatic patterns (see below).
 
-### 3) “Reference identity” expectations
+### 3) Reference identity and aliases
 
-The BEAM does not have object identity/mutation semantics like JS/C++.
-Code that relies on shared mutable references should be refactored to:
-- explicit state passing
-- processes (GenServer) for shared state
+Ordinary immutable BEAM terms do not provide Haxe object identity or shared
+field mutation. The issue is not isolated to `ObjectMap`: normal classes,
+anonymous objects, arrays, Haxe maps, lists, and buffers may expose aliases.
+
+For application state that is intentionally BEAM-native, prefer:
+
+- explicit state passing; or
+- processes such as a GenServer for long-lived shared state.
 
 See: `docs/02-user-guide/PHOENIX_INTEGRATION.md` (OTP state patterns)
 
-For portable Haxe compatibility, the compiler has accepted a selective managed-reference ABI for
-ordinary objects. It is not implemented yet: `ObjectMap`, `ListSort`, `WeakMap`, and complete cyclic
+For ordinary portable Haxe compatibility, the compiler has accepted one typed,
+selective managed-reference ABI for reference objects and audited mutable
+collections. It is not implemented yet: ordinary alias behavior remains a
+known gap, while `ObjectMap`, `ListSort`, `WeakMap`, and complete cyclic
 reference graphs still fail fast or remain incomplete. Until the gates in
-`docs/05-architecture/MANAGED_REFERENCE_ABI.md` ship, the refactoring guidance above describes the
-supported application path.
+[Selective Managed-Reference ABI](../05-architecture/MANAGED_REFERENCE_ABI.md)
+ship, the refactoring guidance above describes the supported application path.
 
 ### 4) Escape hatches
 

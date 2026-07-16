@@ -20,6 +20,39 @@ compiler should respect when Haxe portability and BEAM-native shape conflict.
 Both profiles aim for idiomatic Elixir. Portable code is not an unidiomatic mode;
 it simply gives Haxe semantics first claim when there is a real semantic gap.
 
+## One semantic contract, typed representations
+
+Authoring profile and runtime representation are different decisions. The
+compiler has one Haxe semantic contract, while typed values can use different
+representations inside that contract:
+
+- ordinary Haxe classes, anonymous objects, and mutable collections use managed
+  shared storage when their pinned contract exposes identity or alias-visible
+  mutation;
+- explicit native/value types use ordinary immutable BEAM terms; and
+- Ecto, Phoenix, OTP, JSON, exception, and declared extern boundaries keep their
+  exact target shapes.
+
+For example, this ordinary Haxe code requires both variables to observe the
+same mutation in either authoring profile:
+
+```haxe
+var values = [1];
+var alias = values;
+values.push(2);
+trace(alias.length); // 2
+```
+
+A separately declared target-native immutable list may instead expose an
+operation that returns a replacement list. That is a different typed API, not
+an Elixir-first reinterpretation of ordinary `Array.push`.
+
+The exact managed and native collection APIs are not shipped or frozen yet.
+Some current extern signatures still reuse `Array` or `Map` to spell raw BEAM
+terms; the representation design must remove that ambiguity before its ABI is
+enabled. See the
+[reference-semantics audit](HAXE_REFERENCE_SEMANTICS_AUDIT.md).
+
 ## Why `metal` is not an application profile
 
 Rust and Go targets may need a project-level "metal" lane because their users
@@ -28,10 +61,11 @@ binding choices.
 
 Reflaxe.Elixir is different:
 
-- Native BEAM values are immutable, so mutation-like operations on persistent
-  value receivers use explicit rebinding. Ordinary Haxe objects whose identity
-  or aliases are observable use the selective managed-reference ABI once its
-  gated implementation ships; profile declarations never select that ABI.
+- Explicit native BEAM values are immutable, so mutation-like operations on
+  those persistent value receivers use explicit rebinding. Ordinary Haxe
+  objects and mutable collections whose identity or aliases are observable use
+  the selective managed-reference ABI once its gated implementation ships;
+  profile declarations never select that ABI.
 - Phoenix/Ecto/OTP integration is better represented with typed Elixir-first
   externs than with raw target syntax.
 - Raw HEEx or Elixir injection is a local escape hatch, not a whole-application
@@ -84,9 +118,10 @@ Possible future checks:
 - Portable stdlib features such as Haxe special floats, Haxe serialization, and
   mutable-looking iterator code may require helper modules or heavier lowering.
   That is acceptable when it preserves the Haxe contract.
-- Exact object identity and alias-visible mutation may require the managed
-  runtime described in `MANAGED_REFERENCE_ABI.md`. Explicit Ecto, Phoenix, OTP,
-  JSON, and extern boundaries remain native in both profiles.
+- Exact object identity and alias-visible mutation for ordinary objects and
+  mutable collections may require the managed runtime described in
+  `MANAGED_REFERENCE_ABI.md`. Explicit Ecto, Phoenix, OTP, JSON, and extern
+  boundaries remain native in both profiles.
 
 ## CI matrix
 

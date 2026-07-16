@@ -88,28 +88,33 @@ unsupported or subset remain blockers. Most use a local target override; entries
 fallback intentionally use the installed Haxe stdlib unchanged.
 
 Top-level:
-- `Array`
+- `Array` (current native-list lowering handles many direct-receiver flows, but
+  alias-visible mutators and indexed writes are not complete; this blocks 1.0)
 - `Date`
 - `DateTools`
 - `EReg`
 - `IntIterator`
 - `Lambda`
 - `List`
-- `Map`
+- `Map` (current native-map lowering handles many direct-receiver flows, but
+  ordinary Haxe map aliases do not yet share `set`/`remove`/`clear`; this blocks
+  1.0)
 - `Math` (portable Haxe NaN/Infinity support is implemented for constants,
   operators, Math APIs, IEEE byte paths, JSON, Haxe serialization, templates,
   and finite-native ErlangMath boundary diagnostics; the full target contract is
   documented in `docs/05-architecture/HAXE_FLOAT_SPECIAL_VALUES.md`.
   Typed Elixir-first code may use native finite BEAM numeric APIs directly,
   with explicit boundaries for Haxe special floats.)
-- `Reflect`
+- `Reflect` (current native/map-oriented subset; managed fields, identity-aware
+  copy, bound methods, and graph behavior remain 1.0 blockers)
 - `Std`
 - `String`
-- `StringBuf`
+- `StringBuf` (current receiver-rebinding path is not complete for aliases)
 - `StringTools`
 - `Sys`
 - `Type` (target-specific; typed enum reflection calls used by `haxe.EnumTools`
-  and `haxe.EnumFlags` are backed by generated enum metadata)
+  and `haxe.EnumFlags` are backed by generated enum metadata; managed class
+  tags, instance creation, and empty allocation remain blockers)
 - `UInt`
 - `UnicodeString` (UTF-8 validation and codepoint iteration)
 - `Xml` (parse/print, attributes, child iteration, parent links)
@@ -202,16 +207,16 @@ state across processes.
 - `haxe.crypto.Sha1`
 - `haxe.crypto.Sha224`
 - `haxe.crypto.Sha256`
-- `haxe.ds.ArraySort` (target override lowered to stable `Enum.sort/2` rebinding for local array bindings)
+- `haxe.ds.ArraySort` (target override lowered to stable `Enum.sort/2` rebinding for local array bindings; aliases are not updated yet)
 - `haxe.ds.BalancedTree`
 - `haxe.ds.Either` (official stdlib enum fallback; covered by local runtime tests)
 - `haxe.ds.EnumValueMap` (bootstrap-safe override under `src/haxe/ds`)
-- `haxe.ds.GenericStack` (target override with receiver rebinding for `add`, `pop`, and `remove`; covered by upstream `unitstd` plus local iterator/toString runtime tests)
-- `haxe.ds.HashMap` (target override keyed by `hashCode()` with receiver rebinding for `set`, `remove`, and `clear`; covered by local runtime tests)
-- `haxe.ds.List` (target override with receiver rebinding for `add`, `push`, `pop`, `remove`, and `clear`; array-backed iterators use the canonical iterator runtimes; covered by adapted upstream `unitstd` plus local runtime tests)
+- `haxe.ds.GenericStack` (target override with receiver rebinding for `add`, `pop`, and `remove`; upstream `unitstd` plus local iterator/toString tests pass, but shared-alias mutation is incomplete)
+- `haxe.ds.HashMap` (target override keyed by `hashCode()` with receiver rebinding for `set`, `remove`, and `clear`; direct runtime tests pass, but shared-alias mutation still needs pinned evidence)
+- `haxe.ds.List` (target override with receiver rebinding for `add`, `push`, `pop`, `remove`, and `clear`; adapted upstream `unitstd` plus local tests pass, but aliases retain old snapshots and therefore block complete parity)
 - `haxe.ds.ListSort` (current fail-fast unsupported surface and 1.0 blocker)
 - `haxe.ds.Option` (local `@:elixirIdiomatic` target surface with `OptionTools`; covered by local runtime tests)
-- `haxe.ds.Vector` (target override with process-local backing cells for fixed-length indexed storage; covered by adapted upstream `unitstd`, local Reflect ordering runtime coverage, and `test/snapshot/stdlib/haxe_ds_vector`)
+- `haxe.ds.Vector` (target override with process-local backing cells for fixed-length indexed storage; covered by adapted upstream `unitstd`, local Reflect ordering runtime coverage, and `test/snapshot/stdlib/haxe_ds_vector`; alias/lifetime behavior remains part of the representation audit)
 - `haxe.exceptions.ArgumentException` (official stdlib fallback; covered by local runtime tests)
 - `haxe.exceptions.NotImplementedException` (official stdlib fallback; covered by local runtime tests)
 - `haxe.format.JsonParser` (BEAM-native `Jason.decode!/1` direct parser surface; covered by local runtime tests)
@@ -220,7 +225,7 @@ state across processes.
 - `haxe.io.ArrayBufferView` (official portable implementation; BEAM conformance covered with the typed-array cluster)
 - `haxe.io.BufferInput`
 - `haxe.io.Bytes`
-- `haxe.io.BytesBuffer`
+- `haxe.io.BytesBuffer` (current receiver-rebinding path is not complete for aliases)
 - `haxe.io.BytesData`
 - `haxe.io.BytesInput`
 - `haxe.io.BytesOutput`
@@ -286,8 +291,20 @@ Notes:
 - The AST pipeline still optimizes most loop patterns to idiomatic `Enum.*`; runtime iterators are primarily for manual iterator usage and stdlib/runtime compatibility.
 - `UnicodeString.validate` supports `UTF8`; UTF-16/UTF-32 validation currently fails fast because
   `haxe.io.Bytes` stores UTF-8 binaries on this target. The missing encodings block 1.0.
-- Built-in map surfaces (`haxe.ds.Map`, `StringMap`, `IntMap`) are represented as native Elixir `%{}` maps and lowered to idiomatic `Map.*` operations.
-- `haxe.ds.List` is represented as an ordered immutable snapshot with receiver rebinding for mutators; generated Elixir uses `Haxe.Ds.List` so it does not collide with Elixir's built-in `List` module.
+- Built-in map surfaces (`haxe.ds.Map`, `StringMap`, `IntMap`) are currently
+  represented as native Elixir `%{}` maps and lowered to idiomatic `Map.*`
+  operations. That is the current implementation, not the final parity
+  decision: a discarded or one-binding `Map.put` does not update another Haxe
+  alias. Ordinary mutable maps are part of the managed-collection audit, while
+  explicit target-native immutable maps remain `%{}` values.
+- `haxe.ds.List` is currently represented as an ordered immutable snapshot with
+  receiver rebinding for mutators; generated Elixir uses `Haxe.Ds.List` so it
+  does not collide with Elixir's built-in `List` module. The snapshot/rebind
+  path does not update aliases and is therefore partial for 1.0 semantics.
+- The same audit covers `Array`, `GenericStack`, `StringBuf`, `BytesBuffer`, and
+  other ordinary mutable Haxe objects. See
+  `docs/05-architecture/HAXE_REFERENCE_SEMANTICS_AUDIT.md` for observed evidence,
+  inferred representation impact, and remaining unknowns.
 - `haxe.ds.ObjectMap` is currently unsupported and blocks 1.0. Haxe ObjectMap requires object-identity
   keys, but BEAM map keys are structural terms. The compiler currently rejects construction and
   direct method calls instead of silently lowering them to incorrect `%{}` behavior. See

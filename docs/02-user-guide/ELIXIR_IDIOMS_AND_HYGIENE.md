@@ -4,7 +4,9 @@ This guide documents **small but important** conventions Reflaxe.Elixir applies 
 
 - is idiomatic and readable
 - avoids common compiler warnings
-- preserves Haxe semantics in an immutable, expression-oriented target
+- preserves the documented supported Haxe semantics in an immutable,
+  expression-oriented target; shared object/collection aliases remain a
+  [known pre-1.0 gap](../06-guides/KNOWN_LIMITATIONS.md)
 
 If you’re looking for construct-by-construct mappings (classes, enums, types, control flow), also see:
 `docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md`.
@@ -217,9 +219,9 @@ These shapes are intentionally “Elixir-native”:
 
 ## Data shapes: lists + maps
 
-### Arrays are lists
+### Current array output uses lists
 
-`Array<T>` compiles to an Elixir list (`[...]`). Many familiar operations become `Enum.*` calls:
+`Array<T>` currently compiles to an Elixir list (`[...]`). Many read/functional operations become `Enum.*` calls:
 
 - `array.map(f)` → `Enum.map(array, f)`
 - `array.filter(f)` → `Enum.filter(array, f)`
@@ -227,9 +229,15 @@ These shapes are intentionally “Elixir-native”:
 
 This is implemented in `std/elixir/_std/Array.hx` and is designed to read like hand-written Elixir.
 
-### Anonymous structures are maps (atom keys)
+That representation is not complete for mutating aliases. If `alias = array`
+and `array.push(value)` becomes a one-binding list replacement, `alias` still
+holds the old list. Ordinary mutable arrays are therefore part of the accepted,
+not-yet-shipped managed-collection design. Explicitly target-native immutable
+lists remain normal BEAM lists.
 
-Haxe anonymous structures / typedef “records” compile to Elixir maps with atom keys:
+### Current anonymous-structure output uses maps (atom keys)
+
+Haxe anonymous structures / typedef “records” currently compile to Elixir maps with atom keys:
 
 ```haxe
 var user = { name: "Alice", age: 42 };
@@ -246,7 +254,12 @@ Field reads and updates use idiomatic Elixir map syntax:
 - `user.name` (read)
 - `%{user | name: "Bob"}` (update)
 
-### Class instances are map-backed (no mutation)
+This is exact for an explicit native/value record or a proven local value. It
+does not by itself preserve allocation identity or shared field writes for an
+ordinary anonymous object with aliases. The future typed representation
+contract, not source style, decides which case applies.
+
+### Current class instances are map-backed (alias limitation)
 
 Reflaxe.Elixir models “instances” as immutable map-backed values. Instance methods become module functions that take
 the instance as an explicit first parameter (often named `struct` in generated code).
@@ -270,6 +283,11 @@ end
 
 If your Haxe code relies heavily on mutating fields, consider refactoring toward returning updated values (functional
 style), which maps naturally onto Elixir.
+
+The current map-backed shape is not the final ordinary-class contract. Updating
+one map binding leaves another Haxe alias stale. Managed class handles are an
+accepted staged direction but are not shipped; see
+[Known Limitations](../06-guides/KNOWN_LIMITATIONS.md).
 
 #### Field assignment lowers to map updates
 

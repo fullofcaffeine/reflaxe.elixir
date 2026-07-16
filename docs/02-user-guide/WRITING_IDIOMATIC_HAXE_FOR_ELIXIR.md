@@ -59,9 +59,9 @@ These compile to idiomatic Elixir tuples:
 
 They compose well with `switch` and the provided `OptionTools` / `ResultTools` helpers.
 
-## 3) Embrace immutability (especially for arrays)
+## 3) Prefer explicit immutable flows (especially today)
 
-In the Elixir target:
+In the current Elixir output:
 
 - `Array<T>` is an Elixir list (`[...]`)
 - `Map<K, V>` is an Elixir map
@@ -75,6 +75,13 @@ var evens = numbers.filter(n -> n % 2 == 0);
 ```
 
 This typically becomes `Enum.map/2`, `Enum.filter/2`, etc.
+
+This guidance is both idiomatic and a practical way to avoid the current
+shared-alias gap. It does not redefine ordinary Haxe `Array`/`Map` mutators as
+value-semantic: when two variables alias one mutable Haxe collection, the
+pinned Haxe contract may require both to observe a write, while current
+list/map rebinding updates only one. Managed collection semantics are accepted
+but not shipped. See [Known Limitations](../06-guides/KNOWN_LIMITATIONS.md).
 
 ### Loops are fine, but `break`/`continue` are heavier
 

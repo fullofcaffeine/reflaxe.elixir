@@ -5,7 +5,9 @@ Reflaxe.Elixir supports two valid application authoring profiles for the BEAM:
 1. **Portable stdlib-first**
 2. **Typed Elixir-first**
 
-Both are supported **today**.
+Both authoring styles are supported **today within the documented pre-1.0
+surface**. That does not imply that every portable Haxe reference/stdlib
+behavior is complete; see [Known Limitations](../06-guides/KNOWN_LIMITATIONS.md).
 
 ## One pipeline, two profiles
 
@@ -34,6 +36,39 @@ The difference is what wins when Haxe portability and BEAM-native shape conflict
 Portable is not an “unidiomatic” profile. It still prefers Elixir modules, functions, maps, tuples, pattern matching, `case`, `Enum`, and normal Phoenix `~H` output where those shapes preserve Haxe behavior.
 
 When semantics differ, portable code may need Haxe-compatible lowering or helper modules for things like Haxe stdlib APIs, class semantics, mutable-looking loops, iterators, exceptions, nullable behavior, and map behavior.
+
+## Reference semantics are not a profile switch
+
+An Elixir-first developer can stay close to Elixir by choosing typed native
+boundaries and data-in/data-out APIs: Ecto structs and changesets,
+Phoenix/OTP payloads, JSON values, target externs, and explicit immutable
+collection operations. Those values should remain ordinary BEAM terms.
+
+What Elixir-first does **not** do is reinterpret an ordinary mutable Haxe API:
+
+```haxe
+var values = [1];
+var alias = values;
+values.push(2);
+trace(alias.length); // Haxe requires 2 in either profile
+```
+
+Compiling `push` as a one-binding list replacement would make this source mean
+something different merely because the author preferred Elixir style. That
+would create two semantic compilers and make shared libraries unreliable.
+
+The accepted design instead uses one compiler with typed representations:
+
+- ordinary Haxe reference objects and mutable collections use shared managed
+  storage when their audited contract requires it; and
+- explicitly native/value APIs keep immutable BEAM representation and make the
+  replacement value explicit.
+
+The managed representation and a distinct public native-collection surface are
+not shipped or named yet. Today, write Elixir-first state transitions explicitly
+and avoid relying on ordinary Haxe aliases to observe collection/object
+mutators. See [Known Limitations](../06-guides/KNOWN_LIMITATIONS.md) and the
+[reference-semantics audit](../05-architecture/HAXE_REFERENCE_SEMANTICS_AUDIT.md).
 
 ### Float special values
 
@@ -131,7 +166,9 @@ class MessageRules {
 
 Expected Elixir tendency:
 
-- Use normal functions and maps/struct-like values.
+- Use normal functions. Record-like values may remain managed at public
+  boundaries when identity is observable; a future checked native-value
+  declaration or proven local scalar replacement may emit a plain map/tuple.
 - Use native string/list/map operations where they preserve Haxe behavior.
 - Add Haxe-compatible lowering only where the stdlib contract requires it.
 

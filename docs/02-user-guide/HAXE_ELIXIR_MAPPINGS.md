@@ -192,8 +192,12 @@ typedef User = {
 
 ### Tuple-Shaped Anonymous Objects
 
-Ordinary Haxe anonymous objects compile to Elixir maps. Two deliberately
-positional field layouts compile to tuples instead:
+Ordinary Haxe anonymous objects currently compile to Elixir maps. That is a
+current output description, not a final alias/identity contract: the accepted
+managed-reference design defaults ordinary reference-capable anonymous objects
+to managed storage unless a checked native/value contract or a proven local
+optimization applies. Two deliberately positional native field layouts compile
+to tuples instead:
 
 - `_1.._N` is the portable Haxe tuple convention.
 - `_0.._N-1` is the zero-based convention used by typed Elixir externs.
@@ -238,13 +242,18 @@ the typed `Result`, Phoenix, or OTP return surfaces for common tagged tuples.
 | `Float` | `float()` | IEEE 754 double precision |
 | `String` | `String.t()` | UTF-8 binary strings |
 | `Bool` | `boolean()` | `true` or `false` atoms |
-| `Array<T>` | `list(T)` | Immutable linked lists |
-| `Map<K,V>` | `map(K, V)` | Immutable hash maps (see note below) |
+| `Array<T>` | currently `list(T)` | Direct functional operations map well; shared aliases for mutators/indexed writes are incomplete |
+| `Map<K,V>` | currently `map(K, V)` | Direct operations map to `%{}` today; ordinary mutable-map aliases are incomplete (see note below) |
 | `Dynamic` | `term()` | Any Elixir term |
 | `Void` | `:ok` or `nil` | Context dependent |
 | `Null<T>` | `T \| nil` | Nullable types |
 | `Option<T>` | `{:some, T} \| {:none}` | Type-safe null handling |
 | `Result<T,E>` | `{:ok, T} \| {:error, E}` | Explicit error handling |
+
+This table describes current target shapes. It does not override Haxe reference
+semantics. Ordinary mutable arrays/maps are part of the managed-collection
+design, while explicitly target-native immutable lists/maps remain raw BEAM
+terms. See [Known Limitations](../06-guides/KNOWN_LIMITATIONS.md).
 
 ### Note: Haxe `Map<K,V>` vs native Elixir `%{}`
 
@@ -254,6 +263,10 @@ In Elixir, many framework APIs (Phoenix params, `Presence.list/2`, JSON payloads
 Those values are **not guaranteed** to be a Haxe `Map<K,V>` runtime object, even if they are “map-like”.
 When dealing with boundary terms, prefer Elixir-native helpers like `elixir.ElixirMap.get/3` (and typed
 decode helpers such as `WirePayload`) instead of calling Haxe `Map` instance methods.
+
+Conversely, an ordinary Haxe `Map<K,V>` must eventually preserve its own
+mutating alias contract. Its current `%{}` lowering does not make a second alias
+observe `set`, `remove`, or `clear`, so it is not complete 1.0 semantics.
 
 For multi-step boundary reads, `reflaxe.elixir.Pipe` gives Haxe a typed spelling
 that is close to Elixir's `|>` while still compiling through normal Haxe syntax:
@@ -733,7 +746,7 @@ result = result |> Enum.filter(fn x -> x > 2 end) |> Enum.map(fn x -> x * 2 end)
 This optimization targets contiguous assignments where the variable is passed as the first argument
 (`x = f(x, ...)`), and collapses them into a single `|>` pipeline.
 
-**Classes → Module + map-backed instances**:
+**Classes → Module + currently map-backed instances**:
 ```haxe
 // Haxe input
 class Point {
@@ -761,6 +774,12 @@ end
 
 Instance methods become module functions that take the instance as an explicit first parameter (often
 named `struct` in the generated Elixir).
+
+The current map-backed instance shape cannot preserve a second alias when a
+field or method mutates the object. It is a documented pre-1.0 limitation, not
+the final class ABI. The accepted design replaces ordinary instances with
+managed handles after the gated compiler/runtime/package work is complete; no
+managed class behavior is shipped today.
 
 ### Smart Array/List Operations
 

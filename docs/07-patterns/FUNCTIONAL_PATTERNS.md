@@ -291,7 +291,7 @@ count = count + 1  # No ++ operator
 
 ### Structure Updates
 ```haxe
-// Haxe - mutable object
+// Haxe source used with an explicit native/value record
 user.name = "New Name";
 user.age = user.age + 1;
 ```
@@ -302,15 +302,18 @@ user = %{user | name: "New Name"}
 user = %{user | age: user.age + 1}
 ```
 
-**Compiler support:** The current documented subset generates proper Elixir struct-update syntax for
-field assignments. You can write natural Haxe field assignment code and the compiler will produce
-idiomatic functional Elixir patterns. Release guarantees are defined by
-[Versioning & Stability](../06-guides/VERSIONING_AND_STABILITY.md).
+**Compiler support:** The current compiler generates Elixir struct/map updates
+for many field assignments. That shape is exact for explicitly native/value
+records and proven local transformations. It is not exact for an ordinary Haxe
+object with another alias: rebinding `user` does not update the alias. Managed
+ordinary-object semantics are accepted but not shipped. See
+[Known Limitations](../06-guides/KNOWN_LIMITATIONS.md).
 
 ## Best Practices
 
 ### 1. Favor Functional Patterns
 When writing Haxe code for Elixir compilation, prefer functional patterns:
+
 - Use `map`, `filter`, `reduce` over loops when possible
 - Return new data instead of modifying existing
 - Use pattern matching for control flow
@@ -323,9 +326,16 @@ var count: Int = 0;          // Compiler knows to use +
 ```
 
 ### 3. Avoid Complex Mutations
-Complex mutation patterns **do compile correctly**, but they can produce less idiomatic output and/or extra allocations on the BEAM.
+Complex mutation patterns may compile, but ordinary shared aliases are not fully
+supported yet. Even where the direct receiver result is correct, generated code
+can be less idiomatic or allocate more on the BEAM.
 
-In particular, Haxe `Array` is represented as an immutable Elixir list for this target, so an indexed “in-place” update like `array[i] = ...` requires rebuilding the list. Doing that inside a loop can turn a linear pass into **O(n²)** work.
+In the current implementation, Haxe `Array` is represented as an immutable
+Elixir list, so an indexed “in-place” update like `array[i] = ...` requires
+rebuilding the list. Doing that inside a loop can turn a linear pass into
+**O(n²)** work, and another alias may retain the old list. The accepted
+managed-collection design must close the alias gap before this can be described
+as complete ordinary-Haxe behavior.
 
 Reflaxe.Elixir intentionally does **not** auto-rewrite arbitrary mutation-heavy loops into `Enum.map/2` unless it can prove the rewrite is semantics-safe (e.g. the loop counter isn’t observed after the loop, there’s no early-exit control flow, and there aren’t multiple interacting mutations).
 
