@@ -2,6 +2,21 @@
 
 > **Note**: `CLAUDE.md` in this directory is a symlink to `AGENTS.md` (no duplication). Edit `AGENTS.md` only.
 
+## 🧭 Epistemic Humility and Reader Calibration (General Rule)
+
+- Do not mistake familiarity with terminology, a plausible explanation, or one passing prototype
+  for complete understanding or production readiness. Actively look for evidence that could
+  disprove the current model.
+- Separate what was directly observed, what is inferred from that evidence, what is assumed, and
+  what remains unknown or untested. State confidence and important limitations plainly; never make
+  a broad support, safety, performance, legal, or release claim from narrower evidence.
+- Explain unfamiliar machinery from the reader's altitude before introducing internal jargon. Show
+  at least one concrete input or real-world scenario, the behavior that must be preserved, and the
+  bug or failure that would occur without the machinery. Then explain the implementation details.
+- When a decision crosses compiler semantics, concurrency, security, native code, distribution, or
+  another specialist boundary, verify it with primary evidence and qualified review. Acknowledge
+  uncertainty instead of filling gaps with confident-sounding speculation.
+
 ## 🚦 Non-Blocking Todo-App QA (Required)
 
 Agents must never block the terminal when validating the todo-app. Use the provided QA sentinels which build, start Phoenix in the background, probe readiness, and tear down cleanly.
