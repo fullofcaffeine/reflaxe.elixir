@@ -13,7 +13,7 @@
 4. **ALWAYS update test counts** in this file when adding/moving tests
 5. **ALWAYS follow the exact directory structure** documented below
 
-**Last Updated**: January 2025 - Moved ~50 tests from incorrect `test/tests/` to proper locations
+**Last Updated**: 2026-07-17 - Added stock LiveReact HXX binding and wrapper diagnostics coverage
 
 ## 🧪 Test Suite Overview
 
@@ -35,9 +35,9 @@ This directory contains the Reflaxe.Elixir compiler test suite, validating that 
 3. Users care about generated Elixir, not how we build it internally
 4. Snapshot tests catch real bugs that affect actual usage
 
-### Test Statistics (as of 2026-07-14)
-- **410 positive snapshot tests** validating compiler output
-- **91 negative snapshot tests** validating expected failures
+### Test Statistics (as of 2026-07-17)
+- **411 positive snapshot tests** validating compiler output
+- **93 negative snapshot tests** validating expected failures
 - **~8,000 test files** (source + intended + outputs)
 - **6 test categories** organizing tests by feature area
 

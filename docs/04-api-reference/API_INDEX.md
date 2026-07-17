@@ -135,6 +135,10 @@ Core:
 - `std/phoenix/Token.hx`
 - `std/phoenix/JS.hx`
 
+Opt-in stock LiveReact interop:
+
+- `std/phoenix/live_react/LiveReact.hx`
+
 Channels and wire types:
 
 - `std/phoenix/channels/JoinResult.hx`

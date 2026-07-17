@@ -168,6 +168,73 @@ The existing component surface is intentionally Phoenix-shaped. Use function com
 attrs, and slots when a real reusable component boundary exists; keep inline HXX in a
 LiveView render function when a template is local to that LiveView.
 
+### Stock LiveReact component declaration (experimental)
+
+`phoenix.live_react.LiveReact` is a low-level declaration for the upstream
+`LiveReact` module. It does not install `:live_react`, configure JavaScript, or
+copy any LiveReact runtime behavior. Its open `react/1` boundary accepts typed
+Phoenix assigns and returns an opaque rendered `Term`, matching the upstream
+component rather than pretending it returns a string.
+
+Keep product props in an app-local discoverable wrapper:
+
+```haxe
+import phoenix.live_react.LiveReact;
+import phoenix.types.Assigns;
+
+typedef StatusCardAssigns = {
+  var id:String;
+  var title:String;
+}
+
+@:native("MyAppWeb.ReactComponents")
+@:component
+class ReactComponents {
+  @:component
+  public static function statusCard(
+    assigns:Assigns<StatusCardAssigns>
+  ):String {
+    return <LiveReact.react
+      id=${assigns.id}
+      name="StatusCard"
+      title=${assigns.title}
+      ssr=${false}
+    />;
+  }
+}
+```
+
+The generated component remains ordinary Phoenix/HEEx over stock LiveReact:
+
+```elixir
+defmodule MyAppWeb.ReactComponents do
+  use Phoenix.Component
+
+  def status_card(assigns) do
+    ~H"""
+    <LiveReact.react
+      id={@id}
+      name="StatusCard"
+      title={@title}
+      ssr={false}
+    ></LiveReact.react>
+    """
+  end
+end
+```
+
+Compiler std roots are intentionally not application component-discovery
+roots. Consequently, the low-level `<LiveReact.react>` tag stays open while
+callers of `MyAppWeb.ReactComponents.status_card` are checked against the
+closed `StatusCardAssigns` contract. Use local `@:hxx_strict_components` on
+those callers when strict resolution is desired; a global strict-components
+define also applies inside the open upstream wrapper and therefore requires an
+app-owned discoverable declaration for that external tag.
+
+The first-class setup/check/remove tooling, static registry, and browser bridge
+remain tracked as separate experimental integration slices. Until those land,
+applications still own the stock Mix/npm dependency and asset configuration.
+
 ### Forms
 
 For Phoenix 1.7-style forms, use `Phoenix.Component.to_form/1,2` through

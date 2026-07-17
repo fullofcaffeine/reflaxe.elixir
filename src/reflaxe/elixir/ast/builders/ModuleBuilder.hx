@@ -112,6 +112,92 @@ class ModuleBuilder {
 		return classType.name;
 	}
 
+	/**
+	 * Builds the module target for a typed static call and preserves an exact native ABI.
+	 *
+	 * WHAT
+	 * - Creates the `EVar` module target used by `ERemoteCall` and records the resolved
+	 *   native module, extern status, and method name when the class declares `@:native`.
+	 *
+	 * WHY
+	 * - A late Web-module qualification pass cannot distinguish a bare application module
+	 *   from an external module by printed name alone. The typed declaration can, but the
+	 *   original `TypedExpr` is not guaranteed to survive every intervening AST rewrite.
+	 *
+	 * HOW
+	 * - Resolve the target through the same module-name path used for emission, then attach
+	 *   semantic metadata directly to that target. Generic late passes preserve and consume
+	 *   the marker instead of guessing from names. For example, `@:native("LiveReact")`
+	 *   remains `LiveReact.react/1` inside `AppWeb.*`, never `App.LiveReact.react/1`.
+	 */
+	public static function buildStaticCallTarget(classType:ClassType, field:ClassField, moduleName:String, methodName:String):ElixirAST {
+		var metadata:ElixirMetadata = {};
+		if (resolveExactNativeStaticModule(classType, field) != null) {
+			metadata.nativeModule = moduleName;
+			metadata.isStaticExternMethod = classType.isExtern;
+			metadata.methodName = methodName;
+		}
+		return {
+			def: EVar(moduleName),
+			metadata: metadata,
+			pos: classType.pos
+		};
+	}
+
+	/**
+	 * Resolve the exact target module declared for a typed static call.
+	 *
+	 * A full field mapping such as `@:native("Task.Supervisor.start_link")` owns
+	 * its module prefix. Otherwise a class/module-level `@:native` declaration
+	 * owns the module returned by `extractModuleName`. A field-only function rename
+	 * does not make an otherwise application-local module external.
+	 */
+	public static function resolveExactNativeStaticModule(classType:ClassType, field:ClassField):Null<String> {
+		var fieldNative = extractNativeName(field.meta.extract(":native"));
+		if (fieldNative == null)
+			fieldNative = extractNativeName(field.meta.extract("native"));
+		if (fieldNative != null) {
+			var lastDot = fieldNative.lastIndexOf(".");
+			if (lastDot > 0)
+				return fieldNative.substr(0, lastDot);
+		}
+
+		var classNative = extractNativeName(collectClassAndModuleMetadata(classType, ":native", "native"));
+		return classNative != null ? extractModuleName(classType) : null;
+	}
+
+	/**
+	 * Recover an exact native static-call module from typed source before wrapper
+	 * lowering (notably `return`) can discard nested AST metadata.
+	 */
+	public static function resolveExactNativeStaticCall(expr:TypedExpr):Null<String> {
+		if (expr == null)
+			return null;
+		return switch (expr.expr) {
+			case TReturn(inner) if (inner != null): resolveExactNativeStaticCall(inner);
+			case TParenthesis(inner) | TMeta(_, inner): resolveExactNativeStaticCall(inner);
+			case TBlock(expressions) if (expressions != null && expressions.length == 1): resolveExactNativeStaticCall(expressions[0]);
+			case TCall({expr: TField(_, FStatic(classRef, fieldRef))}, _):
+				resolveExactNativeStaticModule(classRef.get(), fieldRef.get());
+			default: null;
+		};
+	}
+
+	static function extractNativeName(entries:Array<MetadataEntry>):Null<String> {
+		if (entries == null)
+			return null;
+		for (entry in entries) {
+			if (entry.params == null || entry.params.length == 0)
+				continue;
+			switch (entry.params[0].expr) {
+				case EConst(CString(name, _)):
+					return StringTools.startsWith(name, "Elixir.") ? name.substr("Elixir.".length) : name;
+				default:
+			}
+		}
+		return null;
+	}
+
 	static function collectClassAndModuleMetadata(classType:ClassType, primaryName:String, alternateName:String):Array<MetadataEntry> {
 		var entries:Array<MetadataEntry> = [];
 

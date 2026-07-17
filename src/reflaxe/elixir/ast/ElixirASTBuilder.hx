@@ -34,6 +34,7 @@ import reflaxe.elixir.ast.builders.SwitchBuilder;
 import reflaxe.elixir.ast.builders.ExceptionBuilder;
 import reflaxe.elixir.ast.builders.ReturnBuilder;
 import reflaxe.elixir.ast.builders.BlockBuilder;
+import reflaxe.elixir.ast.builders.ModuleBuilder;
 import reflaxe.elixir.ast.analyzers.VariableAnalyzer;
 import reflaxe.elixir.ast.optimizers.LoopOptimizer;
 // Helper modules for extracted functions
@@ -3574,6 +3575,7 @@ class ElixirASTBuilder {
 	 * Create metadata from TypedExpr
 	 */
 	static function createMetadata(expr:TypedExpr):ElixirMetadata {
+		var exactNativeModule = ModuleBuilder.resolveExactNativeStaticCall(expr);
 		var preferKeywordMapSyntax = switch (expr.expr) {
 			case TCall(e, [arg]) if (isLiveEventKeywordMapMarker(e)): true;
 			default: false;
@@ -3623,6 +3625,7 @@ class ElixirASTBuilder {
 			inGuard: false, // Will be set by context
 			preferKeywordMapSyntax: preferKeywordMapSyntax,
 			preferReadableConditionSyntax: preferReadableConditionSyntax,
+			nativeModule: exactNativeModule,
 			canInline: canBeInlined(expr),
 			isConstant: PatternDetector.isConstant(expr),
 			sideEffects: hasSideEffects(expr)

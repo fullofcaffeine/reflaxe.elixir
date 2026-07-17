@@ -1284,7 +1284,8 @@ class CallExprBuilder {
 							return ECall(null, elixirMethodName, argASTs);
 						} else {
 							// Different module - use qualified call
-							return ERemoteCall(makeAST(EVar(moduleName)), elixirMethodName, argASTs);
+							return ERemoteCall(ModuleBuilder.buildStaticCallTarget(classType, cf.get(), moduleName, elixirMethodName), elixirMethodName,
+								argASTs);
 						}
 
 					case FEnum(_, ef):

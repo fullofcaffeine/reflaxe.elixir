@@ -1106,7 +1106,8 @@ class BinderTransforms {
 	 *
 	 * HOW
 	 * - For EModule/EDefmodule names containing "Web", derive <App> prefix and rewrite ERemoteCall/ECall
-	 *   targets where module is a single-segment CamelCase and not in the std/framework whitelist.
+	 *   targets where module is a single-segment CamelCase, not in the std/framework whitelist, and
+	 *   not an exact external ABI declared by the typed source target's `@:native` metadata.
 	 */
 	public static function webEFnModuleQualificationPass(ast:ElixirAST):ElixirAST {
 		inline function deriveAppPrefix(moduleName:String):Null<String> {
@@ -1130,12 +1131,16 @@ class BinderTransforms {
 		inline function isGlobalWhitelisted(name:String):Bool {
 			return reflaxe.elixir.ast.StdModuleWhitelist.isWhitelistedRoot(name);
 		}
+		inline function isExplicitNativeModuleTarget(call:ElixirAST, target:ElixirAST):Bool {
+			return (call != null && call.metadata != null && call.metadata.nativeModule != null)
+				|| (target != null && target.metadata != null && target.metadata.nativeModule != null);
+		}
 		function qualifySubtree(sub:ElixirAST, appPrefix:String):ElixirAST {
 			return ElixirASTTransformer.transformNode(sub, function(n:ElixirAST):ElixirAST {
 				return switch (n.def) {
 					case ERemoteCall(mod, func, args):
 						switch (mod.def) {
-							case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isGlobalWhitelisted(m)):
+							case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isGlobalWhitelisted(m) && !isExplicitNativeModuleTarget(n, mod)):
 								if (appPrefix != null && !isAppOrWebRootModule(m, appPrefix)) {
 									var fq = appPrefix + "." + m;
 									makeASTWithMeta(ERemoteCall(makeAST(EVar(fq)), func, args), n.metadata, n.pos);
@@ -1144,7 +1149,11 @@ class BinderTransforms {
 						}
 					case ECall(target, func, args) if (target != null):
 						switch (target.def) {
-							case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isGlobalWhitelisted(m)):
+							case EVar(m)
+								if (isSingleSegmentModule(m)
+									&& isUpperCamel(m)
+									&& !isGlobalWhitelisted(m)
+									&& !isExplicitNativeModuleTarget(n, target)):
 								if (appPrefix != null && !isAppOrWebRootModule(m, appPrefix)) {
 									var fq = appPrefix + "." + m;
 									makeASTWithMeta(ERemoteCall(makeAST(EVar(fq)), func, args), n.metadata, n.pos);

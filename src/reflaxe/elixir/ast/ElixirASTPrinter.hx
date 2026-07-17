@@ -104,7 +104,6 @@ class ElixirASTPrinter {
 
 		#if debug_ast_printer
 		#end
-
 		// Handle EDefmodule and EModule specially to access metadata
 		var result = switch (ast.def) {
 			case EDefmodule(name, doBlock):
@@ -1670,7 +1669,7 @@ class ElixirASTPrinter {
 							needsQual = (open > 1 && (closeDot == -1 || closeDot > open));
 						}
 						if (needsQual) {
-							var remote = printQualifiedModule(module);
+							var remote = printQualifiedModule(module, metadata);
 							parts.push('%' + remote + '{}');
 						} else {
 							parts.push(firstPrinted);
@@ -1683,7 +1682,7 @@ class ElixirASTPrinter {
 						// Special handling: ensure Enum.join first argument is a single valid expression
 						// Some upstream shapes produce multi-statement fragments as the first argument.
 						// Wrap such cases in an IIFE at print-time as a last resort for validity.
-						var mstrTmp = printQualifiedModule(module);
+						var mstrTmp = printQualifiedModule(module, metadata);
 						if (mstrTmp == "Enum" && funcName == "join" && args.length >= 1) {
 							var parts:Array<String> = [];
 							var firstPrintedRaw = print(args[0], indent);
@@ -1705,7 +1704,7 @@ class ElixirASTPrinter {
 							s = [for (a in args) sanitizeArgPrinted(printFunctionArg(a, indent), indent)].join(', ');
 						}
 						// Ecto.Query.from(t in :table, ...) -> qualify atom to <App>.CamelCase
-						var mstr = printQualifiedModule(module);
+						var mstr = printQualifiedModule(module, metadata);
 						if (mstr == "Ecto.Query" && funcName == "from") {
 							inline function camelize(x:String):String {
 								var parts = x.split("_");
@@ -1783,7 +1782,7 @@ class ElixirASTPrinter {
 						return s;
 					}
 				})();
-				var moduleStr = printQualifiedModule(module);
+				var moduleStr = printQualifiedModule(module, metadata);
 				var finalFuncName = funcName;
 
 				// Phoenix.Component normalization
@@ -3760,8 +3759,17 @@ class ElixirASTPrinter {
 	/**
 	 * Print a module reference with context-aware qualification rules
 	 * - Qualify bare Repo.* to <App>.Repo inside <App>Web.* modules
+	 * - Preserve exact target modules carried from typed `@:native` declarations
 	 */
-	static function printQualifiedModule(module:ElixirAST):String {
+	static function printQualifiedModule(module:ElixirAST, ?callMetadata:ElixirMetadata):String {
+		// Static-call construction records the exact external ABI on the module target.
+		// Consult that semantic marker before any name-based app qualification: a bare
+		// external module such as `LiveReact` is not an application-local `App.LiveReact`.
+		if (callMetadata != null && callMetadata.nativeModule != null)
+			return callMetadata.nativeModule;
+		if (module.metadata != null && module.metadata.nativeModule != null)
+			return module.metadata.nativeModule;
+
 		// Compute app prefix from current module name (e.g., TodoAppWeb.* -> TodoApp)
 		inline function currentAppPrefix():Null<String> {
 			if (currentModuleName == null)
@@ -3810,7 +3818,9 @@ class ElixirASTPrinter {
 						return n;
 					}
 					if (app != null && isSingleSegmentCamelRoot(n)) {
-						return app + "." + n;
+						var candidate = app + "." + n;
+						if (reflaxe.elixir.ElixirCompiler.isModuleKnown(candidate))
+							return candidate;
 					}
 				}
 				// In <App>.* (non-Web) modules, qualify single-segment CamelCase roots to <App>.<Name>.
@@ -3826,7 +3836,9 @@ class ElixirASTPrinter {
 					var dot = currentModuleName.indexOf(".");
 					var appPrefix = dot > 0 ? currentModuleName.substring(0, dot) : null;
 					if (appPrefix != null && appPrefix == observedAppPrefix && isSingleSegmentCamelRoot(n) && n != appPrefix && n != appPrefix + "Web") {
-						return appPrefix + "." + n;
+						var candidate = appPrefix + "." + n;
+						if (reflaxe.elixir.ElixirCompiler.isModuleKnown(candidate))
+							return candidate;
 					}
 				}
 				// Outside Web.* modules, conservatively qualify well-known Phoenix Web modules
