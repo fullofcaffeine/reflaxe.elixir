@@ -3465,7 +3465,30 @@ Re-plan: Use EnumBindingPlan as single source of truth for all systems
 - **See**: [`docs/03-compiler-development/TYPE_SAFETY_REQUIREMENTS.md`](docs/03-compiler-development/TYPE_SAFETY_REQUIREMENTS.md) - Complete type safety standards
 
 ### ⚠️ CRITICAL: No Direct Elixir Files - Everything Through Haxe
-**FUNDAMENTAL RULE: NEVER write .ex files directly. Everything must be generated from Haxe.**
+**FUNDAMENTAL RULE: If project code can be expressed in Haxe and compiled to
+Elixir by Reflaxe.Elixir, it MUST be authored in Haxe. This applies across the
+entire repository, including compiler dogfood, PhoenixHx integrations,
+generators, runtime-facing modules, and tests.**
+
+- Treat checked-in generated `.ex` as a first-class product artifact. It must be
+  idiomatic, readable, deterministic, warnings-as-errors clean, and acceptable
+  in a handwritten Elixir code review.
+- Handwritten Elixir is permitted only for a concrete host/bootstrap boundary
+  that cannot reasonably be compiled through Haxe, such as a thin `Mix.Task`
+  loader that must start before the Haxe compiler, Mix-project introspection, or
+  compiler-unavailable recovery and atomic filesystem publication.
+- Every handwritten-Elixir exception MUST contain an adjacent source comment
+  explaining the exact technical reason Haxe cannot own that code. Convenience,
+  familiarity, file size, or generated-output aesthetics are not sufficient.
+- Keep an allowed handwritten boundary as thin as possible. Move deterministic
+  planning, validation, normalization, rendering, and product behavior behind
+  it into Haxe-authored modules.
+- Raw target injection (`__elixir__`, `untyped`, embedded target strings) does
+  not satisfy this rule. If Haxe-generated Elixir is poor, fix the Haxe source
+  or compiler pipeline rather than bypassing it or hand-editing generated files.
+- Existing handwritten `.ex` files are not blanket precedent. When work touches
+  them, audit the boundary and migrate expressible logic to Haxe or document the
+  narrowly justified exception in the source.
 
 ### ⚠️ CRITICAL: Check Haxe Standard Library First
 **FUNDAMENTAL RULE: Always check if Haxe stdlib already offers something before implementing it ourselves.**

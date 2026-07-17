@@ -17,11 +17,14 @@ The planning graph uses these generated IDs:
 - Haxe/HXX bindings: `haxe.elixir.codex-msb.2`
 - Shared patch ownership: `haxe.elixir.codex-msb.3`
 - Setup/check/remove: `haxe.elixir.codex-msb.4`
+- Haxe-authored lifecycle-core migration: `haxe.elixir.codex-msb.10`
 - Static registry and typed wrapper scaffold: `haxe.elixir.codex-msb.5`
 - Live Event Protocol alignment: `haxe.elixir.codex-msb.6`
 - Example 12 migration: `haxe.elixir.codex-msb.7`
 - Independent example: `haxe.elixir.codex-msb.8`
-- Documentation/package/CI gate: `haxe.elixir.codex-msb.9`
+- Compatibility/package/CI gate: `haxe.elixir.codex-msb.9`
+- Todo-app flagship adoption proof: `haxe.elixir.codex-msb.11`
+- Canonical guide and API documentation: `haxe.elixir.codex-msb.12`
 - Haxe-authored React follow-up: `haxe.elixir.codex-a06`
 - SSR follow-up: `haxe.elixir.codex-8yk`
 - Extended capability follow-up: `haxe.elixir.codex-c9w`
@@ -42,13 +45,25 @@ static registry contract, deterministic setup/check/remove tooling, generated
 ownership diagnostics, Live Event Protocol adapter, documentation, examples,
 compatibility evidence, and installed-package smoke.
 
-The filesystem mutation/recovery layer and thin Mix/bootstrap entrypoints remain
-handwritten Elixir because they must work when Haxe compilation is missing or
-broken. Above that ring-0 boundary, production surfaces should be authored in
-Haxe when practical. Their checked-in generated Elixir is a product artifact:
+Only the filesystem publication/recovery host boundary and thin Mix/bootstrap
+entrypoints may remain handwritten Elixir, because they must work when Haxe
+compilation is missing or broken. Each exception must carry an adjacent source
+comment naming that concrete reason. Above that ring-0 boundary, production
+surfaces must be authored in Haxe whenever the compiler can express them. Their
+checked-in generated Elixir is a product artifact:
 it must be idiomatic, readable, byte-stable, warnings-as-errors clean, and good
 enough to accept in a handwritten code review. Raw target injection and manual
 edits to generated output are not quality escape hatches.
+
+For the remaining implementation slices, deterministic domain logic such as
+registry normalization/rendering, component-contract validation, and event
+adapter generation is Haxe-owned. Handwritten Elixir is reserved for
+the thin `Mix.Task` entrypoint, project filesystem/atomic-write boundary, Mix
+dependency introspection, and recovery paths that must work before or while the
+Haxe compiler is unavailable. Any broader handwritten-Elixir implementation
+must record concrete evidence that the Haxe path cannot yet express the required
+host behavior cleanly, and the exception must be documented beside the
+handwritten code; convenience alone is not sufficient.
 
 The planned first support slice is client-only trusted first-party React islands
 with Vite. SSR, slots, uploads, streams, request-selected component names, raw
@@ -100,10 +115,24 @@ experimental building block for the later consumer and package gates:
   handwritten-like generated-source requirement, not a claim that later typed
   island or example output already exists.
 
-Installed-package parity, the independent second consumer, browser behavior,
-and the cross-platform compatibility matrix remain owned by `.msb.8` and
+Installed-package parity, the independent minimal consumer, todo-app flagship
+adoption, browser behavior, canonical documentation, and the cross-platform
+compatibility matrix remain owned by `.msb.8`, `.msb.11`, `.msb.12`, and
 `.msb.9`. This slice does not make the LiveReact integration a shipped public
 feature.
+
+### Immediate Haxe dogfood correction (`haxe.elixir.codex-msb.10`)
+
+The lifecycle behavior is proven, but its first implementation concentrated
+deterministic planning and validation in a large handwritten Elixir module.
+That source ownership does not satisfy the project-wide Haxe-to-Elixir
+dogfooding rule. Before registry expansion, `.msb.10` will move every
+expressible deterministic operation behind a typed Haxe core and keep only a
+thin, comment-justified Mix/filesystem/dependency-introspection host adapter in
+handwritten Elixir. If the port exposes a missing general capability, the task
+owns the appropriate generic compiler, structured DSL, or target-library fix
+and its semantic regression; LiveReact-specific compiler heuristics and raw
+target injection remain forbidden.
 
 ### Historical proof records remain isolated
 
@@ -151,9 +180,9 @@ its child task closes.
 | Dependency identity | Mix resolves `:live_react`; npm consumes that exact checkout via a project-relative `file:` reference in supported topologies. | Independently choosing a semver, tarball, branch, or revision on the npm side. |
 | Asset ownership | Vite is the sole JavaScript bundler when enabled. Genes may emit ESM source for Vite; Tailwind remains an independent CSS lane. | Simultaneous Vite and esbuild JavaScript pipelines or treating Genes as another bundler. |
 | Mutation safety | Whole-plan read/validate/render first, signature/marker ownership, staged per-file atomic publication, rollback on reported publication failure, and deterministic check/recovery. | Best-effort mutation, warning through an ownership conflict, or claiming power-loss-level multi-file filesystem atomicity. |
-| Compatibility status | Experimental 1.x until two independent consumers and installed-package smoke pass; support is only the checked matrix rows. | A Reflaxe.Elixir 1.0 blocker or broad ecosystem compatibility inferred from one canary. |
+| Compatibility status | Experimental 1.x until the rich migration, independent minimal consumer, todo-app adoption proof, and installed-package smoke pass; support is only the checked matrix rows. | A Reflaxe.Elixir 1.0 blocker or broad ecosystem compatibility inferred from one canary. |
 | Genes | Keep the hermetic vendored Genes lane for this epic and support plain JS; migrate reviewed improvements through `haxe.elixir.codex-m52`. | Depending on `../genes`, silently switching generated output, or blocking client-only LiveReact on genes-ts migration. |
-| Promotion/split | Promote only after example 12, an independent minimal project, installed-package smoke, and focused CI. Consider a separate Haxelib only after independent cadence/adoption evidence. | Counting another example-12 route as the second consumer or splitting for aesthetics alone. |
+| Promotion/split | Promote only after example 12, an independent minimal project, the todo-app adoption proof, canonical docs, installed-package smoke, and focused CI. Consider a separate Haxelib only after independent cadence/adoption evidence. | Counting another example-12 route as the second consumer or splitting for aesthetics alone. |
 
 ## Product Contract
 
@@ -221,9 +250,11 @@ Vite, and stock LiveReact. Setup and removal are deterministic and owned.
    that narrows native capabilities.
 6. Compose Vite with both existing client modes; Vite is the only JavaScript
    bundler in the enabled asset lane.
-7. Prove the public integration in the current example 12 plus an independent
-   minimal example.
-8. Prove source-checkout and installed-package behavior under a checked
+7. Prove the public integration in the current example 12, an independent
+   minimal example, and an incremental section in the Haxe-first todo-app.
+8. Publish one canonical adoption/debugging/removal guide backed by those three
+   application stories and complete Haxe-to-generated-Elixir examples.
+9. Prove source-checkout and installed-package behavior under a checked
    compatibility contract.
 
 ## Initial Non-Goals
@@ -530,8 +561,8 @@ The task does not infer Haxe, Elixir/OTP, Node, other package-root, or other
 version support from that row. `.msb.9` must record the exact tested toolchain
 and package-smoke rows before promotion.
 
-The integration stays experimental until both consumers and installed-package
-smoke pass. A separate Haxelib is considered only after real evidence of an
+The integration stays experimental until all three application proofs and
+installed-package smoke pass. A separate Haxelib is considered only after real evidence of an
 independent compatibility/release cadence, package-size impact, multiple
 adopters, or separate maintainership. Package separation does not require a
 new Git repository.
@@ -542,12 +573,17 @@ new Git repository.
    compatibility, and Genes boundaries.
 2. **Complete (2026-07-17):** API-faithful Haxe/HXX declarations and shared
    patch ownership/recovery primitives are integrated and verified.
-3. Implement setup/check/remove and the static registry/wrapper scaffold.
-4. Align typed events with Live Event Protocols.
-5. Migrate the current example 12 local binder.
-6. Add an independent minimal consumer through public commands.
-7. Publish implementation-time docs, compatibility evidence, package smoke,
-   and focused CI.
+3. **Complete (2026-07-17):** implement setup/check/remove.
+4. Move the deterministic lifecycle core to Haxe-authored generated Elixir,
+   fixing generic compiler/DSL/library gaps as required.
+5. Add the static registry and typed wrapper scaffold.
+6. Align typed events with Live Event Protocols.
+7. Migrate the current example 12 local binder.
+8. Add an independent minimal consumer through public commands.
+9. Add a bounded typed LiveReact section to the Haxe-first todo-app.
+10. Publish the canonical guide and API documentation from all three proofs.
+11. Close compatibility evidence, installed-package smoke, package contents,
+    and focused CI.
 
 ## Required Evidence
 
@@ -563,11 +599,13 @@ new Git repository.
 - checked-in generated Elixir review, byte-stable regeneration,
   warnings-as-errors, and handwritten-output quality evidence for each
   Haxe-owned production module;
-- both examples in `examples/qa-manifest.json` with named runtime/E2E coverage;
+- all three application proofs in `examples/qa-manifest.json` with named
+  runtime/E2E coverage;
 - path hygiene, docs links, Beads lint/dependency sanity, and latest CI.
 
-Snapshots prove generated shape, not runtime behavior. Two passing examples
-prove only their named compatibility matrix, not arbitrary ecosystem support.
+Snapshots prove generated shape, not runtime behavior. Three passing
+applications prove only their named compatibility matrix, not arbitrary
+ecosystem support.
 
 ## Blocking Graph
 
@@ -577,7 +615,10 @@ haxe.elixir.codex-msb.1
 └── haxe.elixir.codex-msb.3
     └── haxe.elixir.codex-msb.4
 
-haxe.elixir.codex-msb.2 + haxe.elixir.codex-msb.4
+haxe.elixir.codex-msb.4
+    └── haxe.elixir.codex-msb.10
+
+haxe.elixir.codex-msb.2 + haxe.elixir.codex-msb.4 + haxe.elixir.codex-msb.10
     └── haxe.elixir.codex-msb.5
 
 haxe.elixir.codex-msb.5
@@ -585,9 +626,13 @@ haxe.elixir.codex-msb.5
 
 haxe.elixir.codex-msb.4 + .5 + .6
     ├── haxe.elixir.codex-msb.7
-    └── haxe.elixir.codex-msb.8
+    ├── haxe.elixir.codex-msb.8
+    └── haxe.elixir.codex-msb.11
 
-haxe.elixir.codex-msb.7 + haxe.elixir.codex-msb.8
+haxe.elixir.codex-msb.7 + .8 + .11
+    └── haxe.elixir.codex-msb.12
+
+haxe.elixir.codex-msb.7 + .8 + .11 + .12
     └── haxe.elixir.codex-msb.9
 ```
 
@@ -608,19 +653,24 @@ Reflaxe.Elixir 1.0.
 8. Default boundaries narrow capabilities and make no sandbox claim.
 9. Existing Live Event Protocols remain the sole PhoenixHx event model.
 10. Setup/check/remove are atomic, idempotent, reversible, and fail closed.
-11. Example 12 and the independent example are genuinely separate consumers.
+11. Example 12, the independent minimal example, and todo-app are genuinely
+    distinct migration, clean-room, and incremental-adoption proofs.
 12. Installed-package behavior must match source checkout.
 13. No task in this graph blocks the 1.0 readiness epic.
 14. No local sibling path or machine-local absolute path is part of the ABI.
 15. Haxe-owned production output must remain idiomatic and handwritten-like;
     bootstrap/recovery infrastructure stays handwritten Elixir where it must
-    operate without a working Haxe compiler.
+    operate without a working Haxe compiler, and every such exception carries
+    an adjacent concrete source comment.
+16. Deterministic registry, component-contract, and event-adapter logic defaults
+    to Haxe ownership; handwritten Elixir beyond the ring-0 host boundary needs
+    an explicit evidence-backed exception.
 
 ## Rollout
 
 Ship only after the implementation graph closes, initially as experimental and
 opt-in in the existing Haxelib. Projects that do not enable it remain
 unchanged. Preserve manual integration for unsupported topologies. Promote
-status only after two consumers, package smoke, compatibility evidence, and
-focused CI. Deferred capabilities remain explicitly unsupported until their
-own tasks close.
+status only after all three application proofs, canonical documentation,
+package smoke, compatibility evidence, and focused CI. Deferred capabilities
+remain explicitly unsupported until their own tasks close.
