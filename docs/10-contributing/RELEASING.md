@@ -9,6 +9,37 @@ High level:
 - `semantic-release` determines the next version (if any), builds the package from that tested commit,
   creates a `vX.Y.Z` tag on the same commit, and publishes a complete immutable GitHub Release
 
+## Decision: automated release, no generated release commit
+
+Releases are automated by `semantic-release` running as `github-actions[bot]` with the short-lived
+job token. The bot derives the version, tags the exact tested commit, uploads the approved assets,
+and publishes the GitHub Release. The absence of a `chore(release): X.Y.Z` commit does **not** mean
+the release is manual or that the repository does not use a release bot.
+
+This repository deliberately does not use `@semantic-release/git` to push generated version or
+changelog changes back to `main`. Consider source commit `S` that passes the complete CI graph. If
+the release job then creates a metadata-only commit `R` and tags `R`, the public release identifies
+a commit that did not pass that graph. Tagging `S` while pushing `R` instead makes `main` immediately
+diverge from the released source. Either shape also requires the automation identity to write
+through branch protection and may trigger another CI run. Injecting release metadata only into the
+staged package preserves the stronger invariant: the tag, tested source, and packaged source all
+identify `S`.
+
+This is a contextual architecture decision, not a claim that every release commit is an
+anti-pattern. A reviewed release PR can be the better model when tracked versions and changelogs are
+inputs to downstream source consumers, when a monorepo must update inter-package dependency ranges,
+or when policy requires human approval of the final release metadata. If those requirements arise,
+prefer a release-PR design that runs CI on the final merged contents before tagging, as used by
+[Release Please](https://github.com/googleapis/release-please) and
+[Changesets](https://github.com/changesets/changesets), rather than an unreviewed post-CI push.
+
+The current choice follows semantic-release's own guidance: tags and the package host are release
+truth, while committing generated release files adds synchronization, permissions, and CI
+complexity. See the semantic-release
+[FAQ on repository version updates](https://semantic-release.gitbook.io/semantic-release/support/faq#why-is-the-package-json-s-version-not-updated-in-my-repository)
+and [Release Protocol History](../09-history/RELEASE_PROTOCOL_HISTORY.md) for this repository's
+before-and-after evidence.
+
 ## Same-commit publication boundary
 
 Normal publication is deliberately part of `.github/workflows/ci.yml`, not a later
