@@ -123,4 +123,38 @@ defmodule Mix.Tasks.Haxe.Gen.ProjectTest do
     assert patched =~ ~s("haxe.compile.tests": ["cmd haxe build-tests.hxml"])
     assert patched =~ ~s("test": ["haxe.compile.tests", "test"])
   end
+
+  test "LiveReact remains an opt-in Phoenix feature orthogonal to client mode" do
+    assert :ok ==
+             Mix.Tasks.Haxe.Gen.Project.validate_feature_composition_for_test(%{
+               live_react: true,
+               phoenix: true,
+               skip_npm: false,
+               client_mode: :genes
+             })
+
+    assert :ok ==
+             Mix.Tasks.Haxe.Gen.Project.validate_feature_composition_for_test(%{
+               live_react: true,
+               phoenix: true,
+               skip_npm: false,
+               client_mode: :plain_js
+             })
+
+    assert_raise RuntimeError, ~r/requires --phoenix/, fn ->
+      Mix.Tasks.Haxe.Gen.Project.validate_feature_composition_for_test(%{
+        live_react: true,
+        phoenix: false,
+        skip_npm: false
+      })
+    end
+
+    assert_raise RuntimeError, ~r/cannot be combined with --skip-npm/, fn ->
+      Mix.Tasks.Haxe.Gen.Project.validate_feature_composition_for_test(%{
+        live_react: true,
+        phoenix: true,
+        skip_npm: true
+      })
+    end
+  end
 end

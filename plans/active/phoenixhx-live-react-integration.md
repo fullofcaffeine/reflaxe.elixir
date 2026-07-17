@@ -74,6 +74,37 @@ are separate follow-ups.
 
 This evidence proves feasibility, not a reusable public product.
 
+### Setup/check/remove slice implemented (`haxe.elixir.codex-msb.4`)
+
+The first reusable lifecycle slice is implemented but remains an internal,
+experimental building block for the later consumer and package gates:
+
+- `mix haxe.phoenix.live_react` now plans and atomically publishes the checked
+  client-only LiveReact/Vite wiring; `--check` is network-free and read-only;
+  `--remove` deletes only marker-, signature-, package-key-, and lock-owned
+  state;
+- the task supports the exact fixture matrix of root/`assets` package roots and
+  the existing Genes/plain-JS client modes, while ambiguous/custom topology
+  fails before writes;
+- Mix remains the canonical LiveReact resolver and npm receives a relative
+  `file:` reference to that checkout. Lock resolution may change only the
+  `:live_react` entry, and removal preserves unrelated later lock changes;
+- the project generator composes `--live-react` after the ordinary Phoenix
+  scaffold instead of defining another client mode;
+- focused tests exercise idempotency, deleted generated-file recovery,
+  malformed markers, unowned collisions, dependency/checkout drift, exact
+  source and lock restoration, retained hand-owned imports, both package-root
+  shapes, unsupported SSR, and a real external Mix consumer lifecycle;
+- emitted Mix/config files pass `mix format --check-formatted`, and emitted
+  JavaScript/Vite files pass `node --check`. This is a concrete gate for the
+  handwritten-like generated-source requirement, not a claim that later typed
+  island or example output already exists.
+
+Installed-package parity, the independent second consumer, browser behavior,
+and the cross-platform compatibility matrix remain owned by `.msb.8` and
+`.msb.9`. This slice does not make the LiveReact integration a shipped public
+feature.
+
 ### Historical proof records remain isolated
 
 The planning input cited historical project-proof tasks that are intentionally

@@ -12,6 +12,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
       mix haxe.gen.project --basic-modules
       mix haxe.gen.project --phoenix
       mix haxe.gen.project --phoenix --client-mode plain-js
+      mix haxe.gen.project --phoenix --client-mode genes --live-react
       mix haxe.gen.project --skip-examples
 
   ## Options
@@ -24,6 +25,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
       - `mix haxe.phoenix.scaffold` is fail-fast by default (strict marker-block patching); use `--warn-only` if you
         want best-effort patching under heavy template customization.
     * `--client-mode <genes|plain-js>` - Phoenix client mode when `--phoenix` is enabled (default: `genes`)
+    * `--live-react` - After the ordinary Phoenix scaffold, opt into stock LiveReact + Vite
     * `--skip-examples` - Don't generate example Haxe files
     * `--skip-npm` - Don't create package.json or install npm dependencies
     * `--haxe-dir` - Directory for Haxe source files (default: "src_haxe")
@@ -48,6 +50,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
         switches: [
           basic_modules: :boolean,
           phoenix: :boolean,
+          live_react: :boolean,
           client_mode: :string,
           skip_examples: :boolean,
           skip_npm: :boolean,
@@ -74,12 +77,14 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
       output_dir: Keyword.get(opts, :output_dir, default_output_dir),
       basic_modules: Keyword.get(opts, :basic_modules, false),
       phoenix: Keyword.get(opts, :phoenix, false),
+      live_react: Keyword.get(opts, :live_react, false),
       client_mode: parse_client_mode!(Keyword.get(opts, :client_mode, "genes")),
       skip_examples: Keyword.get(opts, :skip_examples, false),
       skip_npm: Keyword.get(opts, :skip_npm, false),
       force: Keyword.get(opts, :force, false)
     }
 
+    validate_feature_composition!(project_config)
     setup_project(project_config)
   end
 
@@ -133,7 +138,16 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
         Mix.shell().info(
           "Created Phoenix client scaffold (mode=#{client_mode_label(config.client_mode)})"
         )
+
+        if config.live_react do
+          Mix.Task.reenable("haxe.phoenix.live_react")
+          Mix.Task.run("haxe.phoenix.live_react", ["--yes"])
+        end
       else
+        if config.live_react do
+          raise "--live-react requires a canonical Phoenix project shape (assets/js/app.js and config/dev.exs). No LiveReact changes were applied."
+        end
+
         Mix.shell().info("""
         Skipping Phoenix client scaffold: this project doesn't look like a Phoenix app (missing assets/js/app.js or config/dev.exs).
 
@@ -200,6 +214,19 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
 
   defp client_mode_label(:genes), do: "genes"
   defp client_mode_label(:plain_js), do: "plain-js"
+
+  defp validate_feature_composition!(config) do
+    cond do
+      config.live_react and not config.phoenix ->
+        raise "--live-react requires --phoenix"
+
+      config.live_react and config.skip_npm ->
+        raise "--live-react cannot be combined with --skip-npm because Vite and stock LiveReact use the selected npm package root"
+
+      true ->
+        :ok
+    end
+  end
 
   # Create build.hxml configuration file
   defp create_build_config(config) do
@@ -303,6 +330,9 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
 
   @doc false
   def add_haxe_test_aliases_for_test(content), do: maybe_add_haxe_test_aliases_to_mix_exs(content)
+
+  @doc false
+  def validate_feature_composition_for_test(config), do: validate_feature_composition!(config)
 
   # Create package.json for npm dependencies
   defp create_package_json(config) do

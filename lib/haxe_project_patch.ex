@@ -1209,8 +1209,12 @@ defmodule HaxeProjectPatch do
     lines
     |> Enum.with_index()
     |> Enum.flat_map(fn {line, index} ->
-      if String.contains?(line, token), do: [index], else: []
+      if marker_token_on_line?(line, token), do: [index], else: []
     end)
+  end
+
+  defp marker_token_on_line?(line, token) do
+    Regex.match?(~r/(?:^|\s)#{Regex.escape(token)}(?=$|\s)/, line)
   end
 
   defp replace_line_span(lines, begin_index, end_index, replacement) do

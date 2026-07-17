@@ -66,6 +66,16 @@ defmodule HaxeProjectPatchTest do
                {"BEGIN outer", "END outer"},
                {"BEGIN inner", "END inner"}
              ])
+
+    prefixed = "# BEGIN hook_property\nvalue\n# END hook_property\n"
+
+    assert :missing ==
+             HaxeProjectPatch.replace_marker_block_lines(
+               prefixed,
+               "BEGIN hook",
+               "END hook",
+               ["other"]
+             )
   end
 
   test "signature ownership is exact and duplicate signatures fail closed" do
