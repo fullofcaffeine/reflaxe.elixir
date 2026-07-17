@@ -255,6 +255,15 @@ static application registries, safe setup/removal, and compatibility evidence.
 Stock `:live_react` remains the Mix/npm runtime owner; PhoenixHx must not copy
 its hook, renderer, Vite plugin, or DOM protocol.
 
+The public Haxe namespace is frozen as `phoenix.live_react`. Its low-level std
+declaration is API-faithful; strict application props remain in discoverable
+app-local `@:component` wrappers. Mix resolves the canonical upstream checkout,
+npm consumes that exact checkout through a checked project-relative `file:`
+reference, and Vite is the enabled lane's only JavaScript bundler. The current
+vendored Genes source mode and `plain-js` are both initial inputs; moving to a
+released `genes-ts` artifact is a separate nonblocking migration and no sibling
+checkout is part of the package contract.
+
 The integration may ship in the existing Haxelib initially because it is
 opt-in and tightly coupled to PhoenixHx component discovery, scaffolding, and
 Live Event Protocols. A separately versioned companion Haxelib becomes useful

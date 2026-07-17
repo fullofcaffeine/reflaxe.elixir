@@ -97,9 +97,9 @@ These are important 1.x work, but they are separate from the Haxe stdlib promise
 - a complete, versioned, properly typed Haxe surface for the public Elixir standard library;
 - deterministic package-level adoption for Mix dependencies, with precise-or-omitted mapping from
   published Elixir types to Haxe types, safe writes, and companion-package conventions;
-- a first-class, opt-in PhoenixHx React-island authoring and setup layer over stock LiveReact, with
-  typed HXX wrappers, static registries, Vite composition, deterministic setup/removal, and upstream
-  runtime ownership;
+- a first-class, opt-in `phoenix.live_react` authoring and setup layer over stock LiveReact, with
+  app-local typed HXX wrappers, static registries, Vite composition, Mix-canonical runtime identity,
+  deterministic setup/check/removal, and upstream runtime ownership;
 - more direct native string and finite-float operations where semantic proofs allow them;
 - fewer avoidable IIFEs and conservative reducers in generated output;
 - useful generated typespecs and broader behaviour/protocol surfaces;

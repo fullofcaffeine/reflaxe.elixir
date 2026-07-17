@@ -45,9 +45,19 @@ Use this decision rule for every Phoenix surface addition:
 LiveReact hook own the browser path. That proof is still project-local; it is
 not yet a reusable PhoenixHx surface.
 
-The desired reusable owner is a small `std/phoenix/live_react/**` declaration
-surface, PhoenixHx Mix setup/check/remove tooling, and discoverable app-local
-typed component wrappers. Stock LiveReact remains the runtime owner. Promotion
+The frozen reusable owner is a small, API-faithful
+`std/phoenix/live_react/**` declaration surface, the
+`mix haxe.phoenix.live_react` setup/check/remove task, and discoverable app-local
+typed component wrappers. Compiler std roots are intentionally outside app
+component discovery, so the std declaration names stock `LiveReact.react` while
+the app-local `@:component` wrapper owns closed assigns, the literal registry
+name, and `ssr=false`. No compiler special case is planned.
+
+Mix is the canonical LiveReact resolver and npm must consume that same checkout
+through a verified project-relative `file:` reference. Vite is the sole
+JavaScript bundler in an enabled project; current Genes may emit source for
+Vite, and `--live-react` remains orthogonal to the existing `genes` and
+`plain-js` client modes. Stock LiveReact remains the runtime owner. Promotion
 requires an independent second consumer and installed-package smoke, not just
 another route in the existing example.
 
