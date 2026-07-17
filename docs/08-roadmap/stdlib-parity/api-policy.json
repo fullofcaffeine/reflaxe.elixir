@@ -31,10 +31,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.1",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream spec exists; enable after BEAM array/list semantics are triaged in the runtime conformance lane."
+      "reviewNote": "Upstream spec exists; enable after BEAM array/list semantics are triaged in the runtime conformance lane. Reference-semantics audit: Haxe 4.3.7 requires shared Array mutation; direct/module evidence does not prove aliases. Child .10.3.14.1 owns exact mutation, copy, callback, and read-only-view behavior."
     },
     {
       "module": "Class",
@@ -55,7 +55,7 @@
       "surfaceDigest": "17cb6994f5e647952efd3053e7eb0dc223f9b7acdd611ae1f8767ee5047ffb97",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "supported",
+      "supportState": "partial",
       "evidenceState": "module-runtime",
       "evidence": [
         {
@@ -65,9 +65,11 @@
         }
       ],
       "blockers": [
+        "haxe.elixir.codex-0yn.10.3.5",
+        "haxe.elixir.codex-0yn.10.3.9",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream unitstd status: enabled."
+      "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Value APIs have evidence, but equal-timestamp allocations expose distinct identity on both pinned reference targets; .10.3.5 and .10.3.9 own identity, equality, reflection, serialization, and object-key behavior."
     },
     {
       "module": "DateTools",
@@ -93,7 +95,7 @@
       "surfaceDigest": "b3fa4bf60873b77ed9e46654991a24331c00c4221ec1d61a1634e3d8ebe1263d",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "supported",
+      "supportState": "partial",
       "evidenceState": "module-runtime",
       "evidence": [
         {
@@ -103,9 +105,10 @@
         }
       ],
       "blockers": [
+        "haxe.elixir.codex-0yn.10.3.14.6",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream unitstd status: enabled."
+      "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Stateful iterator/EReg/Xml aliases and lifecycle remain incomplete; child .10.3.14.6 owns them. String is partial at module level because its public iterator surfaces return these carriers."
     },
     {
       "module": "Enum",
@@ -140,7 +143,7 @@
       "surfaceDigest": "433e5944248098b954417e266dda29f0bb1c985d34035de198a9e33ce7abf735",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "supported",
+      "supportState": "partial",
       "evidenceState": "module-runtime",
       "evidence": [
         {
@@ -150,9 +153,10 @@
         }
       ],
       "blockers": [
+        "haxe.elixir.codex-0yn.10.3.14.6",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream unitstd status: enabled."
+      "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Stateful iterator/EReg/Xml aliases and lifecycle remain incomplete; child .10.3.14.6 owns them. String is partial at module level because its public iterator surfaces return these carriers."
     },
     {
       "module": "Lambda",
@@ -229,10 +233,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.9",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream spec exists; enable after BEAM reflection semantics are triaged."
+      "reviewNote": "Upstream spec exists; enable after BEAM reflection semantics are triaged. Reference-semantics audit: Managed Dynamic, reflection, RTTI, identity caches, aliases, and cycles remain incomplete under .10.3.9."
     },
     {
       "module": "Std",
@@ -267,7 +271,7 @@
       "surfaceDigest": "126800003aec60932d95a0fe21ddf692c8df39be2b62cdf0404466cc7e34e7bf",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "supported",
+      "supportState": "partial",
       "evidenceState": "module-runtime",
       "evidence": [
         {
@@ -277,16 +281,17 @@
         }
       ],
       "blockers": [
+        "haxe.elixir.codex-0yn.10.3.14.6",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "The upstream target.utf16-only string comparison branch is adapted for the Elixir runtime define because BEAM string comparison follows binary/codepoint ordering for this fixture."
+      "reviewNote": "The upstream target.utf16-only string comparison branch is adapted for the Elixir runtime define because BEAM string comparison follows binary/codepoint ordering for this fixture. Reference-semantics audit: Stateful iterator/EReg/Xml aliases and lifecycle remain incomplete; child .10.3.14.6 owns them. String is partial at module level because its public iterator surfaces return these carriers."
     },
     {
       "module": "StringBuf",
       "surfaceDigest": "5f3219b011136e06a5644e791a81c9cd4348f725ec5d872a981c75e85fc80bc1",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "supported",
+      "supportState": "partial",
       "evidenceState": "module-runtime",
       "evidence": [
         {
@@ -296,9 +301,10 @@
         }
       ],
       "blockers": [
+        "haxe.elixir.codex-0yn.10.3.14.5",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream unitstd status: enabled."
+      "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Direct/module tests do not prove alias-visible builder or checksum mutation; child .10.3.14.5 owns it."
     },
     {
       "module": "StringTools",
@@ -342,10 +348,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.9",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream spec exists; enable after BEAM runtime type semantics are triaged."
+      "reviewNote": "Upstream spec exists; enable after BEAM runtime type semantics are triaged. Reference-semantics audit: Managed Dynamic, reflection, RTTI, identity caches, aliases, and cycles remain incomplete under .10.3.9."
     },
     {
       "module": "UInt",
@@ -380,14 +386,14 @@
       "surfaceDigest": "91eea26fad8a5738da1eb69cbeb647dc9e7b44117a2d279332b353cd43e7260b",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.6",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; XML coverage is maintained by target tests."
+      "reviewNote": "No matching upstream unitstd spec exists; XML coverage is maintained by target tests. Reference-semantics audit: Stateful iterator/EReg/Xml aliases and lifecycle remain incomplete; child .10.3.14.6 owns them. String is partial at module level because its public iterator surfaces return these carriers."
     },
     {
       "module": "haxe.CallStack",
@@ -502,14 +508,15 @@
       "surfaceDigest": "c9f7fc9a0693d19572500cf479b79fb8d7f82d0c8c5c7d97e3c0577a12fe4797",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.3.10",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific."
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific. Reference-semantics audit: Exact cursor/state aliases, lifecycle, cleanup, and process/native boundaries remain partial under .10.4 and .10.3.10."
     },
     {
       "module": "haxe.Int32",
@@ -656,14 +663,14 @@
       "surfaceDigest": "898345f3843a4733550989f7d13ed2001c2cd1fd48e0f865702348bfa8ee83d3",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.9",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; runtime coverage uses local portable-subset tests."
+      "reviewNote": "No matching upstream unitstd spec exists; runtime coverage uses local portable-subset tests. Reference-semantics audit: Managed Dynamic, reflection, RTTI, identity caches, aliases, and cycles remain incomplete under .10.3.9."
     },
     {
       "module": "haxe.SysTools",
@@ -698,14 +705,15 @@
       "surfaceDigest": "ac38554a518ae4d6052039d91e86d23944f6a915f8828b802e05b40a9f608976",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.3.10",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; stamp/measure, run rebinding, delay, repeated event-loop firing, and stop behavior are covered by local Haxe-authored ExUnit runtime tests."
+      "reviewNote": "No matching upstream unitstd spec exists; stamp/measure, run rebinding, delay, repeated event-loop firing, and stop behavior are covered by local Haxe-authored ExUnit runtime tests. Reference-semantics audit: Exact cursor/state aliases, lifecycle, cleanup, and process/native boundaries remain partial under .10.4 and .10.3.10."
     },
     {
       "module": "haxe.Ucs2",
@@ -726,14 +734,14 @@
       "surfaceDigest": "0d2801fe7661965f96fd6950411537ffcd7c9cd097db3171b26206e0185bd1b8",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.9",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; runtime coverage uses local portable-subset tests."
+      "reviewNote": "No matching upstream unitstd spec exists; runtime coverage uses local portable-subset tests. Reference-semantics audit: Managed Dynamic, reflection, RTTI, identity caches, aliases, and cycles remain incomplete under .10.3.9."
     },
     {
       "module": "haxe.Utf8",
@@ -810,14 +818,14 @@
       "surfaceDigest": "c8a3929342bfbb8f430d1ddc0ab6b7d74020081d848ccffdaa3e9c52adc25a77",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.5",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; one-shot, incremental, read/equals, toString, and signed 32-bit behavior are covered by local Haxe-authored ExUnit runtime tests."
+      "reviewNote": "No matching upstream unitstd spec exists; one-shot, incremental, read/equals, toString, and signed 32-bit behavior are covered by local Haxe-authored ExUnit runtime tests. Reference-semantics audit: Direct/module tests do not prove alias-visible builder or checksum mutation; child .10.3.14.5 owns it."
     },
     {
       "module": "haxe.crypto.Base64",
@@ -857,7 +865,7 @@
       "surfaceDigest": "98f368b4d43728337239823ec20f88618dc1ed4a08e5f6392ad3cadb869f9dc8",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "supported",
+      "supportState": "partial",
       "evidenceState": "module-runtime",
       "evidence": [
         {
@@ -867,9 +875,10 @@
         }
       ],
       "blockers": [
+        "haxe.elixir.codex-0yn.10.3.14.5",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream unitstd status: enabled."
+      "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Direct/module tests do not prove alias-visible builder or checksum mutation; child .10.3.14.5 owns it."
     },
     {
       "module": "haxe.crypto.Hmac",
@@ -1048,14 +1057,14 @@
       "surfaceDigest": "e777d2707471140f00862d0a30c7011378fea13cd0a78bb581cd8790b0ff98ba",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.1",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; the Elixir target uses a bootstrap-safe target override lowered to stable Enum.sort/2 rebinding for local array bindings, covered by local Haxe-authored ExUnit runtime tests."
+      "reviewNote": "No matching upstream unitstd spec exists; the Elixir target uses a bootstrap-safe target override lowered to stable Enum.sort/2 rebinding for local array bindings, covered by local Haxe-authored ExUnit runtime tests. Reference-semantics audit: Haxe 4.3.7 requires shared Array mutation; direct/module evidence does not prove aliases. Child .10.3.14.1 owns exact mutation, copy, callback, and read-only-view behavior."
     },
     {
       "module": "haxe.ds.BalancedTree",
@@ -1066,10 +1075,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.2",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged."
+      "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them."
     },
     {
       "module": "haxe.ds.Either",
@@ -1094,17 +1103,17 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.2",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream spec exists; enable after enum-key ordering semantics are triaged."
+      "reviewNote": "Upstream spec exists; enable after enum-key ordering semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them."
     },
     {
       "module": "haxe.ds.GenericStack",
       "surfaceDigest": "085f3b709f867d3aeff171093e0fd26118df08a95babbb278fc1debd5b92f69f",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "supported",
+      "supportState": "partial",
       "evidenceState": "module-runtime",
       "evidence": [
         {
@@ -1114,44 +1123,45 @@
         }
       ],
       "blockers": [
+        "haxe.elixir.codex-0yn.10.3.14.3",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream unitstd status: enabled."
+      "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it."
     },
     {
       "module": "haxe.ds.HashMap",
       "surfaceDigest": "3b7ed1d388118ea6180cd2090fead225f88ebae8b963db12e0fd8bc3425be771",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.2",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec is available in the local reference checkout; the Elixir target uses a BEAM-specific hashCode-keyed override with local Haxe-authored ExUnit runtime coverage."
+      "reviewNote": "No matching upstream unitstd spec is available in the local reference checkout; the Elixir target uses a BEAM-specific hashCode-keyed override with local Haxe-authored ExUnit runtime coverage. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them."
     },
     {
       "module": "haxe.ds.IntMap",
       "surfaceDigest": "f15db6298d7a12c4ab79aad4302d907f200ff1481f6b207115e52841cff1d4c9",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.2",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them."
     },
     {
       "module": "haxe.ds.List",
       "surfaceDigest": "511a161d79469376079d780a4483a06e86c98ffbcd0684e7de0b87158623d229",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "supported",
+      "supportState": "partial",
       "evidenceState": "module-runtime",
       "evidence": [
         {
@@ -1161,9 +1171,10 @@
         }
       ],
       "blockers": [
+        "haxe.elixir.codex-0yn.10.3.14.3",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions."
+      "reviewNote": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it."
     },
     {
       "module": "haxe.ds.ListSort",
@@ -1174,38 +1185,38 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.7",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; the API mutates arbitrary linked-node next/prev fields in place, which ordinary immutable BEAM structs/maps cannot preserve. Calls fail fast with a target diagnostic and are covered by a negative snapshot."
+      "reviewNote": "No matching upstream unitstd spec exists; the API mutates arbitrary linked-node next/prev fields in place, which ordinary immutable BEAM structs/maps cannot preserve. Calls fail fast with a target diagnostic and are covered by a negative snapshot. Reference-semantics audit: The deliberate diagnostic remains until .10.3.7 rewires original managed nodes and preserves external aliases with unlocked comparator calls."
     },
     {
       "module": "haxe.ds.Map",
       "surfaceDigest": "712944909be73388a4b6c5ac81f92de62d7e39fbaf16ea94020381b9cc1ad025",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.2",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them."
     },
     {
       "module": "haxe.ds.ObjectMap",
       "surfaceDigest": "fdfbef21ddeca95578f1f81724dddbb9322eeb822de39a7bc0dec6a76fa6e297",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "unsupported",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.6",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. Reference-semantics audit: The deliberate diagnostic remains until .10.3.6 proves allocation-identity keys, aliases, copy, iteration, graph edges, lifecycle, and package ABI."
     },
     {
       "module": "haxe.ds.Option",
@@ -1226,35 +1237,35 @@
       "surfaceDigest": "57feb32014b57451ea514905fb22a41756a1584a7c4748f34415ee2c1512450e",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.1",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. Reference-semantics audit: Haxe 4.3.7 requires shared Array mutation; direct/module evidence does not prove aliases. Child .10.3.14.1 owns exact mutation, copy, callback, and read-only-view behavior."
     },
     {
       "module": "haxe.ds.StringMap",
       "surfaceDigest": "8d3aa02456a6ac6137ce111d372868c3272f0d544b691607e6378ba81404334b",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.2",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them."
     },
     {
       "module": "haxe.ds.Vector",
       "surfaceDigest": "e56032a9822a97691a8a090e371fee84bc6e34690d05b61fdad4ede963689218",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "supported",
+      "supportState": "partial",
       "evidenceState": "module-runtime",
       "evidence": [
         {
@@ -1264,23 +1275,24 @@
         }
       ],
       "blockers": [
+        "haxe.elixir.codex-0yn.10.3.14.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "The upstream primitive default-value checks are made explicit for the Elixir target because erased generic Vector cells initialize as nil unless a default value is supplied; the reference-identity toData() assertion is rewritten as an observable no-alias mutation check because the target stores Vector data in an opaque process-state cell, and upstream harness helper classes are replaced with local structural values."
+      "reviewNote": "The upstream primitive default-value checks are made explicit for the Elixir target because erased generic Vector cells initialize as nil unless a default value is supplied; the reference-identity toData() assertion is rewritten as an observable no-alias mutation check because the target stores Vector data in an opaque process-state cell, and upstream harness helper classes are replaced with local structural values. Reference-semantics audit: Shared backing storage, intentional view sharing, independent documented copies, lifecycle, and package behavior remain incomplete; child .10.3.14.4 owns them."
     },
     {
       "module": "haxe.ds.WeakMap",
       "surfaceDigest": "ed95934834645b8fa88f71e0b9f53d19e6ef42f8aebc7db5580def3b63b212a4",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "unsupported",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.8",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. Reference-semantics audit: The deliberate diagnostic remains until .10.3.8 proves collector-integrated weak identity keys and lifecycle."
     },
     {
       "module": "haxe.exceptions.ArgumentException",
@@ -1454,7 +1466,7 @@
       "surfaceDigest": "0e50d16b05e9453c14fa3e75455f3e2007f95001efb86e0bd3a8f57b28bafa11",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "supported",
+      "supportState": "partial",
       "evidenceState": "module-runtime",
       "evidence": [
         {
@@ -1464,44 +1476,46 @@
         }
       ],
       "blockers": [
+        "haxe.elixir.codex-0yn.10.3.14.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream unitstd status: enabled."
+      "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Shared backing storage, intentional view sharing, independent documented copies, lifecycle, and package behavior remain incomplete; child .10.3.14.4 owns them."
     },
     {
       "module": "haxe.io.BufferInput",
       "surfaceDigest": "b4497064e48d5735e2fb0bf313096013e70ba90410bbb5ac17dcf59c0d1e47ab",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.3.10",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists."
+      "reviewNote": "No matching upstream unitstd spec exists. Reference-semantics audit: Exact cursor/state aliases, lifecycle, cleanup, and process/native boundaries remain partial under .10.4 and .10.3.10."
     },
     {
       "module": "haxe.io.Bytes",
       "surfaceDigest": "0513c892acad1624d1721b14d45eb10649f263b8104f724dbab89d64315a0b63",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.3.14.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; Bytes behavior is covered by local runtime tests."
+      "reviewNote": "No matching upstream unitstd spec exists; Bytes behavior is covered by local runtime tests. Reference-semantics audit: Shared backing storage, intentional view sharing, independent documented copies, lifecycle, and package behavior remain incomplete; child .10.3.14.4 owns them."
     },
     {
       "module": "haxe.io.BytesBuffer",
       "surfaceDigest": "4c831f8ff8b0e49d8b1f7211a38a1f04d287a8484505ff8d06074c32f15f261d",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "supported",
+      "supportState": "partial",
       "evidenceState": "module-runtime",
       "evidence": [
         {
@@ -1511,51 +1525,54 @@
         }
       ],
       "blockers": [
+        "haxe.elixir.codex-0yn.10.3.14.5",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream unitstd status: enabled."
+      "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Direct/module tests do not prove alias-visible builder or checksum mutation; child .10.3.14.5 owns it."
     },
     {
       "module": "haxe.io.BytesData",
       "surfaceDigest": "71eec30558e1f29110c6a7928b3fd48bad43c49a8c88e0b50794bde778521a49",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.3.14.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists."
+      "reviewNote": "No matching upstream unitstd spec exists. Reference-semantics audit: Shared backing storage, intentional view sharing, independent documented copies, lifecycle, and package behavior remain incomplete; child .10.3.14.4 owns them."
     },
     {
       "module": "haxe.io.BytesInput",
       "surfaceDigest": "2b646713a458e0c35cec6bfa7eec329d72d418cf0bd249cc635e9ba67eed7a4c",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.3.10",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; behavior is covered by local runtime tests."
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is covered by local runtime tests. Reference-semantics audit: Exact cursor/state aliases, lifecycle, cleanup, and process/native boundaries remain partial under .10.4 and .10.3.10."
     },
     {
       "module": "haxe.io.BytesOutput",
       "surfaceDigest": "df3fb4c2c612f3bbeab302c182e422d96993454c48e57fb783ef81259b856d05",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.3.10",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; behavior is covered by local runtime tests."
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is covered by local runtime tests. Reference-semantics audit: Exact cursor/state aliases, lifecycle, cleanup, and process/native boundaries remain partial under .10.4 and .10.3.10."
     },
     {
       "module": "haxe.io.Encoding",
@@ -1623,7 +1640,7 @@
       "surfaceDigest": "3b88f1b41cbe44563fa3bc8169440604841c11d40b5a480e30dd760eb1f8f09a",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "supported",
+      "supportState": "partial",
       "evidenceState": "module-runtime",
       "evidence": [
         {
@@ -1633,16 +1650,17 @@
         }
       ],
       "blockers": [
+        "haxe.elixir.codex-0yn.10.3.14.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream unitstd status: enabled."
+      "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Shared backing storage, intentional view sharing, independent documented copies, lifecycle, and package behavior remain incomplete; child .10.3.14.4 owns them."
     },
     {
       "module": "haxe.io.Float64Array",
       "surfaceDigest": "780bc6885cf4235e64fe1ea50d627d445454f2c866f0e7a8afc19dae96fb2347",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "supported",
+      "supportState": "partial",
       "evidenceState": "module-runtime",
       "evidence": [
         {
@@ -1652,30 +1670,32 @@
         }
       ],
       "blockers": [
+        "haxe.elixir.codex-0yn.10.3.14.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream unitstd status: enabled."
+      "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Shared backing storage, intentional view sharing, independent documented copies, lifecycle, and package behavior remain incomplete; child .10.3.14.4 owns them."
     },
     {
       "module": "haxe.io.Input",
       "surfaceDigest": "1a421a4395272918dceb0fbc6147996ef447acf7b073304cee8f03a47fb0eb36",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.3.10",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; concrete input implementations carry coverage."
+      "reviewNote": "No matching upstream unitstd spec exists; concrete input implementations carry coverage. Reference-semantics audit: Exact cursor/state aliases, lifecycle, cleanup, and process/native boundaries remain partial under .10.4 and .10.3.10."
     },
     {
       "module": "haxe.io.Int32Array",
       "surfaceDigest": "7bf05869882944b1f2ae5d7664bbaac958fdf2b4b8970203704ecc92cef66c68",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "supported",
+      "supportState": "partial",
       "evidenceState": "module-runtime",
       "evidence": [
         {
@@ -1685,9 +1705,10 @@
         }
       ],
       "blockers": [
+        "haxe.elixir.codex-0yn.10.3.14.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream unitstd status: enabled."
+      "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Shared backing storage, intentional view sharing, independent documented copies, lifecycle, and package behavior remain incomplete; child .10.3.14.4 owns them."
     },
     {
       "module": "haxe.io.Mime",
@@ -1708,14 +1729,15 @@
       "surfaceDigest": "51dbdeca0a61fe833882bb45c850710d8d6b447ac6edcdadfd3e38b86fb6f48e",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.3.10",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; concrete output implementations carry coverage."
+      "reviewNote": "No matching upstream unitstd spec exists; concrete output implementations carry coverage. Reference-semantics audit: Exact cursor/state aliases, lifecycle, cleanup, and process/native boundaries remain partial under .10.4 and .10.3.10."
     },
     {
       "module": "haxe.io.Path",
@@ -1755,21 +1777,22 @@
       "surfaceDigest": "5db549bacbbf074f94c9e95f6667297062476f1103721da42b5264bd5c24ddbd",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
+        "haxe.elixir.codex-0yn.10.3.10",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; behavior is covered by local runtime tests."
+      "reviewNote": "No matching upstream unitstd spec exists; behavior is covered by local runtime tests. Reference-semantics audit: Exact cursor/state aliases, lifecycle, cleanup, and process/native boundaries remain partial under .10.4 and .10.3.10."
     },
     {
       "module": "haxe.io.UInt16Array",
       "surfaceDigest": "046be4d3599502b9e289501b8d74e5dd3d44a9f5650965d02167b88be3d44f7b",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "supported",
+      "supportState": "partial",
       "evidenceState": "module-runtime",
       "evidence": [
         {
@@ -1779,16 +1802,17 @@
         }
       ],
       "blockers": [
+        "haxe.elixir.codex-0yn.10.3.14.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream unitstd status: enabled."
+      "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Shared backing storage, intentional view sharing, independent documented copies, lifecycle, and package behavior remain incomplete; child .10.3.14.4 owns them."
     },
     {
       "module": "haxe.io.UInt32Array",
       "surfaceDigest": "d5113363309fe6facae14a5ae217a57fdd71ec3f34220da193188267a5b48fc2",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "supported",
+      "supportState": "partial",
       "evidenceState": "module-runtime",
       "evidence": [
         {
@@ -1798,16 +1822,17 @@
         }
       ],
       "blockers": [
+        "haxe.elixir.codex-0yn.10.3.14.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream unitstd status: enabled."
+      "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Shared backing storage, intentional view sharing, independent documented copies, lifecycle, and package behavior remain incomplete; child .10.3.14.4 owns them."
     },
     {
       "module": "haxe.io.UInt8Array",
       "surfaceDigest": "7825bed5232de9e6bad9447b806c2e748dcab0c4d83714540e26ae756a1b0e8b",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "supported",
+      "supportState": "partial",
       "evidenceState": "module-runtime",
       "evidence": [
         {
@@ -1817,93 +1842,94 @@
         }
       ],
       "blockers": [
+        "haxe.elixir.codex-0yn.10.3.14.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream unitstd status: enabled."
+      "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Shared backing storage, intentional view sharing, independent documented copies, lifecycle, and package behavior remain incomplete; child .10.3.14.4 owns them."
     },
     {
       "module": "haxe.iterators.ArrayIterator",
       "surfaceDigest": "c51b2a91f54e15259bb0bce475b61c019fc5e7a6d6d4708df322ac29e21c7fcf",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.6",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; iterator behavior is covered by local runtime tests."
+      "reviewNote": "No matching upstream unitstd spec exists; iterator behavior is covered by local runtime tests. Reference-semantics audit: Stateful iterator/EReg/Xml aliases and lifecycle remain incomplete; child .10.3.14.6 owns them. String is partial at module level because its public iterator surfaces return these carriers."
     },
     {
       "module": "haxe.iterators.ArrayKeyValueIterator",
       "surfaceDigest": "53c2ad3fa4d6752ab25628e9c59c733ad3e6d827dd72a58702ff3d3fa41c2aff",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.6",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists."
+      "reviewNote": "No matching upstream unitstd spec exists. Reference-semantics audit: Stateful iterator/EReg/Xml aliases and lifecycle remain incomplete; child .10.3.14.6 owns them. String is partial at module level because its public iterator surfaces return these carriers."
     },
     {
       "module": "haxe.iterators.DynamicAccessIterator",
       "surfaceDigest": "fc7aa42c78476766aa49352d8f634d721efecf0886968492c6aefa8993ab6cbb",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.6",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. Reference-semantics audit: Stateful iterator/EReg/Xml aliases and lifecycle remain incomplete; child .10.3.14.6 owns them. String is partial at module level because its public iterator surfaces return these carriers."
     },
     {
       "module": "haxe.iterators.DynamicAccessKeyValueIterator",
       "surfaceDigest": "3176430af097e280fe44ceff7fa179234a5b98eba5a5a1469dd9e83718c6407c",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.6",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. Reference-semantics audit: Stateful iterator/EReg/Xml aliases and lifecycle remain incomplete; child .10.3.14.6 owns them. String is partial at module level because its public iterator surfaces return these carriers."
     },
     {
       "module": "haxe.iterators.HashMapKeyValueIterator",
       "surfaceDigest": "894e13ac7f72ea7fd25ad7cadadc77e4c9c5edacd91b508e502eba10e2f5a185",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.6",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; the Elixir target provides an inline type-compatibility surface for explicit HashMap iterator construction, covered through local haxe.ds.HashMap runtime tests."
+      "reviewNote": "No matching upstream unitstd spec exists; the Elixir target provides an inline type-compatibility surface for explicit HashMap iterator construction, covered through local haxe.ds.HashMap runtime tests. Reference-semantics audit: Stateful iterator/EReg/Xml aliases and lifecycle remain incomplete; child .10.3.14.6 owns them. String is partial at module level because its public iterator surfaces return these carriers."
     },
     {
       "module": "haxe.iterators.MapKeyValueIterator",
       "surfaceDigest": "33d36c6be00e345a85d44c55c6e96d69611e0992024090d15f300914a42220d8",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.6",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; iterator behavior is covered by local runtime tests."
+      "reviewNote": "No matching upstream unitstd spec exists; iterator behavior is covered by local runtime tests. Reference-semantics audit: Stateful iterator/EReg/Xml aliases and lifecycle remain incomplete; child .10.3.14.6 owns them. String is partial at module level because its public iterator surfaces return these carriers."
     },
     {
       "module": "haxe.iterators.RestIterator",
@@ -1938,21 +1964,21 @@
       "surfaceDigest": "4b799a96348d599addc691711f55eb9ecd2f6cfae21340808f21a5ec083d1795",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.6",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; explicit iterator state, codepoint values, and end-of-iteration behavior are covered by local Haxe-authored ExUnit runtime tests."
+      "reviewNote": "No matching upstream unitstd spec exists; explicit iterator state, codepoint values, and end-of-iteration behavior are covered by local Haxe-authored ExUnit runtime tests. Reference-semantics audit: Stateful iterator/EReg/Xml aliases and lifecycle remain incomplete; child .10.3.14.6 owns them. String is partial at module level because its public iterator surfaces return these carriers."
     },
     {
       "module": "haxe.iterators.StringIteratorUnicode",
       "surfaceDigest": "ed69c3da71090ea59e20b4b86314d1a20e3dd293109df3feefa66f9aa03486b3",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "supported",
+      "supportState": "partial",
       "evidenceState": "module-runtime",
       "evidence": [
         {
@@ -1962,30 +1988,31 @@
         }
       ],
       "blockers": [
+        "haxe.elixir.codex-0yn.10.3.14.6",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "The upstream target.unicode conditional is made explicit so Elixir always exercises UTF-8 codepoint iteration."
+      "reviewNote": "The upstream target.unicode conditional is made explicit so Elixir always exercises UTF-8 codepoint iteration. Reference-semantics audit: Stateful iterator/EReg/Xml aliases and lifecycle remain incomplete; child .10.3.14.6 owns them. String is partial at module level because its public iterator surfaces return these carriers."
     },
     {
       "module": "haxe.iterators.StringKeyValueIterator",
       "surfaceDigest": "23024b499df34d3b8e4702dbf69138ed335bad2fdb2240e050d729904dc2cfd8",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
+      "supportState": "partial",
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.6",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; explicit iterator state, character index keys, codepoint values, and end-of-iteration behavior are covered by local Haxe-authored ExUnit runtime tests."
+      "reviewNote": "No matching upstream unitstd spec exists; explicit iterator state, character index keys, codepoint values, and end-of-iteration behavior are covered by local Haxe-authored ExUnit runtime tests. Reference-semantics audit: Stateful iterator/EReg/Xml aliases and lifecycle remain incomplete; child .10.3.14.6 owns them. String is partial at module level because its public iterator surfaces return these carriers."
     },
     {
       "module": "haxe.iterators.StringKeyValueIteratorUnicode",
       "surfaceDigest": "758e59e6a6f64d90df52824cde5620a32c843df680cc7286a4120fa231c4e8f5",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "supported",
+      "supportState": "partial",
       "evidenceState": "module-runtime",
       "evidence": [
         {
@@ -1995,9 +2022,10 @@
         }
       ],
       "blockers": [
+        "haxe.elixir.codex-0yn.10.3.14.6",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "The upstream target.unicode conditional is made explicit so Elixir always exercises UTF-8 codepoint key/value iteration."
+      "reviewNote": "The upstream target.unicode conditional is made explicit so Elixir always exercises UTF-8 codepoint key/value iteration. Reference-semantics audit: Stateful iterator/EReg/Xml aliases and lifecycle remain incomplete; child .10.3.14.6 owns them. String is partial at module level because its public iterator surfaces return these carriers."
     },
     {
       "module": "haxe.macro.CompilationServer",

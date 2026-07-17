@@ -40,7 +40,8 @@ trace(alias.length); // 2
 
 Rebinding only `values` to `[1, 2]` would leave `alias` at `[1]`. The
 [reference-semantics audit](HAXE_REFERENCE_SEMANTICS_AUDIT.md) records the
-confirmed first tranche and the still-unknown types.
+completed implementation classification, exact support gaps, and the remaining
+runtime unknowns.
 
 This design does not turn every BEAM value into a handle. Explicitly native
 Ecto/Phoenix/OTP/JSON values and explicitly target-native immutable lists/maps
@@ -130,14 +131,19 @@ The compiler will classify representation from typed metadata before building
 
 | Classification | Runtime representation | Examples |
 | --- | --- | --- |
-| Managed class | Opaque managed handle | Ordinary generated Haxe class instances |
-| Managed anonymous object | Opaque managed handle | Ordinary Haxe anonymous structures |
-| Managed mutable collection | Opaque managed handle | Ordinary `Array`, `List`, and Haxe map surfaces whose audited contract exposes alias-visible writes; `ObjectMap`; other confirmed mutable objects |
-| Native value | Native BEAM term | numbers, atoms, strings, binaries, tuples, enums/value records, and **explicitly target-native immutable** lists or maps |
-| Native interop | Declared native BEAM term | Ecto structs, Phoenix/OTP option maps, JSON payload maps, target exceptions, native externs |
-| Managed closure | Compiler-owned closure and traced environment | Bound methods or closures whose captures participate in managed graphs |
-| Representation variable or dynamic union | Compile-time descriptor plus checked runtime dispatch where needed | Generic `T`, narrowed `Dynamic`, composites containing managed leaves |
-| Representation conflict | Compile-time diagnostic | A native Ecto struct used as an identity key or mutable `ListSort` node without explicit boxing |
+| `MRef(typeId)` | Opaque managed handle | Ordinary generated classes, anonymous structures, `Date`, and mutable nodes |
+| `MCollection(kind,args...)` | Opaque managed collection or backing-store handle | Ordinary `Array`, `List`, map, `Bytes`, and `Vector` surfaces whose audited contract exposes alias-visible writes |
+| `NValue(layoutId,children...)` | Compiler-owned native BEAM value | numbers, atoms, strings, tuples, nullary enum tags, checked value records, and **explicitly target-native immutable** lists/maps |
+| `NInterop(abiId)` | Externally owned native BEAM ABI | Ecto structs, Phoenix/OTP option maps, JSON payload maps, target exceptions, native externs |
+| `MClosure(codeId,envId)` | Compiler-owned closure and traced environment | Bound methods or closures whose receiver/captures participate in managed graphs |
+| `NClosure(abiId,arity)` | Raw BEAM callable with a checked capture/boundary contract | Capture-free functions or declared native callback adapters |
+| `RVar(id,constraints)` | Compile-time representation variable | Generic `T` whose operations export identity/layout/equality capabilities |
+| `RDynamic(domain)` | Bounded runtime representation union | Typed `Dynamic` and declared external origins |
+| `Conflict(reason)` | Compile-time diagnostic | A native Ecto struct used as an identity key or mutable `ListSort` node without explicit boxing |
+
+Enums with arguments remain native tagged containers whose child descriptors may include managed
+values. Their equality is selected by the typed Haxe operation; the compiler does not flatten
+managed leaves into raw structural BEAM equality.
 
 Ordinary Haxe classes, anonymous structures, and audited mutable collections
 default to the managed ABI at public and cross-module boundaries. A later
@@ -208,8 +214,14 @@ an explicit ABI version change.
 5. `null` remains `nil`; there is no allocated null handle.
 6. Identity, class tags, leases, and heap bookkeeping are not Haxe-visible
    fields.
-7. Generated Haxe equality for managed values uses object identity. Native
-   scalar and declared value types retain their existing equality contract.
+7. A source equality operation that is valid for a managed object or collection
+   uses logical allocation identity. Native scalar and declared value types
+   retain their typed equality contract.
+8. Equality remains operation-specific: Haxe 4.3.7 rejects ordinary `==` on
+   enum values with constructor arguments, while `Type.enumEq` and
+   `EnumValueTools.equals` recurse by descriptor and compare managed leaves by
+   identity. `Dynamic` dispatches over its bounded representation domain, and
+   bound methods include receiver/environment identity.
 
 The public wrapper term is opaque. Two outward leases for the same object may be
 different BEAM resource terms, so generated equality must use a semantic
@@ -238,9 +250,10 @@ different BEAM resource terms, so generated equality must use a semantic
    that collection observes the change. Updating only the receiver's current
    lexical binding is insufficient.
 3. `Array` indexed writes and mutators, ordinary Haxe `Map` specializations,
-   `List`, `GenericStack`, buffers, and other mutable surfaces enter the managed
-   set only after their exact API family is audited. The confirmed first tranche
-   is recorded in `HAXE_REFERENCE_SEMANTICS_AUDIT.md`.
+   `List`, `GenericStack`, shared byte/view storage, builders, checksums,
+   iterators, `EReg`, `Xml`, and other mutable surfaces enter the managed set
+   under the complete family classifications recorded in
+   `HAXE_REFERENCE_SEMANTICS_AUDIT.md`.
 4. One collection kind must not mix managed and persistent mutation operations:
    partial representation would make alias behavior depend on which method was
    called.
@@ -551,12 +564,13 @@ Compiler-inserted materialization is allowed only at a typed, known boundary. A
 general automatic conversion would destroy alias identity and is forbidden.
 
 The checked-in Ecto schema snapshot does not yet satisfy the first row for its
-generated `new/0`: it returns the ordinary tagged-map class shape. That is an
-observed generated-shape mismatch, not yet a runtime-verified interop failure.
-The reference-semantics audit must first add the focused Ecto runtime probe;
-the checked native-value/native-interop gate then owns the correction. Managed
-core work must neither preserve that mismatch as a contract nor wrap the schema
-in a managed handle.
+generated `new/0`: it returns the ordinary tagged-map class shape. The focused
+runtime sentinel in `tools/reference_semantics_audit/run-ecto-gap.sh` confirms
+that this value is not `%MyApp.User{}` and that `Ecto.Changeset.change/1`
+rejects it with `FunctionClauseError`. The checked native-value/native-interop
+gate owns replacing that negative sentinel with positive real-struct interop.
+Managed core work must neither preserve the mismatch as a contract nor wrap
+the schema in a managed handle.
 
 ### Conversion semantics
 
@@ -620,6 +634,7 @@ itself.
 | Managed core | `haxe.elixir.codex-0yn.10.3.5` | Allocation identity and alias-visible fields work for managed classes and anonymous objects |
 | Cross-module managed ABI | `haxe.elixir.codex-0yn.10.3.16` | Dispatch, inheritance, interfaces, generics, handwritten facades, dependency manifests, and stale-artifact rejection preserve one handle ABI across packages |
 | Ordinary mutable Haxe collections | `haxe.elixir.codex-0yn.10.3.14` | Audited `Array`, map, list, buffer, and other mutable families preserve aliases end to end while explicit native collections remain raw values |
+| Mutable family slices | `.10.3.14.1`–`.10.3.14.6` | Array; native-key maps/trees/HashMap; List/GenericStack; Bytes/Vector/views; builders/checksums; and iterator/EReg/Xml state each close only with complete family evidence |
 | ObjectMap | `haxe.elixir.codex-0yn.10.3.6` | Complete identity-keyed mutable map behavior |
 | ListSort | `haxe.elixir.codex-0yn.10.3.7` | Original-node stable singly and doubly linked sorting |
 | WeakMap | `haxe.elixir.codex-0yn.10.3.8` | Collector-integrated weak identity keys |

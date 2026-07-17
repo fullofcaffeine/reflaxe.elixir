@@ -81,7 +81,7 @@ This index helps you find the right docs quickly, whether you're building apps w
 **[05-architecture/](05-architecture/)** - System design and implementation details
 - [Architecture](05-architecture/ARCHITECTURE.md) - Overall system design
 - [Selective Managed-Reference ABI](05-architecture/MANAGED_REFERENCE_ABI.md) - Accepted, gated object identity, alias mutation, graph lifetime, and native-boundary design
-- [Haxe Reference-Semantics Audit](05-architecture/HAXE_REFERENCE_SEMANTICS_AUDIT.md) - Beginner examples, first-party alias evidence, managed-collection boundary, and remaining unknowns
+- [Haxe Reference-Semantics Audit](05-architecture/HAXE_REFERENCE_SEMANTICS_AUDIT.md) - Pinned Haxe 4.3.7 alias/equality evidence, frozen typed representation categories, exact support states, and implementation ownership
 - [Managed-Reference Runtime Feasibility](05-architecture/MANAGED_REFERENCE_FEASIBILITY.md) - Isolated native-versus-hybrid lease, tracing, process, upgrade, package, and build evidence
 - [Cross Overrides & Multi-Target Hardening](05-architecture/CROSS_OVERRIDES_AND_MULTI_TARGET_HARDENING.md) - `_std` / packaged `.cross.hx` ownership and sibling-target coexistence risks
 - [Phoenix Output Model](05-architecture/PHOENIX_OUTPUT_MODEL.md) - In-place vs materialized Phoenix output, source roots vs target namespaces

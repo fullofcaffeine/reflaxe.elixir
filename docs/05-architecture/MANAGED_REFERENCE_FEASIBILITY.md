@@ -250,8 +250,9 @@ The following limits are intentional and must not be mistaken for solved product
 
 - The object slot stores an integer mutation probe and edge vectors, not complete Haxe field values,
   class metadata, `ObjectMap` entries, serializer state, or bound methods.
-- The spike does not classify or implement ordinary Haxe mutable collections. `Array`, `Map`,
-  `List`, buffers, and other candidate families still need pinned semantic and compiler evidence.
+- The spike does not implement ordinary Haxe mutable collections. The separate reference-semantics
+  audit now pins their semantic classifications and family owners, but every managed compiler,
+  runtime, package, alias, lifetime, and boundary gate remains open.
 - The node token is a process-local collision-resistant probe value, not a security credential or a
   stable distribution identifier.
 - Full tracing runs as a dirty CPU NIF, so ordinary schedulers remain available, but the spike holds
