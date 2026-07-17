@@ -298,7 +298,9 @@ defmodule HaxePhoenixScaffoldTest do
     File.write!(Path.join(root, ".gitignore"), "")
 
     assert :ok == HaxePhoenixScaffold.apply!(root)
+    first_tree = file_tree(root)
     assert :ok == HaxePhoenixScaffold.apply!(root)
+    assert file_tree(root) == first_tree
 
     genes_hxml = File.read!(Path.join([root, "haxe_libraries", "genes.hxml"]))
     assert genes_hxml =~ "reflaxe_elixir:scaffolded_haxe_library:genes:v1"
@@ -703,6 +705,78 @@ defmodule HaxePhoenixScaffoldTest do
     assert stderr =~ "could not find a `watchers:` list"
   end
 
+  test "a late validation error leaves the entire scaffold tree untouched" do
+    root =
+      Path.join(
+        System.tmp_dir!(),
+        "reflaxe_elixir_scaffold_preflight_#{System.unique_integer([:positive])}"
+      )
+
+    assets_js = Path.join([root, "assets", "js"])
+    config_dir = Path.join([root, "config"])
+    root_layout_dir = Path.join([root, "lib", "my_app_web", "components", "layouts"])
+    root_layout_path = Path.join(root_layout_dir, "root.html.heex")
+
+    File.mkdir_p!(assets_js)
+    File.mkdir_p!(config_dir)
+    File.mkdir_p!(root_layout_dir)
+    File.write!(Path.join(assets_js, "app.js"), @minimal_app_js)
+    File.write!(Path.join(config_dir, "dev.exs"), @dev_exs_no_watchers)
+    File.write!(Path.join(root, "mix.exs"), @minimal_mix_exs)
+    File.write!(Path.join(root, ".gitignore"), "")
+    File.write!(root_layout_path, @minimal_root_layout_no_boilerplate)
+
+    before = file_tree(root)
+
+    assert_raise RuntimeError, ~r/could not find a `watchers:` list/, fn ->
+      HaxePhoenixScaffold.apply!(root, strict: true)
+    end
+
+    assert file_tree(root) == before
+    refute File.exists?(Path.join(root, ".reflaxe-elixir-project-patch"))
+  end
+
+  test "malformed ownership markers remain fatal in warn-only mode without mutations" do
+    root =
+      Path.join(
+        System.tmp_dir!(),
+        "reflaxe_elixir_scaffold_bad_marker_#{System.unique_integer([:positive])}"
+      )
+
+    assets_js = Path.join([root, "assets", "js"])
+    config_dir = Path.join([root, "config"])
+
+    File.mkdir_p!(assets_js)
+    File.mkdir_p!(config_dir)
+    File.write!(Path.join(assets_js, "app.js"), @minimal_app_js)
+    File.write!(Path.join(config_dir, "dev.exs"), @minimal_dev_exs)
+    File.write!(Path.join(root, "mix.exs"), @minimal_mix_exs)
+    File.write!(Path.join(root, ".gitignore"), "")
+
+    assert :ok == HaxePhoenixScaffold.apply!(root)
+
+    app_js_path = Path.join(assets_js, "app.js")
+
+    File.write!(
+      app_js_path,
+      String.replace(
+        File.read!(app_js_path),
+        "// BEGIN reflaxe_elixir hx_app_import",
+        "// BEGIN reflaxe_elixir hx_app_import\n// BEGIN reflaxe_elixir hx_app_import",
+        global: false
+      )
+    )
+
+    before = file_tree(root)
+
+    assert_raise RuntimeError, ~r/malformed or overlapping reflaxe_elixir marker blocks/, fn ->
+      HaxePhoenixScaffold.apply!(root, strict: false)
+    end
+
+    assert file_tree(root) == before
+    refute File.exists?(Path.join(root, ".reflaxe-elixir-project-patch"))
+  end
+
   test "strict mode fails fast on unmanaged haxe_client watcher; warn-only warns and skips" do
     root =
       Path.join(
@@ -816,6 +890,10 @@ defmodule HaxePhoenixScaffoldTest do
     gitignore = File.read!(Path.join(root, ".gitignore"))
     refute gitignore =~ "assets/js/_hx_app_tmp.js"
     refute gitignore =~ "assets/js/hx_app.js"
+
+    plain_js_tree = file_tree(root)
+    assert :ok == HaxePhoenixScaffold.apply!(root, client_mode: :plain_js, yes: true)
+    assert file_tree(root) == plain_js_tree
   end
 
   test "plain-js mode keeps custom client files and warns" do
@@ -868,5 +946,13 @@ defmodule HaxePhoenixScaffoldTest do
     |> String.split(needle)
     |> length()
     |> Kernel.-(1)
+  end
+
+  defp file_tree(root) do
+    root
+    |> Path.join("**/*")
+    |> Path.wildcard(match_dot: true)
+    |> Enum.filter(&File.regular?/1)
+    |> Map.new(fn path -> {Path.relative_to(path, root), File.read!(path)} end)
   end
 end

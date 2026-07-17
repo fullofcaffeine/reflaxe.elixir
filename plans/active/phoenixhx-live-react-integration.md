@@ -1,6 +1,6 @@
 # PhoenixHx: First-Class Opt-In Stock LiveReact Integration
 
-Status: **active planning record; implementation has not started**
+Status: **active implementation record; initial child slices are underway**
 
 Planning date: 2026-07-16
 
@@ -41,6 +41,14 @@ PhoenixHx owns the typed Haxe/HXX declarations, app-local typed wrappers,
 static registry contract, deterministic setup/check/remove tooling, generated
 ownership diagnostics, Live Event Protocol adapter, documentation, examples,
 compatibility evidence, and installed-package smoke.
+
+The filesystem mutation/recovery layer and thin Mix/bootstrap entrypoints remain
+handwritten Elixir because they must work when Haxe compilation is missing or
+broken. Above that ring-0 boundary, production surfaces should be authored in
+Haxe when practical. Their checked-in generated Elixir is a product artifact:
+it must be idiomatic, readable, byte-stable, warnings-as-errors clean, and good
+enough to accept in a handwritten code review. Raw target injection and manual
+edits to generated output are not quality escape hatches.
 
 The planned first support slice is client-only trusted first-party React islands
 with Vite. SSR, slots, uploads, streams, request-selected component names, raw
@@ -501,7 +509,8 @@ new Git repository.
 
 1. **Complete (2026-07-17):** freeze ownership, API, CLI, manifest,
    compatibility, and Genes boundaries.
-2. Add API-faithful Haxe/HXX declarations and shared patch primitives.
+2. **Complete (2026-07-17):** API-faithful Haxe/HXX declarations and shared
+   patch ownership/recovery primitives are integrated and verified.
 3. Implement setup/check/remove and the static registry/wrapper scaffold.
 4. Align typed events with Live Event Protocols.
 5. Migrate the current example 12 local binder.
@@ -520,6 +529,9 @@ new Git repository.
 - strict TypeScript/React/Vite/source-map evidence;
 - Haxe-authored ExUnit and bounded Playwright fallback evidence;
 - source-checkout and installed-package setup/check/remove smoke;
+- checked-in generated Elixir review, byte-stable regeneration,
+  warnings-as-errors, and handwritten-output quality evidence for each
+  Haxe-owned production module;
 - both examples in `examples/qa-manifest.json` with named runtime/E2E coverage;
 - path hygiene, docs links, Beads lint/dependency sanity, and latest CI.
 
@@ -569,6 +581,9 @@ Reflaxe.Elixir 1.0.
 12. Installed-package behavior must match source checkout.
 13. No task in this graph blocks the 1.0 readiness epic.
 14. No local sibling path or machine-local absolute path is part of the ABI.
+15. Haxe-owned production output must remain idiomatic and handwritten-like;
+    bootstrap/recovery infrastructure stays handwritten Elixir where it must
+    operate without a working Haxe compiler.
 
 ## Rollout
 
