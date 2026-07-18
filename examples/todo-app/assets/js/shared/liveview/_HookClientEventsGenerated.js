@@ -2,16 +2,16 @@ import {Register} from "../../genes/Register.js"
 
 const $global = Register.$global
 
-export const HookClientEvents = Register.global("$hxClasses")["HookClientEvents"] =
+export const HookClientEvents = Register.hxClasses()["HookClientEvents"] =
 class HookClientEvents {
 	static pushClipboardCopied(hook, message) {
 		if (hook.pushEvent != null) {
-			hook.pushEvent("clipboard_copied", { message : message});
+			hook.pushEvent("clipboard_copied", {"message": message});
 		};
 	}
 	static pushHookPing(hook) {
 		if (hook.pushEvent != null) {
-			hook.pushEvent("ping", { });
+			hook.pushEvent("ping", {});
 		};
 	}
 	static get __name__() {
@@ -21,4 +21,3 @@ class HookClientEvents {
 		return HookClientEvents
 	}
 }
-

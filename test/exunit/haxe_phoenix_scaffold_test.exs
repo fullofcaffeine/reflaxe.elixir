@@ -303,9 +303,16 @@ defmodule HaxePhoenixScaffoldTest do
     assert file_tree(root) == first_tree
 
     genes_hxml = File.read!(Path.join([root, "haxe_libraries", "genes.hxml"]))
-    assert genes_hxml =~ "reflaxe_elixir:scaffolded_haxe_library:genes:v1"
-    assert genes_hxml =~ "-cp ${SCOPE_DIR}/deps/reflaxe_elixir/vendor/genes/src"
-    assert genes_hxml =~ "-lib helder.set"
+    assert genes_hxml =~ "reflaxe_elixir:scaffolded_haxe_library:genes:v2"
+    assert genes_hxml =~ "-lib genes-ts"
+    refute genes_hxml =~ "vendor/genes"
+
+    genes_ts_hxml = File.read!(Path.join([root, "haxe_libraries", "genes-ts.hxml"]))
+    assert genes_ts_hxml =~ "reflaxe_elixir:scaffolded_haxe_library:genes-ts:v1"
+    assert genes_ts_hxml =~ "-lib helder.set"
+    assert genes_ts_hxml =~ "genes-ts/1.36.3/github/51dc422c2ec930604dfd928d2a112ead354362e3"
+    assert genes_ts_hxml =~ "temporary admission pin"
+    assert genes_ts_hxml =~ "/extraParams.hxml"
 
     phoenix_js_hxml = File.read!(Path.join([root, "haxe_libraries", "phoenix_js.hxml"]))
     assert phoenix_js_hxml =~ "reflaxe_elixir:scaffolded_haxe_library:phoenix_js:v1"
@@ -317,7 +324,10 @@ defmodule HaxePhoenixScaffoldTest do
     assert helder_set_hxml =~ "${HAXE_LIBCACHE}/helder.set/0.3.1/haxelib/src"
 
     build_client = File.read!(Path.join(root, "build-client.hxml"))
+    assert build_client =~ "reflaxe_elixir:build_client_hxml:v2"
+    assert build_client =~ "-lib genes-ts"
     assert build_client =~ "assets/js/_hx_app_tmp.js"
+    refute build_client =~ "genes.Generator.use()"
 
     boot = File.read!(Path.join([root, "src_haxe", "client", "Boot.hx"]))
     assert boot =~ "window.Hooks"
@@ -412,6 +422,42 @@ defmodule HaxePhoenixScaffoldTest do
 
     assert :ok == HaxePhoenixScaffold.apply!(root)
     assert File.read!(Path.join([root, "haxe_libraries", "genes.hxml"])) == custom_genes
+    assert File.exists?(Path.join([root, "haxe_libraries", "genes-ts.hxml"]))
+  end
+
+  test "migrates the scaffold-owned vendored Genes descriptor to the exact genes-ts release" do
+    root =
+      Path.join(
+        System.tmp_dir!(),
+        "reflaxe_elixir_scaffold_legacy_genes_#{System.unique_integer([:positive])}"
+      )
+
+    assets_js = Path.join([root, "assets", "js"])
+    config_dir = Path.join([root, "config"])
+    haxe_libraries = Path.join(root, "haxe_libraries")
+
+    File.mkdir_p!(assets_js)
+    File.mkdir_p!(config_dir)
+    File.mkdir_p!(haxe_libraries)
+    File.write!(Path.join(assets_js, "app.js"), @minimal_app_js)
+    File.write!(Path.join(config_dir, "dev.exs"), @minimal_dev_exs)
+    File.write!(Path.join(root, "mix.exs"), @minimal_mix_exs)
+    File.write!(Path.join(root, ".gitignore"), "")
+
+    File.write!(
+      Path.join(haxe_libraries, "genes.hxml"),
+      "# reflaxe_elixir:scaffolded_haxe_library:genes:v1\n-cp ${SCOPE_DIR}/deps/reflaxe_elixir/vendor/genes/src\n"
+    )
+
+    assert :ok == HaxePhoenixScaffold.apply!(root)
+
+    alias_hxml = File.read!(Path.join(haxe_libraries, "genes.hxml"))
+    assert alias_hxml =~ "reflaxe_elixir:scaffolded_haxe_library:genes:v2"
+    assert alias_hxml =~ "-lib genes-ts"
+    refute alias_hxml =~ "vendor/genes"
+
+    canonical_hxml = File.read!(Path.join(haxe_libraries, "genes-ts.hxml"))
+    assert canonical_hxml =~ "51dc422c2ec930604dfd928d2a112ead354362e3"
   end
 
   test "patches Phoenix 1.7-ish app.js variants without relying on Hooks variable shape" do
@@ -870,6 +916,7 @@ defmodule HaxePhoenixScaffoldTest do
     refute File.exists?(Path.join([root, "src_haxe", "client", "Boot.hx"]))
     refute File.exists?(Path.join([assets_js, "hx_app.js"]))
     refute File.exists?(Path.join([root, "haxe_libraries", "genes.hxml"]))
+    refute File.exists?(Path.join([root, "haxe_libraries", "genes-ts.hxml"]))
     refute File.exists?(Path.join([root, "haxe_libraries", "phoenix_js.hxml"]))
     refute File.exists?(Path.join([root, "haxe_libraries", "helder.set.hxml"]))
 

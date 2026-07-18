@@ -1,14 +1,4 @@
-# reflaxe_elixir:scaffolded_haxe_library:genes:v1
-# genes — ES6 JavaScript generator (vendored inside reflaxe_elixir)
-#
-# This file is scaffold-managed by `mix haxe.phoenix.scaffold`. If you customize it, remove
-# the signature line above to opt out of future updates.
-
-# genes core sources (vendored)
--cp ${SCOPE_DIR}/../../vendor/genes/src
-
-# genes depends on helder.set for its Set<T> abstraction
--lib helder.set
-
-# Library define for conditional compilation flags
--D genes=0.4.14
+# reflaxe_elixir:scaffolded_haxe_library:genes:v2
+# Compatibility alias for projects that still use `-lib genes`.
+-lib genes-ts
+-D genes=1.36.3

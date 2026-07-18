@@ -78,6 +78,13 @@ git -C "$GENES_CHECKOUT" worktree add "$GENES_WORKTREE" \
 
 Follow the Genes repository's own instructions inside the worktree.
 
+Normally that base is `origin/main`. A temporary downstream admission fix may
+instead be based on the exact currently admitted release commit when newer
+canonical work is independently failing the downstream compatibility matrix.
+That exception must be recorded in the migration receipt, must contain only the
+generic fix, and must still be replaced by the eventual canonical merge or
+release commit. It is not permission to maintain a permanent release fork.
+
 ## Generic fix workflow
 
 If PhoenixHX exposes a Genes defect or missing capability:
@@ -130,6 +137,53 @@ TypeScript compilation is necessary but not sufficient. Runtime behavior,
 module ABI, source maps, and clean package installation remain separate gates.
 The old source remains available until the matrix passes and the migration has
 an explicit rollback commit.
+
+## Current migration receipt (2026-07-18)
+
+The initial external dependency audit admitted `genes-ts` 1.36.3 at release
+commit `c59ecb361fd91418584487c2138bae8d3d3a3961`. Compiling the PhoenixHX
+corpus exposed one generated-output quality defect: blank separators before
+documented members contained indentation-only lines. That made a clean
+generated tree fail `git diff --check` even though the emitted programs ran.
+
+The generic Genes fix is published at:
+
+- repository: `https://github.com/fullofcaffeine/genes-ts`;
+- branch: `codex/output-blank-line-whitespace`;
+- exact commit: `51dc422c2ec930604dfd928d2a112ead354362e3`;
+- base: `genes-ts` 1.36.3 commit
+  `c59ecb361fd91418584487c2138bae8d3d3a3961`;
+- scope: whitespace-free documentation, enum/switch/value-block layout,
+  declaration separators, silent empty-static phases, and Genes-owned raw
+  runtime boundaries in classic ESM, strict TypeScript/TSX, and declaration
+  output; the generic output-quality regression now rejects every
+  whitespace-only generated source line. External Haxelib and Haxe-stdlib
+  source-map entries now use stable `haxe://classpath/...` identities instead
+  of a consumer machine's package-cache path, while project-owned sources stay
+  navigable as relative paths and `-D source_map_content` embeds external
+  source text when requested;
+- upstream verification: `yarn test:output-quality`, `yarn test:dual-output`,
+  `yarn test:genes-ts:sourcemaps`, the focused
+  `SKIP_CLASSIC=1 SKIP_TS2HX=1 yarn test:acceptance` lane, and the complete
+  `yarn test:ci` lane under Node 20.19.3, including both todo-app browser
+  profiles and `ts2hx`;
+- downstream replacement condition: move to the exact commit that lands on
+  canonical Genes `main`, or to the exact commit of a subsequently admitted
+  release containing the fix. This stable-promotion step is tracked by
+  `haxe.elixir.codex-aas` and does not block the current experimental lane.
+
+This topic is deliberately based on the admitted release rather than the local
+`origin/main` observed at `ff588cff2c48bd6443af20e6f8429423d256fafe`.
+During this migration, that newer checkout independently failed its
+`dual-output-source-modules` fixture count (17 discovered versus 13 expected)
+before the whitespace change was applied. That local observation does not make
+a broad claim about upstream release readiness; it only prevents unrelated
+unfinished changes from entering this downstream pin.
+
+The known-green PhoenixHX rollback commit before dependency consolidation is
+`f0a22cc`. The vendored source is removed only after the exact topic pin passes
+all current browser consumers, the strict TSX/React fixture, generated-output
+review, path hygiene, and the applicable Phoenix example/runtime gates.
 
 ## Rollback
 

@@ -1,28 +1,28 @@
-import {Register} from "./genes/Register.js"
 import {HxOverrides} from "./HxOverrides.js"
+import {Register} from "./genes/Register.js"
 
 const $global = Register.$global
 
 /**
-This class provides advanced methods on Strings. It is ideally used with
-`using StringTools` and then acts as an [extension](https://haxe.org/manual/lf-static-extension.html)
-to the `String` class.
-
-If the first argument to any of the methods is null, the result is
-unspecified.
-*/
-export const StringTools = Register.global("$hxClasses")["StringTools"] =
+ * This class provides advanced methods on Strings. It is ideally used with
+ * `using StringTools` and then acts as an [extension](https://haxe.org/manual/lf-static-extension.html)
+ * to the `String` class.
+ *
+ * If the first argument to any of the methods is null, the result is
+ * unspecified.
+ */
+export const StringTools = Register.hxClasses()["StringTools"] =
 class StringTools {
-	
+
 	/**
-	Tells if the character in the string `s` at position `pos` is a space.
-	
-	A character is considered to be a space character if its character code
-	is 9,10,11,12,13 or 32.
-	
-	If `s` is the empty String `""`, or if pos is not a valid position within
-	`s`, the result is false.
-	*/
+	 * Tells if the character in the string `s` at position `pos` is a space.
+	 *
+	 * A character is considered to be a space character if its character code
+	 * is 9,10,11,12,13 or 32.
+	 *
+	 * If `s` is the empty String `""`, or if pos is not a valid position within
+	 * `s`, the result is false.
+	 */
 	static isSpace(s, pos) {
 		let c = HxOverrides.cca(s, pos);
 		if (!(c > 8 && c < 14)) {
@@ -31,16 +31,16 @@ class StringTools {
 			return true;
 		};
 	}
-	
+
 	/**
-	Removes leading space characters of `s`.
-	
-	This function internally calls `isSpace()` to decide which characters to
-	remove.
-	
-	If `s` is the empty String `""` or consists only of space characters, the
-	result is the empty String `""`.
-	*/
+	 * Removes leading space characters of `s`.
+	 *
+	 * This function internally calls `isSpace()` to decide which characters to
+	 * remove.
+	 *
+	 * If `s` is the empty String `""` or consists only of space characters, the
+	 * result is the empty String `""`.
+	 */
 	static ltrim(s) {
 		let l = s.length;
 		let r = 0;
@@ -51,16 +51,16 @@ class StringTools {
 			return s;
 		};
 	}
-	
+
 	/**
-	Removes trailing space characters of `s`.
-	
-	This function internally calls `isSpace()` to decide which characters to
-	remove.
-	
-	If `s` is the empty String `""` or consists only of space characters, the
-	result is the empty String `""`.
-	*/
+	 * Removes trailing space characters of `s`.
+	 *
+	 * This function internally calls `isSpace()` to decide which characters to
+	 * remove.
+	 *
+	 * If `s` is the empty String `""` or consists only of space characters, the
+	 * result is the empty String `""`.
+	 */
 	static rtrim(s) {
 		let l = s.length;
 		let r = 0;
@@ -71,12 +71,12 @@ class StringTools {
 			return s;
 		};
 	}
-	
+
 	/**
-	Removes leading and trailing space characters of `s`.
-	
-	This is a convenience function for `ltrim(rtrim(s))`.
-	*/
+	 * Removes leading and trailing space characters of `s`.
+	 *
+	 * This is a convenience function for `ltrim(rtrim(s))`.
+	 */
 	static trim(s) {
 		return StringTools.ltrim(StringTools.rtrim(s));
 	}
@@ -87,4 +87,3 @@ class StringTools {
 		return StringTools
 	}
 }
-

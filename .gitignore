@@ -83,6 +83,8 @@ compile.protocols
 .tmp/
 /tmp/
 /_tmp/
+/test/fixtures/genes_ts_live_react/generated/
+**/.genes-output-*.manifest
 
 # Debug/macro dumps (never commit)
 **/dump/

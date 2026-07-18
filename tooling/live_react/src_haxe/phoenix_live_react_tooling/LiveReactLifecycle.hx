@@ -636,12 +636,15 @@ class LiveReactLifecycle {
 	}
 
 	static function detectClientMode(root:String):Atom {
-		var indicators = [
+		var structuralIndicators = [
 			Path.joinTwo(root, "build-client.hxml"),
-			Path.join([root, "src_haxe", "client", "Boot.hx"]),
-			Path.join([root, "haxe_libraries", "genes.hxml"])
+			Path.join([root, "src_haxe", "client", "Boot.hx"])
 		];
-		return Enum.all(indicators, function(path:String):Bool return File.regular(path)) ? GENES : PLAIN_JS;
+		var canonicalGenes = Path.join([root, "haxe_libraries", "genes-ts.hxml"]);
+		var compatibilityAlias = Path.join([root, "haxe_libraries", "genes.hxml"]);
+		var hasGenesDescriptor = File.regular(canonicalGenes) || File.regular(compatibilityAlias);
+		return Enum.all(structuralIndicators, function(path:String):Bool return File.regular(path))
+			&& hasGenesDescriptor ? GENES : PLAIN_JS;
 	}
 
 	static function readRequiredSources(topology:LiveReactTopology):LiveReactSources {

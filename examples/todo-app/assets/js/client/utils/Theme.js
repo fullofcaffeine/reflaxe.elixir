@@ -1,9 +1,9 @@
-import {Register} from "../../genes/Register.js"
 import {ThemePreference} from "./ThemePreference.js"
+import {Register} from "../../genes/Register.js"
 
 const $global = Register.$global
 
-export const Theme = Register.global("$hxClasses")["client.utils.Theme"] =
+export const Theme = Register.hxClasses()["client.utils.Theme"] =
 class Theme {
 	static getMediaQuery() {
 		if (window != null) {
@@ -65,7 +65,6 @@ class Theme {
 			case "system":
 				dark = Theme.prefersDark();
 				break
-			
 		};
 		if (dark) {
 			root.classList.add("dark");
@@ -90,7 +89,6 @@ class Theme {
 			case "system":
 				return "light";
 				break
-			
 		};
 	}
 	static get __name__() {
@@ -100,4 +98,3 @@ class Theme {
 		return Theme
 	}
 }
-

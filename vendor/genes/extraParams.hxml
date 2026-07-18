@@ -1,3 +1,0 @@
--D js-es=6
---macro genes.Generator.use()
---macro addMetadata('@:genes.disableNativeAccessors', 'haxe.Exception')

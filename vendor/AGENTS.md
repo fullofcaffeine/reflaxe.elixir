@@ -6,7 +6,11 @@
 
 ## 📦 Vendored Dependencies
 
-This directory contains vendored dependencies for the Reflaxe.Elixir compiler.
+This directory contains the remaining vendored dependencies for the Reflaxe.Elixir compiler.
+
+Genes is intentionally not owned here. Browser builds consume the exact external `genes-ts`
+revision recorded by Lix; see
+[`docs/03-compiler-development/GENES_DEPENDENCY_WORKFLOW.md`](../docs/03-compiler-development/GENES_DEPENDENCY_WORKFLOW.md).
 
 ### vendor/reflaxe/
 
@@ -18,17 +22,6 @@ This directory contains vendored dependencies for the Reflaxe.Elixir compiler.
 - Allows modifications for Elixir-specific requirements
 - Ensures compiler stability with known Reflaxe version
 - Enables custom fixes without waiting for upstream PRs
-
-### vendor/genes/
-
-**Purpose**: Modern ES6 JavaScript generator for full-stack development
-
-**Source**: https://github.com/fullofcaffeine/genes
-
-**Why Vendored**:
-- Modified to support async/await patterns for Phoenix LiveView hooks
-- Enables full-stack Haxe development (Elixir backend + JavaScript frontend)
-- Custom AsyncMacro integration for clean async function generation
 
 ## ⚠️ CRITICAL: Reflaxe Source Modification Policy
 
@@ -97,15 +90,9 @@ Consider upstream PR to Reflaxe project
    - Impact on Elixir compiler functionality
    - Date of modification
 
-### Historical Modifications (Examples)
+### Historical Modification Example
 
-**Example 1: genes AsyncMacro** (January 2025)
-- **File**: `vendor/genes/src/genes/AsyncMacro.hx`
-- **Modification**: Added `__async_marker__` pattern detection for native async functions
-- **Why**: Default genes didn't support async/await needed for Phoenix LiveView hooks
-- **Result**: Clean ES6 async/await generation for client-side JavaScript
-
-**Example 2: Reflaxe TargetCodeInjection** (Considered but not needed - January 2025)
+**Reflaxe TargetCodeInjection** (Considered but not needed - January 2025)
 - **File**: `vendor/reflaxe/src/reflaxe/compiler/TargetCodeInjection.hx`
 - **Issue**: __elixir__() calls not generating proper string interpolation
 - **Resolution**: Fixed in CallExprBuilder.hx instead - did NOT need Reflaxe modification
@@ -155,26 +142,6 @@ When modifying Reflaxe source:
 
 ## 🔧 Vendor Update Process
 
-### Updating genes
-
-```bash
-# 1. Check current version
-cat vendor/genes/haxelib.json
-
-# 2. Pull latest from upstream
-cd vendor/genes
-git pull origin main
-
-# 3. Test full-stack compilation
-cd ../../examples/todo-app
-npx haxe build-client.hxml  # JavaScript generation
-
-# 4. Verify no regressions
-npm run test:full-stack
-```
-
- 
-
 ### Updating Reflaxe
 
 ```bash
@@ -199,7 +166,7 @@ cd examples/todo-app && mix compile --force
 ## 📚 Related Documentation
 
 - [Reflaxe Framework Documentation](https://github.com/SomeRanDev/reflaxe)
-- [genes JavaScript Generator](https://github.com/fullofcaffeine/genes)
+- [Genes dependency and upstream-fix workflow](../docs/03-compiler-development/GENES_DEPENDENCY_WORKFLOW.md)
 - [Contributing to Reflaxe](https://github.com/SomeRanDev/reflaxe/blob/main/CONTRIBUTING.md)
 
 ---

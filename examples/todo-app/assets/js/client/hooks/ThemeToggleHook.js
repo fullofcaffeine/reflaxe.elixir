@@ -1,9 +1,9 @@
-import {Register} from "../../genes/Register.js"
 import {Theme} from "../utils/Theme.js"
+import {Register} from "../../genes/Register.js"
 
 const $global = Register.$global
 
-export const ThemeToggleHook = Register.global("$hxClasses")["client.hooks.ThemeToggleHook"] =
+export const ThemeToggleHook = Register.hxClasses()["client.hooks.ThemeToggleHook"] =
 class ThemeToggleHook {
 	static labelFor(preference) {
 		switch (preference) {
@@ -16,7 +16,6 @@ class ThemeToggleHook {
 			case "system":
 				return "System";
 				break
-			
 		};
 	}
 	static updateLabel(root, preference) {

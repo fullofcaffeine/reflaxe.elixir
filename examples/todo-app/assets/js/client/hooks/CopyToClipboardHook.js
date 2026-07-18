@@ -3,7 +3,7 @@ import {Register} from "../../genes/Register.js"
 
 const $global = Register.$global
 
-export const CopyToClipboardHook = Register.global("$hxClasses")["client.hooks.CopyToClipboardHook"] =
+export const CopyToClipboardHook = Register.hxClasses()["client.hooks.CopyToClipboardHook"] =
 class CopyToClipboardHook {
 	static mounted(hook) {
 		let el = hook.el;
@@ -73,4 +73,3 @@ class CopyToClipboardHook {
 		return CopyToClipboardHook
 	}
 }
-

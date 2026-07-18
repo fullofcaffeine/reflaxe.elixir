@@ -1,25 +1,25 @@
 import {Register} from "../../genes/Register.js"
 
 /**
-This iterator is used only when `Array<T>` is passed to `Iterable<T>`
-*/
-export const ArrayIterator = Register.global("$hxClasses")["haxe.iterators.ArrayIterator"] =
+ * This iterator is used only when `Array<T>` is passed to `Iterable<T>`
+ */
+export const ArrayIterator = Register.hxClasses()["haxe.iterators.ArrayIterator"] =
 class ArrayIterator extends Register.inherits() {
 	[Register.new](array) {
 		this.current = 0;
 		this.array = array;
 	}
-	
+
 	/**
-	See `Iterator.hasNext`
-	*/
+	 * See `Iterator.hasNext`
+	 */
 	hasNext() {
 		return this.current < this.array.length;
 	}
-	
+
 	/**
-	See `Iterator.next`
-	*/
+	 * See `Iterator.next`
+	 */
 	next() {
 		return this.array[this.current++];
 	}
@@ -32,6 +32,5 @@ class ArrayIterator extends Register.inherits() {
 }
 ArrayIterator.prototype.array = null;
 ArrayIterator.prototype.current = null;
-
 
 //# sourceMappingURL=ArrayIterator.js.map

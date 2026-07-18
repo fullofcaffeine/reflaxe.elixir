@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "jsx": "react-jsx",
+    "types": ["node", "react", "react-dom"],
+    "rootDir": "generated/src-gen",
+    "outDir": "generated/dist",
+    "strict": true,
+    "sourceMap": true,
+    "isolatedModules": true,
+    "skipLibCheck": false,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true
+  },
+  "include": ["generated/src-gen/**/*.ts", "generated/src-gen/**/*.tsx"]
+}

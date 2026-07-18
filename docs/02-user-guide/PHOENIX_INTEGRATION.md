@@ -97,7 +97,7 @@ For browser code, use the repo-local `phoenix_js` library (`-lib phoenix_js`) wh
 - `phoenix.channels.TypedChannelClient` (minimal typed wrapper around JS channels)
 
 See:
-- `examples/todo-app/build-client.hxml` (uses `-lib genes` + `-lib phoenix_js`)
+- `examples/todo-app/build-client.hxml` (uses `-lib genes-ts` + `-lib phoenix_js`)
 - `examples/todo-app/src_haxe/client/channels/PingChannelClient.hx` (typed channel client example)
 
 ### Server-side Helpers (Haxe→Elixir)

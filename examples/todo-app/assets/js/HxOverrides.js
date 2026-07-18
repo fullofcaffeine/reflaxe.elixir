@@ -2,7 +2,7 @@ import {Register} from "./genes/Register.js"
 
 const $global = Register.$global
 
-export const HxOverrides = Register.global("$hxClasses")["HxOverrides"] =
+export const HxOverrides = Register.hxClasses()["HxOverrides"] =
 class HxOverrides {
 	static cca(s, index) {
 		let x = s.charCodeAt(index);
@@ -33,6 +33,5 @@ class HxOverrides {
 		return HxOverrides
 	}
 }
-
 
 ;((typeof(performance) != "undefined") ? typeof(performance.now) == "function" : false) ? HxOverrides.now = performance.now.bind(performance) : null

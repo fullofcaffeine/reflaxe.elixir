@@ -120,7 +120,7 @@ explicit param reads, which is shorter and clearer for that local flow.
   - `-lib reflaxe.elixir` (supplies the `elixir` target marker)
   - `-D elixir_output=...` (selects the Elixir target output dir)
 - Client build (`build-client.hxml`):
-  - `-lib genes` (JS generator)
+  - `-lib genes-ts` (exact-pinned JS/TypeScript generator)
   - `-lib phoenix_js` (typed Phoenix JS externs)
 
 In shared code, you’ll sometimes see:

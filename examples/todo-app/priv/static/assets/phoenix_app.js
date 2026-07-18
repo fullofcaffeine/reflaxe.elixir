@@ -113,7 +113,7 @@ var TodoApp = (() => {
   };
   var globalSelf = typeof self !== "undefined" ? self : null;
   var phxWindow = typeof window !== "undefined" ? window : null;
-  var global2 = globalSelf || phxWindow || global2;
+  var global = globalSelf || phxWindow || global;
   var DEFAULT_VSN = "2.0.0";
   var SOCKET_STATES = { connecting: 0, open: 1, closing: 2, closed: 3 };
   var DEFAULT_TIMEOUT = 1e4;
@@ -593,11 +593,11 @@ var TodoApp = (() => {
   };
   var Ajax = class {
     static request(method, endPoint, accept, body, timeout, ontimeout, callback) {
-      if (global2.XDomainRequest) {
-        let req = new global2.XDomainRequest();
+      if (global.XDomainRequest) {
+        let req = new global.XDomainRequest();
         return this.xdomainRequest(req, method, endPoint, body, timeout, ontimeout, callback);
       } else {
-        let req = new global2.XMLHttpRequest();
+        let req = new global.XMLHttpRequest();
         return this.xhrRequest(req, method, endPoint, accept, body, timeout, ontimeout, callback);
       }
     }
@@ -920,11 +920,11 @@ var TodoApp = (() => {
       this.sendBuffer = [];
       this.ref = 0;
       this.timeout = opts.timeout || DEFAULT_TIMEOUT;
-      this.transport = opts.transport || global2.WebSocket || LongPoll;
+      this.transport = opts.transport || global.WebSocket || LongPoll;
       this.primaryPassedHealthCheck = false;
       this.longPollFallbackMs = opts.longPollFallbackMs;
       this.fallbackTimer = null;
-      this.sessionStore = opts.sessionStorage || global2 && global2.sessionStorage;
+      this.sessionStore = opts.sessionStorage || global && global.sessionStorage;
       this.establishedConnections = 0;
       this.defaultEncoder = serializer_default.encode.bind(serializer_default);
       this.defaultDecoder = serializer_default.decode.bind(serializer_default);
@@ -6374,15 +6374,82 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
 
   // js/genes/Register.js
   var Register = class _Register {
+    /**
+     * Get (or lazily create) a named registry object on `globalThis`.
+     *
+     * This function is intentionally dynamic: the returned object is used for
+     * heterogeneous registries like `$hxClasses` and `$hxEnums`.
+     */
     static global(name) {
       let existing = _Register.globals[name];
       if (existing != null) {
         return existing;
       }
       ;
-      let created = new Object();
+      let created = /* @__PURE__ */ Object.create(null);
       _Register.globals[name] = created;
       return created;
+    }
+    /**
+     * Register a runtime type in the `$hxClasses` global registry.
+     *
+     * This is used by genes-ts output to keep Haxe/Genes reflection compatible
+     * without emitting `(… as any)[…] = …` patterns into every generated module.
+     */
+    static setHxClass(id, value) {
+      let hxClasses = _Register.global("$hxClasses");
+      hxClasses[id] = value;
+    }
+    /**
+     * Register a runtime enum in the `$hxEnums` global registry.
+     *
+     * This registry is used by `Type.resolveEnum(...)` and parts of the Haxe JS
+     * runtime (e.g. `js.Boot.__string_rec`) to map enum names to their values.
+     */
+    static setHxEnum(id, value) {
+      let hxEnums = _Register.global("$hxEnums");
+      hxEnums[id] = value;
+    }
+    /**
+     * Typed view of the `$hxClasses` registry (reflection).
+     *
+     * This keeps `Type.resolveClass(...)` and related code typed in generated TS
+     * without leaking `unknown` into user modules.
+     */
+    static hxClasses() {
+      return _Register.unsafeCast(_Register.global("$hxClasses"));
+    }
+    /**
+     * Typed view of the `$hxEnums` registry (reflection).
+     *
+     * This keeps enum reflection code typed in generated TS without leaking
+     * `unknown` into user modules.
+     */
+    static hxEnums() {
+      return _Register.unsafeCast(_Register.global("$hxEnums"));
+    }
+    /**
+     * Ensure an instance field exists on a class prototype for reflection
+     * (`Type.getInstanceFields`, etc) without forcing a TS `any` cast.
+     *
+     * We intentionally set a `null` value (not `undefined`) to match Genes' legacy
+     * behavior for uninitialized fields.
+     */
+    static seedProtoField(cls, name) {
+      Object.defineProperty(cls.prototype, name, { "value": null, "writable": true, "enumerable": true, "configurable": true });
+    }
+    /**
+     * Unsafe type assertion helper.
+     *
+     * This is used by the TS emitter to keep `any` out of user modules when:
+     * - metadata forces a TS type override (`@:genes.type`, `@:genes.returnType`)
+     * - Haxe semantics rely on "impossible" states under TS types (e.g. some JS
+     *   APIs return `undefined` but Haxe models `null`)
+     *
+     * It intentionally centralizes the unsafety inside the runtime boundary.
+     */
+    static unsafeCast(value) {
+      return value;
     }
     static createStatic(obj, name, get) {
       let value = null;
@@ -6402,10 +6469,31 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
         value = v;
       } });
     }
+    /**
+     * NOTE: This function is intentionally typed as `any` in generated TS.
+     *
+     * In JS/Genes, dynamic field access to `.iterator` may refer to either:
+     * - the Haxe/Genes iterator function (callable), OR
+     * - an arbitrary user field value (non-callable), e.g. `{ iterator: 0 }`.
+     *
+     * Returning `any` preserves Genes semantics for dynamic field access while
+     * keeping the unsafety confined to the runtime boundary.
+     */
     static iterator(a) {
-      let isArray = Array.isArray(a);
-      if (!isArray) {
-        return typeof a.iterator === "function" ? a.iterator.bind(a) : a.iterator;
+      if (!Array.isArray(a)) {
+        if ("iterator" in a) {
+          return typeof a.iterator === "function" ? a.iterator.bind(a) : a.iterator;
+        } else {
+          return function() {
+            let keys = a.keys();
+            return { "hasNext": function() {
+              return keys.hasNext();
+            }, "next": function() {
+              return _Register.unsafeCast(a.get(keys.next()));
+            } };
+          };
+        }
+        ;
       } else {
         let a1 = a;
         return function() {
@@ -6415,9 +6503,18 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
       ;
     }
     static getIterator(a) {
-      let isArray = Array.isArray(a);
-      if (!isArray) {
-        return a.iterator();
+      if (!Array.isArray(a)) {
+        if ("iterator" in a) {
+          return a.iterator();
+        } else {
+          let keys = a.keys();
+          return { "hasNext": function() {
+            return keys.hasNext();
+          }, "next": function() {
+            return _Register.unsafeCast(a.get(keys.next()));
+          } };
+        }
+        ;
       } else {
         return _Register.mkIter(a);
       }
@@ -6426,13 +6523,51 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
     static mkIter(a) {
       return new ArrayIterator(a);
     }
+    /**
+     * Create a "synthetic" subclass constructor at runtime.
+     *
+     * genes-ts uses this to preserve Genes/Haxe JS inheritance semantics while
+     * breaking module cycles. The return type is a broad constructor shape because
+     * TS cannot express the precise constructor signature of the dynamically-computed
+     * superclass.
+     *
+     * Why not just return `any`? TypeScript declaration emit looks at classes such
+     * as `class Child extends Register.extend(parent)` and synthesizes a helper
+     * declaration like `declare const Child_base: ...` in the public `.d.ts`. If
+     * this helper returns `any`, that public declaration becomes `Child_base: any`
+     * and downstream users lose type safety before they even touch their own code.
+     *
+     * `new (...args: unknown[]) => {}` is intentionally broad: it says "this is
+     * some constructor" without claiming we know its exact parameters or instance
+     * fields. That is enough for `extends`, avoids a leaked `any`, and keeps the
+     * one unavoidable assertion contained in this runtime helper.
+     */
     static extend(superClass) {
       function res() {
-        this[_Register.new].apply(this, arguments);
+        const init = this[_Register.new];
+        if (typeof init === "function") {
+          init.apply(this, arguments);
+          return;
+        }
+        return Reflect.construct(superClass, arguments, new.target);
       }
       Object.setPrototypeOf(res.prototype, superClass.prototype);
-      return res;
+      return _Register.unsafeCast(res);
     }
+    /**
+     * Return a base class for `extends` that supports deferred resolution.
+     *
+     * This is a core part of Genes' cycle handling. The return type is a broad
+     * constructor shape because the actual superclass can be resolved lazily and
+     * may have an arbitrary constructor signature.
+     *
+     * The important part is the generated `.d.ts` surface: TypeScript creates
+     * intermediate declarations for dynamic `extends` expressions. If this
+     * function is typed as `any`, those intermediates leak into published
+     * declarations as `declare const *_base: any`. Returning the broad constructor
+     * type instead tells TypeScript "this value is constructable" while still
+     * forcing every real use site to prove anything more specific.
+     */
     static inherits(resolve, defer) {
       if (defer == null) {
         defer = false;
@@ -6441,7 +6576,17 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
       function res() {
         if (defer && resolve && res[_Register.init])
           res[_Register.init]();
-        this[_Register.new].apply(this, arguments);
+        const init = this[_Register.new];
+        if (typeof init === "function") {
+          init.apply(this, arguments);
+          return;
+        }
+        if (resolve) {
+          const superClass = defer && !resolve.prototype ? resolve() : resolve;
+          if (superClass[_Register.init])
+            superClass[_Register.init]();
+          return Reflect.construct(superClass, arguments, new.target);
+        }
       }
       if (!defer) {
         if (resolve && resolve[_Register.init]) {
@@ -6464,34 +6609,47 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
           res[_Register.init] = void 0;
         };
       }
-      return res;
+      return _Register.unsafeCast(res);
     }
+    /**
+     * Returns the stable Haxe-JavaScript closure for one receiver/method pair.
+     *
+     * Why: reading an instance method as a value must preserve `this`, and
+     * repeated reads must return the same closure for Haxe identity semantics.
+     *
+     * What: `null` methods remain `null`; the same receiver and callable reuse
+     * one closure; a different receiver or callable receives a different one.
+     *
+     * How: the Haxe JS protocol attaches a numeric `__id__` to the callable and
+     * an `hx__closures__` cache to the receiver. Those hidden mutable properties
+     * are not part of the user's nominal Haxe types, so this helper deliberately
+     * remains a contained dynamic runtime boundary. The emitters recover the
+     * precise callable type at user-module assignments and calls. Direct uses
+     * require a mutable, extensible object receiver; primitives and frozen host
+     * objects are outside this internal helper's supported contract.
+     */
     static bind(o, m) {
       if (m == null) {
         return null;
       }
       ;
-      let id = m.__id__;
-      if (id == null) {
-        id = _Register.fid++;
-        m.__id__ = id;
+      if (m.__id__ == null) {
+        m.__id__ = _Register.fid++;
       }
       ;
-      let closures = o.hx__closures__;
-      if (closures == null) {
-        closures = {};
-        o.hx__closures__ = closures;
+      let f = null;
+      if (o.hx__closures__ == null) {
+        o.hx__closures__ = {};
+      } else {
+        f = o.hx__closures__[m.__id__];
       }
       ;
-      let key = id == null ? "null" : "" + id;
-      let existing = closures[key];
-      if (existing != null) {
-        return existing;
+      if (f == null) {
+        f = m.bind(o);
+        o.hx__closures__[m.__id__] = f;
       }
       ;
-      let bound = m.bind(o);
-      closures[key] = bound;
-      return bound;
+      return f;
     }
     static get __name__() {
       return "genes.Register";
@@ -6500,12 +6658,12 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
       return _Register;
     }
   };
-  Register.$global = typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : void 0;
-  Register.globals = {};
+  Register.$global = globalThis;
+  Register.globals = /* @__PURE__ */ Object.create(null);
   Register["new"] = Symbol();
   Register.init = Symbol();
   Register.fid = 0;
-  var ArrayIterator = Register.global("$hxClasses")["genes._Register.ArrayIterator"] = class ArrayIterator2 extends Register.inherits() {
+  var ArrayIterator = Register.hxClasses()["genes._Register.ArrayIterator"] = class ArrayIterator2 extends Register.inherits() {
     [Register.new](array) {
       this.current = 0;
       this.array = array;
@@ -6526,9 +6684,264 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   ArrayIterator.prototype.array = null;
   ArrayIterator.prototype.current = null;
 
-  // js/client/utils/ThemePreference.js
+  // js/HxOverrides.js
   var $global = Register.$global;
-  var ThemePreference = Register.global("$hxClasses")["client.utils._ThemePreference.ThemePreference"] = class ThemePreference2 {
+  var HxOverrides = Register.hxClasses()["HxOverrides"] = class HxOverrides2 {
+    static cca(s, index) {
+      let x = s.charCodeAt(index);
+      if (x != x) {
+        return void 0;
+      }
+      ;
+      return x;
+    }
+    static substr(s, pos, len) {
+      if (len == null) {
+        len = s.length;
+      } else if (len < 0) {
+        if (pos == 0) {
+          len = s.length + len;
+        } else {
+          return "";
+        }
+        ;
+      }
+      ;
+      return s.substr(pos, len);
+    }
+    static now() {
+      return Date.now();
+    }
+    static get __name__() {
+      return "HxOverrides";
+    }
+    get __class__() {
+      return HxOverrides2;
+    }
+  };
+  (typeof performance != "undefined" ? typeof performance.now == "function" : false) ? HxOverrides.now = performance.now.bind(performance) : null;
+
+  // js/StringTools.js
+  var $global2 = Register.$global;
+  var StringTools = Register.hxClasses()["StringTools"] = class StringTools2 {
+    /**
+     * Tells if the character in the string `s` at position `pos` is a space.
+     *
+     * A character is considered to be a space character if its character code
+     * is 9,10,11,12,13 or 32.
+     *
+     * If `s` is the empty String `""`, or if pos is not a valid position within
+     * `s`, the result is false.
+     */
+    static isSpace(s, pos) {
+      let c = HxOverrides.cca(s, pos);
+      if (!(c > 8 && c < 14)) {
+        return c == 32;
+      } else {
+        return true;
+      }
+      ;
+    }
+    /**
+     * Removes leading space characters of `s`.
+     *
+     * This function internally calls `isSpace()` to decide which characters to
+     * remove.
+     *
+     * If `s` is the empty String `""` or consists only of space characters, the
+     * result is the empty String `""`.
+     */
+    static ltrim(s) {
+      let l = s.length;
+      let r = 0;
+      while (r < l && StringTools2.isSpace(s, r))
+        ++r;
+      if (r > 0) {
+        return HxOverrides.substr(s, r, l - r);
+      } else {
+        return s;
+      }
+      ;
+    }
+    /**
+     * Removes trailing space characters of `s`.
+     *
+     * This function internally calls `isSpace()` to decide which characters to
+     * remove.
+     *
+     * If `s` is the empty String `""` or consists only of space characters, the
+     * result is the empty String `""`.
+     */
+    static rtrim(s) {
+      let l = s.length;
+      let r = 0;
+      while (r < l && StringTools2.isSpace(s, l - r - 1))
+        ++r;
+      if (r > 0) {
+        return HxOverrides.substr(s, 0, l - r);
+      } else {
+        return s;
+      }
+      ;
+    }
+    /**
+     * Removes leading and trailing space characters of `s`.
+     *
+     * This is a convenience function for `ltrim(rtrim(s))`.
+     */
+    static trim(s) {
+      return StringTools2.ltrim(StringTools2.rtrim(s));
+    }
+    static get __name__() {
+      return "StringTools";
+    }
+    get __class__() {
+      return StringTools2;
+    }
+  };
+
+  // js/client/hooks/AutoFocusHook.js
+  var $global3 = Register.$global;
+  var AutoFocusHook = Register.hxClasses()["client.hooks.AutoFocusHook"] = class AutoFocusHook2 {
+    static mounted(hook) {
+      try {
+        hook.el.focus();
+      } catch (_g) {
+      }
+      ;
+    }
+    static get __name__() {
+      return "client.hooks.AutoFocusHook";
+    }
+    get __class__() {
+      return AutoFocusHook2;
+    }
+  };
+
+  // js/shared/liveview/_HookClientEventsGenerated.js
+  var $global4 = Register.$global;
+  var HookClientEvents = Register.hxClasses()["HookClientEvents"] = class HookClientEvents2 {
+    static pushClipboardCopied(hook, message) {
+      if (hook.pushEvent != null) {
+        hook.pushEvent("clipboard_copied", { "message": message });
+      }
+      ;
+    }
+    static pushHookPing(hook) {
+      if (hook.pushEvent != null) {
+        hook.pushEvent("ping", {});
+      }
+      ;
+    }
+    static get __name__() {
+      return "HookClientEvents";
+    }
+    get __class__() {
+      return HookClientEvents2;
+    }
+  };
+
+  // js/client/hooks/PingHook.js
+  var $global5 = Register.$global;
+  var PingHook = Register.hxClasses()["client.hooks.PingHook"] = class PingHook2 {
+    static mounted(hook) {
+      try {
+        HookClientEvents.pushHookPing(hook);
+      } catch (_g) {
+      }
+      ;
+    }
+    static get __name__() {
+      return "client.hooks.PingHook";
+    }
+    get __class__() {
+      return PingHook2;
+    }
+  };
+
+  // js/client/hooks/CopyToClipboardHook.js
+  var $global6 = Register.$global;
+  var CopyToClipboardHook = Register.hxClasses()["client.hooks.CopyToClipboardHook"] = class CopyToClipboardHook2 {
+    static mounted(hook) {
+      let el = hook.el;
+      el.addEventListener("click", function(_) {
+        let text = el.getAttribute("data-copy-text");
+        if (text == null || text == "") {
+          return;
+        }
+        ;
+        CopyToClipboardHook2.copyText(text, function(_success) {
+          let message = el.getAttribute("data-copied-message");
+          if (message == null || message == "") {
+            message = "Copied.";
+          }
+          ;
+          try {
+            HookClientEvents.pushClipboardCopied(hook, message);
+          } catch (_g) {
+          }
+          ;
+          el.classList.add("copied");
+          window.setTimeout(function() {
+            el.classList.remove("copied");
+          }, 800);
+        });
+      });
+    }
+    static copyText(text, done) {
+      let clipboard = Register.$global.navigator.clipboard;
+      if (clipboard != null) {
+        try {
+          let promise = clipboard.writeText(text);
+          promise.then(function(_) {
+            done(true);
+          })["catch"](function(_) {
+            CopyToClipboardHook2.fallbackCopy(text, done);
+          });
+          return;
+        } catch (_g) {
+        }
+        ;
+      }
+      ;
+      CopyToClipboardHook2.fallbackCopy(text, done);
+    }
+    static fallbackCopy(text, done) {
+      let tmp = window.document.createElement("textarea");
+      tmp.value = text;
+      tmp.setAttribute("readonly", "");
+      tmp.style.position = "absolute";
+      tmp.style.left = "-9999px";
+      window.document.body.appendChild(tmp);
+      tmp.select();
+      let ok = false;
+      try {
+        ok = window.document.execCommand("copy");
+      } catch (_g) {
+      }
+      ;
+      try {
+        tmp.remove();
+      } catch (_g) {
+        if (tmp.parentNode != null) {
+          tmp.parentNode.removeChild(tmp);
+        }
+        ;
+      }
+      ;
+      done(ok);
+    }
+    static get __name__() {
+      return "client.hooks.CopyToClipboardHook";
+    }
+    get __class__() {
+      return CopyToClipboardHook2;
+    }
+  };
+
+  // js/client/utils/ThemePreference.js
+  var $global7 = Register.$global;
+  var ThemePreference = Register.hxClasses()["client.utils._ThemePreference.ThemePreference"] = class ThemePreference2 {
     static parse(value) {
       if (value == null) {
         return null;
@@ -6559,8 +6972,8 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   };
 
   // js/client/utils/Theme.js
-  var $global2 = Register.$global;
-  var Theme = Register.global("$hxClasses")["client.utils.Theme"] = class Theme2 {
+  var $global8 = Register.$global;
+  var Theme = Register.hxClasses()["client.utils.Theme"] = class Theme2 {
     static getMediaQuery() {
       if (window != null) {
         return window.matchMedia("(prefers-color-scheme: dark)");
@@ -6667,8 +7080,8 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   };
 
   // js/client/hooks/ThemeToggleHook.js
-  var $global3 = Register.$global;
-  var ThemeToggleHook = Register.global("$hxClasses")["client.hooks.ThemeToggleHook"] = class ThemeToggleHook2 {
+  var $global9 = Register.$global;
+  var ThemeToggleHook = Register.hxClasses()["client.hooks.ThemeToggleHook"] = class ThemeToggleHook2 {
     static labelFor(preference) {
       switch (preference) {
         case "dark":
@@ -6724,160 +7137,21 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   };
   ThemeToggleHook.handlers = /* @__PURE__ */ new WeakMap();
 
-  // js/shared/liveview/_HookClientEventsGenerated.js
-  var $global4 = Register.$global;
-  var HookClientEvents = Register.global("$hxClasses")["HookClientEvents"] = class HookClientEvents2 {
-    static pushClipboardCopied(hook, message) {
-      if (hook.pushEvent != null) {
-        hook.pushEvent("clipboard_copied", { message });
-      }
-      ;
-    }
-    static pushHookPing(hook) {
-      if (hook.pushEvent != null) {
-        hook.pushEvent("ping", {});
-      }
-      ;
-    }
-    static get __name__() {
-      return "HookClientEvents";
-    }
-    get __class__() {
-      return HookClientEvents2;
-    }
-  };
-
-  // js/client/hooks/PingHook.js
-  var $global5 = Register.$global;
-  var PingHook = Register.global("$hxClasses")["client.hooks.PingHook"] = class PingHook2 {
-    static mounted(hook) {
-      try {
-        HookClientEvents.pushHookPing(hook);
-      } catch (_g) {
-      }
-      ;
-    }
-    static get __name__() {
-      return "client.hooks.PingHook";
-    }
-    get __class__() {
-      return PingHook2;
-    }
-  };
-
-  // js/client/hooks/CopyToClipboardHook.js
-  var $global6 = Register.$global;
-  var CopyToClipboardHook = Register.global("$hxClasses")["client.hooks.CopyToClipboardHook"] = class CopyToClipboardHook2 {
-    static mounted(hook) {
-      let el = hook.el;
-      el.addEventListener("click", function(_) {
-        let text = el.getAttribute("data-copy-text");
-        if (text == null || text == "") {
-          return;
-        }
-        ;
-        CopyToClipboardHook2.copyText(text, function(_success) {
-          let message = el.getAttribute("data-copied-message");
-          if (message == null || message == "") {
-            message = "Copied.";
-          }
-          ;
-          try {
-            HookClientEvents.pushClipboardCopied(hook, message);
-          } catch (_g) {
-          }
-          ;
-          el.classList.add("copied");
-          window.setTimeout(function() {
-            el.classList.remove("copied");
-          }, 800);
-        });
-      });
-    }
-    static copyText(text, done) {
-      let clipboard = Register.$global.navigator.clipboard;
-      if (clipboard != null) {
-        try {
-          let promise = clipboard.writeText(text);
-          promise.then(function(_) {
-            done(true);
-          })["catch"](function(_) {
-            CopyToClipboardHook2.fallbackCopy(text, done);
-          });
-          return;
-        } catch (_g) {
-        }
-        ;
-      }
-      ;
-      CopyToClipboardHook2.fallbackCopy(text, done);
-    }
-    static fallbackCopy(text, done) {
-      let tmp = window.document.createElement("textarea");
-      tmp.value = text;
-      tmp.setAttribute("readonly", "");
-      tmp.style.position = "absolute";
-      tmp.style.left = "-9999px";
-      window.document.body.appendChild(tmp);
-      tmp.select();
-      let ok = false;
-      try {
-        ok = window.document.execCommand("copy");
-      } catch (_g) {
-      }
-      ;
-      try {
-        tmp.remove();
-      } catch (_g) {
-        if (tmp.parentNode != null) {
-          tmp.parentNode.removeChild(tmp);
-        }
-        ;
-      }
-      ;
-      done(ok);
-    }
-    static get __name__() {
-      return "client.hooks.CopyToClipboardHook";
-    }
-    get __class__() {
-      return CopyToClipboardHook2;
-    }
-  };
-
-  // js/client/hooks/AutoFocusHook.js
-  var $global7 = Register.$global;
-  var AutoFocusHook = Register.global("$hxClasses")["client.hooks.AutoFocusHook"] = class AutoFocusHook2 {
-    static mounted(hook) {
-      try {
-        hook.el.focus();
-      } catch (_g) {
-      }
-      ;
-    }
-    static get __name__() {
-      return "client.hooks.AutoFocusHook";
-    }
-    get __class__() {
-      return AutoFocusHook2;
-    }
-  };
-
   // js/shared/channels/PingProtocol.js
-  var $global8 = Register.$global;
-  var PingClientEvent = Register.global("$hxEnums")["shared.channels.PingClientEvent"] = {
+  var $global10 = Register.$global;
+  var PingClientEvent = Register.hxEnums()["shared.channels.PingClientEvent"] = {
     __ename__: "shared.channels.PingClientEvent",
     Ping: Object.assign((payload) => ({ _hx_index: 0, __enum__: "shared.channels.PingClientEvent", "payload": payload }), { _hx_name: "Ping", __params__: ["payload"] })
   };
   PingClientEvent.__constructs__ = [PingClientEvent.Ping];
   PingClientEvent.__empty_constructs__ = [];
-  var PingServerEvent = Register.global("$hxEnums")["shared.channels.PingServerEvent"] = {
+  var PingServerEvent = Register.hxEnums()["shared.channels.PingServerEvent"] = {
     __ename__: "shared.channels.PingServerEvent",
     Pong: Object.assign((payload) => ({ _hx_index: 0, __enum__: "shared.channels.PingServerEvent", "payload": payload }), { _hx_name: "Pong", __params__: ["payload"] })
   };
   PingServerEvent.__constructs__ = [PingServerEvent.Pong];
   PingServerEvent.__empty_constructs__ = [];
-  var PingProtocol = Register.global("$hxClasses")["shared.channels.PingProtocol"] = class PingProtocol2 {
+  var PingProtocol = Register.hxClasses()["shared.channels.PingProtocol"] = class PingProtocol2 {
     static encodeClientSend(event) {
       let payload = event.payload;
       return { "event": "ping", "payload": PingProtocol2.pingPayloadCodec.encode(payload) };
@@ -6953,8 +7227,8 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   }(void 0);
 
   // js/phoenix/channels/TypedChannelClient.js
-  var $global9 = Register.$global;
-  var TypedChannelClient = Register.global("$hxClasses")["phoenix.channels.TypedChannelClient"] = class TypedChannelClient2 extends Register.inherits() {
+  var $global11 = Register.$global;
+  var TypedChannelClient = Register.hxClasses()["phoenix.channels.TypedChannelClient"] = class TypedChannelClient2 extends Register.inherits() {
     [Register.new](channel, encodeSend, decodeRecv, eventNames) {
       this.channel = channel;
       this.encodeSend = encodeSend;
@@ -7005,125 +7279,9 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   TypedChannelClient.prototype.decodeRecv = null;
   TypedChannelClient.prototype.handlers = null;
 
-  // js/HxOverrides.js
-  var $global10 = Register.$global;
-  var HxOverrides = Register.global("$hxClasses")["HxOverrides"] = class HxOverrides2 {
-    static cca(s, index) {
-      let x = s.charCodeAt(index);
-      if (x != x) {
-        return void 0;
-      }
-      ;
-      return x;
-    }
-    static substr(s, pos, len) {
-      if (len == null) {
-        len = s.length;
-      } else if (len < 0) {
-        if (pos == 0) {
-          len = s.length + len;
-        } else {
-          return "";
-        }
-        ;
-      }
-      ;
-      return s.substr(pos, len);
-    }
-    static now() {
-      return Date.now();
-    }
-    static get __name__() {
-      return "HxOverrides";
-    }
-    get __class__() {
-      return HxOverrides2;
-    }
-  };
-  (typeof performance != "undefined" ? typeof performance.now == "function" : false) ? HxOverrides.now = performance.now.bind(performance) : null;
-
-  // js/StringTools.js
-  var $global11 = Register.$global;
-  var StringTools = Register.global("$hxClasses")["StringTools"] = class StringTools2 {
-    /**
-    Tells if the character in the string `s` at position `pos` is a space.
-    
-    A character is considered to be a space character if its character code
-    is 9,10,11,12,13 or 32.
-    
-    If `s` is the empty String `""`, or if pos is not a valid position within
-    `s`, the result is false.
-    */
-    static isSpace(s, pos) {
-      let c = HxOverrides.cca(s, pos);
-      if (!(c > 8 && c < 14)) {
-        return c == 32;
-      } else {
-        return true;
-      }
-      ;
-    }
-    /**
-    Removes leading space characters of `s`.
-    
-    This function internally calls `isSpace()` to decide which characters to
-    remove.
-    
-    If `s` is the empty String `""` or consists only of space characters, the
-    result is the empty String `""`.
-    */
-    static ltrim(s) {
-      let l = s.length;
-      let r = 0;
-      while (r < l && StringTools2.isSpace(s, r))
-        ++r;
-      if (r > 0) {
-        return HxOverrides.substr(s, r, l - r);
-      } else {
-        return s;
-      }
-      ;
-    }
-    /**
-    Removes trailing space characters of `s`.
-    
-    This function internally calls `isSpace()` to decide which characters to
-    remove.
-    
-    If `s` is the empty String `""` or consists only of space characters, the
-    result is the empty String `""`.
-    */
-    static rtrim(s) {
-      let l = s.length;
-      let r = 0;
-      while (r < l && StringTools2.isSpace(s, l - r - 1))
-        ++r;
-      if (r > 0) {
-        return HxOverrides.substr(s, 0, l - r);
-      } else {
-        return s;
-      }
-      ;
-    }
-    /**
-    Removes leading and trailing space characters of `s`.
-    
-    This is a convenience function for `ltrim(rtrim(s))`.
-    */
-    static trim(s) {
-      return StringTools2.ltrim(StringTools2.rtrim(s));
-    }
-    static get __name__() {
-      return "StringTools";
-    }
-    get __class__() {
-      return StringTools2;
-    }
-  };
-
   // js/client/channels/PingChannelClient.js
   var $global12 = Register.$global;
-  var PingChannelClient = Register.global("$hxClasses")["client.channels.PingChannelClient"] = class PingChannelClient2 {
+  var PingChannelClient = Register.hxClasses()["client.channels.PingChannelClient"] = class PingChannelClient2 {
     static readCsrfToken() {
       let meta = window.document.querySelector("meta[name='csrf-token']");
       if (meta == null) {
@@ -7166,7 +7324,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
 
   // js/client/Boot.js
   var $global13 = Register.$global;
-  var Boot = Register.global("$hxClasses")["client.Boot"] = class Boot2 {
+  var Boot = Register.hxClasses()["client.Boot"] = class Boot2 {
     static readCsrfToken() {
       let meta = window.document.querySelector("meta[name='csrf-token']");
       if (meta == null) {
@@ -7188,7 +7346,8 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
       window.liveSocket = liveSocket;
     }
     static buildHooks() {
-      let hooks = {};
+      let this1 = {};
+      let hooks = this1;
       hooks["AutoFocus"] = { "mounted": function() {
         AutoFocusHook.mounted(this);
       } };

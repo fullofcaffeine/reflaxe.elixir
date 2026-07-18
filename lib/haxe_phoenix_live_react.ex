@@ -976,13 +976,19 @@ defmodule HaxePhoenixLiveReact do
   end
 
   defp detect_client_mode(root) do
-    indicators = [
+    structural_indicators = [
       Path.join(root, "build-client.hxml"),
-      Path.join([root, "src_haxe", "client", "Boot.hx"]),
-      Path.join([root, "haxe_libraries", "genes.hxml"])
+      Path.join([root, "src_haxe", "client", "Boot.hx"])
     ]
 
-    if Enum.all?(indicators, fn path -> File.regular?(path) end), do: :genes, else: :plain_js
+    canonical_genes = Path.join([root, "haxe_libraries", "genes-ts.hxml"])
+    compatibility_alias = Path.join([root, "haxe_libraries", "genes.hxml"])
+    has_genes_descriptor = File.regular?(canonical_genes) or File.regular?(compatibility_alias)
+
+    if Enum.all?(structural_indicators, fn path -> File.regular?(path) end) and
+         has_genes_descriptor,
+       do: :genes,
+       else: :plain_js
   end
 
   defp read_required_sources(topology) do

@@ -771,9 +771,9 @@ defmodule HaxePhoenixLiveReactTest do
     """)
 
     if client_mode == :genes do
-      write!(root, "build-client.hxml", "-lib genes\n")
+      write!(root, "build-client.hxml", "-lib genes-ts\n")
       write!(root, "src_haxe/client/Boot.hx", "package client; class Boot {}\n")
-      write!(root, "haxe_libraries/genes.hxml", "-cp vendor/genes/src\n")
+      write!(root, "haxe_libraries/genes-ts.hxml", "# exact test fixture pin\n")
     end
 
     root

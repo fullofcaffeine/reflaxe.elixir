@@ -163,9 +163,10 @@ Safety rules:
 
 ## Project-Local `haxe_libraries/*.hxml` Stubs
 
-`mix haxe.phoenix.scaffold` also creates project-local `haxe_libraries/*.hxml` stubs needed by `build-client.hxml`:
+`mix haxe.phoenix.scaffold` also creates project-local `haxe_libraries/*.hxml` descriptors needed by `build-client.hxml`:
 
-- `haxe_libraries/genes.hxml`
+- `haxe_libraries/genes-ts.hxml` — the exact external Genes revision
+- `haxe_libraries/genes.hxml` — a temporary compatibility alias that delegates to `genes-ts`
 - `haxe_libraries/phoenix_js.hxml`
 - `haxe_libraries/helder.set.hxml`
 
@@ -174,4 +175,6 @@ These are signature-managed:
 - If a file contains the scaffold signature, reruns can update it safely.
 - If you remove the signature line, the file becomes user-owned and will not be overwritten.
 
-This makes client builds reproducible without relying on global haxelib state.
+The two Genes names must resolve one immutable compiler tree; the alias must
+never carry a second source path. This makes client builds reproducible without
+relying on global haxelib state or a sibling checkout.

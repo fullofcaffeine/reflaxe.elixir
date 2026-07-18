@@ -3,7 +3,7 @@ import {Register} from "../../genes/Register.js"
 
 const $global = Register.$global
 
-export const PingHook = Register.global("$hxClasses")["client.hooks.PingHook"] =
+export const PingHook = Register.hxClasses()["client.hooks.PingHook"] =
 class PingHook {
 	static mounted(hook) {
 		try {
@@ -18,4 +18,3 @@ class PingHook {
 		return PingHook
 	}
 }
-

@@ -236,7 +236,7 @@ class Date {
 - **Recommended**: For Phoenix apps, use **Genes** on top of the Haxe JS target to emit readable ES modules (used in the todo-app).
 - **Custom JS Only When**: Features don’t exist in standard Haxe (e.g., async/await ergonomics) or require specific Phoenix integration points.
 - **Benefits**: Reduced maintenance burden, clear project scope, and better compatibility with existing JS tooling.
-- **Implementation**: Client builds live in app-local `build-client.hxml` and use `-lib genes`; the Elixir compiler remains framework-agnostic and server-focused.
+- **Implementation**: Client builds live in app-local `build-client.hxml` and use the exact-pinned `-lib genes-ts`; the Elixir compiler remains framework-agnostic and server-focused.
 - **See**: [JavaScript Patterns](../07-patterns/JAVASCRIPT_PATTERNS.md) - Current JS patterns and client build guidance
 
 ## Development Workflow Guidelines

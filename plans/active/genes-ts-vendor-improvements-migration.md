@@ -809,7 +809,7 @@ The downstream migration is tracked as:
 
 ```text
 haxe.elixir.codex-m52
-Evaluate replacing vendored genes 0.4.14 with released genes-ts
+Replace vendored Genes with pinned genes-ts and prove PhoenixHX parity
 ```
 
 Do not close that downstream task from the Genes repository.
@@ -828,6 +828,16 @@ canonical `main`: the squash commit when the PR was squash-merged, or the merge
 commit when it was merged normally. When a release is admitted, advance to its
 exact commit/artifact. A stable downstream release cannot retain an unmerged
 topic/fork pin.
+
+That stable-promotion repin is tracked explicitly as:
+
+```text
+haxe.elixir.codex-aas
+Repin PhoenixHX Genes to the canonical merged or release commit
+```
+
+It is discovered from `haxe.elixir.codex-m52` and does not block the current
+experimental integration lane. It becomes mandatory before stable promotion.
 
 The canonical operational policy is
 `docs/03-compiler-development/GENES_DEPENDENCY_WORKFLOW.md` in the downstream

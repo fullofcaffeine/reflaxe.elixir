@@ -147,7 +147,7 @@ No compilation                →    Haxe compile-time validation
 
 2. **Compile-time hook registry (Genes)**
    ```haxe
-   // Client entrypoint (compiled via -lib genes)
+   // Client entrypoint (compiled via -lib genes-ts)
    var hooks = HookRegistry.build({
      AutoFocus: { mounted: function(): Void { AutoFocusHook.mounted(hookContext()); } },
      ThemeToggle: { mounted: function(): Void { ThemeToggleHook.mounted(hookContext()); } }

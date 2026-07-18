@@ -3,22 +3,22 @@ import {Register} from "../../genes/Register.js"
 const $global = Register.$global
 
 /**
-* TypedChannelClient
-*
-* WHAT
-* - A small typed wrapper over Phoenix JS Channels (`phoenix` npm package).
-*
-* WHY
-* - Channels are a client/server boundary; we want a minimal type-safe layer for:
-*   - encoding typed outbound messages to `{event, payload}`
-*   - decoding inbound `{eventName, payload}` to typed messages
-* - The runtime API remains Phoenix-native (`channel.join().receive(...)`, `channel.push(...)`).
-*
-* HOW
-* - Register `channel.on(eventName, ...)` handlers for the selected event names.
-* - Each inbound payload is decoded and broadcast to all registered `onMessage` handlers.
-*/
-export const TypedChannelClient = Register.global("$hxClasses")["phoenix.channels.TypedChannelClient"] =
+ * TypedChannelClient
+ *
+ * WHAT
+ * - A small typed wrapper over Phoenix JS Channels (`phoenix` npm package).
+ *
+ * WHY
+ * - Channels are a client/server boundary; we want a minimal type-safe layer for:
+ *   - encoding typed outbound messages to `{event, payload}`
+ *   - decoding inbound `{eventName, payload}` to typed messages
+ * - The runtime API remains Phoenix-native (`channel.join().receive(...)`, `channel.push(...)`).
+ *
+ * HOW
+ * - Register `channel.on(eventName, ...)` handlers for the selected event names.
+ * - Each inbound payload is decoded and broadcast to all registered `onMessage` handlers.
+ */
+export const TypedChannelClient = Register.hxClasses()["phoenix.channels.TypedChannelClient"] =
 class TypedChannelClient extends Register.inherits() {
 	[Register.new](channel, encodeSend, decodeRecv, eventNames) {
 		this.channel = channel;
@@ -66,4 +66,3 @@ TypedChannelClient.prototype.channel = null;
 TypedChannelClient.prototype.encodeSend = null;
 TypedChannelClient.prototype.decodeRecv = null;
 TypedChannelClient.prototype.handlers = null;
-

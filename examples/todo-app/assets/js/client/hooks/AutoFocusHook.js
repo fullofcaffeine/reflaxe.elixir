@@ -2,7 +2,7 @@ import {Register} from "../../genes/Register.js"
 
 const $global = Register.$global
 
-export const AutoFocusHook = Register.global("$hxClasses")["client.hooks.AutoFocusHook"] =
+export const AutoFocusHook = Register.hxClasses()["client.hooks.AutoFocusHook"] =
 class AutoFocusHook {
 	static mounted(hook) {
 		try {
@@ -17,4 +17,3 @@ class AutoFocusHook {
 		return AutoFocusHook
 	}
 }
-

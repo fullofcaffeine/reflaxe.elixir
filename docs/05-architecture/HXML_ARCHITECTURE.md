@@ -87,13 +87,10 @@ server.live.TodoLive
 -cp src_haxe
 -cp src_shared
 
-# Enable Genes ES6 module generator (uses haxe_libraries/genes.hxml)
--lib genes
-
-# Modern JavaScript features
--D js-es=6
---macro genes.Generator.use()
---macro addMetadata('@:genes.disableNativeAccessors', 'haxe.Exception')
+# Enable the externally pinned Genes compiler. Its Lix descriptor delegates to
+# upstream extraParams.hxml, which owns the generator, async, inline-markup,
+# JavaScript-target, and native-accessor macro configuration.
+-lib genes-ts
 
 # JavaScript target output (kept separate from Phoenix bootstrap)
 #
@@ -397,13 +394,7 @@ TodoApp
 -cp src_haxe/client
 -cp src_haxe
 -cp src_shared
--lib genes
-
-# NOTE: Our vendored `-lib genes` does not automatically apply genes/extraParams.hxml,
-# so we explicitly enable the generator here.
--D js-es=6
---macro genes.Generator.use()
---macro addMetadata('@:genes.disableNativeAccessors', 'haxe.Exception')
+-lib genes-ts
 
 -js assets/js/_hx_app_tmp.js
 -D js-unflatten
@@ -436,7 +427,7 @@ unexpected macro errors (e.g., “no field setCustomJSGenerator” on
 Rules for JS client HXML (e.g., `examples/todo-app/build-client.hxml`):
 - Only include application client sources and dedicated shared roots (e.g., `-cp src_haxe`,
   `-cp src_haxe/client`, `-cp src_shared`).
-- Pull generators/libraries via `-lib` (e.g., `-lib genes`), letting
+- Pull generators/libraries via `-lib` (for example, `-lib genes-ts`), letting
   `haxe_libraries/<lib>.hxml` provide their classpaths and macros.
 - Do not include repo-level `std/` or `src/` in client builds.
 

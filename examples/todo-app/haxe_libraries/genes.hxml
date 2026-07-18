@@ -1,4 +1,3 @@
-# Local vendor wiring for genes in the monorepo
-# Keep app-local classpath to avoid global coupling
--cp ../../vendor/genes/src
--D genes
+# Compatibility alias for projects that still use `-lib genes`.
+-lib genes-ts
+-D genes=1.36.3

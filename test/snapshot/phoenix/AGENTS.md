@@ -154,7 +154,7 @@ The complete Phoenix development experience in Haxe:
 ## 📖 Documentation References
 
 - **Async/Await Specification**: See `docs/04-api-reference/async-await-specification.md`
-- **genes Integration**: See `vendor/genes/README.md`
+- **Genes integration**: See `docs/03-compiler-development/GENES_DEPENDENCY_WORKFLOW.md`
 - **Full-Stack Guide**: See `docs/02-user-guide/full-stack-phoenix.md`
 - **HXX Template Guide**: See `docs/02-user-guide/hxx-templates.md`
 

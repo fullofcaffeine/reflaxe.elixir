@@ -1,22 +1,22 @@
+import {StringTools} from "../StringTools.js"
 import {LiveSocket} from "phoenix_live_view"
 import {Socket} from "phoenix"
-import {Register} from "../genes/Register.js"
-import {Theme} from "./utils/Theme.js"
-import {ThemeToggleHook} from "./hooks/ThemeToggleHook.js"
+import {AutoFocusHook} from "./hooks/AutoFocusHook.js"
 import {PingHook} from "./hooks/PingHook.js"
 import {CopyToClipboardHook} from "./hooks/CopyToClipboardHook.js"
-import {AutoFocusHook} from "./hooks/AutoFocusHook.js"
+import {ThemeToggleHook} from "./hooks/ThemeToggleHook.js"
+import {Theme} from "./utils/Theme.js"
 import {PingChannelClient} from "./channels/PingChannelClient.js"
-import {StringTools} from "../StringTools.js"
+import {Register} from "../genes/Register.js"
 
 const $global = Register.$global
 
 /**
-* Minimal, typed Phoenix LiveView hook registry for bootstrapping interactivity.
-* Avoids raw JS strings; uses typed Haxe that compiles via Genes.
-* Only uses dynamic interop at the Phoenix Hook boundary (`this` context).
-*/
-export const Boot = Register.global("$hxClasses")["client.Boot"] =
+ * Minimal, typed Phoenix LiveView hook registry for bootstrapping interactivity.
+ * Avoids raw JS strings; uses typed Haxe that compiles via Genes.
+ * Only uses dynamic interop at the Phoenix Hook boundary (`this` context).
+ */
+export const Boot = Register.hxClasses()["client.Boot"] =
 class Boot {
 	static readCsrfToken() {
 		let meta = window.document.querySelector("meta[name='csrf-token']");
@@ -37,7 +37,8 @@ class Boot {
 		window.liveSocket = liveSocket;
 	}
 	static buildHooks() {
-		let hooks = {};
+		let this1 = {};
+		let hooks = this1;
 		hooks["AutoFocus"] = {"mounted": function () {
 			AutoFocusHook.mounted(this);
 		}};
@@ -68,4 +69,3 @@ class Boot {
 		return Boot
 	}
 }
-

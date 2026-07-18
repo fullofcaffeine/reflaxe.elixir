@@ -3,26 +3,24 @@ import {Register} from "../../genes/Register.js"
 const $global = Register.$global
 
 export const PingClientEvent =
-Register.global("$hxEnums")["shared.channels.PingClientEvent"] =
+Register.hxEnums()["shared.channels.PingClientEvent"] =
 {
 	__ename__: "shared.channels.PingClientEvent",
-	
 	Ping: Object.assign((payload) => ({_hx_index: 0, __enum__: "shared.channels.PingClientEvent", "payload": payload}), {_hx_name: "Ping", __params__: ["payload"]})
 }
 PingClientEvent.__constructs__ = [PingClientEvent.Ping]
 PingClientEvent.__empty_constructs__ = []
 
 export const PingServerEvent =
-Register.global("$hxEnums")["shared.channels.PingServerEvent"] =
+Register.hxEnums()["shared.channels.PingServerEvent"] =
 {
 	__ename__: "shared.channels.PingServerEvent",
-	
 	Pong: Object.assign((payload) => ({_hx_index: 0, __enum__: "shared.channels.PingServerEvent", "payload": payload}), {_hx_name: "Pong", __params__: ["payload"]})
 }
 PingServerEvent.__constructs__ = [PingServerEvent.Pong]
 PingServerEvent.__empty_constructs__ = []
 
-export const PingProtocol = Register.global("$hxClasses")["shared.channels.PingProtocol"] =
+export const PingProtocol = Register.hxClasses()["shared.channels.PingProtocol"] =
 class PingProtocol {
 	static encodeClientSend(event) {
 		let payload = event.payload;
@@ -74,7 +72,6 @@ PingProtocol.pingPayloadCodec = (function($this) {var $r0
 	let getA = function (payload) {
 		return payload.requestId;
 	};
-	
 	$r0 = {"encode": function (value) {
 		let payload = {};
 		let fieldA1 = fieldA;

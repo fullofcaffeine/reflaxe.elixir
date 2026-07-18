@@ -5,16 +5,10 @@
 -cp src_haxe/client
 -cp src_haxe
 -cp src_shared
-# Enable Genes ES6 module generator (uses haxe_libraries/genes.hxml)
--lib genes
+# Compile browser source through the pinned genes-ts classic ESM profile.
+-lib genes-ts
 # Typed Phoenix JS externs (Channels + LiveView)
 -lib phoenix_js
-
-# NOTE: Our vendored `-lib genes` does not automatically apply genes/extraParams.hxml,
-# so we explicitly enable the generator here.
--D js-es=6
---macro genes.Generator.use()
---macro addMetadata('@:genes.disableNativeAccessors', 'haxe.Exception')
 
 # JavaScript target output
 #

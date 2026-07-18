@@ -1,4 +1,7 @@
 defmodule HaxePhoenixScaffold do
+  # TRANSITIONAL HOST ADAPTER: this module predates the repository-wide Haxe-first rule.
+  # New deterministic scaffold policy is authored in Haxe and called through generated modules;
+  # the remaining orchestration migration is tracked by haxe.elixir.codex-6nb.
   @moduledoc """
   Phoenix client scaffold for Reflaxe.Elixir projects.
 
@@ -253,11 +256,12 @@ defmodule HaxePhoenixScaffold do
         "deps/reflaxe_elixir"
       end
 
-    # These .hxml files live in the Phoenix project itself (not in this repo). They are required
-    # so client builds can resolve `-lib genes` and `-lib phoenix_js` without needing global haxelib
-    # state. The files are signature-managed so reruns can update them without clobbering user edits.
+    # HAXE-FIRST POLICY BOUNDARY: immutable dependency identity, rendered HXML, and legacy
+    # migration rules live in the checked-in Haxe-authored GenesContract module. This adapter only
+    # adds the returned content to the existing ownership-safe transaction.
     helder_set_desired = helder_set_hxml()
-    genes_desired = genes_hxml(relative_dep_path)
+    genes_ts_desired = HaxePhoenixScaffold.GenesContract.genes_ts_hxml()
+    genes_alias_desired = HaxePhoenixScaffold.GenesContract.genes_alias_hxml()
     phoenix_js_desired = phoenix_js_hxml(relative_dep_path)
 
     plan =
@@ -271,9 +275,17 @@ defmodule HaxePhoenixScaffold do
     plan =
       ProjectPatch.ensure_file!(
         plan,
+        Path.join([project_root, "haxe_libraries", "genes-ts.hxml"]),
+        genes_ts_desired,
+        &HaxePhoenixScaffold.GenesContract.patch_genes_ts_hxml/1
+      )
+
+    plan =
+      ProjectPatch.ensure_file!(
+        plan,
         Path.join([project_root, "haxe_libraries", "genes.hxml"]),
-        genes_desired,
-        &maybe_patch_scaffolded_file(&1, genes_hxml_signature(), genes_desired)
+        genes_alias_desired,
+        &HaxePhoenixScaffold.GenesContract.patch_genes_alias_hxml/1
       )
 
     ProjectPatch.ensure_file!(
@@ -412,6 +424,11 @@ defmodule HaxePhoenixScaffold do
         Path.join([project_root, "haxe_libraries", "genes.hxml"]),
         &managed_genes_stub?/1,
         "Remove scaffold-managed haxe_libraries/genes.hxml"
+      },
+      {
+        Path.join([project_root, "haxe_libraries", "genes-ts.hxml"]),
+        &managed_genes_ts_stub?/1,
+        "Remove scaffold-managed haxe_libraries/genes-ts.hxml"
       },
       {
         Path.join([project_root, "haxe_libraries", "phoenix_js.hxml"]),
@@ -619,31 +636,8 @@ defmodule HaxePhoenixScaffold do
     end
   end
 
-  @build_client_hxml_signature "reflaxe_elixir:build_client_hxml:v1"
-
   defp maybe_patch_build_client_hxml(content) do
-    case ProjectPatch.signature_status(content, @build_client_hxml_signature) do
-      :owned ->
-        build_client_hxml()
-
-      :unowned ->
-        cond do
-          String.contains?(content, "assets/js/_hx_app_tmp.js") ->
-            content
-
-          String.contains?(content, "-js assets/js/hx_app.js") ->
-            String.replace(content, "-js assets/js/hx_app.js", "-js assets/js/_hx_app_tmp.js")
-
-          true ->
-            # If the user already has a custom `-js` target, don't rewrite it.
-            # The rest of the scaffold assumes `assets/js/hx_app.js` is stable and provided via promotion,
-            # so we only auto-migrate the common default.
-            content
-        end
-
-      {:error, reason} ->
-        raise "duplicate scaffold ownership signature #{inspect(@build_client_hxml_signature)}: #{inspect(reason)}"
-    end
+    HaxePhoenixScaffold.GenesContract.patch_build_client_hxml(content)
   end
 
   @hx_app_stub_signature "reflaxe_elixir:hx_app_stub:v1"
@@ -655,10 +649,7 @@ defmodule HaxePhoenixScaffold do
   end
 
   defp managed_build_client_hxml?(content) when is_binary(content) do
-    normalized = normalize_scaffold_content(content)
-
-    normalized == normalize_scaffold_content(build_client_hxml()) or
-      normalized == normalize_scaffold_content(build_client_hxml_legacy())
+    HaxePhoenixScaffold.GenesContract.managed_build_client_hxml(content)
   end
 
   defp managed_client_boot_hx?(content) when is_binary(content) do
@@ -670,7 +661,11 @@ defmodule HaxePhoenixScaffold do
   end
 
   defp managed_genes_stub?(content) when is_binary(content) do
-    owned_signature?(content, genes_hxml_signature())
+    HaxePhoenixScaffold.GenesContract.managed_genes_alias_hxml(content)
+  end
+
+  defp managed_genes_ts_stub?(content) when is_binary(content) do
+    HaxePhoenixScaffold.GenesContract.managed_genes_ts_hxml(content)
   end
 
   defp managed_phoenix_js_stub?(content) when is_binary(content) do
@@ -1436,66 +1431,11 @@ defmodule HaxePhoenixScaffold do
   end
 
   defp build_client_hxml do
-    """
-    # Haxe→JavaScript compilation for Phoenix LiveView client-side code
-    # Generates ES6 modules compatible with esbuild
-
-    # Source directories (client only)
-    -cp src_haxe/client
-    -cp src_haxe
-    # Enable Genes ES6 module generator (uses haxe_libraries/genes.hxml)
-    -lib genes
-    # Typed Phoenix JS externs (Channels + LiveView)
-    -lib phoenix_js
-
-    # NOTE: Our vendored `-lib genes` does not automatically apply genes/extraParams.hxml,
-    # so we explicitly enable the generator here.
-    -D js-es=6
-    --macro genes.Generator.use()
-    --macro addMetadata('@:genes.disableNativeAccessors', 'haxe.Exception')
-
-    # JavaScript target output
-    #
-    # IMPORTANT:
-    # Haxe deletes the `-js` output file at the start of compilation. Since Phoenix runs esbuild in
-    # `--watch` mode and `assets/js/app.js` imports `./hx_app.js`, that temporary deletion can race
-    # esbuild and produce transient "Could not resolve ./hx_app.js" errors.
-    #
-    # To keep esbuild stable in watch mode, compile into a temporary entry file and then promote
-    # it into a stable path used by esbuild imports:
-    # - Haxe writes `assets/js/_hx_app_tmp.js` (and deletes it during rebuilds).
-    # - A watcher promotes that output into the stable `assets/js/hx_app.js` path atomically.
-    -js assets/js/_hx_app_tmp.js
-    -D js-unflatten
-    --dce=full
-
-    # Haxe 4.3+ optimizations
-    -D real-position
-    -D js-source-map
-
-    # Exclude server code from client compilation
-    --macro exclude('server')
-
-    # Main client entry point
-    -main client.Boot
-    """
-  end
-
-  defp build_client_hxml_legacy do
-    build_client_hxml()
-    |> String.replace(
-      "To keep esbuild stable in watch mode, compile into a temporary entry file and then promote\n    # it into a stable path used by esbuild imports:\n    # - Haxe writes `assets/js/_hx_app_tmp.js` (and deletes it during rebuilds).\n    # - A watcher promotes that output into the stable `assets/js/hx_app.js` path atomically.\n    ",
-      ""
-    )
-    |> String.replace("-js assets/js/_hx_app_tmp.js", "-js assets/js/hx_app.js")
+    HaxePhoenixScaffold.GenesContract.build_client_hxml()
   end
 
   defp helder_set_hxml_signature do
     "#{@haxe_lib_stub_signature_prefix}:helder.set:v1"
-  end
-
-  defp genes_hxml_signature do
-    "#{@haxe_lib_stub_signature_prefix}:genes:v1"
   end
 
   defp phoenix_js_hxml_signature do
@@ -1513,25 +1453,6 @@ defmodule HaxePhoenixScaffold do
     # @install: lix --silent download "haxelib:/helder.set#0.3.1" into helder.set/0.3.1/haxelib
     -cp ${HAXE_LIBCACHE}/helder.set/0.3.1/haxelib/src
     -D helder.set=0.3.1
-    """
-  end
-
-  defp genes_hxml(reflaxe_elixir_rel_path) when is_binary(reflaxe_elixir_rel_path) do
-    """
-    # #{genes_hxml_signature()}
-    # genes — ES6 JavaScript generator (vendored inside reflaxe_elixir)
-    #
-    # This file is scaffold-managed by `mix haxe.phoenix.scaffold`. If you customize it, remove
-    # the signature line above to opt out of future updates.
-
-    # genes core sources (vendored)
-    -cp ${SCOPE_DIR}/#{reflaxe_elixir_rel_path}/vendor/genes/src
-
-    # genes depends on helder.set for its Set<T> abstraction
-    -lib helder.set
-
-    # Library define for conditional compilation flags
-    -D genes=0.4.14
     """
   end
 

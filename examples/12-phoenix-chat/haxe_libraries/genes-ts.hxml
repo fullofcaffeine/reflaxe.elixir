@@ -1,0 +1,7 @@
+# reflaxe_elixir:scaffolded_haxe_library:genes-ts:v1
+# Temporary admission pin from codex/output-blank-line-whitespace; replace with the canonical merge or release commit.
+# @install: lix --silent download "gh://github.com/fullofcaffeine/genes-ts#51dc422c2ec930604dfd928d2a112ead354362e3" into genes-ts/1.36.3/github/51dc422c2ec930604dfd928d2a112ead354362e3
+-lib helder.set
+${HAXE_LIBCACHE}/genes-ts/1.36.3/github/51dc422c2ec930604dfd928d2a112ead354362e3/extraParams.hxml
+-cp ${HAXE_LIBCACHE}/genes-ts/1.36.3/github/51dc422c2ec930604dfd928d2a112ead354362e3/src
+-D genes-ts=1.36.3

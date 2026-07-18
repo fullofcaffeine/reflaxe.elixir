@@ -3,12 +3,8 @@
 -cp src_haxe/client
 -cp src_haxe
 
--lib genes
+-lib genes-ts
 -lib phoenix_js
-
--D js-es=6
---macro genes.Generator.use()
---macro addMetadata('@:genes.disableNativeAccessors', 'haxe.Exception')
 
 # Use temp output + promotion to avoid watch races while esbuild watches imports.
 -js assets/js/_hx_app_tmp.js

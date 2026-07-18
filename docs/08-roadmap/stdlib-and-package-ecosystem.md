@@ -259,10 +259,13 @@ The public Haxe namespace is frozen as `phoenix.live_react`. Its low-level std
 declaration is API-faithful; strict application props remain in discoverable
 app-local `@:component` wrappers. Mix resolves the canonical upstream checkout,
 npm consumes that exact checkout through a checked project-relative `file:`
-reference, and Vite is the enabled lane's only JavaScript bundler. The current
-vendored Genes source mode and `plain-js` are both initial inputs; moving to a
-released `genes-ts` artifact is a separate nonblocking migration and no sibling
-checkout is part of the package contract.
+reference, and Vite is the enabled lane's only JavaScript bundler. The `genes`
+client mode consumes an exact, fetchable external `genes-ts` commit through Lix;
+`plain-js` remains the other initial input. The repository no longer carries a
+second vendored Genes compiler, and no sibling checkout or worktree is part of
+the package contract. Temporary upstream fixes may be pinned by exact pushed
+topic SHA and must move to the commit that actually lands on canonical `main`
+or to an admitted release commit.
 
 The integration may ship in the existing Haxelib initially because it is
 opt-in and tightly coupled to PhoenixHx component discovery, scaffolding, and

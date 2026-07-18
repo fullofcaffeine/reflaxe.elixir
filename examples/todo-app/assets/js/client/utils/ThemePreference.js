@@ -2,7 +2,7 @@ import {Register} from "../../genes/Register.js"
 
 const $global = Register.$global
 
-export const ThemePreference = Register.global("$hxClasses")["client.utils._ThemePreference.ThemePreference"] =
+export const ThemePreference = Register.hxClasses()["client.utils._ThemePreference.ThemePreference"] =
 class ThemePreference {
 	static parse(value) {
 		if (value == null) {
@@ -20,7 +20,6 @@ class ThemePreference {
 					break
 				default:
 				return null;
-				
 			};
 		};
 	}
@@ -31,4 +30,3 @@ class ThemePreference {
 		return ThemePreference
 	}
 }
-

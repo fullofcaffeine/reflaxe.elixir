@@ -353,7 +353,7 @@ Use this loop to implement/verify user-facing features end‑to‑end without co
 ### 🧭 JS Client Build Guardrails (Classpath)
 
 - For browser JS builds (e.g., `examples/todo-app/build-client.hxml`), do not add repository-level classpaths like `../../std`, `../../src`, or vendored sources directly.
-- Use `-lib` to bring in libraries (e.g., `-lib genes`); their `haxe_libraries/*.hxml` files provide the correct classpaths and macros.
+- Use `-lib` to bring in libraries (for example, canonical `-lib genes-ts`; `-lib genes` is a temporary compatibility alias); their `haxe_libraries/*.hxml` files provide the correct classpaths and macros.
 - Rationale: Adding repo `std/` can shadow the official Haxe std macros (e.g., `haxe.macro.Compiler`) and trigger false “missing field” errors.
 - Quick check: `haxe -v build-client.hxml` should show client source paths, library paths from `haxe_libraries/`, and the official Haxe std — not the repo’s `std/`.
 
@@ -1059,302 +1059,51 @@ Ask yourself: "Would an experienced Phoenix developer recognize this pattern?"
 
 The goal is that generated Elixir code should be **indistinguishable from hand-written Phoenix code**, just with compile-time type guarantees that Phoenix developers wish they had.
 
-## 🌐 Full-Stack Development with genes (JavaScript Generation)
+## 🌐 Haxe-Authored Browser Code with `genes-ts`
 
-**REVOLUTIONARY CAPABILITY**: Reflaxe.Elixir now includes **genes** - a modern ES6 JavaScript generator that enables writing entire Phoenix applications (backend AND frontend) in pure Haxe with complete type safety.
+PhoenixHX uses the external `genes-ts` compiler for Haxe-authored browser code. Genes is a
+source compiler; Vite, esbuild, or the application-selected tool remains the JavaScript bundler.
+The canonical browser build declaration is:
 
-### Why genes Integration is Game-Changing
-
-The addition of genes transforms Reflaxe.Elixir from a backend-only compiler into a **full-stack development platform**:
-
-1. **Single Language, Multiple Targets**: Write once in Haxe, compile to both Elixir (backend) and JavaScript (frontend)
-2. **Shared Type Definitions**: Define types once, use them on both server and client - no API drift
-3. **Modern ES6 Output**: Clean async/await, modules, arrow functions - production-ready JavaScript
-4. **Phoenix LiveView Integration**: Type-safe hooks, client-side components, and JavaScript interop
-5. **Future Cross-Platform Components**: Components that compile to both LiveView (server) and React-like (client)
-
-### genes Architecture & Integration
-
-**Location**: `vendor/genes/` - Vendored and modified for async/await support
-
-**Key Modifications**:
-- **Async Function Detection**: Recognizes `__async_marker__` pattern and generates native `async` keyword
-- **Await Expression Handling**: Transforms `js.Syntax.code("await {0}", promise)` to clean `await` expressions
-- **Metadata Support**: Full support for `@:async` and `@:await` inline metadata
-
-### Using genes for Client-Side JavaScript
-
-#### Configuration (build-client.hxml)
 ```hxml
-# JavaScript target with modern ES6 via genes
--lib reflaxe
--lib genes
--js assets/js/app.js
-
-# ES6 modules and optimizations
--D js-unflatten
--D analyzer-optimize
---dce=full
-
-# Main entry point
-client.TodoApp
+-lib genes-ts
 ```
 
-#### Clean Async/Await Support
+`-lib genes` is a temporary compatibility alias only. It must resolve the same immutable
+`genes-ts` revision and must never select a second compiler tree. New examples, scaffold output,
+and documentation use `-lib genes-ts`.
 
-**Haxe Source** (using AsyncMacro):
-```haxe
-@:build(genes.AsyncMacro.build())
-class ClientApp {
-    static function main() {
-        // Clean async function with @:async metadata
-        var fetchUser = @:async function(id: Int) {
-            var response = @:await fetch('/api/users/$id');
-            var data = @:await response.json();
-            return data;
-        };
-        
-        // Multiple awaits in sequence
-        var processData = @:async function() {
-            var user = @:await fetchUser(1);
-            var posts = @:await fetchPosts(user.id);
-            var comments = @:await fetchComments(posts);
-            return {user: user, posts: posts, comments: comments};
-        };
-    }
-}
-```
+### Supported output profiles
 
-**Generated JavaScript** (clean ES6):
-```javascript
-class ClientApp {
-    static main() {
-        let fetchUser = async function(id) {
-            let response = await fetch(`/api/users/${id}`);
-            let data = await response.json();
-            return data;
-        };
-        
-        let processData = async function() {
-            let user = await fetchUser(1);
-            let posts = await fetchPosts(user.id);
-            let comments = await fetchComments(posts);
-            return {user: user, posts: posts, comments: comments};
-        };
-    }
-}
-```
+- Classic split ESM remains the compatibility profile for existing Phoenix hooks and clients.
+- Strict TypeScript/TSX is the preferred profile when typed React/HXX output is valuable.
+- A change in either profile must preserve the other unless a decision-complete breaking change is
+  explicitly approved. Compile success alone is insufficient: review module ABI, runtime behavior,
+  source maps, DCE, and the generated code's handwritten-like quality.
 
-### Powerful Abstraction Possibilities
+Shared server/browser contracts belong in a dedicated shared Haxe classpath. This lets Haxe provide
+one typed source of truth while the Elixir and browser compilers emit idiomatic target code. Users
+remain free to author ordinary Elixir or TypeScript at application boundaries.
 
-#### 1. Shared Business Logic
-```haxe
-// shared/Validation.hx - Compiles to BOTH Elixir and JavaScript
-class Validation {
-    public static function validateEmail(email: String): Bool {
-        var pattern = ~/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return pattern.match(email);
-    }
-    
-    public static function validateAge(age: Int): Bool {
-        return age >= 18 && age <= 120;
-    }
-}
+### Dependency ownership
 
-// Used in Elixir (server-side validation)
-@:schema class User {
-    function changeset(attrs) {
-        if (!Validation.validateEmail(attrs.email)) {
-            addError("email", "Invalid email format");
-        }
-    }
-}
+The repository consumes one exact, fetchable Genes commit through Lix. Local sibling checkouts and
+worktrees are development inputs only and must never appear in committed dependency files. Generic
+Genes fixes are implemented in an isolated worktree, pushed to a fetchable topic branch (or a fork
+when remote ownership requires one), and may be consumed temporarily by exact SHA. After merge, the
+pin moves to the commit that actually landed on canonical `main`; an admitted release uses that
+release's exact commit.
 
-// Used in JavaScript (client-side validation)  
-class SignupForm {
-    function validateForm() {
-        if (!Validation.validateEmail(emailInput.value)) {
-            showError("Invalid email");
-            return false;
-        }
-    }
-}
-```
-
-#### 2. Type-Safe API Contracts
-```haxe
-// shared/ApiTypes.hx - Single source of truth
-typedef UserRequest = {
-    name: String,
-    email: String,
-    age: Int
-}
-
-typedef UserResponse = {
-    id: Int,
-    name: String,
-    email: String,
-    createdAt: Date
-}
-
-// Elixir controller uses the types
-@:controller
-class UserController {
-    function create(params: UserRequest): UserResponse {
-        // Type-safe handling
-    }
-}
-
-// JavaScript client uses THE SAME types
-class UserClient {
-    @:async function createUser(data: UserRequest): Promise<UserResponse> {
-        var response = @:await fetch('/api/users', {
-            method: 'POST',
-            body: JSON.stringify(data)
-        });
-        return @:await response.json();
-    }
-}
-```
-
-#### 3. Universal Components (Future Vision)
-```haxe
-// Universal component that compiles to both LiveView and React
-@:universal
-class TodoItem {
-    var id: Int;
-    var text: String;
-    var completed: Bool;
-    
-    // Compiles to LiveView component (Elixir)
-    @:target("elixir")
-    function render() {
-        return <div class=${completed ? "completed" : ""}>
-                <input type="checkbox" checked={completed} phx-click="toggle" phx-value-id={id}/>
-                <span>${text}</span>
-            </div>;
-    }
-    
-    // Compiles to React-like component (JavaScript)
-    @:target("javascript")  
-    function render() {
-        return JSX.jsx('
-            <div className={completed ? "completed" : ""}>
-                <input type="checkbox" checked={completed} onChange={() => toggle(id)}/>
-                <span>{text}</span>
-            </div>
-        ');
-    }
-}
-```
-
-### Phoenix LiveView Hooks with Type Safety
-
-```haxe
-// client/hooks/InfiniteScroll.hx
-@:build(genes.AsyncMacro.build())
-class InfiniteScrollHook {
-    public var el: Element;
-    public var pushEvent: (String, Dynamic) -> Promise<Dynamic>;
-    
-    public function mounted() {
-        var observer = new IntersectionObserver(@:async (entries) -> {
-            if (entries[0].isIntersecting) {
-                var page = parseInt(el.dataset.page) + 1;
-                var result = @:await pushEvent("load-more", {page: page});
-                // Type-safe handling of server response
-            }
-        });
-        observer.observe(el);
-    }
-}
-
-// Compiles to clean JavaScript for Phoenix hooks
-```
-
-### Integration with Phoenix Assets Pipeline
-
-The generated JavaScript integrates seamlessly with Phoenix's esbuild pipeline:
-
-```javascript
-// assets/js/app.js - Generated by genes
-import {TodoApp} from "./TodoApp.js"
-import {InfiniteScrollHook} from "./hooks/InfiniteScrollHook.js"
-
-// Phoenix LiveView integration
-let Hooks = {
-    InfiniteScroll: InfiniteScrollHook
-}
-
-let liveSocket = new LiveSocket("/live", Socket, {hooks: Hooks})
-liveSocket.connect()
-
-// Initialize Haxe app
-TodoApp.main()
-```
-
-### Development Workflow
-
-1. **Backend Development** (Elixir generation):
-   ```bash
-   npx haxe build-server.hxml  # Compiles to Elixir
-   mix compile                  # Validates Elixir code
-   ```
-
-2. **Frontend Development** (JavaScript generation):
-   ```bash
-   npx haxe build-client.hxml   # Compiles to JavaScript via genes
-   npm run deploy               # Bundles with esbuild
-   ```
-
-3. **Full-Stack Watch Mode**:
-   ```bash
-   # Terminal 1: Watch backend
-   mix compile.haxe --watch
-   
-   # Terminal 2: Watch frontend  
-   npx haxe build-client.hxml --watch
-   
-   # Terminal 3: Run Phoenix
-   mix phx.server
-   ```
-
-### Future Possibilities with genes
-
-1. **Isomorphic Rendering**: Same component renders on server (LiveView) and client (JavaScript)
-2. **Shared State Management**: Type-safe state synchronization between server and client
-3. **Progressive Enhancement**: Start with server-rendered, progressively add client features
-4. **Type-Safe GraphQL**: Generate both schema (Elixir) and client (JavaScript) from Haxe types
-5. **Cross-Platform Testing**: Test business logic once, runs on both platforms
-
-### Technical Implementation Details
-
-**The AsyncMacro Pattern**: Instead of complex AST manipulation, genes uses a marker variable approach:
-1. AsyncMacro injects `var __async_marker__ = true;` into async functions
-2. genes' ExprEmitter detects this marker and generates `async` keyword
-3. Clean ES6 output without wrapper functions or runtime overhead
-
-**Why Not Default Haxe→JS?**: 
-- Default Haxe JavaScript can generate older ES5 patterns
-- genes specifically targets modern ES6+ with modules, async/await, arrow functions
-- Better integration with modern bundlers (esbuild, webpack, vite)
-- Cleaner output that looks hand-written
-
-### Summary
-
-The genes integration transforms Reflaxe.Elixir into a **complete full-stack development platform**. Developers can now:
-- Write entire Phoenix applications in pure Haxe
-- Share types and business logic between frontend and backend
-- Get compile-time type safety across the entire stack
-- Generate clean, modern, production-ready JavaScript and Elixir
-
-This is not just about convenience - it's about **eliminating entire categories of bugs** (API drift, type mismatches, validation inconsistencies) through compile-time guarantees across the full stack.
+The current migration receipt, compatibility matrix, worktree/fork decision, upstream-fix sequence,
+and rollback rules live in
+[`docs/03-compiler-development/GENES_DEPENDENCY_WORKFLOW.md`](docs/03-compiler-development/GENES_DEPENDENCY_WORKFLOW.md).
+Do not restore `vendor/genes`, copy project-specific changes into Genes, or bypass those gates.
 
 ## 📦 Vendor Modification Policy
 
 **⚠️ CRITICAL DIRECTIVE: Reflaxe source CAN be modified IF NEEDED, but as a LAST RESORT**
 
-You have permission to modify vendored dependencies (Reflaxe, genes) when necessary, but follow these guidelines:
+You have permission to modify vendored dependencies such as Reflaxe when necessary, but follow these guidelines. Genes is no longer vendored; use the separate generic upstream workflow above.
 
 ### When to Modify Vendor Source
 - ✅ **Bug fixes** that block functionality with no workaround

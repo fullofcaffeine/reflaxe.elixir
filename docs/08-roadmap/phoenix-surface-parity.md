@@ -55,8 +55,8 @@ name, and `ssr=false`. No compiler special case is planned.
 
 Mix is the canonical LiveReact resolver and npm must consume that same checkout
 through a verified project-relative `file:` reference. Vite is the sole
-JavaScript bundler in an enabled project; current Genes may emit source for
-Vite, and `--live-react` remains orthogonal to the existing `genes` and
+JavaScript bundler in an enabled project; the externally pinned `genes-ts`
+compiler may emit source for Vite, and `--live-react` remains orthogonal to the existing `genes` and
 `plain-js` client modes. Stock LiveReact remains the runtime owner. Promotion
 requires an independent second consumer and installed-package smoke, not just
 another route in the existing example.

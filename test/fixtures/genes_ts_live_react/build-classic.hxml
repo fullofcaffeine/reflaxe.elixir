@@ -1,0 +1,11 @@
+-lib genes-ts
+
+-cp test/fixtures/genes_ts_live_react/src
+-main LiveReactIslandFixture
+
+-js test/fixtures/genes_ts_live_react/generated/classic/index.js
+-D genes.react.inline_markup
+-D js-es=6
+-D js-source-map
+
+--dce full
