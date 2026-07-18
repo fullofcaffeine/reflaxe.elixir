@@ -404,15 +404,18 @@ mix compile --force          # Verify Elixir compilation
 ---
 
 **Ready to build?** Check out [Phoenix Integration](../02-user-guide/PHOENIX_INTEGRATION.md) to start building applications.
-## Haxe Compile Server (Automatic & Transparent)
+## Haxe Compile Server (Explicit Long-Lived Workflow)
 
-Reflaxe.Elixir uses the Haxe compilation server (`haxe --wait`) to speed up
-incremental builds during `mix compile` and `mix phx.server`.
+Reflaxe.Elixir can use the Haxe compilation server (`haxe --wait`) to speed up
+incremental builds. Ordinary one-shot commands such as `mix compile` compile
+directly by default, because a background server can outlive a canceled Mix VM.
+The long-running `mix haxe.watch` workflow starts and owns one server explicitly.
 
-Behavior (no configuration required):
+Behavior:
 
-- Auto‑start (dev by default): In `MIX_ENV=dev`, Mix can auto-start `haxe --wait` for incremental compilation.
-- Direct compile (CI/prod/test by default): In short-lived builds, we default to direct `haxe` to avoid leaking `haxe --wait` OS processes.
+- Direct compile (default): one-shot dev, test, CI, and production commands do not auto-start `haxe --wait`.
+- Watcher ownership: long-running `mix haxe.watch` starts and reuses a server for the lifetime of that watcher. `mix haxe.watch --once` compiles directly and exits without starting one.
+- Explicit auto-start: set `HAXE_SERVER_AUTOSTART=dev` or `always` only when the calling process is expected to own a long-lived server.
 - Reuse (owned): If Mix started the server in this VM, it is reused automatically.
 - Attach (opt‑in): If `HAXE_SERVER_ALLOW_ATTACH=1` and the configured port is already bound by a compatible server, Mix attaches and uses it (including a prior server recorded in the cookie).
 - Relocate: If the configured port is already bound and attach is not enabled (or not compatible), Mix relocates to a free port and starts its own server.
@@ -425,13 +428,12 @@ Defaults and environment variables:
 - `HAXE_NO_SERVER=1` — disable the server for the current run (use direct Haxe).
 - `HAXE_SERVER_PORT=<port>` — force a specific port (e.g., `6116`).
 - `HAXE_SERVER_ALLOW_ATTACH=1` — allow attaching to an externally-started compatible server on the configured port.
-- `HAXE_SERVER_AUTOSTART=dev|always|never` — control when Mix should auto-start the server (default: `dev`).
+- `HAXE_SERVER_AUTOSTART=dev|always|never` — opt a caller into automatic startup (default: `never`).
 
 Notes:
 
-- The behavior is fully transparent; no flags are needed for normal use.
-- The QA sentinel also uses a compile server and falls back to direct compilation
-  under strict timeouts. It uses the same default port (`6116`) and relocates when busy.
+- No flag is needed for normal direct compilation or for `mix haxe.watch`.
+- `HAXE_NO_SERVER=1` remains a hard override for automation that must never start a server.
 
 ### Incremental Freshness
 
@@ -463,8 +465,17 @@ If you repeatedly see messages like:
 - `Haxe server port 6116 is in use; relocating to ...`
 
 it usually means a previous Mix VM crashed and left behind stale `haxe --wait` processes.
-Clean them up (bounded, repo-local) and retry:
+Clean them up (bounded, repo-local) and retry. The cleanup command checks both
+launcher paths and process working directories, so it also finds a native Haxe
+child whose Node/Lix launcher has already exited:
 
 ```bash
 scripts/haxe-server-cleanup.sh
+```
+
+The focused lifecycle checks avoid the full generated-code test bootstrap:
+
+```bash
+npm run test:haxe-server-policy
+npm run test:haxe-server-cleanup
 ```

@@ -106,7 +106,7 @@ mix compile.haxe --force
 - `HAXELIB_CMD=/path/to/haxelib` - Use an explicit `haxelib` command for library resolution
 - `HAXE_SERVER_PORT=6116` - Preferred port for the Haxe compilation server (default: 6116). If the port is busy, the server relocates unless attach is explicitly enabled.
 - `HAXE_SERVER_ALLOW_ATTACH=1` - Allow attaching to an externally-started compatible `haxe --wait` server (including a prior compatible server recorded in the cookie) (default: off)
-- `HAXE_SERVER_AUTOSTART=dev|always|never` - Control when Mix should auto-start `haxe --wait` (default: `dev`)
+- `HAXE_SERVER_AUTOSTART=dev|always|never` - Opt a caller into automatic `haxe --wait` startup (default: `never`; `mix haxe.watch` starts its own server)
 - `HAXE_NO_SERVER=1` - Disable the Haxe `--wait` server and compile directly
 - `HAXE_NO_COMPILE=1` - Skip Haxe compilation entirely (useful for CI/sentinels)
 
@@ -346,7 +346,7 @@ mix haxe.watch --hxml build.hxml
 - `--hxml <file>` - HXML file to run (default: `build.hxml`)
 - `--dirs <dir1,dir2,...>` - Comma-separated list of directories to watch (defaults depend on task)
 - `--debounce <ms>` - Debounce window for file events before compiling (default: `200`)
-- `--once` - Compile once and exit (no watcher)
+- `--once` - Compile directly once and exit (no compilation server or watcher)
 - `--promote <from:to,...>` - Post-compile file promotion spec (comma-separated `from:to` pairs)
   - Use this to publish Haxe outputs into stable paths without exposing intermediate build artifacts to other watchers.
   - Example: `--promote assets/js/_hx_app_tmp.js:assets/js/hx_app.js`

@@ -44,6 +44,7 @@ lib/mix/tasks/
 - Watches Haxe source files for changes
 - Triggers automatic recompilation
 - Provides hot-reload functionality during development
+- Starts a managed Haxe compilation server only for the long-running watcher; `--once` compiles directly and exits without leaving a server behind
 
 ### Debugging and Analysis Tools
 

@@ -55,11 +55,13 @@ This task patches `config/dev.exs`, `mix.exs`, and `assets/js/app.js` using expl
   - `mix phx.server`
 - Let the endpoint watchers handle the client build.
 - Use `mix compile.haxe` / `mix haxe.watch` for server-side compilation flows.
+- Long-running `mix haxe.watch` owns and reuses one Haxe compilation server while it is running; one-shot `mix compile` and `mix haxe.watch --once` stay direct by default.
 
 ## Common Environment Variables
 
 - `HAXE_NO_SERVER=1` — disables the background Haxe server (forces direct compilation)
 - `HAXE_SERVER_PORT=6116` — preferred server port. If that port is busy, Mix may attach to the prior compatible server recorded in `.reflaxe_elixir/haxe_server.json` (same project/toolchain), or relocate to a free port.
+- `HAXE_SERVER_AUTOSTART=dev|always|never` — explicitly opt one-shot callers into server startup (default: never)
 - `HAXE_SERVER_ALLOW_ATTACH=1` — allow attaching to an externally-started compatible server on the configured port (default: off)
 - `HAXE_FAST_BOOT=1` — opt-in faster compilation profile (see `docs/06-guides/PERFORMANCE_GUIDE.md`)
 - `HAXE_CLIENT_WAIT_PORT=6001` — overrides the Phoenix watcher wait port (client build)

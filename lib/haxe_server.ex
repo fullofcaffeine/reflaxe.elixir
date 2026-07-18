@@ -26,6 +26,10 @@ defmodule HaxeServer do
   - `:port` - Port for Haxe server (default: 6116; tests pick a free port)
   - `:timeout` - Compilation timeout in ms (default: 30000)
   - `:haxe_cmd` - Haxe command to use (default: auto-detected)
+
+  Ordinary one-shot Mix compilation does not start this long-lived process.
+  `mix haxe.watch`, a direct `start_link/1` call, or an explicit
+  `HAXE_SERVER_AUTOSTART=dev|always` policy owns the server lifecycle.
   """
 
   use GenServer
@@ -66,18 +70,21 @@ defmodule HaxeServer do
     # after the BEAM VM exits (terminate callbacks are not guaranteed to run during shutdown),
     # which leads to port churn and hangs when output pipes never close.
     #
-    # Default: only autostart in dev. Override via env var if you know you want it elsewhere.
+    # Default: direct compilation in every Mix environment. The long-lived
+    # `mix haxe.watch` task starts the server explicitly, while callers that
+    # deliberately want one-shot commands to autostart it can choose `dev` or
+    # `always`. Invalid values fail closed to direct compilation.
     cond do
       System.get_env("HAXE_NO_SERVER") == "1" ->
         false
 
       true ->
         case System.get_env("HAXE_SERVER_AUTOSTART") |> to_string() |> String.trim() |> String.downcase() do
-          "" -> mix_env == :dev
+          "" -> false
           "dev" -> mix_env == :dev
           "always" -> true
           "never" -> false
-          _ -> mix_env == :dev
+          _ -> false
         end
     end
   end

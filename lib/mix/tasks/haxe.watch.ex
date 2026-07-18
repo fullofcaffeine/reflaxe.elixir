@@ -11,14 +11,14 @@ defmodule Mix.Tasks.Haxe.Watch do
   
       mix haxe.watch              # Start watching with defaults
       mix haxe.watch --verbose     # Show detailed output
-      mix haxe.watch --once        # Compile once and exit
+      mix haxe.watch --once        # Compile directly once and exit
       mix haxe.watch --dirs src,lib # Watch specific directories
       mix haxe.watch --hxml build.hxml # Use a specific HXML file
   
 	  ## Options
 	  
 	    * `--verbose` - Show detailed compilation output
-	    * `--once` - Compile once and exit (no watching)
+	    * `--once` - Compile directly once and exit (no server or watcher)
 	    * `--dirs` - Comma-separated list of directories to watch
 	    * `--debounce` - Debounce period in milliseconds (default: 100)
 	    * `--hxml` - Path to build.hxml file (default: "build.hxml")
@@ -66,15 +66,19 @@ defmodule Mix.Tasks.Haxe.Watch do
     # Ensure code is compiled and loaded, but don't start the full application tree.
     Mix.Task.run("app.start", ["--no-start"])
 
-    ensure_haxe_server()
-    
-    if opts[:once] do
-      # Just compile once and exit
-      compile_once(config)
-    else
-      # Start watching
-      start_watching(config)
+    case server_mode(opts) do
+      :direct ->
+        compile_once(config)
+
+      :managed ->
+        ensure_haxe_server()
+        start_watching(config)
     end
+  end
+
+  @doc false
+  def server_mode(opts) when is_list(opts) do
+    if Keyword.get(opts, :once, false), do: :direct, else: :managed
   end
 
   defp ensure_haxe_server() do
