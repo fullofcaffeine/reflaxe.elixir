@@ -14,7 +14,7 @@ import elixir.ElixirInteger;
 import elixir.types.Atom;
 import elixir.types.KeywordList;
 import elixir.types.Term;
-import haxe.test.Callbacks;
+import haxe.test.ExUnit.Callbacks;
 
 typedef OriginalSources = {
 	appJs:String,
