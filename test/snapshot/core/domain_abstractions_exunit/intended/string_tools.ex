@@ -12,7 +12,7 @@ defmodule StringTools do
   def url_decode(s) do
     URI.decode(s)
   end
-  def html_escape(s, quotes) do
+  def html_escape(s, quotes \\ nil) do
     s = s |> replace("&", "&amp;") |> replace("<", "&lt;") |> replace(">", "&gt;")
     s = if (quotes) do
       s |> replace("\"", "&quot;") |> replace("'", "&#039;")
@@ -107,9 +107,9 @@ defmodule StringTools do
     end
   end
   def replace(s, sub, by) do
-    Enum.join((fn -> haxe_split(s, sub) end).(), by)
+    Enum.join(haxe_split(s, sub), by)
   end
-  def hex(n, digits) do
+  def hex(n, digits \\ nil) do
     if (Kernel.is_nil(digits)) do
       Integer.to_string(Bitwise.band(n, 0xFFFFFFFF), 16) |> String.upcase()
     else
@@ -145,7 +145,7 @@ defmodule StringTools do
       Enum.at(String.to_charlist(s), index)
     end
   end
-  def haxe_index_of(s, value, start_index) do
+  def haxe_index_of(s, value, start_index \\ nil) do
 
     (fn ->
       reflaxe_string_source = s
@@ -168,7 +168,7 @@ defmodule StringTools do
     end).()
 
   end
-  def haxe_last_index_of(s, value, start_index) do
+  def haxe_last_index_of(s, value, start_index \\ nil) do
 
     (fn ->
       reflaxe_string_source = s
@@ -198,7 +198,7 @@ defmodule StringTools do
   def haxe_split(s, delimiter) do
     if delimiter == "", do: String.graphemes(s), else: String.split(s, delimiter)
   end
-  def haxe_substr(s, pos, len) do
+  def haxe_substr(s, pos, len \\ nil) do
 
     (fn ->
       reflaxe_string_source = s
@@ -241,7 +241,7 @@ defmodule StringTools do
     end).()
 
   end
-  def haxe_substring(s, start_index, end_index) do
+  def haxe_substring(s, start_index, end_index \\ nil) do
 
     (fn ->
       reflaxe_string_source = s

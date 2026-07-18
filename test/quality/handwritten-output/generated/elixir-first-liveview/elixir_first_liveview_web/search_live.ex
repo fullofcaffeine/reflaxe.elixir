@@ -94,9 +94,7 @@ defmodule ElixirFirstLiveviewWeb.SearchLive do
       raw_query = Map.get(params, "query")
 
       query =
-        if Reflaxe.Elixir.HaxeFloat.neq(raw_query, nil) and Kernel.is_binary(raw_query),
-          do: raw_query,
-          else: ""
+        if not Kernel.is_nil(raw_query) and Kernel.is_binary(raw_query), do: raw_query, else: ""
 
       {:noreply, apply_search(socket, query)}
     end

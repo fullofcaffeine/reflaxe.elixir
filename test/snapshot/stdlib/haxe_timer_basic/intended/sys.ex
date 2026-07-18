@@ -52,7 +52,7 @@ defmodule Sys do
   def exit(code) do
     System.halt(code)
   end
-  def command(cmd, args) do
+  def command(cmd, args \\ nil) do
     if (Kernel.is_nil(args) or length(args) == 0) do
 
                       case System.cmd("sh", ["-c", cmd]) do

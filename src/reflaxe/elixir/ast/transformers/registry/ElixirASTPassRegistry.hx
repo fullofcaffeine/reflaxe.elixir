@@ -117,6 +117,12 @@ class ElixirASTPassRegistry {
 		passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.PhoenixLiveCore.build());
 
 		// Phoenix/Ecto annotation-driven group (order preserved)
+		passes.push({
+			name: "MixTaskTransform",
+			description: "Transform @:mixTask modules into idiomatic Mix.Task modules",
+			enabled: true,
+			pass: reflaxe.elixir.ast.transformers.MixTaskTransforms.transformPass
+		});
 		passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.PhoenixAnnotations.build());
 
 		// Guard condition grouping pass (must run before other pattern transformations)
@@ -4367,6 +4373,17 @@ class ElixirASTPassRegistry {
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.BareLiteralDropTransforms.pass,
 			runAfter: ["DropSelfAssignNoop_AbsoluteLastReplay"]
+		});
+
+		// Absolute-last idiomaticity cleanup: safety passes may have introduced an
+		// IIFE around a multi-statement argument whose body was subsequently reduced
+		// to one binding-free expression. Remove only that proven-obsolete scope.
+		passes.push({
+			name: "TrivialIIFEUnwrap_AbsoluteLast",
+			description: "Absolute-last: unwrap zero-arg IIFEs whose body is one caller-binding-free expression",
+			enabled: true,
+			pass: reflaxe.elixir.ast.transformers.TrivialIIFEUnwrapTransforms.pass,
+			runAfter: ["BareLiteralDrop_AbsoluteLast"]
 		});
 
 		// Filter disabled passes first

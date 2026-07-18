@@ -1,8 +1,8 @@
 defmodule Users do
-  def list_users(_filter) do
+  def list_users(_filter \\ nil) do
     []
   end
-  def change_user(_user) do
+  def change_user(_user \\ nil) do
     %{valid: true}
   end
   def main() do

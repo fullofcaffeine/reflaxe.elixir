@@ -1,24 +1,96 @@
 {
-  "filesGenerated": [
-  "type.ex",
-  "std.ex",
-  "reflaxe/exception.ex",
-  "reflaxe/elixir/haxe_throw.ex",
-  "reflaxe/elixir/haxe_float.ex",
-  "main.ex",
-  "haxe/iterators/array_key_value_iterator.ex",
-  "haxe/iterators/array_iterator.ex",
-  "haxe/_call_stack/call_stack_impl_.ex",
-  "elixir/otp/type_safe_child_spec.ex",
-  "elixir/otp/supervisor_strategy.ex",
-  "elixir/otp/supervisor_options_builder.ex",
-  "elixir/otp/shutdown_type.ex",
-  "elixir/otp/restart_type.ex",
-  "elixir/otp/child_type.ex",
-  "elixir/otp/child_spec_format.ex",
-  "elixir/otp/child_spec_builder.ex"
-],
-  "id": 0,
-  "wasCached": false,
-  "version": 1
+	"filesGenerated": [
+		"type.ex",
+		"std.ex",
+		"reflaxe/exception.ex",
+		"reflaxe/elixir/haxe_throw.ex",
+		"reflaxe/elixir/haxe_float.ex",
+		"main.ex",
+		"haxe/iterators/array_key_value_iterator.ex",
+		"haxe/iterators/array_iterator.ex",
+		"haxe/_call_stack/call_stack_impl_.ex",
+		"elixir/otp/type_safe_child_spec.ex",
+		"elixir/otp/supervisor_strategy.ex",
+		"elixir/otp/supervisor_options_builder.ex",
+		"elixir/otp/shutdown_type.ex",
+		"elixir/otp/restart_type.ex",
+		"elixir/otp/child_type.ex",
+		"elixir/otp/child_spec_format.ex",
+		"elixir/otp/child_spec_builder.ex"
+	],
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 0,
+	"wasCached": false,
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "elixir/otp/child_spec_builder.ex",
+			"sha256": "14ea99a231d90cb65a86e4c972f8d31e74104cf495c730a6af41c0deea0fd7e6"
+		},
+		{
+			"path": "elixir/otp/child_spec_format.ex",
+			"sha256": "4f76007c88d1ba4281d83dcca8ffc22a12f9e2c2d0da0050de4f2b142544afc3"
+		},
+		{
+			"path": "elixir/otp/child_type.ex",
+			"sha256": "a933df8143ef501c6c3f658f4740d6f2f3e9a40e7ae5af48c70e090da4065ca9"
+		},
+		{
+			"path": "elixir/otp/restart_type.ex",
+			"sha256": "6d65661146381d0f4044eac200bf868ea3cdfb7cb0472c54341db8655a857cc4"
+		},
+		{
+			"path": "elixir/otp/shutdown_type.ex",
+			"sha256": "0de416287b9a0676e25df5ac7def869652d7b7a2fc0ff93baa559cdd7348d9ac"
+		},
+		{
+			"path": "elixir/otp/supervisor_options_builder.ex",
+			"sha256": "9aaa29d397ef9f4d90b7fa0a2055d0d2a4c5f9549c8d80051601f1e98df08c86"
+		},
+		{
+			"path": "elixir/otp/supervisor_strategy.ex",
+			"sha256": "0e3a75cf0ec36827542182526b8dad3495be7c0b38df4a77cf07f86dc8b30cea"
+		},
+		{
+			"path": "elixir/otp/type_safe_child_spec.ex",
+			"sha256": "10da1e2317ea2a9d55841c62358c89739f6937a36f0d0fe5002357b5159ec037"
+		},
+		{
+			"path": "haxe/_call_stack/call_stack_impl_.ex",
+			"sha256": "ab46ba4f786a95420ae1cd78188f77ebebc3ced2db90d1351297f573f30dadf8"
+		},
+		{
+			"path": "haxe/iterators/array_iterator.ex",
+			"sha256": "3186b41d2124063a790c08804f1bfb9c3a7508de7f6a99ad2cdb1687f1c2b82d"
+		},
+		{
+			"path": "haxe/iterators/array_key_value_iterator.ex",
+			"sha256": "7c2a5a2cc281bb9a1c5ed1bb56e351bdb68b53a7d048fa70decc5bfdd527419e"
+		},
+		{
+			"path": "main.ex",
+			"sha256": "b3629f6bd1f71eea9009a7f238d521e9b7775e6b811aafd0f532bdebffa77b41"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_float.ex",
+			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_throw.ex",
+			"sha256": "642bbf29d073acc9eb2ffcea4a8e6016396a43f1a4180a79331b537bfefc6094"
+		},
+		{
+			"path": "reflaxe/exception.ex",
+			"sha256": "02fc779b3a5c750db17ab47e624c22bbb8887786a22a767969ab23d1946be755"
+		},
+		{
+			"path": "std.ex",
+			"sha256": "cfc6ad389294bc64c9d82be070797b4e65041a3d225fc0741500ca7cc6c8f804"
+		},
+		{
+			"path": "type.ex",
+			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
+		}
+	],
+	"generation": "b6bbb4387d9bc41bd1a4b11b29949e2e2d3a3b9aa814dbb7c6b722f4e84c751b"
 }

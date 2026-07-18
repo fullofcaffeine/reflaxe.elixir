@@ -25,7 +25,6 @@
 		"elixir/types/_pid/pid_impl_.ex",
 		"elixir/types/_message_queue_data/message_queue_data_impl_.ex",
 		"elixir/types/_gen_server_ref/gen_server_ref_impl_.ex",
-		"elixir/types/_atom/atom_impl_.ex",
 		"elixir/types/_agent_ref/agent_ref_impl_.ex",
 		"elixir/registry_error.ex",
 		"elixir/comparison_result.ex",
@@ -50,15 +49,11 @@
 		},
 		{
 			"path": "elixir/types/_agent_ref/agent_ref_impl_.ex",
-			"sha256": "b26c57d94f0459f596005417f0c304c9457f20f4375a169edffa7c399b97ae24"
-		},
-		{
-			"path": "elixir/types/_atom/atom_impl_.ex",
-			"sha256": "636c8a4d59dca34e5f379b6eda674304a3f4729099fb0fc017c7091c8751193a"
+			"sha256": "bc04750f455d3b0121c95644c7ffcb5eba01670ba5f6b65cddd0d675f33be317"
 		},
 		{
 			"path": "elixir/types/_gen_server_ref/gen_server_ref_impl_.ex",
-			"sha256": "c6dadfe1cce5fccbffd00919da67347e30b4b3df2ed3cd649c1f823c6416c36c"
+			"sha256": "3671bb50eafa5759381ef979a86a5ed3d4e2c267a4d1fb7af40151f623b7170e"
 		},
 		{
 			"path": "elixir/types/_message_queue_data/message_queue_data_impl_.ex",
@@ -90,7 +85,7 @@
 		},
 		{
 			"path": "elixir/types/gen_server_option_builder.ex",
-			"sha256": "eb65f093ec7172d741d6dfae6e810c939f9d1ddce1736b816aa3932e5c92bb22"
+			"sha256": "87b1ba02a792ebd5cb12d8f80bc157e5689d55bd982fb592ea00ffab93e58ac8"
 		},
 		{
 			"path": "elixir/types/handle_call_result.ex",
@@ -118,7 +113,7 @@
 		},
 		{
 			"path": "haxe/_call_stack/call_stack_impl_.ex",
-			"sha256": "3eed6f8fd5edac09d87da343f278c2665d96efcb0acc4df243d44b9c6de2ceca"
+			"sha256": "ab46ba4f786a95420ae1cd78188f77ebebc3ced2db90d1351297f573f30dadf8"
 		},
 		{
 			"path": "haxe/iterators/array_iterator.ex",
@@ -138,11 +133,11 @@
 		},
 		{
 			"path": "reflaxe/elixir/haxe_throw.ex",
-			"sha256": "fc5d023670bb5726080ce33fc783821b07150587289df8b52b03874799f445b5"
+			"sha256": "642bbf29d073acc9eb2ffcea4a8e6016396a43f1a4180a79331b537bfefc6094"
 		},
 		{
 			"path": "reflaxe/exception.ex",
-			"sha256": "576685a232def363aa3e75205b37c0eb47c06876ebea52306879b731a0cd9b92"
+			"sha256": "02fc779b3a5c750db17ab47e624c22bbb8887786a22a767969ab23d1946be755"
 		},
 		{
 			"path": "std.ex",
@@ -150,12 +145,12 @@
 		},
 		{
 			"path": "string_tools.ex",
-			"sha256": "dbd25b1805726a7f5808cdb23b2887442125467919bd9d09cf511a1fc270f25a"
+			"sha256": "b174b046cee6138603fade8a7baa097e869d67f66a86afdebda3449b28d3b153"
 		},
 		{
 			"path": "type.ex",
-			"sha256": "d75480a332d954a3254c46b53b6b688d080a51ff49a1b203ac06c2fcd1c9c556"
+			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "b4969bead571bc8831e61d52f16ddbebc4563dbe3d2ad319b755ff611c54352c"
+	"generation": "ca2736739bf0c379c6cf9f4190e4ecc37d06e3ea4dc1918385dc905dd90c5a11"
 }

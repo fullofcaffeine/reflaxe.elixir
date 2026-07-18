@@ -45,7 +45,6 @@
 		"haxe/iterators/array_iterator.exs",
 		"haxe/exceptions/pos_exception.exs",
 		"haxe/exceptions/not_implemented_exception.exs",
-		"elixir/reduce_while_result.exs",
 		"elixir/otp/supervisor_strategy.exs",
 		"elixir/otp/shutdown_type.exs",
 		"elixir/otp/restart_type.exs",
@@ -62,7 +61,7 @@
 		"phoenix_hx_todo/postgrex_types.ex"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 50,
+	"id": 52,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
@@ -117,10 +116,6 @@
 		{
 			"path": "elixir/otp/supervisor_strategy.exs",
 			"sha256": "0e3a75cf0ec36827542182526b8dad3495be7c0b38df4a77cf07f86dc8b30cea"
-		},
-		{
-			"path": "elixir/reduce_while_result.exs",
-			"sha256": "3c4ad98e1b4ca49ab2dd09f43c64bb73967a06ddf4391e9f45c4a09716ced415"
 		},
 		{
 			"path": "haxe/exceptions/not_implemented_exception.exs",
@@ -204,7 +199,7 @@
 		},
 		{
 			"path": "phoenix_hx_todo/auth_flow_test.exs",
-			"sha256": "7d2d8ae2e7d4e799159c41b743faf65780907897c8ef8d5c92c364224f72fad1"
+			"sha256": "726c4c4a768e156d26e03a7b9a555bd88977ec73e005163717faab2e89ed6b36"
 		},
 		{
 			"path": "phoenix_hx_todo/chat_message.exs",
@@ -288,7 +283,7 @@
 		},
 		{
 			"path": "reflaxe/elixir/haxe_throw.exs",
-			"sha256": "8dc2dbe6b6001a657b8bff0bcd435ecae72866301f5028baedf3c499a7f4a245"
+			"sha256": "8e498f80275fd241c22701a4f170bb1cf2135aa572ccd1b8f4a2d17728f849b1"
 		},
 		{
 			"path": "reflaxe/elixir/macros/http_method.exs",
@@ -296,7 +291,7 @@
 		},
 		{
 			"path": "reflaxe/exception.exs",
-			"sha256": "cb0fdc6ff6a8fb94da21e4ca791baed62e1c02b712ad5356c3e51103c3d94909"
+			"sha256": "9eb2137ead37e4b2ff0650cbece40b4da0427a5fe35a95b0de3eeacb82facbd2"
 		},
 		{
 			"path": "std.exs",
@@ -304,8 +299,8 @@
 		},
 		{
 			"path": "string_tools.exs",
-			"sha256": "ae214ad9492951212417ffe539ed662d8ddd2d00bb73d50815803512a586de32"
+			"sha256": "14d0fae11e0a57cb0a490ec5a9de56a9575762d2649b3f69b2ef5c3431ae3f15"
 		}
 	],
-	"generation": "51549df17c7fee3f64516e657f8a9dcdaf4c0d7c6fcc1edd87ed1132932b2191"
+	"generation": "2926c28accab95c5513a6c0552d4dd0360edc1af21ee07e57619ad6f39d7cf29"
 }

@@ -12,6 +12,8 @@ import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.builders.ModuleBuilder;
 import reflaxe.elixir.CompilationContext;
 
+using reflaxe.helpers.ClassFieldHelper;
+
 /**
  * ConstructorBuilder: Handles constructor call compilation (TNew)
  * 
@@ -86,25 +88,37 @@ class ConstructorBuilder {
 		context.isInConstructorArgContext = false;
 		#if debug_ast_builder trace('[ConstructorBuilder] RESET FLAG isInConstructorArgContext = false'); #end
 
-		// Optional args: Haxe typed constructor calls can omit trailing optional parameters.
-		// Elixir requires exact arity, so pad omitted trailing optionals with `nil`.
+		// Haxe constructor calls normally preserve source defaults at the call site because
+		// even a non-extern class may be backed by a target runtime override that exposes
+		// only an exact arity. A checked `@:elixirStruct` is different: the compiler owns
+		// both its generated `new` definition and its default-bearing Elixir function head,
+		// so that explicit native-value ABI can use the natural lower arity safely.
 		//
 		// Example (Haxe):
-		//   new haxe.Exception("oops") // where new(message, ?previous, ?native)
+		//   new SomeExtern("oops") // where new(message, ?previous, ?native)
 		// Elixir (desired):
-		//   Reflaxe.Exception.new("oops", nil, nil)
+		//   SomeExtern.new("oops", nil, nil)
 		var expectedCtorArgs:Null<Array<{name:String, opt:Bool, t:Type}>> = null;
+		var defaultCtorArgExprs:Null<Array<Null<TypedExpr>>> = null;
+		var constructorEmitsElixirDefaults = false;
 		if (classType.constructor != null) {
-			switch (TypeTools.follow(classType.constructor.get().type)) {
+			var constructorField = classType.constructor.get();
+			switch (TypeTools.follow(constructorField.type)) {
 				case TFun(fnArgs, _):
 					expectedCtorArgs = fnArgs;
 				default:
 			}
+			var constructorData = constructorField.findFuncData(classType, false);
+			if (constructorData != null) {
+				defaultCtorArgExprs = [for (arg in constructorData.args) arg.expr];
+				constructorEmitsElixirDefaults = !classType.isExtern && classType.meta.has(":elixirStruct");
+			}
 		}
-		if (expectedCtorArgs != null && args.length < expectedCtorArgs.length) {
+		if (!constructorEmitsElixirDefaults && expectedCtorArgs != null && args.length < expectedCtorArgs.length) {
 			for (i in args.length...expectedCtorArgs.length) {
 				if (expectedCtorArgs[i].opt) {
-					args.push(makeAST(ENil));
+					var defaultExpr = defaultCtorArgExprs != null && i < defaultCtorArgExprs.length ? defaultCtorArgExprs[i] : null;
+					args.push(defaultExpr == null ? makeAST(ENil) : reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(defaultExpr, context));
 				}
 			}
 		}

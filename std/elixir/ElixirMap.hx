@@ -27,6 +27,50 @@ extern class ElixirMap {
 	@:native("Map.get")
 	public static function getWithDefault<K, V>(map:Map<K, V>, key:K, defaultValue:V):V;
 
+	/** Typed lookup on an explicitly native BEAM map represented by `Term`. */
+	@:native("Map.get")
+	public static function getTyped<K, V>(map:Term, key:K):Null<V>;
+
+	/** Typed lookup with a default on an explicitly native BEAM map. */
+	@:native("Map.get")
+	public static function getTypedWithDefault<K, V>(map:Term, key:K, defaultValue:V):V;
+
+	/** Native `Map.fetch/2` result for boundaries that validate the returned tag. */
+	@:native("Map.fetch")
+	public static function fetchTerm<K>(map:Term, key:K):Term;
+
+	/** Functional native-map update without widening the caller to `Dynamic`. */
+	@:native("Map.put")
+	public static function putTerm<K, V>(map:Term, key:K, value:V):Term;
+
+	/** Functional native-map deletion without widening the caller to `Dynamic`. */
+	@:native("Map.delete")
+	public static function deleteTerm<K>(map:Term, key:K):Term;
+
+	/** Native-map membership at an explicit `Term` boundary. */
+	@:native("Map.has_key?")
+	public static function hasKeyTerm<K>(map:Term, key:K):Bool;
+
+	/** Fetch a required value from an explicitly native BEAM map. */
+	@:native("Map.fetch!")
+	public static function fetchBangTerm<K, V>(map:Term, key:K):V;
+
+	/** Enumerate the keys of an explicitly native BEAM map. */
+	@:native("Map.keys")
+	public static function keysTerm<K>(map:Term):Array<K>;
+
+	/** Enumerate key/value tuples from an explicitly native BEAM map. */
+	@:native("Map.to_list")
+	public static function toListTerm<K, V>(map:Term):Array<{_0:K, _1:V}>;
+
+	/** Merge two explicitly native BEAM maps. */
+	@:native("Map.merge")
+	public static function mergeTerm(left:Term, right:Term):Term;
+
+	/** Drop keys from an explicitly native BEAM map. */
+	@:native("Map.drop")
+	public static function dropTerm<K>(map:Term, keys:Array<K>):Term;
+
 	@:native("Map.fetch")
 	public static function fetch<K, V>(map:Map<K, V>, key:K):{_0:String, _1:Null<V>}; // {:ok, value} | :error
 
@@ -39,6 +83,9 @@ extern class ElixirMap {
 
 	@:native("Map.size")
 	public static function size<K, V>(map:Map<K, V>):Int;
+
+	@:native("Map.size")
+	public static function sizeTerm(map:Term):Int;
 
 	@:native("Map.empty?")
 	public static function empty<K, V>(map:Map<K, V>):Bool;

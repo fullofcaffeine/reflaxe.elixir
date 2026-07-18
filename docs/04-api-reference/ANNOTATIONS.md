@@ -805,6 +805,68 @@ The following combinations are mutually exclusive:
 - `@:schema` and `@:migration` - Schema is runtime, migration is compile-time
 - `@:protocol` and `@:behaviour` - Different polymorphism approaches
 
+### @:mixTask - Optional Haxe-Authored Mix Task
+
+Marks a static Haxe module as an ordinary Elixir `Mix.Task`. This is an additive
+authoring convenience, not a requirement: Phoenix developers may keep writing
+Mix tasks directly in Elixir, write them in Haxe, or call across the two.
+
+The annotation owns only target module declarations. Calls to Mix, File, Path,
+System, OptionParser, or application modules still use typed externs and normal
+Haxe expressions.
+
+```haxe
+package;
+
+/**
+ * Reports how many command-line arguments Mix passed to the task.
+ */
+@:mixTask({
+  shortdoc: "Reports the argument count",
+  requirements: ["app.config"]
+})
+@:native("Mix.Tasks.Haxe.ArgumentCount")
+class ArgumentCountTask {
+  public static function run(args:Array<String>):Int {
+    return args.length;
+  }
+}
+```
+
+Generated Elixir uses the same public Mix surface a handwritten task would use:
+
+```elixir
+defmodule Mix.Tasks.Haxe.ArgumentCount do
+  @moduledoc """
+  Reports how many command-line arguments Mix passed to the task.
+  """
+
+  use Mix.Task
+
+  @shortdoc "Reports the argument count"
+  @requirements ["app.config"]
+
+  @impl Mix.Task
+  def run(args) do
+    length(args)
+  end
+end
+```
+
+Contract:
+
+- `@:native("Mix.Tasks....")` is required so Mix can discover the module.
+- The class must define `public static function run(args:Array<String>)`.
+- `shortdoc` is optional and must be a non-empty string literal.
+- `requirements` is optional and must be an array of unique, non-empty string
+  literals such as `"app.config"`.
+- The Haxe class doc comment becomes `@moduledoc`.
+- Unknown options and invalid callback signatures fail at Haxe compile time.
+- No task name or application path is hard-coded in the compiler.
+
+See [Mix Tasks Reference](MIX_TASKS.md#authoring-custom-mix-tasks-in-haxe-optional)
+for the broader workflow and the handwritten-Elixir interoperability policy.
+
 ### @:application - OTP Application Module
 
 Marks a class as an OTP Application module that defines a supervision tree.

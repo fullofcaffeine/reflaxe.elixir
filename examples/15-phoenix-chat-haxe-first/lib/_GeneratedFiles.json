@@ -39,7 +39,7 @@
 		"e_reg.ex"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 38,
+	"id": 44,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
@@ -153,7 +153,7 @@
 		},
 		{
 			"path": "phoenix_chat_web/app_live.ex",
-			"sha256": "6cd26a5be8616985033d1cffe93e08043e99c10d037be1f6d0b27899e79ee4ac"
+			"sha256": "32f42a8e1b2854718cc164e023a99c39760ada111b4db745e89b46be8bd0682d"
 		},
 		{
 			"path": "phoenix_chat_web/presence.ex",
@@ -169,7 +169,7 @@
 		},
 		{
 			"path": "reflaxe/elixir/haxe_throw.ex",
-			"sha256": "8dc2dbe6b6001a657b8bff0bcd435ecae72866301f5028baedf3c499a7f4a245"
+			"sha256": "8e498f80275fd241c22701a4f170bb1cf2135aa572ccd1b8f4a2d17728f849b1"
 		},
 		{
 			"path": "reflaxe/elixir/macros/http_method.ex",
@@ -177,7 +177,7 @@
 		},
 		{
 			"path": "reflaxe/exception.ex",
-			"sha256": "cb0fdc6ff6a8fb94da21e4ca791baed62e1c02b712ad5356c3e51103c3d94909"
+			"sha256": "9eb2137ead37e4b2ff0650cbece40b4da0427a5fe35a95b0de3eeacb82facbd2"
 		},
 		{
 			"path": "reflect.ex",
@@ -189,8 +189,8 @@
 		},
 		{
 			"path": "string_tools.ex",
-			"sha256": "ae214ad9492951212417ffe539ed662d8ddd2d00bb73d50815803512a586de32"
+			"sha256": "14d0fae11e0a57cb0a490ec5a9de56a9575762d2649b3f69b2ef5c3431ae3f15"
 		}
 	],
-	"generation": "859643dc72327b9d6d2c98b834753fff82ea0a0076d057d92408ee0b45f5d006"
+	"generation": "fc8d14c4b2b63cd8ea11a2a5fa3423ea9303cd99720d3e677c05a27d41dffa9c"
 }

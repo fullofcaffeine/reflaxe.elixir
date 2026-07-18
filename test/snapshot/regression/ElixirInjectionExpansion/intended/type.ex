@@ -107,7 +107,7 @@ defmodule Type do
     struct(cl)
     item
   end
-  def create_enum(enum, constructor, params) do
+  def create_enum(enum, constructor, params \\ nil) do
     ignore_enum = enum
 
           tag = String.to_atom(constructor)
@@ -120,7 +120,7 @@ defmodule Type do
 
     ignore_enum
   end
-  def create_enum_index(enum, index, params) do
+  def create_enum_index(enum, index, params \\ nil) do
     _ignore_enum = enum
     _ignore_i = index
     ignore_p = params

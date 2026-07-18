@@ -815,6 +815,7 @@ typedef ElixirMetadata = {
 	?functionResultContract:FunctionResultContract, // Source return contract for authored EDef/EDefp nodes
 	?functionResultMayBeNil:Bool, // Whether the source return type permits nil
 	?functionResultContractId:String, // Stable authored-function identity for invariant diagnostics
+	?functionArgDefaults:Array<{index:Int, value:ElixirAST}>, // Explicit Haxe defaults rendered in Elixir function heads
 
 	// Transformation Hints
 	?requiresReturn:Bool, // Needs explicit return value
@@ -897,6 +898,11 @@ typedef ElixirMetadata = {
 	?endpointSockets:Array<EndpointSocketMeta>, // Parsed @:endpointSockets metadata for Endpoint emission
 	?endpointLiveLongpoll:Bool, // @:endpoint({liveLongpoll: true|false}) controls /live longpoll transport emission
 	?isExunit:Bool, // @:exunit ExUnit.Case test module
+	?isMixTask:Bool, // @:mixTask Mix.Task module
+	?isElixirStruct:Bool, // Explicit native-value module emitted with defstruct
+	?mixTaskShortdoc:String, // Optional @shortdoc emitted for Mix task discovery/help
+	?mixTaskRequirements:Array<String>, // Optional Mix task requirements such as "app.config"
+	?mixTaskModuledoc:String, // Haxe class documentation emitted as @moduledoc
 	?isTest:Bool, // @:test on a method in ExUnit module
 	?isSetup:Bool, // @:setup on a method in ExUnit module
 	?isSetupAll:Bool, // @:setupAll on a method in ExUnit module
@@ -976,6 +982,7 @@ typedef ElixirMetadata = {
 	// User Annotations
 	?annotations:Array<String>, // @:native, @:inline, etc.
 	?documentation:String, // Doc comments
+	?blankLineBefore:Bool, // Formatting-only hint for a deliberate statement-group boundary
 
 	// Variable Context
 	?variableScope:String, // Current scope identifier

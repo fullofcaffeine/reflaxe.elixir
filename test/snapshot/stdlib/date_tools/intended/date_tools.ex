@@ -48,11 +48,14 @@ defmodule DateTools do
     (case e do
       "%" -> "%"
       "A" ->
-        Enum.at(DateTools.day_names(), (fn ->
-          date = apply(Map.get(d, :__reflaxe_class__) || Map.get(d, :__struct__), :to_date, [d])
-          dow = Date.day_of_week(date)
-          if (dow == 7), do: 0, else: dow
-        end).())
+        Enum.at(
+          DateTools.day_names(),
+          (fn ->
+             date = apply(Map.get(d, :__reflaxe_class__) || Map.get(d, :__struct__), :to_date, [d])
+             dow = Date.day_of_week(date)
+             if (dow == 7), do: 0, else: dow
+           end).()
+        )
       "B" ->
         Enum.at(DateTools.month_names(), (d.month - 1))
       "C" ->
@@ -72,11 +75,14 @@ defmodule DateTools do
       "Y" ->
         Reflaxe.Elixir.HaxeFloat.to_string(d.year)
       "a" ->
-        Enum.at(DateTools.day_short_names(), (fn ->
-          date = apply(Map.get(d, :__reflaxe_class__) || Map.get(d, :__struct__), :to_date, [d])
-          dow = Date.day_of_week(date)
-          if (dow == 7), do: 0, else: dow
-        end).())
+        Enum.at(
+          DateTools.day_short_names(),
+          (fn ->
+             date = apply(Map.get(d, :__reflaxe_class__) || Map.get(d, :__struct__), :to_date, [d])
+             dow = Date.day_of_week(date)
+             if (dow == 7), do: 0, else: dow
+           end).()
+        )
       "d" ->
         StringTools.lpad(Reflaxe.Elixir.HaxeFloat.to_string(d.day), "0", 2)
       "e" ->
@@ -109,11 +115,13 @@ defmodule DateTools do
       "u" ->
         Reflaxe.Elixir.HaxeFloat.to_string(t)
       "w" ->
-        Reflaxe.Elixir.HaxeFloat.to_string((fn ->
-          date = apply(Map.get(d, :__reflaxe_class__) || Map.get(d, :__struct__), :to_date, [d])
-          dow = Date.day_of_week(date)
-          if (dow == 7), do: 0, else: dow
-        end).())
+        Reflaxe.Elixir.HaxeFloat.to_string(
+          (fn ->
+             date = apply(Map.get(d, :__reflaxe_class__) || Map.get(d, :__struct__), :to_date, [d])
+             dow = Date.day_of_week(date)
+             if (dow == 7), do: 0, else: dow
+           end).()
+        )
       "y" ->
         StringTools.lpad(Reflaxe.Elixir.HaxeFloat.to_string(rem(d.year, 100)), "0", 2)
       _ -> raise Reflaxe.Elixir.HaxeThrow, [value: NotImplementedException.new("Date.format %" <> e <> "- not implemented yet.", nil, %{file_name: "../../../../std/elixir/_std/DateTools.hx", line_number: 82, class_name: "DateTools", method_name: "__format_get"})]
@@ -156,7 +164,7 @@ defmodule DateTools do
     month = (d.month - 1)
     year = d.year
     if (month != 1) do
-      DateTools.days_of_month()[month]
+      Enum.at(DateTools.days_of_month(), month)
     else
       is_leap = rem(year, 4) == 0 and rem(year, 100) != 0 or rem(year, 400) == 0
       if (is_leap), do: 29, else: 28
@@ -184,11 +192,14 @@ defmodule DateTools do
     Reflaxe.Elixir.HaxeFloat.add(o.ms, Reflaxe.Elixir.HaxeFloat.mul(1000, Reflaxe.Elixir.HaxeFloat.add(o.seconds, Reflaxe.Elixir.HaxeFloat.mul(60, Reflaxe.Elixir.HaxeFloat.add(o.minutes, Reflaxe.Elixir.HaxeFloat.mul(60, Reflaxe.Elixir.HaxeFloat.add(o.hours, Reflaxe.Elixir.HaxeFloat.mul(24, o.days))))))))
   end
   def make_utc(year, month, day, hour, min, sec) do
-    DateTime.to_unix((fn ->
-      elixir_month = month + 1
+    DateTime.to_unix(
+      (fn ->
+         elixir_month = month + 1
 
-                  {:ok, naive} = NaiveDateTime.new(year, elixir_month, day, hour, min, sec)
-                  DateTime.from_naive!(naive, "Etc/UTC")
-    end).(), :millisecond)
+                     {:ok, naive} = NaiveDateTime.new(year, elixir_month, day, hour, min, sec)
+                     DateTime.from_naive!(naive, "Etc/UTC")
+       end).(),
+      :millisecond
+    )
   end
 end

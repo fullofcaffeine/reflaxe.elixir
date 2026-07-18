@@ -334,7 +334,7 @@ class HXXComponentRegistry {
 			return false;
 		}
 
-		return element.allowedAttributes.indexOf(attributeName) != -1;
+		return element.allowedAttributes.contains(attributeName);
 	}
 
 	/**
@@ -484,7 +484,7 @@ class HXXComponentRegistry {
 			}
 		}
 		// Check global attributes
-		return getGlobalAttributes().indexOf(attributeName) != -1;
+		return getGlobalAttributes().contains(attributeName);
 	}
 
 	// ========================================================================

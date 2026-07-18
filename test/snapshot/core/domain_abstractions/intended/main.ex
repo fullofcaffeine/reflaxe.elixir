@@ -49,13 +49,14 @@ defmodule Main do
         {:error, _error} -> nil
       end)
     end)
-    invalid_ids = ["ab", "user@123", "user 123", "user-123", "", Enum.join((fn ->
+    invalid_ids = ["ab", "user@123", "user 123", "user-123", "", Enum.join(
       (fn ->
-        g = []
-        g = Enum.reduce(0..59//1, g, fn _i, g_acc -> Enum.concat(g_acc, ["a"]) end)
-        g
-      end).()
-    end).(), "")]
+         g = []
+         g = Enum.reduce(0..59//1, g, fn _i, g_acc -> Enum.concat(g_acc, ["a"]) end)
+         g
+       end).(),
+      ""
+    )]
     _g = 0
     Enum.each(invalid_ids, fn invalid_id ->
       (case UserId_Impl_.parse(invalid_id) do

@@ -1,5 +1,5 @@
 defmodule TodoFormatter do
-  def new(format_param, prefix_param) do
+  def new(format_param, prefix_param \\ "") do
     struct = %{:__reflaxe_class__ => TodoFormatter, :format => nil, :prefix => nil}
     struct = %{struct | format: format_param}
     struct = %{struct | prefix: prefix_param}

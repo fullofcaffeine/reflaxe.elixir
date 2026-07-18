@@ -153,6 +153,66 @@ class CallExprBuilder {
 		return stringToolsRemote("haxe_last_index_of", [receiver, value, startIndex]);
 	}
 
+	/**
+	 * Lower `Array.indexOf` from its typed receiver/arguments instead of expanding
+	 * target text from the target stdlib.
+	 *
+	 * Keeping this operation semantic until AST construction owns both correctness
+	 * and output quality: callback operands are evaluated once in Haxe order when
+	 * needed, while the common local-value path prints as a direct `case` over
+	 * `Enum.find_index/2`.
+	 */
+	static function buildArrayIndexOf(receiver:ElixirAST, needle:ElixirAST, startIndex:ElixirAST, hasExplicitStart:Bool,
+			context:CompilationContext):ElixirASTDef {
+		inline function isStableValue(value:ElixirAST):Bool {
+			return switch (value.def) {
+				case EVar(_) | EInteger(_) | EFloat(_) | EString(_) | EAtom(_) | EBoolean(_) | ENil: true;
+				default: false;
+			};
+		}
+
+		var prefix:Array<ElixirAST> = [];
+		var receiverValue = receiver;
+		var needleValue = needle;
+		var startValue = startIndex;
+
+		function bindOnce(value:ElixirAST, label:String):ElixirAST {
+			if (isStableValue(value))
+				return value;
+			var name = 'array_index_${label}_${context.generateNodeId()}';
+			prefix.push(makeAST(EMatch(PVar(name), value)));
+			return makeAST(EVar(name));
+		}
+
+		// Preserve Haxe receiver/argument evaluation order before the predicate runs.
+		receiverValue = bindOnce(receiverValue, "receiver");
+		needleValue = bindOnce(needleValue, "needle");
+		if (hasExplicitStart)
+			startValue = bindOnce(startValue, "start");
+
+		var item = makeAST(EVar("item"));
+		var predicate = makeAST(EFn([
+			{
+				args: [PVar("item")],
+				guard: null,
+				body: makeAST(EBinary(Equal, item, needleValue))
+			}
+		]));
+		var enumerable = hasExplicitStart ? makeAST(ERemoteCall(makeAST(EVar("Enum")), "drop", [receiverValue, startValue])) : receiverValue;
+		var findIndex = makeAST(ERemoteCall(makeAST(EVar("Enum")), "find_index", [enumerable, predicate]));
+		var foundIndex = makeAST(EVar("index"));
+		var foundBody = hasExplicitStart ? makeAST(EBinary(Add, foundIndex, startValue)) : foundIndex;
+		var result = makeAST(ECase(findIndex, [
+			{pattern: PLiteral(makeAST(ENil)), body: makeAST(EInteger(-1))},
+			{pattern: PVar("index"), body: foundBody}
+		]));
+
+		if (prefix.length == 0)
+			return result.def;
+		prefix.push(result);
+		return EBlock(prefix);
+	}
+
 	static function providedArgMayBeNil(args:Array<TypedExpr>, index:Int):Bool {
 		return args == null || index >= args.length || TypeUtils.mayBeNil(args[index].t);
 	}
@@ -649,12 +709,14 @@ class CallExprBuilder {
 
 		var defaultArgExprs:Null<Array<Null<TypedExpr>>> = switch (e.expr) {
 			case TField(_, FStatic(classRef, fieldRef)):
+				var classType = classRef.get();
 				var field = fieldRef.get();
-				var data = field.isMethodKind() ? field.findFuncData(classRef.get(), true) : null;
+				var data = field.isMethodKind() ? field.findFuncData(classType, true) : null;
 				data != null ? [for (arg in data.args) arg.expr] : null;
 			case TField(_, FInstance(classRef, _, fieldRef)):
+				var classType = classRef.get();
 				var field = fieldRef.get();
-				var data = field.isMethodKind() ? field.findFuncData(classRef.get(), false) : null;
+				var data = field.isMethodKind() ? field.findFuncData(classType, false) : null;
 				data != null ? [for (arg in data.args) arg.expr] : null;
 			default:
 				null;
@@ -678,9 +740,10 @@ class CallExprBuilder {
 			argASTs.push(builtArg);
 		}
 
-		// Optional args: Haxe typed calls can omit trailing optional parameters.
-		// Elixir requires exact arity, so preserve typed default expressions when
-		// Reflaxe can recover them and use `nil` only for optionals without defaults.
+		// Haxe calls preserve their source defaults at the call site. This is required
+		// even for non-extern classes because a source class may be backed by a target
+		// runtime override whose callable does not expose generated Elixir defaults.
+		// Preserve typed defaults when available and use `nil` otherwise.
 		//
 		// Example (Haxe):
 		//   getString(pos, len) // where getString(pos, len, ?encoding)
@@ -706,7 +769,7 @@ class CallExprBuilder {
 				switch (fa) {
 					case FInstance(classRef, _, cf):
 						// Instance method call
-						var classType = classRef.get();
+						var classType = classRef != null ? classRef.get() : null;
 						var className = classType.name;
 						var classPack = classType.pack != null ? classType.pack.join(".") : "";
 						var moduleName = ModuleBuilder.extractModuleName(classType);
@@ -872,6 +935,9 @@ class CallExprBuilder {
 
 								case "join" if (argASTs != null && argASTs.length == 1):
 									return ERemoteCall(makeAST(EVar("Enum")), "join", [receiverAst, argASTs[0]]);
+
+								case "indexOf" if (argASTs != null && argASTs.length == 2):
+									return buildArrayIndexOf(receiverAst, argASTs[0], argASTs[1], args != null && args.length > 1, context);
 
 								case "push" if (argASTs != null && argASTs.length == 1):
 									// Haxe: mutates array in-place; Elixir: rebind to appended list.
@@ -1089,6 +1155,24 @@ class CallExprBuilder {
 						//   via `apply/3`.
 						// --------------------------------------------------------------------
 						var receiverAst = buildExpression(obj);
+						var classType = classRef.get();
+						var isElixirModuleReference = classType != null
+							&& classType.isExtern
+							&& (classType.meta.has(":elixirModuleRef") || classType.meta.has("elixirModuleRef"));
+
+						// A value marked `@:elixirModuleRef` is a BEAM module reference, not a Haxe
+						// object. Calling one of its declared methods therefore emits a dynamic
+						// remote call (`module_expr.function(args)`) and must not prepend the
+						// receiver or inspect object/class tags. Mix.shell/0 is the canonical
+						// example: the configured shell module owns info/1 and yes?/1.
+						if (isElixirModuleReference) {
+							if (receiverAst == null) {
+								context.error("@:elixirModuleRef receiver failed to compile as an Elixir module expression", obj.pos);
+								return ENil;
+							}
+							return ERemoteCall(receiverAst, elixirMethodName, argASTs);
+						}
+
 						var callArgs = [receiverAst].concat(argASTs);
 
 						var isPublicMethod = cf.get().isPublic;

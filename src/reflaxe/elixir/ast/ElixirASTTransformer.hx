@@ -2913,7 +2913,13 @@ class ElixirASTTransformer {
 	 * 
 	 * WHY: Elixir's string interpolation #{} is more idiomatic and readable than concatenation
 	 * WHAT: Transforms EBinary(StringConcat, ...) chains into interpolated strings
-	 * HOW: Finds string concatenation chains and replaces them with interpolated strings
+	 * HOW: Finds string concatenation chains, legalizes each typed expression for its target
+	 * representation, and replaces the chain with an interpolated string
+	 *
+	 * Interpolation is an early AST-to-source boundary: once an expression is embedded in ERaw,
+	 * later semantic passes cannot inspect it. Legalize only the expression being serialized here;
+	 * running the same lowering over the whole tree would erase patterns still needed by reducer
+	 * and guard normalization.
 	 * 
 	 * NOTE: We use a custom traversal instead of transformNode to avoid recursive transformation
 	 */
@@ -2961,20 +2967,28 @@ class ElixirASTTransformer {
 					if (hasNonString && parts.length > 1) {
 						// Build interpolated string
 						var result = '"';
+						inline function escapeInterpolationLiteral(value:String):String {
+							// The pass emits ERaw containing a double-quoted Elixir string. Literal
+							// control characters must stay escaped inside that one-line source
+							// representation; otherwise printer indentation becomes runtime data.
+							return value.replace('\\', '\\\\')
+								.replace('"', '\\"')
+								.replace('\n', '\\n')
+								.replace('\r', '\\r')
+								.replace('\t', '\\t')
+								.replace('#{', '\\#{');
+						}
 
 						for (i in 0...parts.length) {
 							var part = parts[i];
 							if (part.isString) {
 								// Add literal string part (escape special characters)
-								var escaped = part.value;
-								escaped = escaped.split('\\').join('\\\\');
-								escaped = escaped.split('"').join('\\"');
-								escaped = escaped.split('#{').join('\\#{'); // Escape interpolation syntax
-								result += escaped;
+								result += escapeInterpolationLiteral(part.value);
 							} else {
 								// Add interpolated expression
 								// First recursively transform the expression
 								var transformedExpr = transform(part.expr);
+								transformedExpr = reflaxe.elixir.ast.transformers.ListIndexAccessToEnumAtTransforms.transformPass(transformedExpr);
 
 								// Strip unnecessary .to_string() calls since Elixir auto-converts in interpolation
 								var exprToInterpolate = switch (transformedExpr.def) {

@@ -11,7 +11,7 @@ defmodule PortableChatDomain.MessageRules do
     if Kernel.is_nil(body) do
       ""
     else
-      s = Enum.join((fn -> StringTools.haxe_split(body, "\n") end).(), " ")
+      s = Enum.join(StringTools.haxe_split(body, "\n"), " ")
       StringTools.ltrim(StringTools.rtrim(s))
     end
   end

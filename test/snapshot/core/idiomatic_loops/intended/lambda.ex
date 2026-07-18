@@ -104,7 +104,7 @@ defmodule Lambda do
   def fold(it, f, first) do
     Enum.reduce(it, first, f)
   end
-  def count(it, pred) do
+  def count(it, pred \\ nil) do
     if (Kernel.is_nil(pred)) do
       Enum.count(it)
     else

@@ -7,7 +7,7 @@ defmodule Sys.Thread.Semaphore do
   def acquire(struct) do
     SemaphoreRuntime.acquire(struct.ref)
   end
-  def try_acquire(struct, timeout) do
+  def try_acquire(struct, timeout \\ nil) do
     SemaphoreRuntime.try_acquire(struct.ref, timeout)
   end
   def release(struct) do

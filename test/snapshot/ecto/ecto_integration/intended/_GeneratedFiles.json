@@ -1,27 +1,111 @@
 {
-  "filesGenerated": [
-  "user_queries.ex",
-  "user_changeset.ex",
-  "type.ex",
-  "std.ex",
-  "repo.ex",
-  "reflaxe/exception.ex",
-  "reflaxe/elixir/haxe_throw.ex",
-  "reflaxe/elixir/haxe_float.ex",
-  "my_app_web/user_live.ex",
-  "my_app/user.ex",
-  "my_app/post.ex",
-  "my_app/organization.ex",
-  "my_app/comment.ex",
-  "haxe/iterators/array_key_value_iterator.ex",
-  "haxe/iterators/array_iterator.ex",
-  "haxe/_call_stack/call_stack_impl_.ex",
-  "ecto_integration_simple.ex",
-  "create_users_table.ex",
-  "array_tools.ex",
-  "accounts.ex"
-],
-  "id": 0,
-  "wasCached": false,
-  "version": 1
+	"filesGenerated": [
+		"user_queries.ex",
+		"user_changeset.ex",
+		"type.ex",
+		"std.ex",
+		"repo.ex",
+		"reflaxe/exception.ex",
+		"reflaxe/elixir/haxe_throw.ex",
+		"reflaxe/elixir/haxe_float.ex",
+		"my_app_web/user_live.ex",
+		"my_app/user.ex",
+		"my_app/post.ex",
+		"my_app/organization.ex",
+		"my_app/comment.ex",
+		"haxe/iterators/array_key_value_iterator.ex",
+		"haxe/iterators/array_iterator.ex",
+		"haxe/_call_stack/call_stack_impl_.ex",
+		"ecto_integration_simple.ex",
+		"create_users_table.ex",
+		"array_tools.ex",
+		"accounts.ex"
+	],
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 0,
+	"wasCached": false,
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "accounts.ex",
+			"sha256": "5d2ffde4aaa0e169b9be708f107d8d18da3e04aa0c231aee8903d2284b19975b"
+		},
+		{
+			"path": "array_tools.ex",
+			"sha256": "3ca3fb06b3e00f4a3f17ff6a90f93a73ff1c55ff43401475cbe2a446f87c0744"
+		},
+		{
+			"path": "create_users_table.ex",
+			"sha256": "74be271f41c561a16783121d4f7922c2300092715d7f15d8b27e6925619c3fe8"
+		},
+		{
+			"path": "ecto_integration_simple.ex",
+			"sha256": "079cc80b96148ae1c6bacccb51dc15acb62fe524afcbef88572496ddd432e513"
+		},
+		{
+			"path": "haxe/_call_stack/call_stack_impl_.ex",
+			"sha256": "ab46ba4f786a95420ae1cd78188f77ebebc3ced2db90d1351297f573f30dadf8"
+		},
+		{
+			"path": "haxe/iterators/array_iterator.ex",
+			"sha256": "3186b41d2124063a790c08804f1bfb9c3a7508de7f6a99ad2cdb1687f1c2b82d"
+		},
+		{
+			"path": "haxe/iterators/array_key_value_iterator.ex",
+			"sha256": "7c2a5a2cc281bb9a1c5ed1bb56e351bdb68b53a7d048fa70decc5bfdd527419e"
+		},
+		{
+			"path": "my_app/comment.ex",
+			"sha256": "ef2eb4f72da24e7d40ddbe4996538cef3986102985d1e6ce99976dc6602b90d1"
+		},
+		{
+			"path": "my_app/organization.ex",
+			"sha256": "69e70c21fb7a84dc206b7d682874307cb40076965f823f48872114ee77d3e0f2"
+		},
+		{
+			"path": "my_app/post.ex",
+			"sha256": "e9a7042eac7b96e5577ea034ff5684c8e9e4bc665e420b94d6255bf04de648be"
+		},
+		{
+			"path": "my_app/user.ex",
+			"sha256": "a29da8ee861b90ba22f971dc63d5a89b6ebddcccb749d04be9a70ce45efd0d09"
+		},
+		{
+			"path": "my_app_web/user_live.ex",
+			"sha256": "dcd10d258eaa3c156b0d8d05c504fda0fd8601db1922567ec23a82ebc58cf855"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_float.ex",
+			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_throw.ex",
+			"sha256": "642bbf29d073acc9eb2ffcea4a8e6016396a43f1a4180a79331b537bfefc6094"
+		},
+		{
+			"path": "reflaxe/exception.ex",
+			"sha256": "02fc779b3a5c750db17ab47e624c22bbb8887786a22a767969ab23d1946be755"
+		},
+		{
+			"path": "repo.ex",
+			"sha256": "c39b8d1e1dc406a595ae2a253d6098a6fcb7b9b23bf2e11f887460fc5d454ebc"
+		},
+		{
+			"path": "std.ex",
+			"sha256": "cfc6ad389294bc64c9d82be070797b4e65041a3d225fc0741500ca7cc6c8f804"
+		},
+		{
+			"path": "type.ex",
+			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
+		},
+		{
+			"path": "user_changeset.ex",
+			"sha256": "e89c3b4250b8e80e75d95fefe21dd4fa6c3e3a2cd67fd76189539b4734cb9aa1"
+		},
+		{
+			"path": "user_queries.ex",
+			"sha256": "db87751aaf1d42cd2c6ca31126b29d2413a78c94acc7199ea80bd9bf2b819be7"
+		}
+	],
+	"generation": "6cd3e16d3905ea1a521978d6a4d540ac7c7588d2f97b507974a7d2bc6975c008"
 }

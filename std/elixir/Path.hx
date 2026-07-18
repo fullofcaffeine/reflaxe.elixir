@@ -1,6 +1,7 @@
 package elixir;
 
 #if (macro || reflaxe_runtime || elixir)
+import elixir.types.Atom;
 import elixir.types.Term;
 
 /**
@@ -56,6 +57,10 @@ extern class Path {
 	// Path type checking and validation
 	@:native("Path.type")
 	public static function type(name:String):String; // :absolute | :relative | :volumerelative
+
+	/** Exact atom result used by target-native path validation. */
+	@:native("Path.type")
+	public static function typeAtom(name:String):Atom;
 
 	@:native("Path.absname?")
 	public static function isAbsolute(path:String):Bool; // Check if path is absolute

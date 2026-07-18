@@ -112,24 +112,18 @@ defmodule Main do
       end)), "john@example.com") end).(), "New field should be added")
     fields = Reflect.fields(obj)
     assert(length(fields) == 3, "Should have 3 fields")
-    assert((fn ->
-                    case Enum.find_index(fields, fn item -> item == "name" end) do
-                        nil -> -1
-                        idx -> idx
-                    end
-     >= 0 end).(), "Should have 'name' field")
-    assert((fn ->
-                    case Enum.find_index(fields, fn item -> item == "age" end) do
-                        nil -> -1
-                        idx -> idx
-                    end
-     >= 0 end).(), "Should have 'age' field")
-    assert((fn ->
-                    case Enum.find_index(fields, fn item -> item == "active" end) do
-                        nil -> -1
-                        idx -> idx
-                    end
-     >= 0 end).(), "Should have 'active' field")
+    assert((case Enum.find_index(fields, fn item -> item == "name" end) do
+      nil -> -1
+      index -> index
+    end) >= 0, "Should have 'name' field")
+    assert((case Enum.find_index(fields, fn item -> item == "age" end) do
+      nil -> -1
+      index -> index
+    end) >= 0, "Should have 'age' field")
+    assert((case Enum.find_index(fields, fn item -> item == "active" end) do
+      nil -> -1
+      index -> index
+    end) >= 0, "Should have 'active' field")
     assert((case {obj, "name"} do
       {reflect_obj, reflect_field} ->
         (case Map.has_key?(reflect_obj, reflect_field) do

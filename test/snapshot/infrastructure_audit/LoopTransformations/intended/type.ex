@@ -94,7 +94,7 @@ defmodule Type do
   def create_empty_instance(cl) do
     struct(cl)
   end
-  def create_enum(enum, constructor, params) do
+  def create_enum(enum, constructor, params \\ nil) do
     _ignore_enum = enum
 
           tag = String.to_atom(constructor)
@@ -106,7 +106,7 @@ defmodule Type do
           List.to_tuple([tag | values])
 
   end
-  def create_enum_index(enum, index, params) do
+  def create_enum_index(enum, index, params \\ nil) do
     _ignore_enum = enum
     _ignore_i = index
     _ignore_p = params

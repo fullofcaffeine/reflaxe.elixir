@@ -28,119 +28,201 @@ defmodule Mix.Tasks.Haxe.Phoenix.LiveReact do
 
   @impl Mix.Task
   def run(args) do
-    {opts, argv, invalid} =
-      OptionParser.parse(args,
-        strict: [
-          check: :boolean,
-          remove: :boolean,
-          yes: :boolean,
-          warn_only: :boolean,
-          package_root: :string,
-          ssr: :boolean
-        ]
-      )
-
-    reject_invalid_arguments!(argv, invalid)
-    reject_unsupported_options!(opts)
-
-    mode = parse_mode!(opts)
+    parsed = OptionParser.parse(args, parser_options())
+    options = elem(parsed, 0)
+    argv = elem(parsed, 1)
+    invalid = elem(parsed, 2)
+    reject_invalid_arguments(argv, invalid)
+    reject_unsupported_options(options)
+    mode = parse_mode(options)
     root = File.cwd!()
+    project_config = Mix.Project.config()
+    mix_dependencies = Keyword.get(project_config, :deps, [])
+    package_root = Keyword.get(options, :package_root, nil)
+    confirmed = Keyword.get(options, :yes, false) or mode == :check
+    warn_only = Keyword.get(options, :warn_only, false)
+    confirm = fn message -> Mix.shell().yes?(message) end
+    report = fn message -> Mix.shell().info(message) end
 
     common = [
-      package_root: opts[:package_root],
-      mix_dependencies: Mix.Project.config()[:deps] || [],
-      yes: opts[:yes] || mode == :check,
-      warn_only: opts[:warn_only] || false,
-      confirm: &Mix.shell().yes?/1,
-      report: &Mix.shell().info/1
+      {:package_root, package_root},
+      {:mix_dependencies, mix_dependencies},
+      {:yes, confirmed},
+      {:warn_only, warn_only},
+      {:confirm, confirm},
+      {:report, report}
     ]
 
     result =
-      case mode do
-        :apply -> HaxePhoenixLiveReact.apply!(root, common)
-        :check -> HaxePhoenixLiveReact.check!(root, common)
-        :remove -> HaxePhoenixLiveReact.remove!(root, common)
+      cond do
+        mode == :apply -> HaxePhoenixLiveReact.apply!(root, common)
+        mode == :check -> HaxePhoenixLiveReact.check!(root, common)
+        true -> HaxePhoenixLiveReact.remove!(root, common)
       end
 
     report_result(mode, result)
     result
   end
 
-  defp parse_mode!(opts) do
-    case {opts[:check] || false, opts[:remove] || false} do
-      {true, true} -> raise "--check and --remove are mutually exclusive"
-      {true, false} -> :check
-      {false, true} -> :remove
-      {false, false} -> :apply
+  defp parser_options() do
+    switches = [
+      {:check, :boolean},
+      {:remove, :boolean},
+      {:yes, :boolean},
+      {:warn_only, :boolean},
+      {:package_root, :string},
+      {:ssr, :boolean}
+    ]
+
+    [{:strict, switches}]
+  end
+
+  defp parse_mode(options) do
+    check = Keyword.get(options, :check, false)
+    remove = Keyword.get(options, :remove, false)
+
+    if check and remove do
+      Kernel.raise("--check and --remove are mutually exclusive")
+    else
+      if check do
+        :check
+      else
+        if remove, do: :remove, else: :apply
+      end
     end
   end
 
-  defp reject_invalid_arguments!([], []), do: :ok
+  defp reject_invalid_arguments(argv, invalid) do
+    if length(argv) == 0 and length(invalid) == 0 do
+      nil
+    else
+      details =
+        if length(argv) == 0 do
+          ""
+        else
+          "unexpected arguments: #{Enum.join(argv, " ")}"
+        end
 
-  defp reject_invalid_arguments!(argv, invalid) do
-    details =
-      [
-        if(argv != [], do: "unexpected arguments: #{Enum.join(argv, " ")}"),
-        if(invalid != [], do: "invalid options: #{inspect(invalid)}")
-      ]
-      |> Enum.reject(&is_nil/1)
-      |> Enum.join("; ")
+      details =
+        if length(invalid) != 0 do
+          details =
+            if details != "" do
+              "#{details}; "
+            else
+              details
+            end
 
-    raise "invalid haxe.phoenix.live_react invocation (#{details})"
-  end
+          "#{details}invalid options: #{Kernel.inspect(invalid)}"
+        else
+          details
+        end
 
-  defp reject_unsupported_options!(opts) do
-    if opts[:ssr] do
-      raise "--ssr is not supported by the initial PhoenixHx LiveReact integration. No writes occurred. Client-only setup always emits ssr=false."
+      Kernel.raise("invalid haxe.phoenix.live_react invocation (#{details})")
     end
   end
 
-  defp report_result(_mode, :cancelled) do
-    Mix.shell().info("PhoenixHx LiveReact changes cancelled; no writes occurred.")
-  end
-
-  defp report_result(:apply, result) do
-    Mix.shell().info("PhoenixHx LiveReact integration is current (experimental, client-only).")
-    Mix.shell().info("Stock LiveReact identity: #{identity_label(result.dependency)}")
-    Mix.shell().info("npm package root: #{result.package_root}")
-    Mix.shell().info("Next: npm install#{package_suffix(result.package_root)}")
-    Mix.shell().info("Then verify: mix haxe.phoenix.live_react --check")
-  end
-
-  defp report_result(:check, result) do
-    Mix.shell().info("PhoenixHx LiveReact check passed; no writes occurred.")
-    Mix.shell().info("Stock LiveReact identity: #{identity_label(result.dependency)}")
-  end
-
-  defp report_result(:remove, result) do
-    Mix.shell().info("Removed all currently owned PhoenixHx LiveReact state.")
-
-    if result.retained_package_keys != [] do
-      Mix.shell().info(
-        "Retained package keys used by hand-owned browser source: #{Enum.join(result.retained_package_keys, ", ")}"
+  defp reject_unsupported_options(options) do
+    if Keyword.get(options, :ssr, false) do
+      Kernel.raise(
+        "--ssr is not supported by the initial PhoenixHx LiveReact integration. No writes occurred. Client-only setup always emits ssr=false."
       )
     end
-
-    if result.retained_live_react_dependency do
-      Mix.shell().info(
-        "Retained the stock :live_react Mix dependency and lock entry because hand-owned browser source still imports live_react."
-      )
-    end
-
-    Mix.shell().info(
-      "Run npm install#{package_suffix(result.package_root)} to converge the npm lockfile."
-    )
   end
 
-  defp identity_label(%{"sourceKind" => "git"} = identity),
-    do: "#{identity["repository"]}@#{identity["resolvedRevision"]}"
+  defp report_result(mode, result) do
+    if result == :cancelled do
+      Mix.shell().info("PhoenixHx LiveReact changes cancelled; no writes occurred.")
+    else
+      report_completed_result(mode, result)
+    end
+  end
 
-  defp identity_label(%{"sourceKind" => "hex"} = identity),
-    do: "hex:#{identity["package"]}@#{identity["resolvedVersion"]}"
+  defp report_completed_result(mode, result) do
+    cond do
+      mode == :apply ->
+        package_root = top_level_string(result, :package_root)
 
-  defp identity_label(%{"sourceKind" => "path"} = identity),
-    do: "path:#{identity["path"]}@#{identity["packageVersion"]}"
+        Mix.shell().info(
+          "PhoenixHx LiveReact integration is current (experimental, client-only)."
+        )
 
-  defp package_suffix("."), do: ""
-  defp package_suffix(path), do: " --prefix #{path}"
+        Mix.shell().info(
+          "Stock LiveReact identity: " <> identity_label(top_level_value(result, :dependency))
+        )
+
+        Mix.shell().info("npm package root: " <> package_root)
+        Mix.shell().info("Next: npm install" <> package_suffix(package_root))
+        Mix.shell().info("Then verify: mix haxe.phoenix.live_react --check")
+
+      mode == :check ->
+        Mix.shell().info("PhoenixHx LiveReact check passed; no writes occurred.")
+
+        Mix.shell().info(
+          "Stock LiveReact identity: " <> identity_label(top_level_value(result, :dependency))
+        )
+
+      true ->
+        Mix.shell().info("Removed all currently owned PhoenixHx LiveReact state.")
+        retained_keys = Enum.to_list(top_level_value(result, :retained_package_keys))
+
+        if length(retained_keys) != 0 do
+          Mix.shell().info(
+            "Retained package keys used by hand-owned browser source: " <>
+              Enum.join(retained_keys, ", ")
+          )
+        end
+
+        if top_level_value(result, :retained_live_react_dependency) == true do
+          Mix.shell().info(
+            "Retained the stock :live_react Mix dependency and lock entry because hand-owned browser source still imports live_react."
+          )
+        end
+
+        Mix.shell().info(
+          "Run npm install" <>
+            package_suffix(top_level_string(result, :package_root)) <>
+            " to converge the npm lockfile."
+        )
+    end
+  end
+
+  defp identity_label(identity) do
+    source_kind = string_key_string(identity, "sourceKind")
+
+    if source_kind == "git" do
+      "#{string_key_string(identity, "repository")}@#{string_key_string(identity, "resolvedRevision")}"
+    else
+      if source_kind == "hex" do
+        "hex:#{string_key_string(identity, "package")}@#{string_key_string(identity, "resolvedVersion")}"
+      else
+        if source_kind == "path" do
+          "path:#{string_key_string(identity, "path")}@#{string_key_string(identity, "packageVersion")}"
+        else
+          Kernel.raise(
+            "unsupported LiveReact dependency identity returned by HaxePhoenixLiveReact"
+          )
+        end
+      end
+    end
+  end
+
+  defp top_level_string(result, key) do
+    Kernel.to_string(top_level_value(result, key))
+  end
+
+  defp top_level_value(result, key) do
+    Map.get(result, key)
+  end
+
+  defp string_key_string(result, key) do
+    Kernel.to_string(Map.get(result, key))
+  end
+
+  defp package_suffix(path) do
+    if path == "." do
+      ""
+    else
+      " --prefix #{path}"
+    end
+  end
 end

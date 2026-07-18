@@ -1,6 +1,7 @@
 package elixir;
 
 #if (macro || reflaxe_runtime || elixir)
+import elixir.types.Atom;
 import elixir.types.Term;
 
 /**
@@ -15,6 +16,10 @@ extern class File {
 	// File reading operations
 	@:native("File.read")
 	public static function read(path:String):{_0:String, _1:Term}; // {:ok, binary} | {:error, reason}
+
+	/** Raw tagged result for code that validates native `:ok`/`:error` atoms. */
+	@:native("File.read")
+	public static function readResult(path:String):Term;
 
 	@:native("File.read!")
 	public static function readBang(path:String):String; // Returns content or raises
@@ -44,6 +49,10 @@ extern class File {
 	@:native("File.write!")
 	public static function writeBangWithModes(path:String, content:Term, modes:Array<String>):Term;
 
+	/** Exact atom-mode variant used by target-native tooling. */
+	@:native("File.write!")
+	public static function writeBangWithAtomModes(path:String, content:Term, modes:Array<Atom>):Term;
+
 	// File streaming operations
 	@:native("File.stream!")
 	public static function stream(path:String):Term; // File stream
@@ -66,6 +75,10 @@ extern class File {
 
 	@:native("File.lstat")
 	public static function lstat(path:String):{_0:String, _1:Term}; // Like stat but for symlinks
+
+	/** Raw result because `File.lstat/1` returns either `{:ok, File.Stat.t()}` or `{:error, reason}`. */
+	@:native("File.lstat")
+	public static function lstatResult(path:String):Term;
 
 	@:native("File.lstat!")
 	public static function lstatBang(path:String):Term;
@@ -123,11 +136,17 @@ extern class File {
 	@:native("File.rm")
 	public static function rm(path:String):{_0:String, _1:Term}; // {:ok} | {:error, reason}
 
+	@:native("File.rm")
+	public static function rmResult(path:String):Term;
+
 	@:native("File.rm!")
 	public static function rmBang(path:String):Term; // Returns :ok or raises
 
 	@:native("File.rm_rf")
 	public static function rmRecursive(path:String):{_0:String, _1:Term}; // Recursive remove
+
+	@:native("File.rm_rf")
+	public static function rmRecursiveResult(path:String):Term;
 
 	@:native("File.rm_rf!")
 	public static function rmRecursiveBang(path:String):Array<String>; // Returns removed files
@@ -147,6 +166,9 @@ extern class File {
 
 	@:native("File.rmdir")
 	public static function rmdir(path:String):{_0:String, _1:Term}; // {:ok} | {:error, reason}
+
+	@:native("File.rmdir")
+	public static function rmdirResult(path:String):Term;
 
 	@:native("File.rmdir!")
 	public static function rmdirBang(path:String):Term;

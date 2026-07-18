@@ -4,10 +4,10 @@ defmodule Main do
     end_ = 10
     _g = start
     g_value = end_
-    _ = Enum.each(start..(g_value - 1)//1, fn _ -> nil end)
+    Enum.each(start..(g_value - 1)//1, fn _ -> nil end)
     arr = [1, 2, 3, 4, 5]
     _g = 0
-    _ = Enum.each(arr, fn _ -> nil end)
+    Enum.each(arr, fn _ -> nil end)
     k = 0
     {_k} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k}, fn _, {acc_k} ->
       try do

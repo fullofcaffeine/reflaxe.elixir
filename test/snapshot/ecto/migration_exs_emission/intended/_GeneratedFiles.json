@@ -1,8 +1,16 @@
 {
-  "filesGenerated": [
-  "test_app/repo/migrations/create_users.exs"
-],
-  "id": 0,
-  "wasCached": false,
-  "version": 1
+	"filesGenerated": [
+		"test_app/repo/migrations/create_users.exs"
+	],
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 0,
+	"wasCached": false,
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "test_app/repo/migrations/create_users.exs",
+			"sha256": "ce80b4a03761367cfbdad984db8187de4ea5f6b1b0d98d1e0cdcc08a686bef21"
+		}
+	],
+	"generation": "4b7c6342a59f736538f892096500d7f58dcbeb1fd04392e022d376c44be84818"
 }

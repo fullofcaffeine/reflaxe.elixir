@@ -11,6 +11,7 @@ import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirASTHelpers;
 import reflaxe.elixir.ast.NameUtils;
 import reflaxe.elixir.helpers.PatternDetector;
+import reflaxe.helpers.NameMetaHelper;
 
 private typedef LocalFieldAssign = {
 	baseVarName:String,
@@ -216,16 +217,10 @@ class AssignmentBuilder {
 						if (baseVarName == "this" || baseVarName == "_this")
 							return null;
 
-						var rawFieldName = switch (fa) {
-							case FInstance(_, _, cf): cf.get().name;
-							case FStatic(_, cf): cf.get().name;
-							case FAnon(cf): cf.get().name;
-							case FClosure(_, cf): cf.get().name;
-							case FEnum(_, ef): ef.name;
-							case FDynamic(s): s;
-						};
-
-						var fieldNameSnake = NameUtils.toSnakeCase(rawFieldName);
+						var nameMeta = NameMetaHelper.getFieldAccessNameMeta(fa);
+						var rawFieldName = nameMeta.name;
+						var targetFieldName = NameMetaHelper.getNameOrNative(nameMeta);
+						var fieldNameSnake = NameMetaHelper.hasMeta(nameMeta, ":native") ? targetFieldName : NameUtils.toSnakeCase(targetFieldName);
 						var tupleIndex = AnonymousTupleShape.fieldIndexForType(baseExpr.t, rawFieldName);
 						var isStruct = switch (baseExpr.t) {
 							case TInst(_, _): true;
@@ -245,19 +240,14 @@ class AssignmentBuilder {
 							return null;
 						var baseVarName = compilationCtx.currentReceiverParamName;
 
-						var rawFieldName = switch (fa) {
-							case FInstance(_, _, cf): cf.get().name;
-							case FStatic(_, cf): cf.get().name;
-							case FAnon(cf): cf.get().name;
-							case FClosure(_, cf): cf.get().name;
-							case FEnum(_, ef): ef.name;
-							case FDynamic(s): s;
-						};
+						var nameMeta = NameMetaHelper.getFieldAccessNameMeta(fa);
+						var targetFieldName = NameMetaHelper.getNameOrNative(nameMeta);
+						var fieldNameSnake = NameMetaHelper.hasMeta(nameMeta, ":native") ? targetFieldName : NameUtils.toSnakeCase(targetFieldName);
 
 						{
 							baseVarName: baseVarName,
 							baseVarId: -1,
-							fieldNameSnake: NameUtils.toSnakeCase(rawFieldName),
+							fieldNameSnake: fieldNameSnake,
 							isStruct: true,
 							tupleIndex: null
 						};

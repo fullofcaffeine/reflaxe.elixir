@@ -26,13 +26,13 @@
           "source": "examples/13-elixir-first-liveview/src_haxe/live/SearchLive.hx",
           "generated": "elixir_first_liveview_web/search_live.ex",
           "handwritten": "handwritten/elixir-first-liveview/search_live.ex",
-          "expectation": "Callbacks, assigns, and HEEx use Phoenix-native shapes. The Term-to-string boundary retains one conservative Haxe inequality helper."
+          "expectation": "Callbacks, assigns, and HEEx use Phoenix-native shapes. Explicit elixir.types.Term comparisons preserve native BEAM term equality without a portable Haxe Float helper."
         }
       ],
       "footprint": {
-        "maxGeneratedFiles": 58,
+        "maxGeneratedFiles": 57,
         "maxApplicationFiles": 11,
-        "maxSupportFiles": 47,
+        "maxSupportFiles": 46,
         "supportGroups": [
           {
             "id": "ecto-extern-support",
@@ -44,7 +44,7 @@
           {
             "id": "elixir-extern-support",
             "paths": ["elixir/"],
-            "maxFiles": 14,
+            "maxFiles": 13,
             "reason": "Typed OTP and core Elixir support values retained by this application build.",
             "tracking": "haxe.elixir.codex-3qh.14"
           },
@@ -78,16 +78,7 @@
           }
         ]
       },
-      "allowances": [
-        {
-          "metric": "helperCall",
-          "file": "elixir_first_liveview_web/search_live.ex",
-          "key": "Reflaxe.Elixir.HaxeFloat",
-          "count": 1,
-          "reason": "The value is an untrusted Term, so Haxe inequality must remain correct if the term is a tagged NaN or infinity value.",
-          "tracking": "haxe.elixir.codex-3qh.20"
-        }
-      ]
+      "allowances": []
     },
     {
       "id": "abstraction-lab",
@@ -155,7 +146,7 @@
           "source": "examples/16-portable-chat-domain/src_haxe/shared/chat/MessageRules.hx",
           "generated": "portable_chat_domain/message_rules.ex",
           "handwritten": "handwritten/portable-chat-domain/message_rules.ex",
-          "expectation": "Portable string behavior remains semantically Haxe-compatible. StringTools calls and expression IIFEs are measured until native operations can be proven equivalent."
+          "expectation": "Portable string behavior remains semantically Haxe-compatible. StringTools calls and the scoped substring expression are measured until native operations can be proven equivalent."
         },
         {
           "id": "portable-transcript",
@@ -169,7 +160,7 @@
           "source": "examples/16-portable-chat-domain/src_haxe/server/PortableChatServer.hx",
           "generated": "portable_chat_domain/portable_chat_server.ex",
           "handwritten": "handwritten/portable-chat-domain/portable_chat_server.ex",
-          "expectation": "The target adapter should remain ordinary pipeline and Enum code; one pure expression IIFE is tracked for removal."
+          "expectation": "The target adapter remains ordinary pipeline and Enum code with direct expression arguments."
         }
       ],
       "footprint": {
@@ -213,16 +204,8 @@
           "metric": "iife",
           "file": "portable_chat_domain/message_rules.ex",
           "key": "",
-          "count": 2,
-          "reason": "Expression-internal split and substring lowering currently isolates temporary bindings in pure IIFEs.",
-          "tracking": "haxe.elixir.codex-3qh.9"
-        },
-        {
-          "metric": "iife",
-          "file": "portable_chat_domain/portable_chat_server.ex",
-          "key": "",
           "count": 1,
-          "reason": "The expression-valued sample_lines call is currently isolated before Enum.join.",
+          "reason": "Portable substring lowering still isolates its source/start/count temporaries inside interpolation; the pure split expression now lowers directly.",
           "tracking": "haxe.elixir.codex-3qh.9"
         }
       ]

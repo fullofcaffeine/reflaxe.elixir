@@ -22,7 +22,7 @@ import reflaxe.elixir.CompilationContext;
  * HOW: Detects patterns and generates appropriate AST
  * - Simple arrays become EList
  * - Comprehensions become EFor
- * - Array access becomes EAccess
+ * - Array access becomes semantic EAccess for representation-aware legalization
  */
 @:nullSafety(Off)
 class ArrayBuilder {

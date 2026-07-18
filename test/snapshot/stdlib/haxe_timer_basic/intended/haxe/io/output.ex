@@ -4,7 +4,7 @@ defmodule Output do
     b
   end
   def write_byte(_struct, _c) do
-    raise Reflaxe.Elixir.HaxeThrow, [value: NotImplementedException.new(nil, nil, %{file_name: "../../../../std/haxe/io/Output.hx", line_number: 38, class_name: "haxe.io.Output", method_name: "writeByte"})]
+    raise Reflaxe.Elixir.HaxeThrow, [value: NotImplementedException.new(nil, nil, %{file_name: "../../../../std/elixir/_std/haxe/io/Output.hx", line_number: 38, class_name: "haxe.io.Output", method_name: "writeByte"})]
   end
   def write_bytes(struct, s, pos, len) do
     if (pos < 0 or len < 0 or pos + len > s.length) do
@@ -182,7 +182,7 @@ defmodule Output do
   def prepare(_struct, _nbytes) do
 
   end
-  def write_input(struct, i, bufsize) do
+  def write_input(struct, i, bufsize \\ nil) do
     bufsize = if (Kernel.is_nil(bufsize)), do: 4096, else: bufsize
     buf = Bytes.alloc(bufsize)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
@@ -242,7 +242,7 @@ defmodule Output do
       end
     end)
   end
-  def write_string(struct, s, encoding) do
+  def write_string(struct, s, encoding \\ nil) do
     b = Bytes.of_string(s, encoding)
     apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_full_bytes, [struct, b, 0, b.length])
   end

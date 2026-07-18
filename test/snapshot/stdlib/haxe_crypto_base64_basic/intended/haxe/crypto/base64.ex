@@ -38,11 +38,11 @@ defmodule Haxe.Crypto.Base64 do
   def url_bytes(value) do
     __haxe_static_put__(:url_bytes, value)
   end
-  def encode(bytes, complement) do
+  def encode(bytes, complement \\ nil) do
     use_complement = if (Kernel.is_nil(complement)), do: true, else: complement
     Base.encode64(apply(Map.get(bytes, :__reflaxe_class__) || Map.get(bytes, :__struct__), :get_data, [bytes]), padding: use_complement)
   end
-  def decode(str, complement) do
+  def decode(str, complement \\ nil) do
     use_complement = if (Kernel.is_nil(complement)), do: true, else: complement
     encoded = if (use_complement) do
       String.trim_trailing(str, "=")
@@ -52,11 +52,11 @@ defmodule Haxe.Crypto.Base64 do
     decoded = Base.decode64!(encoded, padding: false)
     Bytes.of_data(decoded)
   end
-  def url_encode(bytes, complement) do
+  def url_encode(bytes, complement \\ nil) do
     use_complement = if (Kernel.is_nil(complement)), do: false, else: complement
     Base.url_encode64(apply(Map.get(bytes, :__reflaxe_class__) || Map.get(bytes, :__struct__), :get_data, [bytes]), padding: use_complement)
   end
-  def url_decode(str, complement) do
+  def url_decode(str, complement \\ nil) do
     use_complement = if (Kernel.is_nil(complement)), do: false, else: complement
     encoded = if (use_complement) do
       String.trim_trailing(str, "=")

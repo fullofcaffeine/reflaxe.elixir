@@ -225,7 +225,7 @@ defmodule SocketState do
   def endpoint_port(info) do
     elem(info, 1)
   end
-  def select_ready(sockets, kind, timeout) do
+  def select_ready(sockets, kind, timeout \\ nil) do
     (
                 timeout_value =
                   cond do

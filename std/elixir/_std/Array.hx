@@ -106,7 +106,7 @@ class Array<T> {
 	 * Generates: Enum.member?(array, x)
 	 */
 	public function contains(x:T):Bool {
-		return untyped __elixir__('Enum.member?({0}, {1})', this, x);
+		return elixir.Enum.member(this, x);
 	}
 
 	/**
@@ -177,50 +177,26 @@ class Array<T> {
 	/**
 	 * Returns the index of the first occurrence of x
 	 * 
-	 * ## Why `extern inline` Solves the Optional Parameter Issue
+	 * ## Compiler-owned lowering
 	 * 
-	 * When using just `inline`, Reflaxe.Elixir generates runtime code for optional parameter
-	 * initialization. This creates a problem: the generated code references variables that
-	 * don't exist yet (like `from_index`), causing "undefined variable" errors.
-	 * 
-	 * Using `extern inline` changes the compilation behavior fundamentally:
-	 * 1. **Compile-Time Resolution**: The optional parameter logic is evaluated during 
-	 *    Haxe's typing phase, not during code generation
-	 * 2. **No Runtime Variables**: Since the `if (fromIndex != 0)` check happens at 
-	 *    compile-time, only the relevant branch is compiled
-	 * 3. **Clean Output**: The generated Elixir code contains no references to undefined
-	 *    variables because the optional parameter has already been resolved
-	 * 
-	 * Example:
-	 * - `array.indexOf(5)` compiles to just the else branch (fromIndex = 0)
-	 * - `array.indexOf(5, 2)` compiles to just the if branch with fromIndex = 2
-	 * 
-	 * This is the definitive solution as requested - it doesn't work around the problem,
-	 * it prevents the problem from occurring by handling optional parameters at the 
-	 * correct compilation phase.
-	 * 
-	 * @see https://haxe.org/manual/class-field-inline.html#extern-inline
+	 * Direct calls are lowered from typed receiver and argument AST by the compiler.
+	 * This body remains the source-level semantic reference; keeping it non-inline
+	 * prevents raw target interpolation from losing renamed receiver binders.
+	 *
+	 * Generated Elixir uses `Enum.find_index/2` with a concise `case`, while complex
+	 * receiver/argument expressions are bound once in Haxe evaluation order.
 	 */
-	extern inline public function indexOf(x:T, ?fromIndex:Int = 0):Int {
-		// With extern inline, the optional parameter is resolved at compile-time
-		// So we can safely use fromIndex in our logic
+	public function indexOf(x:T, ?fromIndex:Int = 0):Int {
 		if (fromIndex != 0) {
-			return untyped __elixir__("
-                {0}
-                |> Enum.drop({2})
-                |> Enum.find_index(fn item -> item == {1} end)
-                |> case do
-                    nil -> -1
-                    idx -> idx + {2}
-                end
-            ", this, x, fromIndex);
-		} else {
-			return untyped __elixir__("
-                case Enum.find_index({0}, fn item -> item == {1} end) do
-                    nil -> -1
-                    idx -> idx
-                end
-            ", this, x);
+			return switch elixir.Enum.findIndex(elixir.Enum.drop(this, fromIndex), item -> item == x) {
+				case null: -1;
+				case index: index + fromIndex;
+			}
+		}
+
+		return switch elixir.Enum.findIndex(this, item -> item == x) {
+			case null: -1;
+			case index: index;
 		}
 	}
 

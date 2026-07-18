@@ -52,7 +52,7 @@ defmodule BytesOutput do
       len
     end
   end
-  def write_input(struct, i, bufsize) do
+  def write_input(struct, i, bufsize \\ nil) do
     bytes = apply(Map.get(i, :__reflaxe_class__) || Map.get(i, :__struct__), :read_all, [i, bufsize])
     if (bytes.length > 0) do
       apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_bytes, [struct, bytes, 0, bytes.length])

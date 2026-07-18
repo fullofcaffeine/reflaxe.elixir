@@ -634,6 +634,8 @@ class ElixirASTPrinter {
 
 					// Print body
 					for (expr in body) {
+						if (expr.metadata?.blankLineBefore == true && !result.endsWith("\n\n"))
+							result += "\n";
 						// Unwrap raw EBlock([ERaw(...)]) bodies to avoid stray parentheses and double indentation
 						switch (expr.def) {
 							case EBlock(stmts) if (stmts.length == 1):
@@ -809,7 +811,7 @@ class ElixirASTPrinter {
 			// Functions
 			// ================================================================
 			case EDef(name, args, guards, body):
-				var argStr = printPatterns(args);
+				var argStr = printDefinitionPatterns(metadata, args);
 				var guardStr = guards != null ? ' when ' + print(guards, 0) : '';
 				'def ${name}(${argStr})${guardStr} do\n'
 				+ printDefBody(body, indent + 1)
@@ -819,7 +821,7 @@ class ElixirASTPrinter {
 
 			case EDefp(name, args, guards, body):
 				var funcName = name;
-				var argStr = printPatterns(args);
+				var argStr = printDefinitionPatterns(metadata, args);
 				var guardStr = guards != null ? ' when ' + print(guards, 0) : '';
 				'defp ${funcName}(${argStr})${guardStr} do\n'
 				+ printDefBody(body, indent + 1)
@@ -828,7 +830,7 @@ class ElixirASTPrinter {
 				+ 'end';
 
 			case EDefmacro(name, args, guards, body):
-				var argStr = printPatterns(args);
+				var argStr = printDefinitionPatterns(metadata, args);
 				var guardStr = guards != null ? ' when ' + print(guards, 0) : '';
 				'defmacro ${name}(${argStr})${guardStr} do\n'
 				+ printDefBody(body, indent + 1)
@@ -837,7 +839,7 @@ class ElixirASTPrinter {
 				+ 'end';
 
 			case EDefmacrop(name, args, guards, body):
-				var argStr = printPatterns(args);
+				var argStr = printDefinitionPatterns(metadata, args);
 				var guardStr = guards != null ? ' when ' + print(guards, 0) : '';
 				'defmacrop ${name}(${argStr})${guardStr} do\n'
 				+ printDefBody(body, indent + 1)
@@ -1470,14 +1472,12 @@ class ElixirASTPrinter {
 					lines.join('\n' + indentStr(indent));
 				} else {
 					// Normal function call
-					var argStr = (function() {
-						var parts:Array<String> = [];
-						for (a in args) {
-							var printed = printFunctionArg(a, indent + 1);
-							parts.push(sanitizeArgPrinted(printed, indent + 1));
-						}
-						return parts.join(', ');
-					})();
+					var argParts:Array<String> = [];
+					for (a in args) {
+						var printed = printFunctionArg(a, indent + 1);
+						argParts.push(sanitizeArgPrinted(printed, indent + 1));
+					}
+					var argStr = argParts.join(', ');
 					if (target != null) {
 						// Check if this is a function variable call (marked with empty funcName)
 						if (funcName == "") {
@@ -1487,7 +1487,7 @@ class ElixirASTPrinter {
 								case EParen(_): print(target, indent);
 								default: print(target, indent);
 							};
-							tStr + '.(' + argStr + ')';
+							printCallWithStructuredArgs(tStr + '.', args, argParts, indent);
 						} else {
 							// Transform method call syntax to proper Elixir module calls
 							// Elixir doesn't support obj.method() - use Module.function(obj, args)
@@ -1504,29 +1504,13 @@ class ElixirASTPrinter {
 
 							if (isEnumMethod) {
 								// Transform: list.map(fn) → Enum.map(list, fn)
-								// Special-case join: if the receiver is a multi-statement block, wrap via IIFE so the
-								// first argument is a single valid Elixir expression. Keep simple receivers as-is.
-								var receiverPrinted = print(target, indent);
-								var firstArgStr = (function() {
-									if (funcName == "join") {
-										var needsIife = switch (target.def) {
-											case EBlock(_) | EDo(_): true;
-											default: false;
-										};
-										if (!needsIife)
-											return receiverPrinted;
-										var trimmed = StringTools.trim(receiverPrinted);
-										return StringTools.startsWith(trimmed, '(fn ->') ? receiverPrinted : wrapIifeBody(receiverPrinted, false);
-									} else {
-										return receiverPrinted;
-									}
-								})();
-								var enumCall = 'Enum.' + funcName + '(' + firstArgStr;
-								if (argStr.length > 0) {
-									enumCall + ', ' + argStr + ')';
-								} else {
-									enumCall + ')';
-								}
+								// The receiver becomes the first ordinary function argument. Use the same
+								// scope-preserving argument path as every other call: genuine multi-statement
+								// blocks retain an IIFE, while singleton blocks remain direct expressions.
+								var firstArgStr = sanitizeArgPrinted(printFunctionArg(target, indent + 1), indent + 1);
+								var enumArgs = [target].concat(args);
+								var enumArgParts = [firstArgStr].concat(argParts);
+								printCallWithStructuredArgs('Enum.' + funcName, enumArgs, enumArgParts, indent);
 							} else {
 								// Special-case: to_iso8601 on Date/NaiveDateTime values
 								if (funcName == "to_iso8601") {
@@ -1590,11 +1574,17 @@ class ElixirASTPrinter {
 										};
 										modStr + '.' + funcName;
 								};
-								targetStr + '(' + argStr + ')';
+								printCallWithStructuredArgs(targetStr, args, argParts, indent);
 							}
 						}
 					} else {
-						funcName + '(' + argStr + ')';
+						// `defstruct` is a Kernel macro whose idiomatic declaration form omits
+						// call parentheses. Keeping this target-syntax rule in the printer lets
+						// structured AST builders emit native structs without raw Elixir text.
+						if (funcName == "defstruct")
+							'defstruct ' + argStr
+						else
+							printCallWithStructuredArgs(funcName, args, argParts, indent);
 					}
 				}
 
@@ -1640,6 +1630,7 @@ class ElixirASTPrinter {
 				// Printer no longer rewrites new/0 to struct literal to avoid generating invalid
 				// structs for non-schema modules (e.g., BalancedTree). Rely on AST transform stage.
 				// Qualify struct literal in changeset/2 to match remote module
+				var remoteArgParts:Null<Array<String>> = null;
 				var argStr = (function() {
 					// Aggressive stabilization for Assert boolean assertions: wrap first arg in IIFE to
 					// guarantee single-expression semantics even when inline expansions introduce multiple statements.
@@ -1653,6 +1644,7 @@ class ElixirASTPrinter {
 							parts.push(firstPrinted);
 							for (i in 1...args.length)
 								parts.push(sanitizeArgPrinted(printFunctionArg(args[i], indent), indent));
+							remoteArgParts = parts;
 							return parts.join(', ');
 						default:
 					}
@@ -1676,33 +1668,12 @@ class ElixirASTPrinter {
 						}
 						for (i in 1...args.length)
 							parts.push(sanitizeArgPrinted(printFunctionArg(args[i], indent), indent));
+						remoteArgParts = parts;
 						return parts.join(', ');
 					} else {
-						var s:String;
-						// Special handling: ensure Enum.join first argument is a single valid expression
-						// Some upstream shapes produce multi-statement fragments as the first argument.
-						// Wrap such cases in an IIFE at print-time as a last resort for validity.
-						var mstrTmp = printQualifiedModule(module, metadata);
-						if (mstrTmp == "Enum" && funcName == "join" && args.length >= 1) {
-							var parts:Array<String> = [];
-							var firstPrintedRaw = print(args[0], indent);
-							var needsIife = switch (args[0].def) {
-								case EBlock(_) | EDo(_): true;
-								default: false;
-							};
-							var firstPrinted = if (needsIife) {
-								var trimmed = StringTools.trim(firstPrintedRaw);
-								StringTools.startsWith(trimmed, '(fn ->') ? firstPrintedRaw : wrapIifeBody(firstPrintedRaw, false);
-							} else {
-								firstPrintedRaw;
-							};
-							parts.push(firstPrinted);
-							for (i in 1...args.length)
-								parts.push(sanitizeArgPrinted(printFunctionArg(args[i], indent), indent));
-							s = parts.join(', ');
-						} else {
-							s = [for (a in args) sanitizeArgPrinted(printFunctionArg(a, indent), indent)].join(', ');
-						}
+						var parts:Array<String> = [for (a in args) sanitizeArgPrinted(printFunctionArg(a, indent), indent)];
+						var s = parts.join(', ');
+						remoteArgParts = parts;
 						// Ecto.Query.from(t in :table, ...) -> qualify atom to <App>.CamelCase
 						var mstr = printQualifiedModule(module, metadata);
 						if (mstr == "Ecto.Query" && funcName == "from") {
@@ -1745,6 +1716,7 @@ class ElixirASTPrinter {
 									})();
 									if (app != null && app.length > 0) {
 										s = s.substr(0, idxIn + 4) + ' ' + app + '.' + camelize(raw) + s.substr(j);
+										remoteArgParts = null;
 									}
 								}
 							}
@@ -1777,6 +1749,7 @@ class ElixirASTPrinter {
 							if (app != null && isBareModule(trimmed)) {
 								var rest = comma != -1 ? s.substr(comma) : "";
 								s = app + "." + trimmed + rest;
+								remoteArgParts = null;
 							}
 						}
 						return s;
@@ -1815,7 +1788,11 @@ class ElixirASTPrinter {
 					}
 				}
 
-				moduleStr + '.' + finalFuncName + '(' + argStr + ')';
+				var remoteHead = moduleStr + '.' + finalFuncName;
+				remoteArgParts != null ? printCallWithStructuredArgs(remoteHead, args, remoteArgParts, indent) : remoteHead
+				+ '('
+				+ argStr
+				+ ')';
 
 			case EPipe(left, right):
 				print(left, 0) + ' |> ' + print(right, 0);
@@ -2517,18 +2494,18 @@ class ElixirASTPrinter {
 				} else if (statements.length == 1) {
 					print(statements[0], indent);
 				} else {
-					var parts = [];
-					var printed:Array<String> = [];
+					var parts:Array<String> = [];
+					var printed:Array<{value:String, blankLineBefore:Bool}> = [];
 					for (expr in statements) {
 						var str = print(expr, indent);
 						if (str != null && str.trim().length > 0) {
-							printed.push(str);
+							printed.push({value: str, blankLineBefore: expr.metadata?.blankLineBefore == true});
 						}
 					}
 					for (i in 0...printed.length) {
-						parts.push(printed[i]);
+						parts.push(printed[i].value);
 						if (i < printed.length - 1) {
-							parts.push('\n' + indentStr(indent));
+							parts.push((printed[i + 1].blankLineBefore ? '\n\n' : '\n') + indentStr(indent));
 						}
 					}
 					parts.join('');
@@ -2594,10 +2571,10 @@ class ElixirASTPrinter {
 				'@' + name + ' ' + print(value, indent);
 
 			case EModuledoc(content):
-				'@moduledoc """' + '\n' + content + '\n' + '"""';
+				printDocumentationAttribute("moduledoc", content, indent);
 
 			case EDoc(content):
-				'@doc """' + '\n' + content + '\n' + '"""';
+				printDocumentationAttribute("doc", content, indent);
 
 			case ESpec(signature):
 				'@spec ' + signature;
@@ -2906,6 +2883,33 @@ class ElixirASTPrinter {
 	 */
 	static function printPatterns(patterns:Array<EPattern>):String {
 		return [for (p in patterns) printPattern(p)].join(', ');
+	}
+
+	/**
+	 * Prints a function head while retaining source-level Haxe defaults.
+	 *
+	 * Defaults are definition metadata rather than pattern nodes because the
+	 * existing passes intentionally rename and normalize parameter patterns.
+	 * Keeping the value indexed beside the definition lets those passes retain
+	 * their normal behavior while the final head still exposes idiomatic Elixir
+	 * lower arities to handwritten callers.
+	 */
+	static function printDefinitionPatterns(metadata:Null<ElixirMetadata>, patterns:Array<EPattern>):String {
+		var defaults = metadata == null ? null : metadata.functionArgDefaults;
+		if (defaults == null || defaults.length == 0)
+			return printPatterns(patterns);
+
+		var defaultsByIndex:Map<Int, ElixirAST> = [];
+		for (entry in defaults)
+			defaultsByIndex.set(entry.index, entry.value);
+
+		var rendered:Array<String> = [];
+		for (index in 0...patterns.length) {
+			var pattern = printPattern(patterns[index]);
+			var defaultValue = defaultsByIndex.get(index);
+			rendered.push(defaultValue == null ? pattern : pattern + ' \\\\ ' + printFunctionArg(defaultValue, 0));
+		}
+		return rendered.join(', ');
 	}
 
 	/**
@@ -3237,6 +3241,14 @@ class ElixirASTPrinter {
 		return result;
 	}
 
+	/** Prints heredoc documentation with content and delimiter aligned to the owning module/function. */
+	static function printDocumentationAttribute(name:String, content:String, indent:Int):String {
+		var padding = indentStr(indent);
+		var lines = content == null ? [] : content.split("\n");
+		var body = [for (line in lines) padding + line].join("\n");
+		return '@${name} """\n${body}\n${padding}"""';
+	}
+
 	static function indentBody(body:String, level:Int):String {
 		if (body == null || body.length == 0) {
 			return "";
@@ -3455,6 +3467,130 @@ class ElixirASTPrinter {
 				true;
 			default:
 				false;
+		};
+	}
+
+	/**
+	 * Print a parenthesized call with stable layout for scoped multiline arguments.
+	 *
+	 * WHAT: Calls whose argument list contains an immediately invoked multiline
+	 * anonymous function are expanded across lines, with one argument per line.
+	 *
+	 * WHY: Haxe block expressions sometimes require an IIFE to preserve lexical
+	 * scope. Keeping that IIFE inline produces valid but visibly machine-shaped
+	 * Elixir such as `consume((fn ->\n ... end).())`. The generated module should
+	 * instead use the same call layout that `mix format` chooses for handwritten
+	 * code.
+	 *
+	 * HOW: The decision uses the structured argument AST plus the already-rendered
+	 * argument. It never keys off a function or module name. Simple calls retain
+	 * their compact representation, while a necessary multiline IIFE makes the
+	 * complete argument list multiline.
+	 *
+	 * EXAMPLE:
+	 * ```elixir
+	 * consume(
+	 *   (fn ->
+	 *      value = build_value()
+	 *      value
+	 *    end).()
+	 * )
+	 * ```
+	 */
+	static function printCallWithStructuredArgs(head:String, args:Array<ElixirAST>, printedArgs:Array<String>, indent:Int):String {
+		if (args == null || printedArgs == null || args.length != printedArgs.length)
+			return head + '(' + (printedArgs == null ? '' : printedArgs.join(', ')) + ')';
+
+		var hasMultilineScopedIife = false;
+		for (index in 0...args.length) {
+			if (isMultilineScopedIifeArgument(args[index], printedArgs[index])) {
+				hasMultilineScopedIife = true;
+				break;
+			}
+		}
+
+		if (!hasMultilineScopedIife)
+			return head + '(' + printedArgs.join(', ') + ')';
+
+		var argumentIndent = indentStr(indent + 1);
+		var laidOutArgs:Array<String> = [];
+		for (index in 0...printedArgs.length) {
+			var printed = printedArgs[index];
+			laidOutArgs.push(isMultilineScopedIifeArgument(args[index], printed) ? alignScopedIifeContinuation(printed, argumentIndent.length + 1) : printed);
+		}
+		return head + '(\n' + argumentIndent + laidOutArgs.join(',\n' + argumentIndent) + '\n' + indentStr(indent) + ')';
+	}
+
+	static function alignScopedIifeContinuation(printed:String, desiredLeastIndent:Int):String {
+		var lines = printed.split('\n');
+		if (lines.length < 2)
+			return printed;
+
+		var leastIndent:Null<Int> = null;
+		for (index in 1...lines.length) {
+			if (StringTools.trim(lines[index]).length == 0)
+				continue;
+			var leading = 0;
+			while (leading < lines[index].length && lines[index].charAt(leading) == ' ')
+				leading++;
+			if (leastIndent == null || leading < leastIndent)
+				leastIndent = leading;
+		}
+
+		if (leastIndent == null)
+			return printed;
+		var shift = desiredLeastIndent - leastIndent;
+		if (shift == 0)
+			return printed;
+
+		for (index in 1...lines.length) {
+			if (StringTools.trim(lines[index]).length == 0)
+				continue;
+			if (shift > 0) {
+				lines[index] = StringTools.lpad('', ' ', shift) + lines[index];
+			} else {
+				var leading = 0;
+				while (leading < lines[index].length && lines[index].charAt(leading) == ' ')
+					leading++;
+				lines[index] = lines[index].substr(Std.int(Math.min(-shift, leading)));
+			}
+		}
+		return lines.join('\n');
+	}
+
+	static function isMultilineScopedIifeArgument(arg:ElixirAST, printed:String):Bool {
+		if (arg == null || printed == null || printed.indexOf('\n') == -1)
+			return false;
+
+		var trimmed = StringTools.trim(printed);
+		if (!StringTools.startsWith(trimmed, '(fn ->'))
+			return false;
+
+		function unwrapParens(value:ElixirAST):ElixirAST {
+			var current = value;
+			while (current != null) {
+				switch (current.def) {
+					case EParen(inner):
+						current = inner;
+					default:
+						return current;
+				}
+			}
+			return current;
+		}
+
+		var normalized = unwrapParens(arg);
+		if (normalized == null)
+			return false;
+
+		return switch (normalized.def) {
+			case ECall(target, '', callArgs) if (target != null && callArgs != null && callArgs.length == 0): var normalizedTarget = unwrapParens(target); normalizedTarget != null && switch (normalizedTarget.def) {
+					case EFn(_): true;
+					default: false;
+				};
+			case EBlock(expressions) if (expressions.length > 1): true;
+			case EDo(expressions) if (expressions.length > 1): true;
+			default: false;
 		};
 	}
 

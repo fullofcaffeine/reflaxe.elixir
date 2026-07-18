@@ -94,7 +94,7 @@ defmodule Haxe.IO.Path do
   end
   def normalize(path) do
     slash = "/"
-    path = Enum.join((fn -> StringTools.haxe_split(path, "\\") end).(), slash)
+    path = Enum.join(StringTools.haxe_split(path, "\\"), slash)
     if (path == slash) do
       slash
     else

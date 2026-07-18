@@ -102,6 +102,10 @@ extern class ElixirString {
 	@:native("split")
 	public static function splitWithOptions(string:String, pattern:String, options:Array<String>):Array<String>; // Options like "trim", "global"
 
+	/** Exact keyword-option form, for example `trim: false` or `parts: 2`. */
+	@:native("split")
+	public static function splitWithKeywordOptions(string:String, pattern:String, options:elixir.types.KeywordList<Term>):Array<String>;
+
 	@:native("String.split_at")
 	public static function splitAt(string:String, position:Int):{_0:String, _1:String};
 
@@ -118,6 +122,10 @@ extern class ElixirString {
 
 	@:native("String.replace")
 	public static function replaceWithOptions(string:String, pattern:String, replacement:String, options:Array<String>):String;
+
+	/** Exact keyword-option form, for example `global: false`. */
+	@:native("String.replace")
+	public static function replaceWithKeywordOptions(string:String, pattern:Term, replacement:String, options:elixir.types.KeywordList<Term>):String;
 
 	@:native("String.replace_leading")
 	public static function replaceLeading(string:String, pattern:String, replacement:String):String;

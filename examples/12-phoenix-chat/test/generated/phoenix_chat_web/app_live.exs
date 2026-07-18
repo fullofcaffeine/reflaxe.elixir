@@ -192,7 +192,7 @@ defmodule PhoenixChatWeb.AppLive do
             end)
         end)
     end)
-    body_raw = if (Reflaxe.Elixir.HaxeFloat.neq(body_term, nil)), do: body_term, else: ""
+    body_raw = if (not Kernel.is_nil(body_term)), do: body_term, else: ""
     body = StringTools.ltrim(StringTools.rtrim(body_raw))
     if (body == "") do
       {:noreply, Phoenix.Component.assign(socket, :status, "Type a message first.")}
@@ -262,14 +262,14 @@ defmodule PhoenixChatWeb.AppLive do
     else
       msg_term = msg
       struct_term = Map.get(msg_term, :erlang.binary_to_atom("__struct__"))
-      if (Reflaxe.Elixir.HaxeFloat.eq(struct_term, nil)) do
+      if (Kernel.is_nil(struct_term)) do
         false
       else
-        if (Reflaxe.Elixir.HaxeFloat.neq(struct_term, :erlang.binary_to_atom("Elixir.Phoenix.Socket.Broadcast"))) do
+        if (struct_term != :erlang.binary_to_atom("Elixir.Phoenix.Socket.Broadcast")) do
           false
         else
           event_term = Map.get(msg_term, :erlang.binary_to_atom("event"))
-          Reflaxe.Elixir.HaxeFloat.neq(event_term, nil) and Reflaxe.Elixir.HaxeFloat.eq(event_term, "presence_diff")
+          not Kernel.is_nil(event_term) and event_term == "presence_diff"
         end
       end
     end

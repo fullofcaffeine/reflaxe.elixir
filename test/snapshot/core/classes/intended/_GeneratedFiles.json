@@ -1,21 +1,81 @@
 {
-  "filesGenerated": [
-  "vehicle.ex",
-  "type.ex",
-  "std.ex",
-  "shape.ex",
-  "reflaxe/exception.ex",
-  "reflaxe/elixir/haxe_throw.ex",
-  "reflaxe/elixir/haxe_float.ex",
-  "point.ex",
-  "main.ex",
-  "haxe/iterators/array_key_value_iterator.ex",
-  "haxe/iterators/array_iterator.ex",
-  "haxe/_call_stack/call_stack_impl_.ex",
-  "container.ex",
-  "circle.ex"
-],
-  "id": 0,
-  "wasCached": false,
-  "version": 1
+	"filesGenerated": [
+		"vehicle.ex",
+		"type.ex",
+		"std.ex",
+		"shape.ex",
+		"reflaxe/exception.ex",
+		"reflaxe/elixir/haxe_throw.ex",
+		"reflaxe/elixir/haxe_float.ex",
+		"point.ex",
+		"main.ex",
+		"haxe/iterators/array_key_value_iterator.ex",
+		"haxe/iterators/array_iterator.ex",
+		"haxe/_call_stack/call_stack_impl_.ex",
+		"container.ex",
+		"circle.ex"
+	],
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 0,
+	"wasCached": false,
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "circle.ex",
+			"sha256": "d897add4489db91f32ad03fc88f46331a4006116d5641e1f8d284f9012b5012e"
+		},
+		{
+			"path": "container.ex",
+			"sha256": "40500eb17d4fd61945043f81b72d4adcee16e438d66c6df783fffbe9886c8bc3"
+		},
+		{
+			"path": "haxe/_call_stack/call_stack_impl_.ex",
+			"sha256": "ab46ba4f786a95420ae1cd78188f77ebebc3ced2db90d1351297f573f30dadf8"
+		},
+		{
+			"path": "haxe/iterators/array_iterator.ex",
+			"sha256": "3186b41d2124063a790c08804f1bfb9c3a7508de7f6a99ad2cdb1687f1c2b82d"
+		},
+		{
+			"path": "haxe/iterators/array_key_value_iterator.ex",
+			"sha256": "7c2a5a2cc281bb9a1c5ed1bb56e351bdb68b53a7d048fa70decc5bfdd527419e"
+		},
+		{
+			"path": "main.ex",
+			"sha256": "cfa14c89167fed552c241a9edba4c51f240ed748e0ce29210737ab1b13eb2281"
+		},
+		{
+			"path": "point.ex",
+			"sha256": "2f66326618037032fbd4db8f36d3f552991cae708f286e47153ddac41c252ef0"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_float.ex",
+			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_throw.ex",
+			"sha256": "642bbf29d073acc9eb2ffcea4a8e6016396a43f1a4180a79331b537bfefc6094"
+		},
+		{
+			"path": "reflaxe/exception.ex",
+			"sha256": "02fc779b3a5c750db17ab47e624c22bbb8887786a22a767969ab23d1946be755"
+		},
+		{
+			"path": "shape.ex",
+			"sha256": "870544565e01f0226af472742bb5ae851287141b91823e2c7fea996d3854bf04"
+		},
+		{
+			"path": "std.ex",
+			"sha256": "cfc6ad389294bc64c9d82be070797b4e65041a3d225fc0741500ca7cc6c8f804"
+		},
+		{
+			"path": "type.ex",
+			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
+		},
+		{
+			"path": "vehicle.ex",
+			"sha256": "c9c0db06ed41d360e3cf2ce5060a0b0bd86653ac4247b55779a21504d78ea0fd"
+		}
+	],
+	"generation": "ce307e984db6939587ff54c65a0068e7afdd4767ccc9080068d622e5f986f499"
 }

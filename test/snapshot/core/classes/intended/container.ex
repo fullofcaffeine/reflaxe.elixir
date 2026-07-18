@@ -8,7 +8,7 @@ defmodule Container do
     struct.items ++ [item]
   end
   def get(struct, index) do
-    struct.items[index]
+    Enum.at(struct.items, index)
   end
   def size(struct) do
     length(struct.items)

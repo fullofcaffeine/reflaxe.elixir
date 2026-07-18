@@ -4,7 +4,7 @@ defmodule Sys.Thread.Lock do
     struct = %{struct | ref: LockRuntime.create()}
     struct
   end
-  def wait(struct, timeout) do
+  def wait(struct, timeout \\ nil) do
     LockRuntime.wait(struct.ref, timeout)
   end
   def release(struct) do

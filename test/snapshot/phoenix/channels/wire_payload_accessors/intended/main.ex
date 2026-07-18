@@ -19,7 +19,7 @@ defmodule Main do
     nested = Map.put(nested, "n", "x")
     payload = Map.put(payload, "nested", nested)
     got_nested = Phoenix.Channels.WirePayload.get_payload(payload, "nested")
-    assert_that(Reflaxe.Elixir.HaxeFloat.neq(got_nested, nil), "getPayload failed")
+    assert_that(not Kernel.is_nil(got_nested), "getPayload failed")
     assert_that(Phoenix.Channels.WirePayload.get_string(got_nested, "n") == "x", "nested getString failed")
     sa_terms = [:ok, "hi"]
     payload = Map.put(payload, "sa", sa_terms)

@@ -54,7 +54,7 @@ defmodule Input do
   def close(_struct) do
 
   end
-  def read_all(struct, bufsize) do
+  def read_all(struct, bufsize \\ nil) do
     bufsize = if (Kernel.is_nil(bufsize)), do: 16384, else: bufsize
     buf = Bytes.alloc(bufsize)
     total = BytesBuffer.new()
@@ -267,7 +267,7 @@ defmodule Input do
     ch4 = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])
     if (struct.big_endian), do: Bitwise.bor(Bitwise.bor(Bitwise.bor(ch4, Bitwise.bsl(ch3, 8)), Bitwise.bsl(ch2, 16)), Bitwise.bsl(ch1, 24)), else: Bitwise.bor(Bitwise.bor(Bitwise.bor(ch1, Bitwise.bsl(ch2, 8)), Bitwise.bsl(ch3, 16)), Bitwise.bsl(ch4, 24))
   end
-  def read_string(struct, len, encoding) do
+  def read_string(struct, len, encoding \\ nil) do
     b = Bytes.alloc(len)
     apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_full_bytes, [struct, b, 0, len])
     apply(Map.get(b, :__reflaxe_class__) || Map.get(b, :__struct__), :get_string, [b, 0, len, encoding])

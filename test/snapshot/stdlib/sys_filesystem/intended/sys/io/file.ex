@@ -12,19 +12,19 @@ defmodule Sys.IO.File do
   def save_bytes(path, bytes) do
     write!(path, apply(Map.get(bytes, :__reflaxe_class__) || Map.get(bytes, :__struct__), :get_data, [bytes]))
   end
-  def read(path, binary) do
+  def read(path, binary \\ true) do
     device = open_bang(path, (if (binary), do: ["read", "binary"], else: ["read"]))
     FileInput.new(device)
   end
-  def write(path, binary) do
+  def write(path, binary \\ true) do
     device = open_bang(path, (if (binary), do: ["write", "binary"], else: ["write"]))
     FileOutput.new(device)
   end
-  def append(path, binary) do
+  def append(path, binary \\ true) do
     device = open_bang(path, (if (binary), do: ["append", "binary"], else: ["append"]))
     FileOutput.new(device)
   end
-  def update(path, binary) do
+  def update(path, binary \\ true) do
     device = open_bang(path, (if (binary), do: ["read", "write", "binary"], else: ["read", "write"]))
     FileOutput.new(device)
   end

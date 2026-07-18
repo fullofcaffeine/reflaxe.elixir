@@ -1,5 +1,5 @@
 defmodule BufferInput do
-  def new(i_param, buf_param, pos_param, available_param) do
+  def new(i_param, buf_param, pos_param \\ 0, available_param \\ 0) do
     struct = %{:__reflaxe_class__ => BufferInput, :i => nil, :buf => nil, :available => nil, :pos => nil, :big_endian => nil}
     struct = %{struct | i: i_param}
     struct = %{struct | buf: buf_param}

@@ -15,7 +15,7 @@ defmodule PortInput do
     reflaxe_dispatch_receiver = struct.buffer
     apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get, [reflaxe_dispatch_receiver, struct.buffer_offset])
   end
-  def read_all(struct, _bufsize) do
+  def read_all(struct, _bufsize \\ nil) do
     data = (
                 port = struct.port
                 chunks = Enum.reduce_while(Stream.repeatedly(fn -> :ok end), [], fn _, acc ->
@@ -81,7 +81,7 @@ defmodule PortInput do
         struct = %{struct | buffer: nil}
         struct = %{struct | buffer_offset: 0}
         data = receive_data_non_blocking(struct)
-        if (Reflaxe.Elixir.HaxeFloat.neq(data, nil)) do
+        if (not Kernel.is_nil(data)) do
           _ = %{struct | buffer: Bytes.of_data(data)}
           true
         else

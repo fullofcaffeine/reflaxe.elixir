@@ -5,6 +5,6 @@
   "version": 3,
   "file": "array_iterator.ex",
   "sources": [
-  "std/elixir/_std/haxe/iterators/ArrayIterator.hx"
-]
+    "std/elixir/_std/haxe/iterators/ArrayIterator.hx"
+  ]
 }

@@ -7,10 +7,10 @@ defmodule Key do
   def to_ssl_key(struct) do
     KeyState.ssl_key(struct.key_ref)
   end
-  def load_file(file, is_public, pass) do
+  def load_file(file, is_public \\ nil, pass \\ nil) do
     read_pem(File.read!(file), is_public == true, pass)
   end
-  def read_pem(data, is_public, pass) do
+  def read_pem(data, is_public, pass \\ nil) do
     new(KeyState.read_pem(data, is_public, pass))
   end
   def read_der(data, is_public) do

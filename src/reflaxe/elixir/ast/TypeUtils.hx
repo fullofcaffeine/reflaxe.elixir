@@ -84,6 +84,17 @@ class TypeUtils {
 		return isElixirAtomTypeInner(t, 0);
 	}
 
+	/**
+	 * Returns true for the explicit `elixir.types.Term` native BEAM boundary.
+	 *
+	 * Unlike ordinary `Dynamic`, `Term` deliberately asks the target to preserve
+	 * native BEAM term behavior. Detect it before following the abstract to its
+	 * `Dynamic` carrier so operator builders can honor that declared boundary.
+	 */
+	public static function isElixirTermType(t:Null<Type>):Bool {
+		return isElixirTermTypeInner(t, 0);
+	}
+
 	public static function mayBeNil(t:Null<Type>):Bool {
 		return mayBeNilInner(t, 0);
 	}
@@ -192,6 +203,30 @@ class TypeUtils {
 				isElixirAtomTypeInner(td.get().type, depth + 1);
 			case TLazy(f):
 				isElixirAtomTypeInner(f(), depth + 1);
+			default:
+				false;
+		}
+	}
+
+	static function isElixirTermTypeInner(t:Null<Type>, depth:Int):Bool {
+		if (t == null || depth > 20)
+			return false;
+
+		return switch (t) {
+			case TAbstract(ref, params):
+				var abstractType = ref.get();
+				if (abstractType.pack.join(".") == "elixir.types" && abstractType.name == "Term") {
+					true;
+				} else if (abstractType.name == "Null" && params != null && params.length == 1) {
+					isElixirTermTypeInner(params[0], depth + 1);
+				} else {
+					isElixirTermTypeInner(abstractType.type, depth + 1);
+				}
+			case TType(typeRef, _):
+				isElixirTermTypeInner(typeRef.get().type, depth + 1);
+			case TLazy(thunk):
+				isElixirTermTypeInner(thunk(), depth + 1);
+			case TMono(monoRef): var resolved = monoRef.get(); resolved != null && isElixirTermTypeInner(resolved, depth + 1);
 			default:
 				false;
 		}

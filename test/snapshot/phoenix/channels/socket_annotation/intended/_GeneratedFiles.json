@@ -1,19 +1,71 @@
 {
-  "filesGenerated": [
-  "type.ex",
-  "std.ex",
-  "reflaxe/exception.ex",
-  "reflaxe/elixir/haxe_throw.ex",
-  "reflaxe/elixir/haxe_float.ex",
-  "my_app_web/user_socket.ex",
-  "my_app_web/ping_channel.ex",
-  "my_app_web/endpoint.ex",
-  "main.ex",
-  "haxe/iterators/array_key_value_iterator.ex",
-  "haxe/iterators/array_iterator.ex",
-  "haxe/_call_stack/call_stack_impl_.ex"
-],
-  "id": 0,
-  "wasCached": false,
-  "version": 1
+	"filesGenerated": [
+		"type.ex",
+		"std.ex",
+		"reflaxe/exception.ex",
+		"reflaxe/elixir/haxe_throw.ex",
+		"reflaxe/elixir/haxe_float.ex",
+		"my_app_web/user_socket.ex",
+		"my_app_web/ping_channel.ex",
+		"my_app_web/endpoint.ex",
+		"main.ex",
+		"haxe/iterators/array_key_value_iterator.ex",
+		"haxe/iterators/array_iterator.ex",
+		"haxe/_call_stack/call_stack_impl_.ex"
+	],
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 0,
+	"wasCached": false,
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "haxe/_call_stack/call_stack_impl_.ex",
+			"sha256": "ab46ba4f786a95420ae1cd78188f77ebebc3ced2db90d1351297f573f30dadf8"
+		},
+		{
+			"path": "haxe/iterators/array_iterator.ex",
+			"sha256": "3186b41d2124063a790c08804f1bfb9c3a7508de7f6a99ad2cdb1687f1c2b82d"
+		},
+		{
+			"path": "haxe/iterators/array_key_value_iterator.ex",
+			"sha256": "7c2a5a2cc281bb9a1c5ed1bb56e351bdb68b53a7d048fa70decc5bfdd527419e"
+		},
+		{
+			"path": "main.ex",
+			"sha256": "b00c6089f2367c3a3c2d6e71a51d883c14134a8294578e75e16da747a1717852"
+		},
+		{
+			"path": "my_app_web/endpoint.ex",
+			"sha256": "c109a5a64649b99c2f56a31eb140229b4e917e0a070d4e7213e3bcd50e622a9e"
+		},
+		{
+			"path": "my_app_web/ping_channel.ex",
+			"sha256": "fa31d68a89b2378de31e11c759475c4454363bbe1691d9edf6c0701430a1ec97"
+		},
+		{
+			"path": "my_app_web/user_socket.ex",
+			"sha256": "0400db32d413314d35c29eafa6f9309d2930b1cdd646d56c2b82b4dfbd3e96a7"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_float.ex",
+			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_throw.ex",
+			"sha256": "642bbf29d073acc9eb2ffcea4a8e6016396a43f1a4180a79331b537bfefc6094"
+		},
+		{
+			"path": "reflaxe/exception.ex",
+			"sha256": "02fc779b3a5c750db17ab47e624c22bbb8887786a22a767969ab23d1946be755"
+		},
+		{
+			"path": "std.ex",
+			"sha256": "cfc6ad389294bc64c9d82be070797b4e65041a3d225fc0741500ca7cc6c8f804"
+		},
+		{
+			"path": "type.ex",
+			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
+		}
+	],
+	"generation": "0a0fce8183cf31d2d5abc63892bbf570573322efac05fcfa0ae9c44000380bed"
 }

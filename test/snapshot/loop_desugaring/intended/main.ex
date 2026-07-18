@@ -1,13 +1,13 @@
 defmodule Main do
   def main() do
-    _ = test_simple_for_loop()
-    _ = test_while_loop()
-    _ = test_array_map()
-    _ = test_array_filter()
-    _ = test_string_iteration()
-    _ = test_nested_loops()
-    _ = test_loop_with_break()
-    _ = test_loop_with_continue()
+    test_simple_for_loop()
+    test_while_loop()
+    test_array_map()
+    test_array_filter()
+    test_string_iteration()
+    test_nested_loops()
+    test_loop_with_break()
+    test_loop_with_continue()
   end
   defp test_simple_for_loop() do
     nil
@@ -39,11 +39,11 @@ defmodule Main do
   end
   defp test_array_map() do
     numbers = [1, 2, 3, 4, 5]
-    _ = Enum.map(numbers, fn x -> x * 2 end)
+    Enum.map(numbers, fn x -> x * 2 end)
   end
   defp test_array_filter() do
     numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    _ = Enum.filter(numbers, fn x -> rem(x, 2) == 0 end)
+    Enum.filter(numbers, fn x -> rem(x, 2) == 0 end)
   end
   defp test_string_iteration() do
     input = "Hello World!"
@@ -85,12 +85,24 @@ defmodule Main do
   defp test_loop_with_break() do
     result = -1
     _g = 0
-    result = Enum.reduce(0..99//1, result, fn i, _result_acc ->
-      if (i * i > 50) do
-        throw(:break)
-        i
-      else
-        i
+    result = Enum.reduce_while(0..99//1, result, fn i, result_acc ->
+      try do
+        if (i * i > 50) do
+          result_acc = i
+          throw({:break, result_acc})
+          {:cont, result_acc}
+        else
+          {:cont, result_acc}
+        end
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, result_acc}
+        :throw, :continue ->
+          {:cont, result_acc}
       end
     end)
     result
@@ -98,11 +110,23 @@ defmodule Main do
   defp test_loop_with_continue() do
     result = []
     _g = 0
-    result = Enum.reduce(0..9//1, result, fn i, result_acc ->
-      if (rem(i, 2) == 0) do
-        throw(:continue)
+    result = Enum.reduce_while(0..9//1, result, fn i, result_acc ->
+      try do
+        if (rem(i, 2) == 0) do
+          throw({:continue, result_acc})
+        end
+        result_acc = Enum.concat(result_acc, [i])
+        {:cont, result_acc}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, result_acc}
+        :throw, :continue ->
+          {:cont, result_acc}
       end
-      Enum.concat(result_acc, [i])
     end)
     result
   end

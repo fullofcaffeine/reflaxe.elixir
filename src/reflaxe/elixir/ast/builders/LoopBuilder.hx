@@ -2994,6 +2994,12 @@ class LoopBuilder {
 			return switch (node.def) {
 				case EAccess({def: EVar(targetName)}, {def: EVar(indexVarName)}) if (targetName == arrayName && indexVarName == counterName):
 					itemAst;
+				case ERemoteCall({def: EVar("Enum")}, "at", [{def: EVar(targetName)}, {def: EVar(indexVarName)}])
+					if (targetName == arrayName && indexVarName == counterName):
+					// ArrayBuilder lowers typed Haxe list indexing directly to Enum.at/2.
+					// Preserve this TypedExpr-level map proof by recognizing that semantic
+					// equivalent, so the element binder replaces the repeated list lookup.
+					itemAst;
 				default:
 					node;
 			}

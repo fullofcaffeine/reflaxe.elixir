@@ -17,17 +17,22 @@ defmodule Main do
   end
   defp test_function_arguments() do
     optional = nil
-    do_something((fn ->
-        tmp = optional
-        if (not Kernel.is_nil(tmp)), do: tmp, else: "default"
-      end).())
-    do_multiple((fn ->
-        tmp = optional
-        if (not Kernel.is_nil(tmp)), do: tmp, else: "first"
-      end).(), (fn ->
-        tmp = get_value()
-        if (not Kernel.is_nil(tmp)), do: tmp, else: "second"
-      end).())
+    do_something(
+      (fn ->
+         tmp = optional
+         if (not Kernel.is_nil(tmp)), do: tmp, else: "default"
+       end).()
+    )
+    do_multiple(
+      (fn ->
+         tmp = optional
+         if (not Kernel.is_nil(tmp)), do: tmp, else: "first"
+       end).(),
+      (fn ->
+         tmp = get_value()
+         if (not Kernel.is_nil(tmp)), do: tmp, else: "second"
+       end).()
+    )
   end
   defp test_object_literals() do
     optional = nil

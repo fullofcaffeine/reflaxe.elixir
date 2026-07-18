@@ -1,5 +1,5 @@
 defmodule ToFormOptions_Impl_ do
-  def build(as, id, errors, action, method, multipart) do
+  def build(as \\ nil, id \\ nil, errors \\ nil, action \\ nil, method \\ nil, multipart \\ nil) do
 
               [
                 as: if(Kernel.is_nil(as), do: nil, else: String.to_atom(as)),

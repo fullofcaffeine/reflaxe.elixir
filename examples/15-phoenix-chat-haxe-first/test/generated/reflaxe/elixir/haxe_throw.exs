@@ -1,6 +1,6 @@
 defmodule Reflaxe.Elixir.HaxeThrow do
   defexception [:message, :previous, :native, :stack, :value]
-  def new(message, previous, native) do
+  def new(message, previous \\ nil, native \\ nil) do
     struct = %Reflaxe.Elixir.HaxeThrow{}
     struct = Map.merge(struct, Map.drop(Reflaxe.Exception.new(message, previous, native), [:__struct__, :__reflaxe_class__]))
     struct

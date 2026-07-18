@@ -15,18 +15,21 @@ defmodule OptionPatterns.NotificationService do
     value
   end
   def preferences() do
-    __haxe_static_get__(:preferences, (fn ->
-        g = %{}
-        value = OptionPatterns.NotificationPreferences.new(true, true, false)
-        g = Map.put(g, 1, value)
-        value = OptionPatterns.NotificationPreferences.new(true, false, true)
-        g = Map.put(g, 2, value)
-        value = OptionPatterns.NotificationPreferences.new(false, false, false)
-        g = Map.put(g, 3, value)
-        value = OptionPatterns.NotificationPreferences.new(false, true, true)
-        g = Map.put(g, 4, value)
-        g
-      end).())
+    __haxe_static_get__(
+      :preferences,
+      (fn ->
+         g = %{}
+         value = OptionPatterns.NotificationPreferences.new(true, true, false)
+         g = Map.put(g, 1, value)
+         value = OptionPatterns.NotificationPreferences.new(true, false, true)
+         g = Map.put(g, 2, value)
+         value = OptionPatterns.NotificationPreferences.new(false, false, false)
+         g = Map.put(g, 3, value)
+         value = OptionPatterns.NotificationPreferences.new(false, true, true)
+         g = Map.put(g, 4, value)
+         g
+       end).()
+    )
   end
   def preferences(value) do
     __haxe_static_put__(:preferences, value)

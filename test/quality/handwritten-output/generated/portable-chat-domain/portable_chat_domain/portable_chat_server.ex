@@ -12,6 +12,6 @@ defmodule PortableChatDomain.PortableChatServer do
   end
 
   def sample_summary() do
-    Enum.join((fn -> sample_lines() end).(), " | ")
+    Enum.join(sample_lines(), " | ")
   end
 end

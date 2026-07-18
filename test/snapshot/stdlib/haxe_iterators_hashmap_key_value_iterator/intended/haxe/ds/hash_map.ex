@@ -1,8 +1,8 @@
 defmodule HashMap do
   import Kernel, except: [to_string: 1], warn: false
-  def new(entries_param) do
+  def new(entries_param \\ nil) do
     struct = %{:__reflaxe_class__ => HashMap, :entries => nil}
-    struct = %{struct | entries: if (Reflaxe.Elixir.HaxeFloat.eq(entries_param, nil)) do
+    struct = %{struct | entries: if (Kernel.is_nil(entries_param)) do
       %{}
     else
       entries_param

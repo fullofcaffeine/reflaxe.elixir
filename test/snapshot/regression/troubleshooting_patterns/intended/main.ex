@@ -122,13 +122,14 @@ defmodule Main do
                 else
                   arr = request
                   if (length(arr) >= 9) do
-                    "Full HTTP request: " <> Enum.join((fn ->
+                    "Full HTTP request: " <> Enum.join(
                       (fn ->
-                        g = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
-                        g = Enum.reduce(g, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
-                        g
-                      end).()
-                    end).(), "") <> " + more data"
+                         g = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
+                         g = Enum.reduce(g, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
+                         g
+                       end).(),
+                      ""
+                    ) <> " + more data"
                   else
                     "Invalid HTTP request"
                   end
@@ -144,13 +145,14 @@ defmodule Main do
               else
                 arr = request
                 if (length(arr) >= 9) do
-                  "Full HTTP request: " <> Enum.join((fn ->
+                  "Full HTTP request: " <> Enum.join(
                     (fn ->
-                      g = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
-                      g = Enum.reduce(g, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
-                      g
-                    end).()
-                  end).(), "") <> " + more data"
+                       g = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
+                       g = Enum.reduce(g, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
+                       g
+                     end).(),
+                    ""
+                  ) <> " + more data"
                 else
                   "Invalid HTTP request"
                 end
@@ -158,16 +160,19 @@ defmodule Main do
           end
         71 when length(request) >= 4 -> "Other method: #{<<method1::utf8>>}#{<<method2::utf8>>}#{<<method3::utf8>>}#{<<method4::utf8>>}"
         71 when length(arr) >= 9 ->
-          "Full HTTP request: #{(fn -> Enum.join((fn ->
-            _g = []
-            g_value = 0
-            _g2 = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
-            _g = Enum.reduce(_g2, _g, fn b, _g_acc ->
-              _g_acc = _g_acc ++ [<<b::utf8>>]
-              _g_acc
-            end)
-            _g
-          end).(), "") end).()} + more data"
+          "Full HTTP request: #{(fn -> Enum.join(
+            (fn ->
+               _g = []
+               g_value = 0
+               _g2 = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
+               _g = Enum.reduce(_g2, _g, fn b, _g_acc ->
+                 _g_acc = _g_acc ++ [<<b::utf8>>]
+                 _g_acc
+               end)
+               _g
+             end).(),
+            ""
+          ) end).()} + more data"
         71 -> "Invalid HTTP request"
         80 ->
           cond do
@@ -184,13 +189,14 @@ defmodule Main do
                 else
                   arr = request
                   if (length(arr) >= 9) do
-                    "Full HTTP request: " <> Enum.join((fn ->
+                    "Full HTTP request: " <> Enum.join(
                       (fn ->
-                        g = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
-                        g = Enum.reduce(g, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
-                        g
-                      end).()
-                    end).(), "") <> " + more data"
+                         g = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
+                         g = Enum.reduce(g, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
+                         g
+                       end).(),
+                      ""
+                    ) <> " + more data"
                   else
                     "Invalid HTTP request"
                   end
@@ -206,13 +212,14 @@ defmodule Main do
               else
                 arr = request
                 if (length(arr) >= 9) do
-                  "Full HTTP request: " <> Enum.join((fn ->
+                  "Full HTTP request: " <> Enum.join(
                     (fn ->
-                      g = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
-                      g = Enum.reduce(g, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
-                      g
-                    end).()
-                  end).(), "") <> " + more data"
+                       g = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
+                       g = Enum.reduce(g, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
+                       g
+                     end).(),
+                    ""
+                  ) <> " + more data"
                 else
                   "Invalid HTTP request"
                 end
@@ -220,16 +227,19 @@ defmodule Main do
           end
         80 when length(request) >= 4 -> "Other method: #{<<method1::utf8>>}#{<<method2::utf8>>}#{<<method3::utf8>>}#{<<method4::utf8>>}"
         80 when length(arr) >= 9 ->
-          "Full HTTP request: #{(fn -> Enum.join((fn ->
-            _g = []
-            g_value = 0
-            _g2 = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
-            _g = Enum.reduce(_g2, _g, fn b, _g_acc ->
-              _g_acc = _g_acc ++ [<<b::utf8>>]
-              _g_acc
-            end)
-            _g
-          end).(), "") end).()} + more data"
+          "Full HTTP request: #{(fn -> Enum.join(
+            (fn ->
+               _g = []
+               g_value = 0
+               _g2 = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
+               _g = Enum.reduce(_g2, _g, fn b, _g_acc ->
+                 _g_acc = _g_acc ++ [<<b::utf8>>]
+                 _g_acc
+               end)
+               _g
+             end).(),
+            ""
+          ) end).()} + more data"
         80 -> "Invalid HTTP request"
         _ ->
           method1 = Enum.at(request, 0)
@@ -241,16 +251,19 @@ defmodule Main do
           else
             arr = request
             if (length(arr) >= 9) do
-              "Full HTTP request: #{(fn -> Enum.join((fn ->
-                _g = []
-                g_value = 0
-                _g2 = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
-                _g = Enum.reduce(_g2, _g, fn b, _g_acc ->
-                  _g_acc = _g_acc ++ [<<b::utf8>>]
-                  _g_acc
-                end)
-                _g
-              end).(), "") end).()} + more data"
+              "Full HTTP request: #{(fn -> Enum.join(
+                (fn ->
+                   _g = []
+                   g_value = 0
+                   _g2 = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
+                   _g = Enum.reduce(_g2, _g, fn b, _g_acc ->
+                     _g_acc = _g_acc ++ [<<b::utf8>>]
+                     _g_acc
+                   end)
+                   _g
+                 end).(),
+                ""
+              ) end).()} + more data"
             else
               "Invalid HTTP request"
             end
@@ -259,16 +272,19 @@ defmodule Main do
     else
       arr = request
       if (length(arr) >= 9) do
-        "Full HTTP request: #{(fn -> Enum.join((fn ->
-          _g = []
-          g_value = 0
-          _g2 = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
-          _g = Enum.reduce(_g2, _g, fn b, _g_acc ->
-            _g_acc = _g_acc ++ [<<b::utf8>>]
-            _g_acc
-          end)
-          _g
-        end).(), "") end).()} + more data"
+        "Full HTTP request: #{(fn -> Enum.join(
+          (fn ->
+             _g = []
+             g_value = 0
+             _g2 = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
+             _g = Enum.reduce(_g2, _g, fn b, _g_acc ->
+               _g_acc = _g_acc ++ [<<b::utf8>>]
+               _g_acc
+             end)
+             _g
+           end).(),
+          ""
+        ) end).()} + more data"
       else
         "Invalid HTTP request"
       end

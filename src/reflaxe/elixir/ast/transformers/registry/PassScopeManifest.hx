@@ -8,7 +8,7 @@ import reflaxe.elixir.ast.PassApplicability.PassScope;
  * Explicit semantic ownership for framework-specific registry entries.
  *
  * WHAT
- * - Maps exact stable pass IDs to Phoenix/OTP, LiveView, Ecto, HXX, or ExUnit.
+ * - Maps exact stable pass IDs to Phoenix/OTP, LiveView, Ecto, HXX, ExUnit, or Mix.
  *
  * WHY
  * - Ownership belongs in audited registry data. Inferring it from fragments such
@@ -210,6 +210,7 @@ class PassScopeManifest {
 			"HeexAssignsLocalVarRename_AbsoluteLast"
 		]);
 		assign(scopes, PassScope.ExUnit, ["ExUnitTransform", "ExUnitAssert_Final", "AssertArgIIFE_Final"]);
+		assign(scopes, PassScope.Mix, ["MixTaskTransform"]);
 		return scopes;
 	}
 

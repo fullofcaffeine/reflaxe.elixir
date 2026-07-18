@@ -43,6 +43,7 @@ import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.ast.NameUtils;
 import reflaxe.elixir.CompilationContext;
 import reflaxe.elixir.macros.ModuleFieldMetadataRegistry;
+import reflaxe.elixir.macros.MixTaskMetadata;
 
 using StringTools;
 using reflaxe.helpers.NameMetaHelper;
@@ -2456,6 +2457,23 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 						reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
 				};
 
+				// Preserve source-level optional/default arguments for public target APIs.
+				//
+				// Haxe call sites are normally padded to full arity by the typed-expression
+				// pipeline. Public generated Elixir is also an interop surface, so its heads
+				// expose idiomatic `arg \\ default` lower arities to handwritten callers.
+				// Private `defp` helpers have no external caller and keep exact arities;
+				// otherwise Elixir warns that their default values are never used.
+				var functionArgDefaults:Array<{index:Int, value:reflaxe.elixir.ast.ElixirAST}> = [];
+				var functionArgOffset = (!isStaticMethod && !isExUnitTestMethod && !isConstructor) ? 1 : 0;
+				for (arg in funcData.args) {
+					if (arg.opt) {
+						var defaultValue = arg.expr == null ? reflaxe.elixir.ast.ElixirAST.makeAST(ENil) : reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(arg.expr,
+							context);
+						functionArgDefaults.push({index: arg.index + functionArgOffset, value: defaultValue});
+					}
+				}
+
 				#if debug_ast_builder
 				#end
 
@@ -2539,9 +2557,10 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 					}
 
 					var ctorModuleName = ModuleBuilder.extractModuleName(classType);
-					var initStruct = if (isExceptionConstructor) {
-						// Exception classes must construct a real exception struct so `is_struct/2` matches
-						// and `raise <ExceptionModule>` interops naturally with Elixir/Phoenix.
+					var isElixirStructConstructor = classType.meta.has(":elixirStruct") || classType.meta.has("elixirStruct");
+					var initStruct = if (isExceptionConstructor || isElixirStructConstructor) {
+						// Exceptions and explicit native-value structs construct a real Elixir
+						// struct so target pattern matching and `is_struct/2` observe their ABI.
 						reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EStruct(ctorModuleName, []));
 					} else {
 						// Build initial map with all instance fields present so `%{struct | field: ...}` updates are safe.
@@ -2701,6 +2720,8 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 				var funcMetadata:reflaxe.elixir.ast.ElixirAST.ElixirMetadata = {};
 				funcMetadata.receiverReturnConvention = ReceiverReturnConventions.toMetadataValue(receiverConvention);
 				funcMetadata.functionResultContract = funcData.ret.isVoid() ? FunctionResultContract.Void : FunctionResultContract.Value;
+				if (emitPublic && functionArgDefaults.length > 0)
+					funcMetadata.functionArgDefaults = functionArgDefaults;
 				#if reflaxe_elixir_validate_results
 				funcMetadata.functionResultMayBeNil = functionResultMayBeNil(funcData.ret);
 				funcMetadata.functionResultContractId = funcData.id;
@@ -2822,6 +2843,14 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			}
 		}
 		metadata.usesHxx = usesHxx;
+		metadata.isElixirStruct = classType.meta.has(":elixirStruct") || classType.meta.has("elixirStruct");
+		var mixTaskConfig = MixTaskMetadata.read(classType);
+		if (mixTaskConfig != null) {
+			metadata.isMixTask = true;
+			metadata.mixTaskShortdoc = mixTaskConfig.shortdoc;
+			metadata.mixTaskRequirements = mixTaskConfig.requirements;
+			metadata.mixTaskModuledoc = mixTaskConfig.moduledoc;
+		}
 		if (classType.meta.has(":migration"))
 			metadata.ectoContext = EctoContext.Migration;
 		else if (classType.meta.has(":query"))
@@ -3326,7 +3355,9 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			for (field in current.fields.get()) {
 				switch (field.kind) {
 					case FVar(_, _):
-						var snakeFieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(field.name);
+						var targetName = reflaxe.helpers.NameMetaHelper.getNameOrNative(field);
+						var snakeFieldName = reflaxe.helpers.NameMetaHelper.hasMeta(field,
+							":native") ? targetName : reflaxe.elixir.ast.NameUtils.toSnakeCase(targetName);
 						if (!seen.exists(snakeFieldName)) {
 							seen.set(snakeFieldName, true);
 							snakeNames.push(snakeFieldName);

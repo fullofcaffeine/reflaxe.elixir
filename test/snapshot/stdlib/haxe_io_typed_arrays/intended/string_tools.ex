@@ -13,7 +13,7 @@ defmodule StringTools do
       Enum.at(String.to_charlist(s), index)
     end
   end
-  def haxe_index_of(s, value, start_index) do
+  def haxe_index_of(s, value, start_index \\ nil) do
 
     (fn ->
       reflaxe_string_source = s
@@ -36,7 +36,7 @@ defmodule StringTools do
     end).()
 
   end
-  def haxe_last_index_of(s, value, start_index) do
+  def haxe_last_index_of(s, value, start_index \\ nil) do
 
     (fn ->
       reflaxe_string_source = s
@@ -66,7 +66,7 @@ defmodule StringTools do
   def haxe_split(s, delimiter) do
     if delimiter == "", do: String.graphemes(s), else: String.split(s, delimiter)
   end
-  def haxe_substr(s, pos, len) do
+  def haxe_substr(s, pos, len \\ nil) do
 
     (fn ->
       reflaxe_string_source = s
@@ -109,7 +109,7 @@ defmodule StringTools do
     end).()
 
   end
-  def haxe_substring(s, start_index, end_index) do
+  def haxe_substring(s, start_index, end_index \\ nil) do
 
     (fn ->
       reflaxe_string_source = s

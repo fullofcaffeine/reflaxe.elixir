@@ -1,7 +1,7 @@
 defmodule ThreadPoolException do
   defexception [:message, :previous, :native, :stack]
   import Kernel, except: [to_string: 1], warn: false
-  def new(message_param, previous_param, native_param) do
+  def new(message_param, previous_param \\ nil, native_param \\ nil) do
     struct = %ThreadPoolException{}
     struct = Map.merge(struct, Map.drop(Reflaxe.Exception.new(message_param, previous_param, native_param), [:__struct__, :__reflaxe_class__]))
     struct

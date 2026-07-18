@@ -18,10 +18,13 @@ defmodule Socket do
     apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
   end
   def write(struct, content) do
-    SocketState.send_binary(struct.socket_ref, (fn ->
-      reflaxe_dispatch_receiver = Bytes.of_string(content, {:utf8})
-      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get_data, [reflaxe_dispatch_receiver])
-    end).())
+    SocketState.send_binary(
+      struct.socket_ref,
+      (fn ->
+         reflaxe_dispatch_receiver = Bytes.of_string(content, {:utf8})
+         apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get_data, [reflaxe_dispatch_receiver])
+       end).()
+    )
   end
   def connect(struct, host, port) do
     SocketState.tcp_connect(struct.socket_ref, host.ip, port)
@@ -67,7 +70,7 @@ defmodule Socket do
   def set_fast_send(struct, b) do
     SocketState.tcp_set_fast_send(struct.socket_ref, b)
   end
-  def select(read, write, others, timeout) do
+  def select(read, write, others, timeout \\ nil) do
     %{read: select_ready(read, :read, timeout), write: select_ready(write, :write, timeout), others: select_ready(others, :error, timeout)}
   end
   defp select_ready(sockets, kind, timeout) do

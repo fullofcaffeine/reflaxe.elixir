@@ -1,27 +1,106 @@
 {
-  "filesGenerated": [
-  "type.ex",
-  "string_tools.ex",
-  "std.ex",
-  "reflaxe/exception.ex",
-  "reflaxe/elixir/haxe_throw.ex",
-  "reflaxe/elixir/haxe_float.ex",
-  "my_app/user.ex",
-  "my_app/post.ex",
-  "main.ex",
-  "haxe/iterators/array_key_value_iterator.ex",
-  "haxe/iterators/array_iterator.ex",
-  "haxe/exceptions/pos_exception.ex",
-  "haxe/exceptions/not_implemented_exception.ex",
-  "haxe/_call_stack/call_stack_impl_.ex",
-  "elixir/types/_atom/atom_impl_.ex",
-  "ecto/option.ex",
-  "ecto/changeset_utils.ex",
-  "ecto/changeset_action.ex",
-  "ecto/_typed_query/typed_query_impl_.ex",
-  "e_reg.ex"
-],
-  "id": 0,
-  "wasCached": false,
-  "version": 1
+	"filesGenerated": [
+		"type.ex",
+		"string_tools.ex",
+		"std.ex",
+		"reflaxe/exception.ex",
+		"reflaxe/elixir/haxe_throw.ex",
+		"reflaxe/elixir/haxe_float.ex",
+		"my_app/user.ex",
+		"my_app/post.ex",
+		"main.ex",
+		"haxe/iterators/array_key_value_iterator.ex",
+		"haxe/iterators/array_iterator.ex",
+		"haxe/exceptions/pos_exception.ex",
+		"haxe/exceptions/not_implemented_exception.ex",
+		"haxe/_call_stack/call_stack_impl_.ex",
+		"ecto/option.ex",
+		"ecto/changeset_utils.ex",
+		"ecto/changeset_action.ex",
+		"ecto/_typed_query/typed_query_impl_.ex",
+		"e_reg.ex"
+	],
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 0,
+	"wasCached": false,
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "e_reg.ex",
+			"sha256": "c0d6f5906cc887fc266663c36e86836576fab02b58e6cc1604f2e4e26f948b14"
+		},
+		{
+			"path": "ecto/_typed_query/typed_query_impl_.ex",
+			"sha256": "8f2fcf5334ded8f2cbb7509c13aa89375bdcaa6b24eaa2b2f201b1a69637189c"
+		},
+		{
+			"path": "ecto/changeset_action.ex",
+			"sha256": "b94fcec4ed9faa02cbffc107cba294c95c7402260f2de74d6fc2f9245b418e4d"
+		},
+		{
+			"path": "ecto/changeset_utils.ex",
+			"sha256": "fac4fd4f487a8e5eeff2648b1aaf7e459d16511d8ddc4f1fd6f9d65d2f0bf4b1"
+		},
+		{
+			"path": "ecto/option.ex",
+			"sha256": "327dc7217b3300f5fb391514f65f6a3569733c80fe6c3fb721eaabe67c87f6b1"
+		},
+		{
+			"path": "haxe/_call_stack/call_stack_impl_.ex",
+			"sha256": "ab46ba4f786a95420ae1cd78188f77ebebc3ced2db90d1351297f573f30dadf8"
+		},
+		{
+			"path": "haxe/exceptions/not_implemented_exception.ex",
+			"sha256": "1626a1b4284a0b7534ead4d0fb87bb1c11bb0675ed467ffe2c3ec94706733863"
+		},
+		{
+			"path": "haxe/exceptions/pos_exception.ex",
+			"sha256": "1bf19747702bbde341c3a92e2fc6f137f2e04508952fc452a0ae73aa61b2b1dd"
+		},
+		{
+			"path": "haxe/iterators/array_iterator.ex",
+			"sha256": "3186b41d2124063a790c08804f1bfb9c3a7508de7f6a99ad2cdb1687f1c2b82d"
+		},
+		{
+			"path": "haxe/iterators/array_key_value_iterator.ex",
+			"sha256": "7c2a5a2cc281bb9a1c5ed1bb56e351bdb68b53a7d048fa70decc5bfdd527419e"
+		},
+		{
+			"path": "main.ex",
+			"sha256": "db5fe70921daa6fc24c73782d084e5caf1655279e31d9f60bffb56edb013a9f8"
+		},
+		{
+			"path": "my_app/post.ex",
+			"sha256": "6d79bf266cf48108a4927c3dd793bb434554b0fa5672165b24a1100d310cc761"
+		},
+		{
+			"path": "my_app/user.ex",
+			"sha256": "7e21c53179347d200ba2b5ad9ed794c2d59b53f1195e538fce8a050ec0f0aa69"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_float.ex",
+			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_throw.ex",
+			"sha256": "642bbf29d073acc9eb2ffcea4a8e6016396a43f1a4180a79331b537bfefc6094"
+		},
+		{
+			"path": "reflaxe/exception.ex",
+			"sha256": "02fc779b3a5c750db17ab47e624c22bbb8887786a22a767969ab23d1946be755"
+		},
+		{
+			"path": "std.ex",
+			"sha256": "cfc6ad389294bc64c9d82be070797b4e65041a3d225fc0741500ca7cc6c8f804"
+		},
+		{
+			"path": "string_tools.ex",
+			"sha256": "b174b046cee6138603fade8a7baa097e869d67f66a86afdebda3449b28d3b153"
+		},
+		{
+			"path": "type.ex",
+			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
+		}
+	],
+	"generation": "a8656d81081fcdbf3f843573beb0c2ec727476367d0e8bde4c10ab1f93a44f34"
 }

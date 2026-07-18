@@ -24,11 +24,11 @@ defmodule Phoenix.Channels.WirePayload do
     Map.put(payload, key, value)
   end
   def get(payload, key) do
-    if (Reflaxe.Elixir.HaxeFloat.eq(payload, nil) or Kernel.is_nil(key)) do
+    if (Kernel.is_nil(payload) or Kernel.is_nil(key)) do
       nil
     else
       value = Map.get(payload, key)
-      if (Reflaxe.Elixir.HaxeFloat.neq(value, nil)) do
+      if (not Kernel.is_nil(value)) do
         value
       else
         atom = try do
@@ -45,7 +45,7 @@ defmodule Phoenix.Channels.WirePayload do
                 reraise(haxe_exception, __STACKTRACE__)
             end)
         end
-        if (Reflaxe.Elixir.HaxeFloat.neq(atom, nil)) do
+        if (not Kernel.is_nil(atom)) do
           Map.get(payload, atom)
         else
           nil
@@ -55,7 +55,7 @@ defmodule Phoenix.Channels.WirePayload do
   end
   def get_string(payload, key) do
     value = get(payload, key)
-    if (Reflaxe.Elixir.HaxeFloat.eq(value, nil)) do
+    if (Kernel.is_nil(value)) do
       nil
     else
       if (Kernel.is_binary(value)) do
@@ -75,7 +75,7 @@ defmodule Phoenix.Channels.WirePayload do
   end
   def get_int(payload, key) do
     value = get(payload, key)
-    if (Reflaxe.Elixir.HaxeFloat.eq(value, nil)) do
+    if (Kernel.is_nil(value)) do
       nil
     else
       if (Kernel.is_integer(value)) do
@@ -95,7 +95,7 @@ defmodule Phoenix.Channels.WirePayload do
   end
   def get_bool(payload, key) do
     value = get(payload, key)
-    if (Reflaxe.Elixir.HaxeFloat.eq(value, nil)) do
+    if (Kernel.is_nil(value)) do
       nil
     else
       if (Kernel.is_boolean(value)), do: value, else: nil
@@ -103,7 +103,7 @@ defmodule Phoenix.Channels.WirePayload do
   end
   def get_float(payload, key) do
     value = get(payload, key)
-    if (Reflaxe.Elixir.HaxeFloat.eq(value, nil)) do
+    if (Kernel.is_nil(value)) do
       nil
     else
       if (Kernel.is_float(value)) do
@@ -119,7 +119,7 @@ defmodule Phoenix.Channels.WirePayload do
   end
   def get_payload(payload, key) do
     value = get(payload, key)
-    if (Reflaxe.Elixir.HaxeFloat.eq(value, nil)) do
+    if (Kernel.is_nil(value)) do
       nil
     else
       if (Kernel.is_map(value)), do: value, else: nil
@@ -127,7 +127,7 @@ defmodule Phoenix.Channels.WirePayload do
   end
   def get_string_array(payload, key) do
     value = get(payload, key)
-    if (Reflaxe.Elixir.HaxeFloat.eq(value, nil) or not Kernel.is_list(value)) do
+    if (Kernel.is_nil(value) or not Kernel.is_list(value)) do
       nil
     else
       items = value
@@ -147,7 +147,7 @@ defmodule Phoenix.Channels.WirePayload do
   end
   def get_int_array(payload, key) do
     value = get(payload, key)
-    if (Reflaxe.Elixir.HaxeFloat.eq(value, nil) or not Kernel.is_list(value)) do
+    if (Kernel.is_nil(value) or not Kernel.is_list(value)) do
       nil
     else
 

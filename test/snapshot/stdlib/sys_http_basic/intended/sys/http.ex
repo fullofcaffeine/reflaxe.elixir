@@ -28,7 +28,7 @@ defmodule Http do
     HttpRuntime.reset_response_headers(struct.http_base_ref)
     struct
   end
-  def request(struct, post) do
+  def request(struct, post \\ nil) do
     output = BytesOutput.new()
     is_post = post == true or HttpBaseRuntime.has_request_body(struct.http_base_ref)
     apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :custom_request, [struct, is_post, output, nil, nil])
@@ -36,15 +36,15 @@ defmodule Http do
       apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :success, [struct, apply(Map.get(output, :__reflaxe_class__) || Map.get(output, :__struct__), :get_bytes, [output])])
     end
   end
-  def file_transfert(struct, argname, filename, file_param, size, mime_type) do
+  def file_transfert(struct, argname, filename, file_param, size, mime_type \\ "application/octet-stream") do
     apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :file_transfer, [struct, argname, filename, file_param, size, mime_type])
   end
-  def file_transfer(struct, argname, filename, file_input, size, mime_type) do
+  def file_transfer(struct, argname, filename, file_input, size, mime_type \\ "application/octet-stream") do
     HttpRuntime.mark_file_transfer(struct.http_base_ref)
     struct = %{struct | file: %{param: argname, filename: filename, io: file_input, size: size, mime_type: mime_type}}
     struct
   end
-  def custom_request(struct, post, api, sock, method) do
+  def custom_request(struct, post, api, sock \\ nil, method \\ nil) do
     reset_response_state(struct)
     unsupported_message = unsupported_request_message(struct, sock)
     if (not Kernel.is_nil(unsupported_message)) do

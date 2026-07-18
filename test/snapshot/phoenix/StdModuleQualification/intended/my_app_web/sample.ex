@@ -5,7 +5,7 @@ defmodule MyAppWeb.Sample do
   def enum_map_guard() do
     xs = [1, 2, 3]
     ys = Enum.map(xs, fn x -> x + 1 end)
-    ys[0]
+    Enum.at(ys, 0)
   end
   def string_len_guard(s) do
     String.length(s)

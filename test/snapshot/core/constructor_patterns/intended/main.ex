@@ -14,7 +14,7 @@ defmodule Main do
   end
   defp test_regular_class() do
     _ = TodoFormatter.new("markdown", "TODO")
-    _ = TodoFormatter.new("plain", nil)
+    _ = TodoFormatter.new("plain", "")
     nil
   end
   defp test_gen_server() do

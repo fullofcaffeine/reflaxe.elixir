@@ -31,6 +31,7 @@ Not included as primary reference surface:
 - Elixir runtime API deep dive: `docs/04-api-reference/ELIXIR_RUNTIME_API_REFERENCE.md`
 - Exact OTP 1.0 boundary and runtime evidence: `docs/04-api-reference/OTP_SUPPORT_CONTRACT.md`
 - Type-safe OTP child-spec API: `docs/04-api-reference/TYPE_SAFE_CHILD_SPEC.md`
+- Built-in and Haxe-authored Mix tasks: `docs/04-api-reference/MIX_TASKS.md`
 - API UX backlog and prioritization: `docs/08-roadmap/api-ux-backlog.md`
 
 ## LLM Contract: Typed Phoenix DSL Surfaces
@@ -79,6 +80,7 @@ Use this section as the concise contract for assistant/tooling retrieval.
 | `@:keep` | Prevent DCE elimination | `ANNOTATIONS.md` |
 | `@:liveview` | Phoenix LiveView module | `ANNOTATIONS.md` |
 | `@:migration` | Ecto migration class marker | `ANNOTATIONS.md` |
+| `@:mixTask` | Optional Haxe authoring surface for an ordinary `Mix.Task` module | `ANNOTATIONS.md`, `MIX_TASKS.md` |
 | `@:module` | Module macro convenience marker | `ANNOTATIONS.md` |
 | `@:native` | Explicit Elixir module/function naming | `ANNOTATIONS.md` |
 | `@:optional` | Optional contract/typedef field marker | `ANNOTATIONS.md` |

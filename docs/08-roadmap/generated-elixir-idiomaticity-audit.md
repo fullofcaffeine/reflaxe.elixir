@@ -159,9 +159,11 @@ snapshots. Most framework-specific passes were no-ops for that module, but they
 still illustrate the breadth of the registry and the number of late final,
 repair, replay, alignment, and cleanup interactions.
 
-After the discarded-call cleanup, the effective granular registry contains 576
+After the discarded-call cleanup, the effective granular registry contained 576
 passes; the two removed registrations were the synthetic call-wrapper passes
-described above.
+described above. The later typed Mix-task annotation adds one reviewed semantic
+pass, and the absolute-final trivial-IIFE cleanup adds one representation-safe
+idiomaticity pass, bringing the current effective registry to 578.
 
 The default registry presents a small set of bundles, but those bundles execute
 large contiguous portions of the granular registry. The right response is not

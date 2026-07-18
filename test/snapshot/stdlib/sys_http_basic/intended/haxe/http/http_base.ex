@@ -27,7 +27,7 @@ defmodule HttpBase do
   def set_post_bytes(struct, data) do
     HttpBaseRuntime.set_post_bytes(struct.http_base_ref, data)
   end
-  def request(_struct, _post) do
+  def request(_struct, _post \\ nil) do
     raise Reflaxe.Elixir.HaxeThrow, [value: NotImplementedException.new(nil, nil, %{file_name: "../../../../std/elixir/_std/haxe/http/HttpBase.hx", line_number: 74, class_name: "haxe.http.HttpBase", method_name: "request"})]
   end
   def success(struct, data) do

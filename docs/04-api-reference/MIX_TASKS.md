@@ -8,14 +8,72 @@ Complete reference for all Mix tasks provided by Reflaxe.Elixir for compilation,
 > (like `mix haxe.watch`) are intentionally **not** run in CI.
 
 ## Table of Contents
-1. [Compilation Tasks](#compilation-tasks)
-2. [Source Mapping Tasks](#source-mapping-tasks)
-3. [Debugging Tasks](#debugging-tasks)
-4. [Development Tasks](#development-tasks)
-5. [Generation Tasks](#generation-tasks)
-6. [Migration Tasks](#migration-tasks)
-7. [Task Options & Flags](#task-options--flags)
-8. [Examples & Workflows](#examples--workflows)
+1. [Authoring Custom Mix Tasks in Haxe (Optional)](#authoring-custom-mix-tasks-in-haxe-optional)
+2. [Compilation Tasks](#compilation-tasks)
+3. [Source Mapping Tasks](#source-mapping-tasks)
+4. [Debugging Tasks](#debugging-tasks)
+5. [Development Tasks](#development-tasks)
+6. [Generation Tasks](#generation-tasks)
+7. [Migration Tasks](#migration-tasks)
+8. [Task Options & Flags](#task-options--flags)
+9. [Examples & Workflows](#examples--workflows)
+
+## Authoring Custom Mix Tasks in Haxe (Optional)
+
+Reflaxe.Elixir can generate an ordinary Mix task from a typed Haxe class with
+`@:mixTask`. Use this when Haxe ownership improves shared types, completion, or
+compiler dogfooding. It does not replace Elixir as an application language:
+handwritten `.ex` tasks remain first-class, and a project can freely mix both.
+
+Haxe input:
+
+```haxe
+package;
+
+/** Reports compiler status from a Haxe-authored task. */
+@:mixTask({
+  shortdoc: "Reports compiler status",
+  requirements: ["app.config"]
+})
+@:native("Mix.Tasks.Haxe.Status")
+class StatusTask {
+  public static function run(args:Array<String>):Int {
+    return args.length;
+  }
+}
+```
+
+Generated target shape:
+
+```elixir
+defmodule Mix.Tasks.Haxe.Status do
+  @moduledoc """
+  Reports compiler status from a Haxe-authored task.
+  """
+
+  use Mix.Task
+
+  @shortdoc "Reports compiler status"
+  @requirements ["app.config"]
+
+  @impl Mix.Task
+  def run(args) do
+    length(args)
+  end
+end
+```
+
+The generated module is normal Elixir: Mix discovers it by its `Mix.Tasks.*`
+name, Elixir modules can call it, and Haxe-authored code can call handwritten
+Elixir through typed externs. The compiler does not inject task-specific runtime
+code or require Haxe when an already-generated task executes.
+
+Use direct Elixir instead when it is the clearest application-owned choice. The
+repository's Haxe-first rule is a contributor dogfooding policy for
+Reflaxe.Elixir-owned tooling, not a downstream restriction.
+
+See [`@:mixTask` in the annotation reference](ANNOTATIONS.md#mixtask---optional-haxe-authored-mix-task)
+for the exact signature and literal-option contract.
 
 ## Compilation Tasks
 

@@ -91,7 +91,7 @@ defmodule EventLoopRuntime do
                 promised > 0
             )
   end
-  def wait(ref, timeout) do
+  def wait(ref, timeout \\ nil) do
     timeout_ms = seconds_to_timeout(timeout)
     (
                 {loop_ref, pid} = ref

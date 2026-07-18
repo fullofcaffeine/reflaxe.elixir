@@ -1,6 +1,8 @@
 package elixir;
 
 #if (macro || reflaxe_runtime || elixir)
+import elixir.types.Atom;
+import elixir.types.KeywordList;
 import elixir.types.Term;
 
 /**
@@ -15,6 +17,10 @@ extern class System {
 	// Command execution
 	@:native("cmd")
 	static function cmd(command:String, args:Array<String>, ?options:SystemCmdOptions):{_0:String, _1:Int}; // {output, exit_code}
+
+	/** Exact keyword-list form for target-native callers. */
+	@:native("cmd")
+	static function cmdWithKeywordOptions(command:String, args:Array<String>, options:KeywordList<Term>):{_0:String, _1:Int};
 
 	@:native("cmd")
 	static function cmdSimple(command:String):{_0:String, _1:Int};
@@ -100,6 +106,9 @@ extern class System {
 
 	@:native("unique_integer")
 	static function uniqueIntegerWithOptions(options:Array<String>):Int; // With options [:positive, :monotonic]
+
+	@:native("unique_integer")
+	static function uniqueIntegerWithAtomOptions(options:Array<Atom>):Int;
 
 	// Time conversion
 	@:native("convert_time_unit")

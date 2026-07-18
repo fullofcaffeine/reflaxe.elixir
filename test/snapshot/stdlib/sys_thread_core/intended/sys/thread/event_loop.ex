@@ -28,7 +28,7 @@ defmodule Sys.Thread.EventLoop do
       if (EventLoopRuntime.has_promised_events(info)), do: {:any_time, nil}, else: {:never}
     end
   end
-  def wait(struct, timeout) do
+  def wait(struct, timeout \\ nil) do
     EventLoopRuntime.wait(struct.ref, timeout)
   end
   def loop(struct) do

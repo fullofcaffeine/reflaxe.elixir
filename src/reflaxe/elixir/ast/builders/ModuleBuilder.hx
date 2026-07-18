@@ -6,6 +6,7 @@ import haxe.macro.Context;
 import haxe.macro.Expr;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.macros.ModuleFieldMetadataRegistry;
+import reflaxe.helpers.NameMetaHelper;
 
 /**
  * Bootstrap strategy for module loading
@@ -282,6 +283,25 @@ class ModuleBuilder {
 			// Don't add defstruct for exceptions - defexception handles it automatically
 			// The ElixirASTPrinter will handle the defexception macro when it sees isException metadata
 			// Just keep the regular fields (methods like toString)
+		}
+
+		// `@:elixirStruct` is an explicit native-value ABI declaration. Unlike an
+		// ordinary Haxe class, its target representation is a real `%Module{}` that
+		// handwritten Elixir may pattern-match and validate with `is_struct/2`.
+		// Extern uses remain declarations only; this builder runs for generated
+		// class modules.
+		if (moduleMetadata.isElixirStruct == true && moduleMetadata.isException != true) {
+			var structFields:Array<String> = [];
+			for (field in classType.fields.get()) {
+				switch (field.kind) {
+					case FVar(_, _):
+						var targetName = NameMetaHelper.getNameOrNative(field);
+						structFields.push(NameMetaHelper.hasMeta(field, ":native") ? targetName : reflaxe.elixir.ast.NameUtils.toSnakeCase(targetName));
+					default:
+				}
+			}
+			structFields.sort(function(left, right) return left < right ? -1 : (left > right ? 1 : 0));
+			fields.unshift(makeAST(ECall(null, "defstruct", [makeAST(EList([for (field in structFields) makeAST(EAtom(field))]))])));
 		}
 
 		var result = {

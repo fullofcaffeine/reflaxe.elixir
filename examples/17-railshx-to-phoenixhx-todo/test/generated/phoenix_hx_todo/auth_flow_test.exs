@@ -8,6 +8,6 @@ defmodule PhoenixHxTodo.AuthFlowTest do
     actual = conn.status
     assert actual == 302
     user_id = Plug.Conn.get_session(conn, String.to_atom("user_id"))
-    assert Reflaxe.Elixir.HaxeFloat.neq(user_id, nil)
+    assert user_id != nil
   end
 end

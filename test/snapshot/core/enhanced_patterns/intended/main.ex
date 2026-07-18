@@ -3,44 +3,53 @@ defmodule Main do
     data = [72, 101, 108, 108, 111]
     switch_result_1 = (case data do
       [head | tail] when head == 72 and tail != [] ->
-        "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
-          _g = []
-          g_value = 1
-          arr_length = length(arr)
-          _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
-            _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(arr[i])]
-            _g_acc
-          end)
-          _g
-        end).(), ",") end).()}"
+        "Starts with 'H', rest: #{(fn -> Enum.join(
+          (fn ->
+             _g = []
+             g_value = 1
+             arr_length = length(arr)
+             _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
+               _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]
+               _g_acc
+             end)
+             _g
+           end).(),
+          ","
+        ) end).()}"
       [] -> "Empty binary"
       [head | _tail] when head == 72 -> "Starts with 'H' (single byte)"
       [head | tail] when head == 72 and tail != [] ->
-        "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
-          _g = []
-          g_value = 1
-          arr_length = length(arr)
-          _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
-            _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(arr[i])]
-            _g_acc
-          end)
-          _g
-        end).(), ",") end).()}"
+        "Starts with 'H', rest: #{(fn -> Enum.join(
+          (fn ->
+             _g = []
+             g_value = 1
+             arr_length = length(arr)
+             _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
+               _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]
+               _g_acc
+             end)
+             _g
+           end).(),
+          ","
+        ) end).()}"
       [_head | _tail] when length(bytes) > 10 -> "Large binary: #{Reflaxe.Elixir.HaxeFloat.to_string(length(bytes))} bytes"
       [_head | _tail] -> "Other binary pattern"
       2 ->
         arr = data
         if (Enum.at(arr, 0) == 72 and length(arr) > 1) do
-          "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
-            _g = []
-            g_value = 1
-            arr_length = length(arr)
-            _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
-              _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(arr[i])]
-              _g_acc
-            end)
-            _g
-          end).(), ",") end).()}"
+          "Starts with 'H', rest: #{(fn -> Enum.join(
+            (fn ->
+               _g = []
+               g_value = 1
+               arr_length = length(arr)
+               _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
+                 _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]
+                 _g_acc
+               end)
+               _g
+             end).(),
+            ","
+          ) end).()}"
         else
           first = Enum.at(data, 0)
           _second = Enum.at(data, 1)
@@ -58,16 +67,19 @@ defmodule Main do
       5 ->
         arr = data
         if (Enum.at(arr, 0) == 72 and length(arr) > 1) do
-          "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
-            _g = []
-            g_value = 1
-            arr_length = length(arr)
-            _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
-              _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(arr[i])]
-              _g_acc
-            end)
-            _g
-          end).(), ",") end).()}"
+          "Starts with 'H', rest: #{(fn -> Enum.join(
+            (fn ->
+               _g = []
+               g_value = 1
+               arr_length = length(arr)
+               _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
+                 _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]
+                 _g_acc
+               end)
+               _g
+             end).(),
+            ","
+          ) end).()}"
         else
           a = Enum.at(data, 0)
           _b = Enum.at(data, 1)
@@ -88,16 +100,19 @@ defmodule Main do
       _ ->
         arr = data
         if (Enum.at(arr, 0) == 72 and length(arr) > 1) do
-          "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
-            _g = []
-            g_value = 1
-            arr_length = length(arr)
-            _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
-              _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(arr[i])]
-              _g_acc
-            end)
-            _g
-          end).(), ",") end).()}"
+          "Starts with 'H', rest: #{(fn -> Enum.join(
+            (fn ->
+               _g = []
+               g_value = 1
+               arr_length = length(arr)
+               _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
+                 _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]
+                 _g_acc
+               end)
+               _g
+             end).(),
+            ","
+          ) end).()}"
         else
           bytes = data
           if (length(bytes) > 10) do
@@ -120,14 +135,15 @@ defmodule Main do
           true ->
             arr = packet
             if (length(arr) >= 4 and Enum.at(arr, 0) == 1 and Enum.at(arr, 1) == 0) do
-              "Protocol v1, size=" <> Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, 2)) <> ", data=" <> Enum.join((fn ->
+              "Protocol v1, size=" <> Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, 2)) <> ", data=" <> Enum.join(
                 (fn ->
-                  g = []
-                  arr_length = length(arr)
-                  g = Enum.reduce(3..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]) end)
-                  g
-                end).()
-              end).(), ",")
+                   g = []
+                   arr_length = length(arr)
+                   g = Enum.reduce(3..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]) end)
+                   g
+                 end).(),
+                ","
+              )
             else
               version = Enum.at(packet, 0)
               flags = Enum.at(packet, 1)
@@ -141,32 +157,38 @@ defmodule Main do
             end
         end
       3 when length(packet) >= 4 and Enum.at(packet, 0) == 1 and Enum.at(packet, 1) == 0 ->
-        "Protocol v1, size=#{Reflaxe.Elixir.HaxeFloat.to_string(arr[2])}, data=#{(fn -> Enum.join((fn ->
-          _g = []
-          g_value = 3
-          arr_length = length(arr)
-          _g = Enum.reduce(3..(arr_length - 1)//1, _g, fn i, _g_acc ->
-            _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(arr[i])]
-            _g_acc
-          end)
-          _g
-        end).(), ",") end).()}"
+        "Protocol v1, size=#{Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, 2))}, data=#{(fn -> Enum.join(
+          (fn ->
+             _g = []
+             g_value = 3
+             arr_length = length(arr)
+             _g = Enum.reduce(3..(arr_length - 1)//1, _g, fn i, _g_acc ->
+               _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]
+               _g_acc
+             end)
+             _g
+           end).(),
+          ","
+        ) end).()}"
       3 when version > 1 -> "Future protocol v#{Reflaxe.Elixir.HaxeFloat.to_string(version)}"
       3 when length(header) < 3 -> "Incomplete header"
       3 -> "Unknown packet format"
       4 ->
         arr = packet
         if (length(arr) >= 4 and Enum.at(arr, 0) == 1 and Enum.at(arr, 1) == 0) do
-          "Protocol v1, size=#{Reflaxe.Elixir.HaxeFloat.to_string(arr[2])}, data=#{(fn -> Enum.join((fn ->
-            _g = []
-            g_value = 3
-            arr_length = length(arr)
-            _g = Enum.reduce(3..(arr_length - 1)//1, _g, fn i, _g_acc ->
-              _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(arr[i])]
-              _g_acc
-            end)
-            _g
-          end).(), ",") end).()}"
+          "Protocol v1, size=#{Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, 2))}, data=#{(fn -> Enum.join(
+            (fn ->
+               _g = []
+               g_value = 3
+               arr_length = length(arr)
+               _g = Enum.reduce(3..(arr_length - 1)//1, _g, fn i, _g_acc ->
+                 _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]
+                 _g_acc
+               end)
+               _g
+             end).(),
+            ","
+          ) end).()}"
         else
           version = Enum.at(packet, 0)
           flags = Enum.at(packet, 1)
@@ -177,16 +199,19 @@ defmodule Main do
       _ ->
         arr = packet
         if (length(arr) >= 4 and Enum.at(arr, 0) == 1 and Enum.at(arr, 1) == 0) do
-          "Protocol v1, size=#{Reflaxe.Elixir.HaxeFloat.to_string(arr[2])}, data=#{(fn -> Enum.join((fn ->
-            _g = []
-            g_value = 3
-            arr_length = length(arr)
-            _g = Enum.reduce(3..(arr_length - 1)//1, _g, fn i, _g_acc ->
-              _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(arr[i])]
-              _g_acc
-            end)
-            _g
-          end).(), ",") end).()}"
+          "Protocol v1, size=#{Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, 2))}, data=#{(fn -> Enum.join(
+            (fn ->
+               _g = []
+               g_value = 3
+               arr_length = length(arr)
+               _g = Enum.reduce(3..(arr_length - 1)//1, _g, fn i, _g_acc ->
+                 _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]
+                 _g_acc
+               end)
+               _g
+             end).(),
+            ","
+          ) end).()}"
         else
           header = packet
           if (length(header) < 3), do: "Incomplete header", else: "Unknown packet format"

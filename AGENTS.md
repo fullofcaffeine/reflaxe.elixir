@@ -3464,19 +3464,51 @@ Re-plan: Use EnumBindingPlan as single source of truth for all systems
 - Prefer explicit typing and proper interfaces over dynamic access
 - **See**: [`docs/03-compiler-development/TYPE_SAFETY_REQUIREMENTS.md`](docs/03-compiler-development/TYPE_SAFETY_REQUIREMENTS.md) - Complete type safety standards
 
-### ⚠️ CRITICAL: No Direct Elixir Files - Everything Through Haxe
-**FUNDAMENTAL RULE: If project code can be expressed in Haxe and compiled to
-Elixir by Reflaxe.Elixir, it MUST be authored in Haxe. This applies across the
-entire repository, including compiler dogfood, PhoenixHx integrations,
-generators, runtime-facing modules, and tests.**
+### ⚠️ CRITICAL: Repository-Owned Haxe→Elixir Dogfood; Downstream Authoring Choice
+**FUNDAMENTAL RULE: If repository-owned project code can be expressed in Haxe
+and compiled to Elixir by Reflaxe.Elixir, it MUST be authored in Haxe. This
+applies across compiler dogfood, PhoenixHx integrations, generators,
+runtime-facing modules, and tests.**
+
+- This is a contributor/dogfooding rule for this repository, not a restriction
+  on downstream applications. Phoenix and Elixir remain first-class: users may
+  author Haxe, handwritten Elixir, or a deliberate mixture of both. Do not add
+  compiler warnings, scaffold restrictions, or documentation language that
+  implies application developers must replace appropriate Elixir code with
+  Haxe.
+
+- Support two complementary Haxe authoring lanes without turning them into
+  compiler modes:
+  1. portable Haxe and its standard library when the source should remain
+     cross-target; and
+  2. typed Elixir-native Haxe surfaces (`std/elixir`, PhoenixHx, externs, and
+     reusable DSLs) when code should use Mix, Phoenix, OTP, BEAM primitives, or
+     another Elixir ecosystem API directly.
+  Both lanes must compose in one program and obey one deterministic semantic
+  contract. Do not force a portable emulation when the declared typed boundary
+  provides stronger target intent, and do not sacrifice Haxe semantics merely
+  to make the output prettier.
+
+- Treat missing typed access to a stable Elixir construct or ecosystem API as a
+  target-library/DSL/compiler ergonomics gap to evaluate, not as automatic
+  permission for raw target injection or a large handwritten adapter. Add the
+  narrow reusable typed surface when doing so is accurate and maintainable.
 
 - Treat checked-in generated `.ex` as a first-class product artifact. It must be
   idiomatic, readable, deterministic, warnings-as-errors clean, and acceptable
-  in a handwritten Elixir code review.
-- Handwritten Elixir is permitted only for a concrete host/bootstrap boundary
-  that cannot reasonably be compiled through Haxe, such as a thin `Mix.Task`
-  loader that must start before the Haxe compiler, Mix-project introspection, or
-  compiler-unavailable recovery and atomic filesystem publication.
+  in a handwritten Elixir code review. "Best Elixir" means semantic fidelity
+  first, followed by conventional target constructs, direct use of declared
+  ecosystem APIs, stable public arities/shapes, and no avoidable wrappers,
+  temporaries, state threading, support modules, or immediately-invoked
+  functions. When dogfood output falls short, improve the Haxe source model,
+  typed target surface, or generic compiler lowering and add a focused
+  regression; do not hand-edit generated `.ex`.
+- Within repository-owned dogfood, handwritten Elixir is permitted only after
+  checking whether typed externs, a small target library, or a reusable DSL can
+  express the same behavior cleanly. A concrete host/bootstrap boundary may be
+  an exception, but `Mix.Task`, Mix-project introspection, filesystem access,
+  or process execution are not automatically exempt merely because they are
+  target-native APIs.
 - Every handwritten-Elixir exception MUST contain an adjacent source comment
   explaining the exact technical reason Haxe cannot own that code. Convenience,
   familiarity, file size, or generated-output aesthetics are not sufficient.

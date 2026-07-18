@@ -42,10 +42,15 @@ package elixir.types;
  * and generates EAtom AST nodes instead of EString. This happens in
  * ElixirASTBuilder when checking expr.t (the expression's type).
  * 
+ * `extern` is intentional: `Atom` describes an existing native BEAM value and
+ * must not emit an `Atom_Impl_` support module merely because another extern
+ * mentions it in a signature. Every operation below is inline and therefore
+ * remains available to Haxe callers without creating a runtime wrapper.
+ *
  * @see docs/04-api-reference/ATOM_TYPE.md - Complete atom type documentation
  * @since 1.0.0
  */
-abstract Atom(String) from String to String {
+extern abstract Atom(String) from String to String {
 	/**
 	 * Create an Atom from a string literal
 	 * 

@@ -45,7 +45,7 @@ defmodule TestAppWeb.GoldenLive do
             end)
         end)
     end)
-    if (Reflaxe.Elixir.HaxeFloat.eq(id_value, nil)) do
+    if (Kernel.is_nil(id_value)) do
       0
     else
       if (Kernel.is_integer(id_value)) do

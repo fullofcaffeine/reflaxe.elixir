@@ -23,6 +23,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 	* HOW
 	* - Prefer a type-driven rewrite using Haxe type metadata:
 	*   - If the target is typed as `Array<...>` and the key is typed `Int`, rewrite to `Enum.at/2`.
+	* - String interpolation applies this legalization only to the expression it is about to serialize.
+	*   This preserves typed access for reducer/guard normalization elsewhere in the tree while ensuring
+	*   interpolation cannot freeze invalid numeric list access into raw Elixir source.
+	* - Retain the absolute-final registration for access nodes introduced or exposed by later passes.
 	* - Keep a narrow structural fallback for legacy/no-metadata cases:
 	*   - entry.metas[0] -> Enum.at(entry.metas, 0)
 

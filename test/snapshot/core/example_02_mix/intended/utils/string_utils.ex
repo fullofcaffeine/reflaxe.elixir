@@ -96,7 +96,7 @@ defmodule StringUtils do
       slug
     end
   end
-  def truncate(text, max_length) do
+  def truncate(text, max_length \\ 100) do
     if (Kernel.is_nil(text)) do
       ""
     else
@@ -114,7 +114,7 @@ defmodule StringUtils do
       end
     end
   end
-  def mask_sensitive_info(text, visible_chars) do
+  def mask_sensitive_info(text, visible_chars \\ 2) do
     if (Kernel.is_nil(text) or String.length(text) <= visible_chars) do
       repeat_count = if (not Kernel.is_nil(text)) do
         String.length(text)
@@ -141,13 +141,15 @@ defmodule StringUtils do
     apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, text, " "])
   end
   defp normalize_case(text) do
-    "#{String.upcase(StringTools.haxe_char_at(text, 0))}#{(fn -> String.downcase((fn ->
-      reflaxe_string_source = text
-      reflaxe_string_length = String.length(reflaxe_string_source)
-      reflaxe_string_start = min(1, reflaxe_string_length)
-      reflaxe_string_count = (reflaxe_string_length - reflaxe_string_start)
-      String.slice(reflaxe_string_source, reflaxe_string_start, reflaxe_string_count)
-    end).()) end).()}"
+    "#{String.upcase(StringTools.haxe_char_at(text, 0))}#{(fn -> String.downcase(
+      (fn ->
+         reflaxe_string_source = text
+         reflaxe_string_length = String.length(reflaxe_string_source)
+         reflaxe_string_start = min(1, reflaxe_string_length)
+         reflaxe_string_count = (reflaxe_string_length - reflaxe_string_start)
+         String.slice(reflaxe_string_source, reflaxe_string_start, reflaxe_string_count)
+       end).()
+    ) end).()}"
   end
   defp is_valid_email_format(email) do
     at_index = StringTools.haxe_index_of(email, "@", 0)

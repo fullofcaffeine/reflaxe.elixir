@@ -1,483 +1,502 @@
 defmodule HaxeProjectPatch do
-  @moduledoc false
-
-  import Bitwise, only: [band: 2]
-
-  @transaction_directory ".reflaxe-elixir-project-patch"
-  @owner_filename "owner"
-  @journal_filename "journal.json"
-  @owner_marker "reflaxe.elixir project patch transaction v1\n"
-  @protocol "reflaxe-elixir/project-patch"
-  @version 1
-
-  # A publish validates every input, stages replacement files beside their targets, and keeps
-  # content-addressed backups until every target reaches its requested state. A surviving journal
-  # lets the next invocation either roll a mixed state back or accept an entirely published state.
-  # This is intentionally a recovery protocol over atomic per-file renames; it is not a claim of a
-  # power-loss-safe, filesystem-wide transaction.
-
-  defmodule Plan do
-    @moduledoc false
-    @enforce_keys [:root]
-    defstruct root: nil, operations: [], seen_paths: MapSet.new()
+  def new!(root, opts \\ nil) do
+    options = normalize_options(opts)
+    expanded = Path.expand(root)
+    if Keyword.get(options, :recover, true), do: recover!(expanded)
+    require_directory_bang(expanded, "project patch root")
+    HaxeProjectPatch.Plan.new(expanded)
   end
 
-  defmodule Operation do
-    @moduledoc false
-    @enforce_keys [:kind, :path, :relative, :before, :after, :action]
-    defstruct [:kind, :path, :relative, :before, :after, :action, manifest?: false]
-  end
-
-  @type file_state ::
-          %{state: :missing}
-          | %{state: :regular, content: binary(), sha256: binary(), mode: non_neg_integer()}
-
-  @type plan :: %Plan{}
-  @type recovery_status :: :clean | {:pending, :rollback | :commit_cleanup}
-
-  @spec new!(Path.t(), keyword()) :: plan()
-  def new!(root, opts \\ []) when is_binary(root) and is_list(opts) do
-    root = Path.expand(root)
-
-    if Keyword.get(opts, :recover, true) do
-      recover!(root)
-    end
-
-    require_directory!(root, "project patch root")
-    %Plan{root: root}
-  end
-
-  @spec update_file!(
-          plan(),
-          Path.t(),
-          (file_state() -> :keep | :delete | {:write, binary()}),
-          keyword()
-        ) :: plan()
-  def update_file!(%Plan{} = plan, path, fun, opts \\ [])
-      when is_binary(path) and is_function(fun, 1) and is_list(opts) do
-    {absolute, relative} = normalize_target!(plan.root, path)
+  def update_file!(plan, path, fun, opts \\ nil) do
+    options = normalize_options(opts)
+    normalized = normalize_target_bang(plan.root, path)
+    absolute = Kernel.elem(normalized, 0)
+    relative = Kernel.elem(normalized, 1)
 
     if MapSet.member?(plan.seen_paths, absolute) do
-      raise "project patch plan contains more than one operation for #{absolute}"
-    end
+      Kernel.raise("project patch plan contains more than one operation for #{absolute}")
+    else
+      before = snapshot_bang(plan.root, absolute)
 
-    before = snapshot!(plan.root, absolute)
+      if Keyword.get(options, :required, false) and before.state == :missing do
+        missing_message = Keyword.get(options, :missing_message, "expected file at #{absolute}")
+        Kernel.raise(missing_message)
+      else
+        instruction = fun.(before)
+        seen_paths = MapSet.put(plan.seen_paths, absolute)
+        normalized_instruction = normalize_instruction_bang(instruction, before, absolute)
+        plan = %{plan | seen_paths: seen_paths}
 
-    if Keyword.get(opts, :required, false) and before.state == :missing do
-      raise Keyword.get(opts, :missing_message, "expected file at #{absolute}")
-    end
+        if same_term(normalized_instruction, :keep) do
+          plan
+        else
+          kind = Kernel.elem(normalized_instruction, 0)
+          after_state = Kernel.elem(normalized_instruction, 1)
+          action = Kernel.elem(normalized_instruction, 2)
 
-    instruction = fun.(before)
-    seen_paths = MapSet.put(plan.seen_paths, absolute)
+          operation =
+            HaxeProjectPatch.Operation.new(
+              kind,
+              absolute,
+              relative,
+              before,
+              after_state,
+              action,
+              Keyword.get(options, :manifest, false)
+            )
 
-    case normalize_instruction!(instruction, before, absolute) do
-      :keep ->
-        %{plan | seen_paths: seen_paths}
-
-      {kind, after_state, action} ->
-        operation = %Operation{
-          kind: kind,
-          path: absolute,
-          relative: relative,
-          before: before,
-          after: after_state,
-          action: action,
-          manifest?: Keyword.get(opts, :manifest, false)
-        }
-
-        %{plan | operations: [operation | plan.operations], seen_paths: seen_paths}
+          plan = %{plan | operations: Enum.concat([operation], plan.operations)}
+          plan
+        end
+      end
     end
   end
 
-  @spec ensure_file!(plan(), Path.t(), binary(), (binary() -> binary()), keyword()) :: plan()
-  def ensure_file!(%Plan{} = plan, path, initial_content, patch_fun, opts \\ [])
-      when is_binary(path) and is_binary(initial_content) and is_function(patch_fun, 1) and
-             is_list(opts) do
+  def ensure_file!(plan, path, initial_content, patch_fun, opts \\ nil) do
     update_file!(
       plan,
       path,
-      fn
-        %{state: :missing} -> {:write, initial_content}
-        %{state: :regular, content: content} -> {:write, patch_fun.(content)}
+      fn state ->
+        if state.state == :missing,
+          do: write_instruction(initial_content),
+          else: write_instruction(patch_fun.(state.content))
       end,
       opts
     )
   end
 
-  @spec patch_file!(plan(), Path.t(), (binary() -> binary()), keyword()) :: plan()
-  def patch_file!(%Plan{} = plan, path, patch_fun, opts \\ [])
-      when is_binary(path) and is_function(patch_fun, 1) and is_list(opts) do
+  def patch_file!(plan, path, patch_fun, opts \\ nil) do
+    options = Keyword.put(normalize_options(opts), :required, true)
+
     update_file!(
       plan,
       path,
-      fn %{state: :regular, content: content} -> {:write, patch_fun.(content)} end,
-      Keyword.put(opts, :required, true)
+      fn state -> write_instruction(patch_fun.(state.content)) end,
+      options
     )
   end
 
-  @spec write_file!(plan(), Path.t(), binary(), keyword()) :: plan()
-  def write_file!(%Plan{} = plan, path, content, opts \\ [])
-      when is_binary(path) and is_binary(content) and is_list(opts) do
-    update_file!(plan, path, fn _state -> {:write, content} end, opts)
+  def write_file!(plan, path, content, opts \\ nil) do
+    update_file!(plan, path, fn _state -> write_instruction(content) end, opts)
   end
 
-  @spec delete_file!(plan(), Path.t(), keyword()) :: plan()
-  def delete_file!(%Plan{} = plan, path, opts \\ [])
-      when is_binary(path) and is_list(opts) do
+  def delete_file!(plan, path, opts \\ nil) do
     update_file!(plan, path, fn _state -> :delete end, opts)
   end
 
-  @spec changes(plan()) :: [map()]
-  def changes(%Plan{} = plan) do
-    plan.operations
-    |> Enum.reverse()
-    |> Enum.map(fn operation ->
-      %{
-        action: operation.action,
-        path: operation.path,
-        relative: operation.relative,
-        manifest?: operation.manifest?
-      }
+  def changes(plan) do
+    Enum.map(Enum.reverse(plan.operations), fn operation ->
+      change = Map.new()
+
+      change =
+        change
+        |> Map.put(:action, operation.action)
+        |> Map.put(:path, operation.path)
+        |> Map.put(:relative, operation.relative)
+
+      Map.put(change, :manifest?, operation.manifest?)
     end)
   end
 
-  @spec publish!(plan(), keyword()) :: :ok
-  def publish!(%Plan{} = plan, opts \\ []) when is_list(opts) do
+  def publish!(plan, opts \\ nil) do
     operations = ordered_operations(plan)
 
-    if operations == [] do
+    if length(operations) == 0 do
       :ok
     else
-      validate_plan!(plan.root, operations)
-      transaction = prepare_transaction!(plan.root, operations)
-      fault_injector = Keyword.get(opts, :fault_injector, fn _stage, _operation -> :ok end)
+      validate_plan_bang(plan.root, operations)
+      transaction = prepare_transaction_bang(plan.root, operations)
 
-      case publish_operations(transaction, fault_injector) do
-        :ok ->
-          finish_committed_transaction!(transaction)
+      fault_injector =
+        Keyword.get(normalize_options(opts), :fault_injector, fn _stage, _operation -> :ok end)
+
+      published = publish_operations(transaction, fault_injector)
+
+      if same_term(published, :ok) do
+        finish_committed_transaction_bang(transaction)
+        :ok
+      else
+        publication_error = Kernel.elem(published, 1)
+        rollback = rollback_transaction(transaction)
+
+        if same_term(rollback, :ok) do
+          Kernel.raise(
+            "project patch publication failed and was rolled back: #{Exception.message(publication_error)}"
+          )
+        else
+          rollback_message = Kernel.elem(rollback, 1)
+
+          Kernel.raise(
+            "project patch publication failed: #{Exception.message(publication_error)}; automatic rollback could not complete: #{rollback_message}. Transaction data was retained at #{transaction.directory}."
+          )
+        end
+      end
+    end
+  end
+
+  def recovery_status!(root) do
+    action = recovery_action_bang(Path.expand(root))
+
+    if same_term(action, :clean) do
+      :clean
+    else
+      tag = tuple_tag(action)
+      {:pending, if(tag == :commit_cleanup, do: :commit_cleanup, else: :rollback)}
+    end
+  end
+
+  def recover!(root) do
+    action = recovery_action_bang(Path.expand(root))
+
+    if same_term(action, :clean) do
+      :ok
+    else
+      tag = tuple_tag(action)
+
+      if tag == :discard_incomplete do
+        remove_incomplete_transaction_bang(Kernel.elem(action, 1))
+        :ok
+      else
+        transaction = Kernel.elem(action, 1)
+
+        if tag == :commit_cleanup do
+          finish_committed_transaction_bang(transaction)
           :ok
+        else
+          rollback = rollback_transaction(transaction)
 
-        {:error, error} ->
-          case rollback_transaction(transaction) do
-            :ok ->
-              raise RuntimeError,
-                    "project patch publication failed and was rolled back: #{Exception.message(error)}"
+          if same_term(rollback, :ok) do
+            :ok
+          else
+            Kernel.raise(Kernel.elem(rollback, 1))
+          end
+        end
+      end
+    end
+  end
 
-            {:error, rollback_message} ->
-              raise RuntimeError,
-                    "project patch publication failed: #{Exception.message(error)}; " <>
-                      "automatic rollback could not complete: #{rollback_message}. " <>
-                      "Transaction data was retained at #{transaction.directory}."
+  def replace_marker_block_lines(content, begin_token, end_token, desired_lines) do
+    span = marker_span(content, begin_token, end_token)
+
+    if same_term(span, :missing) do
+      :missing
+    else
+      if has_tag(span, :error) do
+        error(Kernel.elem(span, 1))
+      else
+        lines = Kernel.elem(span, 1)
+        begin_index = Kernel.elem(span, 2)
+        end_index = Kernel.elem(span, 3)
+        begin_line = Enum.at(lines, begin_index, "")
+        end_line = Enum.at(lines, end_index, "")
+        indent = leading_indent(begin_line)
+        indented = Enum.map(desired_lines, fn line -> indent <> line end)
+        replacement = Enum.concat(Enum.concat([begin_line], indented), [end_line])
+        ok(replace_line_span(lines, begin_index, end_index, replacement))
+      end
+    end
+  end
+
+  def replace_marker_block_lines_with(content, begin_token, end_token, fun) do
+    span = marker_span(content, begin_token, end_token)
+
+    if same_term(span, :missing) do
+      :missing
+    else
+      if has_tag(span, :error) do
+        error(Kernel.elem(span, 1))
+      else
+        lines = Kernel.elem(span, 1)
+        begin_index = Kernel.elem(span, 2)
+        end_index = Kernel.elem(span, 3)
+        begin_line = Enum.at(lines, begin_index, "")
+        end_line = Enum.at(lines, end_index, "")
+        indent = leading_indent(begin_line)
+        existing_inner = Enum.take(Enum.drop(lines, begin_index + 1), end_index - begin_index - 1)
+
+        desired_inner =
+          Enum.map(fun.(existing_inner), fn line -> indent <> String.trim_leading(line) end)
+
+        replacement = Enum.concat(Enum.concat([begin_line], desired_inner), [end_line])
+        ok(replace_line_span(lines, begin_index, end_index, replacement))
+      end
+    end
+  end
+
+  def remove_marker_block_lines(content, begin_token, end_token) do
+    span = marker_span(content, begin_token, end_token)
+
+    if same_term(span, :missing) do
+      :missing
+    else
+      if has_tag(span, :error) do
+        error(Kernel.elem(span, 1))
+      else
+        lines = Kernel.elem(span, 1)
+        begin_index = Kernel.elem(span, 2)
+        end_index = Kernel.elem(span, 3)
+
+        retained =
+          Enum.flat_map(Enum.with_index(lines), fn entry ->
+            line = Kernel.elem(entry, 0)
+            index = Kernel.elem(entry, 1)
+            if index >= begin_index and index <= end_index, do: [], else: [line]
+          end)
+
+        ok(Enum.join(retained, "\n"))
+      end
+    end
+  end
+
+  def validate_marker_pairs(content, marker_pairs) do
+    collected = collect_marker_spans(content, marker_pairs, 0, [])
+
+    if has_tag(collected, :error) do
+      collected
+    else
+      spans = Kernel.elem(collected, 1)
+      validate_ordered_spans(Enum.sort_by(spans, fn span -> span.first end), 1)
+    end
+  end
+
+  def marker_block_lines(begin_token, end_token, desired_lines, opts \\ nil) do
+    options = if Kernel.is_nil(opts), do: [], else: opts
+    indent = Keyword.get(options, :indent, "")
+    comment_prefix = Keyword.get(options, :comment_prefix, "#")
+    body = Enum.map(desired_lines, fn line -> indent <> line end)
+
+    Enum.concat(Enum.concat(["#{indent}#{comment_prefix} #{begin_token}"], body), [
+      "#{indent}#{comment_prefix} #{end_token}"
+    ])
+  end
+
+  def signature_status(content, signature) do
+    count = length(:binary.matches(content, signature))
+
+    if count == 0 do
+      :unowned
+    else
+      if count == 1, do: :owned, else: error({:duplicate_signature, signature, count})
+    end
+  end
+
+  def managed_file_content(existing, signature, desired) do
+    status = signature_status(existing, signature)
+    if same_term(status, :owned), do: ok(desired), else: status
+  end
+
+  def package_key_status(content, path, expected) do
+    decoded = decode_json_object(content)
+
+    if has_tag(decoded, :error) do
+      decoded
+    else
+      path_validation = validate_key_path(path)
+
+      if not same_term(path_validation, :ok) do
+        path_validation
+      else
+        json = Kernel.elem(decoded, 1)
+        fetched = fetch_json_path(json, path, [])
+
+        if same_term(fetched, :missing) or has_tag(fetched, :error) do
+          if same_term(fetched, :missing), do: ok(:missing), else: fetched
+        else
+          actual = Kernel.elem(fetched, 1)
+          if same_term(actual, expected), do: ok(:equal), else: ok({:conflict, actual})
+        end
+      end
+    end
+  end
+
+  def validate_package_key_change(before, after_content, path, expected) do
+    before_decoded = decode_json_object(before)
+
+    if has_tag(before_decoded, :error) do
+      before_decoded
+    else
+      after_decoded = decode_json_object(after_content)
+
+      if has_tag(after_decoded, :error) do
+        after_decoded
+      else
+        path_validation = validate_key_path(path)
+
+        if not same_term(path_validation, :ok) do
+          path_validation
+        else
+          before_json = Kernel.elem(before_decoded, 1)
+          after_json = Kernel.elem(after_decoded, 1)
+          fetched = fetch_json_path(after_json, path, [])
+
+          if same_term(fetched, :missing) do
+            error("updated package JSON is missing #{Enum.join(path, ".")}")
+          else
+            if has_tag(fetched, :error) do
+              fetched
+            else
+              actual = Kernel.elem(fetched, 1)
+
+              if not same_term(actual, expected) do
+                error("updated package JSON has conflicting value #{Kernel.inspect(actual)}")
+              else
+                if not same_term(
+                     strip_json_path(before_json, path),
+                     strip_json_path(after_json, path)
+                   ),
+                   do: error("package JSON update changed keys outside #{Enum.join(path, ".")}"),
+                   else: :ok
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+  defp normalize_options(opts) do
+    if Kernel.is_nil(opts), do: [], else: opts
+  end
+
+  defp write_instruction(content) do
+    {:write, content}
+  end
+
+  defp normalize_instruction_bang(instruction, before, path) do
+    if same_term(instruction, :keep) do
+      :keep
+    else
+      if same_term(instruction, :delete) do
+        if before.state == :missing, do: :keep, else: {:delete, missing_state(), :removed}
+      else
+        if has_tag(instruction, :write) do
+          content = Kernel.elem(instruction, 1)
+
+          if not Kernel.is_binary(content) do
+            Kernel.raise(
+              "invalid project patch instruction for #{path}: #{Kernel.inspect(instruction)}"
+            )
+          else
+            mode = if before.state == :regular, do: before.mode, else: 420
+            after_state = regular_state(Kernel.elem(instruction, 1), mode)
+
+            if same_state(before, after_state),
+              do: :keep,
+              else:
+                {:write, after_state, if(before.state == :missing, do: :wrote, else: :patched)}
+          end
+        else
+          Kernel.raise(
+            "invalid project patch instruction for #{path}: #{Kernel.inspect(instruction)}"
+          )
+        end
+      end
+    end
+  end
+
+  defp ordered_operations(plan) do
+    operations = Enum.reverse(plan.operations)
+    split = Enum.split_with(operations, fn operation -> not operation.manifest? end)
+    ordinary = Kernel.elem(split, 0)
+    manifests = Kernel.elem(split, 1)
+
+    if length(manifests) > 1 do
+      Kernel.raise("project patch plan may contain at most one manifest operation")
+    else
+      Enum.concat(ordinary, manifests)
+    end
+  end
+
+  defp validate_plan_bang(root, operations) do
+    Enum.each(operations, fn operation ->
+      current = snapshot_bang(root, operation.path)
+
+      if not same_state(current, operation.before) do
+        Kernel.raise("project patch input changed after discovery: " <> operation.path)
+      end
+    end)
+
+    :ok
+  end
+
+  defp prepare_transaction_bang(root, operations) do
+    directory = Path.join(root, ".reflaxe-elixir-project-patch")
+    status = File.lstat(directory)
+
+    if not has_tag(status, :error) or not same_term(Kernel.elem(status, 1), :enoent) do
+      if has_tag(status, :ok) do
+        Kernel.raise("project patch transaction already exists: #{directory}")
+      else
+        Kernel.raise(
+          "cannot inspect project patch transaction path: #{Kernel.inspect(Kernel.elem(status, 1))}"
+        )
+      end
+    else
+      id = Integer.to_string(System.unique_integer([:positive, :monotonic]))
+      created_dirs = missing_parent_directories(root, operations)
+      staged_operations = build_staged_operations(root, directory, id, operations)
+      validate_staged_paths_bang(staged_operations)
+      File.mkdir!(directory)
+
+      File.write!(
+        Path.join(directory, "owner"),
+        "reflaxe.elixir project patch transaction v1\n",
+        [:write, :exclusive]
+      )
+
+      File.mkdir!(Path.join(directory, "backups"))
+
+      transaction = %{
+        root: root,
+        directory: directory,
+        id: id,
+        operations: staged_operations,
+        created_dirs: created_dirs
+      }
+
+      write_journal_bang(transaction)
+
+      try do
+        Enum.each(created_dirs, fn path -> File.mkdir!(path) end)
+        Enum.each(staged_operations, fn staged -> stage_operation_bang(staged) end)
+        transaction
+      rescue
+        error ->
+          rollback = rollback_transaction(transaction)
+
+          if same_term(rollback, :ok) do
+            Kernel.raise(error)
+          else
+            Kernel.raise(
+              Exception.message(error) <> "; staging cleanup failed: " <> Kernel.elem(rollback, 1)
+            )
           end
       end
     end
   end
 
-  @spec recovery_status!(Path.t()) :: recovery_status()
-  def recovery_status!(root) when is_binary(root) do
-    root = Path.expand(root)
-
-    case recovery_action!(root) do
-      :clean -> :clean
-      {:discard_incomplete, _directory} -> {:pending, :rollback}
-      {:rollback, _transaction} -> {:pending, :rollback}
-      {:commit_cleanup, _transaction} -> {:pending, :commit_cleanup}
-    end
-  end
-
-  @spec recover!(Path.t()) :: :ok
-  def recover!(root) when is_binary(root) do
-    root = Path.expand(root)
-
-    case recovery_action!(root) do
-      :clean ->
-        :ok
-
-      {:discard_incomplete, directory} ->
-        remove_incomplete_transaction!(directory)
-
-      {:commit_cleanup, transaction} ->
-        finish_committed_transaction!(transaction)
-
-      {:rollback, transaction} ->
-        case rollback_transaction(transaction) do
-          :ok -> :ok
-          {:error, message} -> raise message
-        end
-    end
-  end
-
-  defp recovery_action!(root) do
-    transaction_directory = Path.join(root, @transaction_directory)
-
-    case File.lstat(transaction_directory) do
-      {:error, :enoent} ->
-        :clean
-
-      {:ok, %File.Stat{type: :directory}} ->
-        recovery_action_from_directory!(root, transaction_directory)
-
-      {:ok, %File.Stat{type: type}} ->
-        raise "project patch transaction path is not a directory (#{type}): #{transaction_directory}"
-
-      {:error, reason} ->
-        raise "cannot inspect project patch transaction path #{transaction_directory}: #{inspect(reason)}"
-    end
-  end
-
-  @spec replace_marker_block_lines(binary(), binary(), binary(), [binary()]) ::
-          {:ok, binary()} | :missing | {:error, term()}
-  def replace_marker_block_lines(content, begin_token, end_token, desired_lines)
-      when is_binary(content) and is_binary(begin_token) and is_binary(end_token) and
-             is_list(desired_lines) do
-    with {:ok, lines, begin_index, end_index} <- marker_span(content, begin_token, end_token) do
-      begin_line = Enum.at(lines, begin_index)
-      end_line = Enum.at(lines, end_index)
-      indent = leading_indent(begin_line)
-
-      replacement =
-        [begin_line]
-        |> Kernel.++(Enum.map(desired_lines, fn line -> indent <> line end))
-        |> Kernel.++([end_line])
-
-      {:ok, replace_line_span(lines, begin_index, end_index, replacement)}
-    end
-  end
-
-  @spec replace_marker_block_lines_with(binary(), binary(), binary(), ([binary()] -> [binary()])) ::
-          {:ok, binary()} | :missing | {:error, term()}
-  def replace_marker_block_lines_with(content, begin_token, end_token, fun)
-      when is_binary(content) and is_binary(begin_token) and is_binary(end_token) and
-             is_function(fun, 1) do
-    with {:ok, lines, begin_index, end_index} <- marker_span(content, begin_token, end_token) do
-      begin_line = Enum.at(lines, begin_index)
-      end_line = Enum.at(lines, end_index)
-      indent = leading_indent(begin_line)
-      existing_inner = Enum.slice(lines, begin_index + 1, end_index - begin_index - 1)
-
-      desired_inner =
-        fun.(existing_inner)
-        |> Enum.map(fn line -> indent <> String.trim_leading(line) end)
-
-      replacement = [begin_line] ++ desired_inner ++ [end_line]
-      {:ok, replace_line_span(lines, begin_index, end_index, replacement)}
-    end
-  end
-
-  @spec remove_marker_block_lines(binary(), binary(), binary()) ::
-          {:ok, binary()} | :missing | {:error, term()}
-  def remove_marker_block_lines(content, begin_token, end_token)
-      when is_binary(content) and is_binary(begin_token) and is_binary(end_token) do
-    with {:ok, lines, begin_index, end_index} <- marker_span(content, begin_token, end_token) do
-      updated =
-        lines
-        |> Enum.with_index()
-        |> Enum.reject(fn {_line, index} -> index >= begin_index and index <= end_index end)
-        |> Enum.map(fn {line, _index} -> line end)
-        |> Enum.join("\n")
-
-      {:ok, updated}
-    end
-  end
-
-  @spec validate_marker_pairs(binary(), [{binary(), binary()}]) :: :ok | {:error, term()}
-  def validate_marker_pairs(content, marker_pairs)
-      when is_binary(content) and is_list(marker_pairs) do
-    marker_pairs
-    |> Enum.reduce_while({:ok, []}, fn {begin_token, end_token}, {:ok, spans} ->
-      case marker_span(content, begin_token, end_token) do
-        :missing -> {:cont, {:ok, spans}}
-        {:ok, _lines, first, last} -> {:cont, {:ok, [{first, last, begin_token} | spans]}}
-        {:error, reason} -> {:halt, {:error, reason}}
-      end
-    end)
-    |> case do
-      {:error, reason} ->
-        {:error, reason}
-
-      {:ok, spans} ->
-        spans
-        |> Enum.sort_by(fn {first, _last, _token} -> first end)
-        |> reject_overlapping_spans()
-    end
-  end
-
-  @spec marker_block_lines(binary(), binary(), [binary()], keyword()) :: [binary()]
-  def marker_block_lines(begin_token, end_token, desired_lines, opts \\ [])
-      when is_binary(begin_token) and is_binary(end_token) and is_list(desired_lines) and
-             is_list(opts) do
-    indent = Keyword.get(opts, :indent, "")
-    comment_prefix = Keyword.get(opts, :comment_prefix, "#")
-
-    [indent <> comment_prefix <> " " <> begin_token]
-    |> Kernel.++(Enum.map(desired_lines, fn line -> indent <> line end))
-    |> Kernel.++([indent <> comment_prefix <> " " <> end_token])
-  end
-
-  @spec signature_status(binary(), binary()) :: :unowned | :owned | {:error, term()}
-  def signature_status(content, signature)
-      when is_binary(content) and is_binary(signature) and byte_size(signature) > 0 do
-    case length(:binary.matches(content, signature)) do
-      0 -> :unowned
-      1 -> :owned
-      count -> {:error, {:duplicate_signature, signature, count}}
-    end
-  end
-
-  @spec managed_file_content(binary(), binary(), binary()) ::
-          {:ok, binary()} | :unowned | {:error, term()}
-  def managed_file_content(existing, signature, desired)
-      when is_binary(existing) and is_binary(signature) and is_binary(desired) do
-    case signature_status(existing, signature) do
-      :owned -> {:ok, desired}
-      :unowned -> :unowned
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  @spec package_key_status(binary(), [binary()], term()) ::
-          {:ok, :missing | :equal | {:conflict, term()}} | {:error, binary()}
-  def package_key_status(content, path, expected)
-      when is_binary(content) and is_list(path) and path != [] do
-    with {:ok, json} <- decode_json_object(content),
-         :ok <- validate_key_path(path) do
-      case fetch_json_path(json, path) do
-        :missing -> {:ok, :missing}
-        {:ok, ^expected} -> {:ok, :equal}
-        {:ok, actual} -> {:ok, {:conflict, actual}}
-        {:error, message} -> {:error, message}
-      end
-    end
-  end
-
-  @spec validate_package_key_change(binary(), binary(), [binary()], term()) ::
-          :ok | {:error, binary()}
-  def validate_package_key_change(before, after_content, path, expected)
-      when is_binary(before) and is_binary(after_content) and is_list(path) and path != [] do
-    with {:ok, before_json} <- decode_json_object(before),
-         {:ok, after_json} <- decode_json_object(after_content),
-         :ok <- validate_key_path(path),
-         {:ok, ^expected} <- fetch_required_json_path(after_json, path),
-         true <- strip_json_path(before_json, path) == strip_json_path(after_json, path) do
-      :ok
-    else
-      :missing -> {:error, "updated package JSON is missing #{Enum.join(path, ".")}"}
-      {:ok, actual} -> {:error, "updated package JSON has conflicting value #{inspect(actual)}"}
-      false -> {:error, "package JSON update changed keys outside #{Enum.join(path, ".")}"}
-      {:error, message} -> {:error, message}
-    end
-  end
-
-  defp normalize_instruction!(:keep, _before, _path), do: :keep
-  defp normalize_instruction!(:delete, %{state: :missing}, _path), do: :keep
-
-  defp normalize_instruction!(:delete, _before, _path) do
-    {:delete, %{state: :missing}, :removed}
-  end
-
-  defp normalize_instruction!({:write, content}, before, _path) when is_binary(content) do
-    mode = if before.state == :regular, do: before.mode, else: 0o644
-    after_state = regular_state(content, mode)
-
-    if same_state?(before, after_state) do
-      :keep
-    else
-      action = if before.state == :missing, do: :wrote, else: :patched
-      {:write, after_state, action}
-    end
-  end
-
-  defp normalize_instruction!(instruction, _before, path) do
-    raise "invalid project patch instruction for #{path}: #{inspect(instruction)}"
-  end
-
-  defp ordered_operations(%Plan{} = plan) do
-    operations = Enum.reverse(plan.operations)
-    {ordinary, manifests} = Enum.split_with(operations, &(not &1.manifest?))
-
-    if length(manifests) > 1 do
-      raise "project patch plan may contain at most one manifest operation"
-    end
-
-    ordinary ++ manifests
-  end
-
-  defp validate_plan!(root, operations) do
-    Enum.each(operations, fn operation ->
-      current = snapshot!(root, operation.path)
-
-      unless same_state?(current, operation.before) do
-        raise "project patch input changed after discovery: #{operation.path}"
-      end
-    end)
-  end
-
-  defp prepare_transaction!(root, operations) do
-    directory = Path.join(root, @transaction_directory)
-
-    case File.lstat(directory) do
-      {:error, :enoent} ->
-        :ok
-
-      {:ok, _stat} ->
-        raise "project patch transaction already exists: #{directory}"
-
-      {:error, reason} ->
-        raise "cannot inspect project patch transaction path: #{inspect(reason)}"
-    end
-
-    id = Integer.to_string(System.unique_integer([:positive, :monotonic]))
-    created_dirs = missing_parent_directories(root, operations)
-    staged_operations = build_staged_operations(root, directory, id, operations)
-    validate_staged_paths!(staged_operations)
-
-    File.mkdir!(directory)
-    File.write!(Path.join(directory, @owner_filename), @owner_marker, [:write, :exclusive])
-    File.mkdir!(Path.join(directory, "backups"))
-
-    transaction = %{
-      root: root,
-      directory: directory,
-      id: id,
-      operations: staged_operations,
-      created_dirs: created_dirs
-    }
-
-    write_journal!(transaction)
-
-    try do
-      Enum.each(created_dirs, &File.mkdir!/1)
-      Enum.each(staged_operations, &stage_operation!/1)
-      transaction
-    rescue
-      error ->
-        case rollback_transaction(transaction) do
-          :ok ->
-            reraise error, __STACKTRACE__
-
-          {:error, message} ->
-            raise "#{Exception.message(error)}; staging cleanup failed: #{message}"
-        end
-    end
-  end
-
   defp build_staged_operations(root, directory, id, operations) do
-    operations
-    |> Enum.with_index()
-    |> Enum.map(fn {operation, index} ->
+    Enum.map(Enum.with_index(operations), fn entry ->
+      operation = Kernel.elem(entry, 0)
+      index = Kernel.elem(entry, 1)
       basename = Path.basename(operation.path)
 
       new_path =
         if operation.kind == :write do
           Path.join(
             Path.dirname(operation.path),
-            ".#{basename}.reflaxe-patch-#{id}-#{index}.new"
+            "." <>
+              basename <> ".reflaxe-patch-" <> id <> "-" <> Integer.to_string(index) <> ".new"
           )
+        else
+          nil
         end
 
       backup_path =
         if operation.before.state == :regular do
           Path.join([directory, "backups", Integer.to_string(index)])
+        else
+          nil
         end
 
       %{
@@ -490,148 +509,174 @@ defmodule HaxeProjectPatch do
     end)
   end
 
-  defp validate_staged_paths!(staged_operations) do
-    targets = Enum.map(staged_operations, & &1.operation.path)
-    temporary_paths = Enum.flat_map(staged_operations, &present_path(&1.new_path))
-    backup_paths = Enum.flat_map(staged_operations, &present_path(&1.backup_path))
+  defp validate_staged_paths_bang(staged_operations) do
+    targets = Enum.map(staged_operations, fn staged -> staged.operation.path end)
 
-    assert_unique_paths!(targets, "target")
-    assert_unique_paths!(temporary_paths, "temporary")
-    assert_unique_paths!(backup_paths, "backup")
+    temporary_paths =
+      Enum.flat_map(staged_operations, fn staged -> present_path(staged.new_path) end)
+
+    backup_paths =
+      Enum.flat_map(staged_operations, fn staged -> present_path(staged.backup_path) end)
+
+    assert_unique_paths_bang(targets, "target")
+    assert_unique_paths_bang(temporary_paths, "temporary")
+    assert_unique_paths_bang(backup_paths, "backup")
 
     collisions =
-      targets
-      |> MapSet.new()
-      |> MapSet.intersection(MapSet.new(temporary_paths ++ backup_paths))
+      MapSet.intersection(
+        MapSet.new(targets),
+        MapSet.new(Enum.concat(temporary_paths, backup_paths))
+      )
 
     if MapSet.size(collisions) > 0 do
-      raise "project patch staging paths collide with targets: #{inspect(MapSet.to_list(collisions))}"
+      Kernel.raise(
+        "project patch staging paths collide with targets: #{Kernel.inspect(MapSet.to_list(collisions))}"
+      )
+    else
+      :ok
     end
-
-    :ok
   end
 
   defp missing_parent_directories(root, operations) do
-    operations
-    |> Enum.filter(&(&1.kind == :write))
-    |> Enum.flat_map(fn operation -> missing_directories(root, Path.dirname(operation.path)) end)
-    |> Enum.uniq()
-    |> Enum.sort_by(fn path -> length(Path.split(path)) end)
+    all =
+      Enum.flat_map(
+        Enum.filter(operations, fn operation -> operation.kind == :write end),
+        fn operation -> missing_directories(root, Path.dirname(operation.path)) end
+      )
+
+    Enum.sort_by(Enum.uniq(all), fn path -> length(Path.split(path)) end)
   end
 
   defp missing_directories(root, directory) do
-    relative = Path.relative_to(directory, root)
-
-    relative
-    |> Path.split()
-    |> Enum.reduce({root, []}, fn part, {parent, missing} ->
-      path = Path.join(parent, part)
-
-      case File.lstat(path) do
-        {:ok, %File.Stat{type: :directory}} ->
-          {path, missing}
-
-        {:error, :enoent} ->
-          {path, missing ++ [path]}
-
-        {:ok, %File.Stat{type: type}} ->
-          raise "project patch parent is not a directory (#{type}): #{path}"
-
-        {:error, reason} ->
-          raise "cannot inspect project patch parent #{path}: #{inspect(reason)}"
-      end
-    end)
-    |> elem(1)
+    collect_missing_directories(Path.split(Path.relative_to(directory, root)), 0, root, [])
   end
 
-  defp stage_operation!(staged) do
+  defp collect_missing_directories(parts, index, parent, missing) do
+    if index >= length(parts) do
+      missing
+    else
+      path = Path.join(parent, Enum.at(parts, index))
+      status = File.lstat(path)
+
+      if has_tag(status, :ok) do
+        stat = Kernel.elem(status, 1)
+
+        if stat.type != :directory do
+          Kernel.raise(
+            "project patch parent is not a directory (#{Kernel.to_string(stat.type)}): #{path}"
+          )
+        else
+          collect_missing_directories(parts, index + 1, path, missing)
+        end
+      else
+        reason = Kernel.elem(status, 1)
+
+        if same_term(reason, :enoent) do
+          collect_missing_directories(parts, index + 1, path, Enum.concat(missing, [path]))
+        else
+          Kernel.raise("cannot inspect project patch parent #{path}: #{Kernel.inspect(reason)}")
+        end
+      end
+    end
+  end
+
+  defp stage_operation_bang(staged) do
     operation = staged.operation
 
-    if is_binary(staged.backup_path) do
-      write_exclusive!(staged.backup_path, operation.before.content, operation.before.mode)
+    if not Kernel.is_nil(staged.backup_path) do
+      write_exclusive_bang(staged.backup_path, operation.before.content, operation.before.mode)
     end
 
-    if is_binary(staged.new_path) do
-      write_exclusive!(staged.new_path, operation.after.content, operation.after.mode)
+    if not Kernel.is_nil(staged.new_path) do
+      write_exclusive_bang(staged.new_path, operation.after.content, operation.after.mode)
     end
   end
 
   defp publish_operations(transaction, fault_injector) do
-    transaction.operations
-    |> Enum.with_index()
-    |> Enum.reduce_while(:ok, fn {staged, index}, :ok ->
-      case safely(fn ->
-             invoke_fault!(fault_injector, {:before_publish, index}, staged.operation)
-             verify_target!(transaction.root, staged.operation, :before)
-             publish_one!(staged)
-             invoke_fault!(fault_injector, {:after_publish, index}, staged.operation)
-           end) do
-        :ok -> {:cont, :ok}
-        {:error, error} -> {:halt, {:error, error}}
+    publish_operations_at(transaction, fault_injector, 0)
+  end
+
+  defp publish_operations_at(transaction, fault_injector, index) do
+    if index >= length(transaction.operations) do
+      :ok
+    else
+      staged = Enum.at(transaction.operations, index)
+
+      result =
+        safely(fn ->
+          invoke_fault_bang(fault_injector, {:before_publish, index}, staged.operation)
+          verify_target_bang(transaction.root, staged.operation, "before")
+          publish_one_bang(staged)
+          invoke_fault_bang(fault_injector, {:after_publish, index}, staged.operation)
+        end)
+
+      if same_term(result, :ok) do
+        publish_operations_at(transaction, fault_injector, index + 1)
+      else
+        result
       end
-    end)
+    end
   end
 
-  defp publish_one!(%{operation: %{kind: :write, path: path}, new_path: new_path}) do
-    File.rename!(new_path, path)
+  defp publish_one_bang(staged) do
+    if staged.operation.kind == :write do
+      File.rename!(staged.new_path, staged.operation.path)
+    else
+      File.rm!(staged.operation.path)
+    end
   end
 
-  defp publish_one!(%{operation: %{kind: :delete, path: path}}) do
-    File.rm!(path)
-  end
-
-  defp finish_committed_transaction!(transaction) do
+  defp finish_committed_transaction_bang(transaction) do
     Enum.each(transaction.operations, fn staged ->
-      verify_target!(transaction.root, staged.operation, :after)
+      verify_target_bang(transaction.root, staged.operation, "after")
     end)
 
-    cleanup_transaction!(transaction)
+    cleanup_transaction_bang(transaction)
   end
 
   defp rollback_transaction(transaction) do
-    with :ok <- validate_recoverable_targets(transaction),
-         :ok <- restore_operations(transaction),
-         :ok <- cleanup_transaction!(transaction),
-         :ok <- prune_created_directories(transaction.created_dirs) do
+    try do
+      validate_recoverable_targets(transaction)
+      restore_operations(transaction)
+      cleanup_transaction_bang(transaction)
+      prune_created_directories(transaction.created_dirs)
       :ok
+    rescue
+      exception ->
+        error(Exception.message(exception))
     end
-  rescue
-    error -> {:error, Exception.message(error)}
   end
 
   defp validate_recoverable_targets(transaction) do
     Enum.each(transaction.operations, fn staged ->
-      current = snapshot!(transaction.root, staged.operation.path)
+      current = snapshot_bang(transaction.root, staged.operation.path)
 
-      unless same_state?(current, staged.operation.before) or
-               same_state?(current, staged.operation.after) do
-        raise "project patch target has unexpected bytes during recovery: #{staged.operation.path}"
+      if not same_state(current, staged.operation.before) and
+           not same_state(current, staged.operation.after) do
+        Kernel.raise(
+          "project patch target has unexpected bytes during recovery: " <> staged.operation.path
+        )
       end
 
-      if same_state?(current, staged.operation.after) and
-           staged.operation.before.state == :regular do
-        verify_backup!(transaction.root, staged)
-      end
+      if same_state(current, staged.operation.after) and
+           staged.operation.before.state == :regular,
+         do: verify_backup_bang(transaction.root, staged)
     end)
 
     :ok
   end
 
   defp restore_operations(transaction) do
-    transaction.operations
-    |> Enum.reverse()
-    |> Enum.each(fn staged ->
+    Enum.each(Enum.reverse(transaction.operations), fn staged ->
       operation = staged.operation
-      current = snapshot!(transaction.root, operation.path)
+      current = snapshot_bang(transaction.root, operation.path)
 
-      if same_state?(current, operation.after) do
-        case operation.before.state do
-          :regular ->
-            verify_backup!(transaction.root, staged)
-            File.rename!(staged.backup_path, operation.path)
-
-          :missing ->
-            File.rm!(operation.path)
+      if same_state(current, operation.after) do
+        if operation.before.state == :regular do
+          verify_backup_bang(transaction.root, staged)
+          File.rename!(staged.backup_path, operation.path)
+        else
+          File.rm!(operation.path)
         end
       end
     end)
@@ -639,678 +684,1006 @@ defmodule HaxeProjectPatch do
     :ok
   end
 
-  defp verify_backup!(root, staged) do
-    backup = snapshot!(root, staged.backup_path)
+  defp verify_backup_bang(root, staged) do
+    backup = snapshot_bang(root, staged.backup_path)
 
-    unless same_state?(backup, staged.operation.before) do
-      raise "project patch backup failed integrity validation: #{staged.backup_path}"
+    if not same_state(backup, staged.operation.before) do
+      Kernel.raise("project patch backup failed integrity validation: #{staged.backup_path}")
+    else
+      :ok
     end
-
-    :ok
   end
 
-  defp cleanup_transaction!(transaction) do
+  defp cleanup_transaction_bang(transaction) do
     Enum.each(transaction.operations, fn staged ->
-      remove_owned_temp!(transaction.root, staged.new_path, staged.operation.after)
+      remove_owned_temp_bang(transaction.root, staged.new_path, staged.operation.after)
     end)
 
-    require_owned_transaction_directory!(transaction.directory)
+    require_owned_transaction_directory_bang(transaction.directory)
+    result = File.rm_rf(transaction.directory)
 
-    case File.rm_rf(transaction.directory) do
-      {:ok, _paths} ->
-        :ok
+    if has_tag(result, :ok) do
+      :ok
+    else
+      reason = Kernel.elem(result, 1)
+      path = Kernel.elem(result, 2)
 
-      {:error, reason, path} ->
-        raise "cannot remove project patch transaction data #{path}: #{inspect(reason)}"
+      Kernel.raise(
+        "cannot remove project patch transaction data #{path}: #{Kernel.inspect(reason)}"
+      )
     end
   end
 
-  defp remove_owned_temp!(_root, nil, _expected), do: :ok
+  defp remove_owned_temp_bang(root, path, expected) do
+    if Kernel.is_nil(path) do
+      :ok
+    else
+      validate_owned_temp_bang(root, path, expected)
+      result = File.rm(path)
 
-  defp remove_owned_temp!(root, path, expected) do
-    validate_owned_temp!(root, path, expected)
+      if same_term(result, :ok) do
+        :ok
+      else
+        reason = Kernel.elem(result, 1)
 
-    case File.rm(path) do
-      :ok -> :ok
-      {:error, :enoent} -> :ok
-      {:error, reason} -> raise "cannot remove project patch temporary file: #{inspect(reason)}"
+        if same_term(reason, :enoent) do
+          :ok
+        else
+          Kernel.raise("cannot remove project patch temporary file: #{Kernel.inspect(reason)}")
+        end
+      end
     end
   end
 
   defp prune_created_directories(directories) do
-    directories
-    |> Enum.reverse()
-    |> Enum.each(fn directory ->
-      case File.rmdir(directory) do
-        :ok ->
-          :ok
+    Enum.each(Enum.reverse(directories), fn directory ->
+      result = File.rmdir(directory)
 
-        {:error, :enoent} ->
-          :ok
+      if not same_term(result, :ok) do
+        reason = Kernel.elem(result, 1)
 
-        {:error, :eexist} ->
-          :ok
-
-        {:error, :enotempty} ->
-          :ok
-
-        {:error, reason} ->
-          raise "cannot remove project patch directory #{directory}: #{inspect(reason)}"
+        if not same_term(reason, :enoent) and not same_term(reason, :eexist) and
+             not same_term(reason, :enotempty) do
+          Kernel.raise(
+            "cannot remove project patch directory " <>
+              directory <> ": " <> Kernel.inspect(reason)
+          )
+        end
       end
     end)
 
     :ok
   end
 
-  defp recovery_action_from_directory!(root, directory) do
-    require_owned_transaction_directory!(directory)
-    journal_path = Path.join(directory, @journal_filename)
+  defp recovery_action_bang(root) do
+    transaction_directory = Path.join(root, ".reflaxe-elixir-project-patch")
+    result = File.lstat(transaction_directory)
 
-    case File.lstat(journal_path) do
-      {:error, :enoent} ->
+    if has_tag(result, :error) do
+      reason = Kernel.elem(result, 1)
+
+      if same_term(reason, :enoent) do
+        :clean
+      else
+        Kernel.raise(
+          "cannot inspect project patch transaction path #{transaction_directory}: #{Kernel.inspect(reason)}"
+        )
+      end
+    else
+      stat = Kernel.elem(result, 1)
+
+      if stat.type != :directory do
+        Kernel.raise(
+          "project patch transaction path is not a directory (#{Kernel.to_string(stat.type)}): #{transaction_directory}"
+        )
+      else
+        recovery_action_from_directory_bang(root, transaction_directory)
+      end
+    end
+  end
+
+  defp recovery_action_from_directory_bang(root, directory) do
+    require_owned_transaction_directory_bang(directory)
+    journal_path = Path.join(directory, "journal.json")
+    result = File.lstat(journal_path)
+
+    if has_tag(result, :error) do
+      reason = Kernel.elem(result, 1)
+
+      if same_term(reason, :enoent) do
         {:discard_incomplete, directory}
+      else
+        Kernel.raise(
+          "cannot inspect project patch journal #{journal_path}: #{Kernel.inspect(reason)}"
+        )
+      end
+    else
+      stat = Kernel.elem(result, 1)
 
-      {:ok, %File.Stat{type: :regular}} ->
-        transaction = read_journal!(root, directory, journal_path)
+      if stat.type != :regular do
+        Kernel.raise(
+          "project patch journal is not a regular file (#{Kernel.to_string(stat.type)}): #{journal_path}"
+        )
+      else
+        transaction = read_journal_bang(root, directory, journal_path)
 
-        if Enum.all?(transaction.operations, fn staged ->
-             same_state?(snapshot!(root, staged.operation.path), staged.operation.after)
-           end) do
-          validate_commit_cleanup!(transaction)
+        complete =
+          Enum.all?(transaction.operations, fn staged ->
+            same_state(snapshot_bang(root, staged.operation.path), staged.operation.after)
+          end)
+
+        if complete do
+          validate_commit_cleanup_bang(transaction)
           {:commit_cleanup, transaction}
         else
           validate_recoverable_targets(transaction)
           {:rollback, transaction}
         end
-
-      {:ok, %File.Stat{type: type}} ->
-        raise "project patch journal is not a regular file (#{type}): #{journal_path}"
-
-      {:error, reason} ->
-        raise "cannot inspect project patch journal #{journal_path}: #{inspect(reason)}"
+      end
     end
   end
 
-  defp validate_commit_cleanup!(transaction) do
+  defp validate_commit_cleanup_bang(transaction) do
     Enum.each(transaction.operations, fn staged ->
-      verify_target!(transaction.root, staged.operation, :after)
-      validate_owned_temp!(transaction.root, staged.new_path, staged.operation.after)
+      verify_target_bang(transaction.root, staged.operation, "after")
+      validate_owned_temp_bang(transaction.root, staged.new_path, staged.operation.after)
     end)
 
     :ok
   end
 
-  defp validate_owned_temp!(_root, nil, _expected), do: :ok
+  defp validate_owned_temp_bang(root, path, expected) do
+    if Kernel.is_nil(path) do
+      :ok
+    else
+      current = snapshot_bang(root, path)
 
-  defp validate_owned_temp!(root, path, expected) do
-    case snapshot!(root, path) do
-      %{state: :missing} ->
+      if current.state != :missing and not same_state(current, expected) do
+        Kernel.raise("project patch temporary file failed integrity validation: #{path}")
+      else
         :ok
-
-      current ->
-        unless same_state?(current, expected) do
-          raise "project patch temporary file failed integrity validation: #{path}"
-        end
-
-        :ok
+      end
     end
   end
 
-  defp remove_incomplete_transaction!(directory) do
-    require_owned_transaction_directory!(directory)
+  defp remove_incomplete_transaction_bang(directory) do
+    require_owned_transaction_directory_bang(directory)
+    result = File.rm_rf(directory)
 
-    case File.rm_rf(directory) do
-      {:ok, _paths} ->
-        :ok
-
-      {:error, reason, path} ->
-        raise "cannot remove incomplete transaction #{path}: #{inspect(reason)}"
+    if has_tag(result, :ok) do
+      :ok
+    else
+      reason = Kernel.elem(result, 1)
+      path = Kernel.elem(result, 2)
+      Kernel.raise("cannot remove incomplete transaction #{path}: #{Kernel.inspect(reason)}")
     end
   end
 
-  defp write_journal!(transaction) do
-    journal = %{
-      "protocol" => @protocol,
-      "version" => @version,
-      "id" => transaction.id,
-      "createdDirectories" =>
-        Enum.map(transaction.created_dirs, &Path.relative_to(&1, transaction.root)),
-      "operations" => Enum.map(transaction.operations, &operation_to_json/1)
-    }
+  defp write_journal_bang(transaction) do
+    journal =
+      json_object([
+        {"protocol", "reflaxe-elixir/project-patch"},
+        {"version", 1},
+        {"id", transaction.id},
+        {"createdDirectories",
+         Enum.map(transaction.created_dirs, fn path ->
+           Path.relative_to(path, transaction.root)
+         end)},
+        {"operations", Enum.map(transaction.operations, &operation_to_json/1)}
+      ])
 
-    content = Jason.encode_to_iodata!(journal, pretty: true) |> IO.iodata_to_binary()
-    atomic_write!(Path.join(transaction.directory, @journal_filename), content <> "\n")
+    content = Jason.encode!(journal, [{:pretty, true}])
+    atomic_write_bang(Path.join(transaction.directory, "journal.json"), "#{content}\n")
+    :ok
   end
 
   defp operation_to_json(staged) do
-    %{
-      "kind" => Atom.to_string(staged.operation.kind),
-      "path" => staged.operation.relative,
-      "before" => state_to_json(staged.operation.before),
-      "after" => state_to_json(staged.operation.after),
-      "newPath" => staged.new_relative,
-      "backupPath" => staged.backup_relative,
-      "manifest" => staged.operation.manifest?
-    }
+    json_object([
+      {"kind", Kernel.to_string(staged.operation.kind)},
+      {"path", staged.operation.relative},
+      {"before", state_to_json(staged.operation.before)},
+      {"after", state_to_json(staged.operation.after)},
+      {"newPath", staged.new_relative},
+      {"backupPath", staged.backup_relative},
+      {"manifest", staged.operation.manifest?}
+    ])
   end
 
-  defp state_to_json(%{state: :missing}), do: %{"state" => "missing"}
-
-  defp state_to_json(%{state: :regular, sha256: sha256, mode: mode}) do
-    %{"state" => "regular", "sha256" => sha256, "mode" => mode}
+  defp state_to_json(state) do
+    if state.state == :missing,
+      do: json_object([{"state", "missing"}]),
+      else: json_object([{"state", "regular"}, {"sha256", state.sha256}, {"mode", state.mode}])
   end
 
-  defp read_journal!(root, directory, path) do
-    with {:ok, json} <- Jason.decode(File.read!(path)),
-         %{"protocol" => @protocol, "version" => @version, "id" => id} <- json,
-         true <- valid_transaction_id?(id),
-         created when is_list(created) <- Map.get(json, "createdDirectories"),
-         operations when is_list(operations) <- Map.get(json, "operations") do
-      operations =
-        operations
-        |> Enum.with_index()
-        |> Enum.map(fn {operation, index} ->
-          operation_from_json!(root, directory, id, operation, index)
-        end)
+  defp read_journal_bang(root, directory, path) do
+    decoded = Jason.decode(File.read!(path))
 
-      transaction = %{
-        root: root,
-        directory: directory,
-        id: id,
-        created_dirs: Enum.map(created, &path_from_relative!(root, &1)),
-        operations: operations
-      }
-
-      validate_loaded_transaction!(transaction)
-      transaction
+    if not has_tag(decoded, :ok) do
+      Kernel.raise("invalid project patch transaction journal: #{path}")
     else
-      _ -> raise "invalid project patch transaction journal: #{path}"
+      json = Kernel.elem(decoded, 1)
+
+      if not Kernel.is_map(json) do
+        Kernel.raise("invalid project patch transaction journal: #{path}")
+      else
+        protocol = Map.get(json, "protocol")
+        version = Map.get(json, "version")
+        id = Map.get(json, "id")
+        created = Map.get(json, "createdDirectories")
+        operation_values = Map.get(json, "operations")
+
+        if not same_term(protocol, "reflaxe-elixir/project-patch") or not same_term(version, 1) or
+             not valid_transaction_id(id) or not Kernel.is_list(created) or
+             not Kernel.is_list(operation_values) do
+          Kernel.raise("invalid project patch transaction journal: #{path}")
+        else
+          operation_terms = Kernel.elem({:ok, operation_values}, 1)
+
+          operations =
+            Enum.map(Enum.with_index(operation_terms), fn entry ->
+              operation_from_json_bang(
+                root,
+                directory,
+                Kernel.elem(id_value(id), 0),
+                Kernel.elem(entry, 0),
+                Kernel.elem(entry, 1)
+              )
+            end)
+
+          created_values = Kernel.elem({:ok, created}, 1)
+
+          transaction = %{
+            root: root,
+            directory: directory,
+            id: elem(id_value(id), 0),
+            created_dirs:
+              Enum.map(created_values, fn relative ->
+                path_from_relative_bang(
+                  root,
+                  require_binary(relative, "invalid project patch transaction journal: " <> path)
+                )
+              end),
+            operations: operations
+          }
+
+          validate_loaded_transaction_bang(transaction)
+          transaction
+        end
+      end
     end
   end
 
-  defp operation_from_json!(root, directory, id, json, index) when is_map(json) do
-    kind =
-      case Map.get(json, "kind") do
-        "write" -> :write
-        "delete" -> :delete
-        other -> raise "invalid project patch operation kind: #{inspect(other)}"
+  defp operation_from_json_bang(root, directory, id, json, index) do
+    if not Kernel.is_map(json) do
+      Kernel.raise("invalid project patch operation: #{Kernel.inspect(json)}")
+    else
+      kind_value = Map.get(json, "kind")
+
+      kind =
+        cond do
+          same_term(kind_value, "write") -> :write
+          same_term(kind_value, "delete") -> :delete
+          true -> nil
+        end
+
+      if Kernel.is_nil(kind) do
+        Kernel.raise("invalid project patch operation kind: #{Kernel.inspect(kind_value)}")
+      else
+        relative =
+          require_binary(fetch_json_bang(json, "path"), "invalid project patch operation path")
+
+        path = path_from_relative_bang(root, relative)
+        reject_reserved_target_bang(relative)
+        before = state_from_json_bang(fetch_json_bang(json, "before"))
+        after_state = state_from_json_bang(fetch_json_bang(json, "after"))
+        manifest = required_boolean_bang(json, "manifest")
+        validate_operation_states_bang(kind, before, after_state, relative)
+
+        operation =
+          HaxeProjectPatch.Operation.new(
+            kind,
+            path,
+            relative,
+            before,
+            after_state,
+            if(kind == :delete, do: :removed, else: :patched),
+            manifest
+          )
+
+        new_path = nullable_relative_path_bang(root, Map.get(json, "newPath"))
+        backup_path = nullable_relative_path_bang(root, Map.get(json, "backupPath"))
+
+        expected_backup =
+          if before.state == :regular do
+            Path.join([directory, "backups", Integer.to_string(index)])
+          else
+            nil
+          end
+
+        expected_new =
+          if kind == :write do
+            Path.join(
+              Path.dirname(path),
+              ".#{Path.basename(path)}.reflaxe-patch-#{id}-#{Integer.to_string(index)}.new"
+            )
+          else
+            nil
+          end
+
+        if backup_path != expected_backup do
+          Kernel.raise("invalid project patch backup path for #{relative}")
+        else
+          if new_path != expected_new do
+            Kernel.raise("invalid project patch temporary path for #{relative}")
+          else
+            %{
+              operation: operation,
+              new_path: new_path,
+              new_relative: relative_or_nil(root, new_path),
+              backup_path: backup_path,
+              backup_relative: relative_or_nil(root, backup_path)
+            }
+          end
+        end
       end
-
-    relative = Map.fetch!(json, "path")
-    path = path_from_relative!(root, relative)
-    reject_reserved_target!(relative)
-    before = state_from_json!(Map.fetch!(json, "before"))
-    after_state = state_from_json!(Map.fetch!(json, "after"))
-    manifest? = required_boolean!(json, "manifest")
-
-    validate_operation_states!(kind, before, after_state, relative)
-
-    operation = %Operation{
-      kind: kind,
-      path: path,
-      relative: relative,
-      before: before,
-      after: after_state,
-      action: if(kind == :delete, do: :removed, else: :patched),
-      manifest?: manifest?
-    }
-
-    new_path = nullable_relative_path!(root, Map.get(json, "newPath"))
-    backup_path = nullable_relative_path!(root, Map.get(json, "backupPath"))
-
-    expected_backup =
-      if before.state == :regular,
-        do: Path.join([directory, "backups", Integer.to_string(index)]),
-        else: nil
-
-    expected_new =
-      if kind == :write do
-        Path.join(
-          Path.dirname(path),
-          ".#{Path.basename(path)}.reflaxe-patch-#{id}-#{index}.new"
-        )
-      end
-
-    if backup_path != expected_backup do
-      raise "invalid project patch backup path for #{relative}"
     end
-
-    if new_path != expected_new do
-      raise "invalid project patch temporary path for #{relative}"
-    end
-
-    %{operation: operation, new_path: new_path, backup_path: backup_path}
   end
 
-  defp validate_loaded_transaction!(transaction) do
+  defp validate_loaded_transaction_bang(transaction) do
     operations = transaction.operations
 
-    if operations == [] do
-      raise "project patch transaction contains no operations"
-    end
+    if length(operations) == 0 do
+      Kernel.raise("project patch transaction contains no operations")
+    else
+      validate_staged_paths_bang(operations)
 
-    validate_staged_paths!(operations)
+      manifest_indices =
+        Enum.flat_map(Enum.with_index(operations), fn entry ->
+          staged = Kernel.elem(entry, 0)
+          if staged.operation.manifest?, do: [Kernel.elem(entry, 1)], else: []
+        end)
 
-    manifest_indices =
-      operations
-      |> Enum.with_index()
-      |> Enum.flat_map(fn {staged, index} ->
-        if staged.operation.manifest?, do: [index], else: []
-      end)
+      if length(manifest_indices) > 1 or
+           (length(manifest_indices) == 1 and
+              Enum.at(manifest_indices, 0) != length(operations) - 1) do
+        Kernel.raise("project patch transaction manifest must be the final operation")
+      else
+        created_dirs = transaction.created_dirs
+        assert_unique_paths_bang(created_dirs, "created directory")
 
-    case manifest_indices do
-      [] -> :ok
-      [index] when index == length(operations) - 1 -> :ok
-      _ -> raise "project patch transaction manifest must be the final operation"
-    end
+        sorted_dirs =
+          Enum.sort_by(created_dirs, fn path -> path_depth(transaction.root, path) end)
 
-    created_dirs = transaction.created_dirs
-    assert_unique_paths!(created_dirs, "created directory")
+        if not same_term(created_dirs, sorted_dirs) do
+          Kernel.raise("project patch created directories are not ordered from parent to child")
+        else
+          allowed_created_dirs =
+            MapSet.new(
+              Enum.flat_map(
+                Enum.filter(operations, fn staged -> staged.operation.kind == :write end),
+                fn staged -> parent_directories(transaction.root, staged.operation.path) end
+              )
+            )
 
-    unless created_dirs ==
-             Enum.sort_by(created_dirs, &path_depth(transaction.root, &1)) do
-      raise "project patch created directories are not ordered from parent to child"
-    end
+          Enum.each(created_dirs, fn directory ->
+            if not MapSet.member?(allowed_created_dirs, directory) do
+              Kernel.raise("invalid project patch created directory: " <> directory)
+            end
+          end)
 
-    allowed_created_dirs =
-      operations
-      |> Enum.filter(&(&1.operation.kind == :write))
-      |> Enum.flat_map(&parent_directories(transaction.root, &1.operation.path))
-      |> MapSet.new()
-
-    Enum.each(created_dirs, fn directory ->
-      unless MapSet.member?(allowed_created_dirs, directory) do
-        raise "invalid project patch created directory: #{directory}"
+          :ok
+        end
       end
-    end)
-
-    :ok
-  end
-
-  defp validate_operation_states!(:write, before, %{state: :regular} = after_state, relative) do
-    if same_state?(before, after_state) do
-      raise "project patch journal contains a no-op write for #{relative}"
-    end
-
-    :ok
-  end
-
-  defp validate_operation_states!(:delete, %{state: :regular}, %{state: :missing}, _relative),
-    do: :ok
-
-  defp validate_operation_states!(kind, before, after_state, relative) do
-    raise "invalid project patch #{kind} state transition for #{relative}: " <>
-            "#{inspect(before.state)} -> #{inspect(after_state.state)}"
-  end
-
-  defp required_boolean!(json, key) do
-    case Map.fetch(json, key) do
-      {:ok, value} when is_boolean(value) -> value
-      _ -> raise "invalid project patch boolean field: #{key}"
     end
   end
 
-  defp valid_transaction_id?(id) when is_binary(id),
-    do: String.match?(id, ~r/\A[1-9][0-9]*\z/)
+  defp validate_operation_states_bang(kind, before, after_state, relative) do
+    cond do
+      kind == :write and after_state.state == :regular ->
+        if same_state(before, after_state) do
+          Kernel.raise("project patch journal contains a no-op write for " <> relative)
+        else
+          :ok
+        end
 
-  defp valid_transaction_id?(_id), do: false
+      kind == :delete and before.state == :regular and after_state.state == :missing ->
+        :ok
 
-  defp present_path(nil), do: []
-  defp present_path(path), do: [path]
+      true ->
+        Kernel.raise(
+          "invalid project patch " <>
+            Kernel.to_string(kind) <>
+            " state transition for " <>
+            relative <>
+            ": " <> Kernel.inspect(before.state) <> " -> " <> Kernel.inspect(after_state.state)
+        )
+    end
+  end
 
-  defp assert_unique_paths!(paths, label) do
+  defp required_boolean_bang(json, key) do
+    fetched = Map.fetch(json, key)
+
+    if not has_tag(fetched, :ok) do
+      Kernel.raise("invalid project patch boolean field: #{key}")
+    else
+      value = Kernel.elem(fetched, 1)
+
+      if Kernel.is_boolean(value) do
+        Kernel.elem({:ok, value}, 1)
+      else
+        Kernel.raise("invalid project patch boolean field: #{key}")
+      end
+    end
+  end
+
+  defp valid_transaction_id(id) do
+    Kernel.is_binary(id) and
+      Regex.match?(Regex.compile!("\\A[1-9][0-9]*\\z"), Kernel.elem({:ok, id}, 1))
+  end
+
+  defp id_value(id) do
+    {Kernel.elem({:ok, id}, 1)}
+  end
+
+  defp present_path(path) do
+    if Kernel.is_nil(path), do: [], else: [path]
+  end
+
+  defp assert_unique_paths_bang(paths, label) do
     if length(paths) != MapSet.size(MapSet.new(paths)) do
-      raise "project patch transaction contains duplicate #{label} paths"
+      Kernel.raise("project patch transaction contains duplicate #{label} paths")
+    else
+      :ok
     end
-
-    :ok
   end
 
   defp parent_directories(root, path) do
-    case Path.relative_to(Path.dirname(path), root) do
-      "." ->
-        []
+    relative = Path.relative_to(Path.dirname(path), root)
 
-      relative ->
-        relative
-        |> Path.split()
-        |> Enum.scan(root, fn part, parent -> Path.join(parent, part) end)
-    end
-  end
-
-  defp path_depth(root, path), do: path |> Path.relative_to(root) |> Path.split() |> length()
-
-  defp state_from_json!(%{"state" => "missing"}), do: %{state: :missing}
-
-  defp state_from_json!(%{"state" => "regular", "sha256" => sha256, "mode" => mode})
-       when is_binary(sha256) and byte_size(sha256) == 64 and is_integer(mode) and mode >= 0 and
-              mode <= 0o7777 do
-    if String.match?(sha256, ~r/\A[0-9a-f]{64}\z/) do
-      %{state: :regular, sha256: sha256, mode: mode}
+    if relative == "." do
+      []
     else
-      raise "invalid project patch content digest: #{inspect(sha256)}"
+      Enum.scan(Path.split(relative), root, fn part, parent -> Path.join(parent, part) end)
     end
   end
 
-  defp state_from_json!(other), do: raise("invalid project patch file state: #{inspect(other)}")
-
-  defp verify_target!(root, operation, side) when side in [:before, :after] do
-    expected = Map.fetch!(operation, side)
-    current = snapshot!(root, operation.path)
-
-    unless same_state?(current, expected) do
-      raise "project patch target changed before publication: #{operation.path}"
-    end
-
-    :ok
+  defp path_depth(root, path) do
+    length(Path.split(Path.relative_to(path, root)))
   end
 
-  defp invoke_fault!(fault_injector, stage, operation) do
-    case fault_injector.(stage, operation) do
-      :ok -> :ok
-      {:error, message} -> raise "injected project patch failure: #{message}"
-      other -> raise "invalid project patch fault injector result: #{inspect(other)}"
+  defp state_from_json_bang(json) do
+    if not Kernel.is_map(json) do
+      Kernel.raise("invalid project patch file state: #{Kernel.inspect(json)}")
+    else
+      state = Map.get(json, "state")
+
+      cond do
+        same_term(state, "missing") -> missing_state()
+        same_term(state, "regular") -> regular_state_from_json_bang(json)
+        true -> Kernel.raise("invalid project patch file state: " <> Kernel.inspect(json))
+      end
+    end
+  end
+
+  defp regular_state_from_json_bang(json) do
+    digest = Map.get(json, "sha256")
+    mode = Map.get(json, "mode")
+
+    if not Kernel.is_binary(digest) or not Kernel.is_integer(mode) do
+      Kernel.raise("invalid project patch file state: #{Kernel.inspect(json)}")
+    else
+      sha = Kernel.elem({:ok, digest}, 1)
+      numeric_mode = Kernel.elem({:ok, mode}, 1)
+
+      if String.length(sha) != 64 or numeric_mode < 0 or numeric_mode > 4095 or
+           not Regex.match?(Regex.compile!("\\A[0-9a-f]{64}\\z"), sha) do
+        Kernel.raise("invalid project patch content digest: #{Kernel.inspect(digest)}")
+      else
+        %{state: :regular, sha256: sha, mode: numeric_mode}
+      end
+    end
+  end
+
+  defp verify_target_bang(root, operation, side) do
+    expected = if side == "before", do: operation.before, else: operation.after
+    current = snapshot_bang(root, operation.path)
+
+    if not same_state(current, expected) do
+      Kernel.raise("project patch target changed before publication: #{operation.path}")
+    else
+      :ok
+    end
+  end
+
+  defp invoke_fault_bang(fault_injector, stage, operation) do
+    result = fault_injector.(stage, operation)
+
+    if same_term(result, :ok) do
+      :ok
+    else
+      if has_tag(result, :error) do
+        Kernel.raise(
+          "injected project patch failure: #{Kernel.to_string(Kernel.elem(result, 1))}"
+        )
+      else
+        Kernel.raise("invalid project patch fault injector result: #{Kernel.inspect(result)}")
+      end
     end
   end
 
   defp safely(fun) do
-    fun.()
-    :ok
-  rescue
-    error -> {:error, error}
+    try do
+      fun.()
+      :ok
+    rescue
+      error ->
+        {:error, error}
+    end
   end
 
-  defp snapshot!(root, path) do
-    validate_parent_chain!(root, path)
+  defp snapshot_bang(root, path) do
+    validate_parent_chain_bang(root, path)
+    result = File.lstat(path)
 
-    case File.lstat(path) do
-      {:error, :enoent} ->
-        %{state: :missing}
+    if has_tag(result, :error) do
+      reason = Kernel.elem(result, 1)
 
-      {:ok, %File.Stat{type: :regular, mode: mode}} ->
-        regular_state(File.read!(path), band(mode, 0o7777))
-
-      {:ok, %File.Stat{type: type}} ->
-        raise "project patch target is not a regular file (#{type}): #{path}"
-
-      {:error, reason} ->
-        raise "cannot inspect project patch target #{path}: #{inspect(reason)}"
+      if same_term(reason, :enoent) do
+        missing_state()
+      else
+        Kernel.raise("cannot inspect project patch target #{path}: #{Kernel.inspect(reason)}")
+      end
+    else
+      snapshot_regular_bang(path, result)
     end
+  end
+
+  defp snapshot_regular_bang(path, result) do
+    stat = Kernel.elem(result, 1)
+
+    if stat.type != :regular do
+      Kernel.raise(
+        "project patch target is not a regular file (#{Kernel.to_string(stat.type)}): #{path}"
+      )
+    else
+      regular_state(File.read!(path), Bitwise.band(stat.mode, 4095))
+    end
+  end
+
+  defp missing_state() do
+    %{state: :missing}
   end
 
   defp regular_state(content, mode) do
     %{state: :regular, content: content, sha256: sha256(content), mode: mode}
   end
 
-  defp same_state?(%{state: :missing}, %{state: :missing}), do: true
+  defp same_state(left, right) do
+    if left.state == :missing or right.state == :missing,
+      do: left.state == :missing and right.state == :missing,
+      else:
+        left.state == :regular and right.state == :regular and left.sha256 == right.sha256 and
+          left.mode == right.mode
+  end
 
-  defp same_state?(
-         %{state: :regular, sha256: left_sha, mode: left_mode},
-         %{state: :regular, sha256: right_sha, mode: right_mode}
-       ),
-       do: left_sha == right_sha and left_mode == right_mode
+  defp sha256(content) do
+    Base.encode16(:crypto.hash(:sha256, content), [{:case, :lower}])
+  end
 
-  defp same_state?(_left, _right), do: false
+  defp normalize_target_bang(root, path) do
+    path_type = Path.type(path)
 
-  defp sha256(content), do: :crypto.hash(:sha256, content) |> Base.encode16(case: :lower)
-
-  defp normalize_target!(root, path) do
     absolute =
-      if Path.type(path) == :absolute, do: Path.expand(path), else: Path.expand(path, root)
+      if path_type == :absolute do
+        Path.expand(path)
+      else
+        Path.expand(path, root)
+      end
 
     relative = Path.relative_to(absolute, root)
 
-    if relative == "." or escapes_root?(relative) do
-      raise "project patch target escapes the project root: #{path}"
+    if relative == "." or escapes_root(relative) do
+      Kernel.raise("project patch target escapes the project root: #{path}")
+    else
+      reject_reserved_target_bang(relative)
+      validate_parent_chain_bang(root, absolute)
+      {absolute, relative}
     end
-
-    reject_reserved_target!(relative)
-    validate_parent_chain!(root, absolute)
-    {absolute, relative}
   end
 
-  defp path_from_relative!(root, relative) when is_binary(relative) do
-    if Path.type(relative) == :absolute or relative == "." or escapes_root?(relative) do
-      raise "invalid project patch relative path: #{inspect(relative)}"
+  defp path_from_relative_bang(root, relative) do
+    path_type = Path.type(relative)
+
+    if path_type == :absolute or relative == "." or escapes_root(relative) do
+      Kernel.raise("invalid project patch relative path: #{Kernel.inspect(relative)}")
+    else
+      path = Path.expand(relative, root)
+
+      if Path.relative_to(path, root) != relative do
+        Kernel.raise("project patch relative path is not canonical: #{Kernel.inspect(relative)}")
+      else
+        validate_parent_chain_bang(root, path)
+        path
+      end
     end
-
-    path = Path.expand(relative, root)
-
-    if Path.relative_to(path, root) != relative do
-      raise "project patch relative path is not canonical: #{inspect(relative)}"
-    end
-
-    validate_parent_chain!(root, path)
-    path
   end
 
-  defp path_from_relative!(_root, relative),
-    do: raise("invalid project patch relative path: #{inspect(relative)}")
+  defp nullable_relative_path_bang(root, path) do
+    if Kernel.is_nil(path),
+      do: nil,
+      else:
+        path_from_relative_bang(
+          root,
+          require_binary(path, "invalid project patch relative path: #{Kernel.inspect(path)}")
+        )
+  end
 
-  defp nullable_relative_path!(_root, nil), do: nil
-  defp nullable_relative_path!(root, path), do: path_from_relative!(root, path)
-
-  defp relative_or_nil(_root, nil), do: nil
-  defp relative_or_nil(root, path), do: Path.relative_to(path, root)
-
-  defp reject_reserved_target!(relative) do
-    if relative == @transaction_directory or
-         String.starts_with?(relative, @transaction_directory <> "/") do
-      raise "project patch target uses the reserved transaction path: #{relative}"
+  defp relative_or_nil(root, path) do
+    if Kernel.is_nil(path) do
+      nil
+    else
+      Path.relative_to(path, root)
     end
-
-    :ok
   end
 
-  defp escapes_root?(relative) do
-    Path.type(relative) == :absolute or relative == ".." or String.starts_with?(relative, "../")
+  defp reject_reserved_target_bang(relative) do
+    if relative == ".reflaxe-elixir-project-patch" or
+         String.starts_with?(relative, ".reflaxe-elixir-project-patch/") do
+      Kernel.raise("project patch target uses the reserved transaction path: #{relative}")
+    else
+      :ok
+    end
   end
 
-  defp validate_parent_chain!(root, path) do
-    require_directory!(root, "project patch root")
+  defp escapes_root(relative) do
+    path_type = Path.type(relative)
+    path_type == :absolute or relative == ".." or String.starts_with?(relative, "../")
+  end
+
+  defp validate_parent_chain_bang(root, path) do
+    require_directory_bang(root, "project patch root")
     relative = Path.relative_to(path, root)
 
-    if escapes_root?(relative) do
-      raise "project patch path escapes the project root: #{path}"
+    if escapes_root(relative) do
+      Kernel.raise("project patch path escapes the project root: #{path}")
+    else
+      validate_parent_parts_bang(Path.split(Path.dirname(relative)), 0, root)
+      :ok
     end
+  end
 
-    relative
-    |> Path.dirname()
-    |> Path.split()
-    |> Enum.reduce_while(root, fn
-      ".", current ->
-        {:cont, current}
+  defp validate_parent_parts_bang(parts, index, current) do
+    if index >= length(parts) do
+      current
+    else
+      part = Enum.at(parts, index)
 
-      part, current ->
+      if part == "." do
+        validate_parent_parts_bang(parts, index + 1, current)
+      else
         next = Path.join(current, part)
+        result = File.lstat(next)
 
-        case File.lstat(next) do
-          {:ok, %File.Stat{type: :directory}} ->
-            {:cont, next}
+        if has_tag(result, :ok) do
+          stat = Kernel.elem(result, 1)
 
-          {:error, :enoent} ->
-            {:halt, next}
+          if stat.type != :directory do
+            Kernel.raise(
+              "project patch parent is not a directory (#{Kernel.to_string(stat.type)}): #{next}"
+            )
+          else
+            validate_parent_parts_bang(parts, index + 1, next)
+          end
+        else
+          reason = Kernel.elem(result, 1)
 
-          {:ok, %File.Stat{type: type}} ->
-            raise "project patch parent is not a directory (#{type}): #{next}"
-
-          {:error, reason} ->
-            raise "cannot inspect project patch parent #{next}: #{inspect(reason)}"
+          if same_term(reason, :enoent) do
+            next
+          else
+            Kernel.raise("cannot inspect project patch parent #{next}: #{Kernel.inspect(reason)}")
+          end
         end
-    end)
-
-    :ok
-  end
-
-  defp require_directory!(path, label) do
-    case File.lstat(path) do
-      {:ok, %File.Stat{type: :directory}} -> :ok
-      {:ok, %File.Stat{type: type}} -> raise "#{label} is not a directory (#{type}): #{path}"
-      {:error, reason} -> raise "cannot inspect #{label} #{path}: #{inspect(reason)}"
+      end
     end
   end
 
-  defp require_owned_transaction_directory!(directory) do
-    require_directory!(directory, "project patch transaction path")
-    owner = Path.join(directory, @owner_filename)
+  defp require_directory_bang(path, label) do
+    result = File.lstat(path)
 
-    case File.lstat(owner) do
-      {:ok, %File.Stat{type: :regular}} ->
-        if File.read!(owner) != @owner_marker do
-          raise "project patch transaction owner marker is invalid: #{owner}"
-        end
+    if has_tag(result, :ok) do
+      stat = Kernel.elem(result, 1)
 
-      {:ok, %File.Stat{type: type}} ->
-        raise "project patch transaction owner is not a regular file (#{type}): #{owner}"
-
-      {:error, reason} ->
-        raise "cannot inspect project patch transaction owner #{owner}: #{inspect(reason)}"
+      if stat.type == :directory do
+        :ok
+      else
+        Kernel.raise("#{label} is not a directory (#{Kernel.to_string(stat.type)}): #{path}")
+      end
+    else
+      Kernel.raise("cannot inspect #{label} #{path}: #{Kernel.inspect(Kernel.elem(result, 1))}")
     end
-
-    :ok
   end
 
-  defp write_exclusive!(path, content, mode) do
+  defp require_owned_transaction_directory_bang(directory) do
+    require_directory_bang(directory, "project patch transaction path")
+    owner = Path.join(directory, "owner")
+    result = File.lstat(owner)
+
+    if has_tag(result, :ok) do
+      stat = Kernel.elem(result, 1)
+
+      if stat.type != :regular do
+        Kernel.raise(
+          "project patch transaction owner is not a regular file (#{Kernel.to_string(stat.type)}): #{owner}"
+        )
+      else
+        if File.read!(owner) != "reflaxe.elixir project patch transaction v1\n" do
+          Kernel.raise("project patch transaction owner marker is invalid: #{owner}")
+        else
+          :ok
+        end
+      end
+    else
+      Kernel.raise(
+        "cannot inspect project patch transaction owner #{owner}: #{Kernel.inspect(Kernel.elem(result, 1))}"
+      )
+    end
+  end
+
+  defp write_exclusive_bang(path, content, mode) do
     File.write!(path, content, [:write, :exclusive, :binary])
     File.chmod!(path, mode)
+    :ok
   end
 
-  defp atomic_write!(path, content) do
-    temp = path <> ".tmp"
+  defp atomic_write_bang(path, content) do
+    temp = "#{path}.tmp"
     File.write!(temp, content, [:write, :exclusive, :binary])
     File.rename!(temp, path)
+    :ok
+  end
+
+  defp json_object(pairs) do
+    build_json_object(pairs, 0, Map.new())
+  end
+
+  defp build_json_object(pairs, index, value) do
+    if index >= length(pairs) do
+      value
+    else
+      pair = Enum.at(pairs, index)
+      build_json_object(pairs, index + 1, Map.put(value, elem(pair, 0), elem(pair, 1)))
+    end
+  end
+
+  defp fetch_json_bang(json, key) do
+    fetched = Map.fetch(json, key)
+
+    if has_tag(fetched, :ok) do
+      Kernel.elem(fetched, 1)
+    else
+      Kernel.raise("missing project patch JSON field: #{key}")
+    end
+  end
+
+  defp require_binary(value, message) do
+    if Kernel.is_binary(value) do
+      Kernel.elem({:ok, value}, 1)
+    else
+      Kernel.raise(message)
+    end
   end
 
   defp marker_span(content, begin_token, end_token) do
     if begin_token == "" or end_token == "" or begin_token == end_token do
-      {:error, {:invalid_marker_tokens, begin_token, end_token}}
+      error({:invalid_marker_tokens, begin_token, end_token})
     else
-      lines = String.split(content, "\n", trim: false)
+      lines = String.split(content, "\n")
       begins = matching_line_indices(lines, begin_token)
       ends = matching_line_indices(lines, end_token)
 
-      case {begins, ends} do
-        {[], []} ->
-          :missing
+      if length(begins) == 0 and length(ends) == 0 do
+        :missing
+      else
+        if length(begins) == 1 and length(ends) == 1 do
+          begin_index = Enum.at(begins, 0)
+          end_index = Enum.at(ends, 0)
 
-        {[begin_index], [end_index]} when begin_index < end_index ->
-          {:ok, lines, begin_index, end_index}
-
-        {[begin_index], [end_index]} ->
-          {:error, {:inverted_marker_pair, begin_token, end_token, begin_index, end_index}}
-
-        _ ->
-          {:error, {:marker_count, begin_token, length(begins), end_token, length(ends)}}
+          if begin_index < end_index,
+            do: {:ok, lines, begin_index, end_index},
+            else: error({:inverted_marker_pair, begin_token, end_token, begin_index, end_index})
+        else
+          error({:marker_count, begin_token, length(begins), end_token, length(ends)})
+        end
       end
     end
   end
 
   defp matching_line_indices(lines, token) do
-    lines
-    |> Enum.with_index()
-    |> Enum.flat_map(fn {line, index} ->
-      if marker_token_on_line?(line, token), do: [index], else: []
+    Enum.flat_map(Enum.with_index(lines), fn entry ->
+      line = Kernel.elem(entry, 0)
+      index = Kernel.elem(entry, 1)
+      if marker_token_on_line(line, token), do: [index], else: []
     end)
   end
 
-  defp marker_token_on_line?(line, token) do
-    Regex.match?(~r/(?:^|\s)#{Regex.escape(token)}(?=$|\s)/, line)
+  defp marker_token_on_line(line, token) do
+    pattern = "(?:^|\\s)#{Regex.escape(token)}(?=$|\\s)"
+    Regex.match?(Regex.compile!(pattern), line)
   end
 
   defp replace_line_span(lines, begin_index, end_index, replacement) do
-    lines
-    |> Enum.with_index()
-    |> Enum.flat_map(fn {line, index} ->
-      cond do
-        index < begin_index -> [line]
-        index == begin_index -> replacement
-        index <= end_index -> []
-        true -> [line]
-      end
-    end)
-    |> Enum.join("\n")
-  end
+    updated =
+      Enum.flat_map(Enum.with_index(lines), fn entry ->
+        line = Kernel.elem(entry, 0)
+        index = Kernel.elem(entry, 1)
 
-  defp reject_overlapping_spans([]), do: :ok
-  defp reject_overlapping_spans([_span]), do: :ok
+        if index < begin_index do
+          [line]
+        else
+          if index == begin_index do
+            replacement
+          else
+            if index <= end_index, do: [], else: [line]
+          end
+        end
+      end)
 
-  defp reject_overlapping_spans([{first_start, first_end, first_token}, second | rest]) do
-    {second_start, second_end, second_token} = second
-
-    if second_start <= first_end do
-      {:error,
-       {:overlapping_marker_pairs, first_token, {first_start, first_end}, second_token,
-        {second_start, second_end}}}
-    else
-      reject_overlapping_spans([second | rest])
-    end
+    Enum.join(updated, "\n")
   end
 
   defp leading_indent(line) do
-    line
-    |> String.graphemes()
-    |> Enum.take_while(&(&1 in [" ", "\t"]))
-    |> Enum.join()
+    leading =
+      Enum.take_while(String.graphemes(line), fn character ->
+        character == " " or character == "\t"
+      end)
+
+    Enum.join(leading, "")
   end
 
   defp decode_json_object(content) do
-    case Jason.decode(content) do
-      {:ok, value} when is_map(value) -> {:ok, value}
-      {:ok, _value} -> {:error, "package JSON must contain an object"}
-      {:error, error} -> {:error, "invalid package JSON: #{Exception.message(error)}"}
+    decoded = Jason.decode(content)
+
+    if has_tag(decoded, :ok) do
+      value = Kernel.elem(decoded, 1)
+      if Kernel.is_map(value), do: ok(value), else: error("package JSON must contain an object")
+    else
+      reason = Kernel.elem(decoded, 1)
+      error("invalid package JSON: #{Exception.message(reason)}")
     end
   end
 
   defp validate_key_path(path) do
-    if Enum.all?(path, &(is_binary(&1) and &1 != "")) do
+    validate_key_path_at(path, 0)
+  end
+
+  defp fetch_json_path(json, path, parents) do
+    key = Enum.at(path, 0)
+    fetched = Map.fetch(json, key)
+
+    if same_term(fetched, :error) do
+      :missing
+    else
+      value = Kernel.elem(fetched, 1)
+
+      if length(path) == 1 do
+        ok(value)
+      else
+        if not Kernel.is_map(value) do
+          error(
+            "package JSON key path #{Enum.join(Enum.concat(parents, [key]), ".")} must contain an object"
+          )
+        else
+          fetch_json_path(value, Enum.drop(path, 1), Enum.concat(parents, [key]))
+        end
+      end
+    end
+  end
+
+  defp strip_json_path(json, path) do
+    key = Enum.at(path, 0)
+
+    if length(path) == 1 do
+      Map.delete(json, key)
+    else
+      fetched = Map.fetch(json, key)
+
+      if same_term(fetched, :error) do
+        json
+      else
+        value = Kernel.elem(fetched, 1)
+
+        if not Kernel.is_map(value) do
+          json
+        else
+          child = strip_json_path(value, Enum.drop(path, 1))
+
+          if Kernel.map_size(child) == 0 do
+            Map.delete(json, key)
+          else
+            Map.put(json, key, child)
+          end
+        end
+      end
+    end
+  end
+
+  defp tuple_tag(value) do
+    if Kernel.is_tuple(value) and Kernel.tuple_size(value) > 0 do
+      Kernel.elem(value, 0)
+    else
+      nil
+    end
+  end
+
+  defp collect_marker_spans(content, pairs, index, spans) do
+    if index >= length(pairs) do
+      ok(spans)
+    else
+      pair = Enum.at(pairs, index)
+      span = marker_span(content, elem(pair, 0), elem(pair, 1))
+
+      if has_tag(span, :error) do
+        span
+      else
+        updated = spans
+
+        updated =
+          if not same_term(span, :missing) do
+            Enum.concat(spans, [
+              %{first: Kernel.elem(span, 2), last: Kernel.elem(span, 3), token: elem(pair, 0)}
+            ])
+          else
+            updated
+          end
+
+        collect_marker_spans(content, pairs, index + 1, updated)
+      end
+    end
+  end
+
+  defp validate_ordered_spans(spans, index) do
+    if index >= length(spans) do
       :ok
     else
-      {:error, "package JSON key path must contain non-empty strings"}
+      first = Enum.at(spans, index - 1)
+      second = Enum.at(spans, index)
+
+      if second.first <= first.last,
+        do:
+          error(
+            {:overlapping_marker_pairs, first.token, {first.first, first.last}, second.token,
+             {second.first, second.last}}
+          ),
+        else: validate_ordered_spans(spans, index + 1)
     end
   end
 
-  defp fetch_json_path(json, path), do: fetch_json_path(json, path, [])
-
-  defp fetch_json_path(json, [key], _parents) do
-    case Map.fetch(json, key) do
-      {:ok, value} -> {:ok, value}
-      :error -> :missing
+  defp validate_key_path_at(path, index) do
+    if index >= length(path) do
+      if length(path) == 0,
+        do: error("package JSON key path must contain non-empty strings"),
+        else: :ok
+    else
+      if Enum.at(path, index) == "",
+        do: error("package JSON key path must contain non-empty strings"),
+        else: validate_key_path_at(path, index + 1)
     end
   end
 
-  defp fetch_json_path(json, [key | rest], parents) do
-    case Map.fetch(json, key) do
-      {:ok, value} when is_map(value) ->
-        fetch_json_path(value, rest, parents ++ [key])
-
-      {:ok, _value} ->
-        {:error,
-         "package JSON key path #{Enum.join(parents ++ [key], ".")} must contain an object"}
-
-      :error ->
-        :missing
-    end
+  defp has_tag(value, tag) do
+    actual = tuple_tag(value)
+    same_term(actual, tag)
   end
 
-  defp fetch_required_json_path(json, path), do: fetch_json_path(json, path)
-
-  defp strip_json_path(json, [key]) do
-    Map.delete(json, key)
+  defp same_term(left, right) do
+    left == right
   end
 
-  defp strip_json_path(json, [key | rest]) do
-    case Map.fetch(json, key) do
-      {:ok, value} when is_map(value) ->
-        child = strip_json_path(value, rest)
+  defp ok(value) do
+    {:ok, value}
+  end
 
-        if map_size(child) == 0 do
-          Map.delete(json, key)
-        else
-          Map.put(json, key, child)
-        end
-
-      _ ->
-        json
-    end
+  defp error(reason) do
+    {:error, reason}
   end
 end

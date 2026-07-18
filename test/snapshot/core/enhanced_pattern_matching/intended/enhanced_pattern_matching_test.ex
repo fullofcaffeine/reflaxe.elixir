@@ -102,7 +102,7 @@ defmodule EnhancedPatternMatchingTest do
       _ ->
         a = arr
         if (length(a) > 3) do
-          "starts with #{Reflaxe.Elixir.HaxeFloat.to_string(a[0])}, has #{Reflaxe.Elixir.HaxeFloat.to_string((length(a) - 1))} more elements"
+          "starts with #{Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(a, 0))}, has #{Reflaxe.Elixir.HaxeFloat.to_string((length(a) - 1))} more elements"
         else
           "other array pattern"
         end

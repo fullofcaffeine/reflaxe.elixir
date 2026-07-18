@@ -23,7 +23,7 @@ defmodule UserView do
         </div>
     """
   end
-  def button(text, type, disabled) do
+  def button(text, type \\ "primary", disabled \\ false) do
     "<button class=\"btn btn-<%= type %>\" <%= if disabled do %>disabled<% end %>>\n\t\t\t<%= text %>\n\t\t</button>"
   end
   def user_form(changeset) do

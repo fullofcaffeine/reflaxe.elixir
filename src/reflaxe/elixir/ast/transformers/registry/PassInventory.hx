@@ -43,13 +43,14 @@ class PassInventory {
 				id: "framework-annotations",
 				title: "Framework annotations",
 				inputInvariant: "Module metadata and normalized authored definitions are available.",
-				outputInvariant: "Phoenix, LiveView, Ecto, OTP, and ExUnit module/callback scaffolding is represented in ElixirAST.",
+				outputInvariant: "Phoenix, LiveView, Ecto, OTP, ExUnit, and Mix module/callback scaffolding is represented in ElixirAST.",
 				downstreamDependency: "Guard, interpolation, and core passes assume generated callback heads and framework module forms already exist.",
 				representativeTests: [
 					"phoenix/router",
 					"liveview/golden_liveview_fixture",
 					"ecto/changeset",
-					"exunit/exunit_comprehensive"
+					"exunit/exunit_comprehensive",
+					"core/mix_task_annotation"
 				]
 			},
 			{
@@ -146,6 +147,12 @@ class PassInventory {
 				title: "ExUnit",
 				applicability: "ExUnit annotation/metadata or structured ExUnit module references.",
 				representativeTests: ["exunit/exunit_comprehensive"]
+			},
+			{
+				id: "mix",
+				title: "Mix",
+				applicability: "Typed @:mixTask metadata or structured Mix module references.",
+				representativeTests: ["core/mix_task_annotation"]
 			},
 			{
 				id: "diagnostics",

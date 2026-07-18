@@ -91,7 +91,7 @@ defmodule Haxe.Ds.List do
     "{#{Enum.join(struct.items, ", ")}}"
   end
   def join(struct, sep) do
-    Enum.join((fn -> struct.items end).(), sep)
+    Enum.join(struct.items, sep)
   end
   def filter(struct, f) do
     result = Haxe.Ds.List.new()

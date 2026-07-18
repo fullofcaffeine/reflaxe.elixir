@@ -1,21 +1,81 @@
 {
-  "filesGenerated": [
-  "type.ex",
-  "std.ex",
-  "reflaxe/exception.ex",
-  "reflaxe/elixir/haxe_throw.ex",
-  "reflaxe/elixir/haxe_float.ex",
-  "my_app/repo.ex",
-  "main.ex",
-  "haxe/iterators/array_key_value_iterator.ex",
-  "haxe/iterators/array_iterator.ex",
-  "haxe/_call_stack/call_stack_impl_.ex",
-  "ecto/postgres_extension.ex",
-  "ecto/json_library.ex",
-  "ecto/database_adapter.ex",
-  "my_app/postgrex_types.ex"
-],
-  "id": 0,
-  "wasCached": false,
-  "version": 1
+	"filesGenerated": [
+		"type.ex",
+		"std.ex",
+		"reflaxe/exception.ex",
+		"reflaxe/elixir/haxe_throw.ex",
+		"reflaxe/elixir/haxe_float.ex",
+		"my_app/repo.ex",
+		"main.ex",
+		"haxe/iterators/array_key_value_iterator.ex",
+		"haxe/iterators/array_iterator.ex",
+		"haxe/_call_stack/call_stack_impl_.ex",
+		"ecto/postgres_extension.ex",
+		"ecto/json_library.ex",
+		"ecto/database_adapter.ex",
+		"my_app/postgrex_types.ex"
+	],
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 0,
+	"wasCached": false,
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "ecto/database_adapter.ex",
+			"sha256": "ad99982c574bd78bd086311699f57eb83282564890fb974b62abd7e7f622d14b"
+		},
+		{
+			"path": "ecto/json_library.ex",
+			"sha256": "fbaee6e0fc36bf177129290ed92b9a412cd8aa9e5fa34db3144794b8126669ba"
+		},
+		{
+			"path": "ecto/postgres_extension.ex",
+			"sha256": "9e7d99659ad6119fc6a64238b9af0438ea2cafd81cb80e15743c51aeb45d85a8"
+		},
+		{
+			"path": "haxe/_call_stack/call_stack_impl_.ex",
+			"sha256": "ab46ba4f786a95420ae1cd78188f77ebebc3ced2db90d1351297f573f30dadf8"
+		},
+		{
+			"path": "haxe/iterators/array_iterator.ex",
+			"sha256": "3186b41d2124063a790c08804f1bfb9c3a7508de7f6a99ad2cdb1687f1c2b82d"
+		},
+		{
+			"path": "haxe/iterators/array_key_value_iterator.ex",
+			"sha256": "7c2a5a2cc281bb9a1c5ed1bb56e351bdb68b53a7d048fa70decc5bfdd527419e"
+		},
+		{
+			"path": "main.ex",
+			"sha256": "b00c6089f2367c3a3c2d6e71a51d883c14134a8294578e75e16da747a1717852"
+		},
+		{
+			"path": "my_app/postgrex_types.ex",
+			"sha256": "e436636fc6790fdbc24313f805269e61233decdc158b309bb959a541d170e61f"
+		},
+		{
+			"path": "my_app/repo.ex",
+			"sha256": "b571d02b5674beed545dd54e0a17a1ea33a3dfb4e3fdbc4e4390a6bdfe33537f"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_float.ex",
+			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_throw.ex",
+			"sha256": "642bbf29d073acc9eb2ffcea4a8e6016396a43f1a4180a79331b537bfefc6094"
+		},
+		{
+			"path": "reflaxe/exception.ex",
+			"sha256": "02fc779b3a5c750db17ab47e624c22bbb8887786a22a767969ab23d1946be755"
+		},
+		{
+			"path": "std.ex",
+			"sha256": "cfc6ad389294bc64c9d82be070797b4e65041a3d225fc0741500ca7cc6c8f804"
+		},
+		{
+			"path": "type.ex",
+			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
+		}
+	],
+	"generation": "fd454eec275d5926adf15421e2666fc938d5bc426a12f9ba094991fe83c0f5ca"
 }

@@ -43,7 +43,7 @@ defmodule TodoApp.Todo do
     Ecto.Changeset.change(todo, %{priority: priority_param})
   end
 
-  def create_new(title_param, user_id_param) do
+  def create_new(title_param, user_id_param \\ nil) do
     %{
       title: title_param,
       description: "",

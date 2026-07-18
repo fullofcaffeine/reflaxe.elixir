@@ -60,7 +60,7 @@ defmodule SocketTools do
     end
   end
   def is_in_state(socket, state_name, state_value) do
-    Reflaxe.Elixir.HaxeFloat.eq(Socket_Impl_.get_assign(socket, state_name), state_value)
+    Socket_Impl_.get_assign(socket, state_name) == state_value
   end
   def get_current_user(socket) do
     Socket_Impl_.get_assign(socket, "current_user")
@@ -70,6 +70,6 @@ defmodule SocketTools do
   end
   def has_flash(socket) do
     flash = get_flash(socket)
-    Reflaxe.Elixir.HaxeFloat.neq(flash, nil) and length(Reflect.fields(flash)) > 0
+    not Kernel.is_nil(flash) and length(Reflect.fields(flash)) > 0
   end
 end

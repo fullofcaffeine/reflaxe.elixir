@@ -1,22 +1,86 @@
 {
-  "filesGenerated": [
-  "reflaxe/exception.ex",
-  "reflaxe/elixir/haxe_throw.ex",
-  "reflaxe/elixir/haxe_float.ex",
-  "my_app_web/telemetry.ex",
-  "my_app/application.ex",
-  "haxe/iterators/array_key_value_iterator.ex",
-  "haxe/iterators/array_iterator.ex",
-  "elixir/otp/supervisor_strategy.ex",
-  "elixir/otp/shutdown_type.ex",
-  "elixir/otp/restart_type.ex",
-  "elixir/otp/child_type.ex",
-  "elixir/otp/child_spec_format.ex",
-  "elixir/otp/application_start_type.ex",
-  "elixir/otp/application_result_tools.ex",
-  "elixir/otp/application_result.ex"
-],
-  "id": 0,
-  "wasCached": false,
-  "version": 1
+	"filesGenerated": [
+		"reflaxe/exception.ex",
+		"reflaxe/elixir/haxe_throw.ex",
+		"reflaxe/elixir/haxe_float.ex",
+		"my_app_web/telemetry.ex",
+		"my_app/application.ex",
+		"haxe/iterators/array_key_value_iterator.ex",
+		"haxe/iterators/array_iterator.ex",
+		"elixir/otp/supervisor_strategy.ex",
+		"elixir/otp/shutdown_type.ex",
+		"elixir/otp/restart_type.ex",
+		"elixir/otp/child_type.ex",
+		"elixir/otp/child_spec_format.ex",
+		"elixir/otp/application_start_type.ex",
+		"elixir/otp/application_result_tools.ex",
+		"elixir/otp/application_result.ex"
+	],
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 0,
+	"wasCached": false,
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "elixir/otp/application_result.ex",
+			"sha256": "e5eeaaf20d7c32c522b51ec64b55f666f7b07948049c68be17775250f4b97355"
+		},
+		{
+			"path": "elixir/otp/application_result_tools.ex",
+			"sha256": "0245701fb21a834fbec130d8cb855891884f655eedea4b8d9d9c734000740c20"
+		},
+		{
+			"path": "elixir/otp/application_start_type.ex",
+			"sha256": "111cf4b1776b5ee5c6c5431835db5eb49789d9b6fd35d158066bf4737b61601f"
+		},
+		{
+			"path": "elixir/otp/child_spec_format.ex",
+			"sha256": "4f76007c88d1ba4281d83dcca8ffc22a12f9e2c2d0da0050de4f2b142544afc3"
+		},
+		{
+			"path": "elixir/otp/child_type.ex",
+			"sha256": "a933df8143ef501c6c3f658f4740d6f2f3e9a40e7ae5af48c70e090da4065ca9"
+		},
+		{
+			"path": "elixir/otp/restart_type.ex",
+			"sha256": "6d65661146381d0f4044eac200bf868ea3cdfb7cb0472c54341db8655a857cc4"
+		},
+		{
+			"path": "elixir/otp/shutdown_type.ex",
+			"sha256": "0de416287b9a0676e25df5ac7def869652d7b7a2fc0ff93baa559cdd7348d9ac"
+		},
+		{
+			"path": "elixir/otp/supervisor_strategy.ex",
+			"sha256": "0e3a75cf0ec36827542182526b8dad3495be7c0b38df4a77cf07f86dc8b30cea"
+		},
+		{
+			"path": "haxe/iterators/array_iterator.ex",
+			"sha256": "bf879924ad145b575913240565bc19645add254693e0e7d1f87bee45a9ab0c56"
+		},
+		{
+			"path": "haxe/iterators/array_key_value_iterator.ex",
+			"sha256": "387d4592afd651337e15dda44716f25a7a7cdd97e1b6a43e9c2aba3f4029a3a3"
+		},
+		{
+			"path": "my_app/application.ex",
+			"sha256": "647ecda20391747c9ab750a8aec1299338eb1b9793a7917cb94978efa75826d7"
+		},
+		{
+			"path": "my_app_web/telemetry.ex",
+			"sha256": "05df9e9b438bc530b01c0870bd58931c0b8d1e83253dff2981cc78e3a89b038e"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_float.ex",
+			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_throw.ex",
+			"sha256": "8e498f80275fd241c22701a4f170bb1cf2135aa572ccd1b8f4a2d17728f849b1"
+		},
+		{
+			"path": "reflaxe/exception.ex",
+			"sha256": "9eb2137ead37e4b2ff0650cbece40b4da0427a5fe35a95b0de3eeacb82facbd2"
+		}
+	],
+	"generation": "10fe6ee22a6137c146a75872178ed6f356ed169360483810014bcac82148fef4"
 }

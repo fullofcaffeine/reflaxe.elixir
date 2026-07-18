@@ -21,7 +21,7 @@ defmodule BytesBuffer do
       struct
     end
   end
-  def add_string(struct, v, encoding) do
+  def add_string(struct, v, encoding \\ nil) do
     _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :add, [struct, Bytes.of_string(v, encoding)])
   end
   def add_int32(struct, v) do

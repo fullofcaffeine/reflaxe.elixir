@@ -54,6 +54,10 @@ extern class Regex {
 	@:native("run")
 	static function runWithOptions(regex:Term, string:String, options:Array<Term>):Null<Array<String>>;
 
+	/** Raw `Regex.run/3` result for options such as `return: :index`. */
+	@:native("run")
+	static function runWithKeywordOptions(regex:Term, string:String, options:elixir.types.KeywordList<Term>):Term;
+
 	@:native("scan")
 	static function scan(regex:Term, string:String):Array<Array<String>>; // All matches
 

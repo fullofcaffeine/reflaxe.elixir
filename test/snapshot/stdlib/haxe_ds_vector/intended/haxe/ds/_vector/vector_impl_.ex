@@ -1,5 +1,5 @@
 defmodule Vector_Impl_ do
-  def _new(length, default_value) do
+  def _new(length, default_value \\ nil) do
     items = []
     _g = 0
     g_value = length

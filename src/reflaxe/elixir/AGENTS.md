@@ -13,6 +13,7 @@ This file contains compiler-specific development guidance for agents working on 
 - **ast/** directory - AST builder, transformer, and printer for pure AST-based compilation
 - **ElixirTyper.hx** - Type mapping between Haxe and Elixir systems
 - **schema/** directory - Schema introspection and metadata processing
+- **macros/MixTaskMetadata.hx** - Typed `@:mixTask` configuration and callback validation
 
 ## 🧭 Transform Design Principles (No Band-Aids)
 
@@ -77,6 +78,7 @@ if (field.meta.has("liveview")) { ... }  // Missing colon!
 | `@:test` | `":test"` | `meta.has(":test")` |
 | `@:liveview` | `":liveview"` | `meta.has(":liveview")` |
 | `@:application` | `":application"` | `meta.has(":application")` |
+| `@:mixTask` | `":mixTask"` | `meta.has(":mixTask")` |
 | `@:native("Name")` | `":native"` | `meta.has(":native")` |
 | `@:schema` | `":schema"` | `meta.has(":schema")` |
 | `@:endpoint` | `":endpoint"` | `meta.has(":endpoint")` |

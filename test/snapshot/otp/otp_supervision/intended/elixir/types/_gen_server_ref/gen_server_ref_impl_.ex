@@ -17,38 +17,10 @@ defmodule GenServerRef_Impl_ do
     ref
   end
   def is_alive(this1) do
-    elixir__.("
-                case #{Reflaxe.Elixir.HaxeFloat.to_string(this1)} do
-                    pid when is_pid(pid) -> Process.alive?(pid)
-                    name when is_atom(name) ->
-                        case Process.whereis(name) do
-                            nil -> false
-                            pid -> Process.alive?(pid)
-                        end
-                    {:global, name} ->
-                        case :global.whereis_name(name) do
-                            :undefined -> false
-                            pid -> Process.alive?(pid)
-                        end
-                    {:via, module, name} ->
-                        case module.whereis_name(name) do
-                            :undefined -> false
-                            pid -> Process.alive?(pid)
-                        end
-                    _ -> false
-                end
-            ")
+    elixir__.("\n            case #{Reflaxe.Elixir.HaxeFloat.to_string(this1)} do\n                pid when is_pid(pid) -> Process.alive?(pid)\n                name when is_atom(name) -> \n                    case Process.whereis(name) do\n                        nil -> false\n                        pid -> Process.alive?(pid)\n                    end\n                {:global, name} ->\n                    case :global.whereis_name(name) do\n                        :undefined -> false\n                        pid -> Process.alive?(pid)\n                    end\n                {:via, module, name} ->\n                    case module.whereis_name(name) do\n                        :undefined -> false\n                        pid -> Process.alive?(pid)\n                    end\n                _ -> false\n            end\n        ")
   end
   def whereis(this1) do
-    elixir__.("
-                case #{Reflaxe.Elixir.HaxeFloat.to_string(this1)} do
-                    pid when is_pid(pid) -> pid
-                    name when is_atom(name) -> Process.whereis(name)
-                    {:global, name} -> :global.whereis_name(name)
-                    {:via, module, name} -> module.whereis_name(name)
-                    _ -> nil
-                end
-            ")
+    elixir__.("\n            case #{Reflaxe.Elixir.HaxeFloat.to_string(this1)} do\n                pid when is_pid(pid) -> pid\n                name when is_atom(name) -> Process.whereis(name)\n                {:global, name} -> :global.whereis_name(name)\n                {:via, module, name} -> module.whereis_name(name)\n                _ -> nil\n            end\n        ")
   end
   def to_string(this1) do
     Kernel.inspect(this1)

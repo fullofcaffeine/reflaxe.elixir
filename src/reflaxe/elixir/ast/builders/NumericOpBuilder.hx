@@ -92,6 +92,14 @@ class NumericOpBuilder {
 
 	static function buildComparison(helperName:String, nativeOp:EBinaryOp, leftAST:ElixirAST, rightAST:ElixirAST, leftExpr:TypedExpr,
 			rightExpr:TypedExpr):ElixirAST {
+		// `elixir.types.Term` is an explicit native BEAM boundary, unlike ordinary
+		// `Dynamic`. Its equality contract is Elixir term equality, so do not route
+		// comparisons through the portable Haxe Float special-value helpers.
+		if ((nativeOp == EBinaryOp.Equal || nativeOp == EBinaryOp.NotEqual)
+			&& (TypeUtils.isElixirTermType(leftExpr.t) || TypeUtils.isElixirTermType(rightExpr.t))) {
+			return makeAST(EBinary(nativeOp, leftAST, rightAST));
+		}
+
 		if (TypeUtils.mayContainHaxeFloat(leftExpr.t) || TypeUtils.mayContainHaxeFloat(rightExpr.t))
 			return haxeFloatCall(helperName, [leftAST, rightAST]);
 		return makeAST(EBinary(nativeOp, leftAST, rightAST));

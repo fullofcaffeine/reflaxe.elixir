@@ -6,7 +6,7 @@ defmodule LockRuntime do
                 {ref, pid}
             )
   end
-  def wait(ref, timeout) do
+  def wait(ref, timeout \\ nil) do
     should_queue = Reflaxe.Elixir.HaxeFloat.eq(timeout, nil) or Reflaxe.Elixir.HaxeFloat.gt(timeout, 0)
     timeout_ms = if (should_queue), do: seconds_to_timeout(timeout), else: 5000
     (

@@ -126,6 +126,24 @@ extern class Enum {
 	static function find<T>(enumerable:Array<T>, fun:T->Bool):Null<T>;
 
 	/**
+	 * Returns the index of the first element for which `fun` is truthy, or nil.
+	 *
+	 * Maps directly to `Enum.find_index/2` so target stdlib implementations can
+	 * express searches without embedding raw Elixir or losing receiver binders.
+	 */
+	@:native("find_index")
+	static function findIndex<T>(enumerable:Array<T>, fun:T->Bool):Null<Int>;
+
+	/** Return the first non-nil mapper result, or the supplied default. */
+	@:native("find_value")
+	@:overload(function<T, R>(enumerable:Array<T>, fun:T->Null<R>):Null<R> {})
+	static function findValue<T, R>(enumerable:Array<T>, defaultValue:R, fun:T->Null<R>):R;
+
+	/** Map each element to a string and join the results. */
+	@:native("map_join")
+	static function mapJoin<T>(enumerable:Array<T>, joiner:String, fun:T->String):String;
+
+	/**
 	 * Maps and flattens the enumerable in one pass.
 	 */
 	@:native("flat_map")
@@ -181,6 +199,9 @@ extern class Enum {
 	 */
 	static function uniq<T>(enumerable:Array<T>):Array<T>;
 
+	/** Returns every intermediate accumulator value. */
+	static function scan<T, Acc>(enumerable:Array<T>, acc:Acc, fun:(T, Acc) -> Acc):Array<Acc>;
+
 	/**
 	 * Zips corresponding elements from two enumerables into a list of tuples.
 	 */
@@ -188,7 +209,7 @@ extern class Enum {
 
 	/**
 	 * Reduce the enumerable until fun returns {:halt, acc}.
-	 * Use with ReduceWhileResult enum for type safety.
+	 * Use with `elixir.types.ReduceWhileResult` for type safety.
 	 */
 	@:native("reduce_while")
 	static function reduceWhile<T, Acc>(enumerable:Term, acc:Acc, fun:(T, Acc) -> Term):Acc;
@@ -250,6 +271,7 @@ extern class Enum {
 	/**
 	 * Checks if element is a member of enumerable.
 	 */
+	@:native("member?")
 	static function member<T>(enumerable:Array<T>, element:T):Bool;
 
 	/**
@@ -281,20 +303,4 @@ extern class Enum {
 	@:native("with_index")
 	@:overload(function<T>(enumerable:Term):Array<Term> {})
 	static function withIndex<T>(enumerable:Term, startAt:Int):Array<Term>;
-}
-
-/**
- * Result type for reduce_while operations.
- * Maps to Elixir's {:cont, acc} and {:halt, acc} tuples.
- */
-enum ReduceWhileResult<T> {
-	/**
-	 * Continue reducing with the given accumulator value
-	 */
-	Cont(value:T);
-
-	/**
-	 * Halt reduction and return the given accumulator value
-	 */
-	Halt(value:T);
 }

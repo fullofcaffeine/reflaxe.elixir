@@ -9,7 +9,7 @@ defmodule CallStack_Impl_ do
      end).())
     item
   end
-  def exception_stack(full_stack) do
+  def exception_stack(full_stack \\ false) do
     exception_stack = stack_trace_to_haxe(Process.get(:__reflaxe_last_stacktrace__, []))
     if (full_stack), do: exception_stack, else: subtract(exception_stack, call_stack())
     exception_stack

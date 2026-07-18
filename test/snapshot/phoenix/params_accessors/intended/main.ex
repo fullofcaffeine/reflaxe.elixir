@@ -31,8 +31,8 @@ defmodule Main do
     assert_that(PhoenixHx.Params.get_int(atom_params, "id") == 13, "atom getInt failed")
     assert_that(PhoenixHx.Params.get_nested_int(atom_params, "todo", "id") == 11, "atom getNestedInt failed")
     assert_that(PhoenixHx.Params.get_bool(atom_params, "done") == false, "atom getBool failed")
-    assert_that(Reflaxe.Elixir.HaxeFloat.eq(PhoenixHx.Params.get(atom_params, "params_accessors_missing_atom"), nil), "missing atom fallback failed")
+    assert_that(Kernel.is_nil(PhoenixHx.Params.get(atom_params, "params_accessors_missing_atom")), "missing atom fallback failed")
     mixed_params = %{"title" => nil, title: "Atom title"}
-    assert_that(Reflaxe.Elixir.HaxeFloat.eq(PhoenixHx.Params.get(mixed_params, "title"), nil), "string-key nil should win over atom fallback")
+    assert_that(Kernel.is_nil(PhoenixHx.Params.get(mixed_params, "title")), "string-key nil should win over atom fallback")
   end
 end

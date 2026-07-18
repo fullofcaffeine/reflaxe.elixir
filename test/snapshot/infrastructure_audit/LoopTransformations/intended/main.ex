@@ -2,7 +2,7 @@ defmodule Main do
   def main() do
     fruits = ["apple", "banana", "cherry"]
     g = 0
-    _ = Enum.each(fruits, fn _ -> nil end)
+    Enum.each(fruits, fn _ -> nil end)
     g = []
     n = 1
     g = g ++ [n * 2]

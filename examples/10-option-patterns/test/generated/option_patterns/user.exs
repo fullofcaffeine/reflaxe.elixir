@@ -1,6 +1,6 @@
 defmodule OptionPatterns.User do
   import Kernel, except: [to_string: 1], warn: false
-  def new(id_param, name_param, email_param, active_param) do
+  def new(id_param, name_param, email_param, active_param \\ true) do
     struct = %{:__reflaxe_class__ => OptionPatterns.User, :id => nil, :name => nil, :email => nil, :active => nil}
     struct = %{struct | id: id_param}
     struct = %{struct | name: name_param}

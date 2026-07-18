@@ -1,14 +1,14 @@
 defmodule Migration do
-  def create_table(_struct, name, options) do
+  def create_table(_struct, name, options \\ nil) do
     TableBuilder.new(name, options)
   end
-  def drop_table(_struct, _name, _options) do
+  def drop_table(_struct, _name, _options \\ nil) do
 
   end
   def alter_table(_struct, name) do
     AlterTableBuilder.new(name)
   end
-  def create_index(_struct, _table, _columns, _options) do
+  def create_index(_struct, _table, _columns, _options \\ nil) do
 
   end
   def drop_index(_struct, _table, _columns) do

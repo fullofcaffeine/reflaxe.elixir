@@ -105,7 +105,7 @@ defmodule OptionTools do
       {:none} -> nil
     end)
   end
-  def to_reply(option, none_error) do
+  def to_reply(option, none_error \\ "none") do
     (case option do
       {:some, value} -> {:ok, value}
       {:none} -> {:error, none_error}

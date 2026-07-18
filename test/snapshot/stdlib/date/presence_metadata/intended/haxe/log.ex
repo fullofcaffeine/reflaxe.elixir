@@ -3,7 +3,7 @@ defmodule Log do
     str = Reflaxe.Elixir.HaxeFloat.to_string(v)
     if (Kernel.is_nil(infos)), do: str, else: str
   end
-  def trace(v, infos) do
+  def trace(v, infos \\ nil) do
 
                 case infos do
                   nil -> IO.inspect(v)

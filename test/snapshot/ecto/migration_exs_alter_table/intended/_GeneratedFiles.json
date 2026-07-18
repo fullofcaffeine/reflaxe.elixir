@@ -1,9 +1,21 @@
 {
-  "filesGenerated": [
-  "test_app/repo/migrations/create_users.exs",
-  "test_app/repo/migrations/add_user_bio.exs"
-],
-  "id": 0,
-  "wasCached": false,
-  "version": 1
+	"filesGenerated": [
+		"test_app/repo/migrations/create_users.exs",
+		"test_app/repo/migrations/add_user_bio.exs"
+	],
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 0,
+	"wasCached": false,
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "test_app/repo/migrations/add_user_bio.exs",
+			"sha256": "b4c6914053f611ceee955f8c53a490953ff63869b30e915ffd6b47efaa6839ed"
+		},
+		{
+			"path": "test_app/repo/migrations/create_users.exs",
+			"sha256": "8a95bd3b8d088ed8024770361db424410d571099b6c2f94761a6bd646b2da79a"
+		}
+	],
+	"generation": "bcb87bd20f0d12dacf799db856eadb33f08fec902ae5a698cd5676f705011daa"
 }

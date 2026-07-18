@@ -1,5 +1,5 @@
 defmodule Sys.IO.Process do
-  def new(cmd, args, detached) do
+  def new(cmd, args \\ nil, detached \\ nil) do
     struct = %{:__reflaxe_class__ => Sys.IO.Process, :stdout => nil, :stderr => nil, :stdin => nil, :port => nil, :exit_code_cache => nil, :is_closed => nil}
     struct = %{struct | is_closed: false}
     struct = %{struct | exit_code_cache: nil}
@@ -31,7 +31,7 @@ defmodule Sys.IO.Process do
                 end
 
   end
-  def exit_code(struct, block) do
+  def exit_code(struct, block \\ true) do
     if (not Kernel.is_nil(struct.exit_code_cache)) do
       struct.exit_code_cache
     else

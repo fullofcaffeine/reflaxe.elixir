@@ -15,90 +15,93 @@ defmodule HXXComponentRegistry do
     value
   end
   def html_elements() do
-    __haxe_static_get__(:html_elements, (fn ->
-        g = %{}
-        value = %{name: "input", attribute_type: "InputAttributes", allowed_attributes: get_input_attributes(), void_element: true}
-        g = Map.put(g, "input", value)
-        value = %{name: "button", attribute_type: "ButtonAttributes", allowed_attributes: get_button_attributes(), void_element: false}
-        g = Map.put(g, "button", value)
-        value = %{name: "form", attribute_type: "FormAttributes", allowed_attributes: get_form_attributes(), void_element: false}
-        g = Map.put(g, "form", value)
-        value = %{name: "select", attribute_type: "SelectAttributes", allowed_attributes: get_select_attributes(), void_element: false}
-        g = Map.put(g, "select", value)
-        value = %{name: "option", attribute_type: "OptionAttributes", allowed_attributes: get_option_attributes(), void_element: false}
-        g = Map.put(g, "option", value)
-        value = %{name: "textarea", attribute_type: "TextAreaAttributes", allowed_attributes: get_text_area_attributes(), void_element: false}
-        g = Map.put(g, "textarea", value)
-        value = %{name: "label", attribute_type: "LabelAttributes", allowed_attributes: get_label_attributes(), void_element: false}
-        g = Map.put(g, "label", value)
-        value = %{name: "a", attribute_type: "AnchorAttributes", allowed_attributes: get_anchor_attributes(), void_element: false}
-        g = Map.put(g, "a", value)
-        value = %{name: "p", attribute_type: "ParagraphAttributes", allowed_attributes: get_global_attributes(), void_element: false}
-        g = Map.put(g, "p", value)
-        value = %{name: "div", attribute_type: "DivAttributes", allowed_attributes: get_global_attributes(), void_element: false}
-        g = Map.put(g, "div", value)
-        value = %{name: "span", attribute_type: "SpanAttributes", allowed_attributes: get_global_attributes(), void_element: false}
-        g = Map.put(g, "span", value)
-        value = %{name: "h1", attribute_type: "HeadingAttributes", allowed_attributes: get_global_attributes(), void_element: false}
-        g = Map.put(g, "h1", value)
-        value = %{name: "h2", attribute_type: "HeadingAttributes", allowed_attributes: get_global_attributes(), void_element: false}
-        g = Map.put(g, "h2", value)
-        value = %{name: "h3", attribute_type: "HeadingAttributes", allowed_attributes: get_global_attributes(), void_element: false}
-        g = Map.put(g, "h3", value)
-        value = %{name: "h4", attribute_type: "HeadingAttributes", allowed_attributes: get_global_attributes(), void_element: false}
-        g = Map.put(g, "h4", value)
-        value = %{name: "h5", attribute_type: "HeadingAttributes", allowed_attributes: get_global_attributes(), void_element: false}
-        g = Map.put(g, "h5", value)
-        value = %{name: "h6", attribute_type: "HeadingAttributes", allowed_attributes: get_global_attributes(), void_element: false}
-        g = Map.put(g, "h6", value)
-        value = %{name: "img", attribute_type: "ImageAttributes", allowed_attributes: get_image_attributes(), void_element: true}
-        g = Map.put(g, "img", value)
-        value = %{name: "video", attribute_type: "VideoAttributes", allowed_attributes: get_video_attributes(), void_element: false}
-        g = Map.put(g, "video", value)
-        value = %{name: "audio", attribute_type: "AudioAttributes", allowed_attributes: get_audio_attributes(), void_element: false}
-        g = Map.put(g, "audio", value)
-        value = %{name: "ul", attribute_type: "ListAttributes", allowed_attributes: get_list_attributes(), void_element: false}
-        g = Map.put(g, "ul", value)
-        value = %{name: "ol", attribute_type: "ListAttributes", allowed_attributes: get_list_attributes(), void_element: false}
-        g = Map.put(g, "ol", value)
-        value = %{name: "li", attribute_type: "ListItemAttributes", allowed_attributes: get_list_item_attributes(), void_element: false}
-        g = Map.put(g, "li", value)
-        value = %{name: "table", attribute_type: "TableAttributes", allowed_attributes: get_global_attributes(), void_element: false}
-        g = Map.put(g, "table", value)
-        value = %{name: "tr", attribute_type: "TableRowAttributes", allowed_attributes: get_global_attributes(), void_element: false}
-        g = Map.put(g, "tr", value)
-        value = %{name: "td", attribute_type: "TableCellAttributes", allowed_attributes: get_table_cell_attributes(), void_element: false}
-        g = Map.put(g, "td", value)
-        value = %{name: "th", attribute_type: "TableCellAttributes", allowed_attributes: get_table_cell_attributes(), void_element: false}
-        g = Map.put(g, "th", value)
-        value = %{name: "meta", attribute_type: "MetaAttributes", allowed_attributes: get_meta_attributes(), void_element: true}
-        g = Map.put(g, "meta", value)
-        value = %{name: "link", attribute_type: "LinkAttributes", allowed_attributes: get_link_attributes(), void_element: true}
-        g = Map.put(g, "link", value)
-        value = %{name: "script", attribute_type: "ScriptAttributes", allowed_attributes: get_script_attributes(), void_element: false}
-        g = Map.put(g, "script", value)
-        value = %{name: "style", attribute_type: "StyleAttributes", allowed_attributes: get_style_attributes(), void_element: false}
-        g = Map.put(g, "style", value)
-        value = %{name: "article", attribute_type: "SemanticAttributes", allowed_attributes: get_global_attributes(), void_element: false}
-        g = Map.put(g, "article", value)
-        value = %{name: "section", attribute_type: "SemanticAttributes", allowed_attributes: get_global_attributes(), void_element: false}
-        g = Map.put(g, "section", value)
-        value = %{name: "nav", attribute_type: "SemanticAttributes", allowed_attributes: get_global_attributes(), void_element: false}
-        g = Map.put(g, "nav", value)
-        value = %{name: "aside", attribute_type: "SemanticAttributes", allowed_attributes: get_global_attributes(), void_element: false}
-        g = Map.put(g, "aside", value)
-        value = %{name: "header", attribute_type: "SemanticAttributes", allowed_attributes: get_global_attributes(), void_element: false}
-        g = Map.put(g, "header", value)
-        value = %{name: "footer", attribute_type: "SemanticAttributes", allowed_attributes: get_global_attributes(), void_element: false}
-        g = Map.put(g, "footer", value)
-        value = %{name: "main", attribute_type: "SemanticAttributes", allowed_attributes: get_global_attributes(), void_element: false}
-        g = Map.put(g, "main", value)
-        value = %{name: "br", attribute_type: "GlobalAttributes", allowed_attributes: get_global_attributes(), void_element: true}
-        g = Map.put(g, "br", value)
-        value = %{name: "hr", attribute_type: "GlobalAttributes", allowed_attributes: get_global_attributes(), void_element: true}
-        g = Map.put(g, "hr", value)
-        g
-      end).())
+    __haxe_static_get__(
+      :html_elements,
+      (fn ->
+         g = %{}
+         value = %{name: "input", attribute_type: "InputAttributes", allowed_attributes: get_input_attributes(), void_element: true}
+         g = Map.put(g, "input", value)
+         value = %{name: "button", attribute_type: "ButtonAttributes", allowed_attributes: get_button_attributes(), void_element: false}
+         g = Map.put(g, "button", value)
+         value = %{name: "form", attribute_type: "FormAttributes", allowed_attributes: get_form_attributes(), void_element: false}
+         g = Map.put(g, "form", value)
+         value = %{name: "select", attribute_type: "SelectAttributes", allowed_attributes: get_select_attributes(), void_element: false}
+         g = Map.put(g, "select", value)
+         value = %{name: "option", attribute_type: "OptionAttributes", allowed_attributes: get_option_attributes(), void_element: false}
+         g = Map.put(g, "option", value)
+         value = %{name: "textarea", attribute_type: "TextAreaAttributes", allowed_attributes: get_text_area_attributes(), void_element: false}
+         g = Map.put(g, "textarea", value)
+         value = %{name: "label", attribute_type: "LabelAttributes", allowed_attributes: get_label_attributes(), void_element: false}
+         g = Map.put(g, "label", value)
+         value = %{name: "a", attribute_type: "AnchorAttributes", allowed_attributes: get_anchor_attributes(), void_element: false}
+         g = Map.put(g, "a", value)
+         value = %{name: "p", attribute_type: "ParagraphAttributes", allowed_attributes: get_global_attributes(), void_element: false}
+         g = Map.put(g, "p", value)
+         value = %{name: "div", attribute_type: "DivAttributes", allowed_attributes: get_global_attributes(), void_element: false}
+         g = Map.put(g, "div", value)
+         value = %{name: "span", attribute_type: "SpanAttributes", allowed_attributes: get_global_attributes(), void_element: false}
+         g = Map.put(g, "span", value)
+         value = %{name: "h1", attribute_type: "HeadingAttributes", allowed_attributes: get_global_attributes(), void_element: false}
+         g = Map.put(g, "h1", value)
+         value = %{name: "h2", attribute_type: "HeadingAttributes", allowed_attributes: get_global_attributes(), void_element: false}
+         g = Map.put(g, "h2", value)
+         value = %{name: "h3", attribute_type: "HeadingAttributes", allowed_attributes: get_global_attributes(), void_element: false}
+         g = Map.put(g, "h3", value)
+         value = %{name: "h4", attribute_type: "HeadingAttributes", allowed_attributes: get_global_attributes(), void_element: false}
+         g = Map.put(g, "h4", value)
+         value = %{name: "h5", attribute_type: "HeadingAttributes", allowed_attributes: get_global_attributes(), void_element: false}
+         g = Map.put(g, "h5", value)
+         value = %{name: "h6", attribute_type: "HeadingAttributes", allowed_attributes: get_global_attributes(), void_element: false}
+         g = Map.put(g, "h6", value)
+         value = %{name: "img", attribute_type: "ImageAttributes", allowed_attributes: get_image_attributes(), void_element: true}
+         g = Map.put(g, "img", value)
+         value = %{name: "video", attribute_type: "VideoAttributes", allowed_attributes: get_video_attributes(), void_element: false}
+         g = Map.put(g, "video", value)
+         value = %{name: "audio", attribute_type: "AudioAttributes", allowed_attributes: get_audio_attributes(), void_element: false}
+         g = Map.put(g, "audio", value)
+         value = %{name: "ul", attribute_type: "ListAttributes", allowed_attributes: get_list_attributes(), void_element: false}
+         g = Map.put(g, "ul", value)
+         value = %{name: "ol", attribute_type: "ListAttributes", allowed_attributes: get_list_attributes(), void_element: false}
+         g = Map.put(g, "ol", value)
+         value = %{name: "li", attribute_type: "ListItemAttributes", allowed_attributes: get_list_item_attributes(), void_element: false}
+         g = Map.put(g, "li", value)
+         value = %{name: "table", attribute_type: "TableAttributes", allowed_attributes: get_global_attributes(), void_element: false}
+         g = Map.put(g, "table", value)
+         value = %{name: "tr", attribute_type: "TableRowAttributes", allowed_attributes: get_global_attributes(), void_element: false}
+         g = Map.put(g, "tr", value)
+         value = %{name: "td", attribute_type: "TableCellAttributes", allowed_attributes: get_table_cell_attributes(), void_element: false}
+         g = Map.put(g, "td", value)
+         value = %{name: "th", attribute_type: "TableCellAttributes", allowed_attributes: get_table_cell_attributes(), void_element: false}
+         g = Map.put(g, "th", value)
+         value = %{name: "meta", attribute_type: "MetaAttributes", allowed_attributes: get_meta_attributes(), void_element: true}
+         g = Map.put(g, "meta", value)
+         value = %{name: "link", attribute_type: "LinkAttributes", allowed_attributes: get_link_attributes(), void_element: true}
+         g = Map.put(g, "link", value)
+         value = %{name: "script", attribute_type: "ScriptAttributes", allowed_attributes: get_script_attributes(), void_element: false}
+         g = Map.put(g, "script", value)
+         value = %{name: "style", attribute_type: "StyleAttributes", allowed_attributes: get_style_attributes(), void_element: false}
+         g = Map.put(g, "style", value)
+         value = %{name: "article", attribute_type: "SemanticAttributes", allowed_attributes: get_global_attributes(), void_element: false}
+         g = Map.put(g, "article", value)
+         value = %{name: "section", attribute_type: "SemanticAttributes", allowed_attributes: get_global_attributes(), void_element: false}
+         g = Map.put(g, "section", value)
+         value = %{name: "nav", attribute_type: "SemanticAttributes", allowed_attributes: get_global_attributes(), void_element: false}
+         g = Map.put(g, "nav", value)
+         value = %{name: "aside", attribute_type: "SemanticAttributes", allowed_attributes: get_global_attributes(), void_element: false}
+         g = Map.put(g, "aside", value)
+         value = %{name: "header", attribute_type: "SemanticAttributes", allowed_attributes: get_global_attributes(), void_element: false}
+         g = Map.put(g, "header", value)
+         value = %{name: "footer", attribute_type: "SemanticAttributes", allowed_attributes: get_global_attributes(), void_element: false}
+         g = Map.put(g, "footer", value)
+         value = %{name: "main", attribute_type: "SemanticAttributes", allowed_attributes: get_global_attributes(), void_element: false}
+         g = Map.put(g, "main", value)
+         value = %{name: "br", attribute_type: "GlobalAttributes", allowed_attributes: get_global_attributes(), void_element: true}
+         g = Map.put(g, "br", value)
+         value = %{name: "hr", attribute_type: "GlobalAttributes", allowed_attributes: get_global_attributes(), void_element: true}
+         g = Map.put(g, "hr", value)
+         g
+       end).()
+    )
   end
   def html_elements(value) do
     __haxe_static_put__(:html_elements, value)
@@ -154,32 +157,15 @@ defmodule HXXComponentRegistry do
     end).()
   end
   def validate_attribute(element_name, attribute_name) do
-    this = HXXComponentRegistry.html_elements()
+    this1 = HXXComponentRegistry.html_elements()
     key = String.downcase(element_name)
-    element = Map.get(this, key)
+    element = Map.get(this1, key)
     if (Kernel.is_nil(element)) do
-      this = HXXComponentRegistry.phoenix_components()
-      component = Map.get(this, element_name)
+      this1 = HXXComponentRegistry.phoenix_components()
+      component = Map.get(this1, element_name)
       if (not Kernel.is_nil(component)), do: validate_component_attribute(component, attribute_name), else: false
-      (fn ->
-        this = element.allowedAttributes
-
-                        case Enum.find_index(_this, fn item -> item == attribute_name end) do
-                            nil -> -1
-                            idx -> idx
-                        end
-
-      end).() != -1
     else
-      (fn ->
-        this = element.allowedAttributes
-
-                        case Enum.find_index(_this, fn item -> item == attribute_name end) do
-                            nil -> -1
-                            idx -> idx
-                        end
-
-      end).() != -1
+      Enum.member?(element.allowedAttributes, attribute_name)
     end
   end
   def get_allowed_attributes(element_name) do
@@ -274,7 +260,7 @@ defmodule HXXComponentRegistry do
         else
           s = name
           if (StringTools.starts_with(s, "phx_")) do
-            Enum.join((fn -> StringTools.haxe_split(s, "_") end).(), "-")
+            Enum.join(StringTools.haxe_split(s, "_"), "-")
           else
             s = name
             if (StringTools.starts_with(s, "phx") and StringTools.haxe_index_of(s, "_", 0) == -1) do
@@ -282,7 +268,7 @@ defmodule HXXComponentRegistry do
             else
               s = name
               if (StringTools.starts_with(s, "aria_")) do
-                Enum.join((fn -> StringTools.haxe_split(s, "_") end).(), "-")
+                Enum.join(StringTools.haxe_split(s, "_"), "-")
               else
                 s = name
                 if (StringTools.starts_with(s, "aria") and StringTools.haxe_index_of(s, "_", 0) == -1) do
@@ -290,7 +276,7 @@ defmodule HXXComponentRegistry do
                 else
                   s = name
                   if (StringTools.starts_with(s, "data_")) do
-                    Enum.join((fn -> StringTools.haxe_split(s, "_") end).(), "-")
+                    Enum.join(StringTools.haxe_split(s, "_"), "-")
                   else
                     s = name
                     if (StringTools.starts_with(s, "data") and StringTools.haxe_index_of(s, "_", 0) == -1) do
@@ -298,7 +284,7 @@ defmodule HXXComponentRegistry do
                     else
                       s = name
                       if (StringTools.haxe_index_of(s, "_", 0) != -1) do
-                        Enum.join((fn -> StringTools.haxe_split(s, "_") end).(), "-")
+                        Enum.join(StringTools.haxe_split(s, "_"), "-")
                       else
                         s = name
                         if (s == String.downcase(s)), do: s, else: camel_to_kebab(name)
@@ -334,14 +320,7 @@ defmodule HXXComponentRegistry do
     end) do
       {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
       _ ->
-        (fn ->
-
-                          case Enum.find_index(_this, fn item -> item == attribute_name end) do
-                              nil -> -1
-                              idx -> idx
-                          end
-
-        end).() != -1
+        Enum.member?(get_global_attributes(), attribute_name)
     end)
   end
   defp get_global_attributes() do

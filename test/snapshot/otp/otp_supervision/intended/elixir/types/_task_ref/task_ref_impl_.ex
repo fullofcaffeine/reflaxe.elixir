@@ -16,10 +16,12 @@ defmodule TaskRef_Impl_ do
     task.owner
   end
   def is_alive(this1) do
-    Process.alive?((fn ->
-      task = this1
-      task.pid
-    end).())
+    Process.alive?(
+      (fn ->
+         task = this1
+         task.pid
+       end).()
+    )
   end
   def to_string(this1) do
     Kernel.inspect(this1)

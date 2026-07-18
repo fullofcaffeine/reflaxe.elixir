@@ -1,44 +1,191 @@
 {
-  "filesGenerated": [
-  "type.ex",
-  "std.ex",
-  "reflaxe/exception.ex",
-  "reflaxe/elixir/haxe_throw.ex",
-  "reflaxe/elixir/haxe_float.ex",
-  "main.ex",
-  "haxe/iterators/array_key_value_iterator.ex",
-  "haxe/iterators/array_iterator.ex",
-  "haxe/_call_stack/call_stack_impl_.ex",
-  "elixir/types/task_yield_result.ex",
-  "elixir/types/task_stream_result.ex",
-  "elixir/types/registry_type.ex",
-  "elixir/types/registry_options_builder.ex",
-  "elixir/types/monitor_info.ex",
-  "elixir/types/init_result.ex",
-  "elixir/types/handle_cast_result.ex",
-  "elixir/types/handle_call_result.ex",
-  "elixir/types/gen_server_option_builder.ex",
-  "elixir/types/callback_result_builder.ex",
-  "elixir/types/_task_ref/task_ref_impl_.ex",
-  "elixir/types/_registry_key/registry_key_impl_.ex",
-  "elixir/types/_reference/reference_impl_.ex",
-  "elixir/types/_process_flag/process_flag_impl_.ex",
-  "elixir/types/_priority/priority_impl_.ex",
-  "elixir/types/_pid/pid_impl_.ex",
-  "elixir/types/_message_queue_data/message_queue_data_impl_.ex",
-  "elixir/types/_gen_server_ref/gen_server_ref_impl_.ex",
-  "elixir/types/_atom/atom_impl_.ex",
-  "elixir/registry_error.ex",
-  "elixir/otp/supervisor_strategy.ex",
-  "elixir/otp/supervisor_options_builder.ex",
-  "elixir/otp/shutdown_type.ex",
-  "elixir/otp/restart_type.ex",
-  "elixir/otp/child_type.ex",
-  "elixir/otp/child_spec_format.ex",
-  "elixir/otp/child_spec_builder.ex",
-  "elixir/comparison_result.ex"
-],
-  "id": 0,
-  "wasCached": false,
-  "version": 1
+	"filesGenerated": [
+		"type.ex",
+		"std.ex",
+		"reflaxe/exception.ex",
+		"reflaxe/elixir/haxe_throw.ex",
+		"reflaxe/elixir/haxe_float.ex",
+		"main.ex",
+		"haxe/iterators/array_key_value_iterator.ex",
+		"haxe/iterators/array_iterator.ex",
+		"haxe/_call_stack/call_stack_impl_.ex",
+		"elixir/types/task_yield_result.ex",
+		"elixir/types/task_stream_result.ex",
+		"elixir/types/registry_type.ex",
+		"elixir/types/registry_options_builder.ex",
+		"elixir/types/monitor_info.ex",
+		"elixir/types/init_result.ex",
+		"elixir/types/handle_cast_result.ex",
+		"elixir/types/handle_call_result.ex",
+		"elixir/types/gen_server_option_builder.ex",
+		"elixir/types/callback_result_builder.ex",
+		"elixir/types/_task_ref/task_ref_impl_.ex",
+		"elixir/types/_registry_key/registry_key_impl_.ex",
+		"elixir/types/_reference/reference_impl_.ex",
+		"elixir/types/_process_flag/process_flag_impl_.ex",
+		"elixir/types/_priority/priority_impl_.ex",
+		"elixir/types/_pid/pid_impl_.ex",
+		"elixir/types/_message_queue_data/message_queue_data_impl_.ex",
+		"elixir/types/_gen_server_ref/gen_server_ref_impl_.ex",
+		"elixir/registry_error.ex",
+		"elixir/otp/supervisor_strategy.ex",
+		"elixir/otp/supervisor_options_builder.ex",
+		"elixir/otp/shutdown_type.ex",
+		"elixir/otp/restart_type.ex",
+		"elixir/otp/child_type.ex",
+		"elixir/otp/child_spec_format.ex",
+		"elixir/otp/child_spec_builder.ex",
+		"elixir/comparison_result.ex"
+	],
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 0,
+	"wasCached": false,
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "elixir/comparison_result.ex",
+			"sha256": "9bc3cb8fcc91eb091285964b6172672283ae6350964392809d446b51c800fe04"
+		},
+		{
+			"path": "elixir/otp/child_spec_builder.ex",
+			"sha256": "14ea99a231d90cb65a86e4c972f8d31e74104cf495c730a6af41c0deea0fd7e6"
+		},
+		{
+			"path": "elixir/otp/child_spec_format.ex",
+			"sha256": "4f76007c88d1ba4281d83dcca8ffc22a12f9e2c2d0da0050de4f2b142544afc3"
+		},
+		{
+			"path": "elixir/otp/child_type.ex",
+			"sha256": "a933df8143ef501c6c3f658f4740d6f2f3e9a40e7ae5af48c70e090da4065ca9"
+		},
+		{
+			"path": "elixir/otp/restart_type.ex",
+			"sha256": "6d65661146381d0f4044eac200bf868ea3cdfb7cb0472c54341db8655a857cc4"
+		},
+		{
+			"path": "elixir/otp/shutdown_type.ex",
+			"sha256": "0de416287b9a0676e25df5ac7def869652d7b7a2fc0ff93baa559cdd7348d9ac"
+		},
+		{
+			"path": "elixir/otp/supervisor_options_builder.ex",
+			"sha256": "9aaa29d397ef9f4d90b7fa0a2055d0d2a4c5f9549c8d80051601f1e98df08c86"
+		},
+		{
+			"path": "elixir/otp/supervisor_strategy.ex",
+			"sha256": "0e3a75cf0ec36827542182526b8dad3495be7c0b38df4a77cf07f86dc8b30cea"
+		},
+		{
+			"path": "elixir/registry_error.ex",
+			"sha256": "5fd6bd8c3727d404190a8ccb0b25f68f52e87d289965fee01c4105b8b5f2acc8"
+		},
+		{
+			"path": "elixir/types/_gen_server_ref/gen_server_ref_impl_.ex",
+			"sha256": "3671bb50eafa5759381ef979a86a5ed3d4e2c267a4d1fb7af40151f623b7170e"
+		},
+		{
+			"path": "elixir/types/_message_queue_data/message_queue_data_impl_.ex",
+			"sha256": "54576cb63a349ab6ec9cc54d5744c20cecb768992ef87cc31c6138a034fc8a61"
+		},
+		{
+			"path": "elixir/types/_pid/pid_impl_.ex",
+			"sha256": "f387d330024b7810e8608cf27e3d5d3af2e47193a96897b9758cedc7c61d8e82"
+		},
+		{
+			"path": "elixir/types/_priority/priority_impl_.ex",
+			"sha256": "c92e69283f73c17cef8514e5e5857d68e0473e31c84e3689d30d182c62b251b2"
+		},
+		{
+			"path": "elixir/types/_process_flag/process_flag_impl_.ex",
+			"sha256": "f9e3359ba4b2b253669bc6fce97f7f9dd6585d4c9b9488edd244c631f7766cc2"
+		},
+		{
+			"path": "elixir/types/_reference/reference_impl_.ex",
+			"sha256": "70044b49cccebf9f5a4802324643b60051f0edb80bb5ce707b533cdb05f432b5"
+		},
+		{
+			"path": "elixir/types/_registry_key/registry_key_impl_.ex",
+			"sha256": "bd0af93ee2c61a0232ed20bfad12a7de8f9d46e66a46437690b9634f0d843478"
+		},
+		{
+			"path": "elixir/types/_task_ref/task_ref_impl_.ex",
+			"sha256": "ddb4919f358f7ae786102c2b419fe412616f42d30f3bd8f2f11a257a8165e6b2"
+		},
+		{
+			"path": "elixir/types/callback_result_builder.ex",
+			"sha256": "ad1bf87192d8cf806ea191f7fff9f4f769b563aacedd7c1b0cdbe4152ca95b1e"
+		},
+		{
+			"path": "elixir/types/gen_server_option_builder.ex",
+			"sha256": "87b1ba02a792ebd5cb12d8f80bc157e5689d55bd982fb592ea00ffab93e58ac8"
+		},
+		{
+			"path": "elixir/types/handle_call_result.ex",
+			"sha256": "778df9c30a82b0e8439de9f837a2d49241d8c94795bf9394e864d4280c837b8e"
+		},
+		{
+			"path": "elixir/types/handle_cast_result.ex",
+			"sha256": "8e041d58ed1aa61639fe184dc5264493f7a8cf346179cca146556f09061ab8d9"
+		},
+		{
+			"path": "elixir/types/init_result.ex",
+			"sha256": "e470f9b8f7840d80b812412b7b4086466a45eaf026297f4023a24dbd442c00bf"
+		},
+		{
+			"path": "elixir/types/monitor_info.ex",
+			"sha256": "54d010a6cc91410a0a446c6f1639960cb9d0e88f91bb1cafc82b163f6988f35e"
+		},
+		{
+			"path": "elixir/types/registry_options_builder.ex",
+			"sha256": "b4261b75ac3d19626dac9fb81d330bcd1040b5b0fc98bdfe0126443054022839"
+		},
+		{
+			"path": "elixir/types/registry_type.ex",
+			"sha256": "d79448b9e596e7fe944c00ac3cd5d22ff7fc8e06eb4cbe7b00c54c4c244879b4"
+		},
+		{
+			"path": "elixir/types/task_stream_result.ex",
+			"sha256": "3c77c4204f40dc1f5deae7709dc007387906c94bc7a7e82fb320b1fa17d6a45a"
+		},
+		{
+			"path": "elixir/types/task_yield_result.ex",
+			"sha256": "a310a67e486fa25bf471656b43a45be2559aa0933186ce6c3e8705d5bc5dca5c"
+		},
+		{
+			"path": "haxe/_call_stack/call_stack_impl_.ex",
+			"sha256": "ab46ba4f786a95420ae1cd78188f77ebebc3ced2db90d1351297f573f30dadf8"
+		},
+		{
+			"path": "haxe/iterators/array_iterator.ex",
+			"sha256": "3186b41d2124063a790c08804f1bfb9c3a7508de7f6a99ad2cdb1687f1c2b82d"
+		},
+		{
+			"path": "haxe/iterators/array_key_value_iterator.ex",
+			"sha256": "7c2a5a2cc281bb9a1c5ed1bb56e351bdb68b53a7d048fa70decc5bfdd527419e"
+		},
+		{
+			"path": "main.ex",
+			"sha256": "1acac05c18a259b10eff7f36b5443679073fed7c6973ee63e652b6f70a6cae72"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_float.ex",
+			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_throw.ex",
+			"sha256": "642bbf29d073acc9eb2ffcea4a8e6016396a43f1a4180a79331b537bfefc6094"
+		},
+		{
+			"path": "reflaxe/exception.ex",
+			"sha256": "02fc779b3a5c750db17ab47e624c22bbb8887786a22a767969ab23d1946be755"
+		},
+		{
+			"path": "std.ex",
+			"sha256": "cfc6ad389294bc64c9d82be070797b4e65041a3d225fc0741500ca7cc6c8f804"
+		},
+		{
+			"path": "type.ex",
+			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
+		}
+	],
+	"generation": "f2a7182e322a234ea805124c37374efe5c9150653b42ca94b087106b473d3b2c"
 }

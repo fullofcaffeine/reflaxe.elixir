@@ -68,6 +68,8 @@ class EarlyReturnIfElseTransforms {
 			case EBlock(stmts) | EDo(stmts): stmts != null && stmts.length > 0 && isFromReturn(stmts[stmts.length - 1]);
 			case EParen(inner):
 				isFromReturn(inner);
+			case EIf(_, thenBranch, elseBranch) if (elseBranch != null): isFromReturn(thenBranch) && isFromReturn(elseBranch);
+			case EUnless(_, body, elseBranch) if (elseBranch != null): isFromReturn(body) && isFromReturn(elseBranch);
 			default:
 				false;
 		};

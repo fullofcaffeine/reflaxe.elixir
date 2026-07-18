@@ -54,18 +54,14 @@ defmodule Main do
   end
   defp test_index_of_function() do
     numbers = [1, 2, 3, 4, 5, 3, 6]
-    _first_three = (
-                    case Enum.find_index(numbers, fn item -> item == 3 end) do
-                        nil -> -1
-                        idx -> idx
-                    end
-    )
-    _not_found = (
-                    case Enum.find_index(numbers, fn item -> item == 10 end) do
-                        nil -> -1
-                        idx -> idx
-                    end
-    )
+    _first_three = (case Enum.find_index(numbers, fn item -> item == 3 end) do
+      nil -> -1
+      index -> index
+    end)
+    _not_found = (case Enum.find_index(numbers, fn item -> item == 10 end) do
+      nil -> -1
+      index -> index
+    end)
     nil
   end
   defp test_join_function() do

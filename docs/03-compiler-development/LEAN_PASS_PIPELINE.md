@@ -48,7 +48,7 @@ opt into the full granular list:
 
 ### Inventory and bounded timing baseline
 
-The validated granular registry contains 576 effective passes, but normal compilation no longer walks
+The validated granular registry contains 577 effective passes, but normal compilation no longer walks
 every framework transform for every module. `PassScopeManifest` assigns exact stable pass IDs to an
 ownership scope. `PassApplicability` then derives module capabilities from Haxe annotations, retained
 compiler metadata, and structured ElixirAST nodes. It does not classify by pass-name fragments,
@@ -66,9 +66,9 @@ npm run profile:passes:baseline
 ```
 
 Each scenario selects one module and records only executed passes plus one summary. The summary also
-records skipped and total registry counts, and the guard requires `executed + skipped = 576` with
+records skipped and total registry counts, and the guard requires `executed + skipped = 577` with
 stable registry indexes. Current representative counts are 406 executed passes for core and stdlib,
-569 for Phoenix, 573 for LiveView, 453 for Ecto, 468 for HXX, and 409 for ExUnit. Checked-in
+569 for Phoenix, 573 for LiveView, 453 for Ecto, 468 for HXX, 409 for ExUnit, and 407 for Mix. Checked-in
 milliseconds are reference observations, not performance thresholds; compare them directionally on
 the same machine. Counts and report shape are the stable contract.
 

@@ -126,6 +126,14 @@ extern class Kernel {
 	@:native("elem")
 	static function elem(tuple:Term, index:Int):Term;
 
+	/**
+	 * Typed projection from a tuple after the caller has validated its shape/tag.
+	 * This remains the native `elem/2` operation; the type parameter prevents a
+	 * broad `Dynamic` escape at explicit BEAM interop boundaries.
+	 */
+	@:native("elem")
+	static function elemAs<T>(tuple:Term, index:Int):T;
+
 	@:native("put_elem")
 	static function putElem(tuple:Term, index:Int, value:Term):Term;
 
@@ -179,6 +187,14 @@ extern class Kernel {
 	@:native("raise")
 	static function raise(message:String):Void;
 
+	/** Raise while allowing a typed expression position to remain exhaustive. */
+	@:native("raise")
+	static function raiseValue<T>(message:String):T;
+
+	/** Re-raise an already constructed native exception term. */
+	@:native("raise")
+	static function raiseNative<T>(exception:elixir.types.NativeException):T;
+
 	@:native("raise")
 	static function raiseException(exception:Term, attributes:Array<Term>):Void;
 
@@ -192,6 +208,10 @@ extern class Kernel {
 	@:native("inspect")
 	@:overload(function(term:Term):String {})
 	static function inspect(term:Term, options:Term):String;
+
+	/** Typed keyword-list form of `inspect/2`. */
+	@:native("inspect")
+	static function inspectWithKeywordOptions(term:Term, options:elixir.types.KeywordList<Term>):String;
 
 	@:native("dbg")
 	static function dbg(value:Term):Term; // Debug helper (Elixir 1.14+)
@@ -227,6 +247,10 @@ extern class Kernel {
 
 	@:native("min")
 	static function min(a:Term, b:Term):Term;
+
+	/** Integer-preserving `min/2` used by bounded index scans. */
+	@:native("min")
+	static function minInt(a:Int, b:Int):Int;
 
 	// Node operations
 	@:native("node")

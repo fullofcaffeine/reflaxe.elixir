@@ -37,7 +37,7 @@ defmodule Main do
     bytes = Bytes.of_string("hello", {:utf8})
     base = BytesInput.new(bytes, nil, nil)
     buf = Bytes.alloc(2)
-    _buffered = BufferInput.new(base, buf, nil, nil)
+    _buffered = BufferInput.new(base, buf, 0, 0)
     nil
   end
   defp string_input() do

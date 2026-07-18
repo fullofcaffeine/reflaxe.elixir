@@ -1,0 +1,77 @@
+{
+  "schema": "reflaxe-elixir/checked-in-haxe-tooling@4",
+  "build": "tooling/live_react/build.hxml",
+  "buildSha256": "c5b68fc10efe50017d5c930b561a1ed67d87d1eeb54b7fd7f4f6afa62dea21aa",
+  "artifacts": [
+    {
+      "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/LiveReactLifecycle.hx",
+      "generated": "lib/haxe_phoenix_live_react.ex",
+      "sourceSha256": "bdd4152fbf83de1dd83bbb6b3bdfc020b1fe54038636ad7056e9d72c34d322ca",
+      "generatedSha256": "2972f8658c077b9efe8f5eeebac19d94bc49e9f37720dfd6be8cf976adc7e50e"
+    },
+    {
+      "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/IntegrationCore.hx",
+      "generated": "lib/haxe_phoenix_live_react/core.ex",
+      "sourceSha256": "0c233a54b5ece8f1b30853cace5e70eb0e3347925e1d3d11eadda5839aaf01e2",
+      "generatedSha256": "fe932afe18b89c675126692e38f7d410815addb1b0fbf25a4e8a4b4eb0900409"
+    },
+    {
+      "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/LiveReactHost.hx",
+      "generated": "lib/haxe_phoenix_live_react/host.ex",
+      "sourceSha256": "1e5dda589672438a0047c13d91115c587f8a182109d3888fc928bc8790d58939",
+      "generatedSha256": "3f49b6b7153064eda01a4751a9154da8a4aecbc809f58a33dd5b7ebd6c984898"
+    },
+    {
+      "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/LiveReactSourcePatcher.hx",
+      "generated": "lib/haxe_phoenix_live_react/source_patcher.ex",
+      "sourceSha256": "6ead3cd90ee1e2d89cf5e6522e07c978bb5da9dd321756b63bb4ede94d0018cb",
+      "generatedSha256": "10788bef7a2b87fd0151c07f2b2ea9433fa88c32c4c0cc561a6909edb1092b9d"
+    },
+    {
+      "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/LiveReactDependency.hx",
+      "generated": "lib/haxe_phoenix_live_react/dependency.ex",
+      "sourceSha256": "bcb172e981556844a7fe3eff8c771c5df1ab500ebd177166f9eda47cf9518b20",
+      "generatedSha256": "9b6807093f764f9df5b4dac3004978fae0d9951e5d9984b1e20fca17b9f9d2db"
+    },
+    {
+      "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/LiveReactPackage.hx",
+      "generated": "lib/haxe_phoenix_live_react/package.ex",
+      "sourceSha256": "3d0e870f0f77b3c4fd27be2a75e69e2a6ef4679774bfbaf4b0923ed8351f6c92",
+      "generatedSha256": "07cb8f4020b0be090be8ab60f0da199f7d5b28baf48fc4ea7af8dc42a05ba472"
+    },
+    {
+      "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/LiveReactMixTask.hx",
+      "generated": "lib/mix/tasks/haxe.phoenix.live_react.ex",
+      "sourceSha256": "6062dc481e980cd0b6401d5b46d09fc33020a24a9ce3157a338a7ce2cac77b5e",
+      "generatedSha256": "6bdb64d6da60c041c556fc9191038a368685ed7dab94d0564f36fb61e021f9df"
+    },
+    {
+      "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/ProjectPatch.hx",
+      "generated": "lib/haxe_project_patch.ex",
+      "sourceSha256": "9c3b46539c562f6bfdfe4a48c0958943a87a64f75ae09bab55ef9ae2d43fabb6",
+      "generatedSha256": "e3d89f1833e1cb5107eb1d45130983e437eff3950dd33a7bf8a6c1365f5c800d"
+    },
+    {
+      "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/PatchPlan.hx",
+      "generated": "lib/haxe_project_patch/plan.ex",
+      "sourceSha256": "75e903c5356a95b77253f84eccf5c5ae6cadcd8bd1adffbdbeed9cf4a39601b2",
+      "generatedSha256": "a90dd03a4ccfb5098efed007ac167a30fe04836a148a08f00b22b7925fd94a5b"
+    },
+    {
+      "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/PatchOperation.hx",
+      "generated": "lib/haxe_project_patch/operation.ex",
+      "sourceSha256": "509d78cc683ecaf50f02cf7ebafa256b2c4ab3d88621efe67568591da4d00016",
+      "generatedSha256": "148395d2462766f8292cf98a4ff44c773389cc618b30431a6beff9217ce428b0"
+    }
+  ],
+  "sharedInputs": [
+    {
+      "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/LiveReactTypes.hx",
+      "sourceSha256": "1d4a24989ddfa2f73f1ad85eab26d4cdf2ea40ed17be218753f0a98c1c260f1b"
+    },
+    {
+      "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/PatchTypes.hx",
+      "sourceSha256": "e76a1de106e7ebf7626ea60ff2f567ac4c4834e55945b66e8941af237ffbb667"
+    }
+  ]
+}

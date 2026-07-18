@@ -1,5 +1,5 @@
 defmodule ArrayBufferView_Impl_ do
-  def from_bytes(bytes, pos, length) do
+  def from_bytes(bytes, pos \\ 0, length \\ nil) do
     length = if (Kernel.is_nil(length)), do: (bytes.length - pos), else: length
     if (pos < 0 or length < 0 or pos + length > bytes.length) do
       raise Reflaxe.Elixir.HaxeThrow, [value: {:outside_bounds}]

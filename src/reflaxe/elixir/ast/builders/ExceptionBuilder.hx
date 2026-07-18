@@ -85,6 +85,28 @@ class ExceptionBuilder {
 			return null;
 		}
 
+		var nativeExceptionCatches = [for (c in catches) if (isNativeExceptionCatchType(c.v.t)) c];
+		if (nativeExceptionCatches.length > 0) {
+			if (catches.length != 1) {
+				context.error("A native Elixir exception catch must be the only catch clause because it rescues the complete target exception domain.",
+					nativeExceptionCatches[0].expr.pos);
+				return null;
+			}
+
+			var nativeCatch = nativeExceptionCatches[0];
+			var nativeCatchName = VariableAnalyzer.toElixirVarName(nativeCatch.v.name);
+			var nativeCatchBody = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(nativeCatch.expr, context);
+			if (nativeCatchBody == null)
+				nativeCatchBody = makeAST(ENil);
+
+			return ETry(body, [
+				{
+					pattern: nativeCatchName == "_" ? PWildcard : PVar(nativeCatchName),
+					body: nativeCatchBody
+				}
+			], [], null, null);
+		}
+
 		// Haxe `try/catch` must not intercept loop-control `throw(:break|:continue)` which we use internally.
 		// Those are Elixir `throw/1` payloads and are intentionally handled by `catch` clauses in LoopBuilder.
 		// Therefore, we compile Haxe exceptions as Elixir exceptions (raise/rescue), not `throw`.
@@ -180,6 +202,17 @@ class ExceptionBuilder {
 		];
 
 		return ETry(body, rescueClauses, [], null, null);
+	}
+
+	static function isNativeExceptionCatchType(t:Null<Type>):Bool {
+		if (t == null)
+			return false;
+		return switch (t) {
+			case TLazy(resolve): isNativeExceptionCatchType(resolve());
+			case TAbstract(ref, _): var type = ref.get(); type.meta.has(":elixirNativeException") || type.meta.has("elixirNativeException");
+			case TInst(ref, _): var type = ref.get(); type.meta.has(":elixirNativeException") || type.meta.has("elixirNativeException");
+			default: false;
+		}
 	}
 
 	/**

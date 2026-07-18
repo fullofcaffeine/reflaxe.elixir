@@ -4,7 +4,7 @@ Generated from the validated granular registry by `tools/RegistryOrderDoc.hx`; d
 
 Scope labels are executable semantic ownership. `PassScopeManifest` maps exact stable pass IDs to scopes, while `PassApplicability` derives module capabilities only from typed annotation metadata and structured ElixirAST. The verification-only `-D reflaxe_elixir_disable_pass_scopes` switch restores legacy all-pass execution for byte-parity checks.
 
-- Effective granular passes per transformed module: **576**
+- Effective granular passes per transformed module: **578**
 - Full deterministic order: [TRANSFORM_PASS_REGISTRY_ORDER_GRANULAR.md](TRANSFORM_PASS_REGISTRY_ORDER_GRANULAR.md)
 - Rebuild: `npm run docs:passes`
 - Drift guard: `npm run guard:pass-inventory`
@@ -17,7 +17,7 @@ Scope labels are executable semantic ownership. `PassScopeManifest` maps exact s
 | Phase | Input invariant | Output invariant | Known downstream dependency | Representative tests |
 |---|---|---|---|---|
 | `bootstrap` Bootstrap normalization | Builder output after initial receiver-effect lowering. | Early returns, source binders, inline-expansion artifacts, and local names have stable AST carriers. | Framework annotation and core lowering passes consume these normalized binders and expression containers. | core/basic_syntax, regression/inline_if_g_variables |
-| `framework-annotations` Framework annotations | Module metadata and normalized authored definitions are available. | Phoenix, LiveView, Ecto, OTP, and ExUnit module/callback scaffolding is represented in ElixirAST. | Guard, interpolation, and core passes assume generated callback heads and framework module forms already exist. | phoenix/router, liveview/golden_liveview_fixture, ecto/changeset, exunit/exunit_comprehensive |
+| `framework-annotations` Framework annotations | Module metadata and normalized authored definitions are available. | Phoenix, LiveView, Ecto, OTP, ExUnit, and Mix module/callback scaffolding is represented in ElixirAST. | Guard, interpolation, and core passes assume generated callback heads and framework module forms already exist. | phoenix/router, liveview/golden_liveview_fixture, ecto/changeset, exunit/exunit_comprehensive, core/mix_task_annotation |
 | `guards-interpolation` Guards and interpolation | Case clauses and framework callbacks have their target-level heads. | Guard binders, list patterns, complex expression containers, and interpolation bodies are target-valid. | Core control-flow and collection lowering relies on valid clause binders and expression-position blocks. | core/string_interpolation_test, regression/guard_condition_grouping |
 | `core-lowering` Core semantic lowering | Target-valid guards and expression containers are available. | Imperative state, loops, collections, pattern matches, stdlib calls, and framework call shapes have Elixir carriers. | HEEx conversion and late hygiene consume these stable target expressions and receiver/reducer bindings. | core/basic_syntax, stdlib/stdlib_externs, regression/non_void_tail_values |
 | `hxx-heex` HXX and HEEx lowering | Core expressions and framework callback signatures are stable. | Typed HXX content is represented as valid HEEx sigils with assigns, imports, components, and control tags normalized. | Late hygiene must preserve sigil contents while repairing only target binders and warning-producing shells. | phoenix/hxx_inline_markup_basic, liveview/golden_liveview_fixture |
@@ -35,6 +35,7 @@ Scope labels are executable semantic ownership. `PassScopeManifest` maps exact s
 | `ecto` Ecto | Ecto annotations/context or structured Ecto references; Phoenix/OTP-owned modules remain conservatively eligible for generated or unqualified Repo shapes. | ecto/changeset, ecto/typed_query_basic |
 | `hxx` HXX and HEEx | Typed HXX metadata, HEEx fragments/sigils, assigns nodes, or an authored assigns function argument. | phoenix/hxx_inline_markup_basic, liveview/golden_liveview_fixture |
 | `exunit` ExUnit | ExUnit annotation/metadata or structured ExUnit module references. | exunit/exunit_comprehensive |
+| `mix` Mix | Typed @:mixTask metadata or structured Mix module references. | core/mix_task_annotation |
 | `diagnostics` Diagnostics | Compile-time define gated; production builds retain no diagnostic output. | test:result-invariant, guard:pass-inventory |
 | `mixed` Mixed bundle | Lean-mode phase bundle; each contained granular pass evaluates its own typed scope before execution. | test:quick |
 
@@ -44,7 +45,7 @@ A family is the intersection of a phase contract and semantic ownership scope. E
 
 | Family | Effective passes |
 |---|---:|
-| `absolute-final.core` | 117 |
+| `absolute-final.core` | 118 |
 | `absolute-final.ecto` | 7 |
 | `absolute-final.exunit` | 2 |
 | `absolute-final.hxx` | 6 |
@@ -63,6 +64,7 @@ A family is the intersection of a phase contract and semantic ownership scope. E
 | `framework-annotations.exunit` | 1 |
 | `framework-annotations.hxx` | 1 |
 | `framework-annotations.liveview` | 3 |
+| `framework-annotations.mix` | 1 |
 | `framework-annotations.phoenix` | 7 |
 | `guards-interpolation.core` | 21 |
 | `guards-interpolation.liveview` | 1 |

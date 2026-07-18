@@ -480,9 +480,9 @@ defmodule HaxePhoenixScaffold do
             :missing ->
               current
 
-            :error ->
+            {:error, reason} ->
               warn_or_raise(
-                "failed to patch #{file_label}: malformed reflaxe_elixir marker block (#{begin_token})",
+                "failed to patch #{file_label}: malformed reflaxe_elixir marker block (#{begin_token}): #{inspect(reason)}",
                 strict
               )
 
@@ -752,9 +752,9 @@ defmodule HaxePhoenixScaffold do
           List.insert_at(lines, insert_at, Enum.join(block, "\n")) |> Enum.join("\n")
         end
 
-      :error ->
+      {:error, reason} ->
         warn_or_raise(
-          "failed to patch assets/js/app.js: malformed reflaxe_elixir marker block (hx_app_import)",
+          "failed to patch assets/js/app.js: malformed reflaxe_elixir marker block (hx_app_import): #{inspect(reason)}",
           strict
         )
 
@@ -889,18 +889,18 @@ defmodule HaxePhoenixScaffold do
               end
             end
 
-          :error ->
+          {:error, reason} ->
             warn_or_raise(
-              "failed to patch assets/js/app.js: malformed reflaxe_elixir marker block (hooks_after_decl)",
+              "failed to patch assets/js/app.js: malformed reflaxe_elixir marker block (hooks_after_decl): #{inspect(reason)}",
               strict
             )
 
             content
         end
 
-      :error ->
+      {:error, reason} ->
         warn_or_raise(
-          "failed to patch assets/js/app.js: malformed reflaxe_elixir marker block (hooks_property)",
+          "failed to patch assets/js/app.js: malformed reflaxe_elixir marker block (hooks_property): #{inspect(reason)}",
           strict
         )
 
@@ -1139,9 +1139,9 @@ defmodule HaxePhoenixScaffold do
               insertion <> String.slice(content, insert_at..-1//1)
           end
 
-        :error ->
+        {:error, reason} ->
           warn_or_raise(
-            "failed to patch config/dev.exs: malformed reflaxe_elixir marker block (haxe_client)",
+            "failed to patch config/dev.exs: malformed reflaxe_elixir marker block (haxe_client): #{inspect(reason)}",
             strict
           )
 
@@ -1242,9 +1242,9 @@ defmodule HaxePhoenixScaffold do
             end
           end
 
-        :error ->
+        {:error, reason} ->
           warn_or_raise(
-            "failed to patch mix.exs: malformed reflaxe_elixir marker block (haxe_compile_client_alias)",
+            "failed to patch mix.exs: malformed reflaxe_elixir marker block (haxe_compile_client_alias): #{inspect(reason)}",
             strict
           )
 
@@ -1312,9 +1312,9 @@ defmodule HaxePhoenixScaffold do
             String.slice(content, 0, insert_at) <> insertion <> remainder
           end
 
-        :error ->
+        {:error, reason} ->
           warn_or_raise(
-            "failed to patch mix.exs: malformed reflaxe_elixir marker block (#{alias_name})",
+            "failed to patch mix.exs: malformed reflaxe_elixir marker block (#{alias_name}): #{inspect(reason)}",
             strict
           )
 

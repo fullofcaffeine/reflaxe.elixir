@@ -15,6 +15,7 @@ enum abstract PassScope(String) from String to String {
 	var Ecto = "ecto";
 	var Hxx = "hxx";
 	var ExUnit = "exunit";
+	var Mix = "mix";
 	var Diagnostics = "diagnostics";
 	var Mixed = "mixed";
 }
@@ -26,6 +27,7 @@ typedef PassCapabilities = {
 	var ecto:Bool;
 	var hxx:Bool;
 	var exunit:Bool;
+	var mix:Bool;
 }
 
 /**
@@ -33,7 +35,7 @@ typedef PassCapabilities = {
  *
  * WHAT
  * - Identifies whether the current module can require Phoenix/OTP, LiveView,
- *   Ecto, HXX/HEEx, or ExUnit transforms.
+ *   Ecto, HXX/HEEx, ExUnit, or Mix transforms.
  *
  * WHY
  * - Framework passes are expensive full-tree walks and are irrelevant to most
@@ -42,7 +44,7 @@ typedef PassCapabilities = {
  * HOW
  * - Reads Haxe annotations retained in `CompilationContext`, compiler-only
  *   `ElixirMetadata`, and structured target nodes. Exact `Phoenix.*`, `Ecto.*`,
- *   and `ExUnit.*` references are real target API boundaries, not generated app
+ *   `ExUnit.*`, and `Mix.*` references are real target API boundaries, not generated app
  *   or file-name heuristics. The runner recomputes these facts at phase
  *   boundaries so an earlier phase can expose a capability needed later.
  * - Phoenix/OTP modules remain conservatively eligible for Ecto passes because
@@ -51,8 +53,8 @@ typedef PassCapabilities = {
  *   compare this path with legacy all-pass execution.
  *
  * EXAMPLE
- * - A plain core module skips LiveView passes. A `@:liveview` module enables
- *   LiveView, Phoenix, and HXX capabilities before annotation lowering begins.
+ * - A plain core module skips LiveView and Mix passes. A `@:mixTask` module
+ *   enables Mix capability before annotation lowering begins.
  */
 class PassApplicability {
 	public static function analyze(ast:ElixirAST, ?context:reflaxe.elixir.CompilationContext):PassCapabilities {
@@ -61,7 +63,8 @@ class PassApplicability {
 			liveView: false,
 			ecto: false,
 			hxx: false,
-			exunit: false
+			exunit: false,
+			mix: false
 		};
 		if (context != null && context.currentClass != null) {
 			var classMetadata = context.currentClass.meta;
@@ -81,6 +84,7 @@ class PassApplicability {
 			capabilities.ecto = classMetadata.has(":schema") || classMetadata.has(":repo") || classMetadata.has(":migration")
 				|| classMetadata.has(":query") || classMetadata.has(":changeset") || classMetadata.has(":postgrexTypes") || classMetadata.has(":dbTypes");
 			capabilities.exunit = classMetadata.has(":exunit") || classMetadata.has("exunit");
+			capabilities.mix = classMetadata.has(":mixTask");
 			capabilities.hxx = capabilities.liveView
 				|| classMetadata.has(":component")
 				|| classMetadata.has(":hxx_inline_markup")
@@ -108,6 +112,8 @@ class PassApplicability {
 				}
 				if (metadata.isExunit == true)
 					capabilities.exunit = true;
+				if (metadata.isMixTask == true)
+					capabilities.mix = true;
 				if (metadata.usesHxx == true
 					|| (metadata.heexFragments != null && metadata.heexFragments.length > 0)
 					|| (metadata.heexAST != null && metadata.heexAST.length > 0))
@@ -160,6 +166,7 @@ class PassApplicability {
 			case Ecto: capabilities.ecto || capabilities.phoenix;
 			case Hxx: capabilities.hxx;
 			case ExUnit: capabilities.exunit;
+			case Mix: capabilities.mix;
 			case Core | Stdlib | Diagnostics | Mixed: true;
 			default: true;
 		};
@@ -178,6 +185,8 @@ class PassApplicability {
 			capabilities.ecto = true;
 		if (module == "ExUnit" || module.startsWith("ExUnit."))
 			capabilities.exunit = true;
+		if (module == "Mix" || module.startsWith("Mix."))
+			capabilities.mix = true;
 	}
 }
 #end

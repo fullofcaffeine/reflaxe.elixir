@@ -25,7 +25,7 @@ defmodule Template do
     struct = %{struct | source: str}
     struct
   end
-  def execute(struct, context, macros) do
+  def execute(struct, context, macros \\ nil) do
     render(struct.source, context, (if (Reflaxe.Elixir.HaxeFloat.eq(macros, nil)), do: %{}, else: macros), Template.globals())
   end
   defp render(source_param, context, macros, globals) do

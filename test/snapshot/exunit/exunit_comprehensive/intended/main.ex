@@ -135,12 +135,10 @@ end) do
         end end).())
     end
     assert_contains = fn array, element, msg ->
-      assert((fn ->
-                      case Enum.find_index(array, fn item -> item == element end) do
-                          nil -> -1
-                          idx -> idx
-                      end
-       >= 0 end).(), (if (not Kernel.is_nil(msg)), do: msg, else: "Array should contain element"))
+      assert((case Enum.find_index(array, fn item -> item == element end) do
+        nil -> -1
+        index -> index
+      end) >= 0, (if (not Kernel.is_nil(msg)), do: msg, else: "Array should contain element"))
     end
     assert_between.(5, 1, 10, "5 should be between 1 and 10")
     assert_contains.([1, 2, 3], 2, "Array should contain 2")

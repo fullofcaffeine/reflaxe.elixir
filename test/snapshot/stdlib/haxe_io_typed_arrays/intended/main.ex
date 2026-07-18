@@ -11,10 +11,13 @@ defmodule Main do
     else
       0
     end
-    if (Reflaxe.Elixir.HaxeFloat.neq((fn ->
-      reflaxe_dispatch_receiver = floats.bytes
-      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get_float, [reflaxe_dispatch_receiver, floats.byte_offset])
-    end).(), 1.25)) do
+    if (Reflaxe.Elixir.HaxeFloat.neq(
+      (fn ->
+         reflaxe_dispatch_receiver = floats.bytes
+         apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get_float, [reflaxe_dispatch_receiver, floats.byte_offset])
+       end).(),
+      1.25
+    )) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Float32Array write failed"]
     end
     bytes = Bytes.alloc(2)

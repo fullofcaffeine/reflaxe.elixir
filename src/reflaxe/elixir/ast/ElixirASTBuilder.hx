@@ -492,6 +492,18 @@ class ElixirASTBuilder {
 
 		// Do the actual conversion
 		var metadata = createMetadata(expr);
+		// ReturnBuilder deliberately erases the source `return` keyword and yields
+		// the returned expression's AST definition. Preserve that expression's typed
+		// representation metadata on the resulting node, then add the non-local
+		// return marker. Using only the outer TReturn metadata loses information such
+		// as `Array<T>` + `Int` on `return values[index]`, preventing the later
+		// representation-aware list-index legalization pass from selecting Enum.at/2.
+		switch (expr.expr) {
+			case TReturn(returned) if (returned != null):
+				metadata = createMetadata(returned);
+				metadata.fromReturn = true;
+			default:
+		}
 		var astDef = convertExpression(expr);
 
 		// CRITICAL FIX: If conversion returns null (skipped assignment), propagate the null

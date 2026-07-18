@@ -1,5 +1,5 @@
 defmodule Haxe.Timer do
-  def new(time_ms, defer_start) do
+  def new(time_ms, defer_start \\ nil) do
     struct = %{:__reflaxe_class__ => Haxe.Timer, :thread => nil, :event_handler => nil, :callback_ref => nil}
     struct = %{struct | callback_ref: Haxe.TimerRuntime.create()}
     struct = if (defer_start != true) do
@@ -13,11 +13,11 @@ defmodule Haxe.Timer do
     struct
   end
   def stop(struct) do
-    if (not Kernel.is_nil(struct.thread) and Reflaxe.Elixir.HaxeFloat.neq(struct.event_handler, nil)) do
+    if (not Kernel.is_nil(struct.thread) and not Kernel.is_nil(struct.event_handler)) do
       reflaxe_dispatch_receiver = Sys.Thread.Thread.get_events(struct.thread)
       apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :cancel, [reflaxe_dispatch_receiver, struct.event_handler])
     end
-    if (Reflaxe.Elixir.HaxeFloat.neq(struct.callback_ref, nil)) do
+    if (not Kernel.is_nil(struct.callback_ref)) do
       Haxe.TimerRuntime.delete(struct.callback_ref)
     end
     struct = %{struct | event_handler: nil}
@@ -39,7 +39,7 @@ defmodule Haxe.Timer do
     timer = %{timer | event_handler: apply(EventLoopRuntime, :run_delayed, [events.ref, fn -> Haxe.TimerRuntime.invoke(ref, fn -> nil end) end, time_ms])}
     timer
   end
-  def measure(f, pos) do
+  def measure(f, pos \\ nil) do
     start = stamp()
     Log.trace("#{Reflaxe.Elixir.HaxeFloat.to_string(Reflaxe.Elixir.HaxeFloat.sub(stamp(), start))}s", pos)
     f.()

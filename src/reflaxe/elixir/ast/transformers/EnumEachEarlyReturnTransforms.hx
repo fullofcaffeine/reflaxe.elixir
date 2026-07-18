@@ -133,8 +133,8 @@ class EnumEachEarlyReturnTransforms {
 					+ Std.string(stmts.length - index - 1));
 				var elseExpr = (index < stmts.length - 1) ? buildRestExpr(stmts.slice(index + 1), meta, pos) : makeAST(ENil);
 
-				var reduceWhileExpr = buildReduceWhile(extracted.collection, extracted.binderName, extracted.condition, extracted.returnValue, stmt.metadata,
-					stmt.pos);
+				var reduceWhileExpr = buildReduceWhile(extracted.collection, extracted.binderName, extracted.callbackPrefix, extracted.condition,
+					extracted.returnValue, stmt.metadata, stmt.pos);
 
 				var returnVarName = "reflaxe_return_value";
 				var returnTagAst = makeAST(EAtom(RETURN_TAG));
@@ -181,6 +181,7 @@ class EnumEachEarlyReturnTransforms {
 		prefix:Array<ElixirAST>,
 		collection:ElixirAST,
 		binderName:String,
+		callbackPrefix:Array<ElixirAST>,
 		condition:ElixirAST,
 		returnValue:ElixirAST
 	}> {
@@ -219,6 +220,7 @@ class EnumEachEarlyReturnTransforms {
 		function tryExtractSingle(singleStmt:ElixirAST):Null<{
 			collection:ElixirAST,
 			binderName:String,
+			callbackPrefix:Array<ElixirAST>,
 			condition:ElixirAST,
 			returnValue:ElixirAST
 		}> {
@@ -280,7 +282,17 @@ class EnumEachEarlyReturnTransforms {
 				return null;
 			}
 
+			var bodyPrefix:Array<ElixirAST> = [];
 			var bodyExpr = unwrapSingleStmtBlock(clause.body);
+			switch (bodyExpr.def) {
+				case EBlock(stmts) | EDo(stmts) if (stmts != null && stmts.length > 1):
+					var meaningful = [for (s in stmts) if (s != null && s.def != null && !isBareNumericSentinel(s)) s];
+					if (meaningful.length > 0) {
+						bodyExpr = meaningful[meaningful.length - 1];
+						bodyPrefix = meaningful.slice(0, meaningful.length - 1);
+					}
+				default:
+			}
 
 			#if debug_enum_each_early_return
 			switch (bodyExpr.def) {
@@ -317,6 +329,7 @@ class EnumEachEarlyReturnTransforms {
 			return {
 				collection: eachCall.collection,
 				binderName: binderName,
+				callbackPrefix: bodyPrefix,
 				condition: earlyReturn.condition,
 				returnValue: earlyReturn.value
 			};
@@ -328,6 +341,7 @@ class EnumEachEarlyReturnTransforms {
 				prefix: [],
 				collection: direct.collection,
 				binderName: direct.binderName,
+				callbackPrefix: direct.callbackPrefix,
 				condition: direct.condition,
 				returnValue: direct.returnValue
 			};
@@ -353,6 +367,7 @@ class EnumEachEarlyReturnTransforms {
 						prefix: meaningful.slice(0, meaningful.length - 1),
 						collection: extractedLast.collection,
 						binderName: extractedLast.binderName,
+						callbackPrefix: extractedLast.callbackPrefix,
 						condition: extractedLast.condition,
 						returnValue: extractedLast.returnValue
 					};
@@ -441,8 +456,8 @@ class EnumEachEarlyReturnTransforms {
 		};
 	}
 
-	static function buildReduceWhile(collection:ElixirAST, binderName:String, condition:ElixirAST, returnValue:ElixirAST, meta:ElixirMetadata,
-			pos:haxe.macro.Expr.Position):ElixirAST {
+	static function buildReduceWhile(collection:ElixirAST, binderName:String, callbackPrefix:Array<ElixirAST>, condition:ElixirAST, returnValue:ElixirAST,
+			meta:ElixirMetadata, pos:haxe.macro.Expr.Position):ElixirAST {
 		var returnTagAst = makeAST(EAtom(RETURN_TAG));
 		var noReturnAst = makeAST(EAtom(NO_RETURN_TAG));
 
@@ -450,7 +465,9 @@ class EnumEachEarlyReturnTransforms {
 		var haltTuple = makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("halt"))), haltValue]));
 		var contTuple = makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("cont"))), noReturnAst]));
 
-		var fnBody = makeAST(EIf(condition, haltTuple, contTuple));
+		var conditional = makeAST(EIf(condition, haltTuple, contTuple));
+		var fnBody = callbackPrefix != null
+			&& callbackPrefix.length > 0 ? makeAST(EBlock(callbackPrefix.concat([conditional]))) : conditional;
 		var reducerFn = makeAST(EFn([
 			{
 				args: [PVar(binderName), PWildcard],

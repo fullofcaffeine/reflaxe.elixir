@@ -1,6 +1,6 @@
 defmodule Reflaxe.Exception do
   defexception [:message, :previous, :native, :stack]
-  def new(message, previous, native) do
+  def new(message, previous \\ nil, native \\ nil) do
     struct = %Reflaxe.Exception{}
     struct = %{ struct | message: message }
     struct = %{ struct | previous: previous }

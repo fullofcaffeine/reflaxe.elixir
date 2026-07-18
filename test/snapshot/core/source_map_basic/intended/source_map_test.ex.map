@@ -1,10 +1,10 @@
 {
   "sourceRoot": "",
   "names": [],
-  "mappings": "AACC,AAAA;AACC,EAAA;AAAA;AAAA;AAIA,EAAA;AACC,IAAA;AAAA;AAGD,EAAA;AACC,IAAA,IAAI,QAAQ,QACX,YAEA;AAAA;AAIF,EAAA;AAAA;AAAA;AAAA;AAIO,kBAAA,mFAAN;AAAA;AAAA;AAAA",
+  "mappings": "AACC,AAAA;AACC,EAAA;AAAA;AAAA;AAIA,EAAA;AACC,IAAA;AAAA;AAGD,EAAA;AACC,IAAA,IAAI,QAAQ,QACX,YAEA;AAAA;AAIF,EAAA;AAAA;AAAA;AAAA;AAIO,cAAA,mFAAN;AAAA;AAAA;AAAA",
   "version": 3,
   "file": "source_map_test.ex",
   "sources": [
-  "SourceMapTest.hx"
-]
+    "SourceMapTest.hx"
+  ]
 }

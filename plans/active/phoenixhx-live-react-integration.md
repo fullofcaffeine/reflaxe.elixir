@@ -45,25 +45,39 @@ static registry contract, deterministic setup/check/remove tooling, generated
 ownership diagnostics, Live Event Protocol adapter, documentation, examples,
 compatibility evidence, and installed-package smoke.
 
-Only the filesystem publication/recovery host boundary and thin Mix/bootstrap
-entrypoints may remain handwritten Elixir, because they must work when Haxe
-compilation is missing or broken. Each exception must carry an adjacent source
-comment naming that concrete reason. Above that ring-0 boundary, production
-surfaces must be authored in Haxe whenever the compiler can express them. Their
-checked-in generated Elixir is a product artifact:
+The Haxe-first ownership below is how this repository dogfoods its compiler;
+it is not a restriction on Phoenix developers. Applications remain free to use
+Haxe, handwritten Elixir, or both, and the integration must interoperate cleanly
+with hand-owned Elixir modules and project configuration.
+
+Repository-owned Haxe may use either portable Haxe/stdlib abstractions or typed
+Elixir-native surfaces for Mix, Phoenix, OTP, filesystem, process, and BEAM
+APIs. These are complementary source styles in one compiler contract, not
+separate backends. The target-native path should expose the full upstream
+construct or ecosystem API accurately enough that generated code can use the
+same ordinary Elixir primitives a careful handwritten implementation would use.
+
+No Mix, filesystem, process, or bootstrap surface is presumed to require
+handwritten Elixir. First try typed externs, a target library, or a reusable
+Haxe-facing DSL, including Mix-specific ergonomics where they make Haxe-first
+tooling clearer. A minimal precompiler entry may remain handwritten only after
+that check shows a concrete bootstrap requirement; each exception must carry an
+adjacent source comment naming it. Repository-owned production surfaces must be
+authored in Haxe whenever the compiler can express them. Their checked-in
+generated Elixir is a product artifact:
 it must be idiomatic, readable, byte-stable, warnings-as-errors clean, and good
 enough to accept in a handwritten code review. Raw target injection and manual
 edits to generated output are not quality escape hatches.
 
-For the remaining implementation slices, deterministic domain logic such as
-registry normalization/rendering, component-contract validation, and event
-adapter generation is Haxe-owned. Handwritten Elixir is reserved for
-the thin `Mix.Task` entrypoint, project filesystem/atomic-write boundary, Mix
-dependency introspection, and recovery paths that must work before or while the
-Haxe compiler is unavailable. Any broader handwritten-Elixir implementation
-must record concrete evidence that the Haxe path cannot yet express the required
-host behavior cleanly, and the exception must be documented beside the
-handwritten code; convenience alone is not sufficient.
+For the remaining implementation slices, lifecycle execution, registry
+normalization/rendering, component-contract validation, and event adapter
+generation are Haxe-owned. Mix tasks, filesystem/atomic-write operations,
+dependency introspection, and recovery should also be Haxe-authored through
+typed target surfaces unless a narrowly demonstrated precompiler requirement
+prevents it. Any handwritten-Elixir implementation must record concrete
+evidence that the Haxe path cannot express the required behavior cleanly, and
+the exception must be documented beside the handwritten code; convenience
+alone is not sufficient.
 
 The planned first support slice is client-only trusted first-party React islands
 with Vite. SSR, slots, uploads, streams, request-selected component names, raw
@@ -126,13 +140,14 @@ feature.
 The lifecycle behavior is proven, but its first implementation concentrated
 deterministic planning and validation in a large handwritten Elixir module.
 That source ownership does not satisfy the project-wide Haxe-to-Elixir
-dogfooding rule. Before registry expansion, `.msb.10` will move every
-expressible deterministic operation behind a typed Haxe core and keep only a
-thin, comment-justified Mix/filesystem/dependency-introspection host adapter in
-handwritten Elixir. If the port exposes a missing general capability, the task
-owns the appropriate generic compiler, structured DSL, or target-library fix
-and its semantic regression; LiveReact-specific compiler heuristics and raw
-target injection remain forbidden.
+dogfooding rule. Before registry expansion, `.msb.10` will move the lifecycle,
+including host API calls, behind typed Haxe modules. Mix, filesystem, path, and
+process APIs should gain reusable typed externs or Haxe-facing DSL ergonomics
+where needed. Only a proven precompiler entry may remain handwritten. If the
+port exposes a missing general capability, the task owns the appropriate
+generic compiler, structured DSL, or target-library fix and its semantic
+regression; LiveReact-specific compiler heuristics and raw target injection
+remain forbidden.
 
 ### Historical proof records remain isolated
 

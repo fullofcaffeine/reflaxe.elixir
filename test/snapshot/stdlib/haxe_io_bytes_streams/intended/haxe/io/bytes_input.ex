@@ -1,5 +1,5 @@
 defmodule BytesInput do
-  def new(bytes, pos, len) do
+  def new(bytes, pos \\ nil, len \\ nil) do
     struct = %{:__reflaxe_class__ => BytesInput, :data => nil, :total_length => nil, :ref_id => nil, :dict_key => nil, :position => nil, :length => nil, :big_endian => nil}
     pos = if (Kernel.is_nil(pos)), do: 0, else: pos
     len = if (Kernel.is_nil(len)), do: (bytes.length - pos), else: len
@@ -93,7 +93,7 @@ defmodule BytesInput do
       len
     end
   end
-  def read_all(struct, _bufsize) do
+  def read_all(struct, _bufsize \\ nil) do
     state = Process.get(struct.dict_key)
     state = if (Kernel.is_nil(state)) do
       state = %{pos: 0, remaining: struct.total_length}

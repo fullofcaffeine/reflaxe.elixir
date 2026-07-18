@@ -1,5 +1,5 @@
 defmodule JsonPrinter do
-  def new(replacer_param, space_param) do
+  def new(replacer_param \\ nil, space_param \\ nil) do
     struct = %{:__reflaxe_class__ => JsonPrinter, :replacer => nil, :space => nil}
     struct = %{struct | replacer: replacer_param}
     struct = %{struct | space: space_param}
@@ -30,9 +30,7 @@ defmodule JsonPrinter do
     arr_length = length(arr)
     items = Enum.reduce(0..(arr_length - 1)//1, items, fn i, items_acc -> Enum.concat(items_acc, [write_value(struct, Enum.at(arr, i), Reflaxe.Elixir.HaxeFloat.to_string(i))]) end)
     if (not Kernel.is_nil(struct.space) and length(items) > 0) do
-      "[
-        #{Enum.join(items, ",\n  ")}
-      ]"
+      "[\n  #{Enum.join(items, ",\n  ")}\n]"
     else
       "[#{Enum.join(items, ",")}]"
     end
@@ -68,9 +66,7 @@ defmodule JsonPrinter do
       end
     end)
     if (not Kernel.is_nil(struct.space) and length(pairs) > 0) do
-      "{
-        #{Enum.join(pairs, ",\n  ")}
-      }"
+      "{\n  #{Enum.join(pairs, ",\n  ")}\n}"
     else
       "{#{Enum.join(pairs, ",")}}"
     end
@@ -128,7 +124,7 @@ defmodule JsonPrinter do
   def write(struct, k, v) do
     write_value(struct, v, k)
   end
-  def print(o, replacer_param, space_param) do
+  def print(o, replacer_param \\ nil, space_param \\ nil) do
     printer = JsonPrinter.new(replacer_param, space_param)
     write_value(printer, o, "")
   end

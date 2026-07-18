@@ -1,24 +1,96 @@
 {
-  "filesGenerated": [
-  "type.ex",
-  "string_tools.ex",
-  "std.ex",
-  "reflaxe/exception.ex",
-  "reflaxe/elixir/haxe_throw.ex",
-  "reflaxe/elixir/haxe_float.ex",
-  "main.ex",
-  "int_iterator.ex",
-  "haxe/iterators/string_key_value_iterator_unicode.ex",
-  "haxe/iterators/string_key_value_iterator.ex",
-  "haxe/iterators/string_iterator_unicode.ex",
-  "haxe/iterators/string_iterator.ex",
-  "haxe/iterators/array_key_value_iterator.ex",
-  "haxe/iterators/array_iterator.ex",
-  "haxe/io/bytes.ex",
-  "haxe/int64_helper.ex",
-  "haxe/_call_stack/call_stack_impl_.ex"
-],
-  "id": 0,
-  "wasCached": false,
-  "version": 1
+	"filesGenerated": [
+		"type.ex",
+		"string_tools.ex",
+		"std.ex",
+		"reflaxe/exception.ex",
+		"reflaxe/elixir/haxe_throw.ex",
+		"reflaxe/elixir/haxe_float.ex",
+		"main.ex",
+		"int_iterator.ex",
+		"haxe/iterators/string_key_value_iterator_unicode.ex",
+		"haxe/iterators/string_key_value_iterator.ex",
+		"haxe/iterators/string_iterator_unicode.ex",
+		"haxe/iterators/string_iterator.ex",
+		"haxe/iterators/array_key_value_iterator.ex",
+		"haxe/iterators/array_iterator.ex",
+		"haxe/io/bytes.ex",
+		"haxe/int64_helper.ex",
+		"haxe/_call_stack/call_stack_impl_.ex"
+	],
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 0,
+	"wasCached": false,
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "haxe/_call_stack/call_stack_impl_.ex",
+			"sha256": "ab46ba4f786a95420ae1cd78188f77ebebc3ced2db90d1351297f573f30dadf8"
+		},
+		{
+			"path": "haxe/int64_helper.ex",
+			"sha256": "8327ac55d005a20bcfdab611fb9a672fadce5c938d4bbe1580db8637468edbc8"
+		},
+		{
+			"path": "haxe/io/bytes.ex",
+			"sha256": "2b5bbb5087c447a1f5869d498456c3ead74a5142aa35e49e341176f3d4d8585d"
+		},
+		{
+			"path": "haxe/iterators/array_iterator.ex",
+			"sha256": "3186b41d2124063a790c08804f1bfb9c3a7508de7f6a99ad2cdb1687f1c2b82d"
+		},
+		{
+			"path": "haxe/iterators/array_key_value_iterator.ex",
+			"sha256": "7c2a5a2cc281bb9a1c5ed1bb56e351bdb68b53a7d048fa70decc5bfdd527419e"
+		},
+		{
+			"path": "haxe/iterators/string_iterator.ex",
+			"sha256": "4a863a6c490e8766194cfbbe673fb6b7b8b3ebb63c3b252b08b2c72bfacf40c1"
+		},
+		{
+			"path": "haxe/iterators/string_iterator_unicode.ex",
+			"sha256": "470493d14453180eee829c6edf36c858fe1ff7cfc80ba170b530820a6f71fdf1"
+		},
+		{
+			"path": "haxe/iterators/string_key_value_iterator.ex",
+			"sha256": "caeee1d7086475a2e8703e708d355974c11fa72e0df83f4190284d04bc00ba05"
+		},
+		{
+			"path": "haxe/iterators/string_key_value_iterator_unicode.ex",
+			"sha256": "79ef0b1b6a6bfe937263bb03ac8cd2d4589e4f6fa76366c157e520593bc35dde"
+		},
+		{
+			"path": "int_iterator.ex",
+			"sha256": "b2835b6dc973f62d5e79732053e7944116c9c0032e0747206eff211183182f11"
+		},
+		{
+			"path": "main.ex",
+			"sha256": "415a8173ef8a6541bba167e2807370dd707dab810850aee64b562ed357d71b98"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_float.ex",
+			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_throw.ex",
+			"sha256": "642bbf29d073acc9eb2ffcea4a8e6016396a43f1a4180a79331b537bfefc6094"
+		},
+		{
+			"path": "reflaxe/exception.ex",
+			"sha256": "02fc779b3a5c750db17ab47e624c22bbb8887786a22a767969ab23d1946be755"
+		},
+		{
+			"path": "std.ex",
+			"sha256": "cfc6ad389294bc64c9d82be070797b4e65041a3d225fc0741500ca7cc6c8f804"
+		},
+		{
+			"path": "string_tools.ex",
+			"sha256": "b174b046cee6138603fade8a7baa097e869d67f66a86afdebda3449b28d3b153"
+		},
+		{
+			"path": "type.ex",
+			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
+		}
+	],
+	"generation": "ceab1ca60339886754e54e6b5da2ca70651bb936c5a67a484d485c08d05f194b"
 }

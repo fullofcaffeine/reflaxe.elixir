@@ -1,6 +1,7 @@
 package elixir;
 
 import elixir.types.Term;
+import elixir.types.KeywordList;
 
 /**
  * Jason: Type-safe extern for Elixir's Jason JSON library
@@ -33,6 +34,10 @@ extern class Jason {
 	@:overload(function(term:Term, opts:JasonOptions):String {})
 	public static function encodeStrict(term:Term):String;
 
+	/** Exact keyword-list form for target-native callers. */
+	@:native("encode!")
+	public static function encodeStrictWithKeywordOptions(term:Term, opts:KeywordList<Term>):String;
+
 	/**
 	 * Decode a JSON string
 	 * Returns {:ok, value} or {:error, reason}
@@ -40,6 +45,13 @@ extern class Jason {
 	@:native("decode")
 	@:overload(function(json:String, opts:JasonDecodeOptions):ElixirResult<Term, Term> {})
 	public static function decode(json:String):ElixirResult<Term, Term>;
+
+	/**
+	 * Raw tagged result for callers that explicitly validate `{:ok, value}` or
+	 * `{:error, reason}` at the BEAM boundary.
+	 */
+	@:native("decode")
+	public static function decodeResult(json:String):Term;
 
 	/**
 	 * Decode a JSON string, raises on error
