@@ -100,6 +100,9 @@ These are important 1.x work, but they are separate from the Haxe stdlib promise
 - a first-class, opt-in `phoenix.live_react` authoring and setup layer over stock LiveReact, with
   app-local typed HXX wrappers, static registries, Vite composition, Mix-canonical runtime identity,
   deterministic setup/check/removal, and upstream runtime ownership;
+- richer structural Elixir AST coverage and small validated semantic plans where an observable Haxe
+  invariant must survive target-shape selection, without replacing the existing pipeline with a
+  C-style whole-program IR;
 - more direct native string and finite-float operations where semantic proofs allow them;
 - fewer avoidable IIFEs and conservative reducers in generated output;
 - useful generated typespecs and broader behaviour/protocol surfaces;

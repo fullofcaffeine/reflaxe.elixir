@@ -81,6 +81,7 @@ This index helps you find the right docs quickly, whether you're building apps w
 ### 🏗️ Architecture
 **[05-architecture/](05-architecture/)** - System design and implementation details
 - [Architecture](05-architecture/ARCHITECTURE.md) - Overall system design
+- [Structural AST and Focused Semantic Plans](05-architecture/SEMANTIC_PLANS_AND_STRUCTURAL_AST.md) - Why the compiler enriches ElixirAST and adds only evidence-backed semantic plans instead of copying a C-style whole-program IR
 - [Selective Managed-Reference ABI](05-architecture/MANAGED_REFERENCE_ABI.md) - Accepted, gated object identity, alias mutation, graph lifetime, and native-boundary design
 - [Haxe Reference-Semantics Audit](05-architecture/HAXE_REFERENCE_SEMANTICS_AUDIT.md) - Pinned Haxe 4.3.7 alias/equality evidence, frozen typed representation categories, exact support states, and implementation ownership
 - [Managed-Reference Runtime Feasibility](05-architecture/MANAGED_REFERENCE_FEASIBILITY.md) - Isolated native-versus-hybrid lease, tracing, process, upgrade, package, and build evidence

@@ -14,6 +14,19 @@ This document is the canonical “how the compiler is structured today” overvi
    ownership/collisions, then transactionally publishes files and commits a content-hashed
    `_GeneratedFiles.json` last.
 
+## Accepted staged evolution: structure before text
+
+The unified pipeline remains the architecture. It may use a **focused semantic plan** before a
+particular Elixir form is selected when one observable Haxe invariant otherwise needs repeated raw
+text/target-shape inference or synchronized side tables. Existing examples include `LoopIR`,
+receiver-effect intent, and function-result validation.
+
+This is not a second backend or a copy of haxe.c's whole-program HxcIR. Ordinary lowering should
+enrich `ElixirAST` instead—starting with structural interpolation whose embedded expressions remain
+traversable until the printer. The admission test, raw-authority taxonomy, managed-reference
+coordination, and staged work are defined in
+[Structural Elixir AST and Focused Semantic Plans](SEMANTIC_PLANS_AND_STRUCTURAL_AST.md).
+
 ## Key Source Locations
 
 - `src/reflaxe/elixir/ElixirCompiler.hx`
@@ -74,4 +87,6 @@ Migrations are authored in Haxe via the typed DSL in `std/ecto/Migration.hx` and
 - `docs/05-architecture/HAXE_FLOAT_SPECIAL_VALUES.md` (NaN/Infinity representation and numeric lowering contract)
 - `docs/05-architecture/MANAGED_REFERENCE_ABI.md` (accepted, gated object identity, alias mutation, lifecycle, and native-boundary contract)
 - `docs/05-architecture/HAXE_REFERENCE_SEMANTICS_AUDIT.md` (pinned evidence for ordinary object/collection aliases and unresolved classification work)
+- `docs/05-architecture/SEMANTIC_PLANS_AND_STRUCTURAL_AST.md` (accepted boundary between TypedExpr,
+  focused semantic plans, structural ElixirAST, raw authority, passes, and printer)
 - `docs/05-architecture/HXML_ARCHITECTURE.md` (build configuration patterns)

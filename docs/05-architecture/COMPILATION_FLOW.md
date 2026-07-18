@@ -31,6 +31,19 @@ Ownership preflight + recoverable publication
 Generated, content-hash-owned Elixir files
 ```
 
+## Structural AST and focused semantic plans
+
+One pipeline does not require every source invariant to remain implicit until a final target node is
+chosen. A small semantic plan is allowed when it preserves one named Haxe invariant across several
+target constructs and can be validated before lowering. `LoopIR`, receiver-effect intent, and the
+function-result invariant are current precedents.
+
+The compiler does not adopt haxe.c's C-specific whole-program IR. Most Haxe meaning still lowers
+directly into structural `ElixirAST`. Compiler-owned children must not be printed and re-embedded as
+raw target text when later passes need to traverse them; structural interpolation is the first
+planned repair. See
+[Structural Elixir AST and Focused Semantic Plans](SEMANTIC_PLANS_AND_STRUCTURAL_AST.md).
+
 ## Where “Desugaring” and “Re‑Sugaring” Happen
 
 - **Haxe desugars** high‑level syntax during typing (e.g., `for`/`switch` conveniences into
@@ -158,4 +171,6 @@ updates, nesting, object-pattern matching, and map-shaped negative cases;
 - `docs/05-architecture/UNIFIED_AST_PIPELINE.md` — conceptual overview of the AST pipeline.
 - `docs/05-architecture/TRANSFORM_PASS_REGISTRY_ORDER.md` — pass ordering and safety rules.
 - `docs/05-architecture/PASS_REGISTRY_INVENTORY.md` — effective phase contracts, ownership scopes, replay families, and bounded profiling baseline.
+- `docs/05-architecture/SEMANTIC_PLANS_AND_STRUCTURAL_AST.md` — focused-plan admission,
+  structural interpolation, raw authority, and executable semantic-boundary contracts.
 - `docs/03-compiler-development/COMPILATION_PIPELINE_ARCHITECTURE.md` — contributor‑level detail.

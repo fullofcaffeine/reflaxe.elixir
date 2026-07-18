@@ -4,6 +4,12 @@
 
 **ALL code generation in Reflaxe.Elixir goes through a single, unified AST pipeline.**
 
+“Unified” means there is one target AST/pass/printer path. Typed applicability and the scoped pass
+registry may skip irrelevant passes for a module, and a narrow semantic analysis may precede target
+selection when a proven Haxe invariant requires it. This does not create another backend or require
+a whole-program C-style IR. See
+[Structural Elixir AST and Focused Semantic Plans](SEMANTIC_PLANS_AND_STRUCTURAL_AST.md).
+
 This ensures predictable, consistent transformations regardless of whether we're compiling:
 - **Classes** → Elixir modules
 - **Enums** → Tagged tuple modules  
