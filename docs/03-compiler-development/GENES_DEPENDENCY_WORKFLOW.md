@@ -140,50 +140,54 @@ an explicit rollback commit.
 
 ## Current migration receipt (2026-07-18)
 
-The initial external dependency audit admitted `genes-ts` 1.36.3 at release
-commit `c59ecb361fd91418584487c2138bae8d3d3a3961`. Compiling the PhoenixHX
-corpus exposed one generated-output quality defect: blank separators before
-documented members contained indentation-only lines. That made a clean
-generated tree fail `git diff --check` even though the emitted programs ran.
-
-The generic Genes fix is published at:
+PhoenixHX now consumes the reviewed canonical Genes release rather than an
+intermediate development revision:
 
 - repository: `https://github.com/fullofcaffeine/genes-ts`;
-- branch: `codex/output-blank-line-whitespace`;
-- exact commit: `51dc422c2ec930604dfd928d2a112ead354362e3`;
-- base: `genes-ts` 1.36.3 commit
-  `c59ecb361fd91418584487c2138bae8d3d3a3961`;
-- scope: whitespace-free documentation, enum/switch/value-block layout,
-  declaration separators, silent empty-static phases, and Genes-owned raw
-  runtime boundaries in classic ESM, strict TypeScript/TSX, and declaration
-  output; the generic output-quality regression now rejects every
-  whitespace-only generated source line. External Haxelib and Haxe-stdlib
-  source-map entries now use stable `haxe://classpath/...` identities instead
-  of a consumer machine's package-cache path, while project-owned sources stay
-  navigable as relative paths and `-D source_map_content` embeds external
-  source text when requested;
-- upstream verification: `yarn test:output-quality`, `yarn test:dual-output`,
-  `yarn test:genes-ts:sourcemaps`, the focused
-  `SKIP_CLASSIC=1 SKIP_TS2HX=1 yarn test:acceptance` lane, and the complete
-  `yarn test:ci` lane under Node 20.19.3, including both todo-app browser
-  profiles and `ts2hx`;
-- downstream replacement condition: move to the exact commit that lands on
-  canonical Genes `main`, or to the exact commit of a subsequently admitted
-  release containing the fix. This stable-promotion step is tracked by
-  `haxe.elixir.codex-aas` and does not block the current experimental lane.
+- release: `v1.36.7`;
+- exact release commit:
+  `25a5e3015f8b0f0e4447b8fd0590124548f132da`;
+- merged pull request: `fullofcaffeine/genes-ts#5`;
+- merge commit: `d2e881c7c3b5352399f16bc4216dd0b8c0fb18ff`;
+- reviewed source-map commits:
+  `20e2bd0bf61e00cbf6da408f1581155adf0a2102` and
+  `184b45de99635ba6dac281b1b7462d9238f936af`.
 
-This topic is deliberately based on the admitted release rather than the local
-`origin/main` observed at `ff588cff2c48bd6443af20e6f8429423d256fafe`.
-During this migration, that newer checkout independently failed its
-`dual-output-source-modules` fixture count (17 discovered versus 13 expected)
-before the whitespace change was applied. That local observation does not make
-a broad claim about upstream release readiness; it only prevents unrelated
-unfinished changes from entering this downstream pin.
+The release keeps project-owned Haxe files as useful relative paths in source
+maps. Files supplied by Genes, Haxelib packages, or the Haxe standard library
+use stable `haxe://classpath/...` names instead of exposing one developer's
+package-cache path. When classpaths overlap, every physical source still gets a
+different deterministic name. The same release also contains the earlier
+generated-output cleanup that prevents indentation-only blank lines.
+
+Upstream evidence is tied to the canonical history, not to a local checkout:
+
+- the pull request's focused source-map, output-quality, transaction,
+  dual-profile, snapshot, and version gates passed;
+- Codex reviewed the overlap correction on its exact final head and reported no
+  remaining major issue;
+- canonical `main` CI run `29650160563` passed classic JS on stable and
+  next-LTS Node, strict TypeScript plus todo-app E2E, ts2hx, declaration and
+  library profiles, Haxe-preview probes, secrets, and vulnerability checks;
+- release run `29650589810` reran the full `yarn test:ci` gate before publishing
+  `v1.36.7`.
+
+Downstream admission also starts from clean dependency state. Lix resolved the
+exact release commit into a disposable empty cache, the Haxe-owned scaffold
+contract regenerated without drift, all 152 scaffold migration tests passed,
+the strict TSX and classic ESM fixtures produced the same runtime transcript
+with portable source maps, and the complete example corpus matched its
+checked-in output. The complete downstream `npm test` gate also passed: all 404
+generated Elixir trees parsed, all 305 ExUnit tests passed, and the runtime and
+generated-output checks stayed green. A clean todo-app asset build, Phoenix
+readiness probe, and all five bounded Playwright smoke scenarios passed as
+well. The exact-commit Haxelib package smoke then proved source/package output
+parity and compiled an installed-package Phoenix fixture. Hosted exact-head CI
+remains the final authority before this downstream change is merged.
 
 The known-green PhoenixHX rollback commit before dependency consolidation is
-`f0a22cc`. The vendored source is removed only after the exact topic pin passes
-all current browser consumers, the strict TSX/React fixture, generated-output
-review, path hygiene, and the applicable Phoenix example/runtime gates.
+`f0a22cc`. The repository keeps one external Genes source: the legacy
+`-lib genes` name is only an alias for the same immutable `genes-ts` release.
 
 ## Rollback
 

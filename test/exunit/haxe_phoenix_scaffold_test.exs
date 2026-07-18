@@ -310,8 +310,9 @@ defmodule HaxePhoenixScaffoldTest do
     genes_ts_hxml = File.read!(Path.join([root, "haxe_libraries", "genes-ts.hxml"]))
     assert genes_ts_hxml =~ "reflaxe_elixir:scaffolded_haxe_library:genes-ts:v1"
     assert genes_ts_hxml =~ "-lib helder.set"
-    assert genes_ts_hxml =~ "genes-ts/1.36.3/github/51dc422c2ec930604dfd928d2a112ead354362e3"
-    assert genes_ts_hxml =~ "temporary admission pin"
+    assert genes_ts_hxml =~ "genes-ts/1.36.7/github/25a5e3015f8b0f0e4447b8fd0590124548f132da"
+    assert genes_ts_hxml =~ "canonical genes-ts v1.36.7 release"
+    refute genes_ts_hxml =~ "temporary admission pin"
     assert genes_ts_hxml =~ "/extraParams.hxml"
 
     phoenix_js_hxml = File.read!(Path.join([root, "haxe_libraries", "phoenix_js.hxml"]))
@@ -457,7 +458,7 @@ defmodule HaxePhoenixScaffoldTest do
     refute alias_hxml =~ "vendor/genes"
 
     canonical_hxml = File.read!(Path.join(haxe_libraries, "genes-ts.hxml"))
-    assert canonical_hxml =~ "51dc422c2ec930604dfd928d2a112ead354362e3"
+    assert canonical_hxml =~ "25a5e3015f8b0f0e4447b8fd0590124548f132da"
   end
 
   test "patches Phoenix 1.7-ish app.js variants without relying on Hooks variable shape" do
