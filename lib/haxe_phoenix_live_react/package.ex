@@ -225,18 +225,29 @@ defmodule HaxePhoenixLiveReact.Package do
         not MapSet.member?(managed, path) and not String.contains?(path, "/node_modules/")
       end)
 
-    Enum.reduce(files, MapSet.new(), fn path, packages ->
-      source = File.read!(path)
-      updated = maybe_mark_package(packages, source, "live_react")
+    imported =
+      Enum.reduce(files, MapSet.new(), fn path, packages ->
+        source = File.read!(path)
+        updated = maybe_mark_package(packages, source, "live_react")
 
-      updated =
-        updated
-        |> maybe_mark_package(source, "react")
-        |> maybe_mark_package(source, "react-dom")
-        |> maybe_mark_package(source, "vite")
+        updated =
+          updated
+          |> maybe_mark_package(source, "react")
+          |> maybe_mark_package(source, "react-dom")
+          |> maybe_mark_package(source, "vite")
 
-      maybe_mark_package(updated, source, "@vitejs/plugin-react")
-    end)
+        maybe_mark_package(updated, source, "@vitejs/plugin-react")
+      end)
+
+    retain_runtime_peers(imported)
+  end
+
+  defp retain_runtime_peers(packages) do
+    if not MapSet.member?(packages, "live_react") do
+      packages
+    else
+      MapSet.put(MapSet.put(packages, "react"), "react-dom")
+    end
   end
 
   defp maybe_mark_package(packages, source, package_name) do

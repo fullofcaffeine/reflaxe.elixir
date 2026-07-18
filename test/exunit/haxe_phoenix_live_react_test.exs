@@ -47,9 +47,9 @@ defmodule HaxePhoenixLiveReactTest do
 
     assert HaxePhoenixLiveReact.check!(root, rerun_options())[:mode] == :check
 
-    File.rm!(Path.join([root, "assets", "react-components", "registry.generated.js"]))
+    File.rm!(Path.join([root, "assets", "react-components", "registry.generated.ts"]))
     HaxePhoenixLiveReact.apply!(root, rerun_options())
-    assert File.regular?(Path.join([root, "assets", "react-components", "registry.generated.js"]))
+    assert File.regular?(Path.join([root, "assets", "react-components", "registry.generated.ts"]))
 
     after_recovery = tree_snapshot(root)
     HaxePhoenixLiveReact.apply!(root, rerun_options())
@@ -61,7 +61,7 @@ defmodule HaxePhoenixLiveReactTest do
     refute File.exists?(Path.join(root, @manifest))
     refute File.exists?(Path.join(root, "vite.config.mjs"))
     refute File.exists?(Path.join(root, "assets/js/live-react-hooks.js"))
-    refute File.exists?(Path.join([root, "assets", "react-components", "registry.generated.js"]))
+    refute File.exists?(Path.join([root, "assets", "react-components", "registry.generated.ts"]))
     refute :live_react in Map.keys(Mix.Dep.Lock.read(Path.join(root, "mix.lock")))
 
     assert File.read!(Path.join(root, "assets/js/app.js")) == originals.app_js
@@ -100,6 +100,309 @@ defmodule HaxePhoenixLiveReactTest do
 
     assert File.read!(Path.join(root, "assets/js/app.js")) == original_app_js
     refute File.exists?(Path.join(root, @manifest))
+  end
+
+  test "the owned JavaScript registry migrates explicitly to the typed registry" do
+    root = fixture_root(:genes, ".")
+    HaxePhoenixLiveReact.apply!(root, apply_options(root))
+
+    typed = Path.join(root, "assets/react-components/registry.generated.ts")
+    legacy = Path.join(root, "assets/react-components/registry.generated.js")
+    File.rename!(typed, legacy)
+
+    manifest_path = Path.join(root, @manifest)
+    manifest = Jason.decode!(File.read!(manifest_path))
+
+    legacy_files =
+      manifest["managed"]["files"]
+      |> Enum.map(fn
+        "assets/react-components/registry.generated.ts" ->
+          "assets/react-components/registry.generated.js"
+
+        relative ->
+          relative
+      end)
+      |> Enum.sort()
+
+    File.write!(
+      manifest_path,
+      Jason.encode!(put_in(manifest, ["managed", "files"], legacy_files), pretty: true) <> "\n"
+    )
+
+    before_check = tree_snapshot(root)
+
+    assert_raise RuntimeError, ~r/integration drift detected/, fn ->
+      HaxePhoenixLiveReact.check!(root, rerun_options())
+    end
+
+    assert tree_snapshot(root) == before_check
+
+    HaxePhoenixLiveReact.apply!(root, rerun_options())
+    refute File.exists?(legacy)
+    assert File.regular?(typed)
+
+    migrated = Jason.decode!(File.read!(manifest_path))
+    assert "assets/react-components/registry.generated.ts" in migrated["managed"]["files"]
+    refute "assets/react-components/registry.generated.js" in migrated["managed"]["files"]
+  end
+
+  test "component registration creates a sorted static registry and hand-owned typed boundaries" do
+    root = fixture_root(:genes, ".")
+    HaxePhoenixLiveReact.apply!(root, apply_options(root))
+
+    zeta =
+      HaxePhoenixLiveReact.add_component!(root, "ZetaPanel",
+        app_name: "demo",
+        yes: true
+      )
+
+    alpha =
+      HaxePhoenixLiveReact.add_component!(root, "AlphaPanel",
+        app_name: "demo",
+        yes: true
+      )
+
+    assert zeta.created_files == [
+             "src_haxe/demo_hx/components/live_react/ZetaPanelIsland.hx",
+             "assets/react-components/zeta-panel-boundary.tsx",
+             "assets/react-components/zeta-panel.tsx"
+           ]
+
+    assert alpha.created_files == [
+             "src_haxe/demo_hx/components/live_react/AlphaPanelIsland.hx",
+             "assets/react-components/alpha-panel-boundary.tsx",
+             "assets/react-components/alpha-panel.tsx"
+           ]
+
+    manifest = File.read!(Path.join(root, @manifest)) |> Jason.decode!()
+
+    assert Enum.map(manifest["components"], & &1["name"]) == ["AlphaPanel", "ZetaPanel"]
+
+    registry = File.read!(Path.join(root, "assets/react-components/registry.generated.ts"))
+
+    assert registry =~
+             ~s(import {AlphaPanelBoundary as AlphaPanelComponent} from "./alpha-panel-boundary")
+
+    assert registry =~
+             ~s(import {ZetaPanelBoundary as ZetaPanelComponent} from "./zeta-panel-boundary")
+
+    assert registry =~ "export type ComponentName = keyof typeof componentRegistry"
+    assert :binary.match(registry, "AlphaPanel:") < :binary.match(registry, "ZetaPanel:")
+    refute registry =~ "import("
+    refute registry =~ "glob"
+
+    wrapper =
+      File.read!(Path.join(root, "src_haxe/demo_hx/components/live_react/AlphaPanelIsland.hx"))
+
+    assert wrapper =~ "private typedef AlphaPanelAssigns"
+    assert wrapper =~ "return <div"
+    assert wrapper =~ "<LiveReact.react"
+    assert wrapper =~ ~s(name="AlphaPanel")
+    assert wrapper =~ ~S(id=${assigns.id})
+    assert wrapper =~ ~S(ssr=${false})
+    refute wrapper =~ "HXX.hxx"
+    refute wrapper =~ "hxx("
+    refute wrapper =~ "<%"
+
+    boundary = File.read!(Path.join(root, "assets/react-components/alpha-panel-boundary.tsx"))
+    inner_path = Path.join(root, "assets/react-components/alpha-panel.tsx")
+    inner = File.read!(inner_path)
+
+    assert boundary =~ ~s(import type {LiveProps} from "live_react")
+    assert boundary =~ "const nativeBridgeKeys"
+    assert boundary =~ "typeof raw.pushEvent"
+    assert boundary =~ "Unexpected AlphaPanel input"
+    assert boundary =~ ~S|raw.pushEvent("alpha_panel_action", {})|
+    assert boundary =~ ~s(<section role="alert")
+    assert inner =~ "readonly onAction: () => void"
+    assert inner =~ ~s(<button type="button" onClick={onAction}>)
+    refute inner =~ "pushEvent"
+    refute inner =~ "uploadTo"
+
+    File.write!(inner_path, inner <> "\n// application-owned edit\n")
+    before_rerun = tree_snapshot(root)
+
+    rerun =
+      HaxePhoenixLiveReact.add_component!(root, "AlphaPanel",
+        app_name: "demo",
+        yes: true
+      )
+
+    assert rerun.changes == []
+    assert tree_snapshot(root) == before_rerun
+
+    removed =
+      HaxePhoenixLiveReact.remove_component!(root, "AlphaPanel",
+        app_name: "demo",
+        yes: true
+      )
+
+    assert "assets/react-components/alpha-panel.tsx" in removed.retained_files
+    assert File.read!(inner_path) =~ "application-owned edit"
+
+    refute File.read!(Path.join(root, "assets/react-components/registry.generated.ts")) =~
+             "AlphaPanel"
+  end
+
+  test "an existing reviewed boundary can be adopted without scaffolding or source ownership" do
+    root = fixture_root(:plain_js, "assets")
+    HaxePhoenixLiveReact.apply!(root, apply_options(root))
+
+    custom = "assets/react-components/custom-boundary.tsx"
+    write!(root, custom, "export function CustomBoundary() { return null }\n")
+
+    result =
+      HaxePhoenixLiveReact.add_component!(root, "CustomPanel",
+        app_name: "demo",
+        existing: true,
+        module_path: "./custom-boundary",
+        export_name: "CustomBoundary",
+        yes: true
+      )
+
+    assert result.created_files == []
+
+    assert File.read!(Path.join(root, "assets/react-components/registry.generated.ts")) =~
+             ~s(import {CustomBoundary as CustomPanelComponent} from "./custom-boundary")
+
+    refute File.exists?(
+             Path.join(root, "src_haxe/demo_hx/components/live_react/CustomPanelIsland.hx")
+           )
+
+    removed =
+      HaxePhoenixLiveReact.remove_component!(root, "CustomPanel",
+        app_name: "demo",
+        yes: true
+      )
+
+    assert custom in removed.retained_files
+
+    assert File.read!(Path.join(root, custom)) ==
+             "export function CustomBoundary() { return null }\n"
+  end
+
+  test "full removal retains a scaffolded component and its browser runtime dependencies" do
+    root = fixture_root(:plain_js, "assets")
+    HaxePhoenixLiveReact.apply!(root, apply_options(root))
+
+    HaxePhoenixLiveReact.add_component!(root, "StatusPanel",
+      app_name: "demo",
+      yes: true
+    )
+
+    result = HaxePhoenixLiveReact.remove!(root, yes: true)
+    package = Jason.decode!(File.read!(Path.join(root, "assets/package.json")))
+
+    assert result.retained_package_keys == [
+             "dependencies.live_react",
+             "dependencies.react",
+             "dependencies.react-dom"
+           ]
+
+    assert result.retained_live_react_dependency
+
+    assert File.regular?(
+             Path.join(root, "src_haxe/demo_hx/components/live_react/StatusPanelIsland.hx")
+           )
+
+    assert File.regular?(Path.join(root, "assets/react-components/status-panel-boundary.tsx"))
+    assert File.regular?(Path.join(root, "assets/react-components/status-panel.tsx"))
+    assert package["dependencies"]["live_react"] == "file:../deps/live_react"
+    assert package["dependencies"]["react"] == "19.1.0"
+    assert package["dependencies"]["react-dom"] == "19.1.0"
+    refute File.exists?(Path.join(root, "assets/react-components/registry.generated.ts"))
+    refute File.exists?(Path.join(root, @manifest))
+  end
+
+  test "component conflicts and missing boundaries fail before any write" do
+    root = fixture_root(:genes, ".")
+    HaxePhoenixLiveReact.apply!(root, apply_options(root))
+
+    before_invalid = tree_snapshot(root)
+
+    assert_raise RuntimeError, ~r/static PascalCase/, fn ->
+      HaxePhoenixLiveReact.add_component!(root, "request-selected",
+        app_name: "demo",
+        yes: true
+      )
+    end
+
+    assert tree_snapshot(root) == before_invalid
+
+    assert_raise RuntimeError, ~r/closed project-relative import/, fn ->
+      HaxePhoenixLiveReact.add_component!(root, "EscapingPanel",
+        app_name: "demo",
+        existing: true,
+        module_path: "../outside",
+        yes: true
+      )
+    end
+
+    assert_raise RuntimeError, ~r/JavaScript identifier/, fn ->
+      HaxePhoenixLiveReact.add_component!(root, "InvalidExportPanel",
+        app_name: "demo",
+        existing: true,
+        module_path: "./reviewed-boundary",
+        export_name: "not-valid!",
+        yes: true
+      )
+    end
+
+    assert tree_snapshot(root) == before_invalid
+
+    collision = "src_haxe/demo_hx/components/live_react/CollisionPanelIsland.hx"
+    write!(root, collision, "package demo_hx.components.live_react;\n")
+    before_collision = tree_snapshot(root)
+
+    assert_raise RuntimeError, ~r/hand-owned source file already exists/, fn ->
+      HaxePhoenixLiveReact.add_component!(root, "CollisionPanel",
+        app_name: "demo",
+        yes: true
+      )
+    end
+
+    assert tree_snapshot(root) == before_collision
+
+    HaxePhoenixLiveReact.add_component!(root, "MissingPanel",
+      app_name: "demo",
+      yes: true
+    )
+
+    File.rm!(Path.join(root, "assets/react-components/missing-panel-boundary.tsx"))
+    before_check = tree_snapshot(root)
+
+    assert_raise RuntimeError, ~r/cannot resolve .*missing-panel-boundary/, fn ->
+      HaxePhoenixLiveReact.check!(root, rerun_options())
+    end
+
+    assert tree_snapshot(root) == before_check
+  end
+
+  test "duplicate manifest component identities fail without rewriting owned state" do
+    root = fixture_root(:genes, ".")
+    HaxePhoenixLiveReact.apply!(root, apply_options(root))
+
+    manifest_path = Path.join(root, @manifest)
+    manifest = Jason.decode!(File.read!(manifest_path))
+
+    duplicate = %{
+      "name" => "StatusPanel",
+      "module" => "./status-panel-boundary",
+      "export" => "StatusPanelBoundary"
+    }
+
+    File.write!(
+      manifest_path,
+      Jason.encode!(Map.put(manifest, "components", [duplicate, duplicate]), pretty: true) <> "\n"
+    )
+
+    before = tree_snapshot(root)
+
+    assert_raise RuntimeError, ~r/duplicate LiveReact component name StatusPanel/, fn ->
+      HaxePhoenixLiveReact.check!(root, rerun_options())
+    end
+
+    assert tree_snapshot(root) == before
   end
 
   test "check reports drift without changing a byte" do
@@ -401,6 +704,13 @@ defmodule HaxePhoenixLiveReactTest do
     assert apply_output =~ "PhoenixHx LiveReact integration is current"
     assert apply_output =~ "path:vendor/live_react@0.1.0"
 
+    component_output =
+      run_external_mix!(root, ["haxe.gen.live_react", "StatusPanel", "--yes"])
+
+    assert component_output =~ "StatusPanel is registered in the static registry"
+    assert File.regular?(Path.join(root, "assets/react-components/status-panel-boundary.tsx"))
+    assert File.regular?(Path.join(root, "assets/react-components/registry.generated.ts"))
+
     run_external_mix!(root, [
       "format",
       "--check-formatted",
@@ -413,7 +723,6 @@ defmodule HaxePhoenixLiveReactTest do
       [
         "assets/js/app.js",
         "assets/js/live-react-hooks.js",
-        "assets/react-components/registry.generated.js",
         "assets/vite.config.mjs"
       ],
       &run_node_syntax_check!(root, &1)
@@ -421,6 +730,12 @@ defmodule HaxePhoenixLiveReactTest do
 
     check_output = run_live_react_task!(root, ["--check"])
     assert check_output =~ "check passed; no writes occurred"
+
+    component_remove_output =
+      run_external_mix!(root, ["haxe.gen.live_react", "StatusPanel", "--remove", "--yes"])
+
+    assert component_remove_output =~ "Removed StatusPanel from the static LiveReact registry"
+    assert File.regular?(Path.join(root, "assets/react-components/status-panel.tsx"))
 
     remove_output = run_live_react_task!(root, ["--remove", "--yes"])
     assert remove_output =~ "Removed all currently owned PhoenixHx LiveReact state"

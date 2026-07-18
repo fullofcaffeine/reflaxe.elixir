@@ -357,6 +357,17 @@ Use this loop to implement/verify user-facing features end‑to‑end without co
 - Rationale: Adding repo `std/` can shadow the official Haxe std macros (e.g., `haxe.macro.Compiler`) and trigger false “missing field” errors.
 - Quick check: `haxe -v build-client.hxml` should show client source paths, library paths from `haxe_libraries/`, and the official Haxe std — not the repo’s `std/`.
 
+### 🧬 Genes Dependency and Upstream-Fix Workflow (Required)
+
+- Committed browser builds resolve one exact `genes-ts` revision through Lix. Never commit a local checkout/worktree path, a moving branch, `haxelib dev`, or an unpushed commit as a dependency.
+- `$GENES_CHECKOUT` denotes the local compiler-authority checkout; it is not a consumer build input. Use an isolated `$GENES_WORKTREE` for each generic compiler change so concurrent work in the authority checkout is preserved.
+- A worktree is local branch isolation; a fork is remote ownership/sharing. If a topic branch can be pushed to the canonical Genes repository, no additional fork is required. Use a private/project-owned fork only when permissions, visibility, or ownership require it.
+- Before merge, this experimental repository may temporarily pin an exact **pushed** topic-branch/fork SHA so CI can consume a needed fix. Record the repository, branch, SHA, owner, PR, and replacement gate. Never pin a dirty or local-only commit.
+- After merge, replace that temporary SHA with the exact commit that actually landed on canonical `main` (the squash commit for squash merges or the merge commit for merge commits). When admitting a release, pin the exact release commit/artifact.
+- Genes changes must be generic: reduce the bug without PhoenixHX, LiveReact, example, route, or application-specific symbols; test strict TypeScript/TSX and classic ESM as applicable; follow the Genes repository's complete contribution gates.
+- Do not remove or bypass the current Genes source until every existing Genes-backed example preserves reviewed runtime, ESM/import, async/HXX, DCE, and source-map behavior under the new pin. Add Haxe-authored strict TS/TSX React evidence as a separate positive lane.
+- Canonical commands, evidence fields, admission gates, and rollback rules live in `docs/03-compiler-development/GENES_DEPENDENCY_WORKFLOW.md`.
+
 ### 🧭 Shared Haxe Classpath Hygiene (Required)
 
 - Shared front/back contracts (Live Event Protocol enums, hook/event names, channel payload protocols, shared domain DTOs) should live in a small dedicated classpath root, such as `src_shared/shared/**`, not under a broad app root when tests or client builds need to import them independently.
@@ -3503,6 +3514,27 @@ runtime-facing modules, and tests.**
   functions. When dogfood output falls short, improve the Haxe source model,
   typed target surface, or generic compiler lowering and add a focused
   regression; do not hand-edit generated `.ex`.
+
+- Use a target-shape-first implementation workflow for repository dogfood:
+  1. identify the idiomatic handwritten Elixir/BEAM shape and the source
+     semantics that must be preserved;
+  2. express that contract through ordinary portable Haxe when appropriate, or
+     through an existing typed Elixir-native Haxe surface;
+  3. when a gap remains, classify it by ownership and extend the smallest
+     truthful reusable layer: use a typed extern or target library for a stable
+     ecosystem API, a DSL or macro for repeated authoring ergonomics and
+     compile-time validation, or the compiler for general Haxe semantics and
+     target-wide code generation; and
+  4. lock both runtime semantics and generated-target quality with focused
+     tests. When a handwritten reference implementation exists, compare the
+     generated artifact against it instead of treating successful compilation
+     as sufficient evidence.
+  "Pragmatic" means choosing the smallest truthful, reusable ownership layer;
+  it does not mean accepting project-name/path heuristics, app-specific
+  compiler lowering, raw target injection, or avoidably worse generated code.
+  Conversely, do not put a normal library wrapper into compiler core merely to
+  maximize compiler changes.
+
 - Within repository-owned dogfood, handwritten Elixir is permitted only after
   checking whether typed externs, a small target library, or a reusable DSL can
   express the same behavior cleanly. A concrete host/bootstrap boundary may be

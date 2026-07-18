@@ -2359,7 +2359,7 @@ class ElixirASTBuilder {
 					var retVar:Null<TVar> = null;
 					switch (el[el.length - 1].expr) {
 						case TLocal(v): retVar = v;
-						case TReturn(e):
+						case TReturn(e) if (e != null):
 							switch (e.expr) {
 								case TLocal(v2): retVar = v2;
 								default:

@@ -176,7 +176,7 @@ its child task closes.
 | Observed | `LiveEventProtocolModel.hx` already owns normalized wire names, payload fields/kinds, a deterministic manifest, and a hash. | React event contracts adapt this model. A second event enum, DSL, decoder runtime, or independent string registry is rejected. |
 | Observed | The pinned LiveReact checkout exposes `LiveReact.react`, `LiveReact.Reload.vite_assets`, `LiveReact.Test.get_react`, `getHooks`, `useLiveReact`, `Link`, and the stock Vite plugin. Its browser bridge is intentionally broad. | PhoenixHx may declare stable public surfaces honestly, but must not copy their implementation or pass the raw bridge into the default inner component type. Open test/helper shapes must not receive false precision. |
 | Observed | Example 12 currently pins one LiveReact Git revision independently in Mix and npm, and both pins identify revision `055e80e6a4e6d009df5e229eb39e7f85f03fea22`. | This proves one project-local identity match. The reusable tool instead makes Mix canonical and points npm at the resolved Mix checkout so the two sides cannot drift independently. |
-| Observed | `haxe_libraries/genes.hxml` uses the repository's vendored Genes copy; a sibling checkout is not a clean-build or package dependency. | The initial integration supports current `genes` and `plain-js`. Released `genes-ts` adoption stays in the nonblocking migration task. |
+| Observed | `haxe_libraries/genes.hxml` uses the repository's vendored Genes copy; a sibling checkout is not a clean-build or package dependency. The maintained `genes-ts` compiler provides classic ESM plus strict TypeScript/TSX and inline React markup. | The selected migration replaces the vendor with one exact Lix-resolved `genes-ts` commit, preserves current classic ESM consumers, and adds Haxe-authored TS/TSX LiveReact evidence. `$GENES_CHECKOUT` remains only an optional uncommitted contributor override. |
 | Unknown until implementation | Cross-platform package-root discovery, crash-safe rollback, installed-package template availability, and the ecosystem version matrix have not yet been proven. | Those claims remain gates in `.msb.3`, `.msb.4`, `.msb.8`, and `.msb.9`; this contract does not advertise them as shipped. |
 
 ### Frozen decision table
@@ -196,7 +196,7 @@ its child task closes.
 | Asset ownership | Vite is the sole JavaScript bundler when enabled. Genes may emit ESM source for Vite; Tailwind remains an independent CSS lane. | Simultaneous Vite and esbuild JavaScript pipelines or treating Genes as another bundler. |
 | Mutation safety | Whole-plan read/validate/render first, signature/marker ownership, staged per-file atomic publication, rollback on reported publication failure, and deterministic check/recovery. | Best-effort mutation, warning through an ownership conflict, or claiming power-loss-level multi-file filesystem atomicity. |
 | Compatibility status | Experimental 1.x until the rich migration, independent minimal consumer, todo-app adoption proof, and installed-package smoke pass; support is only the checked matrix rows. | A Reflaxe.Elixir 1.0 blocker or broad ecosystem compatibility inferred from one canary. |
-| Genes | Keep the hermetic vendored Genes lane for this epic and support plain JS; migrate reviewed improvements through `haxe.elixir.codex-m52`. | Depending on `../genes`, silently switching generated output, or blocking client-only LiveReact on genes-ts migration. |
+| Genes | Migrate through `haxe.elixir.codex-m52` to one immutable Lix-pinned `genes-ts` source. Preserve classic ESM for existing PhoenixHX consumers and use strict TypeScript/TSX for the Haxe-first React lane. A pushed topic SHA may be temporary; after merge the pin moves to the exact commit landed on canonical `main`, then to an admitted release commit. | Depending on a local checkout path, a dirty/unpushed checkout, a moving branch, two active compiler sources, framework-specific Genes patches, or unreviewed output changes. |
 | Promotion/split | Promote only after example 12, an independent minimal project, the todo-app adoption proof, canonical docs, installed-package smoke, and focused CI. Consider a separate Haxelib only after independent cadence/adoption evidence. | Counting another example-12 route as the second consumer or splitting for aesthetics alone. |
 
 ## Product Contract
@@ -487,17 +487,28 @@ reported, not rewritten heuristically.
 
 ### Decision
 
-The initial LiveReact epic does **not** replace Genes and never points to
-`../genes`. It must work with the current public `genes` client mode and with
-plain JS. React components remain app-owned TSX/JSX in the first slice, so the
-new genes-ts React compiler surface is not required.
+Replace the vendored Genes 0.4.14 tree through
+`haxe.elixir.codex-m52` with one immutable `genes-ts` dependency resolved by
+Lix. The migration is a prerequisite for closing the static LiveReact registry
+slice because its positive browser contract will be authored in Haxe and
+compiled through the strict TypeScript/TSX profile. Existing PhoenixHX browser
+clients retain the classic split ESM profile; Vite remains the only bundler.
 
-Create a separate nonblocking P3 task to evaluate replacing the vendored 0.4.14
-copy with an exact released `genes-ts` artifact. The preferred long-term shape
-is a pinned released dependency plus a repository-controlled compatibility
-alias/configuration, not a live sibling checkout. Vendoring a reviewed
-genes-ts snapshot remains a fallback only if package installation cannot meet
-offline, source/package parity, or deterministic release requirements.
+The committed dependency never points at `$GENES_CHECKOUT`. Contributors use
+that checkout or an isolated `$GENES_WORKTREE` only through an uncommitted development
+override. When a required generic fix has not merged yet, the integration may
+pin the exact pushed topic-branch/fork SHA temporarily so CI is reproducible.
+After merge, the pin must move to the exact commit that landed on canonical
+`main`—the squash commit for squash merges or the merge commit for merge
+commits. An admitted release may then replace it with the exact release commit
+and artifact receipt. A temporary pre-merge pin cannot support a stable release
+claim.
+
+The vendored tree remains until every local modification has a mapped upstream
+implementation/regression and all existing Genes-backed examples preserve
+runtime semantics, classic ESM/import shape, async/await, inline HXX, DCE, and
+source maps. The detailed contributor workflow and rollback contract are in
+`docs/03-compiler-development/GENES_DEPENDENCY_WORKFLOW.md`.
 
 Migration must inventory every local patch, compile all current Genes examples,
 compare generated ESM and source maps, preserve both client modes and package

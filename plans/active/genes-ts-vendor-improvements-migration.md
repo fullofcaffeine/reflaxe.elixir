@@ -814,6 +814,25 @@ Evaluate replacing vendored genes 0.4.14 with released genes-ts
 
 Do not close that downstream task from the Genes repository.
 
+### Downstream pin and pre-merge workflow
+
+The downstream repository commits one exact Lix-resolved SHA.
+`$GENES_CHECKOUT` and `$GENES_WORKTREE` are contributor inputs only and must
+never appear in a committed consumer HXML.
+
+If a downstream gate needs a generic fix before merge, push the isolated topic
+branch to the canonical Genes repository or an authorized fork and temporarily
+pin that exact fetchable SHA. Record its owner, PR, and replacement condition.
+After merge, replace the topic SHA with the exact commit that landed on
+canonical `main`: the squash commit when the PR was squash-merged, or the merge
+commit when it was merged normally. When a release is admitted, advance to its
+exact commit/artifact. A stable downstream release cannot retain an unmerged
+topic/fork pin.
+
+The canonical operational policy is
+`docs/03-compiler-development/GENES_DEPENDENCY_WORKFLOW.md` in the downstream
+repository.
+
 Do not publish a release unless the repository’s release workflow and human authorization permit it. At minimum, provide a green commit that downstream can pin.
 
 ---

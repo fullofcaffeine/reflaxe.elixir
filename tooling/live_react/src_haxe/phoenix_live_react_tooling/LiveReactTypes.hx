@@ -3,6 +3,13 @@ package phoenix_live_react_tooling;
 import elixir.types.Atom;
 import elixir.types.Term;
 
+/** One closed, statically imported React component registry entry. */
+typedef LiveReactComponent = {
+	final name:String;
+	final modulePath:String;
+	final exportName:String;
+}
+
 /** Canonical npm and Phoenix source locations discovered before mutation. */
 typedef LiveReactTopology = {
 	root:String,
@@ -89,6 +96,7 @@ typedef LiveReactPackagePlan = {
 typedef LiveReactManifestData = {
 	topology:LiveReactTopology,
 	dependency:LiveReactDependency,
+	components:Array<LiveReactComponent>,
 	managedFiles:Array<String>,
 	packageKeys:Array<String>,
 	restores:Term,
@@ -106,5 +114,16 @@ typedef LiveReactLifecyclePlan = {
 	?npmReference:String,
 	?retainedPackageKeys:Array<String>,
 	?retainedLiveReactDependency:Bool,
+	changes:Array<Term>
+}
+
+/** Result returned by component registration/removal planning. */
+typedef LiveReactComponentPlan = {
+	plan:PatchPlan,
+	mode:Atom,
+	name:String,
+	components:Array<LiveReactComponent>,
+	createdFiles:Array<String>,
+	retainedFiles:Array<String>,
 	changes:Array<Term>
 }

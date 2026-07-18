@@ -11,6 +11,14 @@ defmodule HaxePhoenixLiveReact do
     execute!(project_root, :remove, opts)
   end
 
+  def add_component!(project_root, name, opts \\ nil) do
+    mutate_component_bang(project_root, name, :add_component, opts)
+  end
+
+  def remove_component!(project_root, name, opts \\ nil) do
+    mutate_component_bang(project_root, name, :remove_component, opts)
+  end
+
   def execute!(project_root, mode, opts \\ nil) do
     options = normalize_options(opts)
     root = canonical_project_root(project_root)
@@ -209,6 +217,10 @@ defmodule HaxePhoenixLiveReact do
                  not Kernel.is_list(Map.get(manifest, "components")) do
               Kernel.raise("#{path} has invalid integration metadata. No writes occurred.")
             else
+              HaxePhoenixLiveReact.Registry.components_from_manifest(
+                Map.get(manifest, "components")
+              )
+
               manifest
             end
           end
@@ -220,6 +232,17 @@ defmodule HaxePhoenixLiveReact do
   defp build_apply_plan(root, existing_manifest, opts, allow_resolution) do
     topology = discover_topology(root, existing_manifest, opts)
     validate_owned_topology(existing_manifest, topology)
+
+    components =
+      if Kernel.is_nil(existing_manifest) do
+        []
+      else
+        HaxePhoenixLiveReact.Registry.components_from_manifest(
+          Map.get(existing_manifest, "components")
+        )
+      end
+
+    validate_registered_boundaries(root, components)
 
     dependency =
       HaxePhoenixLiveReact.Dependency.resolve(
@@ -273,6 +296,7 @@ defmodule HaxePhoenixLiveReact do
     manifest_data = %{
       topology: topology,
       dependency: dependency,
+      components: components,
       managed_files: managed_files,
       package_keys: package_plan.owned_keys,
       restores: elem(layout_patched, 1),
@@ -285,6 +309,7 @@ defmodule HaxePhoenixLiveReact do
 
     plan =
       plan
+      |> plan_legacy_registry_migration(root, existing_manifest, topology)
       |> HaxeProjectPatch.write_file!(Path.join(root, "mix.exs"), elem(mix_patched, 0), nil)
       |> HaxePhoenixLiveReact.Dependency.write_lock_if_changed(root, dependency)
       |> HaxeProjectPatch.write_file!(
@@ -311,7 +336,7 @@ defmodule HaxePhoenixLiveReact do
       |> plan_managed_file(topology.hooks_file, HaxePhoenixLiveReact.Core.render_hooks_file())
       |> plan_managed_file(
         topology.registry_file,
-        HaxePhoenixLiveReact.Core.render_registry_file()
+        HaxePhoenixLiveReact.Core.render_registry_file(components)
       )
       |> HaxeProjectPatch.write_file!(Path.join(root, "phoenixhx-live-react.json"), manifest, [
         {:manifest?, true}
@@ -405,6 +430,319 @@ defmodule HaxePhoenixLiveReact do
     }
   end
 
+  defp mutate_component_bang(project_root, name, mode, opts) do
+    options = normalize_options(opts)
+    root = canonical_project_root(project_root)
+    HaxeProjectPatch.recover!(root)
+    manifest = read_manifest(root, :apply)
+
+    if Kernel.is_nil(manifest) do
+      Kernel.raise(
+        "PhoenixHx LiveReact is not installed. No writes occurred. Run `mix haxe.phoenix.live_react` before registering a component."
+      )
+    else
+      topology = discover_topology(root, manifest, options)
+      validate_owned_topology(manifest, topology)
+      app_name_value = Keyword.get(options, :app_name, nil)
+
+      if not Kernel.is_binary(app_name_value) do
+        Kernel.raise(
+          "component scaffolding requires the current Mix application name. No writes occurred."
+        )
+      else
+        app_name = Kernel.to_string(app_name_value)
+        module_path = Keyword.get(options, :module_path, nil)
+        export_name = Keyword.get(options, :export_name, nil)
+        requested = HaxePhoenixLiveReact.Registry.component(name, module_path, export_name)
+
+        components =
+          HaxePhoenixLiveReact.Registry.components_from_manifest(Map.get(manifest, "components"))
+
+        existing = Enum.find(components, fn value -> value.name == requested.name end)
+
+        plan_result =
+          if mode == :add_component do
+            build_component_add_plan(
+              root,
+              topology,
+              manifest,
+              components,
+              existing,
+              requested,
+              app_name,
+              options
+            )
+          else
+            build_component_remove_plan(
+              root,
+              topology,
+              manifest,
+              components,
+              existing,
+              requested,
+              app_name
+            )
+          end
+
+        finish_component_execution(plan_result, options)
+      end
+    end
+  end
+
+  defp build_component_add_plan(
+         root,
+         topology,
+         manifest,
+         components,
+         existing,
+         requested,
+         app_name,
+         opts
+       ) do
+    plan = HaxeProjectPatch.new!(root, [{:recover, false}])
+
+    if not Kernel.is_nil(existing) do
+      if not same_component(existing, requested) do
+        Kernel.raise(
+          "LiveReact component #{requested.name} is already registered as #{existing.module_path}##{existing.export_name}. No writes occurred. Remove it before changing its static identity."
+        )
+      else
+        %{
+          plan: plan,
+          mode: :add_component,
+          name: requested.name,
+          components: components,
+          created_files: [],
+          retained_files: existing_source_files(root, app_name, requested),
+          changes: []
+        }
+      end
+    else
+      use_existing = Keyword.get(opts, :existing, false)
+      created_files = []
+
+      {created_files, plan} =
+        if use_existing do
+          validate_registered_boundary(root, requested)
+          {created_files, plan}
+        else
+          wrapper = HaxePhoenixLiveReact.Registry.wrapper_relative_path(app_name, requested)
+          boundary = HaxePhoenixLiveReact.Registry.boundary_relative_path(requested)
+          inner = HaxePhoenixLiveReact.Registry.inner_relative_path(requested)
+
+          plan =
+            plan
+            |> plan_hand_owned_starter(
+              root,
+              wrapper,
+              HaxePhoenixLiveReact.Registry.render_haxe_wrapper(app_name, requested)
+            )
+            |> plan_hand_owned_starter(
+              root,
+              boundary,
+              HaxePhoenixLiveReact.Registry.render_boundary(requested)
+            )
+            |> plan_hand_owned_starter(
+              root,
+              inner,
+              HaxePhoenixLiveReact.Registry.render_inner_component(requested)
+            )
+
+          created_files = [wrapper, boundary, inner]
+          {created_files, plan}
+        end
+
+      updated =
+        HaxePhoenixLiveReact.Registry.normalize_components(Enum.concat(components, [requested]))
+
+      plan =
+        plan
+        |> plan_managed_file(
+          topology.registry_file,
+          HaxePhoenixLiveReact.Core.render_registry_file(updated)
+        )
+        |> HaxeProjectPatch.write_file!(
+          Path.join(root, "phoenixhx-live-react.json"),
+          render_manifest_components(manifest, updated),
+          [{:manifest?, true}]
+        )
+
+      %{
+        plan: plan,
+        mode: :add_component,
+        name: requested.name,
+        components: updated,
+        created_files: created_files,
+        retained_files: [],
+        changes: HaxeProjectPatch.changes(plan)
+      }
+    end
+  end
+
+  defp build_component_remove_plan(
+         root,
+         topology,
+         manifest,
+         components,
+         existing,
+         requested,
+         app_name
+       ) do
+    plan = HaxeProjectPatch.new!(root, [{:recover, false}])
+
+    if Kernel.is_nil(existing) do
+      %{
+        plan: plan,
+        mode: :remove_component,
+        name: requested.name,
+        components: components,
+        created_files: [],
+        retained_files: [],
+        changes: []
+      }
+    else
+      updated = Enum.filter(components, fn value -> value.name != requested.name end)
+
+      plan =
+        plan
+        |> plan_managed_file(
+          topology.registry_file,
+          HaxePhoenixLiveReact.Core.render_registry_file(updated)
+        )
+        |> HaxeProjectPatch.write_file!(
+          Path.join(root, "phoenixhx-live-react.json"),
+          render_manifest_components(manifest, updated),
+          [{:manifest?, true}]
+        )
+
+      %{
+        plan: plan,
+        mode: :remove_component,
+        name: requested.name,
+        components: updated,
+        created_files: [],
+        retained_files: existing_source_files(root, app_name, existing),
+        changes: HaxeProjectPatch.changes(plan)
+      }
+    end
+  end
+
+  defp finish_component_execution(result, opts) do
+    changes = HaxeProjectPatch.changes(result.plan)
+    report = Keyword.get(opts, :report, fn message -> IO.puts(message) end)
+
+    Enum.each(changes, fn change ->
+      action = Map.fetch!(change, :action)
+      relative = Map.fetch!(change, :relative)
+      report.("[live-react] " <> Kernel.to_string(action) <> " " <> relative)
+    end)
+
+    if length(changes) == 0 do
+      drop_component_plan(result)
+    else
+      if Keyword.get(opts, :yes, false) do
+        HaxeProjectPatch.publish!(result.plan, nil)
+        drop_component_plan(result)
+      else
+        confirm = Keyword.get(opts, :confirm, fn _prompt -> false end)
+        action = if result.mode == :add_component, do: "Register", else: "Remove"
+
+        if not confirm.(
+             action <>
+               " React component " <>
+               result.name <>
+               " with " <> Kernel.to_string(length(changes)) <> " project change(s)?"
+           ) do
+          :cancelled
+        else
+          HaxeProjectPatch.publish!(result.plan, nil)
+          drop_component_plan(result)
+        end
+      end
+    end
+  end
+
+  defp drop_component_plan(result) do
+    Map.drop(result, [:plan])
+  end
+
+  defp render_manifest_components(manifest, components) do
+    updated =
+      Map.put(manifest, "components", HaxePhoenixLiveReact.Registry.to_manifest_terms(components))
+
+    options = [{:pretty, true}]
+    Enum.join([Jason.encode!(updated, options), ""], "\n")
+  end
+
+  defp plan_hand_owned_starter(plan, root, relative, content) do
+    path = Path.join(root, relative)
+    read = File.read(path)
+    read_tag = tag(read)
+
+    if read_tag == :ok do
+      Kernel.raise(
+        "cannot scaffold #{relative}: a hand-owned source file already exists. No writes occurred. Re-run with --existing to register reviewed existing source instead."
+      )
+    else
+      reason = Kernel.elem(read, 1)
+
+      if reason != :enoent do
+        Kernel.raise(
+          "cannot inspect starter path #{relative}: #{:file.format_error(reason)}. No writes occurred."
+        )
+      else
+        HaxeProjectPatch.write_file!(plan, path, content, nil)
+      end
+    end
+  end
+
+  defp validate_registered_boundaries(root, components) do
+    Enum.each(components, fn value -> validate_registered_boundary(root, value) end)
+  end
+
+  defp validate_registered_boundary(root, value) do
+    candidates =
+      Enum.map(HaxePhoenixLiveReact.Registry.boundary_candidates(value), fn relative ->
+        Path.join([root, "assets", "react-components", relative])
+      end)
+
+    matches = Enum.filter(candidates, fn path -> File.regular?(path) end)
+
+    if length(matches) == 0 do
+      Kernel.raise(
+        "registered LiveReact component #{value.name} cannot resolve #{value.module_path} under assets/react-components. No writes occurred. Restore its hand-owned boundary or remove the registry entry."
+      )
+    end
+
+    if length(matches) > 1 do
+      Kernel.raise(
+        "registered LiveReact component #{value.name} has ambiguous boundary modules: #{Enum.join(matches, ", ")}. No writes occurred. Keep exactly one supported extension."
+      )
+    end
+  end
+
+  defp existing_source_files(root, app_name, value) do
+    candidates = [
+      HaxePhoenixLiveReact.Registry.wrapper_relative_path(app_name, value),
+      HaxePhoenixLiveReact.Registry.inner_relative_path(value)
+    ]
+
+    candidates =
+      Enum.concat(
+        candidates,
+        Enum.map(HaxePhoenixLiveReact.Registry.boundary_candidates(value), fn relative ->
+          Path.join(["assets", "react-components", relative])
+        end)
+      )
+
+    Enum.filter(candidates, fn relative -> File.regular?(Path.join(root, relative)) end)
+  end
+
+  defp same_component(left, right) do
+    left.name == right.name and left.module_path == right.module_path and
+      left.export_name == right.export_name
+  end
+
   defp discover_topology(root, existing_manifest, opts) do
     HaxePhoenixLiveReact.Host.require_regular_file(
       Path.join([root, "config", "config.exs"]),
@@ -481,7 +819,7 @@ defmodule HaxePhoenixLiveReact do
         package_json: Path.join(package_root.absolute, "package.json"),
         vite_config: Path.join(package_root.absolute, "vite.config.mjs"),
         hooks_file: Path.join([root, "assets", "js", "live-react-hooks.js"]),
-        registry_file: Path.join([root, "assets", "react-components", "registry.generated.js"]),
+        registry_file: Path.join([root, "assets", "react-components", "registry.generated.ts"]),
         root_layout: root_layout,
         client_mode: client_mode
       }
@@ -493,7 +831,7 @@ defmodule HaxePhoenixLiveReact do
         package_json: Path.join(package_root.absolute, "package.json"),
         vite_config: Path.join(package_root.absolute, "vite.config.mjs"),
         hooks_file: Path.join([root, "assets", "js", "live-react-hooks.js"]),
-        registry_file: Path.join([root, "assets", "react-components", "registry.generated.js"]),
+        registry_file: Path.join([root, "assets", "react-components", "registry.generated.ts"]),
         root_layout: root_layout,
         client_mode: client_mode
       }
@@ -674,6 +1012,17 @@ defmodule HaxePhoenixLiveReact do
     )
   end
 
+  defp legacy_managed_files_for(topology) do
+    Enum.sort(
+      Enum.concat(
+        Enum.map([topology.vite_config, topology.hooks_file], fn path ->
+          Path.relative_to(path, topology.root)
+        end),
+        ["assets/react-components/registry.generated.js"]
+      )
+    )
+  end
+
   defp render_manifest(data) do
     managed =
       json_object([
@@ -695,7 +1044,7 @@ defmodule HaxePhoenixLiveReact do
         {"mixDependency", data.dependency.identity},
         {"npmReference", data.dependency.npm_reference},
         {"runtimePolicy", HaxePhoenixLiveReact.Core.runtime_policy()},
-        {"components", []},
+        {"components", HaxePhoenixLiveReact.Registry.to_manifest_terms(data.components)},
         {"managed", managed}
       ])
 
@@ -710,13 +1059,35 @@ defmodule HaxePhoenixLiveReact do
       managed = Map.fetch!(manifest, "managed")
       files = Map.fetch!(managed, "files")
       markers = Map.fetch!(managed, "markers")
+      sorted_files = Enum.sort(files)
 
-      if Enum.sort(files) != managed_files_for(topology) or
+      files_match =
+        sorted_files == managed_files_for(topology) or
+          sorted_files == legacy_managed_files_for(topology)
+
+      if not files_match or
            markers != HaxePhoenixLiveReact.SourcePatcher.managed_markers(topology) or
            Map.get(manifest, "runtimePolicy") != HaxePhoenixLiveReact.Core.runtime_policy() do
         Kernel.raise(
           "phoenixhx-live-react.json ownership or client-only policy does not match this integration version. No writes occurred. Upgrade the tool or restore the generated manifest."
         )
+      end
+    end
+  end
+
+  defp plan_legacy_registry_migration(plan, root, manifest, topology) do
+    if Kernel.is_nil(manifest) do
+      plan
+    else
+      managed = Map.fetch!(manifest, "managed")
+      files = Map.fetch!(managed, "files")
+      current_registry = Path.relative_to(topology.registry_file, root)
+
+      if Enum.member?(files, "assets/react-components/registry.generated.js") and
+           not Enum.member?(files, current_registry) do
+        plan_generated_removal(plan, root, "assets/react-components/registry.generated.js")
+      else
+        plan
       end
     end
   end

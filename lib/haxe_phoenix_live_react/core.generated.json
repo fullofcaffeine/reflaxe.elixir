@@ -6,14 +6,14 @@
     {
       "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/LiveReactLifecycle.hx",
       "generated": "lib/haxe_phoenix_live_react.ex",
-      "sourceSha256": "bdd4152fbf83de1dd83bbb6b3bdfc020b1fe54038636ad7056e9d72c34d322ca",
-      "generatedSha256": "2972f8658c077b9efe8f5eeebac19d94bc49e9f37720dfd6be8cf976adc7e50e"
+      "sourceSha256": "1fd92325ac532d9bc5f04b9d69dd1a8e3c3830c9de12527a2e50fcc8be329123",
+      "generatedSha256": "a026cb31a0a850e4059cd2e8f1cf8d28866715fc980712a16c4f7044accc3dfd"
     },
     {
       "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/IntegrationCore.hx",
       "generated": "lib/haxe_phoenix_live_react/core.ex",
-      "sourceSha256": "0c233a54b5ece8f1b30853cace5e70eb0e3347925e1d3d11eadda5839aaf01e2",
-      "generatedSha256": "fe932afe18b89c675126692e38f7d410815addb1b0fbf25a4e8a4b4eb0900409"
+      "sourceSha256": "c72621520467703cf55f9cf1422c558f6ee33488946fc2140963532df9ecc7a4",
+      "generatedSha256": "c6bcb84ef4f1d50c88169654d9a7cf1ce5cd0c07dc4be4e65a3610686b2d78b4"
     },
     {
       "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/LiveReactHost.hx",
@@ -36,14 +36,26 @@
     {
       "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/LiveReactPackage.hx",
       "generated": "lib/haxe_phoenix_live_react/package.ex",
-      "sourceSha256": "3d0e870f0f77b3c4fd27be2a75e69e2a6ef4679774bfbaf4b0923ed8351f6c92",
-      "generatedSha256": "07cb8f4020b0be090be8ab60f0da199f7d5b28baf48fc4ea7af8dc42a05ba472"
+      "sourceSha256": "acc7992b31ff4945492e62dff5d6114ba450c9f02a762ba1d24af1b7aba2e7c8",
+      "generatedSha256": "04bf180a4f688cecb7bf1347d982247dbb8ca5ae0af03662dd41c7b3ca41fb61"
+    },
+    {
+      "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/LiveReactRegistry.hx",
+      "generated": "lib/haxe_phoenix_live_react/registry.ex",
+      "sourceSha256": "809541400fd2c51519bab2f2474e62765c1c979599fae879d21d9afb391857cd",
+      "generatedSha256": "281266b2a1678d739e414737b03592475f928a31caaeac65beddb63649f354b1"
     },
     {
       "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/LiveReactMixTask.hx",
       "generated": "lib/mix/tasks/haxe.phoenix.live_react.ex",
       "sourceSha256": "6062dc481e980cd0b6401d5b46d09fc33020a24a9ce3157a338a7ce2cac77b5e",
       "generatedSha256": "6bdb64d6da60c041c556fc9191038a368685ed7dab94d0564f36fb61e021f9df"
+    },
+    {
+      "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/LiveReactComponentMixTask.hx",
+      "generated": "lib/mix/tasks/haxe.gen.live_react.ex",
+      "sourceSha256": "448520f7c654fc7f66162713c48186fc17b2cc36c728ff788abb55ab2d1c8873",
+      "generatedSha256": "eb77b00e7c64e5ac791dd2f02f57a78d0aa92c503b1fa043c87adf69b0d37bba"
     },
     {
       "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/ProjectPatch.hx",
@@ -67,7 +79,7 @@
   "sharedInputs": [
     {
       "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/LiveReactTypes.hx",
-      "sourceSha256": "1d4a24989ddfa2f73f1ad85eab26d4cdf2ea40ed17be218753f0a98c1c260f1b"
+      "sourceSha256": "015a6b09809456f31464b27b95c5729b95776e1379a9220b515d07947237e331"
     },
     {
       "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/PatchTypes.hx",

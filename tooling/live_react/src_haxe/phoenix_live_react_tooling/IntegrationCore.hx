@@ -3,6 +3,7 @@ package phoenix_live_react_tooling;
 import elixir.Enum;
 import elixir.Kernel;
 import elixir.types.Atom;
+import phoenix_live_react_tooling.LiveReactTypes.LiveReactComponent;
 
 typedef Compatibility = {
 	repository:String,
@@ -144,19 +145,14 @@ class IntegrationCore {
 		return joinLines([
 			'// $GENERATED_SIGNATURE',
 			'import {getHooks} from "live_react"',
-			'import componentRegistry from "../react-components/registry.generated.js"',
+			'import componentRegistry from "../react-components/registry.generated"',
 			'',
 			'export const reactHooks = getHooks(componentRegistry)'
 		]);
 	}
 
-	public static function renderRegistryFile():String {
-		return joinLines([
-			'// $GENERATED_SIGNATURE',
-			'export const componentRegistry = {}',
-			'',
-			'export default componentRegistry'
-		]);
+	public static function renderRegistryFile(components:Array<LiveReactComponent>):String {
+		return LiveReactRegistry.renderRegistryFile(components);
 	}
 
 	public static function liveReactDependencyLines():Array<String> {

@@ -173,7 +173,7 @@ class LiveReactPackage {
 		files = Enum.filter(files, function(path:String):Bool {
 			return !MapSet.member(managed, path) && !elixir.ElixirString.contains(path, "/node_modules/");
 		});
-		return Enum.reduce(files, MapSet.new_(), function(path:String, packages:Term):Term {
+		var imported = Enum.reduce(files, MapSet.new_(), function(path:String, packages:Term):Term {
 			var source = File.readBang(path);
 			var updated = maybeMarkPackage(packages, source, "live_react");
 			updated = maybeMarkPackage(updated, source, "react");
@@ -181,6 +181,18 @@ class LiveReactPackage {
 			updated = maybeMarkPackage(updated, source, "vite");
 			return maybeMarkPackage(updated, source, "@vitejs/plugin-react");
 		});
+		return retainRuntimePeers(imported);
+	}
+
+	/**
+	 * A retained LiveReact browser import still mounts through React and ReactDOM.
+	 * Keep that complete runtime dependency set even when JSX's automatic runtime
+	 * means the hand-owned component does not spell those peer imports itself.
+	 */
+	static function retainRuntimePeers(packages:Term):Term {
+		if (!MapSet.member(packages, "live_react"))
+			return packages;
+		return MapSet.put(MapSet.put(packages, "react"), "react-dom");
 	}
 
 	static function maybeMarkPackage(packages:Term, source:String, packageName:String):Term {

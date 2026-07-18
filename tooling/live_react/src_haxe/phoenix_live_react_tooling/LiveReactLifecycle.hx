@@ -16,6 +16,8 @@ import elixir.types.KeywordList;
 import elixir.types.NativeException;
 import elixir.types.Term;
 import phoenix_live_react_tooling.LiveReactDependency.LiveReactDependencyResolver;
+import phoenix_live_react_tooling.LiveReactTypes.LiveReactComponent;
+import phoenix_live_react_tooling.LiveReactTypes.LiveReactComponentPlan;
 import phoenix_live_react_tooling.LiveReactTypes.LiveReactDependency;
 import phoenix_live_react_tooling.LiveReactTypes.LiveReactLifecyclePlan;
 import phoenix_live_react_tooling.LiveReactTypes.LiveReactManifestData;
@@ -57,6 +59,13 @@ class LiveReactLifecycle {
 	static inline final ACTION:Atom = "action";
 	static inline final RELATIVE:Atom = "relative";
 	static inline final PRETTY:Atom = "pretty";
+	static inline final ADD_COMPONENT:Atom = "add_component";
+	static inline final REMOVE_COMPONENT:Atom = "remove_component";
+	static inline final APP_NAME:Atom = "app_name";
+	static inline final MODULE_PATH:Atom = "module_path";
+	static inline final EXPORT_NAME:Atom = "export_name";
+	static inline final EXISTING:Atom = "existing";
+	static inline final LEGACY_REGISTRY_FILE = "assets/react-components/registry.generated.js";
 
 	@:native("apply!")
 	public static function applyBang(projectRoot:String, opts:Null<KeywordList<Term>> = null):Term {
@@ -71,6 +80,16 @@ class LiveReactLifecycle {
 	@:native("remove!")
 	public static function removeBang(projectRoot:String, opts:Null<KeywordList<Term>> = null):Term {
 		return executeBang(projectRoot, REMOVE, opts);
+	}
+
+	@:native("add_component!")
+	public static function addComponentBang(projectRoot:String, name:String, opts:Null<KeywordList<Term>> = null):Term {
+		return mutateComponentBang(projectRoot, name, ADD_COMPONENT, opts);
+	}
+
+	@:native("remove_component!")
+	public static function removeComponentBang(projectRoot:String, name:String, opts:Null<KeywordList<Term>> = null):Term {
+		return mutateComponentBang(projectRoot, name, REMOVE_COMPONENT, opts);
 	}
 
 	@:native("execute!")
@@ -220,12 +239,15 @@ class LiveReactLifecycle {
 			|| !Kernel.isMap(ElixirMap.get(manifest, "runtimePolicy"))
 			|| !Kernel.isList(ElixirMap.get(manifest, "components")))
 			return Kernel.raiseValue(path + " has invalid integration metadata. No writes occurred.");
+		LiveReactRegistry.componentsFromManifest(ElixirMap.get(manifest, "components"));
 		return manifest;
 	}
 
 	static function buildApplyPlan(root:String, existingManifest:Term, opts:KeywordList<Term>, allowResolution:Bool):LiveReactLifecyclePlan {
 		var topology = discoverTopology(root, existingManifest, opts);
 		validateOwnedTopology(existingManifest, topology);
+		var components = existingManifest == null ? [] : LiveReactRegistry.componentsFromManifest(ElixirMap.get(existingManifest, "components"));
+		validateRegisteredBoundaries(root, components);
 		var dependency = LiveReactDependencyResolver.resolve(root, topology, existingManifest, opts, allowResolution);
 		var packagePlan = LiveReactPackage.plan(topology, dependency, existingManifest);
 		var source = readRequiredSources(topology);
@@ -240,6 +262,7 @@ class LiveReactLifecycle {
 		var manifestData:LiveReactManifestData = {
 			topology: topology,
 			dependency: dependency,
+			components: components,
 			managedFiles: managedFiles,
 			packageKeys: packagePlan.ownedKeys,
 			restores: layoutPatched._1,
@@ -248,6 +271,7 @@ class LiveReactLifecycle {
 		};
 		var manifest = renderManifest(manifestData);
 		var plan = ProjectPatch.newBang(root, [{_0: RECOVER, _1: false}]);
+		plan = planLegacyRegistryMigration(plan, root, existingManifest, topology);
 		plan = ProjectPatch.writeFileBang(plan, Path.joinTwo(root, "mix.exs"), mixPatched._0);
 		plan = LiveReactDependencyResolver.writeLockIfChanged(plan, root, dependency);
 		plan = ProjectPatch.writeFileBang(plan, Path.join([root, "config", "config.exs"]), configPatched._0);
@@ -257,7 +281,7 @@ class LiveReactLifecycle {
 		plan = ProjectPatch.writeFileBang(plan, topology.packageJson, packagePlan.content);
 		plan = planManagedFile(plan, topology.viteConfig, IntegrationCore.renderViteConfig(topology.packageRootRelative));
 		plan = planManagedFile(plan, topology.hooksFile, IntegrationCore.renderHooksFile());
-		plan = planManagedFile(plan, topology.registryFile, IntegrationCore.renderRegistryFile());
+		plan = planManagedFile(plan, topology.registryFile, IntegrationCore.renderRegistryFile(components));
 		plan = ProjectPatch.writeFileBang(plan, Path.joinTwo(root, IntegrationCore.MANIFEST_FILENAME), manifest, [{_0: MANIFEST_QUESTION, _1: true}]);
 		return {
 			plan: plan,
@@ -311,6 +335,182 @@ class LiveReactLifecycle {
 		};
 	}
 
+	static function mutateComponentBang(projectRoot:String, name:String, mode:Atom, opts:Null<KeywordList<Term>>):Term {
+		var options = normalizeOptions(opts);
+		var root = canonicalProjectRoot(projectRoot);
+		ProjectPatch.recoverBang(root);
+		var manifest = readManifest(root, APPLY);
+		if (manifest == null)
+			return
+				Kernel.raiseValue("PhoenixHx LiveReact is not installed. No writes occurred. Run `mix haxe.phoenix.live_react` before registering a component.");
+		var topology = discoverTopology(root, manifest, options);
+		validateOwnedTopology(manifest, topology);
+		var appNameValue:Term = Keyword.get(options, APP_NAME, null);
+		if (!Kernel.isBinary(appNameValue))
+			return Kernel.raiseValue("component scaffolding requires the current Mix application name. No writes occurred.");
+		var appName = Kernel.toString(appNameValue);
+		var modulePath:Null<String> = Keyword.get(options, MODULE_PATH, null);
+		var exportName:Null<String> = Keyword.get(options, EXPORT_NAME, null);
+		var requested = LiveReactRegistry.component(name, modulePath, exportName);
+		var components = LiveReactRegistry.componentsFromManifest(ElixirMap.get(manifest, "components"));
+		var existing = Enum.find(components, function(value:LiveReactComponent):Bool return value.name == requested.name);
+		var planResult = mode == ADD_COMPONENT ? buildComponentAddPlan(root, topology, manifest, components, existing, requested, appName,
+			options) : buildComponentRemovePlan(root, topology, manifest, components, existing, requested, appName);
+		return finishComponentExecution(planResult, options);
+	}
+
+	static function buildComponentAddPlan(root:String, topology:LiveReactTopology, manifest:Term, components:Array<LiveReactComponent>,
+			existing:Null<LiveReactComponent>, requested:LiveReactComponent, appName:String, opts:KeywordList<Term>):LiveReactComponentPlan {
+		var plan = ProjectPatch.newBang(root, [{_0: RECOVER, _1: false}]);
+		if (existing != null) {
+			if (!sameComponent(existing, requested))
+				return
+					Kernel.raiseValue('LiveReact component ${requested.name} is already registered as ${existing.modulePath}#${existing.exportName}. No writes occurred. Remove it before changing its static identity.');
+			return {
+				plan: plan,
+				mode: ADD_COMPONENT,
+				name: requested.name,
+				components: components,
+				createdFiles: [],
+				retainedFiles: existingSourceFiles(root, appName, requested),
+				changes: []
+			};
+		}
+
+		var useExisting = Keyword.get(opts, EXISTING, false);
+		var createdFiles:Array<String> = [];
+		if (useExisting) {
+			validateRegisteredBoundary(root, requested);
+		} else {
+			var wrapper = LiveReactRegistry.wrapperRelativePath(appName, requested);
+			var boundary = LiveReactRegistry.boundaryRelativePath(requested);
+			var inner = LiveReactRegistry.innerRelativePath(requested);
+			plan = planHandOwnedStarter(plan, root, wrapper, LiveReactRegistry.renderHaxeWrapper(appName, requested));
+			plan = planHandOwnedStarter(plan, root, boundary, LiveReactRegistry.renderBoundary(requested));
+			plan = planHandOwnedStarter(plan, root, inner, LiveReactRegistry.renderInnerComponent(requested));
+			createdFiles = [wrapper, boundary, inner];
+		}
+
+		var updated = LiveReactRegistry.normalizeComponents(Enum.concatTwo(components, [requested]));
+		plan = planManagedFile(plan, topology.registryFile, IntegrationCore.renderRegistryFile(updated));
+		plan = ProjectPatch.writeFileBang(plan, Path.joinTwo(root, IntegrationCore.MANIFEST_FILENAME), renderManifestComponents(manifest, updated),
+			[{_0: MANIFEST_QUESTION, _1: true}]);
+		return {
+			plan: plan,
+			mode: ADD_COMPONENT,
+			name: requested.name,
+			components: updated,
+			createdFiles: createdFiles,
+			retainedFiles: [],
+			changes: ProjectPatch.changes(plan)
+		};
+	}
+
+	static function buildComponentRemovePlan(root:String, topology:LiveReactTopology, manifest:Term, components:Array<LiveReactComponent>,
+			existing:Null<LiveReactComponent>, requested:LiveReactComponent, appName:String):LiveReactComponentPlan {
+		var plan = ProjectPatch.newBang(root, [{_0: RECOVER, _1: false}]);
+		if (existing == null) {
+			return {
+				plan: plan,
+				mode: REMOVE_COMPONENT,
+				name: requested.name,
+				components: components,
+				createdFiles: [],
+				retainedFiles: [],
+				changes: []
+			};
+		}
+		var updated = Enum.filter(components, function(value:LiveReactComponent):Bool return value.name != requested.name);
+		plan = planManagedFile(plan, topology.registryFile, IntegrationCore.renderRegistryFile(updated));
+		plan = ProjectPatch.writeFileBang(plan, Path.joinTwo(root, IntegrationCore.MANIFEST_FILENAME), renderManifestComponents(manifest, updated),
+			[{_0: MANIFEST_QUESTION, _1: true}]);
+		return {
+			plan: plan,
+			mode: REMOVE_COMPONENT,
+			name: requested.name,
+			components: updated,
+			createdFiles: [],
+			retainedFiles: existingSourceFiles(root, appName, existing),
+			changes: ProjectPatch.changes(plan)
+		};
+	}
+
+	static function finishComponentExecution(result:LiveReactComponentPlan, opts:KeywordList<Term>):Term {
+		var changes = ProjectPatch.changes(result.plan);
+		var report:String->Void = Keyword.get(opts, REPORT, function(message:String):Void IO.puts(message));
+		Enum.each(changes, function(change:Term):Void {
+			var action:Term = ElixirMap.fetchBangTerm(change, ACTION);
+			var relative:String = ElixirMap.fetchBangTerm(change, RELATIVE);
+			report("[live-react] " + Kernel.toString(action) + " " + relative);
+		});
+		if (changes.length == 0)
+			return dropComponentPlan(result);
+		if (Keyword.get(opts, YES, false)) {
+			ProjectPatch.publishBang(result.plan);
+			return dropComponentPlan(result);
+		}
+		var confirm:String->Bool = Keyword.get(opts, CONFIRM, function(_prompt:String):Bool return false);
+		var action = result.mode == ADD_COMPONENT ? "Register" : "Remove";
+		if (!confirm(action + " React component " + result.name + " with " + Kernel.toString(changes.length) + " project change(s)?"))
+			return CANCELLED;
+		ProjectPatch.publishBang(result.plan);
+		return dropComponentPlan(result);
+	}
+
+	static function dropComponentPlan(result:LiveReactComponentPlan):Term {
+		return ElixirMap.dropTerm(result, [PLAN]);
+	}
+
+	static function renderManifestComponents(manifest:Term, components:Array<LiveReactComponent>):String {
+		var updated = ElixirMap.putTerm(manifest, "components", LiveReactRegistry.toManifestTerms(components));
+		var options:KeywordList<Term> = [{_0: PRETTY, _1: true}];
+		return Enum.join([Jason.encodeStrictWithKeywordOptions(updated, options), ""], "\n");
+	}
+
+	static function planHandOwnedStarter(plan:PatchPlan, root:String, relative:String, content:String):PatchPlan {
+		var path = Path.joinTwo(root, relative);
+		var read = File.readResult(path);
+		var readTag = tag(read);
+		if (readTag == OK)
+			return Kernel.raiseValue("cannot scaffold "
+				+ relative
+				+ ": a hand-owned source file already exists. No writes occurred. Re-run with --existing to register reviewed existing source instead.");
+		var reason = Kernel.elem(read, 1);
+		if (reason != ENOENT)
+			return Kernel.raiseValue("cannot inspect starter path " + relative + ": " + ErlangFile.formatError(reason) + ". No writes occurred.");
+		return ProjectPatch.writeFileBang(plan, path, content);
+	}
+
+	static function validateRegisteredBoundaries(root:String, components:Array<LiveReactComponent>):Void {
+		Enum.each(components, function(value:LiveReactComponent):Void validateRegisteredBoundary(root, value));
+	}
+
+	static function validateRegisteredBoundary(root:String, value:LiveReactComponent):Void {
+		var candidates = Enum.map(LiveReactRegistry.boundaryCandidates(value), function(relative:String):String {
+			return Path.join([root, "assets", "react-components", relative]);
+		});
+		var matches = Enum.filter(candidates, function(path:String):Bool return File.regular(path));
+		if (matches.length == 0)
+			Kernel.raise('registered LiveReact component ${value.name} cannot resolve ${value.modulePath} under assets/react-components. No writes occurred. Restore its hand-owned boundary or remove the registry entry.');
+		if (matches.length > 1)
+			Kernel.raise('registered LiveReact component ${value.name} has ambiguous boundary modules: ${Enum.join(matches, ", ")}. No writes occurred. Keep exactly one supported extension.');
+	}
+
+	static function existingSourceFiles(root:String, appName:String, value:LiveReactComponent):Array<String> {
+		var candidates = [
+			LiveReactRegistry.wrapperRelativePath(appName, value),
+			LiveReactRegistry.innerRelativePath(value)
+		];
+		candidates = Enum.concatTwo(candidates, Enum.map(LiveReactRegistry.boundaryCandidates(value), function(relative:String):String {
+			return Path.join(["assets", "react-components", relative]);
+		}));
+		return Enum.filter(candidates, function(relative:String):Bool return File.regular(Path.joinTwo(root, relative)));
+	}
+
+	static function sameComponent(left:LiveReactComponent, right:LiveReactComponent):Bool {
+		return left.name == right.name && left.modulePath == right.modulePath && left.exportName == right.exportName;
+	}
+
 	static function discoverTopology(root:String, existingManifest:Term, opts:KeywordList<Term>):LiveReactTopology {
 		LiveReactHost.requireRegularFile(Path.join([root, "config", "config.exs"]), "Phoenix config");
 		LiveReactHost.requireRegularFile(Path.join([root, "config", "dev.exs"]), "Phoenix development config");
@@ -354,7 +554,7 @@ class LiveReactLifecycle {
 			packageJson: Path.joinTwo(packageRoot.absolute, "package.json"),
 			viteConfig: Path.joinTwo(packageRoot.absolute, "vite.config.mjs"),
 			hooksFile: Path.join([root, "assets", "js", "live-react-hooks.js"]),
-			registryFile: Path.join([root, "assets", "react-components", "registry.generated.js"]),
+			registryFile: Path.join([root, "assets", "react-components", "registry.generated.ts"]),
 			rootLayout: rootLayout,
 			clientMode: clientMode
 		};
@@ -466,6 +666,12 @@ class LiveReactLifecycle {
 			function(path:String):String return Path.relativeTo(path, topology.root)));
 	}
 
+	static function legacyManagedFilesFor(topology:LiveReactTopology):Array<String> {
+		return Enum.sort(Enum.concatTwo(Enum.map([topology.viteConfig, topology.hooksFile],
+			function(path:String):String return Path.relativeTo(path, topology.root)),
+			[LEGACY_REGISTRY_FILE]));
+	}
+
 	static function renderManifest(data:LiveReactManifestData):String {
 		var managed = jsonObject([
 			{_0: "files", _1: data.managedFiles},
@@ -484,7 +690,7 @@ class LiveReactLifecycle {
 			{_0: "mixDependency", _1: data.dependency.identity},
 			{_0: "npmReference", _1: data.dependency.npmReference},
 			{_0: "runtimePolicy", _1: IntegrationCore.runtimePolicy()},
-			{_0: "components", _1: []},
+			{_0: "components", _1: LiveReactRegistry.toManifestTerms(data.components)},
 			{_0: "managed", _1: managed}
 		]);
 		var options:KeywordList<Term> = [{_0: PRETTY, _1: true}];
@@ -497,12 +703,24 @@ class LiveReactLifecycle {
 		var managed:Term = ElixirMap.fetchBangTerm(manifest, "managed");
 		var files:Array<String> = ElixirMap.fetchBangTerm(managed, "files");
 		var markers:Array<Term> = ElixirMap.fetchBangTerm(managed, "markers");
-		if (Enum.sort(files) != managedFilesFor(topology)
+		var sortedFiles = Enum.sort(files);
+		var filesMatch = sortedFiles == managedFilesFor(topology) || sortedFiles == legacyManagedFilesFor(topology);
+		if (!filesMatch
 			|| markers != LiveReactSourcePatcher.managedMarkers(topology)
 			|| ElixirMap.get(manifest, "runtimePolicy") != IntegrationCore.runtimePolicy())
 			Kernel.raise(IntegrationCore.MANIFEST_FILENAME
 				+
 				" ownership or client-only policy does not match this integration version. No writes occurred. Upgrade the tool or restore the generated manifest.");
+	}
+
+	static function planLegacyRegistryMigration(plan:PatchPlan, root:String, manifest:Term, topology:LiveReactTopology):PatchPlan {
+		if (manifest == null)
+			return plan;
+		var managed:Term = ElixirMap.fetchBangTerm(manifest, "managed");
+		var files:Array<String> = ElixirMap.fetchBangTerm(managed, "files");
+		var currentRegistry = Path.relativeTo(topology.registryFile, root);
+		return Enum.member(files, LEGACY_REGISTRY_FILE)
+			&& !Enum.member(files, currentRegistry) ? planGeneratedRemoval(plan, root, LEGACY_REGISTRY_FILE) : plan;
 	}
 
 	static function planManagedFile(plan:PatchPlan, path:String, desired:String):PatchPlan {
