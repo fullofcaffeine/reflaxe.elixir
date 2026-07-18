@@ -139,6 +139,11 @@ enum abstract JasonFloatMode(String) to String {
 
 /**
  * Elixir result type for {:ok, value} or {:error, reason}
+ *
+ * `@:native("")` is intentional here: this is a type-only view of a tagged
+ * BEAM value, not an Elixir module that should qualify instance operations.
+ * Do not use the empty native name for ordinary maps or records; model those
+ * with a typed anonymous `typedef` instead.
  */
 @:native("")
 extern class ElixirResult<T, E> {

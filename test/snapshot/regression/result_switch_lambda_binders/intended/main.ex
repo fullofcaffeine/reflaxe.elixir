@@ -5,6 +5,9 @@ defmodule Main do
   defp apply_result_to(input, callback) do
     callback.(input)
   end
+  defp apply_string(callback) do
+    callback.()
+  end
   defp assert_equals(label, expected, actual) do
     if (expected != actual) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "" <> label <> ": expected " <> Reflaxe.Elixir.HaxeFloat.to_string(expected) <> ", got " <> Reflaxe.Elixir.HaxeFloat.to_string(actual)]
@@ -34,8 +37,16 @@ defmodule Main do
       {:error, message} -> raise Reflaxe.Elixir.HaxeThrow, [value: "unexpected object error: " <> message]
     end)
   end
+  defp verify_suffix_parameter_does_not_capture_local(package_root) do
+    root = "local-root"
+    captured = apply_string(fn -> root end)
+    if (captured != root) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "closure captured " <> captured <> " instead of " <> root <> " from " <> package_root]
+    end
+  end
   def main() do
     verify({:ok, 10})
     verify_object_capture({:ok, %{amount: 10}})
+    verify_suffix_parameter_does_not_capture_local("package-root")
   end
 end

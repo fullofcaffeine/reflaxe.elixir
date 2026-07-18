@@ -81,10 +81,12 @@ extern class ElixirMap {
 	@:native("Map.has_key?")
 	public static function hasKey<K, V>(map:Map<K, V>, key:K):Bool;
 
-	@:native("Map.size")
+	/** Map cardinality through the current Kernel BIF; avoids deprecated `Map.size/1`. */
+	@:native("Kernel.map_size")
 	public static function size<K, V>(map:Map<K, V>):Int;
 
-	@:native("Map.size")
+	/** Map cardinality at an explicitly native `Term` boundary. */
+	@:native("Kernel.map_size")
 	public static function sizeTerm(map:Term):Int;
 
 	@:native("Map.empty?")

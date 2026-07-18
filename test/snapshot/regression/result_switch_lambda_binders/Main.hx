@@ -22,6 +22,10 @@ class Main {
 		return callback(input);
 	}
 
+	static function applyString(callback:() -> String):String {
+		return callback();
+	}
+
 	static function assertEquals(label:String, expected:Int, actual:Int):Void {
 		if (expected != actual) {
 			throw '$label: expected $expected, got $actual';
@@ -57,8 +61,17 @@ class Main {
 		}
 	}
 
+	static function verifySuffixParameterDoesNotCaptureLocal(packageRoot:String):Void {
+		var root = "local-root";
+		var captured = applyString(() -> root);
+		if (captured != root) {
+			throw 'closure captured $captured instead of $root from $packageRoot';
+		}
+	}
+
 	public static function main():Void {
 		verify(Ok(10));
 		verifyObjectCapture(Ok({amount: 10}));
+		verifySuffixParameterDoesNotCaptureLocal("package-root");
 	}
 }

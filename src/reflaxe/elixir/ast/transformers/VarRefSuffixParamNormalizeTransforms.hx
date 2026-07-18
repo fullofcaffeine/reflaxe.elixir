@@ -176,7 +176,10 @@ class VarRefSuffixParamNormalizeTransforms {
 							var declared = collectDeclared(makeASTWithMeta(EFn([cl]), x.metadata, x.pos));
 							var newBody = ElixirASTTransformer.transformNode(cl.body, function(y:ElixirAST):ElixirAST {
 								return switch (y.def) {
-									case EVar(v) if (v != null && suff.exists(v) && !declared.exists(v)):
+									case EVar(v) if (v != null && suff.exists(v) && !declared.exists(v) && !topDeclaredCache.exists(v)):
+										// A nested function may legitimately capture a local declared by the
+										// enclosing Haxe function. Do not reinterpret that free variable as a
+										// suffix-matching parameter (for example `root` -> `package_root`).
 										var full = suff.get(v);
 										makeASTWithMeta(EVar(full), y.metadata, y.pos);
 									default: y;

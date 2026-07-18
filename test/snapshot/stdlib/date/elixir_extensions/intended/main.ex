@@ -5,6 +5,7 @@ defmodule Main do
     test_conversions()
     test_utility_methods()
     test_operators()
+    test_system_time_units()
   end
   defp test_arithmetic() do
     elixir_month = 1
@@ -83,5 +84,11 @@ defmodule Main do
                 {:ok, naive} = NaiveDateTime.new(2024, elixir_month, 15, 12, 0, 0)
                 DateTime.from_naive!(naive, "Etc/UTC"))
     nil
+  end
+  defp test_system_time_units() do
+    milliseconds = System.system_time(:millisecond)
+    if (milliseconds <= 0) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "System time must be positive"]
+    end
   end
 end

@@ -29,6 +29,8 @@ import reflaxe.elixir.ast.naming.ElixirAtom;
  *   - `Assert.is_false(v, msg)` -> `refute(v, msg?)`
  *   - `Assert.raises(fn, ex, msg)` -> `assert_raise(ex, msg?, fn)` (when `ex` provided)
  *     or `assert(try ... rescue ... end)` (when `ex` is nil)
+ *   - `Assert.raisesRuntimeErrorMatching(fn, pattern)` ->
+ *     `assert_raise(RuntimeError, Regex.compile!(pattern), fn)`
  *   - plus other common assertion helpers.
  *
  * EXAMPLES
@@ -105,6 +107,8 @@ class ExUnitAssertTransforms {
 				if (args == null || args.length < 1) n else assertOrRefute("assert", resultIsErrorExpr(args[0]), takeOptionalNonNilArg(args, 1), n);
 			case "raises":
 				rewriteRaises(n, args);
+			case "raises_runtime_error_matching":
+				rewriteRuntimeErrorMatching(n, args);
 			case "does_not_raise":
 				rewriteDoesNotRaise(n, args);
 			case "contains":
@@ -155,6 +159,13 @@ class ExUnitAssertTransforms {
 		// Any exception: assert(try do fn.(); false rescue _ -> true end, msg?)
 		var didRaiseExpr = tryRescueBoolean(fnExpr, false, true);
 		return assertOrRefute("assert", didRaiseExpr, message, n);
+	}
+
+	static function rewriteRuntimeErrorMatching(n:ElixirAST, args:Array<ElixirAST>):ElixirAST {
+		if (args == null || args.length < 2)
+			return n;
+		var regex = makeAST(ERemoteCall(makeAST(EVar("Regex")), "compile!", [args[1]]));
+		return makeASTWithMeta(ECall(null, "assert_raise", [makeAST(EVar("RuntimeError")), regex, args[0]]), n.metadata, n.pos);
 	}
 
 	static function rewriteDoesNotRaise(n:ElixirAST, args:Array<ElixirAST>):ElixirAST {

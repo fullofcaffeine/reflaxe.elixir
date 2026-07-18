@@ -2738,6 +2738,38 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 				funcMetadata.isTeardownAll = hasMeta("teardownAll");
 				funcMetadata.isAsync = hasMeta("async");
 
+				if (funcMetadata.isTest) {
+					var testMeta = funcData.field.meta.extract("test");
+					var testMetaAlt = funcData.field.meta.extract(":test");
+					if (testMetaAlt != null && testMetaAlt.length > 0) {
+						testMeta = testMeta == null ? testMetaAlt : testMeta.concat(testMetaAlt);
+					}
+
+					var explicitDescription:Null<String> = null;
+					if (testMeta != null) {
+						for (entry in testMeta) {
+							if (entry.params == null || entry.params.length == 0)
+								continue;
+							if (entry.params.length != 1) {
+								Context.error('@:test accepts either no arguments or one string-literal description.', entry.pos);
+								continue;
+							}
+
+							switch (entry.params[0].expr) {
+								case EConst(CString(description)):
+									if (description.trim().length == 0)
+										Context.error('@:test description must not be empty.', entry.params[0].pos);
+									if (explicitDescription != null)
+										Context.error('@:test description may be declared only once.', entry.pos);
+									explicitDescription = description;
+								default:
+									Context.error('@:test description must be a string literal.', entry.params[0].pos);
+							}
+						}
+					}
+					funcMetadata.testDescription = explicitDescription;
+				}
+
 				#if debug_exunit
 				if (funcMetadata.isTest) {}
 				#end

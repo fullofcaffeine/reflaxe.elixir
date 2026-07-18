@@ -82,6 +82,10 @@ extern class Path {
 	@:native("Path.wildcard")
 	public static function wildcardWithOptions(glob:String, options:Map<String, Term>):Array<String>;
 
+	/** Exact keyword-option form, for example `match_dot: true`. */
+	@:native("Path.wildcard")
+	public static function wildcardWithKeywordOptions(glob:String, options:elixir.types.KeywordList<Term>):Array<String>;
+
 	// Path constants
 	public static inline var SEPARATOR:String = "/"; // Path separator for current OS
 	public static inline var CURRENT_DIR:String = "."; // Current directory

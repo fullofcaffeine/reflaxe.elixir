@@ -24,11 +24,12 @@ import haxe.macro.Expr;
  * EXAMPLES
  * Haxe:
  *   @:exunit class MyTest extends TestCase {
- *     @:test function works() { ... }
+ *     @:test("two plus two is four") function works() { ... }
  *   }
  *
  * Result (macro-time):
  * - `works()` is marked `@:keep` so it survives to the AST-based ExUnit transformer.
+ * - The compiler later carries the explicit description into `test "two plus two is four"`.
  */
 class ExUnitBuilder {
 	public static function build():Array<Field> {

@@ -10,7 +10,7 @@ defmodule Main do
     on_exit(fn -> nil end)
     :ok
   end
-  test "equality assertions" do
+  test "basic equality remains exact" do
     assert(4 == 4, "Basic math should work")
     assert("Hello" == "Hello", "String equality should work")
     assert(true == true, "Boolean equality should work")
@@ -18,6 +18,9 @@ defmodule Main do
     arr2_0 = 1
     assert(3 == 3, "Array lengths should be equal")
     assert(arr1_0 == arr2_0, "First elements should be equal")
+  end
+  test "runtime error messages can be matched" do
+    assert_raise(RuntimeError, Regex.compile!("^expected failure$"), fn -> Kernel.raise("expected failure") end)
   end
   test "boolean assertions" do
     assert(true, "5 should be greater than 3")

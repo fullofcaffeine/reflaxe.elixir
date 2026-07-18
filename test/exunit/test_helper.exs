@@ -38,11 +38,58 @@ File.mkdir_p!(Path.join(project_root, "test/fixtures"))
 # Compile test support modules
 Code.compile_file(Path.join(project_root, "test/support/haxe_test_helper.ex"))
 
-# Compile + load Haxe-authored ExUnit tests (stdlib runtime semantics)
-generated_dir = Path.join(project_root, "test/fixtures/_generated_haxe_exunit")
-haxe_test_src = Path.join(project_root, "test/haxe_exunit/stdlib_parity/src_haxe")
+# HOST BOOTSTRAP BOUNDARY: Mix evaluates test_helper.exs before the Haxe-authored
+# ExUnit modules exist. This deliberately tiny handwritten loader only verifies and
+# applies Elixir's canonical lexical formatter, and loads compiler output; all
+# test behavior remains in Haxe. Product generation uses the same formatter
+# stage after Reflaxe.Elixir has established the target semantics.
+defmodule HaxeExUnitBootstrap do
+  @moduledoc false
 
-if File.dir?(haxe_test_src) do
+  def format_and_require_generated!(generated_dir, relative_files) do
+    Enum.each(relative_files, fn relative_file ->
+      generated_file = Path.join(generated_dir, relative_file)
+
+      unless File.regular?(generated_file) do
+        raise "Expected Haxe-authored ExUnit module was not generated: #{generated_file}"
+      end
+
+      formatted =
+        generated_file
+        |> File.read!()
+        |> Code.format_string!()
+        |> IO.iodata_to_binary()
+
+      File.write!(generated_file, formatted <> "\n")
+      Code.require_file(generated_file)
+    end)
+  end
+end
+
+# Compile + load Haxe-authored ExUnit tests.
+generated_dir = Path.join(project_root, "test/fixtures/_generated_haxe_exunit")
+
+haxe_test_sources = [
+  Path.join(project_root, "test/haxe_exunit/stdlib_parity/src_haxe"),
+  Path.join(project_root, "test/haxe_exunit/live_react/src_haxe")
+]
+
+haxe_test_modules = [
+  "stdlib_parity.StdlibParityTest",
+  "stdlib_parity.UpstreamUnitStdTest",
+  "live_react_test.HaxePhoenixLiveReactTest",
+  "live_react_test.MixTaskOptionsTest"
+]
+
+deferred_haxe_test_files = [
+  "haxe_phoenix_live_react_test/support.ex",
+  "haxe_phoenix_live_react_test.ex",
+  "mix/tasks/haxe/phoenix/live_react_test.ex"
+]
+
+missing_haxe_test_sources = Enum.reject(haxe_test_sources, &File.dir?/1)
+
+if missing_haxe_test_sources == [] do
   File.rm_rf!(generated_dir)
   File.mkdir_p!(generated_dir)
 
@@ -50,27 +97,30 @@ if File.dir?(haxe_test_src) do
   timeout_script = Path.join(project_root, "scripts/with-timeout.sh")
   bash_bin = System.find_executable("bash") || "bash"
 
-  haxe_test_modules = [
-    "stdlib_parity.StdlibParityTest",
-    "stdlib_parity.UpstreamUnitStdTest"
-  ]
+  haxe_source_args = Enum.flat_map(haxe_test_sources, &["-cp", &1])
 
   {output, status} =
-    System.cmd(bash_bin, [
-      timeout_script,
-      "--secs",
-      "240",
-      "--",
-      haxe_bin,
-      "-cp",
-      haxe_test_src,
-      "-lib",
-      "reflaxe.elixir",
-      "-dce",
-      "full",
-      "-D",
-      "elixir_output=#{generated_dir}"
-    ] ++ haxe_test_modules, cd: project_root, stderr_to_stdout: true)
+    System.cmd(
+      bash_bin,
+      [
+        timeout_script,
+        "--secs",
+        "240",
+        "--",
+        haxe_bin
+      ] ++
+        haxe_source_args ++
+        [
+          "-lib",
+          "reflaxe.elixir",
+          "-dce",
+          "full",
+          "-D",
+          "elixir_output=#{generated_dir}"
+        ] ++ haxe_test_modules,
+      cd: project_root,
+      stderr_to_stdout: true
+    )
 
   if status != 0 do
     raise """
@@ -88,6 +138,7 @@ if File.dir?(haxe_test_src) do
     |> Path.join("**/*.ex")
     |> Path.wildcard()
     |> Enum.map(&Path.relative_to(&1, generated_dir))
+    |> Enum.reject(&(&1 in deferred_haxe_test_files))
     |> Enum.sort()
 
   # Dependency-friendly load order: require core runtime modules (like `Reflaxe.Elixir.HaxeThrow`)
@@ -126,7 +177,7 @@ if File.dir?(haxe_test_src) do
     Code.require_file(Path.join(generated_dir, rel))
   end)
 else
-  ExUnit.start()
+  raise "Missing Haxe-authored ExUnit source roots: #{Enum.join(missing_haxe_test_sources, ", ")}"
 end
 
 # Configure ExUnit for parallel execution (default: 2x CPU cores)

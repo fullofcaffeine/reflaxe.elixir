@@ -3303,6 +3303,37 @@ runtime-facing modules, and tests.**
   them, audit the boundary and migrate expressible logic to Haxe or document the
   narrowly justified exception in the source.
 
+### Haxe Semantic Paragraphing (Required)
+
+Haxe source must use blank lines to expose the program's semantic phases. A
+reader should be able to scan a function as a few short paragraphs instead of
+decoding one dense wall of statements.
+
+- Separate setup/input construction, the operation under test, each distinct
+  verification group, state transition or recovery, and cleanup with one blank
+  line. In non-test code, apply the same rule to phases such as parse, validate,
+  normalize, render, persist, and report.
+- Keep tightly coupled statements together: a value and the assertion(s) about
+  that value, or a transformation chain that expresses one idea, should remain
+  in the same paragraph.
+- Do not add a blank line after every statement or use comments such as
+  `// Arrange` merely to compensate for unclear grouping. Prefer meaningful
+  locals and small named helpers when a paragraph still contains multiple
+  ideas.
+- In tests, make the arrange/action/assertion/cleanup flow visually obvious,
+  and split assertions into coherent behavior groups (for example generated
+  files, runtime output, then removal/restoration).
+- Apply this during review to every new or substantially edited Haxe file; a
+  formatter passing is not sufficient if the semantic grouping remains dense.
+
+When a bootstrap file, fixture, or generated configuration must contain target
+source before Reflaxe.Elixir itself can be loaded (for example an external
+project's `mix.exs`), callers must still describe the data with typed Haxe
+structures and delegate source emission to one named renderer/template owner.
+Do not concatenate target syntax at the test or product call site. Document the
+bootstrap cycle at the renderer so this narrow source-generation boundary is
+not mistaken for general permission to inject target code.
+
 ### ⚠️ CRITICAL: Check Haxe Standard Library First
 **FUNDAMENTAL RULE: Always check if Haxe stdlib already offers something before implementing it ourselves.**
 

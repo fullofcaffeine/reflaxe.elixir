@@ -52,7 +52,7 @@ class Main extends TestCase {
 	/**
 	 * Test basic equality assertions
 	 */
-	@:test
+	@:test("basic equality remains exact")
 	function testEqualityAssertions() {
 		Assert.equals(2 + 2, 4, "Basic math should work");
 		Assert.equals("Hello", "Hello", "String equality should work");
@@ -63,6 +63,14 @@ class Main extends TestCase {
 		var arr2 = [1, 2, 3];
 		Assert.equals(arr1.length, arr2.length, "Array lengths should be equal");
 		Assert.equals(arr1[0], arr2[0], "First elements should be equal");
+	}
+
+	/** Test exact RuntimeError message matching without target-code injection. */
+	@:test("runtime error messages can be matched")
+	function testRuntimeErrorMessages() {
+		Assert.raisesRuntimeErrorMatching(function():Void {
+			elixir.Kernel.raiseValue("expected failure");
+		}, "^expected failure$");
 	}
 
 	/**

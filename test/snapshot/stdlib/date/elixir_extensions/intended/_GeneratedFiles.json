@@ -1,6 +1,7 @@
 {
 	"filesGenerated": [
 		"type.ex",
+		"string_tools.ex",
 		"std.ex",
 		"reflaxe/exception.ex",
 		"reflaxe/elixir/haxe_throw.ex",
@@ -29,7 +30,7 @@
 		},
 		{
 			"path": "main.ex",
-			"sha256": "eac453bec042cdc058a9d51a3536f7a5f34f83597b7530df9b640458740181c1"
+			"sha256": "4dc74fc3593733e595962d586a4110434b646680e2c53b5f15e13557fc7973f6"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.ex",
@@ -48,9 +49,13 @@
 			"sha256": "cfc6ad389294bc64c9d82be070797b4e65041a3d225fc0741500ca7cc6c8f804"
 		},
 		{
+			"path": "string_tools.ex",
+			"sha256": "b174b046cee6138603fade8a7baa097e869d67f66a86afdebda3449b28d3b153"
+		},
+		{
 			"path": "type.ex",
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "0e521714fd2f348302ea39f8571d1a9aa8264bd42d347eaa4f25ffd446f98192"
+	"generation": "cff887ff6240cabc0615af331b33a4b057f70b2c4a0b350ca7b16e2781db0685"
 }

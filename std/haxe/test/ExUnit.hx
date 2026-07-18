@@ -11,7 +11,7 @@ package haxe.test;
  * ```haxe
  * @:exunit
  * class MyTest extends TestCase {
- *     @:test
+ *     @:test("addition is exact")
  *     function testSomething() {
  *         Assert.equals(2, 1 + 1);
  *     }
@@ -23,7 +23,7 @@ package haxe.test;
  * defmodule MyTest do
  *   use ExUnit.Case
  *   
- *   test "test something" do
+ *   test "addition is exact" do
  *     assert 1 + 1 == 2
  *   end
  * end
@@ -34,8 +34,13 @@ package haxe.test;
  * 
  * Classes extending TestCase and marked with @:exunit will be compiled
  * to ExUnit test modules with proper setup and teardown handling.
+ * `@:keepSub` keeps those named test modules under `-dce full`: unlike a
+ * normal Haxe program, an ExUnit suite has no `main` entrypoint for Haxe's
+ * dead-code eliminator to discover. `@:keep` keeps this root contract active.
  */
 @:autoBuild(reflaxe.elixir.helpers.ExUnitBuilder.build())
+@:keep
+@:keepSub
 class TestCase {}
 
 /**

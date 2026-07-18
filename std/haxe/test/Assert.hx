@@ -152,6 +152,17 @@ class Assert {
 	}
 
 	/**
+	 * Assert that a function raises Elixir `RuntimeError` with a matching message.
+	 *
+	 * The pattern uses Elixir regular-expression syntax and lowers to
+	 * `assert_raise RuntimeError, Regex.compile!(pattern), fn` without target-code
+	 * injection in the Haxe test.
+	 */
+	public static function raisesRuntimeErrorMatching(fn:() -> Void, pattern:String):Void {
+		throw "Assert.raisesRuntimeErrorMatching should be compiled by ExUnitCompiler";
+	}
+
+	/**
 	 * Assert that a function does not raise an exception.
 	 * 
 	 * @param fn Function to execute

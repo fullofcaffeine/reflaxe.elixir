@@ -49,6 +49,11 @@ and exclusions are in the [OTP Support Contract](OTP_SUPPORT_CONTRACT.md).
 - `elixir.Module`, `elixir.Code`, `elixir.Node`, `elixir.Registry`
 - `elixir.HttpClient`, `elixir.Jason`
 
+Use `elixir.System.SystemTimeUnit` for VM clock operations and
+`elixir.DateTime.TimeUnit` for calendar/date-time operations. They are distinct
+typed surfaces because Elixir accepts different unit sets at those boundaries;
+both still generate ordinary atoms such as `:millisecond`.
+
 ## Typed Wrapper Modules (`elixir.types.*`)
 
 Typed wrappers are provided for BEAM values and runtime contracts:

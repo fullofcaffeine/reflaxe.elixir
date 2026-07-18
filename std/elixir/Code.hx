@@ -116,6 +116,17 @@ extern class Code {
 	@:native("format_string!")
 	static function formatStringBang(string:String, ?opts:CodeFormatOptions):String;
 
+	/**
+	 * Exact `Code.format_string!/2` result for callers that preserve native
+	 * iodata until an explicit `IO.iodata_to_binary/1` boundary.
+	 */
+	@:native("format_string!")
+	static function formatStringIodataBang(string:String, ?opts:CodeFormatOptions):Term;
+
+	/** Exact one-argument form, preserving Elixir's default formatter options. */
+	@:native("format_string!")
+	static function formatStringIodataBangOne(string:String):Term;
+
 	@:native("format_file!")
 	static function formatFileBang(file:String, ?opts:CodeFormatOptions):String;
 

@@ -87,19 +87,19 @@ extern class System {
 	static function osTime():Int; // OS time in native unit
 
 	@:native("os_time")
-	static function osTimeUnit(unit:TimeUnit):Int; // OS time in specified unit
+	static function osTimeUnit(unit:SystemTimeUnit):Int; // OS time in specified unit
 
 	@:native("system_time")
 	static function systemTime():Int; // System time in native unit
 
 	@:native("system_time")
-	static function systemTimeUnit(unit:TimeUnit):Int; // System time in specified unit
+	static function systemTimeUnit(unit:SystemTimeUnit):Int; // System time in specified unit
 
 	@:native("monotonic_time")
 	static function monotonicTime():Int; // Monotonic time in native unit
 
 	@:native("monotonic_time")
-	static function monotonicTimeUnit(unit:TimeUnit):Int; // Monotonic time in specified unit
+	static function monotonicTimeUnit(unit:SystemTimeUnit):Int; // Monotonic time in specified unit
 
 	@:native("unique_integer")
 	static function uniqueInteger():Int; // Generate unique integer
@@ -112,7 +112,7 @@ extern class System {
 
 	// Time conversion
 	@:native("convert_time_unit")
-	static function convertTimeUnit(time:Int, fromUnit:TimeUnit, toUnit:TimeUnit):Int;
+	static function convertTimeUnit(time:Int, fromUnit:SystemTimeUnit, toUnit:SystemTimeUnit):Int;
 
 	// Scheduler information
 	@:native("schedulers")
@@ -146,7 +146,9 @@ extern class System {
 	@:native("cwd")
 	static function cwd():Null<String>; // Current working directory
 
-	@:native("cwd!")
+	// `System.cwd!/0` and `File.cwd!/0` share string-or-raise semantics, so the
+	// source-compatible facade can target the non-deprecated API directly.
+	@:native("File.cwd!")
 	static function cwdBang():String; // Current working directory or raises
 
 	// Helper functions for common operations
@@ -212,9 +214,14 @@ typedef SystemCmdOptions = {
 }
 
 /**
- * Time units for System time functions
+ * VM clock units accepted by Elixir's `System` functions.
+ *
+ * This deliberately has a distinct name from `elixir.DateTime.TimeUnit`.
+ * Haxe secondary types share their package namespace, and the two target APIs
+ * accept different unit sets: calendar units such as `Day` are valid for
+ * `DateTime`, while `Native` is specific to VM clocks.
  */
-enum abstract TimeUnit(String) to String {
+enum abstract SystemTimeUnit(Atom) to Atom {
 	var Second = "second";
 	var Millisecond = "millisecond";
 	var Microsecond = "microsecond";

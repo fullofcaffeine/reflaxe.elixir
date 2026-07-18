@@ -904,6 +904,7 @@ typedef ElixirMetadata = {
 	?mixTaskRequirements:Array<String>, // Optional Mix task requirements such as "app.config"
 	?mixTaskModuledoc:String, // Haxe class documentation emitted as @moduledoc
 	?isTest:Bool, // @:test on a method in ExUnit module
+	?testDescription:String, // Optional string literal from @:test("readable description")
 	?isSetup:Bool, // @:setup on a method in ExUnit module
 	?isSetupAll:Bool, // @:setupAll on a method in ExUnit module
 	?isTeardown:Bool, // @:teardown on a method in ExUnit module

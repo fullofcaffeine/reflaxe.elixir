@@ -1,6 +1,7 @@
 import elixir.DateTime.TimeUnit;
 import elixir.DateTime.TimePrecision;
 import elixir.DateTime.ComparisonResult;
+import elixir.System.SystemTimeUnit;
 
 /**
  * Test for Elixir-specific Date extensions
@@ -13,6 +14,7 @@ class Main {
 		testConversions();
 		testUtilityMethods();
 		testOperators();
+		testSystemTimeUnits();
 	}
 
 	static function testArithmetic() {
@@ -122,5 +124,12 @@ class Main {
 		trace('d1 >= d3: ${d1 >= d3}'); // Should be true (equal)
 		trace('d1 == d3: ${d1 == d3}'); // Should be true
 		trace('d1 != d2: ${d1 != d2}'); // Should be true
+	}
+
+	static function testSystemTimeUnits() {
+		var milliseconds = elixir.System.systemTimeUnit(SystemTimeUnit.Millisecond);
+
+		if (milliseconds <= 0)
+			throw "System time must be positive";
 	}
 }

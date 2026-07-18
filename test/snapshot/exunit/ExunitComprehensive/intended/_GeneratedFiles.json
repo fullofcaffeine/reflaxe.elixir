@@ -36,11 +36,11 @@
 		},
 		{
 			"path": "haxe/test/assert.ex",
-			"sha256": "2cd8932f3d1d1fdb20edac50dc816aad2eec7ed4fb24b19616a1b31a7c7a2ea5"
+			"sha256": "9c4014260b95e66c2262ff62b731bd077c3426bdf268d31573a85045f2be3ce8"
 		},
 		{
 			"path": "main.ex",
-			"sha256": "e9e00240e8de5b53288f63a3f033da8508a7fa1a7e6c440b8586296b3423c9a1"
+			"sha256": "bdcfbdab1f991c6c0ed97449679221dc62c24e671d27385dd69c540b6e4f49f8"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.ex",
@@ -67,5 +67,5 @@
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "2e2d8b325fbae84481c26639186eee48b24361454f1f8d5155417937eb3c56c9"
+	"generation": "35c6a46d0d71d99943809b33dba1b7943cfbc70da582078f52a8f1d0ef644ab3"
 }
