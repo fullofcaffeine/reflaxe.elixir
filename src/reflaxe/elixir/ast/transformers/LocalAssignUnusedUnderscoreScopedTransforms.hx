@@ -123,6 +123,13 @@ class LocalAssignUnusedUnderscoreScopedTransforms {
 				var newClauses = rewriteClauses(clauses, scope, usedAfterScope);
 				makeASTWithMeta(ECase(newExpr, newClauses), node.metadata, node.pos);
 
+			case ECond(clauses):
+				var newClauses = clauses.map(clause -> {
+					condition: rewriteWithScope(clause.condition, cloneScope(scope), usedAfterScope),
+					body: rewriteWithScope(clause.body, cloneScope(scope), usedAfterScope)
+				});
+				makeASTWithMeta(ECond(newClauses), node.metadata, node.pos);
+
 			case EFn(clauses):
 				var outClauses = [];
 				for (c in clauses) {

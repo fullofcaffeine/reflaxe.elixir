@@ -146,8 +146,8 @@ defmodule Main do
               )
             else
               version = Enum.at(packet, 0)
-              flags = Enum.at(packet, 1)
-              size = Enum.at(packet, 2)
+              _flags = Enum.at(packet, 1)
+              _size = Enum.at(packet, 2)
               if (version > 1) do
                 "Future protocol v" <> Reflaxe.Elixir.HaxeFloat.to_string(version)
               else

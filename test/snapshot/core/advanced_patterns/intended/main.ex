@@ -144,14 +144,14 @@ defmodule Main do
         cond do
           length(Enum.at(matrix, 1)) == 3 ->
             if (length(Enum.at(matrix, 2)) == 3) do
-              h = Enum.at(g, 1)
-              i = Enum.at(g, 2)
-              a = Enum.at(g, 0)
-              b = Enum.at(g, 1)
-              c = Enum.at(g, 2)
-              f = Enum.at(g, 2)
-              e = Enum.at(g, 1)
-              d = Enum.at(g, 0)
+              _h = Enum.at(g, 1)
+              _i = Enum.at(g, 2)
+              _a = Enum.at(g, 0)
+              _b = Enum.at(g, 1)
+              _c = Enum.at(g, 2)
+              _f = Enum.at(g, 2)
+              _e = Enum.at(g, 1)
+              _d = Enum.at(g, 0)
               "3x3 matrix"
             else
               m = matrix

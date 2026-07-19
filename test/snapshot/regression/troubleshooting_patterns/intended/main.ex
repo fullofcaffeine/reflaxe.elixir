@@ -82,7 +82,7 @@ defmodule Main do
             if (version == 0 and true) do
               "Protocol v0, length=" <> Reflaxe.Elixir.HaxeFloat.to_string(length) <> ", payload bytes=" <> Reflaxe.Elixir.HaxeFloat.to_string(5)
             else
-              length = header_2
+              _ = header_2
               version = header_3
               cond do
                 version > 0 -> "Future protocol v" <> Reflaxe.Elixir.HaxeFloat.to_string(version)
