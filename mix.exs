@@ -45,7 +45,7 @@ defmodule ReflaxeElixir.MixProject do
     [
       licenses: ["GPL-3.0"],
       links: %{"GitHub" => "https://github.com/fullofcaffeine/reflaxe.elixir"},
-      files: ~w(lib mix.exs README* LICENSE*)
+      files: ~w(lib priv mix.exs README* LICENSE*)
     ]
   end
 end

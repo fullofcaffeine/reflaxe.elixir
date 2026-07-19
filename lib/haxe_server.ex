@@ -79,7 +79,10 @@ defmodule HaxeServer do
         false
 
       true ->
-        case System.get_env("HAXE_SERVER_AUTOSTART") |> to_string() |> String.trim() |> String.downcase() do
+        case System.get_env("HAXE_SERVER_AUTOSTART")
+             |> to_string()
+             |> String.trim()
+             |> String.downcase() do
           "" -> false
           "dev" -> mix_env == :dev
           "always" -> true
@@ -328,9 +331,12 @@ defmodule HaxeServer do
   # Private Functions
 
   defp start_haxe_server(state) do
-    # Use Port.open to properly manage the Haxe server process
+    # The native owner keeps the compiler tied to the BEAM port even when VM
+    # shutdown skips GenServer.terminate/2. Its PID becomes the root of the
+    # exact process tree used by ordinary stop/restart cleanup.
     cmd = state.haxe_cmd
     args = state.haxe_args ++ ["--wait", to_string(state.port)]
+    {owner_cmd, owner_args} = server_owner_command(cmd, args)
 
     # Generate a unique port for haxeshim's internal server to avoid collisions in dev/test
     # when multiple Mix VMs (or multiple HaxeServer instances) are running concurrently.
@@ -349,8 +355,8 @@ defmodule HaxeServer do
     try do
       port =
         Port.open(
-          {:spawn_executable, System.find_executable(cmd) || cmd},
-          [:binary, :exit_status, :stderr_to_stdout, {:args, args}, {:env, env}]
+          {:spawn_executable, owner_cmd},
+          [:binary, :exit_status, :stderr_to_stdout, {:args, owner_args}, {:env, env}]
         )
 
       # Give the server a moment to start.
@@ -378,9 +384,29 @@ defmodule HaxeServer do
     end
   end
 
+  # The shell owner is a narrow native lifecycle boundary. It must remain
+  # capable of acting after the BEAM VM exits, which cannot be implemented by
+  # another Elixir process. Packaged releases retain it under the application
+  # priv directory rather than depending on a source-checkout path.
+  defp server_owner_command(cmd, args) do
+    with bash when is_binary(bash) <- System.find_executable("bash"),
+         priv_dir when is_list(priv_dir) <- :code.priv_dir(:reflaxe_elixir),
+         owner_script = Path.join(List.to_string(priv_dir), "haxe-server-owner.sh"),
+         true <- File.regular?(owner_script) do
+      {bash, [owner_script, System.find_executable(cmd) || cmd | args]}
+    else
+      _ -> {System.find_executable(cmd) || cmd, args}
+    end
+  end
+
   defp stop_haxe_server(%{server_pid: nil}), do: :ok
 
-  defp stop_haxe_server(%{server_pid: port, server_os_pid: os_pid, owns_server: true, port: port_number})
+  defp stop_haxe_server(%{
+         server_pid: port,
+         server_os_pid: os_pid,
+         owns_server: true,
+         port: port_number
+       })
        when is_port(port) and is_integer(port_number) do
     # Best-effort shutdown order:
     # 1) Close the Erlang port.
@@ -533,8 +559,8 @@ defmodule HaxeServer do
 
       cond do
         state.allow_external_attach and
-            is_integer(cookie_port) and cookie_port > 0 and cookie_port != state.port and
-            attach_to_cookie_server?(%{state | port: cookie_port}) and
+          is_integer(cookie_port) and cookie_port > 0 and cookie_port != state.port and
+          attach_to_cookie_server?(%{state | port: cookie_port}) and
             external_server_compatible?(%{state | port: cookie_port}) ->
           Logger.debug(
             "Haxe server port #{state.port} is in use; attaching to prior server on cookie port #{cookie_port}"
@@ -552,19 +578,22 @@ defmodule HaxeServer do
           _ = write_cookie(attached)
           {:ok, attached}
 
-        state.allow_external_attach and attach_to_cookie_server?(state) and external_server_compatible?(state) ->
+        state.allow_external_attach and attach_to_cookie_server?(state) and
+            external_server_compatible?(state) ->
           Logger.debug(
             "Haxe server port #{state.port} is in use; attaching to prior server (cookie match)"
           )
 
           _ = write_cookie(%{state | owns_server: false, status: :running})
 
-          {:ok, %{state | server_pid: nil, server_os_pid: nil, owns_server: false, status: :running}}
+          {:ok,
+           %{state | server_pid: nil, server_os_pid: nil, owns_server: false, status: :running}}
 
         state.allow_external_attach and external_server_compatible?(state) ->
           Logger.debug("Haxe server port #{state.port} is in use; attaching to existing server")
 
-          {:ok, %{state | server_pid: nil, server_os_pid: nil, owns_server: false, status: :running}}
+          {:ok,
+           %{state | server_pid: nil, server_os_pid: nil, owns_server: false, status: :running}}
 
         true ->
           # Prefer deterministic behavior over cross-process reuse unless the user opted in.
@@ -575,7 +604,13 @@ defmodule HaxeServer do
           _ = maybe_cleanup_stale_cookie_server(state)
 
           if port_available?(state.port) do
-            start_or_attach_server(%{state | server_pid: nil, server_os_pid: nil, owns_server: false, status: :stopped})
+            start_or_attach_server(%{
+              state
+              | server_pid: nil,
+                server_os_pid: nil,
+                owns_server: false,
+                status: :stopped
+            })
           else
             new_port = find_available_port()
             Logger.debug("Haxe server port #{state.port} is in use; relocating to #{new_port}")
@@ -625,7 +660,8 @@ defmodule HaxeServer do
          "owns_server" => true,
          "server_os_pid" => os_pid
        }}
-      when cookie_key == state.cache_key and is_integer(cookie_port) and cookie_port > 0 and is_integer(os_pid) and os_pid > 0 ->
+      when cookie_key == state.cache_key and is_integer(cookie_port) and cookie_port > 0 and
+             is_integer(os_pid) and os_pid > 0 ->
         kill_process_tree(os_pid)
         kill_wait_processes_by_port(cookie_port)
         # The cookie is now stale; best-effort remove so future runs don't repeatedly try to kill.
@@ -675,6 +711,7 @@ defmodule HaxeServer do
 
   defp cookie_port_for_cache_key(state) do
     cache_key = state.cache_key
+
     case read_cookie(state.cookie_path) do
       {:ok, %{"version" => @cookie_version, "port" => cookie_port, "cache_key" => ^cache_key}}
       when is_integer(cookie_port) and cookie_port > 0 ->
@@ -740,7 +777,9 @@ defmodule HaxeServer do
     _ -> :ok
   end
 
-  defp maybe_remove_cookie(%{owns_server: true, cookie_path: path, server_os_pid: os_pid, port: port_number} = state)
+  defp maybe_remove_cookie(
+         %{owns_server: true, cookie_path: path, server_os_pid: os_pid, port: port_number} = state
+       )
        when is_binary(path) and is_integer(port_number) do
     # Only remove the cookie once we're confident the OS server is actually gone.
     #
@@ -759,7 +798,9 @@ defmodule HaxeServer do
 
     wait_alive =
       if is_binary(pgrep_exe) do
-        {out, status} = System.cmd(pgrep_exe, ["-f", "haxe --wait #{port_number}"], stderr_to_stdout: true)
+        {out, status} =
+          System.cmd(pgrep_exe, ["-f", "haxe --wait #{port_number}"], stderr_to_stdout: true)
+
         status == 0 and String.trim(out) != ""
       else
         false
@@ -849,13 +890,20 @@ defmodule HaxeServer do
         end
 
       if pids != [] do
-        _ = System.cmd(kill_exe, ["-TERM" | Enum.map(pids, &Integer.to_string/1)], stderr_to_stdout: true)
+        _ =
+          System.cmd(kill_exe, ["-TERM" | Enum.map(pids, &Integer.to_string/1)],
+            stderr_to_stdout: true
+          )
+
         Process.sleep(100)
 
         remaining =
           Enum.filter(pids, fn pid -> process_alive?(pid, kill_exe) end)
 
-        _ = System.cmd(kill_exe, ["-KILL" | Enum.map(remaining, &Integer.to_string/1)], stderr_to_stdout: true)
+        _ =
+          System.cmd(kill_exe, ["-KILL" | Enum.map(remaining, &Integer.to_string/1)],
+            stderr_to_stdout: true
+          )
       end
     end
 
@@ -1033,6 +1081,7 @@ defmodule HaxeServer do
 
   defp in_node_bin_dir?(path) do
     parts = Path.split(Path.expand(path))
+
     Enum.chunk_every(parts, 2, 1, :discard)
     |> Enum.any?(fn
       ["node_modules", ".bin"] -> true

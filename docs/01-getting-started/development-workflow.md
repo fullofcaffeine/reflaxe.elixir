@@ -420,6 +420,7 @@ Behavior:
 - Attach (opt‑in): If `HAXE_SERVER_ALLOW_ATTACH=1` and the configured port is already bound by a compatible server, Mix attaches and uses it (including a prior server recorded in the cookie).
 - Relocate: If the configured port is already bound and attach is not enabled (or not compatible), Mix relocates to a free port and starts its own server.
 - Cookie: Mix records the last working server info per project/toolchain in `.reflaxe_elixir/haxe_server.json` to reduce port churn across restarts and enable stale-server cleanup.
+- Native owner: a packaged host helper ties the exact `haxe --wait` process tree to the Mix VM's port. If VM shutdown skips Elixir termination callbacks, closing that port still reaps the compiler child instead of leaving it under PID 1.
 - Fallback: If the server cannot be reached, Mix compiles directly (no server).
 
 Defaults and environment variables:
@@ -467,7 +468,9 @@ If you repeatedly see messages like:
 it usually means a previous Mix VM crashed and left behind stale `haxe --wait` processes.
 Clean them up (bounded, repo-local) and retry. The cleanup command checks both
 launcher paths and process working directories, so it also finds a native Haxe
-child whose Node/Lix launcher has already exited:
+child whose Node/Lix launcher has already exited. Its process classifier checks
+the executable and argument shape, so a shell or diagnostic command that merely
+mentions `haxe --wait` is never selected:
 
 ```bash
 scripts/haxe-server-cleanup.sh
@@ -478,4 +481,5 @@ The focused lifecycle checks avoid the full generated-code test bootstrap:
 ```bash
 npm run test:haxe-server-policy
 npm run test:haxe-server-cleanup
+npm run test:haxe-server-owner-exit
 ```

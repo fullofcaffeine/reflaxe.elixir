@@ -7,30 +7,25 @@ set -euo pipefail
 # originally tied it to the project.
 ROOT_DIR_RAW="${HAXE_SERVER_CLEANUP_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 ROOT_DIR="$(cd "$ROOT_DIR_RAW" && pwd -P)"
+PROCESS_CLASSIFIER="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/haxe-server-processes.awk"
 
 if ! command -v pgrep >/dev/null 2>&1; then
   echo "[haxe-server-cleanup] error: pgrep not found" >&2
   exit 1
 fi
+if [ ! -f "$PROCESS_CLASSIFIER" ]; then
+  echo "[haxe-server-cleanup] error: missing process classifier: $PROCESS_CLASSIFIER" >&2
+  exit 1
+fi
 
 collect_candidates() {
   local snapshot=""
-  snapshot="$(ps -axo pid=,command=)"
-  printf '%s\n' "$snapshot" | awk '
-    {
-      pid = $1
-      $1 = ""
-      command = substr($0, 2)
-      if (index(tolower(command), "haxe") == 0)
-        next
-      for (i = 1; i < NF; i++) {
-        if ($i == "--wait") {
-          printf "%s\t%s\n", pid, command
-          break
-        }
-      }
-    }
-  '
+  if [ -n "${HAXE_SERVER_CLEANUP_PROCESS_SNAPSHOT:-}" ]; then
+    snapshot="$(cat "$HAXE_SERVER_CLEANUP_PROCESS_SNAPSHOT")"
+  else
+    snapshot="$(ps -axo pid=,comm=,command=)"
+  fi
+  printf '%s\n' "$snapshot" | awk -f "$PROCESS_CLASSIFIER"
 }
 
 collect_cwd_map() {

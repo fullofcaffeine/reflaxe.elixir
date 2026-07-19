@@ -29,7 +29,7 @@
   "scripts": {
     "postinstall": "lix download",
     "build": "echo 'Reflaxe.Elixir is a compiler - no build step needed'",
-    "test": "npm run test:ast-children && scripts/test-chunks.sh --parallel 8 --chunk-deadline 900 --timeout 120 && make -C test -j8 summary-negative && npm run test:result-invariant && npm run test:generator && npm run test:elixir-validate && npm run test:mix && npm run test:haxe-server-policy && npm run test:haxe-server-cleanup && npm run test:runtime-smoke && npm run test:generated-output-quality && npm run test:generated-formatting",
+    "test": "npm run test:ast-children && scripts/test-chunks.sh --parallel 8 --chunk-deadline 900 --timeout 120 && make -C test -j8 summary-negative && npm run test:result-invariant && npm run test:generator && npm run test:elixir-validate && npm run test:mix && npm run test:haxe-server-policy && npm run test:haxe-server-cleanup && npm run test:haxe-server-owner-exit && npm run test:runtime-smoke && npm run test:generated-output-quality && npm run test:generated-formatting",
     "test:bounded": "scripts/test-chunks.sh --parallel 8 --chunk-deadline 900 --timeout 120",
     "test:sequential": "make -C test -j1 && npm run test:elixir-validate && npm run test:generator && npm run test:mix",
     "test:quick": "bash scripts/test-chunks.sh --parallel 8 --chunk-deadline 900 --timeout 120 --categories core,stdlib,regression && bash test/validate_elixir.sh test/snapshot/core test/snapshot/stdlib test/snapshot/regression",
@@ -41,6 +41,7 @@
     "test:mix-fast": "bash scripts/test-mix-fast.sh",
     "test:haxe-server-policy": "HAXE_NO_COMPILE=1 MIX_ENV=dev mix run --no-start scripts/ci/haxe-server-policy-fixture.exs",
     "test:haxe-server-cleanup": "bash -n scripts/haxe-server-cleanup.sh scripts/ci/haxe-server-cleanup-fixture.sh && bash scripts/ci/haxe-server-cleanup-fixture.sh",
+    "test:haxe-server-owner-exit": "bash -n scripts/ci/haxe-server-owner-exit-fixture.sh && bash scripts/ci/haxe-server-owner-exit-fixture.sh",
     "generate:live-react-core": "bash scripts/generate-live-react-core.sh --write",
     "guard:live-react-core": "bash scripts/generate-live-react-core.sh --check",
     "generate:phoenix-scaffold-core": "bash scripts/generate-phoenix-scaffold-core.sh --write",

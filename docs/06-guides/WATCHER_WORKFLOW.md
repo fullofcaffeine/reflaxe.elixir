@@ -56,6 +56,7 @@ This task patches `config/dev.exs`, `mix.exs`, and `assets/js/app.js` using expl
 - Let the endpoint watchers handle the client build.
 - Use `mix compile.haxe` / `mix haxe.watch` for server-side compilation flows.
 - Long-running `mix haxe.watch` owns and reuses one Haxe compilation server while it is running; one-shot `mix compile` and `mix haxe.watch --once` stay direct by default.
+- The owned native compiler tree is also tied to the Mix VM's operating-system port, so it is reaped even when VM shutdown cannot run the normal Elixir cleanup callback.
 
 ## Common Environment Variables
 
