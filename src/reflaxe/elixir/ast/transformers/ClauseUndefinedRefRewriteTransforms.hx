@@ -56,6 +56,21 @@ class ClauseUndefinedRefRewriteTransforms {
 					collectPatternVars(a, functionEnv);
 				makeASTWithMeta(EDefp(name, args, guards, rewriteNode(body, functionEnv)), node.metadata, node.pos);
 
+			case EFn(clauses):
+				var rewrittenClauses:Array<EFnClause> = [];
+				for (clause in clauses) {
+					var clauseEnv = cloneEnv(env);
+					for (arg in clause.args)
+						collectPatternVars(arg, clauseEnv);
+
+					rewrittenClauses.push({
+						args: clause.args,
+						guard: clause.guard != null ? rewriteNode(clause.guard, clauseEnv) : null,
+						body: rewriteNode(clause.body, clauseEnv)
+					});
+				}
+				makeASTWithMeta(EFn(rewrittenClauses), node.metadata, node.pos);
+
 			case EBlock(stmts):
 				var blockEnv = cloneEnv(env);
 				var newStmts:Array<ElixirAST> = [];

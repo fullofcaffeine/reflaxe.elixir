@@ -4483,48 +4483,7 @@ class ElixirASTTransformer {
 		return result;
 	}
 
-	/**
-	 * Recursively transform AST nodes with infinite recursion protection
-	 *
-	 * ## CRITICAL FIX: Infinite Recursion in Transformer (January 2025)
-	 *
-	 * ### The Problem
-	 * The transformer was entering infinite recursion, causing compilation hangs
-	 * lasting over 2 minutes. This occurred when certain nodes (especially atoms)
-	 * were being endlessly re-transformed.
-	 *
-	 * ### Root Cause
-	 * The original implementation always created new AST nodes, even when no
-	 * transformation occurred. This caused:
-	 * 1. Transformer applies to a node, returns a "new" node (same content, new object)
-	 * 2. Parent sees the node changed (different object reference)
-	 * 3. Parent re-transforms the "changed" node
-	 * 4. Infinite loop as nodes appear to always change
-	 *
-	 * ### The Solution: Structural Sharing Pattern
-	 * Only create new AST nodes when the content actually changes:
-	 * - If no children change, return the SAME object (not a copy)
-	 * - If any child changes, create a new parent with updated children
-	 * - Use physical equality (same object) to detect changes
-	 *
-	 * ### Special Handling for Terminal Nodes
-	 * Some nodes (like atoms) are terminal and should never recurse:
-	 * - EAtom: Always terminal, no children to transform
-	 * - EInteger, EFloat, EString: Terminal literal values
-	 * - These return immediately without recursion
-	 *
-	 * ### Implementation Details
-	 * - transformArray(): Helper that only copies arrays when elements change
-	 * - Physical equality check: `transformed != original` (object identity)
-	 * - Terminal node early returns prevent unnecessary recursion
-	 *
-	 * ### Impact
-	 * - Compilation time: 2+ minutes → ~10 seconds
-	 * - Memory usage: Significantly reduced due to structural sharing
-	 * - Correctness: Transformations still apply correctly
-	 *
-	 * @see https://github.com/reflaxe/reflaxe.haxe.elixir/commits/transformer-recursion-fix
-	 */
+	/** Debug-only recursion accounting for the shared structural traversal. */
 	// Track visited nodes to detect cycles (for debugging)
 	private static var visitedNodes:Map<String, Int> = new Map();
 
@@ -4537,28 +4496,6 @@ class ElixirASTTransformer {
 	#if debug_transformer_hang
 	private static var currentPassName:String = "";
 	#end
-
-	// Helper to transform an array only if elements change
-	private static function transformArray(arr:Array<ElixirAST>, transformer:(ElixirAST) -> ElixirAST,
-			isBoundary:Null<(ElixirAST) -> Bool>):{array:Array<ElixirAST>, changed:Bool} {
-		var changed = false;
-		var result = arr;
-
-		for (i in 0...arr.length) {
-			var original = arr[i];
-			var transformed = transformNodeScopedInternal(original, transformer, isBoundary);
-			if (transformed != original) {
-				if (!changed) {
-					// First change - copy the array
-					result = arr.copy();
-					changed = true;
-				}
-				result[i] = transformed;
-			}
-		}
-
-		return {array: result, changed: changed};
-	}
 
 	/**
 	 * transformNode
@@ -4573,8 +4510,9 @@ class ElixirASTTransformer {
 	 *   legitimate targets, producing undefined variable issues.
 	 *
 	 * HOW
-	 * - Mirrors EBlock recursion for EDo: transforms each expression, then rebuilds the enclosing node.
-	 * - All other nodes retain prior recursion semantics; ERaw remains non-transformable by design.
+	 * - Delegates immediate-child rebuilding to `ElixirASTChildren`, then applies the callback in postorder.
+	 * - Pattern-contained AST values participate through `ElixirPatternChildren`.
+	 * - ERaw remains opaque and non-transformable by design.
 	 *
 	 * EXAMPLES
 	 * Before (no EDo recursion):
@@ -4654,314 +4592,20 @@ class ElixirASTTransformer {
 		}
 		#end
 
-		// First transform children
-		var transformed = switch (ast.def) {
-			case EModule(name, attributes, body):
-				var bodyResult = transformArray(body, transformer, isBoundary);
-				var attrChanged = false;
-				var newAttributes:Array<EAttribute> = attributes;
-				if (attributes != null) {
-					var outAttrs:Array<EAttribute> = [];
-					for (a in attributes) {
-						var newVal = transformNodeScopedInternal(a.value, transformer, isBoundary);
-						if (newVal != a.value)
-							attrChanged = true;
-						outAttrs.push({name: a.name, value: newVal});
-					}
-					if (attrChanged)
-						newAttributes = outAttrs;
-				}
-				if (bodyResult.changed || attrChanged) {
-					makeASTWithMeta(EModule(name, newAttributes, bodyResult.array), ast.metadata, ast.pos);
-				} else {
-					ast; // Return original if nothing changed
-				}
-
-			case EDef(name, args, guards, body):
-				makeASTWithMeta(EDef(name, args, guards != null ? transformNodeScopedInternal(guards, transformer, isBoundary) : null,
-					transformNodeScopedInternal(body, transformer, isBoundary)),
-					ast.metadata, ast.pos);
-
-			case EDefp(name, args, guards, body):
-				makeASTWithMeta(EDefp(name, args, guards != null ? transformNodeScopedInternal(guards, transformer, isBoundary) : null,
-					transformNodeScopedInternal(body, transformer, isBoundary)),
-					ast.metadata, ast.pos);
-
-			case EDefmacro(name, args, guards, body):
-				makeASTWithMeta(EDefmacro(name, args, guards != null ? transformNodeScopedInternal(guards, transformer, isBoundary) : null,
-					transformNodeScopedInternal(body, transformer, isBoundary)),
-					ast.metadata, ast.pos);
-
-			case EDefmacrop(name, args, guards, body):
-				makeASTWithMeta(EDefmacrop(name, args, guards != null ? transformNodeScopedInternal(guards, transformer, isBoundary) : null,
-					transformNodeScopedInternal(body, transformer, isBoundary)),
-					ast.metadata, ast.pos);
-
-			// Blocks
-			case EBlock(expressions):
-				var expResult = transformArray(expressions, transformer, isBoundary);
-				if (expResult.changed) {
-					makeASTWithMeta(EBlock(expResult.array), ast.metadata, ast.pos);
-				} else {
-					ast; // Return original if nothing changed
-				}
-
-			// Transform do-end blocks by visiting each expression
-			case EDo(body):
-				var doResult = transformArray(body, transformer, isBoundary);
-				if (doResult.changed) {
-					makeASTWithMeta(EDo(doResult.array), ast.metadata, ast.pos);
-				} else {
-					ast;
-				}
-
-			case EIf(condition, thenBranch, elseBranch):
-				makeASTWithMeta(EIf(transformNodeScopedInternal(condition, transformer, isBoundary),
-					transformNodeScopedInternal(thenBranch, transformer, isBoundary),
-					elseBranch != null ? transformNodeScopedInternal(elseBranch, transformer, isBoundary) : null),
-					ast.metadata, ast.pos);
-
-			case EUnless(condition, body, elseBranch):
-				makeASTWithMeta(EUnless(transformNodeScopedInternal(condition, transformer, isBoundary),
-					transformNodeScopedInternal(body, transformer, isBoundary),
-					elseBranch != null ? transformNodeScopedInternal(elseBranch, transformer, isBoundary) : null),
-					ast.metadata, ast.pos);
-
-			case ECase(expr, clauses):
-				makeASTWithMeta(ECase(transformNodeScopedInternal(expr, transformer, isBoundary), clauses.map(c -> {
-					pattern: c.pattern,
-					guard: c.guard != null ? transformNodeScopedInternal(c.guard, transformer, isBoundary) : null,
-					body: transformNodeScopedInternal(c.body, transformer, isBoundary)
-				})), ast.metadata, ast.pos);
-
-			case ECond(clauses):
-				makeASTWithMeta(ECond(clauses.map(c -> {
-					condition: transformNodeScopedInternal(c.condition, transformer, isBoundary),
-					body: transformNodeScopedInternal(c.body, transformer, isBoundary)
-				})), ast.metadata, ast.pos);
-
-			case EWith(clauses, doBlock, elseBlock):
-				makeASTWithMeta(EWith(clauses.map(c -> {
-					pattern: c.pattern,
-					expr: transformNodeScopedInternal(c.expr, transformer, isBoundary)
-				}),
-					transformNodeScopedInternal(doBlock, transformer, isBoundary),
-					elseBlock != null ? transformNodeScopedInternal(elseBlock, transformer, isBoundary) : null), ast.metadata, ast.pos);
-
-			case ETry(body, rescueClauses, catchClauses, afterBlock, elseBlock):
-				makeASTWithMeta(ETry(transformNodeScopedInternal(body, transformer, isBoundary), rescueClauses != null ? rescueClauses.map(r -> {
-					pattern: r.pattern,
-					varName: r.varName,
-					body: transformNodeScopedInternal(r.body, transformer, isBoundary)
-				}) : [], catchClauses != null ? catchClauses.map(c -> {
-					kind: c.kind,
-					pattern: c.pattern,
-					body: transformNodeScopedInternal(c.body, transformer, isBoundary)
-				}) : [],
-					afterBlock != null ? transformNodeScopedInternal(afterBlock, transformer, isBoundary) : null,
-					elseBlock != null ? transformNodeScopedInternal(elseBlock, transformer, isBoundary) : null), ast.metadata, ast.pos);
-
-			case ERaise(exception, attributes):
-				makeASTWithMeta(ERaise(transformNodeScopedInternal(exception, transformer, isBoundary),
-					attributes != null ? transformNodeScopedInternal(attributes, transformer, isBoundary) : null),
-					ast.metadata, ast.pos);
-
-			case EThrow(value):
-				makeASTWithMeta(EThrow(transformNodeScopedInternal(value, transformer, isBoundary)), ast.metadata, ast.pos);
-
-			// Traverse anonymous functions and clause bodies
-			case EFn(clauses):
-				makeASTWithMeta(EFn(clauses.map(cl -> {
-					args: cl.args,
-					guard: cl.guard != null ? transformNodeScopedInternal(cl.guard, transformer, isBoundary) : null,
-					body: transformNodeScopedInternal(cl.body, transformer, isBoundary)
-				})), ast.metadata, ast.pos);
-
-			case EBinary(op, left, right):
-				makeASTWithMeta(EBinary(op, transformNodeScopedInternal(left, transformer, isBoundary),
-					transformNodeScopedInternal(right, transformer, isBoundary)),
-					ast.metadata, ast.pos);
-
-			case EUnary(op, expr):
-				makeASTWithMeta(EUnary(op, transformNodeScopedInternal(expr, transformer, isBoundary)), ast.metadata, ast.pos);
-
-			case EParen(expr):
-				makeASTWithMeta(EParen(transformNodeScopedInternal(expr, transformer, isBoundary)), ast.metadata, ast.pos);
-
-			case ECall(target, funcName, args):
-				makeASTWithMeta(ECall(target != null ? transformNodeScopedInternal(target, transformer, isBoundary) : null, funcName,
-					args.map(a -> transformNodeScopedInternal(a, transformer, isBoundary))),
-					ast.metadata, ast.pos);
-
-			case EMacroCall(macroName, args, doBlock):
-				makeASTWithMeta(EMacroCall(macroName, args.map(a -> transformNodeScopedInternal(a, transformer, isBoundary)),
-					transformNodeScopedInternal(doBlock, transformer, isBoundary)),
-					ast.metadata, ast.pos);
-
-			case ERemoteCall(module, funcName, args):
-				makeASTWithMeta(ERemoteCall(transformNodeScopedInternal(module, transformer, isBoundary), funcName,
-					args.map(a -> transformNodeScopedInternal(a, transformer, isBoundary))),
-					ast.metadata, ast.pos);
-
-			case EPipe(left, right):
-				makeASTWithMeta(EPipe(transformNodeScopedInternal(left, transformer, isBoundary), transformNodeScopedInternal(right, transformer, isBoundary)),
-					ast.metadata, ast.pos);
-
-			case EField(target, field):
-				makeASTWithMeta(EField(transformNodeScopedInternal(target, transformer, isBoundary), field), ast.metadata, ast.pos);
-
-			case EAccess(target, key):
-				makeASTWithMeta(EAccess(transformNodeScopedInternal(target, transformer, isBoundary),
-					transformNodeScopedInternal(key, transformer, isBoundary)),
-					ast.metadata, ast.pos);
-
-			case ERange(start, end, exclusive, step):
-				makeASTWithMeta(ERange(transformNodeScopedInternal(start, transformer, isBoundary), transformNodeScopedInternal(end, transformer, isBoundary),
-					exclusive, step != null ? transformNodeScopedInternal(step, transformer, isBoundary) : null),
-					ast.metadata, ast.pos);
-
-			case EList(elements):
-				makeASTWithMeta(EList(elements.map(e -> transformNodeScopedInternal(e, transformer, isBoundary))), ast.metadata, ast.pos);
-
-			case ETuple(elements):
-				makeASTWithMeta(ETuple(elements.map(e -> transformNodeScopedInternal(e, transformer, isBoundary))), ast.metadata, ast.pos);
-
-			case EMap(pairs):
-				makeASTWithMeta(EMap(pairs.map(p -> {
-					key: transformNodeScopedInternal(p.key, transformer, isBoundary),
-					value: transformNodeScopedInternal(p.value, transformer, isBoundary)
-				})), ast.metadata, ast.pos);
-
-			case EStruct(module, fields):
-				makeASTWithMeta(EStruct(module, fields.map(f -> {
-					key: f.key,
-					value: transformNodeScopedInternal(f.value, transformer, isBoundary)
-				})), ast.metadata, ast.pos);
-
-			case EStructUpdate(struct, fields):
-				makeASTWithMeta(EStructUpdate(transformNodeScopedInternal(struct, transformer, isBoundary), fields.map(f -> {
-					key: f.key,
-					value: transformNodeScopedInternal(f.value, transformer, isBoundary)
-				})), ast.metadata, ast.pos);
-
-			case EKeywordList(pairs):
-				makeASTWithMeta(EKeywordList(pairs.map(p -> {
-					key: p.key,
-					value: transformNodeScopedInternal(p.value, transformer, isBoundary)
-				})), ast.metadata, ast.pos);
-
-			case EBitstring(segments):
-				makeASTWithMeta(EBitstring(segments.map(s -> {
-					value: transformNodeScopedInternal(s.value, transformer, isBoundary),
-					size: s.size != null ? transformNodeScopedInternal(s.size, transformer, isBoundary) : null,
-					type: s.type,
-					modifiers: s.modifiers
-				})), ast.metadata, ast.pos);
-
-			case EMatch(pattern, expr):
-				// CRITICAL FIX: Transform the RHS expression
-				// WHY: EMatch bindings in HygieneTransforms mark LHS as declaration
-				//      but RHS may reference variables that need renaming
-				// WHAT: Recursively transform expr to rename any EVar nodes
-				// HOW: Pattern stays unchanged (creates new binding), expr transforms
-				makeASTWithMeta(EMatch(pattern, transformNodeScopedInternal(expr, transformer, isBoundary)), ast.metadata, ast.pos);
-
-			case EFor(generators, filters, body, into, uniq):
-				makeASTWithMeta(EFor(generators.map(g -> {
-					pattern: g.pattern,
-					expr: transformNodeScopedInternal(g.expr, transformer, isBoundary)
-				}),
-					filters.map(f -> transformNodeScopedInternal(f, transformer, isBoundary)), transformNodeScopedInternal(body, transformer, isBoundary),
-					into != null ? transformNodeScopedInternal(into, transformer, isBoundary) : null, uniq), ast.metadata, ast.pos);
-
-			case EPin(expr):
-				makeASTWithMeta(EPin(transformNodeScopedInternal(expr, transformer, isBoundary)), ast.metadata, ast.pos);
-
-			case ECapture(expr, arity):
-				makeASTWithMeta(ECapture(transformNodeScopedInternal(expr, transformer, isBoundary), arity), ast.metadata, ast.pos);
-
-			case EUse(module, options):
-				makeASTWithMeta(EUse(module, options != null ? options.map(o -> transformNodeScopedInternal(o, transformer, isBoundary)) : []), ast.metadata,
-					ast.pos);
-
-			case EModuleAttribute(name, value):
-				makeASTWithMeta(EModuleAttribute(name, transformNodeScopedInternal(value, transformer, isBoundary)), ast.metadata, ast.pos);
-
-			case EQuote(options, expr):
-				makeASTWithMeta(EQuote(options != null ? options.map(o -> transformNodeScopedInternal(o, transformer, isBoundary)) : [],
-					transformNodeScopedInternal(expr, transformer, isBoundary)),
-					ast.metadata, ast.pos);
-
-			case EUnquote(expr):
-				makeASTWithMeta(EUnquote(transformNodeScopedInternal(expr, transformer, isBoundary)), ast.metadata, ast.pos);
-
-			case EUnquoteSplicing(expr):
-				makeASTWithMeta(EUnquoteSplicing(transformNodeScopedInternal(expr, transformer, isBoundary)), ast.metadata, ast.pos);
-
-			case EReceive(clauses, after):
-				makeASTWithMeta(EReceive(clauses.map(c -> {
-					pattern: c.pattern,
-					guard: c.guard != null ? transformNodeScopedInternal(c.guard, transformer, isBoundary) : null,
-					body: transformNodeScopedInternal(c.body, transformer, isBoundary)
-				}), after != null ? {
-					timeout: transformNodeScopedInternal(after.timeout, transformer, isBoundary),
-					body: transformNodeScopedInternal(after.body, transformer, isBoundary)
-				} : null), ast.metadata, ast.pos);
-
-			case ESend(target, message):
-				makeASTWithMeta(ESend(transformNodeScopedInternal(target, transformer, isBoundary),
-					transformNodeScopedInternal(message, transformer, isBoundary)),
-					ast.metadata, ast.pos);
-
-			case EFragment(tag, attributes, children):
-				makeASTWithMeta(EFragment(tag, attributes != null ? attributes.map(a -> {
-					name: a.name,
-					value: transformNodeScopedInternal(a.value, transformer, isBoundary),
-					nameSpanStart: a.nameSpanStart,
-					nameSpanEnd: a.nameSpanEnd,
-					valueSpanStart: a.valueSpanStart,
-					valueSpanEnd: a.valueSpanEnd
-				}) : [],
-					children != null ? children.map(c -> transformNodeScopedInternal(c, transformer, isBoundary)) : []), ast.metadata, ast.pos);
-
-			// Raw Elixir code injection - NEVER transform
-			case ERaw(code):
-				// ERaw nodes are sacred - they contain direct Elixir code injection
-				// from __elixir__() calls and must NEVER be transformed
-				// Just return the node as-is, without calling the transformer
+		// Raw target injection is opaque by contract. Preserve it byte-for-byte and
+		// do not invoke ordinary structural transformations inside or on the node.
+		switch (ast.def) {
+			case ERaw(_):
 				return ast;
-
-			case EDefmodule(name, body):
-				// Transform the module body recursively
-				makeASTWithMeta(EDefmodule(name, transformNodeScopedInternal(body, transformer, isBoundary)), ast.metadata, ast.pos);
-
-			// Literals and simple nodes - no children to transform
-			// These have no children, so just return them as-is for the transformer to process
 			default:
-				ast;
-		};
-
-		// Apply the transformation to this node
-		var finalResult = transformer(transformed);
-
-		// CRITICAL FIX: Prevent infinite recursion
-		// Special handling for atoms which were causing infinite loops
-		switch (finalResult.def) {
-			case EAtom(_):
-				// Atoms are terminal nodes and should never be recursively transformed
-				// Just return them immediately to break any potential loops
-				return finalResult;
-			default:
-				// For other nodes, check if the transformation actually changed anything
-				// Use standard equality check
-				if (finalResult == transformed) {
-					// If the same object was returned, no transformation occurred
-					return finalResult;
-				}
-
-				// Otherwise return the transformed result
-				return finalResult;
 		}
+
+		// Rebuild through the one exhaustive structural child contract. Boundary
+		// policy remains owned here; pattern-contained AST values follow the same
+		// children-first transformation order as expression children.
+		var transformed = ElixirASTChildren.mapImmediate(ast, child -> transformNodeScopedInternal(child, transformer, isBoundary),
+			pattern -> ElixirPatternChildren.mapTree(pattern, child -> transformNodeScopedInternal(child, transformer, isBoundary)));
+		return transformer(transformed);
 	}
 
 	/**
@@ -5936,347 +5580,32 @@ class ElixirASTTransformer {
 	}
 
 	/**
-	 * Helper function to iterate over AST nodes without transformation
+	 * Visit one node's immediate structural children without rebuilding it.
+	 *
+	 * Nested pattern structure is walked so every AST value carried by a pattern
+	 * is reported. Callers that need the complete recursive tree should use
+	 * `ASTUtils.walk` or `ElixirASTChildren.walk`.
 	 */
 	public static function iterateAST(node:ElixirAST, visitor:ElixirAST->Void):Void {
-		// Check for null node or def before processing
-		if (node == null || node.def == null) {
+		if (node == null || node.def == null)
 			return;
-		}
 
-		switch (node.def) {
-			case EBlock(expressions):
-				for (expr in expressions)
-					if (expr != null)
-						visitor(expr);
-			case EModule(name, attributes, body):
-				for (b in body)
-					if (b != null)
-						visitor(b);
-			case EDefmodule(name, doBlock):
-				if (doBlock != null)
-					visitor(doBlock);
-			case EDef(name, args, guards, body):
-				if (body != null)
-					visitor(body);
-			case EDefp(name, args, guards, body):
-				if (body != null)
-					visitor(body);
-			case EIf(condition, thenBranch, elseBranch):
-				if (condition != null)
-					visitor(condition);
-				if (thenBranch != null)
-					visitor(thenBranch);
-				if (elseBranch != null)
-					visitor(elseBranch);
-			case EUnless(condition, body, elseBranch):
-				if (condition != null)
-					visitor(condition);
-				if (body != null)
-					visitor(body);
-				if (elseBranch != null)
-					visitor(elseBranch);
-			case ECase(expr, clauses):
-				if (expr != null)
-					visitor(expr);
-				for (clause in clauses) {
-					if (clause != null) {
-						if (clause.guard != null)
-							visitor(clause.guard);
-						if (clause.body != null)
-							visitor(clause.body);
-					}
-				}
-			case EMatch(pattern, expr):
-				if (expr != null)
-					visitor(expr);
-			case EBinary(op, left, right):
-				if (left != null)
-					visitor(left);
-				if (right != null)
-					visitor(right);
-			case EPipe(left, right):
-				if (left != null)
-					visitor(left);
-				if (right != null)
-					visitor(right);
-			case EUnary(op, expr):
-				if (expr != null)
-					visitor(expr);
-			case ERaise(exception, attributes):
-				if (exception != null)
-					visitor(exception);
-				if (attributes != null)
-					visitor(attributes);
-			case EThrow(value):
-				if (value != null)
-					visitor(value);
-			case ECall(target, funcName, args):
-				if (target != null)
-					visitor(target);
-				for (arg in args)
-					if (arg != null)
-						visitor(arg);
-			case EMacroCall(macroName, args, doBlock):
-				for (arg in args)
-					if (arg != null)
-						visitor(arg);
-				if (doBlock != null)
-					visitor(doBlock);
-			case ETuple(elements):
-				for (elem in elements)
-					if (elem != null)
-						visitor(elem);
-			case EList(elements):
-				for (elem in elements)
-					if (elem != null)
-						visitor(elem);
-			case EMap(pairs):
-				for (pair in pairs) {
-					if (pair != null) {
-						if (pair.key != null)
-							visitor(pair.key);
-						if (pair.value != null)
-							visitor(pair.value);
-					}
-				}
-			case EStruct(name, fields):
-				for (field in fields)
-					if (field != null && field.value != null)
-						visitor(field.value);
-			case EStructUpdate(struct, fields):
-				if (struct != null)
-					visitor(struct);
-				for (field in fields)
-					if (field != null && field.value != null)
-						visitor(field.value);
-			case EAccess(target, key):
-				if (target != null)
-					visitor(target);
-				if (key != null)
-					visitor(key);
-			case EBitstring(segments):
-				for (seg in segments) {
-					if (seg == null)
-						continue;
-					if (seg.value != null)
-						visitor(seg.value);
-					if (seg.size != null)
-						visitor(seg.size);
-				}
-			case EFor(generators, filters, body, into, uniq):
-				for (gen in generators) {
-					if (gen != null && gen.expr != null)
-						visitor(gen.expr);
-				}
-				for (filter in filters)
-					if (filter != null)
-						visitor(filter);
-				if (body != null)
-					visitor(body);
-				if (into != null)
-					visitor(into);
-			case EFn(clauses):
-				for (clause in clauses) {
-					if (clause != null) {
-						if (clause.guard != null)
-							visitor(clause.guard);
-						if (clause.body != null)
-							visitor(clause.body);
-					}
-				}
-			case EReceive(clauses, after):
-				for (clause in clauses) {
-					if (clause != null) {
-						if (clause.guard != null)
-							visitor(clause.guard);
-						if (clause.body != null)
-							visitor(clause.body);
-					}
-				}
-				if (after != null) {
-					if (after.timeout != null)
-						visitor(after.timeout);
-					if (after.body != null)
-						visitor(after.body);
-				}
-			case ERemoteCall(module, funcName, args):
-				if (module != null)
-					visitor(module);
-				for (arg in args)
-					if (arg != null)
-						visitor(arg);
-			case ERange(start, end, _exclusive, step):
-				if (start != null)
-					visitor(start);
-				if (end != null)
-					visitor(end);
-				if (step != null)
-					visitor(step);
-			case EParen(expr):
-				if (expr != null)
-					visitor(expr);
-			case EDo(body):
-				for (stmt in body)
-					if (stmt != null)
-						visitor(stmt);
-			case ETry(body, rescue, catchClauses, afterBlock, elseBlock):
-				if (body != null)
-					visitor(body);
-				if (rescue != null) {
-					for (clause in rescue) {
-						// ERescueClause structure would need checking
-						if (clause != null && clause.body != null)
-							visitor(clause.body);
-					}
-				}
-				if (catchClauses != null) {
-					for (clause in catchClauses) {
-						if (clause != null && clause.body != null)
-							visitor(clause.body);
-					}
-				}
-				if (afterBlock != null)
-					visitor(afterBlock);
-				if (elseBlock != null)
-					visitor(elseBlock);
-			case EWith(clauses, doBlock, elseBlock):
-				for (clause in clauses) {
-					// Pattern is not an ElixirAST, only visit the expression
-					if (clause != null && clause.expr != null)
-						visitor(clause.expr);
-				}
-				if (doBlock != null)
-					visitor(doBlock);
-				if (elseBlock != null)
-					visitor(elseBlock);
-			case EUse(_module, options):
-				for (opt in options)
-					if (opt != null)
-						visitor(opt);
-			case ECond(clauses):
-				for (clause in clauses) {
-					if (clause != null) {
-						if (clause.condition != null)
-							visitor(clause.condition);
-						if (clause.body != null)
-							visitor(clause.body);
-					}
-				}
-			case EField(object, field):
-				if (object != null)
-					visitor(object);
-			case EModuleAttribute(name, value):
-				if (value != null)
-					visitor(value);
-			case EKeywordList(pairs):
-				// Visit values in keyword list
-				for (pair in pairs) {
-					if (pair != null && pair.value != null)
-						visitor(pair.value);
-				}
-			case EFragment(_tag, attributes, children):
-				if (attributes != null) {
-					for (a in attributes)
-						if (a != null && a.value != null)
-							visitor(a.value);
-				}
-				if (children != null) {
-					for (c in children)
-						if (c != null)
-							visitor(c);
-				}
-			case _:
-				// Leaf nodes - nothing to iterate
-		}
+		ElixirASTChildren.forEachImmediate(node, visitor, pattern -> {
+			ElixirPatternChildren.walk(pattern, visitor);
+		});
 	}
 
 	/**
-	 * Helper function to transform AST nodes recursively
+	 * Rebuild one node after transforming each immediate structural child.
+	 *
+	 * This legacy public name is intentionally one level deep; recursive passes
+	 * call themselves from `transformer`. Pattern-contained AST values follow the
+	 * same immediate-child contract.
 	 */
 	public static function transformAST(node:ElixirAST, transformer:ElixirAST->ElixirAST):ElixirAST {
-		if (node == null || node.def == null) {
-			return null;
-		}
-		var transformed = switch (node.def) {
-			case EBlock(expressions):
-				makeASTWithMeta(EBlock(expressions.map(transformer)), node.metadata, node.pos);
-			case EModule(name, attributes, body):
-				makeASTWithMeta(EModule(name, attributes, body.map(transformer)), node.metadata, node.pos);
-			case EDefmodule(name, doBlock):
-				makeASTWithMeta(EDefmodule(name, transformer(doBlock)), node.metadata, node.pos);
-			case EDef(name, args, guards, body):
-				makeASTWithMeta(EDef(name, args, guards, transformer(body)), node.metadata, node.pos);
-			case EDefp(name, args, guards, body):
-				makeASTWithMeta(EDefp(name, args, guards, transformer(body)), node.metadata, node.pos);
-			case EIf(condition, thenBranch, elseBranch):
-				makeASTWithMeta(EIf(transformer(condition), transformer(thenBranch), elseBranch != null ? transformer(elseBranch) : null), node.metadata,
-					node.pos);
-			case ECase(expr, clauses):
-				makeASTWithMeta(ECase(transformer(expr), clauses.map(c -> {
-					pattern: c.pattern,
-					guard: c.guard != null ? transformer(c.guard) : null,
-					body: transformer(c.body)
-				})), node.metadata, node.pos);
-			case EMatch(pattern, expr):
-				makeASTWithMeta(EMatch(pattern, transformer(expr)), node.metadata, node.pos);
-			case EBinary(op, left, right):
-				makeASTWithMeta(EBinary(op, transformer(left), transformer(right)), node.metadata, node.pos);
-			case EUnary(op, expr):
-				makeASTWithMeta(EUnary(op, transformer(expr)), node.metadata, node.pos);
-			case ECall(target, funcName, args):
-				makeASTWithMeta(ECall(target != null ? transformer(target) : null, funcName, args.map(transformer)), node.metadata, node.pos);
-			case EMacroCall(macroName, args, doBlock):
-				makeASTWithMeta(EMacroCall(macroName, args.map(transformer), transformer(doBlock)), node.metadata, node.pos);
-			case ETuple(elements):
-				makeASTWithMeta(ETuple(elements.map(transformer)), node.metadata, node.pos);
-			case EList(elements):
-				#if (debug_otp_child_spec && debug_otp_child_spec_verbose)
-				if (elements.length > 0) {
-					for (i in 0...elements.length) {
-						var elem = elements[i];
-						if (elem.metadata != null && elem.metadata.requiresIdiomaticTransform == true) {}
-					}
-				}
-				#end
-				makeASTWithMeta(EList(elements.map(transformer)), node.metadata, node.pos);
-			case EMap(pairs):
-				makeASTWithMeta(EMap(pairs.map(p -> {key: transformer(p.key), value: transformer(p.value)})), node.metadata, node.pos);
-			case EKeywordList(pairs):
-				makeASTWithMeta(EKeywordList(pairs.map(p -> {key: p.key, value: transformer(p.value)})), node.metadata, node.pos);
-			case EStruct(name, fields):
-				makeASTWithMeta(EStruct(name, fields.map(f -> {key: f.key, value: transformer(f.value)})), node.metadata, node.pos);
-			case EFor(generators, filters, body, into, uniq):
-				makeASTWithMeta(EFor(generators.map(g -> {pattern: g.pattern, expr: transformer(g.expr)}), filters.map(transformer), transformer(body),
-					into != null ? transformer(into) : null, uniq),
-					node.metadata, node.pos);
-			case EFn(clauses):
-				makeASTWithMeta(EFn(clauses.map(c -> {
-					args: c.args,
-					guard: c.guard != null ? transformer(c.guard) : null,
-					body: transformer(c.body)
-				})), node.metadata, node.pos);
-			case EReceive(clauses, after):
-				makeASTWithMeta(EReceive(clauses.map(c -> {
-					pattern: c.pattern,
-					guard: c.guard != null ? transformer(c.guard) : null,
-					body: transformer(c.body)
-				}),
-					after != null ? {timeout: transformer(after.timeout), body: transformer(after.body)} : null), node.metadata, node.pos);
-			case EModuleAttribute(name, value):
-				makeASTWithMeta(EModuleAttribute(name, transformer(value)), node.metadata, node.pos);
-			case ERemoteCall(module, funcName, args):
-				makeASTWithMeta(ERemoteCall(module != null ? transformer(module) : null, funcName, args.map(transformer)), node.metadata, node.pos);
-			case ERange(start, end, exclusive, step):
-				makeASTWithMeta(ERange(transformer(start), transformer(end), exclusive, step != null ? transformer(step) : null), node.metadata, node.pos);
-			case EParen(expr):
-				// Transform the inner expression and preserve parentheses
-				makeASTWithMeta(EParen(transformer(expr)), node.metadata, node.pos);
-			case _:
-				// Leaf nodes - return unchanged
-				node;
-		};
-		return transformed;
+		return ElixirASTChildren.mapImmediate(node, transformer, pattern -> {
+			return ElixirPatternChildren.mapTree(pattern, transformer);
+		});
 	}
 
 	/**

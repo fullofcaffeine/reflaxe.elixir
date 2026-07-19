@@ -185,6 +185,30 @@ class Main {
 		return result;
 	}
 
+	/**
+	 * Regression coverage for reducer accumulator scope through an enum switch.
+	 *
+	 * The case payload binder (`value`) must not replace the enclosing loop's
+	 * map accumulator when the loop is lowered to an anonymous reduce function.
+	 */
+	public static function collectSuccessful(input:Map<String, Int>):Map<String, String> {
+		var result = new Map<String, String>();
+
+		for (key in input.keys()) {
+			switch (labelFor(key)) {
+				case Present(value):
+					result.set(key, value);
+				case Missing:
+			}
+		}
+
+		return result;
+	}
+
+	static function labelFor(key:String):LabelLookup {
+		return key == "skip" ? Missing : Present('Value: $key');
+	}
+
 	public static function main() {
 		trace("=== String Map ===");
 		stringMap();
@@ -218,4 +242,9 @@ enum Color {
 	Red;
 	Green;
 	Blue;
+}
+
+private enum LabelLookup {
+	Present(value:String);
+	Missing;
 }

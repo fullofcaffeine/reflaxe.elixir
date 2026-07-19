@@ -1,7 +1,7 @@
 # Structural Elixir AST and focused semantic plans
 
-Status: **accepted direction for staged 1.x work; no new compiler behavior is enabled by this
-decision**
+Status: **accepted direction for staged 1.x work; exhaustive structural traversal is implemented,
+while later semantic/runtime slices remain gated**
 
 Planning issue: [GitHub issue #38](https://github.com/fullofcaffeine/reflaxe.elixir/issues/38)
 
@@ -88,8 +88,9 @@ a focused semantic node has been lowered. Compatibility follows these rules:
    `ElixirASTDef` constructor.
 2. One coordinated exhaustive mapper owns `EPattern`, including AST values in literals, map keys,
    and binary sizes.
-3. Scope, control flow, quote/raw authority, and AST-valued metadata remain named traversal policies;
-   a structural child mapper must not pretend to infer those semantics.
+3. The shared mapper owns structure, not lexical meaning. Scope-sensitive transforms add the
+   smallest local binder policy they need; raw target text and AST-valued metadata stay opaque by
+   default until a concrete consumer proves otherwise.
 4. One named semantic owner validates and consumes each focused plan.
 5. A legacy structural transform that cannot interpret an unresolved semantic node runs after that
    owner or rejects the node through typed applicability or a boundary invariant.
@@ -124,9 +125,9 @@ Elixir through a C-shaped CFG, depend on MLIR, or create a general dialect frame
 structured expressions, pattern matching, guards, exceptions, and immutable values remain visible
 in `ElixirAST`.
 
-## What is observed today
+## Reviewed baseline and current implementation
 
-The architecture review was statically rechecked against repository head
+The architecture review baseline was statically rechecked against repository head
 `40254f38d9c07c069c7c3e19831096dcc2d6c95d`:
 
 - compilation follows `TypedExpr -> ElixirAST -> ordered transforms -> ElixirASTPrinter`;
@@ -161,11 +162,19 @@ The architecture review was statically rechecked against repository head
 - explicit raw Elixir and externally validated template/DSL boundaries remain legitimate public or
   framework authorities.
 
-These are reviewed static observations, not automatically enforced semantic classifications. The
-existing generated pass inventory freezes pass order and count. Each implementation slice adds a
-focused Haxe-authored contract test for the invariant it introduces, while source-level snapshots,
-runtime tests, package checks, and determinism evidence protect behavior. A separate regex-generated
-architecture receipt would duplicate those mechanisms and couple CI to incidental source text.
+The traversal portion of that baseline has since been addressed by `ElixirASTChildren` and
+`ElixirPatternChildren`. All 66 AST constructors and all 11 pattern constructors have executable
+constructor-set and immediate-child coverage; the three legacy generic entry points delegate to the
+same schema. Expanded traversal exposed one real anonymous-function scope omission in
+`ClauseUndefinedRefRewrite`, which is fixed at that pass and covered by the ordinary-Haxe
+`core/maps` reducer regression. The remaining bullets are reviewed debt, not claims that every later
+architecture slice has shipped.
+
+The existing generated pass inventory freezes pass order and count. Each implementation slice adds
+a focused Haxe-authored contract test for the invariant it introduces, while source-level snapshots,
+runtime tests, package checks, and determinism evidence protect behavior. Do not add a parallel
+architecture receipt or semantic-boundary inventory: those artifacts duplicate executable tests and
+couple CI to incidental source text.
 
 ## Why haxe.c needs more IR than Reflaxe.Elixir
 
@@ -227,20 +236,22 @@ semantic gaps and can be independently verified.
 
 ## Traversal contract
 
-One module owns every immediate `ElixirAST` child for all 66 constructors, and a coordinated module
-owns all `EPattern` recursion and embedded AST values. The authoritative switches have no catch-all
-branch. Generic walking, mapping, folding, semantic-family counting, and structural digests build on
-that schema.
+`ElixirASTChildren` owns every immediate `ElixirAST` child for all 66 constructors, and
+`ElixirPatternChildren` owns all 11 pattern variants and their embedded AST values. The authoritative
+switches have no catch-all branch. Generic walking and mapping build on that one schema; the legacy
+`iterateAST`, `transformAST`, scoped transform, and `ASTUtils.walk` entry points delegate to it.
 
-Structural traversal is intentionally not the only traversal. Separate policies decide whether to
-enter nested functions, quoted code, raw authority, AST-valued metadata, and control-flow/result
-contexts. Ordinary identity mapping preserves metadata, source positions, optional payload fields,
-and attribute spans exactly. An explicit metadata-aware traversal covers `functionArgDefaults`,
-`fieldMutations`, and `heexAST`; ordinary transforms do not enter those fields accidentally.
+This is one structural traversal contract, not a family of speculative universal walkers. Ordinary
+identity mapping preserves object identity, metadata, source positions, optional payload fields, and
+attribute spans exactly. Raw target injection is opaque. Metadata is preserved but not entered.
+Transforms that care about lexical binders or a deliberate boundary such as an anonymous function
+express that policy locally, as `ClauseUndefinedRefRewrite` now does for anonymous-function clause
+arguments.
 
-A macro or generated constructor-set guard compares the enum constructors with traversal,
-legality, and printer classifications. Adding a constructor is incomplete until those decisions and
-focused child-preservation tests exist.
+The Haxe macro test compares the runtime enum constructor sets with its explicit samples, verifies
+immediate child counts and deterministic order, and exercises boundary/raw behavior. Adding a
+constructor is incomplete until the structural schema and focused contract test classify it;
+printer or legality work is added only when the new constructor's actual role requires it.
 
 ## Pass-manager and analysis contract
 
@@ -283,7 +294,7 @@ testable invariant, it stays in the existing layer.
 ## Raw authority taxonomy
 
 The later typed raw-authority and legality work must assign every admitted raw or print/re-embed
-boundary to one owner. The Stage-0 receipt deliberately does not make this semantic judgment:
+boundary to one owner. The regression baseline deliberately does not make this semantic judgment:
 
 | Class | Meaning | Policy |
 | --- | --- | --- |
@@ -397,9 +408,9 @@ generic part of that model. The typed authority slice will classify remaining
 HEEx producers before any template-AST expansion is approved.
 
 External raw HEEx remains valid only through the documented explicit authority. A broad template IR
-will not be designed speculatively; it earns a follow-up when the receipt and typed audit show a
-closed repeated
-semantic family that ordinary `ElixirAST` fragments cannot represent.
+will not be designed speculatively; it earns a follow-up only when a focused typed audit and failing
+examples show a closed repeated semantic family that ordinary `ElixirAST` fragments cannot
+represent.
 
 ## Pass/module decomposition
 
@@ -421,7 +432,8 @@ A mechanical move that leaves ownership or side tables ambiguous does not satisf
 1. Freeze the existing generated-output, result, pass-order/scope, runtime, package, and determinism
    baselines; record reviewed architecture debt in this decision without creating a parallel audit
    database.
-2. Add exhaustive child/pattern traversal and run legacy/new walkers in shadow mode before switching.
+2. Add exhaustive child/pattern traversal, switch the legacy generic entry points onto it, and use
+   constructor contracts plus full generated/runtime parity to classify newly reached children.
 3. Make registry errors fail closed while preserving the exact effective list.
 4. Replace opaque executable bundles with transparent nested groups, initially preserving current
    capability snapshot semantics.
@@ -445,13 +457,13 @@ not public, node schema changes need source/package parity rather than consumer 
 Implementation slices require, proportionate to scope:
 
 - structural AST tests proving traversal and source metadata;
-- constructor/pattern coverage and legacy/new walker visit-set evidence;
+- constructor/pattern coverage, deterministic traversal, and complete generated/runtime parity;
 - strict registry negative tests, frozen effective order, and opaque/transparent runner parity;
 - request-local determinism and cached/forced-recomputed analysis parity;
 - focused interpolation snapshots and BEAM runtime assertions;
 - adversarial escaping and binder/scope fixtures;
 - pass-order, pass-inventory, and pass-scope guards;
-- result-invariant and semantic-boundary diagnostics;
+- result-invariant and focused owner-boundary diagnostics where a semantic family actually exists;
 - handwritten-output review;
 - full snapshot categories for AST/pass changes;
 - Haxe-authored ExUnit/stdlib tests where behavior is runtime-visible;
@@ -481,7 +493,7 @@ operation whose lowering is being verified.
 | Conclusion | Confidence | Limitation |
 | --- | ---: | --- |
 | Preserve the existing pipeline instead of adopting HxcIR wholesale | High | Future evidence may justify additional focused plans, not a current whole-program IR |
-| Exhaustive child/pattern traversal is the first implementation prerequisite | High | Switching walkers may expose latent behavior and therefore requires shadow evidence |
+| Exhaustive child/pattern traversal is the first implementation prerequisite | High | Implemented; the migration exposed and fixed one anonymous-function binder bug, confirming the need for full semantic parity tests |
 | Structural interpolation is the first new structural-node seam | High | It follows traversal/pass/result prerequisites rather than preceding them |
 | Receiver effects are the best first semantic-plan completion | Medium-high | Exact interaction with `Dynamic` and managed representation must be validated against current main |
 | Raw authority can be completely classified | Medium-high | Some framework/template producers may need a temporary migration class |

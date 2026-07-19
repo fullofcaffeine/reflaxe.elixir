@@ -207,7 +207,7 @@ defmodule Main do
         {:ok, user} ->
           valid_users_acc = Enum.concat(valid_users_acc, [user])
           valid_users_acc
-        {:error, error} -> error
+        {:error, _error} -> valid_users_acc
       end)
     end)
     config_data = [%{timeout: "30", retries: "3", name: "production"}, %{timeout: "0", retries: "5", name: ""}, %{timeout: "60", retries: "-1", name: "test"}]

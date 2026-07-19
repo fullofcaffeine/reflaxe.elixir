@@ -24,7 +24,7 @@ import reflaxe.elixir.ast.ElixirAST.EPattern;
  * 
  * HOW: Uses defensive programming and exhaustive pattern matching
  * - flattenBlocks: Recursively unwraps nested EBlock structures into flat array
- * - containsIteratorPattern: Uses transformNode for guaranteed complete traversal
+ * - containsIteratorPattern: Uses the exhaustive structural child contract
  * - filterIteratorAssignments: Safely removes Map iterator assignments while preserving other code
  * - debugAST: Visualizes AST structure for debugging transformation issues
  * - All functions handle null/undefined gracefully with safe defaults
@@ -56,25 +56,13 @@ class ASTUtils {
 	 * WHY: Some passes need read-only traversal (collecting facts) without
 	 * depending on private helpers on transformer modules.
 	 *
-	 * WHAT: Performs a full traversal using transformNode but returns the
-	 * original tree unchanged. The visitor is called on every node.
+	 * WHAT: Performs a full structural traversal without rebuilding the tree.
+	 * The visitor is called on every AST node, including values carried by patterns.
 	 *
-	 * HOW: Delegates to ElixirASTTransformer.transformNode to guarantee
-	 * exhaustive traversal. The transformer callback returns the node
-	 * unmodified and invokes the visitor for side effects.
+	 * HOW: Delegates to the one exhaustive `ElixirASTChildren` schema.
 	 */
 	public static function walk(ast:ElixirAST, visitor:ElixirAST->Void):Void {
-		if (ast == null || ast.def == null)
-			return;
-
-		function walkNode(node:ElixirAST):Void {
-			if (node == null || node.def == null)
-				return;
-			visitor(node);
-			ElixirASTTransformer.iterateAST(node, walkNode);
-		}
-
-		walkNode(ast);
+		ElixirASTChildren.walk(ast, visitor);
 	}
 
 	/**

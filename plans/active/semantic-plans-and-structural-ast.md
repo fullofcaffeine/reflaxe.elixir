@@ -1,6 +1,6 @@
 # Structural Elixir AST and focused semantic plans
 
-Status: active implementation contract; regression baseline complete, exhaustive traversal next
+Status: active implementation contract; regression baseline and exhaustive traversal foundation complete
 
 External source: [GitHub issue #38](https://github.com/fullofcaffeine/reflaxe.elixir/issues/38)
 
@@ -37,7 +37,7 @@ infrastructure without re-planning that work.
 | `haxe.elixir.codex-75i.3` | Complete the persistent receiver-effect semantic plan | P1, open |
 | `haxe.elixir.codex-75i.4` | Establish phase legality and raw/runtime-intent contracts | P1, open |
 | `haxe.elixir.codex-75i.5` | Extract proven semantic owners from the mega-transformer | P2, open |
-| `haxe.elixir.codex-75i.6` | Centralize exhaustive ElixirAST child and pattern traversal | P1, open |
+| `haxe.elixir.codex-75i.6` | Centralize exhaustive ElixirAST child and pattern traversal | P1, completing validation |
 | `haxe.elixir.codex-75i.7` | Freeze effective pass order and fail closed on registry errors | P1, open |
 | `haxe.elixir.codex-75i.8` | Make pass bundles transparent nested pipeline groups | P1, open |
 | `haxe.elixir.codex-75i.9` | Add request-local pass context and conservative analysis invalidation | P1, open |
@@ -95,11 +95,17 @@ byte/runtime parity. One-off discovery scripts remain disposable investigation a
 
 ## Slice 2: exhaustive traversal foundation
 
-Add one no-default immediate-child schema for all `ElixirASTDef` constructors plus a coordinated
-exhaustive `EPattern` mapper. Preserve metadata, positions, optional record fields, and HEEx attribute
-spans under identity mapping. Layer scope, control flow, quote/raw behavior, and AST-valued metadata
-as explicit traversal policies. Shadow current walkers and classify every newly reached child before
-switching production APIs.
+Delivered by `ElixirASTChildren` and `ElixirPatternChildren`: one no-default immediate-child schema
+for all `ElixirASTDef` constructors plus the coordinated exhaustive `EPattern` mapper. Identity
+mapping preserves node references, metadata, positions, optional record fields, and HEEx attribute
+spans. The old generic child switches now delegate to this schema.
+
+This does not create three replacement walkers. The shared schema owns structural children only.
+Scope-sensitive passes keep the smallest explicit binder policy they need, raw target nodes remain
+opaque, and AST-valued metadata remains preserved but untraversed until a concrete analysis proves
+that entering it is necessary. The migration's expanded traversal exposed an anonymous-function
+binder omission in `ClauseUndefinedRefRewrite`; the owning pass now establishes clause binders, and
+`core/maps` protects the reducer/enum-switch case with ordinary Haxe source.
 
 ## Slice 3: strict and transparent pass management
 
@@ -159,7 +165,8 @@ a broad rewrite.
   boundary rather than forming a parallel general-purpose compiler pipeline.
 - Structural AST before target text for ordinary compiler-owned lowering.
 - A semantic plan must pass the admission test in the architecture decision.
-- No generic traversal has a catch-all leaf case; scope/raw/quote/metadata policies are explicit.
+- No generic structural traversal has a catch-all leaf case. Scope-sensitive behavior is explicit
+  in the pass that owns it; raw target code and AST-valued metadata are opaque by default.
 - Current effective pass order is behavioral data and is not changed by infrastructure work.
 - Pass groups are scheduling structure, not hidden runners.
 - Changed or unknown passes invalidate cached facts unless preservation is proven.
@@ -181,18 +188,19 @@ structure, policy, phase, and ownership:
 
 - one exhaustive immediate-child schema covers all `ElixirASTDef` constructors, and one coordinated
   mapper covers every `EPattern` variant;
-- structural traversal does not pretend to understand lexical scope, quote/raw authority,
-  control-flow completion, or AST-valued metadata; those are explicit layered policies;
+- structural traversal does not pretend to understand lexical scope, completion flow, or metadata
+  semantics; a pass adds only the local policy required by its real rewrite;
 - exactly one named semantic owner validates and consumes each focused plan;
 - a structural transform that cannot interpret an unresolved semantic node must run after lowering
   or reject it through typed applicability or an invariant;
 - exhaustive `ElixirAST` handling is updated when a new structural or semantic case is admitted; and
 - no legacy transform may recover source intent from printed text, target names, or map/struct shape.
 
-The old and new walkers run in bounded shadow mode before production switches. Focused constructor
-coverage and identity-map tests capture the current gaps and then enforce explicit structural,
-scope, quote/raw, metadata, and control-flow policies before new nodes are introduced. This makes
-compatibility an executable migration property, not an assumption.
+Focused constructor-set, child-count, identity-map, deterministic-order, raw-opacity, and boundary
+tests enforce the schema. Complete snapshot/runtime/example parity then catches behavior changes
+when previously invisible children become reachable. A newly exposed scope bug is fixed in its
+owning pass with a source-level regression; it does not justify another universal walker or audit
+artifact. This makes compatibility an executable migration property, not an assumption.
 
 ## LLVM and MLIR lessons we adopt
 
@@ -215,7 +223,8 @@ This work uses a parity-first, slice-by-slice migration:
 1. Capture complete generated-output, runtime, package, pass-order, and determinism baselines.
 2. Require traversal schema, strict registry, transparent groups, context/analysis scaffolding, and
    mechanical ownership extraction to remain byte-identical.
-3. Shadow old/new traversal and pass runners before switching; classify every difference.
+3. Differential-test old/new behavior where useful, then classify every generated or runtime
+   difference; do not build a permanent parallel traversal framework merely for migration.
 4. Admit one node or semantic owner at a time only after constructor coverage and legality exist.
 5. Keep the old behavior until ordinary-Haxe semantic, evaluation-order, exception, and runtime
    regressions distinguish the replacement from a cosmetic rewrite.

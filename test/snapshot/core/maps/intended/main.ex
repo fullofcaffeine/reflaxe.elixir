@@ -298,6 +298,33 @@ defmodule Main do
     end)
     result
   end
+  def collect_successful(input) do
+    result = %{}
+    {result} = Enum.reduce_while(Map.keys(input), {result}, fn key, {acc_result} ->
+      try do
+        acc_result =
+          (case label_for(key) do
+            {:present, value} ->
+              Map.put(acc_result, key, value)
+            {:missing} -> acc_result
+          end)
+        {:cont, {acc_result}}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, {acc_result}}
+        :throw, :continue ->
+          {:cont, {acc_result}}
+      end
+    end)
+    result
+  end
+  defp label_for(key) do
+    if (key == "skip"), do: {:missing}, else: {:present, "Value: " <> key}
+  end
   def main() do
     string_map()
     int_map()
