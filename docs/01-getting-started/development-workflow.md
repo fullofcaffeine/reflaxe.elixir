@@ -115,6 +115,30 @@ npm run test:examples
 npm run qa:sentinel
 ```
 
+### Queue the Full Local Suite
+
+Several Haxe target repositories can otherwise start their largest local suites
+at the same time and make every run much slower. Use the opt-in queued entrypoint
+when other Haxe-family compiler work may be active:
+
+```bash
+npm run test:queued
+```
+
+This waits for at most 15 minutes on the user-scoped
+`haxe-family.heavy-run-lease.v1` lease, runs the unchanged `npm test` command,
+and releases the lease on success, failure, or cancellation. It reports exit
+code `75` when the bounded wait expires, so retrying later is safe. The ordinary
+`npm test` command remains unqueued for focused or manual use, and CI never
+acquires a local lease.
+
+Nested participating commands inherit the same owner process and lease path, so
+a Reflaxe.Elixir suite that invokes an `hxhx` heavy gate does not deadlock
+itself. Override the shared path only for isolated diagnostics with
+`HAXE_FAMILY_HEAVY_RUN_LEASE_FILE`; a different schema is rejected rather than
+silently deleted. Protocol upgrades require coordinated adapter updates across
+repositories.
+
 For details on non-blocking Phoenix validation (async runs, bounded log viewing, Playwright integration), see
 [Phoenix E2E & QA Sentinel](../06-guides/PHOENIX_E2E_AND_SENTINEL.md).
 

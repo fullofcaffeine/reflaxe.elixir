@@ -29,7 +29,9 @@
   "scripts": {
     "postinstall": "lix download",
     "build": "echo 'Reflaxe.Elixir is a compiler - no build step needed'",
-    "test": "npm run test:ast-children && scripts/test-chunks.sh --parallel 8 --chunk-deadline 900 --timeout 120 && make -C test -j8 summary-negative && npm run test:result-invariant && npm run test:generator && npm run test:elixir-validate && npm run test:mix && npm run test:haxe-server-policy && npm run test:haxe-server-cleanup && npm run test:haxe-server-owner-exit && npm run test:runtime-smoke && npm run test:generated-output-quality && npm run test:generated-formatting",
+    "test": "npm run test:heavy-run-lease && npm run test:ast-children && scripts/test-chunks.sh --parallel 8 --chunk-deadline 900 --timeout 120 && make -C test -j8 summary-negative && npm run test:result-invariant && npm run test:generator && npm run test:elixir-validate && npm run test:mix && npm run test:haxe-server-policy && npm run test:haxe-server-cleanup && npm run test:haxe-server-owner-exit && npm run test:runtime-smoke && npm run test:generated-output-quality && npm run test:generated-formatting",
+    "test:queued": "node scripts/ci/with-heavy-run-lease.js --wait-seconds 900 --label reflaxe-elixir-full-test -- npm test",
+    "test:heavy-run-lease": "node scripts/ci/haxe-family-heavy-run-lease-fixture-test.js",
     "test:bounded": "scripts/test-chunks.sh --parallel 8 --chunk-deadline 900 --timeout 120",
     "test:sequential": "make -C test -j1 && npm run test:elixir-validate && npm run test:generator && npm run test:mix",
     "test:quick": "bash scripts/test-chunks.sh --parallel 8 --chunk-deadline 900 --timeout 120 --categories core,stdlib,regression && bash test/validate_elixir.sh test/snapshot/core test/snapshot/stdlib test/snapshot/regression",
