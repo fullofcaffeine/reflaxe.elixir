@@ -37,7 +37,7 @@ infrastructure without re-planning that work.
 | `haxe.elixir.codex-75i.3` | Complete the persistent receiver-effect semantic plan | P1, open |
 | `haxe.elixir.codex-75i.4` | Establish phase legality and raw/runtime-intent contracts | P1, open |
 | `haxe.elixir.codex-75i.5` | Extract proven semantic owners from the mega-transformer | P2, open |
-| `haxe.elixir.codex-75i.6` | Centralize exhaustive ElixirAST child and pattern traversal | P1, completing validation |
+| `haxe.elixir.codex-75i.6` | Centralize exhaustive ElixirAST child and pattern traversal | P1, complete |
 | `haxe.elixir.codex-75i.7` | Freeze effective pass order and fail closed on registry errors | P1, open |
 | `haxe.elixir.codex-75i.8` | Make pass bundles transparent nested pipeline groups | P1, open |
 | `haxe.elixir.codex-75i.9` | Add request-local pass context and conservative analysis invalidation | P1, open |
