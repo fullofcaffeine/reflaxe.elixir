@@ -33,7 +33,7 @@ if HAXE_NO_SERVER=1 haxe "$FIXTURE_DIR/build-negative.hxml" >"$negative_log" 2>&
   exit 1
 fi
 
-if ! rg -q 'GTS-HXX-PROP-002.*property `title` expects `String` but received `Int`' "$negative_log"; then
+if ! grep -Eq 'GTS-HXX-PROP-002.*property `title` expects `String` but received `Int`' "$negative_log"; then
   echo "genes-ts rejected the invalid prop without the expected typed diagnostic" >&2
   sed -n '1,120p' "$negative_log" >&2
   exit 1
@@ -83,7 +83,7 @@ for (const path of process.argv.slice(2)) {
 NODE
 
 local_path_pattern='/U[s]ers/|/var/fol[d]ers/|[A-Za-z]:\\\\U[s]ers\\\\'
-if rg -n "$local_path_pattern" "$GENERATED_DIR"; then
+if grep -ERn "$local_path_pattern" "$GENERATED_DIR"; then
   echo "genes-ts integration emitted a machine-local path" >&2
   exit 1
 fi
