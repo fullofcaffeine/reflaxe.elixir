@@ -5,6 +5,7 @@ defmodule Mix.Tasks.Haxe.Gen.LiveReact do
       mix haxe.gen.live_react PreferenceStudio
       mix haxe.gen.live_react PreferenceStudio --existing
       mix haxe.gen.live_react PreferenceStudio --remove
+      mix haxe.gen.live_react PreferenceStudio --package-root assets
 
   The default creates one strict Haxe wrapper, one trusted TSX boundary, and
   one inner TSX component. Those files become application-owned immediately;
@@ -37,6 +38,7 @@ defmodule Mix.Tasks.Haxe.Gen.LiveReact do
     use_existing = Keyword.get(options, :existing, false)
     module_path = Keyword.get(options, :module, nil)
     export_name = Keyword.get(options, :export, nil)
+    package_root = Keyword.get(options, :package_root, nil)
 
     if remove and
          (use_existing or not Kernel.is_nil(module_path) or not Kernel.is_nil(export_name)) do
@@ -62,6 +64,7 @@ defmodule Mix.Tasks.Haxe.Gen.LiveReact do
       {:app_name, app_name},
       {:module_path, module_path},
       {:export_name, export_name},
+      {:package_root, package_root},
       {:existing, use_existing},
       {:yes, confirmed},
       {:confirm, confirm},
@@ -85,6 +88,7 @@ defmodule Mix.Tasks.Haxe.Gen.LiveReact do
       {:existing, :boolean},
       {:module, :string},
       {:export, :string},
+      {:package_root, :string},
       {:yes, :boolean}
     ]
 

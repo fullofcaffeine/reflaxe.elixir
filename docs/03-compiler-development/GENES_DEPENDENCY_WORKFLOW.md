@@ -220,6 +220,28 @@ passed, at downstream commit `8bd78c89cc79cc8f6a872e3497a034811e6ed7d8`.
 That complete local, package, Linux, macOS, minimum-toolchain, browser, and
 hosted evidence admits v1.37.0 as the current PhoenixHX Genes dependency.
 
+## Temporary LiveReact integration pin (2026-07-19)
+
+The typed Todo LiveReact lane exposed a generic Genes defect: a module can use
+`genes.react.Element` in a type annotation without authoring JSX in that same
+module. Genes correctly emitted `JSX.Element`, but the dependency plan omitted
+the type-only `JSX` import because it only tracked markup. The generic fix is:
+
+- repository: `https://github.com/fullofcaffeine/genes-ts`;
+- branch: `codex/tsx-jsx-type-import`;
+- owner: `fullofcaffeine`;
+- pull request: [`fullofcaffeine/genes-ts#16`](https://github.com/fullofcaffeine/genes-ts/pull/16);
+- exact tested and pushed code commit:
+  `697943b1c10b72309d815b0f6a5605d7c5c2a53b`.
+
+PhoenixHX temporarily pins that immutable commit so local builds and CI consume
+the same reviewed source. The fix was reduced and tested entirely in Genes: it
+contains no PhoenixHX, LiveReact, route, or application-specific symbols, adds
+only a type import, and preserves classic ESM output. This is not a release
+admission. After PR #16 merges, replace the temporary SHA with the exact commit
+that lands on canonical `main`; a later release may replace it only after the
+normal downstream admission matrix passes.
+
 ## Rollback
 
 Before changing compiler ownership, commit a known-green repository state.

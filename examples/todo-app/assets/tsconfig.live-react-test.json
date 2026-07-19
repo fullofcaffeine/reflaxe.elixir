@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "jsx": "react-jsx",
+    "types": ["node", "react", "react-dom"],
+    "rootDir": "_tmp/live-react-contract/src",
+    "outDir": "_tmp/live-react-contract/dist",
+    "strict": true,
+    "sourceMap": true,
+    "isolatedModules": true,
+    "skipLibCheck": false,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true
+  },
+  "include": ["_tmp/live-react-contract/src/**/*.ts", "_tmp/live-react-contract/src/**/*.tsx"]
+}

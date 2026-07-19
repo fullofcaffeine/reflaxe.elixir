@@ -37,6 +37,25 @@
   counts into a new subsystem when a direct Haxe-authored test or existing generated guard can
   express the requirement.
 
+## 🪶 Smallest Effective Design (Hard Rule)
+
+- Use the simplest existing mechanism that truthfully solves the demonstrated problem. Prefer a
+  direct typed function, ordinary data/configuration, a checked-in template, or a focused test over
+  a new service, policy object, registry, manifest, generator, DSL, IR, adapter layer, or parallel
+  source of truth.
+- A new abstraction must solve a concrete recurring problem that the simpler baseline cannot solve.
+  Before adding it, identify that baseline, the observed failure, the independent consumers that
+  need the abstraction, and the invariant its focused tests will enforce. “Cleaner architecture,”
+  possible future reuse, or dogfooding by itself is not sufficient justification.
+- Do not turn static dependency pins or static scaffold content into executable modules when Lix,
+  Mix, a template, or another standard declarative mechanism already expresses them completely.
+  Dogfood Haxe for real program behavior and compiler coverage, not to manufacture indirection.
+- Simplicity does not permit unsafe mutation, semantic shortcuts, or weaker tests. Keep the minimum
+  ownership checks, type guarantees, diagnostics, rollback behavior, and verification required by
+  the actual risk—then stop.
+- If a simpler sound design becomes apparent before the task closes, remove the unnecessary layer
+  instead of preserving it because work has already been invested in it.
+
 ## 🚦 Non-Blocking Todo-App QA (Required)
 
 Agents must never block the terminal when validating the todo-app. Use the provided QA sentinels which build, start Phoenix in the background, probe readiness, and tear down cleanly.
@@ -632,7 +651,29 @@ Use `reflaxe.ruby` / RailsHx as a UX and cross-target learning reference when it
 - Keep functions short and focused; extract helpers when a block grows complex.
 - Avoid magic numbers and stringly-typed logic; prefer enums/typedefs and small helpers.
 - Do not leak target-specific runtime details into the Haxe types unless strictly required by shape.
-- Comment clarity is a hard rule: comments must be beginner-friendly by default, explaining the plain-language what/why/how without labeling themselves as “beginner-friendly.”
+
+### Comment Clarity (Hard Rule)
+
+- Write comments for a capable reader who may not already know Haxe, the target
+  language, or this compiler's internal terminology. Define an acronym or
+  specialist term at first use, or replace it with plain language; a shorthand
+  label such as “DCE root” is not an adequate explanation by itself.
+- Explain the concrete situation first: what uses the code, why the code is
+  needed, and what observable behavior would fail or change if it were removed.
+  Include implementation terminology only after that context is clear.
+- Intentionally empty functions, no-op declarations, marker types, adapters,
+  extern/native declarations, generated entry points, and lifecycle glue need
+  especially explicit comments. Name the external tool, framework, compiler
+  phase, reflection lookup, registry, or other indirect consumer that makes the
+  apparently redundant code necessary, and explain why an ordinary source call
+  does not make that dependency visible.
+- Prefer comments about intent, invariants, ownership, constraints, and failure
+  modes over comments that merely translate the next line into prose. Keep them
+  adjacent to the code they explain, and update or remove them when the contract
+  changes.
+- Be precise about evidence and support status. A comment must not turn an
+  experimental path, inferred behavior, or narrow test result into a broad
+  correctness or compatibility claim.
 
 ### Documentation Coverage Threshold (Hard Rule)
 

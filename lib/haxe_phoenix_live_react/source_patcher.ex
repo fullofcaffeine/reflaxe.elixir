@@ -215,7 +215,15 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
     patch_app_js_hooks(patch_app_js_import(content), restores)
   end
 
-  def patch_root_layout(content, restores) do
+  def patch_root_layout(content, topology, restores) do
+    if topology.root_layout_kind == :haxe do
+      patch_haxe_root_layout(content, topology, restores)
+    else
+      patch_heex_root_layout(content, restores)
+    end
+  end
+
+  defp patch_heex_root_layout(content, restores) do
     begin_token = "BEGIN reflaxe_elixir live_react_vite_assets"
     end_token = "END reflaxe_elixir live_react_vite_assets"
     restore_key = "layout.appScript"
@@ -249,7 +257,7 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
             "Phoenix root layout already contains an unowned LiveReact Vite asset wrapper. No writes occurred. Manual integration is required."
           )
         else
-          script = find_root_app_script(content)
+          script = find_root_app_script(content, ["/assets/app.js"])
           next_restores = put_restore(restores, restore_key, script.original)
           lines = split_lines(content)
 
@@ -261,6 +269,70 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
               script.indent,
               "<%!--",
               "--%>"
+            )
+
+          updated =
+            replace_line_range(
+              lines,
+              script.start_index,
+              script.end_index,
+              Enum.join(block, "\n")
+            )
+
+          {Enum.join(updated, "\n"), next_restores}
+        end
+      end
+    end
+  end
+
+  defp patch_haxe_root_layout(content, topology, restores) do
+    begin_asset = "BEGIN reflaxe_elixir live_react_vite_assets"
+    end_asset = "END reflaxe_elixir live_react_vite_assets"
+    restore_key = "layout.appScript"
+    validate_marker_pairs(content, [{begin_asset, end_asset}], "Haxe Phoenix root layout")
+    existing_original = Map.get(restores, restore_key)
+
+    desired =
+      if Kernel.is_nil(existing_original),
+        do: [],
+        else: haxe_root_asset_inner_lines(existing_original, topology.reload_component_module)
+
+    replaced =
+      HaxeProjectPatch.replace_marker_block_lines(content, begin_asset, end_asset, desired)
+
+    replaced_tag = tag(replaced)
+
+    if replaced_tag == :ok do
+      if Kernel.is_nil(existing_original) do
+        Kernel.raise(
+          "phoenixhx-live-react.json is missing the original Haxe root-layout app script needed for recovery. No writes occurred."
+        )
+      else
+        {Kernel.elem(replaced, 1), restores}
+      end
+    else
+      if replaced_tag == :error do
+        Kernel.raise(
+          "Haxe Phoenix root layout has a malformed LiveReact assets marker (#{Kernel.inspect(Kernel.elem(replaced, 1))}). No writes occurred."
+        )
+      else
+        if String.contains?(content, "LiveReact.Reload.vite_assets") do
+          Kernel.raise(
+            "Haxe Phoenix root layout already contains an unowned LiveReact Vite asset wrapper. No writes occurred. Manual integration is required."
+          )
+        else
+          script = find_root_app_script(content, ["/assets/app.js", "/assets/phoenix_app.js"])
+          next_restores = put_restore(restores, restore_key, script.original)
+          lines = split_lines(content)
+
+          block =
+            marker_lines_with_suffix(
+              begin_asset,
+              end_asset,
+              haxe_root_asset_inner_lines(script.original, topology.reload_component_module),
+              script.indent,
+              "<!--",
+              " -->"
             )
 
           updated =
@@ -454,7 +526,7 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
     end
   end
 
-  def remove_root_layout_wiring(content, restores) do
+  def remove_root_layout_wiring(content, topology, restores) do
     original = Map.get(restores, "layout.appScript")
 
     if Kernel.is_nil(original) do
@@ -462,14 +534,25 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
         "phoenixhx-live-react.json is missing the original root-layout script. No writes occurred."
       )
     else
-      restore_owned_marker(
-        content,
-        "BEGIN reflaxe_elixir live_react_vite_assets",
-        "END reflaxe_elixir live_react_vite_assets",
-        root_asset_inner_lines(original),
-        original,
-        "Phoenix root layout LiveReact assets"
-      )
+      if topology.root_layout_kind != :haxe do
+        restore_owned_marker(
+          content,
+          "BEGIN reflaxe_elixir live_react_vite_assets",
+          "END reflaxe_elixir live_react_vite_assets",
+          root_asset_inner_lines(original),
+          original,
+          "Phoenix root layout LiveReact assets"
+        )
+      else
+        restore_owned_marker(
+          content,
+          "BEGIN reflaxe_elixir live_react_vite_assets",
+          "END reflaxe_elixir live_react_vite_assets",
+          haxe_root_asset_inner_lines(original, topology.reload_component_module),
+          original,
+          "Haxe Phoenix root layout LiveReact assets"
+        )
+      end
     end
   end
 
@@ -1208,15 +1291,30 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
 
         true ->
           lines = split_lines(content)
-          live_socket = find_live_socket_index(lines)
+          insertion = early_window_hooks_insertion_index(lines)
           block = marker_lines(begin_token, end_token, desired, "", "//")
-          updated = Enum.join(List.insert_at(lines, live_socket, Enum.join(block, "\n")), "\n")
+          updated = Enum.join(List.insert_at(lines, insertion, Enum.join(block, "\n")), "\n")
           updated
       end
 
     if live_socket_uses_window_hooks(updated),
       do: {updated, restores},
       else: patch_live_socket_hooks_property(updated, restores)
+  end
+
+  defp early_window_hooks_insertion_index(lines) do
+    import_marker_ends =
+      indices(0, length(lines), fn index ->
+        String.contains?(at(lines, index), "END reflaxe_elixir live_react_import")
+      end)
+
+    if length(import_marker_ends) != 1 do
+      Kernel.raise(
+        "assets/js/app.js has no unique owned LiveReact import marker. No writes occurred."
+      )
+    else
+      Enum.at(import_marker_ends, 0) + 1
+    end
   end
 
   defp live_socket_uses_window_hooks(content) do
@@ -1421,7 +1519,7 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
     end
   end
 
-  defp find_root_app_script(content) do
+  defp find_root_app_script(content, accepted_paths) do
     lines = split_lines(content)
     starts = []
     _g = 0
@@ -1430,8 +1528,9 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
     starts =
       Enum.reduce(g_value, starts, fn entry, starts_acc ->
         line = Kernel.elem(entry, 0)
+        accepted = Enum.any?(accepted_paths, fn path -> String.contains?(line, path) end)
 
-        if String.contains?(line, "<script") and String.contains?(line, "/assets/app.js") do
+        if String.contains?(line, "<script") and accepted do
           Enum.concat(starts_acc, [entry])
         else
           starts_acc
@@ -1440,7 +1539,7 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
 
     if length(starts) == 0 do
       Kernel.raise(
-        "Phoenix root layout has no canonical /assets/app.js script. No writes occurred. Run the Phoenix scaffold first."
+        "Phoenix root layout has no canonical app script (expected #{Enum.join(accepted_paths, " or ")}). No writes occurred. Run the Phoenix scaffold first."
       )
     else
       if length(starts) != 1 do
@@ -1505,13 +1604,70 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
               String.trim_leading(line)
             end
 
-          "  " <> stripped
+          "  " <> normalize_vite_module_script(stripped)
         end)
 
       Enum.concat(
         Enum.concat(["<LiveReact.Reload.vite_assets assets={[\"/js/app.js\"]}>"], script),
         ["</LiveReact.Reload.vite_assets>"]
       )
+    end
+  end
+
+  defp haxe_root_asset_inner_lines(original, component_module) do
+    if Kernel.is_nil(original) do
+      Kernel.raise("missing original Haxe Phoenix root-layout app script")
+    else
+      if Kernel.is_nil(component_module) do
+        Kernel.raise(
+          "missing app-local LiveReact assets component for a Haxe Phoenix root layout"
+        )
+      else
+        original_lines = split_lines(original)
+        original_indent = leading_indent(Enum.at(original_lines, 0))
+
+        script =
+          Enum.map(original_lines, fn line ->
+            stripped =
+              if String.starts_with?(line, original_indent) do
+                String.replace_prefix(line, original_indent, "")
+              else
+                String.trim_leading(line)
+              end
+
+            normalized =
+              normalize_vite_module_script(
+                String.replace(stripped, "/assets/phoenix_app.js", "/assets/app.js")
+              )
+
+            "  " <> normalized
+          end)
+
+        Enum.concat(
+          Enum.concat(["<#{component_module}.vite_assets assets=${[\"/js/app.js\"]}>"], script),
+          ["</#{component_module}.vite_assets>"]
+        )
+      end
+    end
+  end
+
+  defp normalize_vite_module_script(line) do
+    if not String.contains?(line, "<script") do
+      line
+    else
+      if String.contains?(line, "type=\"text/javascript\"") do
+        String.replace(line, "type=\"text/javascript\"", "type=\"module\"")
+      else
+        if String.contains?(line, "type='text/javascript'") do
+          String.replace(line, "type='text/javascript'", "type='module'")
+        else
+          if not String.contains?(line, "type=") do
+            String.replace_prefix(line, "<script", "<script type=\"module\"")
+          else
+            line
+          end
+        end
+      end
     end
   end
 

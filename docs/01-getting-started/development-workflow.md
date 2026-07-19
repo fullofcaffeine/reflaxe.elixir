@@ -72,9 +72,13 @@ haxe TestMain.hxml      # Compile using your Haxe toolchain
 
 **Why lix?**
 - ✅ **Locked Haxe library versions** (avoids "works on my machine")
-- ✅ **GitHub + haxelib sources** (always latest libraries)  
+- ✅ **Exact GitHub commits/releases and pinned Haxelib sources** (reviewed, reproducible inputs)
 - ✅ **Locked dependency versions** (zero software erosion)
 - ✅ **Scoped installs** (keeps Haxe libs out of global state)
+
+Reflaxe.Elixir itself is installed from a versioned GitHub Release package through Lix. Haxelib
+package compatibility remains tested, but a global Haxelib-registry install is not the recommended
+application workflow. See [Installation And Setup](installation.md#why-lix-and-github-releases).
 
 ### ⚡ Elixir Runtime Side (mix)  
 **Purpose**: Test and run the generated Elixir code

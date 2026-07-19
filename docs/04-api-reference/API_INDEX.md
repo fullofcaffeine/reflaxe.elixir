@@ -140,6 +140,7 @@ Core:
 Opt-in stock LiveReact interop:
 
 - `std/phoenix/live_react/LiveReact.hx`
+- `std/phoenix/live_react/LiveReactReload.hx`
 - `vendor/phoenix_shared/src/phoenix/live_react/LiveReactEventProtocol.hx`
 
 Channels and wire types:

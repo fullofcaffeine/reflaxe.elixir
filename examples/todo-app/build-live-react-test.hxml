@@ -1,0 +1,16 @@
+-lib genes-ts
+-lib phoenix_js
+
+-cp src_react
+-cp src_shared
+
+-main todo_insights.TodoInsightsContractTest
+-js assets/_tmp/live-react-contract/src/index.tsx
+
+-D genes.ts
+-D genes.ts.jsx_import_source=react
+-D js-source-map
+
+--macro phoenix.live_react.LiveReactEventProtocol.exportTypeScript('shared.liveview.TodoInsightsEvents.TodoInsightsEvent','assets/_tmp/live-react-contract/src/todo_insights/todo-insights-events.generated.ts')
+
+--dce full

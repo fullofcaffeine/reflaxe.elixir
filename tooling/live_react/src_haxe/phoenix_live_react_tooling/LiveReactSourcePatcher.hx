@@ -40,6 +40,8 @@ class LiveReactSourcePatcher {
 	static inline final GLOBAL:Atom = "global";
 	static inline final PARTS:Atom = "parts";
 	static inline final TRIM:Atom = "trim";
+	static inline final HAXE_LAYOUT:Atom = "haxe";
+	static inline final DOLLAR_SIGN = "$";
 
 	public static function markerSpecs():Array<Term> {
 		return [
@@ -148,7 +150,11 @@ class LiveReactSourcePatcher {
 		return patchAppJsHooks(patchAppJsImport(content), restores);
 	}
 
-	public static function patchRootLayout(content:String, restores:Term):{_0:String, _1:Term} {
+	public static function patchRootLayout(content:String, topology:LiveReactTopology, restores:Term):{_0:String, _1:Term} {
+		return topology.rootLayoutKind == HAXE_LAYOUT ? patchHaxeRootLayout(content, topology, restores) : patchHeexRootLayout(content, restores);
+	}
+
+	static function patchHeexRootLayout(content:String, restores:Term):{_0:String, _1:Term} {
 		var beginToken = "BEGIN reflaxe_elixir live_react_vite_assets";
 		var endToken = "END reflaxe_elixir live_react_vite_assets";
 		var restoreKey = "layout.appScript";
@@ -171,10 +177,43 @@ class LiveReactSourcePatcher {
 			return
 				Kernel.raiseValue("Phoenix root layout already contains an unowned LiveReact Vite asset wrapper. No writes occurred. Manual integration is required.");
 
-		var script = findRootAppScript(content);
+		var script = findRootAppScript(content, ["/assets/app.js"]);
 		var nextRestores = putRestore(restores, restoreKey, script.original);
 		var lines = splitLines(content);
 		var block = markerLinesWithSuffix(beginToken, endToken, rootAssetInnerLines(script.original), script.indent, "<%!--", "--%>");
+		var updated = replaceLineRange(lines, script.startIndex, script.endIndex, Enum.join(block, "\n"));
+		return {_0: Enum.join(updated, "\n"), _1: nextRestores};
+	}
+
+	static function patchHaxeRootLayout(content:String, topology:LiveReactTopology, restores:Term):{_0:String, _1:Term} {
+		var beginAsset = "BEGIN reflaxe_elixir live_react_vite_assets";
+		var endAsset = "END reflaxe_elixir live_react_vite_assets";
+		var restoreKey = "layout.appScript";
+		validateMarkerPairs(content, [{_0: beginAsset, _1: endAsset}], "Haxe Phoenix root layout");
+
+		var existingOriginal:Null<String> = ElixirMap.getTyped(restores, restoreKey);
+		var desired = existingOriginal == null ? [] : haxeRootAssetInnerLines(existingOriginal, topology.reloadComponentModule);
+		var replaced = ProjectPatch.replaceMarkerBlockLines(content, beginAsset, endAsset, desired);
+		var replacedTag = tag(replaced);
+		if (replacedTag == OK) {
+			if (existingOriginal == null)
+				return Kernel.raiseValue(IntegrationCore.MANIFEST_FILENAME
+					+ " is missing the original Haxe root-layout app script needed for recovery. No writes occurred.");
+			return {_0: Kernel.elemAs(replaced, 1), _1: restores};
+		}
+		if (replacedTag == ERROR)
+			return Kernel.raiseValue("Haxe Phoenix root layout has a malformed LiveReact assets marker ("
+				+ Kernel.inspect(Kernel.elem(replaced, 1))
+				+ "). No writes occurred.");
+		if (ElixirString.contains(content, "LiveReact.Reload.vite_assets"))
+			return
+				Kernel.raiseValue("Haxe Phoenix root layout already contains an unowned LiveReact Vite asset wrapper. No writes occurred. Manual integration is required.");
+
+		var script = findRootAppScript(content, ["/assets/app.js", "/assets/phoenix_app.js"]);
+		var nextRestores = putRestore(restores, restoreKey, script.original);
+		var lines = splitLines(content);
+		var block = markerLinesWithSuffix(beginAsset, endAsset, haxeRootAssetInnerLines(script.original, topology.reloadComponentModule), script.indent,
+			"<!--", " -->");
 		var updated = replaceLineRange(lines, script.startIndex, script.endIndex, Enum.join(block, "\n"));
 		return {_0: Enum.join(updated, "\n"), _1: nextRestores};
 	}
@@ -236,12 +275,16 @@ class LiveReactSourcePatcher {
 		return Kernel.raiseValue("assets/js/app.js must contain exactly one owned LiveReact hook strategy. No writes occurred.");
 	}
 
-	public static function removeRootLayoutWiring(content:String, restores:Term):String {
+	public static function removeRootLayoutWiring(content:String, topology:LiveReactTopology, restores:Term):String {
 		var original:Null<String> = ElixirMap.getTyped(restores, "layout.appScript");
 		if (original == null)
 			return Kernel.raiseValue(IntegrationCore.MANIFEST_FILENAME + " is missing the original root-layout script. No writes occurred.");
+		if (topology.rootLayoutKind != HAXE_LAYOUT)
+			return restoreOwnedMarker(content, "BEGIN reflaxe_elixir live_react_vite_assets", "END reflaxe_elixir live_react_vite_assets",
+				rootAssetInnerLines(original), original, "Phoenix root layout LiveReact assets");
+
 		return restoreOwnedMarker(content, "BEGIN reflaxe_elixir live_react_vite_assets", "END reflaxe_elixir live_react_vite_assets",
-			rootAssetInnerLines(original), original, "Phoenix root layout LiveReact assets");
+			haxeRootAssetInnerLines(original, topology.reloadComponentModule), original, "Haxe Phoenix root layout LiveReact assets");
 	}
 
 	public static function putRestore(restores:Term, key:String, value:Term):Term {
@@ -616,11 +659,25 @@ class LiveReactSourcePatcher {
 				+ "). No writes occurred.");
 		} else {
 			var lines = splitLines(content);
-			var liveSocket = findLiveSocketIndex(lines);
+			var insertion = earlyWindowHooksInsertionIndex(lines);
 			var block = markerLines(beginToken, endToken, desired, "", "//");
-			updated = Enum.join(List.insertAt(lines, liveSocket, Enum.join(block, "\n")), "\n");
+			updated = Enum.join(List.insertAt(lines, insertion, Enum.join(block, "\n")), "\n");
 		}
 		return liveSocketUsesWindowHooks(updated) ? {_0: updated, _1: restores} : patchLiveSocketHooksProperty(updated, restores);
+	}
+
+	/**
+	 * Initialize the shared hook table immediately after the owned import block.
+	 * This must precede project bootstrap statements: a Genes entry may be loaded
+	 * dynamically and construct LiveSocket from Haxe before the JavaScript fallback.
+	 */
+	static function earlyWindowHooksInsertionIndex(lines:Array<String>):Int {
+		var importMarkerEnds = indices(0, lines.length, function(index:Int):Bool {
+			return ElixirString.contains(at(lines, index), "END reflaxe_elixir live_react_import");
+		});
+		if (importMarkerEnds.length != 1)
+			return Kernel.raiseValue("assets/js/app.js has no unique owned LiveReact import marker. No writes occurred.");
+		return importMarkerEnds[0] + 1;
 	}
 
 	static function liveSocketUsesWindowHooks(content:String):Bool {
@@ -717,16 +774,19 @@ class LiveReactSourcePatcher {
 		return "hooks: " + merged + (trailingComma ? "," : "");
 	}
 
-	static function findRootAppScript(content:String):RootScript {
+	static function findRootAppScript(content:String, acceptedPaths:Array<String>):RootScript {
 		var lines = splitLines(content);
 		var starts:Array<Term> = [];
 		for (entry in Enum.withIndex(lines)) {
 			var line:String = Kernel.elemAs(entry, 0);
-			if (ElixirString.contains(line, "<script") && ElixirString.contains(line, "/assets/app.js"))
+			var accepted = Enum.any(acceptedPaths, function(path:String):Bool return ElixirString.contains(line, path));
+			if (ElixirString.contains(line, "<script") && accepted)
 				starts.push(entry);
 		}
 		if (starts.length == 0)
-			return Kernel.raiseValue("Phoenix root layout has no canonical /assets/app.js script. No writes occurred. Run the Phoenix scaffold first.");
+			return Kernel.raiseValue("Phoenix root layout has no canonical app script (expected "
+				+ Enum.join(acceptedPaths, " or ")
+				+ "). No writes occurred. Run the Phoenix scaffold first.");
 		if (starts.length != 1)
 			return Kernel.raiseValue("Phoenix root layout has " + Kernel.toString(starts.length) + " app script candidates. No writes occurred.");
 		var line:String = Kernel.elemAs(starts[0], 0);
@@ -757,9 +817,46 @@ class LiveReactSourcePatcher {
 		var script = Enum.map(originalLines, function(line:String):String {
 			var stripped = ElixirString.startsWith(line,
 				originalIndent) ? ElixirString.replacePrefix(line, originalIndent, "") : ElixirString.trimLeading(line);
-			return "  " + stripped;
+			return "  " + normalizeViteModuleScript(stripped);
 		});
 		return Enum.concatTwo(Enum.concatTwo(['<LiveReact.Reload.vite_assets assets={["/js/app.js"]}>'], script), ["</LiveReact.Reload.vite_assets>"]);
+	}
+
+	static function haxeRootAssetInnerLines(original:String, componentModule:Null<String>):Array<String> {
+		if (original == null)
+			return Kernel.raiseValue("missing original Haxe Phoenix root-layout app script");
+		if (componentModule == null)
+			return Kernel.raiseValue("missing app-local LiveReact assets component for a Haxe Phoenix root layout");
+		var originalLines = splitLines(original);
+		var originalIndent = leadingIndent(originalLines[0]);
+		var script = Enum.map(originalLines, function(line:String):String {
+			var stripped = ElixirString.startsWith(line,
+				originalIndent) ? ElixirString.replacePrefix(line, originalIndent, "") : ElixirString.trimLeading(line);
+			var normalized = normalizeViteModuleScript(ElixirString.replace(stripped, "/assets/phoenix_app.js", "/assets/app.js"));
+			return "  " + normalized;
+		});
+		return Enum.concatTwo(Enum.concatTwo([
+			"<" + componentModule + ".vite_assets assets=" + DOLLAR_SIGN + '{["/js/app.js"]}>'
+		], script), ["</" + componentModule + ".vite_assets>"]);
+	}
+
+	/**
+	 * Vite emits an ES module: its imports and exports are valid only when the browser loads the
+	 * entry with `type="module"`. Phoenix's traditional esbuild layout uses a classic script, so
+	 * adopting the Vite-owned LiveReact lane must convert that existing tag instead of merely
+	 * changing its path. Without this conversion the bundle builds successfully but fails before
+	 * LiveSocket or the stock LiveReact hook can start.
+	 */
+	static function normalizeViteModuleScript(line:String):String {
+		if (!ElixirString.contains(line, "<script"))
+			return line;
+		if (ElixirString.contains(line, "type=\"text/javascript\""))
+			return ElixirString.replace(line, "type=\"text/javascript\"", "type=\"module\"");
+		if (ElixirString.contains(line, "type='text/javascript'"))
+			return ElixirString.replace(line, "type='text/javascript'", "type='module'");
+		if (!ElixirString.contains(line, "type="))
+			return ElixirString.replacePrefix(line, "<script", "<script type=\"module\"");
+		return line;
 	}
 
 	static function removeHooksProperty(content:String, restores:Term):String {

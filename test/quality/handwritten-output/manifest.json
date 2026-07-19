@@ -227,9 +227,11 @@
         }
       ],
       "footprint": {
-        "maxGeneratedFiles": 114,
-        "maxApplicationFiles": 67,
+        "maxGeneratedFiles": 116,
+        "maxApplicationFiles": 70,
         "maxSupportFiles": 47,
+        "reason": "The Todo canary now includes three app-owned LiveReact modules: its typed event protocol, native LiveReact asset boundary, and island component. The generated support footprint did not grow.",
+        "tracking": "haxe.elixir.codex-msb.11",
         "supportGroups": [
           {
             "id": "ecto-extern-support",

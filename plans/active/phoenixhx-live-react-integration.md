@@ -309,7 +309,10 @@ Vite, and stock LiveReact. Setup and removal are deterministic and owned.
 7. Prove the public integration in the current example 12, an independent
    minimal example, and an incremental section in the Haxe-first todo-app.
 8. Publish one canonical adoption/debugging/removal guide backed by those three
-   application stories and complete Haxe-to-generated-Elixir examples.
+   application stories and complete Haxe-to-generated-Elixir examples. Teach
+   the two HXX targets, their LiveReact handoff, client mounting versus SSR,
+   safe cross-target sharing, and the tradeoffs against Inertia and a
+   LiveView-only application.
 9. Prove source-checkout and installed-package behavior under a checked
    compatibility contract.
 
@@ -356,6 +359,112 @@ LiveReact.react
 ```
 
 The repository must not copy the hook, renderer, DOM protocol, or Vite plugin.
+
+### One HXX authoring feel, two target meanings
+
+HXX is source syntax and compile-time tooling, not a browser or BEAM runtime.
+The same familiar markup style is intentionally available on both sides of a
+LiveReact boundary, but each build gives it a different, explicit meaning:
+
+```text
+server Haxe + HXX                       browser Haxe + HXX
+  -> Reflaxe.Elixir                       -> Genes TypeScript/TSX profile
+  -> Phoenix component + HEEx             -> React component + TSX/JavaScript
+  -> runs on the BEAM                     -> runs in the browser
+                 \                       /
+                  stock LiveReact protocol
+```
+
+On the server, `<LiveReact.react ... />` is a Phoenix component invocation in
+generated HEEx. LiveView still owns the LiveView process, assigns, navigation,
+server events, and DOM patches outside the island. The stock LiveReact
+component serializes the declared props and creates the host that its stock
+LiveView hook recognizes.
+
+On the browser side, HXX in a Genes TypeScript/TSX build describes React
+elements. It does not become HEEx and it does not run on the BEAM. The generated
+static registry gives stock LiveReact one reviewed component name; LiveReact's
+hook mounts that React boundary and carries supported events back over the
+existing LiveView connection. React owns its mounted subtree. Generated or
+handwritten code must not ask both LiveView and React to independently mutate
+the same child nodes.
+
+The ergonomic benefit is continuity, not conflation: a Haxe-first developer
+can use typed Haxe expressions and HXX on both sides while still getting
+ordinary Phoenix/HEEx and ordinary React/TSX output. Documentation must always
+show those generated target shapes so a reader understands which framework
+runs each piece.
+
+### What can cross the boundary
+
+Small target-neutral Haxe types and pure logic may live in a dedicated shared
+classpath and compile once for each target. Good candidates are closed enums,
+data-transfer-object shapes, event names, validation rules whose behavior is
+portable, and pure formatting/calculation helpers. This can remove duplicated
+strings and give both builds compile-time feedback from one contract.
+
+Live server objects, sockets, processes, functions/closures, database values,
+and arbitrary BEAM terms do not become shared browser objects. Props and events
+still cross LiveReact's serialization boundary. The trusted boundary validates
+that wire data and converts the broad native bridge into narrow semantic
+callbacks. Shared source improves consistency; it does not remove the network,
+serialization, trust, or lifecycle boundary.
+
+### Client mounting and future SSR
+
+The first shipped slice is intentionally client-only (`ssr=false`). Phoenix
+and HEEx render the outer page, useful native fallback, and LiveReact host. Once
+the browser loads the Vite bundle, the stock hook looks up the statically
+registered component and React creates the island UI. If JavaScript or mounting
+fails, the documented example must retain useful LiveView content rather than
+making core behavior depend on React.
+
+LiveReact server-side rendering (SSR) is a separate upstream-owned execution
+path. Stock LiveReact asks a JavaScript runtime to render the React component to
+initial HTML on the server; the browser then hydrates that HTML instead of
+creating it from an empty host. Phoenix HXX still becomes HEEx for the outer
+page, while Genes HXX still becomes React code for the island. SSR does not
+merge the two HXX compilers or make a React component execute as Elixir.
+
+The deferred SSR slice must account for the upstream development Vite renderer,
+production NodeJS worker/supervision path, server bundle, release artifacts,
+memory, failures/fallback, hydration determinism, browser-only APIs, source
+maps, and clean removal. The upstream guide explicitly requires a Node worker
+and warns about resource use, so documentation must not present SSR as a boolean
+that is safe to enable without operational work. Until `haxe.elixir.codex-8yk`
+closes, examples and public setup reject or document SSR as unsupported rather
+than partially configuring it.
+
+### Choosing LiveReact islands, Inertia, or LiveView alone
+
+The canonical guide must compare architectures without declaring a universal
+winner:
+
+| Approach | Primary UI owner | Good fit | Main tradeoffs |
+| --- | --- | --- | --- |
+| Phoenix LiveView alone | LiveView/HEEx | Server-driven applications that do not need a React-only widget or library | Smallest client stack and one DOM owner; React ecosystem components are not directly available. |
+| Phoenix LiveView + stock LiveReact | LiveView page with explicitly bounded React subtrees | Gradual adoption, isolated rich widgets, or reuse of React libraries while preserving LiveView processes, navigation, events, and fallback | Two UI lifecycles meet at a serialized island boundary; registry, prop/event validation, bundling, and DOM ownership need discipline. |
+| Inertia Phoenix + React | React page components driven by Inertia responses/protocol | Applications that want React to own whole pages while Phoenix remains the backend, with Inertia navigation, shared/deferred props, history, and optional SSR | A clearer single client-page owner, but it is a different application/navigation architecture rather than a React island inside LiveView; adopting it can displace LiveView-specific rendering and event patterns for those pages. |
+| Handwritten Phoenix + LiveReact/React | Same stock runtimes, with Elixir and TypeScript authored directly | Teams that prefer the native languages and want the thinnest compiler/tooling layer | Maximum direct ecosystem familiarity; cross-language prop/event names, validators, registry entries, and boilerplate are more often maintained separately. |
+
+PhoenixHx's Haxe layer should improve the LiveReact-island option through closed
+assigns, static names, shared event/type declarations, generated boilerplate,
+earlier diagnostics, completion, Haxe-authored ExUnit, and optional Haxe-authored
+React through Genes. It must not change stock LiveView patching, LiveReact's DOM
+protocol/hook, React mounting/hydration, or Vite semantics. A claimed ergonomic
+or safety benefit needs a concrete compile-time diagnostic or generated-code
+example; the guide must also name the extra compiler/build tooling and the
+remaining runtime validation boundary as real costs.
+
+Primary comparison sources for documentation maintenance:
+
+- stock LiveReact overview and runtime ownership:
+  <https://github.com/mrdotb/live_react>
+- stock LiveReact installation and SSR topology:
+  <https://github.com/mrdotb/live_react/blob/main/guides/installation.md> and
+  <https://github.com/mrdotb/live_react/blob/main/guides/ssr.md>
+- official Inertia Phoenix adapter, including response, client, testing, and
+  SSR contracts: <https://github.com/inertiajs/inertia-phoenix>
 
 ## HXX and Application Type Boundary
 
@@ -518,9 +627,10 @@ reported, not rewritten heuristically.
   `25a5e3015f8b0f0e4447b8fd0590124548f132da` after classic ESM, strict TSX,
   source-map, examples, todo-app browser QA, and installed-package evidence.
 - On 2026-07-19, implementation-time verification identified canonical v1.37.0
-  at exact commit `107491cb115ba7abd5628a1f3bcb338aa8cf2685` as latest. Its release
-  notes include Haxe-level HXX contract checking and React HXX soundness fixes.
-  Release notes alone were not treated as downstream compatibility evidence.
+  at exact `main` commit `440f4fc3c6ac23f7f7dd08c8c6b72b02867564cb` as latest. It includes
+  Haxe-level HXX contract checking and the subsequent runtime-string JSX tag
+  typing fixes. Repository history alone is not downstream compatibility
+  evidence; the classic and strict TSX lanes must both pass.
 - Genes' strict TypeScript/TSX profile supports TSX-like inline HXX, while its
   classic split-ESM profile remains the compatibility lane for existing
   PhoenixHX browser clients.
@@ -531,11 +641,12 @@ reported, not rewritten heuristically.
 ### Decision
 
 Keep the completed single-source Lix migration and admit v1.37.0 through
-`haxe.elixir.codex-a06`. The task captured the v1.36.7 baseline, updated the
-Haxe-owned `GenesContract`, regenerated its owned outputs, and used Genes'
-TypeScript/TSX profile plus inline HXX for a bounded Haxe-authored React
-component. Existing PhoenixHX browser clients retain the classic split-ESM
-profile; Vite remains the only bundler.
+`haxe.elixir.codex-a06`. The exact Lix descriptor is the dependency authority;
+Phoenix scaffolding copies ordinary signature-owned templates rather than
+wrapping static pins in an executable policy module. The task captures the
+classic ESM baseline and uses Genes' TypeScript/TSX profile plus inline HXX for
+a bounded Haxe-authored React component. Existing PhoenixHX browser clients
+retain the classic split-ESM profile; Vite remains the only bundler.
 
 The committed dependency never points at `$GENES_CHECKOUT`. Contributors use
 that checkout or an isolated `$GENES_WORKTREE` only through an uncommitted development
@@ -562,6 +673,15 @@ regression becomes a generic Genes worktree/pushed-SHA fix; PhoenixHX does not
 carry a local framework-specific compiler patch. The detailed contributor
 workflow and rollback contract remain in
 `docs/03-compiler-development/GENES_DEPENDENCY_WORKFLOW.md`.
+
+The typed Todo React contract subsequently exposed a generic type-dependency
+gap when `genes.react.Element` appeared without markup in the same module.
+Genes PR #16 fixes that gap at exact pushed commit
+`697943b1c10b72309d815b0f6a5605d7c5c2a53b`. The LiveReact lane temporarily
+pins that SHA under the documented pre-merge workflow. Replace it with the
+exact canonical `main` commit after merge, then admit a later release only
+through the normal classic-ESM, strict-TSX, examples, browser, source-map, and
+package matrix.
 
 ## Versioned Integration Manifest
 

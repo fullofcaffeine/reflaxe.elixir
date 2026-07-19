@@ -180,6 +180,7 @@ defmodule HaxePhoenixLiveReact do
           "schema",
           "generatedBy",
           "assetMode",
+          "appName",
           "packageRoot",
           "clientMode",
           "mixDependency",
@@ -210,6 +211,7 @@ defmodule HaxePhoenixLiveReact do
 
             if Map.get(manifest, "assetMode") != "vite" or
                  (client_mode != "genes" and client_mode != "plain-js") or
+                 not Kernel.is_binary(Map.get(manifest, "appName")) or
                  not Kernel.is_binary(Map.get(manifest, "packageRoot")) or
                  not Kernel.is_map(Map.get(manifest, "mixDependency")) or
                  not Kernel.is_binary(Map.get(manifest, "npmReference")) or
@@ -217,6 +219,8 @@ defmodule HaxePhoenixLiveReact do
                  not Kernel.is_list(Map.get(manifest, "components")) do
               Kernel.raise("#{path} has invalid integration metadata. No writes occurred.")
             else
+              HaxePhoenixLiveReact.Registry.validate_app_name(Map.get(manifest, "appName"))
+
               HaxePhoenixLiveReact.Registry.components_from_manifest(
                 Map.get(manifest, "components")
               )
@@ -288,6 +292,7 @@ defmodule HaxePhoenixLiveReact do
     layout_patched =
       HaxePhoenixLiveReact.SourcePatcher.patch_root_layout(
         source.root_layout,
+        topology,
         elem(app_patched, 1)
       )
 
@@ -338,7 +343,20 @@ defmodule HaxePhoenixLiveReact do
         topology.registry_file,
         HaxePhoenixLiveReact.Core.render_registry_file(components)
       )
-      |> HaxeProjectPatch.write_file!(Path.join(root, "phoenixhx-live-react.json"), manifest, [
+
+    plan =
+      if not Kernel.is_nil(topology.reload_wrapper) do
+        plan_managed_file(
+          plan,
+          topology.reload_wrapper,
+          HaxePhoenixLiveReact.Registry.render_reload_wrapper(topology.app_name)
+        )
+      else
+        plan
+      end
+
+    plan =
+      HaxeProjectPatch.write_file!(plan, Path.join(root, "phoenixhx-live-react.json"), manifest, [
         {:manifest?, true}
       ])
 
@@ -379,7 +397,11 @@ defmodule HaxePhoenixLiveReact do
     app_js = HaxePhoenixLiveReact.SourcePatcher.remove_app_js_wiring(source.app_js, restores)
 
     root_layout =
-      HaxePhoenixLiveReact.SourcePatcher.remove_root_layout_wiring(source.root_layout, restores)
+      HaxePhoenixLiveReact.SourcePatcher.remove_root_layout_wiring(
+        source.root_layout,
+        topology,
+        restores
+      )
 
     plan = HaxeProjectPatch.new!(root, [{:recover, false}])
 
@@ -761,6 +783,7 @@ defmodule HaxePhoenixLiveReact do
 
     package_root = discover_package_root(root, Keyword.get(opts, :package_root, nil))
     root_layout = discover_root_layout(root)
+    app_name = discover_app_name(existing_manifest, Keyword.get(opts, :app_name, nil))
     detected_mode = detect_client_mode(root)
     requested_mode = Keyword.get(opts, :client_mode, nil)
     client_mode = nil
@@ -814,27 +837,83 @@ defmodule HaxePhoenixLiveReact do
 
       %{
         root: root,
+        app_name: app_name,
         package_root: package_root.absolute,
         package_root_relative: package_root.relative,
         package_json: Path.join(package_root.absolute, "package.json"),
         vite_config: Path.join(package_root.absolute, "vite.config.mjs"),
         hooks_file: Path.join([root, "assets", "js", "live-react-hooks.js"]),
         registry_file: Path.join([root, "assets", "react-components", "registry.generated.ts"]),
-        root_layout: root_layout,
+        root_layout: root_layout.path,
+        root_layout_kind: root_layout.kind,
+        reload_wrapper:
+          if root_layout.kind == :haxe do
+            Path.join(root, HaxePhoenixLiveReact.Registry.reload_wrapper_relative_path(app_name))
+          else
+            nil
+          end,
+        reload_component_module:
+          if root_layout.kind == :haxe do
+            HaxePhoenixLiveReact.Registry.reload_component_module(app_name)
+          else
+            nil
+          end,
         client_mode: client_mode
       }
     else
       %{
         root: root,
+        app_name: app_name,
         package_root: package_root.absolute,
         package_root_relative: package_root.relative,
         package_json: Path.join(package_root.absolute, "package.json"),
         vite_config: Path.join(package_root.absolute, "vite.config.mjs"),
         hooks_file: Path.join([root, "assets", "js", "live-react-hooks.js"]),
         registry_file: Path.join([root, "assets", "react-components", "registry.generated.ts"]),
-        root_layout: root_layout,
+        root_layout: root_layout.path,
+        root_layout_kind: root_layout.kind,
+        reload_wrapper:
+          if root_layout.kind == :haxe do
+            Path.join(root, HaxePhoenixLiveReact.Registry.reload_wrapper_relative_path(app_name))
+          else
+            nil
+          end,
+        reload_component_module:
+          if root_layout.kind == :haxe do
+            HaxePhoenixLiveReact.Registry.reload_component_module(app_name)
+          else
+            nil
+          end,
         client_mode: client_mode
       }
+    end
+  end
+
+  defp discover_app_name(existing_manifest, requested) do
+    owned =
+      if Kernel.is_nil(existing_manifest) do
+        nil
+      else
+        Map.get(existing_manifest, "appName")
+      end
+
+    value = if Kernel.is_nil(requested), do: owned, else: requested
+
+    if not Kernel.is_binary(value) do
+      Kernel.raise(
+        "could not determine the Mix application name required by LiveReact project ownership. No writes occurred."
+      )
+    else
+      app_name = Kernel.to_string(value)
+      HaxePhoenixLiveReact.Registry.validate_app_name(app_name)
+
+      if not Kernel.is_nil(owned) and owned != app_name do
+        Kernel.raise(
+          "LiveReact app-name drift: the manifest owns #{Kernel.inspect(owned)}, but the loaded Mix project reports #{Kernel.inspect(app_name)}. No writes occurred."
+        )
+      else
+        app_name
+      end
     end
   end
 
@@ -961,16 +1040,38 @@ defmodule HaxePhoenixLiveReact do
     matches = Enum.uniq(Enum.flat_map(patterns, fn pattern -> Path.wildcard(pattern) end))
 
     if length(matches) == 1 do
-      Enum.at(matches, 0)
+      %{path: Enum.at(matches, 0), kind: :heex}
     else
-      if length(matches) == 0 do
-        Kernel.raise(
-          "could not find one canonical Phoenix root layout. No writes occurred. Expected lib/*_web/components/layouts/root.html.heex or the legacy template path."
-        )
-      else
+      if length(matches) > 1 do
         Kernel.raise(
           "multiple Phoenix root layouts found: #{Enum.map_join(matches, ", ", fn path -> Path.relative_to(path, root) end)}. No writes occurred."
         )
+      else
+        haxe_candidates = Path.wildcard(Path.join([root, "src_haxe", "**", "Layouts.hx"]))
+
+        haxe_matches =
+          Enum.filter(haxe_candidates, fn path ->
+            source = File.read!(path)
+
+            Regex.match?(Regex.compile!("(?m)^\\s*@:component\\b"), source) and
+              Regex.match?(Regex.compile!("\\bfunction\\s+root\\s*\\("), source) and
+              (String.contains?(source, "/assets/app.js") or
+                 String.contains?(source, "/assets/phoenix_app.js"))
+          end)
+
+        if length(haxe_matches) == 1 do
+          %{path: Enum.at(haxe_matches, 0), kind: :haxe}
+        else
+          if length(haxe_matches) == 0 do
+            Kernel.raise(
+              "could not find one canonical Phoenix root layout. No writes occurred. Expected a standard root.html.heex/root.html.leex or one Haxe-authored src_haxe/**/Layouts.hx with @:component root/1 and a canonical app script."
+            )
+          else
+            Kernel.raise(
+              "multiple Haxe-authored Phoenix root layouts found: #{Enum.map_join(haxe_matches, ", ", fn path -> Path.relative_to(path, root) end)}. No writes occurred."
+            )
+          end
+        end
       end
     end
   end
@@ -1011,21 +1112,32 @@ defmodule HaxePhoenixLiveReact do
   end
 
   defp managed_files_for(topology) do
-    Enum.sort(
-      Enum.map([topology.vite_config, topology.hooks_file, topology.registry_file], fn path ->
-        Path.relative_to(path, topology.root)
-      end)
-    )
+    files = [topology.vite_config, topology.hooks_file, topology.registry_file]
+
+    files =
+      if not Kernel.is_nil(topology.reload_wrapper) do
+        Enum.concat(files, [topology.reload_wrapper])
+      else
+        files
+      end
+
+    Enum.sort(Enum.map(files, fn path -> Path.relative_to(path, topology.root) end))
   end
 
   defp legacy_managed_files_for(topology) do
+    files = [topology.vite_config, topology.hooks_file]
+
+    files =
+      if not Kernel.is_nil(topology.reload_wrapper) do
+        Enum.concat(files, [topology.reload_wrapper])
+      else
+        files
+      end
+
     Enum.sort(
-      Enum.concat(
-        Enum.map([topology.vite_config, topology.hooks_file], fn path ->
-          Path.relative_to(path, topology.root)
-        end),
-        ["assets/react-components/registry.generated.js"]
-      )
+      Enum.concat(Enum.map(files, fn path -> Path.relative_to(path, topology.root) end), [
+        "assets/react-components/registry.generated.js"
+      ])
     )
   end
 
@@ -1045,6 +1157,7 @@ defmodule HaxePhoenixLiveReact do
         {"schema", "phoenixhx.live-react@1"},
         {"generatedBy", "mix haxe.phoenix.live_react"},
         {"assetMode", "vite"},
+        {"appName", data.topology.app_name},
         {"packageRoot", data.topology.package_root_relative},
         {"clientMode", HaxePhoenixLiveReact.Core.client_mode_label(data.topology.client_mode)},
         {"mixDependency", data.dependency.identity},

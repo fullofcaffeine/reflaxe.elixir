@@ -108,6 +108,10 @@ mix phx.server
 For security-sensitive or reproducible setup, verify the release ZIP against its `.sha256`
 sidecar before installing it. The canonical cross-platform commands are in the
 [installation guide package verification step](installation.md#verify-the-package).
+Reflaxe.Elixir intentionally uses a versioned GitHub Release package through Lix rather than a
+global Haxelib-registry install; the
+[Lix and GitHub Releases explanation](installation.md#why-lix-and-github-releases) covers the
+dependency and compatibility model.
 
 Then open `http://localhost:4000`.
 

@@ -36,12 +36,13 @@ config :todo_app, TodoApp.Mailer, adapter: Swoosh.Adapters.Local
 # Hackney API client so the app does not carry an unused outbound HTTP stack.
 config :swoosh, :api_client, false
 
-# Configure esbuild for Haxe→JavaScript + Phoenix integration
+# Retained removal fallback: the enabled LiveReact lane uses Vite, while the
+# public lifecycle can restore this canonical esbuild entry on safe removal.
 config :esbuild,
   version: "0.19.8",
   todo_app: [
     args: ~w(
-      js/phoenix_app.js
+      js/app.js
       --bundle
       --target=es2017
       --outdir=../priv/static/assets
@@ -66,7 +67,7 @@ config :tailwind,
   version: "3.3.6",
   todo_app: [
     args: ~w(
-      --config=tailwind.config.js
+      --config=tailwind.config.cjs
       --input=css/app.css
       --output=../priv/static/assets/app.css
       --postcss
@@ -76,3 +77,8 @@ config :tailwind,
 
 # Import environment specific config
 import_config "#{config_env()}.exs"
+
+# BEGIN reflaxe_elixir live_react_config
+# Stock LiveReact remains client-only in the initial PhoenixHx integration.
+config :live_react, ssr: false
+# END reflaxe_elixir live_react_config

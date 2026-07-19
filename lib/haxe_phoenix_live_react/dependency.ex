@@ -931,68 +931,106 @@ defmodule HaxePhoenixLiveReact.Dependency do
     if Kernel.is_nil(project_file) or Path.dirname(Path.expand(project_file)) != context.root do
       Kernel.raise("dependency resolution must run from the target Mix project root")
     else
-      directory =
-        Path.join(
-          System.tmp_dir!(),
-          "reflaxe_live_react_resolve_#{Kernel.to_string(System.unique_integer([:positive, :monotonic]))}"
+      project_config = Mix.Project.config()
+      app_value = Keyword.get(project_config, :app, nil)
+
+      if not Kernel.is_atom(app_value) do
+        Kernel.raise(
+          "dependency resolution requires the loaded Mix project to declare one :app atom"
         )
+      else
+        app = app_value
 
-      File.mkdir!(directory)
-      lockfile = Path.join(directory, "mix.lock")
-      File.write!(lockfile, context.current_lock_content)
-      dependencies = context.dependencies
+        directory =
+          Path.join(
+            System.tmp_dir!(),
+            "reflaxe_live_react_resolve_#{Kernel.to_string(System.unique_integer([:positive, :monotonic]))}"
+          )
 
-      found =
-        Enum.any?(dependencies, fn dependency ->
-          name = dependency_name(dependency)
-          name == :live_react
-        end)
+        File.mkdir!(directory)
+        lockfile = Path.join(directory, "mix.lock")
+        input_file = Path.join(directory, "input.etf")
+        output_file = Path.join(directory, "output.etf")
+        File.write!(lockfile, context.current_lock_content)
+        dependencies = context.dependencies
 
-      dependencies =
-        if not found do
-          Enum.concat([context.dependency], dependencies)
-        else
-          dependencies
-        end
+        found =
+          Enum.any?(dependencies, fn dependency ->
+            name = dependency_name(dependency)
+            name == :live_react
+          end)
 
-      Mix.ensure_application!(:hex)
+        dependencies =
+          if not found do
+            Enum.concat([context.dependency], dependencies)
+          else
+            dependencies
+          end
 
-      config = [
-        {:deps, dependencies},
-        {:lockfile, lockfile},
-        {:deps_path, Path.join(context.root, "deps")}
-      ]
+        input = Map.new()
 
-      Mix.ProjectStack.post_config(config)
+        input =
+          input
+          |> Map.put("app", app)
+          |> Map.put("root", context.root)
+          |> Map.put("dependencies", dependencies)
+          |> Map.put("lockfile", lockfile)
+          |> Map.put("depsPath", Path.join(context.root, "deps"))
+          |> Map.put("dependencyPath", context.dependency_path)
 
-      try do
-        Mix.Task.reenable("deps.get")
-        Mix.Task.run("deps.get", ["live_react"])
-        result = Map.new()
+        File.write!(input_file, :erlang.term_to_binary(input), [:write, :exclusive])
+        ebin = Application.app_dir(:reflaxe_elixir, "ebin")
 
-        result =
-          result
-          |> Map.put(:lock_content, File.read!(lockfile))
-          |> Map.put(:dependency_path, context.dependency_path)
+        options = [
+          {:env,
+           [
+             {"REFLAXE_LIVE_REACT_RESOLVER_INPUT", input_file},
+             {"REFLAXE_LIVE_REACT_RESOLVER_OUTPUT", output_file}
+           ]},
+          {:stderr_to_stdout, true}
+        ]
 
-        cleanup_resolution(lockfile, directory)
-        result
-      rescue
-        error ->
-          cleanup_resolution(lockfile, directory)
+        worker_entry = "HaxePhoenixLiveReact.DependencyWorker.run()"
+
+        command =
+          try do
+            System.cmd("elixir", ["-pa", ebin, "-e", worker_entry], options)
+          rescue
+            error ->
+              cleanup_resolution(lockfile, input_file, output_file, directory)
+
+              Kernel.raise(
+                "could not start the isolated stock LiveReact dependency resolver: " <>
+                  Exception.message(error) <>
+                  ". No tracked integration files were written; ignored dependency downloads may remain in deps/."
+              )
+          end
+
+        if elem(command, 1) != 0 do
+          cleanup_resolution(lockfile, input_file, output_file, directory)
 
           Kernel.raise(
-            "could not resolve the checked stock LiveReact dependency: " <>
-              Exception.message(error) <>
-              ". No tracked integration files were written; ignored dependency downloads may remain in deps/."
+            "could not resolve the checked stock LiveReact dependency in an isolated Mix project (exit #{Kernel.to_string(elem(command, 1))}):\n#{elem(command, 0)}\nNo tracked integration files were written; ignored dependency downloads may remain in deps/."
           )
+        else
+          if not File.regular?(output_file) do
+            cleanup_resolution(lockfile, input_file, output_file, directory)
+
+            Kernel.raise(
+              "the isolated stock LiveReact dependency resolver exited without a result. No tracked integration files were written."
+            )
+          else
+            result = :erlang.binary_to_term(File.read!(output_file))
+            cleanup_resolution(lockfile, input_file, output_file, directory)
+            result
+          end
+        end
       end
     end
   end
 
-  defp cleanup_resolution(lockfile, directory) do
-    Enum.each([:deps, :lockfile, :deps_path], fn key -> Mix.ProjectStack.pop_post_config(key) end)
-    File.rm(lockfile)
+  defp cleanup_resolution(lockfile, input_file, output_file, directory) do
+    Enum.each([lockfile, input_file, output_file], fn path -> File.rm(path) end)
     File.rmdir(directory)
   end
 

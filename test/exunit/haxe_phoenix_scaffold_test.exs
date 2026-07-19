@@ -1,7 +1,7 @@
 # LEGACY TEST MIGRATION BOUNDARY: this scaffold suite predates the repository's
 # Haxe-first ExUnit rule. haxe.elixir.codex-6nb owns its Haxe migration; until
-# then, pin assertions delegate to the Haxe-generated GenesContract rather than
-# duplicating dependency policy in handwritten Elixir.
+# then, pin assertions read the packaged static template rather than duplicating
+# dependency policy in handwritten Elixir.
 defmodule HaxePhoenixScaffoldTest do
   use ExUnit.Case, async: true
   import ExUnit.CaptureIO
@@ -312,7 +312,15 @@ defmodule HaxePhoenixScaffoldTest do
     refute genes_hxml =~ "vendor/genes"
 
     genes_ts_hxml = File.read!(Path.join([root, "haxe_libraries", "genes-ts.hxml"]))
-    assert genes_ts_hxml == HaxePhoenixScaffold.GenesContract.genes_ts_hxml()
+
+    assert genes_ts_hxml ==
+             File.read!(
+               Application.app_dir(
+                 :reflaxe_elixir,
+                 "priv/templates/phoenix_scaffold/haxe_libraries/genes-ts.hxml"
+               )
+             )
+
     assert genes_ts_hxml =~ "reflaxe_elixir:scaffolded_haxe_library:genes-ts:v1"
     assert genes_ts_hxml =~ "-lib helder.set"
     refute genes_ts_hxml =~ "temporary admission pin"
@@ -461,7 +469,14 @@ defmodule HaxePhoenixScaffoldTest do
     refute alias_hxml =~ "vendor/genes"
 
     canonical_hxml = File.read!(Path.join(haxe_libraries, "genes-ts.hxml"))
-    assert canonical_hxml == HaxePhoenixScaffold.GenesContract.genes_ts_hxml()
+
+    assert canonical_hxml ==
+             File.read!(
+               Application.app_dir(
+                 :reflaxe_elixir,
+                 "priv/templates/phoenix_scaffold/haxe_libraries/genes-ts.hxml"
+               )
+             )
   end
 
   test "patches Phoenix 1.7-ish app.js variants without relying on Hooks variable shape" do

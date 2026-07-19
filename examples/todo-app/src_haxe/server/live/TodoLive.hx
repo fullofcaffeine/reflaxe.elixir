@@ -60,6 +60,8 @@ import shared.liveview.HookName;
 import shared.liveview.TodoEvents.TodoEvent;
 import shared.liveview.TodoEvents.CreateTodoForm;
 import shared.liveview.TodoEvents;
+import shared.liveview.TodoInsightsEvents.TodoInsightsEvent;
+import shared.liveview.TodoInsightsEvents.TodoInsightsFilterInput;
 import StringTools;
 
 using reflaxe.elixir.macros.TypedQueryLambda;
@@ -88,6 +90,7 @@ enum ActivityKind {
 @:liveview
 @:liveEvents(HookClientEvent, dispatchHookEvent)
 @:liveEvents(TodoEvent)
+@:liveEvents(TodoInsightsEvent, dispatchTodoInsightsEvent)
 class TodoLive {
 	// All socket state is now defined in TodoLiveAssigns typedef for type safety
 	static inline function presenceUsersTopic(organizationId:Int):String {
@@ -357,6 +360,11 @@ class TodoLive {
 			return todoEventResult;
 		}
 
+		var insightsEventResult = dispatchTodoInsightsEvent(event, params, socket);
+		if (insightsEventResult != null) {
+			return insightsEventResult;
+		}
+
 		var nextSocket:Socket<TodoLiveAssigns> = if (event == EventName.DeleteTodo) {
 			delete_todo(extract_id(params), socket);
 		} else if (event == EventName.EditTodo) {
@@ -426,6 +434,15 @@ class TodoLive {
 
 	static function handleCreateTodo(payload:CreateTodoForm, socket:Socket<TodoLiveAssigns>):HandleEventResult<TodoLiveAssigns> {
 		return NoReply(createTodoFromForm(payload, socket));
+	}
+
+	static function handleSetFilter(payload:TodoInsightsFilterInput, socket:Socket<TodoLiveAssigns>):HandleEventResult<TodoLiveAssigns> {
+		var filter = switch (payload.filter) {
+			case "all" | "active" | "completed": payload.filter;
+			case _: "all";
+		};
+
+		return NoReply(recomputeVisible(SafeAssigns.setFilter(socket, filter)));
 	}
 
 	public static function extract_id(params:Term):Int {
@@ -1551,9 +1568,19 @@ class TodoLive {
 											</button>
 										</div>
 									</div>
-								</if>
+						</if>
 								</div>
-						
+
+						<TodoAppWeb.ReactIslands.TodoInsights.render
+							id="todo-insights-island"
+							title="Todo signal"
+							total=${assigns.total_todos}
+							completed=${assigns.completed_todos}
+							pending=${assigns.pending_todos}
+							visible=${assigns.visible_count}
+							filter=${encodeFilter(assigns.filter)}
+						/>
+
 						<!-- Online Users Panel -->
 						<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6">
 							<div class="flex items-center justify-between gap-4">

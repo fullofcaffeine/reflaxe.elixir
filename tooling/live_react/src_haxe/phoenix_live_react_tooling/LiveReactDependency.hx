@@ -1,11 +1,13 @@
 package phoenix_live_react_tooling;
 
 import elixir.Base;
+import elixir.Application;
 import elixir.Crypto;
 import elixir.ElixirException;
 import elixir.ElixirMap;
 import elixir.ElixirString;
 import elixir.Enum;
+import elixir.ErlangTerm;
 import elixir.ErlangFile;
 import elixir.File;
 import elixir.Jason;
@@ -17,10 +19,7 @@ import elixir.Regex;
 import elixir.System;
 import elixir.Version;
 import elixir.mix.DependencyLock;
-import elixir.mix.Mix;
 import elixir.mix.Project;
-import elixir.mix.ProjectStack;
-import elixir.mix.Task;
 import elixir.types.Atom;
 import elixir.types.KeywordList;
 import elixir.types.NativeException;
@@ -45,6 +44,7 @@ class LiveReactDependencyResolver {
 	static inline final ERROR:Atom = "error";
 	static inline final ENOENT:Atom = "enoent";
 	static inline final LIVE_REACT:Atom = "live_react";
+	static inline final REFLAXE_ELIXIR:Atom = "reflaxe_elixir";
 	static inline final GIT:Atom = "git";
 	static inline final HEX:Atom = "hex";
 	static inline final PATH_SOURCE:Atom = "path";
@@ -59,16 +59,16 @@ class LiveReactDependencyResolver {
 	static inline final EXCLUSIVE:Atom = "exclusive";
 	static inline final POSITIVE:Atom = "positive";
 	static inline final MONOTONIC:Atom = "monotonic";
-	static inline final DEPS:Atom = "deps";
-	static inline final LOCKFILE:Atom = "lockfile";
-	static inline final DEPS_PATH:Atom = "deps_path";
 	static inline final MIX_DEPENDENCIES:Atom = "mix_dependencies";
 	static inline final DEPENDENCY_RESOLVER:Atom = "dependency_resolver";
 	static inline final GIT_REVISION:Atom = "git_revision";
 	static inline final LOCK_CONTENT:Atom = "lock_content";
 	static inline final DEPENDENCY_PATH:Atom = "dependency_path";
 	static inline final TRIM:Atom = "trim";
+	static inline final ENV:Atom = "env";
 	static inline final STDERR_TO_STDOUT:Atom = "stderr_to_stdout";
+	static inline final WORKER_INPUT_ENV = "REFLAXE_LIVE_REACT_RESOLVER_INPUT";
+	static inline final WORKER_OUTPUT_ENV = "REFLAXE_LIVE_REACT_RESOLVER_OUTPUT";
 
 	public static function defaultDependency():Term {
 		var options:KeywordList<Term> = [
@@ -660,10 +660,17 @@ class LiveReactDependencyResolver {
 		var projectFile = Project.projectFile();
 		if (projectFile == null || Path.dirname(Path.expand(projectFile)) != context.root)
 			return Kernel.raiseValue("dependency resolution must run from the target Mix project root");
+		var projectConfig = Project.config();
+		var appValue:Term = Keyword.get(projectConfig, "app", null);
+		if (!Kernel.isAtom(appValue))
+			return Kernel.raiseValue("dependency resolution requires the loaded Mix project to declare one :app atom");
+		var app:Atom = cast appValue;
 		var directory = Path.joinTwo(System.tmpDirBang(),
 			"reflaxe_live_react_resolve_" + Kernel.toString(System.uniqueIntegerWithAtomOptions([POSITIVE, MONOTONIC])));
 		File.mkdirBang(directory);
 		var lockfile = Path.joinTwo(directory, "mix.lock");
+		var inputFile = Path.joinTwo(directory, "input.etf");
+		var outputFile = Path.joinTwo(directory, "output.etf");
 		File.writeBang(lockfile, context.currentLockContent);
 		var dependencies = context.dependencies;
 		var found = Enum.any(dependencies, function(dependency:Term):Bool {
@@ -672,32 +679,52 @@ class LiveReactDependencyResolver {
 		});
 		if (!found)
 			dependencies = Enum.concatTwo([context.dependency], dependencies);
-		Mix.ensureApplicationBang(HEX);
-		var config:KeywordList<Term> = [
-			{_0: DEPS, _1: dependencies},
-			{_0: LOCKFILE, _1: lockfile},
-			{_0: DEPS_PATH, _1: Path.joinTwo(context.root, "deps")}
+
+		var input = ElixirMap.new_();
+		input = ElixirMap.putTerm(input, "app", app);
+		input = ElixirMap.putTerm(input, "root", context.root);
+		input = ElixirMap.putTerm(input, "dependencies", dependencies);
+		input = ElixirMap.putTerm(input, "lockfile", lockfile);
+		input = ElixirMap.putTerm(input, "depsPath", Path.joinTwo(context.root, "deps"));
+		input = ElixirMap.putTerm(input, "dependencyPath", context.dependencyPath);
+		File.writeBangWithAtomModes(inputFile, ErlangTerm.toBinary(input), [WRITE, EXCLUSIVE]);
+
+		var ebin = Application.appDir(REFLAXE_ELIXIR, "ebin");
+		var options:KeywordList<Term> = [
+			{_0: ENV, _1: [{_0: WORKER_INPUT_ENV, _1: inputFile}, {_0: WORKER_OUTPUT_ENV, _1: outputFile}]},
+			{_0: STDERR_TO_STDOUT, _1: true}
 		];
-		ProjectStack.postConfig(config);
-		try {
-			Task.reenable("deps.get");
-			Task.run("deps.get", ["live_react"]);
-			var result = ElixirMap.new_();
-			result = ElixirMap.putTerm(result, LOCK_CONTENT, File.readBang(lockfile));
-			result = ElixirMap.putTerm(result, DEPENDENCY_PATH, context.dependencyPath);
-			cleanupResolution(lockfile, directory);
-			return result;
+		// HOST BOOTSTRAP: Elixir has no typed module-entry CLI flag. This fixed
+		// expression only selects the Haxe-generated worker; no project data or
+		// lifecycle policy is interpolated into target source.
+		var workerEntry = "HaxePhoenixLiveReact.DependencyWorker.run()";
+		var command:{_0:String, _1:Int} = try {
+			System.cmdWithKeywordOptions("elixir", ["-pa", ebin, "-e", workerEntry], options);
 		} catch (error:NativeException) {
-			cleanupResolution(lockfile, directory);
-			return Kernel.raiseValue("could not resolve the checked stock LiveReact dependency: "
+			cleanupResolution(lockfile, inputFile, outputFile, directory);
+			Kernel.raiseValue("could not start the isolated stock LiveReact dependency resolver: "
 				+ ElixirException.message(error)
 				+ ". No tracked integration files were written; ignored dependency downloads may remain in deps/.");
+		};
+		if (command._1 != 0) {
+			cleanupResolution(lockfile, inputFile, outputFile, directory);
+			return Kernel.raiseValue("could not resolve the checked stock LiveReact dependency in an isolated Mix project (exit "
+				+ Kernel.toString(command._1)
+				+ "):\n"
+				+ command._0
+				+ "\nNo tracked integration files were written; ignored dependency downloads may remain in deps/.");
 		}
+		if (!File.regular(outputFile)) {
+			cleanupResolution(lockfile, inputFile, outputFile, directory);
+			return Kernel.raiseValue("the isolated stock LiveReact dependency resolver exited without a result. No tracked integration files were written.");
+		}
+		var result = ErlangTerm.fromBinary(File.readBang(outputFile));
+		cleanupResolution(lockfile, inputFile, outputFile, directory);
+		return result;
 	}
 
-	static function cleanupResolution(lockfile:String, directory:String):Void {
-		Enum.each([DEPS, LOCKFILE, DEPS_PATH], function(key:Atom):Void ProjectStack.popPostConfig(key));
-		File.rmResult(lockfile);
+	static function cleanupResolution(lockfile:String, inputFile:String, outputFile:String, directory:String):Void {
+		Enum.each([lockfile, inputFile, outputFile], function(path:String):Void File.rmResult(path));
 		File.rmdirResult(directory);
 	}
 

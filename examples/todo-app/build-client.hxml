@@ -1,5 +1,6 @@
-# Haxe→JavaScript compilation for Phoenix LiveView client-side code
-# Generates efficient ES6 modules compatible with esbuild
+# Haxe browser compilation for Phoenix LiveView and the opt-in React island.
+# The first job preserves the classic Genes ESM bootstrap byte-for-byte; the
+# second uses the same exact compiler pin to emit strict TypeScript/TSX for Vite.
 
 # Source directories (client only)
 -cp src_haxe/client
@@ -13,15 +14,15 @@
 # JavaScript target output (separate from Phoenix bootstrap to avoid overwriting LiveView init)
 #
 # IMPORTANT:
-# Haxe deletes the `-js` output file at the start of compilation. Since Phoenix runs esbuild in
-# `--watch` mode and `assets/js/app.js` imports `./hx_app.js`, that temporary deletion can race
-# esbuild and produce transient "Could not resolve ./hx_app.js" errors.
+# Haxe deletes the `-js` output file at the start of compilation. Since Phoenix runs Vite in
+# watch mode and `assets/js/app.js` imports `./hx_app.js`, that temporary deletion can race
+# Vite and produce transient "Could not resolve ./hx_app.js" errors.
 #
-# To keep esbuild stable in watch mode, compile into a temporary entry file and then promote
-# it into a stable path used by esbuild imports:
+# To keep Vite stable in watch mode, compile into a temporary entry file and then promote
+# it into a stable path used by Vite imports:
 # - Haxe writes `assets/js/_hx_app_tmp.js` (and deletes it during rebuilds).
 # - The dev watcher promotes that output into `assets/js/hx_app.js` atomically (see config/dev.exs),
-#   so esbuild never sees an imported module temporarily disappear.
+#   so Vite never sees an imported module temporarily disappear.
 -js assets/js/_hx_app_tmp.js
 -D js-unflatten               # Better module structure
 # NOTE: -D analyzer-optimize removed - destroys functional patterns
@@ -35,9 +36,30 @@
 --macro exclude('server')
 
 # Default: bootstrap Phoenix LiveSocket from typed Haxe (Genes) in `client.Boot`.
-# `assets/js/phoenix_app.js` keeps a guard to avoid double-connect.
-# To revert to the canonical JS bootstrap, remove this define.
+# `assets/js/app.js` retains the ordinary Phoenix fallback and loads this module
+# only after opt-in hook integrations have initialized `window.Hooks`.
 -D todoapp_hx_live_socket_bootstrap
 
 # Main client entry point - minimal boot for Phoenix hooks
 -main client.Boot
+
+--next
+
+# Haxe-authored stock-LiveReact boundary and inner component. Genes owns TSX
+# lowering; Vite remains the application's only JavaScript bundler.
+-lib genes-ts
+-lib phoenix_js
+
+-cp src_react
+-cp src_shared
+
+-main todo_insights.TodoInsightsIsland
+-js assets/react-components/generated/index.tsx
+
+-D genes.ts
+-D genes.ts.jsx_import_source=react
+-D js-source-map
+
+--macro phoenix.live_react.LiveReactEventProtocol.exportTypeScript('shared.liveview.TodoInsightsEvents.TodoInsightsEvent','assets/react-components/generated/todo_insights/todo-insights-events.generated.ts')
+
+--dce full

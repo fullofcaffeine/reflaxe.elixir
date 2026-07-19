@@ -8,6 +8,8 @@ assets/js/haxe/
 assets/js/js/
 assets/js/_hx_app_tmp.js
 assets/js/_hx_app_tmp.js.map
+assets/_tmp/
+_tmp/
 lib/
 !lib/
 !lib/todo_app/

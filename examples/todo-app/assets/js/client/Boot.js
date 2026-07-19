@@ -55,10 +55,22 @@ class Boot {
 		}};
 		return hooks;
 	}
+
+	/**
+	 * Publish this bundle's typed hooks without discarding hooks installed by optional integrations.
+	 *
+	 * `window.Hooks` is Phoenix LiveView's native JavaScript registry and is not a field on Haxe's
+	 * standard `Window` type, so this one expression is an intentional target-boundary escape hatch.
+	 * `Object.assign` returns the same merged object that is stored globally; passing that returned
+	 * map to LiveSocket is essential because stock LiveReact installs `ReactHook` before this Haxe
+	 * module is loaded.
+	 */
+	static publishHooks(hooks) {
+		return window.Hooks = Object.assign(window.Hooks || {}, hooks);
+	}
 	static main() {
 		Theme.applyStoredOrDefault();
-		let hooks = Boot.buildHooks();
-		window.Hooks = Object.assign(window.Hooks || {}, hooks);
+		let hooks = Boot.publishHooks(Boot.buildHooks());
 		PingChannelClient.bootstrap();
 		Boot.connectLiveView(hooks);
 	}

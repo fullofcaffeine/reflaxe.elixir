@@ -37,8 +37,12 @@ class Layouts {
 
 				<!-- Static assets (served by Phoenix Endpoint) -->
 				<link phx-track-static rel="stylesheet" href="/assets/app.css" />
-				<!-- Bundle that bootstraps LiveSocket and loads Haxe hooks -->
-				<script defer phx-track-static type="text/javascript" src="/assets/phoenix_app.js"></script>
+				<!-- Canonical Vite entry that loads the Haxe-authored client and LiveSocket bootstrap -->
+				<!-- BEGIN reflaxe_elixir live_react_vite_assets -->
+				<TodoAppWeb.ReactIslands.LiveReactAssets.vite_assets assets=${["/js/app.js"]}>
+				  <script defer phx-track-static type="module" src="/assets/app.js"></script>
+				</TodoAppWeb.ReactIslands.LiveReactAssets.vite_assets>
+				<!-- END reflaxe_elixir live_react_vite_assets -->
 			</head>
 			<body class="h-full bg-gray-50 dark:bg-gray-900 font-inter antialiased">
 				<main id="main-content" class="h-full">

@@ -1,47 +1,53 @@
 {
-  "name": "todo_app_assets",
-  "version": "1.0.0",
-  "description": "Assets for TodoApp Phoenix LiveView application with Haxe dual-target compilation",
-  "private": true,
-  "engines": {
-    "node": ">=14.0.0",
-    "npm": ">=6.0.0"
-  },
-  "scripts": {
-    "build": "npm run build:haxe && npm run build:esbuild",
-    "build:haxe": "cd .. && haxe build-client.hxml",
-    "build:esbuild": "esbuild js/phoenix_app.js --bundle --outdir=../priv/static/assets --target=es2017",
-    "build:production": "npm run build:haxe && npm run build:esbuild:production",
-    "build:esbuild:production": "esbuild js/phoenix_app.js --bundle --outdir=../priv/static/assets --target=es2017 --minify --tree-shaking=true --drop:console --drop:debugger",
-    "watch": "concurrently \"npm run watch:haxe\" \"npm run watch:esbuild\"",
-    "watch:haxe": "cd .. && haxe build-client.hxml --wait 6001",
-    "watch:esbuild": "esbuild js/phoenix_app.js --bundle --outdir=../priv/static/assets --target=es2017 --sourcemap=external --watch",
-    "analyze": "esbuild js/phoenix_app.js --bundle --metafile=meta.json --analyze",
-    "clean": "rm -rf ../priv/static/assets/*.js ../priv/static/assets/*.css ../priv/static/assets/*.map",
-    "lint": "eslint js/**/*.js",
-    "format": "prettier --write js/**/*.js css/**/*.css"
-  },
+  "author": "Reflaxe.Elixir Contributors",
+  "browserslist": [
+    "defaults",
+    "not IE 11",
+    "> 1%",
+    "last 2 versions"
+  ],
   "dependencies": {
+    "live_react": "file:../deps/live_react",
     "phoenix": "file:../deps/phoenix",
     "phoenix_html": "file:../deps/phoenix_html",
-    "phoenix_live_view": "file:../deps/phoenix_live_view"
+    "phoenix_live_view": "file:../deps/phoenix_live_view",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
   },
+  "description": "Assets for TodoApp Phoenix LiveView application with Haxe dual-target compilation",
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.7",
     "@tailwindcss/typography": "^0.5.10",
+    "@types/node": "20.19.43",
+    "@types/react": "19.1.17",
+    "@types/react-dom": "19.1.11",
+    "@vitejs/plugin-react": "4.5.2",
     "autoprefixer": "^10.4.16",
-    "concurrently": "^8.2.2",
-    "esbuild": "^0.19.8",
+    "cssnano": "^6.0.1",
     "eslint": "^8.55.0",
     "postcss": "^8.4.32",
     "postcss-import": "^15.1.0",
-    "cssnano": "^6.0.1",
     "prettier": "^3.1.0",
-    "tailwindcss": "^3.3.6"
+    "tailwindcss": "^3.3.6",
+    "typescript": "5.9.3",
+    "vite": "7.2.7"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/RobertBeckebans/reflaxe.elixir"
+  "engines": {
+    "node": ">=20.19.0",
+    "npm": ">=10.0.0"
+  },
+  "eslintConfig": {
+    "env": {
+      "browser": true,
+      "es2017": true
+    },
+    "extends": [
+      "eslint:recommended"
+    ],
+    "rules": {
+      "no-console": "off",
+      "no-unused-vars": "warn"
+    }
   },
   "keywords": [
     "haxe",
@@ -53,31 +59,30 @@
     "esbuild",
     "tailwind"
   ],
-  "author": "Reflaxe.Elixir Contributors",
   "license": "MIT",
-  "eslintConfig": {
-    "env": {
-      "browser": true,
-      "es2017": true
-    },
-    "extends": [
-      "eslint:recommended"
-    ],
-    "rules": {
-      "no-unused-vars": "warn",
-      "no-console": "off"
-    }
-  },
+  "name": "todo_app_assets",
   "prettier": {
     "semi": true,
     "singleQuote": true,
     "tabWidth": 2,
     "trailingComma": "es5"
   },
-  "browserslist": [
-    "defaults",
-    "not IE 11",
-    "> 1%",
-    "last 2 versions"
-  ]
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RobertBeckebans/reflaxe.elixir"
+  },
+  "scripts": {
+    "assets:build": "vite build",
+    "assets:dev": "vite --host 127.0.0.1 --port 5173 --strictPort --logLevel warn",
+    "build:haxe": "cd .. && haxe build-client.hxml",
+    "clean": "rm -rf ../priv/static/assets/*.js ../priv/static/assets/*.css ../priv/static/assets/*.map",
+    "format": "prettier --write js/**/*.js css/**/*.css",
+    "lint": "eslint js/**/*.js",
+    "test:live-react": "cd .. && haxe build-live-react-test.hxml && cd assets && tsc -p tsconfig.live-react-test.json && node _tmp/live-react-contract/dist/index.js",
+    "typecheck:live-react": "tsc -p tsconfig.live-react.json",
+    "watch:haxe": "cd .. && haxe build-client.hxml --wait 6001"
+  },
+  "type": "module",
+  "version": "1.0.0"
 }

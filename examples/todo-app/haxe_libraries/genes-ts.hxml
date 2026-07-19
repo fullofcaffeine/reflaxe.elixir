@@ -1,6 +1,6 @@
-# Canonical genes-ts v1.37.0 release with Haxe-checked React HXX contracts and soundness fixes.
-# @install: lix --silent download "gh://github.com/fullofcaffeine/genes-ts#107491cb115ba7abd5628a1f3bcb338aa8cf2685" into genes-ts/1.37.0/github/107491cb115ba7abd5628a1f3bcb338aa8cf2685
+# Temporary exact pin to pushed genes-ts PR #16, which adds the type-only JSX namespace import needed by Haxe-authored React contracts with no markup in the same module.
+# @install: lix --silent download "gh://github.com/fullofcaffeine/genes-ts#697943b1c10b72309d815b0f6a5605d7c5c2a53b" into genes-ts/1.37.0/github/697943b1c10b72309d815b0f6a5605d7c5c2a53b
 -lib helder.set
-${HAXE_LIBCACHE}/genes-ts/1.37.0/github/107491cb115ba7abd5628a1f3bcb338aa8cf2685/extraParams.hxml
--cp ${HAXE_LIBCACHE}/genes-ts/1.37.0/github/107491cb115ba7abd5628a1f3bcb338aa8cf2685/src
+${HAXE_LIBCACHE}/genes-ts/1.37.0/github/697943b1c10b72309d815b0f6a5605d7c5c2a53b/extraParams.hxml
+-cp ${HAXE_LIBCACHE}/genes-ts/1.37.0/github/697943b1c10b72309d815b0f6a5605d7c5c2a53b/src
 -D genes-ts=1.37.0

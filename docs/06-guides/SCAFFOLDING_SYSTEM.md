@@ -178,3 +178,9 @@ These are signature-managed:
 The two Genes names must resolve one immutable compiler tree; the alias must
 never carry a second source path. This makes client builds reproducible without
 relying on global haxelib state or a sibling checkout.
+
+The `genes-ts.hxml` file itself is the dependency authority: Lix reads its exact GitHub revision and
+downloads that source into the scoped cache. PhoenixHX does not need a runtime dependency-policy
+object around it. The scaffold only copies a checked-in template and applies the same signature
+ownership rules used for its other generated files. See
+[Why Lix And GitHub Releases](../01-getting-started/installation.md#why-lix-and-github-releases).

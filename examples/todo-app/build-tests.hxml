@@ -31,5 +31,6 @@ web.UsersLiveTest
 web.UsersApiTest
 web.ProfileLiveTest
 web.LiveEventProtocolDispatchTest
+web.TodoInsightsLiveReactTest
 web.TenancyTest
 live.TodoLiveDueDateTest

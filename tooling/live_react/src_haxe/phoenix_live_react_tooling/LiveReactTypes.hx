@@ -13,6 +13,7 @@ typedef LiveReactComponent = {
 /** Canonical npm and Phoenix source locations discovered before mutation. */
 typedef LiveReactTopology = {
 	root:String,
+	appName:String,
 	packageRoot:String,
 	packageRootRelative:String,
 	packageJson:String,
@@ -20,7 +21,16 @@ typedef LiveReactTopology = {
 	hooksFile:String,
 	registryFile:String,
 	rootLayout:String,
+	rootLayoutKind:Atom,
+	reloadWrapper:Null<String>,
+	reloadComponentModule:Null<String>,
 	clientMode:Atom
+}
+
+/** One fail-closed root-layout source selected for lifecycle ownership. */
+typedef LiveReactRootLayout = {
+	path:String,
+	kind:Atom
 }
 
 /** One supported package root after physical-path validation. */

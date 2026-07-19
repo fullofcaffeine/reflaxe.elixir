@@ -23,7 +23,9 @@ haxe_bin = System.find_executable("haxe") || find_local_haxe.(find_local_haxe, t
 # Base watchers (always on)
 base_watchers = [
   # esbuild bundling watcher for Phoenix assets
-  esbuild: {Esbuild, :install_and_run, [:todo_app, ~w(--sourcemap=external --watch)]},
+  # BEGIN reflaxe_elixir live_react_vite_watcher
+  vite: ["npm", "run", "assets:dev", cd: Path.expand("../assets", __DIR__)],
+  # END reflaxe_elixir live_react_vite_watcher
   # Tailwind CSS watcher (if styles are edited)
   tailwind: {Tailwind, :install_and_run, [:todo_app, ~w(--watch)]}
 ]
@@ -43,7 +45,7 @@ optional_watchers =
         "--hxml",
         "build-client.hxml",
         "--dirs",
-        "src_haxe/client,src_shared,src_haxe/contexts",
+        "src_haxe/client,src_react,src_shared,src_haxe/contexts",
         "--debounce",
         "150",
         "--promote",
@@ -116,3 +118,11 @@ config :phoenix, :stacktrace_depth, 20
 
 # Initialize plugs at runtime for faster development compilation
 # config :phoenix, :plug_init_mode, :runtime  # Deprecated in Phoenix 1.7
+
+# BEGIN reflaxe_elixir live_react_vite_host
+config :live_react,
+  vite_host:
+    if(System.get_env("DISABLE_WATCHERS") == "1", do: nil, else: "http://127.0.0.1:5173"),
+  ssr: false
+
+# END reflaxe_elixir live_react_vite_host

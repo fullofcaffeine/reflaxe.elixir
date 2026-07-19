@@ -609,11 +609,13 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			return true;
 		}
 
-		// Ensure Phoenix component modules are always generated
-		// WHY: `use AppWeb, :html` imports AppWeb.CoreComponents at runtime; Haxe DCE can't see this
-		// WHAT: Force generation for classes annotated with @:component (component modules)
+		// Ensure implemented Phoenix component modules are always generated.
+		// Phoenix can call these modules through HEEx and `use AppWeb, :html`, so an
+		// ordinary Haxe call graph does not prove that their function bodies are used.
+		// An extern component is different: it describes a module supplied by a Mix
+		// dependency or handwritten Elixir and must remain a type-only declaration.
 		if (classType.meta.has(":component")) {
-			return true;
+			return !classType.isExtern;
 		}
 
 		// Check if this is an @:application class
@@ -1196,12 +1198,10 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		// Use AST pipeline for class compilation
 		var moduleAST = buildClassAST(classType, varFields, funcFields);
 
-		// Ensure Phoenix component modules are always emitted
-		// WHAT: Classes annotated with @:component define Phoenix.Component functions
-		// WHY: Phoenix apps using `use AppWeb, :html` import AppWeb.CoreComponents unconditionally
-		//      Even if DCE removes unused functions, the module itself must exist at runtime
-		// HOW: Mark the module AST with metadata.forceEmit so the output iterator never suppresses it
-		if (classType.meta.has(":component")) {
+		// Keep implemented component modules even when Phoenix/HEEx is their only
+		// caller. Extern components are type declarations for modules owned outside
+		// this compilation and must never create a shadow runtime module.
+		if (!classType.isExtern && classType.meta.has(":component")) {
 			if (moduleAST != null) {
 				if (moduleAST.metadata == null)
 					moduleAST.metadata = {};

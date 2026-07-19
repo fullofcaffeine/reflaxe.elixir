@@ -140,6 +140,40 @@ class LiveReactRegistry {
 		]);
 	}
 
+	/** Managed app-local component required by strict HXX in Haxe root layouts. */
+	public static function renderReloadWrapper(appName:String):String {
+		validateAppName(appName);
+		var packageName = appName + "_hx.components.live_react";
+		var nativeModule = reloadComponentModule(appName);
+		return joinLines([
+			'// ${IntegrationCore.GENERATED_SIGNATURE}',
+			'package $packageName;',
+			"",
+			"import elixir.types.Term;",
+			"import phoenix.live_react.LiveReactReload;",
+			"import phoenix.types.Assigns;",
+			"import phoenix.types.Slot;",
+			"",
+			"private typedef LiveReactViteAssetsAssigns = {",
+			"\tvar assets:Array<String>;",
+			"\t@:slot var inner_block:Slot<Term>;",
+			"}",
+			"",
+			"/**",
+			" * Generated app-local strict-HXX boundary for stock LiveReact development assets.",
+			" * The wrapper forwards the complete assigns/default-slot payload unchanged.",
+			" */",
+			'@:native("$nativeModule")',
+			"@:component",
+			"class LiveReactAssets {",
+			"\t@:component",
+			"\tpublic static function vite_assets(assigns:Assigns<LiveReactViteAssetsAssigns>):Term {",
+			"\t\treturn LiveReactReload.vite_assets(assigns);",
+			"\t}",
+			"}"
+		]);
+	}
+
 	public static function renderBoundary(value:LiveReactComponent):String {
 		validateComponent(value);
 		var slug = componentSlug(value.name);
@@ -238,6 +272,16 @@ class LiveReactRegistry {
 		]);
 	}
 
+	public static function reloadWrapperRelativePath(appName:String):String {
+		validateAppName(appName);
+		return Path.join(["src_haxe", appName + "_hx", "components", "live_react", "LiveReactAssets.hx"]);
+	}
+
+	public static function reloadComponentModule(appName:String):String {
+		validateAppName(appName);
+		return ElixirMacro.camelize(appName) + "Web.ReactIslands.LiveReactAssets";
+	}
+
 	public static function boundaryRelativePath(value:LiveReactComponent):String {
 		return Path.join(["assets", "react-components", componentSlug(value.name) + "-boundary.tsx"]);
 	}
@@ -268,7 +312,7 @@ class LiveReactRegistry {
 			Kernel.raise('invalid LiveReact component name ${Kernel.inspect(name)}. Expected a static PascalCase identifier such as PreferenceStudio. No writes occurred.');
 	}
 
-	static function validateAppName(appName:String):Void {
+	public static function validateAppName(appName:String):Void {
 		if (!Regex.match(Regex.compileBang(APP_NAME_PATTERN), appName))
 			Kernel.raise('invalid Mix application name ${Kernel.inspect(appName)}. Expected a lowercase underscore identifier. No writes occurred.');
 	}

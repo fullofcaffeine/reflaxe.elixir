@@ -231,6 +231,24 @@ those callers when strict resolution is desired; a global strict-components
 define also applies inside the open upstream wrapper and therefore requires an
 app-owned discoverable declaration for that external tag.
 
+`phoenix.live_react.LiveReactReload` maps the stock
+`LiveReact.Reload.vite_assets/1` component for Haxe-authored root layouts. The
+public lifecycle uses it when a project has one canonical
+`src_haxe/**/Layouts.hx` instead of a `root.html.heex`:
+
+```haxe
+return <LiveReact.Reload.vite_assets assets=${["/js/app.js"]}>
+  <script defer phx-track-static type="text/javascript" src="/assets/app.js"></script>
+</LiveReact.Reload.vite_assets>;
+```
+
+This generates the same ordinary `LiveReact.Reload.vite_assets` HEEx component
+call as a handwritten Phoenix root layout. The module-qualified HXX tag is the
+upstream component boundary; `LiveReactReload.vite_assets(assigns)` remains the
+typed direct-call declaration. Setup owns the HXX wrapper with fail-closed
+markers, and removal restores the original Haxe source instead of editing
+generated `.ex` files.
+
 The first-class setup/check/remove tooling and static registry now exist as an
 experimental implementation, but public promotion still waits for the two
 application canaries, installed-package smoke, and the compatibility gate.

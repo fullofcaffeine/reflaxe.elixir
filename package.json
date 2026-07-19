@@ -44,8 +44,6 @@
     "test:haxe-server-owner-exit": "bash -n scripts/ci/haxe-server-owner-exit-fixture.sh && bash scripts/ci/haxe-server-owner-exit-fixture.sh",
     "generate:live-react-core": "bash scripts/generate-live-react-core.sh --write",
     "guard:live-react-core": "bash scripts/generate-live-react-core.sh --check",
-    "generate:phoenix-scaffold-core": "bash scripts/generate-phoenix-scaffold-core.sh --write",
-    "guard:phoenix-scaffold-core": "bash scripts/generate-phoenix-scaffold-core.sh --check",
     "test:genes-ts-integration": "bash scripts/ci/test-genes-ts-integration.sh",
     "test:managed-reference-spike": "bash scripts/ci/managed-reference-spike.sh",
     "test:haxe-exunit-stdlib": "bash scripts/test-haxe-exunit-stdlib.sh",

@@ -26,6 +26,10 @@ import elixir.types.Term;
  */
 @:native("Application")
 extern class Application {
+	/** Return the absolute directory for an OTP application or one of its children. */
+	@:native("app_dir")
+	static function appDir(application:Term, ?path:String):String;
+
 	/**
 	 * Get the application that owns the given module
 	 * 

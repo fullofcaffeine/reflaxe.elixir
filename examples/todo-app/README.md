@@ -3,7 +3,9 @@
 End-to-end reference app showcasing Reflaxe.Elixir in a real Phoenix LiveView application:
 
 - **Server**: Haxe → Elixir (LiveView + Ecto + PubSub)
-- **Client**: Haxe → JavaScript (LiveView hooks + progressive enhancement)
+- **Browser client**: Haxe → classic ESM JavaScript for LiveView hooks, plus
+  Haxe → strict TypeScript/TSX for one optional React island
+- **React runtime**: stock LiveReact + React, bundled by Vite
 - **E2E tests**: Playwright
 
 ## 🌟 Features
@@ -27,8 +29,13 @@ Note on “multiple instances”:
 - LiveView hooks authored in Haxe (progressive enhancement)
 - Keyboard shortcuts + small UX helpers
 - Optional offline/connection-state behaviors
+- A bounded `TodoInsights` React island authored in Haxe with Genes inline HXX
+- A typed event shared by the React boundary and the Haxe-authored LiveView
+- A native LiveView summary that remains useful if React or JavaScript is absent
 
-The client is intentionally kept “thin”: most logic stays on the server (LiveView), with JS as an enhancement layer.
+The client is intentionally kept “thin”: LiveView still owns the page, state,
+navigation, and todo operations. React enhances one section; it does not turn
+the application into a client-owned single-page app.
 
 ## 🚀 Quick Start
 
@@ -98,6 +105,10 @@ export GITHUB_REDIRECT_URI="http://localhost:4000/auth/github/callback"
 - Router/session bridge: `examples/todo-app/src_haxe/TodoAppRouter.hx` + `examples/todo-app/src_haxe/server/infrastructure/TodoAppWeb.hx`
 - Ecto schema: `examples/todo-app/src_haxe/server/schemas/Todo.hx`
 - Client hooks: `examples/todo-app/src_haxe/client/hooks/`
+- Phoenix wrapper for the island: `examples/todo-app/src_haxe/server/components/TodoInsightsIsland.hx`
+- Haxe-authored React component: `examples/todo-app/src_react/todo_insights/TodoInsightsIsland.hx`
+- Shared event contract: `examples/todo-app/src_shared/shared/liveview/TodoInsightsEvents.hx`
+- Static React registry: `examples/todo-app/assets/react-components/registry.generated.ts`
 - Playwright specs: `examples/todo-app/e2e/*.spec.ts`
 
 ## Testing Runbook
@@ -170,9 +181,14 @@ todo-app/
 │   ├── server/            # Phoenix/Ecto/LiveView app code
 │   ├── client/            # Client-side hooks and boot code
 │   └── test/              # Haxe-authored ExUnit tests
+├── src_react/             # Haxe components compiled by Genes to strict TSX
 ├── src_shared/            # Haxe contracts imported by server, client, and tests
+├── assets/
+│   ├── js/                # Phoenix/Vite entry and generated LiveReact hook
+│   └── react-components/  # Static registry plus Genes-generated TSX modules
 ├── lib/                   # Generated Elixir code
-├── priv/static/assets/    # Bundled JS/CSS (esbuild output)
+├── priv/static/assets/    # Vite production output
+├── phoenixhx-live-react.json # Checked opt-in integration/registry manifest
 ├── build-server.hxml      # Canonical server (Haxe→Elixir) build
 ├── build.hxml             # Thin alias to build-server.hxml (compat)
 └── build-client.hxml      # Client (Haxe→JS) build (used by assets alias)
@@ -191,6 +207,9 @@ The todo-app is designed to demonstrate **end-to-end Haxe→Elixir** for applica
 - Server app code: `examples/todo-app/src_haxe/server/**` → `examples/todo-app/lib/todo_app/**` and `examples/todo-app/lib/todo_app_web/**`
 - Shared/domain contracts: `examples/todo-app/src_shared/shared/**` are imported by the server, client, and test builds. They are a Haxe classpath root, not the desired Elixir app namespace.
 - Client hooks: `examples/todo-app/src_haxe/client/**` → bundled JS under `priv/static/assets/` via `build-client.hxml`
+- React island: `examples/todo-app/src_react/**` → strict TypeScript/TSX under
+  `assets/react-components/generated/**` through the second job in
+  `build-client.hxml`; Vite consumes both Genes outputs.
 
 Shared code note:
 - `src_shared/shared/` is the place to put typed client/server boundary contracts (payload typedefs, event names,
@@ -212,9 +231,12 @@ Shared code note:
   - Why: Phoenix expects these files and patterns; keeping them idiomatic makes gradual adoption easy.
 - Ecto seeds: `priv/repo/seeds.exs`
   - Why: Ecto executes seeds as Elixir scripts; keeping them Elixir-first is fine for an example app.
-- Phoenix JS bootstrap: `assets/js/phoenix_app.js`
-  - Why: this mirrors Phoenix’s canonical LiveView bootstrap and stays stable across Phoenix upgrades.
-  - Default in this repo: the Haxe client also bootstraps LiveSocket (typed Genes) so more of the client boot is type-checked; the JS file keeps a guard to avoid double connections.
+- Phoenix/Vite bootstrap: `assets/js/app.js`
+  - Why: this is the small host boundary that imports Phoenix, composes the
+    stock LiveReact hook, and then loads the Haxe/Genes client entry.
+  - Default in this repo: the Haxe client also bootstraps LiveSocket, so the
+    JavaScript file keeps an ordinary Phoenix fallback and avoids a duplicate
+    connection.
 
 **Haxe-authored migrations (compiled to `.exs`)**
 - Haxe sources: `examples/todo-app/src_haxe/server/migrations/*.hx`
@@ -230,31 +252,61 @@ Shared code note:
 
 ```mermaid
 graph LR
-    A[Haxe Source] --> B[Reflaxe.Elixir]
-    A --> C[Genes JS Generator]
-    B --> D[Elixir/Phoenix Backend]
-    C --> E[JavaScript Frontend]
-    D --> F[LiveView + Ecto]
-    E --> G[Enhanced UX]
-    F <--> G
+    A[Server Haxe + HXX] --> B[Reflaxe.Elixir]
+    B --> C[Elixir + HEEx]
+    D[Client Haxe + HXX] --> E[Genes]
+    E --> F[ESM + TSX]
+    F --> G[Vite]
+    C --> H[Phoenix LiveView]
+    G --> I[Browser assets]
+    H --> J[stock LiveReact hook]
+    I --> J
+    J --> K[TodoInsights React island]
 ```
+
+### One HXX authoring style, two explicit targets
+
+HXX is compile-time markup syntax; it is not a browser runtime and it does not
+make HEEx and React the same thing.
+
+- In `src_haxe/server/components/TodoInsightsIsland.hx`, Reflaxe.Elixir turns
+  inline HXX into an ordinary Phoenix `~H` template. That template calls the
+  upstream `<LiveReact.react ... />` component with a fixed component name and
+  `ssr={false}`.
+- In `src_react/todo_insights/TodoInsightsIsland.hx`, Genes turns inline HXX
+  into typed React TSX/JavaScript. Vite bundles that generated module in the
+  static component registry.
+- At runtime, stock LiveReact serializes the server props into its DOM
+  protocol. Its stock LiveView hook looks up `TodoInsights` in the static
+  registry, mounts React, and carries the typed filter event back to LiveView.
+
+The shared Haxe contract is useful because the event name and payload shape are
+declared once and checked on both sides. Runtime-only values do not cross the
+boundary: props and events still travel through LiveReact/LiveView's normal
+serialized data.
+
+This example is client-only. Phoenix renders the useful native summary first;
+React mounts in the browser afterward. LiveReact SSR would add a separate
+Node-backed server render and browser hydration step. That deployment and
+lifecycle surface is intentionally not enabled here.
 
 ## 💻 Development Workflow
 
-### Phoenix JS Bootstrap (phoenix_app.js)
-- Entry point: `assets/js/phoenix_app.js` (hand‑written JS, bundled by esbuild).
+### Phoenix JS Bootstrap (`assets/js/app.js`)
+- Entry point: `assets/js/app.js` (small hand-written host boundary, bundled by Vite).
 - Responsibilities:
   - Import `phoenix_html`, `phoenix`, and `phoenix_live_view`.
-  - Read CSRF meta from the HTML `<meta name="csrf-token" ...>`.
-  - Pick up LiveView Hooks from `window.Hooks` (populated by the Haxe bundle).
+  - Import the generated stock-LiveReact hook and merge it into `window.Hooks`.
+  - Load the Haxe/Genes client after hook registration.
   - Create and connect `LiveSocket` (unless already bootstrapped by Haxe), and expose `window.liveSocket`.
 - Haxe integration:
   - The Haxe client compiles via Genes to `assets/js/_hx_app_tmp.js` (intermediate entry) plus supporting modules under `assets/js/client/**` and `assets/js/genes/**` (`build-client.hxml`).
-  - In dev, the Haxe watcher promotes `assets/js/_hx_app_tmp.js` to the stable `assets/js/hx_app.js` path atomically (see `config/dev.exs`) so esbuild `--watch` never sees an imported module disappear. `assets/js/app.js` imports `./hx_app.js`, and `phoenix_app.js` imports `./app.js`, so Hooks exported by Haxe are available to LiveView.
+  - In dev, the Haxe watcher promotes `assets/js/_hx_app_tmp.js` to the stable `assets/js/hx_app.js` path atomically (see `config/dev.exs`) so Vite never sees an imported module disappear.
+  - The second Genes job emits strict TSX under `assets/react-components/generated/**`; the generated static registry imports its exposed boundary.
 - Why JS here and not Haxe?
   - This file mirrors Phoenix’s canonical bootstrap and stays stable across Phoenix upgrades.
   - All meaningful client behavior (Hooks, utils, shared types) remains in Haxe for type safety.
-  - Default in this repo: the client build enables `-D todoapp_hx_live_socket_bootstrap`, so the Haxe bundle can connect LiveSocket and `phoenix_app.js` will detect `window.liveSocket` and skip.
+  - Default in this repo: the client build enables `-D todoapp_hx_live_socket_bootstrap`, so the Haxe bundle connects LiveSocket with the merged Phoenix/LiveReact hook registry. `app.js` detects `window.liveSocket` and skips its JavaScript fallback.
 
 ### Watch Mode
 ```bash
@@ -270,7 +322,7 @@ npm --prefix assets run watch:haxe
 
 Note
 - In this app, both `mix dev` and `mix phx.server` run Endpoint watchers from `config/dev.exs`
-  (esbuild, tailwind, Haxe server watcher, Haxe client watcher).
+  (Vite, Tailwind, Haxe server watcher, and Haxe client watcher).
 - The Haxe client watcher is launched via npm (`npm --prefix assets run watch:haxe`).
 - If npm is not available on PATH, Phoenix starts without the Haxe watcher; you can still build once with `mix assets.build`.
 
@@ -278,7 +330,7 @@ Note
 - The layout emits a standard Phoenix CSRF meta tag using Plug:
   - `examples/todo-app/lib/todo_app_web/layouts.ex` includes
     `<meta name="csrf-token" content={Plug.CSRFProtection.get_csrf_token()}/>`
-- LiveSocket reads this token in `client.Boot` (default) or `phoenix_app.js` (fallback) and passes it as `_csrf_token`.
+- LiveSocket reads this token in `client.Boot` (default) or `assets/js/app.js` (fallback) and passes it as `_csrf_token`.
 ```
 
 ### Testing

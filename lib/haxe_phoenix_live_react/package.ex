@@ -24,7 +24,8 @@ defmodule HaxePhoenixLiveReact.Package do
         initial = %{json: value, owned: existing_owned}
 
         accumulated =
-          Enum.reduce(managed_values(dependency.npm_reference), initial, fn spec, state ->
+          Enum.reduce(managed_values(topology, dependency.npm_reference), initial, fn spec,
+                                                                                      state ->
             dotted = Enum.join(spec.path, ".")
             fetched = fetch_json_path(state.json, spec.path, 0)
             fetched_tag = tag(fetched)
@@ -40,16 +41,21 @@ defmodule HaxePhoenixLiveReact.Package do
               if actual == spec.expected do
                 state
               else
-                Kernel.raise(
-                  topology.package_json <>
-                    " " <>
-                    dotted <>
-                    " conflicts with the managed value. Found " <>
-                    Kernel.inspect(actual) <>
-                    ", expected " <>
-                    Kernel.inspect(spec.expected) <>
-                    ". No writes occurred. Preserve the existing value and use manual integration, or remove it before retrying."
-                )
+                if not MapSet.member?(state.owned, dotted) and
+                     Enum.member?(spec.accepted_existing, actual) do
+                  state
+                else
+                  Kernel.raise(
+                    topology.package_json <>
+                      " " <>
+                      dotted <>
+                      " conflicts with the managed value. Found " <>
+                      Kernel.inspect(actual) <>
+                      ", expected " <>
+                      Kernel.inspect(spec.expected) <>
+                      ". No writes occurred. Preserve the existing value and use manual integration, or remove it before retrying."
+                  )
+                end
               end
             end
           end)
@@ -76,7 +82,7 @@ defmodule HaxePhoenixLiveReact.Package do
       initial = %{json: value, retained: []}
 
       accumulated =
-        Enum.reduce(managed_values(npm_reference), initial, fn spec, state ->
+        Enum.reduce(managed_values(topology, npm_reference), initial, fn spec, state ->
           dotted = Enum.join(spec.path, ".")
 
           if not MapSet.member?(owned, dotted) do
@@ -120,24 +126,53 @@ defmodule HaxePhoenixLiveReact.Package do
     end
   end
 
-  defp managed_values(npm_reference) do
+  defp managed_values(topology, npm_reference) do
     [
-      %{path: ["private"], expected: true},
-      %{path: ["type"], expected: "module"},
+      %{path: ["private"], expected: true, accepted_existing: []},
+      %{path: ["type"], expected: "module", accepted_existing: []},
       %{
         path: ["scripts", "assets:dev"],
-        expected: "vite --host 127.0.0.1 --port 5173 --strictPort --logLevel warn"
+        expected: "vite --host 127.0.0.1 --port 5173 --strictPort --logLevel warn",
+        accepted_existing: []
       },
-      %{path: ["scripts", "assets:build"], expected: "vite build"},
-      %{path: ["dependencies", "live_react"], expected: npm_reference},
-      %{path: ["dependencies", "phoenix"], expected: "1.7.24"},
-      %{path: ["dependencies", "phoenix_html"], expected: "4.3.0"},
-      %{path: ["dependencies", "phoenix_live_view"], expected: "0.20.17"},
-      %{path: ["dependencies", "react"], expected: "19.1.0"},
-      %{path: ["dependencies", "react-dom"], expected: "19.1.0"},
-      %{path: ["devDependencies", "@vitejs/plugin-react"], expected: "4.5.2"},
-      %{path: ["devDependencies", "vite"], expected: "7.2.7"}
+      %{path: ["scripts", "assets:build"], expected: "vite build", accepted_existing: []},
+      %{path: ["dependencies", "live_react"], expected: npm_reference, accepted_existing: []},
+      %{
+        path: ["dependencies", "phoenix"],
+        expected: "1.7.24",
+        accepted_existing: [mix_checkout_reference(topology, "phoenix")]
+      },
+      %{
+        path: ["dependencies", "phoenix_html"],
+        expected: "4.3.0",
+        accepted_existing: [mix_checkout_reference(topology, "phoenix_html")]
+      },
+      %{
+        path: ["dependencies", "phoenix_live_view"],
+        expected: "0.20.17",
+        accepted_existing: [mix_checkout_reference(topology, "phoenix_live_view")]
+      },
+      %{path: ["dependencies", "react"], expected: "19.1.0", accepted_existing: []},
+      %{path: ["dependencies", "react-dom"], expected: "19.1.0", accepted_existing: []},
+      %{
+        path: ["devDependencies", "@vitejs/plugin-react"],
+        expected: "4.5.2",
+        accepted_existing: []
+      },
+      %{path: ["devDependencies", "vite"], expected: "7.2.7", accepted_existing: []}
     ]
+  end
+
+  defp mix_checkout_reference(topology, package_name) do
+    parents =
+      if topology.package_root_relative == "." do
+        []
+      else
+        Enum.map(Path.split(topology.package_root_relative), fn _ -> ".." end)
+      end
+
+    relative = Path.join(Enum.concat(parents, ["deps", package_name]))
+    "file:#{String.replace(relative, "\\", "/")}"
   end
 
   defp fetch_json_path(json, path, index) do

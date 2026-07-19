@@ -43,6 +43,12 @@ defmodule TodoApp.MixProject do
   # Specifies your project dependencies.
   defp deps do
     [
+      # BEGIN reflaxe_elixir live_react_dependency
+      {:live_react,
+       git: "https://github.com/mrdotb/live_react.git",
+       ref: "055e80e6a4e6d009df5e229eb39e7f85f03fea22"},
+      # END reflaxe_elixir live_react_dependency
+
       # Add parent project as dependency for Haxe compilation functionality
       {:reflaxe_elixir, path: "../..", only: [:dev, :test, :e2e]},
       {:phoenix, "~> 1.7.24"},
@@ -78,7 +84,7 @@ defmodule TodoApp.MixProject do
         "deps.get",
         # Install toolchain deps for this example app:
         # - root: lix (Haxe toolchain manager) + Playwright
-        # - assets: Phoenix JS deps for esbuild bundling
+        # - assets: Phoenix, LiveReact, React, Vite, and Tailwind dependencies
         "cmd npm install --no-audit --no-fund",
         "cmd --cd assets npm install --no-audit --no-fund",
         "ecto.setup",
@@ -91,10 +97,28 @@ defmodule TodoApp.MixProject do
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       # Tests rely on compiled Haxe app; compile Haxe-authored ExUnit modules before `mix test`.
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "haxe.compile.tests", "test"],
-      "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["haxe.compile.client", "tailwind todo_app", "esbuild todo_app"],
-      "assets.deploy": ["haxe.compile.client", "tailwind todo_app --minify", "esbuild todo_app --minify --tree-shaking=true --drop:debugger --drop:console", "phx.digest"],
-      # IMPORTANT: Haxe deletes the `-js` output at compile start, which can race esbuild --watch.
+      # BEGIN reflaxe_elixir live_react_assets_setup
+      "assets.setup": [
+        "tailwind.install --if-missing",
+        "cmd --cd assets npm install --no-audit --no-fund"
+      ],
+      # END reflaxe_elixir live_react_assets_setup
+      # BEGIN reflaxe_elixir live_react_assets_build
+      "assets.build": [
+        "haxe.compile.client",
+        "tailwind todo_app",
+        "cmd --cd assets npm run assets:build"
+      ],
+      # END reflaxe_elixir live_react_assets_build
+      # BEGIN reflaxe_elixir live_react_assets_deploy
+      "assets.deploy": [
+        "haxe.compile.client",
+        "tailwind todo_app --minify",
+        "cmd --cd assets npm run assets:build",
+        "phx.digest"
+      ],
+      # END reflaxe_elixir live_react_assets_deploy
+      # IMPORTANT: Haxe deletes the `-js` output at compile start, which can race Vite's watcher.
       # `build-client.hxml` outputs to a temp file (`assets/js/_hx_app_tmp.js`) and this task promotes
       # it into the stable import path (`assets/js/hx_app.js`) after successful compilation.
       #

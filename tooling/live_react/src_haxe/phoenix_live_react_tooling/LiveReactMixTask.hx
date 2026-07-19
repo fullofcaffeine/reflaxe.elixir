@@ -58,6 +58,7 @@ class LiveReactMixTask {
 		var mode = parseMode(options);
 		var root = File.cwdBang();
 		var projectConfig = Project.config();
+		var appName:Term = Keyword.get(projectConfig, "app", null);
 		var mixDependencies:Array<Term> = Keyword.get(projectConfig, "deps", []);
 		var packageRoot:Null<String> = Keyword.get(options, "package_root", null);
 		var confirmed = Keyword.get(options, "yes", false) || mode == CHECK;
@@ -66,6 +67,7 @@ class LiveReactMixTask {
 		var report:String->Void = function(message:String):Void Mix.shell().info(message);
 
 		var common:KeywordList<Term> = [
+			{_0: "app_name", _1: appName == null ? null : Kernel.toString(appName)},
 			{_0: "package_root", _1: packageRoot},
 			{_0: "mix_dependencies", _1: mixDependencies},
 			{_0: "yes", _1: confirmed},

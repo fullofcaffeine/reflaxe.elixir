@@ -1,0 +1,5 @@
+# reflaxe_elixir:scaffolded_haxe_library:genes:v2
+# Compatibility alias for projects that still use `-lib genes`.
+# Both names resolve the same immutable genes-ts revision.
+-lib genes-ts
+-D genes=1.37.0

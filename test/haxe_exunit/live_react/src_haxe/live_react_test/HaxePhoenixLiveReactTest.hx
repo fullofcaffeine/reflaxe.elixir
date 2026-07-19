@@ -47,7 +47,7 @@ class HaxePhoenixLiveReactTest extends TestCase {
 		Assert.containsString(File.readBang(Fixture.rootLayout(root)),
 			"<%!-- BEGIN reflaxe_elixir live_react_vite_assets --%>\n"
 			+ "    <LiveReact.Reload.vite_assets assets={[\"/js/app.js\"]}>\n"
-			+ "      <script defer phx-track-static type=\"text/javascript\" src={~p\"/assets/app.js\"}></script>\n"
+			+ "      <script defer phx-track-static type=\"module\" src={~p\"/assets/app.js\"}></script>\n"
 			+ "    </LiveReact.Reload.vite_assets>\n"
 			+ "    <%!-- END reflaxe_elixir live_react_vite_assets --%>");
 
@@ -92,6 +92,66 @@ class HaxePhoenixLiveReactTest extends TestCase {
 		Assert.equals("demo-assets", Fixture.jsonPath(packageJson, ["name"]));
 	}
 
+	@:test("Haxe-authored root layout applies and removes typed LiveReact Reload wiring")
+	function testHaxeAuthoredRootLayoutLifecycle():Void {
+		var root = Fixture.fixtureRootWithHaxeLayout(Fixture.GENES, "assets");
+		var original = File.readBang(Fixture.rootLayout(root));
+
+		var result = LifecycleApi.applyBang(root, Fixture.applyOptions(root));
+		var layout = File.readBang(Fixture.rootLayout(root));
+		var wrapperPath = Path.join([root, "src_haxe", "demo_hx", "components", "live_react", "LiveReactAssets.hx"]);
+
+		Assert.equals("assets", result.packageRoot);
+		Assert.containsString(layout, "<!-- BEGIN reflaxe_elixir live_react_vite_assets -->");
+		Assert.containsString(layout, "<DemoWeb.ReactIslands.LiveReactAssets.vite_assets assets=" + DOLLAR_SIGN + "{[\"/js/app.js\"]}>");
+		Assert.containsString(layout, "type=\"module\"");
+		Assert.containsString(layout, "src=\"/assets/app.js\"");
+		Assert.isTrue(File.regular(wrapperPath));
+		Assert.containsString(File.readBang(wrapperPath), "return LiveReactReload.vite_assets(assigns);");
+		Assert.containsString(File.readBang(Path.joinTwo(root, Fixture.MANIFEST)), "src_haxe/server/layouts/Layouts.hx");
+		Assert.containsString(File.readBang(Path.joinTwo(root, Fixture.MANIFEST)), '"appName": "demo"');
+
+		Assert.equals(CHECK, LifecycleApi.checkBang(root, Fixture.rerunOptions()).mode);
+
+		LifecycleApi.removeBang(root, [{_0: "yes", _1: true}]);
+		Assert.equals(original, File.readBang(Fixture.rootLayout(root)));
+		Assert.isFalse(File.exists(wrapperPath));
+	}
+
+	@:test("project-local Phoenix npm checkouts remain compatible and unowned")
+	function testProjectLocalPhoenixNpmCheckoutsRemainUnowned():Void {
+		var root = Fixture.fixtureRoot(Fixture.GENES, "assets");
+		var packagePath = Path.join([root, "assets", "package.json"]);
+		var packageJson = Fixture.readJson(packagePath);
+		var dependencies = ElixirMap.new_();
+
+		dependencies = ElixirMap.putTerm(dependencies, "phoenix", "file:../deps/phoenix");
+		dependencies = ElixirMap.putTerm(dependencies, "phoenix_html", "file:../deps/phoenix_html");
+		dependencies = ElixirMap.putTerm(dependencies, "phoenix_live_view", "file:../deps/phoenix_live_view");
+		packageJson = ElixirMap.putTerm(packageJson, "dependencies", dependencies);
+		File.writeBang(packagePath, Fixture.encodePretty(packageJson));
+
+		LifecycleApi.applyBang(root, Fixture.applyOptions(root));
+
+		var appliedPackage = Fixture.readJson(packagePath);
+		Assert.equals("file:../deps/phoenix", Fixture.jsonPath(appliedPackage, ["dependencies", "phoenix"]));
+		Assert.equals("file:../deps/phoenix_html", Fixture.jsonPath(appliedPackage, ["dependencies", "phoenix_html"]));
+		Assert.equals("file:../deps/phoenix_live_view", Fixture.jsonPath(appliedPackage, ["dependencies", "phoenix_live_view"]));
+
+		var manifest = Fixture.readJson(Path.joinTwo(root, Fixture.MANIFEST));
+		var ownedKeys:Array<String> = Fixture.jsonPath(manifest, ["managed", "packageKeys"]);
+		Assert.equals(-1, ownedKeys.indexOf("dependencies.phoenix"));
+		Assert.equals(-1, ownedKeys.indexOf("dependencies.phoenix_html"));
+		Assert.equals(-1, ownedKeys.indexOf("dependencies.phoenix_live_view"));
+
+		LifecycleApi.removeBang(root, [{_0: "yes", _1: true}]);
+
+		var removedPackage = Fixture.readJson(packagePath);
+		Assert.equals("file:../deps/phoenix", Fixture.jsonPath(removedPackage, ["dependencies", "phoenix"]));
+		Assert.equals("file:../deps/phoenix_html", Fixture.jsonPath(removedPackage, ["dependencies", "phoenix_html"]));
+		Assert.equals("file:../deps/phoenix_live_view", Fixture.jsonPath(removedPackage, ["dependencies", "phoenix_live_view"]));
+	}
+
 	@:test("plain-JS project with an assets package root preserves its existing hook expression")
 	function testPlainJsAssetsPackagePreservesHookExpression():Void {
 		var root = Fixture.fixtureRoot(Fixture.PLAIN_JS, "assets");
@@ -119,6 +179,40 @@ class HaxePhoenixLiveReactTest extends TestCase {
 
 		Assert.equals(originalAppJs, File.readBang(Path.join([root, "assets", "js", "app.js"])));
 		Assert.isFalse(File.exists(Path.joinTwo(root, Fixture.MANIFEST)));
+	}
+
+	@:test("LiveReact hooks initialize before a dynamically loaded Haxe client bootstrap")
+	function testHooksPrecedeDynamicHaxeBootstrap():Void {
+		var root = Fixture.fixtureRoot(Fixture.GENES, "assets");
+		var appPath = Path.join([root, "assets", "js", "app.js"]);
+		var original = "import \"phoenix_html\"\n"
+			+ "import {Socket} from \"phoenix\"\n"
+			+ "import {LiveSocket} from \"phoenix_live_view\"\n\n"
+			+ "async function boot() {\n"
+			+ "  await import(\"./hx_app.js\")\n"
+			+ "  if (!window.liveSocket) {\n"
+			+ "    const liveSocket = new LiveSocket(\"/live\", Socket, {\n"
+			+ "      hooks: window.Hooks || {},\n"
+			+ "    })\n"
+			+ "    liveSocket.connect()\n"
+			+ "    window.liveSocket = liveSocket\n"
+			+ "  }\n"
+			+ "}\n\n"
+			+ "void boot()\n";
+		File.writeBang(appPath, original);
+
+		LifecycleApi.applyBang(root, Fixture.applyOptions(root));
+
+		var applied = File.readBang(appPath);
+		var hooksIndex = applied.indexOf("window.Hooks = {...(window.Hooks || {}), ...reactHooks}");
+		var bootstrapIndex = applied.indexOf('await import("./hx_app.js")');
+		Assert.isTrue(hooksIndex >= 0);
+		Assert.isTrue(bootstrapIndex >= 0);
+		Assert.isTrue(hooksIndex < bootstrapIndex);
+
+		LifecycleApi.removeBang(root, [{_0: "yes", _1: true}]);
+
+		Assert.equals(original, File.readBang(appPath));
 	}
 
 	@:test("the owned JavaScript registry migrates explicitly to the typed registry")
@@ -553,11 +647,12 @@ class HaxePhoenixLiveReactTest extends TestCase {
 		var root = Fixture.fixtureRoot(Fixture.PLAIN_JS, "assets");
 		var repositoryRoot = File.cwdBang();
 		Fixture.copyLiveReactToVendor(root);
-		Fixture.writeMixProject(root, [
+
+		var bootstrapDependencies = [
 			Fixture.pathDependency(MixDependencyName.JasonLibrary, Path.join([repositoryRoot, "deps", "jason"]), true),
-			Fixture.pathDependency(MixDependencyName.ReflaxeElixir, repositoryRoot),
-			Fixture.pathDependency(MixDependencyName.LiveReact, "vendor/live_react")
-		]);
+			Fixture.pathDependency(MixDependencyName.ReflaxeElixir, repositoryRoot)
+		];
+		Fixture.writeMixProject(root, bootstrapDependencies);
 
 		Fixture.formatElixirFile(root, "mix.exs");
 		Fixture.formatElixirFile(root, "config/config.exs");
@@ -566,12 +661,16 @@ class HaxePhoenixLiveReactTest extends TestCase {
 		Fixture.runExternalMix(root, ["deps.get"]);
 		Fixture.runExternalMix(root, ["deps.compile", "reflaxe_elixir"]);
 
+		var applicationDependencies = bootstrapDependencies.concat([Fixture.pathDependency(MixDependencyName.LiveReact, "vendor/live_react")]);
+		Fixture.writeMixProject(root, applicationDependencies);
+		Fixture.formatElixirFile(root, "mix.exs");
+
 		var applyOutput = Fixture.runLiveReactTask(root, ["--yes"]);
 
 		Assert.containsString(applyOutput, "PhoenixHx LiveReact integration is current");
 		Assert.containsString(applyOutput, "path:vendor/live_react@0.1.0");
 
-		var componentOutput = Fixture.runExternalMix(root, ["haxe.gen.live_react", "StatusPanel", "--yes"]);
+		var componentOutput = Fixture.runExternalMix(root, ["haxe.gen.live_react", "StatusPanel", "--package-root", "assets", "--yes"]);
 
 		Assert.containsString(componentOutput, "StatusPanel is registered in the static registry");
 		Assert.isTrue(File.regular(Path.join([root, "assets", "react-components", "status-panel-boundary.tsx"])));
@@ -586,7 +685,14 @@ class HaxePhoenixLiveReactTest extends TestCase {
 
 		Assert.containsString(checkOutput, "check passed; no writes occurred");
 
-		var componentRemoveOutput = Fixture.runExternalMix(root, ["haxe.gen.live_react", "StatusPanel", "--remove", "--yes"]);
+		var componentRemoveOutput = Fixture.runExternalMix(root, [
+			"haxe.gen.live_react",
+			"StatusPanel",
+			"--remove",
+			"--package-root",
+			"assets",
+			"--yes"
+		]);
 
 		Assert.containsString(componentRemoveOutput, "Removed StatusPanel from the static LiveReact registry");
 		Assert.isTrue(File.regular(Path.join([root, "assets", "react-components", "status-panel.tsx"])));

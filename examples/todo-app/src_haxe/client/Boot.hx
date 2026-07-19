@@ -73,13 +73,23 @@ class Boot {
 		});
 	}
 
+	/**
+	 * Publish this bundle's typed hooks without discarding hooks installed by optional integrations.
+	 *
+	 * `window.Hooks` is Phoenix LiveView's native JavaScript registry and is not a field on Haxe's
+	 * standard `Window` type, so this one expression is an intentional target-boundary escape hatch.
+	 * `Object.assign` returns the same merged object that is stored globally; passing that returned
+	 * map to LiveSocket is essential because stock LiveReact installs `ReactHook` before this Haxe
+	 * module is loaded.
+	 */
+	static function publishHooks(hooks:HookMap):HookMap {
+		return cast js.Syntax.code("window.Hooks = Object.assign(window.Hooks || {}, {0})", hooks);
+	}
+
 	public static function main() {
 		Theme.applyStoredOrDefault();
 
-		var hooks = buildHooks();
-
-		// Publish hooks for phoenix_app.js to pick up
-		js.Syntax.code("window.Hooks = Object.assign(window.Hooks || {}, {0})", hooks);
+		var hooks = publishHooks(buildHooks());
 
 		// Boot a minimal typed Phoenix Channel client to validate cross-runtime channel APIs.
 		// This is independent of LiveView boot ownership (assets/js vs Haxe/Genes).
@@ -90,7 +100,7 @@ class Boot {
 		//
 		// Bootstrapping LiveView is a side-effectful “pick one owner” responsibility, so the todo-app
 		// supports two mutually-exclusive owners:
-		// 1) JS bootstrap (no flag): `assets/js/phoenix_app.js` does the canonical Phoenix bootstrap
+		// 1) JS bootstrap (no flag): `assets/js/app.js` does the canonical Phoenix bootstrap
 		//    (`new LiveSocket(...).connect()`), and this Haxe/Genes bundle only publishes hooks onto
 		//    `window.Hooks`.
 		// 2) Haxe bootstrap (with `-D todoapp_hx_live_socket_bootstrap`): this bundle also runs the
@@ -99,7 +109,7 @@ class Boot {
 		// This repo defaults to (2) via `build-client.hxml`. Remove the define there if you want to
 		// switch back to (1).
 		//
-		// `assets/js/phoenix_app.js` still keeps a runtime guard to avoid double-connect if both are present.
+		// `assets/js/app.js` still keeps a runtime guard to avoid double-connect if both are present.
 		connectLiveView(hooks);
 		#end
 	}

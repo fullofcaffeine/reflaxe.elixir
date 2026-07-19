@@ -68,6 +68,48 @@ npx lix download
 The `www.github.com` host is intentional: it keeps the release ZIP on Lix's generic
 immutable-archive path instead of treating the URL as a source repository dependency.
 
+### Why Lix And GitHub Releases
+
+Reflaxe.Elixir uses **Lix as the project dependency manager** instead of asking users to install
+the compiler globally from the Haxelib registry. The primary application install is a versioned,
+Reflaxe-built ZIP from GitHub Releases:
+
+```text
+versioned GitHub Release ZIP
+        ↓  npx lix install <immutable URL>
+haxe_libraries/reflaxe.elixir.hxml
+        ↓  npx lix download
+project-local, reproducible compiler input
+```
+
+This is a better fit for this project because:
+
+- `haxe_libraries/*.hxml` is committed, so dependency changes are ordinary reviewed Git changes;
+- a project can pin a release archive, Git tag, or exact commit instead of following global state;
+- different projects can use different Haxe/compiler/library versions on the same machine;
+- `npx lix download` reconstructs the checked-in dependency state and reuses Lix's local cache;
+- unreleased fixes can be consumed from an exact pushed Git SHA without publishing an unrelated
+  registry release.
+
+For example, PhoenixHX browser builds pin Genes to one fetchable commit:
+
+```hxml
+# @install: lix --silent download "gh://github.com/fullofcaffeine/genes-ts#<exact-sha>" into genes-ts/<version>/github/<exact-sha>
+```
+
+Lix is not a new library format and does not make Haxelib incompatible. It can consume Haxelib
+packages, GitHub/GitLab repositories, and immutable HTTP archives. Reflaxe.Elixir's GitHub release
+asset is deliberately a built Haxelib-style package because that is the correct flattened compiler
+layout. We continue to test Haxelib package installation, but GitHub Releases plus Lix are the
+recommended distribution path for this project. Some third-party dependencies may still come from
+Haxelib.org through Lix; applications do not need to install Reflaxe.Elixir itself from the Haxelib
+server.
+
+See the [Lix project documentation](https://github.com/lix-pm/lix#readme) for its scoped dependency
+model and supported source schemes, and
+[Source Checkout vs Release Package Layout](SOURCE_VS_PACKAGE_LAYOUT.md) for why this compiler needs
+a built release artifact rather than a raw source archive.
+
 Continue with the [Quickstart](../06-guides/QUICKSTART.md),
 [Phoenix New App](../06-guides/PHOENIX_NEW_APP.md), or
 [Gradual Adoption](../06-guides/PHOENIX_GRADUAL_ADOPTION.md) guide.
@@ -140,7 +182,7 @@ See `docs/04-api-reference/SOURCE_MAPPING.md` for the current status and next st
 
 ## Understanding the Setup
 
-### Why lix Instead of Global Haxe?
+### Why Lix Instead Of Global Haxe And Global Haxelib State?
 
 **❌ Traditional Haxe Installation Problems:**
 - Global Haxe versions cause "works on my machine" issues
@@ -151,7 +193,7 @@ See `docs/04-api-reference/SOURCE_MAPPING.md` for the current status and next st
 **✅ lix Package Manager Benefits:**
 - **Project-specific Haxe versions** defined in `.haxerc`
 - **Locked dependency versions** in `haxe_libraries/`
-- **GitHub + haxelib sources** for latest libraries
+- **Exact GitHub commits/releases plus pinned Haxelib sources** when appropriate
 - **Zero global conflicts** between projects
 
 ### Key Files Created by Setup

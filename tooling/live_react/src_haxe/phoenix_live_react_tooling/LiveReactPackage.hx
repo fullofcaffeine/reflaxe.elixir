@@ -2,6 +2,7 @@ package phoenix_live_react_tooling;
 
 import elixir.ElixirException;
 import elixir.ElixirMap;
+import elixir.ElixirString;
 import elixir.Enum;
 import elixir.File;
 import elixir.Jason;
@@ -18,7 +19,8 @@ import phoenix_live_react_tooling.LiveReactTypes.LiveReactTopology;
 
 private typedef ManagedPackageValue = {
 	path:Array<String>,
-	expected:Term
+	expected:Term,
+	acceptedExisting:Array<Term>
 }
 
 private typedef ApplyAccumulator = {
@@ -51,7 +53,7 @@ class LiveReactPackage {
 
 		var existingOwned = existingManifest == null ? MapSet.new_() : MapSet.fromValues(manifestPackageKeys(existingManifest));
 		var initial:ApplyAccumulator = {json: value, owned: existingOwned};
-		var accumulated = Enum.reduce(managedValues(dependency.npmReference), initial,
+		var accumulated = Enum.reduce(managedValues(topology, dependency.npmReference), initial,
 			function(spec:ManagedPackageValue, state:ApplyAccumulator):ApplyAccumulator {
 				var dotted = Enum.join(spec.path, ".");
 				var fetched = fetchJsonPath(state.json, spec.path, 0);
@@ -60,6 +62,8 @@ class LiveReactPackage {
 					return {json: putJsonPath(state.json, spec.path, 0, spec.expected), owned: MapSet.put(state.owned, dotted)};
 				var actual = Kernel.elem(fetched, 1);
 				if (actual == spec.expected)
+					return state;
+				if (!MapSet.member(state.owned, dotted) && Enum.member(spec.acceptedExisting, actual))
 					return state;
 				return Kernel.raiseValue(topology.packageJson
 					+ " "
@@ -85,24 +89,25 @@ class LiveReactPackage {
 		var handUsage = handOwnedBrowserPackages(topology);
 		var npmReference:String = ElixirMap.fetchBangTerm(manifest, "npmReference");
 		var initial:RemoveAccumulator = {json: value, retained: []};
-		var accumulated = Enum.reduce(managedValues(npmReference), initial, function(spec:ManagedPackageValue, state:RemoveAccumulator):RemoveAccumulator {
-			var dotted = Enum.join(spec.path, ".");
-			if (!MapSet.member(owned, dotted))
-				return state;
-			var fetched = fetchJsonPath(state.json, spec.path, 0);
-			var fetchedTag = tag(fetched);
-			if (fetchedTag == ERROR)
-				return state;
-			var actual = Kernel.elem(fetched, 1);
-			if (actual != spec.expected)
-				return Kernel.raiseValue("cannot remove package.json " + dotted + ": owned value drifted to " + Kernel.inspect(actual)
-					+ ". No writes occurred.");
-			var packageName = spec.path[spec.path.length - 1];
-			return MapSet.member(handUsage, packageName) ? {
-				json: state.json,
-				retained: Enum.concatTwo([dotted], state.retained)
-			} : {json: deleteJsonPath(state.json, spec.path, 0), retained: state.retained};
-		});
+		var accumulated = Enum.reduce(managedValues(topology, npmReference), initial,
+			function(spec:ManagedPackageValue, state:RemoveAccumulator):RemoveAccumulator {
+				var dotted = Enum.join(spec.path, ".");
+				if (!MapSet.member(owned, dotted))
+					return state;
+				var fetched = fetchJsonPath(state.json, spec.path, 0);
+				var fetchedTag = tag(fetched);
+				if (fetchedTag == ERROR)
+					return state;
+				var actual = Kernel.elem(fetched, 1);
+				if (actual != spec.expected)
+					return Kernel.raiseValue("cannot remove package.json " + dotted + ": owned value drifted to " + Kernel.inspect(actual)
+						+ ". No writes occurred.");
+				var packageName = spec.path[spec.path.length - 1];
+				return MapSet.member(handUsage, packageName) ? {
+					json: state.json,
+					retained: Enum.concatTwo([dotted], state.retained)
+				} : {json: deleteJsonPath(state.json, spec.path, 0), retained: state.retained};
+			});
 		var options:KeywordList<Term> = [{_0: PRETTY, _1: true}];
 		return {
 			content: Enum.join([Jason.encodeStrictWithKeywordOptions(accumulated.json, options), ""], "\n"),
@@ -110,21 +115,48 @@ class LiveReactPackage {
 		};
 	}
 
-	static function managedValues(npmReference:String):Array<ManagedPackageValue> {
+	static function managedValues(topology:LiveReactTopology, npmReference:String):Array<ManagedPackageValue> {
 		return [
-			{path: ["private"], expected: true},
-			{path: ["type"], expected: "module"},
-			{path: ["scripts", "assets:dev"], expected: "vite --host 127.0.0.1 --port 5173 --strictPort --logLevel warn"},
-			{path: ["scripts", "assets:build"], expected: "vite build"},
-			{path: ["dependencies", "live_react"], expected: npmReference},
-			{path: ["dependencies", "phoenix"], expected: "1.7.24"},
-			{path: ["dependencies", "phoenix_html"], expected: "4.3.0"},
-			{path: ["dependencies", "phoenix_live_view"], expected: "0.20.17"},
-			{path: ["dependencies", "react"], expected: "19.1.0"},
-			{path: ["dependencies", "react-dom"], expected: "19.1.0"},
-			{path: ["devDependencies", "@vitejs/plugin-react"], expected: "4.5.2"},
-			{path: ["devDependencies", "vite"], expected: "7.2.7"}
+			{path: ["private"], expected: true, acceptedExisting: []},
+			{path: ["type"], expected: "module", acceptedExisting: []},
+			{
+				path: ["scripts", "assets:dev"],
+				expected: "vite --host 127.0.0.1 --port 5173 --strictPort --logLevel warn",
+				acceptedExisting: []
+			},
+			{path: ["scripts", "assets:build"], expected: "vite build", acceptedExisting: []},
+			{path: ["dependencies", "live_react"], expected: npmReference, acceptedExisting: []},
+			{
+				path: ["dependencies", "phoenix"],
+				expected: "1.7.24",
+				acceptedExisting: [mixCheckoutReference(topology, "phoenix")]
+			},
+			{
+				path: ["dependencies", "phoenix_html"],
+				expected: "4.3.0",
+				acceptedExisting: [mixCheckoutReference(topology, "phoenix_html")]
+			},
+			{
+				path: ["dependencies", "phoenix_live_view"],
+				expected: "0.20.17",
+				acceptedExisting: [mixCheckoutReference(topology, "phoenix_live_view")]
+			},
+			{path: ["dependencies", "react"], expected: "19.1.0", acceptedExisting: []},
+			{path: ["dependencies", "react-dom"], expected: "19.1.0", acceptedExisting: []},
+			{path: ["devDependencies", "@vitejs/plugin-react"], expected: "4.5.2", acceptedExisting: []},
+			{path: ["devDependencies", "vite"], expected: "7.2.7", acceptedExisting: []}
 		];
+	}
+
+	/**
+	 * Preserve the exact project-local npm checkout used by standard Phoenix assets.
+	 * `Path.relative_to/2` deliberately refuses to synthesize parent segments, so the
+	 * package-root depth is converted to `..` segments explicitly.
+	 */
+	static function mixCheckoutReference(topology:LiveReactTopology, packageName:String):String {
+		var parents = topology.packageRootRelative == "." ? [] : Enum.map(Path.split(topology.packageRootRelative), function(_:String):String return "..");
+		var relative = Path.join(Enum.concatTwo(parents, ["deps", packageName]));
+		return "file:" + ElixirString.replace(relative, "\\", "/");
 	}
 
 	static function fetchJsonPath(json:Term, path:Array<String>, index:Int):Term {

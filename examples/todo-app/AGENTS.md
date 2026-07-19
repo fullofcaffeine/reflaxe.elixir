@@ -118,6 +118,7 @@ Source files under `src_haxe/test/**`:
 - `src_haxe/test/web/UsersApiTest.hx`
 - `src_haxe/test/web/ProfileLiveTest.hx`
 - `src_haxe/test/web/LiveEventProtocolDispatchTest.hx`
+- `src_haxe/test/web/TodoInsightsLiveReactTest.hx`
 - `src_haxe/test/web/TenancyTest.hx`
 - `src_haxe/test/live/TodoLiveDueDateTest.hx`
 
@@ -161,6 +162,7 @@ Execution wiring:
 
 - `e2e/smoke/basic.spec.ts`
 - `e2e/smoke/search.spec.ts`
+- `e2e/smoke/live_react_insights.spec.ts`
 - `e2e/smoke/typed-channel.spec.ts`
 - `e2e/smoke/optimistic-toggle.spec.ts`
 - `e2e/smoke/presence_collab.spec.ts`
@@ -386,9 +388,9 @@ We compile the server (Haxe→Elixir) via a Mix compiler and the client (Haxe→
   - Uses `build-server.hxml` as source of truth to generate idiomatic Elixir under `lib/` (`build.hxml` is a thin alias)
 
 - Client compilation: handled by assets watchers/aliases
-  - Dev: `haxe` watcher runs `haxe build-client.hxml --wait 6001` and esbuild bundles `assets/js/phoenix_app.js` (see config/dev.exs)
-  - Build: `mix assets.build` (Haxe client + tailwind + esbuild)
-  - Deploy: `mix assets.deploy` (Haxe client + tailwind + esbuild + digest)
+  - Dev: the Haxe watcher runs `haxe build-client.hxml --wait 6001`, while Vite serves and bundles `assets/js/app.js` (see `config/dev.exs`).
+  - Build: `mix assets.build` (Haxe/Genes source generation + Tailwind + Vite).
+  - Deploy: `mix assets.deploy` (Haxe/Genes + Tailwind + Vite + Phoenix digest).
 
 Quick commands
 - One‑liner with watchers for humans/manual sessions: `mix dev`
@@ -399,24 +401,26 @@ Quick commands
 CI suggestions
 - `mix compile --force && mix assets.build`
 
-## 🔌 Phoenix JS Bootstrap (phoenix_app.js)
+## 🔌 Phoenix/Vite Host Boundary (`assets/js/app.js`)
 
-We intentionally keep the LiveView bootstrap as a tiny, hand‑written JS entry and generate client logic (Hooks, utils, shared DTOs) from Haxe.
+`assets/js/app.js` is a deliberately small native JavaScript host boundary. Application behavior,
+Phoenix hooks, shared contracts, and the default LiveSocket bootstrap remain Haxe-authored; Vite
+uses this entry to compose those generated modules with stock LiveReact and Phoenix packages.
 
-- File: `assets/js/phoenix_app.js` (bundled to `priv/static/assets/phoenix_app.js` via esbuild)
+- File: `assets/js/app.js` (bundled to `priv/static/assets/app.js` by Vite).
 - Responsibilities:
   - Import `phoenix_html`, `phoenix`, `phoenix_live_view`.
-  - Read CSRF meta token and pass it to `LiveSocket`.
-  - Pull Hooks from `window.Hooks` (populated by the Haxe bundle).
-  - Create/connect `LiveSocket` unless already bootstrapped by Haxe.
-  - Expose `window.liveSocket` for debugging.
+  - Install stock LiveReact's generated `ReactHook` before loading the Haxe client.
+  - Dynamically load the Haxe/Genes client after integrations have published their hooks.
+  - Provide a conventional JavaScript LiveSocket fallback only when Haxe did not create one.
 - Haxe integration:
-  - Haxe client compiles via Genes to `assets/js/_hx_app_tmp.js` (intermediate entry) plus modules under `assets/js/client/**` and `assets/js/genes/**`, and publishes `window.Hooks`.
-  - In dev, the Haxe watcher promotes `assets/js/_hx_app_tmp.js` to the stable `assets/js/hx_app.js` path atomically (see `config/dev.exs`) so esbuild `--watch` never sees an imported module disappear. `assets/js/app.js` imports `./hx_app.js`; `phoenix_app.js` imports `./app.js` to register Hooks.
+  - Genes emits `assets/js/_hx_app_tmp.js` plus modules under `assets/js/client/**` and `assets/js/genes/**`.
+  - The watcher promotes the temporary entry atomically to `assets/js/hx_app.js`, so Vite never observes a missing imported module during a rebuild.
+  - `client.Boot` merges its typed hooks into the already-published integration hooks and passes that same merged map to the Haxe-created LiveSocket. Passing only the Haxe-local map would silently omit `ReactHook` and prevent React islands from mounting.
 - Rationale (1.0 scope):
-  - Matches Phoenix’s idiomatic setup and minimizes friction on upgrades.
-  - Keeps the bootstrap minimal while concentrating typed logic in Haxe.
-  - Default in this repo: `build-client.hxml` enables `-D todoapp_hx_live_socket_bootstrap` so the typed Haxe client can connect LiveSocket; `phoenix_app.js` keeps a guard to prevent double-connect.
+  - Matches Phoenix and Vite conventions while keeping target-native orchestration small.
+  - Concentrates meaningful logic in Haxe without pretending that npm module loading is not a JavaScript boundary.
+  - `build-client.hxml` enables `-D todoapp_hx_live_socket_bootstrap`, so typed Haxe owns the normal LiveSocket path; `app.js` guards its fallback with `window.liveSocket` to prevent a second connection.
 
 Watchers
 - Dev watcher runs the Haxe client watcher when available:
@@ -430,7 +434,7 @@ CSRF meta
 Constraints (project-wide)
 - No `-D analyzer-optimize` in any HXML; it destroys functional patterns for Elixir and JS
 - No Dynamic on public surfaces; JS hooks are typed (`typedef Hooks`) and use js interop only at the boundary
-- Phoenix idioms: LiveSocket bootstrap in `assets/js/phoenix_app.js` with `hooks` + CSRF meta, plus a typed Haxe bootstrap (default via `-D todoapp_hx_live_socket_bootstrap`) guarded by `window.liveSocket`
+- Phoenix idioms: a CSRF-aware Haxe LiveSocket bootstrap by default, a small `assets/js/app.js` fallback guarded by `window.liveSocket`, and one merged hook registry shared by Phoenix and stock LiveReact.
 
 #### Before (Broken):
 ```haxe
@@ -1087,7 +1091,7 @@ class TodoTest {
 📦 **Only if technically required**:
 - **mix.exs** - Build tool configuration (could potentially be generated)
 - **config/*.exs** - Environment configs (could be templated from Haxe)
-- **Assets pipeline** - package.json, esbuild (JavaScript tooling)
+- **Assets pipeline** - package.json, Vite, Tailwind, and npm dependency metadata (native JavaScript/CSS tooling boundaries)
 
 ### The Haxe-First Development Flow
 1. **Start with Haxe** - Always implement in Haxe first

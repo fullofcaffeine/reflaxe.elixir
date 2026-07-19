@@ -11,6 +11,7 @@ import elixir.Jason;
 import elixir.Keyword;
 import elixir.Kernel;
 import elixir.Path;
+import elixir.Regex;
 import elixir.types.Atom;
 import elixir.types.KeywordList;
 import elixir.types.NativeException;
@@ -22,6 +23,7 @@ import phoenix_live_react_tooling.LiveReactTypes.LiveReactDependency;
 import phoenix_live_react_tooling.LiveReactTypes.LiveReactLifecyclePlan;
 import phoenix_live_react_tooling.LiveReactTypes.LiveReactManifestData;
 import phoenix_live_react_tooling.LiveReactTypes.LiveReactPackageRoot;
+import phoenix_live_react_tooling.LiveReactTypes.LiveReactRootLayout;
 import phoenix_live_react_tooling.LiveReactTypes.LiveReactSources;
 import phoenix_live_react_tooling.LiveReactTypes.LiveReactTopology;
 import phoenix_live_react_tooling.PatchTypes.PatchFileState;
@@ -48,6 +50,8 @@ class LiveReactLifecycle {
 	static inline final ROOT_LAYOUT:Atom = "root_layout";
 	static inline final GENES:Atom = "genes";
 	static inline final PLAIN_JS:Atom = "plain_js";
+	static inline final HEEX_LAYOUT:Atom = "heex";
+	static inline final HAXE_LAYOUT:Atom = "haxe";
 	static inline final PACKAGE_ROOT:Atom = "package_root";
 	static inline final CLIENT_MODE:Atom = "client_mode";
 	static inline final YES:Atom = "yes";
@@ -209,6 +213,7 @@ class LiveReactLifecycle {
 			"schema",
 			"generatedBy",
 			"assetMode",
+			"appName",
 			"packageRoot",
 			"clientMode",
 			"mixDependency",
@@ -233,12 +238,14 @@ class LiveReactLifecycle {
 		var clientMode = ElixirMap.get(manifest, "clientMode");
 		if (ElixirMap.get(manifest, "assetMode") != "vite"
 			|| (clientMode != "genes" && clientMode != "plain-js")
+			|| !Kernel.isBinary(ElixirMap.get(manifest, "appName"))
 			|| !Kernel.isBinary(ElixirMap.get(manifest, "packageRoot"))
 			|| !Kernel.isMap(ElixirMap.get(manifest, "mixDependency"))
 			|| !Kernel.isBinary(ElixirMap.get(manifest, "npmReference"))
 			|| !Kernel.isMap(ElixirMap.get(manifest, "runtimePolicy"))
 			|| !Kernel.isList(ElixirMap.get(manifest, "components")))
 			return Kernel.raiseValue(path + " has invalid integration metadata. No writes occurred.");
+		LiveReactRegistry.validateAppName(ElixirMap.getTyped(manifest, "appName"));
 		LiveReactRegistry.componentsFromManifest(ElixirMap.get(manifest, "components"));
 		return manifest;
 	}
@@ -257,7 +264,7 @@ class LiveReactLifecycle {
 		var configPatched = LiveReactSourcePatcher.patchConfigExs(source.configExs, restores);
 		var devPatched = LiveReactSourcePatcher.patchDevExs(source.devExs, topology, configPatched._1);
 		var appPatched = LiveReactSourcePatcher.patchAppJs(source.appJs, devPatched._1);
-		var layoutPatched = LiveReactSourcePatcher.patchRootLayout(source.rootLayout, appPatched._1);
+		var layoutPatched = LiveReactSourcePatcher.patchRootLayout(source.rootLayout, topology, appPatched._1);
 		var managedFiles = managedFilesFor(topology);
 		var manifestData:LiveReactManifestData = {
 			topology: topology,
@@ -282,6 +289,8 @@ class LiveReactLifecycle {
 		plan = planManagedFile(plan, topology.viteConfig, IntegrationCore.renderViteConfig(topology.packageRootRelative));
 		plan = planManagedFile(plan, topology.hooksFile, IntegrationCore.renderHooksFile());
 		plan = planManagedFile(plan, topology.registryFile, IntegrationCore.renderRegistryFile(components));
+		if (topology.reloadWrapper != null)
+			plan = planManagedFile(plan, topology.reloadWrapper, LiveReactRegistry.renderReloadWrapper(topology.appName));
 		plan = ProjectPatch.writeFileBang(plan, Path.joinTwo(root, IntegrationCore.MANIFEST_FILENAME), manifest, [{_0: MANIFEST_QUESTION, _1: true}]);
 		return {
 			plan: plan,
@@ -305,7 +314,7 @@ class LiveReactLifecycle {
 		var configExs = LiveReactSourcePatcher.removeConfigWiring(source.configExs, restores);
 		var devExs = LiveReactSourcePatcher.removeDevWiring(source.devExs, topology, restores);
 		var appJs = LiveReactSourcePatcher.removeAppJsWiring(source.appJs, restores);
-		var rootLayout = LiveReactSourcePatcher.removeRootLayoutWiring(source.rootLayout, restores);
+		var rootLayout = LiveReactSourcePatcher.removeRootLayoutWiring(source.rootLayout, topology, restores);
 		var plan = ProjectPatch.newBang(root, [{_0: RECOVER, _1: false}]);
 		plan = ProjectPatch.writeFileBang(plan, Path.joinTwo(root, "mix.exs"), mixExs);
 		plan = LiveReactDependencyResolver.removeOwnedLock(plan, root, manifest, retainLiveReact);
@@ -517,6 +526,7 @@ class LiveReactLifecycle {
 		LiveReactHost.requireRegularFile(Path.join([root, "assets", "js", "app.js"]), "Phoenix JavaScript entry");
 		var packageRoot = discoverPackageRoot(root, Keyword.get(opts, PACKAGE_ROOT, null));
 		var rootLayout = discoverRootLayout(root);
+		var appName = discoverAppName(existingManifest, Keyword.get(opts, APP_NAME, null));
 		var detectedMode = detectClientMode(root);
 		var requestedMode:Term = Keyword.get(opts, CLIENT_MODE, null);
 		var clientMode:Atom;
@@ -549,15 +559,32 @@ class LiveReactLifecycle {
 		}
 		return {
 			root: root,
+			appName: appName,
 			packageRoot: packageRoot.absolute,
 			packageRootRelative: packageRoot.relative,
 			packageJson: Path.joinTwo(packageRoot.absolute, "package.json"),
 			viteConfig: Path.joinTwo(packageRoot.absolute, "vite.config.mjs"),
 			hooksFile: Path.join([root, "assets", "js", "live-react-hooks.js"]),
 			registryFile: Path.join([root, "assets", "react-components", "registry.generated.ts"]),
-			rootLayout: rootLayout,
+			rootLayout: rootLayout.path,
+			rootLayoutKind: rootLayout.kind,
+			reloadWrapper: rootLayout.kind == HAXE_LAYOUT ? Path.joinTwo(root, LiveReactRegistry.reloadWrapperRelativePath(appName)) : null,
+			reloadComponentModule: rootLayout.kind == HAXE_LAYOUT ? LiveReactRegistry.reloadComponentModule(appName) : null,
 			clientMode: clientMode
 		};
+	}
+
+	static function discoverAppName(existingManifest:Term, requested:Term):String {
+		var owned = existingManifest == null ? null : ElixirMap.get(existingManifest, "appName");
+		var value = requested == null ? owned : requested;
+		if (!Kernel.isBinary(value))
+			return Kernel.raiseValue("could not determine the Mix application name required by LiveReact project ownership. No writes occurred.");
+		var appName = Kernel.toString(value);
+		LiveReactRegistry.validateAppName(appName);
+		if (owned != null && owned != appName)
+			return Kernel.raiseValue("LiveReact app-name drift: the manifest owns " + Kernel.inspect(owned) + ", but the loaded Mix project reports "
+				+ Kernel.inspect(appName) + ". No writes occurred.");
+		return appName;
 	}
 
 	static function discoverPackageRoot(root:String, explicit:Term):LiveReactPackageRoot {
@@ -618,7 +645,7 @@ class LiveReactLifecycle {
 		return relative == "." || (relativeType == RELATIVE_PATH && !ElixirString.startsWith(relative, ".."));
 	}
 
-	static function discoverRootLayout(root:String):String {
+	static function discoverRootLayout(root:String):LiveReactRootLayout {
 		var patterns = [
 			Path.join([root, "lib", "*_web", "components", "layouts", "root.html.heex"]),
 			Path.join([root, "lib", "*_web", "templates", "layout", "root.html.heex"]),
@@ -626,12 +653,26 @@ class LiveReactLifecycle {
 		];
 		var matches = Enum.uniq(Enum.flatMap(patterns, function(pattern:String):Array<String> return Path.wildcard(pattern)));
 		if (matches.length == 1)
-			return matches[0];
-		if (matches.length == 0)
+			return {path: matches[0], kind: HEEX_LAYOUT};
+		if (matches.length > 1)
+			return Kernel.raiseValue("multiple Phoenix root layouts found: "
+				+ Enum.mapJoin(matches, ", ", function(path:String):String return Path.relativeTo(path, root))
+				+ ". No writes occurred.");
+
+		var haxeCandidates = Path.wildcard(Path.join([root, "src_haxe", "**", "Layouts.hx"]));
+		var haxeMatches = Enum.filter(haxeCandidates, function(path:String):Bool {
+			var source = File.readBang(path);
+			return Regex.match(Regex.compileBang("(?m)^\\s*@:component\\b"), source)
+				&& Regex.match(Regex.compileBang("\\bfunction\\s+root\\s*\\("), source)
+				&& (ElixirString.contains(source, "/assets/app.js") || ElixirString.contains(source, "/assets/phoenix_app.js"));
+		});
+		if (haxeMatches.length == 1)
+			return {path: haxeMatches[0], kind: HAXE_LAYOUT};
+		if (haxeMatches.length == 0)
 			return
-				Kernel.raiseValue("could not find one canonical Phoenix root layout. No writes occurred. Expected lib/*_web/components/layouts/root.html.heex or the legacy template path.");
-		return Kernel.raiseValue("multiple Phoenix root layouts found: "
-			+ Enum.mapJoin(matches, ", ", function(path:String):String return Path.relativeTo(path, root))
+				Kernel.raiseValue("could not find one canonical Phoenix root layout. No writes occurred. Expected a standard root.html.heex/root.html.leex or one Haxe-authored src_haxe/**/Layouts.hx with @:component root/1 and a canonical app script.");
+		return Kernel.raiseValue("multiple Haxe-authored Phoenix root layouts found: "
+			+ Enum.mapJoin(haxeMatches, ", ", function(path:String):String return Path.relativeTo(path, root))
 			+ ". No writes occurred.");
 	}
 
@@ -665,14 +706,17 @@ class LiveReactLifecycle {
 	}
 
 	static function managedFilesFor(topology:LiveReactTopology):Array<String> {
-		return Enum.sort(Enum.map([topology.viteConfig, topology.hooksFile, topology.registryFile],
-			function(path:String):String return Path.relativeTo(path, topology.root)));
+		var files = [topology.viteConfig, topology.hooksFile, topology.registryFile];
+		if (topology.reloadWrapper != null)
+			files = Enum.concatTwo(files, [topology.reloadWrapper]);
+		return Enum.sort(Enum.map(files, function(path:String):String return Path.relativeTo(path, topology.root)));
 	}
 
 	static function legacyManagedFilesFor(topology:LiveReactTopology):Array<String> {
-		return Enum.sort(Enum.concatTwo(Enum.map([topology.viteConfig, topology.hooksFile],
-			function(path:String):String return Path.relativeTo(path, topology.root)),
-			[LEGACY_REGISTRY_FILE]));
+		var files = [topology.viteConfig, topology.hooksFile];
+		if (topology.reloadWrapper != null)
+			files = Enum.concatTwo(files, [topology.reloadWrapper]);
+		return Enum.sort(Enum.concatTwo(Enum.map(files, function(path:String):String return Path.relativeTo(path, topology.root)), [LEGACY_REGISTRY_FILE]));
 	}
 
 	static function renderManifest(data:LiveReactManifestData):String {
@@ -688,6 +732,7 @@ class LiveReactLifecycle {
 			{_0: "schema", _1: IntegrationCore.SCHEMA},
 			{_0: "generatedBy", _1: IntegrationCore.GENERATED_BY},
 			{_0: "assetMode", _1: "vite"},
+			{_0: "appName", _1: data.topology.appName},
 			{_0: "packageRoot", _1: data.topology.packageRootRelative},
 			{_0: "clientMode", _1: IntegrationCore.clientModeLabel(data.topology.clientMode)},
 			{_0: "mixDependency", _1: data.dependency.identity},

@@ -37,6 +37,7 @@ defmodule Mix.Tasks.Haxe.Phoenix.LiveReact do
     mode = parse_mode(options)
     root = File.cwd!()
     project_config = Mix.Project.config()
+    app_name = Keyword.get(project_config, :app, nil)
     mix_dependencies = Keyword.get(project_config, :deps, [])
     package_root = Keyword.get(options, :package_root, nil)
     confirmed = Keyword.get(options, :yes, false) or mode == :check
@@ -45,6 +46,12 @@ defmodule Mix.Tasks.Haxe.Phoenix.LiveReact do
     report = fn message -> Mix.shell().info(message) end
 
     common = [
+      {:app_name,
+       if Kernel.is_nil(app_name) do
+         nil
+       else
+         Kernel.to_string(app_name)
+       end},
       {:package_root, package_root},
       {:mix_dependencies, mix_dependencies},
       {:yes, confirmed},

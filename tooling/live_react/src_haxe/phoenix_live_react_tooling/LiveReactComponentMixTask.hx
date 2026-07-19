@@ -19,6 +19,7 @@ import elixir.types.Term;
  *     mix haxe.gen.live_react PreferenceStudio
  *     mix haxe.gen.live_react PreferenceStudio --existing
  *     mix haxe.gen.live_react PreferenceStudio --remove
+ *     mix haxe.gen.live_react PreferenceStudio --package-root assets
  *
  * The default creates one strict Haxe wrapper, one trusted TSX boundary, and
  * one inner TSX component. Those files become application-owned immediately;
@@ -53,6 +54,7 @@ class LiveReactComponentMixTask {
 		var useExisting = Keyword.get(options, "existing", false);
 		var modulePath:Null<String> = Keyword.get(options, "module", null);
 		var exportName:Null<String> = Keyword.get(options, "export", null);
+		var packageRoot:Null<String> = Keyword.get(options, "package_root", null);
 		if (remove && (useExisting || modulePath != null || exportName != null))
 			Kernel.raiseValue("--remove cannot be combined with --existing, --module, or --export. No writes occurred.");
 		if (!remove && !useExisting && (modulePath != null || exportName != null))
@@ -67,6 +69,7 @@ class LiveReactComponentMixTask {
 			{_0: "app_name", _1: appName},
 			{_0: "module_path", _1: modulePath},
 			{_0: "export_name", _1: exportName},
+			{_0: "package_root", _1: packageRoot},
 			{_0: "existing", _1: useExisting},
 			{_0: "yes", _1: confirmed},
 			{_0: "confirm", _1: confirm},
@@ -84,6 +87,7 @@ class LiveReactComponentMixTask {
 			{_0: "existing", _1: "boolean"},
 			{_0: "module", _1: "string"},
 			{_0: "export", _1: "string"},
+			{_0: "package_root", _1: "string"},
 			{_0: "yes", _1: "boolean"}
 		];
 		return [{_0: "strict", _1: switches}];

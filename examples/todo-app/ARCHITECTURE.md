@@ -1,308 +1,238 @@
-# 🏗️ Todo App Architecture & Development Guide
+# Todo App Architecture
 
-## Overview
+This application is a Haxe-first Phoenix LiveView project. Application modules,
+LiveViews, components, event contracts, and ExUnit tests are authored in Haxe.
+Reflaxe.Elixir generates ordinary Elixir and HEEx. Browser code is also authored
+in Haxe and compiled by Genes either to classic ESM JavaScript or to strict
+TypeScript/TSX.
 
-This todo-app is a **100% Haxe-powered Phoenix LiveView application** that compiles to both Elixir (backend) and JavaScript (frontend). Every `.ex` file in `lib/` is generated from Haxe source - we write type-safe Haxe and get idiomatic Elixir.
+It is still a normal Phoenix project. Mix configuration, dependency manifests,
+the Vite host entry, and a few infrastructure files stay in their ecosystem's
+native format. Haxe-first means “use Haxe wherever it improves the application
+and compiler evidence,” not “hide Phoenix, Elixir, React, or JavaScript.”
 
-**Client build (JS)**
-- The client uses **Genes** to generate split ES modules from Haxe (`build-client.hxml`).
-- Output entry module: `assets/js/hx_app.js` (stable; promoted from `assets/js/_hx_app_tmp.js` in watch mode to avoid esbuild races).
+## Runtime ownership
 
-## 🎯 Core Philosophy
+| Concern | Owner | What this example adds |
+| --- | --- | --- |
+| Page state, navigation, forms, todo operations | Phoenix LiveView | Typed Haxe authoring and generated HEEx |
+| React mounting and LiveView bridge | stock LiveReact | Static registry and closed app boundary |
+| React rendering | stock React/ReactDOM | Haxe-authored component compiled by Genes |
+| Browser source compilation | Genes | Classic ESM and strict TSX jobs from one exact Lix pin |
+| JavaScript bundling | Vite | One asset graph for Phoenix, Genes, LiveReact, and React |
 
-**Write Once in Haxe, Deploy Everywhere**
-- All business logic in type-safe Haxe
-- Compiles to idiomatic Elixir for Phoenix
-- Compiles to optimized JavaScript for frontend
-- Zero manual Elixir code in the application layer
+PhoenixHX does not copy or replace the LiveReact hook, DOM protocol, renderer,
+or Vite plugin. The application depends on upstream `:live_react`, and npm
+consumes that same Mix checkout through a relative `file:` dependency.
 
-## 📁 Project Structure
+## Source layout
 
-```
+```text
 todo-app/
-├── src_haxe/              # 🎯 ALL SOURCE CODE LIVES HERE
-│   ├── TodoApp.hx        # Main application entry
-│   ├── TodoAppRouter.hx  # Phoenix router definition
-│   ├── server/           # Backend code (→ Elixir)
-│   │   ├── live/         # LiveView modules
-│   │   │   ├── TodoLive.hx
-│   │   │   └── UserLive.hx
-│   │   ├── schemas/      # Ecto schemas
-│   │   │   ├── Todo.hx
-│   │   │   └── User.hx
-│   │   ├── contexts/     # Business logic
-│   │   │   └── Todos.hx
-│   │   ├── layouts/      # Phoenix layouts
-│   │   │   ├── RootLayout.hx
-│   │   │   └── AppLayout.hx
-│   │   └── infrastructure/
-│   │       ├── Endpoint.hx
-│   │       ├── Repo.hx
-│   │       └── Telemetry.hx
-│   └── client/           # Frontend code (→ JavaScript)
-│       └── TodoApp.hx    # Client-side enhancements
-│
-├── lib/                  # ⚡ GENERATED ELIXIR CODE (DO NOT EDIT!)
-│   ├── todo_app_web/     # Phoenix web layer
-│   │   ├── router.ex     # Generated from TodoAppRouter.hx
-│   │   └── live/         # Generated LiveViews
-│   ├── todo_app/         # Business logic layer
-│   │   ├── schemas/      # Generated Ecto schemas
-│   │   └── contexts/     # Generated contexts
-│   └── [many .ex files]  # Generated Haxe stdlib, helpers
-│
-├── build-server.hxml     # Canonical server compilation (Haxe→Elixir)
-├── build.hxml            # Thin alias to build-server.hxml (compat)
-├── build-client.hxml     # Client compilation (Haxe→JavaScript)
-├── mix.exs               # Elixir project config (manual)
-└── config/               # Phoenix config (manual)
+├── src_haxe/
+│   ├── server/                 Haxe → Elixir/Phoenix
+│   ├── client/                 Haxe → classic Genes ESM
+│   └── test/                   Haxe → ExUnit
+├── src_react/                  Haxe → Genes TypeScript/TSX
+├── src_shared/                 Small target-neutral contracts
+├── assets/
+│   ├── js/app.js               Phoenix/Vite host boundary
+│   ├── js/live-react-hooks.js  Generated stock-LiveReact hook registration
+│   └── react-components/
+│       ├── registry.generated.ts
+│       └── generated/          Genes output; do not edit
+├── lib/                        Generated Elixir; do not edit
+├── test/generated/             Generated ExUnit; do not edit
+├── phoenixhx-live-react.json   Opt-in integration and static registry manifest
+├── build-server.hxml           Haxe → Elixir application build
+├── build-client.hxml           Classic ESM + strict TSX browser builds
+└── build-tests.hxml            Haxe → ExUnit build
 ```
 
-## 🔄 Compilation Flow
+`src_shared` is intentionally narrow. It holds data contracts and event
+protocols that genuinely belong on both sides. Importing the whole server tree
+into a browser or test build would couple unrelated code and make dead-code
+elimination less trustworthy.
 
-### How It Works
+## The two HXX paths
 
-```mermaid
-graph LR
-    A[Haxe Source] --> B[Reflaxe.Elixir Compiler]
-    B --> C[Generated Elixir Code]
-    C --> D[Phoenix Application]
-    
-    A --> E[Genes JS Generator]
-    E --> F[Client JavaScript]
-    F --> D
-```
+HXX gives both Haxe source trees a familiar inline-markup authoring style, but
+the compilers and target frameworks remain explicit.
 
-### Compilation Commands
+### 1. Server HXX becomes HEEx
 
-```bash
-# One-time compilation
-haxe build-server.hxml   # Compile server (Haxe→Elixir, source of truth)
-haxe build.hxml          # Same as build-server.hxml (alias)
-haxe build-client.hxml   # Compile client only (Haxe→JS via Genes)
+The server wrapper is authored in
+`src_haxe/server/components/TodoInsightsIsland.hx`:
 
-# Client output locations (Genes)
-# - Entry (stable): assets/js/hx_app.js
-# - Entry (intermediate, Haxe `-js` output): assets/js/_hx_app_tmp.js
-# - Modules: assets/js/client/** and assets/js/genes/**
-
-# Clean and rebuild
-rm -rf lib/*.ex lib/**/*.ex  # Remove all generated files
-haxe build-server.hxml   # Regenerate fresh
-```
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- **Haxe 4.3.7** - The supported source-language baseline
-- **Elixir 1.14+** - Runtime for backend
-- **Phoenix 1.7+** - Web framework
-- **PostgreSQL** - Database
-- **Node.js 22.14.0+** - For the supported JavaScript and repository tooling path
-
-### Initial Setup
-
-```bash
-# 1. Install Elixir dependencies
-mix deps.get
-
-# 2. Install JavaScript dependencies
-npm install
-
-# 3. Compile Haxe→Elixir (generates all .ex files)
-haxe build-server.hxml
-
-# 4. Setup database
-mix ecto.create
-mix ecto.migrate
-
-# 5. Compile assets
-npm run build
-
-# 6. Start Phoenix server
-mix phx.server
-```
-
-Visit http://localhost:4000 to see the app!
-
-### Development Workflow
-
-```bash
-# Recommended: one terminal (DB ensure + Phoenix with watchers)
-mix dev
-
-# Optional: keep server-side Haxe compilation hot in a second terminal
-mix haxe.watch
-```
-
-## ⚠️ Critical Rules
-
-### NEVER Edit Generated Files
-- **All `.ex` files in `lib/` are GENERATED**
-- Changes will be lost on next compilation
-- Always edit the `.hx` source in `src_haxe/`
-
-### When You See Compilation Errors
-- **DON'T patch the `.ex` files** - they're generated
-- **DO fix the Haxe compiler** at `/src/reflaxe/elixir/`
-- **DO fix the Haxe source** in `src_haxe/`
-
-### File Generation Issues (Current State)
-
-**Known Issues:**
-1. **Duplicate modules** - Some modules generate in multiple locations
-2. **Path casing** - Fixed but may have remnants
-
-**Recently Resolved:**
-- ✅ **Missing imports** - Phoenix.Component now properly imported for ~H sigil usage
-- ✅ **Variable substitution** - Lambda expressions now generate correct variable names
-- ✅ **Hardcoded app names** - Compiler now works with any Phoenix application, not just TodoApp
-
-**Note**: Previous PascalCase file generation issues have been resolved. Files now generate with proper snake_case names and directory structure.
-
-## 🤖 Using with LLMs (Claude, ChatGPT, etc.)
-
-### Key Context to Provide
-
-When asking an LLM for help, always mention:
-1. **This is a Haxe→Elixir compiled project**
-2. **All `.ex` files are generated, not hand-written**
-3. **Source code is in `src_haxe/` directory**
-4. **Using Reflaxe.Elixir compiler**
-
-### Example Prompt
-```
-I'm working on a Phoenix LiveView todo app where all Elixir code is 
-generated from Haxe source files. The source is in src_haxe/ and 
-compiles to lib/. When I compile, I get [error]. How should I fix 
-the Haxe source or compiler to generate correct Elixir?
-```
-
-## 🎯 Architecture Decisions
-
-### Why Haxe?
-- **Type Safety** - Catch errors at compile time
-- **Single Source** - One codebase for backend + frontend
-- **IDE Support** - Full autocomplete and refactoring
-- **Cross-platform** - Same business logic everywhere
-
-### Why Generated Code?
-- **No Manual Sync** - Haxe source is the single truth
-- **Framework Updates** - Regenerate for new Phoenix versions
-- **Type Guarantees** - Generated code matches types exactly
-
-### Framework Integration
-
-The app uses standard Phoenix patterns:
-- **LiveView** for real-time UI
-- **Ecto** for database
-- **PubSub** for broadcasting
-- **Channels** for WebSocket communication
-
-But all implemented in Haxe with annotations:
-- `@:liveview` → Phoenix.LiveView module
-- `@:schema` → Ecto.Schema module
-- `@:router` → Phoenix.Router module
-- `@:changeset` → Ecto.Changeset functions
-
-## 📊 Compilation Pipeline Details
-
-### Annotation Processing
 ```haxe
-@:liveview
-class TodoLive {
-    // Haxe source
+return <LiveReact.react
+  id=${assigns.id}
+  name="TodoInsights"
+  total=${assigns.total}
+  filter=${assigns.filter}
+  ssr=${false}
+/>;
+```
+
+Reflaxe.Elixir emits an ordinary Phoenix component call inside `~H`:
+
+```heex
+<LiveReact.react
+  id={@id}
+  name="TodoInsights"
+  total={@total}
+  filter={@filter}
+  ssr={false}
+/>
+```
+
+The app-local `StockLiveReact` extern gives strict HXX a closed prop contract.
+It describes the upstream module; it does not generate or wrap a new LiveReact
+runtime.
+
+### 2. Browser HXX becomes React TSX
+
+The inner component is authored in
+`src_react/todo_insights/TodoInsightsIsland.hx`:
+
+```haxe
+function TodoInsights(props:TodoInsightsProps):Element {
+  return <div data-testid="todo-insights" data-active-filter={props.filter}>
+    <button onClick={() -> props.onFilter(Completed)}>Done</button>
+  </div>;
 }
 ```
-↓ Compiles to ↓
-```elixir
-defmodule TodoAppWeb.TodoLive do
-  use TodoAppWeb, :live_view
-  # Generated Elixir
-end
+
+Genes emits typed TSX and the exposed `TodoInsightsBoundary` export. Vite then
+bundles it as normal React source. The generated static registry maps the fixed
+name `TodoInsights` to that export; request data cannot choose an arbitrary
+module.
+
+### 3. Stock LiveReact connects them
+
+```text
+Haxe server wrapper
+  → generated HEEx calling LiveReact.react
+  → LiveReact serializes props into its DOM protocol
+  → stock LiveReact hook finds TodoInsights in the static registry
+  → Haxe/Genes React boundary validates props and mounts the inner component
+  → typed callback pushes a normal LiveView event
+  → generated Haxe Live Event dispatcher updates LiveView state
 ```
 
-### File Placement
-- `TodoAppRouter.hx` → `lib/todo_app_web/router.ex`
-- `TodoLive.hx` → `lib/todo_app_web/live/todo_live.ex`
-- `Todo.hx` → `lib/todo_app/schemas/todo.ex`
-- `Todos.hx` → `lib/todo_app/todos.ex`
+Only serializable props and events cross that boundary. A Haxe type can be
+shared as a compile-time contract, but a BEAM process, socket, function, Ecto
+schema instance, or arbitrary server object does not become a browser value.
 
-### Standard Library
-The Haxe standard library types compile to Elixir:
-- `haxe.ds.Map` → `lib/haxe/ds/map.ex`
-- `haxe.io.Bytes` → `lib/haxe/io/bytes.ex`
-- Many helper modules for Haxe compatibility
+## Trusted boundary and fallback
 
-## 🔧 Troubleshooting
+Upstream LiveReact supplies bridge functions such as `pushEvent` to the trusted
+boundary component. The inner `TodoInsights` component does not receive that
+open bridge. It receives closed semantic props and one `onFilter` callback.
 
-### "Module not found" Errors
-- Check if the Haxe source compiled successfully
-- Verify file is in correct location (snake_case paths)
-- Remove duplicate modules from different paths
+The boundary:
 
-### "Function undefined" Errors  
-- Missing Phoenix imports in generated code
-- Compiler needs to add proper `use` statements
-- Temporary fix: Add to compiler output
+- rejects missing or unknown public props;
+- checks strings, integers, and the closed filter values;
+- checks that `pushEvent` is callable;
+- translates `onFilter` through the generated Live Event Protocol adapter;
+- renders a local error panel if validation fails.
 
-### Database Errors
-```bash
-# Reset database completely
-mix ecto.drop
-mix ecto.create
-mix ecto.migrate
+This is capability narrowing for first-party code, not a security sandbox for
+untrusted React modules.
+
+The server wrapper always renders a useful native LiveView summary outside the
+React mount. Todo CRUD and the normal LiveView filter controls remain available
+when JavaScript is disabled or the island fails to mount. The React section is
+an enhancement, never the only path to an application operation.
+
+## Client-only rendering and SSR
+
+This example fixes `ssr=false`.
+
+1. Phoenix renders the native summary and LiveReact mount data.
+2. The browser downloads the Vite bundle.
+3. The stock hook mounts the React component on the client.
+
+LiveReact SSR is a different deployment topology. It asks upstream LiveReact to
+render the React component through a Node/Vite SSR process on the server, sends
+that HTML in the initial response, and then hydrates it in the browser. That
+requires Node supervision, release artifacts, hydration compatibility, failure
+handling, and additional operational tests. PhoenixHX tracks it separately; it
+is not implied by using HXX or by keeping both source trees in Haxe.
+
+## Build graph
+
+```mermaid
+graph TD
+  SH[Server Haxe + HXX] --> RE[Reflaxe.Elixir]
+  RE --> EX[Generated Elixir + HEEx]
+  CH[Client Haxe] --> GE[Genes classic ESM]
+  RH[React Haxe + HXX] --> GT[Genes strict TSX]
+  SP[Shared Haxe event contract] --> RE
+  SP --> GE
+  SP --> GT
+  EX --> PHX[Phoenix LiveView]
+  GE --> V[Vite]
+  GT --> V
+  LR[stock LiveReact hook/runtime] --> V
+  V --> B[Browser]
+  PHX <--> B
 ```
 
-### Clean Build
+Vite is the only JavaScript bundler. Genes produces source modules; it does not
+compete with Vite. Tailwind remains a separate CSS lane.
+
+## Commands
+
 ```bash
-# Nuclear option - regenerate everything
-rm -rf lib/*.ex lib/**/*.ex
-rm -rf _build deps
-mix deps.get
+# Generate the Phoenix application modules.
 haxe build-server.hxml
-mix compile
+
+# Generate classic ESM plus the strict TSX React module.
+haxe build-client.hxml
+
+# Prove the Haxe-authored React boundary without a browser.
+npm --prefix assets run test:live-react
+
+# Type-check generated production TSX and build Vite assets.
+npm --prefix assets run typecheck:live-react
+npm --prefix assets run assets:build
+
+# Compile and run Haxe-authored ExUnit tests.
+haxe build-tests.hxml
+mix test
 ```
 
-## 🚧 Current Status
+The public integration lifecycle is:
 
-### ✅ Working
-- Haxe→Elixir compilation
-- Router generation
-- LiveView modules
-- Ecto schemas
-- Phoenix layouts
+```bash
+mix haxe.phoenix.live_react          # plan and apply owned setup
+mix haxe.phoenix.live_react --check  # read-only drift check
+mix haxe.phoenix.live_react --remove # remove only integration-owned state
+```
 
-### 🔧 Needs Fixes
-- Missing Phoenix.Component imports
-- Duplicate module generation
-- Template variable handling
-- HEEx sigil processing
+`--remove` preserves hand-owned application components. It refuses ambiguous
+ownership rather than deleting a custom Vite or React setup.
 
-### 🎯 Next Steps
-1. Fix sigil_H import issues
-2. Resolve duplicate modules
-3. Add comprehensive tests
-4. Improve error messages
+## Evidence boundaries
 
-## 📚 Learn More
+- Haxe→ExUnit tests prove the server wrapper, native fallback, typed event
+  dispatch, and malformed-known-payload behavior.
+- The Haxe-authored React contract test renders the generated component through
+  ReactDOM and checks exact-boundary failure behavior.
+- Playwright proves the stock hook mounts the island, the callback updates
+  LiveView, and the native page remains useful with JavaScript disabled.
+- Vite production build proves bundling and source-map generation.
 
-- [Reflaxe.Elixir Documentation](../../docs/README.md)
-- [Haxe Language Manual](https://haxe.org/manual/)
-- [Phoenix Framework Guides](https://hexdocs.pm/phoenix)
-- [Compiler Source Code](../../src/reflaxe/elixir/)
+Do not edit `lib/**`, `test/generated/**`, or
+`assets/react-components/generated/**`. Poor generated output belongs in the
+Haxe source, Genes, or Reflaxe.Elixir—not in a manual patch to an artifact.
 
-## 💡 Tips for Development
+## Further reading
 
-1. **Always compile Haxe first** before running Phoenix
-2. **Use the watcher** for rapid development
-3. **Check generated code** to understand issues
-4. **Fix at the source** - either Haxe or compiler
-5. **Document patterns** that work for future reference
-
----
-
-Remember: This is a cutting-edge approach to Phoenix development. You're writing
-Haxe to get type-safe, maintainable Elixir code. When it works, it's magical! 
-When it doesn't, check the compiler output and fix the transformation.
+- [Project README](README.md)
+- [Phoenix output model](../../docs/05-architecture/PHOENIX_OUTPUT_MODEL.md)
+- [Genes dependency workflow](../../docs/03-compiler-development/GENES_DEPENDENCY_WORKFLOW.md)
+- [Phoenix LiveView](https://hexdocs.pm/phoenix_live_view/)
+- [LiveReact](https://github.com/mrdotb/live_react)

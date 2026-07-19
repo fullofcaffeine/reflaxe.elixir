@@ -262,6 +262,7 @@ extern class LiveViewTest {
 	 * Check if element exists in rendered HTML.
 	 */
 	@:overload(function(liveView:LiveView, selector:String, text:String):Bool {})
+	@:native("has_element?")
 	public static function has_element(liveView:LiveView, selector:String):Bool;
 
 	/**
