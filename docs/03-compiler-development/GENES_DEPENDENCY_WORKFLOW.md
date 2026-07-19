@@ -210,11 +210,12 @@ source identities.
 The local downstream matrix passed the complete example compile, expected-output,
 warnings-as-errors, and runtime lanes; all 305 fast Mix tests; the example 12
 TypeScript, React, Vite, binding, and two-scenario browser canary; and the
-todo-app five-scenario browser smoke. The package-smoke command also remained
-green against the previously committed package baseline. Final admission still
-requires rerunning package smoke from the commit that contains this exact pin
-and obtaining green exact-head hosted CI; local source-checkout evidence alone
-does not establish that release gate.
+todo-app five-scenario browser smoke. Installed-package smoke exported candidate
+commit `7ba4200f7383eba70d2b6d4c376126d163ba2587`, installed its exact ZIP in an
+isolated Haxelib repository, and proved source/package generated-Elixir,
+structural-quality, and Mix/Phoenix compile parity. Final admission still
+requires green exact-head hosted CI; local and installed-package evidence alone
+do not establish that hosted gate.
 
 ## Rollback
 

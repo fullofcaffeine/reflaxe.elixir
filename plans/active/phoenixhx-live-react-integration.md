@@ -181,7 +181,7 @@ its child task closes.
 | Observed | `LiveEventProtocolModel.hx` already owns normalized wire names, payload fields/kinds, a deterministic manifest, and a hash. | React event contracts adapt this model. A second event enum, DSL, decoder runtime, or independent string registry is rejected. |
 | Observed | The pinned LiveReact checkout exposes `LiveReact.react`, `LiveReact.Reload.vite_assets`, `LiveReact.Test.get_react`, `getHooks`, `useLiveReact`, `Link`, and the stock Vite plugin. Its browser bridge is intentionally broad. | PhoenixHx may declare stable public surfaces honestly, but must not copy their implementation or pass the raw bridge into the default inner component type. Open test/helper shapes must not receive false precision. |
 | Observed | Example 12 currently pins one LiveReact Git revision independently in Mix and npm, and both pins identify revision `055e80e6a4e6d009df5e229eb39e7f85f03fea22`. | This proves one project-local identity match. The reusable tool instead makes Mix canonical and points npm at the resolved Mix checkout so the two sides cannot drift independently. |
-| Observed | The vendored Genes tree has been removed. `haxe_libraries/genes.hxml` is now a compatibility alias for one exact Lix-resolved `genes-ts` source. Implementation-time verification found canonical v1.37.0 at `107491cb115ba7abd5628a1f3bcb338aa8cf2685` as latest. Its Haxe-level HXX prop checker rejects the bounded invalid React prop with `GTS-HXX-PROP-002`; valid v1.37.0 TypeScript/TSX and classic ESM output is byte-identical to the v1.36.7 baseline. | `haxe.elixir.codex-a06` admits v1.37.0 only after committed-package and exact-head CI evidence join the completed local dual-profile, example, Mix, Vite, runtime, source-map, and browser matrix. `$GENES_CHECKOUT` and worktrees remain contributor-only inputs, never committed dependencies. |
+| Observed | The vendored Genes tree has been removed. `haxe_libraries/genes.hxml` is now a compatibility alias for one exact Lix-resolved `genes-ts` source. Implementation-time verification found canonical v1.37.0 at `107491cb115ba7abd5628a1f3bcb338aa8cf2685` as latest. Its Haxe-level HXX prop checker rejects the bounded invalid React prop with `GTS-HXX-PROP-002`; valid v1.37.0 TypeScript/TSX and classic ESM output is byte-identical to the v1.36.7 baseline. Installed-package smoke from candidate commit `7ba4200f7383eba70d2b6d4c376126d163ba2587` proved exact-ZIP source/package parity and Mix/Phoenix compilation. | `haxe.elixir.codex-a06` admits v1.37.0 only after exact-head hosted CI joins the completed local dual-profile, example, Mix, Vite, runtime, source-map, browser, and installed-package matrix. `$GENES_CHECKOUT` and worktrees remain contributor-only inputs, never committed dependencies. |
 | Unknown until implementation | Cross-platform package-root discovery, crash-safe rollback, installed-package template availability, and the ecosystem version matrix have not yet been proven. | Those claims remain gates in `.msb.3`, `.msb.4`, `.msb.8`, and `.msb.9`; this contract does not advertise them as shipped. |
 
 ### Frozen decision table
@@ -516,11 +516,13 @@ with `examples/todo-app` and `examples/12-phoenix-chat` as named browser
 canaries. It must compare classic module/import ABI, async and inline-HXX
 behavior, DCE, generated ESM, portable source maps, Vite consumption, scaffold
 lifecycle, and installed-package behavior, in addition to strict TSX typing and
-React runtime evidence. The last admitted v1.36.7 release remains the rollback
-boundary until v1.37.0 has both committed-package and exact-head hosted evidence.
-Any later regression becomes a generic Genes worktree/pushed-SHA fix; PhoenixHX
-does not carry a local framework-specific compiler patch. The detailed
-contributor workflow and rollback contract remain in
+React runtime evidence. Candidate commit
+`7ba4200f7383eba70d2b6d4c376126d163ba2587` passed the committed-package gate;
+the last admitted v1.36.7 release remains the rollback boundary until v1.37.0
+also has exact-head hosted evidence. Any later regression becomes a generic
+Genes worktree/pushed-SHA fix; PhoenixHX does not carry a local
+framework-specific compiler patch. The detailed contributor workflow and
+rollback contract remain in
 `docs/03-compiler-development/GENES_DEPENDENCY_WORKFLOW.md`.
 
 ## Versioned Integration Manifest
