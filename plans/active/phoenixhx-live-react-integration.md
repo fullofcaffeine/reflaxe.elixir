@@ -184,6 +184,11 @@ generated-output, documentation, package-content, and hosted CI gates pass. It
 does not promote the overall LiveReact integration; examples 12/18, todo-app,
 canonical guide, compatibility, and installed-package canaries remain open.
 
+Closure evidence: implementation commit `3dc812c33` passed exact-head CI run
+`29695466442` and CodeQL run `29695466386` on 2026-07-19. The event adapter
+slice is complete; this evidence does not change the parent epic's experimental
+status or close any downstream consumer, documentation, or release gate.
+
 ### Historical proof records remain isolated
 
 The planning input cited historical project-proof tasks that are intentionally
