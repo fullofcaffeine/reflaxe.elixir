@@ -2198,6 +2198,11 @@ end'))
 							collectUsedVars(cl.guard, out);
 						collectUsedVars(cl.body, out);
 					}
+				case ECond(clauses):
+					for (cl in clauses) {
+						collectUsedVars(cl.condition, out);
+						collectUsedVars(cl.body, out);
+					}
 				case EFn(clauses):
 					for (cl in clauses) {
 						if (cl.guard != null)

@@ -67,6 +67,7 @@ defmodule Main do
     header_3 = 0
     switch_result_2 = (case 9 do
       3 when header_0 == 255 ->
+        other = header_1
         cond do
           other != 254 -> "Invalid magic byte: 0x" <> StringTools.hex(other, 2)
           false -> "Incomplete packet header"
