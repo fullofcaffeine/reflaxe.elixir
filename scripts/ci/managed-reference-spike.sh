@@ -26,7 +26,7 @@ if grep -Eq 'copy_(dir|file)_to_(work|build)[[:space:]]+tools' \
   echo "[managed-reference-spike] ERROR: tools/ entered the Haxelib package roots" >&2
   exit 1
 fi
-grep -F 'files: ~w(lib mix.exs README* LICENSE*)' "$ROOT_DIR/mix.exs" >/dev/null
+grep -F 'files: ~w(lib priv mix.exs README* LICENSE*)' "$ROOT_DIR/mix.exs" >/dev/null
 
 log "checking scheduler and hot-takeover invariants"
 grep -F '{"collect", 0, collect_nif, ERL_NIF_DIRTY_JOB_CPU_BOUND}' \
