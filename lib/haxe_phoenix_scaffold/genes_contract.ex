@@ -18,13 +18,13 @@ defmodule HaxePhoenixScaffold.GenesContract do
       "#",
       "# This file is scaffold-managed by `mix haxe.phoenix.scaffold`. If you customize it, remove",
       "# the signature line above to opt out of future updates.",
-      "# Pin provenance: canonical genes-ts v1.36.7 release with the reviewed generated-output and portable source-map fixes.",
+      "# Pin provenance: canonical genes-ts v1.37.0 release with Haxe-checked React HXX contracts and soundness fixes.",
       "",
-      "# @install: lix --silent download \"gh://github.com/fullofcaffeine/genes-ts#25a5e3015f8b0f0e4447b8fd0590124548f132da\" into genes-ts/1.36.7/github/25a5e3015f8b0f0e4447b8fd0590124548f132da",
+      "# @install: lix --silent download \"gh://github.com/fullofcaffeine/genes-ts#107491cb115ba7abd5628a1f3bcb338aa8cf2685\" into genes-ts/1.37.0/github/107491cb115ba7abd5628a1f3bcb338aa8cf2685",
       "-lib helder.set",
-      "${HAXE_LIBCACHE}/genes-ts/1.36.7/github/25a5e3015f8b0f0e4447b8fd0590124548f132da/extraParams.hxml",
-      "-cp ${HAXE_LIBCACHE}/genes-ts/1.36.7/github/25a5e3015f8b0f0e4447b8fd0590124548f132da/src",
-      "-D genes-ts=1.36.7"
+      "${HAXE_LIBCACHE}/genes-ts/1.37.0/github/107491cb115ba7abd5628a1f3bcb338aa8cf2685/extraParams.hxml",
+      "-cp ${HAXE_LIBCACHE}/genes-ts/1.37.0/github/107491cb115ba7abd5628a1f3bcb338aa8cf2685/src",
+      "-D genes-ts=1.37.0"
     ])
   end
 
@@ -34,7 +34,7 @@ defmodule HaxePhoenixScaffold.GenesContract do
       "# Compatibility alias for projects that still use `-lib genes`.",
       "# Both names resolve the same immutable genes-ts revision.",
       "-lib genes-ts",
-      "-D genes=1.36.7"
+      "-D genes=1.37.0"
     ])
   end
 

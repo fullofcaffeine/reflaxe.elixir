@@ -6,8 +6,8 @@
     {
       "source": "tooling/phoenix_scaffold/src_haxe/phoenix_scaffold_tooling/GenesContract.hx",
       "generated": "lib/haxe_phoenix_scaffold/genes_contract.ex",
-      "sourceSha256": "c4d19955c806a8f55076495278264179c409412c8142eb9596909c8aba2537c1",
-      "generatedSha256": "4b8290a7d7ed8a812d64d6d0e59707ed09e5bf0a9e196f1487e1a9da2b1dfe31"
+      "sourceSha256": "798896cd62212d8b72b7def2f3be7f08fd1626d6c6e7b2f8b052313fbcbf8853",
+      "generatedSha256": "d2d3315a4d39ab342cac2644eecade6a414ffb77b1690a04142e1d2a8e158905"
     }
   ],
   "sharedInputs": []

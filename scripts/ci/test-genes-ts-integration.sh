@@ -27,6 +27,18 @@ cd "$ROOT_DIR"
 HAXE_NO_SERVER=1 haxe "$FIXTURE_DIR/build-tsx.hxml"
 HAXE_NO_SERVER=1 haxe "$FIXTURE_DIR/build-classic.hxml"
 
+negative_log="$GENERATED_DIR/negative-hxx.log"
+if HAXE_NO_SERVER=1 haxe "$FIXTURE_DIR/build-negative.hxml" >"$negative_log" 2>&1; then
+  echo "genes-ts accepted an invalid Haxe-authored React prop" >&2
+  exit 1
+fi
+
+if ! rg -q 'GTS-HXX-PROP-002.*property `title` expects `String` but received `Int`' "$negative_log"; then
+  echo "genes-ts rejected the invalid prop without the expected typed diagnostic" >&2
+  sed -n '1,120p' "$negative_log" >&2
+  exit 1
+fi
+
 "$EXAMPLE_DIR/node_modules/.bin/tsc" --project "$FIXTURE_DIR/tsconfig.json"
 
 tsx_output="$(node --enable-source-maps "$GENERATED_DIR/dist/index.js")"

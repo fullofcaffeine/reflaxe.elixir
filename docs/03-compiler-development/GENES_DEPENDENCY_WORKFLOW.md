@@ -138,7 +138,7 @@ module ABI, source maps, and clean package installation remain separate gates.
 The old source remains available until the matrix passes and the migration has
 an explicit rollback commit.
 
-## Current migration receipt (2026-07-18)
+## Historical consolidation receipt (2026-07-18)
 
 PhoenixHX now consumes the reviewed canonical Genes release rather than an
 intermediate development revision:
@@ -188,6 +188,33 @@ remains the final authority before this downstream change is merged.
 The known-green PhoenixHX rollback commit before dependency consolidation is
 `f0a22cc`. The repository keeps one external Genes source: the legacy
 `-lib genes` name is only an alias for the same immutable `genes-ts` release.
+
+## Current candidate admission (2026-07-19)
+
+Implementation-time verification found that the canonical upstream release had
+advanced beyond the planning-time v1.36.8 reference. The candidate dependency is:
+
+- repository: `https://github.com/fullofcaffeine/genes-ts`;
+- release: [`v1.37.0`](https://github.com/fullofcaffeine/genes-ts/releases/tag/v1.37.0);
+- exact release commit:
+  `107491cb115ba7abd5628a1f3bcb338aa8cf2685`.
+
+This release makes React HXX prop contracts part of Haxe type checking. The
+downstream negative fixture now requires `GTS-HXX-PROP-002` when an `Int` is
+passed to a `String` prop; it no longer relies on a TypeScript-only
+`@ts-expect-error`. For the same valid Haxe React source, v1.37.0 emitted
+byte-identical TypeScript/TSX and classic ESM modules to v1.36.7. Both profiles
+rendered the same React HTML, and both source maps retained portable resolved
+source identities.
+
+The local downstream matrix passed the complete example compile, expected-output,
+warnings-as-errors, and runtime lanes; all 305 fast Mix tests; the example 12
+TypeScript, React, Vite, binding, and two-scenario browser canary; and the
+todo-app five-scenario browser smoke. The package-smoke command also remained
+green against the previously committed package baseline. Final admission still
+requires rerunning package smoke from the commit that contains this exact pin
+and obtaining green exact-head hosted CI; local source-checkout evidence alone
+does not establish that release gate.
 
 ## Rollback
 

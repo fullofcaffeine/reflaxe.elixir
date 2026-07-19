@@ -2,4 +2,4 @@
 # Compatibility alias for projects that still use `-lib genes`.
 # Both names resolve the same immutable genes-ts revision.
 -lib genes-ts
--D genes=1.36.7
+-D genes=1.37.0

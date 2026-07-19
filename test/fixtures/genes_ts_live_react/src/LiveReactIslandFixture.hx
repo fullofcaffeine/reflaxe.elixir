@@ -59,12 +59,13 @@ class LiveReactIslandFixture {
 		if (registryHtml.indexOf('data-density="comfortable"') == -1)
 			throw "static registry lost the closed density contract: " + registryHtml;
 
-		// The JSX macro records component intent without weakening the Haxe type of
-		// interpolated values. TypeScript must still reject this invalid prop.
-		js.Syntax.code("// @ts-expect-error StatusPanel title is a string");
+		#if genes_test_invalid_props
+		// genes-ts v1.37+ validates component props while Haxe types the inline HXX.
+		// The negative build enables this branch and requires GTS-HXX-PROP-002.
 		final invalid = <RegistryComponent title={123} density={Density.Compact} onAction={function(_:Density):Void {}} />;
 		if (invalid == null)
 			throw "unreachable";
+		#end
 
 		js.Syntax.code("console.log({0})", html);
 	}

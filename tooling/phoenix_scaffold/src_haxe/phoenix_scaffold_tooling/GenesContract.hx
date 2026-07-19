@@ -31,9 +31,9 @@ private extern class ProjectPatchApi {
 @:keep
 @:native("HaxePhoenixScaffold.GenesContract")
 class GenesContract {
-	public static inline final VERSION = "1.36.7";
-	public static inline final COMMIT = "25a5e3015f8b0f0e4447b8fd0590124548f132da";
-	public static inline final PIN_NOTE = "canonical genes-ts v1.36.7 release with the reviewed generated-output and portable source-map fixes";
+	public static inline final VERSION = "1.37.0";
+	public static inline final COMMIT = "107491cb115ba7abd5628a1f3bcb338aa8cf2685";
+	public static inline final PIN_NOTE = "canonical genes-ts v1.37.0 release with Haxe-checked React HXX contracts and soundness fixes";
 	public static inline final BUILD_CLIENT_SIGNATURE = "reflaxe_elixir:build_client_hxml:v2";
 	public static inline final LEGACY_BUILD_CLIENT_SIGNATURE = "reflaxe_elixir:build_client_hxml:v1";
 	public static inline final GENES_ALIAS_SIGNATURE = "reflaxe_elixir:scaffolded_haxe_library:genes:v2";
