@@ -9,7 +9,7 @@ import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.emptyMetadata;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
-import reflaxe.elixir.ast.ElixirASTChildren;
+import reflaxe.elixir.ast.ASTUtils;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ElixirPatternChildren;
 import reflaxe.elixir.ast.naming.ElixirAtom;
@@ -28,7 +28,6 @@ class TestElixirASTChildren {
 		testConstructorCoverageAndImmediateChildren();
 		testPatternCoverageAndEmbeddedAst();
 		testMetadataPositionAndAttributeSpans();
-		testIdentityMappingPreservesReferences();
 		testDeterministicStructuralWalk();
 		testTransformerDelegatesToStructuralChildren();
 		testTransformerBoundaryStopsRecursion();
@@ -177,11 +176,9 @@ class TestElixirASTChildren {
 
 		for (sample in nodes) {
 			var astChildren = 0;
-			var patternChildren = 0;
-			ElixirASTChildren.forEachImmediate(sample.node, _ -> astChildren++, _ -> patternChildren++);
+			ElixirASTTransformer.iterateAST(sample.node, _ -> astChildren++);
 
 			assertEquals(sample.astChildren, astChildren, sample.name + " immediate AST child count");
-			assertEquals(sample.patternChildren, patternChildren, sample.name + " immediate pattern child count");
 		}
 	}
 
@@ -314,7 +311,7 @@ class TestElixirASTChildren {
 				valueSpanEnd: 21
 			}
 		], [ast("body")]), metadata, pos);
-		var mapped = ElixirASTChildren.mapImmediate(node, renameVar, pattern -> pattern);
+		var mapped = ElixirASTTransformer.transformAST(node, renameVar);
 
 		assertTrue(mapped.metadata == metadata, "node metadata reference is preserved");
 		assertTrue(mapped.pos == pos, "node source position is preserved");
@@ -330,17 +327,6 @@ class TestElixirASTChildren {
 		}
 	}
 
-	static function testIdentityMappingPreservesReferences():Void {
-		var pattern = PTuple([PVar("value")]);
-		var node = makeAST(ECase(ast("target"), [{pattern: pattern, guard: null, body: ast("body")}]));
-
-		var mappedNode = ElixirASTChildren.mapImmediate(node, child -> child, child -> child);
-		var mappedPattern = ElixirPatternChildren.mapImmediate(pattern, child -> child, child -> child);
-
-		assertTrue(mappedNode == node, "identity AST mapping preserves the original node reference");
-		assertTrue(mappedPattern == pattern, "identity pattern mapping preserves the original pattern reference");
-	}
-
 	static function testDeterministicStructuralWalk():Void {
 		var node = makeAST(ECase(ast("target"), [
 			{
@@ -350,7 +336,7 @@ class TestElixirASTChildren {
 			}
 		]));
 		var names:Array<String> = [];
-		ElixirASTChildren.walk(node, child -> collectVarName(child, names));
+		ASTUtils.walk(node, child -> collectVarName(child, names));
 
 		assertStrings(["target", "pattern_key", "guard", "body"], names, "structural preorder");
 	}
@@ -381,7 +367,7 @@ class TestElixirASTChildren {
 			};
 		});
 		var names:Array<String> = [];
-		ElixirASTChildren.walk(mapped, child -> collectVarName(child, names));
+		ASTUtils.walk(mapped, child -> collectVarName(child, names));
 
 		assertStrings(["mapped_pattern_literal", "mapped_rhs", "mapped_operation"], names, "transformNode structural child delegation");
 		assertTrue(!sawRaw, "transformNode keeps raw target injection opaque");
@@ -394,7 +380,7 @@ class TestElixirASTChildren {
 			default: false;
 		});
 		var names:Array<String> = [];
-		ElixirASTChildren.walk(mapped, child -> collectVarName(child, names));
+		ASTUtils.walk(mapped, child -> collectVarName(child, names));
 
 		assertStrings(["mapped_outside", "inside"], names, "transformNodeUntil lexical boundary");
 	}

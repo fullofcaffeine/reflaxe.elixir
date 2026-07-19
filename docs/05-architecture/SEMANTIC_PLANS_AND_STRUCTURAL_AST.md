@@ -162,10 +162,11 @@ The architecture review baseline was statically rechecked against repository hea
 - explicit raw Elixir and externally validated template/DSL boundaries remain legitimate public or
   framework authorities.
 
-The traversal portion of that baseline has since been addressed by `ElixirASTChildren` and
-`ElixirPatternChildren`. All 66 AST constructors and all 11 pattern constructors have executable
-constructor-set and immediate-child coverage; the three legacy generic entry points delegate to the
-same schema. Expanded traversal exposed one real anonymous-function scope omission in
+The traversal portion of that baseline has since been addressed by one fused structural engine in
+`ElixirASTTransformer` plus the coordinated `ElixirPatternChildren` schema. All 66 AST constructors
+and all 11 pattern constructors have executable constructor-set and immediate-child coverage;
+immediate map/visit and recursive walk entry points derive from the same AST switch. Expanded
+traversal exposed one real anonymous-function scope omission in
 `ClauseUndefinedRefRewrite`, which is fixed at that pass and covered by the ordinary-Haxe
 `core/maps` reducer regression. The remaining bullets are reviewed debt, not claims that every later
 architecture slice has shipped.
@@ -228,7 +229,7 @@ semantic gaps and can be independently verified.
 | Haxe `TypedExpr` | Resolved Haxe types, declarations, source positions, and frontend desugaring | Elixir punctuation or final runtime layout |
 | Focused semantic plan | One proven cross-phase Haxe invariant and the typed facts needed to validate it; it may feed the builder or exist temporarily as an admitted marker carried by `ElixirAST` | A copy of every `TypedExpr`, unrelated semantic families, target formatting, or a parallel general-purpose pipeline |
 | `ElixirAST` | Structural Elixir expressions, patterns, clauses, modules, templates, typed target metadata, and bounded semantic markers until their one owned lowering boundary | Recovery of facts already erased into strings or unresolved semantic intent at the printer boundary |
-| Child/pattern schema | Exhaustive immediate structural children and identity-preserving rebuild | Lexical scope, completion flow, quote/raw authority, or implicit metadata traversal |
+| Fused AST traversal and pattern schema | Exhaustive structural children, deterministic order, metadata/position preservation, and derived immediate/recursive APIs | Lexical scope, completion flow, quote/raw authority, or implicit metadata traversal |
 | Pass manager | Stable IDs, transparent groups, frozen effective order, context, diagnostics, failure, legality, and analysis invalidation | App/path/name heuristics, implicit profile semantics, or hidden inner runners |
 | Validators | Structural, phase, result, ABI, and final legality checks | Repairing the tree |
 | Printer | Delimiters, precedence, escaping, interpolation spelling, indentation, and surface syntax | Semantic repair, binder discovery, runtime selection, or framework policy |
@@ -236,14 +237,16 @@ semantic gaps and can be independently verified.
 
 ## Traversal contract
 
-`ElixirASTChildren` owns every immediate `ElixirAST` child for all 66 constructors, and
-`ElixirPatternChildren` owns all 11 pattern variants and their embedded AST values. The authoritative
-switches have no catch-all branch. Generic walking and mapping build on that one schema; the legacy
-`iterateAST`, `transformAST`, scoped transform, and `ASTUtils.walk` entry points delegate to it.
+`ElixirASTTransformer.transformNodeScopedInternal` owns every structural `ElixirAST` child for all
+66 constructors, and `ElixirPatternChildren` owns all 11 pattern variants and their embedded AST
+values. The authoritative switches have no catch-all branch. `transformAST` derives a one-level map
+from the fused engine by treating direct children as transformable boundaries; `iterateAST` derives
+visiting from that map; `ASTUtils.walk` supplies recursion without another constructor switch.
 
 This is one structural traversal contract, not a family of speculative universal walkers. Ordinary
-identity mapping preserves object identity, metadata, source positions, optional payload fields, and
-attribute spans exactly. Raw target injection is opaque. Metadata is preserved but not entered.
+Mapping preserves metadata, source positions, optional payload fields, and attribute spans. Raw
+target injection is opaque. Metadata is preserved but not entered. Object identity is not a public
+traversal contract; semantic and generated-output behavior are the regression boundary.
 Transforms that care about lexical binders or a deliberate boundary such as an anonymous function
 express that policy locally, as `ClauseUndefinedRefRewrite` now does for anonymous-function clause
 arguments.

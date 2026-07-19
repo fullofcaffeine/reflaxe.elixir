@@ -95,12 +95,12 @@ byte/runtime parity. One-off discovery scripts remain disposable investigation a
 
 ## Slice 2: exhaustive traversal foundation
 
-Delivered by `ElixirASTChildren` and `ElixirPatternChildren`: one no-default immediate-child schema
-for all `ElixirASTDef` constructors plus the coordinated exhaustive `EPattern` mapper. Identity
-mapping preserves node references, metadata, positions, optional record fields, and HEEx attribute
-spans. The old generic child switches now delegate to this schema.
+Delivered by one no-default fused AST child switch in `ElixirASTTransformer` plus the coordinated
+exhaustive `ElixirPatternChildren` mapper. One-level map/visit and recursive walk APIs derive from
+that engine instead of owning separate constructor switches. Mapping preserves metadata, positions,
+optional record fields, and HEEx attribute spans; internal object identity is not a public contract.
 
-This does not create three replacement walkers. The shared schema owns structural children only.
+This does not create three replacement walkers. The fused engine owns structural children only.
 Scope-sensitive passes keep the smallest explicit binder policy they need, raw target nodes remain
 opaque, and AST-valued metadata remains preserved but untraversed until a concrete analysis proves
 that entering it is necessary. The migration's expanded traversal exposed an anonymous-function

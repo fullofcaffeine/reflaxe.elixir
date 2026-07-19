@@ -42,8 +42,9 @@ contract.
 
 The compiler does not adopt haxe.c's C-specific whole-program IR. Most Haxe meaning still lowers
 directly into structural `ElixirAST`; a bounded semantic marker may temporarily live in that same IR
-when one named lowerer owns it. `ElixirASTChildren` and `ElixirPatternChildren` now provide the one
-exhaustive structural child schema used by the generic traversal entry points. Scope-sensitive
+when one named lowerer owns it. The fused traversal engine in `ElixirASTTransformer` owns the one
+exhaustive AST child switch; `ElixirPatternChildren` owns the coordinated exhaustive pattern schema.
+Immediate mapping and visiting are derived from that engine's boundary policy. Scope-sensitive
 passes still own their binder rules locally, while raw target injection and AST-valued metadata stay
 opaque by default. Compiler-owned children must not be printed and re-embedded as raw target text
 when later passes need to traverse them; structural interpolation follows that foundation. See
@@ -155,7 +156,6 @@ updates, nesting, object-pattern matching, and map-shaped negative cases;
 - Pass registry + ordered transforms:
   - `src/reflaxe/elixir/ast/transformers/registry/ElixirASTPassRegistry.hx`
   - `src/reflaxe/elixir/ast/ElixirASTTransformer.hx`
-  - `src/reflaxe/elixir/ast/ElixirASTChildren.hx`
   - `src/reflaxe/elixir/ast/ElixirPatternChildren.hx`
   - `src/reflaxe/elixir/ast/PassApplicability.hx` (typed module capabilities)
   - `src/reflaxe/elixir/ast/transformers/registry/PassScopeManifest.hx` (exact pass ownership)
