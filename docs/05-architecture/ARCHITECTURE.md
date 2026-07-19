@@ -1,6 +1,9 @@
 # Architecture Overview (AST Pipeline)
 
-Reflaxe.Elixir is a Haxe → Elixir compiler built on Reflaxe. As of **August 2025**, the compiler is **pure AST-based**: it builds an `ElixirAST` IR, runs deterministic transformation passes, then prints idiomatic Elixir.
+Reflaxe.Elixir is a Haxe → Elixir compiler built on Reflaxe. It builds one target-specific
+`ElixirAST` IR, runs an ordered transformation pipeline, then prints Elixir. Deterministic,
+request-local pass state and a formatting-only printer are architectural contracts under staged
+migration; current static state and printer policy debt are not described as already solved.
 
 This document is the canonical “how the compiler is structured today” overview. The previous pre-AST architecture writeup is kept in git history.
 
@@ -16,14 +19,18 @@ This document is the canonical “how the compiler is structured today” overvi
 
 ## Accepted staged evolution: structure before text
 
-The unified pipeline remains the architecture. It may use a **focused semantic plan** before a
+The unified pipeline remains the architecture. Before adding another node family, generic child and
+pattern traversal must become exhaustive and the mature pass order must become fail-closed and
+observable through transparent groups. The pipeline may use a **focused semantic plan** before a
 particular Elixir form is selected when one observable Haxe invariant otherwise needs repeated raw
-text/target-shape inference or synchronized side tables. Existing examples include `LoopIR`,
-receiver-effect intent, and function-result validation.
+text/target-shape inference or synchronized side tables. Receiver-effect intent and function-result
+validation are current focused forms. `LoopIR` is a useful local-plan experiment, but its placeholder,
+confidence, and emitter re-analysis behavior still requires tightening.
 
 This is not a second backend or a copy of haxe.c's whole-program HxcIR. Ordinary lowering should
-enrich `ElixirAST` instead—starting with structural interpolation whose embedded expressions remain
-traversable until the printer. The admission test, raw-authority taxonomy, managed-reference
+enrich `ElixirAST` instead. Structural interpolation is the first new node after exhaustive
+traversal, pass-boundary, and result-flow prerequisites. The admission test, raw-authority taxonomy,
+managed-reference
 coordination, and staged work are defined in
 [Structural Elixir AST and Focused Semantic Plans](SEMANTIC_PLANS_AND_STRUCTURAL_AST.md).
 

@@ -17,6 +17,26 @@
   another specialist boundary, verify it with primary evidence and qualified review. Acknowledge
   uncertainty instead of filling gaps with confident-sounding speculation.
 
+## 🧪 Prefer Executable Contracts Over Architecture Ceremony (General Rule)
+
+- Drive refactors with the repository's existing behavior and contract-test layers: ordinary Haxe
+  regression fixtures, focused compiler unit/negative tests, generated-output snapshots, pass
+  inventory/scope guards, scoped-versus-all-pass parity, runtime tests, package parity, and bounded
+  determinism/QA checks. Add the smallest missing test beside the implementation that owns the
+  invariant.
+- Do not create a committed source-scan "receipt", string-anchor catalog, generated implementation
+  inventory, or parallel audit database merely to freeze the current code before refactoring. Such
+  artifacts duplicate tests, couple CI to incidental source text, and can create false confidence
+  without proving behavior.
+- Temporary discovery scripts and one-off reports are welcome during investigation, but keep them
+  disposable unless a concrete recurring failure demonstrates durable CI value. Before promoting
+  one, document the failure it catches that existing tests cannot, its semantic owner, maintenance
+  cost, and retirement condition.
+- Architecture documents record decisions, observed evidence, risks, and unknowns. Executable tests
+  enforce behavior and structural contracts. Do not turn prose observations or implementation
+  counts into a new subsystem when a direct Haxe-authored test or existing generated guard can
+  express the requirement.
+
 ## 🚦 Non-Blocking Todo-App QA (Required)
 
 Agents must never block the terminal when validating the todo-app. Use the provided QA sentinels which build, start Phoenix in the background, probe readiness, and tear down cleanly.

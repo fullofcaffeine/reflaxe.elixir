@@ -24,7 +24,7 @@ import reflaxe.elixir.ast.naming.ElixirAtom;
  * HOW: Three-phase compilation pipeline uses this AST:
  * 1. ElixirASTBuilder converts TypedExpr → ElixirAST
  * 2. ElixirASTTransformer applies idiom/framework transformations
- * 3. ElixirPrinter generates string output
+ * 3. ElixirASTPrinter generates string output
  *
  * @see docs/03-compiler-development/INTERMEDIATE_AST_REFACTORING_PRD.md
  */

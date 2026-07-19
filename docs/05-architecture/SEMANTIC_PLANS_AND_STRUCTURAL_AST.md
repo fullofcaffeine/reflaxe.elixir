@@ -10,8 +10,11 @@ Implementation plan: [Structural AST and semantic plans](../../plans/active/sema
 ## Beginner-readable reason
 
 The compiler already translates typed Haxe into a structured Elixir tree before printing source.
+That tree, `ElixirAST`, is Reflaxe.Elixir's existing target-specific intermediate representation.
 That is the right architecture. The problem begins when an ordinary compiler-owned expression is
-printed too early and then stored as raw text.
+printed too early and then stored as raw text. A more immediate prerequisite is that every
+structural child must be visible to generic traversal at all: otherwise a new node can be perfectly
+typed yet silently become a leaf to analysis.
 
 Consider a Haxe expression such as:
 
@@ -47,13 +50,15 @@ escaping. This is a richer target AST, not a new compiler backend.
 
 ## Decision
 
-Reflaxe.Elixir will preserve its existing deterministic pipeline:
+Reflaxe.Elixir will preserve its existing ordered pipeline and make request-level determinism an
+executable contract:
 
 ```text
 TypedExpr
-  -> focused analysis or semantic plan only where evidence requires one
-  -> structural ElixirAST
-  -> scoped, ordered passes with executable contracts
+  -> typed analysis and builders
+  -> ElixirAST (structural target nodes plus admitted semantic markers)
+  -> scoped, ordered legalization and structural passes with executable contracts
+  -> printer-legal structural ElixirAST
   -> formatting-only printer
   -> generated Elixir
 ```
@@ -61,26 +66,93 @@ TypedExpr
 The project will **not** copy haxe.c's whole-program `HxcIR`, replace `ElixirAST`, or force Elixir
 through a C-shaped control-flow graph. Instead it will:
 
-1. keep compiler-owned values structural for as long as later passes need to inspect them;
-2. classify and constrain raw target authority rather than treating every raw node alike;
-3. introduce a small typed semantic plan only when one observable Haxe invariant otherwise depends
+1. centralize exhaustive structural and pattern-child traversal before admitting another node;
+2. freeze the effective pass order, fail closed on registry errors, and keep groups transparent;
+3. keep compiler-owned values structural for as long as later passes need to inspect them;
+4. classify and constrain raw target authority rather than treating every raw node alike;
+5. introduce a small typed semantic plan only when one observable Haxe invariant otherwise depends
    on repeated target-text/shape inference or synchronized side tables;
-4. validate important preconditions and postconditions at the pass boundary that owns them; and
-5. lower each semantic plan once before the printer.
+6. validate important preconditions and postconditions at the pass boundary that owns them; and
+7. lower each semantic plan once before the printer.
 
 Portable and Elixir-first authoring remain profiles over one semantic compiler contract. This
 decision creates no profile-selected representation, alternate backend, or public mode.
 
+## Compatibility with the current transformer pipeline
+
+This is an incremental extension of the existing transformer pipeline, not a replacement for it.
+Most current transforms operate on ordinary structural `ElixirAST` and can continue unchanged once
+a focused semantic node has been lowered. Compatibility follows these rules:
+
+1. One authoritative no-default schema explicitly maps the immediate children of every
+   `ElixirASTDef` constructor.
+2. One coordinated exhaustive mapper owns `EPattern`, including AST values in literals, map keys,
+   and binary sizes.
+3. Scope, control flow, quote/raw authority, and AST-valued metadata remain named traversal policies;
+   a structural child mapper must not pretend to infer those semantics.
+4. One named semantic owner validates and consumes each focused plan.
+5. A legacy structural transform that cannot interpret an unresolved semantic node runs after that
+   owner or rejects the node through typed applicability or a boundary invariant.
+6. Equality/digest, result behavior, legality, printer disposition, and source/metadata preservation
+   are decided whenever a new `ElixirAST` case is admitted.
+
+Transforms that currently infer source meaning from printed text or target map/struct shape are not
+silently grandfathered in. Reviewed source evidence identifies the debt; focused compiler tests,
+typed authority, and phase ownership make the replacement executable. Consequently, strengthening
+`ElixirAST` requires a traversal foundation and may require focused pass updates, but it does not
+require a wholesale transformer rewrite or automatic pass rescheduling.
+
+## Lessons adopted from LLVM and MLIR
+
+[LLVM's relevant lesson](https://llvm.org/docs/NewPassManager.html) is that a pass must state which
+analyses remain valid after it changes the IR; stale cached analysis is a correctness bug, while
+recomputing every analysis after every pass is needlessly expensive. [MLIR adds a useful
+progressive-lowering model](https://mlir.llvm.org/docs/DialectConversion/): an owned conversion
+boundary declares operations legal, illegal, or conditionally legal and fails when required
+legalization is incomplete.
+
+Reflaxe.Elixir adopts those principles in a lightweight form:
+
+- every focused semantic family has a declared legal phase range and one lowering owner;
+- the owner verifies its preconditions and postconditions;
+- transforms explicitly preserve or invalidate affected cached analyses;
+- unresolved semantic nodes are illegal at the printer boundary; and
+- stable pass IDs and before/after diagnostics explain failed legalization.
+
+It does not adopt LLVM's low-level SSA instruction set as a universal source representation, force
+Elixir through a C-shaped CFG, depend on MLIR, or create a general dialect framework. Elixir's own
+structured expressions, pattern matching, guards, exceptions, and immutable values remain visible
+in `ElixirAST`.
+
 ## What is observed today
 
-At repository baseline `79255c533f33896c0d29de25a704b96e40363961`:
+The architecture review was statically rechecked against repository head
+`40254f38d9c07c069c7c3e19831096dcc2d6c95d`:
 
 - compilation follows `TypedExpr -> ElixirAST -> ordered transforms -> ElixirASTPrinter`;
-- `LoopIR` is a successful narrow precedent: it normalizes several Haxe loop shapes before choosing
-  an idiomatic Elixir form;
+- `ElixirASTDef` has 66 constructors and `ElixirMetadata` has 136 optional fields;
+- `transformNodeScopedInternal`, `iterateAST`, and `transformAST` implement overlapping child
+  switches with leaf catch-alls; the latter two omit many child-bearing forms;
+- `iterateAST` skips `EReceiverEffect.operation`, function guards, module attribute values, macro
+  bodies, quote/unquote, sends, and AST values embedded in patterns;
+- `ASTUtils.walk` delegates to that incomplete walker, so `PassApplicability` inherits its omissions;
+- identity rebuild in the generic scoped transformer can drop optional `EAttribute` span fields;
+- the validated registry has 578 effective granular passes but normal compilation executes seven
+  bundle functions whose private inner loop hides granular result, timing, snapshot, and future
+  invalidation/legality boundaries;
+- registry validation drops duplicate names, does not validate missing `runBefore`, and tolerates
+  missing names/cycles during scheduling even though the checked healthy inventory reports none;
+- `LoopIR` is a useful narrow-plan experiment, but successful emission still uses placeholder
+  `ENil`, confidence scoring, `originalExpr` re-analysis, and an `EnumReduce` legacy fallback;
 - `EReceiverEffect` and receiver-return conventions already preserve part of the immutable
   receiver-rebinding problem as explicit intent;
+- receiver lowering currently runs before and after the registry, followed by a final accumulator
+  replay, so the marker does not yet have exactly one phase owner;
 - `FunctionResultInvariant` detects when a named pass loses a non-`Void` result carrier;
+- that invariant models numeric tails that the printer later discards, exposing hidden semantic
+  ownership in the formatting layer;
+- the printer also injects exception declarations, scans or qualifies Repo/module references,
+  allocates loop names from static state, and performs other target-policy work;
 - `stringInterpolationPass` in `ElixirASTTransformer.hx` prints embedded AST expressions and returns
   `ERaw` containing a complete Elixir string literal;
 - `VarUseAnalyzer`, `OptimizedVarUseAnalyzer`, scoped rewriters, loop restoration, binder repair, and
@@ -89,10 +161,11 @@ At repository baseline `79255c533f33896c0d29de25a704b96e40363961`:
 - explicit raw Elixir and externally validated template/DSL boundaries remain legitimate public or
   framework authorities.
 
-An initial unclassified search found `ERaw` construction in 101 compiler files, `case ERaw` handling
-in 90 files, and `ElixirASTPrinter` references in 56 compiler files. Those counts are **not** a defect
-count or a promise to eliminate raw authority. They show why the first implementation slice must
-produce a classified, reproducible inventory before broad rewrites.
+These are reviewed static observations, not automatically enforced semantic classifications. The
+existing generated pass inventory freezes pass order and count. Each implementation slice adds a
+focused Haxe-authored contract test for the invariant it introduces, while source-level snapshots,
+runtime tests, package checks, and determinism evidence protect behavior. A separate regex-generated
+architecture receipt would duplicate those mechanisms and couple CI to incidental source text.
 
 ## Why haxe.c needs more IR than Reflaxe.Elixir
 
@@ -116,16 +189,75 @@ The reusable lesson from haxe.c is not its schema. It is its admission rule:
 
 That rule supports focused plans in Reflaxe.Elixir while rejecting a speculative universal IR.
 
+## Cross-compiler lessons adopted selectively
+
+The reference compilers support different architectures because their targets exert different
+pressure; they are evidence, not templates to copy mechanically.
+
+- **Genes TS:** immutable reachability, temporary, and ABI plans can be better than a target AST when
+  the target stays close to `TypedExpr`. Reflaxe.Elixir keeps `ElixirAST` because it already performs
+  substantial shared target-structure rewriting, but adopts the plan-minimization and deterministic
+  pre-emission facts.
+- **Reflaxe.Rust:** a central exhaustive target-tree mapper is the useful precedent for constructor
+  safety. Its small runner is not copied into a 578-pass compiler.
+- **Reflaxe.Go:** duplicate/dependency/cycle validation should fail closed. Its smaller pipeline does
+  not justify automatic rescheduling of this mature list.
+- **Reflaxe.Ruby and Reflaxe.OCaml:** narrow callable, runtime, place, or evaluation plans are the
+  closest precedent for receiver and ABI gaps. The plan earns its fields through independent
+  consumers or validators rather than becoming a second tree.
+- **haxe.c:** a durable semantic IR is appropriate only when evaluation, places, cleanup, lifetime,
+  failure, representation, and undefined-behavior pressure are broad and recurring. Elixir does not
+  currently meet that threshold.
+
+The reusable rule is to choose the least powerful representation that preserves the target's real
+semantic gaps and can be independently verified.
+
 ## Layer ownership
 
 | Layer | Owns | Must not own |
 | --- | --- | --- |
 | Haxe `TypedExpr` | Resolved Haxe types, declarations, source positions, and frontend desugaring | Elixir punctuation or final runtime layout |
-| Focused semantic plan | One proven cross-phase Haxe invariant and the typed facts needed to validate it before target selection | A copy of every `TypedExpr`, unrelated semantic families, or target formatting |
-| `ElixirAST` | Structural Elixir expressions, patterns, clauses, modules, templates, and typed target metadata | Recovery of facts already erased into strings |
-| Pass registry | Stable IDs, typed applicability, ordering, and owned pre/postconditions | App/path/name heuristics or implicit profile semantics |
+| Focused semantic plan | One proven cross-phase Haxe invariant and the typed facts needed to validate it; it may feed the builder or exist temporarily as an admitted marker carried by `ElixirAST` | A copy of every `TypedExpr`, unrelated semantic families, target formatting, or a parallel general-purpose pipeline |
+| `ElixirAST` | Structural Elixir expressions, patterns, clauses, modules, templates, typed target metadata, and bounded semantic markers until their one owned lowering boundary | Recovery of facts already erased into strings or unresolved semantic intent at the printer boundary |
+| Child/pattern schema | Exhaustive immediate structural children and identity-preserving rebuild | Lexical scope, completion flow, quote/raw authority, or implicit metadata traversal |
+| Pass manager | Stable IDs, transparent groups, frozen effective order, context, diagnostics, failure, legality, and analysis invalidation | App/path/name heuristics, implicit profile semantics, or hidden inner runners |
+| Validators | Structural, phase, result, ABI, and final legality checks | Repairing the tree |
 | Printer | Delimiters, precedence, escaping, interpolation spelling, indentation, and surface syntax | Semantic repair, binder discovery, runtime selection, or framework policy |
 | Explicit raw authority | Reviewed user injection or externally owned source that cannot be represented honestly yet | Ordinary compiler-owned lowering by convenience |
+
+## Traversal contract
+
+One module owns every immediate `ElixirAST` child for all 66 constructors, and a coordinated module
+owns all `EPattern` recursion and embedded AST values. The authoritative switches have no catch-all
+branch. Generic walking, mapping, folding, semantic-family counting, and structural digests build on
+that schema.
+
+Structural traversal is intentionally not the only traversal. Separate policies decide whether to
+enter nested functions, quoted code, raw authority, AST-valued metadata, and control-flow/result
+contexts. Ordinary identity mapping preserves metadata, source positions, optional payload fields,
+and attribute spans exactly. An explicit metadata-aware traversal covers `functionArgDefaults`,
+`fieldMutations`, and `heexAST`; ordinary transforms do not enter those fields accidentally.
+
+A macro or generated constructor-set guard compares the enum constructors with traversal,
+legality, and printer classifications. Adding a constructor is incomplete until those decisions and
+focused child-preservation tests exist.
+
+## Pass-manager and analysis contract
+
+The current effective 578-pass list is behavioral data. During this migration it remains the
+scheduling source of truth. Ordering metadata is validated against that list; it does not silently
+topologically move mature passes. Duplicate IDs, missing hard dependencies, cycles, and phase
+regressions fail. Optional edges are typed as optional.
+
+The seven contributor-facing groups remain useful, but become transparent scheduling groups rather
+than functions containing a second pass runner. Each granular child remains visible to result
+tracking, diagnostics, timing, snapshots, legality, and analysis invalidation.
+
+Analysis state is request-local and keyed by AST revision. A changed or legacy-unknown pass
+invalidates cached AST analyses unless preservation is explicitly proven. Migration does not force
+all legacy passes to claim a precise change set at once, and it does not recompute an expensive
+capability inventory after all 578 passes merely for architectural appearance. Each analysis moves
+under invalidation only after cached and forced-recomputed results agree under bounded profiles.
 
 ## Admission test for a semantic plan
 
@@ -150,7 +282,8 @@ testable invariant, it stays in the existing layer.
 
 ## Raw authority taxonomy
 
-The inventory must assign every raw or print/re-embed site to one owner:
+The later typed raw-authority and legality work must assign every admitted raw or print/re-embed
+boundary to one owner. The Stage-0 receipt deliberately does not make this semantic judgment:
 
 | Class | Meaning | Policy |
 | --- | --- | --- |
@@ -162,10 +295,10 @@ The inventory must assign every raw or print/re-embed site to one owner:
 Raw-node count alone is not a progress metric. The useful measures are approved authority coverage,
 eliminated compiler-owned text boundaries, and fewer semantic scanners.
 
-## First structural slice: interpolation
+## First new structural-node slice: interpolation
 
-The first implementation slice adds a closed interpolated-string node (exact name provisional) with
-literal and expression parts. Its contract is:
+After traversal and pass-boundary infrastructure is safe, the first new structural node is a closed
+interpolated-string form (exact name provisional) with literal and expression parts. Its contract is:
 
 - literal text is stored unescaped or canonically escaped exactly once;
 - embedded expressions remain `ElixirAST` nodes with metadata and source positions;
@@ -186,16 +319,18 @@ The next bounded semantic family is receiver mutation over immutable BEAM values
 partial explicit form (`EReceiverEffect`) and a centralized convention table, making it a safer
 candidate than inventing a new family from scratch.
 
-The completed plan must record:
+The marker/plan stores only irrecoverable behavioral variants:
 
 - receiver identity and representation category;
-- source operation and source position;
+- structural source operation and source position;
 - whether the source result is the updated receiver, a separate value, or both;
-- evaluation order for receiver and arguments;
-- the writable binding/writeback target, if any;
-- control-flow joins that must carry the updated value;
-- exception behavior and completed effects; and
-- the reason a runtime/helper operation is or is not required.
+- the writable binding/writeback target, if any; and
+- an optional stable classification/decision ID when cross-node validation needs it.
+
+Left-to-right evaluation and ordinary failure behavior are invariants of the one owner unless a real
+operation variant needs additional data. Control-flow joins belong in scoped lowering context or a
+separate proven state plan, not as a full CFG summary copied onto every marker. Runtime/helper prose
+belongs in classification evidence; it is not repeated as free-form payload.
 
 The plan is valid only for declared persistent value APIs. Managed Haxe reference carriers use the
 separate managed-reference semantic nodes and shared-storage writes; they must never become caller
@@ -239,15 +374,31 @@ These checks are not a request to run every whole-tree invariant after every rew
 cheap in normal builds where practical, more detailed under the existing compiler validation
 defines, and actionable when they fail.
 
+Legality applies to semantic and authority families, not every ordinary Elixir syntax constructor.
+Each admitted family declares its construction domain, legal phase range, one owner, and
+post-owner status. Existing debt begins report-only; already-owned failures such as a receiver
+marker at printer readiness remain hard errors.
+
+## `LoopIR` status
+
+`LoopIR` supports the architectural idea of a local plan, but is not evidence that its current
+schema is complete. It still uses placeholder target nodes, a floating confidence score,
+`originalExpr` re-analysis in emitters, and a nominal reduce strategy that falls back to legacy
+emission. The tightening task replaces successful paths with closed variants and explicit `NoMatch`
+or unsupported reasons. A successful emitter consumes only the plan; the original typed expression
+remains outside it solely for fallback. This remains a builder-local plan, not a whole-compiler CFG.
+
 ## HXX and HEEx
 
 Typed HXX/HEEx should keep template structure, attributes, control constructs, and embedded
 `ElixirAST` expressions visible until the template printer. The interpolation slice establishes the
-generic part of that model. The inventory will classify remaining `ESigil(content:String)` and raw
+generic part of that model. The typed authority slice will classify remaining
+`ESigil(content:String)` and raw
 HEEx producers before any template-AST expansion is approved.
 
 External raw HEEx remains valid only through the documented explicit authority. A broad template IR
-will not be designed speculatively; it earns a follow-up when the inventory shows a closed repeated
+will not be designed speculatively; it earns a follow-up when the receipt and typed audit show a
+closed repeated
 semantic family that ordinary `ElixirAST` fragments cannot represent.
 
 ## Pass/module decomposition
@@ -267,14 +418,22 @@ A mechanical move that leaves ownership or side tables ambiguous does not satisf
 
 ## Staged implementation and rollback
 
-1. Freeze a machine-readable inventory and authority taxonomy without changing output.
-2. Add structural interpolation behind byte/runtime parity, then remove interpolation scanners only
-   when their structural replacements cover the same cases.
-3. Complete and validate the persistent receiver-effect plan; keep managed carriers explicitly
-   excluded.
-4. Add semantic-boundary/raw-authority/runtime-reason invariants.
-5. Extract the proven owners into focused modules without changing registry identity or order.
-6. Consider HEEx/framework, failure, or further runtime plans only from measured inventory evidence.
+1. Freeze the existing generated-output, result, pass-order/scope, runtime, package, and determinism
+   baselines; record reviewed architecture debt in this decision without creating a parallel audit
+   database.
+2. Add exhaustive child/pattern traversal and run legacy/new walkers in shadow mode before switching.
+3. Make registry errors fail closed while preserving the exact effective list.
+4. Replace opaque executable bundles with transparent nested groups, initially preserving current
+   capability snapshot semantics.
+5. Add request-local pass context, conservative analysis infrastructure, and report-only legality.
+6. Instrument then consolidate persistent receiver effects under one owner; keep managed carriers
+   explicitly excluded.
+7. Move numeric-sentinel ownership upstream so result validation no longer models printer repair.
+8. Add structural interpolation behind byte/runtime parity, then remove interpolation scanners only
+   when structural replacements cover the same cases.
+9. Move remaining semantic printer policy upstream and tighten `LoopIR` as independent slices.
+10. Extract proven owners without changing registry identity/order, then consider HEEx/framework,
+    failure, managed-reference, or further runtime plans only from measured evidence.
 
 Each slice is independently revertible before a public AST/internal contract is relied upon. A
 rollback restores the previous internal lowering but must not weaken Haxe behavior, disable result
@@ -286,6 +445,9 @@ not public, node schema changes need source/package parity rather than consumer 
 Implementation slices require, proportionate to scope:
 
 - structural AST tests proving traversal and source metadata;
+- constructor/pattern coverage and legacy/new walker visit-set evidence;
+- strict registry negative tests, frozen effective order, and opaque/transparent runner parity;
+- request-local determinism and cached/forced-recomputed analysis parity;
 - focused interpolation snapshots and BEAM runtime assertions;
 - adversarial escaping and binder/scope fixtures;
 - pass-order, pass-inventory, and pass-scope guards;
@@ -304,7 +466,7 @@ operation whose lowering is being verified.
 
 - A copy of haxe.c's HxcIR, CFG, place/lifetime model, or schema versioning.
 - A universal Reflaxe IR shared speculatively across targets.
-- Replacing `TypedExpr`, `ElixirAST`, `LoopIR`, or the pass registry.
+- Replacing `TypedExpr`, `ElixirAST`, or the pass registry; `LoopIR` may be tightened as a local plan.
 - Duplicating every Haxe expression in a second tree.
 - A big-bang builder/transformer rewrite.
 - Treating Portable and Elixir-first as different semantic backends.
@@ -319,7 +481,8 @@ operation whose lowering is being verified.
 | Conclusion | Confidence | Limitation |
 | --- | ---: | --- |
 | Preserve the existing pipeline instead of adopting HxcIR wholesale | High | Future evidence may justify additional focused plans, not a current whole-program IR |
-| Structural interpolation is the best first seam | High | The inventory may reveal prerequisite traversal/equality work |
+| Exhaustive child/pattern traversal is the first implementation prerequisite | High | Switching walkers may expose latent behavior and therefore requires shadow evidence |
+| Structural interpolation is the first new structural-node seam | High | It follows traversal/pass/result prerequisites rather than preceding them |
 | Receiver effects are the best first semantic-plan completion | Medium-high | Exact interaction with `Dynamic` and managed representation must be validated against current main |
 | Raw authority can be completely classified | Medium-high | Some framework/template producers may need a temporary migration class |
 | A general structural HEEx model should be designed now | Low | Inventory and interpolation evidence must come first |

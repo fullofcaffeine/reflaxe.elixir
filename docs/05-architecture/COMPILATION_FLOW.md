@@ -3,8 +3,8 @@
 This document describes the current (post‑August 2025) compilation flow for Reflaxe.Elixir.
 
 Reflaxe.Elixir is a **macro‑time compiler**: it runs during the Haxe compile, converts Haxe’s
-typed AST (`TypedExpr`) into a target AST (`ElixirAST`), applies ordered transformation passes,
-then prints idiomatic Elixir source.
+typed AST (`TypedExpr`) into its target-specific intermediate representation (`ElixirAST`), applies
+ordered transformation passes, then prints idiomatic Elixir source.
 
 ## High‑Level Flow
 
@@ -17,7 +17,7 @@ ElixirCompiler (GenericCompiler<ElixirAST>)
   ↓ build
 ElixirASTBuilder (TypedExpr → ElixirAST)
   ↓ transform
-ElixirASTTransformer (ordered, shape‑based passes)
+ElixirASTTransformer (ordered typed/structural AST passes)
   ↓ validate authored function result contracts (test/opt-in builds)
   ↓ print
 ElixirASTPrinter (ElixirAST → Elixir source text)
@@ -35,13 +35,18 @@ Generated, content-hash-owned Elixir files
 
 One pipeline does not require every source invariant to remain implicit until a final target node is
 chosen. A small semantic plan is allowed when it preserves one named Haxe invariant across several
-target constructs and can be validated before lowering. `LoopIR`, receiver-effect intent, and the
-function-result invariant are current precedents.
+target constructs and can be validated before lowering. Receiver-effect intent and the
+function-result invariant are current focused forms. `LoopIR` is a useful local-plan experiment, but
+its current placeholder/confidence/original-expression behavior is not yet a complete normalized
+contract.
 
 The compiler does not adopt haxe.c's C-specific whole-program IR. Most Haxe meaning still lowers
-directly into structural `ElixirAST`. Compiler-owned children must not be printed and re-embedded as
-raw target text when later passes need to traverse them; structural interpolation is the first
-planned repair. See
+directly into structural `ElixirAST`; a bounded semantic marker may temporarily live in that same IR
+when one named lowerer owns it. The immediate prerequisite is one exhaustive child/pattern schema:
+the current generic walkers have overlapping omissions, so another child-bearing constructor could
+otherwise become a silent analysis leaf. Compiler-owned children must not be printed and re-embedded
+as raw target text when later passes need to traverse them; structural interpolation follows that
+foundation. See
 [Structural Elixir AST and Focused Semantic Plans](SEMANTIC_PLANS_AND_STRUCTURAL_AST.md).
 
 ## Where “Desugaring” and “Re‑Sugaring” Happen
@@ -50,7 +55,9 @@ planned repair. See
   lower‑level shapes).
 - Reflaxe.Elixir **re‑sugars** those shapes inside **transformer passes** to recover idiomatic,
   Elixir‑native patterns (e.g., `Enum.*`, pipes, comprehensions, Phoenix‑friendly shapes).
-- The **printer is formatting‑only**; semantic decisions belong in builder/transformer.
+- The **printer contract is formatting-only**; semantic decisions belong in builders or named
+  passes. Current exception/Repo/name/sentinel behavior still violates that contract and is tracked
+  by `haxe.elixir.codex-75i.10` and `.11` rather than hidden by this overview.
 - Optional canonical Mix formatting runs after staging succeeds but before live publication. It is
   a presentation stage, never an AST repair stage; see
   [Canonical Formatting for Generated Elixir](../02-user-guide/GENERATED_OUTPUT_FORMATTING.md) and
