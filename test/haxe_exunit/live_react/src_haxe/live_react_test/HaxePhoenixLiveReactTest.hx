@@ -210,14 +210,14 @@ class HaxePhoenixLiveReactTest extends TestCase {
 		var innerPath = Path.join([root, "assets", "react-components", "alpha-panel.tsx"]);
 		var inner = File.readBang(innerPath);
 
-		Assert.containsString(boundary, 'import type {LiveProps} from "live_react"');
+		Assert.containsString(boundary, "export type AlphaPanelRawProps = Record<string, unknown>");
 		Assert.containsString(boundary, "const nativeBridgeKeys");
-		Assert.containsString(boundary, "typeof raw.pushEvent");
 		Assert.containsString(boundary, "Unexpected AlphaPanel input");
-		Assert.containsString(boundary, 'raw.pushEvent("alpha_panel_action", {})');
+		Assert.doesNotContainString(boundary, "raw.pushEvent");
+		Assert.doesNotContainString(boundary, "alpha_panel_action");
 		Assert.containsString(boundary, '<section role="alert"');
-		Assert.containsString(inner, "readonly onAction: () => void");
-		Assert.containsString(inner, '<button type="button" onClick={onAction}>');
+		Assert.containsString(inner, "readonly title: string");
+		Assert.doesNotContainString(inner, "onAction");
 		Assert.doesNotContainString(inner, "pushEvent");
 		Assert.doesNotContainString(inner, "uploadTo");
 
@@ -257,8 +257,8 @@ class HaxePhoenixLiveReactTest extends TestCase {
 		Assert.equals("export function CustomBoundary() { return null }\n", File.readBang(Path.joinTwo(root, custom)));
 	}
 
-	@:test("full removal retains a scaffolded component and its browser runtime dependencies")
-	function testFullRemovalRetainsScaffoldedComponentAndRuntimeDependencies():Void {
+	@:test("full removal retains scaffolded source without retaining now-unused browser dependencies")
+	function testFullRemovalRetainsScaffoldedSourceWithoutUnusedDependencies():Void {
 		var root = Fixture.fixtureRoot(Fixture.PLAIN_JS, "assets");
 		LifecycleApi.applyBang(root, Fixture.applyOptions(root));
 		LifecycleApi.addComponentBang(root, "StatusPanel", Fixture.componentOptions());
@@ -266,14 +266,13 @@ class HaxePhoenixLiveReactTest extends TestCase {
 		var result = LifecycleApi.removeBang(root, [{_0: "yes", _1: true}]);
 		var packageJson = Fixture.readJson(Path.join([root, "assets", "package.json"]));
 
-		Assert.equals(["dependencies.live_react", "dependencies.react", "dependencies.react-dom"], result.retainedPackageKeys);
-		Assert.isTrue(result.retainedLiveReactDependency);
+		Assert.isEmpty(result.retainedPackageKeys);
+		Assert.isFalse(result.retainedLiveReactDependency);
 		Assert.isTrue(File.regular(Path.join([root, "src_haxe", "demo_hx", "components", "live_react", "StatusPanelIsland.hx"])));
 		Assert.isTrue(File.regular(Path.join([root, "assets", "react-components", "status-panel-boundary.tsx"])));
 		Assert.isTrue(File.regular(Path.join([root, "assets", "react-components", "status-panel.tsx"])));
-		Assert.equals("file:../deps/live_react", Fixture.jsonPath(packageJson, ["dependencies", "live_react"]));
-		Assert.equals("19.1.0", Fixture.jsonPath(packageJson, ["dependencies", "react"]));
-		Assert.equals("19.1.0", Fixture.jsonPath(packageJson, ["dependencies", "react-dom"]));
+		Assert.equals(1, ElixirMap.sizeTerm(packageJson));
+		Assert.equals("demo-assets", Fixture.jsonPath(packageJson, ["name"]));
 		Assert.isFalse(File.exists(Path.join([root, "assets", "react-components", "registry.generated.ts"])));
 		Assert.isFalse(File.exists(Path.joinTwo(root, Fixture.MANIFEST)));
 	}

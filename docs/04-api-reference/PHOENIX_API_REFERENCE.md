@@ -231,9 +231,122 @@ those callers when strict resolution is desired; a global strict-components
 define also applies inside the open upstream wrapper and therefore requires an
 app-owned discoverable declaration for that external tag.
 
-The first-class setup/check/remove tooling, static registry, and browser bridge
-remain tracked as separate experimental integration slices. Until those land,
-applications still own the stock Mix/npm dependency and asset configuration.
+The first-class setup/check/remove tooling and static registry now exist as an
+experimental implementation, but public promotion still waits for the two
+application canaries, installed-package smoke, and the compatibility gate.
+Until that promotion, treat the command surface as opt-in 1.x preview work.
+
+#### Reusing a Live Event Protocol from a React boundary
+
+Do not invent an event string in the generated React starter or pass stock
+LiveReact's entire browser bridge into the inner component. Declare the event
+once in the shared Haxe classpath that already feeds the LiveView dispatcher:
+
+```haxe
+package shared.liveview;
+
+typedef StatusPanelAction = {
+  var density:String;
+
+  @:wire("selected_index")
+  var selectedIndex:Int;
+
+  @:optional
+  var note:Null<String>;
+}
+
+@:liveEventProtocol
+enum StatusPanelEvent {
+  @:hookEvent("status_panel_action")
+  Action(payload:StatusPanelAction);
+}
+```
+
+`phoenix.live_react.LiveReactEventProtocol` consumes the same normalized
+`LiveEventProtocolModel` as the Haxe browser companion and Elixir LiveView
+dispatcher. Export the application-owned TypeScript boundary contract
+explicitly; use the read-only form in CI:
+
+```bash
+HAXE_NO_SERVER=1 haxe \
+  -cp src_shared \
+  -lib phoenix_js \
+  --macro 'phoenix.live_react.LiveReactEventProtocol.exportTypeScript("shared.liveview.StatusPanelEvent", "assets/react-components/status-panel-events.generated.ts")' \
+  --no-output
+
+HAXE_NO_SERVER=1 haxe \
+  -cp src_shared \
+  -lib phoenix_js \
+  --macro 'phoenix.live_react.LiveReactEventProtocol.checkTypeScript("shared.liveview.StatusPanelEvent", "assets/react-components/status-panel-events.generated.ts")' \
+  --no-output
+```
+
+The checked-in output is ordinary strict TypeScript. It carries the protocol
+manifest/hash for drift checks, validates exact semantic inputs, maps Haxe field
+names to wire keys, and narrows stock LiveReact to the two-argument capability
+the adapter actually needs:
+
+```ts
+export interface ActionInput {
+  readonly density: string
+  readonly note?: string | null
+  readonly selectedIndex: number
+}
+
+export type LiveReactPushEvent = (
+  event: string,
+  payload: Record<string, unknown>,
+) => unknown
+
+export function pushAction(
+  pushEvent: LiveReactPushEvent,
+  candidate: ActionInput,
+): void {
+  const input = decodeActionInput(candidate)
+  pushEvent(ACTION_EVENT, encodeActionPayload(input))
+}
+```
+
+Keep `pushEvent` inside the trusted application boundary. The inner React
+component receives a semantic callback:
+
+```tsx
+import {
+  pushAction,
+  type ActionInput,
+  type LiveReactPushEvent,
+} from "./status-panel-events.generated"
+import {StatusPanel} from "./status-panel"
+
+type RawProps = Record<string, unknown> & {
+  readonly pushEvent: LiveReactPushEvent
+}
+
+function decodeStatusPanelProps(raw: Record<string, unknown>): {title: string} {
+  if (typeof raw.title !== "string") {
+    throw new Error("StatusPanel.title must be a string")
+  }
+  return {title: raw.title}
+}
+
+export function StatusPanelBoundary(raw: RawProps) {
+  const input = decodeStatusPanelProps(raw)
+  const onAction = (action: ActionInput): void => {
+    pushAction(raw.pushEvent, action)
+  }
+
+  return <StatusPanel {...input} onAction={onAction} />
+}
+```
+
+Automatic projection is deliberately limited to hook-origin events with closed
+`String`, `Int`, `Bool`, `Float`, `Array<String>`, `Array<Int>`, and explicitly
+optional/null fields. Template/form events stay in their Phoenix HXX boundary.
+Open payloads and custom Haxe codecs require an app-owned TypeScript validator
+or codec adapter; the projector rejects them instead of claiming type safety
+through `any`, `unknown`, or `Dynamic`. Server dispatch and known malformed
+payload behavior remain the existing Live Event Protocol contract documented in
+[`phoenixhx-live-event-protocols.md`](../08-roadmap/phoenixhx-live-event-protocols.md).
 
 ### Forms
 

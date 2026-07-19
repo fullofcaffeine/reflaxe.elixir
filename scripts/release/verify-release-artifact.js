@@ -23,6 +23,7 @@ const REQUIRED_ENTRIES = [
   'src/reflaxe/elixir/CompilerBootstrap.hx',
   'vendor/reflaxe/src/reflaxe/ReflectCompiler.hx',
   'vendor/phoenix_shared/src/phoenix/channels/WirePayload.hx',
+  'vendor/phoenix_shared/src/phoenix/live_react/LiveReactEventProtocol.hx',
 ]
 const ALLOWED_ROOT_FILES = new Set([
   'LICENSE',

@@ -119,7 +119,7 @@ defmodule Mix.Tasks.Haxe.Gen.LiveReact do
           end
 
           Mix.shell().info(
-            "Next: review the closed Haxe assigns and trusted TypeScript boundary, then compile Haxe and run the Vite type/build checks."
+            "Next: review the closed Haxe assigns and trusted TypeScript boundary, add a Live Event Protocol adapter for client pushes, then compile Haxe and run the Vite type/build checks."
           )
 
         mode == :remove_component ->

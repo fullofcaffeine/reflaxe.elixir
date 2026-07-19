@@ -1,5 +1,6 @@
 package;
 
+import StatusPanelEvent.StatusPanelActionInput;
 import genes.react.Element;
 import genes.react.JSX.*;
 import genes.ts.Imports;
@@ -14,6 +15,19 @@ typedef StatusPanelProps = {
 	final density:Density;
 	final onAction:Density->Void;
 }
+
+/**
+ * Stock LiveReact bridge capability narrowed to the one call this fixture uses.
+ * `DynamicAccess<Dynamic>` is confined to the external JSON transport stub;
+ * generated validators and semantic component props remain closed and typed.
+ */
+typedef LiveReactPushEvent = (event:String, payload:haxe.DynamicAccess<Dynamic>) -> Void;
+
+/** Type of the generated helper imported from the shared Haxe event protocol. */
+typedef PushStatusPanelAction = (pushEvent:LiveReactPushEvent, input:StatusPanelActionInput) -> Void;
+
+/** Runtime validator generated from the same shared Haxe event protocol. */
+typedef DecodeStatusPanelAction = Dynamic->StatusPanelActionInput;
 
 /**
  * Haxe-authored React island shared by strict TSX and classic Genes ESM.
@@ -58,6 +72,48 @@ class LiveReactIslandFixture {
 		}));
 		if (registryHtml.indexOf('data-density="comfortable"') == -1)
 			throw "static registry lost the closed density contract: " + registryHtml;
+
+		#if live_react_event_contract_tsx
+		final pushAction:PushStatusPanelAction = Imports.namedImport("./status-panel-events.generated.js", "pushAction");
+		final decodeAction:DecodeStatusPanelAction = Imports.namedImport("./status-panel-events.generated.js", "decodeActionInput");
+		var pushedEvent:Null<String> = null;
+		var pushedDensity:Null<String> = null;
+		var pushedIndex:Null<Int> = null;
+		pushAction(function(event:String, payload:haxe.DynamicAccess<Dynamic>):Void {
+			pushedEvent = event;
+			pushedDensity = payload["density"];
+			pushedIndex = payload["selected_index"];
+		}, {
+			density: Density.Compact,
+			enabled: true,
+			progress: 0.75,
+			tags: ["typed", "react"],
+			indexes: [1, 2],
+			selectedIndex: 2,
+			note: "checked"
+		});
+
+		if (pushedEvent != "status_panel_action" || pushedDensity != "compact" || pushedIndex != 2)
+			throw "generated Live Event Protocol helper lost its event or wire contract";
+
+		var rejectedUnexpectedField = false;
+		try {
+			// External JSON is deliberately cast only at the validator boundary under test.
+			decodeAction(cast {
+				density: "compact",
+				enabled: true,
+				progress: 0.75,
+				tags: ["typed"],
+				indexes: [1],
+				selectedIndex: 2,
+				unexpected: true
+			});
+		} catch (_:Any) {
+			rejectedUnexpectedField = true;
+		}
+		if (!rejectedUnexpectedField)
+			throw "generated Live Event Protocol validator accepted an unknown field";
+		#end
 
 		#if genes_test_invalid_props
 		// genes-ts v1.37+ validates component props while Haxe types the inline HXX.

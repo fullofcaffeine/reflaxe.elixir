@@ -54,6 +54,8 @@ function packageFixture(root, options = {}) {
       'package reflaxe; class ReflectCompiler {}\n',
     'vendor/phoenix_shared/src/phoenix/channels/WirePayload.hx':
       'package phoenix.channels; class WirePayload {}\n',
+    'vendor/phoenix_shared/src/phoenix/live_react/LiveReactEventProtocol.hx':
+      'package phoenix.live_react; class LiveReactEventProtocol {}\n',
   })) {
     write(root, name, content)
   }

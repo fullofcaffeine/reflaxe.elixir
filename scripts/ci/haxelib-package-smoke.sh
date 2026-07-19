@@ -234,6 +234,8 @@ require_file "$installed_root/src/sys/io/File.cross.hx"
 require_file "$installed_root/src/elixir/DateTime.hx"
 require_dir "$installed_root/vendor/reflaxe/src"
 require_dir "$installed_root/vendor/phoenix_shared/src"
+require_file "$installed_root/vendor/phoenix_shared/src/phoenix/live_react/LiveReactEventProtocol.hx"
+require_file "$installed_root/vendor/phoenix_shared/src/phoenix/live_react/macros/LiveReactEventProtocolTypeScript.hx"
 
 require_absent "$installed_root/std"
 require_absent "$installed_root/src/elixir/_std"

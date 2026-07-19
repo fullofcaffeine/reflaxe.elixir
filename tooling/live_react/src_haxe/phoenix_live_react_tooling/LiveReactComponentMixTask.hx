@@ -104,7 +104,8 @@ class LiveReactComponentMixTask {
 				Mix.shell().info("Created hand-owned starter source:\n" + Enum.mapJoin(created, "\n", function(path:String):String return "  * " + path));
 			else
 				Mix.shell().info("No starter source was changed; existing application source remains hand-owned.");
-			Mix.shell().info("Next: review the closed Haxe assigns and trusted TypeScript boundary, then compile Haxe and run the Vite type/build checks.");
+			Mix.shell()
+				.info("Next: review the closed Haxe assigns and trusted TypeScript boundary, add a Live Event Protocol adapter for client pushes, then compile Haxe and run the Vite type/build checks.");
 		} else if (mode == REMOVE_COMPONENT) {
 			Mix.shell().info("Removed " + name + " from the static LiveReact registry.");
 			if (retained.length != 0)

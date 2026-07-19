@@ -153,6 +153,37 @@ generic compiler, structured DSL, or target-library fix and its semantic
 regression; LiveReact-specific compiler heuristics and raw target injection
 remain forbidden.
 
+### Live Event Protocol adapter slice (`haxe.elixir.codex-msb.6`)
+
+The React event boundary now derives from the existing Haxe-owned
+`LiveEventProtocolModel`; no second React event enum, string registry, codec
+runtime, or compiler special case was added:
+
+- `phoenix.live_react.LiveReactEventProtocol` explicitly exports or checks a
+  signature-owned `*.generated.ts` contract containing the normalized manifest,
+  hash, event names, semantic fields, wire names, exact validators, encoders,
+  and a structural stock-`pushEvent` subset;
+- automatic projection admits hook-origin `String`, `Int`, `Bool`, `Float`,
+  `Array<String>`, `Array<Int>`, and explicit optional/null fields; template/form
+  origins, open payloads, and custom codecs fail with an app-owned-adapter
+  diagnostic;
+- the default component starter no longer invents a `${component}_action`
+  string or sends an untyped empty payload. It remains a safe display-only
+  boundary until the application connects a declared Live Event Protocol;
+- the tracked Haxe-authored React fixture exercises this adapter through the
+  admitted canonical Genes v1.37.0 TypeScript/TSX inline-HXX lane, while its
+  classic ESM render remains byte/runtime-equivalent and both source-map lanes
+  remain portable;
+- the checked generated TypeScript is strict, no-unused clean, deterministic,
+  ownership-safe, read-only under `checkTypeScript`, and reviewed as ordinary
+  application source rather than hidden macro output.
+
+This closes the event-contract implementation slice only after its focused
+Haxe/TypeScript/runtime, existing LiveView invalid-payload, Mix lifecycle,
+generated-output, documentation, package-content, and hosted CI gates pass. It
+does not promote the overall LiveReact integration; examples 12/18, todo-app,
+canonical guide, compatibility, and installed-package canaries remain open.
+
 ### Historical proof records remain isolated
 
 The planning input cited historical project-proof tasks that are intentionally

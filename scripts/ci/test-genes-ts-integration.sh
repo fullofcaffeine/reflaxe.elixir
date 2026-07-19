@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 FIXTURE_DIR="$ROOT_DIR/test/fixtures/genes_ts_live_react"
 EXAMPLE_DIR="$ROOT_DIR/examples/12-phoenix-chat"
 GENERATED_DIR="$FIXTURE_DIR/generated"
+EXPECTED_CONTRACT="$FIXTURE_DIR/expected/status-panel-events.generated.ts"
 
 if [[ ! -x "$EXAMPLE_DIR/node_modules/.bin/tsc" ]]; then
   "$ROOT_DIR/scripts/with-timeout.sh" --secs 300 -- \
@@ -27,6 +28,94 @@ cd "$ROOT_DIR"
 HAXE_NO_SERVER=1 haxe "$FIXTURE_DIR/build-tsx.hxml"
 HAXE_NO_SERVER=1 haxe "$FIXTURE_DIR/build-classic.hxml"
 
+EVENT_CONTRACT_RELATIVE="test/fixtures/genes_ts_live_react/generated/src-gen/status-panel-events.generated.ts"
+EVENT_MACRO_ARGS=(
+  -cp "$ROOT_DIR/std"
+  -cp "$ROOT_DIR/vendor/phoenix_shared/src"
+  -cp "$FIXTURE_DIR/src"
+)
+
+run_event_macro() {
+  HAXE_NO_SERVER=1 haxe "${EVENT_MACRO_ARGS[@]}" --macro "$1" --no-output
+}
+
+run_event_macro \
+  "phoenix.live_react.LiveReactEventProtocol.exportTypeScript(\"StatusPanelEvent\", \"$EVENT_CONTRACT_RELATIVE\")"
+
+# Generated event contracts are drift-checked independently from TypeScript so
+# an application can use the same read-only gate before Vite compilation.
+run_event_macro \
+  "phoenix.live_react.LiveReactEventProtocol.checkTypeScript(\"StatusPanelEvent\", \"$EVENT_CONTRACT_RELATIVE\")"
+
+diff -u \
+  "$EXPECTED_CONTRACT" \
+  "$GENERATED_DIR/src-gen/status-panel-events.generated.ts"
+
+contract_path="$GENERATED_DIR/src-gen/status-panel-events.generated.ts"
+unowned_path="$GENERATED_DIR/src-gen/unowned.generated.ts"
+ownership_log="$GENERATED_DIR/event-contract-ownership.log"
+printf '%s\n' '// hand-owned TypeScript' >"$unowned_path"
+if run_event_macro \
+  'phoenix.live_react.LiveReactEventProtocol.exportTypeScript("StatusPanelEvent", "test/fixtures/genes_ts_live_react/generated/src-gen/unowned.generated.ts")' \
+  >"$ownership_log" 2>&1; then
+  echo "LiveReact event exporter overwrote an unowned TypeScript file" >&2
+  exit 1
+fi
+if ! grep -Fq "Refusing to overwrite unowned LiveReact event contract" "$ownership_log"; then
+  echo "LiveReact event exporter rejected an unowned file without the expected diagnostic" >&2
+  sed -n '1,120p' "$ownership_log" >&2
+  exit 1
+fi
+rm -f "$unowned_path"
+
+drift_log="$GENERATED_DIR/event-contract-drift.log"
+printf '%s\n' '// intentional drift' >>"$contract_path"
+if run_event_macro \
+  "phoenix.live_react.LiveReactEventProtocol.checkTypeScript(\"StatusPanelEvent\", \"$EVENT_CONTRACT_RELATIVE\")" \
+  >"$drift_log" 2>&1; then
+  echo "LiveReact event contract check accepted generated-file drift" >&2
+  exit 1
+fi
+if ! grep -Fq "LiveReact event contract drift detected" "$drift_log" ||
+   ! grep -Fq "intentional drift" "$contract_path"; then
+  echo "LiveReact event contract check did not fail read-only with the expected diagnostic" >&2
+  sed -n '1,120p' "$drift_log" >&2
+  exit 1
+fi
+
+run_event_macro \
+  "phoenix.live_react.LiveReactEventProtocol.exportTypeScript(\"StatusPanelEvent\", \"$EVENT_CONTRACT_RELATIVE\")"
+diff -u "$EXPECTED_CONTRACT" "$contract_path"
+
+assert_event_projection_rejected() {
+  local protocol_type="$1"
+  local expected="$2"
+  local log="$GENERATED_DIR/${protocol_type}.negative.log"
+
+  if run_event_macro \
+    "phoenix.live_react.LiveReactEventProtocol.exportTypeScript(\"$protocol_type\", \"test/fixtures/genes_ts_live_react/generated/src-gen/rejected.generated.ts\")" \
+    >"$log" 2>&1; then
+    echo "LiveReact event projection unexpectedly accepted $protocol_type" >&2
+    exit 1
+  fi
+
+  if ! grep -Fq "$expected" "$log"; then
+    echo "LiveReact event projection rejected $protocol_type without the expected diagnostic" >&2
+    sed -n '1,120p' "$log" >&2
+    exit 1
+  fi
+}
+
+assert_event_projection_rejected \
+  "CustomStatusPanelEvent" \
+  "requires an application-owned TypeScript adapter"
+assert_event_projection_rejected \
+  "OpenStatusPanelEvent" \
+  "raw/open payloads require an application-owned TypeScript validator"
+assert_event_projection_rejected \
+  "TemplateStatusPanelEvent" \
+  "supports hook-origin events only"
+
 negative_log="$GENERATED_DIR/negative-hxx.log"
 if HAXE_NO_SERVER=1 haxe "$FIXTURE_DIR/build-negative.hxml" >"$negative_log" 2>&1; then
   echo "genes-ts accepted an invalid Haxe-authored React prop" >&2
@@ -39,7 +128,13 @@ if ! grep -Eq 'GTS-HXX-PROP-002.*property `title` expects `String` but received 
   exit 1
 fi
 
+# Compiler diagnostics legitimately contain the local source path. They are
+# transient test evidence, not generated application artifacts, so remove them
+# before the tracked-output path-hygiene scan below.
+rm -f "$GENERATED_DIR"/*.log
+
 "$EXAMPLE_DIR/node_modules/.bin/tsc" --project "$FIXTURE_DIR/tsconfig.json"
+"$EXAMPLE_DIR/node_modules/.bin/tsc" --project "$FIXTURE_DIR/tsconfig-contract.json"
 
 tsx_output="$(node --enable-source-maps "$GENERATED_DIR/dist/index.js")"
 classic_output="$(node --enable-source-maps "$GENERATED_DIR/classic/index.js")"

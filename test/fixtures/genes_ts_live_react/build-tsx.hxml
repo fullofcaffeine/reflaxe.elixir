@@ -6,6 +6,7 @@
 -js test/fixtures/genes_ts_live_react/generated/src-gen/index.tsx
 -D genes.ts
 -D genes.ts.jsx_import_source=react
+-D live_react_event_contract_tsx
 -D js-source-map
 
 --dce full

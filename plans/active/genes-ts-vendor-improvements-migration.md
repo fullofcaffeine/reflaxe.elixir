@@ -933,3 +933,24 @@ Unresolved facts:
 ```
 
 Do not state that Reflaxe.Elixir can remove its vendor until the downstream migration task has pinned this green revision and completed its own full verification.
+
+## 14. 2026-07-19 Downstream Strict-TS Follow-Up
+
+The downstream LiveReact event-contract lane found one generic Genes output
+quality gap after admitting canonical v1.37.0: enabling TypeScript
+`noUnusedLocals` across the complete strict TSX output reports unused
+`Register` imports in generated support modules such as `haxe/extern/Rest`,
+`haxe/NativeStackTrace`, `js/lib/Object`, `js/lib/Promise`, and `index`.
+
+This does not invalidate the admitted downstream revision: strict type checking,
+React runtime behavior, classic ESM parity, and source maps remain green, and
+the Haxe-generated LiveReact event contract independently passes
+`noUnusedLocals` plus `noUnusedParameters`. It does mean Genes should not yet
+claim that an arbitrary complete TSX tree is no-unused-clean.
+
+The Genes agent should reduce this without PhoenixHx or LiveReact symbols and
+either omit semantically unused `Register` imports or make their required side
+effect explicit. Verify both strict TypeScript/TSX and classic ESM output before
+proposing the generic fix. Downstream should consume it only through the normal
+exact pushed-SHA/merged-main/release admission workflow; no local checkout path
+or in-repository Genes patch is allowed.

@@ -696,6 +696,16 @@ for named typedef payload fields; v1 keeps `WireCodec<T>` as the explicit
 manual-domain escape hatch, while built-in protocol fields stay macro-first and
 runtime-minimal.
 
+The opt-in stock LiveReact integration now reuses this normalized model through
+`phoenix.live_react.LiveReactEventProtocol`. Its explicit exporter/checker emits
+a signature-owned strict TypeScript adapter containing the same event names,
+semantic field names, wire keys, manifest, and hash. The adapter narrows stock
+LiveReact's `pushEvent` capability and generates exact validators plus wire
+encoders for closed built-in hook payloads. It rejects template/form origins,
+open payloads, and custom codecs; those remain in their Phoenix boundary or
+require an application-owned TypeScript adapter. This is an adapter to the
+existing protocol, not a second React-specific event DSL or runtime.
+
 Avoid copying these Tink patterns into v1:
 
 - HTTP path/query/header/body routing machinery.
