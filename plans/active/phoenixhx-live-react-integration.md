@@ -25,7 +25,8 @@ The planning graph uses these generated IDs:
 - Compatibility/package/CI gate: `haxe.elixir.codex-msb.9`
 - Todo-app flagship adoption proof: `haxe.elixir.codex-msb.11`
 - Canonical guide and API documentation: `haxe.elixir.codex-msb.12`
-- Haxe-authored React follow-up: `haxe.elixir.codex-a06`
+- Haxe-authored React and Genes TSX/HXX conformance gate (P1):
+  `haxe.elixir.codex-a06`
 - SSR follow-up: `haxe.elixir.codex-8yk`
 - Extended capability follow-up: `haxe.elixir.codex-c9w`
 - Separate-Haxelib follow-up: `haxe.elixir.codex-mqj`
@@ -80,9 +81,12 @@ the exception must be documented beside the handwritten code; convenience
 alone is not sufficient.
 
 The planned first support slice is client-only trusted first-party React islands
-with Vite. SSR, slots, uploads, streams, request-selected component names, raw
-bridge exposure, Haxe-authored inner React components, and package extraction
-are separate follow-ups.
+with Vite. It now includes one bounded Haxe-authored inner React component using
+Genes' TypeScript/TSX profile and inline HXX, because this is the most useful
+Haxe-first authoring proof for the flagship consumers. That proof does not imply
+general compatibility with arbitrary React libraries or TypeScript declarations.
+SSR, slots, uploads, streams, request-selected component names, raw bridge
+exposure, and package extraction remain separate follow-ups.
 
 ## Current Evidence and Important Deviations
 
@@ -162,7 +166,8 @@ main. An extra route in example 12 would not count as the independent consumer.
 ## Contract Freeze and Evidence Ledger
 
 The contract task audited the current compiler, scaffold, local proof, event
-model, vendored Genes lane, and the exact LiveReact checkout used by example 12.
+model, then-vendored Genes lane, and the exact LiveReact checkout used by
+example 12.
 The following distinctions are deliberate: an observed project proof is not a
 public support claim, and a proposed implementation remains unverified until
 its child task closes.
@@ -176,7 +181,7 @@ its child task closes.
 | Observed | `LiveEventProtocolModel.hx` already owns normalized wire names, payload fields/kinds, a deterministic manifest, and a hash. | React event contracts adapt this model. A second event enum, DSL, decoder runtime, or independent string registry is rejected. |
 | Observed | The pinned LiveReact checkout exposes `LiveReact.react`, `LiveReact.Reload.vite_assets`, `LiveReact.Test.get_react`, `getHooks`, `useLiveReact`, `Link`, and the stock Vite plugin. Its browser bridge is intentionally broad. | PhoenixHx may declare stable public surfaces honestly, but must not copy their implementation or pass the raw bridge into the default inner component type. Open test/helper shapes must not receive false precision. |
 | Observed | Example 12 currently pins one LiveReact Git revision independently in Mix and npm, and both pins identify revision `055e80e6a4e6d009df5e229eb39e7f85f03fea22`. | This proves one project-local identity match. The reusable tool instead makes Mix canonical and points npm at the resolved Mix checkout so the two sides cannot drift independently. |
-| Observed | `haxe_libraries/genes.hxml` uses the repository's vendored Genes copy; a sibling checkout is not a clean-build or package dependency. The maintained `genes-ts` compiler provides classic ESM plus strict TypeScript/TSX and inline React markup. | The selected migration replaces the vendor with one exact Lix-resolved `genes-ts` commit, preserves current classic ESM consumers, and adds Haxe-authored TS/TSX LiveReact evidence. `$GENES_CHECKOUT` remains only an optional uncommitted contributor override. |
+| Observed | The vendored Genes tree has been removed. `haxe_libraries/genes.hxml` is now a compatibility alias for one exact Lix-resolved `genes-ts` source. The admitted downstream pin is canonical release v1.36.7 at `25a5e3015f8b0f0e4447b8fd0590124548f132da`; upstream's release list currently marks v1.36.8 at `7fc5aa2b72e9a5d6d5feaab9cb9ddfc08be121c6` as latest. Genes provides both classic ESM and strict TypeScript/TSX with inline HXX. | `haxe.elixir.codex-a06` must reverify and admit the latest canonical release through the Haxe-owned pin, use TSX-like inline HXX for the bounded Haxe-authored React proof, and preserve every existing classic Genes consumer. `$GENES_CHECKOUT` and worktrees remain contributor-only inputs, never committed dependencies. |
 | Unknown until implementation | Cross-platform package-root discovery, crash-safe rollback, installed-package template availability, and the ecosystem version matrix have not yet been proven. | Those claims remain gates in `.msb.3`, `.msb.4`, `.msb.8`, and `.msb.9`; this contract does not advertise them as shipped. |
 
 ### Frozen decision table
@@ -196,7 +201,7 @@ its child task closes.
 | Asset ownership | Vite is the sole JavaScript bundler when enabled. Genes may emit ESM source for Vite; Tailwind remains an independent CSS lane. | Simultaneous Vite and esbuild JavaScript pipelines or treating Genes as another bundler. |
 | Mutation safety | Whole-plan read/validate/render first, signature/marker ownership, staged per-file atomic publication, rollback on reported publication failure, and deterministic check/recovery. | Best-effort mutation, warning through an ownership conflict, or claiming power-loss-level multi-file filesystem atomicity. |
 | Compatibility status | Experimental 1.x until the rich migration, independent minimal consumer, todo-app adoption proof, and installed-package smoke pass; support is only the checked matrix rows. | A Reflaxe.Elixir 1.0 blocker or broad ecosystem compatibility inferred from one canary. |
-| Genes | Migrate through `haxe.elixir.codex-m52` to one immutable Lix-pinned `genes-ts` source. Preserve classic ESM for existing PhoenixHX consumers and use strict TypeScript/TSX for the Haxe-first React lane. A pushed topic SHA may be temporary; after merge the pin moves to the exact commit landed on canonical `main`, then to an admitted release commit. | Depending on a local checkout path, a dirty/unpushed checkout, a moving branch, two active compiler sources, framework-specific Genes patches, or unreviewed output changes. |
+| Genes | Keep one immutable Lix-pinned canonical `genes-ts` source. Before the flagship LiveReact consumers land, `haxe.elixir.codex-a06` updates the Haxe-owned pin from v1.36.7 to the latest release that passes admission, then uses Genes' strict TypeScript/TSX and inline-HXX path for the bounded Haxe-authored React component. Preserve classic ESM for every existing PhoenixHX consumer. A pushed topic SHA may bridge a generic upstream fix temporarily; after merge the pin moves to the exact commit landed on canonical `main`, then to an admitted release commit. | Depending on a local checkout path, a dirty/unpushed checkout, a moving branch, two active compiler sources, framework-specific Genes patches, assuming that “latest” is safe without the full downstream matrix, or accepting unreviewed output changes. |
 | Promotion/split | Promote only after example 12, an independent minimal project, the todo-app adoption proof, canonical docs, installed-package smoke, and focused CI. Consider a separate Haxelib only after independent cadence/adoption evidence. | Counting another example-12 route as the second consumer or splitting for aesthetics alone. |
 
 ## Product Contract
@@ -470,29 +475,33 @@ reported, not rewritten heuristically.
 
 ### Observed
 
-- This repository tracks `vendor/genes` as ordinary files at upstream Genes
-  0.4.14 plus local No-Dynamic, source-map typing, async-marker, and emission
-  changes. `haxe_libraries/genes.hxml` makes `-lib genes` hermetic.
-- The sibling `../genes` checkout is `genes-ts` 1.32.0, a renamed and greatly
-  expanded compiler: 74 source files versus 25 here and roughly 15,000 added
-  source lines. It adds strict TypeScript/TSX, React inline markup, explicit
-  async helpers, transactional output, import/dependency plans, richer source
-  maps, and a bounded classic-ESM compatibility path.
-- At the 2026-07-17 audit, `../genes` was a developer checkout rather than a
-  pinned release input. Any sibling path is unavailable to CI, installed
-  packages, and clean adopters regardless of its later working-tree state.
-- `genes-ts` publishes an MIT Haxelib package and documents both TypeScript and
-  classic ESM modes, but its broad change set is not output-compatible by
-  assumption; this repository's generated client corpus must prove migration.
+- `haxe.elixir.codex-m52` removed `vendor/genes` and replaced it with one exact
+  Lix-resolved `genes-ts` source. `-lib genes` remains only a compatibility
+  alias for `-lib genes-ts`; it is not a second compiler source.
+- `haxe.elixir.codex-aas` admitted canonical release v1.36.7 at commit
+  `25a5e3015f8b0f0e4447b8fd0590124548f132da` after classic ESM, strict TSX,
+  source-map, examples, todo-app browser QA, and installed-package evidence.
+- On 2026-07-18, the official upstream release list identified v1.36.8 at exact
+  commit `7fc5aa2b72e9a5d6d5feaab9cb9ddfc08be121c6` as latest. Its release notes name
+  TypeScript narrowing fixes. “Latest” is time-sensitive, and those notes do
+  not by themselves prove downstream compatibility.
+- Genes' strict TypeScript/TSX profile supports TSX-like inline HXX, while its
+  classic split-ESM profile remains the compatibility lane for existing
+  PhoenixHX browser clients.
+- The sibling `../genes` checkout is developer authority only. Its working tree
+  may contain unrelated work and is never a clean-build, CI, package, or
+  consumer dependency.
 
 ### Decision
 
-Replace the vendored Genes 0.4.14 tree through
-`haxe.elixir.codex-m52` with one immutable `genes-ts` dependency resolved by
-Lix. The migration is a prerequisite for closing the static LiveReact registry
-slice because its positive browser contract will be authored in Haxe and
-compiled through the strict TypeScript/TSX profile. Existing PhoenixHX browser
-clients retain the classic split ESM profile; Vite remains the only bundler.
+Keep the completed single-source Lix migration and promote
+`haxe.elixir.codex-a06` to the next P1 conformance gate after the static registry
+slice. That task must reverify upstream's latest release, capture the admitted
+v1.36.7 baseline, update `GenesContract` to the latest canonical release only
+if it passes, regenerate every owned descriptor, and use Genes' TypeScript/TSX
+profile plus inline HXX for a bounded Haxe-authored React component. Existing
+PhoenixHX browser clients retain the classic split-ESM profile; Vite remains
+the only bundler.
 
 The committed dependency never points at `$GENES_CHECKOUT`. Contributors use
 that checkout or an isolated `$GENES_WORKTREE` only through an uncommitted development
@@ -504,17 +513,16 @@ commits. An admitted release may then replace it with the exact release commit
 and artifact receipt. A temporary pre-merge pin cannot support a stable release
 claim.
 
-The vendored tree remains until every local modification has a mapped upstream
-implementation/regression and all existing Genes-backed examples preserve
-runtime semantics, classic ESM/import shape, async/await, inline HXX, DCE, and
-source maps. The detailed contributor workflow and rollback contract are in
+The latest-release admission must preserve every existing Genes-backed example,
+with `examples/todo-app` and `examples/12-phoenix-chat` as named browser
+canaries. It must compare classic module/import ABI, async and inline-HXX
+behavior, DCE, generated ESM, portable source maps, Vite consumption, scaffold
+lifecycle, and installed-package behavior, in addition to strict TSX typing and
+React runtime evidence. A regression keeps the existing v1.36.7 pin in place
+and becomes a generic Genes worktree/pushed-SHA fix; PhoenixHX does not carry a
+local framework-specific compiler patch. The detailed contributor workflow and
+rollback contract remain in
 `docs/03-compiler-development/GENES_DEPENDENCY_WORKFLOW.md`.
-
-Migration must inventory every local patch, compile all current Genes examples,
-compare generated ESM and source maps, preserve both client modes and package
-smoke, and document rollback. It is not a prerequisite for client-only
-LiveReact. The Haxe-authored inner React follow-up may depend on the migration
-only after that task proves the new compiler boundary.
 
 ## Versioned Integration Manifest
 
@@ -603,12 +611,15 @@ new Git repository.
 4. Move the deterministic lifecycle core to Haxe-authored generated Elixir,
    fixing generic compiler/DSL/library gaps as required.
 5. Add the static registry and typed wrapper scaffold.
-6. Align typed events with Live Event Protocols.
-7. Migrate the current example 12 local binder.
-8. Add an independent minimal consumer through public commands.
-9. Add a bounded typed LiveReact section to the Haxe-first todo-app.
-10. Publish the canonical guide and API documentation from all three proofs.
-11. Close compatibility evidence, installed-package smoke, package contents,
+6. Reverify and admit the latest canonical Genes release, then prove one
+   Haxe-authored React component through Genes' TypeScript/TSX inline-HXX lane
+   without regressing classic ESM, example 12, todo-app, or other consumers.
+7. Align typed events with Live Event Protocols.
+8. Migrate the current example 12 local binder.
+9. Add an independent minimal Haxe-first consumer through public commands.
+10. Add a bounded Haxe-authored LiveReact section to the todo-app.
+11. Publish the canonical guide and API documentation from all three proofs.
+12. Close compatibility evidence, installed-package smoke, package contents,
     and focused CI.
 
 ## Required Evidence
@@ -620,6 +631,8 @@ new Git repository.
 - deterministic registry and starter ownership tests;
 - Live Event Protocol Haxe/TypeScript contract tests;
 - strict TypeScript/React/Vite/source-map evidence;
+- exact canonical Genes release identity plus strict TSX/inline-HXX and classic
+  ESM parity across every existing Genes-backed example;
 - Haxe-authored ExUnit and bounded Playwright fallback evidence;
 - source-checkout and installed-package setup/check/remove smoke;
 - checked-in generated Elixir review, byte-stable regeneration,
@@ -648,10 +661,13 @@ haxe.elixir.codex-msb.2 + haxe.elixir.codex-msb.4 + haxe.elixir.codex-msb.10
     └── haxe.elixir.codex-msb.5
 
 haxe.elixir.codex-msb.5
-    └── haxe.elixir.codex-msb.6
+    ├── haxe.elixir.codex-msb.6
+    └── haxe.elixir.codex-a06 (P1 Genes TSX/HXX + latest-release admission)
 
 haxe.elixir.codex-msb.4 + .5 + .6
-    ├── haxe.elixir.codex-msb.7
+    └── haxe.elixir.codex-msb.7
+
+haxe.elixir.codex-msb.4 + .5 + .6 + haxe.elixir.codex-a06
     ├── haxe.elixir.codex-msb.8
     └── haxe.elixir.codex-msb.11
 
@@ -662,9 +678,11 @@ haxe.elixir.codex-msb.7 + .8 + .11 + .12
     └── haxe.elixir.codex-msb.9
 ```
 
-Deferred follow-ups `haxe.elixir.codex-a06`, `haxe.elixir.codex-8yk`,
-`haxe.elixir.codex-c9w`, `haxe.elixir.codex-mqj`, and
-`haxe.elixir.codex-m52` are discovered from the epic and do not block it or
+Deferred follow-ups `haxe.elixir.codex-8yk`, `haxe.elixir.codex-c9w`, and
+`haxe.elixir.codex-mqj` remain outside the client-only graph. The completed
+Genes migration `haxe.elixir.codex-m52` is historical evidence;
+`haxe.elixir.codex-a06` is now an active P1 prerequisite for the independent
+example and todo-app, but neither it nor any LiveReact task blocks
 Reflaxe.Elixir 1.0.
 
 ## Cross-Cutting Invariants
@@ -673,18 +691,21 @@ Reflaxe.Elixir 1.0.
 2. No compiler special case or new backend/profile is introduced.
 3. Non-enabled projects receive no React/Vite/Node changes.
 4. Vite is the one bundler; Genes remains a source compiler when selected.
-5. Mix and npm resolve one LiveReact identity.
-6. Component names and registry membership are static and reviewable.
-7. App-local wrappers own strict props and product policy.
-8. Default boundaries narrow capabilities and make no sandbox claim.
-9. Existing Live Event Protocols remain the sole PhoenixHx event model.
-10. Setup/check/remove are atomic, idempotent, reversible, and fail closed.
-11. Example 12, the independent minimal example, and todo-app are genuinely
+5. The flagship Haxe-first React lane uses Genes' TypeScript/TSX inline HXX,
+   while the classic ESM lane and all existing Genes consumers remain parity
+   gates for every pin update.
+6. Mix and npm resolve one LiveReact identity.
+7. Component names and registry membership are static and reviewable.
+8. App-local wrappers own strict props and product policy.
+9. Default boundaries narrow capabilities and make no sandbox claim.
+10. Existing Live Event Protocols remain the sole PhoenixHx event model.
+11. Setup/check/remove are atomic, idempotent, reversible, and fail closed.
+12. Example 12, the independent minimal example, and todo-app are genuinely
     distinct migration, clean-room, and incremental-adoption proofs.
-12. Installed-package behavior must match source checkout.
-13. No task in this graph blocks the 1.0 readiness epic.
-14. No local sibling path or machine-local absolute path is part of the ABI.
-15. Haxe-owned production output must remain idiomatic and handwritten-like;
+13. Installed-package behavior must match source checkout.
+14. No task in this graph blocks the 1.0 readiness epic.
+15. No local sibling path or machine-local absolute path is part of the ABI.
+16. Haxe-owned production output must remain idiomatic and handwritten-like;
     bootstrap/recovery infrastructure stays handwritten Elixir where it must
     operate without a working Haxe compiler, and every such exception carries
     an adjacent concrete source comment.
