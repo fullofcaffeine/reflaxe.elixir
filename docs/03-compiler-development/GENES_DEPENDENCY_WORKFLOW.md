@@ -182,17 +182,18 @@ generated Elixir trees parsed, all 305 ExUnit tests passed, and the runtime and
 generated-output checks stayed green. A clean todo-app asset build, Phoenix
 readiness probe, and all five bounded Playwright smoke scenarios passed as
 well. The exact-commit Haxelib package smoke then proved source/package output
-parity and compiled an installed-package Phoenix fixture. Hosted exact-head CI
-remains the final authority before this downstream change is merged.
+parity and compiled an installed-package Phoenix fixture. Downstream exact-head
+CI run `29654249001` then completed with no failures before the v1.36.7 task
+closed.
 
 The known-green PhoenixHX rollback commit before dependency consolidation is
 `f0a22cc`. The repository keeps one external Genes source: the legacy
 `-lib genes` name is only an alias for the same immutable `genes-ts` release.
 
-## Current candidate admission (2026-07-19)
+## Current admitted release (2026-07-19)
 
 Implementation-time verification found that the canonical upstream release had
-advanced beyond the planning-time v1.36.8 reference. The candidate dependency is:
+advanced beyond the planning-time v1.36.8 reference. The admitted dependency is:
 
 - repository: `https://github.com/fullofcaffeine/genes-ts`;
 - release: [`v1.37.0`](https://github.com/fullofcaffeine/genes-ts/releases/tag/v1.37.0);
@@ -213,9 +214,11 @@ TypeScript, React, Vite, binding, and two-scenario browser canary; and the
 todo-app five-scenario browser smoke. Installed-package smoke exported candidate
 commit `7ba4200f7383eba70d2b6d4c376126d163ba2587`, installed its exact ZIP in an
 isolated Haxelib repository, and proved source/package generated-Elixir,
-structural-quality, and Mix/Phoenix compile parity. Final admission still
-requires green exact-head hosted CI; local and installed-package evidence alone
-do not establish that hosted gate.
+structural-quality, and Mix/Phoenix compile parity. Exact-head CI run
+`29689906541` completed all 36 jobs successfully, and CodeQL run `29689906445`
+passed, at downstream commit `8bd78c89cc79cc8f6a872e3497a034811e6ed7d8`.
+That complete local, package, Linux, macOS, minimum-toolchain, browser, and
+hosted evidence admits v1.37.0 as the current PhoenixHX Genes dependency.
 
 ## Rollback
 
