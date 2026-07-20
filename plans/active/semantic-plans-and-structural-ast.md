@@ -40,7 +40,7 @@ infrastructure without re-planning that work.
 | `haxe.elixir.codex-75i.6` | Centralize exhaustive ElixirAST child and pattern traversal | P1, complete |
 | `haxe.elixir.codex-75i.7` | Freeze effective pass order and fail closed on registry errors | P1, complete |
 | `haxe.elixir.codex-75i.8` | Make pass bundles transparent nested pipeline groups | P1, complete |
-| `haxe.elixir.codex-75i.9` | Add request-local pass context and conservative analysis invalidation | P1, in progress |
+| `haxe.elixir.codex-75i.9` | Add request-local pass context and conservative analysis invalidation | P1, complete |
 | `haxe.elixir.codex-75i.10` | Detach result correctness from printer sentinel behavior | P1, open |
 | `haxe.elixir.codex-75i.11` | Move semantic policy out of ElixirASTPrinter | P1, open |
 | `haxe.elixir.codex-75i.12` | Tighten LoopIR into a closed builder-local plan | P2, open |
