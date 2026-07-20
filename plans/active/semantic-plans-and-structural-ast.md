@@ -1,6 +1,6 @@
 # Structural Elixir AST and focused semantic plans
 
-Status: active implementation contract; regression, traversal, and strict pass-order foundations complete; transparent groups await exact-head CI
+Status: active implementation contract; regression, traversal, strict pass-order, and transparent-group foundations complete
 
 External source: [GitHub issue #38](https://github.com/fullofcaffeine/reflaxe.elixir/issues/38)
 
@@ -39,7 +39,7 @@ infrastructure without re-planning that work.
 | `haxe.elixir.codex-75i.5` | Extract proven semantic owners from the mega-transformer | P2, open |
 | `haxe.elixir.codex-75i.6` | Centralize exhaustive ElixirAST child and pattern traversal | P1, complete |
 | `haxe.elixir.codex-75i.7` | Freeze effective pass order and fail closed on registry errors | P1, complete |
-| `haxe.elixir.codex-75i.8` | Make pass bundles transparent nested pipeline groups | P1, in progress; local parity complete |
+| `haxe.elixir.codex-75i.8` | Make pass bundles transparent nested pipeline groups | P1, complete |
 | `haxe.elixir.codex-75i.9` | Add request-local pass context and conservative analysis invalidation | P1, open |
 | `haxe.elixir.codex-75i.10` | Detach result correctness from printer sentinel behavior | P1, open |
 | `haxe.elixir.codex-75i.11` | Move semantic policy out of ElixirASTPrinter | P1, open |
@@ -118,8 +118,8 @@ named `PassPipeline` scheduling groups. Their 578 ordinary `PassConfig` children
 single main runner, so diagnostics, result checks, timing, snapshots, and later legality/invalidation
 hooks see the actual child ID. Focused contracts and three-way complete-tree comparison protect the
 grouped, direct-granular, and all-pass paths while preserving the existing phase-level capability
-snapshot cadence. Local full-suite, example, runtime/browser, and bounded performance gates are
-green; the slice remains open only until committed-package and exact-head CI/CodeQL evidence lands.
+snapshot cadence. The committed package, local full-suite, example, runtime/browser, bounded
+performance, exact-head CI, and CodeQL gates are green.
 
 ## Slice 4: request-local state, analysis, and legality
 

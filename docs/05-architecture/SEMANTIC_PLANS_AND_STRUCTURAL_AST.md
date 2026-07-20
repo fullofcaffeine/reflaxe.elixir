@@ -441,9 +441,7 @@ A mechanical move that leaves ownership or side tables ambiguous does not satisf
 
 ## Staged implementation and rollback
 
-Stages 1–3 below are delivered. Stage 4 is implemented with local parity evidence and awaits
-committed-package plus exact-head CI/CodeQL confirmation. Later stages remain plans and must retain
-their own regression gate.
+Stages 1–4 below are delivered. Later stages remain plans and must retain their own regression gate.
 
 1. Freeze the existing generated-output, result, pass-order/scope, runtime, package, and determinism
    baselines; record reviewed architecture debt in this decision without creating a parallel audit
