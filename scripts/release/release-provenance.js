@@ -236,24 +236,7 @@ function verifyHostReleaseControls({ repository, cwd, run = defaultRun }) {
     )
   }
 
-  const environment = JSON.parse(
-    run(
-      'gh',
-      ['api', `repos/${repository}/environments/release-repair`],
-      { cwd }
-    )
-  )
-  const reviewerRule = (environment.protection_rules || []).find(
-    ({ type }) => type === 'required_reviewers'
-  )
-  if (
-    !reviewerRule ||
-    !Array.isArray(reviewerRule.reviewers) ||
-    reviewerRule.reviewers.length === 0
-  ) {
-    throw new Error('release-repair environment must require a reviewer')
-  }
-  return { environment, immutable, repository: repositoryState, ruleset }
+  return { immutable, repository: repositoryState, ruleset }
 }
 
 module.exports = {

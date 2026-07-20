@@ -8,7 +8,7 @@ try {
     throw new Error('usage: verify-host-controls.js <OWNER/REPOSITORY>')
   const result = verifyHostReleaseControls({ repository })
   console.log(
-    `[release-host] OK: immutable releases, tag ruleset ${result.ruleset.id}, and protected ${result.environment.name} environment`
+    `[release-host] OK: immutable releases and protected tag ruleset ${result.ruleset.id}`
   )
 } catch (error) {
   console.error(`[release-host] ERROR: ${error.message}`)

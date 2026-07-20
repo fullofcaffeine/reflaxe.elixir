@@ -11,9 +11,11 @@ In short:
   all pass before publication.
 - The package is built twice for byte reproducibility, checked for source/package parity, and
   published with a checksum under a protected immutable version tag.
-- There is no manual normal-release or tag-moving path.
-- The reviewer-gated repair workflow can complete or verify publication for an existing tag only; it
-  cannot derive a version, choose a branch, create a tag, or replace mismatched published bytes.
+- There is no manual normal-release, separate repair workflow, deployment environment, or tag-moving
+  path.
+- If publication is interrupted, rerun the failed `Release exact CI-tested commit` job. The same job
+  can complete or verify only a strict version tag pointing at its own tested commit; it cannot pick
+  an arbitrary branch/tag/SHA or replace mismatched published bytes.
 
 Do not follow older backfill or manual-tag instructions from historical commits. Use the canonical
 guide for preflight commands, recovery, consumer verification, host controls, and the stable-major

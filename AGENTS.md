@@ -3553,13 +3553,15 @@ publication must leave the tested commit unchanged and must not create a release
 Normal publication is the final job in the same `CI` run for a `main` push. It has explicit `needs`
 edges to compiler, package, examples, dogfood, sentinel, and security gates; checks out only
 `github.sha`; consumes no CI cache/artifact; and receives only job-scoped `contents: write`.
-Diagnostic workflow dispatches and repair workflows must never become normal publication
-bypasses. The only write-capable dispatch is the reviewer-gated existing-tag repair workflow: it
-must reject branches/SHAs, derive no version, create/move/delete no tag, preserve verified partial
-assets, and fail on mismatched bytes. Audit immutable releases, `v*` update/deletion protection,
-and the protected repair environment with `node scripts/release/verify-host-controls.js
-fullofcaffeine/reflaxe.elixir`. See `docs/10-contributing/RELEASING.md` for the trust model and
-recovery procedure.
+Diagnostic workflow dispatches must never become publication bypasses. There is one write-capable
+release path and no GitHub Actions environment: publishing a package is not an application
+deployment. If publication is interrupted, rerun the failed Release job from that same CI run. It
+may complete or verify only one strict version tag pointing exactly at its own tested
+`github.sha`; it must propagate failures before tag creation, derive no alternate version,
+create/move/delete no recovery tag, preserve verified partial assets, and fail on mismatched bytes.
+Audit immutable releases and `v*` update/deletion protection with `node
+scripts/release/verify-host-controls.js fullofcaffeine/reflaxe.elixir`. See
+`docs/10-contributing/RELEASING.md` for the trust model and rerun procedure.
 
 The scheduled README release smoke must download the published ZIP and its `.sha256` sidecar and
 verify the digest before exercising the Lix install/generator path. Consumer documentation must keep

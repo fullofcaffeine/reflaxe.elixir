@@ -54,8 +54,9 @@ the locked dependency graph. The artifact plugin then performs the source/packag
 byte-reproducibility checks again before a tag or hosted asset is created.
 
 The called Dogfood, Example Compilation, and QA Sentinel workflows remain manually runnable for
-diagnosis, but those read-only runs cannot publish. The protected manual workflow is only a repair
-path for an existing immutable tag; it cannot select an arbitrary new release commit.
+diagnosis, but those read-only runs cannot publish. There is no separate manual repair workflow and
+no GitHub Actions environment: this repository publishes a package; it does not deploy an
+application. Only the final same-run Release job has write permission.
 
 ## What triggers a release?
 
@@ -157,14 +158,16 @@ Release verification runs at four boundaries:
   `CI` run so the release still targets the same `github.sha`. If source must change, push the fix and
   let the new complete CI graph decide publication. Do not create a tag manually; no public release
   identity exists yet.
-- **Tag exists but its GitHub Release is absent or still draft:** run the protected **Repair Existing
-  Release** workflow with that exact `vMAJOR.MINOR.PATCH` tag. A required reviewer must approve the
-  environment. The workflow checks out `refs/tags/<tag>`, verifies local/origin tag identity,
-  rebuilds twice, smokes the exact ZIP, preserves any already-correct draft assets, uploads only
-  missing assets, publishes the complete draft, and verifies immutable hosted digests.
+- **Tag exists but its GitHub Release is absent or still draft:** rerun the failed
+  **Release exact CI-tested commit** job in that same `CI` run. On the rerun, semantic-release may
+  correctly report that there is no new version because the tag already exists. The job then accepts
+  only one strict `vMAJOR.MINOR.PATCH` tag pointing exactly at its checked-out `github.sha`, rebuilds
+  twice, smokes the exact ZIP, preserves already-correct draft assets, uploads only missing assets,
+  publishes the complete draft, and verifies immutable hosted digests. A reachable older tag is not
+  enough, and a failure with no exact tag still fails the job.
 - **Published bytes, tag identity, or immutable state are wrong:** treat this as a release incident.
-  Repair refuses published mutable releases, unexpected assets, and same-name assets with different
-  bytes. Never move/delete the remote tag or reuse the version; ship a corrective version.
+  Completion refuses published mutable releases, unexpected assets, and same-name assets with
+  different bytes. Never move/delete the remote tag or reuse the version; ship a corrective version.
 
 Finish every recovery with:
 
@@ -172,9 +175,10 @@ Finish every recovery with:
 scripts/release/verify-published-package.sh vX.Y.Z
 ```
 
-The repair path never invokes semantic-release, analyzes commits, creates a version, or creates,
-moves, or deletes a tag. Re-running it after a lost API response is safe: an already-complete
-immutable release becomes a read-only verification.
+The completion branch never makes a second version decision and never creates, moves, or deletes a
+tag. It can run only after semantic-release or a prior attempt has left one strict version tag at the
+tested commit. Re-running after a lost API response is safe: an already-complete immutable release
+becomes a read-only verification.
 
 ## Consumer verification
 
@@ -201,9 +205,8 @@ GitHub's hosted SHA-256 digests, and signed release/asset attestations.
 ## Repository host controls
 
 The repository enables GitHub immutable releases for all future publications and has an active
-`Immutable semantic version tags` ruleset for `refs/tags/v*` that blocks update and deletion. The
-`release-repair` environment requires reviewer approval. Audit all three controls with an
-administrator-capable token:
+`Immutable semantic version tags` ruleset for `refs/tags/v*` that blocks update and deletion. Audit
+both controls with an administrator-capable token:
 
 ```bash
 node scripts/release/verify-host-controls.js fullofcaffeine/reflaxe.elixir
@@ -236,7 +239,7 @@ git tag --merged main | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'
 ```
 
 If this returns nothing, stop publication and investigate the repository history. Baseline creation
-is a one-time migration operation, not a recovery action and not part of the repair workflow.
+is a one-time migration operation, not a recovery action and not part of the rerunnable release job.
 
 For the predecessor protocol and live reference-rollout evidence, see
 [Release Protocol History](../09-history/RELEASE_PROTOCOL_HISTORY.md).

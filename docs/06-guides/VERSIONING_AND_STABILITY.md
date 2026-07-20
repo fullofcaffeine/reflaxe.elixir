@@ -38,8 +38,10 @@ they are not the current reference protocol.
 
 For each new release, checked-out source, local/origin tag, embedded package metadata, ZIP/checksum
 bytes, and GitHub's immutable asset digests must identify the same commit and version. An interrupted
-publication can only be completed by the reviewer-gated existing-tag repair workflow; repair never
-derives a version or creates, moves, or deletes a tag. See
+publication is completed by rerunning the same exact-CI-tested Release job. Its completion branch
+accepts only one strict version tag at that job's tested commit and never makes a second version
+decision or creates, moves, or deletes a tag. Package publication does not use a GitHub Actions
+environment because it is not an application deployment. See
 [Releasing](../10-contributing/RELEASING.md) for the full trust and recovery model.
 
 The current policy shape is deliberately small:

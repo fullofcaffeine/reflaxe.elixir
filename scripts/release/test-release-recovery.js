@@ -16,7 +16,7 @@ const {
   draftAssetPlan,
   releaseView,
   releaseVersionFromTag,
-} = require('./repair-release.js')
+} = require('./complete-release.js')
 
 const VERSION = '0.15.0'
 const TAG = `v${VERSION}`
@@ -67,13 +67,13 @@ function main() {
       assert.throws(() => releaseVersionFromTag(invalid), /existing vMAJOR/)
     }
 
-    const repairSource = fs.readFileSync(
-      path.join(__dirname, 'repair-release.js'),
+    const completionSource = fs.readFileSync(
+      path.join(__dirname, 'complete-release.js'),
       'utf8'
     )
-    assert.doesNotMatch(repairSource, /run\(['"]git['"], \[['"]tag['"]/)
-    assert.doesNotMatch(repairSource, /run\(['"]git['"], \[['"]push['"]/)
-    assert.doesNotMatch(repairSource, /require\(['"]semantic-release/)
+    assert.doesNotMatch(completionSource, /run\(['"]git['"], \[['"]tag['"]/)
+    assert.doesNotMatch(completionSource, /run\(['"]git['"], \[['"]push['"]/)
+    assert.doesNotMatch(completionSource, /require\(['"]semantic-release/)
 
     // Tag exists but no Release: an authoritative 404 is the only absence signal.
     assert.strictEqual(
@@ -220,13 +220,6 @@ function main() {
         const endpoint = args[1]
         if (endpoint.endsWith('/immutable-releases'))
           return JSON.stringify({ enabled: true })
-        if (endpoint.endsWith('/environments/release-repair'))
-          return JSON.stringify({
-            name: 'release-repair',
-            protection_rules: [
-              { type: 'required_reviewers', reviewers: [{ type: 'User' }] },
-            ],
-          })
         if (endpoint.endsWith('/rulesets'))
           return JSON.stringify([
             {
@@ -248,7 +241,7 @@ function main() {
     assert.strictEqual(controls.ruleset.id, 7)
 
     console.log(
-      '[release-recovery] OK: tag-only repair and failure-injection contracts'
+      '[release-recovery] OK: same-job completion and failure-injection contracts'
     )
   } finally {
     fs.rmSync(temp, { recursive: true, force: true })

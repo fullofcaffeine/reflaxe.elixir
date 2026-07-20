@@ -51,7 +51,7 @@ function buildApprovedArtifact({ cwd, version, tag, sourceCommit }) {
   const zipPath = path.join(dist, 'reflaxe.elixir.zip')
   const checksumPath = path.join(dist, 'reflaxe.elixir.zip.sha256')
   const repeatRoot = fs.mkdtempSync(
-    path.join(os.tmpdir(), 'reflaxe-elixir-repair-repeat-')
+    path.join(os.tmpdir(), 'reflaxe-elixir-release-completion-repeat-')
   )
   const repeatZip = path.join(repeatRoot, 'reflaxe.elixir.zip')
   try {
@@ -84,7 +84,7 @@ function buildApprovedArtifact({ cwd, version, tag, sourceCommit }) {
     )
     if (!fs.readFileSync(zipPath).equals(fs.readFileSync(repeatZip))) {
       throw new Error(
-        'repaired Haxelib package is not byte-for-byte reproducible'
+        'completed Haxelib package is not byte-for-byte reproducible'
       )
     }
     const verified = verifyReleaseArtifact({
@@ -206,20 +206,20 @@ function releaseVersionFromTag(tag) {
     typeof tag !== 'string' ||
     !/^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/.test(tag)
   ) {
-    throw new Error('repair requires an existing vMAJOR.MINOR.PATCH tag')
+    throw new Error('completion requires an existing vMAJOR.MINOR.PATCH tag')
   }
   return tag.slice(1)
 }
 
 /**
- * Complete publication for one immutable existing tag. This command never analyzes commits,
- * creates/moves/deletes a tag, or replaces mismatched hosted bytes.
+ * Complete or verify publication for the one immutable tag at the tested checkout. This command
+ * never analyzes commits, creates/moves/deletes a tag, or replaces mismatched hosted bytes.
  */
 function main() {
   const [tag, ...rest] = process.argv.slice(2)
   if (!tag || rest.length > 0) {
     throw new Error(
-      'usage: repair-release.js <existing vMAJOR.MINOR.PATCH tag>'
+      'usage: complete-release.js <existing vMAJOR.MINOR.PATCH tag>'
     )
   }
   const cwd = path.resolve(__dirname, '..', '..')
@@ -240,7 +240,7 @@ function main() {
     { cwd }
   )
   if (tracked.trim().length > 0)
-    throw new Error('repair checkout contains tracked changes')
+    throw new Error('release completion checkout contains tracked changes')
 
   const artifact = buildApprovedArtifact({
     cwd,
@@ -264,7 +264,7 @@ function main() {
       attempts: 6,
       retryDelayMs: 5000,
     })
-    console.log(`[release-repair] ${tag} is already complete and immutable`)
+    console.log(`[release] ${tag} is already complete and immutable`)
     return
   }
 
@@ -296,14 +296,14 @@ function main() {
     attempts: 6,
     retryDelayMs: 5000,
   })
-  console.log(`[release-repair] completed immutable ${tag}`)
+  console.log(`[release] completed immutable ${tag}`)
 }
 
 if (require.main === module) {
   try {
     main()
   } catch (error) {
-    console.error(`[release-repair] ERROR: ${error.message}`)
+    console.error(`[release] ERROR: ${error.message}`)
     process.exit(1)
   }
 }

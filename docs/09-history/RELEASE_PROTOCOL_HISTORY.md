@@ -65,7 +65,7 @@ current-version prose.
 | ZIP | `reflaxe.elixir-0.14.26.zip`, 2,502,008 bytes, SHA-256 `4d896af5d45d1cc5730aa4fd6aae8fc08b1f09aacf447844fa7377eec10a4280` |
 | Checksum sidecar | `reflaxe.elixir-0.14.26.zip.sha256`, 93 bytes, SHA-256 `005e3a663ccbf6571033080a12e7425791b89e82c59a2bcbac1000005372e9aa` |
 | Hosted state | Both assets `uploaded`; release published, non-prerelease, and immutable |
-| Host controls | Immutable releases enabled; active ruleset `18796523` blocks `v*` update/deletion; `release-repair` requires review |
+| Host controls at publication time | Immutable releases enabled; active ruleset `18796523` blocks `v*` update/deletion; the then-current `release-repair` workflow required review |
 
 After fetching the tag, checked-out HEAD, `v0.14.26^{}`, and `origin`'s
 `refs/tags/v0.14.26` all resolved to `S`. The published-package verifier also checked the ZIP's
@@ -81,6 +81,13 @@ package, checksum, source identity, and signed attestations above remain valid. 
 prevents silently rewriting that public record, so a normal corrective patch release restores notes.
 Publication now renders representative commits in tests and rejects heading-only notes before the
 package build and tag boundary.
+
+The separate `release-repair` environment named in the historical row above was retired after the
+`v0.27.0` publication outage demonstrated that GitHub presents a protected package-publication gate
+as an application “Deployment.” Current releases use one rerunnable same-CI Release job: if an
+immutable tag already points exactly at that job's tested commit, the same job completes or verifies
+the partial publication in place. The tag, artifact, checksum, and immutability invariants are
+unchanged; only the misleading second workflow and environment were removed.
 
 The commit immediately following `v0.14.26` is documentation/test evidence only. Its exact CI and
 semantic-release no-op result passed in CI run `29158403187`; CodeQL run `29158403127` also passed.

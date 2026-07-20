@@ -99,6 +99,11 @@ function main() {
     false,
     'unverified historical release backfill must not exist'
   )
+  assert.strictEqual(
+    fs.existsSync(path.join(WORKFLOWS, 'release-repair.yml')),
+    false,
+    'release recovery must stay in the normal rerunnable Release job'
+  )
 
   const ci = fs.readFileSync(CI_PATH, 'utf8')
   assert.doesNotMatch(ci, /workflow_run|workflow_dispatch/)
@@ -134,6 +139,11 @@ function main() {
   assert.match(release, /ref: \$\{\{ github\.sha \}\}/)
   assert.match(release, /fetch-depth: 0/)
   assert.match(release, /RELEASE_SOURCE_SHA: \$\{\{ github\.sha \}\}/)
+  assert.match(release, /git tag --points-at HEAD/)
+  assert.match(release, /semantic_status=\$\?/)
+  assert.match(release, /semantic-release failed before creating an exact tag/)
+  assert.match(release, /node scripts\/release\/complete-release\.js "\$tag"/)
+  assert.doesNotMatch(release, /environment:/)
   assert.doesNotMatch(release, /actions\/cache|upload-artifact|download-artifact|cache:/)
   assert.doesNotMatch(release, /api\.github\.com|sleep |workflow_runs/)
   assert.match(
@@ -162,24 +172,6 @@ function main() {
       './scripts/release/published-verifier-plugin.cjs'
     )
   )
-
-  const repair = fs.readFileSync(
-    path.join(WORKFLOWS, 'release-repair.yml'),
-    'utf8'
-  )
-  assert.match(repair, /workflow_dispatch:\n\s+inputs:\n\s+tag:/)
-  assert.doesNotMatch(repair, /all_tags|overwrite_existing|skip_verify/)
-  assert.match(repair, /environment: release-repair/)
-  assert.match(repair, /group: release-\$\{\{ github\.repository \}\}/)
-  assert.match(repair, /permissions:\n\s+contents: read/)
-  assert.match(repair, /permissions:\n\s+contents: write/)
-  assert.match(
-    repair,
-    /ref: refs\/tags\/\$\{\{ inputs\.tag \}\}/
-  )
-  assert.match(repair, /Repair accepts only vMAJOR\.MINOR\.PATCH/)
-  assert.match(repair, /node scripts\/release\/repair-release\.js/)
-  assert.doesNotMatch(repair, /semantic-release|git tag|git push|--clobber/)
 
   assertTriggerMatrix()
   assertPinnedActions()
