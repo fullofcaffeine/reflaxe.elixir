@@ -3,6 +3,10 @@ package elixir;
 #if (macro || reflaxe_runtime || elixir)
 import elixir.types.Term;
 import elixir.types.Atom as AtomValue;
+import elixir.types.Tuple2;
+import elixir.types.Tuple3;
+import elixir.types.Tuple4;
+import elixir.types.Tuple5;
 
 /**
  * Tuple module extern definitions for Elixir standard library
@@ -54,31 +58,55 @@ extern class Tuple {
 		return untyped __elixir__('put_elem({0}, {1}, {2})', tuple, index, value);
 	}
 
-	public static inline function make2<A, B>(a:A, b:B):{_0:A, _1:B} {
-		return cast untyped __elixir__('{{0}, {1}}', a, b);
+	/** Constructs a native two-element tuple with no runtime helper call. */
+	public static extern inline function of2<A, B>(a:A, b:B):Tuple2<A, B> {
+		return {_0: a, _1: b};
 	}
 
-	public static inline function make3<A, B, C>(a:A, b:B, c:C):{_0:A, _1:B, _2:C} {
-		return cast untyped __elixir__('{{0}, {1}, {2}}', a, b, c);
+	/** Constructs a native three-element tuple with no runtime helper call. */
+	public static extern inline function of3<A, B, C>(a:A, b:B, c:C):Tuple3<A, B, C> {
+		return {_0: a, _1: b, _2: c};
 	}
 
-	public static inline function make4<A, B, C, D>(a:A, b:B, c:C, d:D):{
-		_0:A,
-		_1:B,
-		_2:C,
-		_3:D
-	} {
-		return cast untyped __elixir__('{{0}, {1}, {2}, {3}}', a, b, c, d);
+	/** Constructs a native four-element tuple with no runtime helper call. */
+	public static extern inline function of4<A, B, C, D>(a:A, b:B, c:C, d:D):Tuple4<A, B, C, D> {
+		return {
+			_0: a,
+			_1: b,
+			_2: c,
+			_3: d
+		};
 	}
 
-	public static inline function make5<A, B, C, D, E>(a:A, b:B, c:C, d:D, e:E):{
-		_0:A,
-		_1:B,
-		_2:C,
-		_3:D,
-		_4:E
-	} {
-		return cast untyped __elixir__('{{0}, {1}, {2}, {3}, {4}}', a, b, c, d, e);
+	/** Constructs a native five-element tuple with no runtime helper call. */
+	public static extern inline function of5<A, B, C, D, E>(a:A, b:B, c:C, d:D, e:E):Tuple5<A, B, C, D, E> {
+		return {
+			_0: a,
+			_1: b,
+			_2: c,
+			_3: d,
+			_4: e
+		};
+	}
+
+	/** Compatibility spelling for `Tuple.of2`. */
+	public static extern inline function make2<A, B>(a:A, b:B):Tuple2<A, B> {
+		return of2(a, b);
+	}
+
+	/** Compatibility spelling for `Tuple.of3`. */
+	public static extern inline function make3<A, B, C>(a:A, b:B, c:C):Tuple3<A, B, C> {
+		return of3(a, b, c);
+	}
+
+	/** Compatibility spelling for `Tuple.of4`. */
+	public static extern inline function make4<A, B, C, D>(a:A, b:B, c:C, d:D):Tuple4<A, B, C, D> {
+		return of4(a, b, c, d);
+	}
+
+	/** Compatibility spelling for `Tuple.of5`. */
+	public static extern inline function make5<A, B, C, D, E>(a:A, b:B, c:C, d:D, e:E):Tuple5<A, B, C, D, E> {
+		return of5(a, b, c, d, e);
 	}
 
 	// Pattern matching helpers

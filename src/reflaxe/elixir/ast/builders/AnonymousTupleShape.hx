@@ -12,6 +12,9 @@ import haxe.macro.TypeTools;
  * - Recognizes canonical contiguous field sets using either `_0.._N-1`
  *   (native Elixir extern convention) or `_1.._N` (portable Haxe convention).
  * - Resolves a typed anonymous field to its zero-based BEAM tuple index.
+ * - Follows an abstract only when it explicitly carries
+ *   `@:elixirNativeTupleView` and its substituted underlying type still has a
+ *   canonical tuple shape.
  *
  * WHY
  * - Object construction already emitted these shapes as Elixir tuples, while
@@ -27,6 +30,9 @@ import haxe.macro.TypeTools;
  *   zero or one.
  * - For typed reads/updates, inspect the complete followed anonymous type, not
  *   only the selected field name. Mixed and gapped shapes remain maps.
+ * - Never unwrap arbitrary abstracts by shape. An abstract may intentionally
+ *   hide or change its underlying representation; the marker is the explicit
+ *   Elixir ABI promise that positional reads and persistent updates stay native.
  *
  * EXAMPLES
  * - `{_1: "ok", _2: 4}` -> `{"ok", 4}`; `value._1` -> `elem(value, 0)`
@@ -70,6 +76,25 @@ class AnonymousTupleShape {
 		return index >= 0 && index < layout.arity ? index : null;
 	}
 
+	/**
+	 * Reports whether a type explicitly promises a zero-cost native tuple view.
+	 *
+	 * Haxe inserts a representation cast when an inline abstract property reaches
+	 * its anonymous tuple carrier. Assignment lowering may look through that cast
+	 * only for this marked ABI: arbitrary abstract casts can carry real semantics
+	 * and must remain opaque to the tuple machinery.
+	 */
+	public static function isNativeTupleView(type:Null<Type>):Bool {
+		if (type == null)
+			return false;
+
+		return switch (TypeTools.follow(type)) {
+			case TAbstract(abstractRef, _): hasNativeTupleViewMetadata(abstractRef.get());
+			default:
+				false;
+		}
+	}
+
 	static function fieldNamesFromType(type:Null<Type>, depth:Int):Null<Array<String>> {
 		if (type == null || depth > 20)
 			return null;
@@ -82,6 +107,9 @@ class AnonymousTupleShape {
 				var abstractType = abstractRef.get();
 				if (abstractType.name == "Null" && params != null && params.length == 1) {
 					fieldNamesFromType(params[0], depth + 1);
+				} else if (hasNativeTupleViewMetadata(abstractType)) {
+					var underlying = TypeTools.applyTypeParameters(abstractType.type, abstractType.params, params);
+					fieldNamesFromType(underlying, depth + 1);
 				} else {
 					null;
 				}
@@ -95,6 +123,10 @@ class AnonymousTupleShape {
 			default:
 				null;
 		}
+	}
+
+	static function hasNativeTupleViewMetadata(abstractType:AbstractType):Bool {
+		return abstractType.meta != null && abstractType.meta.has(":elixirNativeTupleView");
 	}
 
 	static function layoutFromFieldNames(fieldNames:Null<Array<String>>):Null<{base:Int, arity:Int}> {

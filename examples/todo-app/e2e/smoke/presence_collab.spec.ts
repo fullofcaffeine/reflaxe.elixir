@@ -8,6 +8,10 @@ async function login(page: Page, base: string, name: string, email: string) {
   await page.goto(base + '/login')
   await expect(page.locator('h1')).toContainText('Sign in')
 
+  // Wait for the initial LiveView mount before typing. Otherwise its first DOM patch can replace
+  // the form after Playwright fills the name, leaving the submitted field unexpectedly blank.
+  await waitForLiveViewConnected(page)
+
   const loginForm = page.locator('form[action="/auth/login"]').filter({
     has: page.locator('input[name="name"][type="text"]'),
   }).first()

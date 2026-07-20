@@ -6,12 +6,16 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 
 /**
- * Removes a zero-argument IIFE after its body has become one binding-free expression.
+ * Removes obsolete expression-local scopes immediately before printing.
  *
  * WHAT
  * - Rewrites `(fn -> expression end).()` to `expression` when the anonymous
  *   function has one unguarded zero-argument clause and its body contains one
  *   expression that cannot bind or rebind a variable in the caller's scope.
+ * - Collapses an isolated tuple expression shaped like
+ *   `value = expression; {:literal_key, value}` to
+ *   `{:literal_key, expression}` when the tuple proves exactly-once use and
+ *   unchanged evaluation order.
  *
  * WHY
  * - `FunctionArgBlockToIIFETransforms` must isolate genuine multi-statement
@@ -20,6 +24,9 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   operation, or other single expression. Keeping the obsolete function shell
  *   produces mechanically noisy Elixir such as
  *   `Path.join((fn -> root.absolute end).(), "package.json")`.
+ * - Haxe forced-inline functions can also retain an argument temporary inside a
+ *   tuple-valued expression. An earlier safety pass correctly introduces an IIFE
+ *   to keep that binding from leaking into the caller.
  * - Removing the shell only at the absolute end retains the early safety
  *   boundary while allowing final output to read like authored Elixir.
  *
@@ -30,11 +37,17 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   they still execute exactly once at the same argument position; assignments,
  *   matches, macros, control-flow binders, raw target code, and other uncertain
  *   forms retain the IIFE because moving them could change lexical scope.
+ * - For an isolated tuple-valued body, require one assignment, one direct use of
+ *   its binder, and only literal siblings. Literal siblings cannot perform an
+ *   effect or fail before the inlined expression, so source evaluation order is
+ *   unchanged. Multiple uses or any non-literal sibling retain the block.
  * - Preserve the outer expression's source metadata on the replacement.
  *
  * EXAMPLES
  * - `(fn -> package_root.absolute end).()` becomes `package_root.absolute`.
  * - `(fn -> List.insert_at(lines, index, value) end).()` becomes the direct call.
+ * - `(fn -> value = compute(); {:key, value} end).()` becomes
+ *   `{:key, compute()}`.
  * - `(fn -> value = compute(); value end).()` is retained because its binding is
  *   intentionally isolated from the caller.
  *
@@ -49,7 +62,7 @@ class TrivialIIFEUnwrapTransforms {
 					switch (functionTarget.def) {
 						case EFn(clauses) if (clauses.length == 1):
 							var clause = clauses[0];
-							var expression = singletonExpression(clause.body);
+							var expression = singletonExpression(collapseSingleUseTupleBinding(clause.body));
 							if (clause.args.length == 0 && clause.guard == null && expression != null && isCallerBindingFree(expression))
 								makeASTWithMeta(expression.def, node.metadata, node.pos); else node;
 						default:
@@ -59,6 +72,56 @@ class TrivialIIFEUnwrapTransforms {
 					node;
 			}
 		});
+	}
+
+	/**
+	 * Remove a tuple-element binding only when tuple structure proves the rewrite.
+	 *
+	 * This deliberately does not use temporary-variable names as provenance. A
+	 * normal Haxe local may have any name, while compiler-generated names can
+	 * change. Safety comes from the closed AST shape instead: one binding, one
+	 * direct tuple-element use, and inert literal siblings.
+	 */
+	static function collapseSingleUseTupleBinding(expression:ElixirAST):ElixirAST {
+		return switch (expression.def) {
+			case EParen(inner):
+				var replacement = collapseSingleUseTupleBinding(inner);
+				replacement == inner ? expression : replacement;
+
+			case EBlock(expressions) | EDo(expressions) if (expressions.length == 2):
+				switch [expressions[0].def, expressions[1].def] {
+					case [EMatch(PVar(name), value), ETuple(elements)]:
+						var useIndex = -1;
+						var safe = true;
+
+						for (index in 0...elements.length) {
+							switch (elements[index].def) {
+								case EVar(candidate) if (candidate == name):
+									if (useIndex != -1) safe = false; else useIndex = index;
+
+								case EAtom(_) | EString(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil | ECharlist(_):
+									// These values cannot change evaluation order or bind names.
+
+								default:
+									safe = false;
+							}
+						}
+
+						if (safe && useIndex != -1) {
+							var inlined = elements.copy();
+							inlined[useIndex] = value;
+							makeASTWithMeta(ETuple(inlined), expressions[1].metadata, expressions[1].pos);
+						} else {
+							expression;
+						}
+
+					default:
+						expression;
+				}
+
+			default:
+				expression;
+		}
 	}
 
 	static function unwrapParens(expression:ElixirAST):ElixirAST {
@@ -105,6 +168,9 @@ class TrivialIIFEUnwrapTransforms {
 
 			case EParen(inner) | EUnary(_, inner) | EPin(inner) | ECapture(inner, _) | EThrow(inner):
 				isCallerBindingFree(inner);
+
+			case EIf(condition, thenBranch, elseBranch): isCallerBindingFree(condition) && isCallerBindingFree(thenBranch) && (elseBranch == null
+					|| isCallerBindingFree(elseBranch));
 
 			case ERaise(exception, attributes): isCallerBindingFree(exception) && (attributes == null || isCallerBindingFree(attributes));
 

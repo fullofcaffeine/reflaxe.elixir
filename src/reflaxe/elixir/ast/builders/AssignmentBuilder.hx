@@ -39,6 +39,9 @@ private typedef LocalFieldAssign = {
  * HOW
  * - Detect local-field assignment shapes:
  *   - `TField(TLocal(base), <non-this field>) = rhs`
+ *   - `TField(TCast(TLocal(base)), <tuple field>) = rhs` only when the source
+ *     abstract explicitly promises `@:elixirNativeTupleView`. Haxe inserts this
+ *     zero-cost representation cast for inline abstract properties.
  * - Rewrite to:
  *   - Struct (`TInst`): `%{base | field: rhs}`
  *   - Map/anonymous (`TAnonymous`): `Map.put(base, :field, rhs)`
@@ -210,49 +213,78 @@ class AssignmentBuilder {
 	static function detectLocalFieldAssign(e:TypedExpr, context:CompilationContext):Null<LocalFieldAssign> {
 		return switch (e.expr) {
 			case TField(baseExpr, fa):
-				switch (baseExpr.expr) {
-					case TLocal(v):
-						var baseVarName = ElixirASTHelpers.toElixirVarName(v.name);
-						// Avoid rewriting instance field assignment on this/_this (handled elsewhere)
-						if (baseVarName == "this" || baseVarName == "_this")
-							return null;
+				var nameMeta = NameMetaHelper.getFieldAccessNameMeta(fa);
+				var rawFieldName = nameMeta.name;
+				var localVariable = localVariableForFieldBase(baseExpr, rawFieldName);
 
-						var nameMeta = NameMetaHelper.getFieldAccessNameMeta(fa);
-						var rawFieldName = nameMeta.name;
-						var targetFieldName = NameMetaHelper.getNameOrNative(nameMeta);
-						var fieldNameSnake = NameMetaHelper.hasMeta(nameMeta, ":native") ? targetFieldName : NameUtils.toSnakeCase(targetFieldName);
-						var tupleIndex = AnonymousTupleShape.fieldIndexForType(baseExpr.t, rawFieldName);
-						var isStruct = switch (baseExpr.t) {
-							case TInst(_, _): true;
-							default: false;
-						};
+				if (localVariable != null) {
+					var v = localVariable;
+					var baseVarName = ElixirASTHelpers.toElixirVarName(v.name);
 
-						{
-							baseVarName: baseVarName,
-							baseVarId: v.id,
-							fieldNameSnake: fieldNameSnake,
-							isStruct: isStruct,
-							tupleIndex: tupleIndex
-						};
-					case TConst(TThis):
-						var compilationCtx = context;
-						if (compilationCtx == null || compilationCtx.currentReceiverParamName == null)
-							return null;
-						var baseVarName = compilationCtx.currentReceiverParamName;
+					// Avoid rewriting instance field assignment on this/_this (handled elsewhere)
+					if (baseVarName == "this" || baseVarName == "_this")
+						return null;
 
-						var nameMeta = NameMetaHelper.getFieldAccessNameMeta(fa);
-						var targetFieldName = NameMetaHelper.getNameOrNative(nameMeta);
-						var fieldNameSnake = NameMetaHelper.hasMeta(nameMeta, ":native") ? targetFieldName : NameUtils.toSnakeCase(targetFieldName);
+					var targetFieldName = NameMetaHelper.getNameOrNative(nameMeta);
+					var fieldNameSnake = NameMetaHelper.hasMeta(nameMeta, ":native") ? targetFieldName : NameUtils.toSnakeCase(targetFieldName);
+					var tupleIndex = AnonymousTupleShape.fieldIndexForType(baseExpr.t, rawFieldName);
+					var isStruct = switch (baseExpr.t) {
+						case TInst(_, _): true;
+						default: false;
+					};
 
-						{
-							baseVarName: baseVarName,
-							baseVarId: -1,
-							fieldNameSnake: fieldNameSnake,
-							isStruct: true,
-							tupleIndex: null
-						};
-					default:
-						null;
+					{
+						baseVarName: baseVarName,
+						baseVarId: v.id,
+						fieldNameSnake: fieldNameSnake,
+						isStruct: isStruct,
+						tupleIndex: tupleIndex
+					};
+				} else {
+					switch (baseExpr.expr) {
+						case TConst(TThis):
+							var compilationCtx = context;
+							if (compilationCtx == null || compilationCtx.currentReceiverParamName == null)
+								return null;
+							var baseVarName = compilationCtx.currentReceiverParamName;
+
+							var nameMeta = NameMetaHelper.getFieldAccessNameMeta(fa);
+							var targetFieldName = NameMetaHelper.getNameOrNative(nameMeta);
+							var fieldNameSnake = NameMetaHelper.hasMeta(nameMeta, ":native") ? targetFieldName : NameUtils.toSnakeCase(targetFieldName);
+
+							{
+								baseVarName: baseVarName,
+								baseVarId: -1,
+								fieldNameSnake: fieldNameSnake,
+								isStruct: true,
+								tupleIndex: null
+							};
+						default:
+							null;
+					}
+				}
+			default:
+				null;
+		}
+	}
+
+	/**
+	 * Finds the local whose field is being updated.
+	 *
+	 * The cast case is intentionally metadata-gated. It exists for a Haxe
+	 * abstract whose runtime value is exactly its native tuple carrier; looking
+	 * through arbitrary casts here could turn a meaningful conversion into an
+	 * update of the wrong local value.
+	 */
+	static function localVariableForFieldBase(baseExpr:TypedExpr, rawFieldName:String):Null<TVar> {
+		return switch (baseExpr.expr) {
+			case TLocal(variable):
+				variable;
+			case TCast(inner, _) if (AnonymousTupleShape.isNativeTupleView(inner.t)
+				&& AnonymousTupleShape.fieldIndexForType(baseExpr.t, rawFieldName) != null):
+				switch (inner.expr) {
+					case TLocal(variable): variable;
+					default: null;
 				}
 			default:
 				null;

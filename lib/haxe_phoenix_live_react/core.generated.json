@@ -54,13 +54,13 @@
     {
       "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/LiveReactMixTask.hx",
       "generated": "lib/mix/tasks/haxe.phoenix.live_react.ex",
-      "sourceSha256": "c9e47abfddb004ea7501213c619e08b418c9120e47c68d4e00e7a49c4388f17e",
+      "sourceSha256": "a5ca2d53742d7598769d721e6a4f7d7f6ab80a067370c5a04ebce90185ead76e",
       "generatedSha256": "ffea8ca1652b596b160762dc1ea48c2fdd63bcf43e35d3c1babfa5635108ced1"
     },
     {
       "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/LiveReactComponentMixTask.hx",
       "generated": "lib/mix/tasks/haxe.gen.live_react.ex",
-      "sourceSha256": "d5c709266ca0a97dd30bc942c86c273f06941bec0caf0628ebe2b4ac1772fc49",
+      "sourceSha256": "7e68c19392a6b75316672e0555cf094a24cb78c7cc17e9959fbac11b353639b2",
       "generatedSha256": "b989618bec94c4d8895cfa41adb8550f59e565c714a7126e02fe38b43d4437da"
     },
     {

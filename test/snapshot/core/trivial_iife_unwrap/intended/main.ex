@@ -30,6 +30,30 @@ defmodule Main do
        end).()
     )
   end
+  def preserve_repeated_tuple_value(value) do
+    identity_pair(
+      (fn ->
+         value = observe(value)
+         {value, value}
+       end).()
+    )
+  end
+  def preserve_tuple_argument_order(first, second) do
+    identity_pair(
+      (fn ->
+         first = observe(first)
+         second = observe(second)
+         {second, first}
+       end).()
+    )
+  end
+  defp observe(value) do
+    IO.puts(value)
+    value
+  end
+  defp identity_pair(value) do
+    value
+  end
   defp identity(value) do
     value
   end

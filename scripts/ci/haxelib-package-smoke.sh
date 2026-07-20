@@ -232,6 +232,14 @@ require_file "$installed_root/src/haxe/crypto/Sha256.cross.hx"
 require_file "$installed_root/src/sys/FileSystem.cross.hx"
 require_file "$installed_root/src/sys/io/File.cross.hx"
 require_file "$installed_root/src/elixir/DateTime.hx"
+require_file "$installed_root/src/elixir/Keyword.hx"
+require_file "$installed_root/src/elixir/OptionParser.hx"
+require_file "$installed_root/src/elixir/Tuple.hx"
+require_file "$installed_root/src/elixir/types/KeywordEntry.hx"
+require_file "$installed_root/src/elixir/types/Tuple2.hx"
+require_file "$installed_root/src/elixir/types/Tuple3.hx"
+require_file "$installed_root/src/elixir/types/Tuple4.hx"
+require_file "$installed_root/src/elixir/types/Tuple5.hx"
 require_dir "$installed_root/vendor/reflaxe/src"
 require_dir "$installed_root/vendor/phoenix_shared/src"
 require_file "$installed_root/vendor/phoenix_shared/src/phoenix/live_react/LiveReactEventProtocol.hx"
@@ -361,6 +369,14 @@ import haxe.io.Float32Array;
 import haxe.io.Mime;
 import haxe.io.Scheme;
 import haxe.io.UInt8Array;
+import elixir.Keyword;
+import elixir.OptionParser;
+import elixir.OptionParser.OptionSwitch;
+import elixir.OptionParser.OptionSwitchTypes;
+import elixir.Tuple;
+import elixir.types.KeywordList;
+import elixir.types.Term;
+import elixir.types.Tuple2;
 import phoenix.channels.WirePayload;
 
 class Main {
@@ -390,6 +406,12 @@ class Main {
     var tupleValue = packageTuple();
     if (tupleValue._1 != "tuple" || tupleValue._2 != 4)
       throw "installed package tuple lowering failed";
+    var nativePair:Tuple2<String, Int> = Tuple.of2("native", 2);
+    if (nativePair._0 != "native" || nativePair._1 != 2)
+      throw "installed package Tuple.of2 lowering failed";
+    var parsed = OptionParser.parse([], parserOptions());
+    parsed._0 = [];
+    var appOptions = complexOptions(value);
     var projected = project([1, 2, 3]);
     if (projected.join(",") != "2,4,6")
       throw "installed package projection lowering failed";
@@ -399,11 +421,25 @@ class Main {
     trace(value.split("i").join("|"));
     trace([mime, (customMime:String), scheme, (customScheme:String)].join("|"));
     trace([Std.string(floats[0]), Std.string(sharedBytes.get(0))].join("|"));
+    trace([Std.string(parsed.argv.length), Std.string(appOptions.length)].join("|"));
     trace(projected.join("|"));
   }
 
   static function packageTuple():{_1:String, _2:Int} {
     return {_1: "tuple", _2: 4};
+  }
+
+  static function parserOptions():KeywordList<Term> {
+    var switches:Array<OptionSwitch> = [
+      Keyword.entry("verbose", OptionSwitchTypes.BOOLEAN),
+      Keyword.entry("source", OptionSwitchTypes.STRING)
+    ];
+
+    return [Keyword.entry("strict", switches)];
+  }
+
+  static function complexOptions(value:Null<String>):KeywordList<Term> {
+    return [Keyword.entry("app_name", value == null ? null : value.toUpperCase())];
   }
 
   static function project(values:Array<Int>):Array<Int> {
@@ -483,6 +519,14 @@ fi
 say "Source/package generated-output ownership parity: OK"
 require_contains "$work_dir/out/main.ex" "elem(tuple_value, 0)"
 require_contains "$work_dir/out/main.ex" "elem(tuple_value, 1)"
+require_contains "$work_dir/out/main.ex" '{:verbose, :boolean}'
+require_contains "$work_dir/out/main.ex" '{:source, :string}'
+require_contains "$work_dir/out/main.ex" '{:app_name,'
+require_contains "$work_dir/out/main.ex" 'parsed = put_elem(parsed, 0, [])'
+require_contains "$work_dir/out/main.ex" 'elem(parsed, 1)'
+require_not_contains "$work_dir/out/main.ex" 'Keyword.entry'
+require_not_contains "$work_dir/out/main.ex" 'Tuple.of2('
+require_not_contains "$work_dir/out/main.ex" 'OptionParseResult_Impl_'
 require_contains "$work_dir/out/main.ex" "Enum.map"
 require_contains "$work_dir/out_source/main.ex" "Enum.map"
 require_absent "$work_dir/out/haxe/io/mime.ex"

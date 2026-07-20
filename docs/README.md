@@ -49,6 +49,7 @@ This index helps you find the right docs quickly, whether you're building apps w
 **[03-compiler-development/](03-compiler-development/)** - For contributors to the compiler itself
 - [Compilation Pipeline](03-compiler-development/COMPILATION_PIPELINE_ARCHITECTURE.md) - How TypedExpr becomes Elixir
 - [Compilation Flow](05-architecture/COMPILATION_FLOW.md) - Current builder, transformer, result-invariant, printer, and output stages
+- [Native BEAM Tuples and Keyword Lists](04-api-reference/TUPLES_AND_KEYWORD_LISTS.md) - Raw positional carriers, zero-cost helpers, keyword entries, named protocol views, and design rationale
 - [Lean Pass Pipeline](03-compiler-development/LEAN_PASS_PIPELINE.md) - Bundle boundaries, granular debugging, and pass-order guardrails
 - [AST Pass Registry Inventory](05-architecture/PASS_REGISTRY_INVENTORY.md) - Effective phases, typed ownership scopes, scoped/all-pass byte parity, replay families, diagnostics, and profiling baseline
 - [Macro Principles](03-compiler-development/MACRO_PRINCIPLES.md) - Macro-time compilation rules

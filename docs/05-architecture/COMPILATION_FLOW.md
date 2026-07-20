@@ -125,9 +125,21 @@ The complete followed anonymous type must contain one of those contiguous field
 sets. A mixed shape such as `{_1, label}` or a gapped shape such as `{_1, _3}`
 is a map, not a tuple.
 
+The underscore is part of the Haxe-side carrier contract because Haxe field
+names must be identifiers; numeric fields such as `{0: value}` are not valid
+Haxe syntax. Indexed map literals such as `[0 => value]` retain map semantics and
+must not be contextually reinterpreted as tuples. The public authoring decision,
+including the compatible raw syntax and additive zero-cost helpers, is documented
+in [Native BEAM Tuples and Keyword Lists](../04-api-reference/TUPLES_AND_KEYWORD_LISTS.md).
+
 `AnonymousTupleShape` owns this decision for the build phase. `ObjectBuilder`
 emits `ETuple`, `FieldAccessBuilder` emits zero-based `elem/2` reads, and
 `AssignmentBuilder` emits `put_elem/3` followed by normal local rebinding.
+An abstract remains opaque unless it explicitly carries
+`@:elixirNativeTupleView`; even then, `AnonymousTupleShape` substitutes the
+abstract's type parameters and revalidates the complete canonical carrier. The
+marker is used by zero-cost protocol views such as `OptionParseResult` and must
+not become a general rule that follows every abstract's implementation type.
 Haxe object-pattern lowering also reaches the typed field-access path, so its
 tests and binds use the same indices. For example:
 

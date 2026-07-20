@@ -7,6 +7,7 @@ import elixir.Keyword;
 import elixir.Kernel;
 import elixir.OptionParser;
 import elixir.OptionParser.OptionSwitch;
+import elixir.OptionParser.OptionSwitchTypes;
 import elixir.mix.Mix;
 import elixir.mix.Project;
 import elixir.types.Atom;
@@ -42,9 +43,9 @@ class LiveReactComponentMixTask {
 
 	public static function run(args:Array<String>):Term {
 		var parsed = OptionParser.parse(args, parserOptions());
-		var options = parsed._0;
-		var argv = parsed._1;
-		var invalid = parsed._2;
+		var options = parsed.options;
+		var argv = parsed.argv;
+		var invalid = parsed.invalid;
 		if (invalid.length != 0)
 			Kernel.raiseValue("invalid haxe.gen.live_react options: " + Kernel.inspect(invalid));
 		if (argv.length != 1)
@@ -66,14 +67,14 @@ class LiveReactComponentMixTask {
 		var confirm:String->Bool = function(message:String):Bool return Mix.shell().yes(message);
 		var report:String->Void = function(message:String):Void Mix.shell().info(message);
 		var common:KeywordList<Term> = [
-			{_0: "app_name", _1: appName},
-			{_0: "module_path", _1: modulePath},
-			{_0: "export_name", _1: exportName},
-			{_0: "package_root", _1: packageRoot},
-			{_0: "existing", _1: useExisting},
-			{_0: "yes", _1: confirmed},
-			{_0: "confirm", _1: confirm},
-			{_0: "report", _1: report}
+			Keyword.entry("app_name", appName),
+			Keyword.entry("module_path", modulePath),
+			Keyword.entry("export_name", exportName),
+			Keyword.entry("package_root", packageRoot),
+			Keyword.entry("existing", useExisting),
+			Keyword.entry("yes", confirmed),
+			Keyword.entry("confirm", confirm),
+			Keyword.entry("report", report)
 		];
 		var result = remove ? LiveReactLifecycle.removeComponentBang(File.cwdBang(), argv[0],
 			common) : LiveReactLifecycle.addComponentBang(File.cwdBang(), argv[0], common);
@@ -83,14 +84,14 @@ class LiveReactComponentMixTask {
 
 	static function parserOptions():KeywordList<Term> {
 		var switches:Array<OptionSwitch> = [
-			{_0: "remove", _1: "boolean"},
-			{_0: "existing", _1: "boolean"},
-			{_0: "module", _1: "string"},
-			{_0: "export", _1: "string"},
-			{_0: "package_root", _1: "string"},
-			{_0: "yes", _1: "boolean"}
+			Keyword.entry("remove", OptionSwitchTypes.BOOLEAN),
+			Keyword.entry("existing", OptionSwitchTypes.BOOLEAN),
+			Keyword.entry("module", OptionSwitchTypes.STRING),
+			Keyword.entry("export", OptionSwitchTypes.STRING),
+			Keyword.entry("package_root", OptionSwitchTypes.STRING),
+			Keyword.entry("yes", OptionSwitchTypes.BOOLEAN)
 		];
-		return [{_0: "strict", _1: switches}];
+		return [Keyword.entry("strict", switches)];
 	}
 
 	static function reportResult(result:Term):Void {

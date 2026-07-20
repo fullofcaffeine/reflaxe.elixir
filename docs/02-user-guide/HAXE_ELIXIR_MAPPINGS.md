@@ -233,6 +233,17 @@ field begins with an underscore and a number.
 Use tuple-shaped objects when a typed Haxe surface must model a positional
 Elixir value. Prefer named structural types for application records, and prefer
 the typed `Result`, Phoenix, or OTP return surfaces for common tagged tuples.
+The leading underscore is required because Haxe object-field names must be
+identifiers: `_0` is legal, while a numeric field such as `{0: "ok"}` is not.
+It also makes the positional carrier visible in Haxe source; the name disappears
+when the compiler emits the native tuple.
+
+A Haxe map literal such as `[0 => "ok"]` remains a map and generates a native
+Elixir map such as `%{0 => "ok"}`. It is not alternate tuple syntax: maps have
+keys and dynamic lookup, while tuples have fixed ordered positions. See
+[Native BEAM Tuples and Keyword Lists](../04-api-reference/TUPLES_AND_KEYWORD_LISTS.md)
+for the raw syntax, zero-cost helpers, keyword entries, named
+protocol views, and the rationale for keeping both forms.
 
 ## Type System Mappings
 

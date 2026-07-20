@@ -7,6 +7,7 @@ import elixir.Keyword;
 import elixir.Kernel;
 import elixir.OptionParser;
 import elixir.OptionParser.OptionSwitch;
+import elixir.OptionParser.OptionSwitchTypes;
 import elixir.mix.Mix;
 import elixir.mix.Project;
 import elixir.types.Atom;
@@ -48,9 +49,9 @@ class LiveReactMixTask {
 
 	public static function run(args:Array<String>):Term {
 		var parsed = OptionParser.parse(args, parserOptions());
-		var options = parsed._0;
-		var argv = parsed._1;
-		var invalid = parsed._2;
+		var options = parsed.options;
+		var argv = parsed.argv;
+		var invalid = parsed.invalid;
 
 		rejectInvalidArguments(argv, invalid);
 		rejectUnsupportedOptions(options);
@@ -67,13 +68,13 @@ class LiveReactMixTask {
 		var report:String->Void = function(message:String):Void Mix.shell().info(message);
 
 		var common:KeywordList<Term> = [
-			{_0: "app_name", _1: appName == null ? null : Kernel.toString(appName)},
-			{_0: "package_root", _1: packageRoot},
-			{_0: "mix_dependencies", _1: mixDependencies},
-			{_0: "yes", _1: confirmed},
-			{_0: "warn_only", _1: warnOnly},
-			{_0: "confirm", _1: confirm},
-			{_0: "report", _1: report}
+			Keyword.entry("app_name", appName == null ? null : Kernel.toString(appName)),
+			Keyword.entry("package_root", packageRoot),
+			Keyword.entry("mix_dependencies", mixDependencies),
+			Keyword.entry("yes", confirmed),
+			Keyword.entry("warn_only", warnOnly),
+			Keyword.entry("confirm", confirm),
+			Keyword.entry("report", report)
 		];
 
 		var result = if (mode == APPLY) {
@@ -90,14 +91,14 @@ class LiveReactMixTask {
 
 	static function parserOptions():KeywordList<Term> {
 		var switches:Array<OptionSwitch> = [
-			{_0: "check", _1: "boolean"},
-			{_0: "remove", _1: "boolean"},
-			{_0: "yes", _1: "boolean"},
-			{_0: "warn_only", _1: "boolean"},
-			{_0: "package_root", _1: "string"},
-			{_0: "ssr", _1: "boolean"}
+			Keyword.entry("check", OptionSwitchTypes.BOOLEAN),
+			Keyword.entry("remove", OptionSwitchTypes.BOOLEAN),
+			Keyword.entry("yes", OptionSwitchTypes.BOOLEAN),
+			Keyword.entry("warn_only", OptionSwitchTypes.BOOLEAN),
+			Keyword.entry("package_root", OptionSwitchTypes.STRING),
+			Keyword.entry("ssr", OptionSwitchTypes.BOOLEAN)
 		];
-		return [{_0: "strict", _1: switches}];
+		return [Keyword.entry("strict", switches)];
 	}
 
 	static function parseMode(options:KeywordList<Term>):Atom {
