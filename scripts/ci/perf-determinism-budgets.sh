@@ -34,6 +34,12 @@ if [[ ! -x "$TIMEOUT" ]]; then
 fi
 
 tmp_base="$(mktemp -d "${TMPDIR:-/tmp}/reflaxe-elixir-budgets.XXXXXX")"
+# On macOS, TMPDIR commonly begins with `/var`, which is a symbolic link to
+# `/private/var`. Genes refuses to write through a symbolic-link path because an
+# output directory could otherwise escape the location the build reviewed.
+# Resolve the newly created directory once so the client budget exercises that
+# safety check with the real path rather than failing on the OS alias.
+tmp_base="$(cd "$tmp_base" && pwd -P)"
 trap 'rm -rf "$tmp_base" 2>/dev/null || true' EXIT
 
 log() { echo "[budgets] $*"; }

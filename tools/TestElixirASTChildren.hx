@@ -9,6 +9,7 @@ import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.emptyMetadata;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
+import reflaxe.elixir.ast.ElixirASTStructuralDigest;
 import reflaxe.elixir.ast.ASTUtils;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ElixirPatternChildren;
@@ -179,6 +180,8 @@ class TestElixirASTChildren {
 			ElixirASTTransformer.iterateAST(sample.node, _ -> astChildren++);
 
 			assertEquals(sample.astChildren, astChildren, sample.name + " immediate AST child count");
+			var digest = ElixirASTStructuralDigest.digest(sample.node);
+			assertEquals(digest, ElixirASTStructuralDigest.digest(sample.node), sample.name + " structural digest determinism");
 		}
 	}
 

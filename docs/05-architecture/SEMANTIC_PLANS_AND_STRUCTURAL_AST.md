@@ -275,12 +275,43 @@ containing a second pass runner. Each granular child is visible to result tracki
 timing, and snapshots. The same boundary is ready to host legality and analysis invalidation when
 those later slices land.
 
-The next analysis slice will make analysis state request-local and key it by AST revision. A changed
-or legacy-unknown pass will invalidate cached AST analyses unless preservation is explicitly proven.
-Migration does not force all legacy passes to claim a precise change set at once, and it does not
-recompute an expensive capability inventory after all 578 passes merely for architectural
-appearance. Each analysis moves under invalidation only after cached and forced-recomputed results
-agree under bounded profiles.
+Each transformation invocation now creates one request-local `PassContext`. It owns the visible pass
+ID, phase and scope, the current structural AST and revision, diagnostics, a collision-aware temporary
+name allocator, and a lazy `AnalysisManager`. It is passed explicitly to outcome-aware pass functions;
+it is not stored in a process-global variable or a mutable "current pass" slot on
+`CompilationContext`. That explicit boundary remains unambiguous if a later pass invokes nested
+compiler work.
+
+The temporary-name inventory is also lazy. Creating a context does not add another whole-tree walk to
+every module: the first pass that requests a compiler-owned name inventories structured variables and
+patterns at the current revision. Pipelines that do not use the allocator pay no traversal cost, and
+names known only through an opaque raw-target contract must be reserved explicitly.
+
+An outcome-aware pass reports `Changed`, `Unchanged`, or `Unknown`. The third state matters during
+migration: the 578 established AST-only pass functions cannot honestly prove that they preserved an
+analysis merely because they returned the same root object or printed the same bytes. Their adapter
+therefore reports `Unknown`, advances the AST revision, and invalidates every materialized analysis
+unless preservation was explicitly proven. A proven `Unchanged` outcome retains the revision; a
+proven `Changed` outcome may name preserved analyses, but a dependent result survives only when its
+entire dependency chain is preserved. Dependency cycles and changing dependency contracts fail
+closed.
+
+The analysis manager owns the AST associated with its revision and passes that tree directly to the
+analysis function. This prevents callers from accidentally combining revision N with a closure over
+the tree from revision N−1. With `-D reflaxe_elixir_validate_analysis_cache`, a cached read is also
+computed fresh and compared through the analysis's typed equality function. That differential mode is
+the admission gate for moving a correctness-sensitive analysis into the cache.
+
+No established analysis moved in this scaffolding slice. `PassApplicability` deliberately keeps its
+phase-boundary recomputation cadence, so the change does not recompute an expensive capability
+inventory after every legacy pass. Static receiver and printer counters also remain with their
+separate owner tasks. New migrations use the request-local allocator, then remove the old owner only
+with focused collision, determinism, output, and performance evidence.
+
+`debug_pass_metrics` no longer prints intermediate trees to detect change. It compares a deterministic
+digest of structural `ElixirAST`, including compiler-only children that are intentionally illegal to
+print. The digest excludes source positions and legacy metadata and is diagnostic only; it never
+establishes an `Unchanged` outcome or analysis preservation.
 
 ## Admission test for a semantic plan
 
@@ -441,7 +472,7 @@ A mechanical move that leaves ownership or side tables ambiguous does not satisf
 
 ## Staged implementation and rollback
 
-Stages 1–4 below are delivered. Later stages remain plans and must retain their own regression gate.
+Stages 1–5 below are delivered. Later stages remain plans and must retain their own regression gate.
 
 1. Freeze the existing generated-output, result, pass-order/scope, runtime, package, and determinism
    baselines; record reviewed architecture debt in this decision without creating a parallel audit
@@ -451,7 +482,8 @@ Stages 1–4 below are delivered. Later stages remain plans and must retain thei
 3. Make registry errors fail closed while preserving the exact effective list.
 4. Replace opaque executable bundles with transparent nested groups, initially preserving current
    capability snapshot semantics.
-5. Add request-local pass context, conservative analysis infrastructure, and report-only legality.
+5. Add request-local pass context and conservative analysis infrastructure. Phase legality remains a
+   later independently gated slice; the analysis scaffold does not invent a broad legality database.
 6. Instrument then consolidate persistent receiver effects under one owner; keep managed carriers
    explicitly excluded.
 7. Move numeric-sentinel ownership upstream so result validation no longer models printer repair.

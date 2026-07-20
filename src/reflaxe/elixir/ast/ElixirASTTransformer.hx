@@ -13,6 +13,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTBuilder;
 import reflaxe.elixir.ast.PassApplicability;
 import reflaxe.elixir.ast.PassApplicability.PassScope;
+import reflaxe.elixir.ast.PassContext.PassOutcome;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.ast.transformers.GuardConditionFlattener;
 import reflaxe.elixir.ast.transformers.LoopVariableRestorer;
@@ -52,6 +53,12 @@ typedef TransformPass = (ast:ElixirAST) -> ElixirAST;
  */
 typedef ContextualTransformPass = (ast:ElixirAST, context:reflaxe.elixir.CompilationContext) -> ElixirAST;
 
+/** Outcome-aware pass that can report change and preservation honestly. */
+typedef OutcomeTransformPass = (ast:ElixirAST, passContext:PassContext) -> PassOutcome;
+
+/** Outcome-aware pass that also needs the existing compilation context. */
+typedef ContextualOutcomeTransformPass = (ast:ElixirAST, context:reflaxe.elixir.CompilationContext, passContext:PassContext) -> PassOutcome;
+
 /**
  * Pass configuration
  *
@@ -77,6 +84,10 @@ typedef PassConfig = {
 	 * Optional contextual variant of the pass (receives CompilationContext)
 	 */
 	?contextualPass:ContextualTransformPass,
+	/** Preferred result-aware variant for new stateless passes. */
+	?outcomePass:OutcomeTransformPass,
+	/** Preferred result-aware variant for new contextual passes. */
+	?contextualOutcomePass:ContextualOutcomeTransformPass,
 	/**
 	 * Optional phase tag used for coarse ordering groups (e.g., "early", "post_interpolate").
 	 * When omitted, the pass remains in its original relative position unless constrained
@@ -240,11 +251,18 @@ class ElixirASTTransformer {
 
 		var passes = getEnabledPasses();
 		var currentPassPhase:Null<String> = null;
+		var validateAnalysisCache = false;
+		#if reflaxe_elixir_validate_analysis_cache
+		validateAnalysisCache = true;
+		#end
+		var passContext = new PassContext(rootName, ast, validateAnalysisCache);
 		#if reflaxe_elixir_validate_results
 		var functionResultStates = reflaxe.elixir.ast.validation.FunctionResultInvariant.capture(ast, rootName);
 		#end
+		passContext.beginPass("ReceiverEffectLowering_Initial", null, PassScope.Core);
 		var result = context != null ? reflaxe.elixir.ast.transformers.ReceiverEffectLoweringTransforms.contextualPass(ast,
 			context) : reflaxe.elixir.ast.transformers.ReceiverEffectLoweringTransforms.pass(ast);
+		passContext.finish(PassContext.legacyOutcome(result));
 		var passCapabilities = PassApplicability.analyze(result, context);
 		#if reflaxe_elixir_validate_results
 		functionResultStates = reflaxe.elixir.ast.validation.FunctionResultInvariant.validateTransition(result, rootName, "ReceiverEffectLowering_Initial",
@@ -326,9 +344,11 @@ class ElixirASTTransformer {
 			 *   or snapshotting. Helps avoid circular debugging by pinpointing impact.
 			 *
 			 * HOW
-			 * - Before running a pass, render the current AST to a string using the printer.
-			 * - After the pass, render again and compare. If different, emit a concise
+			 * - Before running a pass, fingerprint structural AST without invoking the printer.
+			 * - After the pass, fingerprint again and compare. If different, emit a concise
 			 *   line: `#[PassMetrics] Changed by: <passName>`.
+			 * - Compiler-only intermediate nodes therefore remain measurable even when they
+			 *   are deliberately illegal at the printer boundary.
 			 * - Guarded by `-D debug_pass_metrics`; zero cost and zero output otherwise.
 			 *
 			 * EXAMPLES
@@ -337,25 +357,24 @@ class ElixirASTTransformer {
 			 *   `#[PassMetrics] Changed by: FilterQueryConsolidate`
 			 */
 			#if debug_pass_metrics
-			var __beforePrint:String = null;
-			try
-				__beforePrint = reflaxe.elixir.ast.ElixirASTPrinter.print(result, 0)
-			catch (e) {}
+			var __beforeDigest = ElixirASTStructuralDigest.digest(result);
 			#end
 
-			// CONTEXTUAL PASS SELECTION LOGIC
-			// WHY: Enable passes to access compilation context when needed
-			// WHAT: Check for contextualPass variant first, fall back to regular pass
-			// HOW: Conditional logic based on contextualPass availability and context presence
+			// PASS SELECTION AND LEGACY ADAPTATION
+			// WHY: New passes need honest change/preservation outcomes while the mature
+			//      registry still contains AST-only functions.
+			// WHAT: Prefer outcome-aware variants; adapt every legacy result as Unknown.
+			// HOW: Select the most specific available function without changing legacy APIs.
 			//
 			// ARCHITECTURE:
-			// 1. If contextualPass exists AND context provided → Use contextual variant
-			// 2. Otherwise → Use stateless pass variant (backward compatible)
+			// 1. Contextual outcome pass + CompilationContext
+			// 2. Stateless outcome pass + request-local PassContext
+			// 3. Contextual legacy pass, conservatively Unknown
+			// 4. Stateless legacy pass, conservatively Unknown
 			//
 			// This ensures:
-			// - Contextual passes get access to tempVarRenameMap for consistency
-			// - Non-contextual passes continue working unchanged
-			// - No null pointer errors when context not provided
+			// PassApplicability intentionally keeps its existing phase snapshot cadence;
+			// it is not silently moved into the new analysis cache in this scaffolding slice.
 			#if ((hxx_pass_timing || profile_passes) && !hxx_disable_timing)
 			var __t0 = passTimingStamp();
 			#end
@@ -365,17 +384,26 @@ class ElixirASTTransformer {
 			nodeVisitCounter = 0;
 			currentPassName = passConfig.name;
 			#end
-			if (passConfig.contextualPass != null && context != null) {
+			passContext.beginPass(passConfig.name, passConfig.phase, passConfig.scope);
+			var outcome:PassOutcome;
+			if (passConfig.contextualOutcomePass != null && context != null) {
+				outcome = passConfig.contextualOutcomePass(result, context, passContext);
+			} else if (passConfig.outcomePass != null) {
+				outcome = passConfig.outcomePass(result, passContext);
+			} else if (passConfig.contextualPass != null && context != null) {
 				#if debug_contextual_passes
 				#end
 
-				result = passConfig.contextualPass(result, context);
+				outcome = PassContext.legacyOutcome(passConfig.contextualPass(result, context));
 			} else {
 				#if debug_contextual_passes
 				#end
 
-				result = passConfig.pass(result);
+				outcome = PassContext.legacyOutcome(passConfig.pass(result));
 			}
+			if (outcome == null || outcome.ast == null)
+				throw 'Pass ${passConfig.name} returned no AST outcome';
+			result = outcome.ast;
 
 			#if reflaxe_elixir_test_result_invariant_mutation
 			if (passConfig.name == "LocalAssignUnusedUnderscore_Scoped_Final") {
@@ -391,8 +419,14 @@ class ElixirASTTransformer {
 							node;
 					};
 				});
+				outcome = {
+					ast: result,
+					change: Changed,
+					preservedAnalyses: []
+				};
 			}
 			#end
+			passContext.finish(outcome);
 
 			#if reflaxe_elixir_validate_results
 			functionResultStates = reflaxe.elixir.ast.validation.FunctionResultInvariant.validateTransition(result, rootName, passConfig.name,
@@ -438,12 +472,8 @@ class ElixirASTTransformer {
 			#end
 
 			#if debug_pass_metrics
-			var __afterPrint:String = null;
-			var __changed:Bool = false;
-			try {
-				__afterPrint = reflaxe.elixir.ast.ElixirASTPrinter.print(result, 0);
-				__changed = (__beforePrint != __afterPrint);
-			} catch (e) {}
+			var __afterDigest = ElixirASTStructuralDigest.digest(result);
+			var __changed = __beforeDigest != __afterDigest;
 			if (__changed) {
 				#if sys Sys.println('#[PassMetrics] Changed by: ' + passConfig.name); #else trace('#[PassMetrics] Changed by: ' + passConfig.name); #end
 			}
@@ -476,8 +506,10 @@ class ElixirASTTransformer {
 		#if debug_ast_transformer
 		#end
 
+		passContext.beginPass("ReceiverEffectLowering_Final", null, PassScope.Core);
 		result = context != null ? reflaxe.elixir.ast.transformers.ReceiverEffectLoweringTransforms.contextualPass(result,
 			context) : reflaxe.elixir.ast.transformers.ReceiverEffectLoweringTransforms.pass(result);
+		passContext.finish(PassContext.legacyOutcome(result));
 		#if reflaxe_elixir_validate_results
 		functionResultStates = reflaxe.elixir.ast.validation.FunctionResultInvariant.validateTransition(result, rootName, "ReceiverEffectLowering_Final",
 			functionResultStates);
@@ -487,7 +519,9 @@ class ElixirASTTransformer {
 		// bodies after the normal pass registry has already run. Run the accumulator
 		// pass once more so those late matches update `acc_i` in the reducer scope
 		// instead of rebinding the outer `i` and getting lost on the next iteration.
+		passContext.beginPass("ReduceWhileAccumulator_Final", null, PassScope.Core);
 		result = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.reduceWhileAccumulatorPass(result);
+		passContext.finish(PassContext.legacyOutcome(result));
 		#if reflaxe_elixir_validate_results
 		functionResultStates = reflaxe.elixir.ast.validation.FunctionResultInvariant.validateTransition(result, rootName, "ReduceWhileAccumulator_Final",
 			functionResultStates);

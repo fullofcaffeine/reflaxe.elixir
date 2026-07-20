@@ -90,9 +90,20 @@ file paths, or application names.
 
 The runner re-evaluates capabilities at phase boundaries because an earlier phase can introduce a
 structured target call used by a later phase. Transparent grouped construction and direct granular
-construction use the same pass functions, order, scopes, and capability analysis. This refactor
-deliberately preserves that phase-level capability cadence; request-local analysis invalidation is
-a later, separately tested architecture slice.
+construction use the same pass functions, order, scopes, and capability analysis. Request-local
+analysis invalidation infrastructure now exists, but `PassApplicability` deliberately remains outside
+that cache: moving it would require cached-versus-forced-recomputed parity and a bounded performance
+comparison. Its phase-level cadence therefore remains unchanged.
+
+Each visible child pass does run with a request-local `PassContext`. New outcome-aware passes can
+report `Changed`, `Unchanged`, or `Unknown` and explicitly preserve named cached analyses. Existing
+AST-only passes are adapted as `Unknown`; they never claim preservation from root identity or printed
+output. This is conservative without causing 578 capability recomputations, because no established
+capability analysis has been migrated into the new cache yet. Under `debug_pass_metrics`, structural
+digests replace printer calls so compiler-only intermediate nodes can be measured without teaching
+the printer to accept them. The context does not eagerly walk each module for temporary-name hygiene,
+and revision changes do not allocate cache bookkeeping while no analysis is materialized; both costs
+begin only when a migrated pass requests the corresponding service.
 
 Run the bounded baseline report with:
 

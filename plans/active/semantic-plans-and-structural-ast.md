@@ -40,7 +40,7 @@ infrastructure without re-planning that work.
 | `haxe.elixir.codex-75i.6` | Centralize exhaustive ElixirAST child and pattern traversal | P1, complete |
 | `haxe.elixir.codex-75i.7` | Freeze effective pass order and fail closed on registry errors | P1, complete |
 | `haxe.elixir.codex-75i.8` | Make pass bundles transparent nested pipeline groups | P1, complete |
-| `haxe.elixir.codex-75i.9` | Add request-local pass context and conservative analysis invalidation | P1, open |
+| `haxe.elixir.codex-75i.9` | Add request-local pass context and conservative analysis invalidation | P1, in progress |
 | `haxe.elixir.codex-75i.10` | Detach result correctness from printer sentinel behavior | P1, open |
 | `haxe.elixir.codex-75i.11` | Move semantic policy out of ElixirASTPrinter | P1, open |
 | `haxe.elixir.codex-75i.12` | Tighten LoopIR into a closed builder-local plan | P2, open |
@@ -124,10 +124,18 @@ performance, exact-head CI, and CodeQL gates are green.
 ## Slice 4: request-local state, analysis, and legality
 
 Add request-local pass context, collision-aware naming, AST revisions, conservative analysis
-invalidation, and forced-recompute differential checks. Legacy passes may report changed/unknown;
-they must not claim false preservation. Introduce a small legal/illegal/conditionally-legal matrix
-only for admitted semantic and raw-authority families. Report current debt first and harden each
-family immediately after its one owner can prove the postcondition.
+invalidation, and forced-recompute differential checks. The context stays local to one transformer
+invocation and is passed explicitly to outcome-aware passes; it is not hidden in
+`CompilationContext`. Legacy passes report `Unknown` rather than claiming false preservation. The
+analysis manager owns the AST/revision pair, rejects dependency cycles, and retains a dependent result
+only when its full dependency chain is proven preserved. `PassApplicability` keeps its existing
+phase-boundary cadence until a separate cached-versus-fresh and performance migration proves a
+change safe.
+
+Legality remains a separate follow-on concern: introduce a small
+legal/illegal/conditionally-legal matrix only for admitted semantic and raw-authority families, not a
+broad inventory database. Report current debt first and harden each family immediately after its one
+owner can prove the postcondition.
 
 ## Slice 5: persistent receiver-effect plan
 
