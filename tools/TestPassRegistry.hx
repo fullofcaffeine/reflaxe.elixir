@@ -5,6 +5,7 @@ import haxe.macro.Expr;
 import reflaxe.elixir.ast.ElixirASTTransformer.PassConfig;
 import reflaxe.elixir.ast.transformers.registry.ElixirASTPassRegistry;
 import reflaxe.elixir.ast.transformers.registry.PassInventory;
+import reflaxe.elixir.ast.transformers.registry.PassPipeline;
 import reflaxe.elixir.ast.transformers.registry.RegistryCore;
 import reflaxe.elixir.ast.transformers.registry.RegistryCore.RegistryDiagnostics;
 import reflaxe.elixir.ast.transformers.registry.RegistryCore.RegistryValidationOptions;
@@ -20,6 +21,7 @@ class TestPassRegistry {
 		testEffectiveOrderViolationsFail();
 		testPhaseRegressionsAndUnknownPhasesFail();
 		testRepositoryRegistryIsHealthy();
+		testTransparentGroupsPreserveGranularOrder();
 
 		Sys.println("Pass registry contract passed");
 		return macro null;
@@ -113,6 +115,35 @@ class TestPassRegistry {
 		var diagnostics = RegistryCore.analyze(passes, effectiveOptions(phaseOrder));
 
 		assertClean(diagnostics, "the repository registry");
+	}
+
+	static function testTransparentGroupsPreserveGranularOrder():Void {
+		var contracts = PassPipeline.contracts();
+		var groups = ElixirASTPassRegistry.getEnabledPassGroups();
+		var flattened = PassPipeline.flatten(groups);
+		var granular = ElixirASTPassRegistry.getGranularPasses();
+
+		assertEquals(contracts.length, groups.length, "every declared phase has one contributor-facing group");
+		assertEquals(granular.length, flattened.length, "transparent groups contain every enabled granular pass exactly once");
+
+		for (groupIndex in 0...groups.length) {
+			var contract = contracts[groupIndex];
+			var group = groups[groupIndex];
+
+			assertEquals(contract.name, group.name, "group order is stable");
+			assertEquals(contract.phase, group.phase, "group phase is stable");
+
+			for (child in group.children) {
+				assertEquals(group.phase, child.phase, 'child ${child.name} remains in its frozen phase');
+				assertEquals(group.name, child.group, 'child ${child.name} names its contributor-facing group');
+			}
+		}
+
+		for (index in 0...granular.length) {
+			assertEquals(granular[index].name, flattened[index].name, "flattening preserves granular pass order");
+			assertEquals(granular[index].phase, flattened[index].phase, "flattening preserves phase assignment");
+			assertEquals(granular[index].scope, flattened[index].scope, "flattening preserves scope assignment");
+		}
 	}
 
 	static function pass(name:String, ?runAfter:Array<String>, ?runBefore:Array<String>, ?runAfterIfPresent:Array<String>, ?runBeforeIfPresent:Array<String>,

@@ -525,7 +525,7 @@ lose state even though both passes compile.
 - Cycles, duplicate pass IDs, missing hard targets, violated effective order, unknown phases, and
   backward phase movement fail before transformations execute. Never restore deduplication or
   fall back to source order after an invalid graph.
-- The accepted 578-pass order, phase/scope assignments, and seven default bundles are frozen by
+- The accepted 578-pass order, phase/scope assignments, and seven transparent group headings are frozen by
   `PASS_REGISTRY_BASELINE.json` and the generated readable order documents. Infrastructure work must
   preserve that effective schedule; an intentional change requires a reviewed baseline update.
 - Do not use application names, file paths, generated module names, or example-specific symbols to

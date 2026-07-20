@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare scoped pass execution with the legacy all-pass pipeline byte-for-byte."""
+"""Compare transparent groups, direct granular execution, and all-pass output."""
 
 from __future__ import annotations
 
@@ -44,7 +44,7 @@ def command_output(command: list[str]) -> str:
     return result.stdout
 
 
-def compile_fixture(profile: dict, legacy_all_passes: bool) -> None:
+def compile_fixture(profile: dict, *, granular: bool, all_passes: bool) -> None:
     command = [
         str(ROOT / "scripts/with-timeout.sh"),
         "--secs",
@@ -54,10 +54,10 @@ def compile_fixture(profile: dict, legacy_all_passes: bool) -> None:
         "--",
         os.environ.get("HAXE_BIN", "haxe"),
         "compile.hxml",
-        "-D",
-        "hxx_granular_pass_registry",
     ]
-    if legacy_all_passes:
+    if granular:
+        command.extend(["-D", "hxx_granular_pass_registry"])
+    if all_passes:
         command.extend(["-D", "reflaxe_elixir_disable_pass_scopes"])
     command_output(command)
 
@@ -66,43 +66,62 @@ def output_files(root: Path) -> list[Path]:
     return sorted(path.relative_to(root) for path in root.rglob("*") if path.is_file())
 
 
-def text_diff(relative: Path, legacy_bytes: bytes, scoped_bytes: bytes) -> str:
+def text_diff(
+    relative: Path,
+    left_label: str,
+    left_bytes: bytes,
+    right_label: str,
+    right_bytes: bytes,
+) -> str:
     try:
-        legacy = legacy_bytes.decode("utf-8").splitlines()
-        scoped = scoped_bytes.decode("utf-8").splitlines()
+        left = left_bytes.decode("utf-8").splitlines()
+        right = right_bytes.decode("utf-8").splitlines()
     except UnicodeDecodeError:
         return "binary content differs"
     lines = list(
         difflib.unified_diff(
-            legacy,
-            scoped,
-            fromfile=f"legacy/{relative}",
-            tofile=f"scoped/{relative}",
+            left,
+            right,
+            fromfile=f"{left_label}/{relative}",
+            tofile=f"{right_label}/{relative}",
             lineterm="",
         )
     )
     return "\n".join(lines[:80])
 
 
-def compare_trees(profile: dict, legacy: Path, scoped: Path) -> None:
-    legacy_files = output_files(legacy)
-    scoped_files = output_files(scoped)
-    if legacy_files != scoped_files:
-        legacy_only = sorted(set(legacy_files) - set(scoped_files))
-        scoped_only = sorted(set(scoped_files) - set(legacy_files))
+def compare_trees(
+    profile: dict,
+    left_label: str,
+    left: Path,
+    right_label: str,
+    right: Path,
+) -> None:
+    left_files = output_files(left)
+    right_files = output_files(right)
+    if left_files != right_files:
+        left_only = sorted(set(left_files) - set(right_files))
+        right_only = sorted(set(right_files) - set(left_files))
         raise RuntimeError(
             f"{profile['scope']} generated a different file set\n"
-            f"legacy only: {', '.join(map(str, legacy_only)) or '(none)'}\n"
-            f"scoped only: {', '.join(map(str, scoped_only)) or '(none)'}"
+            f"{left_label} only: {', '.join(map(str, left_only)) or '(none)'}\n"
+            f"{right_label} only: {', '.join(map(str, right_only)) or '(none)'}"
         )
 
-    for relative in legacy_files:
-        legacy_bytes = (legacy / relative).read_bytes()
-        scoped_bytes = (scoped / relative).read_bytes()
-        if legacy_bytes != scoped_bytes:
-            detail = text_diff(relative, legacy_bytes, scoped_bytes)
+    for relative in left_files:
+        left_bytes = (left / relative).read_bytes()
+        right_bytes = (right / relative).read_bytes()
+        if left_bytes != right_bytes:
+            detail = text_diff(
+                relative,
+                left_label,
+                left_bytes,
+                right_label,
+                right_bytes,
+            )
             raise RuntimeError(
-                f"{profile['scope']} differs at {relative}\n{detail}"
+                f"{profile['scope']} differs between {left_label} and "
+                f"{right_label} at {relative}\n{detail}"
             )
 
 
@@ -115,26 +134,46 @@ def compare_profile(profile: dict) -> int:
     with tempfile.TemporaryDirectory(prefix="reflaxe-pass-scope-parity-") as temp_dir:
         temp = Path(temp_dir)
         original = temp / "original"
-        legacy = temp / "legacy"
-        scoped = temp / "scoped"
+        grouped_scoped = temp / "grouped-scoped"
+        granular_scoped = temp / "granular-scoped"
+        granular_all = temp / "granular-all"
         had_original = output.exists()
         if had_original:
             shutil.copytree(output, original)
 
         try:
             shutil.rmtree(output, ignore_errors=True)
-            compile_fixture(profile, legacy_all_passes=True)
+            compile_fixture(profile, granular=False, all_passes=False)
             if not output.is_dir():
-                raise RuntimeError(f"legacy compile did not create {output}")
-            shutil.copytree(output, legacy)
+                raise RuntimeError(f"transparent-group compile did not create {output}")
+            shutil.copytree(output, grouped_scoped)
 
             shutil.rmtree(output)
-            compile_fixture(profile, legacy_all_passes=False)
+            compile_fixture(profile, granular=True, all_passes=False)
             if not output.is_dir():
-                raise RuntimeError(f"scoped compile did not create {output}")
-            shutil.copytree(output, scoped)
-            compare_trees(profile, legacy, scoped)
-            return len(output_files(scoped))
+                raise RuntimeError(f"direct granular compile did not create {output}")
+            shutil.copytree(output, granular_scoped)
+            compare_trees(
+                profile,
+                "grouped-scoped",
+                grouped_scoped,
+                "granular-scoped",
+                granular_scoped,
+            )
+
+            shutil.rmtree(output)
+            compile_fixture(profile, granular=True, all_passes=True)
+            if not output.is_dir():
+                raise RuntimeError(f"all-pass compile did not create {output}")
+            shutil.copytree(output, granular_all)
+            compare_trees(
+                profile,
+                "granular-scoped",
+                granular_scoped,
+                "granular-all",
+                granular_all,
+            )
+            return len(output_files(grouped_scoped))
         finally:
             shutil.rmtree(output, ignore_errors=True)
             if had_original:
@@ -154,10 +193,13 @@ def main() -> int:
     if unknown:
         raise RuntimeError(f"unknown scenarios: {', '.join(sorted(unknown))}")
 
-    print("scope\tmodule\tgenerated_files\tparity")
+    print("scope\tmodule\tgenerated_files\tgrouped/granular\tscoped/all-pass")
     for profile in profiles:
         file_count = compare_profile(profile)
-        print(f"{profile['scope']}\t{profile['module']}\t{file_count}\tbyte-identical")
+        print(
+            f"{profile['scope']}\t{profile['module']}\t{file_count}\t"
+            "byte-identical\tbyte-identical"
+        )
     return 0
 
 

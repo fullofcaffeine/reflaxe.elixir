@@ -92,8 +92,9 @@ These tests are intentionally small and deterministic. They lock in compiler beh
 
 All snapshot commands run with `-D reflaxe_elixir_validate_results`. Authored functions carry their
 Haxe `Void`/value return contract as compiler metadata, and the AST transformer records value-carrier
-state after each lean pass bundle. At the pre-print boundary it rejects unresolved valid-to-invalid
-transitions and reports the first bundle that caused the degradation. This is stronger than checking that generated Elixir parses:
+state after each child pass in the transparent pipeline. At the pre-print boundary it rejects
+unresolved valid-to-invalid transitions and reports the first exact pass that caused the degradation.
+This is stronger than checking that generated Elixir parses:
 an accidentally empty Elixir function is valid syntax but returns `nil`.
 
 Focused coverage lives in:
@@ -106,7 +107,8 @@ Focused coverage lives in:
 
 The invariant is compiler QA, not a runtime feature. It is disabled for ordinary source/package
 consumers and does not change generated Elixir. A developer can opt in on any local compiler build;
-add `-D hxx_granular_pass_registry` when an exact inner pass name is more useful than a lean bundle.
+the default transparent pipeline already reports exact pass names. The historical
+`-D hxx_granular_pass_registry` path remains useful only for grouped-versus-direct parity checks.
 
 ### Case Study: reduce_while Accumulator Updates (Todo-App Presence)
 

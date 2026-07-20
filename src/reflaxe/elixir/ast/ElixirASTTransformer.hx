@@ -69,6 +69,8 @@ typedef PassConfig = {
 	description:String,
 	enabled:Bool,
 	pass:TransformPass,
+	/** Contributor-facing transparent group; execution still occurs at this pass boundary. */
+	?group:String,
 	/** Explicit semantic ownership used by the typed applicability gate. */
 	?scope:PassScope,
 	/**
@@ -567,7 +569,7 @@ class ElixirASTTransformer {
 
 				passes = [
 					for (p in passes)
-						if (!isPassDisabled(p.name, disabled)) p
+						if (!isPassDisabled(p, disabled)) p
 				];
 			}
 		}
@@ -599,9 +601,9 @@ class ElixirASTTransformer {
 		#end
 	}
 
-	static function isPassDisabled(passName:String, disabled:Array<String>):Bool {
+	static function isPassDisabled(pass:PassConfig, disabled:Array<String>):Bool {
 		for (token in disabled) {
-			if (passName == token)
+			if (pass.name == token || pass.group == token)
 				return true;
 		}
 		return false;

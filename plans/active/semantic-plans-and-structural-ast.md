@@ -1,6 +1,6 @@
 # Structural Elixir AST and focused semantic plans
 
-Status: active implementation contract; regression baseline and exhaustive traversal foundation complete
+Status: active implementation contract; regression, traversal, and strict pass-order foundations complete; transparent groups await exact-head CI
 
 External source: [GitHub issue #38](https://github.com/fullofcaffeine/reflaxe.elixir/issues/38)
 
@@ -38,8 +38,8 @@ infrastructure without re-planning that work.
 | `haxe.elixir.codex-75i.4` | Establish phase legality and raw/runtime-intent contracts | P1, open |
 | `haxe.elixir.codex-75i.5` | Extract proven semantic owners from the mega-transformer | P2, open |
 | `haxe.elixir.codex-75i.6` | Centralize exhaustive ElixirAST child and pattern traversal | P1, complete |
-| `haxe.elixir.codex-75i.7` | Freeze effective pass order and fail closed on registry errors | P1, open |
-| `haxe.elixir.codex-75i.8` | Make pass bundles transparent nested pipeline groups | P1, open |
+| `haxe.elixir.codex-75i.7` | Freeze effective pass order and fail closed on registry errors | P1, complete |
+| `haxe.elixir.codex-75i.8` | Make pass bundles transparent nested pipeline groups | P1, in progress; local parity complete |
 | `haxe.elixir.codex-75i.9` | Add request-local pass context and conservative analysis invalidation | P1, open |
 | `haxe.elixir.codex-75i.10` | Detach result correctness from printer sentinel behavior | P1, open |
 | `haxe.elixir.codex-75i.11` | Move semantic policy out of ElixirASTPrinter | P1, open |
@@ -109,11 +109,17 @@ binder omission in `ClauseUndefinedRefRewrite`; the owning pass now establishes 
 
 ## Slice 3: strict and transparent pass management
 
-Materialize the current 578-pass effective order as behavioral data. Distinguish hard and optional
-ordering edges, fail on duplicates, missing hard edges, cycles, and phase regressions, and do not
-topologically reshuffle the mature list. Replace the seven executable bundle functions with seven
-transparent nested groups so each granular pass remains visible to diagnostics and invariants while
-initially preserving today's capability snapshot cadence.
+The strict-registry slice materialized the current 578-pass effective order as behavioral data,
+distinguished hard and optional ordering edges, and now fails on duplicates, missing hard edges,
+cycles, effective-order violations, and phase regressions without rescheduling the mature list.
+
+The transparent-group implementation replaces the seven executable bundle functions with seven
+named `PassPipeline` scheduling groups. Their 578 ordinary `PassConfig` children execute through the
+single main runner, so diagnostics, result checks, timing, snapshots, and later legality/invalidation
+hooks see the actual child ID. Focused contracts and three-way complete-tree comparison protect the
+grouped, direct-granular, and all-pass paths while preserving the existing phase-level capability
+snapshot cadence. Local full-suite, example, runtime/browser, and bounded performance gates are
+green; the slice remains open only until committed-package and exact-head CI/CodeQL evidence lands.
 
 ## Slice 4: request-local state, analysis, and legality
 

@@ -1,4 +1,4 @@
-# Lean Pass Pipeline (Contributor Guide)
+# Transparent Pass Pipeline (Contributor Guide)
 
 Reflaxe.Elixir’s AST transformer stack is intentionally **ordered**: each pass assumes certain
 shapes are already normalized by earlier passes. This document explains:
@@ -20,11 +20,11 @@ shapes are already normalized by earlier passes. This document explains:
 
 The repository maintains generated, deterministic registry artifacts:
 
-- `docs/05-architecture/TRANSFORM_PASS_REGISTRY_ORDER.md` (seven default bundles)
+- `docs/05-architecture/TRANSFORM_PASS_REGISTRY_ORDER.md` (seven transparent group headings)
 - `docs/05-architecture/TRANSFORM_PASS_REGISTRY_ORDER_GRANULAR.md` (every effective pass)
 - `docs/05-architecture/PASS_REGISTRY_INVENTORY.md` (phase/scope contracts, replay families, and registry diagnostics)
 - `docs/05-architecture/PASS_REGISTRY_BASELINE.json` (the accepted order/phase/scope digest,
-  lean bundle order, representative pass counts, and reference timings)
+  transparent group order, representative pass counts, and reference timings)
 
 Regenerate the documentation from typed registry data:
 
@@ -54,33 +54,45 @@ current `fast_boot` contract has two such edges: result binding follows the full
 pass when enabled, and the final case-binder replay follows the full underscore repair when enabled.
 An optional edge is still enforced whenever its target exists.
 
-The mature stable topological sorter remains in place for this parity slice because several source
-registrations are intentionally moved by existing relationships. Validation runs once before it to
-reject malformed declarations and once after it to prove the effective order. Replacing the seven
-opaque bundles with transparent groups is a separate migration, so strictness did not also change
-pass execution boundaries.
+The mature stable topological sorter remains in place because several source registrations are
+intentionally moved by existing relationships. Validation runs once before it to reject malformed
+declarations and once after it to prove the effective order.
 
-### Granular vs lean registry
+### Groups are headings, not hidden runners
 
-By default, the registry exposes a small **lean** list of bundle passes (<=20) to keep the
-order understandable for contributors. For deep debugging (per-pass metrics/timing), you can
-opt into the full granular list:
+The default pipeline presents seven named groups so contributors do not have to understand all 578
+passes at once. Each group contains the passes for one phase, but it does not execute them itself.
+The main transformer flattens the groups once and executes every child through the same runner.
+
+This distinction matters when a pass breaks a function result. Under the old opaque bundle, the
+diagnostic could report only `BundleCoreTransforms`, even if `NormalizeCaseTail` was the child that
+lost the value. With transparent groups, the diagnostic, timer, and AST snapshot all name
+`NormalizeCaseTail` directly. The `BundleCoreTransforms` name remains a readable heading and a
+backward-compatible group-disable token; it is no longer a second pass loop.
+
+The historical flag below remains only as a differential test path. It constructs the same
+validated granular list directly, without first grouping and flattening it:
 
 - Build flag: `-D hxx_granular_pass_registry`
 - Doc output: `docs/05-architecture/TRANSFORM_PASS_REGISTRY_ORDER_GRANULAR.md`
 
+Normal diagnosis does not need this flag. Default builds already expose exact child-pass timing,
+snapshots, and invariant attribution.
+
 ### Inventory and bounded timing baseline
 
-The validated granular registry contains 578 effective passes, but normal compilation no longer walks
-every framework transform for every module. `PassScopeManifest` assigns exact stable pass IDs to an
+The validated registry contains 578 effective passes, but normal compilation does not execute every
+framework transform for every module. `PassScopeManifest` assigns exact stable pass IDs to an
 ownership scope. `PassApplicability` then derives module capabilities from Haxe annotations, retained
-compiler metadata, and structured ElixirAST nodes. It does not classify by pass-name fragments,
-generated module names, file paths, or application names.
+compiler metadata, and structured ElixirAST nodes. Inapplicable passes are skipped before their
+transform function runs. The classifier does not use pass-name fragments, generated module names,
+file paths, or application names.
 
 The runner re-evaluates capabilities at phase boundaries because an earlier phase can introduce a
-structured target call used by a later phase. The default lean bundles and granular debugging mode
-use the same pass functions, order, scopes, and capability analysis; bundles only make the registry
-easier to inspect.
+structured target call used by a later phase. Transparent grouped construction and direct granular
+construction use the same pass functions, order, scopes, and capability analysis. This refactor
+deliberately preserves that phase-level capability cadence; request-local analysis invalidation is
+a later, separately tested architecture slice.
 
 Run the bounded baseline report with:
 
@@ -88,14 +100,15 @@ Run the bounded baseline report with:
 npm run profile:passes:baseline
 ```
 
-Each scenario selects one module and records only executed passes plus one summary. The summary also
-records skipped and total registry counts, and the guard requires `executed + skipped = 578` with
-stable registry indexes. Current representative counts are 407 executed passes for core and stdlib,
+Each scenario uses the default transparent-group path, selects one module, and records only executed
+passes plus one summary. The summary also records skipped and total registry counts, and the guard
+requires `executed + skipped = 578` with stable registry indexes. Current representative counts are
+407 executed passes for core and stdlib,
 570 for Phoenix, 574 for LiveView, 454 for Ecto, 469 for HXX, 410 for ExUnit, and 408 for Mix. Checked-in
 milliseconds are reference observations, not performance thresholds; compare them directionally on
 the same machine. Counts and report shape are the stable contract.
 
-### Why scoped and all-pass builds do not drift
+### Why grouped, granular, and all-pass builds do not drift
 
 Scoped execution is not a second compiler or a source-versus-package difference. Source checkouts and
 built packages both use the same scoped pipeline. The verification-only
@@ -108,10 +121,17 @@ Run the cross-check with:
 npm run test:pass-scope-parity
 ```
 
-The guard compiles representative core, stdlib, Phoenix, LiveView, Ecto, HXX, and ExUnit fixtures in
-both modes, compares the complete generated file trees byte-for-byte, and restores each fixture's
-prior output directory. CI runs the timing/count and byte-parity checks together through
-`npm run guard:pass-scopes`.
+For each representative core, stdlib, Phoenix, LiveView, Ecto, HXX, and ExUnit fixture, the guard
+performs three bounded compilations:
+
+1. default transparent groups with normal pass scopes;
+2. direct granular construction with normal pass scopes; and
+3. direct granular construction with every pass enabled.
+
+It compares the complete generated trees from 1↔2 and 2↔3 byte-for-byte, then restores the fixture's
+previous output directory. The first comparison proves that grouping is scheduling metadata only.
+The second preserves the established scoped-versus-all-pass contract. CI runs the timing/count and
+byte-parity checks together through `npm run guard:pass-scopes`.
 
 This cleanup removed 50 same-name registrations that `RegistryCore` had already discarded before
 ordering or execution. Distinctly named final/replay passes were retained: similar names do not prove
@@ -120,9 +140,10 @@ only after an idempotence test and focused regression demonstrate that the later
 
 The non-`Void` result invariant follows the same boundary model:
 
-- `-D reflaxe_elixir_validate_results` with the default lean registry reports the bundle that exposed a lost result.
-- Adding `-D hxx_granular_pass_registry` reports the exact granular pass, which is slower but better for diagnosis.
-- Snapshot tests enable result validation automatically through `test/Makefile`; ordinary compiler consumers do not pay this diagnostic cost.
+- `-D reflaxe_elixir_validate_results` reports the exact child pass that first exposes a lost result.
+- The diagnostic path is identical under transparent-group and direct-granular construction.
+- Snapshot tests enable result validation automatically through `test/Makefile`; ordinary compiler
+  consumers do not pay this diagnostic cost.
 
 Use `npm run test:result-invariant` to run the compile-time-only mutation fixture. It deliberately
 removes one function result after a known pass and verifies that the diagnostic names both the pass

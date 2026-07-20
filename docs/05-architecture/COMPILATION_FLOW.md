@@ -95,7 +95,7 @@ each pass boundary and detects valid-to-invalid result transitions.
 In practical terms, this catches a dangerous class of compiler bug early: a cleanup pass may turn
 an `Int` function ending in `0` into an empty target block. Elixir accepts an empty function and
 returns `nil`, so syntax validation alone cannot identify the lost Haxe value. The invariant reports
-the Haxe function and the pass or lean pass bundle that first exposes the invalid result shape.
+the Haxe function and the exact child pass that first exposes the invalid result shape.
 
 The check is intentionally an AST check, not a generated-text comparison. It understands scalar
 tails, blocks, `if`, `case`, `cond`, `with`, `try`, `receive`, raise/throw termination, nullable
@@ -109,8 +109,9 @@ diagnostic still names the first pass that degraded the previously valid carrier
 Normal users do not need this define. The small `Void`/value contract metadata also supports normal
 abstract identity shaping, but transition tracking adds no generated Elixir and is disabled in
 ordinary source and package builds. The snapshot harness enables it by default because compiler tests
-benefit from checking every phase. For exact granular pass names during compiler debugging, combine it with
-`-D hxx_granular_pass_registry`; otherwise diagnostics name the lean bundle boundary.
+benefit from checking every phase. Exact pass attribution now works in the default transparent-group
+pipeline. `-D hxx_granular_pass_registry` retains a direct-construction path for differential tests;
+it is no longer required for useful diagnostics.
 
 ## Anonymous Tuple-Shaped Object Contract
 

@@ -14,7 +14,7 @@ typedef PassBaselineContract = {
 	var maxRecordsPerModule:Int;
 	var effectiveOrderSha256:String;
 	var phaseOrder:Array<String>;
-	var leanBundleOrder:Array<String>;
+	var transparentGroupOrder:Array<String>;
 }
 
 class RegistryOrderDoc {
@@ -40,8 +40,8 @@ class RegistryOrderDoc {
 		writeOrCheck(OUT_GRANULAR, renderOrderDoc("granular (`-D hxx_granular_pass_registry`)", passes));
 		writeOrCheck(OUT_INVENTORY, renderInventory(passes, diagnostics));
 		#else
-		validateLeanBaselineContract(passes);
-		writeOrCheck(OUT_LEAN, renderOrderDoc("lean (default)", passes));
+		validateTransparentGroupBaselineContract(passes);
+		writeOrCheck(OUT_LEAN, renderOrderDoc("transparent groups (default)", passes));
 		#end
 	}
 
@@ -195,9 +195,9 @@ class RegistryOrderDoc {
 		assertStringArrayEquals("phase order", baseline.phaseOrder, actualPhases);
 	}
 
-	static function validateLeanBaselineContract(passes:Array<PassInfo>):Void {
+	static function validateTransparentGroupBaselineContract(passes:Array<PassInfo>):Void {
 		var baseline = readBaselineContract();
-		assertStringArrayEquals("lean bundle order", baseline.leanBundleOrder, passes.map(pass -> pass.name));
+		assertStringArrayEquals("transparent group order", baseline.transparentGroupOrder, passes.map(pass -> pass.name));
 	}
 
 	static function readBaselineContract():PassBaselineContract {

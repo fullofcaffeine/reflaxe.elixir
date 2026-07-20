@@ -78,8 +78,6 @@ def profile_scenario(
             os.environ.get("HAXE_BIN", "haxe"),
             "compile.hxml",
             "-D",
-            "hxx_granular_pass_registry",
-            "-D",
             "profile_passes",
             "-D",
             f"hxx_pass_timing_module_filter={profile['module']}",
@@ -231,8 +229,8 @@ def main() -> int:
 
     if args.write_baseline:
         by_scope = {result["scope"]: result for result in results}
-        baseline["schemaVersion"] = 3
-        baseline["mode"] = "granular-scoped"
+        baseline["schemaVersion"] = 4
+        baseline["mode"] = "transparent-groups-scoped"
         baseline["toolchain"] = f"Haxe {report['toolchain']}"
         for profile in baseline["profiles"]:
             result = by_scope.get(profile["scope"])

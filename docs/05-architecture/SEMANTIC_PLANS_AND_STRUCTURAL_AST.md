@@ -169,8 +169,14 @@ and all 11 pattern constructors have executable constructor-set and immediate-ch
 immediate map/visit and recursive walk entry points derive from the same AST switch. Expanded
 traversal exposed one real anonymous-function scope omission in
 `ClauseUndefinedRefRewrite`, which is fixed at that pass and covered by the ordinary-Haxe
-`core/maps` reducer regression. The remaining bullets are reviewed debt, not claims that every later
-architecture slice has shipped.
+`core/maps` reducer regression.
+
+The registry and runner portions have also moved forward. Registry failures are fail-closed, the
+frozen order is enforced, and the seven historical `Bundle*` headings are now transparent groups.
+Their 578 child passes execute in the single outer runner, so timing, AST snapshots, and result
+diagnostics identify the exact child. Default-grouped and direct-granular fixture builds are compared
+byte-for-byte. The other bullets remain reviewed debt, not claims that every later architecture
+slice has shipped.
 
 The existing generated pass inventory freezes pass order and count. Each implementation slice adds
 a focused Haxe-authored contract test for the invariant it introduces, while source-level snapshots,
@@ -264,15 +270,17 @@ scheduling source of truth. Ordering metadata is validated against that list; it
 topologically move mature passes. Duplicate IDs, missing hard dependencies, cycles, and phase
 regressions fail. Optional edges are typed as optional.
 
-The seven contributor-facing groups remain useful, but become transparent scheduling groups rather
-than functions containing a second pass runner. Each granular child remains visible to result
-tracking, diagnostics, timing, snapshots, legality, and analysis invalidation.
+The seven contributor-facing groups are transparent scheduling groups rather than functions
+containing a second pass runner. Each granular child is visible to result tracking, diagnostics,
+timing, and snapshots. The same boundary is ready to host legality and analysis invalidation when
+those later slices land.
 
-Analysis state is request-local and keyed by AST revision. A changed or legacy-unknown pass
-invalidates cached AST analyses unless preservation is explicitly proven. Migration does not force
-all legacy passes to claim a precise change set at once, and it does not recompute an expensive
-capability inventory after all 578 passes merely for architectural appearance. Each analysis moves
-under invalidation only after cached and forced-recomputed results agree under bounded profiles.
+The next analysis slice will make analysis state request-local and key it by AST revision. A changed
+or legacy-unknown pass will invalidate cached AST analyses unless preservation is explicitly proven.
+Migration does not force all legacy passes to claim a precise change set at once, and it does not
+recompute an expensive capability inventory after all 578 passes merely for architectural
+appearance. Each analysis moves under invalidation only after cached and forced-recomputed results
+agree under bounded profiles.
 
 ## Admission test for a semantic plan
 
@@ -433,6 +441,10 @@ A mechanical move that leaves ownership or side tables ambiguous does not satisf
 
 ## Staged implementation and rollback
 
+Stages 1–3 below are delivered. Stage 4 is implemented with local parity evidence and awaits
+committed-package plus exact-head CI/CodeQL confirmation. Later stages remain plans and must retain
+their own regression gate.
+
 1. Freeze the existing generated-output, result, pass-order/scope, runtime, package, and determinism
    baselines; record reviewed architecture debt in this decision without creating a parallel audit
    database.
@@ -462,7 +474,7 @@ Implementation slices require, proportionate to scope:
 
 - structural AST tests proving traversal and source metadata;
 - constructor/pattern coverage, deterministic traversal, and complete generated/runtime parity;
-- strict registry negative tests, frozen effective order, and opaque/transparent runner parity;
+- strict registry negative tests, frozen effective order, and grouped/direct-granular runner parity;
 - request-local determinism and cached/forced-recomputed analysis parity;
 - focused interpolation snapshots and BEAM runtime assertions;
 - adversarial escaping and binder/scope fixtures;

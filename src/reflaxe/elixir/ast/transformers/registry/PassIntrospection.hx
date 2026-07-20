@@ -2,6 +2,7 @@ package reflaxe.elixir.ast.transformers.registry;
 
 #if (macro || reflaxe_runtime)
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.transformers.registry.PassPipeline.PassPipelineGroup;
 import reflaxe.elixir.ast.transformers.registry.RegistryCore.RegistryDiagnostics;
 
 /**
@@ -18,9 +19,9 @@ import reflaxe.elixir.ast.transformers.registry.RegistryCore.RegistryDiagnostics
 	*   and honors the No-Dynamic policy.
 	*
 	* HOW
-	* - Maps ElixirASTPassRegistry.getEnabledPasses() → Array<PassInfo>
-	*   (name, phase/scope, and hard or explicitly optional ordering relationships).
-	*   No behavior change.
+	* - Default documentation maps the seven transparent groups to `PassInfo`.
+	* - Granular documentation maps every executable child pass, including hard or
+	*   explicitly optional ordering relationships.
 
 	*
 	* EXAMPLES
@@ -42,7 +43,30 @@ typedef PassInfo = {
 
 class PassIntrospection {
 	public static function list():Array<PassInfo> {
-		var enabled:Array<ElixirASTTransformer.PassConfig> = ElixirASTPassRegistry.getEnabledPasses();
+		#if hxx_granular_pass_registry
+		return listPasses(ElixirASTPassRegistry.getGranularPasses());
+		#else
+		return listGroups(ElixirASTPassRegistry.getEnabledPassGroups());
+		#end
+	}
+
+	static function listGroups(groups:Array<PassPipelineGroup>):Array<PassInfo> {
+		var out:Array<PassInfo> = [];
+		for (index in 0...groups.length) {
+			var group = groups[index];
+			out.push({
+				index: index + 1,
+				name: group.name,
+				description: group.description + ' (${group.children.length} child passes)',
+				phase: group.phase,
+				scope: group.scope,
+				family: group.phase + "." + group.scope
+			});
+		}
+		return out;
+	}
+
+	static function listPasses(enabled:Array<ElixirASTTransformer.PassConfig>):Array<PassInfo> {
 		var phases = PassInventory.phaseAssignments(enabled);
 		var replayCounts = new Map<String, Int>();
 		for (pass in enabled) {
