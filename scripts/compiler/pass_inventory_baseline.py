@@ -231,7 +231,7 @@ def main() -> int:
 
     if args.write_baseline:
         by_scope = {result["scope"]: result for result in results}
-        baseline["schemaVersion"] = 2
+        baseline["schemaVersion"] = 3
         baseline["mode"] = "granular-scoped"
         baseline["toolchain"] = f"Haxe {report['toolchain']}"
         for profile in baseline["profiles"]:

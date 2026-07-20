@@ -23,7 +23,8 @@ The repository maintains generated, deterministic registry artifacts:
 - `docs/05-architecture/TRANSFORM_PASS_REGISTRY_ORDER.md` (seven default bundles)
 - `docs/05-architecture/TRANSFORM_PASS_REGISTRY_ORDER_GRANULAR.md` (every effective pass)
 - `docs/05-architecture/PASS_REGISTRY_INVENTORY.md` (phase/scope contracts, replay families, and registry diagnostics)
-- `docs/05-architecture/PASS_REGISTRY_BASELINE.json` (representative pass counts and reference timings)
+- `docs/05-architecture/PASS_REGISTRY_BASELINE.json` (the accepted order/phase/scope digest,
+  lean bundle order, representative pass counts, and reference timings)
 
 Regenerate the documentation from typed registry data:
 
@@ -36,6 +37,11 @@ The generator runs as a Haxe macro. That is intentional: the registry references
 `haxe.macro.*` APIs that are valid in macro context, while a normal `--interp` main would type those
 APIs as application runtime code. The old source-text parser could overcount disabled or deduplicated
 registrations; structured introspection reports the effective validated order instead.
+
+The baseline stores a SHA-256 digest of each effective pass's name, phase, and scope in execution
+order. The generated granular document remains the readable list; the digest makes accidental
+reordering fail even if someone regenerates that document. An intentional pipeline change therefore
+requires reviewing the readable order first and then explicitly updating the baseline contract.
 
 ### Granular vs lean registry
 

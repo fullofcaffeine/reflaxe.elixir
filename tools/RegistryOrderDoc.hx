@@ -1,5 +1,6 @@
 package tools;
 
+import haxe.crypto.Sha256;
 import haxe.io.Path;
 import reflaxe.elixir.ast.transformers.registry.PassIntrospection;
 import reflaxe.elixir.ast.transformers.registry.PassInventory;
@@ -11,6 +12,9 @@ using StringTools;
 typedef PassBaselineContract = {
 	var effectivePassCount:Int;
 	var maxRecordsPerModule:Int;
+	var effectiveOrderSha256:String;
+	var phaseOrder:Array<String>;
+	var leanBundleOrder:Array<String>;
 }
 
 class RegistryOrderDoc {
@@ -31,11 +35,12 @@ class RegistryOrderDoc {
 		var passes = PassIntrospection.list();
 		var diagnostics = PassIntrospection.diagnostics();
 		#if hxx_granular_pass_registry
-		validateBaselineContract(passes.length);
+		validateGranularBaselineContract(passes);
 		validateRegistryContract(passes, diagnostics);
 		writeOrCheck(OUT_GRANULAR, renderOrderDoc("granular (`-D hxx_granular_pass_registry`)", passes));
 		writeOrCheck(OUT_INVENTORY, renderInventory(passes, diagnostics));
 		#else
+		validateLeanBaselineContract(passes);
 		writeOrCheck(OUT_LEAN, renderOrderDoc("lean (default)", passes));
 		#end
 	}
@@ -165,15 +170,55 @@ class RegistryOrderDoc {
 		#end
 	}
 
-	static function validateBaselineContract(effectivePassCount:Int):Void {
+	static function validateGranularBaselineContract(passes:Array<PassInfo>):Void {
+		var baseline = readBaselineContract();
+		if (baseline.effectivePassCount != passes.length)
+			throw 'Effective pass count changed from ${baseline.effectivePassCount} to ${passes.length}; review the registry and update the baseline explicitly.';
+		if (baseline.maxRecordsPerModule != passes.length + 1)
+			throw 'Pass baseline maxRecordsPerModule must equal effectivePassCount + one summary record.';
+
+		var actualDigest = effectiveOrderDigest(passes);
+		if (baseline.effectiveOrderSha256 != actualDigest)
+			throw 'Effective pass order, phase, or scope changed (expected SHA-256 ${baseline.effectiveOrderSha256}, got $actualDigest); review the generated granular order before updating the baseline explicitly.';
+
+		var actualPhases:Array<String> = [];
+		for (pass in passes)
+			if (actualPhases.length == 0 || actualPhases[actualPhases.length - 1] != pass.phase)
+				actualPhases.push(pass.phase);
+		assertStringArrayEquals("phase order", baseline.phaseOrder, actualPhases);
+	}
+
+	static function validateLeanBaselineContract(passes:Array<PassInfo>):Void {
+		var baseline = readBaselineContract();
+		assertStringArrayEquals("lean bundle order", baseline.leanBundleOrder, passes.map(pass -> pass.name));
+	}
+
+	static function readBaselineContract():PassBaselineContract {
 		var baselinePath = "docs/05-architecture/PASS_REGISTRY_BASELINE.json";
 		if (!sys.FileSystem.exists(baselinePath))
 			throw "Missing pass baseline contract: " + baselinePath;
-		var baseline:PassBaselineContract = haxe.Json.parse(sys.io.File.getContent(baselinePath));
-		if (baseline.effectivePassCount != effectivePassCount)
-			throw 'Effective pass count changed from ${baseline.effectivePassCount} to $effectivePassCount; review the registry and update the baseline explicitly.';
-		if (baseline.maxRecordsPerModule != effectivePassCount + 1)
-			throw 'Pass baseline maxRecordsPerModule must equal effectivePassCount + one summary record.';
+		return haxe.Json.parse(sys.io.File.getContent(baselinePath));
+	}
+
+	static function effectiveOrderDigest(passes:Array<PassInfo>):String {
+		var canonical = new StringBuf();
+		for (pass in passes) {
+			canonical.add(pass.name);
+			canonical.add("\t");
+			canonical.add(pass.phase);
+			canonical.add("\t");
+			canonical.add(pass.scope);
+			canonical.add("\n");
+		}
+		return Sha256.encode(canonical.toString());
+	}
+
+	static function assertStringArrayEquals(label:String, expected:Array<String>, actual:Array<String>):Void {
+		if (expected.length != actual.length)
+			throw 'Pass baseline $label changed (expected ${expected.join(" -> ")}, got ${actual.join(" -> ")}); review and update the baseline explicitly.';
+		for (index in 0...expected.length)
+			if (expected[index] != actual[index])
+				throw 'Pass baseline $label changed (expected ${expected.join(" -> ")}, got ${actual.join(" -> ")}); review and update the baseline explicitly.';
 	}
 
 	static function validateRegistryContract(passes:Array<PassInfo>, diagnostics:RegistryDiagnostics):Void {

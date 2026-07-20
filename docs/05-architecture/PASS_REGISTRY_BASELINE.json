@@ -1,8 +1,27 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "mode": "granular-scoped",
   "effectivePassCount": 578,
   "maxRecordsPerModule": 579,
+  "effectiveOrderSha256": "78149a92df0bf7d6b466f6eb3c7cb5ebe9b6d9b607a7fc84fc5b3c81f3ff874f",
+  "phaseOrder": [
+    "bootstrap",
+    "framework-annotations",
+    "guards-interpolation",
+    "core-lowering",
+    "hxx-heex",
+    "final-hygiene",
+    "absolute-final"
+  ],
+  "leanBundleOrder": [
+    "BundleBootstrap",
+    "BundlePhoenixAnnotations",
+    "BundleGuardsAndInterpolation",
+    "BundleCoreTransforms",
+    "BundleHeexPipeline",
+    "BundleHygieneFinal",
+    "BundleAbsoluteFinal"
+  ],
   "toolchain": "Haxe 4.3.7",
   "profiles": [
     {
