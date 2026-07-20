@@ -141,8 +141,9 @@ The architecture review baseline was statically rechecked against repository hea
 - the validated registry has 578 effective granular passes but normal compilation executes seven
   bundle functions whose private inner loop hides granular result, timing, snapshot, and future
   invalidation/legality boundaries;
-- registry validation drops duplicate names, does not validate missing `runBefore`, and tolerates
-  missing names/cycles during scheduling even though the checked healthy inventory reports none;
+- registry validation now rejects duplicate IDs, missing hard `runAfter` and `runBefore` targets,
+  cycles, violated effective order, and phase regressions; deliberately absent targets use explicit
+  `runAfterIfPresent`/`runBeforeIfPresent` relationships, and the accepted order is checksum-frozen;
 - `LoopIR` is a useful narrow-plan experiment, but successful emission still uses placeholder
   `ENil`, confidence scoring, `originalExpr` re-analysis, and an `EnumReduce` legacy fallback;
 - `EReceiverEffect` and receiver-return conventions already preserve part of the immutable

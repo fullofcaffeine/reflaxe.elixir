@@ -43,6 +43,23 @@ order. The generated granular document remains the readable list; the digest mak
 reordering fail even if someone regenerates that document. An intentional pipeline change therefore
 requires reviewing the readable order first and then explicitly updating the baseline contract.
 
+Registry relationships now fail closed. Suppose `NormalizeCalls` declares that it runs after
+`BuildCalls`. If `BuildCalls` is misspelled, duplicated, part of a cycle, or ends up later in the
+effective list, compilation stops before either transform runs and names the invalid relationship.
+The validator also rejects unknown phases and movement back into an earlier phase.
+
+Use `runAfter` and `runBefore` for hard relationships. Use `runAfterIfPresent` or
+`runBeforeIfPresent` only when a supported conditional build deliberately omits the target. The
+current `fast_boot` contract has two such edges: result binding follows the full reducer accumulator
+pass when enabled, and the final case-binder replay follows the full underscore repair when enabled.
+An optional edge is still enforced whenever its target exists.
+
+The mature stable topological sorter remains in place for this parity slice because several source
+registrations are intentionally moved by existing relationships. Validation runs once before it to
+reject malformed declarations and once after it to prove the effective order. Replacing the seven
+opaque bundles with transparent groups is a separate migration, so strictness did not also change
+pass execution boundaries.
+
 ### Granular vs lean registry
 
 By default, the registry exposes a small **lean** list of bundle passes (<=20) to keep the

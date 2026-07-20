@@ -19,7 +19,8 @@ import reflaxe.elixir.ast.transformers.registry.RegistryCore.RegistryDiagnostics
 	*
 	* HOW
 	* - Maps ElixirASTPassRegistry.getEnabledPasses() → Array<PassInfo>
-	*   (name + optional ordering hints). No behavior change.
+	*   (name, phase/scope, and hard or explicitly optional ordering relationships).
+	*   No behavior change.
 
 	*
 	* EXAMPLES
@@ -35,6 +36,8 @@ typedef PassInfo = {
 	@:optional var replayFamily:String;
 	@:optional var runAfter:Array<String>;
 	@:optional var runBefore:Array<String>;
+	@:optional var runAfterIfPresent:Array<String>;
+	@:optional var runBeforeIfPresent:Array<String>;
 }
 
 class PassIntrospection {
@@ -62,7 +65,9 @@ class PassIntrospection {
 				family: phase + "." + scope,
 				replayFamily: replayCount != null && replayCount > 1 ? replayFamily : null,
 				runAfter: pass.runAfter,
-				runBefore: pass.runBefore
+				runBefore: pass.runBefore,
+				runAfterIfPresent: pass.runAfterIfPresent,
+				runBeforeIfPresent: pass.runBeforeIfPresent
 			});
 		}
 		return out;

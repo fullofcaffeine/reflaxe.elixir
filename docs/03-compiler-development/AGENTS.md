@@ -512,47 +512,24 @@ git bisect reset
 
 **Remember**: Every compiler change affects the entire ecosystem. Always validate through the complete testing pipeline and integration with real applications.
 
-## Pass Ordering and Scheduler Invariants (1.0)
+## Pass Ordering and Scheduler Invariants (Required)
 
-- WHAT
-  - The pass registry now supports lightweight ordering metadata and a stable, deterministic sort.
-  - Each pass may optionally declare , , and  constraints.
+Pass ordering is compiler behavior. For example, a pass that rewrites reducer state may require an
+earlier pass to expose assignments first. Running those passes in the opposite order can silently
+lose state even though both passes compile.
 
-- WHY
-  - Avoid brittle, index-based ordering and enable local ordering hints without coupling to app code.
-  - Keep the default order stable while allowing precise constraints where correctness depends on order.
-
-- HOW
-  -  includes optional fields:
-    -  (coarse grouping; currently informational)
-    -  and  (hard ordering hints by pass name)
-  - The registry applies a stable topological sort; unknown names are ignored.
-  - On cycles, the sorter falls back to original order (enable  to diagnose).
-
-- Guardrails
-  - Do not use app- or example-specific pass names for ordering.
-  - Keep naming clear and descriptive (no numeric-suffix locals in new code).
-  - Never edit generated  to “fix order” — always express ordering via pass metadata.
-
-
-## Pass Ordering and Scheduler Invariants (1.0) — Addendum
-
-- WHAT
-  - The pass registry supports lightweight ordering metadata and a stable, deterministic sort.
-  - Each pass may optionally declare: phase, runAfter, runBefore.
-
-- WHY
-  - Avoid brittle index-based ordering; enable local hints without app coupling.
-  - Keep the default order stable while allowing precise constraints where required.
-
-- HOW
-  - PassConfig optional fields:
-    - phase: String (coarse grouping; informational)
-    - runAfter: Array<String> and runBefore: Array<String> (hard ordering hints by pass name)
-  - The registry applies a stable topological sort; unknown names are ignored.
-  - On cycles, the sorter falls back to original order (enable -D debug_pass_order to diagnose).
-
-- Guardrails
-  - Do not use app- or example-specific pass names for ordering.
-  - Use descriptive names (no numeric-suffix locals in new code).
-  - Never edit generated .ex to “fix order” — express ordering via pass metadata.
+- `runAfter` and `runBefore` are hard relationships. Every named pass must exist. A misspelling is a
+  compiler error, not an ignored hint.
+- `runAfterIfPresent` and `runBeforeIfPresent` are reserved for a target that a supported conditional
+  build deliberately omits. If the target is present, the relationship remains mandatory.
+- Cycles, duplicate pass IDs, missing hard targets, violated effective order, unknown phases, and
+  backward phase movement fail before transformations execute. Never restore deduplication or
+  fall back to source order after an invalid graph.
+- The accepted 578-pass order, phase/scope assignments, and seven default bundles are frozen by
+  `PASS_REGISTRY_BASELINE.json` and the generated readable order documents. Infrastructure work must
+  preserve that effective schedule; an intentional change requires a reviewed baseline update.
+- Do not use application names, file paths, generated module names, or example-specific symbols to
+  order or classify passes.
+- Never edit generated `.ex` files to repair ordering. Fix the typed pass declaration and run
+  `npm run test:pass-registry`, `npm run docs:passes`, `npm run guard:pass-inventory`, and
+  `npm run guard:pass-scopes`.

@@ -117,13 +117,13 @@ class RegistryOrderDoc {
 			out.add("| `" + escape(name) + "` | " + escape(replayGroups.get(name).join(", ")) + " |\n");
 
 		out.add("\n## Registry Diagnostics\n\n");
-		out.add("`RegistryCore` validates registrations before execution and still deduplicates defensively. The inventory guard requires zero duplicate registrations and zero ordering cycles.\n\n");
+		out.add("`RegistryCore` rejects invalid registrations before execution; it does not deduplicate, reorder, or repair them. Hard targets must exist. Explicitly optional targets may be absent, but every present relationship must agree with the effective order and phase sequence.\n\n");
 		var uniqueDuplicates = new Map<String, Bool>();
 		for (name in diagnostics.duplicateNames)
 			uniqueDuplicates.set(name, true);
 		var duplicateNames = [for (name in uniqueDuplicates.keys()) name];
 		duplicateNames.sort(Reflect.compare);
-		out.add("- Duplicate registrations removed: **"
+		out.add("- Duplicate registrations: **"
 			+ diagnostics.duplicateNames.length
 			+ "** across **"
 			+ duplicateNames.length
@@ -133,10 +133,13 @@ class RegistryOrderDoc {
 		out.add("\n");
 		out.add("- Missing ordering dependencies: **" + diagnostics.missingDependencies.length + "**\n");
 		out.add("- Detected ordering cycle nodes: **" + diagnostics.cycleNodes.length + "**\n");
+		out.add("- Effective-order violations: **" + diagnostics.orderingViolations.length + "**\n");
+		out.add("- Phase regressions: **" + diagnostics.phaseRegressions.length + "**\n");
+		out.add("- Missing or unknown phases: **" + diagnostics.invalidPhases.length + "**\n");
 		if (diagnostics.missingDependencies.length > 0) {
-			out.add("\n| Missing dependency | Referenced by |\n|---|---|\n");
+			out.add("\n| Relationship | Missing dependency | Referenced by |\n|---|---|---|\n");
 			for (entry in diagnostics.missingDependencies)
-				out.add("| `" + escape(entry.name) + "` | " + escape(entry.users.join(", ")) + " |\n");
+				out.add("| `" + escape(entry.relation) + "` | `" + escape(entry.name) + "` | " + escape(entry.users.join(", ")) + " |\n");
 		}
 		return out.toString();
 	}
@@ -147,6 +150,10 @@ class RegistryOrderDoc {
 			parts.push("after: " + pass.runAfter.join(", "));
 		if (pass.runBefore != null && pass.runBefore.length > 0)
 			parts.push("before: " + pass.runBefore.join(", "));
+		if (pass.runAfterIfPresent != null && pass.runAfterIfPresent.length > 0)
+			parts.push("after if present: " + pass.runAfterIfPresent.join(", "));
+		if (pass.runBeforeIfPresent != null && pass.runBeforeIfPresent.length > 0)
+			parts.push("before if present: " + pass.runBeforeIfPresent.join(", "));
 		return parts.length == 0 ? "source order" : parts.join("; ");
 	}
 
@@ -226,6 +233,12 @@ class RegistryOrderDoc {
 			throw 'Pass registry contains ${diagnostics.duplicateNames.length} duplicate registrations; remove later same-name entries.';
 		if (diagnostics.cycleNodes.length > 0)
 			throw 'Pass registry contains ordering cycles: ${diagnostics.cycleNodes.join(", ")}';
+		if (diagnostics.missingDependencies.length > 0)
+			throw 'Pass registry contains missing hard ordering dependencies.';
+		if (diagnostics.orderingViolations.length > 0)
+			throw 'Pass registry contains effective-order violations.';
+		if (diagnostics.phaseRegressions.length > 0 || diagnostics.invalidPhases.length > 0)
+			throw 'Pass registry contains invalid phase assignments.';
 
 		var effectiveNames = new Map<String, Bool>();
 		for (pass in passes)

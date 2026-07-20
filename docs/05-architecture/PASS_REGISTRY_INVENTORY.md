@@ -135,8 +135,11 @@ These are naming-related candidates for later consolidation, not proof that a pa
 
 ## Registry Diagnostics
 
-`RegistryCore` validates registrations before execution and still deduplicates defensively. The inventory guard requires zero duplicate registrations and zero ordering cycles.
+`RegistryCore` rejects invalid registrations before execution; it does not deduplicate, reorder, or repair them. Hard targets must exist. Explicitly optional targets may be absent, but every present relationship must agree with the effective order and phase sequence.
 
-- Duplicate registrations removed: **0** across **0** names
+- Duplicate registrations: **0** across **0** names
 - Missing ordering dependencies: **0**
 - Detected ordering cycle nodes: **0**
+- Effective-order violations: **0**
+- Phase regressions: **0**
+- Missing or unknown phases: **0**

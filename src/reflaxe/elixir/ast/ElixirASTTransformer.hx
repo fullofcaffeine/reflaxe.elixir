@@ -82,16 +82,20 @@ typedef PassConfig = {
 	 */
 	?phase:String,
 	/**
-	 * Optional hard ordering constraints. Each entry indicates a pass name that this
-	 * pass must run AFTER. Multiple entries are allowed. Names not present in the registry
-	 * are ignored to keep ordering robust across optional builds.
+	 * Hard ordering constraints. Each entry names a pass that must exist and run before
+	 * this pass. Use runAfterIfPresent only when the target is deliberately omitted by a
+	 * supported conditional build.
 	 */
 	?runAfter:Array<String>,
 	/**
-	 * Optional hard ordering constraints. Each entry indicates a pass name that this
-	 * pass must run BEFORE. Multiple entries are allowed. Unknown names are ignored.
+	 * Hard ordering constraints. Each entry names a pass that must exist and run after
+	 * this pass. Use runBeforeIfPresent only for a deliberately optional target.
 	 */
-	?runBefore:Array<String>
+	?runBefore:Array<String>,
+	/** Ordering constraints applied only when the named pass is enabled. */
+	?runAfterIfPresent:Array<String>,
+	/** Ordering constraints applied only when the named pass is enabled. */
+	?runBeforeIfPresent:Array<String>
 };
 
 /**

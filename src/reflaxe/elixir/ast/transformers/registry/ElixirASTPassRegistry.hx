@@ -524,7 +524,7 @@ class ElixirASTPassRegistry {
 			description: "Bind Enum.reduce_while result to original accumulator locals (required in fast_boot)",
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.ReduceWhileResultBindingTransforms.bindReduceWhileResultPass,
-			runAfter: ["ReduceWhileAccumulator"]
+			runAfterIfPresent: ["ReduceWhileAccumulator"]
 		});
 		// Early chain assign normalization group (order preserved)
 		passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.AssignChainEarly.build());
@@ -4240,7 +4240,7 @@ class ElixirASTPassRegistry {
 			description: "Absolute-final replay: align underscored case binders with body references (avoid undefined vars)",
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.CaseBinderUnderscoreAlignTransforms.pass,
-			runAfter: ["FinalUnderscoreRepair"]
+			runAfterIfPresent: ["FinalUnderscoreRepair"]
 		});
 
 		// Absolute-last: normalize any ambiguous `Component.*` call targets to `Phoenix.Component.*`.
@@ -4388,15 +4388,20 @@ class ElixirASTPassRegistry {
 
 		// Filter disabled passes first
 		var enabled = passes.filter(p -> p.enabled);
-		// Validate current list (unique names, missing deps, cycles report only)
+		// Reject malformed definitions before the existing stable sorter builds name maps.
 		enabled = reflaxe.elixir.ast.transformers.registry.RegistryCore.validate(enabled);
-		// Apply lightweight topological sort based on optional runAfter/runBefore
+		// Preserve the established effective schedule. The checked order digest makes any
+		// resulting movement an explicit, reviewed baseline change.
 		enabled = sortPassesByConstraints(enabled);
 		var phases = PassInventory.phaseAssignments(enabled);
 		for (index in 0...enabled.length)
 			if (enabled[index].phase == null || enabled[index].phase.length == 0)
 				enabled[index].phase = phases[index];
 		PassScopeManifest.apply(enabled);
+		enabled = reflaxe.elixir.ast.transformers.registry.RegistryCore.validate(enabled, {
+			requireEffectiveOrder: true,
+			phaseOrder: PassInventory.phaseContracts().map(contract -> contract.id)
+		});
 		return enabled;
 	}
 
@@ -4482,16 +4487,22 @@ class ElixirASTPassRegistry {
 		enabled = reflaxe.elixir.ast.transformers.registry.RegistryCore.validate(enabled);
 		// Keep deterministic (stable) ordering, though bundles intentionally do not declare constraints.
 		enabled = sortPassesByConstraints(enabled);
+		var phases = PassInventory.phaseAssignments(enabled);
+		for (index in 0...enabled.length)
+			enabled[index].phase = phases[index];
+		enabled = reflaxe.elixir.ast.transformers.registry.RegistryCore.validate(enabled, {
+			requireEffectiveOrder: true,
+			phaseOrder: PassInventory.phaseContracts().map(contract -> contract.id)
+		});
 		return enabled;
 	}
 
 	/**
 	 * sortPassesByConstraints
-	 * WHAT: Stable topological sort honoring optional runAfter/runBefore metadata.
-	 * WHY: Provide deterministic ordering without hard-coded indices; allow passes to declare
-	 *      minimal dependencies while keeping default order stable.
-	 * HOW: Kahn’s algorithm; unknown pass names are ignored; on cycles, fall back to the
-	 *      original order (debug warns when -D debug_pass_order is enabled).
+	 * WHAT: The established stable topological sort for declared pass relationships.
+	 * WHY: Preserve the frozen effective order while strict validation is introduced around it.
+	 * HOW: Kahn's algorithm. RegistryCore rejects missing hard targets and cycles before this
+	 *      function runs; only explicitly optional absent targets are ignored.
 	 */
 	static function sortPassesByConstraints(passes:Array<ElixirASTTransformer.PassConfig>):Array<ElixirASTTransformer.PassConfig> {
 		var indexByName = new Map<String, Int>();
@@ -4529,6 +4540,12 @@ class ElixirASTPassRegistry {
 			if (p.runBefore != null)
 				for (q in p.runBefore)
 					addEdge(p.name, q);
+			if (p.runAfterIfPresent != null)
+				for (q in p.runAfterIfPresent)
+					addEdge(q, p.name);
+			if (p.runBeforeIfPresent != null)
+				for (q in p.runBeforeIfPresent)
+					addEdge(p.name, q);
 		}
 
 		var ready:Array<String> = [];
@@ -4553,8 +4570,7 @@ class ElixirASTPassRegistry {
 		}
 
 		if (out.length != passes.length) {
-			// Debug: PassOrder cycle detection disabled
-			return passes;
+			throw "Pass registry constraint sort did not consume every pass; RegistryCore cycle validation must reject this schedule.";
 		}
 		var byName = new Map<String, ElixirASTTransformer.PassConfig>();
 		for (p in passes)
