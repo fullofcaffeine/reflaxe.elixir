@@ -669,8 +669,12 @@ mix haxe.compile.migrations
 mix haxe.watch
 ```
 
-This improves the edit loop through automatic rebuilds and persistent compiler-state reuse. It does
-not, by itself, prove that unchanged Reflaxe target modules were skipped.
+This improves the edit loop through automatic rebuilds and persistent compiler-state reuse. That
+reuse may save Haxe from repeating some parsing or type-checking work. It does not, by itself, prove
+that Reflaxe avoided rebuilding an unchanged module: Reflaxe might still reconstruct that module's
+Elixir AST, run its transformation passes, render the generated Elixir, and compare the result with
+the existing output. We call the backend incremental only when measurements show that this
+unchanged-module work was actually avoided.
 
 ### Batch Operations
 
