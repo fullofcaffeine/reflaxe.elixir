@@ -18,6 +18,124 @@ from typing import Any
 
 SCHEMA_VERSION = 2
 EDIT_MARKER = "// reflaxe-elixir benchmark variant B"
+TARGET_TIMING_PREFIX = "REFLAXE_ELIXIR_TIMINGS "
+
+
+def target_timing_report(text: str) -> dict[str, Any] | None:
+    """Return the last machine-readable Reflaxe target report in ``text``."""
+
+    reports: list[dict[str, Any]] = []
+    for line in text.splitlines():
+        marker = line.find(TARGET_TIMING_PREFIX)
+        if marker < 0:
+            continue
+        try:
+            reports.append(json.loads(line[marker + len(TARGET_TIMING_PREFIX) :]))
+        except json.JSONDecodeError:
+            continue
+    return reports[-1] if reports else None
+
+
+def haxe_reported_total_ms(text: str) -> float | None:
+    """Return the last ``--times`` total emitted by Haxe, converted to milliseconds."""
+
+    pattern = re.compile(r"^total\s+\|\s*([0-9]+(?:\.[0-9]+)?)\s*\|", re.IGNORECASE)
+    matches = []
+    for line in text.splitlines():
+        match = pattern.match(line.strip())
+        if match:
+            matches.append(float(match.group(1)) * 1000.0)
+    return matches[-1] if matches else None
+
+
+def haxe_integration_timing_report(text: str) -> dict[str, Any] | None:
+    """Return the last timing block printed by the Mix/Haxe integration.
+
+    This report measures the compilation request around the Haxe invocation. It
+    includes work such as input fingerprinting and generated-file discovery,
+    which Haxe's own ``--times`` table does not describe.
+    """
+
+    header_pattern = re.compile(r"^== Haxe timings: (.+) ==$")
+    phase_pattern = re.compile(r"^\s{2}(.+?):\s*([0-9]+(?:\.[0-9]+)?)\s+ms$")
+    reports: list[dict[str, Any]] = []
+    current: dict[str, Any] | None = None
+
+    for line in text.splitlines():
+        header = header_pattern.match(line.strip())
+        if header:
+            current = {"context": header.group(1), "phases": []}
+            reports.append(current)
+            continue
+        if current is None:
+            continue
+        phase = phase_pattern.match(line)
+        if phase:
+            name = phase.group(1)
+            duration_ms = float(phase.group(2))
+            current["phases"].append({"name": name, "duration_ms": duration_ms})
+            if name == "total wall":
+                current["total_wall_ms"] = duration_ms
+            continue
+        if line.strip():
+            current = None
+
+    return reports[-1] if reports else None
+
+
+def watch_phase_reconciliation(external_duration_ms: int, compiler_output: str) -> dict[str, Any] | None:
+    """Connect one edit-to-success sample to its nested compiler measurements.
+
+    The outer sample starts when the source file is changed and ends when the
+    watcher reports success. The Mix/Haxe timing starts later, when compilation
+    begins. Within that request, ``haxe.invoke`` surrounds both Haxe's own
+    reported work and the Reflaxe target callback. Keeping both remainders
+    explicit prevents the harness from silently assigning unknown time to the
+    wrong layer.
+    """
+
+    integration = haxe_integration_timing_report(compiler_output)
+    target = target_timing_report(compiler_output)
+    haxe_total = haxe_reported_total_ms(compiler_output)
+    if integration is None and target is None and haxe_total is None:
+        return None
+
+    result: dict[str, Any] = {"external_edit_to_success_ms": external_duration_ms}
+    if integration is not None:
+        result["haxe_integration_timing"] = integration
+        integration_total = integration.get("total_wall_ms")
+        if isinstance(integration_total, (int, float)):
+            result["outside_haxe_integration_ms"] = round(
+                external_duration_ms - integration_total,
+                3,
+            )
+
+        invoke_ms = next(
+            (
+                phase["duration_ms"]
+                for phase in integration.get("phases", [])
+                if phase.get("name") == "haxe.invoke"
+            ),
+            None,
+        )
+        if isinstance(invoke_ms, (int, float)):
+            result["haxe_invoke_ms"] = invoke_ms
+            known_invoke_ms = 0.0
+            if haxe_total is not None:
+                known_invoke_ms += haxe_total
+            target_total = target.get("total_wall_ms") if target is not None else None
+            if isinstance(target_total, (int, float)):
+                known_invoke_ms += target_total
+            result["haxe_invoke_unattributed_ms"] = round(invoke_ms - known_invoke_ms, 3)
+
+    if haxe_total is not None:
+        result["haxe_reported_total_ms"] = haxe_total
+    if target is not None:
+        target_total = target.get("total_wall_ms")
+        if isinstance(target_total, (int, float)):
+            result["reflaxe_target_total_ms"] = target_total
+
+    return result
 
 
 def source_variant(original: str, variant: str) -> str:

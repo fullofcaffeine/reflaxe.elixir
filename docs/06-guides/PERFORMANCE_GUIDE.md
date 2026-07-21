@@ -183,6 +183,12 @@ Watch benchmark (`tmp/perf/watch-cycle-times.json`):
 - `config.process_model` distinguishes direct child compilation from the persistent Haxe server.
 - Each sample's `generated_output` reports whether the edit actually changed generated files and keeps
   an exact output-tree digest for clean-versus-warm comparison.
+- In coarse mode, each sample's `phase_reconciliation` connects the outer edit-to-success duration to
+  the nested Mix/Haxe request and Haxe invocation. For example, it reports how much time fell outside
+  the nested compilation timer (including file detection, debounce, and observing the success marker),
+  how long `haxe.invoke` took, the totals separately reported by Haxe and Reflaxe, and any
+  still-unattributed invocation time. An unattributed remainder is an explicit unknown to investigate;
+  the harness does not guess that Haxe, Reflaxe, or Mix owns it.
 - `summary` reports `min_ms`, `max_ms`, `mean_ms`, `p50_ms`, and `p95_ms`.
 - Full logs live under `tmp/perf/todo-watch/logs/`.
 

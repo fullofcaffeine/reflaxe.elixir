@@ -30,7 +30,15 @@ from typing import Any
 
 sys.dont_write_bytecode = True
 
-from benchmark_contract import SCHEMA_VERSION, generated_output_state, parse_server_identity, source_variant, watch_process_model
+from benchmark_contract import (
+    SCHEMA_VERSION,
+    generated_output_state,
+    parse_server_identity,
+    source_variant,
+    target_timing_report,
+    watch_phase_reconciliation,
+    watch_process_model,
+)
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -160,22 +168,6 @@ def target_timing_reports(path: Path) -> list[dict[str, Any]]:
         except json.JSONDecodeError:
             continue
     return reports
-
-
-def target_timing_report(text: str) -> dict[str, Any] | None:
-    """Return the last Reflaxe target report printed during one rebuild."""
-
-    prefix = "REFLAXE_ELIXIR_TIMINGS "
-    reports: list[dict[str, Any]] = []
-    for line in text.splitlines():
-        marker = line.find(prefix)
-        if marker < 0:
-            continue
-        try:
-            reports.append(json.loads(line[marker + len(prefix) :]))
-        except json.JSONDecodeError:
-            continue
-    return reports[-1] if reports else None
 
 
 def free_port() -> int:
@@ -466,6 +458,9 @@ def measure_watch_cycles(
                 timing = target_timing_report(chunk)
                 if timing is not None:
                     sample["reflaxe_target_timing"] = timing
+                reconciliation = watch_phase_reconciliation(duration_ms, chunk)
+                if reconciliation is not None:
+                    sample["phase_reconciliation"] = reconciliation
                 output_state, prior_output_digests = generated_output_state(app_dir / "lib", prior_output_digests)
                 sample["generated_output"] = output_state
                 if is_warmup:

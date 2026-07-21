@@ -96,6 +96,33 @@ check(
     "missing server identity was invented",
 )
 
+watch_compiler_output = """REFLAXE_ELIXIR_TIMINGS {"schema_version":1,"total_wall_ms":11520.765,"phases":[]}
+name  | time(s) | %
+total | 0.396 | 100
+== Haxe timings: haxe watch rebuild ==
+  haxe.fingerprint_inputs: 1309.1 ms
+  haxe.invoke: 16627.6 ms
+  haxe.find_generated_files: 25.1 ms
+  total wall: 18005.5 ms
+"""
+reconciliation = contract.watch_phase_reconciliation(18170, watch_compiler_output)
+check(reconciliation is not None, "watch timing signals were not reconciled")
+check(reconciliation["haxe_reported_total_ms"] == 396.0, "Haxe --times total was not parsed")
+check(reconciliation["reflaxe_target_total_ms"] == 11520.765, "Reflaxe target total was not parsed")
+check(reconciliation["haxe_invoke_ms"] == 16627.6, "Mix/Haxe invocation time was not parsed")
+check(
+    reconciliation["outside_haxe_integration_ms"] == 164.5,
+    "watcher time outside the compilation request was not preserved",
+)
+check(
+    reconciliation["haxe_invoke_unattributed_ms"] == 4710.835,
+    "unknown time inside the Haxe invocation was silently reassigned",
+)
+check(
+    contract.watch_phase_reconciliation(100, "no timing output") is None,
+    "missing timing evidence produced an invented reconciliation",
+)
+
 # Exercise the real shell harness with fake compilers. This proves the public
 # scenario names and result schema without paying for a Phoenix dependency build.
 fixture_rel = Path("tmp") / f"perf-benchmark-contract-{os.getpid()}"
