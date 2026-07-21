@@ -570,14 +570,19 @@ These options work with most Mix tasks:
 
 ### Compilation Flags
 
-Set in your `build.hxml` or `compile.hxml`:
+Set ordinary target configuration in your `build.hxml` or `compile.hxml`:
 
 ```hxml
--D source-map          # Enable source mapping
--D incremental        # Support incremental compilation
--D watch-mode         # Optimize for file watching
--D source-map-verbose # Verbose source map generation
+-lib reflaxe.elixir
+-D elixir_output=lib
+-dce full
 ```
+
+There is no Reflaxe.Elixir `-D incremental` or `-D watch-mode` switch. Persistent
+compiler reuse is selected by `mix haxe.watch` or the `HAXE_SERVER_*` environment
+variables documented below. See the
+[compiler flags guide](../01-getting-started/compiler-flags-guide.md) for supported
+target flags and their tradeoffs.
 
 ### Environment Variables
 
@@ -657,12 +662,15 @@ mix haxe.compile.migrations
 
 ## Performance Tips
 
-### Incremental Compilation
+### Persistent Watch Workflow
 
 ```bash
-# Use file watching for automatic compilation
+# Watch source files and reuse one Haxe compiler process between build requests
 mix haxe.watch
 ```
+
+This improves the edit loop through automatic rebuilds and persistent compiler-state reuse. It does
+not, by itself, prove that unchanged Reflaxe target modules were skipped.
 
 ### Batch Operations
 
@@ -752,7 +760,7 @@ iex> H.errors()
 
 Reflaxe.Elixir provides a comprehensive suite of Mix tasks for:
 
-- ✅ **Compilation** with file watching and incremental builds
+- ✅ **Compilation** with file watching and optional persistent Haxe-server reuse
 - 🧪 **Source mapping (experimental)** for Haxe↔Elixir position lookups
 - ✅ **Error reporting** with structured output for LLMs
 - ✅ **Development tools** for status checking and debugging

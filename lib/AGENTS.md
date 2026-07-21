@@ -42,8 +42,8 @@ lib/
 
 #### `haxe_server.ex`
 - **Purpose**: Maintains a persistent Haxe compilation server
-- **Key Functions**: Speeds up incremental compilation, manages server lifecycle
-- **Performance**: Reduces compilation time from seconds to milliseconds
+- **Key Functions**: Reuses Haxe compiler state and manages server lifecycle
+- **Performance**: Measure the actual edit loop; process reuse alone does not prove backend module skipping or a particular latency
 
 #### `haxe_watcher.ex`
 - **Purpose**: Watches Haxe source files for changes
@@ -66,7 +66,7 @@ lib/
 - **`compile.haxe.ex`**: Main Mix compilation task (`mix compile.haxe`)
   - Integrates with Mix compilation pipeline
   - Handles dependency tracking
-  - Manages incremental compilation
+  - Skips a new compile when the complete build-input fingerprint is unchanged
 
 #### Code Generation Tasks
 - **`haxe.gen.context.ex`**: Generate Phoenix context modules from Haxe

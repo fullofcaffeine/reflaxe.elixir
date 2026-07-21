@@ -2,8 +2,8 @@ defmodule HaxeCompiler do
   @moduledoc """
   Core Haxe compilation functionality for Phoenix integration.
 
-  Handles the execution of Haxe compilation, file watching, dependency tracking,
-  and incremental compilation for optimal development workflow.
+  Handles Haxe compilation, file watching, dependency tracking, and optional
+  reuse of a persistent Haxe compiler process during long-running development workflows.
   """
 
   @doc """
@@ -129,8 +129,8 @@ defmodule HaxeCompiler do
   Computes a stable hash for a compilation configuration.
 
   The hash intentionally ignores settings that do not affect emitted output
-  (e.g. watch mode and verbosity), so incremental builds don't recompile
-  unnecessarily.
+  (e.g. watch mode and verbosity), so unchanged build inputs do not trigger
+  another compilation unnecessarily.
   """
   @spec config_hash(keyword()) :: integer()
   def config_hash(opts) do
@@ -228,7 +228,7 @@ defmodule HaxeCompiler do
   end
 
   defp compile_with_real_haxe(hxml_file, _source_dir, target_dir, verbose) do
-    # First, try to use HaxeServer for incremental compilation if available
+    # Reuse the persistent Haxe compiler process when the caller owns one.
     # fast_boot is an opt-in compilation profile that disables expensive macro/transform work.
     # Enable it explicitly via env var:
     #   HAXE_FAST_BOOT=1 mix compile
@@ -248,7 +248,7 @@ defmodule HaxeCompiler do
 
           {_, true} ->
             if verbose do
-              Mix.shell().info("Using Haxe server for incremental compilation")
+              Mix.shell().info("Using persistent Haxe compilation server")
             end
 
             case HaxeServer.compile(common_args ++ [hxml_file]) do

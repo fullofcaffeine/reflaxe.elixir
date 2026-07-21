@@ -37,7 +37,8 @@ lib/mix/tasks/
 **File**: `compile.haxe.ex`
 - Integrates Haxe compilation into Mix build pipeline
 - Handles automatic compilation when Haxe files change
-- Manages compilation cache and incremental builds
+- Uses a complete build-input fingerprint to skip unnecessary compilation requests
+- Can reuse a persistent Haxe compiler process when the caller explicitly owns one
 
 #### `Mix.Tasks.Haxe.Watch`
 **File**: `haxe.watch.ex`

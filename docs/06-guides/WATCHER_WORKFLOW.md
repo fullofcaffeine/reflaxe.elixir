@@ -14,7 +14,8 @@ This guide describes the common “edit → compile → reload” loop when usin
 
 2. **Client build/watch (Haxe → JS)**
    - Typically run via Phoenix endpoint watchers as `mix haxe.watch --hxml build-client.hxml ...`.
-   - This keeps an incremental client compiler process alive during `mix phx.server`.
+   - This keeps one client compiler process alive during `mix phx.server`, allowing Haxe to reuse
+     compiler state between complete build requests.
    - Recommended generator: **Genes** (ES modules) via exact-pinned `-lib genes-ts` in `build-client.hxml`.
 
 ### Important: esbuild `--watch` + Haxe `-js` output races

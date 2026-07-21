@@ -1,11 +1,13 @@
 defmodule HaxeWatcher do
   @moduledoc """
-  GenServer for watching Haxe source files and triggering incremental compilation.
+  GenServer for watching Haxe source files and triggering compilation requests.
 
   This module uses FileSystem to monitor .hx files for changes (creation, modification,
   deletion) and automatically triggers compilation through HaxeServer when changes
-  are detected. It supports configurable watch directories and debouncing to prevent
-  excessive compilation triggers.
+  are detected. A long-running watcher can reuse the same Haxe compiler process, but
+  process reuse is not a claim that every unaffected target module was skipped. It
+  supports configurable watch directories and debouncing to prevent excessive
+  compilation triggers.
 
   ## Usage
 

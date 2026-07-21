@@ -520,7 +520,7 @@ Error: listen EADDRINUSE: address already in use :::6001
 
 **Cause:**
 
-Phoenix watchers often run Haxe in `--wait <PORT>` mode for fast incremental rebuilds. If that port is already in use (e.g., from a previous run), the watcher process will fail.
+Phoenix watchers often run Haxe in `--wait <PORT>` mode so repeated builds can reuse one compiler process. If that port is already in use (e.g., from a previous run), the watcher process will fail.
 
 **Solutions:**
 
@@ -865,7 +865,7 @@ haxe --wait 6000
 haxe build.hxml --connect 6000
 ```
 
-2. **Prefer incremental compilation/watch workflows:**
+2. **Prefer persistent compilation/watch workflows:**
    - For Elixir/Mix projects: use `mix haxe.watch` (or your app's watcher integration)
    - For plain HXML workflows: keep a compile server running and use `--connect`
 

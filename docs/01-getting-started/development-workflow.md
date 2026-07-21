@@ -411,9 +411,15 @@ mix compile --force          # Verify Elixir compilation
 ## Haxe Compile Server (Explicit Long-Lived Workflow)
 
 Reflaxe.Elixir can use the Haxe compilation server (`haxe --wait`) to speed up
-incremental builds. Ordinary one-shot commands such as `mix compile` compile
-directly by default, because a background server can outlive a canceled Mix VM.
-The long-running `mix haxe.watch` workflow starts and owns one server explicitly.
+repeated builds by retaining Haxe compiler state between requests. Ordinary
+one-shot commands such as `mix compile` compile directly by default, because a
+background server can outlive a canceled Mix VM. The long-running
+`mix haxe.watch` workflow starts and owns one server explicitly.
+
+The server still receives a complete HXML compilation request. Reusing its process
+and frontend cache does not automatically mean Reflaxe skipped every unaffected
+target module, so project performance results distinguish server reuse from
+demonstrated module-level skipping.
 
 Behavior:
 
@@ -440,7 +446,7 @@ Notes:
 - No flag is needed for normal direct compilation or for `mix haxe.watch`.
 - `HAXE_NO_SERVER=1` remains a hard override for automation that must never start a server.
 
-### Incremental Freshness
+### Server Reuse and Build Freshness
 
 Server caching and Mix freshness are separate. Before a no-op, Mix fingerprints the effective Haxe
 build by content: recursive HXML, direct classpaths such as `src_shared`, resources, resolved Haxe

@@ -2,9 +2,11 @@ defmodule HaxeServer do
   @moduledoc """
   GenServer for managing the Haxe compilation server (--wait mode).
 
-  This module handles starting, stopping, and communicating with the Haxe compiler
-  server for incremental compilation. The server uses Haxe's `--wait` mode to
-  provide fast incremental builds by caching parsed files and typed modules.
+  This module starts, stops, and communicates with Haxe's long-lived `--wait`
+  process. Reusing that process lets Haxe retain compiler caches between complete
+  compilation requests. It does not, by itself, prove that Reflaxe skipped
+  rebuilding unaffected target modules; the performance harness measures frontend
+  reuse and backend regeneration separately.
 
   ## Usage
 
@@ -44,7 +46,7 @@ defmodule HaxeServer do
 
   # By default we do NOT attach to an externally-started Haxe --wait server even if it
   # responds to `--connect -version`. Sharing a server across unrelated build contexts can
-  # corrupt the incremental cache and trigger internal compiler crashes (e.g. OCaml
+  # corrupt the compiler cache and trigger internal compiler crashes (e.g. OCaml
   # `globals.ml: Assertion failed`). Opt in explicitly if you know the server is safe to share.
   @allow_external_attach_env "HAXE_SERVER_ALLOW_ATTACH"
 
@@ -226,7 +228,7 @@ defmodule HaxeServer do
     if System.get_env("HAXE_NO_SERVER") == "1" do
       {:ok, state}
     else
-      # Start or attach immediately so callers can use the incremental server cache right away.
+      # Start or attach immediately so callers can reuse the persistent compiler cache right away.
       #
       # If the configured port is already bound (EADDRINUSE), attempt to attach to an existing
       # compatible server; otherwise relocate to a free port.
