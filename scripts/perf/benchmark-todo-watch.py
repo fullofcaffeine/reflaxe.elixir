@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
-"""Bounded todo-app watch-cycle benchmark.
+"""Bounded todo-app persistent watch-cycle benchmark.
 
 Measures edit-to-rebuild latency for `mix haxe.watch` in an isolated worktree.
-The script starts the watcher, touches a representative Haxe source file, waits
-for the watch task's compile-success log marker, repeats, then tears everything
-down and writes a JSON artifact.
+The script starts one watcher, alternates a representative source file between
+exact A/B contents, waits for the compile-success marker, then tears everything
+down and writes a JSON artifact. A persistent watcher is not automatically an
+incremental compiler: the result records server use without claiming that
+unaffected target modules were skipped.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -24,6 +27,8 @@ import sys
 import time
 from datetime import datetime, timezone
 from typing import Any
+
+from benchmark_contract import SCHEMA_VERSION, generated_output_state, source_variant, watch_process_model
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -52,8 +57,9 @@ def parse_args() -> argparse.Namespace:
         help=f"Artifact dir relative to repo root (default: {DEFAULT_ARTIFACT_DIR_REL})",
     )
     parser.add_argument("--out", default=DEFAULT_OUT_REL, help=f"JSON output path relative to repo root (default: {DEFAULT_OUT_REL})")
-    parser.add_argument("--source", default=DEFAULT_SOURCE_REL, help=f"Haxe source to touch, relative to app root (default: {DEFAULT_SOURCE_REL})")
+    parser.add_argument("--source", default=DEFAULT_SOURCE_REL, help=f"Haxe source to alternate between exact A/B contents, relative to app root (default: {DEFAULT_SOURCE_REL})")
     parser.add_argument("--iterations", type=int, default=5, help="Number of edit/rebuild samples to collect (default: 5)")
+    parser.add_argument("--warmups", type=int, default=1, help="Number of unreported A/B rebuilds before measurement (default: 1)")
     parser.add_argument("--debounce-ms", type=int, default=150, help="Watcher debounce in milliseconds (default: 150)")
     parser.add_argument("--deadline", type=int, default=420, help="Overall benchmark deadline in seconds (default: 420)")
     parser.add_argument("--deps-get-timeout", type=int, default=int(os.environ.get("DEPS_GET_TIMEOUT", "300")))
@@ -65,6 +71,18 @@ def parse_args() -> argparse.Namespace:
         "--use-haxe-server",
         action="store_true",
         help="Opt into Haxe --wait server mode instead of the default direct Haxe invocation.",
+    )
+    parser.add_argument(
+        "--machine-state",
+        choices=("unknown", "idle", "contended"),
+        default=os.environ.get("BENCHMARK_MACHINE_STATE", "unknown"),
+        help="Observed host state; only controlled idle runs may support promotion claims",
+    )
+    parser.add_argument(
+        "--phase-timers",
+        choices=("off", "coarse"),
+        default=os.environ.get("PHASE_TIMERS", "off"),
+        help="Enable coarse Haxe/Mix target timing in watcher logs (default: off)",
     )
     parser.add_argument("--keep-worktree", action="store_true", help="Do not remove the benchmark worktree on exit")
     return parser.parse_args()
@@ -87,6 +105,25 @@ def run_capture(command: list[str], cwd: Path = ROOT_DIR) -> str:
         return f"<unavailable: {exc}>"
 
 
+def build_input_digests(benchmark_root: Path, app_rel: str) -> dict[str, Any]:
+    """Hash pinned build inputs without storing machine-local absolute paths."""
+
+    candidates = [benchmark_root / ".haxerc", benchmark_root / "package-lock.json", benchmark_root / app_rel / "mix.lock"]
+    candidates.extend(sorted((benchmark_root / "haxe_libraries").glob("*.hxml")))
+    candidates.extend(sorted((benchmark_root / app_rel).rglob("*.hxml")))
+    digests: dict[str, str] = {}
+    for path in candidates:
+        if path.is_file():
+            digests[str(path.relative_to(benchmark_root))] = hashlib.sha256(path.read_bytes()).hexdigest()
+    combined = hashlib.sha256()
+    for path, digest in sorted(digests.items()):
+        combined.update(path.encode("utf-8"))
+        combined.update(b"\0")
+        combined.update(digest.encode("ascii"))
+        combined.update(b"\n")
+    return {"combined_sha256": combined.hexdigest(), "files": digests}
+
+
 def monotonic_ms() -> int:
     return int(time.monotonic() * 1000)
 
@@ -101,6 +138,26 @@ def tail_text(path: Path, max_lines: int = 80) -> str:
     except FileNotFoundError:
         return ""
     return "\n".join(lines[-max_lines:])
+
+
+def target_timing_reports(path: Path) -> list[dict[str, Any]]:
+    """Read opt-in machine-readable target reports from a Haxe/Mix log."""
+
+    prefix = "REFLAXE_ELIXIR_TIMINGS "
+    reports: list[dict[str, Any]] = []
+    try:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except FileNotFoundError:
+        return reports
+    for line in lines:
+        marker = line.find(prefix)
+        if marker < 0:
+            continue
+        try:
+            reports.append(json.loads(line[marker + len(prefix) :]))
+        except json.JSONDecodeError:
+            continue
+    return reports
 
 
 def free_port() -> int:
@@ -192,6 +249,9 @@ def base_env(args: argparse.Namespace) -> dict[str, str]:
         env.setdefault("HAXE_SERVER_PORT", str(free_port()))
     else:
         env["HAXE_NO_SERVER"] = "1"
+    if args.phase_timers == "coarse":
+        env["HAXE_TIMINGS"] = "1"
+        env["REFLAXE_ELIXIR_TIMINGS"] = "1"
     return env
 
 
@@ -250,8 +310,8 @@ def kill_process_group(process: subprocess.Popen[str] | None) -> None:
         process.wait(timeout=10)
 
 
-def edit_source(source_path: Path, iteration: int) -> None:
-    updated = source_path.read_text(encoding="utf-8") + f"\n// watch benchmark edit {iteration}\n"
+def edit_source(source_path: Path, original: str, variant: str) -> None:
+    updated = source_variant(original, variant)
     temp_path = source_path.with_name(f"{source_path.name}.watch-bench.tmp")
     temp_path.write_text(updated, encoding="utf-8")
     temp_path.replace(source_path)
@@ -286,6 +346,8 @@ def measure_watch_cycles(
     log_dir: Path,
     phases: list[dict[str, Any]],
     samples: list[dict[str, Any]],
+    warmup_samples: list[dict[str, Any]],
+    process_info: dict[str, Any],
     args: argparse.Namespace,
     env: dict[str, str],
 ) -> None:
@@ -316,6 +378,10 @@ def measure_watch_cycles(
                 text=True,
                 start_new_session=True,
             )
+            process_info["watcher_pid"] = process.pid
+            process_info["haxe_server_port"] = env.get("HAXE_SERVER_PORT") if args.use_haxe_server else None
+            process_info["haxe_server_pid"] = None
+            process_info["haxe_server_identity_observed"] = False
             offset, initial_chunk = wait_for_marker(
                 process=process,
                 log_path=watch_log,
@@ -345,29 +411,45 @@ def measure_watch_cycles(
             )
             time.sleep(args.settle_ms / 1000)
 
-            for iteration in range(1, args.iterations + 1):
-                before_touch_ms = monotonic_ms()
-                edit_source(source_path, iteration)
+            original = source_path.read_text(encoding="utf-8")
+            _, prior_output_digests = generated_output_state(app_dir / "lib", {})
+            total_cycles = args.warmups + args.iterations
+            for cycle in range(1, total_cycles + 1):
+                variant = "B" if cycle % 2 == 1 else "A"
+                before_edit_ms = monotonic_ms()
+                edit_source(source_path, original, variant)
                 offset, chunk = wait_for_marker(
                     process=process,
                     log_path=watch_log,
                     offset=offset,
                     markers=(WATCH_SUCCESS_MARKER,),
                     timeout=args.iteration_timeout,
-                    label=f"watch rebuild {iteration}",
+                    label=f"watch rebuild {cycle}",
                 )
-                duration_ms = monotonic_ms() - before_touch_ms
+                duration_ms = monotonic_ms() - before_edit_ms
+                is_warmup = cycle <= args.warmups
+                measured_iteration = cycle - args.warmups
                 sample = {
-                    "iteration": iteration,
+                    "iteration": cycle if is_warmup else measured_iteration,
+                    "warmup": is_warmup,
                     "duration_ms": duration_ms,
                     "source": str(source_path.relative_to(app_dir)),
+                    "source_variant": variant,
+                    "edit_kind": "source_position_only_a_b_toggle",
+                    "public_api_changed": False,
                     "status": "success",
                 }
-                samples.append(sample)
-                print(f"[watch-bench] iteration {iteration}/{args.iterations}: {duration_ms}ms")
+                output_state, prior_output_digests = generated_output_state(app_dir / "lib", prior_output_digests)
+                sample["generated_output"] = output_state
+                if is_warmup:
+                    warmup_samples.append(sample)
+                    print(f"[watch-bench] warmup {cycle}/{args.warmups}: {duration_ms}ms")
+                else:
+                    samples.append(sample)
+                    print(f"[watch-bench] iteration {measured_iteration}/{args.iterations}: {duration_ms}ms")
 
                 if "Compilation failed" in chunk:
-                    raise BenchmarkError(f"watch rebuild {iteration} included a failure marker\n{tail_text(watch_log)}")
+                    raise BenchmarkError(f"watch rebuild {cycle} included a failure marker\n{tail_text(watch_log)}")
 
                 time.sleep(0.2)
         except Exception:
@@ -387,15 +469,26 @@ def measure_watch_cycles(
             kill_process_group(process)
 
 
-def build_result(args: argparse.Namespace, phases: list[dict[str, Any]], samples: list[dict[str, Any]], status: str) -> dict[str, Any]:
+def build_result(
+    args: argparse.Namespace,
+    phases: list[dict[str, Any]],
+    samples: list[dict[str, Any]],
+    warmup_samples: list[dict[str, Any]],
+    process_info: dict[str, Any],
+    status: str,
+) -> dict[str, Any]:
     dirty = run_capture(["git", "status", "--porcelain"]) != ""
     haxe_bin = os.environ.get("HAXE_BIN", "haxe")
-    return {
-        "schema_version": 1,
+    watch_log = ROOT_DIR / args.artifact_dir / "logs" / "watch.log"
+    benchmark_root = ROOT_DIR / args.artifact_dir / "worktree"
+    result = {
+        "schema_version": SCHEMA_VERSION,
+        "schema_classification": "current",
         "generated_at": now_utc(),
         "status": status,
         "repo": {
-            "head": run_capture(["git", "rev-parse", "HEAD"]),
+            "harness_head": run_capture(["git", "rev-parse", "HEAD"]),
+            "benchmark_head": run_capture(["git", "rev-parse", "HEAD"], benchmark_root),
             "ref": args.ref,
             "dirty": dirty,
         },
@@ -405,9 +498,13 @@ def build_result(args: argparse.Namespace, phases: list[dict[str, Any]], samples
             "artifact_dir": args.artifact_dir,
             "output": args.out,
             "iterations": args.iterations,
+            "warmups": args.warmups,
             "debounce_ms": args.debounce_ms,
             "settle_ms": args.settle_ms,
             "use_haxe_server": args.use_haxe_server,
+            "phase_timer_mode": args.phase_timers,
+            "build_input_digests": build_input_digests(benchmark_root, args.app),
+            **watch_process_model(args.use_haxe_server),
             "timeouts_seconds": {
                 "deadline": args.deadline,
                 "deps_get": args.deps_get_timeout,
@@ -417,6 +514,10 @@ def build_result(args: argparse.Namespace, phases: list[dict[str, Any]], samples
             },
         },
         "environment": {
+            "machine_state": args.machine_state,
+            "machine_state_source": "explicit_benchmark_label",
+            "cpu_count": os.cpu_count(),
+            "load_average": list(os.getloadavg()) if hasattr(os, "getloadavg") else None,
             "os": platform.platform(),
             "uname": run_capture(["uname", "-a"]),
             "haxe": run_capture([haxe_bin, "-version"]),
@@ -425,9 +526,15 @@ def build_result(args: argparse.Namespace, phases: list[dict[str, Any]], samples
             "otp_release": run_capture(["erl", "-noshell", "-eval", 'io:format("~s", [erlang:system_info(otp_release)]), halt().']),
         },
         "phases": phases,
+        "processes": process_info,
+        "warmup_samples": warmup_samples,
         "samples": samples,
         "summary": summarize(samples),
     }
+    reports = target_timing_reports(watch_log)
+    if reports:
+        result["reflaxe_target_timing_reports"] = reports
+    return result
 
 
 def write_result(path: Path, data: dict[str, Any]) -> None:
@@ -450,6 +557,8 @@ def main() -> int:
         require_safe_relative_path(label, value)
     if args.iterations <= 0:
         raise BenchmarkError("--iterations must be greater than zero")
+    if args.warmups < 0:
+        raise BenchmarkError("--warmups must be zero or greater")
     if args.deadline <= 0:
         raise BenchmarkError("--deadline must be greater than zero")
 
@@ -461,6 +570,8 @@ def main() -> int:
     log_dir = artifact_dir / "logs"
     phases: list[dict[str, Any]] = []
     samples: list[dict[str, Any]] = []
+    warmup_samples: list[dict[str, Any]] = []
+    process_info: dict[str, Any] = {}
     status = "failure"
     deadline = time.monotonic() + args.deadline
 
@@ -506,6 +617,8 @@ def main() -> int:
             log_dir=log_dir,
             phases=phases,
             samples=samples,
+            warmup_samples=warmup_samples,
+            process_info=process_info,
             args=args,
             env=env,
         )
@@ -514,7 +627,7 @@ def main() -> int:
         print(f"[watch-bench] ERROR: {exc}", file=sys.stderr)
         status = "failure"
     finally:
-        result = build_result(args, phases, samples, status)
+        result = build_result(args, phases, samples, warmup_samples, process_info, status)
         write_result(out_path, result)
         if not args.keep_worktree:
             remove_worktree(worktree)

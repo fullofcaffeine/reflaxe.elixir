@@ -3,7 +3,9 @@ set -euo pipefail
 
 # Bounded todo-app compile benchmark.
 #
-# Produces a JSON artifact with cold, warm, and incremental compile timings.
+# Produces a JSON artifact with cold, warm fresh-process, and edited
+# full-program fresh-process compile timings. It does not call the latter
+# "incremental" because this harness does not retain compiler process state.
 # Runs in an isolated git worktree by default so cold cleanup can remove deps,
 # _build, and generated lib outputs without mutating the caller's workspace.
 
@@ -15,8 +17,10 @@ REF="HEAD"
 ARTIFACT_DIR_REL="tmp/perf/todo-compile"
 OUT_REL="tmp/perf/compile-times.json"
 BUILD_FILE="build-server.hxml"
-INCREMENTAL_SOURCE_REL="src_shared/shared/TodoTypes.hx"
+EDITED_SOURCE_REL="src_shared/shared/TodoTypes.hx"
 HAXE_BIN="${HAXE_BIN:-haxe}"
+PHASE_TIMERS="${PHASE_TIMERS:-off}"
+MACHINE_STATE="${BENCHMARK_MACHINE_STATE:-unknown}"
 
 DEPS_GET_TIMEOUT="${DEPS_GET_TIMEOUT:-300}"
 DEPS_COMPILE_TIMEOUT="${DEPS_COMPILE_TIMEOUT:-420}"
@@ -35,8 +39,12 @@ Options:
   --artifact-dir PATH   Artifact dir relative to repo root (default: $ARTIFACT_DIR_REL)
   --out PATH            JSON output path relative to repo root (default: $OUT_REL)
   --build-file PATH     HXML build file relative to app root (default: $BUILD_FILE)
+  --edited-source PATH  Source file for the deterministic A→B content edit
+                        (default: $EDITED_SOURCE_REL)
   --incremental-source PATH
-                        Source file to touch relative to app root (default: $INCREMENTAL_SOURCE_REL)
+                        Deprecated alias for --edited-source
+  --phase-timers MODE   off or coarse (default: $PHASE_TIMERS)
+  --machine-state STATE unknown, idle, or contended (default: $MACHINE_STATE)
   --keep-worktree       Do not remove the benchmark worktree on exit
   -h, --help            Show this help
 
@@ -55,7 +63,14 @@ while [[ $# -gt 0 ]]; do
     --artifact-dir) ARTIFACT_DIR_REL="$2"; shift 2 ;;
     --out) OUT_REL="$2"; shift 2 ;;
     --build-file) BUILD_FILE="$2"; shift 2 ;;
-    --incremental-source) INCREMENTAL_SOURCE_REL="$2"; shift 2 ;;
+    --edited-source) EDITED_SOURCE_REL="$2"; shift 2 ;;
+    --incremental-source)
+      echo "[bench] WARNING: --incremental-source is deprecated; use --edited-source" >&2
+      EDITED_SOURCE_REL="$2"
+      shift 2
+      ;;
+    --phase-timers) PHASE_TIMERS="$2"; shift 2 ;;
+    --machine-state) MACHINE_STATE="$2"; shift 2 ;;
     --keep-worktree) KEEP_WORKTREE=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) usage; exit 2 ;;
@@ -75,7 +90,16 @@ require_safe_relative_path "--app" "$APP_REL"
 require_safe_relative_path "--artifact-dir" "$ARTIFACT_DIR_REL"
 require_safe_relative_path "--out" "$OUT_REL"
 require_safe_relative_path "--build-file" "$BUILD_FILE"
-require_safe_relative_path "--incremental-source" "$INCREMENTAL_SOURCE_REL"
+require_safe_relative_path "--edited-source" "$EDITED_SOURCE_REL"
+
+if [[ "$PHASE_TIMERS" != "off" && "$PHASE_TIMERS" != "coarse" ]]; then
+  echo "[bench] ERROR: --phase-timers must be 'off' or 'coarse': $PHASE_TIMERS" >&2
+  exit 2
+fi
+if [[ "$MACHINE_STATE" != "unknown" && "$MACHINE_STATE" != "idle" && "$MACHINE_STATE" != "contended" ]]; then
+  echo "[bench] ERROR: --machine-state must be unknown, idle, or contended: $MACHINE_STATE" >&2
+  exit 2
+fi
 
 if [[ ! -x "$TIMEOUT" ]]; then
   echo "[bench] ERROR: missing timeout wrapper: $TIMEOUT" >&2
@@ -98,9 +122,10 @@ WORKTREE="$ARTIFACT_DIR/worktree"
 LOG_DIR="$ARTIFACT_DIR/logs"
 RESULTS_NDJSON="$ARTIFACT_DIR/results.ndjson"
 META_JSON="$ARTIFACT_DIR/meta.json"
+OUTPUT_STATES_NDJSON="$ARTIFACT_DIR/output-states.ndjson"
 
 mkdir -p "$ARTIFACT_DIR" "$LOG_DIR" "$(dirname "$OUT_PATH")"
-rm -f "$RESULTS_NDJSON" "$META_JSON"
+rm -f "$RESULTS_NDJSON" "$META_JSON" "$OUTPUT_STATES_NDJSON"
 
 log() { echo "[bench] $*"; }
 
@@ -124,15 +149,17 @@ write_meta() {
     dirty="true"
   fi
 
-  python3 - "$META_JSON" "$ROOT_DIR" "$APP_REL" "$REF" "$ARTIFACT_DIR_REL" "$OUT_REL" "$BUILD_FILE" "$INCREMENTAL_SOURCE_REL" "$dirty" <<'PY'
+  python3 - "$META_JSON" "$ROOT_DIR" "$WORKTREE" "$APP_REL" "$REF" "$ARTIFACT_DIR_REL" "$OUT_REL" "$BUILD_FILE" "$EDITED_SOURCE_REL" "$dirty" "$PHASE_TIMERS" "$MACHINE_STATE" <<'PY'
+import hashlib
 import json
 import os
+from pathlib import Path
 import platform
 import subprocess
 import sys
 from datetime import datetime, timezone
 
-out, root, app_rel, ref, artifact_dir, out_rel, build_file, incremental_source, dirty = sys.argv[1:10]
+out, root, benchmark_root, app_rel, ref, artifact_dir, out_rel, build_file, edited_source, dirty, phase_timers, machine_state = sys.argv[1:13]
 
 def run(cmd):
     try:
@@ -140,11 +167,36 @@ def run(cmd):
     except Exception as exc:
         return f"<unavailable: {exc}>"
 
+def run_benchmark(cmd):
+    try:
+        return subprocess.check_output(cmd, cwd=benchmark_root, stderr=subprocess.STDOUT, text=True).strip()
+    except Exception as exc:
+        return f"<unavailable: {exc}>"
+
+def input_digests():
+    benchmark = Path(benchmark_root)
+    candidates = [benchmark / ".haxerc", benchmark / "package-lock.json", benchmark / app_rel / "mix.lock"]
+    candidates.extend(sorted((benchmark / "haxe_libraries").glob("*.hxml")))
+    candidates.extend(sorted((benchmark / app_rel).rglob("*.hxml")))
+    digests = {}
+    for path in candidates:
+        if path.is_file():
+            digests[str(path.relative_to(benchmark))] = hashlib.sha256(path.read_bytes()).hexdigest()
+    combined = hashlib.sha256()
+    for path, digest in sorted(digests.items()):
+        combined.update(path.encode("utf-8"))
+        combined.update(b"\0")
+        combined.update(digest.encode("ascii"))
+        combined.update(b"\n")
+    return {"combined_sha256": combined.hexdigest(), "files": digests}
+
 meta = {
-    "schema_version": 1,
+    "schema_version": 2,
+    "schema_classification": "current",
     "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     "repo": {
-        "head": run(["git", "rev-parse", "HEAD"]),
+        "harness_head": run(["git", "rev-parse", "HEAD"]),
+        "benchmark_head": run_benchmark(["git", "rev-parse", "HEAD"]),
         "ref": ref,
         "dirty": dirty == "true",
     },
@@ -152,8 +204,10 @@ meta = {
         "app": app_rel,
         "artifact_dir": artifact_dir,
         "build_file": build_file,
-        "incremental_source": incremental_source,
+        "edited_source": edited_source,
         "output": out_rel,
+        "phase_timer_mode": phase_timers,
+        "build_input_digests": input_digests(),
         "timeouts_seconds": {
             "deps_get": int(os.environ.get("DEPS_GET_TIMEOUT", "300")),
             "deps_compile": int(os.environ.get("DEPS_COMPILE_TIMEOUT", "420")),
@@ -162,6 +216,10 @@ meta = {
         },
     },
     "environment": {
+        "machine_state": machine_state,
+        "machine_state_source": "explicit_benchmark_label",
+        "cpu_count": os.cpu_count(),
+        "load_average": list(os.getloadavg()) if hasattr(os, "getloadavg") else None,
         "os": platform.platform(),
         "uname": run(["uname", "-a"]),
         "haxe": run([os.environ.get("HAXE_BIN", "haxe"), "-version"]),
@@ -266,14 +324,88 @@ record_marker_phase() {
   log "✅ $run_name/$phase_name ${duration}ms"
 }
 
-finalize_json() {
-  local overall_status="$1"
-  python3 - "$META_JSON" "$RESULTS_NDJSON" "$OUT_PATH" "$overall_status" <<'PY'
-import collections
+record_output_state() {
+  local run_name="$1"
+  local app_dir="$2"
+  python3 - "$OUTPUT_STATES_NDJSON" "$run_name" "$app_dir/lib" "$ROOT_DIR/scripts/perf" <<'PY'
 import json
+from pathlib import Path
 import sys
 
-meta_path, results_path, out_path, overall_status = sys.argv[1:5]
+states_path, run_name, output_root_value, helper_dir = sys.argv[1:5]
+output_root = Path(output_root_value)
+sys.path.insert(0, helper_dir)
+from benchmark_contract import generated_output_state
+
+previous_digests = {}
+try:
+    previous_lines = Path(states_path).read_text(encoding="utf-8").splitlines()
+    if previous_lines:
+        previous_digests = json.loads(previous_lines[-1]).get("_file_digests", {})
+except FileNotFoundError:
+    pass
+
+state, file_digests = generated_output_state(output_root, previous_digests)
+state["run"] = run_name
+state["_file_digests"] = file_digests
+with Path(states_path).open("a", encoding="utf-8") as output:
+    output.write(json.dumps(state, sort_keys=True) + "\n")
+PY
+}
+
+finalize_json() {
+  local overall_status="$1"
+  python3 - "$META_JSON" "$RESULTS_NDJSON" "$OUTPUT_STATES_NDJSON" "$OUT_PATH" "$overall_status" "$ROOT_DIR/scripts/perf" <<'PY'
+import collections
+import json
+from pathlib import Path
+import re
+import sys
+
+meta_path, results_path, states_path, out_path, overall_status, helper_dir = sys.argv[1:7]
+sys.path.insert(0, helper_dir)
+from benchmark_contract import compile_scenario
+
+root = Path(helper_dir).parents[1]
+
+def target_timing_report(log_rel):
+    prefix = "REFLAXE_ELIXIR_TIMINGS "
+    try:
+        lines = (root / log_rel).read_text(encoding="utf-8", errors="replace").splitlines()
+    except FileNotFoundError:
+        return None
+    reports = []
+    for line in lines:
+        marker = line.find(prefix)
+        if marker >= 0:
+            try:
+                reports.append(json.loads(line[marker + len(prefix):]))
+            except json.JSONDecodeError:
+                continue
+    return reports[-1] if reports else None
+
+def haxe_reported_total_ms(log_rel):
+    pattern = re.compile(r"^total\s+\|\s*([0-9]+(?:\.[0-9]+)?)\s*\|", re.IGNORECASE)
+    try:
+        lines = (root / log_rel).read_text(encoding="utf-8", errors="replace").splitlines()
+    except FileNotFoundError:
+        return None
+    matches = []
+    for line in lines:
+        match = pattern.match(line.strip())
+        if match:
+            matches.append(float(match.group(1)) * 1000.0)
+    return matches[-1] if matches else None
+
+def mix_recompiled_modules(log_rel):
+    pattern = re.compile(r"Compiling\s+([0-9]+)\s+files?\s+\(\.ex\)")
+    try:
+        text = (root / log_rel).read_text(encoding="utf-8", errors="replace")
+    except FileNotFoundError:
+        return None
+    matches = [int(value) for value in pattern.findall(text)]
+    return sum(matches) if matches else 0
+
 with open(meta_path, "r", encoding="utf-8") as f:
     data = json.load(f)
 
@@ -285,11 +417,52 @@ try:
                 continue
             phase = json.loads(line)
             run_name = phase.pop("run")
-            run = runs.setdefault(run_name, {"name": run_name, "status": "success", "duration_ms": 0, "phases": []})
+            run = runs.setdefault(run_name, {
+                "name": run_name,
+                "status": "success",
+                "duration_ms": 0,
+                "phases": [],
+                **compile_scenario(run_name),
+            })
             if phase["status"] != "success":
                 run["status"] = "failure"
             run["duration_ms"] += phase["duration_ms"]
+            if phase["phase"] == "haxe_build":
+                timing = target_timing_report(phase["log"])
+                haxe_total = haxe_reported_total_ms(phase["log"])
+                if haxe_total is not None:
+                    phase["haxe_reported_total_ms"] = haxe_total
+                    run["haxe_reported_total_ms"] = haxe_total
+                if timing is not None:
+                    phase["reflaxe_target_timing"] = timing
+                    run["reflaxe_target_timing"] = timing
+                    target_wall = timing.get("total_wall_ms")
+                    if isinstance(target_wall, (int, float)):
+                        known = target_wall + (haxe_total if haxe_total is not None else 0.0)
+                        unattributed = phase["duration_ms"] - known
+                        run["phase_reconciliation"] = {
+                            "external_haxe_build_ms": phase["duration_ms"],
+                            "haxe_reported_total_ms": haxe_total,
+                            "reflaxe_target_total_ms": target_wall,
+                            "unattributed_process_and_measurement_ms": round(unattributed, 3),
+                            "reconciled_total_ms": round(known + unattributed, 3),
+                        }
+            if phase["phase"] == "mix_compile":
+                run["mix_recompiled_module_count"] = mix_recompiled_modules(phase["log"])
             run["phases"].append(phase)
+except FileNotFoundError:
+    pass
+
+try:
+    with open(states_path, "r", encoding="utf-8") as f:
+        for line in f:
+            if not line.strip():
+                continue
+            state = json.loads(line)
+            run_name = state.pop("run")
+            state.pop("_file_digests", None)
+            if run_name in runs:
+                runs[run_name]["generated_output"] = state
 except FileNotFoundError:
     pass
 
@@ -349,24 +522,18 @@ PY
   record_marker_phase "cold" "clean" "$start" "rm -rf _build deps && remove lib/_GeneratedFiles.json entries"
 }
 
-touch_incremental_source() {
+apply_edited_source_variant() {
   local app_dir="$1"
-  local source_rel="$INCREMENTAL_SOURCE_REL"
+  local source_rel="$EDITED_SOURCE_REL"
   local source_path="$app_dir/$source_rel"
   if [[ ! -f "$source_path" ]]; then
-    echo "[bench] ERROR: incremental source not found: $source_rel" >&2
+    echo "[bench] ERROR: edited source not found: $source_rel" >&2
     return 2
   fi
   local start
   start="$(now_ms)"
-  python3 - "$source_path" <<'PY'
-import os
-import sys
-path = sys.argv[1]
-now = None
-os.utime(path, times=now)
-PY
-  record_marker_phase "incremental" "touch_source" "$start" "touch $source_rel"
+  python3 "$ROOT_DIR/scripts/perf/benchmark_contract.py" apply-source-variant --path "$source_path" --variant B
+  record_marker_phase "edited_full_fresh_process" "apply_source_variant_b" "$start" "apply deterministic source variant B to $source_rel"
 }
 
 run_compile_sequence() {
@@ -379,13 +546,19 @@ run_compile_sequence() {
     run_phase "$run_name" "deps_compile" "$DEPS_COMPILE_TIMEOUT" "$app_dir" env HAXE_NO_SERVER=1 MIX_ENV=test mix deps.compile
   fi
 
-  run_phase "$run_name" "haxe_build" "$HAXE_BUILD_TIMEOUT" "$app_dir" "$HAXE_BIN" "$BUILD_FILE"
+  local -a haxe_args=("$BUILD_FILE")
+  if [[ "$PHASE_TIMERS" == "coarse" ]]; then
+    haxe_args+=("--times")
+    run_phase "$run_name" "haxe_build" "$HAXE_BUILD_TIMEOUT" "$app_dir" env REFLAXE_ELIXIR_TIMINGS=1 "$HAXE_BIN" "${haxe_args[@]}"
+  else
+    run_phase "$run_name" "haxe_build" "$HAXE_BUILD_TIMEOUT" "$app_dir" "$HAXE_BIN" "${haxe_args[@]}"
+  fi
   run_phase "$run_name" "mix_compile" "$MIX_COMPILE_TIMEOUT" "$app_dir" env HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=test mix compile --warnings-as-errors --no-deps-check
 }
 
 main() {
-  write_meta
   prepare_worktree
+  write_meta
 
   local app_dir="$WORKTREE/$APP_REL"
   if [[ ! -d "$app_dir" ]]; then
@@ -404,11 +577,17 @@ main() {
     status="failure"
   elif ! run_compile_sequence "cold" "$app_dir" 1; then
     status="failure"
-  elif ! run_compile_sequence "warm" "$app_dir" 0; then
+  elif ! record_output_state "cold" "$app_dir"; then
     status="failure"
-  elif ! touch_incremental_source "$app_dir"; then
+  elif ! run_compile_sequence "warm_fresh_process" "$app_dir" 0; then
     status="failure"
-  elif ! run_compile_sequence "incremental" "$app_dir" 0; then
+  elif ! record_output_state "warm_fresh_process" "$app_dir"; then
+    status="failure"
+  elif ! apply_edited_source_variant "$app_dir"; then
+    status="failure"
+  elif ! run_compile_sequence "edited_full_fresh_process" "$app_dir" 0; then
+    status="failure"
+  elif ! record_output_state "edited_full_fresh_process" "$app_dir"; then
     status="failure"
   fi
 

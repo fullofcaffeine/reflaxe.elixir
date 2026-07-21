@@ -192,7 +192,9 @@ class ElixirOutputIterator {
 			// The metadata from the outer AST node needs to be preserved
 			// when passing to the transformer
 			// Pass the context to ensure metadata is available to transformation passes
+			final transformStarted = compiler.phaseTimings.start();
 			final transformedAST = ElixirASTTransformer.transform(astData.data, context);
+			compiler.phaseTimings.finish("pass_manager", transformStarted);
 
 			#if debug_output_iterator trace('[ElixirOutputIterator] Transformation complete'); #end
 
@@ -243,7 +245,9 @@ class ElixirOutputIterator {
 				ElixirASTPrinter.setSourceMapMarkerEmitter(sourceMapMarkers.emit);
 			}
 			#end
+			var printerStarted = compiler.phaseTimings.start();
 			var output = ElixirASTPrinter.print(transformedAST, 0);
+			compiler.phaseTimings.finish("printer", printerStarted);
 			#if macro
 			if (compiler.sourceMapOutputEnabled) {
 				ElixirASTPrinter.setSourceMapMarkerEmitter(null);
@@ -304,7 +308,9 @@ class ElixirOutputIterator {
 
 			#if macro
 			if (compiler.sourceMapOutputEnabled) {
+				var sourceMapStarted = compiler.phaseTimings.start();
 				output = queueSourceMap(astData, transformedAST, output, sourceMapMarkers);
+				compiler.phaseTimings.finish("source_maps", sourceMapStarted);
 			}
 			#end
 

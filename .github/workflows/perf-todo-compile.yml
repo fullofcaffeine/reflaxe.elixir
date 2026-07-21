@@ -69,7 +69,10 @@ jobs:
       - name: Run todo-app compile benchmark
         run: |
           set -euo pipefail
-          scripts/with-timeout.sh --secs 2400 -- npm run perf:todo-compile -- --ref "$GITHUB_SHA"
+          scripts/with-timeout.sh --secs 2400 -- npm run perf:todo-compile -- \
+            --ref "$GITHUB_SHA" \
+            --phase-timers coarse \
+            --machine-state unknown
 
       - name: Summarize timings
         if: always()
@@ -88,15 +91,18 @@ jobs:
           print("## Todo Compile Benchmark")
           print()
           print(f"- Status: `{data.get('status', 'unknown')}`")
-          print(f"- Commit: `{data.get('repo', {}).get('head', 'unknown')}`")
+          print(f"- Benchmark commit: `{data.get('repo', {}).get('benchmark_head', 'unknown')}`")
+          print(f"- Process/cache schema: `v{data.get('schema_version', 'unknown')}`")
+          print(f"- Machine state: `{data.get('environment', {}).get('machine_state', 'unknown')}`")
           print(f"- Haxe: `{data.get('environment', {}).get('haxe', 'unknown')}`")
           print(f"- OTP: `{data.get('environment', {}).get('otp_release', 'unknown')}`")
           print()
-          print("| Run | Status | Total ms | Phases |")
-          print("| --- | --- | ---: | --- |")
+          print("| Run | Process | Status | Total ms | Changed outputs | Phases |")
+          print("| --- | --- | --- | ---: | ---: | --- |")
           for run in data.get("runs", []):
               phases = ", ".join(f"{phase['phase']}={phase['duration_ms']}ms" for phase in run.get("phases", []))
-              print(f"| `{run['name']}` | `{run['status']}` | {run['duration_ms']} | {phases} |")
+              changed = run.get("generated_output", {}).get("changed_file_count", "unknown")
+              print(f"| `{run['name']}` | `{run.get('process_model', 'unknown')}` | `{run['status']}` | {run['duration_ms']} | {changed} | {phases} |")
           PY
 
       - name: Upload benchmark artifacts
@@ -108,6 +114,7 @@ jobs:
             tmp/perf/compile-times.json
             tmp/perf/todo-compile/logs/**
             tmp/perf/todo-compile/results.ndjson
+            tmp/perf/todo-compile/output-states.ndjson
             tmp/perf/todo-compile/meta.json
           if-no-files-found: warn
           retention-days: 30

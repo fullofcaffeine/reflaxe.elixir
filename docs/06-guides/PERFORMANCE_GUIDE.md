@@ -32,6 +32,27 @@ setup, source discovery, Haxe invocation, generated-file discovery, manifest wri
 total wall time. This is useful when the benchmark says a build is slow and you need to see which local
 phase is responsible.
 
+### Benchmark vocabulary
+
+The process and cache model are part of every result. In this guide:
+
+- **cold command-line generation** starts a new Haxe process after removing generated output and
+  compiler-owned build artifacts; dependency acquisition/compilation is reported separately;
+- **warm fresh-process generation** starts a new Haxe process but retains dependency and filesystem
+  state from the prior build;
+- **edited full-program fresh-process generation** changes real source bytes, starts a new Haxe
+  process, and submits the complete HXML build again;
+- **persistent server rebuild** sends another complete request to the same `haxe --wait` process;
+- **persistent watch rebuild** measures edit-to-completed-output while one watcher remains alive;
+- **incremental** means the measurement proves previous compiler or module work was reused or skipped.
+
+Changing one file does not by itself make a build incremental. For example, editing `TodoTypes.hx`
+and then launching a brand-new `haxe build-server.hxml` process is an edited full build. A server can
+reuse Haxe frontend state, but server reuse alone still does not prove that Reflaxe skipped unaffected
+target modules.
+
+### Compile benchmark
+
 For the todo-app compile baseline, use the bounded benchmark harness:
 
 ```bash
@@ -44,9 +65,11 @@ delete build artifacts without mutating your working copy. It records:
 
 - `cold` — removes `_build`, `deps`, and manifest-listed generated `lib/` files, then runs deps,
   Haxe generation, and Mix WAE compile.
-- `warm` — reruns Haxe generation and Mix WAE compile with dependencies/build cache already present.
-- `incremental` — touches one todo-app Haxe source file, then reruns Haxe generation and Mix WAE
-  compile.
+- `warm_fresh_process` — starts a new Haxe process and reruns generation plus Mix WAE with dependency
+  and filesystem state already warm.
+- `edited_full_fresh_process` — applies a deterministic A→B content change to one Haxe source file,
+  then starts a new Haxe process and submits the complete build again. It explicitly records
+  `demonstrated_incremental_reuse: false`.
 
 The JSON includes Haxe/Elixir/Mix/OTP versions, per-phase durations, command strings, log paths, and
 the last log lines for failed phases. The artifact intentionally lives under `tmp/` because it includes
@@ -60,7 +83,7 @@ npm run perf:example-compile
 
 This reuses the same bounded compile harness against `examples/03-phoenix-app`, writes
 `tmp/perf/example-compile-times.json`, and keeps logs under `tmp/perf/example-compile/logs/`.
-It records the same `cold`, `warm`, and `incremental` phases, using `build.hxml` and
+It records the same `cold`, `warm_fresh_process`, and `edited_full_fresh_process` scenarios, using `build.hxml` and
 `src_haxe/PhoenixHaxeExample.hx`.
 
 For todo-app edit→rebuild latency through `mix haxe.watch`, use the bounded watch benchmark:
@@ -71,14 +94,16 @@ npm run perf:todo-watch
 
 This writes `tmp/perf/watch-cycle-times.json` and keeps watcher/dependency logs under
 `tmp/perf/todo-watch/logs/`. The harness runs in an isolated git worktree, starts `mix haxe.watch`,
-waits for the initial compile, atomically rewrites `src_shared/shared/TodoTypes.hx` with a harmless
-comment, waits for the watch task’s `✅ Haxe compilation successful` marker, and repeats the cycle.
-It reports p50/p95 plus min/max/mean.
+waits for the initial compile, atomically alternates `src_shared/shared/TodoTypes.hx` between exact A/B
+contents, waits for the watch task’s `✅ Haxe compilation successful` marker, and repeats the cycle.
+The B variant adds one comment line: runtime behavior stays the same, while the source bytes and source
+positions genuinely change. The harness performs one unreported warm-up by default, then reports
+p50/p95 plus min/max/mean for measured samples.
 
 Useful local options:
 
 ```bash
-npm run perf:todo-watch -- --iterations 10 --debounce-ms 150 --deadline 600
+npm run perf:todo-watch -- --warmups 5 --iterations 10 --debounce-ms 150 --deadline 600
 npm run perf:todo-watch -- --ref HEAD~1 --out tmp/perf/watch-before.json
 ```
 
@@ -88,11 +113,29 @@ compile benchmark, this is a local/non-gating baseline tool; use it before and a
 changes when you need evidence for DevX performance claims.
 
 By default, the watch benchmark sets `HAXE_NO_SERVER=1` so the run does not leave a persistent Haxe
-`--wait` server behind. To measure server-backed watcher behavior explicitly:
+`--wait` server behind. The result calls this `persistent_watch_with_fresh_haxe_child`. To measure a
+server-backed watcher explicitly:
 
 ```bash
 npm run perf:todo-watch -- --use-haxe-server --iterations 10 --deadline 600
 ```
+
+That mode records `persistent_watch_with_haxe_server`, but it still leaves
+`demonstrated_incremental_reuse` false until module reuse is observed directly. This prevents process
+reuse from being mistaken for end-to-end incremental compilation.
+
+For low-perturbation phase attribution, run either harness with coarse timers:
+
+```bash
+npm run perf:todo-compile -- --phase-timers coarse --machine-state idle
+npm run perf:todo-watch -- --use-haxe-server --phase-timers coarse --machine-state idle --iterations 10
+```
+
+Coarse mode enables Haxe `--times`, existing Mix phase timers, and one Reflaxe target summary. The
+target summary accumulates dependency discovery, class/enum AST construction, pass-manager, printer,
+source-map, and output-transaction time. `class_ast_including_dependency_discovery` is deliberately a
+nested total; subtract `dependency_discovery` when estimating the remaining class AST work. Detailed
+per-pass fingerprints stay disabled because they can dominate the operation being measured.
 
 GitHub Actions also has an optional **Perf Todo Compile Benchmark** workflow. It is intentionally not
 attached to `push` or `pull_request`, so it does not gate PRs or regular CI. Run it manually from
@@ -105,17 +148,28 @@ Use the JSON artifacts to compare phases, not just total wall time.
 
 Compile benchmark (`tmp/perf/compile-times.json`):
 
-- `repo` and `environment` identify the exact compiler commit, dirty state, Haxe version, Elixir/Mix
-  version, OTP release, and host OS.
-- `runs[].name` is one of `cold`, `warm`, or `incremental`.
+- `repo` distinguishes the harness commit from the detached benchmark commit and records harness dirty
+  state. `environment` records Haxe/Elixir/Mix/OTP versions, host OS, CPU/load observations, and the explicitly labelled
+  machine state. `config.build_input_digests` fingerprints the relevant HXML, Lix, lock, and package
+  inputs without storing machine-local absolute paths.
+- `runs[].name` is one of `cold`, `warm_fresh_process`, or `edited_full_fresh_process`.
+- Each run states `process_model`, compiler/artifact/dependency cache state, `edit_kind`, and whether
+  incremental reuse was actually demonstrated.
 - `runs[].phases[]` contains timed phases such as `deps_get`, `deps_compile`, `haxe_build`, and
   `mix_compile`.
+- `runs[].generated_output` reports manifest-owned file/byte counts, the exact output-tree digest, and
+  which generated paths changed since the prior scenario. `mix_recompiled_module_count` is parsed from
+  the Mix compiler log when available.
+- In coarse mode, `phase_reconciliation` places Haxe's reported total, the Reflaxe target total, and
+  unattributed process/measurement time beside the external `haxe_build` wall clock. The reconciled
+  sum must equal that external wall clock; the unattributed remainder is an investigation target, not
+  silently assigned to Haxe or Reflaxe.
 - Failed phases include `log_tail`; full logs live under `tmp/perf/todo-compile/logs/`.
 
 Representative example benchmark (`tmp/perf/example-compile-times.json`):
 
 - Uses the same schema as the todo-app compile benchmark.
-- `config.app`, `config.build_file`, and `config.incremental_source` identify the example and HXML
+- `config.app`, `config.build_file`, and `config.edited_source` identify the example and HXML
   entrypoint.
 - Full logs live under `tmp/perf/example-compile/logs/`.
 
@@ -123,18 +177,28 @@ Watch benchmark (`tmp/perf/watch-cycle-times.json`):
 
 - `phases[]` covers setup costs such as dependency resolution and watcher startup.
 - `samples[]` are the measured edit→rebuild cycles.
+- `warmup_samples[]` are retained for audit but excluded from summary statistics.
+- `config.process_model` distinguishes direct child compilation from the persistent Haxe server.
+- Each sample's `generated_output` reports whether the edit actually changed generated files and keeps
+  an exact output-tree digest for clean-versus-warm comparison.
 - `summary` reports `min_ms`, `max_ms`, `mean_ms`, `p50_ms`, and `p95_ms`.
 - Full logs live under `tmp/perf/todo-watch/logs/`.
 
 Interpretation rules:
 
-- Compare `warm` with `warm`, `incremental` with `incremental`, and watch samples with watch samples.
-  Do not compare cold compile totals with watch-cycle latency.
+- Compare identical scenario names, edit kinds, process models, and cache states. Do not compare a cold
+  compile total with watch-cycle latency or editor diagnostics.
 - A slow `cold/deps_compile` phase is usually Hex/Mix dependency work, not Reflaxe.Elixir codegen.
 - A slow `haxe_build` phase points at Haxe macro work, AST building, AST transforms, or printing.
 - A slow `mix_compile` phase points at generated Elixir compilation, warnings, dependency checks, or
   generated output shape.
-- Watch p95 matters more than a single fast sample; it captures the annoying tail of the edit loop.
+- Ten measured samples can prioritize local work. A promoted persistent-edit p95 or TypeScript-class
+  claim needs at least 50 measured samples per edit class, multiple controlled sessions, raw samples,
+  and an idle machine. With only a handful of samples, p95 is effectively the slowest observation.
+
+Schema version 1 artifacts used the name `incremental` for a touched-file fresh-process build. They are
+historical evidence with the classification `legacy_v1_ambiguous_incremental_label`; do not merge them
+with schema version 2 results or silently relabel their samples.
 
 ## Compile-Time Profiling Playbook
 
@@ -240,7 +304,7 @@ Common hot spots and mitigations:
 | Signal | Likely cause | First mitigation |
 | --- | --- | --- |
 | `deps_compile` dominates only cold runs | Hex/Mix dependency compilation | Treat as environment/setup cost; keep dependency work out of WAE timing where possible. |
-| `haxe_build` dominates warm/incremental runs | Macro expansion, stdlib shaping, AST transforms, or printer work | Use `--times`, `-D macro-times`, then `-D profile_passes`; prefer single-pass transforms and better data structures. |
+| `haxe_build` dominates warm or edited full fresh-process runs | Macro expansion, stdlib shaping, AST construction/transforms, or printer work | Use coarse phase timers, then `-D macro-times` or `-D profile_passes` only for the identified owner. |
 | Watch p95 is much higher than warm compile | Watcher startup, file event debounce, Haxe server behavior, or repeated full rebuilds | Compare default direct mode with `--use-haxe-server`; inspect `tmp/perf/todo-watch/logs/watch.log`. |
 | `mix_compile` dominates after Haxe output | Generated Elixir shape, warning churn, oversized modules, or dependency checks | Use `HAXE_NO_COMPILE=1`; fix emitted shape upstream; compile deps without WAE and project with WAE. |
 | CI slow but local fast | Runner cache misses, slower CPU, dependency download, or shard imbalance | Compare phase logs/artifacts; do not tune local-only microbenchmarks to CI wall time. |
@@ -282,15 +346,31 @@ These are intended for contributor workflows; keep them off by default.
 Do not use `-D analyzer-optimize` for Elixir output. It can destroy functional/idiomatic shapes
 and makes downstream transforms harder. See `docs/01-getting-started/compiler-flags-guide.md`.
 
-## Dev Ergonomics: Incremental Compilation
+## Dev Ergonomics: Persistent Compilation
 
-For Phoenix projects, prefer incremental compilation to avoid recompiling everything on each change:
+For Phoenix projects, prefer the long-running watcher during development so the Haxe process can be
+reused between edits:
 
-- The Mix tasks integrate a background Haxe server when available.
-- Phoenix watchers use `haxe ... --wait <port>` for client builds.
+- `mix haxe.watch` owns and reuses a background Haxe server for its lifetime.
+- Ordinary one-shot `mix compile`, test, CI, and production commands remain direct by default.
 
 If you hit `EADDRINUSE` from `--wait`, prefer reusing/adjusting the wait port (see the todo‑app’s
 `config/dev.exs`) rather than disabling watching entirely.
+
+This is a faster process model, not yet a blanket product claim of module-level incrementality. Current
+measurement work distinguishes Haxe frontend cache reuse, Reflaxe module regeneration, generated-file
+publication, and Mix recompilation before using that term.
+
+## TypeScript-class DevEx is an objective
+
+The project aims for TypeScript-class feedback, especially for persistent no-op and leaf edits. A fair
+comparison must match the work: full typecheck+emit against full typecheck+emit, persistent emit against
+persistent emit, and editor diagnostics against editor diagnostics. Genes/TSX client compilation is a
+separate lane from Phoenix server Haxe-to-Elixir generation.
+
+Until the matched adapter and controlled results are complete, this is an engineering objective—not a
+measured parity or superiority claim. Absolute latency and memory figures are promotion goals until an
+idle, repeatable reference-runner baseline makes them safe as regression budgets.
 
 ## Contributor Rule of Thumb: Keep Passes Linear
 

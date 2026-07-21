@@ -42,6 +42,7 @@ import reflaxe.elixir.ast.builders.ModuleBuilder;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.ast.NameUtils;
 import reflaxe.elixir.CompilationContext;
+import reflaxe.elixir.debug.CompilerPhaseTimings;
 import reflaxe.elixir.macros.ModuleFieldMetadataRegistry;
 import reflaxe.elixir.macros.MixTaskMetadata;
 
@@ -299,6 +300,9 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	 */
 	private var sourceImportResolutionCache:Map<String, {directImports:Map<String, String>, wildcardImports:Array<String>}> = new Map();
 
+	/** Opt-in, request-reset coarse timings used only by the performance harness. */
+	public var phaseTimings(default, null):CompilerPhaseTimings;
+
 	/**
 	 * Map module name -> BaseType for synthetic outputs (e.g., bootstrap files)
 	 * WHY: OutputManager requires a BaseType for each DataAndFileInfo; we use the module's
@@ -312,6 +316,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	public function new() {
 		super();
 		instance = this; // Set static instance reference
+		this.phaseTimings = new CompilerPhaseTimings();
 		this.typer = new reflaxe.elixir.ElixirTyper();
 
 		// Enable source mapping if requested
@@ -341,6 +346,9 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	 * - Filter the already-typed module list to keep only `@:migration` classes.
 	 */
 	public override function filterTypes(moduleTypes:Array<haxe.macro.Type.ModuleType>):Array<haxe.macro.Type.ModuleType> {
+		// A Haxe compilation server may reuse this compiler instance. Reset at the
+		// request boundary so phase totals never leak into the next edit sample.
+		phaseTimings.reset();
 		#if eval
 		var result = moduleTypes != null ? moduleTypes.copy() : [];
 		forceStringToolsRuntime = false;
@@ -1122,6 +1130,15 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	 * @return ElixirAST representing the compiled module
 	 */
 	public function compileClassImpl(classType:ClassType, varFields:Array<ClassVarData>, funcFields:Array<ClassFuncData>):Null<reflaxe.elixir.ast.ElixirAST> {
+		if (!phaseTimings.enabled)
+			return compileClassBody(classType, varFields, funcFields);
+		var started = phaseTimings.start();
+		var result = compileClassBody(classType, varFields, funcFields);
+		phaseTimings.finish("class_ast_including_dependency_discovery", started);
+		return result;
+	}
+
+	function compileClassBody(classType:ClassType, varFields:Array<ClassVarData>, funcFields:Array<ClassFuncData>):Null<reflaxe.elixir.ast.ElixirAST> {
 		#if debug_compilation_flow
 		#end
 
@@ -1230,6 +1247,15 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	 * Required implementation for GenericCompiler - implements enum compilation
 	 */
 	public function compileEnumImpl(enumType:EnumType, options:Array<EnumOptionData>):Null<reflaxe.elixir.ast.ElixirAST> {
+		if (!phaseTimings.enabled)
+			return compileEnumBody(enumType, options);
+		var started = phaseTimings.start();
+		var result = compileEnumBody(enumType, options);
+		phaseTimings.finish("enum_ast_construction", started);
+		return result;
+	}
+
+	function compileEnumBody(enumType:EnumType, options:Array<EnumOptionData>):Null<reflaxe.elixir.ast.ElixirAST> {
 		if (enumType == null)
 			return null;
 
@@ -2036,7 +2062,13 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		// This populates the moduleDependencies map before we build the module
 		// Extract ClassField array from ClassFuncData array for discoverDependencies
 		var funcClassFields = funcFields.map(fd -> fd.field);
-		discoverDependencies(classType, funcClassFields);
+		if (phaseTimings.enabled) {
+			var dependencyStarted = phaseTimings.start();
+			discoverDependencies(classType, funcClassFields);
+			phaseTimings.finish("dependency_discovery", dependencyStarted);
+		} else {
+			discoverDependencies(classType, funcClassFields);
+		}
 
 		// PASS 2: Build the module with discovered dependencies
 		// Set compiler reference for dependency tracking and bootstrap generation
