@@ -321,7 +321,7 @@ defmodule PhoenixHxTodoWeb.AppLive do
     if (not Kernel.is_nil(protocol_result)) do
       protocol_result
     else
-      switch_result_5 = (case event do
+      switch_result_1 = (case event do
         "create_chat_message" ->
           create_chat_message(params, live)
         "create_todo" ->
@@ -332,7 +332,7 @@ defmodule PhoenixHxTodoWeb.AppLive do
         "update_form" -> {:noreply, Phoenix.Component.assign(live, %{title_input: string_param(params, "title"), notes_input: string_param(params, "notes")})}
         _ -> {:noreply, live}
       end)
-      switch_result_5
+      switch_result_1
     end
   end
 end

@@ -17,23 +17,23 @@ defmodule Main do
   end
   defp test_used_extraction() do
     result = {:ok, "world"}
-    switch_result_2 = (case result do
+    switch_result_1 = (case result do
       {:ok, value} -> "Got: #{value}"
       {:error, msg} -> "Error: #{msg}"
     end)
-    switch_result_2
+    switch_result_1
   end
   defp test_mixed_usage() do
     result = {:ok, 42}
-    switch_result_3 = (case result do
+    switch_result_1 = (case result do
       {:ok, num} -> "Number is #{Reflaxe.Elixir.HaxeFloat.to_string(num)}"
       {:error, _error} -> "Got an error"
     end)
-    switch_result_3
+    switch_result_1
   end
   defp test_nested_extraction() do
     opt = {:some, {:ok, 123}}
-    switch_result_4 = (case opt do
+    switch_result_1 = (case opt do
       {:some, result} ->
         (case result do
           {:ok, value} -> "Nested value: #{Reflaxe.Elixir.HaxeFloat.to_string(value)}"
@@ -41,19 +41,19 @@ defmodule Main do
         end)
       {:none} -> "Nothing"
     end)
-    switch_result_4
+    switch_result_1
   end
   defp test_multiple_extractions() do
     node = {:node, {:leaf}, 42, {:leaf}}
-    switch_result_5 = (case node do
+    switch_result_1 = (case node do
       {:leaf} -> "Empty"
       {:node, _left, value, _right} -> "Value: #{Reflaxe.Elixir.HaxeFloat.to_string(value)}"
     end)
-    switch_result_5
+    switch_result_1
   end
   defp test_tree_extraction() do
     tree = {:node, {:node, {:leaf}, 1, {:leaf}}, 2, {:node, {:leaf}, 3, {:leaf}}}
-    switch_result_6 = (case tree do
+    switch_result_1 = (case tree do
       {:leaf} -> 0
       {:node, left, value, right} when left == 1 ->
         (case right do
@@ -62,6 +62,6 @@ defmodule Main do
         end)
       {:node, _left, value, _right} -> value
     end)
-    switch_result_6
+    switch_result_1
   end
 end

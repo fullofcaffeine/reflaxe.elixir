@@ -65,7 +65,7 @@ defmodule Main do
     header_1 = 254
     header_2 = 4
     header_3 = 0
-    switch_result_2 = (case 9 do
+    switch_result_1 = (case 9 do
       3 when header_0 == 255 ->
         other = header_1
         cond do
@@ -102,7 +102,7 @@ defmodule Main do
           true -> "Unknown packet format"
         end
     end)
-    switch_result_2
+    switch_result_1
   end
   def test_binary_segments() do
     request = [71, 69, 84, 32, 47, 97, 112, 105, 32, 72, 84, 84, 80]
@@ -293,7 +293,7 @@ defmodule Main do
   end
   def test_pattern_matching_edge_cases() do
     data = [1, [2, 3], %{name: "test", value: 42}]
-    switch_result_3 = (case data do
+    switch_result_1 = (case data do
       [] when Std.is(data, Array) and Reflaxe.Elixir.HaxeFloat.gt(length(data), 3) -> "Large array with #{Reflaxe.Elixir.HaxeFloat.to_string(length(arr))} elements"
       [] -> "Empty array"
       [_head | _tail] ->
@@ -365,11 +365,11 @@ defmodule Main do
           "Other data structure"
         end
     end)
-    switch_result_3
+    switch_result_1
   end
   def test_proper_syntax_handling() do
     value = 42
-    switch_result_4 = (case value do
+    switch_result_1 = (case value do
       0 -> "zero"
       1 -> "small numbers"
       2 -> "small numbers"
@@ -382,7 +382,7 @@ defmodule Main do
           "other number: #{Reflaxe.Elixir.HaxeFloat.to_string(value)}"
         end
     end)
-    switch_result_4
+    switch_result_1
   end
   def test_pattern_matching_performance() do
     operations = [%{type: "read", resource: "user", id: 123}, %{type: "write", resource: "post", id: 456}, %{type: "delete", resource: "comment", id: 789}, %{type: "update", resource: "user", id: 123}]

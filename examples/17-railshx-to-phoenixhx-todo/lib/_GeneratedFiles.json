@@ -54,7 +54,7 @@
 		"phoenix_hx_todo/postgrex_types.ex"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 104,
+	"id": 105,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
@@ -216,7 +216,7 @@
 		},
 		{
 			"path": "phoenix_hx_todo_web/app_live.ex",
-			"sha256": "6709f7857afe4763e8b430006da93140a34227a6ce8b37a5d22c42bed50b7db5"
+			"sha256": "bdaaeb661f4a3e8998c2d856cce9bdaa91d045a3cad0991e399e0c9ff5db2985"
 		},
 		{
 			"path": "phoenix_hx_todo_web/live_events/todo_event.ex",
@@ -267,5 +267,5 @@
 			"sha256": "14d0fae11e0a57cb0a490ec5a9de56a9575762d2649b3f69b2ef5c3431ae3f15"
 		}
 	],
-	"generation": "abfd9481d0365632e080e813fc2265fd521cc242937eb0802bd8f373faedaf28"
+	"generation": "0953cce40a63d1a407313f9404f0d58f8fd5cbd1be8b5d8b60ceaca1f392d25c"
 }

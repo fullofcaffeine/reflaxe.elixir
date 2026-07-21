@@ -10,6 +10,9 @@
  *   variables should have underscore prefixes (_g, _value, etc.)
  * - When enum parameters are used, they should not have underscores
  * - This prevents Elixir compilation warnings about unused variables
+ * - Compiler-created switch_result_N names restart in each function. Their
+ *   suffix must not depend on unrelated functions that a warm Haxe server may
+ *   reuse instead of compiling again.
  */
 enum Result<T, E> {
 	Ok(value:T);

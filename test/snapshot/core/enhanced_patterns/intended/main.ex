@@ -126,7 +126,7 @@ defmodule Main do
   end
   def test_complex_binary_segments() do
     packet = [1, 0, 8, 72, 101, 108, 108, 111]
-    switch_result_2 = (case packet do
+    switch_result_1 = (case packet do
       3 ->
         cond do
           Enum.at(packet, 1) == 0 ->
@@ -217,7 +217,7 @@ defmodule Main do
           if (length(header) < 3), do: "Incomplete header", else: "Unknown packet format"
         end
     end)
-    switch_result_2
+    switch_result_1
   end
   def test_pin_operator_patterns() do
     expected_value = 42

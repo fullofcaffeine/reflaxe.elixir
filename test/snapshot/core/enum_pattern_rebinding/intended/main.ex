@@ -14,11 +14,11 @@ defmodule Main do
   end
   defp test_used_parameter() do
     result = get_result()
-    switch_result_2 = (case result do
+    switch_result_1 = (case result do
       {:ok, value} -> "Got: #{value}"
       {:error, msg} -> "Error: #{msg}"
     end)
-    switch_result_2
+    switch_result_1
   end
   defp get_result() do
     {:ok, "test value"}
