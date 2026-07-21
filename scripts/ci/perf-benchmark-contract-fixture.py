@@ -62,6 +62,62 @@ with tempfile.TemporaryDirectory(prefix="perf-benchmark-contract-") as temporary
     changed_state, _ = contract.generated_output_state(output_root, first_digests)
     check(changed_state["changed_paths"] == ["main.ex"], "changed generated path was not identified")
 
+with tempfile.TemporaryDirectory(prefix="perf-benchmark-patch-") as temporary:
+    worktree = Path(temporary) / "worktree"
+    worktree.mkdir()
+    edited = worktree / "fixture.txt"
+    edited.write_text("variant A\n", encoding="utf-8")
+    patch = Path(temporary) / "edit.patch"
+    patch.write_text(
+        "diff --git a/fixture.txt b/fixture.txt\n"
+        "--- a/fixture.txt\n"
+        "+++ b/fixture.txt\n"
+        "@@ -1 +1 @@\n"
+        "-variant A\n"
+        "+variant B\n",
+        encoding="utf-8",
+    )
+
+    check(contract.patch_changed_paths(worktree, patch) == ["fixture.txt"], "patch paths were not parsed")
+    contract.apply_patch_variant(worktree, patch, "B")
+    check(edited.read_text(encoding="utf-8") == "variant B\n", "patch variant B was not applied")
+    try:
+        contract.apply_patch_variant(worktree, patch, "B")
+        raise AssertionError("reapplying patch variant B should fail closed")
+    except ValueError:
+        pass
+    check(edited.read_text(encoding="utf-8") == "variant B\n", "failed patch check modified the worktree")
+    contract.apply_patch_variant(worktree, patch, "A")
+    check(edited.read_text(encoding="utf-8") == "variant A\n", "patch variant A did not restore exact bytes")
+
+todo_patch_root = ROOT / "scripts" / "perf" / "fixtures" / "todo-edits"
+todo_patches = sorted(todo_patch_root.glob("*.patch"))
+check(bool(todo_patches), "todo edit fixtures are missing")
+for patch in todo_patches:
+    changed_paths = contract.patch_changed_paths(ROOT, patch)
+    check(
+        all(path.startswith("examples/todo-app/") for path in changed_paths),
+        f"{patch.name} changes a path outside the todo app",
+    )
+    with tempfile.TemporaryDirectory(prefix=f"perf-{patch.stem}-") as temporary:
+        worktree = Path(temporary)
+        originals: dict[str, bytes] = {}
+        for relative in changed_paths:
+            source = ROOT / relative
+            destination = worktree / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, destination)
+            originals[relative] = destination.read_bytes()
+
+        contract.apply_patch_variant(worktree, patch, "B")
+        check(
+            any((worktree / relative).read_bytes() != content for relative, content in originals.items()),
+            f"{patch.name} variant B changed no bytes",
+        )
+        contract.apply_patch_variant(worktree, patch, "A")
+        for relative, content in originals.items():
+            check((worktree / relative).read_bytes() == content, f"{patch.name} did not restore {relative}")
+
 for scenario_name in ("cold", "warm_fresh_process", "edited_full_fresh_process"):
     scenario = contract.compile_scenario(scenario_name)
     for required in (

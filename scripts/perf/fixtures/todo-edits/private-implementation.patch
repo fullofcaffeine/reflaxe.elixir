@@ -1,0 +1,12 @@
+diff --git a/examples/todo-app/src_shared/shared/AvatarTools.hx b/examples/todo-app/src_shared/shared/AvatarTools.hx
+--- a/examples/todo-app/src_shared/shared/AvatarTools.hx
++++ b/examples/todo-app/src_shared/shared/AvatarTools.hx
+@@ -162,7 +162,7 @@ class AvatarTools {
+ 	static function hashToIndex(input:String, modulo:Int):Int {
+ 		var hash = 0;
+ 		for (i in 0...input.length) {
+-			hash = (hash * 31 + input.charCodeAt(i)) & 0x7fffffff;
++			hash = (hash * 32 - hash + input.charCodeAt(i)) & 0x7fffffff;
+ 		}
+ 		return modulo == 0 ? 0 : (hash % modulo);
+ 	}

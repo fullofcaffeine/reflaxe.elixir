@@ -1,0 +1,18 @@
+diff --git a/examples/todo-app/build-server.hxml b/examples/todo-app/build-server.hxml
+--- a/examples/todo-app/build-server.hxml
++++ b/examples/todo-app/build-server.hxml
+@@ -88,6 +88,7 @@ server.support.FlashTypeTools
+ # Provide both hyphenated and underscored defines for preprocessor gating compatibility
+ -D no-traces
+ -D no_traces
++-D reflaxe_elixir_benchmark_variant_b
+ 
+ # Main server classes to compile
+ TodoApp
+diff --git a/examples/todo-app/src_shared/shared/TodoTypes.hx b/examples/todo-app/src_shared/shared/TodoTypes.hx
+--- a/examples/todo-app/src_shared/shared/TodoTypes.hx
++++ b/examples/todo-app/src_shared/shared/TodoTypes.hx
+@@ -153,2 +153,3 @@ class TodoTypes {
+ 	// Empty class just to make the module findable
+ }
++// Watched source marker for the build-input benchmark variant B.

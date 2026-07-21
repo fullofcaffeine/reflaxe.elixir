@@ -1,0 +1,12 @@
+diff --git a/examples/todo-app/src_shared/shared/AvatarTools.hx b/examples/todo-app/src_shared/shared/AvatarTools.hx
+--- a/examples/todo-app/src_shared/shared/AvatarTools.hx
++++ b/examples/todo-app/src_shared/shared/AvatarTools.hx
+@@ -43,7 +43,7 @@ class AvatarTools {
+ 		"bg-amber-600"
+ 	];
+ 
+-	public static function normalizeEmail(email:String):String {
++	public static function normalizeEmail(email:String, ?benchmarkContext:Null<String>):String {
+ 		return StringTools.trim(email).toLowerCase();
+ 	}
+ 

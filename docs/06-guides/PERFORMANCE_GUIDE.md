@@ -107,6 +107,42 @@ npm run perf:todo-watch -- --warmups 5 --iterations 10 --debounce-ms 150 --deadl
 npm run perf:todo-watch -- --ref HEAD~1 --out tmp/perf/watch-before.json
 ```
 
+The default comment edit answers one narrow question: what happens when source bytes and source
+positions change but runtime behavior does not? For other edit shapes, pass one of the checked-in
+unified diff patches to the same harness. The isolated worktree starts in baseline state A, applies
+the patch for state B, reverses it for A, and repeats. The harness checks each patch before applying
+it, so a patch that no longer matches the selected revision fails without partially changing the
+worktree.
+
+For example, compare the exact same HXX text edit with and without a persistent Haxe server:
+
+```bash
+npm run perf:todo-watch -- \
+  --edit-patch scripts/perf/fixtures/todo-edits/hxx-component.patch \
+  --edit-kind hxx_component_text \
+  --iterations 10
+
+npm run perf:todo-watch -- \
+  --edit-patch scripts/perf/fixtures/todo-edits/hxx-component.patch \
+  --edit-kind hxx_component_text \
+  --use-haxe-server \
+  --iterations 10
+```
+
+Available todo-app patches under `scripts/perf/fixtures/todo-edits/`:
+
+| Patch | `--edit-kind` | What changes |
+|---|---|---|
+| `private-implementation.patch` | `private_implementation` | Rewrites a private hash calculation to an equivalent expression without changing its callable contract. |
+| `public-signature.patch` | `public_callable_signature` | Adds an optional argument to a public function; pass `--public-api-changed`. |
+| `hxx-component.patch` | `hxx_component_text` | Changes visible text inside inline HXX/HEEx markup. |
+| `shared-protocol.patch` | `shared_protocol_type` | Adds an optional field to a client/server channel payload; pass `--public-api-changed`. |
+| `build-input-define.patch` | `hxml_define` | Adds an HXML define and a watched source marker, so the watcher receives an event and the build-input fingerprint changes. |
+
+Patch paths, their SHA-256 digest, `--edit-kind`, `--public-api-changed`, and every edited path are
+stored in the result. The flag records the semantic class of the edit; it does not make the harness
+infer dependency impact or claim that incremental reuse occurred.
+
 The JSON includes Haxe/Elixir/Mix/OTP versions, dependency setup phases, watcher startup timing,
 per-iteration samples, command strings, log paths, and the last log lines for failed phases. Like the
 compile benchmark, this is a local/non-gating baseline tool; use it before and after compiler/watch
@@ -181,6 +217,9 @@ Watch benchmark (`tmp/perf/watch-cycle-times.json`):
 - `samples[]` are the measured edit→rebuild cycles.
 - `warmup_samples[]` are retained for audit but excluded from summary statistics.
 - `config.process_model` distinguishes direct child compilation from the persistent Haxe server.
+- For patch-driven runs, `config.edit_patch`, `edit_patch_sha256`, `edit_kind`, `edited_paths`, and
+  `public_api_changed` identify the exact edit and its intended dependency class. These fields describe
+  the input; they do not claim which compiler work was reused.
 - Each sample's `generated_output` reports whether the edit actually changed generated files and keeps
   an exact output-tree digest for clean-versus-warm comparison.
 - In coarse mode, each sample's `phase_reconciliation` connects the outer edit-to-success duration to

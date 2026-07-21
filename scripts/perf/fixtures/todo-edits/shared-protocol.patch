@@ -1,0 +1,11 @@
+diff --git a/examples/todo-app/src_shared/shared/channels/PingProtocol.hx b/examples/todo-app/src_shared/shared/channels/PingProtocol.hx
+--- a/examples/todo-app/src_shared/shared/channels/PingProtocol.hx
++++ b/examples/todo-app/src_shared/shared/channels/PingProtocol.hx
+@@ -24,6 +24,7 @@ import phoenix.channels.WireFields;
+  */
+ typedef PingPayload = {
+ 	var requestId:String;
++	@:optional var benchmarkTraceId:Null<String>;
+ }
+ 
+ enum PingClientEvent {

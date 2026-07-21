@@ -11,8 +11,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
+import subprocess
 from typing import Any
 
 
@@ -173,6 +175,78 @@ def write_source_variant(path: Path, variant: str) -> None:
     temporary = path.with_name(f"{path.name}.benchmark.tmp")
     temporary.write_text(updated, encoding="utf-8")
     temporary.replace(path)
+
+
+def patch_changed_paths(worktree: Path, patch_path: Path) -> list[str]:
+    """Return the safe workspace-relative paths changed by a unified diff.
+
+    ``git apply --numstat -z`` parses the standard patch format without
+    changing the worktree. Rejecting absolute and parent-relative paths keeps a
+    benchmark fixture from writing outside its isolated checkout.
+    """
+
+    try:
+        output = subprocess.check_output(
+            ["git", "apply", "--numstat", "-z", str(patch_path)],
+            cwd=worktree,
+            stderr=subprocess.STDOUT,
+        )
+    except subprocess.CalledProcessError as exc:
+        detail = exc.output.decode("utf-8", errors="replace").strip()
+        raise ValueError(f"cannot inspect benchmark patch {patch_path}: {detail}") from exc
+
+    paths: list[str] = []
+    for raw_record in output.split(b"\0"):
+        if not raw_record:
+            continue
+        fields = raw_record.split(b"\t", 2)
+        if len(fields) != 3:
+            raise ValueError(f"unexpected git numstat record in benchmark patch: {raw_record!r}")
+        relative = os.fsdecode(fields[2])
+        path = Path(relative)
+        if path.is_absolute() or ".." in path.parts:
+            raise ValueError(f"unsafe path in benchmark patch: {relative}")
+        paths.append(path.as_posix())
+
+    if not paths:
+        raise ValueError(f"benchmark patch changes no files: {patch_path}")
+    return sorted(paths)
+
+
+def apply_patch_variant(worktree: Path, patch_path: Path, variant: str) -> None:
+    """Apply exact patch variant B or restore the baseline variant A.
+
+    Variant B applies the patch. Variant A reverses it. ``--check`` runs first
+    so a stale fixture fails without partially modifying the isolated checkout.
+    """
+
+    if variant not in {"A", "B"}:
+        raise ValueError(f"unsupported benchmark patch variant: {variant}")
+
+    direction = ["--reverse"] if variant == "A" else []
+    check_command = ["git", "apply", *direction, "--check", str(patch_path)]
+    apply_command = ["git", "apply", *direction, str(patch_path)]
+    try:
+        subprocess.run(
+            check_command,
+            cwd=worktree,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        subprocess.run(
+            apply_command,
+            cwd=worktree,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        detail = exc.stdout.strip()
+        action = "restore variant A from" if variant == "A" else "apply variant B from"
+        raise ValueError(f"cannot {action} benchmark patch {patch_path}: {detail}") from exc
 
 
 def compile_scenario(name: str) -> dict[str, Any]:

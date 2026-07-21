@@ -2,11 +2,11 @@
 """Bounded todo-app persistent watch-cycle benchmark.
 
 Measures edit-to-rebuild latency for `mix haxe.watch` in an isolated worktree.
-The script starts one watcher, alternates a representative source file between
-exact A/B contents, waits for the compile-success marker, then tears everything
-down and writes a JSON artifact. A persistent watcher is not automatically an
-incremental compiler: the result records server use without claiming that
-unaffected target modules were skipped.
+The script starts one watcher, alternates either the default source comment or
+an exact unified-diff fixture between states A and B, waits for the
+compile-success marker, then tears everything down and writes a JSON artifact.
+A persistent watcher is not automatically an incremental compiler: the result
+records server use without claiming that unaffected target modules were skipped.
 """
 
 from __future__ import annotations
@@ -32,7 +32,9 @@ sys.dont_write_bytecode = True
 
 from benchmark_contract import (
     SCHEMA_VERSION,
+    apply_patch_variant,
     generated_output_state,
+    patch_changed_paths,
     parse_server_identity,
     source_variant,
     target_timing_report,
@@ -67,7 +69,25 @@ def parse_args() -> argparse.Namespace:
         help=f"Artifact dir relative to repo root (default: {DEFAULT_ARTIFACT_DIR_REL})",
     )
     parser.add_argument("--out", default=DEFAULT_OUT_REL, help=f"JSON output path relative to repo root (default: {DEFAULT_OUT_REL})")
-    parser.add_argument("--source", default=DEFAULT_SOURCE_REL, help=f"Haxe source to alternate between exact A/B contents, relative to app root (default: {DEFAULT_SOURCE_REL})")
+    parser.add_argument(
+        "--source",
+        default=DEFAULT_SOURCE_REL,
+        help=f"Haxe source for the default comment edit, relative to app root; ignored with --edit-patch (default: {DEFAULT_SOURCE_REL})",
+    )
+    parser.add_argument(
+        "--edit-patch",
+        help="Workspace-relative unified diff to alternate between baseline A and patched B instead of appending the default source comment",
+    )
+    parser.add_argument(
+        "--edit-kind",
+        default="source_position_only_a_b_toggle",
+        help="Precise edit classification stored with every sample (default: source_position_only_a_b_toggle)",
+    )
+    parser.add_argument(
+        "--public-api-changed",
+        action="store_true",
+        help="Record that the selected edit changes a public type or callable contract",
+    )
     parser.add_argument("--iterations", type=int, default=5, help="Number of edit/rebuild samples to collect (default: 5)")
     parser.add_argument("--warmups", type=int, default=1, help="Number of unreported A/B rebuilds before measurement (default: 1)")
     parser.add_argument("--debounce-ms", type=int, default=150, help="Watcher debounce in milliseconds (default: 150)")
@@ -351,8 +371,11 @@ def summarize(samples: list[dict[str, Any]]) -> dict[str, Any]:
 
 def measure_watch_cycles(
     *,
+    benchmark_root: Path,
     app_dir: Path,
-    source_path: Path,
+    source_path: Path | None,
+    patch_path: Path | None,
+    edited_paths: list[str],
     log_dir: Path,
     phases: list[dict[str, Any]],
     samples: list[dict[str, Any]],
@@ -427,53 +450,72 @@ def measure_watch_cycles(
             )
             time.sleep(args.settle_ms / 1000)
 
-            original = source_path.read_text(encoding="utf-8")
+            original = source_path.read_text(encoding="utf-8") if source_path is not None else None
             _, prior_output_digests = generated_output_state(app_dir / "lib", {})
             total_cycles = args.warmups + args.iterations
-            for cycle in range(1, total_cycles + 1):
-                variant = "B" if cycle % 2 == 1 else "A"
-                before_edit_ms = monotonic_ms()
-                edit_source(source_path, original, variant)
-                offset, chunk = wait_for_marker(
-                    process=process,
-                    log_path=watch_log,
-                    offset=offset,
-                    markers=(WATCH_SUCCESS_MARKER,),
-                    timeout=args.iteration_timeout,
-                    label=f"watch rebuild {cycle}",
-                )
-                duration_ms = monotonic_ms() - before_edit_ms
-                is_warmup = cycle <= args.warmups
-                measured_iteration = cycle - args.warmups
-                sample = {
-                    "iteration": cycle if is_warmup else measured_iteration,
-                    "warmup": is_warmup,
-                    "duration_ms": duration_ms,
-                    "source": str(source_path.relative_to(app_dir)),
-                    "source_variant": variant,
-                    "edit_kind": "source_position_only_a_b_toggle",
-                    "public_api_changed": False,
-                    "status": "success",
-                }
-                timing = target_timing_report(chunk)
-                if timing is not None:
-                    sample["reflaxe_target_timing"] = timing
-                reconciliation = watch_phase_reconciliation(duration_ms, chunk)
-                if reconciliation is not None:
-                    sample["phase_reconciliation"] = reconciliation
-                output_state, prior_output_digests = generated_output_state(app_dir / "lib", prior_output_digests)
-                sample["generated_output"] = output_state
-                if is_warmup:
-                    warmup_samples.append(sample)
-                    print(f"[watch-bench] warmup {cycle}/{args.warmups}: {duration_ms}ms")
-                else:
-                    samples.append(sample)
-                    print(f"[watch-bench] iteration {measured_iteration}/{args.iterations}: {duration_ms}ms")
+            current_variant = "A"
+            try:
+                for cycle in range(1, total_cycles + 1):
+                    variant = "B" if cycle % 2 == 1 else "A"
+                    before_edit_ms = monotonic_ms()
+                    if patch_path is not None:
+                        apply_patch_variant(benchmark_root, patch_path, variant)
+                    elif source_path is not None and original is not None:
+                        edit_source(source_path, original, variant)
+                    else:
+                        raise BenchmarkError("benchmark edit has neither a source nor a patch")
+                    current_variant = variant
+                    offset, chunk = wait_for_marker(
+                        process=process,
+                        log_path=watch_log,
+                        offset=offset,
+                        markers=(WATCH_SUCCESS_MARKER,),
+                        timeout=args.iteration_timeout,
+                        label=f"watch rebuild {cycle}",
+                    )
+                    duration_ms = monotonic_ms() - before_edit_ms
+                    is_warmup = cycle <= args.warmups
+                    measured_iteration = cycle - args.warmups
+                    sample = {
+                        "iteration": cycle if is_warmup else measured_iteration,
+                        "warmup": is_warmup,
+                        "duration_ms": duration_ms,
+                        "edited_paths": edited_paths,
+                        "source_variant": variant,
+                        "edit_kind": args.edit_kind,
+                        "public_api_changed": args.public_api_changed,
+                        "status": "success",
+                    }
+                    timing = target_timing_report(chunk)
+                    if timing is not None:
+                        sample["reflaxe_target_timing"] = timing
+                    reconciliation = watch_phase_reconciliation(duration_ms, chunk)
+                    if reconciliation is not None:
+                        sample["phase_reconciliation"] = reconciliation
+                    output_state, prior_output_digests = generated_output_state(app_dir / "lib", prior_output_digests)
+                    sample["generated_output"] = output_state
+                    if is_warmup:
+                        warmup_samples.append(sample)
+                        print(f"[watch-bench] warmup {cycle}/{args.warmups}: {duration_ms}ms")
+                    else:
+                        samples.append(sample)
+                        print(f"[watch-bench] iteration {measured_iteration}/{args.iterations}: {duration_ms}ms")
 
-                if "Compilation failed" in chunk:
-                    raise BenchmarkError(f"watch rebuild {cycle} included a failure marker\n{tail_text(watch_log)}")
+                    if "Compilation failed" in chunk:
+                        raise BenchmarkError(f"watch rebuild {cycle} included a failure marker\n{tail_text(watch_log)}")
 
-                time.sleep(0.2)
+                    time.sleep(0.2)
+            finally:
+                if current_variant == "B":
+                    # Stop the watcher before restoring source A. Otherwise the
+                    # cleanup edit can start an unmeasured rebuild while this
+                    # benchmark is tearing the process down.
+                    kill_process_group(process)
+                    process = None
+                    if patch_path is not None:
+                        apply_patch_variant(benchmark_root, patch_path, "A")
+                    elif source_path is not None and original is not None:
+                        edit_source(source_path, original, "A")
         except Exception:
             phases.append(
                 {
@@ -493,6 +535,7 @@ def measure_watch_cycles(
 
 def build_result(
     args: argparse.Namespace,
+    edit_metadata: dict[str, Any],
     phases: list[dict[str, Any]],
     samples: list[dict[str, Any]],
     warmup_samples: list[dict[str, Any]],
@@ -516,7 +559,8 @@ def build_result(
         },
         "config": {
             "app": args.app,
-            "source": args.source,
+            "source": args.source if args.edit_patch is None else None,
+            **edit_metadata,
             "artifact_dir": args.artifact_dir,
             "output": args.out,
             "iterations": args.iterations,
@@ -577,6 +621,12 @@ def main() -> int:
         ("--source", args.source),
     ):
         require_safe_relative_path(label, value)
+    if args.edit_patch is not None:
+        require_safe_relative_path("--edit-patch", args.edit_patch)
+        if args.edit_kind == "source_position_only_a_b_toggle":
+            raise BenchmarkError("--edit-patch requires an explicit --edit-kind")
+    elif args.public_api_changed:
+        raise BenchmarkError("--public-api-changed requires --edit-patch")
     if args.iterations <= 0:
         raise BenchmarkError("--iterations must be greater than zero")
     if args.warmups < 0:
@@ -594,6 +644,13 @@ def main() -> int:
     samples: list[dict[str, Any]] = []
     warmup_samples: list[dict[str, Any]] = []
     process_info: dict[str, Any] = {}
+    edit_metadata: dict[str, Any] = {
+        "edit_kind": args.edit_kind,
+        "public_api_changed": args.public_api_changed,
+        "edit_patch": None,
+        "edit_patch_sha256": None,
+        "edited_paths": [(Path(args.app) / args.source).as_posix()],
+    }
     status = "failure"
     deadline = time.monotonic() + args.deadline
 
@@ -603,11 +660,39 @@ def main() -> int:
     try:
         prepare_worktree(worktree, args.ref)
         app_dir = worktree / args.app
-        source_path = app_dir / args.source
         if not app_dir.is_dir():
             raise BenchmarkError(f"app not found in worktree: {args.app}")
-        if not source_path.is_file():
-            raise BenchmarkError(f"source not found in app: {args.source}")
+
+        patch_path: Path | None = None
+        source_path: Path | None = None
+        if args.edit_patch is not None:
+            patch_path = (ROOT_DIR / args.edit_patch).resolve()
+            try:
+                patch_path.relative_to(ROOT_DIR.resolve())
+            except ValueError as exc:
+                raise BenchmarkError(f"--edit-patch resolves outside the workspace: {args.edit_patch}") from exc
+            if not patch_path.is_file():
+                raise BenchmarkError(f"edit patch not found: {args.edit_patch}")
+            try:
+                edited_paths = patch_changed_paths(worktree, patch_path)
+            except ValueError as exc:
+                raise BenchmarkError(str(exc)) from exc
+            app_prefix = f"{Path(args.app).as_posix()}/"
+            outside_app = [path for path in edited_paths if not path.startswith(app_prefix)]
+            if outside_app:
+                raise BenchmarkError(f"edit patch changes paths outside {args.app}: {outside_app}")
+            edit_metadata.update(
+                {
+                    "edit_patch": args.edit_patch,
+                    "edit_patch_sha256": hashlib.sha256(patch_path.read_bytes()).hexdigest(),
+                    "edited_paths": edited_paths,
+                }
+            )
+        else:
+            source_path = app_dir / args.source
+            if not source_path.is_file():
+                raise BenchmarkError(f"source not found in app: {args.source}")
+            edited_paths = [(Path(args.app) / args.source).as_posix()]
 
         env = base_env(args)
         run_phase(
@@ -634,8 +719,11 @@ def main() -> int:
             raise BenchmarkError("overall deadline exceeded before watch measurement")
 
         measure_watch_cycles(
+            benchmark_root=worktree,
             app_dir=app_dir,
             source_path=source_path,
+            patch_path=patch_path,
+            edited_paths=edited_paths,
             log_dir=log_dir,
             phases=phases,
             samples=samples,
@@ -649,7 +737,7 @@ def main() -> int:
         print(f"[watch-bench] ERROR: {exc}", file=sys.stderr)
         status = "failure"
     finally:
-        result = build_result(args, phases, samples, warmup_samples, process_info, status)
+        result = build_result(args, edit_metadata, phases, samples, warmup_samples, process_info, status)
         write_result(out_path, result)
         if not args.keep_worktree:
             remove_worktree(worktree)
