@@ -120,9 +120,10 @@ server-backed watcher explicitly:
 npm run perf:todo-watch -- --use-haxe-server --iterations 10 --deadline 600
 ```
 
-That mode records `persistent_watch_with_haxe_server`, but it still leaves
-`demonstrated_incremental_reuse` false until module reuse is observed directly. This prevents process
-reuse from being mistaken for end-to-end incremental compilation.
+That mode records `persistent_watch_with_haxe_server`, plus the port and operating-system PID of the
+process that owns the Haxe server. It still leaves `demonstrated_incremental_reuse` false until module
+reuse is observed directly. A stable process identity proves that the same server stayed alive; it
+does not, by itself, prove which compiler work was reused.
 
 For low-perturbation phase attribution, run either harness with coarse timers:
 
@@ -131,8 +132,9 @@ npm run perf:todo-compile -- --phase-timers coarse --machine-state idle
 npm run perf:todo-watch -- --use-haxe-server --phase-timers coarse --machine-state idle --iterations 10
 ```
 
-Coarse mode enables Haxe `--times`, existing Mix phase timers, and one Reflaxe target summary. The
-target summary accumulates dependency discovery, class/enum AST construction, pass-manager, printer,
+Coarse mode enables Haxe `--times`, existing Mix phase timers, and a Reflaxe target summary for each
+compile or watch rebuild. Each measured watch sample keeps its matching target summary. The target
+summary accumulates dependency discovery, class/enum AST construction, pass-manager, printer,
 source-map, and output-transaction time. `class_ast_including_dependency_discovery` is deliberately a
 nested total; subtract `dependency_discovery` when estimating the remaining class AST work. Detailed
 per-pass fingerprints stay disabled because they can dominate the operation being measured.

@@ -9,7 +9,11 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
+
+
+sys.dont_write_bytecode = True
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -79,6 +83,18 @@ server = contract.watch_process_model(True)
 direct = contract.watch_process_model(False)
 check(server["process_model"] != direct["process_model"], "direct and server watch modes must remain distinguishable")
 check(server["demonstrated_incremental_reuse"] is False, "process reuse alone must not claim module reuse")
+
+identity = contract.parse_server_identity(
+    "Haxe server started on port 62327 (owner_os_pid=9123)\n"
+    "Haxe server relocated and started on port 62328 (owner_os_pid=9124)"
+)
+check(identity["haxe_server_identity_observed"] is True, "server identity was not observed")
+check(identity["haxe_server_port"] == 62328, "latest server port was not selected")
+check(identity["haxe_server_owner_os_pid"] == 9124, "latest server owner PID was not selected")
+check(
+    contract.parse_server_identity("no server here")["haxe_server_identity_observed"] is False,
+    "missing server identity was invented",
+)
 
 # Exercise the real shell harness with fake compilers. This proves the public
 # scenario names and result schema without paying for a Phoenix dependency build.

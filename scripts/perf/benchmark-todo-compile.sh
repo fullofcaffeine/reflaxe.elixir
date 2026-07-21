@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Importing the shared Python helper must not make an otherwise clean harness
+# checkout appear dirty in the benchmark metadata.
+export PYTHONDONTWRITEBYTECODE=1
+
 # Bounded todo-app compile benchmark.
 #
 # Produces a JSON artifact with cold, warm fresh-process, and edited

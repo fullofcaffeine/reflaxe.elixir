@@ -27,6 +27,20 @@ defmodule HaxeTimings do
     end
   end
 
+  @doc false
+  def diagnostic_compiler_args do
+    if enabled?(), do: ["--times"], else: []
+  end
+
+  @doc false
+  def report_compiler_output(output) when is_binary(output) do
+    if enabled?() and String.trim(output) != "" do
+      Mix.shell().info(String.trim_trailing(output))
+    end
+
+    :ok
+  end
+
   @doc """
   Resets process-local timing state.
   """

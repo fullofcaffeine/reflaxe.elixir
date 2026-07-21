@@ -232,7 +232,9 @@ defmodule HaxeCompiler do
     # fast_boot is an opt-in compilation profile that disables expensive macro/transform work.
     # Enable it explicitly via env var:
     #   HAXE_FAST_BOOT=1 mix compile
-    common_args = if fast_boot_enabled?(), do: ["-D", "fast_boot"], else: []
+    common_args =
+      if(fast_boot_enabled?(), do: ["-D", "fast_boot"], else: []) ++
+        HaxeTimings.diagnostic_compiler_args()
 
     compilation_result =
       HaxeTimings.measure("haxe.invoke", fn ->
@@ -289,7 +291,9 @@ defmodule HaxeCompiler do
       end)
 
     case compilation_result do
-      {:ok, _output} ->
+      {:ok, output} ->
+        HaxeTimings.report_compiler_output(output)
+
         # The ownership manifest is authoritative. Scanning the target would
         # accidentally classify handwritten Phoenix modules as compiler output.
         HaxeTimings.measure("haxe.find_generated_files", fn ->

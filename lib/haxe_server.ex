@@ -295,6 +295,8 @@ defmodule HaxeServer do
     stats = %{
       status: state.status,
       port: state.port,
+      server_owner_os_pid: state.server_os_pid,
+      owns_server: state.owns_server,
       compile_count: state.compile_count,
       last_compile: state.last_compile
     }
@@ -503,7 +505,7 @@ defmodule HaxeServer do
     if port_available?(state.port) do
       case start_haxe_server(state) do
         {:ok, pid, os_pid} ->
-          Logger.debug("Haxe server started on port #{state.port}")
+          Logger.debug("Haxe server started on port #{state.port} (owner_os_pid=#{os_pid})")
 
           started = %{
             state
@@ -526,7 +528,9 @@ defmodule HaxeServer do
 
           case start_haxe_server(relocated) do
             {:ok, pid2, os_pid2} ->
-              Logger.debug("Haxe server relocated and started on port #{new_port}")
+              Logger.debug(
+                "Haxe server relocated and started on port #{new_port} (owner_os_pid=#{os_pid2})"
+              )
 
               started = %{
                 relocated
@@ -618,7 +622,9 @@ defmodule HaxeServer do
 
             case start_haxe_server(relocated) do
               {:ok, pid2, os_pid2} ->
-                Logger.debug("Haxe server relocated and started on port #{new_port}")
+                Logger.debug(
+                  "Haxe server relocated and started on port #{new_port} (owner_os_pid=#{os_pid2})"
+                )
 
                 started = %{
                   relocated

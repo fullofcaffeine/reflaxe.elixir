@@ -1,14 +1,14 @@
 defmodule HaxeWatcher do
   @moduledoc """
   GenServer for watching Haxe source files and triggering incremental compilation.
-  
+
   This module uses FileSystem to monitor .hx files for changes (creation, modification,
   deletion) and automatically triggers compilation through HaxeServer when changes
   are detected. It supports configurable watch directories and debouncing to prevent
   excessive compilation triggers.
-  
+
   ## Usage
-  
+
       # Start with default configuration
       {:ok, pid} = HaxeWatcher.start_link([])
       
@@ -23,18 +23,18 @@ defmodule HaxeWatcher do
       
       # Stop watching
       HaxeWatcher.stop()
-  
+
   ## Configuration
-  
+
   - `:dirs` - List of directories to watch (default: ["src_haxe"])
   - `:patterns` - List of file patterns to watch (default: ["**/*.hx"])  
   - `:debounce_ms` - Debounce period in milliseconds (default: 100)
   - `:auto_compile` - Whether to automatically trigger compilation (default: true)
   """
-  
+
   use GenServer
   require Logger
-  
+
   @default_dirs ["src_haxe"]
   @default_patterns ["**/*.hx"]
   @default_debounce_ms 100
@@ -46,7 +46,7 @@ defmodule HaxeWatcher do
 
   @doc """
   Starts the HaxeWatcher GenServer.
-  
+
   ## Options
   - `:dirs` - Directories to watch for Haxe files
   - `:patterns` - File patterns to match  
@@ -103,7 +103,7 @@ defmodule HaxeWatcher do
     auto_compile = Keyword.get(opts, :auto_compile, @default_auto_compile)
     build_file = Keyword.get(opts, :build_file, @default_build_file)
     promote_files = Keyword.get(opts, :promote_files, @default_promote_files)
-    
+
     state = %{
       dirs: dirs,
       patterns: patterns,
@@ -119,10 +119,10 @@ defmodule HaxeWatcher do
       compilation_count: 0,
       last_compilation: nil
     }
-    
+
     # Start file watching asynchronously
     send(self(), :start_watching)
-    
+
     {:ok, state}
   end
 
@@ -133,7 +133,7 @@ defmodule HaxeWatcher do
         Logger.info("HaxeWatcher started monitoring #{length(state.dirs)} directory(ies)")
         file_count = count_haxe_files(state)
         {:noreply, %{state | watcher_pid: watcher_pid, file_count: file_count}}
-      
+
       {:error, reason} ->
         Logger.error("Failed to start file watching: #{inspect(reason)}")
         # Retry in 5 seconds
@@ -152,7 +152,7 @@ defmodule HaxeWatcher do
     end
   end
 
-  @impl GenServer  
+  @impl GenServer
   def handle_info({:file_event, watcher_pid, :stop}, %{watcher_pid: watcher_pid} = state) do
     Logger.info("File watcher stopped")
     {:noreply, %{state | watcher_pid: nil}}
@@ -161,6 +161,7 @@ defmodule HaxeWatcher do
   @impl GenServer
   def handle_info(:trigger_debounced_compilation, state) do
     Logger.debug("Received :trigger_debounced_compilation, auto_compile: #{state.auto_compile}")
+
     if state.auto_compile do
       trigger_compilation_now(state)
     else
@@ -185,7 +186,7 @@ defmodule HaxeWatcher do
   @impl GenServer
   def handle_call(:status, _from, state) do
     watching = not is_nil(state.watcher_pid) and Process.alive?(state.watcher_pid)
-    
+
     status = %{
       watching: watching,
       dirs: state.dirs,
@@ -198,7 +199,7 @@ defmodule HaxeWatcher do
       compilation_count: state.compilation_count,
       last_compilation: state.last_compilation
     }
-    
+
     {:reply, status, state}
   end
 
@@ -212,13 +213,14 @@ defmodule HaxeWatcher do
     if File.exists?(dir) and dir not in state.dirs do
       new_dirs = [dir | state.dirs]
       Logger.info("Added watch directory: #{dir}")
-      
+
       # Restart watching to include new directory
       if state.watcher_pid do
         GenServer.stop(state.watcher_pid)
       end
+
       send(self(), :start_watching)
-      
+
       {:noreply, %{state | dirs: new_dirs, watcher_pid: nil}}
     else
       {:noreply, state}
@@ -230,13 +232,14 @@ defmodule HaxeWatcher do
     if dir in state.dirs do
       new_dirs = List.delete(state.dirs, dir)
       Logger.info("Removed watch directory: #{dir}")
-      
+
       # Restart watching without removed directory
       if state.watcher_pid do
         GenServer.stop(state.watcher_pid)
       end
+
       send(self(), :start_watching)
-      
+
       {:noreply, %{state | dirs: new_dirs, watcher_pid: nil}}
     else
       {:noreply, state}
@@ -246,15 +249,15 @@ defmodule HaxeWatcher do
   @impl GenServer
   def terminate(reason, state) do
     Logger.info("HaxeWatcher terminating: #{inspect(reason)}")
-    
+
     if state.watcher_pid do
       GenServer.stop(state.watcher_pid)
     end
-    
+
     if state.debounce_timer do
       Process.cancel_timer(state.debounce_timer)
     end
-    
+
     :ok
   end
 
@@ -262,7 +265,7 @@ defmodule HaxeWatcher do
 
   defp start_file_watching(state) do
     existing_dirs = Enum.filter(state.dirs, &File.exists?/1)
-    
+
     if Enum.empty?(existing_dirs) do
       Logger.warning("No valid directories to watch: #{inspect(state.dirs)}")
       {:error, :no_valid_directories}
@@ -275,19 +278,22 @@ defmodule HaxeWatcher do
       # Dynamic dispatch means calling functions indirectly through runtime lookups rather
       # than direct compile-time references. This is useful for optional dependencies.
       fs = Module.concat(Elixir, FileSystem)
-      
+
       if Code.ensure_loaded?(fs) and function_exported?(fs, :start_link, 1) do
         case apply(fs, :start_link, [[dirs: existing_dirs]]) do
           {:ok, pid} ->
             _ = apply(fs, :subscribe, [pid])
             {:ok, pid}
-            
+
           {:error, reason} ->
             {:error, reason}
-            
+
           :ignore ->
             # FileSystem returns :ignore when dependencies like inotify-tools are missing
-            Logger.warning("FileSystem cannot start (missing inotify-tools on Linux?), file watching disabled")
+            Logger.warning(
+              "FileSystem cannot start (missing inotify-tools on Linux?), file watching disabled"
+            )
+
             {:error, :filesystem_cannot_start}
         end
       else
@@ -298,51 +304,54 @@ defmodule HaxeWatcher do
   end
 
   defp handle_file_change(events, path, state) do
-    Logger.debug("handle_file_change called, debounce_ms: #{state.debounce_ms}, auto_compile: #{state.auto_compile}")
-    
+    Logger.debug(
+      "handle_file_change called, debounce_ms: #{state.debounce_ms}, auto_compile: #{state.auto_compile}"
+    )
+
     # Update last change time
-    new_state = %{state | 
-      last_change: DateTime.utc_now(),
-      file_count: count_haxe_files(state)
-    }
-    
+    new_state = %{state | last_change: DateTime.utc_now(), file_count: count_haxe_files(state)}
+
     # Cancel existing debounce timer
     if state.debounce_timer do
       Logger.debug("Cancelling existing timer")
       Process.cancel_timer(state.debounce_timer)
     end
-    
+
     # Set new debounce timer
     Logger.debug("Setting new debounce timer for #{state.debounce_ms}ms")
     timer = Process.send_after(self(), :trigger_debounced_compilation, state.debounce_ms)
-    
+
     # Log the change
-    event_description = events
-    |> Enum.map(&event_to_string/1)
-    |> Enum.join(", ")
-    
+    event_description =
+      events
+      |> Enum.map(&event_to_string/1)
+      |> Enum.join(", ")
+
     Logger.debug("Haxe file #{event_description}: #{Path.relative_to_cwd(path)}")
-    
+
     {:noreply, %{new_state | debounce_timer: timer}}
   end
 
   defp trigger_compilation_now(state) do
     Logger.info("Triggering Haxe compilation...")
-    
+    HaxeTimings.reset()
+
     # Find the build file in the watched directories
     build_file_path = find_build_file(state)
-    
+
     result =
       state.compiler_opts
       |> Keyword.put(:hxml_file, build_file_path)
       |> HaxeCompiler.compile()
-    
+
+    HaxeTimings.report("haxe watch rebuild")
+
     # Log compilation result
     case result do
       {:ok, _output} ->
         promote_files_best_effort(state.promote_files)
         Logger.info("✅ Haxe compilation successful")
-        
+
       {:error, {exit_code, output}} ->
         report_compilation_failure(build_file_path, exit_code, output)
 
@@ -359,13 +368,14 @@ defmodule HaxeWatcher do
         {exit_code, output} = parse_compilation_failure(inspect(error))
         report_compilation_failure(build_file_path, exit_code, output)
     end
-    
-    new_state = %{state | 
-      compilation_count: state.compilation_count + 1,
-      last_compilation: DateTime.utc_now(),
-      debounce_timer: nil
+
+    new_state = %{
+      state
+      | compilation_count: state.compilation_count + 1,
+        last_compilation: DateTime.utc_now(),
+        debounce_timer: nil
     }
-    
+
     {:noreply, new_state}
   end
 
@@ -502,10 +512,12 @@ defmodule HaxeWatcher do
   defp haxe_file?(path, patterns) do
     # Guard against nil path
     case path do
-      nil -> false
+      nil ->
+        false
+
       _ ->
         filename = Path.basename(path)
-        
+
         Enum.any?(patterns, fn pattern ->
           # Simple pattern matching - could be enhanced with proper glob matching
           case pattern do
@@ -533,7 +545,7 @@ defmodule HaxeWatcher do
     |> Enum.uniq()
     |> length()
   end
-  
+
   defp find_build_file(state) do
     # First, check if build_file is an absolute path
     if Path.type(state.build_file) == :absolute and File.exists?(state.build_file) do
@@ -541,21 +553,21 @@ defmodule HaxeWatcher do
     else
       # Look for the build file in watched directories
       build_file_name = Path.basename(state.build_file)
-      
-      found_path = state.dirs
-      |> Enum.filter(&File.exists?/1)
-      |> Enum.map(fn dir -> Path.join(dir, build_file_name) end)
-      |> Enum.find(&File.exists?/1)
-      
+
+      found_path =
+        state.dirs
+        |> Enum.filter(&File.exists?/1)
+        |> Enum.map(fn dir -> Path.join(dir, build_file_name) end)
+        |> Enum.find(&File.exists?/1)
+
       # Fall back to the original path if not found in watched dirs
       found_path || state.build_file
     end
   end
 
   defp event_to_string(:created), do: "created"
-  defp event_to_string(:modified), do: "modified"  
+  defp event_to_string(:modified), do: "modified"
   defp event_to_string(:removed), do: "removed"
   defp event_to_string(:renamed), do: "renamed"
   defp event_to_string(other), do: to_string(other)
-  
 end

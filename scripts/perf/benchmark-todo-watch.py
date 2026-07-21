@@ -28,7 +28,9 @@ import time
 from datetime import datetime, timezone
 from typing import Any
 
-from benchmark_contract import SCHEMA_VERSION, generated_output_state, source_variant, watch_process_model
+sys.dont_write_bytecode = True
+
+from benchmark_contract import SCHEMA_VERSION, generated_output_state, parse_server_identity, source_variant, watch_process_model
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -158,6 +160,22 @@ def target_timing_reports(path: Path) -> list[dict[str, Any]]:
         except json.JSONDecodeError:
             continue
     return reports
+
+
+def target_timing_report(text: str) -> dict[str, Any] | None:
+    """Return the last Reflaxe target report printed during one rebuild."""
+
+    prefix = "REFLAXE_ELIXIR_TIMINGS "
+    reports: list[dict[str, Any]] = []
+    for line in text.splitlines():
+        marker = line.find(prefix)
+        if marker < 0:
+            continue
+        try:
+            reports.append(json.loads(line[marker + len(prefix) :]))
+        except json.JSONDecodeError:
+            continue
+    return reports[-1] if reports else None
 
 
 def free_port() -> int:
@@ -379,9 +397,13 @@ def measure_watch_cycles(
                 start_new_session=True,
             )
             process_info["watcher_pid"] = process.pid
-            process_info["haxe_server_port"] = env.get("HAXE_SERVER_PORT") if args.use_haxe_server else None
-            process_info["haxe_server_pid"] = None
-            process_info["haxe_server_identity_observed"] = False
+            process_info.update(
+                {
+                    "haxe_server_identity_observed": False,
+                    "haxe_server_port": None,
+                    "haxe_server_owner_os_pid": None,
+                }
+            )
             offset, initial_chunk = wait_for_marker(
                 process=process,
                 log_path=watch_log,
@@ -399,6 +421,8 @@ def measure_watch_cycles(
                     timeout=args.startup_timeout,
                     label="watcher readiness",
                 )
+            if args.use_haxe_server:
+                process_info.update(parse_server_identity(watch_log.read_text(encoding="utf-8", errors="replace")))
             phases.append(
                 {
                     "name": "watcher_ready",
@@ -439,6 +463,9 @@ def measure_watch_cycles(
                     "public_api_changed": False,
                     "status": "success",
                 }
+                timing = target_timing_report(chunk)
+                if timing is not None:
+                    sample["reflaxe_target_timing"] = timing
                 output_state, prior_output_digests = generated_output_state(app_dir / "lib", prior_output_digests)
                 sample["generated_output"] = output_state
                 if is_warmup:

@@ -12,6 +12,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import re
 from typing import Any
 
 
@@ -102,6 +103,25 @@ def watch_process_model(use_haxe_server: bool) -> dict[str, Any]:
         "artifact_cache_state": "prior_outputs_and_build_artifacts_retained",
         "dependency_state": "dependencies_warm",
         "demonstrated_incremental_reuse": False,
+    }
+
+
+def parse_server_identity(text: str) -> dict[str, Any]:
+    """Read the server owner identity emitted by the lifecycle manager."""
+
+    pattern = re.compile(r"Haxe server (?:relocated and )?started on port ([0-9]+) \(owner_os_pid=([0-9]+)\)")
+    matches = pattern.findall(text)
+    if not matches:
+        return {
+            "haxe_server_identity_observed": False,
+            "haxe_server_port": None,
+            "haxe_server_owner_os_pid": None,
+        }
+    port, owner_os_pid = matches[-1]
+    return {
+        "haxe_server_identity_observed": True,
+        "haxe_server_port": int(port),
+        "haxe_server_owner_os_pid": int(owner_os_pid),
     }
 
 
