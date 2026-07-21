@@ -53,7 +53,7 @@ class CompilerPhaseTimings {
 		requestStartedMs = enabled ? nowMs() : 0.0;
 	}
 
-	/** Returns a monotonic start value, or zero when instrumentation is disabled. */
+	/** Returns a compiler-process timestamp, or zero when instrumentation is disabled. */
 	public inline function start():Float {
 		return enabled ? nowMs() : 0.0;
 	}
@@ -103,7 +103,11 @@ class CompilerPhaseTimings {
 	}
 
 	static inline function nowMs():Float {
-		return haxe.Timer.stamp() * 1000.0;
+		// This class is initialized while Haxe is still bootstrapping the target.
+		// `haxe.Timer` can pull target event-loop overrides into that macro phase before
+		// Reflaxe has registered `__elixir__`; `Sys.time()` is the direct compiler-side
+		// clock already used by the pass runner and has no target runtime dependency.
+		return Sys.time() * 1000.0;
 	}
 
 	static function environmentEnabled():Bool {

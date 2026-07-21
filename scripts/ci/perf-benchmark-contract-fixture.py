@@ -98,6 +98,7 @@ try:
         )
         if name == "haxe":
             script += (
+                "if [[ \"${PERF_FIXTURE_FAIL_BUILD:-0}\" == \"1\" ]]; then printf '%s\\n' 'fixture build failure' >&2; exit 7; fi\n"
                 "for argument in \"$@\"; do\n"
                 "  if [[ \"$argument\" == \"--times\" ]]; then\n"
                 "    printf '%s\\n' 'total | 0.010 | 100 | 100 | 1 | fixture'\n"
@@ -169,6 +170,44 @@ try:
     check(
         reconciliation["reconciled_total_ms"] == reconciliation["external_haxe_build_ms"],
         "coarse phases did not reconcile to external Haxe wall time",
+    )
+
+    failure_artifact_rel = fixture_rel / "failure-artifacts"
+    failure_out_rel = fixture_rel / "failure-result.json"
+    failure_environment = environment.copy()
+    failure_environment["PERF_FIXTURE_FAIL_BUILD"] = "1"
+    failed = subprocess.run(
+        [
+            "bash",
+            "scripts/perf/benchmark-todo-compile.sh",
+            "--app",
+            "examples/03-phoenix-app",
+            "--build-file",
+            "build.hxml",
+            "--edited-source",
+            "src_haxe/PhoenixHaxeExample.hx",
+            "--artifact-dir",
+            str(failure_artifact_rel),
+            "--out",
+            str(failure_out_rel),
+        ],
+        cwd=ROOT,
+        env=failure_environment,
+        check=False,
+        timeout=30,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    check(failed.returncode != 0, "compile harness accepted a failed Haxe phase")
+    failure_result = json.loads((ROOT / failure_out_rel).read_text(encoding="utf-8"))
+    check(failure_result["status"] == "failure", "failed Haxe phase produced a successful result")
+    failed_run = failure_result["runs"][-1]
+    check(failed_run["status"] == "failure", "failed run was not marked as failed")
+    failed_phases = [phase["phase"] for phase in failed_run["phases"]]
+    check(
+        failed_phases[-1] == "haxe_build" and "mix_compile" not in failed_phases,
+        "the harness continued into Mix after Haxe failed",
     )
 finally:
     shutil.rmtree(fixture_root, ignore_errors=True)

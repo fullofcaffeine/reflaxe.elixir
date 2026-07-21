@@ -466,8 +466,12 @@ try:
 except FileNotFoundError:
     pass
 
-data["status"] = overall_status
 data["runs"] = list(runs.values())
+data["status"] = (
+    "failure"
+    if overall_status != "success" or any(run["status"] != "success" for run in data["runs"])
+    else "success"
+)
 
 with open(out_path, "w", encoding="utf-8") as f:
     json.dump(data, f, indent=2, sort_keys=True)
@@ -542,18 +546,18 @@ run_compile_sequence() {
   local include_deps="$1"; shift
 
   if [[ "$include_deps" -eq 1 ]]; then
-    run_phase "$run_name" "deps_get" "$DEPS_GET_TIMEOUT" "$app_dir" env HAXE_NO_SERVER=1 MIX_ENV=test mix deps.get
-    run_phase "$run_name" "deps_compile" "$DEPS_COMPILE_TIMEOUT" "$app_dir" env HAXE_NO_SERVER=1 MIX_ENV=test mix deps.compile
+    run_phase "$run_name" "deps_get" "$DEPS_GET_TIMEOUT" "$app_dir" env HAXE_NO_SERVER=1 MIX_ENV=test mix deps.get || return $?
+    run_phase "$run_name" "deps_compile" "$DEPS_COMPILE_TIMEOUT" "$app_dir" env HAXE_NO_SERVER=1 MIX_ENV=test mix deps.compile || return $?
   fi
 
   local -a haxe_args=("$BUILD_FILE")
   if [[ "$PHASE_TIMERS" == "coarse" ]]; then
     haxe_args+=("--times")
-    run_phase "$run_name" "haxe_build" "$HAXE_BUILD_TIMEOUT" "$app_dir" env REFLAXE_ELIXIR_TIMINGS=1 "$HAXE_BIN" "${haxe_args[@]}"
+    run_phase "$run_name" "haxe_build" "$HAXE_BUILD_TIMEOUT" "$app_dir" env HAXE_NO_SERVER=1 HAXELIB_PATH="$WORKTREE/haxe_libraries" REFLAXE_ELIXIR_TIMINGS=1 "$HAXE_BIN" "${haxe_args[@]}" || return $?
   else
-    run_phase "$run_name" "haxe_build" "$HAXE_BUILD_TIMEOUT" "$app_dir" "$HAXE_BIN" "${haxe_args[@]}"
+    run_phase "$run_name" "haxe_build" "$HAXE_BUILD_TIMEOUT" "$app_dir" env HAXE_NO_SERVER=1 HAXELIB_PATH="$WORKTREE/haxe_libraries" "$HAXE_BIN" "${haxe_args[@]}" || return $?
   fi
-  run_phase "$run_name" "mix_compile" "$MIX_COMPILE_TIMEOUT" "$app_dir" env HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=test mix compile --warnings-as-errors --no-deps-check
+  run_phase "$run_name" "mix_compile" "$MIX_COMPILE_TIMEOUT" "$app_dir" env HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=test mix compile --warnings-as-errors --no-deps-check || return $?
 }
 
 main() {
