@@ -151,7 +151,12 @@ restore_baseline_sources() {
 	cp "$FIXTURE_DIR/CacheStatus.hx" "$PROJECT_DIR/src/CacheStatus.hx"
 	cp "$FIXTURE_DIR/CachePayload.hx" "$PROJECT_DIR/src/CachePayload.hx"
 	cp "$FIXTURE_DIR/CacheCode.hx" "$PROJECT_DIR/src/CacheCode.hx"
-	rm -f "$PROJECT_DIR/src/CacheLegacy.hx" "$PROJECT_DIR/src/CacheRenamed.hx"
+	rm -f \
+		"$PROJECT_DIR/src/CacheLegacy.hx" \
+		"$PROJECT_DIR/src/CacheRenamed.hx" \
+		"$PROJECT_DIR/src/CacheTemplate.hx" \
+		"$PROJECT_DIR/src/HookName.hx" \
+		"$PROJECT_DIR/src/ExternalValueMacro.hx"
 }
 
 run_variant() {
@@ -208,6 +213,99 @@ run_module_rename_variant() {
 		echo "SERVER_CACHE_PARITY:module-delete-restored left deleted cache_renamed.ex on disk" >&2
 		return 1
 	fi
+}
+
+run_hxx_registry_variant() {
+	local direct_known="$TMP_ROOT/direct-hxx-registry-known"
+	local direct_restored="$TMP_ROOT/direct-hxx-registry-restored"
+	local direct_failure_log="$TMP_ROOT/direct-hxx-registry-renamed.log"
+	local server_failure_log="$TMP_ROOT/server-hxx-registry-renamed.log"
+
+	cp "$FIXTURE_DIR/variants/hxx-registry/MainHxx.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$FIXTURE_DIR/variants/hxx-registry/CacheTemplate.hx" "$PROJECT_DIR/src/CacheTemplate.hx"
+	cp "$FIXTURE_DIR/variants/hxx-registry/HookNameKnown.hx" "$PROJECT_DIR/src/HookName.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$direct_known"
+	compare_generated_output "$direct_known" "$SERVER_OUTPUT" "hxx-registry-known"
+
+	# CacheTemplate is unchanged and does not reference HookName directly. Only
+	# the global registry changes, so a warm build must still revalidate the
+	# template and reject the name that is no longer registered.
+	cp "$FIXTURE_DIR/variants/hxx-registry/HookNameRenamed.hx" "$PROJECT_DIR/src/HookName.hx"
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" compile.hxml -D "elixir_output=$TMP_ROOT/direct-hxx-registry-renamed" \
+		>"$direct_failure_log" 2>&1
+	then
+		echo "SERVER_CACHE_PARITY:hxx-registry-renamed direct build unexpectedly succeeded" >&2
+		return 1
+	fi
+	grep -Fq 'unknown hook "Known"' "$direct_failure_log" || {
+		echo "SERVER_CACHE_PARITY:hxx-registry-renamed direct build failed for the wrong reason" >&2
+		sed -n '1,160p' "$direct_failure_log" >&2
+		return 1
+	}
+
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" --connect "$SERVER_PORT" compile.hxml -D "elixir_output=$SERVER_OUTPUT" \
+		>"$server_failure_log" 2>&1
+	then
+		echo "SERVER_CACHE_PARITY:hxx-registry-renamed warm build accepted a stale global registry" >&2
+		return 1
+	fi
+	grep -Fq 'unknown hook "Known"' "$server_failure_log" || {
+		echo "SERVER_CACHE_PARITY:hxx-registry-renamed warm build failed for the wrong reason" >&2
+		sed -n '1,160p' "$server_failure_log" >&2
+		return 1
+	}
+	echo "SERVER_CACHE_DIAGNOSTIC_PARITY:hxx-registry-renamed:PASS"
+
+	cp "$FIXTURE_DIR/variants/hxx-registry/HookNameKnown.hx" "$PROJECT_DIR/src/HookName.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$direct_restored"
+	compare_generated_output "$direct_restored" "$SERVER_OUTPUT" "hxx-registry-restored"
+
+	restore_baseline_sources
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "hxx-registry-removed"
+}
+
+run_external_macro_input_variant() {
+	local direct_a="$TMP_ROOT/direct-external-input-a"
+	local direct_b="$TMP_ROOT/direct-external-input-b"
+	local direct_restored="$TMP_ROOT/direct-external-input-restored"
+
+	mkdir -p "$PROJECT_DIR/config"
+	cp "$FIXTURE_DIR/variants/external-input/MainExternal.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$FIXTURE_DIR/variants/external-input/ExternalValueMacro.hx" "$PROJECT_DIR/src/ExternalValueMacro.hx"
+	cp "$FIXTURE_DIR/variants/external-input/value-a.txt" "$PROJECT_DIR/config/external-value.txt"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$direct_a"
+	compare_generated_output "$direct_a" "$SERVER_OUTPUT" "external-input-A"
+	grep -Fq '"alpha"' "$SERVER_OUTPUT/main.ex" || {
+		echo "SERVER_CACHE_PARITY:external-input-A did not embed the external value" >&2
+		return 1
+	}
+
+	# The .txt file is not a Haxe source module. registerModuleDependency tells
+	# Haxe which caller must be retyped when this external macro input changes.
+	cp "$FIXTURE_DIR/variants/external-input/value-b.txt" "$PROJECT_DIR/config/external-value.txt"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$direct_b"
+	compare_generated_output "$direct_b" "$SERVER_OUTPUT" "external-input-B"
+	grep -Fq '"beta"' "$SERVER_OUTPUT/main.ex" || {
+		echo "SERVER_CACHE_PARITY:external-input-B kept the stale external value" >&2
+		return 1
+	}
+
+	cp "$FIXTURE_DIR/variants/external-input/value-a.txt" "$PROJECT_DIR/config/external-value.txt"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$direct_restored"
+	compare_generated_output "$direct_restored" "$SERVER_OUTPUT" "external-input-A-restored"
+
+	restore_baseline_sources
+	rm -rf "$PROJECT_DIR/config"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "external-input-removed"
 }
 
 HAXE_BIN="$(resolve_haxe_server_binary)"
@@ -295,6 +393,8 @@ run_variant \
 	"code * 2"
 
 run_module_rename_variant
+run_hxx_registry_variant
+run_external_macro_input_variant
 
 FINAL_FD_COUNT="$(open_fd_count "$SERVER_PID")"
 if [[ -n "$BASELINE_FD_COUNT" && -n "$FINAL_FD_COUNT" ]]; then

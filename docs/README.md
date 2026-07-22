@@ -19,6 +19,7 @@ This index helps you find the right docs quickly, whether you're building apps w
 - [Start Here (Beginner Quickstart)](01-getting-started/START_HERE.md) - Run the todo-app and learn the mental model (Haxe/Phoenix newcomers)
 - [Installation Guide](01-getting-started/installation.md) - Setup Haxe, Reflaxe, and dependencies
 - [Development Workflow](01-getting-started/development-workflow.md) - Day-to-day development practices
+- [Haxe Compilation Server and Watcher](06-guides/WATCHER_WORKFLOW.md) - Faster edit/rebuild loops, Phoenix setup, manual HXML use, cache limits, and recovery
 - [Source Checkout vs Release Package](01-getting-started/SOURCE_VS_PACKAGE_LAYOUT.md) - Why Reflaxe uses two filesystem layouts for one implementation
 - [Compiler Flags Guide](01-getting-started/compiler-flags-guide.md) - Recommended flags and anti-patterns
 - [Cross-hx Guide](01-getting-started/cross-hx.md) - Target-conditional stdlib overrides
@@ -112,6 +113,7 @@ This index helps you find the right docs quickly, whether you're building apps w
 - [Production Deployment](06-guides/PRODUCTION_DEPLOYMENT.md) - CI/Docker/release patterns
 - [VS Code Debugging (Source Maps)](06-guides/VSCODE_DEBUGGING.md) - Jump from `.ex` runtime locations back to Haxe
 - [Performance Guide](06-guides/PERFORMANCE_GUIDE.md) - Compilation performance
+- [Haxe Compilation Server and Watcher](06-guides/WATCHER_WORKFLOW.md) - `mix haxe.watch`, Phoenix lifecycle, external macro inputs, and direct-build fallback
 - [Troubleshooting](06-guides/TROUBLESHOOTING.md) - Common issues and solutions
 - [Known Limitations](06-guides/KNOWN_LIMITATIONS.md) - Sharp edges and experimental surfaces
 - [Support Matrix](06-guides/SUPPORT_MATRIX.md) - CI-tested toolchain versions

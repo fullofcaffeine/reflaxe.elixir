@@ -243,7 +243,14 @@ at that same native executable and Haxe version.
 ## External files read by macros
 
 Haxe can track `.hx`, HXML, classpath, and library changes, but it cannot infer
-every file a custom macro reads. Declare those files in `mix.exs`:
+every file a custom macro reads. Two separate connections are required:
+
+1. The watcher must notice the external file and request another build.
+2. The macro must tell Haxe which typed module depends on that file, so the
+   compilation server retypes that module instead of safely reusing its old
+   result.
+
+For the first connection, declare the files in `mix.exs`:
 
 ```elixir
 haxe: [
@@ -256,14 +263,61 @@ haxe: [
 
 The watcher monitors these roots, and the Mix freshness fingerprint includes
 their contents. Without this declaration, editing an external file might not
-trigger a rebuild even though a macro uses it.
+trigger a build request even though a macro uses it.
+
+For the second connection, a custom expression macro should register the file
+with Haxe's official macro API:
+
+```haxe
+package my_app.macros;
+
+#if macro
+import haxe.io.Path;
+import haxe.macro.Context;
+import haxe.macro.Expr;
+import sys.io.File;
+#end
+
+class AppNameMacro {
+  public static macro function read():ExprOf<String> {
+    final file = Path.join([Sys.getCwd(), "config", "app-name.txt"]);
+
+    // The module that called this macro must be retyped when the file changes.
+    Context.registerModuleDependency(Context.getLocalModule(), file);
+
+    return macro $v{StringTools.trim(File.getContent(file))};
+  }
+}
+```
+
+For example, if `MyApp.hx` calls `AppNameMacro.read()`, changing
+`config/app-name.txt` causes the watcher to submit a build and causes Haxe to
+retype `MyApp`. Reflaxe.Elixir can then regenerate the new embedded string.
+
+`extra_inputs` alone is not a compiler dependency declaration. Without
+`registerModuleDependency`, the watcher can correctly start a build while the
+long-lived Haxe server correctly—but unknowingly—reuses the caller's previously
+typed macro result. A fresh direct build would see the new file while the warm
+build could keep the old value. Macros that read the environment, network,
+clock, random state, or other inputs that cannot be declared completely should
+be treated as unsafe for cached development builds; use a direct build for the
+reliable comparison.
 
 ## Cache correctness and limits
 
 The Haxe server caches parsed files and typed modules in memory. It checks file
 changes, classpath shadowing, compiler-define signatures, and typed dependencies
-before reuse. Reflaxe layers target-module work selection on that result and
-regenerates non-class type forms conservatively.
+before reuse. Reflaxe layers target-module work selection on that result.
+
+Changing a source file that defines an enum, typedef, or abstract intentionally
+causes one full target regeneration. These declarations can affect otherwise
+unchanged classes through constructor sets, inline abstract code, representation
+choices, or shared metadata. A concrete example is an unreferenced
+`@:phxHookNames` abstract: renaming one registered hook must revalidate every HXX
+template that relies on that global registry. Rebuilding only the abstract could
+leave an unchanged template validated against the old hook list. Reflaxe detects
+the exact source-content change and regenerates the complete current target once;
+ordinary class-only edits retain the narrower cached path.
 
 Adding, deleting, or renaming a Haxe module intentionally causes one full target
 regeneration. For example, if `CacheLegacy.hx` previously generated
@@ -332,7 +386,8 @@ Common cases:
 - **Port already in use:** the managed watcher normally relocates. Repeated
   relocation can indicate an orphaned old server; run the bounded cleanup script.
 - **Change did not trigger:** confirm the file is under `--dirs`, an HXML
-  classpath, or `extra_inputs`.
+  classpath, or `extra_inputs`. If a macro reads it, also confirm the macro calls
+  `Context.registerModuleDependency` for the calling module.
 - **Direct succeeds but server fails:** capture the failing edit and warm request
   sequence. This is an invalidation or persistent-state bug, not a reason to
   silently accept stale output.

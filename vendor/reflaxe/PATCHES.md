@@ -413,7 +413,7 @@ Validation before removal:
 - `npm run test:quick`
 - `npm run test:examples-qa`
 
-### 9. `ReflectCompiler.hx`: Full Rebuild When Live Modules Change
+### 9. `ReflectCompiler.hx`: Full Rebuild for Unsafe Cache Boundaries
 
 Status: local patch, not upstreamed.
 
@@ -424,9 +424,14 @@ Files:
 Why it exists:
 
 During a normal Haxe compilation-server edit, Reflaxe can regenerate only the
-classes Haxe reports as rebuilt. Deletion is different: a deleted class no
-longer exists, so Haxe cannot include it in that rebuilt-class list. A rename is
-the same problem expressed as one deletion plus one addition.
+classes Haxe reports as rebuilt. Two boundaries cannot be represented safely by
+that class-only list:
+
+- A deleted class no longer exists, so Haxe cannot report it as rebuilt. A
+  rename is the same problem expressed as one deletion plus one addition.
+- Haxe build macros do not run on enums, typedefs, or abstracts. These types can
+  still affect otherwise unchanged classes through inline code, representation,
+  metadata, and global framework registries.
 
 Observed failure shape:
 
@@ -435,6 +440,9 @@ Observed failure shape:
   `cache_renamed.ex` during the same server lifetime.
 - The warm output still contained stale `cache_legacy.ex`, unlike a clean
   one-shot build.
+- An unchanged HXX template used `phx-hook="Known"`. After an unreferenced
+  `@:phxHookNames` abstract renamed that entry, a clean build rejected the hook
+  but the warm build accepted it using stale registry facts.
 
 Local fix:
 
@@ -443,14 +451,19 @@ Local fix:
 - When the next request has added, removed, or renamed a module, bypass the
   rebuilt-class filter for that request and regenerate all currently live
   modules once.
-- Commit the new identity set only after output succeeds, so a failed target
-  build cannot poison the next request's baseline.
+- Fingerprint the exact source bytes for every source file that contributes a
+  visible enum, typedef, or abstract. If one changes, bypass the class-only
+  filter and regenerate all currently live modules once.
+- Commit both successful baselines only after output succeeds, so a failed
+  target build cannot poison the next request.
 
 Current decision:
 
-Keep. Module additions, deletions, and renames are relatively rare, and a
-conservative full rebuild on those edits is preferable to stale target files or
-a second target-specific ownership cache.
+Keep. Module topology and non-class source edits are less common than ordinary
+class-body edits. One conservative full regeneration at those boundaries is
+preferable to stale target files, missed global diagnostics, or a second
+target-specific dependency cache. Class-only edits retain the narrower cached
+path.
 
 Upstream action:
 

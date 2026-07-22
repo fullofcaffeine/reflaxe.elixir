@@ -17,6 +17,12 @@ import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 
+#if eval
+import haxe.crypto.Sha256;
+import sys.FileSystem;
+import sys.io.File;
+#end
+
 import reflaxe.BaseCompiler;
 import reflaxe.compiler.NullTypeEnforcer;
 import reflaxe.config.Define;
@@ -114,7 +120,9 @@ class ReflectCompiler {
 	#if !reflaxe.disallow_build_cache_check
 	@:persistent static var isCachedRun = false;
 	@:persistent static var previousSuccessfulModuleIds: Null<Array<String>> = null;
+	@:persistent static var previousSuccessfulNonClassSourceDigests: Null<Array<String>> = null;
 	static var currentModuleIds: Null<Array<String>> = null;
+	static var currentNonClassSourceDigests: Null<Array<String>> = null;
 	#end
 
 	public static function checkServerCache() {
@@ -322,10 +330,13 @@ class ReflectCompiler {
 		#if !reflaxe.disallow_build_cache_check
 		currentModuleIds = moduleTypes.map(moduleType -> moduleType.getUniqueId());
 		currentModuleIds.sort(Reflect.compare);
+		currentNonClassSourceDigests = collectNonClassSourceDigests(moduleTypes);
 		final liveModuleSetChanged = previousSuccessfulModuleIds != null
 			&& !previousSuccessfulModuleIds.equals(currentModuleIds);
+		final nonClassSourceChanged = previousSuccessfulNonClassSourceDigests != null
+			&& !previousSuccessfulNonClassSourceDigests.equals(currentNonClassSourceDigests);
 
-		if(rebuiltClasses != null && !liveModuleSetChanged) {
+		if(rebuiltClasses != null && !liveModuleSetChanged && !nonClassSourceChanged) {
 			final result = moduleTypes.filter(mt -> {
 				switch(mt) {
 					case TClassDecl(_.get() => c): {
@@ -352,6 +363,50 @@ class ReflectCompiler {
 	}
 
 	/**
+		Returns stable content fingerprints for source files that define enums,
+		typedefs, or abstracts visible to this target build.
+
+		Haxe build macros can tell Reflaxe which classes were rebuilt, but build
+		macros do not run on non-class declarations. Rebuilding only a changed enum
+		or abstract is unsafe because it can provide facts used by otherwise
+		unchanged classes. For example, changing an unreferenced `@:phxHookNames`
+		abstract must revalidate every HXX template that uses the global hook
+		registry. Without this fingerprint, a warm build can accept a hook that a
+		clean build correctly rejects.
+
+		When one of these source files changes, `applyBuildCacheCheckFilter` performs
+		one full target regeneration. Reading exact bytes avoids trusting timestamps;
+		duplicate declarations from the same source file are hashed only once.
+	**/
+	static function collectNonClassSourceDigests(moduleTypes:Array<ModuleType>):Array<String> {
+		#if eval
+		final sourceFiles = new Map<String, Bool>();
+		for(moduleType in moduleTypes) {
+			switch(moduleType) {
+				case TClassDecl(_):
+				case _:
+					final sourceFile = Context.getPosInfos(moduleType.getCommonData().pos).file;
+					if(sourceFile == null || sourceFile.length == 0) {
+						continue;
+					}
+					final normalized = try FileSystem.fullPath(sourceFile) catch(_) sourceFile;
+					sourceFiles.set(normalized, true);
+			}
+		}
+
+		final result = [];
+		for(sourceFile in sourceFiles.keys()) {
+			final digest = try Sha256.make(File.getBytes(sourceFile)).toHex() catch(_) "<unreadable>";
+			result.push(sourceFile + "\u0000" + digest);
+		}
+		result.sort(Reflect.compare);
+		return result;
+		#else
+		return [];
+		#end
+	}
+
+	/**
 		Remembers the live Haxe modules only after target output was published.
 
 		A normal compiler-server edit can safely regenerate only the classes Haxe
@@ -368,6 +423,9 @@ class ReflectCompiler {
 		#if !reflaxe.disallow_build_cache_check
 		if(currentModuleIds != null) {
 			previousSuccessfulModuleIds = currentModuleIds.copy();
+		}
+		if(currentNonClassSourceDigests != null) {
+			previousSuccessfulNonClassSourceDigests = currentNonClassSourceDigests.copy();
 		}
 		#end
 	}

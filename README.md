@@ -331,6 +331,7 @@ tested in independent projects for a defined period.
 | --- | --- |
 | Product thesis and tradeoffs | [Why Reflaxe.Elixir?](docs/01-getting-started/WHY_REFLAXE_ELIXIR.md) |
 | Setup and first application | [Start Here](docs/01-getting-started/START_HERE.md) |
+| Fast local rebuilds | [Haxe Compilation Server and Watcher](docs/06-guides/WATCHER_WORKFLOW.md) |
 | Elixir-friendly Haxe | [Writing Idiomatic Haxe](docs/02-user-guide/WRITING_IDIOMATIC_HAXE_FOR_ELIXIR.md) |
 | Portable vs Elixir-first source design | [Authoring Styles](docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md) |
 | Native lowering and compatibility helpers | [`reflaxe_runtime` And Generated Helpers](docs/02-user-guide/REFLAXE_RUNTIME_EXPLAINED.md) |
