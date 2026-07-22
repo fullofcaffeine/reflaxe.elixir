@@ -113,6 +113,8 @@ class ReflectCompiler {
 
 	#if !reflaxe.disallow_build_cache_check
 	@:persistent static var isCachedRun = false;
+	@:persistent static var previousSuccessfulModuleIds: Null<Array<String>> = null;
+	static var currentModuleIds: Null<Array<String>> = null;
 	#end
 
 	public static function checkServerCache() {
@@ -276,6 +278,7 @@ class ReflectCompiler {
 		// Generate files
 		generateFiles(compiler);
 		compiler.onOutputComplete();
+		commitSuccessfulModuleIds();
 	}
 
 	/**
@@ -317,7 +320,12 @@ class ReflectCompiler {
 
 	static function applyBuildCacheCheckFilter(moduleTypes: Array<ModuleType>) {
 		#if !reflaxe.disallow_build_cache_check
-		if(rebuiltClasses != null) {
+		currentModuleIds = moduleTypes.map(moduleType -> moduleType.getUniqueId());
+		currentModuleIds.sort(Reflect.compare);
+		final liveModuleSetChanged = previousSuccessfulModuleIds != null
+			&& !previousSuccessfulModuleIds.equals(currentModuleIds);
+
+		if(rebuiltClasses != null && !liveModuleSetChanged) {
 			final result = moduleTypes.filter(mt -> {
 				switch(mt) {
 					case TClassDecl(_.get() => c): {
@@ -341,6 +349,27 @@ class ReflectCompiler {
 		}
 		#end
 		return moduleTypes;
+	}
+
+	/**
+		Remembers the live Haxe modules only after target output was published.
+
+		A normal compiler-server edit can safely regenerate only the classes Haxe
+		retyped. A deleted class is different: there is no class left for Haxe to put
+		in that rebuilt list. Comparing the complete live module set with the last
+		successful request lets `applyBuildCacheCheckFilter` detect additions,
+		deletions, and renames and perform one full target rebuild. Without that full
+		rebuild, a deleted Haxe module can leave its old generated target file on disk.
+
+		The snapshot is committed here, after successful output publication, so a
+		failed target build cannot become the baseline for the next server request.
+	**/
+	static function commitSuccessfulModuleIds() {
+		#if !reflaxe.disallow_build_cache_check
+		if(currentModuleIds != null) {
+			previousSuccessfulModuleIds = currentModuleIds.copy();
+		}
+		#end
 	}
 
 	static function getAllModulesTypesForCompiler(compiler: BaseCompiler, moduleTypes: ReadOnlyArray<ModuleType>): ReadOnlyArray<ModuleType> {

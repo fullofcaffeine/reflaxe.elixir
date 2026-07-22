@@ -265,6 +265,19 @@ changes, classpath shadowing, compiler-define signatures, and typed dependencies
 before reuse. Reflaxe layers target-module work selection on that result and
 regenerates non-class type forms conservatively.
 
+Adding, deleting, or renaming a Haxe module intentionally causes one full target
+regeneration. For example, if `CacheLegacy.hx` previously generated
+`cache_legacy.ex` and is renamed to `CacheRenamed.hx`, the next warm request
+regenerates all currently live modules, writes `cache_renamed.ex`, and removes
+the now-obsolete `cache_legacy.ex`. Later local edits can use the normal cached
+path again.
+
+That one full regeneration is necessary because a deleted module cannot appear
+in Haxe's list of modules that changed—it no longer exists. Comparing the
+complete live module set with the last successful request lets Reflaxe detect
+the deletion safely. This is a correctness fallback for uncommon project-shape
+changes, not a second incremental cache.
+
 This is real compiler-state reuse, but not a universal module-artifact cache:
 
 - Reflaxe still performs required whole-program fact collection and output work.

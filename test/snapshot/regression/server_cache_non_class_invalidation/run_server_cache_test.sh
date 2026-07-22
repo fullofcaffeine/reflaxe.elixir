@@ -147,9 +147,11 @@ compile_server() {
 }
 
 restore_baseline_sources() {
+	cp "$FIXTURE_DIR/Main.hx" "$PROJECT_DIR/src/Main.hx"
 	cp "$FIXTURE_DIR/CacheStatus.hx" "$PROJECT_DIR/src/CacheStatus.hx"
 	cp "$FIXTURE_DIR/CachePayload.hx" "$PROJECT_DIR/src/CachePayload.hx"
 	cp "$FIXTURE_DIR/CacheCode.hx" "$PROJECT_DIR/src/CacheCode.hx"
+	rm -f "$PROJECT_DIR/src/CacheLegacy.hx" "$PROJECT_DIR/src/CacheRenamed.hx"
 }
 
 run_variant() {
@@ -172,6 +174,40 @@ run_variant() {
 	restore_baseline_sources
 	compile_server "$SERVER_OUTPUT"
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "$name-A-restored"
+}
+
+run_module_rename_variant() {
+	local direct_legacy="$TMP_ROOT/direct-module-legacy"
+	local direct_renamed="$TMP_ROOT/direct-module-renamed"
+
+	cp "$FIXTURE_DIR/variants/module-rename/MainLegacy.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$FIXTURE_DIR/variants/module-rename/CacheLegacy.hx" "$PROJECT_DIR/src/CacheLegacy.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$direct_legacy"
+	compare_generated_output "$direct_legacy" "$SERVER_OUTPUT" "module-add-legacy"
+
+	rm "$PROJECT_DIR/src/CacheLegacy.hx"
+	cp "$FIXTURE_DIR/variants/module-rename/MainRenamed.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$FIXTURE_DIR/variants/module-rename/CacheRenamed.hx" "$PROJECT_DIR/src/CacheRenamed.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$direct_renamed"
+	compare_generated_output "$direct_renamed" "$SERVER_OUTPUT" "module-rename"
+	if [[ -e "$SERVER_OUTPUT/cache_legacy.ex" ]]; then
+		echo "SERVER_CACHE_PARITY:module-rename left deleted cache_legacy.ex on disk" >&2
+		return 1
+	fi
+	grep -Fq '"renamed"' "$SERVER_OUTPUT/cache_renamed.ex" || {
+		echo "SERVER_CACHE_PARITY:module-rename did not generate cache_renamed.ex" >&2
+		return 1
+	}
+
+	restore_baseline_sources
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "module-delete-restored"
+	if [[ -e "$SERVER_OUTPUT/cache_renamed.ex" ]]; then
+		echo "SERVER_CACHE_PARITY:module-delete-restored left deleted cache_renamed.ex on disk" >&2
+		return 1
+	fi
 }
 
 HAXE_BIN="$(resolve_haxe_server_binary)"
@@ -257,6 +293,8 @@ run_variant \
 	"$FIXTURE_DIR/variants/abstract/CacheCode.hx" \
 	"main.ex" \
 	"code * 2"
+
+run_module_rename_variant
 
 FINAL_FD_COUNT="$(open_fd_count "$SERVER_PID")"
 if [[ -n "$BASELINE_FD_COUNT" && -n "$FINAL_FD_COUNT" ]]; then

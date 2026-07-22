@@ -413,6 +413,58 @@ Validation before removal:
 - `npm run test:quick`
 - `npm run test:examples-qa`
 
+### 9. `ReflectCompiler.hx`: Full Rebuild When Live Modules Change
+
+Status: local patch, not upstreamed.
+
+Files:
+
+- `src/reflaxe/ReflectCompiler.hx`
+
+Why it exists:
+
+During a normal Haxe compilation-server edit, Reflaxe can regenerate only the
+classes Haxe reports as rebuilt. Deletion is different: a deleted class no
+longer exists, so Haxe cannot include it in that rebuilt-class list. A rename is
+the same problem expressed as one deletion plus one addition.
+
+Observed failure shape:
+
+- `CacheLegacy.hx` generated `cache_legacy.ex`.
+- The source was renamed to `CacheRenamed.hx` and generated
+  `cache_renamed.ex` during the same server lifetime.
+- The warm output still contained stale `cache_legacy.ex`, unlike a clean
+  one-shot build.
+
+Local fix:
+
+- Remember the complete typed module-identity set after each successful target
+  publication.
+- When the next request has added, removed, or renamed a module, bypass the
+  rebuilt-class filter for that request and regenerate all currently live
+  modules once.
+- Commit the new identity set only after output succeeds, so a failed target
+  build cannot poison the next request's baseline.
+
+Current decision:
+
+Keep. Module additions, deletions, and renames are relatively rare, and a
+conservative full rebuild on those edits is preferable to stale target files or
+a second target-specific ownership cache.
+
+Upstream action:
+
+Good upstream candidate after the warm-server regression is also reproduced in
+Reflaxe's own target-neutral test suite. Do not open a PR without explicit user
+authorization.
+
+Validation before removal:
+
+- `test/snapshot/regression/server_cache_non_class_invalidation/run_server_cache_test.sh`
+- `npm run test:reflaxe-server-cache`
+- `npm run test:haxelib-package`
+- `npm run test:quick`
+
 ## Local Non-Framework Metadata
 
 These files are local to this vendored copy and are not framework patches:
