@@ -53,6 +53,12 @@ For example:
 - Changing a define, classpath, HXML file, dependency pin, or undeclared macro
   input can invalidate much more work and may be close to a full rebuild.
 
+HXML arguments such as defines and classpaths are part of Haxe's compiler-cache
+identity. Sending a changed HXML file to the same project server is safe: Haxe
+selects or creates the matching typing context rather than pretending that the
+old arguments still apply. Changing the Haxe executable itself is different;
+see [Changing Haxe or Lix versions](#changing-haxe-or-lix-versions).
+
 The first server build is still a full warm-up. The benefit appears on later
 no-op and local edit cycles.
 
@@ -234,11 +240,50 @@ Advanced users can run the native executable directly:
 Every `--connect` call submits a complete build request. The server decides which
 frontend work can be reused.
 
+Treat one native server process as belonging to one project. If you work on two
+projects manually, give each one its own server and port:
+
+```bash
+# Project A
+/path/to/native/haxe --wait 6116
+/path/to/native/haxe --connect 6116 project-a/build.hxml
+
+# Project B, in separate terminals/processes
+/path/to/native/haxe --wait 6117
+/path/to/native/haxe --connect 6117 project-b/build.hxml
+```
+
+This is the same practical boundary as running one `tsc --watch` process per
+TypeScript project. Haxe source positions may contain project-relative paths;
+sharing one raw process across unrelated roots can make one project's cached
+line table influence another project's source maps. `mix haxe.watch` avoids that
+class of mistake by owning a server for the current project root.
+
 When Lix is installed, `haxe` on `PATH` may be a Node launcher. That launcher is
 appropriate for ordinary direct builds, but it does not directly implement the
 native server protocol. `mix haxe.watch` resolves the native executable pinned by
 the project's `.haxerc` automatically. For manual commands, point both terminals
 at that same native executable and Haxe version.
+
+## Changing Haxe or Lix versions
+
+Lix makes the compiler version reproducible by recording it in `.haxerc` and
+resolving the corresponding native Haxe executable. The native executable is
+selected when `mix haxe.watch` starts; a running Haxe process cannot turn itself
+into a different compiler version.
+
+After changing `.haxerc`, a Lix/Haxe version pin, or the executable selected for
+the project:
+
+1. stop the current `mix haxe.watch` process with `Ctrl+C`;
+2. run `npx lix download` so Lix installs or resolves the newly pinned toolchain;
+3. start `mix haxe.watch --hxml build-server.hxml` again.
+
+The next request is a fresh warm-up under the new compiler. Ordinary HXML edits,
+defines, and classpath arguments do not require this manual restart because they
+do not replace the running executable. Dependency changes can affect both the
+classpath and macro code; when in doubt after changing a compiler library pin,
+restart the watcher so no old macro process state remains.
 
 ## External files read by macros
 
@@ -323,7 +368,9 @@ Adding, deleting, or renaming a Haxe module intentionally causes one full target
 regeneration. For example, if `CacheLegacy.hx` previously generated
 `cache_legacy.ex` and is renamed to `CacheRenamed.hx`, the next warm request
 regenerates all currently live modules, writes `cache_renamed.ex`, and removes
-the now-obsolete `cache_legacy.ex`. Later local edits can use the normal cached
+the now-obsolete `cache_legacy.ex`. When source maps are enabled, their
+`.ex.map` sidecars participate in the same ownership transaction, so the old map
+is removed with the old Elixir file. Later local edits can use the normal cached
 path again.
 
 That one full regeneration is necessary because a deleted module cannot appear
@@ -391,8 +438,9 @@ Common cases:
 - **Direct succeeds but server fails:** capture the failing edit and warm request
   sequence. This is an invalidation or persistent-state bug, not a reason to
   silently accept stale output.
-- **Server restarts after toolchain/config change:** expected when the project,
-  Haxe version, classpath, defines, or compatible server identity changes.
+- **Haxe or Lix version changed:** stop and restart the watcher. HXML defines and
+  classpaths are cache inputs and may cause broad retyping, but they do not
+  replace the native executable already running inside the server process.
 
 ## CI and production
 

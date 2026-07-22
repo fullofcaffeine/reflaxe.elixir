@@ -91,7 +91,7 @@ in **minor** releases, but changes must be:
 Includes (non-exhaustive):
 
 - `fast_boot` compilation profile
-- source mapping (`-D source-map`, `.ex.map`) until wired end-to-end
+- source mapping (`-D source-map`, `.ex.map`) while mapping precision and editor integration evolve
 - Ecto migrations `.exs` emission (`-D ecto_migrations_exs`) until promoted
 - `mix haxe.gen.*` generators (scaffolds evolve as patterns improve)
 

@@ -22,28 +22,34 @@ defmodule GeneratedOutputOwnershipTest do
          output: output
        } do
     write_module(project, "one", "release_one")
-    write_build(project, "one.Main")
+    write_build(project, "one.Main", source_maps: true)
     handwritten = Path.join(output, "handwritten.ex")
     File.write!(handwritten, "defmodule Handwritten do\nend\n")
 
     files = compile!(project)
     generated = Path.join(output, "one/main.ex")
+    source_map = generated <> ".map"
     manifest_path = HaxeGeneratedOutput.manifest_path(output)
     first_manifest = File.read!(manifest_path)
     first_json = Jason.decode!(first_manifest)
 
     assert generated in files
+    assert source_map in files
     assert first_json["version"] == 2
     assert first_json["protocol"] == "reflaxe-elixir/generated-output"
     assert Enum.any?(first_json["ownedFiles"], &(&1["path"] == "one/main.ex"))
+    assert Enum.any?(first_json["ownedFiles"], &(&1["path"] == "one/main.ex.map"))
     assert File.read!(generated) =~ "release_one"
+    assert File.regular?(source_map)
     assert File.read!(handwritten) == "defmodule Handwritten do\nend\n"
 
     fixed_time = {{2020, 1, 1}, {0, 0, 0}}
     File.touch!(generated, fixed_time)
+    File.touch!(source_map, fixed_time)
     compile!(project)
 
     assert File.stat!(generated) |> Map.fetch!(:mtime) == fixed_time
+    assert File.stat!(source_map) |> Map.fetch!(:mtime) == fixed_time
     assert File.read!(manifest_path) == first_manifest
 
     # A version 1 manifest is the explicit upgrade boundary. It owns its listed
@@ -71,16 +77,19 @@ defmodule GeneratedOutputOwnershipTest do
     # file is stale and must disappear while the unrelated handwritten module stays.
     File.rm_rf!(Path.join([project, "src_haxe", "one"]))
     write_module(project, "two", "release_one")
-    write_build(project, "two.Main")
+    write_build(project, "two.Main", source_maps: true)
     compile!(project)
 
     refute File.exists?(generated)
+    refute File.exists?(source_map)
     assert File.read!(Path.join(output, "two/main.ex")) =~ "release_one"
+    assert File.regular?(Path.join(output, "two/main.ex.map"))
     assert File.exists?(handwritten)
 
     assert {:ok, cleaned_count} = HaxeGeneratedOutput.clean(output)
     assert cleaned_count > 0
     refute File.exists?(Path.join(output, "two/main.ex"))
+    refute File.exists?(Path.join(output, "two/main.ex.map"))
     refute File.exists?(manifest_path)
     assert File.read!(handwritten) == "defmodule Handwritten do\nend\n"
   end
@@ -106,6 +115,84 @@ defmodule GeneratedOutputOwnershipTest do
     refute File.exists?(HaxeGeneratedOutput.manifest_path(output))
     refute File.exists?(Path.join(output, "._GeneratedFiles.prepare"))
     refute File.exists?(Path.join(output, "._GeneratedFiles.transaction"))
+  end
+
+  test "adopts only a valid legacy source map beside an already-owned Elixir file", %{
+    project: project,
+    output: output
+  } do
+    write_module(project, nil, "legacy_map")
+    write_build(project, "Main")
+    compile!(project)
+
+    source_map = Path.join(output, "main.ex.map")
+
+    File.write!(
+      source_map,
+      Jason.encode!(%{
+        "version" => 3,
+        "file" => "main.ex",
+        "sourceRoot" => "",
+        "sources" => ["src_haxe/Main.hx"],
+        "names" => [],
+        "mappings" => "AAAA"
+      })
+    )
+
+    write_build(project, "Main", source_maps: true)
+    assert source_map in compile!(project)
+
+    manifest = HaxeGeneratedOutput.manifest_path(output) |> File.read!() |> Jason.decode!()
+    assert Enum.any?(manifest["ownedFiles"], &(&1["path"] == "main.ex.map"))
+    assert Jason.decode!(File.read!(source_map))["file"] == "main.ex"
+  end
+
+  test "does not adopt a mismatched unowned source map", %{project: project, output: output} do
+    write_module(project, nil, "mismatched_map")
+    write_build(project, "Main")
+    compile!(project)
+
+    source_map = Path.join(output, "main.ex.map")
+
+    contents =
+      ~s({"version":3,"file":"someone_else.ex","sourceRoot":"","sources":[],"names":[],"mappings":""})
+
+    File.write!(source_map, contents)
+    write_build(project, "Main", source_maps: true)
+
+    assert {:error, reason} = compile(project)
+    assert reason =~ "Refusing to overwrite unowned file"
+    assert File.read!(source_map) == contents
+  end
+
+  test "adopts a valid legacy source map beside an already-owned Elixir script", %{
+    project: project,
+    output: output
+  } do
+    write_module(project, nil, "legacy_script_map")
+    write_build(project, "Main", output_exs: true)
+    compile!(project)
+
+    source_map = Path.join(output, "main.exs.map")
+
+    File.write!(
+      source_map,
+      Jason.encode!(%{
+        "version" => 3,
+        "file" => "main.exs",
+        "sourceRoot" => "",
+        "sources" => ["src_haxe/Main.hx"],
+        "names" => [],
+        "mappings" => "AAAA"
+      })
+    )
+
+    write_build(project, "Main", source_maps: true, output_exs: true)
+    assert source_map in compile!(project)
+
+    manifest = HaxeGeneratedOutput.manifest_path(output) |> File.read!() |> Jason.decode!()
+    assert Enum.any?(manifest["ownedFiles"], &(&1["path"] == "main.exs.map"))
+    assert Jason.decode!(File.read!(source_map))["file"] == "main.exs"
   end
 
   test "rejects modified owned output and clean fails before deleting siblings", %{
@@ -246,7 +333,10 @@ defmodule GeneratedOutputOwnershipTest do
     )
   end
 
-  defp write_build(project, main_module) do
+  defp write_build(project, main_module, options \\ []) do
+    source_map_define = if options[:source_maps], do: "-D source-map\n", else: ""
+    output_exs_define = if options[:output_exs], do: "-D elixir_output_exs\n", else: ""
+
     File.write!(
       Path.join(project, "build.hxml"),
       """
@@ -254,7 +344,7 @@ defmodule GeneratedOutputOwnershipTest do
       -lib reflaxe.elixir
       -D elixir_output=lib
       -D reflaxe.dont_output_metadata_id
-      #{main_module}
+      #{source_map_define}#{output_exs_define}#{main_module}
       """
     )
   end

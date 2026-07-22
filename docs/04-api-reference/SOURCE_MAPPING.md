@@ -7,7 +7,7 @@ to original Haxe source positions, enabling:
 - LLM‑friendly navigation between generated and source code
 - tooling like `mix haxe.source_map`
 
-## Current Status (December 2025)
+## Current status
 
 Source mapping is implemented, but remains **experimental**:
 
@@ -29,10 +29,16 @@ Version 1.0 does **not** require source mapping. It remains opt-in and is intend
 aid. See [Versioning & Stability](../06-guides/VERSIONING_AND_STABILITY.md) for the current release
 status.
 
+Generated `.ex.map` files use the same content-hash ownership transaction as
+their sibling `.ex` files. A module rename therefore publishes the new Elixir
+and map together and removes both old files; a failed build leaves the last
+successful pair untouched.
+
 ## Where the Pieces Live
 
-- Haxe source map writer (planned emission point):
+- Haxe source map writer and output integration:
   - `src/reflaxe/elixir/SourceMapWriter.hx`
+  - `src/reflaxe/elixir/GeneratedOutputManager.hx`
 - Elixir lookup task + runtime helpers:
   - `lib/source_map_lookup.ex`
   - `lib/mix/tasks/haxe.source_map.ex`
@@ -43,8 +49,11 @@ status.
 Add a define to your Elixir build:
 
 ```hxml
--D source_map_enabled
+-D source-map
 ```
+
+The older spelling `-D source_map_enabled` remains accepted for compatibility,
+but new projects and documentation use `-D source-map`.
 
 Then compile normally. The compiler will emit sibling files:
 

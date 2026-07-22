@@ -142,20 +142,24 @@ class SourceMapWriter {
 	}
 
 	/**
-	 * Generate the complete source map JSON and save to .ex.map file.
-	 * Call this after all code generation is complete.
-	 * 
-	 * @return Path to the generated source map file
+	 * Returns the generated-output-relative path owned by this source map.
+	 *
+	 * Source maps participate in the same publication transaction as their `.ex`
+	 * file. Exposing the path separately lets `GeneratedOutputManager` stage both
+	 * files before either one becomes visible.
 	 */
-	public function generateSourceMap():String {
-		var sourceMapPath = generatedFile + '.map';
+	public function sourceMapPath():String {
+		return generatedFile + '.map';
+	}
 
-		// Ensure output directory exists
-		var dir = haxe.io.Path.directory(sourceMapPath);
-		if (dir != "" && !sys.FileSystem.exists(dir)) {
-			sys.FileSystem.createDirectory(dir);
-		}
-
+	/**
+	 * Renders the complete Source Map v3 document without writing it.
+	 *
+	 * Keeping rendering separate from filesystem publication prevents a renamed
+	 * Haxe module from leaving its old `.ex.map` behind after the corresponding
+	 * `.ex` file was transactionally removed.
+	 */
+	public function renderSourceMap():String {
 		var sourceMap = {
 			version: 3,
 			file: extractFileName(generatedFile),
@@ -165,8 +169,27 @@ class SourceMapWriter {
 			mappings: mappingsBuffer.toString()
 		};
 
-		var sourceMapJson = Json.stringify(sourceMap, null, "  ");
-		File.saveContent(sourceMapPath, sourceMapJson);
+		return Json.stringify(sourceMap, null, "  ");
+	}
+
+	/**
+	 * Generate the complete source map JSON and save to .ex.map file.
+	 *
+	 * Retained for callers outside the transactional Elixir output manager. The
+	 * normal Reflaxe.Elixir path uses `renderSourceMap()` instead.
+	 * 
+	 * @return Path to the generated source map file
+	 */
+	public function generateSourceMap():String {
+		var sourceMapPath = sourceMapPath();
+
+		// Ensure output directory exists
+		var dir = haxe.io.Path.directory(sourceMapPath);
+		if (dir != "" && !sys.FileSystem.exists(dir)) {
+			sys.FileSystem.createDirectory(dir);
+		}
+
+		File.saveContent(sourceMapPath, renderSourceMap());
 
 		return sourceMapPath;
 	}

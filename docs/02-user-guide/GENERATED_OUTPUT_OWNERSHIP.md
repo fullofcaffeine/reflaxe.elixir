@@ -15,6 +15,7 @@ In-place output is useful when Haxe owns app-native modules:
 
 ```text
 lib/my_app/orders.ex          # generated and manifest-owned
+lib/my_app/orders.ex.map      # optional source map, owned with orders.ex
 lib/my_app/accounts.ex        # handwritten and unowned
 lib/_GeneratedFiles.json      # ownership record
 ```
@@ -54,8 +55,9 @@ The compiler applies these rules before publication:
    replace the manifest last.
 
 Unchanged generated files are not rewritten. Removed Haxe modules and namespace moves delete only
-stale owned paths. Editing a generated file by hand changes its digest, so the next build and clean
-both stop instead of silently discarding the edit.
+stale owned paths. With `-D source-map`, each `.ex.map` sidecar enters the same transaction as its
+`.ex` file, so a rename cannot leave an obsolete map behind. Editing a generated file by hand
+changes its digest, so the next build and clean both stop instead of silently discarding the edit.
 
 ## Formatting Is Inside The Transaction
 
@@ -114,6 +116,13 @@ Inspect that path rather than renaming or deleting application source to make th
 The first current build accepts Reflaxe's version 1 `_GeneratedFiles.json` as the legacy ownership
 record and upgrades it to version 2 after a successful staged publication. This preserves existing
 projects whose generated modules do not contain a particular source marker.
+
+Older source-map-enabled releases wrote `.ex.map` and `.exs.map` sidecars after
+committing the manifest, so those files were not listed even though their
+sibling `.ex` or `.exs` files were. The first current build adopts only a valid
+Source Map v3 whose declared target matches that already-owned sibling. A
+malformed map or a map naming a different target remains an unowned collision
+and is not overwritten.
 
 Regenerating older application source or restoring an older immutable compiler/package is an owned
 update: the manifest keeps target paths explicit, and a later current build can upgrade a version 1

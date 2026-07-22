@@ -6454,17 +6454,8 @@ left_name == right_name and left_params == right_params';
 		GeneratedOutputFormatter.run(outputDirectory, sourceMapOutputEnabled);
 	}
 
-	/** Called after the ownership transaction has committed all generated files. */
+	/** Called after the ownership transaction has committed Elixir and source maps. */
 	public override function onOutputComplete() {
-		if (sourceMapOutputEnabled) {
-			// Generate all pending source maps after output files are written.
-			for (writer in pendingSourceMapWriters) {
-				if (writer != null)
-					writer.generateSourceMap();
-			}
-			pendingSourceMapWriters = [];
-		}
-
 		pruneEmptyOutputDirectories();
 	}
 

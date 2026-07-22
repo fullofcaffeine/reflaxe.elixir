@@ -149,9 +149,10 @@ the project watcher to observe an external package cache in real time.
 **Generated-output ownership and clean:**
 
 Compilation returns only paths listed by the validated target-root `_GeneratedFiles.json`; it does
-not scan all `.ex`/`.exs` files in `target_dir`. The version 2 manifest content-hashes each owned
-file, rejects unowned target collisions, removes stale owned paths, and recovers interrupted
-publication before Mix records compiler freshness.
+not scan all `.ex`/`.exs` files in `target_dir`. When source maps are enabled, their `.ex.map` or
+`.exs.map` sidecars are listed and owned too. The version 2 manifest content-hashes each owned file,
+rejects unowned target collisions, removes stale owned paths, and recovers interrupted publication
+before Mix records compiler freshness.
 
 `mix clean` delegates to the same ownership protocol. It preflights the whole manifest, then deletes
 only owned regular files. A missing manifest owns nothing; an invalid path, symlink, unknown version,
@@ -165,7 +166,7 @@ or manually modified generated file makes clean fail before another file is remo
 Query and validate source mapping information.
 
 > Note: Source mapping is currently **experimental**, but is wired end‑to‑end when enabled
-> (`-D source_map_enabled`). See `docs/04-api-reference/SOURCE_MAPPING.md`.
+> (`-D source-map`). See `docs/04-api-reference/SOURCE_MAPPING.md`.
 
 ```bash
 # Query specific position
@@ -696,8 +697,8 @@ mix compile.haxe --force
 
 ### Common Issues
 
-**No source maps generated:** Source mapping is currently experimental; `.ex.map` files are not emitted
-by default builds yet. See `docs/04-api-reference/SOURCE_MAPPING.md`.
+**No source maps generated:** Source mapping is opt-in. Add `-D source-map` to the HXML build that
+generates Elixir, then compile again. See `docs/04-api-reference/SOURCE_MAPPING.md`.
 
 **Server connection issues:**
 ```bash

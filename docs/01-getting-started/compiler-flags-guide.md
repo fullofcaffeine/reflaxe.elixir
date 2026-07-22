@@ -148,7 +148,7 @@ You *can* temporarily disable DCE when debugging, but it’s not the recommended
 # Helpful during development
 -D debug_ast_pipeline       # See AST transformations
 -D debug_pattern_matching   # Debug pattern matching
--D source-map              # Reserved/experimental (source mapping not fully wired yet)
+-D source-map              # Emit experimental .ex.map debugging sidecars
 ```
 
 ## 📊 Flag Impact Comparison
@@ -160,7 +160,7 @@ You *can* temporarily disable DCE when debugging, but it’s not the recommended
 | `-D analyzer-optimize` | Destroys functional patterns, unrolls loops | ❌ **Never use** |
 | `-dce full` | Removes unused code cleanly | ✅ **Always use** |
 | `-D loop_unroll_max_cost=N` | Controls unrolling threshold | ✅ **Prefer `0` (disable)** |
-| `-D source-map` | Reserved/experimental | ⚠️ **Not yet end-to-end** |
+| `-D source-map` | Emits `.ex.map` files and enables Mix lookup tooling | ⚠️ **Experimental, opt-in** |
 | `-D debug_ast_pipeline` | Verbose AST transformation output | 🔧 **Development only** |
 
 ## 🎯 Configuration by Use Case

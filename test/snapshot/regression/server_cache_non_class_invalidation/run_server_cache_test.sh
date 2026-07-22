@@ -2,13 +2,15 @@
 set -euo pipefail
 
 # A normal snapshot proves the baseline generated shape. This companion check
-# keeps one real Haxe compilation server alive while non-class type definitions
-# change. After every edit, its output must equal a clean one-shot compilation.
+# keeps one real Haxe compilation server alive while types and configuration
+# change, then verifies a second project through its own isolated server. After
+# every edit, output and source maps must equal a clean one-shot compilation.
 
 FIXTURE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$FIXTURE_DIR/../../../.." && pwd)"
 TIMEOUT="$ROOT_DIR/scripts/with-timeout.sh"
 SERVER_PID=""
+SECONDARY_SERVER_PID=""
 TMP_ROOT=""
 
 cleanup() {
@@ -22,6 +24,10 @@ cleanup() {
 	if [[ -n "$SERVER_PID" ]] && kill -0 "$SERVER_PID" 2>/dev/null; then
 		kill -TERM "$SERVER_PID" 2>/dev/null || true
 		wait "$SERVER_PID" 2>/dev/null || true
+	fi
+	if [[ -n "$SECONDARY_SERVER_PID" ]] && kill -0 "$SECONDARY_SERVER_PID" 2>/dev/null; then
+		kill -TERM "$SECONDARY_SERVER_PID" 2>/dev/null || true
+		wait "$SECONDARY_SERVER_PID" 2>/dev/null || true
 	fi
 
 	if [[ -n "$TMP_ROOT" && -d "$TMP_ROOT" ]]; then
@@ -74,6 +80,7 @@ compare_generated_output() {
 
 	python3 - "$expected" "$actual" "$label" <<'PY'
 import json
+import difflib
 from pathlib import Path
 import sys
 
@@ -89,6 +96,9 @@ def generated_files(root: Path):
         if path.is_absolute() or ".." in path.parts:
             raise SystemExit(f"{label}: unsafe generated path {relative!r}")
         result[path.as_posix()] = (root / path).read_bytes()
+    for source_map in root.rglob("*.ex.map"):
+        relative = source_map.relative_to(root).as_posix()
+        result[relative] = source_map.read_bytes()
     return result
 
 expected = generated_files(expected_root)
@@ -101,6 +111,11 @@ all_paths = sorted(set(expected) | set(actual))
 for path in all_paths:
     if expected.get(path) != actual.get(path):
         print(f"SERVER_CACHE_PARITY:{label}:MISMATCH {path}", file=sys.stderr)
+        if path.endswith(".map") and expected.get(path) is not None and actual.get(path) is not None:
+            expected_text = expected[path].decode("utf-8", errors="replace").splitlines()
+            actual_text = actual[path].decode("utf-8", errors="replace").splitlines()
+            for line in difflib.unified_diff(expected_text, actual_text, fromfile="direct", tofile="server", lineterm=""):
+                print(line, file=sys.stderr)
 raise SystemExit(1)
 PY
 }
@@ -122,14 +137,16 @@ PY
 
 compile_direct() {
 	local output="$1"
+	shift
 	"$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
-		"$HAXE_BIN" compile.hxml -D "elixir_output=$output"
+		"$HAXE_BIN" compile.hxml -D "elixir_output=$output" "$@"
 }
 
 compile_server() {
 	local output="$1"
+	shift
 	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
-		"$HAXE_BIN" --connect "$SERVER_PORT" compile.hxml -D "elixir_output=$output"
+		"$HAXE_BIN" --connect "$SERVER_PORT" compile.hxml -D "elixir_output=$output" "$@"
 	then
 		return
 	fi
@@ -144,6 +161,70 @@ compile_server() {
 	fi
 	echo "SERVER_CACHE_PARITY:compile-failed process=$server_process protocol=$server_protocol" >&2
 	return 1
+}
+
+write_project_hxml() {
+	local project="$1"
+	local extra_define="${2:-}"
+
+	{
+		cat <<'HXML'
+-cp src
+-lib reflaxe
+-lib reflaxe.elixir
+-D reflaxe_runtime
+-D source-map
+--no-output
+HXML
+		if [[ -n "$extra_define" ]]; then
+			printf '%s\n' "-D $extra_define"
+		fi
+		printf '%s\n' "Main"
+	} >"$project/compile.hxml"
+}
+
+compile_project_direct() {
+	local project="$1"
+	local output="$2"
+	"$TIMEOUT" --secs 120 --cwd "$project" -- \
+		"$HAXE_BIN" compile.hxml -D "elixir_output=$output"
+}
+
+compile_project_server() {
+	local project="$1"
+	local output="$2"
+	local port="${3:-$SERVER_PORT}"
+	"$TIMEOUT" --secs 120 --cwd "$project" -- \
+		"$HAXE_BIN" --connect "$port" compile.hxml -D "elixir_output=$output"
+}
+
+start_secondary_server() {
+	SECONDARY_SERVER_PORT="$(python3 - <<'PY'
+import socket
+with socket.socket() as sock:
+    sock.bind(("127.0.0.1", 0))
+    print(sock.getsockname()[1])
+PY
+)"
+	"$HAXE_BIN" --wait "$SECONDARY_SERVER_PORT" </dev/null >"$TMP_ROOT/server-secondary.log" 2>&1 &
+	SECONDARY_SERVER_PID="$!"
+
+	local ready=0
+	for _attempt in $(seq 1 100); do
+		if "$HAXE_BIN" --connect "$SECONDARY_SERVER_PORT" -version >/dev/null 2>&1; then
+			ready=1
+			break
+		fi
+		if ! kill -0 "$SECONDARY_SERVER_PID" 2>/dev/null; then
+			break
+		fi
+		sleep 0.1
+	done
+	if [[ "$ready" != "1" ]]; then
+		echo "SERVER_CACHE_PARITY:could not start the project-B Haxe server" >&2
+		sed -n '1,160p' "$TMP_ROOT/server-secondary.log" >&2
+		return 1
+	fi
 }
 
 restore_baseline_sources() {
@@ -308,6 +389,72 @@ run_external_macro_input_variant() {
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "external-input-removed"
 }
 
+run_hxml_define_variant() {
+	local direct_a="$TMP_ROOT/direct-hxml-define-a"
+	local direct_b="$TMP_ROOT/direct-hxml-define-b"
+	local direct_restored="$TMP_ROOT/direct-hxml-define-restored"
+
+	cp "$FIXTURE_DIR/variants/configuration/MainConfiguration.hx" "$PROJECT_DIR/src/Main.hx"
+	write_project_hxml "$PROJECT_DIR"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$direct_a"
+	compare_generated_output "$direct_a" "$SERVER_OUTPUT" "hxml-define-A"
+	grep -Fq '"disabled"' "$SERVER_OUTPUT/main.ex" || {
+		echo "SERVER_CACHE_PARITY:hxml-define-A did not use the default branch" >&2
+		return 1
+	}
+
+	# Only the HXML define changes. Haxe must select the matching cached typing
+	# context, and Reflaxe must publish output from that request rather than from
+	# the previous configuration.
+	write_project_hxml "$PROJECT_DIR" "server_cache_feature"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$direct_b"
+	compare_generated_output "$direct_b" "$SERVER_OUTPUT" "hxml-define-B"
+	grep -Fq '"enabled"' "$SERVER_OUTPUT/main.ex" || {
+		echo "SERVER_CACHE_PARITY:hxml-define-B reused the previous define context" >&2
+		return 1
+	}
+
+	write_project_hxml "$PROJECT_DIR"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$direct_restored"
+	compare_generated_output "$direct_restored" "$SERVER_OUTPUT" "hxml-define-A-restored"
+
+	restore_baseline_sources
+	write_project_hxml "$PROJECT_DIR"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "hxml-define-removed"
+}
+
+run_cross_project_variant() {
+	local project_b="$TMP_ROOT/cross-project-b"
+	local server_b="$TMP_ROOT/server-cross-project-b"
+	local direct_b="$TMP_ROOT/direct-cross-project-b"
+
+	mkdir -p "$project_b/src"
+	cp "$FIXTURE_DIR/variants/cross-project/MainProjectB.hx" "$project_b/src/Main.hx"
+	write_project_hxml "$project_b"
+
+	compile_project_direct "$project_b" "$direct_b"
+	grep -Fq '"project-b"' "$direct_b/main.ex" || {
+		echo "SERVER_CACHE_PARITY:cross-project-B direct baseline generated the wrong project" >&2
+		return 1
+	}
+
+	# A compiler server is one project's in-memory compiler context, like one
+	# `tsc --watch` process. The managed Mix integration keys ownership by project
+	# root; this regression mirrors that contract with a second native server and
+	# verifies both projects' Elixir and source maps against clean builds.
+	start_secondary_server
+	compile_project_server "$project_b" "$server_b" "$SECONDARY_SERVER_PORT"
+	compare_generated_output "$direct_b" "$server_b" "cross-project-B-isolated"
+	echo "SERVER_CACHE_PROJECT_ISOLATION:cross-project-B:PASS"
+
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "cross-project-A-after-project-B"
+}
+
 HAXE_BIN="$(resolve_haxe_server_binary)"
 HAXE_VERSION="$($HAXE_BIN -version)"
 EXPECTED_VERSION="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$ROOT_DIR/.haxerc")"
@@ -324,14 +471,7 @@ mkdir -p "$PROJECT_DIR/src"
 cp "$FIXTURE_DIR/Main.hx" "$PROJECT_DIR/src/Main.hx"
 restore_baseline_sources
 
-cat >"$PROJECT_DIR/compile.hxml" <<'HXML'
--cp src
--lib reflaxe
--lib reflaxe.elixir
--D reflaxe_runtime
---no-output
-Main
-HXML
+write_project_hxml "$PROJECT_DIR"
 
 # The native Haxe server still resolves this repository's Lix-scoped libraries
 # through HAXELIB_PATH. It must not be replaced by the Node haxeshim because the
@@ -395,6 +535,8 @@ run_variant \
 run_module_rename_variant
 run_hxx_registry_variant
 run_external_macro_input_variant
+run_hxml_define_variant
+run_cross_project_variant
 
 FINAL_FD_COUNT="$(open_fd_count "$SERVER_PID")"
 if [[ -n "$BASELINE_FD_COUNT" && -n "$FINAL_FD_COUNT" ]]; then

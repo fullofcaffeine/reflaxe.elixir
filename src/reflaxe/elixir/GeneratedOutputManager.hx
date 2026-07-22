@@ -61,6 +61,8 @@ class GeneratedOutputManager extends OutputManager {
 			saveFile(path, sections.join("\n\n"));
 		}
 
+		queueSourceMapCandidates();
+
 		if (outputDir == null || outputDir.length == 0)
 			throw "Generated Elixir output requires a destination directory.";
 		var elixirCompiler:ElixirCompiler = cast compiler;
@@ -68,6 +70,42 @@ class GeneratedOutputManager extends OutputManager {
 		GeneratedOutputOwnership.publish(compiler, outputDir, candidates, cachedRebuild());
 		elixirCompiler.phaseTimings.finish("output_transaction_including_formatting", publicationStarted);
 		elixirCompiler.phaseTimings.report();
+	}
+
+	/**
+	 * Adds rendered `.ex.map` sidecars to the same candidate set as generated
+	 * Elixir, so ownership, stale-file deletion, and rollback cover both files.
+	 *
+	 * Older source-map emission happened after the output transaction. Renaming a
+	 * module could therefore remove `old_module.ex` while silently retaining
+	 * `old_module.ex.map`. The last writer for a shared module path is retained to
+	 * preserve the previous file-per-module behavior until multi-type source-map
+	 * composition has its own focused design.
+	 */
+	function queueSourceMapCandidates():Void {
+		var elixirCompiler:ElixirCompiler = cast compiler;
+		if (!elixirCompiler.sourceMapOutputEnabled) {
+			elixirCompiler.pendingSourceMapWriters = [];
+			return;
+		}
+
+		var paths:Array<String> = [];
+		var contents = new Map<String, String>();
+		for (writer in elixirCompiler.pendingSourceMapWriters) {
+			if (writer == null)
+				continue;
+			var path = writer.sourceMapPath();
+			if (!contents.exists(path))
+				paths.push(path);
+			contents.set(path, writer.renderSourceMap());
+		}
+		elixirCompiler.pendingSourceMapWriters = [];
+
+		for (path in paths) {
+			var content = contents.get(path);
+			if (content != null)
+				saveFile(path, content);
+		}
 	}
 
 	/** Queues one candidate; live output is never changed from this method. */

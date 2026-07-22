@@ -491,19 +491,6 @@ class ElixirOutputIterator {
 	}
 
 	static function computeGeneratedFilePath(astData:DataAndFileInfo<reflaxe.elixir.ast.ElixirAST>):String {
-		var outputDir = ElixirCompiler.instance.output != null ? ElixirCompiler.instance.output.outputDir : null;
-		if (outputDir == null || outputDir.length == 0) {
-			var defineName = ElixirCompiler.instance.options != null ? ElixirCompiler.instance.options.outputDirDefineName : null;
-			if (defineName != null && defineName.length > 0) {
-				var defined = Context.definedValue(defineName);
-				if (defined != null && defined.length > 0)
-					outputDir = defined;
-			}
-		}
-		if (outputDir == null || outputDir.length == 0) {
-			outputDir = ElixirCompiler.instance.outputDirectory;
-		}
-
 		var extension = ElixirCompiler.instance.options.fileOutputExtension;
 		if (extension == null || extension.length == 0)
 			extension = ".ex";
@@ -512,11 +499,10 @@ class ElixirOutputIterator {
 		var directory = astData.overrideDirectory != null && astData.overrideDirectory.length > 0 ? astData.overrideDirectory + "/" : "";
 		var relativePath = directory + baseName + extension;
 
-		if (haxe.io.Path.isAbsolute(relativePath) || outputDir == null || outputDir.length == 0) {
-			return relativePath;
-		}
-
-		return Path.join([outputDir, relativePath]);
+		// GeneratedOutputManager owns the destination root. Keeping this path
+		// relative lets the `.ex` file and its `.ex.map` sidecar enter one checked,
+		// recoverable publication transaction.
+		return relativePath;
 	}
 
 	static function emitLineMappings(writer:SourceMapWriter, output:String, mappingPoints:Array<{index:Int, pos:Position}>):Void {

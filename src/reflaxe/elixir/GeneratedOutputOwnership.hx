@@ -163,10 +163,14 @@ class GeneratedOutputOwnership {
 
 			verifyOwnedFiles(root, previous);
 			var oldSet = stringSet(previous.paths);
+			var legacySourceMaps = new Map<String, String>();
 			for (path in pendingOrder) {
 				var target = targetPath(root, path);
 				if (FileSystem.exists(target) && !oldSet.exists(path)) {
-					fail('Refusing to overwrite unowned file `$target`. Move it, choose isolated output, or remove the ownership collision explicitly.');
+					var legacyDigest = legacySourceMapDigest(root, path, oldSet);
+					if (legacyDigest == null)
+						fail('Refusing to overwrite unowned file `$target`. Move it, choose isolated output, or remove the ownership collision explicitly.');
+					legacySourceMaps.set(path, legacyDigest);
 				}
 			}
 
@@ -196,8 +200,11 @@ class GeneratedOutputOwnership {
 			verifyOwnedFiles(root, previous);
 			for (path in pendingOrder) {
 				var target = targetPath(root, path);
-				if (FileSystem.exists(target) && !oldSet.exists(path))
-					fail('Unowned output collision appeared while publication was being prepared: $target');
+				if (FileSystem.exists(target) && !oldSet.exists(path)) {
+					var legacyDigest = legacySourceMaps.get(path);
+					if (legacyDigest == null || hashFile(target) != legacyDigest)
+						fail('Unowned output collision appeared while publication was being prepared: $target');
+				}
 			}
 
 			var stagedRoot = Path.join([prepare, STAGED_DIRECTORY]);
@@ -264,7 +271,7 @@ class GeneratedOutputOwnership {
 			for (path in nextPaths) {
 				var target = targetPath(root, path);
 				var digest = newDigests.get(path);
-				if (!FileSystem.exists(target) || digest == null || hashFile(target) != digest)
+				if (legacySourceMaps.exists(path) || !FileSystem.exists(target) || digest == null || hashFile(target) != digest)
 					affected.push(path);
 			}
 			affected.sort(Reflect.compare);
@@ -283,11 +290,12 @@ class GeneratedOutputOwnership {
 					fail('Missing next generated-output digest for `$path`.');
 				var target = targetPath(root, path);
 				var hadPrevious = FileSystem.exists(target);
+				var adoptedDigest = legacySourceMaps.get(path);
 				transactionPaths.push({
 					path: path,
 					tempPath: tempPath,
 					hadPrevious: hadPrevious,
-					previousDigest: hadPrevious ? hashFile(target) : null,
+					previousDigest: hadPrevious ? (adoptedDigest != null ? adoptedDigest : hashFile(target)) : null,
 					nextDigest: nextDigest
 				});
 			}
@@ -470,6 +478,49 @@ class GeneratedOutputOwnership {
 					fail('Owned generated output was modified outside the compiler: $target\nRefusing to overwrite or delete it until the change is reconciled explicitly.');
 			}
 		}
+	}
+
+	/**
+	 * Recognizes the one historical file class that predates manifest ownership.
+	 *
+	 * Source maps were previously emitted after publication, so an old manifest
+	 * can own `module.ex` or `module.exs` while its generated `.map` sibling is
+	 * absent from the manifest. Adoption is allowed only for a valid Source Map
+	 * v3 whose declared target is that already-owned Elixir file. Arbitrary
+	 * `.map` files, mismatched targets, directories, and symlinks remain unowned
+	 * collisions.
+	 */
+	static function legacySourceMapDigest(root:String, path:String, oldSet:Map<String, Bool>):Null<String> {
+		if (!path.endsWith(".ex.map") && !path.endsWith(".exs.map"))
+			return null;
+		var elixirPath = path.substr(0, path.length - ".map".length);
+		if (!oldSet.exists(elixirPath))
+			return null;
+
+		var target = targetPath(root, path);
+		if (!FileSystem.exists(target) || FileSystem.isDirectory(target))
+			return null;
+		ensureCanonicalWithin(root, target, "legacy generated source map");
+
+		var raw:Dynamic = try Json.parse(File.getContent(target)) catch (_:Dynamic) return null;
+		var version:Dynamic = Reflect.field(raw, "version");
+		var file:Dynamic = Reflect.field(raw, "file");
+		var sourceRoot:Dynamic = Reflect.field(raw, "sourceRoot");
+		var mappings:Dynamic = Reflect.field(raw, "mappings");
+		var names:Dynamic = Reflect.field(raw, "names");
+		var sources:Dynamic = Reflect.field(raw, "sources");
+		var validVersion = Std.string(Type.typeof(version)) == "TInt" && (cast version : Int) == 3;
+		var validTarget = isStringValue(file) && (cast file : String) == Path.withoutDirectory(elixirPath);
+		if (!validVersion || !validTarget || !isStringValue(sourceRoot) || !isStringValue(mappings) || !isArrayValue(names) || !isArrayValue(sources))
+			return null;
+
+		for (name in (cast names : Array<Dynamic>))
+			if (!isStringValue(name))
+				return null;
+		for (source in (cast sources : Array<Dynamic>))
+			if (!isStringValue(source))
+				return null;
+		return hashFile(target);
 	}
 
 	static function recoverActive(root:String, active:String):Void {

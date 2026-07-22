@@ -21,8 +21,11 @@ This guide documents the current workflow for VS Code. (ElixirLS and VS Code do 
 Add this define to the Haxe build that generates your server-side Elixir:
 
 ```hxml
--D source_map_enabled
+-D source-map
 ```
+
+The older `-D source_map_enabled` spelling remains compatible, but new builds
+should use `-D source-map`.
 
 Then compile as usual (for example via `mix compile` in a Phoenix project using the included Mix integration).
 
@@ -95,7 +98,7 @@ Then run it via the Command Palette: “Tasks: Run Task” → “Reflaxe.Elixir
 ## Troubleshooting
 
 - **No source map found**
-  - Ensure you compiled with `-D source_map_enabled`.
+  - Ensure you compiled with `-D source-map`.
   - Use `mix haxe.source_map --list-maps` to see which maps are available.
 - **Mapping looks “off” by one column**
   - Source Map v3 columns are 0-based; editors often display 1-based columns. Use `--format goto` for editor jumps.

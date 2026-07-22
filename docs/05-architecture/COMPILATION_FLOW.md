@@ -27,8 +27,9 @@ ElixirOutputIterator + transactional generated-output manager
 Optional `GeneratedOutputFormatter` from `onOutputPrepared`
   ↓ project `mix format` over staged generated files only
 Ownership preflight + recoverable publication
-  ↓ publish `.ex` / `.exs`; atomically commit version 2 `_GeneratedFiles.json` last
-Generated, content-hash-owned Elixir files
+  ↓ publish `.ex` / `.exs` and optional `.ex.map` / `.exs.map` sidecars
+  ↓ atomically commit version 2 `_GeneratedFiles.json` last
+Generated, content-hash-owned Elixir files and source maps
 ```
 
 ## Structural AST and focused semantic plans
