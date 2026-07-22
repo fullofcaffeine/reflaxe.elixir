@@ -149,7 +149,10 @@ Install Haxe 4.3.7 (or add it to your PATH). If you’re using lix in this repo,
 ### Port conflicts (Phoenix or Haxe watcher)
 
 - Phoenix port: run with `PORT=4001 mix phx.server`
-- Haxe watcher port (client build): set `HAXE_CLIENT_WAIT_PORT=6002` (todo-app), or stop the stale process holding the port.
+- Haxe server port: the managed watcher normally relocates automatically. To
+  choose another preferred port, run `HAXE_SERVER_PORT=6117 mix haxe.watch`, or
+  clean up an orphaned repository-owned server. See the
+  [Haxe compilation server guide](../06-guides/WATCHER_WORKFLOW.md#failure-and-recovery-behavior).
 
 ### “Where do I learn Haxe / Phoenix basics?”
 

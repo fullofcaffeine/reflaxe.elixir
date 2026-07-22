@@ -186,15 +186,19 @@ Recommendation:
 
 ## Tooling / watcher port conflicts
 
-Phoenix watchers (`mix phx.server`) often run the Haxe client compiler in `--wait <port>` mode. If something else is already bound to that port you may see `EADDRINUSE`.
+Phoenix watchers (`mix phx.server`) can own one or more Haxe compilation servers.
+If another process is already bound to a preferred server port, the managed
+watcher normally relocates to a free port.
 
 Fix options:
 
 - Stop the process using the port and restart.
-- Change the watcher `--wait` port to a free port (example apps use `HAXE_CLIENT_WAIT_PORT` and will probe for a nearby free port automatically).
+- Set another preferred port with `HAXE_SERVER_PORT=<port>`; a second managed
+  server in the same app can still relocate automatically.
 - Disable Haxe server usage for a single build with `HAXE_NO_SERVER=1` (see `docs/06-guides/PRODUCTION_DEPLOYMENT.md`).
 
-See also: `docs/06-guides/TROUBLESHOOTING.md`.
+See also the [Haxe compilation server guide](WATCHER_WORKFLOW.md) and
+`docs/06-guides/TROUBLESHOOTING.md`.
 
 ## Coverage notes
 

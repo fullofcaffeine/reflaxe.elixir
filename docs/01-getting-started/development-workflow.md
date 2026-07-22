@@ -203,42 +203,31 @@ See `lib/haxe_compiler.ex` for the injection point. Legacy todo-app perf/debug H
 
 ## Haxe Compilation Server Policy
 
-The Haxe compilation server (`haxe --wait`) is **opt-in**:
+Use the compilation server for a long-lived edit loop, not for isolated builds:
 
-- Default dev and CI workflows should act as if:
+```bash
+# Recommended for an application-side Haxe → Elixir build
+mix haxe.watch --hxml build-server.hxml
+```
 
-  ```bash
-  export HAXE_NO_SERVER=1
-  ```
+The watcher owns one native `haxe --wait` process and sends later rebuilds to it.
+This lets Haxe reuse safely cached parsing and typing work while it still checks
+changed files and their dependents. Reflaxe receives the resulting typed program,
+regenerates what is required, and leaves byte-identical output files untouched.
 
-  and should **not** auto‑start the server.
+Ordinary one-shot commands, CI, and production builds compile directly by
+default. Use `HAXE_NO_SERVER=1` when automation must explicitly prohibit a
+background server. See the [Watcher Workflow](../06-guides/WATCHER_WORKFLOW.md)
+for Phoenix integration, plain HXML commands, lifecycle details, and troubleshooting.
 
-- You may explicitly start and use the server when iterating on the compiler:
+## Performance Objectives
 
-  ```bash
-  # In a dev shell
-  iex -S mix
-  iex> {:ok, _} = HaxeServer.start_link([])
-  iex> HaxeServer.status()
-
-  # In another shell, reuse the server:
-  HAXE_USE_SERVER=1 haxe --connect 6116 examples/todo-app/build-server.hxml
-
-  # When done:
-  iex> HaxeServer.stop()
-  ```
-
-- QA sentinel and CI use direct `haxe` invocations by default and only opt into the server via environment (`HAXE_USE_SERVER=1`) when explicitly configured. This avoids background high‑CPU processes and keeps build behavior predictable.
-
-
-## Performance Targets
-
-All compilation features meet <15ms performance requirements:
-- **Basic compilation**: 0.015ms ✅
-- **Ecto Changesets**: 0.006ms average ✅  
-- **Migration DSL**: 6.5μs per migration ✅
-- **Experimental GenServer compile-shape fixture**: 0.07ms average ✅
-- **Phoenix LiveView**: <1ms average ✅
+Fast, TypeScript-class edit feedback is a project objective, not a claim derived
+from tiny isolated operation timings. Compiler measurements distinguish clean
+builds, fresh-process rebuilds, persistent server rebuilds, generated-file output,
+and downstream Mix compilation. See the
+[Performance Guide](../06-guides/PERFORMANCE_GUIDE.md) for the current benchmark
+vocabulary and reproducible commands.
 
 ## Key Development Files
 

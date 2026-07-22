@@ -1,83 +1,346 @@
-# Watcher Workflow (Mix + Phoenix)
+# Haxe Compilation Server and Watcher Workflow
 
-This guide describes the common “edit → compile → reload” loop when using Reflaxe.Elixir with Phoenix.
+This guide explains the development loop for applications compiled with
+Reflaxe.Elixir: what the Haxe compilation server is, when it is active, what it
+reuses, and how to configure it for Phoenix, Mix, client JavaScript, or plain
+HXML projects.
 
 > [!NOTE]
-> This is a dev-workflow guide. It is not fully CI-smoked because port/watcher behavior depends on your local environment.
-> For “new user” verified flows, see `bash scripts/ci/docs-smoke.sh` and `bash scripts/ci/readme-release-tag-smoke.sh`.
+> The server is a development optimization. A clean direct build remains the
+> correctness baseline for CI and releases.
 
-## Two Watch Loops You’ll See
+## The short version
 
-1. **Server compilation (Haxe → Elixir)**
-   - Driven by Mix tasks (e.g., `mix compile.haxe`, `mix haxe.watch`).
-   - Uses a background Haxe compilation server when available.
+For most Mix or Phoenix projects, use:
 
-2. **Client build/watch (Haxe → JS)**
-   - Typically run via Phoenix endpoint watchers as `mix haxe.watch --hxml build-client.hxml ...`.
-   - This keeps one client compiler process alive during `mix phx.server`, allowing Haxe to reuse
-     compiler state between complete build requests.
-   - Recommended generator: **Genes** (ES modules) via exact-pinned `-lib genes-ts` in `build-client.hxml`.
+```bash
+mix haxe.watch --hxml build-server.hxml
+```
 
-### Important: esbuild `--watch` + Haxe `-js` output races
+Keep that process running while you edit `.hx` files. It watches the configured
+inputs, starts one native Haxe compilation server, and sends later builds to the
+same process. Stop it with `Ctrl+C` when you finish.
 
-Haxe deletes the `-js` output file at the start of compilation. If your esbuild entry imports that file
-(for example `assets/js/app.js` contains `import "./hx_app.js"`), then in watch mode esbuild can see a
-brief window where the module disappears and error with:
+If `mix haxe.phoenix.scaffold` added the Haxe client watcher to `config/dev.exs`,
+normal Phoenix development starts that client build for you:
 
-- `Could not resolve "./hx_app.js"`
+```bash
+mix phx.server
+```
 
-**Recommended pattern (used by `examples/todo-app/`):**
-- Have `build-client.hxml` write its `-js` output to a temp path (example: `assets/js/_hx_app_tmp.js`).
-- After a successful compile, promote that temp file into the stable import path (example: `assets/js/hx_app.js`).
-- Configure Phoenix watchers to use `mix haxe.watch --promote from:to` so promotion happens atomically.
+The compilation server is not enabled for ordinary one-shot `mix compile`, CI,
+or production builds by default.
 
-If you want this wiring scaffolded automatically in a Phoenix app, run:
+## Why use it?
+
+A direct build starts a new Haxe process, parses and types the requested program,
+runs Reflaxe, writes Elixir, and exits. Repeating that command throws away all
+in-memory compiler state.
+
+The server keeps Haxe alive between builds. On the next request, Haxe checks
+which source files changed and follows their typed dependency edges. Unchanged
+parsed files and typed modules can be reused. Dirty modules and affected
+dependents are retyped. Reflaxe then regenerates the required target modules,
+and byte-identical `.ex` files are left untouched so Mix does not recompile them
+unnecessarily.
+
+For example:
+
+- Editing only the implementation of `TodoService.hx` can reuse unrelated typed
+  modules.
+- Changing a public type used by `TodoLive.hx` also invalidates and retypes
+  `TodoLive`, preventing stale target code.
+- Changing a define, classpath, HXML file, dependency pin, or undeclared macro
+  input can invalidate much more work and may be close to a full rebuild.
+
+The first server build is still a full warm-up. The benefit appears on later
+no-op and local edit cycles.
+
+## Comparison with TypeScript
+
+The closest TypeScript mental model is `tsc --watch`:
+
+| Workflow | Haxe + Reflaxe.Elixir | TypeScript reference |
+|---|---|---|
+| Fresh one-shot emit | `mix compile.haxe` or `haxe build.hxml` | `tsc -p tsconfig.json` |
+| Persistent edit/emit loop | `mix haxe.watch` | `tsc --watch` |
+| Disk-backed command-line reuse | Not currently claimed | `tsc --incremental` or `tsc --build` with `.tsbuildinfo` |
+| Editor-only diagnostics | Haxe language server/display requests | TypeScript language service |
+
+Both persistent workflows keep compiler state alive and invalidate affected
+dependencies after an edit. The pipelines are not identical: Haxe receives a
+complete HXML request through `--connect`, Reflaxe generates Elixir, and Mix may
+then compile changed `.ex` modules. This comparison explains the workflow; it is
+not a claim that current latency matches `tsc` on every project.
+
+The storage model is another important difference. TypeScript can save build
+information to `.tsbuildinfo` and reuse it in a later command-line process. The
+Haxe compilation server described here keeps its parser and typer cache only in
+the running server process. Restarting it gives you a clean build. Reflaxe.Elixir
+does not currently advertise a persistent per-module Elixir artifact cache.
+
+## When is the server active?
+
+| Command or scenario | Server behavior |
+|---|---|
+| `mix haxe.watch` | Starts and owns a server for the watcher's lifetime. |
+| Scaffolded `mix phx.server` | Endpoint watcher starts `mix haxe.watch`; server is active while Phoenix runs. |
+| `mix haxe.watch --once` | Direct one-shot compile; no server or watcher remains. |
+| `mix compile` / `mix compile.haxe` | Direct by default. |
+| CI or production build | Direct by default; `HAXE_NO_SERVER=1` can enforce this. |
+| Plain `haxe build.hxml` | Direct unless you explicitly use `--wait` and `--connect`. |
+
+Starting a server inside a short-lived command would not help the next command,
+because its in-memory state disappears when the owner exits. That is why the
+safe default is explicit long-lived ownership rather than automatic background
+processes everywhere.
+
+## Set up a Mix project
+
+Add the Haxe compiler to the Mix compiler list and describe the build in
+`mix.exs`:
+
+```elixir
+def project do
+  [
+    compilers: [:haxe] ++ Mix.compilers(),
+    haxe: [
+      hxml_file: "build-server.hxml",
+      source_dir: "src_haxe",
+      target_dir: "lib",
+      watch: false
+    ]
+  ]
+end
+
+defp deps do
+  [
+    {:reflaxe_elixir, "~> 0.28", only: [:dev, :test]},
+    {:file_system, "~> 1.1", only: [:dev, :test]}
+  ]
+end
+```
+
+`file_system` provides operating-system file notifications. The `watch: false`
+setting avoids starting a second watcher inside the normal Mix compiler; the
+explicit long-running `mix haxe.watch` command owns that job.
+
+Then run:
+
+```bash
+mix deps.get
+mix haxe.watch --hxml build-server.hxml
+```
+
+By default, the task discovers classpaths and configured external inputs. You
+can make the watched roots explicit:
+
+```bash
+mix haxe.watch \
+  --hxml build-server.hxml \
+  --dirs src_haxe,src_shared \
+  --debounce 150 \
+  --verbose
+```
+
+## Set up a Phoenix project
+
+For a Genes/JavaScript client build, the simplest path is the scaffold task:
 
 ```bash
 mix haxe.phoenix.scaffold
 ```
 
-This task patches `config/dev.exs`, `mix.exs`, and `assets/js/app.js` using explicit marker blocks
-(`BEGIN reflaxe_elixir ...` / `END reflaxe_elixir ...`) so reruns update only the block content.
+It updates the project-owned client sections of `mix.exs`, `config/dev.exs`, and
+the JavaScript bootstrap through explicit marker blocks. Rerunning it updates
+only those owned blocks. Server-side Haxe → Elixir watching remains an explicit
+project choice because existing Phoenix applications organize their server
+source roots differently.
 
-### What gets created/changed (and why it stays stable)
+For manual server-side wiring, add a watcher to `config/dev.exs`:
 
-- `assets/js/_hx_app_tmp.js` is the Genes entry output path (temp).
-  - Haxe deletes this file at the start of each rebuild, so it is not safe to import directly from esbuild watch.
-- `assets/js/hx_app.js` is the stable import path.
-  - The scaffold writes a stub file (signature: `reflaxe_elixir:hx_app_stub:v1`) so esbuild has a file to import on first boot.
-  - The watcher promotes `_hx_app_tmp.js -> hx_app.js` after successful compiles so esbuild always has a file to import.
-  - The scaffold only overwrites `hx_app.js` if it detects its own stub signature; user customizations are not clobbered.
-  - The scaffold also adds `.gitignore` entries for both the temp output and the promoted stable output to keep repo diffs clean.
+```elixir
+import Config
 
-## Recommended Workflow
+app_root = Path.expand("../", __DIR__)
 
-- Run normal Phoenix dev:
-  - `mix phx.server`
-- Let the endpoint watchers handle the client build.
-- Use `mix compile.haxe` / `mix haxe.watch` for server-side compilation flows.
-- Long-running `mix haxe.watch` owns and reuses one Haxe compilation server while it is running; one-shot `mix compile` and `mix haxe.watch --once` stay direct by default.
-- The owned native compiler tree is also tied to the Mix VM's operating-system port, so it is reaped even when VM shutdown cannot run the normal Elixir cleanup callback.
+config :my_app, MyAppWeb.Endpoint,
+  watchers: [
+    haxe_server: [
+      "mix",
+      "haxe.watch",
+      "--hxml", "build-server.hxml",
+      "--dirs", "src_haxe,src_shared",
+      "--debounce", "150",
+      cd: app_root
+    ]
+  ]
+```
 
-## Common Environment Variables
+Now `mix phx.server` owns the complete lifecycle:
 
-- `HAXE_NO_SERVER=1` — disables the background Haxe server (forces direct compilation)
-- `HAXE_SERVER_PORT=6116` — preferred server port. If that port is busy, Mix may attach to the prior compatible server recorded in `.reflaxe_elixir/haxe_server.json` (same project/toolchain), or relocate to a free port.
-- `HAXE_SERVER_AUTOSTART=dev|always|never` — explicitly opt one-shot callers into server startup (default: never)
-- `HAXE_SERVER_ALLOW_ATTACH=1` — allow attaching to an externally-started compatible server on the configured port (default: off)
-- `HAXE_FAST_BOOT=1` — opt-in faster compilation profile (see `docs/06-guides/PERFORMANCE_GUIDE.md`)
-- `HAXE_CLIENT_WAIT_PORT=6001` — overrides the Phoenix watcher wait port (client build)
+1. Phoenix starts the endpoint watcher.
+2. `mix haxe.watch` starts its native Haxe server.
+3. A Haxe edit regenerates only changed Elixir bytes where possible.
+4. Phoenix's code reloader sees changed `.ex` files.
+5. Stopping Phoenix stops the watcher and its owned compiler process.
 
-## Troubleshooting
+If you already have Vite, esbuild, Tailwind, or other endpoint watchers, keep
+them in the same watcher list; do not replace them.
 
-### `EADDRINUSE` on the client `--wait` port
+## Server-side and client-side Haxe in one Phoenix app
 
-This usually means a previous `haxe --wait` process is still running and holding the port.
+A full PhoenixHx app can have two independent builds:
 
-- Prefer reusing/adjusting the wait port (some examples auto-pick a free port).
-- If needed, terminate the orphaned process before retrying.
+1. `build-server.hxml`: Haxe → Elixir through Reflaxe.Elixir.
+2. `build-client.hxml`: Haxe → JavaScript/TypeScript, commonly through Genes.
 
-## Todo-App QA Note
+Configure one `mix haxe.watch` endpoint watcher for each HXML. Each long-running
+watcher owns its compiler lifecycle. If both prefer the same port, the managed
+server code safely relocates one to a free port; you do not need a separate
+client-port convention.
 
-When validating the example todo-app, use the repo’s QA sentinel scripts (non-blocking) instead of
-running long-lived foreground servers during agent work. See root `AGENTS.md`.
+### Avoid client output races
+
+Haxe deletes its `-js` output at the start of compilation. A bundler watching a
+file that imports that output can briefly observe a missing module.
+
+Use a temporary Haxe output and atomically promote it after success:
+
+```bash
+mix haxe.watch \
+  --hxml build-client.hxml \
+  --dirs src_haxe/client,src_react,src_shared \
+  --promote assets/js/_hx_app_tmp.js:assets/js/hx_app.js
+```
+
+The scaffold configures this pattern. `assets/js/_hx_app_tmp.js` may disappear
+during a build; `assets/js/hx_app.js` remains the stable bundler import. Promotion
+occurs only after successful compilation.
+
+## Plain HXML projects without Mix
+
+The underlying protocol is Haxe's standard `--wait` / `--connect` interface.
+Advanced users can run the native executable directly:
+
+```bash
+# Terminal 1
+/path/to/native/haxe --wait 6116
+
+# Terminal 2
+/path/to/native/haxe --connect 6116 build.hxml
+```
+
+Every `--connect` call submits a complete build request. The server decides which
+frontend work can be reused.
+
+When Lix is installed, `haxe` on `PATH` may be a Node launcher. That launcher is
+appropriate for ordinary direct builds, but it does not directly implement the
+native server protocol. `mix haxe.watch` resolves the native executable pinned by
+the project's `.haxerc` automatically. For manual commands, point both terminals
+at that same native executable and Haxe version.
+
+## External files read by macros
+
+Haxe can track `.hx`, HXML, classpath, and library changes, but it cannot infer
+every file a custom macro reads. Declare those files in `mix.exs`:
+
+```elixir
+haxe: [
+  hxml_file: "build-server.hxml",
+  source_dir: "src_haxe",
+  target_dir: "lib",
+  extra_inputs: ["config/haxe/**/*.json", "priv/templates/**/*.hxx"]
+]
+```
+
+The watcher monitors these roots, and the Mix freshness fingerprint includes
+their contents. Without this declaration, editing an external file might not
+trigger a rebuild even though a macro uses it.
+
+## Cache correctness and limits
+
+The Haxe server caches parsed files and typed modules in memory. It checks file
+changes, classpath shadowing, compiler-define signatures, and typed dependencies
+before reuse. Reflaxe layers target-module work selection on that result and
+regenerates non-class type forms conservatively.
+
+This is real compiler-state reuse, but not a universal module-artifact cache:
+
+- Reflaxe still performs required whole-program fact collection and output work.
+- Some changes correctly invalidate a large part of the program.
+- Macros with undeclared external inputs must run conservatively.
+- A server restart loses the in-memory cache; it does not affect correctness.
+- Generated output from a successful warm build must match a clean direct build.
+
+## Configuration
+
+- `HAXE_NO_SERVER=1` — force direct compilation. Recommended for CI and useful
+  when diagnosing whether a problem is server-specific.
+- `HAXE_SERVER_PORT=6116` — preferred server port. If occupied, the managed
+  watcher attaches only when explicitly allowed and compatible; otherwise it
+  relocates to a free port.
+- `HAXE_SERVER_ALLOW_ATTACH=1` — permit attachment to an externally started,
+  compatible server. Off by default to avoid sharing compiler state across
+  unrelated projects or toolchains.
+- `HAXE_SERVER_AUTOSTART=dev|always|never` — opt a long-lived custom Mix caller
+  into automatic startup. Default: `never`. Normal users should prefer
+  `mix haxe.watch`.
+- `HAXE_FAST_BOOT=1` — select the separate opt-in fast-boot compilation profile;
+  see the [Performance Guide](PERFORMANCE_GUIDE.md). It is not required to use
+  the server.
+
+The managed integration records compatible per-project server information in
+`.reflaxe_elixir/haxe_server.json`. This is lifecycle metadata, not compiled
+program output or a persistent typed-module cache.
+
+## Failure and recovery behavior
+
+If a managed server request fails, Reflaxe.Elixir reports the reason, falls back
+to a direct compilation, and attempts to refresh the server for later edits. The
+last successful generated output remains the safe baseline; a failed request must
+not publish partial target output.
+
+Use these checks when diagnosing a problem:
+
+```bash
+# Compare with the direct path
+HAXE_NO_SERVER=1 mix compile.haxe
+
+# Show the exact requests and rebuild results
+mix haxe.watch --hxml build-server.hxml --verbose
+
+# Remove repository-owned stale server processes
+scripts/haxe-server-cleanup.sh
+```
+
+Common cases:
+
+- **Port already in use:** the managed watcher normally relocates. Repeated
+  relocation can indicate an orphaned old server; run the bounded cleanup script.
+- **Change did not trigger:** confirm the file is under `--dirs`, an HXML
+  classpath, or `extra_inputs`.
+- **Direct succeeds but server fails:** capture the failing edit and warm request
+  sequence. This is an invalidation or persistent-state bug, not a reason to
+  silently accept stale output.
+- **Server restarts after toolchain/config change:** expected when the project,
+  Haxe version, classpath, defines, or compatible server identity changes.
+
+## CI and production
+
+Use direct builds for reproducible clean validation:
+
+```bash
+HAXE_NO_SERVER=1 MIX_ENV=test mix compile --warnings-as-errors
+HAXE_NO_SERVER=1 MIX_ENV=prod mix compile
+```
+
+Haxe and Reflaxe.Elixir are build-time dependencies. The compilation server is
+not deployed with the application and is not required by the running BEAM
+release.
+
+## Repository QA note
+
+Contributors validating `examples/todo-app` should use the bounded asynchronous
+QA sentinel described in the root `AGENTS.md`; do not run foreground servers from
+agent sessions.

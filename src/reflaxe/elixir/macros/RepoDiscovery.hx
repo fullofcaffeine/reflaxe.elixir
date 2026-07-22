@@ -246,10 +246,22 @@ class RepoDiscovery {
 			} catch (e:Eof) {
 				// Reached end-of-file; process what we discovered.
 			}
+		} catch (_) {}
 
-			if (!hasRelevantMeta)
-				return;
+		// Close before any early return below. Repo discovery may inspect thousands of
+		// ordinary project files that do not contain Phoenix metadata. Leaving those
+		// handles open eventually prevents a long-lived Haxe compilation server from
+		// starting subprocesses such as `haxelib`, so later rebuilds fail even though
+		// the server itself is still running.
+		try
+			if (file != null)
+				file.close()
+		catch (_) {}
 
+		if (!hasRelevantMeta)
+			return;
+
+		try {
 			var moduleName = Path.withoutExtension(Path.withoutDirectory(filePath));
 			if (moduleName == null || moduleName.length == 0) {
 				// Fallback for unusual paths.
@@ -268,10 +280,6 @@ class RepoDiscovery {
 			var mod = (typeName != null && typeName != moduleName) ? (modBase + "." + typeName) : modBase;
 			forceType(mod);
 		} catch (_) {}
-		try
-			if (file != null)
-				file.close()
-		catch (_) {}
 	}
 
 	static function hasRelevantMetadataToken(line:String):Bool {

@@ -708,7 +708,7 @@ todo-app/
 
 ### 3. Rapid Development Loop
 1. Edit .hx file and save
-2. Watch compilation result (~200ms)
+2. Watch the persistent compilation result
 3. Test changes immediately
 4. Fix errors using source positions
 5. Repeat for fast iteration
@@ -717,14 +717,14 @@ todo-app/
 
 ### Watcher Not Starting
 ```bash
-# Check if the Phoenix watcher port is in use (default: 6001)
-lsof -i :6001
+# Check if the preferred Haxe server port is in use (default: 6116)
+lsof -i :6116
 
-# Use a different watcher port if needed
-HAXE_CLIENT_WAIT_PORT=6002 mix phx.server
+# Use a different preferred server port if needed; another managed watcher can relocate
+HAXE_SERVER_PORT=6117 mix phx.server
 
-# Reset watcher state
-rm -rf .haxe_cache && mix haxe.watch --once
+# From the repository root, remove only repository-owned stale servers
+scripts/haxe-server-cleanup.sh
 ```
 
 ### Changes Not Detected
