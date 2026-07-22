@@ -230,6 +230,13 @@ meta = {
         "elixir": run(["elixir", "--version"]),
         "mix": run(["mix", "--version"]),
         "otp_release": run(["erl", "-noshell", "-eval", "io:format(\"~s\", [erlang:system_info(otp_release)]), halt()."]),
+        "host_load_observations": [
+            {
+                "observed_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                "cpu_count": os.cpu_count(),
+                "load_average": list(os.getloadavg()) if hasattr(os, "getloadavg") else None,
+            }
+        ],
     },
 }
 
@@ -361,7 +368,9 @@ finalize_json() {
   local overall_status="$1"
   python3 - "$META_JSON" "$RESULTS_NDJSON" "$OUTPUT_STATES_NDJSON" "$OUT_PATH" "$overall_status" "$ROOT_DIR/scripts/perf" <<'PY'
 import collections
+from datetime import datetime, timezone
 import json
+import os
 from pathlib import Path
 import re
 import sys
@@ -471,6 +480,11 @@ except FileNotFoundError:
     pass
 
 data["runs"] = list(runs.values())
+data["environment"].setdefault("host_load_observations", []).append({
+    "observed_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+    "cpu_count": os.cpu_count(),
+    "load_average": list(os.getloadavg()) if hasattr(os, "getloadavg") else None,
+})
 data["status"] = (
     "failure"
     if overall_status != "success" or any(run["status"] != "success" for run in data["runs"])

@@ -34,8 +34,10 @@ from benchmark_contract import (
     SCHEMA_VERSION,
     apply_patch_variant,
     generated_output_state,
+    host_load_observation,
     patch_changed_paths,
     parse_server_identity,
+    process_tree_rss_snapshot,
     source_variant,
     target_timing_report,
     watch_phase_reconciliation,
@@ -369,6 +371,18 @@ def summarize(samples: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def memory_snapshot(process_info: dict[str, Any]) -> dict[str, Any]:
+    """Observe persistent process memory after a completed rebuild."""
+
+    return {
+        "observed_at": now_utc(),
+        "watcher_process_tree": process_tree_rss_snapshot(process_info.get("watcher_pid")),
+        "haxe_server_process_tree": process_tree_rss_snapshot(
+            process_info.get("haxe_server_owner_os_pid")
+        ),
+    }
+
+
 def measure_watch_cycles(
     *,
     benchmark_root: Path,
@@ -438,6 +452,14 @@ def measure_watch_cycles(
                 )
             if args.use_haxe_server:
                 process_info.update(parse_server_identity(watch_log.read_text(encoding="utf-8", errors="replace")))
+            process_info["memory_measurement"] = {
+                "method": "post_cycle_process_tree_rss_snapshot",
+                "unit": "bytes",
+                "timing": "after the timed edit-to-success interval",
+                "limitation": "This is retained-memory evidence, not peak compile memory.",
+                "overlap": "The Haxe-server tree may be contained in the watcher tree; do not add them.",
+            }
+            process_info["memory_before_samples"] = memory_snapshot(process_info)
             phases.append(
                 {
                     "name": "watcher_ready",
@@ -486,6 +508,7 @@ def measure_watch_cycles(
                         "public_api_changed": args.public_api_changed,
                         "status": "success",
                     }
+                    sample["memory_after_success"] = memory_snapshot(process_info)
                     timing = target_timing_report(chunk)
                     if timing is not None:
                         sample["reflaxe_target_timing"] = timing
@@ -590,9 +613,15 @@ def build_result(
             "elixir": run_capture(["elixir", "--version"]),
             "mix": run_capture(["mix", "--version"]),
             "otp_release": run_capture(["erl", "-noshell", "-eval", 'io:format("~s", [erlang:system_info(otp_release)]), halt().']),
+            "host_load_observations": [
+                process_info.get("host_load_at_start"),
+                host_load_observation(),
+            ],
         },
         "phases": phases,
-        "processes": process_info,
+        "processes": {
+            key: value for key, value in process_info.items() if key != "host_load_at_start"
+        },
         "warmup_samples": warmup_samples,
         "samples": samples,
         "summary": summarize(samples),
@@ -644,6 +673,7 @@ def main() -> int:
     samples: list[dict[str, Any]] = []
     warmup_samples: list[dict[str, Any]] = []
     process_info: dict[str, Any] = {}
+    process_info["host_load_at_start"] = host_load_observation()
     edit_metadata: dict[str, Any] = {
         "edit_kind": args.edit_kind,
         "public_api_changed": args.public_api_changed,

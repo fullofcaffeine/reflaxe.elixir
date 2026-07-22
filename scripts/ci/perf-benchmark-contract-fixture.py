@@ -118,6 +118,16 @@ for patch in todo_patches:
         for relative, content in originals.items():
             check((worktree / relative).read_bytes() == content, f"{patch.name} did not restore {relative}")
 
+load_observation = contract.host_load_observation()
+check(load_observation["cpu_count"] == os.cpu_count(), "host CPU count was not observed")
+check("observed_at" in load_observation, "host load observation has no timestamp")
+own_tree = contract.process_tree_rss_snapshot(os.getpid())
+check(own_tree is not None, "current process RSS tree was not observable")
+check(own_tree["root_pid"] == os.getpid(), "RSS snapshot changed its root process")
+check(own_tree["process_count"] >= 1, "RSS snapshot omitted its root process")
+check(own_tree["rss_bytes"] > 0, "RSS snapshot reported no resident memory")
+check(contract.process_tree_rss_snapshot(-1) is None, "invalid PID produced an RSS snapshot")
+
 for scenario_name in ("cold", "warm_fresh_process", "edited_full_fresh_process"):
     scenario = contract.compile_scenario(scenario_name)
     for required in (
@@ -248,6 +258,10 @@ try:
     result = json.loads(result_path.read_text(encoding="utf-8"))
     check(result["schema_version"] == contract.SCHEMA_VERSION, "shell harness schema version")
     check(result["environment"]["machine_state"] == "idle", "machine state was not recorded")
+    check(
+        len(result["environment"]["host_load_observations"]) == 2,
+        "compile harness omitted start/end host load observations",
+    )
     check(result["config"]["phase_timer_mode"] == "coarse", "phase timer mode was not recorded")
     run_names = [run["name"] for run in result["runs"]]
     check(

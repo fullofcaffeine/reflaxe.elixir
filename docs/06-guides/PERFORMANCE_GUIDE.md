@@ -161,6 +161,13 @@ process that owns the Haxe server. It still leaves `demonstrated_incremental_reu
 reuse is observed directly. A stable process identity proves that the same server stayed alive; it
 does not, by itself, prove which compiler work was reused.
 
+The watch artifact also records retained-memory snapshots before sampling and after every completed
+rebuild. “Retained memory” here means RSS (resident set size): the physical memory currently occupied
+by the watcher process tree and, in server mode, by the owned Haxe-server process tree. The snapshot is
+taken after the edit-to-success timer stops, so observing memory does not make the measured rebuild look
+slower. It is useful for detecting growth across a long session—for example, whether ten edits leave the
+server using steadily more memory—but it is not the highest memory usage reached during compilation.
+
 For low-perturbation phase attribution, run either harness with coarse timers:
 
 ```bash
@@ -187,8 +194,10 @@ Use the JSON artifacts to compare phases, not just total wall time.
 Compile benchmark (`tmp/perf/compile-times.json`):
 
 - `repo` distinguishes the harness commit from the detached benchmark commit and records harness dirty
-  state. `environment` records Haxe/Elixir/Mix/OTP versions, host OS, CPU/load observations, and the explicitly labelled
-  machine state. `config.build_input_digests` fingerprints the relevant HXML, Lix, lock, and package
+  state. `environment` records Haxe/Elixir/Mix/OTP versions, host OS, start/end CPU-load observations,
+  and the explicitly labelled machine state. A label such as `idle` remains a human-reviewed statement;
+  load average is supporting evidence, not an automatic verdict. `config.build_input_digests`
+  fingerprints the relevant HXML, Lix, lock, and package
   inputs without storing machine-local absolute paths.
 - `runs[].name` is one of `cold`, `warm_fresh_process`, or `edited_full_fresh_process`.
 - Each run states `process_model`, compiler/artifact/dependency cache state, `edit_kind`, and whether
@@ -222,6 +231,12 @@ Watch benchmark (`tmp/perf/watch-cycle-times.json`):
   the input; they do not claim which compiler work was reused.
 - Each sample's `generated_output` reports whether the edit actually changed generated files and keeps
   an exact output-tree digest for clean-versus-warm comparison.
+- `processes.memory_before_samples` and `samples[].memory_after_success` contain post-build RSS
+  snapshots. `watcher_process_tree` covers the long-running Mix watcher and its live descendants;
+  `haxe_server_process_tree` starts at the native owner that keeps `haxe --wait` alive. A missing process
+  is recorded as `null`, and the artifact explicitly describes the measurement as a snapshot rather
+  than a peak-memory value. The server tree can be a descendant of the watcher tree, so compare each
+  series over time; do not add the two byte counts together.
 - In coarse mode, each sample's `phase_reconciliation` connects the outer edit-to-success duration to
   the nested Mix/Haxe request and Haxe invocation. For example, it reports how much time fell outside
   the nested compilation timer (including file detection, debounce, and observing the success marker),
@@ -235,6 +250,9 @@ Interpretation rules:
 
 - Compare identical scenario names, edit kinds, process models, and cache states. Do not compare a cold
   compile total with watch-cycle latency or editor diagnostics.
+- Check both start and end host-load observations before accepting a run labelled `idle`. A low load
+  average alone does not prove an uncontended machine; record obvious background builds, indexers, or
+  thermal constraints in the surrounding benchmark notes.
 - A slow `cold/deps_compile` phase is usually Hex/Mix dependency work, not Reflaxe.Elixir codegen.
 - A slow `haxe_build` phase points at Haxe macro work, AST building, AST transforms, or printing.
 - A slow `mix_compile` phase points at generated Elixir compilation, warnings, dependency checks, or

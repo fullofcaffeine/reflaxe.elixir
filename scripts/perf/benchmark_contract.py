@@ -15,12 +15,88 @@ import os
 from pathlib import Path
 import re
 import subprocess
+from datetime import datetime, timezone
 from typing import Any
 
 
 SCHEMA_VERSION = 2
 EDIT_MARKER = "// reflaxe-elixir benchmark variant B"
 TARGET_TIMING_PREFIX = "REFLAXE_ELIXIR_TIMINGS "
+
+
+def now_utc() -> str:
+    """Return an ISO-8601 UTC timestamp suitable for benchmark artifacts."""
+
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def host_load_observation() -> dict[str, Any]:
+    """Capture enough host-load context to audit an idle/contended label.
+
+    Load average is supporting evidence, not an automatic idle detector: its
+    meaning varies with CPU count, operating system, and other background work.
+    """
+
+    return {
+        "observed_at": now_utc(),
+        "cpu_count": os.cpu_count(),
+        "load_average": list(os.getloadavg()) if hasattr(os, "getloadavg") else None,
+    }
+
+
+def process_tree_rss_snapshot(root_pid: int | None) -> dict[str, Any] | None:
+    """Return a post-build RSS snapshot for one process and its descendants.
+
+    RSS (resident set size) is the memory currently held in physical memory.
+    The snapshot is intentionally taken outside the timed rebuild interval. It
+    helps reveal growth in a long-lived watcher or Haxe server, but it is not a
+    peak-memory measurement for the compile that just completed.
+    """
+
+    if root_pid is None or root_pid <= 0:
+        return None
+
+    try:
+        output = subprocess.check_output(
+            ["ps", "-axo", "pid=,ppid=,rss="],
+            stderr=subprocess.DEVNULL,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+    processes: dict[int, tuple[int, int]] = {}
+    children: dict[int, list[int]] = {}
+    for line in output.splitlines():
+        fields = line.split()
+        if len(fields) != 3:
+            continue
+        try:
+            pid, parent_pid, rss_kib = (int(field) for field in fields)
+        except ValueError:
+            continue
+        processes[pid] = (parent_pid, rss_kib)
+        children.setdefault(parent_pid, []).append(pid)
+
+    if root_pid not in processes:
+        return None
+
+    pending = [root_pid]
+    observed: set[int] = set()
+    rss_kib = 0
+    while pending:
+        pid = pending.pop()
+        if pid in observed:
+            continue
+        observed.add(pid)
+        rss_kib += processes.get(pid, (0, 0))[1]
+        pending.extend(children.get(pid, []))
+
+    return {
+        "root_pid": root_pid,
+        "process_count": len(observed),
+        "rss_bytes": rss_kib * 1024,
+    }
 
 
 def target_timing_report(text: str) -> dict[str, Any] | None:
