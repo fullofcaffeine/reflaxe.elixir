@@ -187,6 +187,12 @@ attached to `push` or `pull_request`, so it does not gate PRs or regular CI. Run
 Actions when you want a shared timing artifact; the scheduled run provides a low-frequency trend sample.
 The workflow uploads `compile-times.json`, phase logs, and the intermediate metadata as an artifact.
 
+The manually dispatched **Perf Todo Watch Matrix** workflow runs the five checked-in edit classes in
+both direct and Haxe-server modes, sequentially on one runner. Its artifacts can verify output parity,
+server identity and cleanup, and phase attribution. GitHub-hosted runner contention is unknown, so its
+latency is provisional and cannot replace a controlled idle-machine baseline or support a public p95
+claim.
+
 ## Read Benchmark JSON
 
 Use the JSON artifacts to compare phases, not just total wall time.

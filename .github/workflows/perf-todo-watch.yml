@@ -1,0 +1,179 @@
+name: Perf Todo Watch Matrix
+
+on:
+  workflow_dispatch:
+    inputs:
+      iterations:
+        description: Measured rebuilds per edit class and process model
+        required: true
+        default: '10'
+        type: choice
+        options:
+          - '10'
+          - '50'
+      warmups:
+        description: Warm-up rebuilds before each measured case
+        required: true
+        default: '2'
+        type: choice
+        options:
+          - '1'
+          - '2'
+          - '5'
+
+concurrency:
+  group: perf-todo-watch-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '22.14.0'
+  HAXE_VERSION: '4.3.7'
+  ELIXIR_VERSION: '1.18.3'
+  OTP_VERSION: '27.2'
+  WATCH_ITERATIONS: ${{ inputs.iterations }}
+  WATCH_WARMUPS: ${{ inputs.warmups }}
+
+jobs:
+  benchmark:
+    name: Todo watch direct/server matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Setup Erlang/Elixir
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      - name: Cache Haxe toolchain (lix)
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: |
+            ~/haxe
+          key: ${{ runner.os }}-lix-haxe-${{ env.HAXE_VERSION }}-${{ hashFiles('.haxerc', 'haxe_libraries/*.hxml', 'package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-lix-haxe-${{ env.HAXE_VERSION }}-
+
+      - name: Install npm dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Install Haxe (pinned via lix)
+        run: |
+          set -euo pipefail
+          npx lix download
+          npx lix download haxe "${HAXE_VERSION}"
+          npx lix use haxe "${HAXE_VERSION}"
+          echo "$(pwd)/node_modules/.bin" >> "$GITHUB_PATH"
+          export PATH="$(pwd)/node_modules/.bin:$PATH"
+          haxe -version
+
+      - name: Download Haxe libraries
+        run: npx lix download
+
+      - name: Run direct and Haxe-server watch matrix
+        run: |
+          set -uo pipefail
+
+          patches=(
+            "private-implementation.patch:private_implementation:false"
+            "public-signature.patch:public_callable_signature:true"
+            "hxx-component.patch:hxx_component_text:false"
+            "shared-protocol.patch:shared_protocol_type:true"
+            "build-input-define.patch:hxml_define:false"
+          )
+          overall_status=0
+
+          for process_model in direct server; do
+            for entry in "${patches[@]}"; do
+              IFS=: read -r patch edit_kind public_api_changed <<< "$entry"
+              slug="${patch%.patch}-${process_model}"
+              args=(
+                --ref "$GITHUB_SHA"
+                --edit-patch "scripts/perf/fixtures/todo-edits/${patch}"
+                --edit-kind "$edit_kind"
+                --iterations "$WATCH_ITERATIONS"
+                --warmups "$WATCH_WARMUPS"
+                --deadline 1500
+                --phase-timers coarse
+                --machine-state unknown
+                --artifact-dir "tmp/perf/todo-watch-matrix/${slug}"
+                --out "tmp/perf/todo-watch-matrix/${slug}.json"
+              )
+              if [[ "$public_api_changed" == true ]]; then
+                args+=(--public-api-changed)
+              fi
+              if [[ "$process_model" == server ]]; then
+                args+=(--use-haxe-server)
+              fi
+
+              echo "::group::${slug}"
+              if ! scripts/with-timeout.sh --secs 1800 -- \
+                npm run perf:todo-watch -- "${args[@]}"; then
+                overall_status=1
+              fi
+              echo "::endgroup::"
+            done
+          done
+
+          exit "$overall_status"
+
+      - name: Summarize watch matrix
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import glob
+          import json
+          import os
+
+          paths = sorted(glob.glob("tmp/perf/todo-watch-matrix/*.json"))
+          print("## Todo Watch Matrix")
+          print()
+          print("GitHub-hosted runner timing is provisional because runner contention is unknown.")
+          print("The artifacts remain valid for output parity, cleanup, identity, and phase inspection.")
+          print()
+          if not paths:
+              print("No benchmark JSON was produced.")
+              raise SystemExit(0)
+
+          print("| Edit | Process | Status | Samples | p50 ms | p95 ms | Start/end load |")
+          print("| --- | --- | --- | ---: | ---: | ---: | --- |")
+          for path in paths:
+              with open(path, "r", encoding="utf-8") as handle:
+                  data = json.load(handle)
+              config = data.get("config", {})
+              summary = data.get("summary", {})
+              observations = data.get("environment", {}).get("host_load_observations", [])
+              start = observations[0].get("load_average", ["?"])[0] if observations else "?"
+              end = observations[-1].get("load_average", ["?"])[0] if observations else "?"
+              process = "server" if config.get("use_haxe_server") else "direct"
+              print(
+                  f"| `{config.get('edit_kind', os.path.basename(path))}` "
+                  f"| `{process}` | `{data.get('status', 'unknown')}` "
+                  f"| {summary.get('count', 0)} | {summary.get('p50_ms', '—')} "
+                  f"| {summary.get('p95_ms', '—')} | `{start}` / `{end}` |"
+              )
+          PY
+
+      - name: Upload watch benchmark artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: todo-watch-matrix-${{ github.run_id }}
+          path: |
+            tmp/perf/todo-watch-matrix/**
+          if-no-files-found: warn
+          retention-days: 30
