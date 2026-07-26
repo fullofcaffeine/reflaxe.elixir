@@ -84,6 +84,12 @@ jobs:
       - name: Download Haxe libraries
         run: npx lix download
 
+      - name: Install Linux file watcher
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y inotify-tools
+
       - name: Run direct and Haxe-server watch matrix
         run: |
           set -uo pipefail

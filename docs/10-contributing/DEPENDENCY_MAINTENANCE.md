@@ -35,7 +35,7 @@ maintainers prepare focused, reviewable updates instead of accepting broad autom
 2. Run the repository security-alert checks:
 
    ```bash
-   npm audit --audit-level=high --omit=optional
+   npm run audit:npm-high
    mix hex.audit
    npm run audit:examples-hex
    ```
@@ -46,6 +46,22 @@ maintainers prepare focused, reviewable updates instead of accepting broad autom
    compiler, package, example, and runtime checks.
 5. If an update is deferred, record the reason, affected versions, known exposure, and next review
    date in a tracked issue. Never add a broad advisory ignore merely to make CI green.
+
+### Temporary bundled npm acknowledgement
+
+`npm run audit:npm-high` still rejects every unacknowledged high- or critical-severity finding. Until
+2026-08-31 it narrowly acknowledges `GHSA-mh99-v99m-4gvg` only when the lockfile contains
+`brace-expansion 5.0.7` at `node_modules/npm/node_modules/brace-expansion` inside `npm 11.18.0`.
+That npm executable is development-only release tooling; generated compiler packages and applications
+do not include it. The affected expansion routine can exhaust memory if the release process is given a
+malicious brace pattern, so release inputs remain trusted repository configuration.
+
+The latest compatible `semantic-release` stack still supplies that npm version, and npm package
+overrides cannot replace a dependency bundled inside the npm archive. The policy fails if the advisory
+path or locked versions change, if another high/critical advisory appears, if the advisory disappears,
+or when the review date passes. Remove the acknowledgement and restore direct `npm audit` as soon as a
+compatible npm release contains `brace-expansion 5.0.8` or newer. The owner and review schedule above
+apply; tracking issue: `haxe.elixir.codex-3v3`.
 
 ## Updating Gitleaks Safely
 

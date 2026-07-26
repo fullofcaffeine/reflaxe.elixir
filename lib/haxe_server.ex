@@ -24,10 +24,12 @@ defmodule HaxeServer do
 
   ## Configuration
 
-  The server can be configured with:
+  `start_link/1` accepts:
   - `:port` - Port for Haxe server (default: 6116; tests pick a free port)
-  - `:timeout` - Compilation timeout in ms (default: 30000)
   - `:haxe_cmd` - Haxe command to use (default: auto-detected)
+
+  `compile/2` accepts `:timeout`, the maximum time the caller waits for one
+  compilation response (default: 120000 ms).
 
   Ordinary one-shot Mix compilation does not start this long-lived process.
   `mix haxe.watch`, a direct `start_link/1` call, or an explicit
@@ -39,7 +41,10 @@ defmodule HaxeServer do
 
   # Align the default with QA sentinel and avoid clashes with common editor defaults
   @default_port 6116
-  @default_timeout 30_000
+  # A cold todo-app compile takes about 38 seconds on a four-core hosted runner.
+  # Keep the client call bounded, but allow normal compilation to finish before
+  # the watcher decides the server itself failed.
+  @default_timeout 120_000
   @cookie_dir ".reflaxe_elixir"
   @cookie_file "haxe_server.json"
   @cookie_version 1

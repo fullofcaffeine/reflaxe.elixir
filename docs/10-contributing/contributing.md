@@ -284,7 +284,9 @@ npm run audit:examples-hex
 ```
 
 Run this after changing a Mix dependency or lockfile. The command fails when any example has an
-unacknowledged advisory; CI runs it in the dependency-audit job alongside `npm audit`. It resolves
+unacknowledged advisory; CI runs it in the dependency-audit job alongside `npm run audit:npm-high`.
+That npm command rejects high/critical findings under the narrow, expiring acknowledgement documented
+in [Keeping Dependencies and Security Tools Current](DEPENDENCY_MAINTENANCE.md). The Hex audit resolves
 each locked graph in an isolated temporary dependency directory with `--check-locked`, so the audit
 works from a clean checkout without changing lockfiles or relying on a contributor's existing deps.
 

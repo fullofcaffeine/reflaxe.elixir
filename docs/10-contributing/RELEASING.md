@@ -85,7 +85,7 @@ CI is the source of truth; locally you can sanity-check with:
 
 ```bash
 npm ci
-npm audit --audit-level=high --omit=optional
+npm run audit:npm-high
 npm run ci:guards
 npm test
 npm run test:haxe-exunit-stdlib

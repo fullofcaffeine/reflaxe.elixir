@@ -148,7 +148,7 @@ function main() {
   assert.doesNotMatch(release, /api\.github\.com|sleep |workflow_runs/)
   assert.match(
     release,
-    /npm ci --ignore-scripts --no-audit --no-fund[\s\S]*npm audit --audit-level=high --omit=optional/
+    /npm ci --ignore-scripts --no-audit --no-fund[\s\S]*npm run audit:npm-high/
   )
 
   const packageJson = require(path.join(ROOT, 'package.json'))

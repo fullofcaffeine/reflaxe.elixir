@@ -124,7 +124,7 @@ jobs:
       - name: Install exact npm dependency graph
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Reject high and critical advisories
-        run: npm audit --audit-level=high --omit=optional
+        run: npm run audit:npm-high
       - name: Reject unacknowledged example Hex advisories
         run: npm run audit:examples-hex
 
@@ -772,7 +772,7 @@ jobs:
         run: |
           set -euo pipefail
           npm ci --ignore-scripts --no-audit --no-fund
-          npm audit --audit-level=high --omit=optional
+          npm run audit:npm-high
 
       - name: Install Haxe for Reflaxe package build
         run: |
