@@ -451,15 +451,47 @@ try:
                     run["reflaxe_target_timing"] = timing
                     target_wall = timing.get("total_wall_ms")
                     if isinstance(target_wall, (int, float)):
-                        known = target_wall + (haxe_total if haxe_total is not None else 0.0)
-                        unattributed = phase["duration_ms"] - known
-                        run["phase_reconciliation"] = {
+                        reconciliation = {
                             "external_haxe_build_ms": phase["duration_ms"],
                             "haxe_reported_total_ms": haxe_total,
                             "reflaxe_target_total_ms": target_wall,
-                            "unattributed_process_and_measurement_ms": round(unattributed, 3),
-                            "reconciled_total_ms": round(known + unattributed, 3),
                         }
+                        if haxe_total is None and target_wall > phase["duration_ms"]:
+                            reconciliation["timing_nesting_status"] = "inconsistent"
+                            reconciliation["timing_nesting_violations"] = [
+                                "reflaxe_target_total_exceeds_external_haxe_build"
+                            ]
+                        elif haxe_total is None:
+                            reconciliation["timing_nesting_status"] = "partial"
+                        elif target_wall > haxe_total:
+                            reconciliation["timing_nesting_status"] = "inconsistent"
+                            reconciliation["timing_nesting_violations"] = [
+                                "reflaxe_target_total_exceeds_haxe_reported_total"
+                            ]
+                        elif haxe_total > phase["duration_ms"]:
+                            reconciliation["timing_nesting_status"] = "inconsistent"
+                            reconciliation["timing_nesting_violations"] = [
+                                "haxe_reported_total_exceeds_external_haxe_build"
+                            ]
+                        else:
+                            haxe_excluding_target = haxe_total - target_wall
+                            unattributed = phase["duration_ms"] - haxe_total
+                            reconciliation.update({
+                                "timing_nesting_status": "consistent",
+                                "haxe_reported_excluding_reflaxe_target_ms": round(
+                                    haxe_excluding_target,
+                                    3,
+                                ),
+                                "unattributed_process_and_measurement_ms": round(
+                                    unattributed,
+                                    3,
+                                ),
+                                "reconciled_total_ms": round(
+                                    target_wall + haxe_excluding_target + unattributed,
+                                    3,
+                                ),
+                            })
+                        run["phase_reconciliation"] = reconciliation
             if phase["phase"] == "mix_compile":
                 run["mix_recompiled_module_count"] = mix_recompiled_modules(phase["log"])
             run["phases"].append(phase)

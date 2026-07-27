@@ -164,7 +164,7 @@ check(
 
 watch_compiler_output = """REFLAXE_ELIXIR_TIMINGS {"schema_version":1,"total_wall_ms":11520.765,"phases":[]}
 name  | time(s) | %
-total | 0.396 | 100
+total | 12.396 | 100
 == Haxe timings: haxe watch rebuild ==
   haxe.fingerprint_inputs: 1309.1 ms
   haxe.invoke: 16627.6 ms
@@ -173,7 +173,7 @@ total | 0.396 | 100
 """
 reconciliation = contract.watch_phase_reconciliation(18170, watch_compiler_output)
 check(reconciliation is not None, "watch timing signals were not reconciled")
-check(reconciliation["haxe_reported_total_ms"] == 396.0, "Haxe --times total was not parsed")
+check(reconciliation["haxe_reported_total_ms"] == 12396.0, "Haxe --times total was not parsed")
 check(reconciliation["reflaxe_target_total_ms"] == 11520.765, "Reflaxe target total was not parsed")
 check(reconciliation["haxe_invoke_ms"] == 16627.6, "Mix/Haxe invocation time was not parsed")
 check(
@@ -181,8 +181,34 @@ check(
     "watcher time outside the compilation request was not preserved",
 )
 check(
-    reconciliation["haxe_invoke_unattributed_ms"] == 4710.835,
+    reconciliation["haxe_reported_excluding_reflaxe_target_ms"] == 875.235,
+    "Haxe-exclusive time double-counted the nested target callback",
+)
+check(
+    reconciliation["haxe_invoke_unattributed_ms"] == 4231.6,
     "unknown time inside the Haxe invocation was silently reassigned",
+)
+check(
+    reconciliation["haxe_invoke_reconciled_ms"] == reconciliation["haxe_invoke_ms"],
+    "nested watch timings did not reconcile to haxe.invoke",
+)
+check(reconciliation["timing_nesting_status"] == "consistent", "valid nesting was rejected")
+inconsistent_reconciliation = contract.watch_phase_reconciliation(
+    100,
+    """REFLAXE_ELIXIR_TIMINGS {"schema_version":1,"total_wall_ms":25.0,"phases":[]}
+total | 0.010 | 100
+== Haxe timings: fixture ==
+  haxe.invoke: 50.0 ms
+  total wall: 60.0 ms
+""",
+)
+check(
+    inconsistent_reconciliation["timing_nesting_status"] == "inconsistent",
+    "impossible nested totals were accepted",
+)
+check(
+    "haxe_invoke_unattributed_ms" not in inconsistent_reconciliation,
+    "inconsistent totals produced a misleading negative remainder",
 )
 check(
     contract.watch_phase_reconciliation(100, "no timing output") is None,
@@ -211,7 +237,7 @@ try:
                 "for argument in \"$@\"; do\n"
                 "  if [[ \"$argument\" == \"--times\" ]]; then\n"
                 "    printf '%s\\n' 'total | 0.010 | 100 | 100 | 1 | fixture'\n"
-                "    printf '%s\\n' 'REFLAXE_ELIXIR_TIMINGS {\"schema_version\":1,\"total_wall_ms\":25.0,\"phases\":[]}'\n"
+                "    printf '%s\\n' 'REFLAXE_ELIXIR_TIMINGS {\"schema_version\":1,\"total_wall_ms\":5.0,\"phases\":[]}'\n"
                 "  fi\n"
                 "done\n"
             )
@@ -279,7 +305,12 @@ try:
     )
     reconciliation = edited_run["phase_reconciliation"]
     check(reconciliation["haxe_reported_total_ms"] == 10.0, "Haxe --times total was not parsed")
-    check(reconciliation["reflaxe_target_total_ms"] == 25.0, "target timing JSON was not parsed")
+    check(reconciliation["reflaxe_target_total_ms"] == 5.0, "target timing JSON was not parsed")
+    check(reconciliation["timing_nesting_status"] == "consistent", "valid compile nesting was rejected")
+    check(
+        reconciliation["haxe_reported_excluding_reflaxe_target_ms"] == 5.0,
+        "compile reconciliation double-counted the target callback",
+    )
     check(
         reconciliation["reconciled_total_ms"] == reconciliation["external_haxe_build_ms"],
         "coarse phases did not reconcile to external Haxe wall time",

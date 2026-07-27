@@ -169,7 +169,8 @@ def watch_phase_reconciliation(external_duration_ms: int, compiler_output: str) 
     begins. Within that request, ``haxe.invoke`` surrounds both Haxe's own
     reported work and the Reflaxe target callback. Keeping both remainders
     explicit prevents the harness from silently assigning unknown time to the
-    wrong layer.
+    wrong layer. Haxe's ``--times`` total includes the Reflaxe target callback,
+    so those two measurements must be treated as nested rather than added.
     """
 
     integration = haxe_integration_timing_report(compiler_output)
@@ -198,13 +199,50 @@ def watch_phase_reconciliation(external_duration_ms: int, compiler_output: str) 
         )
         if isinstance(invoke_ms, (int, float)):
             result["haxe_invoke_ms"] = invoke_ms
-            known_invoke_ms = 0.0
-            if haxe_total is not None:
-                known_invoke_ms += haxe_total
             target_total = target.get("total_wall_ms") if target is not None else None
-            if isinstance(target_total, (int, float)):
-                known_invoke_ms += target_total
-            result["haxe_invoke_unattributed_ms"] = round(invoke_ms - known_invoke_ms, 3)
+            violations: list[str] = []
+            if haxe_total is not None and haxe_total > invoke_ms:
+                violations.append("haxe_reported_total_exceeds_haxe_invoke")
+            if (
+                haxe_total is not None
+                and isinstance(target_total, (int, float))
+                and target_total > haxe_total
+            ):
+                violations.append("reflaxe_target_total_exceeds_haxe_reported_total")
+            elif (
+                haxe_total is None
+                and isinstance(target_total, (int, float))
+                and target_total > invoke_ms
+            ):
+                violations.append("reflaxe_target_total_exceeds_haxe_invoke")
+
+            if violations:
+                result["timing_nesting_status"] = "inconsistent"
+                result["timing_nesting_violations"] = violations
+            elif haxe_total is not None and isinstance(target_total, (int, float)):
+                haxe_excluding_target_ms = haxe_total - target_total
+                invoke_unattributed_ms = invoke_ms - haxe_total
+                result["timing_nesting_status"] = "consistent"
+                result["haxe_reported_excluding_reflaxe_target_ms"] = round(
+                    haxe_excluding_target_ms,
+                    3,
+                )
+                result["haxe_invoke_unattributed_ms"] = round(
+                    invoke_unattributed_ms,
+                    3,
+                )
+                result["haxe_invoke_reconciled_ms"] = round(
+                    target_total + haxe_excluding_target_ms + invoke_unattributed_ms,
+                    3,
+                )
+            else:
+                result["timing_nesting_status"] = "partial"
+                known_nested_ms = haxe_total if haxe_total is not None else target_total
+                if isinstance(known_nested_ms, (int, float)) and known_nested_ms <= invoke_ms:
+                    result["haxe_invoke_unattributed_ms"] = round(
+                        invoke_ms - known_nested_ms,
+                        3,
+                    )
 
     if haxe_total is not None:
         result["haxe_reported_total_ms"] = haxe_total

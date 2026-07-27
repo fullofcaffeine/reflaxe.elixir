@@ -213,10 +213,12 @@ Compile benchmark (`tmp/perf/compile-times.json`):
 - `runs[].generated_output` reports manifest-owned file/byte counts, the exact output-tree digest, and
   which generated paths changed since the prior scenario. `mix_recompiled_module_count` is parsed from
   the Mix compiler log when available.
-- In coarse mode, `phase_reconciliation` places Haxe's reported total, the Reflaxe target total, and
-  unattributed process/measurement time beside the external `haxe_build` wall clock. The reconciled
-  sum must equal that external wall clock; the unattributed remainder is an investigation target, not
-  silently assigned to Haxe or Reflaxe.
+- In coarse mode, `phase_reconciliation` treats the measurements as nested:
+  the external `haxe_build` contains Haxe's reported total, and Haxe's total contains the Reflaxe
+  target callback. It splits the wall clock into Reflaxe target work, Haxe work outside that callback,
+  and unattributed process/measurement time. The non-overlapping pieces must reconcile to the external
+  wall clock. `timing_nesting_status: inconsistent` rejects impossible ordering instead of reporting a
+  misleading negative remainder.
 - Failed phases include `log_tail`; full logs live under `tmp/perf/todo-compile/logs/`.
 
 Representative example benchmark (`tmp/perf/example-compile-times.json`):
@@ -246,9 +248,10 @@ Watch benchmark (`tmp/perf/watch-cycle-times.json`):
 - In coarse mode, each sample's `phase_reconciliation` connects the outer edit-to-success duration to
   the nested Mix/Haxe request and Haxe invocation. For example, it reports how much time fell outside
   the nested compilation timer (including file detection, debounce, and observing the success marker),
-  how long `haxe.invoke` took, the totals separately reported by Haxe and Reflaxe, and any
-  still-unattributed invocation time. An unattributed remainder is an explicit unknown to investigate;
-  the harness does not guess that Haxe, Reflaxe, or Mix owns it.
+  how long `haxe.invoke` took, the Reflaxe callback inside Haxe's reported total, Haxe time outside that
+  callback, and any still-unattributed invocation time. These are nested measurements, not values to
+  add directly. An unattributed remainder is an explicit unknown to investigate; the harness does not
+  guess that Haxe, Reflaxe, or Mix owns it.
 - `summary` reports `min_ms`, `max_ms`, `mean_ms`, `p50_ms`, and `p95_ms`.
 - Full logs live under `tmp/perf/todo-watch/logs/`.
 
