@@ -128,6 +128,18 @@ check(own_tree["process_count"] >= 1, "RSS snapshot omitted its root process")
 check(own_tree["rss_bytes"] > 0, "RSS snapshot reported no resident memory")
 check(contract.process_tree_rss_snapshot(-1) is None, "invalid PID produced an RSS snapshot")
 
+watch_help = subprocess.run(
+    [sys.executable, "scripts/perf/benchmark-todo-watch.py", "--help"],
+    cwd=ROOT,
+    text=True,
+    capture_output=True,
+    check=True,
+)
+check(
+    "representative_loaded" in watch_help.stdout,
+    "watch benchmark omitted the representative-loaded machine-state contract",
+)
+
 for scenario_name in ("cold", "warm_fresh_process", "edited_full_fresh_process"):
     scenario = contract.compile_scenario(scenario_name)
     for required in (

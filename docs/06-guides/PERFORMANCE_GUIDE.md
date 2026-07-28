@@ -168,6 +168,30 @@ taken after the edit-to-success timer stops, so observing memory does not make t
 slower. It is useful for detecting growth across a long session—for example, whether ten edits leave the
 server using steadily more memory—but it is not the highest memory usage reached during compilation.
 
+### Choose a machine-state label
+
+A developer workstation does not need to be perfectly idle before its measurements can guide an
+optimization. Use `--machine-state representative_loaded` when ordinary background work is present
+but reasonably stable. Run matched direct and Haxe-server sessions close together, reverse their order
+in a second session when practical, and compare paired deltas or ratios. Each watch sample records load
+immediately before the edit and immediately after rebuild success so reviewers can reject a period
+whose background work changed materially.
+
+Do not divide latency by load average or subtract an estimated background cost. CPU scheduling, memory
+bandwidth, caches, disk activity, and thermal limits interact nonlinearly, so that calculation would
+invent precision. A representative-loaded run can rank optimizations and show whether an improvement
+survives normal workstation activity. It does not establish an absolute latency budget or a public p95.
+
+Use the labels as follows:
+
+- `idle`: a human-reviewed, repeatable reference machine with no material unrelated work; required for
+  absolute budgets or promoted performance claims;
+- `representative_loaded`: stable everyday background work intentionally admitted for matched relative
+  comparisons;
+- `contended`: changing, saturating, or pathological competing work; retain for diagnostics but do not
+  use it to rank close alternatives;
+- `unknown`: the environment was not sufficiently observed, as with an ordinary hosted runner.
+
 For low-perturbation phase attribution, run either harness with coarse timers:
 
 ```bash
@@ -239,6 +263,9 @@ Watch benchmark (`tmp/perf/watch-cycle-times.json`):
   the input; they do not claim which compiler work was reused.
 - Each sample's `generated_output` reports whether the edit actually changed generated files and keeps
   an exact output-tree digest for clean-versus-warm comparison.
+- `samples[].host_load_before_edit` and `host_load_after_success` bracket each timed rebuild. Use them to
+  detect changing contention; they are evidence for accepting or rejecting a sample, not a formula for
+  normalizing its latency.
 - `processes.memory_before_samples` and `samples[].memory_after_success` contain post-build RSS
   snapshots. `watcher_process_tree` covers the long-running Mix watcher and its live descendants;
   `haxe_server_process_tree` starts at the native owner that keeps `haxe --wait` alive. A missing process
@@ -259,9 +286,9 @@ Interpretation rules:
 
 - Compare identical scenario names, edit kinds, process models, and cache states. Do not compare a cold
   compile total with watch-cycle latency or editor diagnostics.
-- Check both start and end host-load observations before accepting a run labelled `idle`. A low load
-  average alone does not prove an uncontended machine; record obvious background builds, indexers, or
-  thermal constraints in the surrounding benchmark notes.
+- Check the run-level and per-sample host-load observations against the selected machine-state label.
+  A low load average alone does not prove an uncontended machine; record obvious background builds,
+  indexers, or thermal constraints in the surrounding benchmark notes.
 - A slow `cold/deps_compile` phase is usually Hex/Mix dependency work, not Reflaxe.Elixir codegen.
 - A slow `haxe_build` phase points at Haxe macro work, AST building, AST transforms, or printing.
 - A slow `mix_compile` phase points at generated Elixir compilation, warnings, dependency checks, or

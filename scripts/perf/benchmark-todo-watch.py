@@ -106,9 +106,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--machine-state",
-        choices=("unknown", "idle", "contended"),
+        choices=("unknown", "idle", "representative_loaded", "contended"),
         default=os.environ.get("BENCHMARK_MACHINE_STATE", "unknown"),
-        help="Observed host state; only controlled idle runs may support promotion claims",
+        help=(
+            "Observed host state: representative_loaded admits stable everyday background work "
+            "for paired optimization decisions; only controlled idle runs may support promotion claims"
+        ),
     )
     parser.add_argument(
         "--phase-timers",
@@ -479,6 +482,7 @@ def measure_watch_cycles(
             try:
                 for cycle in range(1, total_cycles + 1):
                     variant = "B" if cycle % 2 == 1 else "A"
+                    load_before_edit = host_load_observation()
                     before_edit_ms = monotonic_ms()
                     if patch_path is not None:
                         apply_patch_variant(benchmark_root, patch_path, variant)
@@ -507,6 +511,8 @@ def measure_watch_cycles(
                         "edit_kind": args.edit_kind,
                         "public_api_changed": args.public_api_changed,
                         "status": "success",
+                        "host_load_before_edit": load_before_edit,
+                        "host_load_after_success": host_load_observation(),
                     }
                     sample["memory_after_success"] = memory_snapshot(process_info)
                     timing = target_timing_report(chunk)
