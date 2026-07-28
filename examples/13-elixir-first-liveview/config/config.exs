@@ -4,6 +4,7 @@ config :elixir_first_liveview,
   generators: [context_app: false]
 
 config :elixir_first_liveview, ElixirFirstLiveviewWeb.Endpoint,
+  adapter: Bandit.PhoenixAdapter,
   url: [host: "localhost"],
   render_errors: [formats: [html: ElixirFirstLiveviewWeb.ErrorHTML, json: ElixirFirstLiveviewWeb.ErrorJSON], layout: false],
   pubsub_server: ElixirFirstLiveview.PubSub,

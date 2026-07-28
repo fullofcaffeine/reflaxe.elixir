@@ -6,6 +6,7 @@ config :todo_app,
 
 # Configures the endpoint
 config :todo_app, TodoAppWeb.Endpoint,
+  adapter: Bandit.PhoenixAdapter,
   url: [host: "localhost"],
   render_errors: [
     formats: [html: TodoAppWeb.ErrorHTML, json: TodoAppWeb.ErrorJSON],

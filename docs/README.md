@@ -106,7 +106,6 @@ This index helps you find the right docs quickly, whether you're building apps w
 - [Phoenix Chat Tutorial (Haxe-First)](06-guides/PHOENIX_CHAT_TUTORIAL_HAXE_FIRST.md) - App/router/live/presence authored in Haxe
 - [Portable Chat Tutorial](06-guides/PORTABLE_CHAT_TUTORIAL.md) - Shared Haxe domain logic pattern
 - [Dogfooding](06-guides/DOGFOODING.md) - External Phoenix app upgrade validation
-- [Todo-app Cowboy Toolchain](06-guides/TODOAPP_COWBOY_TOOLCHAIN.md) - Why the todo-app pins Cowboy deps
 - [Production Readiness](06-guides/PRODUCTION_READINESS.md) - Current evidence, known blockers, and remaining requirements before 1.0
 - [Strict Mode](06-guides/STRICT_MODE.md) - Opt-in Gleam-like safety profile
 - [Versioning & Stability](06-guides/VERSIONING_AND_STABILITY.md) - SemVer + stability tiers + deprecation policy

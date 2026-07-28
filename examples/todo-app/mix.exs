@@ -12,7 +12,6 @@ defmodule TodoApp.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      hex: [ignore_advisories: ["CVE-2026-43966", "CVE-2026-43969"]],
       haxe: [
         # Use the full server build to ensure all modules are generated together.
         # Legacy "multipass" / micro-pass build configs were removed during cleanup.
@@ -68,11 +67,7 @@ defmodule TodoApp.MixProject do
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
       {:swoosh, "~> 1.26.3"},
-      # Webserver stack pinned for OTP/toolchain compatibility (see docs/06-guides/TODOAPP_COWBOY_TOOLCHAIN.md)
-      {:plug_cowboy, "~> 2.8.1", override: true},
-      {:cowboy, "~> 2.15", override: true},
-      {:cowlib, "~> 2.18", override: true},
-      {:ranch, "~> 2.2", override: true},
+      {:bandit, "~> 1.12.0"},
       {:file_system, "~> 1.1", only: [:dev, :test]}
     ]
   end

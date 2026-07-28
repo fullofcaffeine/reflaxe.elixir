@@ -295,12 +295,9 @@ tested on the primary Elixir `1.18.3` / OTP `27.2` toolchain and currently requi
 because their security-patched Phoenix ecosystem dependencies have raised their own minimums. An
 example dependency floor is not a change to the generated-code or compiler compatibility contract.
 
-The Cowboy-based examples currently acknowledge `CVE-2026-43966` and `CVE-2026-43969`. Cowlib
-`2.18.0` is its newest release and Hex/OSV lists no patched version for either advisory. The affected
-structured-header and outbound-cookie encoders are not called directly by these examples, while all
-high-severity Cowboy/Cowlib server findings are fixed by the locked `cowboy 2.17.0` / `cowlib
-2.18.0` stack. These acknowledgements are narrow, version-independent advisory IDs: remove each one
-as soon as Cowlib publishes a fixed release, and never add an ignore merely to make CI green.
+Phoenix examples use Bandit as their HTTP server. The Hex audit remains fail-closed: do not add an
+advisory ignore merely to make CI green. Upgrade or replace the affected dependency, and document any
+exception only when no safe alternative exists and the residual risk has been reviewed.
 
 For the named owner, monthly review schedule, Action-pin checks, and safe Gitleaks update procedure,
 see [Keeping Dependencies and Security Tools Current](DEPENDENCY_MAINTENANCE.md).

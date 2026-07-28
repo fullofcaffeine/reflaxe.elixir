@@ -11,7 +11,6 @@ defmodule ElixirFirstLiveview.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      hex: [ignore_advisories: ["CVE-2026-43966", "CVE-2026-43969"]],
       haxe: [
         hxml_file: "build.hxml",
         source_dir: "src_haxe",
@@ -51,7 +50,7 @@ defmodule ElixirFirstLiveview.MixProject do
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
-      {:plug_cowboy, "~> 2.8.1"}
+      {:bandit, "~> 1.12.0"}
     ]
   end
 

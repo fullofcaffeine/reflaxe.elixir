@@ -4,6 +4,7 @@ config :phoenix_haxe_example,
   generators: [context_app: false]
 
 config :phoenix_haxe_example, PhoenixHaxeExampleWeb.Endpoint,
+  adapter: Bandit.PhoenixAdapter,
   url: [host: "localhost"],
   render_errors: [formats: [html: PhoenixHaxeExampleWeb.ErrorHTML, json: PhoenixHaxeExampleWeb.ErrorJSON], layout: false],
   pubsub_server: PhoenixHaxeExample.PubSub,

@@ -337,18 +337,6 @@ When adding `NEW_FEATURE.md`, review and update:
 - [ ] **FEATURES.md** - Update feature status
 - [ ] **EXAMPLES.md** - Add usage examples
 
-### Example: Adding TODOAPP_COWBOY_TOOLCHAIN.md
-
-When this doc was added, these files needed updates:
-```markdown
-# In docs/README.md (docs index):
-### How-To Guides
-- [Todo-app Cowboy toolchain](06-guides/TODOAPP_COWBOY_TOOLCHAIN.md) - Why the todo-app pins Cowboy deps
-
-# In examples/todo-app/mix.exs (source comment):
-# Webserver stack pinned for OTP/toolchain compatibility (see docs/06-guides/TODOAPP_COWBOY_TOOLCHAIN.md)
-```
-
 ### Internal Links
 
 Always use relative paths:

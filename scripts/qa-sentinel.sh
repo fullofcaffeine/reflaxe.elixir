@@ -639,13 +639,6 @@ if [[ "$HAXE_USE_SERVER" -eq 1 ]] && [[ -n "$HAXE_EXE" ]]; then
   if [[ "$READY" -ne 1 ]]; then HAXE_CMD="$HAXE_EXE"; fi
 fi
 
-# Optional: dependency prewarm to avoid first-time rebar/make latency for
-# heavy Erlang deps (best-effort, bounded). Useful on macOS where erlang.mk
-# projects like cowlib may trigger additional setup on the first run.
-if [[ -n "$PREWARM_TIMEOUT" && "$PREWARM_TIMEOUT" != "0" ]]; then
-  run_step_best_effort "Step 1.pre: deps prewarm (cowlib)" "$PREWARM_TIMEOUT" /tmp/qa-deps-prewarm.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix deps.compile cowlib --force"
-fi
-
 # Generate .ex files.
 # Default: run the full build (`build-server.hxml`) so the generated output is
 # complete and consistent.
@@ -675,32 +668,6 @@ if [[ -n "${QA_SKIP_DEPS:-}" ]]; then
   log "[QA] Step 2: Skipping deps (QA_SKIP_DEPS set)"
 else
   run_step_with_log "Step 2: mix deps.get" "$DEPS_TIMEOUT" /tmp/qa-mix-deps.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix deps.get" || exit 1
-
-  # Workaround for cowlib hex packaging without rebar.config on some systems:
-  # if deps/cowlib/rebar.config is missing, create a minimal one that includes
-  # the local include/ dir so rebar3 passes -I include to erlc.
-  if [[ -d "deps/cowlib" && ! -f "deps/cowlib/rebar.config" ]]; then
-    echo "{erl_opts, [{i, \"include\"}]}."> "deps/cowlib/rebar.config"
-  fi
-
-  # Precompile critical Erlang deps to avoid include path races during main compile.
-  # Use the default _build root to ensure rebar include_lib resolution works; best-effort so main compile can proceed.
-  # Best-effort precompile of the HTTP adapter to reduce first-run latency.
-  #
-  # Phoenix generators may use either Cowboy (plug_cowboy) or Bandit, so pick what exists.
-  HTTP_ADAPTER=""
-  if [[ -f mix.lock ]]; then
-    if grep -q '"cowboy"' mix.lock 2>/dev/null; then
-      HTTP_ADAPTER="cowboy"
-    elif grep -q '"bandit"' mix.lock 2>/dev/null; then
-      HTTP_ADAPTER="bandit"
-    fi
-  fi
-  if [[ -n "$HTTP_ADAPTER" ]]; then
-    run_step_best_effort "Step 2.1: deps precompile (${HTTP_ADAPTER})" 180s /tmp/qa-deps-precompile.log "bash -lc 'unset MIX_BUILD_ROOT; MIX_ENV=$ENV_NAME mix deps.compile ${HTTP_ADAPTER}'"
-  else
-    log "[QA] Step 2.1: deps precompile skipped (no known HTTP adapter dep detected)"
-  fi
 
   # Prepare database and runtime after compile. Robust deps compile to avoid
   # rebar include_lib issues under per-run MIX_BUILD_ROOT.
