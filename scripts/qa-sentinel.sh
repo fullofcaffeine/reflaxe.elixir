@@ -704,7 +704,10 @@ else
 fi
 
 HAS_ECTO=0
-if mix help ecto.migrate >/dev/null 2>&1; then
+# Probe tasks in the same environment and isolated build root used by the
+# compile/server steps. A bare `mix help` defaults to dev and can falsely report
+# a missing task on clean CI even though the e2e dependencies are compiled.
+if MIX_ENV="$ENV_NAME" MIX_BUILD_ROOT="$QA_BUILD_ROOT" mix help ecto.migrate >/dev/null 2>&1; then
   HAS_ECTO=1
 fi
 
@@ -746,8 +749,8 @@ fi
 # Build static assets (JS/CSS) so LiveView client and UI interactions are available
 if [[ -n "${QA_SKIP_ASSETS:-}" ]]; then
   log "[QA] Assets build: skipped (QA_SKIP_ASSETS set)"
-elif mix help assets.build >/dev/null 2>&1; then
-  run_step_with_log "Assets build ($ENV_NAME)" 300s /tmp/qa-assets-build.log "MIX_ENV=$ENV_NAME mix assets.build" || exit 1
+elif MIX_ENV="$ENV_NAME" MIX_BUILD_ROOT="$QA_BUILD_ROOT" mix help assets.build >/dev/null 2>&1; then
+  run_step_with_log "Assets build ($ENV_NAME)" 300s /tmp/qa-assets-build.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix assets.build" || exit 1
 else
   log "[QA] Assets build: skipped (no assets.build task)"
 fi
