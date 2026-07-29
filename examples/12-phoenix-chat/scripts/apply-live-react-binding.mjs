@@ -243,7 +243,7 @@ try {
     "config/dev.exs",
     "         # BEGIN phoenix_chat vite_live_react_watcher",
     "         # END phoenix_chat vite_live_react_watcher",
-    '         vite: ["npm", "run", "assets:dev", cd: Path.expand("../", __DIR__)],',
+    '         npm: ["run", "assets:dev", cd: Path.expand("../", __DIR__)],',
   )
   replaceMarker(
     "config/dev.exs",

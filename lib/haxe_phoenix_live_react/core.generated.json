@@ -12,8 +12,8 @@
     {
       "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/IntegrationCore.hx",
       "generated": "lib/haxe_phoenix_live_react/core.ex",
-      "sourceSha256": "c72621520467703cf55f9cf1422c558f6ee33488946fc2140963532df9ecc7a4",
-      "generatedSha256": "c6bcb84ef4f1d50c88169654d9a7cf1ce5cd0c07dc4be4e65a3610686b2d78b4"
+      "sourceSha256": "99e44257b93b4fb28f1eb794535b77c774c28d0b436cf8877787bcd412ed1709",
+      "generatedSha256": "668817df3ae43d4a26b8b5beaca50b71ee9e7ac8947e554a1b2d00ea54a812ad"
     },
     {
       "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/LiveReactHost.hx",

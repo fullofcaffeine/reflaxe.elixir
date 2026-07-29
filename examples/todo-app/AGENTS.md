@@ -44,6 +44,8 @@ This section is the source of truth for todo-app tests.
   - `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 600 --verbose`
 - Smoke E2E (CI-aligned):
   - `scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --playwright --e2e-spec "e2e/smoke/*.spec.ts" --async --deadline 900 --verbose`
+- Local-dev watcher E2E (Vite + LiveSocket parity):
+  - `READY_PROBES=180 scripts/qa-sentinel.sh --app examples/todo-app --env dev --port 4001 --enable-watchers --playwright --e2e-spec "e2e/create_todo.spec.ts e2e/toggle_complete.spec.ts" --async --deadline 900 --verbose`
 - Full E2E sweep:
   - `scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --playwright --e2e-spec "e2e/*.spec.ts" --async --deadline 900 --verbose`
 - Single Playwright spec:

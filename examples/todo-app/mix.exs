@@ -101,7 +101,7 @@ defmodule TodoApp.MixProject do
       # BEGIN reflaxe_elixir live_react_assets_build
       "assets.build": [
         "haxe.compile.client",
-        "tailwind todo_app",
+        "tailwind todo_app --minify",
         "cmd --cd assets npm run assets:build"
       ],
       # END reflaxe_elixir live_react_assets_build

@@ -24,10 +24,10 @@ haxe_bin = System.find_executable("haxe") || find_local_haxe.(find_local_haxe, t
 base_watchers = [
   # esbuild bundling watcher for Phoenix assets
   # BEGIN reflaxe_elixir live_react_vite_watcher
-  vite: ["npm", "run", "assets:dev", cd: Path.expand("../assets", __DIR__)],
+  npm: ["run", "assets:dev", cd: Path.expand("../assets", __DIR__)],
   # END reflaxe_elixir live_react_vite_watcher
   # Tailwind CSS watcher (if styles are edited)
-  tailwind: {Tailwind, :install_and_run, [:todo_app, ~w(--watch)]}
+  tailwind: {Tailwind, :install_and_run, [:todo_app, ~w(--watch --minify)]}
 ]
 
 # Optional watchers (enabled only if binaries are present)

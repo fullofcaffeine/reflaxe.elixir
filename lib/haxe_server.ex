@@ -27,6 +27,8 @@ defmodule HaxeServer do
   `start_link/1` accepts:
   - `:port` - Port for Haxe server (default: 6116; tests pick a free port)
   - `:haxe_cmd` - Haxe command to use (default: auto-detected)
+  - `:cache_namespace` - Isolates the ownership cookie for concurrent build
+    configurations such as PhoenixHx server and browser watchers
 
   `compile/2` accepts `:timeout`, the maximum time the caller waits for one
   compilation response (default: 120000 ms).
@@ -165,7 +167,8 @@ defmodule HaxeServer do
     _ = ensure_haxeshim_server_port_env()
 
     project_root = find_project_root()
-    cookie_path = cookie_path(project_root)
+    cache_namespace = Keyword.get(opts, :cache_namespace)
+    cookie_path = cookie_path(project_root, cache_namespace)
 
     # Determine port preference order:
     # 1) explicit opts
@@ -219,6 +222,7 @@ defmodule HaxeServer do
       haxe_args: args,
       project_root: project_root,
       cookie_path: cookie_path,
+      cache_namespace: cache_namespace,
       cache_key: cache_key,
       server_pid: nil,
       server_os_pid: nil,
@@ -305,7 +309,8 @@ defmodule HaxeServer do
       server_owner_os_pid: state.server_os_pid,
       owns_server: state.owns_server,
       compile_count: state.compile_count,
-      last_compile: state.last_compile
+      last_compile: state.last_compile,
+      cache_namespace: state.cache_namespace
     }
 
     {:reply, {response, stats}, state}
@@ -718,8 +723,17 @@ defmodule HaxeServer do
       {:error, "Failed to connect to Haxe server: #{Exception.message(error)}"}
   end
 
-  defp cookie_path(project_root) do
+  defp cookie_path(project_root, nil) do
     Path.join([project_root, @cookie_dir, @cookie_file])
+  end
+
+  defp cookie_path(project_root, cache_namespace) when is_binary(cache_namespace) do
+    namespace_hash =
+      :crypto.hash(:sha256, cache_namespace)
+      |> Base.encode16(case: :lower)
+      |> String.slice(0, 16)
+
+    Path.join([project_root, @cookie_dir, "haxe_server.#{namespace_hash}.json"])
   end
 
   defp cookie_port_for_cache_key(state) do

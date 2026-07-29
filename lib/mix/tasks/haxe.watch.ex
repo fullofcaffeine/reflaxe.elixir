@@ -1,35 +1,35 @@
 defmodule Mix.Tasks.Haxe.Watch do
   @moduledoc """
   Watches Haxe source files and automatically recompiles on changes.
-  
+
   This task provides manual control over the file watcher, useful for:
   - Development workflows that need explicit watching
   - Debugging compilation issues
   - Running outside of Mix's compile pipeline
-  
+
   ## Usage
-  
+
       mix haxe.watch              # Start watching with defaults
       mix haxe.watch --verbose     # Show detailed output
       mix haxe.watch --once        # Compile directly once and exit
       mix haxe.watch --dirs src,lib # Watch specific directories
       mix haxe.watch --hxml build.hxml # Use a specific HXML file
-  
-	  ## Options
-	  
-	    * `--verbose` - Show detailed compilation output
-	    * `--once` - Compile directly once and exit (no server or watcher)
-	    * `--dirs` - Comma-separated list of directories to watch
-	    * `--debounce` - Debounce period in milliseconds (default: 100)
-	    * `--hxml` - Path to build.hxml file (default: "build.hxml")
-	    * `--promote` - Post-compile file promotion spec (comma-separated `from:to` pairs)
-	      - Example: `--promote assets/js/_hx_app_tmp.js:assets/js/hx_app.js`
-	      - Intended for Phoenix+esbuild watch mode when Haxe deletes its `-js` output during rebuilds
-  
+
+   ## Options
+
+     * `--verbose` - Show detailed compilation output
+     * `--once` - Compile directly once and exit (no server or watcher)
+     * `--dirs` - Comma-separated list of directories to watch
+     * `--debounce` - Debounce period in milliseconds (default: 100)
+     * `--hxml` - Path to build.hxml file (default: "build.hxml")
+     * `--promote` - Post-compile file promotion spec (comma-separated `from:to` pairs)
+       - Example: `--promote assets/js/_hx_app_tmp.js:assets/js/hx_app.js`
+       - Intended for Phoenix+esbuild watch mode when Haxe deletes its `-js` output during rebuilds
+
   ## Configuration
-  
+
   You can also configure defaults in `mix.exs`:
-  
+
       def project do
         [
           haxe: [
@@ -41,28 +41,29 @@ defmodule Mix.Tasks.Haxe.Watch do
         ]
       end
   """
-  
+
   use Mix.Task
-  
+
   @shortdoc "Watches and recompiles Haxe files on changes"
-  
+
   @impl Mix.Task
-	  def run(args) do
-	    # Parse command line options
-	    {opts, _, _} = OptionParser.parse(args,
-	      switches: [
-	        verbose: :boolean,
-	        once: :boolean,
-	        dirs: :string,
-	        debounce: :integer,
-	        hxml: :string,
-	        promote: :string
-	      ]
-	    )
-    
+  def run(args) do
+    # Parse command line options
+    {opts, _, _} =
+      OptionParser.parse(args,
+        switches: [
+          verbose: :boolean,
+          once: :boolean,
+          dirs: :string,
+          debounce: :integer,
+          hxml: :string,
+          promote: :string
+        ]
+      )
+
     # Get configuration from mix.exs
     config = get_watch_config(opts)
-    
+
     # Ensure code is compiled and loaded, but don't start the full application tree.
     Mix.Task.run("app.start", ["--no-start"])
 
@@ -71,7 +72,7 @@ defmodule Mix.Tasks.Haxe.Watch do
         compile_once(config)
 
       :managed ->
-        ensure_haxe_server()
+        ensure_haxe_server(config)
         start_watching(config)
     end
   end
@@ -81,18 +82,24 @@ defmodule Mix.Tasks.Haxe.Watch do
     if Keyword.get(opts, :once, false), do: :direct, else: :managed
   end
 
-  defp ensure_haxe_server() do
+  defp ensure_haxe_server(config) do
     if System.get_env("HAXE_NO_SERVER") != "1" do
       try do
         unless HaxeServer.running?() do
-          {:ok, _} = HaxeServer.start_link([])
+          {:ok, _} = HaxeServer.start_link(server_options(config))
         end
       rescue
         _ -> :ok
       end
     end
   end
-  
+
+  @doc false
+  def server_options(config) when is_list(config) do
+    build_file = config[:hxml_file] || config[:build_file] || "build.hxml"
+    [cache_namespace: Path.expand(build_file)]
+  end
+
   defp get_watch_config(opts) do
     # Start with project config
     project_config = Mix.Project.config()[:haxe] || []
@@ -149,134 +156,135 @@ defmodule Mix.Tasks.Haxe.Watch do
     )
   end
 
-	  defp parse_promote_spec(nil), do: []
-	  defp parse_promote_spec(""), do: []
+  defp parse_promote_spec(nil), do: []
+  defp parse_promote_spec(""), do: []
 
-	  defp parse_promote_spec(spec) when is_binary(spec) do
-	    spec
-	    |> String.split(",", trim: true)
-	    |> Enum.map(&String.trim/1)
-	    |> Enum.reduce([], fn pair, acc ->
-	      case String.split(pair, ":", parts: 2) do
-	        [from, to] ->
-	          from = String.trim(from)
-	          to = String.trim(to)
+  defp parse_promote_spec(spec) when is_binary(spec) do
+    spec
+    |> String.split(",", trim: true)
+    |> Enum.map(&String.trim/1)
+    |> Enum.reduce([], fn pair, acc ->
+      case String.split(pair, ":", parts: 2) do
+        [from, to] ->
+          from = String.trim(from)
+          to = String.trim(to)
 
-	          if from != "" and to != "" do
-	            acc ++ [{from, to}]
-	          else
-	            acc
-	          end
+          if from != "" and to != "" do
+            acc ++ [{from, to}]
+          else
+            acc
+          end
 
-	        _ ->
-	          acc
-	      end
-	    end)
-	  end
-  
-	  defp compile_once(config) do
-	    Mix.shell().info("Compiling Haxe files...")
-	    
-	    case HaxeCompiler.compile(config) do
-	      {:ok, files} ->
-	        promote_files_best_effort(config[:promote_files] || [])
-	        Mix.shell().info("✓ Compiled #{length(files)} file(s)")
-	        
-	      {:error, reason} ->
-	        Mix.shell().error("✗ Compilation failed:")
-	        Mix.shell().error(reason)
-	        exit({:shutdown, 1})
-	    end
-	  end
+        _ ->
+          acc
+      end
+    end)
+  end
 
-	  defp promote_files_best_effort([]), do: :ok
+  defp compile_once(config) do
+    Mix.shell().info("Compiling Haxe files...")
 
-	  defp promote_files_best_effort(promote_files) when is_list(promote_files) do
-	    Enum.each(promote_files, fn
-	      {from, to} when is_binary(from) and is_binary(to) ->
-	        if File.exists?(from) do
-	          case File.read(from) do
-	            {:ok, contents} -> atomic_replace_best_effort(to, contents)
-	            _ -> :ok
-	          end
-	        end
+    case HaxeCompiler.compile(config) do
+      {:ok, files} ->
+        promote_files_best_effort(config[:promote_files] || [])
+        Mix.shell().info("✓ Compiled #{length(files)} file(s)")
 
-	      _ ->
-	        :ok
-	    end)
-	  end
+      {:error, reason} ->
+        Mix.shell().error("✗ Compilation failed:")
+        Mix.shell().error(reason)
+        exit({:shutdown, 1})
+    end
+  end
 
-	  defp atomic_replace_best_effort(path, contents) when is_binary(path) and is_binary(contents) do
-	    dir = Path.dirname(path)
-	    if is_binary(dir) and dir != "." do
-	      _ = File.mkdir_p(dir)
-	    end
+  defp promote_files_best_effort([]), do: :ok
 
-	    tmp = path <> ".tmp." <> Integer.to_string(:rand.uniform(1_000_000_000))
+  defp promote_files_best_effort(promote_files) when is_list(promote_files) do
+    Enum.each(promote_files, fn
+      {from, to} when is_binary(from) and is_binary(to) ->
+        if File.exists?(from) do
+          case File.read(from) do
+            {:ok, contents} -> atomic_replace_best_effort(to, contents)
+            _ -> :ok
+          end
+        end
 
-	    with :ok <- File.write(tmp, contents) do
-	      case File.rename(tmp, path) do
-	        :ok ->
-	          :ok
+      _ ->
+        :ok
+    end)
+  end
 
-	        {:error, _} ->
-	          _ = File.write(path, contents)
-	          _ = File.rm(tmp)
-	          :ok
-	      end
-	    else
-	      _ -> :ok
-	    end
-	  end
-  
+  defp atomic_replace_best_effort(path, contents) when is_binary(path) and is_binary(contents) do
+    dir = Path.dirname(path)
+
+    if is_binary(dir) and dir != "." do
+      _ = File.mkdir_p(dir)
+    end
+
+    tmp = path <> ".tmp." <> Integer.to_string(:rand.uniform(1_000_000_000))
+
+    with :ok <- File.write(tmp, contents) do
+      case File.rename(tmp, path) do
+        :ok ->
+          :ok
+
+        {:error, _} ->
+          _ = File.write(path, contents)
+          _ = File.rm(tmp)
+          :ok
+      end
+    else
+      _ -> :ok
+    end
+  end
+
   defp start_watching(config) do
     Mix.shell().info("Starting Haxe file watcher...")
     Mix.shell().info("Watching directories: #{inspect(config[:dirs])}")
     Mix.shell().info("Press Ctrl+C to stop")
     Mix.shell().info("")
-    
+
     # Initial compilation
     compile_once(config)
-    
+
     # Start the watcher
     case HaxeWatcher.start_link(config) do
       {:ok, pid} ->
         # Monitor the watcher process
         ref = Process.monitor(pid)
-        
+
         # Register for compilation events
         :ok = register_compilation_callbacks(config)
-        
+
         # Keep the task running
         receive do
           {:DOWN, ^ref, :process, ^pid, reason} ->
             Mix.shell().error("Watcher stopped: #{inspect(reason)}")
             exit({:shutdown, 1})
         end
-        
+
       {:error, {:already_started, _pid}} ->
         Mix.shell().info("Watcher is already running")
-        
+
         # Just wait indefinitely
         receive do
           :never -> :ok
         end
-        
+
       {:error, reason} ->
         Mix.shell().error("Failed to start watcher: #{inspect(reason)}")
         exit({:shutdown, 1})
     end
   end
-  
+
   defp register_compilation_callbacks(config) do
     # Register a callback to show compilation results
     spawn_link(fn ->
       monitor_compilation_loop(config)
     end)
-    
+
     :ok
   end
-  
+
   defp monitor_compilation_loop(config) do
     receive do
       {:compilation_started, files} ->
@@ -285,39 +293,39 @@ defmodule Mix.Tasks.Haxe.Watch do
         else
           Mix.shell().info("→ Recompiling...")
         end
-        
+
       {:compilation_finished, {:ok, compiled_files}} ->
         Mix.shell().info("✓ Compiled successfully (#{length(compiled_files)} files)")
-        
+
       {:compilation_finished, {:error, reason}} ->
         Mix.shell().error("✗ Compilation failed:")
         display_formatted_errors(reason, config)
-        
+
       _ ->
         :ok
     end
-    
+
     # Continue monitoring
     monitor_compilation_loop(config)
   end
-  
+
   defp display_formatted_errors(reason, config) when is_binary(reason) do
     {exit_code, output} = extract_exit_code_and_output(reason)
     errors = HaxeCompiler.parse_haxe_errors(output)
-    
+
     if Enum.empty?(errors) do
       Mix.shell().error(output)
     else
       Enum.each(errors, fn error ->
         display_error(error, config)
       end)
-      
+
       Mix.shell().info("\nHint: Run 'mix haxe.errors --json' for detailed error information")
     end
 
     print_raw_output_on_failure(exit_code, output)
   end
-  
+
   defp display_formatted_errors(reason, _config) do
     Mix.shell().error(inspect(reason))
   end
@@ -362,6 +370,7 @@ defmodule Mix.Tasks.Haxe.Watch do
 
   defp write_last_failure_log(output) do
     path = Path.join(System.tmp_dir!(), "haxe_watch.last_failure.log")
+
     case File.write(path, output) do
       :ok -> path
       _ -> nil
@@ -385,54 +394,55 @@ defmodule Mix.Tasks.Haxe.Watch do
 
     IO.puts(Enum.join(shown_lines, "\n"))
   end
-  
+
   defp display_error(error, config) do
     location = format_location(error)
     message = error[:message] || "Unknown error"
-    
+
     case error[:type] do
       :warning ->
         Mix.shell().info("  ⚠ #{location} #{message}")
-        
+
       _ ->
         error_type = error[:error_type] || "Error"
         Mix.shell().error("  ✗ #{location} #{error_type}: #{message}")
     end
-    
+
     # Show code context in verbose mode
     if config[:verbose] && error[:file] && File.exists?(error[:file]) do
       show_code_snippet(error)
     end
   end
-  
+
   defp format_location(error) do
-    parts = [
-      error[:file],
-      error[:line] && ":#{error[:line]}",
-      error[:column_start] && ":#{error[:column_start]}"
-    ]
-    |> Enum.filter(& &1)
-    |> Enum.join("")
-    
+    parts =
+      [
+        error[:file],
+        error[:line] && ":#{error[:line]}",
+        error[:column_start] && ":#{error[:column_start]}"
+      ]
+      |> Enum.filter(& &1)
+      |> Enum.join("")
+
     if parts == "" do
       "[unknown location]"
     else
       parts
     end
   end
-  
+
   defp show_code_snippet(error) do
     file = error[:file]
     line_num = error[:line]
-    
+
     if file && line_num do
       lines = File.read!(file) |> String.split("\n")
-      
+
       # Show the error line with context
       if line_num > 0 && line_num <= length(lines) do
         line_content = Enum.at(lines, line_num - 1)
         Mix.shell().info("    │ #{line_content}")
-        
+
         # Show column indicator if available
         if error[:column_start] do
           indicator = String.duplicate(" ", 5 + error[:column_start]) <> "^"

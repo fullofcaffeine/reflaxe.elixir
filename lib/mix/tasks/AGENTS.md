@@ -48,6 +48,9 @@ lib/mix/tasks/
 - Triggers automatic recompilation
 - Provides hot-reload functionality during development
 - Starts a managed Haxe compilation server only for the long-running watcher; `--once` compiles directly and exits without leaving a server behind
+- Namespaces the compilation-server ownership cookie by HXML build file so
+  PhoenixHx server and browser watchers can reuse separate compiler processes
+  concurrently without terminating each other
 
 ### Debugging and Analysis Tools
 

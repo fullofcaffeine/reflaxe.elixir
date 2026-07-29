@@ -124,6 +124,18 @@ jobs:
           set -euo pipefail
           scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --compile-migrations --playwright --e2e-spec "e2e/smoke/*.spec.ts" --e2e-workers 1 --deadline 900 --verbose | tee qa-run.log
 
+      - name: Run local-dev watcher E2E (bounded)
+        env:
+          MIX_ENV: dev
+          PGHOST: localhost
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGPORT: '5432'
+          READY_PROBES: '180'
+        run: |
+          set -euo pipefail
+          scripts/qa-sentinel.sh --app examples/todo-app --env dev --port 4001 --enable-watchers --playwright --e2e-spec "e2e/create_todo.spec.ts e2e/toggle_complete.spec.ts" --e2e-workers 1 --deadline 900 --verbose | tee qa-dev-watchers-run.log
+
       - name: Upload QA logs
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -132,6 +144,7 @@ jobs:
           path: |
             /tmp/qa-*.log
             qa-run.log
+            qa-dev-watchers-run.log
 
   todo-app-mix-test:
     runs-on: ubuntu-latest

@@ -168,9 +168,9 @@ defmodule HaxePhoenixLiveReact.Core do
 
   def vite_watcher_line(package_root_relative) do
     if package_root_relative == "." do
-      "vite: [\"npm\", \"run\", \"assets:dev\", cd: Path.expand(\"../\", __DIR__)],"
+      "npm: [\"run\", \"assets:dev\", cd: Path.expand(\"../\", __DIR__)],"
     else
-      "vite: [\"npm\", \"run\", \"assets:dev\", cd: Path.expand(\"../#{package_root_relative}\", __DIR__)],"
+      "npm: [\"run\", \"assets:dev\", cd: Path.expand(\"../#{package_root_relative}\", __DIR__)],"
     end
   end
 

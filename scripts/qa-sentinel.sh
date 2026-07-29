@@ -17,7 +17,7 @@ set +m
 #   while the full validation runs in the background with logs you can tail.
 #
 # USAGE
-#   scripts/qa-sentinel.sh [--app PATH] [--port N] [--keep-alive] [--verbose] [--async] [--deadline SECS]
+#   scripts/qa-sentinel.sh [--app PATH] [--port N] [--keep-alive] [--enable-watchers] [--verbose] [--async] [--deadline SECS]
 #
 # FLAGS
 #   --app PATH       Default: examples/todo-app
@@ -29,6 +29,7 @@ set +m
 #   --compile-migrations   Before ecto.migrate, compile runnable `.exs` migrations (ecto_migrations_exs)
 #   --migrations-hxml FILE Migration HXML to use (default: build-migrations.hxml)
 #   --keep-alive     Do not kill Phoenix on exit; print PHX_PID, PHX_PGID, and PORT
+#   --enable-watchers Exercise Endpoint watchers during a bounded run (local-dev parity)
 #   --verbose|-v     Print shell commands and tail logs during probes
 #   --async          Dispatch pipeline to background and return immediately
 #   --deadline SECS  Hard cap: watchdog kills background job after SECS
@@ -51,6 +52,7 @@ set +m
 #     - Optional Step 7 when `--playwright` is used
 #     - Use a dedicated env `--env e2e` (separate DB, server=true, PORT honored)
 #     - Run entire E2E via sentinel: `scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4011 --playwright --e2e-spec "e2e/*.spec.ts" --deadline 600`
+#     - Check the local-dev watcher path: `scripts/qa-sentinel.sh --app examples/todo-app --env dev --enable-watchers --port 4011 --playwright --e2e-spec "e2e/create_todo.spec.ts" --deadline 600`
 #     - Or standalone against a keep-alive server: `BASE_URL=http://localhost:$PORT npx -C examples/todo-app playwright test`
 #   Testing Trophy Guidance
 #     - Most coverage via Haxe-authored ExUnit (LiveView/ConnTest)
@@ -106,9 +108,11 @@ APP_DIR="examples/todo-app"
 HXML_FILE="build-server.hxml"
 PORT=4001
 ENV_NAME="dev"
+ENV_EXPLICIT=0
 REUSE_DB=0
 SEEDS_FILE=""
 KEEP_ALIVE=0
+ENABLE_WATCHERS=0
 VERBOSE=0
 # Noise control
 NO_HEARTBEAT=0
@@ -148,10 +152,11 @@ while [[ $# -gt 0 ]]; do
     --app) APP_DIR="$2"; shift 2 ;;
     --hxml) HXML_FILE="$2"; shift 2 ;;
     --port) PORT="$2"; shift 2 ;;
-    --env) ENV_NAME="$2"; shift 2 ;;
+    --env) ENV_NAME="$2"; ENV_EXPLICIT=1; shift 2 ;;
     --reuse-db) REUSE_DB=1; shift 1 ;;
     --seeds) SEEDS_FILE="$2"; shift 2 ;;
     --keep-alive) KEEP_ALIVE=1; shift 1 ;;
+    --enable-watchers) ENABLE_WATCHERS=1; shift 1 ;;
     --verbose|-v) VERBOSE=1; shift 1 ;;
     --async) ASYNC=1; shift 1 ;;
     --no-wae) WAE=0; shift 1 ;;
@@ -176,7 +181,7 @@ fi
 
 # If Playwright is requested and no explicit env provided (still 'dev'),
 # default to e2e for proper DB isolation and server settings
-if [[ "$RUN_PLAYWRIGHT" -eq 1 && "$ENV_NAME" == "dev" ]]; then
+if [[ "$RUN_PLAYWRIGHT" -eq 1 && "$ENV_NAME" == "dev" && "$ENV_EXPLICIT" -eq 0 ]]; then
   ENV_NAME="e2e"
 fi
 
@@ -362,6 +367,7 @@ if [[ "${ASYNC}" -eq 1 && "${ASYNC_CHILD:-0}" -eq 0 ]]; then
   if [[ "$REUSE_DB" -eq 1 ]]; then CHILD_FLAGS+=("--reuse-db"); fi
   if [[ -n "$SEEDS_FILE" ]]; then CHILD_FLAGS+=("--seeds" "$SEEDS_FILE"); fi
   if [[ "$KEEP_ALIVE" -eq 1 ]]; then CHILD_FLAGS+=("--keep-alive"); fi
+  if [[ "$ENABLE_WATCHERS" -eq 1 ]]; then CHILD_FLAGS+=("--enable-watchers"); fi
   if [[ "$VERBOSE" -eq 1 ]]; then CHILD_FLAGS+=("--verbose"); fi
   if [[ "$QUIET" -eq 1 ]]; then CHILD_FLAGS+=("--quiet"); fi
   if [[ "$NO_HEARTBEAT" -eq 1 ]]; then CHILD_FLAGS+=("--no-heartbeat"); fi
@@ -523,7 +529,7 @@ log "[QA]  6) GET /, scan logs, teardown (unless --keep-alive)"
 if [[ "$RUN_PLAYWRIGHT" -eq 1 ]]; then
   log "[QA]  7) Run Playwright E2E (spec: ${E2E_SPEC:-e2e}, workers: ${E2E_WORKERS}, browsers: ${PLAYWRIGHT_BROWSERS})"
 fi
-log "[QA] Config: PORT=$PORT ENV=$ENV_NAME KEEP_ALIVE=$KEEP_ALIVE VERBOSE=$VERBOSE WAE=$WAE"
+log "[QA] Config: PORT=$PORT ENV=$ENV_NAME KEEP_ALIVE=$KEEP_ALIVE ENABLE_WATCHERS=$ENABLE_WATCHERS VERBOSE=$VERBOSE WAE=$WAE"
 
 # Optional overall deadline for synchronous mode too
 if [[ -n "${DEADLINE}" && "${ASYNC}" -eq 0 ]]; then
@@ -772,7 +778,12 @@ export PORT="$PORT"
 # for interactive dev, but can leak long-lived processes (e.g. `haxe --wait`)
 # after the server is torn down.
 PHX_ENV_PREFIX="MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT"
-if [[ "$KEEP_ALIVE" -eq 0 ]]; then
+if [[ "$ENABLE_WATCHERS" -eq 1 ]]; then
+  # The sentinel already compiled the server before boot. Keep endpoint watchers
+  # active to exercise the local-development asset path without compiling the
+  # server a second time.
+  PHX_ENV_PREFIX="HAXE_NO_COMPILE=1 ${PHX_ENV_PREFIX}"
+elif [[ "$KEEP_ALIVE" -eq 0 ]]; then
   PHX_ENV_PREFIX="DISABLE_WATCHERS=1 HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 ${PHX_ENV_PREFIX}"
 fi
 # Start Phoenix in the background, detached when possible, and capture PID/PGID
@@ -795,6 +806,23 @@ MY_PGID=$(ps -o pgid= $$ 2>/dev/null | tr -d ' ' || true)
 log "[QA] Phoenix started: PHX_PID=$PHX_PID PGID=$PGID (logs: /tmp/qa-phx.log)"
 
 cleanup() {
+  # Snapshot and terminate the Phoenix descendant tree before its children can
+  # be reparented. Endpoint watchers such as Vite and `mix haxe.watch` may use
+  # their own process groups, so killing only Phoenix's group is insufficient.
+  local descendants=""
+  collect_descendants() {
+    local parent_pid="$1"
+    local child_pid
+    for child_pid in $(ps -Ao pid=,ppid= | awk -v parent="$parent_pid" '$2 == parent {print $1}'); do
+      collect_descendants "$child_pid"
+      descendants="${descendants} ${child_pid}"
+    done
+  }
+  collect_descendants "$PHX_PID"
+  if [[ -n "${descendants// /}" ]]; then
+    kill -TERM $descendants >/dev/null 2>&1 || true
+  fi
+
   # Prefer killing the Phoenix process group when it is distinct from our own.
   # This prevents terminating the host CLI when the server wasn't started in a new session.
   if [[ -n "$PGID" && -n "$MY_PGID" && "$PGID" != "$MY_PGID" ]]; then
@@ -804,6 +832,10 @@ cleanup() {
   fi
   # Always try to terminate the server PID directly
   kill "$PHX_PID" >/dev/null 2>&1 || true
+  if [[ -n "${descendants// /}" ]]; then
+    sleep 0.5
+    kill -KILL $descendants >/dev/null 2>&1 || true
+  fi
   # Extra safety: kill anything still listening on the port
   if command -v lsof >/dev/null 2>&1; then
     PIDS=$(lsof -ti tcp:"$PORT" -sTCP:LISTEN || true)
@@ -840,6 +872,34 @@ if [[ "$READY" -ne 1 ]]; then
   tail -n 200 /tmp/qa-phx.log || true
   cleanup || true
   exit 1
+fi
+
+if [[ "$ENABLE_WATCHERS" -eq 1 ]]; then
+  log "[QA] Waiting for local-dev watchers to settle"
+  EXPECTED_HAXE_WATCHERS="${QA_EXPECT_HAXE_WATCHERS:-2}"
+  WATCHERS_READY=0
+
+  for i in $(seq 1 "$READY_PROBES"); do
+    HAXE_WATCHERS_READY=$(grep -c "HaxeWatcher started monitoring" /tmp/qa-phx.log 2>/dev/null || true)
+
+    if curl -fsS "http://127.0.0.1:5173/@vite/client" >/dev/null 2>&1 &&
+      [[ "$HAXE_WATCHERS_READY" -ge "$EXPECTED_HAXE_WATCHERS" ]]; then
+      WATCHERS_READY=1
+      break
+    fi
+
+    if [[ "$VERBOSE" -eq 1 && $((i % 20)) -eq 0 ]]; then
+      log "[QA] Watcher readiness $i/$READY_PROBES: Haxe=$HAXE_WATCHERS_READY/$EXPECTED_HAXE_WATCHERS"
+    fi
+    sleep 0.5
+  done
+
+  if [[ "$WATCHERS_READY" -ne 1 ]]; then
+    log "[QA] ❌ Local-dev watchers did not settle. Last 200 log lines:"
+    tail -n 200 /tmp/qa-phx.log || true
+    cleanup || true
+    exit 1
+  fi
 fi
 
 log "[QA] Step 6: GET / (strict 2xx)"

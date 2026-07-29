@@ -198,7 +198,7 @@ class IntegrationCore {
 
 	public static function viteWatcherLine(packageRootRelative:String):String {
 		return
-			packageRootRelative == "." ? 'vite: ["npm", "run", "assets:dev", cd: Path.expand("../", __DIR__)],' : 'vite: ["npm", "run", "assets:dev", cd: Path.expand("../$packageRootRelative", __DIR__)],';
+			packageRootRelative == "." ? 'npm: ["run", "assets:dev", cd: Path.expand("../", __DIR__)],' : 'npm: ["run", "assets:dev", cd: Path.expand("../$packageRootRelative", __DIR__)],';
 	}
 
 	static function joinLines(lines:Array<String>):String {

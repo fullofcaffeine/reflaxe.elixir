@@ -62,9 +62,20 @@ Visit `http://localhost:4000` to see the app.
 
 ### Command Guide (Recommended)
 
-- `mix dev` (best default): runs `ecto.create`, `ecto.migrate`, then starts Phoenix with watchers.
-- `mix phx.server` (fast restart): starts Phoenix with the same dev watchers, but does not run DB create/migrate.
+- `mix dev` is the normal human development command. It runs `ecto.create`,
+  `ecto.migrate`, and then starts Phoenix with the Vite, Tailwind, server-Haxe,
+  and client-Haxe watchers.
+- `mix phx.server` is a fast restart for an already prepared checkout. It starts
+  the same watchers, but it does not create or migrate the database.
 - `mix assets.build && mix compile` (one-shot build): builds client assets and compiles server code without starting the server/watchers.
+- `scripts/qa-sentinel.sh ...` is the bounded CI/agent harness. It is useful for
+  reproducible build, boot, and Playwright validation; it is not the everyday
+  local development command.
+
+After `mix dev` reports that Phoenix is listening, open
+`http://localhost:4000`. Interactive LiveView behavior also requires the Vite
+watcher on `http://127.0.0.1:5173`. A page that renders but whose buttons do
+nothing usually means the server HTML loaded while the browser bundle did not.
 
 ### Troubleshooting
 
@@ -83,10 +94,33 @@ Tip: prefer `mix dev` over `mix phx.server` because `mix dev` runs `ecto.create`
 #### Haxe port conflicts / slow first compile
 
 - Dev uses `mix haxe.watch` watchers for **both** server (Haxe→Elixir) and client (Haxe→JS) code.
+- The first `mix dev` boot can take longer because the server and client Haxe
+  builds initialize before their watchers settle.
 - If you see `Haxe server port 6116 is in use; relocating ...` and builds feel slow, clean up stale servers:
   - `../../scripts/haxe-server-cleanup.sh`
 - Inspect status:
   - `mix haxe.status`
+
+#### The page renders, but clicks and forms do nothing
+
+First check the `mix dev` terminal. It must not report that the `npm` watcher
+failed, and Vite should be listening on port 5173. Then verify the browser
+connection in its developer console:
+
+```js
+window.liveSocket?.isConnected()
+```
+
+The result should be `true`. If it is false or undefined, stop the current
+server, clear stale Haxe servers, and restart the full development flow:
+
+```bash
+../../scripts/haxe-server-cleanup.sh
+mix dev
+```
+
+Do not use a successful HTML load as the readiness signal: LiveView buttons,
+forms, and completion toggles need the browser bundle and websocket connection.
 
 ### Optional: GitHub OAuth (Login)
 
@@ -127,6 +161,9 @@ replace them.
 
 ### QA Sentinel (non-blocking)
 
+These commands are for CI and agent validation. For normal development, use
+`mix dev` from `examples/todo-app`.
+
 Compile + boot + readiness smoke:
 ```bash
 scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 600 --verbose
@@ -135,6 +172,13 @@ scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 60
 Smoke browser suite (CI-aligned):
 ```bash
 scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --playwright --e2e-spec "e2e/smoke/*.spec.ts" --async --deadline 900 --verbose
+```
+
+Local-development watcher parity (the CI lane that catches a missing Vite
+watcher even when prebuilt assets work):
+
+```bash
+READY_PROBES=180 scripts/qa-sentinel.sh --app examples/todo-app --env dev --port 4001 --enable-watchers --playwright --e2e-spec "e2e/create_todo.spec.ts e2e/toggle_complete.spec.ts" --async --deadline 900 --verbose
 ```
 
 Full browser suite:
@@ -310,21 +354,21 @@ lifecycle surface is intentionally not enabled here.
 
 ### Watch Mode
 ```bash
-# Recommended: single terminal with Phoenix watchers (server+client)
+# Recommended human workflow: one terminal, all watchers
 mix dev
 
-# Optional (manual split):
-# Terminal 1 (Phoenix with assets watchers)
+# Fast restart after setup/migrations are current
 mix phx.server
-# Terminal 2 (manual client build)
-npm --prefix assets run watch:haxe
 ```
 
 Note
 - In this app, both `mix dev` and `mix phx.server` run Endpoint watchers from `config/dev.exs`
   (Vite, Tailwind, Haxe server watcher, and Haxe client watcher).
-- The Haxe client watcher is launched via npm (`npm --prefix assets run watch:haxe`).
-- If npm is not available on PATH, Phoenix starts without the Haxe watcher; you can still build once with `mix assets.build`.
+- `mix dev` additionally ensures the database exists and is migrated, so it is
+  the safer default.
+- Vite is launched through the `npm` Endpoint watcher. If npm is unavailable or
+  that watcher fails, the HTML can still render but LiveView interactions will
+  not work.
 
 ### CSRF meta tag
 - The layout emits a standard Phoenix CSRF meta tag using Plug:

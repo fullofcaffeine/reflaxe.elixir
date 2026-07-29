@@ -53,7 +53,7 @@ config :phoenix_chat, PhoenixChatWeb.Endpoint,
          # END reflaxe_elixir haxe_client
 
          # BEGIN phoenix_chat vite_live_react_watcher
-         vite: ["npm", "run", "assets:dev", cd: Path.expand("../", __DIR__)],
+         npm: ["run", "assets:dev", cd: Path.expand("../", __DIR__)],
          # END phoenix_chat vite_live_react_watcher
          tailwind: {Tailwind, :install_and_run, [:phoenix_chat, ~w(--watch)]}
        ]

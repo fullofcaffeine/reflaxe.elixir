@@ -52,6 +52,38 @@ defmodule HaxeServerTest do
   end
 
   describe "start_link/1" do
+    test "isolates ownership cookies by build cache namespace" do
+      previous_haxe_no_server = System.get_env("HAXE_NO_SERVER")
+      System.put_env("HAXE_NO_SERVER", "1")
+
+      try do
+        assert {:ok, server_pid} =
+                 HaxeServer.start_link(cache_namespace: "/project/build-server.hxml")
+
+        server_cookie = :sys.get_state(server_pid).cookie_path
+        GenServer.stop(server_pid, :normal)
+
+        assert {:ok, client_pid} =
+                 HaxeServer.start_link(cache_namespace: "/project/build-client.hxml")
+
+        client_cookie = :sys.get_state(client_pid).cookie_path
+
+        refute server_cookie == client_cookie
+        assert Path.basename(server_cookie) =~ ~r/^haxe_server\.[0-9a-f]{16}\.json$/
+        assert Path.basename(client_cookie) =~ ~r/^haxe_server\.[0-9a-f]{16}\.json$/
+      after
+        case Process.whereis(HaxeServer) do
+          nil -> :ok
+          pid -> GenServer.stop(pid, :normal)
+        end
+
+        case previous_haxe_no_server do
+          nil -> System.delete_env("HAXE_NO_SERVER")
+          value -> System.put_env("HAXE_NO_SERVER", value)
+        end
+      end
+    end
+
     test "starts the GenServer with default options" do
       assert {:ok, pid} = HaxeServer.start_link([])
       assert Process.alive?(pid)

@@ -42,7 +42,7 @@ class HaxePhoenixLiveReactTest extends TestCase {
 		Assert.equals("file:deps/live_react", result.npmReference);
 		Assert.equals(Fixture.REVISION, Fixture.jsonPath(result.dependency, ["resolvedRevision"]));
 		Assert.containsString(File.readBang(Path.joinTwo(root, "mix.exs")), "BEGIN reflaxe_elixir live_react_dependency");
-		Assert.containsString(File.readBang(Path.join([root, "config", "dev.exs"])), 'vite: ["npm", "run", "assets:dev", cd: Path.expand("../", __DIR__)]');
+		Assert.containsString(File.readBang(Path.join([root, "config", "dev.exs"])), 'npm: ["run", "assets:dev", cd: Path.expand("../", __DIR__)]');
 		Assert.containsString(File.readBang(Path.join([root, "assets", "js", "app.js"])), "Object.assign(Hooks, reactHooks);");
 		Assert.containsString(File.readBang(Fixture.rootLayout(root)),
 			"<%!-- BEGIN reflaxe_elixir live_react_vite_assets --%>\n"
@@ -167,8 +167,7 @@ class HaxePhoenixLiveReactTest extends TestCase {
 
 		Assert.containsString(appJs, "window.Hooks = {...(window.Hooks || {}), ...reactHooks}");
 		Assert.containsString(appJs, "hooks: {...colocatedHooks, ...(window.Hooks || {})},");
-		Assert.containsString(File.readBang(Path.join([root, "config", "dev.exs"])),
-			'vite: ["npm", "run", "assets:dev", cd: Path.expand("../assets", __DIR__)]');
+		Assert.containsString(File.readBang(Path.join([root, "config", "dev.exs"])), 'npm: ["run", "assets:dev", cd: Path.expand("../assets", __DIR__)]');
 
 		var packageJson = Fixture.readJson(Path.join([root, "assets", "package.json"]));
 
