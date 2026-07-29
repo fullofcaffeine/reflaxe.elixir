@@ -40,13 +40,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   @haxe_test_helper_begin "# BEGIN reflaxe_elixir haxe_exunit_require"
   @haxe_test_helper_end "# END reflaxe_elixir haxe_exunit_require"
   @reflaxe_elixir_source_root Path.expand("../../..", __DIR__)
-  @agent_template_path Path.join([
-                         @reflaxe_elixir_source_root,
-                         "priv",
-                         "templates",
-                         "project",
-                         "agents.md.tpl"
-                       ])
+  @agent_template_path Path.join([__DIR__, "templates", "agents.md.tpl"])
 
   @doc """
   Entry point for the Mix task

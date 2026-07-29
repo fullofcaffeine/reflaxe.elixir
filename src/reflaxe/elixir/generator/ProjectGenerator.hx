@@ -767,14 +767,16 @@ class HelloWorld {
 
 	function loadTemplate(templateName:String):String {
 		var libPath = getLibraryPath();
-		var templatePath = Path.join([libPath, "priv", "templates", "project", templateName]);
-		if (!FileSystem.exists(templatePath)) {
-			templatePath = Path.join([libPath, "templates", "project", templateName]);
+		var templatePath = if (templateName == "agents.md.tpl") {
+			var sourceTemplate = Path.join([libPath, "lib", "mix", "tasks", "templates", templateName]);
+			FileSystem.exists(sourceTemplate) ? sourceTemplate : Path.join([libPath, "src", "reflaxe", "elixir", "generator", "templates", templateName]);
+		} else {
+			Path.join([libPath, "templates", "project", templateName]);
 		}
 
 		if (!FileSystem.exists(templatePath)) {
 			if (templateName == "agents.md.tpl") {
-				throw "Installed Reflaxe.Elixir package is missing priv/templates/project/agents.md.tpl";
+				throw "Installed Reflaxe.Elixir package is missing the shared agents.md.tpl";
 			}
 			// Fall back to embedded defaults when running from a minimal distribution.
 			return defaultTemplate(templateName);

@@ -70,6 +70,17 @@ copy_dir_to_build() {
   cp -R "$source_root/$rel/." "$build_dir/$rel/"
 }
 
+copy_file_to_build() {
+  local source_rel="$1"
+  local target_rel="$2"
+  [[ -f "$source_root/$source_rel" ]] || {
+    echo "[package] error: required file missing: $source_rel" >&2
+    exit 2
+  }
+  mkdir -p "$build_dir/$(dirname "$target_rel")"
+  cp "$source_root/$source_rel" "$build_dir/$target_rel"
+}
+
 copy_dir_to_work src
 copy_dir_to_work std
 for rel in haxelib.json extraParams.hxml LICENSE README.md; do copy_file_to_work "$rel"; done
@@ -93,7 +104,9 @@ node "$root_dir/scripts/release/prepare-package-metadata.js" \
 # CompilerBootstrap loads these package siblings by path; generic Reflaxe build owns src/_std flattening.
 copy_dir_to_build vendor
 # The Haxe-side project generator reads the same agent bootstrap as the Mix generator.
-copy_dir_to_build priv/templates/project
+copy_file_to_build \
+  lib/mix/tasks/templates/agents.md.tpl \
+  src/reflaxe/elixir/generator/templates/agents.md.tpl
 # The source tree's contributor-instruction link is not package runtime content; prior copy logic
 # also omitted symlinks, and release archives reject them explicitly.
 rm -f "$build_dir/vendor/CLAUDE.md"
