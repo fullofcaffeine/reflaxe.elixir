@@ -402,6 +402,26 @@ Use this loop to implement/verify user-facing features end‑to‑end without co
 
 ### 🧬 Genes Dependency and Upstream-Fix Workflow (Required)
 
+- When work will become a pull request to the Genes repository, operate as a
+  Genes contributor first. Before planning or editing, read the live
+  `$GENES_CHECKOUT/AGENTS.md`, every scoped `AGENTS.md` that applies to the
+  files being changed, and the Genes guides those instructions require. Do
+  this for each Genes task; do not rely on a previously absorbed copy because
+  the upstream rules can change.
+- The Genes repository's instructions govern work inside its checkout,
+  including Beads/worktrees, architecture and fixture selection, both
+  TypeScript and classic JavaScript profiles, performance evidence,
+  documentation, commit/PR writing, review-thread disposition, CI, and the
+  protected merge workflow. In other words, become the Genes agent for that
+  repository.
+- This repository supplies a downstream integration twist on top: reduce the
+  motivating PhoenixHx/LiveReact failure to a generic Haxe→JS/TS compiler
+  contract, then return here after the Genes PR merges to update the exact pin
+  and validate the affected consumers. These downstream rules may add evidence
+  or sequencing requirements, but they never replace, weaken, or bypass the
+  Genes repository's own rules. If instructions conflict for work in Genes,
+  stop and resolve the conflict explicitly; do not silently choose the easier
+  workflow.
 - Committed browser builds resolve one exact `genes-ts` revision through Lix. Never commit a local checkout/worktree path, a moving branch, `haxelib dev`, or an unpushed commit as a dependency.
 - `$GENES_CHECKOUT` denotes the local compiler-authority checkout; it is not a consumer build input. Use an isolated `$GENES_WORKTREE` for each generic compiler change so concurrent work in the authority checkout is preserved.
 - A worktree is local branch isolation; a fork is remote ownership/sharing. If a topic branch can be pushed to the canonical Genes repository, no additional fork is required. Use a private/project-owned fork only when permissions, visibility, or ownership require it.
