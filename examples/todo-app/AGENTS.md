@@ -390,7 +390,9 @@ We compile the server (Haxe→Elixir) via a Mix compiler and the client (Haxe→
   - Uses `build-server.hxml` as source of truth to generate idiomatic Elixir under `lib/` (`build.hxml` is a thin alias)
 
 - Client compilation: handled by assets watchers/aliases
-  - Dev: the Haxe watcher runs `haxe build-client.hxml --wait 6001`, while Vite serves and bundles `assets/js/app.js` (see `config/dev.exs`).
+  - Dev: `mix haxe.watch --hxml build-client.hxml` owns the build-specific
+    compilation server, while Vite serves and bundles `assets/js/app.js` (see
+    `config/dev.exs`).
   - Build: `mix assets.build` (Haxe/Genes source generation + Tailwind + Vite).
   - Deploy: `mix assets.deploy` (Haxe/Genes + Tailwind + Vite + Phoenix digest).
 
@@ -428,7 +430,7 @@ uses this entry to compose those generated modules with stock LiveReact and Phoe
 
 Watchers
 - Dev watcher runs the Haxe client watcher when available:
-  - `haxe build-client.hxml --wait 6001`
+  - `mix haxe.watch --hxml build-client.hxml`
 - Configured in `config/dev.exs`; omitted automatically if `haxe` is not on PATH.
 
 CSRF meta

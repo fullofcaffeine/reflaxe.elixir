@@ -194,6 +194,20 @@ Now `mix phx.server` owns the complete lifecycle:
 If you already have Vite, esbuild, Tailwind, or other endpoint watchers, keep
 them in the same watcher list; do not replace them.
 
+The watcher keyword is the executable Phoenix starts. For example, Vite
+normally runs through npm:
+
+```elixir
+watchers: [
+  npm: ["run", "assets:dev", cd: Path.expand("../assets", __DIR__)]
+]
+```
+
+Do not write `vite: ["npm", "run", "assets:dev", ...]`. That asks Phoenix to
+execute `vite` and pass `npm` as its first argument; the server-rendered HTML
+can still load while the missing browser bundle leaves LiveView forms and
+buttons inert.
+
 ## Server-side and client-side Haxe in one Phoenix app
 
 A full PhoenixHx app can have two independent builds:
@@ -202,9 +216,23 @@ A full PhoenixHx app can have two independent builds:
 2. `build-client.hxml`: Haxe → JavaScript/TypeScript, commonly through Genes.
 
 Configure one `mix haxe.watch` endpoint watcher for each HXML. Each long-running
-watcher owns its compiler lifecycle. If both prefer the same port, the managed
-server code safely relocates one to a free port; you do not need a separate
-client-port convention.
+watcher owns its compiler lifecycle. `mix haxe.watch` derives an ownership
+namespace from the absolute HXML path, so `build-server.hxml` and
+`build-client.hxml` do not overwrite each other's ownership cookie. That keeps
+stale-process cleanup for one build from treating the other build's live
+compiler as its own. If both prefer the same port, the managed server code
+safely relocates one to a free port; you do not need a separate client-port
+convention.
+
+These are regression-tested contracts. Commit `2030abea2` first registered the
+todo app's npm command under a `vite` watcher key, which broke browser
+interactivity; commit `c0af6a45c` corrected the executable and added the
+local-development watcher E2E lane. Independently, commit `fba02394e` added
+stale-server cleanup while concurrent builds still shared one ownership cookie,
+allowing the two watchers to terminate each other; `c0af6a45c` added the
+per-HXML namespace. The Haxe server ExUnit tests enforce distinct cookies, and
+the bounded todo-app CI lane creates and toggles a todo with all development
+watchers enabled.
 
 ### Avoid client output races
 

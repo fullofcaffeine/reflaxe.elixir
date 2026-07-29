@@ -509,33 +509,44 @@ scope "/", MyAppWeb do
 end
 ```
 
-### Problem: `EADDRINUSE` when running `mix phx.server` (Haxe watcher port)
+### Problem: repeated Haxe server relocation or restart under `mix phx.server`
 
 **Symptom:**
 
-You see a Node/Haxe watcher crash like:
+You repeatedly see messages such as:
 ```
-Error: listen EADDRINUSE: address already in use :::6001
+Haxe server port 6116 is in use; relocating ...
+Haxe server exited with status: 143; restarting
 ```
 
 **Cause:**
 
-Phoenix watchers often run Haxe in `--wait <PORT>` mode so repeated builds can reuse one compiler process. If that port is already in use (e.g., from a previous run), the watcher process will fail.
+`mix haxe.watch` owns a persistent compiler process and normally relocates when
+its preferred port is occupied. A single relocation is harmless. Repeated
+relocation can mean an old repository-owned server survived a prior run.
+Repeated status `143` messages can also indicate custom watcher code starting
+multiple builds without distinct `:cache_namespace` values.
 
 **Solutions:**
 
-1. **Stop whatever is using the port**:
+1. **Use the managed watcher for each build**:
 ```bash
-lsof -i :6001
-kill -TERM <PID>
+mix haxe.watch --hxml build-server.hxml
+mix haxe.watch --hxml build-client.hxml
 ```
 
-2. **Change the watcher port** (recommended if you frequently run multiple app instances):
-   - Find the watcher command in `config/dev.exs`
-   - Change `--wait 6001` to another free port (e.g. `--wait 6002`)
+   Each command derives a separate ownership namespace from its HXML path.
 
-3. **Disable `--wait` for the watcher** (slower rebuilds, but no port binding):
-   - Remove the `--wait <PORT>` args from the watcher command in `config/dev.exs`
+2. **Remove repository-owned stale servers**, from the repository root:
+```bash
+scripts/haxe-server-cleanup.sh
+```
+
+3. **Compare with direct compilation** when diagnosing a server-specific
+   problem:
+```bash
+HAXE_NO_SERVER=1 mix compile.haxe
+```
 
 If you see port conflicts in CI builds, also see `docs/06-guides/PRODUCTION_DEPLOYMENT.md` for `HAXE_NO_SERVER=1` and other build‑time options.
 

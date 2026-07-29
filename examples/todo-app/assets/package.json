@@ -81,7 +81,7 @@
     "lint": "eslint js/**/*.js",
     "test:live-react": "cd .. && haxe build-live-react-test.hxml && cd assets && tsc -p tsconfig.live-react-test.json && node _tmp/live-react-contract/dist/index.js",
     "typecheck:live-react": "tsc -p tsconfig.live-react.json",
-    "watch:haxe": "cd .. && haxe build-client.hxml --wait 6001"
+    "watch:haxe": "cd .. && mix haxe.watch --hxml build-client.hxml --dirs src_haxe/client,src_react,src_shared,src_haxe/contexts --debounce 150 --promote assets/js/_hx_app_tmp.js:assets/js/hx_app.js,assets/js/_hx_app_tmp.js.map:assets/js/hx_app.js.map"
   },
   "type": "module",
   "version": "1.0.0"

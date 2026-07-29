@@ -362,7 +362,7 @@ lifecycle surface is intentionally not enabled here.
 
 ### Watch Mode
 ```bash
-# Recommended human workflow: one terminal, all watchers
+# Recommended interactive workflow: one terminal, all watchers
 mix dev
 
 # Fast restart after setup/migrations are current
@@ -377,6 +377,10 @@ Note
 - Vite is launched through the `npm` Endpoint watcher. If npm is unavailable or
   that watcher fails, the HTML can still render but LiveView interactions will
   not work.
+- In a Phoenix watcher entry, the keyword before `:` names the executable.
+  Keep this as `npm: ["run", "assets:dev", ...]`; spelling it
+  `vite: ["npm", "run", ...]` asks Phoenix to execute `vite` with the wrong
+  arguments and leaves the rendered page without a working LiveSocket.
 
 ### CSRF meta tag
 - The layout emits a standard Phoenix CSRF meta tag using Plug:
