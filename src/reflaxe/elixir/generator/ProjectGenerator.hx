@@ -279,15 +279,7 @@ class ProjectGenerator {
 			File.saveContent(haxercPath, '{\n  "version": "4.3.7",\n  "resolveLibs": "scoped"\n}\n');
 		}
 
-		// Always regenerate AGENTS.md + CLAUDE.md from the same template (kept in sync).
-		var agentPath = Path.join([projectPath, "AGENTS.md"]);
-		var claudePath = Path.join([projectPath, "CLAUDE.md"]);
-		var content = generateClaudeInstructions(options);
-		File.saveContent(agentPath, content);
-		File.saveContent(claudePath, content);
-		if (options.verbose) {
-			Sys.println('Created AGENTS.md + CLAUDE.md with AI development instructions');
-		}
+		createAgentInstructions(projectPath, options, false);
 
 		Sys.println("");
 		Sys.println("✅ Updated mix.exs with :haxe compiler + reflaxe_elixir dependency");
@@ -307,15 +299,7 @@ class ProjectGenerator {
 			File.saveContent(gitignorePath, content);
 		}
 
-		// Always regenerate AGENTS.md + CLAUDE.md from the same template (kept in sync).
-		var agentPath = Path.join([projectPath, "AGENTS.md"]);
-		var claudePath = Path.join([projectPath, "CLAUDE.md"]);
-		var content = generateClaudeInstructions(options);
-		File.saveContent(agentPath, content);
-		File.saveContent(claudePath, content);
-		if (options.verbose) {
-			Sys.println('Created AGENTS.md + CLAUDE.md with AI development instructions');
-		}
+		createAgentInstructions(projectPath, options, true);
 
 		// Ensure .haxerc exists for lix-managed toolchain
 		var haxercPath = Path.join([projectPath, ".haxerc"]);
@@ -783,9 +767,15 @@ class HelloWorld {
 
 	function loadTemplate(templateName:String):String {
 		var libPath = getLibraryPath();
-		var templatePath = Path.join([libPath, "templates", "project", templateName]);
+		var templatePath = Path.join([libPath, "priv", "templates", "project", templateName]);
+		if (!FileSystem.exists(templatePath)) {
+			templatePath = Path.join([libPath, "templates", "project", templateName]);
+		}
 
 		if (!FileSystem.exists(templatePath)) {
+			if (templateName == "agents.md.tpl") {
+				throw "Installed Reflaxe.Elixir package is missing priv/templates/project/agents.md.tpl";
+			}
 			// Fall back to embedded defaults when running from a minimal distribution.
 			return defaultTemplate(templateName);
 		}
@@ -905,7 +895,39 @@ Describe decisions and conventions unique to this project.
 
 	function generateClaudeInstructions(options:GeneratorOptions):String {
 		var context = createTemplateContext(options);
-		return processTemplate("claude.md.tpl", context);
+		return processTemplate("agents.md.tpl", context);
+	}
+
+	/**
+	 * Writes the shared agent bootstrap without destroying instructions already owned by an
+	 * adopted project.
+	 *
+	 * New projects always receive the current template. Add-to-existing mode preserves a pair
+	 * that is already present; if only one compatibility filename exists, the missing filename
+	 * is initialized from that existing content so both agent entrypoints see the same rules.
+	 */
+	function createAgentInstructions(projectPath:String, options:GeneratorOptions, replaceExisting:Bool):Void {
+		var agentPath = Path.join([projectPath, "AGENTS.md"]);
+		var claudePath = Path.join([projectPath, "CLAUDE.md"]);
+
+		if (!replaceExisting && (FileSystem.exists(agentPath) || FileSystem.exists(claudePath))) {
+			if (!FileSystem.exists(agentPath) && FileSystem.exists(claudePath)) {
+				File.saveContent(agentPath, File.getContent(claudePath));
+			} else if (!FileSystem.exists(claudePath) && FileSystem.exists(agentPath)) {
+				File.saveContent(claudePath, File.getContent(agentPath));
+			}
+			if (options.verbose) {
+				Sys.println("Preserved existing AGENTS.md / CLAUDE.md agent instructions");
+			}
+			return;
+		}
+
+		var content = generateClaudeInstructions(options);
+		File.saveContent(agentPath, content);
+		File.saveContent(claudePath, content);
+		if (options.verbose) {
+			Sys.println("Created AGENTS.md + CLAUDE.md from the shared agent bootstrap");
+		}
 	}
 
 	function generateReadme(options:GeneratorOptions):String {
@@ -940,6 +962,7 @@ Describe decisions and conventions unique to this project.
 		var isPhoenix = projectType == "phoenix";
 		var isLiveView = projectType == "liveview";
 		var isBasic = projectType == "basic" || projectType == "add-to-existing";
+		var haxeNamespace = projectNameSnake + "_hx";
 
 		// Create template context map
 		var context = TemplateContext.empty();
@@ -953,11 +976,15 @@ Describe decisions and conventions unique to this project.
 		context.set("YEAR", VString(Std.string(Date.now().getFullYear())));
 
 		// Boolean flags for conditionals
-		context.set("IS_PHOENIX", VBool(isPhoenix));
+		context.set("IS_PHOENIX", VBool(isPhoenix || isLiveView));
 		context.set("IS_LIVEVIEW", VBool(isLiveView || isPhoenix)); // Phoenix includes LiveView
 		context.set("IS_BASIC", VBool(isBasic));
 		context.set("HAS_ECTO", VBool(isPhoenix || isLiveView));
 		context.set("HAS_PATTERNS", VBool(false)); // Will be true after first extraction
+		context.set("HAS_LIVE_REACT", VBool(false));
+		context.set("HAXE_DIR", VString("src_haxe"));
+		context.set("OUTPUT_DIR", VString('lib/${haxeNamespace}'));
+		context.set("CLIENT_MODE", VString(phoenixClientMode(options)));
 
 		return context;
 	}

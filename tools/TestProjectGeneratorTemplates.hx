@@ -57,6 +57,29 @@ class TestProjectGeneratorTemplates {
 		assertContains(buildHxml, "--main demo_hx.Main", "build.hxml sets a stable --main");
 		assertNotContains(buildHxml, "CompilerInit.Start()", "build.hxml does not duplicate the bootstrap macro");
 
+		var agents = File.getContent(Path.join([runDir, "AGENTS.md"]));
+		var claude = File.getContent(Path.join([runDir, "CLAUDE.md"]));
+		assertEquals(agents, claude, "Haxe generator keeps AGENTS.md and CLAUDE.md byte-identical");
+		assertContains(agents, "Edit application behavior in `src_haxe/**`", "base agent guide names the Haxe source owner");
+		assertContains(agents, "`lib/demo_hx/**` as generated output", "base agent guide names the configured generated output");
+		assertContains(agents, "haxe build.hxml", "base agent guide includes a bounded compile command");
+		assertNotContains(agents, "## PhoenixHx", "add-to-existing base profile does not claim PhoenixHx");
+		assertNotContains(agents, "## PhoenixHx + LiveReact", "base profile does not claim LiveReact");
+		assertNotContains(agents, "{{", "base agent guide leaves no template tokens");
+
+		File.saveContent(Path.join([runDir, "AGENTS.md"]), "# Existing agent rules\n");
+		File.saveContent(Path.join([runDir, "CLAUDE.md"]), "# Existing compatibility rules\n");
+		generator.generate({
+			name: "demo",
+			type: "add-to-existing",
+			skipInstall: true,
+			verbose: false,
+			vscode: false,
+			workingDir: runDir
+		});
+		assertEquals(File.getContent(Path.join([runDir, "AGENTS.md"])), "# Existing agent rules\n", "add-to-existing preserves user-owned AGENTS.md");
+		assertEquals(File.getContent(Path.join([runDir, "CLAUDE.md"])), "# Existing compatibility rules\n", "add-to-existing preserves user-owned CLAUDE.md");
+
 		assertMixTaskScaffold(root);
 
 		Sys.println("OK: ProjectGenerator + Mix.Tasks.Haxe.Gen.Project scaffolds");
@@ -78,6 +101,8 @@ class TestProjectGeneratorTemplates {
 
 		assertExists(Path.join([runDir, "build.hxml"]), "mix task created build.hxml");
 		assertExists(Path.join([runDir, "package.json"]), "mix task created package.json");
+		assertExists(Path.join([runDir, "AGENTS.md"]), "mix task created AGENTS.md");
+		assertExists(Path.join([runDir, "CLAUDE.md"]), "mix task created CLAUDE.md");
 		assertExists(Path.join([runDir, "src_haxe", "demo_hx", "Main.hx"]), "mix task created src_haxe/demo_hx/Main.hx");
 		assertExists(Path.join([runDir, "src_haxe", "demo_hx", "utils", "StringUtils.hx"]), "mix task created utils/StringUtils.hx");
 		assertExists(Path.join([runDir, "src_haxe", "demo_hx", "live", "AppLive.hx"]), "mix task created live/AppLive.hx");
@@ -97,6 +122,17 @@ class TestProjectGeneratorTemplates {
 		assertContains(buildHxml, "-D hxx_string_to_sigil", "mix task build.hxml includes hxx_string_to_sigil for Phoenix");
 		assertContains(buildHxml, "demo_hx.Main", "mix task build.hxml compiles demo_hx.Main");
 		assertContains(buildHxml, "demo_hx.live.AppLive", "mix task build.hxml compiles demo_hx.live.AppLive");
+
+		var agents = File.getContent(Path.join([runDir, "AGENTS.md"]));
+		var claude = File.getContent(Path.join([runDir, "CLAUDE.md"]));
+		assertEquals(agents, claude, "Mix generator keeps AGENTS.md and CLAUDE.md byte-identical");
+		assertContains(agents, "## PhoenixHx", "Mix Phoenix profile teaches the PhoenixHx target model");
+		assertContains(agents, "return <section>", "Mix Phoenix profile teaches inline HXX");
+		assertContains(agents, "The target shape is ordinary HEEx", "Mix Phoenix profile shows the raw Phoenix equivalent");
+		assertContains(agents, "configured browser client mode is `genes`", "Mix Phoenix profile records the selected client mode");
+		assertNotContains(agents, "## PhoenixHx + LiveReact", "ordinary Phoenix profile does not claim LiveReact");
+		assertContains(agents, 'Do not introduce `hxx("...")`', "Mix Phoenix profile explicitly rejects legacy HXX wrappers");
+		assertNotContains(agents, "{{", "Mix Phoenix profile leaves no template tokens");
 
 		rmrf(runDir);
 	}
@@ -186,6 +222,13 @@ end
 	private static function assertNotContains(haystack:String, needle:String, message:String):Void {
 		if (haystack.indexOf(needle) != -1) {
 			Sys.println("FAIL: " + message + " (unexpected: " + needle + ")");
+			Sys.exit(1);
+		}
+	}
+
+	private static function assertEquals(actual:String, expected:String, message:String):Void {
+		if (actual != expected) {
+			Sys.println("FAIL: " + message);
 			Sys.exit(1);
 		}
 	}

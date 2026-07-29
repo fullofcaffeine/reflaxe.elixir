@@ -92,6 +92,8 @@ node "$root_dir/scripts/release/prepare-package-metadata.js" \
 
 # CompilerBootstrap loads these package siblings by path; generic Reflaxe build owns src/_std flattening.
 copy_dir_to_build vendor
+# The Haxe-side project generator reads the same agent bootstrap as the Mix generator.
+copy_dir_to_build priv/templates/project
 # The source tree's contributor-instruction link is not package runtime content; prior copy logic
 # also omitted symlinks, and release archives reject them explicitly.
 rm -f "$build_dir/vendor/CLAUDE.md"

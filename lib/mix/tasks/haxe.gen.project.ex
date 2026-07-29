@@ -40,6 +40,13 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   @haxe_test_helper_begin "# BEGIN reflaxe_elixir haxe_exunit_require"
   @haxe_test_helper_end "# END reflaxe_elixir haxe_exunit_require"
   @reflaxe_elixir_source_root Path.expand("../../..", __DIR__)
+  @agent_template_path Path.join([
+                         @reflaxe_elixir_source_root,
+                         "priv",
+                         "templates",
+                         "project",
+                         "agents.md.tpl"
+                       ])
 
   @doc """
   Entry point for the Mix task
@@ -156,6 +163,10 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
         """)
       end
     end
+
+    # 7c. Create agent guidance only after optional integrations succeeded, so it never
+    # claims LiveReact is enabled when lifecycle setup failed.
+    create_agent_instructions(config)
 
     # 8. Display next steps
     display_next_steps(config)
@@ -333,6 +344,48 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
 
   @doc false
   def validate_feature_composition_for_test(config), do: validate_feature_composition!(config)
+
+  @doc false
+  def agent_instructions_content_for_test(config), do: agent_instructions_content(config)
+
+  defp create_agent_instructions(config) do
+    content = agent_instructions_content(config)
+    paths = ["AGENTS.md", "CLAUDE.md"]
+
+    should_write? =
+      config.force or
+        Enum.all?(paths, &(not File.exists?(&1))) or
+        Mix.shell().yes?(
+          "AGENTS.md or CLAUDE.md already exists. Overwrite both from the shared Reflaxe.Elixir bootstrap?"
+        )
+
+    if should_write? do
+      Enum.each(paths, &File.write!(&1, content))
+      Mix.shell().info("Created AGENTS.md + CLAUDE.md from the shared agent bootstrap")
+    else
+      Mix.shell().info("Preserved existing AGENTS.md / CLAUDE.md agent instructions")
+    end
+  end
+
+  defp agent_instructions_content(config) do
+    @agent_template_path
+    |> File.read!()
+    |> render_agent_condition("IS_PHOENIX", config.phoenix)
+    |> render_agent_condition("HAS_LIVE_REACT", config.live_react)
+    |> replace_agent_token("PROJECT_NAME", to_string(config.app_name))
+    |> replace_agent_token("HAXE_DIR", config.haxe_dir)
+    |> replace_agent_token("OUTPUT_DIR", config.output_dir)
+    |> replace_agent_token("CLIENT_MODE", client_mode_label(config.client_mode))
+  end
+
+  defp render_agent_condition(content, condition, enabled?) do
+    pattern = ~r/\{\{#if\s+#{Regex.escape(condition)}\}\}(.*?)\{\{\/if\}\}/s
+    Regex.replace(pattern, content, fn _, body -> if enabled?, do: body, else: "" end)
+  end
+
+  defp replace_agent_token(content, token, value) do
+    String.replace(content, "{{#{token}}}", value)
+  end
 
   # Create package.json for npm dependencies
   defp create_package_json(config) do

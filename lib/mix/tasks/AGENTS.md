@@ -22,11 +22,13 @@ lib/mix/tasks/
 ├── haxe.inspect.ex             # Code inspection and analysis tools
 ├── haxe.source_map.ex          # Source map generation and validation
 ├── haxe.gen.project.ex         # Generate new Haxe→Elixir projects
+├── haxe.gen.live_react.ex      # Generate a typed app-local LiveReact component
 ├── haxe.gen.schema.ex          # Generate Ecto schemas from Haxe
 ├── haxe.gen.live.ex            # Generate Phoenix LiveView from Haxe
 ├── haxe.gen.context.ex         # Generate Phoenix contexts from Haxe
 ├── haxe.gen.extern.ex          # Generate starter Haxe externs from Elixir modules
-└── haxe.gen.migration.ex       # Generate Ecto migrations from Haxe
+├── haxe.gen.migration.ex       # Generate Ecto migrations from Haxe
+└── haxe.phoenix.live_react.ex  # Setup/check/remove stock LiveReact integration
 ```
 
 ## 🔧 Mix Tasks Overview
@@ -87,6 +89,18 @@ lib/mix/tasks/
 - Scaffolds new Haxe→Elixir projects
 - Sets up build configuration
 - Creates project structure
+- Emits the shared `AGENTS.md` / `CLAUDE.md` bootstrap
+- Composes optional PhoenixHx and LiveReact guidance from selected flags
+
+#### `Mix.Tasks.Haxe.Gen.LiveReact`
+**File**: `haxe.gen.live_react.ex`
+- Adds a statically registered, typed app-local LiveReact wrapper/component
+- Requires the public LiveReact lifecycle setup to own the project integration
+
+#### `Mix.Tasks.Haxe.Phoenix.LiveReact`
+**File**: `haxe.phoenix.live_react.ex`
+- Sets up, checks, repairs, or removes the opt-in stock LiveReact integration
+- Preserves marker and manifest ownership instead of rewriting unowned project content
 
 #### `Mix.Tasks.Haxe.Gen.Schema`
 **File**: `haxe.gen.schema.ex`

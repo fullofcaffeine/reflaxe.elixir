@@ -30,6 +30,7 @@ defmodule Mix.Tasks.Haxe.Gen.ProjectTest do
   defp phoenix_config(overrides \\ []) do
     Map.merge(
       %{
+        app_name: :my_app,
         haxe_namespace: "my_app_hx",
         elixir_namespace: "MyApp",
         module_name: "MyApp",
@@ -37,6 +38,8 @@ defmodule Mix.Tasks.Haxe.Gen.ProjectTest do
         output_dir: "lib/my_app_hx",
         basic_modules: false,
         phoenix: true,
+        live_react: false,
+        client_mode: :genes,
         skip_examples: true
       },
       Map.new(overrides)
@@ -156,5 +159,38 @@ defmodule Mix.Tasks.Haxe.Gen.ProjectTest do
         skip_npm: true
       })
     end
+  end
+
+  test "agent bootstrap renders base, Phoenix, and LiveReact profiles from one template" do
+    base =
+      phoenix_config(phoenix: false)
+      |> Mix.Tasks.Haxe.Gen.Project.agent_instructions_content_for_test()
+
+    phoenix =
+      phoenix_config(client_mode: :plain_js)
+      |> Mix.Tasks.Haxe.Gen.Project.agent_instructions_content_for_test()
+
+    live_react =
+      phoenix_config(live_react: true)
+      |> Mix.Tasks.Haxe.Gen.Project.agent_instructions_content_for_test()
+
+    assert base =~ "Edit application behavior in `src_haxe/**`"
+    assert base =~ "`lib/my_app_hx/**` as generated output"
+    refute base =~ "## PhoenixHx"
+    refute base =~ "{{"
+
+    assert phoenix =~ "## PhoenixHx"
+    assert phoenix =~ ~S(return <section>)
+    assert phoenix =~ "The target shape is ordinary HEEx"
+    assert phoenix =~ "configured browser client mode is `plain-js`"
+    refute phoenix =~ "## PhoenixHx + LiveReact"
+    assert phoenix =~ ~S|Do not introduce `hxx("...")`|
+
+    assert live_react =~ "## PhoenixHx + LiveReact"
+    assert live_react =~ "mix haxe.phoenix.live_react --check"
+    assert live_react =~ "mix haxe.gen.live_react ComponentName"
+    assert live_react =~ "browser events as untrusted input"
+    assert live_react =~ "Server-side React rendering is not enabled"
+    refute live_react =~ "{{"
   end
 end
