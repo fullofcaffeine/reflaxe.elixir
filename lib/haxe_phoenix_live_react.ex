@@ -1056,6 +1056,7 @@ defmodule HaxePhoenixLiveReact do
             Regex.match?(Regex.compile!("(?m)^\\s*@:component\\b"), source) and
               Regex.match?(Regex.compile!("\\bfunction\\s+root\\s*\\("), source) and
               (String.contains?(source, "/assets/app.js") or
+                 String.contains?(source, "/assets/js/app.js") or
                  String.contains?(source, "/assets/phoenix_app.js"))
           end)
 

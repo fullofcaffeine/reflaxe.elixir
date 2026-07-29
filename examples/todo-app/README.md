@@ -63,15 +63,15 @@ Visit `http://localhost:4000` to see the app.
 
 ### Command Guide (Recommended)
 
-- `mix dev` is the normal human development command. It runs `ecto.create`,
+- `mix dev` is the normal interactive development command. It runs `ecto.create`,
   `ecto.migrate`, and then starts Phoenix with the Vite, Tailwind, server-Haxe,
   and client-Haxe watchers.
 - `mix phx.server` is a fast restart for an already prepared checkout. It starts
   the same watchers, but it does not create or migrate the database.
 - `mix assets.build && mix compile` (one-shot build): builds client assets and compiles server code without starting the server/watchers.
-- `scripts/qa-sentinel.sh ...` is the bounded CI/agent harness. It is useful for
-  reproducible build, boot, and Playwright validation; it is not the everyday
-  local development command.
+- `scripts/qa-sentinel.sh ...` runs the same application path with bounded
+  background lifecycle ownership for CI and automated agents: readiness
+  probes, captured logs, a deadline, Playwright, and guaranteed teardown.
 - Run `mix setup` once after a fresh clone or dependency change. It installs the
   root and `assets/` npm dependencies required by Vite before `mix dev`.
 

@@ -1,0 +1,3 @@
+# Repository example: resolve the compiler framework from this checkout.
+-cp ../../vendor/reflaxe/src/
+-D reflaxe=4.0.0-beta

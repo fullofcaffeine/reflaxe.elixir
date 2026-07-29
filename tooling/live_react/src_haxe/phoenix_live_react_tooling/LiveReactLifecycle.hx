@@ -664,7 +664,9 @@ class LiveReactLifecycle {
 			var source = File.readBang(path);
 			return Regex.match(Regex.compileBang("(?m)^\\s*@:component\\b"), source)
 				&& Regex.match(Regex.compileBang("\\bfunction\\s+root\\s*\\("), source)
-				&& (ElixirString.contains(source, "/assets/app.js") || ElixirString.contains(source, "/assets/phoenix_app.js"));
+				&& (ElixirString.contains(source, "/assets/app.js")
+					|| ElixirString.contains(source, "/assets/js/app.js")
+					|| ElixirString.contains(source, "/assets/phoenix_app.js"));
 		});
 		if (haxeMatches.length == 1)
 			return {path: haxeMatches[0], kind: HAXE_LAYOUT};

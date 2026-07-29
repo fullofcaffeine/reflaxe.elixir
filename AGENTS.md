@@ -79,7 +79,11 @@ What these scripts do
 - Build Haxe → Elixir (`build-server.hxml`), `mix deps.get`, `mix compile` (WAE), boot `mix phx.server` in background, wait for readiness with bounded probes, curl `/`, scan logs for errors, and tear down (unless `--keep-alive`).
 - All steps have timeouts with heartbeat progress lines to avoid hangs.
 
-Always use these sentinels for runtime checks. Do not run `mix phx.server` in the foreground during agent work.
+Always use these sentinels for runtime checks. Interactive development and
+automated validation exercise the same application path; agents use the
+sentinel because it supplies bounded background process ownership and
+guaranteed teardown, not because the app has an agent-specific runtime mode.
+Do not run `mix phx.server` in the foreground during agent work.
 
 ## ✅ CI Parity Checklist (Required before pushing)
 

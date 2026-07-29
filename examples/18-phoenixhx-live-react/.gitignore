@@ -1,0 +1,52 @@
+# The directory Mix will write compiled artifacts to.
+/_build/
+
+# If you run "mix test --cover", coverage assets end up here.
+/cover/
+
+# The directory Mix downloads your dependencies sources to.
+/deps/
+
+# Where 3rd-party dependencies like ExDoc output generated docs.
+/doc/
+
+# Ignore .fetch files in case you like to edit your project deps locally.
+/.fetch
+
+# If the VM crashes, it generates a dump, let's ignore it too.
+erl_crash.dump
+
+# Also ignore archive artifacts (built via "mix archive.build").
+*.ez
+
+# Temporary files, for example, from tests.
+/tmp/
+/test/generated/
+
+# Ignore package tarball (built via "mix hex.build").
+phoenixhx_live_react-*.tar
+
+# Ignore assets that are produced by build tools.
+/priv/static/assets/
+
+# Ignore digested assets cache.
+/priv/static/cache_manifest.json
+
+# In case you use Node.js/npm, you want to ignore these.
+npm-debug.log
+/assets/node_modules/
+
+# Genes multi-file JavaScript output (regenerated from src_haxe/client).
+assets/js/.genes-output-*.manifest
+assets/js/client/
+assets/js/genes/
+assets/js/haxe/
+assets/js/Std.js
+assets/js/Std.js.map
+
+# Reflaxe.Elixir (Haxe client JS intermediate output)
+assets/js/_hx_app_tmp.js
+assets/js/_hx_app_tmp.js.map
+# Reflaxe.Elixir (Haxe client JS stable import target; generated via promotion)
+assets/js/hx_app.js
+assets/js/hx_app.js.map

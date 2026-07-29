@@ -52,7 +52,10 @@ class HaxePhoenixLiveReactTest extends TestCase {
 			+ "    <%!-- END reflaxe_elixir live_react_vite_assets --%>");
 
 		Assert.isTrue(ElixirMap.hasKeyTerm(DependencyLock.read(Path.joinTwo(root, "mix.lock")), LIVE_REACT));
-		Assert.containsString(File.readBang(Path.joinTwo(root, "vite.config.mjs")), Fixture.GENERATED_SIGNATURE);
+		var viteConfig = File.readBang(Path.joinTwo(root, "vite.config.mjs"));
+		Assert.containsString(viteConfig, Fixture.GENERATED_SIGNATURE);
+		Assert.containsString(viteConfig, 'alias: {"phoenix-colocated": colocatedRoot}');
+		Assert.containsString(viteConfig, "commonjsOptions: {include: [/node_modules/, /vendor/], transformMixedEsModules: true}");
 		var manifest = Fixture.readJson(Path.joinTwo(root, Fixture.MANIFEST));
 		Assert.isEmpty(Fixture.jsonPath(manifest, ["components"]));
 		var originalLockState:Term = Fixture.jsonPath(manifest, ["managed", "restores", "mix.lockOriginalState"]);
@@ -116,6 +119,94 @@ class HaxePhoenixLiveReactTest extends TestCase {
 		LifecycleApi.removeBang(root, [{_0: "yes", _1: true}]);
 		Assert.equals(original, File.readBang(Fixture.rootLayout(root)));
 		Assert.isFalse(File.exists(wrapperPath));
+	}
+
+	@:test("Phoenix 1.8 multiline asset aliases retain their loop binder during setup")
+	function testPhoenix18MultilineAssetAliasesApply():Void {
+		var root = Fixture.fixtureRoot(Fixture.GENES, "assets");
+		var mixPath = Path.joinTwo(root, "mix.exs");
+		var layoutPath = Fixture.rootLayout(root);
+		var multiline = Fixture.replaceOnce(File.readBang(mixPath), "      \"assets.build\": [\"esbuild demo\"],",
+			"      \"assets.build\": [\n" + "        \"esbuild demo\"\n" + "      ],");
+		File.writeBang(mixPath, multiline);
+		var phoenix18Layout = Fixture.replaceOnce(File.readBang(layoutPath),
+			"    <script defer phx-track-static type=\"text/javascript\" src={~p\"/assets/app.js\"}></script>",
+			"    <script defer phx-track-static type=\"text/javascript\" src={~p\"/assets/js/app.js\"}>\n" + "    </script>");
+		File.writeBang(layoutPath, phoenix18Layout);
+
+		LifecycleApi.applyBang(root, Fixture.applyOptions(root));
+
+		var applied = File.readBang(mixPath);
+		Assert.containsString(applied, "\"assets.build\": [");
+		Assert.containsString(applied, "\"cmd --cd assets npm run assets:build\"");
+		var appliedLayout = File.readBang(layoutPath);
+		Assert.containsString(appliedLayout, "type=\"module\" src={~p\"/assets/app.js\"}");
+		Assert.containsString(appliedLayout, "</LiveReact.Reload.vite_assets>\n" + "    <%!-- END reflaxe_elixir live_react_vite_assets --%>\n" + "  </head>");
+		Assert.equals(CHECK, LifecycleApi.checkBang(root, Fixture.rerunOptions()).mode);
+
+		LifecycleApi.removeBang(root, [{_0: "yes", _1: true}]);
+		Assert.equals(phoenix18Layout, File.readBang(layoutPath));
+	}
+
+	@:test("Genes client compilation precedes Vite on first setup and repair")
+	function testGenesClientCompilationPrecedesVite():Void {
+		var root = Fixture.fixtureRoot(Fixture.GENES, ".");
+		var mixPath = Path.joinTwo(root, "mix.exs");
+		var original = Fixture.replaceOnce(File.readBang(mixPath), "      \"assets.build\": [\"esbuild demo\"],",
+			"      \"assets.build\": [\n"
+			+ "\n"
+			+ "        # BEGIN reflaxe_elixir assets.build_task\n"
+			+ "        \"haxe.compile.client\",\n"
+			+ "        # END reflaxe_elixir assets.build_task\n"
+			+ "        \"compile\"\n"
+			+ "      ],");
+		File.writeBang(mixPath, original);
+
+		LifecycleApi.applyBang(root, Fixture.applyOptions(root));
+
+		var applied = File.readBang(mixPath);
+		var haxeBlock = "        # BEGIN reflaxe_elixir assets.build_task\n" + "        \"haxe.compile.client\",\n"
+			+ "        # END reflaxe_elixir assets.build_task";
+		var viteBlock = "        # BEGIN reflaxe_elixir live_react_assets_build\n"
+			+ "        \"cmd npm run assets:build\",\n"
+			+ "        # END reflaxe_elixir live_react_assets_build";
+		Assert.isTrue(applied.indexOf(haxeBlock) < applied.indexOf(viteBlock));
+
+		// Simulate a project written by the older integration, then prove
+		// `--yes` repairs the already-managed block instead of preserving drift.
+		File.writeBang(mixPath, Fixture.replaceOnce(applied, haxeBlock + "\n" + viteBlock, viteBlock + "\n" + haxeBlock));
+		LifecycleApi.applyBang(root, Fixture.rerunOptions());
+		var repaired = File.readBang(mixPath);
+		Assert.isTrue(repaired.indexOf(haxeBlock) < repaired.indexOf(viteBlock));
+		Assert.equals(CHECK, LifecycleApi.checkBang(root, Fixture.rerunOptions()).mode);
+
+		LifecycleApi.removeBang(root, [{_0: "yes", _1: true}]);
+		Assert.equals(original, File.readBang(mixPath));
+	}
+
+	@:test("Phoenix compact asset aliases replace esbuild without losing sibling tasks")
+	function testCompactAssetAliasReplacesEsbuild():Void {
+		var root = Fixture.fixtureRoot(Fixture.GENES, ".");
+		var mixPath = Path.joinTwo(root, "mix.exs");
+		var original = Fixture.replaceOnce(File.readBang(mixPath), "      \"assets.build\": [\"esbuild demo\"],",
+			"      \"assets.build\": [\n"
+			+ "        # BEGIN reflaxe_elixir assets.build_task\n"
+			+ "        \"haxe.compile.client\",\n"
+			+ "        # END reflaxe_elixir assets.build_task\n"
+			+ "        \"compile\", \"tailwind demo\", \"esbuild demo\"],");
+		File.writeBang(mixPath, original);
+
+		LifecycleApi.applyBang(root, Fixture.applyOptions(root));
+
+		var applied = File.readBang(mixPath);
+		Assert.containsString(applied, "\"haxe.compile.client\"");
+		Assert.containsString(applied, "\"compile\", \"tailwind demo\", \"cmd npm run assets:build\"");
+		Assert.doesNotContainString(applied, "\"esbuild demo\"");
+		Assert.doesNotContainString(applied, "\n        \n");
+		Assert.equals(CHECK, LifecycleApi.checkBang(root, Fixture.rerunOptions()).mode);
+
+		LifecycleApi.removeBang(root, [{_0: "yes", _1: true}]);
+		Assert.equals(original, File.readBang(mixPath));
 	}
 
 	@:test("project-local Phoenix npm checkouts remain compatible and unowned")

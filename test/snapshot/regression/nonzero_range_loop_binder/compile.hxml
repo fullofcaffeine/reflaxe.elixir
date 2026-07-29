@@ -1,0 +1,8 @@
+-cp .
+-lib reflaxe
+-lib reflaxe.elixir
+-dce full
+-D reflaxe.dont_output_metadata_id
+-D elixir_output=out
+--no-output
+-main Main

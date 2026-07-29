@@ -183,6 +183,10 @@ defmodule Mix.Tasks.Haxe.Gen.ProjectTest do
     assert phoenix =~ ~S(return <section>)
     assert phoenix =~ "The target shape is ordinary HEEx"
     assert phoenix =~ "configured browser client mode is `plain-js`"
+    assert phoenix =~ "`plain-js` means Phoenix modules and HEEx may still be Haxe-authored"
+    assert phoenix =~ "`genes` means browser bootstrap code and hooks may be authored in Haxe"
+    assert phoenix =~ "Interactive development and automated validation"
+    assert phoenix =~ "bounded process ownership"
     refute phoenix =~ "## PhoenixHx + LiveReact"
     assert phoenix =~ ~S|Do not introduce `hxx("...")`|
 
@@ -191,6 +195,8 @@ defmodule Mix.Tasks.Haxe.Gen.ProjectTest do
     assert live_react =~ "mix haxe.gen.live_react ComponentName"
     assert live_react =~ "browser events as untrusted input"
     assert live_react =~ "Server-side React rendering is not enabled"
+    assert live_react =~ "LiveReact does not itself require Genes"
+    assert live_react =~ "inner React component in hand-owned TSX"
     refute live_react =~ "{{"
   end
 end

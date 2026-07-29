@@ -8,6 +8,7 @@ Canonical examples that drive this list:
 - `examples/13-elixir-first-liveview/` - Elixir-first LiveView, typed test helpers, app-local externs
 - `examples/15-phoenix-chat-haxe-first/` - Haxe-authored app/router/live/presence server path
 - `examples/17-railshx-to-phoenixhx-todo/` - RailsHx-inspired UX port implemented with Phoenix-native LiveView, Ecto, PubSub, and session patterns
+- `examples/18-phoenixhx-live-react/` - reusable LiveReact lifecycle, Genes bootstrap, typed island wrapper, and browser interaction
 - `examples/todo-app/` - production-shaped LiveView/Ecto app
 
 ## Policy
@@ -33,19 +34,14 @@ Use this decision rule for every Phoenix surface addition:
 | Phoenix tests | `phoenix.test.ConnTest`, `phoenix.test.LiveViewTest`, `LiveViewTest.view/initial_html` | `examples/13-elixir-first-liveview/test_haxe` | Covered with typed result follow-up |
 | Channels | `phoenix.Channel`, `phoenix.channels.*` | channel snapshots/docs | Covered, needs example-driven expansion only |
 | App-owned infra modules | app-local `@:unsafeExtern` for Endpoint/PubSub/Telemetry/DNSCluster | Haxe-first chat + Elixir-first LiveView examples | Intentional boundary |
-| Stock LiveReact islands | Project-local typed HXX wrapper, static registry, Vite, and upstream hook proof | `examples/12-phoenix-chat` | Project proof complete; first-class opt-in integration open |
+| Stock LiveReact islands | API-faithful extern, lifecycle task, typed app wrapper, static registry, and Vite | `examples/18-phoenixhx-live-react`, Haxe lifecycle suite | Experimental reusable integration covered |
 | RailsHx-to-PhoenixHx learning port | Phoenix-native LiveView/Ecto/PubSub/session implementation of a RailsHx-inspired UX | `examples/17-railshx-to-phoenixhx-todo/` | Covered; see follow-up sections below |
 
 ## Gap Details And Follow-Ups
 
-### Open: First-Class Stock LiveReact Integration
+### Done: First-Class Stock LiveReact Integration
 
-`examples/12-phoenix-chat` proves that direct inline HXX can call stock
-`LiveReact.react` while a static application registry, Vite, and the upstream
-LiveReact hook own the browser path. That proof is still project-local; it is
-not yet a reusable PhoenixHx surface.
-
-The frozen reusable owner is a small, API-faithful
+The reusable owner is a small, API-faithful
 `std/phoenix/live_react/**` declaration surface, the
 `mix haxe.phoenix.live_react` setup/check/remove task, and discoverable app-local
 typed component wrappers. Compiler std roots are intentionally outside app
@@ -53,18 +49,17 @@ component discovery, so the std declaration names stock `LiveReact.react` while
 the app-local `@:component` wrapper owns closed assigns, the literal registry
 name, and `ssr=false`. No compiler special case is planned.
 
-Mix is the canonical LiveReact resolver and npm must consume that same checkout
+Mix is the canonical LiveReact resolver and npm consumes that same checkout
 through a verified project-relative `file:` reference. Vite is the sole
 JavaScript bundler in an enabled project; the externally pinned `genes-ts`
-compiler may emit source for Vite, and `--live-react` remains orthogonal to the existing `genes` and
-`plain-js` client modes. Stock LiveReact remains the runtime owner. Promotion
-requires an independent second consumer and installed-package smoke, not just
-another route in the existing example.
+compiler may emit source for Vite, and LiveReact remains orthogonal to the
+existing `genes` and `plain-js` client modes. Stock LiveReact remains the
+runtime owner.
 
-Planning is tracked by
-[`plans/active/phoenixhx-live-react-integration.md`](../../plans/active/phoenixhx-live-react-integration.md)
-and Beads epic `haxe.elixir.codex-msb`. It is experimental 1.x work and is not a
-1.0 approval requirement.
+Evidence includes the Haxe-authored lifecycle suite, installed-package smoke,
+the Genes-first `examples/18-phoenixhx-live-react` application, Haxe-authored
+ConnTest coverage, and a Playwright hydration/interaction smoke. The surface
+remains experimental while compatibility evidence grows.
 
 ### Done: Replace PubSubShim With API-Faithful PubSub Helpers
 

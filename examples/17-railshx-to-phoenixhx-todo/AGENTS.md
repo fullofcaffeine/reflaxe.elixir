@@ -68,4 +68,6 @@ group when done:
 scripts/qa-sentinel.sh --app examples/17-railshx-to-phoenixhx-todo --port 4017 --compile-migrations --migrations-hxml build-migrations.hxml --keep-alive --async --deadline 900 --verbose
 ```
 
-Never run `mix phx.server` in the foreground during agent work.
+Automated agents exercise the same Phoenix application path through the
+sentinel. The restriction on foreground `mix phx.server` is about bounded
+process ownership and guaranteed teardown, not a separate agent runtime mode.

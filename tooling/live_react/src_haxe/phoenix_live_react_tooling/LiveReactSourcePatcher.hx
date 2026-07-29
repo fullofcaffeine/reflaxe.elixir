@@ -177,7 +177,7 @@ class LiveReactSourcePatcher {
 			return
 				Kernel.raiseValue("Phoenix root layout already contains an unowned LiveReact Vite asset wrapper. No writes occurred. Manual integration is required.");
 
-		var script = findRootAppScript(content, ["/assets/app.js"]);
+		var script = findRootAppScript(content, ["/assets/app.js", "/assets/js/app.js"]);
 		var nextRestores = putRestore(restores, restoreKey, script.original);
 		var lines = splitLines(content);
 		var block = markerLinesWithSuffix(beginToken, endToken, rootAssetInnerLines(script.original), script.indent, "<%!--", "--%>");
@@ -209,7 +209,7 @@ class LiveReactSourcePatcher {
 			return
 				Kernel.raiseValue("Haxe Phoenix root layout already contains an unowned LiveReact Vite asset wrapper. No writes occurred. Manual integration is required.");
 
-		var script = findRootAppScript(content, ["/assets/app.js", "/assets/phoenix_app.js"]);
+		var script = findRootAppScript(content, ["/assets/app.js", "/assets/js/app.js", "/assets/phoenix_app.js"]);
 		var nextRestores = putRestore(restores, restoreKey, script.original);
 		var lines = splitLines(content);
 		var block = markerLinesWithSuffix(beginAsset, endAsset, haxeRootAssetInnerLines(script.original, topology.reloadComponentModule), script.indent,
@@ -340,7 +340,10 @@ class LiveReactSourcePatcher {
 		var replaced = ProjectPatch.replaceMarkerBlockLines(content, beginToken, endToken, desired);
 		var replacedTag = tag(replaced);
 		if (replacedTag == OK)
-			return {_0: Kernel.elemAs(replaced, 1), _1: restores};
+			return {
+				_0: normalizeAssetAliasOrder(Kernel.elemAs(replaced, 1), aliasName, beginToken, endToken),
+				_1: restores
+			};
 		if (replacedTag == ERROR)
 			return Kernel.raiseValue("mix.exs has a malformed " + aliasName + " LiveReact marker (" + Kernel.inspect(Kernel.elem(replaced, 1))
 				+ "). No writes occurred.");
@@ -371,8 +374,24 @@ class LiveReactSourcePatcher {
 		_0:String,
 		_1:Term
 	} {
+		var compactEsbuildLines = indices(startIndex, endIndex + 1, function(index:Int):Bool {
+			var line = at(lines, index);
+			return Regex.match(esbuildTaskPattern(), line) && !Regex.match(rx("^\\s*[\"']esbuild[^\"']*[\"']\\s*,?\\s*$"), line);
+		});
+		if (compactEsbuildLines.length > 1)
+			return Kernel.raiseValue("mix.exs " + aliasName + " contains multiple compact esbuild tasks. No writes occurred. Manual integration is required.");
+		if (compactEsbuildLines.length == 1) {
+			var original = Enum.join(Enum.take(Enum.drop(lines, startIndex), endIndex - startIndex + 1), "\n");
+			var rendered = renderCompactAssetAliasLines(original, aliasName, desired[0]);
+			var block = markerLines(beginToken, endToken, rendered, leadingIndent(at(lines, startIndex)), "#");
+			return {
+				_0: Enum.join(replaceLineRange(lines, startIndex, endIndex, Enum.join(block, "\n")), "\n"),
+				_1: putRestore(restores, restoreKey, original)
+			};
+		}
+
 		var esbuildIndices = indices(startIndex, endIndex + 1, function(index:Int):Bool {
-			return Regex.match(rx("^\\s*\"?esbuild(?:\\.install|\\s)"), ElixirString.trimLeading(at(lines, index)));
+			return Regex.match(rx("^\\s*[\"']esbuild[^\"']*[\"']\\s*,?\\s*$"), at(lines, index));
 		});
 		if (esbuildIndices.length > 1)
 			return Kernel.raiseValue("mix.exs " + aliasName + " contains multiple esbuild tasks. No writes occurred. Manual integration is required.");
@@ -386,14 +405,68 @@ class LiveReactSourcePatcher {
 			return Kernel.raiseValue("mix.exs "
 				+ aliasName
 				+ " already contains an unowned Vite task. No writes occurred. Adopt the exact PhoenixHx marker block or use manual integration.");
-		var insertion = aliasInsertionIndex(lines, startIndex, endIndex);
+		var insertion = aliasInsertionIndex(lines, startIndex, endIndex, aliasName);
 		var block = markerLines(beginToken, endToken, desired, aliasEntryIndent(lines, startIndex, endIndex), "#");
 		return {_0: Enum.join(List.insertAt(lines, insertion, Enum.join(block, "\n")), "\n"), _1: putRestore(restores, restoreKey, null)};
 	}
 
+	/**
+	 * Keep Vite after the generated Haxe client in aliases that run both.
+	 *
+	 * A clean Genes checkout has no `assets/js/hx_app.js` yet. Running Vite
+	 * first therefore fails its import before `haxe.compile.client` can create
+	 * the stable module. Existing managed blocks are moved as well as new ones
+	 * so `--yes` repairs projects created by older task versions.
+	 */
+	static function normalizeAssetAliasOrder(content:String, aliasName:String, beginToken:String, endToken:String):String {
+		var haxeEndToken = haxeClientAliasEndToken(aliasName);
+		if (haxeEndToken == null)
+			return content;
+
+		var lines = splitLines(content);
+		var span = findAliasSpan(lines, aliasName);
+		var haxeEnds = indices(span._0, span._1 + 1, index -> ElixirString.contains(at(lines, index), haxeEndToken));
+		var markerBegins = indices(span._0, span._1 + 1, index -> ElixirString.contains(at(lines, index), beginToken));
+		var markerEnds = indices(span._0, span._1 + 1, index -> ElixirString.contains(at(lines, index), endToken));
+		if (haxeEnds.length != 1 || markerBegins.length != 1 || markerEnds.length != 1)
+			return content;
+
+		var haxeEnd = haxeEnds[0];
+		var markerBegin = markerBegins[0];
+		var markerEnd = markerEnds[0];
+		if (markerBegin > haxeEnd)
+			return content;
+
+		var markerCount = markerEnd - markerBegin + 1;
+		var markerBlock = Enum.join(Enum.take(Enum.drop(lines, markerBegin), markerCount), "\n");
+		var withoutMarker = Enum.concatTwo(Enum.take(lines, markerBegin), Enum.drop(lines, markerEnd + 1));
+		return Enum.join(List.insertAt(withoutMarker, haxeEnd - markerCount + 1, markerBlock), "\n");
+	}
+
 	static function desiredAssetAliasLines(aliasName:String, desiredLine:String, original:Null<String>):Array<String> {
-		return original != null
-			&& singleLineAlias(original, aliasName) ? renderSingleLineAssetAlias(original, aliasName, desiredLine) : [desiredLine];
+		if (original == null)
+			return [desiredLine];
+		if (singleLineAlias(original, aliasName))
+			return renderSingleLineAssetAlias(original, aliasName, desiredLine);
+		if (Regex.match(rx("[\"']" + Regex.escape(aliasName) + "[\"']\\s*:\\s*\\["), original)
+			&& Regex.match(esbuildTaskPattern(), original))
+			return renderCompactAssetAliasLines(original, aliasName, desiredLine);
+		return [desiredLine];
+	}
+
+	static function renderCompactAssetAliasLines(original:String, aliasName:String, desiredLine:String):Array<String> {
+		var matches = Regex.scan(esbuildTaskPattern(), original);
+		if (matches.length != 1)
+			return Kernel.raiseValue("mix.exs " + aliasName + " compact alias must contain exactly one esbuild task. No writes occurred.");
+		var originalLines = splitLines(original);
+		var indent = leadingIndent(at(originalLines, 0));
+		var relative = Enum.map(originalLines, line -> stripExpectedIndent(line, indent));
+		var desiredTask = ElixirString.trimTrailingWith(desiredLine, ",");
+		return splitLines(Regex.replace(esbuildTaskPattern(), Enum.join(relative, "\n"), desiredTask));
+	}
+
+	static function esbuildTaskPattern():Term {
+		return rx("[\"']esbuild[^\"']*[\"']");
 	}
 
 	static function singleLineAlias(line:String, aliasName:String):Bool {
@@ -482,11 +555,22 @@ class LiveReactSourcePatcher {
 		return false;
 	}
 
-	static function aliasInsertionIndex(lines:Array<String>, startIndex:Int, endIndex:Int):Int {
+	static function aliasInsertionIndex(lines:Array<String>, startIndex:Int, endIndex:Int, aliasName:String):Int {
+		var haxeEndToken = haxeClientAliasEndToken(aliasName);
+		if (haxeEndToken == null)
+			return startIndex + 1;
 		for (index in (startIndex + 1)...endIndex)
-			if (ElixirString.contains(at(lines, index), "END reflaxe_elixir haxe_compile_client_alias"))
+			if (ElixirString.contains(at(lines, index), haxeEndToken))
 				return index + 1;
 		return startIndex + 1;
+	}
+
+	static function haxeClientAliasEndToken(aliasName:String):Null<String> {
+		return switch (aliasName) {
+			case "assets.build": "END reflaxe_elixir assets.build_task";
+			case "assets.deploy": "END reflaxe_elixir assets.deploy_task";
+			default: null;
+		};
 	}
 
 	static function aliasEntryIndent(lines:Array<String>, startIndex:Int, endIndex:Int):String {
@@ -817,7 +901,8 @@ class LiveReactSourcePatcher {
 		var script = Enum.map(originalLines, function(line:String):String {
 			var stripped = ElixirString.startsWith(line,
 				originalIndent) ? ElixirString.replacePrefix(line, originalIndent, "") : ElixirString.trimLeading(line);
-			return "  " + normalizeViteModuleScript(stripped);
+			var canonical = ElixirString.replace(stripped, "/assets/js/app.js", "/assets/app.js");
+			return "  " + normalizeViteModuleScript(canonical);
 		});
 		return Enum.concatTwo(Enum.concatTwo(['<LiveReact.Reload.vite_assets assets={["/js/app.js"]}>'], script), ["</LiveReact.Reload.vite_assets>"]);
 	}
@@ -832,7 +917,8 @@ class LiveReactSourcePatcher {
 		var script = Enum.map(originalLines, function(line:String):String {
 			var stripped = ElixirString.startsWith(line,
 				originalIndent) ? ElixirString.replacePrefix(line, originalIndent, "") : ElixirString.trimLeading(line);
-			var normalized = normalizeViteModuleScript(ElixirString.replace(stripped, "/assets/phoenix_app.js", "/assets/app.js"));
+			var canonical = ElixirString.replace(stripped, "/assets/js/app.js", "/assets/app.js");
+			var normalized = normalizeViteModuleScript(ElixirString.replace(canonical, "/assets/phoenix_app.js", "/assets/app.js"));
 			return "  " + normalized;
 		});
 		return Enum.concatTwo(Enum.concatTwo([
@@ -999,7 +1085,7 @@ class LiveReactSourcePatcher {
 			suffix:String):Array<String> {
 		var opening = indent + commentPrefix + " " + beginToken + (commentPrefix == "<%!--" ? " --%>" : suffix);
 		var closing = indent + commentPrefix + " " + endToken + (commentPrefix == "<%!--" ? " --%>" : suffix);
-		var body = Enum.map(desired, function(line:String):String return indent + line);
+		var body = Enum.map(desired, function(line:String):String return line == "" ? "" : indent + line);
 		return Enum.concatTwo(Enum.concatTwo([opening], body), [closing]);
 	}
 

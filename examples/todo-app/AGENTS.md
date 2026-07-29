@@ -395,10 +395,12 @@ We compile the server (Haxe→Elixir) via a Mix compiler and the client (Haxe→
   - Deploy: `mix assets.deploy` (Haxe/Genes + Tailwind + Vite + Phoenix digest).
 
 Quick commands
-- One‑liner with watchers for humans/manual sessions: `mix dev`
+- One-liner for an interactively supervised foreground session: `mix dev`
   (alias for `ecto.create`, `ecto.migrate`, then `phx.server` — includes Phoenix + dev watchers)
 - Manual one‑off build: `mix assets.build && mix compile`
-- Agents must not use foreground server commands here; use the repo QA sentinel with `--async --deadline ...`.
+- Automated agents exercise that same app path through the repo QA sentinel
+  with `--async --deadline ...`; the distinction is bounded process ownership,
+  not an agent-specific development mode.
 
 CI suggestions
 - `mix compile --force && mix assets.build`

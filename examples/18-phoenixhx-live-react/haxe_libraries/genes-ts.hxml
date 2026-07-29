@@ -1,0 +1,12 @@
+# reflaxe_elixir:scaffolded_haxe_library:genes-ts:v1
+# genes-ts — Haxe to classic ESM JavaScript or strict TypeScript/TSX
+#
+# This file is scaffold-managed by `mix haxe.phoenix.scaffold`. If you customize it, remove
+# the signature line above to opt out of future updates.
+# Pin provenance: temporary exact pushed commit from genes-ts PR #16, layered on v1.37.0 until the fix lands on canonical main.
+
+# @install: lix --silent download "gh://github.com/fullofcaffeine/genes-ts#697943b1c10b72309d815b0f6a5605d7c5c2a53b" into genes-ts/1.37.0/github/697943b1c10b72309d815b0f6a5605d7c5c2a53b
+-lib helder.set
+${HAXE_LIBCACHE}/genes-ts/1.37.0/github/697943b1c10b72309d815b0f6a5605d7c5c2a53b/extraParams.hxml
+-cp ${HAXE_LIBCACHE}/genes-ts/1.37.0/github/697943b1c10b72309d815b0f6a5605d7c5c2a53b/src
+-D genes-ts=1.37.0

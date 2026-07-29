@@ -1,0 +1,15 @@
+# Repository example: resolve Reflaxe.Elixir from this checkout.
+# Release consumers receive the equivalent paths from the installed package.
+-cp ../../src/
+-cp ../../std/
+-cp ../../std/elixir/_std/
+-cp ../../vendor/phoenix_shared/src
+-D phoenix_shared=0.1.0
+
+-lib reflaxe
+-D reflaxe.elixir=0.0.0-development
+-D elixir
+
+--macro nullSafety("reflaxe.elixir")
+--macro reflaxe.elixir.CompilerBootstrap.Start()
+--macro reflaxe.elixir.CompilerInit.Start()

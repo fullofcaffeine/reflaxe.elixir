@@ -95,15 +95,24 @@ The target shape is ordinary HEEx:
 - Do not embed raw `<% ... %>` or `<%= ... %>` blocks in Haxe-authored markup.
 - Use `${...}`, `<if ${...}>`, and `<for ${item in items}>` so Haxe can check
   the expressions before generating HEEx.
-- The configured browser client mode is `{{CLIENT_MODE}}`. Phoenix owns its
-  host asset pipeline; do not add a second competing watcher or bundler.
+- The configured browser client mode is `{{CLIENT_MODE}}`.
+  - `genes` means browser bootstrap code and hooks may be authored in Haxe and
+    compiled to JavaScript through Genes. The host asset tool still performs
+    the final bundle.
+  - `plain-js` means Phoenix modules and HEEx may still be Haxe-authored, while
+    browser bootstrap code, hooks, and components stay in JavaScript or
+    TypeScript. Use it when the browser side does not need Haxe.
+- Keep one final browser bundler. In a stock Phoenix project that is normally
+  esbuild; after LiveReact setup it is Vite.
 - Exercise LiveView behavior primarily with Haxe-authored ExUnit integration
   tests. Use a small browser smoke only for behavior that requires a real
   browser.
-- Agents must not run `mix phx.server` in the foreground. Start it through the
-  repository's bounded/background QA helper when one exists; otherwise use a
-  background process with readiness probing, a deadline, captured logs, and
-  guaranteed teardown.
+- Interactive development and automated validation use the same application
+  path. Agents must not run `mix phx.server` in the foreground because they
+  need bounded process ownership, not because the project has an agent-specific
+  runtime mode. Start it through the repository's bounded/background QA helper
+  when one exists; otherwise use a background process with readiness probing,
+  a deadline, captured logs, and guaranteed teardown.
 {{/if}}
 
 {{#if HAS_LIVE_REACT}}
@@ -135,6 +144,10 @@ typed Haxe wrapper -> generated HEEx LiveReact call -> static registry
 -> Vite module -> React component in the browser
 ```
 
+- LiveReact does not itself require Genes. Genes compiles Haxe-authored browser
+  code; LiveReact mounts the registered React component. A Genes project may
+  still keep the inner React component in hand-owned TSX, while a plain-js
+  project can retain typed Haxe server wrappers without compiling browser Haxe.
 - Keep the component name static. Do not accept an arbitrary client module name
   from request data.
 - Keep each wrapper's props type closed and explicit. The browser receives only

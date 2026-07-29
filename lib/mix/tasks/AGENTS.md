@@ -41,6 +41,8 @@ lib/mix/tasks/
 - Handles automatic compilation when Haxe files change
 - Uses a complete build-input fingerprint to skip unnecessary compilation requests
 - Can reuse a persistent Haxe compiler process when the caller explicitly owns one
+- It is invoked as a Mix compiler through `mix compile`; there is no public
+  `mix haxe.compile` task
 
 #### `Mix.Tasks.Haxe.Watch`
 **File**: `haxe.watch.ex`
@@ -107,6 +109,17 @@ lib/mix/tasks/
 **File**: `haxe.phoenix.live_react.ex`
 - Sets up, checks, repairs, or removes the opt-in stock LiveReact integration
 - Preserves marker and manifest ownership instead of rewriting unowned project content
+- Replaces Phoenix esbuild with Vite as the single final browser bundler
+- Works with both client modes: Genes compiles Haxe-authored browser source,
+  while plain JS keeps browser source in JavaScript/TypeScript
+
+#### `Mix.Tasks.Haxe.Phoenix.Scaffold`
+**File**: `haxe.phoenix.scaffold.ex`
+- Applies the Phoenix client build and watcher wiring
+- `genes` is for Haxe-authored browser bootstrap/hooks; `plain-js` still allows
+  Haxe-authored Phoenix modules and HEEx while leaving browser code in JS/TS
+- Long-running server and client watchers own HXML-specific compilation
+  servers; do not start a shared `haxe --wait` process manually
 
 #### `Mix.Tasks.Haxe.Gen.Schema`
 **File**: `haxe.gen.schema.ex`

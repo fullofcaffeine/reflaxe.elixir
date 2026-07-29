@@ -385,6 +385,11 @@ jobs:
             cache_paths: |
               examples/16-portable-chat-domain/deps
               examples/16-portable-chat-domain/_build
+          - shard: mix-18
+            only: '18-phoenixhx-live-react'
+            cache_paths: |
+              examples/18-phoenixhx-live-react/deps
+              examples/18-phoenixhx-live-react/_build
     timeout-minutes: 90
     env:
       TIMEOUT_DEPS_GET: '600'

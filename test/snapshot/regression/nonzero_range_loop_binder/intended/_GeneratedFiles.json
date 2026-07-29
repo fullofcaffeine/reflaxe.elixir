@@ -1,0 +1,41 @@
+{
+	"filesGenerated": [
+		"reflaxe/exception.ex",
+		"reflaxe/elixir/haxe_throw.ex",
+		"reflaxe/elixir/haxe_float.ex",
+		"nonzero_range_loop_binder.ex",
+		"haxe/iterators/array_key_value_iterator.ex",
+		"haxe/iterators/array_iterator.ex"
+	],
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 0,
+	"wasCached": false,
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "haxe/iterators/array_iterator.ex",
+			"sha256": "bf879924ad145b575913240565bc19645add254693e0e7d1f87bee45a9ab0c56"
+		},
+		{
+			"path": "haxe/iterators/array_key_value_iterator.ex",
+			"sha256": "387d4592afd651337e15dda44716f25a7a7cdd97e1b6a43e9c2aba3f4029a3a3"
+		},
+		{
+			"path": "nonzero_range_loop_binder.ex",
+			"sha256": "27e2b097f8c357d936a90a34f2ae1c69e158decf15fcae620f0d38edf4d57183"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_float.ex",
+			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_throw.ex",
+			"sha256": "8e498f80275fd241c22701a4f170bb1cf2135aa572ccd1b8f4a2d17728f849b1"
+		},
+		{
+			"path": "reflaxe/exception.ex",
+			"sha256": "9eb2137ead37e4b2ff0650cbece40b4da0427a5fe35a95b0de3eeacb82facbd2"
+		}
+	],
+	"generation": "6c2859986125c4f4fb575e95215015e088c8473c0b0f83e0ac9fab5168154b31"
+}

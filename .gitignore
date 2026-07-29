@@ -144,6 +144,11 @@ examples/1[0-9]-*/lib/
 examples/lix-installation/lib/
 examples/test-integration/lib/
 examples/todo-app/lib/
+# Example 18 is a generated Phoenix app with hand-owned Elixir host modules.
+# Keep those modules; continue ignoring its Haxe-generated target subtree.
+!examples/18-phoenixhx-live-react/lib/
+!examples/18-phoenixhx-live-react/lib/**
+examples/18-phoenixhx-live-react/lib/phoenixhx_live_react_hx/
 examples/todo-app/assets/js/haxe/
 examples/todo-app/priv/repo/migrations/_GeneratedFiles.json
 examples/**/lib/_GeneratedFiles.json

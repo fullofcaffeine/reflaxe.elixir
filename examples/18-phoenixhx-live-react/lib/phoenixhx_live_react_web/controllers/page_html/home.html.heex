@@ -1,0 +1,47 @@
+<Layouts.flash_group flash={@flash} />
+
+<main class="integration-shell">
+  <header class="integration-nav">
+    <a href="/" class="integration-mark" aria-label="PhoenixHx LiveReact example home">
+      PHX<span>×</span>HX
+    </a>
+    <p>Integration specimen 018</p>
+    <a href="https://github.com/fullofcaffeine/reflaxe.elixir" rel="noreferrer">Source ↗</a>
+  </header>
+
+  <section class="integration-hero">
+    <div class="integration-copy">
+      <p class="integration-kicker">Haxe → Elixir · Haxe → JavaScript · React</p>
+      <h1>One typed source language.<br /><em>Two runtimes in concert.</em></h1>
+      <p class="integration-lede">
+        Phoenix renders the host. A Haxe component fixes the LiveReact boundary.
+        Genes boots the browser client. React owns the island’s local interaction.
+      </p>
+
+      <ol class="integration-route" aria-label="Application compilation route">
+        <li><span>01</span><b>Haxe server</b><small>Reflaxe.Elixir</small></li>
+        <li><span>02</span><b>Phoenix host</b><small>BEAM runtime</small></li>
+        <li><span>03</span><b>Genes client</b><small>ES module</small></li>
+        <li><span>04</span><b>React island</b><small>LiveReact</small></li>
+      </ol>
+    </div>
+
+    <div class="integration-demo">
+      <div class="integration-demo__label">
+        <span>Interactive proof</span>
+        <span>Client only / SSR off</span>
+      </div>
+      <PhoenixhxLiveReactWeb.ReactIslands.SignalConsole.render
+        id="signal-console"
+        title="Signal console"
+      />
+    </div>
+  </section>
+
+  <footer class="integration-footer">
+    <p>
+      <span aria-hidden="true">●</span> Static registry · closed props · stock LiveReact runtime
+    </p>
+    <p>Open the README for the exact local workflow and ownership map.</p>
+  </footer>
+</main>

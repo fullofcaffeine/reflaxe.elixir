@@ -375,6 +375,12 @@ Modes:
 - `--client-mode genes` (default): typed Haxe/Genes client build + watcher promotion + hook merge.
 - `--client-mode plain-js`: remove scaffold-managed Genes wiring and converge back to plain Phoenix JS bootstrap.
 
+The choice concerns browser source, not whether PhoenixHx is useful. In
+`plain-js` mode, Phoenix modules, typed assigns, and HEEx wrappers may still be
+Haxe-authored; browser hooks and components remain JavaScript or TypeScript.
+Choose `genes` when any browser bootstrap, hook, protocol, or component is
+authored in Haxe.
+
 This task wires the "temp output + promote" pattern to avoid esbuild `--watch` racing Haxe's `-js`
 output deletion window (which can otherwise produce transient `Could not resolve "./hx_app.js"` errors).
 
@@ -439,6 +445,49 @@ It also scaffolds baseline Haxe ExUnit wiring:
 
 This avoids the common esbuild `--watch` race where Haxe deletes the `-js` output at compile start and
 esbuild briefly fails with `Could not resolve "./hx_app.js"`.
+
+### mix haxe.phoenix.live_react
+
+Sets up, checks, repairs, or removes the experimental client-only integration
+with stock LiveReact:
+
+```bash
+mix haxe.phoenix.live_react --yes
+mix haxe.phoenix.live_react --check
+mix haxe.phoenix.live_react --remove --yes
+```
+
+Mix resolves the pinned `:live_react` checkout and npm consumes that same
+checkout through a verified project-relative `file:` reference. The task
+replaces the Phoenix esbuild watcher and asset task with Vite, patches the
+LiveView hook and root asset tag, and records owned files and marker blocks in
+`phoenixhx-live-react.json`. It preserves hand-owned source and fails closed on
+ambiguous or drifted integration state.
+
+LiveReact is orthogonal to the scaffold client mode:
+
+- `genes`: Haxe-authored browser source is compiled to JavaScript, then Vite
+  performs the final bundle.
+- `plain-js`: browser source remains JavaScript/TypeScript and Vite performs
+  the final bundle.
+
+LiveReact itself does not require Genes. See the runnable Genes-first example at
+[`examples/18-phoenixhx-live-react`](../../examples/18-phoenixhx-live-react/).
+
+### mix haxe.gen.live_react
+
+Registers a statically named application component after LiveReact setup:
+
+```bash
+mix haxe.gen.live_react SignalConsole --yes
+mix haxe.gen.live_react ExistingPanel --existing --yes
+```
+
+The normal generated boundary is a closed Haxe assigns type and wrapper, a
+trusted TypeScript prop decoder, and a hand-owned React component starter. The
+registry is generated and static; do not derive its component name from
+request data. `--existing` registers compatible hand-owned source without
+overwriting it.
 
 ### mix haxe.gen.schema
 

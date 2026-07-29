@@ -190,7 +190,12 @@ defmodule HaxeProjectPatch do
         begin_line = Enum.at(lines, begin_index, "")
         end_line = Enum.at(lines, end_index, "")
         indent = leading_indent(begin_line)
-        indented = Enum.map(desired_lines, fn line -> indent <> line end)
+
+        indented =
+          Enum.map(desired_lines, fn line ->
+            if line == "", do: "", else: indent <> line
+          end)
+
         replacement = Enum.concat(Enum.concat([begin_line], indented), [end_line])
         ok(replace_line_span(lines, begin_index, end_index, replacement))
       end
@@ -215,7 +220,10 @@ defmodule HaxeProjectPatch do
         existing_inner = Enum.take(Enum.drop(lines, begin_index + 1), end_index - begin_index - 1)
 
         desired_inner =
-          Enum.map(fun.(existing_inner), fn line -> indent <> String.trim_leading(line) end)
+          Enum.map(fun.(existing_inner), fn line ->
+            trimmed = String.trim_leading(line)
+            if trimmed == "", do: "", else: indent <> trimmed
+          end)
 
         replacement = Enum.concat(Enum.concat([begin_line], desired_inner), [end_line])
         ok(replace_line_span(lines, begin_index, end_index, replacement))

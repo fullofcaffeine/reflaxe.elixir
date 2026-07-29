@@ -156,6 +156,10 @@ class VarRefSuffixParamNormalizeTransforms {
 					case EWith(clauses, _, _):
 						for (cl in clauses)
 							pat(cl.pattern, d);
+					case EFn(clauses):
+						for (cl in clauses)
+							for (arg in cl.args)
+								pat(arg, d);
 					default:
 				}
 			});

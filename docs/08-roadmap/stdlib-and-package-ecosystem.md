@@ -248,7 +248,7 @@ Beads epic `haxe.elixir.codex-5np` owns this package-adoption track.
 
 ### LiveReact Is A Hand-Maintained Phoenix Companion Surface
 
-The planned PhoenixHx LiveReact integration is intentionally not generated
+The experimental PhoenixHx LiveReact integration is intentionally not generated
 dependency-adoption dogfood. It is a small, manually maintained Phoenix
 authoring and project-setup surface whose value comes from typed HXX wrappers,
 static application registries, safe setup/removal, and compatibility evidence.
@@ -261,7 +261,9 @@ app-local `@:component` wrappers. Mix resolves the canonical upstream checkout,
 npm consumes that exact checkout through a checked project-relative `file:`
 reference, and Vite is the enabled lane's only JavaScript bundler. The `genes`
 client mode consumes an exact, fetchable external `genes-ts` commit through Lix;
-`plain-js` remains the other initial input. The repository no longer carries a
+`plain-js` remains the other supported input: it keeps browser source in
+JavaScript/TypeScript while Haxe may still own the Phoenix server wrapper.
+LiveReact does not itself require Genes. The repository no longer carries a
 second vendored Genes compiler, and no sibling checkout or worktree is part of
 the package contract. Temporary upstream fixes may be pinned by exact pushed
 topic SHA and must move to the commit that actually lands on canonical `main`

@@ -251,7 +251,7 @@
 		},
 		{
 			"path": "phoenix_hx_todo_web/app_live.exs",
-			"sha256": "6709f7857afe4763e8b430006da93140a34227a6ce8b37a5d22c42bed50b7db5"
+			"sha256": "bdaaeb661f4a3e8998c2d856cce9bdaa91d045a3cad0991e399e0c9ff5db2985"
 		},
 		{
 			"path": "phoenix_hx_todo_web/live_events/todo_event.exs",
@@ -302,5 +302,5 @@
 			"sha256": "14d0fae11e0a57cb0a490ec5a9de56a9575762d2649b3f69b2ef5c3431ae3f15"
 		}
 	],
-	"generation": "2926c28accab95c5513a6c0552d4dd0360edc1af21ee07e57619ad6f39d7cf29"
+	"generation": "e6b7c5010e26f41d2baa2bca021de8202660e66f57cd479e0b5f10f483977981"
 }

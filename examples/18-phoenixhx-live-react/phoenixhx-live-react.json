@@ -1,0 +1,127 @@
+{
+  "appName": "phoenixhx_live_react",
+  "assetMode": "vite",
+  "clientMode": "genes",
+  "components": [
+    {
+      "export": "SignalConsoleBoundary",
+      "module": "./signal-console-boundary",
+      "name": "SignalConsole"
+    }
+  ],
+  "generatedBy": "mix haxe.phoenix.live_react",
+  "managed": {
+    "dependencyOwned": true,
+    "files": [
+      "assets/js/live-react-hooks.js",
+      "assets/react-components/registry.generated.ts",
+      "vite.config.mjs"
+    ],
+    "lockOwned": true,
+    "markers": [
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_hooks",
+        "end": "END reflaxe_elixir live_react_hooks",
+        "path": "assets/js/app.js"
+      },
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_hooks_property",
+        "end": "END reflaxe_elixir live_react_hooks_property",
+        "path": "assets/js/app.js"
+      },
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_import",
+        "end": "END reflaxe_elixir live_react_import",
+        "path": "assets/js/app.js"
+      },
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_window_hooks",
+        "end": "END reflaxe_elixir live_react_window_hooks",
+        "path": "assets/js/app.js"
+      },
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_config",
+        "end": "END reflaxe_elixir live_react_config",
+        "path": "config/config.exs"
+      },
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_vite_host",
+        "end": "END reflaxe_elixir live_react_vite_host",
+        "path": "config/dev.exs"
+      },
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_vite_watcher",
+        "end": "END reflaxe_elixir live_react_vite_watcher",
+        "path": "config/dev.exs"
+      },
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_vite_assets",
+        "end": "END reflaxe_elixir live_react_vite_assets",
+        "path": "lib/phoenixhx_live_react_web/components/layouts/root.html.heex"
+      },
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_assets_build",
+        "end": "END reflaxe_elixir live_react_assets_build",
+        "path": "mix.exs"
+      },
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_assets_deploy",
+        "end": "END reflaxe_elixir live_react_assets_deploy",
+        "path": "mix.exs"
+      },
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_assets_setup",
+        "end": "END reflaxe_elixir live_react_assets_setup",
+        "path": "mix.exs"
+      },
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_dependency",
+        "end": "END reflaxe_elixir live_react_dependency",
+        "path": "mix.exs"
+      }
+    ],
+    "packageKeys": [
+      "dependencies.live_react",
+      "dependencies.phoenix",
+      "dependencies.phoenix_html",
+      "dependencies.phoenix_live_view",
+      "dependencies.react-dom",
+      "devDependencies.@vitejs/plugin-react",
+      "devDependencies.vite",
+      "private",
+      "scripts.assets:build",
+      "scripts.assets:dev",
+      "type"
+    ],
+    "restores": {
+      "config.trailingWhitespace": "\n",
+      "dev.esbuildWatcher": "    esbuild: {Esbuild, :install_and_run, [:phoenixhx_live_react, ~w(--sourcemap=inline --watch)]},",
+      "dev.trailingWhitespace": "\n",
+      "layout.appScript": "    <script defer phx-track-static type=\"text/javascript\" src={~p\"/assets/js/app.js\"}>\n    </script>",
+      "mix.assets.build": "      \"assets.build\": [\n\n        # BEGIN reflaxe_elixir assets.build_task\n        \"haxe.compile.client\",\n        # END reflaxe_elixir assets.build_task\n        \"compile\", \"tailwind phoenixhx_live_react\", \"esbuild phoenixhx_live_react\"],",
+      "mix.assets.deploy": "        \"esbuild phoenixhx_live_react --minify\",",
+      "mix.assets.setup": "      \"assets.setup\": [\"tailwind.install --if-missing\", \"esbuild.install --if-missing\"],",
+      "mix.lockOriginalState": {
+        "kind": "populated",
+        "sha256": "67e8afa2e513c870ca7ef703386c8d328b6e9018a5de2f3597ee303b2612db79"
+      }
+    }
+  },
+  "mixDependency": {
+    "name": "live_react",
+    "repository": "https://github.com/mrdotb/live_react",
+    "resolvedRevision": "055e80e6a4e6d009df5e229eb39e7f85f03fea22",
+    "sourceKind": "git"
+  },
+  "npmReference": "file:deps/live_react",
+  "packageRoot": ".",
+  "runtimePolicy": {
+    "rawBridgeDefault": false,
+    "slots": false,
+    "ssr": false,
+    "streams": false,
+    "trustedFirstPartyOnly": true,
+    "uploads": false
+  },
+  "schema": "phoenixhx.live-react@1"
+}

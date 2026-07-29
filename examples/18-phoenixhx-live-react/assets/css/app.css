@@ -1,0 +1,482 @@
+/* See the Tailwind configuration guide for advanced usage
+   https://tailwindcss.com/docs/configuration */
+
+@import "tailwindcss" source(none);
+@import "phoenix-colocated/phoenixhx_live_react/colocated.css";
+@source "../css";
+@source "../js";
+@source "../../lib/phoenixhx_live_react_web";
+/* Required for Tailwind to automatically pick up changes in colocated CSS files in dev */
+@source "../../_build/dev/phoenix-colocated/phoenixhx_live_react/*/";
+
+/* A Tailwind plugin that makes "hero-#{ICON}" classes available.
+   The heroicons installation itself is managed by your mix.exs */
+@plugin "../vendor/heroicons";
+
+/* daisyUI Tailwind Plugin. */
+@plugin "daisyui/packages/bundle/daisyui" {
+  themes: false;
+}
+
+/* daisyUI theme plugin.
+  We ship with two themes, a light one inspired on Phoenix colors and a dark one inspired
+  on Elixir colors. Build your own at: https://daisyui.com/theme-generator/ */
+@plugin "daisyui/packages/bundle/daisyui-theme" {
+  name: "dark";
+  default: false;
+  prefersdark: true;
+  color-scheme: "dark";
+  --color-base-100: oklch(30.33% 0.016 252.42);
+  --color-base-200: oklch(25.26% 0.014 253.1);
+  --color-base-300: oklch(20.15% 0.012 254.09);
+  --color-base-content: oklch(97.807% 0.029 256.847);
+  --color-primary: oklch(58% 0.233 277.117);
+  --color-primary-content: oklch(96% 0.018 272.314);
+  --color-secondary: oklch(58% 0.233 277.117);
+  --color-secondary-content: oklch(96% 0.018 272.314);
+  --color-accent: oklch(60% 0.25 292.717);
+  --color-accent-content: oklch(96% 0.016 293.756);
+  --color-neutral: oklch(37% 0.044 257.287);
+  --color-neutral-content: oklch(98% 0.003 247.858);
+  --color-info: oklch(58% 0.158 241.966);
+  --color-info-content: oklch(97% 0.013 236.62);
+  --color-success: oklch(60% 0.118 184.704);
+  --color-success-content: oklch(98% 0.014 180.72);
+  --color-warning: oklch(66% 0.179 58.318);
+  --color-warning-content: oklch(98% 0.022 95.277);
+  --color-error: oklch(58% 0.253 17.585);
+  --color-error-content: oklch(96% 0.015 12.422);
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.21875rem;
+  --size-field: 0.21875rem;
+  --border: 1.5px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@plugin "daisyui/packages/bundle/daisyui-theme" {
+  name: "light";
+  default: true;
+  prefersdark: false;
+  color-scheme: "light";
+  --color-base-100: oklch(98% 0 0);
+  --color-base-200: oklch(96% 0.001 286.375);
+  --color-base-300: oklch(92% 0.004 286.32);
+  --color-base-content: oklch(21% 0.006 285.885);
+  --color-primary: oklch(70% 0.213 47.604);
+  --color-primary-content: oklch(98% 0.016 73.684);
+  --color-secondary: oklch(55% 0.027 264.364);
+  --color-secondary-content: oklch(98% 0.002 247.839);
+  --color-accent: oklch(0% 0 0);
+  --color-accent-content: oklch(100% 0 0);
+  --color-neutral: oklch(44% 0.017 285.786);
+  --color-neutral-content: oklch(98% 0 0);
+  --color-info: oklch(62% 0.214 259.815);
+  --color-info-content: oklch(97% 0.014 254.604);
+  --color-success: oklch(70% 0.14 182.503);
+  --color-success-content: oklch(98% 0.014 180.72);
+  --color-warning: oklch(66% 0.179 58.318);
+  --color-warning-content: oklch(98% 0.022 95.277);
+  --color-error: oklch(58% 0.253 17.585);
+  --color-error-content: oklch(96% 0.015 12.422);
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.21875rem;
+  --size-field: 0.21875rem;
+  --border: 1.5px;
+  --depth: 1;
+  --noise: 0;
+}
+
+/* Add variants based on LiveView classes */
+@custom-variant phx-click-loading (.phx-click-loading&, .phx-click-loading &);
+@custom-variant phx-submit-loading (.phx-submit-loading&, .phx-submit-loading &);
+@custom-variant phx-change-loading (.phx-change-loading&, .phx-change-loading &);
+
+/* Use the data attribute for dark mode  */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+/* Make LiveView wrapper divs transparent for layout */
+[data-phx-session], [data-phx-teleported-src] { display: contents }
+
+/* This file is for your main application CSS */
+
+:root {
+  --ink: #0b0f0d;
+  --paper: #e8e2d4;
+  --acid: #c9ff3d;
+  --signal: #ff5c35;
+  --line: rgba(232, 226, 212, 0.22);
+}
+
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: "IBM Plex Mono", "Azeret Mono", ui-monospace, monospace;
+}
+
+.integration-shell {
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    linear-gradient(rgba(232, 226, 212, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232, 226, 212, 0.045) 1px, transparent 1px),
+    radial-gradient(circle at 82% 38%, rgba(201, 255, 61, 0.12), transparent 28rem),
+    var(--ink);
+  background-size: 42px 42px, 42px 42px, auto, auto;
+}
+
+.integration-nav,
+.integration-footer {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem clamp(1.25rem, 4vw, 4rem);
+  border-bottom: 1px solid var(--line);
+  color: rgba(232, 226, 212, 0.65);
+  font-size: 0.67rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.integration-nav a:last-child {
+  justify-self: end;
+}
+
+.integration-mark {
+  color: var(--paper);
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.integration-mark span {
+  color: var(--acid);
+  margin: 0 0.22rem;
+}
+
+.integration-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(24rem, 0.92fr);
+  min-height: calc(100vh - 8.5rem);
+}
+
+.integration-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(3rem, 7vw, 7rem) clamp(1.25rem, 5vw, 5rem);
+  border-right: 1px solid var(--line);
+}
+
+.integration-kicker,
+.signal-console__eyebrow {
+  color: var(--acid);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.integration-copy h1 {
+  max-width: 13ch;
+  margin: 1.4rem 0 1.5rem;
+  font-family: "Iowan Old Style", "Baskerville", serif;
+  font-size: clamp(3.2rem, 6vw, 7rem);
+  font-weight: 400;
+  line-height: 0.88;
+  letter-spacing: -0.065em;
+}
+
+.integration-copy h1 em {
+  color: var(--acid);
+  font-weight: 400;
+}
+
+.integration-lede {
+  max-width: 42rem;
+  color: rgba(232, 226, 212, 0.68);
+  font-size: clamp(0.9rem, 1.2vw, 1.08rem);
+  line-height: 1.8;
+}
+
+.integration-route {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: clamp(2.5rem, 6vw, 5rem) 0 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+
+.integration-route li {
+  display: grid;
+  gap: 0.28rem;
+  padding: 1rem 0.75rem 0 0;
+  border-right: 1px solid var(--line);
+}
+
+.integration-route li:last-child {
+  border-right: 0;
+}
+
+.integration-route span,
+.integration-route small {
+  color: rgba(232, 226, 212, 0.43);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.integration-route b {
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.integration-demo {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(2rem, 6vw, 6rem);
+}
+
+.integration-demo__label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.7rem;
+  color: rgba(232, 226, 212, 0.52);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.react-island-host {
+  display: block;
+}
+
+.signal-console {
+  position: relative;
+  padding: clamp(1.4rem, 3vw, 2.5rem);
+  overflow: hidden;
+  border: 1px solid rgba(201, 255, 61, 0.58);
+  background: rgba(9, 14, 11, 0.86);
+  box-shadow: 0 2rem 7rem rgba(0, 0, 0, 0.42);
+}
+
+.signal-console::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent 0 5px, rgba(201, 255, 61, 0.025) 6px);
+  content: "";
+}
+
+.signal-console__header {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.signal-console__header h2 {
+  margin: 0.45rem 0 0;
+  font-family: "Iowan Old Style", "Baskerville", serif;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 400;
+  letter-spacing: -0.05em;
+}
+
+.signal-console__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--acid);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.signal-console__status::before {
+  width: 0.48rem;
+  height: 0.48rem;
+  border-radius: 999px;
+  background: var(--acid);
+  box-shadow: 0 0 1rem var(--acid);
+  content: "";
+  animation: signal-pulse 1.8s ease-in-out infinite;
+}
+
+.signal-console__readout {
+  position: relative;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  margin-top: clamp(2.5rem, 6vw, 5rem);
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--line);
+  color: rgba(232, 226, 212, 0.55);
+  font-size: 0.64rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.signal-console__readout strong {
+  color: var(--paper);
+  font-family: "Iowan Old Style", "Baskerville", serif;
+  font-size: clamp(4.5rem, 10vw, 8rem);
+  font-weight: 400;
+  line-height: 0.7;
+  letter-spacing: -0.08em;
+}
+
+.signal-console__meter {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0.35rem;
+  margin: 1.4rem 0 2rem;
+}
+
+.signal-console__meter i {
+  height: 0.34rem;
+  background: rgba(232, 226, 212, 0.12);
+  transition: background 160ms ease, box-shadow 160ms ease;
+}
+
+.signal-console__meter i.is-lit {
+  background: var(--signal);
+  box-shadow: 0 0 0.75rem rgba(255, 92, 53, 0.58);
+}
+
+.signal-console__controls {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 0.65rem;
+}
+
+.signal-console__controls button {
+  min-height: 3.2rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--acid);
+  background: var(--acid);
+  color: var(--ink);
+  cursor: pointer;
+  font: 700 0.68rem/1 "IBM Plex Mono", "Azeret Mono", ui-monospace, monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.signal-console__controls button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.65rem 2rem rgba(201, 255, 61, 0.14);
+}
+
+.signal-console__controls button:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: 3px;
+}
+
+.signal-console__controls .signal-console__channel {
+  border-color: var(--line);
+  background: transparent;
+  color: rgba(232, 226, 212, 0.62);
+}
+
+.signal-console__channel b {
+  color: var(--paper);
+}
+
+.signal-console__footnote {
+  position: relative;
+  max-width: 35rem;
+  margin: 1.4rem 0 0;
+  color: rgba(232, 226, 212, 0.42);
+  font-size: 0.62rem;
+  line-height: 1.6;
+}
+
+.integration-footer {
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid var(--line);
+  border-bottom: 0;
+}
+
+.integration-footer p:last-child {
+  justify-self: end;
+}
+
+.integration-footer span {
+  color: var(--acid);
+}
+
+@keyframes signal-pulse {
+  50% { opacity: 0.35; transform: scale(0.72); }
+}
+
+@media (max-width: 900px) {
+  .integration-nav {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .integration-nav p {
+    display: none;
+  }
+
+  .integration-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .integration-copy {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .integration-route {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .integration-route li:nth-child(2) {
+    border-right: 0;
+  }
+
+  .integration-demo {
+    padding-block: 4rem;
+  }
+}
+
+@media (max-width: 540px) {
+  .integration-copy h1 {
+    font-size: 3.35rem;
+  }
+
+  .integration-route,
+  .signal-console__controls {
+    grid-template-columns: 1fr;
+  }
+
+  .integration-route li {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .integration-footer {
+    grid-template-columns: 1fr;
+  }
+
+  .integration-footer p:last-child {
+    justify-self: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signal-console__status::before {
+    animation: none;
+  }
+}

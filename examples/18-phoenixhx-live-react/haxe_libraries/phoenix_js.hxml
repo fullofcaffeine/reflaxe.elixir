@@ -1,0 +1,11 @@
+# reflaxe_elixir:scaffolded_haxe_library:phoenix_js:v1
+# phoenix_js — Phoenix Channels + LiveView JS externs (vendored inside reflaxe_elixir)
+#
+# This file is scaffold-managed by `mix haxe.phoenix.scaffold`. If you customize it, remove
+# the signature line above to opt out of future updates.
+
+-cp ${SCOPE_DIR}/../../vendor/phoenix_js/src
+-cp ${SCOPE_DIR}/../../vendor/phoenix_shared/src
+
+# Library define for conditional compilation flags
+-D phoenix_js=0.1.0

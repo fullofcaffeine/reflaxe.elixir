@@ -31,8 +31,10 @@ npm run ci:guards
 
 ## Todo App Runtime Check (Required)
 
-When validating the Phoenix todo-app, never run `mix phx.server` in the foreground.
-Use the non-blocking QA sentinel with a deadline:
+Interactive development and automated validation use the same Phoenix
+application path. Automated runs must use the non-blocking QA sentinel with a
+deadline so the server has readiness probes, captured logs, and guaranteed
+teardown:
 
 ```bash
 scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 600 --verbose

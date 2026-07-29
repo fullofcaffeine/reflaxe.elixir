@@ -257,7 +257,7 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
             "Phoenix root layout already contains an unowned LiveReact Vite asset wrapper. No writes occurred. Manual integration is required."
           )
         else
-          script = find_root_app_script(content, ["/assets/app.js"])
+          script = find_root_app_script(content, ["/assets/app.js", "/assets/js/app.js"])
           next_restores = put_restore(restores, restore_key, script.original)
           lines = split_lines(content)
 
@@ -321,7 +321,13 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
             "Haxe Phoenix root layout already contains an unowned LiveReact Vite asset wrapper. No writes occurred. Manual integration is required."
           )
         else
-          script = find_root_app_script(content, ["/assets/app.js", "/assets/phoenix_app.js"])
+          script =
+            find_root_app_script(content, [
+              "/assets/app.js",
+              "/assets/js/app.js",
+              "/assets/phoenix_app.js"
+            ])
+
           next_restores = put_restore(restores, restore_key, script.original)
           lines = split_lines(content)
 
@@ -653,7 +659,8 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
     replaced_tag = tag(replaced)
 
     if replaced_tag == :ok do
-      {Kernel.elem(replaced, 1), restores}
+      {normalize_asset_alias_order(Kernel.elem(replaced, 1), alias_name, begin_token, end_token),
+       restores}
     else
       if replaced_tag == :error do
         Kernel.raise(
@@ -726,56 +733,166 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
          restore_key,
          restores
        ) do
-    esbuild_indices =
+    compact_esbuild_lines =
       indices(start_index, end_index + 1, fn index ->
-        Regex.match?(
-          rx("^\\s*\"?esbuild(?:\\.install|\\s)"),
-          String.trim_leading(at(lines, index))
-        )
+        line = at(lines, index)
+
+        Regex.match?(esbuild_task_pattern(), line) and
+          not Regex.match?(rx("^\\s*[\"']esbuild[^\"']*[\"']\\s*,?\\s*$"), line)
       end)
 
-    if length(esbuild_indices) > 1 do
+    if length(compact_esbuild_lines) > 1 do
       Kernel.raise(
-        "mix.exs #{alias_name} contains multiple esbuild tasks. No writes occurred. Manual integration is required."
+        "mix.exs #{alias_name} contains multiple compact esbuild tasks. No writes occurred. Manual integration is required."
       )
     else
-      if length(esbuild_indices) == 1 do
-        index = Enum.at(esbuild_indices, 0)
-        original = at(lines, index)
-        block = marker_lines(begin_token, end_token, desired, leading_indent(original), "#")
+      if length(compact_esbuild_lines) == 1 do
+        original =
+          Enum.join(Enum.take(Enum.drop(lines, start_index), end_index - start_index + 1), "\n")
 
-        {Enum.join(List.replace_at(lines, index, Enum.join(block, "\n")), "\n"),
-         put_restore(restores, restore_key, original)}
+        rendered = render_compact_asset_alias_lines(original, alias_name, Enum.at(desired, 0))
+
+        block =
+          marker_lines(
+            begin_token,
+            end_token,
+            rendered,
+            leading_indent(at(lines, start_index)),
+            "#"
+          )
+
+        {Enum.join(
+           replace_line_range(lines, start_index, end_index, Enum.join(block, "\n")),
+           "\n"
+         ), put_restore(restores, restore_key, original)}
       else
-        if find_unowned_vite_task(lines, start_index, end_index) do
+        esbuild_indices =
+          indices(start_index, end_index + 1, fn index ->
+            Regex.match?(rx("^\\s*[\"']esbuild[^\"']*[\"']\\s*,?\\s*$"), at(lines, index))
+          end)
+
+        if length(esbuild_indices) > 1 do
           Kernel.raise(
-            "mix.exs #{alias_name} already contains an unowned Vite task. No writes occurred. Adopt the exact PhoenixHx marker block or use manual integration."
+            "mix.exs #{alias_name} contains multiple esbuild tasks. No writes occurred. Manual integration is required."
           )
         else
-          insertion = alias_insertion_index(lines, start_index, end_index)
+          if length(esbuild_indices) == 1 do
+            index = Enum.at(esbuild_indices, 0)
+            original = at(lines, index)
+            block = marker_lines(begin_token, end_token, desired, leading_indent(original), "#")
 
-          block =
-            marker_lines(
-              begin_token,
-              end_token,
-              desired,
-              alias_entry_indent(lines, start_index, end_index),
-              "#"
-            )
+            {Enum.join(List.replace_at(lines, index, Enum.join(block, "\n")), "\n"),
+             put_restore(restores, restore_key, original)}
+          else
+            if find_unowned_vite_task(lines, start_index, end_index) do
+              Kernel.raise(
+                "mix.exs #{alias_name} already contains an unowned Vite task. No writes occurred. Adopt the exact PhoenixHx marker block or use manual integration."
+              )
+            else
+              insertion = alias_insertion_index(lines, start_index, end_index, alias_name)
 
-          {Enum.join(List.insert_at(lines, insertion, Enum.join(block, "\n")), "\n"),
-           put_restore(restores, restore_key, nil)}
+              block =
+                marker_lines(
+                  begin_token,
+                  end_token,
+                  desired,
+                  alias_entry_indent(lines, start_index, end_index),
+                  "#"
+                )
+
+              {Enum.join(List.insert_at(lines, insertion, Enum.join(block, "\n")), "\n"),
+               put_restore(restores, restore_key, nil)}
+            end
+          end
+        end
+      end
+    end
+  end
+
+  defp normalize_asset_alias_order(content, alias_name, begin_token, end_token) do
+    haxe_end_token = haxe_client_alias_end_token(alias_name)
+
+    if Kernel.is_nil(haxe_end_token) do
+      content
+    else
+      lines = split_lines(content)
+      span = find_alias_span(lines, alias_name)
+
+      haxe_ends =
+        indices(elem(span, 0), elem(span, 1) + 1, fn index ->
+          String.contains?(at(lines, index), haxe_end_token)
+        end)
+
+      marker_begins =
+        indices(elem(span, 0), elem(span, 1) + 1, fn index ->
+          String.contains?(at(lines, index), begin_token)
+        end)
+
+      marker_ends =
+        indices(elem(span, 0), elem(span, 1) + 1, fn index ->
+          String.contains?(at(lines, index), end_token)
+        end)
+
+      if length(haxe_ends) != 1 or length(marker_begins) != 1 or length(marker_ends) != 1 do
+        content
+      else
+        haxe_end = Enum.at(haxe_ends, 0)
+        marker_begin = Enum.at(marker_begins, 0)
+        marker_end = Enum.at(marker_ends, 0)
+
+        if marker_begin > haxe_end do
+          content
+        else
+          marker_count = marker_end - marker_begin + 1
+          marker_block = Enum.join(Enum.take(Enum.drop(lines, marker_begin), marker_count), "\n")
+
+          without_marker =
+            Enum.concat(Enum.take(lines, marker_begin), Enum.drop(lines, marker_end + 1))
+
+          Enum.join(
+            List.insert_at(without_marker, haxe_end - marker_count + 1, marker_block),
+            "\n"
+          )
         end
       end
     end
   end
 
   defp desired_asset_alias_lines(alias_name, desired_line, original) do
-    if not Kernel.is_nil(original) and single_line_alias(original, alias_name) do
-      render_single_line_asset_alias(original, alias_name, desired_line)
-    else
+    if Kernel.is_nil(original) do
       [desired_line]
+    else
+      if single_line_alias(original, alias_name) do
+        render_single_line_asset_alias(original, alias_name, desired_line)
+      else
+        if Regex.match?(rx("[\"']#{Regex.escape(alias_name)}[\"']\\s*:\\s*\\["), original) and
+             Regex.match?(esbuild_task_pattern(), original) do
+          render_compact_asset_alias_lines(original, alias_name, desired_line)
+        else
+          [desired_line]
+        end
+      end
     end
+  end
+
+  defp render_compact_asset_alias_lines(original, alias_name, desired_line) do
+    matches = Regex.scan(esbuild_task_pattern(), original)
+
+    if length(matches) != 1 do
+      Kernel.raise(
+        "mix.exs #{alias_name} compact alias must contain exactly one esbuild task. No writes occurred."
+      )
+    else
+      original_lines = split_lines(original)
+      indent = leading_indent(at(original_lines, 0))
+      relative = Enum.map(original_lines, fn line -> strip_expected_indent(line, indent) end)
+      desired_task = String.trim_trailing(desired_line, ",")
+      split_lines(Regex.replace(esbuild_task_pattern(), Enum.join(relative, "\n"), desired_task))
+    end
+  end
+
+  defp esbuild_task_pattern() do
+    rx("[\"']esbuild[^\"']*[\"']")
   end
 
   defp single_line_alias(line, alias_name) do
@@ -895,12 +1012,12 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
     lines_length = length(lines)
 
     {_depth, end_index} =
-      Enum.reduce((start_index + 1)..(lines_length - 1)//1, {depth, end_index}, fn _index,
+      Enum.reduce((start_index + 1)..(lines_length - 1)//1, {depth, end_index}, fn index,
                                                                                    {depth_acc,
                                                                                     end_index_acc} ->
         if Kernel.is_nil(end_index_acc) do
-          depth_acc = depth_acc + bracket_delta(at(lines, start_index))
-          end_index_acc = if depth_acc == 0, do: start_index, else: end_index_acc
+          depth_acc = depth_acc + bracket_delta(at(lines, index))
+          end_index_acc = if depth_acc == 0, do: index, else: end_index_acc
           {depth_acc, end_index_acc}
         else
           {depth_acc, end_index_acc}
@@ -941,18 +1058,35 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
     end
   end
 
-  defp alias_insertion_index(lines, start_index, end_index) do
-    _g = start_index + 1
-    g_value = end_index
+  defp alias_insertion_index(lines, start_index, end_index, alias_name) do
+    haxe_end_token = haxe_client_alias_end_token(alias_name)
 
-    case Enum.reduce_while((start_index + 1)..(g_value - 1)//1, :__reflaxe_no_return__, fn index,
-                                                                                           _ ->
-           if String.contains?(at(lines, index), "END reflaxe_elixir haxe_compile_client_alias"),
-             do: {:halt, {:__reflaxe_return__, index + 1}},
-             else: {:cont, :__reflaxe_no_return__}
-         end) do
-      {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
-      _ -> start_index + 1
+    if Kernel.is_nil(haxe_end_token) do
+      start_index + 1
+    else
+      _g = start_index + 1
+      g_value = end_index
+
+      case Enum.reduce_while(
+             (start_index + 1)..(g_value - 1)//1,
+             :__reflaxe_no_return__,
+             fn index, _ ->
+               if String.contains?(at(lines, index), haxe_end_token),
+                 do: {:halt, {:__reflaxe_return__, index + 1}},
+                 else: {:cont, :__reflaxe_no_return__}
+             end
+           ) do
+        {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
+        _ -> start_index + 1
+      end
+    end
+  end
+
+  defp haxe_client_alias_end_token(alias_name) do
+    case alias_name do
+      "assets.build" -> "END reflaxe_elixir assets.build_task"
+      "assets.deploy" -> "END reflaxe_elixir assets.deploy_task"
+      _ -> nil
     end
   end
 
@@ -1126,9 +1260,9 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
     _g = insertion_index
     g_value = end_ + 1
 
-    case Enum.reduce_while(insertion_index..(g_value - 1)//1, :__reflaxe_no_return__, fn _index,
+    case Enum.reduce_while(insertion_index..(g_value - 1)//1, :__reflaxe_no_return__, fn index,
                                                                                          _ ->
-           line = at(lines, insertion_index)
+           line = at(lines, index)
            trimmed = String.trim(line)
 
            if trimmed != "" and trimmed != "]" and trimmed != "])",
@@ -1558,10 +1692,14 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
             g_value = end_ + 1
 
             end_index =
-              Enum.reduce(start_index..(g_value - 1)//1, end_index, fn index, _end_index_acc ->
-                if Kernel.is_nil(index) and String.contains?(at(lines, index), "</script>"),
-                  do: index,
-                  else: index
+              Enum.reduce(start_index..(g_value - 1)//1, end_index, fn index, end_index_acc ->
+                if Kernel.is_nil(end_index_acc) and
+                     String.contains?(at(lines, index), "</script>") do
+                  end_index_acc = index
+                  end_index_acc
+                else
+                  end_index_acc
+                end
               end)
 
             end_index
@@ -1604,7 +1742,8 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
               String.trim_leading(line)
             end
 
-          "  " <> normalize_vite_module_script(stripped)
+          canonical = String.replace(stripped, "/assets/js/app.js", "/assets/app.js")
+          "  " <> normalize_vite_module_script(canonical)
         end)
 
       Enum.concat(
@@ -1635,9 +1774,11 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
                 String.trim_leading(line)
               end
 
+            canonical = String.replace(stripped, "/assets/js/app.js", "/assets/app.js")
+
             normalized =
               normalize_vite_module_script(
-                String.replace(stripped, "/assets/phoenix_app.js", "/assets/app.js")
+                String.replace(canonical, "/assets/phoenix_app.js", "/assets/app.js")
               )
 
             "  " <> normalized
@@ -1906,7 +2047,11 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
     closing =
       "#{indent}#{comment_prefix} #{end_token}#{if comment_prefix == "<%!--", do: " --%>", else: suffix}"
 
-    body = Enum.map(desired, fn line -> indent <> line end)
+    body =
+      Enum.map(desired, fn line ->
+        if line == "", do: "", else: indent <> line
+      end)
+
     Enum.concat(Enum.concat([opening], body), [closing])
   end
 

@@ -238,7 +238,7 @@ class ProjectPatch {
 		var beginLine = Enum.at(lines, beginIndex, "");
 		var endLine = Enum.at(lines, endIndex, "");
 		var indent = leadingIndent(beginLine);
-		var indented = Enum.map(desiredLines, function(line:String):String return indent + line);
+		var indented = Enum.map(desiredLines, function(line:String):String return line == "" ? "" : indent + line);
 		var replacement = Enum.concatTwo(Enum.concatTwo([beginLine], indented), [endLine]);
 		return ok(replaceLineSpan(lines, beginIndex, endIndex, replacement));
 	}
@@ -258,7 +258,10 @@ class ProjectPatch {
 		var endLine = Enum.at(lines, endIndex, "");
 		var indent = leadingIndent(beginLine);
 		var existingInner = Enum.take(Enum.drop(lines, beginIndex + 1), endIndex - beginIndex - 1);
-		var desiredInner = Enum.map(fun(existingInner), function(line:String):String return indent + ElixirString.trimLeading(line));
+		var desiredInner = Enum.map(fun(existingInner), function(line:String):String {
+			var trimmed = ElixirString.trimLeading(line);
+			return trimmed == "" ? "" : indent + trimmed;
+		});
 		var replacement = Enum.concatTwo(Enum.concatTwo([beginLine], desiredInner), [endLine]);
 		return ok(replaceLineSpan(lines, beginIndex, endIndex, replacement));
 	}

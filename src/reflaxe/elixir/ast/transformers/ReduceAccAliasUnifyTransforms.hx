@@ -149,7 +149,10 @@ class ReduceAccAliasUnifyTransforms {
 												// DEBUG: Sys.println('[ReduceAccAliasUnify] acc alias: ' + lhs + ' (acc=' + accName + ')');
 											}
 											switch (rhs.def) {
-												case EVar(rv) if (binderName != null && rv == binderName && lhs != binderName):
+												case EVar(rv) if (binderName != null && rv == binderName && lhs != binderName && lhs != accName):
+													// `acc = binder` is a real accumulator update, not a disposable
+													// binder alias. Rewriting the accumulator itself to the binder
+													// corrupts every other read and the reducer's fallback value.
 													binderAliasSet.set(lhs, true);
 												// DEBUG: Sys.println('[ReduceAccAliasUnify] binder alias: ' + lhs + ' (binder=' + binderName + ')');
 												default:
@@ -169,7 +172,7 @@ class ReduceAccAliasUnifyTransforms {
 												// DEBUG: Sys.println('[ReduceAccAliasUnify] acc alias: ' + lhs2 + ' (acc=' + accName + ')');
 											}
 											switch (rhs2.def) {
-												case EVar(rv2) if (binderName != null && rv2 == binderName && lhs2 != binderName):
+												case EVar(rv2) if (binderName != null && rv2 == binderName && lhs2 != binderName && lhs2 != accName):
 													binderAliasSet.set(lhs2, true);
 												// DEBUG: Sys.println('[ReduceAccAliasUnify] binder alias: ' + lhs2 + ' (binder=' + binderName + ')');
 												default:

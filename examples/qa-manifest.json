@@ -200,6 +200,23 @@
         "reason": "Browser smoke is available for local/manual validation; CI keeps this learning example bounded with mix tests plus WAE."
       }
     },
+    "18-phoenixhx-live-react": {
+      "compile": { "required": true },
+      "strictElixir": { "mode": "ci" },
+      "runtime": {
+        "mode": "mix-test",
+        "command": "mix deps.get && mix test",
+        "timeoutSeconds": 900,
+        "ci": true,
+        "evidence": ["test", "src_haxe/test"]
+      },
+      "e2e": {
+        "mode": "sentinel-playwright",
+        "command": "scripts/qa-sentinel.sh --app examples/18-phoenixhx-live-react --port 4018 --playwright --e2e-spec e2e/signal_console.spec.ts --e2e-workers 1 --async --deadline 900 --verbose",
+        "ci": true,
+        "evidence": ["e2e/signal_console.spec.ts"]
+      }
+    },
     "lix-installation": {
       "compile": { "required": true },
       "strictElixir": { "mode": "dedicated", "reason": "Installer smoke is covered by docs/release installation checks, not the WAE shards." },

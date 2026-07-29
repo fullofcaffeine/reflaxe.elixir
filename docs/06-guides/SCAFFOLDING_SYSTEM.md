@@ -34,6 +34,17 @@ There are three layers that work together:
    - If a Phoenix root layout template is present, it also ensures baseline HTML boilerplate (doctype, CSRF meta tag, tracked app script).
    - Use `--yes` for non-interactive plain-js convergence (CI/generator flows).
 
+`plain-js` does not mean “no PhoenixHx.” Server modules, typed assigns, router
+definitions, and HEEx wrappers can still be Haxe-authored. It means only that
+the browser bootstrap, hooks, and components remain JavaScript or TypeScript.
+Choose `genes` when browser code itself is authored in Haxe.
+
+Stock LiveReact can be installed on either mode with
+`mix haxe.phoenix.live_react`. LiveReact mounts React islands; Genes compiles
+Haxe browser source. When both are enabled, Genes emits source and Vite remains
+the single final bundler. The canonical runnable composition is
+[`examples/18-phoenixhx-live-react`](../../examples/18-phoenixhx-live-react/).
+
 Why both Mix and Haxe entrypoints exist:
 
 - Mix tasks are the best UX for “modify the current project in place”.

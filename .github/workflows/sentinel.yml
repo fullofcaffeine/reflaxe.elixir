@@ -328,3 +328,89 @@ jobs:
           path: |
             /tmp/qa-*.log
             qa-chat-run.log
+
+  smoke-live-react:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.14.0'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            examples/18-phoenixhx-live-react/package-lock.json
+
+      - name: Setup Erlang/Elixir
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
+        with:
+          otp-version: '27.2'
+          elixir-version: '1.18.3'
+
+      - name: Cache Mix deps
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: |
+            ~/.mix
+            ~/.hex
+            examples/18-phoenixhx-live-react/deps
+            examples/18-phoenixhx-live-react/_build
+          key: ${{ runner.os }}-mix-live-react-${{ hashFiles('examples/18-phoenixhx-live-react/mix.lock') }}
+
+      - name: Cache Haxe toolchain (lix)
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: |
+            ~/haxe
+          key: ${{ runner.os }}-lix-haxe-4.3.7-${{ hashFiles('.haxerc', 'haxe_libraries/*.hxml', 'package-lock.json', 'examples/18-phoenixhx-live-react/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-lix-haxe-4.3.7-
+
+      - name: Install root dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Install Haxe (pinned via lix)
+        run: |
+          set -euo pipefail
+          npx lix download
+          npx lix download haxe "4.3.7"
+          npx lix use haxe "4.3.7"
+          echo "$(pwd)/node_modules/.bin" >> "$GITHUB_PATH"
+          export PATH="$(pwd)/node_modules/.bin:$PATH"
+          haxe -version
+
+      - name: Download Haxe libraries (lix)
+        run: npx lix download
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: |
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-live-react-${{ hashFiles('examples/18-phoenixhx-live-react/package-lock.json') }}
+
+      - name: Fetch example Mix dependencies
+        run: scripts/with-timeout.sh --secs 300 --cwd examples/18-phoenixhx-live-react -- mix deps.get
+
+      - name: Install example npm dependencies and Chromium
+        run: |
+          npm -C examples/18-phoenixhx-live-react ci --prefer-offline --no-audit --no-fund
+          npx -C examples/18-phoenixhx-live-react playwright install chromium
+
+      - name: Run PhoenixHx LiveReact browser smoke (bounded)
+        run: |
+          set -euo pipefail
+          scripts/qa-sentinel.sh --app examples/18-phoenixhx-live-react --port 4018 --playwright --e2e-spec "e2e/signal_console.spec.ts" --e2e-workers 1 --deadline 900 --verbose | tee qa-live-react-run.log
+
+      - name: Upload PhoenixHx LiveReact QA logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: qa-logs-live-react
+          path: |
+            /tmp/qa-*.log
+            qa-live-react-run.log
