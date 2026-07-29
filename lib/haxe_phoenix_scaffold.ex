@@ -1128,7 +1128,6 @@ defmodule HaxePhoenixScaffold do
       "  \"150\",",
       "  \"--promote\",",
       "  \"assets/js/_hx_app_tmp.js:assets/js/hx_app.js,assets/js/_hx_app_tmp.js.map:assets/js/hx_app.js.map\",",
-      "  env: [{\"HAXE_NO_SERVER\", \"1\"}],",
       "  cd: Path.expand(\"../\", __DIR__)",
       "],"
     ]
