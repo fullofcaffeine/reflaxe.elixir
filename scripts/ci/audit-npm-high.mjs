@@ -12,6 +12,10 @@ const ACKNOWLEDGEMENT = Object.freeze({
   dependencyVersion: "5.0.7",
   reviewBy: "2026-08-31",
 });
+const AUDIT_ATTEMPTS = 3;
+const AUDIT_TIMEOUT_MS = 60_000;
+const RETRY_DELAY_MS = 2_000;
+const retryWait = new Int32Array(new SharedArrayBuffer(4));
 
 function blockingVulnerabilities(audit) {
   return Object.entries(audit.vulnerabilities ?? {}).filter(([, vulnerability]) =>
@@ -139,23 +143,51 @@ function selfTest() {
   console.log("[npm-audit] policy self-test passed");
 }
 
-function runAudit() {
-  const result = spawnSync(
-    "npm",
-    ["audit", "--audit-level=high", "--omit=optional", "--json"],
-    { encoding: "utf8" },
+function fetchAudit() {
+  const failures = [];
+
+  for (let attempt = 1; attempt <= AUDIT_ATTEMPTS; attempt += 1) {
+    const result = spawnSync(
+      "npm",
+      ["audit", "--audit-level=high", "--omit=optional", "--json"],
+      { encoding: "utf8", timeout: AUDIT_TIMEOUT_MS, maxBuffer: 10 * 1024 * 1024 },
+    );
+
+    let audit;
+    let failure;
+    if (result.error) {
+      failure = result.error.message;
+    } else {
+      try {
+        audit = JSON.parse(result.stdout);
+      } catch {
+        failure = `npm audit did not return JSON: ${result.stderr || result.stdout}`;
+      }
+    }
+
+    if (audit && !audit.error) {
+      return audit;
+    }
+    if (audit?.error) {
+      failure = `npm audit failed operationally: ${JSON.stringify(audit.error)}`;
+    }
+
+    failures.push(failure);
+    if (attempt < AUDIT_ATTEMPTS) {
+      console.warn(
+        `[npm-audit] operational attempt ${attempt}/${AUDIT_ATTEMPTS} failed; retrying in ${RETRY_DELAY_MS / 1000}s`,
+      );
+      Atomics.wait(retryWait, 0, 0, RETRY_DELAY_MS);
+    }
+  }
+
+  throw new Error(
+    `npm audit failed operationally after ${AUDIT_ATTEMPTS} attempts: ${failures.at(-1)}`,
   );
-  if (result.error) {
-    throw result.error;
-  }
+}
 
-  let audit;
-  try {
-    audit = JSON.parse(result.stdout);
-  } catch {
-    throw new Error(`npm audit did not return JSON:\n${result.stderr || result.stdout}`);
-  }
-
+function runAudit() {
+  const audit = fetchAudit();
   const packageLock = JSON.parse(readFileSync("package-lock.json", "utf8"));
   const outcome = evaluateAudit(audit, packageLock);
   console.log(
