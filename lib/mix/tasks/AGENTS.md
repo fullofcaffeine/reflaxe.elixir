@@ -51,9 +51,9 @@ lib/mix/tasks/
 - Namespaces the compilation-server ownership cookie by HXML build file so
   PhoenixHx server and browser watchers can reuse separate compiler processes
   concurrently without terminating each other
-- Vite integrations must ignore Genes' private `.genes-output-*.stage/**` and
-  `.genes-output-*.manifest` paths; these are atomic transaction internals, not
-  hot-reload inputs
+- Tailwind content globs that cover Genes output directories must exclude
+  `**/.genes-output-*.stage/**` and `**/.genes-output-*.manifest`; these are
+  atomic transaction internals, not content or hot-reload inputs
 
 ### Debugging and Analysis Tools
 

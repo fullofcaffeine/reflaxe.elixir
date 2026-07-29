@@ -8,6 +8,10 @@ const path = require("path")
 module.exports = {
   content: [
     "./js/**/*.js",
+    // Genes publishes generated modules transactionally. Its hidden staging
+    // trees are private compiler state and may disappear between watch events.
+    "!./**/.genes-output-*.stage/**",
+    "!./**/.genes-output-*.manifest",
     // BEGIN phoenix_chat vite_live_react_content
     "./react-components/**/*.{ts,tsx}",
     // END phoenix_chat vite_live_react_content

@@ -99,9 +99,9 @@ Tip: prefer `mix dev` over `mix phx.server` because `mix dev` runs `ecto.create`
 - Dev uses `mix haxe.watch` watchers for **both** server (Haxe→Elixir) and client (Haxe→JS) code.
 - Each build owns a separate persistent Haxe compilation server, so the server
   and browser watchers reuse compiler caches without terminating each other.
-- Vite ignores Genes' private `.genes-output-*.stage` transaction paths. Those
-  files are renamed atomically during a successful Haxe build and are not
-  browser source files.
+- Tailwind excludes Genes' private `.genes-output-*.stage` transaction paths
+  from its content watcher. Those files are renamed atomically during a
+  successful Haxe build and are not browser source files.
 - The first `mix dev` boot can take longer because the server and client Haxe
   builds initialize before their watchers settle.
 - If you see `Haxe server port 6116 is in use; relocating ...` and builds feel slow, clean up stale servers:

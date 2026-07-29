@@ -8,6 +8,10 @@ module.exports = {
     
     // JavaScript files (including generated Haxe code)
     "./js/**/*.js",
+    // Genes publishes generated modules transactionally. Its hidden staging
+    // trees are private compiler state and may disappear between watch events.
+    "!./**/.genes-output-*.stage/**",
+    "!./**/.genes-output-*.manifest",
     
     // Haxe source files (for HXX templates and className usage)
     "../src_haxe/**/*.hx",
