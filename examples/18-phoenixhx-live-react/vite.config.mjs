@@ -8,7 +8,10 @@ import liveReactPlugin from "live_react/vite-plugin"
 const packageRoot = path.dirname(fileURLToPath(import.meta.url))
 const projectRoot = packageRoot
 const assetRoot = path.join(projectRoot, "assets")
-const colocatedRoot = path.join(projectRoot, "_build", process.env.MIX_ENV || "dev", "phoenix-colocated")
+const mixBuildRoot = process.env.MIX_BUILD_ROOT
+  ? path.resolve(projectRoot, process.env.MIX_BUILD_ROOT)
+  : path.join(projectRoot, "_build")
+const colocatedRoot = path.join(mixBuildRoot, process.env.MIX_ENV || "dev", "phoenix-colocated")
 
 export default defineConfig(({command}) => ({
   root: assetRoot,

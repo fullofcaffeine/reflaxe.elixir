@@ -54,6 +54,9 @@ class HaxePhoenixLiveReactTest extends TestCase {
 		Assert.isTrue(ElixirMap.hasKeyTerm(DependencyLock.read(Path.joinTwo(root, "mix.lock")), LIVE_REACT));
 		var viteConfig = File.readBang(Path.joinTwo(root, "vite.config.mjs"));
 		Assert.containsString(viteConfig, Fixture.GENERATED_SIGNATURE);
+		Assert.containsString(viteConfig, "const mixBuildRoot = process.env.MIX_BUILD_ROOT");
+		Assert.containsString(viteConfig, "? path.resolve(projectRoot, process.env.MIX_BUILD_ROOT)");
+		Assert.containsString(viteConfig, 'const colocatedRoot = path.join(mixBuildRoot, process.env.MIX_ENV || "dev", "phoenix-colocated")');
 		Assert.containsString(viteConfig, 'alias: {"phoenix-colocated": colocatedRoot}');
 		Assert.containsString(viteConfig, "commonjsOptions: {include: [/node_modules/, /vendor/], transformMixedEsModules: true}");
 		var manifest = Fixture.readJson(Path.joinTwo(root, Fixture.MANIFEST));
