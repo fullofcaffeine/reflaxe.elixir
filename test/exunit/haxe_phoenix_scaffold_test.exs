@@ -359,6 +359,7 @@ defmodule HaxePhoenixScaffoldTest do
     assert dev_exs =~ "BEGIN reflaxe_elixir haxe_client"
     assert dev_exs =~ "haxe_client:"
     assert dev_exs =~ "--promote"
+    assert dev_exs =~ ~s(env: [{"HAXE_NO_SERVER", "1"}])
     assert count(dev_exs, "BEGIN reflaxe_elixir haxe_client") == 1
 
     mix_exs = File.read!(Path.join(root, "mix.exs"))

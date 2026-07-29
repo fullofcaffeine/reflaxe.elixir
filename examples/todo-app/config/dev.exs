@@ -35,7 +35,16 @@ optional_watchers =
   if haxe_bin != nil do
     [
       # Server Haxe watcher: regenerates Elixir into lib/ so Phoenix code reloader picks it up.
-      mix: ["haxe.watch", "--hxml", "build-server.hxml", "--dirs", "src_haxe/server,src_shared,src_haxe/contexts", "--debounce", "150", cd: todo_app_root],
+      mix: [
+        "haxe.watch",
+        "--hxml",
+        "build-server.hxml",
+        "--dirs",
+        "src_haxe/server,src_shared,src_haxe/contexts",
+        "--debounce",
+        "150",
+        cd: todo_app_root
+      ],
       # Client Haxe watcher:
       # - Haxe outputs to assets/js/_hx_app_tmp.js (deleted/recreated each rebuild).
       # - We promote that output into the stable assets/js/hx_app.js path so esbuild --watch
@@ -50,6 +59,7 @@ optional_watchers =
         "150",
         "--promote",
         "assets/js/_hx_app_tmp.js:assets/js/hx_app.js,assets/js/_hx_app_tmp.js.map:assets/js/hx_app.js.map",
+        env: [{"HAXE_NO_SERVER", "1"}],
         cd: todo_app_root
       ]
     ]
@@ -77,7 +87,9 @@ config :todo_app, TodoApp.Repo,
 # Allow overriding the port via PORT; default to 4000 for dev
 dev_port =
   case System.get_env("PORT") do
-    nil -> 4000
+    nil ->
+      4000
+
     val ->
       case Integer.parse(val) do
         {int, _} -> int
@@ -93,7 +105,7 @@ config :todo_app, TodoAppWeb.Endpoint,
   # Prefer env in dev when provided, otherwise use a stable (but non-secret) fallback.
   # NOTE: Keep this low-entropy so secret scanners don't flag example config.
   secret_key_base: System.get_env("DEV_SECRET_KEY_BASE") || String.duplicate("a", 64),
-  watchers: (if disable_watchers, do: [], else: all_watchers)
+  watchers: if(disable_watchers, do: [], else: all_watchers)
 
 # Watch static and templates for browser reloading.
 config :todo_app, TodoAppWeb.Endpoint,

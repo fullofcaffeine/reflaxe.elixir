@@ -51,6 +51,10 @@ lib/mix/tasks/
 - Namespaces the compilation-server ownership cookie by HXML build file so
   PhoenixHx server and browser watchers can reuse separate compiler processes
   concurrently without terminating each other
+- Genes multi-target browser scaffolds set `HAXE_NO_SERVER=1` on their client
+  watcher because Genes' transactional output is not certified for persistent
+  compiler reuse on every supported platform; Haxe→Elixir server watchers keep
+  using the managed compilation server
 
 ### Debugging and Analysis Tools
 
