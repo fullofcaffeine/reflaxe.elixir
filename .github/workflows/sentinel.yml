@@ -113,6 +113,12 @@ jobs:
           npm -C examples/todo-app ci --prefer-offline --no-audit --no-fund
           npx -C examples/todo-app playwright install chromium
 
+      - name: Install local-dev watcher dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends inotify-tools
+          npm -C examples/todo-app/assets ci --prefer-offline --no-audit --no-fund
+
       - name: Run QA Sentinel smoke (bounded)
         env:
           MIX_ENV: e2e

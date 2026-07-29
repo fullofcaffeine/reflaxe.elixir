@@ -45,6 +45,7 @@ the application into a client-owned single-page app.
 - PostgreSQL
 - Node.js 22.14.0+
 - Haxe 4.3.7
+- Linux only: `inotify-tools` for the Haxe and Phoenix filesystem watchers
 
 ### Installation
 
@@ -71,6 +72,8 @@ Visit `http://localhost:4000` to see the app.
 - `scripts/qa-sentinel.sh ...` is the bounded CI/agent harness. It is useful for
   reproducible build, boot, and Playwright validation; it is not the everyday
   local development command.
+- Run `mix setup` once after a fresh clone or dependency change. It installs the
+  root and `assets/` npm dependencies required by Vite before `mix dev`.
 
 After `mix dev` reports that Phoenix is listening, open
 `http://localhost:4000`. Interactive LiveView behavior also requires the Vite
