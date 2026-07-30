@@ -162,6 +162,27 @@ The scaffold prevents this via “temp output + promote”:
 
 See `docs/06-guides/WATCHER_WORKFLOW.md` for the full rationale.
 
+### What belongs in `build-client.hxml`
+
+The HXML remains the visible, standard Haxe build definition. Its lines fall
+into two groups:
+
+- **Application intent:** source roots (`-cp`), the client entry point
+  (`-main`), selected libraries (`-lib`), dead-code elimination, and
+  application-specific defines.
+- **PhoenixHx scaffold plumbing:** the temporary `-js
+  assets/js/_hx_app_tmp.js` target required by the watcher’s atomic promotion.
+
+PhoenixHx does not hide these settings behind a second configuration format.
+Edit an unsigned `build-client.hxml` directly when the application needs a
+different build. The scaffold updates signed files and exact historical
+templates, but it does not infer ownership from one familiar line. In
+particular, if an unsigned file still writes directly to
+`assets/js/hx_app.js`, rerunning the scaffold stops without writing anything
+and asks you to change the target explicitly. This preserves custom compiler
+options instead of replacing or partially migrating a build whose meaning
+PhoenixHx cannot prove.
+
 ## `hx_app.js` Stub Safety
 
 The scaffold creates `assets/js/hx_app.js` as a stub so esbuild can boot before the first successful Haxe client compile.

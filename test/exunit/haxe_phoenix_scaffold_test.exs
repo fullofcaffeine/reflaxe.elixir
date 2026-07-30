@@ -708,7 +708,7 @@ defmodule HaxePhoenixScaffoldTest do
     assert File.read!(Path.join(assets_js, "hx_app.js")) == custom
   end
 
-  test "migrates build-client.hxml -js target from stable path to temp path" do
+  test "refuses to rewrite an unowned build-client.hxml stable output target" do
     root =
       Path.join(
         System.tmp_dir!(),
@@ -731,11 +731,14 @@ defmodule HaxePhoenixScaffoldTest do
       "-lib reflaxe.elixir\n-cp src_haxe\n-js assets/js/hx_app.js\n--main client.Boot\n"
     )
 
-    assert :ok == HaxePhoenixScaffold.apply!(root)
+    before = file_tree(root)
 
-    build_client = File.read!(Path.join(root, "build-client.hxml"))
-    assert build_client =~ "-js assets/js/_hx_app_tmp.js"
-    refute build_client =~ "-js assets/js/hx_app.js\n"
+    assert_raise RuntimeError, ~r/not scaffold-owned.*No writes occurred/s, fn ->
+      HaxePhoenixScaffold.apply!(root)
+    end
+
+    assert file_tree(root) == before
+    refute File.exists?(Path.join(root, ".reflaxe-elixir-project-patch"))
   end
 
   test "strict mode fails fast; warn-only mode skips with warning" do

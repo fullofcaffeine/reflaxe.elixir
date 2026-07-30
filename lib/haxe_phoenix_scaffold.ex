@@ -662,7 +662,13 @@ defmodule HaxePhoenixScaffold do
         content
 
       String.contains?(content, "-js assets/js/hx_app.js") ->
-        String.replace(content, "-js assets/js/hx_app.js", "-js assets/js/_hx_app_tmp.js")
+        raise """
+        cannot update build-client.hxml: it targets assets/js/hx_app.js but is not \
+        scaffold-owned. No writes occurred. Change that target to \
+        assets/js/_hx_app_tmp.js so the scaffold watcher can promote it atomically, \
+        or add the current scaffold ownership signature only after confirming the \
+        whole file may be replaced.
+        """
 
       true ->
         content
