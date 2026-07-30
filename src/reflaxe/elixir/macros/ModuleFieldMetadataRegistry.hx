@@ -30,6 +30,16 @@ typedef ModuleFieldImportData = {
 }
 
 class ModuleFieldMetadataRegistry {
+	/**
+	 * Internal metadata carrier for a module-level router initializer.
+	 *
+	 * Haxe's compilation server may reuse the post-build-macro module after
+	 * request-local macro state has been reset. Keeping the original syntax
+	 * tree on the cached module type lets a later request recover `final
+	 * routes = [...]` without emitting that declaration as runtime Elixir.
+	 */
+	public static inline final MODULE_ROUTES_CACHE_META = ":reflaxeElixirModuleRoutes";
+
 	static var metadataByModulePath:Map<String, Array<MetadataEntry>> = new Map();
 	static var importsByModulePath:Map<String, ModuleFieldImportData> = new Map();
 	static var fieldInitializersByModulePath:Map<String, Map<String, Expr>> = new Map();

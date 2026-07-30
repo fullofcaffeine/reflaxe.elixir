@@ -174,6 +174,70 @@ check(
     "missing server identity was invented",
 )
 
+paired_config = {
+    "edit_kind": "fixture_edit",
+    "edit_patch_sha256": "patch-digest",
+    "edited_paths": ["fixture.hx"],
+    "iterations": 2,
+    "warmups": 2,
+    "build_input_digests": {"combined_sha256": "build-inputs"},
+}
+
+
+def watch_result(use_server: bool) -> dict:
+    return {
+        "status": "success",
+        "repo": {"benchmark_head": "fixture-head"},
+        "config": {**paired_config, "use_haxe_server": use_server},
+        "processes": {"haxe_server_identity_observed": use_server},
+        "warmup_samples": [
+            {
+                "status": "success",
+                "source_variant": "B",
+                "generated_output": {"output_tree_sha256": "tree-b"},
+            },
+            {
+                "status": "success",
+                "source_variant": "A",
+                "generated_output": {"output_tree_sha256": "tree-a"},
+            },
+        ],
+        "samples": [
+            {
+                "status": "success",
+                "source_variant": "B",
+                "generated_output": {"output_tree_sha256": "tree-b"},
+            },
+            {
+                "status": "success",
+                "source_variant": "A",
+                "generated_output": {"output_tree_sha256": "tree-a"},
+            },
+        ],
+    }
+
+
+direct_watch = watch_result(False)
+server_watch = watch_result(True)
+parity = contract.compare_watch_output_results(direct_watch, server_watch)
+check(parity["status"] == "success", f"matching direct/server watch output failed parity: {parity['errors']}")
+server_watch["samples"][1]["generated_output"]["output_tree_sha256"] = "tree-a-mismatch"
+mismatch = contract.compare_watch_output_results(direct_watch, server_watch)
+check(mismatch["status"] == "failure", "direct/server output mismatch passed parity")
+check(
+    any("variant A" in error for error in mismatch["errors"]),
+    "direct/server output mismatch did not identify the source variant",
+)
+server_watch = watch_result(True)
+server_watch["samples"][1] = server_watch["samples"][0]
+server_watch["warmup_samples"][1] = server_watch["warmup_samples"][0]
+missing_variant = contract.compare_watch_output_results(direct_watch, server_watch)
+check(missing_variant["status"] == "failure", "missing source variant passed output parity")
+check(
+    any("variant A was not observed" in error for error in missing_variant["errors"]),
+    "missing source variant was not identified",
+)
+
 watch_compiler_output = """REFLAXE_ELIXIR_TIMINGS {"schema_version":1,"total_wall_ms":11520.765,"phases":[]}
 name  | time(s) | %
 total | 12.396 | 100

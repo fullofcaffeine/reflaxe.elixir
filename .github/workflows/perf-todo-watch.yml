@@ -135,6 +135,18 @@ jobs:
             done
           done
 
+          for entry in "${patches[@]}"; do
+            IFS=: read -r patch _edit_kind _public_api_changed <<< "$entry"
+            slug="${patch%.patch}"
+            echo "::group::${slug}-output-parity"
+            if ! python3 scripts/perf/benchmark_contract.py compare-watch-output \
+              --direct "tmp/perf/todo-watch-matrix/${slug}-direct.json" \
+              --server "tmp/perf/todo-watch-matrix/${slug}-server.json"; then
+              overall_status=1
+            fi
+            echo "::endgroup::"
+          done
+
           exit "$overall_status"
 
       - name: Summarize watch matrix
@@ -149,7 +161,8 @@ jobs:
           print("## Todo Watch Matrix")
           print()
           print("GitHub-hosted runner timing is provisional because runner contention is unknown.")
-          print("The artifacts remain valid for output parity, cleanup, identity, and phase inspection.")
+          print("Direct/server generated-output parity is an enforced correctness gate.")
+          print("The artifacts remain valid for cleanup, identity, and phase inspection.")
           print()
           if not paths:
               print("No benchmark JSON was produced.")

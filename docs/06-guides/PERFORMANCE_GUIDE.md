@@ -212,10 +212,12 @@ Actions when you want a shared timing artifact; the scheduled run provides a low
 The workflow uploads `compile-times.json`, phase logs, and the intermediate metadata as an artifact.
 
 The manually dispatched **Perf Todo Watch Matrix** workflow runs the five checked-in edit classes in
-both direct and Haxe-server modes, sequentially on one runner. Its artifacts can verify output parity,
-server identity and cleanup, and phase attribution. GitHub-hosted runner contention is unknown, so its
-latency is provisional and cannot replace a controlled idle-machine baseline or support a public p95
-claim.
+both direct and Haxe-server modes, sequentially on one runner. Before the job can pass, every source
+variant must produce one stable generated-output tree in each mode, the paired tree hashes must match,
+and the server run must report a persistent Haxe-server identity. This makes generated-output parity a
+correctness gate rather than a claim inferred from a successful timing run. The artifacts also support
+cleanup and phase inspection. GitHub-hosted runner contention is unknown, so latency remains
+provisional and cannot replace a controlled idle-machine baseline or support a public p95 claim.
 
 ## Read Benchmark JSON
 

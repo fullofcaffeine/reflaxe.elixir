@@ -4481,10 +4481,24 @@ left_name == right_name and left_params == right_params';
 		return typePath;
 	}
 
+	/**
+	 * Recover the module-level `final routes` syntax tree.
+	 *
+	 * The request-local registry is authoritative on a fresh typing request.
+	 * A warm Haxe-server request can reuse the already-neutralized module, so
+	 * it falls back to the syntax tree preserved on the cached module type.
+	 */
 	private function extractRoutesFieldExpr(classType:ClassType):Null<Expr> {
 		if (classType == null)
 			return null;
-		return ModuleFieldMetadataRegistry.extractFieldInitializer(classType, "routes");
+		var currentRequestInitializer = ModuleFieldMetadataRegistry.extractFieldInitializer(classType, "routes");
+		if (currentRequestInitializer != null)
+			return currentRequestInitializer;
+
+		var cachedInitializers = classType.meta.extract(ModuleFieldMetadataRegistry.MODULE_ROUTES_CACHE_META);
+		if (cachedInitializers.length == 0 || cachedInitializers[0].params == null || cachedInitializers[0].params.length == 0)
+			return null;
+		return cachedInitializers[0].params[0];
 	}
 
 	private function extractRoutesMetaExpr(classType:ClassType):Null<Expr> {

@@ -186,6 +186,15 @@ class AnnotatedModuleEnumerator {
 		return null;
 	}
 
+	/**
+	 * Preserve a module-level router declaration for warm compiler requests,
+	 * then prevent its compile-time DSL value from becoming runtime Elixir.
+	 *
+	 * A persistent Haxe server caches the fields returned by this build macro.
+	 * If only `null` were cached, a later request that reuses the unchanged
+	 * router module would lose every route after request-local registries reset.
+	 * Type metadata is part of the cached module, so it is the durable copy.
+	 */
 	static function neutralizeModuleLevelRoutesFieldInitializer(cls:haxe.macro.Type.ClassType, fields:Array<Field>):Void {
 		if (fields == null || cls == null)
 			return;
@@ -209,9 +218,13 @@ class AnnotatedModuleEnumerator {
 				continue;
 
 			switch (field.kind) {
-				case FVar(fieldType, _):
+				case FVar(fieldType, initializer):
+					if (initializer != null && !cls.meta.has(ModuleFieldMetadataRegistry.MODULE_ROUTES_CACHE_META))
+						cls.meta.add(ModuleFieldMetadataRegistry.MODULE_ROUTES_CACHE_META, [initializer], field.pos);
 					field.kind = FVar(fieldType, macro null);
-				case FProp(get, set, fieldType, _):
+				case FProp(get, set, fieldType, initializer):
+					if (initializer != null && !cls.meta.has(ModuleFieldMetadataRegistry.MODULE_ROUTES_CACHE_META))
+						cls.meta.add(ModuleFieldMetadataRegistry.MODULE_ROUTES_CACHE_META, [initializer], field.pos);
 					field.kind = FProp(get, set, fieldType, macro null);
 				default:
 			}

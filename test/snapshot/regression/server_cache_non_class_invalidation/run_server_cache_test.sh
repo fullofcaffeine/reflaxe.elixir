@@ -427,6 +427,36 @@ run_hxml_define_variant() {
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "hxml-define-removed"
 }
 
+run_module_routes_variant() {
+	local direct_a="$TMP_ROOT/direct-module-routes-a"
+	local direct_b="$TMP_ROOT/direct-module-routes-b"
+	local include_status='include("CacheStatus")'
+
+	cp "$FIXTURE_DIR/variants/module-routes/MainModuleRoutes.hx" "$PROJECT_DIR/src/Main.hx"
+	compile_server "$SERVER_OUTPUT" --macro "$include_status"
+	compile_direct "$direct_a" --macro "$include_status"
+	compare_generated_output "$direct_a" "$SERVER_OUTPUT" "module-routes-A"
+	rg -Fq 'get("/status", CacheController, :index)' "$SERVER_OUTPUT" || {
+		echo "SERVER_CACHE_PARITY:module-routes-A omitted the typed route" >&2
+		return 1
+	}
+
+	# CacheStatus is a separately included root module. Editing it starts a new
+	# server request without invalidating the cached module-level router.
+	cp "$FIXTURE_DIR/variants/enum/CacheStatus.hx" "$PROJECT_DIR/src/CacheStatus.hx"
+	compile_server "$SERVER_OUTPUT" --macro "$include_status"
+	compile_direct "$direct_b" --macro "$include_status"
+	compare_generated_output "$direct_b" "$SERVER_OUTPUT" "module-routes-B"
+	rg -Fq 'get("/status", CacheController, :index)' "$SERVER_OUTPUT" || {
+		echo "SERVER_CACHE_PARITY:module-routes-B lost the typed route on a warm request" >&2
+		return 1
+	}
+
+	restore_baseline_sources
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "module-routes-removed"
+}
+
 run_cross_project_variant() {
 	local project_b="$TMP_ROOT/cross-project-b"
 	local server_b="$TMP_ROOT/server-cross-project-b"
@@ -536,6 +566,7 @@ run_module_rename_variant
 run_hxx_registry_variant
 run_external_macro_input_variant
 run_hxml_define_variant
+run_module_routes_variant
 run_cross_project_variant
 
 FINAL_FD_COUNT="$(open_fd_count "$SERVER_PID")"

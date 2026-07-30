@@ -482,6 +482,99 @@ def generated_output_state(output_root: Path, previous_digests: dict[str, str]) 
     )
 
 
+def compare_watch_output_results(direct: dict[str, Any], server: dict[str, Any]) -> dict[str, Any]:
+    """Verify that paired direct/server watch runs generated identical output.
+
+    Each source variant must be internally stable in both modes and then match
+    its peer mode exactly. Timing is deliberately excluded: hosted-runner
+    latency may be noisy, while generated-output parity is a correctness
+    contract.
+    """
+
+    errors: list[str] = []
+    direct_config = direct.get("config", {})
+    server_config = server.get("config", {})
+    direct_repo = direct.get("repo", {})
+    server_repo = server.get("repo", {})
+
+    if direct.get("status") != "success":
+        errors.append("direct run did not succeed")
+    if server.get("status") != "success":
+        errors.append("server run did not succeed")
+    if direct_config.get("use_haxe_server") is not False:
+        errors.append("direct result is not labeled as direct mode")
+    if server_config.get("use_haxe_server") is not True:
+        errors.append("server result is not labeled as Haxe-server mode")
+    if server.get("processes", {}).get("haxe_server_identity_observed") is not True:
+        errors.append("server result did not observe a persistent Haxe-server identity")
+
+    comparable_fields = (
+        ("benchmark head", direct_repo.get("benchmark_head"), server_repo.get("benchmark_head")),
+        ("edit kind", direct_config.get("edit_kind"), server_config.get("edit_kind")),
+        ("edit patch", direct_config.get("edit_patch_sha256"), server_config.get("edit_patch_sha256")),
+        ("edited paths", direct_config.get("edited_paths"), server_config.get("edited_paths")),
+        ("iterations", direct_config.get("iterations"), server_config.get("iterations")),
+        ("warmups", direct_config.get("warmups"), server_config.get("warmups")),
+        (
+            "build inputs",
+            direct_config.get("build_input_digests", {}).get("combined_sha256"),
+            server_config.get("build_input_digests", {}).get("combined_sha256"),
+        ),
+    )
+    for label, direct_value, server_value in comparable_fields:
+        if direct_value != server_value:
+            errors.append(f"{label} differs between direct and server results")
+
+    def variant_hashes(label: str, result: dict[str, Any]) -> dict[str, str]:
+        expected_samples = int(result.get("config", {}).get("iterations", 0))
+        expected_warmups = int(result.get("config", {}).get("warmups", 0))
+        samples = result.get("samples", [])
+        warmups = result.get("warmup_samples", [])
+        if len(samples) != expected_samples:
+            errors.append(f"{label} measured sample count is {len(samples)}, expected {expected_samples}")
+        if len(warmups) != expected_warmups:
+            errors.append(f"{label} warmup sample count is {len(warmups)}, expected {expected_warmups}")
+
+        observed: dict[str, set[str]] = {}
+        for sample in [*warmups, *samples]:
+            variant = sample.get("source_variant")
+            digest = sample.get("generated_output", {}).get("output_tree_sha256")
+            if sample.get("status") != "success":
+                errors.append(f"{label} variant {variant!r} contains a failed sample")
+                continue
+            if variant not in ("A", "B") or not isinstance(digest, str) or not digest:
+                errors.append(f"{label} sample lacks a valid source variant/output digest")
+                continue
+            observed.setdefault(variant, set()).add(digest)
+
+        stable: dict[str, str] = {}
+        for required_variant in ("A", "B"):
+            if required_variant not in observed:
+                errors.append(f"{label} variant {required_variant} was not observed")
+        for variant, digests in sorted(observed.items()):
+            if len(digests) != 1:
+                errors.append(f"{label} variant {variant} generated {len(digests)} distinct output trees")
+                continue
+            stable[variant] = next(iter(digests))
+        return stable
+
+    direct_hashes = variant_hashes("direct", direct)
+    server_hashes = variant_hashes("server", server)
+    for variant in sorted(set(direct_hashes) | set(server_hashes)):
+        if variant not in direct_hashes or variant not in server_hashes:
+            errors.append(f"variant {variant} was not observed in both process models")
+        elif direct_hashes[variant] != server_hashes[variant]:
+            errors.append(f"variant {variant} output differs between direct and server modes")
+
+    return {
+        "status": "success" if not errors else "failure",
+        "edit_kind": direct_config.get("edit_kind"),
+        "direct_hashes": direct_hashes,
+        "server_hashes": server_hashes,
+        "errors": errors,
+    }
+
+
 def schema_classification(schema_version: int | None) -> str:
     """Classify historical results without reinterpreting their old labels."""
 
@@ -498,11 +591,20 @@ def main() -> int:
     edit = subparsers.add_parser("apply-source-variant")
     edit.add_argument("--path", required=True)
     edit.add_argument("--variant", choices=("A", "B"), required=True)
+    compare = subparsers.add_parser("compare-watch-output")
+    compare.add_argument("--direct", required=True)
+    compare.add_argument("--server", required=True)
     args = parser.parse_args()
 
     if args.command == "apply-source-variant":
         write_source_variant(Path(args.path), args.variant)
         return 0
+    if args.command == "compare-watch-output":
+        direct = json.loads(Path(args.direct).read_text(encoding="utf-8"))
+        server = json.loads(Path(args.server).read_text(encoding="utf-8"))
+        report = compare_watch_output_results(direct, server)
+        print(json.dumps(report, indent=2, sort_keys=True))
+        return 0 if report["status"] == "success" else 1
     raise AssertionError(f"unhandled command: {args.command}")
 
 
