@@ -56,6 +56,14 @@
 - If a simpler sound design becomes apparent before the task closes, remove the unnecessary layer
   instead of preserving it because work has already been invested in it.
 
+## 🧾 Reviewable Decision Trails (Required for Substantive Runs)
+
+- Use `$show-me-your-work` for substantive multi-phase, autonomous, or unattended work that a human
+  will review after the fact.
+- Keep its append-only TSV trail under `.audit/<task-slug>.tsv` and local by default. Commit the
+  trail only when a reviewer needs it to trust the result.
+- Follow the skill's end-of-run truth audit, independent review, and `Attention` handoff requirements.
+
 ## 🚦 Non-Blocking Todo-App QA (Required)
 
 Agents must never block the terminal when validating the todo-app. Use the provided QA sentinels which build, start Phoenix in the background, probe readiness, and tear down cleanly.

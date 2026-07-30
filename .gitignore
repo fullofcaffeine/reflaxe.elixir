@@ -204,3 +204,6 @@ test/snapshot/**/tmp/
 
 # Haxe-authored ExUnit runtime test outputs (generated)
 test/fixtures/_generated_haxe_exunit/
+
+# Local show-me-your-work decision trails (commit explicitly only when needed)
+.audit/
