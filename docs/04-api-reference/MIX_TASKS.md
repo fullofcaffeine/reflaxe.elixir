@@ -436,7 +436,16 @@ It also scaffolds baseline Haxe ExUnit wiring:
 - `build-tests.hxml` (Haxe test compile target to `test/generated/**/*.exs`)
 - `test_haxe/` and `test/generated/` directories
 - `test/test_helper.exs` bootstrap block that requires generated `*_test.exs` files
-- Mix aliases: `"haxe.compile.tests"` and (when absent) `"test": ["haxe.compile.tests", "test"]`
+- Mix aliases: `"haxe.compile.tests"` and (when absent) `test: ["haxe.compile.tests", "test"]`
+
+`build.hxml` and `build-tests.hxml` remain visible application build
+definitions. Existing copies are replaced only after confirmation, or when
+`--force` explicitly authorizes replacement. A standard `mix new` project
+without an aliases function receives `aliases: aliases()` and the required
+aliases automatically. If custom alias wiring is ambiguous—for example, an
+existing `"test"` alias that never invokes `"haxe.compile.tests"`—the task
+fails during preflight without writing files and asks for manual integration
+instead of claiming Haxe-authored ExUnit tests are active.
 
 - Writes/updates `build-client.hxml` (Genes) to output to `assets/js/_hx_app_tmp.js`
 - Ensures a stable import path at `assets/js/hx_app.js`

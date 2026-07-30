@@ -27,6 +27,15 @@ There are three layers that work together:
    - With `--phoenix`, it also invokes `mix haxe.phoenix.scaffold`.
    - Supports `--client-mode genes|plain-js` when `--phoenix` is used (default: `genes`).
 
+   The server and test HXML files are application build definitions, not
+   hidden generator state. Existing files are overwritten only after explicit
+   confirmation, or when `--force` grants that authority. Before creating
+   files, the generator verifies that `mix.exs` has a supported patch shape.
+   A standard `mix new` project receives `aliases: aliases()` and an
+   `aliases/0` function automatically. Ambiguous custom alias wiring fails
+   without writes instead of reporting a test setup that never compiles the
+   Haxe-authored ExUnit modules.
+
 3. `mix haxe.phoenix.scaffold`
    - Canonical Phoenix client integration task.
    - `--client-mode genes` (default): typed Haxe/Genes client build + watcher promotion + `app.js` hook merge.

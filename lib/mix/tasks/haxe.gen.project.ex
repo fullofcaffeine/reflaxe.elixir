@@ -91,6 +91,10 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
 
   # Main setup workflow
   defp setup_project(config) do
+    # Validate deterministic Mix/source transformations before creating files. Optional Phoenix
+    # integrations retain their own transactional preflight and publication boundaries.
+    preflight_project!(config)
+
     # 1. Create directory structure
     create_directories(config)
 
@@ -233,6 +237,24 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     end
   end
 
+  defp preflight_project!(config) do
+    mix_exs_path = "mix.exs"
+
+    unless File.exists?(mix_exs_path) do
+      raise "mix.exs not found - this doesn't appear to be an Elixir project. No writes occurred."
+    end
+
+    mix_exs_path
+    |> File.read!()
+    |> planned_mix_exs_content!(config)
+
+    if config.live_react and not phoenix_project_shape?() do
+      raise "--live-react requires a canonical Phoenix project shape (assets/js/app.js and config/dev.exs). No writes occurred."
+    end
+
+    :ok
+  end
+
   # Create build.hxml configuration file
   defp create_build_config(config) do
     build_content = build_hxml_content(config)
@@ -335,6 +357,10 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
 
   @doc false
   def add_haxe_test_aliases_for_test(content), do: maybe_add_haxe_test_aliases_to_mix_exs(content)
+
+  @doc false
+  def planned_mix_exs_content_for_test(content, config),
+    do: planned_mix_exs_content!(content, config)
 
   @doc false
   def validate_feature_composition_for_test(config), do: validate_feature_composition!(config)
@@ -462,22 +488,12 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   # Update mix.exs to include Haxe compiler
   defp update_mix_exs(config) do
     mix_exs_path = "mix.exs"
-
-    unless File.exists?(mix_exs_path) do
-      Mix.shell().error("mix.exs not found - this doesn't appear to be an Elixir project")
-      System.halt(1)
-    end
-
     current_content = File.read!(mix_exs_path)
-
-    has_haxe_compiler? = Regex.match?(~r/compilers:\s*\[([^\]]*):haxe/m, current_content)
-    has_haxe_config? = Regex.match?(~r/\bhaxe:\s*\[/m, current_content)
+    updated_content = planned_mix_exs_content!(current_content, config)
 
     # Check if already has Haxe compiler and config
-    if has_haxe_compiler? && has_haxe_config? do
+    if haxe_compiler_configured?(current_content) and haxe_configured?(current_content) do
       Mix.shell().info("mix.exs already includes Haxe compiler configuration")
-
-      updated_content = maybe_add_haxe_test_aliases_to_mix_exs(current_content)
 
       if updated_content != current_content do
         if config.force || confirm_overwrite("mix.exs") do
@@ -488,12 +504,6 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
         end
       end
     else
-      updated_content =
-        current_content
-        |> maybe_add_haxe_compiler_to_mix_exs(has_haxe_compiler?)
-        |> maybe_add_haxe_config_to_mix_exs(config, has_haxe_config?)
-        |> maybe_add_haxe_test_aliases_to_mix_exs()
-
       if config.force || confirm_overwrite("mix.exs") do
         File.write!(mix_exs_path, updated_content)
         Mix.shell().info("✅ Updated mix.exs with Haxe compiler configuration")
@@ -504,6 +514,57 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
       end
     end
   end
+
+  defp planned_mix_exs_content!(content, config)
+       when is_binary(content) and is_map(config) do
+    updated =
+      content
+      |> maybe_add_haxe_compiler_to_mix_exs(haxe_compiler_configured?(content))
+      |> maybe_add_haxe_config_to_mix_exs(config, haxe_configured?(content))
+      |> maybe_add_haxe_test_aliases_to_mix_exs()
+
+    missing =
+      []
+      |> maybe_missing(not haxe_compiler_configured?(updated), "the :haxe Mix compiler")
+      |> maybe_missing(not haxe_configured?(updated), "the haxe: project configuration")
+      |> maybe_missing(
+        not Regex.match?(~r/"haxe\.compile\.tests"\s*:/m, updated),
+        "the haxe.compile.tests alias"
+      )
+      |> maybe_missing(
+        not Regex.match?(
+          ~r/(?:"test"|test)\s*:\s*\[[^\]]*"haxe\.compile\.tests"/ms,
+          updated
+        ),
+        "a test alias that invokes haxe.compile.tests"
+      )
+      |> maybe_missing(
+        not Regex.match?(~r/\baliases:\s*aliases\(\)/m, updated),
+        "aliases: aliases() in project/0"
+      )
+      |> maybe_missing(
+        not Regex.match?(~r/\bdefp?\s+aliases\b/m, updated),
+        "an aliases/0 function"
+      )
+
+    if missing == [] do
+      updated
+    else
+      raise """
+      cannot safely patch mix.exs; the supported standard Mix shape could not provide \
+      #{Enum.join(missing, ", ")}. No writes occurred. Preserve custom alias behavior, \
+      integrate the missing Haxe entries manually, then rerun the generator.
+      """
+    end
+  end
+
+  defp haxe_compiler_configured?(content),
+    do: Regex.match?(~r/compilers:\s*\[([^\]]*):haxe/m, content)
+
+  defp haxe_configured?(content), do: Regex.match?(~r/\bhaxe:\s*\[/m, content)
+
+  defp maybe_missing(items, true, label), do: items ++ [label]
+  defp maybe_missing(items, false, _label), do: items
 
   # Add Haxe compiler to mix.exs
   defp maybe_add_haxe_compiler_to_mix_exs(content, true), do: content
@@ -520,14 +581,16 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   defp maybe_add_haxe_config_to_mix_exs(content, _config, true), do: content
 
   defp maybe_add_haxe_config_to_mix_exs(content, config, false) do
-    haxe_config = """
-          haxe: [
-            hxml_file: "build.hxml",
-            source_dir: "#{config.haxe_dir}",
-            target_dir: "#{config.output_dir}",
-            watch: Mix.env() == :dev
-          ],
-    """
+    haxe_config =
+      """
+            haxe: [
+              hxml_file: "build.hxml",
+              source_dir: "#{config.haxe_dir}",
+              target_dir: "#{config.output_dir}",
+              watch: Mix.env() == :dev
+            ],
+      """
+      |> String.trim_trailing()
 
     if Regex.match?(~r/compilers:\s*[^\n,]+,/m, content) do
       Regex.replace(~r/(compilers:\s*[^\n,]+,)/m, content, "\\1\n" <> haxe_config)
@@ -538,8 +601,55 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
 
   defp maybe_add_haxe_test_aliases_to_mix_exs(content) do
     content
+    |> ensure_standard_aliases_configuration()
     |> maybe_add_haxe_compile_tests_alias_to_mix_exs()
     |> maybe_add_test_alias_to_mix_exs()
+  end
+
+  defp ensure_standard_aliases_configuration(content) do
+    has_aliases_key? = Regex.match?(~r/\baliases:\s*/m, content)
+    has_standard_aliases_key? = Regex.match?(~r/\baliases:\s*aliases\(\)/m, content)
+    has_aliases_function? = Regex.match?(~r/\bdefp?\s+aliases\b/m, content)
+
+    cond do
+      has_standard_aliases_key? and has_aliases_function? ->
+        content
+
+      has_standard_aliases_key? ->
+        maybe_insert_aliases_function(content, false)
+
+      has_aliases_key? ->
+        content
+
+      true ->
+        content
+        |> insert_project_aliases_key()
+        |> maybe_insert_aliases_function(has_aliases_function?)
+    end
+  end
+
+  defp insert_project_aliases_key(content) do
+    String.replace(
+      content,
+      ~r/(def project do\s*\[)/m,
+      "\\1\n      aliases: aliases(),",
+      global: false
+    )
+  end
+
+  defp maybe_insert_aliases_function(content, true), do: content
+
+  defp maybe_insert_aliases_function(content, false) do
+    case Regex.scan(~r/^end[ \t]*$/m, content, return: :index) |> List.last() do
+      [{position, _length}] ->
+        aliases_function = "\n  defp aliases do\n    [\n    ]\n  end\n"
+
+        String.slice(content, 0, position) <>
+          aliases_function <> String.slice(content, position..-1//1)
+
+      _ ->
+        content
+    end
   end
 
   defp maybe_add_haxe_compile_tests_alias_to_mix_exs(content) do
@@ -551,10 +661,10 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   end
 
   defp maybe_add_test_alias_to_mix_exs(content) do
-    if Regex.match?(~r/"test"\s*:/m, content) do
+    if Regex.match?(~r/(?:"test"|test)\s*:/m, content) do
       content
     else
-      insert_alias_entry(content, ~s("test": ["haxe.compile.tests", "test"],))
+      insert_alias_entry(content, ~s(test: ["haxe.compile.tests", "test"],))
     end
   end
 
@@ -582,10 +692,30 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
         content
       else
         insert_at = alias_pos + list_open_idx + 1
-        insertion = "\n        " <> alias_entry <> "\n"
+
+        list_line_start =
+          content
+          |> String.slice(0, insert_at)
+          |> String.split("\n")
+          |> List.last()
+
+        entry_indent = leading_indent(list_line_start) <> "  "
+        remainder = String.slice(content, insert_at..-1//1)
+
+        rendered_entry =
+          if Regex.match?(~r/^\s*\]/, remainder),
+            do: String.trim_trailing(alias_entry, ","),
+            else: alias_entry
+
+        insertion =
+          if String.starts_with?(remainder, "\n") do
+            "\n" <> entry_indent <> rendered_entry
+          else
+            "\n" <> entry_indent <> rendered_entry <> "\n"
+          end
 
         String.slice(content, 0, insert_at) <>
-          insertion <> String.slice(content, insert_at..-1//1)
+          insertion <> remainder
       end
     end
   end

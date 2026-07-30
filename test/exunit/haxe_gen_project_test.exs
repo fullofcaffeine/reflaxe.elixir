@@ -23,6 +23,41 @@ defmodule Mix.Tasks.Haxe.Gen.ProjectTest do
   end
   """
 
+  @mix_exs_without_aliases """
+  defmodule MyApp.MixProject do
+    use Mix.Project
+
+    def project do
+      [
+        app: :my_app,
+        version: "0.1.0",
+        elixir: "~> 1.14",
+        deps: []
+      ]
+    end
+  end
+  """
+
+  @mix_exs_with_custom_test_alias """
+  defmodule MyApp.MixProject do
+    use Mix.Project
+
+    def project do
+      [
+        app: :my_app,
+        aliases: aliases(),
+        deps: []
+      ]
+    end
+
+    defp aliases do
+      [
+        "test": ["ecto.create --quiet", "test"]
+      ]
+    end
+  end
+  """
+
   @test_helper_minimal """
   ExUnit.start()
   """
@@ -124,7 +159,41 @@ defmodule Mix.Tasks.Haxe.Gen.ProjectTest do
       Mix.Tasks.Haxe.Gen.Project.add_haxe_test_aliases_for_test(@mix_exs_without_test_alias)
 
     assert patched =~ ~s("haxe.compile.tests": ["cmd haxe build-tests.hxml"])
-    assert patched =~ ~s("test": ["haxe.compile.tests", "test"])
+    assert patched =~ ~s(test: ["haxe.compile.tests", "test"])
+  end
+
+  test "mix.exs patch adds the standard aliases configuration when absent" do
+    patched =
+      Mix.Tasks.Haxe.Gen.Project.planned_mix_exs_content_for_test(
+        @mix_exs_without_aliases,
+        phoenix_config(phoenix: false)
+      )
+
+    assert patched =~ "compilers: [:haxe] ++ Mix.compilers()"
+    assert patched =~ "haxe: ["
+    assert patched =~ "aliases: aliases()"
+    assert patched =~ "defp aliases do"
+    assert patched =~ ~s("haxe.compile.tests": ["cmd haxe build-tests.hxml"])
+    assert patched =~ ~s(test: ["haxe.compile.tests", "test"])
+    assert {:ok, _ast} = Code.string_to_quoted(patched)
+
+    assert String.trim_trailing(patched) ==
+             patched |> Code.format_string!() |> IO.iodata_to_binary()
+
+    assert patched ==
+             Mix.Tasks.Haxe.Gen.Project.planned_mix_exs_content_for_test(
+               patched,
+               phoenix_config(phoenix: false)
+             )
+  end
+
+  test "mix.exs patch refuses to claim a custom test alias compiles Haxe tests" do
+    assert_raise RuntimeError, ~r/cannot safely patch mix\.exs.*No writes occurred/s, fn ->
+      Mix.Tasks.Haxe.Gen.Project.planned_mix_exs_content_for_test(
+        @mix_exs_with_custom_test_alias,
+        phoenix_config(phoenix: false)
+      )
+    end
   end
 
   test "LiveReact remains an opt-in Phoenix feature orthogonal to client mode" do
