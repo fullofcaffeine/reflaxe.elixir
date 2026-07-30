@@ -442,14 +442,17 @@ It also scaffolds baseline Haxe ExUnit wiring:
 definitions. Existing copies are replaced only after confirmation, or when
 `--force` explicitly authorizes replacement. A standard `mix new` project
 without an aliases function receives `aliases: aliases()` and the required
-aliases automatically. If custom alias wiring is ambiguous—for example, an
-existing `"test"` alias that never invokes `"haxe.compile.tests"`—the task
-fails during preflight without writing files and asks for manual integration
+aliases automatically. The task owns only the canonical
+`"haxe.compile.tests": ["cmd haxe build-tests.hxml"]` entry; a custom or
+duplicate entry requires manual integration. If other custom alias wiring is
+ambiguous—for example, an existing `"test"` alias that never invokes
+`"haxe.compile.tests"`—the task fails during preflight without writing files
 instead of claiming Haxe-authored ExUnit tests are active. An existing custom
 `compilers:` pipeline also fails closed unless it already includes `:haxe`;
 the task never replaces or shadows application-owned compilers. If the required
 `mix.exs` update is declined, the task cancels during preflight before creating
-scaffold files.
+scaffold files. Before publishing the consented update, it compares `mix.exs`
+with the preflight snapshot and preserves any intervening application edit.
 
 - Writes/updates `build-client.hxml` (Genes) to output to `assets/js/_hx_app_tmp.js`
 - Ensures a stable import path at `assets/js/hx_app.js`

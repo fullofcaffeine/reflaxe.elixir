@@ -32,13 +32,18 @@ There are three layers that work together:
    confirmation, or when `--force` grants that authority. Before creating
    files, the generator verifies that `mix.exs` has a supported patch shape.
    A standard `mix new` project receives `aliases: aliases()` and an
-   `aliases/0` function automatically. Ambiguous custom alias wiring fails
-   without writes instead of reporting a test setup that never compiles the
-   Haxe-authored ExUnit modules. Existing application-owned `compilers:`
-   pipelines fail closed unless they already include `:haxe`; integrate those
-   manually rather than letting the generator guess at compiler ordering.
+   `aliases/0` function automatically. The generator owns only the canonical
+   `"haxe.compile.tests": ["cmd haxe build-tests.hxml"]` entry; a custom or
+   duplicate entry fails closed for manual integration. Other ambiguous custom
+   alias wiring also fails without writes instead of reporting a test setup
+   that never compiles the Haxe-authored ExUnit modules. Existing
+   application-owned `compilers:` pipelines fail closed unless they already
+   include `:haxe`; integrate those manually rather than letting the generator
+   guess at compiler ordering.
    Declining the required `mix.exs` update cancels preflight before any
-   scaffold files are created.
+   scaffold files are created. Publication also verifies that `mix.exs` still
+   matches the consented preflight snapshot, so an intervening application edit
+   is preserved and setup asks you to rerun.
 
 3. `mix haxe.phoenix.scaffold`
    - Canonical Phoenix client integration task.

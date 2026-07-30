@@ -95,6 +95,10 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     # integrations retain their own transactional preflight and publication boundaries.
     mix_exs_plan = preflight_project!(config)
 
+    # Publish the consented project-file update before later scaffold prompts can widen the
+    # stale-plan window. Publication still compares the file with the preflight snapshot.
+    update_mix_exs(mix_exs_plan)
+
     # 1. Create directory structure
     create_directories(config)
 
@@ -111,9 +115,6 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     unless config.skip_npm do
       create_package_json(config)
     end
-
-    # 4. Update mix.exs with Haxe compiler
-    update_mix_exs(mix_exs_plan)
 
     # 5. Create example modules (if not skipped)
     unless config.skip_examples do
@@ -373,6 +374,9 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     do: require_mix_exs_update_consent!(current, updated, force, fn -> approved end)
 
   @doc false
+  def update_mix_exs_for_test(path, plan), do: update_mix_exs(plan, path)
+
+  @doc false
   def validate_feature_composition_for_test(config), do: validate_feature_composition!(config)
 
   @doc false
@@ -496,18 +500,45 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   end
 
   # Update mix.exs to include Haxe compiler
-  defp update_mix_exs(%{current: current_content, updated: updated_content}) do
+  defp update_mix_exs(plan, path \\ "mix.exs")
+
+  defp update_mix_exs(
+         %{current: current_content, updated: updated_content},
+         path
+       ) do
+    assert_preflight_source_unchanged!(path, current_content)
+
     cond do
       current_content == updated_content ->
         Mix.shell().info("mix.exs already includes Haxe compiler and test configuration")
 
       haxe_compiler_configured?(current_content) and haxe_configured?(current_content) ->
-        File.write!("mix.exs", updated_content)
+        File.write!(path, updated_content)
         Mix.shell().info("✅ Updated mix.exs with Haxe test aliases")
 
       true ->
-        File.write!("mix.exs", updated_content)
+        File.write!(path, updated_content)
         Mix.shell().info("✅ Updated mix.exs with Haxe compiler configuration")
+    end
+  end
+
+  defp assert_preflight_source_unchanged!(path, expected_content)
+       when is_binary(path) and is_binary(expected_content) do
+    case File.read(path) do
+      {:ok, ^expected_content} ->
+        :ok
+
+      {:ok, _changed_content} ->
+        raise """
+        cannot safely update #{path}; it changed after generator preflight and consent. \
+        No generator writes occurred. Review the newer file, then rerun the generator.
+        """
+
+      {:error, reason} ->
+        raise """
+        cannot safely update #{path}; it became unreadable after generator preflight: \
+        #{:file.format_error(reason)}. No generator writes occurred.
+        """
     end
   end
 
@@ -542,8 +573,8 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
       |> maybe_missing(not haxe_compiler_configured?(updated), "the :haxe Mix compiler")
       |> maybe_missing(not haxe_configured?(updated), "the haxe: project configuration")
       |> maybe_missing(
-        not alias_entry?(facts, :"haxe.compile.tests"),
-        "the haxe.compile.tests alias"
+        not canonical_haxe_compile_tests_alias?(facts),
+        "the canonical haxe.compile.tests alias"
       )
       |> maybe_missing(
         not test_alias_invokes_haxe?(facts),
@@ -605,6 +636,15 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
       |> maybe_missing(
         facts.aliases_function? and is_nil(facts.aliases_entries),
         "a literal keyword list returned by aliases/0"
+      )
+      |> maybe_missing(
+        entry_count(facts.aliases_entries, :"haxe.compile.tests") > 1,
+        "one unambiguous haxe.compile.tests alias"
+      )
+      |> maybe_missing(
+        alias_entry?(facts, :"haxe.compile.tests") and
+          not canonical_haxe_compile_tests_alias?(facts),
+        "manual integration with the existing haxe.compile.tests alias"
       )
       |> maybe_missing(
         entry_count(facts.aliases_entries, :test) > 1,
@@ -913,6 +953,13 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   end
 
   defp alias_entry?(facts, key), do: entry?(facts.aliases_entries, key)
+
+  defp canonical_haxe_compile_tests_alias?(facts) do
+    case entry_value(facts.aliases_entries, :"haxe.compile.tests") do
+      {:ok, ["cmd haxe build-tests.hxml"]} -> true
+      _ -> false
+    end
+  end
 
   defp test_alias_invokes_haxe?(facts) do
     case entry_value(facts.aliases_entries, :test) do

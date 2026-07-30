@@ -104,6 +104,41 @@ defmodule Mix.Tasks.Haxe.Gen.ProjectTest do
   end
   """
 
+  @mix_exs_with_custom_haxe_compile_tests_alias """
+  defmodule CustomHaxeTestAliasProject do
+    def project do
+      [
+        app: :custom_haxe_test_alias,
+        aliases: aliases()
+      ]
+    end
+
+    defp aliases do
+      [
+        "haxe.compile.tests": ["cmd echo application-owned"]
+      ]
+    end
+  end
+  """
+
+  @mix_exs_with_duplicate_haxe_compile_tests_aliases """
+  defmodule DuplicateHaxeTestAliasProject do
+    def project do
+      [
+        app: :duplicate_haxe_test_alias,
+        aliases: aliases()
+      ]
+    end
+
+    defp aliases do
+      [
+        "haxe.compile.tests": ["cmd haxe build-tests.hxml"],
+        "haxe.compile.tests": ["cmd haxe build-tests.hxml"]
+      ]
+    end
+  end
+  """
+
   @test_helper_minimal """
   ExUnit.start()
   """
@@ -283,6 +318,28 @@ defmodule Mix.Tasks.Haxe.Gen.ProjectTest do
                  end
   end
 
+  test "mix.exs patch fails closed for an application-owned haxe.compile.tests alias" do
+    assert_raise RuntimeError,
+                 ~r/manual integration with the existing haxe\.compile\.tests alias.*No writes/s,
+                 fn ->
+                   Mix.Tasks.Haxe.Gen.Project.planned_mix_exs_content_for_test(
+                     @mix_exs_with_custom_haxe_compile_tests_alias,
+                     phoenix_config(phoenix: false)
+                   )
+                 end
+  end
+
+  test "mix.exs patch fails closed for duplicate haxe.compile.tests aliases" do
+    assert_raise RuntimeError,
+                 ~r/one unambiguous haxe\.compile\.tests alias.*No writes/s,
+                 fn ->
+                   Mix.Tasks.Haxe.Gen.Project.planned_mix_exs_content_for_test(
+                     @mix_exs_with_duplicate_haxe_compile_tests_aliases,
+                     phoenix_config(phoenix: false)
+                   )
+                 end
+  end
+
   test "declining the required mix.exs update cancels preflight" do
     assert_raise RuntimeError, ~r/cancelled.*No writes occurred/s, fn ->
       Mix.Tasks.Haxe.Gen.Project.require_mix_exs_update_consent_for_test(
@@ -308,6 +365,56 @@ defmodule Mix.Tasks.Haxe.Gen.ProjectTest do
                false,
                false
              )
+  end
+
+  test "mix.exs publication refuses to overwrite a file changed after preflight" do
+    test_dir =
+      Path.join(
+        System.tmp_dir!(),
+        "haxe_gen_project_stale_write_#{System.unique_integer([:positive])}"
+      )
+
+    File.mkdir_p!(test_dir)
+    on_exit(fn -> File.rm_rf!(test_dir) end)
+
+    mix_exs_path = Path.join(test_dir, "mix.exs")
+    File.write!(mix_exs_path, "consented snapshot")
+    plan = %{current: "consented snapshot", updated: "generator update"}
+
+    File.write!(mix_exs_path, "newer application-owned edit")
+
+    assert_raise RuntimeError, ~r/changed after generator preflight and consent/, fn ->
+      Mix.Tasks.Haxe.Gen.Project.update_mix_exs_for_test(mix_exs_path, plan)
+    end
+
+    assert File.read!(mix_exs_path) == "newer application-owned edit"
+  end
+
+  test "mix.exs publication rechecks the preflight snapshot when no update was planned" do
+    test_dir =
+      Path.join(
+        System.tmp_dir!(),
+        "haxe_gen_project_stale_noop_#{System.unique_integer([:positive])}"
+      )
+
+    File.mkdir_p!(test_dir)
+    on_exit(fn -> File.rm_rf!(test_dir) end)
+
+    mix_exs_path = Path.join(test_dir, "mix.exs")
+    File.write!(mix_exs_path, "preflight-complete configuration")
+
+    plan = %{
+      current: "preflight-complete configuration",
+      updated: "preflight-complete configuration"
+    }
+
+    File.write!(mix_exs_path, "newer configuration with different semantics")
+
+    assert_raise RuntimeError, ~r/changed after generator preflight and consent/, fn ->
+      Mix.Tasks.Haxe.Gen.Project.update_mix_exs_for_test(mix_exs_path, plan)
+    end
+
+    assert File.read!(mix_exs_path) == "newer configuration with different semantics"
   end
 
   test "LiveReact remains an opt-in Phoenix feature orthogonal to client mode" do
