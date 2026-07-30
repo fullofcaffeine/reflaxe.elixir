@@ -436,7 +436,7 @@ run_module_routes_variant() {
 	compile_server "$SERVER_OUTPUT" --macro "$include_status"
 	compile_direct "$direct_a" --macro "$include_status"
 	compare_generated_output "$direct_a" "$SERVER_OUTPUT" "module-routes-A"
-	rg -Fq 'get("/status", CacheController, :index)' "$SERVER_OUTPUT" || {
+	grep -RFq 'get("/status", CacheController, :index)' "$SERVER_OUTPUT" || {
 		echo "SERVER_CACHE_PARITY:module-routes-A omitted the typed route" >&2
 		return 1
 	}
@@ -447,7 +447,7 @@ run_module_routes_variant() {
 	compile_server "$SERVER_OUTPUT" --macro "$include_status"
 	compile_direct "$direct_b" --macro "$include_status"
 	compare_generated_output "$direct_b" "$SERVER_OUTPUT" "module-routes-B"
-	rg -Fq 'get("/status", CacheController, :index)' "$SERVER_OUTPUT" || {
+	grep -RFq 'get("/status", CacheController, :index)' "$SERVER_OUTPUT" || {
 		echo "SERVER_CACHE_PARITY:module-routes-B lost the typed route on a warm request" >&2
 		return 1
 	}
