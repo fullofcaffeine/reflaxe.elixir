@@ -377,7 +377,7 @@ import sys
 
 meta_path, results_path, states_path, out_path, overall_status, helper_dir = sys.argv[1:7]
 sys.path.insert(0, helper_dir)
-from benchmark_contract import compile_scenario
+from benchmark_contract import compile_scenario, reconcile_compiler_timer_relationship
 
 root = Path(helper_dir).parents[1]
 
@@ -456,41 +456,24 @@ try:
                             "haxe_reported_total_ms": haxe_total,
                             "reflaxe_target_total_ms": target_wall,
                         }
-                        if haxe_total is None and target_wall > phase["duration_ms"]:
-                            reconciliation["timing_nesting_status"] = "inconsistent"
-                            reconciliation["timing_nesting_violations"] = [
-                                "reflaxe_target_total_exceeds_external_haxe_build"
-                            ]
-                        elif haxe_total is None:
-                            reconciliation["timing_nesting_status"] = "partial"
-                        elif target_wall > haxe_total:
-                            reconciliation["timing_nesting_status"] = "inconsistent"
-                            reconciliation["timing_nesting_violations"] = [
-                                "reflaxe_target_total_exceeds_haxe_reported_total"
-                            ]
-                        elif haxe_total > phase["duration_ms"]:
-                            reconciliation["timing_nesting_status"] = "inconsistent"
-                            reconciliation["timing_nesting_violations"] = [
-                                "haxe_reported_total_exceeds_external_haxe_build"
-                            ]
-                        else:
-                            haxe_excluding_target = haxe_total - target_wall
-                            unattributed = phase["duration_ms"] - haxe_total
-                            reconciliation.update({
-                                "timing_nesting_status": "consistent",
-                                "haxe_reported_excluding_reflaxe_target_ms": round(
-                                    haxe_excluding_target,
-                                    3,
-                                ),
-                                "unattributed_process_and_measurement_ms": round(
-                                    unattributed,
-                                    3,
-                                ),
-                                "reconciled_total_ms": round(
-                                    target_wall + haxe_excluding_target + unattributed,
-                                    3,
-                                ),
-                            })
+                        relationship = reconcile_compiler_timer_relationship(
+                            phase["duration_ms"],
+                            haxe_total,
+                            target_wall,
+                        )
+                        unattributed = relationship.pop("unattributed_outer_ms", None)
+                        reconciled = relationship.pop("reconciled_outer_ms", None)
+                        unattributed_range = relationship.pop("unattributed_outer_ms_range", None)
+                        partial_remainder = relationship.pop("unattributed_after_known_ms", None)
+                        reconciliation.update(relationship)
+                        if unattributed is not None:
+                            reconciliation["unattributed_process_and_measurement_ms"] = unattributed
+                        if reconciled is not None:
+                            reconciliation["reconciled_total_ms"] = reconciled
+                        if unattributed_range is not None:
+                            reconciliation["unattributed_process_and_measurement_ms_range"] = unattributed_range
+                        if partial_remainder is not None:
+                            reconciliation["remainder_after_known_timer_ms"] = partial_remainder
                         run["phase_reconciliation"] = reconciliation
             if phase["phase"] == "mix_compile":
                 run["mix_recompiled_module_count"] = mix_recompiled_modules(phase["log"])

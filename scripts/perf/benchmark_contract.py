@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -161,16 +162,128 @@ def haxe_integration_timing_report(text: str) -> dict[str, Any] | None:
     return reports[-1] if reports else None
 
 
+def reconcile_compiler_timer_relationship(
+    outer_ms: float,
+    haxe_reported_ms: float | None,
+    reflaxe_target_ms: float | None,
+    *,
+    tolerance_ms: float = 1.0,
+) -> dict[str, Any]:
+    """Reconcile Haxe and Reflaxe measurements without assuming containment.
+
+    Haxe's ``--times`` table can include the target callback in its ``macro``
+    total or report only compiler work outside that callback. Durations alone
+    resolve the relationship when exactly one model fits inside the measured
+    outer interval. If both fit, the decomposition remains explicitly
+    ambiguous instead of selecting the more convenient interpretation.
+    """
+
+    values = {
+        "outer": outer_ms,
+        "haxe_reported": haxe_reported_ms,
+        "reflaxe_target": reflaxe_target_ms,
+    }
+    invalid = [
+        name
+        for name, value in values.items()
+        if value is not None and (not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0)
+    ]
+    if invalid:
+        return {
+            "timing_reconciliation_status": "inconsistent",
+            "timing_relationship": "unknown",
+            "timing_relationship_violations": [f"{name}_is_not_a_nonnegative_finite_duration" for name in invalid],
+        }
+
+    def fits_within(value: float, limit: float) -> bool:
+        return value <= limit + tolerance_ms
+
+    known = [value for value in (haxe_reported_ms, reflaxe_target_ms) if value is not None]
+    if len(known) < 2:
+        if known and not fits_within(known[0], outer_ms):
+            return {
+                "timing_reconciliation_status": "inconsistent",
+                "timing_relationship": "unknown",
+                "timing_relationship_violations": ["known_compiler_total_exceeds_outer_measurement"],
+            }
+        result: dict[str, Any] = {
+            "timing_reconciliation_status": "partial",
+            "timing_relationship": "unknown",
+        }
+        if known:
+            result["unattributed_after_known_ms"] = round(max(0.0, outer_ms - known[0]), 3)
+        return result
+
+    assert haxe_reported_ms is not None
+    assert reflaxe_target_ms is not None
+    nested_fits = fits_within(reflaxe_target_ms, haxe_reported_ms) and fits_within(haxe_reported_ms, outer_ms)
+    disjoint_fits = fits_within(haxe_reported_ms + reflaxe_target_ms, outer_ms)
+
+    if nested_fits and not disjoint_fits:
+        haxe_excluding_target_ms = max(0.0, haxe_reported_ms - reflaxe_target_ms)
+        unattributed_ms = max(0.0, outer_ms - haxe_reported_ms)
+        component_total_ms = reflaxe_target_ms + haxe_excluding_target_ms + unattributed_ms
+        result = {
+            "timing_reconciliation_status": "complete",
+            "timing_relationship": "reflaxe_target_nested_in_haxe_reported_total",
+            "haxe_reported_excluding_reflaxe_target_ms": round(haxe_excluding_target_ms, 3),
+            "unattributed_outer_ms": round(unattributed_ms, 3),
+            "reconciled_outer_ms": round(outer_ms, 3),
+        }
+        rounding_adjustment_ms = outer_ms - component_total_ms
+        if abs(rounding_adjustment_ms) >= 0.001:
+            result["timer_rounding_adjustment_ms"] = round(rounding_adjustment_ms, 3)
+        return result
+
+    if disjoint_fits and not nested_fits:
+        unattributed_ms = max(0.0, outer_ms - haxe_reported_ms - reflaxe_target_ms)
+        component_total_ms = haxe_reported_ms + reflaxe_target_ms + unattributed_ms
+        result = {
+            "timing_reconciliation_status": "complete",
+            "timing_relationship": "haxe_reported_total_and_reflaxe_target_disjoint",
+            "haxe_reported_frontend_ms": round(haxe_reported_ms, 3),
+            "unattributed_outer_ms": round(unattributed_ms, 3),
+            "reconciled_outer_ms": round(outer_ms, 3),
+        }
+        rounding_adjustment_ms = outer_ms - component_total_ms
+        if abs(rounding_adjustment_ms) >= 0.001:
+            result["timer_rounding_adjustment_ms"] = round(rounding_adjustment_ms, 3)
+        return result
+
+    if nested_fits and disjoint_fits:
+        return {
+            "timing_reconciliation_status": "ambiguous",
+            "timing_relationship": "nested_or_disjoint",
+            "unattributed_outer_ms_range": {
+                "min": round(max(0.0, outer_ms - haxe_reported_ms - reflaxe_target_ms), 3),
+                "max": round(max(0.0, outer_ms - haxe_reported_ms), 3),
+            },
+        }
+
+    violations = []
+    if not fits_within(haxe_reported_ms, outer_ms):
+        violations.append("haxe_reported_total_exceeds_outer_measurement")
+    if not fits_within(reflaxe_target_ms, outer_ms):
+        violations.append("reflaxe_target_total_exceeds_outer_measurement")
+    if not violations:
+        violations.append("compiler_totals_fit_neither_nested_nor_disjoint_model")
+    return {
+        "timing_reconciliation_status": "inconsistent",
+        "timing_relationship": "unknown",
+        "timing_relationship_violations": violations,
+    }
+
+
 def watch_phase_reconciliation(external_duration_ms: int, compiler_output: str) -> dict[str, Any] | None:
-    """Connect one edit-to-success sample to its nested compiler measurements.
+    """Connect one edit-to-success sample to its compiler measurements.
 
     The outer sample starts when the source file is changed and ends when the
     watcher reports success. The Mix/Haxe timing starts later, when compilation
-    begins. Within that request, ``haxe.invoke`` surrounds both Haxe's own
-    reported work and the Reflaxe target callback. Keeping both remainders
-    explicit prevents the harness from silently assigning unknown time to the
-    wrong layer. Haxe's ``--times`` total includes the Reflaxe target callback,
-    so those two measurements must be treated as nested rather than added.
+    begins. Within that request, ``haxe.invoke`` surrounds Haxe's reported work
+    and the Reflaxe target callback, but Haxe's ``--times`` total does not
+    consistently include the callback. The shared reconciliation contract
+    resolves nested or disjoint observations only when the durations prove
+    which model fits.
     """
 
     integration = haxe_integration_timing_report(compiler_output)
@@ -200,49 +313,24 @@ def watch_phase_reconciliation(external_duration_ms: int, compiler_output: str) 
         if isinstance(invoke_ms, (int, float)):
             result["haxe_invoke_ms"] = invoke_ms
             target_total = target.get("total_wall_ms") if target is not None else None
-            violations: list[str] = []
-            if haxe_total is not None and haxe_total > invoke_ms:
-                violations.append("haxe_reported_total_exceeds_haxe_invoke")
-            if (
-                haxe_total is not None
-                and isinstance(target_total, (int, float))
-                and target_total > haxe_total
-            ):
-                violations.append("reflaxe_target_total_exceeds_haxe_reported_total")
-            elif (
-                haxe_total is None
-                and isinstance(target_total, (int, float))
-                and target_total > invoke_ms
-            ):
-                violations.append("reflaxe_target_total_exceeds_haxe_invoke")
-
-            if violations:
-                result["timing_nesting_status"] = "inconsistent"
-                result["timing_nesting_violations"] = violations
-            elif haxe_total is not None and isinstance(target_total, (int, float)):
-                haxe_excluding_target_ms = haxe_total - target_total
-                invoke_unattributed_ms = invoke_ms - haxe_total
-                result["timing_nesting_status"] = "consistent"
-                result["haxe_reported_excluding_reflaxe_target_ms"] = round(
-                    haxe_excluding_target_ms,
-                    3,
-                )
-                result["haxe_invoke_unattributed_ms"] = round(
-                    invoke_unattributed_ms,
-                    3,
-                )
-                result["haxe_invoke_reconciled_ms"] = round(
-                    target_total + haxe_excluding_target_ms + invoke_unattributed_ms,
-                    3,
-                )
-            else:
-                result["timing_nesting_status"] = "partial"
-                known_nested_ms = haxe_total if haxe_total is not None else target_total
-                if isinstance(known_nested_ms, (int, float)) and known_nested_ms <= invoke_ms:
-                    result["haxe_invoke_unattributed_ms"] = round(
-                        invoke_ms - known_nested_ms,
-                        3,
-                    )
+            relationship = reconcile_compiler_timer_relationship(
+                invoke_ms,
+                haxe_total,
+                target_total if isinstance(target_total, (int, float)) else None,
+            )
+            unattributed_ms = relationship.pop("unattributed_outer_ms", None)
+            reconciled_ms = relationship.pop("reconciled_outer_ms", None)
+            unattributed_range = relationship.pop("unattributed_outer_ms_range", None)
+            partial_remainder_ms = relationship.pop("unattributed_after_known_ms", None)
+            result.update(relationship)
+            if unattributed_ms is not None:
+                result["haxe_invoke_unattributed_ms"] = unattributed_ms
+            if reconciled_ms is not None:
+                result["haxe_invoke_reconciled_ms"] = reconciled_ms
+            if unattributed_range is not None:
+                result["haxe_invoke_unattributed_ms_range"] = unattributed_range
+            if partial_remainder_ms is not None:
+                result["haxe_invoke_remainder_after_known_timer_ms"] = partial_remainder_ms
 
     if haxe_total is not None:
         result["haxe_reported_total_ms"] = haxe_total

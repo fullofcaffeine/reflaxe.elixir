@@ -268,19 +268,58 @@ check(
     reconciliation["haxe_invoke_reconciled_ms"] == reconciliation["haxe_invoke_ms"],
     "nested watch timings did not reconcile to haxe.invoke",
 )
-check(reconciliation["timing_nesting_status"] == "consistent", "valid nesting was rejected")
+check(reconciliation["timing_reconciliation_status"] == "complete", "valid nesting was rejected")
+check(
+    reconciliation["timing_relationship"] == "reflaxe_target_nested_in_haxe_reported_total",
+    "nested target timing was misclassified",
+)
+
+disjoint_reconciliation = contract.watch_phase_reconciliation(
+    27334,
+    """REFLAXE_ELIXIR_TIMINGS {"schema_version":1,"total_wall_ms":18624.654,"phases":[]}
+total | 0.608 | 100
+== Haxe timings: haxe watch rebuild ==
+  haxe.invoke: 25419.5 ms
+  total wall: 26307.2 ms
+""",
+)
+check(disjoint_reconciliation is not None, "disjoint timing signals were not reconciled")
+check(
+    disjoint_reconciliation["timing_relationship"] == "haxe_reported_total_and_reflaxe_target_disjoint",
+    "disjoint target timing was misclassified",
+)
+check(
+    disjoint_reconciliation["haxe_reported_frontend_ms"] == 608.0,
+    "disjoint Haxe frontend timing was not preserved",
+)
+check(
+    disjoint_reconciliation["haxe_invoke_unattributed_ms"] == 6186.846,
+    "disjoint compiler timings did not preserve the invocation remainder",
+)
+check(
+    disjoint_reconciliation["haxe_invoke_reconciled_ms"] == disjoint_reconciliation["haxe_invoke_ms"],
+    "disjoint watch timings did not reconcile to haxe.invoke",
+)
+
+ambiguous = contract.reconcile_compiler_timer_relationship(100.0, 40.0, 20.0)
+check(ambiguous["timing_reconciliation_status"] == "ambiguous", "ambiguous timer relationship was guessed")
+check(
+    ambiguous["unattributed_outer_ms_range"] == {"min": 40.0, "max": 60.0},
+    "ambiguous timer relationship omitted its valid remainder range",
+)
+
 inconsistent_reconciliation = contract.watch_phase_reconciliation(
     100,
-    """REFLAXE_ELIXIR_TIMINGS {"schema_version":1,"total_wall_ms":25.0,"phases":[]}
-total | 0.010 | 100
+    """REFLAXE_ELIXIR_TIMINGS {"schema_version":1,"total_wall_ms":40.0,"phases":[]}
+total | 0.030 | 100
 == Haxe timings: fixture ==
   haxe.invoke: 50.0 ms
   total wall: 60.0 ms
 """,
 )
 check(
-    inconsistent_reconciliation["timing_nesting_status"] == "inconsistent",
-    "impossible nested totals were accepted",
+    inconsistent_reconciliation["timing_reconciliation_status"] == "inconsistent",
+    "impossible compiler totals were accepted",
 )
 check(
     "haxe_invoke_unattributed_ms" not in inconsistent_reconciliation,
@@ -312,8 +351,9 @@ try:
                 "if [[ \"${PERF_FIXTURE_FAIL_BUILD:-0}\" == \"1\" ]]; then printf '%s\\n' 'fixture build failure' >&2; exit 7; fi\n"
                 "for argument in \"$@\"; do\n"
                 "  if [[ \"$argument\" == \"--times\" ]]; then\n"
-                "    printf '%s\\n' 'total | 0.010 | 100 | 100 | 1 | fixture'\n"
-                "    printf '%s\\n' 'REFLAXE_ELIXIR_TIMINGS {\"schema_version\":1,\"total_wall_ms\":5.0,\"phases\":[]}'\n"
+                "    sleep 0.03\n"
+                "    printf '%s\\n' 'total | 0.005 | 100 | 100 | 1 | fixture'\n"
+                "    printf '%s\\n' 'REFLAXE_ELIXIR_TIMINGS {\"schema_version\":1,\"total_wall_ms\":10.0,\"phases\":[]}'\n"
                 "  fi\n"
                 "done\n"
             )
@@ -380,12 +420,16 @@ try:
         "edited scenario did not record its deterministic content change",
     )
     reconciliation = edited_run["phase_reconciliation"]
-    check(reconciliation["haxe_reported_total_ms"] == 10.0, "Haxe --times total was not parsed")
-    check(reconciliation["reflaxe_target_total_ms"] == 5.0, "target timing JSON was not parsed")
-    check(reconciliation["timing_nesting_status"] == "consistent", "valid compile nesting was rejected")
+    check(reconciliation["haxe_reported_total_ms"] == 5.0, "Haxe --times total was not parsed")
+    check(reconciliation["reflaxe_target_total_ms"] == 10.0, "target timing JSON was not parsed")
+    check(reconciliation["timing_reconciliation_status"] == "complete", "valid compile timings were rejected")
     check(
-        reconciliation["haxe_reported_excluding_reflaxe_target_ms"] == 5.0,
-        "compile reconciliation double-counted the target callback",
+        reconciliation["timing_relationship"] == "haxe_reported_total_and_reflaxe_target_disjoint",
+        "compile reconciliation misclassified disjoint target timing",
+    )
+    check(
+        reconciliation["haxe_reported_frontend_ms"] == 5.0,
+        "compile reconciliation did not preserve Haxe frontend time",
     )
     check(
         reconciliation["reconciled_total_ms"] == reconciliation["external_haxe_build_ms"],
