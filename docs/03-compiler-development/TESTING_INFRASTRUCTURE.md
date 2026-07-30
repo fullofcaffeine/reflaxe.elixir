@@ -20,6 +20,25 @@ GitHub Actions runs a few higher-level “integration” checks in addition to s
 
 The same WAE philosophy is used by the todo-app QA sentinel when it runs `mix compile --warnings-as-errors`.
 
+## Wall-clock checks and normal machine load
+
+Fast unit and integration suites must not enforce tight millisecond cutoffs.
+Scheduler pauses, filesystem latency, antivirus/indexing, and ordinary
+background work can make the same correct operation cross a narrow threshold
+on a developer machine or shared CI runner. Those suites may print timings for
+diagnosis, but their assertions should enforce behavior.
+
+Performance protection lives at two deliberate levels:
+
+- `npm run ci:budgets` enforces determinism and generous build timeouts. These
+  bounds catch hangs and severe regressions while allowing normal runner load.
+- `npm run perf:todo-compile` and `npm run perf:todo-watch` are the profiling
+  tools for tighter comparisons; their reports capture host-load observations
+  so results can be interpreted in context.
+
+Do not promote a single fast-suite wall-clock observation into a tighter CI
+limit. Establish a repeatable benchmark under stated host conditions first.
+
 ## Handwritten-output quality corpus
 
 Snapshots, WAE, and runtime tests answer different questions. The focused
