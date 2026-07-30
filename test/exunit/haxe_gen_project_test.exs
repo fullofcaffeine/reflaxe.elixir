@@ -52,7 +52,53 @@ defmodule Mix.Tasks.Haxe.Gen.ProjectTest do
 
     defp aliases do
       [
-        "test": ["ecto.create --quiet", "test"]
+        test: ["ecto.create --quiet", "test"]
+      ]
+    end
+  end
+  """
+
+  @mix_exs_with_aliases_arity_one """
+  defmodule AliasArityOneProject do
+    def project do
+      [
+        app: :alias_arity_one,
+        aliases_arity_one: aliases([])
+      ]
+    end
+
+    defp aliases(_opts) do
+      [
+        test: ["test"]
+      ]
+    end
+  end
+  """
+
+  @mix_exs_with_commented_haxe_alias """
+  defmodule CommentedAliasProject do
+    def project do
+      [
+        app: :commented_alias,
+        aliases: aliases()
+      ]
+    end
+
+    defp aliases do
+      [
+        # "haxe.compile.tests": ["cmd haxe build-tests.hxml"],
+        test: ["test"]
+      ]
+    end
+  end
+  """
+
+  @mix_exs_with_custom_compilers """
+  defmodule CustomCompilerProject do
+    def project do
+      [
+        app: :custom_compiler,
+        compilers: [:custom] ++ Mix.compilers()
       ]
     end
   end
@@ -194,6 +240,74 @@ defmodule Mix.Tasks.Haxe.Gen.ProjectTest do
         phoenix_config(phoenix: false)
       )
     end
+  end
+
+  test "mix.exs patch distinguishes aliases/0 from an existing aliases/1 function" do
+    patched =
+      Mix.Tasks.Haxe.Gen.Project.planned_mix_exs_content_for_test(
+        @mix_exs_with_aliases_arity_one,
+        phoenix_config(phoenix: false)
+      )
+
+    assert patched =~ "aliases: aliases()"
+    assert patched =~ "defp aliases(_opts) do"
+    assert patched =~ "defp aliases do"
+    assert patched =~ ~s("haxe.compile.tests": ["cmd haxe build-tests.hxml"])
+    assert patched =~ ~s(test: ["haxe.compile.tests", "test"])
+    assert {:ok, _ast} = Code.string_to_quoted(patched)
+    assert [{AliasArityOneProject, _bytecode}] = Code.compile_string(patched)
+  after
+    :code.purge(AliasArityOneProject)
+    :code.delete(AliasArityOneProject)
+  end
+
+  test "mix.exs patch ignores commented aliases and rejects a custom test alias" do
+    assert_raise RuntimeError,
+                 ~r/manual integration with the existing test alias.*No writes/s,
+                 fn ->
+                   Mix.Tasks.Haxe.Gen.Project.planned_mix_exs_content_for_test(
+                     @mix_exs_with_commented_haxe_alias,
+                     phoenix_config(phoenix: false)
+                   )
+                 end
+  end
+
+  test "mix.exs patch fails closed for an application-owned compiler pipeline" do
+    assert_raise RuntimeError,
+                 ~r/manual integration with the existing custom compilers: entry.*No writes/s,
+                 fn ->
+                   Mix.Tasks.Haxe.Gen.Project.planned_mix_exs_content_for_test(
+                     @mix_exs_with_custom_compilers,
+                     phoenix_config(phoenix: false)
+                   )
+                 end
+  end
+
+  test "declining the required mix.exs update cancels preflight" do
+    assert_raise RuntimeError, ~r/cancelled.*No writes occurred/s, fn ->
+      Mix.Tasks.Haxe.Gen.Project.require_mix_exs_update_consent_for_test(
+        "before",
+        "after",
+        false,
+        false
+      )
+    end
+
+    assert :ok ==
+             Mix.Tasks.Haxe.Gen.Project.require_mix_exs_update_consent_for_test(
+               "before",
+               "after",
+               false,
+               true
+             )
+
+    assert :ok ==
+             Mix.Tasks.Haxe.Gen.Project.require_mix_exs_update_consent_for_test(
+               "same",
+               "same",
+               false,
+               false
+             )
   end
 
   test "LiveReact remains an opt-in Phoenix feature orthogonal to client mode" do

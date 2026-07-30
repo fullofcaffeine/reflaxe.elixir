@@ -445,7 +445,11 @@ without an aliases function receives `aliases: aliases()` and the required
 aliases automatically. If custom alias wiring is ambiguous—for example, an
 existing `"test"` alias that never invokes `"haxe.compile.tests"`—the task
 fails during preflight without writing files and asks for manual integration
-instead of claiming Haxe-authored ExUnit tests are active.
+instead of claiming Haxe-authored ExUnit tests are active. An existing custom
+`compilers:` pipeline also fails closed unless it already includes `:haxe`;
+the task never replaces or shadows application-owned compilers. If the required
+`mix.exs` update is declined, the task cancels during preflight before creating
+scaffold files.
 
 - Writes/updates `build-client.hxml` (Genes) to output to `assets/js/_hx_app_tmp.js`
 - Ensures a stable import path at `assets/js/hx_app.js`

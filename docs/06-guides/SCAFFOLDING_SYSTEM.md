@@ -34,7 +34,11 @@ There are three layers that work together:
    A standard `mix new` project receives `aliases: aliases()` and an
    `aliases/0` function automatically. Ambiguous custom alias wiring fails
    without writes instead of reporting a test setup that never compiles the
-   Haxe-authored ExUnit modules.
+   Haxe-authored ExUnit modules. Existing application-owned `compilers:`
+   pipelines fail closed unless they already include `:haxe`; integrate those
+   manually rather than letting the generator guess at compiler ordering.
+   Declining the required `mix.exs` update cancels preflight before any
+   scaffold files are created.
 
 3. `mix haxe.phoenix.scaffold`
    - Canonical Phoenix client integration task.

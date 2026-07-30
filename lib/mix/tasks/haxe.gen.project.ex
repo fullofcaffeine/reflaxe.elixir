@@ -93,7 +93,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   defp setup_project(config) do
     # Validate deterministic Mix/source transformations before creating files. Optional Phoenix
     # integrations retain their own transactional preflight and publication boundaries.
-    preflight_project!(config)
+    mix_exs_plan = preflight_project!(config)
 
     # 1. Create directory structure
     create_directories(config)
@@ -113,7 +113,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     end
 
     # 4. Update mix.exs with Haxe compiler
-    update_mix_exs(config)
+    update_mix_exs(mix_exs_plan)
 
     # 5. Create example modules (if not skipped)
     unless config.skip_examples do
@@ -244,15 +244,21 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
       raise "mix.exs not found - this doesn't appear to be an Elixir project. No writes occurred."
     end
 
-    mix_exs_path
-    |> File.read!()
-    |> planned_mix_exs_content!(config)
+    current_mix_exs = File.read!(mix_exs_path)
+    updated_mix_exs = planned_mix_exs_content!(current_mix_exs, config)
 
     if config.live_react and not phoenix_project_shape?() do
       raise "--live-react requires a canonical Phoenix project shape (assets/js/app.js and config/dev.exs). No writes occurred."
     end
 
-    :ok
+    require_mix_exs_update_consent!(
+      current_mix_exs,
+      updated_mix_exs,
+      config.force,
+      fn -> confirm_overwrite(mix_exs_path) end
+    )
+
+    %{current: current_mix_exs, updated: updated_mix_exs}
   end
 
   # Create build.hxml configuration file
@@ -361,6 +367,10 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   @doc false
   def planned_mix_exs_content_for_test(content, config),
     do: planned_mix_exs_content!(content, config)
+
+  @doc false
+  def require_mix_exs_update_consent_for_test(current, updated, force, approved),
+    do: require_mix_exs_update_consent!(current, updated, force, fn -> approved end)
 
   @doc false
   def validate_feature_composition_for_test(config), do: validate_feature_composition!(config)
@@ -486,64 +496,65 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   end
 
   # Update mix.exs to include Haxe compiler
-  defp update_mix_exs(config) do
-    mix_exs_path = "mix.exs"
-    current_content = File.read!(mix_exs_path)
-    updated_content = planned_mix_exs_content!(current_content, config)
+  defp update_mix_exs(%{current: current_content, updated: updated_content}) do
+    cond do
+      current_content == updated_content ->
+        Mix.shell().info("mix.exs already includes Haxe compiler and test configuration")
 
-    # Check if already has Haxe compiler and config
-    if haxe_compiler_configured?(current_content) and haxe_configured?(current_content) do
-      Mix.shell().info("mix.exs already includes Haxe compiler configuration")
+      haxe_compiler_configured?(current_content) and haxe_configured?(current_content) ->
+        File.write!("mix.exs", updated_content)
+        Mix.shell().info("✅ Updated mix.exs with Haxe test aliases")
 
-      if updated_content != current_content do
-        if config.force || confirm_overwrite("mix.exs") do
-          File.write!(mix_exs_path, updated_content)
-          Mix.shell().info("✅ Updated mix.exs with Haxe test aliases")
-        else
-          Mix.shell().info("Skipped updating mix.exs test aliases")
-        end
-      end
-    else
-      if config.force || confirm_overwrite("mix.exs") do
-        File.write!(mix_exs_path, updated_content)
+      true ->
+        File.write!("mix.exs", updated_content)
         Mix.shell().info("✅ Updated mix.exs with Haxe compiler configuration")
-      else
-        Mix.shell().info("Skipped updating mix.exs")
-        Mix.shell().info("To manually add Haxe support, add this to your mix.exs project config:")
-        Mix.shell().info("  compilers: [:haxe] ++ Mix.compilers()")
-      end
     end
+  end
+
+  defp require_mix_exs_update_consent!(current, updated, force, confirm)
+       when is_binary(current) and is_binary(updated) and is_boolean(force) and
+              is_function(confirm, 0) do
+    if current != updated and not force and not confirm.() do
+      raise """
+      cancelled Reflaxe.Elixir setup because the required mix.exs update was declined. \
+      No writes occurred. Integrate the compiler, haxe: configuration, and test aliases \
+      manually, or rerun and approve the update.
+      """
+    end
+
+    :ok
   end
 
   defp planned_mix_exs_content!(content, config)
        when is_binary(content) and is_map(config) do
+    validate_supported_mix_shape!(content)
+
     updated =
       content
       |> maybe_add_haxe_compiler_to_mix_exs(haxe_compiler_configured?(content))
       |> maybe_add_haxe_config_to_mix_exs(config, haxe_configured?(content))
       |> maybe_add_haxe_test_aliases_to_mix_exs()
 
+    facts = mix_source_facts!(updated)
+
     missing =
       []
       |> maybe_missing(not haxe_compiler_configured?(updated), "the :haxe Mix compiler")
       |> maybe_missing(not haxe_configured?(updated), "the haxe: project configuration")
       |> maybe_missing(
-        not Regex.match?(~r/"haxe\.compile\.tests"\s*:/m, updated),
+        not alias_entry?(facts, :"haxe.compile.tests"),
         "the haxe.compile.tests alias"
       )
       |> maybe_missing(
-        not Regex.match?(
-          ~r/(?:"test"|test)\s*:\s*\[[^\]]*"haxe\.compile\.tests"/ms,
-          updated
-        ),
+        not test_alias_invokes_haxe?(facts),
         "a test alias that invokes haxe.compile.tests"
       )
       |> maybe_missing(
-        not Regex.match?(~r/\baliases:\s*aliases\(\)/m, updated),
+        not standard_project_aliases?(facts),
         "aliases: aliases() in project/0"
       )
       |> maybe_missing(
-        not Regex.match?(~r/\bdefp?\s+aliases\b/m, updated),
+        not facts.aliases_function?,
         "an aliases/0 function"
       )
 
@@ -558,10 +569,84 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     end
   end
 
-  defp haxe_compiler_configured?(content),
-    do: Regex.match?(~r/compilers:\s*\[([^\]]*):haxe/m, content)
+  defp validate_supported_mix_shape!(content) do
+    facts = mix_source_facts!(content)
 
-  defp haxe_configured?(content), do: Regex.match?(~r/\bhaxe:\s*\[/m, content)
+    issues =
+      []
+      |> maybe_missing(
+        is_nil(facts.project_entries),
+        "a literal keyword list returned by project/0"
+      )
+      |> maybe_missing(
+        entry_count(facts.project_entries, :compilers) > 1,
+        "one unambiguous compilers: entry"
+      )
+      |> maybe_missing(
+        entry?(facts.project_entries, :compilers) and not haxe_compiler_configured?(content),
+        "manual integration with the existing custom compilers: entry"
+      )
+      |> maybe_missing(
+        entry_count(facts.project_entries, :haxe) > 1,
+        "one unambiguous haxe: entry"
+      )
+      |> maybe_missing(
+        entry?(facts.project_entries, :haxe) and not haxe_configured?(content),
+        "manual integration with the existing custom haxe: entry"
+      )
+      |> maybe_missing(
+        entry_count(facts.project_entries, :aliases) > 1,
+        "one unambiguous aliases: entry"
+      )
+      |> maybe_missing(
+        entry?(facts.project_entries, :aliases) and not standard_project_aliases?(facts),
+        "manual integration with the existing custom aliases: entry"
+      )
+      |> maybe_missing(
+        facts.aliases_function? and is_nil(facts.aliases_entries),
+        "a literal keyword list returned by aliases/0"
+      )
+      |> maybe_missing(
+        entry_count(facts.aliases_entries, :test) > 1,
+        "one unambiguous test alias"
+      )
+      |> maybe_missing(
+        alias_entry?(facts, :test) and not test_alias_invokes_haxe?(facts),
+        "manual integration with the existing test alias"
+      )
+
+    if issues != [] do
+      raise """
+      cannot safely patch mix.exs; the supported standard Mix shape requires \
+      #{Enum.join(issues, ", ")}. No writes occurred. Preserve custom compiler and \
+      alias behavior, integrate the Haxe entries manually, then rerun the generator.
+      """
+    end
+
+    :ok
+  end
+
+  defp haxe_compiler_configured?(content) do
+    content
+    |> mix_source_facts!()
+    |> Map.fetch!(:project_entries)
+    |> entry_value(:compilers)
+    |> case do
+      {:ok, value} -> compiler_expression_includes_haxe?(value)
+      :missing -> false
+    end
+  end
+
+  defp haxe_configured?(content) do
+    content
+    |> mix_source_facts!()
+    |> Map.fetch!(:project_entries)
+    |> entry_value(:haxe)
+    |> case do
+      {:ok, value} -> is_list(value)
+      :missing -> false
+    end
+  end
 
   defp maybe_missing(items, true, label), do: items ++ [label]
   defp maybe_missing(items, false, _label), do: items
@@ -570,12 +655,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   defp maybe_add_haxe_compiler_to_mix_exs(content, true), do: content
 
   defp maybe_add_haxe_compiler_to_mix_exs(content, false) do
-    # Look for the project function and add compilers configuration
-    content
-    |> String.replace(
-      ~r/(def project do\s*\[)/m,
-      "\\1\n      compilers: [:haxe] ++ Mix.compilers(),"
-    )
+    insert_project_entry(content, "compilers: [:haxe] ++ Mix.compilers(),")
   end
 
   defp maybe_add_haxe_config_to_mix_exs(content, _config, true), do: content
@@ -590,13 +670,10 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
               watch: Mix.env() == :dev
             ],
       """
+      |> String.trim_leading()
       |> String.trim_trailing()
 
-    if Regex.match?(~r/compilers:\s*[^\n,]+,/m, content) do
-      Regex.replace(~r/(compilers:\s*[^\n,]+,)/m, content, "\\1\n" <> haxe_config)
-    else
-      String.replace(content, ~r/(def project do\s*\[)/m, "\\1\n" <> haxe_config)
-    end
+    insert_project_entry(content, haxe_config)
   end
 
   defp maybe_add_haxe_test_aliases_to_mix_exs(content) do
@@ -607,9 +684,10 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   end
 
   defp ensure_standard_aliases_configuration(content) do
-    has_aliases_key? = Regex.match?(~r/\baliases:\s*/m, content)
-    has_standard_aliases_key? = Regex.match?(~r/\baliases:\s*aliases\(\)/m, content)
-    has_aliases_function? = Regex.match?(~r/\bdefp?\s+aliases\b/m, content)
+    facts = mix_source_facts!(content)
+    has_aliases_key? = entry?(facts.project_entries, :aliases)
+    has_standard_aliases_key? = standard_project_aliases?(facts)
+    has_aliases_function? = facts.aliases_function?
 
     cond do
       has_standard_aliases_key? and has_aliases_function? ->
@@ -629,12 +707,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   end
 
   defp insert_project_aliases_key(content) do
-    String.replace(
-      content,
-      ~r/(def project do\s*\[)/m,
-      "\\1\n      aliases: aliases(),",
-      global: false
-    )
+    insert_project_entry(content, "aliases: aliases(),")
   end
 
   defp maybe_insert_aliases_function(content, true), do: content
@@ -653,7 +726,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   end
 
   defp maybe_add_haxe_compile_tests_alias_to_mix_exs(content) do
-    if Regex.match?(~r/"haxe\.compile\.tests"\s*:/m, content) do
+    if content |> mix_source_facts!() |> alias_entry?(:"haxe.compile.tests") do
       content
     else
       insert_alias_entry(content, ~s("haxe.compile.tests": ["cmd haxe build-tests.hxml"],))
@@ -661,7 +734,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   end
 
   defp maybe_add_test_alias_to_mix_exs(content) do
-    if Regex.match?(~r/(?:"test"|test)\s*:/m, content) do
+    if content |> mix_source_facts!() |> alias_entry?(:test) do
       content
     else
       insert_alias_entry(content, ~s(test: ["haxe.compile.tests", "test"],))
@@ -671,12 +744,20 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   defp insert_alias_entry(content, alias_entry)
        when is_binary(content) and is_binary(alias_entry) do
     alias_pos =
-      case Regex.run(~r/\bdefp\s+aliases\b/m, content, return: :index) do
+      case Regex.run(
+             ~r/^[ \t]*defp[ \t]+aliases(?:\(\))?[ \t]+do\b/m,
+             content,
+             return: :index
+           ) do
         [{pos, _len} | _] ->
           pos
 
         _ ->
-          case Regex.run(~r/\bdef\s+aliases\b/m, content, return: :index) do
+          case Regex.run(
+                 ~r/^[ \t]*def[ \t]+aliases(?:\(\))?[ \t]+do\b/m,
+                 content,
+                 return: :index
+               ) do
             [{pos, _len} | _] -> pos
             _ -> nil
           end
@@ -719,6 +800,137 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
       end
     end
   end
+
+  defp insert_project_entry(content, entry)
+       when is_binary(content) and is_binary(entry) do
+    Regex.replace(
+      ~r/^([ \t]*def[ \t]+project[ \t]+do[ \t]*\r?\n[ \t]*\[)/m,
+      content,
+      fn opening ->
+        entry_indent =
+          opening
+          |> String.split("\n")
+          |> List.last()
+          |> leading_indent()
+          |> Kernel.<>("  ")
+
+        opening <> "\n" <> entry_indent <> entry
+      end,
+      global: false
+    )
+  end
+
+  defp mix_source_facts!(content) when is_binary(content) do
+    ast =
+      case Code.string_to_quoted(content) do
+        {:ok, ast} ->
+          ast
+
+        {:error, {line, error, token}} ->
+          raise """
+          cannot safely patch mix.exs; Elixir parsing failed at line #{line}: \
+          #{to_string(error)} #{inspect(token)}. No writes occurred.
+          """
+      end
+
+    project_body = unique_function_body!(ast, :project, 0, true)
+    aliases_body = unique_function_body!(ast, :aliases, 0, false)
+
+    %{
+      project_entries: literal_entries(project_body),
+      aliases_function?: not is_nil(aliases_body),
+      aliases_entries: literal_entries(aliases_body)
+    }
+  end
+
+  defp unique_function_body!(ast, name, arity, required?) do
+    {_ast, bodies} =
+      Macro.prewalk(ast, [], fn
+        {kind, _meta, [{^name, _call_meta, args}, body_kw]} = node, acc
+        when kind in [:def, :defp] and is_list(body_kw) ->
+          args = args || []
+
+          if length(args) == arity do
+            {node, [Keyword.fetch!(body_kw, :do) | acc]}
+          else
+            {node, acc}
+          end
+
+        node, acc ->
+          {node, acc}
+      end)
+
+    case bodies do
+      [body] ->
+        body
+
+      [] when required? ->
+        raise """
+        cannot safely patch mix.exs; expected exactly one #{name}/#{arity} function. \
+        No writes occurred.
+        """
+
+      [] ->
+        nil
+
+      _ ->
+        raise """
+        cannot safely patch mix.exs; found more than one #{name}/#{arity} function. \
+        No writes occurred.
+        """
+    end
+  end
+
+  defp literal_entries(entries) when is_list(entries) do
+    if Enum.all?(entries, &match?({key, _value} when is_atom(key), &1)),
+      do: entries,
+      else: nil
+  end
+
+  defp literal_entries(_other), do: nil
+
+  defp entry_count(nil, _key), do: 0
+
+  defp entry_count(entries, key) when is_list(entries),
+    do: Enum.count(entries, &match?({^key, _value}, &1))
+
+  defp entry?(entries, key), do: entry_count(entries, key) > 0
+
+  defp entry_value(nil, _key), do: :missing
+
+  defp entry_value(entries, key) when is_list(entries) do
+    case Enum.find(entries, &match?({^key, _value}, &1)) do
+      {^key, value} -> {:ok, value}
+      nil -> :missing
+    end
+  end
+
+  defp standard_project_aliases?(facts) do
+    case entry_value(facts.project_entries, :aliases) do
+      {:ok, {:aliases, _meta, args}} when args in [nil, []] -> true
+      _ -> false
+    end
+  end
+
+  defp alias_entry?(facts, key), do: entry?(facts.aliases_entries, key)
+
+  defp test_alias_invokes_haxe?(facts) do
+    case entry_value(facts.aliases_entries, :test) do
+      {:ok, commands} when is_list(commands) ->
+        "haxe.compile.tests" in commands
+
+      _ ->
+        false
+    end
+  end
+
+  defp compiler_expression_includes_haxe?(compilers) when is_list(compilers),
+    do: :haxe in compilers
+
+  defp compiler_expression_includes_haxe?({:++, _meta, [left, right]}),
+    do: compiler_expression_includes_haxe?(left) or compiler_expression_includes_haxe?(right)
+
+  defp compiler_expression_includes_haxe?(_other), do: false
 
   defp binary_index(haystack, needle) when is_binary(haystack) and is_binary(needle) do
     case :binary.match(haystack, needle) do
