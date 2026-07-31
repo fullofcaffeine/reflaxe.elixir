@@ -1,31 +1,37 @@
 # Essential Testing Commands
 
-## 🚀 Quick Test Commands
+The canonical policy is
+[Testing Strategy](../03-compiler-development/TESTING_INFRASTRUCTURE.md).
+Choose commands by the behavior being changed; do not treat one suite as proof
+of every layer.
 
-### Full Test Suite
+## 🚀 Feedback-loop Commands
+
+### R0 — Focused Owner
 ```bash
-npm test                          # Complete test suite (mandatory before commit)
+make -C test test-core__<case>             # One compiler snapshot
+npm run test:core                         # One snapshot category
+npm run test:stdlib                       # Stdlib compiler shapes
+npm run test:regression                   # Focused regressions
 ```
 
-### Specific Test Categories  
+### R1 — Runtime/Claim Smoke
 ```bash
-make -C test test-name                     # Run specific snapshot test
-make -C test update-intended TEST=name     # Accept new compiler output
-MIX_ENV=test mix test                      # Runtime validation tests
+npm run test:runtime-smoke                 # Small Haxe -> Elixir -> BEAM path
 npm run test:haxe-exunit-stdlib           # Haxe-authored stdlib semantics on BEAM
+npm run test:mix-fast                     # Mix/compiler integration
 ```
 
-### Integration Testing
+### Application Integration
 ```bash
-# Todo-app integration (primary benchmark, non-blocking + bounded)
+# Agent-safe, non-blocking, bounded lifecycle
 scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 600 --verbose
 scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 60
 ```
 
-### Performance Testing
+### Broad Local Aggregate (Part of R4)
 ```bash
-npm run test:parallel                     # Parallel test execution
-timeout 30 npm test                       # Test with timeout
+npm test                                 # Compiler/runtime aggregate; CI owns the complete graph
 ```
 
 ## 🔍 Test Analysis Commands
@@ -46,8 +52,12 @@ MIX_ENV=test mix compile --force          # Force recompilation
 
 ## ⚠️ Critical Test Rules
 
-- **NEVER commit without running `npm test`**
-- **Todo-app MUST compile as integration validation**
-- **ALL tests must pass before moving to new features**
+- Start with the smallest semantic owner; widen using the canonical change map.
+- `npm run test:changed` is advisory only until it has reviewed ownership and
+  selector-miss evidence.
+- Runtime claims require runtime execution; snapshots alone are insufficient.
+- Cross-cutting compiler/runtime/runner changes require `npm test`.
+- Todo-app validation is required when application/runtime behavior can change
+  and must use the agent-safe sentinel lifecycle.
 - **Update snapshots only when compiler output legitimately improves**
 - **Fix broken tests immediately, don't ignore as "unrelated"**

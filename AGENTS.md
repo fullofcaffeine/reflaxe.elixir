@@ -76,15 +76,10 @@ Agents must never block the terminal when validating the todo-app. Use the provi
   - View logs without blocking:
     - One‑shot: `scripts/qa-logpeek.sh --run-id <RUN_ID> --last 200`
     - Bounded follow: `scripts/qa-logpeek.sh --run-id <RUN_ID> --follow 60`
-    - Stop server: `kill -TERM $QA_SENTINEL_PID`
-- Keep server alive for manual browsing:
-  - `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --keep-alive -v`
-  - Prints `PHX_PID`, `PHX_PGID`, and `PORT`; stop with `kill -TERM -$PHX_PGID`.
-- App-local helper (one-shot, :4000):
-  - `examples/todo-app/scripts/qa-sentinel-local.sh`
+    - Stop this exact run early, if needed: `kill -TERM "$QA_SENTINEL_PID"`
 
 What these scripts do
-- Build Haxe → Elixir (`build-server.hxml`), `mix deps.get`, `mix compile` (WAE), boot `mix phx.server` in background, wait for readiness with bounded probes, curl `/`, scan logs for errors, and tear down (unless `--keep-alive`).
+- Build Haxe → Elixir (`build-server.hxml`), `mix deps.get`, `mix compile` (WAE), boot `mix phx.server` in background, wait for readiness with bounded probes, curl `/`, scan logs for errors, and tear down.
 - All steps have timeouts with heartbeat progress lines to avoid hangs.
 
 Always use these sentinels for runtime checks. Interactive development and
@@ -137,7 +132,10 @@ These failures usually come from running only a subset locally (e.g. `test:quick
   - If upstream Haxe has a matching `tests/unit/src/unitstd/**/*.unit.hx` spec, prefer checking in/enabling that fixture under `test/upstream_unitstd/upstream/**` so it compiles to ExUnit and runs on BEAM.
   - If the upstream spec is not yet runnable or no spec exists, record the explicit manifest reason and add local runtime coverage when appropriate. Snapshot coverage alone is not sufficient for stdlib semantics.
   - Treat upstream runtime test failures as compiler/stdlib correctness signals first, not as bad fixtures. Investigate whether the fix belongs in AST lowering, target stdlib source, or the adapter before skipping/adapting the spec.
-- CI-equivalent full suite: `npm test`
+- Broad local compiler/runtime aggregate: `npm test`
+- Complete repository backstop: the exact-head CI graph, including the
+  independent example, sentinel/browser, package, security, platform, budget,
+  and release jobs below
 - Examples (compile): `npm run test:examples`
 - Examples (expected generated output): `npm run test:examples-output`
 - Examples (strict warnings): `npm run test:examples-elixir` (mix compile `--warnings-as-errors`, no deps check)
@@ -274,9 +272,10 @@ GitHub Actions step logs often require a signed-in session to view or download. 
   - Running sentinel without `--deadline`.
   - Running sentinel without `--async`.
   - Any `tail -f`, watchers, or foreground servers that do not auto‑finish.
-- If a prior run may be active, terminate it first to ensure non‑blocking behavior:
-  - `kill -TERM $QA_SENTINEL_PID` (or `pgrep -f qa-sentinel | xargs kill -TERM` as a fallback)
-  - For Phoenix: `pgrep -f "mix phx.server" | xargs kill -TERM`
+- If a prior run may be active, use its printed `QA_SENTINEL_PID` or
+  `PHX_PGID` and stop that exact owned run. Never use a broad `pgrep | xargs
+  kill` fallback; inspect ownership and ask the user when the process cannot be
+  attributed safely.
 
 Note: CI may use synchronous mode for readability, but MUST include `--deadline` and must not exceed per‑step caps. Agents in interactive sessions must always use async.
 ### ⛔ Hard Rule: Commands Must Finish (No Indefinite Runs)
@@ -299,31 +298,14 @@ CI hygiene notes (to prevent flaky hangs):
 - CI uses `concurrency.cancel-in-progress`; a “failed” check may simply be a **canceled** run from a newer push. Always confirm the job status before chasing logs.
 - Minimum toolchain CI runs OTP 25 / Elixir 1.14. Avoid newer Mix flags (notably `mix test --stale`). Use `npm run test:mix-fast` (wrapped by `scripts/test-mix-fast.sh`, which feature-detects support).
 
-### 🔭 Optional: Playwright E2E Smoke (when server is up)
+### 🔭 Optional: Playwright E2E Smoke
 
-Once the sentinel reports readiness, agents may run a lightweight Playwright check to exercise critical paths without blocking the terminal:
+Agents run Playwright through the same async bounded sentinel lifecycle so the
+browser never races the sentinel's automatic teardown:
 
-- Start the server in the background (recommended for E2E):
-  - `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --verbose --deadline 300`
-  - Or keep it alive for manual browsing: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --keep-alive -v`
-  - Inspect logs without blocking (examples):
-    - `scripts/qa-logpeek.sh --file /tmp/qa-phx.log --last 200`
-    - `scripts/qa-logpeek.sh --file /tmp/qa-phx.log --follow 60`
-
-- Minimal Playwright probe (example):
-  1) `npm -C examples/todo-app install --no-audit --no-fund && npx -C examples/todo-app playwright install`
-  2) Save a quick test (examples/todo-app/e2e/basic.spec.ts):
-     ```ts
-     import { test, expect } from '@playwright/test'
-     test('home + todos render', async ({ page }) => {
-       const base = process.env.BASE_URL || 'http://localhost:4001'
-       await page.goto(base + '/')
-       await expect(page).toHaveTitle(/Todo/i)
-       await page.goto(base + '/todos')
-       await expect(page.locator('body')).toContainText(/Todo/i)
-     })
-     ```
-  3) Run: `BASE_URL=http://localhost:4001 npx -C examples/todo-app playwright test e2e/basic.spec.ts`
+- `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --playwright --e2e-spec "e2e/smoke/*.spec.ts" --deadline 600 -v`
+- Inspect completion with
+  `scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 120`.
 
 ### ✅ Testing Strategy (ExUnit in Haxe + Playwright in TS)
 
@@ -333,7 +315,7 @@ Once the sentinel reports readiness, agents may run a lightweight Playwright che
 
 Sentinel integration (optional):
 - You can have the QA sentinel run Playwright after readiness:
-  - `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --playwright --e2e-spec "e2e/*.spec.ts" --deadline 600`
+  - `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --playwright --e2e-spec "e2e/*.spec.ts" --deadline 600`
   - Sentinel sets `BASE_URL` from the detected PORT and fails on Playwright errors. Keep deadlines generous for first-run browser installs.
 - Current example specs:
   - `examples/todo-app/e2e/basic.spec.ts` — home + todos load
@@ -358,7 +340,6 @@ This repo exercises quality at three distinct layers. Keep them separate and use
 - Runs (examples):
   - Quick (agent-safe, async + bounded): `npm run qa:sentinel`
   - Async: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 300`
-  - Keep alive: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --keep-alive -v`
 - Purpose: Prove compiler output integrates with Phoenix correctly and runs without runtime errors.
 
 3) Application layer — App tests (Elixir ExUnit + Playwright E2E)
@@ -367,14 +348,14 @@ This repo exercises quality at three distinct layers. Keep them separate and use
   - Keep these fast and deterministic; most UI logic belongs here (Testing Trophy).
 - Playwright E2E (TypeScript, thin real‑browser layer):
   - Location: `examples/todo-app/e2e/*.spec.ts`
-  - Run standalone: `BASE_URL=http://localhost:4001 npx -C examples/todo-app playwright test`
-  - Run via sentinel: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --playwright --e2e-spec "e2e/*.spec.ts" --deadline 600`
+  - Run via sentinel: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --playwright --e2e-spec "e2e/*.spec.ts" --deadline 600`
   - Purpose: Validate hydration/assets/hooks and critical user journeys cross‑browser; keep under ~1 minute.
 
 Guidelines
 - Keep Playwright checks fast and smoke-level (1–2 assertions per path).
 - Always rely on the QA sentinel to boot/tear down; do not launch `mix phx.server` directly.
-- When running sync sentinel, prefer `--deadline` to guarantee bounded validation.
+- Agents always use `--async` and `--deadline`; synchronous sentinel mode is
+  reserved for bounded CI steps.
 
 ### 🔁 E2E TDD Loop (Recommended)
 
@@ -383,22 +364,18 @@ Use this loop to implement/verify user-facing features end‑to‑end without co
 1) Write the Playwright spec first (user perspective)
 - Place spec(s) under `examples/todo-app/e2e/`. Start with a minimal flow (1–3 assertions).
 
-2) Boot the app via the QA sentinel (non‑blocking)
-- Keep‑alive for manual browsing and MCP inspection:  
-  `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --keep-alive -v`
+2) Run the spec through the QA sentinel (non-blocking and bounded)
+- `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --playwright --e2e-spec "e2e/<your>.spec.ts" --deadline 600 -v`
+- Inspect completion with `scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 120`.
 
-3) Run the spec against the running server
-- `BASE_URL=http://localhost:4001 npx -C examples/todo-app playwright test e2e/<your>.spec.ts`
+3) Implement the feature/fix generically in the compiler or example app (no app‑specific name heuristics)
 
-4) Implement the feature/fix generically in the compiler or example app (no app‑specific name heuristics)
+4) Re-run the same async bounded sentinel command.
 
-5) Re‑run sentinel with `--playwright`
-- `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --playwright --e2e-spec "e2e/<your>.spec.ts" --deadline 600`
-
-6) Add Haxe‑authored ExUnit integration tests (ConnTest/LiveViewTest)
+5) Add Haxe‑authored ExUnit integration tests (ConnTest/LiveViewTest)
 - Keep most coverage here (Testing Trophy). Playwright remains a thin real‑browser layer.
 
-7) Track everything in shrimp
+6) Track everything in Beads
 - Each task must include the QA sentinel step in its verification criteria and should link the specific specs being exercised.
 
 ### 🧭 JS Client Build Guardrails (Classpath)
@@ -820,7 +797,7 @@ Examples
 → **[docs/03-compiler-development/](docs/03-compiler-development/)** - Specialized compiler development context
 - [Compiler Development AGENTS.md](docs/03-compiler-development/AGENTS.md) - **AI context for compiler work**
 - [Architecture Overview](docs/03-compiler-development/architecture.md) - How the compiler works
-- [Testing Infrastructure](docs/03-compiler-development/testing-infrastructure.md) - Snapshot testing system
+- [Testing Strategy](docs/03-compiler-development/TESTING_INFRASTRUCTURE.md) - Agent feedback rings, evidence layers, and closure rules
 
 #### **Need Technical Reference?**
 → **[docs/04-api-reference/](docs/04-api-reference/)** - Technical references and API docs
@@ -1226,14 +1203,15 @@ Issue with vendor code → Can I fix in compiler? → YES → Fix in compiler
 
 ### Development Workflow
 ```bash
-# Build and test (with CORRECT flags - no analyzer-optimize!)
-npm test                                 # Full test suite (mandatory before commit)
-mix assets.build && mix compile --force  # Compile client+server
-mix phx.server                           # Run Phoenix application (watchers on)
+# Fast loop: run the semantic owner first
+make -C test test-core__<case>            # One compiler snapshot
+npm run test:runtime-smoke                # Small Haxe -> Elixir -> BEAM check
 
-# Integration testing (example app)
-cd examples/todo-app && mix assets.build && mix compile
-curl http://localhost:4000               # Test application response
+# Broad local aggregate: required for cross-cutting changes; CI is the R4 backstop
+npm test
+
+# Agent-safe application integration
+npm run qa:sentinel
 
 # Dev convenience (example app)
 cd examples/todo-app && mix dev          # setup + start with watchers
@@ -1292,32 +1270,14 @@ This repo uses a small `plans/` directory to store decision records that are lar
 - Plans are an index/history layer and should be kept in sync, but not required reading.
 - Conventions and lifecycle: `plans/README.md`
 
-### Run Servers in Background (Agents)
+### Run Servers Through the Sentinel (Agents)
 
-- Never block the terminal with long‑running servers during agent work. Always start them in the background, capture logs, and ensure teardown.
-- Recommended pattern (background + readiness + teardown):
-  ```bash
-  # Start (background) and capture PID
-  # Start Phoenix in a new session so teardown can terminate the whole process group (watchers included).
-  if command -v setsid >/dev/null 2>&1; then
-    setsid MIX_ENV=dev mix phx.server >/tmp/qa-phx.log 2>&1 &
-  else
-    nohup MIX_ENV=dev mix phx.server >/tmp/qa-phx.log 2>&1 &
-  fi
-  PHX_PID=$!
-  PHX_PGID=$(ps -o pgid= "$PHX_PID" 2>/dev/null | tr -d ' ' || true)
-  trap 'if [[ -n "$PHX_PGID" ]]; then kill -TERM -"$PHX_PGID" >/dev/null 2>&1 || true; else kill -TERM "$PHX_PID" >/dev/null 2>&1 || true; fi' EXIT
-
-  # Wait until ready
-  for i in $(seq 1 60); do
-    curl -fsS http://localhost:4000 >/dev/null 2>&1 && break
-    sleep 0.5
-  done
-
-  # Interact with the app here (tests, Playwright, etc.)
-  ```
-- Prefer `scripts/qa-sentinel.sh` when possible — it already starts Phoenix in the background, probes readiness, and tears down cleanly.
-- If a port is already in use, terminate the listener first (e.g., via `lsof -ti tcp:4000 | xargs -r kill -9`) before starting a new server.
+- Agents use the QA sentinel because it owns background startup, readiness,
+  bounded execution, logs, and teardown.
+- Follow the hard rules above: every agent invocation uses `--async` and
+  `--deadline`, and log inspection is bounded or finish-aware.
+- Do not kill an unidentified port listener. Resolve its PID and ownership
+  first; stop only a process that belongs to the in-scope QA run.
 
 ## 🧭 Architecture Lessons From Live QA (Elixir/Phoenix)
 
@@ -1340,7 +1300,9 @@ This repo uses a small `plans/` directory to store decision records that are lar
   - Use descriptive names everywhere, including inside injected Elixir snippets: e.g., `snake_params`, `normalized_params`.
 
 - QA loop: gate + browser flows.
-  - Always run `scripts/qa-sentinel.sh` to validate build + runtime (WAE) before browser tests.
+  - Always use the agent-safe `npm run qa:sentinel`, or invoke
+    `scripts/qa-sentinel.sh` with both `--async` and `--deadline`, to validate
+    build + runtime (WAE) before browser tests.
   - Use Playwright MCP to drive add/toggle/delete/search; capture console logs and server logs.
   - Start servers in background and ensure teardown between runs to avoid port conflicts and stale sessions.
 
@@ -1367,7 +1329,7 @@ npm run test:core                          # Run core language tests only
 npm run test:stdlib                        # Run standard library tests
 npm run test:regression                    # Run regression tests
 npm run test:phoenix                       # Run Phoenix framework tests
-npm run test:changed                       # Run only tests affected by git changes
+npm run test:changed                       # Advisory local heuristic; never closure evidence by itself
 npm run test:failed                        # Re-run only failed tests from last run
 
 # Pattern-based testing
@@ -2088,7 +2050,11 @@ Each file should have **one clear reason to change**:
 - Single responsibility focus
 - Test coverage to prevent regressions
 
-**Validation**: `npm test && cd examples/todo-app && npx haxe build-server.hxml && mix compile`
+**Validation**: Run the focused owner after each extraction, then every
+affected layer from
+[Testing Strategy](docs/03-compiler-development/TESTING_INFRASTRUCTURE.md).
+Cross-cutting refactors also run `npm test`; application/runtime changes use
+the async bounded QA sentinel rather than direct generated-app compilation.
 
 ## Framework-Agnostic Design Pattern ✨ **ARCHITECTURAL PRINCIPLE**
 
@@ -2269,7 +2235,7 @@ socket = assign(socket, :total, calculate_total(items))
 ## 📍 Agent Navigation Guide
 
 ### When Writing or Fixing Tests
-→ **[docs/03-compiler-development/testing-infrastructure.md](docs/03-compiler-development/testing-infrastructure.md)** - Critical testing rules and snapshot testing
+→ **[docs/03-compiler-development/TESTING_INFRASTRUCTURE.md](docs/03-compiler-development/TESTING_INFRASTRUCTURE.md)** - Feedback rings, semantic owners, and closure evidence
 
 ### When Implementing New Features  
 → **[docs/07-patterns/](docs/07-patterns/)** - Code patterns and examples
@@ -2541,15 +2507,13 @@ Every stdlib module should follow this documentation pattern:
 ### Test Infrastructure Organization
 
 ```
-test/tests/
-├── StdlibStringBuf/        # StringBuf tests
-│   └── Main.hx             # Test cases with expected output
-├── StdlibLambda/           # Lambda functional tests  
-│   └── Main.hx             # Validates Enum extern usage
-├── StdlibEnum/             # Elixir Enum extern tests
-│   └── Main.hx             # 1:1 mapping validation
-└── StdlibCommon/           # Shared test utilities
-    └── TestHelper.hx       # DRY test infrastructure
+test/snapshot/
+├── stdlib/                 # Portable Haxe stdlib compilation contracts
+│   └── <case>/             # Main.hx plus intended generated output
+├── core/                   # Compiler semantics and code-shape regressions
+│   └── <case>/
+└── phoenix/                # Phoenix-specific compiler contracts
+    └── <case>/
 ```
 
 ### Example: StringBuf Idiomatic Generation
@@ -2637,12 +2601,12 @@ class StringBuf {
 - Zero compilation warnings, Reflaxe snapshot testing approach
 - **Date Rule**: Always run `date` command before writing timestamps
 - **CRITICAL: Idiomatic Elixir Code Generation** - Generate high-quality, functional Elixir code
-- **Testing Protocol**: ALWAYS run `npm test` after compiler changes
+- **Testing Protocol**: run the focused semantic owner during iteration, widen by the canonical change map, and keep full exact-head CI as the backstop
 - **Naming Convention**: ALWAYS use camelCase in Haxe code, compiler handles snake_case conversion
 
 ## Mandatory Testing Protocol ⚠️ CRITICAL
 
-**EVERY compiler change MUST be validated through the complete testing pipeline.**
+**EVERY compiler change MUST be validated through the affected layers in the canonical testing strategy.**
 
 ### Test-Driven Development Approach for Compiler Fixes
 
@@ -2669,7 +2633,10 @@ class StringBuf {
 - ✅ **Snapshot tests**: `test/snapshot/{category}/{test_name}/` (e.g., `test/snapshot/regression/MapIteration/`)
 - ✅ **Categories**: core, phoenix, ecto, otp, stdlib, exunit, loops, regression
 - ❌ **NEVER in repo root**: Do not create ad-hoc `TestSomething.hx` files at the repository root
-- ❌ **NEVER in test/tests/**: This directory should not exist (use `test/snapshot/` instead)
+- ❌ **Do not add to `test/tests/`**: It contains a small tracked legacy corpus,
+  but it is non-canonical and is not closure evidence; use `test/snapshot/`
+  instead. Do not delete legacy fixtures without a separately verified
+  migration task.
 
 **If you need to debug compiler issues:**
 - Use existing tests in `test/snapshot/`
@@ -2687,9 +2654,17 @@ npm run test:core            # Test core features if working on basics
 npm run test:stdlib          # Test stdlib if working on standard library
 ```
 
-#### Full Validation (Before Commit)
-1. **Run Full Test Suite**: `npm test` - ALL tests must pass
-2. **Test Todo-App Integration (non-blocking)**:
+`test:changed` is advisory because it does not yet have a reviewed
+semantic-ownership manifest or selector-miss audit. It cannot establish
+completion by itself.
+
+#### Closure Validation
+1. Follow the change-to-test map in
+   [Testing Strategy](docs/03-compiler-development/TESTING_INFRASTRUCTURE.md).
+   Run `npm test` locally for cross-cutting compiler/runtime/runner changes;
+   narrower changes run every affected owner and rely on clean exact-head CI as
+   the full backstop.
+2. **Test Todo-App Integration when application/runtime behavior can change**:
    ```bash
    # Do not run `mix phx.server` in the foreground during agent work.
    scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 600 --verbose
@@ -2698,7 +2673,7 @@ npm run test:stdlib          # Test stdlib if working on standard library
 
 **Rule**: If ANY step fails, the compiler change is incomplete. Fix the root cause.
 
-**See**: [docs/03-compiler-development/testing-infrastructure.md](docs/03-compiler-development/testing-infrastructure.md) - Complete testing guide
+**See**: [docs/03-compiler-development/TESTING_INFRASTRUCTURE.md](docs/03-compiler-development/TESTING_INFRASTRUCTURE.md) - Complete testing guide
 
 ## ⚠️ CRITICAL: Haxe Naming Convention Rules
 
@@ -3115,8 +3090,10 @@ Testing workflow for compiler bug fixes:
 1. **Create minimal regression test** that reproduces the exact bug
 2. **Write the intended idiomatic output** - What SHOULD be generated
 3. **Fix the compiler** until test passes with correct output
-4. **Run full test suite** - Ensure no regressions (`npm test`)
-5. **Validate with todo-app** - Real-world integration test
+4. **Run every affected owner from the canonical change map** - Use `npm test`
+   when the change is cross-cutting across compiler/runtime/runner ownership
+5. **Validate with todo-app when application/runtime behavior can change** -
+   Use the bounded, async QA sentinel and its owned Playwright option
 6. **Update any broken tests** if they had wrong intended outputs
 
 **Why this workflow works**:
@@ -3166,7 +3143,7 @@ When tests fail after compiler fixes:
 **FUNDAMENTAL RULE: Every bug fix MUST have a dedicated regression test to prevent reoccurrence.**
 
 When fixing a bug:
-1. **Create a focused test** in `test/tests/` that reproduces the exact bug scenario
+1. **Create a focused test** in `test/snapshot/<category>/<case>/` that reproduces the exact bug scenario
 2. **Name it descriptively** (e.g., `underscore_prefix_consistency`, `orphaned_enum_parameters`)
 3. **Document the bug** in the test file's header comment with:
    - What the bug was
@@ -3192,12 +3169,12 @@ When fixing a bug:
 - Avoid repeating fixes that were already attempted
 
 ### ⚠️ CRITICAL: Never Confirm Something Works Without Actual Tests
-**FUNDAMENTAL RULE: Don't confirm something is working before being 100% sure by verifying with actual tests.**
-- Always run `npm test` after changes
-- Test todo-app compilation: `cd examples/todo-app && npx haxe build-server.hxml && mix compile`
-- Verify the application runs: `mix phx.server`
+**FUNDAMENTAL RULE: Don't confirm something is working without executing the tests that own the claim.**
+- Run the focused semantic owner, then every affected layer from the canonical change map.
+- Run `npm test` for cross-cutting compiler/runtime/runner changes.
+- Verify todo-app behavior through the agent-safe async QA sentinel when application behavior can change.
 - Check for runtime errors, not just compilation success
-- Never say "it's fixed" without running the complete test suite
+- Never say "it's fixed" from a snapshot alone when the claim is about runtime behavior.
 
 ### ⚠️ CRITICAL: Avoid Regressions and Circular Work
 **FUNDAMENTAL RULE: Avoid regressions and walking in circles by checking previous work.**
@@ -3506,13 +3483,15 @@ src/reflaxe/elixir/
 ### Testing During Refactoring (MANDATORY)
 ```bash
 # After EVERY extraction:
-npm test                    # Must pass ALL tests
+npm run test:<owner>        # Fast semantic owner for the code being moved
 
 # After 2-3 extractions:
-cd examples/todo-app && npx haxe build-server.hxml && mix compile --force
+npm run test:quick          # Broader compiler-shape checkpoint
 ```
 
-**NEVER** complete a refactoring session without full test validation.
+Before closing, run every affected layer from the canonical strategy. A
+cross-cutting refactor still requires `npm test`, affected runtime/example
+gates, and exact-head full CI.
 
 ## Known Issues  
 - **Array Mutability**: Methods like `reverse()` and `sort()` don't mutate in place (Elixir lists are immutable)
@@ -3550,17 +3529,27 @@ cd examples/todo-app && npx haxe build-server.hxml && mix compile --force
 
 ## Development Loop ⚡ **CRITICAL WORKFLOW**
 
-**MANDATORY: Every development change MUST follow this complete validation loop:**
+**MANDATORY: Every development change follows the feedback-ring loop:**
 
 ```bash
-# 1. Run full test suite (ALL tests must pass)
-npm test
+# 1. Iterate on the smallest semantic owner
+make -C test test-<category>__<case>
 
-# 2. Verify todo-app compiles and runs (non-blocking)
+# 2. Add the smallest runtime/strict-output owner required by the claim
+npm run test:runtime-smoke
+
+# 3. For affected application behavior, use bounded non-blocking QA
 scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 600 --verbose
+
+# 4. Cross-cutting changes run the broad local aggregate; every closed task waits
+#    for its exact-head full CI backstop.
+npm test
 ```
 
-**Rule**: If ANY step in this loop fails, the development change is incomplete.
+Not every change runs every command above. The canonical
+[Testing Strategy](docs/03-compiler-development/TESTING_INFRASTRUCTURE.md)
+maps changes to required evidence. If any selected owner fails, the change is
+incomplete.
 
 ## Implementation Status
 **See**: [`docs/08-roadmap/`](docs/08-roadmap/) for plans and
@@ -3600,7 +3589,7 @@ verify the digest before exercising the Lix install/generator path. Consumer doc
 both `sha256sum --check` and the macOS `shasum -a 256 --check` fallback visible.
 
 ## Test Status Summary
-**See**: [`docs/03-compiler-development/testing-infrastructure.md`](docs/03-compiler-development/testing-infrastructure.md) - Complete test architecture and status
+**See**: [`docs/03-compiler-development/TESTING_INFRASTRUCTURE.md`](docs/03-compiler-development/TESTING_INFRASTRUCTURE.md) - Complete test architecture, feedback rings, and status
 
 ## Development Resources & Reference Strategy
 - **Reference Codebase (optional)**: If you keep a separate local “reference” checkout, point it via `HAXE_ELIXIR_REFERENCE` (or legacy `HAXE_ELIXIR_REFERENCE_PATH`) and consult it for:

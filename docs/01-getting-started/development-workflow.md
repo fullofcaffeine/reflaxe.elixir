@@ -10,8 +10,8 @@
 vim src_haxe/MyModule.hx
 
 # 2. Compile and test
-npm test                    # Full validation (recommended)
-npm run test:quick         # Faster subset for quick iterations
+npm run test:quick          # Broad compiler-shape checkpoint
+npm test                    # Broad local compiler/runtime aggregate
 
 # 3. Test specific functionality
 haxe build.hxml        # Basic compilation
@@ -101,38 +101,57 @@ mix ecto.migrate     # Runs database migrations
 
 ## Testing Strategy
 
-### Comprehensive Testing
-```bash
-# Test everything (recommended before commits)
-npm test
+Use the smallest test that owns the behavior while editing, then widen
+validation to match the claim. A compiler snapshot gives fast code-generation
+feedback; a runtime claim also needs generated Elixir acceptance and BEAM
+execution.
 
-# Snapshot-only run (fastest)
+```bash
+# One focused snapshot
+make -C test test-core__<case>
+
+# Broader compiler-shape checkpoint
 npm run test:quick
 
-# Test Mix tasks + Elixir integration
-npm run test:mix
+# Portable runtime
+npm run test:haxe-exunit-stdlib
 
-# Compile-check every example under examples/
-npm run test:examples
+# Mixed portable + OTP/Mix runtime aggregates
+npm run test:runtime-smoke
+npm run test:mix-fast
 
-# Todo-app end-to-end build + boot (Phoenix runtime + optional Playwright)
+# Broad local compiler/runtime aggregate for cross-cutting changes
+npm test
+
+# Agent-safe todo-app build, boot, probe, and teardown
 npm run qa:sentinel
 ```
+
+`npm run test:changed` is an advisory local heuristic, not completion evidence:
+it does not yet have a reviewed semantic-ownership manifest or selector-miss
+audit.
+
+The canonical
+[Testing Strategy](../03-compiler-development/TESTING_INFRASTRUCTURE.md)
+maps change types to required evidence, separates portable Haxe semantics from
+Elixir/OTP/Phoenix product behavior, and defines the R0–R5 feedback rings used
+by people and agents.
 
 For details on non-blocking Phoenix validation (async runs, bounded log viewing, Playwright integration), see
 [Phoenix E2E & QA Sentinel](../06-guides/PHOENIX_E2E_AND_SENTINEL.md).
 
 ### Testing Infrastructure Benefits
 
-#### Modern Stack (tink_unittest)
-- **Synchronous testing**: Deterministic test execution
-- **Performance validation**: Built-in benchmarking, <15ms targets
-- **Clean output**: Clear success/failure reporting
-- **Framework-agnostic**: Easy to switch between test frameworks
-
-#### Dual Test Coverage
-1. **Haxe Compiler Tests**: Validate the compilation engine itself
-2. **Elixir Runtime Tests**: Validate the generated code and Mix integration
+1. **Focused ownership:** small snapshot, negative, macro, and ExUnit tests
+   localize failures during implementation.
+2. **Target acceptance:** strict Elixir parsing, formatting, and warnings-as-
+   errors catch invalid or poor generated source.
+3. **Runtime behavior:** Haxe-authored ExUnit and bounded smokes execute the
+   emitted program on BEAM.
+4. **Product integration:** examples, OTP/Phoenix/Ecto tests, and thin
+   Playwright flows preserve framework and browser contracts.
+5. **Consumer/release evidence:** isolated package installation and exact-head
+   CI keep repository-only classpaths from masquerading as user success.
 
 ### Test Error Interpretation
 
@@ -239,7 +258,7 @@ vocabulary and reproducible commands.
 
 ### Testing Files  
 - **`test/Test.hxml`**: Snapshot test runner configuration
-- **`test/tests/`**: Individual test cases with expected outputs
+- **`test/snapshot/<category>/<case>/`**: Individual compiler cases with expected outputs
 - **`examples/todo-app/`**: Integration test as real Phoenix application
 
 ### Source Code Files
@@ -277,15 +296,16 @@ Reflaxe.Elixir supports full-stack development with a single language:
 2. **Plan with documentation** - Update [roadmap](../08-roadmap/) with your feature
 3. Create helper compiler in `src/reflaxe/elixir/helpers/`
 4. Add annotation support to main `ElixirCompiler.hx`  
-5. Write tests using snapshot testing in `test/tests/`
+5. Write the focused regression under `test/snapshot/<category>/<case>/`
 6. **Document thoroughly** - Update guides and examples
-7. Run `npm test` to validate (ALL tests must pass)
+7. Run the focused owner, then every affected layer from the
+   [Testing Strategy](../03-compiler-development/TESTING_INFRASTRUCTURE.md);
+   cross-cutting changes also run `npm test`
 8. **Mark task complete** - Verify implementation meets requirements
 
 ### Adding Tests  
 ```haxe
-// Create snapshot test in test/tests/new_feature/
-// src_haxe/TestNewFeature.hx
+// Create test/snapshot/<category>/new_feature/Main.hx
 class TestNewFeature {
     public static function main() {
         trace("Testing new feature");
@@ -334,7 +354,7 @@ npm run test:mix      # Elixir/Mix tests only
 
 # Narrow scope
 npm run test:failed
-npm run test:changed
+npm run test:changed  # advisory only; widen using the canonical change map
 
 # Update test snapshots when output improves
 npm run test:update
@@ -342,8 +362,8 @@ npm run test:update
 
 ### Compilation Issues
 ```bash
-# Clean and rebuild everything
-rm -rf lib/*.ex lib/**/*.ex  # Remove generated files
+# Clean compiler-owned generated files through the repository manifest
+npm run clean:generated
 haxe build.hxml              # Regenerate from Haxe
 mix compile --force          # Verify Elixir compilation
 ```
@@ -352,9 +372,13 @@ mix compile --force          # Verify Elixir compilation
 
 ### Development Workflow
 - Prefer `haxe` from a proper Haxe install; if it’s not on your PATH, use the repo shim: `./node_modules/.bin/haxe ...` (provided by `lix` + `.haxerc`).
-- **Run full test suite** before committing changes
+- Run the focused semantic owner while editing, then every affected layer from
+  the canonical testing strategy. Cross-cutting compiler/runtime/runner changes
+  require the broad local aggregate; the complete backstop is the exact-head
+  CI graph.
 - **Use source maps** for debugging (`-D source-map`)
-- **Test todo-app integration** after compiler changes
+- **Test todo-app integration** when compiler changes can affect generated
+  application/runtime behavior; use the canonical change map for other changes
 - **Update documentation** when adding features
 
 ### Code Quality
@@ -374,7 +398,8 @@ mix compile --force          # Verify Elixir compilation
 ✅ **Modern Haxe tooling** (lix + tink_unittest)  
 ✅ **Native Elixir integration** (mix + Phoenix ecosystem)
 ✅ **End-to-end validation** (compiler + generated code)  
-✅ **Single command simplicity** (`npm test`)
+✅ **One broad local compiler/runtime aggregate** (`npm test`) with the complete
+repository evidence graph owned by CI
 ✅ **Zero global state** (project-specific everything)
 ✅ **Fast compilation** for typical modules (see `docs/06-guides/PERFORMANCE_GUIDE.md`)
 

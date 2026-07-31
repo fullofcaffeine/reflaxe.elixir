@@ -1,347 +1,292 @@
-# Testing Infrastructure Architecture
+# Testing Strategy: Fast Agent Loops and Release Evidence
 
-## Overview
+## Outcome
 
-Reflaxe.Elixir uses a dual-mode testing system with shared utilities to provide both sequential and parallel test execution with identical behavior and 100% reliability.
+Reflaxe.Elixir uses one testing portfolio at different feedback horizons. A developer or agent should
+get a useful failure from the smallest semantic owner while editing, then widen validation as the
+claim and blast radius widen. The release path still proves clean package installation, generated
+Elixir acceptance, BEAM behavior, framework integrations, and supported toolchains.
 
-## CI lanes (why “WAE” and “mix-0x” exist)
+For example, a compiler pass can emit valid Elixir that returns `nil` instead of the Haxe function's
+value. A snapshot or result-invariant test should catch that quickly. Running only that snapshot does
+not prove that the emitted application starts on BEAM, while starting the todo app does not precisely
+locate the faulty compiler pass. Both tests are useful, but they answer different questions.
 
-GitHub Actions runs a few higher-level “integration” checks in addition to snapshot tests:
+The governing rule is:
 
-- **Examples (Elixir WAE)**: compiles each example’s generated Elixir under `mix compile --warnings-as-errors`.
-  - **WAE** = “warnings as errors”. This is a release-hygiene gate: warnings often indicate subtle
-    codegen/stdlib issues (unused vars, undefined funcs, module conflicts) that would otherwise slip through.
-  - Keep example dependencies compatible with the CI Elixir version. Newer Elixir releases can introduce
-    stricter warnings that older deps still emit (which can slow compiles and break WAE gates).
-- **`mix-01`, `mix-02`, … shards**: the examples list is split into multiple matrix shards so the WAE job:
-  - finishes faster (parallel execution),
-  - avoids per-job timeouts,
-  - and isolates failures (you get a single shard log instead of one huge run).
+```text
+changed behavior
+  -> smallest test that owns that behavior
+  -> smallest runtime check needed for the claim
+  -> broader affected checks
+  -> clean full and release evidence
+```
 
-The same WAE philosophy is used by the todo-app QA sentinel when it runs `mix compile --warnings-as-errors`.
+Do not run the largest suite on every edit. Do not call a change complete from a fast test that omits
+the behavior being claimed.
 
-## Wall-clock checks and normal machine load
+## Two independent evidence axes
 
-Fast unit and integration suites must not enforce tight millisecond cutoffs.
-Scheduler pauses, filesystem latency, antivirus/indexing, and ordinary
-background work can make the same correct operation cross a narrow threshold
-on a developer machine or shared CI runner. Those suites may print timings for
-diagnosis, but their assertions should enforce behavior.
+Results must remain separate:
 
-Performance protection lives at two deliberate levels:
+1. **Portable Haxe semantics** — ordinary Haxe operations compile through Reflaxe.Elixir and behave
+   correctly on BEAM. This includes language regressions, standard-library behavior, diagnostics,
+   and the applicable active portion of the pinned official Haxe test corpus.
+2. **Elixir/BEAM-native product behavior** — typed Elixir APIs, OTP, Phoenix, Ecto, LiveView,
+   LiveReact/Genes browser code, package installation, output quality, atom/runtime safety, and
+   performance.
 
-- `npm run ci:budgets` enforces determinism and generous build timeouts. These
-  bounds catch hangs and severe regressions while allowing normal runner load.
-- `npm run perf:todo-compile` and `npm run perf:todo-watch` are the profiling
-  tools for tighter comparisons; their reports capture host-load observations
-  so results can be interpreted in context.
+A Phoenix browser flow cannot turn a missing portable `Array` contract into a pass. An upstream
+`unitstd` pass cannot prove Phoenix routing or OTP supervision. Public readiness must report both
+axes rather than one blended percentage.
 
-Do not promote a single fast-suite wall-clock observation into a tighter CI
-limit. Establish a repeatable benchmark under stated host conditions first.
+## Evidence vocabulary
 
-## Handwritten-output quality corpus
+Use these labels in testing reports and design reviews:
 
-Snapshots, WAE, and runtime tests answer different questions. The focused
-handwritten-output corpus adds a structural review layer for representative
-Elixir-first, portable, abstraction-heavy, LiveView, and Ecto output:
+- **Observed** — read directly from the current checkout or produced by an executed command.
+- **Inferred** — follows from observed evidence but was not directly executed.
+- **Assumed** — a working premise, with a named check that will confirm it.
+- **Unknown/untested** — this repository does not currently establish the claim.
+
+Applicability and execution are separate facts. An upstream test may be applicable, unsupported by
+product policy, or require a faithful harness adaptation; its execution may independently pass,
+fail correctness, fail infrastructure, or not run. Only an applicable test that executes
+successfully contributes a compatibility pass.
+
+## Live repository binding
+
+| Parameter | Current binding and evidence |
+|---|---|
+| Target | `reflaxe.elixir` / Haxe→Elixir, as installed by the repository's scoped Lix configuration or packaged as `reflaxe.elixir` for Haxelib |
+| Haxe baseline | `.haxerc` pins Haxe 4.3.7; the local official reference checkout used during this review is also tag 4.3.7, but its exact commit is not yet recorded in the fixture manifest |
+| Primary CI toolchain | Node 22.14.0, Haxe 4.3.7, Elixir 1.18.3, and OTP 27.2 in `.github/workflows/ci.yml` |
+| Minimum CI evidence | Elixir 1.14 and OTP 25 smoke; this is compatibility evidence for that lane, not by itself a complete release-support statement |
+| Authoring axes | Portable stdlib-first Haxe and typed Elixir-first/native boundaries; `metal` is a local HXX/target-syntax escape hatch, not a second compiler backend |
+| Public consumer path | Isolated Haxelib ZIP installation in `scripts/ci/haxelib-package-smoke.sh`; scheduled README smoke separately downloads and exercises a released artifact |
+| Focused command | The exact snapshot, negative fixture, macro invariant, Haxe ExUnit file, or focused script owned by the change |
+| Local smoke | No universal R1 command is accepted yet; compose the focused owner with the smallest strict-output/runtime command from the change map |
+| Full evidence | The complete CI graph: `npm test` plus independently owned examples, framework/browser, package, security, platform, and release jobs |
+| Artifacts | Existing owner-specific roots such as snapshot `out/`, `_tmp/examples-elixir-wae/`, QA logs, package-smoke temporary workspaces, and workflow artifacts; no parallel artifact database |
+
+## What each current layer proves
+
+| Layer | Primary commands | Positive contract | Does not prove |
+|---|---|---|---|
+| Focused compiler shape | `make -C test test-<category>__<case>`, `npm run test:<category>` | Haxe input generates the reviewed Elixir tree; negative fixtures own diagnostics | BEAM runtime behavior by itself |
+| Compiler invariants | `npm run test:ast-children`, `test:pass-context`, `test:pass-registry`, `test:result-invariant` | Compiler-internal ownership, registry, traversal, and non-`Void` value preservation | Framework or package behavior |
+| Generated Elixir acceptance | `npm run test:elixir-validate`, `test:examples-elixir` | `test:elixir-validate` parses already-generated snapshot `out/` trees that exist and skips absent ones; example WAE lanes compile maintained examples and reject warnings | Snapshot generation, absent `out/` trees, or correct runtime semantics |
+| Portable BEAM runtime | `npm run test:haxe-exunit-stdlib` | Selected ordinary Haxe stdlib behavior executes on BEAM/ExUnit | Complete official Haxe `unit.TestMain` coverage |
+| Mixed BEAM aggregate | `npm run test:runtime-smoke`, `test:mix-fast` | Selected portable runtime, compiler integration, and native OTP/Mix behavior execute | A pass cannot be attributed wholly to either evidence axis; failures must be routed to their owning test |
+| Official `unitstd` subset | `npm run guard:upstream-unitstd`, `test:haxe-exunit-stdlib` | The currently enabled/adapted checked-in specs remain inventoried and execute | Shared top-level language classes, issue corpus, or all 120 manifest entries |
+| Output quality | `npm run test:handwritten-output`, `test:generated-formatting` | Representative generated Elixir stays formatted and within reviewed structural budgets | Semantic correctness alone |
+| Examples | `test:examples`, `test:examples-output`, `test:examples-elixir`, `test:examples-runtime` | Maintained examples compile, keep reviewed output, pass strict Elixir checks, and run where declared | Unlisted examples or unsupported capabilities |
+| Framework/application | `test:mix-fast`, todo-app Haxe ExUnit tests, bounded QA sentinel and Playwright specs | OTP/Phoenix/Ecto callbacks and selected browser journeys work end to end | General portable-Haxe conformance |
+| Server/watch lifecycle | `test:haxe-server-*`, `test:reflaxe-server-cache`, dev-watcher sentinel flow | Process ownership, cleanup, invalidation, and watched application behavior | Clean fresh-process/package behavior |
+| Package/consumer | `test:haxelib-package`, scheduled README release smoke | An isolated consumer can install the built/released artifact and generate equivalent output | Every release matrix combination |
+| Security/release/performance | dependency/secret scans, release policy tests, `ci:budgets`, dedicated perf workflows | Those named policies and bounded measurements hold | Language or framework correctness not exercised there |
+
+Snapshots, generated-source checks, runtime tests, examples, and browser tests are complementary.
+Never use one as a cheaper substitute for another contract.
+
+## Feedback rings for people and agents
+
+The same code and test commands serve humans and agents. Agents additionally require bounded process
+ownership and guaranteed teardown; this is why they use the QA sentinel instead of a foreground
+Phoenix server.
+
+| Ring | Purpose in this repository | Current use |
+|---|---|---|
+| **R0 — focused/editor** | Prove the changed semantic owner while coding | One snapshot/negative case, one macro invariant, one Haxe-authored ExUnit file, or one focused script |
+| **R1 — local claim smoke** | Prove the smallest compile→Elixir-check→BEAM-runtime chain needed by the change | Compose the focused owner with `test:runtime-smoke`, `test:mix-fast`, or a bounded sentinel flow as applicable; a universal fast smoke is not yet accepted |
+| **R2 — clean required change gate** | Reproduce the primary environment and all affected owners remotely | Current PR workflow runs the full main graph; affected selection has not been promoted |
+| **R3 — affected extended** | Add browser, framework, package, platform, capability, or performance evidence when the diff can affect it | Today these jobs run broadly on every PR/main push; future selection must begin in observation mode |
+| **R4 — main/full backstop** | Run the complete current-primary repository suite and detect selection misses | Current `main` CI graph, including `npm test`, examples, sentinel, package, minimum-toolchain, macOS, security, and budgets |
+| **R5 — release** | Publish only the exact commit that passed every named gate; separately exercise the released artifact | `Release exact CI-tested commit`, package smoke, and scheduled README release-tag smoke |
+
+The starting time budgets from the shared testing review are goals to measure, not assertions about
+this repository: roughly 15–30 seconds for R0, 60–90 seconds for R1, and a 10–12 minute required-PR
+critical path. **Observed:** exact-head CI run `30612110872` took about 51 minutes in `Tests`, 25
+minutes in macOS smoke, and 19 minutes in minimum-toolchain smoke. The current PR graph therefore
+does not meet the proposed R2 budget. Reducing it requires measured ownership and selector-recall
+evidence, not broad path ignores.
+
+## Agentic TDD loop
+
+1. **Name the claim and semantic owner.** “Fix arrays” is too broad. “Preserve the value returned
+   after this pass” points to a result-invariant regression; “LiveView click changes the task” points
+   to Haxe-authored LiveViewTest plus a thin browser flow.
+2. **Write or identify the smallest failing contract.** Bugs use the same public Haxe operation that
+   failed. Do not replace it with `untyped`, raw Elixir, or a lower-level helper merely to simplify
+   output.
+3. **Iterate in R0.** Run one case or focused owner with a bounded command. Review intended generated
+   output rather than accepting snapshot drift automatically.
+4. **Cross the real runtime boundary in R1 when behavior can change.** A source-shape-only change may
+   need strict parsing/formatting; stdlib semantics need BEAM execution; Phoenix UI behavior needs
+   LiveView/ConnTest and, for critical browser wiring, Playwright.
+5. **Run all affected repository contracts before pushing.** Use the change map below. Cross-cutting
+   compiler, stdlib, runner, manifest, package, or CI changes expand to the full relevant suite.
+6. **Push the closed task and require exact-head CI.** The latest `main` run must be green before the
+   next task. A cancelled superseded run is not a failure; an older green run is not evidence for a
+   newer commit.
+7. **Preserve the failure.** Do not hide deterministic failures with retries or silently convert a
+   retry pass into an ordinary green claim. Record the original attempt and classify infrastructure
+   failures separately.
+
+`npm run test:changed` is a local convenience heuristic. It has no reviewed semantic-ownership
+manifest or selector-miss audit, so it is **advisory only** and cannot establish completion or become
+a blocking CI selector in its current form.
+
+## Change-to-test ownership map
+
+Choose the smallest row that fully covers the change, then add rows when the diff crosses boundaries.
+
+| Change | R0 owner | Required widening before closure |
+|---|---|---|
+| AST builder/pass/printer | Focused snapshot plus owning macro/pass invariant | Relevant snapshot categories, result invariant when values can change, Elixir validation, runtime owner when semantics change |
+| Diagnostic/unsupported feature | Focused negative fixture | Full negative summary and affected positive category |
+| Standard library/portable semantics | Focused stdlib snapshot and Haxe ExUnit assertion | `guard:upstream-unitstd`, `test:haxe-exunit-stdlib`, runtime smoke, API/layout/parity guards as applicable |
+| ExUnit/Mix compiler integration | Focused Haxe-authored ExUnit or Mix test | `test:mix-fast`; package parity if consumer compilation changes |
+| OTP/Phoenix/Ecto API or macro | Focused category snapshot and Haxe integration test | Relevant example compile/output/WAE/runtime layers |
+| LiveView/browser/assets/Genes | Haxe LiveView/ConnTest or focused Genes integration | Agent-safe async sentinel with the smallest Playwright spec; affected example QA |
+| Server/watch/cache/output transaction | Focused lifecycle/cache fixture | Direct/server parity, clean equivalent, affected sentinel dev-watcher flow |
+| Example source or expected output | That example's compile/output check | Its WAE and declared runtime/E2E contract; `guard:examples-qa` when coverage metadata changes |
+| Package/generator/release | Focused policy/fixture | Haxelib package smoke, release tests, and release-artifact path appropriate to the claim |
+| Docs/snippets | Link guard and focused docs smoke | Compile/run the documented example when behavior is the point |
+| Test runner/manifest/selector/CI | Harness self-test and fail-closed fixture | Broader/full suite because ownership itself changed; verify unknown inputs expand safely |
+| Cross-cutting compiler/runtime | Small reproducer while editing | `npm test`, examples QA, relevant runtime/framework/package gates, exact-head full CI |
+
+## Todo-app and browser lifecycle
+
+Never run an unbounded foreground server during agent work. The application path is not
+agent-specific; the lifecycle wrapper is.
 
 ```bash
-npm run test:handwritten-output
+# Agent-safe, asynchronous, bounded boot/build/runtime smoke
+npm run qa:sentinel
+
+# Browser regression owned by a compiler/std/runtime change
+scripts/qa-sentinel.sh \
+  --app examples/todo-app \
+  --port 4001 \
+  --env e2e \
+  --async \
+  --deadline 900 \
+  --playwright \
+  --e2e-spec "e2e/smoke/*.spec.ts" \
+  --verbose
+
+# Bounded result inspection
+scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 180
 ```
 
-It rebuilds into temporary directories, checks project-owned Mix formatting,
-compares selected canonical output with reviewed snapshots and handwritten
-Elixir examples, and rejects unexplained `_ =`, IIFE, helper, reducer-append,
-or support-footprint growth. File-scoped allowances include reasons and beads;
-they are not repository-wide exemptions.
+Most Phoenix UI behavior belongs in Haxe-authored ExUnit integration tests using
+`Phoenix.LiveViewTest`/`ConnTest`. Playwright stays thin and proves browser assets, hooks, hydration,
+and critical user journeys.
 
-Use `npm run update:handwritten-output` only after reviewing an intentional
-compiler change. The full design, current baseline, and source-vs-package proof
-are documented in
-[Generated Elixir Quality Corpus](GENERATED_OUTPUT_QUALITY_CORPUS.md).
+## Current-state gap matrix
 
-## Haxe-authored ExUnit stdlib runtime harness
+This matrix records the live review on 2026-07-31. “Missing” means the repository does not yet prove
+the contract; it is not permission to relabel the gap as a pass.
 
-Snapshot tests validate emitted Elixir shape. Stdlib parity also needs executable BEAM semantics tests for
-stateful/runtime-sensitive APIs such as iterators, `haxe.io.BytesInput`/`BytesOutput`, exceptions, maps,
-Unicode strings, crypto helpers, and numeric edge cases.
+| Layer | Observed existing evidence | Missing evidence | Smallest owning seam | Planned stage |
+|---|---|---|---|---|
+| Compiler internals | Categorized positive/negative snapshots, pass/AST/result guards | No major structural gap identified in this review | Keep focused regressions beside the owning compiler stage | Ongoing |
+| Generated target | Snapshot trees, Elixir validation, WAE, formatting and handwritten-output corpus | These do not prove runtime behavior | Preserve as separate source-quality gates | Ongoing |
+| Portable runtime | Runtime smoke and Haxe-authored ExUnit stdlib parity | Complete applicable active official Haxe contract | Expand through the existing ExUnit generation seam | Official smoke, then baseline expansion |
+| Official `unitstd` | 120 product entries: 24 enabled, 9 adapted, 13 target-specific skips, 3 unsupported, 71 without upstream specs; 32 checked-in fixtures | Exact per-fixture upstream commit/path/hash, local hash, adaptation diff/hash, independent disposition/outcome, secure TLS classification | Harden `test/upstream_unitstd/manifest.json` and its existing guards | Provenance/classification |
+| Shared language/issues | General local regressions exist | No source-identity-preserving smoke from official shared top-level and issue families | Add one meaningful case from each family beside the existing ExUnit official-fixture lane | Official representative smoke |
+| Capabilities | Runtime, OTP, IO, framework and platform smokes cover selected contracts | No complete capability manifest for filesystem/process/env/locale/time/network/TLS/thread/atomic behavior | Versioned capability classification tied to the official inventory | Classification, then capability shards |
+| Examples/E2E | Manifested compile/output/WAE/runtime coverage; todo, chat and LiveReact browser gates | Ring/selection ownership and comparable timing/failure-yield data | Extend `examples/qa-manifest.json`, not a parallel example registry | Instrumentation and selector observation |
+| Package/install | Isolated Haxelib ZIP parity and scheduled released-artifact smoke | Full official portable smoke through the installed package | Reuse package workspace and official ExUnit smoke once provenance is hardened | Official smoke, then release evidence |
+| Native/framework | Mix, OTP, Phoenix, Ecto, LiveView, LiveReact/Genes and output-quality gates | No gap that portable-suite work is allowed to replace | Keep this axis independently required | Ongoing |
+| Feedback efficiency | Focused commands, parallel snapshots, bounded sentinels, sharded WAE | R0/R1 p50/p95, time to first failure, semantic ownership plan, selected/omitted explanation, selector-miss audit, retry/flake evidence | Instrument existing runners; observe before selecting | Instrumentation and selector observation |
+| CI topology | Full PR/main graph with exact tested-commit release | PR critical path is about 51 minutes; repeated setup; no required aggregator for future selected jobs | Measure current graph, then introduce observation-only impact planning | Measured R2/R3 promotion |
+| Retry policy | macOS Mix and QA-sentinel Playwright paths retry failed semantic tests | A later pass can erase the original red outcome or log; setup/download retries are not classified separately | Preserve attempt logs/outcomes and classify setup, infrastructure, flake, and deterministic semantic failures without turning red into an unqualified pass | Retry-policy repair |
 
-The focused harness is:
+## Consolidation plan
 
-- Haxe source: `test/haxe_exunit/stdlib_parity/src_haxe/**`
-- Generated output: `test/fixtures/_generated_haxe_exunit/` (created by `test/exunit/test_helper.exs`)
-- Focused command: `npm run test:haxe-exunit-stdlib`
-- Broader command: `npm run test:mix-fast` or `npm test`
+Implement gaps in this order:
 
-When adding or changing stdlib behavior, add at least one focused Haxe ExUnit assertion here whenever a
-snapshot cannot prove runtime semantics by itself. Keep tests deterministic and bounded; do not depend on
-external services.
+1. **Canonical policy (this document).** Route AGENTS and contributor docs here and remove
+   contradictory “full suite after every edit” guidance.
+2. **Fixture provenance and classification.** Keep the current runner; enrich the existing manifest
+   and fail closed on upstream/adaptation drift.
+3. **Official representative smoke.** Add shared-language, `unitstd`, and issue cases through the
+   public package path, with intentional-failure and timeout propagation tests.
+4. **Measure loops before filtering.** Emit phase timings, cache mode, selected/omitted owners, and
+   first actionable failure from existing aggregate runners.
+5. **Observe impact selection.** Add a machine-readable ownership plan and explain mode while the
+   current full gate remains required. Unknown ownership and cross-cutting changes select full.
+6. **Promote rings only after recall evidence.** Move expensive work from ordinary PRs only when
+   main/full selector audits show no material misses and every remote shard has a bounded local
+   reproduction command.
+7. **Tie compatibility wording to R5 evidence.** Until the complete applicable active baseline
+   passes through the installed package and supported toolchains, documentation must say partial or
+   representative coverage.
 
-### How shards map to the repo
+Do not create a shared cross-repository runner for symmetry. Share vocabulary and report shape first;
+reuse this repository's test runners, ExUnit generator, example manifest, sentinel, package smoke, and
+CI workflows.
 
-The WAE job is implemented by:
+## Commands by closure scope
 
-- CI workflow: `.github/workflows/ci.yml` (matrix shards `mix-01`…`mix-11`)
-- Runner script: `scripts/test-examples-elixir.sh` (called by `npm run test:examples-elixir`)
+```bash
+# One snapshot
+make -C test test-core__<case>
 
-Each shard sets `EXAMPLES_ELIXIR_WAE_ONLY=<example-name>` so we compile **one** example per job. This keeps
-wall-clock time predictable, and it makes the failure logs focused (CI uploads `_tmp/examples-elixir-wae/`
-as an artifact on failure).
+# Focused categories
+npm run test:core
+npm run test:stdlib
+npm run test:regression
 
-### Why you sometimes see “cancelled” checks
+# Portable runtime
+npm run test:haxe-exunit-stdlib
 
-This repo uses GitHub Actions concurrency cancellation (`cancel-in-progress`). If you push multiple commits
-quickly, older runs will often show `cancelled` even when nothing is wrong. Only the **latest** run for the
-current `HEAD` matters.
+# Mixed BEAM aggregates
+npm run test:runtime-smoke
+npm run test:mix-fast
 
-Quick no-auth sanity check:
+# Examples
+npm run test:examples-qa
 
-- Use the GitHub API to query the CI workflow run for the current `HEAD` SHA and ensure all jobs conclude `success`.
+# Broad local compiler/runtime aggregate (not the complete CI graph)
+npm test
 
-## Regression Snapshots (Compiler Correctness)
-
-When a bug is found in a real app (especially `examples/todo-app/`), add a focused regression snapshot under:
-
-- `test/snapshot/regression/**`
-
-These tests are intentionally small and deterministic. They lock in compiler behavior at the AST/lowering level and prevent
-“it works in the todo-app but regresses in a later refactor” outcomes.
-
-### Phase-Level Function Result Validation
-
-All snapshot commands run with `-D reflaxe_elixir_validate_results`. Authored functions carry their
-Haxe `Void`/value return contract as compiler metadata, and the AST transformer records value-carrier
-state after each child pass in the transparent pipeline. At the pre-print boundary it rejects
-unresolved valid-to-invalid transitions and reports the first exact pass that caused the degradation.
-This is stronger than checking that generated Elixir parses:
-an accidentally empty Elixir function is valid syntax but returns `nil`.
-
-Focused coverage lives in:
-
-- `test/snapshot/regression/function_result_invariants/` for Void, raise-only, branch, case,
-  nullable, loop-carrier, callback, native-named, and extern surfaces.
-- `test/snapshot/negative/result_contract_invariant/` for an intentional test-only tail mutation.
-- `npm run test:result-invariant` for the diagnostic assertion. It requires the message to name
-  `Main.invariant_target/0` and `LocalAssignUnusedUnderscore_Scoped_Final`.
-
-The invariant is compiler QA, not a runtime feature. It is disabled for ordinary source/package
-consumers and does not change generated Elixir. A developer can opt in on any local compiler build;
-the default transparent pipeline already reports exact pass names. The historical
-`-D hxx_granular_pass_registry` path remains useful only for grouped-versus-direct parity checks.
-
-### Case Study: reduce_while Accumulator Updates (Todo-App Presence)
-
-The todo-app “online users” UI exposed a correctness bug in the `Enum.reduce_while` lowering pipeline.
-
-- Symptom: Presence state existed, but derived UI lists stayed empty (`@online_user_count` rendered `0`, no avatars).
-- Root cause: Haxe `for` loops lower into `Enum.reduce_while(...)`, and list “updates” like `Array.push`/`Array.concat`
-  become `list ++ [value]` on the Elixir target. A bug in accumulator-threading meant updates inside nested control-flow
-  (`if` branches in the reducer) did not escape the recursion, so the reducer returned the original accumulator.
-- Fix: implemented in `src/reflaxe/elixir/ast/transformers/ReduceWhileAccumulatorTransform.hx` and supporting passes to
-  ensure nested-branch updates become explicit accumulator rebindings that survive `try` wrappers and branch lowering.
-- Regression snapshot: `test/snapshot/regression/ReduceWhileAccumulatorBranchUpdates/` guards:
-  - nested `if` updates via `names = names.concat([k])`
-  - statement-position `views.push({...})` lowering into explicit accumulator rebindings
-
-This regression is intentionally generic: any code that builds lists inside loops benefits, not just Presence.
-
-## Architecture Components
-
-```
-┌─────────────────┐    ┌─────────────────┐
-│   TestRunner    │    │ ParallelTestRunner │
-│  (Sequential)   │    │   (Parallel)    │
-└─────────┬───────┘    └─────────┬───────┘
-          │                      │
-          │        ┌─────────────────┐
-          └────────┤   TestCommon    ├────────┘
-                   │ (Shared Utils)  │
-                   └─────────────────┘
+# Agent-safe application/browser lifecycle
+npm run qa:sentinel
 ```
 
-### TestRunner.hx (Sequential)
-- **Purpose**: Traditional sequential test execution 
-- **Usage**: Development debugging, CI fallback
-- **Behavior**: Processes tests one at a time
-- **Output**: Detailed differences for debugging
+Every command invoked by an agent must finish on its own or use the repository timeout/sentinel
+mechanisms. A successful cached or warm run accelerates feedback but never replaces the clean path
+needed for package and release claims.
 
-### ParallelTestRunner.hx (Parallel)
-- **Purpose**: High-performance parallel test execution
-- **Usage**: Default test mode, development workflow
-- **Behavior**: 16 workers with file-based locking
-- **Output**: Boolean success/failure for speed
+## Focused implementation notes
 
-### TestCommon.hx (Shared Utilities)
-- **Purpose**: Eliminate code duplication and ensure consistency
-- **Functions**: File operations, content normalization, directory comparison
-- **Benefit**: Single source of truth for test logic
+### Warnings-as-errors example shards
 
-## Shared Functions
+“WAE” means `mix compile --warnings-as-errors`. Each `mix-XX` CI shard sets
+`EXAMPLES_ELIXIR_WAE_ONLY` so one example's generated Elixir is checked in
+isolation. This catches undefined calls, unused values, module conflicts, and
+other target warnings without making one monolithic example job. The owning
+runner is `scripts/test-examples-elixir.sh`; failures retain logs under
+`_tmp/examples-elixir-wae/`.
 
-### `getAllFiles(dir: String, prefix: String = ""): Array<String>`
-**Purpose**: Recursively collect all files from a directory
-```haxe
-// Usage examples
-TestCommon.getAllFiles("test/out")           // ["Main.ex", "User.ex"]
-TestCommon.getAllFiles("test/out", "src/")   // ["src/Main.ex", "src/User.ex"]
-```
-**Features**:
-- Handles non-existent directories gracefully (returns `[]`)
-- Supports optional prefix for relative path construction
-- Platform-agnostic file system operations
+### Snapshot runner internals
 
-### `normalizeContent(content: String, fileName: String = ""): String`
-**Purpose**: Normalize file content for reliable comparison
-```haxe
-// Standard normalization
-var normalized = TestCommon.normalizeContent(fileContent);
+Sequential and parallel snapshot execution share normalization and directory-
+comparison behavior through the test harness rather than maintaining separate
+expected-output rules. Detailed fixture authoring and runner contracts live in
+[`test/snapshot/AGENTS.md`](../../test/snapshot/AGENTS.md). This strategy
+document owns *when and why* to run a layer; the snapshot instructions own
+*how* to author and debug that layer.
 
-// Special handling for generated files
-var normalized = TestCommon.normalizeContent(jsonContent, "_GeneratedFiles.json");
-```
-**Features**:
-- **Line ending normalization**: `\r\n` → `\n`, `\r` → `\n`
-- **Whitespace cleanup**: Trim trailing spaces, remove trailing empty lines
-- **Special file handling**: Filters incremental ID fields from `_GeneratedFiles.json`
-- **Error resilience**: Graceful fallback on parsing failures
+### Wall-clock checks under ordinary load
 
-### Directory Comparison Functions
-
-#### `compareDirectoriesDetailed(actualDir, intendedDir): Array<String>`
-**Purpose**: Detailed comparison for TestRunner debugging
-```haxe
-var differences = TestCommon.compareDirectoriesDetailed("out/", "intended/");
-// Returns: ["Missing file: Main.ex", "Content differs: User.ex", "Extra file: Debug.ex"]
-```
-**Used by**: TestRunner for detailed error reporting
-
-#### `compareDirectoriesSimple(actualDir, intendedDir): Bool`
-**Purpose**: Fast boolean comparison for ParallelTestRunner
-```haxe
-var matches = TestCommon.compareDirectoriesSimple("out/", "intended/");
-// Returns: true or false
-```
-**Used by**: ParallelTestRunner for performance
-
-## Key Design Patterns
-
-### 1. Graceful Directory Handling
-```haxe
-// Both functions handle missing directories correctly
-TestCommon.getAllFiles("/nonexistent/path")  // Returns []
-TestCommon.compareDirectoriesSimple("out/", "intended/")  // Handles missing 'out'
-```
-
-### 2. Special File Processing
-```haxe
-// _GeneratedFiles.json contains incrementing ID field that must be ignored
-{
-  "filesGenerated": ["Main.ex", "User.ex"],
-  "id": 123,  // ← This changes on each compilation
-  "version": 1
-}
-
-// normalizeContent() filters out the "id" line for consistent comparison
-```
-
-### 3. Two-Pattern Comparison
-- **Detailed Pattern**: Returns difference descriptions for debugging
-- **Simple Pattern**: Returns boolean for performance
-- **Same Logic**: Both use identical file processing and content normalization
-
-## Critical Bug Fixes Resolved
-
-### Issue 1: _GeneratedFiles.json False Failures
-**Problem**: Incremental ID field caused test failures
-```json
-// Intended
-{"id": 120, "files": ["Main.ex"]}
-// Actual  
-{"id": 121, "files": ["Main.ex"]}
-```
-**Solution**: `normalizeContent()` filters ID lines with regex `/^\s*"id"\s*:\s*\d+,?$/`
-
-### Issue 2: Empty Directory Handling Divergence
-**Problem**: ParallelTestRunner failed when no output generated
-```haxe
-// OLD ParallelTestRunner (FAILED)
-if (!sys.FileSystem.exists(actualDir) || !sys.FileSystem.exists(intendedDir)) {
-    return false;  // ← Failed for missing actualDir
-}
-
-// NEW TestCommon approach (WORKS)
-if (!sys.FileSystem.exists(intendedDir)) return false;  // Only check intended
-var intended = getAllFiles(intendedDir);  // []
-var actual = getAllFiles(actualDir);      // [] (handles missing dir)
-return intended.length == actual.length;  // 0 == 0 = true ✅
-```
-
-### Issue 3: Code Duplication Issues
-**Problem**: ~100 lines of duplicated logic between test runners
-**Solution**: Centralized shared functions in TestCommon.hx
-**Benefit**: Single point of maintenance, guaranteed consistency
-
-## Performance Impact
-
-### Before TestCommon
-- **Test Success**: 57/57 (100%) - All tests passing with new file naming conventions
-- **Maintenance**: Duplicated logic in both runners
-- **Reliability**: Inconsistent behavior between sequential and parallel
-
-### After TestCommon  
-- **Test Success**: 57/57 (100%) - Zero failures
-- **Maintenance**: Single source of truth for test logic
-- **Reliability**: Identical behavior guaranteed
-- **Performance**: No impact on 87-90% speed improvement
-
-## Usage Guidelines
-
-### For Test Development
-```haxe
-import test.TestCommon;
-
-// Use shared functions for consistent behavior
-var files = TestCommon.getAllFiles(outputDir);
-var content = TestCommon.normalizeContent(fileContent, fileName);
-var matches = TestCommon.compareDirectoriesSimple(actual, intended);
-```
-
-### For Test Runner Implementation
-```haxe
-// Sequential runner - get detailed differences
-var differences = TestCommon.compareDirectoriesDetailed(outPath, intendedPath);
-if (differences.length > 0) {
-    // Show detailed error messages
-}
-
-// Parallel runner - get fast boolean result  
-var success = TestCommon.compareDirectoriesSimple(outPath, intendedPath);
-return success;
-```
-
-## Lessons Learned
-
-1. **Shared Utilities Prevent Divergence**: Code duplication leads to inconsistent behavior
-2. **Special Case Handling**: Generated files need special normalization (ID filtering)
-3. **Directory Existence Logic**: Be careful about existence checks - intended vs actual
-4. **Performance vs Detail Trade-off**: Two comparison functions serve different needs
-5. **Testing the Tests**: Test infrastructure needs its own reliability validation
-
-## Future Enhancements
-
-1. **Test Result Caching**: Cache normalized content for unchanged files
-2. **Parallel Directory Operations**: Parallelize file reading within directory comparison
-3. **Smart Content Filtering**: Configurable filtering rules for other generated files
-4. **Test Isolation**: Enhanced directory sandboxing for even better isolation
-5. **Metrics Collection**: Track test timing and failure patterns
-
-## Conclusion
-
-The TestCommon.hx architecture ensures that Reflaxe.Elixir's testing infrastructure is:
-- **Reliable**: 100% test success rate
-- **Maintainable**: Single source of truth for test logic  
-- **Performant**: No impact on parallel execution speed
-- **Consistent**: Identical behavior between sequential and parallel modes
-- **Robust**: Handles edge cases like missing directories and special file formats
-
-This foundation supports the project's commitment to reliable, fast development workflows.
+Fast correctness suites must not enforce tight millisecond cutoffs. Scheduler
+pauses, filesystem latency, indexing, and shared-runner load can move a correct
+operation across a narrow threshold. `npm run ci:budgets` uses generous bounded
+timeouts to catch hangs and severe regressions. Tighter comparisons belong in
+the dedicated compile/watch benchmark workflows, with host-load observations
+and multiple samples. Never promote one workstation timing into a blocking
+budget.
