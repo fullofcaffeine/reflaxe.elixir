@@ -303,6 +303,8 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	/** Opt-in, request-reset coarse timings used only by the performance harness. */
 	public var phaseTimings(default, null):CompilerPhaseTimings;
 
+	var astPipelineStarted:Float = 0.0;
+
 	/**
 	 * Map module name -> BaseType for synthetic outputs (e.g., bootstrap files)
 	 * WHY: OutputManager requires a BaseType for each DataAndFileInfo; we use the module's
@@ -349,15 +351,6 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		// A Haxe compilation server may reuse this compiler instance. Reset at the
 		// request boundary so phase totals never leak into the next edit sample.
 		phaseTimings.reset();
-		if (!phaseTimings.enabled)
-			return filterTypesBody(moduleTypes);
-		var started = phaseTimings.start();
-		var result = filterTypesBody(moduleTypes);
-		phaseTimings.finish("prebuild_type_filtering", started);
-		return result;
-	}
-
-	function filterTypesBody(moduleTypes:Array<haxe.macro.Type.ModuleType>):Array<haxe.macro.Type.ModuleType> {
 		#if eval
 		var result = moduleTypes != null ? moduleTypes.copy() : [];
 		forceStringToolsRuntime = false;
@@ -387,6 +380,14 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		#else
 		return moduleTypes != null ? moduleTypes : [];
 		#end
+	}
+
+	public override function onCompileStart():Void {
+		astPipelineStarted = phaseTimings.start();
+	}
+
+	public override function onCompileEnd():Void {
+		phaseTimings.finish("ast_pipeline_including_class_enum_construction", astPipelineStarted);
 	}
 
 	private function moduleTypesNeedStringToolsRuntime(moduleTypes:Array<haxe.macro.Type.ModuleType>):Bool {

@@ -72,6 +72,8 @@ class ElixirOutputIterator {
 
 	// Cached next output so `hasNext()` can accurately account for suppressed emissions.
 	var preparedNext:Null<DataAndFileInfo<StringOrBytes>> = null;
+	var outputIterationStarted:Float = 0.0;
+	var outputIterationReported:Bool = false;
 
 	/**
 	 * Constructor
@@ -79,6 +81,7 @@ class ElixirOutputIterator {
 	 */
 	public function new(compiler:ElixirCompiler) {
 		this.compiler = compiler;
+		outputIterationStarted = compiler.phaseTimings.start();
 		this.context = compiler.createCompilationContext();
 		index = 0;
 
@@ -134,6 +137,7 @@ class ElixirOutputIterator {
 				if (extraIndex < extraOutputs.length) {
 					return extraOutputs[extraIndex++];
 				}
+				finishOutputIteration();
 				return null;
 			}
 
@@ -319,6 +323,13 @@ class ElixirOutputIterator {
 			// Return the same DataAndFileInfo but with string output instead of AST
 			return astData.withOutput(output);
 		}
+	}
+
+	function finishOutputIteration():Void {
+		if (outputIterationReported)
+			return;
+		outputIterationReported = true;
+		compiler.phaseTimings.finish("output_iteration_including_passes_printing_maps", outputIterationStarted);
 	}
 
 	function setContextForCurrentOutput(astData:DataAndFileInfo<ElixirAST>):Void {
