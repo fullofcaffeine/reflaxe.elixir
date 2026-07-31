@@ -4,8 +4,9 @@ import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
 const ACKNOWLEDGEMENT = Object.freeze({
-  advisorySource: 1124334,
+  advisorySource: 1130591,
   advisoryUrl: "https://github.com/advisories/GHSA-mh99-v99m-4gvg",
+  advisoryRange: ">=4.0.0 <5.0.8",
   dependency: "brace-expansion",
   node: "node_modules/npm/node_modules/brace-expansion",
   npmVersion: "11.18.0",
@@ -25,12 +26,15 @@ function blockingVulnerabilities(audit) {
 
 function matchesAcknowledgement(name, vulnerability, packageLock, today) {
   const via = Array.isArray(vulnerability.via) ? vulnerability.via : [];
-  const advisoryMatches = via.some(
-    (entry) =>
-      typeof entry === "object" &&
-      entry.source === ACKNOWLEDGEMENT.advisorySource &&
-      entry.url === ACKNOWLEDGEMENT.advisoryUrl,
-  );
+  const advisory = via.length === 1 && typeof via[0] === "object" ? via[0] : null;
+  const advisoryMatches =
+    advisory !== null &&
+    advisory.source === ACKNOWLEDGEMENT.advisorySource &&
+    advisory.url === ACKNOWLEDGEMENT.advisoryUrl &&
+    advisory.name === ACKNOWLEDGEMENT.dependency &&
+    advisory.dependency === ACKNOWLEDGEMENT.dependency &&
+    advisory.severity === "high" &&
+    advisory.range === ACKNOWLEDGEMENT.advisoryRange;
   const nodes = Array.isArray(vulnerability.nodes) ? vulnerability.nodes : [];
   const lockedNpm = packageLock.packages?.["node_modules/npm"]?.version;
   const lockedDependency = packageLock.packages?.[ACKNOWLEDGEMENT.node]?.version;
@@ -87,6 +91,10 @@ function fixture() {
             {
               source: ACKNOWLEDGEMENT.advisorySource,
               url: ACKNOWLEDGEMENT.advisoryUrl,
+              name: ACKNOWLEDGEMENT.dependency,
+              dependency: ACKNOWLEDGEMENT.dependency,
+              severity: "high",
+              range: ACKNOWLEDGEMENT.advisoryRange,
             },
           ],
           nodes: [ACKNOWLEDGEMENT.node],
@@ -125,6 +133,25 @@ function selfTest() {
   moved.audit.vulnerabilities["brace-expansion"].nodes = ["node_modules/brace-expansion"];
   expectFailure("changed package path", () =>
     evaluateAudit(moved.audit, moved.packageLock, "2026-07-26"),
+  );
+
+  const changedAdvisory = structuredClone(valid);
+  changedAdvisory.audit.vulnerabilities["brace-expansion"].via[0].source -= 1;
+  expectFailure("changed advisory identity", () =>
+    evaluateAudit(changedAdvisory.audit, changedAdvisory.packageLock, "2026-07-26"),
+  );
+
+  const additionalAdvisory = structuredClone(valid);
+  additionalAdvisory.audit.vulnerabilities["brace-expansion"].via.push({
+    source: 9999999,
+    url: "https://github.com/advisories/GHSA-other-advisory",
+    name: "brace-expansion",
+    dependency: "brace-expansion",
+    severity: "high",
+    range: "*",
+  });
+  expectFailure("additional advisory on acknowledged package", () =>
+    evaluateAudit(additionalAdvisory.audit, additionalAdvisory.packageLock, "2026-07-26"),
   );
 
   const upgraded = structuredClone(valid);

@@ -56,12 +56,14 @@ That npm executable is development-only release tooling; generated compiler pack
 do not include it. The affected expansion routine can exhaust memory if the release process is given a
 malicious brace pattern, so release inputs remain trusted repository configuration.
 
-The latest compatible `semantic-release` stack still supplies that npm version, and npm package
-overrides cannot replace a dependency bundled inside the npm archive. The policy fails if the advisory
-path or locked versions change, if another high/critical advisory appears, if the advisory disappears,
-or when the review date passes. Remove the acknowledgement and restore direct `npm audit` as soon as a
-compatible npm release contains `brace-expansion 5.0.8` or newer. The owner and review schedule above
-apply; tracking issue: `haxe.elixir.codex-3v3`.
+The latest compatible `semantic-release` stack still supplies an npm 11 release that bundles the same
+vulnerable file (npm 11.19.0 was checked on 2026-07-31), and npm package overrides cannot replace a
+dependency bundled inside the npm archive. The repository therefore keeps its narrower npm 11.18.0
+lock until a real fix exists. The policy fails if the advisory identity, path, or locked versions
+change, if another high/critical advisory appears, if the advisory disappears, or when the review date
+passes. Remove the acknowledgement and restore direct `npm audit` as soon as a compatible npm release
+contains `brace-expansion 5.0.8` or newer. The owner and review schedule above apply; tracking issue:
+`haxe.elixir.codex-3v3`.
 
 ## Updating Gitleaks Safely
 
