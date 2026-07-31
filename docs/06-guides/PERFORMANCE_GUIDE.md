@@ -44,12 +44,17 @@ The process and cache model are part of every result. In this guide:
   process, and submits the complete HXML build again;
 - **persistent server rebuild** sends another complete request to the same `haxe --wait` process;
 - **persistent watch rebuild** measures edit-to-completed-output while one watcher remains alive;
+- **no-op** means the measured request has no source change, even if a fresh process still performs a
+  full compile;
 - **incremental** means the measurement proves previous compiler or module work was reused or skipped.
 
 Changing one file does not by itself make a build incremental. For example, editing `TodoTypes.hx`
 and then launching a brand-new `haxe build-server.hxml` process is an edited full build. A server can
 reuse Haxe frontend state, but server reuse alone still does not prove that Reflaxe skipped unaffected
-target modules.
+target modules. Artifacts record these as independent facts: `workload_change` is `initial_build`,
+`no_op`, or `edited`; `reuse_classification` is `demonstrated_incremental_reuse` only when direct
+evidence exists, otherwise it is `incremental_reuse_not_demonstrated`. Current watch measurements do
+not expose module-level reuse evidence and therefore correctly remain in the latter state.
 
 ### Compile benchmark
 
@@ -66,7 +71,8 @@ delete build artifacts without mutating your working copy. It records:
 - `cold` — removes `_build`, `deps`, and manifest-listed generated `lib/` files, then runs deps,
   Haxe generation, and Mix WAE compile.
 - `warm_fresh_process` — starts a new Haxe process and reruns generation plus Mix WAE with dependency
-  and filesystem state already warm.
+  and filesystem state already warm. Because no source bytes change, its `workload_change` is
+  `no_op`; it is still a full fresh-process compile, not incremental.
 - `edited_full_fresh_process` — applies a deterministic A→B content change to one Haxe source file,
   then starts a new Haxe process and submits the complete build again. It explicitly records
   `demonstrated_incremental_reuse: false`.

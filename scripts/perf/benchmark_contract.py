@@ -542,7 +542,7 @@ def compile_scenario(name: str) -> dict[str, Any]:
             "dependency_state": "dependency_cold",
             "edit_kind": "none",
             "public_api_changed": False,
-            "demonstrated_incremental_reuse": False,
+            **workload_classification("initial_build", False),
         },
         "warm_fresh_process": {
             "process_model": "fresh_process_per_compile",
@@ -551,7 +551,7 @@ def compile_scenario(name: str) -> dict[str, Any]:
             "dependency_state": "dependencies_warm",
             "edit_kind": "none",
             "public_api_changed": False,
-            "demonstrated_incremental_reuse": False,
+            **workload_classification("no_op", False),
         },
         "edited_full_fresh_process": {
             "process_model": "fresh_process_per_compile",
@@ -560,7 +560,7 @@ def compile_scenario(name: str) -> dict[str, Any]:
             "dependency_state": "dependencies_warm",
             "edit_kind": "source_position_only_a_to_b",
             "public_api_changed": False,
-            "demonstrated_incremental_reuse": False,
+            **workload_classification("edited", False),
         },
     }
     if name not in scenarios:
@@ -568,7 +568,27 @@ def compile_scenario(name: str) -> dict[str, Any]:
     return dict(scenarios[name])
 
 
-def watch_process_model(use_haxe_server: bool) -> dict[str, Any]:
+def workload_classification(workload_change: str, demonstrated_incremental_reuse: bool) -> dict[str, Any]:
+    """Classify source change and reuse as independent, executable facts."""
+
+    if workload_change not in {"initial_build", "no_op", "edited"}:
+        raise ValueError(f"unknown benchmark workload change: {workload_change}")
+    if not isinstance(demonstrated_incremental_reuse, bool):
+        raise ValueError("demonstrated incremental reuse must be boolean")
+    if workload_change == "initial_build" and demonstrated_incremental_reuse:
+        raise ValueError("an initial build cannot demonstrate reuse of a prior compilation")
+    return {
+        "workload_change": workload_change,
+        "reuse_classification": (
+            "demonstrated_incremental_reuse"
+            if demonstrated_incremental_reuse
+            else "incremental_reuse_not_demonstrated"
+        ),
+        "demonstrated_incremental_reuse": demonstrated_incremental_reuse,
+    }
+
+
+def watch_process_model(use_haxe_server: bool, edit_kind: str = "edited") -> dict[str, Any]:
     """Describe what remains alive between watch edit samples."""
 
     return {
@@ -576,7 +596,7 @@ def watch_process_model(use_haxe_server: bool) -> dict[str, Any]:
         "compiler_cache_state": "haxe_server_process_retained" if use_haxe_server else "no_persistent_compiler_state",
         "artifact_cache_state": "prior_outputs_and_build_artifacts_retained",
         "dependency_state": "dependencies_warm",
-        "demonstrated_incremental_reuse": False,
+        **workload_classification("no_op" if edit_kind == "none" else "edited", False),
     }
 
 

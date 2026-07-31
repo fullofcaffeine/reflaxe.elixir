@@ -599,7 +599,7 @@ def build_result(
             "use_haxe_server": args.use_haxe_server,
             "phase_timer_mode": args.phase_timers,
             "build_input_digests": build_input_digests(benchmark_root, args.app),
-            **watch_process_model(args.use_haxe_server),
+            **watch_process_model(args.use_haxe_server, args.edit_kind),
             "timeouts_seconds": {
                 "deadline": args.deadline,
                 "deps_get": args.deps_get_timeout,

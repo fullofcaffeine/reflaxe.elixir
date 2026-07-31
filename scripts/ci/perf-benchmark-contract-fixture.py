@@ -165,18 +165,37 @@ for scenario_name in ("cold", "warm_fresh_process", "edited_full_fresh_process")
         "artifact_cache_state",
         "dependency_state",
         "edit_kind",
+        "workload_change",
+        "reuse_classification",
         "demonstrated_incremental_reuse",
     ):
         check(required in scenario, f"{scenario_name} omitted {required}")
 
+check(
+    contract.compile_scenario("warm_fresh_process")["workload_change"] == "no_op",
+    "warm unchanged-source compile was not classified as no-op",
+)
 edited = contract.compile_scenario("edited_full_fresh_process")
+check(edited["workload_change"] == "edited", "edited fresh-process compile lost its change classification")
 check(edited["demonstrated_incremental_reuse"] is False, "fresh-process edit must not claim incremental reuse")
+demonstrated = contract.workload_classification("edited", True)
+check(
+    demonstrated["reuse_classification"] == "demonstrated_incremental_reuse",
+    "evidence-backed incremental reuse cannot be represented",
+)
+for invalid_change, invalid_reuse in (("unknown", False), ("edited", "yes"), ("initial_build", True)):
+    try:
+        contract.workload_classification(invalid_change, invalid_reuse)
+        raise AssertionError(f"invalid workload classification was accepted: {invalid_change!r}, {invalid_reuse!r}")
+    except ValueError:
+        pass
 check(contract.schema_classification(1) == "legacy_v1_ambiguous_incremental_label", "schema-v1 history must stay explicit")
 check(contract.schema_classification(contract.SCHEMA_VERSION) == "current", "current schema classification failed")
 
-server = contract.watch_process_model(True)
-direct = contract.watch_process_model(False)
+server = contract.watch_process_model(True, "private_implementation")
+direct = contract.watch_process_model(False, "private_implementation")
 check(server["process_model"] != direct["process_model"], "direct and server watch modes must remain distinguishable")
+check(server["workload_change"] == "edited", "watch edit was not classified as edited")
 check(server["demonstrated_incremental_reuse"] is False, "process reuse alone must not claim module reuse")
 
 identity = contract.parse_server_identity(
