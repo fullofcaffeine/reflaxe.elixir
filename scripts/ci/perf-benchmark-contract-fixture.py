@@ -330,6 +330,36 @@ check(
     target_parent_inconsistent["status"] == "inconsistent",
     "target parent phases exceeding wall time were accepted",
 )
+for invalid_duration in (-1.0, float("nan"), True):
+    target_parent_invalid = contract.reconcile_target_parent_phases(
+        {
+            "total_wall_ms": 100.0,
+            "phases": [
+                {
+                    "name": name,
+                    "durationMs": invalid_duration if index == 0 else 10.0,
+                }
+                for index, name in enumerate(contract.TARGET_PARENT_PHASES)
+            ],
+        }
+    )
+    check(
+        target_parent_invalid["status"] == "inconsistent",
+        f"invalid target parent duration was accepted: {invalid_duration!r}",
+    )
+invalid_target_total = contract.reconcile_target_parent_phases(
+    {
+        "total_wall_ms": float("inf"),
+        "phases": [
+            {"name": name, "durationMs": 1.0}
+            for name in contract.TARGET_PARENT_PHASES
+        ],
+    }
+)
+check(
+    invalid_target_total["status"] == "inconsistent",
+    "non-finite target wall duration was accepted",
+)
 
 disjoint_reconciliation = contract.watch_phase_reconciliation(
     27334,

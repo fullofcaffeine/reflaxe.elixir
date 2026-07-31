@@ -129,19 +129,43 @@ def reconcile_target_parent_phases(report: dict[str, Any]) -> dict[str, Any]:
     added again here.
     """
 
+    def valid_duration(value: Any) -> bool:
+        return (
+            isinstance(value, (int, float))
+            and not isinstance(value, bool)
+            and math.isfinite(float(value))
+            and value >= 0
+        )
+
     total = report.get("total_wall_ms")
     phases = report.get("phases", [])
+    if not isinstance(phases, list):
+        return {
+            "status": "inconsistent",
+            "violations": ["target_phases_is_not_an_array"],
+        }
     observed = {
         phase.get("name"): phase.get("durationMs")
         for phase in phases
         if isinstance(phase, dict)
     }
-    missing = [name for name in TARGET_PARENT_PHASES if not isinstance(observed.get(name), (int, float))]
-    if not isinstance(total, (int, float)) or total < 0:
+    if not valid_duration(total):
         return {
             "status": "inconsistent",
             "violations": ["target_total_is_not_a_nonnegative_duration"],
         }
+    invalid = [
+        name
+        for name in TARGET_PARENT_PHASES
+        if name in observed and not valid_duration(observed[name])
+    ]
+    if invalid:
+        return {
+            "status": "inconsistent",
+            "invalid_parent_phases": invalid,
+            "violations": ["target_parent_phase_is_not_a_nonnegative_duration"],
+        }
+    missing = [name for name in TARGET_PARENT_PHASES if name not in observed]
     if missing:
         return {
             "status": "partial",
