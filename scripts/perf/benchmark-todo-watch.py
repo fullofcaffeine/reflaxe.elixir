@@ -662,6 +662,10 @@ def main() -> int:
             raise BenchmarkError("--edit-patch requires an explicit --edit-kind")
     elif args.public_api_changed:
         raise BenchmarkError("--public-api-changed requires --edit-patch")
+    try:
+        watch_process_model(args.use_haxe_server, args.edit_kind)
+    except ValueError as error:
+        raise BenchmarkError(str(error)) from error
     if args.iterations <= 0:
         raise BenchmarkError("--iterations must be greater than zero")
     if args.warmups < 0:

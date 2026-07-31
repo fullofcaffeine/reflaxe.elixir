@@ -591,12 +591,14 @@ def workload_classification(workload_change: str, demonstrated_incremental_reuse
 def watch_process_model(use_haxe_server: bool, edit_kind: str = "edited") -> dict[str, Any]:
     """Describe what remains alive between watch edit samples."""
 
+    if not isinstance(edit_kind, str) or not edit_kind.strip() or edit_kind == "none":
+        raise ValueError("watch benchmarks always edit source bytes; edit kind must not be empty or `none`")
     return {
         "process_model": "persistent_watch_with_haxe_server" if use_haxe_server else "persistent_watch_with_fresh_haxe_child",
         "compiler_cache_state": "haxe_server_process_retained" if use_haxe_server else "no_persistent_compiler_state",
         "artifact_cache_state": "prior_outputs_and_build_artifacts_retained",
         "dependency_state": "dependencies_warm",
-        **workload_classification("no_op" if edit_kind == "none" else "edited", False),
+        **workload_classification("edited", False),
     }
 
 

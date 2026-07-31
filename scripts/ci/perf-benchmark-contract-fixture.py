@@ -197,6 +197,12 @@ direct = contract.watch_process_model(False, "private_implementation")
 check(server["process_model"] != direct["process_model"], "direct and server watch modes must remain distinguishable")
 check(server["workload_change"] == "edited", "watch edit was not classified as edited")
 check(server["demonstrated_incremental_reuse"] is False, "process reuse alone must not claim module reuse")
+for invalid_watch_edit_kind in ("", "none"):
+    try:
+        contract.watch_process_model(True, invalid_watch_edit_kind)
+        raise AssertionError(f"watch accepted a false no-op edit kind: {invalid_watch_edit_kind!r}")
+    except ValueError:
+        pass
 
 identity = contract.parse_server_identity(
     "Haxe server started on port 62327 (owner_os_pid=9123)\n"
