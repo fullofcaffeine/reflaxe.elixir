@@ -303,6 +303,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	/** Opt-in, request-reset coarse timings used only by the performance harness. */
 	public var phaseTimings(default, null):CompilerPhaseTimings;
 
+	var reflaxeFiltersStarted:Float = 0.0;
 	var astPipelineStarted:Float = 0.0;
 
 	/**
@@ -351,6 +352,14 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		// A Haxe compilation server may reuse this compiler instance. Reset at the
 		// request boundary so phase totals never leak into the next edit sample.
 		phaseTimings.reset();
+		var result = filterTypesBody(moduleTypes);
+		// ReflectCompiler applies its define/server-cache filters and initialization
+		// callbacks after this method returns and before onCompileStart().
+		reflaxeFiltersStarted = phaseTimings.start();
+		return result;
+	}
+
+	function filterTypesBody(moduleTypes:Array<haxe.macro.Type.ModuleType>):Array<haxe.macro.Type.ModuleType> {
 		#if eval
 		var result = moduleTypes != null ? moduleTypes.copy() : [];
 		forceStringToolsRuntime = false;
@@ -383,6 +392,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	}
 
 	public override function onCompileStart():Void {
+		phaseTimings.finish("reflaxe_module_filters_and_init", reflaxeFiltersStarted);
 		astPipelineStarted = phaseTimings.start();
 	}
 
