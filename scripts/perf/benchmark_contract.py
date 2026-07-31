@@ -23,6 +23,12 @@ from typing import Any
 SCHEMA_VERSION = 2
 EDIT_MARKER = "// reflaxe-elixir benchmark variant B"
 TARGET_TIMING_PREFIX = "REFLAXE_ELIXIR_TIMINGS "
+TARGET_PARENT_PHASES = (
+    "reflaxe_module_filters_and_init",
+    "ast_pipeline_including_class_enum_construction",
+    "output_iteration_including_passes_printing_maps",
+    "output_transaction_including_formatting",
+)
 
 
 def now_utc() -> str:
@@ -113,6 +119,53 @@ def target_timing_report(text: str) -> dict[str, Any] | None:
         except json.JSONDecodeError:
             continue
     return reports[-1] if reports else None
+
+
+def reconcile_target_parent_phases(report: dict[str, Any]) -> dict[str, Any]:
+    """Reconcile non-overlapping target lifecycle parents to target wall time.
+
+    Child timings such as class construction, pass manager, and printer remain
+    useful attribution within their parent spans, but they are deliberately not
+    added again here.
+    """
+
+    total = report.get("total_wall_ms")
+    phases = report.get("phases", [])
+    observed = {
+        phase.get("name"): phase.get("durationMs")
+        for phase in phases
+        if isinstance(phase, dict)
+    }
+    missing = [name for name in TARGET_PARENT_PHASES if not isinstance(observed.get(name), (int, float))]
+    if not isinstance(total, (int, float)) or total < 0:
+        return {
+            "status": "inconsistent",
+            "violations": ["target_total_is_not_a_nonnegative_duration"],
+        }
+    if missing:
+        return {
+            "status": "partial",
+            "missing_parent_phases": missing,
+        }
+
+    parent_total = sum(float(observed[name]) for name in TARGET_PARENT_PHASES)
+    remainder = float(total) - parent_total
+    if remainder < -1.0:
+        return {
+            "status": "inconsistent",
+            "parent_phase_total_ms": round(parent_total, 3),
+            "violations": ["target_parent_phases_exceed_target_wall_time"],
+        }
+    remainder = max(0.0, remainder)
+    remainder_percent = 0.0 if total == 0 else remainder / float(total) * 100.0
+    return {
+        "status": "complete",
+        "parent_phase_names": list(TARGET_PARENT_PHASES),
+        "parent_phase_total_ms": round(parent_total, 3),
+        "unattributed_target_ms": round(remainder, 3),
+        "unattributed_target_percent": round(remainder_percent, 3),
+        "reconciled_target_total_ms": round(float(total), 3),
+    }
 
 
 def haxe_reported_total_ms(text: str) -> float | None:
@@ -340,6 +393,7 @@ def watch_phase_reconciliation(external_duration_ms: int, compiler_output: str) 
         target_total = target.get("total_wall_ms")
         if isinstance(target_total, (int, float)):
             result["reflaxe_target_total_ms"] = target_total
+        result["reflaxe_target_phase_reconciliation"] = reconcile_target_parent_phases(target)
 
     return result
 

@@ -201,10 +201,22 @@ npm run perf:todo-watch -- --use-haxe-server --phase-timers coarse --machine-sta
 
 Coarse mode enables Haxe `--times`, existing Mix phase timers, and a Reflaxe target summary for each
 compile or watch rebuild. Each measured watch sample keeps its matching target summary. The target
-summary accumulates dependency discovery, class/enum AST construction, pass-manager, printer,
-source-map, and output-transaction time. `class_ast_including_dependency_discovery` is deliberately a
-nested total; subtract `dependency_discovery` when estimating the remaining class AST work. Detailed
-per-pass fingerprints stay disabled because they can dominate the operation being measured.
+summary has four non-overlapping parent spans: Reflaxe module filters/initialization, target AST
+construction, output iteration, and the output transaction. Child timings such as dependency
+discovery, class/enum AST construction, pass manager, printer, and source maps explain work inside
+those parents and must not be added again. `class_ast_including_dependency_discovery` is itself a
+nested child; subtract `dependency_discovery` only when estimating the remaining class AST work.
+`reflaxe_target_phase_reconciliation` adds only the four parents, reports the remaining target-wall
+time, and fails if their sum exceeds the enclosing target interval. Detailed per-pass fingerprints
+stay disabled because they can dominate the operation being measured.
+
+The 2026-07-31 representative-loaded overhead check used two 10-sample sessions per mode in AB/BA
+order on the same warm-server private-implementation edit. The pooled p50 was 13.098s with timers off
+and 13.081s with coarse timers on (-0.13%); pooled means were 13.011s and 13.081s (+0.54%). Individual
+session-median ratios had opposite signs (+2.52% and -1.14%), showing that normal session drift is
+larger than a precise causal timer-cost estimate. This evidence supports the narrower conclusion that
+coarse timing stayed below the approximately 2% perturbation target in this representative-loaded
+workload. It is not an idle-machine latency baseline or a public performance claim.
 
 GitHub Actions also has an optional **Perf Todo Compile Benchmark** workflow. It is intentionally not
 attached to `push` or `pull_request`, so it does not gate PRs or regular CI. Run it manually from
@@ -237,8 +249,9 @@ Compile benchmark (`tmp/perf/compile-times.json`):
 - `runs[].phases[]` contains timed phases such as `deps_get`, `deps_compile`, `haxe_build`, and
   `mix_compile`.
 - `runs[].generated_output` reports manifest-owned file/byte counts, the exact output-tree digest, and
-  which generated paths changed since the prior scenario. `mix_recompiled_module_count` is parsed from
-  the Mix compiler log when available.
+  which generated paths changed since the prior scenario. Digests are computed from file bytes; a
+  manifest digest that disagrees with those bytes fails the observation instead of being trusted.
+  `mix_recompiled_module_count` is parsed from the Mix compiler log when available.
 - In coarse mode, `phase_reconciliation` tests two candidate interpretations: Haxe's `--times` total
   contains the Reflaxe target callback, or the two totals are disjoint. Both shapes occur in real
   artifacts. Haxe's
@@ -295,6 +308,11 @@ Watch benchmark (`tmp/perf/watch-cycle-times.json`):
   candidate, `haxe_reported_frontend_ms` preserves the Haxe timer total before the two components are
   added. An unattributed remainder is an explicit unknown to investigate; the harness does not guess
   that Haxe, Reflaxe, or Mix owns it.
+- `phase_reconciliation.reflaxe_target_phase_reconciliation` independently checks the four
+  non-overlapping Reflaxe parent spans against the enclosing target wall interval. A
+  representative-loaded 10-sample run at `65548d3a0` left a median 0.04% unattributed (0.04–0.06%
+  range), inside the 3–5% coverage objective. This target-local reconciliation does not remove or
+  relabel the separate unknown remainder inside the surrounding `haxe.invoke` interval.
 - `summary` reports `min_ms`, `max_ms`, `mean_ms`, `p50_ms`, and `p95_ms`.
 - Full logs live under `tmp/perf/todo-watch/logs/`.
 

@@ -290,6 +290,46 @@ check(
     reconciliation["timing_relationship"] == "reflaxe_target_nested_in_haxe_reported_total",
     "nested target timing was misclassified",
 )
+check(
+    reconciliation["reflaxe_target_phase_reconciliation"]["status"] == "partial",
+    "historical target report without parent phases was not marked partial",
+)
+
+target_parent_reconciliation = contract.reconcile_target_parent_phases(
+    {
+        "total_wall_ms": 100.0,
+        "phases": [
+            {"name": "reflaxe_module_filters_and_init", "durationMs": 10.0},
+            {"name": "ast_pipeline_including_class_enum_construction", "durationMs": 20.0},
+            {"name": "output_iteration_including_passes_printing_maps", "durationMs": 40.0},
+            {"name": "output_transaction_including_formatting", "durationMs": 25.0},
+            # Nested child detail must not be added to the parent reconciliation.
+            {"name": "pass_manager", "durationMs": 35.0},
+        ],
+    }
+)
+check(target_parent_reconciliation["status"] == "complete", "valid target parent phases did not reconcile")
+check(
+    target_parent_reconciliation["parent_phase_total_ms"] == 95.0,
+    "nested target child phase was double-counted",
+)
+check(
+    target_parent_reconciliation["unattributed_target_percent"] == 5.0,
+    "target parent remainder percentage was not preserved",
+)
+target_parent_inconsistent = contract.reconcile_target_parent_phases(
+    {
+        "total_wall_ms": 10.0,
+        "phases": [
+            {"name": name, "durationMs": 3.0}
+            for name in contract.TARGET_PARENT_PHASES
+        ],
+    }
+)
+check(
+    target_parent_inconsistent["status"] == "inconsistent",
+    "target parent phases exceeding wall time were accepted",
+)
 
 disjoint_reconciliation = contract.watch_phase_reconciliation(
     27334,

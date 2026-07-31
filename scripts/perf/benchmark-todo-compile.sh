@@ -377,7 +377,11 @@ import sys
 
 meta_path, results_path, states_path, out_path, overall_status, helper_dir = sys.argv[1:7]
 sys.path.insert(0, helper_dir)
-from benchmark_contract import compile_scenario, reconcile_compiler_timer_relationship
+from benchmark_contract import (
+    compile_scenario,
+    reconcile_compiler_timer_relationship,
+    reconcile_target_parent_phases,
+)
 
 root = Path(helper_dir).parents[1]
 
@@ -455,6 +459,7 @@ try:
                             "external_haxe_build_ms": phase["duration_ms"],
                             "haxe_reported_total_ms": haxe_total,
                             "reflaxe_target_total_ms": target_wall,
+                            "reflaxe_target_phase_reconciliation": reconcile_target_parent_phases(timing),
                         }
                         relationship = reconcile_compiler_timer_relationship(
                             phase["duration_ms"],
