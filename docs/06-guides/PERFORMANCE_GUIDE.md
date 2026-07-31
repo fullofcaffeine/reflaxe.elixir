@@ -216,13 +216,15 @@ nested child; subtract `dependency_discovery` only when estimating the remaining
 time, and fails if their sum exceeds the enclosing target interval. Detailed per-pass fingerprints
 stay disabled because they can dominate the operation being measured.
 
-The 2026-07-31 representative-loaded overhead check used two 10-sample sessions per mode in AB/BA
-order on the same warm-server private-implementation edit. The pooled p50 was 13.098s with timers off
-and 13.081s with coarse timers on (-0.13%); pooled means were 13.011s and 13.081s (+0.54%). Individual
-session-median ratios had opposite signs (+2.52% and -1.14%), showing that normal session drift is
-larger than a precise causal timer-cost estimate. This evidence supports the narrower conclusion that
-coarse timing stayed below the approximately 2% perturbation target in this representative-loaded
-workload. It is not an idle-machine latency baseline or a public performance claim.
+The final 2026-07-31 representative-loaded overhead check used two 10-sample sessions per mode in
+AB/BA order on clean commit `581726aef`, which contains all four lifecycle-parent timers. Standard
+medians were 13.738s off versus 13.255s coarse in the first pair and 13.791s off versus 13.616s coarse
+in the reverse pair. The observed pair deltas were -3.52% and -1.27%; pooled standard medians were
+13.753s off and 13.422s coarse (-2.40%), and pooled means differed by -1.84%. No timer slowdown was
+observed, so these sessions meet the approximately 2% perturbation target as an observational
+admission check. They do not establish that instrumentation makes compilation faster or place a
+causal upper bound on its cost: start/end load still drifted, especially in the second pair. This is
+not an idle-machine latency baseline or a public performance claim.
 
 GitHub Actions also has an optional **Perf Todo Compile Benchmark** workflow. It is intentionally not
 attached to `push` or `pull_request`, so it does not gate PRs or regular CI. Run it manually from
