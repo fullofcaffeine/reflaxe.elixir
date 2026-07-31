@@ -44,6 +44,7 @@
     "test:haxe-server-owner-exit": "bash -n scripts/ci/haxe-server-owner-exit-fixture.sh && bash scripts/ci/haxe-server-owner-exit-fixture.sh",
     "test:reflaxe-server-cache": "bash -n test/snapshot/regression/server_cache_non_class_invalidation/run_server_cache_test.sh && bash test/snapshot/regression/server_cache_non_class_invalidation/run_server_cache_test.sh",
     "test:perf-benchmark-contract": "python3 scripts/ci/perf-benchmark-contract-fixture.py && haxe -lib reflaxe -cp std -cp src -cp . --macro \"tools.TestCompilerPhaseTimings.run()\" --no-output",
+    "test:test-feedback-observer": "python3 scripts/ci/test-test-feedback-observer.py",
     "generate:live-react-core": "bash scripts/generate-live-react-core.sh --write",
     "guard:live-react-core": "bash scripts/generate-live-react-core.sh --check",
     "test:genes-ts-integration": "bash scripts/ci/test-genes-ts-integration.sh",

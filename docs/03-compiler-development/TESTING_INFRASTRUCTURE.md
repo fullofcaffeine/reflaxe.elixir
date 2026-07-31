@@ -137,6 +137,54 @@ evidence, not broad path ignores.
 manifest or selector-miss audit, so it is **advisory only** and cannot establish completion or become
 a blocking CI selector in its current form.
 
+### Observation-only test feedback
+
+The repository has a separate, fail-safe observer for evaluating whether future affected-test
+selection is worth pursuing. It does **not** replace `test:changed`, and it does not control which CI
+jobs run.
+
+For example, when only `docs/guide.md` changes, the observer may propose dependency audit,
+guardrails, secret scan, docs smoke, and the generated-Phoenix dogfood sentinel. That proposal is a
+hypothesis to evaluate, not a claim that those jobs already provide sufficient evidence. Dependency
+audit is always included because a newly published advisory can make an unchanged lockfile fail.
+Dogfood is always included because it exercises authored Haxe through generation, strict upgraded
+Elixir compilation, and a real Phoenix boot. GitHub still runs the complete required graph. After
+the run, the observer compares that proposal with every configured selectable job result in that
+workflow attempt. A configured job missing from the attempt forces full fallback. If an omitted job
+failed, the report records a selector miss; it does not turn the run green.
+
+```text
+changed paths -> reviewed ownership rules -> proposed jobs
+                                      full CI still runs
+                                               |
+                       completed job results <-+
+                                  |
+                 timings + omitted-job failures
+```
+
+The reviewed ownership data lives in `test/impact-ownership.json`. A rule starts from deterministic
+paths, but it also names the semantic owner and the independent product surfaces whose claims may be
+affected: compiler conformance, BEAM/OTP runtime, Elixir-native interop, Mix/package/CLI, and
+framework applications. Those labels explain risk; they are not a scorecard and do not claim that
+one selected job proves every named surface. Unknown paths, compiler/runtime source, workflows,
+runners, and changes to the observer or its manifest propose the full graph. A workflow job that is
+missing from or unknown to the manifest also changes the effective observation to full fallback.
+These are positive safety rules: uncertainty causes more testing, never less.
+
+CI publishes `test-feedback-observation-<run-id>-<attempt>` with:
+
+- the changed paths, matched rules, and plain-language reasons;
+- proposed selected and omitted stable jobs;
+- actual job durations, the jobs that completed last, and the earliest failed-job completion signal;
+- explicit limitations when GitHub job metadata does not expose cache hits, retries, or the first
+  failing log line; and
+- any failure from a job the proposal would have omitted.
+
+Run the focused executable contract with `npm run test:test-feedback-observer`. A completed report is
+not promotion evidence by itself. No number of days or observations has been validated. Each rule
+remains on full CI until its mappings, historical failures, and a real shadow change are all reviewed
+under the later promotion task.
+
 ## Change-to-test ownership map
 
 Choose the smallest row that fully covers the change, then add rows when the diff crosses boundaries.
@@ -200,8 +248,8 @@ the contract; it is not permission to relabel the gap as a pass.
 | Examples/E2E | Manifested compile/output/WAE/runtime coverage; todo, chat and LiveReact browser gates | Ring/selection ownership and comparable timing/failure-yield data | Extend `examples/qa-manifest.json`, not a parallel example registry | Instrumentation and selector observation |
 | Package/install | Isolated Haxelib ZIP parity and scheduled released-artifact smoke | Full official portable smoke through the installed package | Reuse package workspace and official ExUnit smoke once provenance is hardened | Official smoke, then release evidence |
 | Native/framework | Mix, OTP, Phoenix, Ecto, LiveView, LiveReact/Genes and output-quality gates | No gap that portable-suite work is allowed to replace | Keep this axis independently required | Ongoing |
-| Feedback efficiency | Focused commands, parallel snapshots, bounded sentinels, sharded WAE | R0/R1 p50/p95, time to first failure, semantic ownership plan, selected/omitted explanation, selector-miss audit, retry/flake evidence | Instrument existing runners; observe before selecting | Instrumentation and selector observation |
-| CI topology | Full PR/main graph with exact tested-commit release | PR critical path is about 51 minutes; repeated setup; no required aggregator for future selected jobs | Measure current graph, then introduce observation-only impact planning | Measured R2/R3 promotion |
+| Feedback efficiency | Focused commands, parallel snapshots, bounded sentinels, sharded WAE, observation-only ownership/timing reports | R0/R1 p50/p95 and validated per-rule promotion evidence; GitHub job metadata does not expose every cache/retry/first-log signal | Extend existing runners only when a missing signal changes a decision; observe before selecting | Selector observation, then measured promotion |
+| CI topology | Full PR/main graph with exact tested-commit release plus a non-blocking post-gate timing/miss observer | PR critical path is about 51 minutes; repeated setup; no required aggregator for future selected jobs | Keep the observer unable to skip jobs; use its reports to decide whether selective CI is worthwhile | Measured R2/R3 promotion |
 | Retry policy | macOS Mix and QA-sentinel Playwright paths retry failed semantic tests | A later pass can erase the original red outcome or log; setup/download retries are not classified separately | Preserve attempt logs/outcomes and classify setup, infrastructure, flake, and deterministic semantic failures without turning red into an unqualified pass | Retry-policy repair |
 
 ## Consolidation plan
@@ -214,13 +262,13 @@ Implement gaps in this order:
    and fail closed on upstream/adaptation drift.
 3. **Official representative smoke.** Add shared-language, `unitstd`, and issue cases through the
    public package path, with intentional-failure and timeout propagation tests.
-4. **Measure loops before filtering.** Emit phase timings, cache mode, selected/omitted owners, and
-   first actionable failure from existing aggregate runners.
-5. **Observe impact selection.** Add a machine-readable ownership plan and explain mode while the
-   current full gate remains required. Unknown ownership and cross-cutting changes select full.
-6. **Promote rings only after recall evidence.** Move expensive work from ordinary PRs only when
-   main/full selector audits show no material misses and every remote shard has a bounded local
-   reproduction command.
+4. **Measure loops before filtering.** The observation job records GitHub job timing and selection
+   explanations without inventing cache/retry signals unavailable from that API.
+5. **Observe impact selection.** Keep the current full gate required. Unknown ownership,
+   cross-cutting changes, and stale job mappings select full.
+6. **Promote rules only after direct evidence.** Each rule needs executable mappings, historical
+   replay, and a real shadow change with no missed failing owner. Rules without that evidence remain
+   full; elapsed calendar time alone is not evidence.
 7. **Tie compatibility wording to R5 evidence.** Until the complete applicable active baseline
    passes through the installed package and supported toolchains, documentation must say partial or
    representative coverage.
@@ -252,6 +300,9 @@ npm run test:examples-qa
 
 # Broad local compiler/runtime aggregate (not the complete CI graph)
 npm test
+
+# Focused contract for the advisory CI observer
+npm run test:test-feedback-observer
 
 # Agent-safe application/browser lifecycle
 npm run qa:sentinel

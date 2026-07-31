@@ -150,6 +150,7 @@ These failures usually come from running only a subset locally (e.g. `test:quick
   - If the upstream spec is not yet runnable or no spec exists, record the explicit manifest reason and add local runtime coverage when appropriate. Snapshot coverage alone is not sufficient for stdlib semantics.
   - Treat upstream runtime test failures as compiler/stdlib correctness signals first, not as bad fixtures. Investigate whether the fix belongs in AST lowering, target stdlib source, or the adapter before skipping/adapting the spec.
 - Broad local compiler/runtime aggregate: `npm test`
+- Observation-only test-impact/timing contract: `npm run test:test-feedback-observer`
 - Complete repository backstop: the exact-head CI graph, including the
   independent example, sentinel/browser, package, security, platform, budget,
   and release jobs below
@@ -164,6 +165,11 @@ These failures usually come from running only a subset locally (e.g. `test:quick
 - Stdlib runtime semantics (Haxe→ExUnit): `npm run test:haxe-exunit-stdlib`
 - Todo-app runtime smoke (non-blocking): `npm run qa:sentinel` then `scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 120`
 - Todo-app Playwright smoke for compiler/std/runtime changes: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --env e2e --async --deadline 900 --playwright --e2e-spec "e2e/smoke/*.spec.ts" --verbose`, then `scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 180`
+
+The test-feedback observer is advisory infrastructure. It reports what a
+reviewed ownership plan would have selected, but every current required CI job
+still runs. Unknown paths, cross-cutting changes, and stale job mappings must
+report full fallback. Do not use observation artifacts to waive closure gates.
 
 ## 🧼 Path Hygiene (Required)
 

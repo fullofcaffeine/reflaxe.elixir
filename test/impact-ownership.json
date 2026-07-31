@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "policy": {
+    "observation_only": true,
+    "controls_required_ci": false,
+    "promotion_threshold_validated": false
+  },
+  "product_surfaces": [
+    "compiler-conformance",
+    "beam-otp-runtime",
+    "elixir-native-interop",
+    "mix-package-cli",
+    "framework-applications"
+  ],
+  "jobs": [
+    {"id": "dogfood-gate", "name_prefix": "Dogfood gate", "selectable": true},
+    {"id": "example-compilation-gate", "name_prefix": "Example compilation gate", "selectable": true},
+    {"id": "sentinel-gate", "name_prefix": "QA sentinel gate", "selectable": true},
+    {"id": "secret-scan", "name_prefix": "Secret Scan (gitleaks)", "selectable": true},
+    {"id": "guards", "name_prefix": "Guardrails", "selectable": true},
+    {"id": "dependency-audit", "name_prefix": "Dependency Audit", "selectable": true},
+    {"id": "repo-hygiene", "name_prefix": "Repo Hygiene (dead-code audit)", "selectable": true},
+    {"id": "haxelib-package-smoke", "name_prefix": "Haxelib Package Smoke", "selectable": true},
+    {"id": "test", "name_prefix": "Tests", "selectable": true},
+    {"id": "examples", "name_prefix": "Examples", "selectable": true},
+    {"id": "examples-elixir", "name_prefix": "Examples (Elixir WAE)", "selectable": true},
+    {"id": "budgets", "name_prefix": "Budgets (perf + determinism)", "selectable": true},
+    {"id": "smoke-min-toolchain", "name_prefix": "Smoke (minimum toolchain)", "selectable": true},
+    {"id": "smoke-macos", "name_prefix": "Smoke (macOS)", "selectable": true},
+    {"id": "docs-smoke", "name_prefix": "Docs Smoke (Phoenix)", "selectable": true},
+    {"id": "managed-reference-spike", "name_prefix": "Managed reference feasibility", "selectable": true},
+    {"id": "release", "name_prefix": "Release exact CI-tested commit", "selectable": false, "optional": true},
+    {"id": "test-feedback-observation", "name_prefix": "Test feedback observation", "selectable": false, "optional": true}
+  ],
+  "always_jobs": ["dependency-audit", "dogfood-gate", "guards", "secret-scan"],
+  "rules": [
+    {
+      "id": "documentation",
+      "owner": "documentation-contracts",
+      "patterns": ["*.md", "docs/**", ".beads/**"],
+      "surfaces": [
+        "compiler-conformance",
+        "beam-otp-runtime",
+        "elixir-native-interop",
+        "mix-package-cli",
+        "framework-applications"
+      ],
+      "jobs": ["docs-smoke"],
+      "reason": "Documentation can change claims for any product surface; docs checks own prose, links, and Phoenix documentation examples."
+    },
+    {
+      "id": "examples",
+      "owner": "example-qa-portfolio",
+      "patterns": [
+        "examples/**",
+        "scripts/test-examples.sh",
+        "scripts/test-examples-elixir.sh",
+        "scripts/ci/examples_qa.py",
+        "scripts/ci/check-examples-expected-output.sh"
+      ],
+      "surfaces": ["compiler-conformance", "beam-otp-runtime", "mix-package-cli", "framework-applications"],
+      "jobs": ["example-compilation-gate", "sentinel-gate", "examples", "examples-elixir", "docs-smoke"],
+      "reason": "Example source must compile, pass strict generated-Elixir checks, and run its declared application coverage."
+    },
+    {
+      "id": "snapshot-fixtures",
+      "owner": "compiler-snapshot-aggregate",
+      "patterns": ["test/snapshot/**"],
+      "surfaces": [
+        "compiler-conformance",
+        "beam-otp-runtime",
+        "elixir-native-interop",
+        "mix-package-cli",
+        "framework-applications"
+      ],
+      "jobs": ["test"],
+      "reason": "The snapshot corpus includes compiler, runtime, native interop, bootstrap/package, and framework categories executed by the primary test aggregate."
+    },
+    {
+      "id": "performance-tools",
+      "owner": "performance-contracts",
+      "patterns": ["scripts/perf/**", "scripts/ci/perf-*.py", "scripts/ci/perf-*.sh"],
+      "surfaces": ["compiler-conformance"],
+      "jobs": ["budgets", "test"],
+      "reason": "Performance tooling is covered by benchmark contracts, determinism budgets, and the primary test aggregate."
+    },
+    {
+      "id": "package-consumer",
+      "owner": "package-consumer-contracts",
+      "patterns": ["scripts/release/**", "scripts/ci/haxelib-package-smoke.sh"],
+      "surfaces": ["mix-package-cli"],
+      "jobs": ["dependency-audit", "haxelib-package-smoke", "test"],
+      "reason": "Package and release helpers must preserve isolated consumer installation and dependency policy."
+    },
+    {
+      "id": "cross-cutting-full-fallback",
+      "owner": "complete-ci-evidence-graph",
+      "patterns": [
+        "src/**",
+        "std/**",
+        "vendor/**",
+        "lib/**",
+        "tools/**",
+        ".github/workflows/**",
+        "scripts/test-runner.sh",
+        "scripts/test-chunks.sh",
+        "scripts/ci/test_feedback_observer.py",
+        "scripts/ci/test-test-feedback-observer.py",
+        "test/impact-ownership.json",
+        "package.json",
+        "package-lock.json",
+        "mix.exs",
+        "mix.lock",
+        ".haxerc",
+        "extraParams.hxml",
+        "haxe_libraries/**"
+      ],
+      "surfaces": [
+        "compiler-conformance",
+        "beam-otp-runtime",
+        "elixir-native-interop",
+        "mix-package-cli",
+        "framework-applications"
+      ],
+      "selection": "full",
+      "reason": "Compiler, runtime, toolchain, workflow, runner, and selector changes can affect several independent evidence owners."
+    }
+  ]
+}

@@ -32,6 +32,7 @@ scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 60
 ### Broad Local Aggregate (Part of R4)
 ```bash
 npm test                                 # Compiler/runtime aggregate; CI owns the complete graph
+npm run test:test-feedback-observer      # Advisory selector/timing contract; skips no CI jobs
 ```
 
 ## 🔍 Test Analysis Commands
