@@ -239,17 +239,21 @@ Compile benchmark (`tmp/perf/compile-times.json`):
 - `runs[].generated_output` reports manifest-owned file/byte counts, the exact output-tree digest, and
   which generated paths changed since the prior scenario. `mix_recompiled_module_count` is parsed from
   the Mix compiler log when available.
-- In coarse mode, `phase_reconciliation` first determines whether Haxe's `--times` total contains the
-  Reflaxe target callback or is disjoint from it. Both shapes occur in real artifacts. Haxe's
+- In coarse mode, `phase_reconciliation` tests two candidate interpretations: Haxe's `--times` total
+  contains the Reflaxe target callback, or the two totals are disjoint. Both shapes occur in real
+  artifacts. Haxe's
   [4.3.7 timer implementation](https://github.com/HaxeFoundation/haxe/blob/4.3.7/src/core/timer.ml#L97-L184)
   constructs its report from registered timer nodes; `total` is therefore not an independent process
   wall clock that can prove callback containment by itself. For example, when target 11.5s ≤ Haxe
   12.4s ≤ outer 16.6s and Haxe + target exceeds the outer interval, only
   `reflaxe_target_nested_in_haxe_reported_total` fits. When target 18.6s > Haxe 0.6s and their 19.2s
   sum fits within an outer 25.4s interval, only
-  `haxe_reported_total_and_reflaxe_target_disjoint` fits. The
-  non-overlapping pieces then reconcile to the external wall clock.
-- `timing_reconciliation_status` is `complete` only when exactly one relationship fits. It is
+  `haxe_reported_total_and_reflaxe_target_disjoint` fits. Under that candidate interpretation, the
+  non-overlapping pieces then reconcile to the external wall clock. This is a duration-constraint
+  model fit, not proof of physical timer topology: partial overlap or another aggregation model would
+  require independent instrumentation to distinguish.
+- `timing_reconciliation_status` is `complete` only when exactly one of the two candidate
+  interpretations fits and its arithmetic reconciles. It is
   `ambiguous` when both nested and disjoint interpretations fit, `partial` when one timer is missing,
   and `inconsistent` when neither interpretation fits. Ambiguous results report an unattributed-time
   range instead of guessing; inconsistent results report violations instead of a negative remainder.
@@ -285,11 +289,12 @@ Watch benchmark (`tmp/perf/watch-cycle-times.json`):
 - In coarse mode, each sample's `phase_reconciliation` connects the outer edit-to-success duration to
   the Mix/Haxe request and Haxe invocation. It reports time outside the compilation timer (including
   file detection, debounce, and observing the success marker), how long `haxe.invoke` took, the
-  observed Haxe and Reflaxe totals, their proven relationship, and any still-unattributed invocation
-  time. When the target is nested, `haxe_reported_excluding_reflaxe_target_ms` removes it from Haxe's
-  total. When they are disjoint, `haxe_reported_frontend_ms` preserves the Haxe timer total before the
-  two components are added. An unattributed remainder is an explicit unknown to investigate; the
-  harness does not guess that Haxe, Reflaxe, or Mix owns it.
+  observed Haxe and Reflaxe totals, the uniquely fitting candidate interpretation when one exists,
+  and any still-unattributed invocation time. Under the nested candidate,
+  `haxe_reported_excluding_reflaxe_target_ms` removes the target from Haxe's total. Under the disjoint
+  candidate, `haxe_reported_frontend_ms` preserves the Haxe timer total before the two components are
+  added. An unattributed remainder is an explicit unknown to investigate; the harness does not guess
+  that Haxe, Reflaxe, or Mix owns it.
 - `summary` reports `min_ms`, `max_ms`, `mean_ms`, `p50_ms`, and `p95_ms`.
 - Full logs live under `tmp/perf/todo-watch/logs/`.
 

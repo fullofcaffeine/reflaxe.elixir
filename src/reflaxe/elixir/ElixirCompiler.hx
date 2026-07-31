@@ -349,6 +349,15 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		// A Haxe compilation server may reuse this compiler instance. Reset at the
 		// request boundary so phase totals never leak into the next edit sample.
 		phaseTimings.reset();
+		if (!phaseTimings.enabled)
+			return filterTypesBody(moduleTypes);
+		var started = phaseTimings.start();
+		var result = filterTypesBody(moduleTypes);
+		phaseTimings.finish("prebuild_type_filtering", started);
+		return result;
+	}
+
+	function filterTypesBody(moduleTypes:Array<haxe.macro.Type.ModuleType>):Array<haxe.macro.Type.ModuleType> {
 		#if eval
 		var result = moduleTypes != null ? moduleTypes.copy() : [];
 		forceStringToolsRuntime = false;

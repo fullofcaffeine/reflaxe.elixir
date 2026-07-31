@@ -172,10 +172,12 @@ def reconcile_compiler_timer_relationship(
     """Reconcile Haxe and Reflaxe measurements without assuming containment.
 
     Haxe's ``--times`` table can include the target callback in its ``macro``
-    total or report only compiler work outside that callback. Durations alone
-    resolve the relationship when exactly one model fits inside the measured
-    outer interval. If both fit, the decomposition remains explicitly
-    ambiguous instead of selecting the more convenient interpretation.
+    total or report only compiler work outside that callback. This helper tests
+    those two candidate models against the measured outer interval. A unique
+    fit supports arithmetic reconciliation under that model; durations alone
+    do not prove physical timer topology or exclude partial overlap. If both
+    candidates fit, the decomposition remains explicitly ambiguous instead of
+    selecting the more convenient interpretation.
     """
 
     values = {
@@ -282,8 +284,8 @@ def watch_phase_reconciliation(external_duration_ms: int, compiler_output: str) 
     begins. Within that request, ``haxe.invoke`` surrounds Haxe's reported work
     and the Reflaxe target callback, but Haxe's ``--times`` total does not
     consistently include the callback. The shared reconciliation contract
-    resolves nested or disjoint observations only when the durations prove
-    which model fits.
+    selects nested or disjoint only when exactly one of those two candidate
+    models fits the observed durations.
     """
 
     integration = haxe_integration_timing_report(compiler_output)
@@ -543,7 +545,13 @@ def generated_output_state(output_root: Path, previous_digests: dict[str, str]) 
         if not absolute.is_file():
             continue
         content = absolute.read_bytes()
-        digests[relative] = owned_digests.get(relative) or hashlib.sha256(content).hexdigest()
+        content_digest = hashlib.sha256(content).hexdigest()
+        manifest_digest = owned_digests.get(relative)
+        if manifest_digest is not None and manifest_digest != content_digest:
+            raise ValueError(
+                f"generated manifest digest does not match file bytes: {relative}"
+            )
+        digests[relative] = content_digest
         sizes[relative] = len(content)
 
     changed_paths = sorted(

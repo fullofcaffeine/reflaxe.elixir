@@ -61,6 +61,23 @@ with tempfile.TemporaryDirectory(prefix="perf-benchmark-contract-") as temporary
     generated.write_text("defmodule Main do\n  def run, do: :ok\nend\n", encoding="utf-8")
     changed_state, _ = contract.generated_output_state(output_root, first_digests)
     check(changed_state["changed_paths"] == ["main.ex"], "changed generated path was not identified")
+    (output_root / "_GeneratedFiles.json").write_text(
+        json.dumps(
+            {
+                "filesGenerated": ["main.ex"],
+                "ownedFiles": [{"path": "main.ex", "sha256": "0" * 64}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    try:
+        contract.generated_output_state(output_root, {})
+        raise AssertionError("stale manifest digest should fail byte observation")
+    except ValueError as error:
+        check(
+            "manifest digest does not match file bytes" in str(error),
+            "stale manifest digest reported the wrong failure",
+        )
 
 with tempfile.TemporaryDirectory(prefix="perf-benchmark-patch-") as temporary:
     worktree = Path(temporary) / "worktree"
