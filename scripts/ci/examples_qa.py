@@ -222,7 +222,7 @@ def validate_manifest() -> dict:
     return manifest
 
 
-def run_command(example: str, command: str, timeout_seconds: int) -> None:
+def run_command(example: str, command: str, timeout_seconds: int, grace_seconds: int = 1) -> None:
     print(f"\n[examples-qa] == {example}: {command} ==")
     env = os.environ.copy()
     env["HAXE_NO_SERVER"] = env.get("HAXE_NO_SERVER", "1")
@@ -232,6 +232,8 @@ def run_command(example: str, command: str, timeout_seconds: int) -> None:
         str(ROOT / "scripts" / "with-timeout.sh"),
         "--secs",
         str(timeout_seconds),
+        "--grace",
+        str(grace_seconds),
         "--cwd",
         str(EXAMPLES_DIR / example),
         "--",
@@ -261,7 +263,8 @@ def run_runtime_tests(manifest: dict) -> None:
             continue
 
         timeout_seconds = int(runtime.get("timeoutSeconds", 600))
-        run_command(example, runtime["command"], timeout_seconds)
+        grace_seconds = int(runtime.get("graceSeconds", 1))
+        run_command(example, runtime["command"], timeout_seconds, grace_seconds)
 
 
 def main() -> None:

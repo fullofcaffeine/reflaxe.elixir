@@ -12,8 +12,8 @@ class CreateUsers extends Migration {
 	public function new() {}
 
 	public function up():Void {
-		createTable("users").addId()
-			.addColumn("name", ColumnType.String(), {nullable: false})
+		// Ecto creates its conventional `id` primary key by default.
+		createTable("users").addColumn("name", ColumnType.String(), {nullable: false})
 			.addColumn("email", ColumnType.String(), {nullable: false})
 			.addColumn("age", ColumnType.Integer)
 			.addColumn("active", ColumnType.Boolean, {defaultValue: true})

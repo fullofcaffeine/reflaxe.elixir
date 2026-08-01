@@ -125,6 +125,13 @@ class ExampleQaContractTests(unittest.TestCase):
         manifest["examples"]["01-simple-modules"].pop("runtime")
         self.assert_invalid(manifest, "01-simple-modules.runtime must be an object")
 
+    def test_runtime_runner_passes_declared_cleanup_grace(self) -> None:
+        with patch.object(EXAMPLES_QA.subprocess, "run") as run:
+            EXAMPLES_QA.run_command("04-ecto-migrations", "./qa-runtime.sh", 900, 30)
+
+        wrapped = run.call_args.args[0]
+        self.assertEqual("30", wrapped[wrapped.index("--grace") + 1])
+
     def test_manifest_root_must_be_an_object(self) -> None:
         self.assert_invalid([], "Manifest root must be an object")
 

@@ -159,9 +159,9 @@ qualified as a whole. There is deliberately no combined green status.
 | Authored input → output | Haxe-authored Phoenix/Ecto/LiveView/LiveReact application code and assets → production build, booted endpoint, runtime state, and browser-visible behavior |
 | Supported/tested profiles | Elixir-first on the pinned Phoenix/LiveView/Ecto/LiveReact combinations documented by the [Support Matrix](../06-guides/SUPPORT_MATRIX.md) |
 | Focused owners | Phoenix/Ecto/LiveView snapshots, Haxe-authored ConnTest/LiveViewTest/ExUnit, and focused client/binding tests |
-| Vertical/runtime owners | Example Mix tests, strict builds, dogfood generation/upgrade, and bounded QA sentinels; `03-phoenix-app` production-boots and verifies its exact JSON controller response without borrowing a richer app's result |
+| Vertical/runtime owners | Example Mix tests, strict builds, dogfood generation/upgrade, and bounded QA sentinels; `03-phoenix-app` production-boots and verifies its exact JSON controller response, while `04-ecto-migrations` executes freshly generated migrations against an isolated PostgreSQL database |
 | Browser owners | Playwright for `12-phoenix-chat`, `18-phoenixhx-live-react`, and the flagship `todo-app`; `15` and `17` browser specs remain manual and are not CI evidence |
-| Representative examples | All framework examples, with `03` as a runtime-backed minimal HTTP capability, `todo-app` as the flagship application, and `12`/`18` as browser-backed capability showcases |
+| Representative examples | All framework examples, with `03` as a runtime-backed minimal HTTP capability, `04` as a real Ecto migration capability, `todo-app` as the flagship application, and `12`/`18` as browser-backed capability showcases |
 | Oracle and provenance | Phoenix/Ecto/LiveView public contracts plus user-visible browser behavior; a compiler snapshot alone cannot prove application behavior |
 | Skips/adaptations/quarantine | Compile-only examples claim source generation only; manual browser checks are named but do not advance CI-backed claims |
 | Selector/backstop/release | `example-qa-portfolio`, framework sentinel, dogfood, and full fallback; `test:examples-qa`, bounded sentinels, and exact-head full CI |
@@ -340,6 +340,24 @@ substitutes for the other. The guard does not yet prove that every future `ci: t
 into a required workflow; `haxe.elixir.codex-jvg.4` owns that bounded follow-up. `npm run ci:guards`,
 example QA, and exact-head CI are the broader contracts.
 
+### Representative migration tracer: generated source to real PostgreSQL
+
+The `04-ecto-migrations` capability owns one narrow database scenario. Haxe-authored `CreateUsers`
+and `CreatePosts` declarations compile in a new temporary workspace, so checked-in `.exs` files
+cannot make the run pass. Ecto executes those fresh timestamped files against a uniquely named
+database. A Haxe-authored ExUnit test then queries PostgreSQL's `information_schema.tables` as the
+independent oracle: `users` and `posts` must exist after `up`; the same fresh path is passed to
+`Ecto.Migrator` for `down`, after which neither table may remain.
+
+The first runtime contract was red because the example had no `EctoMigrationsExample.Repo`. Once
+the Repo existed, fresh generation exposed a lower compiler regression: application-wide Phoenix
+target qualification (introduced by commit `18efaf896`) replaced Ecto's timestamped root output
+with a nested module path. The focused `ecto/migration_exs_emission` snapshot was red with that path
+mismatch. It now locks the timestamped filename and `App.Repo.Migrations.*` module, while the
+database tracer retains the real Ecto/PostgreSQL boundary. `scripts/ci/test-ecto-migrations-qa.sh`
+separately proves that a migration failure remains nonzero and still drops the prefix-validated
+database owned by the run.
+
 ### Observation-only test feedback
 
 The repository has a separate, fail-safe observer for evaluating whether future affected-test
@@ -448,7 +466,7 @@ the contract; it is not permission to relabel the gap as a pass.
 | Official `unitstd` | 120 product entries: 24 enabled, 9 adapted, 13 target-specific skips, 3 unsupported, 71 without upstream specs; 32 checked-in fixtures | Exact per-fixture upstream commit/path/hash, local hash, adaptation diff/hash, independent disposition/outcome, secure TLS classification | Harden `test/upstream_unitstd/manifest.json` and its existing guards | Provenance/classification |
 | Shared language/issues | General local regressions exist | No source-identity-preserving smoke from official shared top-level and issue families | Add one meaningful case from each family beside the existing ExUnit official-fixture lane | Official representative smoke |
 | Capabilities | Runtime, OTP, IO, framework and platform smokes cover selected contracts | No complete capability manifest for filesystem/process/env/locale/time/network/TLS/thread/atomic behavior | Versioned capability classification tied to the official inventory | Classification, then capability shards |
-| Examples/E2E | Schema-v2 manifested tiers, stable owners, affected product surfaces, profiles, claims, compile/output/WAE/runtime coverage; todo, chat and LiveReact browser gates | `03` bounded boot, `04` migration execution, required browser ownership for the maintained `15`/`17` manual specs, and an independently executable link from `ci: true` declarations to required workflows | Existing manifest/guard plus `haxe.elixir.codex-jvg.1`, `.2`, `.3`, and `.4`; no parallel example registry | Close only the evidence-backed child gaps; portfolio metrics remain observational |
+| Examples/E2E | Schema-v2 manifested tiers, stable owners, affected product surfaces, profiles, claims, compile/output/WAE/runtime coverage; `03` bounded boot, `04` isolated PostgreSQL migration execution, and todo/chat/LiveReact browser gates | Required browser ownership for the maintained `15`/`17` manual specs, and an independently executable link from `ci: true` declarations to required workflows | Existing manifest/guard plus `haxe.elixir.codex-jvg.3` and `.4`; no parallel example registry | Close only the evidence-backed child gaps; portfolio metrics remain observational |
 | Package/install | Isolated Haxelib ZIP parity and scheduled released-artifact smoke | Full official portable smoke through the installed package | Reuse package workspace and official ExUnit smoke once provenance is hardened | Official smoke, then release evidence |
 | Native/framework | Mix, OTP, Phoenix, Ecto, LiveView, LiveReact/Genes and output-quality gates | No gap that portable-suite work is allowed to replace | Keep this axis independently required | Ongoing |
 | Feedback efficiency | Focused commands, parallel snapshots, bounded sentinels, sharded WAE, observation-only ownership/timing reports | R0/R1 p50/p95 and validated per-rule promotion evidence; GitHub job metadata does not expose every cache/retry/first-log signal | Extend existing runners only when a missing signal changes a decision; observe before selecting | Selector observation, then measured promotion |

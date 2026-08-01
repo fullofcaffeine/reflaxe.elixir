@@ -1,0 +1,15 @@
+# Haxe-authored ExUnit contract for the generated migration runtime.
+
+-lib reflaxe.elixir
+
+-cp test_haxe
+
+-D app_name=EctoMigrationsExample
+-D elixir_output=test/generated
+-D elixir_output_exs
+-D reflaxe_elixir_strict_examples
+-D exunit
+
+-dce full
+
+qa.MigrationRuntimeTest

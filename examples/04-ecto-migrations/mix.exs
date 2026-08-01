@@ -9,9 +9,10 @@ defmodule EctoMigrationsExample.MixProject do
       compilers: [:haxe] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      aliases: aliases(),
       haxe: [
         hxml_file: "build.hxml",
-        source_dir: "src_haxe", 
+        source_dir: "src_haxe",
         target_dir: "lib",
         watch: false,
         verbose: true
@@ -30,6 +31,13 @@ defmodule EctoMigrationsExample.MixProject do
       {:reflaxe_elixir, path: "../..", runtime: false},
       {:ecto_sql, "~> 3.14"},
       {:postgrex, "~> 0.22.3"}
+    ]
+  end
+
+  defp aliases do
+    [
+      test: ["haxe.compile.tests", "test"],
+      "haxe.compile.tests": ["cmd haxe build-tests.hxml"]
     ]
   end
 end

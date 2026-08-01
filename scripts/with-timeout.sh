@@ -51,27 +51,28 @@ if [[ -n "$CWD" ]]; then cd "$CWD"; fi
 
 # Start command in a new process group when possible
 start_cmd() {
-  if command -v setsid >/dev/null 2>&1; then
-    # Start in a new session so we can later reap all descendants reliably
+  if command -v python3 >/dev/null 2>&1 && command -v setsid >/dev/null 2>&1; then
+    # On setsid-capable hosts, own a full session so descendants cannot escape
+    # the deadline merely by creating another process group.
+    if [[ "$QUIET" -eq 1 ]]; then
+      python3 -c 'import os,signal,sys; signal.signal(signal.SIGINT, signal.SIG_DFL); signal.signal(signal.SIGQUIT, signal.SIG_DFL); os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' "${CMD[@]}" >/dev/null 2>&1 &
+    else
+      python3 -c 'import os,signal,sys; signal.signal(signal.SIGINT, signal.SIG_DFL); signal.signal(signal.SIGQUIT, signal.SIG_DFL); os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' "${CMD[@]}" &
+    fi
+  elif command -v python3 >/dev/null 2>&1; then
+    # Reset signals that shells commonly ignore for asynchronous children, then
+    # create the process group used for timeout and interactive-signal cleanup.
+    if [[ "$QUIET" -eq 1 ]]; then
+      python3 -c 'import os,signal,sys; signal.signal(signal.SIGINT, signal.SIG_DFL); signal.signal(signal.SIGQUIT, signal.SIG_DFL); os.setpgrp(); os.execvp(sys.argv[1], sys.argv[1:])' "${CMD[@]}" >/dev/null 2>&1 &
+    else
+      python3 -c 'import os,signal,sys; signal.signal(signal.SIGINT, signal.SIG_DFL); signal.signal(signal.SIGQUIT, signal.SIG_DFL); os.setpgrp(); os.execvp(sys.argv[1], sys.argv[1:])' "${CMD[@]}" &
+    fi
+  elif command -v setsid >/dev/null 2>&1; then
+    # Fallback for minimal systems without Python.
     if [[ "$QUIET" -eq 1 ]]; then
       setsid "${CMD[@]}" >/dev/null 2>&1 &
     else
       setsid "${CMD[@]}" &
-    fi
-  elif command -v python3 >/dev/null 2>&1; then
-    # macOS often lacks `setsid` by default. Use python to create a fresh process group.
-    #
-    # Important: prefer `setpgrp()` over `setsid()` here.
-    # - `setsid()` detaches from the controlling terminal/session and can lead to odd IO behavior
-    #   for some commands (notably BEAM/Mix output + buffering).
-    # - a dedicated process group is sufficient for our kill-by-PGID strategy.
-    #
-    # The python process is immediately replaced by the target command via execvp, so $! is
-    # still the command PID (in a fresh process group).
-    if [[ "$QUIET" -eq 1 ]]; then
-      python3 -c 'import os,sys; os.setpgrp(); os.execvp(sys.argv[1], sys.argv[1:])' "${CMD[@]}" >/dev/null 2>&1 &
-    else
-      python3 -c 'import os,sys; os.setpgrp(); os.execvp(sys.argv[1], sys.argv[1:])' "${CMD[@]}" &
     fi
   else
     # Fallback: background in current group
@@ -90,6 +91,7 @@ PGID_CHILD="$(ps -o pgid= "$CMD_PID" 2>/dev/null | tr -d ' ')" || PGID_CHILD=""
 PGID_SELF="$(ps -o pgid= $$ 2>/dev/null | tr -d ' ')" || PGID_SELF=""
 # Session id of child (BSD/macOS uses 'sess')
 SESS_CHILD="$(ps -o sess= "$CMD_PID" 2>/dev/null | tr -d ' ')" || SESS_CHILD=""
+SESS_SELF="$(ps -o sess= $$ 2>/dev/null | tr -d ' ')" || SESS_SELF=""
 if [[ "$ECHO" -eq 1 ]]; then
   echo "[timeout] pids: cmd_pid=${CMD_PID} pgid_child=${PGID_CHILD:-?} pgid_self=${PGID_SELF:-?} sess_child=${SESS_CHILD:-?}" >&2
 fi
@@ -139,6 +141,60 @@ list_descendants() {
   echo "$acc" | xargs -n1 echo | awk 'NF' | sort -u | xargs echo 2>/dev/null || true
 }
 
+process_identity() {
+  ps -o lstart= -p "$1" 2>/dev/null | awk '{$1=$1; print}' || true
+}
+
+record_process_identities() {
+  local p identity
+  for p in $1; do
+    identity=$(process_identity "$p")
+    if [[ -n "$identity" ]]; then
+      printf '%s|%s\n' "$p" "$identity"
+    fi
+  done
+}
+
+kill_recorded_processes() {
+  local sig="$1"
+  local records="$2"
+  local record p expected current
+  while IFS= read -r record; do
+    [[ -n "$record" ]] || continue
+    p=${record%%|*}
+    expected=${record#*|}
+    current=$(process_identity "$p")
+    if [[ -n "$current" && "$current" == "$expected" ]]; then
+      kill -s "$sig" "$p" 2>/dev/null || true
+    fi
+  done <<<"$records"
+}
+
+# Forward an interactive interrupt to the command we own, then keep waiting so
+# its cleanup traps receive their configured grace period.
+FORWARDED_STATUS=""
+forward_external_signal() {
+  local sig="$1"
+  local status="$2"
+  local descendants
+  FORWARDED_STATUS="$status"
+
+  descendants=$(list_descendants "$CMD_PID")
+  if command -v pkill >/dev/null 2>&1 \
+    && [[ -n "$SESS_CHILD" && "$SESS_CHILD" != "0" && "$SESS_CHILD" != "$SESS_SELF" ]]; then
+    pkill -"$sig" -s "$SESS_CHILD" 2>/dev/null || true
+  elif [[ -n "$PGID_CHILD" && -n "$PGID_SELF" && "$PGID_CHILD" != "$PGID_SELF" && "$PGID_CHILD" != "0" ]]; then
+    kill -s "$sig" -"$PGID_CHILD" 2>/dev/null || true
+  else
+    kill -s "$sig" "$CMD_PID" 2>/dev/null || true
+  fi
+  for descendant in $descendants; do
+    kill -s "$sig" "$descendant" 2>/dev/null || true
+  done
+}
+trap 'forward_external_signal INT 130' INT
+trap 'forward_external_signal TERM 143' TERM
+
 # Watchdog
 #
 # Instead of a single long sleep (which we then have to interrupt with signals), we poll the
@@ -161,29 +217,46 @@ list_descendants() {
     # kills this watchdog before we can write the marker.
     echo 124 >"$MARKER_FILE" 2>/dev/null || true
 
-    # Prefer killing the entire session if available (handles grandchildren in separate PGIDs)
-    if command -v pkill >/dev/null 2>&1 && [[ -n "$SESS_CHILD" && "$SESS_CHILD" != "0" ]]; then
+    # Snapshot descendants before TERM so an orphan that changes process group
+    # can still be force-killed after the grace period on non-session platforms.
+    DESC=""
+    DESC_IDENTITIES=""
+    ROOT_IDENTITY=$(process_identity "$CMD_PID")
+    if command -v pkill >/dev/null 2>&1 \
+      && [[ -n "$SESS_CHILD" && "$SESS_CHILD" != "0" && "$SESS_CHILD" != "$SESS_SELF" ]]; then
       pkill -TERM -s "$SESS_CHILD" 2>/dev/null || true
-    elif [[ -n "$PGID_CHILD" && -n "$PGID_SELF" && "$PGID_CHILD" != "$PGID_SELF" && "$PGID_CHILD" != "0" ]]; then
-      kill -TERM -"$PGID_CHILD" 2>/dev/null || true
     else
-      # Capture descendants first to avoid orphans then terminate all
       DESC=$(list_descendants "$CMD_PID")
-      kill -TERM "$CMD_PID" 2>/dev/null || true
-      for d in $DESC; do kill -TERM "$d" 2>/dev/null || true; done
+      DESC_IDENTITIES=$(record_process_identities "$DESC")
+      if [[ -n "$PGID_CHILD" && -n "$PGID_SELF" && "$PGID_CHILD" != "$PGID_SELF" && "$PGID_CHILD" != "0" ]]; then
+        kill -TERM -"$PGID_CHILD" 2>/dev/null || true
+      else
+        kill -TERM "$CMD_PID" 2>/dev/null || true
+      fi
+      kill_recorded_processes TERM "$DESC_IDENTITIES"
     fi
     sleep "$GRACE" || true
-    if kill -0 "$CMD_PID" 2>/dev/null; then
-      if command -v pkill >/dev/null 2>&1 && [[ -n "$SESS_CHILD" && "$SESS_CHILD" != "0" ]]; then
-        pkill -KILL -s "$SESS_CHILD" 2>/dev/null || true
-      elif [[ -n "$PGID_CHILD" && -n "$PGID_SELF" && "$PGID_CHILD" != "$PGID_SELF" && "$PGID_CHILD" != "0" ]]; then
-        kill -KILL -"$PGID_CHILD" 2>/dev/null || true
-      else
-        # Recompute and force kill everyone left
-        DESC2=$(list_descendants "$CMD_PID")
-        kill -KILL "$CMD_PID" 2>/dev/null || true
-        for d in $DESC2; do kill -KILL "$d" 2>/dev/null || true; done
+    root_survived=0
+    if kill -0 "$CMD_PID" 2>/dev/null; then root_survived=1; fi
+    DESC2=$(list_descendants "$CMD_PID")
+    if command -v pkill >/dev/null 2>&1 \
+      && [[ -n "$SESS_CHILD" && "$SESS_CHILD" != "0" && "$SESS_CHILD" != "$SESS_SELF" ]]; then
+      pkill -KILL -s "$SESS_CHILD" 2>/dev/null || true
+    else
+      DESC2_IDENTITIES=$(record_process_identities "$DESC2")
+      CURRENT_ROOT_IDENTITY=$(process_identity "$CMD_PID")
+      if [[ -n "$CURRENT_ROOT_IDENTITY" && "$CURRENT_ROOT_IDENTITY" == "$ROOT_IDENTITY" ]]; then
+        if [[ -n "$PGID_CHILD" && -n "$PGID_SELF" && "$PGID_CHILD" != "$PGID_SELF" && "$PGID_CHILD" != "0" ]]; then
+          kill -KILL -"$PGID_CHILD" 2>/dev/null || true
+        else
+          kill -KILL "$CMD_PID" 2>/dev/null || true
+        fi
       fi
+      kill_recorded_processes KILL "$DESC_IDENTITIES"
+      kill_recorded_processes KILL "$DESC2_IDENTITIES"
+    fi
+
+    if (( root_survived == 1 )); then
       echo "[timeout] command force-killed after ${SECS}s+${GRACE}s" >&2
       echo 137 >"$MARKER_FILE" 2>/dev/null || true
       exit 137
@@ -200,8 +273,14 @@ WATCH_PID=$!
 # Wait for the command and propagate exit code; kill watchdog if still running
 # Do not mask non-zero exits from `wait` — we want to surface timeout/kill statuses.
 set +e
-wait "$CMD_PID"
-RC=$?
+while true; do
+  wait "$CMD_PID"
+  RC=$?
+  if [[ -n "$FORWARDED_STATUS" ]] && kill -0 "$CMD_PID" 2>/dev/null; then
+    continue
+  fi
+  break
+done
 set -e
 
 # Wait for watchdog to exit (should be quick if the command finished before timeout)
@@ -210,6 +289,8 @@ wait "$WATCH_PID" 2>/dev/null || true
 # If the watchdog fired, override RC with the conventional timeout exit codes (124/137).
 if [[ -f "$MARKER_FILE" ]]; then
   RC="$(cat "$MARKER_FILE" 2>/dev/null || echo "$RC")"
+elif [[ -n "$FORWARDED_STATUS" ]] && (( RC == 0 )); then
+  RC="$FORWARDED_STATUS"
 fi
 
 exit "$RC"

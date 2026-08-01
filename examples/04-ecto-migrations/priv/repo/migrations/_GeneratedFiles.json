@@ -1,0 +1,21 @@
+{
+	"filesGenerated": [
+		"20240102120000_create_posts.exs",
+		"20240101120000_create_users.exs"
+	],
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 2,
+	"wasCached": false,
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "20240101120000_create_users.exs",
+			"sha256": "329e985c1d66d7b310a3174c1fec7026a3a646d40395ccd892972dab19fe0db7"
+		},
+		{
+			"path": "20240102120000_create_posts.exs",
+			"sha256": "67a0e4f9c8bafd4caed4d15e2b53190fd423d143a8c9bae7678d6cecdcb81447"
+		}
+	],
+	"generation": "c502cbad1b39a76e29628fd717b8edae9d21f7276b79cd10efedeff382f24ed7"
+}

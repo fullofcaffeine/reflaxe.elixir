@@ -4,7 +4,8 @@ This example demonstrates **Haxe-authored, type-safe Ecto migrations** via the `
 
 > **Status (Experimental)**: Migrations are executable by Ecto via an **opt-in migration build**
 > (`build-migrations.hxml`) that emits timestamped `.exs` files under `priv/repo/migrations/`.
-> The DSL is still evolving; treat `alterTable` support as experimental.
+> CI runs this exact output against PostgreSQL and verifies both migration and rollback. The DSL is
+> still evolving; treat `alterTable` support as experimental.
 
 **Prerequisites**: [03-phoenix-app](../03-phoenix-app/) completed  
 **Difficulty**: 🟡 Intermediate  
@@ -47,10 +48,24 @@ ls lib/migrations
 
 ## Automated QA boundary
 
-This experimental sample is currently a compile-only snippet. CI proves that the Haxe migration DSL
-generates reviewed Ecto source shapes and strict-compiles the intermediate project; it does not yet
-run these migrations against a database. Therefore this example does not advance a database-
-execution claim even though the opt-in output is intended for Ecto to execute.
+With PostgreSQL available on `localhost:5432` as user/password `postgres`, run:
+
+```bash
+../../scripts/with-timeout.sh --secs 900 --grace 30 -- ./qa-runtime.sh
+```
+
+The QA command generates the migrations fresh, strict-compiles the project, creates a uniquely named
+test database, runs `mix ecto.migrate`, and executes a Haxe-authored ExUnit contract. That contract
+queries PostgreSQL's own schema catalog rather than trusting generated source: `users` and `posts`
+must exist after `up`, then both must disappear after Ecto runs `down`. A cleanup trap drops only the
+high-entropy database created by that run, including when migration execution fails. An ownership
+marker is written only when PostgreSQL confirms that the database is new, so an existing database is
+never treated as disposable QA state. The 30-second timeout grace lets the owned database cleanup
+finish after an interrupt or deadline.
+
+In ordinary Elixir terms, `Repo.hx` generates the standard `use Ecto.Repo` module, while
+`build-migrations.hxml` generates normal timestamped Ecto `.exs` migration files. Haxe adds typed
+migration construction and earlier validation; Ecto and PostgreSQL still own execution semantics.
 
 ## Migration Examples
 
@@ -87,7 +102,7 @@ After `haxe build-migrations.hxml`, see:
 Example generated shape:
 
 ```elixir
-defmodule ReflaxeExample.Repo.Migrations.CreateUsers do
+defmodule EctoMigrationsExample.Repo.Migrations.CreateUsers do
   use Ecto.Migration
 
   def up do

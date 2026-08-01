@@ -13,8 +13,8 @@ class CreatePosts extends Migration {
 	public function new() {}
 
 	public function up():Void {
-		createTable("posts").addId()
-			.addColumn("title", ColumnType.String(), {nullable: false})
+		// Ecto creates its conventional `id` primary key by default.
+		createTable("posts").addColumn("title", ColumnType.String(), {nullable: false})
 			.addColumn("content", ColumnType.Text)
 			.addColumn("published", ColumnType.Boolean, {defaultValue: false})
 			.addColumn("view_count", ColumnType.Integer, {defaultValue: 0})

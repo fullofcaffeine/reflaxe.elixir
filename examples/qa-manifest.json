@@ -60,18 +60,22 @@
     },
     "04-ecto-migrations": {
       "qa": {
-        "tier": "compile-only-snippet",
-        "owner": "example-ecto-migration-emission",
+        "tier": "capability-showcase",
+        "owner": "example-ecto-migration-runtime",
         "surfaces": ["compiler-conformance", "elixir-native-interop", "framework-applications"],
         "profiles": ["elixir-first"],
-        "evidenceLevel": "compile",
-        "claim": "Experimental Haxe migration declarations generate reviewed Ecto migration source shapes without claiming database execution."
+        "evidenceLevel": "runtime",
+        "claim": "Haxe-authored Ecto migrations generate fresh, strict-compile, create the expected users/posts tables in an isolated PostgreSQL database, and roll those tables back cleanly."
       },
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
-        "mode": "compile-only",
-        "reason": "Migration emission sample. Generated migration shapes are covered by compile/WAE and snapshot tests."
+        "mode": "mix-test",
+        "command": "./qa-runtime.sh",
+        "timeoutSeconds": 900,
+        "graceSeconds": 30,
+        "ci": true,
+        "evidence": ["qa-runtime.sh", "test_haxe", "test"]
       }
     },
     "05-heex-templates": {

@@ -1191,7 +1191,8 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		moduleName = frameworkNaming.moduleName;
 		modulePack = frameworkNaming.modulePack;
 		var extractedModuleName = reflaxe.elixir.ast.builders.ModuleBuilder.extractModuleName(classType);
-		if (isAppFacingModule(extractedModuleName)) {
+		var hasMigrationOutputOverride = Context.defined("ecto_migrations_exs") && classType.meta.has(":migration");
+		if (!hasMigrationOutputOverride && isAppFacingModule(extractedModuleName)) {
 			moduleName = extractedModuleName;
 			modulePack = reflaxe.elixir.PhoenixTargetNames.packForAlias(extractedModuleName);
 		}
@@ -1206,7 +1207,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		// Track the output path for this module. Use the framework override when
 		// provided; otherwise fall back to universal naming rules.
 		var outputPath = frameworkNaming.outputPath != null ? frameworkNaming.outputPath : getModuleOutputPath(moduleName, modulePack);
-		if (isAppFacingModule(extractedModuleName)) {
+		if (!hasMigrationOutputOverride && isAppFacingModule(extractedModuleName)) {
 			outputPath = reflaxe.elixir.PhoenixTargetNames.aliasToPath(extractedModuleName);
 			var pathParts = outputPath.split("/");
 			var file = pathParts.pop();

@@ -74,6 +74,14 @@ class ModuleBuilder {
 			}
 		}
 
+		// Migration-only output has a stricter Ecto namespace than ordinary
+		// project-module qualification. Resolve it before the general PhoenixHx
+		// target so `CreateUsers` remains `App.Repo.Migrations.CreateUsers`.
+		if (Context.defined("ecto_migrations_exs") && classType.meta.has(":migration")) {
+			var migrationAppName = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+			return migrationAppName + ".Repo.Migrations." + classType.name;
+		}
+
 		var derivedPhoenixTarget = reflaxe.elixir.PhoenixTargetNames.classTargetAlias(classType);
 		if (derivedPhoenixTarget != null)
 			return derivedPhoenixTarget;
@@ -99,14 +107,6 @@ class ModuleBuilder {
 			if (appName != null && appName != "")
 				return appName + ".Application";
 			return classType.name + ".Application";
-		}
-
-		// Migration emission mode: migrations are compiled into `priv/repo/migrations/*.exs`.
-		// Ecto convention is `MyApp.Repo.Migrations.*`, so we force that namespace when
-		// `-D ecto_migrations_exs` is enabled.
-		if (Context.defined("ecto_migrations_exs") && classType.meta.has(":migration")) {
-			var migrationAppName = reflaxe.elixir.PhoenixMapper.getAppModuleName();
-			return migrationAppName + ".Repo.Migrations." + classType.name;
 		}
 
 		// Default to class name
