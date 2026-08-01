@@ -2,6 +2,7 @@
 set -euo pipefail
 
 example_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+repo_root=$(CDPATH= cd -- "$example_dir/../.." && pwd)
 mix_bin=${MIX_BIN:-mix}
 haxe_bin=${HAXE_BIN:-haxe}
 qa_workspace=
@@ -32,6 +33,9 @@ export ECTO_MIGRATIONS_DATABASE=$database_name
 export ECTO_MIGRATIONS_PATH=$qa_migrations_dir
 export ECTO_MIGRATIONS_OWNERSHIP_MARKER=$ownership_marker
 export HAXE_NO_SERVER=${HAXE_NO_SERVER:-1}
+if [[ -z "${HAXELIB_PATH:-}" || ! -f "$HAXELIB_PATH/reflaxe.elixir.hxml" ]]; then
+  export HAXELIB_PATH="$repo_root/haxe_libraries"
+fi
 
 cleanup() {
   local status=$?
