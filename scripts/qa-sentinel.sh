@@ -217,9 +217,34 @@ port_available() {
 port_has_local_listener() {
   local port="$1"
   [[ -n "$port" ]] || return 1
-  if ! command -v elixir >/dev/null 2>&1; then
+  if command -v python3 >/dev/null 2>&1; then
+    if python3 -c '
+import socket
+import sys
+
+port = int(sys.argv[1])
+probes = (
+    (socket.AF_INET, ("127.0.0.1", port)),
+    (socket.AF_INET6, ("::1", port, 0, 0)),
+)
+
+for family, address in probes:
+    sock = socket.socket(family, socket.SOCK_STREAM)
+    sock.settimeout(0.2)
+    try:
+        if sock.connect_ex(address) == 0:
+            sys.exit(0)
+    finally:
+        sock.close()
+
+sys.exit(1)
+' "$port" >/dev/null 2>&1; then
+      return 0
+    fi
     return 1
   fi
+
+  command -v elixir >/dev/null 2>&1 || return 1
   elixir -e '
     port = System.argv() |> List.first() |> String.to_integer()
     probes = [
