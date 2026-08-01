@@ -1,0 +1,56 @@
+{
+	"filesGenerated": [
+		"20260102120000_create_audit_logs.exs",
+		"20260101170000_create_organization_invites.exs",
+		"20260101004032_add_todo_organization_id.exs",
+		"20260101004031_add_user_organization_id.exs",
+		"20260101004030_create_organizations.exs",
+		"20251231233414_add_user_role.exs",
+		"20251231230017_add_user_bio.exs",
+		"20250901092524_create_users.exs",
+		"20250813170314_create_todos.exs"
+	],
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 8,
+	"wasCached": false,
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "20250813170314_create_todos.exs",
+			"sha256": "6ee4b3c5a3d1107b47e34c1e91ea2e217421e00aba380b5ca57bc9a65eb73144"
+		},
+		{
+			"path": "20250901092524_create_users.exs",
+			"sha256": "951de85033231c39d8e1c33832ea1226c953d61ae7e4176e1f48f4b578b4dc9d"
+		},
+		{
+			"path": "20251231230017_add_user_bio.exs",
+			"sha256": "24217eb35b125f81d6cf4f35dc7cddb65ed2b35ce1cd9acf250d637b0ec19c57"
+		},
+		{
+			"path": "20251231233414_add_user_role.exs",
+			"sha256": "9cb913190571cc12a04c888d6fb25ad706108d81573b862d1c454c57bb7c74c6"
+		},
+		{
+			"path": "20260101004030_create_organizations.exs",
+			"sha256": "ef2c9394080e3a6b69fc8ff0c211bcb1f1ea91685f4146437e4b6dcfd3e3a69e"
+		},
+		{
+			"path": "20260101004031_add_user_organization_id.exs",
+			"sha256": "85fd35fe6c9667636821476972613804ea347d247474928de798860c0e88ad5a"
+		},
+		{
+			"path": "20260101004032_add_todo_organization_id.exs",
+			"sha256": "cf3bd795cc85d1cef7545fb38d1350cd6da86a7871e38e9a7ba65b3a3b30a848"
+		},
+		{
+			"path": "20260101170000_create_organization_invites.exs",
+			"sha256": "7ff20dc15515de28e3233322c7c0488ca31a5fc1d82e55a99e8ea96530864621"
+		},
+		{
+			"path": "20260102120000_create_audit_logs.exs",
+			"sha256": "5c6f4d403f31ca91a77313b478d95922a7de1f4cff7512ad02d3b106ac9f6082"
+		}
+	],
+	"generation": "496f9cabf9bdbab4ad8c09c90db291c2ad01ec6ed0d52584ddd96f676274cacd"
+}

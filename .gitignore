@@ -150,7 +150,6 @@ examples/todo-app/lib/
 !examples/18-phoenixhx-live-react/lib/**
 examples/18-phoenixhx-live-react/lib/phoenixhx_live_react_hx/
 examples/todo-app/assets/js/haxe/
-examples/todo-app/priv/repo/migrations/_GeneratedFiles.json
 examples/**/lib/_GeneratedFiles.json
 
 # Generated runtime shims emitted into example app lib trees

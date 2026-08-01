@@ -15,7 +15,6 @@ lib/
 !lib/todo_app/
 !lib/todo_app/mailer.ex
 !lib/todo_app/invite_email.ex
-priv/repo/migrations/_GeneratedFiles.json
 
 # IDE
 .vscode/
