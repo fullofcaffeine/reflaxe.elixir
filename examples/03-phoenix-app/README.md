@@ -20,13 +20,44 @@ mix phx.server
 
 Then open `http://localhost:4000/`.
 
+For a production-style local boot, compile and start with an explicit secret:
+
+```bash
+export SECRET_KEY_BASE="$(mix phx.gen.secret)"
+MIX_ENV=prod mix compile --warnings-as-errors
+MIX_ENV=prod PORT=4000 mix phx.server
+```
+
 ## Automated QA boundary
 
-This minimal teaching sample is classified as a compile-only snippet in
-`examples/qa-manifest.json`. The command above is useful for manual exploration, but this example's
-automated evidence proves generation and strict Phoenix compilation only; it does not advance a
-Phoenix runtime claim. The richer chat, LiveReact, and todo examples own required boot/browser
-evidence.
+This minimal teaching sample is a runtime capability showcase in
+`examples/qa-manifest.json`. Required CI production-compiles the Haxe-generated application, starts
+Phoenix through the repository's bounded sentinel, requests `/`, parses the JSON response, scans the
+server log for runtime failures, and tears down the owned process. The expected response is:
+
+```json
+{"message":"Hello from Haxe → Elixir!"}
+```
+
+From the repository root, run the same lifecycle locally in agent-safe asynchronous mode:
+
+```bash
+SECRET_KEY_BASE="$(cd examples/03-phoenix-app && mix phx.gen.secret)" \
+  QA_SKIP_ASSETS=1 \
+  scripts/qa-sentinel.sh \
+    --app examples/03-phoenix-app \
+    --hxml build.hxml \
+    --env prod \
+    --port 4003 \
+    --async \
+    --deadline 600 \
+    --verbose
+```
+
+Use the printed run ID with `scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 120`. No browser
+test is attached because this example advertises an HTTP controller route, not client-side behavior;
+the sentinel therefore skips asset building, and the richer chat, LiveReact, and todo examples own
+browser evidence.
 
 ## Haxe source map
 
@@ -63,7 +94,7 @@ Haxe controller:
 @:controller
 class PageController {
   public static function home(conn: Conn<EmptyParams>, params: EmptyParams): Conn<EmptyParams> {
-    return conn.json({message: "Hello from Haxe -> Elixir!"});
+    return conn.json({message: "Hello from Haxe → Elixir!"});
   }
 }
 ```
@@ -74,7 +105,7 @@ Generated Elixir shape:
 get "/", PageController, :home
 
 def home(conn, _params) do
-  json(conn, %{message: "Hello from Haxe -> Elixir!"})
+  json(conn, %{message: "Hello from Haxe → Elixir!"})
 end
 ```
 

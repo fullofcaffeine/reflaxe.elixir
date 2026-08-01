@@ -250,8 +250,9 @@ Examples are maintained QA assets, not just documentation snippets:
   qualified. The guard rejects internally inconsistent tier/evidence/CI declarations. Reviewers and
   workflow ownership must separately confirm that a `ci: true` command is actually required.
 - `npm run test:examples-runtime` runs examples marked as CI runtime-covered in the manifest.
-- Heavy browser/app checks stay in dedicated sentinel workflows, including
-  `todo-app`, chat presence, and the LiveReact hydration smoke.
+- Bounded application checks stay in dedicated sentinel workflows: `03-phoenix-app` production-boots
+  and verifies its JSON route without a browser, while `todo-app`, chat presence, and LiveReact add
+  browser evidence for the client behavior they advertise.
 
 ### Continuous Integration
 
@@ -266,7 +267,9 @@ Examples are tested in CI/CD on every commit to ensure:
 - ✅ Build configurations are correct
 
 Notes:
-- The heavyweight end-to-end `todo-app/` is validated by the dedicated **QA Sentinel** workflow (`.github/workflows/sentinel.yml`) which boots Phoenix in the background and runs Playwright smoke specs.
+- The dedicated **QA Sentinel** workflow (`.github/workflows/sentinel.yml`) production-boots the
+  minimal Phoenix example and verifies its HTTP response. It also runs the heavyweight `todo-app/`
+  and browser-backed chat/LiveReact paths at their stronger advertised boundaries.
 - The `Examples (Elixir WAE)` CI job validates the tutorial examples under `--warnings-as-errors` (sharded for runtime) and skips `todo-app/`, `test-integration/`, and `lix-installation/` to keep runtime bounded (those are covered elsewhere).
 - The dedicated **Example Compilation Tests** workflow also runs expected-output drift checks, the examples QA manifest guard, and runtime checks for examples marked `ci: true`.
 

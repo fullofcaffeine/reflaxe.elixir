@@ -159,9 +159,9 @@ qualified as a whole. There is deliberately no combined green status.
 | Authored input → output | Haxe-authored Phoenix/Ecto/LiveView/LiveReact application code and assets → production build, booted endpoint, runtime state, and browser-visible behavior |
 | Supported/tested profiles | Elixir-first on the pinned Phoenix/LiveView/Ecto/LiveReact combinations documented by the [Support Matrix](../06-guides/SUPPORT_MATRIX.md) |
 | Focused owners | Phoenix/Ecto/LiveView snapshots, Haxe-authored ConnTest/LiveViewTest/ExUnit, and focused client/binding tests |
-| Vertical/runtime owners | Example Mix tests, strict builds, dogfood generation/upgrade, and bounded QA sentinels |
+| Vertical/runtime owners | Example Mix tests, strict builds, dogfood generation/upgrade, and bounded QA sentinels; `03-phoenix-app` production-boots and verifies its exact JSON controller response without borrowing a richer app's result |
 | Browser owners | Playwright for `12-phoenix-chat`, `18-phoenixhx-live-react`, and the flagship `todo-app`; `15` and `17` browser specs remain manual and are not CI evidence |
-| Representative examples | All framework examples, with `todo-app` as the flagship application and `12`/`18` as browser-backed capability showcases |
+| Representative examples | All framework examples, with `03` as a runtime-backed minimal HTTP capability, `todo-app` as the flagship application, and `12`/`18` as browser-backed capability showcases |
 | Oracle and provenance | Phoenix/Ecto/LiveView public contracts plus user-visible browser behavior; a compiler snapshot alone cannot prove application behavior |
 | Skips/adaptations/quarantine | Compile-only examples claim source generation only; manual browser checks are named but do not advance CI-backed claims |
 | Selector/backstop/release | `example-qa-portfolio`, framework sentinel, dogfood, and full fallback; `test:examples-qa`, bounded sentinels, and exact-head full CI |

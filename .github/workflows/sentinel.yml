@@ -8,6 +8,75 @@ permissions:
   contents: read
 
 jobs:
+  smoke-minimal-phoenix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.14.0'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Setup Erlang/Elixir
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
+        with:
+          otp-version: '27.2'
+          elixir-version: '1.18.3'
+
+      - name: Cache Mix dependencies
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: |
+            ~/.mix
+            ~/.hex
+            examples/03-phoenix-app/deps
+            examples/03-phoenix-app/_build
+          key: ${{ runner.os }}-minimal-phoenix-mix-${{ hashFiles('examples/03-phoenix-app/mix.lock') }}
+
+      - name: Cache Haxe toolchain (lix)
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: ~/haxe
+          key: ${{ runner.os }}-lix-haxe-4.3.7-${{ hashFiles('.haxerc', 'haxe_libraries/*.hxml', 'package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-lix-haxe-4.3.7-
+
+      - name: Install root dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Install Haxe and libraries
+        run: |
+          set -euo pipefail
+          npx lix download
+          npx lix download haxe "4.3.7"
+          npx lix use haxe "4.3.7"
+          echo "$(pwd)/node_modules/.bin" >> "$GITHUB_PATH"
+          export PATH="$(pwd)/node_modules/.bin:$PATH"
+          haxe -version
+
+      - name: Run minimal Phoenix production smoke (bounded)
+        env:
+          SECRET_KEY_BASE: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          QA_SKIP_ASSETS: '1'
+        run: |
+          set -euo pipefail
+          scripts/qa-sentinel.sh --app examples/03-phoenix-app --hxml build.hxml --env prod --port 4003 --deadline 600 --verbose | tee qa-minimal-phoenix.log
+          python3 -c 'import json; assert json.load(open("/tmp/qa-index.html", encoding="utf-8")) == {"message": "Hello from Haxe → Elixir!"}'
+
+      - name: Upload minimal Phoenix QA logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: qa-minimal-phoenix-logs
+          path: |
+            /tmp/qa-*.log
+            qa-minimal-phoenix.log
+
   smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 30

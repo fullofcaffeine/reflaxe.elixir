@@ -16,5 +16,9 @@
 # Application module prefix (prevents collisions with Elixir built-ins like `Application`)
 -D app_name=PhoenixHaxeExample
 
+# Phoenix invokes configured endpoint helpers by their target module names, so
+# Haxe has no ordinary call edge that would otherwise load these @:keep types.
+--macro include('server.infrastructure')
+
 # Main class to compile (entry point)
 PhoenixHaxeExample

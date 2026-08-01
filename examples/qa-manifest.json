@@ -41,18 +41,21 @@
     },
     "03-phoenix-app": {
       "qa": {
-        "tier": "compile-only-snippet",
+        "tier": "capability-showcase",
         "owner": "example-minimal-phoenix-wiring",
         "surfaces": ["compiler-conformance", "mix-package-cli", "framework-applications"],
         "profiles": ["elixir-first"],
-        "evidenceLevel": "compile",
-        "claim": "The minimal Haxe-authored Phoenix application, router, and controller wiring compiles without claiming application runtime behavior."
+        "evidenceLevel": "runtime",
+        "claim": "The minimal Haxe-authored Phoenix application production-compiles, boots under an owned bounded process, and serves its declared JSON controller route."
       },
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
-        "mode": "compile-only",
-        "reason": "Minimal Phoenix wiring sample. Runtime Phoenix coverage lives in the richer Phoenix examples and todo-app sentinel."
+        "mode": "sentinel",
+        "command": "SECRET_KEY_BASE=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa QA_SKIP_ASSETS=1 scripts/qa-sentinel.sh --app examples/03-phoenix-app --hxml build.hxml --env prod --port 4003 --deadline 600 --verbose && python3 -c 'import json; assert json.load(open(\"/tmp/qa-index.html\", encoding=\"utf-8\")) == {\"message\": \"Hello from Haxe → Elixir!\"}'",
+        "timeoutSeconds": 600,
+        "ci": true,
+        "evidence": ["src_haxe/controllers/PageController.hx", "config/prod.exs", "config/runtime.exs"]
       }
     },
     "04-ecto-migrations": {

@@ -146,6 +146,7 @@ READY_PROBES=${READY_PROBES:-60}
 PROGRESS_INTERVAL=${PROGRESS_INTERVAL:-10}
 OVERALL_WATCHDOG_PID=""
 OVERALL_WATCHDOG_LOG=""
+HAXE_SERVER_PID=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -221,6 +222,25 @@ pick_available_port() {
       return 0
     fi
   done
+  return 1
+}
+
+show_port_owner() {
+  local port="$1"
+  if command -v lsof >/dev/null 2>&1; then
+    lsof -nP -iTCP:"$port" -sTCP:LISTEN 2>/dev/null || true
+  elif command -v ss >/dev/null 2>&1; then
+    ss -ltnp 2>/dev/null | awk -v p=":$port" '$4 ~ p {print}' || true
+  fi
+}
+
+require_available_target_port() {
+  if port_available "$PORT"; then
+    return 0
+  fi
+
+  log "[QA] ❌ Target port :$PORT is already in use; refusing to terminate an unowned process."
+  show_port_owner "$PORT"
   return 1
 }
 
@@ -358,6 +378,12 @@ run_step_best_effort() {
   return 0
 }
 
+# Fail before dispatching an async child. The child checks immediately before
+# boot, after its EXIT trap is installed, so an async failure still emits DONE.
+if [[ "${ASYNC_CHILD:-0}" -eq 0 ]]; then
+  require_available_target_port || exit 1
+fi
+
 # Async launcher: re-invoke this script in background and return immediately
 if [[ "${ASYNC}" -eq 1 && "${ASYNC_CHILD:-0}" -eq 0 ]]; then
   RUN_ID=$(date +%s)
@@ -481,15 +507,12 @@ fi
 
 on_exit() {
   local rc=$?
-  # Tear down the QA-started Haxe server if present (avoid leaking `haxe --wait` between runs).
-  if [[ -f /tmp/qa-haxe-server.pid ]]; then
-    local haxe_pid
-    haxe_pid="$(cat /tmp/qa-haxe-server.pid 2>/dev/null || true)"
-    if [[ -n "$haxe_pid" ]] && kill -0 "$haxe_pid" 2>/dev/null; then
-      kill_tree "$haxe_pid"
-      sleep 0.2
-      kill -KILL "$haxe_pid" 2>/dev/null || true
-    fi
+  # Tear down only the Haxe server started by this sentinel run. A shared PID
+  # file can be overwritten by a parallel run and must not define ownership.
+  if [[ -n "${HAXE_SERVER_PID:-}" ]] && kill -0 "$HAXE_SERVER_PID" 2>/dev/null; then
+    kill_tree "$HAXE_SERVER_PID"
+    sleep 0.2
+    kill -KILL "$HAXE_SERVER_PID" 2>/dev/null || true
   fi
 
   # Stop synchronous deadline watchdog to avoid lingering children/open pipes after success.
@@ -502,7 +525,9 @@ on_exit() {
   # `cleanup` is defined only after Phoenix is launched, so guard its presence
   # to keep early-failure paths safe.
   if [[ "${KEEP_ALIVE:-0}" -eq 0 ]] && declare -F cleanup >/dev/null 2>&1; then
-    cleanup || true
+    if ! cleanup; then
+      rc=1
+    fi
   fi
 
   # Only report DONE for the actual runner (not the async launcher).
@@ -510,6 +535,9 @@ on_exit() {
   if [[ "${ASYNC_CHILD:-0}" -eq 1 || "${ASYNC}" -eq 0 ]]; then
     echo "[$(ts)] [QA] DONE status=${rc}"
   fi
+
+  trap - EXIT
+  exit "$rc"
 }
 
 trap on_exit EXIT
@@ -631,7 +659,8 @@ if [[ "$HAXE_USE_SERVER" -eq 1 ]] && [[ -n "$HAXE_EXE" ]]; then
   # If we successfully detected a compatible server already running on the port,
   # skip starting a new one.
   if [[ "$HAXE_REUSE_SERVER" -eq 0 ]]; then
-    ( nohup "$HAXE_EXE" --wait "$HAXE_SERVER_PORT" >/tmp/qa-haxe-server.log 2>&1 & echo $! > /tmp/qa-haxe-server.pid ) >/dev/null 2>&1 || true
+    nohup "$HAXE_EXE" --wait "$HAXE_SERVER_PORT" >/tmp/qa-haxe-server.log 2>&1 &
+    HAXE_SERVER_PID=$!
   fi
   # Keep using plain HAXE_CMD unless caller explicitly set HAXE_USE_SERVER=1
   HAXE_CMD="$HAXE_EXE --connect $HAXE_SERVER_PORT"
@@ -761,24 +790,9 @@ if [[ -z "${QA_SKIP_ASSETS:-}" ]]; then
   fi
 fi
 
-# Ensure no stale Phoenix server is occupying the target port (or default :4000)
-for P in "$PORT" 4000; do
-  if command -v lsof >/dev/null 2>&1; then
-    PIDLIST=$(lsof -ti tcp:"$P" -sTCP:LISTEN || true)
-    if [ -n "$PIDLIST" ]; then
-      echo "[QA] Detected process on :$P → killing: $PIDLIST"
-      kill -9 $PIDLIST >/dev/null 2>&1 || true
-      sleep 0.5
-    fi
-  elif command -v ss >/dev/null 2>&1; then
-    PIDS=$(ss -ltnp 2>/dev/null | awk -v p=":$P" '$4 ~ p {print $6}' | sed -E 's/.*pid=([0-9]+),.*/\1/' | sort -u)
-    if [ -n "$PIDS" ]; then
-      echo "[QA] Detected process on :$P → killing: $PIDS"
-      kill -9 $PIDS >/dev/null 2>&1 || true
-      sleep 0.5
-    fi
-  fi
-done
+# Compilation can take long enough for another process to claim the port after
+# the initial async preflight. Fail closed instead of killing an unknown owner.
+require_available_target_port || exit 1
 
 log "[QA] Step 4: Starting Phoenix server on :$PORT (background, non-blocking)"
 export PORT="$PORT"
@@ -844,14 +858,20 @@ cleanup() {
     sleep 0.5
     kill -KILL $descendants >/dev/null 2>&1 || true
   fi
-  # Extra safety: kill anything still listening on the port
-  if command -v lsof >/dev/null 2>&1; then
-    PIDS=$(lsof -ti tcp:"$PORT" -sTCP:LISTEN || true)
-    if [[ -n "$PIDS" ]]; then kill -9 $PIDS >/dev/null 2>&1 || true; fi
-  elif command -v ss >/dev/null 2>&1; then
-    PIDS=$(ss -ltnp 2>/dev/null | awk -v p=":$PORT" '$4 ~ p {print $6}' | sed -E 's/.*pid=([0-9]+),.*/\1/' | sort -u)
-    if [[ -n "$PIDS" ]]; then kill -9 $PIDS >/dev/null 2>&1 || true; fi
-  fi
+  # Never kill by port: a different process could have acquired it while the
+  # owned Phoenix tree was stopping. Wait briefly and fail diagnostically if
+  # teardown did not release the requested port.
+  local attempt
+  for attempt in $(seq 1 20); do
+    if port_available "$PORT"; then
+      return 0
+    fi
+    sleep 0.1
+  done
+
+  log "[QA] ❌ Owned Phoenix process did not release :$PORT; refusing to kill an unknown listener."
+  show_port_owner "$PORT"
+  return 1
 }
 
 log "[QA] Step 5: Waiting for server readiness (probes=$READY_PROBES)"
