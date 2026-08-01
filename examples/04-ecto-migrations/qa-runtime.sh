@@ -66,8 +66,8 @@ echo "[ecto-migrations-qa] Preparing isolated database $database_name"
 cp -R "$example_dir/src_haxe" "$qa_workspace/src_haxe"
 cp "$example_dir/build-migrations.hxml" "$qa_workspace/build-migrations.hxml"
 (
-  cd "$qa_workspace"
-  "$haxe_bin" build-migrations.hxml
+  cd "$repo_root"
+  "$haxe_bin" --cwd "$qa_workspace" build-migrations.hxml
 )
 if [[ ! -f "$qa_migrations_dir/20240101120000_create_users.exs" \
    || ! -f "$qa_migrations_dir/20240102120000_create_posts.exs" ]]; then
