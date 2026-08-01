@@ -45,6 +45,13 @@ haxe build.hxml
 ls lib/migrations
 ```
 
+## Automated QA boundary
+
+This experimental sample is currently a compile-only snippet. CI proves that the Haxe migration DSL
+generates reviewed Ecto source shapes and strict-compiles the intermediate project; it does not yet
+run these migrations against a database. Therefore this example does not advance a database-
+execution claim even though the opt-in output is intended for Ecto to execute.
+
 ## Migration Examples
 
 ### Basic Table Creation

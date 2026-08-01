@@ -20,6 +20,14 @@ mix phx.server
 
 Then open `http://localhost:4000/`.
 
+## Automated QA boundary
+
+This minimal teaching sample is classified as a compile-only snippet in
+`examples/qa-manifest.json`. The command above is useful for manual exploration, but this example's
+automated evidence proves generation and strict Phoenix compilation only; it does not advance a
+Phoenix runtime claim. The richer chat, LiveReact, and todo examples own required boot/browser
+evidence.
+
 ## Haxe source map
 
 - `examples/03-phoenix-app/src_haxe/PhoenixHaxeExample.hx` - OTP app module (`@:application`)

@@ -4,6 +4,11 @@ This example demonstrates how to install and use Reflaxe.Elixir via Lix in a new
 
 ## Setup
 
+The example QA lane compiles the checked-in Haxe source but does not download a released package.
+Clean released-artifact installation is owned separately by the scheduled README release smoke and
+the isolated Haxelib package test. This distinction prevents a source-checkout compile from being
+reported as proof that release installation succeeded.
+
 ```bash
 # 1. Initialize a new project with lix
 mkdir my-elixir-project

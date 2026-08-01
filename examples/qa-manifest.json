@@ -1,7 +1,15 @@
 {
-  "version": 1,
+  "version": 2,
   "examples": {
     "01-simple-modules": {
+      "qa": {
+        "tier": "capability-showcase",
+        "owner": "example-simple-modules",
+        "surfaces": ["compiler-conformance", "elixir-native-interop"],
+        "profiles": ["elixir-first"],
+        "evidenceLevel": "runtime",
+        "claim": "Typed module functions, visibility, and pipe composition generate callable Elixir modules."
+      },
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
@@ -13,6 +21,14 @@
       }
     },
     "02-mix-project": {
+      "qa": {
+        "tier": "capability-showcase",
+        "owner": "example-mix-project",
+        "surfaces": ["compiler-conformance", "mix-package-cli"],
+        "profiles": ["elixir-first"],
+        "evidenceLevel": "runtime",
+        "claim": "A normal Mix project invokes the Haxe compiler and calls the generated modules from ExUnit."
+      },
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
@@ -24,6 +40,14 @@
       }
     },
     "03-phoenix-app": {
+      "qa": {
+        "tier": "compile-only-snippet",
+        "owner": "example-minimal-phoenix-wiring",
+        "surfaces": ["compiler-conformance", "mix-package-cli", "framework-applications"],
+        "profiles": ["elixir-first"],
+        "evidenceLevel": "compile",
+        "claim": "The minimal Haxe-authored Phoenix application, router, and controller wiring compiles without claiming application runtime behavior."
+      },
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
@@ -32,6 +56,14 @@
       }
     },
     "04-ecto-migrations": {
+      "qa": {
+        "tier": "compile-only-snippet",
+        "owner": "example-ecto-migration-emission",
+        "surfaces": ["compiler-conformance", "elixir-native-interop", "framework-applications"],
+        "profiles": ["elixir-first"],
+        "evidenceLevel": "compile",
+        "claim": "Experimental Haxe migration declarations generate reviewed Ecto migration source shapes without claiming database execution."
+      },
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
@@ -40,6 +72,14 @@
       }
     },
     "05-heex-templates": {
+      "qa": {
+        "tier": "capability-showcase",
+        "owner": "example-balanced-hxx-compatibility",
+        "surfaces": ["compiler-conformance", "framework-applications"],
+        "profiles": ["elixir-first"],
+        "evidenceLevel": "runtime",
+        "claim": "Legacy balanced HXX compatibility templates compile and render through Phoenix HTML safely."
+      },
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
@@ -51,6 +91,14 @@
       }
     },
     "06-user-management": {
+      "qa": {
+        "tier": "capability-showcase",
+        "owner": "example-liveview-ecto-user-flow",
+        "surfaces": ["compiler-conformance", "elixir-native-interop", "framework-applications"],
+        "profiles": ["elixir-first"],
+        "evidenceLevel": "runtime",
+        "claim": "Typed Ecto schemas, changesets, context functions, and LiveView render code compile, with the stable data path exercised at runtime."
+      },
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
@@ -62,6 +110,14 @@
       }
     },
     "07-protocols": {
+      "qa": {
+        "tier": "capability-showcase",
+        "owner": "example-protocol-contracts",
+        "surfaces": ["compiler-conformance", "elixir-native-interop"],
+        "profiles": ["elixir-first"],
+        "evidenceLevel": "runtime",
+        "claim": "Typed protocol-style contracts and their generated implementation modules dispatch correctly at runtime."
+      },
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
@@ -73,6 +129,14 @@
       }
     },
     "08-behaviors": {
+      "qa": {
+        "tier": "capability-showcase",
+        "owner": "example-behaviour-contracts",
+        "surfaces": ["compiler-conformance", "beam-otp-runtime", "elixir-native-interop"],
+        "profiles": ["elixir-first"],
+        "evidenceLevel": "runtime",
+        "claim": "Typed behaviour declarations generate callback contracts whose implementation dispatch and state transitions run under ExUnit."
+      },
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
@@ -84,6 +148,14 @@
       }
     },
     "09-phoenix-router": {
+      "qa": {
+        "tier": "capability-showcase",
+        "owner": "example-phoenix-router-dsl",
+        "surfaces": ["compiler-conformance", "framework-applications"],
+        "profiles": ["elixir-first"],
+        "evidenceLevel": "runtime",
+        "claim": "Typed module-level Phoenix routes expand to route metadata and preserve controller path values at runtime."
+      },
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
@@ -95,6 +167,14 @@
       }
     },
     "10-option-patterns": {
+      "qa": {
+        "tier": "capability-showcase",
+        "owner": "example-option-result-runtime",
+        "surfaces": ["compiler-conformance", "beam-otp-runtime"],
+        "profiles": ["portable"],
+        "evidenceLevel": "runtime",
+        "claim": "Ordinary Haxe Option and Result flows preserve their success, absence, and error behavior on BEAM."
+      },
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
@@ -106,6 +186,14 @@
       }
     },
     "11-domain-validation": {
+      "qa": {
+        "tier": "capability-showcase",
+        "owner": "example-domain-validation-runtime",
+        "surfaces": ["compiler-conformance", "beam-otp-runtime"],
+        "profiles": ["portable"],
+        "evidenceLevel": "runtime",
+        "claim": "Typed domain constructors reject invalid values and preserve composed validation results at runtime."
+      },
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
@@ -117,6 +205,14 @@
       }
     },
     "12-phoenix-chat": {
+      "qa": {
+        "tier": "capability-showcase",
+        "owner": "example-hybrid-phoenix-chat",
+        "surfaces": ["beam-otp-runtime", "elixir-native-interop", "mix-package-cli", "framework-applications"],
+        "profiles": ["elixir-first"],
+        "evidenceLevel": "browser",
+        "claim": "A hybrid Haxe/Phoenix chat boots with LiveView, Presence, PubSub, and its client integration visible in a real browser."
+      },
       "compile": { "required": true },
       "strictElixir": { "mode": "dedicated", "reason": "Skipped from WAE shard budget; covered by dedicated runtime and sentinel checks." },
       "runtime": {
@@ -134,6 +230,14 @@
       }
     },
     "13-elixir-first-liveview": {
+      "qa": {
+        "tier": "capability-showcase",
+        "owner": "example-elixir-first-liveview",
+        "surfaces": ["compiler-conformance", "elixir-native-interop", "mix-package-cli", "framework-applications"],
+        "profiles": ["elixir-first"],
+        "evidenceLevel": "runtime",
+        "claim": "Strict typed Haxe code uses Phoenix LiveView and a handwritten Elixir module through explicit interop boundaries exercised by integration tests."
+      },
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
@@ -145,6 +249,14 @@
       }
     },
     "14-abstraction-lab": {
+      "qa": {
+        "tier": "capability-showcase",
+        "owner": "example-elixir-abstraction-lab",
+        "surfaces": ["compiler-conformance", "beam-otp-runtime", "elixir-native-interop"],
+        "profiles": ["elixir-first"],
+        "evidenceLevel": "runtime",
+        "claim": "Protocol, behaviour, renderer, retry, and process-boundary abstractions generate ordinary Elixir behavior exercised by ExUnit."
+      },
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
@@ -156,6 +268,14 @@
       }
     },
     "15-phoenix-chat-haxe-first": {
+      "qa": {
+        "tier": "capability-showcase",
+        "owner": "example-haxe-first-phoenix-chat",
+        "surfaces": ["beam-otp-runtime", "elixir-native-interop", "mix-package-cli", "framework-applications"],
+        "profiles": ["elixir-first"],
+        "evidenceLevel": "runtime",
+        "claim": "A Haxe-authored Phoenix application, router, LiveView, and Presence state compile together and pass their declared runtime tests."
+      },
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
@@ -169,10 +289,19 @@
         "mode": "manual",
         "command": "scripts/qa-sentinel.sh --app examples/15-phoenix-chat-haxe-first --port 4015 --playwright --e2e-spec e2e/presence.spec.ts --e2e-workers 1 --deadline 900 --verbose",
         "ci": false,
-        "reason": "Browser smoke is available for local/manual validation; CI keeps this example bounded with mix tests plus WAE."
+        "reason": "Browser smoke is available for local/manual validation; CI keeps this example bounded with mix tests plus WAE.",
+        "evidence": ["e2e/presence.spec.ts"]
       }
     },
     "16-portable-chat-domain": {
+      "qa": {
+        "tier": "capability-showcase",
+        "owner": "example-portable-chat-domain",
+        "surfaces": ["compiler-conformance", "beam-otp-runtime"],
+        "profiles": ["portable"],
+        "evidenceLevel": "runtime",
+        "claim": "One portable Haxe chat domain preserves its selected validation and transcript behavior on both Elixir and JavaScript."
+      },
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
@@ -184,6 +313,14 @@
       }
     },
     "17-railshx-to-phoenixhx-todo": {
+      "qa": {
+        "tier": "capability-showcase",
+        "owner": "example-railshx-phoenix-port",
+        "surfaces": ["beam-otp-runtime", "elixir-native-interop", "mix-package-cli", "framework-applications"],
+        "profiles": ["elixir-first"],
+        "evidenceLevel": "runtime",
+        "claim": "The RailsHx-inspired Phoenix/Ecto/PubSub port compiles from Haxe and preserves its declared domain and application runtime contracts."
+      },
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
@@ -197,10 +334,19 @@
         "mode": "manual",
         "command": "scripts/qa-sentinel.sh --app examples/17-railshx-to-phoenixhx-todo --port 4017 --compile-migrations --migrations-hxml build-migrations.hxml --playwright --e2e-spec e2e/railshx_port.spec.ts --e2e-workers 1 --async --deadline 900 --verbose",
         "ci": false,
-        "reason": "Browser smoke is available for local/manual validation; CI keeps this learning example bounded with mix tests plus WAE."
+        "reason": "Browser smoke is available for local/manual validation; CI keeps this learning example bounded with mix tests plus WAE.",
+        "evidence": ["e2e/railshx_port.spec.ts"]
       }
     },
     "18-phoenixhx-live-react": {
+      "qa": {
+        "tier": "capability-showcase",
+        "owner": "example-phoenixhx-live-react",
+        "surfaces": ["elixir-native-interop", "mix-package-cli", "framework-applications"],
+        "profiles": ["elixir-first"],
+        "evidenceLevel": "browser",
+        "claim": "A Haxe-authored Phoenix wrapper and Genes browser bootstrap hydrate a LiveReact island whose controls update without a reload."
+      },
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },
       "runtime": {
@@ -218,6 +364,14 @@
       }
     },
     "lix-installation": {
+      "qa": {
+        "tier": "compile-only-snippet",
+        "owner": "example-lix-installation-source",
+        "surfaces": ["compiler-conformance", "mix-package-cli"],
+        "profiles": ["portable", "elixir-first"],
+        "evidenceLevel": "compile",
+        "claim": "The source example used by the documented Lix installation flow compiles without claiming that this lane downloaded a released package."
+      },
       "compile": { "required": true },
       "strictElixir": { "mode": "dedicated", "reason": "Installer smoke is covered by docs/release installation checks, not the WAE shards." },
       "runtime": {
@@ -226,6 +380,14 @@
       }
     },
     "test-integration": {
+      "qa": {
+        "tier": "capability-showcase",
+        "owner": "example-mix-test-integration",
+        "surfaces": ["compiler-conformance", "mix-package-cli"],
+        "profiles": ["portable", "elixir-first"],
+        "evidenceLevel": "runtime",
+        "claim": "A minimal Mix project compiles ordinary Haxe and calls the generated module from ExUnit."
+      },
       "compile": { "required": true },
       "strictElixir": { "mode": "dedicated", "reason": "Integration harness is compile-checked outside the WAE shards to keep CI bounded." },
       "runtime": {
@@ -237,6 +399,14 @@
       }
     },
     "todo-app": {
+      "qa": {
+        "tier": "flagship-application",
+        "owner": "example-todo-flagship",
+        "surfaces": ["compiler-conformance", "beam-otp-runtime", "elixir-native-interop", "mix-package-cli", "framework-applications"],
+        "profiles": ["elixir-first"],
+        "evidenceLevel": "browser",
+        "claim": "The full Haxe-authored Phoenix LiveView todo application compiles, boots, and proves create, edit, complete/uncomplete, delete, and core browser-integration journeys."
+      },
       "compile": { "required": true },
       "strictElixir": { "mode": "dedicated", "reason": "Covered by QA Sentinel, Playwright, and app-specific test gates because it is intentionally heavyweight." },
       "runtime": {
@@ -247,9 +417,15 @@
       },
       "e2e": {
         "mode": "sentinel-playwright",
-        "command": "scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --playwright --e2e-spec \"e2e/smoke/*.spec.ts\" --async --deadline 900 --verbose",
+        "command": "READY_PROBES=180 scripts/qa-sentinel.sh --app examples/todo-app --env dev --port 4001 --enable-watchers --playwright --e2e-spec \"e2e/create_todo.spec.ts e2e/edit_todo.spec.ts e2e/toggle_complete.spec.ts e2e/delete_todo.spec.ts\" --async --deadline 900 --verbose",
         "ci": true,
-        "evidence": ["e2e/smoke"]
+        "evidence": [
+          "e2e/smoke",
+          "e2e/create_todo.spec.ts",
+          "e2e/edit_todo.spec.ts",
+          "e2e/toggle_complete.spec.ts",
+          "e2e/delete_todo.spec.ts"
+        ]
       }
     }
   }

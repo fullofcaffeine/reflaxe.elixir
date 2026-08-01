@@ -24,6 +24,10 @@ implemented with Phoenix-native concepts:
 - Haxe-authored LiveView hook bootstrap through Genes.
 - Playwright smoke for guest entry, create, toggle, delete, and conversion copy.
 
+The Playwright spec is currently a bounded manual check, not required CI evidence. The example's
+automated claim is limited to compilation plus its declared Mix/runtime contracts until a follow-up
+promotes that browser journey to a required lane.
+
 This slice keeps the RailsHx user journey while moving persistence, auth, and realtime room notes into Phoenix/Ecto/PubSub patterns. User-management remains intentionally deferred because it needs admin authorization and account lifecycle policy.
 
 ## Run

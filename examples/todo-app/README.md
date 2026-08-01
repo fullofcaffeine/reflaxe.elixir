@@ -183,10 +183,11 @@ scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --playwrigh
 ```
 
 Local-development watcher parity (the CI lane that catches a missing Vite
-watcher even when prebuilt assets work):
+watcher even when prebuilt assets work, and protects the create, edit,
+complete/uncomplete, and delete journeys):
 
 ```bash
-READY_PROBES=180 scripts/qa-sentinel.sh --app examples/todo-app --env dev --port 4001 --enable-watchers --playwright --e2e-spec "e2e/create_todo.spec.ts e2e/toggle_complete.spec.ts" --async --deadline 900 --verbose
+READY_PROBES=180 scripts/qa-sentinel.sh --app examples/todo-app --env dev --port 4001 --enable-watchers --playwright --e2e-spec "e2e/create_todo.spec.ts e2e/edit_todo.spec.ts e2e/toggle_complete.spec.ts e2e/delete_todo.spec.ts" --async --deadline 900 --verbose
 ```
 
 Full browser suite:

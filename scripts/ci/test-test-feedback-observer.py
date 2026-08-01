@@ -75,7 +75,13 @@ class PlanTests(unittest.TestCase):
             (
                 "examples/todo-app/src/Main.hx",
                 {"example-compilation-gate", "sentinel-gate", "examples", "examples-elixir"},
-                {"compiler-conformance", "beam-otp-runtime", "mix-package-cli", "framework-applications"},
+                {
+                    "compiler-conformance",
+                    "beam-otp-runtime",
+                    "elixir-native-interop",
+                    "mix-package-cli",
+                    "framework-applications",
+                },
             ),
             (
                 "test/snapshot/core/example/Main.hx",

@@ -13,6 +13,17 @@ MANIFEST_PATH = EXAMPLES_DIR / "qa-manifest.json"
 
 STRICT_ELIXIR_MODES = {"ci", "dedicated", "skipped"}
 RUNTIME_MODES = {"compile-only", "mix-test", "sentinel", "sentinel-playwright", "manual"}
+E2E_MODES = {"sentinel-playwright", "manual"}
+QA_TIERS = {"flagship-application", "capability-showcase", "compile-only-snippet"}
+EVIDENCE_LEVELS = {"compile", "runtime", "browser"}
+AUTHORING_PROFILES = {"portable", "elixir-first"}
+PRODUCT_SURFACES = {
+    "compiler-conformance",
+    "beam-otp-runtime",
+    "elixir-native-interop",
+    "mix-package-cli",
+    "framework-applications",
+}
 
 
 def fail(message: str) -> None:
@@ -48,22 +59,97 @@ def require_non_empty_text(example: str, section: str, field: str, value: object
         fail(f"{example}.{section}.{field} must be a non-empty string")
 
 
+def require_bounded_text_list(
+    example: str, section: str, field: str, value: object, allowed: set[str]
+) -> None:
+    if not isinstance(value, list) or not value:
+        fail(f"{example}.{section}.{field} must be a non-empty list")
+    seen = set()
+    for item in value:
+        require_non_empty_text(example, section, f"{field}[]", item)
+        if item in seen:
+            fail(f"{example}.{section}.{field} must not contain duplicates")
+        seen.add(item)
+        if item not in allowed:
+            fail(f"{example}.{section}.{field}[] must be one of {sorted(allowed)}")
+
+
+def validate_qa_contract(example: str, entry: dict, owners: dict[str, str]) -> None:
+    qa = entry.get("qa")
+    if not isinstance(qa, dict):
+        fail(f"{example}.qa must be an object")
+
+    tier = qa.get("tier")
+    if tier not in QA_TIERS:
+        fail(f"{example}.qa.tier must be one of {sorted(QA_TIERS)}")
+    require_non_empty_text(example, "qa", "owner", qa.get("owner"))
+    owner = qa["owner"]
+    if owner in owners:
+        fail(f"{example}.qa.owner must be unique; already used by {owners[owner]}")
+    owners[owner] = example
+    require_bounded_text_list(example, "qa", "surfaces", qa.get("surfaces"), PRODUCT_SURFACES)
+    require_bounded_text_list(example, "qa", "profiles", qa.get("profiles"), AUTHORING_PROFILES)
+    require_non_empty_text(example, "qa", "claim", qa.get("claim"))
+
+    evidence_level = qa.get("evidenceLevel")
+    if evidence_level not in EVIDENCE_LEVELS:
+        fail(f"{example}.qa.evidenceLevel must be one of {sorted(EVIDENCE_LEVELS)}")
+
+    runtime = entry.get("runtime")
+    runtime_mode = runtime.get("mode") if isinstance(runtime, dict) else None
+    e2e = entry.get("e2e")
+
+    if tier == "compile-only-snippet" and runtime_mode != "compile-only":
+        fail(f"{example}: compile-only-snippet must use runtime.mode=compile-only")
+    if tier != "compile-only-snippet" and runtime_mode == "compile-only":
+        fail(f"{example}: {tier} must execute runtime evidence")
+    if tier == "flagship-application" and evidence_level != "browser":
+        fail(f"{example}: flagship-application must declare browser evidence")
+
+    if evidence_level == "compile":
+        if runtime_mode != "compile-only":
+            fail(f"{example}: compile claim must use runtime.mode=compile-only")
+        if e2e is not None:
+            fail(f"{example}: compile claim must not declare E2E evidence")
+    elif evidence_level == "runtime":
+        if runtime_mode == "compile-only" or runtime.get("ci") is not True:
+            fail(f"{example}: runtime claim requires runtime.ci=true")
+    elif evidence_level == "browser":
+        if runtime_mode == "compile-only" or runtime.get("ci") is not True:
+            fail(f"{example}: browser claim requires runtime.ci=true")
+        if not isinstance(e2e, dict) or e2e.get("ci") is not True:
+            fail(f"{example}: browser claim requires e2e.ci=true")
+        if e2e.get("mode") != "sentinel-playwright":
+            fail(f"{example}: browser claim requires e2e.mode=sentinel-playwright")
+
+
 def validate_evidence_paths(example: str, section_name: str, section: dict) -> None:
     evidence = section.get("evidence", [])
     if evidence is None:
         evidence = []
     if not isinstance(evidence, list):
         fail(f"{example}.{section_name}.evidence must be a list")
+    if not evidence:
+        fail(f"{example}.{section_name}.evidence must name at least one path")
 
     for relative_path in evidence:
         require_non_empty_text(example, section_name, "evidence[]", relative_path)
-        evidence_path = EXAMPLES_DIR / example / relative_path
+        example_root = (EXAMPLES_DIR / example).resolve()
+        evidence_path = (example_root / relative_path).resolve()
+        try:
+            evidence_path.relative_to(example_root)
+        except ValueError:
+            fail(f"{example}.{section_name}.evidence[] must stay inside the example: {relative_path}")
         if not evidence_path.exists():
             fail(f"{example}.{section_name}.evidence path does not exist: {relative_path}")
 
 
 def validate_manifest() -> dict:
     manifest = load_manifest()
+    if not isinstance(manifest, dict):
+        fail("Manifest root must be an object")
+    if manifest.get("version") != 2:
+        fail("Manifest version must be 2")
     entries = manifest.get("examples")
     if not isinstance(entries, dict):
         fail("Manifest must contain an object field named examples")
@@ -78,6 +164,7 @@ def validate_manifest() -> dict:
     if extra:
         fail("qa-manifest.json contains unknown examples: " + ", ".join(extra))
 
+    owners: dict[str, str] = {}
     for example in sorted(manifest_names):
         entry = entries[example]
         if not isinstance(entry, dict):
@@ -102,6 +189,8 @@ def validate_manifest() -> dict:
         runtime_mode = runtime.get("mode")
         if runtime_mode not in RUNTIME_MODES:
             fail(f"{example}.runtime.mode must be one of {sorted(RUNTIME_MODES)}")
+        if runtime_mode == "manual" and runtime.get("ci") is not False:
+            fail(f"{example}.runtime: manual mode requires ci=false")
 
         if runtime_mode == "compile-only":
             require_non_empty_text(example, "runtime", "reason", runtime.get("reason"))
@@ -116,12 +205,19 @@ def validate_manifest() -> dict:
             if not isinstance(e2e, dict):
                 fail(f"{example}.e2e must be an object")
             e2e_mode = e2e.get("mode")
-            if e2e_mode not in RUNTIME_MODES:
-                fail(f"{example}.e2e.mode must be one of {sorted(RUNTIME_MODES)}")
+            if e2e_mode not in E2E_MODES:
+                fail(f"{example}.e2e.mode must be one of {sorted(E2E_MODES)}")
+            if e2e_mode == "manual" and e2e.get("ci") is not False:
+                fail(f"{example}.e2e: manual mode requires ci=false")
             require_non_empty_text(example, "e2e", "command", e2e.get("command"))
             if e2e.get("ci") is False:
                 require_non_empty_text(example, "e2e", "reason", e2e.get("reason"))
             validate_evidence_paths(example, "e2e", e2e)
+
+        # Validate the cross-section claim only after its compile/runtime/E2E
+        # inputs have been shaped. Malformed base sections should produce the
+        # direct manifest error above, never an incidental Python exception.
+        validate_qa_contract(example, entry, owners)
 
     return manifest
 

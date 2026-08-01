@@ -25,9 +25,51 @@ changed behavior
 Do not run the largest suite on every edit. Do not call a change complete from a fast test that omits
 the behavior being claimed.
 
-## Two independent evidence axes
+## Behavior-first change contract
 
-Results must remain separate:
+Before broad automation, describe meaningful new or changed behavior as one concrete scenario. This
+is not a request for Gherkin or a new specification system. A Bead, PR, fixture comment, or small
+scenario table is enough when it records:
+
+1. the precondition and authored input;
+2. the action or compilation path;
+3. the observable result;
+4. the error or edge behavior;
+5. the owning product surface; and
+6. the public or internal claim protected by the test.
+
+For a bug fix or behavior change, start with the lowest-cost test that can still observe the defect.
+Run it against the unfixed behavior and retain the command plus the relevant failure. A separate red
+commit is optional; an unrelated setup error is not red-state evidence. Expected values must come
+from an independent source: a specification, manually authored minimal result, pinned differential
+reference, invariant, reviewed golden with provenance, or real consumer behavior. The production
+implementation must not create its own expected value.
+
+For a new capability, prove one narrow real path before multiplying fixtures. This **tracer bullet**
+starts with authored Haxe, crosses generated Elixir and the strict target check, and reaches the Mix,
+package, framework, runtime, or browser observer needed by the claim. When one change affects both
+compiler semantics and Phoenix/framework behavior, retain one tracer for each surface; one green app
+cannot stand in for the compiler contract.
+
+When a system or browser test discovers a stable compiler/generator defect, keep a **double lock**:
+
+- a focused deterministic regression for fast diagnosis;
+- the representative vertical integration that crosses the failed boundary; and
+- a system/browser regression only when that complete environment owns the user-visible promise.
+
+Mocks are valid only when they do not remove the failure class being claimed. OTP Process, Task,
+Agent, supervision, and message expectations come from the documented Elixir/OTP contract, not from
+the current generated implementation shape.
+
+High-risk changes to compiler representation, runtime semantics, ABI, package publication, security,
+migration behavior, or public claims require a review pass distinct from implementation. Record the
+review's findings and dispositions, challenging test sensitivity, oracle independence, missing
+negative cases, mocked boundaries, selector omissions, scorecard laundering, and claims broader than
+the executed evidence.
+
+## Evidence lenses and independent product surfaces
+
+Two broad lenses remain useful for orientation:
 
 1. **Portable Haxe semantics** — ordinary Haxe operations compile through Reflaxe.Elixir and behave
    correctly on BEAM. This includes language regressions, standard-library behavior, diagnostics,
@@ -39,6 +81,112 @@ Results must remain separate:
 A Phoenix browser flow cannot turn a missing portable `Array` contract into a pass. An upstream
 `unitstd` pass cannot prove Phoenix routing or OTP supervision. Public readiness must report both
 axes rather than one blended percentage.
+
+Those two lenses are not detailed enough to own release evidence. The repository therefore keeps
+five independent scorecards below. A scorecard is a map from one bounded claim to the tests that can
+actually observe it. “Partial” means the named slice has useful evidence but the surface is not
+qualified as a whole. There is deliberately no combined green status.
+
+### Haxe-to-Elixir compiler conformance
+
+| Field | Current binding |
+|---|---|
+| Stable owner and status | `compiler-conformance`; **partial** compiler/target surface |
+| Authored input → output | Ordinary Haxe, diagnostics, macros, and applicable stdlib declarations → generated Elixir and source maps |
+| Supported/tested profiles | Portable and Elixir-first authoring; Haxe 4.3.7; primary and minimum toolchains from the [Support Matrix](../06-guides/SUPPORT_MATRIX.md) |
+| Focused owners | Positive/negative snapshot categories, AST/pass/result invariants, generated-output and source-map comparisons |
+| Vertical/runtime owners | Strict generated-Elixir validation, Haxe-authored ExUnit stdlib runtime, maintained examples, and isolated package compilation |
+| Browser owners | None. Browser results may expose a compiler bug but cannot qualify compiler conformance. |
+| Representative examples | `01-simple-modules`, `10-option-patterns`, `16-portable-chat-domain`, and the compiler path exercised by `todo-app` |
+| Oracle and provenance | Haxe language/stdlib contracts, manually reviewed generated goldens, semantic invariants, and pinned official fixtures; exact fixture provenance remains `haxe.elixir.codex-ydd` |
+| Skips/adaptations/quarantine | Recorded in `test/upstream_unitstd/manifest.json`; disposition and execution outcome must remain separate |
+| Selector/backstop/release | `compiler-snapshot-aggregate` and cross-cutting full fallback; `npm test`, official/runtime lanes, package smoke, and exact-commit release gate |
+| Last clean proof and residual risk | CI `30664953897`: Tests, Examples/WAE, minimum-toolchain, and macOS jobs passed at `fb633dbff`; complete applicable official/stdlib qualification remains open |
+
+### BEAM/OTP runtime semantics
+
+| Field | Current binding |
+|---|---|
+| Stable owner and status | `beam-otp-runtime`; **partial** runtime surface |
+| Authored input → output | Haxe operations and typed OTP calls → processes, messages, return values, timeouts, shutdown, and application boot on BEAM |
+| Supported/tested profiles | The bounded operations in the [OTP Support Contract](../04-api-reference/OTP_SUPPORT_CONTRACT.md), tested on primary and minimum Elixir/OTP lanes |
+| Focused owners | Haxe-authored runtime/ExUnit fixtures for portable semantics plus Process, Task, and Agent lifecycle behavior |
+| Vertical/runtime owners | `test:haxe-exunit-stdlib`, runtime smoke, Mix tests, todo-app Mix tests, and application boot sentinels |
+| Browser owners | None for general BEAM/OTP semantics; browser flows can prove only their application behavior. |
+| Representative examples | `08-behaviors`, `10-option-patterns`, `14-abstraction-lab`, `16-portable-chat-domain`, and `todo-app` |
+| Oracle and provenance | Explicit Elixir/OTP behavior contracts and manually authored runtime expectations; generated callback structure is not the oracle |
+| Skips/adaptations/quarantine | Custom GenServer callbacks, Registry, broad supervisor failure policy, raw mailbox behavior, and distributed OTP are outside the current promise |
+| Selector/backstop/release | `test`/runtime owners with cross-cutting full fallback; `test:runtime-smoke`, `test:mix-fast`, and exact-head full CI |
+| Last clean proof and residual risk | CI `30664953897`: Tests, runtime examples, todo-app Mix, dogfood, minimum-toolchain, and sentinel jobs passed; broad OTP behavior is intentionally unclaimed |
+
+### Elixir-native, metal, macros, and interop
+
+| Field | Current binding |
+|---|---|
+| Stable owner and status | `elixir-native-interop`; **partial** native-boundary surface |
+| Authored input → output | Typed externs, annotations, HXX, macros, and isolated metal escape hatches → ordinary Elixir/Phoenix/Ecto/OTP calls and modules |
+| Supported/tested profiles | Elixir-first is primary; portable code may cross a typed boundary deliberately; `metal` remains a local escape hatch rather than an application profile |
+| Focused owners | Phoenix/Ecto/OTP/ExUnit snapshot categories, strict-boundary diagnostics, macro/pass guards, and typed interop fixtures |
+| Vertical/runtime owners | `test:mix-fast` and the relevant runtime examples using real Elixir, Ecto, Phoenix, or OTP APIs |
+| Browser owners | Only when the native boundary itself is browser-visible, such as the LiveReact/Genes integration; those results do not qualify unrelated native APIs |
+| Representative examples | `07-protocols`, `13-elixir-first-liveview`, `14-abstraction-lab`, `18-phoenixhx-live-react` |
+| Oracle and provenance | Elixir/Phoenix/Ecto/OTP public contracts, manually authored minimal target equivalents, strict target compilation, and real consumer behavior |
+| Skips/adaptations/quarantine | No broad promise that every Hex dependency has a typed facade; raw HEEx/metal use stays explicitly isolated |
+| Selector/backstop/release | `test` and affected example/framework owners with cross-cutting full fallback; Mix/runtime/example QA plus exact-head full CI |
+| Last clean proof and residual risk | CI `30664953897`: Tests, Example WAE/runtime, and LiveReact/Phoenix sentinels passed; coverage remains API-by-API rather than ecosystem-wide |
+
+### Mix package, CLI, and installation
+
+| Field | Current binding |
+|---|---|
+| Stable owner and status | `mix-package-cli`; **partial** consumer/distribution surface |
+| Authored input → output | Mix configuration, HXML, source checkout, and packaged archive → compilation, generated-file ownership, clean rebuild, and installable consumer output |
+| Supported/tested profiles | Repository checkout, isolated Haxelib ZIP consumer, scheduled released-artifact smoke, primary/minimum toolchains where declared |
+| Focused owners | Haxe compiler Mix tests, invalidation/ownership fixtures, generator/package policy, and release workflow contracts |
+| Vertical/runtime owners | `test:haxelib-package`, dogfood generation/boot/upgrade, docs smoke, and installed-package output parity |
+| Browser owners | None for installation itself; a generated Phoenix app boot may prove the installed product crosses into the framework surface. |
+| Representative examples | `02-mix-project`, `lix-installation`, `test-integration`, and package-created dogfood applications |
+| Oracle and provenance | Mix compiler/application contracts, declarative package contents, source/package parity, immutable release artifacts, and clean-consumer behavior |
+| Skips/adaptations/quarantine | `lix-installation` is compile evidence in the example lane; it does not by itself prove a released download occurred |
+| Selector/backstop/release | `package-consumer-contracts` with full fallback for package/release changes; package smoke, release policy, and exact tested-commit publication |
+| Last clean proof and residual risk | CI `30664953897`: Haxelib Package Smoke, Docs Smoke, Dogfood, minimum-toolchain, and release jobs passed; final 1.0 support/licensing approval remains blocked |
+
+### Phoenix and framework applications
+
+| Field | Current binding |
+|---|---|
+| Stable owner and status | `framework-applications`; **partial** application surface |
+| Authored input → output | Haxe-authored Phoenix/Ecto/LiveView/LiveReact application code and assets → production build, booted endpoint, runtime state, and browser-visible behavior |
+| Supported/tested profiles | Elixir-first on the pinned Phoenix/LiveView/Ecto/LiveReact combinations documented by the [Support Matrix](../06-guides/SUPPORT_MATRIX.md) |
+| Focused owners | Phoenix/Ecto/LiveView snapshots, Haxe-authored ConnTest/LiveViewTest/ExUnit, and focused client/binding tests |
+| Vertical/runtime owners | Example Mix tests, strict builds, dogfood generation/upgrade, and bounded QA sentinels |
+| Browser owners | Playwright for `12-phoenix-chat`, `18-phoenixhx-live-react`, and the flagship `todo-app`; `15` and `17` browser specs remain manual and are not CI evidence |
+| Representative examples | All framework examples, with `todo-app` as the flagship application and `12`/`18` as browser-backed capability showcases |
+| Oracle and provenance | Phoenix/Ecto/LiveView public contracts plus user-visible browser behavior; a compiler snapshot alone cannot prove application behavior |
+| Skips/adaptations/quarantine | Compile-only examples claim source generation only; manual browser checks are named but do not advance CI-backed claims |
+| Selector/backstop/release | `example-qa-portfolio`, framework sentinel, dogfood, and full fallback; `test:examples-qa`, bounded sentinels, and exact-head full CI |
+| Last clean proof and residual risk | CI `30664953897`: example runtime/WAE, Phoenix chat, LiveReact, todo Mix/browser, docs, and dogfood jobs passed; only pinned paths are claimed |
+
+The broad [Production Readiness scorecard](../06-guides/PRODUCTION_READINESS.md) combines these
+surface results into release decisions. It must link back to the relevant surface evidence; it does
+not replace the five scorecards or allow one surface to advance another.
+
+## Incremental strategy crosswalk
+
+This table records the 2026-08-01 audit against the behavior-first update. “Satisfied” can mean the
+policy and owner now exist; it does not erase the residual execution gaps named in the final column.
+
+| Conclusion | Before this update | Current status | Evidence or residual work |
+|---|---|---|---|
+| Behavior discovery/formulation | Partial | **Satisfied** | The six-field scenario contract above uses existing Beads, PRs, fixture notes, or scenario tables rather than a new BDD system. |
+| TDD at the lowest faithful layer | Partial | **Satisfied** | The agent loop plus red-state rule require the exact pre-fix command/failure for behavior changes; the example-manifest guard was developed red-first. |
+| Independent oracle | Partial | **Partial** | New/materially changed expectations require provenance; official fixture pin/adaptation provenance remains `haxe.elixir.codex-ydd`. |
+| One tracer bullet first | Partial | **Satisfied** | New capabilities require a narrow authored-source → target → real observer path, with separate compiler and framework tracers when both change. |
+| Lowest faithful layer and double lock | Partial | **Satisfied** | The policy retains focused diagnosis and real-boundary proof without forcing browser tests where the browser cannot observe the defect. |
+| Portfolio review, not quotas | Partial | **Partial** | Per-surface review is now required; ratios remain smell detectors. Unique failure yield and critical-path optimization remain measured follow-up work. |
+| Executable examples | Partial | **Partial, with current claims audited** | Manifest schema v2 classifies every example and rejects internally inconsistent tier/evidence/CI declarations. The current `ci: true` entries were checked against required workflows, but independent workflow linkage remains `haxe.elixir.codex-jvg.4`; advertised execution gaps receive separate Beads. |
+| Preserve R0–R5 | Satisfied | **Satisfied with residual** | Rings, conservative fallback, and full backstop remain unchanged; retry evidence repair remains `haxe.elixir.codex-04s`. |
+| Targeted high-risk verification | Partial | **Satisfied as policy** | A distinct review is now required and this update records one; future findings must remain durable in the Bead/PR or decision trail. |
 
 ## Evidence vocabulary
 
@@ -89,6 +237,27 @@ successfully contributes a compatibility pass.
 Snapshots, generated-source checks, runtime tests, examples, and browser tests are complementary.
 Never use one as a cheaper substitute for another contract.
 
+## Per-surface portfolio review
+
+Review balance by stable behavior owner inside each scorecard, never by mixing surfaces to reach one
+percentage. Static formatting, lint, strict types, manifests, generated freshness, workflow policy,
+and security checks remain outside the denominator: they are important floors, but they do not
+exercise a product behavior.
+
+Approximate diagnostic ranges—not gates—are:
+
+- compiler/backend: 55–70% focused semantic/diagnostic owners, 25–40% real
+  compile/build/run integration, and 0–10% downstream/system qualification;
+- browser-capable framework/application: 50–60% focused deterministic/contract owners, 30–40%
+  vertical integration/application runtime, and 5–10% browser E2E scenarios.
+
+Count scenarios or stable owners, not assertions, parameter rows, files, or CI minutes. Investigate
+an imbalance using unique actionable failure yield, escaped defects, diagnosis time, framework/build
+failures missed below the boundary, browser discoveries converted into focused regressions, flake and
+quarantine rates, example health, selector misses, maintenance cost, and claim-to-test ownership.
+Unknown values stay unknown. The job-level feedback observer cannot infer all of these metrics from
+durations alone, and no ratio controls CI.
+
 ## Feedback rings for people and agents
 
 The same code and test commands serve humans and agents. Agents additionally require bounded process
@@ -136,6 +305,40 @@ evidence, not broad path ignores.
 `npm run test:changed` is a local convenience heuristic. It has no reviewed semantic-ownership
 manifest or selector-miss audit, so it is **advisory only** and cannot establish completion or become
 a blocking CI selector in its current form.
+
+### Representative behavior-first workflow: example claims
+
+This 2026-08-01 update closed a real policy gap rather than inventing a compiler feature for process
+demonstration.
+
+| Scenario field | Recorded behavior |
+|---|---|
+| Preconditions/input | An entry in `examples/qa-manifest.json` declares its tier, product surfaces, authoring profiles, strongest evidence level, and one distinctive claim. |
+| Action/path | `npm run guard:examples-qa` loads every maintained example and validates that declaration against its compile, runtime, and E2E decisions. |
+| Observable result | A compile-only claim may compile; a runtime claim requires `runtime.ci=true`; a browser claim requires both runtime CI and `e2e.ci=true`; the flagship todo app therefore remains browser-backed QA. |
+| Error/edge behavior | Missing metadata, unknown surfaces/profiles, duplicate owners, incompatible tier/runtime pairs, and browser claims with manual-only E2E fail nonzero. |
+| Owning surface | The guard owns example evidence declarations; each entry separately names affected product surfaces for scorecard routing. `evidenceLevel` and the distinctive claim bound what the example may actually prove. |
+| Protected claim | An example cannot advance a stronger product claim than the level CI executes. |
+
+The focused test was red before implementation:
+
+```bash
+scripts/with-timeout.sh --secs 60 -- python3 scripts/ci/test-examples-qa.py
+```
+
+It exited 1 because all 21 entries lacked claim metadata and the old validator accepted invalid
+tier/runtime pairs, unknown product surfaces, duplicate owners, and a browser claim without CI
+browser evidence. The expectation is independently authored from the example QA contract; the
+validator does not generate its own expected manifest.
+
+The focused owner is `scripts/ci/test-examples-qa.py`. The vertical tracer is the `todo-app` entry:
+its declaration passes schema validation, and the separately reviewed required sentinel workflows
+build Haxe to Elixir, strict-compile the application, boot Phoenix, run the compact browser smoke,
+and exercise create, edit, complete/uncomplete, and delete through the local-development watcher
+path. The guard checks declaration consistency; the sentinels observe the application. Neither
+substitutes for the other. The guard does not yet prove that every future `ci: true` edit is wired
+into a required workflow; `haxe.elixir.codex-jvg.4` owns that bounded follow-up. `npm run ci:guards`,
+example QA, and exact-head CI are the broader contracts.
 
 ### Observation-only test feedback
 
@@ -245,7 +448,7 @@ the contract; it is not permission to relabel the gap as a pass.
 | Official `unitstd` | 120 product entries: 24 enabled, 9 adapted, 13 target-specific skips, 3 unsupported, 71 without upstream specs; 32 checked-in fixtures | Exact per-fixture upstream commit/path/hash, local hash, adaptation diff/hash, independent disposition/outcome, secure TLS classification | Harden `test/upstream_unitstd/manifest.json` and its existing guards | Provenance/classification |
 | Shared language/issues | General local regressions exist | No source-identity-preserving smoke from official shared top-level and issue families | Add one meaningful case from each family beside the existing ExUnit official-fixture lane | Official representative smoke |
 | Capabilities | Runtime, OTP, IO, framework and platform smokes cover selected contracts | No complete capability manifest for filesystem/process/env/locale/time/network/TLS/thread/atomic behavior | Versioned capability classification tied to the official inventory | Classification, then capability shards |
-| Examples/E2E | Manifested compile/output/WAE/runtime coverage; todo, chat and LiveReact browser gates | Ring/selection ownership and comparable timing/failure-yield data | Extend `examples/qa-manifest.json`, not a parallel example registry | Instrumentation and selector observation |
+| Examples/E2E | Schema-v2 manifested tiers, stable owners, affected product surfaces, profiles, claims, compile/output/WAE/runtime coverage; todo, chat and LiveReact browser gates | `03` bounded boot, `04` migration execution, required browser ownership for the maintained `15`/`17` manual specs, and an independently executable link from `ci: true` declarations to required workflows | Existing manifest/guard plus `haxe.elixir.codex-jvg.1`, `.2`, `.3`, and `.4`; no parallel example registry | Close only the evidence-backed child gaps; portfolio metrics remain observational |
 | Package/install | Isolated Haxelib ZIP parity and scheduled released-artifact smoke | Full official portable smoke through the installed package | Reuse package workspace and official ExUnit smoke once provenance is hardened | Official smoke, then release evidence |
 | Native/framework | Mix, OTP, Phoenix, Ecto, LiveView, LiveReact/Genes and output-quality gates | No gap that portable-suite work is allowed to replace | Keep this axis independently required | Ongoing |
 | Feedback efficiency | Focused commands, parallel snapshots, bounded sentinels, sharded WAE, observation-only ownership/timing reports | R0/R1 p50/p95 and validated per-rule promotion evidence; GitHub job metadata does not expose every cache/retry/first-log signal | Extend existing runners only when a missing signal changes a decision; observe before selecting | Selector observation, then measured promotion |

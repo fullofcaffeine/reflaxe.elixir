@@ -48,6 +48,11 @@ Related policies and support pages:
 Green CI means the tested cases passed. It does not prove untested Haxe semantics, framework
 versions, operating systems, third-party libraries, or deployment conditions.
 
+This release-oriented scorecard summarizes decisions across the product. It does not merge their
+evidence. The five independent compiler, BEAM/OTP, native interop, Mix/package, and framework
+scorecards live in the [Testing Strategy](../03-compiler-development/TESTING_INFRASTRUCTURE.md#evidence-lenses-and-independent-product-surfaces).
+One surface can remain conditional or blocked even while another surface is green.
+
 ## Current Scorecard
 
 | Dimension | Status | Evidence | Remaining condition or gap |

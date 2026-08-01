@@ -140,7 +140,7 @@ jobs:
           READY_PROBES: '180'
         run: |
           set -euo pipefail
-          scripts/qa-sentinel.sh --app examples/todo-app --env dev --port 4001 --enable-watchers --playwright --e2e-spec "e2e/create_todo.spec.ts e2e/toggle_complete.spec.ts" --e2e-workers 1 --deadline 900 --verbose | tee qa-dev-watchers-run.log
+          scripts/qa-sentinel.sh --app examples/todo-app --env dev --port 4001 --enable-watchers --playwright --e2e-spec "e2e/create_todo.spec.ts e2e/edit_todo.spec.ts e2e/toggle_complete.spec.ts e2e/delete_todo.spec.ts" --e2e-workers 1 --deadline 900 --verbose | tee qa-dev-watchers-run.log
 
       - name: Upload QA logs
         if: always()

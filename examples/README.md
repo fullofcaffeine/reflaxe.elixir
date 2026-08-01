@@ -230,10 +230,25 @@ haxe build.hxml
 
 Examples are maintained QA assets, not just documentation snippets:
 
+- **Flagship application** means a full reference app whose protected claim crosses authored-source
+  generation, strict target build, process boot, runtime tests, and a compact browser journey. The
+  todo app is the current flagship; this classification keeps its runtime and Playwright gates
+  mandatory.
+- **Capability showcase** means a focused example that must compile and execute at the level its
+  distinctive claim requires. Browser evidence is required only when the protected claim needs a
+  browser.
+- **Compile-only snippet** means compilation and strict target acceptance are the truthful signal.
+  It can protect a framework code-generation claim, but it cannot be used as framework runtime,
+  browser, or package-install evidence.
+
 - `npm run test:examples` compiles every example with `build.hxml` or `compile-all.hxml`.
 - `npm run test:examples-output` recompiles the examples and fails if checked-in generated output changes.
 - `npm run test:examples-elixir` verifies generated Elixir under warnings-as-errors for Mix/tutorial examples that fit the CI budget.
-- `examples/qa-manifest.json` records each example’s QA status. An example must either list runtime/E2E coverage or explain why compile-only validation is the right signal.
+- `examples/qa-manifest.json` records each example’s tier, stable owner, affected product surfaces,
+  authoring profiles, strongest evidence level, distinctive claim, and executable QA decisions.
+  `qa.surfaces` routes changes to the relevant scorecards; it does not say those surfaces are fully
+  qualified. The guard rejects internally inconsistent tier/evidence/CI declarations. Reviewers and
+  workflow ownership must separately confirm that a `ci: true` command is actually required.
 - `npm run test:examples-runtime` runs examples marked as CI runtime-covered in the manifest.
 - Heavy browser/app checks stay in dedicated sentinel workflows, including
   `todo-app`, chat presence, and the LiveReact hydration smoke.

@@ -56,9 +56,10 @@
         "scripts/test-examples.sh",
         "scripts/test-examples-elixir.sh",
         "scripts/ci/examples_qa.py",
+        "scripts/ci/test-examples-qa.py",
         "scripts/ci/check-examples-expected-output.sh"
       ],
-      "surfaces": ["compiler-conformance", "beam-otp-runtime", "mix-package-cli", "framework-applications"],
+      "surfaces": ["compiler-conformance", "beam-otp-runtime", "elixir-native-interop", "mix-package-cli", "framework-applications"],
       "jobs": ["example-compilation-gate", "sentinel-gate", "examples", "examples-elixir", "docs-smoke"],
       "reason": "Example source must compile, pass strict generated-Elixir checks, and run its declared application coverage."
     },

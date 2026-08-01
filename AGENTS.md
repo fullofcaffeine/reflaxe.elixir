@@ -117,13 +117,25 @@ These failures usually come from running only a subset locally (e.g. `test:quick
 - Haxe/PhoenixHx docs must keep the target model visible: when explaining a non-trivial Haxe→Elixir or PhoenixHx idiom, show the raw Elixir/Phoenix equivalent or the generated target shape nearby. When the Haxe layer improves UX, briefly explain the improvement too: stronger types, fewer duplicated strings/keys, generated boilerplate, better completion, or earlier compile-time feedback. Omit the comparison only when the mapping is truly obvious, such as a direct wrapper over a same-named target call; when omitted, keep wording clear about the underlying target primitive.
 - Examples are first-class QA artifacts:
   - Every example with `build.hxml`, `compile-all.hxml`, or `mix.exs` must be listed in `examples/qa-manifest.json`.
+  - Every manifest entry must declare its tier, stable owner, affected product surfaces, authoring
+    profiles, strongest evidence level, and one distinctive claim. The claim cannot be stronger than
+    its required CI execution. `todo-app` is the flagship application and must retain compile,
+    strict-build, boot, runtime, and Playwright evidence.
   - Every example must either name meaningful runtime/E2E coverage or state why compile-only validation is the right signal.
   - After compiler/std/framework/example changes, validate the relevant layers: Haxe compile (`npm run test:examples`), generated expected-output drift (`npm run test:examples-output`), strict generated Elixir (`npm run test:examples-elixir`), and runtime example tests (`npm run test:examples-runtime`) when behavior can change.
   - Run `npm run guard:examples-qa` after adding/removing an example or changing example test coverage.
   - If example generated output changes intentionally, review and commit the generated output alongside the source/docs change; do not leave examples regenerating differently from checked-in files.
 - Handwritten-output corpus changes: `test/quality/handwritten-output/manifest.json` is a review policy, not a suppression list. New `_ =`, IIFE, helper, reducer-append, or support-footprint growth should be fixed at the compiler source when possible. Add an allowance only when the artifact is semantically or architecturally required, scope it to one file/helper/count, explain why, and link the owning bead. Run `npm run test:handwritten-output`; use `npm run update:handwritten-output` only after reviewing the Haxe source, generated diff, handwritten comparison, and runtime/WAE evidence.
 - Deep compiler/runtime semantics: if a fix becomes too complex, ambiguous, or architectural to reason about locally with confidence, stop before broad changes and ask the human to query GPT 5.5 Pro with the whole repo. Provide a precise prompt describing the failing Haxe source, generated Elixir shape, expected semantics, suspected pipeline files, and adjacent risks. Do not land speculative broad repairs while waiting for that external review.
-- Bugs: when you fix a bug, add a regression test/snapshot when it fits (and keep it minimal).
+- Behavior-first changes: before broad automation for meaningful new or changed behavior, record the
+  input/precondition, action or compilation path, observable result, edge/error behavior, owning
+  product surface, and protected claim. For bug fixes and behavior changes, retain the exact pre-fix
+  command and concise failure evidence; for new/materially changed expectations, name the independent
+  oracle. Start a new capability with one narrow real tracer path. See
+  `docs/03-compiler-development/TESTING_INFRASTRUCTURE.md`.
+- Bugs: when you fix a bug, add a regression test/snapshot when it fits (and keep it minimal). When a
+  high-level test exposes a stable compiler/generator defect, retain both the focused regression and
+  the representative real-boundary proof.
 - Regression fidelity: exercise the same public Haxe/source-language operation that failed in production. Do not replace ordinary Haxe behavior with `__elixir__()`, `untyped`, raw target syntax, or a lower-level helper merely to reduce generated support files, warnings, snapshot size, or test complexity; that can bypass the compiler path the test claims to protect. Target escape hatches are allowed only when the target representation/boundary itself is under test or no typed Haxe surface exists. Document that reason beside the escape hatch and track any source-level semantic gap it bypasses.
 - Optimize regression fixtures for semantic signal first. Generated helper volume is not a reason to weaken the exercised path; accept the required artifact or isolate it in a separate representation-specific assertion.
 - Non-`Void` result invariants: snapshot tests enable `-D reflaxe_elixir_validate_results`. When a pass fails this check, preserve or restore the value in that pass; do not disable the invariant, weaken the source return type, or add target injection to the fixture. Use `-D hxx_granular_pass_registry` to identify an inner pass and `npm run test:result-invariant` to verify the diagnostic hook.
