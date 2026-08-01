@@ -212,6 +212,33 @@ port_available() {
   ' -- "$port" >/dev/null 2>&1
 }
 
+# Detect an active local listener without confusing recently closed TCP
+# connections in TIME_WAIT for a still-running server.
+port_has_local_listener() {
+  local port="$1"
+  [[ -n "$port" ]] || return 1
+  if ! command -v elixir >/dev/null 2>&1; then
+    return 1
+  fi
+  elixir -e '
+    port = System.argv() |> List.first() |> String.to_integer()
+    probes = [
+      {{127,0,0,1}, [:binary, active: false]},
+      {{0,0,0,0,0,0,0,1}, [:binary, :inet6, active: false]}
+    ]
+
+    listening? =
+      Enum.any?(probes, fn {address, options} ->
+        case :gen_tcp.connect(address, port, options, 200) do
+          {:ok, socket} -> :gen_tcp.close(socket); true
+          {:error, _} -> false
+        end
+      end)
+
+    System.halt(if listening?, do: 0, else: 1)
+  ' -- "$port" >/dev/null 2>&1
+}
+
 pick_available_port() {
   local base="$1"
   local offset port
@@ -863,7 +890,7 @@ cleanup() {
   # teardown did not release the requested port.
   local attempt
   for attempt in $(seq 1 20); do
-    if port_available "$PORT"; then
+    if ! port_has_local_listener "$PORT"; then
       return 0
     fi
     sleep 0.1
