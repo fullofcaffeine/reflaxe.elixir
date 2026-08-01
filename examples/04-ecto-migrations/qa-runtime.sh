@@ -4,7 +4,15 @@ set -euo pipefail
 example_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 repo_root=$(CDPATH= cd -- "$example_dir/../.." && pwd)
 mix_bin=${MIX_BIN:-mix}
-haxe_bin=${HAXE_BIN:-haxe}
+haxe_bin=${HAXE_BIN:-}
+if [[ -z "$haxe_bin" ]]; then
+  haxe_version=${HAXE_VERSION:-}
+  if [[ -z "$haxe_version" ]]; then
+    haxe_version=$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$repo_root/.haxerc")
+  fi
+  pinned_haxe="$HOME/haxe/versions/$haxe_version/haxe"
+  haxe_bin=$([[ -x "$pinned_haxe" ]] && printf '%s' "$pinned_haxe" || printf '%s' haxe)
+fi
 qa_workspace=
 qa_migrations_dir=
 ownership_marker=
@@ -66,8 +74,8 @@ echo "[ecto-migrations-qa] Preparing isolated database $database_name"
 cp -R "$example_dir/src_haxe" "$qa_workspace/src_haxe"
 cp "$example_dir/build-migrations.hxml" "$qa_workspace/build-migrations.hxml"
 (
-  cd "$repo_root"
-  "$haxe_bin" --cwd "$qa_workspace" build-migrations.hxml
+  cd "$qa_workspace"
+  "$haxe_bin" build-migrations.hxml
 )
 if [[ ! -f "$qa_migrations_dir/20240101120000_create_users.exs" \
    || ! -f "$qa_migrations_dir/20240102120000_create_posts.exs" ]]; then

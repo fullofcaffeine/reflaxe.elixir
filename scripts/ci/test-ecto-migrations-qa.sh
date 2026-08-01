@@ -14,12 +14,12 @@ cat >"$tmp_dir/haxe" <<'FAKE_HAXE'
 #!/usr/bin/env bash
 set -euo pipefail
 printf 'haxe %s\n' "$*" >>"$QA_FAKE_CALLS"
-if [[ "${1:-}" == "--cwd" && "${3:-}" == "build-migrations.hxml" ]]; then
+if [[ "${1:-}" == "build-migrations.hxml" ]]; then
   if [[ ! -f "$HAXELIB_PATH/reflaxe.elixir.hxml" ]]; then
     echo "QA did not export a usable scoped HAXELIB_PATH" >&2
     exit 68
   fi
-  output_dir="$2/priv/repo/migrations"
+  output_dir="$PWD/priv/repo/migrations"
   mkdir -p "$output_dir"
   : >"$output_dir/20240101120000_create_users.exs"
   : >"$output_dir/20240102120000_create_posts.exs"
