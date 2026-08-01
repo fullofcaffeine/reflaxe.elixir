@@ -262,13 +262,22 @@ show_port_owner() {
 }
 
 require_available_target_port() {
+  if port_has_local_listener "$PORT"; then
+    log "[QA] ❌ Target port :$PORT is already in use; refusing to terminate an unowned process."
+    show_port_owner "$PORT"
+    return 1
+  fi
+
   if port_available "$PORT"; then
     return 0
   fi
 
-  log "[QA] ❌ Target port :$PORT is already in use; refusing to terminate an unowned process."
-  show_port_owner "$PORT"
-  return 1
+  # A previous bounded run can leave closed client connections in TIME_WAIT,
+  # which blocks a strict probe bind on Linux even though no server remains.
+  # Proceed without killing anything; a non-local collision will still make
+  # Phoenix's owned startup fail safely and surface its ordinary bind error.
+  log "[QA] Target port :$PORT has no accepting local listener; proceeding past a transient TCP bind state."
+  return 0
 }
 
 kill_tree() {
