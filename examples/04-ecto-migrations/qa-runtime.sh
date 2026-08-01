@@ -5,13 +5,10 @@ example_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 repo_root=$(CDPATH= cd -- "$example_dir/../.." && pwd)
 mix_bin=${MIX_BIN:-mix}
 haxe_bin=${HAXE_BIN:-}
+isolated_haxe_cwd=
 if [[ -z "$haxe_bin" ]]; then
-  haxe_version=${HAXE_VERSION:-}
-  if [[ -z "$haxe_version" ]]; then
-    haxe_version=$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$repo_root/.haxerc")
-  fi
-  pinned_haxe="$HOME/haxe/versions/$haxe_version/haxe"
-  haxe_bin=$([[ -x "$pinned_haxe" ]] && printf '%s' "$pinned_haxe" || printf '%s' haxe)
+  haxe_bin="$repo_root/node_modules/.bin/haxe"
+  isolated_haxe_cwd=$repo_root
 fi
 qa_workspace=
 qa_migrations_dir=
@@ -73,10 +70,27 @@ echo "[ecto-migrations-qa] Preparing isolated database $database_name"
 "$mix_bin" deps.get
 cp -R "$example_dir/src_haxe" "$qa_workspace/src_haxe"
 cp "$example_dir/build-migrations.hxml" "$qa_workspace/build-migrations.hxml"
-(
-  cd "$qa_workspace"
-  "$haxe_bin" build-migrations.hxml
-)
+if [[ -n "$isolated_haxe_cwd" ]]; then
+  # Lix resolves scoped `-lib` entries from the repository. Keep that scope
+  # while rewriting the copied HXML's relative source/output paths so the
+  # generated migration remains isolated in the temporary workspace.
+  sed -i.bak \
+    -e "s|^-cp src_haxe$|-cp $qa_workspace/src_haxe|" \
+    -e "s|^-D elixir_output=priv/repo/migrations$|-D elixir_output=$qa_migrations_dir|" \
+    "$qa_workspace/build-migrations.hxml"
+  rm -f -- "$qa_workspace/build-migrations.hxml.bak"
+  (
+    cd "$isolated_haxe_cwd"
+    "$haxe_bin" "$qa_workspace/build-migrations.hxml"
+  )
+else
+  # HAXE_BIN is an explicit test/consumer seam and retains workspace-relative
+  # invocation so callers can provide a self-contained compiler wrapper.
+  (
+    cd "$qa_workspace"
+    "$haxe_bin" build-migrations.hxml
+  )
+fi
 if [[ ! -f "$qa_migrations_dir/20240101120000_create_users.exs" \
    || ! -f "$qa_migrations_dir/20240102120000_create_posts.exs" ]]; then
   echo "[ecto-migrations-qa] Fresh timestamped migrations were not generated" >&2
