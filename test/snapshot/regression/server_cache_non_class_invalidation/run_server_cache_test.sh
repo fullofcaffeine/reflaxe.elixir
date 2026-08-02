@@ -493,6 +493,10 @@ if [[ "$HAXE_VERSION" != "$EXPECTED_VERSION" ]]; then
 	exit 1
 fi
 
+# This fixture is also a standalone CI owner. Create the ignored parent here
+# instead of relying on an earlier snapshot lane to have created it. Keep the
+# project below the repository so Lix resolves this checkout's vendored Reflaxe.
+mkdir -p "$ROOT_DIR/tmp"
 TMP_ROOT="$(mktemp -d "$ROOT_DIR/tmp/server-cache-non-class.XXXXXX")"
 PROJECT_DIR="$TMP_ROOT/project"
 SERVER_OUTPUT="$TMP_ROOT/server-output"
