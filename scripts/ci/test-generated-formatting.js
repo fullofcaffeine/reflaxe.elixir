@@ -155,6 +155,44 @@ try {
   }
   process.stdout.write(`[generated-formatting] write mode is canonical and deterministic (${files.length} files)\n`);
 
+  const concurrentlyEdited = files[0];
+  const concurrentlyEditedBefore = fs.readFileSync(concurrentlyEdited);
+  const concurrentEditMarker = path.join(tempRoot, "concurrent-edit-applied");
+  const concurrentFakeBin = path.join(tempRoot, "concurrent-fake-bin");
+  const realMix = output(run("sh", ["-c", "command -v mix"])).trim();
+  if (!realMix) fail("could not resolve the real Mix executable for the concurrent-edit fixture");
+  fs.mkdirSync(concurrentFakeBin, {recursive: true});
+  fs.writeFileSync(
+    path.join(concurrentFakeBin, "mix"),
+    [
+      "#!/bin/sh",
+      'if [ ! -e "$LIVE_EDIT_MARKER" ]; then',
+      "  printf '%s\\n' 'manual edit during staged formatting' > \"$LIVE_EDIT_PATH\"",
+      '  : > "$LIVE_EDIT_MARKER"',
+      "fi",
+      'exec "$REAL_MIX" "$@"',
+      "",
+    ].join("\n"),
+    {mode: 0o755},
+  );
+  const concurrentResult = compile("write", writeOutput, {
+    env: {
+      PATH: `${concurrentFakeBin}${path.delimiter}${process.env.PATH || ""}`,
+      LIVE_EDIT_MARKER: concurrentEditMarker,
+      LIVE_EDIT_PATH: concurrentlyEdited,
+      REAL_MIX: realMix,
+    },
+  });
+  const concurrentOutput = output(concurrentResult);
+  if (concurrentResult.status === 0 || !concurrentOutput.includes("modified outside the compiler")) {
+    fail("write mode did not reject a live generated file changed during staged formatting", concurrentResult);
+  }
+  if (fs.readFileSync(concurrentlyEdited, "utf8") !== "manual edit during staged formatting\n") {
+    fail("failed publication did not preserve the concurrent live edit", concurrentResult);
+  }
+  fs.writeFileSync(concurrentlyEdited, concurrentlyEditedBefore);
+  process.stdout.write("[generated-formatting] concurrent live edits fail before publication and remain untouched\n");
+
   const checkResult = compile("check", writeOutput);
   const checkOutput = output(checkResult);
   if (checkResult.status === 0) fail("check mode unexpectedly accepted noncanonical raw compiler output", checkResult);

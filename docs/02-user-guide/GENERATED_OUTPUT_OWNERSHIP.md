@@ -50,7 +50,9 @@ The compiler applies these rules before publication:
    control paths, and symlink escapes fail.
 2. Verify every existing version 2 owned file still matches its recorded digest.
 3. Reject any generated target that already exists but is not owned.
-4. Generate and optionally format the complete next tree in staging.
+4. Generate the next tree in staging. A full build, legacy-manifest upgrade, or enabled formatter
+   stages the complete tree. A version 2 cached rebuild with formatting off stages only candidates
+   whose generated digest differs from the verified live digest.
 5. Back up changed/stale owned files, activate a recovery journal, publish files, and atomically
    replace the manifest last.
 
@@ -58,6 +60,13 @@ Unchanged generated files are not rewritten. Removed Haxe modules and namespace 
 stale owned paths. With `-D source-map`, each `.ex.map` sidecar enters the same transaction as its
 `.ex` file, so a rename cannot leave an obsolete map behind. Editing a generated file by hand
 changes its digest, so the next build and clean both stop instead of silently discarding the edit.
+
+On a safe cached rebuild, the compiler hashes newly rendered candidates in memory and compares them
+with the version 2 manifest. It reuses an old digest only after verifying that the live file still
+matches it, and it rechecks owned files after the prepared-output hook has finished. Changed and new
+files still pass through staging, backup, journal, and manifest-last activation. If the manifest is
+legacy, ownership is ambiguous, or a hook needs the whole tree, publication uses the complete staging
+path instead.
 
 ## Formatting Is Inside The Transaction
 
@@ -69,6 +78,8 @@ With:
 
 `mix format` operates on the staged generated tree. Formatter errors therefore leave live Phoenix
 source untouched, and the final ownership digests describe the formatted bytes that actually ship.
+Both `write` and `check` deliberately retain complete staging: formatter configuration and plugins
+can change independently of the Haxe modules selected by a cached rebuild.
 See [Canonical Formatting for Generated Elixir](GENERATED_OUTPUT_FORMATTING.md) for modes and project
 discovery.
 

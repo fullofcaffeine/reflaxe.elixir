@@ -67,7 +67,7 @@ class GeneratedOutputManager extends OutputManager {
 			throw "Generated Elixir output requires a destination directory.";
 		var elixirCompiler:ElixirCompiler = cast compiler;
 		var publicationStarted = elixirCompiler.phaseTimings.start();
-		GeneratedOutputOwnership.publish(compiler, outputDir, candidates, cachedRebuild());
+		GeneratedOutputOwnership.publish(compiler, outputDir, candidates, cachedRebuild(), GeneratedOutputFormatter.requiresCompletePreparedOutput());
 		elixirCompiler.phaseTimings.finish("output_transaction_including_formatting", publicationStarted);
 		elixirCompiler.phaseTimings.report();
 	}

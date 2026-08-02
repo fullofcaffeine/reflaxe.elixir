@@ -35,6 +35,13 @@ mix format --force <generated files only>
 Only staged compiler candidates are included. Handwritten files in the live
 `lib/` tree are never passed to the formatter.
 
+Formatter-enabled builds always stage the complete owned generated set, including
+on a cached Haxe-server rebuild. This is intentional: `.formatter.exs`, imported
+formatter dependencies, and plugins may change how an otherwise unchanged file
+is checked or written. Formatter-off cached rebuilds can use the narrower
+digest-verified publication path described in
+[Generated Output Ownership And Safe Cleanup](GENERATED_OUTPUT_OWNERSHIP.md).
+
 ## Modes
 
 Set `-D reflaxe_elixir_format=<mode>` to one of:

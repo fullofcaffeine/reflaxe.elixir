@@ -132,14 +132,19 @@ class GeneratedOutputOwnership {
 
 	/**
 	 * Stages, validates, optionally post-processes, and transactionally publishes a
-	 * complete generated output set. Returns normalized manifest-relative paths.
+	 * generated output set. Cached version 2 publication may stage only changed
+	 * candidates when the prepared-output hook has no whole-tree dependency.
+	 * Returns normalized manifest-relative paths.
 	 */
-	public static function publish(compiler:BaseCompiler, outputDirectory:String, candidates:Array<GeneratedOutputCandidate>,
-			cachedRebuild:Bool):Array<String> {
+	public static function publish(compiler:BaseCompiler, outputDirectory:String, candidates:Array<GeneratedOutputCandidate>, cachedRebuild:Bool,
+			requiresCompletePreparedOutput:Bool):Array<String> {
 		#if sys
+		var phaseTimings = (cast compiler : ElixirCompiler).phaseTimings;
 		ensureDirectory(outputDirectory);
 		var root = FileSystem.fullPath(Path.normalize(outputDirectory));
+		var recoveryStarted = phaseTimings.start();
 		recover(root);
+		phaseTimings.finish("output_recovery", recoveryStarted);
 
 		var prepare = Path.join([root, PREPARE_DIRECTORY]);
 		if (directoryEntryExists(root, PREPARE_DIRECTORY))
@@ -147,7 +152,9 @@ class GeneratedOutputOwnership {
 
 		var activated = false;
 		try {
+			var preflightStarted = phaseTimings.start();
 			var previous = readOwnership(root);
+			var usePartialStaging = cachedRebuild && !previous.legacy && !requiresCompletePreparedOutput;
 			var pending = new Map<String, StringOrBytes>();
 			var pendingOrder:Array<String> = [];
 
@@ -197,7 +204,6 @@ class GeneratedOutputOwnership {
 				fail('Reserved generated-output prepare path was claimed by another compiler: $prepare');
 			FileSystem.createDirectory(prepare);
 			File.saveContent(Path.join([prepare, OWNER_FILENAME]), OWNER_MARKER);
-			verifyOwnedFiles(root, previous);
 			for (path in pendingOrder) {
 				var target = targetPath(root, path);
 				if (FileSystem.exists(target) && !oldSet.exists(path)) {
@@ -206,40 +212,88 @@ class GeneratedOutputOwnership {
 						fail('Unowned output collision appeared while publication was being prepared: $target');
 				}
 			}
+			phaseTimings.finish("output_ownership_preflight", preflightStarted);
 
 			var stagedRoot = Path.join([prepare, STAGED_DIRECTORY]);
 			ensureDirectory(stagedRoot);
+			var candidateDigests = new Map<String, String>();
+			var stagedPaths = new Map<String, Bool>();
 			for (path in nextPaths) {
 				var staged = targetPath(stagedRoot, path);
-				ensureDirectory(Path.directory(staged));
 				if (pending.exists(path)) {
 					var content = pending.get(path);
 					if (content == null)
 						fail('Missing pending output contents for `$path`.');
+					if (usePartialStaging) {
+						var candidateHashStarted = phaseTimings.start();
+						var candidateDigest = hashContent(content);
+						phaseTimings.finish("output_candidate_content_hashing", candidateHashStarted);
+						candidateDigests.set(path, candidateDigest);
+						if (oldSet.exists(path) && previous.digests.get(path) == candidateDigest)
+							continue;
+					}
+					ensureDirectory(Path.directory(staged));
+					var candidateWriteStarted = phaseTimings.start();
 					content.save(staged);
-				} else {
+					phaseTimings.finish("output_staging_candidate_write", candidateWriteStarted);
+					stagedPaths.set(path, true);
+				} else if (!usePartialStaging) {
+					ensureDirectory(Path.directory(staged));
+					var retainedCopyStarted = phaseTimings.start();
 					File.copy(targetPath(root, path), staged);
+					phaseTimings.finish("output_staging_retained_copy", retainedCopyStarted);
+					stagedPaths.set(path, true);
 				}
 			}
 
-			// The target formatter consumes the normal Reflaxe manifest shape. This
-			// provisional copy is confined to staging and is replaced by version 2 below.
-			File.saveContent(Path.join([stagedRoot, MANIFEST_FILENAME]), Json.stringify({
-				filesGenerated: nextPaths,
-				id: 0,
-				wasCached: cachedRebuild,
-				version: 1
-			}, null, "\t") + "\n");
-			compiler.onOutputPrepared(stagedRoot);
+			if (requiresCompletePreparedOutput) {
+				// The target formatter consumes the normal Reflaxe manifest shape. This
+				// provisional copy is confined to staging and is replaced by version 2 below.
+				File.saveContent(Path.join([stagedRoot, MANIFEST_FILENAME]), Json.stringify({
+					filesGenerated: nextPaths,
+					id: 0,
+					wasCached: cachedRebuild,
+					version: 1
+				}, null, "\t") + "\n");
+				var preparedHookStarted = phaseTimings.start();
+				compiler.onOutputPrepared(stagedRoot);
+				phaseTimings.finish("output_prepared_hook_including_formatting", preparedHookStarted);
+			}
+
+			// Recheck after the external hook's full execution window. A formatter or
+			// another process that edits live generated output must never have those
+			// bytes adopted as the transaction's new rollback baseline.
+			var liveOwnershipRecheckStarted = phaseTimings.start();
+			verifyOwnedFiles(root, previous);
+			phaseTimings.finish("output_live_ownership_recheck", liveOwnershipRecheckStarted);
 
 			var owned:Array<OwnedFileRecord> = [];
 			var newDigests = new Map<String, String>();
 			for (path in nextPaths) {
 				var staged = targetPath(stagedRoot, path);
-				if (!FileSystem.exists(staged) || FileSystem.isDirectory(staged))
-					fail('Prepared output hook removed or replaced generated file `$path`.');
-				ensureCanonicalWithin(stagedRoot, staged, "prepared output");
-				var digest = hashFile(staged);
+				var digest:Null<String> = null;
+				if (usePartialStaging) {
+					digest = pending.exists(path) ? candidateDigests.get(path) : previous.digests.get(path);
+					if (digest == null)
+						fail('Cannot reuse a verified generated-output digest for `$path`.');
+					if (stagedPaths.exists(path)) {
+						if (!FileSystem.exists(staged) || FileSystem.isDirectory(staged))
+							fail('Prepared output is missing changed candidate `$path`.');
+						ensureCanonicalWithin(stagedRoot, staged, "prepared output");
+						var stagedHashStarted = phaseTimings.start();
+						var stagedDigest = hashFile(staged);
+						phaseTimings.finish("output_staged_file_hashing", stagedHashStarted);
+						if (stagedDigest != digest)
+							fail('Prepared output bytes do not match the generated candidate for `$path`.');
+					}
+				} else {
+					if (!FileSystem.exists(staged) || FileSystem.isDirectory(staged))
+						fail('Prepared output hook removed or replaced generated file `$path`.');
+					ensureCanonicalWithin(stagedRoot, staged, "prepared output");
+					var stagedHashStarted = phaseTimings.start();
+					digest = hashFile(staged);
+					phaseTimings.finish("output_staged_file_hashing", stagedHashStarted);
+				}
 				newDigests.set(path, digest);
 				owned.push({path: path, digest: digest});
 			}
@@ -269,13 +323,22 @@ class GeneratedOutputOwnership {
 					affected.push(path);
 			}
 			for (path in nextPaths) {
-				var target = targetPath(root, path);
 				var digest = newDigests.get(path);
-				if (legacySourceMaps.exists(path) || !FileSystem.exists(target) || digest == null || hashFile(target) != digest)
+				var changed = if (usePartialStaging) {
+					legacySourceMaps.exists(path)
+					|| !oldSet.exists(path)
+					|| digest == null
+					|| previous.digests.get(path) != digest;
+				} else {
+					var target = targetPath(root, path);
+					legacySourceMaps.exists(path) || !FileSystem.exists(target) || digest == null || hashFile(target) != digest;
+				};
+				if (changed)
 					affected.push(path);
 			}
 			affected.sort(Reflect.compare);
 
+			var journalStarted = phaseTimings.start();
 			var transactionPaths:Array<TransactionPath> = [];
 			var allOwned = stringSet(previous.paths.concat(nextPaths));
 			for (path in affected) {
@@ -291,11 +354,12 @@ class GeneratedOutputOwnership {
 				var target = targetPath(root, path);
 				var hadPrevious = FileSystem.exists(target);
 				var adoptedDigest = legacySourceMaps.get(path);
+				var verifiedPreviousDigest = usePartialStaging && oldSet.exists(path) ? previous.digests.get(path) : null;
 				transactionPaths.push({
 					path: path,
 					tempPath: tempPath,
 					hadPrevious: hadPrevious,
-					previousDigest: hadPrevious ? (adoptedDigest != null ? adoptedDigest : hashFile(target)) : null,
+					previousDigest: hadPrevious ? (adoptedDigest != null ? adoptedDigest : (verifiedPreviousDigest != null ? verifiedPreviousDigest : hashFile(target))) : null,
 					nextDigest: nextDigest
 				});
 			}
@@ -339,6 +403,7 @@ class GeneratedOutputOwnership {
 					fail('Unowned output collision appeared while publication was being prepared: $target');
 				}
 			}
+			phaseTimings.finish("output_transaction_journal_preparation", journalStarted);
 
 			var active = Path.join([root, TRANSACTION_DIRECTORY]);
 			if (directoryEntryExists(root, TRANSACTION_DIRECTORY))
@@ -346,6 +411,7 @@ class GeneratedOutputOwnership {
 			FileSystem.rename(prepare, active);
 			activated = true;
 
+			var livePublicationStarted = phaseTimings.start();
 			var activeStaged = Path.join([active, STAGED_DIRECTORY]);
 			for (entry in transactionPaths) {
 				var target = targetPath(root, entry.path);
@@ -369,6 +435,7 @@ class GeneratedOutputOwnership {
 			removeTransactionTemps(root, journal);
 			safeRemoveTree(active);
 			activated = false;
+			phaseTimings.finish("output_live_publication", livePublicationStarted);
 
 			if (affected.length == 0)
 				Sys.println("No files updated.");
@@ -960,6 +1027,13 @@ class GeneratedOutputOwnership {
 
 	static function hashFile(path:String):String {
 		return hashBytes(File.getBytes(path));
+	}
+
+	static function hashContent(content:StringOrBytes):String {
+		return switch (content.data()) {
+			case String(value): hashBytes(haxe.io.Bytes.ofString(value));
+			case Bytes(value): hashBytes(value);
+		};
 	}
 
 	static function hashBytes(bytes:Bytes):String {

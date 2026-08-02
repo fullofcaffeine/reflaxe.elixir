@@ -216,6 +216,41 @@ nested child; subtract `dependency_discovery` only when estimating the remaining
 time, and fails if their sum exceeds the enclosing target interval. Detailed per-pass fingerprints
 stay disabled because they can dominate the operation being measured.
 
+The output transaction also reports diagnostic child spans for ownership
+preflight and recheck, candidate-content hashing, changed-candidate writes,
+retained-file copies, staged-file hashing, the prepared-output hook, journal
+preparation, and live publication. These spans overlap only with their enclosing
+`output_transaction_including_formatting` parent; do not add them to that parent
+or to the four lifecycle parents again.
+
+### Cached output publication measurement (2026-08-02)
+
+A representative-loaded local comparison used the checked-in
+`private-implementation.patch`, one persistent Haxe server, one unreported
+warmup, ten measured A/B rebuilds per version, and coarse target timers. The
+baseline and candidate used the same toolchain and complete output contract.
+This is evidence for the local optimization decision, not an idle-machine budget
+or public latency promise.
+
+| Measurement | Complete cached staging | Digest-verified partial staging | Change |
+| --- | ---: | ---: | ---: |
+| Edit to successful rebuild, p50 | 13.083s | 11.841s | 9.5% faster |
+| Edit to successful rebuild, p95 | 13.679s | 12.781s | 6.6% faster |
+| Output transaction, p50 | 2.326s | 1.531s | 34.2% faster |
+| Output transaction, p95 | 2.594s | 1.717s | 33.8% faster |
+
+Each sample changed only `todo_app/avatar_tools.ex`. Across both versions, state
+A always produced output-tree SHA-256
+`43af6676bfc361683eaa896670f6d5a6dfe4834b2502fb9a60821c80b10c11ba`,
+and state B always produced
+`5d4c9dd7b8e764f7b1bd52a74a1c8f160740a2a28e274d9757cd5c5a1b775fc1`.
+The baseline wrote 56 candidates, copied 60 retained files, and hashed all 116
+staged files. The optimized formatter-off path wrote and rehashed the one changed
+candidate, hashed 56 rendered candidates in memory, and reused verified manifest
+digests for the rest. Full builds, version 1 manifest upgrades, and formatter
+`write`/`check` keep complete staging because their whole-tree contract is not
+safe to narrow.
+
 The final 2026-07-31 representative-loaded overhead check used two 10-sample sessions per mode in
 AB/BA order on clean commit `581726aef`, which contains all four lifecycle-parent timers. Standard
 medians were 13.738s off versus 13.255s coarse in the first pair and 13.791s off versus 13.616s coarse

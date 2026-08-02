@@ -39,6 +39,18 @@ class GeneratedOutputFormatter {
 	static inline var GENERATED_FILES_MANIFEST = "_GeneratedFiles.json";
 	static inline var MAX_COMMAND_LENGTH = 7000;
 
+	/**
+	 * Reports whether the prepared-output hook needs every generated file staged.
+	 *
+	 * Write and check modes invoke Mix over the complete owned file list because
+	 * project formatter configuration and plugins can change independently of a
+	 * Haxe module. Off mode returns before inspecting staging, so cached output
+	 * publication may safely prepare only changed or newly generated candidates.
+	 */
+	public static function requiresCompletePreparedOutput():Bool {
+		return resolveMode() != Off;
+	}
+
 	public static function run(outputDirectory:Null<String>, sourceMapsEnabled:Bool):Void {
 		var mode = resolveMode();
 		if (mode == Off)
