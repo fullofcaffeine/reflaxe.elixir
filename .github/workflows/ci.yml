@@ -226,7 +226,7 @@ jobs:
             beam: false
           - name: Compiler contracts + target quality
             command: npm run test:ci:compiler-contracts
-            beam: false
+            beam: true
           - name: Portable stdlib runtime
             command: npm run test:ci:stdlib-runtime
             beam: true
