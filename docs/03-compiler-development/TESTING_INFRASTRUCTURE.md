@@ -531,6 +531,15 @@ The primary `Test lane / ...` matrix proves that those checked-in outputs match 
 generation; minimum-toolchain green does not replace that conformance evidence, and primary green
 does not replace the independent Elixir 1.14 parse. Both remain required.
 
+The corrected exact-head run `30735021490` at commit `195fa5c9a` provides the first hosted result
+for this narrower ownership. macOS completed in 5m 30s, down 21m 32s from the 27m 02s baseline p50;
+minimum-toolchain completed in 7m 23s, down 18m 13s from its 25m 36s baseline p50. The minimum lane
+parsed 267 tracked fixtures and reported zero missing artifacts. The exact-green retry completed the
+whole job graph in 21m 59s, 10m 40s faster than the 32m 39s comparison run `30730230507`, even when
+measured from the first attempt's earliest job. The retry was needed because one unrelated example
+WAE setup step received a transient `Bad Gateway` while downloading Haxe; that shard passed unchanged
+on retry, so it is recorded as infrastructure noise rather than compatibility evidence.
+
 ## Consolidation plan
 
 Implement gaps in this order:

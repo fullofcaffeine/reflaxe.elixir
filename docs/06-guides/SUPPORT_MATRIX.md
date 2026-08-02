@@ -31,6 +31,12 @@ Our GitHub Actions CI runs primarily on **Ubuntu**, plus a macOS smoke job. CI c
     `npm run test:mix-fast` to cover filesystem/process behavior and the Mix compiler path on macOS.
     Platform compatibility does not repeat the primary toolchain's full compiler-conformance corpus.
 
+The first corrected hosted run of these focused lanes (`30735021490`, commit `195fa5c9a`) completed
+the macOS smoke in 5m 30s and the minimum-toolchain smoke in 7m 23s. The latter parsed all 267 tracked
+generated fixtures with none missing. These timings describe CI feedback speed; the support claims
+still come from the independent contracts listed above, not from duration or from another lane being
+green.
+
 Additionally, the **QA Sentinel Smoke** workflow boots the todo-app on Ubuntu (Postgres + Phoenix) and runs a small Playwright suite.
 
 Phoenix coverage:
