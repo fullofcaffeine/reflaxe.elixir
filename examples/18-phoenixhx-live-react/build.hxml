@@ -19,11 +19,12 @@
 # Application module prefix
 -D app_name=PhoenixhxLiveReact
 
-# Optional canonical Mix formatting after code generation (off by default)
-# -D reflaxe_elixir_format=write
+# Generated Elixir is checked in as exact compiler evidence. Formatting is
+# intentionally left off so `mix compile` never launches a nested Mix process.
 
 # Enable dead code elimination to remove unused functions and reduce output noise
 -dce full
 
 -D hxx_string_to_sigil
+--macro phoenix.live_react.LiveReactEventProtocol.exportTypeScript('phoenixhx_live_react_hx.live.SignalConsoleEvents.SignalConsoleEvent','assets/react-components/signal-console-events.generated.ts')
 --main phoenixhx_live_react_hx.Main

@@ -1,7 +1,7 @@
 {
   "appName": "phoenixhx_live_react",
   "assetMode": "vite",
-  "clientMode": "genes",
+  "clientMode": "plain-js",
   "components": [
     {
       "export": "SignalConsoleBoundary",
@@ -11,13 +11,13 @@
   ],
   "generatedBy": "mix haxe.phoenix.live_react",
   "managed": {
-    "dependencyOwned": true,
+    "dependencyOwned": false,
     "files": [
       "assets/js/live-react-hooks.js",
       "assets/react-components/registry.generated.ts",
       "vite.config.mjs"
     ],
-    "lockOwned": true,
+    "lockOwned": false,
     "markers": [
       {
         "begin": "BEGIN reflaxe_elixir live_react_hooks",
@@ -81,11 +81,6 @@
       }
     ],
     "packageKeys": [
-      "dependencies.live_react",
-      "dependencies.phoenix",
-      "dependencies.phoenix_html",
-      "dependencies.phoenix_live_view",
-      "dependencies.react-dom",
       "devDependencies.@vitejs/plugin-react",
       "devDependencies.vite",
       "private",
@@ -94,16 +89,17 @@
       "type"
     ],
     "restores": {
+      "app.hooksProperty": null,
       "config.trailingWhitespace": "\n",
       "dev.esbuildWatcher": "    esbuild: {Esbuild, :install_and_run, [:phoenixhx_live_react, ~w(--sourcemap=inline --watch)]},",
       "dev.trailingWhitespace": "\n",
       "layout.appScript": "    <script defer phx-track-static type=\"text/javascript\" src={~p\"/assets/js/app.js\"}>\n    </script>",
-      "mix.assets.build": "      \"assets.build\": [\n\n        # BEGIN reflaxe_elixir assets.build_task\n        \"haxe.compile.client\",\n        # END reflaxe_elixir assets.build_task\n        \"compile\", \"tailwind phoenixhx_live_react\", \"esbuild phoenixhx_live_react\"],",
+      "mix.assets.build": "      \"assets.build\": [\n\n        \"compile\", \"tailwind phoenixhx_live_react\", \"esbuild phoenixhx_live_react\"],",
       "mix.assets.deploy": "        \"esbuild phoenixhx_live_react --minify\",",
       "mix.assets.setup": "      \"assets.setup\": [\"tailwind.install --if-missing\", \"esbuild.install --if-missing\"],",
       "mix.lockOriginalState": {
         "kind": "populated",
-        "sha256": "67e8afa2e513c870ca7ef703386c8d328b6e9018a5de2f3597ee303b2612db79"
+        "sha256": "391ac79037885fd98506082870d477bf2d202004d554c0df336337c94b06a9de"
       }
     }
   },

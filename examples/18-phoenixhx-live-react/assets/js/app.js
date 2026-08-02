@@ -24,23 +24,22 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/phoenixhx_live_react"
 import topbar from "../vendor/topbar"
-// BEGIN reflaxe_elixir hx_app_import
-import "./hx_app.js";
+// Preserve Phoenix's generated colocated hooks before LiveReact adds its hook.
+window.Hooks = {...colocatedHooks, ...(window.Hooks || {})}
 // BEGIN reflaxe_elixir live_react_import
 import {reactHooks} from "./live-react-hooks.js"
 // END reflaxe_elixir live_react_import
 // BEGIN reflaxe_elixir live_react_window_hooks
 window.Hooks = {...(window.Hooks || {}), ...reactHooks}
 // END reflaxe_elixir live_react_window_hooks
-// END reflaxe_elixir hx_app_import
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
+  // BEGIN reflaxe_elixir live_react_hooks_property
+  hooks: window.Hooks || {},
+  // END reflaxe_elixir live_react_hooks_property
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  // BEGIN reflaxe_elixir hooks_property
-  hooks: {...colocatedHooks, ...(window.Hooks || {})},
-  // END reflaxe_elixir hooks_property
 })
 
 // Show progress bar on live navigation and form submits

@@ -2,13 +2,14 @@ import {useState} from "react"
 
 export interface SignalConsoleProps {
   readonly title: string
+  readonly pulseCount: number
+  readonly onPulse: (channel: (typeof channels)[number]) => void
 }
 
 const channels = ["ALPHA", "BETA", "GAMMA"] as const
 
 /** Hand-owned React implementation behind the generated closed boundary. */
-export function SignalConsole({title}: SignalConsoleProps) {
-  const [pulseCount, setPulseCount] = useState(0)
+export function SignalConsole({title, pulseCount, onPulse}: SignalConsoleProps) {
   const [channel, setChannel] = useState<(typeof channels)[number]>("ALPHA")
 
   const nextChannel = () => {
@@ -42,7 +43,7 @@ export function SignalConsole({title}: SignalConsoleProps) {
       </div>
 
       <div className="signal-console__controls">
-        <button data-testid="transmit-pulse" type="button" onClick={() => setPulseCount(value => value + 1)}>
+        <button data-testid="transmit-pulse" type="button" onClick={() => onPulse(channel)}>
           Transmit pulse
         </button>
         <button data-testid="cycle-channel" className="signal-console__channel" type="button" onClick={nextChannel}>
@@ -51,7 +52,7 @@ export function SignalConsole({title}: SignalConsoleProps) {
       </div>
 
       <p className="signal-console__footnote">
-        State above lives in React. The island name and public props crossed a typed Haxe boundary.
+        Channel selection lives in React. Phoenix owns the count after validating the typed event.
       </p>
     </section>
   )

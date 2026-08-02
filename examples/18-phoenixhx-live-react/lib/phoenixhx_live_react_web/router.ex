@@ -17,7 +17,7 @@ defmodule PhoenixhxLiveReactWeb.Router do
   scope "/", PhoenixhxLiveReactWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    live "/", SignalConsoleLive
   end
 
   # Other scopes may use custom stacks.

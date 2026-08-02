@@ -6,6 +6,7 @@ import phoenix.types.Assigns;
 private typedef SignalConsoleAssigns = {
 	var id:String;
 	var title:String;
+	var pulse_count:Int;
 }
 
 /**
@@ -24,6 +25,7 @@ class SignalConsoleIsland {
 				id=${assigns.id}
 				name="SignalConsole"
 				title=${assigns.title}
+				pulseCount=${assigns.pulse_count}
 				ssr=${false}
 			/>
 		</div>;

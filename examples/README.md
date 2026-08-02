@@ -91,8 +91,8 @@ This directory contains progressive examples demonstrating Haxe→Elixir compila
 
 ### 18. [18-phoenixhx-live-react](./18-phoenixhx-live-react/)
 **Difficulty**: Intermediate
-**Features**: Typed Haxe LiveReact wrapper, Genes browser bootstrap, static registry, Vite, React hydration E2E
-**Use Case**: Learn the reusable stock LiveReact integration and the Genes-versus-plain-JS boundary
+**Features**: Typed Haxe LiveReact wrapper/event, plain TypeScript React island, static registry, Vite, native fallback, browser E2E
+**Use Case**: Learn the reusable stock LiveReact integration without requiring Haxe-authored browser code
 
 ### 19. [todo-app](./todo-app/)
 **Difficulty**: Advanced  
@@ -127,7 +127,7 @@ Reflaxe.Elixir supports two authoring styles on one compiler pipeline. This matr
 | `15-phoenix-chat-haxe-first` | Elixir-first | Haxe-authored `@:application` + module-level `@:router` + LiveView/Presence in one server-first workflow. |
 | `16-portable-chat-domain` | Portable-first | Same chat domain compiles to Elixir and JavaScript; target adapters stay thin. |
 | `17-railshx-to-phoenixhx-todo` | Elixir-first | RailsHx-inspired product surface implemented with Phoenix LiveView/HXX rather than Rails compatibility APIs. |
-| `18-phoenixhx-live-react` | Hybrid (intentional) | Haxe owns the typed server wrapper and Genes bootstrap; hand-owned TSX demonstrates the trusted React boundary. |
+| `18-phoenixhx-live-react` | Hybrid (intentional) | Haxe owns the typed Phoenix wrapper/event; hand-owned strict TSX demonstrates the supported plain-JS LiveReact path. |
 | `todo-app` | Hybrid (intentional) | Full app canary: portable shared domain + extensive Phoenix/Ecto/OTP integration. |
 | `test-integration` | N/A | Compiler/Mix integration verification harness. |
 
@@ -179,7 +179,7 @@ mix phx.server
 4. **Abstractions**: 07-protocols, 08-behaviors, 14-abstraction-lab
 5. **Choose style**: 10-option-patterns (portable-first) or 13-elixir-first-liveview (typed Elixir-first)
 6. **Extend**: 04-ecto-migrations, 05-heex-templates, 09-phoenix-router
-7. **Add React**: 18-phoenixhx-live-react for typed islands and Genes/Vite ownership
+7. **Add React**: 18-phoenixhx-live-react for typed Phoenix islands with plain TypeScript and Vite
 8. **Compare targets**: 17-railshx-to-phoenixhx-todo for the RailsHx-to-PhoenixHx mapping
 9. **Master**: 06-user-management + todo-app
 

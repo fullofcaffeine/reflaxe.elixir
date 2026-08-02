@@ -46,11 +46,9 @@ defmodule PhoenixhxLiveReact.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      # BEGIN reflaxe_elixir live_react_dependency
       {:live_react,
        git: "https://github.com/mrdotb/live_react.git",
        ref: "055e80e6a4e6d009df5e229eb39e7f85f03fea22"},
-      # END reflaxe_elixir live_react_dependency
 
       # Repository example: use the exact source checkout under test.
       # Installed-package parity is verified separately by the package smoke gate.
@@ -95,11 +93,6 @@ defmodule PhoenixhxLiveReact.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      # BEGIN reflaxe_elixir haxe_compile_client_alias
-      "haxe.compile.client": [
-        "haxe.watch --once --hxml build-client.hxml --dirs src_haxe --promote assets/js/_hx_app_tmp.js:assets/js/hx_app.js,assets/js/_hx_app_tmp.js.map:assets/js/hx_app.js.map"
-      ],
-      # END reflaxe_elixir haxe_compile_client_alias
 
       "haxe.compile.tests": ["cmd haxe build-tests.hxml"],
       setup: ["deps.get", "assets.setup", "assets.build"],
@@ -113,15 +106,9 @@ defmodule PhoenixhxLiveReact.MixProject do
       # BEGIN reflaxe_elixir live_react_assets_build
       "assets.build": [
 
-        # BEGIN reflaxe_elixir assets.build_task
-        "haxe.compile.client",
-        # END reflaxe_elixir assets.build_task
         "compile", "tailwind phoenixhx_live_react", "cmd npm run assets:build"],
       # END reflaxe_elixir live_react_assets_build
       "assets.deploy": [
-        # BEGIN reflaxe_elixir assets.deploy_task
-        "haxe.compile.client",
-        # END reflaxe_elixir assets.deploy_task
         "tailwind phoenixhx_live_react --minify",
         # BEGIN reflaxe_elixir live_react_assets_deploy
         "cmd npm run assets:build",

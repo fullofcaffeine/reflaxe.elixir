@@ -487,7 +487,7 @@ LiveReact is orthogonal to the scaffold client mode:
 - `plain-js`: browser source remains JavaScript/TypeScript and Vite performs
   the final bundle.
 
-LiveReact itself does not require Genes. See the runnable Genes-first example at
+LiveReact itself does not require Genes. See the runnable plain-JavaScript example at
 [`examples/18-phoenixhx-live-react`](../../examples/18-phoenixhx-live-react/).
 
 ### mix haxe.gen.live_react

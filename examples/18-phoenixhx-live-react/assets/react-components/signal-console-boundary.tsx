@@ -1,12 +1,19 @@
+import type {LiveProps} from "live_react"
 import {SignalConsole} from "./signal-console"
+import {pushPulse} from "./signal-console-events.generated"
 
-export type SignalConsoleRawProps = Record<string, unknown>
+type PushEvent = LiveProps["pushEvent"]
+
+export type SignalConsoleRawProps = Record<string, unknown> & {
+  readonly pushEvent: PushEvent
+}
 
 interface SignalConsoleInput {
   readonly title: string
+  readonly pulseCount: number
 }
 
-const publicInputKeys = new Set(["title"])
+const publicInputKeys = new Set(["title", "pulseCount"])
 const nativeBridgeKeys = new Set([
   "pushEvent",
   "pushEventTo",
@@ -17,10 +24,17 @@ const nativeBridgeKeys = new Set([
 ])
 
 function decodeSignalConsoleInput(value: Record<string, unknown>): SignalConsoleInput {
-  if (Object.keys(value).length !== 1 || typeof value.title !== "string" || value.title.trim() === "") {
-    throw new Error("SignalConsole expects exactly one non-empty string prop: title")
+  if (
+    Object.keys(value).length !== 2 ||
+    typeof value.title !== "string" ||
+    value.title.trim() === "" ||
+    typeof value.pulseCount !== "number" ||
+    !Number.isInteger(value.pulseCount) ||
+    value.pulseCount < 0
+  ) {
+    throw new Error("SignalConsole expects a title and a non-negative integer pulseCount")
   }
-  return {title: value.title}
+  return {title: value.title, pulseCount: value.pulseCount}
 }
 
 /**
@@ -29,6 +43,9 @@ function decodeSignalConsoleInput(value: Record<string, unknown>): SignalConsole
  */
 export function SignalConsoleBoundary(raw: SignalConsoleRawProps) {
   try {
+    if (typeof raw.pushEvent !== "function") {
+      throw new Error("live_react did not provide pushEvent")
+    }
     const publicInput: Record<string, unknown> = {}
     for (const [key, candidate] of Object.entries(raw)) {
       if (nativeBridgeKeys.has(key)) continue
@@ -37,13 +54,18 @@ export function SignalConsoleBoundary(raw: SignalConsoleRawProps) {
     }
 
     const input = decodeSignalConsoleInput(publicInput)
-    return <SignalConsole {...input} />
+    return (
+      <SignalConsole
+        {...input}
+        onPulse={(channel) => pushPulse(raw.pushEvent, {channel})}
+      />
+    )
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown React boundary error"
     return (
       <section role="alert" data-live-react-boundary="error">
         <strong>SignalConsole is unavailable.</strong>
-        <span>{message}</span>
+        <span>Use the native LiveView control below. {message}</span>
       </section>
     )
   }

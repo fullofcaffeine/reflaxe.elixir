@@ -1,10 +1,10 @@
 # PhoenixHx + LiveReact
 
-This example proves the complete client-only LiveReact path: Phoenix renders a
-statically named React island through a Haxe-authored wrapper, Genes compiles
-the Haxe browser bootstrap, and Vite mounts the hand-owned React component.
-The signal console is deliberately interactive so browser QA proves hydration,
-not just that the HTML page loaded.
+This example proves the complete `plain-js` LiveReact path: Haxe authors the
+Phoenix LiveView, its closed props, and one typed browser event; ordinary strict
+TypeScript owns the React island; Vite builds it; and stock LiveReact joins the
+two at runtime. The signal console is deliberately interactive so browser QA
+proves hydration and a real round trip to Phoenix, not just that HTML loaded.
 
 ## Run it locally
 
@@ -20,16 +20,25 @@ cycle the channel. Both controls should update immediately without a page
 reload.
 
 `mix phx.server` is the normal interactive development command for this
-example. Its Phoenix endpoint starts all three development watchers:
+example. Its Phoenix endpoint starts the development watchers:
 
 - the Mix Haxe compiler watches server-side Haxe and emits Elixir;
-- `mix haxe.watch` compiles the Genes browser entry to stable JavaScript;
 - Vite and Tailwind rebuild the browser assets.
 
 There is intentionally no `mix dev` alias here. The todo app defines one
 because it must create and migrate PostgreSQL before starting Phoenix; this
 example has no database to prepare. `mix phx.server` is therefore the complete
 local flow.
+
+The Phoenix browser packages in `package.json` use `file:deps/...` references.
+That makes npm package the JavaScript from the exact Phoenix and LiveView
+checkouts selected by Mix instead of resolving unrelated versions from the npm
+registry. The checked-in `.npmrc` enables npm's `install-links` mode so those
+local packages are installed like application dependencies, without also
+installing the contributor-only test and documentation dependencies from the
+Phoenix source repositories. Keep these references and `mix.lock` together;
+otherwise the browser and BEAM server can load incompatible LiveView protocol
+versions even though each side compiles successfully.
 
 The application path is the same for interactive developers and automated
 agents. The operational difference is process supervision: a person can own a
@@ -43,17 +52,20 @@ Playwright, and cleanup—without changing how the app builds or runs.
 ```text
 SignalConsoleIsland.hx
   -> generated Phoenix component and HEEx LiveReact call
-  -> static TypeScript registry and trusted prop boundary
+  -> static TypeScript registry and trusted prop/event boundary
   -> signal-console.tsx
-  -> React state and browser interaction
+  -> stock LiveReact pushEvent
+  -> SignalConsoleLive.hx on the BEAM
 ```
 
 - `src_haxe/phoenixhx_live_react_hx/components/live_react/SignalConsoleIsland.hx`
   owns the closed server props and the fixed component name.
-- Generated Elixir under `lib/phoenixhx_live_react_hx/**` is compiler output;
-  change its Haxe source instead of editing the `.ex` file.
-- `src_haxe/client/Boot.hx` is browser code compiled through Genes. It publishes
-  the shared hook table and an E2E boot marker.
+- Generated Elixir under `lib/phoenixhx_live_react_hx/**` is checked in as the
+  compiler emitted it so reviewers and drift checks inspect the real Phoenix
+  target; change its Haxe source instead of editing the `.ex` file.
+- `src_haxe/phoenixhx_live_react_hx/live/SignalConsoleEvents.hx` is the single
+  event declaration. The Haxe build generates the matching strict TypeScript
+  validator and Phoenix dispatcher from it.
 - `assets/react-components/signal-console-boundary.tsx` validates the values
   crossing from LiveReact and discards native bridge capabilities that this
   component does not need.
@@ -103,10 +115,10 @@ in JavaScript or TypeScript. Choose `plain-js` when there is no browser Haxe to
 compile.
 
 Choose `genes` when the browser bootstrap, hooks, event protocol, or React
-component is authored in Haxe. This example is intentionally Genes-first:
-`src_haxe/client/Boot.hx` is compiled by Genes, while the inner React component
-remains hand-owned TSX to demonstrate that the choices can be mixed. Genes is
-the source compiler and Vite is the sole final bundler.
+component is authored in Haxe. This example is intentionally `plain-js`: there
+is no `build-client.hxml`, Genes dependency, Haxe browser watcher, or generated
+Haxe JavaScript. The todo app provides the separate Genes-first LiveReact proof.
+In both modes, Vite is the sole final bundler.
 
 ## Verification
 
@@ -115,12 +127,17 @@ Fast server-side and integration checks:
 ```bash
 mix test
 mix haxe.phoenix.live_react --check
+npm run typecheck
 mix assets.build
 ```
 
 `mix test` first compiles `src_haxe/test/web/PageSmokeTest.hx` to ExUnit, then
-checks that Phoenix renders the typed island boundary. `mix assets.build`
-compiles the Genes client before Vite so it also works from a clean checkout.
+checks that Phoenix renders the typed island and accepts the shared event.
+`npm run typecheck` checks the hand-owned React boundary and generated event
+adapter without emitting JavaScript. The Haxe compiler's generated Elixir is
+checked in so regeneration drift is reviewable. `mix assets.build` runs the
+Haxe server compile, Tailwind, and Vite from the same clean-checkout path used
+in release builds; Vite emits source maps.
 
 The real-browser contract is:
 
@@ -142,8 +159,42 @@ Use the printed run ID with:
 ../../scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 180
 ```
 
-That browser test proves Genes booted, React hydrated, the pulse count changes,
-and the channel control advances.
+That browser test proves React hydrated, a typed React event reached Phoenix,
+the server-owned count came back to React, and the native LiveView fallback can
+perform the same action without the island.
+
+## Setup, repair, and removal
+
+The checked-in project was created and enabled through public Mix tasks. The
+same lifecycle is available to another PhoenixHx application:
+
+```bash
+# Enable or repair the managed stock LiveReact/Vite integration
+mix haxe.phoenix.live_react --yes
+
+# Verify dependency identity, marker ownership, registry, and generated files
+mix haxe.phoenix.live_react --check
+
+# Register compatible hand-owned source without overwriting it
+mix haxe.gen.live_react SignalConsole \
+  --existing \
+  --module ./signal-console-boundary \
+  --export SignalConsoleBoundary \
+  --yes
+
+# Remove only integration-owned files and marker blocks
+mix haxe.phoenix.live_react --remove --yes
+```
+
+If setup is interrupted, rerun the first command; the task detects and recovers
+its transaction before applying new changes. If `--check` reports drift, review
+the named file, then rerun setup to restore managed content. Component Haxe and
+TypeScript files are application-owned and survive integration or registry
+removal.
+
+In this repository checkout, the four stock browser packages are deliberately
+hand-owned `file:deps/...` values. The lifecycle task accepts and preserves
+them, while continuing to own Vite, registry, hook, and Phoenix marker wiring.
 
 ## Adding another island
 

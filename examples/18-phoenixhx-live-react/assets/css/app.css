@@ -402,6 +402,48 @@ body {
   line-height: 1.6;
 }
 
+.signal-console-server-status,
+.signal-console-fallback {
+  margin: 0.85rem 0 0;
+  border: 1px solid var(--line);
+  background: rgba(9, 14, 11, 0.72);
+  color: rgba(232, 226, 212, 0.68);
+  font-size: 0.64rem;
+  line-height: 1.6;
+}
+
+.signal-console-server-status {
+  padding: 0.8rem 1rem;
+  color: var(--acid);
+}
+
+.signal-console-fallback {
+  padding: 0.8rem 1rem;
+}
+
+.signal-console-fallback summary {
+  cursor: pointer;
+  color: var(--paper);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.signal-console-fallback p {
+  margin: 0.75rem 0;
+}
+
+.signal-console-fallback button {
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--paper);
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .integration-footer {
   grid-template-columns: 1fr 1fr;
   border-top: 1px solid var(--line);

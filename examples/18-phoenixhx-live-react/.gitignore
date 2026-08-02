@@ -35,18 +35,3 @@ phoenixhx_live_react-*.tar
 # In case you use Node.js/npm, you want to ignore these.
 npm-debug.log
 /assets/node_modules/
-
-# Genes multi-file JavaScript output (regenerated from src_haxe/client).
-assets/js/.genes-output-*.manifest
-assets/js/client/
-assets/js/genes/
-assets/js/haxe/
-assets/js/Std.js
-assets/js/Std.js.map
-
-# Reflaxe.Elixir (Haxe client JS intermediate output)
-assets/js/_hx_app_tmp.js
-assets/js/_hx_app_tmp.js.map
-# Reflaxe.Elixir (Haxe client JS stable import target; generated via promotion)
-assets/js/hx_app.js
-assets/js/hx_app.js.map

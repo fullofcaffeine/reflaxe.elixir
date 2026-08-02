@@ -8,7 +8,7 @@ Canonical examples that drive this list:
 - `examples/13-elixir-first-liveview/` - Elixir-first LiveView, typed test helpers, app-local externs
 - `examples/15-phoenix-chat-haxe-first/` - Haxe-authored app/router/live/presence server path
 - `examples/17-railshx-to-phoenixhx-todo/` - RailsHx-inspired UX port implemented with Phoenix-native LiveView, Ecto, PubSub, and session patterns
-- `examples/18-phoenixhx-live-react/` - reusable LiveReact lifecycle, Genes bootstrap, typed island wrapper, and browser interaction
+- `examples/18-phoenixhx-live-react/` - reusable LiveReact lifecycle, plain-TypeScript browser island, typed Phoenix event, fallback, and browser interaction
 - `examples/todo-app/` - production-shaped LiveView/Ecto app
 
 ## Policy
@@ -57,7 +57,7 @@ existing `genes` and `plain-js` client modes. Stock LiveReact remains the
 runtime owner.
 
 Evidence includes the Haxe-authored lifecycle suite, installed-package smoke,
-the Genes-first `examples/18-phoenixhx-live-react` application, Haxe-authored
+the plain-JavaScript `examples/18-phoenixhx-live-react` application, Haxe-authored
 ConnTest coverage, and a Playwright hydration/interaction smoke. The surface
 remains experimental while compatibility evidence grows.
 

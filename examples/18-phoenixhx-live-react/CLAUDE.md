@@ -95,7 +95,7 @@ The target shape is ordinary HEEx:
 - Do not embed raw `<% ... %>` or `<%= ... %>` blocks in Haxe-authored markup.
 - Use `${...}`, `<if ${...}>`, and `<for ${item in items}>` so Haxe can check
   the expressions before generating HEEx.
-- The configured browser client mode is `genes`.
+- The configured browser client mode is `plain-js`.
   - `genes` means browser bootstrap code and hooks may be authored in Haxe and
     compiled to JavaScript through Genes. The host asset tool still performs
     the final bundle.
@@ -103,6 +103,13 @@ The target shape is ordinary HEEx:
     browser bootstrap code, hooks, and components stay in JavaScript or
     TypeScript. Use it when the browser side does not need Haxe.
 - Keep one final browser bundler. This LiveReact project uses Vite.
+- Keep the `file:deps/...` Phoenix, Phoenix HTML, LiveView, and LiveReact npm
+  references aligned with `mix.lock`. They make the browser consume JavaScript
+  from the same dependency checkouts as the BEAM server. Do not replace them
+  with independent registry versions merely because npm and Mix each compile.
+- Keep `.npmrc` with `install-links=true`; it packages those local application
+  dependencies without installing the upstream repositories' contributor-only
+  development toolchains.
 - Exercise LiveView behavior primarily with Haxe-authored ExUnit integration
   tests. Use a small browser smoke only for behavior that requires a real
   browser.
@@ -135,9 +142,9 @@ typed Haxe wrapper -> generated HEEx LiveReact call -> static registry
 ```
 
 LiveReact does not itself require Genes. Genes compiles Haxe-authored browser
-code; LiveReact mounts the registered React component. This example uses Genes
-for `src_haxe/client/Boot.hx`, while the inner React component remains
-hand-owned TSX.
+code; LiveReact mounts the registered React component. This example deliberately
+keeps all browser source in hand-owned strict TypeScript. Haxe still owns the
+Phoenix LiveView, closed props, and shared event declaration.
 
 - Keep the component name static and each wrapper's props closed and explicit.
 - Treat browser events as untrusted input. Validate authorization and current
@@ -156,12 +163,12 @@ hand-owned TSX.
   separate agent-specific development mode.
 - `mix compile` invokes the `:haxe` Mix compiler for server-side Haxe. There is
   no public `mix haxe.compile` task.
-- `mix haxe.compile.client` is the one-shot Genes client build. In development,
-  the Phoenix endpoint starts the client watcher, Vite, and Tailwind.
-- Long-running server and client watchers own separate persistent Haxe
-  compilation servers keyed by their HXML files. Do not start or kill
-  `haxe --wait` manually. CI may set `HAXE_NO_SERVER=1` for direct,
-  process-contained compilation.
+- This plain-JavaScript example has no `mix haxe.compile.client`,
+  `build-client.hxml`, Genes dependency, or Haxe browser watcher. Vite compiles
+  the hand-owned TypeScript; the todo app separately proves the Genes path.
+- The server-side Haxe watcher owns its persistent compilation server. Do not
+  start or kill `haxe --wait` manually. CI may set `HAXE_NO_SERVER=1` for
+  direct, process-contained compilation.
 - Agents must use the repository sentinel for browser/runtime work:
 
   ```bash
@@ -177,5 +184,6 @@ hand-owned TSX.
   ```
 
 - Before handoff, run `mix test`, `mix haxe.phoenix.live_react --check`,
-  `mix assets.build`, and the Playwright sentinel. The browser test must prove
-  Genes booted and the React controls changed state.
+  `npm run typecheck`, `mix assets.build`, and the Playwright sentinel. The
+  browser test must prove React hydration, the typed event round trip through
+  Phoenix, and the native LiveView fallback.

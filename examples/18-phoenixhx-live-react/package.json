@@ -1,18 +1,21 @@
 {
   "dependencies": {
     "live_react": "file:deps/live_react",
-    "phoenix": "1.7.24",
-    "phoenix_html": "4.3.0",
-    "phoenix_live_view": "0.20.17",
+    "phoenix": "file:deps/phoenix",
+    "phoenix_html": "file:deps/phoenix_html",
+    "phoenix_live_view": "file:deps/phoenix_live_view",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },
   "description": "A Reflaxe.Elixir project",
   "devDependencies": {
     "@playwright/test": "^1.62.0",
+    "@types/react": "19.1.8",
+    "@types/react-dom": "19.1.6",
     "@vitejs/plugin-react": "4.5.2",
     "lix": "^15.12.4",
     "nodemon": "^3.0.0",
+    "typescript": "5.8.3",
     "vite": "7.2.7"
   },
   "name": "phoenixhx_live_react",
@@ -23,6 +26,7 @@
     "compile": "haxe build.hxml",
     "setup:haxe": "npx lix scope create && npx lix install https://www.github.com/fullofcaffeine/reflaxe.elixir/releases/download/v0.29.0/reflaxe.elixir-0.29.0.zip && npx lix download",
     "test": "mix test",
+    "typecheck": "tsc -p assets/tsconfig.json --noEmit",
     "watch": "nodemon --watch src_haxe --ext hx --exec \"haxe build.hxml\""
   },
   "type": "module",

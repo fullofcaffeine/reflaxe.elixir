@@ -20,28 +20,10 @@ config :phoenixhx_live_react, PhoenixhxLiveReactWeb.Endpoint,
     if(disable_watchers,
       do: [],
       else: [
-        # BEGIN reflaxe_elixir haxe_client
-        # Haxe client JS build:
-        # - Compiles to assets/js/_hx_app_tmp.js (temp output Haxe may delete during rebuilds).
-        # - Promotes to assets/js/hx_app.js (stable import path for Vite).
-        haxe_client: [
-          "mix",
-          "haxe.watch",
-          "--hxml",
-          "build-client.hxml",
-          "--dirs",
-          "src_haxe",
-          "--debounce",
-          "150",
-          "--promote",
-          "assets/js/_hx_app_tmp.js:assets/js/hx_app.js,assets/js/_hx_app_tmp.js.map:assets/js/hx_app.js.map",
-          cd: Path.expand("../", __DIR__)
-        ],
-        # END reflaxe_elixir haxe_client
 
-        # BEGIN reflaxe_elixir live_react_vite_watcher
-        npm: ["run", "assets:dev", cd: Path.expand("../", __DIR__)],
-        # END reflaxe_elixir live_react_vite_watcher
+    # BEGIN reflaxe_elixir live_react_vite_watcher
+    npm: ["run", "assets:dev", cd: Path.expand("../", __DIR__)],
+    # END reflaxe_elixir live_react_vite_watcher
         tailwind: {Tailwind, :install_and_run, [:phoenixhx_live_react, ~w(--watch)]}
       ]
     )

@@ -771,6 +771,10 @@ else
   run_step_with_log "Step 2.1: deps compile (default root)" "$DEPS_COMPILE_TIMEOUT" /tmp/qa-deps-compile-default.log "bash -lc 'unset MIX_BUILD_ROOT; MIX_ENV=$ENV_NAME mix deps.compile'" || exit 1
   # Mirror artifacts with symlink dereference so priv/include are real files in MIX_BUILD_ROOT
   run_step_with_log "Step 2.2: mirror deps to MIX_BUILD_ROOT" 60s /tmp/qa-deps-mirror.log "bash -lc 'mkdir -p \"$QA_BUILD_ROOT/$ENV_NAME/lib\" && rsync -aL --delete \"_build/$ENV_NAME/lib/\" \"$QA_BUILD_ROOT/$ENV_NAME/lib/\"'" || exit 1
+  # Tailwind includes its configured version in the cached filename. Reuse
+  # only those version-addressed executables so isolated QA avoids a duplicate
+  # download without accepting an unversioned, potentially stale esbuild binary.
+  run_step_with_log "Step 2.3: mirror cached Tailwind executables" 60s /tmp/qa-assets-cache-mirror.log "bash -lc 'mkdir -p \"$QA_BUILD_ROOT\"; for asset in _build/tailwind-*; do [[ -f \"\$asset\" ]] || continue; cp -p \"\$asset\" \"$QA_BUILD_ROOT/\"; done'" || exit 1
 fi
 
 # Second prune in case codegen emitted unused std helpers during the build loop

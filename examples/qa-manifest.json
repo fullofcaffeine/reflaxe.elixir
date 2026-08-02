@@ -352,7 +352,7 @@
         "surfaces": ["elixir-native-interop", "mix-package-cli", "framework-applications"],
         "profiles": ["elixir-first"],
         "evidenceLevel": "browser",
-        "claim": "A Haxe-authored Phoenix wrapper and Genes browser bootstrap hydrate a LiveReact island whose controls update without a reload."
+        "claim": "A Haxe-authored Phoenix wrapper and typed event hydrate a plain-TypeScript LiveReact island, round-trip through Phoenix, and retain a native LiveView fallback."
       },
       "compile": { "required": true },
       "strictElixir": { "mode": "ci" },

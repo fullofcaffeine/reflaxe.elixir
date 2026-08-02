@@ -1,0 +1,141 @@
+{
+	"filesGenerated": [
+		"string_tools.ex",
+		"reflaxe/exception.ex",
+		"reflaxe/elixir/haxe_throw.ex",
+		"reflaxe/elixir/haxe_float.ex",
+		"phoenixhx_live_react_web/signal_console_live.ex",
+		"phoenixhx_live_react_web/react_islands/signal_console.ex",
+		"phoenixhx_live_react_hx/main.ex",
+		"phoenixhx_live_react/live/signal_console_event.ex",
+		"phoenix/types/socket_transport.ex",
+		"phoenix/types/flash_type_tools.ex",
+		"phoenix/types/flash_type.ex",
+		"phoenix/route_helper.ex",
+		"phoenix/mount_result.ex",
+		"phoenix/http_status.ex",
+		"phoenix/http_method.ex",
+		"phoenix/handle_info_result.ex",
+		"phoenix/handle_event_result.ex",
+		"phoenix/form_field_value.ex",
+		"phoenix/conn_state.ex",
+		"haxe/iterators/array_key_value_iterator.ex",
+		"haxe/iterators/array_iterator.ex",
+		"haxe/exceptions/pos_exception.ex",
+		"haxe/exceptions/not_implemented_exception.ex",
+		"ecto/option.ex",
+		"ecto/changeset_action.ex",
+		"e_reg.ex"
+	],
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 67,
+	"wasCached": false,
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "e_reg.ex",
+			"sha256": "c0d6f5906cc887fc266663c36e86836576fab02b58e6cc1604f2e4e26f948b14"
+		},
+		{
+			"path": "ecto/changeset_action.ex",
+			"sha256": "b94fcec4ed9faa02cbffc107cba294c95c7402260f2de74d6fc2f9245b418e4d"
+		},
+		{
+			"path": "ecto/option.ex",
+			"sha256": "327dc7217b3300f5fb391514f65f6a3569733c80fe6c3fb721eaabe67c87f6b1"
+		},
+		{
+			"path": "haxe/exceptions/not_implemented_exception.ex",
+			"sha256": "79e1169384c0e4040281af71c745bba63d1ca530105f2c290d880ad94b818273"
+		},
+		{
+			"path": "haxe/exceptions/pos_exception.ex",
+			"sha256": "1bf19747702bbde341c3a92e2fc6f137f2e04508952fc452a0ae73aa61b2b1dd"
+		},
+		{
+			"path": "haxe/iterators/array_iterator.ex",
+			"sha256": "bf879924ad145b575913240565bc19645add254693e0e7d1f87bee45a9ab0c56"
+		},
+		{
+			"path": "haxe/iterators/array_key_value_iterator.ex",
+			"sha256": "387d4592afd651337e15dda44716f25a7a7cdd97e1b6a43e9c2aba3f4029a3a3"
+		},
+		{
+			"path": "phoenix/conn_state.ex",
+			"sha256": "935c47dbe73927846fdc222467c2a0672d39479649d36286f17b4a3facf6eb9b"
+		},
+		{
+			"path": "phoenix/form_field_value.ex",
+			"sha256": "43240ead75f286077169adc587904d62bd3d336ea29e55f8db9610984fde3886"
+		},
+		{
+			"path": "phoenix/handle_event_result.ex",
+			"sha256": "38d182b776acba05b1fb32f50fe293461b693fe3127fec72402eeab8ed6fd450"
+		},
+		{
+			"path": "phoenix/handle_info_result.ex",
+			"sha256": "6d786d4a9e5a85080ae81028850620723c219423daab70fb65102677f0aff301"
+		},
+		{
+			"path": "phoenix/http_method.ex",
+			"sha256": "e2d263319d6716a5c4810eb6c0e921bd53bdd777c272fa1bbdd986df5835e4fc"
+		},
+		{
+			"path": "phoenix/http_status.ex",
+			"sha256": "1c25b33bfe12a05f4f0060c8ca13327aaf9511cc1df697aa23b5a442adf6ee44"
+		},
+		{
+			"path": "phoenix/mount_result.ex",
+			"sha256": "10596ff096753fc2e7f424cc918df43900ffa2dd14f3ab1c826268fe28e6efb3"
+		},
+		{
+			"path": "phoenix/route_helper.ex",
+			"sha256": "58f6d17ad94cd962e4395ed81d310d91376397bfb8821992dbc5e7622511474a"
+		},
+		{
+			"path": "phoenix/types/flash_type.ex",
+			"sha256": "a265549182273d8b20502aad77ae854825a06012b9955bb35c79e62490ce5f7b"
+		},
+		{
+			"path": "phoenix/types/flash_type_tools.ex",
+			"sha256": "978886ca88d00a57954786f83390fc51035ebd85cdf6c6f1ecb4f93dce88312a"
+		},
+		{
+			"path": "phoenix/types/socket_transport.ex",
+			"sha256": "5bcdad1611e8abdf88cf4949691ec12bab592503a4022034875aef1da969b056"
+		},
+		{
+			"path": "phoenixhx_live_react/live/signal_console_event.ex",
+			"sha256": "e91f30adaf39383781f608b159151337271cc09c21cd1ed6ce95c3bd95875a1a"
+		},
+		{
+			"path": "phoenixhx_live_react_hx/main.ex",
+			"sha256": "97e69343bd8a41e8a99439be68126e1621f6aa73befd1c2618ac6524570ee0ef"
+		},
+		{
+			"path": "phoenixhx_live_react_web/react_islands/signal_console.ex",
+			"sha256": "fcac601c7e240c3e554d6c97be01893bdd626c9884c92b4cc3ce5684147ef618"
+		},
+		{
+			"path": "phoenixhx_live_react_web/signal_console_live.ex",
+			"sha256": "ae386f479a7a7ea66612491538fa0505f29fab2bc0522e1b871d3cf698925fe5"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_float.ex",
+			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_throw.ex",
+			"sha256": "8e498f80275fd241c22701a4f170bb1cf2135aa572ccd1b8f4a2d17728f849b1"
+		},
+		{
+			"path": "reflaxe/exception.ex",
+			"sha256": "9eb2137ead37e4b2ff0650cbece40b4da0427a5fe35a95b0de3eeacb82facbd2"
+		},
+		{
+			"path": "string_tools.ex",
+			"sha256": "b174b046cee6138603fade8a7baa097e869d67f66a86afdebda3449b28d3b153"
+		}
+	],
+	"generation": "648785d39729cebf0939ba52a25e9b400aae93764c808b21d06f6d82bfef4af6"
+}
