@@ -605,8 +605,8 @@ jobs:
           haxe -version
       - name: Download Haxe libraries (lix)
         run: npx lix download
-      - name: Run quick snapshot suite
-        run: npm run test:quick
+      - name: Validate generated corpus on minimum Elixir
+        run: bash test/validate_elixir.sh --artifact-dir intended --require-all test/snapshot/core test/snapshot/stdlib test/snapshot/regression
       - name: Runtime smoke (stdlib IO)
         run: bash scripts/ci/runtime-smoke-stdlib-io.sh
       - name: Runtime smoke (local OTP contract)
@@ -667,8 +667,10 @@ jobs:
           haxe -version
       - name: Download Haxe libraries (lix)
         run: npx lix download
-      - name: Run quick snapshot suite
-        run: npm run test:quick
+      - name: Runtime smoke (stdlib IO)
+        run: bash scripts/ci/runtime-smoke-stdlib-io.sh
+      - name: Runtime smoke (local OTP contract)
+        run: npm run test:otp-runtime
       - name: Run Mix tests (fast)
         run: |
           set -euo pipefail

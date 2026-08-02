@@ -16,7 +16,10 @@ Our GitHub Actions CI runs primarily on **Ubuntu**, plus a macOS smoke job. CI c
   - Node.js: `22.14.0`
   - Elixir: `1.14.x`
   - Erlang/OTP: `25.x`
-  - Runs a bounded subset (`npm run test:quick` + `npm run test:mix-fast`)
+  - Parses the complete checked-in generated corpus with Elixir 1.14, compiles and executes focused
+    stdlib and OTP contracts, then runs `npm run test:mix-fast`.
+  - The primary toolchain independently proves that the checked-in corpus matches current compiler
+    output; neither environment's green result substitutes for the other compatibility claim.
   - Note: `npm run test:mix-fast` feature-detects newer Mix flags (e.g. `--stale`) to stay compatible with Elixir `1.14`.
 
 - macOS smoke (bounded):
@@ -24,7 +27,9 @@ Our GitHub Actions CI runs primarily on **Ubuntu**, plus a macOS smoke job. CI c
   - Haxe: `4.3.7`
   - Elixir: `1.18.3`
   - Erlang/OTP: `27.2`
-  - Runs a bounded subset (`npm run test:quick` + `npm run test:mix-fast`)
+  - Compiles and executes the same focused stdlib and OTP contracts, then runs
+    `npm run test:mix-fast` to cover filesystem/process behavior and the Mix compiler path on macOS.
+    Platform compatibility does not repeat the primary toolchain's full compiler-conformance corpus.
 
 Additionally, the **QA Sentinel Smoke** workflow boots the todo-app on Ubuntu (Postgres + Phoenix) and runs a small Playwright suite.
 

@@ -20,7 +20,39 @@ WITH_TIMEOUT="${ROOT_DIR}/scripts/util/with-timeout.sh"
 # Examples:
 #   ./validate_elixir.sh snapshot
 #   ./validate_elixir.sh snapshot/core snapshot/stdlib
-TEST_DIRS=("$@")
+#   ./validate_elixir.sh --artifact-dir intended --require-all snapshot/core
+ARTIFACT_DIR="out"
+REQUIRE_ALL=0
+TEST_DIRS=()
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --artifact-dir)
+            if [ "$#" -lt 2 ] || [ -z "$2" ]; then
+                echo "ERROR: --artifact-dir requires a directory name" >&2
+                exit 2
+            fi
+            ARTIFACT_DIR="$2"
+            shift 2
+            ;;
+        --require-all)
+            REQUIRE_ALL=1
+            shift
+            ;;
+        --)
+            shift
+            TEST_DIRS+=("$@")
+            break
+            ;;
+        -*)
+            echo "ERROR: unknown option: $1" >&2
+            exit 2
+            ;;
+        *)
+            TEST_DIRS+=("$1")
+            shift
+            ;;
+    esac
+done
 if [ ${#TEST_DIRS[@]} -eq 0 ]; then
     TEST_DIRS=("snapshot")
 fi
@@ -35,9 +67,11 @@ fi
 
 VALIDATION_LOG="elixir_validation.log"
 FAILED_TESTS=""
+MISSING_ARTIFACT_TESTS=""
 TOTAL_TESTS=0
 PASSED_TESTS=0
 FAILED_COUNT=0
+MISSING_ARTIFACT_COUNT=0
 
 is_windows_shell() {
     # MSYS2/Git-Bash environments report MINGW/MSYS/CYGWIN here.
@@ -52,6 +86,7 @@ for dir in "${TEST_DIRS[@]}"; do
     echo "  - $dir" | tee -a "$VALIDATION_LOG"
 done
 echo "Per-test parse timeout: ${PARSE_TIMEOUT_SECS}s" | tee -a "$VALIDATION_LOG"
+echo "Artifact directory: ${ARTIFACT_DIR}" | tee -a "$VALIDATION_LOG"
 echo "" | tee -a "$VALIDATION_LOG"
 
 # Validate all .ex files in a test directory by parsing (no execution)
@@ -64,16 +99,27 @@ validate_test_directory() {
         test_name="$parent_name/$test_name"
     fi
     
-    # Skip if no out directory (test might not have run yet)
-    if [ ! -d "$test_dir/out" ]; then
+    local artifact_path="$test_dir/$ARTIFACT_DIR"
+
+    # Generated `out` directories are optional for ordinary local validation. A
+    # checked-in corpus gate uses --require-all so a clean checkout cannot pass
+    # after silently validating zero fixtures.
+    if [ ! -d "$artifact_path" ]; then
+        if [ "$REQUIRE_ALL" -eq 1 ]; then
+            MISSING_ARTIFACT_COUNT=$((MISSING_ARTIFACT_COUNT + 1))
+            MISSING_ARTIFACT_TESTS="$MISSING_ARTIFACT_TESTS\n  - $test_name"
+        fi
         return 0
     fi
     
-    # Find all .ex files in the out directory
-    local ex_files=$(find "$test_dir/out" -name "*.ex" -type f 2>/dev/null | sort)
+    # Find all .ex files in the selected artifact directory.
+    local ex_files=$(find "$artifact_path" -name "*.ex" -type f 2>/dev/null | sort)
     
     if [ -z "$ex_files" ]; then
-        # No Elixir files, might be a JavaScript test
+        if [ "$REQUIRE_ALL" -eq 1 ]; then
+            MISSING_ARTIFACT_COUNT=$((MISSING_ARTIFACT_COUNT + 1))
+            MISSING_ARTIFACT_TESTS="$MISSING_ARTIFACT_TESTS\n  - $test_name"
+        fi
         return 0
     fi
     
@@ -127,10 +173,19 @@ echo "=== Validation Summary ===" | tee -a "$VALIDATION_LOG"
 echo "Total tests validated: $TOTAL_TESTS" | tee -a "$VALIDATION_LOG"
 echo -e "${GREEN}Passed: $PASSED_TESTS${RESET}" | tee -a "$VALIDATION_LOG"
 echo -e "${RED}Failed: $FAILED_COUNT${RESET}" | tee -a "$VALIDATION_LOG"
+echo -e "${RED}Missing required artifacts: $MISSING_ARTIFACT_COUNT${RESET}" | tee -a "$VALIDATION_LOG"
 
-if [ $FAILED_COUNT -gt 0 ]; then
+if [ "$MISSING_ARTIFACT_COUNT" -gt 0 ]; then
+    echo -e "\n${RED}Tests missing required ${ARTIFACT_DIR}/ Elixir artifacts:${RESET}" | tee -a "$VALIDATION_LOG"
+    echo -e "$MISSING_ARTIFACT_TESTS" | tee -a "$VALIDATION_LOG"
+fi
+
+if [ "$FAILED_COUNT" -gt 0 ]; then
     echo -e "\n${RED}Failed tests:${RESET}" | tee -a "$VALIDATION_LOG"
     echo -e "$FAILED_TESTS" | tee -a "$VALIDATION_LOG"
+fi
+
+if [ "$FAILED_COUNT" -gt 0 ] || [ "$MISSING_ARTIFACT_COUNT" -gt 0 ]; then
     exit 1
 else
     echo -e "\n${GREEN}All Elixir syntax validation passed!${RESET}" | tee -a "$VALIDATION_LOG"

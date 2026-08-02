@@ -250,6 +250,70 @@ class ObservationTests(unittest.TestCase):
 
 
 class WorkflowTopologyTests(unittest.TestCase):
+    def test_checked_in_corpus_validation_fails_when_artifacts_are_absent(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture = Path(tmp) / "snapshot" / "missing-intended"
+            fixture.mkdir(parents=True)
+            (fixture / "compile.hxml").write_text("-main Main\n", encoding="utf-8")
+            result = subprocess.run(
+                [
+                    "bash",
+                    str(ROOT / "test/validate_elixir.sh"),
+                    "--artifact-dir",
+                    "intended",
+                    "--require-all",
+                    str(Path(tmp) / "snapshot"),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Missing required artifacts: 1", result.stdout)
+
+    def test_compatibility_smokes_keep_vertical_contracts_without_recompiling_the_full_corpus(self) -> None:
+        workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+        minimum_match = re.search(
+            r"^  smoke-min-toolchain:\n(?P<body>.*?)^  smoke-macos:\n",
+            workflow,
+            re.MULTILINE | re.DOTALL,
+        )
+        macos_match = re.search(
+            r"^  smoke-macos:\n(?P<body>.*?)^  docs-smoke:\n",
+            workflow,
+            re.MULTILINE | re.DOTALL,
+        )
+        self.assertIsNotNone(minimum_match, "CI must keep the minimum-toolchain compatibility owner")
+        self.assertIsNotNone(macos_match, "CI must keep the macOS compatibility owner")
+
+        for name, body in (
+            ("minimum toolchain", minimum_match.group("body")),
+            ("macOS", macos_match.group("body")),
+        ):
+            with self.subTest(name=name):
+                run_commands = re.findall(r"^        run: ([^\n]+)$", body, re.MULTILINE)
+                self.assertNotIn(
+                    "npm run test:quick",
+                    run_commands,
+                    "platform compatibility must not repeat the primary compiler-conformance corpus",
+                )
+                self.assertIn("bash scripts/ci/runtime-smoke-stdlib-io.sh", run_commands)
+                self.assertIn("npm run test:otp-runtime", run_commands)
+                self.assertTrue(
+                    "npm run test:mix-fast" in run_commands or "if npm run test:mix-fast; then" in body,
+                    f"{name} must execute the Mix integration suite",
+                )
+
+        minimum_commands = re.findall(
+            r"^        run: ([^\n]+)$", minimum_match.group("body"), re.MULTILINE
+        )
+        self.assertIn(
+            "bash test/validate_elixir.sh --artifact-dir intended --require-all test/snapshot/core test/snapshot/stdlib test/snapshot/regression",
+            minimum_commands,
+            "the minimum Elixir version must parse the complete generated conformance corpus",
+        )
+
     def test_every_declared_ci_test_lane_is_required_by_the_matrix(self) -> None:
         package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
         expected_scripts = {

@@ -275,10 +275,11 @@ Phoenix server.
 
 The starting time budgets from the shared testing review are goals to measure, not assertions about
 this repository: roughly 15–30 seconds for R0, 60–90 seconds for R1, and a 10–12 minute required-PR
-critical path. **Observed:** exact-head CI run `30612110872` took about 51 minutes in `Tests`, 25
-minutes in macOS smoke, and 19 minutes in minimum-toolchain smoke. The current PR graph therefore
-does not meet the proposed R2 budget. Reducing it requires measured ownership and selector-recall
-evidence, not broad path ignores.
+critical path. The initial baseline run `30612110872` took about 51 minutes in `Tests`, 25 minutes in
+macOS smoke, and 19 minutes in minimum-toolchain smoke. After splitting `Tests`, exact-head run
+`30730230507` completed that gate in under ten minutes but still spent 27 minutes in macOS smoke and
+20 minutes in minimum-toolchain smoke. Reducing the remaining gap requires measured ownership and
+selector-recall evidence, not broad path ignores.
 
 ## Agentic TDD loop
 
@@ -470,7 +471,7 @@ the contract; it is not permission to relabel the gap as a pass.
 | Package/install | Isolated Haxelib ZIP parity and scheduled released-artifact smoke | Full official portable smoke through the installed package | Reuse package workspace and official ExUnit smoke once provenance is hardened | Official smoke, then release evidence |
 | Native/framework | Mix, OTP, Phoenix, Ecto, LiveView, LiveReact/Genes and output-quality gates | No gap that portable-suite work is allowed to replace | Keep this axis independently required | Ongoing |
 | Feedback efficiency | Focused commands, parallel snapshots, bounded sentinels, sharded WAE, observation-only ownership/timing reports | R0/R1 p50/p95 and validated per-rule promotion evidence; GitHub job metadata does not expose every cache/retry/first-log signal | Extend existing runners only when a missing signal changes a decision; observe before selecting | Selector observation, then measured promotion |
-| CI topology | Full PR/main graph with exact tested-commit release, parallel semantic test lanes, a fail-closed `Tests` aggregator, and a non-blocking post-gate timing/miss observer | Minimum-toolchain and macOS smoke are expected to become the next critical-path owners; code-level compiler and harness costs remain measured follow-up work | Keep the observer unable to skip jobs; optimize the newly visible owners from evidence rather than weakening lanes | Measured R2/R3 promotion |
+| CI topology | Full PR/main graph with exact tested-commit release, parallel semantic test lanes, focused minimum-toolchain/macOS vertical smokes, a fail-closed `Tests` aggregator, and a non-blocking post-gate timing/miss observer | Code-level compiler and harness costs remain measured follow-up work | Keep the observer unable to skip jobs; optimize newly visible owners from evidence rather than weakening lanes | Measured R2/R3 promotion |
 | Retry policy | macOS Mix and QA-sentinel Playwright paths retry failed semantic tests | A later pass can erase the original red outcome or log; setup/download retries are not classified separately | Preserve attempt logs/outcomes and classify setup, infrastructure, flake, and deterministic semantic failures without turning red into an unqualified pass | Retry-policy repair |
 
 ### Primary Tests critical-path baseline and split
@@ -506,6 +507,29 @@ while the mixed harness cannot substitute for that claim. Bead `haxe.elixir.code
 the duplicated generation/execution without merging those evidence surfaces. Code-level profiling is
 also tracked separately: `haxe.elixir.codex-u9q` for compiler/snapshot cost and
 `haxe.elixir.codex-1ud` for the persistent-server differential fixture.
+
+### Minimum-toolchain and macOS compatibility baseline
+
+Five successful hosted runs (`30730230507`, `30728577368`, `30725109709`, `30723143092`, and
+`30713283042`) showed that both compatibility jobs were regenerating the complete core, stdlib, and
+regression snapshot corpus after the primary environment had already qualified it. Nearest-rank p95
+is used for this five-run sample.
+
+| Compatibility owner | Whole-job p50 / p95 | Repeated snapshots p50 / p95 | Preserved runtime/Mix evidence p50 / p95 |
+|---|---:|---:|---:|
+| Elixir 1.14 / OTP 25 on Ubuntu | 25m 36s / 26m 03s | 18m 46s / 19m 03s | 6m 21s / 6m 27s |
+| Primary toolchain on macOS | 27m 02s / 32m 49s | 21m 15s / 26m 12s | Mix 4m 55s / 5m 47s |
+
+These jobs own **compatibility**, not broad compiler conformance. Each one now compiles real Haxe
+through the custom backend, strictly compiles generated Elixir, executes focused stdlib IO and local
+Process/Task/Agent contracts on BEAM, and runs the Mix integration suite on its declared environment.
+The macOS job gained the explicit stdlib and OTP vertical checks before losing broad regeneration.
+
+The minimum-toolchain job separately parses every checked-in core, stdlib, and regression output with
+Elixir 1.14. This preserves the old-version syntax claim without recompiling all Haxe fixtures there.
+The primary `Test lane / ...` matrix proves that those checked-in outputs match current compiler
+generation; minimum-toolchain green does not replace that conformance evidence, and primary green
+does not replace the independent Elixir 1.14 parse. Both remain required.
 
 ## Consolidation plan
 
