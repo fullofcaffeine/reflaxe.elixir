@@ -126,7 +126,7 @@ These failures usually come from running only a subset locally (e.g. `test:quick
   - Run `npm run guard:examples-qa` after adding/removing an example or changing example test coverage.
   - If example generated output changes intentionally, review and commit the generated output alongside the source/docs change; do not leave examples regenerating differently from checked-in files.
 - Handwritten-output corpus changes: `test/quality/handwritten-output/manifest.json` is a review policy, not a suppression list. New `_ =`, IIFE, helper, reducer-append, or support-footprint growth should be fixed at the compiler source when possible. Add an allowance only when the artifact is semantically or architecturally required, scope it to one file/helper/count, explain why, and link the owning bead. Run `npm run test:handwritten-output`; use `npm run update:handwritten-output` only after reviewing the Haxe source, generated diff, handwritten comparison, and runtime/WAE evidence.
-- Deep compiler/runtime semantics: if a fix becomes too complex, ambiguous, or architectural to reason about locally with confidence, stop before broad changes and ask the human to query GPT 5.5 Pro with the whole repo. Provide a precise prompt describing the failing Haxe source, generated Elixir shape, expected semantics, suspected pipeline files, and adjacent risks. Do not land speculative broad repairs while waiting for that external review.
+- Deep compiler/runtime semantics: use Oracle only for genuinely critical work when the problem or safe plan remains unusually hard or materially undefined after focused local investigation, competing fixes are consequential and difficult to reverse, implementation no longer converges, or a critical plan/result needs a higher-quality independent challenge. Oracle may clarify and plan before implementation or review afterward; size, unfamiliarity, or generic extra confidence alone are insufficient. Invoke the globally installed `$oracle-review` skill and let its caf-oracle facade own the ledger, agent provenance, checked evidence bundle, dedicated browser dispatch, recovery, response capture, disposition, and archive. Do not maintain a parallel `/tmp/oracle` queue or manually upload and paste when the tool is available. If `$show-me-your-work` is active, link its concise decision trail to the request instead of copying Oracle artifacts. The request must still describe the failing Haxe source, generated Elixir shape, expected semantics, suspected pipeline files, AST-only/no-band-aid constraints, and adjacent risks. Do not land speculative broad repairs while waiting for the response.
 - Behavior-first changes: before broad automation for meaningful new or changed behavior, record the
   input/precondition, action or compilation path, observable result, edge/error behavior, owning
   product surface, and protected claim. For bug fixes and behavior changes, retain the exact pre-fix
@@ -3750,68 +3750,6 @@ See also: docs/03-compiler-development/transformers-overview.md (updated with th
 - When a test fails due to shape changes, prefer updating the snapshot to reflect the improved idiomatic output rather than introducing a test-only exception.
 - Rationale: tests are a contract for production behavior. Keeping them aligned prevents drift, avoids hidden branches, and enforces correctness and idiomatic output for real apps.
 
-## Escalation Protocol: GPT‑5 Pro Consult (Repomix)
+## Escalation Protocol: Oracle Review
 
-If a task becomes too complex/uncertain to resolve confidently within a normal agent iteration (e.g., subtle compiler invariants, multi-pass ordering bugs, target boundary encoding/decoding design), pause and ask the user for a GPT‑5 Pro consult using a *minimal* repo extract.
-
-### When to escalate
-- You can reproduce a failure but the root cause spans multiple subsystems (builder → transformer → printer → stdlib/runtime).
-- You have 2–3 plausible fixes and need help picking the most idiomatic/architecturally correct one.
-- The change would require a new cross-target abstraction and you want validation of the API design.
-
-### What to tell the user (tailored prompt template)
-Use a prompt like this (fill in the bracketed fields):
-
-```
-You are GPT‑5 Pro. You are reviewing a Haxe→Elixir compiler + stdlib.
-
-Goal:
-- [one sentence: what must work / what is failing]
-
-Repro:
-- [exact command(s) + where run]
-- [exact error output / stacktrace]
-
-Constraints:
-- AST pipeline only (no string-gen path)
-- No band-aids / no test-only gates
-- Don’t edit generated *.ex as source of truth
-- Keep APIs Phoenix-faithful; no invented functions
-
-Context:
-- [what changed recently / relevant commits]
-- [suspected subsystem(s): builder/transformer/printer/stdlib]
-
-Ask:
-1) Identify the root cause.
-2) Recommend the most elegant fix (and why).
-3) Call out any edge cases / tests we should add (runtime + snapshots).
-```
-
-### Repomix (include only what’s needed)
-If `repomix` is not installed, use `npx`. Prefer a *small include set*.
-
-Compiler/stdlib/runtime issue example:
-```
-npx repomix@latest \
-  --include "src/reflaxe/elixir/**" \
-  --include "std/**" \
-  --include "test/snapshot/stdlib/haxe_io_bytes_streams/**" \
-  --include ".github/workflows/ci.yml" \
-  --output "/tmp/reflaxe-elixir-repomix.txt"
-```
-
-Channels boundary (shared protocol + JS client + Elixir server) example:
-```
-npx repomix@latest \
-  --include "vendor/phoenix_shared/src/phoenix/channels/**" \
-  --include "vendor/phoenix_js/src/phoenix/channels/**" \
-  --include "std/phoenix/**" \
-  --include "examples/todo-app/src_haxe/**/channels/**" \
-  --output "/tmp/reflaxe-elixir-repomix.txt"
-```
-
-Then ask the user to paste:
-- The repomix output file contents
-- The failing logs (last ~200 lines)
-- The exact commands used to reproduce
+Reserve Oracle for unresolved multi-subsystem compiler invariants, genuinely competing architectural fixes, a materially undefined critical plan, or a new cross-target abstraction whose ownership cannot be established safely from local evidence. Use `$oracle-review` for planning or review and let caf-oracle automate the durable request and response lifecycle; keep the Elixir-specific AST, generated-source, Phoenix-faithfulness, runtime, and snapshot constraints in the request. Local tests and repository authorities remain decisive.
