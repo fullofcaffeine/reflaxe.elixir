@@ -293,6 +293,11 @@ class WorkflowTopologyTests(unittest.TestCase):
         ):
             with self.subTest(name=name):
                 run_commands = re.findall(r"^        run: ([^\n]+)$", body, re.MULTILINE)
+                self.assertIn(
+                    'echo "$(pwd)/node_modules/.bin" >> "$GITHUB_PATH"',
+                    body,
+                    f"{name} must expose the repository Lix shims to direct Bash runtime steps",
+                )
                 self.assertNotIn(
                     "npm run test:quick",
                     run_commands,
