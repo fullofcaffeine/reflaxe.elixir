@@ -31,6 +31,7 @@ class TestElixirASTChildren {
 		testMetadataPositionAndAttributeSpans();
 		testDeterministicStructuralWalk();
 		testTransformerDelegatesToStructuralChildren();
+		testTransformerPreservesUnchangedBranches();
 		testTransformerBoundaryStopsRecursion();
 
 		Sys.println("ElixirAST child traversal contract passed");
@@ -182,6 +183,8 @@ class TestElixirASTChildren {
 			assertEquals(sample.astChildren, astChildren, sample.name + " immediate AST child count");
 			var digest = ElixirASTStructuralDigest.digest(sample.node);
 			assertEquals(digest, ElixirASTStructuralDigest.digest(sample.node), sample.name + " structural digest determinism");
+			assertTrue(ElixirASTTransformer.transformNode(sample.node, child -> child) == sample.node,
+				sample.name + " no-op traversal preserves node identity");
 		}
 	}
 
@@ -374,6 +377,28 @@ class TestElixirASTChildren {
 
 		assertStrings(["mapped_pattern_literal", "mapped_rhs", "mapped_operation"], names, "transformNode structural child delegation");
 		assertTrue(!sawRaw, "transformNode keeps raw target injection opaque");
+	}
+
+	static function testTransformerPreservesUnchangedBranches():Void {
+		var untouched = makeAST(ECall(ast("service"), "fetch", [ast("id")]));
+		var changed = makeAST(ECall(ast("service"), "store", [ast("old_value")]));
+		var node = makeAST(EBlock([untouched, changed]));
+
+		var identity = ElixirASTTransformer.transformNode(node, child -> child);
+		assertTrue(identity == node, "a no-op traversal preserves the root object");
+
+		var mapped = ElixirASTTransformer.transformNode(node, child -> switch (child.def) {
+			case EVar("old_value"): makeASTWithMeta(EVar("new_value"), child.metadata, child.pos);
+			default: child;
+		});
+		assertTrue(mapped != node, "a changed descendant rebuilds its ancestor path");
+		switch (mapped.def) {
+			case EBlock([mappedUntouched, mappedChanged]):
+				assertTrue(mappedUntouched == untouched, "an unrelated sibling keeps its identity");
+				assertTrue(mappedChanged != changed, "the changed branch is rebuilt");
+			default:
+				fail("structural sharing test did not preserve the block shape");
+		}
 	}
 
 	static function testTransformerBoundaryStopsRecursion():Void {

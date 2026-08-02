@@ -119,6 +119,39 @@ requires `executed + skipped = 578` with stable registry indexes. Current repres
 milliseconds are reference observations, not performance thresholds; compare them directionally on
 the same machine. Counts and report shape are the stable contract.
 
+### Shared traversal allocation
+
+Most passes inspect a complete module but change only a small part of it. The shared
+`ElixirASTTransformer.transformNode` walk therefore preserves the original node and child arrays when
+the callback leaves every descendant unchanged. If one descendant changes, only that ancestor path is
+rebuilt; unrelated sibling branches retain their identity. This is ordinary structural sharing: every
+callback still runs in the same order, and it does not let an adapted pass claim that cached analysis is
+preserved. Legacy pass outcomes remain `Unknown` unless the pass reports a stronger outcome explicitly.
+
+`npm run test:ast-children` checks no-op identity for every AST constructor and separately checks that a
+real descendant edit rebuilds its path. Snapshot output and scoped/all-pass parity remain the semantic
+oracles; object identity alone does not prove generated-code equivalence.
+
+The 2026-08-02 optimization was measured against the same clean commit in an isolated worktree using
+`core/domain_abstractions`, three alternating baseline/candidate pairs per state, fresh Haxe processes
+(`HAXE_NO_SERVER=1`), and nearest-rank percentiles. “Cold output” means the generated tree was absent;
+“warm output” means an identical generated tree already existed. The workstation had ordinary varying
+load, so paired direction and compiler-phase timings are more trustworthy than the absolute process
+times, and these numbers are evidence rather than a new budget.
+
+| State and measurement | Baseline p50 / p95 | Structural sharing p50 / p95 |
+| --- | ---: | ---: |
+| Cold output, process wall | 9.02s / 9.22s | 8.58s / 8.64s |
+| Cold output, target compiler | 3.25s / 3.40s | 3.01s / 3.04s |
+| Cold output, pass manager | 2.37s / 2.40s | 2.22s / 2.22s |
+| Warm output, process wall | 8.98s / 9.21s | 8.48s / 8.67s |
+| Warm output, target compiler | 3.62s / 3.90s | 3.05s / 3.07s |
+| Warm output, pass manager | 2.40s / 2.63s | 2.06s / 2.08s |
+
+All twelve measured output trees had the same SHA-256 digest. The full categorized snapshot backstop
+then passed 413/413 fixtures. Re-measure on the same host and toolchain when changing this traversal;
+do not compare these workstation seconds directly with hosted CI duration.
+
 ### Why grouped, granular, and all-pass builds do not drift
 
 Scoped execution is not a second compiler or a source-versus-package difference. Source checkouts and
