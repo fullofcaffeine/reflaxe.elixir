@@ -8,6 +8,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import re
 import subprocess
 import tempfile
 import unittest
@@ -51,7 +52,7 @@ class PlanTests(unittest.TestCase):
         )
         self.assertEqual(plan["affected_product_surfaces"], sorted(MANIFEST["product_surfaces"]))
         self.assertEqual(plan["matched_rules"][0]["owner"], "documentation-contracts")
-        self.assertIn("test", plan["omitted_jobs"])
+        self.assertIn("test-lanes", plan["omitted_jobs"])
         self.assertFalse(plan["controls_required_ci"])
         self.assertFalse(plan["promotion_eligible"])
 
@@ -85,17 +86,17 @@ class PlanTests(unittest.TestCase):
             ),
             (
                 "test/snapshot/core/example/Main.hx",
-                {"test"},
+                {"test-lanes"},
                 set(MANIFEST["product_surfaces"]),
             ),
             (
                 "scripts/perf/benchmark-todo-watch.py",
-                {"budgets", "test"},
+                {"budgets", "test-lanes"},
                 {"compiler-conformance"},
             ),
             (
                 "scripts/release/test-release-policy.js",
-                {"haxelib-package-smoke", "test"},
+                {"haxelib-package-smoke", "test-lanes"},
                 {"mix-package-cli"},
             ),
         ]
@@ -198,23 +199,26 @@ class ObservationTests(unittest.TestCase):
 
     def test_missing_configured_job_forces_effective_full_fallback(self) -> None:
         plan = observer.build_plan(["docs/guide.md"], MANIFEST)
-        jobs = [job for job in complete_jobs() if job["name"] != "Tests"]
+        jobs = [job for job in complete_jobs() if job["name"] != "Test lane"]
         result = observer.build_observation(plan, {"jobs": jobs}, MANIFEST)
         self.assertFalse(result["manifest_fresh"])
-        self.assertIn("test", result["missing_job_ids"])
+        self.assertIn("test-lanes", result["missing_job_ids"])
         self.assertEqual(result["effective_omitted_jobs"], [])
 
     def test_failed_omitted_job_is_a_selector_miss(self) -> None:
         plan = observer.build_plan(["docs/guide.md"], MANIFEST)
         jobs = complete_jobs()
         for job in jobs:
-            if job["name"] == "Tests":
+            if job["name"] == "Test lane":
                 job["conclusion"] = "failure"
                 job["completed_at"] = "2026-07-31T10:03:00Z"
         result = observer.build_observation(plan, {"jobs": jobs}, MANIFEST, run_attempt=1)
-        self.assertEqual(result["selector_misses"], [{"job_id": "test", "name": "Tests", "conclusion": "failure"}])
+        self.assertEqual(
+            result["selector_misses"],
+            [{"job_id": "test-lanes", "name": "Test lane", "conclusion": "failure"}],
+        )
         self.assertEqual(result["timing"]["first_failure_signal"]["elapsed_ms"], 180000)
-        self.assertIn("Tests", result["timing"]["completion_critical_jobs"])
+        self.assertIn("Test lane", result["timing"]["completion_critical_jobs"])
 
     def test_failed_selected_job_is_not_a_selector_miss(self) -> None:
         plan = observer.build_plan(["docs/guide.md"], MANIFEST)
@@ -232,12 +236,46 @@ class ObservationTests(unittest.TestCase):
             "examples-elixir",
         )
         self.assertEqual(observer.match_job_id("Examples", MANIFEST), "examples")
+        self.assertEqual(
+            observer.match_job_id("Test lane / Compiler snapshots (core)", MANIFEST),
+            "test-lanes",
+        )
+        self.assertEqual(observer.match_job_id("Tests", MANIFEST), "test")
 
     def test_unavailable_cache_and_retry_signals_are_not_invented(self) -> None:
         plan = observer.build_plan(["docs/guide.md"], MANIFEST)
         result = observer.build_observation(plan, {"jobs": complete_jobs()}, MANIFEST)
         self.assertEqual(result["timing"]["cache_evidence"], "not_reported_by_github_jobs_api")
         self.assertEqual(result["timing"]["retry_evidence"], "not_reported_by_input")
+
+
+class WorkflowTopologyTests(unittest.TestCase):
+    def test_every_declared_ci_test_lane_is_required_by_the_matrix(self) -> None:
+        package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
+        expected_scripts = {
+            name for name in package["scripts"] if name.startswith("test:ci:")
+        }
+        workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+        matrix_match = re.search(r"^  test-lanes:\n(?P<body>.*?)^  test:\n", workflow, re.MULTILINE | re.DOTALL)
+        self.assertIsNotNone(matrix_match, "CI must define semantic test lanes before the Tests aggregator")
+        matrix_body = matrix_match.group("body")
+        scheduled_scripts = re.findall(r"^\s+command: npm run (test:ci:[\w:-]+)$", matrix_body, re.MULTILINE)
+
+        self.assertEqual(set(scheduled_scripts), expected_scripts)
+        self.assertEqual(len(scheduled_scripts), len(expected_scripts), "each CI test lane must be scheduled once")
+        self.assertIn("fail-fast: false", matrix_body)
+
+    def test_tests_aggregator_fails_closed_over_the_whole_matrix(self) -> None:
+        workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+        aggregator_match = re.search(r"^  test:\n(?P<body>.*?)^  examples:\n", workflow, re.MULTILINE | re.DOTALL)
+        self.assertIsNotNone(aggregator_match, "CI must preserve the stable Tests aggregator")
+        aggregator = aggregator_match.group("body")
+
+        self.assertIn("name: Tests", aggregator)
+        self.assertIn("if: ${{ always() }}", aggregator)
+        self.assertIn("needs: [test-lanes]", aggregator)
+        self.assertIn("needs.test-lanes.result", aggregator)
+        self.assertIn('if [ "$TEST_LANES_RESULT" != "success" ]', aggregator)
 
 
 if __name__ == "__main__":

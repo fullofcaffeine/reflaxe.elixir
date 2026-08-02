@@ -470,8 +470,42 @@ the contract; it is not permission to relabel the gap as a pass.
 | Package/install | Isolated Haxelib ZIP parity and scheduled released-artifact smoke | Full official portable smoke through the installed package | Reuse package workspace and official ExUnit smoke once provenance is hardened | Official smoke, then release evidence |
 | Native/framework | Mix, OTP, Phoenix, Ecto, LiveView, LiveReact/Genes and output-quality gates | No gap that portable-suite work is allowed to replace | Keep this axis independently required | Ongoing |
 | Feedback efficiency | Focused commands, parallel snapshots, bounded sentinels, sharded WAE, observation-only ownership/timing reports | R0/R1 p50/p95 and validated per-rule promotion evidence; GitHub job metadata does not expose every cache/retry/first-log signal | Extend existing runners only when a missing signal changes a decision; observe before selecting | Selector observation, then measured promotion |
-| CI topology | Full PR/main graph with exact tested-commit release plus a non-blocking post-gate timing/miss observer | PR critical path is about 51 minutes; repeated setup; no required aggregator for future selected jobs | Keep the observer unable to skip jobs; use its reports to decide whether selective CI is worthwhile | Measured R2/R3 promotion |
+| CI topology | Full PR/main graph with exact tested-commit release, parallel semantic test lanes, a fail-closed `Tests` aggregator, and a non-blocking post-gate timing/miss observer | Minimum-toolchain and macOS smoke are expected to become the next critical-path owners; code-level compiler and harness costs remain measured follow-up work | Keep the observer unable to skip jobs; optimize the newly visible owners from evidence rather than weakening lanes | Measured R2/R3 promotion |
 | Retry policy | macOS Mix and QA-sentinel Playwright paths retry failed semantic tests | A later pass can erase the original red outcome or log; setup/download retries are not classified separately | Preserve attempt logs/outcomes and classify setup, infrastructure, flake, and deterministic semantic failures without turning red into an unqualified pass | Retry-policy repair |
+
+### Primary Tests critical-path baseline and split
+
+Five successful `main` runs on 2026-08-01/02 supplied timestamped step logs: `30725109709`,
+`30723143092`, `30713283042`, `30710833880`, and `30694846998`. These are hosted-runner
+measurements, not local estimates. The old sequential `Tests` job had a 50.1-minute p50 and
+50.2-minute p95. Checkout, toolchain, cache, and dependency setup took only 29 seconds p50 and
+34 seconds p95, so repeating that small setup is cheaper than keeping the behavior owners in one
+fifty-minute chain.
+
+| Semantic stage | Bounded local reproduction | p50 | p95 | Owning evidence |
+|---|---|---:|---:|---|
+| Core snapshots | `npm run test:ci:compiler-core` | 5m 34s | 5m 35s | Core Haxe-to-Elixir compiler conformance |
+| Stdlib snapshots | `npm run test:ci:compiler-stdlib` | 4m 05s | 4m 08s | Generated stdlib shape |
+| Regression snapshots | `npm run test:ci:compiler-regression` | 7m 31s | 7m 33s | Previously escaped compiler behavior |
+| Phoenix + LiveView snapshots | `npm run test:ci:compiler-phoenix` | 6m 21s | 6m 22s | Framework code generation |
+| Ecto/OTP/ExUnit/bootstrap snapshots | `npm run test:ci:compiler-target-domains` | 3m 12s | 3m 14s | Independent target-domain generated shapes |
+| Negative/compiler/target-quality contracts | `npm run test:ci:compiler-contracts` | 8m 33s | 8m 34s | Diagnostics, result invariants, strict Elixir, and target quality |
+| Portable stdlib runtime | `npm run test:ci:stdlib-runtime` | 1m 15s | 1m 16s | Portable Haxe behavior on BEAM |
+| Mix + BEAM runtime | `npm run test:ci:mix-runtime` | 7m 34s | 7m 35s | Mix integration, native runtime, and server ownership |
+| Persistent Haxe-server differential | `npm run test:ci:server-cache` | 4m 58s | 5m 00s | Warm-cache invalidation versus clean-build output |
+
+The `Test lane / ...` matrix runs these owners independently with `fail-fast: false`, so one failure
+does not hide the other lanes' evidence. The stable required check remains `Tests`; it runs after the
+whole matrix and fails unless every lane succeeded. Release and the advisory observer depend on that
+aggregator. The AST/pass/performance contracts are no longer repeated here because the required
+`Guardrails` dependency already runs the exact same commands before the lanes start.
+
+The portable stdlib lane intentionally remains separate even though the broad Mix harness currently
+loads the same Haxe-authored modules. Its green result belongs to the portable-runtime scorecard,
+while the mixed harness cannot substitute for that claim. Bead `haxe.elixir.codex-bk4` owns removing
+the duplicated generation/execution without merging those evidence surfaces. Code-level profiling is
+also tracked separately: `haxe.elixir.codex-u9q` for compiler/snapshot cost and
+`haxe.elixir.codex-1ud` for the persistent-server differential fixture.
 
 ## Consolidation plan
 

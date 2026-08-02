@@ -200,14 +200,42 @@ jobs:
       - name: Run haxelib package smoke
         run: npm run test:haxelib-package
 
-  test:
-    name: Tests
+  test-lanes:
+    name: Test lane / ${{ matrix.name }}
     runs-on: ubuntu-latest
     needs: [guards]
-    # The full suite includes persistent-server A/B differentials. Healthy runs
-    # have reached 60 minutes under ordinary shared-runner load, so keep 25%
-    # scheduling/load headroom beyond that observed duration.
-    timeout-minutes: 75
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Compiler snapshots (core)
+            command: npm run test:ci:compiler-core
+            beam: false
+          - name: Compiler snapshots (stdlib)
+            command: npm run test:ci:compiler-stdlib
+            beam: false
+          - name: Compiler snapshots (regression)
+            command: npm run test:ci:compiler-regression
+            beam: false
+          - name: Compiler snapshots (Phoenix + LiveView)
+            command: npm run test:ci:compiler-phoenix
+            beam: false
+          - name: Compiler snapshots (target domains)
+            command: npm run test:ci:compiler-target-domains
+            beam: false
+          - name: Compiler contracts + target quality
+            command: npm run test:ci:compiler-contracts
+            beam: false
+          - name: Portable stdlib runtime
+            command: npm run test:ci:stdlib-runtime
+            beam: true
+          - name: Mix + BEAM runtime
+            command: npm run test:ci:mix-runtime
+            beam: true
+          - name: Haxe server cache differential
+            command: npm run test:ci:server-cache
+            beam: false
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -219,11 +247,13 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
       - name: Setup Erlang/Elixir
+        if: matrix.beam
         uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
       - name: Cache Mix deps
+        if: matrix.beam
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: |
@@ -256,10 +286,26 @@ jobs:
           haxe -version
       - name: Download Haxe libraries (lix)
         run: npx lix download
-      - name: Run Haxe ExUnit stdlib parity suite
-        run: npm run test:haxe-exunit-stdlib
-      - name: Run full test suite
-        run: npm test
+      - name: Run ${{ matrix.name }}
+        run: ${{ matrix.command }}
+
+  test:
+    name: Tests
+    if: ${{ always() }}
+    needs: [test-lanes]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every semantic test lane
+        env:
+          TEST_LANES_RESULT: ${{ needs.test-lanes.result }}
+        run: |
+          set -euo pipefail
+          if [ "$TEST_LANES_RESULT" != "success" ]; then
+            echo "::error::One or more required semantic test lanes did not succeed (result=$TEST_LANES_RESULT)."
+            exit 1
+          fi
+          echo "All required semantic test lanes succeeded."
 
   examples:
     name: Examples

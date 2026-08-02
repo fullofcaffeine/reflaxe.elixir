@@ -21,7 +21,8 @@
     {"id": "dependency-audit", "name_prefix": "Dependency Audit", "selectable": true},
     {"id": "repo-hygiene", "name_prefix": "Repo Hygiene (dead-code audit)", "selectable": true},
     {"id": "haxelib-package-smoke", "name_prefix": "Haxelib Package Smoke", "selectable": true},
-    {"id": "test", "name_prefix": "Tests", "selectable": true},
+    {"id": "test-lanes", "name_prefix": "Test lane", "selectable": true},
+    {"id": "test", "name_prefix": "Tests", "selectable": false},
     {"id": "examples", "name_prefix": "Examples", "selectable": true},
     {"id": "examples-elixir", "name_prefix": "Examples (Elixir WAE)", "selectable": true},
     {"id": "budgets", "name_prefix": "Budgets (perf + determinism)", "selectable": true},
@@ -74,15 +75,15 @@
         "mix-package-cli",
         "framework-applications"
       ],
-      "jobs": ["test"],
-      "reason": "The snapshot corpus includes compiler, runtime, native interop, bootstrap/package, and framework categories executed by the primary test aggregate."
+      "jobs": ["test-lanes"],
+      "reason": "The semantic test-lane matrix independently owns compiler, runtime, native interop, bootstrap/package, and framework snapshot categories; the Tests aggregator only reports their combined required result."
     },
     {
       "id": "performance-tools",
       "owner": "performance-contracts",
       "patterns": ["scripts/perf/**", "scripts/ci/perf-*.py", "scripts/ci/perf-*.sh"],
       "surfaces": ["compiler-conformance"],
-      "jobs": ["budgets", "test"],
+      "jobs": ["budgets", "test-lanes"],
       "reason": "Performance tooling is covered by benchmark contracts, determinism budgets, and the primary test aggregate."
     },
     {
@@ -90,7 +91,7 @@
       "owner": "package-consumer-contracts",
       "patterns": ["scripts/release/**", "scripts/ci/haxelib-package-smoke.sh"],
       "surfaces": ["mix-package-cli"],
-      "jobs": ["dependency-audit", "haxelib-package-smoke", "test"],
+      "jobs": ["dependency-audit", "haxelib-package-smoke", "test-lanes"],
       "reason": "Package and release helpers must preserve isolated consumer installation and dependency policy."
     },
     {
