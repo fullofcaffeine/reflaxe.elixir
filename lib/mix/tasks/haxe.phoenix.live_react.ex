@@ -39,6 +39,7 @@ defmodule Mix.Tasks.Haxe.Phoenix.LiveReact do
     project_config = Mix.Project.config()
     app_name = Keyword.get(project_config, :app, nil)
     mix_dependencies = Keyword.get(project_config, :deps, [])
+    mix_dependency_paths = Mix.Project.deps_paths()
     package_root = Keyword.get(options, :package_root, nil)
     confirmed = Keyword.get(options, :yes, false) or mode == :check
     warn_only = Keyword.get(options, :warn_only, false)
@@ -54,6 +55,7 @@ defmodule Mix.Tasks.Haxe.Phoenix.LiveReact do
        end},
       {:package_root, package_root},
       {:mix_dependencies, mix_dependencies},
+      {:mix_dependency_paths, mix_dependency_paths},
       {:yes, confirmed},
       {:warn_only, warn_only},
       {:confirm, confirm},

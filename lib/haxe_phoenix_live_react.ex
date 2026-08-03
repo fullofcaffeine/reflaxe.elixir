@@ -123,6 +123,23 @@ defmodule HaxePhoenixLiveReact do
     end
   end
 
+  defp mix_dependency_paths(root, opts) do
+    provided = Keyword.get(opts, :mix_dependency_paths, nil)
+
+    if not Kernel.is_nil(provided) do
+      provided
+    else
+      paths = Map.new()
+
+      paths =
+        paths
+        |> Map.put("phoenix", Path.join([root, "deps", "phoenix"]))
+        |> Map.put("phoenix_html", Path.join([root, "deps", "phoenix_html"]))
+
+      Map.put(paths, "phoenix_live_view", Path.join([root, "deps", "phoenix_live_view"]))
+    end
+  end
+
   defp read_manifest(root, mode) do
     path = Path.join(root, "phoenixhx-live-react.json")
     read = File.read(path)
@@ -202,6 +219,8 @@ defmodule HaxePhoenixLiveReact do
           if not Kernel.is_map(managed) or not Kernel.is_list(Map.get(managed, "files")) or
                not Kernel.is_list(Map.get(managed, "markers")) or
                not Kernel.is_list(Map.get(managed, "packageKeys")) or
+               (Map.has_key?(managed, "packageValues") and
+                  not Kernel.is_map(Map.get(managed, "packageValues"))) or
                not Kernel.is_map(Map.get(managed, "restores")) or
                not Kernel.is_boolean(Map.get(managed, "dependencyOwned")) or
                not Kernel.is_boolean(Map.get(managed, "lockOwned")) do
@@ -257,7 +276,14 @@ defmodule HaxePhoenixLiveReact do
         allow_resolution
       )
 
-    package_plan = HaxePhoenixLiveReact.Package.plan(topology, dependency, existing_manifest)
+    package_plan =
+      HaxePhoenixLiveReact.Package.plan(
+        topology,
+        dependency,
+        existing_manifest,
+        mix_dependency_paths(root, opts)
+      )
+
     source = read_required_sources(topology)
     restores = existing_restores(existing_manifest)
 
@@ -304,6 +330,7 @@ defmodule HaxePhoenixLiveReact do
       components: components,
       managed_files: managed_files,
       package_keys: package_plan.owned_keys,
+      package_values: package_plan.owned_values,
       restores: elem(layout_patched, 1),
       dependency_owned: dependency.owned,
       lock_owned: dependency.lock_owned
@@ -1148,6 +1175,7 @@ defmodule HaxePhoenixLiveReact do
         {"files", data.managed_files},
         {"markers", HaxePhoenixLiveReact.SourcePatcher.managed_markers(data.topology)},
         {"packageKeys", data.package_keys},
+        {"packageValues", data.package_values},
         {"dependencyOwned", data.dependency_owned},
         {"lockOwned", data.lock_owned},
         {"restores", data.restores}

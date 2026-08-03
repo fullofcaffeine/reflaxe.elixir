@@ -61,6 +61,7 @@ class LiveReactMixTask {
 		var projectConfig = Project.config();
 		var appName:Term = Keyword.get(projectConfig, "app", null);
 		var mixDependencies:Array<Term> = Keyword.get(projectConfig, "deps", []);
+		var mixDependencyPaths = Project.depsPaths();
 		var packageRoot:Null<String> = Keyword.get(options, "package_root", null);
 		var confirmed = Keyword.get(options, "yes", false) || mode == CHECK;
 		var warnOnly = Keyword.get(options, "warn_only", false);
@@ -71,6 +72,7 @@ class LiveReactMixTask {
 			Keyword.entry("app_name", appName == null ? null : Kernel.toString(appName)),
 			Keyword.entry("package_root", packageRoot),
 			Keyword.entry("mix_dependencies", mixDependencies),
+			Keyword.entry("mix_dependency_paths", mixDependencyPaths),
 			Keyword.entry("yes", confirmed),
 			Keyword.entry("warn_only", warnOnly),
 			Keyword.entry("confirm", confirm),

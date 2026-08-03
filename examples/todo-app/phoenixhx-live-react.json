@@ -91,6 +91,16 @@
       "scripts.assets:dev",
       "type"
     ],
+    "packageValues": {
+      "dependencies.live_react": "file:../deps/live_react",
+      "dependencies.react": "19.1.0",
+      "dependencies.react-dom": "19.1.0",
+      "devDependencies.@vitejs/plugin-react": "4.5.2",
+      "devDependencies.vite": "7.2.7",
+      "scripts.assets:build": "vite build",
+      "scripts.assets:dev": "vite --host 127.0.0.1 --port 5173 --strictPort --logLevel warn",
+      "type": "module"
+    },
     "restores": {
       "config.trailingWhitespace": "\n",
       "dev.esbuildWatcher": "  esbuild: {Esbuild, :install_and_run, [:todo_app, ~w(--sourcemap=external --watch)]},",

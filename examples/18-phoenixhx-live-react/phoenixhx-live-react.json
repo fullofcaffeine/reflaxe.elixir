@@ -88,6 +88,14 @@
       "scripts.assets:dev",
       "type"
     ],
+    "packageValues": {
+      "devDependencies.@vitejs/plugin-react": "4.5.2",
+      "devDependencies.vite": "7.2.7",
+      "private": true,
+      "scripts.assets:build": "vite build",
+      "scripts.assets:dev": "vite --host 127.0.0.1 --port 5173 --strictPort --logLevel warn",
+      "type": "module"
+    },
     "restores": {
       "app.hooksProperty": null,
       "config.trailingWhitespace": "\n",

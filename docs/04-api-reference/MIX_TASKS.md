@@ -475,7 +475,21 @@ mix haxe.phoenix.live_react --remove --yes
 
 Mix resolves the pinned `:live_react` checkout and npm consumes that same
 checkout through a verified project-relative `file:` reference. The task
-replaces the Phoenix esbuild watcher and asset task with Vite, patches the
+also reads the npm identity shipped by Mix's resolved `:phoenix`,
+`:phoenix_html`, and `:phoenix_live_view` checkouts. Each browser dependency
+must use that exact version or a project-relative `file:` reference to that
+same checkout. This prevents dependency-declaration drift that could install a
+different LiveView protocol implementation than the BEAM server. The check
+does not inspect an existing `node_modules`; run `npm install` and rebuild the
+assets after changing the declaration.
+
+If the task reports a browser/Mix mismatch, run `mix deps.get`, replace the
+named `package.json` dependency with either version shown after "resolved Mix
+checkout" or the suggested `file:deps/...` (use `file:../deps/...` when
+`package.json` is under `assets/`), then run `npm install` in the package root
+and repeat `mix haxe.phoenix.live_react --check`.
+
+The task replaces the Phoenix esbuild watcher and asset task with Vite, patches the
 LiveView hook and root asset tag, and records owned files and marker blocks in
 `phoenixhx-live-react.json`. It preserves hand-owned source and fails closed on
 ambiguous or drifted integration state.

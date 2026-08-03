@@ -39,6 +39,9 @@ enum abstract MixDependencyName(String) to String {
 	var JasonLibrary = "jason";
 	var ReflaxeElixir = "reflaxe_elixir";
 	var LiveReact = "live_react";
+	var Phoenix = "phoenix";
+	var PhoenixHtml = "phoenix_html";
+	var PhoenixLiveView = "phoenix_live_view";
 }
 
 typedef MixPathDependency = {
@@ -111,6 +114,14 @@ class LiveReactFixture {
 		write(root, Path.joinTwo(packageRoot, "package.json"), "{\"name\":\"demo-assets\"}\n");
 		write(root, "deps/live_react/package.json", "{\"name\":\"live_react\",\"version\":\"0.1.0\"}\n");
 		write(root, "deps/live_react/mix.exs", liveReactMixExs());
+		// Explicit historical releases model one known compatible Mix/browser row;
+		// the lifecycle derives them from these checkouts instead of owning them.
+		write(root, "deps/phoenix/package.json", "{\"name\":\"phoenix\",\"version\":\"1.7.24\"}\n");
+		write(root, "deps/phoenix_html/package.json", "{\"name\":\"phoenix_html\",\"version\":\"4.3.0\"}\n");
+		write(root, "deps/phoenix_live_view/package.json", "{\"name\":\"phoenix_live_view\",\"version\":\"1.2.8\"}\n");
+		write(root, "deps/phoenix/mix.exs", dependencyMixExs("phoenix", "1.7.24"));
+		write(root, "deps/phoenix_html/mix.exs", dependencyMixExs("phoenix_html", "4.3.0"));
+		write(root, "deps/phoenix_live_view/mix.exs", dependencyMixExs("phoenix_live_view", "1.2.8"));
 
 		if (clientMode == GENES) {
 			write(root, "build-client.hxml", "-lib genes-ts\n");
@@ -353,6 +364,19 @@ class LiveReactFixture {
 		});
 
 		return "    [\n" + entries + "\n    ]";
+	}
+
+	static function dependencyMixExs(app:String, version:String):String {
+		var moduleName = switch (app) {
+			case "phoenix": "FixturePhoenix.MixProject";
+			case "phoenix_html": "FixturePhoenixHtml.MixProject";
+			case "phoenix_live_view": "FixturePhoenixLiveView.MixProject";
+			case _: "FixtureDependency.MixProject";
+		};
+		return 'defmodule $moduleName do\n'
+			+ "  use Mix.Project\n"
+			+ '  def project, do: [app: :$app, version: "$version"]\n'
+			+ "end\n";
 	}
 
 	public static function devExs():String {

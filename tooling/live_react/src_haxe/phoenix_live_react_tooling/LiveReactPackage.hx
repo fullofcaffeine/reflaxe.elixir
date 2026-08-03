@@ -33,6 +33,12 @@ private typedef RemoveAccumulator = {
 	retained:Array<String>
 }
 
+private typedef BrowserDependency = {
+	name:String,
+	version:String,
+	fileReference:Null<String>
+}
+
 /** Deterministic ownership of the npm package values required by LiveReact. */
 @:keep
 @:native("HaxePhoenixLiveReact.Package")
@@ -40,8 +46,13 @@ class LiveReactPackage {
 	static inline final OK:Atom = "ok";
 	static inline final ERROR:Atom = "error";
 	static inline final PRETTY:Atom = "pretty";
+	static inline final ABSOLUTE:Atom = "absolute";
+	static inline final PHOENIX:Atom = "phoenix";
+	static inline final PHOENIX_HTML:Atom = "phoenix_html";
+	static inline final PHOENIX_LIVE_VIEW:Atom = "phoenix_live_view";
 
-	public static function plan(topology:LiveReactTopology, dependency:LiveReactDependency, existingManifest:Term):LiveReactPackagePlan {
+	public static function plan(topology:LiveReactTopology, dependency:LiveReactDependency, existingManifest:Term,
+			mixDependencyPaths:Term):LiveReactPackagePlan {
 		var content = File.readBang(topology.packageJson);
 		var decoded = Jason.decodeResult(content);
 		var decodedTag = tag(decoded);
@@ -50,34 +61,37 @@ class LiveReactPackage {
 		var value = Kernel.elem(decoded, 1);
 		if (!Kernel.isMap(value))
 			return Kernel.raiseValue(topology.packageJson + " must contain a JSON object. No writes occurred.");
+		var browserDependencies = resolvedBrowserDependencies(topology, mixDependencyPaths);
+		validateBrowserDependencies(topology, value, browserDependencies);
 
 		var existingOwned = existingManifest == null ? MapSet.new_() : MapSet.fromValues(manifestPackageKeys(existingManifest));
 		var initial:ApplyAccumulator = {json: value, owned: existingOwned};
-		var accumulated = Enum.reduce(managedValues(topology, dependency.npmReference), initial,
-			function(spec:ManagedPackageValue, state:ApplyAccumulator):ApplyAccumulator {
-				var dotted = Enum.join(spec.path, ".");
-				var fetched = fetchJsonPath(state.json, spec.path, 0);
-				var fetchedTag = tag(fetched);
-				if (fetchedTag == ERROR)
-					return {json: putJsonPath(state.json, spec.path, 0, spec.expected), owned: MapSet.put(state.owned, dotted)};
-				var actual = Kernel.elem(fetched, 1);
-				if (actual == spec.expected)
-					return state;
-				if (!MapSet.member(state.owned, dotted) && Enum.member(spec.acceptedExisting, actual))
-					return state;
-				return Kernel.raiseValue(topology.packageJson
-					+ " "
-					+ dotted
-					+ " conflicts with the managed value. Found "
-					+ Kernel.inspect(actual)
-					+ ", expected "
-					+ Kernel.inspect(spec.expected)
-					+ ". No writes occurred. Preserve the existing value and use manual integration, or remove it before retrying.");
-			});
+		var specs = managedValues(dependency.npmReference, browserDependencies);
+		var accumulated = Enum.reduce(specs, initial, function(spec:ManagedPackageValue, state:ApplyAccumulator):ApplyAccumulator {
+			var dotted = Enum.join(spec.path, ".");
+			var fetched = fetchJsonPath(state.json, spec.path, 0);
+			var fetchedTag = tag(fetched);
+			if (fetchedTag == ERROR)
+				return {json: putJsonPath(state.json, spec.path, 0, spec.expected), owned: MapSet.put(state.owned, dotted)};
+			var actual = Kernel.elem(fetched, 1);
+			if (actual == spec.expected)
+				return state;
+			if (!MapSet.member(state.owned, dotted) && Enum.member(spec.acceptedExisting, actual))
+				return state;
+			return Kernel.raiseValue(topology.packageJson
+				+ " "
+				+ dotted
+				+ " conflicts with the managed value. Found "
+				+ Kernel.inspect(actual)
+				+ ", expected "
+				+ Kernel.inspect(spec.expected)
+				+ ". No writes occurred. Preserve the existing value and use manual integration, or remove it before retrying.");
+		});
 		var options:KeywordList<Term> = [{_0: PRETTY, _1: true}];
 		return {
 			content: Enum.join([Jason.encodeStrictWithKeywordOptions(accumulated.json, options), ""], "\n"),
-			ownedKeys: Enum.sort(MapSet.toList(accumulated.owned))
+			ownedKeys: Enum.sort(MapSet.toList(accumulated.owned)),
+			ownedValues: ownedPackageValues(accumulated.json, accumulated.owned, specs)
 		};
 	}
 
@@ -88,8 +102,9 @@ class LiveReactPackage {
 		var owned = MapSet.fromValues(manifestPackageKeys(manifest));
 		var handUsage = handOwnedBrowserPackages(topology);
 		var npmReference:String = ElixirMap.fetchBangTerm(manifest, "npmReference");
+		var packageValues = manifestPackageValues(manifest);
 		var initial:RemoveAccumulator = {json: value, retained: []};
-		var accumulated = Enum.reduce(managedValues(topology, npmReference), initial,
+		var accumulated = Enum.reduce(legacyManagedValues(npmReference), initial,
 			function(spec:ManagedPackageValue, state:RemoveAccumulator):RemoveAccumulator {
 				var dotted = Enum.join(spec.path, ".");
 				if (!MapSet.member(owned, dotted))
@@ -99,7 +114,8 @@ class LiveReactPackage {
 				if (fetchedTag == ERROR)
 					return state;
 				var actual = Kernel.elem(fetched, 1);
-				if (actual != spec.expected)
+				var expected:Term = ElixirMap.getTypedWithDefault(packageValues, dotted, spec.expected);
+				if (actual != expected)
 					return Kernel.raiseValue("cannot remove package.json " + dotted + ": owned value drifted to " + Kernel.inspect(actual)
 						+ ". No writes occurred.");
 				var packageName = spec.path[spec.path.length - 1];
@@ -115,7 +131,29 @@ class LiveReactPackage {
 		};
 	}
 
-	static function managedValues(topology:LiveReactTopology, npmReference:String):Array<ManagedPackageValue> {
+	/** Historical schema-one manifests predate packageValues and owned these exact defaults. */
+	static function legacyManagedValues(npmReference:String):Array<ManagedPackageValue> {
+		return managedValues(npmReference, [
+			{name: "phoenix", version: "1.7.24", fileReference: null},
+			{name: "phoenix_html", version: "4.3.0", fileReference: null},
+			{name: "phoenix_live_view", version: "0.20.17", fileReference: null}
+		]);
+	}
+
+	static function ownedPackageValues(json:Term, owned:Term, specs:Array<ManagedPackageValue>):Term {
+		return Enum.reduce(specs, ElixirMap.new_(), function(spec:ManagedPackageValue, values:Term):Term {
+			var dotted = Enum.join(spec.path, ".");
+			if (!MapSet.member(owned, dotted))
+				return values;
+			var fetched = fetchJsonPath(json, spec.path, 0);
+			return tag(fetched) == ERROR ? values : ElixirMap.putTerm(values, dotted, Kernel.elem(fetched, 1));
+		});
+	}
+
+	static function managedValues(npmReference:String, browserDependencies:Array<BrowserDependency>):Array<ManagedPackageValue> {
+		var phoenix = browserDependencies[0];
+		var phoenixHtml = browserDependencies[1];
+		var liveView = browserDependencies[2];
 		return [
 			{path: ["private"], expected: true, acceptedExisting: []},
 			{path: ["type"], expected: "module", acceptedExisting: []},
@@ -128,18 +166,18 @@ class LiveReactPackage {
 			{path: ["dependencies", "live_react"], expected: npmReference, acceptedExisting: []},
 			{
 				path: ["dependencies", "phoenix"],
-				expected: "1.7.24",
-				acceptedExisting: [mixCheckoutReference(topology, "phoenix")]
+				expected: phoenix.version,
+				acceptedExisting: acceptedFileReference(phoenix)
 			},
 			{
 				path: ["dependencies", "phoenix_html"],
-				expected: "4.3.0",
-				acceptedExisting: [mixCheckoutReference(topology, "phoenix_html")]
+				expected: phoenixHtml.version,
+				acceptedExisting: acceptedFileReference(phoenixHtml)
 			},
 			{
 				path: ["dependencies", "phoenix_live_view"],
-				expected: "0.20.17",
-				acceptedExisting: [mixCheckoutReference(topology, "phoenix_live_view")]
+				expected: liveView.version,
+				acceptedExisting: acceptedFileReference(liveView)
 			},
 			{path: ["dependencies", "react"], expected: "19.1.0", acceptedExisting: []},
 			{path: ["dependencies", "react-dom"], expected: "19.1.0", acceptedExisting: []},
@@ -148,15 +186,72 @@ class LiveReactPackage {
 		];
 	}
 
-	/**
-	 * Preserve the exact project-local npm checkout used by standard Phoenix assets.
-	 * `Path.relative_to/2` deliberately refuses to synthesize parent segments, so the
-	 * package-root depth is converted to `..` segments explicitly.
-	 */
-	static function mixCheckoutReference(topology:LiveReactTopology, packageName:String):String {
+	static function resolvedBrowserDependencies(topology:LiveReactTopology, paths:Term):Array<BrowserDependency> {
+		return Enum.map(["phoenix", "phoenix_html", "phoenix_live_view"], function(name:String):BrowserDependency {
+			var checkout = dependencyPath(paths, name);
+			var packagePath = Path.joinTwo(checkout, "package.json");
+			if (!File.regular(packagePath))
+				return Kernel.raiseValue("cannot verify the resolved Mix checkout for "
+					+ name
+					+ ": "
+					+ packagePath
+					+ " is missing. Run `mix deps.get`, then retry. No writes occurred.");
+			var packageJson = Jason.decodeStrict(File.readBang(packagePath));
+			var packageName:Term = ElixirMap.get(packageJson, "name");
+			var version:Term = ElixirMap.get(packageJson, "version");
+			if (packageName != name || !Kernel.isBinary(version))
+				return Kernel.raiseValue(packagePath + " must identify npm package " + name + " with a string version. No writes occurred.");
+			return {
+				name: name,
+				version: version,
+				fileReference: projectLocalFileReference(topology, checkout)
+			};
+		});
+	}
+
+	static function dependencyPath(paths:Term, name:String):String {
+		var fetched = ElixirMap.fetchTerm(paths, name);
+		if (tag(fetched) == ERROR) {
+			var app:Atom = switch (name) {
+				case "phoenix": PHOENIX;
+				case "phoenix_html": PHOENIX_HTML;
+				case _: PHOENIX_LIVE_VIEW;
+			};
+			fetched = ElixirMap.fetchTerm(paths, app);
+		}
+		if (tag(fetched) == ERROR)
+			return Kernel.raiseValue("cannot find the resolved Mix checkout for " + name + ". Run `mix deps.get`, then retry. No writes occurred.");
+		return Path.expand(Kernel.elemAs(fetched, 1));
+	}
+
+	static function projectLocalFileReference(topology:LiveReactTopology, checkout:String):Null<String> {
+		var relativeToRoot = Path.relativeTo(checkout, topology.root);
+		if (Path.typeAtom(relativeToRoot) == ABSOLUTE || relativeToRoot == ".." || ElixirString.startsWith(relativeToRoot, "../"))
+			return null;
 		var parents = topology.packageRootRelative == "." ? [] : Enum.map(Path.split(topology.packageRootRelative), function(_:String):String return "..");
-		var relative = Path.join(Enum.concatTwo(parents, ["deps", packageName]));
+		var relative = Path.join(Enum.concatTwo(parents, Path.split(relativeToRoot)));
 		return "file:" + ElixirString.replace(relative, "\\", "/");
+	}
+
+	static function acceptedFileReference(dependency:BrowserDependency):Array<Term> {
+		return dependency.fileReference == null ? [] : [dependency.fileReference];
+	}
+
+	static function validateBrowserDependencies(topology:LiveReactTopology, packageJson:Term, dependencies:Array<BrowserDependency>):Void {
+		Enum.each(dependencies, function(dependency:BrowserDependency):Void {
+			var fetched = fetchJsonPath(packageJson, ["dependencies", dependency.name], 0);
+			if (tag(fetched) != ERROR) {
+				var actual:Term = Kernel.elem(fetched, 1);
+				var matchesFileReference = dependency.fileReference != null && actual == dependency.fileReference;
+				if (actual != dependency.version && !matchesFileReference) {
+					var repair = "Use " + Kernel.inspect(dependency.version);
+					if (dependency.fileReference != null)
+						repair += " or " + Kernel.inspect(dependency.fileReference);
+					Kernel.raiseValue(dependency.name + " browser package is " + Kernel.toString(actual) + ", but the resolved Mix checkout is "
+						+ dependency.version + ". " + repair + " in " + topology.packageJson + ", run npm install, then retry. No writes occurred.");
+				}
+			}
+		});
 	}
 
 	static function fetchJsonPath(json:Term, path:Array<String>, index:Int):Term {
@@ -235,6 +330,11 @@ class LiveReactPackage {
 	static function manifestPackageKeys(manifest:Term):Array<String> {
 		var managed:Term = ElixirMap.fetchBangTerm(manifest, "managed");
 		return ElixirMap.fetchBangTerm(managed, "packageKeys");
+	}
+
+	static function manifestPackageValues(manifest:Term):Term {
+		var managed:Term = ElixirMap.fetchBangTerm(manifest, "managed");
+		return ElixirMap.getTypedWithDefault(managed, "packageValues", ElixirMap.new_());
 	}
 
 	static function tag(value:Term):Atom {

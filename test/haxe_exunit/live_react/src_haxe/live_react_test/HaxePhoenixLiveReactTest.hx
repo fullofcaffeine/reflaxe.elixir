@@ -360,6 +360,133 @@ class HaxePhoenixLiveReactTest extends TestCase {
 		Assert.equals("file:../deps/phoenix_live_view", Fixture.jsonPath(removedPackage, ["dependencies", "phoenix_live_view"]));
 	}
 
+	@:test("root package accepts the same resolved Phoenix npm checkouts")
+	function testRootPackageAcceptsResolvedPhoenixNpmCheckouts():Void {
+		var root = Fixture.fixtureRoot(Fixture.GENES, ".");
+		var packagePath = Path.joinTwo(root, "package.json");
+		var packageJson = Fixture.readJson(packagePath);
+		var dependencies = ElixirMap.new_();
+
+		dependencies = ElixirMap.putTerm(dependencies, "phoenix", "file:deps/phoenix");
+		dependencies = ElixirMap.putTerm(dependencies, "phoenix_html", "file:deps/phoenix_html");
+		dependencies = ElixirMap.putTerm(dependencies, "phoenix_live_view", "file:deps/phoenix_live_view");
+		packageJson = ElixirMap.putTerm(packageJson, "dependencies", dependencies);
+		File.writeBang(packagePath, Fixture.encodePretty(packageJson));
+
+		LifecycleApi.applyBang(root, Fixture.applyOptions(root));
+		Assert.equals(CHECK, LifecycleApi.checkBang(root, Fixture.rerunOptions()).mode);
+
+		var manifest = Fixture.readJson(Path.joinTwo(root, Fixture.MANIFEST));
+		var ownedKeys:Array<String> = Fixture.jsonPath(manifest, ["managed", "packageKeys"]);
+		Assert.equals(-1, ownedKeys.indexOf("dependencies.phoenix"));
+		Assert.equals(-1, ownedKeys.indexOf("dependencies.phoenix_html"));
+		Assert.equals(-1, ownedKeys.indexOf("dependencies.phoenix_live_view"));
+	}
+
+	@:test("npm LiveView must match the resolved Mix checkout")
+	function testMismatchedLiveViewBrowserPackageFailsBeforeWrites():Void {
+		var root = Fixture.fixtureRoot(Fixture.GENES, ".");
+		var packagePath = Path.joinTwo(root, "package.json");
+		var packageJson = Fixture.readJson(packagePath);
+		var dependencies = ElixirMap.new_();
+
+		dependencies = ElixirMap.putTerm(dependencies, "phoenix", "1.7.24");
+		dependencies = ElixirMap.putTerm(dependencies, "phoenix_html", "4.3.0");
+		dependencies = ElixirMap.putTerm(dependencies, "phoenix_live_view", "0.20.17");
+		packageJson = ElixirMap.putTerm(packageJson, "dependencies", dependencies);
+		File.writeBang(packagePath, Fixture.encodePretty(packageJson));
+		var before = Fixture.treeSnapshot(root);
+
+		Assert.raisesRuntimeErrorMatching(function():Void {
+			LifecycleApi.applyBang(root, Fixture.applyOptions(root));
+		},
+			"phoenix_live_view browser package is 0.20.17, but the resolved Mix checkout is 1.2.8");
+		Assert.equals(before, Fixture.treeSnapshot(root));
+	}
+
+	@:test("Phoenix and Phoenix HTML browser packages use their resolved Mix identities")
+	function testMismatchedPhoenixBrowserPackagesFailBeforeWrites():Void {
+		var mismatches = [
+			{name: "phoenix", actual: "1.6.0", expected: "1.7.24"},
+			{name: "phoenix_html", actual: "3.3.0", expected: "4.3.0"}
+		];
+		for (mismatch in mismatches) {
+			var root = Fixture.fixtureRoot(Fixture.GENES, ".");
+			var packagePath = Path.joinTwo(root, "package.json");
+			var packageJson = Fixture.readJson(packagePath);
+			var dependencies = ElixirMap.new_();
+			dependencies = ElixirMap.putTerm(dependencies, mismatch.name, mismatch.actual);
+			packageJson = ElixirMap.putTerm(packageJson, "dependencies", dependencies);
+			File.writeBang(packagePath, Fixture.encodePretty(packageJson));
+			var before = Fixture.treeSnapshot(root);
+
+			Assert.raisesRuntimeErrorMatching(function():Void {
+				LifecycleApi.applyBang(root, Fixture.applyOptions(root));
+			},
+				mismatch.name
+				+ " browser package is "
+				+ mismatch.actual
+				+ ", but the resolved Mix checkout is "
+				+ mismatch.expected);
+			Assert.equals(before, Fixture.treeSnapshot(root));
+		}
+	}
+
+	@:test("removal uses install-time package ownership after a Mix upgrade")
+	function testRemovalUsesInstalledPackageValuesAfterMixUpgrade():Void {
+		var root = Fixture.fixtureRoot(Fixture.GENES, ".");
+		LifecycleApi.applyBang(root, Fixture.applyOptions(root));
+		var checkoutPackage = Path.join([root, "deps", "phoenix_live_view", "package.json"]);
+		var upgraded = "{\"name\":\"phoenix_live_view\",\"version\":\"1.3.0\"}\n";
+		File.writeBang(checkoutPackage, upgraded);
+
+		LifecycleApi.removeBang(root, [{_0: "yes", _1: true}]);
+
+		Assert.equals(upgraded, File.readBang(checkoutPackage));
+		Assert.isFalse(File.exists(Path.joinTwo(root, Fixture.MANIFEST)));
+		var packageJson = Fixture.readJson(Path.joinTwo(root, "package.json"));
+		Assert.isFalse(ElixirMap.hasKeyTerm(packageJson, "dependencies"));
+	}
+
+	@:test("removal remains available after Mix dependency checkouts are cleaned")
+	function testRemovalDoesNotRequireCurrentMixCheckouts():Void {
+		var root = Fixture.fixtureRoot(Fixture.GENES, ".");
+		LifecycleApi.applyBang(root, Fixture.applyOptions(root));
+		File.rmRecursiveBang(Path.joinTwo(root, "deps"));
+
+		LifecycleApi.removeBang(root, [{_0: "yes", _1: true}]);
+
+		Assert.isFalse(File.exists(Path.joinTwo(root, Fixture.MANIFEST)));
+		var packageJson = Fixture.readJson(Path.joinTwo(root, "package.json"));
+		Assert.isFalse(ElixirMap.hasKeyTerm(packageJson, "dependencies"));
+	}
+
+	@:test("schema-one manifests remove their explicit historical browser defaults")
+	function testLegacyManifestRemovalUsesHistoricalDefaults():Void {
+		var root = Fixture.fixtureRoot(Fixture.GENES, ".");
+		LifecycleApi.applyBang(root, Fixture.applyOptions(root));
+
+		var manifestPath = Path.joinTwo(root, Fixture.MANIFEST);
+		var manifest = Fixture.readJson(manifestPath);
+		var managed:Term = Fixture.jsonPath(manifest, ["managed"]);
+		managed = ElixirMap.deleteTerm(managed, "packageValues");
+		manifest = ElixirMap.putTerm(manifest, "managed", managed);
+		File.writeBang(manifestPath, Fixture.encodePretty(manifest));
+
+		var packagePath = Path.joinTwo(root, "package.json");
+		var packageJson = Fixture.readJson(packagePath);
+		var dependencies:Term = Fixture.jsonPath(packageJson, ["dependencies"]);
+		dependencies = ElixirMap.putTerm(dependencies, "phoenix_live_view", "0.20.17");
+		packageJson = ElixirMap.putTerm(packageJson, "dependencies", dependencies);
+		File.writeBang(packagePath, Fixture.encodePretty(packageJson));
+		File.rmRecursiveBang(Path.joinTwo(root, "deps"));
+
+		LifecycleApi.removeBang(root, [{_0: "yes", _1: true}]);
+
+		Assert.isFalse(File.exists(manifestPath));
+		Assert.isFalse(ElixirMap.hasKeyTerm(Fixture.readJson(packagePath), "dependencies"));
+	}
+
 	@:test("plain-JS project with an assets package root preserves its existing hook expression")
 	function testPlainJsAssetsPackagePreservesHookExpression():Void {
 		var root = Fixture.fixtureRoot(Fixture.PLAIN_JS, "assets");
@@ -857,7 +984,10 @@ class HaxePhoenixLiveReactTest extends TestCase {
 
 		var bootstrapDependencies = [
 			Fixture.pathDependency(MixDependencyName.JasonLibrary, Path.join([repositoryRoot, "deps", "jason"]), true),
-			Fixture.pathDependency(MixDependencyName.ReflaxeElixir, repositoryRoot)
+			Fixture.pathDependency(MixDependencyName.ReflaxeElixir, repositoryRoot),
+			Fixture.pathDependency(MixDependencyName.Phoenix, "deps/phoenix"),
+			Fixture.pathDependency(MixDependencyName.PhoenixHtml, "deps/phoenix_html"),
+			Fixture.pathDependency(MixDependencyName.PhoenixLiveView, "deps/phoenix_live_view")
 		];
 		Fixture.writeMixProject(root, bootstrapDependencies);
 

@@ -81,6 +81,7 @@
       }
     ],
     "packageKeys": [],
+    "packageValues": {},
     "restores": {
       "config.trailingWhitespace": "\n",
       "dev.esbuildWatcher": "         esbuild: {Esbuild, :install_and_run, [:phoenix_chat, ~w(--sourcemap=inline --watch)]},",

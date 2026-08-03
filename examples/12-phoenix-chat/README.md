@@ -152,6 +152,14 @@ install the local checkout as an application dependency rather than pulling its 
 development tree. Keep `mix.lock`, `package.json`, and `package-lock.json` together when updating the
 revision.
 
+The lifecycle applies the same identity rule to Phoenix's browser packages. `phoenix`,
+`phoenix_html`, and `phoenix_live_view` must be the exact versions supplied by the resolved Mix
+checkouts, or project-relative `file:deps/...` references to those checkouts. A mismatch can let the
+page render while every LiveView click fails because the browser and server speak different protocol
+versions. If `--check` reports one, run `mix deps.get`, use the exact version or `file:` repair shown
+in the error, run `npm install`, rebuild the assets, and check again. The lifecycle checks the
+declaration; `npm install` is what updates an already-populated `node_modules` directory.
+
 Vite is the one JavaScript bundler in this mode. The Haxe/Genes client compilation remains a source
 compiler and Tailwind remains the CSS build lane; neither is presented as a second JS bundler.
 Phoenix and browser debugging remain ordinary `mix`, Vite, TypeScript, and React workflows.

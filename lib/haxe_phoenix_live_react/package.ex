@@ -1,5 +1,5 @@
 defmodule HaxePhoenixLiveReact.Package do
-  def plan(topology, dependency, existing_manifest) do
+  def plan(topology, dependency, existing_manifest, mix_dependency_paths) do
     content = File.read!(topology.package_json)
     decoded = Jason.decode(content)
     decoded_tag = tag(decoded)
@@ -14,6 +14,9 @@ defmodule HaxePhoenixLiveReact.Package do
       if not Kernel.is_map(value) do
         Kernel.raise("#{topology.package_json} must contain a JSON object. No writes occurred.")
       else
+        browser_dependencies = resolved_browser_dependencies(topology, mix_dependency_paths)
+        validate_browser_dependencies(topology, value, browser_dependencies)
+
         existing_owned =
           if Kernel.is_nil(existing_manifest) do
             MapSet.new()
@@ -22,10 +25,10 @@ defmodule HaxePhoenixLiveReact.Package do
           end
 
         initial = %{json: value, owned: existing_owned}
+        specs = managed_values(dependency.npm_reference, browser_dependencies)
 
         accumulated =
-          Enum.reduce(managed_values(topology, dependency.npm_reference), initial, fn spec,
-                                                                                      state ->
+          Enum.reduce(specs, initial, fn spec, state ->
             dotted = Enum.join(spec.path, ".")
             fetched = fetch_json_path(state.json, spec.path, 0)
             fetched_tag = tag(fetched)
@@ -64,7 +67,8 @@ defmodule HaxePhoenixLiveReact.Package do
 
         %{
           content: Enum.join([Jason.encode!(accumulated.json, options), ""], "\n"),
-          owned_keys: Enum.sort(MapSet.to_list(accumulated.owned))
+          owned_keys: Enum.sort(MapSet.to_list(accumulated.owned)),
+          owned_values: owned_package_values(accumulated.json, accumulated.owned, specs)
         }
       end
     end
@@ -79,10 +83,11 @@ defmodule HaxePhoenixLiveReact.Package do
       owned = MapSet.new(manifest_package_keys(manifest))
       hand_usage = hand_owned_browser_packages(topology)
       npm_reference = Map.fetch!(manifest, "npmReference")
+      package_values = manifest_package_values(manifest)
       initial = %{json: value, retained: []}
 
       accumulated =
-        Enum.reduce(managed_values(topology, npm_reference), initial, fn spec, state ->
+        Enum.reduce(legacy_managed_values(npm_reference), initial, fn spec, state ->
           dotted = Enum.join(spec.path, ".")
 
           if not MapSet.member?(owned, dotted) do
@@ -95,8 +100,9 @@ defmodule HaxePhoenixLiveReact.Package do
               state
             else
               actual = Kernel.elem(fetched, 1)
+              expected = Map.get(package_values, dotted, spec.expected)
 
-              if actual != spec.expected do
+              if actual != expected do
                 Kernel.raise(
                   "cannot remove package.json " <>
                     dotted <>
@@ -126,7 +132,40 @@ defmodule HaxePhoenixLiveReact.Package do
     end
   end
 
-  defp managed_values(topology, npm_reference) do
+  defp legacy_managed_values(npm_reference) do
+    managed_values(npm_reference, [
+      %{name: "phoenix", version: "1.7.24", file_reference: nil},
+      %{name: "phoenix_html", version: "4.3.0", file_reference: nil},
+      %{name: "phoenix_live_view", version: "0.20.17", file_reference: nil}
+    ])
+  end
+
+  defp owned_package_values(json, owned, specs) do
+    Enum.reduce(specs, Map.new(), fn spec, values ->
+      dotted = Enum.join(spec.path, ".")
+
+      if not MapSet.member?(owned, dotted) do
+        values
+      else
+        fetched = fetch_json_path(json, spec.path, 0)
+
+        if (
+             this1 = tag(fetched)
+             this1 == :error
+           ) do
+          values
+        else
+          Map.put(values, dotted, Kernel.elem(fetched, 1))
+        end
+      end
+    end)
+  end
+
+  defp managed_values(npm_reference, browser_dependencies) do
+    phoenix = Enum.at(browser_dependencies, 0)
+    phoenix_html = Enum.at(browser_dependencies, 1)
+    live_view = Enum.at(browser_dependencies, 2)
+
     [
       %{path: ["private"], expected: true, accepted_existing: []},
       %{path: ["type"], expected: "module", accepted_existing: []},
@@ -139,18 +178,18 @@ defmodule HaxePhoenixLiveReact.Package do
       %{path: ["dependencies", "live_react"], expected: npm_reference, accepted_existing: []},
       %{
         path: ["dependencies", "phoenix"],
-        expected: "1.7.24",
-        accepted_existing: [mix_checkout_reference(topology, "phoenix")]
+        expected: phoenix.version,
+        accepted_existing: accepted_file_reference(phoenix)
       },
       %{
         path: ["dependencies", "phoenix_html"],
-        expected: "4.3.0",
-        accepted_existing: [mix_checkout_reference(topology, "phoenix_html")]
+        expected: phoenix_html.version,
+        accepted_existing: accepted_file_reference(phoenix_html)
       },
       %{
         path: ["dependencies", "phoenix_live_view"],
-        expected: "0.20.17",
-        accepted_existing: [mix_checkout_reference(topology, "phoenix_live_view")]
+        expected: live_view.version,
+        accepted_existing: accepted_file_reference(live_view)
       },
       %{path: ["dependencies", "react"], expected: "19.1.0", accepted_existing: []},
       %{path: ["dependencies", "react-dom"], expected: "19.1.0", accepted_existing: []},
@@ -163,16 +202,134 @@ defmodule HaxePhoenixLiveReact.Package do
     ]
   end
 
-  defp mix_checkout_reference(topology, package_name) do
-    parents =
-      if topology.package_root_relative == "." do
-        []
+  defp resolved_browser_dependencies(topology, paths) do
+    Enum.map(["phoenix", "phoenix_html", "phoenix_live_view"], fn name ->
+      checkout = dependency_path(paths, name)
+      package_path = Path.join(checkout, "package.json")
+
+      if not File.regular?(package_path) do
+        Kernel.raise(
+          "cannot verify the resolved Mix checkout for " <>
+            name <>
+            ": " <>
+            package_path <> " is missing. Run `mix deps.get`, then retry. No writes occurred."
+        )
       else
-        Enum.map(Path.split(topology.package_root_relative), fn _ -> ".." end)
+        package_json = Jason.decode!(File.read!(package_path))
+        package_name = Map.get(package_json, "name")
+        version = Map.get(package_json, "version")
+
+        if package_name != name or not Kernel.is_binary(version) do
+          Kernel.raise(
+            package_path <>
+              " must identify npm package " <>
+              name <> " with a string version. No writes occurred."
+          )
+        else
+          %{
+            name: name,
+            version: version,
+            file_reference: project_local_file_reference(topology, checkout)
+          }
+        end
+      end
+    end)
+  end
+
+  defp dependency_path(paths, name) do
+    fetched = Map.fetch(paths, name)
+
+    fetched =
+      if (
+           this1 = tag(fetched)
+           this1 == :error
+         ) do
+        app =
+          case name do
+            "phoenix" -> :phoenix
+            "phoenix_html" -> :phoenix_html
+            _ -> :phoenix_live_view
+          end
+
+        Map.fetch(paths, app)
+      else
+        fetched
       end
 
-    relative = Path.join(Enum.concat(parents, ["deps", package_name]))
-    "file:#{String.replace(relative, "\\", "/")}"
+    if (
+         this1 = tag(fetched)
+         this1 == :error
+       ) do
+      Kernel.raise(
+        "cannot find the resolved Mix checkout for #{name}. Run `mix deps.get`, then retry. No writes occurred."
+      )
+    else
+      Path.expand(Kernel.elem(fetched, 1))
+    end
+  end
+
+  defp project_local_file_reference(topology, checkout) do
+    relative_to_root = Path.relative_to(checkout, topology.root)
+
+    if (fn ->
+          this1 = Path.type(relative_to_root)
+          this1 == :absolute
+        end).() or relative_to_root == ".." or String.starts_with?(relative_to_root, "../") do
+      nil
+    else
+      parents =
+        if topology.package_root_relative == "." do
+          []
+        else
+          Enum.map(Path.split(topology.package_root_relative), fn _ -> ".." end)
+        end
+
+      relative = Path.join(Enum.concat(parents, Path.split(relative_to_root)))
+      "file:#{String.replace(relative, "\\", "/")}"
+    end
+  end
+
+  defp accepted_file_reference(dependency) do
+    if Kernel.is_nil(dependency.file_reference), do: [], else: [dependency.file_reference]
+  end
+
+  defp validate_browser_dependencies(topology, package_json, dependencies) do
+    Enum.each(dependencies, fn dependency ->
+      fetched = fetch_json_path(package_json, ["dependencies", dependency.name], 0)
+
+      if (
+           this1 = tag(fetched)
+           this1 != :error
+         ) do
+        actual = Kernel.elem(fetched, 1)
+
+        matches_file_reference =
+          not Kernel.is_nil(dependency.file_reference) and actual == dependency.file_reference
+
+        if actual != dependency.version and not matches_file_reference do
+          repair = "Use " <> Kernel.inspect(dependency.version)
+
+          repair =
+            if not Kernel.is_nil(dependency.file_reference) do
+              repair <> " or " <> Kernel.inspect(dependency.file_reference)
+            else
+              repair
+            end
+
+          Kernel.raise(
+            dependency.name <>
+              " browser package is " <>
+              Kernel.to_string(actual) <>
+              ", but the resolved Mix checkout is " <>
+              dependency.version <>
+              ". " <>
+              repair <>
+              " in " <>
+              topology.package_json <> ", run npm install, then retry. No writes occurred."
+          )
+        end
+      end
+    end)
   end
 
   defp fetch_json_path(json, path, index) do
@@ -301,6 +458,11 @@ defmodule HaxePhoenixLiveReact.Package do
   defp manifest_package_keys(manifest) do
     managed = Map.fetch!(manifest, "managed")
     Map.fetch!(managed, "packageKeys")
+  end
+
+  defp manifest_package_values(manifest) do
+    managed = Map.fetch!(manifest, "managed")
+    Map.get(managed, "packageValues", Map.new())
   end
 
   defp tag(value) do

@@ -66,6 +66,7 @@ class LiveReactLifecycle {
 	static inline final ADD_COMPONENT:Atom = "add_component";
 	static inline final REMOVE_COMPONENT:Atom = "remove_component";
 	static inline final APP_NAME:Atom = "app_name";
+	static inline final MIX_DEPENDENCY_PATHS:Atom = "mix_dependency_paths";
 	static inline final MODULE_PATH:Atom = "module_path";
 	static inline final EXPORT_NAME:Atom = "export_name";
 	static inline final EXISTING:Atom = "existing";
@@ -173,6 +174,21 @@ class LiveReactLifecycle {
 		return root;
 	}
 
+	/**
+	 * Mix tasks provide the paths from the active dependency graph. The fallback
+	 * keeps the public lifecycle module convenient for deterministic tests and
+	 * direct callers that use the conventional project-local `deps/` directory.
+	 */
+	static function mixDependencyPaths(root:String, opts:KeywordList<Term>):Term {
+		var provided:Term = Keyword.get(opts, MIX_DEPENDENCY_PATHS, null);
+		if (provided != null)
+			return provided;
+		var paths = ElixirMap.new_();
+		paths = ElixirMap.putTerm(paths, "phoenix", Path.join([root, "deps", "phoenix"]));
+		paths = ElixirMap.putTerm(paths, "phoenix_html", Path.join([root, "deps", "phoenix_html"]));
+		return ElixirMap.putTerm(paths, "phoenix_live_view", Path.join([root, "deps", "phoenix_live_view"]));
+	}
+
 	static function readManifest(root:String, mode:Atom):Term {
 		var path = Path.joinTwo(root, IntegrationCore.MANIFEST_FILENAME);
 		var read = File.readResult(path);
@@ -231,6 +247,7 @@ class LiveReactLifecycle {
 			|| !Kernel.isList(ElixirMap.get(managed, "files"))
 			|| !Kernel.isList(ElixirMap.get(managed, "markers"))
 			|| !Kernel.isList(ElixirMap.get(managed, "packageKeys"))
+			|| (ElixirMap.hasKeyTerm(managed, "packageValues") && !Kernel.isMap(ElixirMap.get(managed, "packageValues")))
 			|| !Kernel.isMap(ElixirMap.get(managed, "restores"))
 			|| !Kernel.isBoolean(ElixirMap.get(managed, "dependencyOwned"))
 			|| !Kernel.isBoolean(ElixirMap.get(managed, "lockOwned")))
@@ -256,7 +273,7 @@ class LiveReactLifecycle {
 		var components = existingManifest == null ? [] : LiveReactRegistry.componentsFromManifest(ElixirMap.get(existingManifest, "components"));
 		validateRegisteredBoundaries(root, components);
 		var dependency = LiveReactDependencyResolver.resolve(root, topology, existingManifest, opts, allowResolution);
-		var packagePlan = LiveReactPackage.plan(topology, dependency, existingManifest);
+		var packagePlan = LiveReactPackage.plan(topology, dependency, existingManifest, mixDependencyPaths(root, opts));
 		var source = readRequiredSources(topology);
 		var restores = existingRestores(existingManifest);
 		var mixPatched = LiveReactSourcePatcher.patchMixExs(source.mixExs, topology, dependency, restores);
@@ -272,6 +289,7 @@ class LiveReactLifecycle {
 			components: components,
 			managedFiles: managedFiles,
 			packageKeys: packagePlan.ownedKeys,
+			packageValues: packagePlan.ownedValues,
 			restores: layoutPatched._1,
 			dependencyOwned: dependency.owned,
 			lockOwned: dependency.lockOwned
@@ -726,6 +744,7 @@ class LiveReactLifecycle {
 			{_0: "files", _1: data.managedFiles},
 			{_0: "markers", _1: LiveReactSourcePatcher.managedMarkers(data.topology)},
 			{_0: "packageKeys", _1: data.packageKeys},
+			{_0: "packageValues", _1: data.packageValues},
 			{_0: "dependencyOwned", _1: data.dependencyOwned},
 			{_0: "lockOwned", _1: data.lockOwned},
 			{_0: "restores", _1: data.restores}

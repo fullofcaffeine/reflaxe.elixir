@@ -99,6 +99,7 @@ typedef LiveReactResolverResult = {
 typedef LiveReactPackagePlan = {
 	content:String,
 	?ownedKeys:Array<String>,
+	?ownedValues:Term,
 	?retainedKeys:Array<String>
 }
 
@@ -109,6 +110,7 @@ typedef LiveReactManifestData = {
 	components:Array<LiveReactComponent>,
 	managedFiles:Array<String>,
 	packageKeys:Array<String>,
+	packageValues:Term,
 	restores:Term,
 	dependencyOwned:Bool,
 	lockOwned:Bool
