@@ -8,6 +8,10 @@ import liveReactPlugin from "live_react/vite-plugin"
 const packageRoot = path.dirname(fileURLToPath(import.meta.url))
 const projectRoot = path.dirname(packageRoot)
 const assetRoot = path.join(projectRoot, "assets")
+const mixBuildRoot = process.env.MIX_BUILD_ROOT
+  ? path.resolve(projectRoot, process.env.MIX_BUILD_ROOT)
+  : path.join(projectRoot, "_build")
+const colocatedRoot = path.join(mixBuildRoot, process.env.MIX_ENV || "dev", "phoenix-colocated")
 
 export default defineConfig(({command}) => ({
   root: assetRoot,
@@ -20,13 +24,14 @@ export default defineConfig(({command}) => ({
     strictPort: true,
   },
   resolve: {
+    alias: {"phoenix-colocated": colocatedRoot},
     dedupe: ["react", "react-dom"],
   },
   optimizeDeps: {
     include: ["live_react", "phoenix", "phoenix_html", "phoenix_live_view"],
   },
   build: {
-    commonjsOptions: {transformMixedEsModules: true},
+    commonjsOptions: {include: [/node_modules/, /vendor/], transformMixedEsModules: true},
     target: "es2020",
     outDir: path.join(projectRoot, "priv/static/assets"),
     emptyOutDir: false,

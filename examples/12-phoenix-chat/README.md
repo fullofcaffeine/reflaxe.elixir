@@ -4,6 +4,11 @@ Realtime chat example authored in Haxe and compiled to Phoenix LiveView + Presen
 
 This example is intentionally **hybrid by design**: Haxe generates the app feature logic, while a small Phoenix scaffold remains hand-authored Elixir.
 
+New to PhoenixHx LiveReact? Read the
+[beginner guide](../../docs/02-user-guide/PHOENIX_LIVE_REACT.md) before the
+application-specific details below. It explains what LiveView, LiveReact,
+React, Vite, and Genes each do without assuming knowledge of this example.
+
 ## What this example covers
 
 - LiveView callbacks (`mount/3`, `handle_event/3`, `handle_info/2`)
@@ -109,6 +114,10 @@ example compile, runtime Mix tests, and sentinel browser path exercise this layo
 
 ## Public PhoenixHx LiveReact lifecycle
 
+The [canonical guide](../../docs/02-user-guide/PHOENIX_LIVE_REACT.md) teaches
+the general setup and removal flow. This section records only how the chat
+example applies it and which chat files remain application-owned.
+
 This example now exercises the same public Mix tasks that a PhoenixHx user installs. The
 "lifecycle" is the repeatable setup, verification, repair, component-registration, and removal of
 the generic LiveReact/Vite wiring. It is not the lifetime of a React component in the browser.
@@ -128,14 +137,14 @@ mix haxe.phoenix.live_react --yes
 # Verify dependency identity, marker ownership, registry, and generated files.
 mix haxe.phoenix.live_react --check
 
-# Adopt this existing hand-owned component in the static registry.
+# Adopt this existing application-owned component in the static registry.
 mix haxe.gen.live_react PreferenceStudio \
   --existing \
   --module ./preference-studio-boundary \
   --export PreferenceStudioBoundary \
   --yes
 
-# Remove only lifecycle-owned wiring; hand-owned component source survives.
+# Remove only setup-owned files and settings; application-owned component source survives.
 # The app returns to its Phoenix esbuild lane, so the native controls still run.
 mix haxe.phoenix.live_react --remove --yes
 ```
@@ -201,7 +210,7 @@ Genes-authored React-component proof.
 
 - Remove the React island and the useful LiveView controls remain.
 - Remove lifecycle-owned Vite/LiveReact wiring and the app restores its Phoenix esbuild lane, so the
-  native Phoenix/Haxe controls still run from a clean build. The task retains hand-owned component
+  native Phoenix/Haxe controls still run from a clean build. The task retains application-owned component
   source and dependencies that source still imports.
 - Keep using the stock pinned dependency unless a measured repeated gap survives the wrapper and an
   upstream contribution attempt.

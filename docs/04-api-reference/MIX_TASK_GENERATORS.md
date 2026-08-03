@@ -20,6 +20,43 @@ For end-to-end reference patterns, always compare against `examples/todo-app/`.
 
 ## Generators
 
+### `mix haxe.gen.live_react` (experimental)
+
+Registers one statically named React component after the project has been set
+up with `mix haxe.phoenix.live_react`.
+
+```bash
+# Create a Haxe wrapper, TypeScript boundary, and React starter
+mix haxe.gen.live_react StatusCard
+
+# Register a compatible boundary that the application already owns
+mix haxe.gen.live_react StatusCard \
+  --existing \
+  --module ./status-card-boundary \
+  --export StatusCardBoundary
+
+# Remove only the registry entry; keep application source
+mix haxe.gen.live_react StatusCard --remove
+```
+
+The component name must be one fixed PascalCase name such as `StatusCard`.
+This keeps the generated browser registry explicit; request data cannot select
+an arbitrary module. The default starter files become application-owned as
+soon as they are created, so reruns and removal do not rewrite or delete them.
+
+Options:
+
+- `--existing` registers source that already exists.
+- `--module PATH` sets the registry import and requires `--existing`.
+- `--export NAME` sets the exported boundary name and requires `--existing`.
+- `--package-root .|assets` selects the npm application when automatic
+  detection is ambiguous.
+- `--remove` removes this component from the registry.
+- `--yes` skips the confirmation prompt for a reviewed non-interactive run.
+
+Read [Add a React component to a PhoenixHx LiveView](../02-user-guide/PHOENIX_LIVE_REACT.md)
+for the complete first-time workflow and the generated Phoenix target shape.
+
 ### `mix haxe.gen.schema`
 
 Generates a Haxe `@:schema` module.

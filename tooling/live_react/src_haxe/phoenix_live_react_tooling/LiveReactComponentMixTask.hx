@@ -15,16 +15,27 @@ import elixir.types.KeywordList;
 import elixir.types.Term;
 
 /**
- * Registers a closed React island and optionally scaffolds hand-owned source.
+ * Registers one statically named React component and can create application-owned
+ * starter source for it.
  *
  *     mix haxe.gen.live_react PreferenceStudio
  *     mix haxe.gen.live_react PreferenceStudio --existing
+ *     mix haxe.gen.live_react PreferenceStudio --existing --module ./preference-studio-boundary --export PreferenceStudioBoundary
  *     mix haxe.gen.live_react PreferenceStudio --remove
  *     mix haxe.gen.live_react PreferenceStudio --package-root assets
  *
  * The default creates one strict Haxe wrapper, one trusted TSX boundary, and
  * one inner TSX component. Those files become application-owned immediately;
  * reruns and removal never rewrite or delete them.
+ *
+ * ## Options
+ *
+ *   * `--existing` - register compatible source the application already owns
+ *   * `--module PATH` - import this existing browser module; requires `--existing`
+ *   * `--export NAME` - use this export from the existing module; requires `--existing`
+ *   * `--remove` - remove the registry entry but keep application source files
+ *   * `--package-root PATH` - select the tested `.` or `assets` npm package root
+ *   * `--yes` - do not prompt before a reviewed add or removal
  */
 @:keep
 @:native("Mix.Tasks.Haxe.Gen.LiveReact")
@@ -59,7 +70,7 @@ class LiveReactComponentMixTask {
 		if (remove && (useExisting || modulePath != null || exportName != null))
 			Kernel.raiseValue("--remove cannot be combined with --existing, --module, or --export. No writes occurred.");
 		if (!remove && !useExisting && (modulePath != null || exportName != null))
-			Kernel.raiseValue("--module and --export adopt hand-owned source and therefore require --existing. No writes occurred.");
+			Kernel.raiseValue("--module and --export adopt application-owned source and therefore require --existing. No writes occurred.");
 
 		var projectConfig = Project.config();
 		var appName = Kernel.toString(Keyword.get(projectConfig, "app", null));
@@ -106,15 +117,16 @@ class LiveReactComponentMixTask {
 		if (mode == ADD_COMPONENT) {
 			Mix.shell().info("LiveReact component " + name + " is registered in the static registry.");
 			if (created.length != 0)
-				Mix.shell().info("Created hand-owned starter source:\n" + Enum.mapJoin(created, "\n", function(path:String):String return "  * " + path));
+				Mix.shell()
+					.info("Created application-owned starter source:\n" + Enum.mapJoin(created, "\n", function(path:String):String return "  * " + path));
 			else
-				Mix.shell().info("No starter source was changed; existing application source remains hand-owned.");
+				Mix.shell().info("No starter source was changed; existing application source remains application-owned.");
 			Mix.shell()
 				.info("Next: review the closed Haxe assigns and trusted TypeScript boundary, add a Live Event Protocol adapter for client pushes, then compile Haxe and run the Vite type/build checks.");
 		} else if (mode == REMOVE_COMPONENT) {
 			Mix.shell().info("Removed " + name + " from the static LiveReact registry.");
 			if (retained.length != 0)
-				Mix.shell().info("Retained hand-owned source:\n" + Enum.mapJoin(retained, "\n", function(path:String):String return "  * " + path));
+				Mix.shell().info("Retained application-owned source:\n" + Enum.mapJoin(retained, "\n", function(path:String):String return "  * " + path));
 		}
 	}
 }

@@ -60,8 +60,12 @@ Choose `genes` when browser code itself is authored in Haxe.
 Stock LiveReact can be installed on either mode with
 `mix haxe.phoenix.live_react`. LiveReact mounts React islands; Genes compiles
 Haxe browser source. When both are enabled, Genes emits source and Vite remains
-the single final bundler. The canonical runnable composition is
-[`examples/18-phoenixhx-live-react`](../../examples/18-phoenixhx-live-react/).
+the single final browser builder. A React island means one bounded React-owned
+region inside a page that LiveView otherwise owns. Read the
+[beginner LiveReact guide](../02-user-guide/PHOENIX_LIVE_REACT.md) before
+installing it. The smallest runnable `plain-js` composition is
+[`examples/18-phoenixhx-live-react`](../../examples/18-phoenixhx-live-react/),
+while the todo app shows the Genes-authored React path.
 
 Why both Mix and Haxe entrypoints exist:
 

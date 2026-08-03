@@ -60,8 +60,8 @@
     {
       "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/LiveReactComponentMixTask.hx",
       "generated": "lib/mix/tasks/haxe.gen.live_react.ex",
-      "sourceSha256": "7e68c19392a6b75316672e0555cf094a24cb78c7cc17e9959fbac11b353639b2",
-      "generatedSha256": "b989618bec94c4d8895cfa41adb8550f59e565c714a7126e02fe38b43d4437da"
+      "sourceSha256": "ddbb529a7a82c71947e56eb88f9e40ca95e1c39d9983a5812a3d7d9625da07e3",
+      "generatedSha256": "2527ef9d6dd0326a4a89766bb539be1a45c33a6de6907a136ccd6255fece8e3b"
     },
     {
       "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/ProjectPatch.hx",

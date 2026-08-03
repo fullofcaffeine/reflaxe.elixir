@@ -41,6 +41,11 @@ Use this decision rule for every Phoenix surface addition:
 
 ### Done: First-Class Stock LiveReact Integration
 
+The user-facing starting point is
+[Add a React component to a PhoenixHx LiveView](../02-user-guide/PHOENIX_LIVE_REACT.md).
+The details below record implementation coverage and remaining promotion
+evidence; they are not required reading for first-time users.
+
 The reusable owner is a small, API-faithful
 `std/phoenix/live_react/**` declaration surface, the
 `mix haxe.phoenix.live_react` setup/check/remove task, and discoverable app-local

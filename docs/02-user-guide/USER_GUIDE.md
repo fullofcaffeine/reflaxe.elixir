@@ -24,6 +24,25 @@ Chat walkthroughs for both adoption styles:
 - Hybrid (gradual): `docs/06-guides/PHOENIX_CHAT_TUTORIAL.md`
 - Haxe-first server: `docs/06-guides/PHOENIX_CHAT_TUTORIAL_HAXE_FIRST.md`
 
+## Add One React Component Without Giving React the Whole Page
+
+Phoenix LiveView can remain responsible for the page while React renders one
+bounded component, such as a chart or editor. The experimental PhoenixHx
+LiveReact integration adds typed Haxe wrappers and repeatable setup commands;
+the upstream LiveReact library still mounts React in the browser and carries
+events between React and LiveView.
+
+Start with [Add a React component to a PhoenixHx LiveView](PHOENIX_LIVE_REACT.md).
+It assumes no previous knowledge of the integration and explains:
+
+- when LiveView alone is simpler;
+- the difference between Haxe-authored browser code (`genes`) and ordinary
+  JavaScript or TypeScript (`plain-js`);
+- setup, component registration, local development, testing, repair, updates,
+  removal, and client-only deployment;
+- the exact current limits, including the absence of PhoenixHx-managed React
+  server rendering, slots, uploads, streams, and request-selected components.
+
 ## Choose an Authoring Profile
 
 You can use either profile today within the documented pre-1.0 support surface:

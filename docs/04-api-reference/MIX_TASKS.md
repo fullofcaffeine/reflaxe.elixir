@@ -467,6 +467,12 @@ esbuild briefly fails with `Could not resolve "./hx_app.js"`.
 Sets up, checks, repairs, or removes the experimental client-only integration
 with stock LiveReact:
 
+New to the integration? Follow the
+[step-by-step LiveReact guide](../02-user-guide/PHOENIX_LIVE_REACT.md). It
+explains what each tool owns, when to choose Genes or plain JavaScript, and why
+the npm and Mix dependency checks matter before this reference lists the exact
+task behavior.
+
 ```bash
 mix haxe.phoenix.live_react --yes
 mix haxe.phoenix.live_react --check
@@ -491,7 +497,7 @@ and repeat `mix haxe.phoenix.live_react --check`.
 
 The task replaces the Phoenix esbuild watcher and asset task with Vite, patches the
 LiveView hook and root asset tag, and records owned files and marker blocks in
-`phoenixhx-live-react.json`. It preserves hand-owned source and fails closed on
+`phoenixhx-live-react.json`. It preserves application-owned source and fails closed on
 ambiguous or drifted integration state.
 
 LiveReact is orthogonal to the scaffold client mode:
@@ -514,10 +520,16 @@ mix haxe.gen.live_react ExistingPanel --existing --yes
 ```
 
 The normal generated boundary is a closed Haxe assigns type and wrapper, a
-trusted TypeScript prop decoder, and a hand-owned React component starter. The
+trusted TypeScript prop decoder, and an application-owned React component starter. The
 registry is generated and static; do not derive its component name from
-request data. `--existing` registers compatible hand-owned source without
+request data. `--existing` registers compatible application-owned source without
 overwriting it.
+
+The generator's files become application-owned immediately. Setup, repair,
+component removal, and full integration removal retain them. The
+[canonical guide](../02-user-guide/PHOENIX_LIVE_REACT.md#register-a-react-component)
+shows the generated Haxe wrapper beside the ordinary Phoenix/HEEx result and
+explains how to keep the browser boundary small.
 
 ### mix haxe.gen.schema
 

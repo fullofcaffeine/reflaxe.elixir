@@ -41,6 +41,7 @@ This index helps you find the right docs quickly, whether you're building apps w
 - [Phoenix Integration](02-user-guide/PHOENIX_INTEGRATION.md) - Building Phoenix applications
 - [Type-Safe Phoenix Abstractions](02-user-guide/TYPE_SAFE_PHOENIX_ABSTRACTIONS.md) - Assigns/Socket/Flash typed surfaces
 - [Phoenix LiveView Architecture](02-user-guide/PHOENIX_LIVEVIEW_ARCHITECTURE.md) - Real-time UI patterns
+- [Add a React Component to a PhoenixHx LiveView](02-user-guide/PHOENIX_LIVE_REACT.md) - Beginner guide to the experimental client-only LiveReact integration, with Genes and plain-TypeScript paths
 - [Haxe for Phoenix](02-user-guide/haxe-for-phoenix.md) - Why Haxe makes Phoenix better
 - [HXX Syntax & Comparison](02-user-guide/HXX_SYNTAX_AND_COMPARISON.md) - Typed HXX UX and comparison with Coconut UI & TSX
 - [Ecto Integration Patterns](07-patterns/ECTO_INTEGRATION_PATTERNS.md) - Database integration patterns (canonical)
@@ -176,6 +177,7 @@ This documentation is optimized for AI assistant development with **AGENTS.md** 
 - **[Interop With Existing Elixir](02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md)** - Call pure Elixir modules from Haxe with typed boundaries
 - **[Type-Safe ChildSpec API](04-api-reference/TYPE_SAFE_CHILD_SPEC.md)** - Canonical typed child-spec reference
 - **[Phoenix Guide](02-user-guide/PHOENIX_INTEGRATION.md)** - Building Phoenix applications
+- **[PhoenixHx + LiveReact](02-user-guide/PHOENIX_LIVE_REACT.md)** - Keep LiveView in charge while React owns one bounded component
 - **[Troubleshooting](06-guides/TROUBLESHOOTING.md)** - Solve common issues
 - **[Known Limitations](06-guides/KNOWN_LIMITATIONS.md)** - Sharp edges and experimental surfaces
 - **[Support Matrix](06-guides/SUPPORT_MATRIX.md)** - CI-tested versions

@@ -170,6 +170,10 @@ LiveView render function when a template is local to that LiveView.
 
 ### Stock LiveReact component declaration (experimental)
 
+If you have not used this integration before, read the
+[beginner LiveReact guide](../02-user-guide/PHOENIX_LIVE_REACT.md) first. This
+section is the exact Haxe declaration reference, not the installation guide.
+
 `phoenix.live_react.LiveReact` is a low-level declaration for the upstream
 `LiveReact` module. It does not install `:live_react`, configure JavaScript, or
 copy any LiveReact runtime behavior. Its open `react/1` boundary accepts typed
@@ -249,10 +253,12 @@ typed direct-call declaration. Setup owns the HXX wrapper with fail-closed
 markers, and removal restores the original Haxe source instead of editing
 generated `.ex` files.
 
-The first-class setup/check/remove tooling and static registry now exist as an
-experimental implementation, but public promotion still waits for the two
-application canaries, installed-package smoke, and the compatibility gate.
-Until that promotion, treat the command surface as opt-in 1.x preview work.
+The setup/check/remove tooling and static registry are available as opt-in,
+experimental 1.x features. Three applications exercise the client-only path,
+but those applications prove only their recorded dependency combinations; they
+do not establish compatibility with every Phoenix, LiveView, React, or Node
+release. See the [canonical guide's current limits](../02-user-guide/PHOENIX_LIVE_REACT.md#current-limits-and-security-boundary)
+before adopting the surface.
 
 #### Reusing a Live Event Protocol from a React boundary
 

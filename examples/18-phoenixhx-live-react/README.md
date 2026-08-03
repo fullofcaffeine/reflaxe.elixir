@@ -4,7 +4,14 @@ This example proves the complete `plain-js` LiveReact path: Haxe authors the
 Phoenix LiveView, its closed props, and one typed browser event; ordinary strict
 TypeScript owns the React island; Vite builds it; and stock LiveReact joins the
 two at runtime. The signal console is deliberately interactive so browser QA
-proves hydration and a real round trip to Phoenix, not just that HTML loaded.
+proves that React mounted and completed a real round trip to Phoenix, not just
+that HTML loaded. This client-only example does not use server-rendered React
+or hydration.
+
+If those names are unfamiliar, begin with
+[Add a React component to a PhoenixHx LiveView](../../docs/02-user-guide/PHOENIX_LIVE_REACT.md).
+It explains the parts in plain language, then returns here for the smallest
+runnable project.
 
 ## Run it locally
 
@@ -69,7 +76,7 @@ SignalConsoleIsland.hx
 - `assets/react-components/signal-console-boundary.tsx` validates the values
   crossing from LiveReact and discards native bridge capabilities that this
   component does not need.
-- `assets/react-components/signal-console.tsx` is the hand-owned React
+- `assets/react-components/signal-console.tsx` is the application-owned React
   implementation.
 - `assets/react-components/registry.generated.ts`, `vite.config.mjs`, and
   `assets/js/live-react-hooks.js` are owned by
@@ -133,7 +140,7 @@ mix assets.build
 
 `mix test` first compiles `src_haxe/test/web/PageSmokeTest.hx` to ExUnit, then
 checks that Phoenix renders the typed island and accepts the shared event.
-`npm run typecheck` checks the hand-owned React boundary and generated event
+`npm run typecheck` checks the application-owned React boundary and generated event
 adapter without emitting JavaScript. The Haxe compiler's generated Elixir is
 checked in so regeneration drift is reviewable. `mix assets.build` runs the
 Haxe server compile, Tailwind, and Vite from the same clean-checkout path used
@@ -165,6 +172,10 @@ perform the same action without the island.
 
 ## Setup, repair, and removal
 
+The [canonical guide](../../docs/02-user-guide/PHOENIX_LIVE_REACT.md#add-livereact-to-a-project)
+explains the general workflow. These commands show the exact choices used by
+this `plain-js` example.
+
 The checked-in project was created and enabled through public Mix tasks. The
 same lifecycle is available to another PhoenixHx application:
 
@@ -175,7 +186,7 @@ mix haxe.phoenix.live_react --yes
 # Verify dependency identity, marker ownership, registry, and generated files
 mix haxe.phoenix.live_react --check
 
-# Register compatible hand-owned source without overwriting it
+# Register compatible application-owned source without overwriting it
 mix haxe.gen.live_react SignalConsole \
   --existing \
   --module ./signal-console-boundary \
@@ -193,7 +204,7 @@ TypeScript files are application-owned and survive integration or registry
 removal.
 
 In this repository checkout, the four stock browser packages are deliberately
-hand-owned `file:deps/...` values. The lifecycle task accepts and preserves
+application-owned `file:deps/...` values. The setup task accepts and preserves
 them, while continuing to own Vite, registry, hook, and Phoenix marker wiring.
 
 ## Adding another island

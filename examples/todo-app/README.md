@@ -2,6 +2,12 @@
 
 End-to-end reference app showcasing Reflaxe.Elixir in a real Phoenix LiveView application:
 
+The app includes one optional React component inside a LiveView. If you are new
+to that arrangement, read
+[Add a React component to a PhoenixHx LiveView](../../docs/02-user-guide/PHOENIX_LIVE_REACT.md)
+first. The guide explains the parts and the smaller example 18; this README
+focuses on the larger todo application.
+
 - **Server**: Haxe → Elixir (LiveView + Ecto + PubSub)
 - **Browser client**: Haxe → classic ESM JavaScript for LiveView hooks, plus
   Haxe → strict TypeScript/TSX for one optional React island

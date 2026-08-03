@@ -1,15 +1,26 @@
 defmodule Mix.Tasks.Haxe.Gen.LiveReact do
   @moduledoc """
-  Registers a closed React island and optionally scaffolds hand-owned source.
+  Registers one statically named React component and can create application-owned
+  starter source for it.
 
       mix haxe.gen.live_react PreferenceStudio
       mix haxe.gen.live_react PreferenceStudio --existing
+      mix haxe.gen.live_react PreferenceStudio --existing --module ./preference-studio-boundary --export PreferenceStudioBoundary
       mix haxe.gen.live_react PreferenceStudio --remove
       mix haxe.gen.live_react PreferenceStudio --package-root assets
 
   The default creates one strict Haxe wrapper, one trusted TSX boundary, and
   one inner TSX component. Those files become application-owned immediately;
   reruns and removal never rewrite or delete them.
+
+  ## Options
+
+    * `--existing` - register compatible source the application already owns
+    * `--module PATH` - import this existing browser module; requires `--existing`
+    * `--export NAME` - use this export from the existing module; requires `--existing`
+    * `--remove` - remove the registry entry but keep application source files
+    * `--package-root PATH` - select the tested `.` or `assets` npm package root
+    * `--yes` - do not prompt before a reviewed add or removal
   """
 
   use Mix.Task
@@ -50,7 +61,7 @@ defmodule Mix.Tasks.Haxe.Gen.LiveReact do
     if not remove and not use_existing and
          (not Kernel.is_nil(module_path) or not Kernel.is_nil(export_name)) do
       Kernel.raise(
-        "--module and --export adopt hand-owned source and therefore require --existing. No writes occurred."
+        "--module and --export adopt application-owned source and therefore require --existing. No writes occurred."
       )
     end
 
@@ -113,12 +124,12 @@ defmodule Mix.Tasks.Haxe.Gen.LiveReact do
 
           if length(created) != 0 do
             Mix.shell().info(
-              "Created hand-owned starter source:\n" <>
+              "Created application-owned starter source:\n" <>
                 Enum.map_join(created, "\n", fn path -> "  * " <> path end)
             )
           else
             Mix.shell().info(
-              "No starter source was changed; existing application source remains hand-owned."
+              "No starter source was changed; existing application source remains application-owned."
             )
           end
 
@@ -131,7 +142,7 @@ defmodule Mix.Tasks.Haxe.Gen.LiveReact do
 
           if length(retained) != 0 do
             Mix.shell().info(
-              "Retained hand-owned source:\n" <>
+              "Retained application-owned source:\n" <>
                 Enum.map_join(retained, "\n", fn path -> "  * " <> path end)
             )
           end
