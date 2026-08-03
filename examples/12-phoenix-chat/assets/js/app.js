@@ -20,21 +20,22 @@ import "phoenix_html"
 // Establish Phoenix Socket and LiveView configuration.
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
-// BEGIN phoenix_chat vite_topbar_import
 import topbar from "topbar"
-// END phoenix_chat vite_topbar_import
-// BEGIN phoenix_chat vite_live_react_imports
-import {reactHooks} from "./live-react-hooks"
-// END phoenix_chat vite_live_react_imports
 // BEGIN reflaxe_elixir hx_app_import
 import "./hx_app.js";
 // END reflaxe_elixir hx_app_import
+// BEGIN reflaxe_elixir live_react_import
+import {reactHooks} from "./live-react-hooks.js"
+// END reflaxe_elixir live_react_import
+// BEGIN reflaxe_elixir live_react_window_hooks
+window.Hooks = {...(window.Hooks || {}), ...reactHooks}
+// END reflaxe_elixir live_react_window_hooks
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 let liveSocket = new LiveSocket("/live", Socket, {
-  // BEGIN phoenix_chat vite_live_react_hooks
-  hooks: {...(window.Hooks || {}), ...reactHooks},
-  // END phoenix_chat vite_live_react_hooks
+  // BEGIN reflaxe_elixir hooks_property
+  hooks: window.Hooks || {},
+  // END reflaxe_elixir hooks_property
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken}
 })

@@ -419,13 +419,9 @@ class LiveReactSourcePatcher {
 	 * so `--yes` repairs projects created by older task versions.
 	 */
 	static function normalizeAssetAliasOrder(content:String, aliasName:String, beginToken:String, endToken:String):String {
-		var haxeEndToken = haxeClientAliasEndToken(aliasName);
-		if (haxeEndToken == null)
-			return content;
-
 		var lines = splitLines(content);
 		var span = findAliasSpan(lines, aliasName);
-		var haxeEnds = indices(span._0, span._1 + 1, index -> ElixirString.contains(at(lines, index), haxeEndToken));
+		var haxeEnds = haxeClientAliasAnchors(lines, span._0, span._1, aliasName);
 		var markerBegins = indices(span._0, span._1 + 1, index -> ElixirString.contains(at(lines, index), beginToken));
 		var markerEnds = indices(span._0, span._1 + 1, index -> ElixirString.contains(at(lines, index), endToken));
 		if (haxeEnds.length != 1 || markerBegins.length != 1 || markerEnds.length != 1)
@@ -556,13 +552,18 @@ class LiveReactSourcePatcher {
 	}
 
 	static function aliasInsertionIndex(lines:Array<String>, startIndex:Int, endIndex:Int, aliasName:String):Int {
+		var anchors = haxeClientAliasAnchors(lines, startIndex, endIndex, aliasName);
+		return anchors.length == 1 ? anchors[0] + 1 : startIndex + 1;
+	}
+
+	static function haxeClientAliasAnchors(lines:Array<String>, startIndex:Int, endIndex:Int, aliasName:String):Array<Int> {
 		var haxeEndToken = haxeClientAliasEndToken(aliasName);
 		if (haxeEndToken == null)
-			return startIndex + 1;
-		for (index in (startIndex + 1)...endIndex)
-			if (ElixirString.contains(at(lines, index), haxeEndToken))
-				return index + 1;
-		return startIndex + 1;
+			return [];
+		var markerAnchors = indices(startIndex + 1, endIndex, index -> ElixirString.contains(at(lines, index), haxeEndToken));
+		if (markerAnchors.length != 0)
+			return markerAnchors;
+		return indices(startIndex + 1, endIndex, index -> Regex.match(rx("^\\s*[\"']haxe\\.compile\\.client[\"']\\s*,?\\s*$"), at(lines, index)));
 	}
 
 	static function haxeClientAliasEndToken(aliasName:String):Null<String> {
@@ -654,10 +655,20 @@ class LiveReactSourcePatcher {
 		}
 		if (watcherIndex == null)
 			return Kernel.raiseValue("config/dev.exs has no watchers configuration. No writes occurred. Canonical Phoenix watcher topology is required.");
-		var end = Kernel.minInt(lines.length - 1, watcherIndex + 16);
-		for (index in watcherIndex...(end + 1))
-			if (ElixirString.contains(at(lines, index), "["))
-				return index + 1;
+		var end = Kernel.minInt(lines.length - 1, watcherIndex + 32);
+		var conditionals = indices(watcherIndex, end + 1, index -> Regex.match(rx("^(?:watchers\\s*:\\s*)?\\(?if\\b"), ElixirString.trim(at(lines, index))));
+		if (conditionals.length > 1)
+			return Kernel.raiseValue("config/dev.exs has an ambiguous conditional watchers configuration. No writes occurred.");
+		var searchStart = watcherIndex;
+		if (conditionals.length == 1) {
+			var elseBranches = indices(conditionals[0], end + 1, index -> ElixirString.trim(at(lines, index)) == "else");
+			if (elseBranches.length != 1)
+				return Kernel.raiseValue("config/dev.exs has a conditional watchers configuration without one recognizable else branch. No writes occurred.");
+			searchStart = elseBranches[0] + 1;
+		}
+		var lists = indices(searchStart, end + 1, index -> ElixirString.contains(at(lines, index), "["));
+		if (lists.length > 0)
+			return lists[0] + 1;
 		return Kernel.raiseValue("config/dev.exs watchers configuration has no recognizable list. No writes occurred.");
 	}
 
@@ -693,7 +704,14 @@ class LiveReactSourcePatcher {
 			if (ElixirString.startsWith(ElixirString.trimLeading(line), "import "))
 				lastImport = Kernel.elemAs(entry, 1);
 		}
-		return Enum.join(List.insertAt(lines, lastImport + 1, Enum.join(markerLines(beginToken, endToken, desired, "", "//"), "\n")), "\n");
+		var insertion = lastImport + 1;
+		var scaffoldPresence = markerPresence(content, "BEGIN reflaxe_elixir hx_app_import", "END reflaxe_elixir hx_app_import");
+		if (scaffoldPresence == PRESENT) {
+			var scaffold = markerIndices(lines, "BEGIN reflaxe_elixir hx_app_import", "END reflaxe_elixir hx_app_import", "assets/js/app.js scaffold import");
+			if (lastImport > scaffold._0 && lastImport < scaffold._1)
+				insertion = scaffold._1 + 1;
+		}
+		return Enum.join(List.insertAt(lines, insertion, Enum.join(markerLines(beginToken, endToken, desired, "", "//"), "\n")), "\n");
 	}
 
 	static function patchAppJsHooks(content:String, restores:Term):{_0:String, _1:Term} {

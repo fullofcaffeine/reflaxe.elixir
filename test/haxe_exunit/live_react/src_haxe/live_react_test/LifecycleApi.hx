@@ -52,3 +52,9 @@ extern class LiveReactTaskApi {
 extern class LiveReactComponentTaskApi {
 	public static function run(arguments:Array<String>):Term;
 }
+
+@:native("HaxePhoenixScaffold")
+extern class PhoenixScaffoldApi {
+	@:native("apply!")
+	public static function applyBang(projectRoot:String, options:KeywordList<Term>):Atom;
+}

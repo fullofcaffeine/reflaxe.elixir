@@ -387,7 +387,7 @@ jobs:
       - name: Run Phoenix chat QA Sentinel smoke (bounded)
         run: |
           set -euo pipefail
-          scripts/qa-sentinel.sh --app examples/12-phoenix-chat --port 4012 --playwright --e2e-spec "e2e/presence.spec.ts" --e2e-workers 1 --deadline 900 --verbose | tee qa-chat-run.log
+          scripts/qa-sentinel.sh --app examples/12-phoenix-chat --port 4012 --playwright --e2e-spec "e2e/*.spec.ts" --e2e-workers 1 --deadline 900 --verbose | tee qa-chat-run.log
 
       - name: Upload Phoenix chat QA logs
         if: always()

@@ -21,10 +21,15 @@ config :phoenix_chat, PhoenixChatWeb.Endpoint,
   pubsub_server: PhoenixChat.PubSub,
   live_view: [signing_salt: "n6w0LkDj"]
 
-# BEGIN phoenix_chat vite_live_react_config
-# The first proof is client-only: stock live_react never starts an SSR runtime.
-config :live_react, ssr: false
-# END phoenix_chat vite_live_react_config
+# Native fallback asset lane used when the optional LiveReact/Vite lifecycle is removed.
+config :esbuild,
+  version: "0.17.11",
+  phoenix_chat: [
+    args:
+      ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
+    cd: Path.expand("../assets", __DIR__),
+    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+  ]
 
 # Configure tailwind (the version is required)
 config :tailwind,
@@ -49,3 +54,8 @@ config :phoenix, :json_library, Jason
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
+
+# BEGIN reflaxe_elixir live_react_config
+# Stock LiveReact remains client-only in the initial PhoenixHx integration.
+config :live_react, ssr: false
+# END reflaxe_elixir live_react_config

@@ -52,9 +52,9 @@ config :phoenix_chat, PhoenixChatWeb.Endpoint,
          ],
          # END reflaxe_elixir haxe_client
 
-         # BEGIN phoenix_chat vite_live_react_watcher
+         # BEGIN reflaxe_elixir live_react_vite_watcher
          npm: ["run", "assets:dev", cd: Path.expand("../", __DIR__)],
-         # END phoenix_chat vite_live_react_watcher
+         # END reflaxe_elixir live_react_vite_watcher
          tailwind: {Tailwind, :install_and_run, [:phoenix_chat, ~w(--watch)]}
        ]
      end)
@@ -95,13 +95,6 @@ config :phoenix_chat, PhoenixChatWeb.Endpoint,
 # Enable dev routes for dashboard and mailbox
 config :phoenix_chat, dev_routes: true
 
-# BEGIN phoenix_chat vite_live_react_host
-config :live_react,
-  vite_host: if(disable_watchers, do: nil, else: "http://127.0.0.1:5173"),
-  ssr: false
-
-# END phoenix_chat vite_live_react_host
-
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
 
@@ -117,3 +110,11 @@ config :phoenix_live_view,
   debug_heex_annotations: true,
   # Enable helpful, but potentially expensive runtime checks
   enable_expensive_runtime_checks: true
+
+# BEGIN reflaxe_elixir live_react_vite_host
+config :live_react,
+  vite_host:
+    if(System.get_env("DISABLE_WATCHERS") == "1", do: nil, else: "http://127.0.0.1:5173"),
+  ssr: false
+
+# END reflaxe_elixir live_react_vite_host

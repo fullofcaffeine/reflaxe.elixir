@@ -85,10 +85,9 @@ defmodule PhoenixChatWeb do
       import Phoenix.HTML
       # Core UI components and translation
       import PhoenixChatWeb.CoreComponents
-      # BEGIN phoenix_chat vite_live_react_imports
+      # Application-owned imports used by the Haxe-authored React wrapper.
       import LiveReact
       import PhoenixChatWeb.ReactComponents
-      # END phoenix_chat vite_live_react_imports
       use Gettext, backend: PhoenixChatWeb.Gettext
 
       # Shortcut for generating JS commands

@@ -13,6 +13,7 @@ import haxe.test.Assert;
 import haxe.test.ExUnit.TestCase;
 import live_react_test.LiveReactFixture as Fixture;
 import live_react_test.LiveReactFixture.MixDependencyName;
+import live_react_test.LifecycleApi.PhoenixScaffoldApi;
 
 /**
  * Full behavioral contract for the public PhoenixHx LiveReact lifecycle.
@@ -96,6 +97,101 @@ class HaxePhoenixLiveReactTest extends TestCase {
 
 		Assert.equals(1, ElixirMap.sizeTerm(packageJson));
 		Assert.equals("demo-assets", Fixture.jsonPath(packageJson, ["name"]));
+	}
+
+	@:test("conditional watcher lists receive Vite only in the enabled branch")
+	function testConditionalWatcherListUsesEnabledBranch():Void {
+		var root = Fixture.fixtureRoot(Fixture.GENES, ".");
+		var devPath = Path.join([root, "config", "dev.exs"]);
+		var original = Fixture.replaceOnce(File.readBang(devPath),
+			"  watchers: [\n"
+			+ "    esbuild: {Esbuild, :install_and_run, [:demo, ~w(--sourcemap=inline --watch)]},\n"
+			+ "    tailwind: {Tailwind, :install_and_run, [:demo, ~w(--watch)]}\n"
+			+ "  ]",
+			"  watchers:\n"
+			+ "    (if disable_watchers do\n"
+			+ "       []\n"
+			+ "     else\n"
+			+ "       [\n"
+			+ "         tailwind: {Tailwind, :install_and_run, [:demo, ~w(--watch)]}\n"
+			+ "       ]\n"
+			+ "     end)");
+		File.writeBang(devPath, original);
+
+		LifecycleApi.applyBang(root, Fixture.applyOptions(root));
+
+		var applied = File.readBang(devPath);
+		Assert.containsString(applied, "     else\n       [\n         # BEGIN reflaxe_elixir live_react_vite_watcher");
+		Assert.doesNotContainString(applied, "       []\n     # BEGIN reflaxe_elixir live_react_vite_watcher");
+		Assert.equals(CHECK, LifecycleApi.checkBang(root, Fixture.rerunOptions()).mode);
+
+		LifecycleApi.removeBang(root, [{_0: "yes", _1: true}]);
+		Assert.equals(original, File.readBang(devPath));
+	}
+
+	@:test("inline conditional watcher lists receive Vite only in the enabled branch")
+	function testInlineConditionalWatcherListUsesEnabledBranch():Void {
+		var root = Fixture.fixtureRoot(Fixture.GENES, ".");
+		var devPath = Path.join([root, "config", "dev.exs"]);
+		var original = Fixture.replaceOnce(File.readBang(devPath),
+			"  watchers: [\n"
+			+ "    esbuild: {Esbuild, :install_and_run, [:demo, ~w(--sourcemap=inline --watch)]},\n"
+			+ "    tailwind: {Tailwind, :install_and_run, [:demo, ~w(--watch)]}\n"
+			+ "  ]",
+			"  watchers: if disable_watchers do\n"
+			+ "    []\n"
+			+ "  else\n"
+			+ "    [\n"
+			+ "      tailwind: {Tailwind, :install_and_run, [:demo, ~w(--watch)]}\n"
+			+ "    ]\n"
+			+ "  end");
+		File.writeBang(devPath, original);
+
+		LifecycleApi.applyBang(root, Fixture.applyOptions(root));
+
+		var applied = File.readBang(devPath);
+		Assert.containsString(applied, "  else\n    [\n      # BEGIN reflaxe_elixir live_react_vite_watcher");
+		Assert.doesNotContainString(applied, "    []\n  # BEGIN reflaxe_elixir live_react_vite_watcher");
+		Assert.equals(CHECK, LifecycleApi.checkBang(root, Fixture.rerunOptions()).mode);
+
+		LifecycleApi.removeBang(root, [{_0: "yes", _1: true}]);
+		Assert.equals(original, File.readBang(devPath));
+	}
+
+	@:test("Phoenix scaffold and LiveReact lifecycles can rerun without nesting ownership")
+	function testScaffoldAndLiveReactRerunComposition():Void {
+		var root = Fixture.fixtureRoot(Fixture.PLAIN_JS, ".");
+		Fixture.write(root, ".gitignore", "");
+		PhoenixScaffoldApi.applyBang(root, [{_0: "client_mode", _1: Fixture.GENES}, {_0: "yes", _1: true}]);
+		var appPath = Path.join([root, "assets", "js", "app.js"]);
+		Assert.containsString(File.readBang(appPath), "BEGIN reflaxe_elixir hooks_property");
+
+		LifecycleApi.applyBang(root, Fixture.applyOptions(root));
+		PhoenixScaffoldApi.applyBang(root, [{_0: "client_mode", _1: Fixture.GENES}, {_0: "yes", _1: true}]);
+
+		var composed = File.readBang(appPath);
+		Assert.containsString(composed, "END reflaxe_elixir hx_app_import\n// BEGIN reflaxe_elixir live_react_import");
+		Assert.containsString(composed, "BEGIN reflaxe_elixir hooks_property");
+		Assert.doesNotContainString(composed, "BEGIN reflaxe_elixir live_react_hooks_property");
+		Assert.equals(CHECK, LifecycleApi.checkBang(root, Fixture.rerunOptions()).mode);
+
+		LifecycleApi.removeBang(root, [{_0: "yes", _1: true}]);
+		var removed = File.readBang(appPath);
+		Assert.containsString(removed, "BEGIN reflaxe_elixir hooks_property");
+		Assert.doesNotContainString(removed, "live_react_");
+	}
+
+	@:test("Genes scaffolding fails safely when LiveReact owns the hooks property")
+	function testLiveReactFirstScaffoldRequiresReconciliation():Void {
+		var root = Fixture.fixtureRoot(Fixture.PLAIN_JS, ".");
+		Fixture.write(root, ".gitignore", "");
+		LifecycleApi.applyBang(root, Fixture.applyOptions(root));
+		var beforeScaffold = Fixture.treeSnapshot(root);
+
+		Assert.raisesRuntimeErrorMatching(function():Void {
+			PhoenixScaffoldApi.applyBang(root, [{_0: "client_mode", _1: Fixture.GENES}, {_0: "yes", _1: true}]);
+		}, "LiveReact was installed before Genes scaffolding");
+		Assert.equals(beforeScaffold, Fixture.treeSnapshot(root));
 	}
 
 	@:test("Haxe-authored root layout applies and removes typed LiveReact Reload wiring")
@@ -185,6 +281,24 @@ class HaxePhoenixLiveReactTest extends TestCase {
 
 		LifecycleApi.removeBang(root, [{_0: "yes", _1: true}]);
 		Assert.equals(original, File.readBang(mixPath));
+	}
+
+	@:test("an ordinary Haxe client alias runs before Vite")
+	function testOrdinaryHaxeClientAliasPrecedesVite():Void {
+		var root = Fixture.fixtureRoot(Fixture.GENES, ".");
+		var mixPath = Path.joinTwo(root, "mix.exs");
+		File.writeBang(mixPath,
+			Fixture.replaceOnce(File.readBang(mixPath), "      \"assets.build\": [\"esbuild demo\"],",
+				"      \"assets.build\": [\n"
+				+ "        \"haxe.compile.client\",\n"
+				+ "        \"compile\"\n"
+				+ "      ],"));
+
+		LifecycleApi.applyBang(root, Fixture.applyOptions(root));
+
+		var applied = File.readBang(mixPath);
+		Assert.isTrue(applied.indexOf("        \"haxe.compile.client\",") < applied.indexOf("        # BEGIN reflaxe_elixir live_react_assets_build"));
+		Assert.equals(CHECK, LifecycleApi.checkBang(root, Fixture.rerunOptions()).mode);
 	}
 
 	@:test("Phoenix compact asset aliases replace esbuild without losing sibling tasks")

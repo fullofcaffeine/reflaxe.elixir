@@ -24,8 +24,8 @@
     {
       "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/LiveReactSourcePatcher.hx",
       "generated": "lib/haxe_phoenix_live_react/source_patcher.ex",
-      "sourceSha256": "9ff2a2f1ddbdf2cdfa0003963833437e15ab3705be2f5c25085450decdb2ac0b",
-      "generatedSha256": "48367836a2ebc7e586459a7f2a530668a6daa8a205ffe905f79dbf4e2c899d67"
+      "sourceSha256": "c6f8a2ff5e32422c631cb9fb8a55816c4b7f9ee96e9460c1484a6df719da7ba7",
+      "generatedSha256": "f44d7a8bca8486b8dc08d5efa7c6c68d2c91cbf3e072be622a4dad17fe0c441e"
     },
     {
       "source": "tooling/live_react/src_haxe/phoenix_live_react_tooling/LiveReactDependency.hx",

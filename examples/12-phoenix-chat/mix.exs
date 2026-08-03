@@ -45,11 +45,10 @@ defmodule PhoenixChat.MixProject do
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 0.20.2"},
       {:floki, ">= 0.30.0", only: :test},
-      # BEGIN phoenix_chat vite_live_react_dependency
       {:live_react,
        git: "https://github.com/mrdotb/live_react.git",
        ref: "055e80e6a4e6d009df5e229eb39e7f85f03fea22"},
-      # END phoenix_chat vite_live_react_dependency
+      {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
       {:heroicons,
        github: "tailwindlabs/heroicons",
@@ -82,26 +81,27 @@ defmodule PhoenixChat.MixProject do
       # END reflaxe_elixir haxe_compile_client_alias
       setup: ["deps.get", "assets.setup", "assets.build"],
       test: ["haxe.compile.tests", "test"],
-      # BEGIN phoenix_chat vite_live_react_assets_setup
-      "assets.setup": ["cmd npm ci --no-audit --no-fund", "tailwind.install --if-missing"],
-      # END phoenix_chat vite_live_react_assets_setup
-      # BEGIN phoenix_chat vite_live_react_assets_build
+      # BEGIN reflaxe_elixir live_react_assets_setup
+      "assets.setup": [
+        "tailwind.install --if-missing",
+        "cmd npm install --no-audit --no-fund"
+      ],
+      # END reflaxe_elixir live_react_assets_setup
       "assets.build": [
         "haxe.compile.client",
-        "cmd npm run typecheck",
+        # BEGIN reflaxe_elixir live_react_assets_build
         "cmd npm run assets:build",
+        # END reflaxe_elixir live_react_assets_build
         "tailwind phoenix_chat"
       ],
-      # END phoenix_chat vite_live_react_assets_build
-      # BEGIN phoenix_chat vite_live_react_assets_deploy
       "assets.deploy": [
         "haxe.compile.client",
-        "cmd npm run typecheck",
+        # BEGIN reflaxe_elixir live_react_assets_deploy
         "cmd npm run assets:build",
+        # END reflaxe_elixir live_react_assets_deploy
         "tailwind phoenix_chat --minify",
         "phx.digest"
       ],
-      # END phoenix_chat vite_live_react_assets_deploy
       "haxe.compile.tests": ["cmd haxe build-tests.hxml"]
     ]
   end

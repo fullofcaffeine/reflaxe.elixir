@@ -12,9 +12,8 @@ module.exports = {
     // trees are private compiler state and may disappear between watch events.
     "!./**/.genes-output-*.stage/**",
     "!./**/.genes-output-*.manifest",
-    // BEGIN phoenix_chat vite_live_react_content
+    // Application-owned React source remains part of the Tailwind scan.
     "./react-components/**/*.{ts,tsx}",
-    // END phoenix_chat vite_live_react_content
     "../lib/phoenix_chat_web.ex",
     "../lib/phoenix_chat_web/**/*.*ex"
   ],

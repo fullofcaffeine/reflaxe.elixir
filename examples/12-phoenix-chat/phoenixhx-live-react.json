@@ -1,0 +1,115 @@
+{
+  "appName": "phoenix_chat",
+  "assetMode": "vite",
+  "clientMode": "genes",
+  "components": [
+    {
+      "export": "PreferenceStudioBoundary",
+      "module": "./preference-studio-boundary",
+      "name": "PreferenceStudio"
+    }
+  ],
+  "generatedBy": "mix haxe.phoenix.live_react",
+  "managed": {
+    "dependencyOwned": false,
+    "files": [
+      "assets/js/live-react-hooks.js",
+      "assets/react-components/registry.generated.ts",
+      "vite.config.mjs"
+    ],
+    "lockOwned": false,
+    "markers": [
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_hooks",
+        "end": "END reflaxe_elixir live_react_hooks",
+        "path": "assets/js/app.js"
+      },
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_hooks_property",
+        "end": "END reflaxe_elixir live_react_hooks_property",
+        "path": "assets/js/app.js"
+      },
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_import",
+        "end": "END reflaxe_elixir live_react_import",
+        "path": "assets/js/app.js"
+      },
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_window_hooks",
+        "end": "END reflaxe_elixir live_react_window_hooks",
+        "path": "assets/js/app.js"
+      },
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_config",
+        "end": "END reflaxe_elixir live_react_config",
+        "path": "config/config.exs"
+      },
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_vite_host",
+        "end": "END reflaxe_elixir live_react_vite_host",
+        "path": "config/dev.exs"
+      },
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_vite_watcher",
+        "end": "END reflaxe_elixir live_react_vite_watcher",
+        "path": "config/dev.exs"
+      },
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_vite_assets",
+        "end": "END reflaxe_elixir live_react_vite_assets",
+        "path": "lib/phoenix_chat_web/components/layouts/root.html.heex"
+      },
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_assets_build",
+        "end": "END reflaxe_elixir live_react_assets_build",
+        "path": "mix.exs"
+      },
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_assets_deploy",
+        "end": "END reflaxe_elixir live_react_assets_deploy",
+        "path": "mix.exs"
+      },
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_assets_setup",
+        "end": "END reflaxe_elixir live_react_assets_setup",
+        "path": "mix.exs"
+      },
+      {
+        "begin": "BEGIN reflaxe_elixir live_react_dependency",
+        "end": "END reflaxe_elixir live_react_dependency",
+        "path": "mix.exs"
+      }
+    ],
+    "packageKeys": [],
+    "restores": {
+      "config.trailingWhitespace": "\n",
+      "dev.esbuildWatcher": "         esbuild: {Esbuild, :install_and_run, [:phoenix_chat, ~w(--sourcemap=inline --watch)]},",
+      "dev.trailingWhitespace": "\n",
+      "layout.appScript": "    <script defer phx-track-static type=\"text/javascript\" src={~p\"/assets/app.js\"}>\n    </script>",
+      "mix.assets.build": "        \"esbuild phoenix_chat\",",
+      "mix.assets.deploy": "        \"esbuild phoenix_chat --minify\",",
+      "mix.assets.setup": "      \"assets.setup\": [\"tailwind.install --if-missing\", \"esbuild.install --if-missing\"],",
+      "mix.lockOriginalState": {
+        "kind": "populated",
+        "sha256": "af0cc489932ad7be60b1c794858550c1071cbad195bd2a9a6f68f455c4536978"
+      }
+    }
+  },
+  "mixDependency": {
+    "name": "live_react",
+    "repository": "https://github.com/mrdotb/live_react",
+    "resolvedRevision": "055e80e6a4e6d009df5e229eb39e7f85f03fea22",
+    "sourceKind": "git"
+  },
+  "npmReference": "file:deps/live_react",
+  "packageRoot": ".",
+  "runtimePolicy": {
+    "rawBridgeDefault": false,
+    "slots": false,
+    "ssr": false,
+    "streams": false,
+    "trustedFirstPartyOnly": true,
+    "uploads": false
+  },
+  "schema": "phoenixhx.live-react@1"
+}

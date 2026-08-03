@@ -820,6 +820,35 @@ defmodule HaxePhoenixScaffold do
   defp upsert_js_hooks_merge_blocks(content, opts) do
     strict = Keyword.get(opts, :strict, true)
 
+    # LiveReact owns this property only when no compatible hook merge already
+    # exists. Genes cannot silently borrow that marker: a later LiveReact
+    # removal would restore the pre-Genes hooks value and disconnect hx_app.
+    # Fail before the scaffold plan writes anything and give the user the safe
+    # order that leaves the scaffold as the durable hooks-property owner.
+    case live_react_hooks_property_status(content) do
+      :present ->
+        raise """
+        LiveReact was installed before Genes scaffolding, so LiveReact currently owns the \
+        LiveSocket hooks property. No writes occurred. Run \
+        `mix haxe.phoenix.live_react --remove`, then \
+        `mix haxe.phoenix.scaffold --client-mode genes`, and finally reinstall LiveReact with \
+        `mix haxe.phoenix.live_react`.
+        """
+
+      {:error, reason} ->
+        warn_or_raise(
+          "failed to patch assets/js/app.js: invalid LiveReact hooks-property handoff: #{reason}",
+          strict
+        )
+
+        content
+
+      :missing ->
+        upsert_js_hooks_merge_blocks_without_live_react(content, strict)
+    end
+  end
+
+  defp upsert_js_hooks_merge_blocks_without_live_react(content, strict) do
     begin_token_after_decl = "BEGIN reflaxe_elixir hooks_after_decl"
     end_token_after_decl = "END reflaxe_elixir hooks_after_decl"
 
@@ -960,6 +989,44 @@ defmodule HaxePhoenixScaffold do
         )
 
         content
+    end
+  end
+
+  defp live_react_hooks_property_status(content) when is_binary(content) do
+    begin_token = "BEGIN reflaxe_elixir live_react_hooks_property"
+    end_token = "END reflaxe_elixir live_react_hooks_property"
+
+    case ProjectPatch.replace_marker_block_lines_with(content, begin_token, end_token, fn lines ->
+           lines
+         end) do
+      :missing ->
+        :missing
+
+      {:error, reason} ->
+        {:error, "malformed marker pair #{inspect(reason)}"}
+
+      {:ok, _unchanged} ->
+        inner =
+          content
+          |> String.split("\n", trim: false)
+          |> Enum.drop_while(&(not String.contains?(&1, begin_token)))
+          |> Enum.drop(1)
+          |> Enum.take_while(&(not String.contains?(&1, end_token)))
+          |> Enum.filter(
+            &(String.trim(&1) != "" and not String.starts_with?(String.trim(&1), "//"))
+          )
+
+        case inner do
+          [line] ->
+            if String.contains?(line, "hooks:") and String.contains?(line, "window.Hooks") do
+              :present
+            else
+              {:error, "owned block must contain one hooks property merged with window.Hooks"}
+            end
+
+          _ ->
+            {:error, "owned block must contain exactly one hooks property"}
+        end
     end
   end
 

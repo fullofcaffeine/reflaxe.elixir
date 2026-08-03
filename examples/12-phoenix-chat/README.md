@@ -24,6 +24,11 @@ mix phx.server
 
 Open `http://localhost:4000`.
 
+`mix phx.server` is the normal local development command for this example. Its Phoenix endpoint
+starts the Haxe client, Vite, and Tailwind watchers declared in `config/dev.exs`; there is no separate
+`mix dev` alias here. Automated checks use the sentinel below only to give that same app path a
+deadline, readiness probes, captured logs, and guaranteed teardown.
+
 ## Tests
 
 Compile Haxe-authored ExUnit tests and run:
@@ -33,7 +38,7 @@ cd examples/12-phoenix-chat
 mix test
 npm run typecheck
 npm run test:frontend
-npm run test:binding
+mix haxe.phoenix.live_react --check
 ```
 
 The example includes a Haxe-authored ExUnit test:
@@ -41,20 +46,26 @@ The example includes a Haxe-authored ExUnit test:
 - `examples/12-phoenix-chat/src_haxe/test/live/ChatStateTest.hx`
 - `examples/12-phoenix-chat/src_haxe/test/web/ReactIslandLiveTest.hx`
 
-The bounded browser proof is the same command used by CI:
+The bounded browser proof is the local async form of the same
+sentinel/Playwright path used by CI:
 
 ```bash
 scripts/qa-sentinel.sh \
   --app examples/12-phoenix-chat \
   --port 4012 \
   --playwright \
-  --e2e-spec "e2e/presence.spec.ts" \
+  --e2e-spec "e2e/*.spec.ts" \
   --e2e-workers 1 \
+  --async \
   --deadline 900 \
   --verbose
 ```
 
-Run that command from the repository root.
+Run that command from the repository root, then inspect its bounded result:
+
+```bash
+scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 180
+```
 
 ## Architecture
 
@@ -96,22 +107,50 @@ example compile, runtime Mix tests, and sentinel browser path exercise this layo
   - `examples/12-phoenix-chat/lib/phoenix_chat_web.ex`
   - `examples/12-phoenix-chat/lib/phoenix_chat_web/**`
 
-## Project-local Vite + `live_react` proof
+## Public PhoenixHx LiveReact lifecycle
 
-This example is the first bounded proof of a PhoenixHx application using stock `live_react`. It is
-deliberately project-local: it proves the native seam before PhoenixHx promotes a reusable scaffold
-mode. `live-react-binding.json` pins the PhoenixHx baseline and the exact upstream `live_react`
-revision. `scripts/apply-live-react-binding.mjs` validates that closed manifest and manages only
-explicit marker blocks, exact package values, and files carrying its generated signature.
+This example now exercises the same public Mix tasks that a PhoenixHx user installs. The
+"lifecycle" is the repeatable setup, verification, repair, component-registration, and removal of
+the generic LiveReact/Vite wiring. It is not the lifetime of a React component in the browser.
 
-The binding fails closed when markers are missing or duplicated, a package key has a conflicting
-owner, or a generated file lacks its signature. Running it twice must be byte-identical, and deleting
-its generated TypeScript contract/registry must be recoverable without touching hand-owned source:
+The lifecycle task owns only infrastructure it can safely reproduce: Vite configuration, the
+LiveReact hook module, the static component registry, and explicit marker blocks in Phoenix files.
+It also validates the `live_react` npm reference recorded in `phoenixhx-live-react.json`. The chat
+behavior,
+`PreferenceStudio` boundary and component, closed wire contract, Haxe wrapper, and native LiveView
+fallback remain application-owned. This split lets setup repair generated wiring without rewriting
+the feature itself.
 
 ```bash
-npm run bind:live-react
-npm run bind:live-react:check
+# Enable or repair stock LiveReact and Vite wiring.
+mix haxe.phoenix.live_react --yes
+
+# Verify dependency identity, marker ownership, registry, and generated files.
+mix haxe.phoenix.live_react --check
+
+# Adopt this existing hand-owned component in the static registry.
+mix haxe.gen.live_react PreferenceStudio \
+  --existing \
+  --module ./preference-studio-boundary \
+  --export PreferenceStudioBoundary \
+  --yes
+
+# Remove only lifecycle-owned wiring; hand-owned component source survives.
+# The app returns to its Phoenix esbuild lane, so the native controls still run.
+mix haxe.phoenix.live_react --remove --yes
 ```
+
+Setup is transactional and fails closed when ownership is ambiguous. If setup is interrupted, run
+the first command again; it recovers the pending transaction before applying changes. If `--check`
+reports drift, inspect the named file before rerunning setup. Repeating setup on a current project is
+byte-identical.
+
+Mix selects the canonical stock LiveReact Git checkout at the exact revision recorded in
+`mix.lock`. npm then consumes that same checkout through `file:deps/live_react`; it does not resolve
+an independent tarball that can drift from the BEAM dependency. The checked-in `.npmrc` asks npm to
+install the local checkout as an application dependency rather than pulling its contributor-only
+development tree. Keep `mix.lock`, `package.json`, and `package-lock.json` together when updating the
+revision.
 
 Vite is the one JavaScript bundler in this mode. The Haxe/Genes client compilation remains a source
 compiler and Tailwind remains the CSS build lane; neither is presented as a second JS bundler.
@@ -144,19 +183,22 @@ qualified `LiveReact.react` Phoenix component. That source root satisfies Haxe's
 the HXX lowerer emits the module-qualified component as ordinary HEEx. The remote component remains
 explicit, no legacy HXX mode is enabled, and there is no HXX runtime.
 
-The handwritten TypeScript implementation is intentional for this first proof: it isolates the
-Phoenix/React boundary from code-generation risk. A Genes-generated implementation of the same
-closed contract is a later conformance variant, not a prerequisite for this slice.
+This is a Genes-mode application because its browser boot hook is authored in Haxe and compiled to
+`assets/js/hx_app.js`. The `PreferenceStudio` React component itself is intentionally handwritten
+strict TypeScript/TSX. Genes is required for browser code authored in Haxe, not merely because
+LiveReact is installed; Vite remains the sole final JavaScript bundler. The todo app is the separate
+Genes-authored React-component proof.
 
-### Removal and promotion gates
+### Removal and ownership gates
 
 - Remove the React island and the useful LiveView controls remain.
-- Remove the Vite/`live_react` binding and the original Phoenix/Haxe application path remains.
+- Remove lifecycle-owned Vite/LiveReact wiring and the app restores its Phoenix esbuild lane, so the
+  native Phoenix/Haxe controls still run from a clean build. The task retains hand-owned component
+  source and dependencies that source still imports.
 - Keep using the stock pinned dependency unless a measured repeated gap survives the wrapper and an
   upstream contribution attempt.
-- Promote this project-local binding into PhoenixHx scaffolding only after a second real consumer
-  proves the same asset mode, rerun ownership, clean-checkout recovery, and native debug path.
-- Delete the generator if a small handwritten binding is clearer and no second component reuses it.
+- Do not add a second project-local installer. Setup, check, recovery, component registration, and
+  removal all go through the public Mix tasks above.
 
 ## How This Differs From todo-app
 
@@ -238,4 +280,4 @@ end
 - Template expressions are real Haxe expressions (`${...}`), so syntax/type errors are caught by the Haxe typer.
 - For detailed template authoring guidance, see `docs/02-user-guide/INLINE_MARKUP.md` and `docs/02-user-guide/HXX_SYNTAX_AND_COMPARISON.md`.
 - For the most complete end-to-end app (Ecto + tests + Playwright), see `examples/todo-app/README.md`.
-- Playwright smoke for two-session presence is at `examples/12-phoenix-chat/e2e/presence.spec.ts`.
+- Playwright smoke covers the native LiveView fallback, two-session Presence, and the React island at `examples/12-phoenix-chat/e2e/*.spec.ts`.

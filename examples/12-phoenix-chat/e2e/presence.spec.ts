@@ -20,7 +20,7 @@ test('presence online count updates across sessions', async ({ browser }) => {
   await ctxB.close()
 })
 
-test('React island sends one typed event and native fallback remains useful', async ({ page }) => {
+test('React island sends one typed event', async ({ page }) => {
   const base = process.env.BASE_URL || 'http://localhost:4001'
 
   await page.goto(base + '/')
@@ -29,8 +29,4 @@ test('React island sends one typed event and native fallback remains useful', as
   await page.getByRole('button', { name: /Dense/ }).click()
   await page.getByRole('button', { name: 'Apply dense' }).click()
   await expect(page.getByTestId('preference-status')).toHaveText('Density synchronized: Dense.')
-
-  await page.getByTestId('preference-fallback').getByText('Native LiveView controls').click()
-  await page.getByRole('button', { name: 'Use Calm native mode' }).click()
-  await expect(page.getByTestId('preference-status')).toHaveText('Density synchronized: Calm.')
 })

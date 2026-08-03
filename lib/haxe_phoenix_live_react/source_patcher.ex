@@ -810,50 +810,37 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
   end
 
   defp normalize_asset_alias_order(content, alias_name, begin_token, end_token) do
-    haxe_end_token = haxe_client_alias_end_token(alias_name)
+    lines = split_lines(content)
+    span = find_alias_span(lines, alias_name)
+    haxe_ends = haxe_client_alias_anchors(lines, elem(span, 0), elem(span, 1), alias_name)
 
-    if Kernel.is_nil(haxe_end_token) do
+    marker_begins =
+      indices(elem(span, 0), elem(span, 1) + 1, fn index ->
+        String.contains?(at(lines, index), begin_token)
+      end)
+
+    marker_ends =
+      indices(elem(span, 0), elem(span, 1) + 1, fn index ->
+        String.contains?(at(lines, index), end_token)
+      end)
+
+    if length(haxe_ends) != 1 or length(marker_begins) != 1 or length(marker_ends) != 1 do
       content
     else
-      lines = split_lines(content)
-      span = find_alias_span(lines, alias_name)
+      haxe_end = Enum.at(haxe_ends, 0)
+      marker_begin = Enum.at(marker_begins, 0)
+      marker_end = Enum.at(marker_ends, 0)
 
-      haxe_ends =
-        indices(elem(span, 0), elem(span, 1) + 1, fn index ->
-          String.contains?(at(lines, index), haxe_end_token)
-        end)
-
-      marker_begins =
-        indices(elem(span, 0), elem(span, 1) + 1, fn index ->
-          String.contains?(at(lines, index), begin_token)
-        end)
-
-      marker_ends =
-        indices(elem(span, 0), elem(span, 1) + 1, fn index ->
-          String.contains?(at(lines, index), end_token)
-        end)
-
-      if length(haxe_ends) != 1 or length(marker_begins) != 1 or length(marker_ends) != 1 do
+      if marker_begin > haxe_end do
         content
       else
-        haxe_end = Enum.at(haxe_ends, 0)
-        marker_begin = Enum.at(marker_begins, 0)
-        marker_end = Enum.at(marker_ends, 0)
+        marker_count = marker_end - marker_begin + 1
+        marker_block = Enum.join(Enum.take(Enum.drop(lines, marker_begin), marker_count), "\n")
 
-        if marker_begin > haxe_end do
-          content
-        else
-          marker_count = marker_end - marker_begin + 1
-          marker_block = Enum.join(Enum.take(Enum.drop(lines, marker_begin), marker_count), "\n")
+        without_marker =
+          Enum.concat(Enum.take(lines, marker_begin), Enum.drop(lines, marker_end + 1))
 
-          without_marker =
-            Enum.concat(Enum.take(lines, marker_begin), Enum.drop(lines, marker_end + 1))
-
-          Enum.join(
-            List.insert_at(without_marker, haxe_end - marker_count + 1, marker_block),
-            "\n"
-          )
-        end
+        Enum.join(List.insert_at(without_marker, haxe_end - marker_count + 1, marker_block), "\n")
       end
     end
   end
@@ -1059,25 +1046,32 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
   end
 
   defp alias_insertion_index(lines, start_index, end_index, alias_name) do
+    anchors = haxe_client_alias_anchors(lines, start_index, end_index, alias_name)
+
+    if length(anchors) == 1 do
+      Enum.at(anchors, 0) + 1
+    else
+      start_index + 1
+    end
+  end
+
+  defp haxe_client_alias_anchors(lines, start_index, end_index, alias_name) do
     haxe_end_token = haxe_client_alias_end_token(alias_name)
 
     if Kernel.is_nil(haxe_end_token) do
-      start_index + 1
+      []
     else
-      _g = start_index + 1
-      g_value = end_index
+      marker_anchors =
+        indices(start_index + 1, end_index, fn index ->
+          String.contains?(at(lines, index), haxe_end_token)
+        end)
 
-      case Enum.reduce_while(
-             (start_index + 1)..(g_value - 1)//1,
-             :__reflaxe_no_return__,
-             fn index, _ ->
-               if String.contains?(at(lines, index), haxe_end_token),
-                 do: {:halt, {:__reflaxe_return__, index + 1}},
-                 else: {:cont, :__reflaxe_no_return__}
-             end
-           ) do
-        {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
-        _ -> start_index + 1
+      if length(marker_anchors) != 0 do
+        marker_anchors
+      else
+        indices(start_index + 1, end_index, fn index ->
+          Regex.match?(rx("^\\s*[\"']haxe\\.compile\\.client[\"']\\s*,?\\s*$"), at(lines, index))
+        end)
       end
     end
   end
@@ -1234,23 +1228,63 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
         "config/dev.exs has no watchers configuration. No writes occurred. Canonical Phoenix watcher topology is required."
       )
     else
-      end_ = Kernel.min(length(lines) - 1, watcher_index + 16)
-      _g = watcher_index
-      g_value = end_ + 1
+      end_ = Kernel.min(length(lines) - 1, watcher_index + 32)
 
-      case Enum.reduce_while(watcher_index..(g_value - 1)//1, :__reflaxe_no_return__, fn index,
-                                                                                         _ ->
-             if String.contains?(at(lines, index), "["),
-               do: {:halt, {:__reflaxe_return__, index + 1}},
-               else: {:cont, :__reflaxe_no_return__}
-           end) do
-        {:__reflaxe_return__, reflaxe_return_value} ->
-          reflaxe_return_value
+      conditionals =
+        indices(watcher_index, end_ + 1, fn index ->
+          Regex.match?(rx("^(?:watchers\\s*:\\s*)?\\(?if\\b"), String.trim(at(lines, index)))
+        end)
 
-        _ ->
-          Kernel.raise(
-            "config/dev.exs watchers configuration has no recognizable list. No writes occurred."
-          )
+      if length(conditionals) > 1 do
+        Kernel.raise(
+          "config/dev.exs has an ambiguous conditional watchers configuration. No writes occurred."
+        )
+      else
+        search_start = watcher_index
+
+        if length(conditionals) == 1 do
+          else_branches =
+            indices(Enum.at(conditionals, 0), end_ + 1, fn index ->
+              String.trim(at(lines, index)) == "else"
+            end)
+
+          search_start =
+            if length(else_branches) != 1 do
+              Kernel.raise(
+                "config/dev.exs has a conditional watchers configuration without one recognizable else branch. No writes occurred."
+              )
+
+              search_start
+            else
+              Enum.at(else_branches, 0) + 1
+            end
+
+          lists =
+            indices(search_start, end_ + 1, fn index ->
+              String.contains?(at(lines, index), "[")
+            end)
+
+          if length(lists) > 0 do
+            Enum.at(lists, 0) + 1
+          else
+            Kernel.raise(
+              "config/dev.exs watchers configuration has no recognizable list. No writes occurred."
+            )
+          end
+        else
+          lists =
+            indices(search_start, end_ + 1, fn index ->
+              String.contains?(at(lines, index), "[")
+            end)
+
+          if length(lists) > 0 do
+            Enum.at(lists, 0) + 1
+          else
+            Kernel.raise(
+              "config/dev.exs watchers configuration has no recognizable list. No writes occurred."
+            )
+          end
+        end
       end
     end
   end
@@ -1313,10 +1347,36 @@ defmodule HaxePhoenixLiveReact.SourcePatcher do
               end
             end)
 
+          insertion = last_import + 1
+
+          scaffold_presence =
+            marker_presence(
+              content,
+              "BEGIN reflaxe_elixir hx_app_import",
+              "END reflaxe_elixir hx_app_import"
+            )
+
+          insertion =
+            if scaffold_presence == :present do
+              scaffold =
+                marker_indices(
+                  lines,
+                  "BEGIN reflaxe_elixir hx_app_import",
+                  "END reflaxe_elixir hx_app_import",
+                  "assets/js/app.js scaffold import"
+                )
+
+              if last_import > elem(scaffold, 0) and last_import < elem(scaffold, 1),
+                do: elem(scaffold, 1) + 1,
+                else: insertion
+            else
+              insertion
+            end
+
           Enum.join(
             List.insert_at(
               lines,
-              last_import + 1,
+              insertion,
               Enum.join(marker_lines(begin_token, end_token, desired, "", "//"), "\n")
             ),
             "\n"

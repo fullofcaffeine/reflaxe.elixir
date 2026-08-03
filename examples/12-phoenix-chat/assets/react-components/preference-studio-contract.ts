@@ -3,7 +3,7 @@ import {
   MAX_PUBLIC_INPUT_BYTES,
   PREFERENCE_CHANGED_EVENT,
   PREFERENCE_DENSITIES,
-} from "./binding-contract.generated"
+} from "./preference-studio-policy"
 
 export type PreferenceDensity = (typeof PREFERENCE_DENSITIES)[number]
 
