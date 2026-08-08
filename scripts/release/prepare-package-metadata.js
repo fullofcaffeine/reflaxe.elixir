@@ -8,6 +8,7 @@ const semver = require('semver')
 function preparePackageMetadata({
   haxelibPath,
   metadataPath,
+  mixExsPath,
   version,
   tag,
   sourceCommit,
@@ -30,6 +31,19 @@ function preparePackageMetadata({
       : `v${version}: See GitHub Releases`
   fs.writeFileSync(haxelibPath, `${JSON.stringify(haxelib, null, 2)}\n`)
 
+  const mixExs = fs.readFileSync(mixExsPath, 'utf8')
+  const developmentVersion = 'version: "0.0.0-development"'
+  const matches = mixExs.split(developmentVersion).length - 1
+  if (matches !== 1) {
+    throw new Error(
+      `staged mix.exs must contain exactly one development version marker, found ${matches}`
+    )
+  }
+  fs.writeFileSync(
+    mixExsPath,
+    mixExs.replace(developmentVersion, `version: "${version}"`)
+  )
+
   const metadata = {
     schemaVersion: 1,
     version,
@@ -42,23 +56,32 @@ function preparePackageMetadata({
 
 if (require.main === module) {
   try {
-    const [haxelibPath, metadataPath, version, tag, sourceCommit, ...rest] =
-      process.argv.slice(2)
+    const [
+      haxelibPath,
+      metadataPath,
+      mixExsPath,
+      version,
+      tag,
+      sourceCommit,
+      ...rest
+    ] = process.argv.slice(2)
     if (
       !haxelibPath ||
       !metadataPath ||
+      !mixExsPath ||
       !version ||
       !tag ||
       !sourceCommit ||
       rest.length > 0
     ) {
       throw new Error(
-        'usage: prepare-package-metadata.js <staged-haxelib.json> <release-metadata.json> <version> <tag> <source-sha>'
+        'usage: prepare-package-metadata.js <staged-haxelib.json> <release-metadata.json> <staged-mix.exs> <version> <tag> <source-sha>'
       )
     }
     preparePackageMetadata({
       haxelibPath,
       metadataPath,
+      mixExsPath,
       version,
       tag,
       sourceCommit,

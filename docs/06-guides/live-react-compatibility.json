@@ -1,0 +1,241 @@
+{
+  "schema": "reflaxe-elixir/live-react-compatibility@1",
+  "productStatus": "experimental",
+  "optIn": true,
+  "runtimeOwner": "stock-live-react",
+  "ciGate": {
+    "job": "live-react-release-gate",
+    "dependsOn": [
+      "guards",
+      "haxelib-package-smoke",
+      "test",
+      "example-compilation-gate",
+      "examples-elixir",
+      "sentinel-gate"
+    ],
+    "purpose": "Collect existing independent results into one release decision without rerunning their tests."
+  },
+  "statusDefinitions": {
+    "tested": "The exact dependency row is protected by the CI workflow and job named in its evidence block. The QA manifest remains the local reproduction owner.",
+    "compatible-by-contract": "A bounded range is justified by an upstream contract and a tested boundary row.",
+    "experimental": "The behavior is planned or partly evidenced but is not a support promise.",
+    "unsupported": "The current PhoenixHx integration rejects or does not configure this capability."
+  },
+  "rows": [
+    {
+      "id": "example-12-phoenix-chat",
+      "kind": "application",
+      "status": "tested",
+      "claim": "The Haxe/Genes bootstrap, handwritten TSX React component, rich Phoenix chat, typed React event, Presence flow, and native LiveView fallback work together in this exact dependency row.",
+      "project": "examples/12-phoenix-chat",
+      "reflaxeElixir": {
+        "version": "0.0.0-development",
+        "identity": "exact-ci-head"
+      },
+      "toolchain": {
+        "node": "22.14.0",
+        "nodePosture": "asset-build-and-browser-test",
+        "haxe": "4.3.7",
+        "elixir": "1.18.3",
+        "otp": "27.2"
+      },
+      "phoenix": "1.7.24",
+      "phoenixHtml": "4.3.0",
+      "phoenixLiveView": "0.20.17",
+      "liveReact": {
+        "kind": "git",
+        "repository": "https://github.com/mrdotb/live_react.git",
+        "revision": "055e80e6a4e6d009df5e229eb39e7f85f03fea22"
+      },
+      "react": "19.1.0",
+      "reactDom": "19.1.0",
+      "vite": "7.2.7",
+      "genes": {
+        "posture": "exact-temporary-pr-pin",
+        "version": "1.37.0",
+        "revision": "697943b1c10b72309d815b0f6a5605d7c5c2a53b"
+      },
+      "packageRoot": ".",
+      "clientMode": "genes",
+      "assetMode": "vite",
+      "capabilities": {
+        "trustedFirstPartyOnly": true,
+        "ssr": false,
+        "slots": false,
+        "uploads": false,
+        "streams": false,
+        "rawBridgeDefault": false
+      },
+      "evidence": {
+        "qaManifestKey": "12-phoenix-chat",
+        "ciWorkflow": ".github/workflows/sentinel.yml",
+        "ciJob": "smoke-phoenix-chat",
+        "ciSpec": "e2e/*.spec.ts"
+      }
+    },
+    {
+      "id": "example-18-phoenixhx-live-react",
+      "kind": "application",
+      "status": "tested",
+      "claim": "The minimal plain-TypeScript consumer hydrates a React island, completes one typed Phoenix event round trip, and retains its native LiveView fallback.",
+      "project": "examples/18-phoenixhx-live-react",
+      "reflaxeElixir": {
+        "version": "0.0.0-development",
+        "identity": "exact-ci-head"
+      },
+      "toolchain": {
+        "node": "22.14.0",
+        "nodePosture": "asset-build-and-browser-test",
+        "haxe": "4.3.7",
+        "elixir": "1.18.3",
+        "otp": "27.2"
+      },
+      "phoenix": "1.8.9",
+      "phoenixHtml": "4.3.0",
+      "phoenixLiveView": "1.2.8",
+      "liveReact": {
+        "kind": "git",
+        "repository": "https://github.com/mrdotb/live_react.git",
+        "revision": "055e80e6a4e6d009df5e229eb39e7f85f03fea22"
+      },
+      "react": "19.1.0",
+      "reactDom": "19.1.0",
+      "vite": "7.2.7",
+      "genes": {
+        "posture": "not-used",
+        "version": null,
+        "revision": null
+      },
+      "packageRoot": ".",
+      "clientMode": "plain-js",
+      "assetMode": "vite",
+      "capabilities": {
+        "trustedFirstPartyOnly": true,
+        "ssr": false,
+        "slots": false,
+        "uploads": false,
+        "streams": false,
+        "rawBridgeDefault": false
+      },
+      "evidence": {
+        "qaManifestKey": "18-phoenixhx-live-react",
+        "ciWorkflow": ".github/workflows/sentinel.yml",
+        "ciJob": "smoke-live-react",
+        "ciSpec": "e2e/signal_console.spec.ts"
+      }
+    },
+    {
+      "id": "todo-app-live-react",
+      "kind": "application",
+      "status": "tested",
+      "claim": "The flagship todo app incrementally adds a Genes-authored React island while its ordinary create, edit, complete, delete, and native fallback journeys remain usable.",
+      "project": "examples/todo-app",
+      "reflaxeElixir": {
+        "version": "0.0.0-development",
+        "identity": "exact-ci-head"
+      },
+      "toolchain": {
+        "node": "22.14.0",
+        "nodePosture": "asset-build-and-browser-test",
+        "haxe": "4.3.7",
+        "elixir": "1.18.3",
+        "otp": "27.2"
+      },
+      "phoenix": "1.7.24",
+      "phoenixHtml": "3.3.4",
+      "phoenixLiveView": "0.20.17",
+      "liveReact": {
+        "kind": "git",
+        "repository": "https://github.com/mrdotb/live_react.git",
+        "revision": "055e80e6a4e6d009df5e229eb39e7f85f03fea22"
+      },
+      "react": "19.1.0",
+      "reactDom": "19.1.0",
+      "vite": "7.2.7",
+      "genes": {
+        "posture": "exact-temporary-pr-pin",
+        "version": "1.37.0",
+        "revision": "697943b1c10b72309d815b0f6a5605d7c5c2a53b"
+      },
+      "packageRoot": "assets",
+      "clientMode": "genes",
+      "assetMode": "vite",
+      "capabilities": {
+        "trustedFirstPartyOnly": true,
+        "ssr": false,
+        "slots": false,
+        "uploads": false,
+        "streams": false,
+        "rawBridgeDefault": false
+      },
+      "evidence": {
+        "qaManifestKey": "todo-app",
+        "ciWorkflow": ".github/workflows/sentinel.yml",
+        "ciJob": "smoke",
+        "ciSpec": "e2e/create_todo.spec.ts e2e/edit_todo.spec.ts e2e/toggle_complete.spec.ts e2e/delete_todo.spec.ts"
+      }
+    },
+    {
+      "id": "installed-release-package",
+      "kind": "package-smoke",
+      "status": "tested",
+      "claim": "A clean installation of the GitHub Release package exposes the Mix tasks, setup/check/component/remove lifecycle, Haxe imports, HXX compilation, byte-identical LiveReact wrapper output, and reversible non-enabled behavior. It does not claim browser-runtime compatibility for the dependency stubs.",
+      "project": null,
+      "reflaxeElixir": {
+        "version": "release-metadata",
+        "identity": "exact-packaged-ci-head"
+      },
+      "toolchain": {
+        "node": "22.14.0",
+        "nodePosture": "package-tooling-only",
+        "haxe": "4.3.7",
+        "elixir": "1.18.3",
+        "otp": "27.2"
+      },
+      "phoenix": "1.8.9",
+      "phoenixHtml": "4.3.0",
+      "phoenixLiveView": "1.2.8",
+      "liveReact": {
+        "kind": "path-fixture",
+        "repository": null,
+        "revision": "path:vendor/live_react@0.1.0"
+      },
+      "react": "19.1.0",
+      "reactDom": "19.1.0",
+      "vite": "7.2.7",
+      "genes": {
+        "posture": "not-used",
+        "version": null,
+        "revision": null
+      },
+      "packageRoot": "assets",
+      "clientMode": "plain-js",
+      "assetMode": "vite-generated-not-browser-run",
+      "capabilities": {
+        "trustedFirstPartyOnly": true,
+        "ssr": false,
+        "slots": false,
+        "uploads": false,
+        "streams": false,
+        "rawBridgeDefault": false
+      },
+      "evidence": {
+        "qaManifestKey": null,
+        "ciWorkflow": ".github/workflows/ci.yml",
+        "ciJob": "haxelib-package-smoke",
+        "localCommands": [
+          "npm run test:haxelib-package"
+        ]
+      }
+    }
+  ],
+  "unsupportedCapabilities": [
+    "server-side React rendering and hydration",
+    "slots as a React component interface",
+    "uploads as a React component interface",
+    "streams as a React component interface",
+    "request-selected dynamic component names",
+    "a raw browser bridge by default",
+    "untrusted third-party React code isolation"
+  ]
+}

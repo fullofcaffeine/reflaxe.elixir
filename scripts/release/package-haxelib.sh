@@ -94,22 +94,39 @@ reflaxe_run="$source_root/vendor/reflaxe/Run.hx"
   "$haxe_cmd" -cp "$source_root/vendor/reflaxe" --run Run build _Build --deleteOldFolder "$work_dir"
 )
 
+# CompilerBootstrap loads these package siblings by path; generic Reflaxe build owns src/_std flattening.
+# Only the two compiler dependencies belong in the release. Browser-side Genes,
+# Phoenix JavaScript, and LiveReact itself remain application dependencies.
+copy_dir_to_build vendor/reflaxe
+copy_dir_to_build vendor/phoenix_shared
+# The release archive is also the installable Mix path used by PhoenixHx
+# projects. Keep the ordinary Mix package surface beside the Reflaxe-built
+# Haxe tree so an isolated haxelib install exposes the same public tasks and
+# templates as a source checkout.
+copy_dir_to_build lib
+copy_dir_to_build priv
+copy_file_to_build mix.exs mix.exs
+
 node "$root_dir/scripts/release/prepare-package-metadata.js" \
   "$build_dir/haxelib.json" \
   "$build_dir/release-metadata.json" \
+  "$build_dir/mix.exs" \
   "$version" \
   "$tag" \
   "$source_sha"
 
-# CompilerBootstrap loads these package siblings by path; generic Reflaxe build owns src/_std flattening.
-copy_dir_to_build vendor
 # The Haxe-side project generator reads the same agent bootstrap as the Mix generator.
 copy_file_to_build \
   lib/mix/tasks/templates/agents.md.tpl \
   src/reflaxe/elixir/generator/templates/agents.md.tpl
-# The source tree's contributor-instruction link is not package runtime content; prior copy logic
-# also omitted symlinks, and release archives reject them explicitly.
-rm -f "$build_dir/vendor/CLAUDE.md"
+# Contributor-instruction symlinks are not package runtime content, and release
+# archives reject links so an extracted artifact cannot redirect a reader.
+rm -f \
+  "$build_dir/vendor/CLAUDE.md" \
+  "$build_dir/lib/AGENTS.md" \
+  "$build_dir/lib/CLAUDE.md" \
+  "$build_dir/lib/mix/tasks/AGENTS.md" \
+  "$build_dir/lib/mix/tasks/CLAUDE.md"
 
 LC_ALL=C TZ=UTC node "$root_dir/scripts/release/deterministic-zip.js" "$build_dir" "$out_abs"
 log "wrote: $out"

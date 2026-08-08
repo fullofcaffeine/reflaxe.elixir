@@ -276,6 +276,14 @@ only when adoption or compatibility cadence demonstrates independent release
 pressure. Package separation would not, by itself, require a separate Git
 repository.
 
+The Haxelib-compatible GitHub Release archive therefore carries two related public surfaces: the built
+Haxe compiler tree, and the small Mix project (`mix.exs`, `lib/`, and `priv/`)
+that supplies PhoenixHx setup tasks and templates. Release checks install that
+archive in a clean temporary package repository and use it as an ordinary Mix
+path dependency. The archive deliberately excludes stock LiveReact's Elixir
+modules, browser code, built assets, dependencies, and `node_modules`; the
+consumer still resolves the upstream runtime itself.
+
 The active decision and implementation graph live in
 [`plans/active/phoenixhx-live-react-integration.md`](../../plans/active/phoenixhx-live-react-integration.md)
 and Beads epic `haxe.elixir.codex-msb`. Generic dependency discovery remains a

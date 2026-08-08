@@ -67,7 +67,7 @@ scripts/dogfood-phoenix.sh --keep-dir
 
 - The script uses the repo QA sentinel in **async** mode with a deadline, then checks the final
   `[QA] DONE status=` line in the sentinel log.
-- A raw GitHub tag is a multi-root compiler source checkout, not the flattened Haxelib package.
+- A raw GitHub tag is a multi-root compiler source checkout, not the flattened GitHub Release package.
   GitHub mode therefore installs the Reflaxe-built release zip; local mode explicitly configures
   source roots with `scripts/dev/configure-source-checkout-hxml.sh`.
 - Generated Phoenix apps use `build.hxml` (not `build-server.hxml`), so the sentinel run uses `--hxml build.hxml`.

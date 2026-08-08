@@ -61,10 +61,16 @@ compiler may emit source for Vite, and LiveReact remains orthogonal to the
 existing `genes` and `plain-js` client modes. Stock LiveReact remains the
 runtime owner.
 
-Evidence includes the Haxe-authored lifecycle suite, installed-package smoke,
-the plain-JavaScript `examples/18-phoenixhx-live-react` application, Haxe-authored
-ConnTest coverage, and a Playwright hydration/interaction smoke. The surface
-remains experimental while compatibility evidence grows.
+Evidence includes the Haxe-authored lifecycle suite; a clean installed-package
+setup/check/component/remove smoke; strict example builds; and browser checks
+for the Genes-backed chat and todo applications plus the plain-TypeScript
+`examples/18-phoenixhx-live-react` application. The
+[checked compatibility rows](../06-guides/live-react-compatibility.json) name
+the exact dependency combinations and the evidence owned by each row. A small
+CI result collects those independent owners for release without rerunning
+their work. The surface remains experimental: passing these exact rows does
+not imply support for other combinations or for the explicitly deferred
+capabilities.
 
 ### Done: Replace PubSubShim With API-Faithful PubSub Helpers
 

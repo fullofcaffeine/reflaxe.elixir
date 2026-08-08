@@ -596,6 +596,22 @@ sentinel. Application repositories may use their own process supervisor, but
 the test must own server startup, wait for readiness, and always stop the
 process it started.
 
+### Know what “tested” means
+
+The project does not turn one working demo into a broad compatibility promise.
+The [support matrix](../06-guides/SUPPORT_MATRIX.md#experimental-livereact-rows)
+lists the exact Phoenix, LiveView, LiveReact, React, Vite, and Genes combinations
+that are exercised today. It also separates the installed-package check from
+the browser-tested applications: loading the Mix commands from a clean Haxelib
+archive proves packaging, but it does not prove that a stubbed browser runtime
+works.
+
+CI compares the machine-readable
+[compatibility data](../06-guides/live-react-compatibility.json) with the real
+dependency locks and example manifests. If a dependency changes without its
+evidence and documentation changing too, the guard fails instead of leaving a
+stale support claim behind.
+
 ## Update Phoenix or LiveView safely
 
 Phoenix LiveView has code on both sides of the connection:

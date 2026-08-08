@@ -744,15 +744,17 @@ the exact LiveReact source identity, React/ReactDOM, Vite, Node posture,
 package-root topology, client mode, asset mode, and SSR/capability posture. The
 matrix must link the commands or CI evidence that earned its status.
 
-The current example-12 evidence is recorded only as a project-local proof:
+The checked
+[`live-react-compatibility.json`](../../docs/06-guides/live-react-compatibility.json)
+records four separate rows: the Genes-backed chat migration, the independent
+plain-TypeScript consumer, the Genes-backed todo adoption, and a clean
+installed-Haxelib package smoke. The package row uses dependency stubs to prove
+task loading, lifecycle reversibility, and HXX source/package parity; it does
+not claim browser runtime behavior. CI rejects drift between these rows and
+the actual locks, manifests, package smoke, and release-evidence dependencies.
 
-| Evidence row | Known values | Status |
-| --- | --- | --- |
-| Example 12 local binder | Phoenix `1.7.24`; LiveView `0.20.17`; LiveReact Git commit `055e80e6a4e6d009df5e229eb39e7f85f03fea22`; React/ReactDOM `19.1.0`; Vite `7.2.7`; root package; Genes source mode; client-only | `experimental` project proof, not the reusable product matrix |
-
-The task does not infer Haxe, Elixir/OTP, Node, other package-root, or other
-version support from that row. `.msb.9` must record the exact tested toolchain
-and package-smoke rows before promotion.
+The exact rows do not infer Haxe, Elixir/OTP, Node, package-root, or dependency
+version support beyond the values they name.
 
 The integration stays experimental until all three application proofs and
 installed-package smoke pass. A separate Haxelib is considered only after real evidence of an
@@ -778,8 +780,9 @@ new Git repository.
 9. Add an independent minimal Haxe-first consumer through public commands.
 10. Add a bounded Haxe-authored LiveReact section to the todo-app.
 11. Publish the canonical guide and API documentation from all three proofs.
-12. Close compatibility evidence, installed-package smoke, package contents,
-    and focused CI.
+12. **Complete (2026-08-08):** close exact compatibility evidence,
+    installed-package lifecycle/parity smoke, package-content boundaries, and
+    focused CI aggregation while retaining experimental status.
 
 ## Required Evidence
 

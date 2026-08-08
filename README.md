@@ -310,6 +310,11 @@ For application use, install and checksum a pinned release ZIP rather than depen
 checkout. Continue with [Installation](docs/01-getting-started/installation.md) and
 [Start Here](docs/01-getting-started/START_HERE.md).
 
+Direct `haxelib git` and Lix `github:` installs clone the repository's development layout; they do
+not build the flattened `.cross.hx` package needed by normal consumers. Use the release ZIP for an
+application, or follow the documented source-checkout setup when deliberately testing unreleased
+compiler code.
+
 ## Evidence And Maturity
 
 CI covers full codegen snapshots and negative cases, Haxe-authored ExUnit semantics, selected upstream

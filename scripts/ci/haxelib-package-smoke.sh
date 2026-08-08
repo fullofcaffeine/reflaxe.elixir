@@ -2,10 +2,10 @@
 set -euo pipefail
 
 # ----------------------------------------------------------------------------
-# Haxelib Package Artifact Smoke
+# GitHub Release Package Artifact Smoke
 #
 # WHAT
-# - Validates the actual zip artifact we would submit to haxelib.org by:
+# - Validates the Haxelib-compatible ZIP distributed through GitHub Releases by:
 #   1) creating a fresh npm+lix workspace,
 #   2) installing the generated package zip into an isolated haxelib repo,
 #   3) checking the installed `Run` CLI entrypoint used by haxelib metadata,
@@ -13,11 +13,13 @@ set -euo pipefail
 #   5) compiling the same fixture through installed `-lib reflaxe.elixir`,
 #   6) comparing canonical Mix-formatted generated Elixir from both layouts,
 #   7) comparing path-independent structural quality reports,
-#   8) checking target overrides plus official stdlib fallback both work.
+#   8) checking target overrides plus official stdlib fallback both work,
+#   9) loading the public LiveReact tasks from the installed archive only,
+#  10) exercising setup/check/component/remove in a clean Phoenix-shaped fixture.
 #
 # WHY
-# - Repo-local scoped libs and GitHub-tag Lix installs can pass while the
-#   Reflaxe-flattened haxelib package layout is wrong. This smoke exercises the
+# - Repo-local scoped libs can pass while the Reflaxe-flattened release package
+#   layout is wrong. This smoke exercises the
 #   installed package root.
 #
 # HOW
@@ -209,7 +211,7 @@ done < <(find "$haxelib_repo" -maxdepth 4 -name haxelib.json -type f | sort)
 [[ -n "$installed_root" ]] || fail "could not find installed reflaxe.elixir package under $haxelib_repo"
 
 if find "$installed_root" -path '*managed_reference_spike*' -print -quit | grep -q .; then
-  fail "experimental managed-reference spike leaked into the installed Haxelib package"
+  fail "experimental managed-reference spike leaked into the installed release package"
 fi
 
 canonical_root="$(cd "$ROOT_DIR" && pwd -P)"
@@ -222,6 +224,15 @@ fi
 require_file "$installed_root/haxelib.json"
 require_file "$installed_root/release-metadata.json"
 require_file "$installed_root/extraParams.hxml"
+require_file "$installed_root/mix.exs"
+require_file "$installed_root/lib/haxe_phoenix_live_react.ex"
+require_file "$installed_root/lib/haxe_phoenix_live_react/core.ex"
+require_file "$installed_root/lib/haxe_phoenix_live_react/core.generated.json"
+require_file "$installed_root/lib/mix/tasks/haxe.gen.live_react.ex"
+require_file "$installed_root/lib/mix/tasks/haxe.phoenix.live_react.ex"
+require_file "$installed_root/lib/mix/tasks/templates/agents.md.tpl"
+require_file "$installed_root/priv/templates/phoenix_scaffold/build-client.hxml"
+require_file "$installed_root/priv/templates/phoenix_scaffold/haxe_libraries/genes-ts.hxml"
 require_file "$installed_root/src/Run.hx"
 require_file "$installed_root/src/reflaxe/elixir/CompilerBootstrap.hx"
 require_file "$installed_root/src/Std.cross.hx"
@@ -255,8 +266,37 @@ require_absent "$installed_root/src/haxe/Exception.hx"
 require_absent "$installed_root/src/haxe/crypto/Sha256.hx"
 require_absent "$installed_root/src/sys/FileSystem.hx"
 require_absent "$installed_root/src/sys/io/File.hx"
+require_absent "$installed_root/assets"
+require_absent "$installed_root/deps"
+require_absent "$installed_root/node_modules"
+require_absent "$installed_root/lib/live_react.ex"
+require_absent "$installed_root/lib/live_react"
+require_absent "$installed_root/lib/third_party"
+require_absent "$installed_root/priv/static"
+require_absent "$installed_root/priv/live_react"
+require_absent "$installed_root/vendor/live_react"
+require_absent "$installed_root/vendor/genes"
+require_absent "$installed_root/vendor/phoenix_js"
 
-if ! python3 - "$installed_root/haxelib.json" "$installed_root/release-metadata.json" <<'PY'
+metadata_field() {
+  python3 - "$installed_root/release-metadata.json" "$1" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    print(json.load(handle)[sys.argv[2]])
+PY
+}
+
+export EXPECTED_PACKAGE_VERSION PACKAGE_TAG PACKAGE_SOURCE_SHA PACKAGE_VERIFICATION_LOG
+EXPECTED_PACKAGE_VERSION="$(metadata_field version)"
+PACKAGE_TAG="$(metadata_field tag)"
+PACKAGE_SOURCE_SHA="$(metadata_field sourceCommit)"
+PACKAGE_VERIFICATION_LOG="$work_dir/package-verification.json"
+run_step "verify actual release-package archive" 60 "$ROOT_DIR" \
+  'node scripts/release/verify-release-artifact.js --zip "$PACKAGE_ZIP" --version "$EXPECTED_PACKAGE_VERSION" --tag "$PACKAGE_TAG" --source-sha "$PACKAGE_SOURCE_SHA" > "$PACKAGE_VERIFICATION_LOG"'
+
+if ! python3 - "$installed_root/haxelib.json" "$installed_root/release-metadata.json" "$installed_root/mix.exs" <<'PY'
 import json
 import re
 import sys
@@ -265,6 +305,8 @@ with open(sys.argv[1], encoding="utf-8") as handle:
     data = json.load(handle)
 with open(sys.argv[2], encoding="utf-8") as handle:
     metadata = json.load(handle)
+with open(sys.argv[3], encoding="utf-8") as handle:
+    mix_exs = handle.read()
 
 if "reflaxe" in data:
     raise SystemExit("installed haxelib.json still contains source-only reflaxe metadata")
@@ -276,10 +318,29 @@ if metadata.get("schemaVersion") != 1 or metadata.get("version") != data.get("ve
     raise SystemExit("release-metadata.json does not match staged haxelib metadata")
 if not re.fullmatch(r"[0-9a-f]{40}", metadata.get("sourceCommit", "")):
     raise SystemExit("release-metadata.json does not contain a full source commit")
+mix_version = f'version: "{data.get("version")}"'
+if mix_exs.count(mix_version) != 1:
+    raise SystemExit("packaged mix.exs does not use the staged haxelib version")
+if 'version: "0.0.0-development"' in mix_exs:
+    raise SystemExit("packaged mix.exs still contains the development version")
 PY
 then
-  fail "installed package haxelib.json does not match runnable package metadata"
+  fail "installed Haxelib and Mix package metadata do not agree"
 fi
+
+cat > "$work_dir/check-installed-mix-version.exs" <<'EX'
+Mix.start()
+package_root = System.fetch_env!("REFLAXE_ELIXIR_PACKAGE_ROOT")
+Code.require_file(Path.join(package_root, "mix.exs"))
+expected = System.fetch_env!("EXPECTED_PACKAGE_VERSION")
+actual = ReflaxeElixir.MixProject.project()[:version]
+
+if actual != expected do
+  raise "loaded Mix project version #{inspect(actual)} does not match #{inspect(expected)}"
+end
+
+IO.puts("Loaded installed Mix project version: #{actual}")
+EX
 
 export INSTALLED_ROOT="$installed_root"
 run_step "run installed CLI entrypoint" 120 "$work_dir" \
@@ -357,6 +418,230 @@ SH
 chmod +x "$haxelib_wrapper_dir/haxelib"
 export HAXELIB_PACKAGE_REPO="$haxelib_repo"
 export HAXELIB_WRAPPER_DIR="$haxelib_wrapper_dir"
+
+# Prove the installed release archive is also the complete Mix dependency used
+# by a PhoenixHx consumer. The fixture owns only ordinary Phoenix-shaped source
+# and tiny dependency stubs; it does not point back to this repository.
+live_react_consumer="$tmp_base/live_react_consumer"
+mkdir -p \
+  "$live_react_consumer/assets/js" \
+  "$live_react_consumer/config" \
+  "$live_react_consumer/lib/package_live_react_consumer_web/components/layouts" \
+  "$live_react_consumer/vendor/live_react" \
+  "$live_react_consumer/vendor/phoenix" \
+  "$live_react_consumer/vendor/phoenix_html" \
+  "$live_react_consumer/vendor/phoenix_live_view"
+
+cat > "$live_react_consumer/mix.exs" <<'EX'
+defmodule PackageLiveReactConsumer.MixProject do
+  use Mix.Project
+
+  def project do
+    [
+      app: :package_live_react_consumer,
+      version: "0.1.0",
+      deps: deps(),
+      aliases: aliases()
+    ]
+  end
+
+  def application, do: [extra_applications: [:logger]]
+
+  defp deps do
+    [
+      {:jason, "~> 1.4"},
+      {:reflaxe_elixir, path: System.fetch_env!("REFLAXE_ELIXIR_PACKAGE_ROOT")},
+      {:live_react, path: "vendor/live_react"},
+      {:phoenix, path: "vendor/phoenix", override: true},
+      {:phoenix_html, path: "vendor/phoenix_html", override: true},
+      {:phoenix_live_view, path: "vendor/phoenix_live_view", override: true}
+    ]
+  end
+
+  defp aliases do
+    [
+      "assets.setup": ["esbuild.install --if-missing"],
+      "assets.build": ["esbuild package_live_react_consumer"],
+      "assets.deploy": ["esbuild package_live_react_consumer --minify", "phx.digest"]
+    ]
+  end
+end
+EX
+
+cat > "$live_react_consumer/config/config.exs" <<'EX'
+import Config
+
+config :package_live_react_consumer, ecto_repos: []
+EX
+
+cat > "$live_react_consumer/config/dev.exs" <<'EX'
+import Config
+
+config :package_live_react_consumer, PackageLiveReactConsumerWeb.Endpoint,
+  http: [ip: {127, 0, 0, 1}, port: 4000],
+  watchers: [
+    esbuild: {Esbuild, :install_and_run, [:package_live_react_consumer, ~w(--sourcemap=inline --watch)]},
+    tailwind: {Tailwind, :install_and_run, [:package_live_react_consumer, ~w(--watch)]}
+  ]
+EX
+
+cat > "$live_react_consumer/assets/js/app.js" <<'JS'
+import "phoenix_html"
+import {Socket} from "phoenix"
+import {LiveSocket} from "phoenix_live_view"
+import {hooks as colocatedHooks} from "phoenix-colocated/package_live_react_consumer"
+
+const liveSocket = new LiveSocket("/live", Socket, {
+  params: {_csrf_token: "package-smoke"},
+  hooks: {...colocatedHooks},
+})
+
+liveSocket.connect()
+JS
+
+cat > "$live_react_consumer/assets/package.json" <<'JSON'
+{
+  "name": "package-live-react-consumer-assets",
+  "private": true
+}
+JSON
+
+cat > "$live_react_consumer/lib/package_live_react_consumer_web/components/layouts/root.html.heex" <<'HEEX'
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}></script>
+  </head>
+  <body>{@inner_content}</body>
+</html>
+HEEX
+
+cat > "$live_react_consumer/vendor/live_react/package.json" <<'JSON'
+{"name":"live_react","version":"0.1.0"}
+JSON
+
+cat > "$live_react_consumer/vendor/live_react/mix.exs" <<'EX'
+defmodule LiveReact.MixProject do
+  use Mix.Project
+  def project, do: [app: :live_react, version: "0.1.0"]
+end
+EX
+
+cat > "$live_react_consumer/vendor/phoenix/mix.exs" <<'EX'
+defmodule FixturePhoenix.MixProject do
+  use Mix.Project
+  def project, do: [app: :phoenix, version: "1.8.9"]
+end
+EX
+cat > "$live_react_consumer/vendor/phoenix/package.json" <<'JSON'
+{"name":"phoenix","version":"1.8.9"}
+JSON
+
+cat > "$live_react_consumer/vendor/phoenix_html/mix.exs" <<'EX'
+defmodule FixturePhoenixHtml.MixProject do
+  use Mix.Project
+  def project, do: [app: :phoenix_html, version: "4.3.0"]
+end
+EX
+cat > "$live_react_consumer/vendor/phoenix_html/package.json" <<'JSON'
+{"name":"phoenix_html","version":"4.3.0"}
+JSON
+
+cat > "$live_react_consumer/vendor/phoenix_live_view/mix.exs" <<'EX'
+defmodule FixturePhoenixLiveView.MixProject do
+  use Mix.Project
+  def project, do: [app: :phoenix_live_view, version: "1.2.8"]
+end
+EX
+cat > "$live_react_consumer/vendor/phoenix_live_view/package.json" <<'JSON'
+{"name":"phoenix_live_view","version":"1.2.8"}
+JSON
+
+mkdir -p "$live_react_consumer/original"
+for rel in \
+  mix.exs \
+  config/config.exs \
+  config/dev.exs \
+  assets/js/app.js \
+  assets/package.json \
+  lib/package_live_react_consumer_web/components/layouts/root.html.heex; do
+  mkdir -p "$live_react_consumer/original/$(dirname "$rel")"
+  cp "$live_react_consumer/$rel" "$live_react_consumer/original/$rel"
+done
+
+export REFLAXE_ELIXIR_PACKAGE_ROOT="$canonical_installed"
+run_step "load installed Mix project identity" 60 "$work_dir" \
+  'elixir check-installed-mix-version.exs > mix-project-version.log 2>&1 || { cat mix-project-version.log; exit 1; }'
+require_contains "$work_dir/mix-project-version.log" "Loaded installed Mix project version: $EXPECTED_PACKAGE_VERSION"
+run_step "fetch clean installed-package consumer dependencies" 300 "$live_react_consumer" \
+  'MIX_ENV=prod mix deps.get > deps-get.log 2>&1 || { tail -200 deps-get.log; exit 1; }'
+run_step "compile installed Mix package and fixture dependencies" 300 "$live_react_consumer" \
+  'MIX_ENV=prod mix deps.compile > deps-compile.log 2>&1 || { tail -200 deps-compile.log; exit 1; }'
+run_step "prove installed LiveReact task help is available" 60 "$live_react_consumer" \
+  'MIX_ENV=prod mix help haxe.phoenix.live_react > lifecycle-help.log && MIX_ENV=prod mix help haxe.gen.live_react > component-help.log'
+require_contains "$live_react_consumer/lifecycle-help.log" "mix haxe.phoenix.live_react --check"
+require_contains "$live_react_consumer/component-help.log" "mix haxe.gen.live_react PreferenceStudio"
+
+if "$TIMEOUT" --secs 60 --cwd "$live_react_consumer" -- env MIX_ENV=prod mix haxe.phoenix.live_react --check >"$live_react_consumer/pre-setup-check.log" 2>&1; then
+  fail "LiveReact check unexpectedly passed before the integration was enabled"
+fi
+require_absent "$live_react_consumer/phoenixhx-live-react.json"
+require_absent "$live_react_consumer/assets/vite.config.mjs"
+require_absent "$live_react_consumer/assets/js/live-react-hooks.js"
+require_not_contains "$live_react_consumer/assets/package.json" '"react"'
+
+run_step "apply LiveReact from installed package" 120 "$live_react_consumer" \
+  'MIX_ENV=prod mix haxe.phoenix.live_react --package-root assets --yes > lifecycle-apply.log 2>&1 || { tail -200 lifecycle-apply.log; exit 1; }'
+require_contains "$live_react_consumer/lifecycle-apply.log" "path:vendor/live_react@0.1.0"
+require_file "$live_react_consumer/phoenixhx-live-react.json"
+require_contains "$live_react_consumer/phoenixhx-live-react.json" '"clientMode": "plain-js"'
+require_contains "$live_react_consumer/phoenixhx-live-react.json" '"packageRoot": "assets"'
+require_file "$live_react_consumer/assets/vite.config.mjs"
+require_file "$live_react_consumer/assets/js/live-react-hooks.js"
+require_file "$live_react_consumer/assets/react-components/registry.generated.ts"
+require_contains "$live_react_consumer/assets/package.json" '"live_react": "file:../vendor/live_react"'
+require_contains "$live_react_consumer/assets/package.json" '"react": "19.1.0"'
+require_contains "$live_react_consumer/assets/package.json" '"vite": "7.2.7"'
+
+run_step "check installed-package LiveReact wiring" 60 "$live_react_consumer" \
+  'MIX_ENV=prod mix haxe.phoenix.live_react --check > lifecycle-check.log 2>&1 || { cat lifecycle-check.log; exit 1; }'
+require_contains "$live_react_consumer/lifecycle-check.log" "check passed; no writes occurred"
+
+run_step "generate a component from installed package" 60 "$live_react_consumer" \
+  'MIX_ENV=prod mix haxe.gen.live_react PackagePanel --package-root assets --yes > component-add.log 2>&1 || { cat component-add.log; exit 1; }'
+require_file "$live_react_consumer/src_haxe/package_live_react_consumer_hx/components/live_react/PackagePanelIsland.hx"
+require_file "$live_react_consumer/assets/react-components/package-panel-boundary.tsx"
+require_file "$live_react_consumer/assets/react-components/package-panel.tsx"
+require_contains "$live_react_consumer/assets/react-components/registry.generated.ts" "PackagePanel"
+
+run_step "remove the installed-package component registration" 60 "$live_react_consumer" \
+  'MIX_ENV=prod mix haxe.gen.live_react PackagePanel --remove --package-root assets --yes > component-remove.log 2>&1 || { cat component-remove.log; exit 1; }'
+require_file "$live_react_consumer/src_haxe/package_live_react_consumer_hx/components/live_react/PackagePanelIsland.hx"
+require_file "$live_react_consumer/assets/react-components/package-panel-boundary.tsx"
+require_file "$live_react_consumer/assets/react-components/package-panel.tsx"
+require_not_contains "$live_react_consumer/assets/react-components/registry.generated.ts" "PackagePanel"
+
+run_step "remove LiveReact wiring from installed package" 120 "$live_react_consumer" \
+  'MIX_ENV=prod mix haxe.phoenix.live_react --remove --yes > lifecycle-remove.log 2>&1 || { tail -200 lifecycle-remove.log; exit 1; }'
+require_absent "$live_react_consumer/phoenixhx-live-react.json"
+require_absent "$live_react_consumer/assets/vite.config.mjs"
+require_absent "$live_react_consumer/assets/js/live-react-hooks.js"
+require_absent "$live_react_consumer/assets/react-components/registry.generated.ts"
+for rel in \
+  mix.exs \
+  config/config.exs \
+  config/dev.exs \
+  assets/js/app.js \
+  assets/package.json \
+  lib/package_live_react_consumer_web/components/layouts/root.html.heex; do
+  if ! cmp -s "$live_react_consumer/original/$rel" "$live_react_consumer/$rel"; then
+    diff -u "$live_react_consumer/original/$rel" "$live_react_consumer/$rel" || true
+    fail "installed-package removal did not restore $rel"
+  fi
+done
+require_tree_not_contains "$live_react_consumer" "$canonical_root"
+say "Installed-package LiveReact lifecycle and non-enabled isolation: OK"
 
 cat > "$work_dir/src/Main.hx" <<'HX'
 #if !phoenix_shared
@@ -497,6 +782,72 @@ run_step "compile fixture through source checkout" 300 "$work_dir" \
 run_step "compile fixture through installed package" 300 "$work_dir" \
   'PATH="$HAXELIB_WRAPPER_DIR:$(dirname "$HAXE_BIN"):$PATH" "$HAXE_BIN" build.hxml > compile.log 2>&1 || { tail -200 compile.log; exit 1; }'
 
+mkdir -p "$work_dir/live_react_probe"
+cat > "$work_dir/live_react_probe/ProbeMain.hx" <<'HX'
+class ProbeMain {
+  static function main() {}
+}
+HX
+
+cat > "$work_dir/live_react_probe/ReactProbe.hx" <<'HX'
+import phoenix.live_react.LiveReact;
+import phoenix.types.Assigns;
+
+private typedef ReactProbeAssigns = {
+  var id:String;
+  var title:String;
+}
+
+@:native("PackageProbeWeb.ReactProbe")
+@:component
+class ReactProbe {
+  @:component
+  public static function render(assigns:Assigns<ReactProbeAssigns>):String {
+    return <LiveReact.react
+      id=${assigns.id}
+      name="PackagePanel"
+      title=${assigns.title}
+      ssr=${false}
+    />;
+  }
+}
+HX
+
+cat > "$work_dir/live-react-probe-source.hxml" <<'HXML'
+-lib reflaxe.elixir
+-cp live_react_probe
+-D elixir_output=live_react_probe_out_source
+-D reflaxe_elixir_format=write
+-D app_name=PackageProbe
+-main ProbeMain
+--macro include("ReactProbe")
+HXML
+
+cat > "$work_dir/live-react-probe-package.hxml" <<'HXML'
+-lib reflaxe.elixir
+-cp live_react_probe
+-D elixir_output=live_react_probe_out_package
+-D reflaxe_elixir_format=write
+-D app_name=PackageProbe
+-main ProbeMain
+--macro include("ReactProbe")
+HXML
+
+run_step "compile LiveReact HXX through source checkout" 180 "$work_dir" \
+  '"$PWD/node_modules/.bin/haxe" live-react-probe-source.hxml > live-react-probe-source.log 2>&1 || { tail -200 live-react-probe-source.log; exit 1; }'
+run_step "compile LiveReact HXX through installed package" 180 "$work_dir" \
+  'PATH="$HAXELIB_WRAPPER_DIR:$(dirname "$HAXE_BIN"):$PATH" "$HAXE_BIN" live-react-probe-package.hxml > live-react-probe-package.log 2>&1 || { tail -200 live-react-probe-package.log; exit 1; }'
+for rel in package_probe_web/react_probe.ex probe_main.ex; do
+  if ! cmp -s "$work_dir/live_react_probe_out_source/$rel" "$work_dir/live_react_probe_out_package/$rel"; then
+    diff -u "$work_dir/live_react_probe_out_source/$rel" "$work_dir/live_react_probe_out_package/$rel" || true
+    fail "source and package modes emitted different LiveReact probe output: $rel"
+  fi
+done
+require_contains "$work_dir/live_react_probe_out_package/package_probe_web/react_probe.ex" "LiveReact.react"
+require_contains "$work_dir/live_react_probe_out_package/package_probe_web/react_probe.ex" "use Phoenix.Component"
+require_tree_not_contains "$work_dir/live_react_probe_out_package" "$canonical_root"
+say "Source/package LiveReact HXX parity: OK"
+
 require_file "$work_dir/out/_GeneratedFiles.json"
 require_file "$work_dir/out/main.ex"
 require_file "$work_dir/out/string_buf.ex"
@@ -604,4 +955,4 @@ if [[ "$VERBOSE" -eq 1 ]]; then
 fi
 
 echo ""
-say "OK (source/package parity + exact-ZIP Mix/Phoenix compile)"
+say "OK (source/package parity + installed LiveReact lifecycle + exact-ZIP Mix/Phoenix compile)"

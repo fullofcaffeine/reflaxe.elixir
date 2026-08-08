@@ -68,6 +68,34 @@ npx lix download
 The `www.github.com` host is intentional: it keeps the release ZIP on Lix's generic
 immutable-archive path instead of treating the URL as a source repository dependency.
 
+### Install The Same ZIP With Haxelib
+
+Publishing on haxelib.org is not required. If a project intentionally uses Haxelib's local package
+repository, download and verify the same GitHub Release ZIP as shown above, then install that file:
+
+```bash
+haxelib install "$PACKAGE"
+```
+
+This installs the prepared package from disk. It does not contact haxelib.org for
+`reflaxe.elixir`.
+
+### Why A Direct Git Install Is Different
+
+Haxelib's `git` command and Lix's `github:` source scheme can fetch this repository, but neither is
+a supported one-step application install for Reflaxe.Elixir.
+
+The default branch is the compiler's development workspace. Its Haxe sources live in several roots,
+while a normal Haxelib consumer receives one package classpath containing prepared `.cross.hx`
+files. Haxelib and Lix do not run a library-provided post-install build that creates that layout.
+The repository's `extraParams.hxml` supplies compiler options when Haxe runs; it is not an install
+hook and cannot safely replace the packaging step.
+
+For an unreleased compiler revision, use the explicit
+[source-checkout setup](SOURCE_VS_PACKAGE_LAYOUT.md#why-haxelib-needs-a-built-layout). It records all
+required source roots in the consuming project. For ordinary applications, use the immutable
+GitHub Release ZIP.
+
 ### Why Lix And GitHub Releases
 
 Reflaxe.Elixir uses **Lix as the project dependency manager** instead of asking users to install
@@ -85,11 +113,12 @@ project-local, reproducible compiler input
 This is a better fit for this project because:
 
 - `haxe_libraries/*.hxml` is committed, so dependency changes are ordinary reviewed Git changes;
-- a project can pin a release archive, Git tag, or exact commit instead of following global state;
+- a project can pin a release archive; source-checkout testing can separately pin an exact Git
+  commit with the required development HXML setup;
 - different projects can use different Haxe/compiler/library versions on the same machine;
 - `npx lix download` reconstructs the checked-in dependency state and reuses Lix's local cache;
-- unreleased fixes can be consumed from an exact pushed Git SHA without publishing an unrelated
-  registry release.
+- unreleased fixes can be tested from an exact pushed Git SHA through the documented
+  source-checkout setup, without publishing an unrelated registry release.
 
 For example, PhoenixHX browser builds pin Genes to one fetchable commit:
 
@@ -100,7 +129,7 @@ For example, PhoenixHX browser builds pin Genes to one fetchable commit:
 Lix is not a new library format and does not make Haxelib incompatible. It can consume Haxelib
 packages, GitHub/GitLab repositories, and immutable HTTP archives. Reflaxe.Elixir's GitHub release
 asset is deliberately a built Haxelib-style package because that is the correct flattened compiler
-layout. We continue to test Haxelib package installation, but GitHub Releases plus Lix are the
+layout. We continue to test installation through the Haxelib-compatible package format, but GitHub Releases plus Lix are the
 recommended distribution path for this project. Some third-party dependencies may still come from
 Haxelib.org through Lix; applications do not need to install Reflaxe.Elixir itself from the Haxelib
 server.

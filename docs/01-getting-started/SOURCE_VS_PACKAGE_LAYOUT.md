@@ -77,6 +77,12 @@ npx lix download
 The helper renders the same scoped HXML used by this repository. It does not build or modify compiler
 sources.
 
+The same limitation applies to `haxelib git` and Lix `github:` dependencies: both can download a Git
+revision, but neither runs an automatic library-controlled post-install build. Haxelib's
+`haxelib run` entrypoint is an explicit command, and `extraParams.hxml` contributes compiler options
+only when `-lib` is later processed. Neither mechanism turns the raw checkout into the prepared
+single-classpath release package during installation.
+
 ## Why local tests do not build first
 
 Building a package before every test would be slower and would make it easier to test stale copied

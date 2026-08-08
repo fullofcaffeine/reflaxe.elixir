@@ -43,6 +43,18 @@ function packageFixture(root, options = {}) {
     'README.md': '# fixture\n',
     LICENSE: 'fixture license\n',
     'extraParams.hxml': '# fixture\n',
+    'mix.exs':
+      'defmodule Fixture.MixProject do\n  use Mix.Project\n  def project, do: [app: :reflaxe_elixir, version: "0.0.0-development"]\nend\n',
+    'lib/haxe_phoenix_live_react.ex': 'defmodule HaxePhoenixLiveReact do\nend\n',
+    'lib/haxe_phoenix_live_react/core.ex':
+      'defmodule HaxePhoenixLiveReact.Core do\nend\n',
+    'lib/haxe_phoenix_live_react/core.generated.json': '{}\n',
+    'lib/mix/tasks/haxe.gen.live_react.ex':
+      'defmodule Mix.Tasks.Haxe.Gen.LiveReact do\nend\n',
+    'lib/mix/tasks/haxe.phoenix.live_react.ex':
+      'defmodule Mix.Tasks.Haxe.Phoenix.LiveReact do\nend\n',
+    'lib/mix/tasks/templates/agents.md.tpl': '# fixture agent template\n',
+    'priv/templates/phoenix_scaffold/build-client.hxml': '# fixture\n',
     'src/Run.hx': 'class Run {}\n',
     'src/Std.cross.hx': 'class Std {}\n',
     'src/String.cross.hx': 'class String {}\n',
@@ -62,6 +74,7 @@ function packageFixture(root, options = {}) {
   preparePackageMetadata({
     haxelibPath: path.join(root, 'haxelib.json'),
     metadataPath: path.join(root, 'release-metadata.json'),
+    mixExsPath: path.join(root, 'mix.exs'),
     version: options.version || VERSION,
     tag: options.tag || TAG,
     sourceCommit: SOURCE_SHA,
@@ -259,6 +272,26 @@ function main() {
       /unexpected archive root: private/
     )
 
+    for (const copiedPath of [
+      'lib/live_react.ex',
+      'lib/third_party/live_react.ex',
+      'priv/live_react/runtime.js',
+      'vendor/live_react/lib/live_react.ex',
+    ]) {
+      const copiedRuntime = path.join(
+        temp,
+        `copied-runtime-${copiedPath.replace(/[^a-z]+/gi, '-')}`
+      )
+      packageFixture(copiedRuntime)
+      write(copiedRuntime, copiedPath, 'copied runtime fixture\n')
+      const copiedRuntimeZip = `${copiedRuntime}.zip`
+      zipApi.createDeterministicZip(copiedRuntime, copiedRuntimeZip)
+      assert.throws(
+        () => verify(copiedRuntimeZip),
+        /archive entry is outside approved package-owned paths/
+      )
+    }
+
     const unsafeZip = path.join(temp, 'unsafe.zip')
     fs.writeFileSync(
       unsafeZip,
@@ -318,6 +351,7 @@ function main() {
         preparePackageMetadata({
           haxelibPath: path.join(left, 'haxelib.json'),
           metadataPath: path.join(left, 'bad.json'),
+          mixExsPath: path.join(left, 'mix.exs'),
           version: VERSION,
           tag: 'v9.9.9',
           sourceCommit: SOURCE_SHA,

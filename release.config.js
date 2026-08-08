@@ -34,7 +34,7 @@ module.exports = {
           {
             path: 'dist/reflaxe.elixir.zip',
             name: 'reflaxe.elixir-${nextRelease.version}.zip',
-            label: 'Reflaxe.Elixir haxelib package (${nextRelease.gitTag})',
+            label: 'Reflaxe.Elixir release package, Haxelib-compatible (${nextRelease.gitTag})',
           },
           {
             path: 'dist/reflaxe.elixir.zip.sha256',

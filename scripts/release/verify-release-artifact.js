@@ -14,7 +14,15 @@ const REQUIRED_ENTRIES = [
   'README.md',
   'extraParams.hxml',
   'haxelib.json',
+  'mix.exs',
   'release-metadata.json',
+  'lib/haxe_phoenix_live_react.ex',
+  'lib/haxe_phoenix_live_react/core.ex',
+  'lib/haxe_phoenix_live_react/core.generated.json',
+  'lib/mix/tasks/haxe.gen.live_react.ex',
+  'lib/mix/tasks/haxe.phoenix.live_react.ex',
+  'lib/mix/tasks/templates/agents.md.tpl',
+  'priv/templates/phoenix_scaffold/build-client.hxml',
   'src/Run.hx',
   'src/Std.cross.hx',
   'src/String.cross.hx',
@@ -30,10 +38,47 @@ const ALLOWED_ROOT_FILES = new Set([
   'README.md',
   'extraParams.hxml',
   'haxelib.json',
+  'mix.exs',
   'release-metadata.json',
   'run.n',
 ])
-const ALLOWED_ROOT_DIRECTORIES = new Set(['src', 'vendor'])
+const ALLOWED_ROOT_DIRECTORIES = new Set(['lib', 'priv', 'src', 'vendor'])
+const ALLOWED_LIB_ROOT_FILES = new Set([
+  'lib/haxe_build_inputs.ex',
+  'lib/haxe_compiler.ex',
+  'lib/haxe_generated_output.ex',
+  'lib/haxe_phoenix_live_react.ex',
+  'lib/haxe_phoenix_scaffold.ex',
+  'lib/haxe_project_patch.ex',
+  'lib/haxe_server.ex',
+  'lib/haxe_timings.ex',
+  'lib/haxe_toolchain.ex',
+  'lib/haxe_watcher.ex',
+  'lib/phoenix_error_handler.ex',
+  'lib/source_map_lookup.ex',
+])
+const ALLOWED_PRIV_FILES = new Set([
+  'priv/haxe-server-owner.sh',
+  'priv/templates/phoenix_scaffold/build-client.hxml',
+  'priv/templates/phoenix_scaffold/haxe_libraries/genes-ts.hxml',
+  'priv/templates/phoenix_scaffold/haxe_libraries/genes.hxml',
+])
+const ALLOWED_PACKAGE_OWNED_PREFIXES = [
+  'lib/haxe_phoenix_live_react/',
+  'lib/haxe_project_patch/',
+  'lib/mix/tasks/',
+  'vendor/phoenix_shared/',
+  'vendor/reflaxe/',
+]
+
+function isApprovedPackageOwnedEntry(name) {
+  if (ALLOWED_LIB_ROOT_FILES.has(name) || ALLOWED_PRIV_FILES.has(name)) {
+    return true
+  }
+  return ALLOWED_PACKAGE_OWNED_PREFIXES.some((prefix) =>
+    name.startsWith(prefix)
+  )
+}
 
 function findEndOfCentralDirectory(buffer) {
   const minimum = Math.max(0, buffer.length - 65_557)
@@ -126,6 +171,14 @@ function verifyLayout(names) {
     ) {
       throw new Error(`development-only archive entry is not allowed: ${name}`)
     }
+    if (
+      (root === 'lib' || root === 'priv' || root === 'vendor') &&
+      !isApprovedPackageOwnedEntry(name)
+    ) {
+      throw new Error(
+        `archive entry is outside approved package-owned paths: ${name}`
+      )
+    }
   }
 }
 
@@ -163,6 +216,13 @@ function verifyReleaseArtifact({ zipPath, version, tag, sourceCommit }) {
     throw new Error(
       'packaged haxelib metadata still contains the source-only reflaxe block'
     )
+  }
+  const mixExs = strFromU8(files['mix.exs'])
+  if (!mixExs.includes(`version: "${version}"`)) {
+    throw new Error('packaged Mix project version does not match')
+  }
+  if (mixExs.includes('version: "0.0.0-development"')) {
+    throw new Error('packaged Mix project still contains the development version')
   }
   const metadata = parseJsonEntry(files, 'release-metadata.json')
   if (metadata.schemaVersion !== 1)

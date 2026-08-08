@@ -197,7 +197,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends neko
-      - name: Run haxelib package smoke
+      - name: Run release package smoke (Haxelib-compatible ZIP)
         run: npm run test:haxelib-package
 
   test-lanes:
@@ -766,6 +766,43 @@ jobs:
       - name: Build and run the experimental feasibility suite
         run: bash scripts/ci/managed-reference-spike.sh
 
+  live-react-release-gate:
+    name: LiveReact release evidence
+    if: ${{ always() }}
+    needs:
+      - guards
+      - haxelib-package-smoke
+      - test
+      - example-compilation-gate
+      - examples-elixir
+      - sentinel-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require every independent LiveReact evidence owner
+        env:
+          GUARDS_RESULT: ${{ needs.guards.result }}
+          PACKAGE_RESULT: ${{ needs.haxelib-package-smoke.result }}
+          LIFECYCLE_RESULT: ${{ needs.test.result }}
+          EXAMPLES_RESULT: ${{ needs.example-compilation-gate.result }}
+          STRICT_BUILD_RESULT: ${{ needs.examples-elixir.result }}
+          BROWSER_RESULT: ${{ needs.sentinel-gate.result }}
+        run: |
+          set -euo pipefail
+          for result in \
+            "$GUARDS_RESULT" \
+            "$PACKAGE_RESULT" \
+            "$LIFECYCLE_RESULT" \
+            "$EXAMPLES_RESULT" \
+            "$STRICT_BUILD_RESULT" \
+            "$BROWSER_RESULT"; do
+            if [ "$result" != "success" ]; then
+              echo "::error::LiveReact release evidence is incomplete (result=$result)."
+              exit 1
+            fi
+          done
+          echo "LiveReact package, lifecycle, example, strict-build, and browser evidence succeeded."
+
   test-feedback-observation:
     name: Test feedback observation
     if: ${{ always() }}
@@ -787,6 +824,7 @@ jobs:
       - smoke-macos
       - docs-smoke
       - managed-reference-spike
+      - live-react-release-gate
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -879,6 +917,7 @@ jobs:
       - smoke-macos
       - docs-smoke
       - managed-reference-spike
+      - live-react-release-gate
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
