@@ -174,6 +174,9 @@ These failures usually come from running only a subset locally (e.g. `test:quick
 - Examples (full QA): `npm run test:examples-qa`
 - Example Hex dependency audit: `npm run audit:examples-hex`
 - Mix tests (fast): `npm run test:mix-fast`
+- Mix tooling tests (focused, no generated runtime bootstrap): `npm run test:mix-tooling`
+  - Run one file or line with `npm run test:mix-tooling -- test/tooling/<file>_test.exs[:LINE]`.
+  - The ordinary `npm run test:mix` and `npm run test:mix-fast` commands still run both the runtime and tooling test paths.
 - Stdlib runtime semantics (Haxe→ExUnit): `npm run test:haxe-exunit-stdlib`
 - Todo-app runtime smoke (non-blocking): `npm run qa:sentinel` then `scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 120`
 - Todo-app Playwright smoke for compiler/std/runtime changes: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --env e2e --async --deadline 900 --playwright --e2e-spec "e2e/smoke/*.spec.ts" --verbose`, then `scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 180`

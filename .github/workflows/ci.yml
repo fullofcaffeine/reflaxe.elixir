@@ -233,6 +233,9 @@ jobs:
           - name: Mix + BEAM runtime
             command: npm run test:ci:mix-runtime
             beam: true
+          - name: Mix tooling policies
+            command: npm run test:ci:mix-tooling
+            beam: true
           - name: Haxe server cache differential
             command: npm run test:ci:server-cache
             beam: false

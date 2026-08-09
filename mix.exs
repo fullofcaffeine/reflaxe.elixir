@@ -7,7 +7,7 @@ defmodule ReflaxeElixir.MixProject do
       version: "0.0.0-development",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
-      test_paths: ["test/exunit"],
+      test_paths: test_paths(),
       deps: deps(),
       package: package(),
       description: description(),
@@ -22,6 +22,16 @@ defmodule ReflaxeElixir.MixProject do
       # HaxeServer uses :crypto for deterministic cookie/cache keys even outside tests.
       extra_applications: [:logger, :jason, :crypto]
     ]
+  end
+
+  defp test_paths do
+    case System.get_env("REFLAXE_ELIXIR_TEST_LANE") do
+      nil -> ["test/exunit", "test/tooling"]
+      "" -> ["test/exunit", "test/tooling"]
+      "runtime" -> ["test/exunit"]
+      "tooling" -> ["test/tooling"]
+      lane -> raise "unknown REFLAXE_ELIXIR_TEST_LANE: #{inspect(lane)}"
+    end
   end
 
   defp deps do

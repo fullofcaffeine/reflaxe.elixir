@@ -492,7 +492,8 @@ fifty-minute chain.
 | Ecto/OTP/ExUnit/bootstrap snapshots | `npm run test:ci:compiler-target-domains` | 3m 12s | 3m 14s | Independent target-domain generated shapes |
 | Negative/compiler/target-quality contracts | `npm run test:ci:compiler-contracts` | 8m 33s | 8m 34s | Diagnostics, result invariants, strict Elixir, and target quality |
 | Portable stdlib runtime | `npm run test:ci:stdlib-runtime` | 1m 15s | 1m 16s | Portable Haxe behavior on BEAM |
-| Mix + BEAM runtime | `npm run test:ci:mix-runtime` | 7m 34s | 7m 35s | Mix integration, native runtime, and server ownership |
+| Mix + BEAM runtime | `npm run test:ci:mix-runtime` | 7m 34s | 7m 35s | Historical pre-split baseline for Mix integration and native runtime |
+| Mix tooling policies | `npm run test:ci:mix-tooling` | pending | pending | Pure Mix tasks, project patching, and Haxe-server start policy |
 | Persistent Haxe-server differential | `npm run test:ci:server-cache` | 4m 58s | 5m 00s | Warm-cache invalidation versus clean-build output |
 
 The `Test lane / ...` matrix runs these owners independently with `fail-fast: false`, so one failure
@@ -507,6 +508,34 @@ while the mixed harness cannot substitute for that claim. Bead `haxe.elixir.code
 the duplicated generation/execution without merging those evidence surfaces. Code-level profiling is
 also tracked separately: `haxe.elixir.codex-u9q` for compiler/snapshot cost and
 `haxe.elixir.codex-1ud` for the persistent-server differential fixture.
+
+### Focused Mix tooling tests
+
+Pure Mix tasks do not need the generated Haxe-authored runtime suite. Use this command for those
+tests:
+
+```bash
+npm run test:mix-tooling
+npm run test:mix-tooling -- test/tooling/haxe_gen_project_test.exs:LINE
+```
+
+This command loads only `test/tooling/test_helper.exs`. It does not compile or load
+`test/fixtures/_generated_haxe_exunit`. The default `npm run test:mix` command still loads both
+`test/exunit/` and `test/tooling/`, so it remains the complete local Mix check.
+
+The table below records one local A/B observation on 2026-08-08. The command selected the same
+20 generator-policy tests before and after the split. These numbers describe one machine and are not
+a performance budget.
+
+| Selected path | After `mix clean` | Warm | Tests executed | Warning lines |
+|---|---:|---:|---:|---:|
+| Old shared runtime helper | 41.52s | 40.48s | 151 | 23 |
+| Isolated tooling helper | 1.10s | 0.51s | 20 | 0 |
+
+CI keeps both owners required. `Mix + BEAM runtime` loads `test/exunit/`. `Mix tooling policies`
+loads `test/tooling/` and runs the separate Haxe-server policy fixture. The stable `Tests` aggregate
+fails if either lane fails. The first hosted timings for the new lane remain pending; do not replace
+the historical row with local measurements.
 
 ### Minimum-toolchain and macOS compatibility baseline
 
@@ -582,6 +611,9 @@ npm run test:haxe-exunit-stdlib
 # Mixed BEAM aggregates
 npm run test:runtime-smoke
 npm run test:mix-fast
+
+# Pure Mix tasks and deterministic tooling policies
+npm run test:mix-tooling
 
 # Examples
 npm run test:examples-qa

@@ -13,7 +13,7 @@
 4. **ALWAYS update test counts** in this file when adding/moving tests
 5. **ALWAYS follow the exact directory structure** documented below
 
-**Last Updated**: 2026-07-17 - Added Haxe-authored Mix, native-boundary, and control-flow regression coverage
+**Last Updated**: 2026-08-08 - Split pure Mix tooling tests from the generated runtime bootstrap
 
 ## 🧪 Test Suite Overview
 
@@ -259,12 +259,24 @@ npm run test:failed          # Re-run only failed tests from last run
 npm run test:sequential       # Force sequential execution (-j1)
 make -C test -j1             # Direct sequential make command
 
+# Focused Mix tooling tests (no generated Haxe/ExUnit runtime bootstrap)
+npm run test:mix-tooling
+npm run test:mix-tooling -- test/tooling/haxe_gen_project_test.exs:LINE
+
+# Full Mix integration and runtime suite
+npm run test:mix
+
 # Update expected output after fixing compiler
 make -C test update-intended TEST=core/arrays     # Update specific test
 ./scripts/test-runner.sh --update --pattern "test_name"  # Auto-update failures
 ```
 
 ### Test Directory Structure & Paths
+
+Existing Elixir integration tests use two Mix paths. `test/exunit/` owns the
+generated Haxe-authored runtime fixtures. `test/tooling/` owns pure Mix tasks
+and deterministic project-patch policies. The default full Mix command runs
+both paths.
 
 ```bash
 # Tests MUST be in test/snapshot/, organized by category:
