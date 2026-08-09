@@ -19,6 +19,7 @@
 
 <p align="center">
   <a href="docs/01-getting-started/WHY_REFLAXE_ELIXIR.md">Why Reflaxe.Elixir?</a> ·
+  <a href="#choose-how-you-write-haxe">Writing styles</a> ·
   <a href="#ecto-queries-that-fail-before-mix">Typed Ecto</a> ·
   <a href="#try-it">Try it</a> ·
   <a href="#phoenixhx">PhoenixHx</a> ·
@@ -71,10 +72,66 @@ their behavior through explicit lowering. Haxe is a build dependency, not a seco
 Haxe / HXX -> Reflaxe.Elixir + PhoenixHx -> ordinary .ex / ~H -> Mix -> BEAM
 ```
 
-Reflaxe.Elixir has one compiler pipeline and two authoring styles: **Typed Elixir-first** favors
-BEAM/Phoenix-native APIs and direct output; **portable stdlib-first** prioritizes cross-target Haxe
-semantics. They are source-design choices, not separate backends. See
-[Authoring Styles](docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md).
+## Choose How You Write Haxe
+
+Reflaxe.Elixir supports two source styles through one compiler within its documented pre-1.0
+surface. A project can use either style in each module. The styles do not select different backends
+or change the meaning of Haxe code.
+
+| Starting point | Source style | What you write | When it fits |
+| --- | --- | --- | --- |
+| Haxe application or shared library | **Portable stdlib-first** | Haxe types, standard-library APIs, loops, and ordinary Haxe control flow | You want familiar Haxe code or selected logic that can also compile to JavaScript or another target. |
+| Elixir, Phoenix, or BEAM application | **Typed Elixir-first** | Typed `elixir.*`, `phoenix.*`, `ecto.*`, and OTP APIs, with explicit data transformations | You want Haxe type checks while the source and generated code stay close to Elixir concepts. |
+| Most Phoenix applications | **A deliberate mix** | Portable domain rules with Elixir-first framework and process boundaries | You want reuse where it helps, without hiding Phoenix, Ecto, or OTP behind portable abstractions. |
+
+The mixed approach is the recommended default for Phoenix applications. Keep reusable domain rules
+portable when another target needs them. Write LiveView, Ecto, supervision, and process state with
+the typed BEAM APIs that own those concepts.
+
+### How the two standard-library views fit together
+
+Portable code can use supported Haxe APIs such as `String`, `Array`, `Map`, `Lambda`, and
+`haxe.functional.Result`. The compiler uses native BEAM operations when they preserve the Haxe
+contract. It adds compatibility code when Haxe and Elixir define different behavior.
+
+Elixir-first code can call typed surfaces for common Elixir modules such as `Enum`, `String`,
+`MapSet`, `Process`, and `Task`. It can also use typed atoms, tuples, keyword lists, process IDs,
+and opaque terms. These Haxe declarations map to normal Elixir calls and values. For example,
+`haxe.functional.Result<T, E>` becomes `{:ok, value}` or `{:error, reason}`.
+
+These declarations present common Elixir APIs through Haxe types. They do not copy or replace the
+Elixir standard library. For example, `elixir.Enum.map` accepts typed Haxe values at the source and
+emits a normal `Enum.map` call.
+
+The Haxe standard library is not forbidden in Elixir-first code. Use it when its contract is the
+contract that you want. Use a typed Elixir surface when you want the exact BEAM API and behavior.
+See [Standard Library Handling](docs/04-api-reference/STANDARD_LIBRARY_HANDLING.md) and
+[Interop With Existing Elixir](docs/02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md).
+
+### Recommended source style
+
+For new Elixir-first code, prefer functions that receive data and return new data. Use closed Haxe
+enums, exhaustive `switch`, `Result`, explicit collection operations, and typed framework APIs.
+Keep long-lived state in LiveView assigns, GenServer state, or ETS instead of static mutable fields.
+
+This style is the closest Reflaxe.Elixir offers to a Gleam-like development experience. It combines
+typed functional source with BEAM libraries, but it still generates ordinary Elixir for Mix.
+Haxe also permits classes, macros, exceptions, reassignment, and imperative control flow. The
+[Gleam comparison](docs/01-getting-started/WHY_REFLAXE_ELIXIR.md#reflaxeelixir-and-gleam) explains
+the different goals and current maturity.
+
+Imperative Haxe remains supported within the documented surface. The compiler converts local
+reassignment and loops into immutable Elixir value flow, often with `Enum` operations or reducers.
+This helps Haxe teams migrate existing code, but complex control flow can produce more generated
+code and intermediate values. Effects and exceptions still occur, so immutable output is not
+automatically pure.
+
+Shared mutable aliases need special care. The current compiler does not preserve every case where
+two Haxe variables refer to the same mutable object or collection. This is a correctness limitation,
+not a style preference. Read [Imperative to Functional Lowering](docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md)
+and [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md) before you port mutation-heavy code.
+The complete [Authoring Styles guide](docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md)
+shows portable, Elixir-first, and mixed project examples.
 
 ## See The Output
 
