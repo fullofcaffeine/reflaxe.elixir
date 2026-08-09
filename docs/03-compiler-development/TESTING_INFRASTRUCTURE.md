@@ -534,8 +534,10 @@ a performance budget.
 
 CI keeps both owners required. `Mix + BEAM runtime` loads `test/exunit/`. `Mix tooling policies`
 loads `test/tooling/` and runs the separate Haxe-server policy fixture. The stable `Tests` aggregate
-fails if either lane fails. The first hosted timings for the new lane remain pending; do not replace
-the historical row with local measurements.
+fails if either lane fails. Stable hosted percentile timings for the new lane remain pending; do not
+replace the historical row with local measurements. The first clean hosted run (`31286359508`)
+completed the tooling job in 35 seconds, including runner setup and dependency preparation. One run
+is not enough to report a p50 or p95, so the summary table remains `pending` until several runs exist.
 
 ### Minimum-toolchain and macOS compatibility baseline
 
