@@ -128,7 +128,10 @@ automatically pure.
 
 Shared mutable aliases need special care. The current compiler does not preserve every case where
 two Haxe variables refer to the same mutable object or collection. This is a correctness limitation,
-not a style preference. Read [Imperative to Functional Lowering](docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md)
+not a style preference. The compiler now rejects one proven Array case: a fresh local Array, one
+direct alias, `push`, and a later `length` read through the other name in the same straight-line block.
+This check prevents known-wrong output, but it is not general alias analysis. No error means only
+that this narrow check did not match. Read [Imperative to Functional Lowering](docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md)
 and [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md) before you port mutation-heavy code.
 The complete [Authoring Styles guide](docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md)
 shows portable, Elixir-first, and mixed project examples.

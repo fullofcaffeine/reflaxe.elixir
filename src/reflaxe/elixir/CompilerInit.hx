@@ -10,6 +10,7 @@ import reflaxe.elixir.macros.LiveViewPreserver;
 import reflaxe.elixir.macros.NativeModulePreserver;
 import reflaxe.elixir.macros.InlineMarkup;
 import reflaxe.elixir.macros.BoundaryEnforcer;
+import reflaxe.elixir.macros.ReferenceSemanticsDiagnostics;
 import reflaxe.elixir.macros.StrictModeEnforcer;
 // Import preprocessor types
 import reflaxe.preprocessors.ExpressionPreprocessor;
@@ -85,6 +86,10 @@ class CompilerInit {
 		LiveViewPreserver.init();
 		NativeModulePreserver.init();
 		InlineMarkup.enable();
+
+		// Reject only independently proven Haxe reference-semantics mismatches.
+		// This checker is profile-neutral and does not modify generated code.
+		ReferenceSemanticsDiagnostics.init();
 
 		// Enforce example-app purity (opt-in): no __elixir__ injections or ad-hoc extern classes.
 		// Enabled by defining `reflaxe_elixir_strict_examples` in repo examples.

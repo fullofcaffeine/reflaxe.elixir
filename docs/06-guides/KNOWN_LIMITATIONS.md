@@ -67,6 +67,24 @@ class of bug can affect ordinary class fields, anonymous objects, Haxe maps,
 lists, stacks, and buffers. Existing direct-receiver tests or same-scope
 receiver rebinding do not prove alias behavior.
 
+The compiler rejects the exact example above in project-local source. It recognizes a fresh Array
+literal, one direct local alias, `push`, and a later peer `length` read in one straight-line block.
+The error points to `push`, before the compiler can emit known-wrong Elixir.
+
+This safeguard is deliberately narrow. It stops when it sees branches, loops, escapes, overwrites,
+another mutation, or an unproved reference shape. It does not scan third-party dependency source.
+It does not cover other Array observations, other collection mutators, object fields, maps, lists,
+stacks, buffers, or aliases that move through functions. No diagnostic means only that the narrow
+pattern did not match. It does not prove that another shared-alias pattern is safe.
+
+Use explicit value flow when shared identity is not required:
+
+```haxe
+var values = [1];
+values = values.concat([2]);
+trace(values.length);
+```
+
 The compiler has accepted one typed selective managed-reference direction, not
 two Portable/Elixir semantic modes. Ordinary reference-bearing Haxe values will
 use managed shared storage where their audited contract requires it; explicitly

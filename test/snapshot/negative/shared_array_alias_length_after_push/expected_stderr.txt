@@ -1,0 +1,1 @@
+Main.hx:6: characters 3-17 : Reflaxe.Elixir cannot preserve this shared Array mutation. `values.push(...)` becomes a new immutable value, but `alias.length` would read the old Array. Use an explicit returned value, or keep shared state in LiveView assigns, GenServer state, or ETS. This check covers one narrow pattern. Other shared aliases remain unsupported.

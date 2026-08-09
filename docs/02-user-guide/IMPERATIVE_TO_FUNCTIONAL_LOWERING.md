@@ -111,8 +111,18 @@ length(alias_values) # 1, so this lowering is not equivalent
 ```
 
 The current compiler does not yet preserve every alias-sensitive ordinary-Haxe
-case. The accepted managed-reference design will use shared storage where the
-Haxe contract requires it; it has not shipped yet. See
+case. It rejects this exact project-local pattern before code generation because
+the later peer `length` is known to be stale. The check covers one fresh Array,
+one direct local alias, one `push`, and one later peer `length` read in the same
+straight-line block.
+
+The check stops at branches, loops, escapes, overwrites, another mutation, or
+an unproved reference shape. It does not scan third-party dependency source.
+No error means only that this narrow check did not match. It does not prove
+that another alias pattern is safe.
+
+The accepted managed-reference design will use shared storage where the Haxe
+contract requires it; it has not shipped yet. See
 [Haxe Reference-Semantics Audit](../05-architecture/HAXE_REFERENCE_SEMANTICS_AUDIT.md).
 
 ### 2) “Loops” become **Enum/reduce recursion**

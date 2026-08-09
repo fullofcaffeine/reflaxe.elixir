@@ -57,6 +57,13 @@ Compiling `push` as a one-binding list replacement would make this source mean
 something different merely because the author preferred Elixir style. That
 would create two semantic compilers and make shared libraries unreliable.
 
+The compiler now rejects this exact project-local pattern before code
+generation. The result is the same in both authoring styles because this is a
+correctness check, not a style rule. The check covers one straight-line form:
+a fresh Array, one direct local alias, `push`, and a later peer `length` read.
+It stops on branches, escapes, overwrites, another mutation, or unproved shapes.
+No error for a different alias pattern does not mean that the pattern is safe.
+
 The accepted design instead uses one compiler with typed representations:
 
 - ordinary Haxe reference objects and mutable collections use shared managed
