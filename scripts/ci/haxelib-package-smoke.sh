@@ -843,6 +843,7 @@ for rel in package_probe_web/react_probe.ex probe_main.ex; do
     fail "source and package modes emitted different LiveReact probe output: $rel"
   fi
 done
+compare_generated_elixir "$work_dir/live_react_probe_out_source" "$work_dir/live_react_probe_out_package"
 require_contains "$work_dir/live_react_probe_out_package/package_probe_web/react_probe.ex" "LiveReact.react"
 require_contains "$work_dir/live_react_probe_out_package/package_probe_web/react_probe.ex" "use Phoenix.Component"
 require_tree_not_contains "$work_dir/live_react_probe_out_package" "$canonical_root"

@@ -558,6 +558,20 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		var normalized = file.split("\\").join("/");
 		if (normalized.indexOf("/std/elixir/_std/") != -1)
 			return true;
+		#if eval
+		try {
+			// Installed packages flatten target stdlib files into the compiler's own
+			// src tree. Anchor that layout to this compiler file so an unrelated
+			// consumer-authored .cross.hx file is still eligible for source scanning.
+			var compilerFile = Context.resolvePath("reflaxe/elixir/ElixirCompiler.hx").split("\\").join("/");
+			var compilerSuffix = "/reflaxe/elixir/ElixirCompiler.hx";
+			if (StringTools.endsWith(compilerFile, compilerSuffix)) {
+				var compilerSourceRoot = compilerFile.substr(0, compilerFile.length - compilerSuffix.length);
+				if (StringTools.startsWith(normalized, compilerSourceRoot + "/") && StringTools.endsWith(normalized, ".cross.hx"))
+					return true;
+			}
+		} catch (_:Dynamic) {}
+		#end
 		return normalized.indexOf("/std/") != -1
 			&& (StringTools.endsWith(normalized, ".cross.hx") || normalized.indexOf("/haxe/versions/") != -1);
 	}
