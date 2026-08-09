@@ -219,24 +219,15 @@ class TodoLive {
 
 		var updated = socket;
 
-		function containsKey(keys:Array<String>, key:String):Bool {
-			var found = false;
-			for (k in keys) {
-				if (k == key)
-					found = true;
-			}
-			return found;
-		}
-
 		// Join/leave messages
 		for (key in newKeys) {
-			if (!containsKey(prevKeys, key)) {
+			if (!prevKeys.contains(key)) {
 				var name = presenceDisplayName(ElixirMap.getWithDefault(newUsers, key, null), key, currentUserKey);
 				updated = pushActivity(updated, PresenceJoin, name + " joined");
 			}
 		}
 		for (key in prevKeys) {
-			if (!containsKey(newKeys, key)) {
+			if (!newKeys.contains(key)) {
 				var name = presenceDisplayName(ElixirMap.getWithDefault(prevUsers, key, null), key, currentUserKey);
 				updated = pushActivity(updated, PresenceLeave, name + " left");
 			}
@@ -244,7 +235,7 @@ class TodoLive {
 
 		// Editing transitions (start/stop)
 		for (key in newKeys) {
-			if (containsKey(prevKeys, key)) {
+			if (prevKeys.contains(key)) {
 				var before = presenceEditingTodoId(ElixirMap.getWithDefault(prevUsers, key, null));
 				var after = presenceEditingTodoId(ElixirMap.getWithDefault(newUsers, key, null));
 				if (before != after) {

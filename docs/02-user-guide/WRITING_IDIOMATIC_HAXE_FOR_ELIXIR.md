@@ -5,6 +5,7 @@ It complements:
 
 - `docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md` (construct-by-construct mappings)
 - `docs/02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md` (codegen conventions and hygiene rules)
+- `docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md` (how mutation becomes immutable Elixir, including tradeoffs)
 - `docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md` (portable vs Elixir-first authoring choices)
 
 ## Quick Do / Don’t
@@ -12,7 +13,8 @@ It complements:
 Do:
 
 - Prefer **enums + `switch`** for control flow (great Elixir `case` output).
-- Prefer **`Option<T>` / `Result<T, E>`** for absence/failure (great tuple/pattern output).
+- Prefer **`Option<T>` / `Result<T, E>`** when the caller controls expected absence or failure.
+- Prefer a standard collection operation when it describes the whole job, such as `items.contains(value)`.
 - Treat “instances” as **immutable values** (return updated values rather than mutating).
 - Prefer **typed externs + `@:native`** over raw injection for interop.
 
@@ -43,12 +45,12 @@ static function greeting(auth:Auth):String {
 
 This compiles to a `case` over tagged tuples such as `{:anonymous}` and `{:signed_in, user_id}`.
 
-## 2) Use `Option<T>` / `Result<T, E>` instead of `null` / exceptions
+## 2) Choose an error contract that matches the caller
 
-Elixir is dynamically typed, so compile-time safety comes mostly from **explicit success/failure types**.
+An error contract tells a caller which outcomes to expect and handle.
 
-- Use `Option<T>` for “might be missing”.
-- Use `Result<T, E>` for “might fail with an error”.
+- Use `Option<T>` when a missing value is normal and the caller must choose what to do.
+- Use `Result<T, E>` when an operation can succeed or return an expected error.
 
 These compile to idiomatic Elixir tuples:
 
@@ -57,9 +59,53 @@ These compile to idiomatic Elixir tuples:
 - `Ok(v)` → `{:ok, v}`
 - `Error(e)` → `{:error, e}`
 
-They compose well with `switch` and the provided `OptionTools` / `ResultTools` helpers.
+They work well with `switch` and the provided `OptionTools` / `ResultTools` helpers.
 
-## 3) Prefer explicit immutable flows (especially today)
+Nullable values and exceptions are also valid when they state the intended contract.
+For example, a lookup can return `Null<User>` when “not found” is a normal target API result.
+A required lookup can raise an exception when a missing record means that the function cannot honor its contract.
+
+Do not change one error contract to another only for style. Each contract tells the caller something different.
+
+## 3) Prefer a standard collection operation when it states the whole job
+
+A membership check asks one question: does this array contain this value?
+The todo app previously answered that question with a mutable Boolean and a complete loop:
+
+```haxe
+function containsKey(keys:Array<String>, key:String):Bool {
+	var found = false;
+	for (candidate in keys) {
+		if (candidate == key)
+			found = true;
+	}
+	return found;
+}
+```
+
+The standard Haxe operation states the intent directly at the call site:
+
+```haxe
+if (!previousKeys.contains(key)) {
+	recordJoin(key);
+}
+```
+
+Reflaxe.Elixir generates the ordinary Elixir membership operation:
+
+```elixir
+if not Enum.member?(previous_keys, key) do
+  record_join(key)
+end
+```
+
+`Enum.member?/2` returns `true` when the collection contains the requested value.
+The typed Haxe call also rejects a value of the wrong type before the app runs.
+
+This guidance does not mean that loops are bad. The compiler already converts many safe loops into operations such as `Enum.map` and `Enum.count`.
+Use a named operation when it describes the entire job more clearly than the loop.
+
+## 4) Prefer explicit immutable flows (especially today)
 
 In the current Elixir output:
 
@@ -88,7 +134,7 @@ but not shipped. See [Known Limitations](../06-guides/KNOWN_LIMITATIONS.md).
 Haxe loops compile correctly, but `break`/`continue` may lower to more elaborate Elixir constructs
 to preserve Haxe semantics. For “simple iteration”, prefer `map/filter/fold/each` style.
 
-## 4) Avoid static mutable state for “global” data
+## 5) Avoid static mutable state for “global” data
 
 Haxe `static var` is mutable; Elixir is immutable. To preserve semantics, static state is implemented
 via process-local storage (you’ll see `Process.get/put` helpers in the generated code).
@@ -99,7 +145,7 @@ For application state, prefer BEAM-native patterns:
 - GenServer state for long-lived processes
 - ETS for shared in-memory tables (when appropriate)
 
-## 5) Don’t write snake_case or `_unused` names in Haxe (unless you want to)
+## 6) Don’t write snake_case or `_unused` names in Haxe (unless you want to)
 
 Reflaxe.Elixir applies Elixir hygiene automatically:
 
@@ -108,7 +154,7 @@ Reflaxe.Elixir applies Elixir hygiene automatically:
 
 So the usual Haxe style is fine; you can still use leading underscores in Haxe to communicate intent.
 
-## 6) Interop the “Elixir way”: externs + `@:native`
+## 7) Interop the “Elixir way”: externs + `@:native`
 
 Prefer typed externs (the `std/` surfaces) over raw code injection.
 
@@ -124,7 +170,7 @@ extern class Enum {
 
 Likewise, use `@:native("My.App.Module")` when you need an exact module name.
 
-## 7) For Phoenix/HXX: turn on strict typing (opt-in)
+## 8) For Phoenix/HXX: turn on strict typing (opt-in)
 
 If you’re building Phoenix apps, enable strict HXX typing in your app so templates behave more like TSX:
 

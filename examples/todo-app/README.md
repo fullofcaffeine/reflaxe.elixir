@@ -149,6 +149,7 @@ export GITHUB_REDIRECT_URI="http://localhost:4000/auth/github/callback"
 ## Where to Look (Code Tour)
 
 - LiveView: `examples/todo-app/src_haxe/server/live/TodoLive.hx`
+- Haxe-to-Elixir authoring choices: [`Writing Idiomatic Haxe for Elixir`](../../docs/02-user-guide/WRITING_IDIOMATIC_HAXE_FOR_ELIXIR.md)
 - Typed assigns/types: `examples/todo-app/src_haxe/server/live/TodoLiveTypes.hx`
 - Router/session bridge: `examples/todo-app/src_haxe/TodoAppRouter.hx` + `examples/todo-app/src_haxe/server/infrastructure/TodoAppWeb.hx`
 - Ecto schema: `examples/todo-app/src_haxe/server/schemas/Todo.hx`

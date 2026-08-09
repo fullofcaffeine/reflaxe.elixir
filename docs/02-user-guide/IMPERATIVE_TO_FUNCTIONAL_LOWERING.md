@@ -1,7 +1,64 @@
 # Imperative → Functional Lowering (How Haxe Becomes Idiomatic Elixir)
 
-Reflaxe.Elixir compiles Haxe (which allows mutation and loops) into Elixir (immutable, expression-oriented).
-This page is a **high-level index + mental model** for how “imperative-looking” Haxe becomes **functional/immutable** Elixir, and where to be careful.
+Reflaxe.Elixir compiles Haxe, which permits reassignment and loops, into Elixir, which uses immutable values.
+This guide explains the conversion, its benefits, and its limits.
+
+“Imperative mode” is not a compiler switch. It means that the Haxe source uses statements, loops, reassignment, or mutable collection APIs.
+
+## What the compiler changes
+
+The compiler replaces local mutation with a flow of new values. Each step receives the latest value and returns the value for the next step.
+This technique is often called **state threading**.
+
+For example, this Haxe code updates `total` during a loop:
+
+```haxe
+var total = 0;
+for (value in values) {
+	total += value;
+}
+return total;
+```
+
+A general Elixir lowering has this immutable shape:
+
+```elixir
+Enum.reduce(values, 0, fn value, total ->
+  total + value
+end)
+```
+
+`Enum.reduce/3` passes the returned total into the next call. No call changes the previous total.
+
+The generated code is immutable, but it is not automatically pure.
+Database writes, process messages, exceptions, file access, and other effects still occur in their original order.
+The compiler preserves those actions instead of removing them.
+
+## Benefits and costs of imperative Haxe
+
+Imperative Haxe is a supported convenience. It can be the clearest choice for portable code or an incremental port from another Haxe target.
+
+Benefits:
+
+- Existing Haxe knowledge and many portable algorithms transfer directly.
+- Haxe types still catch invalid values and calls before the application runs.
+- The compiler can replace proven patterns with direct Elixir operations such as `Enum.map`, `Enum.count`, or `Enum.member?`.
+- A team can port working code first and improve its source style after tests protect its behavior.
+
+Costs and risks:
+
+- Complex updates can require reducers, temporary bindings, or recursive helpers in the generated Elixir.
+- `break`, `continue`, exceptions, and effects inside expressions reduce the compiler's safe optimization choices.
+- Immutable collection updates can create more intermediate values than the original source suggests. Measure important paths instead of assuming equal performance.
+- Two Haxe variables can refer to the same mutable object or collection. The current compiler does not preserve every shared-alias update correctly.
+- Static mutable state uses target support such as process-local storage. Phoenix or OTP state owners are usually clearer for long-lived application state.
+
+The shared-alias limitation is a correctness risk. The other costs usually affect output clarity, maintenance, or performance rather than correctness.
+Read [Known Limitations](../06-guides/KNOWN_LIMITATIONS.md) before porting mutation-heavy code.
+
+Use imperative source when it makes the Haxe algorithm clearer and stays inside supported semantics.
+Prefer named collection operations and data-in/data-out functions when they state the intent more directly.
+For BEAM application state, prefer LiveView assigns, GenServer state, ETS, or another explicit owner.
 
 If you want the deep dive (with many examples), start here:
 
@@ -33,7 +90,7 @@ total = total + 2
 
 Implication:
 
-- The output is still purely functional/immutable at runtime, but reads like idiomatic Elixir rebinding.
+- The output still uses immutable values at runtime and reads like idiomatic Elixir rebinding.
 - Generated code may rebind names to preserve Haxe mutation semantics; if you need "assign once" guarantees in source,
   use Haxe `final`.
 
@@ -196,7 +253,7 @@ Haxe exceptions map to Elixir `raise`/`try`/`rescue` patterns, but Elixir codeba
 - tagged return values (`{:ok, v}` / `{:error, reason}`)
 - `with` / `case` flows
 
-If you want “BEAM-first” error flow from Haxe, prefer `Result`/`Option`-style APIs.
+For expected caller-controlled failures in BEAM-first code, prefer `Result`/`Option`-style APIs.
 
 See:
 
@@ -276,7 +333,7 @@ Start here:
 - `docs/07-patterns/quick-start-patterns.md`
 
 Rules of thumb:
-- Prefer `Result`/`Option` flows over exceptions for domain errors.
+- Prefer `Result`/`Option` when a domain error is expected and the caller decides how to handle it.
 - Prefer data-in/data-out functions over mutation-heavy methods.
 - Prefer small pure helpers; let Phoenix/OTP own long-lived state.
 - Keep template/event names typed (opt-in strict modes) when building Phoenix apps.
