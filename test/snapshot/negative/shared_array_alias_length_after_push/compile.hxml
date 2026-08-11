@@ -1,4 +1,5 @@
 -cp .
+-cp src
 -cp ../../../../src
 -cp ../../../../std
 -cp ../../../../std/elixir/_std

@@ -61,7 +61,9 @@ The compiler now rejects this exact project-local pattern before code
 generation. The result is the same in both authoring styles because this is a
 correctness check, not a style rule. The check covers one straight-line form:
 a fresh Array, one direct local alias, `push`, and a later peer `length` read.
-It stops on branches, escapes, overwrites, another mutation, or unproved shapes.
+The direct `push` result can be unused, assigned, or stored in a new local variable.
+The check stops when a nested block or function can change the order of operations.
+It also stops on branches, escapes, overwrites, another mutation, or unproved shapes.
 No error for a different alias pattern does not mean that the pattern is safe.
 
 The accepted design instead uses one compiler with typed representations:

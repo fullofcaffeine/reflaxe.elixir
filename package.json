@@ -97,7 +97,7 @@
     "test:runtime-smoke": "bash scripts/test-runtime-smoke.sh",
     "test:otp-runtime": "bash scripts/ci/runtime-smoke-otp-core.sh",
     "test:result-invariant": "bash scripts/ci/result-contract-invariant-smoke.sh",
-    "test:reference-semantics-diagnostic": "bash scripts/ci/reference-semantics-diagnostic-smoke.sh",
+    "test:reference-semantics-diagnostic": "bash scripts/ci/reference-semantics-diagnostic-smoke.sh && bash scripts/ci/reference-semantics-diagnostic-server.sh",
     "test:ast-children": "haxe -lib reflaxe -cp std -cp src -cp . --macro \"tools.TestElixirASTChildren.run()\" --no-output",
     "test:pass-context": "haxe -lib reflaxe -cp std -cp src -cp . --macro \"tools.TestPassContext.run()\" --no-output && haxe -lib reflaxe -cp std -cp src -cp . -D debug_pass_metrics --macro \"tools.TestPassContext.run()\" --no-output",
     "test:pass-registry": "haxe -lib reflaxe -cp std -cp src -cp . --macro \"tools.TestPassRegistry.run()\" --no-output && haxe -lib reflaxe -cp std -cp src -cp . -D hxx_granular_pass_registry --macro \"tools.TestPassRegistry.run()\" --no-output && haxe -lib reflaxe -cp std -cp src -cp . -D hxx_granular_pass_registry -D fast_boot --macro \"tools.TestPassRegistry.run()\" --no-output",

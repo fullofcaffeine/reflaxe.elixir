@@ -6,12 +6,18 @@ import haxe.macro.Context;
 import haxe.macro.Expr.Position;
 import haxe.macro.Type;
 import haxe.macro.TypedExprTools;
+import sys.FileSystem;
 
 private typedef ArrayAliasCandidate = {
 	final root:TVar;
 	final alias:TVar;
 	var mutated:Null<TVar>;
 	var mutationPos:Null<Position>;
+}
+
+private typedef CanonicalArrayPush = {
+	final receiver:TVar;
+	final position:Position;
 }
 
 /**
@@ -28,10 +34,11 @@ private typedef ArrayAliasCandidate = {
  *
  * HOW
  * - Reads canonical typed identities during `Context.onAfterTyping`.
- * - Scans one lexical block at a time and abandons a candidate on control flow,
- *   escape, overwrite, another mutation, or any reference shape that is not proven.
- * - Scans project-local source only. Third-party dependency code remains outside
- *   this initial compatibility boundary and is not thereby known to be safe.
+ * - Scans fields, constructors, and class initialization one lexical block at a time.
+ * - Abandons a candidate on nested sequencing, escape, overwrite, another mutation,
+ *   or any reference shape that is not proven.
+ * - Treats source below the compilation root as owned. Exact compiler and framework
+ *   classpaths are excluded through marker files, not user directory names.
  *
  * This checker does not rewrite code, infer an authoring profile, or claim general
  * alias analysis. Managed reference support remains the complete future solution.
@@ -43,27 +50,49 @@ class ReferenceSemanticsDiagnostics {
 		}
 
 		var projectRoot = normalizePath(Sys.getCwd());
-		Context.onAfterTyping(types -> diagnose(types, projectRoot));
+		var compilerOwnedRoots = findCompilerOwnedRoots(projectRoot);
+		Context.onAfterTyping(types -> diagnose(types, projectRoot, compilerOwnedRoots));
 	}
 
-	static function diagnose(types:Array<ModuleType>, projectRoot:String):Void {
+	static function diagnose(types:Array<ModuleType>, projectRoot:String, compilerOwnedRoots:Array<String>):Void {
 		for (moduleType in types) {
 			switch (moduleType) {
 				case TClassDecl(classRef):
 					var classType = classRef.get();
-					if (!isProjectSource(classType.pos, projectRoot)) {
+					if (!isProjectSource(classType.pos, projectRoot, compilerOwnedRoots)) {
 						continue;
 					}
 
+					var scannedFields = new Map<String, Bool>();
 					for (field in classType.fields.get().concat(classType.statics.get())) {
-						var expression = field.expr();
-						if (expression != null) {
-							scanExpression(expression);
-						}
+						scanFieldExpression(field, scannedFields);
+					}
+
+					if (classType.constructor != null) {
+						scanFieldExpression(classType.constructor.get(), scannedFields);
+					}
+
+					if (classType.init != null) {
+						scanExpression(classType.init);
 					}
 
 				case _:
 			}
+		}
+	}
+
+	/** Scans each class expression once, including constructors that Haxe stores separately. */
+	static function scanFieldExpression(field:ClassField, scannedFields:Map<String, Bool>):Void {
+		var position = Context.getPosInfos(field.pos);
+		var key = '${position.file}:${position.min}:${position.max}:${field.name}';
+		if (scannedFields.exists(key)) {
+			return;
+		}
+		scannedFields.set(key, true);
+
+		var expression = field.expr();
+		if (expression != null) {
+			scanExpression(expression);
 		}
 	}
 
@@ -89,7 +118,7 @@ class ReferenceSemanticsDiagnostics {
 		for (expression in expressions) {
 			var direct = unwrap(expression);
 
-			if (isAmbiguousControlFlowBoundary(direct)) {
+			if (isAmbiguousControlFlowBoundary(direct) || containsNestedSequencingBoundary(direct)) {
 				freshArrays = [];
 				candidates = [];
 				continue;
@@ -102,7 +131,7 @@ class ReferenceSemanticsDiagnostics {
 					}
 
 					var peer = sameVariable(candidate.mutated, candidate.root) ? candidate.alias : candidate.root;
-					if (sameVariable(receiver, peer)) {
+					if (sameVariable(receiver, peer) && candidateUseIsOnly(expression, candidate, peer)) {
 						reportStaleAlias(candidate, peer);
 					}
 				}
@@ -114,29 +143,31 @@ class ReferenceSemanticsDiagnostics {
 				continue;
 			}
 
-			var pushedReceiver = canonicalArrayPushReceiver(direct);
-			if (pushedReceiver != null) {
+			var push = canonicalArrayPush(direct);
+			if (push != null) {
 				var kept:Array<ArrayAliasCandidate> = [];
 				for (candidate in candidates) {
-					if (!candidateContains(candidate, pushedReceiver)) {
+					if (!candidateContains(candidate, push.receiver)) {
 						if (!expressionReferencesCandidate(expression, candidate)) {
 							kept.push(candidate);
 						}
 						continue;
 					}
 
-					if (candidate.mutated == null) {
-						candidate.mutated = pushedReceiver;
-						candidate.mutationPos = direct.pos;
+					if (candidate.mutated == null && candidateUseIsOnly(expression, candidate, push.receiver)) {
+						candidate.mutated = push.receiver;
+						candidate.mutationPos = push.position;
 						kept.push(candidate);
 					}
 				}
 				candidates = kept;
+				invalidateReferencedFreshArrays(expression, freshArrays);
 				continue;
 			}
 
 			switch (direct.expr) {
 				case TVar(variable, initializer) if (initializer != null && isFreshArrayLiteral(initializer)):
+					invalidateReferencedFreshArrays(expression, freshArrays);
 					invalidateReferencedCandidates(expression, candidates);
 					freshArrays.push(variable);
 					continue;
@@ -157,6 +188,7 @@ class ReferenceSemanticsDiagnostics {
 					invalidateReferencedCandidates(expression, candidates);
 
 				case _:
+					invalidateReferencedFreshArrays(expression, freshArrays);
 					invalidateReferencedCandidates(expression, candidates);
 			}
 		}
@@ -169,10 +201,18 @@ class ReferenceSemanticsDiagnostics {
 			return;
 		}
 
-		Context.error('Reflaxe.Elixir cannot preserve this shared Array mutation. `${mutated.name}.push(...)` becomes a new immutable value, '
-			+ 'but `${peer.name}.length` would read the old Array. Use an explicit returned value, or keep shared state in LiveView assigns, '
-			+ 'GenServer state, or ETS. This check covers one narrow pattern. Other shared aliases remain unsupported.',
+		Context.error('Reflaxe.Elixir cannot preserve this shared Array mutation. The current lowering would update only `${mutated.name}`, '
+			+ 'so `${peer.name}.length` would read the old Array. Avoid the shared alias. For example, compute a new Array with `concat(...)` '
+			+ 'and use that binding. This diagnostic covers one narrow pattern. Other shared aliases remain unsupported.',
 			position);
+	}
+
+	static function invalidateReferencedFreshArrays(expression:TypedExpr, freshArrays:Array<TVar>):Void {
+		var kept = freshArrays.filter(variable -> !expressionReferencesVariable(expression, variable));
+		freshArrays.resize(0);
+		for (variable in kept) {
+			freshArrays.push(variable);
+		}
 	}
 
 	static function invalidateReferencedCandidates(expression:TypedExpr, candidates:Array<ArrayAliasCandidate>):Void {
@@ -205,6 +245,27 @@ class ReferenceSemanticsDiagnostics {
 		return found;
 	}
 
+	/** Requires one candidate-local occurrence, which must be the recognized receiver. */
+	static function candidateUseIsOnly(expression:TypedExpr, candidate:ArrayAliasCandidate, expected:TVar):Bool {
+		var rootUses = countVariableReferences(expression, candidate.root);
+		var aliasUses = countVariableReferences(expression, candidate.alias);
+		return sameVariable(expected, candidate.root) ? rootUses == 1 && aliasUses == 0 : aliasUses == 1 && rootUses == 0;
+	}
+
+	static function countVariableReferences(expression:TypedExpr, expected:TVar):Int {
+		var count = 0;
+		function visit(current:TypedExpr):Void {
+			switch (current.expr) {
+				case TLocal(actual) if (sameVariable(actual, expected)):
+					count++;
+				case _:
+			}
+			TypedExprTools.iter(current, visit);
+		}
+		visit(expression);
+		return count;
+	}
+
 	static function findCanonicalArrayLengthReceivers(expression:TypedExpr):Array<TVar> {
 		var receivers:Array<TVar> = [];
 		function visit(current:TypedExpr):Void {
@@ -224,11 +285,16 @@ class ReferenceSemanticsDiagnostics {
 		return receivers;
 	}
 
-	static function canonicalArrayPushReceiver(expression:TypedExpr):Null<TVar> {
+	static function canonicalArrayPush(expression:TypedExpr):Null<CanonicalArrayPush> {
 		return switch (expression.expr) {
 			case TCall({expr: TField(receiverExpression, FInstance(classRef, _, fieldRef))}, [_])
 				if (isCanonicalArrayClass(classRef.get()) && fieldRef.get().name == "push"):
-				directLocal(receiverExpression);
+				var receiver = directLocal(receiverExpression);
+				receiver == null ? null : {receiver: receiver, position: expression.pos};
+			case TVar(_, initializer) if (initializer != null):
+				canonicalArrayPush(unwrap(initializer));
+			case TBinop(OpAssign, _, value):
+				canonicalArrayPush(unwrap(value));
 			case _:
 				null;
 		}
@@ -254,6 +320,32 @@ class ReferenceSemanticsDiagnostics {
 				true;
 			case _:
 				false;
+		}
+	}
+
+	/** Finds sequencing boundaries below a statement so parent alias facts never enter them. */
+	static function containsNestedSequencingBoundary(expression:TypedExpr):Bool {
+		var found = false;
+		function visit(current:TypedExpr):Void {
+			if (found) {
+				return;
+			}
+
+			var direct = unwrap(current);
+			if (isAmbiguousControlFlowBoundary(direct) || isShortCircuitExpression(direct)) {
+				found = true;
+				return;
+			}
+			TypedExprTools.iter(direct, visit);
+		}
+		TypedExprTools.iter(expression, visit);
+		return found;
+	}
+
+	static function isShortCircuitExpression(expression:TypedExpr):Bool {
+		return switch (expression.expr) {
+			case TBinop(OpBoolAnd | OpBoolOr, _, _): true;
+			case _: false;
 		}
 	}
 
@@ -292,7 +384,7 @@ class ReferenceSemanticsDiagnostics {
 		return classType.pack.length == 0 && classType.name == "Array";
 	}
 
-	static function isProjectSource(position:Position, projectRoot:String):Bool {
+	static function isProjectSource(position:Position, projectRoot:String, compilerOwnedRoots:Array<String>):Bool {
 		var root = ensureTrailingSlash(projectRoot);
 		var file = normalizePath(Context.getPosInfos(position).file);
 		if (file == null || file == "") {
@@ -307,9 +399,31 @@ class ReferenceSemanticsDiagnostics {
 			return false;
 		}
 
-		var compilerSource = ensureTrailingSlash(Path.join([root, "src/reflaxe"]));
-		var targetStd = ensureTrailingSlash(Path.join([root, "std"]));
-		return !StringTools.startsWith(file, compilerSource) && !StringTools.startsWith(file, targetStd);
+		for (compilerOwnedRoot in compilerOwnedRoots) {
+			if (StringTools.startsWith(file, compilerOwnedRoot)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/** Identifies compiler and framework classpaths by owned marker files, not user directory names. */
+	static function findCompilerOwnedRoots(projectRoot:String):Array<String> {
+		var roots:Array<String> = [];
+		for (classPath in Context.getClassPath()) {
+			var absolute = normalizePath(Path.isAbsolute(classPath) ? classPath : Path.join([projectRoot, classPath]));
+			if (hasCompilerOwnedMarker(absolute)) {
+				roots.push(ensureTrailingSlash(absolute));
+			}
+		}
+		return roots;
+	}
+
+	static function hasCompilerOwnedMarker(classPath:String):Bool {
+		return FileSystem.exists(Path.join([classPath, "reflaxe", "elixir", "CompilerInit.hx"]))
+			|| FileSystem.exists(Path.join([classPath, "elixir", "otp", "TypeSafeChildSpec.hx"]))
+			|| FileSystem.exists(Path.join([classPath, "reflaxe", "ReflectCompiler.hx"]))
+			|| FileSystem.exists(Path.join([classPath, "phoenix", "channels", "WireCodecs.hx"]));
 	}
 
 	static function ensureTrailingSlash(path:String):String {

@@ -116,8 +116,14 @@ the later peer `length` is known to be stale. The check covers one fresh Array,
 one direct local alias, one `push`, and one later peer `length` read in the same
 straight-line block.
 
-The check stops at branches, loops, escapes, overwrites, another mutation, or
-an unproved reference shape. It does not scan third-party dependency source.
+The direct `push` result can be unused, assigned, or stored in a new local variable.
+The check also scans constructors and class initialization.
+
+The check stops when a nested block or function can change the order of operations.
+It also stops at branches, loops, escapes, overwrites, another mutation, or an unproved reference shape.
+It scans typed source below the compilation working directory.
+Exact compiler and framework classpaths are excluded by marker files, not by user directory names.
+A vendored dependency below the working directory is therefore inside this initial safety boundary.
 No error means only that this narrow check did not match. It does not prove
 that another alias pattern is safe.
 

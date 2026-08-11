@@ -13,6 +13,7 @@ cleanup() {
 trap cleanup EXIT
 
 EXPECTED_LINE="$(cat "$FIXTURE_DIR/expected_stderr.txt")"
+EXPECTED_MESSAGE="$(cat "$FIXTURE_DIR/expected_message.txt")"
 
 run_case() {
   local label="$1"
@@ -25,15 +26,30 @@ run_case() {
     exit 1
   fi
 
-  if ! grep -Fqx "$EXPECTED_LINE" "$LOG_FILE"; then
-    echo "[reference-diagnostic] compiler did not report the exact expected source diagnostic in $label" >&2
-    tail -n 80 "$LOG_FILE" >&2
-    exit 1
+	local message_count
+	message_count="$(grep -Fc "$EXPECTED_MESSAGE" "$LOG_FILE" || true)"
+	if [[ "$message_count" -ne 1 ]]; then
+		echo "[reference-diagnostic] expected one shared Array alias diagnostic in $label, found $message_count" >&2
+		tail -n 80 "$LOG_FILE" >&2
+		exit 1
+	fi
+
+	if [[ "$label" == "the default compiler profile" ]] && ! grep -Fqx "$EXPECTED_LINE" "$LOG_FILE"; then
+		echo "[reference-diagnostic] compiler did not report the exact expected source diagnostic in $label" >&2
+		tail -n 80 "$LOG_FILE" >&2
+		exit 1
   fi
 }
 
 run_case "the default compiler profile"
 run_case "strict mode" -D reflaxe_elixir_strict
 run_case "the full-prepasses profile" -D full_prepasses
+run_case "a constructor" -D constructor_case
+run_case "class initialization" -D init_case
+run_case "a consumed push result" -D used_push_result_case
+run_case "an assigned push result" -D assigned_push_result_case
+run_case "an independently scanned local function" -D nested_function_case
+run_case "push through the alias" -D reverse_case
+run_case "owned source below an exclusion-looking path" -D source_scope_case
 
-echo "[reference-diagnostic] exact shared Array alias diagnostic observed in all compiler profiles"
+echo "[reference-diagnostic] one exact shared Array alias diagnostic observed in all compiler profiles and source shapes"

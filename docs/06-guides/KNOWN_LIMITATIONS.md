@@ -70,9 +70,18 @@ receiver rebinding do not prove alias behavior.
 The compiler rejects the exact example above in project-local source. It recognizes a fresh Array
 literal, one direct local alias, `push`, and a later peer `length` read in one straight-line block.
 The error points to `push`, before the compiler can emit known-wrong Elixir.
+The direct `push` result can be unused, assigned, or stored in a new local variable.
+The check also scans constructors and class initialization.
 
-This safeguard is deliberately narrow. It stops when it sees branches, loops, escapes, overwrites,
-another mutation, or an unproved reference shape. It does not scan third-party dependency source.
+This safeguard is deliberately narrow. It stops when a nested block or function can change the
+order of operations. It also stops at branches, loops, escapes, overwrites, another mutation,
+or an unproved reference shape.
+
+The check scans typed source below the compilation working directory. It excludes exact compiler
+and framework classpaths through marker files. It does not reserve user directory names.
+A vendored dependency below the working directory is inside this initial safety boundary.
+Dependency source outside the working directory is not scanned.
+
 It does not cover other Array observations, other collection mutators, object fields, maps, lists,
 stacks, buffers, or aliases that move through functions. No diagnostic means only that the narrow
 pattern did not match. It does not prove that another shared-alias pattern is safe.

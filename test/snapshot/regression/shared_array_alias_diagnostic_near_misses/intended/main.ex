@@ -44,6 +44,33 @@ defmodule Main do
     values = values ++ [2]
     length(values)
   end
+  def nested_overwrite() do
+    values = [1]
+    _alias = values
+    _ = values ++ [2]
+    alias_ = []
+    length(alias_)
+  end
+  def push_argument_reference() do
+    values = [1]
+    alias = values
+    values = values ++ [length(alias)]
+    length(values)
+  end
+  def unused_closure() do
+    values = [1]
+    alias = values
+    values = values ++ [2]
+    _read_later = fn -> length(alias) end
+    length(values)
+  end
+  def escape_before_alias() do
+    values = [1]
+    observe(values)
+    alias = values
+    _ = values ++ [2]
+    length(alias)
+  end
   defp observe(_values) do
 
   end
