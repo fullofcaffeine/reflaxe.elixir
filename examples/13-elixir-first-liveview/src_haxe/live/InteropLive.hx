@@ -67,7 +67,7 @@ class InteropLive {
 	                    </p>
 	                </header>
 
-	                <form phx-change="normalize" class="mb-4">
+	                <form id="slug-normalizer" phx-change="normalize" class="mb-4">
 	                    <label class="mb-1 block text-sm text-slate-700" for="slug-input">Input label</label>
 	                    <input
 	                        id="slug-input"

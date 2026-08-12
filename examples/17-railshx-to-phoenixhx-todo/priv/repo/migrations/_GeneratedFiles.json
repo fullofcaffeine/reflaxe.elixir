@@ -1,10 +1,26 @@
 {
-  "filesGenerated": [
-  "20260623090200_create_chat_messages.exs",
-  "20260623090100_create_todos.exs",
-  "20260623090000_create_users.exs"
-],
-  "id": 9,
-  "wasCached": false,
-  "version": 1
+	"filesGenerated": [
+		"20260623090200_create_chat_messages.exs",
+		"20260623090100_create_todos.exs",
+		"20260623090000_create_users.exs"
+	],
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 9,
+	"wasCached": false,
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "20260623090000_create_users.exs",
+			"sha256": "f3bd1f7b5b6f70dcd90199f5922cebf66a7aad147afb40c1bf7170e8a1f051d1"
+		},
+		{
+			"path": "20260623090100_create_todos.exs",
+			"sha256": "4961bb61d3c9ea3b8edbf47253484020a382b293ef43a5ff757419bc19d6d26e"
+		},
+		{
+			"path": "20260623090200_create_chat_messages.exs",
+			"sha256": "db3ac0aac579896b9535d1fa9db20bea956e32b8413a7a4337d5cb21c2fb9a94"
+		}
+	],
+	"generation": "238ba49e15d99081d4295a8ef86ff96f6f7264491b9419e02c28df42ff0d2c17"
 }

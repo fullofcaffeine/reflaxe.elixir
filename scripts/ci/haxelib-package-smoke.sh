@@ -551,11 +551,11 @@ JSON
 cat > "$live_react_consumer/vendor/phoenix_live_view/mix.exs" <<'EX'
 defmodule FixturePhoenixLiveView.MixProject do
   use Mix.Project
-  def project, do: [app: :phoenix_live_view, version: "1.2.8"]
+  def project, do: [app: :phoenix_live_view, version: "1.2.9"]
 end
 EX
 cat > "$live_react_consumer/vendor/phoenix_live_view/package.json" <<'JSON'
-{"name":"phoenix_live_view","version":"1.2.8"}
+{"name":"phoenix_live_view","version":"1.2.9"}
 JSON
 
 mkdir -p "$live_react_consumer/original"

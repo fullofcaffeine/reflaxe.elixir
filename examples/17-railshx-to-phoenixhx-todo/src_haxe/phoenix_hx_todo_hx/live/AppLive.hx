@@ -153,7 +153,7 @@ class AppLive {
 						<div class="side-stack">
 							<div class="panel composer-card">
 								<h2>Add a task</h2>
-								<form phx-submit="create_todo" phx-change="update_form" class="todo-form" data-testid="todo-form">
+								<form id="todo-form" phx-submit="create_todo" phx-change="update_form" class="todo-form" data-testid="todo-form">
 									<p class="form-owner-note">New tasks will be assigned to ${assigns.current_user_name}.</p>
 									<label>
 										<span>What should ship next?</span>
@@ -177,7 +177,7 @@ class AppLive {
 									RailsHx broadcasts server-rendered Turbo Stream partials. This slice persists
 									room notes through Ecto and broadcasts a PubSub refresh signal to LiveViews.
 								</p>
-								<form phx-submit="create_chat_message" phx-change="update_chat" class="chat-form" data-testid="chat-form">
+								<form id="chat-form" phx-submit="create_chat_message" phx-change="update_chat" class="chat-form" data-testid="chat-form">
 									<label>
 										<span>Add a typed room note</span>
 										<textarea name="body" rows="3" placeholder="Share what changed or what shipped">${assigns.chat_input}</textarea>

@@ -41,7 +41,7 @@
       },
       "phoenix": "1.7.24",
       "phoenixHtml": "4.3.0",
-      "phoenixLiveView": "0.20.17",
+      "phoenixLiveView": "1.2.9",
       "liveReact": {
         "kind": "git",
         "repository": "https://github.com/mrdotb/live_react.git",
@@ -90,9 +90,9 @@
         "elixir": "1.18.3",
         "otp": "27.2"
       },
-      "phoenix": "1.8.9",
+      "phoenix": "1.8.10",
       "phoenixHtml": "4.3.0",
-      "phoenixLiveView": "1.2.8",
+      "phoenixLiveView": "1.2.9",
       "liveReact": {
         "kind": "git",
         "repository": "https://github.com/mrdotb/live_react.git",
@@ -143,7 +143,7 @@
       },
       "phoenix": "1.7.24",
       "phoenixHtml": "3.3.4",
-      "phoenixLiveView": "0.20.17",
+      "phoenixLiveView": "1.2.9",
       "liveReact": {
         "kind": "git",
         "repository": "https://github.com/mrdotb/live_react.git",
@@ -194,7 +194,7 @@
       },
       "phoenix": "1.8.9",
       "phoenixHtml": "4.3.0",
-      "phoenixLiveView": "1.2.8",
+      "phoenixLiveView": "1.2.9",
       "liveReact": {
         "kind": "path-fixture",
         "repository": null,

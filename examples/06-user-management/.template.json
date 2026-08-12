@@ -15,7 +15,7 @@
     "haxe": "4.3.7",
     "elixir": "1.14+",
     "phoenix": "1.7+", 
-    "phoenix_live_view": "0.20+",
+    "phoenix_live_view": "1.2.9+",
     "node": "22.14.0+"
   },
   "placeholders": {

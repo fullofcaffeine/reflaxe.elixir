@@ -124,7 +124,7 @@ defmodule PhoenixChatWeb.AppLive do
                                     <% end %>
                                 </div>
 
-                                <form phx-submit="send_message" class="composer">
+                                <form id="message-composer" phx-submit="send_message" class="composer">
                                     <input type="text" name="message" value={@message_input} placeholder="Message the room..." autocomplete="off" class="composer-input" phx-change="update_input" />
                                     <button type="submit" class="composer-btn">Send</button>
                                 </form>

@@ -148,7 +148,7 @@
 		},
 		{
 			"path": "phoenix_chat_web/app_live.exs",
-			"sha256": "4a281c5b46947d24d5e94c95ba97594525e1b92f18761d792b17073b0dc6bc4e"
+			"sha256": "e4226d02e0175f6f2163dc45ca4428ee8c3afb2a7d603ff59c3dbfbee739fbc1"
 		},
 		{
 			"path": "phoenix_chat_web/presence.exs",
@@ -187,5 +187,5 @@
 			"sha256": "14d0fae11e0a57cb0a490ec5a9de56a9575762d2649b3f69b2ef5c3431ae3f15"
 		}
 	],
-	"generation": "d827bf8330ac0e1d964f3298a552d112949111e8d913a231a674d1a6fa26fb17"
+	"generation": "daa631fd5dcc6cc249cadbd39befff41cfa4a4cb1a31b8196821283114f0bb4e"
 }

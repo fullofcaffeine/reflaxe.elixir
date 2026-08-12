@@ -195,7 +195,7 @@ class AppLive {
                                 </for>
                             </div>
 
-                            <form phx-submit="send_message" class="composer">
+                            <form id="message-composer" phx-submit="send_message" class="composer">
                                 <input
                                     type="text"
                                     name="message"

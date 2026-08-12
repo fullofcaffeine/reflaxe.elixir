@@ -118,10 +118,10 @@ class LiveReactFixture {
 		// the lifecycle derives them from these checkouts instead of owning them.
 		write(root, "deps/phoenix/package.json", "{\"name\":\"phoenix\",\"version\":\"1.7.24\"}\n");
 		write(root, "deps/phoenix_html/package.json", "{\"name\":\"phoenix_html\",\"version\":\"4.3.0\"}\n");
-		write(root, "deps/phoenix_live_view/package.json", "{\"name\":\"phoenix_live_view\",\"version\":\"1.2.8\"}\n");
+		write(root, "deps/phoenix_live_view/package.json", "{\"name\":\"phoenix_live_view\",\"version\":\"1.2.9\"}\n");
 		write(root, "deps/phoenix/mix.exs", dependencyMixExs("phoenix", "1.7.24"));
 		write(root, "deps/phoenix_html/mix.exs", dependencyMixExs("phoenix_html", "4.3.0"));
-		write(root, "deps/phoenix_live_view/mix.exs", dependencyMixExs("phoenix_live_view", "1.2.8"));
+		write(root, "deps/phoenix_live_view/mix.exs", dependencyMixExs("phoenix_live_view", "1.2.9"));
 
 		if (clientMode == GENES) {
 			write(root, "build-client.hxml", "-lib genes-ts\n");

@@ -3,7 +3,7 @@
     "live_react": "file:deps/live_react",
     "phoenix": "1.7.24",
     "phoenix_html": "4.3.0",
-    "phoenix_live_view": "0.20.17",
+    "phoenix_live_view": "1.2.9",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "topbar": "2.0.0"

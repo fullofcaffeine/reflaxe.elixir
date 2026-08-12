@@ -302,7 +302,7 @@ class UsersLive {
                             </div>
                         </div>
 
-                        <form phx-change=${EventName.FilterUsers} class="flex flex-col md:flex-row gap-3 mb-6">
+                        <form id="user-filters" phx-change=${EventName.FilterUsers} class="flex flex-col md:flex-row gap-3 mb-6">
                             <input data-testid="users-search" name="query" type="text" value={assigns.search_query} placeholder="Search name or email…"
                                 phx-debounce="250"
                                 class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"/>

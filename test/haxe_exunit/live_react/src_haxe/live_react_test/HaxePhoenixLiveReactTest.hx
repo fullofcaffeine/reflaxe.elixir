@@ -400,7 +400,7 @@ class HaxePhoenixLiveReactTest extends TestCase {
 		Assert.raisesRuntimeErrorMatching(function():Void {
 			LifecycleApi.applyBang(root, Fixture.applyOptions(root));
 		},
-			"phoenix_live_view browser package is 0.20.17, but the resolved Mix checkout is 1.2.8");
+			"phoenix_live_view browser package is 0.20.17, but the resolved Mix checkout is 1.2.9");
 		Assert.equals(before, Fixture.treeSnapshot(root));
 	}
 

@@ -272,7 +272,7 @@ class AuditLogLive {
                                 </div>
                             </div>
 
-                            <form phx-change=${EventName.FilterAudit} class="flex flex-col md:flex-row gap-3 mb-6">
+                            <form id="audit-log-filters" phx-change=${EventName.FilterAudit} class="flex flex-col md:flex-row gap-3 mb-6">
 	                                <select data-testid="audit-filter-action" name="action"
 	                                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">
 	                                    <option value="all" selected={assigns.action_filter == "all"}>All actions</option>

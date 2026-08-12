@@ -39,7 +39,7 @@ defmodule ElixirFirstLiveview.MixProject do
       {:phoenix, "~> 1.7.24"},
       {:phoenix_html, "~> 3.3"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:phoenix_live_view, "~> 1.0"},
+      {:phoenix_live_view, "~> 1.2.9"},
       {:lazy_html, ">= 0.1.0", only: :test},
       {:floki, ">= 0.30.0", only: :test},
       {:phoenix_live_dashboard, "~> 0.8.0"},

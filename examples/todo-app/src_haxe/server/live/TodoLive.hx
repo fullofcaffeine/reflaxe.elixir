@@ -1513,7 +1513,7 @@ class TodoLive {
 									<div data-testid="todo-controls-row" class="todo-controls-row">
 									<!-- Search -->
 									<div class="flex-1 min-w-[280px]">
-			                            <form phx-change=${EventName.SearchTodos} class="relative h-11">
+			                            <form id="todo-search" phx-change=${EventName.SearchTodos} class="relative h-11">
 												<input type="search" name="query" value={assigns.search_query} phx-debounce="300"
 													class="todo-control-field todo-control-field-search pl-10 pr-4"
 													placeholder="Search todos..." />
@@ -1533,7 +1533,7 @@ class TodoLive {
 									
 									<!-- Sort Dropdown -->
 									<div class="min-w-[210px]">
-			                            <form phx-change=${EventName.SortTodos} class="h-11">
+			                            <form id="todo-sort" phx-change=${EventName.SortTodos} class="h-11">
 				                                <select name="sort_by"
 				                                    class="todo-control-field px-4">
 				                                    <option value="created" selected={assigns.sort_selected_created}>Sort by Date</option>

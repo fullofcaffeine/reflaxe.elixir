@@ -61,10 +61,10 @@ All three browser-tested applications currently use React and ReactDOM
 
 | Tested consumer | Browser source | Phoenix / Phoenix HTML / LiveView | What the row proves |
 | --- | --- | --- | --- |
-| `examples/12-phoenix-chat` | Haxe/Genes bootstrap with a handwritten TSX React component | `1.7.24` / `4.3.0` / `0.20.17` | A richer chat app mounts React, completes a typed event, keeps Presence working, and retains its LiveView fallback. |
-| `examples/18-phoenixhx-live-react` | Plain TypeScript; Genes is not used | `1.8.9` / `4.3.0` / `1.2.8` | A small independent project installs the integration, mounts React, completes one event round trip, and retains its LiveView fallback. |
-| `examples/todo-app` | Haxe through Genes | `1.7.24` / `3.3.4` / `0.20.17` | The flagship app adds a React island without losing create, edit, complete, delete, or fallback behavior. |
-| Installed GitHub Release package (Haxelib-compatible ZIP) | No browser is started | dependency stubs for `1.8.9` / `4.3.0` / `1.2.8` | A clean installed archive exposes the setup and component commands, restores files on removal, and compiles the same HXX wrapper as the source checkout. This row does **not** claim browser compatibility for the stubs. |
+| `examples/12-phoenix-chat` | Haxe/Genes bootstrap with a handwritten TSX React component | `1.7.24` / `4.3.0` / `1.2.9` | A richer chat app mounts React, completes a typed event, keeps Presence working, and retains its LiveView fallback. |
+| `examples/18-phoenixhx-live-react` | Plain TypeScript; Genes is not used | `1.8.10` / `4.3.0` / `1.2.9` | A small independent project installs the integration, mounts React, completes one event round trip, and retains its LiveView fallback. |
+| `examples/todo-app` | Haxe through Genes | `1.7.24` / `3.3.4` / `1.2.9` | The flagship app adds a React island without losing create, edit, complete, delete, or fallback behavior. |
+| Installed GitHub Release package (Haxelib-compatible ZIP) | No browser is started | dependency stubs for `1.8.9` / `4.3.0` / `1.2.9` | A clean installed archive exposes the setup and component commands, restores files on removal, and compiles the same HXX wrapper as the source checkout. This row does **not** claim browser compatibility for the stubs. |
 
 The two Genes rows declare Genes `1.37.0` from exact temporary pull-request
 commit `697943b1c10b72309d815b0f6a5605d7c5c2a53b`. That makes today's tests
