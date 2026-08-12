@@ -57,7 +57,7 @@ defmodule ElixirFirstLiveviewWeb.SearchLive do
           </p>
         </header>
 
-        <form phx-change="search" class="mb-3">
+        <form id="topic-search" phx-change="search" class="mb-3">
           <input
             type="text"
             name="query"
