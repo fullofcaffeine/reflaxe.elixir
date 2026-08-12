@@ -1,6 +1,25 @@
 # Phoenix Integration (User Guide)
 
-Reflaxe.Elixir is designed to let you use **Phoenix conventions and APIs** while gaining Haxe’s compile-time type safety. You can adopt it in two ways:
+PhoenixHx is a typed Haxe authoring and integration layer for the real Phoenix framework.
+You write selected application modules in Haxe. PhoenixHx generates ordinary Elixir and HEEx for
+Mix, Phoenix, LiveView, Ecto, and the BEAM runtime.
+
+PhoenixHx has three related parts:
+
+- **Typed bindings** describe existing Phoenix APIs to the Haxe type checker.
+- **Authoring tools** provide Haxe forms for routes, LiveViews, components, templates, Ecto, and OTP wiring.
+- **Compiler integration** generates the Elixir modules and HEEx templates that Phoenix compiles and runs.
+
+An **extern** is one Haxe declaration that describes an existing API without copying its
+implementation. Externs provide many low-level bindings. However, “bindings” describes only one
+part of PhoenixHx. “Headers” is not the preferred term because Haxe and Elixir do not use C-style
+header files.
+
+PhoenixHx does not reimplement Phoenix. Your project still depends on the real Phoenix libraries.
+Phoenix still owns request handling, LiveView behavior, templates, processes, and production
+runtime behavior.
+
+You can adopt this layer in two ways:
 
 1. **Greenfield** — new Phoenix apps where you author many modules in Haxe.
 2. **Gradual adoption** — existing Phoenix apps where you move one module at a time.

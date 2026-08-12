@@ -29,7 +29,8 @@
 </p>
 
 **Reflaxe.Elixir** compiles typed Haxe into `.ex` source for the normal Mix and BEAM pipeline.
-**PhoenixHx** adds typed Phoenix, LiveView, Ecto, and OTP authoring while Phoenix remains the runtime.
+**PhoenixHx** is the typed Haxe authoring and integration layer for Phoenix, LiveView, Ecto, and OTP.
+It generates ordinary Elixir that runs on the real frameworks and the BEAM runtime.
 
 **For Elixir developers:** add static types, closed domain states, typed Phoenix boundaries, and
 compile-time DSL checks one module or feature at a time. Generated and hand-written Elixir coexist
@@ -262,10 +263,14 @@ validation behavior is shared without pulling Phoenix or JavaScript APIs into th
 
 ## PhoenixHx
 
-PhoenixHx is a build-time typed authoring layer, not a replacement web runtime. LiveViews use typed
-`Socket<TAssigns>` and callback result types. Haxe parses inline HXX and type-checks assigns and
-embedded expressions before emitting Phoenix `~H`; strict options also check registered components,
-slots, hooks, and events. This excerpt is from the checked
+PhoenixHx combines typed bindings, Haxe authoring tools, and compiler integration. The bindings
+describe existing Phoenix APIs to Haxe. The authoring tools cover routes, LiveViews, components,
+templates, Ecto, and OTP application code. The compiler then generates ordinary Elixir and HEEx.
+PhoenixHx does not copy or replace Phoenix.
+
+For example, LiveViews use typed `Socket<TAssigns>` and callback result types. Haxe parses inline HXX
+and type-checks assigns and embedded expressions before emitting Phoenix `~H`. Strict options also
+check registered components, slots, hooks, and events. This excerpt is from the checked
 [`SearchLive`](examples/13-elixir-first-liveview/src_haxe/live/SearchLive.hx):
 
 ```haxe
