@@ -8,8 +8,14 @@ GENERATED_DIR="$FIXTURE_DIR/generated"
 EXPECTED_CONTRACT="$FIXTURE_DIR/expected/status-panel-events.generated.ts"
 
 if [[ ! -x "$EXAMPLE_DIR/node_modules/.bin/tsc" ]]; then
-  "$ROOT_DIR/scripts/with-timeout.sh" --secs 300 -- \
-    npm -C "$EXAMPLE_DIR" ci --prefer-offline --no-audit --no-fund
+	# npm must resolve LiveReact from the Mix checkout under deps/. A warm CI
+	# cache already has that directory, so fetch it explicitly on a cold run.
+	if [[ ! -f "$EXAMPLE_DIR/deps/live_react/package.json" ]]; then
+		"$ROOT_DIR/scripts/with-timeout.sh" --secs 300 --cwd "$EXAMPLE_DIR" -- \
+			mix deps.get
+	fi
+	"$ROOT_DIR/scripts/with-timeout.sh" --secs 300 -- \
+		npm -C "$EXAMPLE_DIR" ci --prefer-offline --no-audit --no-fund
 fi
 
 rm -rf "$GENERATED_DIR"
