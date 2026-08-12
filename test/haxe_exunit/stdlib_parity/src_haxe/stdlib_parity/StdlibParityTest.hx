@@ -1692,7 +1692,7 @@ class StdlibParityTest extends TestCase {
 
 	@:describe("haxe.Timer")
 	@:test
-	function testTimerDelayAndRepeatUseEventLoop():Void {
+	function testTimerRepeatUsesEventLoop():Void {
 		var repeated = new Timer(1);
 		repeated.run = function() {
 			Thread.current().sendMessage("timer-repeat");
@@ -1702,7 +1702,11 @@ class StdlibParityTest extends TestCase {
 		progressCurrentThreadEvents();
 		Assert.equals("timer-repeat", Thread.readMessage(false));
 		repeated.stop();
+	}
 
+	@:describe("haxe.Timer")
+	@:test
+	function testTimerDelayUsesEventLoop():Void {
 		Timer.delay(function() {
 			Thread.current().sendMessage("timer-delay");
 		}, 1);
