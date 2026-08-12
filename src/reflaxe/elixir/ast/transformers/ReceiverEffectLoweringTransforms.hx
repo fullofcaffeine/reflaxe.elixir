@@ -1,6 +1,7 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
+import haxe.macro.Type;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.EBinaryOp;
 import reflaxe.elixir.ast.ElixirAST.ReceiverResultShape;
@@ -240,28 +241,61 @@ class ReceiverEffectLoweringTransforms {
 			case ECall(target, functionName, args):
 				var prelude:Array<ElixirAST> = [];
 				var newTarget:Null<ElixirAST> = null;
+				var targetFrozen = false;
 				if (target != null) {
 					var targetPlan = lowerExpression(target, Value);
 					prelude = prelude.concat(targetPlan.prelude);
 					newTarget = targetPlan.value;
 				}
 				var newArgs:Array<ElixirAST> = [];
+				var frozenArgs:Array<Bool> = [];
 				for (arg in args) {
 					var argPlan = lowerExpression(arg, Value);
+					if (argPlan.prelude.length > 0) {
+						if (newTarget != null && !targetFrozen) {
+							newTarget = bindOrderedValue(newTarget, prelude);
+							targetFrozen = true;
+						}
+						for (i in 0...newArgs.length) {
+							if (!frozenArgs[i]) {
+								newArgs[i] = bindOrderedValue(newArgs[i], prelude);
+								frozenArgs[i] = true;
+							}
+						}
+					}
 					prelude = prelude.concat(argPlan.prelude);
 					newArgs.push(argPlan.value);
+					frozenArgs.push(false);
 				}
 				{prelude: prelude, value: makeASTWithMeta(ECall(newTarget, functionName, newArgs), node.metadata, node.pos)};
 			case ERemoteCall(module, functionName, args):
 				var modulePlan = lowerExpression(module, Value);
 				var prelude = modulePlan.prelude.copy();
+				var moduleValue = modulePlan.value;
+				var moduleFrozen = false;
 				var newArgs:Array<ElixirAST> = [];
+				var frozenArgs:Array<Bool> = [];
 				for (arg in args) {
 					var argPlan = lowerExpression(arg, Value);
+					if (argPlan.prelude.length > 0) {
+						if (!moduleFrozen && needsOrderedBinding(moduleValue)) {
+							moduleValue = bindOrderedValue(moduleValue, prelude);
+							moduleFrozen = true;
+						} else if (!moduleFrozen) {
+							moduleFrozen = true;
+						}
+						for (i in 0...newArgs.length) {
+							if (!frozenArgs[i]) {
+								newArgs[i] = bindOrderedValue(newArgs[i], prelude);
+								frozenArgs[i] = true;
+							}
+						}
+					}
 					prelude = prelude.concat(argPlan.prelude);
 					newArgs.push(argPlan.value);
+					frozenArgs.push(false);
 				}
-				{prelude: prelude, value: makeASTWithMeta(ERemoteCall(modulePlan.value, functionName, newArgs), node.metadata, node.pos)};
+				{prelude: prelude, value: makeASTWithMeta(ERemoteCall(moduleValue, functionName, newArgs), node.metadata, node.pos)};
 			case EPipe(left, right):
 				var leftPlan = lowerExpression(left, Value);
 				var rightPlan = lowerExpression(right, Value);
@@ -528,13 +562,86 @@ class ReceiverEffectLoweringTransforms {
 				flattened.push(plan.value);
 		}
 
-		if (!sawPrelude || flattened.length == 0)
+		if ((!sawPrelude && !hasCallerVisibleReassignmentPrelude(flattened)) || flattened.length == 0)
 			return {prelude: [], value: rebuild(flattened)};
 
 		return {
 			prelude: flattened.slice(0, flattened.length - 1),
 			value: flattened[flattened.length - 1]
 		};
+	}
+
+	/**
+	 * Report whether a block's leading expressions only reassign Haxe locals that
+	 * already exist in the caller.
+	 *
+	 * Haxe lets a block used as a value update an outer local. Elixir anonymous
+	 * functions do not export bindings, so the printer's normal block-argument
+	 * wrapper would hide that update. The node's source metadata distinguishes a
+	 * local reassignment from a `var` declaration. We lift only this narrow,
+	 * declaration-free sequence and leave blocks with local declarations scoped
+	 * in the normal wrapper.
+	 */
+	static function hasCallerVisibleReassignmentPrelude(statements:Array<ElixirAST>):Bool {
+		if (statements == null || statements.length < 2)
+			return false;
+
+		for (i in 0...statements.length - 1) {
+			var statement = statements[i];
+			if (!isSourceLocalReassignment(statement))
+				return false;
+			switch (statement.def) {
+				case EMatch(_, _):
+				default:
+					return false;
+			}
+		}
+
+		return true;
+	}
+
+	static function bindOrderedValue(value:ElixirAST, prelude:Array<ElixirAST>):ElixirAST {
+		var name = 'reflaxe_call_value_${tempCounter++}';
+		prelude.push(makeASTWithMeta(EMatch(PVar(name), value), value != null ? value.metadata : null, value != null ? value.pos : null));
+		return makeAST(EVar(name));
+	}
+
+	static function needsOrderedBinding(value:ElixirAST):Bool {
+		if (value == null)
+			return false;
+		return switch (value.def) {
+			case EAtom(_) | EInteger(_) | EFloat(_) | EString(_) | EBoolean(_) | ENil:
+				false;
+			case EVar(name) if (name != null && name.length > 0 && name.charAt(0) == name.charAt(0).toUpperCase()):
+				false;
+			default:
+				true;
+		}
+	}
+
+	static function isSourceLocalReassignment(statement:ElixirAST):Bool {
+		if (statement == null || statement.metadata == null || statement.metadata.sourceExpr == null)
+			return false;
+
+		function isLocalTarget(expr:TypedExpr):Bool {
+			return switch (expr.expr) {
+				case TLocal(_):
+					true;
+				case TField(base, _):
+					isLocalTarget(base);
+				case TParenthesis(inner) | TMeta(_, inner) | TCast(inner, _):
+					isLocalTarget(inner);
+				default:
+					false;
+			}
+		}
+
+		return switch (statement.metadata.sourceExpr.expr) {
+			case TBinop(OpAssign, lhs, _) | TBinop(OpAssignOp(_), lhs, _):
+				isLocalTarget(lhs);
+			default:
+				false;
+		}
 	}
 
 	static function materialize(prelude:Array<ElixirAST>, value:ElixirAST, source:ElixirAST):ElixirAST {

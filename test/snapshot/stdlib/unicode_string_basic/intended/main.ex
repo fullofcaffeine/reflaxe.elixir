@@ -13,9 +13,10 @@ defmodule Main do
     {codes, _g_offset} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {codes, g_offset}, fn _, {acc_codes, acc__g_offset} ->
       try do
         if (StringTools.haxe_char_at(g_s, acc__g_offset) != "") do
+          reflaxe_call_value_1 = g_s
           reflaxe_receiver_value_0 = acc__g_offset
           acc__g_offset = acc__g_offset + 1
-          code = StringTools.fast_code_at(g_s, reflaxe_receiver_value_0)
+          code = StringTools.fast_code_at(reflaxe_call_value_1, reflaxe_receiver_value_0)
           acc_codes = acc_codes ++ [code]
           {:cont, {acc_codes, acc__g_offset}}
         else
@@ -47,9 +48,10 @@ defmodule Main do
       try do
         if (StringTools.haxe_char_at(g_s, acc__g_offset) != "") do
           g_key = acc__g_offset
-          reflaxe_receiver_value_1 = acc__g_offset
+          reflaxe_call_value_3 = g_s
+          reflaxe_receiver_value_2 = acc__g_offset
           acc__g_offset = acc__g_offset + 1
-          g_value = StringTools.fast_code_at(g_s, reflaxe_receiver_value_1)
+          g_value = StringTools.fast_code_at(reflaxe_call_value_3, reflaxe_receiver_value_2)
           index = g_key
           code = g_value
           acc_entries = acc_entries ++ [Reflaxe.Elixir.HaxeFloat.to_string(index) <> ":" <> Reflaxe.Elixir.HaxeFloat.to_string(code)]

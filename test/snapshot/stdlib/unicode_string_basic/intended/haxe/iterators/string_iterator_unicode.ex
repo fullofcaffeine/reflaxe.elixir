@@ -9,8 +9,9 @@ defmodule StringIteratorUnicode do
     StringTools.haxe_char_at(struct.s, struct.offset) != ""
   end
   def next(struct) do
-    {struct, reflaxe_receiver_value_0} = {%{struct | offset: struct.offset + 1}, struct.offset}
-    StringTools.fast_code_at(struct.s, reflaxe_receiver_value_0)
+    reflaxe_call_value_1 = struct.s
+    {_struct, reflaxe_receiver_value_0} = {%{struct | offset: struct.offset + 1}, struct.offset}
+    StringTools.fast_code_at(reflaxe_call_value_1, reflaxe_receiver_value_0)
   end
   def unicode_iterator(s_param) do
     StringIteratorUnicode.new(s_param)
