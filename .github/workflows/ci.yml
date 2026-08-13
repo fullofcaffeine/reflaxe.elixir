@@ -675,19 +675,26 @@ jobs:
         run: bash scripts/ci/runtime-smoke-stdlib-io.sh
       - name: Runtime smoke (local OTP contract)
         run: npm run test:otp-runtime
-      - name: Run Mix tests (fast)
+      - name: Prepare Mix test dependencies
+        run: npm run test:mix-fast -- --prepare-only
+      - name: Run Mix tests (required)
         run: |
           set -euo pipefail
-          for attempt in 1 2 3; do
-            echo "[ci] Mix tests attempt ${attempt}/3"
-            if npm run test:mix-fast; then
-              exit 0
-            fi
-            echo "[ci] Mix tests failed; retrying in 5s..."
-            sleep 5
-          done
-          echo "[ci] Mix tests failed after 3 attempts"
-          exit 1
+          scripts/ci/run-required-semantic-test.sh \
+            --name "macOS Mix tests" \
+            --log "$RUNNER_TEMP/mix-fast-semantic.log" \
+            --metadata "$RUNNER_TEMP/mix-fast-semantic.meta" \
+            -- npm run test:mix-fast -- --test-only
+      - name: Upload macOS Mix test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: macos-mix-test-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/mix-fast-semantic.log
+            ${{ runner.temp }}/mix-fast-semantic.meta
+          if-no-files-found: warn
+          retention-days: 30
 
   docs-smoke:
     name: Docs Smoke (Phoenix)

@@ -305,8 +305,9 @@ class WorkflowTopologyTests(unittest.TestCase):
                 )
                 self.assertIn("bash scripts/ci/runtime-smoke-stdlib-io.sh", run_commands)
                 self.assertIn("npm run test:otp-runtime", run_commands)
-                self.assertTrue(
-                    "npm run test:mix-fast" in run_commands or "if npm run test:mix-fast; then" in body,
+                self.assertIn(
+                    "npm run test:mix-fast",
+                    body,
                     f"{name} must execute the Mix integration suite",
                 )
 

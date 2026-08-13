@@ -75,6 +75,7 @@ jobs:
           name: qa-minimal-phoenix-logs
           path: |
             /tmp/qa-*.log
+            /tmp/qa-*.meta
             qa-minimal-phoenix.log
 
   smoke:
@@ -218,6 +219,7 @@ jobs:
           name: qa-logs
           path: |
             /tmp/qa-*.log
+            /tmp/qa-*.meta
             qa-run.log
             qa-dev-watchers-run.log
 
@@ -396,6 +398,7 @@ jobs:
           name: qa-logs-phoenix-chat
           path: |
             /tmp/qa-*.log
+            /tmp/qa-*.meta
             qa-chat-run.log
 
   smoke-live-react:
@@ -482,4 +485,5 @@ jobs:
           name: qa-logs-live-react
           path: |
             /tmp/qa-*.log
+            /tmp/qa-*.meta
             qa-live-react-run.log

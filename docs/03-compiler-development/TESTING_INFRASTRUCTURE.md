@@ -185,7 +185,7 @@ policy and owner now exist; it does not erase the residual execution gaps named 
 | Lowest faithful layer and double lock | Partial | **Satisfied** | The policy retains focused diagnosis and real-boundary proof without forcing browser tests where the browser cannot observe the defect. |
 | Portfolio review, not quotas | Partial | **Partial** | Per-surface review is now required; ratios remain smell detectors. Unique failure yield and critical-path optimization remain measured follow-up work. |
 | Executable examples | Partial | **Partial, with current claims audited** | Manifest schema v2 classifies every example and rejects internally inconsistent tier/evidence/CI declarations. The current `ci: true` entries were checked against required workflows, but independent workflow linkage remains `haxe.elixir.codex-jvg.4`; advertised execution gaps receive separate Beads. |
-| Preserve R0–R5 | Satisfied | **Satisfied with residual** | Rings, conservative fallback, and full backstop remain unchanged; retry evidence repair remains `haxe.elixir.codex-04s`. |
+| Preserve R0–R5 | Satisfied | **Satisfied** | Rings, conservative fallback, and the full backstop remain unchanged. Required semantic tests now preserve their first result. |
 | Targeted high-risk verification | Partial | **Satisfied as policy** | A distinct review is now required and this update records one; future findings must remain durable in the Bead/PR or decision trail. |
 
 ## Evidence vocabulary
@@ -300,8 +300,11 @@ selector-recall evidence, not broad path ignores.
    next task. A cancelled superseded run is not a failure; an older green run is not evidence for a
    newer commit.
 7. **Preserve the failure.** Do not hide deterministic failures with retries or silently convert a
-   retry pass into an ordinary green claim. Record the original attempt and classify infrastructure
-   failures separately.
+   retry pass into an ordinary green claim. Each required semantic test runs once in a CI attempt.
+   If infrastructure noise is possible, rerun the CI job as a separate diagnostic attempt. The new
+   attempt gets a separate result and cannot change the original failure. Setup and download steps
+   can retry because they do not evaluate product behavior. Keep these operational retries in named
+   setup steps so that their final failures are clear.
 
 `npm run test:changed` is a local convenience heuristic. It has no reviewed semantic-ownership
 manifest or selector-miss audit, so it is **advisory only** and cannot establish completion or become
@@ -472,7 +475,7 @@ the contract; it is not permission to relabel the gap as a pass.
 | Native/framework | Mix, OTP, Phoenix, Ecto, LiveView, LiveReact/Genes and output-quality gates | No gap that portable-suite work is allowed to replace | Keep this axis independently required | Ongoing |
 | Feedback efficiency | Focused commands, parallel snapshots, bounded sentinels, sharded WAE, observation-only ownership/timing reports | R0/R1 p50/p95 and validated per-rule promotion evidence; GitHub job metadata does not expose every cache/retry/first-log signal | Extend existing runners only when a missing signal changes a decision; observe before selecting | Selector observation, then measured promotion |
 | CI topology | Full PR/main graph with exact tested-commit release, parallel semantic test lanes, focused minimum-toolchain/macOS vertical smokes, a fail-closed `Tests` aggregator, and a non-blocking post-gate timing/miss observer | Code-level compiler and harness costs remain measured follow-up work | Keep the observer unable to skip jobs; optimize newly visible owners from evidence rather than weakening lanes | Measured R2/R3 promotion |
-| Retry policy | macOS Mix and QA-sentinel Playwright paths retry failed semantic tests | A later pass can erase the original red outcome or log; setup/download retries are not classified separately | Preserve attempt logs/outcomes and classify setup, infrastructure, flake, and deterministic semantic failures without turning red into an unqualified pass | Retry-policy repair |
+| Retry policy | macOS Mix and QA-sentinel Playwright paths retried failed semantic tests | Required semantic tests now run once per CI attempt and save their result, log, and run-attempt identity | Setup and download retries remain operational; their named steps cannot turn a failed semantic test green | Implemented by `haxe.elixir.codex-04s` |
 
 ### Primary Tests critical-path baseline and split
 

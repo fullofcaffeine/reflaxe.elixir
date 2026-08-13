@@ -1074,14 +1074,16 @@ if [[ "$RUN_PLAYWRIGHT" -eq 1 ]]; then
   # Important: do NOT quote the spec so that shell globs expand (e.g., e2e/*.spec.ts)
   SPEC_ARG=${E2E_SPEC:-e2e}
   PLAYWRIGHT_TEST_CMD="BASE_URL=\"http://localhost:$PORT\" npx -C . playwright test ${SPEC_ARG} --workers=${E2E_WORKERS}"
-  if ! run_step_with_log "Playwright tests" 300s /tmp/qa-playwright-run.log "$PLAYWRIGHT_TEST_CMD"; then
-    log "[QA] Playwright tests failed; retrying once..."
-    if ! run_step_with_log "Playwright tests (retry)" 300s /tmp/qa-playwright-run.log "$PLAYWRIGHT_TEST_CMD"; then
-      log "[QA] ❌ Playwright tests failed. Last 120 lines:"
-      tail -n 120 /tmp/qa-playwright-run.log || true
-      cleanup || true
-      exit 1
-    fi
+  log "[QA] Playwright tests are required and run once; use a separate CI rerun for diagnosis."
+  if ! "$SCRIPT_DIR/ci/run-required-semantic-test.sh" \
+    --name "QA sentinel Playwright" \
+    --log /tmp/qa-playwright-run.log \
+    --metadata /tmp/qa-playwright-run.meta \
+    -- "$SCRIPT_DIR/with-timeout.sh" --secs 300 --cwd "$(pwd)" -- bash -lc "$PLAYWRIGHT_TEST_CMD"; then
+    log "[QA] ❌ Playwright tests failed. Last 120 lines:"
+    tail -n 120 /tmp/qa-playwright-run.log || true
+    cleanup || true
+    exit 1
   fi
   log "[QA] ✅ Playwright tests passed"
 fi

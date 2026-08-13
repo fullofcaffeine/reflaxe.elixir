@@ -10,11 +10,32 @@ set -euo pipefail
 export HAXE_NO_SERVER="${HAXE_NO_SERVER:-1}"
 export MIX_ENV="${MIX_ENV:-test}"
 
-mix local.hex --if-missing --force
-mix local.rebar --if-missing --force
+prepare=1
+run_tests=1
+if (( $# > 1 )); then
+  echo "Usage: scripts/test-mix-fast.sh [--prepare-only|--test-only]" >&2
+  exit 2
+fi
+case "${1:-}" in
+  "") ;;
+  --prepare-only) run_tests=0 ;;
+  --test-only) prepare=0 ;;
+  *)
+    echo "Usage: scripts/test-mix-fast.sh [--prepare-only|--test-only]" >&2
+    exit 2
+    ;;
+esac
 
-mix deps.get
-mix deps.compile
+if (( prepare == 1 )); then
+  mix local.hex --if-missing --force
+  mix local.rebar --if-missing --force
+  mix deps.get
+  mix deps.compile
+fi
+
+if (( run_tests == 0 )); then
+  exit 0
+fi
 
 supports_stale=0
 help_file="$(mktemp "${TMPDIR:-/tmp}/mix-help-test.XXXXXX")"
