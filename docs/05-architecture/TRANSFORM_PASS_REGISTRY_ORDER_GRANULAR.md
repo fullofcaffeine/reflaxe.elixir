@@ -159,7 +159,7 @@ Effective pass count: **578**
 | 149 | `CaseSuccessVarUnifier` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite undefined placeholder locals to the success var in {:ok, v} clauses |
 | 150 | `CaseSuccessVarRenameCollisionFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Rename {:ok, var} binder when it collides with function args (e.g., socket) |
 | 151 | `CaseSomeBinderRename` | `core-lowering` | `core` | `core-lowering.core` | source order | Rename {:some, g} binder to value and rewrite body refs to avoid shadowing |
-| 152 | `SimplifyIsNilFalse` | `core-lowering` | `core` | `core-lowering.core` | source order | Replace is_nil(var) with false when var is known non-nil from earlier literal assignment |
+| 152 | `SimplifyIsNilFalse` | `core-lowering` | `core` | `core-lowering.core` | source order | Fold nil checks from earlier literal assignments in function and generated ExUnit callback scopes |
 | 153 | `ApplicationStartArgNormalization` | `core-lowering` | `phoenix` | `core-lowering.phoenix` | source order | Align start_link arg names with declared locals in start/2 |
 | 154 | `TypeSafeChildSpecNormalize` | `core-lowering` | `core` | `core-lowering.core` | source order | Normalize TypeSafeChildSpec.supervisor/3 to bind parameters and avoid undefined vars |
 | 155 | `LocalVarReferenceFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Fix local references like changeset-> _changeset or query->query2 when only the latter is declared |
