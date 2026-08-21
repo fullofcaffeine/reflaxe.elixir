@@ -419,6 +419,9 @@ chmod +x "$haxelib_wrapper_dir/haxelib"
 export HAXELIB_PACKAGE_REPO="$haxelib_repo"
 export HAXELIB_WRAPPER_DIR="$haxelib_wrapper_dir"
 
+run_step "run official Haxe tests through installed package" 480 "$ROOT_DIR" \
+  "HAXE_BIN='$HAXE_BIN' HAXELIB_WRAPPER_DIR='$HAXELIB_WRAPPER_DIR' HAXELIB_PACKAGE_REPO='$HAXELIB_PACKAGE_REPO' scripts/ci/official-haxe-beam-smoke.sh '$tmp_base/official_haxe_beam_smoke'"
+
 # Prove the installed release archive is also the complete Mix dependency used
 # by a PhoenixHx consumer. The fixture owns only ordinary Phoenix-shaped source
 # and tiny dependency stubs; it does not point back to this repository.

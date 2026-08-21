@@ -57,12 +57,14 @@ fi
 STAGED_HX_FILES=()
 while IFS= read -r staged_file; do
   if [ -n "$staged_file" ]; then
+    case "$staged_file" in
+      test/upstream_unitstd/upstream/*|test/upstream_haxe_smoke/upstream/*) continue ;;
+    esac
     STAGED_HX_FILES+=("$staged_file")
   fi
 done < <(
   git diff --cached --name-only --diff-filter=ACMR \
     | rg '\.hx$' \
-    | rg -v '^test/upstream_unitstd/upstream/' \
     || true
 )
 

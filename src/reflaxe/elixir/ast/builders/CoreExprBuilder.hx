@@ -51,7 +51,7 @@ class CoreExprBuilder {
 			case TInt(i):
 				ElixirASTDef.EInteger(i);
 			case TFloat(f):
-				ElixirASTDef.EFloat(Std.parseFloat(f));
+				ElixirASTDef.EFloat(Std.parseFloat(StringTools.replace(f, "_", "")));
 			case TString(s):
 				ElixirASTDef.EString(s);
 			case TBool(b):

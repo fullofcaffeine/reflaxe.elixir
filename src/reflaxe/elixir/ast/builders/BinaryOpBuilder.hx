@@ -141,7 +141,7 @@ class BinaryOpBuilder {
 						// Attempt to recover from original right expression for common literals/vars
 						safeRight = switch (rightExpr.expr) {
 							case TConst(TInt(b)): makeAST(EInteger(b));
-							case TConst(TFloat(f)): makeAST(EFloat(Std.parseFloat(Std.string(f))));
+							case TConst(TFloat(f)): makeAST(EFloat(Std.parseFloat(StringTools.replace(f, "_", ""))));
 							case TLocal(v): makeAST(EVar(v.name));
 							default: makeAST(EInteger(0)); // identity fallback
 						};

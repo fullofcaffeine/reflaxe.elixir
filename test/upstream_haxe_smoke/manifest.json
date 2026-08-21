@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "upstream": {
+    "repository": "https://github.com/HaxeFoundation/haxe",
+    "tag": "4.3.7",
+    "commit": "e0b355c6be312c1b17382603f018cf52522ec651",
+    "license": {
+      "name": "Haxe Standard Library MIT License",
+      "spdx": "MIT",
+      "path": "extra/LICENSE.txt",
+      "sha256": "f84691d619932ebfd4fa3568f8311f87ed4bf12e747e9aaa619a92cb1d2d359d"
+    }
+  },
+  "tests": [
+    {
+      "family": "shared-language",
+      "type": "unit.TestNumericSeparator",
+      "source": "tests/unit/src/unit/TestNumericSeparator.hx",
+      "fixture": "test/upstream_haxe_smoke/upstream/unit/TestNumericSeparator.hx",
+      "sha256": "0d8ea242903f84238e97d00b57ed802828f2e3a2b9ea83f7d798adeace83e86c"
+    },
+    {
+      "family": "issue",
+      "type": "unit.issues.Issue10455",
+      "source": "tests/unit/src/unit/issues/Issue10455.hx",
+      "fixture": "test/upstream_haxe_smoke/upstream/unit/issues/Issue10455.hx",
+      "sha256": "22f4d5cd22b1dd905c0dba2879d96286e3d4b3d320836a9a468986dd9fb74934"
+    }
+  ]
+}

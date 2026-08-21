@@ -152,7 +152,7 @@ class PatternBuilder {
 			case TConst(TInt(i)):
 				PLiteral(makeAST(EInteger(i)));
 			case TConst(TFloat(f)):
-				PLiteral(makeAST(EFloat(Std.parseFloat(f))));
+				PLiteral(makeAST(EFloat(Std.parseFloat(StringTools.replace(f, "_", "")))));
 			case TConst(TString(s)):
 				PLiteral(makeAST(EString(s)));
 			case TConst(TBool(b)):

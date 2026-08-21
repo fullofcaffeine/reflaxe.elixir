@@ -16,7 +16,9 @@ echo "[guard:hx-format] Checking Haxe formatting..."
 test_sources=()
 while IFS= read -r source; do
   test_sources+=("-s" "$source")
-done < <(find test -name '*.hx' -not -path 'test/upstream_unitstd/upstream/*' | sort)
+done < <(find test -name '*.hx' \
+  -not -path 'test/upstream_unitstd/upstream/*' \
+  -not -path 'test/upstream_haxe_smoke/upstream/*' | sort)
 
 haxelib run formatter -s src -s std -s examples -s tooling "${test_sources[@]}" --check
 echo "[guard:hx-format] OK: Haxe formatting is clean."
