@@ -6,7 +6,9 @@ ii.next() == 1;
 ii.hasNext() == false;
 var ii = new IntIterator(0, 2);
 var r = [];
-for (i in ii) r.push(i);
+for (i in ii)
+	r.push(i);
 r == [0, 1];
-for (i in ii) r.push(i);
+for (i in ii)
+	r.push(i);
 r == [0, 1];

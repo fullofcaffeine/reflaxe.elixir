@@ -5,6 +5,9 @@
 # Enforce LF line endings for cross-platform CI (Windows snapshot diffs).
 *.sh text eol=lf
 *.hx text eol=lf
+*.patch text eol=lf
+test/upstream_unitstd/adaptations/** whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab
+test/upstream_unitstd/upstream/** whitespace=-blank-at-eof
 *.hxml text eol=lf
 *.ex text eol=lf
 *.exs text eol=lf

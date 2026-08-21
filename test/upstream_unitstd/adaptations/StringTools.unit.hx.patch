@@ -1,0 +1,74 @@
+--- a/tests/unit/src/unitstd/StringTools.unit.hx
++++ b/test/upstream_unitstd/upstream/StringTools.unit.hx
+@@ -24,7 +24,7 @@
+ StringTools.endsWith("foo", "fooo") == false;
+ StringTools.endsWith("foo", "") == true;
+ StringTools.endsWith("", "") == true;
+-StringTools.endsWith("μου\n","\n") == true;
++StringTools.endsWith("μου\n", "\n") == true;
+ 
+ // isSpace
+ StringTools.isSpace("", 0) == false;
+@@ -104,11 +104,11 @@
+ StringTools.hex(4564562) == "45A652";
+ StringTools.hex(4564562, 0) == "45A652";
+ StringTools.hex(4564562, 1) == "45A652";
+-StringTools.hex( -1) == "FFFFFFFF";
+-StringTools.hex( -2) == "FFFFFFFE";
++StringTools.hex(-1) == "FFFFFFFF";
++StringTools.hex(-2) == "FFFFFFFE";
+ StringTools.hex(0xABCDEF, 7) == "0ABCDEF";
+-StringTools.hex( -1, 8) == "FFFFFFFF";
+-StringTools.hex( -481400000, 8) == "E34E6B40";
++StringTools.hex(-1, 8) == "FFFFFFFF";
++StringTools.hex(-481400000, 8) == "E34E6B40";
+ 
+ // contains
+ var s = "foo1bar";
+@@ -143,7 +143,9 @@
+ #if (neko || lua || eval)
+ StringTools.isEof(null) == true;
+ #elseif (cs || java || python)
+-StringTools.isEof( -1) == true;
++StringTools.isEof(-1) == true;
++#elseif (elixir || reflaxe_runtime || elixir_output)
++StringTools.isEof(-1) == true;
+ #elseif js
+ // how do I test this here?
+ #else
+@@ -154,15 +156,29 @@
+ var s = 'zя𠜎';
+ #if !(target.unicode)
+ var expectedCodes = [122, 209, 143, 240, 160, 156, 142];
++#elseif (elixir || reflaxe_runtime || elixir_output)
++var expectedCodes = [122, 1103, 132878];
+ #elseif utf16
+ var expectedCodes = [122, 1103, 55361, 57102];
+ #else
+ var expectedCodes = [122, 1103, 132878];
+ #end
+-var expectedKeys = [for(i in 0...expectedCodes.length) i];
++var expectedKeys = [for (i in 0...expectedCodes.length) i];
+ // iterator()
+-aeq(expectedCodes, [for(c in StringTools.iterator(s)) c]);
++var iteratorValues = [];
++var iterator = StringTools.iterator(s);
++while (iterator.hasNext()) {
++	iteratorValues.push(iterator.next());
++}
++expectedCodes == iteratorValues;
+ // keyValueIterator()
+-var keyCodes = [for(i => c in StringTools.keyValueIterator(s)) [i, c]];
+-aeq(expectedKeys, keyCodes.map(a -> a[0]));
+-aeq(expectedCodes, keyCodes.map(a -> a[1]));
+\ No newline at end of file
++var actualKeys = [];
++var actualCodes = [];
++var keyValueIterator = StringTools.keyValueIterator(s);
++while (keyValueIterator.hasNext()) {
++	var item = keyValueIterator.next();
++	actualKeys.push(item.key);
++	actualCodes.push(item.value);
++}
++expectedKeys == actualKeys;
++expectedCodes == actualCodes;

@@ -1,0 +1,55 @@
+--- a/tests/unit/src/unitstd/String.unit.hx
++++ b/test/upstream_unitstd/upstream/String.unit.hx
+@@ -27,10 +27,10 @@
+ s.charAt(5) == "a";
+ s.charAt(6) == "r";
+ s.charAt(7) == "";
+-s.charAt( -1) == "";
++s.charAt(-1) == "";
+ "".charAt(0) == "";
+ "".charAt(1) == "";
+-"".charAt( -1) == "";
++"".charAt(-1) == "";
+ 
+ // charCodeAt
+ var s = "foo1bar";
+@@ -42,7 +42,7 @@
+ s.charCodeAt(5) == 97;
+ s.charCodeAt(6) == 114;
+ s.charCodeAt(7) == null;
+-s.charCodeAt( -1) == null;
++s.charCodeAt(-1) == null;
+ 
+ // code
+ "f".code == 102;
+@@ -114,8 +114,8 @@
+ 
+ // split
+ var s = "xfooxfooxxbarxbarxx";
+-s.split("x") == ["", "foo", "foo", "", "bar", "bar", "",""];
+-s.split("xx") == ["xfooxfoo","barxbar",""];
++s.split("x") == ["", "foo", "foo", "", "bar", "bar", "", ""];
++s.split("xx") == ["xfooxfoo", "barxbar", ""];
+ s.split("") == ["x", "f", "o", "o", "x", "f", "o", "o", "x", "x", "b", "a", "r", "x", "b", "a", "r", "x", "x"];
+ s.split("z") == ["xfooxfooxxbarxbarxx"];
+ 
+@@ -130,7 +130,7 @@
+ s.substr(-2) == "xx";
+ s.substr(-18) == "fooxfooxxbarxbarxx";
+ s.substr(-19) == "xfooxfooxxbarxbarxx";
+-s.substr( -100) == "xfooxfooxxbarxbarxx";
++s.substr(-100) == "xfooxfooxxbarxbarxx";
+ s.substr(0, 0) == "";
+ s.substr(0, 1) == "x";
+ s.substr(0, 2) == "xf";
+@@ -185,7 +185,9 @@
+ ("𠜎zя" < "abя") == false;
+ ("𠜎zя" <= "abя") == false;
+ 
+-#if target.utf16
++#if (elixir || reflaxe_runtime || elixir_output)
++("\u{FF61}" < "\u{10002}") == true;
++#elseif target.utf16
+ // since U+10002 in UTF16 is D800 DC02
+ ("\u{FF61}" < "\u{10002}") == false;
+ #else

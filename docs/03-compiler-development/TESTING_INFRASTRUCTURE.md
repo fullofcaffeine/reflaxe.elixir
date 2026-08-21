@@ -98,8 +98,8 @@ qualified as a whole. There is deliberately no combined green status.
 | Vertical/runtime owners | Strict generated-Elixir validation, Haxe-authored ExUnit stdlib runtime, maintained examples, and isolated package compilation |
 | Browser owners | None. Browser results may expose a compiler bug but cannot qualify compiler conformance. |
 | Representative examples | `01-simple-modules`, `10-option-patterns`, `16-portable-chat-domain`, and the compiler path exercised by `todo-app` |
-| Oracle and provenance | Haxe language/stdlib contracts, manually reviewed generated goldens, semantic invariants, and pinned official fixtures; exact fixture provenance remains `haxe.elixir.codex-ydd` |
-| Skips/adaptations/quarantine | Recorded in `test/upstream_unitstd/manifest.json`; disposition and execution outcome must remain separate |
+| Oracle and source records | Haxe language and standard-library contracts, reviewed generated files, semantic invariants, and official fixtures from an exact Haxe commit |
+| Skips and adaptations | `test/upstream_unitstd/manifest.json` keeps applicability, runtime-suite participation, and local changes separate |
 | Selector/backstop/release | `compiler-snapshot-aggregate` and cross-cutting full fallback; `npm test`, official/runtime lanes, package smoke, and exact-commit release gate |
 | Last clean proof and residual risk | CI `30664953897`: Tests, Examples/WAE, minimum-toolchain, and macOS jobs passed at `fb633dbff`; complete applicable official/stdlib qualification remains open |
 
@@ -180,7 +180,7 @@ policy and owner now exist; it does not erase the residual execution gaps named 
 |---|---|---|---|
 | Behavior discovery/formulation | Partial | **Satisfied** | The six-field scenario contract above uses existing Beads, PRs, fixture notes, or scenario tables rather than a new BDD system. |
 | TDD at the lowest faithful layer | Partial | **Satisfied** | The agent loop plus red-state rule require the exact pre-fix command/failure for behavior changes; the example-manifest guard was developed red-first. |
-| Independent oracle | Partial | **Partial** | New/materially changed expectations require provenance; official fixture pin/adaptation provenance remains `haxe.elixir.codex-ydd`. |
+| Independent oracle | Partial | **Satisfied for official unitstd fixtures** | Each runtime fixture records its exact official source and local hash. Each adapted file has a reviewed patch. |
 | One tracer bullet first | Partial | **Satisfied** | New capabilities require a narrow authored-source → target → real observer path, with separate compiler and framework tracers when both change. |
 | Lowest faithful layer and double lock | Partial | **Satisfied** | The policy retains focused diagnosis and real-boundary proof without forcing browser tests where the browser cannot observe the defect. |
 | Portfolio review, not quotas | Partial | **Partial** | Per-surface review is now required; ratios remain smell detectors. Unique failure yield and critical-path optimization remain measured follow-up work. |
@@ -207,7 +207,7 @@ successfully contributes a compatibility pass.
 | Parameter | Current binding and evidence |
 |---|---|
 | Target | `reflaxe.elixir` / Haxe→Elixir, as installed by the repository's scoped Lix configuration or packaged as `reflaxe.elixir` for Haxelib |
-| Haxe baseline | `.haxerc` pins Haxe 4.3.7; the local official reference checkout used during this review is also tag 4.3.7, but its exact commit is not yet recorded in the fixture manifest |
+| Haxe baseline | `.haxerc` pins Haxe 4.3.7. The fixture manifest pins tag commit `e0b355c6be312c1b17382603f018cf52522ec651`. |
 | Primary CI toolchain | Node 22.14.0, Haxe 4.3.7, Elixir 1.18.3, and OTP 27.2 in `.github/workflows/ci.yml` |
 | Minimum CI evidence | Elixir 1.14 and OTP 25 smoke; this is compatibility evidence for that lane, not by itself a complete release-support statement |
 | Authoring axes | Portable stdlib-first Haxe and typed Elixir-first/native boundaries; `metal` is a local HXX/target-syntax escape hatch, not a second compiler backend |
@@ -467,7 +467,7 @@ the contract; it is not permission to relabel the gap as a pass.
 | Compiler internals | Categorized positive/negative snapshots, pass/AST/result guards | No major structural gap identified in this review | Keep focused regressions beside the owning compiler stage | Ongoing |
 | Generated target | Snapshot trees, Elixir validation, WAE, formatting and handwritten-output corpus | These do not prove runtime behavior | Preserve as separate source-quality gates | Ongoing |
 | Portable runtime | Runtime smoke and Haxe-authored ExUnit stdlib parity | Complete applicable active official Haxe contract | Expand through the existing ExUnit generation seam | Official smoke, then baseline expansion |
-| Official `unitstd` | 120 product entries: 24 enabled, 9 adapted, 13 target-specific skips, 3 unsupported, 71 without upstream specs; 32 checked-in fixtures | Exact per-fixture upstream commit/path/hash, local hash, adaptation diff/hash, independent disposition/outcome, secure TLS classification | Harden `test/upstream_unitstd/manifest.json` and its existing guards | Provenance/classification |
+| Official `unitstd` | 120 product entries, 33 runtime entries, 32 checked-in files, eight adaptation patches, and one reviewed SSL omission | Broader applicable official Haxe coverage | Expand the existing ExUnit lane after each behavior is supported | Official representative smoke, then baseline expansion |
 | Shared language/issues | General local regressions exist | No source-identity-preserving smoke from official shared top-level and issue families | Add one meaningful case from each family beside the existing ExUnit official-fixture lane | Official representative smoke |
 | Capabilities | Runtime, OTP, IO, framework and platform smokes cover selected contracts | No complete capability manifest for filesystem/process/env/locale/time/network/TLS/thread/atomic behavior | Versioned capability classification tied to the official inventory | Classification, then capability shards |
 | Examples/E2E | Schema-v2 manifested tiers, stable owners, affected product surfaces, profiles, claims, compile/output/WAE/runtime coverage; `03` bounded boot, `04` isolated PostgreSQL migration execution, and todo/chat/LiveReact browser gates | Required browser ownership for the maintained `15`/`17` manual specs, and an independently executable link from `ci: true` declarations to required workflows | Existing manifest/guard plus `haxe.elixir.codex-jvg.3` and `.4`; no parallel example registry | Close only the evidence-backed child gaps; portfolio metrics remain observational |
@@ -580,8 +580,8 @@ Implement gaps in this order:
 
 1. **Canonical policy (this document).** Route AGENTS and contributor docs here and remove
    contradictory “full suite after every edit” guidance.
-2. **Fixture provenance and classification.** Keep the current runner; enrich the existing manifest
-   and fail closed on upstream/adaptation drift.
+2. **Fixture source records and classification.** The manifest pins Haxe 4.3.7 sources and local changes.
+   The local guard rejects manifest and fixture drift. The sync command also checks official sources.
 3. **Official representative smoke.** Add shared-language, `unitstd`, and issue cases through the
    public package path, with intentional-failure and timeout propagation tests.
 4. **Measure loops before filtering.** The observation job records GitHub job timing and selection

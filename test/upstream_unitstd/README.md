@@ -1,44 +1,38 @@
 # Upstream Haxe `unitstd` Runtime Specs
 
-This directory contains a curated, checked-in subset of Haxe upstream
-`tests/unit/src/unitstd/**/*.unit.hx` specs.
+This directory contains selected official Haxe tests from
+`tests/unit/src/unitstd/**/*.unit.hx`.
 
-Why this exists:
-- Snapshot tests validate generated Elixir shape.
-- These specs validate BEAM runtime behavior against Haxe's stdlib contract.
-- CI must be deterministic, so it cannot depend on a sibling
-  `../haxe.compilerdev.reference` checkout.
+Snapshot tests examine the generated Elixir structure. These official tests examine Haxe standard-library behavior on BEAM.
 
-Source provenance:
-- Upstream source: Haxe `tests/unit/src/unitstd`
-- Haxe standard library/tests are distributed under the Haxe Foundation MIT
-  license; see the upstream `extra/LICENSE.txt`.
+CI uses the checked-in files. It does not require a second Haxe checkout.
 
-Coverage policy:
-- `manifest.json` must include every module listed in the core stdlib support
-  matrix.
-- `enabled` and `adapted` fixtures compile through Reflaxe.Elixir into ExUnit
-  and run on BEAM via `npm run test:haxe-exunit-stdlib`.
-- Non-enabled entries must explain whether no upstream spec exists, the current
-  implementation is unsupported, or target-specific triage is still required. A runtime-relevant
-  `skipped-unsupported` or unresolved target-specific entry is a 1.0 blocker under
-  `haxe.elixir.codex-0yn.10`; the manifest describes current evidence, not an allowed final exclusion.
+## Source records
 
-Current upstream runtime fixtures:
-- Enabled: `EReg`, `IntIterator`, `Math`, `StringBuf`,
-  `haxe.crypto.Base64`,
-  `haxe.crypto.Crc32`, `haxe.crypto.Hmac`, `haxe.crypto.Md5`, `haxe.crypto.Sha1`,
-  `haxe.crypto.Sha224`, `haxe.crypto.Sha256`, `haxe.io.BytesBuffer`,
-  `haxe.io.FPHelper`, `haxe.CallStack`.
-- Adapted: `haxe.DynamicAccess` (membership syntax expansion),
-  `String` (Elixir runtime string comparison branch),
-  `StringTools` (upstream helper assertion expansion, explicit Elixir EOF
-  sentinel/codepoint iterator branches, and iterator-comprehension expansion),
-  `haxe.io.Path` (path-hygiene-only Windows sample adjustment),
-  `haxe.ds.Vector` (nil-backed erased cells, opaque backing-cell identity, and
-  local structural values),
-  `haxe.iterators.StringIteratorUnicode`, and
-  `haxe.iterators.StringKeyValueIteratorUnicode` (explicit Elixir UTF-8 branch).
+`manifest.json` records the exact Haxe tag, commit, license, and source path for each runtime test. It also records a SHA-256 file fingerprint.
+
+An unchanged fixture has the same SHA-256 value as its official source. An adapted fixture also has a checked-in patch.
+
+The patch shows each local change against the official source. The guard rejects an unexpected fixture or patch change.
+
+The manifest keeps these facts separate:
+
+- `upstreamSpec` states whether an official test exists.
+- `disposition` states whether the test behavior applies to the Elixir target.
+- `execution` states whether the BEAM runtime suite runs the test.
+- `fixtureKind` states whether the checked-in file is unchanged or adapted.
+
+The runtime suite reports the current result. The manifest does not store a stale pass or error result.
+
+Every module in the core standard-library matrix must have one manifest entry. A missing or unsupported runtime behavior remains a 1.0 blocker.
+
+## The omitted SSL test
+
+Haxe 4.3.7 includes `Ssl.unit.hx`, but its SSL assertions run only on C++ or Neko.
+
+Other targets execute only `1 == 1`. Therefore, this file gives no BEAM SSL evidence.
+
+The manifest records this omission as `not-applicable`. Separate Haxe-authored runtime tests must prove Elixir SSL behavior.
 
 EReg note:
 - `EReg.unit.hx` is the unchanged Haxe 4.3.7 fixture. It verifies the existing
@@ -63,6 +57,15 @@ IEEE byte note:
   and `BytesInput`/`BytesOutput` stream round-trips. Keep this runtime coverage
   when changing `Bytes`, `BytesBuffer`, `Input`, `Output`, or `FPHelper`.
 
-Use `scripts/sync-upstream-unitstd-specs.sh` to refresh enabled, unmodified specs
-from a local Haxe reference checkout. Adapted specs must be reviewed manually so
-their local target/path-hygiene changes are not overwritten.
+## Update procedure
+
+1. Check out the exact Haxe commit from `manifest.json`.
+2. Make sure that the Haxe checkout has no local changes.
+3. Run `HAXE_ELIXIR_REFERENCE=<haxe-checkout> scripts/sync-upstream-unitstd-specs.sh`.
+4. Review each adapted patch.
+5. Run `npm run test:upstream-unitstd-manifest`.
+6. Run `npm run test:haxe-exunit-stdlib`.
+
+The sync command copies unchanged tests. It does not overwrite adapted tests.
+
+The command stops if the commit, license, official source, local fixture, or adaptation patch has an unexpected SHA-256 value.

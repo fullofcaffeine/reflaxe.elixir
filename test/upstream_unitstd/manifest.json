@@ -1,135 +1,1062 @@
 {
-  "schemaVersion": 1,
-  "referenceRoot": "haxe/tests/unit/src/unitstd",
-  "statusValues": [
-    "enabled",
-    "adapted",
-    "skipped-target-specific",
-    "skipped-unsupported",
-    "no-upstream-spec"
+  "schemaVersion": 2,
+  "upstream": {
+    "repository": "https://github.com/HaxeFoundation/haxe",
+    "tag": "4.3.7",
+    "commit": "e0b355c6be312c1b17382603f018cf52522ec651",
+    "referenceRoot": "tests/unit/src/unitstd",
+    "license": {
+      "name": "Haxe Standard Library MIT License",
+      "spdx": "MIT",
+      "path": "extra/LICENSE.txt",
+      "sha256": "f84691d619932ebfd4fa3568f8311f87ed4bf12e747e9aaa619a92cb1d2d359d"
+    },
+    "updateCommand": "HAXE_ELIXIR_REFERENCE=<haxe-checkout> scripts/sync-upstream-unitstd-specs.sh"
+  },
+  "upstreamSpecValues": [
+    "available",
+    "absent"
+  ],
+  "dispositionValues": [
+    "applicable",
+    "pending-review",
+    "unsupported",
+    "not-applicable"
+  ],
+  "executionValues": [
+    "runtime-suite",
+    "not-run"
+  ],
+  "fixtureKindValues": [
+    "unchanged",
+    "adapted"
   ],
   "modules": [
-    {"module": "Array", "status": "skipped-target-specific", "source": "Array.unit.hx", "reason": "Upstream spec exists; enable after BEAM array/list semantics are triaged in the runtime conformance lane."},
-    {"module": "Date", "status": "enabled", "source": "Date.unit.hx", "fixture": "test/upstream_unitstd/upstream/Date.unit.hx"},
-    {"module": "DateTools", "status": "enabled", "source": "DateTools.unit.hx", "fixture": "test/upstream_unitstd/upstream/DateTools.unit.hx"},
-    {"module": "EReg", "status": "enabled", "source": "EReg.unit.hx", "fixture": "test/upstream_unitstd/upstream/EReg.unit.hx"},
-    {"module": "IntIterator", "status": "enabled", "source": "IntIterator.unit.hx", "fixture": "test/upstream_unitstd/upstream/IntIterator.unit.hx"},
-    {"module": "Lambda", "status": "skipped-target-specific", "source": "Lambda.unit.hx", "reason": "Upstream spec exists; enable after collection semantics are triaged."},
-    {"module": "List", "status": "adapted", "source": "List.unit.hx", "fixture": "test/upstream_unitstd/upstream/List.unit.hx", "reason": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions."},
-    {"module": "Map", "status": "skipped-target-specific", "source": "Map.unit.hx", "reason": "Upstream spec exists; enable after native BEAM map ordering/identity semantics are triaged."},
-    {"module": "Math", "status": "enabled", "source": "Math.unit.hx", "fixture": "test/upstream_unitstd/upstream/Math.unit.hx"},
-    {"module": "Reflect", "status": "skipped-target-specific", "source": "Reflect.unit.hx", "reason": "Upstream spec exists; enable after BEAM reflection semantics are triaged."},
-    {"module": "Std", "status": "skipped-target-specific", "source": "Std.unit.hx", "reason": "Upstream spec exists; enable after target string/parse/cast edge cases are triaged."},
-    {"module": "String", "status": "adapted", "source": "String.unit.hx", "fixture": "test/upstream_unitstd/upstream/String.unit.hx", "reason": "The upstream target.utf16-only string comparison branch is adapted for the Elixir runtime define because BEAM string comparison follows binary/codepoint ordering for this fixture."},
-    {"module": "StringBuf", "status": "enabled", "source": "StringBuf.unit.hx", "fixture": "test/upstream_unitstd/upstream/StringBuf.unit.hx"},
-    {"module": "StringTools", "status": "adapted", "source": "StringTools.unit.hx", "fixture": "test/upstream_unitstd/upstream/StringTools.unit.hx", "reason": "The upstream aeq(...) helper assertions are expanded to direct array equality expressions because this checked-in fixture harness only rewrites expression-level assertions; the EOF sentinel and iterator expected-code branches are made explicit for the Elixir runtime define ahead of JS/UTF-16 branches because this target uses -1 EOF and codepoint-indexed iterators; iterator comprehensions are expanded to explicit loops so this fixture validates StringTools.iterator/keyValueIterator without depending on unrelated comprehension lowering."},
-    {"module": "Sys", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is target/sys integration specific."},
-    {"module": "Type", "status": "skipped-target-specific", "source": "Type.unit.hx", "reason": "Upstream spec exists; enable after BEAM runtime type semantics are triaged."},
-    {"module": "UInt", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists."},
-    {"module": "UnicodeString", "status": "skipped-target-specific", "source": "UnicodeString.unit.hx", "reason": "Upstream spec exists; enable after UTF-8 codepoint semantics are triaged."},
-    {"module": "Xml", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; XML coverage is maintained by target tests."},
-
-    {"module": "haxe.CallStack", "status": "enabled", "source": "haxe/CallStack.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/CallStack.unit.hx"},
-    {"module": "haxe.Constraints", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged for compile-time Function/IMap constraints, and local Haxe-authored ExUnit tests cover Function calls plus IMap values crossing through the Reflaxe.Elixir.IMap runtime boundary."},
-    {"module": "haxe.DynamicAccess", "status": "adapted", "source": "haxe/DynamicAccess.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/DynamicAccess.unit.hx", "reason": "Upstream membership expressions (`value in array`) are expanded to explicit `t(value == a || value == b || ...)` assertions for the Haxe parser used by this checked-in fixture harness."},
-    {"module": "haxe.EntryPoint", "status": "skipped-unsupported", "reason": "No matching upstream unitstd spec exists; haxe.EntryPoint is Haxe's target-owned process main-loop bridge and does not map to BEAM application lifecycle semantics. Direct output-code calls and static field reads fail fast with a target diagnostic; use elixir.otp.Application, elixir.otp.Supervisor, and elixir.otp.TypeSafeChildSpec for OTP lifecycle/supervision, phoenix.* modules and annotations for Phoenix callbacks, or sys.thread.EventLoop/haxe.Timer for callback scheduling instead."},
-    {"module": "haxe.EnumFlags", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; official Haxe abstract fallback is used unchanged, while dynamic flag operations lower through typed Type.enumIndex metadata. Local Haxe-authored ExUnit tests cover set, unset, setTo, has, ofInt, and toInt behavior."},
-    {"module": "haxe.EnumTools", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; official Haxe extern inline fallback is used unchanged, while typed Type enum reflection lowers through generated enum metadata. Local Haxe-authored ExUnit tests cover getConstructors, createByName, createByIndex, createAll, EnumValueTools name/index/params, and equality."},
-    {"module": "haxe.Http", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is target/sys integration specific."},
-    {"module": "haxe.Int64", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests."},
-    {"module": "haxe.Int64Helper", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; helper parsing behavior is covered through local haxe.Int64 runtime tests."},
-    {"module": "haxe.Log", "status": "skipped-target-specific", "source": "haxe/Log.unit.hx", "reason": "Upstream spec exists; enable after mutable static dynamic field hooks and closure-captured outer-local mutation semantics are implemented."},
-    {"module": "haxe.MainLoop", "status": "skipped-unsupported", "reason": "No matching upstream unitstd spec exists; haxe.MainLoop is Haxe's target-owned process main-loop/event queue bridge and does not map to BEAM application lifecycle semantics. Direct output-code calls and static field reads fail fast with a target diagnostic; use elixir.otp.Application, elixir.otp.Supervisor, and elixir.otp.TypeSafeChildSpec for OTP lifecycle/supervision, phoenix.* modules and annotations for Phoenix callbacks, or sys.thread.EventLoop/haxe.Timer for callback scheduling instead."},
-    {"module": "haxe.Serializer", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; runtime coverage uses local portable-subset tests."},
-    {"module": "haxe.Template", "status": "skipped-target-specific", "source": "haxe/Template.unit.hx", "reason": "Upstream spec exists; local BEAM contract intentionally supports a portable subset first."},
-    {"module": "haxe.Timer", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; stamp/measure, run rebinding, delay, repeated event-loop firing, and stop behavior are covered by local Haxe-authored ExUnit runtime tests."},
-    {"module": "haxe.Unserializer", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; runtime coverage uses local portable-subset tests."},
-    {"module": "haxe.ValueException", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged and explicit value/message/previous/toString plus typed ValueException throw/catch behavior are covered by local Haxe-authored ExUnit runtime tests."},
-    {"module": "haxe.crypto.Adler32", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; one-shot, incremental, read/equals, toString, and signed 32-bit behavior are covered by local Haxe-authored ExUnit runtime tests."},
-    {"module": "haxe.crypto.BaseCode", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; arbitrary power-of-two dictionary encode/decode, string helpers, invalid dictionary length, and invalid encoded characters are covered by local Haxe-authored ExUnit runtime tests."},
-    {"module": "haxe.crypto.Base64", "status": "enabled", "source": "haxe/crypto/Base64.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/crypto/Base64.unit.hx"},
-    {"module": "haxe.crypto.Crc32", "status": "enabled", "source": "haxe/crypto/Crc32.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/crypto/Crc32.unit.hx"},
-    {"module": "haxe.crypto.Hmac", "status": "enabled", "source": "haxe/crypto/Hmac.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/crypto/Hmac.unit.hx"},
-    {"module": "haxe.crypto.Md5", "status": "enabled", "source": "haxe/crypto/Md5.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/crypto/Md5.unit.hx"},
-    {"module": "haxe.crypto.Sha1", "status": "enabled", "source": "haxe/crypto/Sha1.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/crypto/Sha1.unit.hx"},
-    {"module": "haxe.crypto.Sha224", "status": "enabled", "source": "haxe/crypto/Sha224.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/crypto/Sha224.unit.hx"},
-    {"module": "haxe.crypto.Sha256", "status": "enabled", "source": "haxe/crypto/Sha256.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/crypto/Sha256.unit.hx"},
-    {"module": "haxe.ds.ArraySort", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; the Elixir target uses a bootstrap-safe target override lowered to stable Enum.sort/2 rebinding for local array bindings, covered by local Haxe-authored ExUnit runtime tests."},
-    {"module": "haxe.ds.BalancedTree", "status": "skipped-target-specific", "source": "haxe/ds/BalancedTree.unit.hx", "reason": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged."},
-    {"module": "haxe.ds.Either", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; official Haxe stdlib enum fallback is used unchanged and Left/Right pattern matching plus generic payload preservation are covered by local Haxe-authored ExUnit runtime tests."},
-    {"module": "haxe.ds.EnumValueMap", "status": "skipped-target-specific", "source": "haxe/ds/EnumValueMap.unit.hx", "reason": "Upstream spec exists; enable after enum-key ordering semantics are triaged."},
-    {"module": "haxe.ds.GenericStack", "status": "enabled", "source": "haxe/ds/GenericStack.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/ds/GenericStack.unit.hx"},
-    {"module": "haxe.ds.HashMap", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec is available in the local reference checkout; the Elixir target uses a BEAM-specific hashCode-keyed override with local Haxe-authored ExUnit runtime coverage."},
-    {"module": "haxe.ds.List", "status": "adapted", "source": "List.unit.hx", "fixture": "test/upstream_unitstd/upstream/List.unit.hx", "reason": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions."},
-    {"module": "haxe.ds.ListSort", "status": "skipped-unsupported", "reason": "No matching upstream unitstd spec exists; the API mutates arbitrary linked-node next/prev fields in place, which ordinary immutable BEAM structs/maps cannot preserve. Calls fail fast with a target diagnostic and are covered by a negative snapshot."},
-    {"module": "haxe.ds.Option", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; the Elixir target uses a local @:elixirIdiomatic Option enum plus OptionTools helpers, and local Haxe-authored ExUnit runtime tests cover Some/None pattern matching, helper transforms/extraction, collection helpers, and Result/null bridges."},
-    {"module": "haxe.ds.Vector", "status": "adapted", "source": "haxe/ds/Vector.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/ds/Vector.unit.hx", "reason": "The upstream primitive default-value checks are made explicit for the Elixir target because erased generic Vector cells initialize as nil unless a default value is supplied; the reference-identity toData() assertion is rewritten as an observable no-alias mutation check because the target stores Vector data in an opaque process-state cell, and upstream harness helper classes are replaced with local structural values."},
-    {"module": "haxe.exceptions.ArgumentException", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged and constructor fields, inherited message/previous behavior, toString, and typed throw/catch behavior are covered by local Haxe-authored ExUnit runtime tests."},
-    {"module": "haxe.exceptions.NotImplementedException", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged and default/custom messages, inherited previous behavior, toString, and typed throw/catch behavior are covered by local Haxe-authored ExUnit runtime tests."},
-    {"module": "haxe.format.JsonParser", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; direct parse behavior, native JSON terms, escaped strings/nulls, and invalid JSON raising are covered by local Haxe-authored ExUnit runtime tests."},
-    {"module": "haxe.format.JsonPrinter", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists."},
-    {"module": "haxe.http.HttpBase", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is covered through haxe.Http/sys.Http tests."},
-    {"module": "haxe.io.ArrayBufferView", "status": "enabled", "source": "haxe/io/ArrayBufferView.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/io/ArrayBufferView.unit.hx"},
-    {"module": "haxe.io.BufferInput", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists."},
-    {"module": "haxe.io.Bytes", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; Bytes behavior is covered by local runtime tests."},
-    {"module": "haxe.io.BytesBuffer", "status": "enabled", "source": "haxe/io/BytesBuffer.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/io/BytesBuffer.unit.hx"},
-    {"module": "haxe.io.BytesData", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists."},
-    {"module": "haxe.io.BytesInput", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is covered by local runtime tests."},
-    {"module": "haxe.io.BytesOutput", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is covered by local runtime tests."},
-    {"module": "haxe.io.Encoding", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists."},
-    {"module": "haxe.io.Error", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; IO error enum behavior is covered by local runtime tests."},
-    {"module": "haxe.io.Eof", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists."},
-    {"module": "haxe.io.FPHelper", "status": "enabled", "source": "haxe/io/FPHelper.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/io/FPHelper.unit.hx"},
-    {"module": "haxe.io.Float32Array", "status": "enabled", "source": "haxe/io/Float32Array.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/io/Float32Array.unit.hx"},
-    {"module": "haxe.io.Float64Array", "status": "enabled", "source": "haxe/io/Float64Array.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/io/Float64Array.unit.hx"},
-    {"module": "haxe.io.Input", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; concrete input implementations carry coverage."},
-    {"module": "haxe.io.Int32Array", "status": "enabled", "source": "haxe/io/Int32Array.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/io/Int32Array.unit.hx"},
-    {"module": "haxe.io.Mime", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; the official Haxe String enum-abstract fallback is used unchanged, with representative constants, custom values, and String conversion covered by local Haxe-authored ExUnit plus source/package parity tests."},
-    {"module": "haxe.io.Output", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; concrete output implementations carry coverage."},
-    {"module": "haxe.io.Path", "status": "adapted", "source": "haxe/io/Path.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/io/Path.unit.hx", "reason": "One Windows normalization vector uses ProgramData instead of the upstream C:/Users sample to satisfy repository local-path hygiene while preserving path normalization semantics."},
-    {"module": "haxe.io.Scheme", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; the official Haxe String enum-abstract fallback is used unchanged, with representative constants, custom values, and String conversion covered by local Haxe-authored ExUnit plus source/package parity tests."},
-    {"module": "haxe.io.StringInput", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is covered by local runtime tests."},
-    {"module": "haxe.io.UInt16Array", "status": "enabled", "source": "haxe/io/UInt16Array.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/io/UInt16Array.unit.hx"},
-    {"module": "haxe.io.UInt32Array", "status": "enabled", "source": "haxe/io/UInt32Array.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/io/UInt32Array.unit.hx"},
-    {"module": "haxe.io.UInt8Array", "status": "enabled", "source": "haxe/io/UInt8Array.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/io/UInt8Array.unit.hx"},
-    {"module": "haxe.iterators.ArrayIterator", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; iterator behavior is covered by local runtime tests."},
-    {"module": "haxe.iterators.ArrayKeyValueIterator", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists."},
-    {"module": "haxe.iterators.HashMapKeyValueIterator", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; the Elixir target provides an inline type-compatibility surface for explicit HashMap iterator construction, covered through local haxe.ds.HashMap runtime tests."},
-    {"module": "haxe.iterators.MapKeyValueIterator", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; iterator behavior is covered by local runtime tests."},
-    {"module": "haxe.iterators.StringIterator", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; explicit iterator state, codepoint values, and end-of-iteration behavior are covered by local Haxe-authored ExUnit runtime tests."},
-    {"module": "haxe.iterators.StringKeyValueIterator", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; explicit iterator state, character index keys, codepoint values, and end-of-iteration behavior are covered by local Haxe-authored ExUnit runtime tests."},
-    {"module": "haxe.iterators.StringIteratorUnicode", "status": "adapted", "source": "haxe/iterators/StringIteratorUnicode.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/iterators/StringIteratorUnicode.unit.hx", "reason": "The upstream target.unicode conditional is made explicit so Elixir always exercises UTF-8 codepoint iteration."},
-    {"module": "haxe.iterators.StringKeyValueIteratorUnicode", "status": "adapted", "source": "haxe/iterators/StringKeyValueIteratorUnicode.unit.hx", "fixture": "test/upstream_unitstd/upstream/haxe/iterators/StringKeyValueIteratorUnicode.unit.hx", "reason": "The upstream target.unicode conditional is made explicit so Elixir always exercises UTF-8 codepoint key/value iteration."},
-
-    {"module": "sys.FileStat", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is sys-target integration specific."},
-    {"module": "sys.FileSystem", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is sys-target integration specific."},
-    {"module": "sys.Http", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is sys-target integration specific."},
-    {"module": "sys.io.File", "status": "skipped-target-specific", "source": "sys/io/File.unit.hx", "reason": "Upstream spec exists; enable after filesystem temp-path and permissions semantics are triaged."},
-    {"module": "sys.io.FileInput", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is covered through sys.io.File."},
-    {"module": "sys.io.FileOutput", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is covered through sys.io.File."},
-    {"module": "sys.io.Process", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is sys-target integration specific."},
-    {"module": "sys.io.FileSeek", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists."},
-    {"module": "sys.net.Address", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is BEAM socket integration specific."},
-    {"module": "sys.net.Host", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is BEAM socket integration specific."},
-    {"module": "sys.net.Socket", "status": "skipped-target-specific", "source": "sys/net/Socket.unit.hx", "reason": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged."},
-    {"module": "sys.net.UdpSocket", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is BEAM socket integration specific."},
-    {"module": "sys.ssl.Certificate", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific."},
-    {"module": "sys.ssl.Digest", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific."},
-    {"module": "sys.ssl.DigestAlgorithm", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists."},
-    {"module": "sys.ssl.Key", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific."},
-    {"module": "sys.ssl.Socket", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific."},
-    {"module": "sys.thread.Condition", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."},
-    {"module": "sys.thread.Deque", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."},
-    {"module": "sys.thread.ElasticThreadPool", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."},
-    {"module": "sys.thread.EventLoop", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."},
-    {"module": "sys.thread.FixedThreadPool", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."},
-    {"module": "sys.thread.IThreadPool", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."},
-    {"module": "sys.thread.Lock", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."},
-    {"module": "sys.thread.Mutex", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."},
-    {"module": "sys.thread.NoEventLoopException", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists."},
-    {"module": "sys.thread.Semaphore", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."},
-    {"module": "sys.thread.Thread", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."},
-    {"module": "sys.thread.ThreadPoolException", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists."},
-    {"module": "sys.thread.Tls", "status": "no-upstream-spec", "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."}
+    {
+      "module": "Array",
+      "upstreamSpec": "available",
+      "disposition": "pending-review",
+      "execution": "not-run",
+      "source": "Array.unit.hx",
+      "reason": "Upstream spec exists; enable after BEAM array/list semantics are triaged in the runtime conformance lane."
+    },
+    {
+      "module": "Date",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "Date.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/Date.unit.hx",
+      "sourceSha256": "26176b48bf71857e669192e57cf819fd14912c2398d3c318e0931d8571ab9c76",
+      "fixtureSha256": "26176b48bf71857e669192e57cf819fd14912c2398d3c318e0931d8571ab9c76"
+    },
+    {
+      "module": "DateTools",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "DateTools.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/DateTools.unit.hx",
+      "sourceSha256": "416622f2bff536fca2b355868a4126b2c9e22b35f4e535c3fba37fea1c2d742a",
+      "fixtureSha256": "416622f2bff536fca2b355868a4126b2c9e22b35f4e535c3fba37fea1c2d742a"
+    },
+    {
+      "module": "EReg",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "EReg.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/EReg.unit.hx",
+      "sourceSha256": "20a77056925bb257404279daf218d5996fa7571f038922acc51d7833fa2237d9",
+      "fixtureSha256": "20a77056925bb257404279daf218d5996fa7571f038922acc51d7833fa2237d9"
+    },
+    {
+      "module": "IntIterator",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "IntIterator.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/IntIterator.unit.hx",
+      "sourceSha256": "dbd81c1cf9c4d58843145f2f975ec8c9131dc190272ccd3947ce4f3e7c5c9c31",
+      "fixtureSha256": "dbd81c1cf9c4d58843145f2f975ec8c9131dc190272ccd3947ce4f3e7c5c9c31"
+    },
+    {
+      "module": "Lambda",
+      "upstreamSpec": "available",
+      "disposition": "pending-review",
+      "execution": "not-run",
+      "source": "Lambda.unit.hx",
+      "reason": "Upstream spec exists; enable after collection semantics are triaged."
+    },
+    {
+      "module": "List",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "adapted",
+      "source": "List.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/List.unit.hx",
+      "reason": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions.",
+      "sourceSha256": "5fac6897b9fee9eb59a1ff596295e595f8bec1f9f01629ef42449723ba1b8c46",
+      "fixtureSha256": "5f5e22786edc7a7bca05f3ca4dda3c77ec04434f548e965dcc6bc7d4b9c00d1c",
+      "adaptationPatch": "test/upstream_unitstd/adaptations/List.unit.hx.patch",
+      "adaptationPatchSha256": "7199ecaf52cfd0e46ee63bb02db1c52bbf47c6c639ffa8d7460d77cd4b6f8fd1"
+    },
+    {
+      "module": "Map",
+      "upstreamSpec": "available",
+      "disposition": "pending-review",
+      "execution": "not-run",
+      "source": "Map.unit.hx",
+      "reason": "Upstream spec exists; enable after native BEAM map ordering/identity semantics are triaged."
+    },
+    {
+      "module": "Math",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "Math.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/Math.unit.hx",
+      "sourceSha256": "19da6c9af90bdbc4af31321d56138b4e1fb4018c9eb6cb7f3f1460eec0b9b37a",
+      "fixtureSha256": "19da6c9af90bdbc4af31321d56138b4e1fb4018c9eb6cb7f3f1460eec0b9b37a"
+    },
+    {
+      "module": "Reflect",
+      "upstreamSpec": "available",
+      "disposition": "pending-review",
+      "execution": "not-run",
+      "source": "Reflect.unit.hx",
+      "reason": "Upstream spec exists; enable after BEAM reflection semantics are triaged."
+    },
+    {
+      "module": "Std",
+      "upstreamSpec": "available",
+      "disposition": "pending-review",
+      "execution": "not-run",
+      "source": "Std.unit.hx",
+      "reason": "Upstream spec exists; enable after target string/parse/cast edge cases are triaged."
+    },
+    {
+      "module": "String",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "adapted",
+      "source": "String.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/String.unit.hx",
+      "reason": "The upstream target.utf16-only string comparison branch is adapted for the Elixir runtime define because BEAM string comparison follows binary/codepoint ordering for this fixture.",
+      "sourceSha256": "5a25d684b40456e9ed2752e329643e7b02fece0c8cbb88777f986ae17bdf0c5b",
+      "fixtureSha256": "c2a94b1461f93cadb824780748b04209314d45070acd078255899c36470cd667",
+      "adaptationPatch": "test/upstream_unitstd/adaptations/String.unit.hx.patch",
+      "adaptationPatchSha256": "b6fe38e7ce39353c5e7a6886d4908b71982ff02254dc4b87e492cb80197609f2"
+    },
+    {
+      "module": "StringBuf",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "StringBuf.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/StringBuf.unit.hx",
+      "sourceSha256": "03de9a22d3576a462773b04682de3db2cc665337849cb14a6b3875a16d88ae41",
+      "fixtureSha256": "03de9a22d3576a462773b04682de3db2cc665337849cb14a6b3875a16d88ae41"
+    },
+    {
+      "module": "StringTools",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "adapted",
+      "source": "StringTools.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/StringTools.unit.hx",
+      "reason": "The upstream aeq(...) helper assertions are expanded to direct array equality expressions because this checked-in fixture harness only rewrites expression-level assertions; the EOF sentinel and iterator expected-code branches are made explicit for the Elixir runtime define ahead of JS/UTF-16 branches because this target uses -1 EOF and codepoint-indexed iterators; iterator comprehensions are expanded to explicit loops so this fixture validates StringTools.iterator/keyValueIterator without depending on unrelated comprehension lowering.",
+      "sourceSha256": "6b1964143cd3046747b012bf09cc6bc96de981c65a84cf79cc17a9e32a8fc72d",
+      "fixtureSha256": "3f413d74858d4a97c53f19ff7a01e1ac50c1615f8bc3a21aaf6c1707d8c1ea03",
+      "adaptationPatch": "test/upstream_unitstd/adaptations/StringTools.unit.hx.patch",
+      "adaptationPatchSha256": "d9f809d3d1d43b4218b28cea06b090263ced3f6b93dc898ca303177a9456bb3d"
+    },
+    {
+      "module": "Sys",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is target/sys integration specific."
+    },
+    {
+      "module": "Type",
+      "upstreamSpec": "available",
+      "disposition": "pending-review",
+      "execution": "not-run",
+      "source": "Type.unit.hx",
+      "reason": "Upstream spec exists; enable after BEAM runtime type semantics are triaged."
+    },
+    {
+      "module": "UInt",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists."
+    },
+    {
+      "module": "UnicodeString",
+      "upstreamSpec": "available",
+      "disposition": "pending-review",
+      "execution": "not-run",
+      "source": "UnicodeString.unit.hx",
+      "reason": "Upstream spec exists; enable after UTF-8 codepoint semantics are triaged."
+    },
+    {
+      "module": "Xml",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; XML coverage is maintained by target tests."
+    },
+    {
+      "module": "haxe.CallStack",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "haxe/CallStack.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/CallStack.unit.hx",
+      "sourceSha256": "93059cbf4e25f4382c973f50bf470b6c30e08739ce726b6c2eda89c8e9c710c7",
+      "fixtureSha256": "93059cbf4e25f4382c973f50bf470b6c30e08739ce726b6c2eda89c8e9c710c7"
+    },
+    {
+      "module": "haxe.Constraints",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged for compile-time Function/IMap constraints, and local Haxe-authored ExUnit tests cover Function calls plus IMap values crossing through the Reflaxe.Elixir.IMap runtime boundary."
+    },
+    {
+      "module": "haxe.DynamicAccess",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "adapted",
+      "source": "haxe/DynamicAccess.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/DynamicAccess.unit.hx",
+      "reason": "Upstream membership expressions (`value in array`) are expanded to explicit `t(value == a || value == b || ...)` assertions for the Haxe parser used by this checked-in fixture harness.",
+      "sourceSha256": "a0da891d4fc65d5c5c893c8cec582c94d0a20f29f3565ad99f06e0ac74455879",
+      "fixtureSha256": "28b9e761e02060a64cff3cd3b84135918837571c9eecf54c5680311d80a0d29e",
+      "adaptationPatch": "test/upstream_unitstd/adaptations/haxe/DynamicAccess.unit.hx.patch",
+      "adaptationPatchSha256": "95c7ae5491cede7877a8559cad95b4ce7ba55c70020c5d6246c6b44bcd9c59b1"
+    },
+    {
+      "module": "haxe.EntryPoint",
+      "upstreamSpec": "absent",
+      "disposition": "unsupported",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; haxe.EntryPoint is Haxe's target-owned process main-loop bridge and does not map to BEAM application lifecycle semantics. Direct output-code calls and static field reads fail fast with a target diagnostic; use elixir.otp.Application, elixir.otp.Supervisor, and elixir.otp.TypeSafeChildSpec for OTP lifecycle/supervision, phoenix.* modules and annotations for Phoenix callbacks, or sys.thread.EventLoop/haxe.Timer for callback scheduling instead."
+    },
+    {
+      "module": "haxe.EnumFlags",
+      "upstreamSpec": "available",
+      "disposition": "pending-review",
+      "execution": "not-run",
+      "source": "haxe/EnumFlags.unit.hx",
+      "reason": "The official test exists but is not in the BEAM runtime suite. Local Haxe-authored tests cover set, unset, setTo, has, ofInt, and toInt behavior. Review the complete official test before enabling it."
+    },
+    {
+      "module": "haxe.EnumTools",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; official Haxe extern inline fallback is used unchanged, while typed Type enum reflection lowers through generated enum metadata. Local Haxe-authored ExUnit tests cover getConstructors, createByName, createByIndex, createAll, EnumValueTools name/index/params, and equality."
+    },
+    {
+      "module": "haxe.Http",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is target/sys integration specific."
+    },
+    {
+      "module": "haxe.Int64",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.Int64Helper",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; helper parsing behavior is covered through local haxe.Int64 runtime tests."
+    },
+    {
+      "module": "haxe.Log",
+      "upstreamSpec": "available",
+      "disposition": "pending-review",
+      "execution": "not-run",
+      "source": "haxe/Log.unit.hx",
+      "reason": "Upstream spec exists; enable after mutable static dynamic field hooks and closure-captured outer-local mutation semantics are implemented."
+    },
+    {
+      "module": "haxe.MainLoop",
+      "upstreamSpec": "absent",
+      "disposition": "unsupported",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; haxe.MainLoop is Haxe's target-owned process main-loop/event queue bridge and does not map to BEAM application lifecycle semantics. Direct output-code calls and static field reads fail fast with a target diagnostic; use elixir.otp.Application, elixir.otp.Supervisor, and elixir.otp.TypeSafeChildSpec for OTP lifecycle/supervision, phoenix.* modules and annotations for Phoenix callbacks, or sys.thread.EventLoop/haxe.Timer for callback scheduling instead."
+    },
+    {
+      "module": "haxe.Serializer",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; runtime coverage uses local portable-subset tests."
+    },
+    {
+      "module": "haxe.Template",
+      "upstreamSpec": "available",
+      "disposition": "pending-review",
+      "execution": "not-run",
+      "source": "haxe/Template.unit.hx",
+      "reason": "Upstream spec exists; local BEAM contract intentionally supports a portable subset first."
+    },
+    {
+      "module": "haxe.Timer",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; stamp/measure, run rebinding, delay, repeated event-loop firing, and stop behavior are covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.Unserializer",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; runtime coverage uses local portable-subset tests."
+    },
+    {
+      "module": "haxe.ValueException",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged and explicit value/message/previous/toString plus typed ValueException throw/catch behavior are covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.crypto.Adler32",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; one-shot, incremental, read/equals, toString, and signed 32-bit behavior are covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.crypto.BaseCode",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; arbitrary power-of-two dictionary encode/decode, string helpers, invalid dictionary length, and invalid encoded characters are covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.crypto.Base64",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "haxe/crypto/Base64.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/crypto/Base64.unit.hx",
+      "sourceSha256": "f8efc15b0da633fb2642602e81e4245234d9603893437bdc3e9c41dccbbd01e3",
+      "fixtureSha256": "f8efc15b0da633fb2642602e81e4245234d9603893437bdc3e9c41dccbbd01e3"
+    },
+    {
+      "module": "haxe.crypto.Crc32",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "haxe/crypto/Crc32.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/crypto/Crc32.unit.hx",
+      "sourceSha256": "0a40a31b136cb46111b28d3163471c926425b0c6ce58e74e2d0829716b282a16",
+      "fixtureSha256": "0a40a31b136cb46111b28d3163471c926425b0c6ce58e74e2d0829716b282a16"
+    },
+    {
+      "module": "haxe.crypto.Hmac",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "haxe/crypto/Hmac.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/crypto/Hmac.unit.hx",
+      "sourceSha256": "265f71116e83470e289983be71e247ec2ab4ff5aaf474cb96330b99286ef5e34",
+      "fixtureSha256": "265f71116e83470e289983be71e247ec2ab4ff5aaf474cb96330b99286ef5e34"
+    },
+    {
+      "module": "haxe.crypto.Md5",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "haxe/crypto/Md5.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/crypto/Md5.unit.hx",
+      "sourceSha256": "f1db046036c25ea452840a68a5cd99e89c470c0d67f2ab6804e78e9b7fe8b201",
+      "fixtureSha256": "f1db046036c25ea452840a68a5cd99e89c470c0d67f2ab6804e78e9b7fe8b201"
+    },
+    {
+      "module": "haxe.crypto.Sha1",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "haxe/crypto/Sha1.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/crypto/Sha1.unit.hx",
+      "sourceSha256": "de423cf1391225ff0487857e51375dc36f4a7f4e453c1ddbe2e33e3bd6932227",
+      "fixtureSha256": "de423cf1391225ff0487857e51375dc36f4a7f4e453c1ddbe2e33e3bd6932227"
+    },
+    {
+      "module": "haxe.crypto.Sha224",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "haxe/crypto/Sha224.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/crypto/Sha224.unit.hx",
+      "sourceSha256": "fd5dfa6bba2a18991e32e6d6e343f6bf215ddd5403e17ea9e79fac0ce99756a5",
+      "fixtureSha256": "fd5dfa6bba2a18991e32e6d6e343f6bf215ddd5403e17ea9e79fac0ce99756a5"
+    },
+    {
+      "module": "haxe.crypto.Sha256",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "haxe/crypto/Sha256.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/crypto/Sha256.unit.hx",
+      "sourceSha256": "2a1ec946737801499b2bd679223b3768c473e11d073a2481e9505c7b3f3b8fe8",
+      "fixtureSha256": "2a1ec946737801499b2bd679223b3768c473e11d073a2481e9505c7b3f3b8fe8"
+    },
+    {
+      "module": "haxe.ds.ArraySort",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; the Elixir target uses a bootstrap-safe target override lowered to stable Enum.sort/2 rebinding for local array bindings, covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.ds.BalancedTree",
+      "upstreamSpec": "available",
+      "disposition": "pending-review",
+      "execution": "not-run",
+      "source": "haxe/ds/BalancedTree.unit.hx",
+      "reason": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged."
+    },
+    {
+      "module": "haxe.ds.Either",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; official Haxe stdlib enum fallback is used unchanged and Left/Right pattern matching plus generic payload preservation are covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.ds.EnumValueMap",
+      "upstreamSpec": "available",
+      "disposition": "pending-review",
+      "execution": "not-run",
+      "source": "haxe/ds/EnumValueMap.unit.hx",
+      "reason": "Upstream spec exists; enable after enum-key ordering semantics are triaged."
+    },
+    {
+      "module": "haxe.ds.GenericStack",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "haxe/ds/GenericStack.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/ds/GenericStack.unit.hx",
+      "sourceSha256": "59fe52104e3636c874588ca0b9d2b31a656ea4251b0f054529a0272a80ee652f",
+      "fixtureSha256": "59fe52104e3636c874588ca0b9d2b31a656ea4251b0f054529a0272a80ee652f"
+    },
+    {
+      "module": "haxe.ds.HashMap",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec is available in the local reference checkout; the Elixir target uses a BEAM-specific hashCode-keyed override with local Haxe-authored ExUnit runtime coverage."
+    },
+    {
+      "module": "haxe.ds.List",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "adapted",
+      "source": "List.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/List.unit.hx",
+      "reason": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions.",
+      "sourceSha256": "5fac6897b9fee9eb59a1ff596295e595f8bec1f9f01629ef42449723ba1b8c46",
+      "fixtureSha256": "5f5e22786edc7a7bca05f3ca4dda3c77ec04434f548e965dcc6bc7d4b9c00d1c",
+      "adaptationPatch": "test/upstream_unitstd/adaptations/List.unit.hx.patch",
+      "adaptationPatchSha256": "7199ecaf52cfd0e46ee63bb02db1c52bbf47c6c639ffa8d7460d77cd4b6f8fd1"
+    },
+    {
+      "module": "haxe.ds.ListSort",
+      "upstreamSpec": "absent",
+      "disposition": "unsupported",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; the API mutates arbitrary linked-node next/prev fields in place, which ordinary immutable BEAM structs/maps cannot preserve. Calls fail fast with a target diagnostic and are covered by a negative snapshot."
+    },
+    {
+      "module": "haxe.ds.Option",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; the Elixir target uses a local @:elixirIdiomatic Option enum plus OptionTools helpers, and local Haxe-authored ExUnit runtime tests cover Some/None pattern matching, helper transforms/extraction, collection helpers, and Result/null bridges."
+    },
+    {
+      "module": "haxe.ds.Vector",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "adapted",
+      "source": "haxe/ds/Vector.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/ds/Vector.unit.hx",
+      "reason": "The upstream primitive default-value checks are made explicit for the Elixir target because erased generic Vector cells initialize as nil unless a default value is supplied; the reference-identity toData() assertion is rewritten as an observable no-alias mutation check because the target stores Vector data in an opaque process-state cell, and upstream harness helper classes are replaced with local structural values.",
+      "sourceSha256": "143e8fa8c3a26cd41e4bb66c2943e52ceaf579c96a374fa2045643c66d4abe7f",
+      "fixtureSha256": "b3c8e53fb668e4c790ab0f1c174d9caa674c9e01ea538eb0873a87b98a5e793c",
+      "adaptationPatch": "test/upstream_unitstd/adaptations/haxe/ds/Vector.unit.hx.patch",
+      "adaptationPatchSha256": "c6facf6b6d52a286ab13de187e69db04c8e700c990f74eae969337cf880a9d21"
+    },
+    {
+      "module": "haxe.exceptions.ArgumentException",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged and constructor fields, inherited message/previous behavior, toString, and typed throw/catch behavior are covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.exceptions.NotImplementedException",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged and default/custom messages, inherited previous behavior, toString, and typed throw/catch behavior are covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.format.JsonParser",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; direct parse behavior, native JSON terms, escaped strings/nulls, and invalid JSON raising are covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.format.JsonPrinter",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists."
+    },
+    {
+      "module": "haxe.http.HttpBase",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is covered through haxe.Http/sys.Http tests."
+    },
+    {
+      "module": "haxe.io.ArrayBufferView",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "haxe/io/ArrayBufferView.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/io/ArrayBufferView.unit.hx",
+      "sourceSha256": "ef6e7d7225368dcfa1a1e1c5f314df98d6466d9e971bc4406d8459fde420edfe",
+      "fixtureSha256": "ef6e7d7225368dcfa1a1e1c5f314df98d6466d9e971bc4406d8459fde420edfe"
+    },
+    {
+      "module": "haxe.io.BufferInput",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists."
+    },
+    {
+      "module": "haxe.io.Bytes",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; Bytes behavior is covered by local runtime tests."
+    },
+    {
+      "module": "haxe.io.BytesBuffer",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "haxe/io/BytesBuffer.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/io/BytesBuffer.unit.hx",
+      "sourceSha256": "1e792d02a7c789e7bbecfacf71d76b5699bc56a955ba55f312be5a3c16edc111",
+      "fixtureSha256": "1e792d02a7c789e7bbecfacf71d76b5699bc56a955ba55f312be5a3c16edc111"
+    },
+    {
+      "module": "haxe.io.BytesData",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists."
+    },
+    {
+      "module": "haxe.io.BytesInput",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is covered by local runtime tests."
+    },
+    {
+      "module": "haxe.io.BytesOutput",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is covered by local runtime tests."
+    },
+    {
+      "module": "haxe.io.Encoding",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists."
+    },
+    {
+      "module": "haxe.io.Error",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; IO error enum behavior is covered by local runtime tests."
+    },
+    {
+      "module": "haxe.io.Eof",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists."
+    },
+    {
+      "module": "haxe.io.FPHelper",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "haxe/io/FPHelper.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/io/FPHelper.unit.hx",
+      "sourceSha256": "167323b87127e8bd34c4e3255859df3d585ffcc03bfe7a5b1e7c2853f24fd128",
+      "fixtureSha256": "167323b87127e8bd34c4e3255859df3d585ffcc03bfe7a5b1e7c2853f24fd128"
+    },
+    {
+      "module": "haxe.io.Float32Array",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "haxe/io/Float32Array.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/io/Float32Array.unit.hx",
+      "sourceSha256": "b363185ac1a73016d83985e15b2e2f199479876a4668e7a25409e6aa0dee2a9d",
+      "fixtureSha256": "b363185ac1a73016d83985e15b2e2f199479876a4668e7a25409e6aa0dee2a9d"
+    },
+    {
+      "module": "haxe.io.Float64Array",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "haxe/io/Float64Array.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/io/Float64Array.unit.hx",
+      "sourceSha256": "a69ce4ef14c14cf26fc6b253fc0db5ccb5499dac2fb0f445b7352c04c751ad71",
+      "fixtureSha256": "a69ce4ef14c14cf26fc6b253fc0db5ccb5499dac2fb0f445b7352c04c751ad71"
+    },
+    {
+      "module": "haxe.io.Input",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; concrete input implementations carry coverage."
+    },
+    {
+      "module": "haxe.io.Int32Array",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "haxe/io/Int32Array.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/io/Int32Array.unit.hx",
+      "sourceSha256": "2e180bb26f845792f9cccbbf6def8d96ce2eb77d9ee1230e9e6d404e631d1d76",
+      "fixtureSha256": "2e180bb26f845792f9cccbbf6def8d96ce2eb77d9ee1230e9e6d404e631d1d76"
+    },
+    {
+      "module": "haxe.io.Mime",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; the official Haxe String enum-abstract fallback is used unchanged, with representative constants, custom values, and String conversion covered by local Haxe-authored ExUnit plus source/package parity tests."
+    },
+    {
+      "module": "haxe.io.Output",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; concrete output implementations carry coverage."
+    },
+    {
+      "module": "haxe.io.Path",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "adapted",
+      "source": "haxe/io/Path.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/io/Path.unit.hx",
+      "reason": "One Windows normalization vector uses ProgramData instead of the upstream C:/Users sample to satisfy repository local-path hygiene while preserving path normalization semantics.",
+      "sourceSha256": "e845307dcec5fc615b2178e0f4addbffc6c3f4047cd03d2e4f22ff0ea71661ff",
+      "fixtureSha256": "f801052b0d3f4983f1894276f5ca73fc7d5ea1e7cf8f37c48281c47fb35c2628",
+      "adaptationPatch": "test/upstream_unitstd/adaptations/haxe/io/Path.unit.hx.patch",
+      "adaptationPatchSha256": "7a4f51a2dcf115ab05e38aaeac655fb66a590e936d4d6a5af7b41d590558bffc",
+      "adaptationPatchRedactions": [
+        "machine-local-user-path"
+      ]
+    },
+    {
+      "module": "haxe.io.Scheme",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; the official Haxe String enum-abstract fallback is used unchanged, with representative constants, custom values, and String conversion covered by local Haxe-authored ExUnit plus source/package parity tests."
+    },
+    {
+      "module": "haxe.io.StringInput",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is covered by local runtime tests."
+    },
+    {
+      "module": "haxe.io.UInt16Array",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "haxe/io/UInt16Array.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/io/UInt16Array.unit.hx",
+      "sourceSha256": "c49d17b179093b58bc30fbd9bce656dd409390b1437fcd9b2f5fdff201f1fa56",
+      "fixtureSha256": "c49d17b179093b58bc30fbd9bce656dd409390b1437fcd9b2f5fdff201f1fa56"
+    },
+    {
+      "module": "haxe.io.UInt32Array",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "haxe/io/UInt32Array.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/io/UInt32Array.unit.hx",
+      "sourceSha256": "1228ce6146c143800c5524bf3386a6c55a6706eefd50abf5370911f299a842f7",
+      "fixtureSha256": "1228ce6146c143800c5524bf3386a6c55a6706eefd50abf5370911f299a842f7"
+    },
+    {
+      "module": "haxe.io.UInt8Array",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
+      "source": "haxe/io/UInt8Array.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/io/UInt8Array.unit.hx",
+      "sourceSha256": "c35c2a44ee35d1a1520cbdefcd23d1895660ec1fc10cef5dd0d65841028ce393",
+      "fixtureSha256": "c35c2a44ee35d1a1520cbdefcd23d1895660ec1fc10cef5dd0d65841028ce393"
+    },
+    {
+      "module": "haxe.iterators.ArrayIterator",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; iterator behavior is covered by local runtime tests."
+    },
+    {
+      "module": "haxe.iterators.ArrayKeyValueIterator",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists."
+    },
+    {
+      "module": "haxe.iterators.HashMapKeyValueIterator",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; the Elixir target provides an inline type-compatibility surface for explicit HashMap iterator construction, covered through local haxe.ds.HashMap runtime tests."
+    },
+    {
+      "module": "haxe.iterators.MapKeyValueIterator",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; iterator behavior is covered by local runtime tests."
+    },
+    {
+      "module": "haxe.iterators.StringIterator",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; explicit iterator state, codepoint values, and end-of-iteration behavior are covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.iterators.StringKeyValueIterator",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; explicit iterator state, character index keys, codepoint values, and end-of-iteration behavior are covered by local Haxe-authored ExUnit runtime tests."
+    },
+    {
+      "module": "haxe.iterators.StringIteratorUnicode",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "adapted",
+      "source": "haxe/iterators/StringIteratorUnicode.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/iterators/StringIteratorUnicode.unit.hx",
+      "reason": "The upstream target.unicode conditional is made explicit so Elixir always exercises UTF-8 codepoint iteration.",
+      "sourceSha256": "89aa8b5d7c91ecf46457262faa4e20c23d73053e8127e1d7b779af3b4728c6f7",
+      "fixtureSha256": "64b399ea8c28d08225b190cd8d96b9ee40ff0e353963015ed47b3fdeb36541f6",
+      "adaptationPatch": "test/upstream_unitstd/adaptations/haxe/iterators/StringIteratorUnicode.unit.hx.patch",
+      "adaptationPatchSha256": "c0e980350ec19e2a490013a53db487d39579a83992d9f21cbbad77f8620e0408"
+    },
+    {
+      "module": "haxe.iterators.StringKeyValueIteratorUnicode",
+      "upstreamSpec": "available",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "adapted",
+      "source": "haxe/iterators/StringKeyValueIteratorUnicode.unit.hx",
+      "fixture": "test/upstream_unitstd/upstream/haxe/iterators/StringKeyValueIteratorUnicode.unit.hx",
+      "reason": "The upstream target.unicode conditional is made explicit so Elixir always exercises UTF-8 codepoint key/value iteration.",
+      "sourceSha256": "a273b8cc63331c562f34424645369bca8577a4f6da070315097b1e53efafeb20",
+      "fixtureSha256": "a1eb95bfca3cad1203748a035a2f9bf13054063601d1c2c4be932e880e7fb8a3",
+      "adaptationPatch": "test/upstream_unitstd/adaptations/haxe/iterators/StringKeyValueIteratorUnicode.unit.hx.patch",
+      "adaptationPatchSha256": "24555b60e831acb13c00c43d67cb9bcc2f40e6e9d84e23410ac8d7da8c290f0a"
+    },
+    {
+      "module": "sys.FileStat",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is sys-target integration specific."
+    },
+    {
+      "module": "sys.FileSystem",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is sys-target integration specific."
+    },
+    {
+      "module": "sys.Http",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is sys-target integration specific."
+    },
+    {
+      "module": "sys.io.File",
+      "upstreamSpec": "available",
+      "disposition": "pending-review",
+      "execution": "not-run",
+      "source": "sys/io/File.unit.hx",
+      "reason": "Upstream spec exists; enable after filesystem temp-path and permissions semantics are triaged."
+    },
+    {
+      "module": "sys.io.FileInput",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is covered through sys.io.File."
+    },
+    {
+      "module": "sys.io.FileOutput",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is covered through sys.io.File."
+    },
+    {
+      "module": "sys.io.Process",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is sys-target integration specific."
+    },
+    {
+      "module": "sys.io.FileSeek",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists."
+    },
+    {
+      "module": "sys.net.Address",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is BEAM socket integration specific."
+    },
+    {
+      "module": "sys.net.Host",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is BEAM socket integration specific."
+    },
+    {
+      "module": "sys.net.Socket",
+      "upstreamSpec": "available",
+      "disposition": "pending-review",
+      "execution": "not-run",
+      "source": "sys/net/Socket.unit.hx",
+      "reason": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged."
+    },
+    {
+      "module": "sys.net.UdpSocket",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is BEAM socket integration specific."
+    },
+    {
+      "module": "sys.ssl.Certificate",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific."
+    },
+    {
+      "module": "sys.ssl.Digest",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific."
+    },
+    {
+      "module": "sys.ssl.DigestAlgorithm",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists."
+    },
+    {
+      "module": "sys.ssl.Key",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific."
+    },
+    {
+      "module": "sys.ssl.Socket",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific."
+    },
+    {
+      "module": "sys.thread.Condition",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+    },
+    {
+      "module": "sys.thread.Deque",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+    },
+    {
+      "module": "sys.thread.ElasticThreadPool",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+    },
+    {
+      "module": "sys.thread.EventLoop",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+    },
+    {
+      "module": "sys.thread.FixedThreadPool",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+    },
+    {
+      "module": "sys.thread.IThreadPool",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+    },
+    {
+      "module": "sys.thread.Lock",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+    },
+    {
+      "module": "sys.thread.Mutex",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+    },
+    {
+      "module": "sys.thread.NoEventLoopException",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists."
+    },
+    {
+      "module": "sys.thread.Semaphore",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+    },
+    {
+      "module": "sys.thread.Thread",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+    },
+    {
+      "module": "sys.thread.ThreadPoolException",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists."
+    },
+    {
+      "module": "sys.thread.Tls",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+    }
+  ],
+  "omittedUpstreamFixtures": [
+    {
+      "source": "Ssl.unit.hx",
+      "sourceSha256": "65ce42379397ad1e906d6fc4b481c44038a88599c1a66c95b4969163a9860fde",
+      "upstreamSpec": "available",
+      "disposition": "not-applicable",
+      "execution": "not-run",
+      "reason": "Haxe 4.3.7 runs the SSL assertions only on cpp or Neko. Other targets execute only `1 == 1`, so this file supplies no BEAM SSL evidence."
+    }
   ]
 }

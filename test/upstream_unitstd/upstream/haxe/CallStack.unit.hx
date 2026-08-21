@@ -1,16 +1,15 @@
 var stack = haxe.CallStack.callStack();
 (stack is Array) == true;
-var stack = haxe.CallStack.exceptionStack();
 
+var stack = haxe.CallStack.exceptionStack();
 (stack is Array) == true;
+
 function throw2() {
 	throw false;
 }
-
 function throw1() {
 	throw2();
 }
-
 try {
 	throw1();
 } catch (_:Dynamic) {
