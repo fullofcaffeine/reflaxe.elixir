@@ -52,6 +52,21 @@ const ACKNOWLEDGEMENTS = Object.freeze([
       },
     ],
   },
+  {
+    dependency: "tar",
+    node: "node_modules/npm/node_modules/tar",
+    npmVersion: "11.19.0",
+    dependencyVersion: "7.5.19",
+    reviewBy: "2026-08-31",
+    advisories: [
+      {
+        source: 1145647,
+        url: "https://github.com/advisories/GHSA-r292-9mhp-454m",
+        severity: "high",
+        range: "<=7.5.20",
+      },
+    ],
+  },
 ]);
 const AUDIT_ATTEMPTS = 3;
 const AUDIT_TIMEOUT_MS = 60_000;
@@ -128,17 +143,24 @@ export function evaluateAudit(
       ),
     ),
   );
+  const acknowledgedNames = new Set(acknowledged.map(([name]) => name));
+  const coveredByAcknowledgement = (name, seen = new Set()) => {
+    if (acknowledgedNames.has(name)) return true;
+    if (seen.has(name)) return false;
+    seen.add(name);
+    const vulnerability = audit.vulnerabilities?.[name];
+    const via = Array.isArray(vulnerability?.via) ? vulnerability.via : [];
+    return (
+      via.length > 0 &&
+      via.every(
+        (dependency) =>
+          typeof dependency === "string" &&
+          coveredByAcknowledgement(dependency, new Set(seen)),
+      )
+    );
+  };
   const unexpected = blocking.filter(
-    ([name, vulnerability]) =>
-      !ACKNOWLEDGEMENTS.some((acknowledgement) =>
-        matchesAcknowledgement(
-          name,
-          vulnerability,
-          acknowledgement,
-          packageLock,
-          today,
-        ),
-      ),
+    ([name]) => !coveredByAcknowledgement(name),
   );
 
   if (unexpected.length > 0) {
@@ -256,6 +278,19 @@ function selfTest() {
       "2026-07-26",
     ),
   );
+
+  const chained = structuredClone(valid);
+  chained.audit.vulnerabilities.npm = {
+    severity: "high",
+    via: ["tar"],
+    nodes: ["node_modules/npm"],
+  };
+  chained.audit.vulnerabilities["@semantic-release/npm"] = {
+    severity: "high",
+    via: ["npm"],
+    nodes: ["node_modules/@semantic-release/npm"],
+  };
+  evaluateAudit(chained.audit, chained.packageLock, "2026-07-26");
 
   const upgraded = structuredClone(valid);
   upgraded.packageLock.packages["node_modules/npm"].version = "11.19.1";

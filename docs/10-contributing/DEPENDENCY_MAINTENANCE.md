@@ -49,20 +49,25 @@ maintainers prepare focused, reviewable updates instead of accepting broad autom
 
 ### Temporary bundled npm acknowledgement
 
-`npm run audit:npm-high` still rejects every unacknowledged high- or critical-severity finding. Until
-2026-08-31 it narrowly acknowledges `GHSA-mh99-v99m-4gvg` only when the lockfile contains
-`brace-expansion 5.0.7` at `node_modules/npm/node_modules/brace-expansion` inside `npm 11.18.0`.
-That npm executable is development-only release tooling; generated compiler packages and applications
-do not include it. The affected expansion routine can exhaust memory if the release process is given a
-malicious brace pattern, so release inputs remain trusted repository configuration.
+`npm run audit:npm-high` still rejects each unacknowledged high- or critical-severity finding. Until
+2026-08-31, it acknowledges three exact dependencies bundled in npm 11.19.0:
 
-The latest compatible `semantic-release` stack still supplies an npm 11 release that bundles the same
-vulnerable file (npm 11.19.0 was checked on 2026-07-31), and npm package overrides cannot replace a
-dependency bundled inside the npm archive. The repository therefore keeps its narrower npm 11.18.0
-lock until a real fix exists. The policy fails if the advisory identity, path, or locked versions
-change, if another high/critical advisory appears, if the advisory disappears, or when the review date
-passes. Remove the acknowledgement and restore direct `npm audit` as soon as a compatible npm release
-contains `brace-expansion 5.0.8` or newer. The owner and review schedule above apply; tracking issue:
+- `brace-expansion 5.0.7`;
+- `ip-address 10.2.0`;
+- `tar 7.5.19`.
+
+The policy records each advisory identity and exact nested path. It also checks advisory chains from
+`npm`, `@semantic-release/npm`, and `semantic-release`. It does not treat those chains as new findings
+when every path ends at a reviewed bundled dependency.
+
+This npm executable is development-only release tooling. Compiler packages and generated applications
+do not include it. Release inputs must remain trusted repository data while these acknowledgements are
+active.
+
+Compatible `semantic-release` versions still install an npm archive with these files. Package
+overrides cannot replace dependencies inside that archive. The policy fails if an advisory, path, or
+locked version changes. It also fails for a new high or critical advisory and after the review date.
+Remove each acknowledgement as soon as a compatible npm release contains its fix. Tracking issue:
 `haxe.elixir.codex-3v3`.
 
 ## Updating Gitleaks Safely
