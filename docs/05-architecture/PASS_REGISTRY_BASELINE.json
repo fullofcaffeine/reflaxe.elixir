@@ -3,7 +3,7 @@
   "mode": "transparent-groups-scoped",
   "effectivePassCount": 578,
   "maxRecordsPerModule": 579,
-  "effectiveOrderSha256": "78149a92df0bf7d6b466f6eb3c7cb5ebe9b6d9b607a7fc84fc5b3c81f3ff874f",
+  "effectiveOrderSha256": "b9d9e3306d93ae034c6062c2a176ddc9073f0f6e01255e35040269a501faf45e",
   "phaseOrder": [
     "bootstrap",
     "framework-annotations",

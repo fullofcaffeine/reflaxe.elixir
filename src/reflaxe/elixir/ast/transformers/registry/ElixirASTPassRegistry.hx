@@ -963,7 +963,8 @@ class ElixirASTPassRegistry {
 			name: "SimplifyIsNilFalse",
 			description: "Fold nil checks from earlier literal assignments in function and generated ExUnit callback scopes",
 			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.BinderTransforms.simplifyProvableIsNilFalsePass
+			pass: reflaxe.elixir.ast.transformers.BinderTransforms.simplifyProvableIsNilFalsePass,
+			runAfter: ["EqNilToIsNil"]
 		});
 
 		// (temporarily disabled) Ecto query var consistency — will be addressed via assignment extraction specialization

@@ -159,15 +159,15 @@ Effective pass count: **578**
 | 149 | `CaseSuccessVarUnifier` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite undefined placeholder locals to the success var in {:ok, v} clauses |
 | 150 | `CaseSuccessVarRenameCollisionFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Rename {:ok, var} binder when it collides with function args (e.g., socket) |
 | 151 | `CaseSomeBinderRename` | `core-lowering` | `core` | `core-lowering.core` | source order | Rename {:some, g} binder to value and rewrite body refs to avoid shadowing |
-| 152 | `SimplifyIsNilFalse` | `core-lowering` | `core` | `core-lowering.core` | source order | Fold nil checks from earlier literal assignments in function and generated ExUnit callback scopes |
-| 153 | `ApplicationStartArgNormalization` | `core-lowering` | `phoenix` | `core-lowering.phoenix` | source order | Align start_link arg names with declared locals in start/2 |
-| 154 | `TypeSafeChildSpecNormalize` | `core-lowering` | `core` | `core-lowering.core` | source order | Normalize TypeSafeChildSpec.supervisor/3 to bind parameters and avoid undefined vars |
-| 155 | `LocalVarReferenceFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Fix local references like changeset-> _changeset or query->query2 when only the latter is declared |
-| 156 | `StringToolsLocalFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Align len/result references with declared locals in StringTools |
-| 157 | `StringToolsNativeRewrite` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite ltrim/rtrim to String.trim_leading/trim_trailing |
-| 158 | `StringToolsFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Ensure StringTools.is_space/2 uses binders s,pos (late enforcement) |
-| 159 | `StdHaxeRuntimeOverride` | `core-lowering` | `core` | `core-lowering.core` | source order | Override select Haxe runtime modules with binder-consistent native implementations |
-| 160 | `EqNilToIsNil` | `core-lowering` | `core` | `core-lowering.core` | source order | Replace (x == nil) with Kernel.is_nil(x) (post opts rewrites) |
+| 152 | `ApplicationStartArgNormalization` | `core-lowering` | `phoenix` | `core-lowering.phoenix` | source order | Align start_link arg names with declared locals in start/2 |
+| 153 | `TypeSafeChildSpecNormalize` | `core-lowering` | `core` | `core-lowering.core` | source order | Normalize TypeSafeChildSpec.supervisor/3 to bind parameters and avoid undefined vars |
+| 154 | `LocalVarReferenceFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Fix local references like changeset-> _changeset or query->query2 when only the latter is declared |
+| 155 | `StringToolsLocalFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Align len/result references with declared locals in StringTools |
+| 156 | `StringToolsNativeRewrite` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite ltrim/rtrim to String.trim_leading/trim_trailing |
+| 157 | `StringToolsFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Ensure StringTools.is_space/2 uses binders s,pos (late enforcement) |
+| 158 | `StdHaxeRuntimeOverride` | `core-lowering` | `core` | `core-lowering.core` | source order | Override select Haxe runtime modules with binder-consistent native implementations |
+| 159 | `EqNilToIsNil` | `core-lowering` | `core` | `core-lowering.core` | source order | Replace (x == nil) with Kernel.is_nil(x) (post opts rewrites) |
+| 160 | `SimplifyIsNilFalse` | `core-lowering` | `core` | `core-lowering.core` | after: EqNilToIsNil | Fold nil checks from earlier literal assignments in function and generated ExUnit callback scopes |
 | 161 | `ChangesetSequentialValidateThread` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Thread sequential Ecto.Changeset validate calls through one changeset binder |
 | 162 | `ChangesetFieldAtomNormalize` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Rewrite String.to_atom("field") to :field in validate_* calls |
 | 163 | `ChangesetLengthCondCollapse` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Collapse cond-combination trees for validate_length to filtered Map.get keyword list |

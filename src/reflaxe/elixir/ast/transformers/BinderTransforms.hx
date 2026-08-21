@@ -1493,8 +1493,9 @@ class BinderTransforms {
 	 * - Process generated ExUnit test and setup macro bodies as independent
 	 *   function scopes because ExUnitTransform has already removed their EDef nodes.
 	 * - Replace `is_nil(var)` with `true` for known nil values and `false` for
-	 *   known non-nil values. Apply the same rule to `var == nil` before the
-	 *   later equality-normalization pass changes it to `is_nil(var)`.
+	 *   known non-nil values. Apply the same rule to any remaining `var == nil`.
+	 * - Run after local-reference and nil-equality normalization so the pass sees
+	 *   the final variable name and `is_nil` call shape.
 	 * - If a variable is reassigned to an unknown expression, remove it from both sets.
 	 * - Conservative: Only nil and literal non-nil assignments establish known state.
 	 * - Do not carry the state through an anonymous-function boundary, where an argument
