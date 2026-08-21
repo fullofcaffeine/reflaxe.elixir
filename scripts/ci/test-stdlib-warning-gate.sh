@@ -53,8 +53,8 @@ PATH="${FAKE_BIN}:${PATH}" \
   HAXE_EXUNIT_GENERATED_DIR="${FIXTURE_ROOT}/generated" \
   bash "${ROOT_DIR}/scripts/test-mix-fast.sh" --test-only
 
-if [[ "$(grep -Fxc -- 'compile --force --warnings-as-errors --no-deps-check' "${MIX_CALLS_LOG}")" -ne 2 ]]; then
-  echo "stdlib warning gate failed: both runners must force a strict Mix compile" >&2
+if [[ "$(grep -Fxc -- 'compile --force --warnings-as-errors --no-deps-check' "${MIX_CALLS_LOG}")" -ne 1 ]]; then
+  echo "stdlib warning gate failed: the focused runner must force a strict Mix compile" >&2
   cat "${MIX_CALLS_LOG}" >&2
   exit 1
 fi

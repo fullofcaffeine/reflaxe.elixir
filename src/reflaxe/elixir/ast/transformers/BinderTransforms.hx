@@ -1491,7 +1491,8 @@ class BinderTransforms {
 	 * - For each function body, recursively process blocks and track variables
 	 *   assigned to nil or to clearly non-nil literals.
 	 * - Replace `is_nil(var)` with `true` for known nil values and `false` for
-	 *   known non-nil values.
+	 *   known non-nil values. Apply the same rule to `var == nil` before the
+	 *   later equality-normalization pass changes it to `is_nil(var)`.
 	 * - If a variable is reassigned to an unknown expression, remove it from both sets.
 	 * - Conservative: Only nil and literal non-nil assignments establish known state.
 	 * - Do not carry the state through an anonymous-function boundary, where an argument
@@ -1541,6 +1542,13 @@ class BinderTransforms {
 			}
 
 			return switch (expr.def) {
+				case EBinary(Equal, left, right):
+					switch [left.def, right.def] {
+						case [EVar(v), ENil] | [ENil, EVar(v)]:
+							knownResult(v);
+						default:
+							expr;
+					}
 				case ERemoteCall(mod, func, args) if (func == "is_nil" && args != null && args.length == 1):
 					// Preserve guards injected by EctoEqPinnedNilGuardTransforms
 					if (expr.metadata != null && expr.metadata.ectoPinnedNilGuard == true)

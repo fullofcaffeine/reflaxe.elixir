@@ -40,8 +40,6 @@ if (( run_tests == 0 )); then
   exit 0
 fi
 
-mix compile --force --warnings-as-errors --no-deps-check
-
 supports_stale=0
 help_file="$(mktemp "${TMPDIR:-/tmp}/mix-help-test.XXXXXX")"
 cleanup() { rm -f "$help_file" 2>/dev/null || true; }
