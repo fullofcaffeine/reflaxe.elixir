@@ -958,10 +958,10 @@ class ElixirASTPassRegistry {
 
 		// (moved) EqNilToIsNil should run after ChangesetNormalize so opts.* -> Map.get rewrites happen first
 
-		// Simplify provably false is_nil checks based on prior literal assignments
+		// Simplify provable nil checks based on prior literal assignments
 		passes.push({
 			name: "SimplifyIsNilFalse",
-			description: "Replace is_nil(var) with false when var is known non-nil from earlier literal assignment",
+			description: "Fold nil checks from earlier literal assignments in function and generated ExUnit callback scopes",
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.BinderTransforms.simplifyProvableIsNilFalsePass
 		});

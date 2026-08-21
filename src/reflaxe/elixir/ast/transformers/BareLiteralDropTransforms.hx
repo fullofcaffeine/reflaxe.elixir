@@ -21,8 +21,8 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * HOW
  * - Walk `EBlock` and `EDo` and filter out non-final statements that are either pure literals
- *   (`EInteger`, `EFloat`, `EString`, `EBoolean`, `ENil`, `EAtom`, `ECharlist`) or wildcard
- *   matches whose RHS is one of those pure literals.
+ *   (`EInteger`, `EFloat`, signed numeric literals, `EString`, `EBoolean`, `ENil`, `EAtom`,
+ *   `ECharlist`) or wildcard matches whose RHS is one of those pure literals.
  *
  * EXAMPLES
  * Haxe:
@@ -83,7 +83,22 @@ class BareLiteralDropTransforms {
 			case EParen(inner):
 				isPureLiteral(inner);
 			case EBlock(exprs): exprs != null && exprs.length == 1 && isPureLiteral(exprs[0]);
+			case EUnary(Negate, inner) | EUnary(Positive, inner):
+				isUnsignedNumericLiteral(inner);
 			case EAtom(_) | EString(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil | ECharlist(_):
+				true;
+			default:
+				false;
+		}
+	}
+
+	static function isUnsignedNumericLiteral(ast:ElixirAST):Bool {
+		if (ast == null)
+			return false;
+		return switch (ast.def) {
+			case EParen(inner):
+				isUnsignedNumericLiteral(inner);
+			case EInteger(_) | EFloat(_):
 				true;
 			default:
 				false;
