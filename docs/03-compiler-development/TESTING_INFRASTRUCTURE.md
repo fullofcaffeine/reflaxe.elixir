@@ -224,8 +224,8 @@ successfully contributes a compatibility pass.
 | Focused compiler shape | `make -C test test-<category>__<case>`, `npm run test:<category>` | Haxe input generates the reviewed Elixir tree; negative fixtures own diagnostics | BEAM runtime behavior by itself |
 | Compiler invariants | `npm run test:ast-children`, `test:pass-context`, `test:pass-registry`, `test:result-invariant` | Compiler-internal ownership, registry, traversal, and non-`Void` value preservation | Framework or package behavior |
 | Generated Elixir acceptance | `npm run test:elixir-validate`, `test:examples-elixir` | `test:elixir-validate` parses already-generated snapshot `out/` trees that exist and skips absent ones; example WAE lanes compile maintained examples and reject warnings | Snapshot generation, absent `out/` trees, or correct runtime semantics |
-| Portable BEAM runtime | `npm run test:haxe-exunit-stdlib` | Selected ordinary Haxe stdlib behavior executes on BEAM/ExUnit | Complete official Haxe `unit.TestMain` coverage |
-| Mixed BEAM aggregate | `npm run test:runtime-smoke`, `test:mix-fast` | Selected portable runtime, compiler integration, and native OTP/Mix behavior execute | A pass cannot be attributed wholly to either evidence axis; failures must be routed to their owning test |
+| Portable BEAM runtime | `npm run test:haxe-exunit-stdlib` | Selected ordinary Haxe stdlib behavior executes on BEAM/ExUnit, and all compilation steps reject Elixir warnings | Complete official Haxe `unit.TestMain` coverage |
+| Mixed BEAM aggregate | `npm run test:runtime-smoke`, `test:mix-fast` | Selected portable runtime, compiler integration, and native OTP/Mix behavior execute, and all compilation steps reject Elixir warnings | A pass cannot be attributed wholly to either evidence axis. Route each error to its owning test. |
 | Official `unitstd` subset | `npm run guard:upstream-unitstd`, `test:haxe-exunit-stdlib` | The currently enabled/adapted checked-in specs remain inventoried and execute | Shared top-level language classes, issue corpus, or all 120 manifest entries |
 | Output quality | `npm run test:handwritten-output`, `test:generated-formatting` | Representative generated Elixir stays formatted and within reviewed structural budgets | Semantic correctness alone |
 | Examples | `test:examples`, `test:examples-output`, `test:examples-elixir`, `test:examples-runtime` | Maintained examples compile, keep reviewed output, pass strict Elixir checks, and run where declared | Unlisted examples or unsupported capabilities |
@@ -233,6 +233,10 @@ successfully contributes a compatibility pass.
 | Server/watch lifecycle | `test:haxe-server-*`, `test:reflaxe-server-cache`, dev-watcher sentinel flow | Process ownership, cleanup, invalidation, and watched application behavior | Clean fresh-process/package behavior |
 | Package/consumer | `test:haxelib-package`, scheduled README release smoke | An isolated consumer can install the built/released artifact and generate equivalent output | Every release matrix combination |
 | Security/release/performance | dependency/secret scans, release policy tests, `ci:budgets`, dedicated perf workflows | Those named policies and bounded measurements hold | Language or framework correctness not exercised there |
+
+The primary CI runs the focused stdlib command on the primary Elixir version. The minimum-toolchain lane runs `test:mix-fast` on Elixir 1.14.
+
+Both commands reject Elixir compiler warnings. `test:stdlib-warning-gate` proves this behavior with an intentional warning in a temporary generated file.
 
 Snapshots, generated-source checks, runtime tests, examples, and browser tests are complementary.
 Never use one as a cheaper substitute for another contract.
@@ -611,6 +615,7 @@ npm run test:stdlib
 npm run test:regression
 
 # Portable runtime
+npm run test:stdlib-warning-gate
 npm run test:haxe-exunit-stdlib
 
 # Mixed BEAM aggregates

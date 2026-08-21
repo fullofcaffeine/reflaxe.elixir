@@ -10,6 +10,9 @@ set -euo pipefail
 export HAXE_NO_SERVER="${HAXE_NO_SERVER:-1}"
 export MIX_ENV="${MIX_ENV:-test}"
 
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+GENERATED_DIR="${HAXE_EXUNIT_GENERATED_DIR:-${ROOT_DIR}/test/fixtures/_generated_haxe_exunit}"
+
 prepare=1
 run_tests=1
 if (( $# > 1 )); then
@@ -37,6 +40,8 @@ if (( run_tests == 0 )); then
   exit 0
 fi
 
+mix compile --warnings-as-errors --no-deps-check
+
 supports_stale=0
 help_file="$(mktemp "${TMPDIR:-/tmp}/mix-help-test.XXXXXX")"
 cleanup() { rm -f "$help_file" 2>/dev/null || true; }
@@ -48,9 +53,10 @@ if mix help test >"$help_file" 2>/dev/null; then
   fi
 fi
 
-args=(--max-cases 1 --timeout 60000)
+args=(--warnings-as-errors --max-cases 1 --timeout 60000)
 if [[ "$supports_stale" -eq 1 ]]; then
   args=(--stale "${args[@]}")
 fi
 
 mix test "${args[@]}"
+bash "${ROOT_DIR}/scripts/ci/validate-generated-elixir-warnings.sh" "${GENERATED_DIR}"
