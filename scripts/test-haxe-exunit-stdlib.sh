@@ -32,7 +32,7 @@ run_bounded "${HEX_TIMEOUT_SECS}" mix local.hex --if-missing --force
 run_bounded "${HEX_TIMEOUT_SECS}" mix local.rebar --if-missing --force
 run_bounded "${DEPS_TIMEOUT_SECS}" mix deps.get
 run_bounded "${DEPS_TIMEOUT_SECS}" mix deps.compile
-run_bounded "${COMPILE_TIMEOUT_SECS}" mix compile --warnings-as-errors --no-deps-check
+run_bounded "${COMPILE_TIMEOUT_SECS}" mix compile --force --warnings-as-errors --no-deps-check
 
 mix_args=(
   test

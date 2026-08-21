@@ -40,7 +40,7 @@ if (( run_tests == 0 )); then
   exit 0
 fi
 
-mix compile --warnings-as-errors --no-deps-check
+mix compile --force --warnings-as-errors --no-deps-check
 
 supports_stale=0
 help_file="$(mktemp "${TMPDIR:-/tmp}/mix-help-test.XXXXXX")"

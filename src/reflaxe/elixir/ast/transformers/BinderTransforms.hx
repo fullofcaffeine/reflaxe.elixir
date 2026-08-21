@@ -1477,9 +1477,8 @@ class BinderTransforms {
 	 * simplifyProvableIsNilFalsePass
 	 *
 	 * WHAT
-	 * - Replaces guard conditions `Kernel.is_nil(var)` (or `is_nil(var)`) with `false`
-	 *   when it is provable in the local block that `var` was assigned a non-nil literal
-	 *   value earlier and not reassigned.
+	 * - Replaces guard conditions `Kernel.is_nil(var)` (or `is_nil(var)`) with a
+	 *   boolean when the local block proves whether `var` is nil.
 	 *
 	 * WHY
 	 * - Elixir warns on comparisons between disjoint types (e.g., binary() == nil).
@@ -1490,10 +1489,13 @@ class BinderTransforms {
 	 *
 	 * HOW
 	 * - For each function body, recursively process blocks and track variables
-	 *   assigned to clearly non-nil literals (string, number, list, map, tuple, atom true/false).
-	 * - When encountering `is_nil(var)` and `var` is in the non-nil set, replace with `false`.
-	 * - If a variable is reassigned to an unknown expression or nil, remove it from the set.
-	 * - Conservative: Only literal non-nil assignments mark a variable as non-nil.
+	 *   assigned to nil or to clearly non-nil literals.
+	 * - Replace `is_nil(var)` with `true` for known nil values and `false` for
+	 *   known non-nil values.
+	 * - If a variable is reassigned to an unknown expression, remove it from both sets.
+	 * - Conservative: Only nil and literal non-nil assignments establish known state.
+	 * - Do not carry the state through an anonymous-function boundary, where an argument
+	 *   can shadow the outer variable.
 	 *
 	 * EXAMPLES
 	 * Before:
@@ -1519,8 +1521,25 @@ class BinderTransforms {
 			};
 		}
 
-		// Rewrite is_nil(var) when var is known non-nil
-		inline function rewriteIsNilIfProvablyFalse(expr:ElixirAST, nonNil:Map<String, Bool>):ElixirAST {
+		inline function isDefinitelyNil(e:ElixirAST):Bool {
+			return switch (e.def) {
+				case ENil: true;
+				default: false;
+			};
+		}
+
+		// Rewrite is_nil(var) when the local flow proves its result.
+		inline function rewriteProvableIsNil(expr:ElixirAST, nonNil:Map<String, Bool>, knownNil:Map<String, Bool>):ElixirAST {
+			inline function knownResult(variable:String):ElixirAST {
+				return if (knownNil.exists(variable)) {
+					makeASTWithMeta(EBoolean(true), expr.metadata, expr.pos);
+				} else if (nonNil.exists(variable)) {
+					makeASTWithMeta(EBoolean(false), expr.metadata, expr.pos);
+				} else {
+					expr;
+				}
+			}
+
 			return switch (expr.def) {
 				case ERemoteCall(mod, func, args) if (func == "is_nil" && args != null && args.length == 1):
 					// Preserve guards injected by EctoEqPinnedNilGuardTransforms
@@ -1529,8 +1548,8 @@ class BinderTransforms {
 					switch (mod.def) {
 						case EVar(m) if (m == "Kernel"):
 							switch (args[0].def) {
-								case EVar(v) if (nonNil.exists(v)):
-									makeASTWithMeta(EBoolean(false), expr.metadata, expr.pos);
+								case EVar(v):
+									knownResult(v);
 								default: expr;
 							}
 						default: expr;
@@ -1539,58 +1558,71 @@ class BinderTransforms {
 					if (expr.metadata != null && expr.metadata.ectoPinnedNilGuard == true)
 						return expr;
 					switch (args[0].def) {
-						case EVar(v) if (nonNil.exists(v)):
-							makeASTWithMeta(EBoolean(false), expr.metadata, expr.pos);
+						case EVar(v):
+							knownResult(v);
 						default: expr;
 					}
 				default: expr;
 			}
 		}
 
-		// Process a block with a flowing non-nil set
-		function processBlock(block:ElixirAST, incoming:Map<String, Bool>):ElixirAST {
+		// Process a block with flowing known-value sets.
+		function processBlock(block:ElixirAST, incomingNonNil:Map<String, Bool>, incomingNil:Map<String, Bool>):ElixirAST {
 			// Defensive: some defs may not carry a body (e.g. stubbed functions); skip safely.
 			if (block == null)
 				return block;
 			return switch (block.def) {
 				case EBlock(stmts):
 					var nonNil = new Map<String, Bool>();
-					// copy incoming set
-					for (k in incoming.keys())
+					var knownNil = new Map<String, Bool>();
+					// Copy incoming sets.
+					for (k in incomingNonNil.keys())
 						nonNil.set(k, true);
+					for (k in incomingNil.keys())
+						knownNil.set(k, true);
 					var out:Array<ElixirAST> = [];
 					for (stmt in stmts) {
 						var s = stmt;
 						// Generic deep rewrite first: fold Kernel.is_nil(var) anywhere it appears
-						// when `var` is provably a non-nil literal in current flow context.
-						s = ElixirASTTransformer.transformNode(s, function(n:ElixirAST):ElixirAST {
-							return rewriteIsNilIfProvablyFalse(n, nonNil);
+						// when the current flow proves whether `var` is nil.
+						s = ElixirASTTransformer.transformNodeUntil(s, function(n:ElixirAST):ElixirAST {
+							return rewriteProvableIsNil(n, nonNil, knownNil);
+						}, function(n:ElixirAST):Bool {
+							return switch (n.def) {
+								case EFn(_): true;
+								default: false;
+							};
 						});
 						// Attempt rewrite in conditions
 						switch (s.def) {
 							case EIf(cond, thenB, elseB):
-								var newCond = rewriteIsNilIfProvablyFalse(cond, nonNil);
-								var newThen = processBlock(thenB, nonNil);
-								var newElse = elseB != null ? processBlock(elseB, nonNil) : null;
+								var newCond = rewriteProvableIsNil(cond, nonNil, knownNil);
+								var newThen = processBlock(thenB, nonNil, knownNil);
+								var newElse = elseB != null ? processBlock(elseB, nonNil, knownNil) : null;
 								s = makeASTWithMeta(EIf(newCond, newThen, newElse), s.metadata, s.pos);
 							case ECase(expr, clauses):
-								var newExpr = rewriteIsNilIfProvablyFalse(expr, nonNil);
+								var newExpr = rewriteProvableIsNil(expr, nonNil, knownNil);
 								var newClauses = [];
 								for (c in clauses) {
-									var bodyProcessed = processBlock(c.body, nonNil);
+									var bodyProcessed = processBlock(c.body, nonNil, knownNil);
 									newClauses.push({pattern: c.pattern, guard: c.guard, body: bodyProcessed});
 								}
 								s = makeASTWithMeta(ECase(newExpr, newClauses), s.metadata, s.pos);
 							default:
 								// No-op; we'll examine assignments below
 						}
-						// Track assignments for non-nil inference
+						// Track assignments for nil-state inference.
 						switch (s.def) {
 							case EMatch(PVar(name), rhs):
 								if (isDefinitelyNonNilLiteral(rhs)) {
 									nonNil.set(name, true);
+									knownNil.remove(name);
+								} else if (isDefinitelyNil(rhs)) {
+									knownNil.set(name, true);
+									nonNil.remove(name);
 								} else {
 									nonNil.remove(name);
+									knownNil.remove(name);
 								}
 							case EBinary(Match, left, rhs):
 								// Handle `name = <literal>` pattern as well
@@ -1598,8 +1630,13 @@ class BinderTransforms {
 									case EVar(name2):
 										if (isDefinitelyNonNilLiteral(rhs)) {
 											nonNil.set(name2, true);
+											knownNil.remove(name2);
+										} else if (isDefinitelyNil(rhs)) {
+											knownNil.set(name2, true);
+											nonNil.remove(name2);
 										} else {
 											nonNil.remove(name2);
+											knownNil.remove(name2);
 										}
 									default:
 								}
@@ -1617,9 +1654,9 @@ class BinderTransforms {
 		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
 			return switch (n.def) {
 				case EDef(name, args, guards, body):
-					makeASTWithMeta(EDef(name, args, guards, processBlock(body, new Map())), n.metadata, n.pos);
+					makeASTWithMeta(EDef(name, args, guards, processBlock(body, new Map(), new Map())), n.metadata, n.pos);
 				case EDefp(name, args, guards, body):
-					makeASTWithMeta(EDefp(name, args, guards, processBlock(body, new Map())), n.metadata, n.pos);
+					makeASTWithMeta(EDefp(name, args, guards, processBlock(body, new Map(), new Map())), n.metadata, n.pos);
 				default:
 					n;
 			}

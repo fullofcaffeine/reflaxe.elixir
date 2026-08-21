@@ -53,7 +53,11 @@ PATH="${FAKE_BIN}:${PATH}" \
   HAXE_EXUNIT_GENERATED_DIR="${FIXTURE_ROOT}/generated" \
   bash "${ROOT_DIR}/scripts/test-mix-fast.sh" --test-only
 
-grep -Fqx 'compile --warnings-as-errors --no-deps-check' "${MIX_CALLS_LOG}"
+if [[ "$(grep -Fxc -- 'compile --force --warnings-as-errors --no-deps-check' "${MIX_CALLS_LOG}")" -ne 2 ]]; then
+  echo "stdlib warning gate failed: both runners must force a strict Mix compile" >&2
+  cat "${MIX_CALLS_LOG}" >&2
+  exit 1
+fi
 grep -Fq 'test test/exunit/haxe_exunit_stdlib_runtime_test.exs --warnings-as-errors' "${MIX_CALLS_LOG}"
 grep -Fqx 'test --warnings-as-errors --max-cases 1 --timeout 60000' "${MIX_CALLS_LOG}"
 if [[ "$(grep -Fc -- 'validate-generated-elixir-warnings.exs' "${ELIXIR_CALLS_LOG}")" -ne 2 ]]; then
