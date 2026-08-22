@@ -25,7 +25,8 @@ class TestStdlibWarningTransforms {
 		var assignLength = makeAST(EMatch(PVar("length"), makeAST(ENil)));
 		var nilCheck = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [makeAST(EVar("length"))]));
 		var shift = makeAST(ERemoteCall(makeAST(EVar("Bitwise")), "bsl", [makeAST(EVar("length")), makeAST(EInteger(2))]));
-		var body = makeAST(EBlock([assignLength, makeAST(EIf(nilCheck, makeAST(ENil), shift))]));
+		var nestedArgument = makeAST(EBlock([assignLength, makeAST(EIf(nilCheck, makeAST(ENil), shift))]));
+		var body = makeAST(EBlock([makeAST(ERemoteCall(makeAST(EVar("Sample")), "consume", [nestedArgument]))]));
 		var testMacro = makeAST(EMacroCall("test", [makeAST(EString("known nil length"))], body));
 
 		var simplified = BinderTransforms.simplifyProvableIsNilFalsePass(testMacro);
@@ -34,8 +35,8 @@ class TestStdlibWarningTransforms {
 		switch (folded.def) {
 			case EMacroCall("test", _, macroBody):
 				switch (macroBody.def) {
-					case EBlock([_, finalExpression]):
-						assertNode(finalExpression, ENil, "known nil must remove the unreachable shift branch");
+					case EBlock([{def: ERemoteCall(_, "consume", [{def: EBlock([_, finalExpression])}])}]):
+						assertNode(finalExpression, ENil, "known nil in a nested argument block must remove the unreachable shift branch");
 					default:
 						fail("known-nil test macro body changed shape");
 				}

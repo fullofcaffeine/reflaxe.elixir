@@ -1490,6 +1490,8 @@ class BinderTransforms {
 	 * HOW
 	 * - For each function body, recursively process blocks and track variables
 	 *   assigned to nil or to clearly non-nil literals.
+	 * - Process blocks nested in expression positions with a copy of the current
+	 *   state. Do not export their assignments to later parent statements.
 	 * - Process generated ExUnit test and setup macro bodies as independent
 	 *   function scopes because ExUnitTransform has already removed their EDef nodes.
 	 * - Replace `is_nil(var)` with `true` for known nil values and `false` for
@@ -1598,10 +1600,16 @@ class BinderTransforms {
 					var out:Array<ElixirAST> = [];
 					for (stmt in stmts) {
 						var s = stmt;
-						// Generic deep rewrite first: fold Kernel.is_nil(var) anywhere it appears
-						// when the current flow proves whether `var` is nil.
+						// Generic deep rewrite first. A block can remain nested in a function
+						// argument until later IIFE cleanup, so process that block's statements
+						// in sequence before rewriting its nil checks.
 						s = ElixirASTTransformer.transformNodeUntil(s, function(n:ElixirAST):ElixirAST {
-							return rewriteProvableIsNil(n, nonNil, knownNil);
+							return switch (n.def) {
+								case EBlock(_) | EDo(_):
+									processBlock(n, nonNil, knownNil);
+								default:
+									rewriteProvableIsNil(n, nonNil, knownNil);
+							}
 						}, function(n:ElixirAST):Bool {
 							return switch (n.def) {
 								case EFn(_): true;
@@ -1660,6 +1668,12 @@ class BinderTransforms {
 						out.push(s);
 					}
 					makeASTWithMeta(EBlock(out), block.metadata, block.pos);
+				case EDo(statements):
+					var processed = processBlock(makeASTWithMeta(EBlock(statements), block.metadata, block.pos), incomingNonNil, incomingNil);
+					switch (processed.def) {
+						case EBlock(out): makeASTWithMeta(EDo(out), block.metadata, block.pos);
+						default: block;
+					}
 				default:
 					// Not a block; conservatively descend
 					ElixirASTTransformer.transformNode(block, function(n) return n);
