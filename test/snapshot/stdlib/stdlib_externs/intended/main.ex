@@ -47,7 +47,6 @@ defmodule Main do
     IO.puts("Using helper function")
     IO.puts("stderr", "This is an error message")
     label = "label"
-    label = if (Kernel.is_nil(label)), do: "", else: label
     if (label != "") do
       IO.puts("#{label}: ")
     end
@@ -59,7 +58,6 @@ defmodule Main do
     color = IO.io.ansi.blue()
     IO.write("#{color}Info text#{IO.io.ansi.reset()}")
     label = "Array"
-    label = if (Kernel.is_nil(label)), do: "", else: label
     result = IO.iodata_to_binary(IO.inspect([1, 2, 3]))
     _formatted = if (label != "") do
       "#{label}: #{result}"
@@ -167,7 +165,6 @@ defmodule Main do
     string = String.trim("   ")
     _is_blank = String.length(string) == 0
     pad_with = "0"
-    pad_with = if (Kernel.is_nil(pad_with)), do: " ", else: pad_with
     _left_padded = if (String.length("test") >= 10) do
       "test"
     else

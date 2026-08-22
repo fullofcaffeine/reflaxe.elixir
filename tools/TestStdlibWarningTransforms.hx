@@ -47,7 +47,7 @@ class TestStdlibWarningTransforms {
 
 	static function testDiscardedIfRemovesSignedBranchTail():Void {
 		var setter = makeAST(ERemoteCall(makeAST(EVar("Sample")), "set", [makeAST(EInteger(-2))]));
-		var signedResult = makeAST(EUnary(Negate, makeAST(EInteger(2))));
+		var signedResult = makeAST(EInteger(-2));
 		var conditional = makeAST(EIf(makeAST(EBoolean(true)), makeAST(EBlock([setter, signedResult])), makeAST(EInteger(0))));
 		var assertion = makeAST(ECall(null, "assert", [makeAST(EBoolean(true))]));
 

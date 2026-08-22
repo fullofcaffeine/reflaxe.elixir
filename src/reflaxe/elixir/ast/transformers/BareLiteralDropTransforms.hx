@@ -13,8 +13,8 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   the final expression of the block.
  * - Also removes non-final wildcard matches to pure literals, such as `_ = 1`, because those are
  *   explicit discard statements with no side effects.
- * - When a non-final `if` result is discarded, removes a signed numeric tail from either branch
- *   while it preserves earlier side effects in that branch.
+ * - When a non-final `if` result is discarded, removes a pure literal tail that follows side
+ *   effects in either branch.
  *
  * WHY
  * - Elixir warns on “code block contains unused literal …” when a literal appears in statement
@@ -54,7 +54,7 @@ class BareLiteralDropTransforms {
 			return stmts;
 		var out:Array<ElixirAST> = [];
 		for (i in 0...stmts.length) {
-			var s = i < stmts.length - 1 ? dropDiscardedSignedIfResult(stmts[i]) : stmts[i];
+			var s = i < stmts.length - 1 ? dropDiscardedIfBranchLiteralResult(stmts[i]) : stmts[i];
 			if (i < stmts.length - 1 && isDiscardedPureLiteral(s)) {
 				continue;
 			}
@@ -63,33 +63,29 @@ class BareLiteralDropTransforms {
 		return out;
 	}
 
-	static function dropDiscardedSignedIfResult(ast:ElixirAST):ElixirAST {
+	static function dropDiscardedIfBranchLiteralResult(ast:ElixirAST):ElixirAST {
 		if (ast == null)
 			return ast;
 		return switch (ast.def) {
-			case EIf(condition, thenBranch, elseBranch): var nextThen = dropSignedNumericTail(thenBranch); var nextElse = elseBranch != null ? dropSignedNumericTail(elseBranch) : null; nextThen == thenBranch && nextElse == elseBranch ? ast : makeASTWithMeta(EIf(condition,
+			case EIf(condition, thenBranch, elseBranch): var nextThen = dropDiscardedBranchLiteralTail(thenBranch); var nextElse = elseBranch != null ? dropDiscardedBranchLiteralTail(elseBranch) : null; nextThen == thenBranch && nextElse == elseBranch ? ast : makeASTWithMeta(EIf(condition,
 					nextThen, nextElse), ast.metadata, ast.pos);
 			default:
 				ast;
 		}
 	}
 
-	static function dropSignedNumericTail(branch:ElixirAST):ElixirAST {
+	static function dropDiscardedBranchLiteralTail(branch:ElixirAST):ElixirAST {
 		if (branch == null)
 			return branch;
 		return switch (branch.def) {
 			case EBlock(expressions) if (expressions != null
-				&& expressions.length > 0
-				&& isSignedNumericLiteral(expressions[expressions.length - 1])):
+				&& expressions.length > 1
+				&& isPureLiteral(expressions[expressions.length - 1])):
 				var kept = expressions.slice(0, expressions.length - 1);
-				kept.length == 0 ? makeASTWithMeta(ENil, branch.metadata, branch.pos) : makeASTWithMeta(EBlock(kept), branch.metadata, branch.pos);
-			case EDo(expressions) if (expressions != null
-				&& expressions.length > 0
-				&& isSignedNumericLiteral(expressions[expressions.length - 1])):
+				makeASTWithMeta(EBlock(kept), branch.metadata, branch.pos);
+			case EDo(expressions) if (expressions != null && expressions.length > 1 && isPureLiteral(expressions[expressions.length - 1])):
 				var kept = expressions.slice(0, expressions.length - 1);
-				kept.length == 0 ? makeASTWithMeta(ENil, branch.metadata, branch.pos) : makeASTWithMeta(EDo(kept), branch.metadata, branch.pos);
-			case _ if (isSignedNumericLiteral(branch)):
-				makeASTWithMeta(ENil, branch.metadata, branch.pos);
+				makeASTWithMeta(EDo(kept), branch.metadata, branch.pos);
 			default:
 				branch;
 		}
@@ -134,19 +130,6 @@ class BareLiteralDropTransforms {
 				isUnsignedNumericLiteral(inner);
 			case EInteger(_) | EFloat(_):
 				true;
-			default:
-				false;
-		}
-	}
-
-	static function isSignedNumericLiteral(ast:ElixirAST):Bool {
-		if (ast == null)
-			return false;
-		return switch (ast.def) {
-			case EParen(inner):
-				isSignedNumericLiteral(inner);
-			case EUnary(Negate, inner) | EUnary(Positive, inner):
-				isUnsignedNumericLiteral(inner);
 			default:
 				false;
 		}
