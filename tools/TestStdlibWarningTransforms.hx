@@ -15,12 +15,32 @@ class TestStdlibWarningTransforms {
 	public static function run():Expr {
 		testKnownNilRemovesUnreachableShift();
 		testKnownNonNilFoldsNegatedCheck();
+		testKnownNonNilFoldsBooleanIdentity();
 		testTupleMatchForgetsKnownNil();
 		testBranchAssignmentForgetsKnownNil();
 		testDiscardedIfRemovesSignedBranchTail();
 
 		Sys.println("Stdlib warning transform contracts passed");
 		return macro null;
+	}
+
+	static function testKnownNonNilFoldsBooleanIdentity():Void {
+		var assignArgs = makeAST(EMatch(PVar("args"), makeAST(EList([makeAST(EInteger(1))]))));
+		var nilCheck = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [makeAST(EVar("args"))]));
+		var hasValues = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "length", [makeAST(EVar("args"))]));
+		var remainingCondition = makeAST(EBinary(Greater, hasValues, makeAST(EInteger(0))));
+		var combined = makeAST(EBinary(And, makeAST(EUnary(Not, nilCheck)), remainingCondition));
+		var conditional = makeAST(EIf(combined, makeAST(EAtom("present")), makeAST(EAtom("missing"))));
+		var functionNode = makeAST(EDef("children", [], null, makeAST(EBlock([assignArgs, conditional]))));
+
+		var result = BinderTransforms.simplifyProvableIsNilFalsePass(functionNode);
+
+		switch (result.def) {
+			case EDef("children", _, _, {def: EBlock([_, {def: EIf(condition, _, _)}])}):
+				assertNode(condition, remainingCondition.def, "true and a remaining condition must fold to the remaining condition");
+			default:
+				fail("boolean-identity function changed shape");
+		}
 	}
 
 	static function testBranchAssignmentForgetsKnownNil():Void {

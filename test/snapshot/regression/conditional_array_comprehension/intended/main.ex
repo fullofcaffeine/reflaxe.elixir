@@ -16,7 +16,8 @@ defmodule Main do
     g = g ++ [3]
     g = g ++ [5]
     g = g ++ [7]
-    _odds = g ++ [9]
+    g = g ++ [9]
+    _odds = g
     nil
   end
 end

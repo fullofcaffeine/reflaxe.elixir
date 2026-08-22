@@ -1501,8 +1501,9 @@ class BinderTransforms {
 	 * - If a variable is reassigned to an unknown expression, remove it from both sets.
 	 * - Forget prior facts when a tuple, branch, loop, or nested expression can rebind
 	 *   a variable. This avoids using an earlier value after control flow changes it.
-	 * - Fold a negated known result and its containing constant `if` immediately, since
-	 *   the general constant-folding pass has already run by this stage.
+	 * - Fold negated known results, boolean identities such as `true and condition`,
+	 *   and containing constant `if` expressions immediately, since the general
+	 *   constant-folding pass has already run by this stage.
 	 * - Conservative: Only nil and literal non-nil assignments establish known state.
 	 * - Do not carry the state through an anonymous-function boundary, where an argument
 	 *   can shadow the outer variable.
@@ -1617,6 +1618,22 @@ class BinderTransforms {
 							makeASTWithMeta(EBoolean(!value), expr.metadata, expr.pos);
 						default:
 							if (rewrittenInner == inner) expr else makeASTWithMeta(EUnary(Not, rewrittenInner), expr.metadata, expr.pos);
+					}
+				case EBinary(op, left, right) if (op == And || op == AndAlso || op == Or || op == OrElse):
+					var rewrittenLeft = rewriteProvableIsNil(left, nonNil, knownNil);
+					var rewrittenRight = rewriteProvableIsNil(right, nonNil, knownNil);
+					switch [op, rewrittenLeft.def] {
+						case [And | AndAlso, EBoolean(true)]:
+							rewrittenRight;
+						case [And | AndAlso, EBoolean(false)]:
+							makeASTWithMeta(EBoolean(false), expr.metadata, expr.pos);
+						case [Or | OrElse, EBoolean(true)]:
+							makeASTWithMeta(EBoolean(true), expr.metadata, expr.pos);
+						case [Or | OrElse, EBoolean(false)]:
+							rewrittenRight;
+						default:
+							if (rewrittenLeft == left && rewrittenRight == right) expr else makeASTWithMeta(EBinary(op, rewrittenLeft, rewrittenRight),
+								expr.metadata, expr.pos);
 					}
 				case EBinary(Equal, left, right):
 					switch [left.def, right.def] {
