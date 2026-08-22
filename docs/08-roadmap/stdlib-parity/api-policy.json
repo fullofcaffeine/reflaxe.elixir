@@ -17,10 +17,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.9",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The reflection and graph-serialization task owns the remaining APIs."
     },
     {
       "module": "Array",
@@ -45,10 +45,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.9",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The reflection and graph-serialization task owns the remaining APIs."
     },
     {
       "module": "Date",
@@ -119,10 +119,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.9",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The reflection and graph-serialization task owns the remaining APIs."
     },
     {
       "module": "EnumValue",
@@ -133,10 +133,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.9",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The reflection and graph-serialization task owns the remaining APIs."
     },
     {
       "module": "IntIterator",
@@ -167,10 +167,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.7",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream spec exists; enable after collection semantics are triaged."
+      "reviewNote": "Upstream spec exists; enable after collection semantics are triaged. The Lambda and rest-argument task owns the remaining APIs."
     },
     {
       "module": "List",
@@ -200,10 +200,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.2",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream spec exists; enable after native BEAM map ordering/identity semantics are triaged."
+      "reviewNote": "Upstream spec exists; enable after native BEAM map ordering/identity semantics are triaged. The exact Map task owns the remaining APIs."
     },
     {
       "module": "Math",
@@ -247,10 +247,11 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.17",
+        "haxe.elixir.codex-0yn.10.3.9",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream spec exists; enable after target string/parse/cast edge cases are triaged."
+      "reviewNote": "Upstream spec exists; enable after target string/parse/cast edge cases are triaged. The core value-utility task owns the remaining APIs. The reflection and graph-serialization task owns the remaining APIs."
     },
     {
       "module": "StdTypes",
@@ -261,10 +262,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The core value-utility task owns the remaining APIs."
     },
     {
       "module": "String",
@@ -362,10 +363,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists."
+      "reviewNote": "No matching upstream unitstd spec exists. The core value-utility task owns the remaining APIs."
     },
     {
       "module": "UnicodeString",
@@ -376,10 +377,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.18",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream spec exists; enable after UTF-8 codepoint semantics are triaged."
+      "reviewNote": "Upstream spec exists; enable after UTF-8 codepoint semantics are triaged. The text and base-code task owns the remaining APIs."
     },
     {
       "module": "Xml",
@@ -423,10 +424,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged for compile-time Function/IMap constraints, and local Haxe-authored ExUnit tests cover Function calls plus IMap values crossing through the Reflaxe.Elixir.IMap runtime boundary."
+      "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged for compile-time Function/IMap constraints, and local Haxe-authored ExUnit tests cover Function calls plus IMap values crossing through the Reflaxe.Elixir.IMap runtime boundary. The core value-utility task owns the remaining APIs."
     },
     {
       "module": "haxe.DynamicAccess",
@@ -470,10 +471,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; official Haxe abstract fallback is used unchanged, while dynamic flag operations lower through typed Type.enumIndex metadata. Local Haxe-authored ExUnit tests cover set, unset, setTo, has, ofInt, and toInt behavior."
+      "reviewNote": "No matching upstream unitstd spec exists; official Haxe abstract fallback is used unchanged, while dynamic flag operations lower through typed Type.enumIndex metadata. Local Haxe-authored ExUnit tests cover set, unset, setTo, has, ofInt, and toInt behavior. The core value-utility task owns the remaining APIs."
     },
     {
       "module": "haxe.EnumTools",
@@ -484,10 +485,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; official Haxe extern inline fallback is used unchanged, while typed Type enum reflection lowers through generated enum metadata. Local Haxe-authored ExUnit tests cover getConstructors, createByName, createByIndex, createAll, EnumValueTools name/index/params, and equality."
+      "reviewNote": "No matching upstream unitstd spec exists; official Haxe extern inline fallback is used unchanged, while typed Type enum reflection lowers through generated enum metadata. Local Haxe-authored ExUnit tests cover getConstructors, createByName, createByIndex, createAll, EnumValueTools name/index/params, and equality. The core value-utility task owns the remaining APIs."
     },
     {
       "module": "haxe.Exception",
@@ -498,10 +499,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.15",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The checked native-value task owns the remaining APIs."
     },
     {
       "module": "haxe.Http",
@@ -527,10 +528,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The core value-utility task owns the remaining APIs."
     },
     {
       "module": "haxe.Int64",
@@ -541,10 +542,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests."
+      "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs."
     },
     {
       "module": "haxe.Int64Helper",
@@ -555,10 +556,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; helper parsing behavior is covered through local haxe.Int64 runtime tests."
+      "reviewNote": "No matching upstream unitstd spec exists; helper parsing behavior is covered through local haxe.Int64 runtime tests. The core value-utility task owns the remaining APIs."
     },
     {
       "module": "haxe.Json",
@@ -569,10 +570,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.9",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The reflection and graph-serialization task owns the remaining APIs."
     },
     {
       "module": "haxe.Log",
@@ -583,10 +584,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.19",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream spec exists; enable after mutable static dynamic field hooks and closure-captured outer-local mutation semantics are implemented."
+      "reviewNote": "Upstream spec exists; enable after mutable static dynamic field hooks and closure-captured outer-local mutation semantics are implemented. The logging and stack task owns the remaining APIs."
     },
     {
       "module": "haxe.MainLoop",
@@ -611,10 +612,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.19",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The logging and stack task owns the remaining APIs."
     },
     {
       "module": "haxe.PosInfos",
@@ -625,10 +626,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.19",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The logging and stack task owns the remaining APIs."
     },
     {
       "module": "haxe.Resource",
@@ -639,10 +640,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.20",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The resource and shell-quoting task owns the remaining APIs."
     },
     {
       "module": "haxe.Rest",
@@ -653,10 +654,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.7",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The Lambda and rest-argument task owns the remaining APIs."
     },
     {
       "module": "haxe.Serializer",
@@ -681,10 +682,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.20",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The resource and shell-quoting task owns the remaining APIs."
     },
     {
       "module": "haxe.Template",
@@ -695,10 +696,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.21",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream spec exists; local BEAM contract intentionally supports a portable subset first."
+      "reviewNote": "Upstream spec exists; local BEAM contract intentionally supports a portable subset first. The complete Template task owns the remaining APIs."
     },
     {
       "module": "haxe.Timer",
@@ -724,10 +725,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.18",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs."
     },
     {
       "module": "haxe.Unserializer",
@@ -752,10 +753,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.18",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs."
     },
     {
       "module": "haxe.ValueException",
@@ -766,10 +767,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.15",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged and explicit value/message/previous/toString plus typed ValueException throw/catch behavior are covered by local Haxe-authored ExUnit runtime tests."
+      "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged and explicit value/message/previous/toString plus typed ValueException throw/catch behavior are covered by local Haxe-authored ExUnit runtime tests. The checked native-value task owns the remaining APIs."
     },
     {
       "module": "haxe.atomic.AtomicBool",
@@ -780,10 +781,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.4.1",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The atomic value task owns the remaining APIs."
     },
     {
       "module": "haxe.atomic.AtomicInt",
@@ -794,10 +795,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.4.1",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The atomic value task owns the remaining APIs."
     },
     {
       "module": "haxe.atomic.AtomicObject",
@@ -808,10 +809,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.4.1",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The atomic value task owns the remaining APIs."
     },
     {
       "module": "haxe.crypto.Adler32",
@@ -855,10 +856,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.18",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; arbitrary power-of-two dictionary encode/decode, string helpers, invalid dictionary length, and invalid encoded characters are covered by local Haxe-authored ExUnit runtime tests."
+      "reviewNote": "No matching upstream unitstd spec exists; arbitrary power-of-two dictionary encode/decode, string helpers, invalid dictionary length, and invalid encoded characters are covered by local Haxe-authored ExUnit runtime tests. The text and base-code task owns the remaining APIs."
     },
     {
       "module": "haxe.crypto.Crc32",
@@ -1089,10 +1090,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib enum fallback is used unchanged and Left/Right pattern matching plus generic payload preservation are covered by local Haxe-authored ExUnit runtime tests."
+      "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib enum fallback is used unchanged and Left/Right pattern matching plus generic payload preservation are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs."
     },
     {
       "module": "haxe.ds.EnumValueMap",
@@ -1227,10 +1228,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; the Elixir target uses a local @:elixirIdiomatic Option enum plus OptionTools helpers, and local Haxe-authored ExUnit runtime tests cover Some/None pattern matching, helper transforms/extraction, collection helpers, and Result/null bridges."
+      "reviewNote": "No matching upstream unitstd spec exists; the Elixir target uses a local @:elixirIdiomatic Option enum plus OptionTools helpers, and local Haxe-authored ExUnit runtime tests cover Some/None pattern matching, helper transforms/extraction, collection helpers, and Result/null bridges. The core value-utility task owns the remaining APIs."
     },
     {
       "module": "haxe.ds.ReadOnlyArray",
@@ -1303,10 +1304,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.15",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged and constructor fields, inherited message/previous behavior, toString, and typed throw/catch behavior are covered by local Haxe-authored ExUnit runtime tests."
+      "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged and constructor fields, inherited message/previous behavior, toString, and typed throw/catch behavior are covered by local Haxe-authored ExUnit runtime tests. The checked native-value task owns the remaining APIs."
     },
     {
       "module": "haxe.exceptions.NotImplementedException",
@@ -1317,10 +1318,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.15",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged and default/custom messages, inherited previous behavior, toString, and typed throw/catch behavior are covered by local Haxe-authored ExUnit runtime tests."
+      "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged and default/custom messages, inherited previous behavior, toString, and typed throw/catch behavior are covered by local Haxe-authored ExUnit runtime tests. The checked native-value task owns the remaining APIs."
     },
     {
       "module": "haxe.exceptions.PosException",
@@ -1331,10 +1332,11 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.15",
+        "haxe.elixir.codex-0yn.10.3.19",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The checked native-value task owns the remaining APIs. The logging and stack task owns the remaining APIs."
     },
     {
       "module": "haxe.extern.AsVar",
@@ -1378,10 +1380,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.9",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; direct parse behavior, native JSON terms, escaped strings/nulls, and invalid JSON raising are covered by local Haxe-authored ExUnit runtime tests."
+      "reviewNote": "No matching upstream unitstd spec exists; direct parse behavior, native JSON terms, escaped strings/nulls, and invalid JSON raising are covered by local Haxe-authored ExUnit runtime tests. The reflection and graph-serialization task owns the remaining APIs."
     },
     {
       "module": "haxe.format.JsonPrinter",
@@ -1392,10 +1394,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.9",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists."
+      "reviewNote": "No matching upstream unitstd spec exists. The reflection and graph-serialization task owns the remaining APIs."
     },
     {
       "module": "haxe.http.HttpBase",
@@ -1940,10 +1942,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.7",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The Lambda and rest-argument task owns the remaining APIs."
     },
     {
       "module": "haxe.iterators.RestKeyValueIterator",
@@ -1954,10 +1956,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.7",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The Lambda and rest-argument task owns the remaining APIs."
     },
     {
       "module": "haxe.iterators.StringIterator",
@@ -2245,10 +2247,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.9",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The reflection and graph-serialization task owns the remaining APIs."
     },
     {
       "module": "haxe.rtti.Meta",
@@ -2259,10 +2261,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.9",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The reflection and graph-serialization task owns the remaining APIs."
     },
     {
       "module": "haxe.rtti.Rtti",
@@ -2273,10 +2275,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.9",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The reflection and graph-serialization task owns the remaining APIs."
     },
     {
       "module": "haxe.rtti.XmlParser",
@@ -2287,10 +2289,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.9",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The reflection and graph-serialization task owns the remaining APIs."
     },
     {
       "module": "haxe.xml.Access",
@@ -2301,10 +2303,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.6",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The stateful iterator and Xml task owns the remaining APIs."
     },
     {
       "module": "haxe.xml.Check",
@@ -2315,10 +2317,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.6",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The stateful iterator and Xml task owns the remaining APIs."
     },
     {
       "module": "haxe.xml.Fast",
@@ -2329,10 +2331,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.6",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The stateful iterator and Xml task owns the remaining APIs."
     },
     {
       "module": "haxe.xml.Parser",
@@ -2343,10 +2345,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.6",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The stateful iterator and Xml task owns the remaining APIs."
     },
     {
       "module": "haxe.xml.Printer",
@@ -2357,10 +2359,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.14.6",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The stateful iterator and Xml task owns the remaining APIs."
     },
     {
       "module": "haxe.zip.Compress",
@@ -2371,10 +2373,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.22",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The ZIP utility task owns the remaining APIs."
     },
     {
       "module": "haxe.zip.Entry",
@@ -2385,10 +2387,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.22",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The ZIP utility task owns the remaining APIs."
     },
     {
       "module": "haxe.zip.FlushMode",
@@ -2399,10 +2401,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.22",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The ZIP utility task owns the remaining APIs."
     },
     {
       "module": "haxe.zip.Huffman",
@@ -2413,10 +2415,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.22",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The ZIP utility task owns the remaining APIs."
     },
     {
       "module": "haxe.zip.InflateImpl",
@@ -2427,10 +2429,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.22",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The ZIP utility task owns the remaining APIs."
     },
     {
       "module": "haxe.zip.Reader",
@@ -2441,10 +2443,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.22",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The ZIP utility task owns the remaining APIs."
     },
     {
       "module": "haxe.zip.Tools",
@@ -2455,10 +2457,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.22",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The ZIP utility task owns the remaining APIs."
     },
     {
       "module": "haxe.zip.Uncompress",
@@ -2469,10 +2471,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.22",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The ZIP utility task owns the remaining APIs."
     },
     {
       "module": "haxe.zip.Writer",
@@ -2483,10 +2485,10 @@
       "evidenceState": "missing",
       "evidence": [],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3",
+        "haxe.elixir.codex-0yn.10.3.22",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No module-level runtime-conformance decision exists yet. The ZIP utility task owns the remaining APIs."
     },
     {
       "module": "sys.FileStat",

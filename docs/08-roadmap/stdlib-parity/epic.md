@@ -306,30 +306,24 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
 - Coverage: `test/snapshot/negative/sys_db_unsupported` verifies the APIs fail to compile instead of emitting runtime stubs.
 - Docs: see `docs/04-api-reference/STDLIB_SUPPORT_MATRIX.md` and `docs/07-patterns/ECTO_INTEGRATION_PATTERNS.md`.
 
-## Workstreams (proposed order)
+## Current owners for remaining core work
 
-1) **Core top-level modules**
-   - Done: `EReg`, `DateTools`, `IntIterator`, `List`, `Map`, `UInt`, `UnicodeString`, `Xml`
-   - Remaining core-types like `Any`, `Class`, `Enum`, `EnumValue`, and `StdTypes` are typically not override targets
+The API policy file is the machine-readable owner record. Each Beads task names its runtime evidence and required commands.
 
-2) **`haxe.io` + core utilities**
-   - Done (core building blocks): `haxe.io.BufferInput`, `haxe.io.BytesBuffer`, `haxe.io.BytesInput`, `haxe.io.BytesOutput`, `haxe.io.FPHelper`, `haxe.Json`
-   - Done (verified official fallback): `haxe.io.Mime`, `haxe.io.Scheme`; both are String enum abstracts and need no target override or runtime module
-   - Done (verified official fallback): `haxe.io.ArrayBufferView` and the six typed arrays; shared Bytes views and all upstream `unitstd` specs run on BEAM without target stdlib duplication
-   - Done: `haxe.Exception`
-   - Done: `haxe.Int32`, `haxe.Int64`, `haxe.Int64Helper`
-   - Done: `haxe.CallStack`
-   - Done: `haxe.Serializer` / `haxe.Unserializer` portable data subset
-   - Done: `haxe.Template` portable rendering subset
-   - Next: remaining `haxe.io.*` utilities as-needed
+- `haxe.elixir.codex-0yn.10.3.9` owns core reflection, RTTI, JSON, and graph serialization.
+- `haxe.elixir.codex-0yn.10.3.14.2` owns the remaining `Map` contract.
+- `haxe.elixir.codex-0yn.10.3.14.6` owns stateful iterators and the `Xml` family.
+- `haxe.elixir.codex-0yn.10.3.14.7` owns `Lambda`, `haxe.Rest`, and their iterators.
+- `haxe.elixir.codex-0yn.10.3.15` owns target exceptions and native-value boundaries.
+- `haxe.elixir.codex-0yn.10.3.17` owns scalar, enum, and other core value utilities.
+- `haxe.elixir.codex-0yn.10.3.18` owns text encoding and base-code utilities.
+- `haxe.elixir.codex-0yn.10.3.19` owns logging, stack, and source-position utilities.
+- `haxe.elixir.codex-0yn.10.3.20` owns embedded resources and shell quoting.
+- `haxe.elixir.codex-0yn.10.3.21` owns the complete `haxe.Template` expression contract.
+- `haxe.elixir.codex-0yn.10.3.22` owns ZIP streams and archive utilities.
+- `haxe.elixir.codex-0yn.10.4.1` owns atomic values and their concurrency contract.
 
-3) **`sys.*` runtime integration**
-   - Prioritize: remaining smaller host/process surfaces
-   - Guardrails: BEAM/OTP idioms, avoid pretending POSIX semantics exist where they don’t.
-
-4) **Parsers/serializers**
-   - Done: `haxe.Template` portable rendering subset
-   - Next: expand `haxe.Serializer` / `haxe.Unserializer` beyond the portable data subset if downstream libraries require classes/enums/custom serialization
+These owners do not mark an API as supported. Task `haxe.elixir.codex-0yn.10.5` still requires exact API evidence from source and release packages.
 
 ## Tracking
 
