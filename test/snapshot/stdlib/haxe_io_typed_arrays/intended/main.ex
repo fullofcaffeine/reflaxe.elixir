@@ -7,7 +7,6 @@ defmodule Main do
     if (0 < Bitwise.bsr(floats.byte_length, 2)) do
       reflaxe_dispatch_receiver = floats.bytes
       apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :set_float, [reflaxe_dispatch_receiver, floats.byte_offset, 1.25])
-      1.25
     else
       0
     end
@@ -25,7 +24,6 @@ defmodule Main do
     if (0 < octets.byte_length) do
       reflaxe_dispatch_receiver = octets.bytes
       apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :set, [reflaxe_dispatch_receiver, octets.byte_offset, 55])
-      55
     else
       0
     end
