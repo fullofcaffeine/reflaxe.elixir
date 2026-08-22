@@ -1499,6 +1499,10 @@ class BinderTransforms {
 	 * - Run after local-reference and nil-equality normalization so the pass sees
 	 *   the final variable name and `is_nil` call shape.
 	 * - If a variable is reassigned to an unknown expression, remove it from both sets.
+	 * - Forget prior facts when a tuple, branch, loop, or nested expression can rebind
+	 *   a variable. This avoids using an earlier value after control flow changes it.
+	 * - Fold a negated known result and its containing constant `if` immediately, since
+	 *   the general constant-folding pass has already run by this stage.
 	 * - Conservative: Only nil and literal non-nil assignments establish known state.
 	 * - Do not carry the state through an anonymous-function boundary, where an argument
 	 *   can shadow the outer variable.
@@ -1538,8 +1542,63 @@ class BinderTransforms {
 			};
 		}
 
+		// A non-trivial match can rebind several variables at once. Their values are
+		// unknown unless each pattern position is analyzed, so forget prior facts.
+		function forgetPatternBindings(pattern:EPattern, nonNil:Map<String, Bool>, knownNil:Map<String, Bool>):Void {
+			function forget(name:String):Void {
+				if (name != null && name != "_") {
+					nonNil.remove(name);
+					knownNil.remove(name);
+				}
+			}
+			switch (pattern) {
+				case PVar(name):
+					forget(name);
+				case PTuple(elements) | PList(elements):
+					for (element in elements)
+						forgetPatternBindings(element, nonNil, knownNil);
+				case PCons(head, tail):
+					forgetPatternBindings(head, nonNil, knownNil);
+					forgetPatternBindings(tail, nonNil, knownNil);
+				case PMap(pairs):
+					for (pair in pairs)
+						forgetPatternBindings(pair.value, nonNil, knownNil);
+				case PStruct(_, fields):
+					for (field in fields)
+						forgetPatternBindings(field.value, nonNil, knownNil);
+				case PAlias(name, nested):
+					forget(name);
+					forgetPatternBindings(nested, nonNil, knownNil);
+				case PBinary(segments):
+					for (segment in segments)
+						forgetPatternBindings(segment.pattern, nonNil, knownNil);
+				case PLiteral(_) | PPin(_) | PWildcard:
+			}
+		}
+
+		// Assignments inside a branch, loop, or nested expression can change a value
+		// even when the whole statement is not itself a simple assignment.
+		function forgetNestedAssignments(statement:ElixirAST, nonNil:Map<String, Bool>, knownNil:Map<String, Bool>):Void {
+			ElixirASTTransformer.transformNodeUntil(statement, function(node:ElixirAST):ElixirAST {
+				switch (node.def) {
+					case EMatch(pattern, _):
+						forgetPatternBindings(pattern, nonNil, knownNil);
+					case EBinary(Match, {def: EVar(name)}, _):
+						nonNil.remove(name);
+						knownNil.remove(name);
+					default:
+				}
+				return node;
+			}, function(node:ElixirAST):Bool {
+				return switch (node.def) {
+					case EFn(_): true;
+					default: false;
+				};
+			});
+		}
+
 		// Rewrite is_nil(var) when the local flow proves its result.
-		inline function rewriteProvableIsNil(expr:ElixirAST, nonNil:Map<String, Bool>, knownNil:Map<String, Bool>):ElixirAST {
+		function rewriteProvableIsNil(expr:ElixirAST, nonNil:Map<String, Bool>, knownNil:Map<String, Bool>):ElixirAST {
 			inline function knownResult(variable:String):ElixirAST {
 				return if (knownNil.exists(variable)) {
 					makeASTWithMeta(EBoolean(true), expr.metadata, expr.pos);
@@ -1551,6 +1610,14 @@ class BinderTransforms {
 			}
 
 			return switch (expr.def) {
+				case EUnary(Not, inner):
+					var rewrittenInner = rewriteProvableIsNil(inner, nonNil, knownNil);
+					switch (rewrittenInner.def) {
+						case EBoolean(value):
+							makeASTWithMeta(EBoolean(!value), expr.metadata, expr.pos);
+						default:
+							if (rewrittenInner == inner) expr else makeASTWithMeta(EUnary(Not, rewrittenInner), expr.metadata, expr.pos);
+					}
 				case EBinary(Equal, left, right):
 					switch [left.def, right.def] {
 						case [EVar(v), ENil] | [ENil, EVar(v)]:
@@ -1622,7 +1689,8 @@ class BinderTransforms {
 								var newCond = rewriteProvableIsNil(cond, nonNil, knownNil);
 								var newThen = processBlock(thenB, nonNil, knownNil);
 								var newElse = elseB != null ? processBlock(elseB, nonNil, knownNil) : null;
-								s = makeASTWithMeta(EIf(newCond, newThen, newElse), s.metadata, s.pos);
+								var rewrittenIf = makeASTWithMeta(EIf(newCond, newThen, newElse), s.metadata, s.pos);
+								s = IfConstSimplifyTransforms.transformPass(rewrittenIf);
 							case ECase(expr, clauses):
 								var newExpr = rewriteProvableIsNil(expr, nonNil, knownNil);
 								var newClauses = [];
@@ -1634,18 +1702,26 @@ class BinderTransforms {
 							default:
 								// No-op; we'll examine assignments below
 						}
+						// Conservatively invalidate every variable assigned anywhere in the
+						// statement. A direct top-level assignment can establish a new fact below.
+						forgetNestedAssignments(stmt, nonNil, knownNil);
 						// Track assignments for nil-state inference.
 						switch (s.def) {
-							case EMatch(PVar(name), rhs):
-								if (isDefinitelyNonNilLiteral(rhs)) {
-									nonNil.set(name, true);
-									knownNil.remove(name);
-								} else if (isDefinitelyNil(rhs)) {
-									knownNil.set(name, true);
-									nonNil.remove(name);
-								} else {
-									nonNil.remove(name);
-									knownNil.remove(name);
+							case EMatch(pattern, rhs):
+								switch (pattern) {
+									case PVar(name):
+										if (isDefinitelyNonNilLiteral(rhs)) {
+											nonNil.set(name, true);
+											knownNil.remove(name);
+										} else if (isDefinitelyNil(rhs)) {
+											knownNil.set(name, true);
+											nonNil.remove(name);
+										} else {
+											nonNil.remove(name);
+											knownNil.remove(name);
+										}
+									default:
+										forgetPatternBindings(pattern, nonNil, knownNil);
 								}
 							case EBinary(Match, left, rhs):
 								// Handle `name = <literal>` pattern as well

@@ -65,17 +65,8 @@ defmodule Main do
     if (tmp != nil), do: tmp, else: "b" end).()}")
   end
   defp test_method_calls() do
-    obj = nil
-    _name = if (not Kernel.is_nil((tmp = if (not Kernel.is_nil(obj)) do
-      apply(Map.get(obj, :__reflaxe_class__) || Map.get(obj, :__struct__), :get_name, [obj])
-    else
-      nil
-    end))), do: tmp, else: "Anonymous"
-    _value = if (not Kernel.is_nil((tmp = if (not Kernel.is_nil(obj)) do
-      apply(Map.get(obj, :__reflaxe_class__) || Map.get(obj, :__struct__), :get_value, [obj])
-    else
-      nil
-    end))), do: tmp, else: 100
+    _name = if (not Kernel.is_nil((tmp = nil))), do: tmp, else: "Anonymous"
+    _value = if (not Kernel.is_nil((tmp = nil))), do: tmp, else: 100
     opt = get_optional()
     _result = if (not Kernel.is_nil((tmp = if (not Kernel.is_nil(opt)) do
       apply(Map.get(opt, :__reflaxe_class__) || Map.get(opt, :__struct__), :process, [opt])

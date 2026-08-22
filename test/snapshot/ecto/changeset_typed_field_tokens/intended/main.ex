@@ -64,12 +64,7 @@ defmodule Main do
     this1 = Ecto.Changeset.validate_length(this1, :name, Enum.filter([min: Map.get(%{min: 2, max: 80}, :min), max: Map.get(%{min: 2, max: 80}, :max), is: Map.get(%{min: 2, max: 80}, :is)], fn {_, v} -> v != nil end))
     field = :email
     pattern = EReg.new("@", "")
-    message = nil
-    this1 = if (not Kernel.is_nil(message)) do
-      Ecto.Changeset.validate_format(this1, field, pattern, message: message)
-    else
-      Ecto.Changeset.validate_format(this1, field, pattern)
-    end
+    this1 = Ecto.Changeset.validate_format(this1, field, pattern)
     this1 = Ecto.Changeset.validate_number(this1, :age,
               (fn opts ->
                  greater_than_or_equal_to =

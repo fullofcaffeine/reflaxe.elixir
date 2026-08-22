@@ -8,17 +8,63 @@ import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.transformers.BareLiteralDropTransforms;
 import reflaxe.elixir.ast.transformers.BinderTransforms;
-import reflaxe.elixir.ast.transformers.IfConstSimplifyTransforms;
 
 /** Focused executable contracts for warning-producing upstream stdlib AST shapes. */
 @:nullSafety(Off)
 class TestStdlibWarningTransforms {
 	public static function run():Expr {
 		testKnownNilRemovesUnreachableShift();
+		testKnownNonNilFoldsNegatedCheck();
+		testTupleMatchForgetsKnownNil();
+		testBranchAssignmentForgetsKnownNil();
 		testDiscardedIfRemovesSignedBranchTail();
 
 		Sys.println("Stdlib warning transform contracts passed");
 		return macro null;
+	}
+
+	static function testBranchAssignmentForgetsKnownNil():Void {
+		var assignKnownNil = makeAST(EMatch(PVar("found"), makeAST(ENil)));
+		var branchAssignment = makeAST(EMatch(PVar("found"), makeAST(EMap([]))));
+		var branch = makeAST(EIf(makeAST(EVar("condition")), makeAST(EBlock([branchAssignment])), makeAST(EBlock([]))));
+		var nilCheck = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [makeAST(EVar("found"))]));
+		var conditional = makeAST(EIf(nilCheck, makeAST(EAtom("missing")), makeAST(EAtom("present"))));
+		var functionNode = makeAST(EDef("find", [], null, makeAST(EBlock([assignKnownNil, branch, conditional]))));
+
+		var result = BinderTransforms.simplifyProvableIsNilFalsePass(functionNode);
+
+		switch (result.def) {
+			case EDef("find", _, _, {def: EBlock([_, _, {def: EIf(condition, _, _)}])}):
+				switch (condition.def) {
+					case ERemoteCall({def: EVar("Kernel")}, "is_nil", [{def: EVar("found")}]):
+					default:
+						fail("an assignment inside a branch must forget the earlier known-nil value");
+				}
+			default:
+				fail("branch-rebinding function changed shape");
+		}
+	}
+
+	static function testTupleMatchForgetsKnownNil():Void {
+		var assignKnownNil = makeAST(EMatch(PVar("validated_email"), makeAST(ENil)));
+		var tupleMatch = makeAST(EMatch(PTuple([PVar("errors"), PVar("validated_email")]), makeAST(ECall(null, "validate", []))));
+		var nilCheck = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [makeAST(EVar("validated_email"))]));
+		var conditional = makeAST(EIf(nilCheck, makeAST(EAtom("error")), makeAST(EAtom("ok"))));
+		var body = makeAST(EBlock([assignKnownNil, tupleMatch, conditional]));
+		var functionNode = makeAST(EDef("validate_user_input", [], null, body));
+
+		var result = BinderTransforms.simplifyProvableIsNilFalsePass(functionNode);
+
+		switch (result.def) {
+			case EDef("validate_user_input", _, _, {def: EBlock([_, _, {def: EIf(condition, _, _)}])}):
+				switch (condition.def) {
+					case ERemoteCall({def: EVar("Kernel")}, "is_nil", [{def: EVar("validated_email")}]):
+					default:
+						fail("a tuple match must forget the earlier known-nil value");
+				}
+			default:
+				fail("tuple-rebinding function changed shape");
+		}
 	}
 
 	static function testKnownNilRemovesUnreachableShift():Void {
@@ -29,8 +75,7 @@ class TestStdlibWarningTransforms {
 		var body = makeAST(EBlock([makeAST(ERemoteCall(makeAST(EVar("Sample")), "consume", [nestedArgument]))]));
 		var testMacro = makeAST(EMacroCall("test", [makeAST(EString("known nil length"))], body));
 
-		var simplified = BinderTransforms.simplifyProvableIsNilFalsePass(testMacro);
-		var folded = IfConstSimplifyTransforms.transformPass(simplified);
+		var folded = BinderTransforms.simplifyProvableIsNilFalsePass(testMacro);
 
 		switch (folded.def) {
 			case EMacroCall("test", _, macroBody):
@@ -42,6 +87,22 @@ class TestStdlibWarningTransforms {
 				}
 			default:
 				fail("known-nil test macro changed shape");
+		}
+	}
+
+	static function testKnownNonNilFoldsNegatedCheck():Void {
+		var assignValue = makeAST(EMatch(PVar("value"), makeAST(EString("set"))));
+		var nilCheck = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [makeAST(EVar("value"))]));
+		var conditional = makeAST(EIf(makeAST(EUnary(Not, nilCheck)), makeAST(EAtom("ok")), makeAST(EAtom("error"))));
+		var functionNode = makeAST(EDef("check", [], null, makeAST(EBlock([assignValue, conditional]))));
+
+		var result = BinderTransforms.simplifyProvableIsNilFalsePass(functionNode);
+
+		switch (result.def) {
+			case EDef("check", _, _, {def: EBlock([_, finalExpression])}):
+				assertNode(finalExpression, EAtom("ok"), "a negated known non-nil check must fold to its true branch");
+			default:
+				fail("known-non-nil function changed shape");
 		}
 	}
 

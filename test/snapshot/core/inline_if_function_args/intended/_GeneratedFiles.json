@@ -29,7 +29,7 @@
 		},
 		{
 			"path": "main.ex",
-			"sha256": "13821f0b7d5ad30de6788cd81df7cd65d179fd2c95831dae31c1ee03bbd5ec4f"
+			"sha256": "7aae8cb9aa2e422b1df6e8785f33c8093b1e8b5c88d3aff160ac68a4f515eedf"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.ex",
@@ -52,5 +52,5 @@
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "c5aaebd6801ba318ab65b45739cbfbf3f98eb1a98b3c22ef5a24d51c1606f1c4"
+	"generation": "c951a2811cc76e6a4c72fb0a092e6b63048dd5ee70ef5537a56e71596ff195f8"
 }

@@ -187,12 +187,10 @@ defmodule EnhancedPatternMatchingTest do
   defp validate_input(input) do
     if (String.length(input) == 0) do
       context = "validation"
-      context = if (Kernel.is_nil(context)), do: "", else: context
       _result = {:error, "Empty input", context}
     else
       if (String.length(input) > 1000) do
         context = "validation"
-        context = if (Kernel.is_nil(context)), do: "", else: context
         _result = {:error, "Input too long", context}
       else
         value = String.downcase(input)
@@ -203,7 +201,6 @@ defmodule EnhancedPatternMatchingTest do
   defp process_data(data) do
     if (StringTools.haxe_index_of(data, "error", 0) >= 0) do
       context = "processing"
-      context = if (Kernel.is_nil(context)), do: "", else: context
       _result = {:error, "Data contains error keyword", context}
     else
       value = String.upcase(data)
@@ -213,7 +210,6 @@ defmodule EnhancedPatternMatchingTest do
   defp format_output(data) do
     if (String.length(data) == 0) do
       context = "formatting"
-      context = if (Kernel.is_nil(context)), do: "", else: context
       _result = {:error, "No data to format", context}
     else
       _result = {:success, "Formatted: [" <> data <> "]"}

@@ -13,8 +13,7 @@ defmodule Main do
     map = map |> Map.put("bool_key", (if (condition), do: "true", else: "false")) |> Map.put("number_key", (if (value > 10), do: "high", else: "low"))
     is_active = false
     map = Map.put(map, "status", (if (is_active), do: "active", else: "inactive"))
-    maybe = nil
-    _ = Map.put(map, "nullable", (if (not Kernel.is_nil(maybe)), do: maybe, else: "default"))
+    _ = Map.put(map, "nullable", "default")
   end
   defp test_function_calls() do
     flag = true

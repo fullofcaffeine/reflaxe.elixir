@@ -16,28 +16,26 @@ defmodule Main do
   end
   defp test_shadowing_in_if_blocks() do
     filter = %{name: "John", email: "john@example.com", is_active: true}
-    if (not Kernel.is_nil(filter)) do
-      query = this1
-      query = if (not Kernel.is_nil(filter.name)) do
-        _value = "%#{filter.name}%"
-        this2
-      else
-        query
-      end
-      query = if (not Kernel.is_nil(filter.email)) do
-        _value = "%#{filter.email}%"
-        this3
-      else
-        query
-      end
-      _ = if (filter.is_active == true) do
-        _value = filter.is_active
-        this4
-      else
-        query
-      end
-      nil
+    query = this1
+    query = if (not Kernel.is_nil(filter.name)) do
+      _value = "%#{filter.name}%"
+      this2
+    else
+      query
     end
+    query = if (not Kernel.is_nil(filter.email)) do
+      _value = "%#{filter.email}%"
+      this3
+    else
+      query
+    end
+    _ = if (filter.is_active == true) do
+      _value = filter.is_active
+      this4
+    else
+      query
+    end
+    nil
   end
   defp test_query_builder_pattern() do
     base_query = build_base_query()
