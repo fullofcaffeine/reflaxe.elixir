@@ -725,7 +725,7 @@ typedef EndpointSocketMeta = {
 	var path:String;
 	// Fully-qualified Elixir module name (resolved at compile time, respects @:native).
 	var socket:String;
-	@:optional var session:Bool;
+	var ?session:Bool;
 }
 
 /**

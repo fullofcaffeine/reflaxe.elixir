@@ -6136,10 +6136,7 @@ left_name == right_name and left_params == right_params';
 						Context.error("endpointSockets entry requires path/socket", expr.pos);
 						null;
 					} else {
-						var out:EndpointSocketMeta = {path: path, socket: socket};
-						if (session != null)
-							Reflect.setField(out, "session", session);
-						out;
+						session == null ? {path: path, socket: socket} : {path: path, socket: socket, session: session};
 					}
 				default:
 					Context.error("endpointSockets entries must be object literals", expr.pos);
