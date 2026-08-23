@@ -19,6 +19,100 @@ PhoenixHx does not reimplement Phoenix. Your project still depends on the real P
 Phoenix still owns request handling, LiveView behavior, templates, processes, and production
 runtime behavior.
 
+## API-only Phoenix applications
+
+Add `-D phoenix_api_only` to the server HXML when an application uses JSON
+controllers and Phoenix Channels but does not use LiveView or server-rendered
+HTML. This build capability keeps `@:endpoint` and `@:phoenixWebModule`, but
+their generated Elixir does not refer to LiveView, Phoenix HTML, Gettext,
+layouts, core components, static assets, or cookie sessions that no declared
+socket needs.
+
+The flag changes generated Phoenix infrastructure. It is not a new Haxe
+authoring profile or a second backend. Without the flag, the existing full-web
+Phoenix output is unchanged. A socket declared with `session: true` still gets
+the session configuration and plug because the authored socket contract asks
+for them.
+
+Add the capability to the HXML that generates the Phoenix server:
+
+```hxml
+-lib reflaxe.elixir
+-D phoenix_api_only
+-D elixir_output=lib
+```
+
+Keep module relationships typed in Haxe. The compiler resolves each class
+reference and its `@:native` target name at compile time:
+
+```haxe
+import elixir.types.Term;
+import phoenix.channels.JoinResult;
+
+@:native("MyAppWeb.ApiChannel")
+@:channel
+class ApiChannel {
+	public static function join(topic:String, payload:Term, socket:Term):JoinResult<Term>
+		return Ok(socket);
+}
+
+@:native("MyAppWeb.UserSocket")
+@:socket
+@:socketChannels([{topic: "api:*", channel: ApiChannel}])
+class UserSocket {}
+
+@:native("MyAppWeb.Endpoint")
+@:endpoint
+@:endpointSockets([{path: "/socket", socket: UserSocket}])
+class Endpoint {}
+```
+
+The endpoint lowers to ordinary Phoenix and Plug calls. A sessionless socket
+does not generate cookie-session state:
+
+```elixir
+defmodule MyAppWeb.Endpoint do
+  use Phoenix.Endpoint, otp_app: :my_app
+  socket("/socket", MyAppWeb.UserSocket, [websocket: true, longpoll: false])
+  if (code_reloading?), do: plug(Phoenix.CodeReloader)
+  plug(Plug.RequestId)
+  plug(Plug.Telemetry, [event_prefix: [:phoenix, :endpoint]])
+  plug(Plug.Parsers, [
+    parsers: [:urlencoded, :multipart, :json],
+    pass: ["*/*"],
+    json_decoder: Phoenix.json_library()
+  ])
+  plug(Plug.MethodOverride)
+  plug(Plug.Head)
+  plug(MyAppWeb.Router)
+end
+```
+
+The generated web helper keeps only router, JSON controller, verified-route,
+Channel, and static-path helpers. It does not import LiveView, HTML, layouts,
+components, or Gettext.
+
+Setting one socket to `session: true` adds only this generated delta:
+
+```elixir
+@session_options [store: :cookie, key: "_my_app_key", signing_salt: "my_app_signing_salt", same_site: "Lax"]
+socket("/session-socket", MyAppWeb.UserSocket, [
+  websocket: [connect_info: [session: @session_options]], longpoll: false
+])
+plug(Plug.Session, @session_options)
+```
+
+The define applies to the complete backend build so its endpoint and web helper
+cannot select incompatible capabilities. It does not install Phoenix packages,
+generate browser code, or reject separately authored LiveView/HTML modules.
+Use the normal profile when the backend needs server-rendered UI.
+
+Focused compiler contracts:
+
+- [API-only JSON and sessionless Channels](../../test/snapshot/phoenix/api_only_profile/compile.hxml)
+- [Mixed session and sessionless sockets](../../test/snapshot/phoenix/api_only_session_socket/compile.hxml)
+- [Same implicit web module without the define](../../test/snapshot/phoenix/api_only_implicit_web_default/compile.hxml)
+
 You can adopt this layer in two ways:
 
 1. **Greenfield** — new Phoenix apps where you author many modules in Haxe.

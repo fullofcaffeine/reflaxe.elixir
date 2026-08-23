@@ -135,6 +135,9 @@ class AnnotationTransforms {
 	 *      Also supports additional sockets via `@:endpointSockets([...])`.
 	 */
 	public static function endpointTransformPass(ast:ElixirAST):ElixirAST {
+		if (PhoenixApiOnlyTransforms.enabled() && ast.metadata?.isEndpoint == true)
+			return PhoenixApiOnlyTransforms.endpoint(ast);
+
 		#if debug_annotation_transforms
 		if (ast.metadata?.isEndpoint == true) {}
 		#end
@@ -2106,14 +2109,23 @@ class AnnotationTransforms {
 	 * HOW: Detects isPhoenixWeb metadata and transforms module body
 	 */
 	public static function phoenixWebTransformPass(ast:ElixirAST):ElixirAST {
+		final isPhoenixWebModule = switch ast.def {
+			case EDefmodule(name, _) | EModule(name, _, _): final isImplicitRoot = name != null && StringTools.endsWith(name,
+					"Web") && name.indexOf(".") == -1; ast.metadata?.isPhoenixWeb == true || isImplicitRoot;
+			default:
+				false;
+		};
+		if (!isPhoenixWebModule)
+			return ast;
+		if (PhoenixApiOnlyTransforms.enabled())
+			return PhoenixApiOnlyTransforms.web(ast);
+
 		#if debug_annotation_transforms
 		#end
 
 		// Check the top-level node first for PhoenixWeb modules
 		switch (ast.def) {
-			case EDefmodule(name, body)
-				if (ast.metadata?.isPhoenixWeb == true
-					|| (name != null && (StringTools.endsWith(name, "Web") && name.indexOf(".") == -1))):
+			case EDefmodule(name, body):
 				var phoenixWebBody = buildPhoenixWebBody(name, body);
 				// Extract statements from EBlock
 				var stmts:Array<ElixirAST> = switch (phoenixWebBody.def) {
@@ -2129,9 +2141,7 @@ class AnnotationTransforms {
 					]))
 				};
 				return makeASTWithMeta(EModule(name, [compileAttr], stmts), ast.metadata, ast.pos);
-			case EModule(name, attrs, exprs)
-				if (ast.metadata?.isPhoenixWeb == true
-					|| (name != null && (StringTools.endsWith(name, "Web") && name.indexOf(".") == -1))):
+			case EModule(name, attrs, exprs):
 				var phoenixWebBody2 = buildPhoenixWebBody(name, makeAST(EBlock(exprs)));
 				var stmts2:Array<ElixirAST> = switch (phoenixWebBody2.def) {
 					case EBlock(es): es;
@@ -2357,6 +2367,7 @@ class AnnotationTransforms {
 	 * - MyApp.Presence -> my_app
 	 * - SomeModuleWeb.Presence -> some_module
 	 */
+	@:allow(reflaxe.elixir.ast.transformers.PhoenixApiOnlyTransforms)
 	static function extractAppName(moduleName:String):String {
 		// Remove Web suffix if present
 		var name = moduleName;
