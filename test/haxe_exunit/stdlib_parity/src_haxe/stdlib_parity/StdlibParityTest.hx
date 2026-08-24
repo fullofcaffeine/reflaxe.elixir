@@ -1452,7 +1452,7 @@ class StdlibParityTest extends TestCase {
 		Assert.equals(2147483647, ((unsignedMax >>> 1) : Int));
 		Assert.equals(1, ((unsignedMax & 1) : Int));
 
-		var unsignedCounter:UInt = unsignedMax;
+		var unsignedCounter:UInt = Std.parseInt("-1");
 		Assert.equals(-1, (unsignedCounter++ : Int));
 		Assert.equals(0, (unsignedCounter : Int));
 

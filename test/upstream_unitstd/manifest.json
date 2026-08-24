@@ -141,11 +141,11 @@
       "fixtureKind": "adapted",
       "source": "Std.unit.hx",
       "fixture": "test/upstream_unitstd/upstream/Std.unit.hx",
-      "reason": "The interface downcast assertion is excluded because interface runtime identity belongs to the separate reflection parity task; all scalar type checks, class and built-in downcasts, string conversion, integer and float conversion, parsing, and random contracts remain enabled.",
+      "reason": "The interface downcast assertion is excluded because interface runtime identity belongs to the separate reflection parity task. Random bounds use parsed runtime values so generated Elixir does not contain always-constant guards. All scalar type checks, class and built-in downcasts, string conversion, integer and float conversion, parsing, and random contracts remain enabled.",
       "sourceSha256": "c2b9e70dea6b32b2e9ab866da79196800b5fdf9533b708314ccc2804889f5fe9",
-      "fixtureSha256": "6da8f00e1e24ea9d82d623838e66677611908917b91fbfbb1047b558f72c4dca",
+      "fixtureSha256": "8c53373728ef4cd73583f643435aa69b53c4695bebdc3d82541be13fc3a00689",
       "adaptationPatch": "test/upstream_unitstd/adaptations/Std.unit.hx.patch",
-      "adaptationPatchSha256": "df6c36b33f52cd0cd63f712d2bbca775db4c93ed3c38e3bf3d36bfa5c59fd794"
+      "adaptationPatchSha256": "89c8fb06704c6b700fc7a3196ad2d2ea8f9c4d028c41efd9cbf36e598c48cc19"
     },
     {
       "module": "StdTypes",

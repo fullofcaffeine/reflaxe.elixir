@@ -186,8 +186,10 @@ Math.isNaN(Std.parseFloat("+ 12.3")) == true;
 Math.isNaN(Std.parseFloat("- 12.3")) == true;
 
 // random
-var x = Std.random(2);
+var randomTwo = Std.parseInt("2");
+var randomOne = Std.parseInt("1");
+var x = Std.random(randomTwo);
 x in [0,1];
-Std.random(1) == 0;
+Std.random(randomOne) == 0;
 Std.random(0) == 0;
 Std.random(-100) == 0;
