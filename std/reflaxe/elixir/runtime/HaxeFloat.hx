@@ -516,9 +516,32 @@ case {0} do
   {Reflaxe.Elixir.HaxeFloat, :negative_infinity} -> "-Infinity"
   value when is_atom(value) -> Atom.to_string(value)
   value when is_number(value) or is_boolean(value) -> Kernel.to_string(value)
+  %{__reflaxe_class__: module} when is_atom(module) ->
+    if function_exported?(module, :to_string, 1) do
+      apply(module, :to_string, [value])
+    else
+      inspect(value)
+    end
   value -> inspect(value)
 end
 ', value);
+	}
+
+	/** Formats a typed Haxe enum with its generated constructor metadata. */
+	public static function enumToString(enumModule:Term, value:Term):String {
+		return untyped __elixir__('
+constructor = apply({0}, :__haxe_enum_constructor__, [{1}])
+parameters =
+  case {1} do
+    tuple when is_tuple(tuple) and tuple_size(tuple) > 1 -> tl(Tuple.to_list(tuple))
+    _ -> []
+  end
+
+case parameters do
+  [] -> constructor
+  values -> constructor <> "(" <> Enum.map_join(values, ",", &Reflaxe.Elixir.HaxeFloat.to_string/1) <> ")"
+end
+', enumModule, value);
 	}
 
 	/**

@@ -13,6 +13,8 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 	* - Hoist complex constructs (case/cond/with/if) used inside binary conditions of
 	*   if/unless into a prior binding, then compare the bound value. This avoids
 	*   shapes like `if case ... end > -1 do` which are parser-sensitive.
+	* - Hoist a multi-statement left operand before the condition. This preserves
+	*   assignments made by an inline abstract operation such as `value++`.
 	*
 	* HOW
 	* - When encountering EIf/EUnless with condition EBinary(op, left, right) and either
@@ -78,17 +80,44 @@ class IfConditionComplexHoistTransforms {
 
 	static function tryHoist(cond:ElixirAST, rebuild:(ElixirAST) -> ElixirAST):Null<ElixirAST> {
 		return switch (cond.def) {
-			case EBinary(op, left, right) if (containsComplex(left) || containsComplex(right)):
-				var hoisted = containsComplex(left) ? left : right;
-				var tmpName = 'cond_value';
-				var assign = makeAST(EMatch(PVar(tmpName), hoisted));
-				var newLeft = containsComplex(left) ? makeAST(EVar(tmpName)) : left;
-				var newRight = containsComplex(right) ? makeAST(EVar(tmpName)) : right;
-				var newCond = makeAST(EBinary(op, newLeft, newRight));
-				makeAST(EBlock([assign, rebuild(newCond)]));
+			case EBinary(op, left, right):
+				var split = splitLeftOperand(left);
+				if (split != null) {
+					var newCond = makeAST(EBinary(op, split.value, right));
+					makeAST(EBlock(split.prefix.concat([rebuild(newCond)])));
+				} else if (containsComplex(left) || containsComplex(right)) {
+					var hoisted = containsComplex(left) ? left : right;
+					var tmpName = 'cond_value';
+					var assign = makeAST(EMatch(PVar(tmpName), hoisted));
+					var newLeft = containsComplex(left) ? makeAST(EVar(tmpName)) : left;
+					var newRight = containsComplex(right) ? makeAST(EVar(tmpName)) : right;
+					var complexCond = makeAST(EBinary(op, newLeft, newRight));
+					makeAST(EBlock([assign, rebuild(complexCond)]));
+				} else {
+					null;
+				}
 			default:
 				null;
 		}
+	}
+
+	static function splitLeftOperand(operand:ElixirAST):Null<{prefix:Array<ElixirAST>, value:ElixirAST}> {
+		var statements = switch (operand.def) {
+			case EBlock(exprs) | EDo(exprs): exprs;
+			case EParen(inner):
+				switch (inner.def) {
+					case EBlock(exprs) | EDo(exprs): exprs;
+					default: null;
+				}
+			default: null;
+		}
+		if (statements == null || statements.length < 2)
+			return null;
+
+		return {
+			prefix: statements.slice(0, statements.length - 1),
+			value: statements[statements.length - 1]
+		};
 	}
 }
 #end

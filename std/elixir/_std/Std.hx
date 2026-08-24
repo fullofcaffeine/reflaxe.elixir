@@ -1,6 +1,7 @@
 package;
 
 import reflaxe.elixir.runtime.HaxeFloat;
+import reflaxe.elixir.runtime.HaxeInt;
 
 /**
  * Std: Haxe Standard Library Core Functions
@@ -44,19 +45,13 @@ class Std {
 	 * 
 	 * WHY: String-to-integer conversion is common in input processing.
 	 * WHAT: Attempts to parse a string as an integer.
-	 * HOW: The compiler will optimize this to Integer.parse/1.
+	 * HOW: Uses the shared BEAM helper that preserves Haxe prefix rules.
 	 * 
 	 * @param str The string to parse
 	 * @return The parsed integer or null if parsing fails
 	 */
 	public static function parseInt(str:String):Null<Int> {
-		// Use native Elixir Integer.parse
-		return untyped __elixir__('
-            case Integer.parse({0}) do
-                {num, _} -> num
-                :error -> nil
-            end
-        ', str);
+		return HaxeInt.parse(str);
 	}
 
 	/**
@@ -192,6 +187,7 @@ class Std {
                     # For user-defined types, check if it\'s a struct with matching __struct__ field
                     case {0} do
                         %{__struct__: struct_type} -> struct_type == {1}
+                        %{__reflaxe_class__: class_type} -> class_type == {1}
                         # For enums (tagged tuples), check if first element matches the type atom
                         {tag, _} when is_atom(tag) -> tag == {1}
                         {tag, _, _} when is_atom(tag) -> tag == {1}
@@ -215,6 +211,22 @@ class Std {
 	 */
 	public static inline function isOfType(value:Dynamic, type:Dynamic):Bool {
 		return is(value, type);
+	}
+
+	/**
+	 * Return `value` when its runtime type is `targetClass`.
+	 *
+	 * This method preserves the standard Haxe checked-downcast contract. A
+	 * failed check returns `null` instead of changing the value.
+	 */
+	public static function downcast<T:{}, S:T>(value:T, targetClass:Class<S>):S {
+		return isOfType(value, targetClass) ? cast value : cast null;
+	}
+
+	/** Deprecated alias for `downcast`. */
+	@:deprecated("Std.instance() is deprecated. Use Std.downcast() instead.")
+	public static inline function instance<T:{}, S:T>(value:T, targetClass:Class<S>):S {
+		return downcast(value, targetClass);
 	}
 
 	/**

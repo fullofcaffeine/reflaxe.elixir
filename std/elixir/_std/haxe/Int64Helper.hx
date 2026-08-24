@@ -69,6 +69,12 @@ class Int64Helper {
 		if (noFractions < -9007199254740991)
 			throw "Conversion underflow";
 
+		#if (!macro && elixir_output)
+		// BEAM division keeps the fractional part. The reference bit-building
+		// loop relies on target integer division, so use the native truncation
+		// operation after the portable range checks above.
+		return cast untyped __elixir__("trunc({0})", f);
+		#else
 		var result = Int64.ofInt(0);
 		var neg = noFractions < 0;
 		var rest = neg ? -noFractions : noFractions;
@@ -84,5 +90,6 @@ class Int64Helper {
 		}
 
 		return neg ? Int64.neg(result) : result;
+		#end
 	}
 }

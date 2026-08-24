@@ -13,30 +13,18 @@ defmodule Main do
     arr = [1, 2, 3]
     _arr_str = Reflaxe.Elixir.HaxeFloat.to_string(arr)
     option = {:some, "value"}
-    _option_str = Reflaxe.Elixir.HaxeFloat.to_string(option)
+    option_str = Reflaxe.Elixir.HaxeFloat.enum_to_string(Option, option)
+    if (option_str != "Some(value)") do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "local enum formatting failed: " <> option_str]
+    end
     nil
   end
   defp test_parsing() do
-    _valid_int = (case Integer.parse("42") do
-      {num, _} -> num
-      :error -> nil
-    end)
-    _negative_int = (case Integer.parse("-123") do
-      {num, _} -> num
-      :error -> nil
-    end)
-    _invalid_int = (case Integer.parse("abc") do
-      {num, _} -> num
-      :error -> nil
-    end)
-    _partial_int = (case Integer.parse("42abc") do
-      {num, _} -> num
-      :error -> nil
-    end)
-    _empty_int = (case Integer.parse("") do
-      {num, _} -> num
-      :error -> nil
-    end)
+    _valid_int = Reflaxe.Elixir.HaxeInt.parse("42")
+    _negative_int = Reflaxe.Elixir.HaxeInt.parse("-123")
+    _invalid_int = Reflaxe.Elixir.HaxeInt.parse("abc")
+    _partial_int = Reflaxe.Elixir.HaxeInt.parse("42abc")
+    _empty_int = Reflaxe.Elixir.HaxeInt.parse("")
     _valid_float = Reflaxe.Elixir.HaxeFloat.parse("3.14")
     _negative_float = Reflaxe.Elixir.HaxeFloat.parse("-2.5")
     _int_as_float = Reflaxe.Elixir.HaxeFloat.parse("42")

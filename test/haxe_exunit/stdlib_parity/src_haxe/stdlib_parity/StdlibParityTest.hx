@@ -105,6 +105,14 @@ class HashKey {
 	}
 }
 
+class ConstraintConstructibleValue {
+	public final marker:Int;
+
+	public function new() {
+		marker = 17;
+	}
+}
+
 @:exunit
 class StdlibParityTest extends TestCase {
 	static function throwCallStackProbe():Void {
@@ -190,6 +198,36 @@ class StdlibParityTest extends TestCase {
 		return cast Reflect.callMethod(null, fn, [left, right]);
 	}
 
+	static function preserveFlatEnum<T:haxe.Constraints.FlatEnum>(value:T):T {
+		return value;
+	}
+
+	static function preserveNotVoid<T:haxe.Constraints.NotVoid>(value:T):T {
+		return value;
+	}
+
+	static function preserveConstructible<T:haxe.Constraints.Constructible<() -> Void>>(value:T):T {
+		return value;
+	}
+
+	static function sumIterator(iterator:Iterator<Int>):Int {
+		var result = 0;
+		while (iterator.hasNext()) {
+			result += iterator.next();
+		}
+		return result;
+	}
+
+	static function sumIterable(iterable:Iterable<Int>):Int {
+		return sumIterator(iterable.iterator());
+	}
+
+	// ArrayAccess is an extern-only marker. Keeping this typed boundary proves
+	// that the target accepts the official compile-time contract.
+	@:keep static function acceptArrayAccess<T>(value:ArrayAccess<T>):Void {}
+
+	static function returnVoid():Void {}
+
 	static function throwPortableNan():Void {
 		throw Math.NaN;
 	}
@@ -249,6 +287,14 @@ class StdlibParityTest extends TestCase {
 		var restored:EnumFlags<ParityColor> = EnumFlags.ofInt(3);
 		Assert.isTrue(restored.has(Red));
 		Assert.isTrue(restored.has(Green));
+	}
+
+	@:describe("Std compatibility aliases")
+	@:test
+	function testStdCompatibilityAliases():Void {
+		var values = [1, 2];
+		Assert.isTrue(Std.is(values, Array));
+		Assert.equals(values, Std.instance(values, Array));
 	}
 
 	@:describe("Haxe Float special values")
@@ -687,6 +733,82 @@ class StdlibParityTest extends TestCase {
 		Assert.equals(2, pairs.length);
 		Assert.contains(seenPairs, "one:1");
 		Assert.contains(seenPairs, "two:2");
+	}
+
+	@:describe("haxe.Constraints upstream fallback")
+	@:test
+	function testConstraintTypes():Void {
+		Assert.equals(Red, preserveFlatEnum(Red));
+		Assert.equals(12, preserveNotVoid(12));
+		Assert.equals(17, preserveConstructible(new ConstraintConstructibleValue()).marker);
+
+		var map:haxe.Constraints.IMap<String, Int> = new StringMap<Int>();
+		map.set("one", 1);
+		map.set("two", 2);
+		Assert.equals(1, map.get("one"));
+		Assert.isTrue(map.exists("two"));
+		Assert.equals(3, sumIterator(map.iterator()));
+
+		var keys = [];
+		for (key in map.keys()) {
+			keys.push(key);
+		}
+		Assert.contains(keys, "one");
+		Assert.contains(keys, "two");
+
+		var pairs = [];
+		var pairIterator = map.keyValueIterator();
+		while (pairIterator.hasNext()) {
+			pairs.push(pairToString(pairIterator.next()));
+		}
+		Assert.contains(pairs, "one:1");
+		Assert.contains(pairs, "two:2");
+		var printed = map.toString();
+		Assert.isTrue(StringTools.contains(printed, "one"));
+
+		var copy = map.copy();
+		Assert.isTrue(copy.remove("one"));
+		Assert.isFalse(copy.exists("one"));
+		copy.clear();
+		Assert.isFalse(copy.exists("two"));
+	}
+
+	@:describe("StdTypes structural contracts")
+	@:test
+	function testStdTypesIteratorsAndCoreValues():Void {
+		var boolValue:Bool = true;
+		var intValue:Int = 4;
+		var floatValue:Float = 2.5;
+		// Dynamic is the public contract under test at this boundary.
+		var dynamicValue:Dynamic = "dynamic-value";
+		Assert.isTrue(boolValue);
+		Assert.equals(4, intValue);
+		Assert.equals(2.5, floatValue);
+		Assert.equals("dynamic-value", (dynamicValue : String));
+		returnVoid();
+
+		var values = new StringMap<Int>();
+		values.set("two", 2);
+		values.set("three", 3);
+		values.set("five", 5);
+		var iterable:Iterable<Int> = {
+			iterator: () -> values.iterator()
+		};
+		Assert.equals(10, sumIterable(iterable));
+
+		var entries = new StringMap<Int>();
+		entries.set("answer", 42);
+		var keyValueIterable:KeyValueIterable<String, Int> = {
+			keyValueIterator: () -> entries.keyValueIterator()
+		};
+		var keyValues:KeyValueIterator<String, Int> = keyValueIterable.keyValueIterator();
+		Assert.isTrue(keyValues.hasNext());
+		var entry = keyValues.next();
+		Assert.equals("answer", entry.key);
+		Assert.equals(42, entry.value);
+
+		var nullable:Null<Int> = null;
+		Assert.isNull(nullable);
 	}
 
 	@:describe("haxe.ds.ArraySort target override")
@@ -1317,6 +1439,72 @@ class StdlibParityTest extends TestCase {
 		Assert.raises(() -> {
 			Int64.toInt(Int64.parseString("2147483648"));
 		});
+	}
+
+	@:describe("UInt and haxe.Int32")
+	@:test
+	function testUnsignedAndSigned32BitWidthContracts():Void {
+		var unsignedMax:UInt = -1;
+		var unsignedZero:UInt = 0;
+		Assert.isTrue(unsignedMax > unsignedZero);
+		Assert.equals(4294967295.0, (unsignedMax : Float));
+		Assert.equals(0, ((unsignedMax + 1) : Int));
+		Assert.equals(2147483647, ((unsignedMax >>> 1) : Int));
+		Assert.equals(1, ((unsignedMax & 1) : Int));
+
+		var unsignedCounter:UInt = unsignedMax;
+		Assert.equals(-1, (unsignedCounter++ : Int));
+		Assert.equals(0, (unsignedCounter : Int));
+
+		var signedMax = Int32.ofInt(2147483647);
+		var signedMin = signedMax + Int32.ofInt(1);
+		Assert.equals(-2147483648, (signedMin : Int));
+		Assert.equals(2147483647, ((Int32.ofInt(-1) >>> Int32.ofInt(1)) : Int));
+		Assert.equals(1, Int32.ucompare(Int32.ofInt(-1), Int32.ofInt(0)));
+		Assert.equals(-1, Int32.ucompare(Int32.ofInt(0), Int32.ofInt(-1)));
+	}
+
+	@:describe("haxe.Int64 and haxe.Int64Helper")
+	@:test
+	function testInt64PublicOperationSurface():Void {
+		var six = Int64.ofInt(6);
+		var three = Int64.ofInt(3);
+		Assert.equals("6", Int64.toStr(six.copy()));
+		Assert.isTrue(Int64.is(six));
+		Assert.isTrue(Int64.isInt64(six));
+		Assert.isFalse(Int64.isNeg(six));
+		Assert.isTrue(Int64.isNeg(Int64.neg(six)));
+		Assert.isTrue(Int64.isZero(Int64.ofInt(0)));
+		Assert.equals(1, Int64.compare(six, three));
+		Assert.equals(1, Int64.ucompare(Int64.ofInt(-1), Int64.ofInt(0)));
+		Assert.isTrue(Int64.eq(six, Int64.ofInt(6)));
+		Assert.isTrue(Int64.neq(six, three));
+
+		Assert.equals("9", Int64.toStr(Int64.add(six, three)));
+		Assert.equals("3", Int64.toStr(Int64.sub(six, three)));
+		Assert.equals("18", Int64.toStr(Int64.mul(six, three)));
+		Assert.equals(2.0, Int64.div(six, three));
+		Assert.equals("0", Int64.toStr(Int64.mod(six, three)));
+		Assert.equals("2", Int64.toStr(Int64.and(six, three)));
+		Assert.equals("7", Int64.toStr(Int64.or(six, three)));
+		Assert.equals("5", Int64.toStr(Int64.xor(six, three)));
+		Assert.equals("12", Int64.toStr(Int64.shl(six, 1)));
+		Assert.equals("3", Int64.toStr(Int64.shr(six, 1)));
+		Assert.equals("3", Int64.toStr(Int64.ushr(six, 1)));
+
+		var division = Int64.divMod(Int64.ofInt(17), Int64.ofInt(5));
+		Assert.equals("3", Int64.toStr(division.quotient));
+		Assert.equals("2", Int64.toStr(division.modulus));
+		Assert.equals("42", Int64.toStr(Int64.fromFloat(42.75)));
+		Assert.equals("-42", Int64.toStr(haxe.Int64Helper.fromFloat(-42.75)));
+		Assert.equals("123", Int64.toStr(haxe.Int64Helper.parseString(" 123 ")));
+		Assert.raises(() -> haxe.Int64Helper.parseString("9223372036854775808"));
+		Assert.raises(() -> haxe.Int64Helper.parseString("not-an-integer"));
+		Assert.raises(() -> haxe.Int64Helper.fromFloat(Math.NaN));
+
+		var composite = Int64.make(Int32.ofInt(1), Int32.ofInt(2));
+		Assert.equals(1, (Int64.getHigh(composite) : Int));
+		Assert.equals(2, (Int64.getLow(composite) : Int));
 	}
 
 	@:describe("haxe.ds.Map (native map backend)")

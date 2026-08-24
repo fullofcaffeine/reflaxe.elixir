@@ -418,7 +418,28 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       {Reflaxe.Elixir.HaxeFloat, :negative_infinity} -> "-Infinity"
       value when is_atom(value) -> Atom.to_string(value)
       value when is_number(value) or is_boolean(value) -> Kernel.to_string(value)
+      %{__reflaxe_class__: module} when is_atom(module) ->
+        if function_exported?(module, :to_string, 1) do
+          apply(module, :to_string, [value])
+        else
+          inspect(value)
+        end
       value -> inspect(value)
+    end
+
+  end
+  def enum_to_string(enum_module, value) do
+
+    constructor = apply(enum_module, :__haxe_enum_constructor__, [value])
+    parameters =
+      case value do
+        tuple when is_tuple(tuple) and tuple_size(tuple) > 1 -> tl(Tuple.to_list(tuple))
+        _ -> []
+      end
+
+    case parameters do
+      [] -> constructor
+      values -> constructor <> "(" <> Enum.map_join(values, ",", &Reflaxe.Elixir.HaxeFloat.to_string/1) <> ")"
     end
 
   end

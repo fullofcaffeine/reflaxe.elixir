@@ -223,10 +223,7 @@ defmodule Main do
   defp build_user_profile(user_id_str, email_str, score_str) do
     ResultTools.flat_map(ResultTools.map_error(UserId_Impl_.parse(user_id_str), fn e -> "Invalid UserId: " <> e end), fn user_id ->
       ResultTools.flat_map(ResultTools.map_error(Email_Impl_.parse(StringTools.ltrim(StringTools.rtrim(email_str))), fn e -> "Invalid Email: " <> e end), fn email ->
-        score_int = (case Integer.parse(score_str) do
-          {num, _} -> num
-          :error -> nil
-        end)
+        score_int = Reflaxe.Elixir.HaxeInt.parse(score_str)
         if (Kernel.is_nil(score_int)) do
           {:error, "Invalid score: " <> score_str}
         else
@@ -239,14 +236,8 @@ defmodule Main do
     ResultTools.flat_map(ResultTools.map_error(UserId_Impl_.parse(user_id_str), fn e -> "Invalid UserId: " <> e end), fn user_id -> ResultTools.flat_map(ResultTools.map_error(Email_Impl_.parse(email_str), fn e -> "Invalid Email: " <> e end), fn email -> ResultTools.map(ResultTools.map_error(NonEmptyString_Impl_.parse_and_trim(name_str), fn e -> "Invalid Name: " <> e end), fn display_name -> %{user_id: user_id, email: email, display_name: display_name} end) end) end)
   end
   defp validate_configuration(timeout_str, retries_str, name_str) do
-    timeout_int = (case Integer.parse(timeout_str) do
-      {num, _} -> num
-      :error -> nil
-    end)
-    retries_int = (case Integer.parse(retries_str) do
-      {num, _} -> num
-      :error -> nil
-    end)
+    timeout_int = Reflaxe.Elixir.HaxeInt.parse(timeout_str)
+    retries_int = Reflaxe.Elixir.HaxeInt.parse(retries_str)
     if (Kernel.is_nil(timeout_int)) do
       {:error, "Timeout must be a number: " <> timeout_str}
     else

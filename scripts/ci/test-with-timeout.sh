@@ -4,6 +4,7 @@ set -euo pipefail
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/with-timeout-contract.XXXXXX")
 child_pid_file="$tmp_dir/escaped-child.pid"
+timeout_log="$tmp_dir/timeout.log"
 
 cleanup() {
   if [[ -f "$child_pid_file" ]]; then
@@ -15,7 +16,8 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 set +e
-"$repo_root/scripts/with-timeout.sh" --secs 1 --grace 1 -- \
+started_at=$SECONDS
+"$repo_root/scripts/with-timeout.sh" --secs 1 --grace 1 --echo -- \
   python3 -c '
 import subprocess, sys, time
 
@@ -30,12 +32,31 @@ time.sleep(30)
 """
 subprocess.Popen([sys.executable, "-c", child_code, sys.argv[1]])
 time.sleep(30)
-' "$child_pid_file"
+' "$child_pid_file" >"$timeout_log" 2>&1
 timeout_status=$?
+elapsed=$((SECONDS - started_at))
 set -e
 
 if (( timeout_status != 124 )); then
+  cat "$timeout_log" >&2
   echo "Expected timeout status 124, got $timeout_status" >&2
+  exit 1
+fi
+if (( elapsed > 6 )); then
+  cat "$timeout_log" >&2
+  echo "One-second timeout took ${elapsed}s" >&2
+  exit 1
+fi
+
+pids_line=$(grep -F '[timeout] pids:' "$timeout_log" || true)
+if [[ ! "$pids_line" =~ cmd_pid=([0-9]+).*pgid_child=([0-9]+) ]]; then
+  cat "$timeout_log" >&2
+  echo "Timeout diagnostics did not contain child process identities" >&2
+  exit 1
+fi
+if [[ "${BASH_REMATCH[1]}" != "${BASH_REMATCH[2]}" ]]; then
+  cat "$timeout_log" >&2
+  echo "Child process group was sampled before isolation completed" >&2
   exit 1
 fi
 if [[ ! -s "$child_pid_file" ]]; then

@@ -3,13 +3,11 @@ defmodule Main do
     _node = TreeNode.new()
     l = TreeNode.new()
     r = TreeNode.new()
-    if ((fn ->
-      this = l.left
-      if (Kernel.is_nil(this)), do: 0, else: this._height
-    end).() >= (fn ->
+    this = l.left
+    if (((if (Kernel.is_nil(this)), do: 0, else: this._height) >= (fn ->
       this = l.right
       if (Kernel.is_nil(this)), do: 0, else: this._height
-    end).()), do: nil
+    end).())), do: nil
     _total_height = (if (Kernel.is_nil(l)), do: 0, else: l._height) + (if (Kernel.is_nil(r)), do: 0, else: r._height)
     _has_height = (if (Kernel.is_nil(l)), do: 0, else: l._height) > 0
     nil

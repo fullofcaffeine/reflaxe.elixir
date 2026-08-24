@@ -23,6 +23,8 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 	* - Scan statement lists (EBlock/EDo). When [i] is a=b and [i+1] is EIf whose
 	*   else is exactly b and whose condition references a, rewrite condition/body
 	*   occurrences of a to b and promote into a single assignment.
+	* - Leave one-branch `if` statements unchanged because they have no alias value
+	*   to promote.
 
 	*
 	* EXAMPLES
@@ -51,7 +53,7 @@ class AssignAliasIfPromoteTransforms {
 									switch (stmts[i + 1].def) {
 										case EIf(cond, thenE, elseE):
 											// else must be exactly b
-											var elseIsB = switch (elseE.def) {
+											var elseIsB = elseE != null && switch (elseE.def) {
 												case EVar(bb) if (bb == b): true;
 												default: false;
 											};
@@ -95,7 +97,7 @@ class AssignAliasIfPromoteTransforms {
 								case EBinary(Match, {def: EVar(leftVar)}, {def: EVar(rightVar)}):
 									switch (statements[index + 1].def) {
 										case EIf(condExpr, thenExpr, elseExpr):
-											var elseIsRightVar = switch (elseExpr.def) {
+											var elseIsRightVar = elseExpr != null && switch (elseExpr.def) {
 												case EVar(ev) if (ev == rightVar): true;
 												default: false;
 											};

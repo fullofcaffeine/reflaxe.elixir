@@ -562,8 +562,17 @@ class ReceiverEffectLoweringTransforms {
 				flattened.push(plan.value);
 		}
 
-		if ((!sawPrelude && !hasCallerVisibleReassignmentPrelude(flattened)) || flattened.length == 0)
+		if (flattened.length == 0)
 			return {prelude: [], value: rebuild(flattened)};
+
+		if (!sawPrelude) {
+			var callerReassignments = callerVisibleReassignmentNames(flattened);
+			if (callerReassignments.length == 0)
+				return {prelude: [], value: rebuild(flattened)};
+
+			if (!hasCallerVisibleReassignmentPrelude(flattened))
+				return exportCallerReassignments(flattened, callerReassignments);
+		}
 
 		return {
 			prelude: flattened.slice(0, flattened.length - 1),
@@ -579,8 +588,9 @@ class ReceiverEffectLoweringTransforms {
 	 * functions do not export bindings, so the printer's normal block-argument
 	 * wrapper would hide that update. The node's source metadata distinguishes a
 	 * local reassignment from a `var` declaration. We lift only this narrow,
-	 * declaration-free sequence and leave blocks with local declarations scoped
-	 * in the normal wrapper.
+	 * declaration-free sequence. If an inline expansion also declares temporary
+	 * locals, `exportCallerReassignments` keeps those locals inside an IIFE and
+	 * returns only the updated caller bindings plus the expression value.
 	 */
 	static function hasCallerVisibleReassignmentPrelude(statements:Array<ElixirAST>):Bool {
 		if (statements == null || statements.length < 2)
@@ -598,6 +608,73 @@ class ReceiverEffectLoweringTransforms {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Find caller locals that a value block reassigns.
+	 *
+	 * A declaration in the same block is local to that expression and must not be
+	 * exported. Source metadata distinguishes those declarations from assignments,
+	 * while the emitted pattern supplies the final Elixir variable name.
+	 */
+	static function callerVisibleReassignmentNames(statements:Array<ElixirAST>):Array<String> {
+		var declaredHere:Map<String, Bool> = new Map();
+		var seen:Map<String, Bool> = new Map();
+		var result:Array<String> = [];
+
+		for (i in 0...statements.length - 1) {
+			var statement = statements[i];
+			var binder = directBinderName(statement);
+			if (binder == null)
+				continue;
+
+			if (isSourceLocalDeclaration(statement)) {
+				declaredHere.set(binder, true);
+				continue;
+			}
+
+			if (isSourceLocalReassignment(statement) && !declaredHere.exists(binder) && !seen.exists(binder)) {
+				seen.set(binder, true);
+				result.push(binder);
+			}
+		}
+
+		return result;
+	}
+
+	/** Keep expression-local declarations private while exporting caller updates. */
+	static function exportCallerReassignments(statements:Array<ElixirAST>, names:Array<String>):ExprPlan {
+		var valueName = 'reflaxe_call_value_${tempCounter++}';
+		var innerStatements = statements.slice(0, statements.length - 1);
+		var tupleValues = [for (name in names) makeAST(EVar(name))];
+		tupleValues.push(statements[statements.length - 1]);
+		innerStatements.push(makeAST(ETuple(tupleValues)));
+
+		var body = makeAST(EBlock(innerStatements));
+		var iife = makeAST(ECall(makeAST(EFn([{args: [], guard: null, body: body}])), "", []));
+		var patternItems:Array<EPattern> = [for (name in names) PVar(name)];
+		patternItems.push(PVar(valueName));
+
+		return {
+			prelude: [makeAST(EMatch(PTuple(patternItems), iife))],
+			value: makeAST(EVar(valueName))
+		};
+	}
+
+	static function directBinderName(statement:ElixirAST):Null<String> {
+		return switch (statement.def) {
+			case EMatch(PVar(name), _): name;
+			default: null;
+		}
+	}
+
+	static function isSourceLocalDeclaration(statement:ElixirAST):Bool {
+		if (statement == null || statement.metadata == null || statement.metadata.sourceExpr == null)
+			return false;
+		return switch (statement.metadata.sourceExpr.expr) {
+			case TVar(_, _): true;
+			default: false;
+		}
 	}
 
 	static function bindOrderedValue(value:ElixirAST, prelude:Array<ElixirAST>):ElixirAST {

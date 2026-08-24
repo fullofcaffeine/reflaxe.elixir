@@ -23,11 +23,7 @@ defmodule TodoEvents do
         id_raw = Map.get(event_payload, "id")
         id = cond do
           Kernel.is_integer(id_raw) -> id_raw
-          Kernel.is_binary(id_raw) ->
-            (case Integer.parse(id_raw) do
-              {num, _} -> num
-              :error -> nil
-            end)
+          Kernel.is_binary(id_raw) -> Reflaxe.Elixir.HaxeInt.parse(id_raw)
           true -> nil
         end
         if not Kernel.is_nil(id), do: {:toggle_todo, id}, else: nil

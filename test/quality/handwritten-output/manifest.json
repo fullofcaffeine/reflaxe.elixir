@@ -65,9 +65,9 @@
           {
             "id": "reflaxe-runtime",
             "paths": ["reflaxe/"],
-            "maxFiles": 4,
-            "reason": "Compiler runtime support for Haxe exceptions and special Float semantics.",
-            "tracking": "haxe.elixir.codex-3qh.14"
+            "maxFiles": 5,
+            "reason": "Compiler runtime support for Haxe exceptions, special Float semantics, and Haxe-compatible integer parsing.",
+            "tracking": "haxe.elixir.codex-0yn.10.3.17"
           },
           {
             "id": "root-runtime",
@@ -104,9 +104,9 @@
         }
       ],
       "footprint": {
-        "maxGeneratedFiles": 15,
+        "maxGeneratedFiles": 16,
         "maxApplicationFiles": 7,
-        "maxSupportFiles": 8,
+        "maxSupportFiles": 9,
         "supportGroups": [
           {
             "id": "haxe-runtime",
@@ -118,9 +118,9 @@
           {
             "id": "reflaxe-runtime",
             "paths": ["reflaxe/"],
-            "maxFiles": 3,
-            "reason": "Compiler runtime support for exceptions and special Float semantics.",
-            "tracking": "haxe.elixir.codex-3qh.14"
+            "maxFiles": 4,
+            "reason": "Compiler runtime support for Haxe exceptions, special Float semantics, and Haxe-compatible integer parsing.",
+            "tracking": "haxe.elixir.codex-0yn.10.3.17"
           },
           {
             "id": "root-runtime",
@@ -164,9 +164,9 @@
         }
       ],
       "footprint": {
-        "maxGeneratedFiles": 16,
+        "maxGeneratedFiles": 17,
         "maxApplicationFiles": 4,
-        "maxSupportFiles": 12,
+        "maxSupportFiles": 13,
         "supportGroups": [
           {
             "id": "haxe-runtime",
@@ -178,9 +178,9 @@
           {
             "id": "reflaxe-runtime",
             "paths": ["reflaxe/"],
-            "maxFiles": 3,
-            "reason": "Compiler runtime support for exceptions and special Float semantics.",
-            "tracking": "haxe.elixir.codex-3qh.14"
+            "maxFiles": 4,
+            "reason": "Compiler runtime support for Haxe exceptions, special Float semantics, and Haxe-compatible integer parsing.",
+            "tracking": "haxe.elixir.codex-0yn.10.3.17"
           },
           {
             "id": "root-runtime",
@@ -227,7 +227,7 @@
         }
       ],
       "footprint": {
-        "maxGeneratedFiles": 116,
+        "maxGeneratedFiles": 117,
         "maxApplicationFiles": 70,
         "maxSupportFiles": 47,
         "reason": "The Todo canary now includes three app-owned LiveReact modules: its typed event protocol, native LiveReact asset boundary, and island component. The generated support footprint did not grow.",
@@ -278,9 +278,9 @@
           {
             "id": "reflaxe-runtime",
             "paths": ["reflaxe/"],
-            "maxFiles": 4,
-            "reason": "Compiler runtime support for Haxe exceptions and special Float semantics.",
-            "tracking": "haxe.elixir.codex-3qh.14"
+            "maxFiles": 5,
+            "reason": "Compiler runtime support for Haxe exceptions, special Float semantics, and Haxe-compatible integer parsing.",
+            "tracking": "haxe.elixir.codex-0yn.10.3.17"
           },
           {
             "id": "root-runtime",

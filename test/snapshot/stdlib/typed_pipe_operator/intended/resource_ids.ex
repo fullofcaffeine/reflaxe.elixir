@@ -3,10 +3,7 @@ defmodule ResourceIds do
     if (Kernel.is_nil(value)) do
       nil
     else
-      parsed = (case Integer.parse(value) do
-        {num, _} -> num
-        :error -> nil
-      end)
+      parsed = Reflaxe.Elixir.HaxeInt.parse(value)
       if (not Kernel.is_nil(parsed) and parsed > 0) do
         _ = parsed
       else

@@ -33,5 +33,55 @@ defmodule Main do
     if (apply(Map.get(cases, :__reflaxe_class__) || Map.get(cases, :__struct__), :callback_value, [cases, 6]) != 7) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "callback result lost"]
     end
+    this1 = 1
+    flags = this1
+    if (Bitwise.band(flags, 1) == 0) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "statements after an inline abstract reassignment were dropped"]
+    end
+    flags = Bitwise.bor(flags, 2)
+    if (Bitwise.band(flags, 2) == 0) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "statements after an inline abstract mutation were dropped"]
+    end
+    unsigned_counter = -1
+    {unsigned_counter, reflaxe_call_value_0} = (fn ->
+      old = unsigned_counter
+      unsigned_counter = (
+            case Bitwise.band(unsigned_counter + 1, 0xFFFFFFFF) do
+              v when v >= 0x80000000 -> v - 0x100000000
+              v -> v
+            end
+      )
+      {unsigned_counter, old}
+    end).()
+    if (reflaxe_call_value_0 != -1) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "inline abstract post-increment returned the wrong prior value"]
+    end
+    if (unsigned_counter != 0) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "inline abstract post-increment did not rebind its caller"]
+    end
+    old = 99
+    unsigned_counter = -1
+    {unsigned_counter, reflaxe_call_value_1} = (fn ->
+      old = unsigned_counter
+      unsigned_counter = (
+            case Bitwise.band(unsigned_counter + 1, 0xFFFFFFFF) do
+              v when v >= 0x80000000 -> v - 0x100000000
+              v -> v
+            end
+      )
+      {unsigned_counter, old}
+    end).()
+    if (identity_int(reflaxe_call_value_1) != -1) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "function argument post-increment returned the wrong prior value"]
+    end
+    if (unsigned_counter != 0) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "function argument post-increment did not rebind its caller"]
+    end
+    if (old != 99) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "inline abstract temporary escaped into the caller"]
+    end
+  end
+  defp identity_int(value) do
+    value
   end
 end

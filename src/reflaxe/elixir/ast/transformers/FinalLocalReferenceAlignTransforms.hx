@@ -130,60 +130,69 @@ class FinalLocalReferenceAlignTransforms {
 		return ElixirASTTransformer.transformNode(body, function(x:ElixirAST):ElixirAST {
 			return switch (x.def) {
 				case EVar(v) if (v != null):
-					var target:Null<String> = null;
-					// Rule A0: _name -> name when base is declared and underscored is not
-					if (v.charAt(0) == '_' && v.length > 1) {
-						var base = v.substr(1);
-						if (has(base) && !has(v))
-							target = base;
-					}
-					// Rule A: name -> _name
-					if (target == null && !has(v) && has('_' + v))
-						target = '_' + v;
-					// Rule B: nameN -> name (numeric suffix)
-					if (target == null) {
-						var i = v.length - 1;
-						while (i >= 0 && v.charCodeAt(i) >= '0'.code && v.charCodeAt(i) <= '9'.code)
-							i--;
-						if (i < v.length - 1) {
-							var base = v.substr(0, i + 1);
+					// Elixir module aliases start with an uppercase letter. EVar carries both
+					// aliases and local references, so local-name repair must leave aliases
+					// unchanged even when a lowercase local has the same spelling.
+					var first = v.length > 0 ? v.charAt(0) : "";
+					var isModuleAlias = first != "" && first.toUpperCase() == first && first.toLowerCase() != first;
+					if (isModuleAlias) {
+						x;
+					} else {
+						var target:Null<String> = null;
+						// Rule A0: _name -> name when base is declared and underscored is not
+						if (v.charAt(0) == '_' && v.length > 1) {
+							var base = v.substr(1);
 							if (has(base) && !has(v))
 								target = base;
 						}
-					}
-					// Rule C: updated -> ok_* (single candidate) [softened: disabled to avoid ok_* leaks]
-					// if (target == null && v == "updated") {
-					//   var okb = findOkBinder();
-					//   if (okb != null) target = okb;
-					// }
-					// Rule D: camelCase -> snake_case when declared contains the snake name
-					if (target == null) {
-						var snake = toSnakeCase(v);
-						if (snake != v && has(snake) && !has(v))
-							target = snake;
-					}
-					// Rule D2: lowercase fallback -> when fully-lowercased name exists
-					if (target == null) {
-						var lower = v.toLowerCase();
-						if (lower != v && has(lower) && !has(v))
-							target = lower;
-					}
-					// Rule E: canonical remap (snake+no-underscore match to a unique declared name)
-					if (target == null && !has(v)) {
-						var cv = canon(v);
-						if (declaredCanonToName.exists(cv)) {
-							var unique = declaredCanonToName.get(cv);
-							// Avoid pointless self-map (shouldn't happen) and prefer declared
-							if (unique != null && unique != v)
-								target = unique;
+						// Rule A: name -> _name
+						if (target == null && !has(v) && has('_' + v))
+							target = '_' + v;
+						// Rule B: nameN -> name (numeric suffix)
+						if (target == null) {
+							var i = v.length - 1;
+							while (i >= 0 && v.charCodeAt(i) >= '0'.code && v.charCodeAt(i) <= '9'.code)
+								i--;
+							if (i < v.length - 1) {
+								var base = v.substr(0, i + 1);
+								if (has(base) && !has(v))
+									target = base;
+							}
 						}
-					}
-					if (target != null) {
-						#if debug_ast_transformer
-						#end
-						makeASTWithMeta(EVar(target), x.metadata, x.pos);
-					} else {
-						x;
+						// Rule C: updated -> ok_* (single candidate) [softened: disabled to avoid ok_* leaks]
+						// if (target == null && v == "updated") {
+						//   var okb = findOkBinder();
+						//   if (okb != null) target = okb;
+						// }
+						// Rule D: camelCase -> snake_case when declared contains the snake name
+						if (target == null) {
+							var snake = toSnakeCase(v);
+							if (snake != v && has(snake) && !has(v))
+								target = snake;
+						}
+						// Rule D2: lowercase fallback -> when fully-lowercased name exists
+						if (target == null) {
+							var lower = v.toLowerCase();
+							if (lower != v && has(lower) && !has(v))
+								target = lower;
+						}
+						// Rule E: canonical remap (snake+no-underscore match to a unique declared name)
+						if (target == null && !has(v)) {
+							var cv = canon(v);
+							if (declaredCanonToName.exists(cv)) {
+								var unique = declaredCanonToName.get(cv);
+								// Avoid pointless self-map (shouldn't happen) and prefer declared
+								if (unique != null && unique != v)
+									target = unique;
+							}
+						}
+						if (target != null) {
+							#if debug_ast_transformer
+							#end
+							makeASTWithMeta(EVar(target), x.metadata, x.pos);
+						} else {
+							x;
+						}
 					}
 				// Align variable names that appear inside string interpolations #{...}
 				case EString(s) if (s != null && s.indexOf("#{") != -1):

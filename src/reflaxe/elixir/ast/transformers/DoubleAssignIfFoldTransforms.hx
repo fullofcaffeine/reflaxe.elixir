@@ -19,6 +19,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 	* HOW
 	* - Runs late; scans EBlock/EDo (and recursively within EFn bodies via transformNode).
 	* - Matches adjacent or small-window patterns and rewrites as two statements.
+	* - Requires the documented else branch and ignores one-branch conditions.
 
 	*
 	* EXAMPLES
@@ -39,7 +40,7 @@ class DoubleAssignIfFoldTransforms {
 								if (i + 1 < stmts.length) {
 									switch (stmts[i + 1].def) {
 										case EIf(cond, thenE, elseE):
-											var elseIsB = switch (elseE.def) {
+											var elseIsB = elseE != null && switch (elseE.def) {
 												case EVar(bb) if (bb == b): true;
 												default: false;
 											};
@@ -73,7 +74,7 @@ class DoubleAssignIfFoldTransforms {
 								if (j + 1 < stmts2.length) {
 									switch (stmts2[j + 1].def) {
 										case EIf(cond2, then2, else2):
-											var elseIsB2 = switch (else2.def) {
+											var elseIsB2 = else2 != null && switch (else2.def) {
 												case EVar(bb2) if (bb2 == b2): true;
 												default: false;
 											};

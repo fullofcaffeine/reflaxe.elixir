@@ -52,10 +52,7 @@ defmodule TestAppWeb.GoldenLive do
         id_value
       else
         if (Kernel.is_binary(id_value)) do
-          parsed = (case Integer.parse(id_value) do
-            {num, _} -> num
-            :error -> nil
-          end)
+          parsed = Reflaxe.Elixir.HaxeInt.parse(id_value)
           if (not Kernel.is_nil(parsed)), do: parsed, else: 0
         else
           0

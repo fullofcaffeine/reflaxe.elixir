@@ -9,13 +9,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * AssignmentIfElseCombineTransforms
  *
  * WHAT
- * - (Documented in-file; see the existing code below.)
+ * - Combines `a = b` with a following `if ... else b` value.
  *
  * WHY
- * - Avoid warnings and keep generated Elixir output idiomatic.
+ * - Keeps the assignment and its conditional result in one expression.
  *
  * HOW
- * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+ * - Rewrite only when the `if` has the required `else b` branch.
+ * - Leave one-branch `if` statements unchanged.
  *
  * EXAMPLES
  * - Covered by snapshot tests under `test/snapshot/**`.
@@ -33,7 +34,7 @@ class AssignmentIfElseCombineTransforms {
 								case EBinary(Match, {def: EVar(a)}, {def: EVar(b)}):
 									switch (stmts[i + 1].def) {
 										case EIf(cond, thenE, elseE):
-											var elseIsB = switch (elseE.def) {
+											var elseIsB = elseE != null && switch (elseE.def) {
 												case EVar(bb) if (bb == b): true;
 												default: false;
 											};
@@ -62,7 +63,7 @@ class AssignmentIfElseCombineTransforms {
 								case EBinary(Match, {def: EVar(a2)}, {def: EVar(b2)}):
 									switch (stmts2[j + 1].def) {
 										case EIf(cond2, then2, else2):
-											var elseIsB2 = switch (else2.def) {
+											var elseIsB2 = else2 != null && switch (else2.def) {
 												case EVar(bb2) if (bb2 == b2): true;
 												default: false;
 											};

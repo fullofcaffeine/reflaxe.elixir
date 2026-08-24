@@ -136,10 +136,23 @@
     {
       "module": "Std",
       "upstreamSpec": "available",
-      "disposition": "pending-review",
-      "execution": "not-run",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "adapted",
       "source": "Std.unit.hx",
-      "reason": "Upstream spec exists; enable after target string/parse/cast edge cases are triaged."
+      "fixture": "test/upstream_unitstd/upstream/Std.unit.hx",
+      "reason": "The interface downcast assertion is excluded because interface runtime identity belongs to the separate reflection parity task; all scalar type checks, class and built-in downcasts, string conversion, integer and float conversion, parsing, and random contracts remain enabled.",
+      "sourceSha256": "c2b9e70dea6b32b2e9ab866da79196800b5fdf9533b708314ccc2804889f5fe9",
+      "fixtureSha256": "6da8f00e1e24ea9d82d623838e66677611908917b91fbfbb1047b558f72c4dca",
+      "adaptationPatch": "test/upstream_unitstd/adaptations/Std.unit.hx.patch",
+      "adaptationPatchSha256": "df6c36b33f52cd0cd63f712d2bbca775db4c93ed3c38e3bf3d36bfa5c59fd794"
+    },
+    {
+      "module": "StdTypes",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists. Local Haxe-authored ExUnit tests cover structural iterators, key-value iterators, nullable values, and core value contracts."
     },
     {
       "module": "String",
@@ -259,10 +272,13 @@
     {
       "module": "haxe.EnumFlags",
       "upstreamSpec": "available",
-      "disposition": "pending-review",
-      "execution": "not-run",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
       "source": "haxe/EnumFlags.unit.hx",
-      "reason": "The official test exists but is not in the BEAM runtime suite. Local Haxe-authored tests cover set, unset, setTo, has, ofInt, and toInt behavior. Review the complete official test before enabling it."
+      "fixture": "test/upstream_unitstd/upstream/haxe/EnumFlags.unit.hx",
+      "sourceSha256": "10d93f4365e77cb6c7b2deedca2f7df328b14e41e10c076edf200d96ff79832c",
+      "fixtureSha256": "10d93f4365e77cb6c7b2deedca2f7df328b14e41e10c076edf200d96ff79832c"
     },
     {
       "module": "haxe.EnumTools",
@@ -277,6 +293,13 @@
       "disposition": "applicable",
       "execution": "not-run",
       "reason": "No matching upstream unitstd spec exists; behavior is target/sys integration specific."
+    },
+    {
+      "module": "haxe.Int32",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists. Local Haxe-authored ExUnit tests cover signed wraparound, shifts, and unsigned comparison on BEAM integers."
     },
     {
       "module": "haxe.Int64",

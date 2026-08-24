@@ -107,7 +107,10 @@ Top-level:
   with explicit boundaries for Haxe special floats.)
 - `Reflect` (current native/map-oriented subset; managed fields, identity-aware
   copy, bound methods, and graph behavior remain 1.0 blockers)
-- `Std`
+- `Std` (the official Haxe fixture verifies scalar conversion, parsing, string conversion,
+  `downcast`, and deprecated compatibility aliases; interface identity remains part of the
+  separate reflection audit)
+- `StdTypes` (typed structural iterator, key-value iterator, nullable, and core value contracts)
 - `String`
 - `StringBuf` (current receiver-rebinding path is not complete for aliases)
 - `StringTools`
@@ -115,9 +118,27 @@ Top-level:
 - `Type` (target-specific; typed enum reflection calls used by `haxe.EnumTools`
   and `haxe.EnumFlags` are backed by generated enum metadata; managed class
   tags, instance creation, and empty allocation remain blockers)
-- `UInt`
+- `UInt` (32-bit unsigned operators and caller-visible mutation use BEAM integer and bitwise
+  operations while preserving Haxe wraparound behavior)
 - `UnicodeString` (UTF-8 validation and codepoint iteration)
 - `Xml` (parse/print, attributes, child iteration, parent links)
+
+For example, Haxe keeps the intended 32-bit type visible:
+
+```haxe
+var value:UInt = -1;
+value++;
+```
+
+The generated Elixir uses BEAM integers and applies the Haxe width after the operation:
+
+```elixir
+wrapped = Bitwise.band(value + 1, 0xFFFFFFFF)
+value = if wrapped >= 0x80000000, do: wrapped - 0x100000000, else: wrapped
+```
+
+The Haxe type prevents callers from duplicating this wrapping rule. The compiler also preserves the
+old expression value and updates the caller when code uses `value++` inside another expression.
 
 `Date` and `DateTools` use Haxe's normal millisecond timestamp and formatting
 contract while storing runtime values as BEAM `%DateTime{}` structs. For
@@ -183,9 +204,10 @@ state across processes.
   broader supervisor behavior is outside the [OTP Support Contract](OTP_SUPPORT_CONTRACT.md))
 - `haxe.EnumFlags` (official abstract fallback; dynamic flag operations use typed `Type.enumIndex` lowering backed by generated enum metadata)
 - `haxe.EnumTools` (official extern inline fallback; typed constructor/name/index/equality helpers lower through generated enum metadata)
+- `haxe.Int32` (signed 32-bit wraparound, shifts, and unsigned comparison over BEAM integers)
 - `haxe.Http` (current OTP-backed partial implementation; remaining APIs below block 1.0)
-- `haxe.Int64` (signed 64-bit wrapping semantics on BEAM integers)
-- `haxe.Int64Helper`
+- `haxe.Int64` (signed 64-bit wrapping semantics and the public operation surface on BEAM integers)
+- `haxe.Int64Helper` (checked float conversion, parsing, arithmetic, and comparison helpers)
 - `haxe.Log`
 - `haxe.MainLoop` (currently unsupported Haxe process main-loop/event queue bridge and therefore a
   1.0 blocker; meanwhile use the

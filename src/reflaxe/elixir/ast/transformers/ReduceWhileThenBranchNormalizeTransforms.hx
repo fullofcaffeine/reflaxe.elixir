@@ -21,6 +21,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 	*
 	* HOW
 	* - Runs late and matches any EIf node; if its then-branch is EBlock, apply the normalization.
+	* - Fold only nested conditions with the documented else value.
 
 	*
 	* EXAMPLES
@@ -56,7 +57,7 @@ class ReduceWhileThenBranchNormalizeTransforms {
 								switch (stmts[i + 1].def) {
 									case EIf(cond2, then2, else2):
 										// debug removed
-										var elseIsB = switch (else2.def) {
+										var elseIsB = else2 != null && switch (else2.def) {
 											case EVar(bb) if (bb == b): true;
 											default: false;
 										};
@@ -76,7 +77,7 @@ class ReduceWhileThenBranchNormalizeTransforms {
 								// debug removed
 								switch (stmts[i + 1].def) {
 									case EIf(condM, thenM, elseM):
-										var elseIsBM = switch (elseM.def) {
+										var elseIsBM = elseM != null && switch (elseM.def) {
 											case EVar(bbM) if (bbM == bM): true;
 											default: false;
 										};
@@ -95,7 +96,7 @@ class ReduceWhileThenBranchNormalizeTransforms {
 								// debug removed
 								switch (stmts[i + 1].def) {
 									case EIf(condM2, thenM2, elseM2):
-										var elseIsBM2 = switch (elseM2.def) {
+										var elseIsBM2 = elseM2 != null && switch (elseM2.def) {
 											case EVar(bbM2) if (bbM2 == bM2): true;
 											default: false;
 										};
@@ -116,7 +117,7 @@ class ReduceWhileThenBranchNormalizeTransforms {
 									case EBinary(Match, {def: EVar(leftVar)}, {def: EMatch(PVar(boundVar), rhsExpr)}):
 										switch (stmts[i + 1].def) {
 											case EIf(condX, thenX, elseX):
-												var elseIsBound = switch (elseX.def) {
+												var elseIsBound = elseX != null && switch (elseX.def) {
 													case EVar(varName) if (varName == boundVar): true;
 													default: false;
 												};
@@ -150,7 +151,7 @@ class ReduceWhileThenBranchNormalizeTransforms {
 							case EBinary(Match, {def: EVar(a)}, {def: EBinary(Match, {def: EVar(b)}, rhs)}):
 								switch (statements[index + 1].def) {
 									case EIf(condExpr, thenExpr, elseExpr):
-										var elseIsB = switch (elseExpr.def) {
+										var elseIsB = elseExpr != null && switch (elseExpr.def) {
 											case EVar(bb) if (bb == b): true;
 											default: false;
 										};
@@ -170,7 +171,7 @@ class ReduceWhileThenBranchNormalizeTransforms {
 							case EMatch(PVar(aM), {def: EBinary(Match, {def: EVar(bM)}, rhsM)}):
 								switch (statements[index + 1].def) {
 									case EIf(condM, thenM, elseM):
-										var elseIsBM = switch (elseM.def) {
+										var elseIsBM = elseM != null && switch (elseM.def) {
 											case EVar(bbM) if (bbM == bM): true;
 											default: false;
 										};
@@ -190,7 +191,7 @@ class ReduceWhileThenBranchNormalizeTransforms {
 							case EMatch(PVar(aM2), {def: EMatch(PVar(bM2), rhsM2)}):
 								switch (statements[index + 1].def) {
 									case EIf(condM2, thenM2, elseM2):
-										var elseIsBM2 = switch (elseM2.def) {
+										var elseIsBM2 = elseM2 != null && switch (elseM2.def) {
 											case EVar(bbM2) if (bbM2 == bM2): true;
 											default: false;
 										};
@@ -213,7 +214,7 @@ class ReduceWhileThenBranchNormalizeTransforms {
 									case EBinary(Match, {def: EVar(leftVar)}, {def: EMatch(PVar(rightVar), rhsExpr)}):
 										switch (statements[index + 1].def) {
 											case EIf(condX, thenX, elseX):
-												var elseIsBX = switch (elseX.def) {
+												var elseIsBX = elseX != null && switch (elseX.def) {
 													case EVar(bbX) if (bbX == rightVar): true;
 													default: false;
 												};

@@ -9,16 +9,19 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * AssignChainGenericSimplifyTransforms
  *
  * WHAT
- * - (Documented in-file; see the existing code below.)
+ * - Splits `outer = inner = value` into two ordered assignments.
  *
  * WHY
- * - Avoid warnings and keep generated Elixir output idiomatic.
+ * - Elixir does not need Haxe's nested assignment shape.
+ * - The split must keep every statement that follows the assignment.
  *
  * HOW
- * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+ * - Walk each block and replace only the matching statement.
+ * - Continue through the block after the replacement.
  *
  * EXAMPLES
- * - Covered by snapshot tests under `test/snapshot/**`.
+ * - `flags = temp = 1; check(flags);` becomes
+ *   `temp = 1; flags = temp; check(flags);`.
  */
 class AssignChainGenericSimplifyTransforms {
 	static function unwrapRhsAssign(e:ElixirAST):Null<{a:String, b:String, rhs:ElixirAST}> {
@@ -62,7 +65,6 @@ class AssignChainGenericSimplifyTransforms {
 									out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a), s.metadata, s.pos),
 										makeASTWithMeta(EVar(b), s.metadata, s.pos)), s.metadata,
 										s.pos));
-									break;
 								} else {
 									out.push(s);
 								}
@@ -75,7 +77,6 @@ class AssignChainGenericSimplifyTransforms {
 									out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a2), s.metadata, s.pos),
 										makeASTWithMeta(EVar(b2), s.metadata, s.pos)),
 										s.metadata, s.pos));
-									break;
 								} else {
 									out.push(s);
 								}
@@ -98,7 +99,6 @@ class AssignChainGenericSimplifyTransforms {
 									out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a2), s.metadata, s.pos),
 										makeASTWithMeta(EVar(b2), s.metadata, s.pos)),
 										s.metadata, s.pos));
-									break;
 								} else {
 									out2.push(s);
 								}
@@ -111,7 +111,6 @@ class AssignChainGenericSimplifyTransforms {
 									out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a3), s.metadata, s.pos),
 										makeASTWithMeta(EVar(b3), s.metadata, s.pos)),
 										s.metadata, s.pos));
-									break;
 								} else {
 									out2.push(s);
 								}

@@ -79,7 +79,7 @@
     "memberRows": 3198,
     "overloadRowsBeyondPrimary": 68,
     "runtimeApiRows": 1981,
-    "releaseBlockingRuntimeApiRows": 1981,
+    "releaseBlockingRuntimeApiRows": 1883,
     "byApplicability": {
       "compile-time": 733,
       "compiler-display": 733,
@@ -88,13 +88,14 @@
     },
     "bySupportState": {
       "not-applicable": 1711,
-      "partial": 666,
-      "supported": 138,
-      "unknown": 1131,
+      "partial": 661,
+      "supported": 237,
+      "unknown": 1037,
       "unsupported": 46
     },
     "byEvidenceState": {
-      "missing": 1601,
+      "api-runtime": 103,
+      "missing": 1498,
       "module-runtime": 380,
       "not-required": 1711
     },
@@ -387,9 +388,8 @@
       },
       "implementationOwner": "reflaxe-elixir-target",
       "supportState": "partial",
-      "evidenceState": "missing",
+      "evidenceState": "module-runtime",
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.3.9",
         "haxe.elixir.codex-0yn.10.5"
       ]
@@ -407,10 +407,9 @@
         "runtime": 15
       },
       "implementationOwner": "official-haxe-stdlib-fallback",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ]
     },
@@ -523,10 +522,9 @@
         "runtime": 1
       },
       "implementationOwner": "reflaxe-elixir-target",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ]
     },
@@ -600,10 +598,9 @@
         "runtime": 15
       },
       "implementationOwner": "official-haxe-stdlib-fallback",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ]
     },
@@ -656,10 +653,9 @@
         "runtime": 8
       },
       "implementationOwner": "official-haxe-stdlib-fallback",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ]
     },
@@ -675,10 +671,9 @@
         "runtime": 11
       },
       "implementationOwner": "official-haxe-stdlib-fallback",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ]
     },
@@ -735,10 +730,9 @@
         "runtime": 2
       },
       "implementationOwner": "reflaxe-elixir-target",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ]
     },
@@ -754,10 +748,9 @@
         "runtime": 33
       },
       "implementationOwner": "reflaxe-elixir-target",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ]
     },
@@ -773,10 +766,9 @@
         "runtime": 3
       },
       "implementationOwner": "reflaxe-elixir-target",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ]
     },
@@ -1455,10 +1447,9 @@
         "runtime": 3
       },
       "implementationOwner": "official-haxe-stdlib-fallback",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ]
     },
@@ -1627,10 +1618,9 @@
         "runtime": 3
       },
       "implementationOwner": "reflaxe-elixir-target",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ]
     },
@@ -14234,14 +14224,18 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.3.9",
-          "haxe.elixir.codex-0yn.10.5"
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/upstream_unitstd/upstream/Std.unit.hx",
+            "selector": "Std.downcast"
+          }
         ],
-        "reviewNote": "Upstream spec exists; enable after target string/parse/cast edge cases are triaged. The core value-utility task owns the remaining APIs. The reflection and graph-serialization task owns the remaining APIs.",
+        "blockers": [
+          "haxe.elixir.codex-0yn.10.3.9"
+        ],
+        "reviewNote": "Class and scalar behavior passes on BEAM. Interface identity remains with the reflection task.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Std.hx"
@@ -14293,14 +14287,18 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.3.9",
-          "haxe.elixir.codex-0yn.10.5"
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testStdCompatibilityAliases"
+          }
         ],
-        "reviewNote": "Upstream spec exists; enable after target string/parse/cast edge cases are triaged. The core value-utility task owns the remaining APIs. The reflection and graph-serialization task owns the remaining APIs.",
+        "blockers": [
+          "haxe.elixir.codex-0yn.10.3.9"
+        ],
+        "reviewNote": "Class and scalar behavior passes on BEAM. Interface identity remains with the reflection task.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Std.hx"
@@ -14350,15 +14348,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.3.9",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/upstream_unitstd/upstream/Std.unit.hx",
+            "selector": "Std.int"
+          }
         ],
-        "reviewNote": "Upstream spec exists; enable after target string/parse/cast edge cases are triaged. The core value-utility task owns the remaining APIs. The reflection and graph-serialization task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The adapted official Haxe test proves this scalar Std operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Std.hx"
@@ -14411,14 +14411,18 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.3.9",
-          "haxe.elixir.codex-0yn.10.5"
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testStdCompatibilityAliases"
+          }
         ],
-        "reviewNote": "Upstream spec exists; enable after target string/parse/cast edge cases are triaged. The core value-utility task owns the remaining APIs. The reflection and graph-serialization task owns the remaining APIs.",
+        "blockers": [
+          "haxe.elixir.codex-0yn.10.3.9"
+        ],
+        "reviewNote": "Class and scalar behavior passes on BEAM. Interface identity remains with the reflection task.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Std.hx"
@@ -14470,14 +14474,18 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.3.9",
-          "haxe.elixir.codex-0yn.10.5"
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/upstream_unitstd/upstream/Std.unit.hx",
+            "selector": "Std.isOfType"
+          }
         ],
-        "reviewNote": "Upstream spec exists; enable after target string/parse/cast edge cases are triaged. The core value-utility task owns the remaining APIs. The reflection and graph-serialization task owns the remaining APIs.",
+        "blockers": [
+          "haxe.elixir.codex-0yn.10.3.9"
+        ],
+        "reviewNote": "Class and scalar behavior passes on BEAM. Interface identity remains with the reflection task.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Std.hx"
@@ -14527,15 +14535,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.3.9",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/upstream_unitstd/upstream/Std.unit.hx",
+            "selector": "Std.parseFloat"
+          }
         ],
-        "reviewNote": "Upstream spec exists; enable after target string/parse/cast edge cases are triaged. The core value-utility task owns the remaining APIs. The reflection and graph-serialization task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The adapted official Haxe test proves this scalar Std operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Std.hx"
@@ -14586,15 +14596,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.3.9",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/upstream_unitstd/upstream/Std.unit.hx",
+            "selector": "Std.parseInt"
+          }
         ],
-        "reviewNote": "Upstream spec exists; enable after target string/parse/cast edge cases are triaged. The core value-utility task owns the remaining APIs. The reflection and graph-serialization task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The adapted official Haxe test proves this scalar Std operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Std.hx"
@@ -14644,15 +14656,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.3.9",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/upstream_unitstd/upstream/Std.unit.hx",
+            "selector": "Std.random"
+          }
         ],
-        "reviewNote": "Upstream spec exists; enable after target string/parse/cast edge cases are triaged. The core value-utility task owns the remaining APIs. The reflection and graph-serialization task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The adapted official Haxe test proves this scalar Std operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Std.hx"
@@ -14704,15 +14718,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.3.9",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/upstream_unitstd/upstream/Std.unit.hx",
+            "selector": "Std.string"
+          }
         ],
-        "reviewNote": "Upstream spec exists; enable after target string/parse/cast edge cases are triaged. The core value-utility task owns the remaining APIs. The reflection and graph-serialization task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The adapted official Haxe test proves this scalar Std operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Std.hx"
@@ -14778,14 +14794,18 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.3.9",
-          "haxe.elixir.codex-0yn.10.5"
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/UpstreamCoreUnitStdTest.hx",
+            "selector": "class UpstreamCoreUnitStdTest"
+          }
         ],
-        "reviewNote": "Upstream spec exists; enable after target string/parse/cast edge cases are triaged. The core value-utility task owns the remaining APIs. The reflection and graph-serialization task owns the remaining APIs.",
+        "blockers": [
+          "haxe.elixir.codex-0yn.10.3.9"
+        ],
+        "reviewNote": "Class and scalar behavior passes on BEAM. Interface identity remains with the reflection task.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Std.hx"
@@ -14824,14 +14844,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testStdTypesIteratorsAndCoreValues"
+          }
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/StdTypes.hx"
@@ -14870,14 +14893,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testStdTypesIteratorsAndCoreValues"
+          }
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/StdTypes.hx"
@@ -14916,14 +14942,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testStdTypesIteratorsAndCoreValues"
+          }
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/StdTypes.hx"
@@ -14962,14 +14991,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testStdTypesIteratorsAndCoreValues"
+          }
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/StdTypes.hx"
@@ -15022,14 +15054,13 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
+        "supportState": "supported",
         "evidenceState": "missing",
         "evidence": [],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The core value-utility task owns the remaining APIs.",
+        "reviewNote": "ArrayAccess is an extern-only compile contract. The kept acceptArrayAccess boundary proves typing; no runtime value can be constructed.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/StdTypes.hx"
@@ -15085,14 +15116,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testStdTypesIteratorsAndCoreValues"
+          }
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/StdTypes.hx"
@@ -15147,14 +15181,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testStdTypesIteratorsAndCoreValues"
+          }
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/StdTypes.hx"
@@ -15210,14 +15247,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testStdTypesIteratorsAndCoreValues"
+          }
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/StdTypes.hx"
@@ -15273,14 +15313,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testStdTypesIteratorsAndCoreValues"
+          }
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/StdTypes.hx"
@@ -15333,14 +15376,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testStdTypesIteratorsAndCoreValues"
+          }
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/StdTypes.hx"
@@ -15393,14 +15439,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testStdTypesIteratorsAndCoreValues"
+          }
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/StdTypes.hx"
@@ -15453,14 +15502,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testStdTypesIteratorsAndCoreValues"
+          }
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/StdTypes.hx"
@@ -15513,14 +15565,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testStdTypesIteratorsAndCoreValues"
+          }
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/StdTypes.hx"
@@ -15575,14 +15630,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testStdTypesIteratorsAndCoreValues"
+          }
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/StdTypes.hx"
@@ -15682,14 +15740,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testStdTypesIteratorsAndCoreValues"
+          }
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/StdTypes.hx"
@@ -21964,14 +22025,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUnsignedAndSigned32BitWidthContracts"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves unsigned 32-bit value behavior on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/UInt.hx"
@@ -24998,14 +25062,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testConstraintTypes"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged for compile-time Function/IMap constraints, and local Haxe-authored ExUnit tests cover Function calls plus IMap values crossing through the Reflaxe.Elixir.IMap runtime boundary. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Constraints.hx"
@@ -25044,14 +25111,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testConstraintTypes"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged for compile-time Function/IMap constraints, and local Haxe-authored ExUnit tests cover Function calls plus IMap values crossing through the Reflaxe.Elixir.IMap runtime boundary. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Constraints.hx"
@@ -25090,14 +25160,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testConstraintTypes"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged for compile-time Function/IMap constraints, and local Haxe-authored ExUnit tests cover Function calls plus IMap values crossing through the Reflaxe.Elixir.IMap runtime boundary. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Constraints.hx"
@@ -25136,14 +25209,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testConstraintTypes"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged for compile-time Function/IMap constraints, and local Haxe-authored ExUnit tests cover Function calls plus IMap values crossing through the Reflaxe.Elixir.IMap runtime boundary. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Constraints.hx"
@@ -25182,14 +25258,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testConstraintTypes"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged for compile-time Function/IMap constraints, and local Haxe-authored ExUnit tests cover Function calls plus IMap values crossing through the Reflaxe.Elixir.IMap runtime boundary. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Constraints.hx"
@@ -25228,14 +25307,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testConstraintTypes"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged for compile-time Function/IMap constraints, and local Haxe-authored ExUnit tests cover Function calls plus IMap values crossing through the Reflaxe.Elixir.IMap runtime boundary. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Constraints.hx"
@@ -25274,14 +25356,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testConstraintTypes"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged for compile-time Function/IMap constraints, and local Haxe-authored ExUnit tests cover Function calls plus IMap values crossing through the Reflaxe.Elixir.IMap runtime boundary. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Constraints.hx"
@@ -25320,14 +25405,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testConstraintTypes"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged for compile-time Function/IMap constraints, and local Haxe-authored ExUnit tests cover Function calls plus IMap values crossing through the Reflaxe.Elixir.IMap runtime boundary. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Constraints.hx"
@@ -25366,14 +25454,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testConstraintTypes"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged for compile-time Function/IMap constraints, and local Haxe-authored ExUnit tests cover Function calls plus IMap values crossing through the Reflaxe.Elixir.IMap runtime boundary. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Constraints.hx"
@@ -25412,14 +25503,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testConstraintTypes"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged for compile-time Function/IMap constraints, and local Haxe-authored ExUnit tests cover Function calls plus IMap values crossing through the Reflaxe.Elixir.IMap runtime boundary. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Constraints.hx"
@@ -25472,14 +25566,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testConstraintTypes"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged for compile-time Function/IMap constraints, and local Haxe-authored ExUnit tests cover Function calls plus IMap values crossing through the Reflaxe.Elixir.IMap runtime boundary. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Constraints.hx"
@@ -25532,14 +25629,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testConstraintTypes"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged for compile-time Function/IMap constraints, and local Haxe-authored ExUnit tests cover Function calls plus IMap values crossing through the Reflaxe.Elixir.IMap runtime boundary. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Constraints.hx"
@@ -25593,14 +25693,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testConstraintsFunctionAliasCallMethod"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged for compile-time Function/IMap constraints, and local Haxe-authored ExUnit tests cover Function calls plus IMap values crossing through the Reflaxe.Elixir.IMap runtime boundary. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Constraints.hx"
@@ -25653,14 +25756,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testConstraintTypes"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged for compile-time Function/IMap constraints, and local Haxe-authored ExUnit tests cover Function calls plus IMap values crossing through the Reflaxe.Elixir.IMap runtime boundary. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Constraints.hx"
@@ -25713,14 +25819,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testConstraintTypes"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged for compile-time Function/IMap constraints, and local Haxe-authored ExUnit tests cover Function calls plus IMap values crossing through the Reflaxe.Elixir.IMap runtime boundary. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Constraints.hx"
@@ -26483,14 +26592,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testEnumFlagsFallbackUsesEnumIndices"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe abstract fallback is used unchanged, while dynamic flag operations lower through typed Type.enumIndex metadata. Local Haxe-authored ExUnit tests cover set, unset, setTo, has, ofInt, and toInt behavior. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this enum flag operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/EnumFlags.hx"
@@ -26522,14 +26634,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testEnumFlagsFallbackUsesEnumIndices"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe abstract fallback is used unchanged, while dynamic flag operations lower through typed Type.enumIndex metadata. Local Haxe-authored ExUnit tests cover set, unset, setTo, has, ofInt, and toInt behavior. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this enum flag operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/EnumFlags.hx"
@@ -26561,14 +26676,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testEnumFlagsFallbackUsesEnumIndices"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe abstract fallback is used unchanged, while dynamic flag operations lower through typed Type.enumIndex metadata. Local Haxe-authored ExUnit tests cover set, unset, setTo, has, ofInt, and toInt behavior. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this enum flag operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/EnumFlags.hx"
@@ -26600,14 +26718,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testEnumFlagsFallbackUsesEnumIndices"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe abstract fallback is used unchanged, while dynamic flag operations lower through typed Type.enumIndex metadata. Local Haxe-authored ExUnit tests cover set, unset, setTo, has, ofInt, and toInt behavior. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this enum flag operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/EnumFlags.hx"
@@ -26639,14 +26760,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testEnumFlagsFallbackUsesEnumIndices"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe abstract fallback is used unchanged, while dynamic flag operations lower through typed Type.enumIndex metadata. Local Haxe-authored ExUnit tests cover set, unset, setTo, has, ofInt, and toInt behavior. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this enum flag operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/EnumFlags.hx"
@@ -26678,14 +26802,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testEnumFlagsFallbackUsesEnumIndices"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe abstract fallback is used unchanged, while dynamic flag operations lower through typed Type.enumIndex metadata. Local Haxe-authored ExUnit tests cover set, unset, setTo, has, ofInt, and toInt behavior. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this enum flag operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/EnumFlags.hx"
@@ -26717,14 +26844,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testEnumFlagsFallbackUsesEnumIndices"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe abstract fallback is used unchanged, while dynamic flag operations lower through typed Type.enumIndex metadata. Local Haxe-authored ExUnit tests cover set, unset, setTo, has, ofInt, and toInt behavior. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this enum flag operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/EnumFlags.hx"
@@ -26761,14 +26891,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testEnumFlagsFallbackUsesEnumIndices"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe abstract fallback is used unchanged, while dynamic flag operations lower through typed Type.enumIndex metadata. Local Haxe-authored ExUnit tests cover set, unset, setTo, has, ofInt, and toInt behavior. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this enum flag operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/EnumFlags.hx"
@@ -26807,14 +26940,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testEnumToolsFallbackUsesTypeReflection"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe extern inline fallback is used unchanged, while typed Type enum reflection lowers through generated enum metadata. Local Haxe-authored ExUnit tests cover getConstructors, createByName, createByIndex, createAll, EnumValueTools name/index/params, and equality. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this typed enum metadata operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/EnumTools.hx"
@@ -26853,14 +26989,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testEnumToolsFallbackUsesTypeReflection"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe extern inline fallback is used unchanged, while typed Type enum reflection lowers through generated enum metadata. Local Haxe-authored ExUnit tests cover getConstructors, createByName, createByIndex, createAll, EnumValueTools name/index/params, and equality. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this typed enum metadata operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/EnumTools.hx"
@@ -26899,14 +27038,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testEnumToolsFallbackUsesTypeReflection"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe extern inline fallback is used unchanged, while typed Type enum reflection lowers through generated enum metadata. Local Haxe-authored ExUnit tests cover getConstructors, createByName, createByIndex, createAll, EnumValueTools name/index/params, and equality. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this typed enum metadata operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/EnumTools.hx"
@@ -26945,14 +27087,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testEnumToolsFallbackUsesTypeReflection"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe extern inline fallback is used unchanged, while typed Type enum reflection lowers through generated enum metadata. Local Haxe-authored ExUnit tests cover getConstructors, createByName, createByIndex, createAll, EnumValueTools name/index/params, and equality. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this typed enum metadata operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/EnumTools.hx"
@@ -26991,14 +27136,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testEnumToolsFallbackUsesTypeReflection"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe extern inline fallback is used unchanged, while typed Type enum reflection lowers through generated enum metadata. Local Haxe-authored ExUnit tests cover getConstructors, createByName, createByIndex, createAll, EnumValueTools name/index/params, and equality. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this typed enum metadata operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/EnumTools.hx"
@@ -27037,14 +27185,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testEnumToolsFallbackUsesTypeReflection"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe extern inline fallback is used unchanged, while typed Type enum reflection lowers through generated enum metadata. Local Haxe-authored ExUnit tests cover getConstructors, createByName, createByIndex, createAll, EnumValueTools name/index/params, and equality. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this typed enum metadata operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/EnumTools.hx"
@@ -27083,14 +27234,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testEnumToolsFallbackUsesTypeReflection"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe extern inline fallback is used unchanged, while typed Type enum reflection lowers through generated enum metadata. Local Haxe-authored ExUnit tests cover getConstructors, createByName, createByIndex, createAll, EnumValueTools name/index/params, and equality. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this typed enum metadata operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/EnumTools.hx"
@@ -27129,14 +27283,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testEnumToolsFallbackUsesTypeReflection"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe extern inline fallback is used unchanged, while typed Type enum reflection lowers through generated enum metadata. Local Haxe-authored ExUnit tests cover getConstructors, createByName, createByIndex, createAll, EnumValueTools name/index/params, and equality. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this typed enum metadata operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/EnumTools.hx"
@@ -27175,14 +27332,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testEnumToolsFallbackUsesTypeReflection"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe extern inline fallback is used unchanged, while typed Type enum reflection lowers through generated enum metadata. Local Haxe-authored ExUnit tests cover getConstructors, createByName, createByIndex, createAll, EnumValueTools name/index/params, and equality. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this typed enum metadata operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/EnumTools.hx"
@@ -27235,14 +27395,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testEnumToolsFallbackUsesTypeReflection"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe extern inline fallback is used unchanged, while typed Type enum reflection lowers through generated enum metadata. Local Haxe-authored ExUnit tests cover getConstructors, createByName, createByIndex, createAll, EnumValueTools name/index/params, and equality. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this typed enum metadata operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/EnumTools.hx"
@@ -27295,14 +27458,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testEnumToolsFallbackUsesTypeReflection"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe extern inline fallback is used unchanged, while typed Type enum reflection lowers through generated enum metadata. Local Haxe-authored ExUnit tests cover getConstructors, createByName, createByIndex, createAll, EnumValueTools name/index/params, and equality. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this typed enum metadata operation on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/EnumTools.hx"
@@ -28086,14 +28252,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUnsignedAndSigned32BitWidthContracts"
+          }
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves signed 32-bit width and unsigned comparison behavior on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int32.hx"
@@ -28147,14 +28316,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUnsignedAndSigned32BitWidthContracts"
+          }
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves signed 32-bit width and unsigned comparison behavior on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int32.hx"
@@ -28196,14 +28368,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -28245,14 +28420,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64HighLowRoundTrip"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -28294,14 +28472,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64HighLowRoundTrip"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -28345,14 +28526,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -28396,14 +28580,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -28445,14 +28632,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -28496,14 +28686,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -28545,14 +28738,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -28596,14 +28792,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -28645,14 +28844,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -28696,14 +28898,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -28747,14 +28952,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -28798,14 +29006,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -28847,14 +29058,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -28896,14 +29110,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -28945,14 +29162,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -28994,14 +29214,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -29045,14 +29268,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -29096,14 +29322,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -29147,14 +29376,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -29198,14 +29430,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -29249,14 +29484,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -29300,14 +29538,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -29349,14 +29590,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -29400,14 +29644,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -29451,14 +29698,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -29502,14 +29752,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -29551,14 +29804,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64ToIntOverflowRaises"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -29600,14 +29856,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -29649,14 +29908,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -29700,14 +29962,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -29751,14 +30016,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -29817,14 +30085,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64.hx"
@@ -29863,14 +30134,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; helper parsing behavior is covered through local haxe.Int64 runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves checked parsing and float conversion on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64Helper.hx"
@@ -29909,14 +30183,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; helper parsing behavior is covered through local haxe.Int64 runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves checked parsing and float conversion on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64Helper.hx"
@@ -29969,14 +30246,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testInt64PublicOperationSurface"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; helper parsing behavior is covered through local haxe.Int64 runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves checked parsing and float conversion on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Int64Helper.hx"
@@ -68420,14 +68700,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testEitherPreservesGenericPayloads"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib enum fallback is used unchanged and Left/Right pattern matching plus generic payload preservation are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this constructor and generic payload behavior on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/ds/Either.hx"
@@ -68459,14 +68742,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testEitherPreservesGenericPayloads"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib enum fallback is used unchanged and Left/Right pattern matching plus generic payload preservation are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this constructor and generic payload behavior on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/ds/Either.hx"
@@ -68503,14 +68789,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testEitherPreservesGenericPayloads"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib enum fallback is used unchanged and Left/Right pattern matching plus generic payload preservation are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this constructor and generic payload behavior on BEAM.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/ds/Either.hx"
@@ -73273,14 +73562,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testOptionPatternMatchingAndPayloads"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; the Elixir target uses a local @:elixirIdiomatic Option enum plus OptionTools helpers, and local Haxe-authored ExUnit runtime tests cover Some/None pattern matching, helper transforms/extraction, collection helpers, and Result/null bridges. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this constructor and generic payload behavior on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/ds/Option.hx"
@@ -73312,14 +73604,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testOptionPatternMatchingAndPayloads"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; the Elixir target uses a local @:elixirIdiomatic Option enum plus OptionTools helpers, and local Haxe-authored ExUnit runtime tests cover Some/None pattern matching, helper transforms/extraction, collection helpers, and Result/null bridges. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this constructor and generic payload behavior on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/ds/Option.hx"
@@ -73356,14 +73651,17 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
-        "blockers": [
-          "haxe.elixir.codex-0yn.10.3.17",
-          "haxe.elixir.codex-0yn.10.5"
+        "supportState": "supported",
+        "evidenceState": "api-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-runtime",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testOptionPatternMatchingAndPayloads"
+          }
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; the Elixir target uses a local @:elixirIdiomatic Option enum plus OptionTools helpers, and local Haxe-authored ExUnit runtime tests cover Some/None pattern matching, helper transforms/extraction, collection helpers, and Result/null bridges. The core value-utility task owns the remaining APIs.",
+        "blockers": [],
+        "reviewNote": "The named Haxe test proves this constructor and generic payload behavior on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/ds/Option.hx"

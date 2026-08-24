@@ -21,6 +21,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 	* - For any EBlock([...]) walk statements; when a statement is
 	*   `EBinary(Match, EVar(a), EBinary(Match, EVar(b), rhs))`, rewrite it into
 	*   two consecutive statements. Applies recursively within EBlock/EDo/EFn bodies.
+	* - Fold a following `if` only when it has the required `else` value.
 
 	*
 	* EXAMPLES
@@ -41,7 +42,7 @@ class SplitChainedAssignmentsTransforms {
 								case EBinary(Match, {def: EVar(a0)}, {def: EBinary(Match, {def: EVar(b0)}, rhs0)}):
 									switch (stmts[i + 1].def) {
 										case EIf(cond0, then0, else0):
-											var elseIsB0 = switch (else0.def) {
+											var elseIsB0 = else0 != null && switch (else0.def) {
 												case EVar(bb) if (bb == b0): true;
 												default: false;
 											};
@@ -70,7 +71,7 @@ class SplitChainedAssignmentsTransforms {
 								while (j <= windowEnd) {
 									switch (stmts[j].def) {
 										case EIf(condW, thenW, elseW):
-											var elseIsBW = switch (elseW.def) {
+											var elseIsBW = elseW != null && switch (elseW.def) {
 												case EVar(bb) if (bb == bW): true;
 												default: false;
 											};
@@ -105,7 +106,7 @@ class SplitChainedAssignmentsTransforms {
 										case EBinary(Match, {def: EVar(a)}, {def: EVar(b2)}) if (b2 == b):
 											switch (stmts[i + 2].def) {
 												case EIf(cond, thenExpr, elseExpr):
-													var elseIsB = switch (elseExpr.def) {
+													var elseIsB = elseExpr != null && switch (elseExpr.def) {
 														case EVar(b3) if (b3 == b): true;
 														default: false;
 													};
@@ -239,7 +240,7 @@ class SplitChainedAssignmentsTransforms {
 													switch (stmts[i + 2].def) {
 														case EIf(cond, thenExpr, elseExpr):
 															// Require else branch returns b, so we can rewrite a = if ...
-															var elseIsB = switch (elseExpr.def) {
+															var elseIsB = elseExpr != null && switch (elseExpr.def) {
 																case EVar(b3) if (b3 == b): true;
 																default: false;
 															};
@@ -277,7 +278,7 @@ class SplitChainedAssignmentsTransforms {
 								case EBinary(Match, {def: EVar(a0)}, {def: EBinary(Match, {def: EVar(b0)}, rhs0)}):
 									switch (stmts2[i2 + 1].def) {
 										case EIf(cond0, then0, else0):
-											var elseIsB0 = switch (else0.def) {
+											var elseIsB0 = else0 != null && switch (else0.def) {
 												case EVar(bb) if (bb == b0): true;
 												default: false;
 											};
@@ -305,7 +306,7 @@ class SplitChainedAssignmentsTransforms {
 								while (j2 <= windowEnd2) {
 									switch (stmts2[j2].def) {
 										case EIf(condW2, thenW2, elseW2):
-											var elseIsBW2 = switch (elseW2.def) {
+											var elseIsBW2 = elseW2 != null && switch (elseW2.def) {
 												case EVar(bb2) if (bb2 == bW2): true;
 												default: false;
 											};
@@ -339,7 +340,7 @@ class SplitChainedAssignmentsTransforms {
 										case EBinary(Match, {def: EVar(a)}, {def: EVar(b2)}) if (b2 == b):
 											switch (stmts2[i2 + 2].def) {
 												case EIf(cond, thenExpr, elseExpr):
-													var elseIsB2 = switch (elseExpr.def) {
+													var elseIsB2 = elseExpr != null && switch (elseExpr.def) {
 														case EVar(b3) if (b3 == b): true;
 														default: false;
 													};
@@ -420,7 +421,7 @@ class SplitChainedAssignmentsTransforms {
 												case EBinary(Match, {def: EVar(a)}, {def: EVar(b2)}) if (b2 == b):
 													switch (stmts2[i2 + 2].def) {
 														case EIf(cond, thenExpr, elseExpr):
-															var elseIsB = switch (elseExpr.def) {
+															var elseIsB = elseExpr != null && switch (elseExpr.def) {
 																case EVar(b3) if (b3 == b): true;
 																default: false;
 															};

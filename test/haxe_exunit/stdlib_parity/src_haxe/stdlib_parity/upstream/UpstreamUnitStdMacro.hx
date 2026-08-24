@@ -41,6 +41,9 @@ class UpstreamUnitStdMacro {
 
 	static function transformStatement(expression:Expr, relativePath:String):Expr {
 		return switch expression.expr {
+			case EBinop(OpIn, value, {expr: EArrayDecl(values)}):
+				assertTrue(collapseToOr(value, values, expression.pos), expression, relativePath);
+
 			case EBinop(OpEq, left, right) if (boolLiteralValue(right) != null):
 				boolLiteralValue(right) ? assertTrue(left, expression, relativePath) : assertFalse(left, expression, relativePath);
 
@@ -81,6 +84,14 @@ class UpstreamUnitStdMacro {
 				macro haxe.test.Assert.raises(function() {
 					$body;
 				}, null, $v{message(expression, relativePath)});
+
+			case ECall({expr: EConst(CIdent("unspec"))}, [body]):
+				macro {
+					try {
+						$body();
+					} catch (_:Dynamic) {}
+					haxe.test.Assert.isTrue(true, $v{message(expression, relativePath)});
+				};
 
 			case EThrow(value):
 				macro haxe.test.Assert.raises(function() {
@@ -159,6 +170,19 @@ class UpstreamUnitStdMacro {
 				haxe.test.Assert.inDelta(expectedValue, actualValue, 0.00001, $v{assertionMessage});
 			}
 		};
+	}
+
+	static function collapseToOr(value:Expr, values:Array<Expr>, position:Position):Expr {
+		if (values.length == 0) {
+			return macro false;
+		}
+		var comparisons = [for (candidate in values) macro $value == $candidate];
+		var result = comparisons.pop();
+		while (comparisons.length > 0) {
+			var comparison = comparisons.pop();
+			result = {expr: EBinop(OpBoolOr, comparison, result), pos: position};
+		}
+		return result;
 	}
 
 	static function boolLiteralValue(expression:Expr):Null<Bool> {

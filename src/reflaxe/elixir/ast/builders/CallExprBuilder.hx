@@ -1022,7 +1022,7 @@ class CallExprBuilder {
 									context.error(objectMapUnsupportedMessage(), e.pos);
 									return ENil;
 								}
-								if (ct != null && ct.pack != null && ct.pack.join(".") == "haxe.Constraints" && ct.name == "IMap") {
+								if (ct != null && ct.module == "haxe.Constraints" && ct.name == "IMap") {
 									isNativeMapReceiver = true;
 								}
 								if (ct != null && ct.pack != null && ct.pack.join(".") == "haxe.ds") {
@@ -1608,18 +1608,18 @@ class CallExprBuilder {
 						// WHAT: Converts ordinary values normally and formats NaN/Infinity as Haxe expects.
 						if (args.length == 1) {
 							var value = buildExpression(args[0]);
+							var enumModule = enumModuleFromValueExpr(args[0]);
+							if (enumModule != null) {
+								return ERemoteCall(makeAST(EVar("Reflaxe.Elixir.HaxeFloat")), "enum_to_string", [makeAST(EVar(enumModule)), value]);
+							}
 							return ERemoteCall(makeAST(EVar("Reflaxe.Elixir.HaxeFloat")), "to_string", [value]);
 						}
 
 					case "parseInt":
-						// Std.parseInt(str) → case Integer.parse(str) do {num, _} -> num; :error -> nil end
+						// Preserve Haxe whitespace, sign, hexadecimal, prefix, and null rules.
 						if (args.length == 1) {
 							var str = buildExpression(args[0]);
-							var parsed = makeAST(ERemoteCall(makeAST(EVar("Integer")), "parse", [str]));
-							return ECase(parsed, [
-								{pattern: PTuple([PVar("num"), PWildcard]), body: makeAST(EVar("num"))},
-								{pattern: PLiteral(makeAST(EAtom("error"))), body: makeAST(ENil)}
-							]);
+							return ERemoteCall(makeAST(EVar("Reflaxe.Elixir.HaxeInt")), "parse", [str]);
 						}
 
 					case "parseFloat":

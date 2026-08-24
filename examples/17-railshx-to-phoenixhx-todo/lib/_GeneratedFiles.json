@@ -5,6 +5,7 @@
 		"reflaxe/exception.ex",
 		"reflaxe/elixir/macros/http_method.ex",
 		"reflaxe/elixir/haxe_throw.ex",
+		"reflaxe/elixir/haxe_int.ex",
 		"reflaxe/elixir/haxe_float.ex",
 		"plug/http_status.ex",
 		"plug/http_method.ex",
@@ -54,7 +55,7 @@
 		"phoenix_hx_todo/postgrex_types.ex"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 105,
+	"id": 107,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
@@ -172,7 +173,7 @@
 		},
 		{
 			"path": "phoenix_hx/params.ex",
-			"sha256": "dc9ef2d2593e02ee80cc4552af5e51e1531e82556c2ba8831dbf44e418abc2f2"
+			"sha256": "66f9df21f703b3c797b75180010dfb2119389ba8021da4eb0c007e04a6525b7a"
 		},
 		{
 			"path": "phoenix_hx_todo/accounts.ex",
@@ -216,7 +217,7 @@
 		},
 		{
 			"path": "phoenix_hx_todo_web/app_live.ex",
-			"sha256": "def2ecaa1ce0b92a14b4507f2656830f57015a49dd8522578edbc33c0e9ecc4a"
+			"sha256": "1e33b3ad776157f3fd0e177ea118e3c139b237824ac5b2635b62dab5e044e81e"
 		},
 		{
 			"path": "phoenix_hx_todo_web/live_events/todo_event.ex",
@@ -244,7 +245,11 @@
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.ex",
-			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+			"sha256": "6786d5bfb513f44365615186bd6c8f2589222501729873f517d82d2ee23822f4"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_int.ex",
+			"sha256": "61392d67ec3807b64ea717b125498909d6fb903f8600b77dc18a17a65a955515"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_throw.ex",
@@ -260,12 +265,12 @@
 		},
 		{
 			"path": "std.ex",
-			"sha256": "67bdfb39d058412a5badc3fab75654dad62dcb5d89a27ed427d76ecd12cca973"
+			"sha256": "58e6723b0ff73bef9771acbf835813f05a7ba608eb045b514167b1619b15fe53"
 		},
 		{
 			"path": "string_tools.ex",
 			"sha256": "14d0fae11e0a57cb0a490ec5a9de56a9575762d2649b3f69b2ef5c3431ae3f15"
 		}
 	],
-	"generation": "ba737c00f35caf9457f0c82e4e2a2471248ce17013ff257d62a6bc495ad331a3"
+	"generation": "fd336df7fb4aaebb703eba363a658c3acb203e3ee3ac1a8a5401b887c2d9646c"
 }

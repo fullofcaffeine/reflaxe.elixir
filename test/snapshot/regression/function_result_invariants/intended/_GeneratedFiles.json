@@ -1,8 +1,10 @@
 {
 	"filesGenerated": [
 		"statement_effect_probe.ex",
+		"result_flag.ex",
 		"reflaxe/exception.ex",
 		"reflaxe/elixir/haxe_throw.ex",
+		"reflaxe/elixir/haxe_int.ex",
 		"reflaxe/elixir/haxe_float.ex",
 		"native_result_cases.ex",
 		"main.ex",
@@ -24,7 +26,7 @@
 		},
 		{
 			"path": "main.ex",
-			"sha256": "72f4080f05868f7272e7d328eaba54fb90c9f8261e77445a4db8d5a2cac7001e"
+			"sha256": "b4035ea9888e755df98c4c72d0a703305ff8cf75454afbf39d321d042dc9d230"
 		},
 		{
 			"path": "native_result_cases.ex",
@@ -32,7 +34,11 @@
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.ex",
-			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+			"sha256": "6786d5bfb513f44365615186bd6c8f2589222501729873f517d82d2ee23822f4"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_int.ex",
+			"sha256": "61392d67ec3807b64ea717b125498909d6fb903f8600b77dc18a17a65a955515"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_throw.ex",
@@ -43,9 +49,13 @@
 			"sha256": "9eb2137ead37e4b2ff0650cbece40b4da0427a5fe35a95b0de3eeacb82facbd2"
 		},
 		{
+			"path": "result_flag.ex",
+			"sha256": "eb2ee0ce79de96b00521421ad63eaf0b1a9d73dada267e36b3be2a162f5fcd1f"
+		},
+		{
 			"path": "statement_effect_probe.ex",
 			"sha256": "1bdb67d0b1dd2124b108242df5602f5b4fc26f55eff06d7253925354e978dee0"
 		}
 	],
-	"generation": "fe496ab5999bad903c47969c8aee1349b143c84de80a5c36f753afd9ba2c742a"
+	"generation": "f9628936cb1ff1d74879a8ee6c3130e58f506df99748a931a9d8c1625bbd4bbe"
 }

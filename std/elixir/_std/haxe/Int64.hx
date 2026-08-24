@@ -66,6 +66,11 @@ abstract Int64(Int) from Int to Int {
 		return untyped __elixir__("is_integer({0})", val);
 	}
 
+	/** Compatibility alias retained by the official Haxe Int64 surface. */
+	public static inline function is(val:Dynamic):Bool {
+		return isInt64(val);
+	}
+
 	public static inline function isNeg(x:Int64):Bool {
 		return (x : Int) < 0;
 	}
@@ -88,6 +93,14 @@ abstract Int64(Int) from Int to Int {
 
 	public static inline function toStr(x:Int64):String {
 		return untyped __elixir__("Integer.to_string({0})", x);
+	}
+
+	public static inline function getHigh(x:Int64):Int32 {
+		return x.high;
+	}
+
+	public static inline function getLow(x:Int64):Int32 {
+		return x.low;
 	}
 
 	public static inline function parseString(s:String):Int64 {
@@ -144,6 +157,14 @@ abstract Int64(Int) from Int to Int {
 
 	@:op(A ^ B) public static inline function xor(a:Int64, b:Int64):Int64 {
 		return new Int64(untyped __elixir__(":erlang.bxor({0}, {1})", a, b));
+	}
+
+	@:op(A == B) public static inline function eq(a:Int64, b:Int64):Bool {
+		return (a : Int) == (b : Int);
+	}
+
+	@:op(A != B) public static inline function neq(a:Int64, b:Int64):Bool {
+		return (a : Int) != (b : Int);
 	}
 
 	@:op(A << B) public static inline function shl(a:Int64, b:Int):Int64 {

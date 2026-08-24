@@ -3,12 +3,7 @@ defmodule Std do
     Reflaxe.Elixir.HaxeFloat.to_string(value)
   end
   def parse_int(str) do
-
-                case Integer.parse(str) do
-                    {num, _} -> num
-                    :error -> nil
-                end
-
+    Reflaxe.Elixir.HaxeInt.parse(str)
   end
   def int(value) do
     trunc(value)

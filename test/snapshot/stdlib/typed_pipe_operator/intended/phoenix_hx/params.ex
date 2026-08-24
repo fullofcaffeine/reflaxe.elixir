@@ -91,10 +91,7 @@ defmodule PhoenixHx.Params do
           trunc(value)
         else
           if (Kernel.is_binary(value)) do
-            (case Integer.parse(value) do
-              {num, _} -> num
-              :error -> nil
-            end)
+            Reflaxe.Elixir.HaxeInt.parse(value)
           else
             nil
           end

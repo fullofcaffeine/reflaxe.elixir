@@ -52,11 +52,7 @@ defmodule TodoFormEvents do
         priority_raw = Map.get(event_payload, "priority")
         priority = cond do
           Kernel.is_integer(priority_raw) -> priority_raw
-          Kernel.is_binary(priority_raw) ->
-            (case Integer.parse(priority_raw) do
-              {num, _} -> num
-              :error -> nil
-            end)
+          Kernel.is_binary(priority_raw) -> Reflaxe.Elixir.HaxeInt.parse(priority_raw)
           true -> nil
         end
         title_raw = Map.get(event_payload, "title")
@@ -91,11 +87,7 @@ defmodule TodoFormEvents do
         priority_raw = Map.get(event_payload, "priority")
         priority = cond do
           Kernel.is_integer(priority_raw) -> priority_raw
-          Kernel.is_binary(priority_raw) ->
-            (case Integer.parse(priority_raw) do
-              {num, _} -> num
-              :error -> nil
-            end)
+          Kernel.is_binary(priority_raw) -> Reflaxe.Elixir.HaxeInt.parse(priority_raw)
           true -> nil
         end
         title_raw = Map.get(event_payload, "title")

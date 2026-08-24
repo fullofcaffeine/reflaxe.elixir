@@ -26,10 +26,7 @@ defmodule Main do
     value = [1, 2, 3]
     if (Std.is(value, Array)), do: nil
     num = "123"
-    _int_value = (case Integer.parse(num) do
-      {num, _} -> num
-      :error -> nil
-    end)
+    _int_value = Reflaxe.Elixir.HaxeInt.parse(num)
     _float_value = Reflaxe.Elixir.HaxeFloat.parse("3.14")
     nil
   end

@@ -2,6 +2,11 @@ interface ResultCallback {
 	function callbackValue(input:Int):Int;
 }
 
+enum ResultFlag {
+	First;
+	Second;
+}
+
 @:native("NativeResultCases")
 class ResultCases implements ResultCallback {
 	public function new() {}
@@ -103,5 +108,32 @@ class Main {
 			throw "loop result carrier lost";
 		if (cases.callbackValue(6) != 7)
 			throw "callback result lost";
+
+		var flags = new haxe.EnumFlags<ResultFlag>();
+		flags = new haxe.EnumFlags<ResultFlag>(1);
+		if (!flags.has(First))
+			throw "statements after an inline abstract reassignment were dropped";
+		flags.set(Second);
+		if (!flags.has(Second))
+			throw "statements after an inline abstract mutation were dropped";
+
+		var unsignedCounter:UInt = -1;
+		if ((unsignedCounter++ : Int) != -1)
+			throw "inline abstract post-increment returned the wrong prior value";
+		if ((unsignedCounter : Int) != 0)
+			throw "inline abstract post-increment did not rebind its caller";
+
+		var old = 99;
+		unsignedCounter = -1;
+		if (identityInt((unsignedCounter++ : Int)) != -1)
+			throw "function argument post-increment returned the wrong prior value";
+		if ((unsignedCounter : Int) != 0)
+			throw "function argument post-increment did not rebind its caller";
+		if (old != 99)
+			throw "inline abstract temporary escaped into the caller";
+	}
+
+	static function identityInt(value:Int):Int {
+		return value;
 	}
 }

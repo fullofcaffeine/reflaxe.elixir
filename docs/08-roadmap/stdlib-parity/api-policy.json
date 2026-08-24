@@ -244,28 +244,38 @@
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
       "supportState": "partial",
-      "evidenceState": "missing",
-      "evidence": [],
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/Std.unit.hx",
+          "selector": "Std.unit.hx"
+        }
+      ],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.3.9",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream spec exists; enable after target string/parse/cast edge cases are triaged. The core value-utility task owns the remaining APIs. The reflection and graph-serialization task owns the remaining APIs."
+      "reviewNote": "The adapted upstream suite covers scalar parsing, formatting, numeric conversion, random bounds, class checks, and class downcasts. Interface identity and downcasts remain owned by the reflection task."
     },
     {
       "module": "StdTypes",
       "surfaceDigest": "8b56fedab40d67bf8526b83813e3e1f224037b38925111d76692ca56b18fdf73",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testStdTypesIteratorsAndCoreValues"
+        }
+      ],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet. The core value-utility task owns the remaining APIs."
+      "reviewNote": "Local Haxe-authored runtime tests cover primitive values and structural iterator contracts. ArrayAccess is an extern-only compile contract, and Single is not part of the portable Elixir profile."
     },
     {
       "module": "String",
@@ -359,14 +369,19 @@
       "surfaceDigest": "00ab1b0413093d37a6a84424532278062ddfb543502012052c83e4c0016bb507",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testUnsignedAndSigned32BitWidthContracts"
+        }
+      ],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists. The core value-utility task owns the remaining APIs."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover unsigned comparison, conversion, wrapping arithmetic, bit operations, shifts, and post-increment rebinding."
     },
     {
       "module": "UnicodeString",
@@ -420,14 +435,19 @@
       "surfaceDigest": "78ff19a5ff457018162d6b92ff567cd8c05a432c18cb40efea3b15f6a205537d",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testConstraintTypes"
+        }
+      ],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib fallback is used unchanged for compile-time Function/IMap constraints, and local Haxe-authored ExUnit tests cover Function calls plus IMap values crossing through the Reflaxe.Elixir.IMap runtime boundary. The core value-utility task owns the remaining APIs."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored tests cover generic constraints, Function calls, typed IMap operations, and the native-map runtime boundary."
     },
     {
       "module": "haxe.DynamicAccess",
@@ -467,28 +487,38 @@
       "surfaceDigest": "ea04c0db0fcd27ed4005a93cb2bf8d22f8f3c432841be87b7c61c3b59df4b6e4",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/haxe/EnumFlags.unit.hx",
+          "selector": "haxe/EnumFlags.unit.hx"
+        }
+      ],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; official Haxe abstract fallback is used unchanged, while dynamic flag operations lower through typed Type.enumIndex metadata. Local Haxe-authored ExUnit tests cover set, unset, setTo, has, ofInt, and toInt behavior. The core value-utility task owns the remaining APIs."
+      "reviewNote": "The unchanged official Haxe suite covers construction, high-bit flags, set, unset, setTo, and has. Local Haxe-authored runtime tests also cover ofInt and toInt."
     },
     {
       "module": "haxe.EnumTools",
       "surfaceDigest": "fde0eab56c28d6abf525aef8216dd4d952076d91c58cddf33f9879f001715d4d",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEnumToolsFallbackUsesTypeReflection"
+        }
+      ],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; official Haxe extern inline fallback is used unchanged, while typed Type enum reflection lowers through generated enum metadata. Local Haxe-authored ExUnit tests cover getConstructors, createByName, createByIndex, createAll, EnumValueTools name/index/params, and equality. The core value-utility task owns the remaining APIs."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover all EnumTools and EnumValueTools operations through generated typed enum metadata."
     },
     {
       "module": "haxe.Exception",
@@ -524,42 +554,57 @@
       "surfaceDigest": "9ec61240c9b9c2547cfeba1fefacf5aad9ecf7aef723f675045e82a6cd35be4a",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testUnsignedAndSigned32BitWidthContracts"
+        }
+      ],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet. The core value-utility task owns the remaining APIs."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover signed 32-bit overflow, unsigned shifts, and unsigned comparison."
     },
     {
       "module": "haxe.Int64",
       "surfaceDigest": "50cf34b16838524c979a05d512e4ca7286aa4a86ac466530f02819b210249349",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; signed 64-bit wrapping, parsing, high/low construction, shifts, and toInt overflow behavior are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover the full public operation surface, signed wrapping, parsing, high/low construction, shifts, and toInt overflow."
     },
     {
       "module": "haxe.Int64Helper",
       "surfaceDigest": "f69f425675acc23fbb7f3730688927e82856e0a6c7a957cd2ef7ed04bbc3614c",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; helper parsing behavior is covered through local haxe.Int64 runtime tests. The core value-utility task owns the remaining APIs."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover checked parsing and finite float conversion, including invalid and overflow inputs."
     },
     {
       "module": "haxe.Json",
@@ -1086,14 +1131,19 @@
       "surfaceDigest": "a585e062fdd9b7c7952cf4655fa7c77d3f566d2d5999a773afc44103d9f5089a",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEitherPreservesGenericPayloads"
+        }
+      ],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; official Haxe stdlib enum fallback is used unchanged and Left/Right pattern matching plus generic payload preservation are covered by local Haxe-authored ExUnit runtime tests. The core value-utility task owns the remaining APIs."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover Left and Right pattern matching and generic payload preservation."
     },
     {
       "module": "haxe.ds.EnumValueMap",
@@ -1224,14 +1274,19 @@
       "surfaceDigest": "53bb0e246e6ef4b62b9eb471b9caaef526e53de0a722c85c28c248cf80bc547b",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testOptionPatternMatchingAndPayloads"
+        }
+      ],
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.17",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; the Elixir target uses a local @:elixirIdiomatic Option enum plus OptionTools helpers, and local Haxe-authored ExUnit runtime tests cover Some/None pattern matching, helper transforms/extraction, collection helpers, and Result/null bridges. The core value-utility task owns the remaining APIs."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover Some and None pattern matching, generic payloads, and the target Option representation."
     },
     {
       "module": "haxe.ds.ReadOnlyArray",
@@ -2967,5 +3022,1468 @@
       "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
     }
   ],
-  "apiOverrides": []
+  "apiOverrides": [
+    {
+      "apiId": "haxe.Constraints::haxe.IMap::instance.clear@e71ee10164ad",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testConstraintTypes"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Constraints::haxe.IMap::instance.copy@136f07a3f94c",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testConstraintTypes"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Constraints::haxe.IMap::instance.exists@721b933a31be",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testConstraintTypes"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Constraints::haxe.IMap::instance.get@4a9882d951ff",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testConstraintTypes"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Constraints::haxe.IMap::instance.iterator@3774b8770418",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testConstraintTypes"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Constraints::haxe.IMap::instance.keys@98448a4c3a09",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testConstraintTypes"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Constraints::haxe.IMap::instance.keyValueIterator@960bbe872463",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testConstraintTypes"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Constraints::haxe.IMap::instance.remove@40bcba170235",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testConstraintTypes"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Constraints::haxe.IMap::instance.set@7236444094b3",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testConstraintTypes"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Constraints::haxe.IMap::instance.toString@8cc1d86f1d9c",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testConstraintTypes"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Constraints::type:haxe.Constructible@b0fcaa3aeffe",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testConstraintTypes"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Constraints::type:haxe.FlatEnum@2551f0c17a61",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testConstraintTypes"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Constraints::type:haxe.Function@d0d6e00ca210",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testConstraintsFunctionAliasCallMethod"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Constraints::type:haxe.IMap@fda479009fd3",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testConstraintTypes"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Constraints::type:haxe.NotVoid@cd7299a7585a",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testConstraintTypes"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this generic constraint or typed map operation on BEAM."
+    },
+    {
+      "apiId": "haxe.ds.Either::haxe.ds.Either::constructor.Left@31c093f5c55e",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEitherPreservesGenericPayloads"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this constructor and generic payload behavior on BEAM."
+    },
+    {
+      "apiId": "haxe.ds.Either::haxe.ds.Either::constructor.Right@7189660f42ad",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEitherPreservesGenericPayloads"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this constructor and generic payload behavior on BEAM."
+    },
+    {
+      "apiId": "haxe.ds.Either::type:haxe.ds.Either@da627ac4b5d6",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEitherPreservesGenericPayloads"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this constructor and generic payload behavior on BEAM."
+    },
+    {
+      "apiId": "haxe.ds.Option::haxe.ds.Option::constructor.None@8cee1ff6f776",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testOptionPatternMatchingAndPayloads"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this constructor and generic payload behavior on BEAM."
+    },
+    {
+      "apiId": "haxe.ds.Option::haxe.ds.Option::constructor.Some@be54cef18646",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testOptionPatternMatchingAndPayloads"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this constructor and generic payload behavior on BEAM."
+    },
+    {
+      "apiId": "haxe.ds.Option::type:haxe.ds.Option@fb848fcca9b4",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testOptionPatternMatchingAndPayloads"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this constructor and generic payload behavior on BEAM."
+    },
+    {
+      "apiId": "haxe.EnumFlags::haxe.EnumFlags::constructor.new@dc7ba9758019",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEnumFlagsFallbackUsesEnumIndices"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this enum flag operation on BEAM."
+    },
+    {
+      "apiId": "haxe.EnumFlags::haxe.EnumFlags::instance.has@9d455e29510c",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEnumFlagsFallbackUsesEnumIndices"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this enum flag operation on BEAM."
+    },
+    {
+      "apiId": "haxe.EnumFlags::haxe.EnumFlags::instance.set@7f5effc5db0d",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEnumFlagsFallbackUsesEnumIndices"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this enum flag operation on BEAM."
+    },
+    {
+      "apiId": "haxe.EnumFlags::haxe.EnumFlags::instance.setTo@39e7ed2e2b4e",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEnumFlagsFallbackUsesEnumIndices"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this enum flag operation on BEAM."
+    },
+    {
+      "apiId": "haxe.EnumFlags::haxe.EnumFlags::instance.toInt@cb2cac62e4b6",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEnumFlagsFallbackUsesEnumIndices"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this enum flag operation on BEAM."
+    },
+    {
+      "apiId": "haxe.EnumFlags::haxe.EnumFlags::instance.unset@73061b14bfba",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEnumFlagsFallbackUsesEnumIndices"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this enum flag operation on BEAM."
+    },
+    {
+      "apiId": "haxe.EnumFlags::haxe.EnumFlags::static.ofInt@3c82f129ae33",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEnumFlagsFallbackUsesEnumIndices"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this enum flag operation on BEAM."
+    },
+    {
+      "apiId": "haxe.EnumFlags::type:haxe.EnumFlags@9b5e7448ecab",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEnumFlagsFallbackUsesEnumIndices"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this enum flag operation on BEAM."
+    },
+    {
+      "apiId": "haxe.EnumTools::haxe.EnumTools::static.createAll@7c5a6bd50075",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEnumToolsFallbackUsesTypeReflection"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this typed enum metadata operation on BEAM."
+    },
+    {
+      "apiId": "haxe.EnumTools::haxe.EnumTools::static.createByIndex@e0183fb97339",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEnumToolsFallbackUsesTypeReflection"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this typed enum metadata operation on BEAM."
+    },
+    {
+      "apiId": "haxe.EnumTools::haxe.EnumTools::static.createByName@8e9030d1d71a",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEnumToolsFallbackUsesTypeReflection"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this typed enum metadata operation on BEAM."
+    },
+    {
+      "apiId": "haxe.EnumTools::haxe.EnumTools::static.getConstructors@0448832f9585",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEnumToolsFallbackUsesTypeReflection"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this typed enum metadata operation on BEAM."
+    },
+    {
+      "apiId": "haxe.EnumTools::haxe.EnumTools::static.getName@cca94843b544",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEnumToolsFallbackUsesTypeReflection"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this typed enum metadata operation on BEAM."
+    },
+    {
+      "apiId": "haxe.EnumTools::haxe.EnumValueTools::static.equals@41008954c0dc",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEnumToolsFallbackUsesTypeReflection"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this typed enum metadata operation on BEAM."
+    },
+    {
+      "apiId": "haxe.EnumTools::haxe.EnumValueTools::static.getIndex@ed969443d955",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEnumToolsFallbackUsesTypeReflection"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this typed enum metadata operation on BEAM."
+    },
+    {
+      "apiId": "haxe.EnumTools::haxe.EnumValueTools::static.getName@586d291f23a2",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEnumToolsFallbackUsesTypeReflection"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this typed enum metadata operation on BEAM."
+    },
+    {
+      "apiId": "haxe.EnumTools::haxe.EnumValueTools::static.getParameters@e879a5865ac3",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEnumToolsFallbackUsesTypeReflection"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this typed enum metadata operation on BEAM."
+    },
+    {
+      "apiId": "haxe.EnumTools::type:haxe.EnumTools@9eef6407cca0",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEnumToolsFallbackUsesTypeReflection"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this typed enum metadata operation on BEAM."
+    },
+    {
+      "apiId": "haxe.EnumTools::type:haxe.EnumValueTools@b7dfca068148",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testEnumToolsFallbackUsesTypeReflection"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this typed enum metadata operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int32::haxe.Int32::static.ucompare@1d3a855fb4dd",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testUnsignedAndSigned32BitWidthContracts"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves signed 32-bit width and unsigned comparison behavior on BEAM."
+    },
+    {
+      "apiId": "haxe.Int32::type:haxe.Int32@6f165ecc7e55",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testUnsignedAndSigned32BitWidthContracts"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves signed 32-bit width and unsigned comparison behavior on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::instance.copy@726dade3c618",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::instance.high@87b30b941a93",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64HighLowRoundTrip"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::instance.low@869a9ef73415",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64HighLowRoundTrip"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.add@508a6a75279f",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.and@db4bcdcdce39",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.compare@1e4a3139efcf",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.div@08ebc0941f14",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.divMod@8c9e77aeff7a",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.eq@26a8a2080847",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.fromFloat@e48a5517427b",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.getHigh@406880cb3eb0",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.getLow@7b20d9bc24d1",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.is@1dd279e86668",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.isInt64@89f3b927bce6",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.isNeg@7bbdf080e061",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.isZero@2ac0851443ad",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.make@80c188279db2",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.mod@7ba35eb52db3",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.mul@b4c0354bc7ab",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.neg@31cdd9560b9c",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.neq@a46aa57cd109",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.ofInt@fabf029cbac9",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.or@8987c379791c",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.parseString@d2bdfdca2aa1",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.shl@cbf29f93bdac",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.shr@01c087ff4dec",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.sub@8fde08220ffa",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.toInt@380106fc95bc",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64ToIntOverflowRaises"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.toStr@ec09066a11f5",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.ucompare@a3b7c4dde39e",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.ushr@227590449c98",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::haxe.Int64::static.xor@87783419a629",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64::type:haxe.Int64@73b3714c5a91",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this signed 64-bit operation on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64Helper::haxe.Int64Helper::static.fromFloat@4b455d5a10a8",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves checked parsing and float conversion on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64Helper::haxe.Int64Helper::static.parseString@f2438db4d8bf",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves checked parsing and float conversion on BEAM."
+    },
+    {
+      "apiId": "haxe.Int64Helper::type:haxe.Int64Helper@70d224596ada",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testInt64PublicOperationSurface"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves checked parsing and float conversion on BEAM."
+    },
+    {
+      "apiId": "Std::Std::static.downcast@57bb16b9ce7c",
+      "supportState": "partial",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/upstream_unitstd/upstream/Std.unit.hx",
+          "selector": "Std.downcast"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3.9"
+      ],
+      "reviewNote": "Class and scalar behavior passes on BEAM. Interface identity remains with the reflection task."
+    },
+    {
+      "apiId": "Std::Std::static.instance@e154fb982a53",
+      "supportState": "partial",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testStdCompatibilityAliases"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3.9"
+      ],
+      "reviewNote": "Class and scalar behavior passes on BEAM. Interface identity remains with the reflection task."
+    },
+    {
+      "apiId": "Std::Std::static.int@df236c8b69d3",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/upstream_unitstd/upstream/Std.unit.hx",
+          "selector": "Std.int"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The adapted official Haxe test proves this scalar Std operation on BEAM."
+    },
+    {
+      "apiId": "Std::Std::static.is@39b476982fc1",
+      "supportState": "partial",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testStdCompatibilityAliases"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3.9"
+      ],
+      "reviewNote": "Class and scalar behavior passes on BEAM. Interface identity remains with the reflection task."
+    },
+    {
+      "apiId": "Std::Std::static.isOfType@d905ace187a2",
+      "supportState": "partial",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/upstream_unitstd/upstream/Std.unit.hx",
+          "selector": "Std.isOfType"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3.9"
+      ],
+      "reviewNote": "Class and scalar behavior passes on BEAM. Interface identity remains with the reflection task."
+    },
+    {
+      "apiId": "Std::Std::static.parseFloat@6aaf8e281a32",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/upstream_unitstd/upstream/Std.unit.hx",
+          "selector": "Std.parseFloat"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The adapted official Haxe test proves this scalar Std operation on BEAM."
+    },
+    {
+      "apiId": "Std::Std::static.parseInt@d4737a387e31",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/upstream_unitstd/upstream/Std.unit.hx",
+          "selector": "Std.parseInt"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The adapted official Haxe test proves this scalar Std operation on BEAM."
+    },
+    {
+      "apiId": "Std::Std::static.random@21266e106611",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/upstream_unitstd/upstream/Std.unit.hx",
+          "selector": "Std.random"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The adapted official Haxe test proves this scalar Std operation on BEAM."
+    },
+    {
+      "apiId": "Std::Std::static.string@9b25fa4fb063",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/upstream_unitstd/upstream/Std.unit.hx",
+          "selector": "Std.string"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The adapted official Haxe test proves this scalar Std operation on BEAM."
+    },
+    {
+      "apiId": "Std::type:Std@fa3746a737b1",
+      "supportState": "partial",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/UpstreamCoreUnitStdTest.hx",
+          "selector": "class UpstreamCoreUnitStdTest"
+        }
+      ],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.3.9"
+      ],
+      "reviewNote": "Class and scalar behavior passes on BEAM. Interface identity remains with the reflection task."
+    },
+    {
+      "apiId": "StdTypes::Iterable::typedef-field.iterator@0273ddd74835",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testStdTypesIteratorsAndCoreValues"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM."
+    },
+    {
+      "apiId": "StdTypes::Iterator::typedef-field.hasNext@73d9f6b30e39",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testStdTypesIteratorsAndCoreValues"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM."
+    },
+    {
+      "apiId": "StdTypes::Iterator::typedef-field.next@9469b30b3057",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testStdTypesIteratorsAndCoreValues"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM."
+    },
+    {
+      "apiId": "StdTypes::KeyValueIterable::typedef-field.keyValueIterator@de7282111f18",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testStdTypesIteratorsAndCoreValues"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM."
+    },
+    {
+      "apiId": "StdTypes::type:ArrayAccess@794a475b7f75",
+      "supportState": "supported",
+      "evidenceState": "missing",
+      "evidence": [],
+      "blockers": [
+        "haxe.elixir.codex-0yn.10.5"
+      ],
+      "reviewNote": "ArrayAccess is an extern-only compile contract. The kept acceptArrayAccess boundary proves typing; no runtime value can be constructed."
+    },
+    {
+      "apiId": "StdTypes::type:Bool@f19a9348729c",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testStdTypesIteratorsAndCoreValues"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM."
+    },
+    {
+      "apiId": "StdTypes::type:Dynamic@a2abed20e60b",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testStdTypesIteratorsAndCoreValues"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM."
+    },
+    {
+      "apiId": "StdTypes::type:Float@309c01ba94ab",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testStdTypesIteratorsAndCoreValues"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM."
+    },
+    {
+      "apiId": "StdTypes::type:Int@b7fcf0b891a8",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testStdTypesIteratorsAndCoreValues"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM."
+    },
+    {
+      "apiId": "StdTypes::type:Iterable@cbdc523c27ce",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testStdTypesIteratorsAndCoreValues"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM."
+    },
+    {
+      "apiId": "StdTypes::type:Iterator@5e5d016ac324",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testStdTypesIteratorsAndCoreValues"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM."
+    },
+    {
+      "apiId": "StdTypes::type:KeyValueIterable@ec9d6703c7f7",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testStdTypesIteratorsAndCoreValues"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM."
+    },
+    {
+      "apiId": "StdTypes::type:KeyValueIterator@0214fad63c99",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testStdTypesIteratorsAndCoreValues"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM."
+    },
+    {
+      "apiId": "StdTypes::type:Null@41d16b7e37ef",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testStdTypesIteratorsAndCoreValues"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM."
+    },
+    {
+      "apiId": "StdTypes::type:Void@d309ae243fba",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testStdTypesIteratorsAndCoreValues"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves this portable type or structural operation on BEAM."
+    },
+    {
+      "apiId": "UInt::type:UInt@5889f4f391fc",
+      "supportState": "supported",
+      "evidenceState": "api-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-runtime",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testUnsignedAndSigned32BitWidthContracts"
+        }
+      ],
+      "blockers": [],
+      "reviewNote": "The named Haxe test proves unsigned 32-bit value behavior on BEAM."
+    }
+  ]
 }

@@ -3,18 +3,9 @@ defmodule Main do
     _float_str = Reflaxe.Elixir.HaxeFloat.to_string(3.14)
     _null_str = Reflaxe.Elixir.HaxeFloat.to_string(nil)
     _array_str = Reflaxe.Elixir.HaxeFloat.to_string([1, 2, 3])
-    _parsed1 = (case Integer.parse("123") do
-      {num, _} -> num
-      :error -> nil
-    end)
-    _parsed2 = (case Integer.parse("456abc") do
-      {num, _} -> num
-      :error -> nil
-    end)
-    _parsed3 = (case Integer.parse("not a number") do
-      {num, _} -> num
-      :error -> nil
-    end)
+    _ = Reflaxe.Elixir.HaxeInt.parse("123")
+    _ = Reflaxe.Elixir.HaxeInt.parse("456abc")
+    _ = Reflaxe.Elixir.HaxeInt.parse("not a number")
     _ = Reflaxe.Elixir.HaxeFloat.parse("3.14")
     _ = Reflaxe.Elixir.HaxeFloat.parse("2.71828")
     _ = Reflaxe.Elixir.HaxeFloat.parse("invalid")
@@ -37,14 +28,8 @@ defmodule Main do
       std_random_max when std_random_max <= 0 -> 0
       std_random_max -> (:rand.uniform(std_random_max) - 1)
     end)
-    _int_max = (case Integer.parse("2147483647") do
-      {num, _} -> num
-      :error -> nil
-    end)
-    _int_min = (case Integer.parse("-2147483648") do
-      {num, _} -> num
-      :error -> nil
-    end)
+    _int_max = Reflaxe.Elixir.HaxeInt.parse("2147483647")
+    _int_min = Reflaxe.Elixir.HaxeInt.parse("-2147483648")
     _float_inf = Reflaxe.Elixir.HaxeFloat.parse("Infinity")
     float_neg_inf = Reflaxe.Elixir.HaxeFloat.parse("-Infinity")
     float_neg_inf

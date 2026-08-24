@@ -28,6 +28,8 @@ class Main {
 		// Test with enums
 		var option = Some("value");
 		var optionStr = Std.string(option);
+		if (optionStr != "Some(value)")
+			throw 'local enum formatting failed: $optionStr';
 
 		trace("String conversions:");
 		trace('  Int: $intStr');

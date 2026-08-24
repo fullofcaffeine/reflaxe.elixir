@@ -76,6 +76,7 @@ haxe_test_sources = [
 
 haxe_test_modules = [
   "stdlib_parity.StdlibParityTest",
+  "stdlib_parity.UpstreamCoreUnitStdTest",
   "stdlib_parity.UpstreamUnitStdTest",
   "live_react_test.HaxePhoenixLiveReactTest",
   "live_react_test.MixTaskOptionsTest"
@@ -94,6 +95,9 @@ if missing_haxe_test_sources == [] do
   File.mkdir_p!(generated_dir)
 
   haxe_bin = System.get_env("HAXE_PATH") || "haxe"
+  # Keep the default CI cap, but let a loaded interactive host use a larger
+  # bounded cap without changing the generated tests or starting a Haxe server.
+  haxe_compile_timeout = System.get_env("HAXE_EXUNIT_COMPILE_TIMEOUT_SECS") || "240"
   timeout_script = Path.join(project_root, "scripts/with-timeout.sh")
   bash_bin = System.find_executable("bash") || "bash"
 
@@ -105,7 +109,7 @@ if missing_haxe_test_sources == [] do
       [
         timeout_script,
         "--secs",
-        "240",
+        haxe_compile_timeout,
         "--",
         haxe_bin
       ] ++
@@ -147,6 +151,7 @@ if missing_haxe_test_sources == [] do
     "reflaxe/exception.ex",
     "reflaxe/elixir/haxe_throw.ex",
     "reflaxe/elixir/haxe_float.ex",
+    "reflaxe/elixir/haxe_int.ex",
     "type.ex",
     "reflect.ex",
     "std.ex",

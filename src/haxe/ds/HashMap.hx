@@ -87,7 +87,7 @@ class HashMap<K:{function hashCode():Int;}, V> implements IMap<K, V> {
 		', entries));
 	}
 
-	public function copy():IMap<K, V> {
+	public function copy():HashMap<K, V> {
 		return new HashMap<K, V>(entries);
 	}
 

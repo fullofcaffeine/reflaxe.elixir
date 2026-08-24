@@ -251,10 +251,7 @@ defmodule Main do
   end
   def try_as_expression() do
     value = try do
-      parsed = (case Integer.parse("123") do
-        {num, _} -> num
-        :error -> nil
-      end)
+      parsed = Reflaxe.Elixir.HaxeInt.parse("123")
       if (Kernel.is_nil(parsed)) do
         raise Reflaxe.Elixir.HaxeThrow, [value: "parseInt failed"]
       end
@@ -273,10 +270,7 @@ defmodule Main do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Assertion failed: tryAsExpression parseInt(123) (expected " <> Reflaxe.Elixir.HaxeFloat.to_string(123) <> ", got " <> Reflaxe.Elixir.HaxeFloat.to_string(value) <> ")"]
     end
     value_value = try do
-      parsed = (case Integer.parse("not a number") do
-        {num, _} -> num
-        :error -> nil
-      end)
+      parsed = Reflaxe.Elixir.HaxeInt.parse("not a number")
       if (Kernel.is_nil(parsed)) do
         raise Reflaxe.Elixir.HaxeThrow, [value: "parseInt failed"]
       end

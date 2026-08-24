@@ -215,7 +215,7 @@ get_failed_tests() {
 # Function to run tests
 run_tests() {
     local make_target=""
-    local make_vars=""
+    local make_vars="TIMEOUT=${TIMEOUT}s"
     local make_args="-j$PARALLEL"
     
     # Determine what tests to run
@@ -255,7 +255,7 @@ run_tests() {
     elif [ -n "$PATTERN" ]; then
         echo -e "${YELLOW}Running tests matching pattern: $PATTERN${RESET}"
         make_target="test-pattern"
-        make_vars="PATTERN=$PATTERN"
+        make_vars="$make_vars PATTERN=$PATTERN"
     else
         echo -e "${YELLOW}Running all tests...${RESET}"
         make_target="all"

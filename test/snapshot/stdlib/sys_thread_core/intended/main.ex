@@ -46,7 +46,7 @@ defmodule Main do
       {:now} -> nil
       _ ->
         other = apply(Map.get(loop, :__reflaxe_class__) || Map.get(loop, :__struct__), :progress, [loop])
-        raise Reflaxe.Elixir.HaxeThrow, [value: "EventLoop progress should return Now, got " <> Reflaxe.Elixir.HaxeFloat.to_string(other)]
+        raise Reflaxe.Elixir.HaxeThrow, [value: "EventLoop progress should return Now, got " <> Reflaxe.Elixir.HaxeFloat.enum_to_string(Sys.Thread.NextEventTime, other)]
     end)
     if (Reflaxe.Elixir.HaxeFloat.neq(Sys.Thread.Thread.read_message(true), "loop-ran")) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "EventLoop run did not execute callback"]

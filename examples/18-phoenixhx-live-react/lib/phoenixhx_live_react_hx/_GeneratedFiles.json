@@ -3,6 +3,7 @@
 		"string_tools.ex",
 		"reflaxe/exception.ex",
 		"reflaxe/elixir/haxe_throw.ex",
+		"reflaxe/elixir/haxe_int.ex",
 		"reflaxe/elixir/haxe_float.ex",
 		"phoenixhx_live_react_web/signal_console_live.ex",
 		"phoenixhx_live_react_web/react_islands/signal_console.ex",
@@ -28,7 +29,7 @@
 		"e_reg.ex"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 67,
+	"id": 69,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
@@ -122,7 +123,11 @@
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.ex",
-			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+			"sha256": "6786d5bfb513f44365615186bd6c8f2589222501729873f517d82d2ee23822f4"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_int.ex",
+			"sha256": "61392d67ec3807b64ea717b125498909d6fb903f8600b77dc18a17a65a955515"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_throw.ex",
@@ -137,5 +142,5 @@
 			"sha256": "b174b046cee6138603fade8a7baa097e869d67f66a86afdebda3449b28d3b153"
 		}
 	],
-	"generation": "648785d39729cebf0939ba52a25e9b400aae93764c808b21d06f6d82bfef4af6"
+	"generation": "1875655c0d0c43a206bc378df71b791ce6b019151a6a82559dcef22300b299e6"
 }

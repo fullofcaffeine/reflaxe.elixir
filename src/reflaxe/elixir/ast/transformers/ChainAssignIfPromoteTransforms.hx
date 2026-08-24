@@ -42,6 +42,8 @@ class ChainAssignIfPromoteTransforms {
 	}
 
 	static inline function isElseVar(elseE:ElixirAST, name:String):Bool {
+		if (elseE == null)
+			return false;
 		return switch (elseE.def) {
 			case EVar(v) if (v == name): true;
 			default: false;

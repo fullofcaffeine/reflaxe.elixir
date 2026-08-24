@@ -50,8 +50,10 @@ done
 if [[ -n "$CWD" ]]; then cd "$CWD"; fi
 
 # Start command in a new process group when possible
+EXPECT_ISOLATION=0
 start_cmd() {
   if command -v python3 >/dev/null 2>&1 && command -v setsid >/dev/null 2>&1; then
+    EXPECT_ISOLATION=1
     # On setsid-capable hosts, own a full session so descendants cannot escape
     # the deadline merely by creating another process group.
     if [[ "$QUIET" -eq 1 ]]; then
@@ -60,6 +62,7 @@ start_cmd() {
       python3 -c 'import os,signal,sys; signal.signal(signal.SIGINT, signal.SIG_DFL); signal.signal(signal.SIGQUIT, signal.SIG_DFL); os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' "${CMD[@]}" &
     fi
   elif command -v python3 >/dev/null 2>&1; then
+    EXPECT_ISOLATION=1
     # Reset signals that shells commonly ignore for asynchronous children, then
     # create the process group used for timeout and interactive-signal cleanup.
     if [[ "$QUIET" -eq 1 ]]; then
@@ -68,6 +71,7 @@ start_cmd() {
       python3 -c 'import os,signal,sys; signal.signal(signal.SIGINT, signal.SIG_DFL); signal.signal(signal.SIGQUIT, signal.SIG_DFL); os.setpgrp(); os.execvp(sys.argv[1], sys.argv[1:])' "${CMD[@]}" &
     fi
   elif command -v setsid >/dev/null 2>&1; then
+    EXPECT_ISOLATION=1
     # Fallback for minimal systems without Python.
     if [[ "$QUIET" -eq 1 ]]; then
       setsid "${CMD[@]}" >/dev/null 2>&1 &
@@ -86,12 +90,27 @@ start_cmd() {
 
 start_cmd
 CMD_PID=$!
-# Determine process group id of child and our own
-PGID_CHILD="$(ps -o pgid= "$CMD_PID" 2>/dev/null | tr -d ' ')" || PGID_CHILD=""
+# Determine our identity first, then wait briefly for the launcher to isolate
+# the child. Reading immediately can capture this wrapper's process group
+# before Python calls setsid() or setpgrp().
 PGID_SELF="$(ps -o pgid= $$ 2>/dev/null | tr -d ' ')" || PGID_SELF=""
-# Session id of child (BSD/macOS uses 'sess')
-SESS_CHILD="$(ps -o sess= "$CMD_PID" 2>/dev/null | tr -d ' ')" || SESS_CHILD=""
 SESS_SELF="$(ps -o sess= $$ 2>/dev/null | tr -d ' ')" || SESS_SELF=""
+PGID_CHILD=""
+SESS_CHILD=""
+identity_deadline=$((SECONDS + 2))
+while true; do
+  PGID_CHILD="$(ps -o pgid= "$CMD_PID" 2>/dev/null | tr -d ' ')" || PGID_CHILD=""
+  # Session id of child (BSD/macOS uses 'sess').
+  SESS_CHILD="$(ps -o sess= "$CMD_PID" 2>/dev/null | tr -d ' ')" || SESS_CHILD=""
+  if [[ "$EXPECT_ISOLATION" -eq 0 ]] \
+    || [[ -n "$SESS_CHILD" && "$SESS_CHILD" != "0" && "$SESS_CHILD" != "$SESS_SELF" ]] \
+    || [[ -n "$PGID_CHILD" && "$PGID_CHILD" != "0" && "$PGID_CHILD" != "$PGID_SELF" ]] \
+    || ! kill -0 "$CMD_PID" 2>/dev/null \
+    || (( SECONDS >= identity_deadline )); then
+    break
+  fi
+  sleep 0.02 || true
+done
 if [[ "$ECHO" -eq 1 ]]; then
   echo "[timeout] pids: cmd_pid=${CMD_PID} pgid_child=${PGID_CHILD:-?} pgid_self=${PGID_SELF:-?} sess_child=${SESS_CHILD:-?}" >&2
 fi
@@ -202,14 +221,13 @@ trap 'forward_external_signal TERM 143' TERM
 # from bash when the watchdog is signaled in non-interactive environments.
 (
   interval="0.2"
-  ticks="$(( SECS * 5 ))"
+  deadline="$(( SECONDS + SECS ))"
 
-  while [[ "$ticks" -gt 0 ]]; do
+  while (( SECONDS < deadline )); do
     if ! kill -0 "$CMD_PID" 2>/dev/null; then
       exit 0
     fi
     sleep "$interval" || true
-    ticks="$(( ticks - 1 ))"
   done
 
   if kill -0 "$CMD_PID" 2>/dev/null; then
