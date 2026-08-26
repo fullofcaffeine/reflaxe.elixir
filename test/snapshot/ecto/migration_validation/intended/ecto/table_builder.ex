@@ -25,7 +25,7 @@ defmodule TableBuilder do
   end
   def add_reference(struct, column_name, referenced_table, options_param \\ nil) do
     column_options = nil
-    column_options = if (not Kernel.is_nil(options_param)), do: %{nullable: false, on_delete: options_param.on_delete, on_update: options_param.on_update}, else: column_options
+    column_options = if (not Kernel.is_nil(options_param)), do: %{nullable: false, on_delete: Map.get(options_param, :on_delete), on_update: Map.get(options_param, :on_update)}, else: column_options
     apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :add_column, [struct, column_name, {:references, referenced_table}, column_options])
     struct
   end

@@ -4,6 +4,7 @@ package reflaxe.elixir.ast.builders;
 import haxe.macro.Type;
 import haxe.macro.Expr;
 import haxe.macro.Context;
+import haxe.io.Path;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
@@ -52,6 +53,8 @@ import reflaxe.elixir.ast.NameUtils;
  */
 @:nullSafety(Off)
 class ObjectBuilder {
+	static var compilerSourceRoot:Null<String>;
+
 	/**
 	 * Build object declaration with pattern detection
 	 * 
@@ -336,6 +339,7 @@ class ObjectBuilder {
 	 */
 	static function buildRegularMap(fields:Array<{name:String, expr:TypedExpr}>, context:CompilationContext):ElixirASTDef {
 		var pairs = [];
+		var isPosInfos = hasField(fields, "fileName") && hasField(fields, "lineNumber") && hasField(fields, "className") && hasField(fields, "methodName");
 
 		for (field in fields) {
 			// Convert camelCase field names to snake_case for Elixir atoms
@@ -343,12 +347,20 @@ class ObjectBuilder {
 			var key = makeAST(EAtom(atomName));
 
 			// Handle field value with null coalescing detection
-			var fieldValue = handleFieldValue(field, context);
+			var fieldValue = handleFieldValue(field, context, isPosInfos);
 
 			pairs.push({key: key, value: fieldValue});
 		}
 
 		return EMap(pairs);
+	}
+
+	static function hasField(fields:Array<{name:String, expr:TypedExpr}>, name:String):Bool {
+		for (field in fields) {
+			if (field.name == name)
+				return true;
+		}
+		return false;
 	}
 
 	/**
@@ -358,9 +370,19 @@ class ObjectBuilder {
 	 * WHAT: Detect and transform null coalescing to inline if
 	 * HOW: Pattern match on TBlock structure
 	 */
-	static function handleFieldValue(field:{name:String, expr:TypedExpr}, context:CompilationContext):ElixirAST {
+	static function handleFieldValue(field:{name:String, expr:TypedExpr}, context:CompilationContext, isPosInfos:Bool):ElixirAST {
 		if (BlockBuilder.isNativeMapConstructorExpression(field.expr)) {
 			return makeAST(EMap([]));
+		}
+
+		if (isPosInfos && field.name == "fileName") {
+			switch (field.expr.expr) {
+				case TConst(TString(path)):
+					var normalizedPath = normalizePackagedTargetStdPosition(path);
+					if (normalizedPath != path)
+						return makeAST(EString(normalizedPath));
+				default:
+			}
 		}
 
 		switch (field.expr.expr) {
@@ -416,6 +438,41 @@ class ObjectBuilder {
 				// Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
 				return reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(field.expr, context);
 		}
+	}
+
+	/**
+	 * Convert a packaged target-stdlib position to its source-layout name.
+	 *
+	 * Reflaxe packages `std/elixir/_std/Foo.hx` as `src/Foo.cross.hx`.
+	 * Haxe can put that installed absolute path in an implicit `PosInfos` value.
+	 * Restore the authored path so generated output is portable and matches a
+	 * source-checkout build. Paths outside this compiler package stay unchanged.
+	 */
+	static function normalizePackagedTargetStdPosition(path:String):String {
+		if (path == null || !StringTools.endsWith(path, ".cross.hx"))
+			return path;
+
+		var normalizedPath = Path.normalize(path).split("\\").join("/");
+		var sourceRoot = resolveCompilerSourceRoot();
+		if (sourceRoot == null || !StringTools.startsWith(normalizedPath, sourceRoot + "/"))
+			return path;
+
+		var relativePath = normalizedPath.substr(sourceRoot.length + 1);
+		return "elixir/_std/" + relativePath.substr(0, relativePath.length - ".cross.hx".length) + ".hx";
+	}
+
+	static function resolveCompilerSourceRoot():Null<String> {
+		if (compilerSourceRoot != null)
+			return compilerSourceRoot;
+
+		try {
+			var bootstrapPath = Path.normalize(Context.resolvePath("reflaxe/elixir/CompilerBootstrap.hx")).split("\\").join("/");
+			compilerSourceRoot = Path.directory(Path.directory(Path.directory(bootstrapPath))).split("\\").join("/");
+		} catch (_:Dynamic) {
+			return null;
+		}
+
+		return compilerSourceRoot;
 	}
 }
 #end

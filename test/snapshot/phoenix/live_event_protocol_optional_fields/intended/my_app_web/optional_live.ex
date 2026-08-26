@@ -19,10 +19,10 @@ defmodule MyAppWeb.OptionalLive do
     {:noreply, Phoenix.Component.assign(socket, :summary, summary)}
   end
   defp handle_save_profile(payload, socket) do
-    summary = if (Kernel.is_nil(payload.bio)) do
+    summary = if (Kernel.is_nil(Map.get(payload, :bio))) do
       payload.name
     else
-      "#{payload.name}:#{payload.bio}"
+      "#{payload.name}:#{Map.get(payload, :bio)}"
     end
     {:noreply, Phoenix.Component.assign(socket, :summary, summary)}
   end

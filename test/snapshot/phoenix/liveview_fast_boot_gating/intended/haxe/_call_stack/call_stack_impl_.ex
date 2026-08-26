@@ -17,7 +17,7 @@ defmodule CallStack_Impl_ do
       this1
     end
   end
-  defp stack_trace_to_haxe(stack_trace) do
+  def stack_trace_to_haxe(stack_trace) do
 
     Enum.map(stack_trace, fn
       {module, function, _arity, location} ->

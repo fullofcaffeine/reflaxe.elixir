@@ -4,13 +4,13 @@ defmodule TodoFormEvents do
       {:create_todo, payload} ->
         form_payload = %{}
         wire_payload = %{}
-        form_payload = form_payload |> Map.put("done", payload.done) |> Map.put("estimate", payload.estimate) |> Map.put("notes", payload.notes) |> Map.put("priority", payload.priority) |> Map.put("title", payload.title)
+        form_payload = form_payload |> Map.put("done", payload.done) |> Map.put("estimate", payload.estimate) |> Map.put("notes", Map.get(payload, :notes)) |> Map.put("priority", payload.priority) |> Map.put("title", payload.title)
         wire_payload = Map.put(wire_payload, "todo", form_payload)
         %{event: "create_todo", payload: wire_payload}
       {:update_form, payload} ->
         form_payload = %{}
         wire_payload = %{}
-        form_payload = form_payload |> Map.put("done", payload.done) |> Map.put("estimate", payload.estimate) |> Map.put("notes", payload.notes) |> Map.put("priority", payload.priority) |> Map.put("title", payload.title)
+        form_payload = form_payload |> Map.put("done", payload.done) |> Map.put("estimate", payload.estimate) |> Map.put("notes", Map.get(payload, :notes)) |> Map.put("priority", payload.priority) |> Map.put("title", payload.title)
         wire_payload = Map.put(wire_payload, "todo", form_payload)
         %{event: "update_form", payload: wire_payload}
       {:clear_completed} ->

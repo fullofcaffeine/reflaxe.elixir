@@ -12,7 +12,7 @@ defmodule CallStack_Impl_ do
     exception_stack = stack_trace_to_haxe(Process.get(:__reflaxe_last_stacktrace__, []))
     if (full_stack), do: exception_stack, else: subtract(exception_stack, call_stack())
   end
-  defp stack_trace_to_haxe(stack_trace) do
+  def stack_trace_to_haxe(stack_trace) do
 
     Enum.map(stack_trace, fn
       {module, function, _arity, location} ->

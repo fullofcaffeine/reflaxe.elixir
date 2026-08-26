@@ -86,7 +86,7 @@
 		},
 		{
 			"path": "elixir/types/gen_server_option_builder.ex",
-			"sha256": "87b1ba02a792ebd5cb12d8f80bc157e5689d55bd982fb592ea00ffab93e58ac8"
+			"sha256": "02932aed7b2307012c6b45d14d64e995e1146566c0082516f2f83fc152265a98"
 		},
 		{
 			"path": "elixir/types/handle_call_result.ex",
@@ -106,7 +106,7 @@
 		},
 		{
 			"path": "elixir/types/registry_options_builder.ex",
-			"sha256": "b4261b75ac3d19626dac9fb81d330bcd1040b5b0fc98bdfe0126443054022839"
+			"sha256": "d3c63b6d68d821164f879e30438269f5022a15dfc4ed4789bcee9547f96e25bc"
 		},
 		{
 			"path": "elixir/types/registry_type.ex",
@@ -114,7 +114,7 @@
 		},
 		{
 			"path": "haxe/_call_stack/call_stack_impl_.ex",
-			"sha256": "ab46ba4f786a95420ae1cd78188f77ebebc3ced2db90d1351297f573f30dadf8"
+			"sha256": "51ccde2aded2494513ee0e4df47307da4b81b76b152e144ec83f62ca98578569"
 		},
 		{
 			"path": "haxe/iterators/array_iterator.ex",
@@ -157,5 +157,5 @@
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "79b773f854e884f4673fe1cb37613fd1902a0579591a249762ce5ec3269f8b6d"
+	"generation": "e2a2d9b3e5bbd4c12ad120ebfd5150a46fffd281821c9c3020066037d82d73c8"
 }

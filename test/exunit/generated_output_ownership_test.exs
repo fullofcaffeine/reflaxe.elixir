@@ -16,6 +16,9 @@ defmodule GeneratedOutputOwnershipTest do
     {:ok, project: project, source: source, output: output}
   end
 
+  # This contract runs five complete Haxe compilations. The minimum supported
+  # toolchain can need more than ExUnit's default 60-second limit.
+  @tag timeout: 180_000
   test "publishes deterministic owned updates, legacy upgrades, namespace moves, and safe clean",
        %{
          project: project,

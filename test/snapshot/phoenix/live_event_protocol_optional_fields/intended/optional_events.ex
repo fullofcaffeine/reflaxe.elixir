@@ -8,7 +8,7 @@ defmodule OptionalEvents do
       {:save_profile, payload} ->
         form_payload = %{}
         wire_payload = %{}
-        form_payload = form_payload |> Map.put("bio", payload.bio) |> Map.put("name", payload.name)
+        form_payload = form_payload |> Map.put("bio", Map.get(payload, :bio)) |> Map.put("name", payload.name)
         wire_payload = Map.put(wire_payload, "profile", form_payload)
         %{event: "save_profile", payload: wire_payload}
     end)
