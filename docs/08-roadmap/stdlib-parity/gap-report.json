@@ -1,7 +1,7 @@
 {
   "diff": {
     "intersection": {
-      "count": 116,
+      "count": 117,
       "modules": [
         "Array",
         "Date",
@@ -35,6 +35,7 @@
         "haxe.Template",
         "haxe.Timer",
         "haxe.Unserializer",
+        "haxe.Utf8",
         "haxe.crypto.Adler32",
         "haxe.crypto.Base64",
         "haxe.crypto.BaseCode",
@@ -136,7 +137,7 @@
       ]
     },
     "reference_only": {
-      "count": 88,
+      "count": 87,
       "modules": [
         "Any",
         "Class",
@@ -154,7 +155,6 @@
         "haxe.Rest",
         "haxe.SysTools",
         "haxe.Ucs2",
-        "haxe.Utf8",
         "haxe.ValueException",
         "haxe.atomic.AtomicBool",
         "haxe.atomic.AtomicInt",
@@ -232,7 +232,7 @@
   "local": {
     "counts_by_prefix": {
       "<top-level>": 19,
-      "haxe": 72,
+      "haxe": 73,
       "sys": 34
     },
     "nonstdlib_modules_under_std_dir": [
@@ -257,10 +257,11 @@
     },
     "stdlib_roots_considered": [
       "std",
+      "std/elixir/_std",
       "src/haxe"
     ],
-    "total_candidates": 129,
-    "total_std_modules": 125
+    "total_candidates": 130,
+    "total_std_modules": 126
   },
   "reference": {
     "counts_by_prefix": {
