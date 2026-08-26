@@ -89,21 +89,21 @@
     "bySupportState": {
       "not-applicable": 1711,
       "partial": 656,
-      "supported": 262,
-      "unknown": 1004,
+      "supported": 273,
+      "unknown": 993,
       "unsupported": 59
     },
     "byEvidenceState": {
       "api-runtime": 103,
-      "missing": 1460,
-      "module-runtime": 418,
+      "missing": 1446,
+      "module-runtime": 432,
       "not-required": 1711
     },
     "byImplementationOwner": {
       "haxe-compiler": 1466,
       "haxe-other-target": 245,
-      "official-haxe-stdlib-fallback": 910,
-      "reflaxe-elixir-target": 1071
+      "official-haxe-stdlib-fallback": 905,
+      "reflaxe-elixir-target": 1076
     }
   },
   "modules": [
@@ -804,8 +804,9 @@
       },
       "implementationOwner": "reflaxe-elixir-target",
       "supportState": "partial",
-      "evidenceState": "missing",
+      "evidenceState": "module-runtime",
       "blockers": [
+        "haxe.elixir.codex-0yn.10.3.10",
         "haxe.elixir.codex-0yn.10.3.19",
         "haxe.elixir.codex-0yn.10.5"
       ]
@@ -842,11 +843,10 @@
         "other-target": 30,
         "runtime": 5
       },
-      "implementationOwner": "official-haxe-stdlib-fallback",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "implementationOwner": "reflaxe-elixir-target",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.19",
         "haxe.elixir.codex-0yn.10.5"
       ]
     },
@@ -862,10 +862,9 @@
         "runtime": 6
       },
       "implementationOwner": "official-haxe-stdlib-fallback",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.19",
         "haxe.elixir.codex-0yn.10.5"
       ]
     },
@@ -30494,13 +30493,20 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testLogFormatOutputPreservesPositionAndParameters"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.3.19",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after mutable static dynamic field hooks and closure-captured outer-local mutation semantics are implemented. The logging and stack task owns the remaining APIs.",
+        "reviewNote": "Local Haxe runtime tests cover official output formatting. A focused compiler fixture covers capture-free read, replace, call, null, native naming, and restore behavior. Full support remains blocked because the pinned upstream callback changes captured locals, which needs managed closure conversion.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Log.hx"
@@ -30576,13 +30582,20 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testLogFormatOutputPreservesPositionAndParameters"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.3.19",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after mutable static dynamic field hooks and closure-captured outer-local mutation semantics are implemented. The logging and stack task owns the remaining APIs.",
+        "reviewNote": "Local Haxe runtime tests cover official output formatting. A focused compiler fixture covers capture-free read, replace, call, null, native naming, and restore behavior. Full support remains blocked because the pinned upstream callback changes captured locals, which needs managed closure conversion.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Log.hx"
@@ -30635,13 +30648,20 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testLogFormatOutputPreservesPositionAndParameters"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.3.19",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after mutable static dynamic field hooks and closure-captured outer-local mutation semantics are implemented. The logging and stack task owns the remaining APIs.",
+        "reviewNote": "Local Haxe runtime tests cover official output formatting. A focused compiler fixture covers capture-free read, replace, call, null, native naming, and restore behavior. Full support remains blocked because the pinned upstream callback changes captured locals, which needs managed closure conversion.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Log.hx"
@@ -31414,17 +31434,27 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testNativeStackTraceConvertsAndSkipsBeamFrames"
+          },
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testNativeStackTraceSavesRescuedExceptionStack"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.19",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The logging and stack task owns the remaining APIs.",
-        "implementationOwner": "official-haxe-stdlib-fallback",
+        "reviewNote": "Haxe-authored runtime tests cover raw BEAM stack capture, saved rescue stacks, typed conversion, and frame skipping.",
+        "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "std/haxe/NativeStackTrace.hx"
+          "std/elixir/_std/haxe/NativeStackTrace.hx"
         ]
       }
     },
@@ -31660,17 +31690,27 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testNativeStackTraceConvertsAndSkipsBeamFrames"
+          },
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testNativeStackTraceSavesRescuedExceptionStack"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.19",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The logging and stack task owns the remaining APIs.",
-        "implementationOwner": "official-haxe-stdlib-fallback",
+        "reviewNote": "Haxe-authored runtime tests cover raw BEAM stack capture, saved rescue stacks, typed conversion, and frame skipping.",
+        "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "std/haxe/NativeStackTrace.hx"
+          "std/elixir/_std/haxe/NativeStackTrace.hx"
         ]
       }
     },
@@ -31959,17 +31999,27 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testNativeStackTraceConvertsAndSkipsBeamFrames"
+          },
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testNativeStackTraceSavesRescuedExceptionStack"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.19",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The logging and stack task owns the remaining APIs.",
-        "implementationOwner": "official-haxe-stdlib-fallback",
+        "reviewNote": "Haxe-authored runtime tests cover raw BEAM stack capture, saved rescue stacks, typed conversion, and frame skipping.",
+        "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "std/haxe/NativeStackTrace.hx"
+          "std/elixir/_std/haxe/NativeStackTrace.hx"
         ]
       }
     },
@@ -32103,17 +32153,27 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testNativeStackTraceConvertsAndSkipsBeamFrames"
+          },
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testNativeStackTraceSavesRescuedExceptionStack"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.19",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The logging and stack task owns the remaining APIs.",
-        "implementationOwner": "official-haxe-stdlib-fallback",
+        "reviewNote": "Haxe-authored runtime tests cover raw BEAM stack capture, saved rescue stacks, typed conversion, and frame skipping.",
+        "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "std/haxe/NativeStackTrace.hx"
+          "std/elixir/_std/haxe/NativeStackTrace.hx"
         ]
       }
     },
@@ -32489,17 +32549,27 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testNativeStackTraceConvertsAndSkipsBeamFrames"
+          },
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testNativeStackTraceSavesRescuedExceptionStack"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.19",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The logging and stack task owns the remaining APIs.",
-        "implementationOwner": "official-haxe-stdlib-fallback",
+        "reviewNote": "Haxe-authored runtime tests cover raw BEAM stack capture, saved rescue stacks, typed conversion, and frame skipping.",
+        "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "std/haxe/NativeStackTrace.hx"
+          "std/elixir/_std/haxe/NativeStackTrace.hx"
         ]
       }
     },
@@ -32609,14 +32679,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testPosInfosPreservesInjectedAndExplicitFields"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.19",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The logging and stack task owns the remaining APIs.",
+        "reviewNote": "Haxe-authored runtime tests cover compiler-injected and explicit file, line, class, method, and custom parameter fields.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/PosInfos.hx"
@@ -32657,14 +32732,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testPosInfosPreservesInjectedAndExplicitFields"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.19",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The logging and stack task owns the remaining APIs.",
+        "reviewNote": "Haxe-authored runtime tests cover compiler-injected and explicit file, line, class, method, and custom parameter fields.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/PosInfos.hx"
@@ -32703,14 +32783,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testPosInfosPreservesInjectedAndExplicitFields"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.19",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The logging and stack task owns the remaining APIs.",
+        "reviewNote": "Haxe-authored runtime tests cover compiler-injected and explicit file, line, class, method, and custom parameter fields.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/PosInfos.hx"
@@ -32749,14 +32834,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testPosInfosPreservesInjectedAndExplicitFields"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.19",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The logging and stack task owns the remaining APIs.",
+        "reviewNote": "Haxe-authored runtime tests cover compiler-injected and explicit file, line, class, method, and custom parameter fields.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/PosInfos.hx"
@@ -32795,14 +32885,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testPosInfosPreservesInjectedAndExplicitFields"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.19",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The logging and stack task owns the remaining APIs.",
+        "reviewNote": "Haxe-authored runtime tests cover compiler-injected and explicit file, line, class, method, and custom parameter fields.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/PosInfos.hx"
@@ -32855,14 +32950,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testPosInfosPreservesInjectedAndExplicitFields"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.19",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The logging and stack task owns the remaining APIs.",
+        "reviewNote": "Haxe-authored runtime tests cover compiler-injected and explicit file, line, class, method, and custom parameter fields.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/PosInfos.hx"

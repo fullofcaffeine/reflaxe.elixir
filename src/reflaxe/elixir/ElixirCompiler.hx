@@ -38,6 +38,7 @@ import reflaxe.elixir.ast.ElixirAST.FunctionResultContract;
 import reflaxe.elixir.ast.ElixirAST.EctoContext;
 import reflaxe.elixir.ast.ReceiverReturnConventions;
 import reflaxe.elixir.ast.ReceiverReturnConventions.ReceiverReturnConvention;
+import reflaxe.elixir.ast.builders.DynamicStaticFieldPlan;
 import reflaxe.elixir.ast.builders.ModuleBuilder;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.ast.NameUtils;
@@ -1127,33 +1128,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	 * - `@:native("handle_event") function eventCallback` -> `handle_event`
 	 */
 	private function resolveDefinitionFunctionName(field:ClassField, classType:ClassType):String {
-		if (field == null)
-			return "";
-
-		var nativeName = field.getNameOrNative();
-		if (nativeName != null && nativeName != field.name)
-			return nativeName;
-
-		if (classType != null && classType.meta != null && classType.meta.has(":liveview")) {
-			var callbackName = normalizeLiveViewCallbackName(field.name);
-			if (callbackName != null)
-				return callbackName;
-		}
-
-		return reflaxe.elixir.ast.NameUtils.toSafeElixirFunctionName(field.name);
-	}
-
-	private inline function normalizeLiveViewCallbackName(name:String):Null<String> {
-		return switch (name) {
-			case "mount": "mount";
-			case "render": "render";
-			case "handleEvent" | "handle_event": "handle_event";
-			case "handleInfo" | "handle_info": "handle_info";
-			case "handleParams" | "handle_params": "handle_params";
-			case "handleAsync" | "handle_async": "handle_async";
-			case "terminate": "terminate";
-			default: null;
-		};
+		return DynamicStaticFieldPlan.resolveTargetFunctionName(field, classType);
 	}
 
 	/**
@@ -2141,8 +2116,13 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		// NOTE: This is intentionally process-local; cross-process shared state should
 		// be modeled explicitly (GenServer/Agent/ETS) in user code.
 		// --------------------------------------------------------------------
-		if (varFields != null) {
-			var staticVars:Array<{name:String, init:reflaxe.elixir.ast.ElixirAST}> = [];
+		if (varFields != null || funcFields != null) {
+			var staticVars:Array<{
+				name:String,
+				init:reflaxe.elixir.ast.ElixirAST,
+				getterName:String,
+				setterName:String
+			}> = [];
 			var isRouterModule = hasClassOrStaticMetadata(classType, ":router", "router");
 			var isRouterModuleFieldCarrier = isRouterModule && switch (classType.kind) {
 				case KModuleFields(_):
@@ -2151,7 +2131,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 					false;
 			};
 
-			for (varData in varFields) {
+			for (varData in (varFields != null ? varFields : [])) {
 				if (!varData.isStatic)
 					continue;
 				// Module-level router declarations use static fields as compile-time configuration only.
@@ -2185,7 +2165,29 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 					ast(ENil);
 				};
 
-				staticVars.push({name: elixirName, init: initAst});
+				staticVars.push({
+					name: elixirName,
+					init: initAst,
+					getterName: elixirName,
+					setterName: elixirName
+				});
+			}
+
+			for (funcData in (funcFields != null ? funcFields : [])) {
+				if (!funcData.isStatic || funcData.kind != MethDynamic)
+					continue;
+				var plan = DynamicStaticFieldPlan.create(classType, funcData.field);
+				var collision = DynamicStaticFieldPlan.findAccessorCollision(classType, funcData.field);
+				if (collision != null) {
+					context.error('The dynamic static function "${funcData.field.name}" reserves the Elixir accessor "${collision}". Rename the conflicting field.',
+						funcData.field.pos);
+				}
+				staticVars.push({
+					name: plan.storageKey,
+					init: ast(ECapture(ast(EVar(plan.targetFunctionName)), plan.arity)),
+					getterName: plan.getterName,
+					setterName: plan.setterName
+				});
 			}
 
 			if (staticVars.length > 0) {
@@ -2251,10 +2253,10 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 				for (sv in staticVars) {
 					var keyAtom = ast(EAtom(sv.name));
 					var getCall = ast(ECall(null, "__haxe_static_get__", [keyAtom, sv.init]));
-					fields.push(ast(EDef(sv.name, [], null, getCall)));
+					fields.push(ast(EDef(sv.getterName, [], null, getCall)));
 
 					var setCall = ast(ECall(null, "__haxe_static_put__", [keyAtom, ast(EVar("value"))]));
-					fields.push(ast(EDef(sv.name, [PVar("value")], null, setCall)));
+					fields.push(ast(EDef(sv.setterName, [PVar("value")], null, setCall)));
 				}
 			}
 		}

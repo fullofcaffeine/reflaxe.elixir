@@ -85,10 +85,10 @@ class FieldAccessBuilder {
 				return buildStaticField(e, classRef, cf, context);
 
 			case FInstance(classRef, _, cf):
-				return buildInstanceField(e, cf, context);
+				return buildInstanceField(e, cf, context, false);
 
 			case FAnon(cf):
-				return buildInstanceField(e, cf, context);
+				return buildInstanceField(e, cf, context, true);
 
 			case FDynamic(fieldName):
 				return buildDynamicField(e, fieldName, context);
@@ -184,6 +184,12 @@ class FieldAccessBuilder {
 		if (isHaxeMainLoop(classType)) {
 			context.error(haxeMainLoopUnsupportedMessage(), e.pos);
 			return ENil;
+		}
+
+		if (field.kind.match(FMethod(MethDynamic))) {
+			var moduleExpr = makeAST(EVar(ModuleBuilder.extractModuleName(classType)));
+			var plan = DynamicStaticFieldPlan.create(classType, field);
+			return ERemoteCall(moduleExpr, plan.getterName, []);
 		}
 
 		// Check if this is an enum abstract field that should be an atom
@@ -310,7 +316,7 @@ class FieldAccessBuilder {
 	 * WHAT: Handles field access on instances and anonymous objects
 	 * HOW: Compiles object then accesses field
 	 */
-	static function buildInstanceField(e:TypedExpr, cf:Ref<ClassField>, context:CompilationContext):Null<ElixirASTDef> {
+	static function buildInstanceField(e:TypedExpr, cf:Ref<ClassField>, context:CompilationContext, anonymousField:Bool):Null<ElixirASTDef> {
 		var field = cf.get();
 		var fieldName = field.name;
 
@@ -335,6 +341,14 @@ class FieldAccessBuilder {
 		var tupleIndex = AnonymousTupleShape.fieldIndexForType(e.t, fieldName);
 		if (tupleIndex != null) {
 			return ECall(null, "elem", [objAST, makeAST(EInteger(tupleIndex))]);
+		}
+
+		// An absent optional structure field has the Haxe value `null`. Elixir's
+		// dot access raises when the atom key is absent, so use Map.get/2 only for
+		// optional fields on typed anonymous structures.
+		if (anonymousField && field.meta != null && (field.meta.has(":optional") || field.meta.has("optional"))) {
+			var optionalFieldName = NameUtils.toSnakeCase(fieldName);
+			return ERemoteCall(makeAST(EVar("Map")), "get", [objAST, makeAST(EAtom(optionalFieldName))]);
 		}
 
 		var receiverType = haxe.macro.TypeTools.follow(e.t);
@@ -468,14 +482,22 @@ class FieldAccessBuilder {
 		}
 
 		var className = closureType.c.get().name;
-		var methodName = cf.get().name;
+		var classType = closureType.c.get();
+		var method = cf.get();
+		var methodName = method.name;
 
 		#if debug_ast_builder
 		#end
 
 		// For closures, we need to generate a function reference
 		// &Module.function/arity
-		var arity = switch (cf.get().type) {
+		if (method.kind.match(FMethod(MethDynamic))) {
+			var plan = DynamicStaticFieldPlan.create(classType, method);
+			var moduleExpr = makeAST(EVar(ModuleBuilder.extractModuleName(classType)));
+			return ERemoteCall(moduleExpr, plan.getterName, []);
+		}
+
+		var arity = switch (method.type) {
 			case TFun(args, _): args.length;
 			default: 0;
 		};

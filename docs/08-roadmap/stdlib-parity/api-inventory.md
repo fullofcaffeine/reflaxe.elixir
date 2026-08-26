@@ -59,8 +59,8 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 |---|---:|
 | `not-applicable` | 1,711 |
 | `partial` | 656 |
-| `supported` | 262 |
-| `unknown` | 1,004 |
+| `supported` | 273 |
+| `unknown` | 993 |
 | `unsupported` | 59 |
 
 ## Counts by evidence state
@@ -68,8 +68,8 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 | Evidence state | API rows |
 |---|---:|
 | `api-runtime` | 103 |
-| `missing` | 1,460 |
-| `module-runtime` | 418 |
+| `missing` | 1,446 |
+| `module-runtime` | 432 |
 | `not-required` | 1,711 |
 
 ## Module review list
@@ -112,10 +112,10 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 | `haxe.Int64` | 33 | `runtime` (33) | `reflaxe-elixir-target` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.5` |
 | `haxe.Int64Helper` | 3 | `runtime` (3) | `reflaxe-elixir-target` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.5` |
 | `haxe.Json` | 3 | `runtime` (3) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.3.9`, `haxe.elixir.codex-0yn.10.5` |
-| `haxe.Log` | 5 | `other-target` (2) + `runtime` (3) | `reflaxe-elixir-target` | `partial` | `missing` | `haxe.elixir.codex-0yn.10.3.19`, `haxe.elixir.codex-0yn.10.5` |
+| `haxe.Log` | 5 | `other-target` (2) + `runtime` (3) | `reflaxe-elixir-target` | `partial` | `module-runtime` | `haxe.elixir.codex-0yn.10.3.10`, `haxe.elixir.codex-0yn.10.3.19`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.MainLoop` | 14 | `other-target` (1) + `runtime` (13) | `official-haxe-stdlib-fallback` | `unsupported` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
-| `haxe.NativeStackTrace` | 35 | `other-target` (30) + `runtime` (5) | `official-haxe-stdlib-fallback` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.3.19`, `haxe.elixir.codex-0yn.10.5` |
-| `haxe.PosInfos` | 6 | `runtime` (6) | `official-haxe-stdlib-fallback` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.3.19`, `haxe.elixir.codex-0yn.10.5` |
+| `haxe.NativeStackTrace` | 35 | `other-target` (30) + `runtime` (5) | `reflaxe-elixir-target` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.5` |
+| `haxe.PosInfos` | 6 | `runtime` (6) | `official-haxe-stdlib-fallback` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.5` |
 | `haxe.Resource` | 4 | `runtime` (4) | `official-haxe-stdlib-fallback` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.3.20`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.Rest` | 9 | `runtime` (9) | `official-haxe-stdlib-fallback` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.3.14.7`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.Serializer` | 10 | `runtime` (10) | `reflaxe-elixir-target` | `partial` | `missing` | `haxe.elixir.codex-0yn.10.3.9`, `haxe.elixir.codex-0yn.10.5` |

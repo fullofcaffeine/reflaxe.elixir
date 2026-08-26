@@ -1,7 +1,7 @@
 {
   "diff": {
     "intersection": {
-      "count": 117,
+      "count": 118,
       "modules": [
         "Array",
         "Date",
@@ -31,6 +31,7 @@
         "haxe.Int64Helper",
         "haxe.Json",
         "haxe.Log",
+        "haxe.NativeStackTrace",
         "haxe.Serializer",
         "haxe.Template",
         "haxe.Timer",
@@ -137,7 +138,7 @@
       ]
     },
     "reference_only": {
-      "count": 87,
+      "count": 86,
       "modules": [
         "Any",
         "Class",
@@ -149,7 +150,6 @@
         "haxe.EnumFlags",
         "haxe.EnumTools",
         "haxe.MainLoop",
-        "haxe.NativeStackTrace",
         "haxe.PosInfos",
         "haxe.Resource",
         "haxe.Rest",
@@ -232,7 +232,7 @@
   "local": {
     "counts_by_prefix": {
       "<top-level>": 19,
-      "haxe": 73,
+      "haxe": 74,
       "sys": 34
     },
     "nonstdlib_modules_under_std_dir": [
@@ -260,8 +260,8 @@
       "std/elixir/_std",
       "src/haxe"
     ],
-    "total_candidates": 130,
-    "total_std_modules": 126
+    "total_candidates": 131,
+    "total_std_modules": 127
   },
   "reference": {
     "counts_by_prefix": {

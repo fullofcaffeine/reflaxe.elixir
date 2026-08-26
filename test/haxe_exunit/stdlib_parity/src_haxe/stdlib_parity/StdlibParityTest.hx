@@ -3,6 +3,8 @@ package stdlib_parity;
 import haxe.Int32;
 import haxe.Int64;
 import haxe.CallStack;
+import haxe.NativeStackTrace;
+import haxe.PosInfos;
 import haxe.DynamicAccess;
 import haxe.EnumFlags;
 import haxe.EnumTools.EnumValueTools;
@@ -123,6 +125,10 @@ class StdlibParityTest extends TestCase {
 
 	static function makeExceptionWithStack():haxe.Exception {
 		return new haxe.Exception("details-probe");
+	}
+
+	static function capturePosition(?position:PosInfos):PosInfos {
+		return position;
 	}
 
 	static function arrayLength<T>(values:Array<T>):Int {
@@ -623,6 +629,70 @@ class StdlibParityTest extends TestCase {
 		var details = exception.details();
 		Assert.containsString(details, "details-probe");
 		Assert.containsString(details, "Called from ");
+	}
+
+	@:describe("haxe.NativeStackTrace")
+	@:test
+	function testNativeStackTraceConvertsAndSkipsBeamFrames():Void {
+		var native = NativeStackTrace.callStack();
+		var full = NativeStackTrace.toHaxe(native);
+		Assert.isTrue(full.length > 0);
+
+		var skipped = NativeStackTrace.toHaxe(native, 1);
+		Assert.equals(full.length - 1, skipped.length);
+	}
+
+	@:describe("haxe.NativeStackTrace")
+	@:test
+	function testNativeStackTraceSavesRescuedExceptionStack():Void {
+		try {
+			throwCallStackProbe();
+			Assert.fail("throwCallStackProbe should throw");
+		} catch (error:Dynamic) {
+			NativeStackTrace.saveStack(error);
+			var saved = NativeStackTrace.toHaxe(NativeStackTrace.exceptionStack());
+			Assert.isTrue(saved.length > 0);
+			Assert.containsString(CallStack.toString(cast saved), "throw_call_stack_probe");
+		}
+	}
+
+	@:describe("haxe.PosInfos")
+	@:test
+	function testPosInfosPreservesInjectedAndExplicitFields():Void {
+		var injected = capturePosition();
+		Assert.equals("stdlib_parity/StdlibParityTest.hx", injected.fileName);
+		Assert.equals(662, injected.lineNumber);
+		Assert.equals("stdlib_parity.StdlibParityTest", injected.className);
+		Assert.equals("testPosInfosPreservesInjectedAndExplicitFields", injected.methodName);
+
+		var explicit:PosInfos = {
+			fileName: "portable/source.hx",
+			lineNumber: 27,
+			className: "Portable.Source",
+			methodName: "run",
+			customParams: ["detail", 9]
+		};
+		var preserved = capturePosition(explicit);
+		Assert.equals("portable/source.hx", preserved.fileName);
+		Assert.equals(27, preserved.lineNumber);
+		Assert.equals("Portable.Source", preserved.className);
+		Assert.equals("run", preserved.methodName);
+		Assert.equals("detail", preserved.customParams[0]);
+		Assert.equals(9, preserved.customParams[1]);
+	}
+
+	@:describe("haxe.Log")
+	@:test
+	function testLogFormatOutputPreservesPositionAndParameters():Void {
+		var position:PosInfos = {
+			fileName: "portable/log.hx",
+			lineNumber: 12,
+			className: "Portable.LogProbe",
+			methodName: "run",
+			customParams: ["extra", 4]
+		};
+		Assert.equals("portable/log.hx:12: value, extra, 4", haxe.Log.formatOutput("value", position));
+		Assert.equals("value", haxe.Log.formatOutput("value", null));
 	}
 
 	@:describe("haxe.exceptions upstream fallback")

@@ -1249,6 +1249,19 @@ class CallExprBuilder {
 						var moduleName = ModuleBuilder.extractModuleName(classType);
 						var methodName = cf.get().name;
 
+						// A function-valued static variable is read through its generated
+						// zero-arity getter, then invoked as an anonymous function. Calling
+						// `Module.field(args)` directly would incorrectly select the setter.
+						if (cf.get().kind.match(FVar(_, _)) || cf.get().kind.match(FMethod(MethDynamic))) {
+							var getterName = if (cf.get().kind.match(FMethod(MethDynamic))) {
+								DynamicStaticFieldPlan.create(classType, cf.get()).getterName;
+							} else {
+								NameUtils.toSnakeCase(methodName);
+							}
+							var getter = makeAST(ERemoteCall(makeAST(EVar(moduleName)), getterName, []));
+							return ECall(getter, "", argASTs);
+						}
+
 						if (isHaxeEntryPoint(classType)) {
 							context.error(haxeEntryPointUnsupportedMessage(), e.pos);
 							return ENil;

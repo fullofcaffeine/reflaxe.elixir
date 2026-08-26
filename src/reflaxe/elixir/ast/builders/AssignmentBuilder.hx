@@ -87,6 +87,10 @@ class AssignmentBuilder {
 		if (timerRunAssign != null)
 			return timerRunAssign.def;
 
+		var staticVarAssign = buildStaticVarAssign(e1, e2, context);
+		if (staticVarAssign != null)
+			return staticVarAssign.def;
+
 		var localField = detectLocalFieldAssign(e1, context);
 		var pattern:EPattern = (localField != null) ? EPattern.PVar(localField.baseVarName) : PatternBuilder.extractPattern(e1, context);
 
@@ -140,6 +144,36 @@ class AssignmentBuilder {
 		var matchNode = makeAST(EMatch(pattern, rightAST));
 		attachVarIdMetadata(matchNode, e1, localField);
 		return matchNode.def;
+	}
+
+	/**
+	 * Persists assignment to a mutable static variable through its generated setter.
+	 *
+	 * Haxe permits function-valued hooks such as `haxe.Log.trace` to be rebound.
+	 * Static variables use process-local getter/setter functions on the Elixir target,
+	 * so `Module.field = value` must become `Module.field(value)`.
+	 */
+	static function buildStaticVarAssign(targetExpr:TypedExpr, valueExpr:TypedExpr, context:CompilationContext):Null<ElixirAST> {
+		return switch (targetExpr.expr) {
+			case TField(_, FStatic(classRef, fieldRef)) if (isMutableStaticField(fieldRef.get())):
+				var valueAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(valueExpr, context);
+				var moduleName = ModuleBuilder.extractModuleName(classRef.get());
+				var fieldName = if (fieldRef.get().kind.match(FMethod(MethDynamic))) {
+					DynamicStaticFieldPlan.create(classRef.get(), fieldRef.get()).setterName;
+				} else {
+					NameUtils.toSnakeCase(fieldRef.get().name);
+				}
+				makeAST(ERemoteCall(makeAST(EVar(moduleName)), fieldName, [valueAST]));
+			default:
+				null;
+		}
+	}
+
+	static function isMutableStaticField(field:ClassField):Bool {
+		return switch (field.kind) {
+			case FVar(_, _) | FMethod(MethDynamic): true;
+			default: false;
+		};
 	}
 
 	static function buildTimerRunAssign(targetExpr:TypedExpr, valueExpr:TypedExpr, context:CompilationContext):Null<ElixirAST> {

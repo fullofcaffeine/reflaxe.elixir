@@ -41,7 +41,8 @@ end
 		return fullStack ? exceptionStack.asArray() : exceptionStack.subtract(callStack()).asArray();
 	}
 
-	static function stackTraceToHaxe(stackTrace:Any):Array<StackItem> {
+	@:noCompletion
+	public static function stackTraceToHaxe(stackTrace:Any):Array<StackItem> {
 		return cast untyped __elixir__('
 Enum.map({0}, fn
   {module, function, _arity, location} ->
