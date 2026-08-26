@@ -24,6 +24,7 @@
 		"phoenix/handle_event_result.ex",
 		"phoenix/form_field_value.ex",
 		"phoenix/conn_state.ex",
+		"haxe/log.ex",
 		"haxe/iterators/array_key_value_iterator.ex",
 		"haxe/iterators/array_iterator.ex",
 		"haxe/exceptions/pos_exception.ex",
@@ -40,7 +41,7 @@
 		"e_reg.ex"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 46,
+	"id": 47,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
@@ -99,6 +100,10 @@
 		{
 			"path": "haxe/iterators/array_key_value_iterator.ex",
 			"sha256": "387d4592afd651337e15dda44716f25a7a7cdd97e1b6a43e9c2aba3f4029a3a3"
+		},
+		{
+			"path": "haxe/log.ex",
+			"sha256": "392f04ff93b7144a1c4e60ad0064697d7d77d29aa44e2394d15743660eb26945"
 		},
 		{
 			"path": "phoenix/conn_state.ex",
@@ -197,5 +202,5 @@
 			"sha256": "79ab34d32eb9843745093db6c5ec4907244e88d06815f942372dc9825eda7f04"
 		}
 	],
-	"generation": "6cd57104585bb80b002179f799811aa9d3fed3cb440abbce684eebddeb4b95c8"
+	"generation": "ec647f7f8d74013ffd2a03adf603a77667b9f3472a39ac629d52bbaa9ae12ec6"
 }
