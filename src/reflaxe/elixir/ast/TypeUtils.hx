@@ -33,10 +33,22 @@ import haxe.macro.TypeTools;
 @:nullSafety(Off)
 class TypeUtils {
 	public static function isStringType(t:Null<Type>):Bool {
-		var followed = followNullable(t);
-		return switch (followed) {
+		return isStringTypeInner(t, 0);
+	}
+
+	static function isStringTypeInner(t:Null<Type>, depth:Int):Bool {
+		if (t == null || depth > 20)
+			return false;
+
+		return switch (TypeTools.follow(t)) {
 			case TInst(_.get() => {name: "String"}, _): true;
-			case TAbstract(_.get() => {name: "String"}, _): true;
+			case TAbstract(ref, _): var abstractType = ref.get(); // Enum abstracts are closed, typed value domains. Even when their carrier is
+				// String, preserve the abstract boundary so callers convert the selected value.
+				// HXX relies on that conversion to keep registry values inside HEEx `{...}`.
+				abstractType.name == "String" || (!abstractType.meta.has(":enum") && isStringTypeInner(abstractType.type, depth + 1));
+			case TType(ref, _): isStringTypeInner(ref.get().type, depth + 1);
+			case TLazy(thunk): isStringTypeInner(thunk(), depth + 1);
+			case TMono(ref): var resolved = ref.get(); resolved != null && isStringTypeInner(resolved, depth + 1);
 			default: false;
 		}
 	}

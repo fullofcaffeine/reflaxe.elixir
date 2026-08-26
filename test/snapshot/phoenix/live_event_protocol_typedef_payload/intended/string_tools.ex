@@ -151,7 +151,12 @@ defmodule StringTools do
       reflaxe_string_source = s
       reflaxe_string_value = value
       reflaxe_string_length = String.length(reflaxe_string_source)
-      reflaxe_string_start = if Kernel.is_nil(start_index), do: 0, else: max(start_index, 0)
+      reflaxe_string_start =
+        cond do
+          Kernel.is_nil(start_index) -> 0
+          start_index < 0 -> max(reflaxe_string_length + start_index, 0)
+          true -> start_index
+        end
 
       cond do
         reflaxe_string_value == "" ->

@@ -3,10 +3,11 @@ defmodule Haxe.IO.Path do
   def new(path) do
     struct = %{:__reflaxe_class__ => Haxe.IO.Path, :dir => nil, :file => nil, :ext => nil, :backslash => nil}
     struct = %{struct | backslash: false}
-    struct = if (path == "." or path == "..") do
+    {_path, struct} = if (path == "." or path == "..") do
       struct = %{struct | dir: path}
       struct = %{struct | file: ""}
-      %{struct | ext: nil}
+      struct = %{struct | ext: nil}
+      {path, struct}
     else
       slash_index = StringTools.haxe_last_index_of(path, "/", nil)
       backslash_index = StringTools.haxe_last_index_of(path, "\\", nil)
@@ -25,13 +26,14 @@ defmodule Haxe.IO.Path do
           {path, struct}
       end
       dot_index = StringTools.haxe_last_index_of(path, ".", nil)
-      if (dot_index != -1) do
+      struct = if (dot_index != -1) do
         struct = %{struct | ext: StringTools.haxe_substr(path, dot_index + 1, nil)}
         %{struct | file: StringTools.haxe_substr_non_nil_len(path, 0, dot_index)}
       else
         struct = %{struct | ext: nil}
         %{struct | file: path}
       end
+      {path, struct}
     end
     struct
   end

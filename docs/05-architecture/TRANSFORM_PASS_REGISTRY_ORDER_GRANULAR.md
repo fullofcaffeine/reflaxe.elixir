@@ -4,7 +4,7 @@ Generated from the validated registry by `tools/RegistryOrderDoc.hx`; do not edi
 
 Mode: granular (`-D hxx_granular_pass_registry`)
 
-Effective pass count: **578**
+Effective pass count: **579**
 
 | # | Pass | Phase | Scope | Family | Ordering | Description |
 |---:|---|---|---|---|---|---|
@@ -584,5 +584,6 @@ Effective pass count: **578**
 | 574 | `CaseClauseUnusedBinderUnderscore_AbsoluteLastReplay` | `absolute-final` | `core` | `absolute-final.core` | after: PubSubModuleRewrite_AbsoluteLastReplay | Absolute-last: underscore unused case/with/receive binders (replay) |
 | 575 | `ChangesetAssignedWildcardValidateCollapse_AbsoluteLast` | `absolute-final` | `ecto` | `absolute-final.ecto` | after: CaseClauseUnusedBinderUnderscore_AbsoluteLastReplay | Absolute-last: collapse assigned Ecto.Changeset validation wildcard wrappers |
 | 576 | `DropSelfAssignNoop_AbsoluteLastReplay` | `absolute-final` | `core` | `absolute-final.core` | after: ChangesetAssignedWildcardValidateCollapse_AbsoluteLast | Absolute-last: remove no-op self-assignments v = v (replay) |
-| 577 | `BareLiteralDrop_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: DropSelfAssignNoop_AbsoluteLastReplay | Absolute-last: remove non-final literal statements in EBlock/EDo |
-| 578 | `TrivialIIFEUnwrap_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: BareLiteralDrop_AbsoluteLast | Absolute-last: unwrap zero-arg IIFEs whose body is one caller-binding-free expression |
+| 577 | `UnderscorePromoteByUse_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: DropSelfAssignNoop_AbsoluteLastReplay; before: BareLiteralDrop_AbsoluteLast | Absolute-last: restore underscored result binders read by later expressions |
+| 578 | `BareLiteralDrop_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: UnderscorePromoteByUse_AbsoluteLast | Absolute-last: remove non-final literal statements in EBlock/EDo |
+| 579 | `TrivialIIFEUnwrap_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: BareLiteralDrop_AbsoluteLast | Absolute-last: unwrap zero-arg IIFEs whose body is one caller-binding-free expression |

@@ -88,22 +88,22 @@
     },
     "bySupportState": {
       "not-applicable": 1711,
-      "partial": 661,
-      "supported": 237,
-      "unknown": 1037,
-      "unsupported": 46
+      "partial": 656,
+      "supported": 262,
+      "unknown": 1004,
+      "unsupported": 59
     },
     "byEvidenceState": {
       "api-runtime": 103,
-      "missing": 1498,
-      "module-runtime": 380,
+      "missing": 1460,
+      "module-runtime": 418,
       "not-required": 1711
     },
     "byImplementationOwner": {
       "haxe-compiler": 1466,
       "haxe-other-target": 245,
-      "official-haxe-stdlib-fallback": 922,
-      "reflaxe-elixir-target": 1059
+      "official-haxe-stdlib-fallback": 910,
+      "reflaxe-elixir-target": 1071
     }
   },
   "modules": [
@@ -541,10 +541,9 @@
         "runtime": 5
       },
       "implementationOwner": "reflaxe-elixir-target",
-      "supportState": "partial",
-      "evidenceState": "missing",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.18",
         "haxe.elixir.codex-0yn.10.5"
       ]
     },
@@ -997,10 +996,9 @@
         "runtime": 13
       },
       "implementationOwner": "official-haxe-stdlib-fallback",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "unsupported",
+      "evidenceState": "module-runtime",
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.18",
         "haxe.elixir.codex-0yn.10.5"
       ]
     },
@@ -1034,11 +1032,10 @@
       "apiApplicability": {
         "runtime": 12
       },
-      "implementationOwner": "official-haxe-stdlib-fallback",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "implementationOwner": "reflaxe-elixir-target",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.18",
         "haxe.elixir.codex-0yn.10.5"
       ]
     },
@@ -1168,10 +1165,9 @@
         "runtime": 8
       },
       "implementationOwner": "reflaxe-elixir-target",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
       "blockers": [
-        "haxe.elixir.codex-0yn.10.3.18",
         "haxe.elixir.codex-0yn.10.5"
       ]
     },
@@ -22069,14 +22065,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "upstream-unitstd",
+            "path": "test/upstream_unitstd/upstream/UnicodeString.unit.hx",
+            "selector": "UnicodeString.unit.hx"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after UTF-8 codepoint semantics are triaged. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "The unchanged upstream unitstd fixture verifies Unicode codepoint construction, conversion, operators, iteration, key/value iteration, string operations, and UTF-8 validation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/UnicodeString.hx"
@@ -22213,14 +22214,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "upstream-unitstd",
+            "path": "test/upstream_unitstd/upstream/UnicodeString.unit.hx",
+            "selector": "UnicodeString.unit.hx"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after UTF-8 codepoint semantics are triaged. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "The unchanged upstream unitstd fixture verifies Unicode codepoint construction, conversion, operators, iteration, key/value iteration, string operations, and UTF-8 validation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/UnicodeString.hx"
@@ -22252,14 +22258,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "upstream-unitstd",
+            "path": "test/upstream_unitstd/upstream/UnicodeString.unit.hx",
+            "selector": "UnicodeString.unit.hx"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after UTF-8 codepoint semantics are triaged. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "The unchanged upstream unitstd fixture verifies Unicode codepoint construction, conversion, operators, iteration, key/value iteration, string operations, and UTF-8 validation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/UnicodeString.hx"
@@ -22431,14 +22442,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "upstream-unitstd",
+            "path": "test/upstream_unitstd/upstream/UnicodeString.unit.hx",
+            "selector": "UnicodeString.unit.hx"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after UTF-8 codepoint semantics are triaged. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "The unchanged upstream unitstd fixture verifies Unicode codepoint construction, conversion, operators, iteration, key/value iteration, string operations, and UTF-8 validation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/UnicodeString.hx"
@@ -22478,14 +22494,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "upstream-unitstd",
+            "path": "test/upstream_unitstd/upstream/UnicodeString.unit.hx",
+            "selector": "UnicodeString.unit.hx"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after UTF-8 codepoint semantics are triaged. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "The unchanged upstream unitstd fixture verifies Unicode codepoint construction, conversion, operators, iteration, key/value iteration, string operations, and UTF-8 validation on BEAM.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/UnicodeString.hx"
@@ -34617,14 +34638,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "unsupported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUcs2FailsFastWithoutNativeTargetSupport"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "Haxe defines Ucs2 only for targets with native UCS-2 strings. BEAM strings use UTF-8, so the official fallback fails fast with a verified diagnostic. Use UnicodeString for Unicode text.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Ucs2.hx"
@@ -34656,14 +34682,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "unsupported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUcs2FailsFastWithoutNativeTargetSupport"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "Haxe defines Ucs2 only for targets with native UCS-2 strings. BEAM strings use UTF-8, so the official fallback fails fast with a verified diagnostic. Use UnicodeString for Unicode text.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Ucs2.hx"
@@ -34695,14 +34726,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "unsupported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUcs2FailsFastWithoutNativeTargetSupport"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "Haxe defines Ucs2 only for targets with native UCS-2 strings. BEAM strings use UTF-8, so the official fallback fails fast with a verified diagnostic. Use UnicodeString for Unicode text.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Ucs2.hx"
@@ -34734,14 +34770,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "unsupported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUcs2FailsFastWithoutNativeTargetSupport"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "Haxe defines Ucs2 only for targets with native UCS-2 strings. BEAM strings use UTF-8, so the official fallback fails fast with a verified diagnostic. Use UnicodeString for Unicode text.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Ucs2.hx"
@@ -34773,14 +34814,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "unsupported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUcs2FailsFastWithoutNativeTargetSupport"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "Haxe defines Ucs2 only for targets with native UCS-2 strings. BEAM strings use UTF-8, so the official fallback fails fast with a verified diagnostic. Use UnicodeString for Unicode text.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Ucs2.hx"
@@ -34812,14 +34858,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "unsupported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUcs2FailsFastWithoutNativeTargetSupport"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "Haxe defines Ucs2 only for targets with native UCS-2 strings. BEAM strings use UTF-8, so the official fallback fails fast with a verified diagnostic. Use UnicodeString for Unicode text.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Ucs2.hx"
@@ -34851,14 +34902,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "unsupported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUcs2FailsFastWithoutNativeTargetSupport"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "Haxe defines Ucs2 only for targets with native UCS-2 strings. BEAM strings use UTF-8, so the official fallback fails fast with a verified diagnostic. Use UnicodeString for Unicode text.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Ucs2.hx"
@@ -34890,14 +34946,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "unsupported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUcs2FailsFastWithoutNativeTargetSupport"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "Haxe defines Ucs2 only for targets with native UCS-2 strings. BEAM strings use UTF-8, so the official fallback fails fast with a verified diagnostic. Use UnicodeString for Unicode text.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Ucs2.hx"
@@ -34929,14 +34990,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "unsupported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUcs2FailsFastWithoutNativeTargetSupport"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "Haxe defines Ucs2 only for targets with native UCS-2 strings. BEAM strings use UTF-8, so the official fallback fails fast with a verified diagnostic. Use UnicodeString for Unicode text.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Ucs2.hx"
@@ -34968,14 +35034,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "unsupported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUcs2FailsFastWithoutNativeTargetSupport"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "Haxe defines Ucs2 only for targets with native UCS-2 strings. BEAM strings use UTF-8, so the official fallback fails fast with a verified diagnostic. Use UnicodeString for Unicode text.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Ucs2.hx"
@@ -35007,14 +35078,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "unsupported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUcs2FailsFastWithoutNativeTargetSupport"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "Haxe defines Ucs2 only for targets with native UCS-2 strings. BEAM strings use UTF-8, so the official fallback fails fast with a verified diagnostic. Use UnicodeString for Unicode text.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Ucs2.hx"
@@ -35046,14 +35122,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "unsupported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUcs2FailsFastWithoutNativeTargetSupport"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "Haxe defines Ucs2 only for targets with native UCS-2 strings. BEAM strings use UTF-8, so the official fallback fails fast with a verified diagnostic. Use UnicodeString for Unicode text.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Ucs2.hx"
@@ -35090,14 +35171,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "unsupported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUcs2FailsFastWithoutNativeTargetSupport"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "Haxe defines Ucs2 only for targets with native UCS-2 strings. BEAM strings use UTF-8, so the official fallback fails fast with a verified diagnostic. Use UnicodeString for Unicode text.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/Ucs2.hx"
@@ -35538,17 +35624,27 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8UnicodeTargetFallback"
+          },
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8LegacyTranscodingFailsFast"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
-        "implementationOwner": "official-haxe-stdlib-fallback",
+        "reviewNote": "A target implementation maps character operations to BEAM UTF-8 codepoints. Local runtime tests cover all public methods, malformed input, bounds, and the two legacy transcoding methods that intentionally fail fast.",
+        "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "std/haxe/Utf8.hx"
+          "std/elixir/_std/haxe/Utf8.hx"
         ]
       }
     },
@@ -35584,17 +35680,27 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8UnicodeTargetFallback"
+          },
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8LegacyTranscodingFailsFast"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
-        "implementationOwner": "official-haxe-stdlib-fallback",
+        "reviewNote": "A target implementation maps character operations to BEAM UTF-8 codepoints. Local runtime tests cover all public methods, malformed input, bounds, and the two legacy transcoding methods that intentionally fail fast.",
+        "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "std/haxe/Utf8.hx"
+          "std/elixir/_std/haxe/Utf8.hx"
         ]
       }
     },
@@ -35630,17 +35736,27 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8UnicodeTargetFallback"
+          },
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8LegacyTranscodingFailsFast"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
-        "implementationOwner": "official-haxe-stdlib-fallback",
+        "reviewNote": "A target implementation maps character operations to BEAM UTF-8 codepoints. Local runtime tests cover all public methods, malformed input, bounds, and the two legacy transcoding methods that intentionally fail fast.",
+        "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "std/haxe/Utf8.hx"
+          "std/elixir/_std/haxe/Utf8.hx"
         ]
       }
     },
@@ -35676,17 +35792,27 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8UnicodeTargetFallback"
+          },
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8LegacyTranscodingFailsFast"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
-        "implementationOwner": "official-haxe-stdlib-fallback",
+        "reviewNote": "A target implementation maps character operations to BEAM UTF-8 codepoints. Local runtime tests cover all public methods, malformed input, bounds, and the two legacy transcoding methods that intentionally fail fast.",
+        "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "std/haxe/Utf8.hx"
+          "std/elixir/_std/haxe/Utf8.hx"
         ]
       }
     },
@@ -35722,17 +35848,27 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8UnicodeTargetFallback"
+          },
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8LegacyTranscodingFailsFast"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
-        "implementationOwner": "official-haxe-stdlib-fallback",
+        "reviewNote": "A target implementation maps character operations to BEAM UTF-8 codepoints. Local runtime tests cover all public methods, malformed input, bounds, and the two legacy transcoding methods that intentionally fail fast.",
+        "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "std/haxe/Utf8.hx"
+          "std/elixir/_std/haxe/Utf8.hx"
         ]
       }
     },
@@ -35768,17 +35904,27 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8UnicodeTargetFallback"
+          },
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8LegacyTranscodingFailsFast"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
-        "implementationOwner": "official-haxe-stdlib-fallback",
+        "reviewNote": "A target implementation maps character operations to BEAM UTF-8 codepoints. Local runtime tests cover all public methods, malformed input, bounds, and the two legacy transcoding methods that intentionally fail fast.",
+        "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "std/haxe/Utf8.hx"
+          "std/elixir/_std/haxe/Utf8.hx"
         ]
       }
     },
@@ -35814,17 +35960,27 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8UnicodeTargetFallback"
+          },
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8LegacyTranscodingFailsFast"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
-        "implementationOwner": "official-haxe-stdlib-fallback",
+        "reviewNote": "A target implementation maps character operations to BEAM UTF-8 codepoints. Local runtime tests cover all public methods, malformed input, bounds, and the two legacy transcoding methods that intentionally fail fast.",
+        "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "std/haxe/Utf8.hx"
+          "std/elixir/_std/haxe/Utf8.hx"
         ]
       }
     },
@@ -35860,17 +36016,27 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8UnicodeTargetFallback"
+          },
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8LegacyTranscodingFailsFast"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
-        "implementationOwner": "official-haxe-stdlib-fallback",
+        "reviewNote": "A target implementation maps character operations to BEAM UTF-8 codepoints. Local runtime tests cover all public methods, malformed input, bounds, and the two legacy transcoding methods that intentionally fail fast.",
+        "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "std/haxe/Utf8.hx"
+          "std/elixir/_std/haxe/Utf8.hx"
         ]
       }
     },
@@ -35906,17 +36072,27 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8UnicodeTargetFallback"
+          },
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8LegacyTranscodingFailsFast"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
-        "implementationOwner": "official-haxe-stdlib-fallback",
+        "reviewNote": "A target implementation maps character operations to BEAM UTF-8 codepoints. Local runtime tests cover all public methods, malformed input, bounds, and the two legacy transcoding methods that intentionally fail fast.",
+        "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "std/haxe/Utf8.hx"
+          "std/elixir/_std/haxe/Utf8.hx"
         ]
       }
     },
@@ -35952,17 +36128,27 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8UnicodeTargetFallback"
+          },
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8LegacyTranscodingFailsFast"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
-        "implementationOwner": "official-haxe-stdlib-fallback",
+        "reviewNote": "A target implementation maps character operations to BEAM UTF-8 codepoints. Local runtime tests cover all public methods, malformed input, bounds, and the two legacy transcoding methods that intentionally fail fast.",
+        "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "std/haxe/Utf8.hx"
+          "std/elixir/_std/haxe/Utf8.hx"
         ]
       }
     },
@@ -35998,17 +36184,27 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8UnicodeTargetFallback"
+          },
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8LegacyTranscodingFailsFast"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
-        "implementationOwner": "official-haxe-stdlib-fallback",
+        "reviewNote": "A target implementation maps character operations to BEAM UTF-8 codepoints. Local runtime tests cover all public methods, malformed input, bounds, and the two legacy transcoding methods that intentionally fail fast.",
+        "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "std/haxe/Utf8.hx"
+          "std/elixir/_std/haxe/Utf8.hx"
         ]
       }
     },
@@ -36055,17 +36251,27 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8UnicodeTargetFallback"
+          },
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testUtf8LegacyTranscodingFailsFast"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet. The text and base-code task owns the remaining APIs.",
-        "implementationOwner": "official-haxe-stdlib-fallback",
+        "reviewNote": "A target implementation maps character operations to BEAM UTF-8 codepoints. Local runtime tests cover all public methods, malformed input, bounds, and the two legacy transcoding methods that intentionally fail fast.",
+        "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "std/haxe/Utf8.hx"
+          "std/elixir/_std/haxe/Utf8.hx"
         ]
       }
     },
@@ -37988,14 +38194,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testBaseCodeArbitraryPowerOfTwoDictionaries"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; arbitrary power-of-two dictionary encode/decode, string helpers, invalid dictionary length, and invalid encoded characters are covered by local Haxe-authored ExUnit runtime tests. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover every public operation, empty input, arbitrary power-of-two dictionaries, invalid dictionary length, and invalid encoded characters.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/crypto/BaseCode.hx"
@@ -38028,14 +38239,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testBaseCodeArbitraryPowerOfTwoDictionaries"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; arbitrary power-of-two dictionary encode/decode, string helpers, invalid dictionary length, and invalid encoded characters are covered by local Haxe-authored ExUnit runtime tests. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover every public operation, empty input, arbitrary power-of-two dictionaries, invalid dictionary length, and invalid encoded characters.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/crypto/BaseCode.hx"
@@ -38068,14 +38284,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testBaseCodeArbitraryPowerOfTwoDictionaries"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; arbitrary power-of-two dictionary encode/decode, string helpers, invalid dictionary length, and invalid encoded characters are covered by local Haxe-authored ExUnit runtime tests. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover every public operation, empty input, arbitrary power-of-two dictionaries, invalid dictionary length, and invalid encoded characters.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/crypto/BaseCode.hx"
@@ -38108,14 +38329,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testBaseCodeArbitraryPowerOfTwoDictionaries"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; arbitrary power-of-two dictionary encode/decode, string helpers, invalid dictionary length, and invalid encoded characters are covered by local Haxe-authored ExUnit runtime tests. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover every public operation, empty input, arbitrary power-of-two dictionaries, invalid dictionary length, and invalid encoded characters.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/crypto/BaseCode.hx"
@@ -38148,14 +38374,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testBaseCodeArbitraryPowerOfTwoDictionaries"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; arbitrary power-of-two dictionary encode/decode, string helpers, invalid dictionary length, and invalid encoded characters are covered by local Haxe-authored ExUnit runtime tests. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover every public operation, empty input, arbitrary power-of-two dictionaries, invalid dictionary length, and invalid encoded characters.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/crypto/BaseCode.hx"
@@ -38188,14 +38419,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testBaseCodeArbitraryPowerOfTwoDictionaries"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; arbitrary power-of-two dictionary encode/decode, string helpers, invalid dictionary length, and invalid encoded characters are covered by local Haxe-authored ExUnit runtime tests. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover every public operation, empty input, arbitrary power-of-two dictionaries, invalid dictionary length, and invalid encoded characters.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/crypto/BaseCode.hx"
@@ -38228,14 +38464,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testBaseCodeArbitraryPowerOfTwoDictionaries"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; arbitrary power-of-two dictionary encode/decode, string helpers, invalid dictionary length, and invalid encoded characters are covered by local Haxe-authored ExUnit runtime tests. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover every public operation, empty input, arbitrary power-of-two dictionaries, invalid dictionary length, and invalid encoded characters.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/crypto/BaseCode.hx"
@@ -38274,14 +38515,19 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testBaseCodeArbitraryPowerOfTwoDictionaries"
+          }
+        ],
         "blockers": [
-          "haxe.elixir.codex-0yn.10.3.18",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; arbitrary power-of-two dictionary encode/decode, string helpers, invalid dictionary length, and invalid encoded characters are covered by local Haxe-authored ExUnit runtime tests. The text and base-code task owns the remaining APIs.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover every public operation, empty input, arbitrary power-of-two dictionaries, invalid dictionary length, and invalid encoded characters.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/crypto/BaseCode.hx"

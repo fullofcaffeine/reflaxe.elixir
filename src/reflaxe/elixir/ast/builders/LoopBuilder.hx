@@ -4265,11 +4265,9 @@ class LoopBuilder {
 		var reducerAccRebuilders = [];
 		var outerToReducerVar:Map<String, String> = new Map();
 
-		// Try to seed accumulator variables with a concrete initial value when we can prove it,
-		// so the reduce_while does not depend on prior bindings in the surrounding scope.
-		// This is especially important for desugared for/while loops where Haxe introduces
-		// compiler temps (_g, _g1, ...) and accumulator locals (sum/result/items) that must
-		// be initialized for the reducer to be valid Elixir.
+		// Use a tracked local binding when the surrounding block declared the accumulator.
+		// Repeating its initializer here leaves the original binding stale and can evaluate
+		// an effect twice. Only synthesize a seed for compiler temps without a tracked binding.
 		function inferAccumulatorSeed(elixirName:String, tvar:Null<TVar>):Null<ElixirAST> {
 			if (elixirName == null || elixirName.length == 0)
 				return null;
@@ -4282,8 +4280,14 @@ class LoopBuilder {
 				&& concreteContext.localVarInitValuesById != null
 				&& concreteContext.localVarInitValuesById.exists(tvar.id)) {
 				var init = concreteContext.localVarInitValuesById.get(tvar.id);
-				if (init != null)
-					return init;
+				if (init != null) {
+					// Comprehension temps can reuse names such as `g` in one block.
+					// Seed them from the ID-keyed initializer, not an unrelated
+					// same-named outer binding. Source locals use their emitted binding.
+					if (originalName != null && ~/^_?g[0-9]*$/.match(originalName))
+						return init;
+					return makeAST(EVar(elixirName));
+				}
 			}
 
 			// Prefer any tracked initializer (e.g. _g = 5) captured at block level.
@@ -4291,7 +4295,7 @@ class LoopBuilder {
 				&& concreteContext.infrastructureVarInitValues != null
 				&& originalName != null
 				&& concreteContext.infrastructureVarInitValues.exists(originalName)) {
-				return concreteContext.infrastructureVarInitValues.get(originalName);
+				return makeAST(EVar(elixirName));
 			}
 
 			// Default seed for compiler counters (g, g1, _g, _g1, ...): 0

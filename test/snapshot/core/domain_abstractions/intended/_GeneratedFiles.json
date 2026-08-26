@@ -105,12 +105,12 @@
 		},
 		{
 			"path": "string_tools.ex",
-			"sha256": "b174b046cee6138603fade8a7baa097e869d67f66a86afdebda3449b28d3b153"
+			"sha256": "bb5f47e529150a00f248ac791970199bd13a42d23acc3a9c2da761f5930ff5a0"
 		},
 		{
 			"path": "type.ex",
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "181a3953db784de9aa88e9c80bdd079961ee4117e606695fe2e714ad581110ce"
+	"generation": "43f7a1660bd9635906054834a14a3b8d82971736a58a24dc34b6d32428e82f9f"
 }

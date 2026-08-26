@@ -357,7 +357,12 @@ end', s, index);
   reflaxe_string_source = {0}
   reflaxe_string_value = {1}
   reflaxe_string_length = String.length(reflaxe_string_source)
-  reflaxe_string_start = if Kernel.is_nil({2}), do: 0, else: max({2}, 0)
+  reflaxe_string_start =
+    cond do
+      Kernel.is_nil({2}) -> 0
+      {2} < 0 -> max(reflaxe_string_length + {2}, 0)
+      true -> {2}
+    end
 
   cond do
     reflaxe_string_value == "" ->

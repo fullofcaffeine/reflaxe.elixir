@@ -4364,6 +4364,14 @@ class ElixirASTPassRegistry {
 			pass: reflaxe.elixir.ast.transformers.DropSelfAssignNoopTransforms.pass,
 			runAfter: ["ChangesetAssignedWildcardValidateCollapse_AbsoluteLast"]
 		});
+		passes.push({
+			name: "UnderscorePromoteByUse_AbsoluteLast",
+			description: "Absolute-last: restore underscored result binders read by later expressions",
+			enabled: true,
+			pass: reflaxe.elixir.ast.transformers.UnderscorePromoteByUseLateTransforms.resultBinderPass,
+			runAfter: ["DropSelfAssignNoop_AbsoluteLastReplay"],
+			runBefore: ["BareLiteralDrop_AbsoluteLast"]
+		});
 
 		// Absolute-last cleanup: drop non-final bare literal statements to avoid warnings like
 		// “code block contains unused literal 7” (commonly produced by inlined setters returning the value).
@@ -4376,7 +4384,7 @@ class ElixirASTPassRegistry {
 			description: "Absolute-last: remove non-final literal statements in EBlock/EDo",
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.BareLiteralDropTransforms.pass,
-			runAfter: ["DropSelfAssignNoop_AbsoluteLastReplay"]
+			runAfter: ["UnderscorePromoteByUse_AbsoluteLast"]
 		});
 
 		// Absolute-last idiomaticity cleanup: safety passes may have introduced an

@@ -10,6 +10,8 @@ import haxe.Json;
 import haxe.Serializer;
 import haxe.Template;
 import haxe.Timer;
+import haxe.Utf8;
+import haxe.Ucs2;
 import haxe.Unserializer;
 import haxe.ValueException;
 import haxe.crypto.BaseCode;
@@ -1226,6 +1228,51 @@ class StdlibParityTest extends TestCase {
 		Assert.isFalse(UnicodeString.validate(invalid, UTF8));
 	}
 
+	@:describe("haxe.Utf8")
+	@:test
+	function testUtf8UnicodeTargetFallback():Void {
+		var buffer = new Utf8();
+		buffer.addChar(0x41);
+		buffer.addChar(0x1F30D);
+		Assert.equals("A🌍", buffer.toString());
+
+		var current = Thread.current();
+		Utf8.iter("Aé🌍", code -> current.sendMessage(code));
+		Assert.equals(65, Thread.readMessage(false));
+		Assert.equals(233, Thread.readMessage(false));
+		Assert.equals(0x1F30D, Thread.readMessage(false));
+		Assert.equals(3, Utf8.length("Aé🌍"));
+		Assert.equals(0x1F30D, Utf8.charCodeAt("Aé🌍", 2));
+		Assert.equals("é🌍", Utf8.sub("Aé🌍", 1, 2));
+		Assert.isTrue(Utf8.validate("Aé🌍"));
+		// Malformed UTF-8 cannot be written as a Haxe String literal. Keep the
+		// target escape at the exact binary representation boundary under test.
+		var invalidUtf8:String = untyped __elixir__('<<0xC0>>');
+		Assert.isFalse(Utf8.validate(invalidUtf8));
+		Assert.raises(() -> Utf8.charCodeAt("A", 1));
+		Assert.equals(-1, Utf8.compare("a", "b"));
+		Assert.equals(0, Utf8.compare("a", "a"));
+		Assert.equals(1, Utf8.compare("b", "a"));
+	}
+
+	@:describe("haxe.Utf8")
+	@:test
+	function testUtf8LegacyTranscodingFailsFast():Void {
+		Assert.raises(() -> Utf8.encode("é"));
+		Assert.raises(() -> Utf8.decode("é"));
+	}
+
+	@:describe("haxe.Ucs2")
+	@:test
+	function testUcs2FailsFastWithoutNativeTargetSupport():Void {
+		try {
+			Ucs2.fromCharCode(65);
+			Assert.fail("Ucs2 should reject targets without native UCS-2 strings");
+		} catch (error:Dynamic) {
+			Assert.equals("Ucs2 String not supported on this platform", Std.string(error));
+		}
+	}
+
 	@:describe("haxe.iterators.StringIterator")
 	@:test
 	function testStringIteratorIteratesCodepoints():Void {
@@ -1931,6 +1978,10 @@ class StdlibParityTest extends TestCase {
 		var encodedHex = hex.encodeBytes(binary);
 		Assert.equals("00ff10", encodedHex.toString());
 		Assert.equals("00ff10", hex.decodeBytes(Bytes.ofString("00ff10")).toHex());
+		Assert.equals(0, hex.encodeBytes(Bytes.alloc(0)).length);
+		Assert.equals(0, hex.decodeBytes(Bytes.alloc(0)).length);
+		Assert.equals("", hex.encodeString(""));
+		Assert.equals("", hex.decodeString(""));
 
 		Assert.equals("01000001", BaseCode.encode("A", "01"));
 		Assert.equals("A", BaseCode.decode("01000001", "01"));

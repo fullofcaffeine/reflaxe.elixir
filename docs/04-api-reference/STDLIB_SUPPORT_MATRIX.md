@@ -121,6 +121,8 @@ Top-level:
 - `UInt` (32-bit unsigned operators and caller-visible mutation use BEAM integer and bitwise
   operations while preserving Haxe wraparound behavior)
 - `UnicodeString` (UTF-8 validation and codepoint iteration)
+- `haxe.Utf8` (deprecated compatibility API; BEAM codepoint operations work, while its legacy
+  ISO-to-UTF-8 transcoding methods fail explicitly)
 - `Xml` (parse/print, attributes, child iteration, parent links)
 
 For example, Haxe keeps the intended 32-bit type visible:
@@ -218,6 +220,8 @@ state across processes.
 - `haxe.Serializer` (portable data subset; missing behavior below blocks 1.0)
 - `haxe.Template` (portable rendering subset; missing behavior below blocks 1.0)
 - `haxe.Timer` (BEAM event-loop backed delay/repeat, callback rebinding, stamp/measure)
+- `haxe.Ucs2` (unsupported because BEAM has no native UCS-2 string type; construction fails
+  explicitly, and `UnicodeString` is the supported Unicode API)
 - `haxe.Unserializer` (portable data subset; missing behavior below blocks 1.0)
 - `haxe.ValueException` (official stdlib fallback; explicit value wrapper semantics covered by local runtime tests)
 - `haxe.crypto.Adler32`
@@ -313,6 +317,11 @@ Notes:
 - The AST pipeline still optimizes most loop patterns to idiomatic `Enum.*`; runtime iterators are primarily for manual iterator usage and stdlib/runtime compatibility.
 - `UnicodeString.validate` supports `UTF8`; UTF-16/UTF-32 validation currently fails fast because
   `haxe.io.Bytes` stores UTF-8 binaries on this target. The missing encodings block 1.0.
+- `haxe.Utf8` uses BEAM UTF-8 codepoint positions for construction, iteration, indexing, slicing,
+  length, comparison, and validation. Its deprecated `encode` and `decode` methods retain Haxe's
+  generic fail-fast behavior because they describe legacy single-byte transcoding, not UTF-8 text.
+- `haxe.Ucs2` requires a target-native UCS-2 string representation. BEAM strings use UTF-8, so the
+  official Haxe fallback rejects construction. Use `UnicodeString` instead.
 - Built-in map surfaces (`haxe.ds.Map`, `StringMap`, `IntMap`) are currently
   represented as native Elixir `%{}` maps and lowered to idiomatic `Map.*`
   operations. That is the current implementation, not the final parity

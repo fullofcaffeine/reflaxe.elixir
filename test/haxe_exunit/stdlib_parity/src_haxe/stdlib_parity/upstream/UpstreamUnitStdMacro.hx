@@ -80,6 +80,12 @@ class UpstreamUnitStdMacro {
 			case ECall({expr: EConst(CIdent("feq"))}, [actual, expected]):
 				assertFloatNear(actual, expected, expression, relativePath);
 
+			case ECall({expr: EConst(CIdent("aeq"))}, [expected, actual]):
+				macro haxe.test.Assert.equals($expected, $actual, $v{message(expression, relativePath)});
+
+			case EUnop(OpNot, _, _):
+				assertTrue(expression, expression, relativePath);
+
 			case ECall({expr: EConst(CIdent("exc"))}, [body]):
 				macro haxe.test.Assert.raises(function() {
 					$body;

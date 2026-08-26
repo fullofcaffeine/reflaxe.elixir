@@ -4,7 +4,7 @@ Generated from the validated granular registry by `tools/RegistryOrderDoc.hx`; d
 
 Scope labels are executable semantic ownership. `PassScopeManifest` maps exact stable pass IDs to scopes, while `PassApplicability` derives module capabilities only from typed annotation metadata and structured ElixirAST. The verification-only `-D reflaxe_elixir_disable_pass_scopes` switch restores legacy all-pass execution for byte-parity checks.
 
-- Effective granular passes per transformed module: **578**
+- Effective granular passes per transformed module: **579**
 - Full deterministic order: [TRANSFORM_PASS_REGISTRY_ORDER_GRANULAR.md](TRANSFORM_PASS_REGISTRY_ORDER_GRANULAR.md)
 - Rebuild: `npm run docs:passes`
 - Drift guard: `npm run guard:pass-inventory`
@@ -45,7 +45,7 @@ A family is the intersection of a phase contract and semantic ownership scope. E
 
 | Family | Effective passes |
 |---|---:|
-| `absolute-final.core` | 118 |
+| `absolute-final.core` | 119 |
 | `absolute-final.ecto` | 7 |
 | `absolute-final.exunit` | 2 |
 | `absolute-final.hxx` | 6 |
@@ -132,6 +132,7 @@ These are naming-related candidates for later consolidation, not proof that a pa
 | `SuccessBinderAlignByBodyUse` | SuccessBinderAlignByBodyUse, SuccessBinderAlignByBodyUse_Final, SuccessBinderAlignByBodyUse_Replay_Final |
 | `SuccessVarAbsoluteReplaceUndefined` | SuccessVarAbsoluteReplaceUndefined, SuccessVarAbsoluteReplaceUndefined_Replay_Final |
 | `SwitchReturnSanitizer` | SwitchReturnSanitizer, SwitchReturnSanitizer_Final |
+| `UnderscorePromoteByUse` | UnderscorePromoteByUse_Late, UnderscorePromoteByUse_AbsoluteLast |
 
 ## Registry Diagnostics
 

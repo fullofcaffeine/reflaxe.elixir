@@ -35,6 +35,9 @@ defmodule Assert do
   def raises(_fn_param, _exception_module \\ nil, _message \\ nil) do
     raise Reflaxe.Elixir.HaxeThrow, [value: "Assert.raises should be compiled by ExUnitCompiler"]
   end
+  def raises_runtime_error_matching(_fn_param, _pattern) do
+    raise Reflaxe.Elixir.HaxeThrow, [value: "Assert.raisesRuntimeErrorMatching should be compiled by ExUnitCompiler"]
+  end
   def does_not_raise(_fn_param, _message \\ nil) do
     raise Reflaxe.Elixir.HaxeThrow, [value: "Assert.doesNotRaise should be compiled by ExUnitCompiler"]
   end

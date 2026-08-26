@@ -70,10 +70,45 @@ defmodule Main do
           {:cont, {acc_entries, acc__g_offset}}
       end
     end)
+    key_codes = collect_key_codes(text)
     expect("key value count", length(entries) == 3)
     expect("key value ascii", Enum.at(entries, 0) == "0:97")
     expect("key value astral", Enum.at(entries, 1) == "1:127757")
     expect("key value trailing", Enum.at(entries, 2) == "2:98")
+    expect("comprehension count", length(key_codes) == 3)
+    expect("comprehension astral", Enum.at(Enum.at(key_codes, 1), 0) == 1 and Enum.at(Enum.at(key_codes, 1), 1) == 127757)
+  end
+  defp collect_key_codes(text) do
+    g_offset = 0
+    g_s = text
+    {key_codes, _g_offset} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {[], g_offset}, fn _, {acc__g, acc__g_offset} ->
+      try do
+        if (StringTools.haxe_char_at(g_s, acc__g_offset) != "") do
+          g_key = acc__g_offset
+          reflaxe_call_value_5 = g_s
+          reflaxe_receiver_value_4 = acc__g_offset
+          acc__g_offset = acc__g_offset + 1
+          g_value = StringTools.fast_code_at(reflaxe_call_value_5, reflaxe_receiver_value_4)
+          index = g_key
+          code = g_value
+          acc__g = acc__g ++ [[index, code]]
+          {:cont, {acc__g, acc__g_offset}}
+        else
+          {:halt, {acc__g, acc__g_offset}}
+        end
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, {acc__g, acc__g_offset}}
+        :throw, :continue ->
+          {:cont, {acc__g, acc__g_offset}}
+      end
+    end)
+    expect("helper comprehension count", length(key_codes) == 3)
+    key_codes
   end
   defp test_validate_utf8() do
     valid = Bytes.of_string("Aé🌍中", {:utf8})
@@ -159,7 +194,7 @@ defmodule Main do
               reflaxe_unicode_valid.(reflaxe_unicode_valid, 0)
           end
      end).())
-    invalid = %{__reflaxe_class__: Bytes, length: 1, b: <<0xC0>>}
+    invalid = Bytes.of_data(<<0xC0>>)
     expect("invalid utf8", (fn -> not
           case {:utf8} do
             {:raw_native} ->

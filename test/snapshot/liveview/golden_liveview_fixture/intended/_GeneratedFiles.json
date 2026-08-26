@@ -176,7 +176,7 @@
 		},
 		{
 			"path": "string_tools.ex",
-			"sha256": "b174b046cee6138603fade8a7baa097e869d67f66a86afdebda3449b28d3b153"
+			"sha256": "bb5f47e529150a00f248ac791970199bd13a42d23acc3a9c2da761f5930ff5a0"
 		},
 		{
 			"path": "test_app_web/golden_live.ex",
@@ -187,5 +187,5 @@
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "3436f24f4c0edf405e84a0e885ac7bf9e5011d87246bd763f6de8c72a592c438"
+	"generation": "4f5dca936ba684716b51e65aaf8218a6e2c0fb0f7a76f7030a23552de51bb74b"
 }

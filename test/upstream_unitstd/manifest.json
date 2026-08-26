@@ -218,10 +218,13 @@
     {
       "module": "UnicodeString",
       "upstreamSpec": "available",
-      "disposition": "pending-review",
-      "execution": "not-run",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
       "source": "UnicodeString.unit.hx",
-      "reason": "Upstream spec exists; enable after UTF-8 codepoint semantics are triaged."
+      "fixtureKind": "unchanged",
+      "fixture": "test/upstream_unitstd/upstream/UnicodeString.unit.hx",
+      "sourceSha256": "3a8d42c381a0814a119e473a70233ab8a132fc88588ae5e065de8c03092ad94e",
+      "fixtureSha256": "3a8d42c381a0814a119e473a70233ab8a132fc88588ae5e065de8c03092ad94e"
     },
     {
       "module": "Xml",
@@ -353,11 +356,25 @@
       "reason": "No matching upstream unitstd spec exists; stamp/measure, run rebinding, delay, repeated event-loop firing, and stop behavior are covered by local Haxe-authored ExUnit runtime tests."
     },
     {
+      "module": "haxe.Ucs2",
+      "upstreamSpec": "absent",
+      "disposition": "unsupported",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists. Haxe requires a target-native UCS-2 string representation, but BEAM strings use UTF-8. The official fallback therefore fails fast, and a local Haxe-authored ExUnit runtime test verifies its diagnostic. Use UnicodeString for Unicode text."
+    },
+    {
       "module": "haxe.Unserializer",
       "upstreamSpec": "absent",
       "disposition": "applicable",
       "execution": "not-run",
       "reason": "No matching upstream unitstd spec exists; runtime coverage uses local portable-subset tests."
+    },
+    {
+      "module": "haxe.Utf8",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists. Local Haxe-authored ExUnit runtime tests cover construction, codepoint iteration, length, indexing, slicing, comparison, UTF-8 validation, and the legacy transcoding methods that intentionally fail fast."
     },
     {
       "module": "haxe.ValueException",

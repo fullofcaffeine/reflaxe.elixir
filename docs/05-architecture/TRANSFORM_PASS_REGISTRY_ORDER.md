@@ -14,4 +14,4 @@ Effective pass count: **7**
 | 4 | `BundleCoreTransforms` | `core-lowering` | `mixed` | `core-lowering.mixed` | source order | Core idiom, control-flow, collection, and runtime lowering (224 child passes) |
 | 5 | `BundleHeexPipeline` | `hxx-heex` | `mixed` | `hxx-heex.mixed` | source order | Typed HXX and HEEx lowering (89 child passes) |
 | 6 | `BundleHygieneFinal` | `final-hygiene` | `mixed` | `final-hygiene.mixed` | source order | Late binder, temporary, result, and warning hygiene (19 child passes) |
-| 7 | `BundleAbsoluteFinal` | `absolute-final` | `mixed` | `absolute-final.mixed` | source order | Absolute-final validation and narrowly scoped cleanup (184 child passes) |
+| 7 | `BundleAbsoluteFinal` | `absolute-final` | `mixed` | `absolute-final.mixed` | source order | Absolute-final validation and narrowly scoped cleanup (185 child passes) |

@@ -47,6 +47,12 @@ class UpstreamUnitStdTest extends TestCase {
 		UpstreamUnitStdMacro.assertSpec("StringTools.unit.hx");
 	}
 
+	@:describe("upstream Haxe unitstd: UnicodeString")
+	@:test
+	function testUnicodeString():Void {
+		UpstreamUnitStdMacro.assertSpec("UnicodeString.unit.hx");
+	}
+
 	@:describe("upstream Haxe unitstd: haxe.crypto.Base64")
 	@:test
 	function testHaxeCryptoBase64():Void {
