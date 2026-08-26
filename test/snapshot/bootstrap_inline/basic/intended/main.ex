@@ -1,5 +1,5 @@
 defmodule Main do
   def main() do
-    Log.trace("Hello inline deterministic!", nil)
+    Log.__get_trace().("Hello inline deterministic!", nil)
   end
 end

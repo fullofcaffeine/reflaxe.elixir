@@ -1,6 +1,7 @@
 defmodule Main do
   use ExUnit.Case, async: :true
   setup_all context do
+    Main.module_state("initialized")
     %{shared_resource: "database_connection", test_environment: "test"}
   end
   setup context do
@@ -19,7 +20,7 @@ defmodule Main do
     :ok
   end
   setup_all context do
-    on_exit(fn -> module_state = nil end)
+    on_exit(fn -> Main.module_state(nil) end)
     :ok
   end
   defp __haxe_static_get__(key, init) do

@@ -1,5 +1,5 @@
 defmodule Main do
   def main() do
-    Log.trace("Hello from bootstrap!", nil)
+    Log.__get_trace().("Hello from bootstrap!", nil)
   end
 end
