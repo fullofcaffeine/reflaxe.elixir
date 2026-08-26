@@ -4,7 +4,6 @@ package reflaxe.elixir.ast.builders;
 import haxe.macro.Type;
 import haxe.macro.Expr;
 import haxe.macro.Context;
-import haxe.io.Path;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
@@ -53,8 +52,6 @@ import reflaxe.elixir.ast.NameUtils;
  */
 @:nullSafety(Off)
 class ObjectBuilder {
-	static var compilerSourceRoot:Null<String>;
-
 	/**
 	 * Build object declaration with pattern detection
 	 * 
@@ -452,27 +449,29 @@ class ObjectBuilder {
 		if (path == null || !StringTools.endsWith(path, ".cross.hx"))
 			return path;
 
-		var normalizedPath = Path.normalize(path).split("\\").join("/");
-		var sourceRoot = resolveCompilerSourceRoot();
-		if (sourceRoot == null || !StringTools.startsWith(normalizedPath, sourceRoot + "/"))
-			return path;
-
-		var relativePath = normalizedPath.substr(sourceRoot.length + 1);
-		return "elixir/_std/" + relativePath.substr(0, relativePath.length - ".cross.hx".length) + ".hx";
-	}
-
-	static function resolveCompilerSourceRoot():Null<String> {
-		if (compilerSourceRoot != null)
-			return compilerSourceRoot;
-
-		try {
-			var bootstrapPath = Path.normalize(Context.resolvePath("reflaxe/elixir/CompilerBootstrap.hx")).split("\\").join("/");
-			compilerSourceRoot = Path.directory(Path.directory(Path.directory(bootstrapPath))).split("\\").join("/");
-		} catch (_:Dynamic) {
-			return null;
+		var packageMarker = "/reflaxe,elixir/";
+		var normalizedPath = path.split("\\").join("/");
+		if (normalizedPath.lastIndexOf(packageMarker) == -1) {
+			var logicalPath = path.substr(0, path.length - ".cross.hx".length) + ".hx";
+			var resolvedPath = try {
+				Context.resolvePath(logicalPath);
+			} catch (_:Dynamic) {
+				return path;
+			}
+			normalizedPath = resolvedPath.split("\\").join("/");
 		}
 
-		return compilerSourceRoot;
+		var packageOffset = normalizedPath.lastIndexOf(packageMarker);
+		if (packageOffset == -1)
+			return path;
+
+		var sourceMarker = "/src/";
+		var sourceOffset = normalizedPath.indexOf(sourceMarker, packageOffset + packageMarker.length);
+		if (sourceOffset == -1)
+			return path;
+
+		var relativePath = normalizedPath.substr(sourceOffset + sourceMarker.length);
+		return "elixir/_std/" + relativePath.substr(0, relativePath.length - ".cross.hx".length) + ".hx";
 	}
 }
 #end

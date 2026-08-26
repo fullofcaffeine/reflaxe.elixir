@@ -14,12 +14,12 @@ defmodule RegistryOptionsBuilder do
     options
   end
   def with_meta(options, key, value) do
-    options = if (Kernel.is_nil(options.meta)) do
+    options = if (Kernel.is_nil(Map.get(options, :meta))) do
       Map.put(options, :meta, [])
     else
       options
     end
-    options.meta ++ [%{key: key, value: value}]
+    Map.get(options, :meta) ++ [%{key: key, value: value}]
     options
   end
 end

@@ -4,6 +4,7 @@
 		"std.ex",
 		"reflaxe/exception.ex",
 		"reflaxe/elixir/haxe_throw.ex",
+		"reflaxe/elixir/haxe_int.ex",
 		"reflaxe/elixir/haxe_float.ex",
 		"main.ex",
 		"haxe/iterators/array_key_value_iterator.ex",
@@ -116,7 +117,7 @@
 		},
 		{
 			"path": "elixir/types/gen_server_option_builder.ex",
-			"sha256": "87b1ba02a792ebd5cb12d8f80bc157e5689d55bd982fb592ea00ffab93e58ac8"
+			"sha256": "02932aed7b2307012c6b45d14d64e995e1146566c0082516f2f83fc152265a98"
 		},
 		{
 			"path": "elixir/types/handle_call_result.ex",
@@ -136,7 +137,7 @@
 		},
 		{
 			"path": "elixir/types/registry_options_builder.ex",
-			"sha256": "b4261b75ac3d19626dac9fb81d330bcd1040b5b0fc98bdfe0126443054022839"
+			"sha256": "d3c63b6d68d821164f879e30438269f5022a15dfc4ed4789bcee9547f96e25bc"
 		},
 		{
 			"path": "elixir/types/registry_type.ex",
@@ -152,7 +153,7 @@
 		},
 		{
 			"path": "haxe/_call_stack/call_stack_impl_.ex",
-			"sha256": "ab46ba4f786a95420ae1cd78188f77ebebc3ced2db90d1351297f573f30dadf8"
+			"sha256": "51ccde2aded2494513ee0e4df47307da4b81b76b152e144ec83f62ca98578569"
 		},
 		{
 			"path": "haxe/iterators/array_iterator.ex",
@@ -168,7 +169,11 @@
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.ex",
-			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+			"sha256": "6786d5bfb513f44365615186bd6c8f2589222501729873f517d82d2ee23822f4"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_int.ex",
+			"sha256": "61392d67ec3807b64ea717b125498909d6fb903f8600b77dc18a17a65a955515"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_throw.ex",
@@ -180,12 +185,12 @@
 		},
 		{
 			"path": "std.ex",
-			"sha256": "cfc6ad389294bc64c9d82be070797b4e65041a3d225fc0741500ca7cc6c8f804"
+			"sha256": "2719d51795868959cd6891134e197cf72d4b523091c594a280b37e367fd8e03f"
 		},
 		{
 			"path": "type.ex",
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "f2a7182e322a234ea805124c37374efe5c9150653b42ca94b087106b473d3b2c"
+	"generation": "192cb52e0dad3af9d483a19c9fbd005eddf730e6a2c0d12b109f750c1e0faef7"
 }

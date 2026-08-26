@@ -18,7 +18,7 @@ defmodule TypeSafeChildSpec do
     if (not Kernel.is_nil(opts)) do
       spec = opts
       spec = spec |> Map.put(:id, module) |> Map.put(:start, %{module: module, func: "start_link", args: (if (not Kernel.is_nil(args)), do: args, else: [])})
-      spec = if (Kernel.is_nil(spec.type)) do
+      spec = if (Kernel.is_nil(Map.get(spec, :type))) do
         Map.put(spec, :type, {:supervisor})
       else
         spec

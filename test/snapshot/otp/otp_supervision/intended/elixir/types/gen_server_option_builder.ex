@@ -21,32 +21,32 @@ defmodule GenServerOptionBuilder do
   end
   def with_trace(options \\ nil) do
     options = if (Kernel.is_nil(options)), do: %{}, else: options
-    options = if (Kernel.is_nil(options.debug)) do
+    options = if (Kernel.is_nil(Map.get(options, :debug))) do
       Map.put(options, :debug, [])
     else
       options
     end
-    options.debug ++ [:trace]
+    Map.get(options, :debug) ++ [:trace]
     options
   end
   def with_log(options \\ nil) do
     options = if (Kernel.is_nil(options)), do: %{}, else: options
-    options = if (Kernel.is_nil(options.debug)) do
+    options = if (Kernel.is_nil(Map.get(options, :debug))) do
       Map.put(options, :debug, [])
     else
       options
     end
-    options.debug ++ [:log]
+    Map.get(options, :debug) ++ [:log]
     options
   end
   def with_statistics(options \\ nil) do
     options = if (Kernel.is_nil(options)), do: %{}, else: options
-    options = if (Kernel.is_nil(options.debug)) do
+    options = if (Kernel.is_nil(Map.get(options, :debug))) do
       Map.put(options, :debug, [])
     else
       options
     end
-    options.debug ++ [:statistics]
+    Map.get(options, :debug) ++ [:statistics]
     options
   end
 end

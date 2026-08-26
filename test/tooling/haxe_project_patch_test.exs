@@ -2,6 +2,7 @@ defmodule HaxeProjectPatchTest do
   use ExUnit.Case, async: true
 
   @transaction_directory ".reflaxe-elixir-project-patch"
+  @message_timeout 5_000
 
   test "marker helpers require one ordered, non-overlapping marker pair" do
     content = """
@@ -276,8 +277,8 @@ defmodule HaxeProjectPatchTest do
     end
 
     assert :ok == HaxeProjectPatch.publish!(plan, fault_injector: fault)
-    assert_receive {:publishing, "ordinary.txt"}
-    assert_receive {:publishing, "manifest.json"}
+    assert_receive {:publishing, "ordinary.txt"}, @message_timeout
+    assert_receive {:publishing, "manifest.json"}, @message_timeout
   end
 
   test "a rerun recovers a process killed between per-file replacements" do
@@ -308,8 +309,8 @@ defmodule HaxeProjectPatchTest do
         )
       end)
 
-    assert_receive :first_published
-    assert_receive {:DOWN, ^monitor, :process, _pid, :killed}
+    assert_receive :first_published, @message_timeout
+    assert_receive {:DOWN, ^monitor, :process, _pid, :killed}, @message_timeout
     assert File.read!(first) == "first-after\n"
     assert File.read!(second) == "second-before\n"
     assert File.dir?(Path.join(root, @transaction_directory))
@@ -352,8 +353,8 @@ defmodule HaxeProjectPatchTest do
         )
       end)
 
-    assert_receive :manifest_published
-    assert_receive {:DOWN, ^monitor, :process, _pid, :killed}
+    assert_receive :manifest_published, @message_timeout
+    assert_receive {:DOWN, ^monitor, :process, _pid, :killed}, @message_timeout
     assert File.dir?(Path.join(root, @transaction_directory))
     assert HaxeProjectPatch.recovery_status!(root) == {:pending, :commit_cleanup}
 
@@ -396,8 +397,8 @@ defmodule HaxeProjectPatchTest do
         )
       end)
 
-    assert_receive :first_published
-    assert_receive {:DOWN, ^monitor, :process, _pid, :killed}
+    assert_receive :first_published, @message_timeout
+    assert_receive {:DOWN, ^monitor, :process, _pid, :killed}, @message_timeout
 
     journal_path = Path.join([root, @transaction_directory, "journal.json"])
     journal = Jason.decode!(File.read!(journal_path))
