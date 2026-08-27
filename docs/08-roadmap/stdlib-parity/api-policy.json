@@ -2779,14 +2779,20 @@
       "surfaceDigest": "e4923aced7fc3d116057e2fc1f38b7df1b11d4a984000d4937cbecf55d5a1d56",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testFileSeekConstructors"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists."
+      "reviewNote": "No matching upstream unitstd spec exists. The Elixir target keeps the official three-constructor enum contract. Local Haxe-authored runtime tests cover every constructor, name, and index."
     },
     {
       "module": "sys.io.Process",
@@ -2891,14 +2897,20 @@
       "surfaceDigest": "d546783aa83ac52c6b6a421cc3b67d8ced6ea247982303111304c9641ab615c6",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testDigestAlgorithmValues"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists."
+      "reviewNote": "No matching upstream unitstd spec exists. The Elixir target keeps the official String enum-abstract contract. Local Haxe-authored runtime tests cover all seven algorithms and String conversion."
     },
     {
       "module": "sys.ssl.Key",
@@ -3045,14 +3057,20 @@
       "surfaceDigest": "e92f2f2e4b7c1d6b8c7c3ad17d2f4059b70f355c400ed92b4d55937ee213fa1d",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testNoEventLoopExceptionValuesAndCatch"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists."
+      "reviewNote": "No matching upstream unitstd spec exists. The Elixir target keeps the official exception contract. Local Haxe-authored runtime tests cover the default and custom messages, previous cause, throw, and typed catch."
     },
     {
       "module": "sys.thread.Semaphore",
@@ -3087,14 +3105,20 @@
       "surfaceDigest": "1379a8e12c868ab252c661b164064e22a465a1920e87f278026548b11092748f",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testThreadPoolExceptionValuesAndCatch"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists."
+      "reviewNote": "No matching upstream unitstd spec exists. The Elixir target keeps the official exception contract. Local Haxe-authored runtime tests cover message and previous-cause preservation, throw, and typed catch."
     },
     {
       "module": "sys.thread.Tls",

@@ -1663,6 +1663,75 @@ class StdlibParityTest extends TestCase {
 		Assert.equals(599, customCode);
 	}
 
+	@:describe("sys.io.FileSeek")
+	@:test
+	function testFileSeekConstructors():Void {
+		var origins = [sys.io.FileSeek.SeekBegin, sys.io.FileSeek.SeekCur, sys.io.FileSeek.SeekEnd];
+		var expected = ["SeekBegin", "SeekCur", "SeekEnd"];
+
+		Assert.equals(expected.length, origins.length);
+		for (index in 0...expected.length) {
+			Assert.equals(expected[index], Type.enumConstructor(origins[index]));
+			Assert.equals(index, Type.enumIndex(origins[index]));
+		}
+	}
+
+	@:describe("sys.ssl.DigestAlgorithm")
+	@:test
+	function testDigestAlgorithmValues():Void {
+		var algorithms:Array<sys.ssl.DigestAlgorithm> = [
+			sys.ssl.DigestAlgorithm.MD5,
+			sys.ssl.DigestAlgorithm.SHA1,
+			sys.ssl.DigestAlgorithm.SHA224,
+			sys.ssl.DigestAlgorithm.SHA256,
+			sys.ssl.DigestAlgorithm.SHA384,
+			sys.ssl.DigestAlgorithm.SHA512,
+			sys.ssl.DigestAlgorithm.RIPEMD160
+		];
+		var expected = ["MD5", "SHA1", "SHA224", "SHA256", "SHA384", "SHA512", "RIPEMD160"];
+
+		Assert.equals(expected.length, algorithms.length);
+		for (index in 0...expected.length) {
+			var actual:String = algorithms[index];
+			Assert.equals(expected[index], actual);
+		}
+	}
+
+	@:describe("sys.thread.NoEventLoopException")
+	@:test
+	function testNoEventLoopExceptionValuesAndCatch():Void {
+		var defaultError = new sys.thread.NoEventLoopException();
+		Assert.equals("Event loop is not available. Refer to sys.thread.Thread.runWithEventLoop.", defaultError.message);
+
+		var previous = new haxe.Exception("previous failure");
+		var customError = new sys.thread.NoEventLoopException("custom event-loop failure", previous);
+		Assert.equals("custom event-loop failure", customError.message);
+		Assert.equals("previous failure", customError.previous.message);
+
+		try {
+			throw customError;
+			Assert.fail("NoEventLoopException should be catchable by its concrete type");
+		} catch (caught:sys.thread.NoEventLoopException) {
+			Assert.equals("custom event-loop failure", caught.message);
+		}
+	}
+
+	@:describe("sys.thread.ThreadPoolException")
+	@:test
+	function testThreadPoolExceptionValuesAndCatch():Void {
+		var previous = new haxe.Exception("previous failure");
+		var error = new sys.thread.ThreadPoolException("pool failure", previous);
+		Assert.equals("pool failure", error.message);
+		Assert.equals("previous failure", error.previous.message);
+
+		try {
+			throw error;
+			Assert.fail("ThreadPoolException should be catchable by its concrete type");
+		} catch (caught:sys.thread.ThreadPoolException) {
+			Assert.equals("pool failure", caught.message);
+		}
+	}
+
 	@:describe("haxe.Int64")
 	@:test
 	function testInt64WrapOverflow():Void {

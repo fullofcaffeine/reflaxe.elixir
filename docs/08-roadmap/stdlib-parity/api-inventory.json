@@ -89,14 +89,14 @@
     "bySupportState": {
       "not-applicable": 1711,
       "partial": 656,
-      "supported": 677,
-      "unknown": 589,
+      "supported": 693,
+      "unknown": 573,
       "unsupported": 59
     },
     "byEvidenceState": {
       "api-runtime": 103,
-      "missing": 1042,
-      "module-runtime": 836,
+      "missing": 1026,
+      "module-runtime": 852,
       "not-required": 1711
     },
     "byImplementationOwner": {
@@ -3454,8 +3454,8 @@
         "runtime": 4
       },
       "implementationOwner": "reflaxe-elixir-target",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
@@ -3610,8 +3610,8 @@
         "runtime": 8
       },
       "implementationOwner": "reflaxe-elixir-target",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
@@ -3822,8 +3822,8 @@
         "runtime": 2
       },
       "implementationOwner": "reflaxe-elixir-target",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
@@ -3880,8 +3880,8 @@
         "runtime": 2
       },
       "implementationOwner": "reflaxe-elixir-target",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
@@ -153812,14 +153812,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testFileSeekConstructors"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists.",
+        "reviewNote": "No matching upstream unitstd spec exists. The Elixir target keeps the official three-constructor enum contract. Local Haxe-authored runtime tests cover every constructor, name, and index.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/io/FileSeek.hx"
@@ -153856,14 +153862,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testFileSeekConstructors"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists.",
+        "reviewNote": "No matching upstream unitstd spec exists. The Elixir target keeps the official three-constructor enum contract. Local Haxe-authored runtime tests cover every constructor, name, and index.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/io/FileSeek.hx"
@@ -153900,14 +153912,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testFileSeekConstructors"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists.",
+        "reviewNote": "No matching upstream unitstd spec exists. The Elixir target keeps the official three-constructor enum contract. Local Haxe-authored runtime tests cover every constructor, name, and index.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/io/FileSeek.hx"
@@ -153956,14 +153974,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testFileSeekConstructors"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists.",
+        "reviewNote": "No matching upstream unitstd spec exists. The Elixir target keeps the official three-constructor enum contract. Local Haxe-authored runtime tests cover every constructor, name, and index.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/io/FileSeek.hx"
@@ -157397,14 +157421,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testDigestAlgorithmValues"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists.",
+        "reviewNote": "No matching upstream unitstd spec exists. The Elixir target keeps the official String enum-abstract contract. Local Haxe-authored runtime tests cover all seven algorithms and String conversion.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/ssl/DigestAlgorithm.hx"
@@ -157440,14 +157470,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testDigestAlgorithmValues"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists.",
+        "reviewNote": "No matching upstream unitstd spec exists. The Elixir target keeps the official String enum-abstract contract. Local Haxe-authored runtime tests cover all seven algorithms and String conversion.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/ssl/DigestAlgorithm.hx"
@@ -157483,14 +157519,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testDigestAlgorithmValues"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists.",
+        "reviewNote": "No matching upstream unitstd spec exists. The Elixir target keeps the official String enum-abstract contract. Local Haxe-authored runtime tests cover all seven algorithms and String conversion.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/ssl/DigestAlgorithm.hx"
@@ -157526,14 +157568,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testDigestAlgorithmValues"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists.",
+        "reviewNote": "No matching upstream unitstd spec exists. The Elixir target keeps the official String enum-abstract contract. Local Haxe-authored runtime tests cover all seven algorithms and String conversion.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/ssl/DigestAlgorithm.hx"
@@ -157569,14 +157617,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testDigestAlgorithmValues"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists.",
+        "reviewNote": "No matching upstream unitstd spec exists. The Elixir target keeps the official String enum-abstract contract. Local Haxe-authored runtime tests cover all seven algorithms and String conversion.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/ssl/DigestAlgorithm.hx"
@@ -157612,14 +157666,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testDigestAlgorithmValues"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists.",
+        "reviewNote": "No matching upstream unitstd spec exists. The Elixir target keeps the official String enum-abstract contract. Local Haxe-authored runtime tests cover all seven algorithms and String conversion.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/ssl/DigestAlgorithm.hx"
@@ -157655,14 +157715,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testDigestAlgorithmValues"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists.",
+        "reviewNote": "No matching upstream unitstd spec exists. The Elixir target keeps the official String enum-abstract contract. Local Haxe-authored runtime tests cover all seven algorithms and String conversion.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/ssl/DigestAlgorithm.hx"
@@ -157703,14 +157769,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testDigestAlgorithmValues"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists.",
+        "reviewNote": "No matching upstream unitstd spec exists. The Elixir target keeps the official String enum-abstract contract. Local Haxe-authored runtime tests cover all seven algorithms and String conversion.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/ssl/DigestAlgorithm.hx"
@@ -161266,14 +161338,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testNoEventLoopExceptionValuesAndCatch"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists.",
+        "reviewNote": "No matching upstream unitstd spec exists. The Elixir target keeps the official exception contract. Local Haxe-authored runtime tests cover the default and custom messages, previous cause, throw, and typed catch.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/thread/NoEventLoopException.hx"
@@ -161318,14 +161396,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testNoEventLoopExceptionValuesAndCatch"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists.",
+        "reviewNote": "No matching upstream unitstd spec exists. The Elixir target keeps the official exception contract. Local Haxe-authored runtime tests cover the default and custom messages, previous cause, throw, and typed catch.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/thread/NoEventLoopException.hx"
@@ -162182,14 +162266,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testThreadPoolExceptionValuesAndCatch"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists.",
+        "reviewNote": "No matching upstream unitstd spec exists. The Elixir target keeps the official exception contract. Local Haxe-authored runtime tests cover message and previous-cause preservation, throw, and typed catch.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/thread/ThreadPoolException.hx"
@@ -162222,14 +162312,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testThreadPoolExceptionValuesAndCatch"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists.",
+        "reviewNote": "No matching upstream unitstd spec exists. The Elixir target keeps the official exception contract. Local Haxe-authored runtime tests cover message and previous-cause preservation, throw, and typed catch.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/thread/ThreadPoolException.hx"
