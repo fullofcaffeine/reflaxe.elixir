@@ -1531,14 +1531,20 @@
       "surfaceDigest": "1287599fd4e0e1ae2bb32086fef7085595f5e4d3e24d7808c86ae4735b40ef76",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testHttpMethodOfficialFallback"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No matching upstream unitstd spec exists. The official Haxe String enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard method, custom values, and String conversion."
     },
     {
       "module": "haxe.http.HttpNodeJs",
@@ -1556,14 +1562,20 @@
       "surfaceDigest": "7db2aa6a2847fec7274179a258d30a245ec14cc9403e8bca50ba7394cad3c79b",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testHttpStatusOfficialFallback"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No module-level runtime-conformance decision exists yet."
+      "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion."
     },
     {
       "module": "haxe.io.ArrayBufferView",

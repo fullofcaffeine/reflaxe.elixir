@@ -89,14 +89,14 @@
     "bySupportState": {
       "not-applicable": 1711,
       "partial": 656,
-      "supported": 605,
-      "unknown": 661,
+      "supported": 677,
+      "unknown": 589,
       "unsupported": 59
     },
     "byEvidenceState": {
       "api-runtime": 103,
-      "missing": 1114,
-      "module-runtime": 764,
+      "missing": 1042,
+      "module-runtime": 836,
       "not-required": 1711
     },
     "byImplementationOwner": {
@@ -1886,8 +1886,8 @@
         "runtime": 10
       },
       "implementationOwner": "official-haxe-stdlib-fallback",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
@@ -1921,8 +1921,8 @@
         "runtime": 62
       },
       "implementationOwner": "official-haxe-stdlib-fallback",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
@@ -77924,14 +77924,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpMethodOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe String enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard method, custom values, and String conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpMethod.hx"
@@ -77966,14 +77972,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpMethodOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe String enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard method, custom values, and String conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpMethod.hx"
@@ -78008,14 +78020,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpMethodOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe String enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard method, custom values, and String conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpMethod.hx"
@@ -78050,14 +78068,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpMethodOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe String enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard method, custom values, and String conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpMethod.hx"
@@ -78092,14 +78116,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpMethodOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe String enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard method, custom values, and String conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpMethod.hx"
@@ -78134,14 +78164,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpMethodOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe String enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard method, custom values, and String conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpMethod.hx"
@@ -78176,14 +78212,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpMethodOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe String enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard method, custom values, and String conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpMethod.hx"
@@ -78218,14 +78260,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpMethodOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe String enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard method, custom values, and String conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpMethod.hx"
@@ -78260,14 +78308,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpMethodOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe String enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard method, custom values, and String conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpMethod.hx"
@@ -78306,14 +78360,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpMethodOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe String enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard method, custom values, and String conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpMethod.hx"
@@ -78521,14 +78581,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -78563,14 +78629,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -78605,14 +78677,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -78647,14 +78725,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -78689,14 +78773,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -78731,14 +78821,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -78773,14 +78869,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -78815,14 +78917,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -78857,14 +78965,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -78899,14 +79013,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -78941,14 +79061,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -78983,14 +79109,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79025,14 +79157,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79067,14 +79205,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79109,14 +79253,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79151,14 +79301,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79193,14 +79349,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79235,14 +79397,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79277,14 +79445,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79319,14 +79493,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79361,14 +79541,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79403,14 +79589,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79445,14 +79637,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79487,14 +79685,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79529,14 +79733,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79571,14 +79781,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79613,14 +79829,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79655,14 +79877,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79697,14 +79925,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79739,14 +79973,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79781,14 +80021,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79823,14 +80069,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79865,14 +80117,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79907,14 +80165,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79949,14 +80213,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -79991,14 +80261,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80033,14 +80309,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80075,14 +80357,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80117,14 +80405,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80159,14 +80453,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80201,14 +80501,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80243,14 +80549,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80285,14 +80597,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80327,14 +80645,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80369,14 +80693,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80411,14 +80741,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80453,14 +80789,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80495,14 +80837,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80537,14 +80885,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80579,14 +80933,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80621,14 +80981,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80663,14 +81029,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80705,14 +81077,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80747,14 +81125,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80789,14 +81173,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80831,14 +81221,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80873,14 +81269,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80915,14 +81317,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80957,14 +81365,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -80999,14 +81413,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -81041,14 +81461,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"
@@ -81087,14 +81513,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpStatusOfficialFallback"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No module-level runtime-conformance decision exists yet.",
+        "reviewNote": "No matching upstream unitstd spec exists. The official Haxe Int enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover every standard status, custom values, and Int conversion.",
         "implementationOwner": "official-haxe-stdlib-fallback",
         "ownerEvidence": [
           "std/haxe/http/HttpStatus.hx"

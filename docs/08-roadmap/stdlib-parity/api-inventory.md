@@ -59,8 +59,8 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 |---|---:|
 | `not-applicable` | 1,711 |
 | `partial` | 656 |
-| `supported` | 605 |
-| `unknown` | 661 |
+| `supported` | 677 |
+| `unknown` | 589 |
 | `unsupported` | 59 |
 
 ## Counts by evidence state
@@ -68,8 +68,8 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 | Evidence state | API rows |
 |---|---:|
 | `api-runtime` | 103 |
-| `missing` | 1,114 |
-| `module-runtime` | 764 |
+| `missing` | 1,042 |
+| `module-runtime` | 836 |
 | `not-required` | 1,711 |
 
 ## Module review list
@@ -171,9 +171,9 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 | `haxe.format.JsonPrinter` | 2 | `runtime` (2) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.3.9`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.http.HttpBase` | 16 | `runtime` (16) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.http.HttpJs` | 8 | `other-target` (8) | `haxe-other-target` | `not-applicable` | `not-required` | — |
-| `haxe.http.HttpMethod` | 10 | `runtime` (10) | `official-haxe-stdlib-fallback` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
+| `haxe.http.HttpMethod` | 10 | `runtime` (10) | `official-haxe-stdlib-fallback` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.http.HttpNodeJs` | 5 | `other-target` (5) | `haxe-other-target` | `not-applicable` | `not-required` | — |
-| `haxe.http.HttpStatus` | 62 | `runtime` (62) | `official-haxe-stdlib-fallback` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
+| `haxe.http.HttpStatus` | 62 | `runtime` (62) | `official-haxe-stdlib-fallback` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.io.ArrayBufferView` | 18 | `runtime` (18) | `official-haxe-stdlib-fallback` | `partial` | `module-runtime` | `haxe.elixir.codex-0yn.10.3.14.4`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.io.BufferInput` | 9 | `runtime` (9) | `reflaxe-elixir-target` | `partial` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.3.10`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.io.Bytes` | 29 | `other-target` (1) + `runtime` (28) | `reflaxe-elixir-target` | `partial` | `missing` | `haxe.elixir.codex-0yn.10.3.14.4`, `haxe.elixir.codex-0yn.10.5` |

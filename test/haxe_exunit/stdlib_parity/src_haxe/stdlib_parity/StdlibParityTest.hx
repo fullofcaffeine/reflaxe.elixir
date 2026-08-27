@@ -1553,6 +1553,116 @@ class StdlibParityTest extends TestCase {
 		Assert.equals("web+demo", customSchemeText);
 	}
 
+	@:describe("haxe.http.HttpMethod")
+	@:test
+	function testHttpMethodOfficialFallback():Void {
+		var methods:Array<haxe.http.HttpMethod> = [
+			haxe.http.HttpMethod.Post,
+			haxe.http.HttpMethod.Get,
+			haxe.http.HttpMethod.Head,
+			haxe.http.HttpMethod.Put,
+			haxe.http.HttpMethod.Delete,
+			haxe.http.HttpMethod.Trace,
+			haxe.http.HttpMethod.Options,
+			haxe.http.HttpMethod.Connect,
+			haxe.http.HttpMethod.Patch
+		];
+		var expected = ["POST", "GET", "HEAD", "PUT", "DELETE", "TRACE", "OPTIONS", "CONNECT", "PATCH"];
+
+		Assert.equals(expected.length, methods.length);
+		for (index in 0...expected.length) {
+			var actual:String = methods[index];
+			Assert.equals(expected[index], actual);
+		}
+
+		var custom:haxe.http.HttpMethod = "PURGE";
+		var customText:String = custom;
+		Assert.equals("PURGE", customText);
+	}
+
+	@:describe("haxe.http.HttpStatus")
+	@:test
+	function testHttpStatusOfficialFallback():Void {
+		var statuses:Array<haxe.http.HttpStatus> = [
+			haxe.http.HttpStatus.Continue,
+			haxe.http.HttpStatus.SwitchingProtocols,
+			haxe.http.HttpStatus.Processing,
+			haxe.http.HttpStatus.OK,
+			haxe.http.HttpStatus.Created,
+			haxe.http.HttpStatus.Accepted,
+			haxe.http.HttpStatus.NonAuthoritativeInformation,
+			haxe.http.HttpStatus.NoContent,
+			haxe.http.HttpStatus.ResetContent,
+			haxe.http.HttpStatus.PartialContent,
+			haxe.http.HttpStatus.MultiStatus,
+			haxe.http.HttpStatus.AlreadyReported,
+			haxe.http.HttpStatus.IMUsed,
+			haxe.http.HttpStatus.MultipleChoices,
+			haxe.http.HttpStatus.MovedPermanently,
+			haxe.http.HttpStatus.Found,
+			haxe.http.HttpStatus.SeeOther,
+			haxe.http.HttpStatus.NotModified,
+			haxe.http.HttpStatus.UseProxy,
+			haxe.http.HttpStatus.SwitchProxy,
+			haxe.http.HttpStatus.TemporaryRedirect,
+			haxe.http.HttpStatus.PermanentRedirect,
+			haxe.http.HttpStatus.BadRequest,
+			haxe.http.HttpStatus.Unauthorized,
+			haxe.http.HttpStatus.PaymentRequired,
+			haxe.http.HttpStatus.Forbidden,
+			haxe.http.HttpStatus.NotFound,
+			haxe.http.HttpStatus.MethodNotAllowed,
+			haxe.http.HttpStatus.NotAcceptable,
+			haxe.http.HttpStatus.ProxyAuthenticationRequired,
+			haxe.http.HttpStatus.RequestTimeout,
+			haxe.http.HttpStatus.Conflict,
+			haxe.http.HttpStatus.Gone,
+			haxe.http.HttpStatus.LengthRequired,
+			haxe.http.HttpStatus.PreconditionFailed,
+			haxe.http.HttpStatus.PayloadTooLarge,
+			haxe.http.HttpStatus.URITooLong,
+			haxe.http.HttpStatus.UnsupportedMediaType,
+			haxe.http.HttpStatus.RangeNotSatisfiable,
+			haxe.http.HttpStatus.ExpectationFailed,
+			haxe.http.HttpStatus.ImATeapot,
+			haxe.http.HttpStatus.MisdirectedRequest,
+			haxe.http.HttpStatus.UnprocessableEntity,
+			haxe.http.HttpStatus.Locked,
+			haxe.http.HttpStatus.FailedDependency,
+			haxe.http.HttpStatus.UpgradeRequired,
+			haxe.http.HttpStatus.PreconditionRequired,
+			haxe.http.HttpStatus.TooManyRequests,
+			haxe.http.HttpStatus.RequestHeaderFieldsTooLarge,
+			haxe.http.HttpStatus.UnavailableForLegalReasons,
+			haxe.http.HttpStatus.InternalServerError,
+			haxe.http.HttpStatus.NotImplemented,
+			haxe.http.HttpStatus.BadGateway,
+			haxe.http.HttpStatus.ServiceUnavailable,
+			haxe.http.HttpStatus.GatewayTimeout,
+			haxe.http.HttpStatus.HTTPVersionNotSupported,
+			haxe.http.HttpStatus.VariantAlsoNegotiates,
+			haxe.http.HttpStatus.InsufficientStorage,
+			haxe.http.HttpStatus.LoopDetected,
+			haxe.http.HttpStatus.NotExtended,
+			haxe.http.HttpStatus.NetworkAuthenticationRequired
+		];
+		var expected = [
+			100, 101, 102, 200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308, 400, 401, 402, 403, 404, 405, 406,
+			407, 408, 409, 410, 411, 412, 413, 414, 415, 416, 417, 418, 421, 422, 423, 424, 426, 428, 429, 431, 451, 500, 501, 502, 503, 504, 505, 506, 507,
+			508, 510, 511
+		];
+
+		Assert.equals(expected.length, statuses.length);
+		for (index in 0...expected.length) {
+			var actual:Int = statuses[index];
+			Assert.equals(expected[index], actual);
+		}
+
+		var custom:haxe.http.HttpStatus = 599;
+		var customCode:Int = custom;
+		Assert.equals(599, customCode);
+	}
+
 	@:describe("haxe.Int64")
 	@:test
 	function testInt64WrapOverflow():Void {
