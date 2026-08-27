@@ -1683,42 +1683,60 @@
       "surfaceDigest": "e0f74e8fffee0aa32fabd90125a8b625fae03fa4fbf399959c1ea47add2b8310",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testIoEncodingPortableConstructors"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover both portable Encoding constructors."
     },
     {
       "module": "haxe.io.Eof",
       "surfaceDigest": "2f0ed9a49208a993f2438b81eb4fe68813109b1b79574c85a0cbba42ced999b4",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testIoEofConstructorAndCatch"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover construction, toString, throw, and typed catch behavior."
     },
     {
       "module": "haxe.io.Error",
       "surfaceDigest": "bb45f713640655cf7f76c789fa23e97e31b63a9bed18c6f2b97f576a849034ee",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testIoErrorConstructorsAndPayload"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; IO error enum behavior is covered by local runtime tests."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover every constructor, Custom payload matching, throw, and typed catch behavior."
     },
     {
       "module": "haxe.io.FPHelper",
@@ -1819,14 +1837,20 @@
       "surfaceDigest": "9db15363c73591417e093a543213e11fe1492350607f0b30637f81ae559733b5",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testMimeAndSchemeOfficialFallback"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; the official Haxe String enum-abstract fallback is used unchanged, with representative constants, custom values, and String conversion covered by local Haxe-authored ExUnit plus source/package parity tests."
+      "reviewNote": "No matching upstream unitstd spec exists. The official Haxe String enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover representative constants, custom values, and String conversion."
     },
     {
       "module": "haxe.io.Output",
@@ -1867,14 +1891,20 @@
       "surfaceDigest": "c615fece55ddd0668cb89663c1efc0bae392c56808b7ccfbec7b73c615d97ca0",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testMimeAndSchemeOfficialFallback"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; the official Haxe String enum-abstract fallback is used unchanged, with representative constants, custom values, and String conversion covered by local Haxe-authored ExUnit plus source/package parity tests."
+      "reviewNote": "No matching upstream unitstd spec exists. The official Haxe String enum-abstract fallback is used unchanged. Local Haxe-authored runtime tests cover representative constants, custom values, and String conversion."
     },
     {
       "module": "haxe.io.StringInput",

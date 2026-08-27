@@ -59,8 +59,8 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 |---|---:|
 | `not-applicable` | 1,711 |
 | `partial` | 656 |
-| `supported` | 273 |
-| `unknown` | 993 |
+| `supported` | 605 |
+| `unknown` | 661 |
 | `unsupported` | 59 |
 
 ## Counts by evidence state
@@ -68,8 +68,8 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 | Evidence state | API rows |
 |---|---:|
 | `api-runtime` | 103 |
-| `missing` | 1,446 |
-| `module-runtime` | 432 |
+| `missing` | 1,114 |
+| `module-runtime` | 764 |
 | `not-required` | 1,711 |
 
 ## Module review list
@@ -181,18 +181,18 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 | `haxe.io.BytesData` | 7 | `other-target` (6) + `runtime` (1) | `reflaxe-elixir-target` | `partial` | `missing` | `haxe.elixir.codex-0yn.10.3.14.4`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.io.BytesInput` | 13 | `other-target` (7) + `runtime` (6) | `reflaxe-elixir-target` | `partial` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.3.10`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.io.BytesOutput` | 14 | `other-target` (8) + `runtime` (6) | `reflaxe-elixir-target` | `partial` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.3.10`, `haxe.elixir.codex-0yn.10.5` |
-| `haxe.io.Encoding` | 3 | `runtime` (3) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
-| `haxe.io.Eof` | 2 | `runtime` (2) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
-| `haxe.io.Error` | 5 | `runtime` (5) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
+| `haxe.io.Encoding` | 3 | `runtime` (3) | `reflaxe-elixir-target` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
+| `haxe.io.Eof` | 2 | `runtime` (2) | `reflaxe-elixir-target` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
+| `haxe.io.Error` | 5 | `runtime` (5) | `reflaxe-elixir-target` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.io.FPHelper` | 7 | `other-target` (2) + `runtime` (5) | `reflaxe-elixir-target` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.5` |
 | `haxe.io.Float32Array` | 15 | `runtime` (15) | `official-haxe-stdlib-fallback` | `partial` | `module-runtime` | `haxe.elixir.codex-0yn.10.3.14.4`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.io.Float64Array` | 15 | `runtime` (15) | `official-haxe-stdlib-fallback` | `partial` | `module-runtime` | `haxe.elixir.codex-0yn.10.3.14.4`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.io.Input` | 19 | `runtime` (19) | `reflaxe-elixir-target` | `partial` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.3.10`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.io.Int32Array` | 15 | `runtime` (15) | `official-haxe-stdlib-fallback` | `partial` | `module-runtime` | `haxe.elixir.codex-0yn.10.3.14.4`, `haxe.elixir.codex-0yn.10.5` |
-| `haxe.io.Mime` | 315 | `runtime` (315) | `official-haxe-stdlib-fallback` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
+| `haxe.io.Mime` | 315 | `runtime` (315) | `official-haxe-stdlib-fallback` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.io.Output` | 19 | `runtime` (19) | `reflaxe-elixir-target` | `partial` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.3.10`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.io.Path` | 17 | `runtime` (17) | `reflaxe-elixir-target` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.5` |
-| `haxe.io.Scheme` | 7 | `runtime` (7) | `official-haxe-stdlib-fallback` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
+| `haxe.io.Scheme` | 7 | `runtime` (7) | `official-haxe-stdlib-fallback` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.io.StringInput` | 2 | `runtime` (2) | `reflaxe-elixir-target` | `partial` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.3.10`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.io.UInt16Array` | 15 | `runtime` (15) | `official-haxe-stdlib-fallback` | `partial` | `module-runtime` | `haxe.elixir.codex-0yn.10.3.14.4`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.io.UInt32Array` | 15 | `runtime` (15) | `official-haxe-stdlib-fallback` | `partial` | `module-runtime` | `haxe.elixir.codex-0yn.10.3.14.4`, `haxe.elixir.codex-0yn.10.5` |

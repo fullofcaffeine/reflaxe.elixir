@@ -1425,7 +1425,19 @@ class StdlibParityTest extends TestCase {
 
 	@:describe("haxe.io.Error")
 	@:test
-	function testIoErrorCustomCanBeCaughtAndMatched():Void {
+	function testIoErrorConstructorsAndPayload():Void {
+		var simpleErrors = [Error.Blocked, Error.Overflow, Error.OutsideBounds];
+		var matched = 0;
+		for (error in simpleErrors) {
+			switch (error) {
+				case Blocked | Overflow | OutsideBounds:
+					matched++;
+				case Custom(_):
+					Assert.fail("Expected a payload-free IO error");
+			}
+		}
+		Assert.equals(3, matched);
+
 		try {
 			throw Error.Custom("unsupported target IO operation");
 		} catch (error:Error) {
@@ -1435,6 +1447,36 @@ class StdlibParityTest extends TestCase {
 				default:
 					Assert.fail("Expected Error.Custom to survive BEAM throw/catch lowering");
 			}
+		}
+	}
+
+	@:describe("haxe.io.Encoding")
+	@:test
+	function testIoEncodingPortableConstructors():Void {
+		var utf8 = haxe.io.Encoding.UTF8;
+		var raw = haxe.io.Encoding.RawNative;
+
+		Assert.isTrue(switch (utf8) {
+			case UTF8: true;
+			default: false;
+		});
+		Assert.isTrue(switch (raw) {
+			case RawNative: true;
+			default: false;
+		});
+	}
+
+	@:describe("haxe.io.Eof")
+	@:test
+	function testIoEofConstructorAndCatch():Void {
+		var eof = new Eof();
+		Assert.equals("Eof", eof.toString());
+
+		try {
+			throw eof;
+			Assert.fail("Expected the Eof value to be caught");
+		} catch (caught:Eof) {
+			Assert.equals("Eof", caught.toString());
 		}
 	}
 
