@@ -2639,28 +2639,40 @@
       "surfaceDigest": "c65b1d0f4c289077460b6475b7867d816246130f3c777321155904b776d91a35",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testFileSystemLifecycleAndStatFields"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; behavior is sys-target integration specific."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests obtain a real file stat and cover every integer field, every Date field, content size, and hard-link count."
     },
     {
       "module": "sys.FileSystem",
       "surfaceDigest": "d3a11926648deac36966bef377754b5f60a0196961d69e015b3580f8db2e927f",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testFileSystemLifecycleAndStatFields"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; behavior is sys-target integration specific."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover all ten public methods, recursive creation, listing, rename, deletion and its non-empty error, canonical and absolute paths, an intermediate relative symlink, and bounded cleanup."
     },
     {
       "module": "sys.Http",

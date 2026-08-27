@@ -1,16 +1,16 @@
 defmodule Sys.IO.File do
   def get_content(path) do
-    read!(path)
+    File.read!(path)
   end
   def save_content(path, content) do
-    write!(path, content)
+    File.write!(path, content)
   end
   def get_bytes(path) do
-    data = read!(path)
+    data = File.read!(path)
     Bytes.of_data(data)
   end
   def save_bytes(path, bytes) do
-    write!(path, apply(Map.get(bytes, :__reflaxe_class__) || Map.get(bytes, :__struct__), :get_data, [bytes]))
+    File.write!(path, apply(Map.get(bytes, :__reflaxe_class__) || Map.get(bytes, :__struct__), :get_data, [bytes]))
   end
   def read(path, binary \\ true) do
     device = open_bang(path, (if (binary), do: ["read", "binary"], else: ["read"]))
@@ -29,7 +29,7 @@ defmodule Sys.IO.File do
     FileOutput.new(device)
   end
   def copy(src_path, dst_path) do
-    cp!(src_path, dst_path)
+    File.cp!(src_path, dst_path)
   end
   defp open_bang(path, modes) do
 

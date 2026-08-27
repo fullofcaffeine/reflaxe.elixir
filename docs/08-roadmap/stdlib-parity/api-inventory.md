@@ -59,8 +59,8 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 |---|---:|
 | `not-applicable` | 1,711 |
 | `partial` | 656 |
-| `supported` | 693 |
-| `unknown` | 573 |
+| `supported` | 716 |
+| `unknown` | 550 |
 | `unsupported` | 59 |
 
 ## Counts by evidence state
@@ -68,8 +68,8 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 | Evidence state | API rows |
 |---|---:|
 | `api-runtime` | 103 |
-| `missing` | 1,026 |
-| `module-runtime` | 852 |
+| `missing` | 1,003 |
+| `module-runtime` | 875 |
 | `not-required` | 1,711 |
 
 ## Module review list
@@ -246,8 +246,8 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 | `haxe.zip.Tools` | 3 | `runtime` (3) | `official-haxe-stdlib-fallback` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.3.22`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.zip.Uncompress` | 6 | `runtime` (6) | `official-haxe-stdlib-fallback` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.3.22`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.zip.Writer` | 5 | `runtime` (5) | `official-haxe-stdlib-fallback` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.3.22`, `haxe.elixir.codex-0yn.10.5` |
-| `sys.FileStat` | 12 | `runtime` (12) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
-| `sys.FileSystem` | 11 | `runtime` (11) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
+| `sys.FileStat` | 12 | `runtime` (12) | `reflaxe-elixir-target` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
+| `sys.FileSystem` | 11 | `runtime` (11) | `reflaxe-elixir-target` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
 | `sys.Http` | 12 | `runtime` (12) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
 | `sys.db.Connection` | 11 | `runtime` (11) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
 | `sys.db.Mysql` | 2 | `runtime` (2) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |

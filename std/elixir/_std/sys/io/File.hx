@@ -1,6 +1,5 @@
 package sys.io;
 
-import elixir.File as ElixirFile;
 import elixir.types.Term;
 import haxe.io.Bytes;
 
@@ -22,20 +21,20 @@ import haxe.io.Bytes;
 @:native("Sys.IO.File")
 class File {
 	public static function getContent(path:String):String {
-		return ElixirFile.readBang(path);
+		return elixir.File.readBang(path);
 	}
 
 	public static function saveContent(path:String, content:String):Void {
-		ElixirFile.writeBang(path, content);
+		elixir.File.writeBang(path, content);
 	}
 
 	public static function getBytes(path:String):Bytes {
-		var data = ElixirFile.readBang(path);
+		var data = elixir.File.readBang(path);
 		return Bytes.ofData(data);
 	}
 
 	public static function saveBytes(path:String, bytes:Bytes):Void {
-		ElixirFile.writeBang(path, bytes.getData());
+		elixir.File.writeBang(path, bytes.getData());
 	}
 
 	public static function read(path:String, binary:Bool = true):FileInput {
@@ -59,7 +58,7 @@ class File {
 	}
 
 	public static function copy(srcPath:String, dstPath:String):Void {
-		ElixirFile.cpBang(srcPath, dstPath);
+		elixir.File.cpBang(srcPath, dstPath);
 	}
 
 	static function openBang(path:String, modes:Array<String>):Term {

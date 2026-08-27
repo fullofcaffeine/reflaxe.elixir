@@ -48,6 +48,21 @@ using reflaxe.helpers.ClassFieldHelper;
  */
 @:nullSafety(Off)
 class CallExprBuilder {
+	/**
+	 * Test whether the current Haxe class and a call target emit the same
+	 * Elixir module.
+	 *
+	 * Haxe class identity is not sufficient because a typed wrapper and an
+	 * extern can intentionally map to the same native module. Short names are
+	 * also not sufficient because unrelated classes can emit different modules.
+	 * For example, `sys.io.File` emits `Sys.IO.File` and calls the native `File`
+	 * extern, while a `Phoenix.Presence` wrapper can call that same emitted
+	 * module locally.
+	 */
+	static function isSameElixirModule(currentClass:Null<ClassType>, targetModuleName:String):Bool {
+		return currentClass != null && ModuleBuilder.extractModuleName(currentClass) == targetModuleName;
+	}
+
 	static function unwrapMeta(expr:TypedExpr):TypedExpr {
 		return switch (expr.expr) {
 			case TMeta(_, inner): unwrapMeta(inner);
@@ -1235,7 +1250,7 @@ class CallExprBuilder {
 
 						// Private instance methods: static dispatch within the declaring module.
 						var currentClass = context.getCurrentClass();
-						var isSameModule = currentClass != null && currentClass.name == className;
+						var isSameModule = isSameElixirModule(currentClass, moduleName);
 						if (isSameModule) {
 							return ECall(null, elixirMethodName, callArgs);
 						}
@@ -1374,7 +1389,7 @@ class CallExprBuilder {
 						// Elixir allows calling module functions directly when within that module
 						// Main.test_end() → test_end() for better idiomatic code
 						var currentClass = context.getCurrentClass();
-						var isSameModule = currentClass != null && currentClass.name == className;
+						var isSameModule = isSameElixirModule(currentClass, moduleName);
 
 						if (isSameModule) {
 							// Same module - use direct function call

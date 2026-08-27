@@ -183,12 +183,21 @@ extern class NaiveDateTime {
 	 * Elixir API:
 	 * - `NaiveDateTime.from_erl/2`
 	 * - `NaiveDateTime.from_erl!/2`
+	 *
+	 * The calendar argument has a target default. Separate Haxe functions keep
+	 * one-argument calls at arity one instead of passing `nil` as a calendar.
 	 */
 	@:native("NaiveDateTime.from_erl")
-	static function fromErl(datetime:elixir.types.Term, ?microsecond:elixir.types.Term):haxe.functional.Result<NaiveDateTime, elixir.types.Term>;
+	static function fromErl(datetime:elixir.types.Term):haxe.functional.Result<NaiveDateTime, elixir.types.Term>;
+
+	@:native("NaiveDateTime.from_erl")
+	static function fromErlWithCalendar(datetime:elixir.types.Term, calendar:elixir.types.Term):haxe.functional.Result<NaiveDateTime, elixir.types.Term>;
 
 	@:native("NaiveDateTime.from_erl!")
-	static function fromErlBang(datetime:elixir.types.Term, ?microsecond:elixir.types.Term):NaiveDateTime;
+	static function fromErlBang(datetime:elixir.types.Term):NaiveDateTime;
+
+	@:native("NaiveDateTime.from_erl!")
+	static function fromErlBangWithCalendar(datetime:elixir.types.Term, calendar:elixir.types.Term):NaiveDateTime;
 
 	/**
 	 * Compares two naive datetimes

@@ -83,13 +83,6 @@ extern class File {
 	@:native("File.lstat!")
 	public static function lstatBang(path:String):Term;
 
-	// Path resolution
-	@:native("File.realpath")
-	public static function realpath(path:String):{_0:String, _1:String}; // {:ok, path} | {:error, reason}
-
-	@:native("File.realpath!")
-	public static function realpathBang(path:String):String; // Returns resolved path or raises
-
 	// File existence and type checking
 	@:native("File.exists?")
 	public static function exists(path:String):Bool;
@@ -211,10 +204,10 @@ extern class File {
 	@:native("File.ln_s!")
 	public static function lnSymbolicBang(existing:String, newLink:String):Term;
 
-	@:native("File.readlink")
+	@:native("File.read_link")
 	public static function readlink(path:String):{_0:String, _1:Term}; // Read symbolic link
 
-	@:native("File.readlink!")
+	@:native("File.read_link!")
 	public static function readlinkBang(path:String):String;
 
 	// File timestamps

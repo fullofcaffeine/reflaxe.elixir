@@ -1732,6 +1732,101 @@ class StdlibParityTest extends TestCase {
 		}
 	}
 
+	/** Remove only the files owned by the Haxe ExUnit filesystem contract. */
+	static function cleanFilesystemContract(root:String):Void {
+		var nested = root + "/nested";
+		var link = root + "/nested-link";
+		var original = nested + "/original.txt";
+		var renamed = nested + "/renamed.txt";
+
+		if (sys.FileSystem.exists(link)) {
+			sys.FileSystem.deleteFile(link);
+		}
+		if (sys.FileSystem.exists(original)) {
+			sys.FileSystem.deleteFile(original);
+		}
+		if (sys.FileSystem.exists(renamed)) {
+			sys.FileSystem.deleteFile(renamed);
+		}
+		if (sys.FileSystem.exists(nested)) {
+			sys.FileSystem.deleteDirectory(nested);
+		}
+		if (sys.FileSystem.exists(root)) {
+			sys.FileSystem.deleteDirectory(root);
+		}
+	}
+
+	/** Native filesystem failures do not have one portable Haxe exception type. */
+	static function assertNonEmptyDirectoryDeleteFails(path:String):Void {
+		try {
+			sys.FileSystem.deleteDirectory(path);
+			throw "Deleting a non-empty directory should fail";
+		} catch (error:Dynamic) {
+			if (Std.isOfType(error, String)) {
+				throw error;
+			}
+			Assert.isTrue(sys.FileSystem.exists(path));
+		}
+	}
+
+	@:describe("sys.FileSystem and sys.FileStat")
+	@:test
+	function testFileSystemLifecycleAndStatFields():Void {
+		var root = "_tmp/reflaxe_filesystem_exunit_contract";
+		var nested = root + "/nested";
+		var link = root + "/nested-link";
+		var original = nested + "/original.txt";
+		var renamed = nested + "/renamed.txt";
+
+		cleanFilesystemContract(root);
+		Assert.isFalse(sys.FileSystem.exists(root));
+
+		sys.FileSystem.createDirectory(nested);
+		Assert.isTrue(sys.FileSystem.exists(nested));
+		Assert.isTrue(sys.FileSystem.isDirectory(nested));
+
+		sys.io.File.saveContent(original, "hello");
+		Assert.isTrue(sys.FileSystem.exists(original));
+		Assert.isFalse(sys.FileSystem.isDirectory(original));
+		Assert.equals("original.txt", sys.FileSystem.readDirectory(nested).join(","));
+		assertNonEmptyDirectoryDeleteFails(nested);
+
+		sys.FileSystem.rename(original, renamed);
+		Assert.isFalse(sys.FileSystem.exists(original));
+		Assert.isTrue(sys.FileSystem.exists(renamed));
+
+		var stat = sys.FileSystem.stat(renamed);
+		Assert.equals(5, stat.size);
+		var integerFields:Array<Int> = [stat.gid, stat.uid, stat.dev, stat.ino, stat.nlink, stat.rdev, stat.mode];
+		for (value in integerFields) {
+			Assert.isTrue(Std.isOfType(value, Int));
+		}
+		Assert.isTrue(stat.nlink >= 1);
+
+		var dateFields:Array<Date> = [stat.atime, stat.mtime, stat.ctime];
+		for (value in dateFields) {
+			Assert.isTrue(value.getTime() > 0);
+		}
+
+		// Link creation is target-specific setup for the portable fullPath contract.
+		elixir.File.lnSymbolicBang("nested", link);
+		Assert.isTrue(sys.FileSystem.isDirectory(link));
+		Assert.equals(sys.FileSystem.fullPath(renamed), sys.FileSystem.fullPath(link + "/renamed.txt"));
+
+		var absolute = sys.FileSystem.absolutePath(root);
+		var resolved = sys.FileSystem.fullPath(root);
+		Assert.isTrue(haxe.io.Path.isAbsolute(absolute));
+		Assert.isTrue(haxe.io.Path.isAbsolute(resolved));
+		Assert.isTrue(StringTools.endsWith(absolute, root));
+		Assert.isTrue(StringTools.endsWith(resolved, root));
+
+		sys.FileSystem.deleteFile(link);
+		sys.FileSystem.deleteFile(renamed);
+		sys.FileSystem.deleteDirectory(nested);
+		sys.FileSystem.deleteDirectory(root);
+		Assert.isFalse(sys.FileSystem.exists(root));
+	}
+
 	@:describe("haxe.Int64")
 	@:test
 	function testInt64WrapOverflow():Void {

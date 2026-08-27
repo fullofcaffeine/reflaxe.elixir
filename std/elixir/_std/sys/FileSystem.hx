@@ -19,7 +19,8 @@ import elixir.types.Term;
  *
  * HOW
  * - Delegates to Elixir `File` / `Path` for most operations.
- * - `fullPath` uses `File.realpath!/1` to resolve symlinks when possible.
+ * - `fullPath` walks each path component with `File.lstat!/1` and
+ *   `File.read_link!/1` so intermediate and relative symlinks resolve.
  * - `stat` converts `%File.Stat{}` into Haxe's `sys.FileStat` record.
  */
 class FileSystem {
@@ -40,16 +41,17 @@ class FileSystem {
 			mtime: toUtcDate(untyped __elixir__('Map.fetch!({0}, :mtime)', statStruct)),
 			ctime: toUtcDate(untyped __elixir__('Map.fetch!({0}, :ctime)', statStruct)),
 			size: cast untyped __elixir__('Map.fetch!({0}, :size)', statStruct),
-			dev: cast untyped __elixir__('Map.fetch!({0}, :dev)', statStruct),
-			ino: cast untyped __elixir__('Map.fetch!({0}, :ino)', statStruct),
-			nlink: cast untyped __elixir__('Map.fetch!({0}, :nlink)', statStruct),
-			rdev: cast untyped __elixir__('Map.fetch!({0}, :rdev)', statStruct),
+			// File.Stat exposes the portable device values as major/minor parts.
+			dev: cast untyped __elixir__('Map.fetch!({0}, :major_device)', statStruct),
+			ino: cast untyped __elixir__('Map.fetch!({0}, :inode)', statStruct),
+			nlink: cast untyped __elixir__('Map.fetch!({0}, :links)', statStruct),
+			rdev: cast untyped __elixir__('Map.fetch!({0}, :minor_device)', statStruct),
 			mode: cast untyped __elixir__('Map.fetch!({0}, :mode)', statStruct),
 		};
 	}
 
 	public static function fullPath(relPath:String):String {
-		return File.realpathBang(relPath);
+		return resolveExistingPath(Path.expand(relPath), 0);
 	}
 
 	public static function absolutePath(relPath:String):String {
@@ -80,5 +82,44 @@ class FileSystem {
 	static function toUtcDate(erlDatetime:Term):Date {
 		var naive = NaiveDateTime.fromErlBang(erlDatetime);
 		return DateTime.fromNaiveBang(naive, "Etc/UTC");
+	}
+
+	/**
+	 * Resolve every symlink in an existing absolute path.
+	 *
+	 * `File.lstatBang` preserves native missing and inaccessible-path errors.
+	 * A 40-link cap matches common operating-system limits and rejects cycles.
+	 */
+	static function resolveExistingPath(absolutePath:String, followedLinks:Int):String {
+		if (followedLinks >= 40) {
+			throw haxe.io.Error.Custom("Too many symbolic links while resolving " + absolutePath);
+		}
+
+		var components = Path.split(absolutePath);
+		return resolveComponent(components, 1, components[0], followedLinks);
+	}
+
+	static function resolveComponent(components:Array<String>, index:Int, current:String, followedLinks:Int):String {
+		if (index >= components.length) {
+			return current;
+		}
+
+		var next = Path.joinTwo(current, components[index]);
+		var statStruct:Term = File.lstatBang(next);
+		var isSymlink:Bool = untyped __elixir__('Map.fetch!({0}, :type) == :symlink', statStruct);
+		if (!isSymlink) {
+			return resolveComponent(components, index + 1, next, followedLinks);
+		}
+
+		var target = File.readlinkBang(next);
+		var resolved = Path.expandRelativeTo(target, Path.dirname(next));
+		return appendRemainingComponents(components, index + 1, resolved, followedLinks + 1);
+	}
+
+	static function appendRemainingComponents(components:Array<String>, index:Int, resolved:String, followedLinks:Int):String {
+		if (index >= components.length) {
+			return resolveExistingPath(resolved, followedLinks);
+		}
+		return appendRemainingComponents(components, index + 1, Path.joinTwo(resolved, components[index]), followedLinks);
 	}
 }
