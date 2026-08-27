@@ -50,10 +50,10 @@ done
 if [[ -n "$CWD" ]]; then cd "$CWD"; fi
 
 # Start command in a new process group when possible
-EXPECT_ISOLATION=0
+ISOLATION_MODE="none"
 start_cmd() {
   if command -v python3 >/dev/null 2>&1 && command -v setsid >/dev/null 2>&1; then
-    EXPECT_ISOLATION=1
+    ISOLATION_MODE="session"
     # On setsid-capable hosts, own a full session so descendants cannot escape
     # the deadline merely by creating another process group.
     if [[ "$QUIET" -eq 1 ]]; then
@@ -62,7 +62,7 @@ start_cmd() {
       python3 -c 'import os,signal,sys; signal.signal(signal.SIGINT, signal.SIG_DFL); signal.signal(signal.SIGQUIT, signal.SIG_DFL); os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' "${CMD[@]}" &
     fi
   elif command -v python3 >/dev/null 2>&1; then
-    EXPECT_ISOLATION=1
+    ISOLATION_MODE="process_group"
     # Reset signals that shells commonly ignore for asynchronous children, then
     # create the process group used for timeout and interactive-signal cleanup.
     if [[ "$QUIET" -eq 1 ]]; then
@@ -71,7 +71,7 @@ start_cmd() {
       python3 -c 'import os,signal,sys; signal.signal(signal.SIGINT, signal.SIG_DFL); signal.signal(signal.SIGQUIT, signal.SIG_DFL); os.setpgrp(); os.execvp(sys.argv[1], sys.argv[1:])' "${CMD[@]}" &
     fi
   elif command -v setsid >/dev/null 2>&1; then
-    EXPECT_ISOLATION=1
+    ISOLATION_MODE="session"
     # Fallback for minimal systems without Python.
     if [[ "$QUIET" -eq 1 ]]; then
       setsid "${CMD[@]}" >/dev/null 2>&1 &
@@ -102,9 +102,25 @@ while true; do
   PGID_CHILD="$(ps -o pgid= "$CMD_PID" 2>/dev/null | tr -d ' ')" || PGID_CHILD=""
   # Session id of child (BSD/macOS uses 'sess').
   SESS_CHILD="$(ps -o sess= "$CMD_PID" 2>/dev/null | tr -d ' ')" || SESS_CHILD=""
-  if [[ "$EXPECT_ISOLATION" -eq 0 ]] \
-    || [[ -n "$SESS_CHILD" && "$SESS_CHILD" != "0" && "$SESS_CHILD" != "$SESS_SELF" ]] \
-    || [[ -n "$PGID_CHILD" && "$PGID_CHILD" != "0" && "$PGID_CHILD" != "$PGID_SELF" ]] \
+  isolation_ready=0
+  case "$ISOLATION_MODE" in
+    none)
+      isolation_ready=1
+      ;;
+    session)
+      # Read PGID and session in separate ps calls, so one value can still be
+      # stale while setsid() runs. Accept only the final, self-owned pair.
+      if [[ "$PGID_CHILD" == "$CMD_PID" && "$SESS_CHILD" == "$CMD_PID" ]]; then
+        isolation_ready=1
+      fi
+      ;;
+    process_group)
+      if [[ "$PGID_CHILD" == "$CMD_PID" && "$PGID_CHILD" != "$PGID_SELF" ]]; then
+        isolation_ready=1
+      fi
+      ;;
+  esac
+  if (( isolation_ready == 1 )) \
     || ! kill -0 "$CMD_PID" 2>/dev/null \
     || (( SECONDS >= identity_deadline )); then
     break
