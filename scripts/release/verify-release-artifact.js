@@ -9,6 +9,8 @@ const {
   validateEntryNames,
 } = require('./deterministic-zip.js')
 
+const REFLAXE_LICENSE_ENTRY = 'vendor/reflaxe/LICENSE'
+
 const REQUIRED_ENTRIES = [
   'LICENSE',
   'README.md',
@@ -29,6 +31,7 @@ const REQUIRED_ENTRIES = [
   'src/StringBuf.cross.hx',
   'src/haxe/Exception.cross.hx',
   'src/reflaxe/elixir/CompilerBootstrap.hx',
+  REFLAXE_LICENSE_ENTRY,
   'vendor/reflaxe/src/reflaxe/ReflectCompiler.hx',
   'vendor/phoenix_shared/src/phoenix/channels/WirePayload.hx',
   'vendor/phoenix_shared/src/phoenix/live_react/LiveReactEventProtocol.hx',
@@ -197,6 +200,16 @@ function verifyReleaseArtifact({ zipPath, version, tag, sourceCommit }) {
   }
   if (!bytes.equals(createDeterministicZipBytes(files))) {
     throw new Error('release artifact is not in canonical ZIP representation')
+  }
+  const reflaxeLicense = strFromU8(files[REFLAXE_LICENSE_ENTRY])
+  for (const requiredText of [
+    'MIT License',
+    'SomeRanDev',
+    'Permission is hereby granted',
+  ]) {
+    if (!reflaxeLicense.includes(requiredText)) {
+      throw new Error('vendored Reflaxe MIT notice is incomplete')
+    }
   }
   const haxelib = parseJsonEntry(files, 'haxelib.json')
   if (haxelib.version !== version) {

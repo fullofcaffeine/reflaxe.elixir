@@ -62,6 +62,8 @@ function packageFixture(root, options = {}) {
     'src/haxe/Exception.cross.hx': 'package haxe; class Exception {}\n',
     'src/reflaxe/elixir/CompilerBootstrap.hx':
       'package reflaxe.elixir; class CompilerBootstrap {}\n',
+    'vendor/reflaxe/LICENSE':
+      'MIT License\nCopyright (c) SomeRanDev\nPermission is hereby granted\n',
     'vendor/reflaxe/src/reflaxe/ReflectCompiler.hx':
       'package reflaxe; class ReflectCompiler {}\n',
     'vendor/phoenix_shared/src/phoenix/channels/WirePayload.hx':
@@ -252,6 +254,16 @@ function main() {
     const missingZip = path.join(temp, 'missing.zip')
     zipApi.createDeterministicZip(missing, missingZip)
     assert.throws(() => verify(missingZip), /required archive entry is missing/)
+
+    const incompleteNotice = path.join(temp, 'incomplete-notice')
+    packageFixture(incompleteNotice)
+    write(incompleteNotice, 'vendor/reflaxe/LICENSE', 'MIT License\n')
+    const incompleteNoticeZip = path.join(temp, 'incomplete-notice.zip')
+    zipApi.createDeterministicZip(incompleteNotice, incompleteNoticeZip)
+    assert.throws(
+      () => verify(incompleteNoticeZip),
+      /vendored Reflaxe MIT notice is incomplete/
+    )
 
     const wrong = path.join(temp, 'wrong')
     packageFixture(wrong, { version: '0.14.9', tag: 'v0.14.9' })
