@@ -56,8 +56,8 @@ class UpstreamUnitstdManifestTest(unittest.TestCase):
 			checker.validate_manifest(self.root),
 			{
 				"modules": 124,
-				"runtimeEntries": 36,
-				"uniqueFixtures": 35,
+				"runtimeEntries": 37,
+				"uniqueFixtures": 36,
 				"adaptedEntries": 10,
 				"adaptationPatches": 9,
 			},

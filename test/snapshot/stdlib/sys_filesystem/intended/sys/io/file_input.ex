@@ -1,54 +1,39 @@
-defmodule FileInput do
+defmodule Sys.IO.FileInput do
   def new(device_param) do
-    struct = %{:__reflaxe_class__ => FileInput, :device => nil, :big_endian => nil}
+    struct = %{:__reflaxe_class__ => Sys.IO.FileInput, :device => nil, :big_endian => nil}
     struct = %{struct | device: device_param}
     struct
   end
   def seek(struct, p, pos) do
     (case pos do
-      {:seek_begin} -> {:ok, _} = :file.position(struct.device, {:bof, p})
-      {:seek_cur} -> {:ok, _} = :file.position(struct.device, {:cur, p})
-      {:seek_end} -> {:ok, _} = :file.position(struct.device, {:eof, p})
+      {:seek_begin} ->
+        position(struct, {:bof, p})
+      {:seek_cur} ->
+        position(struct, {:cur, p})
+      {:seek_end} ->
+        position(struct, {:eof, p})
     end)
   end
   def tell(struct) do
-    case :file.position(struct.device, :cur) do {:ok, p} -> p end
+    position(struct, :cur)
   end
   def eof(struct) do
     result = :file.read(struct.device, 1)
-    tag = (case result do
-                :eof -> :eof
-                {t, _} -> t
-            end)
-    if (tag == :eof) do
+    if (Reflaxe.Elixir.HaxeFloat.eq(result, :eof)) do
       true
     else
-      if (tag == :ok) do
-        data = elem(result, 1)
-        {:ok, _} = :file.position(struct.device, {:cur, -byte_size(data)})
-        false
-      else
-        reason = elem(result, 1)
-        raise Reflaxe.Elixir.HaxeThrow, [value: "File read error: " <> inspect(reason)]
-      end
+      data = read_data(result)
+      position(struct, {:cur, -data.length})
+      false
     end
   end
   def read_byte(struct) do
     result = :file.read(struct.device, 1)
-    tag = (case result do
-                :eof -> :eof
-                {t, _} -> t
-            end)
-    if (tag == :eof) do
+    if (Reflaxe.Elixir.HaxeFloat.eq(result, :eof)) do
       raise Reflaxe.Elixir.HaxeThrow, [value: Eof.new()]
     end
-    if (tag == :ok) do
-      data = elem(result, 1)
-      :binary.at(data, 0)
-    else
-      reason = elem(result, 1)
-      raise Reflaxe.Elixir.HaxeThrow, [value: "File read error: " <> inspect(reason)]
-    end
+    reflaxe_dispatch_receiver = read_data(result)
+    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get, [reflaxe_dispatch_receiver, 0])
   end
   def read_bytes(struct, buf, pos, len) do
     if (pos < 0 or len < 0 or pos + len > buf.length) do
@@ -58,26 +43,32 @@ defmodule FileInput do
       0
     else
       result = :file.read(struct.device, len)
-      tag = (case result do
-                  :eof -> :eof
-                  {t, _} -> t
-              end)
-      if (tag == :eof) do
+      if (Reflaxe.Elixir.HaxeFloat.eq(result, :eof)) do
         raise Reflaxe.Elixir.HaxeThrow, [value: Eof.new()]
       end
-      if (tag == :ok) do
-        data = elem(result, 1)
-        bytes = Bytes.of_data(data)
-        apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :blit, [buf, pos, bytes, 0, bytes.length])
-        bytes.length
-      else
-        reason = elem(result, 1)
-        raise Reflaxe.Elixir.HaxeThrow, [value: "File read error: " <> inspect(reason)]
-      end
+      bytes = read_data(result)
+      apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :blit, [buf, pos, bytes, 0, bytes.length])
+      bytes.length
     end
   end
   def close(struct) do
-    :ok = File.close(struct.device)
+    result = File.close(struct.device)
+    if (result != :ok) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "File close error"]
+    end
+  end
+  defp position(struct, location) do
+    result = :file.position(struct.device, location)
+    if (elem(result, 0) != :ok), do: throw_file_error("position", result)
+    elem(result, 1)
+  end
+  defp read_data(result) do
+    tagged = result
+    if (elem(tagged, 0) != :ok), do: throw_file_error("read", tagged)
+    Bytes.of_data(elem(tagged, 1))
+  end
+  defp throw_file_error(operation, result) do
+    raise Reflaxe.Elixir.HaxeThrow, [value: "File " <> operation <> " error: " <> :file.format_error(elem(result, 1))]
   end
   def set_big_endian(struct, b) do
     Input.set_big_endian(struct, b)

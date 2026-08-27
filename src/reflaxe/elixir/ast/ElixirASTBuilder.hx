@@ -3246,102 +3246,100 @@ class ElixirASTBuilder {
 			case TCast(e, _):
 				// Elixir has no explicit casts - uses pattern matching instead.
 				//
-				// However, `elixir.types.Atom` is a *compile-time* marker used to
-				// generate atoms instead of strings. Haxe commonly represents the
-				// implicit String→Atom abstract conversion as a `TCast`. If we
-				// drop the cast blindly, we lose the Atom type and emit `"foo"`
-				// where `:foo` is required (e.g. Phoenix assigns keys).
-				switch (expr.t) {
-					case TAbstract(ref, _) if (ref.get().pack.join(".") == "elixir.types" && ref.get().name == "Atom"):
-						var inner = convertExpression(e);
-						switch (inner) {
-							case EString(s):
-								EAtom(s);
-							case _:
-								inner;
-						}
-					case _:
-						// Haxe can optimize a match on a *single-constructor* enum into a cast from
-						// the enum value to its sole constructor-parameter type.
-						//
-						// We represent enums as tagged tuples `{:tag, param1, ...}`; so this cast must
-						// extract the parameter by tuple index (elem(enum, 1)).
-						var paramTupleIndex:Null<Int> = null;
-						var targetType = haxe.macro.TypeTools.follow(expr.t);
-						var sourceType = haxe.macro.TypeTools.follow(e.t);
+				// However, `elixir.types.Atom` and typed abstracts built on it are
+				// compile-time markers used to generate atoms instead of strings.
+				// Haxe commonly represents their implicit conversions as `TCast`.
+				// If we drop the cast blindly, we lose the Atom type and emit
+				// `"foo"` where `:foo` is required.
+				if (TypeUtils.isElixirAtomType(expr.t)) {
+					var inner = convertExpression(e);
+					switch (inner) {
+						case EString(s):
+							EAtom(s);
+						case _:
+							inner;
+					}
+				} else {
+					// Haxe can optimize a match on a *single-constructor* enum into a cast from
+					// the enum value to its sole constructor-parameter type.
+					//
+					// We represent enums as tagged tuples `{:tag, param1, ...}`; so this cast must
+					// extract the parameter by tuple index (elem(enum, 1)).
+					var paramTupleIndex:Null<Int> = null;
+					var targetType = haxe.macro.TypeTools.follow(expr.t);
+					var sourceType = haxe.macro.TypeTools.follow(e.t);
 
-						var enumRef:Null<Ref<EnumType>> = switch (sourceType) {
-							case TEnum(ref, _):
-								ref;
-							case TAbstract(absRef, params):
-								var abs = absRef.get();
-								if (abs != null && abs.pack.length == 0 && abs.name == "Null" && params != null && params.length == 1) {
-									switch (haxe.macro.TypeTools.follow(params[0])) {
-										case TEnum(ref, _):
-											ref;
-										default:
-											null;
-									}
-								} else {
-									null;
+					var enumRef:Null<Ref<EnumType>> = switch (sourceType) {
+						case TEnum(ref, _):
+							ref;
+						case TAbstract(absRef, params):
+							var abs = absRef.get();
+							if (abs != null && abs.pack.length == 0 && abs.name == "Null" && params != null && params.length == 1) {
+								switch (haxe.macro.TypeTools.follow(params[0])) {
+									case TEnum(ref, _):
+										ref;
+									default:
+										null;
 								}
-							default:
-								null;
-						};
-
-						if (enumRef != null) {
-							var enumType = enumRef.get();
-							if (enumType != null && enumType.constructs != null) {
-								var onlyConstructor:Null<EnumField> = null;
-								var constructorCount = 0;
-								for (_ => ctor in enumType.constructs) {
-									onlyConstructor = ctor;
-									constructorCount++;
-									if (constructorCount > 1)
-										break;
-								}
-
-								if (constructorCount == 1 && onlyConstructor != null) {
-									switch (onlyConstructor.type) {
-										case TFun(args, _):
-											if (args != null && args.length == 1) {
-												var paramType = haxe.macro.TypeTools.follow(args[0].t);
-												var matches = false;
-												#if macro
-												try {
-													// Avoid treating casts to Dynamic as payload extraction; Dynamic unifies with almost anything.
-													var targetIsDynamic = switch (targetType) {
-														case TDynamic(_): true;
-														default: false;
-													};
-													if (!targetIsDynamic) {
-														matches = Context.unify(paramType, targetType)
-															|| Context.unify(targetType, paramType);
-													}
-												} catch (_:Any) {}
-												#end
-												if (matches) {
-													// +1 because tuple index 0 is the tag atom.
-													paramTupleIndex = 1;
-												}
-											}
-										default:
-									}
-								}
-							}
-						}
-
-						if (paramTupleIndex != null) {
-							var enumExpr = buildFromTypedExpr(e, currentContext);
-							if (enumExpr != null) {
-								ECall(null, "elem", [enumExpr, makeAST(EInteger(paramTupleIndex))]);
 							} else {
-								convertExpression(e);
+								null;
 							}
+						default:
+							null;
+					};
+
+					if (enumRef != null) {
+						var enumType = enumRef.get();
+						if (enumType != null && enumType.constructs != null) {
+							var onlyConstructor:Null<EnumField> = null;
+							var constructorCount = 0;
+							for (_ => ctor in enumType.constructs) {
+								onlyConstructor = ctor;
+								constructorCount++;
+								if (constructorCount > 1)
+									break;
+							}
+
+							if (constructorCount == 1 && onlyConstructor != null) {
+								switch (onlyConstructor.type) {
+									case TFun(args, _):
+										if (args != null && args.length == 1) {
+											var paramType = haxe.macro.TypeTools.follow(args[0].t);
+											var matches = false;
+											#if macro
+											try {
+												// Avoid treating casts to Dynamic as payload extraction; Dynamic unifies with almost anything.
+												var targetIsDynamic = switch (targetType) {
+													case TDynamic(_): true;
+													default: false;
+												};
+												if (!targetIsDynamic) {
+													matches = Context.unify(paramType, targetType) || Context.unify(targetType, paramType);
+												}
+											} catch (_:Any) {}
+											#end
+											if (matches) {
+												// +1 because tuple index 0 is the tag atom.
+												paramTupleIndex = 1;
+											}
+										}
+									default:
+								}
+							}
+						}
+					}
+
+					if (paramTupleIndex != null) {
+						var enumExpr = buildFromTypedExpr(e, currentContext);
+						if (enumExpr != null) {
+							ECall(null, "elem", [enumExpr, makeAST(EInteger(paramTupleIndex))]);
 						} else {
-							// Default: ignore casts.
 							convertExpression(e);
 						}
+					} else {
+						// Default: ignore casts.
+						convertExpression(e);
+					}
 				}
 
 			case TTypeExpr(m):

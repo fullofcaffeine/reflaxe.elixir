@@ -1,6 +1,9 @@
 package sys.io;
 
 import elixir.types.Term;
+import elixir.types.Atom;
+import elixir.ErlangFile.ErlangFilePosition;
+import elixir.ErlangFile.ErlangFileResult;
 import haxe.io.Bytes;
 
 /**
@@ -16,6 +19,7 @@ import haxe.io.Bytes;
  * - Uses Erlang `:file.write/2` and `:file.position/2` against the underlying
  *   IO device returned by `File.open!/2`.
  */
+@:native("Sys.IO.FileOutput")
 class FileOutput extends haxe.io.Output {
 	final device:Term;
 
@@ -26,20 +30,22 @@ class FileOutput extends haxe.io.Output {
 	public function seek(p:Int, pos:FileSeek):Void {
 		switch (pos) {
 			case SeekBegin:
-				untyped __elixir__('{:ok, _} = :file.position({0}, {:bof, {1}})', device, p);
+				position(elixir.ErlangFile.positionAt(ErlangFilePosition.Begin, p));
 			case SeekCur:
-				untyped __elixir__('{:ok, _} = :file.position({0}, {:cur, {1}})', device, p);
+				position(elixir.ErlangFile.positionAt(ErlangFilePosition.Current, p));
 			case SeekEnd:
-				untyped __elixir__('{:ok, _} = :file.position({0}, {:eof, {1}})', device, p);
+				position(elixir.ErlangFile.positionAt(ErlangFilePosition.End, p));
 		}
 	}
 
 	public function tell():Int {
-		return untyped __elixir__('case :file.position({0}, :cur) do {:ok, p} -> p end', device);
+		return position(ErlangFilePosition.Current);
 	}
 
 	override public function writeByte(c:Int):Void {
-		untyped __elixir__(':ok = :file.write({0}, <<{1}::8>>)', device, c);
+		var byte = Bytes.alloc(1);
+		byte.set(0, c);
+		writeData(byte.getData());
 	}
 
 	override public function writeBytes(b:Bytes, pos:Int, len:Int):Int {
@@ -50,11 +56,35 @@ class FileOutput extends haxe.io.Output {
 			return 0;
 
 		var slice = b.sub(pos, len).getData();
-		untyped __elixir__(':ok = :file.write({0}, {1})', device, slice);
+		writeData(slice);
 		return len;
 	}
 
 	override public function close():Void {
-		untyped __elixir__(':ok = File.close({0})', device);
+		var result = elixir.File.close(device);
+		if (result != cast Atom.OK) {
+			throw "File close error";
+		}
+	}
+
+	/** Validate a native position result before narrowing its integer value. */
+	function position(location:Term):Int {
+		var result = elixir.ErlangFile.position(device, location);
+		if (result._0 != cast Atom.OK) {
+			throwFileError("position", result);
+		}
+		return cast result._1;
+	}
+
+	function writeData(data:Term):Void {
+		var result = elixir.ErlangFile.write(device, data);
+		var rawResult:Term = result;
+		if (rawResult != cast Atom.OK) {
+			throwFileError("write", cast result);
+		}
+	}
+
+	static function throwFileError(operation:String, result:ErlangFileResult):Void {
+		throw 'File $operation error: ' + elixir.ErlangFile.formatError(result._1);
 	}
 }

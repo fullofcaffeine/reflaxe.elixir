@@ -202,4 +202,10 @@ class UpstreamUnitStdTest extends TestCase {
 	function testHaxeIteratorsStringKeyValueIteratorUnicode():Void {
 		UpstreamUnitStdMacro.assertSpec("haxe/iterators/StringKeyValueIteratorUnicode.unit.hx");
 	}
+
+	@:describe("upstream Haxe unitstd: sys.io.File")
+	@:test
+	function testSysIoFile():Void {
+		UpstreamUnitStdMacro.assertSpec("sys/io/File.unit.hx");
+	}
 }

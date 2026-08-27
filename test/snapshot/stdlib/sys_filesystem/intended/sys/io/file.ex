@@ -13,35 +13,26 @@ defmodule Sys.IO.File do
     File.write!(path, apply(Map.get(bytes, :__reflaxe_class__) || Map.get(bytes, :__struct__), :get_data, [bytes]))
   end
   def read(path, binary \\ true) do
-    device = open_bang(path, (if (binary), do: ["read", "binary"], else: ["read"]))
-    FileInput.new(device)
+    modes = if (binary), do: [:read, :binary], else: [:read]
+    device = File.open!(path, modes)
+    Sys.IO.FileInput.new(device)
   end
   def write(path, binary \\ true) do
-    device = open_bang(path, (if (binary), do: ["write", "binary"], else: ["write"]))
-    FileOutput.new(device)
+    modes = if (binary), do: [:write, :binary], else: [:write]
+    device = File.open!(path, modes)
+    Sys.IO.FileOutput.new(device)
   end
   def append(path, binary \\ true) do
-    device = open_bang(path, (if (binary), do: ["append", "binary"], else: ["append"]))
-    FileOutput.new(device)
+    modes = if (binary), do: [:append, :binary], else: [:append]
+    device = File.open!(path, modes)
+    Sys.IO.FileOutput.new(device)
   end
   def update(path, binary \\ true) do
-    device = open_bang(path, (if (binary), do: ["read", "write", "binary"], else: ["read", "write"]))
-    FileOutput.new(device)
+    modes = if (binary), do: [:read, :write, :binary], else: [:read, :write]
+    device = File.open!(path, modes)
+    Sys.IO.FileOutput.new(device)
   end
   def copy(src_path, dst_path) do
     File.cp!(src_path, dst_path)
-  end
-  defp open_bang(path, modes) do
-
-                atom_modes =
-                  Enum.map(modes, fn
-                    "read" -> :read
-                    "write" -> :write
-                    "append" -> :append
-                    "binary" -> :binary
-                    other -> String.to_atom(other)
-                  end)
-                File.open!(path, atom_modes)
-
   end
 end

@@ -2749,42 +2749,65 @@
       "surfaceDigest": "b1954d22b209a62dd3f098b1f729ad223a50cd624ca737ed8e7de414ada38187",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "partial",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "upstream-unitstd",
+          "path": "test/upstream_unitstd/upstream/sys/io/File.unit.hx",
+          "selector": "sys/io/File.unit.hx"
+        },
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testFileStreamLifecycleAndBinaryData"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "Upstream spec exists; enable after filesystem temp-path and permissions semantics are triaged."
+      "reviewNote": "The unchanged official Haxe spec covers write, overwrite, append, update, and update-create. Local Haxe-authored runtime tests also cover text and binary reads, writes, copy, stream creation, and bounded cleanup."
     },
     {
       "module": "sys.io.FileInput",
       "surfaceDigest": "82359d51eb595d790d43272981d9879849c4c5835c6c870a2872ac09db84e5e3",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testFileStreamLifecycleAndBinaryData"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; behavior is covered through sys.io.File."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover seek, tell, a non-consuming EOF check, byte reads, caller-buffer mutation, reads relative to the end, and close."
     },
     {
       "module": "sys.io.FileOutput",
       "surfaceDigest": "c77e92331f755ad216df57e72fe307e61fef598029f4f74cb838e936a804aa95",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testFileStreamLifecycleAndBinaryData"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; behavior is covered through sys.io.File."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover byte and buffered writes, append, update without truncation, seek, tell, and close."
     },
     {
       "module": "sys.io.FileSeek",

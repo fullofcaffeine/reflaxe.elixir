@@ -900,24 +900,28 @@
     {
       "module": "sys.io.File",
       "upstreamSpec": "available",
-      "disposition": "pending-review",
-      "execution": "not-run",
+      "disposition": "applicable",
+      "execution": "runtime-suite",
+      "fixtureKind": "unchanged",
       "source": "sys/io/File.unit.hx",
-      "reason": "Upstream spec exists; enable after filesystem temp-path and permissions semantics are triaged."
+      "fixture": "test/upstream_unitstd/upstream/sys/io/File.unit.hx",
+      "reason": "The unchanged official spec runs on BEAM and covers write, overwrite, append, update, and creation through update.",
+      "sourceSha256": "33613f0ec6ae803d8fdb976721c1b3656648cba3661c3fb9e0d0f8dd4417fdae",
+      "fixtureSha256": "33613f0ec6ae803d8fdb976721c1b3656648cba3661c3fb9e0d0f8dd4417fdae"
     },
     {
       "module": "sys.io.FileInput",
       "upstreamSpec": "absent",
       "disposition": "applicable",
       "execution": "not-run",
-      "reason": "No matching upstream unitstd spec exists; behavior is covered through sys.io.File."
+      "reason": "No matching upstream unitstd spec exists. Local runtime tests use sys.io.File to cover seek, tell, EOF, caller-buffer reads, and close."
     },
     {
       "module": "sys.io.FileOutput",
       "upstreamSpec": "absent",
       "disposition": "applicable",
       "execution": "not-run",
-      "reason": "No matching upstream unitstd spec exists; behavior is covered through sys.io.File."
+      "reason": "No matching upstream unitstd spec exists. Local runtime tests use sys.io.File to cover byte writes, seek, tell, and close."
     },
     {
       "module": "sys.io.Process",

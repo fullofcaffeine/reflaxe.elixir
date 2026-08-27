@@ -33,6 +33,10 @@ extern class File {
 	@:native("File.open")
 	public static function openWithFunction<T>(path:String, modes:Array<String>, func:Term->T):{_0:String, _1:T};
 
+	/** Open a file with exact native atom modes and raise on failure. */
+	@:native("File.open!")
+	public static function openBangWithAtomModes(path:String, modes:Array<FileOpenMode>):Term;
+
 	@:native("File.close")
 	public static function close(file:Term):Term; // Returns :ok
 
@@ -306,5 +310,13 @@ extern class File {
 	public static inline function isDirectory(path:String):Bool {
 		return exists(path) && dir(path);
 	}
+}
+
+/** Closed set of native modes used by Haxe-compatible file handles. */
+enum abstract FileOpenMode(Atom) to Atom {
+	var Read = "read";
+	var Write = "write";
+	var Append = "append";
+	var Binary = "binary";
 }
 #end

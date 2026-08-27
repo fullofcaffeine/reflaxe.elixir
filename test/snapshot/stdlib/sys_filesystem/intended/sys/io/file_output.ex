@@ -1,21 +1,26 @@
-defmodule FileOutput do
+defmodule Sys.IO.FileOutput do
   def new(device_param) do
-    struct = %{:__reflaxe_class__ => FileOutput, :device => nil, :big_endian => nil}
+    struct = %{:__reflaxe_class__ => Sys.IO.FileOutput, :device => nil, :big_endian => nil}
     struct = %{struct | device: device_param}
     struct
   end
   def seek(struct, p, pos) do
     (case pos do
-      {:seek_begin} -> {:ok, _} = :file.position(struct.device, {:bof, p})
-      {:seek_cur} -> {:ok, _} = :file.position(struct.device, {:cur, p})
-      {:seek_end} -> {:ok, _} = :file.position(struct.device, {:eof, p})
+      {:seek_begin} ->
+        position(struct, {:bof, p})
+      {:seek_cur} ->
+        position(struct, {:cur, p})
+      {:seek_end} ->
+        position(struct, {:eof, p})
     end)
   end
   def tell(struct) do
-    case :file.position(struct.device, :cur) do {:ok, p} -> p end
+    position(struct, :cur)
   end
   def write_byte(struct, c) do
-    :ok = :file.write(struct.device, <<c::8>>)
+    byte = Bytes.alloc(1)
+    apply(Map.get(byte, :__reflaxe_class__) || Map.get(byte, :__struct__), :set, [byte, 0, c])
+    write_data(struct, apply(Map.get(byte, :__reflaxe_class__) || Map.get(byte, :__struct__), :get_data, [byte]))
   end
   def write_bytes(struct, b, pos, len) do
     if (pos < 0 or len < 0 or pos + len > b.length) do
@@ -26,12 +31,28 @@ defmodule FileOutput do
     else
       reflaxe_dispatch_receiver = apply(Map.get(b, :__reflaxe_class__) || Map.get(b, :__struct__), :sub, [b, pos, len])
       slice = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get_data, [reflaxe_dispatch_receiver])
-      :ok = :file.write(struct.device, slice)
+      write_data(struct, slice)
       len
     end
   end
   def close(struct) do
-    :ok = File.close(struct.device)
+    result = File.close(struct.device)
+    if (result != :ok) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "File close error"]
+    end
+  end
+  defp position(struct, location) do
+    result = :file.position(struct.device, location)
+    if (elem(result, 0) != :ok), do: throw_file_error("position", result)
+    elem(result, 1)
+  end
+  defp write_data(struct, data) do
+    result = :file.write(struct.device, data)
+    raw_result = result
+    if (raw_result != :ok), do: throw_file_error("write", result)
+  end
+  defp throw_file_error(operation, result) do
+    raise Reflaxe.Elixir.HaxeThrow, [value: "File " <> operation <> " error: " <> :file.format_error(elem(result, 1))]
   end
   def set_big_endian(struct, b) do
     Output.set_big_endian(struct, b)

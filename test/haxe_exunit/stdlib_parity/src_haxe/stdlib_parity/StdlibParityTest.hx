@@ -1738,6 +1738,9 @@ class StdlibParityTest extends TestCase {
 		var link = root + "/nested-link";
 		var original = nested + "/original.txt";
 		var renamed = nested + "/renamed.txt";
+		var stream = nested + "/stream.bin";
+		var copied = nested + "/copied.bin";
+		var createdByUpdate = nested + "/created-by-update.txt";
 
 		if (sys.FileSystem.exists(link)) {
 			sys.FileSystem.deleteFile(link);
@@ -1747,6 +1750,15 @@ class StdlibParityTest extends TestCase {
 		}
 		if (sys.FileSystem.exists(renamed)) {
 			sys.FileSystem.deleteFile(renamed);
+		}
+		if (sys.FileSystem.exists(stream)) {
+			sys.FileSystem.deleteFile(stream);
+		}
+		if (sys.FileSystem.exists(copied)) {
+			sys.FileSystem.deleteFile(copied);
+		}
+		if (sys.FileSystem.exists(createdByUpdate)) {
+			sys.FileSystem.deleteFile(createdByUpdate);
 		}
 		if (sys.FileSystem.exists(nested)) {
 			sys.FileSystem.deleteDirectory(nested);
@@ -1824,6 +1836,72 @@ class StdlibParityTest extends TestCase {
 		sys.FileSystem.deleteFile(renamed);
 		sys.FileSystem.deleteDirectory(nested);
 		sys.FileSystem.deleteDirectory(root);
+		Assert.isFalse(sys.FileSystem.exists(root));
+	}
+
+	@:describe("sys.io.File, sys.io.FileInput, and sys.io.FileOutput")
+	@:test
+	function testFileStreamLifecycleAndBinaryData():Void {
+		var root = "_tmp/reflaxe_file_stream_exunit_contract";
+		var nested = root + "/nested";
+		var stream = nested + "/stream.bin";
+		var copied = nested + "/copied.bin";
+		var createdByUpdate = nested + "/created-by-update.txt";
+
+		cleanFilesystemContract(root);
+		sys.FileSystem.createDirectory(nested);
+
+		var output = sys.io.File.write(stream);
+		output.writeByte("a".code);
+		Assert.equals(4, output.writeBytes(Bytes.ofString("bcde"), 0, 4));
+		Assert.equals(5, output.tell());
+		output.seek(1, sys.io.FileSeek.SeekBegin);
+		Assert.equals(2, output.writeBytes(Bytes.ofString("XY"), 0, 2));
+		Assert.equals(3, output.tell());
+		output.close();
+		Assert.equals("aXYde", sys.io.File.getContent(stream));
+
+		var append = sys.io.File.append(stream);
+		append.writeString("fg");
+		append.close();
+		Assert.equals("aXYdefg", sys.io.File.getContent(stream));
+
+		var update = sys.io.File.update(stream);
+		update.seek(-2, sys.io.FileSeek.SeekEnd);
+		update.writeString("HI");
+		update.close();
+		Assert.equals("aXYdeHI", sys.io.File.getContent(stream));
+
+		var created = sys.io.File.update(createdByUpdate);
+		created.close();
+		Assert.isTrue(sys.FileSystem.exists(createdByUpdate));
+
+		var input = sys.io.File.read(stream);
+		Assert.equals(0, input.tell());
+		Assert.isFalse(input.eof());
+		Assert.equals(0, input.tell());
+		Assert.equals("a".code, input.readByte());
+		var callerBuffer = Bytes.alloc(6);
+		callerBuffer.fill(0, callerBuffer.length, "_".code);
+		Assert.equals(3, input.readBytes(callerBuffer, 2, 3));
+		Assert.equals("__XYd_", callerBuffer.toString());
+		Assert.equals(4, input.tell());
+		input.seek(-2, sys.io.FileSeek.SeekEnd);
+		Assert.equals("HI", input.read(2).toString());
+		Assert.isTrue(input.eof());
+		input.close();
+
+		var binary = Bytes.alloc(4);
+		binary.set(0, 0);
+		binary.set(1, 1);
+		binary.set(2, 127);
+		binary.set(3, 255);
+		sys.io.File.saveBytes(copied, binary);
+		Assert.equals(0, sys.io.File.getBytes(copied).compare(binary));
+		sys.io.File.copy(copied, stream);
+		Assert.equals(0, sys.io.File.getBytes(stream).compare(binary));
+
+		cleanFilesystemContract(root);
 		Assert.isFalse(sys.FileSystem.exists(root));
 	}
 
