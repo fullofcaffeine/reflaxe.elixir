@@ -2862,14 +2862,20 @@
       "surfaceDigest": "4b7d73202d4d3fd03212320e20a9ac6602c6e3fbcfde95c4ab8b0010fe4c66f6",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testHostIPv4AndNameContracts"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM socket integration specific."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover the input host field, signed 32-bit IPv4 values, string conversion, reverse lookup, local host name, and resolution errors without external services."
     },
     {
       "module": "sys.net.Socket",

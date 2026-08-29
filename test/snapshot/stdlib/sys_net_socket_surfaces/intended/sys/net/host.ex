@@ -1,70 +1,40 @@
 defmodule Host do
   import Kernel, except: [to_string: 1], warn: false
   def new(name) do
-    struct = %{:__reflaxe_class__ => Host, :host => nil, :ip => nil, :host_name => nil}
-    struct = %{struct | host_name: name}
+    struct = %{:__reflaxe_class__ => Host, :host => nil, :ip => nil}
+    struct = %{struct | host: name}
     struct = %{struct | ip: resolve(name)}
     struct
   end
-  def get_host(struct) do
-    struct.host_name
-  end
   def to_string(struct) do
-    host_to_string(struct.ip)
+    address = to_inet_address(struct.ip)
+    "#{Integer.to_string(elem(address, 0))}.#{Integer.to_string(elem(address, 1))}.#{Integer.to_string(elem(address, 2))}.#{Integer.to_string(elem(address, 3))}"
   end
   def reverse(struct) do
-    host_reverse(struct.ip)
+    result = :inet.gethostbyaddr(to_inet_address(struct.ip))
+    if (elem(result, 0) != :ok) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "sys.net.Host.reverse failed for " <> apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :to_string, [struct])]
+    end
+    entry = elem(result, 1)
+    List.to_string(elem(entry, 1))
   end
   def localhost() do
-    (
-                case :inet.gethostname() do
-                  {:ok, name} -> List.to_string(name)
-                  _ -> "localhost"
-                end
-            )
+    result = :inet.gethostname()
+    if (elem(result, 0) != :ok) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "sys.net.Host.localhost failed"]
+    end
+    List.to_string(elem(result, 1))
   end
   defp resolve(name) do
-    (
-                char_name = String.to_charlist(name)
-                address =
-                  case :inet.parse_address(char_name) do
-                    {:ok, {a, b, c, d}} -> {a, b, c, d}
-                    {:ok, other} -> raise "sys.net.Host only supports IPv4 addresses on the Elixir target, got: #{inspect(other)}"
-                    {:error, _} ->
-                      case :inet.getaddr(char_name, :inet) do
-                        {:ok, {a, b, c, d}} -> {a, b, c, d}
-                        {:ok, other} -> raise "sys.net.Host only supports IPv4 addresses on the Elixir target, got: #{inspect(other)}"
-                        {:error, reason} -> raise "sys.net.Host: failed to resolve " <> inspect(name) <> ": " <> inspect(reason)
-                      end
-                  end
-                {a, b, c, d} = address
-                Bitwise.bor(Bitwise.bsl(a, 24), Bitwise.bor(Bitwise.bsl(b, 16), Bitwise.bor(Bitwise.bsl(c, 8), d)))
-            )
-  end
-  defp host_to_string(ip_param) do
-    (
-                {a, b, c, d} = Host.to_inet_address(ip_param)
-                Enum.join([a, b, c, d], ".")
-            )
-  end
-  defp host_reverse(ip_param) do
-    (
-                address = Host.to_inet_address(ip_param)
-                case :inet.gethostbyaddr(address) do
-                  {:ok, {:hostent, name, _aliases, _addrtype, _length, _addr_list}} -> List.to_string(name)
-                  {:error, reason} -> raise "sys.net.Host.reverse failed for #{inspect(address)}: #{inspect(reason)}"
-                end
-            )
+    result = :inet.getaddr(String.to_charlist(name), :inet)
+    if (elem(result, 0) != :ok) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "sys.net.Host: failed to resolve " <> name]
+    end
+    address = elem(result, 1)
+    signed_high_byte = if (elem(address, 0) >= 128), do: (elem(address, 0) - 256), else: elem(address, 0)
+    Bitwise.bor(Bitwise.bor(Bitwise.bor(Bitwise.bsl(signed_high_byte, 24), Bitwise.bsl(elem(address, 1), 16)), Bitwise.bsl(elem(address, 2), 8)), elem(address, 3))
   end
   def to_inet_address(ip_param) do
-    (
-                value = ip_param
-                {
-                  Bitwise.band(Bitwise.bsr(value, 24), 255),
-                  Bitwise.band(Bitwise.bsr(value, 16), 255),
-                  Bitwise.band(Bitwise.bsr(value, 8), 255),
-                  Bitwise.band(value, 255)
-                }
-            )
+    {Bitwise.band(Bitwise.bsr(ip_param, 24), 255), Bitwise.band(Bitwise.bsr(ip_param, 16), 255), Bitwise.band(Bitwise.bsr(ip_param, 8), 255), Bitwise.band(ip_param, 255)}
   end
 end

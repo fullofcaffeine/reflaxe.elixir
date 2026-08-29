@@ -1905,6 +1905,27 @@ class StdlibParityTest extends TestCase {
 		Assert.isFalse(sys.FileSystem.exists(root));
 	}
 
+	@:describe("sys.net.Host")
+	@:test
+	function testHostIPv4AndNameContracts():Void {
+		var loopback = new sys.net.Host("127.0.0.1");
+		Assert.equals("127.0.0.1", loopback.host);
+		Assert.equals(2130706433, loopback.ip);
+		Assert.equals("127.0.0.1", loopback.toString());
+		Assert.isFalse(loopback.reverse() == "");
+
+		var signedBoundary = new sys.net.Host("128.0.0.1");
+		Assert.equals(-2147483647, signedBoundary.ip);
+		Assert.equals("128.0.0.1", signedBoundary.toString());
+
+		var unsignedMaximum = new sys.net.Host("255.255.255.255");
+		Assert.equals(-1, unsignedMaximum.ip);
+		Assert.equals("255.255.255.255", unsignedMaximum.toString());
+
+		Assert.isFalse(sys.net.Host.localhost() == "");
+		Assert.raises(() -> new sys.net.Host("::1"));
+	}
+
 	@:describe("haxe.Int64")
 	@:test
 	function testInt64WrapOverflow():Void {

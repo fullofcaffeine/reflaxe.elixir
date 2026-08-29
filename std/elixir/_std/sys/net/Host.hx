@@ -1,6 +1,9 @@
 package sys.net;
 
-import elixir.types.Term;
+import elixir.ErlangInet.ErlangHostEntry;
+import elixir.ErlangInet.ErlangIPv4Address;
+import elixir.ErlangInet.ErlangInetFamily;
+import elixir.types.Atom;
 
 /**
  * sys.net.Host (Elixir target)
@@ -15,85 +18,59 @@ import elixir.types.Term;
  * HOW
  * - Resolve host names with `:inet.getaddr/2`.
  * - Store `ip` as a big-endian IPv4 integer (`a.b.c.d` -> `a<<24 | b<<16 | c<<8 | d`).
+ * - Normalize that integer to Haxe's signed 32-bit `Int` range.
  * - Convert back to BEAM tuples when socket code calls `toInetAddress()`.
  */
 class Host {
-	public var host(get, never):String;
+	public var host(default, null):String;
 	public var ip(default, null):Int;
 
-	var hostName:String;
-
 	public function new(name:String):Void {
-		hostName = name;
+		host = name;
 		ip = resolve(name);
 	}
 
-	function get_host():String {
-		return hostName;
-	}
-
 	public function toString():String {
-		return hostToString(ip);
+		var address = toInetAddress(ip);
+		return elixir.ElixirInteger.toString(address._0) + "." + elixir.ElixirInteger.toString(address._1) + "." + elixir.ElixirInteger.toString(address._2)
+			+ "." + elixir.ElixirInteger.toString(address._3);
 	}
 
 	public function reverse():String {
-		return hostReverse(ip);
+		var result = elixir.ErlangInet.getHostByAddress(toInetAddress(ip));
+		if (result._0 != cast Atom.OK) {
+			throw "sys.net.Host.reverse failed for " + toString();
+		}
+
+		var entry:ErlangHostEntry = cast result._1;
+		return elixir.List.toString(entry._1);
 	}
 
 	public static function localhost():String {
-		return untyped __elixir__('(
-            case :inet.gethostname() do
-              {:ok, name} -> List.to_string(name)
-              _ -> "localhost"
-            end
-        )');
+		var result = elixir.ErlangInet.getHostname();
+		if (result._0 != cast Atom.OK) {
+			throw "sys.net.Host.localhost failed";
+		}
+		return elixir.List.toString(cast result._1);
 	}
 
 	static function resolve(name:String):Int {
-		return untyped __elixir__('(
-            char_name = String.to_charlist({0})
-            address =
-              case :inet.parse_address(char_name) do
-                {:ok, {a, b, c, d}} -> {a, b, c, d}
-                {:ok, other} -> raise "sys.net.Host only supports IPv4 addresses on the Elixir target, got: #{inspect(other)}"
-                {:error, _} ->
-                  case :inet.getaddr(char_name, :inet) do
-                    {:ok, {a, b, c, d}} -> {a, b, c, d}
-                    {:ok, other} -> raise "sys.net.Host only supports IPv4 addresses on the Elixir target, got: #{inspect(other)}"
-                    {:error, reason} -> raise "sys.net.Host: failed to resolve " <> inspect({0}) <> ": " <> inspect(reason)
-                  end
-              end
-            {a, b, c, d} = address
-            Bitwise.bor(Bitwise.bsl(a, 24), Bitwise.bor(Bitwise.bsl(b, 16), Bitwise.bor(Bitwise.bsl(c, 8), d)))
-        )', name);
+		var result = elixir.ErlangInet.getAddress(elixir.ElixirString.toCharlist(name), ErlangInetFamily.IPv4);
+		if (result._0 != cast Atom.OK) {
+			throw "sys.net.Host: failed to resolve " + name;
+		}
+
+		var address:ErlangIPv4Address = cast result._1;
+		var signedHighByte = address._0 >= 128 ? address._0 - 256 : address._0;
+		return (signedHighByte << 24) | (address._1 << 16) | (address._2 << 8) | address._3;
 	}
 
-	static function hostToString(ip:Int):String {
-		return untyped __elixir__('(
-            {a, b, c, d} = Host.to_inet_address({0})
-            Enum.join([a, b, c, d], ".")
-        )', ip);
-	}
-
-	static function hostReverse(ip:Int):String {
-		return untyped __elixir__('(
-            address = Host.to_inet_address({0})
-            case :inet.gethostbyaddr(address) do
-              {:ok, {:hostent, name, _aliases, _addrtype, _length, _addr_list}} -> List.to_string(name)
-              {:error, reason} -> raise "sys.net.Host.reverse failed for #{inspect(address)}: #{inspect(reason)}"
-            end
-        )', ip);
-	}
-
-	public static function toInetAddress(ip:Int):Term {
-		return untyped __elixir__('(
-            value = {0}
-            {
-              Bitwise.band(Bitwise.bsr(value, 24), 255),
-              Bitwise.band(Bitwise.bsr(value, 16), 255),
-              Bitwise.band(Bitwise.bsr(value, 8), 255),
-              Bitwise.band(value, 255)
-            }
-        )', ip);
+	public static function toInetAddress(ip:Int):ErlangIPv4Address {
+		return {
+			_0: (ip >> 24) & 255,
+			_1: (ip >> 16) & 255,
+			_2: (ip >> 8) & 255,
+			_3: ip & 255
+		};
 	}
 }

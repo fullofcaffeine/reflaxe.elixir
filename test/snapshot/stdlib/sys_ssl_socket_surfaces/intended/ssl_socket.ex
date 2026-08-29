@@ -37,11 +37,7 @@ defmodule SslSocket do
   end
   def connect(struct, host, port) do
     server_name = struct.hostname
-    server_name = if (Kernel.is_nil(server_name)) do
-      Host.get_host(host)
-    else
-      server_name
-    end
+    server_name = if (Kernel.is_nil(server_name)), do: host.host, else: server_name
     SslSocketState.connect(struct.socket_ref, host.ip, port, server_name, struct.verify_cert, struct.ca_cert)
   end
   def listen(struct, connections) do

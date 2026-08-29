@@ -1,8 +1,21 @@
 defmodule Main do
   def main() do
     host = Host.new("127.0.0.1")
+    if (host.host != "127.0.0.1") do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Host.host should preserve its input"]
+    end
+    if (host.ip != 2130706433) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Host.ip should use signed 32-bit IPv4 values"]
+    end
     if (apply(Map.get(host, :__reflaxe_class__) || Map.get(host, :__struct__), :to_string, [host]) != "127.0.0.1") do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Host.toString should preserve IPv4 loopback"]
+    end
+    if (String.length(apply(Map.get(host, :__reflaxe_class__) || Map.get(host, :__struct__), :reverse, [host])) == 0) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Host.reverse should return a local name"]
+    end
+    high_host = Host.new("255.255.255.255")
+    if (high_host.ip != -1 or apply(Map.get(high_host, :__reflaxe_class__) || Map.get(high_host, :__struct__), :to_string, [high_host]) != "255.255.255.255") do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Host should preserve the signed high IPv4 range"]
     end
     address = Address.new()
     Address.set_host(address, host.ip)
