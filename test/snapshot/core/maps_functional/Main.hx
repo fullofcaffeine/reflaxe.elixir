@@ -1,5 +1,5 @@
-using ArrayTools;
-using MapTools;
+using elixir.ArrayTools;
+using elixir.MapTools;
 
 /**
  * MapTools functional methods test case

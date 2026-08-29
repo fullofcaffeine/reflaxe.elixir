@@ -1,6 +1,6 @@
 package;
 
-using ArrayTools;
+using elixir.ArrayTools;
 
 import haxe.test.ExUnit.TestCase;
 import haxe.test.Assert;

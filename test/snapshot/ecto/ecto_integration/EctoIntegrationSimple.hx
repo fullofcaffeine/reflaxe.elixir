@@ -1,4 +1,4 @@
-using ArrayTools;
+using elixir.ArrayTools;
 
 /**
  * Comprehensive Ecto Integration Test

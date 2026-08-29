@@ -150,9 +150,10 @@ Layout rule:
 - Do **not** add a plain `.hx` copy of an upstream stdlib file just to reduce
   the parity gap. If the upstream implementation works unchanged, use it from
   the official Haxe stdlib and add tests/tracking instead.
-- Use plain `.hx` under `std/haxe/**` only for modules this target genuinely
-  owns as new support surfaces, or when there is a documented bootstrap/dual-mode
-  reason that `.cross.hx` cannot satisfy.
+- Put new target-owned support in an explicit target or project namespace.
+  Do not add official Haxe modules as plain files under `src/` or `std/`.
+- If macros need different host behavior, add `src/path/Module.macro.hx`.
+  Keep the target implementation under `std/elixir/_std/path/Module.hx`.
 
 Packaging note:
 
@@ -174,67 +175,28 @@ HXML files make that root visible before typing, and Reflaxe build publishes the
 as `src/haxe/Exception.cross.hx`. The executable implementation and its `elixir_output` guard are the
 same in both modes.
 
-### Bootstrap-safe overrides (early source-classpath modules)
+Target-owned helpers use explicit namespaces. Use `elixir.ArrayTools`, `elixir.MapTools`, and
+`elixir.DateConverter`. Old code that used the top-level helper names must update its import or
+`using` statement. These helpers are not official Haxe stdlib replacements.
 
-Some stdlib modules are resolved **very early** during compilation, and Haxe runs macros using the `eval` interpreter.
-That combination means a few modules must satisfy two requirements at once:
+### Macro companions
 
-1) **Macro/eval phase (host-side)**: constructors must exist and be runnable (eval can instantiate classes).
-2) **Elixir output phase (target-side)**: we must avoid emitting the canonical Haxe stdlib implementation when it is
-   non-idiomatic for BEAM or produces Elixir warnings that fail CI under `--warnings-as-errors` (WAE).
+Macro code runs on Haxe's host platform. Elixir target overrides must not replace host behavior.
+Haxe provides the `.macro.hx` suffix for this boundary.
 
-For those specific modules, we use an early override under `src/haxe/**`, the package classpath that
-is available immediately when a project uses `-lib reflaxe.elixir`.
+Four collection modules need custom host implementations:
 
-There are two current shapes:
+- `src/haxe/ds/ArraySort.macro.hx`
+- `src/haxe/ds/BalancedTree.macro.hx`
+- `src/haxe/ds/EnumValueMap.macro.hx`
+- `src/haxe/ds/ListSort.macro.hx`
 
-- `src/haxe/ds/{ArraySort,BalancedTree,EnumValueMap,ListSort}.hx` are dual-mode plain `.hx` modules:
-  `#if macro` gives eval a small implementation, while `#else` exposes an extern surface or target
-  diagnostic surface so generated Elixir does not emit the canonical mutable stdlib implementation.
-- `src/haxe/ds/{GenericStack,HashMap,List}.hx` are early BEAM-safe implementations whose observable
-  direct-receiver flows depend on the compiler's receiver-rebinding rules.
-  Shared-alias mutation is incomplete and belongs to the managed-collection
-  audit; these modules must not be described as full parity from rebinding
-  evidence alone.
+Their Elixir implementations live under `std/elixir/_std/haxe/ds/`. Reflaxe packages those target
+files as `.cross.hx`. `GenericStack`, `HashMap`, and `List` need no custom macro companion. Macro code
+uses the official Haxe implementations for those modules.
 
-For dual-mode plain `.hx` modules, the usual pattern is:
-
-- `#if macro`: small in-memory implementation (keeps macro/eval happy).
-- `#else`: `@:nativeGen extern` surface (prevents canonical stdlib code from being emitted into generated `.ex`).
-
-Examples:
-- `src/haxe/ds/BalancedTree.hx`
-- `src/haxe/ds/EnumValueMap.hx`
-- `src/haxe/ds/ArraySort.hx`
-- `src/haxe/ds/ListSort.hx`
-
-Why `src/`?
-- For haxelib installs, `src/` is the only path guaranteed to be on the initial classpath for `-lib reflaxe.elixir`.
-- Macro-time classpath injection can be too late because Haxe may cache some stdlib modules before bootstrap macros run.
-
-What does this “replace”?
-- Only the specific modules we place under `src/haxe/**` are shadowed early.
-- Everything else still comes from the upstream Haxe stdlib unless we explicitly override it via:
-  - `std/elixir/_std/**/*.hx` (Elixir stdlib override source), or
-  - `std/**/*.hx` excluding upstream std namespaces (Elixir-target additions/shims).
-
-Why the path looks like the Haxe stdlib (`src/haxe/ds/...`)?
-- This is intentional: Haxe module resolution is path-based. Putting a file at `haxe/ds/BalancedTree.hx`
-  on the classpath shadows the upstream `haxe.ds.BalancedTree` module *for this compilation*.
-- We keep it surgical: only add these early overrides when we have a concrete macro/eval + WAE reason.
-
-Is this a Reflaxe convention?
-- It’s a common pattern across target compilers (including Reflaxe-based ones): when a module must be
-  resolved before bootstrap/injection can run, it needs to live on the library’s initial classpath.
-- The dual-mode approach (`#if macro` implementation, `#else` extern) is specific to our constraints:
-  Haxe eval must be able to instantiate the type, but we don’t want to emit the upstream implementation
-  into Elixir output when it is non-idiomatic or breaks `--warnings-as-errors`.
-- `haxe.Exception` does not need this initial-classpath exception. It is selected from `_std` in
-  source builds and generated as `.cross.hx` in release packages, matching other Reflaxe targets.
-
-The injection point is macro-time, in:
-- `src/reflaxe/elixir/CompilerBootstrap.hx:1` (early injection, invoked from `extraParams.hxml`)
-- `src/reflaxe/elixir/CompilerInit.hx:1` (compiler registration + early injection)
+Use a macro companion only after a focused test proves that official host behavior is insufficient.
+Do not add an empty companion as a precaution. Keep host code executable and keep target code typed.
 
 See also:
 - `docs/01-getting-started/cross-hx.md`
@@ -294,8 +256,8 @@ When you need to fix stdlib behavior for the Elixir target:
    - the feature should fail fast as unsupported on the Elixir target
 2) Prefer adding/adjusting Haxe sources in:
    - `std/elixir/_std/**/*.hx`
-   - plain `std/**/*.hx` only for new target-owned support modules or documented
-     exceptions, not unchanged upstream copies
+   - `src/**/*.macro.hx` only for a proven host-side companion
+   - plain `std/**/*.hx` only for new target-owned support modules
 3) Add a snapshot test under:
    - `test/snapshot/stdlib/**`
 4) Add Haxe-authored ExUnit coverage when runtime semantics matter.

@@ -27,7 +27,6 @@ defmodule Main do
     assert true
   end
   test "async with lifecycle" do
-    Process.sleep(1)
     assert true
   end
   test "with underscores and caps" do
@@ -85,7 +84,6 @@ defmodule Main do
   end
   describe "Full featured" do
     test "everything" do
-      Process.sleep(1)
       assert true
     end
   end

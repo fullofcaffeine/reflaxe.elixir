@@ -236,7 +236,7 @@ state across processes.
 - `haxe.ds.ArraySort` (target override lowered to stable `Enum.sort/2` rebinding for local array bindings; aliases are not updated yet)
 - `haxe.ds.BalancedTree`
 - `haxe.ds.Either` (official stdlib enum fallback; covered by local runtime tests)
-- `haxe.ds.EnumValueMap` (bootstrap-safe override under `src/haxe/ds`)
+- `haxe.ds.EnumValueMap` (target override with a separate host-side `.macro.hx` companion)
 - `haxe.ds.GenericStack` (target override with receiver rebinding for `add`, `pop`, and `remove`; upstream `unitstd` plus local iterator/toString tests pass, but shared-alias mutation is incomplete)
 - `haxe.ds.HashMap` (target override keyed by `hashCode()` with receiver rebinding for `set`, `remove`, and `clear`; direct runtime tests pass, but shared-alias mutation still needs pinned evidence)
 - `haxe.ds.List` (target override with receiver rebinding for `add`, `push`, `pop`, `remove`, and `clear`; adapted upstream `unitstd` plus local tests pass, but aliases retain old snapshots and therefore block complete parity)

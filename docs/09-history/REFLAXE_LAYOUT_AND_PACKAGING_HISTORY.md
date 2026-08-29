@@ -74,7 +74,7 @@ In that model, the source tree and published package tree are intentionally diff
 Reflaxe.Elixir keeps:
 
 ```text
-src/                  compiler source, bootstrap macros, early dual-mode overrides
+src/                  compiler source, bootstrap macros, and focused .macro.hx companions
 std/elixir/_std/      authored Elixir stdlib overrides; Reflaxe build packages these as .cross.hx
 std/                  target-owned APIs and support modules
 vendor/reflaxe/src    vendored Reflaxe framework used by this compiler
@@ -200,9 +200,9 @@ Haxelib.org package artifact path:
 Use `std/elixir/_std/**/*.hx` for upstream-colliding stdlib overrides. Do not add new checked-in
 `std/**/*.cross.hx` files for ordinary stdlib work. Keep plain `std/**/*.hx` for target-owned
 APIs/support modules that do not replace upstream Haxe std namespaces; BEAM `sys.*` implementations
-belong under `std/elixir/_std/sys/**`. Keep rare early plain overrides under `src/haxe/**` only when
-macro/eval timing requires them. Checked-in `.cross.hx` files are not permitted; they are generated
-package artifacts.
+belong under `std/elixir/_std/sys/**`. Use a matched `src/**/*.macro.hx` companion only when macro
+code needs different host behavior. Checked-in `.cross.hx` files are not permitted. They are
+generated package artifacts.
 
 Before publishing to haxelib.org, run the package smoke described above. That validates the exact
 artifact users would install.

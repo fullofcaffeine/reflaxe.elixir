@@ -131,7 +131,7 @@ defmodule OptionPatterns.NotificationService do
   end
   defp check_user_preferences(user_id, type) do
     if (not is_notification_allowed(user_id, type)) do
-      {:error, "User has disabled " <> Reflaxe.Elixir.HaxeFloat.to_string(type) <> " notifications"}
+      {:error, "User has disabled " <> Reflaxe.Elixir.HaxeFloat.enum_to_string(OptionPatterns.NotificationType, type) <> " notifications"}
     else
       OptionTools.to_result(OptionPatterns.UserRepository.find(user_id), "User not found during preference check")
     end

@@ -44,8 +44,7 @@ class Main extends TestCase {
 	@:async
 	@:test
 	function testAsyncOperation():Void {
-		// Simulate async operation
-		Process.sleep(10);
+		// The ExUnit async metadata is the behavior under test.
 		assertTrue(true, "Async test completed");
 	}
 
@@ -54,7 +53,6 @@ class Main extends TestCase {
 	@:tag("slow")
 	@:test
 	function testSlowOperation():Void {
-		Process.sleep(100);
 		assertTrue(true, "Slow test completed");
 	}
 

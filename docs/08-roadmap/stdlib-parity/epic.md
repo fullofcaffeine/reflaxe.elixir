@@ -72,13 +72,12 @@ Related work:
 
 Stdlib overrides live under `std/elixir/_std/` and are supplied before typing by scoped source HXML,
 with bootstrap fallback for supported consumer paths.
-However, a small subset of overrides may need to be visible **before** bootstrap runs in consumer
-installs (because Haxe resolves some std modules very early).
+Some modules also need a host-side companion during macro typing.
 
 Local roots considered by the gap report:
 - `std/elixir/_std/` — authored Elixir stdlib overrides; packaged Reflaxe builds can materialize them as `.cross.hx`
 - `std/` — target-owned extern/support surfaces
-- `src/haxe/` — selected early plain dual-mode overrides needed by macro/eval (for example, `haxe.ds.BalancedTree`)
+- `src/**/*.macro.hx` — focused host-side companions for proven macro requirements
 
 ## Definition of Done (incremental)
 
@@ -353,7 +352,8 @@ For each module/cluster task:
 - Implementation:
   - `std/elixir/_std/**/*.hx` for normal upstream-colliding stdlib overrides
   - target-owned plain `std/**/*.hx` for Elixir/Phoenix/Ecto/API support modules
-  - selected plain `src/haxe/**` early overrides only when macro/eval timing requires them; never check in source-tree `.cross.hx` files
+  - matched `src/**/*.macro.hx` companions only when macro/eval behavior requires them
+  - never check in generated source-tree `.cross.hx` files
   - any compiler transforms required (shape-driven; no app-specific heuristics)
 - Tests:
   - Snapshot(s) updated/added (list)
@@ -403,6 +403,6 @@ Suggested repomix inputs (edit per module):
 - `src/reflaxe/elixir/CompilerBootstrap.hx`
 - `src/reflaxe/elixir/CompilerInit.hx`
 - `std/elixir/_std/<Module>.hx` for normal stdlib overrides
-- `src/haxe/<Module>.hx` only for documented early plain Haxe overrides
+- `src/<Module>.macro.hx` only for a proven host-side companion
 - `test/snapshot/**` cases relevant to the module
 - `docs/02-user-guide/exunit-testing.md`

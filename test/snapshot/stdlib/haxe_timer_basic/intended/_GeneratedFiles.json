@@ -10,12 +10,12 @@
 		"string_tools.ex",
 		"std.ex",
 		"reflaxe/exception.ex",
+		"reflaxe/elixir/runtime/timer_runtime.ex",
 		"reflaxe/elixir/haxe_throw.ex",
 		"reflaxe/elixir/haxe_int.ex",
 		"reflaxe/elixir/haxe_float.ex",
 		"main.ex",
 		"int_iterator.ex",
-		"haxe/timer_runtime.ex",
 		"haxe/timer.ex",
 		"haxe/log.ex",
 		"haxe/iterators/string_key_value_iterator.ex",
@@ -40,7 +40,7 @@
 	"ownedFiles": [
 		{
 			"path": "haxe/_call_stack/call_stack_impl_.ex",
-			"sha256": "ab46ba4f786a95420ae1cd78188f77ebebc3ced2db90d1351297f573f30dadf8"
+			"sha256": "51ccde2aded2494513ee0e4df47307da4b81b76b152e144ec83f62ca98578569"
 		},
 		{
 			"path": "haxe/exceptions/not_implemented_exception.ex",
@@ -96,15 +96,11 @@
 		},
 		{
 			"path": "haxe/log.ex",
-			"sha256": "8cc6d8c81f74b61f2804b64db8ee1b296fb7781a953d8169b6fc2189026d1f43"
+			"sha256": "392f04ff93b7144a1c4e60ad0064697d7d77d29aa44e2394d15743660eb26945"
 		},
 		{
 			"path": "haxe/timer.ex",
-			"sha256": "00b0e9add7f0e3a375b39361500649c611a4f55b7d8733ad8c5023af4888c561"
-		},
-		{
-			"path": "haxe/timer_runtime.ex",
-			"sha256": "05d2c2de94dcbb50821f3a9dda724d0dcf4d36307a1bc395a8029c3cf8dc1a60"
+			"sha256": "f9c64962db9ee6a2785788ec88fc4c314b716f4fdbb7831eaa675a3cef6a92a4"
 		},
 		{
 			"path": "int_iterator.ex",
@@ -125,6 +121,10 @@
 		{
 			"path": "reflaxe/elixir/haxe_throw.ex",
 			"sha256": "642bbf29d073acc9eb2ffcea4a8e6016396a43f1a4180a79331b537bfefc6094"
+		},
+		{
+			"path": "reflaxe/elixir/runtime/timer_runtime.ex",
+			"sha256": "aba9951603f82d84c4858e4621e8b829a8d4c34a81508fb448311aedff229d6b"
 		},
 		{
 			"path": "reflaxe/exception.ex",
@@ -167,5 +167,5 @@
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "97e1e2c9fcde66149b3f0b22a86318c66bf6c47749d02e172b1b365bd793c99b"
+	"generation": "a5e57b043c1948ade85c033bbbd325e3e3f09b6b56e7dc85049cb4d900f0f36b"
 }

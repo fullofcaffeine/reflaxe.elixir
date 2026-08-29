@@ -1,4 +1,4 @@
-using ArrayTools;
+using elixir.ArrayTools;
 
 import haxe.validation.Email;
 import haxe.validation.UserId;

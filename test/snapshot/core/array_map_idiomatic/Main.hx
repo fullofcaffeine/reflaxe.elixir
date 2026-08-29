@@ -1,4 +1,4 @@
-using ArrayTools;
+using elixir.ArrayTools;
 
 /**
  * Test idiomatic array map compilation

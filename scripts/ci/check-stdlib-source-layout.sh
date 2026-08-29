@@ -94,98 +94,87 @@ if [[ ! -f "$ROOT_DIR/std/elixir/_std/haxe/Exception.hx" ]]; then
   fail "haxe.Exception must be authored at std/elixir/_std/haxe/Exception.hx"
 fi
 
-duplicate_modules="$(
-  python3 - "$ROOT_DIR" <<'PY'
+if ! python3 - "$ROOT_DIR" <<'PY'
+import json
 from pathlib import Path
 import sys
 
 root = Path(sys.argv[1])
-std = root / "std"
-target_std = std / "elixir" / "_std"
+target_std = root / "std" / "elixir" / "_std"
+inventory = root / "docs" / "08-roadmap" / "stdlib-parity" / "api-inventory.json"
 
-plain_modules = set()
-for path in std.rglob("*.hx"):
-    if target_std in path.parents:
-        continue
-    plain_modules.add(path.relative_to(std).as_posix())
+with inventory.open(encoding="utf-8") as handle:
+    official_modules = {row["module"] for row in json.load(handle)["modules"]}
 
-target_modules = {
-    path.relative_to(target_std).as_posix()
-    for path in target_std.rglob("*.hx")
-}
 
-for module in sorted(plain_modules & target_modules):
-    print(module)
+def module_and_kind(path: Path, source_root: Path) -> tuple[str, str]:
+    relative = path.relative_to(source_root).as_posix()
+    for suffix, kind in (
+        (".macro.hx", "macro"),
+        (".cross.hx", "cross"),
+        (".hx", "plain"),
+    ):
+        if relative.endswith(suffix):
+            module = relative[: -len(suffix)].replace("/", ".")
+            return module, kind
+    raise ValueError(f"unexpected Haxe source path: {relative}")
+
+
+errors = []
+project_modules = {}
+for source_root in (root / "src", root / "std"):
+    for path in sorted(source_root.rglob("*.hx")):
+        if target_std in path.parents:
+            continue
+        module, kind = module_and_kind(path, source_root)
+        relative = path.relative_to(root).as_posix()
+
+        if kind == "plain" and module in official_modules:
+            errors.append(
+                f"{relative}: official Haxe module {module} must be a target override "
+                f"under std/elixir/_std"
+            )
+        if kind == "plain":
+            previous = project_modules.get(module)
+            if previous is not None:
+                errors.append(
+                    f"{relative}: project module {module} duplicates {previous}"
+                )
+            else:
+                project_modules[module] = relative
+
+        if kind == "macro":
+            if module not in official_modules:
+                errors.append(
+                    f"{relative}: .macro.hx is only for a host-side companion of an "
+                    f"official Haxe module"
+                )
+                continue
+            target_path = target_std / (module.replace(".", "/") + ".hx")
+            if not target_path.is_file():
+                errors.append(
+                    f"{relative}: missing target companion "
+                    f"{target_path.relative_to(root).as_posix()}"
+                )
+
+for path in sorted(target_std.rglob("*.hx")):
+    module, kind = module_and_kind(path, target_std)
+    relative = path.relative_to(root).as_posix()
+    if kind != "plain":
+        errors.append(f"{relative}: target override sources must end in .hx")
+    elif module not in official_modules:
+        errors.append(
+            f"{relative}: {module} is not in the pinned Haxe standard library; "
+            f"put target-owned modules in an explicit project or target namespace"
+        )
+
+if errors:
+    print("[guard:stdlib-layout] ERROR: invalid Haxe source ownership:", file=sys.stderr)
+    for error in errors:
+        print(f"  - {error}", file=sys.stderr)
+    raise SystemExit(1)
 PY
-)"
-if [[ -n "$duplicate_modules" ]]; then
-  {
-    echo "std/elixir/_std modules must not also exist under the plain std root;"
-    echo "the plain std root is earlier in raw source checkouts and can shadow"
-    echo "target-specific overrides before macros run. Found duplicates:"
-    printf '%s\n' "$duplicate_modules" | sed -n '1,80p'
-  } >&2
-  exit 1
-fi
-
-unexpected_plain_haxe_modules="$(
-  python3 - "$ROOT_DIR" <<'PY'
-from pathlib import Path
-import sys
-
-root = Path(sys.argv[1])
-plain_haxe_root = root / "std" / "haxe"
-allowed = {
-    "haxe/ds/OptionTools.hx",
-    "haxe/functional/Result.hx",
-    "haxe/functional/ResultTools.hx",
-    "haxe/test/Assert.hx",
-    "haxe/test/ExUnit.hx",
-    "haxe/validation/Email.hx",
-    "haxe/validation/NonEmptyString.hx",
-    "haxe/validation/PositiveInt.hx",
-    "haxe/validation/UserId.hx",
-}
-
-if plain_haxe_root.exists():
-    for path in sorted(plain_haxe_root.rglob("*.hx")):
-        module = path.relative_to(root / "std").as_posix()
-        if module not in allowed:
-            print(module)
-PY
-)"
-if [[ -n "$unexpected_plain_haxe_modules" ]]; then
-  {
-    echo "plain std/haxe/** files are reserved for documented target-owned support"
-    echo "surfaces. Upstream Haxe stdlib replacements must live under"
-    echo "std/elixir/_std/** so Reflaxe build can package them as .cross.hx files."
-    echo "Found unexpected plain std/haxe modules:"
-    printf '%s\n' "$unexpected_plain_haxe_modules" | sed -n '1,80p'
-  } >&2
-  exit 1
-fi
-
-unexpected_plain_sys_modules="$(
-  python3 - "$ROOT_DIR" <<'PY'
-from pathlib import Path
-import sys
-
-root = Path(sys.argv[1])
-plain_sys_root = root / "std" / "sys"
-
-if plain_sys_root.exists():
-    for path in sorted(plain_sys_root.rglob("*.hx")):
-        print(path.relative_to(root / "std").as_posix())
-PY
-)"
-if [[ -n "$unexpected_plain_sys_modules" ]]; then
-  {
-    echo "plain std/sys/** files shadow Haxe host/eval sys modules in packaged"
-    echo "Reflaxe builds. BEAM sys.* replacements must live under"
-    echo "std/elixir/_std/sys/** so Reflaxe build packages them as .cross.hx files."
-    echo "Found unexpected plain std/sys modules:"
-    printf '%s\n' "$unexpected_plain_sys_modules" | sed -n '1,80p'
-  } >&2
+then
   exit 1
 fi
 

@@ -7,7 +7,7 @@ import haxe.ds.Option;
 
 using haxe.functional.ResultTools;
 using haxe.ds.OptionTools;
-using ArrayTools;
+using elixir.ArrayTools;
 
 /**
  * Real-world user registration system demonstrating type-safe domain abstractions.

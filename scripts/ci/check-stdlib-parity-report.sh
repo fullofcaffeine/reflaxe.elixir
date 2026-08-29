@@ -58,6 +58,8 @@ def collect_std_modules(std_root: Path, allow_cross: bool, exclude_roots=()):
             continue
         if not any(str(file).endswith(suffix) for suffix in suffixes):
             continue
+        if str(file).endswith(".macro.hx"):
+            continue
 
         rel = file.relative_to(std_root)
         if rel.parts[0] not in ("haxe", "sys") and len(rel.parts) != 1:
@@ -78,6 +80,8 @@ def collect_prefixed_modules(prefix: str, source_root: Path, allow_cross: bool):
         if not file.is_file():
             continue
         if not any(str(file).endswith(suffix) for suffix in suffixes):
+            continue
+        if str(file).endswith(".macro.hx"):
             continue
         modules.add(prefix + "." + module_id_from_relpath(file.relative_to(source_root)))
 
@@ -126,16 +130,10 @@ if local_elixir_std_override_root.exists():
 local_candidates |= collect_prefixed_modules("haxe", local_src_haxe_root, allow_cross=True)
 local_candidates |= collect_prefixed_modules("sys", local_src_sys_root, allow_cross=True)
 
-internal_local_modules = {
-    "haxe.TimerRuntime",
-}
-
 local_std_modules = set()
 local_nonstdlib_modules = set()
 for module in local_candidates:
-    if module in internal_local_modules:
-        local_nonstdlib_modules.add(module)
-    elif module in reference_modules or module.startswith("haxe.") or module.startswith("sys."):
+    if module in reference_modules or module.startswith("haxe.") or module.startswith("sys."):
         local_std_modules.add(module)
     else:
         local_nonstdlib_modules.add(module)

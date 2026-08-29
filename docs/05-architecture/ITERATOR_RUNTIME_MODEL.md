@@ -139,7 +139,7 @@ This choice is intentionally scoped:
   `%{}` would silently merge those keys. The selective managed-reference architecture is now accepted
   in `MANAGED_REFERENCE_ABI.md`, but its feasibility, distribution, compiler, lifecycle, and runtime
   gates have not shipped.
-- `haxe.ds.BalancedTree` and `haxe.ds.EnumValueMap` remain bootstrap-safe dual-mode surfaces. They exist to satisfy macro/eval and WAE constraints, not because arbitrary tree-backed `IMap` values should be shape-sniffed as native maps.
+- `haxe.ds.BalancedTree` and `haxe.ds.EnumValueMap` have separate target and macro files. This split satisfies macro/eval and WAE constraints. It does not make arbitrary tree-backed `IMap` values native maps.
 - Custom `IMap` implementations must use explicit APIs or normalized pair lists at runtime. `Reflaxe.Elixir.IMap.unwrap/1` is the only generic runtime boundary.
 
 Map abstract conversions currently preserve the backing `%{}` when one exists.
@@ -157,7 +157,7 @@ The managed map design must define conversion and `copy()` semantics from Haxe
 Tradeoffs:
 
 - **WAE:** native-map built-ins avoid emitting canonical Haxe stdlib map implementations that can produce Elixir warnings under `--warnings-as-errors`.
-- **Macro/eval:** dual-mode modules under `src/haxe/ds` remain required for stdlib classes that eval instantiates during macro compilation.
+- **Macro/eval:** focused `.macro.hx` companions provide executable host behavior for classes that eval instantiates.
 - **Performance:** `%{}` storage gives O(1)-ish BEAM map operations and avoids conversion at Elixir boundaries. Those benefits do not justify stale aliases for an ordinary Haxe map. Iteration order follows BEAM map semantics and must not be treated as insertion order.
 - **Portability:** explicit native maps may rely on persistent BEAM behavior. Shared Haxe code using ordinary `Map` must receive the audited Haxe contract rather than target folklore.
 

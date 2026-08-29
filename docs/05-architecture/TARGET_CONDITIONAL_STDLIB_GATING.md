@@ -13,18 +13,14 @@ roles of `extraParams.hxml`, `CompilerBootstrap.Start()`, and `CompilerInit.Star
 - Elixir-specific stdlib work in this repo uses two source roots:
   - `std/elixir/_std/**/*.hx`: authored target-specific overrides for upstream Haxe stdlib modules.
   - plain `std/**/*.hx`: target-owned APIs/support modules such as `elixir.*`, `phoenix.*`, and `ecto.*`.
-- Additionally, a tiny set of **bootstrap-safe plain overrides** live under the initial `src/haxe/**`
-  classpath because they are resolved *very early* (before bootstrap macros can guarantee target
-  std insertion):
-  - `src/haxe/ds/{ArraySort,BalancedTree,EnumValueMap,ListSort}.hx` are plain `.hx` dual-mode
-    surfaces for macro/eval plus Elixir output.
-  - `src/haxe/ds/{GenericStack,HashMap,List}.hx` are early BEAM-safe stdlib implementations whose
-    receiver semantics are tied to compiler lowering.
+- Four official modules have `.macro.hx` companions under `src/haxe/ds/`.
+  These files provide custom host behavior only during macro typing.
+- Their Elixir implementations remain under `std/elixir/_std/haxe/ds/`.
 - `std/elixir/_std/` and `std/` are added to the active Haxe classpath for Elixir builds by
   scoped source-checkout HXML before typing; `CompilerBootstrap.Start()` retains package-root fallback
   insertion for supported consumer paths.
-- Macro contexts and non-Elixir targets normally use the upstream Haxe stdlib, except for the
-  explicitly documented early `src/haxe/**` overrides above.
+- Macro contexts use the official Haxe stdlib unless a focused `.macro.hx` companion exists.
+- Non-Elixir targets use the official Haxe stdlib.
 
 ## WHY
 
@@ -83,9 +79,8 @@ must shadow the official Haxe stdlib in Elixir builds.
 - Added package-scoped `--macro nullSafety("reflaxe.elixir")` before bootstrap/init so the entrypoint
   HXML files match Reflaxe-generated target conventions without changing user application packages.
 - Added `--macro reflaxe.elixir.CompilerBootstrap.Start()` so repo-local scoped-lib builds get the same package-root classpath insertion behavior as consumer installs.
-- For the handful of modules that must be available before macros run, we place a documented
-  bootstrap-safe plain implementation under `src/haxe/**`. Use this only for concrete macro/eval
-  constraints; ordinary stdlib replacements belong in `std/elixir/_std/**`.
+- A focused `src/**/*.macro.hx` companion supplies custom host behavior when required.
+  Ordinary target implementations belong in `std/elixir/_std/**`.
 
 Source development must use the scoped `haxe_libraries/reflaxe.elixir.hxml` or equivalent explicit
 classpaths. Raw `haxelib dev` or `lix dev` alone cannot expose `_std` early enough for every

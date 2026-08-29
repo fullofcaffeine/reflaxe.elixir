@@ -67987,10 +67987,10 @@
           "haxe.elixir.codex-0yn.10.3.14.1",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; the Elixir target uses a bootstrap-safe target override lowered to stable Enum.sort/2 rebinding for local array bindings, covered by local Haxe-authored ExUnit runtime tests. Reference-semantics audit: Haxe 4.3.7 requires shared Array mutation; direct/module evidence does not prove aliases. Child .10.3.14.1 owns exact mutation, copy, callback, and read-only-view behavior.",
+        "reviewNote": "No matching upstream unitstd spec exists; the Elixir target uses an _std override with a separate macro companion. The target lowers local array bindings to stable Enum.sort/2 rebinding, covered by local Haxe-authored ExUnit runtime tests. Reference-semantics audit: Haxe 4.3.7 requires shared Array mutation; direct/module evidence does not prove aliases. Child .10.3.14.1 owns exact mutation, copy, callback, and read-only-view behavior.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/ArraySort.hx"
+          "std/elixir/_std/haxe/ds/ArraySort.hx"
         ]
       }
     },
@@ -68033,10 +68033,10 @@
           "haxe.elixir.codex-0yn.10.3.14.1",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; the Elixir target uses a bootstrap-safe target override lowered to stable Enum.sort/2 rebinding for local array bindings, covered by local Haxe-authored ExUnit runtime tests. Reference-semantics audit: Haxe 4.3.7 requires shared Array mutation; direct/module evidence does not prove aliases. Child .10.3.14.1 owns exact mutation, copy, callback, and read-only-view behavior.",
+        "reviewNote": "No matching upstream unitstd spec exists; the Elixir target uses an _std override with a separate macro companion. The target lowers local array bindings to stable Enum.sort/2 rebinding, covered by local Haxe-authored ExUnit runtime tests. Reference-semantics audit: Haxe 4.3.7 requires shared Array mutation; direct/module evidence does not prove aliases. Child .10.3.14.1 owns exact mutation, copy, callback, and read-only-view behavior.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/ArraySort.hx"
+          "std/elixir/_std/haxe/ds/ArraySort.hx"
         ]
       }
     },
@@ -68082,7 +68082,7 @@
         "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/BalancedTree.hx"
+          "std/elixir/_std/haxe/ds/BalancedTree.hx"
         ]
       }
     },
@@ -68128,7 +68128,7 @@
         "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/BalancedTree.hx"
+          "std/elixir/_std/haxe/ds/BalancedTree.hx"
         ]
       }
     },
@@ -68174,7 +68174,7 @@
         "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/BalancedTree.hx"
+          "std/elixir/_std/haxe/ds/BalancedTree.hx"
         ]
       }
     },
@@ -68220,7 +68220,7 @@
         "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/BalancedTree.hx"
+          "std/elixir/_std/haxe/ds/BalancedTree.hx"
         ]
       }
     },
@@ -68266,7 +68266,7 @@
         "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/BalancedTree.hx"
+          "std/elixir/_std/haxe/ds/BalancedTree.hx"
         ]
       }
     },
@@ -68312,7 +68312,7 @@
         "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/BalancedTree.hx"
+          "std/elixir/_std/haxe/ds/BalancedTree.hx"
         ]
       }
     },
@@ -68358,7 +68358,7 @@
         "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/BalancedTree.hx"
+          "std/elixir/_std/haxe/ds/BalancedTree.hx"
         ]
       }
     },
@@ -68404,7 +68404,7 @@
         "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/BalancedTree.hx"
+          "std/elixir/_std/haxe/ds/BalancedTree.hx"
         ]
       }
     },
@@ -68450,7 +68450,7 @@
         "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/BalancedTree.hx"
+          "std/elixir/_std/haxe/ds/BalancedTree.hx"
         ]
       }
     },
@@ -68496,7 +68496,7 @@
         "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/BalancedTree.hx"
+          "std/elixir/_std/haxe/ds/BalancedTree.hx"
         ]
       }
     },
@@ -68542,7 +68542,7 @@
         "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/BalancedTree.hx"
+          "std/elixir/_std/haxe/ds/BalancedTree.hx"
         ]
       }
     },
@@ -68621,7 +68621,7 @@
         "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/BalancedTree.hx"
+          "std/elixir/_std/haxe/ds/BalancedTree.hx"
         ]
       }
     },
@@ -68667,7 +68667,7 @@
         "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/BalancedTree.hx"
+          "std/elixir/_std/haxe/ds/BalancedTree.hx"
         ]
       }
     },
@@ -68713,7 +68713,7 @@
         "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/BalancedTree.hx"
+          "std/elixir/_std/haxe/ds/BalancedTree.hx"
         ]
       }
     },
@@ -68759,7 +68759,7 @@
         "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/BalancedTree.hx"
+          "std/elixir/_std/haxe/ds/BalancedTree.hx"
         ]
       }
     },
@@ -68805,7 +68805,7 @@
         "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/BalancedTree.hx"
+          "std/elixir/_std/haxe/ds/BalancedTree.hx"
         ]
       }
     },
@@ -68851,7 +68851,7 @@
         "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/BalancedTree.hx"
+          "std/elixir/_std/haxe/ds/BalancedTree.hx"
         ]
       }
     },
@@ -68897,7 +68897,7 @@
         "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/BalancedTree.hx"
+          "std/elixir/_std/haxe/ds/BalancedTree.hx"
         ]
       }
     },
@@ -68957,7 +68957,7 @@
         "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/BalancedTree.hx"
+          "std/elixir/_std/haxe/ds/BalancedTree.hx"
         ]
       }
     },
@@ -69017,7 +69017,7 @@
         "reviewNote": "Upstream spec exists; enable after BEAM tree comparison/order semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/BalancedTree.hx"
+          "std/elixir/_std/haxe/ds/BalancedTree.hx"
         ]
       }
     },
@@ -69193,7 +69193,7 @@
         "reviewNote": "Upstream spec exists; enable after enum-key ordering semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/EnumValueMap.hx"
+          "std/elixir/_std/haxe/ds/EnumValueMap.hx"
         ]
       }
     },
@@ -69239,7 +69239,7 @@
         "reviewNote": "Upstream spec exists; enable after enum-key ordering semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/EnumValueMap.hx"
+          "std/elixir/_std/haxe/ds/EnumValueMap.hx"
         ]
       }
     },
@@ -69299,7 +69299,7 @@
         "reviewNote": "Upstream spec exists; enable after enum-key ordering semantics are triaged. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/EnumValueMap.hx"
+          "std/elixir/_std/haxe/ds/EnumValueMap.hx"
         ]
       }
     },
@@ -69344,7 +69344,7 @@
         "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/GenericStack.hx"
+          "std/elixir/_std/haxe/ds/GenericStack.hx"
         ]
       }
     },
@@ -69389,7 +69389,7 @@
         "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/GenericStack.hx"
+          "std/elixir/_std/haxe/ds/GenericStack.hx"
         ]
       }
     },
@@ -69434,7 +69434,7 @@
         "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/GenericStack.hx"
+          "std/elixir/_std/haxe/ds/GenericStack.hx"
         ]
       }
     },
@@ -69479,7 +69479,7 @@
         "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/GenericStack.hx"
+          "std/elixir/_std/haxe/ds/GenericStack.hx"
         ]
       }
     },
@@ -69524,7 +69524,7 @@
         "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/GenericStack.hx"
+          "std/elixir/_std/haxe/ds/GenericStack.hx"
         ]
       }
     },
@@ -69569,7 +69569,7 @@
         "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/GenericStack.hx"
+          "std/elixir/_std/haxe/ds/GenericStack.hx"
         ]
       }
     },
@@ -69614,7 +69614,7 @@
         "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/GenericStack.hx"
+          "std/elixir/_std/haxe/ds/GenericStack.hx"
         ]
       }
     },
@@ -69659,7 +69659,7 @@
         "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/GenericStack.hx"
+          "std/elixir/_std/haxe/ds/GenericStack.hx"
         ]
       }
     },
@@ -69704,7 +69704,7 @@
         "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/GenericStack.hx"
+          "std/elixir/_std/haxe/ds/GenericStack.hx"
         ]
       }
     },
@@ -69749,7 +69749,7 @@
         "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/GenericStack.hx"
+          "std/elixir/_std/haxe/ds/GenericStack.hx"
         ]
       }
     },
@@ -69794,7 +69794,7 @@
         "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/GenericStack.hx"
+          "std/elixir/_std/haxe/ds/GenericStack.hx"
         ]
       }
     },
@@ -69839,7 +69839,7 @@
         "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/GenericStack.hx"
+          "std/elixir/_std/haxe/ds/GenericStack.hx"
         ]
       }
     },
@@ -69891,7 +69891,7 @@
         "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/GenericStack.hx"
+          "std/elixir/_std/haxe/ds/GenericStack.hx"
         ]
       }
     },
@@ -69943,7 +69943,7 @@
         "reviewNote": "Upstream unitstd status: enabled. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/GenericStack.hx"
+          "std/elixir/_std/haxe/ds/GenericStack.hx"
         ]
       }
     },
@@ -69985,7 +69985,7 @@
         "reviewNote": "No matching upstream unitstd spec is available in the local reference checkout; the Elixir target uses a BEAM-specific hashCode-keyed override with local Haxe-authored ExUnit runtime coverage. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/HashMap.hx"
+          "std/elixir/_std/haxe/ds/HashMap.hx"
         ]
       }
     },
@@ -70025,7 +70025,7 @@
         "reviewNote": "No matching upstream unitstd spec is available in the local reference checkout; the Elixir target uses a BEAM-specific hashCode-keyed override with local Haxe-authored ExUnit runtime coverage. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/HashMap.hx"
+          "std/elixir/_std/haxe/ds/HashMap.hx"
         ]
       }
     },
@@ -70065,7 +70065,7 @@
         "reviewNote": "No matching upstream unitstd spec is available in the local reference checkout; the Elixir target uses a BEAM-specific hashCode-keyed override with local Haxe-authored ExUnit runtime coverage. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/HashMap.hx"
+          "std/elixir/_std/haxe/ds/HashMap.hx"
         ]
       }
     },
@@ -70105,7 +70105,7 @@
         "reviewNote": "No matching upstream unitstd spec is available in the local reference checkout; the Elixir target uses a BEAM-specific hashCode-keyed override with local Haxe-authored ExUnit runtime coverage. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/HashMap.hx"
+          "std/elixir/_std/haxe/ds/HashMap.hx"
         ]
       }
     },
@@ -70147,7 +70147,7 @@
         "reviewNote": "No matching upstream unitstd spec is available in the local reference checkout; the Elixir target uses a BEAM-specific hashCode-keyed override with local Haxe-authored ExUnit runtime coverage. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/HashMap.hx"
+          "std/elixir/_std/haxe/ds/HashMap.hx"
         ]
       }
     },
@@ -70187,7 +70187,7 @@
         "reviewNote": "No matching upstream unitstd spec is available in the local reference checkout; the Elixir target uses a BEAM-specific hashCode-keyed override with local Haxe-authored ExUnit runtime coverage. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/HashMap.hx"
+          "std/elixir/_std/haxe/ds/HashMap.hx"
         ]
       }
     },
@@ -70227,7 +70227,7 @@
         "reviewNote": "No matching upstream unitstd spec is available in the local reference checkout; the Elixir target uses a BEAM-specific hashCode-keyed override with local Haxe-authored ExUnit runtime coverage. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/HashMap.hx"
+          "std/elixir/_std/haxe/ds/HashMap.hx"
         ]
       }
     },
@@ -70267,7 +70267,7 @@
         "reviewNote": "No matching upstream unitstd spec is available in the local reference checkout; the Elixir target uses a BEAM-specific hashCode-keyed override with local Haxe-authored ExUnit runtime coverage. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/HashMap.hx"
+          "std/elixir/_std/haxe/ds/HashMap.hx"
         ]
       }
     },
@@ -70307,7 +70307,7 @@
         "reviewNote": "No matching upstream unitstd spec is available in the local reference checkout; the Elixir target uses a BEAM-specific hashCode-keyed override with local Haxe-authored ExUnit runtime coverage. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/HashMap.hx"
+          "std/elixir/_std/haxe/ds/HashMap.hx"
         ]
       }
     },
@@ -70349,7 +70349,7 @@
         "reviewNote": "No matching upstream unitstd spec is available in the local reference checkout; the Elixir target uses a BEAM-specific hashCode-keyed override with local Haxe-authored ExUnit runtime coverage. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/HashMap.hx"
+          "std/elixir/_std/haxe/ds/HashMap.hx"
         ]
       }
     },
@@ -70395,7 +70395,7 @@
         "reviewNote": "No matching upstream unitstd spec is available in the local reference checkout; the Elixir target uses a BEAM-specific hashCode-keyed override with local Haxe-authored ExUnit runtime coverage. Reference-semantics audit: Shared native-key map/tree/hash mutation and independent shallow copies remain incomplete; child .10.3.14.2 owns them.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/HashMap.hx"
+          "std/elixir/_std/haxe/ds/HashMap.hx"
         ]
       }
     },
@@ -71126,7 +71126,7 @@
         "reviewNote": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/List.hx"
+          "std/elixir/_std/haxe/ds/List.hx"
         ]
       }
     },
@@ -71177,7 +71177,7 @@
         "reviewNote": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/List.hx"
+          "std/elixir/_std/haxe/ds/List.hx"
         ]
       }
     },
@@ -71228,7 +71228,7 @@
         "reviewNote": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/List.hx"
+          "std/elixir/_std/haxe/ds/List.hx"
         ]
       }
     },
@@ -71279,7 +71279,7 @@
         "reviewNote": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/List.hx"
+          "std/elixir/_std/haxe/ds/List.hx"
         ]
       }
     },
@@ -71330,7 +71330,7 @@
         "reviewNote": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/List.hx"
+          "std/elixir/_std/haxe/ds/List.hx"
         ]
       }
     },
@@ -71381,7 +71381,7 @@
         "reviewNote": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/List.hx"
+          "std/elixir/_std/haxe/ds/List.hx"
         ]
       }
     },
@@ -71432,7 +71432,7 @@
         "reviewNote": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/List.hx"
+          "std/elixir/_std/haxe/ds/List.hx"
         ]
       }
     },
@@ -71483,7 +71483,7 @@
         "reviewNote": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/List.hx"
+          "std/elixir/_std/haxe/ds/List.hx"
         ]
       }
     },
@@ -71536,7 +71536,7 @@
         "reviewNote": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/List.hx"
+          "std/elixir/_std/haxe/ds/List.hx"
         ]
       }
     },
@@ -71587,7 +71587,7 @@
         "reviewNote": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/List.hx"
+          "std/elixir/_std/haxe/ds/List.hx"
         ]
       }
     },
@@ -71638,7 +71638,7 @@
         "reviewNote": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/List.hx"
+          "std/elixir/_std/haxe/ds/List.hx"
         ]
       }
     },
@@ -71689,7 +71689,7 @@
         "reviewNote": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/List.hx"
+          "std/elixir/_std/haxe/ds/List.hx"
         ]
       }
     },
@@ -71740,7 +71740,7 @@
         "reviewNote": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/List.hx"
+          "std/elixir/_std/haxe/ds/List.hx"
         ]
       }
     },
@@ -71791,7 +71791,7 @@
         "reviewNote": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/List.hx"
+          "std/elixir/_std/haxe/ds/List.hx"
         ]
       }
     },
@@ -71842,7 +71842,7 @@
         "reviewNote": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/List.hx"
+          "std/elixir/_std/haxe/ds/List.hx"
         ]
       }
     },
@@ -71893,7 +71893,7 @@
         "reviewNote": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/List.hx"
+          "std/elixir/_std/haxe/ds/List.hx"
         ]
       }
     },
@@ -71957,7 +71957,7 @@
         "reviewNote": "The key/value comprehension section is rewritten to explicit keyValueIterator() calls because generic custom iterable key/value for-loop lowering currently emits invalid Elixir for this target; the adapted fixture preserves the same List API assertions. Reference-semantics audit: Shared linked-collection mutation is not proved by receiver-return or direct module tests; child .10.3.14.3 owns it.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/List.hx"
+          "std/elixir/_std/haxe/ds/List.hx"
         ]
       }
     },
@@ -71996,7 +71996,7 @@
         "reviewNote": "No matching upstream unitstd spec exists; the API mutates arbitrary linked-node next/prev fields in place, which ordinary immutable BEAM structs/maps cannot preserve. Calls fail fast with a target diagnostic and are covered by a negative snapshot. Reference-semantics audit: The deliberate diagnostic remains until .10.3.7 rewires original managed nodes and preserves external aliases with unlocked comparator calls.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/ListSort.hx"
+          "std/elixir/_std/haxe/ds/ListSort.hx"
         ]
       }
     },
@@ -72035,7 +72035,7 @@
         "reviewNote": "No matching upstream unitstd spec exists; the API mutates arbitrary linked-node next/prev fields in place, which ordinary immutable BEAM structs/maps cannot preserve. Calls fail fast with a target diagnostic and are covered by a negative snapshot. Reference-semantics audit: The deliberate diagnostic remains until .10.3.7 rewires original managed nodes and preserves external aliases with unlocked comparator calls.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/ListSort.hx"
+          "std/elixir/_std/haxe/ds/ListSort.hx"
         ]
       }
     },
@@ -72079,7 +72079,7 @@
         "reviewNote": "No matching upstream unitstd spec exists; the API mutates arbitrary linked-node next/prev fields in place, which ordinary immutable BEAM structs/maps cannot preserve. Calls fail fast with a target diagnostic and are covered by a negative snapshot. Reference-semantics audit: The deliberate diagnostic remains until .10.3.7 rewires original managed nodes and preserves external aliases with unlocked comparator calls.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
-          "src/haxe/ds/ListSort.hx"
+          "std/elixir/_std/haxe/ds/ListSort.hx"
         ]
       }
     },

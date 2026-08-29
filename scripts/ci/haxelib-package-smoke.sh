@@ -240,8 +240,19 @@ require_file "$installed_root/src/String.cross.hx"
 require_file "$installed_root/src/StringBuf.cross.hx"
 require_file "$installed_root/src/haxe/Exception.cross.hx"
 require_file "$installed_root/src/haxe/crypto/Sha256.cross.hx"
+for collection in ArraySort BalancedTree EnumValueMap GenericStack HashMap List ListSort; do
+  require_file "$installed_root/src/haxe/ds/$collection.cross.hx"
+  require_absent "$installed_root/src/haxe/ds/$collection.hx"
+done
+for collection in ArraySort BalancedTree EnumValueMap ListSort; do
+  require_file "$installed_root/src/haxe/ds/$collection.macro.hx"
+done
 require_file "$installed_root/src/sys/FileSystem.cross.hx"
 require_file "$installed_root/src/sys/io/File.cross.hx"
+require_file "$installed_root/src/elixir/ArrayTools.hx"
+require_file "$installed_root/src/elixir/DateConverter.hx"
+require_file "$installed_root/src/elixir/MapTools.hx"
+require_file "$installed_root/src/reflaxe/elixir/runtime/TimerRuntime.hx"
 require_file "$installed_root/src/elixir/DateTime.hx"
 require_file "$installed_root/src/elixir/Keyword.hx"
 require_file "$installed_root/src/elixir/OptionParser.hx"
@@ -264,6 +275,11 @@ require_absent "$installed_root/src/String.hx"
 require_absent "$installed_root/src/StringBuf.hx"
 require_absent "$installed_root/src/haxe/Exception.hx"
 require_absent "$installed_root/src/haxe/crypto/Sha256.hx"
+require_absent "$installed_root/src/ArrayTools.cross.hx"
+require_absent "$installed_root/src/DateConverter.cross.hx"
+require_absent "$installed_root/src/MapTools.cross.hx"
+require_absent "$installed_root/src/Process.cross.hx"
+require_absent "$installed_root/src/haxe/TimerRuntime.cross.hx"
 require_absent "$installed_root/src/sys/FileSystem.hx"
 require_absent "$installed_root/src/sys/io/File.hx"
 require_absent "$installed_root/assets"
@@ -646,6 +662,28 @@ done
 require_tree_not_contains "$live_react_consumer" "$canonical_root"
 say "Installed-package LiveReact lifecycle and non-enabled isolation: OK"
 
+cat > "$work_dir/src/MacroProbe.hx" <<'HX'
+#if macro
+import haxe.ds.EnumValueMap;
+import haxe.macro.Context;
+import haxe.macro.Expr;
+#end
+
+enum MacroProbeKey {
+  First;
+}
+
+class MacroProbe {
+  public static macro function verify():Expr {
+    var values = new EnumValueMap<MacroProbeKey, String>();
+    values.set(MacroProbeKey.First, "macro-ok");
+    if (values.get(MacroProbeKey.First) != "macro-ok")
+      Context.error("macro collection companion failed", Context.currentPos());
+    return macro null;
+  }
+}
+HX
+
 cat > "$work_dir/src/Main.hx" <<'HX'
 #if !phoenix_shared
 #error "phoenix_shared define missing"
@@ -653,6 +691,7 @@ cat > "$work_dir/src/Main.hx" <<'HX'
 
 import haxe.crypto.Sha256;
 import haxe.ds.Either;
+import haxe.ds.List;
 import haxe.io.Bytes;
 import haxe.io.Float32Array;
 import haxe.io.Mime;
@@ -670,6 +709,7 @@ import phoenix.channels.WirePayload;
 
 class Main {
   static function main() {
+    MacroProbe.verify();
     var buf = new StringBuf();
     buf.add("package");
     buf.add("-");
@@ -702,6 +742,10 @@ class Main {
     parsed._0 = [];
     var appOptions = complexOptions(value);
     var projected = project([1, 2, 3]);
+    var list = new List<Int>();
+    list.add(4);
+    if (list.first() != 4)
+      throw "installed package collection override failed";
     if (projected.join(",") != "2,4,6")
       throw "installed package projection lowering failed";
 
@@ -927,6 +971,8 @@ require_file "$mix_project/_build/dev/lib/reflaxe_elixir_package_smoke/ebin/Elix
 require_contains "$work_dir/out/haxe/crypto/sha256.ex" ":crypto.hash(:sha256"
 require_contains "$work_dir/compile.log" "src/StringBuf.cross.hx"
 require_contains "$work_dir/compile.log" "src/haxe/crypto/Sha256.cross.hx"
+require_contains "$work_dir/compile.log" "src/haxe/ds/List.cross.hx"
+require_contains "$work_dir/compile.log" "src/haxe/ds/EnumValueMap.macro.hx"
 require_contains "$work_dir/compile.log" "std/haxe/ds/Either.hx"
 require_contains "$work_dir/compile.log" "std/haxe/io/Mime.hx"
 require_contains "$work_dir/compile.log" "std/haxe/io/Scheme.hx"
@@ -936,6 +982,8 @@ require_contains "$work_dir/compile.log" "std/haxe/io/UInt8Array.hx"
 require_contains "$work_dir/compile.log" "vendor/phoenix_shared/src/phoenix/channels/WirePayload.hx"
 require_contains "$work_dir/compile-source.log" "std/elixir/_std/StringBuf.hx"
 require_contains "$work_dir/compile-source.log" "std/elixir/_std/haxe/crypto/Sha256.hx"
+require_contains "$work_dir/compile-source.log" "std/elixir/_std/haxe/ds/List.hx"
+require_contains "$work_dir/compile-source.log" "src/haxe/ds/EnumValueMap.macro.hx"
 require_contains "$work_dir/compile-source.log" "std/haxe/io/Mime.hx"
 require_contains "$work_dir/compile-source.log" "std/haxe/io/Scheme.hx"
 require_contains "$work_dir/compile-source.log" "std/haxe/io/ArrayBufferView.hx"

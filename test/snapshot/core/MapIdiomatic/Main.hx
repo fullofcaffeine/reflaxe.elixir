@@ -1,6 +1,6 @@
 package;
 
-using ArrayTools;
+using elixir.ArrayTools;
 
 /**
  * Test idiomatic Map transformations

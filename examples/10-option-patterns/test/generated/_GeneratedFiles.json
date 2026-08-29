@@ -6,6 +6,7 @@
 		"std.exs",
 		"reflaxe/exception.exs",
 		"reflaxe/elixir/haxe_throw.exs",
+		"reflaxe/elixir/haxe_int.exs",
 		"reflaxe/elixir/haxe_float.exs",
 		"option_patterns/user_repository_test.exs",
 		"option_patterns/user_repository.exs",
@@ -67,6 +68,7 @@
 		"option_patterns/user_repository.exs.map",
 		"haxe/exceptions/pos_exception.exs.map",
 		"haxe/exceptions/not_implemented_exception.exs.map",
+		"reflaxe/elixir/haxe_int.exs.map",
 		"option_patterns/notification_service_test.exs.map",
 		"haxe/io/fp_helper.exs.map",
 		"haxe/io/input.exs.map",
@@ -81,11 +83,11 @@
 	"ownedFiles": [
 		{
 			"path": "haxe/_call_stack/call_stack_impl_.exs",
-			"sha256": "ab46ba4f786a95420ae1cd78188f77ebebc3ced2db90d1351297f573f30dadf8"
+			"sha256": "51ccde2aded2494513ee0e4df47307da4b81b76b152e144ec83f62ca98578569"
 		},
 		{
 			"path": "haxe/_call_stack/call_stack_impl_.exs.map",
-			"sha256": "73fda64a96dcc95ce67060103fef58003fa33068e91ec4e68227ccdaff39b337"
+			"sha256": "5e03fb67fb9b28ff4d557f71e3887595c05cf1bfc3f2a1513ff78e8caa65b6a1"
 		},
 		{
 			"path": "haxe/ds/option_tools.exs",
@@ -121,11 +123,11 @@
 		},
 		{
 			"path": "haxe/int64_helper.exs",
-			"sha256": "8327ac55d005a20bcfdab611fb9a672fadce5c938d4bbe1580db8637468edbc8"
+			"sha256": "0643b886c61627b39d0d5d821e77f1b19a77dbc5c5065864c1e69e6a5656054b"
 		},
 		{
 			"path": "haxe/int64_helper.exs.map",
-			"sha256": "c789cf9120e0e87e1a63c9d08994db526e7929c2136aa8146ebf2d040281271f"
+			"sha256": "8e5eeb95d5c9c258ff52cd66bcd195621f59e3afb6591c9df003a8334b4e0825"
 		},
 		{
 			"path": "haxe/io/bytes.exs",
@@ -233,11 +235,11 @@
 		},
 		{
 			"path": "option_patterns/config_manager.exs",
-			"sha256": "0a12a6ab60d9c78c236bdfa797aa7bd37cbd3ea35833614a7c6ec305e6143911"
+			"sha256": "652065e0abf9a656736e6f1d90b47c6127591094d2ecac961b3e355728d99ede"
 		},
 		{
 			"path": "option_patterns/config_manager.exs.map",
-			"sha256": "35eb31b56f6218fe2dd61107c77b31538f8f33f281780425bda89118d29f8ec9"
+			"sha256": "c5fa01c510590deb026bd14c9aebefcc2ca583070f117468288d66fb810e0cd0"
 		},
 		{
 			"path": "option_patterns/config_manager_test.exs",
@@ -273,11 +275,11 @@
 		},
 		{
 			"path": "option_patterns/notification_service.exs",
-			"sha256": "80b15294afd66e4e13f44e6409a54b4b16917a8ed9fd98354c08fbdbdd3912a5"
+			"sha256": "f33a6c3f3c978623f4dba9b12b553ce9b3d5673f8de2292cf7c3919ab90e1df4"
 		},
 		{
 			"path": "option_patterns/notification_service.exs.map",
-			"sha256": "703ac6d1d191decba3395de2680445c36e402264d15d7341a8ff64da3484777e"
+			"sha256": "5aab23dddafe8284701a107439ceb4493235552ecdb78ae96268d89a5746d6a3"
 		},
 		{
 			"path": "option_patterns/notification_service_test.exs",
@@ -317,11 +319,19 @@
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.exs",
-			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+			"sha256": "6786d5bfb513f44365615186bd6c8f2589222501729873f517d82d2ee23822f4"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.exs.map",
-			"sha256": "5677cef4f4a71a1252611d5d9de9fda35794a78dbb2044bda65c45999e03bae8"
+			"sha256": "0c0903ba8a03ab9f291dca9e88f5d4d20615959fc31aba1b967c7f3d1002725c"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_int.exs",
+			"sha256": "61392d67ec3807b64ea717b125498909d6fb903f8600b77dc18a17a65a955515"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_int.exs.map",
+			"sha256": "60cb0696a07d62cd2d334fa681760f6b719f20f39022da81510e800f224abde9"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_throw.exs",
@@ -341,19 +351,19 @@
 		},
 		{
 			"path": "std.exs",
-			"sha256": "cfc6ad389294bc64c9d82be070797b4e65041a3d225fc0741500ca7cc6c8f804"
+			"sha256": "2719d51795868959cd6891134e197cf72d4b523091c594a280b37e367fd8e03f"
 		},
 		{
 			"path": "std.exs.map",
-			"sha256": "1746a004cd6d7ec2b1186251f1b90dd35d1e66a27ff90d40ab7638748185b7d7"
+			"sha256": "9169b3d91eca3a522e49cdacd71b3acf46b95efc494c5ac1bd14e1dedabb161f"
 		},
 		{
 			"path": "string_tools.exs",
-			"sha256": "b174b046cee6138603fade8a7baa097e869d67f66a86afdebda3449b28d3b153"
+			"sha256": "bb5f47e529150a00f248ac791970199bd13a42d23acc3a9c2da761f5930ff5a0"
 		},
 		{
 			"path": "string_tools.exs.map",
-			"sha256": "de67015311d1ed31ddaa49db5b10875994ee3ee4872aebc5eeb76a5cda4e1a85"
+			"sha256": "a8d08547229136262cc41d14de00338f423d0728f99bf8b0cc7449c3164d73bf"
 		},
 		{
 			"path": "sys.exs",
@@ -372,5 +382,5 @@
 			"sha256": "b90d3a44bb1138601ef71badc9e1380f807ed3932966260cd9c073a995f4e213"
 		}
 	],
-	"generation": "1cb673663eeeac414a6ec1e688b7d7220891a558eb444677a4274c0914966f81"
+	"generation": "0d954be8e9cdf626cc2bb023f32d477e05493a84c0e6c3f263dbd666668fb0f7"
 }

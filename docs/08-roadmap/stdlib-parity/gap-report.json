@@ -236,12 +236,7 @@
       "sys": 34
     },
     "nonstdlib_modules_under_std_dir": [
-      "ArrayTools",
-      "DateConverter",
-      "HXX",
-      "MapTools",
-      "Process",
-      "haxe.TimerRuntime"
+      "HXX"
     ],
     "runtime_overrides": {
       "counted_as_present": [
@@ -260,7 +255,7 @@
       "std/elixir/_std",
       "src/haxe"
     ],
-    "total_candidates": 131,
+    "total_candidates": 126,
     "total_std_modules": 127
   },
   "reference": {

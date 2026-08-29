@@ -5,6 +5,7 @@
 		"reflect.exs",
 		"reflaxe/exception.exs",
 		"reflaxe/elixir/haxe_throw.exs",
+		"reflaxe/elixir/haxe_int.exs",
 		"reflaxe/elixir/haxe_float.exs",
 		"phoenix_hx/params.exs",
 		"phoenix_chat_web/react_components.exs",
@@ -164,7 +165,11 @@
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.exs",
-			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+			"sha256": "6786d5bfb513f44365615186bd6c8f2589222501729873f517d82d2ee23822f4"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_int.exs",
+			"sha256": "61392d67ec3807b64ea717b125498909d6fb903f8600b77dc18a17a65a955515"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_throw.exs",
@@ -184,8 +189,8 @@
 		},
 		{
 			"path": "string_tools.exs",
-			"sha256": "14d0fae11e0a57cb0a490ec5a9de56a9575762d2649b3f69b2ef5c3431ae3f15"
+			"sha256": "79ab34d32eb9843745093db6c5ec4907244e88d06815f942372dc9825eda7f04"
 		}
 	],
-	"generation": "daa631fd5dcc6cc249cadbd39befff41cfa4a4cb1a31b8196821283114f0bb4e"
+	"generation": "20fea284991795a7c880a2321b0fb310a69be1ce5fced6ad1aee2c4d4ef2d0e0"
 }

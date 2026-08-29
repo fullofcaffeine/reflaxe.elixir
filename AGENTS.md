@@ -221,8 +221,8 @@ inlined into a statement list and left a bare literal behind (commonly from sett
 ### Common CI failure mode: WAE examples + target std classpath
 
 If `CI / Examples (Elixir WAE)` fails with warnings in generated modules like `lib/haxe/ds/balanced_tree.ex`
-or `lib/haxe/ds/enum_value_map.ex`, it usually means the Elixir target std root (`std/`) or the early
-dual-mode overrides under `src/haxe/**` were not visible early enough during the Haxe→Elixir compile.
+or `lib/haxe/ds/enum_value_map.ex`, the Elixir target override root was probably not visible before
+Haxe typed those modules.
 Fix by ensuring:
 
 - `CompilerBootstrap.Start()` runs for both consumer installs **and** repo-local scoped-lib builds:
@@ -273,9 +273,9 @@ even when we intend to replace them with Elixir-target surfaces:
   eval cannot instantiate extern classes and will fail with `Instance constructor not found: haxe.ds.EnumValueMap`.
 
 Our fix pattern for this class of issue:
-- Provide **bootstrap-safe dual-mode modules** on the **initial classpath** (under `src/haxe/**`):
-  - `#if macro`: small, correct in-memory implementation (keeps eval happy)
-  - `#else`: Elixir-target `@:nativeGen extern` surface (prevents emitting canonical stdlib to `.ex`)
+- Put the Elixir implementation under `std/elixir/_std/**`.
+- If eval needs different host behavior, add a matching `src/**/*.macro.hx` companion.
+- Do not combine both implementations in a plain official module under `src/`.
 
 ## 🧯 CI Failure Triage (No-auth environments)
 
@@ -874,13 +874,13 @@ Examples
   - Repo root/runtime shims and any `*.ex` such as: `reflect.ex`, `std.ex`, `string_buf.ex`, `type.ex`, `int_iterator.ex`
   - Snapshot outputs under `test/snapshot/**/out/**/*.ex`
 - Make all behavior changes in the source-of-truth instead:
-  - Standard library Haxe sources: `std/elixir/_std/**/*.hx`, target-owned `std/**/*.hx`, and early plain dual-mode `src/haxe/**`
+  - Standard library Haxe sources: `std/elixir/_std/**/*.hx`, target-owned `std/**/*.hx`, and focused `src/**/*.macro.hx` companions
   - Compiler pipeline: `src/reflaxe/elixir/ast/**` (Builder → Transformer → Printer)
 - Only edit a `.ex` under `std/` directly if it is explicitly documented as the canonical runtime source (no corresponding `.hx` exists). If unsure, assume it is generated and fix upstream.
 - Example: Reflect.compare/2 — do not touch `reflect.ex`; change its authored `_std` Haxe source and re-run snapshots.
 - No band-aids: Do not “clean up” outputs or add runtime-only conditionals to mask upstream issues. Fix the transform or std source.
 - Pre-merge checks for std/behavior fixes:
-  - `rg` should show diffs only in `std/elixir/_std/**/*.hx`, target-owned `std/**/*.hx`, early plain dual-mode `src/haxe/**`, or `src/reflaxe/elixir/**`.
+  - `rg` should show diffs only in `std/elixir/_std/**/*.hx`, target-owned `std/**/*.hx`, focused `src/**/*.macro.hx`, or `src/reflaxe/elixir/**`.
   - No diffs to `reflect.ex`, `std.ex`, `string_buf.ex`, `type.ex`, `int_iterator.ex`, or `test/snapshot/**/out/**` unless accompanied by matching upstream `.hx` changes and a note explaining why the `.ex` is canonical.
 - Temporary runtime edits for debugging are allowed only if clearly annotated “DEBUG ONLY” and removed in the same PR after the proper upstream fix lands.
 - CI/WAE hygiene for stdlib overrides:
@@ -1055,8 +1055,9 @@ Checklist before merging a transform:
   - Target-owned APIs/support modules such as `phoenix.*`, `ecto.*`, and `elixir.*`.
   - Upstream `haxe.*` and `sys.*` replacements belong under `std/elixir/_std`.
 - `src/haxe/**`
-  - Rare early plain `.hx` dual-mode stdlib overrides that must be available to macro/eval before bootstrap can add `std/`.
-  - Use `#if macro` for eval-safe host behavior and `#else` extern/target behavior when needed.
+  - Only `.macro.hx` companions for official modules that need different host-side behavior.
+  - Keep the target implementation under the matching `std/elixir/_std/**` path.
+  - Never add a plain official Haxe module under `src/`.
 
 ### Source checkout contract
 
@@ -2470,14 +2471,14 @@ untyped __elixir__('Phoenix.Controller.json({0}, {1})', conn, data);  // WORKS!
 ### New Stdlib Mappings (JsonPrinter, Log)
 
 - haxe.format.JsonPrinter
-  - Implemented in `std/haxe/format/JsonPrinter.cross.hx` using native Elixir via `Jason.encode!/2` with:
+  - Implemented in `std/elixir/_std/haxe/format/JsonPrinter.hx` using native Elixir via `Jason.encode!/2` with:
     - recursive `replacer(key, value)` support (maps/lists)
     - `pretty: true` when `space != null`
   - Rationale: Avoids bulky generated code; yields idiomatic, correct Elixir for all apps.
   - Policy: Do not add app-level `.ex` for stdlib — implement once in `std/` with `__elixir__()` injection.
 
 - haxe.Log.trace
-  - Implemented in `std/haxe/Log.cross.hx`; builds label and calls `IO.inspect/2` entirely in injected Elixir, avoiding local temps that later passes underscore.
+  - Implemented in `std/elixir/_std/haxe/Log.hx`; builds a label and calls `IO.inspect/2` in injected Elixir.
   - Guarantees: No undefined label; stable output under code transforms.
 
 ### Typed Ecto Query (Chainable where)

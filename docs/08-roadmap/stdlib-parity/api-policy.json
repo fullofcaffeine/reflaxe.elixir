@@ -1157,7 +1157,7 @@
         "haxe.elixir.codex-0yn.10.3.14.1",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; the Elixir target uses a bootstrap-safe target override lowered to stable Enum.sort/2 rebinding for local array bindings, covered by local Haxe-authored ExUnit runtime tests. Reference-semantics audit: Haxe 4.3.7 requires shared Array mutation; direct/module evidence does not prove aliases. Child .10.3.14.1 owns exact mutation, copy, callback, and read-only-view behavior."
+      "reviewNote": "No matching upstream unitstd spec exists; the Elixir target uses an _std override with a separate macro companion. The target lowers local array bindings to stable Enum.sort/2 rebinding, covered by local Haxe-authored ExUnit runtime tests. Reference-semantics audit: Haxe 4.3.7 requires shared Array mutation; direct/module evidence does not prove aliases. Child .10.3.14.1 owns exact mutation, copy, callback, and read-only-view behavior."
     },
     {
       "module": "haxe.ds.BalancedTree",

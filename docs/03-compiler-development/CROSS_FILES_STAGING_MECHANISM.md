@@ -11,13 +11,14 @@ For the historical reason this repo now uses the generated Reflaxe skeleton `_st
 while still supporting explicitly wired source-checkout development, see
 `docs/09-history/REFLAXE_LAYOUT_AND_PACKAGING_HISTORY.md`.
 
-It answers four questions:
+It answers five questions:
 
 1) How does Haxe resolve modules from `*.cross.hx` files?
 2) What does upstream Reflaxe's `build` packaging command do with std paths?
 3) What are `extraParams.hxml`, `CompilerBootstrap.Start()`, and `CompilerInit.Start()` for?
 4) How does Reflaxe.Elixir add its target std root to the active classpath without leaking it into
    macros or other targets?
+5) When does an override need a separate `.macro.hx` companion?
 
 ## 1) How `.cross.hx` participates in module resolution
 
@@ -66,6 +67,13 @@ Important distinction:
   scoped HXML to put the source root on the classpath before typing and bootstrap fallback for
   supported consumer builds.
 
+Primary implementation references:
+
+- [Haxe module lookup](https://github.com/HaxeFoundation/haxe/blob/e0b355c6be312c1b17382603f018cf52522ec651/src/context/common.ml)
+  selects the `macro` suffix in macro context and the active platform suffix otherwise.
+- [Reflaxe package build](https://github.com/SomeRanDev/reflaxe/blob/73a983112e039daad46b37912ab238df6bf0cf53/Run.hx)
+  copies normal classpath files unchanged. It changes files from `_std` roots to `.cross.hx`.
+
 ### How to verify which file was selected
 
 Run a compile with verbose output and inspect `Parsed ...` lines:
@@ -80,14 +88,16 @@ In an Elixir build, you should see things like:
 - `Parsed .../std/elixir/_std/StringTools.hx` (and other authored std overrides that apply)
 - `Parsed .../std/elixir/_std/haxe/Exception.hx`
 
-Note: some upstream Haxe stdlib modules may still appear as `Parsed .../std/<module>.hx`. If a module
-needs a target override, add it to `_std` and ensure source-checkout HXML files supply that root before
-typing. Reserve the initial `src/haxe/**` classpath for plain dual-mode modules with a demonstrated
-macro/eval requirement.
+Some official Haxe modules can still appear as `Parsed .../std/<module>.hx`. This is correct when the
+official implementation works for Elixir. If a module needs a target override, add it to `_std`.
 
 Macro typing uses a different platform (eval), so it will *not* select `.cross.hx` files.
 Seeing a later `Parsed .../haxe/std/.../Module.hx` line is expected for modules we intentionally
 leave to upstream fallback.
+
+If macro code needs custom host behavior, add a separate `src/path/Module.macro.hx` file. Keep the
+target implementation at `std/elixir/_std/path/Module.hx`. Haxe selects the macro file only while it
+types macro code. Reflaxe packages the target file as `path/Module.cross.hx`.
 
 ## 2) Upstream Reflaxe `build` packaging and this repo
 
@@ -103,6 +113,7 @@ Haxe's normal target-file mechanism.
 Reflaxe.Elixir follows that source convention for upstream-colliding stdlib overrides:
 
 - authored std overrides live in `std/elixir/_std/**/*.hx`
+- host-side companions live in `src/**/*.macro.hx`, but only when macro behavior differs
 - target-owned APIs and support modules live in plain `std/**/*.hx` when they do not replace an
   upstream Haxe std namespace
 - `extraParams.hxml` and `haxe_libraries/reflaxe.elixir.hxml` invoke bootstrap/init macros
@@ -248,10 +259,9 @@ This ensures a generated package file emits Elixir-specific code only when the E
 active. `npm run guard:stdlib-layout` rejects every checked-in `src/**/*.cross.hx` and
 `std/**/*.cross.hx` file.
 
-The plain `.hx` early overrides under `src/haxe/ds/**` are the other side of the same constraint:
-they must be visible to macro/eval when Haxe needs constructors or WAE-safe stdlib surfaces before
-target std insertion can run. See `docs/04-api-reference/STANDARD_LIBRARY_HANDLING.md` for the
-current inventory and ownership rules.
+Do not combine host and target behavior in one plain `src/haxe/**/Module.hx` file. That file can
+replace the official module for every platform. Use `Module.macro.hx` and `_std/Module.hx` instead.
+See `docs/04-api-reference/STANDARD_LIBRARY_HANDLING.md` for the ownership rules.
 
 ### Source-checkout rule
 
@@ -274,9 +284,25 @@ More context: `docs/05-architecture/TARGET_CONDITIONAL_STDLIB_GATING.md`.
 
 - Prefer `std/elixir/_std/**/*.hx` when you are replacing a well-known Haxe API with an idiomatic
   Elixir mapping. Reflaxe build turns these authored files into packaged `.cross.hx` files.
+- Add `src/**/*.macro.hx` only when the official module cannot provide the required macro behavior.
+  The macro file must have a matching target override under `std/elixir/_std/**`.
 - Keep plain `std/**/*.hx` for target-owned APIs/support modules and documented exceptions; do not put
   upstream-colliding stdlib replacements directly under `std/`. That includes `sys.*`, which is an
   upstream Haxe std namespace even when the implementation is BEAM-backed.
 - Leave a module absent from local `std/` when upstream Haxe stdlib is already the right implementation;
   track that decision with tests/docs instead of copying the upstream source.
+- Do not put an official Haxe module in plain `src/**/*.hx` or plain `std/**/*.hx`.
 - Do not add repo-level classpaths like `../../std` to JS/genes builds; use `-lib` and library-provided hxml instead.
+
+### File choice table
+
+| Need | Authored file | Released file |
+| --- | --- | --- |
+| Official Haxe implementation works | no local file | no local file |
+| Elixir must replace an official module | `std/elixir/_std/path/Module.hx` | `src/path/Module.cross.hx` |
+| Macro code also needs different host behavior | add `src/path/Module.macro.hx` | keep both `.macro.hx` and `.cross.hx` |
+| Elixir owns a new API or helper | use an explicit target or project namespace | plain `.hx` |
+
+For example, `haxe.ds.HashMap` replaces an official Haxe module. Its target source belongs in
+`std/elixir/_std/haxe/ds/HashMap.hx`. A plain `src/haxe/ds/HashMap.hx` would affect macro code and
+other targets too. `elixir.ArrayTools` is different. It is a target-owned helper, so it stays plain.

@@ -479,7 +479,7 @@
       "upstreamSpec": "absent",
       "disposition": "applicable",
       "execution": "not-run",
-      "reason": "No matching upstream unitstd spec exists; the Elixir target uses a bootstrap-safe target override lowered to stable Enum.sort/2 rebinding for local array bindings, covered by local Haxe-authored ExUnit runtime tests."
+      "reason": "No matching upstream unitstd spec exists; the Elixir target uses an _std override with a separate macro companion. Local array bindings lower to stable Enum.sort/2 rebinding, covered by local Haxe-authored ExUnit runtime tests."
     },
     {
       "module": "haxe.ds.BalancedTree",

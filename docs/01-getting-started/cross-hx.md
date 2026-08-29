@@ -4,7 +4,7 @@
 > - `.cross.hx` = target-specific implementation of a familiar API (same surface, idiomatic target code)
 > - The suffix is Haxe 4's target-specific file mechanism; `cross` is Haxe's generic custom-target platform, not a promise that the file is portable across all targets
 > - In this repo, authored stdlib replacements live as plain `.hx` files under `std/elixir/_std/**`; Reflaxe build can package them as `.cross.hx`
->   - No `.cross.hx` files are checked into `src/` or `std/`; `haxe.Exception` follows the same `_std` rule as Rust and OCaml. Selected `src/haxe/ds/*.hx` files remain early plain `.hx` dual-mode overrides for macro/eval requirements.
+>   - No `.cross.hx` files are checked into `src/` or `std/`. A separate `.macro.hx` file supplies custom host behavior when required.
 > - `std/elixir/_std/` is a selective override root: modules we do not provide there keep resolving from the installed official Haxe stdlib
 > - Reflaxe's skeleton `build` command generates packaged `.cross.hx` files from `_std` source roots; checked-in `std/**/*.cross.hx` is no longer the source layout
 > - Prefer `_std` overrides for stable API mappings; use macros for authoring ergonomics; use AST transforms for shape-driven rewrites
@@ -49,7 +49,8 @@ Practical note (source checkout versus package)
 - Built haxelib packages already contain generated `src/**/*.cross.hx` files, so installed consumers need only `-lib reflaxe.elixir`.
 - Raw `haxelib dev` or `lix dev` alone is not a supported compiler-development path. Use the repository scope, run the source-HXML helper for an external project, add explicit source classpaths, or build/install the package artifact first.
 - "Added" means Haxe searches the installed package's override/API directories before the official Haxe stdlib for that compile. No files are copied, generated, or renamed at that moment.
-- In rare cases we use an early plain `.hx` override for modules that must work in **both** macro/eval and Elixir target compilation, or whose receiver semantics are tied to compiler lowering. Those files live under `src/haxe/**` (examples: `src/haxe/ds/BalancedTree.hx`, `src/haxe/ds/List.hx`).
+- A module can have a separate `.macro.hx` companion when macro code needs different host behavior.
+  The Elixir implementation remains under `_std`. Most overrides do not need a macro companion.
 
 When compiling for the `cross` platform from a packaged Reflaxe build, Haxe treats files ending in
 `.cross.hx` as platform-specific module implementations. During scoped source-tree builds,
@@ -60,7 +61,7 @@ The override root is selective. If Reflaxe.Elixir does not provide a matching mo
 `std/elixir/_std/` or `std/`, Haxe continues normal classpath resolution and uses the installed
 official Haxe stdlib module. Do not copy upstream stdlib files locally just to make the parity report
 count smaller; add a local file only when the Elixir target needs a target-specific implementation,
-a target-owned API, or a documented early bootstrap exception.
+a target-owned API, or a proven macro companion.
 
 See the full mechanism in docs/03-compiler-development/CROSS_FILES_STAGING_MECHANISM.md
 
@@ -88,7 +89,7 @@ the role of the file:
 
 - `std/elixir/_std/**/*.hx`: target-specific replacement for an existing Haxe module; packaged as `.cross.hx` by Reflaxe build
 - plain `.hx` in `std/`: target-owned public/support API such as `phoenix.*`, `ecto.*`, or `elixir.*`
-- plain `.hx` in `src/haxe/**`: rare early dual-mode override that must work in macro/eval and target compilation
+- `src/**/*.macro.hx`: optional host-side companion for an official module when macro code needs different behavior
 
 ## How Are They Loaded? (Target‑Conditional Gating)
 

@@ -1,4 +1,4 @@
-using ArrayTools;
+using elixir.ArrayTools;
 /**
  * Comprehensive Loop Test Suite
  * Tests all forms of loops and iteration to ensure idiomatic Elixir generation

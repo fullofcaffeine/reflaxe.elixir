@@ -38,10 +38,7 @@ defmodule OptionPatterns.ConfigManager do
   def get_int(key) do
     option = get(key)
     OptionTools.then(option, (fn -> fn value ->
-      parsed = (case Integer.parse(value) do
-        {num, _} -> num
-        :error -> nil
-      end)
+      parsed = Reflaxe.Elixir.HaxeInt.parse(value)
       if (not Kernel.is_nil(parsed)), do: {:some, parsed}, else: {:none}
     end end).())
   end

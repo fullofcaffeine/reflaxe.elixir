@@ -1,5 +1,5 @@
-using ArrayTools;
-using MapTools;
+using elixir.ArrayTools;
+using elixir.MapTools;
 
 /**
  * Simplified MapTools test focusing on non-Map-creating methods first

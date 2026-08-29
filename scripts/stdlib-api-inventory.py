@@ -1188,6 +1188,8 @@ def collect_local_ownership(reference_modules: set[str]) -> dict[str, list[str]]
         for path in sorted(root.rglob("*.hx")):
             relative = path.relative_to(root)
             value = relative.as_posix()
+            if value.endswith(".macro.hx"):
+                continue
             if value.endswith(".cross.hx"):
                 if not allow_cross:
                     continue
@@ -1213,6 +1215,8 @@ def collect_local_ownership(reference_modules: set[str]) -> dict[str, list[str]]
             if relative.parts and relative.parts[0] == "elixir":
                 continue
             value = relative.as_posix()
+            if value.endswith(".macro.hx"):
+                continue
             if value.endswith(".cross.hx"):
                 value = value[: -len(".cross.hx")]
             else:

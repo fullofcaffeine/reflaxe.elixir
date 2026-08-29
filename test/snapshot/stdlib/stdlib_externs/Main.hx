@@ -1,4 +1,4 @@
-using ArrayTools;
+using elixir.ArrayTools;
 
 import elixir.Process;
 import elixir.Registry;

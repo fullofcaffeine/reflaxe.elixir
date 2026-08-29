@@ -23,8 +23,8 @@ That is not automatically wrong, but it does mean contributors need a clearer me
 2. plain `std/**/*.hx`
    - target-owned APIs/support modules such as `elixir.*`, `phoenix.*`, and `ecto.*`
    - not for upstream Haxe std namespaces such as `sys.*`
-3. `src/haxe/**`
-   - selected early-visible plain `src/haxe/ds/*.hx` dual-mode stdlib surfaces
+3. `src/**/*.macro.hx`
+   - host-side companions for official modules that need different macro behavior
 
 That is a coherent design, but it is a different design from `reflaxe.ocaml`.
 
@@ -32,10 +32,10 @@ That is a coherent design, but it is a different design from `reflaxe.ocaml`.
 
 | Question | Answer for this repo |
 | --- | --- |
-| Main override style | broad `std/elixir/_std/**/*.hx` plus target-owned plain `std/**/*.hx` APIs plus selected early `src/haxe/**` overrides |
+| Main override style | `_std` target overrides, target-owned plain APIs, and focused `.macro.hx` companions |
 | Is `_std` used? | yes |
 | Is `.cross.hx` used broadly? | yes in packaged output; source-tree overrides are plain `.hx` |
-| Does this repo own early `src/haxe/*` modules? | yes, selected plain `src/haxe/ds/*.hx` modules |
+| Does this repo own plain official modules under `src/`? | no |
 | Bootstrap activation currently keys off raw Haxe 4 `Cross`? | yes |
 | Same-compilation sibling-target coexistence safe today? | no |
 | Highest-priority hardening item | narrow Haxe 4 bootstrap activation and add mixed-target fail-fast |
@@ -78,9 +78,8 @@ It means this repo can inject Elixir stdlib classpaths earlier and more broadly 
 
 ## Early ownership collision
 
-This repo now authors `haxe.Exception` under `std/elixir/_std`, matching Rust and OCaml, so it no
-longer owns an exceptional checked-in `src/haxe/Exception.cross.hx` path. Selected plain
-`src/haxe/ds/*.hx` modules still occupy the initial classpath for documented macro/eval reasons.
+This repo authors all Elixir replacements under `std/elixir/_std`. Four collection modules also have
+focused `.macro.hx` companions. No plain official Haxe module occupies the initial `src` classpath.
 
 ## Risk level
 
@@ -88,7 +87,7 @@ Current status:
 
 - default one-target-at-a-time use: acceptable
 - same-compilation multi-target coexistence: unsafe today
-- primary reason: broad Haxe 4 `Cross` bootstrap activation and remaining early plain overrides
+- primary reason: broad Haxe 4 `Cross` bootstrap activation
 
 ## Hardening direction
 
@@ -98,7 +97,8 @@ Recommended next steps:
 2. Add explicit mixed-target detection/fail-fast behavior when sibling target libraries are active together.
 3. Keep the source-layout guard strict: no checked-in `src/**/*.cross.hx` or `std/**/*.cross.hx`
    files; Reflaxe build owns those generated package artifacts.
-4. Add a focused coexistence smoke or regression test if a deterministic test shape can be designed.
+4. Reject plain official Haxe modules outside `_std` and matched `.macro.hx` companions.
+5. Add a focused coexistence smoke or regression test if a deterministic test shape can be designed.
 
 ## Local sibling references
 

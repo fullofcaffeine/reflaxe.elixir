@@ -1,6 +1,7 @@
 package haxe;
 
 import elixir.types.Term;
+import reflaxe.elixir.runtime.TimerRuntime;
 import haxe.PosInfos;
 import sys.thread.EventLoop.EventHandler;
 import sys.thread.Thread;
@@ -76,8 +77,9 @@ class Timer {
 		});
 		timer.thread = Thread.current();
 		var events = timer.thread.events;
-		timer.eventHandler = untyped __elixir__('apply(EventLoopRuntime, :run_delayed, [{0}.ref, fn -> Haxe.TimerRuntime.invoke({1}, fn -> nil end) end, {2}])',
-			events, ref, time_ms);
+		timer.eventHandler = untyped __elixir__('apply(EventLoopRuntime, :run_delayed, [{0}.ref, fn -> Reflaxe.Elixir.Runtime.TimerRuntime.invoke({1}, fn -> nil end) end, {2}])',
+			events, ref,
+			time_ms);
 		return timer;
 		#end
 	}

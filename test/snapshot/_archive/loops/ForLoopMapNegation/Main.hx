@@ -1,4 +1,4 @@
-using ArrayTools;
+using elixir.ArrayTools;
 
 typedef Error = {
 	field:String,

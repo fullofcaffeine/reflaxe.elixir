@@ -139,6 +139,8 @@ def collect_std_modules(std_root: Path, allow_cross: bool, exclude_roots: Iterab
       continue
     if not any(str(file).endswith(suf) for suf in suffixes):
       continue
+    if str(file).endswith(".macro.hx"):
+      continue
 
     rel = file.relative_to(std_root)
     # Only consider Haxe std namespaces: top-level, haxe/**, sys/**.
@@ -153,10 +155,8 @@ def collect_prefixed_modules(prefix: str, root: Path, allow_cross: bool) -> Set[
   Collect modules from a subtree that is *not* laid out like std/ itself.
 
   Example:
-    root_dir/src/haxe/ds/List.hx should be reported as `haxe.ds.List`.
-
-  This is needed for the small set of macro/eval-safe modules that intentionally
-  live on the library's initial `src/` classpath.
+    root_dir/src/haxe/ds/List.macro.hx would map to `haxe.ds.List` before
+    macro companions are excluded from runtime ownership.
   """
   modules: Set[str] = set()
   if not root.exists():
@@ -167,6 +167,8 @@ def collect_prefixed_modules(prefix: str, root: Path, allow_cross: bool) -> Set[
     if not file.is_file():
       continue
     if not any(str(file).endswith(suf) for suf in suffixes):
+      continue
+    if str(file).endswith(".macro.hx"):
       continue
     rel = file.relative_to(root)
     modules.add(prefix + "." + module_id_from_relpath(rel))
@@ -191,17 +193,10 @@ local_candidates |= collect_prefixed_modules("sys", local_src_sys_root, allow_cr
 
 # Focus “coverage” on modules that are actually part of the reference stdlib, plus
 # any haxe.* / sys.* modules we ship (useful for parity planning).
-internal_local_modules = {
-  # BEAM implementation detail for std/elixir/_std/haxe/TimerRuntime.hx, not a public Haxe
-  # standard-library surface.
-  "haxe.TimerRuntime",
-}
 local_std_modules = set()
 local_nonstdlib_modules = set()
 for module in local_candidates:
-  if module in internal_local_modules:
-    local_nonstdlib_modules.add(module)
-  elif module in reference_modules or module.startswith("haxe.") or module.startswith("sys."):
+  if module in reference_modules or module.startswith("haxe.") or module.startswith("sys."):
     local_std_modules.add(module)
   else:
     local_nonstdlib_modules.add(module)

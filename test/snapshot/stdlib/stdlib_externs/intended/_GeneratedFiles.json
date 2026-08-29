@@ -29,7 +29,7 @@
 		"elixir/types/_agent_ref/agent_ref_impl_.ex",
 		"elixir/registry_error.ex",
 		"elixir/comparison_result.ex",
-		"array_tools.ex"
+		"elixir/array_tools.ex"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
 	"id": 0,
@@ -37,7 +37,7 @@
 	"version": 2,
 	"ownedFiles": [
 		{
-			"path": "array_tools.ex",
+			"path": "elixir/array_tools.ex",
 			"sha256": "3ca3fb06b3e00f4a3f17ff6a90f93a73ff1c55ff43401475cbe2a446f87c0744"
 		},
 		{
@@ -157,5 +157,5 @@
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "e2a2d9b3e5bbd4c12ad120ebfd5150a46fffd281821c9c3020066037d82d73c8"
+	"generation": "17def89748a06e9a6c3c1cab1eeb51a2606fc2a44ee368e74503f272853e0d14"
 }

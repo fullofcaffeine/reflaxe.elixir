@@ -1,4 +1,4 @@
-using ArrayTools;
+using elixir.ArrayTools;
 
 import haxe.functional.Result;
 import haxe.functional.ResultTools;

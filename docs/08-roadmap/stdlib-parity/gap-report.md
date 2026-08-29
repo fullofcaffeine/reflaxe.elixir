@@ -1,6 +1,6 @@
 # Stdlib Parity Gap Report (Module-Level)
 
-Generated: 2026-08-26
+Generated: 2026-08-28
 
 This report compares this repo’s Elixir-target stdlib overrides against the reference repository.
 
@@ -20,7 +20,7 @@ scripts/stdlib-parity-report.sh --markdown > docs/08-roadmap/stdlib-parity/gap-r
 ## Summary
 
 - Reference std modules: **204**
-- Local std modules present: **127** (candidates scanned: 131)
+- Local std modules present: **127** (candidates scanned: 126)
 - Intersection (local provides): **118**
 - Not yet covered by Elixir target stdlib surface: **86**
 - Local-only: **9**

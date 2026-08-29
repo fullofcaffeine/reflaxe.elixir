@@ -1,4 +1,4 @@
-using ArrayTools;
+using elixir.ArrayTools;
 
 import haxe.ds.Option;
 import haxe.ds.OptionTools;

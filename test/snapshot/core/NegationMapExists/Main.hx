@@ -1,4 +1,4 @@
-using ArrayTools;
+using elixir.ArrayTools;
 
 class Main {
 	static function main() {

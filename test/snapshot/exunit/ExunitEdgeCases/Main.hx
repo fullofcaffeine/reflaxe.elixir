@@ -65,7 +65,6 @@ class Main extends TestCase {
 	@:async
 	@:test
 	function testAsyncWithLifecycle():Void {
-		Process.sleep(1);
 		assertTrue(true);
 	}
 
@@ -159,7 +158,6 @@ class Main extends TestCase {
 	@:tag("complete")
 	@:test
 	function testEverything():Void {
-		Process.sleep(1);
 		assertTrue(true, "Test with all features");
 	}
 

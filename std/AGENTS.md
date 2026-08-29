@@ -388,14 +388,16 @@ out/
 ├── std.ex            # From std/elixir/_std/Std.hx (our custom implementation)
 ├── haxe/
 │   └── log.ex        # From std/elixir/_std/haxe/Log.hx (shadows upstream haxe/Log.hx)
-└── map_tools.ex      # From std/elixir/_std/MapTools.hx (if used)
+└── elixir/
+    └── map_tools.ex  # From std/elixir/MapTools.hx (if used)
 ```
 
 **Reflaxe `_std` / packaged `.cross.hx` files**:
 - Use `std/elixir/_std/**/*.hx` for upstream Haxe stdlib replacements.
 - Reflaxe package builds can turn those files into `*.cross.hx` package output.
 - Do not check in generated `std/**/*.cross.hx` package mirrors.
-- These shadow or extend upstream Haxe implementations for Elixir builds.
+- These replace selected official Haxe modules for Elixir builds.
+- Put target-owned helpers in an explicit namespace outside `_std`.
 - Many overrides inject native Elixir via `__elixir__()` to stay idiomatic and efficient.
 
 **Instead of Creating Core Classes in std/**:

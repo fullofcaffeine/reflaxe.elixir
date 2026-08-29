@@ -1,6 +1,6 @@
 package;
 
-using ArrayTools;
+using elixir.ArrayTools;
 
 /**
  * Repository Pattern Integration test
