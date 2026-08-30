@@ -2924,14 +2924,20 @@
       "surfaceDigest": "8ef25f5d362c29d8b1110d40bc210f3c43d76f83832daa30700a0189de96115d",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testDigestHashSignAndVerify"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover all seven digest mappings, RSA signing, successful verification, and rejection of changed data through Erlang public_key primitives."
     },
     {
       "module": "sys.ssl.DigestAlgorithm",

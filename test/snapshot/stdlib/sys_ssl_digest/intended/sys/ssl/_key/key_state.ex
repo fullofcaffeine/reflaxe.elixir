@@ -24,14 +24,10 @@ defmodule KeyState do
   end
   def read_der(data, is_public) do
     (
-                decoded =
-                  if is_public do
-                    {:SubjectPublicKeyInfo, data}
-                  else
-                    {:PrivateKeyInfo, data}
-                  end
-                KeyState.create(decoded)
-            )
+          entry_tag = if is_public, do: :SubjectPublicKeyInfo, else: :PrivateKeyInfo
+          decoded = :public_key.pem_entry_decode({entry_tag, data, :not_encrypted})
+          KeyState.create(decoded)
+        )
   end
   def ssl_key(key_ref) do
     (

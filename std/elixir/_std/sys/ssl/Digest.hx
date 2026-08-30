@@ -1,7 +1,7 @@
 package sys.ssl;
 
+import elixir.types.Term;
 import haxe.io.Bytes;
-import haxe.io.Error;
 
 /**
  * sys.ssl.Digest (Elixir target)
@@ -11,12 +11,13 @@ import haxe.io.Error;
  *
  * WHY
  * - Hashing is portable and maps cleanly to BEAM primitives.
- * - Signature operations require key algorithm inference and padding semantics
- *   that Haxe's generic `Key` API does not expose precisely enough yet.
+ * - Erlang's `:public_key` module signs and verifies the decoded keys that the
+ *   target `Key` implementation already owns.
  *
  * HOW
  * - `make()` maps Haxe digest names to `:crypto.hash/2`.
- * - `sign()` and `verify()` fail explicitly instead of guessing.
+ * - `sign()` and `verify()` use the same digest map with
+ *   `:public_key.sign/3` and `:public_key.verify/4`.
  */
 class Digest {
 	public static function make(data:Bytes, alg:DigestAlgorithm):Bytes {
@@ -24,11 +25,11 @@ class Digest {
 	}
 
 	public static function sign(data:Bytes, privKey:Key, alg:DigestAlgorithm):Bytes {
-		throw Error.Custom("sys.ssl.Digest.sign is not supported on the Elixir target yet; key algorithm/padding must be modeled explicitly before lowering to :public_key.sign/3");
+		return Bytes.ofData(DigestState.sign(data.getData(), privKey.toSslKey(), algorithmAtom(alg)));
 	}
 
 	public static function verify(data:Bytes, signature:Bytes, pubKey:Key, alg:DigestAlgorithm):Bool {
-		throw Error.Custom("sys.ssl.Digest.verify is not supported on the Elixir target yet; key algorithm/padding must be modeled explicitly before lowering to :public_key.verify/4");
+		return DigestState.verify(data.getData(), signature.getData(), pubKey.toSslKey(), algorithmAtom(alg));
 	}
 
 	@:noCompletion public static function algorithmAtom(alg:DigestAlgorithm):elixir.types.Term {
@@ -44,5 +45,15 @@ class Digest {
               other -> raise "sys.ssl.Digest: unsupported digest algorithm #{inspect(other)}"
             end
         )', alg);
+	}
+}
+
+private class DigestState {
+	public static function sign(data:Term, privateKey:Term, algorithm:Term):Term {
+		return untyped __elixir__(':public_key.sign({0}, {2}, {1})', data, privateKey, algorithm);
+	}
+
+	public static function verify(data:Term, signature:Term, publicKey:Term, algorithm:Term):Bool {
+		return untyped __elixir__(':public_key.verify({0}, {3}, {1}, {2})', data, signature, publicKey, algorithm);
 	}
 }

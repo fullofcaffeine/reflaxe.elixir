@@ -1697,6 +1697,33 @@ class StdlibParityTest extends TestCase {
 		}
 	}
 
+	@:describe("sys.ssl.Digest")
+	@:test
+	function testDigestHashSignAndVerify():Void {
+		// This fixed RSA key is test data. It does not protect a system.
+		var privateDer = Base64.decode("MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBAMjQa1RTzP4JTemH9uOrATsOABsYGkOihKqe4r9FBuB8lJy4wmSIQIjA4o/TAPcdWYEJLujZ0jiFw5HjdbOgp+TS5bzfSDNeV/7uZaN09EpIlND0km+ZvauKU/qGSlq0eyZIrWRbmQGcreM1W9OhYhxnAFkTLdCImgfETDQUwTxbAgMBAAECgYBRsvGnqjxhMhnfo/BfKchjZUvHuiOdVrZQ0DmCBaxJkoXHySdVTVWsDYVfbEIdR3SNmdXa6But4UXyya6uOPN03ZZFAGIPVzPOGMMw92r4ti8cZtPYqWQxWeMwVbxH7doXtsytn2nGifLWkb2xYOr9ZSax9TMLJF8nFfgD4YltSQJBAOPMeT6AXxp25p2AeV/c6+/txx/UMoXgu/M2pwN0ixLU+ENpgiV5gAqhl/wqdo1tTswenO8CFk+mvxtxpCEjcd8CQQDhrLwb1xGxHyexHekpebkk/U9sB1uH26Rmzhz57wSLBMQ7+D//CVZPQfNdow06Pid7SuWrAwFEq7ObhrI7jl0FAkEArlNnIY6JuS3us++CcvsUz2qurMvt0gg2rRxQ2VMRrtquFqCiiV0ewIQDVGWGjhptZ8WxoTJ+snvP2gewa++9DwJAR19xEsD/SGxZCkwybLqhkpBGqRzeluYhZZ40TduJLUpxoaHO46MZV/G8vVWPHmd/5x916ZMGuKgxIrQD9I/+3QJBAIUwCoU84cF5L024f2SaxDQIvGmdkvKeHJTnzfXso/xhm4M0mdSbKKU1e4/tBhYkf5JDV1+eOMALiBRbVQx6Sfs=");
+		var publicDer = Base64.decode("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDI0GtUU8z+CU3ph/bjqwE7DgAbGBpDooSqnuK/RQbgfJScuMJkiECIwOKP0wD3HVmBCS7o2dI4hcOR43WzoKfk0uW830gzXlf+7mWjdPRKSJTQ9JJvmb2rilP6hkpatHsmSK1kW5kBnK3jNVvToWIcZwBZEy3QiJoHxEw0FME8WwIDAQAB");
+		var privateKey = sys.ssl.Key.readDER(privateDer, false);
+		var publicKey = sys.ssl.Key.readDER(publicDer, true);
+		var message = Bytes.ofString("signed by ordinary Haxe");
+		var signature = sys.ssl.Digest.sign(message, privateKey, sys.ssl.DigestAlgorithm.SHA256);
+
+		Assert.equals("900150983cd24fb0d6963f7d28e17f72", sys.ssl.Digest.make(Bytes.ofString("abc"), sys.ssl.DigestAlgorithm.MD5).toHex());
+		Assert.equals("a9993e364706816aba3e25717850c26c9cd0d89d", sys.ssl.Digest.make(Bytes.ofString("abc"), sys.ssl.DigestAlgorithm.SHA1).toHex());
+		Assert.equals("23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7",
+			sys.ssl.Digest.make(Bytes.ofString("abc"), sys.ssl.DigestAlgorithm.SHA224).toHex());
+		Assert.equals("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+			sys.ssl.Digest.make(Bytes.ofString("abc"), sys.ssl.DigestAlgorithm.SHA256).toHex());
+		Assert.equals("cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7",
+			sys.ssl.Digest.make(Bytes.ofString("abc"), sys.ssl.DigestAlgorithm.SHA384).toHex());
+		Assert.equals("ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f",
+			sys.ssl.Digest.make(Bytes.ofString("abc"), sys.ssl.DigestAlgorithm.SHA512).toHex());
+		Assert.equals("8eb208f7e05d987a9b044a8e98c6b087f15a0bfc", sys.ssl.Digest.make(Bytes.ofString("abc"), sys.ssl.DigestAlgorithm.RIPEMD160).toHex());
+		Assert.isTrue(signature.length > 0);
+		Assert.isTrue(sys.ssl.Digest.verify(message, signature, publicKey, sys.ssl.DigestAlgorithm.SHA256));
+		Assert.isFalse(sys.ssl.Digest.verify(Bytes.ofString("changed"), signature, publicKey, sys.ssl.DigestAlgorithm.SHA256));
+	}
+
 	@:describe("sys.thread.NoEventLoopException")
 	@:test
 	function testNoEventLoopExceptionValuesAndCatch():Void {

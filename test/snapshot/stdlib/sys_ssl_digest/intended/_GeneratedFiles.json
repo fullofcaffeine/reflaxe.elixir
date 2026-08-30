@@ -4,6 +4,7 @@
 		"sys/ssl/key.ex",
 		"sys/ssl/digest.ex",
 		"sys/ssl/_key/key_state.ex",
+		"sys/ssl/_digest/digest_state.ex",
 		"string_tools.ex",
 		"std.ex",
 		"reflaxe/exception.ex",
@@ -18,6 +19,7 @@
 		"haxe/iterators/array_iterator.ex",
 		"haxe/io/bytes.ex",
 		"haxe/int64_helper.ex",
+		"haxe/crypto/base64.ex",
 		"haxe/_call_stack/call_stack_impl_.ex"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
@@ -27,7 +29,11 @@
 	"ownedFiles": [
 		{
 			"path": "haxe/_call_stack/call_stack_impl_.ex",
-			"sha256": "ab46ba4f786a95420ae1cd78188f77ebebc3ced2db90d1351297f573f30dadf8"
+			"sha256": "51ccde2aded2494513ee0e4df47307da4b81b76b152e144ec83f62ca98578569"
+		},
+		{
+			"path": "haxe/crypto/base64.ex",
+			"sha256": "b871dc22bd37325ea6164dcc25a3cfe0d24159e078fe4b148690d56235ae7b33"
 		},
 		{
 			"path": "haxe/int64_helper.ex",
@@ -59,7 +65,7 @@
 		},
 		{
 			"path": "main.ex",
-			"sha256": "70cf3fc1798204a135724e3dea269d06f135f862d196ebbc48ed11699042954f"
+			"sha256": "c9a788da9e5f77ecf33efbdeb468324fc884b832f3458f73c8f07e4421f3022a"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.ex",
@@ -86,12 +92,16 @@
 			"sha256": "bb5f47e529150a00f248ac791970199bd13a42d23acc3a9c2da761f5930ff5a0"
 		},
 		{
+			"path": "sys/ssl/_digest/digest_state.ex",
+			"sha256": "2a478b738ea14eb01f7fbf9fcc2448772475f553fed41d9ac73618dae6b415d7"
+		},
+		{
 			"path": "sys/ssl/_key/key_state.ex",
-			"sha256": "1b9bfda6e523977cc49ec16c8ab9ff87b55c2abfb41a7eba5479f59e0cff0dfc"
+			"sha256": "d38e5d22750fade78fa48df740e8b6e52fb8296575bfa9c8d12b49dbbdfd125d"
 		},
 		{
 			"path": "sys/ssl/digest.ex",
-			"sha256": "18875c37efbc8af6d3973c85b0e71639e86fea6f07d45112fccfcaa3d101f57f"
+			"sha256": "d0cad95f9f67c8d473bf5c83aef618fc53db3bea7b9a77a75f9f386cece704c6"
 		},
 		{
 			"path": "sys/ssl/key.ex",
@@ -102,5 +112,5 @@
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "100060354d1bf4f7cb2057d1c1304c1883e56ca7b0a3f846776f10e9d01a937a"
+	"generation": "2ee190719866f7cef2ae75a8776ef3a9fbfb3dc038af7ee2c762569b7670ca22"
 }

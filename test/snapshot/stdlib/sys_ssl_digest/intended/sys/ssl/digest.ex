@@ -2,11 +2,11 @@ defmodule Digest do
   def make(data, alg) do
     Bytes.of_data(:crypto.hash(Digest.algorithm_atom(alg), apply(Map.get(data, :__reflaxe_class__) || Map.get(data, :__struct__), :get_data, [data])))
   end
-  def sign(_data, _priv_key, _alg) do
-    raise Reflaxe.Elixir.HaxeThrow, [value: {:custom, "sys.ssl.Digest.sign is not supported on the Elixir target yet; key algorithm/padding must be modeled explicitly before lowering to :public_key.sign/3"}]
+  def sign(data, priv_key, alg) do
+    Bytes.of_data(DigestState.sign(apply(Map.get(data, :__reflaxe_class__) || Map.get(data, :__struct__), :get_data, [data]), apply(Map.get(priv_key, :__reflaxe_class__) || Map.get(priv_key, :__struct__), :to_ssl_key, [priv_key]), algorithm_atom(alg)))
   end
-  def verify(_data, _signature, _pub_key, _alg) do
-    raise Reflaxe.Elixir.HaxeThrow, [value: {:custom, "sys.ssl.Digest.verify is not supported on the Elixir target yet; key algorithm/padding must be modeled explicitly before lowering to :public_key.verify/4"}]
+  def verify(data, signature, pub_key, alg) do
+    DigestState.verify(apply(Map.get(data, :__reflaxe_class__) || Map.get(data, :__struct__), :get_data, [data]), apply(Map.get(signature, :__reflaxe_class__) || Map.get(signature, :__struct__), :get_data, [signature]), apply(Map.get(pub_key, :__reflaxe_class__) || Map.get(pub_key, :__struct__), :to_ssl_key, [pub_key]), algorithm_atom(alg))
   end
   def algorithm_atom(alg) do
     (

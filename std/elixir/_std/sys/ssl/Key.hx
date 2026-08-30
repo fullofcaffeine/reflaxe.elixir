@@ -11,8 +11,9 @@ import haxe.io.Bytes;
  *
  * WHY
  * - BEAM `:ssl` accepts decoded private keys for certificate configuration.
- * - The generic Haxe API does not expose signing padding/algorithm metadata, so
- *   digest signing remains explicitly unsupported in `Digest`.
+ * - BEAM `:public_key` uses the same decoded terms for digest signatures.
+ * - `KeyState` owns the decoded Erlang term. Public methods return an opaque
+ *   `Key` instead of exposing Erlang records to application code.
  */
 class Key {
 	@:noCompletion public var keyRef(default, null):Term;
@@ -65,14 +66,10 @@ private class KeyState {
 
 	public static function readDer(data:Term, isPublic:Bool):Term {
 		return untyped __elixir__('(
-            decoded =
-              if {1} do
-                {:SubjectPublicKeyInfo, {0}}
-              else
-                {:PrivateKeyInfo, {0}}
-              end
-            KeyState.create(decoded)
-        )', data, isPublic);
+			entry_tag = if {1}, do: :SubjectPublicKeyInfo, else: :PrivateKeyInfo
+			decoded = :public_key.pem_entry_decode({entry_tag, {0}, :not_encrypted})
+			KeyState.create(decoded)
+		)', data, isPublic);
 	}
 
 	public static function sslKey(keyRef:Term):Term {

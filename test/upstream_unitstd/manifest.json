@@ -978,7 +978,7 @@
       "upstreamSpec": "absent",
       "disposition": "applicable",
       "execution": "not-run",
-      "reason": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific."
+      "reason": "No matching upstream unitstd spec exists. Local runtime tests cover all digest mappings, RSA signing, successful verification, and changed-data rejection."
     },
     {
       "module": "sys.ssl.DigestAlgorithm",
