@@ -1,6 +1,6 @@
 defmodule KeyState do
   def read_pem(data, is_public, pass) do
-    (
+    decoded = (
                 entries = :public_key.pem_decode(data)
                 public_tags = [:SubjectPublicKeyInfo, :RSAPublicKey, :DSAPublicKey, :ECPublicKey]
                 private_tags = [:PrivateKeyInfo, :RSAPrivateKey, :DSAPrivateKey, :ECPrivateKey]
@@ -13,21 +13,20 @@ defmodule KeyState do
                   key_kind = if is_public, do: "public", else: "private"
                   raise "sys.ssl.Key.readPEM could not find a " <> key_kind <> " key entry"
                 end
-                decoded =
-                  if is_nil(pass) do
-                    :public_key.pem_entry_decode(entry)
-                  else
-                    :public_key.pem_entry_decode(entry, String.to_charlist(pass))
-                  end
-                KeyState.create(decoded)
+                if is_nil(pass) do
+                  :public_key.pem_entry_decode(entry)
+                else
+                  :public_key.pem_entry_decode(entry, String.to_charlist(pass))
+                end
             )
+    create(decoded)
   end
   def read_der(data, is_public) do
-    (
+    decoded = (
           entry_tag = if is_public, do: :SubjectPublicKeyInfo, else: :PrivateKeyInfo
-          decoded = :public_key.pem_entry_decode({entry_tag, data, :not_encrypted})
-          KeyState.create(decoded)
+          :public_key.pem_entry_decode({entry_tag, data, :not_encrypted})
         )
+    create(decoded)
   end
   def ssl_key(key_ref) do
     (

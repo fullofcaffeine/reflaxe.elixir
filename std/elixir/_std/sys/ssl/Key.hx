@@ -41,7 +41,7 @@ class Key {
 
 private class KeyState {
 	public static function readPem(data:String, isPublic:Bool, pass:String):Term {
-		return untyped __elixir__('(
+		var decoded:Term = untyped __elixir__('(
             entries = :public_key.pem_decode({0})
             public_tags = [:SubjectPublicKeyInfo, :RSAPublicKey, :DSAPublicKey, :ECPublicKey]
             private_tags = [:PrivateKeyInfo, :RSAPrivateKey, :DSAPrivateKey, :ECPrivateKey]
@@ -54,22 +54,21 @@ private class KeyState {
               key_kind = if {1}, do: "public", else: "private"
               raise "sys.ssl.Key.readPEM could not find a " <> key_kind <> " key entry"
             end
-            decoded =
-              if is_nil({2}) do
-                :public_key.pem_entry_decode(entry)
-              else
-                :public_key.pem_entry_decode(entry, String.to_charlist({2}))
-              end
-            KeyState.create(decoded)
+            if is_nil({2}) do
+              :public_key.pem_entry_decode(entry)
+            else
+              :public_key.pem_entry_decode(entry, String.to_charlist({2}))
+            end
         )', data, isPublic, pass);
+		return create(decoded);
 	}
 
 	public static function readDer(data:Term, isPublic:Bool):Term {
-		return untyped __elixir__('(
+		var decoded:Term = untyped __elixir__('(
 			entry_tag = if {1}, do: :SubjectPublicKeyInfo, else: :PrivateKeyInfo
-			decoded = :public_key.pem_entry_decode({entry_tag, {0}, :not_encrypted})
-			KeyState.create(decoded)
+			:public_key.pem_entry_decode({entry_tag, {0}, :not_encrypted})
 		)', data, isPublic);
+		return create(decoded);
 	}
 
 	public static function sslKey(keyRef:Term):Term {
