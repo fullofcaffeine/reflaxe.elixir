@@ -2848,14 +2848,20 @@
       "surfaceDigest": "d5424838faf0224226963355b29346530fdb46d39b545ed40f5a24d3bdce56d5",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "partial",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testAddressSameProcessValueContracts"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM socket integration specific."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe runtime tests cover initial values, field changes, aliases, ordering, clones, and host reconstruction in one BEAM process. Address state remains process-local. Transfer to another Haxe thread does not preserve identity."
     },
     {
       "module": "sys.net.Host",

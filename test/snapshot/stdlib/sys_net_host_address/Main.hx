@@ -23,12 +23,30 @@ class Main {
 		}
 
 		var address = new Address();
+		if (address.host != 0 || address.port != 0) {
+			throw "Address should start with zero host and port values";
+		}
 		address.host = host.ip;
 		address.port = 4001;
+
+		var sameAddress = address;
+		sameAddress.port = 4002;
+		if (address.port != 4002) {
+			throw "Address aliases should observe field changes in one process";
+		}
 
 		var cloned = address.clone();
 		if (address.compare(cloned) != 0) {
 			throw "Address.clone should preserve host and port";
+		}
+		cloned.port = 4003;
+		if (address.port != 4002 || address.compare(cloned) != 1 || cloned.compare(address) != -1) {
+			throw "Address clones should have independent fields and stable port ordering";
+		}
+		cloned.host = address.host + 1;
+		cloned.port = address.port;
+		if (address.compare(cloned) != 1) {
+			throw "Address.compare should order hosts before ports";
 		}
 
 		var reconstructed = address.getHost();

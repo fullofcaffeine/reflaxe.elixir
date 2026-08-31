@@ -2142,6 +2142,33 @@ class StdlibParityTest extends TestCase {
 		Assert.raises(() -> new sys.net.Host("::1"));
 	}
 
+	@:describe("sys.net.Address")
+	@:test
+	function testAddressSameProcessValueContracts():Void {
+		var address = new sys.net.Address();
+		Assert.equals(0, address.host);
+		Assert.equals(0, address.port);
+
+		address.host = 2130706433;
+		address.port = 4001;
+		Assert.equals("127.0.0.1", address.getHost().toString());
+
+		var sameAddress = address;
+		sameAddress.port = 4002;
+		Assert.equals(4002, address.port);
+
+		var cloned = address.clone();
+		Assert.equals(0, address.compare(cloned));
+		cloned.port = 4003;
+		Assert.equals(4002, address.port);
+		Assert.equals(1, address.compare(cloned));
+		Assert.equals(-1, cloned.compare(address));
+
+		cloned.host = address.host + 1;
+		cloned.port = address.port;
+		Assert.equals(1, address.compare(cloned));
+	}
+
 	@:describe("haxe.Int64")
 	@:test
 	function testInt64WrapOverflow():Void {

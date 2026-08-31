@@ -942,7 +942,7 @@
       "upstreamSpec": "absent",
       "disposition": "applicable",
       "execution": "not-run",
-      "reason": "No matching upstream unitstd spec exists; behavior is BEAM socket integration specific."
+      "reason": "No matching upstream unitstd spec exists. Local runtime tests cover every public Address field and method in one BEAM process. Cross-process mutable identity remains open."
     },
     {
       "module": "sys.net.Host",

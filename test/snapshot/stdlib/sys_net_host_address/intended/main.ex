@@ -18,11 +18,28 @@ defmodule Main do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Host should preserve the signed high IPv4 range"]
     end
     address = Address.new()
+    if (Address.get_host(address) != 0 or Address.get_port(address) != 0) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Address should start with zero host and port values"]
+    end
     Address.set_host(address, host.ip)
     Address.set_port(address, 4001)
+    same_address = address
+    Address.set_port(same_address, 4002)
+    if (Address.get_port(address) != 4002) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Address aliases should observe field changes in one process"]
+    end
     cloned = apply(Map.get(address, :__reflaxe_class__) || Map.get(address, :__struct__), :clone, [address])
     if (apply(Map.get(address, :__reflaxe_class__) || Map.get(address, :__struct__), :compare, [address, cloned]) != 0) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Address.clone should preserve host and port"]
+    end
+    Address.set_port(cloned, 4003)
+    if (Address.get_port(address) != 4002 or apply(Map.get(address, :__reflaxe_class__) || Map.get(address, :__struct__), :compare, [address, cloned]) != 1 or apply(Map.get(cloned, :__reflaxe_class__) || Map.get(cloned, :__struct__), :compare, [cloned, address]) != -1) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Address clones should have independent fields and stable port ordering"]
+    end
+    Address.set_host(cloned, Address.get_host(address) + 1)
+    Address.set_port(cloned, Address.get_port(address))
+    if (apply(Map.get(address, :__reflaxe_class__) || Map.get(address, :__struct__), :compare, [address, cloned]) != 1) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Address.compare should order hosts before ports"]
     end
     reconstructed = apply(Map.get(address, :__reflaxe_class__) || Map.get(address, :__struct__), :to_host, [address])
     if (apply(Map.get(reconstructed, :__reflaxe_class__) || Map.get(reconstructed, :__struct__), :to_string, [reconstructed]) != "127.0.0.1") do

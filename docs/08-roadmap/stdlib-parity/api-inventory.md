@@ -58,9 +58,9 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 | Support state | API rows |
 |---|---:|
 | `not-applicable` | 1,711 |
-| `partial` | 660 |
+| `partial` | 667 |
 | `supported` | 755 |
-| `unknown` | 507 |
+| `unknown` | 500 |
 | `unsupported` | 59 |
 
 ## Counts by evidence state
@@ -68,8 +68,8 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 | Evidence state | API rows |
 |---|---:|
 | `api-runtime` | 103 |
-| `missing` | 950 |
-| `module-runtime` | 928 |
+| `missing` | 943 |
+| `module-runtime` | 935 |
 | `not-required` | 1,711 |
 
 ## Module review list
@@ -258,7 +258,7 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 | `sys.io.FileOutput` | 24 | `other-target` (17) + `runtime` (7) | `reflaxe-elixir-target` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
 | `sys.io.FileSeek` | 4 | `runtime` (4) | `reflaxe-elixir-target` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
 | `sys.io.Process` | 10 | `other-target` (1) + `runtime` (9) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
-| `sys.net.Address` | 7 | `runtime` (7) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
+| `sys.net.Address` | 7 | `runtime` (7) | `reflaxe-elixir-target` | `partial` | `module-runtime` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
 | `sys.net.Host` | 9 | `other-target` (2) + `runtime` (7) | `reflaxe-elixir-target` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
 | `sys.net.Socket` | 22 | `other-target` (2) + `runtime` (20) | `reflaxe-elixir-target` | `partial` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
 | `sys.net.UdpSocket` | 5 | `runtime` (5) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
