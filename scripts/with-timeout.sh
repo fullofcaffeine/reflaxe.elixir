@@ -88,6 +88,21 @@ start_cmd() {
   fi
 }
 
+# Capture an external signal before process ownership discovery is ready. The
+# child can start quickly, so callers must not depend on the later forwarding
+# trap already being installed.
+PENDING_SIGNAL=""
+PENDING_STATUS=""
+FORWARDED_STATUS=""
+capture_external_signal() {
+  if [[ -z "$PENDING_SIGNAL" ]]; then
+    PENDING_SIGNAL="$1"
+    PENDING_STATUS="$2"
+  fi
+}
+trap 'capture_external_signal INT 130' INT
+trap 'capture_external_signal TERM 143' TERM
+
 start_cmd
 CMD_PID=$!
 # Determine our identity first, then wait briefly for the launcher to isolate
@@ -207,7 +222,6 @@ kill_recorded_processes() {
 
 # Forward an interactive interrupt to the command we own, then keep waiting so
 # its cleanup traps receive their configured grace period.
-FORWARDED_STATUS=""
 forward_external_signal() {
   local sig="$1"
   local status="$2"
@@ -229,6 +243,9 @@ forward_external_signal() {
 }
 trap 'forward_external_signal INT 130' INT
 trap 'forward_external_signal TERM 143' TERM
+if [[ -n "$PENDING_SIGNAL" ]]; then
+  forward_external_signal "$PENDING_SIGNAL" "$PENDING_STATUS"
+fi
 
 # Watchdog
 #
