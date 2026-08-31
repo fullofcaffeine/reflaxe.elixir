@@ -4,6 +4,7 @@ set -euo pipefail
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/ecto-migrations-qa-contract.XXXXXX")
 calls_file="$tmp_dir/calls"
+ready_file="$tmp_dir/migration-ready"
 
 cleanup() {
   rm -rf -- "$tmp_dir"
@@ -45,7 +46,9 @@ if [[ "$*" == do\ app.start,\ ecto.migrate\ --quiet\ --migrations-path* ]]; then
       trap 'exit 143' TERM
       trap 'exit 130' INT
       sleep 30 &
-      wait $!
+      wait_pid=$!
+      printf 'ready\n' >"$QA_FAKE_READY"
+      wait "$wait_pid"
       ;;
   esac
 fi
@@ -83,8 +86,10 @@ run_bounded() {
   local mode="$1"
   local seconds="$2"
   : >"$calls_file"
+  rm -f -- "$ready_file"
   set +e
   QA_FAKE_CALLS="$calls_file" \
+    QA_FAKE_READY="$ready_file" \
     QA_FAKE_MODE="$mode" \
     QA_DATABASE_SUFFIX="contract_${mode}" \
     HAXE_BIN="$tmp_dir/haxe" \
@@ -170,8 +175,10 @@ run_forwarded_signal() {
   local signal_name="$1"
   local expected_status="$2"
   : >"$calls_file"
+  rm -f -- "$ready_file"
   set +e
   QA_FAKE_CALLS="$calls_file" \
+    QA_FAKE_READY="$ready_file" \
     QA_FAKE_MODE=wait_for_signal \
     QA_DATABASE_SUFFIX="contract_${signal_name}" \
     HAXE_BIN="$tmp_dir/haxe" \
@@ -183,12 +190,21 @@ run_forwarded_signal() {
   wrapper_pid=$!
   set -e
 
-  for _ in $(seq 1 100); do
-    if grep -q 'ecto.migrate' "$calls_file" 2>/dev/null; then
+  for _ in $(seq 1 300); do
+    if [[ -f "$ready_file" ]]; then
       break
     fi
     sleep 0.05
   done
+  if [[ ! -f "$ready_file" ]]; then
+    kill -TERM "$wrapper_pid"
+    set +e
+    wait "$wrapper_pid"
+    set -e
+    echo "$signal_name test did not reach the blocked migration state" >&2
+    cat "$calls_file" >&2
+    exit 1
+  fi
   kill -s "$signal_name" "$wrapper_pid"
   set +e
   wait "$wrapper_pid"
