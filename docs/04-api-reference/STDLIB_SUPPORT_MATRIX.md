@@ -444,16 +444,31 @@ bind/options/`sendTo()`.
 
 `sys.ssl.Socket` maps TLS sockets to Erlang/OTP `:ssl` and reuses the same opaque socket-reference model as `sys.net.Socket`. The generated target module is `SslSocket` to avoid colliding with `sys.net.Socket`'s generated `Socket` module while preserving the Haxe-facing `sys.ssl.Socket` API.
 
+Add the required OTP application to the consumer's `extra_applications` list:
+
+- Use `:crypto` for `Digest.make` only.
+- Use `:public_key` for `Key`, `Digest.sign`, or `Digest.verify`. It also starts `:crypto`.
+- Use `:ssl` for TLS sockets. It also starts `:public_key` and `:crypto`.
+
+For example, an application that signs data but does not open TLS sockets uses:
+
+```elixir
+def application do
+  [extra_applications: [:logger, :public_key]]
+end
+```
+
 Supported today:
+
 - `Socket.connect`, `listen`, `accept`, `handshake`, `shutdown`, `peer`, `host`, `setCA`, `setHostname`, `setCertificate`, and `peerCertificate` lower to `:ssl`/`:public_key` surfaces.
 - `Certificate.loadFile`, `loadPath`, `fromString`, `loadDefaults`, `add`, `addDER`, and `next` operate on opaque DER certificate chains suitable for `:ssl` CA/cert options.
 - `Key.loadFile`, `readPEM`, and `readDER` create opaque key containers for `:ssl` certificate configuration.
-- `Digest.make` maps Haxe digest names to `:crypto.hash/2`.
+- `Digest.make` maps all Haxe digest names to `:crypto.hash/2`.
+- `Digest.sign` and `Digest.verify` use keys from `Key` with Erlang's `:public_key` signatures.
 
 Current unsupported pieces fail explicitly with `haxe.io.Error.Custom` instead of pretending full
 native SSL parity. Each remains a 1.0 blocker:
 - `Certificate.subject`, `issuer`, `commonName`, `altNames`, `notBefore`, and `notAfter` are not implemented yet because Erlang decoded X.509 record shapes are version-sensitive.
-- `Digest.sign` and `Digest.verify` are not implemented yet because the generic Haxe `Key` API does not expose signing algorithm/padding semantics precisely enough.
 - `Socket.addSNICertificate` is not implemented yet; use `setCertificate` for a single cert/key pair.
 - Like TCP sockets, `sys.ssl.Socket.input.readBytes(...)` is unsupported until generated `haxe.io.Bytes` can preserve caller-buffer mutations.
 
