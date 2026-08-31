@@ -13,6 +13,10 @@
 		"sys/net/host.ex",
 		"sys/net/_socket/socket_output.ex",
 		"sys/net/_socket/socket_input.ex",
+		"sys/io/file_seek.ex",
+		"sys/io/file_output.ex",
+		"sys/io/file_input.ex",
+		"sys/io/file.ex",
 		"string_tools.ex",
 		"std.ex",
 		"ssl_socket.ex",
@@ -135,6 +139,22 @@
 			"sha256": "bb5f47e529150a00f248ac791970199bd13a42d23acc3a9c2da761f5930ff5a0"
 		},
 		{
+			"path": "sys/io/file.ex",
+			"sha256": "b71e610dcdb6f113c75cd1d81004b1d466e75ef67efe298b1c46c38d4b59bed3"
+		},
+		{
+			"path": "sys/io/file_input.ex",
+			"sha256": "31c968a78db6520c3781d253c4aff43a4b18dbca32cee09ad34c9a63ab3e9a93"
+		},
+		{
+			"path": "sys/io/file_output.ex",
+			"sha256": "772d6b8e404dabbd4be4448b1ab754628ceb20434e3342c6d1bbb34a2a5338d8"
+		},
+		{
+			"path": "sys/io/file_seek.ex",
+			"sha256": "9c0cd626cbc55775ff7b380f7939a66feb61ce0690b9c14f66e8ecb9c779e68a"
+		},
+		{
 			"path": "sys/net/_socket/socket_input.ex",
 			"sha256": "be925359a2bd795ec85b0d8391ccbedb154d818c2ec784e7acb5dc019c558bdc"
 		},
@@ -160,7 +180,7 @@
 		},
 		{
 			"path": "sys/ssl/_key/key_state.ex",
-			"sha256": "da511c039d4b27cb6f83ec637c9b6784da702127f247792cc285d1af9ea0df3c"
+			"sha256": "f6b4932db300ebc3a1ba80c41c3e50a0aeddc100bcceb177181a13fadff0b34a"
 		},
 		{
 			"path": "sys/ssl/_socket/ssl_socket_input.ex",
@@ -180,12 +200,12 @@
 		},
 		{
 			"path": "sys/ssl/key.ex",
-			"sha256": "c3ea19ffd5f9e692d0b1c32dfa85d71eafca0a5beaa733da7bafdd79063b0f65"
+			"sha256": "6beea6b18e0a87a46ad8321eea1fb49948ddae0ec8fbffb117316d9a452b9423"
 		},
 		{
 			"path": "type.ex",
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "e8e29e626b4bc5987bcf2c274c4095e12f005281e98e2be3dc0624e0e0b02832"
+	"generation": "a1505bf54c7667689032d554a92c71d7aed13068647c6229d3ae210eca6eff4a"
 }

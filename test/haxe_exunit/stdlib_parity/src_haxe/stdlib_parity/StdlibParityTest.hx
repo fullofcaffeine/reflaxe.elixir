@@ -1724,6 +1724,100 @@ class StdlibParityTest extends TestCase {
 		Assert.isFalse(sys.ssl.Digest.verify(Bytes.ofString("changed"), signature, publicKey, sys.ssl.DigestAlgorithm.SHA256));
 	}
 
+	@:describe("sys.ssl.Key")
+	@:test
+	function testSslKeyPemDerFileAndProcessTransfer():Void {
+		// This fixed RSA key is test data. It does not protect a system.
+		var privateBody = "MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBAMjQa1RTzP4JTemH9uOrATsOABsYGkOihKqe4r9FBuB8lJy4wmSIQIjA4o/TAPcdWYEJLujZ0jiFw5HjdbOgp+TS5bzfSDNeV/7uZaN09EpIlND0km+ZvauKU/qGSlq0eyZIrWRbmQGcreM1W9OhYhxnAFkTLdCImgfETDQUwTxbAgMBAAECgYBRsvGnqjxhMhnfo/BfKchjZUvHuiOdVrZQ0DmCBaxJkoXHySdVTVWsDYVfbEIdR3SNmdXa6But4UXyya6uOPN03ZZFAGIPVzPOGMMw92r4ti8cZtPYqWQxWeMwVbxH7doXtsytn2nGifLWkb2xYOr9ZSax9TMLJF8nFfgD4YltSQJBAOPMeT6AXxp25p2AeV/c6+/txx/UMoXgu/M2pwN0ixLU+ENpgiV5gAqhl/wqdo1tTswenO8CFk+mvxtxpCEjcd8CQQDhrLwb1xGxHyexHekpebkk/U9sB1uH26Rmzhz57wSLBMQ7+D//CVZPQfNdow06Pid7SuWrAwFEq7ObhrI7jl0FAkEArlNnIY6JuS3us++CcvsUz2qurMvt0gg2rRxQ2VMRrtquFqCiiV0ewIQDVGWGjhptZ8WxoTJ+snvP2gewa++9DwJAR19xEsD/SGxZCkwybLqhkpBGqRzeluYhZZ40TduJLUpxoaHO46MZV/G8vVWPHmd/5x916ZMGuKgxIrQD9I/+3QJBAIUwCoU84cF5L024f2SaxDQIvGmdkvKeHJTnzfXso/xhm4M0mdSbKKU1e4/tBhYkf5JDV1+eOMALiBRbVQx6Sfs=";
+		var publicBody = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDI0GtUU8z+CU3ph/bjqwE7DgAbGBpDooSqnuK/RQbgfJScuMJkiECIwOKP0wD3HVmBCS7o2dI4hcOR43WzoKfk0uW830gzXlf+7mWjdPRKSJTQ9JJvmb2rilP6hkpatHsmSK1kW5kBnK3jNVvToWIcZwBZEy3QiJoHxEw0FME8WwIDAQAB";
+		var privateDer = Base64.decode(privateBody);
+		var publicDer = Base64.decode(publicBody);
+		var pkcs1PrivateDer = Base64.decode("MIICXQIBAAKBgQDI0GtUU8z+CU3ph/bjqwE7DgAbGBpDooSqnuK/RQbgfJScuMJkiECIwOKP0wD3HVmBCS7o2dI4hcOR43WzoKfk0uW830gzXlf+7mWjdPRKSJTQ9JJvmb2rilP6hkpatHsmSK1kW5kBnK3jNVvToWIcZwBZEy3QiJoHxEw0FME8WwIDAQABAoGAUbLxp6o8YTIZ36PwXynIY2VLx7ojnVa2UNA5ggWsSZKFx8knVU1VrA2FX2xCHUd0jZnV2ugbreFF8smurjjzdN2WRQBiD1czzhjDMPdq+LYvHGbT2KlkMVnjMFW8R+3aF7bMrZ9pxony1pG9sWDq/WUmsfUzCyRfJxX4A+GJbUkCQQDjzHk+gF8aduadgHlf3Ovv7ccf1DKF4LvzNqcDdIsS1PhDaYIleYAKoZf8KnaNbU7MHpzvAhZPpr8bcaQhI3HfAkEA4ay8G9cRsR8nsR3pKXm5JP1PbAdbh9ukZs4c+e8EiwTEO/g//wlWT0HzXaMNOj4ne0rlqwMBRKuzm4ayO45dBQJBAK5TZyGOibkt7rPvgnL7FM9qrqzL7dIINq0cUNlTEa7arhagooldHsCEA1Rlho4abWfFsaEyfrJ7z9oHsGvvvQ8CQEdfcRLA/0hsWQpMMmy6oZKQRqkc3pbmIWWeNE3biS1KcaGhzuOjGVfxvL1Vjx5nf+cfdemTBrioMSK0A/SP/t0CQQCFMAqFPOHBeS9NuH9kmsQ0CLxpnZLynhyU58317KP8YZuDNJnUmyilNXuP7QYWJH+SQ1dfnjjAC4gUW1UMekn7");
+		var pkcs1PublicDer = Base64.decode("MIGJAoGBAMjQa1RTzP4JTemH9uOrATsOABsYGkOihKqe4r9FBuB8lJy4wmSIQIjA4o/TAPcdWYEJLujZ0jiFw5HjdbOgp+TS5bzfSDNeV/7uZaN09EpIlND0km+ZvauKU/qGSlq0eyZIrWRbmQGcreM1W9OhYhxnAFkTLdCImgfETDQUwTxbAgMBAAE=");
+		var privatePem = sslPem("PRIVATE KEY", privateBody);
+		var publicPem = sslPem("PUBLIC KEY", publicBody);
+		var encryptedPem = encryptedPrivateKeyPem();
+		var message = Bytes.ofString("portable sys.ssl.Key");
+		var publicKey = sys.ssl.Key.readPEM(publicPem, true);
+
+		var privateKey = sys.ssl.Key.readPEM(privatePem, false);
+		var encryptedKey = sys.ssl.Key.readPEM(encryptedPem, false, "haxe-test-pass");
+		Assert.raises(() -> sys.ssl.Key.readPEM(encryptedPem, false, "wrong-pass"));
+		Assert.isTrue(sys.ssl.Digest.verify(message, sys.ssl.Digest.sign(message, privateKey, sys.ssl.DigestAlgorithm.SHA256), publicKey,
+			sys.ssl.DigestAlgorithm.SHA256));
+		Assert.isTrue(sys.ssl.Digest.verify(message, sys.ssl.Digest.sign(message, encryptedKey, sys.ssl.DigestAlgorithm.SHA256), publicKey,
+			sys.ssl.DigestAlgorithm.SHA256));
+		var pkcs1PrivateKey = sys.ssl.Key.readDER(pkcs1PrivateDer, false);
+		var pkcs1PublicKey = sys.ssl.Key.readDER(pkcs1PublicDer, true);
+		Assert.isTrue(sys.ssl.Digest.verify(message, sys.ssl.Digest.sign(message, pkcs1PrivateKey, sys.ssl.DigestAlgorithm.SHA256), pkcs1PublicKey,
+			sys.ssl.DigestAlgorithm.SHA256));
+
+		var root = "_tmp/reflaxe_ssl_key_exunit_contract";
+		if (!sys.FileSystem.exists(root))
+			sys.FileSystem.createDirectory(root);
+		var privatePath = root + "/private.pem";
+		var publicPath = root + "/public.der";
+		var encryptedPath = root + "/private-encrypted.pem";
+		sys.io.File.saveContent(privatePath, privatePem);
+		sys.io.File.saveBytes(publicPath, publicDer);
+		sys.io.File.saveContent(encryptedPath, encryptedPem);
+		var filePrivateKey = sys.ssl.Key.loadFile(privatePath);
+		var filePublicKey = sys.ssl.Key.loadFile(publicPath, true);
+		var fileEncryptedKey = sys.ssl.Key.loadFile(encryptedPath, false, "haxe-test-pass");
+		Assert.isTrue(sys.ssl.Digest.verify(message, sys.ssl.Digest.sign(message, filePrivateKey, sys.ssl.DigestAlgorithm.SHA256), filePublicKey,
+			sys.ssl.DigestAlgorithm.SHA256));
+		Assert.isTrue(sys.ssl.Digest.verify(message, sys.ssl.Digest.sign(message, fileEncryptedKey, sys.ssl.DigestAlgorithm.SHA256), filePublicKey,
+			sys.ssl.DigestAlgorithm.SHA256));
+		sys.FileSystem.deleteFile(privatePath);
+		sys.FileSystem.deleteFile(publicPath);
+		sys.FileSystem.deleteFile(encryptedPath);
+		sys.FileSystem.deleteDirectory(root);
+
+		var derPrivateKey = sys.ssl.Key.readDER(privateDer, false);
+		var derPublicKey = sys.ssl.Key.readDER(publicDer, true);
+		var parent = Thread.current();
+		Thread.create(function() {
+			try {
+				var signature = sys.ssl.Digest.sign(message, derPrivateKey, sys.ssl.DigestAlgorithm.SHA256);
+				parent.sendMessage(sys.ssl.Digest.verify(message, signature, derPublicKey, sys.ssl.DigestAlgorithm.SHA256));
+			} catch (_:haxe.Exception) {
+				parent.sendMessage(false);
+			}
+		});
+		Assert.equals(true, Thread.readMessage(true));
+	}
+
+	static function sslPem(label:String, body:String):String {
+		var lines:Array<String> = [];
+		var offset = 0;
+		while (offset < body.length) {
+			lines.push(body.substr(offset, 64));
+			offset += 64;
+		}
+		return "-----BEGIN " + label + "-----\n" + lines.join("\n") + "\n-----END " + label + "-----\n";
+	}
+
+	static function encryptedPrivateKeyPem():String {
+		return "-----BEGIN ENCRYPTED PRIVATE KEY-----\n"
+			+ "MIIC5TBfBgkqhkiG9w0BBQ0wUjAxBgkqhkiG9w0BBQwwJAQQQpeDvIQjlTxrKxgn\n"
+			+ "/btTRgICCAAwDAYIKoZIhvcNAgkFADAdBglghkgBZQMEASoEECsaOY5BCgXJdCmJ\n"
+			+ "neDMFIcEggKA7TtMwBxUR1CO/GCtITAHK9cuCZd6OZZqoTjwEY9RpfXRNBD4NyGG\n"
+			+ "K6ZuY/pUJP2xwXq0lqVkqJlGGrlI+OB2OP42bkCM9YtoZJR3EvSHKzEA8o9NArog\n"
+			+ "XAiQBRp3Kh70jyraq7ckEt/qYIM1HncbQe79GSMjXTJ9tY0BIOd2thbyrBMobR/v\n"
+			+ "0igLYrHC6r8J7i1BjmUunAir4wTwMGrhe0XqvpWXN6CDz8yKeyUkWPzetE0VUCUx\n"
+			+ "cqLrRq2x8xpjaUS5aRajdejxx1/jT3PdD6U5Ji5s+rKJPc6W58veOZj3CLRraveT\n"
+			+ "DxNQdGzQhfOeyfImXaic7Q4xY2Xsgft54I+VgVwo9lituF2M0tNrvsaa0I+oFISP\n"
+			+ "7WjeTHOviguTuVZsMnLTupHd/zn+rwuoN+SNP0XLKtAmqnauJeCQHmXZt2U7Ix2Q\n"
+			+ "0Hlmh3MqAqb3rxfNV4mlo5RyIBSIdlBVjYA+6/xBeMIilOoJGzkM41fPPKXsWLLH\n"
+			+ "OV1CY6YQ9VkWsZfddxSy0b1fyQRMs+Utz4mOBnbqerHJPuNIW8WKnXsEHUYAMwPr\n"
+			+ "Ah9Pyl2bMit8+UC1NfUec4A++PaKn37iHLBWBJkeGMssK2IcyQx+RtnIF6Oiv9LU\n"
+			+ "o9rtn5dd/GAsNbMd8F0uMdXPl5aJj1tBx2rYdUx1IYNXulDprQxh5AdG/S5e/aBI\n"
+			+ "ZWTaUW5VgGtVz+rHmuMi5f04m6/QPckRYEXDwPkDzrUI2TdVf4JJWfhIqpsvEJav\n"
+			+ "xekP2PgIJZUoyceyKeYi5eq+slJCQ4avCELSiVPXHh/AWliXmPIQDfyLlIlrtIad\n"
+			+ "kE+7MKp4FO/19vVes9zEuNIKp6BUaw8W6g==\n"
+			+ "-----END ENCRYPTED PRIVATE KEY-----\n";
+	}
+
 	@:describe("sys.thread.NoEventLoopException")
 	@:test
 	function testNoEventLoopExceptionValuesAndCatch():Void {

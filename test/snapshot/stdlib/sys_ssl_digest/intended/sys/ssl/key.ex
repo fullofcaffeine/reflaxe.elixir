@@ -5,10 +5,15 @@ defmodule Key do
     struct
   end
   def to_ssl_key(struct) do
-    KeyState.ssl_key(struct.key_ref)
+    struct.key_ref
   end
   def load_file(file, is_public \\ nil, pass \\ nil) do
-    read_pem(File.read!(file), is_public == true, pass)
+    data = Sys.IO.File.get_bytes(file)
+    if (data.length >= 11 and apply(Map.get(data, :__reflaxe_class__) || Map.get(data, :__struct__), :get_string, [data, 0, 11, nil]) == "-----BEGIN ") do
+      read_pem(apply(Map.get(data, :__reflaxe_class__) || Map.get(data, :__struct__), :to_string, [data]), is_public == true, pass)
+    else
+      read_der(data, is_public == true)
+    end
   end
   def read_pem(data, is_public, pass \\ nil) do
     new(KeyState.read_pem(data, is_public, pass))

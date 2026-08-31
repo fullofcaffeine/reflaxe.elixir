@@ -275,17 +275,18 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
 - Coverage: `test/snapshot/stdlib/sys_http_basic` includes a generated-runtime smoke against a local TCP server for success, callbacks, duplicate headers, POST, custom PUT, and HTTP error behavior.
 
 **Task cluster: `sys.net.*`**
-- Status: implemented for IPv4 `Host`/`Address`, TCP `Socket` via `:gen_tcp`, and UDP `UdpSocket` via `:gen_udp`.
+- Status: implemented for IPv4 `Host`, TCP `Socket` via `:gen_tcp`, and UDP `UdpSocket` via `:gen_udp`. `Address` value behavior works in one process, but exact cross-process identity remains open.
 - Contract: Haxe socket mutability is represented with an opaque BEAM reference and process-dictionary-backed state so `connect()`/`bind()`/`listen()` update the socket observed by existing `input`/`output` values.
 - Blocking: `setTimeout(seconds)` maps to BEAM millisecond timeouts; `setBlocking(false)` uses zero-timeout read behavior. `Socket.select()` is a compatibility readiness helper, not full POSIX `select(2)`.
 - Unsupported: buffer-mutating receive APIs (`Socket.input.readBytes(...)` and `UdpSocket.readFrom(...)`) raise `Error.Custom` on the Elixir target because generated `haxe.io.Bytes` values are immutable maps; implement stateful Bytes or compiler out-parameter support before claiming those semantics.
 - Coverage: snapshot coverage for Host/Address and socket surfaces, plus generated-runtime smoke for bind/listen and UDP send.
 
 **Task cluster: `sys.ssl.*`**
-- Status: implemented for TLS `Socket` via `:ssl`, opaque DER `Certificate` chains, opaque `Key` containers, digest algorithm constants, and `Digest.make` via `:crypto.hash/2`.
+- Status: implemented for TLS `Socket` via `:ssl`, opaque DER `Certificate` chains, transferable opaque `Key` containers, digest algorithm constants, hashing, signing, and verification.
 - Contract: SSL sockets use generated target module `SslSocket` to avoid colliding with TCP `Socket`; Haxe-facing code still imports `sys.ssl.Socket`.
-- Unsupported: X.509 metadata introspection (`subject`, `issuer`, `commonName`, SAN/date fields), digest sign/verify, SNI certificate callbacks, and buffer-mutating `input.readBytes` fail explicitly with `Error.Custom`.
-- Coverage: snapshot coverage for digest and SSL socket surfaces, plus generated-runtime smoke for hashing, socket configuration, certificate-default loading, and fail-fast unsupported APIs.
+- Key behavior: `loadFile` detects PEM and DER files. PEM readers support encrypted private keys with a passphrase. Decoded immutable OTP key terms remain usable after same-node process transfer.
+- Unsupported: X.509 metadata introspection (`subject`, `issuer`, `commonName`, SAN/date fields), SNI certificate callbacks, and buffer-mutating `input.readBytes` fail explicitly with `Error.Custom`.
+- Coverage: Haxe-authored runtime tests cover every digest algorithm, signatures, all public key loaders, passphrase errors, process transfer, and cleanup. Snapshot coverage also protects digest and SSL socket output.
 
 **Task cluster: `sys.thread.*`**
 - Status: implemented as BEAM process/mailbox primitives, not OS threads.

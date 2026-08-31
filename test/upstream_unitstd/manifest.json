@@ -992,7 +992,7 @@
       "upstreamSpec": "absent",
       "disposition": "applicable",
       "execution": "not-run",
-      "reason": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific."
+      "reason": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover all public loaders, PKCS1 and PKCS8/SPKI DER, encrypted PEM errors, file detection, signing, verification, cleanup, and same-node process transfer."
     },
     {
       "module": "sys.ssl.Socket",

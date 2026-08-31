@@ -5,6 +5,11 @@
 		"sys/ssl/digest.ex",
 		"sys/ssl/_key/key_state.ex",
 		"sys/ssl/_digest/digest_state.ex",
+		"sys/io/file_seek.ex",
+		"sys/io/file_output.ex",
+		"sys/io/file_input.ex",
+		"sys/io/file.ex",
+		"sys/file_system.ex",
 		"string_tools.ex",
 		"std.ex",
 		"reflaxe/exception.ex",
@@ -17,8 +22,15 @@
 		"haxe/iterators/string_iterator.ex",
 		"haxe/iterators/array_key_value_iterator.ex",
 		"haxe/iterators/array_iterator.ex",
+		"haxe/io/output.ex",
+		"haxe/io/input.ex",
+		"haxe/io/fp_helper.ex",
+		"haxe/io/eof.ex",
+		"haxe/io/bytes_buffer.ex",
 		"haxe/io/bytes.ex",
 		"haxe/int64_helper.ex",
+		"haxe/exceptions/pos_exception.ex",
+		"haxe/exceptions/not_implemented_exception.ex",
 		"haxe/crypto/base64.ex",
 		"haxe/_call_stack/call_stack_impl_.ex"
 	],
@@ -36,12 +48,40 @@
 			"sha256": "b871dc22bd37325ea6164dcc25a3cfe0d24159e078fe4b148690d56235ae7b33"
 		},
 		{
+			"path": "haxe/exceptions/not_implemented_exception.ex",
+			"sha256": "1626a1b4284a0b7534ead4d0fb87bb1c11bb0675ed467ffe2c3ec94706733863"
+		},
+		{
+			"path": "haxe/exceptions/pos_exception.ex",
+			"sha256": "1bf19747702bbde341c3a92e2fc6f137f2e04508952fc452a0ae73aa61b2b1dd"
+		},
+		{
 			"path": "haxe/int64_helper.ex",
 			"sha256": "0643b886c61627b39d0d5d821e77f1b19a77dbc5c5065864c1e69e6a5656054b"
 		},
 		{
 			"path": "haxe/io/bytes.ex",
 			"sha256": "2b5bbb5087c447a1f5869d498456c3ead74a5142aa35e49e341176f3d4d8585d"
+		},
+		{
+			"path": "haxe/io/bytes_buffer.ex",
+			"sha256": "0962445091a69c1e1334a2925e6e6ccd39bd1cc179c50ef0f137adfcd1feadbd"
+		},
+		{
+			"path": "haxe/io/eof.ex",
+			"sha256": "209a67120806bddd55fd2677ef52bc750f52e377be130a1bc58a9c73edcdd967"
+		},
+		{
+			"path": "haxe/io/fp_helper.ex",
+			"sha256": "5a654064f9fdd84290acc42f14b75158ae20de2f9ee2ea2de8c0fcaf0b017b4c"
+		},
+		{
+			"path": "haxe/io/input.ex",
+			"sha256": "4b3e9212807a50abd22adb84b4b64abd1f9cb80bde6f32f04ab02bdd8f1b646f"
+		},
+		{
+			"path": "haxe/io/output.ex",
+			"sha256": "8a2e0944356c3e3ab9a3dc1faba06473b19e927c94286c792d0f0a79b616fc75"
 		},
 		{
 			"path": "haxe/iterators/array_iterator.ex",
@@ -65,7 +105,7 @@
 		},
 		{
 			"path": "main.ex",
-			"sha256": "c9a788da9e5f77ecf33efbdeb468324fc884b832f3458f73c8f07e4421f3022a"
+			"sha256": "87f9e7da3fd451f955aaf0216b882ccc352eeb22384eb4e11050f403c21531fa"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.ex",
@@ -92,12 +132,32 @@
 			"sha256": "bb5f47e529150a00f248ac791970199bd13a42d23acc3a9c2da761f5930ff5a0"
 		},
 		{
+			"path": "sys/file_system.ex",
+			"sha256": "0e21d48ef4ee5c6e2668b41943faedd3b2d5f82bc4adca55438e7004d907090b"
+		},
+		{
+			"path": "sys/io/file.ex",
+			"sha256": "b71e610dcdb6f113c75cd1d81004b1d466e75ef67efe298b1c46c38d4b59bed3"
+		},
+		{
+			"path": "sys/io/file_input.ex",
+			"sha256": "31c968a78db6520c3781d253c4aff43a4b18dbca32cee09ad34c9a63ab3e9a93"
+		},
+		{
+			"path": "sys/io/file_output.ex",
+			"sha256": "772d6b8e404dabbd4be4448b1ab754628ceb20434e3342c6d1bbb34a2a5338d8"
+		},
+		{
+			"path": "sys/io/file_seek.ex",
+			"sha256": "9c0cd626cbc55775ff7b380f7939a66feb61ce0690b9c14f66e8ecb9c779e68a"
+		},
+		{
 			"path": "sys/ssl/_digest/digest_state.ex",
 			"sha256": "2a478b738ea14eb01f7fbf9fcc2448772475f553fed41d9ac73618dae6b415d7"
 		},
 		{
 			"path": "sys/ssl/_key/key_state.ex",
-			"sha256": "da511c039d4b27cb6f83ec637c9b6784da702127f247792cc285d1af9ea0df3c"
+			"sha256": "f6b4932db300ebc3a1ba80c41c3e50a0aeddc100bcceb177181a13fadff0b34a"
 		},
 		{
 			"path": "sys/ssl/digest.ex",
@@ -105,12 +165,12 @@
 		},
 		{
 			"path": "sys/ssl/key.ex",
-			"sha256": "c3ea19ffd5f9e692d0b1c32dfa85d71eafca0a5beaa733da7bafdd79063b0f65"
+			"sha256": "6beea6b18e0a87a46ad8321eea1fb49948ddae0ec8fbffb117316d9a452b9423"
 		},
 		{
 			"path": "type.ex",
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "819913c73c575dc26fe6e6a925f436f58f6e48bf30764fa31fcb5154c58c96e8"
+	"generation": "8060849540c4efdad5100d7cbc3d3d8d58cf661e0d1f0531630debc8388cdc43"
 }

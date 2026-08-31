@@ -12,8 +12,8 @@ import haxe.io.Bytes;
  * WHY
  * - BEAM `:ssl` accepts decoded private keys for certificate configuration.
  * - BEAM `:public_key` uses the same decoded terms for digest signatures.
- * - `KeyState` owns the decoded Erlang term. Public methods return an opaque
- *   `Key` instead of exposing Erlang records to application code.
+ * - Decoded Erlang key terms are immutable and safe to send between BEAM
+ *   processes. Public methods keep them behind an opaque `Key`.
  */
 class Key {
 	@:noCompletion public var keyRef(default, null):Term;
@@ -23,7 +23,10 @@ class Key {
 	}
 
 	public static function loadFile(file:String, ?isPublic:Bool, ?pass:String):Key {
-		return readPEM(untyped __elixir__('File.read!({0})', file), isPublic == true, pass);
+		var data = sys.io.File.getBytes(file);
+		if (data.length >= 11 && data.getString(0, 11) == "-----BEGIN ")
+			return readPEM(data.toString(), isPublic == true, pass);
+		return readDER(data, isPublic == true);
 	}
 
 	public static function readPEM(data:String, isPublic:Bool, ?pass:String):Key {
@@ -35,7 +38,7 @@ class Key {
 	}
 
 	@:noCompletion public function toSslKey():Term {
-		return KeyState.sslKey(keyRef);
+		return keyRef;
 	}
 }
 
@@ -44,7 +47,7 @@ private class KeyState {
 		var decoded:Term = untyped __elixir__('(
             entries = :public_key.pem_decode({0})
             public_tags = [:SubjectPublicKeyInfo, :RSAPublicKey, :DSAPublicKey, :ECPublicKey]
-            private_tags = [:PrivateKeyInfo, :RSAPrivateKey, :DSAPrivateKey, :ECPrivateKey]
+            private_tags = [:PrivateKeyInfo, :EncryptedPrivateKeyInfo, :RSAPrivateKey, :DSAPrivateKey, :ECPrivateKey]
             allowed_tags = if {1}, do: public_tags, else: private_tags
             entry =
               Enum.find(entries, fn {tag, _der, _cipher_info} ->
@@ -60,31 +63,27 @@ private class KeyState {
               :public_key.pem_entry_decode(entry, String.to_charlist({2}))
             end
         )', data, isPublic, pass);
-		return create(decoded);
+		return decoded;
 	}
 
 	public static function readDer(data:Term, isPublic:Bool):Term {
 		var decoded:Term = untyped __elixir__('(
-			entry_tag = if {1}, do: :SubjectPublicKeyInfo, else: :PrivateKeyInfo
-			:public_key.pem_entry_decode({entry_tag, {0}, :not_encrypted})
+			entry_tags =
+			  if {1} do
+			    [:SubjectPublicKeyInfo, :RSAPublicKey, :DSAPublicKey, :ECPublicKey]
+			  else
+			    [:PrivateKeyInfo, :RSAPrivateKey, :DSAPrivateKey, :ECPrivateKey]
+			  end
+			Enum.reduce_while(entry_tags, nil, fn entry_tag, _acc ->
+			  try do
+			    {:halt, :public_key.pem_entry_decode({entry_tag, {0}, :not_encrypted})}
+			  rescue
+			    _ -> {:cont, nil}
+			  catch
+			    _, _ -> {:cont, nil}
+			  end
+			end) || raise "sys.ssl.Key.readDER could not decode the requested key"
 		)', data, isPublic);
-		return create(decoded);
-	}
-
-	public static function sslKey(keyRef:Term):Term {
-		return untyped __elixir__('(
-            case Process.get({:reflaxe_sys_ssl_key, {0}}) do
-              nil -> raise "sys.ssl.Key: key is closed or was not initialized"
-              key -> key
-            end
-        )', keyRef);
-	}
-
-	public static function create(key:Term):Term {
-		return untyped __elixir__('(
-            ref = make_ref()
-            Process.put({:reflaxe_sys_ssl_key, ref}, {0})
-            ref
-        )', key);
+		return decoded;
 	}
 }

@@ -289,12 +289,12 @@ state across processes.
 - `sys.io.FileOutput`
 - `sys.io.Process`
 - `sys.io.FileSeek`
-- `sys.net.Address`
+- `sys.net.Address` (same-process mutation works; managed cross-process identity still blocks 1.0)
 - `sys.net.Host`
 - `sys.net.Socket` (caller-buffer receive behavior below blocks 1.0)
 - `sys.net.UdpSocket` (caller-buffer receive behavior below blocks 1.0)
 - `sys.ssl.Certificate` (current partial implementation; remaining APIs below block 1.0)
-- `sys.ssl.Digest` (current partial implementation; remaining APIs below block 1.0)
+- `sys.ssl.Digest`
 - `sys.ssl.DigestAlgorithm`
 - `sys.ssl.Key`
 - `sys.ssl.Socket` (current partial implementation; remaining APIs below block 1.0)
@@ -426,7 +426,7 @@ Coverage:
 
 ### `sys.net.*` BEAM contract
 
-`sys.net.Host` and `sys.net.Address` support IPv4 host/address values. `Host` resolves names with Erlang `:inet`, stores `ip` as a big-endian IPv4 integer, and converts to `{a, b, c, d}` tuples when socket APIs need BEAM-native addresses.
+`sys.net.Host` supports IPv4 host values. It resolves names with Erlang `:inet` and stores `ip` as a big-endian IPv4 integer. A socket receives the value as `{a, b, c, d}`. `sys.net.Address` supports the same values in one process. Its process-local mutable state does not preserve identity after transfer to another process. Thus, full `Address` support remains open.
 
 `sys.net.Socket` maps TCP operations to `:gen_tcp`; `sys.net.UdpSocket` maps UDP operations to `:gen_udp`. Because Haxe socket objects are mutable but generated Elixir values are immutable maps, sockets store mutable runtime state behind an opaque BEAM reference in the current process dictionary. This keeps `connect()`, `bind()`, `listen()`, `accept()`, `input`, and `output` observing the same underlying BEAM socket without pretending Elixir maps mutate in place.
 
@@ -462,7 +462,8 @@ Supported today:
 
 - `Socket.connect`, `listen`, `accept`, `handshake`, `shutdown`, `peer`, `host`, `setCA`, `setHostname`, `setCertificate`, and `peerCertificate` lower to `:ssl`/`:public_key` surfaces.
 - `Certificate.loadFile`, `loadPath`, `fromString`, `loadDefaults`, `add`, `addDER`, and `next` operate on opaque DER certificate chains suitable for `:ssl` CA/cert options.
-- `Key.loadFile`, `readPEM`, and `readDER` create opaque key containers for `:ssl` certificate configuration.
+- `Key.loadFile`, `readPEM`, and `readDER` create opaque key containers for `:ssl` certificate configuration. `loadFile` detects PEM and DER data. PEM loading supports encrypted private keys when the caller supplies a passphrase.
+- A `Key` stores its decoded immutable OTP term directly. The key remains usable after a Haxe thread sends it to another BEAM process.
 - `Digest.make` maps all Haxe digest names to `:crypto.hash/2`.
 - `Digest.sign` and `Digest.verify` use keys from `Key` with Erlang's `:public_key` signatures.
 

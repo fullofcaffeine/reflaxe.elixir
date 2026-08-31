@@ -2964,14 +2964,20 @@
       "surfaceDigest": "600cf266a8691d0ca7f15772e0890802c73a64ca6da00809be91a5853ef3b1ab",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testSslKeyPemDerFileAndProcessTransfer"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover private and public PEM, PKCS1 and PKCS8/SPKI DER, encrypted private PEM passphrases and errors, file detection, signing, verification, cleanup, and use after transfer to another Haxe thread."
     },
     {
       "module": "sys.ssl.Socket",
