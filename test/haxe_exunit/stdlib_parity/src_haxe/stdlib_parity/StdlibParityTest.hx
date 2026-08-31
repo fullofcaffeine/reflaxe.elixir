@@ -1748,7 +1748,7 @@ class StdlibParityTest extends TestCase {
 
 		certificate.addDER(Base64.decode(sslRootCertificateBody()));
 		var appended = certificate.next();
-		Assert.notNull(appended);
+		Assert.isNotNull(appended, "Certificate.addDER and next should expose the appended certificate");
 		Assert.equals("Reflaxe Root CA", appended.commonName);
 		Assert.equals(null, appended.next());
 
