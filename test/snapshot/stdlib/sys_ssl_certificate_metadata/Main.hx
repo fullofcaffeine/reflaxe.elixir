@@ -55,6 +55,7 @@ class Main {
 			+ "-----END CERTIFICATE-----\n";
 	}
 
+	@:keep
 	public static function main() {
 		var cert = Certificate.fromString(leafCertificatePem());
 		assertThat(cert.subject("CN") == "example.test", "Certificate.subject should read the common name");

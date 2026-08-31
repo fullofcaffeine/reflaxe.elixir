@@ -258,6 +258,9 @@ private class CertificateState {
 		return untyped __elixir__('File.read!({0})', file);
 	}
 
+	// Raw Elixir in addPem calls this method, so DCE cannot see every call.
+
+	@:keep
 	public static function fromPem(pem:String):Term {
 		return untyped __elixir__('(
             entries = :public_key.pem_decode({0})
@@ -331,6 +334,9 @@ private class CertificateState {
         )', certificateRef, der);
 	}
 
+	// Raw Elixir in this helper calls derList through the generated module.
+
+	@:keep
 	public static function derList(certificateRef:Term):Term {
 		return untyped __elixir__('(
             case Process.get({:reflaxe_sys_ssl_certificate, {0}}) do
@@ -340,6 +346,9 @@ private class CertificateState {
         )', certificateRef);
 	}
 
+	// Metadata decoders call derAt from raw Elixir.
+
+	@:keep
 	public static function derAt(certificateRef:Term, index:Int):Term {
 		return untyped __elixir__('Enum.at(CertificateState.der_list({0}), {1})', certificateRef, index);
 	}
@@ -348,6 +357,9 @@ private class CertificateState {
 		return untyped __elixir__('length(CertificateState.der_list({0}))', certificateRef);
 	}
 
+	// PEM, DER-chain, path, and default loaders call create from raw Elixir.
+
+	@:keep
 	public static function create(derList:Term):Term {
 		return untyped __elixir__('(
             ref = make_ref()

@@ -5,5 +5,6 @@
 -lib reflaxe
 -D reflaxe_runtime
 -D elixir_output=out
+-dce full
 --macro reflaxe.elixir.CompilerInit.Start()
 Main

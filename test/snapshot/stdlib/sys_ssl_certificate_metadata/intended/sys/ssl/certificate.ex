@@ -17,15 +17,6 @@ defmodule Certificate do
   def add(struct, pem) do
     CertificateState.add_pem(struct.certificate_ref, pem)
   end
-  def add_der(struct, der) do
-    CertificateState.add_der(struct.certificate_ref, apply(Map.get(der, :__reflaxe_class__) || Map.get(der, :__struct__), :get_data, [der]))
-  end
-  def to_der_list(struct) do
-    CertificateState.der_list(struct.certificate_ref)
-  end
-  def first_der(struct) do
-    CertificateState.der_at(struct.certificate_ref, struct.chain_index)
-  end
   def get_common_name(struct) do
     apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :subject, [struct, "CN"])
   end
@@ -38,19 +29,7 @@ defmodule Certificate do
   def get_not_after(struct) do
     CertificateState.validity_date(struct.certificate_ref, struct.chain_index, true)
   end
-  def load_file(file) do
-    from_string(CertificateState.read_file(file))
-  end
-  def load_path(path) do
-    new(CertificateState.load_path(path), 0)
-  end
   def from_string(str) do
     new(CertificateState.from_pem(str), 0)
-  end
-  def load_defaults() do
-    new(CertificateState.load_defaults(), 0)
-  end
-  def from_der_chain(der_chain) do
-    new(CertificateState.from_der_chain(der_chain), 0)
   end
 end
