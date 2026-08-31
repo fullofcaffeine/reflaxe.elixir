@@ -88,15 +88,15 @@
     },
     "bySupportState": {
       "not-applicable": 1711,
-      "partial": 646,
+      "partial": 660,
       "supported": 755,
-      "unknown": 521,
+      "unknown": 507,
       "unsupported": 59
     },
     "byEvidenceState": {
       "api-runtime": 103,
-      "missing": 964,
-      "module-runtime": 914,
+      "missing": 950,
+      "module-runtime": 928,
       "not-required": 1711
     },
     "byImplementationOwner": {
@@ -3572,8 +3572,8 @@
         "runtime": 14
       },
       "implementationOwner": "reflaxe-elixir-target",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "partial",
+      "evidenceState": "module-runtime",
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
@@ -156966,14 +156966,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSslCertificateMetadataFilesAndChain"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover X.509 names, DNS alternative names, validity dates, PEM input, DER append, file loading, directory loading, traversal, and cleanup. Certificate chain mutation still uses process-local state, so a certificate does not yet preserve its mutable identity after transfer to another Haxe thread.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/ssl/Certificate.hx"
@@ -157009,14 +157015,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSslCertificateMetadataFilesAndChain"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover X.509 names, DNS alternative names, validity dates, PEM input, DER append, file loading, directory loading, traversal, and cleanup. Certificate chain mutation still uses process-local state, so a certificate does not yet preserve its mutable identity after transfer to another Haxe thread.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/ssl/Certificate.hx"
@@ -157052,14 +157064,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSslCertificateMetadataFilesAndChain"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover X.509 names, DNS alternative names, validity dates, PEM input, DER append, file loading, directory loading, traversal, and cleanup. Certificate chain mutation still uses process-local state, so a certificate does not yet preserve its mutable identity after transfer to another Haxe thread.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/ssl/Certificate.hx"
@@ -157095,14 +157113,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSslCertificateMetadataFilesAndChain"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover X.509 names, DNS alternative names, validity dates, PEM input, DER append, file loading, directory loading, traversal, and cleanup. Certificate chain mutation still uses process-local state, so a certificate does not yet preserve its mutable identity after transfer to another Haxe thread.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/ssl/Certificate.hx"
@@ -157138,14 +157162,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSslCertificateMetadataFilesAndChain"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover X.509 names, DNS alternative names, validity dates, PEM input, DER append, file loading, directory loading, traversal, and cleanup. Certificate chain mutation still uses process-local state, so a certificate does not yet preserve its mutable identity after transfer to another Haxe thread.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/ssl/Certificate.hx"
@@ -157181,14 +157211,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSslCertificateMetadataFilesAndChain"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover X.509 names, DNS alternative names, validity dates, PEM input, DER append, file loading, directory loading, traversal, and cleanup. Certificate chain mutation still uses process-local state, so a certificate does not yet preserve its mutable identity after transfer to another Haxe thread.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/ssl/Certificate.hx"
@@ -157224,14 +157260,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSslCertificateMetadataFilesAndChain"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover X.509 names, DNS alternative names, validity dates, PEM input, DER append, file loading, directory loading, traversal, and cleanup. Certificate chain mutation still uses process-local state, so a certificate does not yet preserve its mutable identity after transfer to another Haxe thread.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/ssl/Certificate.hx"
@@ -157267,14 +157309,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSslCertificateMetadataFilesAndChain"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover X.509 names, DNS alternative names, validity dates, PEM input, DER append, file loading, directory loading, traversal, and cleanup. Certificate chain mutation still uses process-local state, so a certificate does not yet preserve its mutable identity after transfer to another Haxe thread.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/ssl/Certificate.hx"
@@ -157310,14 +157358,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSslCertificateMetadataFilesAndChain"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover X.509 names, DNS alternative names, validity dates, PEM input, DER append, file loading, directory loading, traversal, and cleanup. Certificate chain mutation still uses process-local state, so a certificate does not yet preserve its mutable identity after transfer to another Haxe thread.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/ssl/Certificate.hx"
@@ -157353,14 +157407,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSslCertificateMetadataFilesAndChain"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover X.509 names, DNS alternative names, validity dates, PEM input, DER append, file loading, directory loading, traversal, and cleanup. Certificate chain mutation still uses process-local state, so a certificate does not yet preserve its mutable identity after transfer to another Haxe thread.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/ssl/Certificate.hx"
@@ -157396,14 +157456,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSslCertificateMetadataFilesAndChain"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover X.509 names, DNS alternative names, validity dates, PEM input, DER append, file loading, directory loading, traversal, and cleanup. Certificate chain mutation still uses process-local state, so a certificate does not yet preserve its mutable identity after transfer to another Haxe thread.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/ssl/Certificate.hx"
@@ -157439,14 +157505,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSslCertificateMetadataFilesAndChain"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover X.509 names, DNS alternative names, validity dates, PEM input, DER append, file loading, directory loading, traversal, and cleanup. Certificate chain mutation still uses process-local state, so a certificate does not yet preserve its mutable identity after transfer to another Haxe thread.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/ssl/Certificate.hx"
@@ -157482,14 +157554,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSslCertificateMetadataFilesAndChain"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover X.509 names, DNS alternative names, validity dates, PEM input, DER append, file loading, directory loading, traversal, and cleanup. Certificate chain mutation still uses process-local state, so a certificate does not yet preserve its mutable identity after transfer to another Haxe thread.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/ssl/Certificate.hx"
@@ -157533,14 +157611,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSslCertificateMetadataFilesAndChain"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover X.509 names, DNS alternative names, validity dates, PEM input, DER append, file loading, directory loading, traversal, and cleanup. Certificate chain mutation still uses process-local state, so a certificate does not yet preserve its mutable identity after transfer to another Haxe thread.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/ssl/Certificate.hx"

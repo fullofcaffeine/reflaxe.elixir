@@ -293,7 +293,7 @@ state across processes.
 - `sys.net.Host`
 - `sys.net.Socket` (caller-buffer receive behavior below blocks 1.0)
 - `sys.net.UdpSocket` (caller-buffer receive behavior below blocks 1.0)
-- `sys.ssl.Certificate` (current partial implementation; remaining APIs below block 1.0)
+- `sys.ssl.Certificate` (X.509 metadata and same-process chains work; cross-process mutable identity still blocks 1.0)
 - `sys.ssl.Digest`
 - `sys.ssl.DigestAlgorithm`
 - `sys.ssl.Key`
@@ -461,7 +461,8 @@ end
 Supported today:
 
 - `Socket.connect`, `listen`, `accept`, `handshake`, `shutdown`, `peer`, `host`, `setCA`, `setHostname`, `setCertificate`, and `peerCertificate` lower to `:ssl`/`:public_key` surfaces.
-- `Certificate.loadFile`, `loadPath`, `fromString`, `loadDefaults`, `add`, `addDER`, and `next` operate on opaque DER certificate chains suitable for `:ssl` CA/cert options.
+- `Certificate.loadFile`, `loadPath`, `fromString`, `loadDefaults`, `add`, `addDER`, and `next` operate on DER certificate chains suitable for `:ssl` CA/cert options.
+- `Certificate.subject`, `issuer`, `commonName`, `altNames`, `notBefore`, and `notAfter` decode X.509 metadata through `:public_key.pkix_decode_cert/2`.
 - `Key.loadFile`, `readPEM`, and `readDER` create opaque key containers for `:ssl` certificate configuration. `loadFile` detects PEM and DER data. PEM loading supports encrypted private keys when the caller supplies a passphrase.
 - A `Key` stores its decoded immutable OTP term directly. The key remains usable after a Haxe thread sends it to another BEAM process.
 - `Digest.make` maps all Haxe digest names to `:crypto.hash/2`.
@@ -469,7 +470,7 @@ Supported today:
 
 Current unsupported pieces fail explicitly with `haxe.io.Error.Custom` instead of pretending full
 native SSL parity. Each remains a 1.0 blocker:
-- `Certificate.subject`, `issuer`, `commonName`, `altNames`, `notBefore`, and `notAfter` are not implemented yet because Erlang decoded X.509 record shapes are version-sensitive.
+- Certificate chain mutation is process-local. A certificate does not keep its mutable chain identity after transfer to another Haxe thread.
 - `Socket.addSNICertificate` is not implemented yet; use `setCertificate` for a single cert/key pair.
 - Like TCP sockets, `sys.ssl.Socket.input.readBytes(...)` is unsupported until generated `haxe.io.Bytes` can preserve caller-buffer mutations.
 

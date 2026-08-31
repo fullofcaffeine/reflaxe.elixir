@@ -282,11 +282,12 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
 - Coverage: snapshot coverage for Host/Address and socket surfaces, plus generated-runtime smoke for bind/listen and UDP send.
 
 **Task cluster: `sys.ssl.*`**
-- Status: implemented for TLS `Socket` via `:ssl`, opaque DER `Certificate` chains, transferable opaque `Key` containers, digest algorithm constants, hashing, signing, and verification.
+- Status: implemented for TLS `Socket` via `:ssl`, DER `Certificate` chains with X.509 metadata, transferable opaque `Key` containers, digest algorithm constants, hashing, signing, and verification.
 - Contract: SSL sockets use generated target module `SslSocket` to avoid colliding with TCP `Socket`; Haxe-facing code still imports `sys.ssl.Socket`.
+- Certificate behavior: `subject`, `issuer`, `commonName`, alternative names, and validity dates use OTP's public X.509 decoder. PEM and DER certificates can form a chain in one Haxe thread.
 - Key behavior: `loadFile` detects PEM and DER files. PEM readers support encrypted private keys with a passphrase. Decoded immutable OTP key terms remain usable after same-node process transfer.
-- Unsupported: X.509 metadata introspection (`subject`, `issuer`, `commonName`, SAN/date fields), SNI certificate callbacks, and buffer-mutating `input.readBytes` fail explicitly with `Error.Custom`.
-- Coverage: Haxe-authored runtime tests cover every digest algorithm, signatures, all public key loaders, passphrase errors, process transfer, and cleanup. Snapshot coverage also protects digest and SSL socket output.
+- Blocking: Certificate chain mutation uses process-local state. A certificate does not preserve its mutable identity after transfer to another Haxe thread. SNI certificate callbacks and buffer-mutating `input.readBytes` also remain unsupported.
+- Coverage: Haxe-authored runtime tests cover certificate metadata and chains, every digest algorithm, signatures, all public key loaders, passphrase errors, key process transfer, and cleanup. Focused snapshots protect certificate metadata, digest behavior, and SSL socket output.
 
 **Task cluster: `sys.thread.*`**
 - Status: implemented as BEAM process/mailbox primitives, not OS threads.

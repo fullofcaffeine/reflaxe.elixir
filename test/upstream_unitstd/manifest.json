@@ -971,7 +971,7 @@
       "upstreamSpec": "absent",
       "disposition": "applicable",
       "execution": "not-run",
-      "reason": "No matching upstream unitstd spec exists; behavior is BEAM SSL integration specific."
+      "reason": "No matching upstream unitstd spec exists. Local Haxe-authored runtime tests cover X.509 names, alternative names, validity dates, PEM and DER chains, file loading, directory loading, and cleanup."
     },
     {
       "module": "sys.ssl.Digest",

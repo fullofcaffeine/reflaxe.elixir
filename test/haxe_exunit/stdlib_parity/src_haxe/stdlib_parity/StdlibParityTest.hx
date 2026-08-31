@@ -1724,6 +1724,56 @@ class StdlibParityTest extends TestCase {
 		Assert.isFalse(sys.ssl.Digest.verify(Bytes.ofString("changed"), signature, publicKey, sys.ssl.DigestAlgorithm.SHA256));
 	}
 
+	@:describe("sys.ssl.Certificate")
+	@:test
+	function testSslCertificateMetadataFilesAndChain():Void {
+		// These fixed certificates are test data. They do not identify a live service.
+		var leafPem = sslPem("CERTIFICATE", sslLeafCertificateBody());
+		var rootPem = sslPem("CERTIFICATE", sslRootCertificateBody());
+		var certificate = sys.ssl.Certificate.fromString(leafPem);
+
+		Assert.equals("example.test", certificate.subject("CN"));
+		Assert.equals("Reflaxe Elixir Tests", certificate.subject("organizationName"));
+		Assert.equals("Compiler", certificate.subject("2.5.4.11"));
+		Assert.equals(null, certificate.subject("missing-field"));
+		Assert.equals("Reflaxe Root CA", certificate.issuer("CN"));
+		Assert.equals("example.test", certificate.commonName);
+		Assert.equals("example.test,www.example.test", certificate.altNames.join(","));
+		Assert.equals(2026, certificate.notBefore.getUTCFullYear());
+		Assert.equals(7, certificate.notBefore.getUTCMonth());
+		Assert.equals(31, certificate.notBefore.getUTCDate());
+		Assert.equals(5, certificate.notBefore.getUTCHours());
+		Assert.equals(2027, certificate.notAfter.getUTCFullYear());
+		Assert.equals(null, certificate.next());
+
+		certificate.addDER(Base64.decode(sslRootCertificateBody()));
+		var appended = certificate.next();
+		Assert.notNull(appended);
+		Assert.equals("Reflaxe Root CA", appended.commonName);
+		Assert.equals(null, appended.next());
+
+		var directory = "_tmp/reflaxe_ssl_certificate_exunit_contract";
+		if (!sys.FileSystem.exists(directory))
+			sys.FileSystem.createDirectory(directory);
+		var leafPath = directory + "/leaf.pem";
+		var rootPath = directory + "/root.pem";
+		sys.io.File.saveContent(leafPath, leafPem);
+		sys.io.File.saveContent(rootPath, rootPem);
+		Assert.equals("example.test", sys.ssl.Certificate.loadFile(leafPath).commonName);
+		var pathCertificate = sys.ssl.Certificate.loadPath(directory);
+		var pathNames:Array<String> = [];
+		while (pathCertificate != null) {
+			pathNames.push(pathCertificate.commonName);
+			pathCertificate = pathCertificate.next();
+		}
+		Assert.equals(2, pathNames.length);
+		Assert.isTrue(pathNames.indexOf("Reflaxe Root CA") >= 0);
+		Assert.isTrue(pathNames.indexOf("example.test") >= 0);
+		sys.FileSystem.deleteFile(leafPath);
+		sys.FileSystem.deleteFile(rootPath);
+		sys.FileSystem.deleteDirectory(directory);
+	}
+
 	@:describe("sys.ssl.Key")
 	@:test
 	function testSslKeyPemDerFileAndProcessTransfer():Void {
@@ -1795,6 +1845,51 @@ class StdlibParityTest extends TestCase {
 			offset += 64;
 		}
 		return "-----BEGIN " + label + "-----\n" + lines.join("\n") + "\n-----END " + label + "-----\n";
+	}
+
+	static function sslLeafCertificateBody():String {
+		return "MIIDkjCCAnqgAwIBAgIUZ64+bFTy8FCv3/YLmULejl7ZiwcwDQYJKoZIhvcNAQEL"
+			+ "BQAwQTELMAkGA1UEBhMCTVgxGDAWBgNVBAoMD1JlZmxheGUgVGVzdCBDQTEYMBYG"
+			+ "A1UEAwwPUmVmbGF4ZSBSb290IENBMB4XDTI2MDgzMTA1MzIzNVoXDTI3MDgzMTA1"
+			+ "MzIzNVowVjELMAkGA1UEBhMCTVgxHTAbBgNVBAoMFFJlZmxheGUgRWxpeGlyIFRl"
+			+ "c3RzMREwDwYDVQQLDAhDb21waWxlcjEVMBMGA1UEAwwMZXhhbXBsZS50ZXN0MIIB"
+			+ "IjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0AS+3gZjXa5Qxon9ix+SnLsa"
+			+ "GjwtS7n27GDkaUMWJLj/HSJgjAWbuZEgGRacU3SMcpxxj6kbnB/VLyvh6ZFdmEnX"
+			+ "mSm18UiO5WUTpJxWIh8eGtCG6kBDmwjsxafi0SDpq/hY6bfe7rw3XFAdbFUQTBlN"
+			+ "GJS8cXJUO8LMUII51VTO6HafyanooFVmJqvIcP9Jc0WpkC+Pf4kTdCUD0gvgbsQn"
+			+ "H4Qmn9D1MMGsI7cHv1TuBTaiJWDpTXvf6cWDlh/nBWC9pUbd2d7qSYUJe/J592/u"
+			+ "1kGvE7bD37GD1AlGR8iuLeSKbCW3+vZJshAMmOpVSMeCf89eRp0P+apiySMMjwID"
+			+ "AQABo20wazApBgNVHREEIjAgggxleGFtcGxlLnRlc3SCEHd3dy5leGFtcGxlLnRl"
+			+ "c3QwHQYDVR0OBBYEFGzQHNO8KrFXIT9mdw2lGchbIAUbMB8GA1UdIwQYMBaAFK34"
+			+ "yu1WVEKTMPYsMvVtQFeGgRa2MA0GCSqGSIb3DQEBCwUAA4IBAQCJJhxUUiNknNEW"
+			+ "0V1pEIqMpyDOkraG6Lpo0kDTiMf3kKJJJoCtusKxYNu/4uJ+6qHgyZvbAT1K4yaB"
+			+ "lSGVl09m2QhV16SCUFBwqObhWG190z0gAkglyhfEn66O92KuOUWielG6kYsxdv96"
+			+ "VsrQ3JEQujOeCVpT+Z+61h3f/YlkxAaHqOGlNQpo/QKFjAxMDqPvbIfDGU0zV+AG"
+			+ "Zw7zG0+treqoNzK7BIG1UzPqjXT41zyOve4Q5JTvmtPoWo3YvnqF+FqqkfQaAYU7"
+			+ "psIh5pUBw5vK2ghmhq9E/wb4MAZpswzD+4VeSEwsbUjfU3DWexKbvLA5O1wKukfH"
+			+ "pGsqGJGl";
+	}
+
+	static function sslRootCertificateBody():String {
+		return "MIIDYzCCAkugAwIBAgIUa46EOG9aPLgRJKLPoew3RJvehBEwDQYJKoZIhvcNAQEL"
+			+ "BQAwQTELMAkGA1UEBhMCTVgxGDAWBgNVBAoMD1JlZmxheGUgVGVzdCBDQTEYMBYG"
+			+ "A1UEAwwPUmVmbGF4ZSBSb290IENBMB4XDTI2MDgzMTA1MzIzNVoXDTM2MDgyODA1"
+			+ "MzIzNVowQTELMAkGA1UEBhMCTVgxGDAWBgNVBAoMD1JlZmxheGUgVGVzdCBDQTEY"
+			+ "MBYGA1UEAwwPUmVmbGF4ZSBSb290IENBMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A"
+			+ "MIIBCgKCAQEAoxaBDD23jYSmqMzqfiotTC9JwGF+3BN65zHxVVKuAdmRP4D++OI2"
+			+ "DT7U07WIUkwfp6aeXTsOv2qiuXSzv+Nr6sVbxgApGlMLAtslBOGXldUpXbrhsnc+"
+			+ "cwAbav+jEtnxtBSM6UOUGtax34P2Tl7bHXJhv+Kj49xKpLxIJjuO1PhfF3nDJrPt"
+			+ "ZsFedMbyYp9yAVz87UhB+T8YVQ2806NibaoZA7JeOLlze48dOh4rDi2kF4tB9yyz"
+			+ "nThgobWhCzpT+WgNJls2h5xuCfBOPhk7y0AWpiRtd72OzVPw7Y4tkaYy+w/yTsGQ"
+			+ "UCBWXRr9JwlTOUw64HJq+9m5jvmfrSqpHQIDAQABo1MwUTAdBgNVHQ4EFgQUrfjK"
+			+ "7VZUQpMw9iwy9W1AV4aBFrYwHwYDVR0jBBgwFoAUrfjK7VZUQpMw9iwy9W1AV4aB"
+			+ "FrYwDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAHGq3hWpw7n8O"
+			+ "CsmjV0vyjUDthhgNCGvvBzYZ4qRai9TGLkZucdOct8cXBsDNIF5MLvGP46hd4L4r"
+			+ "SKLj1RNew2Gv9hG9fdaWsRFfMX04jtYgZhsZSjwsmGkztVPqwXr0Wl/A/JCI4wjw"
+			+ "DR70HMad+sxJRNpHZ2i/Awbu7loLxxI/Ih2PdW0asX807kOqjR/7figPlGASPnFB"
+			+ "59HAvgKUDENIqE70sEPdN75qhrsxL/hc4orThdw8aujZlRYzrxxVOkkPwAni+z0Y"
+			+ "62CGAKaux3VRJ3Kij+Nx+2vH16G/4iDkSRQvyOlye0mcVAnmi96zx8d7/69v/iXb"
+			+ "2FeXHBnJuQ==";
 	}
 
 	static function encryptedPrivateKeyPem():String {

@@ -2,23 +2,24 @@ package sys.ssl;
 
 import elixir.types.Term;
 import haxe.io.Bytes;
-import haxe.io.Error;
 
 /**
  * sys.ssl.Certificate (Elixir target)
  *
  * WHAT
- * - Opaque certificate chain container backed by DER binaries.
+ * - Certificate chain container backed by DER binaries.
  *
  * WHY
  * - BEAM `:ssl` accepts DER certificate chains directly, which is enough for
  *   CA configuration, peer certificates, and server certificates.
- * - Full X.509 field introspection is intentionally not claimed yet because
- *   Erlang's decoded record shapes are version-sensitive.
+ * - Haxe programs can inspect common X.509 names, DNS alternative names, and
+ *   validity dates without depending on Erlang record declarations.
  *
  * HOW
  * - PEM input is decoded with `:public_key.pem_decode/1`.
  * - DER input is stored as-is.
+ * - Metadata is decoded with `:public_key.pkix_decode_cert/2`. The target
+ *   boundary validates each OTP tuple before it reads a record field.
  * - Mutating Haxe APIs (`add`, `addDER`) update process-local state behind an
  *   opaque reference, mirroring `sys.net` socket/address mutability.
  */
@@ -58,11 +59,11 @@ class Certificate {
 	}
 
 	public function subject(field:String):Null<String> {
-		throw Error.Custom("sys.ssl.Certificate.subject is not supported on the Elixir target yet; certificates are currently opaque DER chains for :ssl configuration");
+		return CertificateState.nameField(certificateRef, chainIndex, false, field);
 	}
 
 	public function issuer(field:String):Null<String> {
-		throw Error.Custom("sys.ssl.Certificate.issuer is not supported on the Elixir target yet; certificates are currently opaque DER chains for :ssl configuration");
+		return CertificateState.nameField(certificateRef, chainIndex, true, field);
 	}
 
 	public function next():Null<Certificate> {
@@ -92,19 +93,167 @@ class Certificate {
 	}
 
 	function get_altNames():Array<String> {
-		throw Error.Custom("sys.ssl.Certificate.altNames is not supported on the Elixir target yet; certificates are currently opaque DER chains for :ssl configuration");
+		return CertificateState.altNames(certificateRef, chainIndex);
 	}
 
 	function get_notBefore():Date {
-		throw Error.Custom("sys.ssl.Certificate.notBefore is not supported on the Elixir target yet; certificates are currently opaque DER chains for :ssl configuration");
+		return CertificateState.validityDate(certificateRef, chainIndex, false);
 	}
 
 	function get_notAfter():Date {
-		throw Error.Custom("sys.ssl.Certificate.notAfter is not supported on the Elixir target yet; certificates are currently opaque DER chains for :ssl configuration");
+		return CertificateState.validityDate(certificateRef, chainIndex, true);
 	}
 }
 
 private class CertificateState {
+	/**
+	 * Read one X.509 distinguished-name field through OTP's public decoder.
+	 * This function contains the raw Erlang record boundary and validates all
+	 * tuple tags before it reads their positional fields.
+	 */
+	public static function nameField(certificateRef:Term, index:Int, issuer:Bool, field:String):Null<String> {
+		return untyped __elixir__('(
+            der = CertificateState.der_at({0}, {1})
+            certificate = :public_key.pkix_decode_cert(der, :otp)
+            tbs =
+              case certificate do
+                {:OTPCertificate, value, _signature_algorithm, _signature} -> value
+                other -> raise "sys.ssl.Certificate: unsupported OTP certificate shape: #{inspect(other)}"
+              end
+            name =
+              case tbs do
+                {:OTPTBSCertificate, _version, _serial, _signature, issuer_name, _validity, subject_name, _spki, _issuer_uid, _subject_uid, _extensions} ->
+                  if {2}, do: issuer_name, else: subject_name
+                other -> raise "sys.ssl.Certificate: unsupported OTP certificate body shape: #{inspect(other)}"
+              end
+            requested_oid =
+              case String.downcase({3}) do
+                "cn" -> {2, 5, 4, 3}
+                "commonname" -> {2, 5, 4, 3}
+                "sn" -> {2, 5, 4, 4}
+                "surname" -> {2, 5, 4, 4}
+                "serialnumber" -> {2, 5, 4, 5}
+                "c" -> {2, 5, 4, 6}
+                "countryname" -> {2, 5, 4, 6}
+                "l" -> {2, 5, 4, 7}
+                "localityname" -> {2, 5, 4, 7}
+                "st" -> {2, 5, 4, 8}
+                "stateorprovincename" -> {2, 5, 4, 8}
+                "street" -> {2, 5, 4, 9}
+                "streetaddress" -> {2, 5, 4, 9}
+                "o" -> {2, 5, 4, 10}
+                "organizationname" -> {2, 5, 4, 10}
+                "ou" -> {2, 5, 4, 11}
+                "organizationalunitname" -> {2, 5, 4, 11}
+                "title" -> {2, 5, 4, 12}
+                "description" -> {2, 5, 4, 13}
+                "postalcode" -> {2, 5, 4, 17}
+                "givenname" -> {2, 5, 4, 42}
+                "initials" -> {2, 5, 4, 43}
+                "generationqualifier" -> {2, 5, 4, 44}
+                "dnqualifier" -> {2, 5, 4, 46}
+                "pseudonym" -> {2, 5, 4, 65}
+                "emailaddress" -> {1, 2, 840, 113549, 1, 9, 1}
+                "dc" -> {0, 9, 2342, 19200300, 100, 1, 25}
+                "domaincomponent" -> {0, 9, 2342, 19200300, 100, 1, 25}
+                "uid" -> {0, 9, 2342, 19200300, 100, 1, 1}
+                "userid" -> {0, 9, 2342, 19200300, 100, 1, 1}
+                dotted ->
+                  try do
+                    dotted |> String.split(".") |> Enum.map(&String.to_integer/1) |> List.to_tuple()
+                  rescue
+                    _ -> nil
+                  end
+              end
+            decode_value = fn
+              value when is_binary(value) -> value
+              value when is_list(value) -> :unicode.characters_to_binary(value)
+              {_kind, value} when is_binary(value) -> value
+              {_kind, value} when is_list(value) -> :unicode.characters_to_binary(value)
+              value -> raise "sys.ssl.Certificate: unsupported X.509 name value: #{inspect(value)}"
+            end
+            case {name, requested_oid} do
+              {_, nil} -> nil
+              {{:rdnSequence, groups}, oid} when is_list(groups) ->
+                groups
+                |> List.flatten()
+                |> Enum.find_value(fn
+                  {:AttributeTypeAndValue, ^oid, value} -> decode_value.(value)
+                  _ -> nil
+                end)
+              {other, _oid} -> raise "sys.ssl.Certificate: unsupported X.509 name shape: #{inspect(other)}"
+            end
+        )', certificateRef, index, issuer, field);
+	}
+
+	/** Return DNS, email, URI, and IP subject alternative names as strings. */
+	public static function altNames(certificateRef:Term, index:Int):Array<String> {
+		return untyped __elixir__('(
+            der = CertificateState.der_at({0}, {1})
+            certificate = :public_key.pkix_decode_cert(der, :otp)
+            extensions =
+              case certificate do
+                {:OTPCertificate, {:OTPTBSCertificate, _version, _serial, _tbs_signature, _issuer, _validity, _subject, _spki, _issuer_uid, _subject_uid, value}, _signature_algorithm, _certificate_signature} -> value
+                other -> raise "sys.ssl.Certificate: unsupported OTP certificate shape: #{inspect(other)}"
+              end
+            names =
+              Enum.find_value(List.wrap(extensions), [], fn
+                {:Extension, {2, 5, 29, 17}, _critical, value} -> value
+                _ -> nil
+              end)
+            names
+            |> Enum.flat_map(fn
+              {:dNSName, value} -> [:unicode.characters_to_binary(value)]
+              {:rfc822Name, value} -> [:unicode.characters_to_binary(value)]
+              {:uniformResourceIdentifier, value} -> [:unicode.characters_to_binary(value)]
+              {:iPAddress, value} when is_binary(value) ->
+                address =
+                  case value do
+                    <<a, b, c, d>> -> {a, b, c, d}
+                    <<a::16, b::16, c::16, d::16, e::16, f::16, g::16, h::16>> -> {a, b, c, d, e, f, g, h}
+                    _ -> nil
+                  end
+                case address do
+                  nil -> []
+                  tuple ->
+                    case :inet.ntoa(tuple) do
+                      {:error, _reason} -> []
+                      chars -> [:unicode.characters_to_binary(chars)]
+                    end
+                end
+              _ -> []
+            end)
+        )', certificateRef, index);
+	}
+
+	/** Convert an RFC 5280 UTC or generalized validity time to Haxe Date. */
+	public static function validityDate(certificateRef:Term, index:Int, useNotAfter:Bool):Date {
+		return untyped __elixir__('(
+            der = CertificateState.der_at({0}, {1})
+            certificate = :public_key.pkix_decode_cert(der, :otp)
+            encoded_time =
+              case certificate do
+                {:OTPCertificate, {:OTPTBSCertificate, _version, _serial, _tbs_signature, _issuer, {:Validity, not_before, not_after}, _subject, _spki, _issuer_uid, _subject_uid, _extensions}, _signature_algorithm, _certificate_signature} ->
+                  if {2}, do: not_after, else: not_before
+                other -> raise "sys.ssl.Certificate: unsupported OTP certificate validity shape: #{inspect(other)}"
+              end
+            {year, month, day, hour, minute, second} =
+              case encoded_time do
+                {:utcTime, value} ->
+                  <<short_year::binary-size(2), month::binary-size(2), day::binary-size(2), hour::binary-size(2), minute::binary-size(2), second::binary-size(2), "Z">> = :unicode.characters_to_binary(value)
+                  short_year = String.to_integer(short_year)
+                  year = if short_year >= 50, do: short_year + 1900, else: short_year + 2000
+                  {year, String.to_integer(month), String.to_integer(day), String.to_integer(hour), String.to_integer(minute), String.to_integer(second)}
+                {kind, value} when kind in [:generalTime, :generalizedTime] ->
+                  <<year::binary-size(4), month::binary-size(2), day::binary-size(2), hour::binary-size(2), minute::binary-size(2), second::binary-size(2), "Z">> = :unicode.characters_to_binary(value)
+                  {String.to_integer(year), String.to_integer(month), String.to_integer(day), String.to_integer(hour), String.to_integer(minute), String.to_integer(second)}
+                other -> raise "sys.ssl.Certificate: unsupported X.509 validity time: #{inspect(other)}"
+              end
+            {:ok, naive} = NaiveDateTime.new(year, month, day, hour, minute, second)
+            DateTime.from_naive!(naive, "Etc/UTC")
+        )', certificateRef, index, useNotAfter);
+	}
+
 	public static function readFile(file:String):String {
 		return untyped __elixir__('File.read!({0})', file);
 	}
