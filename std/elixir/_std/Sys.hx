@@ -137,10 +137,14 @@ class Sys {
 	/**
 	 * Sets the value of an environment variable.
 	 * @param s The name of the environment variable
-	 * @param v The value to set
+	 * @param v The value to set. If this value is null, the function removes the variable.
 	 */
-	public static inline function putEnv(s:String, v:String):Void {
-		untyped __elixir__('System.put_env({0}, {1})', s, v);
+	public static inline function putEnv(s:String, v:Null<String>):Void {
+		if (v == null) {
+			untyped __elixir__('System.delete_env({0})', s);
+		} else {
+			untyped __elixir__('System.put_env({0}, {1})', s, v);
+		}
 	}
 
 	/**
@@ -176,23 +180,33 @@ class Sys {
 	}
 
 	/**
-	 * Executes a command in the system shell.
+	 * Executes a command and forwards its output to the current process.
+	 * If args is null, cmd can contain shell syntax.
+	 * If args is present, each array item is one direct command argument.
 	 * @param cmd The command to execute
 	 * @param args Optional arguments for the command
 	 * @return The exit code of the command
 	 */
 	public static function command(cmd:String, ?args:Array<String>):Int {
-		if (args == null || args.length == 0) {
+		if (args == null) {
 			return untyped __elixir__('
-                case System.cmd("sh", ["-c", {0}]) do
-                    {_, 0} -> 0
-                    {_, code} -> code
+                {shell, shell_args} =
+                  case :os.type() do
+                    {:win32, _} -> {"cmd", ["/d", "/s", "/c", {0}]}
+                    _ -> {"sh", ["-c", {0}]}
+                  end
+
+				case System.cmd(shell, shell_args) do
+                    {output, code} ->
+                      IO.write(output)
+                      code
                 end', cmd);
 		} else {
 			return untyped __elixir__('
-                case System.cmd({0}, {1}) do
-                    {_, 0} -> 0
-                    {_, code} -> code
+				case System.cmd({0}, {1}) do
+                    {output, code} ->
+                      IO.write(output)
+                      code
                 end', cmd, args);
 		}
 	}
@@ -202,7 +216,7 @@ class Sys {
 	 * @return The current time in seconds
 	 */
 	public static inline function time():Float {
-		return untyped __elixir__('System.system_time(:second)');
+		return untyped __elixir__('System.system_time(:nanosecond) / 1_000_000_000.0');
 	}
 
 	/**
@@ -226,17 +240,17 @@ class Sys {
 	}
 
 	/**
-	 * Returns the name of the operating system.
-	 * @return The OS name (e.g., "linux", "darwin", "windows")
+	 * Returns the Haxe name for the operating system.
+	 * @return One of "BSD", "Linux", "Mac", or "Windows"
 	 */
 	public static function systemName():String {
 		return untyped __elixir__('
             case :os.type() do
-                {:unix, :linux} -> "linux"
-                {:unix, :darwin} -> "darwin"
-                {:win32, _} -> "windows"
-                {:unix, name} -> Atom.to_string(name)
-                {family, name} -> Atom.to_string(family) <> "_" <> Atom.to_string(name)
+                {:unix, :linux} -> "Linux"
+                {:unix, :darwin} -> "Mac"
+                {:win32, _} -> "Windows"
+                {:unix, _} -> "BSD"
+                _ -> "BSD"
             end
         ');
 	}
@@ -271,11 +285,8 @@ class Sys {
 	 * @return True if the locale was set successfully
 	 */
 	public static function setTimeLocale(loc:String):Bool {
-		// Elixir/BEAM doesn't have a direct equivalent to setlocale
-		// We can set the application environment for locale
-		untyped __elixir__('
-            Application.put_env(:elixir, :locale, {0})
-        ', loc);
-		return true;
+		// BEAM has no process-wide setlocale operation that changes DateTools.
+		// Report the unsupported change instead of recording an unused setting.
+		return untyped __elixir__('(is_binary({0}) and false)', loc);
 	}
 }

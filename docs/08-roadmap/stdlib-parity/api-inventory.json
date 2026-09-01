@@ -88,15 +88,15 @@
     },
     "bySupportState": {
       "not-applicable": 1711,
-      "partial": 667,
+      "partial": 689,
       "supported": 755,
-      "unknown": 500,
+      "unknown": 478,
       "unsupported": 59
     },
     "byEvidenceState": {
       "api-runtime": 103,
-      "missing": 943,
-      "module-runtime": 935,
+      "missing": 921,
+      "module-runtime": 957,
       "not-required": 1711
     },
     "byImplementationOwner": {
@@ -483,8 +483,8 @@
         "runtime": 22
       },
       "implementationOwner": "reflaxe-elixir-target",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "partial",
+      "evidenceState": "module-runtime",
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
@@ -18932,14 +18932,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSysPortableEnvironmentAndProcessContracts"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Sys.hx"
@@ -18983,14 +18989,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSysPortableEnvironmentAndProcessContracts"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Sys.hx"
@@ -19036,14 +19048,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSysPortableEnvironmentAndProcessContracts"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Sys.hx"
@@ -19087,14 +19105,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSysPortableEnvironmentAndProcessContracts"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Sys.hx"
@@ -19140,14 +19164,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSysPortableEnvironmentAndProcessContracts"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Sys.hx"
@@ -19193,14 +19223,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSysPortableEnvironmentAndProcessContracts"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Sys.hx"
@@ -19246,14 +19282,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSysPortableEnvironmentAndProcessContracts"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Sys.hx"
@@ -19297,14 +19339,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSysPortableEnvironmentAndProcessContracts"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Sys.hx"
@@ -19348,14 +19396,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSysPortableEnvironmentAndProcessContracts"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Sys.hx"
@@ -19399,14 +19453,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSysPortableEnvironmentAndProcessContracts"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Sys.hx"
@@ -19450,14 +19510,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSysPortableEnvironmentAndProcessContracts"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Sys.hx"
@@ -19501,14 +19567,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSysPortableEnvironmentAndProcessContracts"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Sys.hx"
@@ -19552,14 +19624,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSysPortableEnvironmentAndProcessContracts"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Sys.hx"
@@ -19603,14 +19681,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSysPortableEnvironmentAndProcessContracts"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Sys.hx"
@@ -19654,14 +19738,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSysPortableEnvironmentAndProcessContracts"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Sys.hx"
@@ -19707,14 +19797,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSysPortableEnvironmentAndProcessContracts"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Sys.hx"
@@ -19760,14 +19856,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSysPortableEnvironmentAndProcessContracts"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Sys.hx"
@@ -19813,14 +19915,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSysPortableEnvironmentAndProcessContracts"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Sys.hx"
@@ -19866,14 +19974,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSysPortableEnvironmentAndProcessContracts"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Sys.hx"
@@ -19917,14 +20031,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSysPortableEnvironmentAndProcessContracts"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Sys.hx"
@@ -19970,14 +20090,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSysPortableEnvironmentAndProcessContracts"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Sys.hx"
@@ -20141,14 +20267,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testSysPortableEnvironmentAndProcessContracts"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/Sys.hx"

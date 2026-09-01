@@ -58,9 +58,9 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 | Support state | API rows |
 |---|---:|
 | `not-applicable` | 1,711 |
-| `partial` | 667 |
+| `partial` | 689 |
 | `supported` | 755 |
-| `unknown` | 500 |
+| `unknown` | 478 |
 | `unsupported` | 59 |
 
 ## Counts by evidence state
@@ -68,8 +68,8 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 | Evidence state | API rows |
 |---|---:|
 | `api-runtime` | 103 |
-| `missing` | 943 |
-| `module-runtime` | 935 |
+| `missing` | 921 |
+| `module-runtime` | 957 |
 | `not-required` | 1,711 |
 
 ## Module review list
@@ -95,7 +95,7 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 | `String` | 31 | `other-target` (17) + `runtime` (14) | `reflaxe-elixir-target` | `partial` | `module-runtime` | `haxe.elixir.codex-0yn.10.3.14.6`, `haxe.elixir.codex-0yn.10.5` |
 | `StringBuf` | 7 | `runtime` (7) | `reflaxe-elixir-target` | `partial` | `module-runtime` | `haxe.elixir.codex-0yn.10.3.14.5`, `haxe.elixir.codex-0yn.10.5` |
 | `StringTools` | 24 | `runtime` (24) | `reflaxe-elixir-target` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.5` |
-| `Sys` | 26 | `other-target` (4) + `runtime` (22) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
+| `Sys` | 26 | `other-target` (4) + `runtime` (22) | `reflaxe-elixir-target` | `partial` | `module-runtime` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
 | `Type` | 32 | `other-target` (1) + `runtime` (31) | `reflaxe-elixir-target` | `partial` | `missing` | `haxe.elixir.codex-0yn.10.3.9`, `haxe.elixir.codex-0yn.10.5` |
 | `UInt` | 1 | `runtime` (1) | `reflaxe-elixir-target` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.5` |
 | `UnicodeString` | 12 | `other-target` (7) + `runtime` (5) | `reflaxe-elixir-target` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.5` |

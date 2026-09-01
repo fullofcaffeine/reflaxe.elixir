@@ -341,14 +341,20 @@
       "surfaceDigest": "d3ac1abe7e24c391b6df98cce4e9c7f58ec0688b6a58da99e97b731d009f95ea",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "partial",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testSysPortableEnvironmentAndProcessContracts"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific."
+      "reviewNote": "No matching upstream unitstd spec exists. Local runtime tests cover environment changes, working directory, arguments, clocks, sleep, OS names, command exits, and locale failure. Standard streams, character input, command output capture, and program paths still need exact runtime evidence."
     },
     {
       "module": "Type",

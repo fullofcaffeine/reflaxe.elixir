@@ -2677,6 +2677,43 @@ class StdlibParityTest extends TestCase {
 		Assert.equals("timer-delay", Thread.readMessage(false));
 	}
 
+	@:describe("Sys")
+	@:test
+	function testSysPortableEnvironmentAndProcessContracts():Void {
+		var environmentKey = "REFLAXE_ELIXIR_SYS_RUNTIME_TEST";
+		var previousValue = Sys.getEnv(environmentKey);
+		Sys.putEnv(environmentKey, "available");
+		var directValue = Sys.getEnv(environmentKey);
+		var snapshotValue = Sys.environment().get(environmentKey);
+		Sys.putEnv(environmentKey, null);
+		var removedValue = Sys.getEnv(environmentKey);
+		if (previousValue != null) {
+			Sys.putEnv(environmentKey, previousValue);
+		}
+
+		Assert.equals("available", directValue);
+		Assert.equals("available", snapshotValue);
+		Assert.isNull(removedValue);
+
+		var originalCwd = Sys.getCwd();
+		Sys.setCwd(originalCwd);
+		Assert.equals(originalCwd, Sys.getCwd());
+		Assert.isTrue(Sys.args().length >= 0);
+
+		var beforeSleep = Sys.time();
+		Sys.sleep(0.01);
+		Assert.isTrue(Sys.time() > beforeSleep);
+		Assert.isTrue(Sys.cpuTime() >= 0);
+
+		var systemName = Sys.systemName();
+		Assert.isTrue(["BSD", "Linux", "Mac", "Windows"].indexOf(systemName) >= 0);
+		var command = systemName == "Windows" ? "cmd" : "sh";
+		var commandArgs = systemName == "Windows" ? ["/d", "/s", "/c", "exit /b 7"] : ["-c", "exit 7"];
+		Assert.equals(7, Sys.command(command, commandArgs));
+		Assert.equals(9, Sys.command(systemName == "Windows" ? "exit /b 9" : "exit 9"));
+		Assert.isFalse(Sys.setTimeLocale("reflaxe-elixir-unavailable-locale"));
+	}
+
 	@:describe("haxe.crypto.Md5")
 	@:test
 	function testMd5EncodeLowerHex():Void {

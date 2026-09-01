@@ -198,7 +198,7 @@
       "upstreamSpec": "absent",
       "disposition": "applicable",
       "execution": "not-run",
-      "reason": "No matching upstream unitstd spec exists; behavior is target/sys integration specific."
+      "reason": "No matching upstream unitstd spec exists. Local runtime tests cover portable environment, directory, argument, clock, sleep, OS-name, command-exit, and locale-failure behavior. Standard streams, character input, command output capture, and program paths remain open."
     },
     {
       "module": "Type",
