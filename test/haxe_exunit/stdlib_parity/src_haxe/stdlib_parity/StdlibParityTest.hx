@@ -1668,11 +1668,12 @@ class StdlibParityTest extends TestCase {
 	function testHttpGetCallbacksParametersAndHeaders():Void {
 		var port = HttpContractServer.start("GET", "/search?name=a%20b%26c%3Dd%2F%2B%3F%20%C3%A9", 200, "get-ok");
 		var http = new haxe.Http('http://127.0.0.1:$port/search');
+		var testThread = Thread.current();
 
 		http.setParameter("name", "a b&c=d/+? é");
-		http.onStatus = nextStatus -> Thread.current().sendMessage('status:$nextStatus');
-		http.onData = nextData -> Thread.current().sendMessage('data:$nextData');
-		http.onBytes = nextBytes -> Thread.current().sendMessage('bytes:${nextBytes.toString()}');
+		http.onStatus = nextStatus -> testThread.sendMessage('status:$nextStatus');
+		http.onData = nextData -> testThread.sendMessage('data:$nextData');
+		http.onBytes = nextBytes -> testThread.sendMessage('bytes:${nextBytes.toString()}');
 		http.request(false);
 
 		Assert.equals("status:200", Thread.readMessage(false));
@@ -1690,7 +1691,8 @@ class StdlibParityTest extends TestCase {
 	function testHttpPostReuseCustomMethodAndStatusError():Void {
 		var firstPort = HttpContractServer.start("POST", "payload&value", 201, "first-post");
 		var http = new sys.Http('http://127.0.0.1:$firstPort/submit');
-		http.onData = nextData -> Thread.current().sendMessage(nextData);
+		var testThread = Thread.current();
+		http.onData = nextData -> testThread.sendMessage(nextData);
 		http.setPostData("payload&value");
 		http.request(true);
 		Assert.equals("first-post", Thread.readMessage(false));
@@ -1709,8 +1711,8 @@ class StdlibParityTest extends TestCase {
 
 		var errorPort = HttpContractServer.start("GET", "/missing", 404, "missing-body");
 		var failed = new haxe.Http('http://127.0.0.1:$errorPort/missing');
-		failed.onStatus = nextStatus -> Thread.current().sendMessage('status:$nextStatus');
-		failed.onError = nextMessage -> Thread.current().sendMessage('error:$nextMessage');
+		failed.onStatus = nextStatus -> testThread.sendMessage('status:$nextStatus');
+		failed.onError = nextMessage -> testThread.sendMessage('error:$nextMessage');
 		failed.request(false);
 		Assert.equals("status:404", Thread.readMessage(false));
 		Assert.equals("error:Http Error #404", Thread.readMessage(false));
