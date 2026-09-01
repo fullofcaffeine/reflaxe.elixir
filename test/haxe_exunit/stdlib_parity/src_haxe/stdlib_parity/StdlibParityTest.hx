@@ -2716,6 +2716,23 @@ class StdlibParityTest extends TestCase {
 
 	@:describe("Sys")
 	@:test
+	function testSysCommandForwardsOutput():Void {
+		var systemName = Sys.systemName();
+		var directCommand = systemName == "Windows" ? "cmd" : "sh";
+		var directArgs = systemName == "Windows" ? ["/d", "/s", "/c", "echo direct-output"] : ["-c", "printf direct-output"];
+		var directOutput = ExUnitCaptureIO.capture(function() {
+			Assert.equals(0, Sys.command(directCommand, directArgs));
+		});
+		Assert.equals(systemName == "Windows" ? "direct-output\r\n" : "direct-output", directOutput);
+
+		var shellOutput = ExUnitCaptureIO.capture(function() {
+			Assert.equals(0, Sys.command(systemName == "Windows" ? "echo shell-output" : "printf shell-output"));
+		});
+		Assert.equals(systemName == "Windows" ? "shell-output\r\n" : "shell-output", shellOutput);
+	}
+
+	@:describe("Sys")
+	@:test
 	function testSysStandardStreamsAndCharacters():Void {
 		var inputOutput = ExUnitCaptureIO.captureWithInput("abc\n", function() {
 			var input = Sys.stdin();
