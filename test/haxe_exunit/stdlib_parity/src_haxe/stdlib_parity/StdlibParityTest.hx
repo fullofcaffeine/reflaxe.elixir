@@ -1663,6 +1663,60 @@ class StdlibParityTest extends TestCase {
 		Assert.equals(599, customCode);
 	}
 
+	@:describe("haxe.Http and sys.Http")
+	@:test
+	function testHttpGetCallbacksParametersAndHeaders():Void {
+		var port = HttpContractServer.start("GET", "/search?name=a%20b%26c%3Dd%2F%2B%3F%20%C3%A9", 200, "get-ok");
+		var http = new haxe.Http('http://127.0.0.1:$port/search');
+
+		http.setParameter("name", "a b&c=d/+? é");
+		http.onStatus = nextStatus -> Thread.current().sendMessage('status:$nextStatus');
+		http.onData = nextData -> Thread.current().sendMessage('data:$nextData');
+		http.onBytes = nextBytes -> Thread.current().sendMessage('bytes:${nextBytes.toString()}');
+		http.request(false);
+
+		Assert.equals("status:200", Thread.readMessage(false));
+		Assert.equals("data:get-ok", Thread.readMessage(false));
+		Assert.equals("bytes:get-ok", Thread.readMessage(false));
+		Assert.equals("get-ok", http.responseData);
+		Assert.equals("get-ok", http.responseBytes.toString());
+		Assert.equals("two", http.responseHeaders.get("x-test"));
+		Assert.equals(["one", "two"], http.getResponseHeaderValues("x-test"));
+		Assert.isNull(http.getResponseHeaderValues("missing"));
+	}
+
+	@:describe("haxe.Http and sys.Http")
+	@:test
+	function testHttpPostReuseCustomMethodAndStatusError():Void {
+		var firstPort = HttpContractServer.start("POST", "payload&value", 201, "first-post");
+		var http = new sys.Http('http://127.0.0.1:$firstPort/submit');
+		http.onData = nextData -> Thread.current().sendMessage(nextData);
+		http.setPostData("payload&value");
+		http.request(true);
+		Assert.equals("first-post", Thread.readMessage(false));
+
+		var secondPort = HttpContractServer.start("POST", "payload&value", 200, "second-post");
+		http.url = 'http://127.0.0.1:$secondPort/submit-again';
+		http.request(true);
+		Assert.equals("second-post", Thread.readMessage(false));
+
+		var putPort = HttpContractServer.start("PUT", "custom-body", 200, "put-ok");
+		var custom = new sys.Http('http://127.0.0.1:$putPort/resource');
+		var output = new BytesOutput();
+		custom.setPostBytes(Bytes.ofString("custom-body"));
+		custom.customRequest(false, output, null, "PUT");
+		Assert.equals("put-ok", output.getBytes().toString());
+
+		var errorPort = HttpContractServer.start("GET", "/missing", 404, "missing-body");
+		var failed = new haxe.Http('http://127.0.0.1:$errorPort/missing');
+		failed.onStatus = nextStatus -> Thread.current().sendMessage('status:$nextStatus');
+		failed.onError = nextMessage -> Thread.current().sendMessage('error:$nextMessage');
+		failed.request(false);
+		Assert.equals("status:404", Thread.readMessage(false));
+		Assert.equals("error:Http Error #404", Thread.readMessage(false));
+		Assert.equals("missing-body", failed.responseBytes.toString());
+	}
+
 	@:describe("sys.io.FileSeek")
 	@:test
 	function testFileSeekConstructors():Void {
@@ -2947,4 +3001,79 @@ extern class ExUnitCaptureIO {
 
 	@:native("capture_io")
 	static function captureDevice(device:reflaxe.elixir.runtime.StandardIODevice, callback:() -> Void):String;
+}
+
+/**
+ * Bounded test server for the public HTTP client contract.
+ * Raw BEAM TCP is isolated here because Haxe has no HTTP server test API.
+ * The server accepts one request and applies five-second accept and receive limits.
+ */
+@:noCompletion
+class HttpContractServer {
+	public static function start(expectedMethod:String, expectedNeedle:String, status:Int, responseBody:String):Int {
+		return untyped __elixir__('
+            (fn ->
+              {:ok, listener} =
+                :gen_tcp.listen(0, [
+                  :binary,
+                  {:active, false},
+                  {:packet, :raw},
+                  {:reuseaddr, true},
+                  {:ip, {127, 0, 0, 1}}
+                ])
+
+              {:ok, {{127, 0, 0, 1}, port}} = :inet.sockname(listener)
+
+              spawn(fn ->
+                case :gen_tcp.accept(listener, 5_000) do
+                  {:ok, socket} ->
+                    read_until_expected = fn read_until_expected, received ->
+                      if String.contains?(received, {1}) do
+                        {:ok, received}
+                      else
+                        case :gen_tcp.recv(socket, 0, 5_000) do
+                          {:ok, chunk} -> read_until_expected.(read_until_expected, received <> chunk)
+                          {:error, _reason} -> {:ok, received}
+                        end
+                      end
+                    end
+
+                    case read_until_expected.(read_until_expected, "") do
+                      {:ok, request} ->
+                        request_ok =
+                          String.starts_with?(request, {0} <> " ") and
+                            String.contains?(request, {1})
+
+                        actual_status = if request_ok, do: {2}, else: 500
+                        body = if request_ok, do: {3}, else: "server request mismatch"
+                        reason = if actual_status >= 400, do: "ERROR", else: "OK"
+                        crlf = <<13, 10>>
+
+                        response =
+                          "HTTP/1.1 #{actual_status} #{reason}" <> crlf <>
+                            "content-type: text/plain" <> crlf <>
+                            "x-test: one" <> crlf <>
+                            "x-test: two" <> crlf <>
+                            "content-length: #{byte_size(body)}" <> crlf <>
+                            crlf <>
+                            body
+
+                        :ok = :gen_tcp.send(socket, response)
+                        :gen_tcp.close(socket)
+
+                      {:error, _reason} ->
+                        :gen_tcp.close(socket)
+                    end
+
+                  {:error, _reason} ->
+                    :ok
+                end
+
+                :gen_tcp.close(listener)
+              end)
+
+              port
+            end).()
+        ', expectedMethod, expectedNeedle, status, responseBody);
+	}
 }

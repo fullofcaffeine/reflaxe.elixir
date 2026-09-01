@@ -48,7 +48,7 @@ defmodule Http do
     reset_response_state(struct)
     unsupported_message = unsupported_request_message(struct, sock)
     if (not Kernel.is_nil(unsupported_message)) do
-      apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :on_error, [struct, unsupported_message])
+      fail(struct, unsupported_message)
     else
       had_explicit_body = HttpBaseRuntime.has_request_body(struct.http_base_ref)
       request_method = if (not Kernel.is_nil(method)), do: method, else: default_method(post)
@@ -66,7 +66,7 @@ defmodule Http do
     else
       status = HttpRuntime.status(result)
       store_response_headers(struct, HttpRuntime.headers(result))
-      apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :on_status, [struct, status])
+      HttpBaseRuntime.call_on_status(struct, status)
       body = Bytes.of_data(HttpRuntime.body(result))
       HttpBaseRuntime.set_response_bytes(struct.http_base_ref, body)
       write_response_body(api, body)
@@ -82,7 +82,7 @@ defmodule Http do
   end
   defp fail(struct, message) do
     HttpBaseRuntime.mark_failed(struct.http_base_ref, message)
-    apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :on_error, [struct, message])
+    HttpBaseRuntime.call_on_error(struct, message)
   end
   defp unsupported_request_message(struct, sock) do
     if (not Kernel.is_nil(sock)) do
@@ -104,7 +104,7 @@ defmodule Http do
     end
   end
   defp request_body_for(struct, post) do
-    post_data = HttpBaseRuntime.take_post_data(struct.http_base_ref)
+    post_data = HttpBaseRuntime.post_data(struct.http_base_ref)
     if (not Kernel.is_nil(post_data)) do
       body = Bytes.of_string(post_data, {:utf8})
       body

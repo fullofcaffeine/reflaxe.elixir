@@ -82,11 +82,13 @@ defmodule HttpBaseRuntime do
 
   end
   def encoded_params(ref) do
+    encoded = Enum.map(parameters(ref), fn parameter -> :uri_string.quote(parameter.name) <> "=" <> :uri_string.quote(parameter.value) end)
+    Enum.join(encoded, "&")
+  end
+  defp parameters(ref) do
 
                 Process.get({:reflaxe_http_base, ref}).params
-                |> Enum.map_join("&", fn {name, value} ->
-                  URI.encode(name) <> "=" <> URI.encode(value)
-                end)
+                |> Enum.map(fn {name, value} -> %{name: name, value: value} end)
 
   end
   def set_post_data(ref, data) do
@@ -116,14 +118,8 @@ defmodule HttpBaseRuntime do
                 not is_nil(state.post_data) or not is_nil(state.post_bytes)
 
   end
-  def take_post_data(ref) do
-
-                key = {:reflaxe_http_base, ref}
-                state = Map.fetch!(%{value: Process.get(key)}, :value)
-                value = state.post_data
-                Process.put(key, %{state | post_data: nil})
-                value
-
+  def post_data(ref) do
+    Process.get({:reflaxe_http_base, ref}).post_data
   end
   def post_bytes(ref) do
     Process.get({:reflaxe_http_base, ref}).post_bytes

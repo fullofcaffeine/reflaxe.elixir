@@ -57,7 +57,7 @@
 		},
 		{
 			"path": "haxe/http/http_base_runtime.ex",
-			"sha256": "ba24e7da020fcf7feadda4fcbe5aa9e993d09ee60060fb437adb5d6b93efb268"
+			"sha256": "42dbc0e1a90f6fdddeea55edae5aa4e644cad38ffcdd950c50e98f47e7f5df64"
 		},
 		{
 			"path": "haxe/int64_helper.ex",
@@ -113,7 +113,7 @@
 		},
 		{
 			"path": "main.ex",
-			"sha256": "280b91ea275a025a002c44e902dda664d1e91682b57e7abbe57c987b2d886903"
+			"sha256": "5ff2c0cbe2ec8b0f31e8d2e55910d6270ccfb8429e250fa66d3f19dd87e31cdd"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.ex",
@@ -141,11 +141,11 @@
 		},
 		{
 			"path": "sys/_http/http_runtime.ex",
-			"sha256": "7fd786eb3d31fc6e79971590e15b97a4ab7cf8dab5258af1ff8358e0c5e7cbe3"
+			"sha256": "d17eaa11313c8474ad146af882cfac52404c6407476f8847ecc1aec86cef601f"
 		},
 		{
 			"path": "sys/http.ex",
-			"sha256": "0fc63d08ae3f7d8ecbbeb8f559e0fd8d9a54f030c3dcde5435fc27ff96cd26ad"
+			"sha256": "a62d7cd4f35f1de65e699183d8b3a13b019e744bf09180816cb69e38901ba80a"
 		},
 		{
 			"path": "sys/net/_socket/socket_input.ex",
@@ -172,5 +172,5 @@
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "0268939e3ab0d5a8a7748a8272cd8af1dca681d4ee087612199f9bd8fa3d85c4"
+	"generation": "c2b4a53d694da294576d07df43808fd8184fad5b6a850c10dc16179ad2adaff9"
 }

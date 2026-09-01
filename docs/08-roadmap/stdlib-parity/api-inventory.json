@@ -88,15 +88,15 @@
     },
     "bySupportState": {
       "not-applicable": 1711,
-      "partial": 689,
+      "partial": 717,
       "supported": 755,
-      "unknown": 478,
+      "unknown": 450,
       "unsupported": 59
     },
     "byEvidenceState": {
       "api-runtime": 103,
-      "missing": 921,
-      "module-runtime": 957,
+      "missing": 892,
+      "module-runtime": 986,
       "not-required": 1711
     },
     "byImplementationOwner": {
@@ -710,7 +710,7 @@
       },
       "implementationOwner": "reflaxe-elixir-target",
       "supportState": "partial",
-      "evidenceState": "missing",
+      "evidenceState": "module-runtime",
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.3.10",
@@ -1851,9 +1851,10 @@
         "runtime": 16
       },
       "implementationOwner": "reflaxe-elixir-target",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "partial",
+      "evidenceState": "module-runtime",
       "blockers": [
+        "haxe.elixir.codex-0yn.10.3.10",
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ]
@@ -3299,9 +3300,10 @@
         "runtime": 12
       },
       "implementationOwner": "reflaxe-elixir-target",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "partial",
+      "evidenceState": "module-runtime",
       "blockers": [
+        "haxe.elixir.codex-0yn.10.3.10",
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ]
@@ -28541,14 +28543,20 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is target/sys integration specific. Reference-semantics audit: Exact cursor/state aliases, lifecycle, cleanup, and process/native boundaries remain partial under .10.4 and .10.3.10.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover the target alias, GET encoding, callbacks, response data, headers, repeated POST bodies, custom methods, and HTTP errors. Proxy use, supplied sockets, multipart uploads, exact API rows, and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/Http.hx"
@@ -77369,14 +77377,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is covered through haxe.Http/sys.Http tests.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover request state, callbacks, response bytes and text, headers, parameters, and reusable POST data. Exact API rows and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/http/HttpBase.hx"
@@ -77408,14 +77423,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is covered through haxe.Http/sys.Http tests.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover request state, callbacks, response bytes and text, headers, parameters, and reusable POST data. Exact API rows and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/http/HttpBase.hx"
@@ -77447,14 +77469,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is covered through haxe.Http/sys.Http tests.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover request state, callbacks, response bytes and text, headers, parameters, and reusable POST data. Exact API rows and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/http/HttpBase.hx"
@@ -77486,14 +77515,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is covered through haxe.Http/sys.Http tests.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover request state, callbacks, response bytes and text, headers, parameters, and reusable POST data. Exact API rows and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/http/HttpBase.hx"
@@ -77525,14 +77561,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is covered through haxe.Http/sys.Http tests.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover request state, callbacks, response bytes and text, headers, parameters, and reusable POST data. Exact API rows and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/http/HttpBase.hx"
@@ -77564,14 +77607,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is covered through haxe.Http/sys.Http tests.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover request state, callbacks, response bytes and text, headers, parameters, and reusable POST data. Exact API rows and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/http/HttpBase.hx"
@@ -77603,14 +77653,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is covered through haxe.Http/sys.Http tests.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover request state, callbacks, response bytes and text, headers, parameters, and reusable POST data. Exact API rows and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/http/HttpBase.hx"
@@ -77642,14 +77699,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is covered through haxe.Http/sys.Http tests.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover request state, callbacks, response bytes and text, headers, parameters, and reusable POST data. Exact API rows and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/http/HttpBase.hx"
@@ -77681,14 +77745,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is covered through haxe.Http/sys.Http tests.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover request state, callbacks, response bytes and text, headers, parameters, and reusable POST data. Exact API rows and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/http/HttpBase.hx"
@@ -77720,14 +77791,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is covered through haxe.Http/sys.Http tests.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover request state, callbacks, response bytes and text, headers, parameters, and reusable POST data. Exact API rows and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/http/HttpBase.hx"
@@ -77759,14 +77837,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is covered through haxe.Http/sys.Http tests.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover request state, callbacks, response bytes and text, headers, parameters, and reusable POST data. Exact API rows and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/http/HttpBase.hx"
@@ -77798,14 +77883,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is covered through haxe.Http/sys.Http tests.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover request state, callbacks, response bytes and text, headers, parameters, and reusable POST data. Exact API rows and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/http/HttpBase.hx"
@@ -77837,14 +77929,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is covered through haxe.Http/sys.Http tests.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover request state, callbacks, response bytes and text, headers, parameters, and reusable POST data. Exact API rows and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/http/HttpBase.hx"
@@ -77876,14 +77975,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is covered through haxe.Http/sys.Http tests.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover request state, callbacks, response bytes and text, headers, parameters, and reusable POST data. Exact API rows and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/http/HttpBase.hx"
@@ -77915,14 +78021,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is covered through haxe.Http/sys.Http tests.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover request state, callbacks, response bytes and text, headers, parameters, and reusable POST data. Exact API rows and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/http/HttpBase.hx"
@@ -77959,14 +78072,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is covered through haxe.Http/sys.Http tests.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover request state, callbacks, response bytes and text, headers, parameters, and reusable POST data. Exact API rows and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/haxe/http/HttpBase.hx"
@@ -150037,14 +150157,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is sys-target integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover GET, encoded parameters, form and explicit bodies, reusable POST data, custom methods, callbacks, headers, and status errors. Proxy use, supplied sockets, multipart uploads, exact API rows, and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/Http.hx"
@@ -150074,14 +150201,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is sys-target integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover GET, encoded parameters, form and explicit bodies, reusable POST data, custom methods, callbacks, headers, and status errors. Proxy use, supplied sockets, multipart uploads, exact API rows, and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/Http.hx"
@@ -150111,14 +150245,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is sys-target integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover GET, encoded parameters, form and explicit bodies, reusable POST data, custom methods, callbacks, headers, and status errors. Proxy use, supplied sockets, multipart uploads, exact API rows, and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/Http.hx"
@@ -150148,14 +150289,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is sys-target integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover GET, encoded parameters, form and explicit bodies, reusable POST data, custom methods, callbacks, headers, and status errors. Proxy use, supplied sockets, multipart uploads, exact API rows, and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/Http.hx"
@@ -150188,14 +150336,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is sys-target integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover GET, encoded parameters, form and explicit bodies, reusable POST data, custom methods, callbacks, headers, and status errors. Proxy use, supplied sockets, multipart uploads, exact API rows, and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/Http.hx"
@@ -150225,14 +150380,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is sys-target integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover GET, encoded parameters, form and explicit bodies, reusable POST data, custom methods, callbacks, headers, and status errors. Proxy use, supplied sockets, multipart uploads, exact API rows, and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/Http.hx"
@@ -150262,14 +150424,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is sys-target integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover GET, encoded parameters, form and explicit bodies, reusable POST data, custom methods, callbacks, headers, and status errors. Proxy use, supplied sockets, multipart uploads, exact API rows, and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/Http.hx"
@@ -150299,14 +150468,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is sys-target integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover GET, encoded parameters, form and explicit bodies, reusable POST data, custom methods, callbacks, headers, and status errors. Proxy use, supplied sockets, multipart uploads, exact API rows, and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/Http.hx"
@@ -150336,14 +150512,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is sys-target integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover GET, encoded parameters, form and explicit bodies, reusable POST data, custom methods, callbacks, headers, and status errors. Proxy use, supplied sockets, multipart uploads, exact API rows, and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/Http.hx"
@@ -150373,14 +150556,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is sys-target integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover GET, encoded parameters, form and explicit bodies, reusable POST data, custom methods, callbacks, headers, and status errors. Proxy use, supplied sockets, multipart uploads, exact API rows, and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/Http.hx"
@@ -150410,14 +150600,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is sys-target integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover GET, encoded parameters, form and explicit bodies, reusable POST data, custom methods, callbacks, headers, and status errors. Proxy use, supplied sockets, multipart uploads, exact API rows, and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/Http.hx"
@@ -150450,14 +150647,21 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "partial",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testHttpGetCallbacksParametersAndHeaders; testHttpPostReuseCustomMethodAndStatusError"
+          }
+        ],
         "blockers": [
+          "haxe.elixir.codex-0yn.10.3.10",
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is sys-target integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover GET, encoded parameters, form and explicit bodies, reusable POST data, custom methods, callbacks, headers, and status errors. Proxy use, supplied sockets, multipart uploads, exact API rows, and cross-process state tests remain open.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/Http.hx"

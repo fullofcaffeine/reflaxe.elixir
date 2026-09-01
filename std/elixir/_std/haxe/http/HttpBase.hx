@@ -211,11 +211,14 @@ class HttpBaseRuntime {
 	}
 
 	public static function encodedParams(ref:Term):String {
-		return untyped __elixir__('
+		var encoded = parameters(ref).map(parameter -> ErlangUriString.quote(parameter.name) + "=" + ErlangUriString.quote(parameter.value));
+		return encoded.join("&");
+	}
+
+	static function parameters(ref:Term):Array<StringKeyValue> {
+		return cast untyped __elixir__('
             Process.get({:reflaxe_http_base, {0}}).params
-            |> Enum.map_join("&", fn {name, value} ->
-              URI.encode(name) <> "=" <> URI.encode(value)
-            end)
+            |> Enum.map(fn {name, value} -> %{name: name, value: value} end)
         ', ref);
 	}
 
@@ -249,14 +252,8 @@ class HttpBaseRuntime {
         ', ref);
 	}
 
-	public static function takePostData(ref:Term):Null<String> {
-		return untyped __elixir__('
-            key = {:reflaxe_http_base, {0}}
-            state = Map.fetch!(%{value: Process.get(key)}, :value)
-            value = state.post_data
-            Process.put(key, %{state | post_data: nil})
-            value
-        ', ref);
+	public static function postData(ref:Term):Null<String> {
+		return untyped __elixir__('Process.get({:reflaxe_http_base, {0}}).post_data', ref);
 	}
 
 	public static function postBytes(ref:Term):Null<Bytes> {
@@ -308,4 +305,11 @@ class HttpBaseRuntime {
 	public static function callOnStatus(owner:HttpBase, status:Int):Void {
 		untyped __elixir__('Map.fetch!({0}, :on_status).({1})', owner, status);
 	}
+}
+
+/** Typed access to OTP's UTF-8 percent encoder. */
+@:native(":uri_string")
+private extern class ErlangUriString {
+	@:native("quote")
+	static function quote(value:String):String;
 }

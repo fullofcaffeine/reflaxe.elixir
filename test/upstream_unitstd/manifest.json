@@ -295,7 +295,7 @@
       "upstreamSpec": "absent",
       "disposition": "applicable",
       "execution": "not-run",
-      "reason": "No matching upstream unitstd spec exists; behavior is target/sys integration specific."
+      "reason": "No matching upstream unitstd spec exists. Local Haxe tests cover the target alias, GET encoding, callbacks, response data, headers, repeated POST bodies, custom methods, and HTTP errors."
     },
     {
       "module": "haxe.Int32",
@@ -597,7 +597,7 @@
       "upstreamSpec": "absent",
       "disposition": "applicable",
       "execution": "not-run",
-      "reason": "No matching upstream unitstd spec exists; behavior is covered through haxe.Http/sys.Http tests."
+      "reason": "No matching upstream unitstd spec exists. Local Haxe tests cover request state, callbacks, response bytes and text, headers, parameters, and reusable POST data."
     },
     {
       "module": "haxe.io.ArrayBufferView",
@@ -881,7 +881,7 @@
       "upstreamSpec": "absent",
       "disposition": "applicable",
       "execution": "not-run",
-      "reason": "No matching upstream unitstd spec exists; behavior is sys-target integration specific."
+      "reason": "No matching upstream unitstd spec exists. Local Haxe tests cover GET, encoded parameters, form and explicit bodies, reusable POST data, custom methods, callbacks, headers, and status errors."
     },
     {
       "module": "sys.FileSystem",

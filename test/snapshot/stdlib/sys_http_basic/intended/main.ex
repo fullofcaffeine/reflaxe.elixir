@@ -19,8 +19,18 @@ defmodule Main do
                   {:ok, {{127, 0, 0, 1}, port}} = :inet.sockname(listener)
 
                   spawn(fn ->
-                    {:ok, socket} = :gen_tcp.accept(listener)
-                    {:ok, request} = :gen_tcp.recv(socket, 0, 5_000)
+                    {:ok, socket} = :gen_tcp.accept(listener, 5_000)
+                    read_until_expected = fn read_until_expected, received ->
+                      if String.contains?(received, expected_needle) do
+                        {:ok, received}
+                      else
+                        case :gen_tcp.recv(socket, 0, 5_000) do
+                          {:ok, chunk} -> read_until_expected.(read_until_expected, received <> chunk)
+                          {:error, _reason} -> {:ok, received}
+                        end
+                      end
+                    end
+                    {:ok, request} = read_until_expected.(read_until_expected, "")
 
                     request_ok =
                       String.starts_with?(request, expected_method <> " ") and
@@ -74,9 +84,9 @@ defmodule Main do
     assert_that(body == "request-url-ok", "Http.requestUrl should return response body")
   end
   defp test_callbacks_and_headers() do
-    port = start_server("GET", "name=alfa%20beta", 200, "get-ok")
+    port = start_server("GET", "name=a%20b%26c%3Dd%2F%2B%3F%20%C3%A9", 200, "get-ok")
     http = Http.new(url(port, "/search"))
-    apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :set_parameter, [http, "name", "alfa beta"])
+    apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :set_parameter, [http, "name", "a b&c=d/+? é"])
     http = %{http | on_status: fn next_status -> put_callback_int("sys_http_status", next_status) end}
     http = %{http | on_data: fn next_data -> put_callback_string("sys_http_data", next_data) end}
     http = %{http | on_bytes: fn next_bytes -> put_callback_string("sys_http_bytes", apply(Map.get(next_bytes, :__reflaxe_class__) || Map.get(next_bytes, :__struct__), :to_string, [next_bytes])) end}
@@ -102,6 +112,18 @@ defmodule Main do
     apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :request, [http, true])
     assert_that(get_callback_int("sys_http_post_status") == 201, "POST should report status 201")
     assert_that(get_callback_string("sys_http_post_data") == "post-ok", "POST form should call onData")
+  end
+  defp test_reusable_post_data() do
+    first_port = start_server("POST", "payload&value", 201, "first-post")
+    http = Http.new(url(first_port, "/first"))
+    apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :set_post_data, [http, "payload&value"])
+    http = %{http | on_data: fn next_data -> put_callback_string("sys_http_reusable_post", next_data) end}
+    apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :request, [http, true])
+    assert_that(get_callback_string("sys_http_reusable_post") == "first-post", "setPostData should send the first body")
+    second_port = start_server("POST", "payload&value", 200, "second-post")
+    http = %{http | url: url(second_port, "/second")}
+    apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :request, [http, true])
+    assert_that(get_callback_string("sys_http_reusable_post") == "second-post", "setPostData should remain available when the request is reused")
   end
   defp test_custom_method() do
     port = start_server("PUT", "payload", 200, "put-ok")
@@ -131,6 +153,7 @@ defmodule Main do
     test_request_url()
     test_callbacks_and_headers()
     test_post_form()
+    test_reusable_post_data()
     test_custom_method()
     test_status_error()
   end

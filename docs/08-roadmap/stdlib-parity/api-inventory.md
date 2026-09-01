@@ -58,9 +58,9 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 | Support state | API rows |
 |---|---:|
 | `not-applicable` | 1,711 |
-| `partial` | 689 |
+| `partial` | 717 |
 | `supported` | 755 |
-| `unknown` | 478 |
+| `unknown` | 450 |
 | `unsupported` | 59 |
 
 ## Counts by evidence state
@@ -68,8 +68,8 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 | Evidence state | API rows |
 |---|---:|
 | `api-runtime` | 103 |
-| `missing` | 921 |
-| `module-runtime` | 957 |
+| `missing` | 892 |
+| `module-runtime` | 986 |
 | `not-required` | 1,711 |
 
 ## Module review list
@@ -107,7 +107,7 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 | `haxe.EnumFlags` | 8 | `runtime` (8) | `official-haxe-stdlib-fallback` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.5` |
 | `haxe.EnumTools` | 11 | `runtime` (11) | `official-haxe-stdlib-fallback` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.5` |
 | `haxe.Exception` | 11 | `other-target` (3) + `runtime` (8) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.3.15`, `haxe.elixir.codex-0yn.10.5` |
-| `haxe.Http` | 5 | `other-target` (4) + `runtime` (1) | `reflaxe-elixir-target` | `partial` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.3.10`, `haxe.elixir.codex-0yn.10.5` |
+| `haxe.Http` | 5 | `other-target` (4) + `runtime` (1) | `reflaxe-elixir-target` | `partial` | `module-runtime` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.3.10`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.Int32` | 2 | `runtime` (2) | `reflaxe-elixir-target` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.5` |
 | `haxe.Int64` | 33 | `runtime` (33) | `reflaxe-elixir-target` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.5` |
 | `haxe.Int64Helper` | 3 | `runtime` (3) | `reflaxe-elixir-target` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.5` |
@@ -169,7 +169,7 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 | `haxe.extern.Rest` | 1 | `compile-time` (1) | `haxe-compiler` | `not-applicable` | `not-required` | — |
 | `haxe.format.JsonParser` | 2 | `runtime` (2) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.3.9`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.format.JsonPrinter` | 2 | `runtime` (2) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.3.9`, `haxe.elixir.codex-0yn.10.5` |
-| `haxe.http.HttpBase` | 16 | `runtime` (16) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
+| `haxe.http.HttpBase` | 16 | `runtime` (16) | `reflaxe-elixir-target` | `partial` | `module-runtime` | `haxe.elixir.codex-0yn.10.3.10`, `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.http.HttpJs` | 8 | `other-target` (8) | `haxe-other-target` | `not-applicable` | `not-required` | — |
 | `haxe.http.HttpMethod` | 10 | `runtime` (10) | `official-haxe-stdlib-fallback` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
 | `haxe.http.HttpNodeJs` | 5 | `other-target` (5) | `haxe-other-target` | `not-applicable` | `not-required` | — |
@@ -248,7 +248,7 @@ contract and are reviewed directly: `haxe.atomic.AtomicBool`, `haxe.atomic.Atomi
 | `haxe.zip.Writer` | 5 | `runtime` (5) | `official-haxe-stdlib-fallback` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.3.22`, `haxe.elixir.codex-0yn.10.5` |
 | `sys.FileStat` | 12 | `runtime` (12) | `reflaxe-elixir-target` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
 | `sys.FileSystem` | 11 | `runtime` (11) | `reflaxe-elixir-target` | `supported` | `module-runtime` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
-| `sys.Http` | 12 | `runtime` (12) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
+| `sys.Http` | 12 | `runtime` (12) | `reflaxe-elixir-target` | `partial` | `module-runtime` | `haxe.elixir.codex-0yn.10.3.10`, `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
 | `sys.db.Connection` | 11 | `runtime` (11) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
 | `sys.db.Mysql` | 2 | `runtime` (2) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |
 | `sys.db.ResultSet` | 12 | `runtime` (12) | `reflaxe-elixir-target` | `unknown` | `missing` | `haxe.elixir.codex-0yn.10.4`, `haxe.elixir.codex-0yn.10.5` |

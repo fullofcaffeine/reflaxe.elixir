@@ -84,7 +84,7 @@ class Http extends haxe.http.HttpBase {
 
 		var unsupportedMessage = unsupportedRequestMessage(sock);
 		if (unsupportedMessage != null) {
-			onError(unsupportedMessage);
+			fail(unsupportedMessage);
 		} else {
 			var hadExplicitBody = HttpBaseRuntime.hasRequestBody(httpBaseRef);
 			var requestMethod = method != null ? method : defaultMethod(post);
@@ -104,7 +104,7 @@ class Http extends haxe.http.HttpBase {
 		} else {
 			var status = HttpRuntime.status(result);
 			storeResponseHeaders(HttpRuntime.headers(result));
-			onStatus(status);
+			HttpBaseRuntime.callOnStatus(this, status);
 			var body = Bytes.ofData(HttpRuntime.body(result));
 			HttpBaseRuntime.setResponseBytes(httpBaseRef, body);
 			writeResponseBody(api, body);
@@ -138,7 +138,7 @@ class Http extends haxe.http.HttpBase {
 
 	function fail(message:String):Void {
 		HttpBaseRuntime.markFailed(httpBaseRef, message);
-		onError(message);
+		HttpBaseRuntime.callOnError(this, message);
 	}
 
 	function unsupportedRequestMessage(sock:Socket):Null<String> {
@@ -167,7 +167,7 @@ class Http extends haxe.http.HttpBase {
 	}
 
 	function requestBodyFor(post:Bool):Null<Bytes> {
-		var postData = HttpBaseRuntime.takePostData(httpBaseRef);
+		var postData = HttpBaseRuntime.postData(httpBaseRef);
 		if (postData != null) {
 			var body = Bytes.ofString(postData);
 			return body;
@@ -252,7 +252,7 @@ private class HttpRuntime {
 
 	public static function storeResponseHeaders(ref:Term, pairs:Array<HeaderPair>):Void {
 		untyped __elixir__('
-            state = Process.get({:reflaxe_sys_http, {0}}, %{headers: %{}, same_key: %{}})
+            state = Process.get({:reflaxe_sys_http, {0}}, %{headers: %{}, same_key: %{}, file_transfer: false})
 
             next_state =
               Enum.reduce({1} || [], state, fn {name, value}, acc ->
@@ -265,7 +265,7 @@ private class HttpRuntime {
                     Map.put(acc.same_key, name, values ++ [value])
                   end
 
-                %{headers: Map.put(acc.headers, name, value), same_key: same_key}
+                %{acc | headers: Map.put(acc.headers, name, value), same_key: same_key}
               end)
 
             Process.put({:reflaxe_sys_http, {0}}, next_state)

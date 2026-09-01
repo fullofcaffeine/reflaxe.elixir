@@ -18,7 +18,7 @@ defmodule HttpRuntime do
   end
   def store_response_headers(ref, pairs) do
 
-                state = Process.get({:reflaxe_sys_http, ref}, %{headers: %{}, same_key: %{}})
+                state = Process.get({:reflaxe_sys_http, ref}, %{headers: %{}, same_key: %{}, file_transfer: false})
 
                 next_state =
                   Enum.reduce(pairs || [], state, fn {name, value}, acc ->
@@ -31,7 +31,7 @@ defmodule HttpRuntime do
                         Map.put(acc.same_key, name, values ++ [value])
                       end
 
-                    %{headers: Map.put(acc.headers, name, value), same_key: same_key}
+                    %{acc | headers: Map.put(acc.headers, name, value), same_key: same_key}
                   end)
 
                 Process.put({:reflaxe_sys_http, ref}, next_state)
