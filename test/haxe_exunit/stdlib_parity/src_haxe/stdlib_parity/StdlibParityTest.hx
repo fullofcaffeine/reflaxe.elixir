@@ -58,20 +58,6 @@ import haxe.test.ExUnit.TestCase;
 import haxe.test.Assert;
 import elixir.ErlangMath;
 import reflaxe.elixir.IMap as IMapRuntime;
-import reflaxe.elixir.runtime.StandardIODevice;
-
-/** Test-only access to ExUnit's process-local IO capture boundary. */
-@:native("ExUnit.CaptureIO")
-extern class ExUnitCaptureIO {
-	@:native("capture_io")
-	static function capture(callback:() -> Void):String;
-
-	@:native("capture_io")
-	static function captureWithInput(input:String, callback:() -> Void):String;
-
-	@:native("capture_io")
-	static function captureDevice(device:StandardIODevice, callback:() -> Void):String;
-}
 
 /**
  * StdlibParityTest
@@ -2748,7 +2734,7 @@ class StdlibParityTest extends TestCase {
 		});
 		Assert.equals("standard-output\n", stdout);
 
-		var stderr = ExUnitCaptureIO.captureDevice(StandardIODevice.StandardError, function() {
+		var stderr = ExUnitCaptureIO.captureDevice(reflaxe.elixir.runtime.StandardIODevice.StandardError, function() {
 			var output = Sys.stderr();
 			output.writeString("standard-error");
 			output.close();
@@ -2931,4 +2917,17 @@ class StdlibParityTest extends TestCase {
 		binary.set(2, 0x10);
 		Assert.equals("fb00d9d04bdeeb4c51a031ab62ad806c6b8d293efafb8456deae0320", Sha224.make(binary).toHex());
 	}
+}
+
+/** Test-only access to ExUnit's process-local IO capture boundary. */
+@:native("ExUnit.CaptureIO")
+extern class ExUnitCaptureIO {
+	@:native("capture_io")
+	static function capture(callback:() -> Void):String;
+
+	@:native("capture_io")
+	static function captureWithInput(input:String, callback:() -> Void):String;
+
+	@:native("capture_io")
+	static function captureDevice(device:reflaxe.elixir.runtime.StandardIODevice, callback:() -> Void):String;
 }
