@@ -95,8 +95,8 @@
     },
     "byEvidenceState": {
       "api-runtime": 103,
-      "missing": 824,
-      "module-runtime": 1054,
+      "missing": 804,
+      "module-runtime": 1074,
       "not-required": 1711
     },
     "byImplementationOwner": {
@@ -3536,7 +3536,7 @@
       },
       "implementationOwner": "reflaxe-elixir-target",
       "supportState": "partial",
-      "evidenceState": "missing",
+      "evidenceState": "module-runtime",
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
@@ -156347,13 +156347,19 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testTcpSocketReceivesIntoCallerBuffer"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged.",
+        "reviewNote": "Local Haxe runtime tests cover bind, listen, connect, accept, blocked reads, caller-buffer updates with an offset, writes, and close. The upstream spec and the remaining lifecycle, select, shutdown, and cross-process state contracts still need review.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/net/Socket.hx"
@@ -156398,13 +156404,19 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testTcpSocketReceivesIntoCallerBuffer"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged.",
+        "reviewNote": "Local Haxe runtime tests cover bind, listen, connect, accept, blocked reads, caller-buffer updates with an offset, writes, and close. The upstream spec and the remaining lifecycle, select, shutdown, and cross-process state contracts still need review.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/net/Socket.hx"
@@ -156449,13 +156461,19 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testTcpSocketReceivesIntoCallerBuffer"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged.",
+        "reviewNote": "Local Haxe runtime tests cover bind, listen, connect, accept, blocked reads, caller-buffer updates with an offset, writes, and close. The upstream spec and the remaining lifecycle, select, shutdown, and cross-process state contracts still need review.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/net/Socket.hx"
@@ -156500,13 +156518,19 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testTcpSocketReceivesIntoCallerBuffer"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged.",
+        "reviewNote": "Local Haxe runtime tests cover bind, listen, connect, accept, blocked reads, caller-buffer updates with an offset, writes, and close. The upstream spec and the remaining lifecycle, select, shutdown, and cross-process state contracts still need review.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/net/Socket.hx"
@@ -156551,13 +156575,19 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testTcpSocketReceivesIntoCallerBuffer"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged.",
+        "reviewNote": "Local Haxe runtime tests cover bind, listen, connect, accept, blocked reads, caller-buffer updates with an offset, writes, and close. The upstream spec and the remaining lifecycle, select, shutdown, and cross-process state contracts still need review.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/net/Socket.hx"
@@ -156600,13 +156630,19 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testTcpSocketReceivesIntoCallerBuffer"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged.",
+        "reviewNote": "Local Haxe runtime tests cover bind, listen, connect, accept, blocked reads, caller-buffer updates with an offset, writes, and close. The upstream spec and the remaining lifecycle, select, shutdown, and cross-process state contracts still need review.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/net/Socket.hx"
@@ -156653,13 +156689,19 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testTcpSocketReceivesIntoCallerBuffer"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged.",
+        "reviewNote": "Local Haxe runtime tests cover bind, listen, connect, accept, blocked reads, caller-buffer updates with an offset, writes, and close. The upstream spec and the remaining lifecycle, select, shutdown, and cross-process state contracts still need review.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/net/Socket.hx"
@@ -156704,13 +156746,19 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testTcpSocketReceivesIntoCallerBuffer"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged.",
+        "reviewNote": "Local Haxe runtime tests cover bind, listen, connect, accept, blocked reads, caller-buffer updates with an offset, writes, and close. The upstream spec and the remaining lifecycle, select, shutdown, and cross-process state contracts still need review.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/net/Socket.hx"
@@ -156755,13 +156803,19 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testTcpSocketReceivesIntoCallerBuffer"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged.",
+        "reviewNote": "Local Haxe runtime tests cover bind, listen, connect, accept, blocked reads, caller-buffer updates with an offset, writes, and close. The upstream spec and the remaining lifecycle, select, shutdown, and cross-process state contracts still need review.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/net/Socket.hx"
@@ -156806,13 +156860,19 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testTcpSocketReceivesIntoCallerBuffer"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged.",
+        "reviewNote": "Local Haxe runtime tests cover bind, listen, connect, accept, blocked reads, caller-buffer updates with an offset, writes, and close. The upstream spec and the remaining lifecycle, select, shutdown, and cross-process state contracts still need review.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/net/Socket.hx"
@@ -156859,13 +156919,19 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testTcpSocketReceivesIntoCallerBuffer"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged.",
+        "reviewNote": "Local Haxe runtime tests cover bind, listen, connect, accept, blocked reads, caller-buffer updates with an offset, writes, and close. The upstream spec and the remaining lifecycle, select, shutdown, and cross-process state contracts still need review.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/net/Socket.hx"
@@ -156910,13 +156976,19 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testTcpSocketReceivesIntoCallerBuffer"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged.",
+        "reviewNote": "Local Haxe runtime tests cover bind, listen, connect, accept, blocked reads, caller-buffer updates with an offset, writes, and close. The upstream spec and the remaining lifecycle, select, shutdown, and cross-process state contracts still need review.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/net/Socket.hx"
@@ -156961,13 +157033,19 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testTcpSocketReceivesIntoCallerBuffer"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged.",
+        "reviewNote": "Local Haxe runtime tests cover bind, listen, connect, accept, blocked reads, caller-buffer updates with an offset, writes, and close. The upstream spec and the remaining lifecycle, select, shutdown, and cross-process state contracts still need review.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/net/Socket.hx"
@@ -157012,13 +157090,19 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testTcpSocketReceivesIntoCallerBuffer"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged.",
+        "reviewNote": "Local Haxe runtime tests cover bind, listen, connect, accept, blocked reads, caller-buffer updates with an offset, writes, and close. The upstream spec and the remaining lifecycle, select, shutdown, and cross-process state contracts still need review.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/net/Socket.hx"
@@ -157063,13 +157147,19 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testTcpSocketReceivesIntoCallerBuffer"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged.",
+        "reviewNote": "Local Haxe runtime tests cover bind, listen, connect, accept, blocked reads, caller-buffer updates with an offset, writes, and close. The upstream spec and the remaining lifecycle, select, shutdown, and cross-process state contracts still need review.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/net/Socket.hx"
@@ -157114,13 +157204,19 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testTcpSocketReceivesIntoCallerBuffer"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged.",
+        "reviewNote": "Local Haxe runtime tests cover bind, listen, connect, accept, blocked reads, caller-buffer updates with an offset, writes, and close. The upstream spec and the remaining lifecycle, select, shutdown, and cross-process state contracts still need review.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/net/Socket.hx"
@@ -157165,13 +157261,19 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testTcpSocketReceivesIntoCallerBuffer"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged.",
+        "reviewNote": "Local Haxe runtime tests cover bind, listen, connect, accept, blocked reads, caller-buffer updates with an offset, writes, and close. The upstream spec and the remaining lifecycle, select, shutdown, and cross-process state contracts still need review.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/net/Socket.hx"
@@ -157216,13 +157318,19 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testTcpSocketReceivesIntoCallerBuffer"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged.",
+        "reviewNote": "Local Haxe runtime tests cover bind, listen, connect, accept, blocked reads, caller-buffer updates with an offset, writes, and close. The upstream spec and the remaining lifecycle, select, shutdown, and cross-process state contracts still need review.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/net/Socket.hx"
@@ -157267,13 +157375,19 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testTcpSocketReceivesIntoCallerBuffer"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged.",
+        "reviewNote": "Local Haxe runtime tests cover bind, listen, connect, accept, blocked reads, caller-buffer updates with an offset, writes, and close. The upstream spec and the remaining lifecycle, select, shutdown, and cross-process state contracts still need review.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/net/Socket.hx"
@@ -157332,13 +157446,19 @@
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
         "supportState": "partial",
-        "evidenceState": "missing",
-        "evidence": [],
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testTcpSocketReceivesIntoCallerBuffer"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged.",
+        "reviewNote": "Local Haxe runtime tests cover bind, listen, connect, accept, blocked reads, caller-buffer updates with an offset, writes, and close. The upstream spec and the remaining lifecycle, select, shutdown, and cross-process state contracts still need review.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/net/Socket.hx"

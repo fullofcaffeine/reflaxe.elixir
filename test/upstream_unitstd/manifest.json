@@ -957,7 +957,7 @@
       "disposition": "pending-review",
       "execution": "not-run",
       "source": "sys/net/Socket.unit.hx",
-      "reason": "Upstream spec exists; enable after BEAM socket lifecycle semantics are triaged."
+      "reason": "Local Haxe tests cover TCP bind, listen, connect, accept, blocked reads, caller-buffer updates, writes, and close. Enable the upstream spec after the remaining lifecycle, select, shutdown, and cross-process state contracts are triaged."
     },
     {
       "module": "sys.net.UdpSocket",

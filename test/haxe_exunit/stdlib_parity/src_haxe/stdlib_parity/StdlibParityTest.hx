@@ -2470,6 +2470,47 @@ class StdlibParityTest extends TestCase {
 		receiver.close();
 	}
 
+	@:describe("sys.net.Socket")
+	@:test
+	function testTcpSocketReceivesIntoCallerBuffer():Void {
+		var host = new sys.net.Host("127.0.0.1");
+		var parent = Thread.current();
+		var server = Thread.create(function() {
+			var listener = new sys.net.Socket();
+			listener.bind(host, 0);
+			listener.listen(1);
+			parent.sendMessage(listener.host().port);
+			Thread.readMessage(true);
+			var peer = listener.accept();
+			peer.write("hello!");
+			peer.close();
+			listener.close();
+		});
+
+		var port:Int = Thread.readMessage(true);
+		var client = new sys.net.Socket();
+		client.connect(host, port);
+		client.setBlocking(false);
+		try {
+			client.input.readBytes(Bytes.alloc(1), 0, 1);
+			Assert.fail("readBytes should block when no stream data is ready");
+		} catch (error:Error) {
+			switch (error) {
+				case Blocked:
+				default:
+					Assert.fail("readBytes should raise Error.Blocked without data");
+			}
+		}
+
+		client.setBlocking(true);
+		client.setTimeout(0.25);
+		server.sendMessage("send");
+		var buffer = Bytes.ofString("________");
+		Assert.equals(5, client.input.readBytes(buffer, 2, 5));
+		Assert.equals("__hello_", buffer.toString());
+		client.close();
+	}
+
 	@:describe("haxe.Int64")
 	@:test
 	function testInt64WrapOverflow():Void {

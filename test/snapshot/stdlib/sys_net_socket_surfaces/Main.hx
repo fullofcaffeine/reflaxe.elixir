@@ -3,6 +3,7 @@ import sys.net.Address;
 import sys.net.Host;
 import sys.net.Socket;
 import sys.net.UdpSocket;
+import sys.thread.Thread;
 
 class Main {
 	static function configureTcp(socket:Socket, host:Host):Void {
@@ -80,6 +81,46 @@ class Main {
 		receiver.close();
 	}
 
+	static function receiveTcpStream(host:Host):Void {
+		var parent = Thread.current();
+		var server = Thread.create(function() {
+			var listener = new Socket();
+			listener.bind(host, 0);
+			listener.listen(1);
+			parent.sendMessage(listener.host().port);
+			Thread.readMessage(true);
+			var peer = listener.accept();
+			peer.write("hello!");
+			peer.close();
+			listener.close();
+		});
+
+		var port:Int = Thread.readMessage(true);
+		var client = new Socket();
+		client.connect(host, port);
+		client.setBlocking(false);
+		try {
+			client.input.readBytes(Bytes.alloc(1), 0, 1);
+			throw "Socket.input.readBytes should block when no stream data is ready";
+		} catch (error:haxe.io.Error) {
+			switch (error) {
+				case Blocked:
+				default:
+					throw "Socket.input.readBytes should raise Error.Blocked without data";
+			}
+		}
+
+		client.setBlocking(true);
+		client.setTimeout(0.25);
+		server.sendMessage("send");
+		var buffer = Bytes.ofString("________");
+		var received = client.input.readBytes(buffer, 2, 5);
+		if (received != 5 || buffer.toString() != "__hello_") {
+			throw "Socket.input.readBytes should mutate only the requested buffer range";
+		}
+		client.close();
+	}
+
 	public static function main() {
 		var host = new Host("127.0.0.1");
 
@@ -92,5 +133,6 @@ class Main {
 		udp.close();
 
 		receiveUdpDatagram(host);
+		receiveTcpStream(host);
 	}
 }

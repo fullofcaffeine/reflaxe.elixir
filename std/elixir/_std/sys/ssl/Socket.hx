@@ -138,7 +138,17 @@ private class SslSocketInput extends haxe.io.Input {
 		if (len == 0)
 			return 0;
 
-		throw Error.Custom("sys.ssl.Socket.input.readBytes is not supported on the Elixir target because haxe.io.Bytes buffers are immutable in generated Elixir; use Socket.read() or Input.readByte() instead");
+		var result = SslSocketState.recvBinary(socketRef, len);
+		if (SocketState.isBlocked(result))
+			throw Error.Blocked;
+		if (SocketState.isEof(result))
+			throw new haxe.io.Eof();
+		if (SocketState.isError(result))
+			throw Error.Custom(SocketState.errorMessage(result));
+
+		var received = Bytes.ofData(result);
+		buf.blit(pos, received, 0, received.length);
+		return received.length;
 	}
 }
 

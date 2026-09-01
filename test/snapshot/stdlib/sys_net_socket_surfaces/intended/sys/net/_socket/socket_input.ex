@@ -17,14 +17,26 @@ defmodule SocketInput do
     end
     :binary.at(result, 0)
   end
-  def read_bytes(_struct, buf, pos, len) do
+  def read_bytes(struct, buf, pos, len) do
     if (pos < 0 or len < 0 or pos + len > buf.length) do
       raise Reflaxe.Elixir.HaxeThrow, [value: {:outside_bounds}]
     end
     if (len == 0) do
       0
     else
-      raise Reflaxe.Elixir.HaxeThrow, [value: {:custom, "sys.net.Socket.input.readBytes is not supported on the Elixir target because haxe.io.Bytes buffers are immutable in generated Elixir; use Socket.read() or Input.readByte() instead"}]
+      result = SocketState.recv_binary(struct.socket_ref, len)
+      if (SocketState.is_blocked(result)) do
+        raise Reflaxe.Elixir.HaxeThrow, [value: {:blocked}]
+      end
+      if (SocketState.is_eof(result)) do
+        raise Reflaxe.Elixir.HaxeThrow, [value: Eof.new()]
+      end
+      if (SocketState.is_error(result)) do
+        raise Reflaxe.Elixir.HaxeThrow, [value: {:custom, SocketState.error_message(result)}]
+      end
+      received = Bytes.of_data(result)
+      apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :blit, [buf, pos, received, 0, received.length])
+      received.length
     end
   end
   def set_big_endian(struct, b) do
