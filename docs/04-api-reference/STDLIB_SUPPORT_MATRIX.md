@@ -408,6 +408,14 @@ Notes:
 
 `haxe.Http` is the standard sys-target alias to `sys.Http`. The implementation is backed by OTP `:httpc`, not by a custom HTTP parser over `sys.net.Socket`. This keeps the generated code close to BEAM/OTP primitives while preserving the Haxe callback contract.
 
+Add `:inets` and `:ssl` to the consumer Mix project's `extra_applications` list. Mix releases can omit OTP modules that the application does not declare.
+
+```elixir
+def application do
+  [extra_applications: [:logger, :inets, :ssl]]
+end
+```
+
 Supported today:
 - `Http.requestUrl(url)` returns the response body or throws the recorded request error.
 - `request(?post)` supports GET and form-style POST parameter encoding.
