@@ -60,31 +60,19 @@ class Sys {
 		untyped __elixir__('IO.write({0})', v);
 	}
 
-	/**
-	 * Reads a line from the standard input.
-	 * @return The line read, without the trailing newline
-	 */
+	/** Return a byte input stream for the current process group leader. */
 	public static inline function stdin():haxe.io.Input {
-		// Return a standard input object
-		return untyped __elixir__('Process.group_leader()');
+		return new reflaxe.elixir.runtime.StandardInput();
 	}
 
-	/**
-	 * Returns the standard output.
-	 * @return The standard output stream
-	 */
+	/** Return a byte output stream for standard output. */
 	public static inline function stdout():haxe.io.Output {
-		// Return a standard output object
-		return untyped __elixir__('Process.group_leader()');
+		return new reflaxe.elixir.runtime.StandardOutput(reflaxe.elixir.runtime.StandardIODevice.StandardIO);
 	}
 
-	/**
-	 * Returns the standard error output.
-	 * @return The standard error stream
-	 */
+	/** Return a byte output stream for standard error. */
 	public static inline function stderr():haxe.io.Output {
-		// Return a standard error object
-		return untyped __elixir__(':standard_error');
+		return new reflaxe.elixir.runtime.StandardOutput(reflaxe.elixir.runtime.StandardIODevice.StandardError);
 	}
 
 	/**
@@ -93,24 +81,31 @@ class Sys {
 	 * @return The character code
 	 */
 	public static function getChar(echo:Bool):Int {
-		// Read a single character from stdin.
-		//
-		// NOTE
-		// - Use a raw Elixir block here because terminal echo control is BEAM/IO-specific.
-		// - Return the character code as an Int (or 0 on failure).
+		// This target block owns terminal echo control. It disables device echo
+		// during the read and writes the character once when echo is requested.
 		return untyped __elixir__('
-            {:ok, old_settings} = :io.getopts(:standard_io)
+            old_echo = :proplists.get_value(:echo, :io.getopts(:standard_io), :undefined)
 
-            if not {0} do
-                :io.setopts(:standard_io, [{:echo, false}])
+            if old_echo != :undefined do
+              :io.setopts(:standard_io, [{:echo, false}])
             end
 
-            input = IO.getn("", 1)
-            :io.setopts(:standard_io, old_settings)
+            input =
+              try do
+                IO.getn("", 1)
+              after
+                if old_echo != :undefined do
+                  :io.setopts(:standard_io, [{:echo, old_echo}])
+                end
+              end
 
             case input do
-                <<c::utf8>> -> c
-                _ -> 0
+              <<c::utf8>> ->
+                if {0}, do: IO.write(input)
+                c
+
+              _ ->
+                0
             end
         ', echo);
 	}

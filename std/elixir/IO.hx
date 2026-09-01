@@ -56,6 +56,10 @@ extern class IO {
 	@:native("IO.read")
 	public static function readLineFrom(device:Term):Null<String>;
 
+	/** Write raw bytes to an IO device. */
+	@:native("binwrite")
+	public static function binwriteTo(device:Term, item:Term):Term;
+
 	// Data formatting
 	@:native("IO.iodata_length")
 	public static function iodataLength(iodata:Term):Int; // Get iodata byte length

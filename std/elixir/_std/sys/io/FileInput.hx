@@ -112,6 +112,6 @@ class FileInput extends haxe.io.Input {
 	}
 
 	static function throwFileError(operation:String, result:ErlangFileResult):Void {
-		throw 'File $operation error: ' + elixir.ErlangFile.formatError(result._1);
+		throw 'File $operation error: ' + elixir.List.toString(elixir.ErlangFile.formatError(result._1));
 	}
 }

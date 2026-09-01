@@ -58,6 +58,20 @@ import haxe.test.ExUnit.TestCase;
 import haxe.test.Assert;
 import elixir.ErlangMath;
 import reflaxe.elixir.IMap as IMapRuntime;
+import reflaxe.elixir.runtime.StandardIODevice;
+
+/** Test-only access to ExUnit's process-local IO capture boundary. */
+@:native("ExUnit.CaptureIO")
+extern class ExUnitCaptureIO {
+	@:native("capture_io")
+	static function capture(callback:() -> Void):String;
+
+	@:native("capture_io")
+	static function captureWithInput(input:String, callback:() -> Void):String;
+
+	@:native("capture_io")
+	static function captureDevice(device:StandardIODevice, callback:() -> Void):String;
+}
 
 /**
  * StdlibParityTest
@@ -2712,6 +2726,44 @@ class StdlibParityTest extends TestCase {
 		Assert.equals(7, Sys.command(command, commandArgs));
 		Assert.equals(9, Sys.command(systemName == "Windows" ? "exit /b 9" : "exit 9"));
 		Assert.isFalse(Sys.setTimeLocale("reflaxe-elixir-unavailable-locale"));
+	}
+
+	@:describe("Sys")
+	@:test
+	function testSysStandardStreamsAndCharacters():Void {
+		var inputOutput = ExUnitCaptureIO.captureWithInput("abc\n", function() {
+			var input = Sys.stdin();
+			Assert.equals("a".charCodeAt(0), input.readByte());
+			Assert.equals("bc", input.readLine());
+			input.close();
+		});
+		Assert.equals("", inputOutput);
+
+		var stdout = ExUnitCaptureIO.capture(function() {
+			var output = Sys.stdout();
+			output.writeString("standard-output");
+			output.writeByte(10);
+			output.flush();
+			output.close();
+		});
+		Assert.equals("standard-output\n", stdout);
+
+		var stderr = ExUnitCaptureIO.captureDevice(StandardIODevice.StandardError, function() {
+			var output = Sys.stderr();
+			output.writeString("standard-error");
+			output.close();
+		});
+		Assert.isTrue(stderr.indexOf("standard-error") >= 0);
+
+		var silentCharacter = ExUnitCaptureIO.captureWithInput("é", function() {
+			Assert.equals("é".charCodeAt(0), Sys.getChar(false));
+		});
+		Assert.equals("", silentCharacter);
+
+		var echoedCharacter = ExUnitCaptureIO.captureWithInput("Z", function() {
+			Assert.equals("Z".charCodeAt(0), Sys.getChar(true));
+		});
+		Assert.equals("Z", echoedCharacter);
 	}
 
 	@:describe("haxe.crypto.Md5")

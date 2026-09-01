@@ -6,28 +6,38 @@ defmodule Sys do
     IO.write(v)
   end
   def stdin() do
-    Process.group_leader()
+    Reflaxe.Elixir.Runtime.StandardInput.new()
   end
   def stdout() do
-    Process.group_leader()
+    Reflaxe.Elixir.Runtime.StandardOutput.new(:standard_io)
   end
   def stderr() do
-    :standard_error
+    Reflaxe.Elixir.Runtime.StandardOutput.new(:stderr)
   end
   def get_char(echo) do
 
-                {:ok, old_settings} = :io.getopts(:standard_io)
+                old_echo = :proplists.get_value(:echo, :io.getopts(:standard_io), :undefined)
 
-                if not echo do
-                    :io.setopts(:standard_io, [{:echo, false}])
+                if old_echo != :undefined do
+                  :io.setopts(:standard_io, [{:echo, false}])
                 end
 
-                input = IO.getn("", 1)
-                :io.setopts(:standard_io, old_settings)
+                input =
+                  try do
+                    IO.getn("", 1)
+                  after
+                    if old_echo != :undefined do
+                      :io.setopts(:standard_io, [{:echo, old_echo}])
+                    end
+                  end
 
                 case input do
-                    <<c::utf8>> -> c
-                    _ -> 0
+                  <<c::utf8>> ->
+                    if echo, do: IO.write(input)
+                    c
+
+                  _ ->
+                    0
                 end
 
   end

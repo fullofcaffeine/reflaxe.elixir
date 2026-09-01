@@ -36,7 +36,7 @@ extern class ErlangFile {
 	public static function write(device:Term, data:Term):ErlangFileWriteResult;
 
 	@:native("format_error")
-	public static function formatError(reason:Term):String;
+	public static function formatError(reason:Term):Array<Int>;
 }
 
 /** Closed set of origins accepted by `:file.position/2`. */
