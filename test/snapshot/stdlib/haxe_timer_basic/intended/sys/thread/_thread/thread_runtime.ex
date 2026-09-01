@@ -20,11 +20,23 @@ defmodule ThreadRuntime do
   def event_loop_key(value) do
     __haxe_static_put__(:event_loop_key, value)
   end
+  def thread_role_key() do
+    __haxe_static_get__(:thread_role_key, {:reflaxe_sys_thread_role})
+  end
+  def thread_role_key(value) do
+    __haxe_static_put__(:thread_role_key, value)
+  end
   def self_pid() do
     self()
   end
   def spawn_process(job) do
-    spawn(fn -> job.() end)
+    (
+                role_key = ThreadRuntime.thread_role_key()
+                spawn(fn ->
+                  Process.put(role_key, :plain)
+                  job.()
+                end)
+            )
   end
   def send_message(pid, msg) do
     send(pid, {:reflaxe_sys_thread_message, msg})
@@ -46,17 +58,18 @@ defmodule ThreadRuntime do
               )
     end
   end
-  def ensure_event_loop() do
-    existing = Process.get(ThreadRuntime.event_loop_key())
-    if (not Kernel.is_nil(existing)) do
-      existing
-    else
-      created = Sys.Thread.EventLoop.new()
-      Process.put(ThreadRuntime.event_loop_key(), created)
-      created
-    end
+  def install_event_loop() do
+    created = Sys.Thread.EventLoop.new()
+    Process.put(ThreadRuntime.event_loop_key(), created)
+    created
   end
-  def current_event_loop() do
-    ensure_event_loop()
+  def existing_event_loop() do
+    Process.get(ThreadRuntime.event_loop_key())
+  end
+  def clear_event_loop() do
+    Process.delete(ThreadRuntime.event_loop_key())
+  end
+  def is_plain_thread() do
+    Process.get(ThreadRuntime.thread_role_key()) == :plain
   end
 end
