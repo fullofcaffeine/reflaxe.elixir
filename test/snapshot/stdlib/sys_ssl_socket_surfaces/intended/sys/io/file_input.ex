@@ -68,7 +68,7 @@ defmodule Sys.IO.FileInput do
     Bytes.of_data(elem(tagged, 1))
   end
   defp throw_file_error(operation, result) do
-    raise Reflaxe.Elixir.HaxeThrow, [value: "File " <> operation <> " error: " <> :file.format_error(elem(result, 1))]
+    raise Reflaxe.Elixir.HaxeThrow, [value: "File " <> operation <> " error: " <> List.to_string(:file.format_error(elem(result, 1)))]
   end
   def set_big_endian(struct, b) do
     Input.set_big_endian(struct, b)
