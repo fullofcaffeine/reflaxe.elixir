@@ -36,7 +36,7 @@
 		"haxe/_call_stack/call_stack_impl_.ex"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 4,
+	"id": 0,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
@@ -154,7 +154,7 @@
 		},
 		{
 			"path": "sys/net/_socket/socket_input.ex",
-			"sha256": "be925359a2bd795ec85b0d8391ccbedb154d818c2ec784e7acb5dc019c558bdc"
+			"sha256": "b937fd5345e22b4950dcd03d037a20c03fe79ae85a3dcc727a17ce244a70b786"
 		},
 		{
 			"path": "sys/net/_socket/socket_output.ex",
@@ -177,5 +177,5 @@
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "a0a57f59e8e18b227c0c000ca517a3c3f51cff5c01cd29ed5d56a3cfcdaedaf9"
+	"generation": "231d37bc270fb9d989d8286898bb89c1c9882aacb43270e313fd76e5feb38243"
 }
