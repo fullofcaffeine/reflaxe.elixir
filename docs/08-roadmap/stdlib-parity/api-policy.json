@@ -2954,14 +2954,20 @@
       "surfaceDigest": "1cc5e7b9969bead66a45a7701540392ce80c2152a0a6f2e803cbe93c054da1c8",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "partial",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testUdpSocketReceivesIntoCallerBuffer"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM socket integration specific."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe runtime tests cover bind, socket options, send, receive, caller-buffer updates, sender addresses, truncation, blocked reads, and close. Socket state remains process-local. Transfer to another Haxe thread does not preserve the open socket."
     },
     {
       "module": "sys.ssl.Certificate",

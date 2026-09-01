@@ -2428,6 +2428,48 @@ class StdlibParityTest extends TestCase {
 		Assert.equals(1, address.compare(cloned));
 	}
 
+	@:describe("sys.net.UdpSocket")
+	@:test
+	function testUdpSocketReceivesIntoCallerBuffer():Void {
+		var host = new sys.net.Host("127.0.0.1");
+		var receiver = new sys.net.UdpSocket();
+		receiver.bind(host, 0);
+		var receiverEndpoint = receiver.host();
+		Assert.isTrue(receiverEndpoint.port > 0);
+
+		receiver.setBlocking(false);
+		try {
+			receiver.readFrom(Bytes.alloc(1), 0, 1, new sys.net.Address());
+			Assert.fail("readFrom should block when no datagram is ready");
+		} catch (error:Error) {
+			switch (error) {
+				case Blocked:
+				default:
+					Assert.fail("readFrom should raise Error.Blocked without data");
+			}
+		}
+		receiver.setBlocking(true);
+		receiver.setTimeout(0.25);
+
+		var sender = new sys.net.UdpSocket();
+		var senderEndpoint = sender.host();
+		var destination = new sys.net.Address();
+		destination.host = host.ip;
+		destination.port = receiverEndpoint.port;
+		var payload = Bytes.ofString("hello!");
+		Assert.equals(payload.length, sender.sendTo(payload, 0, payload.length, destination));
+
+		var buffer = Bytes.ofString("________");
+		var source = new sys.net.Address();
+		Assert.equals(5, receiver.readFrom(buffer, 2, 5, source));
+		Assert.equals("__hello_", buffer.toString());
+		Assert.equals(host.ip, source.host);
+		Assert.equals(senderEndpoint.port, source.port);
+
+		sender.close();
+		receiver.close();
+	}
+
 	@:describe("haxe.Int64")
 	@:test
 	function testInt64WrapOverflow():Void {

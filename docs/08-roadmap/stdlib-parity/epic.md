@@ -271,15 +271,16 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
 - Status: implemented with OTP `:httpc` behind `sys.Http`, with `haxe.Http` as the standard sys-target alias.
 - Contract: mutable Haxe request/response state is represented by an opaque process-dictionary reference; callback fields (`onStatus`, `onData`, `onBytes`, `onError`) are stored on the generated Elixir struct and invoked through target helpers.
 - Supported: `requestUrl`, GET query params, POST form params, explicit request body bytes/data, custom methods (`GET`, `POST`, `HEAD`, `OPTIONS`, `PUT`, `DELETE`, `TRACE`, `PATCH`), response bytes/data, response headers, and duplicate header values.
-- Unsupported: caller-supplied sockets, `PROXY`, and multipart `fileTransfer` fail explicitly with target-specific guidance.
+- Unsupported: caller-supplied sockets and `PROXY` fail with target-specific guidance.
 - Coverage: `test/snapshot/stdlib/sys_http_basic` includes a generated-runtime smoke against a local TCP server for success, callbacks, duplicate headers, POST, custom PUT, and HTTP error behavior.
 
 **Task cluster: `sys.net.*`**
 - Status: implemented for IPv4 `Host`, TCP `Socket` via `:gen_tcp`, and UDP `UdpSocket` via `:gen_udp`. `Address` value behavior works in one process, but exact cross-process identity remains open.
 - Contract: Haxe socket mutability is represented with an opaque BEAM reference and process-dictionary-backed state so `connect()`/`bind()`/`listen()` update the socket observed by existing `input`/`output` values.
 - Blocking: `setTimeout(seconds)` maps to BEAM millisecond timeouts; `setBlocking(false)` uses zero-timeout read behavior. `Socket.select()` is a compatibility readiness helper, not full POSIX `select(2)`.
-- Unsupported: buffer-mutating receive APIs (`Socket.input.readBytes(...)` and `UdpSocket.readFrom(...)`) raise `Error.Custom` on the Elixir target because generated `haxe.io.Bytes` values are immutable maps; implement stateful Bytes or compiler out-parameter support before claiming those semantics.
-- Coverage: snapshot coverage for Host/Address and socket surfaces, plus generated-runtime smoke for bind/listen and UDP send.
+- UDP receive: `UdpSocket.readFrom(...)` updates the caller buffer and sender address. It returns the copied byte count.
+- Unsupported: `Socket.input.readBytes(...)` still raises `Error.Custom` on the Elixir target.
+- Coverage: snapshots and Haxe runtime tests cover Host, Address, socket setup, UDP send, UDP receive, truncation, and blocked reads.
 
 **Task cluster: `sys.ssl.*`**
 - Status: implemented for TLS `Socket` via `:ssl`, DER `Certificate` chains with X.509 metadata, transferable opaque `Key` containers, digest algorithm constants, hashing, signing, and verification.

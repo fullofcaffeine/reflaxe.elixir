@@ -30,14 +30,26 @@ defmodule UdpSocket do
       len
     end
   end
-  def read_from(_struct, buf, pos, len, _addr) do
+  def read_from(struct, buf, pos, len, addr) do
     if (pos < 0 or len < 0 or pos + len > buf.length) do
       raise Reflaxe.Elixir.HaxeThrow, [value: {:outside_bounds}]
     end
     if (len == 0) do
       0
     else
-      raise Reflaxe.Elixir.HaxeThrow, [value: {:custom, "sys.net.UdpSocket.readFrom is not supported on the Elixir target because haxe.io.Bytes buffers are immutable in generated Elixir; use sendTo() for UDP output or a target-specific receive wrapper"}]
+      result = UdpSocketState.receive_from(struct.socket_ref)
+      if (SocketState.is_blocked(result)) do
+        raise Reflaxe.Elixir.HaxeThrow, [value: {:blocked}]
+      end
+      if (SocketState.is_error(result)) do
+        raise Reflaxe.Elixir.HaxeThrow, [value: {:custom, SocketState.error_message(result)}]
+      end
+      received = Bytes.of_data(UdpSocketState.received_data(result))
+      copied = if (received.length < len), do: received.length, else: len
+      apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :blit, [buf, pos, received, 0, copied])
+      Address.set_host(addr, UdpSocketState.received_host(result))
+      Address.set_port(addr, UdpSocketState.received_port(result))
+      copied
     end
   end
   def close(struct) do

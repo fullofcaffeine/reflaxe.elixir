@@ -466,6 +466,9 @@ class SocketState {
 	        )', sockets, kind, timeout);
 	}
 
+	// Haxe full DCE cannot see these calls inside the injected socket operations.
+
+	@:keep
 	public static function fetchState(socketRef:Term):Term {
 		return untyped __elixir__('(
             case Process.get({:reflaxe_sys_net_socket, {0}}) do
@@ -475,6 +478,7 @@ class SocketState {
         )', socketRef);
 	}
 
+	@:keep
 	public static function fetchSocket(state:Term):Term {
 		return untyped __elixir__('(
             case Map.fetch!({0}, :socket) do
@@ -484,6 +488,7 @@ class SocketState {
         )', state);
 	}
 
+	@:keep
 	public static function recvTimeout(state:Term):Term {
 		return untyped __elixir__('(
             if Map.fetch!({0}, :blocking), do: Map.fetch!({0}, :timeout), else: 0
@@ -494,6 +499,7 @@ class SocketState {
 		return untyped __elixir__('Map.fetch!({0}, :timeout)', state);
 	}
 
+	@:keep
 	public static function ipv4ToInt(address:Term):Int {
 		return untyped __elixir__('(
             {a, b, c, d} = {0}

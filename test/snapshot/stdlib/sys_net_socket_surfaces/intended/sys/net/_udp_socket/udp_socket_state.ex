@@ -33,6 +33,27 @@ defmodule UdpSocketState do
                   :ok -> :ok
                   {:error, reason} -> raise "sys.net.UdpSocket.sendTo failed: #{inspect(reason)}"
                 end
+        )
+  end
+  def receive_from(socket_ref) do
+    (
+                state = SocketState.fetch_state(socket_ref)
+                socket = SocketState.fetch_socket(state)
+                case :gen_udp.recv(socket, 0, SocketState.recv_timeout(state)) do
+                  {:ok, {address, port, data}} ->
+                    {data, SocketState.ipv4_to_int(address), port}
+                  {:error, :timeout} -> {:reflaxe_blocked}
+                  {:error, reason} -> {:reflaxe_error, reason}
+                end
             )
+  end
+  def received_data(result) do
+    elem(result, 0)
+  end
+  def received_host(result) do
+    elem(result, 1)
+  end
+  def received_port(result) do
+    elem(result, 2)
   end
 end

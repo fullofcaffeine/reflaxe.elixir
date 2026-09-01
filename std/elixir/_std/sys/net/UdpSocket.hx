@@ -2,6 +2,7 @@ package sys.net;
 
 import elixir.types.Term;
 import haxe.io.Bytes;
+import haxe.io.BytesData;
 import haxe.io.Error;
 import sys.net.Socket.SocketState;
 
@@ -19,8 +20,8 @@ import sys.net.Socket.SocketState;
  * - Reuses `Socket` lifecycle fields for Haxe API compatibility.
  * - Opens a passive binary UDP socket with `:gen_udp.open/2`.
  * - `sendTo()` maps to `:gen_udp.send/4`.
- * - `readFrom()` fails explicitly until generated `haxe.io.Bytes` can preserve
- *   caller-buffer mutations on immutable BEAM terms.
+ * - `readFrom()` receives one datagram, copies the requested byte range into
+ *   the caller buffer, and updates the caller's source address.
  */
 class UdpSocket extends Socket {
 	public function new() {
@@ -52,7 +53,18 @@ class UdpSocket extends Socket {
 		if (len == 0)
 			return 0;
 
-		throw Error.Custom("sys.net.UdpSocket.readFrom is not supported on the Elixir target because haxe.io.Bytes buffers are immutable in generated Elixir; use sendTo() for UDP output or a target-specific receive wrapper");
+		var result = UdpSocketState.receiveFrom(socketRef);
+		if (SocketState.isBlocked(result))
+			throw Error.Blocked;
+		if (SocketState.isError(result))
+			throw Error.Custom(SocketState.errorMessage(result));
+
+		var received = Bytes.ofData(UdpSocketState.receivedData(result));
+		var copied = received.length < len ? received.length : len;
+		buf.blit(pos, received, 0, copied);
+		addr.host = UdpSocketState.receivedHost(result);
+		addr.port = UdpSocketState.receivedPort(result);
+		return copied;
 	}
 }
 
@@ -93,6 +105,31 @@ private class UdpSocketState {
               :ok -> :ok
               {:error, reason} -> raise "sys.net.UdpSocket.sendTo failed: #{inspect(reason)}"
             end
-        )', socketRef, data, hostIp, port);
+		)', socketRef, data, hostIp, port);
+	}
+
+	public static function receiveFrom(socketRef:Term):Term {
+		return untyped __elixir__('(
+            state = SocketState.fetch_state({0})
+            socket = SocketState.fetch_socket(state)
+            case :gen_udp.recv(socket, 0, SocketState.recv_timeout(state)) do
+              {:ok, {address, port, data}} ->
+                {data, SocketState.ipv4_to_int(address), port}
+              {:error, :timeout} -> {:reflaxe_blocked}
+              {:error, reason} -> {:reflaxe_error, reason}
+            end
+        )', socketRef);
+	}
+
+	public static function receivedData(result:Term):BytesData {
+		return untyped __elixir__('elem({0}, 0)', result);
+	}
+
+	public static function receivedHost(result:Term):Int {
+		return untyped __elixir__('elem({0}, 1)', result);
+	}
+
+	public static function receivedPort(result:Term):Int {
+		return untyped __elixir__('elem({0}, 2)', result);
 	}
 }

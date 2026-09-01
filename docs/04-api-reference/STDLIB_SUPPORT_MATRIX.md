@@ -292,7 +292,7 @@ state across processes.
 - `sys.net.Address` (same-process mutation works; managed cross-process identity still blocks 1.0)
 - `sys.net.Host`
 - `sys.net.Socket` (caller-buffer receive behavior below blocks 1.0)
-- `sys.net.UdpSocket` (caller-buffer receive behavior below blocks 1.0)
+- `sys.net.UdpSocket` (same-process UDP behavior works; cross-process socket state still blocks 1.0)
 - `sys.ssl.Certificate` (X.509 metadata and same-process chains work; cross-process mutable identity still blocks 1.0)
 - `sys.ssl.Digest`
 - `sys.ssl.DigestAlgorithm`
@@ -442,13 +442,13 @@ Coverage:
 
 Blocking behavior is implemented with BEAM receive/socket timeouts. `setTimeout(seconds)` sets the timeout in milliseconds; `setBlocking(false)` uses zero-timeout receive behavior for read-style operations. Full POSIX `select(2)` semantics are not promised; `Socket.select()` is a lightweight readiness helper for generated Haxe compatibility.
 
-Unsupported buffer-mutating receive APIs fail explicitly instead of silently losing data:
-`Socket.input.readBytes(buf, pos, len)` and `UdpSocket.readFrom(buf, pos, len, addr)` currently raise
-`haxe.io.Error.Custom`. These missing operations block 1.0. Generated Elixir `haxe.io.Bytes` values
-are immutable maps, so the APIs need a stateful Bytes backing or compiler-level out-parameter support
-before they can preserve Haxe's caller-buffer mutation semantics. Supported paths today are TCP
-`Socket.read()`/`write()`, `Input.readByte()`, TCP bind/listen/accept/connect endpoint flows, and UDP
-bind/options/`sendTo()`.
+`UdpSocket.readFrom(buf, pos, len, addr)` receives one datagram. It copies no more than `len` bytes into `buf` at `pos`.
+The method updates `addr` with the sender host and port. It returns the copied byte count.
+If the datagram is larger than `len`, the socket discards the remaining bytes in that datagram.
+If no datagram is ready, a nonblocking or timed read raises `haxe.io.Error.Blocked`.
+
+`Socket.input.readBytes(buf, pos, len)` still raises `haxe.io.Error.Custom`. This missing TCP operation blocks 1.0.
+Socket state is process-local. Transfer to another Haxe thread does not preserve the open socket.
 
 ### `sys.ssl.*` BEAM contract
 

@@ -964,7 +964,7 @@
       "upstreamSpec": "absent",
       "disposition": "applicable",
       "execution": "not-run",
-      "reason": "No matching upstream unitstd spec exists; behavior is BEAM socket integration specific."
+      "reason": "No matching upstream unitstd spec exists. Local Haxe tests cover UDP send, receive, caller-buffer updates, sender addresses, truncation, blocked reads, and close."
     },
     {
       "module": "sys.ssl.Certificate",
