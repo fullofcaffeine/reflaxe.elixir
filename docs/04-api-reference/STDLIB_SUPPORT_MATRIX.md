@@ -298,7 +298,7 @@ state across processes.
 - `sys.ssl.DigestAlgorithm`
 - `sys.ssl.Key`
 - `sys.ssl.Socket` (current partial implementation; remaining APIs below block 1.0)
-- `sys.thread.Condition` (current fail-fast partial implementation and 1.0 blocker)
+- `sys.thread.Condition`
 - `sys.thread.Deque`
 - `sys.thread.ElasticThreadPool`
 - `sys.thread.EventLoop`
@@ -493,6 +493,9 @@ Synchronization primitives use tiny BEAM server processes instead of process-loc
 - `Lock` is a counting release/wait primitive. `wait(0)` performs a server-side non-blocking availability check; positive timeouts are milliseconds-backed BEAM receive timeouts.
 - `Semaphore` is a counting semaphore with blocking `acquire` and non-blocking/timed `tryAcquire`.
 - `Mutex` is re-entrant for the owning BEAM process and queues other processes.
+- `Condition` keeps its re-entrant mutex and waiter queues in one BEAM server.
+- `Condition.wait` atomically releases all mutex holds. It restores the same hold count before it returns.
+- `Condition.signal` wakes one current waiter. `Condition.broadcast` wakes all current waiters.
 - `Tls<T>` stores values in the current BEAM process dictionary, matching thread-local behavior for spawned Haxe threads.
 
 `EventLoop` is backed by a BEAM state process, but callbacks are drained and executed by the caller of `progress()`/`loop()` rather than inside the storage process. `repeat` uses a BEAM timer process and `cancel` sends that timer a cancel message.
@@ -508,7 +511,7 @@ Current unsupported pieces fail explicitly. Each remains a 1.0 blocker:
   annotations for Phoenix callbacks, or `sys.thread.EventLoop`/`haxe.Timer` for callback scheduling.
   The [OTP Support Contract](OTP_SUPPORT_CONTRACT.md) lists the exact lifecycle behavior that is
   covered.
-- `Condition.wait`, `signal`, and `broadcast` are not implemented because POSIX condition-variable semantics depend on shared-memory mutation. Use `Thread` messages, `Deque`, `Lock`, or `Semaphore` instead.
+- The synchronization servers do not yet stop when their last Haxe handle becomes unreachable. Managed-reference lifecycle work owns this release blocker.
 
 ## Additional modules shipped under `std/` (not part of upstream std)
 

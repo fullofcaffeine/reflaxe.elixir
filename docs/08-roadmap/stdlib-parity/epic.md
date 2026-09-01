@@ -292,10 +292,11 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
 **Task cluster: `sys.thread.*`**
 - Status: implemented as BEAM process/mailbox primitives, not OS threads.
 - Contract: `Thread` wraps BEAM pids; message passing uses tagged mailboxes; `Deque`, `Lock`, `Semaphore`, and `Mutex` use small BEAM server processes so state is shared across spawned processes without pretending Elixir maps mutate in place.
+- Condition variables use one BEAM server for the re-entrant mutex and both waiter queues. A wait releases and restores the complete recursive hold count.
 - Event loop: callbacks are queued in a BEAM state process but executed by the caller of `progress()`/`loop()`; `repeat` uses a timer process.
 - Pools: `FixedThreadPool` uses fixed worker processes; `ElasticThreadPool` spawns per task and bounds concurrency with `Semaphore`.
-- Unsupported: POSIX-style `Condition.wait`/`signal`/`broadcast` fail explicitly; use mailboxes, `Deque`, `Lock`, or `Semaphore`.
-- Coverage: snapshot coverage plus generated-runtime smoke for thread messages, blocking deque handoff, TLS isolation, event-loop progress, lock/mutex/semaphore behavior, and fixed-pool execution.
+- Blocking: synchronization servers need managed-reference lifecycle work before they can stop when their last Haxe handle becomes unreachable.
+- Coverage: snapshot coverage plus generated-runtime smoke for thread messages, blocking deque handoff, TLS isolation, event-loop progress, synchronization primitives, and fixed-pool execution.
 
 **Task cluster: `sys.db.*`**
 - Status: currently unsupported with compile-time rejection for `sys.db.Connection`,

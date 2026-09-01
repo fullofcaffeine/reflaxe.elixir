@@ -89,14 +89,14 @@
     "bySupportState": {
       "not-applicable": 1711,
       "partial": 717,
-      "supported": 755,
-      "unknown": 450,
+      "supported": 763,
+      "unknown": 442,
       "unsupported": 59
     },
     "byEvidenceState": {
       "api-runtime": 103,
-      "missing": 892,
-      "module-runtime": 986,
+      "missing": 884,
+      "module-runtime": 994,
       "not-required": 1711
     },
     "byImplementationOwner": {
@@ -3671,8 +3671,8 @@
         "runtime": 8
       },
       "implementationOwner": "reflaxe-elixir-target",
-      "supportState": "unknown",
-      "evidenceState": "missing",
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
@@ -159919,14 +159919,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testThreadConditionSignalAndBroadcast"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover re-entrant acquisition, atomic wait release, hold-count restoration, one-waiter signal, all-waiter broadcast, mutex exclusion, aliases, and same-node process transfer. Server lifecycle remains owned by the managed-reference blocker.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/thread/Condition.hx"
@@ -159962,14 +159968,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testThreadConditionSignalAndBroadcast"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover re-entrant acquisition, atomic wait release, hold-count restoration, one-waiter signal, all-waiter broadcast, mutex exclusion, aliases, and same-node process transfer. Server lifecycle remains owned by the managed-reference blocker.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/thread/Condition.hx"
@@ -160005,14 +160017,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testThreadConditionSignalAndBroadcast"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover re-entrant acquisition, atomic wait release, hold-count restoration, one-waiter signal, all-waiter broadcast, mutex exclusion, aliases, and same-node process transfer. Server lifecycle remains owned by the managed-reference blocker.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/thread/Condition.hx"
@@ -160048,14 +160066,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testThreadConditionSignalAndBroadcast"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover re-entrant acquisition, atomic wait release, hold-count restoration, one-waiter signal, all-waiter broadcast, mutex exclusion, aliases, and same-node process transfer. Server lifecycle remains owned by the managed-reference blocker.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/thread/Condition.hx"
@@ -160091,14 +160115,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testThreadConditionSignalAndBroadcast"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover re-entrant acquisition, atomic wait release, hold-count restoration, one-waiter signal, all-waiter broadcast, mutex exclusion, aliases, and same-node process transfer. Server lifecycle remains owned by the managed-reference blocker.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/thread/Condition.hx"
@@ -160134,14 +160164,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testThreadConditionSignalAndBroadcast"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover re-entrant acquisition, atomic wait release, hold-count restoration, one-waiter signal, all-waiter broadcast, mutex exclusion, aliases, and same-node process transfer. Server lifecycle remains owned by the managed-reference blocker.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/thread/Condition.hx"
@@ -160177,14 +160213,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testThreadConditionSignalAndBroadcast"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover re-entrant acquisition, atomic wait release, hold-count restoration, one-waiter signal, all-waiter broadcast, mutex exclusion, aliases, and same-node process transfer. Server lifecycle remains owned by the managed-reference blocker.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/thread/Condition.hx"
@@ -160228,14 +160270,20 @@
       "classification": {
         "applicability": "runtime",
         "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-        "supportState": "unknown",
-        "evidenceState": "missing",
-        "evidence": [],
+        "supportState": "supported",
+        "evidenceState": "module-runtime",
+        "evidence": [
+          {
+            "kind": "haxe-exunit",
+            "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+            "selector": "testThreadConditionSignalAndBroadcast"
+          }
+        ],
         "blockers": [
           "haxe.elixir.codex-0yn.10.4",
           "haxe.elixir.codex-0yn.10.5"
         ],
-        "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific.",
+        "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover re-entrant acquisition, atomic wait release, hold-count restoration, one-waiter signal, all-waiter broadcast, mutex exclusion, aliases, and same-node process transfer. Server lifecycle remains owned by the managed-reference blocker.",
         "implementationOwner": "reflaxe-elixir-target",
         "ownerEvidence": [
           "std/elixir/_std/sys/thread/Condition.hx"

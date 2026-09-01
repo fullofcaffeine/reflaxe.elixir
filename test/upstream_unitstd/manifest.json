@@ -1006,7 +1006,7 @@
       "upstreamSpec": "absent",
       "disposition": "applicable",
       "execution": "not-run",
-      "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+      "reason": "No matching upstream unitstd spec exists. Local Haxe runtime tests cover re-entrant wait, signal, broadcast, mutex exclusion, and same-node process transfer."
     },
     {
       "module": "sys.thread.Deque",

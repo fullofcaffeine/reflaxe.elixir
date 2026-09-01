@@ -67,6 +67,7 @@ private class LockRuntime {
 		return Math.ceil(timeout * 1000);
 	}
 
+	@:keep
 	public static function server_loop(ref:Term, permits:Int, waiters:Term):Void {
 		untyped __elixir__('
             receive do

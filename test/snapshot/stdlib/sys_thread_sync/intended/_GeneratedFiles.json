@@ -10,6 +10,7 @@
 		"sys/thread/fixed_thread_pool.ex",
 		"sys/thread/event_loop.ex",
 		"sys/thread/deque.ex",
+		"sys/thread/condition.ex",
 		"sys/thread/_thread/thread_runtime.ex",
 		"sys/thread/_semaphore/semaphore_runtime.ex",
 		"sys/thread/_mutex/mutex_runtime.ex",
@@ -17,6 +18,7 @@
 		"sys/thread/_fixed_thread_pool/thread_pool_runtime.ex",
 		"sys/thread/_event_loop/event_loop_runtime.ex",
 		"sys/thread/_deque/deque_runtime.ex",
+		"sys/thread/_condition/condition_runtime.ex",
 		"sys.ex",
 		"string_tools.ex",
 		"std.ex",
@@ -44,7 +46,7 @@
 		"haxe/_call_stack/call_stack_impl_.ex"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 0,
+	"id": 1,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
@@ -110,7 +112,7 @@
 		},
 		{
 			"path": "main.ex",
-			"sha256": "f0568235ca20f2c26c1da1ebb52457d1f0b8be9f93b014ad891c51473fab3f4f"
+			"sha256": "4e72e6f2db36ba3ac60884bcc623094d61a030266cf35c1853f03b2b51ac1302"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.ex",
@@ -149,6 +151,10 @@
 			"sha256": "5f69862e2b785964668eda9171c65d7e01803f8d3492e3588957799d810f7c32"
 		},
 		{
+			"path": "sys/thread/_condition/condition_runtime.ex",
+			"sha256": "756109a68d40100c9fda6d1479d8718516e3cefbd1291fdf1735275547dacbcd"
+		},
+		{
 			"path": "sys/thread/_deque/deque_runtime.ex",
 			"sha256": "feb3abf0451dd2e71293f98b63fa5a43df03cafdbebf28ee76f4ff3b9cd691d8"
 		},
@@ -175,6 +181,10 @@
 		{
 			"path": "sys/thread/_thread/thread_runtime.ex",
 			"sha256": "5be9c0f4ed82d91581a608c6153ffcafadf28869750138241296b42e201e1e8c"
+		},
+		{
+			"path": "sys/thread/condition.ex",
+			"sha256": "63d3fb0c7e06472fefc3bbb780ce78c7a83f365e140ff49eb469cf250ae671f6"
 		},
 		{
 			"path": "sys/thread/deque.ex",
@@ -217,5 +227,5 @@
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "4a1ba5f2686f6b9091f825a906a028beb14ea3c9b0c2622dc16b67ed136d5764"
+	"generation": "451a07b912a025a70f995e9f2bd238d65be558e9450072c681d1fdfb40865532"
 }

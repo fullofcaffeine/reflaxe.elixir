@@ -2004,6 +2004,71 @@ class StdlibParityTest extends TestCase {
 		}
 	}
 
+	@:describe("sys.thread.Condition")
+	@:test
+	function testThreadConditionSignalAndBroadcast():Void {
+		var condition = new sys.thread.Condition();
+		var ready = new sys.thread.Lock();
+		var resumed = new sys.thread.Lock();
+		var allowFinalRelease = new sys.thread.Lock();
+		var done = new sys.thread.Lock();
+
+		Thread.create(function() {
+			condition.acquire();
+			condition.acquire();
+			ready.release();
+			condition.wait();
+			condition.release();
+			resumed.release();
+			allowFinalRelease.wait();
+			condition.release();
+			done.release();
+		});
+
+		Assert.isTrue(ready.wait(2), "The Condition waiter did not acquire the mutex");
+		condition.acquire();
+		condition.signal();
+		Assert.isFalse(resumed.wait(0), "The waiter resumed before the signaling owner released the mutex");
+		condition.release();
+
+		Assert.isTrue(resumed.wait(2), "Condition.signal did not resume the waiter");
+		Assert.isFalse(condition.tryAcquire(), "Condition.wait did not restore the recursive mutex hold count");
+		allowFinalRelease.release();
+		Assert.isTrue(done.wait(2), "The waiter did not release its restored mutex holds");
+		Assert.isTrue(condition.tryAcquire(), "The Condition mutex stayed locked after the waiter released every hold");
+		condition.release();
+
+		var broadcastCondition = new sys.thread.Condition();
+		var broadcastReady = new sys.thread.Lock();
+		var broadcastDone = new sys.thread.Lock();
+		for (_ in 0...3) {
+			Thread.create(function() {
+				broadcastCondition.acquire();
+				broadcastReady.release();
+				broadcastCondition.wait();
+				broadcastCondition.release();
+				broadcastDone.release();
+			});
+		}
+
+		Assert.isTrue(broadcastReady.wait(2), "The first Condition broadcast waiter did not start");
+		Assert.isTrue(broadcastReady.wait(2), "The second Condition broadcast waiter did not start");
+		Assert.isTrue(broadcastReady.wait(2), "The third Condition broadcast waiter did not start");
+		broadcastCondition.acquire();
+		broadcastCondition.signal();
+		Assert.isFalse(broadcastDone.wait(0), "A signal waiter resumed before mutex release");
+		broadcastCondition.release();
+		Assert.isTrue(broadcastDone.wait(2), "Condition.signal did not resume one waiter");
+		Assert.isFalse(broadcastDone.wait(0), "Condition.signal resumed more than one waiter");
+
+		broadcastCondition.acquire();
+		broadcastCondition.broadcast();
+		Assert.isFalse(broadcastDone.wait(0), "A broadcast waiter resumed before mutex release");
+		broadcastCondition.release();
+		Assert.isTrue(broadcastDone.wait(2), "Condition.broadcast did not resume the first remaining waiter");
+		Assert.isTrue(broadcastDone.wait(2), "Condition.broadcast did not resume the second remaining waiter");
+	}
+
 	@:describe("sys.thread.ThreadPoolException")
 	@:test
 	function testThreadPoolExceptionValuesAndCatch():Void {
