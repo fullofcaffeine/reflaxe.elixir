@@ -70,6 +70,9 @@ private class MutexRuntime {
         )', ref);
 	}
 
+	// Haxe full DCE cannot see this call inside the injected spawn closure.
+
+	@:keep
 	public static function server_loop(ref:Term, owner:Term, count:Int, waiters:Term):Void {
 		untyped __elixir__('
             receive do

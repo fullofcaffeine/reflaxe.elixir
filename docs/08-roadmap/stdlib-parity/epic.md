@@ -290,13 +290,14 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
 - Coverage: Haxe-authored runtime tests cover certificate metadata and chains, every digest algorithm, signatures, all public key loaders, passphrase errors, key process transfer, and cleanup. Focused snapshots protect certificate metadata, digest behavior, and SSL socket output.
 
 **Task cluster: `sys.thread.*`**
-- Status: implemented as BEAM process/mailbox primitives, not OS threads.
-- Contract: `Thread` wraps BEAM pids; message passing uses tagged mailboxes; `Deque`, `Lock`, `Semaphore`, and `Mutex` use small BEAM server processes so state is shared across spawned processes without pretending Elixir maps mutate in place.
-- Condition variables use one BEAM server for the re-entrant mutex and both waiter queues. A wait releases and restores the complete recursive hold count.
-- Event loop: callbacks are queued in a BEAM state process but executed by the caller of `progress()`/`loop()`; `repeat` uses a timer process.
-- Pools: `FixedThreadPool` uses fixed worker processes; `ElasticThreadPool` spawns per task and bounds concurrency with `Semaphore`.
-- Blocking: synchronization servers need managed-reference lifecycle work before they can stop when their last Haxe handle becomes unreachable.
-- Coverage: snapshot coverage plus generated-runtime smoke for thread messages, blocking deque handoff, TLS isolation, event-loop progress, synchronization primitives, and fixed-pool execution.
+- Status: core thread and synchronization primitives use BEAM processes and mailboxes, not OS threads.
+- Contract: `Thread` wraps BEAM pids. Message passing uses tagged mailboxes.
+- `Deque`, `Lock`, `Semaphore`, and `Mutex` use small BEAM server processes. These servers share state across spawned processes.
+- Condition variables use one BEAM server for the re-entrant mutex and both waiter queues. A wait restores its complete recursive hold count.
+- Event loop: direct queue, promise, wait, progress, and timer delivery paths have runtime evidence. Repeating-loop lifetime and exact cancellation timing remain partial.
+- Pools: implementations exist, but exact shutdown state and process-count behavior remain incomplete.
+- Blocking: state servers need managed-reference lifecycle work before they can stop when their last Haxe handle becomes unreachable.
+- Coverage: snapshots and Haxe-authored runtime tests cover messages, event-loop availability, blocking deque handoff, TLS isolation, and synchronization primitives.
 
 **Task cluster: `sys.db.*`**
 - Status: currently unsupported with compile-time rejection for `sys.db.Connection`,

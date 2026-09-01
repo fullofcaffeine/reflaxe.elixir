@@ -219,7 +219,7 @@ state across processes.
   [OTP Support Contract](OTP_SUPPORT_CONTRACT.md))
 - `haxe.Serializer` (portable data subset; missing behavior below blocks 1.0)
 - `haxe.Template` (portable rendering subset; missing behavior below blocks 1.0)
-- `haxe.Timer` (BEAM event-loop backed delay/repeat, callback rebinding, stamp/measure)
+- `haxe.Timer` (partial BEAM event-loop delay/repeat, callback rebinding, stamp/measure)
 - `haxe.Ucs2` (unsupported because BEAM has no native UCS-2 string type; construction fails
   explicitly, and `UnicodeString` is the supported Unicode API)
 - `haxe.Unserializer` (portable data subset; missing behavior below blocks 1.0)
@@ -300,10 +300,10 @@ state across processes.
 - `sys.ssl.Socket` (current partial implementation; remaining APIs below block 1.0)
 - `sys.thread.Condition`
 - `sys.thread.Deque`
-- `sys.thread.ElasticThreadPool`
-- `sys.thread.EventLoop`
-- `sys.thread.FixedThreadPool`
-- `sys.thread.IThreadPool`
+- `sys.thread.ElasticThreadPool` (provisional; shutdown and process-count behavior remain incomplete)
+- `sys.thread.EventLoop` (partial; repeating-loop lifetime and exact cancellation remain incomplete)
+- `sys.thread.FixedThreadPool` (provisional; shutdown state remains incomplete)
+- `sys.thread.IThreadPool` (implemented by provisional pools)
 - `sys.thread.Lock`
 - `sys.thread.Mutex`
 - `sys.thread.NoEventLoopException`
@@ -486,7 +486,14 @@ native SSL parity. Each remains a 1.0 blocker:
 
 ### `sys.thread.*` BEAM contract
 
-`sys.thread.Thread` maps Haxe thread handles to BEAM process identifiers. `Thread.create` spawns a lightweight BEAM process, `Thread.current` wraps `self()`, and `sendMessage`/`readMessage` use tagged BEAM mailbox messages. Haxe's message API is dynamically typed upstream; that is the narrow compatibility exception for this surface.
+`sys.thread.Thread` maps Haxe thread handles to BEAM process identifiers. `Thread.create` starts a
+lightweight BEAM process. `Thread.current` wraps Elixir's `self()`. `sendMessage` and `readMessage`
+use tagged BEAM mailbox messages. Haxe defines this message API as dynamic. This surface keeps that
+narrow compatibility exception.
+
+The main process gets an event loop when it first requests one. `Thread.createWithEventLoop` and
+`Thread.runWithEventLoop` install a loop for their job. A plain `Thread.create` child has no event
+loop. Its `Thread.current().events` access throws `NoEventLoopException`, as Haxe specifies.
 
 Synchronization primitives use tiny BEAM server processes instead of process-local mutable fields:
 - `Deque<T>` is a shared blocking FIFO/deque server, so producers and consumers in different BEAM processes observe the same queue.
@@ -498,20 +505,29 @@ Synchronization primitives use tiny BEAM server processes instead of process-loc
 - `Condition.signal` wakes one current waiter. `Condition.broadcast` wakes all current waiters.
 - `Tls<T>` stores values in the current BEAM process dictionary, matching thread-local behavior for spawned Haxe threads.
 
-`EventLoop` is backed by a BEAM state process, but callbacks are drained and executed by the caller of `progress()`/`loop()` rather than inside the storage process. `repeat` uses a BEAM timer process and `cancel` sends that timer a cancel message.
+`EventLoop` uses a BEAM state process. The caller of `progress()` or `loop()` drains and runs queued
+callbacks. The storage process does not run them. `repeat` uses a BEAM timer process. `cancel` sends
+that process a cancel message.
 
-Thread pools are BEAM-shaped:
+This event-loop support is partial. Runtime tests cover `run`, promises, `wait`, `progress`, process
+transfer, and timer delivery. Autonomous repeating-loop lifetime and exact cancellation timing are
+not complete.
+
+Thread-pool implementations are provisional and are not classified as supported:
 - `FixedThreadPool` starts a fixed number of worker processes and feeds them through `Deque`.
-- `ElasticThreadPool` spawns per task while bounding concurrency with `Semaphore`; `threadsCount` reports `0` because workers are not retained as an OS-thread pool.
+- `ElasticThreadPool` starts one process per task and limits concurrency with `Semaphore`.
+- Shutdown state and exact `threadsCount` behavior still need compatible process ownership.
 
-Current unsupported pieces fail explicitly. Each remains a 1.0 blocker:
+Current incomplete pieces remain 1.0 blockers:
 - `haxe.EntryPoint` and `haxe.MainLoop` are not BEAM application lifecycle primitives. Direct
   output-code calls or static field reads fail at compile time. Use the documented
   `elixir.otp.Application` + `TypeSafeChildSpec` application-wiring shape, `phoenix.*` modules and
   annotations for Phoenix callbacks, or `sys.thread.EventLoop`/`haxe.Timer` for callback scheduling.
   The [OTP Support Contract](OTP_SUPPORT_CONTRACT.md) lists the exact lifecycle behavior that is
   covered.
-- The synchronization servers do not yet stop when their last Haxe handle becomes unreachable. Managed-reference lifecycle work owns this release blocker.
+- State servers do not stop when their last Haxe handle becomes unreachable. Managed-reference lifecycle work owns this release blocker.
+- `EventLoop` still needs exact repeating-loop lifetime and cancellation behavior.
+- Thread pools still need exact shutdown state and process-count behavior.
 
 ## Additional modules shipped under `std/` (not part of upstream std)
 

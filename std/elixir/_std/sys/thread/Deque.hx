@@ -65,6 +65,9 @@ private class DequeRuntime {
         )', ref, block);
 	}
 
+	// Haxe full DCE cannot see this call inside the injected spawn closure.
+
+	@:keep
 	public static function server_loop(ref:Term, queue:Term, waiters:Term):Void {
 		untyped __elixir__('
             receive do

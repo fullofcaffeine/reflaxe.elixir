@@ -1013,7 +1013,7 @@
       "upstreamSpec": "absent",
       "disposition": "applicable",
       "execution": "not-run",
-      "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+      "reason": "No matching upstream unitstd spec exists. Local Haxe runtime tests cover FIFO order, front insertion, non-blocking reads, and blocking same-node process handoff."
     },
     {
       "module": "sys.thread.ElasticThreadPool",
@@ -1027,7 +1027,7 @@
       "upstreamSpec": "absent",
       "disposition": "applicable",
       "execution": "not-run",
-      "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+      "reason": "No matching upstream unitstd spec exists. Local Haxe runtime tests cover queued callbacks, promises, wait, progress, cross-process transfer, and timer delivery. Autonomous repeating-loop lifetime remains incomplete."
     },
     {
       "module": "sys.thread.FixedThreadPool",
@@ -1048,14 +1048,14 @@
       "upstreamSpec": "absent",
       "disposition": "applicable",
       "execution": "not-run",
-      "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+      "reason": "No matching upstream unitstd spec exists. Local Haxe runtime tests cover counting, non-blocking checks, blocking waits, and same-node process releases."
     },
     {
       "module": "sys.thread.Mutex",
       "upstreamSpec": "absent",
       "disposition": "applicable",
       "execution": "not-run",
-      "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+      "reason": "No matching upstream unitstd spec exists. Local Haxe runtime tests cover re-entrant ownership, exclusion, release, and queued same-node process acquisition."
     },
     {
       "module": "sys.thread.NoEventLoopException",
@@ -1069,14 +1069,14 @@
       "upstreamSpec": "absent",
       "disposition": "applicable",
       "execution": "not-run",
-      "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+      "reason": "No matching upstream unitstd spec exists. Local Haxe runtime tests cover counting, exclusion, non-blocking checks, timed checks, and same-node process handoff."
     },
     {
       "module": "sys.thread.Thread",
       "upstreamSpec": "absent",
       "disposition": "applicable",
       "execution": "not-run",
-      "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+      "reason": "No matching upstream unitstd spec exists. Local Haxe runtime tests cover handles, tagged messages, blocking and non-blocking reads, event-loop creation, plain-thread rejection, and same-node transfer."
     },
     {
       "module": "sys.thread.ThreadPoolException",
@@ -1090,7 +1090,7 @@
       "upstreamSpec": "absent",
       "disposition": "applicable",
       "execution": "not-run",
-      "reason": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+      "reason": "No matching upstream unitstd spec exists. Local Haxe runtime tests cover unset values, assignment, and parent-to-child process isolation."
     }
   ],
   "omittedUpstreamFixtures": [

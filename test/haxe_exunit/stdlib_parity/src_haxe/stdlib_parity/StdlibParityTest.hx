@@ -2069,6 +2069,128 @@ class StdlibParityTest extends TestCase {
 		Assert.isTrue(broadcastDone.wait(2), "Condition.broadcast did not resume the second remaining waiter");
 	}
 
+	@:describe("sys.thread.Thread and sys.thread.EventLoop")
+	@:test
+	function testThreadMessagesAndEventLoopAvailability():Void {
+		var parent = Thread.current();
+		Assert.isNull(Thread.readMessage(false));
+
+		Thread.create(function() {
+			try {
+				Thread.current().events;
+				parent.sendMessage("plain-thread-event-loop-present");
+			} catch (_:sys.thread.NoEventLoopException) {
+				parent.sendMessage("plain-thread-event-loop-missing");
+			}
+		});
+		Assert.equals("plain-thread-event-loop-missing", Thread.readMessage(true));
+
+		Thread.createWithEventLoop(function() {
+			Thread.current().events.run(function() {
+				parent.sendMessage("child-event-loop-ran");
+			});
+		});
+		Assert.equals("child-event-loop-ran", Thread.readMessage(true));
+
+		var events = Thread.current().events;
+		Thread.create(function() {
+			events.run(function() {
+				parent.sendMessage("cross-process-event-ran");
+			});
+		});
+		Assert.isTrue(events.wait(2));
+		switch events.progress() {
+			case Now:
+			case other:
+				Assert.fail('Expected EventLoop.Now after a queued event, got $other');
+		}
+		Assert.equals("cross-process-event-ran", Thread.readMessage(false));
+
+		events.promise();
+		events.runPromised(function() {
+			parent.sendMessage("promised-event-ran");
+		});
+		Assert.isTrue(events.wait(2));
+		switch events.progress() {
+			case Now:
+			case other:
+				Assert.fail('Expected EventLoop.Now after a promised event, got $other');
+		}
+		Assert.equals("promised-event-ran", Thread.readMessage(false));
+	}
+
+	@:describe("sys.thread synchronization primitives")
+	@:test
+	function testThreadLocalDequeLockMutexAndSemaphore():Void {
+		var parent = Thread.current();
+		var tls = new sys.thread.Tls<String>();
+		Assert.isNull(tls.value);
+		tls.value = "main-thread";
+		Thread.create(function() {
+			parent.sendMessage(tls.value == null ? "child-tls-empty" : "child-tls-leaked");
+			tls.value = "child-thread";
+			parent.sendMessage(tls.value);
+		});
+		Assert.equals("child-tls-empty", Thread.readMessage(true));
+		Assert.equals("child-thread", Thread.readMessage(true));
+		Assert.equals("main-thread", tls.value);
+
+		var deque = new sys.thread.Deque<String>();
+		deque.add("tail");
+		deque.push("front");
+		Assert.equals("front", deque.pop(false));
+		Assert.equals("tail", deque.pop(false));
+		Assert.isNull(deque.pop(false));
+		Thread.create(function() {
+			parent.sendMessage("deque-waiting");
+			parent.sendMessage('deque:${deque.pop(true)}');
+		});
+		Assert.equals("deque-waiting", Thread.readMessage(true));
+		deque.add("handoff");
+		Assert.equals("deque:handoff", Thread.readMessage(true));
+
+		var lock = new sys.thread.Lock();
+		Assert.isFalse(lock.wait(0));
+		Thread.create(function() {
+			lock.release();
+			lock.release();
+			parent.sendMessage("lock-released-twice");
+		});
+		Assert.equals("lock-released-twice", Thread.readMessage(true));
+		Assert.isTrue(lock.wait(2));
+		Assert.isTrue(lock.wait(2));
+		Assert.isFalse(lock.wait(0));
+
+		var mutex = new sys.thread.Mutex();
+		mutex.acquire();
+		mutex.acquire();
+		Thread.create(function() {
+			parent.sendMessage(mutex.tryAcquire() ? "mutex-acquired-too-early" : "mutex-blocked");
+			mutex.acquire();
+			parent.sendMessage("mutex-acquired");
+			mutex.release();
+		});
+		Assert.equals("mutex-blocked", Thread.readMessage(true));
+		mutex.release();
+		Assert.isNull(Thread.readMessage(false));
+		mutex.release();
+		Assert.equals("mutex-acquired", Thread.readMessage(true));
+
+		var semaphore = new sys.thread.Semaphore(1);
+		semaphore.acquire();
+		Thread.create(function() {
+			parent.sendMessage(semaphore.tryAcquire(0) ? "semaphore-acquired-too-early" : "semaphore-blocked");
+			semaphore.acquire();
+			parent.sendMessage("semaphore-acquired");
+			semaphore.release();
+		});
+		Assert.equals("semaphore-blocked", Thread.readMessage(true));
+		semaphore.release();
+		Assert.equals("semaphore-acquired", Thread.readMessage(true));
+		Assert.isTrue(semaphore.tryAcquire(0));
+		semaphore.release();
+	}
+
 	@:describe("sys.thread.ThreadPoolException")
 	@:test
 	function testThreadPoolExceptionValuesAndCatch():Void {

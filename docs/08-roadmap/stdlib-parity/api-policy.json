@@ -801,8 +801,24 @@
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
       "supportState": "partial",
-      "evidenceState": "missing",
-      "evidence": [],
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testTimerStampMeasureAndManualRunRebinding"
+        },
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testTimerRepeatUsesEventLoop"
+        },
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testTimerDelayUsesEventLoop"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.3.10",
@@ -3066,14 +3082,20 @@
       "surfaceDigest": "2fd260046cdcbcd39bacd3311e8d9077add2e0a4ebee9bdc00af5633568be5c9",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testThreadLocalDequeLockMutexAndSemaphore"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover FIFO order, front insertion, non-blocking reads, and blocking same-node process handoff. Server lifecycle remains owned by the managed-reference blocker."
     },
     {
       "module": "sys.thread.ElasticThreadPool",
@@ -3094,14 +3116,30 @@
       "surfaceDigest": "6ff50b59c96377900076c940c1ff476ef79ed196c2a1d814eface27c02a8210d",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "partial",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testThreadMessagesAndEventLoopAvailability"
+        },
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testTimerRepeatUsesEventLoop"
+        },
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testTimerDelayUsesEventLoop"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover queued callbacks, promises, wait, progress, cross-process transfer, and timer delivery. Autonomous repeating-loop lifetime and exact cancellation timing remain incomplete."
     },
     {
       "module": "sys.thread.FixedThreadPool",
@@ -3136,28 +3174,40 @@
       "surfaceDigest": "b922cf6e7900bab938c23f8dacbddcac09d197fddde22d8b64f30ae8074b16fd",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testThreadLocalDequeLockMutexAndSemaphore"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover counting, non-blocking checks, blocking waits, and same-node process releases. Server lifecycle remains owned by the managed-reference blocker."
     },
     {
       "module": "sys.thread.Mutex",
       "surfaceDigest": "1ed68fff7b1897d6cc371c6f7dcdc1433286366785720e5d7e6efe43957db928",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testThreadLocalDequeLockMutexAndSemaphore"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover re-entrant ownership, exclusion, release, and queued same-node process acquisition. Server lifecycle remains owned by the managed-reference blocker."
     },
     {
       "module": "sys.thread.NoEventLoopException",
@@ -3184,28 +3234,40 @@
       "surfaceDigest": "a7c9d4a15497c7be0fd5a8909c70bbe4bc3db32baccb1cdf536e84e309927d76",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testThreadLocalDequeLockMutexAndSemaphore"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover counting, exclusion, non-blocking checks, timed checks, and same-node process handoff. Server lifecycle remains owned by the managed-reference blocker."
     },
     {
       "module": "sys.thread.Thread",
       "surfaceDigest": "b95be6b25753808b4ae8a0b15ca10633d841c51c0c9db993744a373ce3a7a970",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testThreadMessagesAndEventLoopAvailability"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover current and spawned handles, tagged messages, blocking and non-blocking reads, event-loop creation, plain-thread rejection, and same-node transfer."
     },
     {
       "module": "sys.thread.ThreadPoolException",
@@ -3232,14 +3294,20 @@
       "surfaceDigest": "6fe44d734f27813214438d80f67257e75d4f1330cfd065e08dfe063b1862522c",
       "applicability": "runtime",
       "applicabilityReason": "Public API that can be used by Haxe code compiled to Elixir.",
-      "supportState": "unknown",
-      "evidenceState": "missing",
-      "evidence": [],
+      "supportState": "supported",
+      "evidenceState": "module-runtime",
+      "evidence": [
+        {
+          "kind": "haxe-exunit",
+          "path": "test/haxe_exunit/stdlib_parity/src_haxe/stdlib_parity/StdlibParityTest.hx",
+          "selector": "testThreadLocalDequeLockMutexAndSemaphore"
+        }
+      ],
       "blockers": [
         "haxe.elixir.codex-0yn.10.4",
         "haxe.elixir.codex-0yn.10.5"
       ],
-      "reviewNote": "No matching upstream unitstd spec exists; behavior is BEAM process integration specific."
+      "reviewNote": "No matching upstream unitstd spec exists. Local Haxe tests cover unset values, assignment, and isolation between the parent and spawned same-node processes."
     }
   ],
   "apiOverrides": [

@@ -79,6 +79,9 @@ private class SemaphoreRuntime {
 		return Math.ceil(timeout * 1000);
 	}
 
+	// Haxe full DCE cannot see this call inside the injected spawn closure.
+
+	@:keep
 	public static function server_loop(ref:Term, available:Int, waiters:Term):Void {
 		untyped __elixir__('
             receive do
