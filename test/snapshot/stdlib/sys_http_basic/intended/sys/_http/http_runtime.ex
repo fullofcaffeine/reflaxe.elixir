@@ -1,24 +1,30 @@
 defmodule HttpRuntime do
   def reset_response_headers(ref) do
 
-                state = Process.get({:reflaxe_sys_http, ref}, %{headers: %{}, same_key: %{}, file_transfer: false})
+                state = Process.get({:reflaxe_sys_http, ref}, %{headers: %{}, same_key: %{}, file_transfer: nil})
                 Process.put({:reflaxe_sys_http, ref}, %{state | headers: %{}, same_key: %{}})
                 :ok
 
   end
-  def mark_file_transfer(ref) do
+  def store_file_transfer(ref, transfer) do
 
-                state = Process.get({:reflaxe_sys_http, ref}, %{headers: %{}, same_key: %{}, file_transfer: false})
-                Process.put({:reflaxe_sys_http, ref}, %{state | file_transfer: true})
+                state = Process.get({:reflaxe_sys_http, ref}, %{headers: %{}, same_key: %{}, file_transfer: nil})
+                Process.put({:reflaxe_sys_http, ref}, %{state | file_transfer: transfer})
                 :ok
 
   end
   def has_file_transfer(ref) do
-    Process.get({:reflaxe_sys_http, ref}, %{file_transfer: false}).file_transfer
+    not is_nil(Process.get({:reflaxe_sys_http, ref}, %{file_transfer: nil}).file_transfer)
+  end
+  def file_transfer(ref) do
+    Process.get({:reflaxe_sys_http, ref}, %{file_transfer: nil}).file_transfer
+  end
+  def multipart_boundary() do
+    "--------------------------" <> Integer.to_string(System.unique_integer([:positive, :monotonic]))
   end
   def store_response_headers(ref, pairs) do
 
-                state = Process.get({:reflaxe_sys_http, ref}, %{headers: %{}, same_key: %{}, file_transfer: false})
+                state = Process.get({:reflaxe_sys_http, ref}, %{headers: %{}, same_key: %{}, file_transfer: nil})
 
                 next_state =
                   Enum.reduce(pairs || [], state, fn {name, value}, acc ->

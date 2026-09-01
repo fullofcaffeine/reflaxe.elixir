@@ -21,7 +21,7 @@ defmodule Http do
     __haxe_static_put__(:proxy, value)
   end
   def new(url_param) do
-    struct = %{:__reflaxe_class__ => Http, :no_shutdown => nil, :cnx_timeout => nil, :response_headers => nil, :file => nil, :url => nil, :response_data => nil, :response_bytes => nil, :on_data => nil, :on_bytes => nil, :on_error => nil, :on_status => nil, :http_base_ref => nil}
+    struct = %{:__reflaxe_class__ => Http, :no_shutdown => nil, :cnx_timeout => nil, :response_headers => nil, :url => nil, :response_data => nil, :response_bytes => nil, :on_data => nil, :on_bytes => nil, :on_error => nil, :on_status => nil, :http_base_ref => nil}
     struct = %{struct | no_shutdown: false}
     struct = %{struct | cnx_timeout: 10}
     struct = Map.merge(struct, Map.drop(HttpBase.new(url_param), [:__struct__, :__reflaxe_class__]))
@@ -30,19 +30,17 @@ defmodule Http do
   end
   def request(struct, post \\ nil) do
     output = BytesOutput.new()
-    is_post = post == true or HttpBaseRuntime.has_request_body(struct.http_base_ref)
+    is_post = post == true or HttpBaseRuntime.has_request_body(struct.http_base_ref) or HttpRuntime.has_file_transfer(struct.http_base_ref)
     apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :custom_request, [struct, is_post, output, nil, nil])
     if (not HttpBaseRuntime.failed(struct.http_base_ref)) do
       apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :success, [struct, apply(Map.get(output, :__reflaxe_class__) || Map.get(output, :__struct__), :get_bytes, [output])])
     end
   end
-  def file_transfert(struct, argname, filename, file_param, size, mime_type \\ "application/octet-stream") do
-    apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :file_transfer, [struct, argname, filename, file_param, size, mime_type])
+  def file_transfert(struct, argname, filename, file, size, mime_type \\ "application/octet-stream") do
+    apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :file_transfer, [struct, argname, filename, file, size, mime_type])
   end
   def file_transfer(struct, argname, filename, file_input, size, mime_type \\ "application/octet-stream") do
-    HttpRuntime.mark_file_transfer(struct.http_base_ref)
-    struct = %{struct | file: %{param: argname, filename: filename, io: file_input, size: size, mime_type: mime_type}}
-    struct
+    HttpRuntime.store_file_transfer(struct.http_base_ref, %{param: argname, filename: filename, io: file_input, size: size, mime_type: mime_type})
   end
   def custom_request(struct, post, api, sock \\ nil, method \\ nil) do
     reset_response_state(struct)
@@ -50,14 +48,24 @@ defmodule Http do
     if (not Kernel.is_nil(unsupported_message)) do
       fail(struct, unsupported_message)
     else
+      transfer = HttpRuntime.file_transfer(struct.http_base_ref)
+      effective_post = post or not Kernel.is_nil(transfer)
       had_explicit_body = HttpBaseRuntime.has_request_body(struct.http_base_ref)
-      request_method = if (not Kernel.is_nil(method)), do: method, else: default_method(post)
-      request_body = request_body_for(struct, post)
-      request_body_data = body_data_for(request_body)
-      request_url = request_url_for(struct, post, request_body)
-      request_content_type = content_type_for(struct, post, request_body, had_explicit_body)
-      result = HttpRuntime.request(request_method, request_url, header_pairs(struct), request_body_data, request_content_type, timeout_millis(struct.cnx_timeout))
+      request_method = if (not Kernel.is_nil(method)), do: method, else: default_method(effective_post)
+      payload = request_payload_for(struct, effective_post, transfer, had_explicit_body)
+      request_body_data = body_data_for(payload.body)
+      request_url = request_url_for(struct, effective_post, payload.body)
+      result = HttpRuntime.request(request_method, request_url, header_pairs(struct), request_body_data, payload.content_type, timeout_millis(struct.cnx_timeout))
       handle_result(struct, result, api)
+    end
+  end
+  defp request_payload_for(struct, post, transfer, had_explicit_body) do
+    if (Kernel.is_nil(transfer)) do
+      body = request_body_for(struct, post)
+      %{body: body, content_type: content_type_for(struct, post, body, had_explicit_body)}
+    else
+      boundary = HttpRuntime.multipart_boundary()
+      %{body: multipart_body(struct, transfer, boundary), content_type: "multipart/form-data; boundary=" <> boundary}
     end
   end
   defp handle_result(struct, result, api) do
@@ -84,16 +92,29 @@ defmodule Http do
     HttpBaseRuntime.mark_failed(struct.http_base_ref, message)
     HttpBaseRuntime.call_on_error(struct, message)
   end
-  defp unsupported_request_message(struct, sock) do
+  defp unsupported_request_message(_struct, sock) do
     if (not Kernel.is_nil(sock)) do
       "sys.Http.customRequest with a caller-supplied Socket is not supported on the Elixir target; use sys.net.Socket directly or let sys.Http use OTP :httpc"
     else
-      if (not Kernel.is_nil(Http.proxy())) do
-        "sys.Http.PROXY is not supported on the Elixir target yet; configure an OTP :httpc profile or an application HTTP client boundary instead"
-      else
-        if (not Kernel.is_nil(struct.file) or HttpRuntime.has_file_transfer(struct.http_base_ref)), do: "sys.Http.fileTransfer is not supported on the Elixir target yet; use a typed Elixir HTTP client boundary for multipart uploads", else: nil
-      end
+      if (not Kernel.is_nil(Http.proxy())), do: "sys.Http.PROXY is not supported on the Elixir target yet; configure an OTP :httpc profile or an application HTTP client boundary instead", else: nil
     end
+  end
+  defp multipart_body(struct, transfer, boundary) do
+    output = BytesOutput.new()
+    _g = 0
+    g_value = HttpBaseRuntime.parameter_pairs(struct.http_base_ref)
+    Enum.each(g_value, fn parameter ->
+      apply(Map.get(output, :__reflaxe_class__) || Map.get(output, :__struct__), :write_string, [output, "--" <> boundary <> "\r\n", nil])
+      apply(Map.get(output, :__reflaxe_class__) || Map.get(output, :__struct__), :write_string, [output, "Content-Disposition: form-data; name=\"" <> elem(parameter, 0) <> "\"\r\n\r\n", nil])
+      apply(Map.get(output, :__reflaxe_class__) || Map.get(output, :__struct__), :write_string, [output, elem(parameter, 1) <> "\r\n", nil])
+    end)
+    apply(Map.get(output, :__reflaxe_class__) || Map.get(output, :__struct__), :write_string, [output, "--#{boundary}\r\n", nil])
+    apply(Map.get(output, :__reflaxe_class__) || Map.get(output, :__struct__), :write_string, [output, "Content-Disposition: form-data; name=\"#{transfer.param}\"; filename=\"#{transfer.filename}\"\r\n", nil])
+    apply(Map.get(output, :__reflaxe_class__) || Map.get(output, :__struct__), :write_string, [output, "Content-Type: #{transfer.mime_type}\r\n\r\n", nil])
+    buffer = Bytes.alloc(4096)
+    write_file_bytes(output, transfer.io, transfer.size, buffer)
+    apply(Map.get(output, :__reflaxe_class__) || Map.get(output, :__struct__), :write_string, [output, "\r\n--#{boundary}--", nil])
+    apply(Map.get(output, :__reflaxe_class__) || Map.get(output, :__struct__), :get_bytes, [output])
   end
   defp request_url_for(struct, post, request_body) do
     if (post or not Kernel.is_nil(request_body)) do
@@ -161,6 +182,39 @@ defmodule Http do
       raise Reflaxe.Elixir.HaxeThrow, [value: HttpBaseRuntime.last_error(http.http_base_ref)]
     end
     HttpBase.get_response_data(http)
+  end
+  defp write_file_bytes(output, input, remaining, buffer) do
+    if (remaining <= 0) do
+      nil
+    else
+      requested = if (remaining > buffer.length), do: buffer.length, else: remaining
+      read = read_file_chunk(input, buffer, requested)
+      if (Kernel.is_nil(read)) do
+        nil
+      else
+        if (read == 0) do
+          raise Reflaxe.Elixir.HaxeThrow, [value: {:blocked}]
+        end
+        apply(Map.get(output, :__reflaxe_class__) || Map.get(output, :__struct__), :write_full_bytes, [output, buffer, 0, read])
+        write_file_bytes(output, input, (remaining - read), buffer)
+      end
+    end
+  end
+  defp read_file_chunk(input, buffer, requested) do
+    try do
+      apply(Map.get(input, :__reflaxe_class__) || Map.get(input, :__struct__), :read_bytes, [input, buffer, 0, requested])
+    rescue
+      haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
+        (case {(case haxe_exception do
+          %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+          _ -> haxe_exception
+        end), haxe_exception} do
+          {haxe_catch_value, _} when is_struct(haxe_catch_value, Eof) or is_map(haxe_catch_value) and is_map_key(haxe_catch_value, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, haxe_catch_value) == Eof -> nil
+          _ ->
+            reraise(haxe_exception, __STACKTRACE__)
+        end)
+    end
   end
   defp default_method(post) do
     if (post), do: "POST", else: "GET"

@@ -421,16 +421,18 @@ Supported today:
 - `request(?post)` supports GET and form-style POST parameter encoding.
 - `customRequest(post, output, null, method)` supports OTP `:httpc` methods `GET`, `POST`, `HEAD`, `OPTIONS`, `PUT`, `DELETE`, `TRACE`, and `PATCH`.
 - `setHeader`, `addHeader`, `setParameter`, `addParameter`, `setPostData`, and `setPostBytes` persist through an opaque process-dictionary reference because generated Elixir maps are immutable.
+- `fileTransfer` and `fileTransfert` send multipart form data. They include parameters and read no more than the declared file size.
 - `onStatus`, `onData`, `onBytes`, and `onError` remain assignable Haxe callback fields. The target runtime stores callbacks as struct fields and invokes them through explicit BEAM helper calls.
 - `responseData`, `responseBytes`, `responseHeaders`, and `getResponseHeaderValues` are populated from the OTP response. Duplicate response headers keep the last value in `responseHeaders` and preserve all values through `getResponseHeaderValues`.
 
 Current unsupported pieces fail explicitly instead of corrupting data. Each remains a 1.0 blocker:
 - `customRequest` with a caller-supplied `sys.net.Socket` is not supported; use `sys.net.Socket` directly for manual protocol work.
 - `sys.Http.PROXY` is not supported on this target yet; configure an OTP `:httpc` profile or use a typed application HTTP boundary.
-- `fileTransfer` / `fileTransfert` multipart uploads are not supported yet; use an Elixir HTTP client boundary for multipart payloads.
 
 Coverage:
-- Snapshot/runtime smoke: `test/snapshot/stdlib/sys_http_basic` exercises `requestUrl`, GET query params, POST form params, custom PUT, callbacks, response bytes/data, duplicate headers, and HTTP error callbacks against a tiny local TCP server.
+- Snapshot/runtime smoke: `test/snapshot/stdlib/sys_http_basic` uses a small local TCP server.
+- The test covers requests, callbacks, headers, errors, custom methods, reusable bodies, and multipart uploads.
+- The multipart test checks form fields, file metadata, MIME type, and the declared file size.
 
 ### `sys.net.*` BEAM contract
 

@@ -4,7 +4,7 @@ defmodule Main do
       raise Reflaxe.Elixir.HaxeThrow, [value: message]
     end
   end
-  defp start_server(expected_method, expected_needle, status, response_body) do
+  defp start_server(expected_method, expected_needles, status, response_body) do
 
                 (fn ->
                   {:ok, listener} =
@@ -21,7 +21,7 @@ defmodule Main do
                   spawn(fn ->
                     {:ok, socket} = :gen_tcp.accept(listener, 5_000)
                     read_until_expected = fn read_until_expected, received ->
-                      if String.contains?(received, expected_needle) do
+                      if Enum.all?(expected_needles, fn needle -> String.contains?(received, needle) end) do
                         {:ok, received}
                       else
                         case :gen_tcp.recv(socket, 0, 5_000) do
@@ -34,7 +34,7 @@ defmodule Main do
 
                     request_ok =
                       String.starts_with?(request, expected_method <> " ") and
-                        (expected_needle == "" or String.contains?(request, expected_needle))
+                        Enum.all?(expected_needles, fn needle -> String.contains?(request, needle) end)
 
                     actual_status = if request_ok, do: status, else: 500
                     body = if request_ok, do: response_body, else: "server request mismatch"
@@ -79,12 +79,12 @@ defmodule Main do
     Map.get(map, key)
   end
   defp test_request_url() do
-    port = start_server("GET", "/hello", 200, "request-url-ok")
+    port = start_server("GET", ["/hello"], 200, "request-url-ok")
     body = Http.request_url(url(port, "/hello"))
     assert_that(body == "request-url-ok", "Http.requestUrl should return response body")
   end
   defp test_callbacks_and_headers() do
-    port = start_server("GET", "name=a%20b%26c%3Dd%2F%2B%3F%20%C3%A9", 200, "get-ok")
+    port = start_server("GET", ["name=a%20b%26c%3Dd%2F%2B%3F%20%C3%A9"], 200, "get-ok")
     http = Http.new(url(port, "/search"))
     apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :set_parameter, [http, "name", "a b&c=d/+? é"])
     http = %{http | on_status: fn next_status -> put_callback_int("sys_http_status", next_status) end}
@@ -104,7 +104,7 @@ defmodule Main do
     assert_that(not Kernel.is_nil(values) and length(values) == 2 and Enum.at(values, 0) == "one" and Enum.at(values, 1) == "two", "getResponseHeaderValues should preserve duplicate headers")
   end
   defp test_post_form() do
-    port = start_server("POST", "answer=42", 201, "post-ok")
+    port = start_server("POST", ["answer=42"], 201, "post-ok")
     http = Http.new(url(port, "/submit"))
     apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :set_parameter, [http, "answer", "42"])
     http = %{http | on_status: fn next_status -> put_callback_int("sys_http_post_status", next_status) end}
@@ -114,19 +114,19 @@ defmodule Main do
     assert_that(get_callback_string("sys_http_post_data") == "post-ok", "POST form should call onData")
   end
   defp test_reusable_post_data() do
-    first_port = start_server("POST", "payload&value", 201, "first-post")
+    first_port = start_server("POST", ["payload&value"], 201, "first-post")
     http = Http.new(url(first_port, "/first"))
     apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :set_post_data, [http, "payload&value"])
     http = %{http | on_data: fn next_data -> put_callback_string("sys_http_reusable_post", next_data) end}
     apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :request, [http, true])
     assert_that(get_callback_string("sys_http_reusable_post") == "first-post", "setPostData should send the first body")
-    second_port = start_server("POST", "payload&value", 200, "second-post")
+    second_port = start_server("POST", ["payload&value"], 200, "second-post")
     http = %{http | url: url(second_port, "/second")}
     apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :request, [http, true])
     assert_that(get_callback_string("sys_http_reusable_post") == "second-post", "setPostData should remain available when the request is reused")
   end
   defp test_custom_method() do
-    port = start_server("PUT", "payload", 200, "put-ok")
+    port = start_server("PUT", ["payload"], 200, "put-ok")
     http = Http.new(url(port, "/resource"))
     output = BytesOutput.new()
     apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :set_post_data, [http, "payload"])
@@ -136,8 +136,16 @@ defmodule Main do
       apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
     end).() == "put-ok", "customRequest should support PUT through :httpc")
   end
+  defp test_multipart_upload() do
+    port = start_server("POST", ["multipart/form-data; boundary=", "name=\"note\"\r\n\r\nhello\r\n", "name=\"upload\"; filename=\"sample.txt\"\r\nContent-Type: text/plain\r\n\r\nfile-data\r\n--"], 201, "multipart-ok")
+    http = Http.new(url(port, "/upload"))
+    apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :set_parameter, [http, "note", "hello"])
+    apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :file_transfer, [http, "upload", "sample.txt", BytesInput.new(Bytes.of_string("file-data-ignored", {:utf8}), nil, nil), 9, "text/plain"])
+    apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :request, [http, false])
+    assert_that(HttpBase.get_response_data(http) == "multipart-ok", "fileTransfer should send a multipart POST with only the declared file bytes")
+  end
   defp test_status_error() do
-    port = start_server("GET", "/missing", 404, "missing")
+    port = start_server("GET", ["/missing"], 404, "missing")
     http = Http.new(url(port, "/missing"))
     http = %{http | on_status: fn next_status -> put_callback_int("sys_http_error_status", next_status) end}
     http = %{http | on_error: fn message -> put_callback_string("sys_http_error", message) end}
@@ -155,6 +163,7 @@ defmodule Main do
     test_post_form()
     test_reusable_post_data()
     test_custom_method()
+    test_multipart_upload()
     test_status_error()
   end
 end

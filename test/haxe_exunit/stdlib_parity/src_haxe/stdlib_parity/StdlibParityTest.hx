@@ -1719,6 +1719,22 @@ class StdlibParityTest extends TestCase {
 		Assert.equals("missing-body", failed.responseBytes.toString());
 	}
 
+	@:describe("haxe.Http and sys.Http")
+	@:test
+	function testHttpMultipartFileTransfer():Void {
+		var port = HttpContractServer.startWithNeedles("POST", [
+			"multipart/form-data; boundary=",
+			'name="note"\r\n\r\nhello\r\n',
+			'name="upload"; filename="sample.txt"\r\nContent-Type: text/plain\r\n\r\nfile-data\r\n--'
+		], 201, "multipart-ok");
+		var http = new haxe.Http('http://127.0.0.1:$port/upload');
+		http.setParameter("note", "hello");
+		http.fileTransfer("upload", "sample.txt", new haxe.io.BytesInput(Bytes.ofString("file-data-ignored")), 9, "text/plain");
+		http.request(false);
+
+		Assert.equals("multipart-ok", http.responseData);
+	}
+
 	@:describe("sys.io.FileSeek")
 	@:test
 	function testFileSeekConstructors():Void {
@@ -3013,6 +3029,10 @@ extern class ExUnitCaptureIO {
 @:noCompletion
 class HttpContractServer {
 	public static function start(expectedMethod:String, expectedNeedle:String, status:Int, responseBody:String):Int {
+		return startWithNeedles(expectedMethod, [expectedNeedle], status, responseBody);
+	}
+
+	public static function startWithNeedles(expectedMethod:String, expectedNeedles:Array<String>, status:Int, responseBody:String):Int {
 		return untyped __elixir__('
             (fn ->
               {:ok, listener} =
@@ -3030,7 +3050,7 @@ class HttpContractServer {
                 case :gen_tcp.accept(listener, 5_000) do
                   {:ok, socket} ->
                     read_until_expected = fn read_until_expected, received ->
-                      if String.contains?(received, {1}) do
+                      if Enum.all?({1}, fn needle -> String.contains?(received, needle) end) do
                         {:ok, received}
                       else
                         case :gen_tcp.recv(socket, 0, 5_000) do
@@ -3044,7 +3064,7 @@ class HttpContractServer {
                       {:ok, request} ->
                         request_ok =
                           String.starts_with?(request, {0} <> " ") and
-                            String.contains?(request, {1})
+                            Enum.all?({1}, fn needle -> String.contains?(request, needle) end)
 
                         actual_status = if request_ok, do: {2}, else: 500
                         body = if request_ok, do: {3}, else: "server request mismatch"
@@ -3076,6 +3096,6 @@ class HttpContractServer {
 
               port
             end).()
-        ', expectedMethod, expectedNeedle, status, responseBody);
+        ', expectedMethod, expectedNeedles, status, responseBody);
 	}
 }

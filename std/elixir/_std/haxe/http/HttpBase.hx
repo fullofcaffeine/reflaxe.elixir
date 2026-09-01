@@ -200,6 +200,10 @@ class HttpBaseRuntime {
 		return cast untyped __elixir__('Process.get({:reflaxe_http_base, {0}}).headers', ref);
 	}
 
+	public static function parameterPairs(ref:Term):Array<{_0:String, _1:String}> {
+		return cast untyped __elixir__('Process.get({:reflaxe_http_base, {0}}).params', ref);
+	}
+
 	public static function headerValue(ref:Term, name:String):Null<String> {
 		return untyped __elixir__('
             expected = String.downcase({1})

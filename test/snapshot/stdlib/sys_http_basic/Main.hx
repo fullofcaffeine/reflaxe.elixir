@@ -1,4 +1,6 @@
 import haxe.Http;
+import haxe.io.Bytes;
+import haxe.io.BytesInput;
 import haxe.io.BytesOutput;
 
 class Main {
@@ -7,7 +9,7 @@ class Main {
 			throw message;
 	}
 
-	static function startServer(expectedMethod:String, expectedNeedle:String, status:Int, responseBody:String):Int {
+	static function startServer(expectedMethod:String, expectedNeedles:Array<String>, status:Int, responseBody:String):Int {
 		return untyped __elixir__('
             (fn ->
               {:ok, listener} =
@@ -24,7 +26,7 @@ class Main {
               spawn(fn ->
                 {:ok, socket} = :gen_tcp.accept(listener, 5_000)
                 read_until_expected = fn read_until_expected, received ->
-                  if String.contains?(received, {1}) do
+                  if Enum.all?({1}, fn needle -> String.contains?(received, needle) end) do
                     {:ok, received}
                   else
                     case :gen_tcp.recv(socket, 0, 5_000) do
@@ -37,7 +39,7 @@ class Main {
 
                 request_ok =
                   String.starts_with?(request, {0} <> " ") and
-                    ({1} == "" or String.contains?(request, {1}))
+                    Enum.all?({1}, fn needle -> String.contains?(request, needle) end)
 
                 actual_status = if request_ok, do: {2}, else: 500
                 body = if request_ok, do: {3}, else: "server request mismatch"
@@ -61,7 +63,7 @@ class Main {
 
               port
             end).()
-        ', expectedMethod, expectedNeedle, status, responseBody);
+        ', expectedMethod, expectedNeedles, status, responseBody);
 	}
 
 	static function url(port:Int, path:String):String {
@@ -89,13 +91,13 @@ class Main {
 	}
 
 	static function testRequestUrl():Void {
-		var port = startServer("GET", "/hello", 200, "request-url-ok");
+		var port = startServer("GET", ["/hello"], 200, "request-url-ok");
 		var body = Http.requestUrl(url(port, "/hello"));
 		assertThat(body == "request-url-ok", "Http.requestUrl should return response body");
 	}
 
 	static function testCallbacksAndHeaders():Void {
-		var port = startServer("GET", "name=a%20b%26c%3Dd%2F%2B%3F%20%C3%A9", 200, "get-ok");
+		var port = startServer("GET", ["name=a%20b%26c%3Dd%2F%2B%3F%20%C3%A9"], 200, "get-ok");
 		var http = new Http(url(port, "/search"));
 
 		http.setParameter("name", "a b&c=d/+? é");
@@ -123,7 +125,7 @@ class Main {
 	}
 
 	static function testPostForm():Void {
-		var port = startServer("POST", "answer=42", 201, "post-ok");
+		var port = startServer("POST", ["answer=42"], 201, "post-ok");
 		var http = new Http(url(port, "/submit"));
 
 		http.setParameter("answer", "42");
@@ -140,7 +142,7 @@ class Main {
 	}
 
 	static function testReusablePostData():Void {
-		var firstPort = startServer("POST", "payload&value", 201, "first-post");
+		var firstPort = startServer("POST", ["payload&value"], 201, "first-post");
 		var http = new Http(url(firstPort, "/first"));
 		http.setPostData("payload&value");
 		http.onData = function(nextData:String) {
@@ -149,14 +151,14 @@ class Main {
 		http.request(true);
 		assertThat(getCallbackString("sys_http_reusable_post") == "first-post", "setPostData should send the first body");
 
-		var secondPort = startServer("POST", "payload&value", 200, "second-post");
+		var secondPort = startServer("POST", ["payload&value"], 200, "second-post");
 		http.url = url(secondPort, "/second");
 		http.request(true);
 		assertThat(getCallbackString("sys_http_reusable_post") == "second-post", "setPostData should remain available when the request is reused");
 	}
 
 	static function testCustomMethod():Void {
-		var port = startServer("PUT", "payload", 200, "put-ok");
+		var port = startServer("PUT", ["payload"], 200, "put-ok");
 		var http = new sys.Http(url(port, "/resource"));
 		var output = new BytesOutput();
 
@@ -166,8 +168,22 @@ class Main {
 		assertThat(output.getBytes().toString() == "put-ok", "customRequest should support PUT through :httpc");
 	}
 
+	static function testMultipartUpload():Void {
+		var port = startServer("POST", [
+			"multipart/form-data; boundary=",
+			'name="note"\r\n\r\nhello\r\n',
+			'name="upload"; filename="sample.txt"\r\nContent-Type: text/plain\r\n\r\nfile-data\r\n--'
+		], 201, "multipart-ok");
+		var http = new Http(url(port, "/upload"));
+		http.setParameter("note", "hello");
+		http.fileTransfer("upload", "sample.txt", new BytesInput(Bytes.ofString("file-data-ignored")), 9, "text/plain");
+		http.request(false);
+
+		assertThat(http.responseData == "multipart-ok", "fileTransfer should send a multipart POST with only the declared file bytes");
+	}
+
 	static function testStatusError():Void {
-		var port = startServer("GET", "/missing", 404, "missing");
+		var port = startServer("GET", ["/missing"], 404, "missing");
 		var http = new Http(url(port, "/missing"));
 
 		http.onStatus = function(nextStatus:Int) {
@@ -189,6 +205,7 @@ class Main {
 		testPostForm();
 		testReusablePostData();
 		testCustomMethod();
+		testMultipartUpload();
 		testStatusError();
 	}
 }

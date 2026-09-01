@@ -72,6 +72,9 @@ defmodule HttpBaseRuntime do
   def header_pairs(ref) do
     Process.get({:reflaxe_http_base, ref}).headers
   end
+  def parameter_pairs(ref) do
+    Process.get({:reflaxe_http_base, ref}).params
+  end
   def header_value(ref, name) do
 
                 expected = String.downcase(name)

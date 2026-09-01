@@ -13,6 +13,19 @@ private typedef HeaderPair = {
 	var _1:String;
 };
 
+private typedef FileTransfer = {
+	var param:String;
+	var filename:String;
+	var io:Input;
+	var size:Int;
+	var mimeType:String;
+};
+
+private typedef RequestPayload = {
+	var body:Null<Bytes>;
+	var contentType:Null<String>;
+};
+
 /**
  * sys.Http (Elixir target)
  *
@@ -28,21 +41,13 @@ private typedef HeaderPair = {
  * - Preserve the `haxe.http.HttpBase` callback contract: `onStatus`, `onData`,
  *   `onBytes`, `onError`, `responseData`, `responseBytes`, and response headers.
  * - Convert Haxe headers/params/body fields to `:httpc.request/4` inputs.
- * - Fail explicitly for surfaces that require separate BEAM contracts: proxy,
- *   caller-supplied sockets, and multipart file transfer.
+ * - Fail explicitly for surfaces that require separate BEAM contracts: proxy
+ *   and caller-supplied sockets.
  */
 class Http extends haxe.http.HttpBase {
 	public var noShutdown:Bool;
 	public var cnxTimeout:Float;
 	public var responseHeaders(get, never):Map<String, String>;
-
-	private var file:Null<{
-		param:String,
-		filename:String,
-		io:Input,
-		size:Int,
-		mimeType:String
-	}>;
 
 	public static var PROXY:{host:String, port:Int, auth:{user:String, pass:String}} = null;
 
@@ -55,7 +60,7 @@ class Http extends haxe.http.HttpBase {
 
 	public override function request(?post:Bool):Void {
 		var output = new BytesOutput();
-		var isPost = (post == true) || HttpBaseRuntime.hasRequestBody(httpBaseRef);
+		var isPost = (post == true) || HttpBaseRuntime.hasRequestBody(httpBaseRef) || HttpRuntime.hasFileTransfer(httpBaseRef);
 		customRequest(isPost, output);
 		if (!HttpBaseRuntime.failed(httpBaseRef)) {
 			success(output.getBytes());
@@ -69,14 +74,13 @@ class Http extends haxe.http.HttpBase {
 	}
 
 	public function fileTransfer(argname:String, filename:String, fileInput:Input, size:Int, mimeType = "application/octet-stream"):Void {
-		HttpRuntime.markFileTransfer(httpBaseRef);
-		file = {
+		HttpRuntime.storeFileTransfer(httpBaseRef, {
 			param: argname,
 			filename: filename,
 			io: fileInput,
 			size: size,
 			mimeType: mimeType
-		};
+		});
 	}
 
 	public function customRequest(post:Bool, api:Output, ?sock:Socket, ?method:String):Void {
@@ -86,16 +90,33 @@ class Http extends haxe.http.HttpBase {
 		if (unsupportedMessage != null) {
 			fail(unsupportedMessage);
 		} else {
+			var transfer = HttpRuntime.fileTransfer(httpBaseRef);
+			var effectivePost = post || transfer != null;
 			var hadExplicitBody = HttpBaseRuntime.hasRequestBody(httpBaseRef);
-			var requestMethod = method != null ? method : defaultMethod(post);
-			var requestBody = requestBodyFor(post);
-			var requestBodyData = bodyDataFor(requestBody);
-			var requestUrl = requestUrlFor(post, requestBody);
-			var requestContentType = contentTypeFor(post, requestBody, hadExplicitBody);
+			var requestMethod = method != null ? method : defaultMethod(effectivePost);
+			var payload = requestPayloadFor(effectivePost, transfer, hadExplicitBody);
+			var requestBodyData = bodyDataFor(payload.body);
+			var requestUrl = requestUrlFor(effectivePost, payload.body);
 
-			var result = HttpRuntime.request(requestMethod, requestUrl, headerPairs(), requestBodyData, requestContentType, timeoutMillis(cnxTimeout));
+			var result = HttpRuntime.request(requestMethod, requestUrl, headerPairs(), requestBodyData, payload.contentType, timeoutMillis(cnxTimeout));
 			handleResult(result, api);
 		}
+	}
+
+	function requestPayloadFor(post:Bool, transfer:Null<FileTransfer>, hadExplicitBody:Bool):RequestPayload {
+		if (transfer == null) {
+			var body = requestBodyFor(post);
+			return {
+				body: body,
+				contentType: contentTypeFor(post, body, hadExplicitBody)
+			};
+		}
+
+		var boundary = HttpRuntime.multipartBoundary();
+		return {
+			body: multipartBody(transfer, boundary),
+			contentType: "multipart/form-data; boundary=" + boundary
+		};
 	}
 
 	function handleResult(result:Term, api:Output):Void {
@@ -147,9 +168,49 @@ class Http extends haxe.http.HttpBase {
 				"sys.Http.customRequest with a caller-supplied Socket is not supported on the Elixir target; use sys.net.Socket directly or let sys.Http use OTP :httpc";
 		if (PROXY != null)
 			return "sys.Http.PROXY is not supported on the Elixir target yet; configure an OTP :httpc profile or an application HTTP client boundary instead";
-		if (file != null || HttpRuntime.hasFileTransfer(httpBaseRef))
-			return "sys.Http.fileTransfer is not supported on the Elixir target yet; use a typed Elixir HTTP client boundary for multipart uploads";
 		return null;
+	}
+
+	/** Build the multipart body when the request starts, as the Haxe API requires. */
+	function multipartBody(transfer:FileTransfer, boundary:String):Bytes {
+		var output = new BytesOutput();
+		for (parameter in HttpBaseRuntime.parameterPairs(httpBaseRef)) {
+			output.writeString("--" + boundary + "\r\n");
+			output.writeString('Content-Disposition: form-data; name="${parameter._0}"\r\n\r\n');
+			output.writeString(parameter._1 + "\r\n");
+		}
+
+		output.writeString("--" + boundary + "\r\n");
+		output.writeString('Content-Disposition: form-data; name="${transfer.param}"; filename="${transfer.filename}"\r\n');
+		output.writeString("Content-Type: " + transfer.mimeType + "\r\n\r\n");
+
+		var buffer = Bytes.alloc(4096);
+		writeFileBytes(output, transfer.io, transfer.size, buffer);
+
+		output.writeString("\r\n--" + boundary + "--");
+		return output.getBytes();
+	}
+
+	static function writeFileBytes(output:BytesOutput, input:Input, remaining:Int, buffer:Bytes):Void {
+		if (remaining <= 0)
+			return;
+
+		var requested = remaining > buffer.length ? buffer.length : remaining;
+		var read = readFileChunk(input, buffer, requested);
+		if (read == null)
+			return;
+		if (read == 0)
+			throw haxe.io.Error.Blocked;
+		output.writeFullBytes(buffer, 0, read);
+		writeFileBytes(output, input, remaining - read, buffer);
+	}
+
+	static function readFileChunk(input:Input, buffer:Bytes, requested:Int):Null<Int> {
+		try {
+			return input.readBytes(buffer, 0, requested);
+		} catch (_:haxe.io.Eof) {
+			return null;
+		}
 	}
 
 	static function defaultMethod(post:Bool):String {
@@ -232,27 +293,35 @@ class Http extends haxe.http.HttpBase {
 private class HttpRuntime {
 	public static function resetResponseHeaders(ref:Term):Void {
 		untyped __elixir__('
-            state = Process.get({:reflaxe_sys_http, {0}}, %{headers: %{}, same_key: %{}, file_transfer: false})
+            state = Process.get({:reflaxe_sys_http, {0}}, %{headers: %{}, same_key: %{}, file_transfer: nil})
             Process.put({:reflaxe_sys_http, {0}}, %{state | headers: %{}, same_key: %{}})
             :ok
         ', ref);
 	}
 
-	public static function markFileTransfer(ref:Term):Void {
+	public static function storeFileTransfer(ref:Term, transfer:FileTransfer):Void {
 		untyped __elixir__('
-            state = Process.get({:reflaxe_sys_http, {0}}, %{headers: %{}, same_key: %{}, file_transfer: false})
-            Process.put({:reflaxe_sys_http, {0}}, %{state | file_transfer: true})
+            state = Process.get({:reflaxe_sys_http, {0}}, %{headers: %{}, same_key: %{}, file_transfer: nil})
+            Process.put({:reflaxe_sys_http, {0}}, %{state | file_transfer: {1}})
             :ok
-        ', ref);
+        ', ref, transfer);
 	}
 
 	public static function hasFileTransfer(ref:Term):Bool {
-		return untyped __elixir__('Process.get({:reflaxe_sys_http, {0}}, %{file_transfer: false}).file_transfer', ref);
+		return untyped __elixir__('not is_nil(Process.get({:reflaxe_sys_http, {0}}, %{file_transfer: nil}).file_transfer)', ref);
+	}
+
+	public static function fileTransfer(ref:Term):Null<FileTransfer> {
+		return cast untyped __elixir__('Process.get({:reflaxe_sys_http, {0}}, %{file_transfer: nil}).file_transfer', ref);
+	}
+
+	public static function multipartBoundary():String {
+		return untyped __elixir__('"--------------------------" <> Integer.to_string(System.unique_integer([:positive, :monotonic]))');
 	}
 
 	public static function storeResponseHeaders(ref:Term, pairs:Array<HeaderPair>):Void {
 		untyped __elixir__('
-            state = Process.get({:reflaxe_sys_http, {0}}, %{headers: %{}, same_key: %{}, file_transfer: false})
+            state = Process.get({:reflaxe_sys_http, {0}}, %{headers: %{}, same_key: %{}, file_transfer: nil})
 
             next_state =
               Enum.reduce({1} || [], state, fn {name, value}, acc ->
