@@ -40,6 +40,7 @@ EOF
 PATH="${FAKE_BIN}:${PATH}" \
   MIX_CALLS_LOG="${MIX_CALLS_LOG}" \
   ELIXIR_CALLS_LOG="${ELIXIR_CALLS_LOG}" \
+  MIX_BUILD_ROOT="${FIXTURE_ROOT}/empty-build" \
   HAXE_EXUNIT_GENERATED_DIR="${FIXTURE_ROOT}/generated" \
   HEX_TIMEOUT_SECS=10 \
   DEPS_TIMEOUT_SECS=10 \
@@ -50,6 +51,7 @@ PATH="${FAKE_BIN}:${PATH}" \
 PATH="${FAKE_BIN}:${PATH}" \
   MIX_CALLS_LOG="${MIX_CALLS_LOG}" \
   ELIXIR_CALLS_LOG="${ELIXIR_CALLS_LOG}" \
+  MIX_BUILD_ROOT="${FIXTURE_ROOT}/empty-build" \
   HAXE_EXUNIT_GENERATED_DIR="${FIXTURE_ROOT}/generated" \
   bash "${ROOT_DIR}/scripts/test-mix-fast.sh" --test-only
 
@@ -66,6 +68,14 @@ if [[ "$(grep -Fc -- 'validate-generated-elixir-warnings.exs' "${ELIXIR_CALLS_LO
   exit 1
 fi
 
+# A fresh checkout has no dependency code paths. It must still invoke Elixir
+# correctly and accept clean output before the warning rejection is tested.
+ELIXIR_BIN="${REAL_ELIXIR}" \
+  MIX_BUILD_ROOT="${FIXTURE_ROOT}/empty-build" \
+  GENERATED_WARNING_TIMEOUT_SECS=60 \
+  bash "${ROOT_DIR}/scripts/ci/validate-generated-elixir-warnings.sh" \
+    "${FIXTURE_ROOT}/generated"
+
 cat >"${FIXTURE_ROOT}/generated/generated_warning.ex" <<'EOF'
 defmodule GeneratedWarningFixture do
   def value do
@@ -76,6 +86,7 @@ end
 EOF
 
 if ELIXIR_BIN="${REAL_ELIXIR}" \
+  MIX_BUILD_ROOT="${FIXTURE_ROOT}/empty-build" \
   GENERATED_WARNING_TIMEOUT_SECS=60 \
   bash "${ROOT_DIR}/scripts/ci/validate-generated-elixir-warnings.sh" \
     "${FIXTURE_ROOT}/generated" >"${STRICT_LOG}" 2>&1; then

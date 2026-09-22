@@ -1172,7 +1172,14 @@ class CallExprBuilder {
 						//   the same module) because private functions are not exported and cannot be invoked
 						//   via `apply/3`.
 						// --------------------------------------------------------------------
-						var receiverAst = buildExpression(obj);
+						var isSuperReceiver = switch (obj.expr) {
+							case TConst(TSuper): true;
+							default: false;
+						};
+						// Explicit parent calls select the declaring method, but keep the current
+						// object. Reuse typed `this` lowering so closures and receiver naming keep
+						// their existing context; `super` is not a separate runtime binding.
+						var receiverAst = buildExpression(isSuperReceiver ? {expr: TConst(TThis), t: obj.t, pos: obj.pos} : obj);
 						var classType = classRef.get();
 						var isElixirModuleReference = classType != null
 							&& classType.isExtern
@@ -1194,10 +1201,6 @@ class CallExprBuilder {
 						var callArgs = [receiverAst].concat(argASTs);
 
 						var isPublicMethod = cf.get().isPublic;
-						var isSuperReceiver = switch (obj.expr) {
-							case TConst(TSuper): true;
-							default: false;
-						};
 						if (isPublicMethod && !isSuperReceiver) {
 							var receiverRef = receiverAst;
 							var prefix:Array<ElixirAST> = [];

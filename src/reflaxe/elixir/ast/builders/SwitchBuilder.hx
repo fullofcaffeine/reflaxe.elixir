@@ -645,13 +645,9 @@ class SwitchBuilder {
 			// Detect lowered guard chains (if/else) and use the *condition* side only.
 			var exprToCheck = switchCase.expr;
 			switch (switchCase.expr.expr) {
-				case TBlock(exprs):
-					for (expr in exprs) {
-						if (reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr) == "TIf") {
-							exprToCheck = expr;
-							break;
-						}
-					}
+				case TBlock([only]):
+					// Only a wrapper can disappear. Other statements can define guard locals.
+					exprToCheck = only;
 				default:
 			}
 			switch (exprToCheck.expr) {
@@ -739,14 +735,9 @@ class SwitchBuilder {
 			// Haxe may wrap guard clauses in TBlock - unwrap if needed
 			var exprToCheck = switchCase.expr;
 			switch (switchCase.expr.expr) {
-				case TBlock(exprs):
-					// Search for TIf in the block
-					for (expr in exprs) {
-						if (reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr) == "TIf") {
-							exprToCheck = expr;
-							break;
-						}
-					}
+				case TBlock([only]):
+					// Preserve setup, effects, and trailing results in multi-statement bodies.
+					exprToCheck = only;
 				default:
 					// Not wrapped in block
 			}
@@ -986,16 +977,9 @@ class SwitchBuilder {
 						// Unwrap TBlock to find nested TIf
 						var nextExpr = eelse;
 						switch (eelse.expr) {
-							case TBlock(exprs):
-								#if debug_switch_builder trace('[GuardChain]   Unwrapping TBlock with ${exprs.length} expressions'); #end
-								// Search for TIf in the block
-								for (expr in exprs) {
-									if (reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr) == "TIf") {
-										#if debug_switch_builder trace('[GuardChain]   Found TIf inside TBlock'); #end
-										nextExpr = expr;
-										break;
-									}
-								}
+							case TBlock([only]):
+								// An else branch can have its own setup before a nested condition.
+								nextExpr = only;
 							default:
 								// Not a TBlock, use as-is
 						}

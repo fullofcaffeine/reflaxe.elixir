@@ -375,7 +375,9 @@ class VariableBuilder {
 	 * 
 	 * WHY: Variables might need underscore prefix or special naming
 	 * WHAT: Determines the proper name for the declared variable
-	 * HOW: Checks usage and applies naming conventions
+	 * HOW: Honors explicit mappings, then uses the shared target-name normalizer.
+	 * Local binders and references must agree before usage analysis: for example,
+	 * `final after = []` must bind `after_`, not an apparently unread `after`.
 	 */
 	static function resolveDeclarationName(v:TVar, context:CompilationContext):String {
 		// Haxe can produce a local named `__` from source patterns like `var _ = expr`.
@@ -399,8 +401,8 @@ class VariableBuilder {
 			}
 		}
 
-		// Convert variable name to snake_case
-		var varName = reflaxe.elixir.ast.NameUtils.toSnakeCase(v.name);
+		// Normalize declarations before any pass can analyze their reads or writes.
+		var varName = reflaxe.elixir.ast.naming.ElixirNaming.toVarName(v.name);
 		if (varName == "__")
 			return "_";
 
@@ -555,7 +557,7 @@ class VariableBuilder {
 
 		// Priority 7: Check if the declaration had underscore prefix
 		// CRITICAL: References must match the declaration name exactly
-		var varName = reflaxe.elixir.ast.NameUtils.toSnakeCase(defaultName);
+		var varName = reflaxe.elixir.ast.naming.ElixirNaming.toVarName(defaultName);
 		if (context.underscorePrefixedVars != null && context.underscorePrefixedVars.exists(tvarId)) {
 			var hasUnderscorePrefix = context.underscorePrefixedVars.get(tvarId) == true;
 			if (hasUnderscorePrefix && varName.length > 0 && varName.charAt(0) != "_") {

@@ -111,9 +111,15 @@ defmodule DateTools do
       "s" ->
         Reflaxe.Elixir.HaxeFloat.to_string(trunc(Reflaxe.Elixir.HaxeFloat.divide(DateTime.to_unix(d, :millisecond), 1000)))
       "t" -> "\t"
-      "u" when d == 0 -> "7"
       "u" ->
-        Reflaxe.Elixir.HaxeFloat.to_string(t)
+        date = apply(Map.get(d, :__reflaxe_class__) || Map.get(d, :__struct__), :to_date, [d])
+        dow = Date.day_of_week(date)
+        t = if (dow == 7), do: 0, else: dow
+        if (t == 0) do
+          "7"
+        else
+          Reflaxe.Elixir.HaxeFloat.to_string(t)
+        end
       "w" ->
         Reflaxe.Elixir.HaxeFloat.to_string(
           (fn ->

@@ -1,4 +1,43 @@
+/** Runtime contracts for loop results, including updates inside conditional scopes. */
 class Main {
+	static function guardedPartition(values:Null<Array<Int>>):{left:Array<Int>, right:Array<Int>} {
+		final left:Array<Int> = [];
+		final right:Array<Int> = [];
+
+		if (values != null)
+			for (value in values) {
+				if (value < 2)
+					left.push(value);
+				else
+					right.push(value);
+			}
+
+		return {left: left, right: right};
+	}
+
+	/** Reserved local names and nested guards must preserve the same loop results. */
+	static function nestedPartition(values:Null<Array<Int>>, enabled:Bool):{left:Array<Int>, right:Array<Int>} {
+		final before:Array<Int> = [];
+		final after:Array<Int> = [];
+
+		if (enabled) {
+			if (values != null)
+				for (value in values) {
+					if (value < 2)
+						before.push(value);
+					else
+						after.push(value);
+				}
+		}
+
+		return {left: before, right: after};
+	}
+
+	static function assertPartition(label:String, expectedLeft:Array<Int>, expectedRight:Array<Int>, actual:{left:Array<Int>, right:Array<Int>}):Void {
+		assertInts('$label left', expectedLeft, actual.left);
+		assertInts('$label right', expectedRight, actual.right);
+	}
+
 	static function breakBeforeAppend(values:Array<Int>):Array<Int> {
 		var output = [];
 		for (value in values) {
@@ -106,6 +145,13 @@ class Main {
 	}
 
 	public static function main():Void {
+		assertPartition("null guard", [], [], guardedPartition(null));
+		assertPartition("empty guard", [], [], guardedPartition([]));
+		assertPartition("guarded loop", [1, 0], [2, 3], guardedPartition([1, 2, 0, 3]));
+		assertPartition("nested disabled", [], [], nestedPartition([1, 2, 3], false));
+		assertPartition("nested null", [], [], nestedPartition(null, true));
+		assertPartition("nested loop", [1, 0], [2, 3], nestedPartition([1, 2, 0, 3], true));
+
 		assertInts("break", [1], breakBeforeAppend([1, -1, 2]));
 		assertInts("continue", [1, 2], continueBeforeAppend([1, -1, 2]));
 		assertInts("carried state", [1, 10, 2, 3, 3], carriedArrayState([1, 2, 3, 4]));

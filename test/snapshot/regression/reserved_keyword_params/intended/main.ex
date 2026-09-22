@@ -13,6 +13,16 @@ defmodule Main do
     test_require("library")
     test_use("framework")
     test_multiple("start", "middle", "result")
+    local_keyword_arrays()
+  end
+  def local_keyword_arrays() do
+    after_ = []
+    end_ = []
+    rescue_ = []
+    after_ = after_ ++ [1]
+    end_ = end_ ++ [2]
+    rescue_ = rescue_ ++ [3]
+    length(after_) + length(end_) + length(rescue_)
   end
   defp test_end(start, end_param) do
     "#{start} to #{end_param}"

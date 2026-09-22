@@ -33,6 +33,9 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *         {a, b} = case expr do ... end
  *     - Ensure each branch/clause returns the updated variable value(s) by appending the return
  *       expression (or tuple) to the end of each branch body.
+ * - Assignment patterns may bind several values, as in a loop reducer's
+ *   `{left, right} = Enum.reduce(...)`. Inspect every binding in the pattern,
+ *   not only a single variable. Pinned values are reads, not new bindings.
  *
  * EXAMPLES
  * Haxe:
@@ -383,10 +386,11 @@ class ControlFlowStateHoistTransforms {
 				return;
 
 			case EMatch(pat, rhs):
-				switch (pat) {
-					case PVar(name) if (isBindableName(name) && bound.exists(name)):
+				var assigned = new Map<String, Bool>();
+				bindFromPattern(pat, assigned);
+				for (name in assigned.keys()) {
+					if (bound.exists(name))
 						out.set(name, true);
-					default:
 				}
 				collectAssignedVars(rhs, bound, out);
 
@@ -458,8 +462,8 @@ class ControlFlowStateHoistTransforms {
 			case PBinary(segs):
 				for (s in segs)
 					bindFromPattern(s.pattern, out);
-			case PPin(inner):
-				bindFromPattern(inner, out);
+			case PPin(_):
+				// A pin matches a prior value; it cannot introduce or update a binding.
 			default:
 		}
 	}

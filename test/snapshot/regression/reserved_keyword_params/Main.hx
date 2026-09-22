@@ -25,6 +25,20 @@ class Main {
 
 		// Test multiple reserved keywords
 		testMultiple("start", "middle", "result");
+		localKeywordArrays();
+	}
+
+	/** Local declarations must use the same escaped names as their reads and writes. */
+	public static function localKeywordArrays():Int {
+		final after:Array<Int> = [];
+		final end:Array<Int> = [];
+		final rescue:Array<Int> = [];
+
+		after.push(1);
+		end.push(2);
+		rescue.push(3);
+
+		return after.length + end.length + rescue.length;
 	}
 
 	// Functions with Elixir reserved keyword parameters (that Haxe allows)
