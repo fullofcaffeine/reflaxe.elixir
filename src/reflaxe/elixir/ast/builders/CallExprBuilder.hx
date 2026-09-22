@@ -1205,7 +1205,9 @@ class CallExprBuilder {
 								case EVar(_):
 									// Receiver is already a stable binding; do not re-bind.
 								default:
-									var tempReceiverName = "reflaxe_dispatch_receiver";
+									// Sibling expressions can share the surrounding block after lowering.
+									// Preserve each evaluated receiver with the existing node allocator.
+									var tempReceiverName = 'reflaxe_dispatch_receiver_${context.generateNodeId()}';
 									prefix.push(makeAST(EMatch(PVar(tempReceiverName), receiverAst)));
 									receiverRef = makeAST(EVar(tempReceiverName));
 							}
@@ -1220,35 +1222,39 @@ class CallExprBuilder {
 								makeAST(EList([receiverRef].concat(argASTs)))
 							]));
 
+							var dispatchResult = applyCall;
+
+							// Compose receiver-return handling before attaching its evaluation prefix.
+							// Returning here would drop calls such as makeBuffer() in makeBuffer().add(x).
 							var receiverConvention = ReceiverReturnConventions.forMethod(classPack, className, methodName);
 							switch (receiverConvention) {
 								case UpdatedReceiver:
 									switch (receiverRef.def) {
 										case EVar(receiverVarName):
-											return EMatch(PVar(receiverVarName), applyCall);
+											dispatchResult = makeAST(EMatch(PVar(receiverVarName), applyCall));
 										default:
 									}
 								case UpdatedReceiverAndValue:
 									switch (receiverRef.def) {
 										case EVar(receiverVarName):
-											return makeAST(EReceiverEffect({
+											dispatchResult = makeAST(EReceiverEffect({
 												receiver: {varId: -1, name: receiverVarName},
 												operation: applyCall,
 												resultShape: UpdatedReceiverAndValue,
 												valueProjection: CompanionValue,
 												writeback: Always
-											})).def;
+											}));
 										default:
 									}
 								case PureValue:
 							}
 
 							if (prefix.length > 0) {
-								prefix.push(applyCall);
+								prefix.push(dispatchResult);
 								return EBlock(prefix);
 							}
 
-							return applyCall.def;
+							return dispatchResult.def;
 						}
 
 						// Private instance methods: static dispatch within the declaring module.
