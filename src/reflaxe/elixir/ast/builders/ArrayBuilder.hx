@@ -27,6 +27,54 @@ import reflaxe.elixir.CompilationContext;
 @:nullSafety(Off)
 class ArrayBuilder {
 	/**
+	 * Lower the existing list-backed Array.slice value operation.
+	 *
+	 * Haxe uses an exclusive end and clamps negative offsets relative to length.
+	 * Enum.slice/3 expects a nonnegative start and count, so normalize both bounds
+	 * before calling it. For example, [1, 2, 3, 4].slice(1, -1) yields [2, 3].
+	 * Evaluate operands as function arguments in the caller's scope, then normalize
+	 * their captured values in a pure function body. Putting operand assignments
+	 * inside that body would hide their writes from the caller. A later argument
+	 * can also rebind an earlier local. This does not implement managed Array identity
+	 * or alias-visible mutation; those remain owned by the collection ABI work.
+	 */
+	public static function buildSlice(receiver:ElixirAST, start:ElixirAST, end:ElixirAST, endMayBeNil:Bool, context:CompilationContext):ElixirASTDef {
+		var steps:Array<ElixirAST> = [];
+		function bind(value:ElixirAST, label:String):ElixirAST {
+			var name = 'array_slice_${label}_${context.generateNodeId()}';
+			steps.push(makeAST(EMatch(PVar(name), value)));
+			return makeAST(EVar(name));
+		}
+		var valuesName = 'array_slice_values_${context.generateNodeId()}';
+		var startName = 'array_slice_start_${context.generateNodeId()}';
+		var endName = end.def.match(ENil) ? "_" : 'array_slice_end_${context.generateNodeId()}';
+		var values = makeAST(EVar(valuesName));
+		var startValue = makeAST(EVar(startName));
+		var endValue = makeAST(EVar(endName));
+		var length = bind(makeAST(ECall(null, "length", [values])), "length");
+		var zero = makeAST(EInteger(0));
+
+		function normalize(value:ElixirAST):ElixirAST {
+			var offset = makeAST(EIf(makeAST(EBinary(Less, value, zero)), makeAST(EBinary(Add, length, value)), value));
+			return makeAST(ECall(null, "min", [length, makeAST(ECall(null, "max", [zero, offset]))]));
+		}
+		var first = bind(normalize(startValue), "first");
+		var endBound = switch (end.def) {
+			case ENil: length;
+			case EInteger(_): normalize(endValue);
+			default:
+				endMayBeNil ? makeAST(EIf(makeAST(EBinary(Equal, endValue, makeAST(ENil))), length, normalize(endValue))) : normalize(endValue);
+		};
+		var last = bind(endBound, "last");
+		var count = makeAST(ECall(null, "max", [zero, makeAST(EBinary(Subtract, last, first))]));
+		steps.push(makeAST(ERemoteCall(makeAST(EVar("Enum")), "slice", [values, first, count])));
+		var normalizeSlice = makeAST(EFn([
+			{args: [PVar(valuesName), PVar(startName), PVar(endName)], guard: null, body: makeAST(EBlock(steps))}
+		]));
+		return ECall(normalizeSlice, "", [receiver, start, end]);
+	}
+
+	/**
 	 * Build array declaration expression
 	 * 
 	 * @param elements Array elements to include

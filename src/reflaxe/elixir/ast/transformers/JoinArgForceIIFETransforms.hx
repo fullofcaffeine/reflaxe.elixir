@@ -10,8 +10,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 	* JoinArgForceIIFETransforms
 	*
 	* WHAT
-	* - As a last-resort safety, ensure the first argument to Enum.join/2 is a
-	*   single valid expression by wrapping complex shapes in an IIFE.
+	* - Wrap a statement block used as the first join argument in a value scope.
 	*
 	* WHY
 	* - Earlier rewrites may miss certain desugared list-builder forms outside of
@@ -19,9 +18,11 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 	*   Elixir forbids statements in argument position.
 	*
 	* HOW
-	* - Detect ERemoteCall(Enum, "join", [arg, sep]) where arg is a complex node
-	*   (EBlock, EDo, EMatch, EBinary(Concat|StringConcat), or a Paren-wrapped
-	*   complex). Replace arg with (fn -> <arg> end).().
+	* - Inspect the argument root, not expressions nested inside calls. Calls,
+	*   assignments, and binary operators are already single Elixir expressions.
+	*   Wrapping a call merely because one argument assigns a local would hide
+	*   that write from the caller. Earlier effect lowering owns caller writeback
+	*   from actual blocks; this pass must not introduce another scope around it.
 
 	*
 	* EXAMPLES
@@ -60,34 +61,11 @@ class JoinArgForceIIFETransforms {
 	}
 
 	static function needsIIFE(e:ElixirAST):Bool {
-		var found = false;
-		function walk(n:ElixirAST):Void {
-			if (found || n == null)
-				return;
-			switch (n.def) {
-				case EBlock(_) | EDo(_) | EMatch(_, _) | EBinary(_, _, _):
-					found = true;
-				case ERemoteCall(mod, name, args):
-					walk(mod);
-					for (a in args)
-						walk(a);
-				case ECall(t, _, args2):
-					if (t != null)
-						walk(t);
-					for (a2 in args2)
-						walk(a2);
-				case EParen(inner):
-					walk(inner);
-				case EIf(c, t, eopt):
-					walk(c);
-					walk(t);
-					if (eopt != null)
-						walk(eopt);
-				default:
-			}
-		}
-		walk(e);
-		return found;
+		return switch (e.def) {
+			case EBlock(_) | EDo(_): true;
+			case EParen(inner): needsIIFE(inner);
+			default: false;
+		};
 	}
 }
 #end

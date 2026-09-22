@@ -72,7 +72,6 @@ class ElixirASTPrinter {
 	 * - Reuses the same wrapping rules as function arguments (parens/IIFE as needed).
 	 */
 	public static function printASTForInjectionSubstitution(ast:ElixirAST):String {
-		// IMPORTANT: Do not apply sanitizeArgPrinted here.
 		// __elixir__ substitutions are spliced into already-delimited call sites (e.g. `foo({0})`),
 		// and multi-line control-flow expressions like `if ... do ... end` are valid arguments in Elixir.
 		// We still rely on printFunctionArg to add parens for inline `if` / case/cond/with, etc.
@@ -1474,8 +1473,7 @@ class ElixirASTPrinter {
 					// Normal function call
 					var argParts:Array<String> = [];
 					for (a in args) {
-						var printed = printFunctionArg(a, indent + 1);
-						argParts.push(sanitizeArgPrinted(printed, indent + 1));
+						argParts.push(printFunctionArg(a, indent + 1));
 					}
 					var argStr = argParts.join(', ');
 					if (target != null) {
@@ -1507,7 +1505,7 @@ class ElixirASTPrinter {
 								// The receiver becomes the first ordinary function argument. Use the same
 								// scope-preserving argument path as every other call: genuine multi-statement
 								// blocks retain an IIFE, while singleton blocks remain direct expressions.
-								var firstArgStr = sanitizeArgPrinted(printFunctionArg(target, indent + 1), indent + 1);
+								var firstArgStr = printFunctionArg(target, indent + 1);
 								var enumArgs = [target].concat(args);
 								var enumArgParts = [firstArgStr].concat(argParts);
 								printCallWithStructuredArgs('Enum.' + funcName, enumArgs, enumArgParts, indent);
@@ -1639,11 +1637,10 @@ class ElixirASTPrinter {
 						case EVar(m) if (m == "Assert" && (funcName == "is_true" || funcName == "is_false") && args.length >= 1):
 							var parts:Array<String> = [];
 							var noIife = (args[0].metadata != null && args[0].metadata.noIifeWrap == true);
-							var firstPrinted = noIife ? sanitizeArgPrinted(printFunctionArg(args[0], indent),
-								indent) : wrapIifeBody(print(args[0], indent), false);
+							var firstPrinted = noIife ? printFunctionArg(args[0], indent) : wrapIifeBody(print(args[0], indent), false);
 							parts.push(firstPrinted);
 							for (i in 1...args.length)
-								parts.push(sanitizeArgPrinted(printFunctionArg(args[i], indent), indent));
+								parts.push(printFunctionArg(args[i], indent));
 							remoteArgParts = parts;
 							return parts.join(', ');
 						default:
@@ -1667,11 +1664,11 @@ class ElixirASTPrinter {
 							parts.push(firstPrinted);
 						}
 						for (i in 1...args.length)
-							parts.push(sanitizeArgPrinted(printFunctionArg(args[i], indent), indent));
+							parts.push(printFunctionArg(args[i], indent));
 						remoteArgParts = parts;
 						return parts.join(', ');
 					} else {
-						var parts:Array<String> = [for (a in args) sanitizeArgPrinted(printFunctionArg(a, indent), indent)];
+						var parts:Array<String> = [for (a in args) printFunctionArg(a, indent)];
 						var s = parts.join(', ');
 						remoteArgParts = parts;
 						// Ecto.Query.from(t in :table, ...) -> qualify atom to <App>.CamelCase
@@ -3601,6 +3598,8 @@ class ElixirASTPrinter {
 	 *      function arguments to resolve ambiguity in nested calls
 	 * WHAT: Detects inline if expressions and wraps them in parentheses
 	 * HOW: Checks if the argument is an inline if and wraps it if needed
+	 * Scope decisions use the AST, never printed line breaks. A multiline call is
+	 * still one expression; wrapping it in a new function would hide caller writes.
 	 */
 	static function printFunctionArg(arg:ElixirAST, indentLevel:Int = 0):String {
 		if (arg == null)
@@ -3780,6 +3779,10 @@ class ElixirASTPrinter {
 
 		// Check what kind of expression this is
 		switch (arg.def) {
+			case ERaw(code) if (code != null && code.indexOf('\n') != -1):
+				// Native injection is opaque to the typed AST. Group its statements as
+				// one argument without inventing a function scope or hiding native writes.
+				return '(' + print(arg, indentLevel) + ')';
 			case EIf(condition, thenBranch, elseBranch):
 				// An if expression needs parentheses when used as a function argument
 				// if it will be printed inline (single line)
@@ -3869,27 +3872,6 @@ class ElixirASTPrinter {
 		// Avoid leaving a trailing space when the generated IIFE body starts on the next line.
 		// This keeps snapshots clean without changing the Elixir expression shape.
 		return StringTools.startsWith(body, "\n") ? '(fn ->' + body + ' end).()' : '(fn -> ' + body + ' end).()';
-	}
-
-	// Ensure printed argument is a single safe expression.
-	// If it contains line breaks and is not already wrapped (paren/IIFE),
-	// wrap it in an IIFE to prevent splitting the call site.
-	static function sanitizeArgPrinted(s:String, indent:Int):String {
-		if (s == null)
-			return "";
-		var trimmed = StringTools.trim(s);
-		if (trimmed.length == 0)
-			return s;
-		var hasBreak = (s.indexOf('\n') != -1);
-		var alreadyIIFE = StringTools.startsWith(trimmed, "(fn ->");
-		var alreadyParen = StringTools.startsWith(trimmed, "(");
-		var isFnLiteral = StringTools.startsWith(trimmed, "fn ");
-		// Allow multi-line string literals as arguments without wrapping
-		var isStringLiteral = StringTools.startsWith(trimmed, '"');
-		if (hasBreak && !alreadyIIFE && !alreadyParen && !isFnLiteral && !isStringLiteral) {
-			return wrapIifeBody(s, false);
-		}
-		return s;
 	}
 
 	/**

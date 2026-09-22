@@ -119,6 +119,57 @@ class ConstraintConstructibleValue {
 
 @:exunit
 class StdlibParityTest extends TestCase {
+	static function sliceText(values:Array<Int>, start:Int, ?end:Int):String {
+		return values.slice(start, end).join(",");
+	}
+
+	/** Haxe 4.3.7 Array.slice bounds; this does not qualify managed aliases. */
+	@:test
+	public function testArraySliceValues():Void {
+		var values = [1, 2, 3, 4];
+		Assert.equals("1,2,3,4", values.slice(0).join(","));
+		Assert.equals("2,3,4", values.slice(1, null).join(","));
+		Assert.equals("4", values.slice(-1).join(","));
+		Assert.equals("1,2,3,4", values.slice(-10).join(","));
+		Assert.equals("", values.slice(4).join(","));
+		Assert.equals("", values.slice(10).join(","));
+		Assert.equals("2,3", values.slice(1, 3).join(","));
+		Assert.equals("2,3,4", values.slice(1, 99).join(","));
+		Assert.equals("2,3", values.slice(1, -1).join(","));
+		Assert.equals("2,3", values.slice(-3, -1).join(","));
+		Assert.equals("1,2", values.slice(-10, 2).join(","));
+		Assert.equals("", values.slice(0, -10).join(","));
+		Assert.equals("", values.slice(2, 2).join(","));
+		Assert.equals("", values.slice(3, 1).join(","));
+		Assert.equals("", values.slice(0, 0).join(","));
+		var empty:Array<Int> = [];
+		Assert.equals(0, empty.slice(-1, 2).length);
+		Assert.equals("1,2,3,4", values.join(","));
+		Assert.equals("2,3,4", sliceText(values, 1));
+		Assert.equals("2,3", sliceText(values, 1, -1));
+		Assert.equals("", sliceText(values, 1, 0));
+	}
+
+	/** Keep the portable content pipeline on ordinary public Array APIs. */
+	@:test
+	public function testArraySliceContentChain():Void {
+		var blocks = [{text: "Title"}, {text: "Body"}, {text: ""}, {text: "Tail"}];
+		var body = blocks.slice(1).map(block -> block.text).filter(text -> text != "").join("\n");
+		Assert.equals("Body\nTail", body);
+	}
+
+	/** Argument writes must remain visible after a slice used inside a call. */
+	@:test
+	public function testArraySliceArgumentWrites():Void {
+		var values = [1, 2, 3, 4];
+		var start = 1;
+		Assert.equals("2,3", values.slice(start, start = 3).join(","));
+		Assert.equals(3, start);
+		var result = values.slice({values = [9]; 1;}, 3);
+		Assert.equals("2,3", result.join(","));
+		Assert.equals("9", values.join(","));
+	}
+
 	static function throwCallStackProbe():Void {
 		throw "callstack-probe";
 	}
@@ -660,8 +711,11 @@ class StdlibParityTest extends TestCase {
 	@:test
 	function testPosInfosPreservesInjectedAndExplicitFields():Void {
 		var injected = capturePosition();
+		var nextLine = capturePosition();
 		Assert.equals("stdlib_parity/StdlibParityTest.hx", injected.fileName);
-		Assert.equals(662, injected.lineNumber);
+		// Adjacent calls prove distinct call-site positions without pinning unrelated source layout.
+		Assert.isTrue(injected.lineNumber > 0);
+		Assert.equals(injected.lineNumber + 1, nextLine.lineNumber);
 		Assert.equals("stdlib_parity.StdlibParityTest", injected.className);
 		Assert.equals("testPosInfosPreservesInjectedAndExplicitFields", injected.methodName);
 

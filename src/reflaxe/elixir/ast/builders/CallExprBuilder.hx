@@ -942,6 +942,9 @@ class CallExprBuilder {
 								case "copy":
 									return receiverAst.def;
 
+								case "slice" if (argASTs != null && argASTs.length == 2):
+									return ArrayBuilder.buildSlice(receiverAst, argASTs[0], argASTs[1], providedArgMayBeNil(args, 1), context);
+
 								case "map" if (argASTs != null && argASTs.length == 1):
 									return ERemoteCall(makeAST(EVar("Enum")), "map", [receiverAst, argASTs[0]]);
 
