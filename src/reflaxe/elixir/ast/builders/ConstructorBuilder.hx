@@ -148,6 +148,12 @@ class ConstructorBuilder {
 			return args[0].def;
 		}
 
+		// The built-in Array is represented by a list, not an emitted Array module.
+		// Keep ordinary constructors for packaged classes with the same short name.
+		if (classType.name == "Array" && classType.pack != null && classType.pack.length == 0 && args.length == 0) {
+			return EList([]);
+		}
+
 		// ====================================================================
 		// PATTERN 3: Regular Classes
 		// ====================================================================
