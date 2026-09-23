@@ -5,7 +5,11 @@ class Main {
 	static function main() {
 		var okResult:Term = cast Tuple.ok("created");
 		var errorResult:Term = cast Tuple.error("invalid");
+		checkResults(okResult, errorResult);
+	}
 
+	/** Exercise runtime inputs so native constant analysis does not erase predicate branches. */
+	public static function checkResults(okResult:Term, errorResult:Term):Void {
 		if (!Tuple.isOkTuple(okResult)) {
 			throw "ok tuple did not match";
 		}
