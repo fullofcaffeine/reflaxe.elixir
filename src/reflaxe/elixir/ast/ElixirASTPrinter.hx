@@ -1481,7 +1481,8 @@ class ElixirASTPrinter {
 						if (funcName == "") {
 							// Function variable call - ensure target is parenthesized when needed, then use .() syntax
 							var tStr = switch (target.def) {
-								case EFn(_): '(' + print(target, indent) + ')';
+								// Capture syntax must end before the anonymous invocation's dot.
+								case EFn(_) | ECapture(_, _): '(' + print(target, indent) + ')';
 								case EParen(_): print(target, indent);
 								default: print(target, indent);
 							};

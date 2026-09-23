@@ -35,7 +35,7 @@ defmodule Main do
           {:cont, {acc_seen}}
       end
     end)
-    seen = Enum.sort(seen, fn a, b -> &Reflect.compare/2.(a, b) < 0 end)
+    seen = Enum.sort(seen, fn a, b -> (&Reflect.compare/2).(a, b) < 0 end)
     assert_that(Enum.join(seen, ",") == "key:1=one,key:2=two", "explicit HashMapKeyValueIterator should preserve key/value pairs")
   end
 end
