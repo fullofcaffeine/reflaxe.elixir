@@ -21,6 +21,7 @@ import reflaxe.elixir.ast.transformers.CaseTupleBinderUnshadowTransforms;
 @:nullSafety(Off)
 class TestStdlibWarningTransforms {
 	public static function run():Expr {
+		testChangesetPassLeavesOrdinaryFunctions();
 		testHeexAssignsRebinding();
 		testUsedAliasBinding();
 		testNestedTupleBinderScope();
@@ -40,6 +41,14 @@ class TestStdlibWarningTransforms {
 
 		Sys.println("Stdlib warning transform contracts passed");
 		return macro null;
+	}
+
+	/** Diagnostic defines must not turn an Ecto-only repair into a generic rewrite. */
+	static function testChangesetPassLeavesOrdinaryFunctions():Void {
+		var source = makeAST(EDef("probe", [], null, makeAST(EInteger(42))));
+		var actual = reflaxe.elixir.ast.transformers.ChangesetEnsureReturnTransforms.pass(source);
+		if (ElixirASTPrinter.print(actual) != ElixirASTPrinter.print(source))
+			fail("changeset return repair must leave a non-Ecto function unchanged");
 	}
 
 	/** HEEx reads the current assigns map even without an explicit EVar node. */
