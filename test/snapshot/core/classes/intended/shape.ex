@@ -6,15 +6,17 @@ defmodule Shape do
     struct
   end
   def draw(struct) do
-    "#{struct.name} at #{(fn -> reflaxe_dispatch_receiver = struct.position
-    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver]) end).()}"
+    "" <> struct.name <> " at " <> (fn ->
+      reflaxe_dispatch_receiver_node_0 = struct.position
+      apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :to_string, [reflaxe_dispatch_receiver_node_0])
+    end).()
   end
   def get_position(struct) do
     struct.position
   end
   def move(struct, dx, dy) do
     fh = struct.position
-    fh = %{fh | x: Reflaxe.Elixir.HaxeFloat.add(fh.x, dx)}
+    _ = %{fh | x: Reflaxe.Elixir.HaxeFloat.add(fh.x, dx)}
     fh = struct.position
     fh = %{fh | y: Reflaxe.Elixir.HaxeFloat.add(fh.y, dy)}
     fh

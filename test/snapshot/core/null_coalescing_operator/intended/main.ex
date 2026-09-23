@@ -60,9 +60,13 @@ defmodule Main do
     second = nil
     third = "final"
     _result = if (not Kernel.is_nil((tmp = if (not Kernel.is_nil((tmp = first))), do: tmp, else: second))), do: tmp, else: third
-    _complex = ("#{(fn -> tmp = first
-    if (tmp != nil), do: tmp, else: "a" end).()}#{(fn -> tmp = second
-    if (tmp != nil), do: tmp, else: "b" end).()}")
+    _complex = (fn ->
+      tmp = first
+      if (not Kernel.is_nil(tmp)), do: tmp, else: "a"
+    end).() <> (fn ->
+      tmp = second
+      if (not Kernel.is_nil(tmp)), do: tmp, else: "b"
+    end).()
   end
   defp test_method_calls() do
     _name = if (not Kernel.is_nil((tmp = nil))), do: tmp, else: "Anonymous"

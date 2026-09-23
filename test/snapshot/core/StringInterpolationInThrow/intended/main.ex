@@ -79,8 +79,9 @@ defmodule Main do
     end
   end
   defp test_nil_handling() do
+    maybe_value = nil
     try do
-      raise Reflaxe.Elixir.HaxeThrow, [value: "Value is: " <> "nil"]
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Value is: " <> (maybe_value || "nil")]
     rescue
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)

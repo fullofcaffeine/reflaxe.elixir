@@ -38,7 +38,7 @@ defmodule Main do
   end
   defp test_user_id_validation() do
     valid_ids = ["user123", "Alice", "Bob42", "testUser"]
-    g = 0
+    _g = 0
     Enum.each(valid_ids, fn valid_id ->
       (case UserId_Impl_.parse(valid_id) do
         {:ok, user_id} ->

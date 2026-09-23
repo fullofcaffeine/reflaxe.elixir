@@ -12,6 +12,7 @@ defmodule Main do
     nullable_name = nil
     _option_from_value = OptionTools.from_nullable(name)
     _option_from_null = OptionTools.from_nullable(nullable_name)
+    _no_person = {:none}
   end
   defp test_pattern_matching() do
     user = {:some, "Bob"}

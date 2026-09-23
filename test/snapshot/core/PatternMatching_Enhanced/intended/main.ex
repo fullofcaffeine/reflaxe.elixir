@@ -63,19 +63,25 @@ defmodule Main do
     arrays = [[], [1], [1, 2], [1, 2, 3], [1, 2, 3, 4, 5]]
     _g = 0
     Enum.each(arrays, fn arr ->
-      _description = (case arr do
-        [] -> "empty"
-        [_head | _tail] ->
-          x = Enum.at(arr, 0)
+      _description = (case length(arr) do
+        0 -> "empty"
+        1 ->
+          array_read_node_0 = Enum.at(arr, 0)
+          x = array_read_node_0
           "single: " <> Reflaxe.Elixir.HaxeFloat.to_string(x)
         2 ->
-          x = Enum.at(arr, 0)
-          y = Enum.at(arr, 1)
+          array_read_node_1 = Enum.at(arr, 0)
+          array_read_node_2 = Enum.at(arr, 1)
+          x = array_read_node_1
+          y = array_read_node_2
           "pair: " <> Reflaxe.Elixir.HaxeFloat.to_string(x) <> ", " <> Reflaxe.Elixir.HaxeFloat.to_string(y)
         3 ->
-          x = Enum.at(arr, 0)
-          y = Enum.at(arr, 1)
-          z = Enum.at(arr, 2)
+          array_read_node_3 = Enum.at(arr, 0)
+          array_read_node_4 = Enum.at(arr, 1)
+          array_read_node_5 = Enum.at(arr, 2)
+          x = array_read_node_3
+          y = array_read_node_4
+          z = array_read_node_5
           "triple: " <> Reflaxe.Elixir.HaxeFloat.to_string(x) <> ", " <> Reflaxe.Elixir.HaxeFloat.to_string(y) <> ", " <> Reflaxe.Elixir.HaxeFloat.to_string(z)
         _ ->
           "length=" <> Reflaxe.Elixir.HaxeFloat.to_string(length(arr)) <> ", first=" <> (if (length(arr) > 0) do

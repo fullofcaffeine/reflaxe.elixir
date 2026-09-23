@@ -36,8 +36,8 @@ defmodule Main do
       end
     end)
     functions = []
-    functions = functions ++ [fn -> nil end]
-    functions = functions ++ [fn -> nil end]
+    functions = functions ++ [fn -> 0 end]
+    functions = functions ++ [fn -> 1 end]
     _ = functions ++ [fn -> 2 end]
     i = 100
     result = result ++ [0]

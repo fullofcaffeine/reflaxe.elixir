@@ -9,7 +9,7 @@ defmodule Main do
   end
   defp test_basic_for_loops() do
     fruits = ["apple", "banana", "orange"]
-    g = 0
+    _g = 0
     Enum.each(fruits, fn _ -> nil end)
     scores = %{"Alice" => 95, "Bob" => 87, "Charlie" => 92}
     g = Reflaxe.Elixir.IMap.key_value_iterator(scores)
@@ -177,7 +177,7 @@ defmodule Main do
       end
     end)
     j = 0
-    {j} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {j}, fn _, {acc_j} ->
+    {_j} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {j}, fn _, {acc_j} ->
       try do
         if (acc_j < 2) do
           acc_j = acc_j + 1
@@ -308,9 +308,12 @@ defmodule Main do
     _g = 0
     {_results, _errors} = Enum.reduce_while(items, {results, errors}, fn item, {results_acc, errors_acc} ->
       try do
-        if (StringTools.haxe_index_of(item, "error", 0) >= 0) do
+        errors_acc = if (StringTools.haxe_index_of(item, "error", 0) >= 0) do
           errors_acc = errors_acc ++ ["Failed: " <> item]
           throw({:continue, {results_acc, errors_acc}})
+          errors_acc
+        else
+          errors_acc
         end
         results_acc = results_acc ++ ["Processed: " <> item]
         {:cont, {results_acc, errors_acc}}

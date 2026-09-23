@@ -51,10 +51,16 @@ defmodule Main do
   end
   def array_comprehensions() do
     g = []
+    g = g
     g = g ++ [4]
+    g = g
     g = g ++ [16]
+    g = g
     g = g ++ [36]
-    _even_squares = g ++ [64]
+    g = g
+    g = g ++ [64]
+    g = g
+    _even_squares = g
     g = []
     g = g ++ [%{x: 1, y: 2}]
     g = g ++ [%{x: 1, y: 3}]
@@ -67,7 +73,7 @@ defmodule Main do
   end
   def multi_dimensional() do
     matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-    g = 0
+    _g = 0
     Enum.each(matrix, fn row ->
       _g = 0
       Enum.each(row, fn _ -> nil end)

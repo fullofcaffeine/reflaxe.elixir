@@ -48,7 +48,19 @@ defmodule Main do
       Std.is(value, Int) -> "Int: " <> Reflaxe.Elixir.HaxeFloat.to_string(value)
       Std.is(value, Float) -> "Float: " <> Reflaxe.Elixir.HaxeFloat.to_string(value)
       Std.is(value, String) -> "String: " <> Reflaxe.Elixir.HaxeFloat.to_string(value)
-      Std.is(value, Array) -> "Array of length: " <> Reflaxe.Elixir.HaxeFloat.to_string(length(value))
+      Std.is(value, Array) ->
+        "Array of length: " <> Reflaxe.Elixir.HaxeFloat.to_string((fn
+          dyn_obj when is_binary(dyn_obj) ->
+            String.length(dyn_obj)
+          dyn_obj when is_list(dyn_obj) ->
+            length(dyn_obj)
+          dyn_obj ->
+            (case Map.fetch(dyn_obj, "length") do
+              {:ok, dyn_value} -> dyn_value
+              _ ->
+                Map.get(dyn_obj, :length)
+            end)
+        end).(value))
       true -> "Unknown type"
     end
   end

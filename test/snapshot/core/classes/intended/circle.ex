@@ -7,7 +7,7 @@ defmodule Circle do
     struct
   end
   def draw(struct) do
-    "#{Shape.draw(super)} with radius #{Reflaxe.Elixir.HaxeFloat.to_string(struct.radius)}"
+    "#{Shape.draw(struct)} with radius #{Reflaxe.Elixir.HaxeFloat.to_string(struct.radius)}"
   end
   def update(struct, dt) do
     apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :move, [struct, Reflaxe.Elixir.HaxeFloat.mul(struct.velocity.x, dt), Reflaxe.Elixir.HaxeFloat.mul(struct.velocity.y, dt)])

@@ -41,7 +41,9 @@ defmodule Main do
         "Bulk operation: #{action_str}"
       {:user_online, user_id} -> "User #{Reflaxe.Elixir.HaxeFloat.to_string(user_id)} is online"
       {:user_offline, user_id} -> "User #{Reflaxe.Elixir.HaxeFloat.to_string(user_id)} is offline"
-      {:system_alert, _message, level} -> "#{level}: #{msg}"
+      {:system_alert, message, level} ->
+        msg = message
+        "#{level}: #{msg}"
     end)
   end
   defp add_timestamp(payload) do
@@ -51,7 +53,7 @@ defmodule Main do
     (case action do
       "complete_all" -> {:complete_all}
       "delete_completed" -> {:delete_completed}
-      str ->
+      _ ->
         str = action
         if (StringTools.haxe_index_of(str, "set_priority:", 0) == 0) do
           {:set_priority, StringTools.haxe_substr(str, 13, nil)}
