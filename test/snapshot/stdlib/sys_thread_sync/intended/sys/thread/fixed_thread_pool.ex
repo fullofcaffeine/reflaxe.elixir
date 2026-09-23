@@ -44,8 +44,8 @@ defmodule Sys.Thread.FixedThreadPool do
     if (Reflaxe.Elixir.HaxeFloat.eq(task, nil)) do
       raise Reflaxe.Elixir.HaxeThrow, [value: ThreadPoolException.new("Task to run must not be null.", nil, nil)]
     end
-    reflaxe_dispatch_receiver = struct.queue
-    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :add, [reflaxe_dispatch_receiver, task])
+    reflaxe_dispatch_receiver_node_0 = struct.queue
+    apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :add, [reflaxe_dispatch_receiver_node_0, task])
   end
   def shutdown(struct) do
     if (ThreadPoolRuntime.is_shutdown(struct.state_ref)) do
@@ -55,8 +55,8 @@ defmodule Sys.Thread.FixedThreadPool do
       _g = 0
       g_value = get_threads_count(struct)
       Enum.each(0..(g_value - 1)//1, fn _ ->
-        reflaxe_dispatch_receiver = struct.queue
-        apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :add, [reflaxe_dispatch_receiver, &shutdown_task/0])
+        reflaxe_dispatch_receiver_node_1 = struct.queue
+        apply(Map.get(reflaxe_dispatch_receiver_node_1, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_1, :__struct__), :add, [reflaxe_dispatch_receiver_node_1, &shutdown_task/0])
       end)
     end
   end

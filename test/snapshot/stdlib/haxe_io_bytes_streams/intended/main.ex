@@ -52,8 +52,8 @@ defmodule Main do
   end
   defp io_semantics() do
     all_input = BytesInput.new(Bytes.of_string("hello", {:utf8}), nil, nil)
-    reflaxe_dispatch_receiver = apply(Map.get(all_input, :__reflaxe_class__) || Map.get(all_input, :__struct__), :read_all, [all_input, 2])
-    all = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+    reflaxe_dispatch_receiver_node_0 = apply(Map.get(all_input, :__reflaxe_class__) || Map.get(all_input, :__struct__), :read_all, [all_input, 2])
+    all = apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :to_string, [reflaxe_dispatch_receiver_node_0])
     assert_that(all == "hello", "readAll chunked failed")
     line_input = BytesInput.new(Bytes.of_string("a\r\nb\n", {:utf8}), nil, nil)
     assert_that(apply(Map.get(line_input, :__reflaxe_class__) || Map.get(line_input, :__struct__), :read_line, [line_input]) == "a", "readLine CRLF failed")
@@ -77,8 +77,8 @@ defmodule Main do
     sink = BytesOutput.new()
     apply(Map.get(sink, :__reflaxe_class__) || Map.get(sink, :__struct__), :write_input, [sink, src, 2])
     assert_that((fn ->
-      reflaxe_dispatch_receiver = apply(Map.get(sink, :__reflaxe_class__) || Map.get(sink, :__struct__), :get_bytes, [sink])
-      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+      reflaxe_dispatch_receiver_node_1 = apply(Map.get(sink, :__reflaxe_class__) || Map.get(sink, :__struct__), :get_bytes, [sink])
+      apply(Map.get(reflaxe_dispatch_receiver_node_1, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_1, :__struct__), :to_string, [reflaxe_dispatch_receiver_node_1])
     end).() == "xyz", "writeInput failed")
     out = BytesOutput.new()
     Output.set_big_endian(out, false)

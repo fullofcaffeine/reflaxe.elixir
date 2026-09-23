@@ -40,10 +40,10 @@ defmodule Sys.Thread.EventLoop do
           {:any_time, payload_struct} ->
             apply(Map.get(payload_struct, :__reflaxe_class__) || Map.get(payload_struct, :__struct__), :wait, [payload_struct, nil])
           {:at, time} ->
-            apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :wait, (fn -> [struct, (fn ->
+            apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :wait, [struct, (fn ->
               b = Reflaxe.Elixir.HaxeFloat.sub(time, System.system_time(:nanosecond) / 1_000_000_000.0)
               Reflaxe.Elixir.HaxeFloat.max(0, b)
-            end).()] end).())
+            end).()])
         end)
         {:cont, acc}
       catch

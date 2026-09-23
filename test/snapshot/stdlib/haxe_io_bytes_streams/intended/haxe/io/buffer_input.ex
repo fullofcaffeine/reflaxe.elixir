@@ -9,15 +9,15 @@ defmodule BufferInput do
   end
   def refill(struct) do
     struct = if (struct.pos > 0) do
-      reflaxe_dispatch_receiver = struct.buf
-      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :blit, [reflaxe_dispatch_receiver, 0, struct.buf, struct.pos, struct.available])
+      reflaxe_dispatch_receiver_node_0 = struct.buf
+      apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :blit, [reflaxe_dispatch_receiver_node_0, 0, struct.buf, struct.pos, struct.available])
       %{struct | pos: 0}
     else
       struct
     end
     struct = %{struct | available: struct.available + (fn ->
-      reflaxe_dispatch_receiver = struct.i
-      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :read_bytes, [reflaxe_dispatch_receiver, struct.buf, struct.available, (struct.buf.length - struct.available)])
+      reflaxe_dispatch_receiver_node_1 = struct.i
+      apply(Map.get(reflaxe_dispatch_receiver_node_1, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_1, :__struct__), :read_bytes, [reflaxe_dispatch_receiver_node_1, struct.buf, struct.available, (struct.buf.length - struct.available)])
     end).()}
     struct
   end
@@ -27,8 +27,8 @@ defmodule BufferInput do
     end
     struct = %{struct | pos: struct.pos + 1}
     struct = %{struct | available: (struct.available - 1)}
-    reflaxe_dispatch_receiver = struct.buf
-    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get, [reflaxe_dispatch_receiver, struct.pos])
+    reflaxe_dispatch_receiver_node_2 = struct.buf
+    apply(Map.get(reflaxe_dispatch_receiver_node_2, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_2, :__struct__), :get, [reflaxe_dispatch_receiver_node_2, struct.pos])
   end
   def read_bytes(struct, buf_param, pos_param, len) do
     if (struct.available == 0) do
