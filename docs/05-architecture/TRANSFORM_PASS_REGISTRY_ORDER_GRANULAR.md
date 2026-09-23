@@ -4,7 +4,7 @@ Generated from the validated registry by `tools/RegistryOrderDoc.hx`; do not edi
 
 Mode: granular (`-D hxx_granular_pass_registry`)
 
-Effective pass count: **577**
+Effective pass count: **575**
 
 | # | Pass | Phase | Scope | Family | Ordering | Description |
 |---:|---|---|---|---|---|---|
@@ -107,481 +107,479 @@ Effective pass count: **577**
 | 97 | `StructUpdateTransform` | `core-lowering` | `core` | `core-lowering.core` | source order | Transform instance field assignments to avoid unused variable warnings |
 | 98 | `ReduceWhileOuterAssignToAccumulator` | `core-lowering` | `core` | `core-lowering.core` | after: AssignmentExtraction, StructUpdateTransform; before: ReduceWhileAccumulator | Rewrite reduce_while loops that assign outer vars into accumulator threading |
 | 99 | `ReduceWhileAccumulator` | `core-lowering` | `core` | `core-lowering.core` | after: ReduceWhileOuterAssignToAccumulator | Fix variable shadowing in reduce_while loops by proper accumulator threading |
-| 100 | `ReduceWhileResultBinding` | `core-lowering` | `core` | `core-lowering.core` | after if present: ReduceWhileAccumulator | Bind Enum.reduce_while result to original accumulator locals (required in fast_boot) |
-| 101 | `FluentApiOptimization` | `core-lowering` | `core` | `core-lowering.core` | source order | Optimize fluent API patterns to avoid unused struct assignments |
-| 102 | `ArrayLengthFieldToFunction` | `core-lowering` | `core` | `core-lowering.core` | source order | Transform array.length field access to length(array) function calls |
-| 103 | `KnownStringLengthFieldRewrite` | `core-lowering` | `core` | `core-lowering.core` | after: ArrayLengthFieldToFunction | Transform .length on locals proven to hold strings into String.length/1 |
-| 104 | `FPHelperDoubleToI64FieldAccessRewrite` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite i64.high/low from FPHelper.double_to_i64 to Bitwise ops (WAE) |
-| 105 | `DateTimeMethodRewrite` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite method-style DateTime calls to module calls |
-| 106 | `TupleElemFieldToFunction` | `core-lowering` | `core` | `core-lowering.core` | source order | Transform tuple.elem field access to elem(tuple, index) function calls |
-| 107 | `IdiomaticEnumPatternMatching` | `core-lowering` | `core` | `core-lowering.core` | source order | Transform enum tuple access patterns to idiomatic pattern matching |
-| 108 | `IdiomaticEnumReplay` | `core-lowering` | `core` | `core-lowering.core` | source order | Reapply idiomatic enum conversion on residual tagged tuples |
-| 109 | `PatternMatching` | `core-lowering` | `core` | `core-lowering.core` | source order | Transform switch statements to idiomatic Elixir case expressions |
-| 110 | `CaseLengthToListPattern_Post` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite case length(list) to list pattern case after PatternMatching |
-| 111 | `CaseGuardFreeVarToOtherParam` | `core-lowering` | `core` | `core-lowering.core` | source order | In case guards, rewrite a single free var to the other function parameter when uniquely identifiable |
-| 112 | `CaseClauseEmptyBodyToNil` | `core-lowering` | `core` | `core-lowering.core` | source order | Replace empty case arm bodies with nil to ensure valid syntax |
-| 113 | `GuardSanitization` | `core-lowering` | `core` | `core-lowering.core` | source order | Replace non-guard-safe constructs (e.g., Map.get != nil) with guard-safe guard functions |
-| 114 | `PatternVariableBinding` | `core-lowering` | `core` | `core-lowering.core` | source order | Ensure correct variable scoping in pattern matching |
-| 115 | `RenameSwitchResultVars` | `core-lowering` | `core` | `core-lowering.core` | source order | Rename __elixir_switch_result_* to switch_result_* |
-| 116 | `SwitchResultInlineReturnFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Replace trailing switch_result_* with the assigned case expression (early) |
-| 117 | `SwitchReturnSanitizer` | `core-lowering` | `core` | `core-lowering.core` | source order | Inline case into tail return when returning alias variable (sanitize direct switch returns) |
-| 118 | `CaseExprParenthesizeInExpr` | `core-lowering` | `core` | `core-lowering.core` | source order | Wrap case in parentheses when used as assignment RHS |
-| 119 | `CaseResultAssignmentMerge` | `core-lowering` | `core` | `core-lowering.core` | source order | Merge `x = init; case x do ... end` into `x = case init do ... end` |
-| 120 | `SwitchInnerCaseBinderRepair` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite inner `case <lhs>` to `case <binder>` when clause pattern binds the value (avoids undefined var) |
-| 121 | `IfThenDoToBlock` | `core-lowering` | `core` | `core-lowering.core` | source order | Normalize EIf then-branch EDo to EBlock (prevents nested do) |
-| 122 | `CasePatternTempAssignmentRemoval` | `core-lowering` | `core` | `core-lowering.core` | source order | Drop assignments like `todo = _g` when pattern already binds `todo` |
-| 123 | `NumericSuffixVarNormalize` | `core-lowering` | `core` | `core-lowering.core` | source order | Normalize variables with trailing digits to descriptive base names (no integers) |
-| 124 | `BinderCamelToSnake` | `core-lowering` | `core` | `core-lowering.core` | source order | Rename camelCase binders in case patterns to snake_case with body rewrite |
-| 125 | `ClauseCamelRefToSnake` | `core-lowering` | `core` | `core-lowering.core` | source order | Within case arms, convert camelCase body refs to snake_case when binder exists |
-| 126 | `CaseTupleMultiBinderPromoteByUse_Early` | `core-lowering` | `core` | `core-lowering.core` | after: ClauseCamelRefToSnake | Promote tuple binders (_a, _b, ...) to (a, b, ...) when used in body (AST or interpolation) |
-| 127 | `ClauseUndefinedRefRewrite` | `core-lowering` | `core` | `core-lowering.core` | source order | Within {:tag, binder} arms, rewrite single undefined body var to binder (scope-aware) |
-| 128 | `CasePayloadBinderAvoidReserved` | `core-lowering` | `core` | `core-lowering.core` | source order | Avoid reserved binder names (socket/params); rename binder to sole undefined body var |
-| 129 | `CasePayloadBinderAvoidReserved_Final` | `core-lowering` | `core` | `core-lowering.core` | source order | Absolute final: avoid reserved binder names in case arms |
-| 130 | `InnerParsedMsgCaseToBinder` | `core-lowering` | `core` | `core-lowering.core` | source order | Replace inner case parsed_msg with the outer bound binder (:some value) |
-| 131 | `SystemAlertClauseNormalization` | `core-lowering` | `core` | `core-lowering.core` | source order | Normalize {:system_alert, message, flash_type} and fix flashType usage |
-| 132 | `ControllerEnsureConnParam` | `core-lowering` | `phoenix` | `core-lowering.phoenix` | source order | Add `conn` param to controller action defs when body uses conn and param is missing |
-| 133 | `WebDefHeadPromotion` | `core-lowering` | `phoenix` | `core-lowering.phoenix` | source order | Promote _id/_user_id/_editing_todo -> id/user_id/editing_todo in Web/Live defs when body uses base |
-| 134 | `ErrorReasonAliasInjection` | `core-lowering` | `core` | `core-lowering.core` | source order | Ensure {:error, v} arms alias reason when body uses it |
-| 135 | `LiveViewErrorBinderRenameLate` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Late rename of LiveView {:error,_} -> {:error, reason} |
-| 136 | `ResultErrorBinderLateNormalization` | `core-lowering` | `core` | `core-lowering.core` | source order | If body uses `reason` and not `changeset`, rename error binder to `reason` |
-| 137 | `LiveViewReduceWhileErrorBinderNormalization` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Within Enum.reduce_while anonymous functions, rename {:error,_} binder to reason when body uses it |
-| 138 | `LiveViewAssignCallRewrite` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Rewrite assign(socket,map) to Component.assign(socket,map) in LiveView modules |
-| 139 | `ListPushRewrite` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite list.push(v) to list = Enum.concat(list, [v]) |
-| 140 | `StaticVarMutationRewrite` | `core-lowering` | `core` | `core-lowering.core` | source order | Persist static var mutations by calling static accessor setters |
-| 141 | `RepoQualification` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Rewrite bare Repo.* calls to <App>.Repo.* using the enclosing <App>Web module shape; ensures correctness without relying on aliases |
-| 142 | `ERawRepoQualification` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Qualify Repo.* tokens in ERaw within Web modules to <App>.Repo.* |
-| 143 | `ERawEctoFromQualification` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Rewrite Ecto.Query.from(... in :user, ...) to ... in <App>.User, ... in ERaw |
-| 144 | `EctoFromInAtomQualification` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Rewrite Ecto.Query.from(t in :table, ...) to t in <App>.CamelCase in AST nodes |
-| 145 | `EctoFromInModuleQualification` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Rewrite Ecto.Query.from(t in Module, ...) to t in <App>.Module where Module is single-segment CamelCase |
-| 146 | `EctoQueryVarConsistency` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Normalize Ecto query variable usage and rewrite Ecto.Query.where/Repo.all to canonical query var |
-| 147 | `EctoQueryableAtomToSchema` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Rewrite Ecto.Queryable.to_query(:table) to schema module <App>.<Camel> |
-| 148 | `RepoAtomToSchema` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Rewrite Repo.all/one/get/get!/aggregate(:table, ...) to <App>.<Camel> |
-| 149 | `CaseSuccessVarUnifier` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite undefined placeholder locals to the success var in {:ok, v} clauses |
-| 150 | `CaseSuccessVarRenameCollisionFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Rename {:ok, var} binder when it collides with function args (e.g., socket) |
-| 151 | `CaseSomeBinderRename` | `core-lowering` | `core` | `core-lowering.core` | source order | Rename {:some, g} binder to value and rewrite body refs to avoid shadowing |
-| 152 | `ApplicationStartArgNormalization` | `core-lowering` | `phoenix` | `core-lowering.phoenix` | source order | Align start_link arg names with declared locals in start/2 |
-| 153 | `TypeSafeChildSpecNormalize` | `core-lowering` | `core` | `core-lowering.core` | source order | Normalize TypeSafeChildSpec.supervisor/3 to bind parameters and avoid undefined vars |
-| 154 | `LocalVarReferenceFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Fix local references like changeset-> _changeset or query->query2 when only the latter is declared |
-| 155 | `StringToolsLocalFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Align len/result references with declared locals in StringTools |
-| 156 | `StringToolsNativeRewrite` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite ltrim/rtrim to String.trim_leading/trim_trailing |
-| 157 | `StringToolsFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Ensure StringTools.is_space/2 uses binders s,pos (late enforcement) |
-| 158 | `StdHaxeRuntimeOverride` | `core-lowering` | `core` | `core-lowering.core` | source order | Override select Haxe runtime modules with binder-consistent native implementations |
-| 159 | `EqNilToIsNil` | `core-lowering` | `core` | `core-lowering.core` | source order | Replace (x == nil) with Kernel.is_nil(x) (post opts rewrites) |
-| 160 | `SimplifyIsNilFalse` | `core-lowering` | `core` | `core-lowering.core` | after: EqNilToIsNil | Fold nil checks from earlier literal assignments in function and generated ExUnit callback scopes |
-| 161 | `ChangesetSequentialValidateThread` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Thread sequential Ecto.Changeset validate calls through one changeset binder |
-| 162 | `ChangesetFieldAtomNormalize` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Rewrite String.to_atom("field") to :field in validate_* calls |
-| 163 | `ChangesetLengthCondCollapse` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Collapse cond-combination trees for validate_length to filtered Map.get keyword list |
-| 164 | `ValidateLengthOptsAccessRewrite` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | In validate_length calls, rewrite opts.* to Map.get(opts, :key) |
-| 165 | `ChangesetLengthOptionFilter` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Drop nil options in validate_length by filtering keyword list |
-| 166 | `EctoEqPinnedNilGuard` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Guard Ecto where comparisons with pinned vars that may be nil |
-| 167 | `EctoSchemaBinderFix` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Normalize changeset/2 binder names by dropping underscores when body uses base names |
-| 168 | `EctoQueryRequireEnsure` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Ensure `require Ecto.Query` when Ecto.Query remote macros are present (pre-late; remote-only gating) |
-| 169 | `EctoQueryIIFEInline` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Inline (fn -> ... from(...) ... end).() used as where/2 query arg |
-| 170 | `ChannelSetup` | `core-lowering` | `core` | `core-lowering.core` | source order | Inject `use <App>Web, :channel` for modules named like Phoenix channels |
-| 171 | `EctoWhereWildcardAssignCleanup` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Rewrite if-branch `_ = Ecto.Query.where(...)` to pure where(...) in expression context |
-| 172 | `EctoLocalRequireInline` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Insert `require Ecto.Query` before first from/where usage in function bodies (safety net) |
-| 173 | `OptsKeywordMapGet` | `core-lowering` | `core` | `core-lowering.core` | source order | Normalize opts.* in keyword lists to Map.get |
-| 174 | `SafePubSubAliasInject` | `core-lowering` | `core` | `core-lowering.core` | source order | Ensure alias Phoenix.SafePubSub as SafePubSub present |
-| 175 | `IncrementToAssignment` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite standalone increments to explicit assignments in blocks and if-branches |
-| 176 | `StringToAtomLiteral` | `core-lowering` | `core` | `core-lowering.core` | source order | Replace String.to_atom("field") with :field when argument is a string literal |
-| 177 | `LiveViewUseInjection` | `core-lowering` | `core` | `core-lowering.core` | source order | Inject `use <App>Web, :live_view` into <App>Web.*Live when missing |
-| 178 | `LocalUnderscoreBinderPromote` | `core-lowering` | `core` | `core-lowering.core` | source order | Rename EMatch(_name = ...) to name = ... when subsequent code uses name |
-| 179 | `BlockUnderscoreReferenceFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite name -> _name within a block when only _name is declared in that block |
-| 180 | `AdjacentUnderscoreBinderRefFix` | `core-lowering` | `core` | `core-lowering.core` | source order | In blocks, rewrite next statement references name-> _name after _name = ... assignment |
-| 181 | `PhoenixComponentUseInjection` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | Add `use Phoenix.Component` to modules that call assign/2 |
-| 182 | `SuppressHXXRuntimeModule` | `core-lowering` | `core` | `core-lowering.core` | source order | Mark HXX module as suppressEmission to avoid generating hxx.ex |
-| 183 | `StringSearchFilterNormalization` | `core-lowering` | `core` | `core-lowering.core` | source order | Normalize string contains checks to pure boolean expressions in filter predicates |
-| 184 | `StringBinaryMatchContainsRewrite` | `core-lowering` | `core` | `core-lowering.core` | source order | Normalize binary.match/is_nil search predicates to String.contains? |
-| 185 | `VarNameNormalization` | `core-lowering` | `core` | `core-lowering.core` | source order | Normalize camelCase references to snake_case when a binding exists |
-| 186 | `HXXRegistryFieldCasePreserve` | `core-lowering` | `core` | `core-lowering.core` | source order | Within HXXComponentRegistry, keep camelCase field names (e.g., allowedAttributes) |
-| 187 | `ContainsToEnumMember` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite arr.contains(v) to Enum.member?(arr, v) |
-| 188 | `MemberFilterRemovalFix` | `core-lowering` | `core` | `core-lowering.core` | source order | When cond uses Enum.member?(list, v), rewrite filter(list, fn x -> x != x end) to compare x != v |
-| 189 | `FilterReturnInlineFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Inline filter result into return when function otherwise returns original list |
-| 190 | `CaseSomeBinderNormalize` | `core-lowering` | `core` | `core-lowering.core` | source order | For {:some, _x} used in body, rename binder to a safe name and rewrite references |
-| 191 | `ListMapReplaceFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Fix Enum.map replacement no-op where both branches return the mapping var (use other var from id equality) |
-| 192 | `ListFilterRemoveFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Fix list self-compare bugs: Enum.filter v.id != v and Enum.find v.id == v (replace with enclosing id/_id param) |
-| 193 | `UnderscoreVariableCleanup` | `core-lowering` | `core` | `core-lowering.core` | source order | Remove underscore prefix from used temporary variables |
-| 194 | `AbstractMethodThis` | `core-lowering` | `core` | `core-lowering.core` | source order | Fix 'this' references in abstract methods |
-| 195 | `SupervisorOptionsTransform` | `core-lowering` | `phoenix` | `core-lowering.phoenix` | source order | Convert supervisor option maps to keyword lists |
-| 196 | `OTPChildSpecTransform` | `core-lowering` | `core` | `core-lowering.core` | source order | Convert enum-based child specs to proper OTP child specifications |
-| 197 | `PrefixUnusedParameters` | `core-lowering` | `core` | `core-lowering.core` | source order | Prefix unused function parameters with underscore to follow Elixir conventions |
-| 198 | `UsageAnalysis` | `core-lowering` | `core` | `core-lowering.core` | source order | Detect and mark unused variables with underscore prefix (context-aware) |
-| 199 | `FixBareConcatenations` | `core-lowering` | `core` | `core-lowering.core` | source order | Convert bare concatenations in blocks to assignments |
-| 200 | `FinalAssignRewrite` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite remaining assign/2 calls to Component.assign/2 |
-| 201 | `InlineTrailingReturnVar` | `core-lowering` | `core` | `core-lowering.core` | source order | Replace trailing return variable with its last assigned expression (late) |
-| 202 | `DefParamUnderscorePromote` | `core-lowering` | `core` | `core-lowering.core` | source order | Promote underscored def/defp params when trimmed name is used in body |
-| 203 | `RedundantAssignmentCleanup` | `core-lowering` | `core` | `core-lowering.core` | source order | Remove redundant assignments (thisN/new_query) that cause warnings |
-| 204 | `NoOpArithmeticCleanup` | `core-lowering` | `core` | `core-lowering.core` | source order | Drop standalone `0 + 1` expressions in blocks (no-op arithmetic) |
-| 205 | `DropStandaloneLiteralOne` | `core-lowering` | `core` | `core-lowering.core` | source order | Remove standalone numeric literals (1/0) causing unused literal warnings |
-| 206 | `RefDeclAlignment` | `core-lowering` | `core` | `core-lowering.core` | source order | Final alignment of declarations and references to canonical names |
-| 207 | `UnderscorePromoteByUse_Late` | `core-lowering` | `core` | `core-lowering.core` | source order | Promote underscored locals to base name when base is referenced (late, O(n)) |
-| 208 | `UnusedDefpPrune` | `core-lowering` | `core` | `core-lowering.core` | source order | Final pruning of unused private functions |
-| 209 | `EnsurePhoenixComponentUseInLive` | `core-lowering` | `core` | `core-lowering.core` | source order | Inject `use Phoenix.Component` into modules ending with Live |
-| 210 | `EnsureAppWebHtmlUseInLayouts` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | Inject `use <App>Web, :html` into <App>Web.Layouts modules |
-| 211 | `PresenceQualifiedModuleRewrite` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite <App>.Presence.* calls to <App>Web.Presence.* |
-| 212 | `PresenceWithSocketAssignNormalize` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | In presence modules ending with `socket`, rewrite bare Presence.* call to `socket = Presence.*(...)` |
-| 213 | `LiveNoreplyAtomFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite {:no_reply, socket} to {:noreply, socket} (shape-based) |
-| 214 | `PresenceEFnShadowedBinderRename` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Rename shadowed anonymous-fn binders (e.g., item) to entry to avoid warnings |
-| 215 | `PresenceRouteLocalize` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Inside Presence modules, rewrite Phoenix.Presence.* to current module |
-| 216 | `SafePubSubAliasFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Fix bare SafePubSub references to Phoenix.SafePubSub |
-| 217 | `SafePubSubFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Fix binder mismatch in Phoenix.SafePubSub.is_valid_message/1 |
-| 218 | `TelemetryChildrenArgFix` | `core-lowering` | `phoenix` | `core-lowering.phoenix` | source order | Use _children in Supervisor.start_link when assignment was underscored |
-| 219 | `LiveMountSocketParamPromote` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Promote mount/3 third param to `socket` (shape-based, no app coupling) |
-| 220 | `LiveMountLatePromote` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Late safety net: rename mount/3 third param to `socket` and rewrite body refs |
-| 221 | `LiveMountNormalize` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Normalize LiveView mount/3: promote discards to named binders and bind updated_socket |
-| 222 | `SupervisorStartLinkChildrenInlineFix` | `core-lowering` | `phoenix` | `core-lowering.phoenix` | source order | Inline [] for Supervisor.start_link(children, ...) in <App>Web.Telemetry |
-| 223 | `AnonFnArgBinderFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Rename underscore binders when body uses non-underscore variant |
-| 224 | `KernelImportExceptThen` | `core-lowering` | `core` | `core-lowering.core` | source order | Inject `import Kernel, except: [then: 2]` when a module defines local then/2 |
-| 225 | `UnusedImportCleanup` | `core-lowering` | `core` | `core-lowering.core` | source order | Remove import Ecto.Changeset when module not used |
-| 226 | `DropUnusedSimpleAliasToUnderscore` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite `tmp2 = value` style numeric-suffix aliases to `_ = value` when unused |
-| 227 | `FlattenNestedMatchLhs` | `core-lowering` | `core` | `core-lowering.core` | source order | Flatten `( _ = call1 ) = call2` to two sequential underscore assignments |
-| 228 | `HoistNestedAssignFromStringConcat` | `core-lowering` | `core` | `core-lowering.core` | source order | Hoist `(name = expr)` out of `left <> (...)` then use `name` in concat |
-| 229 | `FixCallEqualsCall` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite `call() = call()` into two underscore-discarded calls |
-| 230 | `NormalizeBlankMatchLhsToUnderscore` | `core-lowering` | `core` | `core-lowering.core` | before: WildcardPromoteByUndeclaredUse | Replace empty LHS in match with `_` |
-| 231 | `SanitizeAssignLhsIdentifier` | `core-lowering` | `core` | `core-lowering.core` | after: NormalizeBlankMatchLhsToUnderscore; before: WildcardPromoteByUndeclaredUse | Ensure LHS of match is a valid identifier; fallback to `_` otherwise |
-| 232 | `WildcardPromoteByUndeclaredUse` | `core-lowering` | `core` | `core-lowering.core` | source order | Promote `_ = rhs` to named binder when a single undeclared var is used later |
-| 233 | `ERawWebModuleQualification` | `core-lowering` | `phoenix` | `core-lowering.phoenix` | source order | Qualify single-segment modules inside ERaw within Web modules (final) |
-| 234 | `HandleEventParamsPromote` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Rename handle_event/3 `_params` to `params` when referenced and rewrite body |
-| 235 | `MountParamsPromote` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Rename mount/3 `_params` to `params` when referenced and rewrite body |
-| 236 | `ERawEctoValidateAtomNormalize` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Normalize ERaw validate_* atoms and opts nil comparisons (final) |
-| 237 | `LiveMountArityRepair` | `core-lowering` | `liveview` | `core-lowering.liveview` | after: MountParamsPromote | Coerce mount heads to arity-3 and rename binders to params/_session/socket |
-| 238 | `IfInlineInContainerParen` | `core-lowering` | `core` | `core-lowering.core` | source order | Wrap inline if-expressions inside tuples/lists/maps in parentheses (absolute-final) |
-| 239 | `InlineIfInContainersGlobal` | `core-lowering` | `core` | `core-lowering.core` | source order | Wrap inline if-expressions in tuples/lists/maps (global contexts) |
-| 240 | `CasePatternUnusedUnderscore` | `core-lowering` | `core` | `core-lowering.core` | source order | Underscore unused variables bound in case/with patterns |
-| 241 | `CasePatternUnderscorePromotion` | `core-lowering` | `core` | `core-lowering.core` | source order | Promote `_name` pattern binders to `name` when the body references `name` |
-| 242 | `CaseBodyAlignToPatternUnderscore` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite body references to match underscored pattern binders in case/with clauses |
-| 243 | `LocalUnderscoreUsedPromotion` | `core-lowering` | `core` | `core-lowering.core` | source order | Promote local `_name` binders to `name` when actually used (warnings cleanup) |
-| 244 | `LocalUnderscoreUsedPromotion_Final` | `core-lowering` | `core` | `core-lowering.core` | source order | Final replay: promote `_this` and similar underscore locals when referenced |
-| 245 | `InlineUnderscoreTempUsedOnce` | `core-lowering` | `core` | `core-lowering.core` | source order | Inline `_tmp = expr` followed by single-use of `_tmp` in next statement |
-| 246 | `InlineUnderscoreTempUsedOnce_Final` | `core-lowering` | `core` | `core-lowering.core` | source order | Final replay: inline immediate-use underscore temps inside nested blocks |
-| 247 | `InlineUnderscoreTempFromNullCheck` | `core-lowering` | `core` | `core-lowering.core` | source order | Replace _this in if-expr then-branch with expression from null check condition |
-| 248 | `MountSessionExtractCleanup` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Remove session extraction from params in mount/3; use real session arg |
-| 249 | `EctoLocalShimNowarn` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Inject @compile {:nowarn_unused_function, [from: 3, where: 3]} when local DSL shims are present |
-| 250 | `EctoQueryBranchSelfAssignUnderscore` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | In branch tails, rewrite `x = Ecto.Query.where(x, ..)` to `_x = ...` |
-| 251 | `AssignWhereSelfBinderUnderscore` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite `x = Ecto.Query.where(x, ...)` to `_x = ...` everywhere in bodies |
-| 252 | `EctoQueryIfAssignSimplify` | `core-lowering` | `ecto` | `core-lowering.ecto` | after: EctoQueryBranchSelfAssignUnderscore, AssignWhereSelfBinderUnderscore | Simplify inner `query =` inside if-branches for Ecto.Query.where |
-| 253 | `DropInvalidMapGetSelfAssign` | `core-lowering` | `core` | `core-lowering.core` | source order | Remove `Map.get(params, key) = Map.get(params, key)` statements in function bodies |
-| 254 | `EctoStringBufQualification` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Qualify bare StringBuf.* to <App>.StringBuf.* in modules with Ecto DSL shims |
-| 255 | `ERawEctoOptsAccessNormalize` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Rewrite opts.* in ERaw keyword lists to Map.get(opts, :key) |
-| 256 | `ERawEctoQueryableToSchema` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Rewrite ERaw to_query(:atom) to schema module <App>.<Camel> |
-| 257 | `PresenceERawCleanup` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Sanitize ERaw reduce bodies in Presence modules (drop if 1 and trailing acc) |
-| 258 | `DefParamBinderAlignByBodyUse` | `core-lowering` | `core` | `core-lowering.core` | source order | Promote underscored def params to base names when body uses base; rewrite body refs |
-| 259 | `DefParamUnderscoreRefFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite _param references to param when only param is declared |
-| 260 | `ArithmeticIncrementCleanup` | `core-lowering` | `core` | `core-lowering.core` | source order | Final sweep: drop bare numeric literals and normalize increments |
-| 261 | `ReduceWhileSentinelCleanup` | `core-lowering` | `core` | `core-lowering.core` | source order | Final sweep: drop numeric sentinels inside reduce_while bodies |
-| 262 | `UnderscoreLocalPromotion` | `core-lowering` | `core` | `core-lowering.core` | source order | Promote `_name` local binders to `name` when referenced and safe |
-| 263 | `UnusedLocalAssignUnderscoreFinal` | `core-lowering` | `core` | `core-lowering.core` | source order | Rename unused local assignment binders `name = expr` to `_name` (same-block only) |
-| 264 | `DropTempNilAssign` | `core-lowering` | `core` | `core-lowering.core` | source order | Drop compiler-generated `thisN = nil` sentinel assignments from blocks/EFn bodies |
-| 265 | `SplitChainedAssignments` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite a = b = expr into: b = expr; a = b (improves reduce_while body shapes) |
-| 266 | `IfConstSimplify` | `core-lowering` | `core` | `core-lowering.core` | source order | Simplify if true/1 and if false/0 conditionals |
-| 267 | `UnusedRepoAliasCleanupFinal` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Remove `alias <App>.Repo, as: Repo` when `Repo` isn’t referenced |
-| 268 | `HeexContentInline` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | Replace ~H raw(content\|@var) using preceding literal assignment with direct ~H literal |
-| 269 | `ParamUnderscoreArgRefAlign` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite `_params` to `params` in defs that have a `params` arg |
-| 270 | `ParamUnderscoreArgRefAlign_Global` | `core-lowering` | `core` | `core-lowering.core` | source order | Align body references to underscored head params globally (e.g., v → _v) |
-| 271 | `HeexRawInlineFromPrecedingLiteral` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | Inline preceding string literal into ~H and drop Phoenix.HTML.raw(var) usage (heuristic) |
-| 272 | `HeexAssignsCapture` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | Ensure @var usage inside ~H and assign var into assigns when inlining isn't possible |
-| 273 | `HeexRawUsageValidator` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | Warn on residual Phoenix.HTML.raw(content\|@content) inside ~H |
-| 274 | `HeexRewriteHxxBlock` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | (late) Replace <%= HXX.block(...) %> residue after capture inlining |
-| 275 | `HeexNestedSigilFlattenFinal` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | Flatten `<%= ~H... %>` inside ~H content to avoid invalid heredoc nesting (final) |
-| 276 | `HeexStabilizeFinal` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | Final ~H stabilization (bounded, idempotent sequence) |
-| 277 | `HeexBlockIfToInline` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | (late) Rewrite <%= if ... do %>HTML<% else %>HTML<% end %> to inline-if |
-| 278 | `HeexStripDanglingQuoteLines` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | (late) Drop lines that are solely a quote in ~H |
-| 279 | `SplitChainedAssignments_Final` | `core-lowering` | `core` | `core-lowering.core` | source order | (ultra-final) Ensure no a = b = expr remains in blocks/EDo |
-| 280 | `PhoenixEnumAtomTag` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite Phoenix.* enum helpers from numeric tags to atom tags using function names |
-| 281 | `EmptyModulePrune` | `core-lowering` | `core` | `core-lowering.core` | source order | Drop defmodule nodes with empty bodies to reduce noise |
-| 282 | `SupportModuleQualification` | `core-lowering` | `core` | `core-lowering.core` | source order | Qualify single-segment CamelCase modules to <App>.<Name> when module is project-local and context uses Repo or Ecto DSL |
-| 283 | `ProjectLocalModuleQualification` | `core-lowering` | `core` | `core-lowering.core` | source order | Qualify call-sites of single-segment project-local modules to <App>.<Name> |
-| 284 | `AssignmentChainCleanupLate` | `core-lowering` | `core` | `core-lowering.core` | source order | Late sweep to collapse nested aliasing chains (lhs = g = expr) when alias is unused |
-| 285 | `HeexInlineRawForHeexVarsInStrings` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | Rewrite "#{var}" to "#{Phoenix.HTML.raw(var)}" for vars bound from ~H/HTML |
-| 286 | `HeexRenderStringToSigil` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | Ensure render(assigns) returns ~H by converting final HTML strings to ~H |
-| 287 | `HeexStringReturnToSigil` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Rewrite EDef/EDefp bodies with final HTML strings to ~H sigils |
-| 288 | `HeexControlTagTransforms` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Rewrite HXX-style <if>/<else> control tags in ~H content to HEEx blocks |
-| 289 | `HeexInlineMarkupConstStringRefs` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Rewrite brace attribute refs (HookName.X/EventName.Y) to string literals inside ~H |
-| 290 | `HeexStripToStringInSigils` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Remove trailing .to_string() in <%= ... %> within ~H |
-| 291 | `HeexSimplifyIIFEInInterpolations` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Rewrite <%= (fn -> expr end).() %> → <%= expr %> inside ~H |
-| 292 | `HeexLetUnusedBinderUnderscore` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Prefix unused :let binders in ~H with `_` to prevent Elixir warnings |
-| 293 | `WebRemoteCallModuleQualification` | `hxx-heex` | `phoenix` | `hxx-heex.phoenix` | source order | Rewrite Foo.bar(...) → AppWeb.Foo.bar(...) inside Web modules |
-| 294 | `HeexAssignsParamRename` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Rename _assigns → assigns in functions that contain ~H |
-| 295 | `HeexVariableRawWrap` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Inside ~H, rewrite <%= var %> to raw(var) when var was bound from ~H or HTML string |
-| 296 | `PhoenixComponentImport` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Add Phoenix.Component import when ~H sigil is used (unless LiveView already includes it) |
-| 297 | `HeexAssignsTypeLinter` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Validate @assigns fields and literal comparisons in ~H against the Haxe typedef |
-| 298 | `DefParamUnusedUnderscore` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Prefix unused function parameters with underscore in Phoenix Web/Live/Presence modules |
-| 299 | `LocalUnderscoreReferenceFallback` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Fallback renaming of EVar(name) -> EVar(_name) when only _name declared (final) |
-| 300 | `TopLevelNilAssignDiscard` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite var = nil to _ = nil when var is not used later in function |
-| 301 | `CaseSuccessVarUnify` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Promote {:ok, _x} binder to {:ok, x} when body references x (extra absolute) |
-| 302 | `EnumEachSentinelCleanup` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Absolute sweep: drop bare numeric sentinels in Enum.each fn bodies |
-| 303 | `ClosureUnusedAssignmentDiscard` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite var = expr to _ = expr in EFn bodies when var unused later |
-| 304 | `WebEFnModuleQualification` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Final sweep to qualify single-segment modules inside <App>Web.* EFn bodies |
-| 305 | `AbsoluteFinalWebModuleQualification` | `hxx-heex` | `phoenix` | `hxx-heex.phoenix` | source order | Absolute-final: qualify single-segment CamelCase modules to <App>.<Module> inside <App>Web.* |
-| 306 | `AliasAppLocalModules` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Insert alias <App>.<Name> at top of <App>Web.* when bare <Name> is used in calls and module exists |
-| 307 | `WebReduceWhileEFnQualification` | `hxx-heex` | `phoenix` | `hxx-heex.phoenix` | source order | Explicitly qualify single-segment modules inside Enum.reduce_while EFns in <App>Web.* |
-| 308 | `SelfAssignCompression` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Compress duplicated self-assignments x = x = expr to x = expr |
-| 309 | `AssignChainPrune` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Prune unused binders in chain assignments and drop var=nil when unused |
-| 310 | `AssignChainGenericSimplify` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Simplify nested match chains by dropping unused side (generic) |
-| 311 | `IfInnerAssignSimplify` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite lhs = if do lhs = expr else lhs end → lhs = if do expr else lhs end |
-| 312 | `IfResultAssignmentSimplify` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Simplify lhs = if do lhs = expr else lhs end to lhs = if do expr else lhs end (block-aware) |
-| 313 | `StatementBlockFlatten` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Flatten nested EBlock/EDo in statement position to a single statement list (scope-transparent) |
-| 314 | `CaseTupleResultBinding` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Bind case-returned tuples to real vars and drop nil pre-binds (WAE + idiomaticity) |
-| 315 | `ShadowedInitAssignPrune` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Prune trivial initializers overwritten later in the same block (WAE hygiene) |
-| 316 | `NilGuardFieldAccessCaseNarrow` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite if/or-nil guards to case-narrowed patterns for safe field access under WAE |
-| 317 | `ChangesetStructQualification` | `hxx-heex` | `ecto` | `hxx-heex.ecto` | source order | Ensure %Module{} struct argument to changeset/2 is qualified to %<App>.Module{} in Web modules |
-| 318 | `NilGuardCoalesceToMap` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Insert v = %{} after if Kernel.is_nil(v) when v.field is used later |
-| 319 | `DateImplRewrite` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Map Date_Impl_.from_time/from_string/get_time/get_timezone_offset to Elixir equivalents |
-| 320 | `NumericNoOpCleanup` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Remove standalone numeric ops like 0 + 1 and convert bare count + 1 to assignments |
-| 321 | `EnumEachLhsDiscard` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Discard tuple LHS for Enum.each matches (shape-based cleanup) |
-| 322 | `ReduceWhileToEnumEach` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite trivial reduce_while(Stream.iterate ...) scans to Enum.each |
-| 323 | `EnumEachOuterAssignToReduce` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite Enum.each outer-var assignments to Enum.reduce accumulator threading |
-| 324 | `FilterPredicateNormalize` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Ensure Enum.filter/2 uses EFn(predicate) across call shapes; wrap captures/expressions |
-| 325 | `EnumEachHeadExtraction` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Inside Enum.each fns, replace head extraction list[0] with binder and drop sentinels |
-| 326 | `EnumEachBinderIntegrity` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Ensure Enum.each bodies use binder (not list[0]); promote wildcard binder when needed |
-| 327 | `HeexCollapseOverEscapedQuotes_Final` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Final normalization of escaped quotes inside ~H inline strings |
-| 328 | `HeexTrimTrailingBlankLines_Final` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Final collapse of trailing blank lines in ~H content to match snapshot style |
-| 329 | `CountRewrite` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite accumulator-style counting loops to Enum.count(list, &pred/1) |
-| 330 | `CountBinderNormalize` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Normalize underscored binder in Enum.count/2 (rename when used) |
-| 331 | `JoinArgListBuilderToMapJoin` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite Enum.join(<block temp-builder>, sep) to Enum.map(list, fn -> ...) \|> Enum.join(sep) |
-| 332 | `FunctionArgBlockToIIFE` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Wrap multi-statement EBlock arguments in (fn -> ... end).() |
-| 333 | `ListFindByIdFix` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Fix Enum.find self-compare v.id == v using enclosing id/_id param |
-| 334 | `CamelAtomAccessToSnake` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite EAccess(_, :camelCase) to snake_case atom keys |
-| 335 | `RedundantUnderscoreCallBeforeCase` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Remove `_ = Mod.func(args)` immediately before `case Mod.func(args) do ... end` |
-| 336 | `FnArgBodyRefNormalize` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Normalize body references of underscored variants to declared non-underscore binder in anonymous functions |
-| 337 | `EFnArgCleanup` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Final cleanup of EFn arg/body underscore mismatches |
-| 338 | `CountEachToEnumCount_Early` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Early: rewrite Enum.each(list, fn b -> if cond, do: b = b + 1 end) → Enum.count(list, fn b -> cond end) |
-| 339 | `EFnScopedUnderscoreRefCleanup` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite _name -> name in EFn bodies when a matching binder exists |
-| 340 | `EFnNumericSentinelCleanup` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Drop EInteger(0\|1) and EFloat(0.0) statements in EFn bodies |
-| 341 | `EFnUnusedArgUnderscore` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Prefix unused EFn binders with underscore to avoid warnings |
-| 342 | `EFnForbiddenBinderRename` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rename forbidden EFn binders (e.g., elem -> entry) and update body references |
-| 343 | `EFnLocalAssignDiscard` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Replace unused local rebinds in EFn bodies with wildcard assignment |
-| 344 | `EFnBinderReferenceAlign` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Align EFn binders with body references: _name -> name when binder exists |
-| 345 | `EFnForbiddenBinderRename_Final` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Late pass: rename forbidden EFn binders (e.g., elem -> entry) post-normalization |
-| 346 | `CountEachToEnumCount` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite Enum.each(list, fn b -> if cond, do: b = b + 1 end) to Enum.count(list, fn b -> cond end) |
-| 347 | `DefArgUnderscorePromoteByBodyUse_Final` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Late: rename PVar(_name) arg to name when body/ERaw references name |
-| 348 | `BlockAssignChainSimplify` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite outer = inner = expr → outer = expr when inner is unused later in function block |
-| 349 | `FunctionArgBlockToIIFE_Post` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Wrap multi-statement EBlock/EDo args in (fn -> ... end).() after late transforms |
-| 350 | `JoinArgForceIIFE` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Ensure Enum.join first argument is a single expression by IIFE wrapping complex shapes |
-| 351 | `JoinArgListBuilderToMapJoin_Post` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite Enum.join(<builder block>, sep) to Enum.map \|> Enum.join late |
-| 352 | `JoinArgBlockScopedFix` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite block-scoped temp-list builder to Enum.map \|> Enum.join and prune builder |
-| 353 | `JoinArgAlwaysIIFE` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Force Enum.join first arg to be a single expression by IIFE wrapping |
-| 354 | `BinaryOperandBlockToIIFE` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Wrap multi-statement operands of binary operators in IIFE |
-| 355 | `IfConditionComplexToParen` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Wrap if/unless conditions in parentheses when containing case/cond/with/if |
-| 356 | `IfConditionComplexHoist` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Hoist case/cond/with/if out of binary conditions: value = <complex>; if value <op> rhs do ... |
-| 357 | `BinaryOperandComplexToParen` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Wrap case/cond/with/if operands of binary ops in parentheses |
-| 358 | `EFnIIFEUnwrap` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Unwrap IIFE that returns an anonymous function to the function itself |
-| 359 | `ReservedWordVarSanitize` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rename variables colliding with Elixir reserved words to safe variants |
-| 360 | `FunctionTopLevelSentinelCleanup` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Remove bare 1/0/0.0 statements at top-level in def/defp bodies |
-| 361 | `ZeroAssignCallToBareCall` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite `0 = call(...)` or `0 = Mod.call(...)` back to bare calls (idiomatic) |
-| 362 | `StructUpdateListAppendRewrite` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite struct update list append into local list append assignment |
-| 363 | `StructUpdateStandaloneDiscard` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Discard standalone %{struct \| ...} when not final in a block |
-| 364 | `TupleLhsDiscard` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Discard {x} = expr (arity-1 tuple LHS) and keep expr |
-| 365 | `PinnedVarRequireEctoQuery` | `hxx-heex` | `ecto` | `hxx-heex.ecto` | source order | Inject `require Ecto.Query` based on EPin presence as a deterministic safeguard |
-| 366 | `EctoRequireHoist` | `hxx-heex` | `ecto` | `hxx-heex.ecto` | source order | Hoist local `require Ecto.Query` to module top and remove duplicates |
-| 367 | `GettextArityAndParamRepair` | `hxx-heex` | `phoenix` | `hxx-heex.phoenix` | source order | In *.Gettext modules, add arity shims and de-underscore used params like count |
-| 368 | `SuccessBinderAlignByBodyUse` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rename {:ok, binder} binder to the single undefined var used in body, if unambiguous |
-| 369 | `SuccessVarAbsoluteReplaceUndefined` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Final safety: replace any undefined lower-case var in {:ok, binder} clause body with binder |
-| 370 | `UnderscoreBinderAlignByBodyUse_Final` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rename {:tag, _x} binder to unique undefined lower-case var used in body (scope-aware) |
-| 371 | `ReduceAliasConcatToAcc` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Normalize alias-based accumulator concat to canonical acc concat inside Enum.reduce (absolute) |
-| 372 | `ReduceAccAliasUnify` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Unify reduce accumulator alias to acc across reducer body (absolute) |
-| 373 | `ReduceCanonicalize` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Canonicalize alias self-append and head extraction within two-arg reducers |
-| 374 | `EFnAliasConcatToAcc` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Normalize alias concat -> acc concat inside any two-arg anonymous function (safety net) |
-| 375 | `ReduceAppendCanonicalize` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Canonicalize append inside Enum.reduce: alias concat -> acc concat; alias element -> binder |
-| 376 | `AccAliasLateRewrite` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Rewrite accumulator alias self-append to canonical acc updates (ultra-final safety) |
-| 377 | `CaseBinderRebindUnderscore` | `final-hygiene` | `core` | `final-hygiene.core` | source order | In case arms, underscore binders that are immediately rebound before use |
-| 378 | `CaseClausePinExistingBindings` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Pin variables in case clause patterns when matching existing in-scope bindings |
-| 379 | `DropStandaloneVarRef` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Drop standalone var references in statement position inside blocks/do-blocks (ultra-final) |
-| 380 | `EFnTempChainSimplify` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Inside EFn, rewrite var=nil; var=expr; var → expr |
-| 381 | `TrailingTempReturnSimplify` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Replace trailing temp returns with the rhs expression |
-| 382 | `DefTrailingAssignedVarReturn` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Append trailing var when last statement is assignment to non-temp |
-| 383 | `ChangesetChainCleanup` | `final-hygiene` | `ecto` | `final-hygiene.ecto` | source order | Collapse changeset nested assigns cs/thisN → direct cs assign |
-| 384 | `ChangesetEnsureReturn` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Ensure functions building Ecto.Changeset return last assigned var |
-| 385 | `ChangesetBareCsRepair` | `final-hygiene` | `ecto` | `final-hygiene.ecto` | source order | Repair changeset/2 bodies reduced to bare cs by reconstructing change(p1, p2) |
-| 386 | `LateEnsureCsBinder` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Ensure `cs` binder exists by rewriting earliest cast/change producer to `cs = ...` (late) |
-| 387 | `ChangesetSequentialValidateThread_Final` | `final-hygiene` | `ecto` | `final-hygiene.ecto` | source order | Finalize sequential Ecto.Changeset validate calls through one changeset binder |
-| 388 | `TempAssignFlattenGlobal` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Flatten temp alias chains globally: outer=(temp=expr) → outer=expr |
-| 389 | `RepoGetBinderRepair` | `final-hygiene` | `ecto` | `final-hygiene.ecto` | source order | Rewrite bodies that return an undeclared var v to Repo.get(schema(v), firstParam) |
-| 390 | `PinnedVarBinderPromote` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Promote `_ = <literal>` to `<name> = <literal>` when a unique ^(name) is used later |
-| 391 | `EctoWherePinnedBinderRepair` | `final-hygiene` | `ecto` | `final-hygiene.ecto` | source order | Repair wildcard literal binder before where/2 that pins its value later |
-| 392 | `EFnUnusedArgUnderscore_Final` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Absolute-final: underscore unused EFn binders (Enum.reduce/map/each) after all rewrites |
-| 393 | `ReduceWhileSentinelCleanup_Final` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Late: drop numeric sentinel literals inside reduce_while bodies |
-| 394 | `NestedAssignCollapseGlobal_Final` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Absolute-final: collapse nested assignments outer=(inner=expr) → outer=expr across all nodes |
-| 395 | `EFnTempChainSimplify_AlwaysRun` | `absolute-final` | `core` | `absolute-final.core` | source order | Inside EFn, rewrite var=nil; var=expr; var → expr (runs even with fast_boot) |
-| 396 | `AbstractNilDefaultSpecialization_AlwaysRun` | `absolute-final` | `core` | `absolute-final.core` | after: EFnTempChainSimplify_AlwaysRun | Collapse nil-default temps emitted by inlined multi-type abstract specialization helpers |
-| 397 | `AbstractImplIdentityStub_AlwaysRun` | `absolute-final` | `core` | `absolute-final.core` | source order | Ensure empty abstract-impl stubs (_new/from_string) return their single argument (prevents unused-arg warnings) |
-| 398 | `HandleInfoDropUnusedAssign` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | In handle_info/2, drop v = case ... when v is unused |
-| 399 | `MountCaseSocketAssignDrop` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | In mount/3 case clauses, drop `socket = put_flash(socket, ...)` assignment to avoid warnings |
-| 400 | `FinalLocalReferenceAlign` | `absolute-final` | `core` | `absolute-final.core` | source order | Map refs to declared locals: name-> _name, nameN->name, updated->ok_* (unique) |
-| 401 | `ResultOkBinderNormalize_Replay_Ultimate` | `absolute-final` | `core` | `absolute-final.core` | after: FinalLocalReferenceAlign | Ultimate replay of {:ok, binder} normalization inside def/defp and EFn |
-| 402 | `OkValueGlobalCleanup_AbsoluteFinal` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: rewrite free ok_value refs to value when value is declared |
-| 403 | `EFnUndefinedRefToArg_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | In fn arg -> ... end with one undefined body var, rewrite it to arg |
-| 404 | `EFnBinderAlignToUndefinedRef_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | If a single undefined var exists in fn body, rename binder to that var |
-| 405 | `CaseSuccessVarUnifier_Replay_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Replay unifier to rewrite undefined placeholders to {:ok, v} binder (late) |
-| 406 | `SuccessVarAbsoluteReplaceUndefined_Replay_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: map undefined lower-case vars in {:ok, binder} bodies to binder |
-| 407 | `CaseSomeBinderNormalize_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Rename {:some, _x} binder to safe name and rewrite references (late) |
-| 408 | `UnderscoreVarUsageFix_AbsoluteFinal` | `absolute-final` | `core` | `absolute-final.core` | after: FinalLocalReferenceAlign, OkValueGlobalCleanup_AbsoluteFinal, SuccessVarAbsoluteReplaceUndefined_Replay_Final | Rename _name to name when used in expression context to avoid warnings |
-| 409 | `CaseNilAssignCleanup_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Remove `nil = _var` statements from case clause bodies (ultra-final) |
-| 410 | `CaseClauseHygieneCleanup_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Drop `nil = _var` and rewrite `socket = put_flash(socket, ...)` inside case clauses |
-| 411 | `CaseErrorVarUnify_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Promote {:error, _x} to {:error, x} when body uses x; map undefined to binder |
-| 412 | `CaseBinderUnderscoreAlign_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Rename {:ok, _value} back to {:ok, value} when body uses `value` and no other binder exists |
-| 413 | `ControllerJsonCallCleanup_Final` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | source order | Remove json/data/conn alias chains before Phoenix.Controller.json and use original conn |
-| 414 | `ControllerResultBinderNormalize_Final` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | after: ControllerJsonCallCleanup_Final | Normalize {:ok,_}/{:error,_} binders to value/reason in controllers (final) |
-| 415 | `ControllerAliasAssignDrop_AbsoluteFinal` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | source order | Absolute-final: drop assignments to json/data/conn in controller bodies and case arms |
-| 416 | `WebDropUnusedSimpleAssign_AbsoluteFinal` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | source order | Absolute-final: in Web modules, drop simple unused assignments (pure RHS) |
-| 417 | `WebJsonCallAliasRewrite_AbsoluteFinal` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | before: ControllerAliasAssignDrop_Replay_Ultimate, ControllerAliasChainDrop_Final | Absolute-final: in Web.* modules, remove json/data/conn alias lines and rewrite json(conn, data) to use RHS var |
-| 418 | `ControllerAliasChainDrop_Final` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | source order | Drop contiguous json/data/conn alias-chains to the same RHS var in controllers |
-| 419 | `ControllerAliasAssignDrop_Replay_Ultimate` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | source order | Ultimate replay: drop alias assigns json/data/conn in controllers after all rewrites |
-| 420 | `DebugControllerJsonArgs` | `absolute-final` | `core` | `absolute-final.core` | source order | Debug: log json(conn, ...) arg kinds in controllers when -D debug_controller_json is set |
-| 421 | `ControllerCaseRenameBinderIfBodyRefsBase_Final` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | after: CaseErrorVarUnify_Final, ControllerJsonCallCleanup_Final | Promote case binder _name -> name in controllers when body references base name |
-| 422 | `ControllerJsonDataArgToBinder_Final` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | after: ControllerCaseRenameBinderIfBodyRefsBase_Final, WebJsonCallAliasRewrite_AbsoluteFinal | In controllers, rewrite Phoenix.Controller.json(conn, data) to binder inside case arms |
-| 423 | `ControllerJsonDataArgPickSingleVar_Final` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | after: ControllerJsonDataArgToBinder_Final, ControllerCaseRenameBinderIfBodyRefsBase_Final | When json(conn, data) and exactly one lower-case var used in body, rewrite arg2 to it |
-| 424 | `ReduceMetasHeadRepair` | `absolute-final` | `core` | `absolute-final.core` | source order | Repair accidental meta=binder in reduce branches that check entry.metas |
-| 425 | `ListIndexAccessToEnumAt` | `absolute-final` | `core` | `absolute-final.core` | source order | Rewrite list index access (entry.metas[0]) to Enum.at(entry.metas, 0) |
-| 426 | `SafePubSubModuleRewrite` | `absolute-final` | `core` | `absolute-final.core` | source order | Rewrite SafePubSub.* to Phoenix.SafePubSub.* (ultimate fallback) |
-| 427 | `PubSubModuleRewrite` | `absolute-final` | `core` | `absolute-final.core` | source order | Rewrite PubSub.* to Phoenix.PubSub.* (ultimate fallback for native extern calls) |
-| 428 | `GlobalNumericSentinelCleanup` | `absolute-final` | `core` | `absolute-final.core` | source order | Global sweep to drop standalone numeric sentinel literals (0,1,0.0) in any block |
-| 429 | `DropNilAssignFromUnderscoredVar_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Remove statements like `nil = _g` which cause WAE warnings |
-| 430 | `SocketPutFlashAssignDrop_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | Rewrite socket = put_flash(socket, ...) to just put_flash(socket, ...) |
-| 431 | `SocketPutFlashBranchUse_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | Append bare `socket` after put_flash assignment when not immediately used |
-| 432 | `EctoMigrationExs` | `absolute-final` | `ecto` | `absolute-final.ecto` | source order | Rewrite @:migration builder chains into runnable Ecto.Migration DSL when ecto_migrations_exs |
-| 433 | `WebParamFinalFix` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | source order | Guarantee def-head and anon-fn binder/body agreement in Web/Live modules (pins-aware) |
-| 434 | `HandleInfoUnderscoreSocketFix_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | Rewrite _socket refs to socket and alias assignments to discard in handle_info/2 |
-| 435 | `UnderscoreToParamSocketFix_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | In defs with socket param, replace _socket -> socket and alias `x = _socket` -> `_ = socket` |
-| 436 | `CaseUnderscoreBinderPromote_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Promote tuple second-element binder _x -> x (when used) and rewrite body references (disabled for snapshot parity) |
-| 437 | `ClosureSelfRebindDiscard_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | In anon fns, rewrite binder rebinding to discard (_ = expr) |
-| 438 | `HandleEventGroupingReorder` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | Group def handle_event/3 clauses and place catch-all immediately after event clauses |
-| 439 | `SelfCompareToParamFix` | `absolute-final` | `core` | `absolute-final.core` | source order | Rewrite (t.id != t) and (t != t) to compare against id/_id function param |
-| 440 | `ListUpdateAndFilterFix` | `absolute-final` | `core` | `absolute-final.core` | source order | Repair map-then-replace and filter-remove-by-id logic patterns (absolute final) |
-| 441 | `UnderscoreParamPromotion_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Promote underscored parameters to base names when referenced in body and no conflict exists |
-| 442 | `HandleInfoSomeClauseNormalize_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: WebParamFinalFix, ListUpdateAndFilterFix, UnderscoreParamPromotion_Final, GlobalNumericSentinelCleanup, DropStandaloneLiteralOne | Normalize {:some, b} clause: drop leading alias, promote binder, and fix noreply payload |
-| 443 | `ClauseUnderscoreUsedPromote` | `absolute-final` | `core` | `absolute-final.core` | source order | If clause body uses underscored binder (_v), rename pattern binder and body refs to base (v) |
-| 444 | `ClauseUndefinedVarBindToBinder_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | (absolute final) Prefix-bind u=binder when clause body uses a single undefined local u (disabled here; re-added later for ordering) |
-| 445 | `CaseTupleBinderUnshadow_PreFinal` | `absolute-final` | `core` | `absolute-final.core` | source order | Rename tuple binder colliding with function arg to 'value' and, if exactly one undefined lower-case var exists in body, prefix-bind it to value (pre-final) |
-| 446 | `NestedCaseTupleUnshadow_PreFinal` | `absolute-final` | `core` | `absolute-final.core` | source order | When clause body starts with case V do {:tag, V} -> ..., rename to {:tag, value} and prefix-bind sole undefined local to value |
-| 447 | `CaseClauseAliasFromUnderscoreBinder` | `absolute-final` | `core` | `absolute-final.core` | source order | Prefix‑bind undefined local u to its underscored pattern binder _u inside case clause bodies |
-| 448 | `ClauseUndefinedVarBindToBinder_Replay_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Replay ultra-final: prefix-bind sole undefined local to the (now unshadowed) binder |
-| 449 | `CaseClauseCamelAliasToSnakeBinder` | `absolute-final` | `core` | `absolute-final.core` | source order | Prepend camelCase=snake aliases for clause bodies when pattern binds snake and body references only camel |
-| 450 | `DropSelfAssignNoop` | `absolute-final` | `core` | `absolute-final.core` | source order | Remove no-op self assignments v = v in clause bodies (late) |
-| 451 | `HeexAssignsBindRepair` | `absolute-final` | `hxx` | `absolute-final.hxx` | source order | Convert `_ = Phoenix.Component.assign(assigns, map)` back to `assigns = ...` in render/1 |
-| 452 | `TempAliasChainRepair` | `absolute-final` | `core` | `absolute-final.core` | source order | Fix use-before-assign chains involving thisN temps by dropping the temp and assigning the final RHS |
-| 453 | `HeexEventNameNormalization` | `absolute-final` | `hxx` | `absolute-final.hxx` | source order | Normalize phx-* event attribute values to lowercase snake_case; validate & warn on invalid names |
-| 454 | `RepoCaseBinderNormalize` | `absolute-final` | `ecto` | `absolute-final.ecto` | source order | Normalize {:ok, binder} binder names for Repo.delete cases: g3/s2 → deleted/_deleted |
-| 455 | `RepoDeleteCaseArgRestore` | `absolute-final` | `ecto` | `absolute-final.ecto` | source order | Inside case Repo.delete, rewrite (binder, socket) helper calls to (id, socket) |
-| 456 | `PresenceModuleFix` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | Underscore unused params and normalize trivial presence helpers to return `socket` |
-| 457 | `LiveMountReturnFinalize` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | Ensure mount/3 ends with {:ok, socket}; assign assigns inline when present |
-| 458 | `SplitChainedAssignments_AbsoluteFinal` | `absolute-final` | `core` | `absolute-final.core` | source order | (absolute final) Split a = b = expr into two statements (blocks/do/fn bodies) |
-| 459 | `VarRefSuffixParamNormalize_AbsoluteFinal` | `absolute-final` | `core` | `absolute-final.core` | source order | Absolute-final: map short refs to a unique param that ends with _<short> (e.g., query -> search_query) |
-| 460 | `DowncaseAssignLhsNormalize_AbsoluteFinal` | `absolute-final` | `core` | `absolute-final.core` | source order | Absolute-final: normalize malformed LHS String.downcase(p) = String.downcase(p) to p = String.downcase(p) |
-| 461 | `CaseOkBinderPrefixBindAllUndefined_AbsoluteFinal` | `absolute-final` | `core` | `absolute-final.core` | source order | Absolute-final: in {:ok, binder} clauses, prefix-bind all undefined simple locals to binder |
-| 462 | `CaseSuccessVarRenameCollisionFix_AbsoluteFinal` | `absolute-final` | `core` | `absolute-final.core` | source order | Absolute-final: rename {:ok, var} binder when it collides with function args (e.g., socket) |
-| 463 | `CaseOkBinderPrefixBindAllUndefined_Replay_AbsoluteFinal` | `absolute-final` | `core` | `absolute-final.core` | source order | Absolute-final replay: after binder collision renames, prefix-bind all undefined locals to {:ok, binder} |
-| 464 | `UndefinedRefInlineDiscardedMapGet_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Inline EVar(camel) to Map.get(_, "snake") when only discarded fetch exists earlier |
-| 465 | `LocalCamelToSnakeDecl_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Re-apply local camelCase→snake_case renames post event synthesis |
-| 466 | `HandleInfoReturnSocketNormalize_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | In handle_info/2, ensure helper calls end with socket and {:noreply, socket} shapes |
-| 467 | `HandleEventToggleKeyExtract_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | For handle_event("toggle_*"), replace helper first arg `params` with Map.get(params, key) |
-| 468 | `HandleEventParamRepair_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | Repair handle_event/3: turn discarded Map.get into named binds and insert any missing binds |
-| 469 | `ClauseSuccessBinderTupleSecondBind_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Prefix-bind tuple second element var to {:ok, binder} within clause bodies |
-| 470 | `SuccessBinderPrefixMostUsedUndefined_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | (absolute final) In {:ok, binder} clauses, prefix-bind the most-frequent undefined var to binder |
-| 471 | `LocalUnderscoreGenericPromotion_UltraFinal` | `absolute-final` | `core` | `absolute-final.core` | after: SuccessBinderPrefixMostUsedUndefined_Final | Ultra-final replay: promote underscored local binders when referenced (late shapes) |
-| 472 | `UpgradeWildcardMapGetToNamed_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Rewrite `_ = Map.get(params, "key")` to `key = Map.get(params, "key")` (enables VarNameNormalization) |
-| 473 | `DebugDumpMainBody` | `absolute-final` | `core` | `absolute-final.core` | source order | Debug-only: print Main.main body AST when -D debug_case_hoist is set |
-| 474 | `InterpolationInspectMapGetSimplify` | `absolute-final` | `core` | `absolute-final.core` | source order | Rewrite inspect(Map.get(obj, :field)) to obj.field |
-| 475 | `ReduceWhileIfAssignmentNormalize` | `absolute-final` | `core` | `absolute-final.core` | source order | Inside Enum.reduce_while EFns, rewrite a=(b=expr); if ... else b → b=expr; a=if ... |
-| 476 | `CaseScrutineeHoist` | `absolute-final` | `core` | `absolute-final.core` | source order | Hoist case parse_*(args) scrutinee to parsed_result = parse_*(args); case parsed_result do |
-| 477 | `CaseScrutineeHoist_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Absolute final: replay hoist of case parse_* scrutinee |
-| 478 | `CaseUnderscoreCaseHoistBlock_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Absolute final: convert `_ = case <call>` to named var + case in blocks |
-| 479 | `CaseUnderscoreAssignHoistAny_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: rewrite `_ = case <scrut>` into named assignment + case |
-| 480 | `DoubleAssignIfFold_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: normalize chained assign + trailing if into two linear assigns |
-| 481 | `AssignIfFoldInRhs_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: fold a = (b=rhs; if … else b) into b=rhs; a=if … else b |
-| 482 | `AssignChainGenericSimplify_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: split a = (b = rhs) into b = rhs; a = b |
-| 483 | `AssignmentIfElseCombine_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: combine `a = b; if ... else b` into `a = if ... else b` |
-| 484 | `AssignAliasIfPromote_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: promote a=b; if cond(a) … else b -> a=if cond(b) … |
-| 485 | `SplitChainAssign_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: split a=(b=rhs) into b=rhs; a=b |
-| 486 | `ReduceWhileThenBranchNormalize_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: normalize then-branch windows a=(b=rhs); if ... else b |
-| 487 | `SuccessBinderAlignByBodyUse_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: rename {:ok, binder} to the single undefined body var (usage-driven) |
-| 488 | `SwitchReturnSanitizer_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: ensure tail return inlines prior case alias |
-| 489 | `ChainAssignIfPromote_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: promote a=(b=rhs); if ... else b → b=rhs; a=if ... else b |
-| 490 | `HandleEventWrapperFinalRepair` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | Ultra-final: ensure helper calls use (params, socket) and inline missing locals from params |
-| 491 | `HandleEventCamelRefInlineFromParams_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | Absolute final: inline camelCase refs in handle_event/3 from params (snake key, id int conversion) |
-| 492 | `HandleEventArg0FromParamsId_UltraFinal` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | Ultra-final: rewrite helper(arg0=params, ..., socket) to pass id extracted from params |
-| 493 | `SuccessBinderAlignByBodyUse_Replay_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Replay ultra-final: align {:ok, binder} to single undefined body var after collision fix |
-| 494 | `CaseScrutineeVarToTupleBinder_Replay_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Replay ultra-final: rewrite EVar(scrutinee) → EVar(binder) inside case clause bodies |
-| 495 | `CaseTupleBinderUnshadow_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Final pass: rename tuple binder colliding with function arg to 'value' and prefix-bind most-used undefined local |
-| 496 | `HandleInfoReturnSocketNormalize_UltraFinal` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | Ultra-final: in handle_info/2, rewrite calls with duplicated first/last arg to end with socket |
-| 497 | `CaseOkBinderPrefixBindAllUndefined_Replay2_UltraFinal` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final replay: prefix-bind any remaining undefineds in {:ok, binder} clauses |
-| 498 | `DebugScanAssignChains` | `absolute-final` | `core` | `absolute-final.core` | source order | Debug-only: scan and print nested assignment chains |
-| 499 | `DebugDumpReduceWhileEFn` | `absolute-final` | `core` | `absolute-final.core` | source order | Debug-only: dump reduce_while EFn clause bodies |
-| 500 | `CaseAtomPatternTupleNormalize_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Absolute final: normalize sibling :tag patterns to {:tag} when tuple tag patterns exist |
-| 501 | `CaseListGuardToCons_Replay_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Absolute final replay: [] with non-empty guard → [head\|tail] |
-| 502 | `ListGuardIndexToHead_Replay_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Absolute final replay: list[0]→head; length(list)>1→tail!=[] in cons clauses |
-| 503 | `CaseOkBinderPrefixBindAllUndefined_Replay_Last` | `absolute-final` | `core` | `absolute-final.core` | source order | Last: prefix-bind any remaining undefineds in {:ok, binder} clauses (conservative) |
-| 504 | `ChainAssignIfPromote_Replay_Last` | `absolute-final` | `core` | `absolute-final.core` | source order | Last: promote chained assign + if window in any block/do |
-| 505 | `MountParamsUltraFinal` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: ChainAssignIfPromote_Replay_Last | Ensure mount/3 uses `params` as first arg and align body refs (absolute-final) |
-| 506 | `MountBodyAlignToHead_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: MountParamsUltraFinal, MountParamsPromote | Align body references (params/_params) to mount/3 head binder (absolute-final) |
-| 507 | `HandleEventParamsUltraFinal` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: MountParamsUltraFinal | Ensure handle_event/3 uses `params` as second arg and align body refs (absolute-final) |
-| 508 | `HandleEventBodyAlignToHead_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: HandleEventParamsUltraFinal | Align body references (params/_params) to handle_event/3 head binder (absolute-final) |
-| 509 | `ParamUnderscoreArgRefAlign_Final` | `absolute-final` | `core` | `absolute-final.core` | after: HandleEventParamsUltraFinal, MountParamsUltraFinal | Final sweep: rewrite `_params` to `params` in bodies of defs that have a `params` arg (after promotions) |
-| 510 | `ParamUnderscoreGlobalAlign_Final` | `absolute-final` | `core` | `absolute-final.core` | after: ParamUnderscoreArgRefAlign_Final | Absolute final safety: rewrite `_params` to `params` inside handle_event/3 and mount/3 bodies |
-| 511 | `DropInvalidMapGetSelfAssign_Final` | `absolute-final` | `core` | `absolute-final.core` | after: ParamUnderscoreGlobalAlign_Final, HandleEventParamsUltraFinal, MountParamsUltraFinal | Absolute final: remove Map.get(params, key) = Map.get(params, key) statements in defs |
-| 512 | `MountSessionExtractCleanup_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: DropInvalidMapGetSelfAssign_Final | Absolute final: drop `session = Map.get(params, "session")` inside mount/3 |
-| 513 | `ControllerLocalUnusedUnderscore_Final` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | after: MountSessionExtractCleanup_Final | Final replay: underscore unused local assignment binders in controllers |
-| 514 | `ConcatSelfAssignBinderUnderscore_Final` | `absolute-final` | `core` | `absolute-final.core` | after: ControllerLocalUnusedUnderscore_Final | Rewrite `x = Enum.concat(x, ...)` → `_x = Enum.concat(x, ...)` in blocks |
-| 515 | `EctoQueryBranchSelfAssignUnderscore_Final` | `absolute-final` | `ecto` | `absolute-final.ecto` | after: ControllerLocalUnusedUnderscore_Final | Absolute final replay: underscore trailing self-assign where/3 in branches |
-| 516 | `AssignWhereSelfBinderUnderscore_Final` | `absolute-final` | `core` | `absolute-final.core` | after: EctoQueryBranchSelfAssignUnderscore_Final | Absolute final replay: rewrite `x = Ecto.Query.where(x, ...)` to `_x = ...` everywhere |
-| 517 | `HandleEventParamsForceBodyRewrite_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: ParamUnderscoreGlobalAlign_Final, DropInvalidMapGetSelfAssign_Final, MountSessionExtractCleanup_Final, EctoQueryBranchSelfAssignUnderscore_Final, AssignWhereSelfBinderUnderscore_Final | Absolute final: force `_params` → `params` inside handle_event/3 bodies |
-| 518 | `EctoRepoFinalArgFromLatestQueryVar` | `absolute-final` | `ecto` | `absolute-final.ecto` | after: AssignWhereSelfBinderUnderscore_Final | Rewrite Repo.*(query) to use last refinement binder when present in the same block |
-| 519 | `EctoRepoArgModuleQualify_Final` | `absolute-final` | `ecto` | `absolute-final.ecto` | after: EctoRepoFinalArgFromLatestQueryVar | Qualify schema arg in Repo.get/one to <App>.<Name> when bare CamelCase is used |
-| 520 | `HeexAssignsParamRename_Final` | `absolute-final` | `hxx` | `absolute-final.hxx` | after: AssignWhereSelfBinderUnderscore_Final | Absolute final safety: rename _assigns → assigns when ~H is present in body |
-| 521 | `DefParamHeadUnderscoreWhenUnused_Final` | `absolute-final` | `core` | `absolute-final.core` | after: MountBodyAlignToHead_Final, MountSessionExtractCleanup_Final, HandleEventParamsForceBodyRewrite_Final | Rename params→_params in mount/3 & handle_event/3 when body does not reference params |
-| 522 | `HandleEventParamsUltraFinal_Last` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: DefParamHeadUnderscoreWhenUnused_Final, DropInvalidMapGetSelfAssign_Final, MountSessionExtractCleanup_Final, EctoRepoFinalArgFromLatestQueryVar, AssignWhereSelfBinderUnderscore_Final | Last guard: if body uses _params, set head to params and rewrite body |
-| 523 | `PresenceConcatAccumulatorInit` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: HeexTrimTrailingBlankLines_Final, HeexCollapseOverEscapedQuotes_Final, ParamUnderscoreGlobalAlign_Final, HandleEventParamsForceBodyRewrite_Final, HandleEventParamsUltraFinal_Last | Insert acc=[] when Enum.concat(acc, [...]) appears without prior definition (Presence only) |
-| 524 | `PresenceReduceWhileAccumulatorRepair` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: PresenceConcatAccumulatorInit, HeexTrimTrailingBlankLines_Final, HeexCollapseOverEscapedQuotes_Final, ParamUnderscoreGlobalAlign_Final, HandleEventParamsForceBodyRewrite_Final, HandleEventParamsUltraFinal_Last | Inject acc=[] and return acc for reduce_while loops missing initialization (Presence only) |
-| 525 | `NilUnderscoreAssignGlobal_AbsoluteFinal` | `absolute-final` | `core` | `absolute-final.core` | after: CaseClauseHygieneCleanup_Final, CaseNilAssignCleanup_Final, ControllerAliasAssignDrop_Replay_Ultimate, SuccessVarAbsoluteReplaceUndefined_Replay_Final, HandleEventParamsUltraFinal_Last | Absolute-final: remove `nil = _var` (and :nil) assignments anywhere in bodies |
-| 526 | `ControllerJsonFinalize_AbsoluteFinal` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | after: WebJsonCallAliasRewrite_AbsoluteFinal, ControllerAliasAssignDrop_Replay_Ultimate, ControllerResultBinderNormalize_Final, ControllerCaseRenameBinderIfBodyRefsBase_Final, ControllerJsonDataArgToBinder_Final, ControllerJsonDataArgPickSingleVar_Final, HandleEventParamsUltraFinal_Last | Absolute-last: in controllers, map json(conn, data) arg2 to case binder and drop alias lines |
-| 527 | `WebJsonSecondArgRewrite_Ultimate` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | after: ControllerAliasAssignDrop_Replay_Ultimate, ControllerJsonFinalize_AbsoluteFinal | Ultimate: rewrite Phoenix.Controller.json(conn, data\|json) to binder/value in Web.* |
-| 528 | `OkValueGlobalCleanup_Replay_Ultimate` | `absolute-final` | `core` | `absolute-final.core` | after: WebJsonSecondArgRewrite_Ultimate, FinalLocalReferenceAlign | Ultimate replay: rewrite ok_value->value and _g->g when only value/g are declared (def/defp and EFn) |
-| 529 | `ControllerJsonSecondArgUndefinedRewrite_Ultimate` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | after: WebJsonSecondArgRewrite_Ultimate, ControllerAliasAssignDrop_Replay_Ultimate | Ultimate: in controllers, if json(conn, data) remains with undefined `data`, rewrite to binder/safe expr |
-| 530 | `CaseBinderRefNormalizeByFlattenUnderscores_Final` | `absolute-final` | `core` | `absolute-final.core` | after: ControllerJsonSecondArgUndefinedRewrite_Ultimate, ControllerJsonFinalize_AbsoluteFinal | Unify clause body refs that flatten to the binder name (remove underscores) |
-| 531 | `FunctionArgMultiStmtIIFE_Final` | `absolute-final` | `core` | `absolute-final.core` | after: CaseBinderRefNormalizeByFlattenUnderscores_Final | Wrap multi-statement argument blocks in IIFE: (fn -> ... end).() |
-| 532 | `ExUnitAssert_Final` | `absolute-final` | `exunit` | `absolute-final.exunit` | after: FunctionArgMultiStmtIIFE_Final | Rewrite Assert.* to ExUnit assert/refute/assert_raise/etc inside ExUnit modules |
-| 533 | `AssertArgIIFE_Final` | `absolute-final` | `exunit` | `absolute-final.exunit` | after: ExUnitAssert_Final | Wrap Assert.is_true/false first arg in IIFE when complex (assignments/case) |
-| 534 | `StringIndexOf_Normalize_Final` | `absolute-final` | `core` | `absolute-final.core` | after: AssertArgIIFE_Final | Rewrite str.indexOf(sub) >= 0 to :binary.match(str, sub) != :nomatch |
-| 535 | `BinaryMatchCaseArgNormalize_Final` | `absolute-final` | `core` | `absolute-final.core` | after: StringIndexOf_Normalize_Final, FunctionArgMultiStmtIIFE_Final | Normalize arg blocks: (v = expr; case :binary.match(v, sub) ...) >= 0 → :binary.match(expr, sub) != :nomatch |
-| 536 | `InlinePrevAssignIntoArg_Final` | `absolute-final` | `core` | `absolute-final.core` | after: BinaryMatchCaseArgNormalize_Final | Inline `v = expr` into next call arg if it compares case :binary.match(v, sub) |
-| 537 | `MountParamsSideEffectAssignDiscard_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: MountSessionExtractCleanup_Final, ParamUnderscoreArgRefAlign_Final, ParamUnderscoreGlobalAlign_Final, MountBodyAlignToHead_Final, HandleEventParamsUltraFinal, HandleEventParamsUltraFinal_Last, HandleEventBodyAlignToHead_Final, DefParamHeadUnderscoreWhenUnused_Final, EctoRepoFinalArgFromLatestQueryVar, EctoQueryBranchSelfAssignUnderscore_Final, AssignWhereSelfBinderUnderscore_Final | Drop head-binder reassignments of params in mount/3 when unused later |
-| 538 | `LocalUnderscoreGenericPromotion` | `absolute-final` | `core` | `absolute-final.core` | after: ControllerLocalUnusedUnderscore_Final, MountParamsSideEffectAssignDiscard_Final, HandleEventBodyAlignToHead_Final, HandleEventParamsUltraFinal_Last | Promote any underscored local binder (_x) to x when referenced |
-| 539 | `MountParamsUnusedReassignUnderscore_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: MountSessionExtractCleanup_Final, MountParamsSideEffectAssignDiscard_Final, ParamUnderscoreGlobalAlign_Final, HandleEventParamsUltraFinal_Last | Rename `params = ...` to `_` in mount/3 when unused later (preserve RHS) |
-| 540 | `LocalAssignUnusedUnderscore_Scoped_Final` | `absolute-final` | `core` | `absolute-final.core` | after: EctoQueryBranchSelfAssignUnderscore_Final | Final (scoped): underscore local assigns not used later in defs except mount/3 |
-| 541 | `ControllerLocalAssignUnusedUnderscore_Final` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | after: LocalAssignUnusedUnderscore_Scoped_Final | In conn actions, underscore unused local assignment binders |
-| 542 | `AlignBaseRefToUnderscoredBinder_Final` | `absolute-final` | `core` | `absolute-final.core` | after: LocalAssignUnusedUnderscore_Scoped_Final | Rewrite base name refs to existing underscored local binders in the same block |
-| 543 | `LocalUnderscoreBinderPromotionWhenUsed_Final` | `absolute-final` | `core` | `absolute-final.core` | after: AlignBaseRefToUnderscoredBinder_Final | Promote underscored local binders to base name when the underscored name is read later and base is free |
-| 544 | `CaseDiscriminantTempNormalize` | `absolute-final` | `core` | `absolute-final.core` | after: LocalAssignUnusedUnderscore_Scoped_Final, AlignBaseRefToUnderscoredBinder_Final, LocalUnderscoreBinderPromotionWhenUsed_Final, FinalLocalReferenceAlign | Rewrite case discriminant to match preceding assignment modulo leading underscore |
-| 545 | `DefParamUsedBaseNamePromotion_Final` | `absolute-final` | `core` | `absolute-final.core` | after: ParamUnderscoreArgRefAlign_Final, ParamUnderscoreGlobalAlign_Final, HandleEventParamsForceBodyRewrite_Final, DropInvalidMapGetSelfAssign_Final, MountSessionExtractCleanup_Final, EctoQueryBranchSelfAssignUnderscore_Final, AssignWhereSelfBinderUnderscore_Final, LocalAssignUnusedUnderscore_Scoped_Final | Promote underscored def params to base name when body uses base name (absolute final) |
-| 546 | `HandleEventParamsHeadToParams_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: HandleEventParamsUltraFinal_Last, LocalAssignUnusedUnderscore_Scoped_Final, ParamUnderscoreArgRefAlign_Final, ParamUnderscoreGlobalAlign_Final, HandleEventParamsForceBodyRewrite_Final | Absolute-final: force handle_event/3 second arg to params when referenced; rewrite _params to params in body |
-| 547 | `DropUnusedPureUnderscoreAssign_AbsoluteFinal` | `absolute-final` | `core` | `absolute-final.core` | after: LocalAssignUnusedUnderscore_Scoped_Final | Drop non-final unused `_name = <pure literal/container>` assignments |
-| 548 | `ParamUnderscoreArgRefAlign_Global_Final` | `absolute-final` | `core` | `absolute-final.core` | after: DefParamHeadUnderscoreWhenUnused_Final, HeexAssignsParamRename_Final | Final replay: align body refs (v→_v) when head params are underscored |
-| 549 | `CaseClauseSuccessBodyBinderRewrite_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: NilUnderscoreAssignGlobal_AbsoluteFinal, FinalLocalReferenceAlign, ParamUnderscoreArgRefAlign_Global_Final | Absolute-last: in {:ok,binder} clauses, rewrite ok_value/ok_<binder> refs in bodies to binder |
-| 550 | `OkValueGlobalCleanup_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: ControllerJsonFinalize_AbsoluteFinal, ControllerAliasAssignDrop_Replay_Ultimate, ControllerJsonSecondArgUndefinedRewrite_Ultimate, CaseBinderRefNormalizeByFlattenUnderscores_Final, FunctionArgMultiStmtIIFE_Final, AssertArgIIFE_Final, StringIndexOf_Normalize_Final, BinaryMatchCaseArgNormalize_Final, ParamUnderscoreArgRefAlign_Global_Final | Absolute-last: rewrite ok_value->value and _g->g when only value/g are declared (def/defp and EFn) |
-| 551 | `CaseDiscriminantTempNormalize_Replay_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: CaseClauseSuccessBodyBinderRewrite_AbsoluteLast, OkValueGlobalCleanup_AbsoluteLast, FinalLocalReferenceAlign, ParamUnderscoreArgRefAlign_Global_Final | Absolute-last replay: rewrite case discriminant to match nearest prior assignment modulo underscore |
-| 552 | `HandleEventMapGetUnderscoreParams_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: HandleEventParamsHeadToParams_Final, HandleEventParamsUltraFinal_Last | Absolute-last: rewrite Map.get(_params, key) → Map.get(params, key) in handle_event/3 bodies |
-| 553 | `AssignMultipleNormalize_Final` | `absolute-final` | `core` | `absolute-final.core` | after: HandleEventMapGetUnderscoreParams_Final | Rewrite left = (assigns = map); Phoenix.Component.assign(socket, assigns) → left = Phoenix.Component.assign(socket, map) |
-| 554 | `HandleInfoUnderscoreBinderPromote_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: HandleInfoUnderscoreSocketFix_Final, HandleInfoReturnSocketNormalize_Final | Promote {:some, _x} binder to payload in handle_info/2 and rewrite refs |
-| 555 | `LocalAssignDiscardIfUnused_LiveView_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: ListUpdateAndFilterFix, WebParamFinalFix, HandleEventParamRepair_Final | In <App>Web.Live modules, replace unused local assigns with `_ = expr` (final) |
-| 556 | `IfBranchDowncaseTempInline_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Inline `_tmp = rhs; String.downcase(_tmp)` inside if/else branches |
-| 557 | `HandleEventMapGetValueDefaultToParams_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: HandleEventParamsHeadToParams_Final, HandleEventParamsUltraFinal_Last, HandleEventMapGetUnderscoreParams_Final | In handle_event/3, rewrite Map.get(params\|_params, "value") → params\|_params (value is Haxe default, not a Phoenix key) |
-| 558 | `MatchBlockRhsExtractLast_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Expand `pat = <block>` into block prefix statements + `pat = last_expr` (semantic fix) |
-| 559 | `MapKeysIteratorReduceWhileRewrite` | `absolute-final` | `core` | `absolute-final.core` | after: ReduceWhileResultBinding, MatchBlockRhsExtractLast_Final | Rewrite iterator-driven reduce_while loops over Map.keys/1 into direct Enum.reduce_while |
-| 560 | `CaseClauseUnusedBinderUnderscore_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | In case clauses, underscore unused binders (absolute-final) |
-| 561 | `CaseTupleMultiBinderPromoteByUse_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | (final) Promote tuple binders _name -> name when used; second pass to catch late changes |
-| 562 | `HandleInfoAliasAndNoreply_AbsoluteFinal` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: HandleInfoReturnSocketNormalize_Final, UnderscoreToParamSocketFix_Final, HandleInfoUnderscoreSocketFix_Final | Absolute-final: in handle_info/2, drop leading alias to socket and rewrite {:noreply, _socket} → {:noreply, socket} |
-| 563 | `FinalUnderscoreRepair` | `absolute-final` | `core` | `absolute-final.core` | after: HandleInfoAliasAndNoreply_AbsoluteFinal | Absolute-final: repair underscore-prefixed variables that are actually used (Phase 1.3 of 1.0 roadmap) |
-| 564 | `CaseBinderUnderscoreAlign_AbsoluteFinal_Replay` | `absolute-final` | `core` | `absolute-final.core` | after if present: FinalUnderscoreRepair | Absolute-final replay: align underscored case binders with body references (avoid undefined vars) |
-| 565 | `PhoenixComponentModuleNormalize_AbsoluteLast` | `absolute-final` | `hxx` | `absolute-final.hxx` | after: CaseBinderUnderscoreAlign_AbsoluteFinal_Replay | Absolute-last: rewrite Component.assign/assign_new/update to Phoenix.Component |
-| 566 | `HeexEnsureAssignsForNestedSigils` | `absolute-final` | `hxx` | `absolute-final.hxx` | after: PhoenixComponentModuleNormalize_AbsoluteLast | Absolute-last: insert local assigns map for ~H helpers without assigns param |
-| 567 | `HeexAssignsLocalVarRename_AbsoluteLast` | `absolute-final` | `hxx` | `absolute-final.hxx` | after: HeexEnsureAssignsForNestedSigils | Absolute-last: rename _assigns → assigns inside function bodies containing ~H |
-| 568 | `EnumEachEarlyReturnTrailingNilCleanup_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: HeexAssignsLocalVarRename_AbsoluteLast | Absolute-last: drop redundant trailing nil after reflaxe return-tagged reduce_while case |
-| 569 | `EFnUnusedArgUnderscore_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: EnumEachEarlyReturnTrailingNilCleanup_AbsoluteLast | Absolute-last: underscore unused EFn binders to avoid warnings |
-| 570 | `RemoteCallModuleAliasCaseNormalize_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: EFnUnusedArgUnderscore_AbsoluteLast | Absolute-last: normalize lowercase remote-call module targets to valid aliases |
-| 571 | `PubSubModuleRewrite_AbsoluteLastReplay` | `absolute-final` | `core` | `absolute-final.core` | after: RemoteCallModuleAliasCaseNormalize_AbsoluteLast | Absolute-last: rewrite PubSub API calls back to Phoenix.PubSub after alias normalization |
-| 572 | `CaseClauseUnusedBinderUnderscore_AbsoluteLastReplay` | `absolute-final` | `core` | `absolute-final.core` | after: PubSubModuleRewrite_AbsoluteLastReplay | Absolute-last: underscore unused case/with/receive binders (replay) |
-| 573 | `ChangesetAssignedWildcardValidateCollapse_AbsoluteLast` | `absolute-final` | `ecto` | `absolute-final.ecto` | after: CaseClauseUnusedBinderUnderscore_AbsoluteLastReplay | Absolute-last: collapse assigned Ecto.Changeset validation wildcard wrappers |
-| 574 | `DropSelfAssignNoop_AbsoluteLastReplay` | `absolute-final` | `core` | `absolute-final.core` | after: ChangesetAssignedWildcardValidateCollapse_AbsoluteLast | Absolute-last: remove no-op self-assignments v = v (replay) |
-| 575 | `UnderscorePromoteByUse_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: DropSelfAssignNoop_AbsoluteLastReplay; before: BareLiteralDrop_AbsoluteLast | Absolute-last: restore underscored result binders read by later expressions |
-| 576 | `BareLiteralDrop_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: UnderscorePromoteByUse_AbsoluteLast | Absolute-last: remove non-final literal statements in EBlock/EDo |
-| 577 | `TrivialIIFEUnwrap_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: BareLiteralDrop_AbsoluteLast | Absolute-last: unwrap zero-arg IIFEs whose body is one caller-binding-free expression |
+| 100 | `FluentApiOptimization` | `core-lowering` | `core` | `core-lowering.core` | source order | Optimize fluent API patterns to avoid unused struct assignments |
+| 101 | `ArrayLengthFieldToFunction` | `core-lowering` | `core` | `core-lowering.core` | source order | Transform array.length field access to length(array) function calls |
+| 102 | `KnownStringLengthFieldRewrite` | `core-lowering` | `core` | `core-lowering.core` | after: ArrayLengthFieldToFunction | Transform .length on locals proven to hold strings into String.length/1 |
+| 103 | `FPHelperDoubleToI64FieldAccessRewrite` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite i64.high/low from FPHelper.double_to_i64 to Bitwise ops (WAE) |
+| 104 | `DateTimeMethodRewrite` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite method-style DateTime calls to module calls |
+| 105 | `TupleElemFieldToFunction` | `core-lowering` | `core` | `core-lowering.core` | source order | Transform tuple.elem field access to elem(tuple, index) function calls |
+| 106 | `IdiomaticEnumPatternMatching` | `core-lowering` | `core` | `core-lowering.core` | source order | Transform enum tuple access patterns to idiomatic pattern matching |
+| 107 | `IdiomaticEnumReplay` | `core-lowering` | `core` | `core-lowering.core` | source order | Reapply idiomatic enum conversion on residual tagged tuples |
+| 108 | `PatternMatching` | `core-lowering` | `core` | `core-lowering.core` | source order | Transform switch statements to idiomatic Elixir case expressions |
+| 109 | `CaseLengthToListPattern_Post` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite case length(list) to list pattern case after PatternMatching |
+| 110 | `CaseGuardFreeVarToOtherParam` | `core-lowering` | `core` | `core-lowering.core` | source order | In case guards, rewrite a single free var to the other function parameter when uniquely identifiable |
+| 111 | `CaseClauseEmptyBodyToNil` | `core-lowering` | `core` | `core-lowering.core` | source order | Replace empty case arm bodies with nil to ensure valid syntax |
+| 112 | `GuardSanitization` | `core-lowering` | `core` | `core-lowering.core` | source order | Replace non-guard-safe constructs (e.g., Map.get != nil) with guard-safe guard functions |
+| 113 | `PatternVariableBinding` | `core-lowering` | `core` | `core-lowering.core` | source order | Ensure correct variable scoping in pattern matching |
+| 114 | `RenameSwitchResultVars` | `core-lowering` | `core` | `core-lowering.core` | source order | Rename __elixir_switch_result_* to switch_result_* |
+| 115 | `SwitchResultInlineReturnFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Replace trailing switch_result_* with the assigned case expression (early) |
+| 116 | `SwitchReturnSanitizer` | `core-lowering` | `core` | `core-lowering.core` | source order | Inline case into tail return when returning alias variable (sanitize direct switch returns) |
+| 117 | `CaseExprParenthesizeInExpr` | `core-lowering` | `core` | `core-lowering.core` | source order | Wrap case in parentheses when used as assignment RHS |
+| 118 | `CaseResultAssignmentMerge` | `core-lowering` | `core` | `core-lowering.core` | source order | Merge `x = init; case x do ... end` into `x = case init do ... end` |
+| 119 | `SwitchInnerCaseBinderRepair` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite inner `case <lhs>` to `case <binder>` when clause pattern binds the value (avoids undefined var) |
+| 120 | `IfThenDoToBlock` | `core-lowering` | `core` | `core-lowering.core` | source order | Normalize EIf then-branch EDo to EBlock (prevents nested do) |
+| 121 | `CasePatternTempAssignmentRemoval` | `core-lowering` | `core` | `core-lowering.core` | source order | Drop assignments like `todo = _g` when pattern already binds `todo` |
+| 122 | `NumericSuffixVarNormalize` | `core-lowering` | `core` | `core-lowering.core` | source order | Normalize variables with trailing digits to descriptive base names (no integers) |
+| 123 | `BinderCamelToSnake` | `core-lowering` | `core` | `core-lowering.core` | source order | Rename camelCase binders in case patterns to snake_case with body rewrite |
+| 124 | `ClauseCamelRefToSnake` | `core-lowering` | `core` | `core-lowering.core` | source order | Within case arms, convert camelCase body refs to snake_case when binder exists |
+| 125 | `CaseTupleMultiBinderPromoteByUse_Early` | `core-lowering` | `core` | `core-lowering.core` | after: ClauseCamelRefToSnake | Promote tuple binders (_a, _b, ...) to (a, b, ...) when used in body (AST or interpolation) |
+| 126 | `ClauseUndefinedRefRewrite` | `core-lowering` | `core` | `core-lowering.core` | source order | Within {:tag, binder} arms, rewrite single undefined body var to binder (scope-aware) |
+| 127 | `CasePayloadBinderAvoidReserved` | `core-lowering` | `core` | `core-lowering.core` | source order | Avoid reserved binder names (socket/params); rename binder to sole undefined body var |
+| 128 | `CasePayloadBinderAvoidReserved_Final` | `core-lowering` | `core` | `core-lowering.core` | source order | Absolute final: avoid reserved binder names in case arms |
+| 129 | `InnerParsedMsgCaseToBinder` | `core-lowering` | `core` | `core-lowering.core` | source order | Replace inner case parsed_msg with the outer bound binder (:some value) |
+| 130 | `SystemAlertClauseNormalization` | `core-lowering` | `core` | `core-lowering.core` | source order | Normalize {:system_alert, message, flash_type} and fix flashType usage |
+| 131 | `ControllerEnsureConnParam` | `core-lowering` | `phoenix` | `core-lowering.phoenix` | source order | Add `conn` param to controller action defs when body uses conn and param is missing |
+| 132 | `WebDefHeadPromotion` | `core-lowering` | `phoenix` | `core-lowering.phoenix` | source order | Promote _id/_user_id/_editing_todo -> id/user_id/editing_todo in Web/Live defs when body uses base |
+| 133 | `ErrorReasonAliasInjection` | `core-lowering` | `core` | `core-lowering.core` | source order | Ensure {:error, v} arms alias reason when body uses it |
+| 134 | `LiveViewErrorBinderRenameLate` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Late rename of LiveView {:error,_} -> {:error, reason} |
+| 135 | `ResultErrorBinderLateNormalization` | `core-lowering` | `core` | `core-lowering.core` | source order | If body uses `reason` and not `changeset`, rename error binder to `reason` |
+| 136 | `LiveViewReduceWhileErrorBinderNormalization` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Within Enum.reduce_while anonymous functions, rename {:error,_} binder to reason when body uses it |
+| 137 | `LiveViewAssignCallRewrite` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Rewrite assign(socket,map) to Component.assign(socket,map) in LiveView modules |
+| 138 | `ListPushRewrite` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite list.push(v) to list = Enum.concat(list, [v]) |
+| 139 | `StaticVarMutationRewrite` | `core-lowering` | `core` | `core-lowering.core` | source order | Persist static var mutations by calling static accessor setters |
+| 140 | `RepoQualification` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Rewrite bare Repo.* calls to <App>.Repo.* using the enclosing <App>Web module shape; ensures correctness without relying on aliases |
+| 141 | `ERawRepoQualification` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Qualify Repo.* tokens in ERaw within Web modules to <App>.Repo.* |
+| 142 | `ERawEctoFromQualification` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Rewrite Ecto.Query.from(... in :user, ...) to ... in <App>.User, ... in ERaw |
+| 143 | `EctoFromInAtomQualification` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Rewrite Ecto.Query.from(t in :table, ...) to t in <App>.CamelCase in AST nodes |
+| 144 | `EctoFromInModuleQualification` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Rewrite Ecto.Query.from(t in Module, ...) to t in <App>.Module where Module is single-segment CamelCase |
+| 145 | `EctoQueryVarConsistency` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Normalize Ecto query variable usage and rewrite Ecto.Query.where/Repo.all to canonical query var |
+| 146 | `EctoQueryableAtomToSchema` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Rewrite Ecto.Queryable.to_query(:table) to schema module <App>.<Camel> |
+| 147 | `RepoAtomToSchema` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Rewrite Repo.all/one/get/get!/aggregate(:table, ...) to <App>.<Camel> |
+| 148 | `CaseSuccessVarUnifier` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite undefined placeholder locals to the success var in {:ok, v} clauses |
+| 149 | `CaseSuccessVarRenameCollisionFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Rename {:ok, var} binder when it collides with function args (e.g., socket) |
+| 150 | `CaseSomeBinderRename` | `core-lowering` | `core` | `core-lowering.core` | source order | Rename {:some, g} binder to value and rewrite body refs to avoid shadowing |
+| 151 | `ApplicationStartArgNormalization` | `core-lowering` | `phoenix` | `core-lowering.phoenix` | source order | Align start_link arg names with declared locals in start/2 |
+| 152 | `TypeSafeChildSpecNormalize` | `core-lowering` | `core` | `core-lowering.core` | source order | Normalize TypeSafeChildSpec.supervisor/3 to bind parameters and avoid undefined vars |
+| 153 | `LocalVarReferenceFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Fix local references like changeset-> _changeset or query->query2 when only the latter is declared |
+| 154 | `StringToolsLocalFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Align len/result references with declared locals in StringTools |
+| 155 | `StringToolsNativeRewrite` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite ltrim/rtrim to String.trim_leading/trim_trailing |
+| 156 | `StringToolsFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Ensure StringTools.is_space/2 uses binders s,pos (late enforcement) |
+| 157 | `StdHaxeRuntimeOverride` | `core-lowering` | `core` | `core-lowering.core` | source order | Override select Haxe runtime modules with binder-consistent native implementations |
+| 158 | `EqNilToIsNil` | `core-lowering` | `core` | `core-lowering.core` | source order | Replace (x == nil) with Kernel.is_nil(x) (post opts rewrites) |
+| 159 | `SimplifyIsNilFalse` | `core-lowering` | `core` | `core-lowering.core` | after: EqNilToIsNil | Fold nil checks from earlier literal assignments in function and generated ExUnit callback scopes |
+| 160 | `ChangesetSequentialValidateThread` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Thread sequential Ecto.Changeset validate calls through one changeset binder |
+| 161 | `ChangesetFieldAtomNormalize` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Rewrite String.to_atom("field") to :field in validate_* calls |
+| 162 | `ChangesetLengthCondCollapse` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Collapse cond-combination trees for validate_length to filtered Map.get keyword list |
+| 163 | `ValidateLengthOptsAccessRewrite` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | In validate_length calls, rewrite opts.* to Map.get(opts, :key) |
+| 164 | `ChangesetLengthOptionFilter` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Drop nil options in validate_length by filtering keyword list |
+| 165 | `EctoEqPinnedNilGuard` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Guard Ecto where comparisons with pinned vars that may be nil |
+| 166 | `EctoSchemaBinderFix` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Normalize changeset/2 binder names by dropping underscores when body uses base names |
+| 167 | `EctoQueryRequireEnsure` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Ensure `require Ecto.Query` when Ecto.Query remote macros are present (pre-late; remote-only gating) |
+| 168 | `EctoQueryIIFEInline` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Inline (fn -> ... from(...) ... end).() used as where/2 query arg |
+| 169 | `ChannelSetup` | `core-lowering` | `core` | `core-lowering.core` | source order | Inject `use <App>Web, :channel` for modules named like Phoenix channels |
+| 170 | `EctoWhereWildcardAssignCleanup` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Rewrite if-branch `_ = Ecto.Query.where(...)` to pure where(...) in expression context |
+| 171 | `EctoLocalRequireInline` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Insert `require Ecto.Query` before first from/where usage in function bodies (safety net) |
+| 172 | `OptsKeywordMapGet` | `core-lowering` | `core` | `core-lowering.core` | source order | Normalize opts.* in keyword lists to Map.get |
+| 173 | `SafePubSubAliasInject` | `core-lowering` | `core` | `core-lowering.core` | source order | Ensure alias Phoenix.SafePubSub as SafePubSub present |
+| 174 | `IncrementToAssignment` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite standalone increments to explicit assignments in blocks and if-branches |
+| 175 | `StringToAtomLiteral` | `core-lowering` | `core` | `core-lowering.core` | source order | Replace String.to_atom("field") with :field when argument is a string literal |
+| 176 | `LiveViewUseInjection` | `core-lowering` | `core` | `core-lowering.core` | source order | Inject `use <App>Web, :live_view` into <App>Web.*Live when missing |
+| 177 | `LocalUnderscoreBinderPromote` | `core-lowering` | `core` | `core-lowering.core` | source order | Rename EMatch(_name = ...) to name = ... when subsequent code uses name |
+| 178 | `BlockUnderscoreReferenceFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite name -> _name within a block when only _name is declared in that block |
+| 179 | `AdjacentUnderscoreBinderRefFix` | `core-lowering` | `core` | `core-lowering.core` | source order | In blocks, rewrite next statement references name-> _name after _name = ... assignment |
+| 180 | `PhoenixComponentUseInjection` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | Add `use Phoenix.Component` to modules that call assign/2 |
+| 181 | `SuppressHXXRuntimeModule` | `core-lowering` | `core` | `core-lowering.core` | source order | Mark HXX module as suppressEmission to avoid generating hxx.ex |
+| 182 | `StringSearchFilterNormalization` | `core-lowering` | `core` | `core-lowering.core` | source order | Normalize string contains checks to pure boolean expressions in filter predicates |
+| 183 | `StringBinaryMatchContainsRewrite` | `core-lowering` | `core` | `core-lowering.core` | source order | Normalize binary.match/is_nil search predicates to String.contains? |
+| 184 | `VarNameNormalization` | `core-lowering` | `core` | `core-lowering.core` | source order | Normalize camelCase references to snake_case when a binding exists |
+| 185 | `HXXRegistryFieldCasePreserve` | `core-lowering` | `core` | `core-lowering.core` | source order | Within HXXComponentRegistry, keep camelCase field names (e.g., allowedAttributes) |
+| 186 | `ContainsToEnumMember` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite arr.contains(v) to Enum.member?(arr, v) |
+| 187 | `MemberFilterRemovalFix` | `core-lowering` | `core` | `core-lowering.core` | source order | When cond uses Enum.member?(list, v), rewrite filter(list, fn x -> x != x end) to compare x != v |
+| 188 | `FilterReturnInlineFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Inline filter result into return when function otherwise returns original list |
+| 189 | `CaseSomeBinderNormalize` | `core-lowering` | `core` | `core-lowering.core` | source order | For {:some, _x} used in body, rename binder to a safe name and rewrite references |
+| 190 | `ListMapReplaceFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Fix Enum.map replacement no-op where both branches return the mapping var (use other var from id equality) |
+| 191 | `ListFilterRemoveFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Fix list self-compare bugs: Enum.filter v.id != v and Enum.find v.id == v (replace with enclosing id/_id param) |
+| 192 | `UnderscoreVariableCleanup` | `core-lowering` | `core` | `core-lowering.core` | source order | Remove underscore prefix from used temporary variables |
+| 193 | `AbstractMethodThis` | `core-lowering` | `core` | `core-lowering.core` | source order | Fix 'this' references in abstract methods |
+| 194 | `SupervisorOptionsTransform` | `core-lowering` | `phoenix` | `core-lowering.phoenix` | source order | Convert supervisor option maps to keyword lists |
+| 195 | `OTPChildSpecTransform` | `core-lowering` | `core` | `core-lowering.core` | source order | Convert enum-based child specs to proper OTP child specifications |
+| 196 | `PrefixUnusedParameters` | `core-lowering` | `core` | `core-lowering.core` | source order | Prefix unused function parameters with underscore to follow Elixir conventions |
+| 197 | `UsageAnalysis` | `core-lowering` | `core` | `core-lowering.core` | source order | Detect and mark unused variables with underscore prefix (context-aware) |
+| 198 | `FixBareConcatenations` | `core-lowering` | `core` | `core-lowering.core` | source order | Convert bare concatenations in blocks to assignments |
+| 199 | `FinalAssignRewrite` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite remaining assign/2 calls to Component.assign/2 |
+| 200 | `InlineTrailingReturnVar` | `core-lowering` | `core` | `core-lowering.core` | source order | Replace trailing return variable with its last assigned expression (late) |
+| 201 | `DefParamUnderscorePromote` | `core-lowering` | `core` | `core-lowering.core` | source order | Promote underscored def/defp params when trimmed name is used in body |
+| 202 | `RedundantAssignmentCleanup` | `core-lowering` | `core` | `core-lowering.core` | source order | Remove redundant assignments (thisN/new_query) that cause warnings |
+| 203 | `NoOpArithmeticCleanup` | `core-lowering` | `core` | `core-lowering.core` | source order | Drop standalone `0 + 1` expressions in blocks (no-op arithmetic) |
+| 204 | `DropStandaloneLiteralOne` | `core-lowering` | `core` | `core-lowering.core` | source order | Remove standalone numeric literals (1/0) causing unused literal warnings |
+| 205 | `RefDeclAlignment` | `core-lowering` | `core` | `core-lowering.core` | source order | Final alignment of declarations and references to canonical names |
+| 206 | `UnderscorePromoteByUse_Late` | `core-lowering` | `core` | `core-lowering.core` | source order | Promote underscored locals to base name when base is referenced (late, O(n)) |
+| 207 | `UnusedDefpPrune` | `core-lowering` | `core` | `core-lowering.core` | source order | Final pruning of unused private functions |
+| 208 | `EnsurePhoenixComponentUseInLive` | `core-lowering` | `core` | `core-lowering.core` | source order | Inject `use Phoenix.Component` into modules ending with Live |
+| 209 | `EnsureAppWebHtmlUseInLayouts` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | Inject `use <App>Web, :html` into <App>Web.Layouts modules |
+| 210 | `PresenceQualifiedModuleRewrite` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite <App>.Presence.* calls to <App>Web.Presence.* |
+| 211 | `PresenceWithSocketAssignNormalize` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | In presence modules ending with `socket`, rewrite bare Presence.* call to `socket = Presence.*(...)` |
+| 212 | `LiveNoreplyAtomFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite {:no_reply, socket} to {:noreply, socket} (shape-based) |
+| 213 | `PresenceEFnShadowedBinderRename` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Rename shadowed anonymous-fn binders (e.g., item) to entry to avoid warnings |
+| 214 | `PresenceRouteLocalize` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Inside Presence modules, rewrite Phoenix.Presence.* to current module |
+| 215 | `SafePubSubAliasFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Fix bare SafePubSub references to Phoenix.SafePubSub |
+| 216 | `SafePubSubFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Fix binder mismatch in Phoenix.SafePubSub.is_valid_message/1 |
+| 217 | `TelemetryChildrenArgFix` | `core-lowering` | `phoenix` | `core-lowering.phoenix` | source order | Use _children in Supervisor.start_link when assignment was underscored |
+| 218 | `LiveMountSocketParamPromote` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Promote mount/3 third param to `socket` (shape-based, no app coupling) |
+| 219 | `LiveMountLatePromote` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Late safety net: rename mount/3 third param to `socket` and rewrite body refs |
+| 220 | `LiveMountNormalize` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Normalize LiveView mount/3: promote discards to named binders and bind updated_socket |
+| 221 | `SupervisorStartLinkChildrenInlineFix` | `core-lowering` | `phoenix` | `core-lowering.phoenix` | source order | Inline [] for Supervisor.start_link(children, ...) in <App>Web.Telemetry |
+| 222 | `AnonFnArgBinderFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Rename underscore binders when body uses non-underscore variant |
+| 223 | `KernelImportExceptThen` | `core-lowering` | `core` | `core-lowering.core` | source order | Inject `import Kernel, except: [then: 2]` when a module defines local then/2 |
+| 224 | `UnusedImportCleanup` | `core-lowering` | `core` | `core-lowering.core` | source order | Remove import Ecto.Changeset when module not used |
+| 225 | `DropUnusedSimpleAliasToUnderscore` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite `tmp2 = value` style numeric-suffix aliases to `_ = value` when unused |
+| 226 | `FlattenNestedMatchLhs` | `core-lowering` | `core` | `core-lowering.core` | source order | Flatten `( _ = call1 ) = call2` to two sequential underscore assignments |
+| 227 | `HoistNestedAssignFromStringConcat` | `core-lowering` | `core` | `core-lowering.core` | source order | Hoist `(name = expr)` out of `left <> (...)` then use `name` in concat |
+| 228 | `FixCallEqualsCall` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite `call() = call()` into two underscore-discarded calls |
+| 229 | `NormalizeBlankMatchLhsToUnderscore` | `core-lowering` | `core` | `core-lowering.core` | before: WildcardPromoteByUndeclaredUse | Replace empty LHS in match with `_` |
+| 230 | `SanitizeAssignLhsIdentifier` | `core-lowering` | `core` | `core-lowering.core` | after: NormalizeBlankMatchLhsToUnderscore; before: WildcardPromoteByUndeclaredUse | Ensure LHS of match is a valid identifier; fallback to `_` otherwise |
+| 231 | `WildcardPromoteByUndeclaredUse` | `core-lowering` | `core` | `core-lowering.core` | source order | Promote `_ = rhs` to named binder when a single undeclared var is used later |
+| 232 | `ERawWebModuleQualification` | `core-lowering` | `phoenix` | `core-lowering.phoenix` | source order | Qualify single-segment modules inside ERaw within Web modules (final) |
+| 233 | `HandleEventParamsPromote` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Rename handle_event/3 `_params` to `params` when referenced and rewrite body |
+| 234 | `MountParamsPromote` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Rename mount/3 `_params` to `params` when referenced and rewrite body |
+| 235 | `ERawEctoValidateAtomNormalize` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Normalize ERaw validate_* atoms and opts nil comparisons (final) |
+| 236 | `LiveMountArityRepair` | `core-lowering` | `liveview` | `core-lowering.liveview` | after: MountParamsPromote | Coerce mount heads to arity-3 and rename binders to params/_session/socket |
+| 237 | `IfInlineInContainerParen` | `core-lowering` | `core` | `core-lowering.core` | source order | Wrap inline if-expressions inside tuples/lists/maps in parentheses (absolute-final) |
+| 238 | `InlineIfInContainersGlobal` | `core-lowering` | `core` | `core-lowering.core` | source order | Wrap inline if-expressions in tuples/lists/maps (global contexts) |
+| 239 | `CasePatternUnusedUnderscore` | `core-lowering` | `core` | `core-lowering.core` | source order | Underscore unused variables bound in case/with patterns |
+| 240 | `CasePatternUnderscorePromotion` | `core-lowering` | `core` | `core-lowering.core` | source order | Promote `_name` pattern binders to `name` when the body references `name` |
+| 241 | `CaseBodyAlignToPatternUnderscore` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite body references to match underscored pattern binders in case/with clauses |
+| 242 | `LocalUnderscoreUsedPromotion` | `core-lowering` | `core` | `core-lowering.core` | source order | Promote local `_name` binders to `name` when actually used (warnings cleanup) |
+| 243 | `LocalUnderscoreUsedPromotion_Final` | `core-lowering` | `core` | `core-lowering.core` | source order | Final replay: promote `_this` and similar underscore locals when referenced |
+| 244 | `InlineUnderscoreTempUsedOnce` | `core-lowering` | `core` | `core-lowering.core` | source order | Inline `_tmp = expr` followed by single-use of `_tmp` in next statement |
+| 245 | `InlineUnderscoreTempUsedOnce_Final` | `core-lowering` | `core` | `core-lowering.core` | source order | Final replay: inline immediate-use underscore temps inside nested blocks |
+| 246 | `InlineUnderscoreTempFromNullCheck` | `core-lowering` | `core` | `core-lowering.core` | source order | Replace _this in if-expr then-branch with expression from null check condition |
+| 247 | `MountSessionExtractCleanup` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Remove session extraction from params in mount/3; use real session arg |
+| 248 | `EctoLocalShimNowarn` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Inject @compile {:nowarn_unused_function, [from: 3, where: 3]} when local DSL shims are present |
+| 249 | `EctoQueryBranchSelfAssignUnderscore` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | In branch tails, rewrite `x = Ecto.Query.where(x, ..)` to `_x = ...` |
+| 250 | `AssignWhereSelfBinderUnderscore` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite `x = Ecto.Query.where(x, ...)` to `_x = ...` everywhere in bodies |
+| 251 | `EctoQueryIfAssignSimplify` | `core-lowering` | `ecto` | `core-lowering.ecto` | after: EctoQueryBranchSelfAssignUnderscore, AssignWhereSelfBinderUnderscore | Simplify inner `query =` inside if-branches for Ecto.Query.where |
+| 252 | `DropInvalidMapGetSelfAssign` | `core-lowering` | `core` | `core-lowering.core` | source order | Remove `Map.get(params, key) = Map.get(params, key)` statements in function bodies |
+| 253 | `EctoStringBufQualification` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Qualify bare StringBuf.* to <App>.StringBuf.* in modules with Ecto DSL shims |
+| 254 | `ERawEctoOptsAccessNormalize` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Rewrite opts.* in ERaw keyword lists to Map.get(opts, :key) |
+| 255 | `ERawEctoQueryableToSchema` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Rewrite ERaw to_query(:atom) to schema module <App>.<Camel> |
+| 256 | `PresenceERawCleanup` | `core-lowering` | `liveview` | `core-lowering.liveview` | source order | Sanitize ERaw reduce bodies in Presence modules (drop if 1 and trailing acc) |
+| 257 | `DefParamBinderAlignByBodyUse` | `core-lowering` | `core` | `core-lowering.core` | source order | Promote underscored def params to base names when body uses base; rewrite body refs |
+| 258 | `DefParamUnderscoreRefFix` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite _param references to param when only param is declared |
+| 259 | `ArithmeticIncrementCleanup` | `core-lowering` | `core` | `core-lowering.core` | source order | Final sweep: drop bare numeric literals and normalize increments |
+| 260 | `ReduceWhileSentinelCleanup` | `core-lowering` | `core` | `core-lowering.core` | source order | Final sweep: drop numeric sentinels inside reduce_while bodies |
+| 261 | `UnderscoreLocalPromotion` | `core-lowering` | `core` | `core-lowering.core` | source order | Promote `_name` local binders to `name` when referenced and safe |
+| 262 | `UnusedLocalAssignUnderscoreFinal` | `core-lowering` | `core` | `core-lowering.core` | source order | Rename unused local assignment binders `name = expr` to `_name` (same-block only) |
+| 263 | `DropTempNilAssign` | `core-lowering` | `core` | `core-lowering.core` | source order | Drop compiler-generated `thisN = nil` sentinel assignments from blocks/EFn bodies |
+| 264 | `SplitChainedAssignments` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite a = b = expr into: b = expr; a = b (improves reduce_while body shapes) |
+| 265 | `IfConstSimplify` | `core-lowering` | `core` | `core-lowering.core` | source order | Simplify if true/1 and if false/0 conditionals |
+| 266 | `UnusedRepoAliasCleanupFinal` | `core-lowering` | `ecto` | `core-lowering.ecto` | source order | Remove `alias <App>.Repo, as: Repo` when `Repo` isn’t referenced |
+| 267 | `HeexContentInline` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | Replace ~H raw(content\|@var) using preceding literal assignment with direct ~H literal |
+| 268 | `ParamUnderscoreArgRefAlign` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite `_params` to `params` in defs that have a `params` arg |
+| 269 | `ParamUnderscoreArgRefAlign_Global` | `core-lowering` | `core` | `core-lowering.core` | source order | Align body references to underscored head params globally (e.g., v → _v) |
+| 270 | `HeexRawInlineFromPrecedingLiteral` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | Inline preceding string literal into ~H and drop Phoenix.HTML.raw(var) usage (heuristic) |
+| 271 | `HeexAssignsCapture` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | Ensure @var usage inside ~H and assign var into assigns when inlining isn't possible |
+| 272 | `HeexRawUsageValidator` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | Warn on residual Phoenix.HTML.raw(content\|@content) inside ~H |
+| 273 | `HeexRewriteHxxBlock` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | (late) Replace <%= HXX.block(...) %> residue after capture inlining |
+| 274 | `HeexNestedSigilFlattenFinal` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | Flatten `<%= ~H... %>` inside ~H content to avoid invalid heredoc nesting (final) |
+| 275 | `HeexStabilizeFinal` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | Final ~H stabilization (bounded, idempotent sequence) |
+| 276 | `HeexBlockIfToInline` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | (late) Rewrite <%= if ... do %>HTML<% else %>HTML<% end %> to inline-if |
+| 277 | `HeexStripDanglingQuoteLines` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | (late) Drop lines that are solely a quote in ~H |
+| 278 | `SplitChainedAssignments_Final` | `core-lowering` | `core` | `core-lowering.core` | source order | (ultra-final) Ensure no a = b = expr remains in blocks/EDo |
+| 279 | `PhoenixEnumAtomTag` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite Phoenix.* enum helpers from numeric tags to atom tags using function names |
+| 280 | `EmptyModulePrune` | `core-lowering` | `core` | `core-lowering.core` | source order | Drop defmodule nodes with empty bodies to reduce noise |
+| 281 | `SupportModuleQualification` | `core-lowering` | `core` | `core-lowering.core` | source order | Qualify single-segment CamelCase modules to <App>.<Name> when module is project-local and context uses Repo or Ecto DSL |
+| 282 | `ProjectLocalModuleQualification` | `core-lowering` | `core` | `core-lowering.core` | source order | Qualify call-sites of single-segment project-local modules to <App>.<Name> |
+| 283 | `AssignmentChainCleanupLate` | `core-lowering` | `core` | `core-lowering.core` | source order | Late sweep to collapse nested aliasing chains (lhs = g = expr) when alias is unused |
+| 284 | `HeexInlineRawForHeexVarsInStrings` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | Rewrite "#{var}" to "#{Phoenix.HTML.raw(var)}" for vars bound from ~H/HTML |
+| 285 | `HeexRenderStringToSigil` | `core-lowering` | `hxx` | `core-lowering.hxx` | source order | Ensure render(assigns) returns ~H by converting final HTML strings to ~H |
+| 286 | `HeexStringReturnToSigil` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Rewrite EDef/EDefp bodies with final HTML strings to ~H sigils |
+| 287 | `HeexControlTagTransforms` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Rewrite HXX-style <if>/<else> control tags in ~H content to HEEx blocks |
+| 288 | `HeexInlineMarkupConstStringRefs` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Rewrite brace attribute refs (HookName.X/EventName.Y) to string literals inside ~H |
+| 289 | `HeexStripToStringInSigils` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Remove trailing .to_string() in <%= ... %> within ~H |
+| 290 | `HeexSimplifyIIFEInInterpolations` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Rewrite <%= (fn -> expr end).() %> → <%= expr %> inside ~H |
+| 291 | `HeexLetUnusedBinderUnderscore` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Prefix unused :let binders in ~H with `_` to prevent Elixir warnings |
+| 292 | `WebRemoteCallModuleQualification` | `hxx-heex` | `phoenix` | `hxx-heex.phoenix` | source order | Rewrite Foo.bar(...) → AppWeb.Foo.bar(...) inside Web modules |
+| 293 | `HeexAssignsParamRename` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Rename _assigns → assigns in functions that contain ~H |
+| 294 | `HeexVariableRawWrap` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Inside ~H, rewrite <%= var %> to raw(var) when var was bound from ~H or HTML string |
+| 295 | `PhoenixComponentImport` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Add Phoenix.Component import when ~H sigil is used (unless LiveView already includes it) |
+| 296 | `HeexAssignsTypeLinter` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Validate @assigns fields and literal comparisons in ~H against the Haxe typedef |
+| 297 | `DefParamUnusedUnderscore` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Prefix unused function parameters with underscore in Phoenix Web/Live/Presence modules |
+| 298 | `LocalUnderscoreReferenceFallback` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Fallback renaming of EVar(name) -> EVar(_name) when only _name declared (final) |
+| 299 | `TopLevelNilAssignDiscard` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite var = nil to _ = nil when var is not used later in function |
+| 300 | `CaseSuccessVarUnify` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Promote {:ok, _x} binder to {:ok, x} when body references x (extra absolute) |
+| 301 | `EnumEachSentinelCleanup` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Absolute sweep: drop bare numeric sentinels in Enum.each fn bodies |
+| 302 | `ClosureUnusedAssignmentDiscard` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite var = expr to _ = expr in EFn bodies when var unused later |
+| 303 | `WebEFnModuleQualification` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Final sweep to qualify single-segment modules inside <App>Web.* EFn bodies |
+| 304 | `AbsoluteFinalWebModuleQualification` | `hxx-heex` | `phoenix` | `hxx-heex.phoenix` | source order | Absolute-final: qualify single-segment CamelCase modules to <App>.<Module> inside <App>Web.* |
+| 305 | `AliasAppLocalModules` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Insert alias <App>.<Name> at top of <App>Web.* when bare <Name> is used in calls and module exists |
+| 306 | `WebReduceWhileEFnQualification` | `hxx-heex` | `phoenix` | `hxx-heex.phoenix` | source order | Explicitly qualify single-segment modules inside Enum.reduce_while EFns in <App>Web.* |
+| 307 | `SelfAssignCompression` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Compress duplicated self-assignments x = x = expr to x = expr |
+| 308 | `AssignChainPrune` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Prune unused binders in chain assignments and drop var=nil when unused |
+| 309 | `AssignChainGenericSimplify` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Simplify nested match chains by dropping unused side (generic) |
+| 310 | `IfInnerAssignSimplify` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite lhs = if do lhs = expr else lhs end → lhs = if do expr else lhs end |
+| 311 | `IfResultAssignmentSimplify` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Simplify lhs = if do lhs = expr else lhs end to lhs = if do expr else lhs end (block-aware) |
+| 312 | `StatementBlockFlatten` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Flatten nested EBlock/EDo in statement position to a single statement list (scope-transparent) |
+| 313 | `CaseTupleResultBinding` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Bind case-returned tuples to real vars and drop nil pre-binds (WAE + idiomaticity) |
+| 314 | `ShadowedInitAssignPrune` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Prune trivial initializers overwritten later in the same block (WAE hygiene) |
+| 315 | `NilGuardFieldAccessCaseNarrow` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite if/or-nil guards to case-narrowed patterns for safe field access under WAE |
+| 316 | `ChangesetStructQualification` | `hxx-heex` | `ecto` | `hxx-heex.ecto` | source order | Ensure %Module{} struct argument to changeset/2 is qualified to %<App>.Module{} in Web modules |
+| 317 | `NilGuardCoalesceToMap` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Insert v = %{} after if Kernel.is_nil(v) when v.field is used later |
+| 318 | `DateImplRewrite` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Map Date_Impl_.from_time/from_string/get_time/get_timezone_offset to Elixir equivalents |
+| 319 | `NumericNoOpCleanup` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Remove standalone numeric ops like 0 + 1 and convert bare count + 1 to assignments |
+| 320 | `EnumEachLhsDiscard` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Discard tuple LHS for Enum.each matches (shape-based cleanup) |
+| 321 | `ReduceWhileToEnumEach` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite trivial reduce_while(Stream.iterate ...) scans to Enum.each |
+| 322 | `EnumEachOuterAssignToReduce` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite Enum.each outer-var assignments to Enum.reduce accumulator threading |
+| 323 | `FilterPredicateNormalize` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Ensure Enum.filter/2 uses EFn(predicate) across call shapes; wrap captures/expressions |
+| 324 | `EnumEachHeadExtraction` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Inside Enum.each fns, replace head extraction list[0] with binder and drop sentinels |
+| 325 | `EnumEachBinderIntegrity` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Ensure Enum.each bodies use binder (not list[0]); promote wildcard binder when needed |
+| 326 | `HeexCollapseOverEscapedQuotes_Final` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Final normalization of escaped quotes inside ~H inline strings |
+| 327 | `HeexTrimTrailingBlankLines_Final` | `hxx-heex` | `hxx` | `hxx-heex.hxx` | source order | Final collapse of trailing blank lines in ~H content to match snapshot style |
+| 328 | `CountRewrite` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite accumulator-style counting loops to Enum.count(list, &pred/1) |
+| 329 | `CountBinderNormalize` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Normalize underscored binder in Enum.count/2 (rename when used) |
+| 330 | `JoinArgListBuilderToMapJoin` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite Enum.join(<block temp-builder>, sep) to Enum.map(list, fn -> ...) \|> Enum.join(sep) |
+| 331 | `FunctionArgBlockToIIFE` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Wrap multi-statement EBlock arguments in (fn -> ... end).() |
+| 332 | `ListFindByIdFix` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Fix Enum.find self-compare v.id == v using enclosing id/_id param |
+| 333 | `CamelAtomAccessToSnake` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite EAccess(_, :camelCase) to snake_case atom keys |
+| 334 | `RedundantUnderscoreCallBeforeCase` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Remove `_ = Mod.func(args)` immediately before `case Mod.func(args) do ... end` |
+| 335 | `FnArgBodyRefNormalize` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Normalize body references of underscored variants to declared non-underscore binder in anonymous functions |
+| 336 | `EFnArgCleanup` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Final cleanup of EFn arg/body underscore mismatches |
+| 337 | `CountEachToEnumCount_Early` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Early: rewrite Enum.each(list, fn b -> if cond, do: b = b + 1 end) → Enum.count(list, fn b -> cond end) |
+| 338 | `EFnScopedUnderscoreRefCleanup` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite _name -> name in EFn bodies when a matching binder exists |
+| 339 | `EFnNumericSentinelCleanup` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Drop EInteger(0\|1) and EFloat(0.0) statements in EFn bodies |
+| 340 | `EFnUnusedArgUnderscore` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Prefix unused EFn binders with underscore to avoid warnings |
+| 341 | `EFnForbiddenBinderRename` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rename forbidden EFn binders (e.g., elem -> entry) and update body references |
+| 342 | `EFnLocalAssignDiscard` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Replace unused local rebinds in EFn bodies with wildcard assignment |
+| 343 | `EFnBinderReferenceAlign` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Align EFn binders with body references: _name -> name when binder exists |
+| 344 | `EFnForbiddenBinderRename_Final` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Late pass: rename forbidden EFn binders (e.g., elem -> entry) post-normalization |
+| 345 | `CountEachToEnumCount` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite Enum.each(list, fn b -> if cond, do: b = b + 1 end) to Enum.count(list, fn b -> cond end) |
+| 346 | `DefArgUnderscorePromoteByBodyUse_Final` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Late: rename PVar(_name) arg to name when body/ERaw references name |
+| 347 | `BlockAssignChainSimplify` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite outer = inner = expr → outer = expr when inner is unused later in function block |
+| 348 | `FunctionArgBlockToIIFE_Post` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Wrap multi-statement EBlock/EDo args in (fn -> ... end).() after late transforms |
+| 349 | `JoinArgForceIIFE` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Ensure Enum.join first argument is a single expression by IIFE wrapping complex shapes |
+| 350 | `JoinArgListBuilderToMapJoin_Post` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite Enum.join(<builder block>, sep) to Enum.map \|> Enum.join late |
+| 351 | `JoinArgBlockScopedFix` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite block-scoped temp-list builder to Enum.map \|> Enum.join and prune builder |
+| 352 | `JoinArgAlwaysIIFE` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Force Enum.join first arg to be a single expression by IIFE wrapping |
+| 353 | `BinaryOperandBlockToIIFE` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Wrap multi-statement operands of binary operators in IIFE |
+| 354 | `IfConditionComplexToParen` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Wrap if/unless conditions in parentheses when containing case/cond/with/if |
+| 355 | `IfConditionComplexHoist` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Hoist case/cond/with/if out of binary conditions: value = <complex>; if value <op> rhs do ... |
+| 356 | `BinaryOperandComplexToParen` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Wrap case/cond/with/if operands of binary ops in parentheses |
+| 357 | `EFnIIFEUnwrap` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Unwrap IIFE that returns an anonymous function to the function itself |
+| 358 | `ReservedWordVarSanitize` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rename variables colliding with Elixir reserved words to safe variants |
+| 359 | `FunctionTopLevelSentinelCleanup` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Remove bare 1/0/0.0 statements at top-level in def/defp bodies |
+| 360 | `ZeroAssignCallToBareCall` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite `0 = call(...)` or `0 = Mod.call(...)` back to bare calls (idiomatic) |
+| 361 | `StructUpdateListAppendRewrite` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rewrite struct update list append into local list append assignment |
+| 362 | `StructUpdateStandaloneDiscard` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Discard standalone %{struct \| ...} when not final in a block |
+| 363 | `PinnedVarRequireEctoQuery` | `hxx-heex` | `ecto` | `hxx-heex.ecto` | source order | Inject `require Ecto.Query` based on EPin presence as a deterministic safeguard |
+| 364 | `EctoRequireHoist` | `hxx-heex` | `ecto` | `hxx-heex.ecto` | source order | Hoist local `require Ecto.Query` to module top and remove duplicates |
+| 365 | `GettextArityAndParamRepair` | `hxx-heex` | `phoenix` | `hxx-heex.phoenix` | source order | In *.Gettext modules, add arity shims and de-underscore used params like count |
+| 366 | `SuccessBinderAlignByBodyUse` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rename {:ok, binder} binder to the single undefined var used in body, if unambiguous |
+| 367 | `SuccessVarAbsoluteReplaceUndefined` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Final safety: replace any undefined lower-case var in {:ok, binder} clause body with binder |
+| 368 | `UnderscoreBinderAlignByBodyUse_Final` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Rename {:tag, _x} binder to unique undefined lower-case var used in body (scope-aware) |
+| 369 | `ReduceAliasConcatToAcc` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Normalize alias-based accumulator concat to canonical acc concat inside Enum.reduce (absolute) |
+| 370 | `ReduceAccAliasUnify` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Unify reduce accumulator alias to acc across reducer body (absolute) |
+| 371 | `ReduceCanonicalize` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Canonicalize alias self-append and head extraction within two-arg reducers |
+| 372 | `EFnAliasConcatToAcc` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Normalize alias concat -> acc concat inside any two-arg anonymous function (safety net) |
+| 373 | `ReduceAppendCanonicalize` | `hxx-heex` | `core` | `hxx-heex.core` | source order | Canonicalize append inside Enum.reduce: alias concat -> acc concat; alias element -> binder |
+| 374 | `AccAliasLateRewrite` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Rewrite accumulator alias self-append to canonical acc updates (ultra-final safety) |
+| 375 | `CaseBinderRebindUnderscore` | `final-hygiene` | `core` | `final-hygiene.core` | source order | In case arms, underscore binders that are immediately rebound before use |
+| 376 | `CaseClausePinExistingBindings` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Pin variables in case clause patterns when matching existing in-scope bindings |
+| 377 | `DropStandaloneVarRef` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Drop standalone var references in statement position inside blocks/do-blocks (ultra-final) |
+| 378 | `EFnTempChainSimplify` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Inside EFn, rewrite var=nil; var=expr; var → expr |
+| 379 | `TrailingTempReturnSimplify` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Replace trailing temp returns with the rhs expression |
+| 380 | `DefTrailingAssignedVarReturn` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Append trailing var when last statement is assignment to non-temp |
+| 381 | `ChangesetChainCleanup` | `final-hygiene` | `ecto` | `final-hygiene.ecto` | source order | Collapse changeset nested assigns cs/thisN → direct cs assign |
+| 382 | `ChangesetEnsureReturn` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Ensure functions building Ecto.Changeset return last assigned var |
+| 383 | `ChangesetBareCsRepair` | `final-hygiene` | `ecto` | `final-hygiene.ecto` | source order | Repair changeset/2 bodies reduced to bare cs by reconstructing change(p1, p2) |
+| 384 | `LateEnsureCsBinder` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Ensure `cs` binder exists by rewriting earliest cast/change producer to `cs = ...` (late) |
+| 385 | `ChangesetSequentialValidateThread_Final` | `final-hygiene` | `ecto` | `final-hygiene.ecto` | source order | Finalize sequential Ecto.Changeset validate calls through one changeset binder |
+| 386 | `TempAssignFlattenGlobal` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Flatten temp alias chains globally: outer=(temp=expr) → outer=expr |
+| 387 | `RepoGetBinderRepair` | `final-hygiene` | `ecto` | `final-hygiene.ecto` | source order | Rewrite bodies that return an undeclared var v to Repo.get(schema(v), firstParam) |
+| 388 | `PinnedVarBinderPromote` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Promote `_ = <literal>` to `<name> = <literal>` when a unique ^(name) is used later |
+| 389 | `EctoWherePinnedBinderRepair` | `final-hygiene` | `ecto` | `final-hygiene.ecto` | source order | Repair wildcard literal binder before where/2 that pins its value later |
+| 390 | `EFnUnusedArgUnderscore_Final` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Absolute-final: underscore unused EFn binders (Enum.reduce/map/each) after all rewrites |
+| 391 | `ReduceWhileSentinelCleanup_Final` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Late: drop numeric sentinel literals inside reduce_while bodies |
+| 392 | `NestedAssignCollapseGlobal_Final` | `final-hygiene` | `core` | `final-hygiene.core` | source order | Absolute-final: collapse nested assignments outer=(inner=expr) → outer=expr across all nodes |
+| 393 | `EFnTempChainSimplify_AlwaysRun` | `absolute-final` | `core` | `absolute-final.core` | source order | Inside EFn, rewrite var=nil; var=expr; var → expr (runs even with fast_boot) |
+| 394 | `AbstractNilDefaultSpecialization_AlwaysRun` | `absolute-final` | `core` | `absolute-final.core` | after: EFnTempChainSimplify_AlwaysRun | Collapse nil-default temps emitted by inlined multi-type abstract specialization helpers |
+| 395 | `AbstractImplIdentityStub_AlwaysRun` | `absolute-final` | `core` | `absolute-final.core` | source order | Ensure empty abstract-impl stubs (_new/from_string) return their single argument (prevents unused-arg warnings) |
+| 396 | `HandleInfoDropUnusedAssign` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | In handle_info/2, drop v = case ... when v is unused |
+| 397 | `MountCaseSocketAssignDrop` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | In mount/3 case clauses, drop `socket = put_flash(socket, ...)` assignment to avoid warnings |
+| 398 | `FinalLocalReferenceAlign` | `absolute-final` | `core` | `absolute-final.core` | source order | Map refs to declared locals: name-> _name, nameN->name, updated->ok_* (unique) |
+| 399 | `ResultOkBinderNormalize_Replay_Ultimate` | `absolute-final` | `core` | `absolute-final.core` | after: FinalLocalReferenceAlign | Ultimate replay of {:ok, binder} normalization inside def/defp and EFn |
+| 400 | `OkValueGlobalCleanup_AbsoluteFinal` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: rewrite free ok_value refs to value when value is declared |
+| 401 | `EFnUndefinedRefToArg_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | In fn arg -> ... end with one undefined body var, rewrite it to arg |
+| 402 | `EFnBinderAlignToUndefinedRef_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | If a single undefined var exists in fn body, rename binder to that var |
+| 403 | `CaseSuccessVarUnifier_Replay_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Replay unifier to rewrite undefined placeholders to {:ok, v} binder (late) |
+| 404 | `SuccessVarAbsoluteReplaceUndefined_Replay_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: map undefined lower-case vars in {:ok, binder} bodies to binder |
+| 405 | `CaseSomeBinderNormalize_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Rename {:some, _x} binder to safe name and rewrite references (late) |
+| 406 | `UnderscoreVarUsageFix_AbsoluteFinal` | `absolute-final` | `core` | `absolute-final.core` | after: FinalLocalReferenceAlign, OkValueGlobalCleanup_AbsoluteFinal, SuccessVarAbsoluteReplaceUndefined_Replay_Final | Rename _name to name when used in expression context to avoid warnings |
+| 407 | `CaseNilAssignCleanup_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Remove `nil = _var` statements from case clause bodies (ultra-final) |
+| 408 | `CaseClauseHygieneCleanup_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Drop `nil = _var` and rewrite `socket = put_flash(socket, ...)` inside case clauses |
+| 409 | `CaseErrorVarUnify_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Promote {:error, _x} to {:error, x} when body uses x; map undefined to binder |
+| 410 | `CaseBinderUnderscoreAlign_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Rename {:ok, _value} back to {:ok, value} when body uses `value` and no other binder exists |
+| 411 | `ControllerJsonCallCleanup_Final` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | source order | Remove json/data/conn alias chains before Phoenix.Controller.json and use original conn |
+| 412 | `ControllerResultBinderNormalize_Final` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | after: ControllerJsonCallCleanup_Final | Normalize {:ok,_}/{:error,_} binders to value/reason in controllers (final) |
+| 413 | `ControllerAliasAssignDrop_AbsoluteFinal` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | source order | Absolute-final: drop assignments to json/data/conn in controller bodies and case arms |
+| 414 | `WebDropUnusedSimpleAssign_AbsoluteFinal` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | source order | Absolute-final: in Web modules, drop simple unused assignments (pure RHS) |
+| 415 | `WebJsonCallAliasRewrite_AbsoluteFinal` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | before: ControllerAliasAssignDrop_Replay_Ultimate, ControllerAliasChainDrop_Final | Absolute-final: in Web.* modules, remove json/data/conn alias lines and rewrite json(conn, data) to use RHS var |
+| 416 | `ControllerAliasChainDrop_Final` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | source order | Drop contiguous json/data/conn alias-chains to the same RHS var in controllers |
+| 417 | `ControllerAliasAssignDrop_Replay_Ultimate` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | source order | Ultimate replay: drop alias assigns json/data/conn in controllers after all rewrites |
+| 418 | `DebugControllerJsonArgs` | `absolute-final` | `core` | `absolute-final.core` | source order | Debug: log json(conn, ...) arg kinds in controllers when -D debug_controller_json is set |
+| 419 | `ControllerCaseRenameBinderIfBodyRefsBase_Final` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | after: CaseErrorVarUnify_Final, ControllerJsonCallCleanup_Final | Promote case binder _name -> name in controllers when body references base name |
+| 420 | `ControllerJsonDataArgToBinder_Final` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | after: ControllerCaseRenameBinderIfBodyRefsBase_Final, WebJsonCallAliasRewrite_AbsoluteFinal | In controllers, rewrite Phoenix.Controller.json(conn, data) to binder inside case arms |
+| 421 | `ControllerJsonDataArgPickSingleVar_Final` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | after: ControllerJsonDataArgToBinder_Final, ControllerCaseRenameBinderIfBodyRefsBase_Final | When json(conn, data) and exactly one lower-case var used in body, rewrite arg2 to it |
+| 422 | `ReduceMetasHeadRepair` | `absolute-final` | `core` | `absolute-final.core` | source order | Repair accidental meta=binder in reduce branches that check entry.metas |
+| 423 | `ListIndexAccessToEnumAt` | `absolute-final` | `core` | `absolute-final.core` | source order | Rewrite list index access (entry.metas[0]) to Enum.at(entry.metas, 0) |
+| 424 | `SafePubSubModuleRewrite` | `absolute-final` | `core` | `absolute-final.core` | source order | Rewrite SafePubSub.* to Phoenix.SafePubSub.* (ultimate fallback) |
+| 425 | `PubSubModuleRewrite` | `absolute-final` | `core` | `absolute-final.core` | source order | Rewrite PubSub.* to Phoenix.PubSub.* (ultimate fallback for native extern calls) |
+| 426 | `GlobalNumericSentinelCleanup` | `absolute-final` | `core` | `absolute-final.core` | source order | Global sweep to drop standalone numeric sentinel literals (0,1,0.0) in any block |
+| 427 | `DropNilAssignFromUnderscoredVar_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Remove statements like `nil = _g` which cause WAE warnings |
+| 428 | `SocketPutFlashAssignDrop_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | Rewrite socket = put_flash(socket, ...) to just put_flash(socket, ...) |
+| 429 | `SocketPutFlashBranchUse_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | Append bare `socket` after put_flash assignment when not immediately used |
+| 430 | `EctoMigrationExs` | `absolute-final` | `ecto` | `absolute-final.ecto` | source order | Rewrite @:migration builder chains into runnable Ecto.Migration DSL when ecto_migrations_exs |
+| 431 | `WebParamFinalFix` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | source order | Guarantee def-head and anon-fn binder/body agreement in Web/Live modules (pins-aware) |
+| 432 | `HandleInfoUnderscoreSocketFix_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | Rewrite _socket refs to socket and alias assignments to discard in handle_info/2 |
+| 433 | `UnderscoreToParamSocketFix_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | In defs with socket param, replace _socket -> socket and alias `x = _socket` -> `_ = socket` |
+| 434 | `CaseUnderscoreBinderPromote_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Promote tuple second-element binder _x -> x (when used) and rewrite body references (disabled for snapshot parity) |
+| 435 | `ClosureSelfRebindDiscard_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | In anon fns, rewrite binder rebinding to discard (_ = expr) |
+| 436 | `HandleEventGroupingReorder` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | Group def handle_event/3 clauses and place catch-all immediately after event clauses |
+| 437 | `SelfCompareToParamFix` | `absolute-final` | `core` | `absolute-final.core` | source order | Rewrite (t.id != t) and (t != t) to compare against id/_id function param |
+| 438 | `ListUpdateAndFilterFix` | `absolute-final` | `core` | `absolute-final.core` | source order | Repair map-then-replace and filter-remove-by-id logic patterns (absolute final) |
+| 439 | `UnderscoreParamPromotion_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Promote underscored parameters to base names when referenced in body and no conflict exists |
+| 440 | `HandleInfoSomeClauseNormalize_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: WebParamFinalFix, ListUpdateAndFilterFix, UnderscoreParamPromotion_Final, GlobalNumericSentinelCleanup, DropStandaloneLiteralOne | Normalize {:some, b} clause: drop leading alias, promote binder, and fix noreply payload |
+| 441 | `ClauseUnderscoreUsedPromote` | `absolute-final` | `core` | `absolute-final.core` | source order | If clause body uses underscored binder (_v), rename pattern binder and body refs to base (v) |
+| 442 | `ClauseUndefinedVarBindToBinder_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | (absolute final) Prefix-bind u=binder when clause body uses a single undefined local u (disabled here; re-added later for ordering) |
+| 443 | `CaseTupleBinderUnshadow_PreFinal` | `absolute-final` | `core` | `absolute-final.core` | source order | Rename tuple binder colliding with function arg to 'value' and, if exactly one undefined lower-case var exists in body, prefix-bind it to value (pre-final) |
+| 444 | `NestedCaseTupleUnshadow_PreFinal` | `absolute-final` | `core` | `absolute-final.core` | source order | When clause body starts with case V do {:tag, V} -> ..., rename to {:tag, value} and prefix-bind sole undefined local to value |
+| 445 | `CaseClauseAliasFromUnderscoreBinder` | `absolute-final` | `core` | `absolute-final.core` | source order | Prefix‑bind undefined local u to its underscored pattern binder _u inside case clause bodies |
+| 446 | `ClauseUndefinedVarBindToBinder_Replay_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Replay ultra-final: prefix-bind sole undefined local to the (now unshadowed) binder |
+| 447 | `CaseClauseCamelAliasToSnakeBinder` | `absolute-final` | `core` | `absolute-final.core` | source order | Prepend camelCase=snake aliases for clause bodies when pattern binds snake and body references only camel |
+| 448 | `DropSelfAssignNoop` | `absolute-final` | `core` | `absolute-final.core` | source order | Remove no-op self assignments v = v in clause bodies (late) |
+| 449 | `HeexAssignsBindRepair` | `absolute-final` | `hxx` | `absolute-final.hxx` | source order | Convert `_ = Phoenix.Component.assign(assigns, map)` back to `assigns = ...` in render/1 |
+| 450 | `TempAliasChainRepair` | `absolute-final` | `core` | `absolute-final.core` | source order | Fix use-before-assign chains involving thisN temps by dropping the temp and assigning the final RHS |
+| 451 | `HeexEventNameNormalization` | `absolute-final` | `hxx` | `absolute-final.hxx` | source order | Normalize phx-* event attribute values to lowercase snake_case; validate & warn on invalid names |
+| 452 | `RepoCaseBinderNormalize` | `absolute-final` | `ecto` | `absolute-final.ecto` | source order | Normalize {:ok, binder} binder names for Repo.delete cases: g3/s2 → deleted/_deleted |
+| 453 | `RepoDeleteCaseArgRestore` | `absolute-final` | `ecto` | `absolute-final.ecto` | source order | Inside case Repo.delete, rewrite (binder, socket) helper calls to (id, socket) |
+| 454 | `PresenceModuleFix` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | Underscore unused params and normalize trivial presence helpers to return `socket` |
+| 455 | `LiveMountReturnFinalize` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | Ensure mount/3 ends with {:ok, socket}; assign assigns inline when present |
+| 456 | `SplitChainedAssignments_AbsoluteFinal` | `absolute-final` | `core` | `absolute-final.core` | source order | (absolute final) Split a = b = expr into two statements (blocks/do/fn bodies) |
+| 457 | `VarRefSuffixParamNormalize_AbsoluteFinal` | `absolute-final` | `core` | `absolute-final.core` | source order | Absolute-final: map short refs to a unique param that ends with _<short> (e.g., query -> search_query) |
+| 458 | `DowncaseAssignLhsNormalize_AbsoluteFinal` | `absolute-final` | `core` | `absolute-final.core` | source order | Absolute-final: normalize malformed LHS String.downcase(p) = String.downcase(p) to p = String.downcase(p) |
+| 459 | `CaseOkBinderPrefixBindAllUndefined_AbsoluteFinal` | `absolute-final` | `core` | `absolute-final.core` | source order | Absolute-final: in {:ok, binder} clauses, prefix-bind all undefined simple locals to binder |
+| 460 | `CaseSuccessVarRenameCollisionFix_AbsoluteFinal` | `absolute-final` | `core` | `absolute-final.core` | source order | Absolute-final: rename {:ok, var} binder when it collides with function args (e.g., socket) |
+| 461 | `CaseOkBinderPrefixBindAllUndefined_Replay_AbsoluteFinal` | `absolute-final` | `core` | `absolute-final.core` | source order | Absolute-final replay: after binder collision renames, prefix-bind all undefined locals to {:ok, binder} |
+| 462 | `UndefinedRefInlineDiscardedMapGet_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Inline EVar(camel) to Map.get(_, "snake") when only discarded fetch exists earlier |
+| 463 | `LocalCamelToSnakeDecl_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Re-apply local camelCase→snake_case renames post event synthesis |
+| 464 | `HandleInfoReturnSocketNormalize_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | In handle_info/2, ensure helper calls end with socket and {:noreply, socket} shapes |
+| 465 | `HandleEventToggleKeyExtract_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | For handle_event("toggle_*"), replace helper first arg `params` with Map.get(params, key) |
+| 466 | `HandleEventParamRepair_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | Repair handle_event/3: turn discarded Map.get into named binds and insert any missing binds |
+| 467 | `ClauseSuccessBinderTupleSecondBind_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Prefix-bind tuple second element var to {:ok, binder} within clause bodies |
+| 468 | `SuccessBinderPrefixMostUsedUndefined_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | (absolute final) In {:ok, binder} clauses, prefix-bind the most-frequent undefined var to binder |
+| 469 | `LocalUnderscoreGenericPromotion_UltraFinal` | `absolute-final` | `core` | `absolute-final.core` | after: SuccessBinderPrefixMostUsedUndefined_Final | Ultra-final replay: promote underscored local binders when referenced (late shapes) |
+| 470 | `UpgradeWildcardMapGetToNamed_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Rewrite `_ = Map.get(params, "key")` to `key = Map.get(params, "key")` (enables VarNameNormalization) |
+| 471 | `DebugDumpMainBody` | `absolute-final` | `core` | `absolute-final.core` | source order | Debug-only: print Main.main body AST when -D debug_case_hoist is set |
+| 472 | `InterpolationInspectMapGetSimplify` | `absolute-final` | `core` | `absolute-final.core` | source order | Rewrite inspect(Map.get(obj, :field)) to obj.field |
+| 473 | `ReduceWhileIfAssignmentNormalize` | `absolute-final` | `core` | `absolute-final.core` | source order | Inside Enum.reduce_while EFns, rewrite a=(b=expr); if ... else b → b=expr; a=if ... |
+| 474 | `CaseScrutineeHoist` | `absolute-final` | `core` | `absolute-final.core` | source order | Hoist case parse_*(args) scrutinee to parsed_result = parse_*(args); case parsed_result do |
+| 475 | `CaseScrutineeHoist_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Absolute final: replay hoist of case parse_* scrutinee |
+| 476 | `CaseUnderscoreCaseHoistBlock_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Absolute final: convert `_ = case <call>` to named var + case in blocks |
+| 477 | `CaseUnderscoreAssignHoistAny_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: rewrite `_ = case <scrut>` into named assignment + case |
+| 478 | `DoubleAssignIfFold_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: normalize chained assign + trailing if into two linear assigns |
+| 479 | `AssignIfFoldInRhs_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: fold a = (b=rhs; if … else b) into b=rhs; a=if … else b |
+| 480 | `AssignChainGenericSimplify_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: split a = (b = rhs) into b = rhs; a = b |
+| 481 | `AssignmentIfElseCombine_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: combine `a = b; if ... else b` into `a = if ... else b` |
+| 482 | `AssignAliasIfPromote_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: promote a=b; if cond(a) … else b -> a=if cond(b) … |
+| 483 | `SplitChainAssign_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: split a=(b=rhs) into b=rhs; a=b |
+| 484 | `ReduceWhileThenBranchNormalize_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: normalize then-branch windows a=(b=rhs); if ... else b |
+| 485 | `SuccessBinderAlignByBodyUse_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: rename {:ok, binder} to the single undefined body var (usage-driven) |
+| 486 | `SwitchReturnSanitizer_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: ensure tail return inlines prior case alias |
+| 487 | `ChainAssignIfPromote_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final: promote a=(b=rhs); if ... else b → b=rhs; a=if ... else b |
+| 488 | `HandleEventWrapperFinalRepair` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | Ultra-final: ensure helper calls use (params, socket) and inline missing locals from params |
+| 489 | `HandleEventCamelRefInlineFromParams_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | Absolute final: inline camelCase refs in handle_event/3 from params (snake key, id int conversion) |
+| 490 | `HandleEventArg0FromParamsId_UltraFinal` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | Ultra-final: rewrite helper(arg0=params, ..., socket) to pass id extracted from params |
+| 491 | `SuccessBinderAlignByBodyUse_Replay_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Replay ultra-final: align {:ok, binder} to single undefined body var after collision fix |
+| 492 | `CaseScrutineeVarToTupleBinder_Replay_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Replay ultra-final: rewrite EVar(scrutinee) → EVar(binder) inside case clause bodies |
+| 493 | `CaseTupleBinderUnshadow_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Final pass: rename tuple binder colliding with function arg to 'value' and prefix-bind most-used undefined local |
+| 494 | `HandleInfoReturnSocketNormalize_UltraFinal` | `absolute-final` | `liveview` | `absolute-final.liveview` | source order | Ultra-final: in handle_info/2, rewrite calls with duplicated first/last arg to end with socket |
+| 495 | `CaseOkBinderPrefixBindAllUndefined_Replay2_UltraFinal` | `absolute-final` | `core` | `absolute-final.core` | source order | Ultra-final replay: prefix-bind any remaining undefineds in {:ok, binder} clauses |
+| 496 | `DebugScanAssignChains` | `absolute-final` | `core` | `absolute-final.core` | source order | Debug-only: scan and print nested assignment chains |
+| 497 | `DebugDumpReduceWhileEFn` | `absolute-final` | `core` | `absolute-final.core` | source order | Debug-only: dump reduce_while EFn clause bodies |
+| 498 | `CaseAtomPatternTupleNormalize_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Absolute final: normalize sibling :tag patterns to {:tag} when tuple tag patterns exist |
+| 499 | `CaseListGuardToCons_Replay_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Absolute final replay: [] with non-empty guard → [head\|tail] |
+| 500 | `ListGuardIndexToHead_Replay_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Absolute final replay: list[0]→head; length(list)>1→tail!=[] in cons clauses |
+| 501 | `CaseOkBinderPrefixBindAllUndefined_Replay_Last` | `absolute-final` | `core` | `absolute-final.core` | source order | Last: prefix-bind any remaining undefineds in {:ok, binder} clauses (conservative) |
+| 502 | `ChainAssignIfPromote_Replay_Last` | `absolute-final` | `core` | `absolute-final.core` | source order | Last: promote chained assign + if window in any block/do |
+| 503 | `MountParamsUltraFinal` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: ChainAssignIfPromote_Replay_Last | Ensure mount/3 uses `params` as first arg and align body refs (absolute-final) |
+| 504 | `MountBodyAlignToHead_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: MountParamsUltraFinal, MountParamsPromote | Align body references (params/_params) to mount/3 head binder (absolute-final) |
+| 505 | `HandleEventParamsUltraFinal` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: MountParamsUltraFinal | Ensure handle_event/3 uses `params` as second arg and align body refs (absolute-final) |
+| 506 | `HandleEventBodyAlignToHead_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: HandleEventParamsUltraFinal | Align body references (params/_params) to handle_event/3 head binder (absolute-final) |
+| 507 | `ParamUnderscoreArgRefAlign_Final` | `absolute-final` | `core` | `absolute-final.core` | after: HandleEventParamsUltraFinal, MountParamsUltraFinal | Final sweep: rewrite `_params` to `params` in bodies of defs that have a `params` arg (after promotions) |
+| 508 | `ParamUnderscoreGlobalAlign_Final` | `absolute-final` | `core` | `absolute-final.core` | after: ParamUnderscoreArgRefAlign_Final | Absolute final safety: rewrite `_params` to `params` inside handle_event/3 and mount/3 bodies |
+| 509 | `DropInvalidMapGetSelfAssign_Final` | `absolute-final` | `core` | `absolute-final.core` | after: ParamUnderscoreGlobalAlign_Final, HandleEventParamsUltraFinal, MountParamsUltraFinal | Absolute final: remove Map.get(params, key) = Map.get(params, key) statements in defs |
+| 510 | `MountSessionExtractCleanup_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: DropInvalidMapGetSelfAssign_Final | Absolute final: drop `session = Map.get(params, "session")` inside mount/3 |
+| 511 | `ControllerLocalUnusedUnderscore_Final` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | after: MountSessionExtractCleanup_Final | Final replay: underscore unused local assignment binders in controllers |
+| 512 | `ConcatSelfAssignBinderUnderscore_Final` | `absolute-final` | `core` | `absolute-final.core` | after: ControllerLocalUnusedUnderscore_Final | Rewrite `x = Enum.concat(x, ...)` → `_x = Enum.concat(x, ...)` in blocks |
+| 513 | `EctoQueryBranchSelfAssignUnderscore_Final` | `absolute-final` | `ecto` | `absolute-final.ecto` | after: ControllerLocalUnusedUnderscore_Final | Absolute final replay: underscore trailing self-assign where/3 in branches |
+| 514 | `AssignWhereSelfBinderUnderscore_Final` | `absolute-final` | `core` | `absolute-final.core` | after: EctoQueryBranchSelfAssignUnderscore_Final | Absolute final replay: rewrite `x = Ecto.Query.where(x, ...)` to `_x = ...` everywhere |
+| 515 | `HandleEventParamsForceBodyRewrite_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: ParamUnderscoreGlobalAlign_Final, DropInvalidMapGetSelfAssign_Final, MountSessionExtractCleanup_Final, EctoQueryBranchSelfAssignUnderscore_Final, AssignWhereSelfBinderUnderscore_Final | Absolute final: force `_params` → `params` inside handle_event/3 bodies |
+| 516 | `EctoRepoFinalArgFromLatestQueryVar` | `absolute-final` | `ecto` | `absolute-final.ecto` | after: AssignWhereSelfBinderUnderscore_Final | Rewrite Repo.*(query) to use last refinement binder when present in the same block |
+| 517 | `EctoRepoArgModuleQualify_Final` | `absolute-final` | `ecto` | `absolute-final.ecto` | after: EctoRepoFinalArgFromLatestQueryVar | Qualify schema arg in Repo.get/one to <App>.<Name> when bare CamelCase is used |
+| 518 | `HeexAssignsParamRename_Final` | `absolute-final` | `hxx` | `absolute-final.hxx` | after: AssignWhereSelfBinderUnderscore_Final | Absolute final safety: rename _assigns → assigns when ~H is present in body |
+| 519 | `DefParamHeadUnderscoreWhenUnused_Final` | `absolute-final` | `core` | `absolute-final.core` | after: MountBodyAlignToHead_Final, MountSessionExtractCleanup_Final, HandleEventParamsForceBodyRewrite_Final | Rename params→_params in mount/3 & handle_event/3 when body does not reference params |
+| 520 | `HandleEventParamsUltraFinal_Last` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: DefParamHeadUnderscoreWhenUnused_Final, DropInvalidMapGetSelfAssign_Final, MountSessionExtractCleanup_Final, EctoRepoFinalArgFromLatestQueryVar, AssignWhereSelfBinderUnderscore_Final | Last guard: if body uses _params, set head to params and rewrite body |
+| 521 | `PresenceConcatAccumulatorInit` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: HeexTrimTrailingBlankLines_Final, HeexCollapseOverEscapedQuotes_Final, ParamUnderscoreGlobalAlign_Final, HandleEventParamsForceBodyRewrite_Final, HandleEventParamsUltraFinal_Last | Insert acc=[] when Enum.concat(acc, [...]) appears without prior definition (Presence only) |
+| 522 | `PresenceReduceWhileAccumulatorRepair` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: PresenceConcatAccumulatorInit, HeexTrimTrailingBlankLines_Final, HeexCollapseOverEscapedQuotes_Final, ParamUnderscoreGlobalAlign_Final, HandleEventParamsForceBodyRewrite_Final, HandleEventParamsUltraFinal_Last | Inject acc=[] and return acc for reduce_while loops missing initialization (Presence only) |
+| 523 | `NilUnderscoreAssignGlobal_AbsoluteFinal` | `absolute-final` | `core` | `absolute-final.core` | after: CaseClauseHygieneCleanup_Final, CaseNilAssignCleanup_Final, ControllerAliasAssignDrop_Replay_Ultimate, SuccessVarAbsoluteReplaceUndefined_Replay_Final, HandleEventParamsUltraFinal_Last | Absolute-final: remove `nil = _var` (and :nil) assignments anywhere in bodies |
+| 524 | `ControllerJsonFinalize_AbsoluteFinal` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | after: WebJsonCallAliasRewrite_AbsoluteFinal, ControllerAliasAssignDrop_Replay_Ultimate, ControllerResultBinderNormalize_Final, ControllerCaseRenameBinderIfBodyRefsBase_Final, ControllerJsonDataArgToBinder_Final, ControllerJsonDataArgPickSingleVar_Final, HandleEventParamsUltraFinal_Last | Absolute-last: in controllers, map json(conn, data) arg2 to case binder and drop alias lines |
+| 525 | `WebJsonSecondArgRewrite_Ultimate` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | after: ControllerAliasAssignDrop_Replay_Ultimate, ControllerJsonFinalize_AbsoluteFinal | Ultimate: rewrite Phoenix.Controller.json(conn, data\|json) to binder/value in Web.* |
+| 526 | `OkValueGlobalCleanup_Replay_Ultimate` | `absolute-final` | `core` | `absolute-final.core` | after: WebJsonSecondArgRewrite_Ultimate, FinalLocalReferenceAlign | Ultimate replay: rewrite ok_value->value and _g->g when only value/g are declared (def/defp and EFn) |
+| 527 | `ControllerJsonSecondArgUndefinedRewrite_Ultimate` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | after: WebJsonSecondArgRewrite_Ultimate, ControllerAliasAssignDrop_Replay_Ultimate | Ultimate: in controllers, if json(conn, data) remains with undefined `data`, rewrite to binder/safe expr |
+| 528 | `CaseBinderRefNormalizeByFlattenUnderscores_Final` | `absolute-final` | `core` | `absolute-final.core` | after: ControllerJsonSecondArgUndefinedRewrite_Ultimate, ControllerJsonFinalize_AbsoluteFinal | Unify clause body refs that flatten to the binder name (remove underscores) |
+| 529 | `FunctionArgMultiStmtIIFE_Final` | `absolute-final` | `core` | `absolute-final.core` | after: CaseBinderRefNormalizeByFlattenUnderscores_Final | Wrap multi-statement argument blocks in IIFE: (fn -> ... end).() |
+| 530 | `ExUnitAssert_Final` | `absolute-final` | `exunit` | `absolute-final.exunit` | after: FunctionArgMultiStmtIIFE_Final | Rewrite Assert.* to ExUnit assert/refute/assert_raise/etc inside ExUnit modules |
+| 531 | `AssertArgIIFE_Final` | `absolute-final` | `exunit` | `absolute-final.exunit` | after: ExUnitAssert_Final | Wrap Assert.is_true/false first arg in IIFE when complex (assignments/case) |
+| 532 | `StringIndexOf_Normalize_Final` | `absolute-final` | `core` | `absolute-final.core` | after: AssertArgIIFE_Final | Rewrite str.indexOf(sub) >= 0 to :binary.match(str, sub) != :nomatch |
+| 533 | `BinaryMatchCaseArgNormalize_Final` | `absolute-final` | `core` | `absolute-final.core` | after: StringIndexOf_Normalize_Final, FunctionArgMultiStmtIIFE_Final | Normalize arg blocks: (v = expr; case :binary.match(v, sub) ...) >= 0 → :binary.match(expr, sub) != :nomatch |
+| 534 | `InlinePrevAssignIntoArg_Final` | `absolute-final` | `core` | `absolute-final.core` | after: BinaryMatchCaseArgNormalize_Final | Inline `v = expr` into next call arg if it compares case :binary.match(v, sub) |
+| 535 | `MountParamsSideEffectAssignDiscard_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: MountSessionExtractCleanup_Final, ParamUnderscoreArgRefAlign_Final, ParamUnderscoreGlobalAlign_Final, MountBodyAlignToHead_Final, HandleEventParamsUltraFinal, HandleEventParamsUltraFinal_Last, HandleEventBodyAlignToHead_Final, DefParamHeadUnderscoreWhenUnused_Final, EctoRepoFinalArgFromLatestQueryVar, EctoQueryBranchSelfAssignUnderscore_Final, AssignWhereSelfBinderUnderscore_Final | Drop head-binder reassignments of params in mount/3 when unused later |
+| 536 | `LocalUnderscoreGenericPromotion` | `absolute-final` | `core` | `absolute-final.core` | after: ControllerLocalUnusedUnderscore_Final, MountParamsSideEffectAssignDiscard_Final, HandleEventBodyAlignToHead_Final, HandleEventParamsUltraFinal_Last | Promote any underscored local binder (_x) to x when referenced |
+| 537 | `MountParamsUnusedReassignUnderscore_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: MountSessionExtractCleanup_Final, MountParamsSideEffectAssignDiscard_Final, ParamUnderscoreGlobalAlign_Final, HandleEventParamsUltraFinal_Last | Rename `params = ...` to `_` in mount/3 when unused later (preserve RHS) |
+| 538 | `LocalAssignUnusedUnderscore_Scoped_Final` | `absolute-final` | `core` | `absolute-final.core` | after: EctoQueryBranchSelfAssignUnderscore_Final | Final (scoped): underscore local assigns not used later in defs except mount/3 |
+| 539 | `ControllerLocalAssignUnusedUnderscore_Final` | `absolute-final` | `phoenix` | `absolute-final.phoenix` | after: LocalAssignUnusedUnderscore_Scoped_Final | In conn actions, underscore unused local assignment binders |
+| 540 | `AlignBaseRefToUnderscoredBinder_Final` | `absolute-final` | `core` | `absolute-final.core` | after: LocalAssignUnusedUnderscore_Scoped_Final | Rewrite base name refs to existing underscored local binders in the same block |
+| 541 | `LocalUnderscoreBinderPromotionWhenUsed_Final` | `absolute-final` | `core` | `absolute-final.core` | after: AlignBaseRefToUnderscoredBinder_Final | Promote underscored local binders to base name when the underscored name is read later and base is free |
+| 542 | `CaseDiscriminantTempNormalize` | `absolute-final` | `core` | `absolute-final.core` | after: LocalAssignUnusedUnderscore_Scoped_Final, AlignBaseRefToUnderscoredBinder_Final, LocalUnderscoreBinderPromotionWhenUsed_Final, FinalLocalReferenceAlign | Rewrite case discriminant to match preceding assignment modulo leading underscore |
+| 543 | `DefParamUsedBaseNamePromotion_Final` | `absolute-final` | `core` | `absolute-final.core` | after: ParamUnderscoreArgRefAlign_Final, ParamUnderscoreGlobalAlign_Final, HandleEventParamsForceBodyRewrite_Final, DropInvalidMapGetSelfAssign_Final, MountSessionExtractCleanup_Final, EctoQueryBranchSelfAssignUnderscore_Final, AssignWhereSelfBinderUnderscore_Final, LocalAssignUnusedUnderscore_Scoped_Final | Promote underscored def params to base name when body uses base name (absolute final) |
+| 544 | `HandleEventParamsHeadToParams_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: HandleEventParamsUltraFinal_Last, LocalAssignUnusedUnderscore_Scoped_Final, ParamUnderscoreArgRefAlign_Final, ParamUnderscoreGlobalAlign_Final, HandleEventParamsForceBodyRewrite_Final | Absolute-final: force handle_event/3 second arg to params when referenced; rewrite _params to params in body |
+| 545 | `DropUnusedPureUnderscoreAssign_AbsoluteFinal` | `absolute-final` | `core` | `absolute-final.core` | after: LocalAssignUnusedUnderscore_Scoped_Final | Drop non-final unused `_name = <pure literal/container>` assignments |
+| 546 | `ParamUnderscoreArgRefAlign_Global_Final` | `absolute-final` | `core` | `absolute-final.core` | after: DefParamHeadUnderscoreWhenUnused_Final, HeexAssignsParamRename_Final | Final replay: align body refs (v→_v) when head params are underscored |
+| 547 | `CaseClauseSuccessBodyBinderRewrite_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: NilUnderscoreAssignGlobal_AbsoluteFinal, FinalLocalReferenceAlign, ParamUnderscoreArgRefAlign_Global_Final | Absolute-last: in {:ok,binder} clauses, rewrite ok_value/ok_<binder> refs in bodies to binder |
+| 548 | `OkValueGlobalCleanup_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: ControllerJsonFinalize_AbsoluteFinal, ControllerAliasAssignDrop_Replay_Ultimate, ControllerJsonSecondArgUndefinedRewrite_Ultimate, CaseBinderRefNormalizeByFlattenUnderscores_Final, FunctionArgMultiStmtIIFE_Final, AssertArgIIFE_Final, StringIndexOf_Normalize_Final, BinaryMatchCaseArgNormalize_Final, ParamUnderscoreArgRefAlign_Global_Final | Absolute-last: rewrite ok_value->value and _g->g when only value/g are declared (def/defp and EFn) |
+| 549 | `CaseDiscriminantTempNormalize_Replay_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: CaseClauseSuccessBodyBinderRewrite_AbsoluteLast, OkValueGlobalCleanup_AbsoluteLast, FinalLocalReferenceAlign, ParamUnderscoreArgRefAlign_Global_Final | Absolute-last replay: rewrite case discriminant to match nearest prior assignment modulo underscore |
+| 550 | `HandleEventMapGetUnderscoreParams_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: HandleEventParamsHeadToParams_Final, HandleEventParamsUltraFinal_Last | Absolute-last: rewrite Map.get(_params, key) → Map.get(params, key) in handle_event/3 bodies |
+| 551 | `AssignMultipleNormalize_Final` | `absolute-final` | `core` | `absolute-final.core` | after: HandleEventMapGetUnderscoreParams_Final | Rewrite left = (assigns = map); Phoenix.Component.assign(socket, assigns) → left = Phoenix.Component.assign(socket, map) |
+| 552 | `HandleInfoUnderscoreBinderPromote_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: HandleInfoUnderscoreSocketFix_Final, HandleInfoReturnSocketNormalize_Final | Promote {:some, _x} binder to payload in handle_info/2 and rewrite refs |
+| 553 | `LocalAssignDiscardIfUnused_LiveView_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: ListUpdateAndFilterFix, WebParamFinalFix, HandleEventParamRepair_Final | In <App>Web.Live modules, replace unused local assigns with `_ = expr` (final) |
+| 554 | `IfBranchDowncaseTempInline_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Inline `_tmp = rhs; String.downcase(_tmp)` inside if/else branches |
+| 555 | `HandleEventMapGetValueDefaultToParams_Final` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: HandleEventParamsHeadToParams_Final, HandleEventParamsUltraFinal_Last, HandleEventMapGetUnderscoreParams_Final | In handle_event/3, rewrite Map.get(params\|_params, "value") → params\|_params (value is Haxe default, not a Phoenix key) |
+| 556 | `MatchBlockRhsExtractLast_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | Expand `pat = <block>` into block prefix statements + `pat = last_expr` (semantic fix) |
+| 557 | `MapKeysIteratorReduceWhileRewrite` | `absolute-final` | `core` | `absolute-final.core` | after: MatchBlockRhsExtractLast_Final | Rewrite iterator-driven reduce_while loops over Map.keys/1 into direct Enum.reduce_while |
+| 558 | `CaseClauseUnusedBinderUnderscore_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | In case clauses, underscore unused binders (absolute-final) |
+| 559 | `CaseTupleMultiBinderPromoteByUse_Final` | `absolute-final` | `core` | `absolute-final.core` | source order | (final) Promote tuple binders _name -> name when used; second pass to catch late changes |
+| 560 | `HandleInfoAliasAndNoreply_AbsoluteFinal` | `absolute-final` | `liveview` | `absolute-final.liveview` | after: HandleInfoReturnSocketNormalize_Final, UnderscoreToParamSocketFix_Final, HandleInfoUnderscoreSocketFix_Final | Absolute-final: in handle_info/2, drop leading alias to socket and rewrite {:noreply, _socket} → {:noreply, socket} |
+| 561 | `FinalUnderscoreRepair` | `absolute-final` | `core` | `absolute-final.core` | after: HandleInfoAliasAndNoreply_AbsoluteFinal | Absolute-final: repair underscore-prefixed variables that are actually used (Phase 1.3 of 1.0 roadmap) |
+| 562 | `CaseBinderUnderscoreAlign_AbsoluteFinal_Replay` | `absolute-final` | `core` | `absolute-final.core` | after if present: FinalUnderscoreRepair | Absolute-final replay: align underscored case binders with body references (avoid undefined vars) |
+| 563 | `PhoenixComponentModuleNormalize_AbsoluteLast` | `absolute-final` | `hxx` | `absolute-final.hxx` | after: CaseBinderUnderscoreAlign_AbsoluteFinal_Replay | Absolute-last: rewrite Component.assign/assign_new/update to Phoenix.Component |
+| 564 | `HeexEnsureAssignsForNestedSigils` | `absolute-final` | `hxx` | `absolute-final.hxx` | after: PhoenixComponentModuleNormalize_AbsoluteLast | Absolute-last: insert local assigns map for ~H helpers without assigns param |
+| 565 | `HeexAssignsLocalVarRename_AbsoluteLast` | `absolute-final` | `hxx` | `absolute-final.hxx` | after: HeexEnsureAssignsForNestedSigils | Absolute-last: rename _assigns → assigns inside function bodies containing ~H |
+| 566 | `EnumEachEarlyReturnTrailingNilCleanup_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: HeexAssignsLocalVarRename_AbsoluteLast | Absolute-last: drop redundant trailing nil after reflaxe return-tagged reduce_while case |
+| 567 | `EFnUnusedArgUnderscore_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: EnumEachEarlyReturnTrailingNilCleanup_AbsoluteLast | Absolute-last: underscore unused EFn binders to avoid warnings |
+| 568 | `RemoteCallModuleAliasCaseNormalize_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: EFnUnusedArgUnderscore_AbsoluteLast | Absolute-last: normalize lowercase remote-call module targets to valid aliases |
+| 569 | `PubSubModuleRewrite_AbsoluteLastReplay` | `absolute-final` | `core` | `absolute-final.core` | after: RemoteCallModuleAliasCaseNormalize_AbsoluteLast | Absolute-last: rewrite PubSub API calls back to Phoenix.PubSub after alias normalization |
+| 570 | `CaseClauseUnusedBinderUnderscore_AbsoluteLastReplay` | `absolute-final` | `core` | `absolute-final.core` | after: PubSubModuleRewrite_AbsoluteLastReplay | Absolute-last: underscore unused case/with/receive binders (replay) |
+| 571 | `ChangesetAssignedWildcardValidateCollapse_AbsoluteLast` | `absolute-final` | `ecto` | `absolute-final.ecto` | after: CaseClauseUnusedBinderUnderscore_AbsoluteLastReplay | Absolute-last: collapse assigned Ecto.Changeset validation wildcard wrappers |
+| 572 | `DropSelfAssignNoop_AbsoluteLastReplay` | `absolute-final` | `core` | `absolute-final.core` | after: ChangesetAssignedWildcardValidateCollapse_AbsoluteLast | Absolute-last: remove no-op self-assignments v = v (replay) |
+| 573 | `UnderscorePromoteByUse_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: DropSelfAssignNoop_AbsoluteLastReplay; before: BareLiteralDrop_AbsoluteLast | Absolute-last: restore underscored result binders read by later expressions |
+| 574 | `BareLiteralDrop_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: UnderscorePromoteByUse_AbsoluteLast | Absolute-last: remove non-final literal statements in EBlock/EDo |
+| 575 | `TrivialIIFEUnwrap_AbsoluteLast` | `absolute-final` | `core` | `absolute-final.core` | after: BareLiteralDrop_AbsoluteLast | Absolute-last: unwrap zero-arg IIFEs whose body is one caller-binding-free expression |

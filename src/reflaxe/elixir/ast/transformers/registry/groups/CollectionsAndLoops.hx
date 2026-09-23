@@ -46,7 +46,7 @@ class CollectionsAndLoops {
 			pass: reflaxe.elixir.ast.transformers.MapKeysIteratorReduceWhileRewriteTransforms.pass,
 			// This rewrite relies on the late match-chain normalization performed by MatchBlockRhsExtractLast_Final,
 			// which turns `Map.keys(m)` discards into stable `iter = _ = Map.keys(m)` assignments.
-			runAfter: ["ReduceWhileResultBinding", "MatchBlockRhsExtractLast_Final"]
+			runAfter: ["MatchBlockRhsExtractLast_Final"]
 		});
 
 		passes.push({

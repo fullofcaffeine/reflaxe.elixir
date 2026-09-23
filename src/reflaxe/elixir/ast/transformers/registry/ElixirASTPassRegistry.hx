@@ -501,8 +501,8 @@ class ElixirASTPassRegistry {
 		// NOTE (ordering)
 		// - This pass must run AFTER StructUpdateTransform, because StructUpdateTransform can
 		//   materialize reducer-body assignments (e.g. `buf = %{buf | ...}`) from earlier shapes.
-		// - It must run BEFORE ReduceWhileAccumulator/ReduceWhileResultBinding so those passes see
-		//   the expanded accumulator tuple and keep subsequent threading consistent.
+		// - It must run BEFORE ReduceWhileAccumulator so that pass sees
+		//   the expanded accumulator tuple and keeps subsequent threading consistent.
 		passes.push({
 			name: "ReduceWhileOuterAssignToAccumulator",
 			description: "Rewrite reduce_while loops that assign outer vars into accumulator threading",
@@ -521,14 +521,8 @@ class ElixirASTPassRegistry {
 			runAfter: ["ReduceWhileOuterAssignToAccumulator"]
 		});
 
-		// Ensure reduce_while results are bound back to local accumulator variables
-		passes.push({
-			name: "ReduceWhileResultBinding",
-			description: "Bind Enum.reduce_while result to original accumulator locals (required in fast_boot)",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.ReduceWhileResultBindingTransforms.bindReduceWhileResultPass,
-			runAfterIfPresent: ["ReduceWhileAccumulator"]
-		});
+		// LoopBuilder owns final-state bindings. Inferring another assignment from a
+		// reducer's seed duplicates those bindings and mutates inputs of native calls.
 		// Early chain assign normalization group (order preserved)
 		passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.AssignChainEarly.build());
 
@@ -2764,12 +2758,8 @@ class ElixirASTPassRegistry {
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.StructUpdateStandaloneDiscardTransforms.transformPass
 		});
-		passes.push({
-			name: "TupleLhsDiscard",
-			description: "Discard {x} = expr (arity-1 tuple LHS) and keep expr",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.TupleLhsDiscardTransforms.discardPass
-		});
+		// Tuple matches bind values and check shape even at arity one. Keep them;
+		// the scope-aware unused-binding passes handle warning cleanup safely.
 
 		// Absolute Final 3: if pin operator exists anywhere in the module and require is missing, inject it
 		passes.push({
