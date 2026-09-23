@@ -151,42 +151,10 @@ summary-negative: $(NEGATIVE_TEST_TARGETS)
 		exit 1; \
 	fi
 
-# Safe, sequential negative summary (bypasses pattern-rule ambiguity)
+# Sequential entrypoint shares the same rejection checks as the parallel runner.
 .PHONY: summary-negative-safe
 summary-negative-safe:
-	@echo ""
-	@echo "========================================"
-	@echo "Running negative tests (safe sequential)"
-	@neg_total=0; neg_failed=0; neg_unexpected=0; \
-	for d in $(NEGATIVE_TESTS); do \
-		name=$${d#negative/}; \
-		td="$(NEGATIVE_DIR)/$$name"; \
-		if [ ! -f "$$td/compile.hxml" ]; then \
-			echo "❌ negative/$$name - Negative test directory not found" | tee -a $(TEST_RESULTS_PREFIX)-$$$$.tmp; \
-			continue; \
-		fi; \
-		echo "Running negative negative/$$name (expected failure)..."; \
-		start=$$(date +%s); \
-		if $(WITH_TIMEOUT) $(TIMEOUT_SECS) bash -c "cd $$td && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
-			end=$$(date +%s); duration=$$((end - start)); \
-			echo "NEG-UNEXPECTED-SUCCESS $$name ($${duration}s)" | tee -a $(TEST_RESULTS_PREFIX)-$$$$.tmp; \
-			neg_unexpected=$$((neg_unexpected + 1)); \
-		else \
-			end=$$(date +%s); duration=$$((end - start)); \
-			echo "NEG-OK $$name ($${duration}s)" | tee -a $(TEST_RESULTS_PREFIX)-$$$$.tmp; \
-			neg_failed=$$((neg_failed + 1)); \
-		fi; \
-		neg_total=$$((neg_total + 1)); \
-	done; \
-	echo "Negative Tests: $$neg_failed/$$neg_total correctly failed"; \
-	if [ "$$neg_total" != "0" ] && [ $$neg_unexpected -eq 0 ] && [ $$neg_failed -eq $$neg_total ]; then \
-		echo "$(GREEN)SUCCESS: All negative tests failed as expected ✅$(RESET)"; \
-	else \
-		if [ $$neg_total -eq 0 ]; then echo "No negative tests found"; fi; \
-		echo "$(RED)FAILED: Some negative tests did not fail as expected$(RESET)"; \
-		cat $(TEST_RESULTS_GLOB) 2>/dev/null | grep "NEG-UNEXPECTED-SUCCESS" | sed 's/^/  /' || true; \
-		exit 1; \
-	fi
+	@$(MAKE) -f $(lastword $(MAKEFILE_LIST)) -j1 summary-negative
 
 # Pattern rule for negative tests (expected-to-fail compilation)
 
@@ -201,14 +169,31 @@ neg-%:
 	fi; \
 	echo "Running negative negative/$$name (expected failure)..."; \
 	start=$$(date +%s); \
-	if $(WITH_TIMEOUT) $(TIMEOUT_SECS) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
-		end=$$(date +%s); duration=$$((end - start)); \
+	log="$(TEST_RESULTS_PREFIX)-negative-$*.log"; status=0; \
+	$(WITH_TIMEOUT) $(TIMEOUT_SECS) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > "$$log" 2>&1 || status=$$?; \
+	end=$$(date +%s); duration=$$((end - start)); \
+	if [ $$status -eq 0 ]; then \
     echo "NEG-UNEXPECTED-SUCCESS $$name ($${duration}s)" | tee -a $(TEST_RESULTS_PREFIX)-$$$$.tmp; \
 		exit 1; \
-	else \
-		end=$$(date +%s); duration=$$((end - start)); \
-    echo "NEG-OK $$name ($${duration}s)" | tee -a $(TEST_RESULTS_PREFIX)-$$$$.tmp; \
 	fi; \
+	if [ $$status -ne 1 ] || ! grep -q '[^[:space:]]' "$$log"; then \
+		echo "NEG-INVALID-FAILURE $$name: status=$$status; diagnostic log: $$log" | tee -a $(TEST_RESULTS_PREFIX)-$$$$.tmp; \
+		cat "$$log"; exit 1; \
+	fi; \
+	for expected_file in "$$testdir/expected_stderr.txt" "$$testdir/expected_message.txt"; do \
+		if [ -f "$$expected_file" ]; then \
+			if ! grep -q '[^[:space:]]' "$$expected_file"; then \
+				echo "NEG-INVALID-EXPECTATION $$name: empty $$expected_file"; exit 1; \
+			fi; \
+			while IFS= read -r expected || [ -n "$$expected" ]; do \
+				if [ -n "$$expected" ] && ! grep -Fq -- "$$expected" "$$log"; then \
+					echo "NEG-WRONG-DIAGNOSTIC $$name: expected $$expected; log: $$log" | tee -a $(TEST_RESULTS_PREFIX)-$$$$.tmp; \
+					cat "$$log"; exit 1; \
+				fi; \
+			done < "$$expected_file"; \
+		fi; \
+	done; \
+	echo "NEG-OK $$name ($${duration}s)" | tee -a $(TEST_RESULTS_PREFIX)-$$$$.tmp; \
 	}
 
 # Back-compat alias: allow test-negative-* targets to delegate to neg-*
