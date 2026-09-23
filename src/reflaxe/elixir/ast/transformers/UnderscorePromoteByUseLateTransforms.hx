@@ -23,7 +23,7 @@ import reflaxe.elixir.ast.ASTUtils;
 	* HOW
 	* - For each def/defp:
 	*   1) Collect referenced identifiers (EVar) in the body; record their bases
-	*      (strip leading underscore and trailing digits).
+	*      (strip leading underscores only; numeric suffixes preserve identity).
 	*   2) Rewrite decls and refs:
 	*      - If a name starts with "_" and its base is in the referenced set,
 	*        drop the underscore.
@@ -345,10 +345,9 @@ class UnderscorePromoteByUseLateTransforms {
 		var s = stripLeadingUnderscores(name);
 		if (s == null || s.length == 0)
 			return null;
-		var i = s.length - 1;
-		while (i >= 0 && s.charAt(i) >= "0" && s.charAt(i) <= "9")
-			i--;
-		var b = s.substr(0, i + 1);
+		// This pass promotes underscores, not distinct numbered locals.
+		// Collapsing _g2 to g can overwrite g before its captured read.
+		var b = s;
 		if (b == "" || b.charAt(0) != b.charAt(0).toLowerCase() || b.charAt(0) == "_")
 			return null;
 		return b;

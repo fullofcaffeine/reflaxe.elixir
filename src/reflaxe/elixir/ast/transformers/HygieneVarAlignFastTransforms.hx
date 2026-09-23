@@ -25,6 +25,7 @@ import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
  *   1) Collect declared identifiers from params, patterns, and match LHS.
  *   2) Collect referenced identifiers using VariableUsageCollector (O(n)).
  *   3) For each base name (strip leading underscore and numeric suffix):
+ *        - If several distinct declarations share the base, preserve them.
  *        - If a plain `base` is referenced → canonical = `base`.
  *        - Else if only `_base` is declared and either `_base` or `base` is
  *          referenced → canonical = `base` (promote underscore when used).
@@ -37,6 +38,7 @@ import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
  *   Decl: `_users`; Ref: `users`  → both become `users`
  *   Decl: `_ok_conn`; Ref: `_ok_conn` → stays `_ok_conn` (no plain ref)
  *   Decl: `payload`; Ref: `payload` → unchanged
+ *   Decls: `_g`, `_g2`; Refs: `_g`, `_g2` → remain distinct
  *
  * NOTES
  * - Keeps underscore on params that remain unused (no references).
@@ -102,9 +104,18 @@ class HygieneVarAlignFastTransforms {
 				referencedBases.set(b, true);
 		}
 
+		// Similar spelling is not alias evidence. Keep distinct declarations
+		// such as _g and _g2 separate even when both share the canonical base.
+		var declarationCounts = new Map<String, Int>();
 		for (decl in declared.keys()) {
 			var base = toBase(decl);
-			if (base == null)
+			if (base != null)
+				declarationCounts.set(base, declarationCounts.exists(base) ? declarationCounts.get(base) + 1 : 1);
+		}
+
+		for (decl in declared.keys()) {
+			var base = toBase(decl);
+			if (base == null || declarationCounts.get(base) != 1)
 				continue;
 			var plainRef = referenced.exists(base);
 			var hasUnderscoreDecl = (decl.length > 0 && decl.charAt(0) == "_");
