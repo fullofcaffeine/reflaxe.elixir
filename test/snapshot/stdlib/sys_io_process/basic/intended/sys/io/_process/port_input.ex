@@ -12,8 +12,8 @@ defmodule PortInput do
       raise Reflaxe.Elixir.HaxeThrow, [value: Eof.new()]
     end
     struct = %{struct | buffer_offset: struct.buffer_offset + 1}
-    reflaxe_dispatch_receiver = struct.buffer
-    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get, [reflaxe_dispatch_receiver, struct.buffer_offset])
+    reflaxe_dispatch_receiver_node_0 = struct.buffer
+    apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :get, [reflaxe_dispatch_receiver_node_0, struct.buffer_offset])
   end
   def read_all(struct, _bufsize \\ nil) do
     data = (
@@ -85,7 +85,7 @@ defmodule PortInput do
           _ = %{struct | buffer: Bytes.of_data(data)}
           true
         else
-          if (not Port.info(struct.port) != nil) do
+          if (not (Port.info(struct.port) != nil)) do
             _ = %{struct | ended: true}
             false
           else

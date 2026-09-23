@@ -6,7 +6,7 @@ defmodule Main do
   end
   def main() do
     obj = Jason.decode!("{\"name\":\"Ada\",\"count\":3,\"items\":[1,true,null],\"escaped\":\"line\\nnext\"}")
-    assert_that((fn -> Reflaxe.Elixir.HaxeFloat.eq(((case {obj, "name"} do
+    assert_that(Reflaxe.Elixir.HaxeFloat.eq(((case {obj, "name"} do
         {reflect_obj, reflect_field} ->
           (case Map.fetch(reflect_obj, reflect_field) do
             {:ok, reflect_value} -> reflect_value
@@ -22,8 +22,8 @@ defmodule Main do
                   Map.get(reflect_obj, reflect_atom)
               end)
           end)
-      end)), "Ada") end).(), "json object string field failed")
-    assert_that((fn -> Reflaxe.Elixir.HaxeFloat.eq(((case {obj, "count"} do
+      end)), "Ada"), "json object string field failed")
+    assert_that(Reflaxe.Elixir.HaxeFloat.eq(((case {obj, "count"} do
         {reflect_obj, reflect_field} ->
           (case Map.fetch(reflect_obj, reflect_field) do
             {:ok, reflect_value} -> reflect_value
@@ -39,8 +39,8 @@ defmodule Main do
                   Map.get(reflect_obj, reflect_atom)
               end)
           end)
-      end)), 3) end).(), "json object int field failed")
-    assert_that((fn -> Reflaxe.Elixir.HaxeFloat.eq(((case {obj, "escaped"} do
+      end)), 3), "json object int field failed")
+    assert_that(Reflaxe.Elixir.HaxeFloat.eq(((case {obj, "escaped"} do
         {reflect_obj, reflect_field} ->
           (case Map.fetch(reflect_obj, reflect_field) do
             {:ok, reflect_value} -> reflect_value
@@ -56,7 +56,7 @@ defmodule Main do
                   Map.get(reflect_obj, reflect_atom)
               end)
           end)
-      end)), "line\nnext") end).(), "json escaped string failed")
+      end)), "line\nnext"), "json escaped string failed")
     items = (case {obj, "items"} do
       {reflect_obj, reflect_field} ->
         (case Map.fetch(reflect_obj, reflect_field) do
