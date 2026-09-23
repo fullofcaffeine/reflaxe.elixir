@@ -26,6 +26,7 @@ test/support/
   - Creates temporary test directories
   - Manages Haxe library paths for tests
   - Handles compilation and verification
+  - Registers timeout-safe working-directory cleanup with `on_exit_in_original_directory/1`; use it before changing the VM directory in serialized tests
 - **Used By**: All Mix integration tests (`test/*.exs` files)
 
 ### `test_reflaxe_elixir.hxml`

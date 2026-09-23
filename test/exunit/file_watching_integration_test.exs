@@ -12,6 +12,7 @@ defmodule FileWatchingIntegrationTest do
   alias Mix.Tasks.Compile.Haxe, as: HaxeTask
 
   setup do
+    previous_config = Application.fetch_env(:reflaxe_elixir, :haxe_compiler)
     # Create a temporary test project directory
     test_dir = Path.join([System.tmp_dir!(), "file_watching_integration_#{:rand.uniform(10000)}"])
     source_dir = Path.join(test_dir, "src_haxe")
@@ -28,7 +29,12 @@ defmodule FileWatchingIntegrationTest do
     -D elixir_output=#{target_dir}
     """)
     
-    on_exit(fn ->
+    HaxeTestHelper.on_exit_in_original_directory(fn ->
+      case previous_config do
+        {:ok, config} -> Application.put_env(:reflaxe_elixir, :haxe_compiler, config)
+        :error -> Application.delete_env(:reflaxe_elixir, :haxe_compiler)
+      end
+
       File.rm_rf(test_dir)
     end)
     

@@ -5,6 +5,22 @@ defmodule HaxeTestHelper do
   This module provides utilities to create valid test projects that can
   successfully compile Haxe code using the reflaxe.elixir compiler.
   """
+
+  @doc """
+  Registers cleanup that restores the original VM working directory first.
+
+  Call before changing directories, only from serialized ExUnit tests. ExUnit
+  runs this callback outside the test process, including after timeout kills
+  that skip a test's `after` block. Keep immediate `after` cleanup as well.
+  """
+  def on_exit_in_original_directory(cleanup) when is_function(cleanup, 0) do
+    original_directory = File.cwd!()
+
+    ExUnit.Callbacks.on_exit(fn ->
+      File.cd!(original_directory)
+      cleanup.()
+    end)
+  end
   
   @doc """
   Sets up a complete test project with all necessary files and configurations.

@@ -25,7 +25,7 @@ defmodule HaxeServerTest do
         Process.sleep(100)
     end
 
-    on_exit(fn ->
+    HaxeTestHelper.on_exit_in_original_directory(fn ->
       # Ensure we don't leave a running `haxe --wait` process behind if this was the last test.
       case Process.whereis(HaxeServer) do
         nil ->

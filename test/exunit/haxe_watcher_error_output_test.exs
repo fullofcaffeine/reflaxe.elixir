@@ -34,7 +34,7 @@ defmodule HaxeWatcherErrorOutputTest do
     HaxeTestHelper.create_build_hxml(test_dir, main_class: "ErrorTest")
     HaxeTestHelper.create_error_haxe_file(test_dir, filename: "ErrorTest.hx", error_type: :undefined)
 
-    on_exit(fn ->
+    HaxeTestHelper.on_exit_in_original_directory(fn ->
       if Process.whereis(HaxeWatcher) do
         try do
           HaxeWatcher.stop()
