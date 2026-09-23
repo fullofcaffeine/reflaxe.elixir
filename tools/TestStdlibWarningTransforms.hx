@@ -21,6 +21,7 @@ import reflaxe.elixir.ast.transformers.CaseTupleBinderUnshadowTransforms;
 @:nullSafety(Off)
 class TestStdlibWarningTransforms {
 	public static function run():Expr {
+		testHeexAssignsRebinding();
 		testUsedAliasBinding();
 		testNestedTupleBinderScope();
 		testBooleanAliasConditions();
@@ -39,6 +40,23 @@ class TestStdlibWarningTransforms {
 
 		Sys.println("Stdlib warning transform contracts passed");
 		return macro null;
+	}
+
+	/** HEEx reads the current assigns map even without an explicit EVar node. */
+	static function testHeexAssignsRebinding():Void {
+		for (sigil in ["H", "h"]) {
+			for (name in ["assigns", "message"]) {
+				var template = name == "assigns" ? "<p>{@message}</p>" : "<p><%= message %></p>";
+				var body = makeAST(EBlock([
+					makeAST(EMatch(PVar(name), makeAST(EVar("updated")))),
+					makeAST(ESigil(sigil, template, ""))
+				]));
+				var source = makeAST(EDef("render", [PVar(name), PVar("updated")], null, body));
+				var actual = ElixirASTPrinter.print(LocalAssignUnusedUnderscoreScopedTransforms.pass(source));
+				if (actual != ElixirASTPrinter.print(source))
+					fail("HEEx must consume the updated binding, including implicit assigns: " + name + "\n" + actual);
+			}
+		}
 	}
 
 	/** A used local stays bound even when its spelling resembles a web helper. */

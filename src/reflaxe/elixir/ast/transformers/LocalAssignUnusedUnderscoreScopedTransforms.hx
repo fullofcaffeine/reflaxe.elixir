@@ -474,13 +474,16 @@ class LocalAssignUnusedUnderscoreScopedTransforms {
 	static function collectIncomingReads(node:ElixirAST, out:Map<String, Bool>):Void {
 		for (name in VarUseAnalyzer.freeVarNames(node).keys())
 			out.set(name, true);
-		// The lexical analyzer deliberately excludes opaque target code. Preserve its
-		// possible reads conservatively rather than removing a binding it may need.
+		// The lexical analyzer deliberately excludes opaque target code. HEEx also
+		// carries reads outside ordinary EVar nodes, including its implicit assigns
+		// input. Preserve these reads using the existing target-aware scanner.
 		function collectRawReads(current:ElixirAST):Void {
 			if (current == null)
 				return;
 			switch (current.def) {
 				case ERaw(_):
+					collectUsedVars(current, out);
+				case ESigil(type, _, _) if (type == "H" || type == "h"):
 					collectUsedVars(current, out);
 				default:
 					ElixirASTTransformer.iterateAST(current, collectRawReads);
