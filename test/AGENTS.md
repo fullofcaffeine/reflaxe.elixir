@@ -38,6 +38,7 @@ This directory contains the Reflaxe.Elixir compiler test suite, validating that 
 ### Test Statistics (as of 2026-08-22)
 - **423 positive snapshot tests** validating compiler output
 - **97 negative snapshot tests** validating expected failures
+- **2026-09-23 negative inventory: 101 fixtures**, including three standalone migration-constraint rejection cases. These require diagnostic verification; a compilation timeout is not a passing rejection.
 - **~8,000 test files** (source + intended + outputs)
 - **6 test categories** organizing tests by feature area
 

@@ -273,18 +273,22 @@ class EctoMigrationExsTransforms {
 
 	static function buildUpStatementsFromChain(chain:MigrationCallChain, pos:Position):Null<Array<ElixirAST>> {
 		var first = chain.calls[0];
+		if (first.name == "create_constraint" || first.name == "drop_constraint")
+			return buildStandaloneConstraint(chain, pos);
 		return if (first.name == "create_table") {
 			buildCreateTableStatementsFromChain(chain, pos);
 		} else if (first.name == "alter_table") {
 			buildAlterTableStatementsFromChain(chain, pos);
 		} else {
-			compilerError("Unsupported migration up/0: expected create_table(\"table\") or alter_table(\"table\").", pos);
+			compilerError("Unsupported migration up/0: expected create_table, alter_table, create_constraint or drop_constraint.", pos);
 			null;
 		};
 	}
 
 	static function buildDownStatementsFromChain(chain:MigrationCallChain, pos:Position):Null<Array<ElixirAST>> {
 		var first = chain.calls[0];
+		if (first.name == "create_constraint" || first.name == "drop_constraint")
+			return buildStandaloneConstraint(chain, pos);
 		if (first.name == "drop_table" && first.args.length >= 1) {
 			var tableName = extractString(first.args[0]);
 			if (tableName == null || tableName == "") {
@@ -299,8 +303,34 @@ class EctoMigrationExsTransforms {
 			return buildAlterTableStatementsFromChain(chain, pos);
 		}
 
-		compilerError("Unsupported migration down/0: expected drop_table(\"table\") or alter_table(\"table\").", pos);
+		compilerError("Unsupported migration down/0: expected drop_table, alter_table, create_constraint or drop_constraint.", pos);
 		return null;
+	}
+
+	/**
+	 * Lowers standalone constraint operations in either migration direction.
+	 * Reuses the fluent check builder so both APIs emit the same native contract;
+	 * dropping needs only the exact table and constraint identity, not its check.
+	 */
+	static function buildStandaloneConstraint(chain:MigrationCallChain, pos:Position):Null<Array<ElixirAST>> {
+		var call = chain.calls[0];
+		var creates = call.name == "create_constraint";
+		if (chain.calls.length != 1 || call.args.length != (creates ? 3 : 2)) {
+			compilerError("Standalone constraint operations require (table, name, check) for create or (table, name) for drop.", pos);
+			return null;
+		}
+		var table = extractString(call.args[0]);
+		var name = extractString(call.args[1]);
+		if (table == null || table == "" || name == null || name == "") {
+			compilerError("Constraint table and name must be non-empty string literals.", pos);
+			return null;
+		}
+		if (creates) {
+			var statement = buildCheckConstraint(makeAtom(table), call.args.slice(1), pos);
+			return statement == null ? null : [statement];
+		}
+		var constraint = makeAST(ECall(null, "constraint", [makeAtom(table), makeAtom(name)]));
+		return [makeAST(ECall(null, "drop", [constraint]))];
 	}
 
 	// ======================================================================
@@ -439,7 +469,8 @@ class EctoMigrationExsTransforms {
 		var keywordPairs = (args.length >= 3) ? normalizeColumnOptions(args[2], pos) : [];
 		keywordPairs = keywordPairs.concat(typeInfo.extraOptions);
 
-		var callArgs:Array<ElixirAST> = [makeAtom(columnName), typeInfo.typeExpr];
+		var typeExpr = args.length >= 3 ? withReferenceOptions(typeInfo.typeExpr, args[2], pos) : typeInfo.typeExpr;
+		var callArgs:Array<ElixirAST> = [makeAtom(columnName), typeExpr];
 		if (keywordPairs.length > 0) {
 			callArgs.push(makeAST(EKeywordList(keywordPairs)));
 		}
@@ -478,7 +509,8 @@ class EctoMigrationExsTransforms {
 		var keywordPairs = (args.length >= 3) ? normalizeColumnOptions(args[2], pos) : [];
 		keywordPairs = keywordPairs.concat(typeInfo.extraOptions);
 
-		var callArgs:Array<ElixirAST> = [makeAtom(columnName), typeInfo.typeExpr];
+		var typeExpr = args.length >= 3 ? withReferenceOptions(typeInfo.typeExpr, args[2], pos) : typeInfo.typeExpr;
+		var callArgs:Array<ElixirAST> = [makeAtom(columnName), typeExpr];
 		if (keywordPairs.length > 0) {
 			callArgs.push(makeAST(EKeywordList(keywordPairs)));
 		}
@@ -867,6 +899,8 @@ class EctoMigrationExsTransforms {
 
 	static function canonicalizeCallName(name:String):String {
 		return switch (name) {
+			case "createConstraint": "create_constraint";
+			case "dropConstraint": "drop_constraint";
 			case "createTable": "create_table";
 			case "dropTable": "drop_table";
 			case "alterTable": "alter_table";
@@ -1115,6 +1149,21 @@ class EctoMigrationExsTransforms {
 		}
 
 		return out;
+	}
+
+	/**
+	 * Keeps foreign-key actions inside references/2 for add and modify columns.
+	 * Column options such as null/default still belong to add/3 or modify/3.
+	 * Reuses the addReference mapping, e.g. Cascade becomes :delete_all.
+	 */
+	static function withReferenceOptions(typeExpr:ElixirAST, options:ElixirAST, pos:Position):ElixirAST {
+		return switch (typeExpr.def) {
+			case ECall(null, "references", args):
+				var pairs = normalizeReferenceOptions(options, pos);
+				pairs.length == 0 ? typeExpr : makeAST(ECall(null, "references", args.concat([makeAST(EKeywordList(pairs))])));
+			default:
+				typeExpr;
+		};
 	}
 
 	static function normalizeReferenceOptions(expr:ElixirAST, pos:Position):Array<ElixirAST.EKeywordPair> {

@@ -1,0 +1,1 @@
+Constraint table and name must be non-empty string literals.

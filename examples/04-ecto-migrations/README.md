@@ -57,7 +57,9 @@ With PostgreSQL available on `localhost:5432` as user/password `postgres`, run:
 The QA command generates the migrations fresh, strict-compiles the project, creates a uniquely named
 test database, runs `mix ecto.migrate`, and executes a Haxe-authored ExUnit contract. That contract
 queries PostgreSQL's own schema catalog rather than trusting generated source: `users` and `posts`
-must exist after `up`, then both must disappear after Ecto runs `down`. A cleanup trap drops only the
+must exist after `up`, then both must disappear after Ecto runs `down`.
+The contract also verifies foreign-key update/delete cascades and rejection of a negative view count.
+A cleanup trap drops only the
 high-entropy database created by that run, including when migration execution fails. An ownership
 marker is written only when PostgreSQL confirms that the database is new, so an existing database is
 never treated as disposable QA state. The 30-second timeout grace lets the owned database cleanup
@@ -80,7 +82,6 @@ import ecto.Migration.ColumnType;
 class CreateUsers extends Migration {
     public function up(): Void {
         createTable("users")
-            .addId()
             .addColumn("name", ColumnType.String(), {nullable: false})
             .addColumn("email", ColumnType.String(), {nullable: false})
             .addTimestamps()
@@ -125,8 +126,36 @@ end
 
 **Foreign Keys:**
 ```haxe
-createTable("posts").addReference("user_id", "users");
+import ecto.Migration.ColumnType;
+import ecto.Migration.OnDeleteAction;
+import ecto.Migration.OnUpdateAction;
+
+// Inside up() on a Migration subclass:
+createTable("posts").addColumn("user_id", ColumnType.References("users"), {
+    onDelete: OnDeleteAction.Cascade,
+    onUpdate: OnUpdateAction.Cascade
+});
 ```
+
+Equivalent Ecto table entry:
+
+```elixir
+add :user_id, references(:users, on_delete: :delete_all, on_update: :update_all)
+```
+
+Before changing an existing foreign key, drop its current constraint explicitly.
+This example uses Ecto's default constraint name. If the database uses a different name, use that name instead.
+
+```haxe
+// Inside up() or down(), using the imports above:
+dropConstraint("posts", "posts_user_id_fkey");
+alterTable("posts").modifyColumn("user_id", ColumnType.References("users"), {
+    onDelete: OnDeleteAction.Restrict,
+    onUpdate: OnUpdateAction.NoAction
+});
+```
+
+`modifyColumn` preserves the requested actions but does not remove an existing foreign-key constraint automatically.
 
 **Composite Indexes:**
 ```haxe
@@ -137,6 +166,18 @@ createTable("posts").addIndex(["published", "inserted_at"]);
 ```haxe
 createTable("posts").addCheckConstraint("positive_view_count", "view_count >= 0");
 ```
+
+For a table that already exists, a migration can use standalone operations:
+
+```haxe
+// Inside up():
+createConstraint("posts", "positive_view_count", "view_count >= 0");
+// Inside down():
+dropConstraint("posts", "positive_view_count");
+```
+
+These calls emit `create constraint(:posts, :positive_view_count, check: "view_count >= 0")`
+and `drop constraint(:posts, :positive_view_count)`. Haxe defines the migration. Ecto runs it, and PostgreSQL enforces the constraint.
 
 ## Workflow Integration
 

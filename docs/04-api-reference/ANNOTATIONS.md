@@ -625,12 +625,17 @@ The `.exs` rewrite pass currently supports a focused, safe subset of the typed D
   - `.addIndex(["col", ...], ?options)` (supports `unique: true`)
   - `.addUniqueConstraint(["col", ...], ?name)`
   - `.addCheckConstraint("name", "sql expression")`
-  - `.addId()` (default id only; custom primary keys are not supported yet in `.exs` mode)
+- `alterTable("table")` with `.addColumn`, `.removeColumn`, or `.modifyColumn`
+- `createConstraint("table", "name", "sql expression")` and `dropConstraint("table", "name")` in either direction
 - `dropTable("table")` in `down()`
 
 Limitations (current)
 - Table/column names must be **string literals** in `.exs` mode.
-- `alterTable`, `execute`, `createIndex`, `dropIndex`, and custom `createTable` options are not rewritten yet.
+- Constraint table, name, and check expression must be string literals. Table and constraint names must not be empty.
+- `addColumn` and `modifyColumn` preserve `onDelete` and `onUpdate` for `ColumnType.References` inside Ecto's `references/2` call.
+- Before changing an existing foreign key, use `dropConstraint` with its actual database constraint name. `modifyColumn` does not remove the previous constraint automatically.
+- Ecto creates the default `id` column. Explicit `.addId()` and custom primary keys are not supported in `.exs` mode.
+- `execute`, `createIndex`, `dropIndex`, and custom `createTable` options are not rewritten yet.
   Keep these migrations as hand-written Elixir when you need advanced DSL features.
 
 **Basic Usage**:
@@ -644,7 +649,6 @@ import ecto.Migration.ColumnType;
 
     public function up(): Void {
         createTable("users")
-            .addId()
             .addColumn("name", ColumnType.String(), {nullable: false})
             .addColumn("email", ColumnType.String(), {nullable: false})
             .addColumn("age", ColumnType.Integer)
