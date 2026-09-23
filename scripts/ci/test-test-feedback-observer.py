@@ -8,7 +8,9 @@ import contextlib
 import importlib.util
 import io
 import json
+import os
 import re
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -250,6 +252,54 @@ class ObservationTests(unittest.TestCase):
 
 
 class WorkflowTopologyTests(unittest.TestCase):
+    def test_validation_preserves_syntax_errors_and_fixture_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fixture = root / "snapshot" / "invalid-syntax"
+            output = fixture / "out"
+            output.mkdir(parents=True)
+            (fixture / "compile.hxml").write_text("-main Main\n", encoding="utf-8")
+            (output / "invalid.ex").write_text("defmodule Invalid do\n", encoding="utf-8")
+            result = subprocess.run(
+                ["bash", str(ROOT / "test/validate_elixir.sh"), "--require-all", str(fixture)],
+                cwd=root, capture_output=True, text=True, timeout=60,
+            )
+            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+            self.assertIn("Failed invalid-syntax (parser status 1)", result.stdout)
+            log = (root / "elixir_validation.log").read_text(encoding="utf-8")
+            self.assertIn("Syntax error in", log)
+            self.assertIn("invalid.ex", log)
+
+    def test_validation_detects_host_platform_once_for_multiple_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fixture = root / "snapshot" / "many-files"
+            output = fixture / "out"
+            output.mkdir(parents=True)
+            (fixture / "compile.hxml").write_text("-main Main\n", encoding="utf-8")
+            for index in range(12):
+                (output / f"module_{index}.ex").write_text(
+                    f"defmodule Fixture{index} do\nend\n", encoding="utf-8"
+                )
+            fake_bin = root / "bin"
+            fake_bin.mkdir()
+            probe = fake_bin / "uname"
+            probe.write_text(
+                '#!/bin/sh\nprintf "probe\\n" >> "$UNAME_PROBE_LOG"\nexec "$REAL_UNAME" "$@"\n',
+                encoding="utf-8",
+            )
+            probe.chmod(0o755)
+            log = root / "uname.log"
+            environment = dict(os.environ, PATH=f"{fake_bin}{os.pathsep}{os.environ['PATH']}",
+                               REAL_UNAME=shutil.which("uname") or "uname", UNAME_PROBE_LOG=str(log))
+            result = subprocess.run(
+                ["bash", str(ROOT / "test/validate_elixir.sh"), "--require-all", str(fixture)],
+                cwd=root, env=environment, capture_output=True, text=True, timeout=60,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("Total tests validated: 1", result.stdout)
+            self.assertEqual(log.read_text(encoding="utf-8").splitlines(), ["probe"])
+
     def test_checked_in_corpus_validation_fails_when_artifacts_are_absent(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             fixture = Path(tmp) / "snapshot" / "missing-intended"
@@ -264,7 +314,7 @@ class WorkflowTopologyTests(unittest.TestCase):
                     "--require-all",
                     str(Path(tmp) / "snapshot"),
                 ],
-                cwd=ROOT,
+                cwd=tmp,
                 capture_output=True,
                 text=True,
                 check=False,
