@@ -1,1 +1,1 @@
-@:submitEvent expects an event name and non-empty form root, for example @:submitEvent("create_todo", "todo").
+:submitEvent expects a non-empty form root, for example :submitEvent("todo") or :submitEvent("create_todo", "todo").
