@@ -302,12 +302,12 @@ defmodule Main do
     result = %{}
     {result} = Enum.reduce_while(Map.keys(input), {result}, fn key, {acc_result} ->
       try do
-        acc_result =
-          (case label_for(key) do
-            {:present, value} ->
-              Map.put(acc_result, key, value)
-            {:missing} -> acc_result
-          end)
+        acc_result = (case label_for(key) do
+          {:present, value} ->
+            acc_result = Map.put(acc_result, key, value)
+            acc_result
+          {:missing} -> acc_result
+        end)
         {:cont, {acc_result}}
       catch
         :throw, {:break, break_state} ->
