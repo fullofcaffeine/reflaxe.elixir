@@ -17,6 +17,7 @@ WITH_TIMEOUT="$ROOT_DIR/scripts/util/with-timeout.sh"
 
 HAXE_BIN="${HAXE_BIN:-haxe}"
 COMPILE_TIMEOUT_SECS="${COMPILE_TIMEOUT_SECS:-120}"
+ELIXIR_COMPILE_TIMEOUT_SECS="${ELIXIR_COMPILE_TIMEOUT_SECS:-60}"
 RUNTIME_TIMEOUT_SECS="${RUNTIME_TIMEOUT_SECS:-20}"
 
 TEST_DIRS=(
@@ -33,9 +34,9 @@ TEST_DIRS=(
   "test/snapshot/stdlib/uint_32bit_semantics"
 )
 
-echo "[runtime-smoke] compile-timeout=${COMPILE_TIMEOUT_SECS}s runtime-timeout=${RUNTIME_TIMEOUT_SECS}s"
+echo "[runtime-smoke] compile-timeout=${COMPILE_TIMEOUT_SECS}s elixir-compile-timeout=${ELIXIR_COMPILE_TIMEOUT_SECS}s runtime-timeout=${RUNTIME_TIMEOUT_SECS}s"
 
-run_one() {
+run_one() (
   local test_dir="$1"
   local abs_test_dir="$ROOT_DIR/$test_dir"
 
@@ -45,8 +46,14 @@ run_one() {
   fi
 
   echo "[runtime-smoke] → compile: $test_dir"
-  (cd "$abs_test_dir" && "$WITH_TIMEOUT" "$COMPILE_TIMEOUT_SECS" \
-    "$HAXE_BIN" --no-traces -D no_traces -D elixir_output=out -D reflaxe.dont_output_metadata_id compile.hxml >/dev/null 2>&1)
+  if (cd "$abs_test_dir" && "$WITH_TIMEOUT" "$COMPILE_TIMEOUT_SECS" \
+    "$HAXE_BIN" --no-traces -D no_traces -D elixir_output=out -D reflaxe.dont_output_metadata_id compile.hxml); then
+    :
+  else
+    local compile_status=$?
+    echo "[runtime-smoke] compile failed: $test_dir (exit=$compile_status, limit=${COMPILE_TIMEOUT_SECS}s)" >&2
+    return "$compile_status"
+  fi
 
   local outdir="$abs_test_dir/out"
   if [[ ! -d "$outdir" ]]; then
@@ -64,28 +71,30 @@ run_one() {
     return 1
   fi
 
-  local requires=()
-  # Ensure core runtime exception structs are loaded before compiling other modules.
-  [[ -f "$outdir/reflaxe/exception.ex" ]] && requires+=("-r" "reflaxe/exception.ex")
-  [[ -f "$outdir/reflaxe/elixir/haxe_throw.ex" ]] && requires+=("-r" "reflaxe/elixir/haxe_throw.ex")
+  local beam_dir
+  beam_dir="$(mktemp -d "${TMPDIR:-/tmp}/reflaxe-runtime-smoke.XXXXXX")"
+  trap 'rm -rf -- "$beam_dir"' EXIT
+  local generated_files=()
+  while IFS= read -r generated_file; do
+    generated_files+=("$generated_file")
+  done < <(cd "$outdir" && find . -type f -name '*.ex' -print | LC_ALL=C sort)
 
-  ex_files="$(cd "$outdir" && find . -type f -name "*.ex" -print | sed 's|^\./||' | LC_ALL=C sort)"
-  while IFS= read -r f; do
-    [[ -z "$f" ]] && continue
-    [[ "$f" == "$entry" ]] && continue
-    [[ "$f" == "reflaxe/exception.ex" ]] && continue
-    [[ "$f" == "reflaxe/elixir/haxe_throw.ex" ]] && continue
-    requires+=("-r" "$f")
-  done <<< "$ex_files"
-  requires+=("-r" "$entry")
+  # As in the OTP smoke owner, compile the complete dependency set together.
+  # Sequential -r loading reports false missing-module warnings and charges
+  # compilation against the runtime budget. Reuse the explicit diagnostic-list
+  # gate: native warning flags alone can print a warning and still return zero.
+  echo "[runtime-smoke] → strict Elixir compile: $test_dir"
+  (cd "$outdir" && "$WITH_TIMEOUT" "$ELIXIR_COMPILE_TIMEOUT_SECS" \
+    elixir "$ROOT_DIR/scripts/ci/validate-generated-elixir-warnings.exs" "$beam_dir" "${generated_files[@]}")
 
   echo "[runtime-smoke] → run: $test_dir ($entry)"
   (cd "$outdir" && "$WITH_TIMEOUT" "$RUNTIME_TIMEOUT_SECS" \
-    elixir "${requires[@]}" -e '
+    elixir -pa "$beam_dir" -e '
+      Code.ensure_loaded!(Main)
       unless function_exported?(Main, :main, 0), do: raise("Missing Main.main/0")
       Main.main()
     ' >/dev/null)
-}
+)
 
 for test_dir in "${TEST_DIRS[@]}"; do
   run_one "$test_dir"
