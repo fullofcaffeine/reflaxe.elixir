@@ -15,7 +15,9 @@ import elixir.types.Term;
  *
  * HOW
  * - Delegate `render/2` to the shared implementation.
+ * - Keep this module because Phoenix config references it outside Haxe's call graph.
  */
+@:keep
 class ErrorJSON {
 	public static function render(template:String, assigns:Term):phoenix.errors.DefaultErrorJSON.ErrorPayload {
 		return phoenix.errors.DefaultErrorJSON.render(template, assigns);
