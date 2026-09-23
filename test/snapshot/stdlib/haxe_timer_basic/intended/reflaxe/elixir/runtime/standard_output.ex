@@ -19,8 +19,8 @@ defmodule Reflaxe.Elixir.Runtime.StandardOutput do
       write_data(
         struct,
         (fn ->
-           reflaxe_dispatch_receiver = apply(Map.get(bytes, :__reflaxe_class__) || Map.get(bytes, :__struct__), :sub, [bytes, pos, len])
-           apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get_data, [reflaxe_dispatch_receiver])
+           reflaxe_dispatch_receiver_node_0 = apply(Map.get(bytes, :__reflaxe_class__) || Map.get(bytes, :__struct__), :sub, [bytes, pos, len])
+           apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :get_data, [reflaxe_dispatch_receiver_node_0])
          end).()
       )
       len

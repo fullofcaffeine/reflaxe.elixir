@@ -5,8 +5,8 @@ defmodule Haxe.Timer do
     struct = if (defer_start != true) do
       struct = %{struct | thread: Sys.Thread.Thread.current()}
       ref = struct.callback_ref
-      reflaxe_dispatch_receiver = Sys.Thread.Thread.get_events(struct.thread)
-      %{struct | event_handler: apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :repeat, [reflaxe_dispatch_receiver, fn -> Reflaxe.Elixir.Runtime.TimerRuntime.invoke(ref, fn -> nil end) end, time_ms])}
+      reflaxe_dispatch_receiver_node_0 = Sys.Thread.Thread.get_events(struct.thread)
+      %{struct | event_handler: apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :repeat, [reflaxe_dispatch_receiver_node_0, fn -> Reflaxe.Elixir.Runtime.TimerRuntime.invoke(ref, fn -> nil end) end, time_ms])}
     else
       struct
     end
@@ -14,8 +14,8 @@ defmodule Haxe.Timer do
   end
   def stop(struct) do
     if (not Kernel.is_nil(struct.thread) and not Kernel.is_nil(struct.event_handler)) do
-      reflaxe_dispatch_receiver = Sys.Thread.Thread.get_events(struct.thread)
-      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :cancel, [reflaxe_dispatch_receiver, struct.event_handler])
+      reflaxe_dispatch_receiver_node_1 = Sys.Thread.Thread.get_events(struct.thread)
+      apply(Map.get(reflaxe_dispatch_receiver_node_1, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_1, :__struct__), :cancel, [reflaxe_dispatch_receiver_node_1, struct.event_handler])
     end
     if (not Kernel.is_nil(struct.callback_ref)) do
       Reflaxe.Elixir.Runtime.TimerRuntime.delete(struct.callback_ref)

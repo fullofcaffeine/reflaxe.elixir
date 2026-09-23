@@ -18,8 +18,8 @@ defmodule Main do
   def main() do
     manual = Haxe.Timer.new(1000, nil)
     Haxe.Timer.__set_run(manual, fn ->
-      reflaxe_dispatch_receiver = Sys.Thread.Thread.current()
-      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :send_message, [reflaxe_dispatch_receiver, "manual-1"])
+      reflaxe_dispatch_receiver_node_0 = Sys.Thread.Thread.current()
+      apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :send_message, [reflaxe_dispatch_receiver_node_0, "manual-1"])
     end)
     Haxe.Timer.__invoke_run(manual)
     require_message("manual-1")
@@ -27,16 +27,16 @@ defmodule Main do
     run_ref.()
     require_message("manual-1")
     Haxe.Timer.__set_run(manual, fn ->
-      reflaxe_dispatch_receiver = Sys.Thread.Thread.current()
-      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :send_message, [reflaxe_dispatch_receiver, "manual-2"])
+      reflaxe_dispatch_receiver_node_1 = Sys.Thread.Thread.current()
+      apply(Map.get(reflaxe_dispatch_receiver_node_1, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_1, :__struct__), :send_message, [reflaxe_dispatch_receiver_node_1, "manual-2"])
     end)
     Haxe.Timer.__invoke_run(manual)
     require_message("manual-2")
     apply(Map.get(manual, :__reflaxe_class__) || Map.get(manual, :__struct__), :stop, [manual])
     repeated = Haxe.Timer.new(1, nil)
     Haxe.Timer.__set_run(repeated, fn ->
-      reflaxe_dispatch_receiver = Sys.Thread.Thread.current()
-      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :send_message, [reflaxe_dispatch_receiver, "tick"])
+      reflaxe_dispatch_receiver_node_2 = Sys.Thread.Thread.current()
+      apply(Map.get(reflaxe_dispatch_receiver_node_2, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_2, :__struct__), :send_message, [reflaxe_dispatch_receiver_node_2, "tick"])
     end)
     drive_timer_once()
     require_message("tick")
@@ -44,8 +44,8 @@ defmodule Main do
     require_message("tick")
     apply(Map.get(repeated, :__reflaxe_class__) || Map.get(repeated, :__struct__), :stop, [repeated])
     Haxe.Timer.delay(fn ->
-      reflaxe_dispatch_receiver = Sys.Thread.Thread.current()
-      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :send_message, [reflaxe_dispatch_receiver, "delay"])
+      reflaxe_dispatch_receiver_node_3 = Sys.Thread.Thread.current()
+      apply(Map.get(reflaxe_dispatch_receiver_node_3, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_3, :__struct__), :send_message, [reflaxe_dispatch_receiver_node_3, "delay"])
     end, 1)
     drive_timer_once()
     require_message("delay")
