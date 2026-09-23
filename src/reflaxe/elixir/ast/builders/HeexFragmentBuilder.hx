@@ -4,6 +4,7 @@ package reflaxe.elixir.ast.builders;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.emptyMetadata;
+import reflaxe.elixir.ast.naming.ElixirAtom;
 
 using StringTools;
 
@@ -390,7 +391,11 @@ private class ExprParser {
 		if (StringTools.startsWith(s, "if ")) {
 			return parseInlineIf();
 		}
-		return parseBinary();
+		var expression = parseBinary();
+		skipWs();
+		// A recognized prefix does not establish the kind of the whole expression.
+		// Preserve unsupported suffixes rather than silently dropping their effects.
+		return eof() ? expression : makeAST(ERaw(s));
 	}
 
 	function parseInlineIf():ElixirAST {
@@ -460,6 +465,14 @@ private class ExprParser {
 	function parsePrimary():ElixirAST {
 		skipWs();
 		var ch = peek();
+		if (startsWith("%{")) {
+			var start = i;
+			var map = parseMap();
+			if (map != null)
+				return map;
+			i = start;
+			return makeAST(ERaw(remaining()));
+		}
 		if (ch == '"' || ch == '\'') {
 			var q = parseQuoted();
 			return makeAST(EString(q));
@@ -497,6 +510,37 @@ private class ExprParser {
 		}
 		// fallback raw
 		return makeAST(ERaw(remaining()));
+	}
+
+	/** Parse keyword-key maps from lowered object literals; leave other map syntax opaque. */
+	function parseMap():Null<ElixirAST> {
+		advance(2); // %{
+		skipWs();
+		var pairs:Array<EMapPair> = [];
+		while (!eof() && peek() != "}") {
+			var key = parseIdent();
+			if (key.length == 0 || peek() != ":")
+				return null;
+			advance(1);
+			skipWs();
+			var valueStart = i;
+			var value = parseBinary();
+			if (i == valueStart)
+				return null;
+			// These atoms are already Elixir source, so preserve their exact spelling.
+			pairs.push({key: makeAST(EAtom(ElixirAtom.raw(key))), value: value});
+			skipWs();
+			if (peek() == "}")
+				break;
+			if (peek() != ",")
+				return null;
+			advance(1);
+			skipWs();
+		}
+		if (peek() != "}")
+			return null;
+		advance(1);
+		return makeAST(EMap(pairs));
 	}
 
 	function parsePostfix(base:ElixirAST):ElixirAST {
