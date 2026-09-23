@@ -9,11 +9,14 @@ import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirASTPrinter;
 import reflaxe.elixir.ast.transformers.BareLiteralDropTransforms;
 import reflaxe.elixir.ast.transformers.BinderTransforms;
+import reflaxe.elixir.ast.transformers.LocalAssignUnusedUnderscoreScopedTransforms;
+import reflaxe.elixir.ast.transformers.FinalUnderscoreRepairTransforms;
 
 /** Focused executable contracts for warning-producing upstream stdlib AST shapes. */
 @:nullSafety(Off)
 class TestStdlibWarningTransforms {
 	public static function run():Expr {
+		testOverwrittenLocalBinding();
 		testUnaryOperandGrouping();
 		testKnownNilRemovesUnreachableShift();
 		testKnownNonNilFoldsNegatedCheck();
@@ -24,6 +27,61 @@ class TestStdlibWarningTransforms {
 
 		Sys.println("Stdlib warning transform contracts passed");
 		return macro null;
+	}
+
+	/** Later reads use the replacement value, but RHS effects and earlier reads survive. */
+	static function testOverwrittenLocalBinding():Void {
+		var value = makeAST(EVar("value"));
+		var effect = makeAST(ECall(null, "observe", []));
+		var replace = makeAST(EMatch(PVar("value"), makeAST(EInteger(2))));
+		var read = makeAST(ECall(null, "consume", [value]));
+		var capture = makeAST(EMatch(PVar("saved"), makeAST(EFn([{args: [], guard: null, body: value}]))));
+		var conditional = makeAST(EIf(makeAST(EVar("enabled")), replace, makeAST(ENil)));
+		for (binary in [false, true]) {
+			var initial = binary ? makeAST(EBinary(Match, value, effect)) : makeAST(EMatch(PVar("value"), effect));
+			for (example in [
+				{rest: [replace, value], expectedName: "_value"},
+				{rest: [read, replace, value], expectedName: "value"},
+				{
+					rest: [
+						makeAST(EMatch(PVar("value"), makeAST(EBinary(Add, value, makeAST(EInteger(1)))))),
+						value
+					],
+					expectedName: "value"
+				},
+				{rest: [conditional, value], expectedName: "value"},
+				{rest: [capture, replace, makeAST(ETuple([makeAST(EVar("saved")), value]))], expectedName: "value"}
+			]) {
+				var input = makeAST(EDef("probe", [PVar("enabled")], null, makeAST(EBlock([initial].concat(example.rest)))));
+				var output = FinalUnderscoreRepairTransforms.transformPass(LocalAssignUnusedUnderscoreScopedTransforms.pass(input));
+				switch (output.def) {
+					case EDef(_, _, _, {def: EBlock(statements)}):
+						switch (statements[0].def) {
+							case EMatch(PVar(name), {def: ECall(null, "observe", [])}) if (!binary && name == example.expectedName):
+							case EBinary(Match, {def: EVar(name)}, {def: ECall(null, "observe", [])}) if (binary && name == example.expectedName):
+							default:
+								fail("overwritten locals must retain effects and all reads before replacement: expected binder "
+									+ example.expectedName
+									+ ", got "
+									+ ElixirASTPrinter.printAST(statements[0]));
+						}
+					default:
+						fail("local-binding test changed function shape");
+				}
+			}
+		}
+		var actualUse = makeAST(EBlock([
+			makeAST(EMatch(PVar("_value"), effect)),
+			makeAST(ECall(null, "consume", [makeAST(EVar("_value"))]))
+		]));
+		switch (FinalUnderscoreRepairTransforms.transformPass(actualUse).def) {
+			case EBlock([
+				{def: EMatch(PVar("value"), {def: ECall(null, "observe", [])})},
+				{def: ECall(null, "consume", [{def: EVar("value")}])}
+			]):
+			default:
+				fail("an exact underscored read must still repair its binder and reference");
+		}
 	}
 
 	/** Prefix operators apply to the complete operand, not its first printed term. */

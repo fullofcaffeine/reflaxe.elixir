@@ -24,9 +24,14 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 	*   that `name = expr` becomes `_name = expr` when `name` is not referenced in
 	*   any subsequent statement within the same block. Scalar function bodies are
 	*   analyzed through a synthetic block and then restored to scalar value context.
+	* - Stop the previous value's lifetime at an unconditional simple assignment,
+	*   then count RHS reads. Conditional writes do not end that lifetime.
 
 	*
 	* EXAMPLES
+	* - Haxe `var value = observe(); value = 2; return value` emits
+	*   `_value = observe(); value = 2; value`, preserving the call without an
+	*   unused-variable warning. `value = value + 1` still reads the old value.
 	* - `defp unused_param(_t), do: 1` must retain `1`; the analysis block is
 	*   internal and must not turn the scalar return into a discarded statement.
 	* - Covered by snapshot tests under `test/snapshot/**`.
@@ -207,6 +212,14 @@ class LocalAssignUnusedUnderscoreScopedTransforms {
 		var idx = stmts.length - 1;
 		while (idx >= 0) {
 			usedLaterByIndex[idx] = cloneScope(usedLater);
+			// A definite local assignment ends the preceding value's lifetime.
+			// Collect RHS reads afterward: x = x + 1 still needs the old x.
+			// Do not infer kills from conditional writes or compound patterns.
+			switch (stmts[idx].def) {
+				case EMatch(PVar(name), _) | EBinary(Match, {def: EVar(name)}, _):
+					usedLater.remove(name);
+				default:
+			}
 			collectUsedVars(stmts[idx], usedLater);
 			idx--;
 		}
