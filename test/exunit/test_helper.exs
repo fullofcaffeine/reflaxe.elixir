@@ -145,42 +145,22 @@ if missing_haxe_test_sources == [] do
     |> Enum.reject(&(&1 in deferred_haxe_test_files))
     |> Enum.sort()
 
-  # Dependency-friendly load order: require core runtime modules (like `Reflaxe.Elixir.HaxeThrow`)
-  # before stdlib stubs that reference them.
-  prefer = [
-    "reflaxe/exception.ex",
-    "reflaxe/elixir/haxe_throw.ex",
-    "reflaxe/elixir/haxe_float.ex",
-    "reflaxe/elixir/haxe_int.ex",
-    "type.ex",
-    "reflect.ex",
-    "std.ex",
-    "string_tools.ex",
-    "string_buf.ex",
-    "sys.ex",
-    "haxe/exceptions/pos_exception.ex",
-    "haxe/exceptions/not_implemented_exception.ex",
-    "haxe/io/eof.ex",
-    "haxe/io/bytes.ex",
-    "haxe/io/output.ex",
-    "haxe/io/bytes_input.ex",
-    "haxe/io/bytes_output.ex"
-  ]
+  # Compile the set together so Elixir resolves dependencies before checking calls.
+  # Sequential require_file emits false missing-module warnings for later files;
+  # formatting their suggestions can exhaust the runtime gate before tests start.
+  # Keep real warnings fatal, independently of Mix's own compilation options.
+  generated_files = Enum.map(ex_files, &Path.join(generated_dir, &1))
 
-  {preferred, remaining} = Enum.split_with(ex_files, fn rel -> rel in prefer end)
+  case Kernel.ParallelCompiler.compile(generated_files) do
+    {:ok, _modules, []} ->
+      :ok
 
-  preferred =
-    prefer
-    |> Enum.filter(&(&1 in preferred))
+    {:ok, _modules, warnings} ->
+      raise "Haxe-authored ExUnit compilation produced #{length(warnings)} warning(s)"
 
-  {reflaxe, remaining} = Enum.split_with(remaining, &String.starts_with?(&1, "reflaxe/"))
-  {haxe, remaining} = Enum.split_with(remaining, &String.starts_with?(&1, "haxe/"))
-
-  ordered = preferred ++ reflaxe ++ haxe ++ remaining
-
-  Enum.each(ordered, fn rel ->
-    Code.require_file(Path.join(generated_dir, rel))
-  end)
+    {:error, errors, warnings} ->
+      raise "Haxe-authored ExUnit compilation failed: #{length(errors)} error(s), #{length(warnings)} warning(s)"
+  end
 else
   raise "Missing Haxe-authored ExUnit source roots: #{Enum.join(missing_haxe_test_sources, ", ")}"
 end
