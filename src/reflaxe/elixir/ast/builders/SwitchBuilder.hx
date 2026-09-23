@@ -3311,8 +3311,9 @@ class SwitchBuilder {
 	 * WHY: Need to recover enum type info after Haxe's TEnumIndex optimization
 	 * WHAT: Extracts EnumType from expression's type annotation
 	 * HOW: Pattern matches on Type structure
+	 * Shared with optimized enum-if recovery so abstract wrappers have one owner.
 	 */
-	static function getEnumTypeFromExpression(expr:TypedExpr):Null<EnumType> {
+	public static function getEnumTypeFromExpression(expr:TypedExpr):Null<EnumType> {
 		if (expr == null)
 			return null;
 

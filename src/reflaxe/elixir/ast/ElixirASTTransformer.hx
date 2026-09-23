@@ -2964,6 +2964,25 @@ class ElixirASTTransformer {
 	 * NOTE: We use a custom traversal instead of transformNode to avoid recursive transformation
 	 */
 	static function stringInterpolationPass(ast:ElixirAST):ElixirAST {
+		// Raw interpolation must not hide bindings from later scope and hygiene passes.
+		// Keep complex operands structured; the printer can emit their concatenation.
+		function containsBindingScope(node:ElixirAST):Bool {
+			if (node == null)
+				return false;
+			switch (node.def) {
+				case EBlock(_), EDo(_), EFn(_), EMatch(_, _), EBinary(Match, _, _), ECase(_, _), EFor(_, _, _, _, _), EWith(_, _, _), ETry(_, _, _, _, _),
+					EReceiverEffect(_):
+					return true;
+				default:
+			}
+			var found = false;
+			iterateAST(node, child -> {
+				if (!found)
+					found = containsBindingScope(child);
+			});
+			return found;
+		}
+
 		function transform(node:ElixirAST):ElixirAST {
 			// Handle null nodes
 			if (node == null)
@@ -2991,6 +3010,10 @@ class ElixirASTTransformer {
 					}
 
 					collectParts(node);
+					for (part in parts) {
+						if (!part.isString && containsBindingScope(part.expr))
+							return node;
+					}
 
 					// Check if we should convert to interpolation
 					var hasNonString = false;

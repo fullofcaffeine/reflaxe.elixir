@@ -9,7 +9,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 	* GlobalNumericSentinelCleanupTransforms
 	*
 	* WHAT
-	* - Remove standalone numeric sentinel literals (0, 1, 0.0) from any EBlock/EDo,
+	* - Remove non-final numeric sentinel literals (0, 1, 0.0) from any EBlock/EDo,
 	*   regardless of nesting (EFn, def/defp, case, etc.).
 	*
 	* WHY
@@ -30,21 +30,33 @@ class GlobalNumericSentinelCleanupTransforms {
 			return switch (n.def) {
 				case EBlock(stmts):
 					var out = [];
-					for (s in stmts)
+					for (index in 0...stmts.length) {
+						var s = stmts[index];
+						if (index == stmts.length - 1) {
+							out.push(s);
+							continue;
+						}
 						switch (s.def) {
 							case EInteger(v) if (v == 0 || v == 1):
 							case EFloat(f) if (f == 0.0):
 							default: out.push(s);
 						}
+					}
 					makeASTWithMeta(EBlock(out), n.metadata, n.pos);
 				case EDo(stmts2):
 					var out2 = [];
-					for (s2 in stmts2)
-						switch (s2.def) {
+					for (index in 0...stmts2.length) {
+						var statement = stmts2[index];
+						if (index == stmts2.length - 1) {
+							out2.push(statement);
+							continue;
+						}
+						switch (statement.def) {
 							case EInteger(v2) if (v2 == 0 || v2 == 1):
 							case EFloat(f2) if (f2 == 0.0):
-							default: out2.push(s2);
+							default: out2.push(statement);
 						}
+					}
 					makeASTWithMeta(EDo(out2), n.metadata, n.pos);
 				default:
 					n;

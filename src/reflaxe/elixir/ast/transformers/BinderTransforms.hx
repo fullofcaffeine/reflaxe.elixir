@@ -8,6 +8,7 @@ import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
 import reflaxe.elixir.ast.ElixirASTPrinter;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import StringTools;
 
@@ -2340,47 +2341,17 @@ end'))
 			};
 		}
 
-		function collectUsedVars(expr:ElixirAST, out:Map<String, Bool>):Void {
-			if (expr == null || expr.def == null)
-				return;
-			switch (expr.def) {
-				case EVar(v) if (v != null):
-					out.set(v, true);
-				case EBinary(Match, _, rhs):
-					// Do not treat LHS as a read
-					collectUsedVars(rhs, out);
-				case EMatch(_, rhs):
-					// Do not treat pattern as a read
-					collectUsedVars(rhs, out);
-				case ECase(scrut, clauses):
-					collectUsedVars(scrut, out);
-					for (cl in clauses) {
-						if (cl.guard != null)
-							collectUsedVars(cl.guard, out);
-						collectUsedVars(cl.body, out);
-					}
-				case ECond(clauses):
-					for (cl in clauses) {
-						collectUsedVars(cl.condition, out);
-						collectUsedVars(cl.body, out);
-					}
-				case EFn(clauses):
-					for (cl in clauses) {
-						if (cl.guard != null)
-							collectUsedVars(cl.guard, out);
-						collectUsedVars(cl.body, out);
-					}
-				default:
-					ElixirASTTransformer.transformAST(expr, function(child:ElixirAST):ElixirAST {
-						collectUsedVars(child, out);
-						return child;
-					});
-			}
-		}
-
 		function dropUnusedAliasAssignments(stmts:Array<ElixirAST>):Array<ElixirAST> {
 			var usedLater = new Map<String, Bool>();
 			var keptReversed:Array<ElixirAST> = [];
+			// Only alias destinations need liveness. Use the shared analyzer so
+			// interpolation and native expressions retain the locals they read.
+			var candidates = new Map<String, Bool>();
+			for (stmt in stmts) {
+				var alias = extractAliasAssignment(stmt);
+				if (alias != null)
+					candidates.set(alias.lhs, true);
+			}
 
 			var i = stmts.length - 1;
 			while (i >= 0) {
@@ -2406,10 +2377,9 @@ end'))
 				if (alias != null) {
 					usedLater.set(alias.rhs, true);
 				} else {
-					var usedHere = new Map<String, Bool>();
-					collectUsedVars(s, usedHere);
-					for (u in usedHere.keys())
-						usedLater.set(u, true);
+					for (name in candidates.keys())
+						if (VarUseAnalyzer.stmtUsesVar(s, name))
+							usedLater.set(name, true);
 				}
 
 				i--;

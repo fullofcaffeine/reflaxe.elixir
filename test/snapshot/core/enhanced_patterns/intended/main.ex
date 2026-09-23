@@ -1,58 +1,64 @@
 defmodule Main do
   def test_binary_patterns() do
     data = [72, 101, 108, 108, 111]
-    switch_result_1 = (case data do
-      [head | tail] when head == 72 and tail != [] ->
-        "Starts with 'H', rest: #{(fn -> Enum.join(
-          (fn ->
-             _g = []
-             g_value = 1
-             arr_length = length(arr)
-             _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
-               _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]
-               _g_acc
-             end)
-             _g
-           end).(),
-          ","
-        ) end).()}"
-      [] -> "Empty binary"
-      [head | _tail] when head == 72 -> "Starts with 'H' (single byte)"
-      [head | tail] when head == 72 and tail != [] ->
-        "Starts with 'H', rest: #{(fn -> Enum.join(
-          (fn ->
-             _g = []
-             g_value = 1
-             arr_length = length(arr)
-             _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
-               _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]
-               _g_acc
-             end)
-             _g
-           end).(),
-          ","
-        ) end).()}"
-      [_head | _tail] when length(bytes) > 10 -> "Large binary: #{Reflaxe.Elixir.HaxeFloat.to_string(length(bytes))} bytes"
-      [_head | _tail] -> "Other binary pattern"
-      2 ->
+    switch_result_1 = (case length(data) do
+      0 ->
         arr = data
         if (Enum.at(arr, 0) == 72 and length(arr) > 1) do
-          "Starts with 'H', rest: #{(fn -> Enum.join(
+          "Starts with 'H', rest: " <> Enum.join(
             (fn ->
-               _g = []
-               g_value = 1
+               g = []
                arr_length = length(arr)
-               _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
-                 _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]
-                 _g_acc
-               end)
-               _g
+               g = Enum.reduce(1..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]) end)
+               g
              end).(),
             ","
-          ) end).()}"
+          )
         else
-          first = Enum.at(data, 0)
-          _second = Enum.at(data, 1)
+          "Empty binary"
+        end
+      1 ->
+        array_read_node_0 = Enum.at(data, 0)
+        if (array_read_node_0 == 72) do
+          "Starts with 'H' (single byte)"
+        else
+          arr = data
+          if (Enum.at(arr, 0) == 72 and length(arr) > 1) do
+            "Starts with 'H', rest: " <> Enum.join(
+              (fn ->
+                 g = []
+                 arr_length = length(arr)
+                 g = Enum.reduce(1..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]) end)
+                 g
+               end).(),
+              ","
+            )
+          else
+            bytes = data
+            if (length(bytes) > 10) do
+              "Large binary: #{Reflaxe.Elixir.HaxeFloat.to_string(length(bytes))} bytes"
+            else
+              "Other binary pattern"
+            end
+          end
+        end
+      2 ->
+        array_read_node_1 = Enum.at(data, 0)
+        array_read_node_2 = Enum.at(data, 1)
+        arr = data
+        if (Enum.at(arr, 0) == 72 and length(arr) > 1) do
+          "Starts with 'H', rest: " <> Enum.join(
+            (fn ->
+               g = []
+               arr_length = length(arr)
+               g = Enum.reduce(1..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]) end)
+               g
+             end).(),
+            ","
+          )
+        else
+          first = array_read_node_1
+          _second = array_read_node_2
           if (first > 64 and first < 90) do
             "2-byte uppercase start"
           else
@@ -65,27 +71,28 @@ defmodule Main do
           end
         end
       5 ->
+        array_read_node_3 = Enum.at(data, 0)
+        array_read_node_4 = Enum.at(data, 1)
+        array_read_node_5 = Enum.at(data, 2)
+        array_read_node_6 = Enum.at(data, 3)
+        array_read_node_7 = Enum.at(data, 4)
         arr = data
         if (Enum.at(arr, 0) == 72 and length(arr) > 1) do
-          "Starts with 'H', rest: #{(fn -> Enum.join(
+          "Starts with 'H', rest: " <> Enum.join(
             (fn ->
-               _g = []
-               g_value = 1
+               g = []
                arr_length = length(arr)
-               _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
-                 _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]
-                 _g_acc
-               end)
-               _g
+               g = Enum.reduce(1..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]) end)
+               g
              end).(),
             ","
-          ) end).()}"
+          )
         else
-          a = Enum.at(data, 0)
-          _b = Enum.at(data, 1)
-          _c = Enum.at(data, 2)
-          _d = Enum.at(data, 3)
-          _e = Enum.at(data, 4)
+          a = array_read_node_3
+          _b = array_read_node_4
+          _c = array_read_node_5
+          _d = array_read_node_6
+          _e = array_read_node_7
           if (a == 72) do
             "5-byte message starting with H"
           else
@@ -100,19 +107,15 @@ defmodule Main do
       _ ->
         arr = data
         if (Enum.at(arr, 0) == 72 and length(arr) > 1) do
-          "Starts with 'H', rest: #{(fn -> Enum.join(
+          "Starts with 'H', rest: " <> Enum.join(
             (fn ->
-               _g = []
-               g_value = 1
+               g = []
                arr_length = length(arr)
-               _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
-                 _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]
-                 _g_acc
-               end)
-               _g
+               g = Enum.reduce(1..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]) end)
+               g
              end).(),
             ","
-          ) end).()}"
+          )
         else
           bytes = data
           if (length(bytes) > 10) do
@@ -126,13 +129,16 @@ defmodule Main do
   end
   def test_complex_binary_segments() do
     packet = [1, 0, 8, 72, 101, 108, 108, 111]
-    switch_result_1 = (case packet do
+    switch_result_1 = (case length(packet) do
       3 ->
-        cond do
-          Enum.at(packet, 1) == 0 ->
-            size = Enum.at(packet, 2)
-            "Protocol v1, size=" <> Reflaxe.Elixir.HaxeFloat.to_string(size) <> " (header only)"
-          true ->
+        array_read_node_8 = Enum.at(packet, 0)
+        array_read_node_9 = Enum.at(packet, 1)
+        array_read_node_10 = Enum.at(packet, 2)
+        if (array_read_node_8 == 1) do
+          if (array_read_node_9 == 0) do
+            size = array_read_node_10
+            "Protocol v1, size=#{Reflaxe.Elixir.HaxeFloat.to_string(size)} (header only)"
+          else
             arr = packet
             if (length(arr) >= 4 and Enum.at(arr, 0) == 1 and Enum.at(arr, 1) == 0) do
               "Protocol v1, size=" <> Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, 2)) <> ", data=" <> Enum.join(
@@ -145,73 +151,76 @@ defmodule Main do
                 ","
               )
             else
-              version = Enum.at(packet, 0)
-              _flags = Enum.at(packet, 1)
-              _size = Enum.at(packet, 2)
+              version = array_read_node_8
+              _flags = array_read_node_9
+              _size = array_read_node_10
               if (version > 1) do
-                "Future protocol v" <> Reflaxe.Elixir.HaxeFloat.to_string(version)
+                "Future protocol v#{Reflaxe.Elixir.HaxeFloat.to_string(version)}"
               else
                 header = packet
                 if (length(header) < 3), do: "Incomplete header", else: "Unknown packet format"
               end
             end
+          end
+        else
+          arr = packet
+          if (length(arr) >= 4 and Enum.at(arr, 0) == 1 and Enum.at(arr, 1) == 0) do
+            "Protocol v1, size=" <> Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, 2)) <> ", data=" <> Enum.join(
+              (fn ->
+                 g = []
+                 arr_length = length(arr)
+                 g = Enum.reduce(3..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]) end)
+                 g
+               end).(),
+              ","
+            )
+          else
+            version = array_read_node_8
+            _flags = array_read_node_9
+            _size = array_read_node_10
+            if (version > 1) do
+              "Future protocol v#{Reflaxe.Elixir.HaxeFloat.to_string(version)}"
+            else
+              header = packet
+              if (length(header) < 3), do: "Incomplete header", else: "Unknown packet format"
+            end
+          end
         end
-      3 when length(packet) >= 4 and Enum.at(packet, 0) == 1 and Enum.at(packet, 1) == 0 ->
-        "Protocol v1, size=#{Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, 2))}, data=#{(fn -> Enum.join(
-          (fn ->
-             _g = []
-             g_value = 3
-             arr_length = length(arr)
-             _g = Enum.reduce(3..(arr_length - 1)//1, _g, fn i, _g_acc ->
-               _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]
-               _g_acc
-             end)
-             _g
-           end).(),
-          ","
-        ) end).()}"
-      3 when version > 1 -> "Future protocol v#{Reflaxe.Elixir.HaxeFloat.to_string(version)}"
-      3 when length(header) < 3 -> "Incomplete header"
-      3 -> "Unknown packet format"
       4 ->
+        array_read_node_11 = Enum.at(packet, 0)
+        array_read_node_12 = Enum.at(packet, 1)
+        array_read_node_13 = Enum.at(packet, 2)
+        array_read_node_14 = Enum.at(packet, 3)
         arr = packet
         if (length(arr) >= 4 and Enum.at(arr, 0) == 1 and Enum.at(arr, 1) == 0) do
-          "Protocol v1, size=#{Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, 2))}, data=#{(fn -> Enum.join(
+          "Protocol v1, size=" <> Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, 2)) <> ", data=" <> Enum.join(
             (fn ->
-               _g = []
-               g_value = 3
+               g = []
                arr_length = length(arr)
-               _g = Enum.reduce(3..(arr_length - 1)//1, _g, fn i, _g_acc ->
-                 _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]
-                 _g_acc
-               end)
-               _g
+               g = Enum.reduce(3..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]) end)
+               g
              end).(),
             ","
-          ) end).()}"
+          )
         else
-          version = Enum.at(packet, 0)
-          flags = Enum.at(packet, 1)
-          size = Enum.at(packet, 2)
-          _payload = Enum.at(packet, 3)
+          version = array_read_node_11
+          flags = array_read_node_12
+          size = array_read_node_13
+          _payload = array_read_node_14
           "Packet: v#{Reflaxe.Elixir.HaxeFloat.to_string(version)}, flags=#{Reflaxe.Elixir.HaxeFloat.to_string(flags)}, size=#{Reflaxe.Elixir.HaxeFloat.to_string(size)}"
         end
       _ ->
         arr = packet
         if (length(arr) >= 4 and Enum.at(arr, 0) == 1 and Enum.at(arr, 1) == 0) do
-          "Protocol v1, size=#{Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, 2))}, data=#{(fn -> Enum.join(
+          "Protocol v1, size=" <> Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, 2)) <> ", data=" <> Enum.join(
             (fn ->
-               _g = []
-               g_value = 3
+               g = []
                arr_length = length(arr)
-               _g = Enum.reduce(3..(arr_length - 1)//1, _g, fn i, _g_acc ->
-                 _g_acc = _g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]
-                 _g_acc
-               end)
-               _g
+               g = Enum.reduce(3..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]) end)
+               g
              end).(),
             ","
-          ) end).()}"
+          )
         else
           header = packet
           if (length(header) < 3), do: "Incomplete header", else: "Unknown packet format"
@@ -232,7 +241,7 @@ defmodule Main do
       "Both match"
     else
       v = test_value
-      n = test_name
+      _ = test_name
       if (v == expected_value) do
         "Value matches, name different"
       else
@@ -249,24 +258,24 @@ defmodule Main do
     pressure = 1013.25
     t = temperature
     h = humidity
-    p = pressure
+    _p = pressure
     if (Reflaxe.Elixir.HaxeFloat.gt(t, 20) and Reflaxe.Elixir.HaxeFloat.lt(t, 25) and h >= 60 and h <= 70) do
       "Perfect conditions"
     else
       t = temperature
       h = humidity
-      p = pressure
+      _ = pressure
       if (Reflaxe.Elixir.HaxeFloat.gt(t, 30) or h > 80) do
         "Too hot or humid"
       else
         t = temperature
         h = humidity
-        p = pressure
+        _ = pressure
         if (Reflaxe.Elixir.HaxeFloat.lt(t, 10) or h < 30) do
           "Too cold or dry"
         else
-          t = temperature
-          h = humidity
+          _ = temperature
+          _ = humidity
           p = pressure
           if (Reflaxe.Elixir.HaxeFloat.lt(p, 1000) or Reflaxe.Elixir.HaxeFloat.gt(p, 1020)) do
             "Abnormal pressure"
@@ -283,11 +292,33 @@ defmodule Main do
   def test_type_guards() do
     value = "Hello World"
     v = value
-    if (Std.is(v, String) and Reflaxe.Elixir.HaxeFloat.gt(length(v), 10)) do
+    if (Std.is(v, String) and Reflaxe.Elixir.HaxeFloat.gt((fn
+      dyn_obj when is_binary(dyn_obj) ->
+        String.length(dyn_obj)
+      dyn_obj when is_list(dyn_obj) ->
+        length(dyn_obj)
+      dyn_obj ->
+        (case Map.fetch(dyn_obj, "length") do
+          {:ok, dyn_value} -> dyn_value
+          _ ->
+            Map.get(dyn_obj, :length)
+        end)
+    end).(v), 10)) do
       "Long string: #{Reflaxe.Elixir.HaxeFloat.to_string(v)}"
     else
       v = value
-      if (Std.is(v, String) and Reflaxe.Elixir.HaxeFloat.lte(length(v), 10)) do
+      if (Std.is(v, String) and Reflaxe.Elixir.HaxeFloat.lte((fn
+        dyn_obj when is_binary(dyn_obj) ->
+          String.length(dyn_obj)
+        dyn_obj when is_list(dyn_obj) ->
+          length(dyn_obj)
+        dyn_obj ->
+          (case Map.fetch(dyn_obj, "length") do
+            {:ok, dyn_value} -> dyn_value
+            _ ->
+              Map.get(dyn_obj, :length)
+          end)
+      end).(v), 10)) do
         "Short string: #{Reflaxe.Elixir.HaxeFloat.to_string(v)}"
       else
         v = value
@@ -308,7 +339,19 @@ defmodule Main do
               else
                 v = value
                 cond do
-                  Std.is(v, Array) -> "Array with " <> Reflaxe.Elixir.HaxeFloat.to_string(length(v)) <> " elements"
+                  Std.is(v, Array) ->
+                    "Array with " <> Reflaxe.Elixir.HaxeFloat.to_string((fn
+                      dyn_obj when is_binary(dyn_obj) ->
+                        String.length(dyn_obj)
+                      dyn_obj when is_list(dyn_obj) ->
+                        length(dyn_obj)
+                      dyn_obj ->
+                        (case Map.fetch(dyn_obj, "length") do
+                          {:ok, dyn_value} -> dyn_value
+                          _ ->
+                            Map.get(dyn_obj, :length)
+                        end)
+                    end).(v)) <> " elements"
                   Reflaxe.Elixir.HaxeFloat.eq(value, nil) -> "Null value"
                   true -> "Unknown type"
                 end
@@ -360,16 +403,24 @@ defmodule Main do
       3 -> "Error"
       _ -> "Unknown status"
     end)
+    arr_0 = 1
+    arr_1 = 2
+    arr_2 = 3
     array_result = (case 3 do
       0 -> "Empty"
-      1 -> "Single: #{Reflaxe.Elixir.HaxeFloat.to_string(x)}"
-      2 -> "Pair: #{Reflaxe.Elixir.HaxeFloat.to_string(x)},#{Reflaxe.Elixir.HaxeFloat.to_string(y)}"
-      3 -> "Triple: #{Reflaxe.Elixir.HaxeFloat.to_string(x)},#{Reflaxe.Elixir.HaxeFloat.to_string(y)},#{Reflaxe.Elixir.HaxeFloat.to_string(z)}"
-      _ ->
-        cond do
-          false -> "Many: " <> Reflaxe.Elixir.HaxeFloat.to_string(3) <> " items"
-          true -> "Other array pattern"
-        end
+      1 ->
+        x = arr_0
+        "Single: #{Reflaxe.Elixir.HaxeFloat.to_string(x)}"
+      2 ->
+        x = arr_0
+        y = arr_1
+        "Pair: #{Reflaxe.Elixir.HaxeFloat.to_string(x)},#{Reflaxe.Elixir.HaxeFloat.to_string(y)}"
+      3 ->
+        x = arr_0
+        y = arr_1
+        z = arr_2
+        "Triple: #{Reflaxe.Elixir.HaxeFloat.to_string(x)},#{Reflaxe.Elixir.HaxeFloat.to_string(y)},#{Reflaxe.Elixir.HaxeFloat.to_string(z)}"
+      _ -> "Other array pattern"
     end)
     "#{bool_result} | #{enum_result} | #{array_result}"
   end
@@ -394,15 +445,11 @@ defmodule Main do
           "Senior user"
         else
           _ = data_user_age
-          active = data_user_active
-          if (not active) do
-            "Inactive user"
-          else
-            _ = data_user_age
-            perms = 2
-            _ = data_user_active
-            if (perms == 0), do: "User without permissions", else: "Other user type"
-          end
+          _ = data_user_active
+          _ = data_user_age
+          perms = 2
+          _ = data_user_active
+          if (perms == 0), do: "User without permissions", else: "Other user type"
         end
       end
     end
@@ -442,7 +489,18 @@ defmodule Main do
       end
     end
   end
+  defp expect(actual, expected) do
+    if (actual != expected) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Expected \"" <> expected <> "\", got \"" <> actual <> "\""]
+    end
+  end
   def main() do
+    expect(test_binary_patterns(), "Starts with 'H', rest: 101,108,108,111")
+    expect(test_complex_binary_segments(), "Protocol v1, size=8, data=72,101,108,108,111")
+    expect(test_pin_operator_patterns(), "Matches expected value | Both match")
+    expect(test_advanced_guards(), "Perfect conditions")
+    expect(test_exhaustive_patterns(), "True case | Active | Triple: 1,2,3")
+    expect(test_nested_patterns_with_guards(), "Adult with full permissions")
     nil
   end
 end

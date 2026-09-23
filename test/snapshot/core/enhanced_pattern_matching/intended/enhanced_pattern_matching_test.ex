@@ -55,17 +55,58 @@ defmodule EnhancedPatternMatchingTest do
   end
   def match_with_range_guards(value, category) do
     (case category do
-      "score" when value >= 90 -> "Excellent score"
-      "score" when value >= 70 and value < 90 -> "Good score"
-      "score" when value >= 50 and value < 70 -> "Average score"
-      "score" when value < 50 -> "Poor score"
-      "score" -> "Unknown category \"#{cat}\" with value #{Reflaxe.Elixir.HaxeFloat.to_string(n)}"
-      "temperature" when value >= 30 -> "Hot"
-      "temperature" when value >= 20 and value < 30 -> "Warm"
-      "temperature" when value >= 10 and value < 20 -> "Cool"
-      "temperature" when value < 10 -> "Cold"
-      "temperature" -> "Unknown category \"#{cat}\" with value #{Reflaxe.Elixir.HaxeFloat.to_string(n)}"
-      cat -> "Unknown category \"#{cat}\" with value #{Reflaxe.Elixir.HaxeFloat.to_string(n)}"
+      "score" ->
+        n = value
+        if (n >= 90) do
+          "Excellent score"
+        else
+          n = value
+          if (n >= 70 and n < 90) do
+            "Good score"
+          else
+            n = value
+            if (n >= 50 and n < 70) do
+              "Average score"
+            else
+              n = value
+              if (n < 50) do
+                "Poor score"
+              else
+                cat = category
+                n = value
+                "Unknown category \"#{cat}\" with value #{Reflaxe.Elixir.HaxeFloat.to_string(n)}"
+              end
+            end
+          end
+        end
+      "temperature" ->
+        n = value
+        if (n >= 30) do
+          "Hot"
+        else
+          n = value
+          if (n >= 20 and n < 30) do
+            "Warm"
+          else
+            n = value
+            if (n >= 10 and n < 20) do
+              "Cool"
+            else
+              n = value
+              if (n < 10) do
+                "Cold"
+              else
+                cat = category
+                n = value
+                "Unknown category \"#{cat}\" with value #{Reflaxe.Elixir.HaxeFloat.to_string(n)}"
+              end
+            end
+          end
+        end
+      _ ->
+        cat = category
+        n = value
+        "Unknown category \"#{cat}\" with value #{Reflaxe.Elixir.HaxeFloat.to_string(n)}"
     end)
   end
   def chain_result_operations(input) do
@@ -74,30 +115,36 @@ defmodule EnhancedPatternMatchingTest do
       {:success, validated} ->
         process_data(validated)
       {:error, error, context} ->
-        context = if (Kernel.is_nil(context)), do: "", else: context
+        context = context || ""
         _result = {:error, error, context}
     end) do
       {:success, processed} ->
         format_output(processed)
       {:error, error, context} ->
-        context = if (Kernel.is_nil(context)), do: "", else: context
+        context = context || ""
         _result = {:error, error, context}
     end)
   end
   def match_array_patterns(arr) do
-    (case arr do
-      [] -> "empty array"
-      [_head | _tail] ->
-        x = Enum.at(arr, 0)
+    (case length(arr) do
+      0 -> "empty array"
+      1 ->
+        array_read_node_0 = Enum.at(arr, 0)
+        x = array_read_node_0
         "single element: #{Reflaxe.Elixir.HaxeFloat.to_string(x)}"
       2 ->
-        x = Enum.at(arr, 0)
-        y = Enum.at(arr, 1)
+        array_read_node_1 = Enum.at(arr, 0)
+        array_read_node_2 = Enum.at(arr, 1)
+        x = array_read_node_1
+        y = array_read_node_2
         "pair: [#{Reflaxe.Elixir.HaxeFloat.to_string(x)}, #{Reflaxe.Elixir.HaxeFloat.to_string(y)}]"
       3 ->
-        x = Enum.at(arr, 0)
-        y = Enum.at(arr, 1)
-        z = Enum.at(arr, 2)
+        array_read_node_3 = Enum.at(arr, 0)
+        array_read_node_4 = Enum.at(arr, 1)
+        array_read_node_5 = Enum.at(arr, 2)
+        x = array_read_node_3
+        y = array_read_node_4
+        z = array_read_node_5
         "triple: [#{Reflaxe.Elixir.HaxeFloat.to_string(x)}, #{Reflaxe.Elixir.HaxeFloat.to_string(y)}, #{Reflaxe.Elixir.HaxeFloat.to_string(z)}]"
       _ ->
         a = arr
@@ -147,9 +194,20 @@ defmodule EnhancedPatternMatchingTest do
         age = data.age
         name = data.name
         "Inactive user: #{name} (#{Reflaxe.Elixir.HaxeFloat.to_string(age)})"
-      true when age >= 18 -> "Active adult: #{name} (#{Reflaxe.Elixir.HaxeFloat.to_string(age)})"
-      true when age < 18 -> "Active minor: #{name} (#{Reflaxe.Elixir.HaxeFloat.to_string(age)})"
-      true -> "unknown pattern"
+      true ->
+        age = data.age
+        name = data.name
+        if (age >= 18) do
+          "Active adult: #{name} (#{Reflaxe.Elixir.HaxeFloat.to_string(age)})"
+        else
+          age = data.age
+          name = data.name
+          if (age < 18) do
+            "Active minor: #{name} (#{Reflaxe.Elixir.HaxeFloat.to_string(age)})"
+          else
+            "unknown pattern"
+          end
+        end
       _ -> "unknown pattern"
     end)
   end
@@ -187,10 +245,12 @@ defmodule EnhancedPatternMatchingTest do
   defp validate_input(input) do
     if (String.length(input) == 0) do
       context = "validation"
+      context = context || ""
       _result = {:error, "Empty input", context}
     else
       if (String.length(input) > 1000) do
         context = "validation"
+        context = context || ""
         _result = {:error, "Input too long", context}
       else
         value = String.downcase(input)
@@ -201,6 +261,7 @@ defmodule EnhancedPatternMatchingTest do
   defp process_data(data) do
     if (StringTools.haxe_index_of(data, "error", 0) >= 0) do
       context = "processing"
+      context = context || ""
       _result = {:error, "Data contains error keyword", context}
     else
       value = String.upcase(data)
@@ -210,14 +271,29 @@ defmodule EnhancedPatternMatchingTest do
   defp format_output(data) do
     if (String.length(data) == 0) do
       context = "formatting"
+      context = context || ""
       _result = {:error, "No data to format", context}
     else
       _result = {:success, "Formatted: [" <> data <> "]"}
     end
   end
+  defp expect(actual, expected) do
+    if (actual != expected) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Expected \"" <> expected <> "\", got \"" <> actual <> "\""]
+    end
+  end
   def main() do
-    value = nil
-    _nested_success = _result = {:success, value}
+    expect(match_array_patterns([]), "empty array")
+    expect(match_array_patterns([7]), "single element: 7")
+    expect(match_array_patterns([7, 8]), "pair: [7, 8]")
+    expect(match_array_patterns([7, 8, 9]), "triple: [7, 8, 9]")
+    expect(match_array_patterns([7, 8, 9, 10]), "starts with 7, has 3 more elements")
+    expect(match_with_range_guards(85, "score"), "Good score")
+    expect(match_with_range_guards(25, "temperature"), "Warm")
+    expect(match_with_range_guards(5, "other"), "Unknown category \"other\" with value 5")
+    result = {:success, "deep value"}
+    value = result
+    _nested_success = _ = {:success, value}
     nil
   end
 end

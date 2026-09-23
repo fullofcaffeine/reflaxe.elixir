@@ -246,7 +246,19 @@ class Main {
 		};
 	}
 
+	/** Constant arrays exercise optimized patterns, not only variable receivers. */
+	static function expect(actual:String, expected:String):Void {
+		if (actual != expected)
+			throw 'Expected "$expected", got "$actual"';
+	}
+
 	public static function main() {
+		expect(testBinaryPatterns(), "Starts with 'H', rest: 101,108,108,111");
+		expect(testComplexBinarySegments(), "Protocol v1, size=8, data=72,101,108,108,111");
+		expect(testPinOperatorPatterns(), "Matches expected value | Both match");
+		expect(testAdvancedGuards(), "Perfect conditions");
+		expect(testExhaustivePatterns(), "True case | Active | Triple: 1,2,3");
+		expect(testNestedPatternsWithGuards(), "Adult with full permissions");
 		trace("Enhanced Pattern Matching Test Suite");
 
 		// Test all enhanced pattern matching features

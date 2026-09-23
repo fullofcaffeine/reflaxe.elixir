@@ -535,7 +535,7 @@ class TypedExprPreprocessor {
 				processBlock(exprs, expr.pos, expr.t, substitutions);
 
 			// Skip TVar assignments for infrastructure variables that aren't used elsewhere
-			case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
+			case TVar(v, init) if (init != null && isInfrastructureVar(v.name) && !requiresArrayReadBinding(init)):
 				#if debug_infrastructure_vars
 				#end
 
@@ -552,6 +552,15 @@ class TypedExprPreprocessor {
 			// For all other expressions, delegate to recursive substitution
 			default:
 				applySubstitutionsRecursively(expr, substitutions);
+		};
+	}
+
+	/** Array reads capture a value now. Keep the binding rather than repeat or lose that read. */
+	static function requiresArrayReadBinding(expr:TypedExpr):Bool {
+		return switch (expr.expr) {
+			case TArray(_, _): true;
+			case TParenthesis(inner) | TMeta(_, inner): requiresArrayReadBinding(inner);
+			default: false;
 		};
 	}
 
@@ -743,6 +752,7 @@ class TypedExprPreprocessor {
 
 					if (init != null
 						&& isInfrastructureVar(v.name)
+						&& !requiresArrayReadBinding(init)
 						&& !protectedLoopInfraVarIds.exists(v.id)
 						&& !protectedMutationInfraVarIds.exists(v.id)) {
 						#if debug_preprocessor

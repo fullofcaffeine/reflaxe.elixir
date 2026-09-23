@@ -5,6 +5,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 
 /**
 	* CaseTupleBinderUnshadowTransforms
@@ -95,7 +96,9 @@ class CaseTupleBinderUnshadowTransforms {
 			return c;
 		// If body references exactly one undefined lower-case local, prefix bind it to value
 		var declared = collectDeclared(pat2, c.body);
-		var used = collectUsed(c.body);
+		// Nested case patterns and closure parameters own their local names.
+		// Only reads free in this body can need the existing outer repair.
+		var used = VarUseAnalyzer.freeVarNames(c.body);
 		var undef:Array<String> = [];
 		for (u in used.keys())
 			if (!declared.exists(u) && allowLocal(u))
@@ -157,18 +160,6 @@ class CaseTupleBinderUnshadowTransforms {
 			}
 		});
 		return m;
-	}
-
-	static function collectUsed(ast:ElixirAST):Map<String, Bool> {
-		var names = new Map<String, Bool>();
-		reflaxe.elixir.ast.ASTUtils.walk(ast, function(n:ElixirAST) {
-			switch (n.def) {
-				case EVar(v):
-					names.set(v, true);
-				default:
-			}
-		});
-		return names;
 	}
 }
 #end

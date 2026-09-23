@@ -2316,21 +2316,8 @@ class ElixirASTPrinter {
 
 					// Check if body is complex and needs multi-line formatting
 					var bodyStr = print(clause.body, 0);
-					// Remove bare numeric sentinel lines within anonymous function bodies
-					inline function stripBareNumericLines(s:String):String {
-						if (s == null || s.length == 0)
-							return s;
-						var lines = s.split('\n');
-						var cleaned:Array<String> = [];
-						for (ln in lines) {
-							var t = StringTools.trim(ln);
-							if (t == '1' || t == '0')
-								continue;
-							cleaned.push(ln);
-						}
-						return cleaned.join('\n');
-					}
-					bodyStr = stripBareNumericLines(bodyStr);
+					// Numeric literals can be branch or function results. The printer
+					// must not remove them by their rendered spelling.
 					if (bodyStr == null || StringTools.trim(bodyStr).length == 0) {
 						bodyStr = 'nil';
 					}
@@ -2485,16 +2472,8 @@ class ElixirASTPrinter {
 			// Blocks and Grouping
 			// ================================================================
 			case EBlock(expressions):
-				// Drop standalone numeric sentinels (1/0/0.0) in statement position
-				inline function isBareNumericSentinel(e:ElixirAST):Bool {
-					return switch (e.def) {
-						case EInteger(v) if (v == 0 || v == 1): true;
-						case EFloat(f) if (f == 0.0): true;
-						case ERaw(code) if (code != null && (StringTools.trim(code) == '1' || StringTools.trim(code) == '0')): true;
-						default: false;
-					}
-				}
-				var statements = [for (e in expressions) if (!isBareNumericSentinel(e)) e];
+				// AST cleanup owns unused statements; the final expression is a value.
+				var statements = expressions;
 				if (statements.length == 0) {
 					// Empty blocks generate empty string (no code)
 					// This aligns with TypedExprPreprocessor's semantics where TBlock([])

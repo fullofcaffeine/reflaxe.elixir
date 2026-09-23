@@ -7,15 +7,26 @@ import reflaxe.elixir.ast.ElixirAST.ElixirAST as ElixirASTNode;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirASTPrinter;
+import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.transformers.BareLiteralDropTransforms;
 import reflaxe.elixir.ast.transformers.BinderTransforms;
 import reflaxe.elixir.ast.transformers.LocalAssignUnusedUnderscoreScopedTransforms;
 import reflaxe.elixir.ast.transformers.FinalUnderscoreRepairTransforms;
+import reflaxe.elixir.ast.transformers.ShadowedInitAssignPruneTransforms;
+import reflaxe.elixir.ast.transformers.IfConstSimplifyTransforms;
+import reflaxe.elixir.ast.transformers.UnderscorePromoteByUseLateTransforms;
+import reflaxe.elixir.ast.transformers.CaseTupleBinderUnshadowTransforms;
 
 /** Focused executable contracts for warning-producing upstream stdlib AST shapes. */
 @:nullSafety(Off)
 class TestStdlibWarningTransforms {
 	public static function run():Expr {
+		testNestedTupleBinderScope();
+		testBooleanAliasConditions();
+		testLateBinderScope();
+		testConstantCondBranches();
+		testInterpolationKeepsBindingStructure();
+		testFinalAssignmentValue();
 		testOverwrittenLocalBinding();
 		testUnaryOperandGrouping();
 		testKnownNilRemovesUnreachableShift();
@@ -27,6 +38,186 @@ class TestStdlibWarningTransforms {
 
 		Sys.println("Stdlib warning transform contracts passed");
 		return macro null;
+	}
+
+	/** A name bound by a nested pattern or closure is not an undefined outer local. */
+	static function testNestedTupleBinderScope():Void {
+		var value = makeAST(EVar("value"));
+		var inner = makeAST(ECase(value, [
+			{pattern: PTuple([PLiteral(makeAST(EAtom("success"))), PVar("number")]), guard: null, body: makeAST(EVar("number"))},
+			{pattern: PWildcard, guard: null, body: makeAST(EInteger(-1))}
+		]));
+		var closure = makeAST(EFn([{args: [PVar("number")], guard: null, body: makeAST(EVar("number"))}]));
+		for (body in [inner, closure]) {
+			var source = makeAST(EDefp("probe", [PVar("value")], null, makeAST(ECase(value, [
+				{pattern: PTuple([PLiteral(makeAST(EAtom("success"))), PVar("value")]), guard: null, body: body}
+			]))));
+			switch (CaseTupleBinderUnshadowTransforms.pass(source).def) {
+				case EDefp(_, _, _, {def: ECase(_, [{body: actual}])}):
+					if (ElixirASTPrinter.print(actual) != ElixirASTPrinter.print(body))
+						fail("nested binders must not create an outer repair assignment");
+				default:
+					fail("tuple binder repair changed the function shape");
+			}
+		}
+		var missing = makeAST(EDefp("probe", [PVar("value")], null, makeAST(ECase(value, [
+			{pattern: PTuple([PLiteral(makeAST(EAtom("success"))), PVar("value")]), guard: null, body: makeAST(EVar("payload"))}
+		]))));
+		switch (CaseTupleBinderUnshadowTransforms.pass(missing).def) {
+			case EDefp(_, _, _, {
+				def: ECase(_, [
+					{body: {def: EBlock([{def: EBinary(Match, {def: EVar("payload")}, {def: EVar("value")})}, _])}}
+				])
+			}):
+			default:
+				fail("the existing genuinely free payload repair must remain available");
+		}
+	}
+
+	/** Boolean facts follow sequential aliases, but unknown writes invalidate them. */
+	static function testBooleanAliasConditions():Void {
+		var source = makeAST(EMatch(PVar("source"), makeAST(EBoolean(true))));
+		var alias = makeAST(EMatch(PVar("active"), makeAST(EVar("source"))));
+		var condition = makeAST(EIf(makeAST(EUnary(Not, makeAST(EVar("active")))), makeAST(EInteger(1)), makeAST(EInteger(2))));
+		var folded = IfConstSimplifyTransforms.transformPass(makeAST(EBlock([source, alias, condition])));
+		switch (folded.def) {
+			case EBlock([_, _, {def: EInteger(2)}]):
+			default:
+				fail("a known Boolean alias must fold a negated condition");
+		}
+		var unknown = makeAST(EMatch(PVar("active"), makeAST(ECall(null, "observe", []))));
+		var changed = IfConstSimplifyTransforms.transformPass(makeAST(EBlock([source, alias, unknown, condition])));
+		switch (changed.def) {
+			case EBlock([_, _, {def: EMatch(_, {def: ECall(null, "observe", [])})}, {def: EIf(_, _, _)}]):
+			default:
+				fail("an unknown reassignment must retain its effect and invalidate the Boolean fact");
+		}
+		var closure = makeAST(EFn([{args: [PVar("active")], guard: null, body: condition}]));
+		var scoped = IfConstSimplifyTransforms.transformPass(makeAST(EBlock([source, alias, closure])));
+		switch (scoped.def) {
+			case EBlock([_, _, {def: EFn([{body: {def: EIf(_, _, _)}}])}]):
+			default:
+				fail("a closure parameter must not inherit the outer Boolean fact");
+		}
+		var conditionalWrite = makeAST(EIf(makeAST(EVar("enabled")), makeAST(EMatch(PVar("active"), makeAST(EBoolean(false)))), null));
+		var afterBranch = IfConstSimplifyTransforms.transformPass(makeAST(EBlock([source, alias, conditionalWrite, condition])));
+		switch (afterBranch.def) {
+			case EBlock([_, _, _, {def: EIf(_, _, _)}]):
+			default:
+				fail("a conditional write must invalidate facts after the branch");
+		}
+		var nested = makeAST(EIf(makeAST(EVar("enabled")), makeAST(EInteger(0)), makeAST(EBlock([alias, condition]))));
+		var nestedOutput = IfConstSimplifyTransforms.transformPass(makeAST(EBlock([source, nested])));
+		switch (nestedOutput.def) {
+			case EBlock([_, {def: EIf(_, _, {def: EBlock([_, {def: EInteger(2)}])})}]):
+			default:
+				fail("a branch must retain safe incoming facts for its sequential aliases");
+		}
+		var patternScope = makeAST(ECase(makeAST(EVar("input")), [{pattern: PVar("active"), guard: null, body: condition}]));
+		var patternOutput = IfConstSimplifyTransforms.transformPass(makeAST(EBlock([source, alias, patternScope])));
+		switch (patternOutput.def) {
+			case EBlock([_, _, {def: ECase(_, [{body: {def: EIf(_, _, _)}}])}]):
+			default:
+				fail("a case pattern must not inherit a same-named outer fact");
+		}
+	}
+
+	/** Late repairs may promote a missing outer read, never a same-named inner local. */
+	static function testLateBinderScope():Void {
+		var read = makeAST(EVar("value"));
+		for (example in [
+			{tail: read, expected: "value"},
+			{tail: makeAST(EFn([{args: [], guard: null, body: read}])), expected: "value"},
+			{tail: makeAST(EFn([{args: [PVar("value")], guard: null, body: read}])), expected: "_value"},
+			{
+				tail: makeAST(EBlock([makeAST(EMatch(PVar("value"), makeAST(EInteger(2)))), read])),
+				expected: "_value"
+			}
+		]) {
+			var input = makeAST(EBlock([
+				makeAST(EMatch(PVar("_value"), makeAST(ECall(null, "observe", [])))),
+				example.tail
+			]));
+			var output = UnderscorePromoteByUseLateTransforms.resultBinderPass(input);
+			switch (output.def) {
+				case EBlock([{def: EMatch(PVar(name), {def: ECall(null, "observe", [])})}, _]) if (name == example.expected):
+				default:
+					fail("late binder repair must distinguish captured reads from inner bindings");
+			}
+		}
+	}
+
+	/** Removing literal-false arms must retain dynamic conditions and no-match behavior. */
+	static function testConstantCondBranches():Void {
+		var impossible = {condition: makeAST(EBoolean(false)), body: makeAST(ECall(null, "unreachable", []))};
+		var fallback = {condition: makeAST(EBoolean(true)), body: makeAST(EInteger(42))};
+		var simplified = IfConstSimplifyTransforms.transformPass(makeAST(ECond([impossible, fallback])));
+		if (!Type.enumEq(simplified.def, fallback.body.def))
+			fail("literal-false cond arm must not survive a known fallback");
+		var dynamicArm = {condition: makeAST(ECall(null, "observe", [])), body: makeAST(EInteger(7))};
+		var dynamicInput = makeAST(ECond([dynamicArm, impossible, fallback]));
+		var dynamicOutput = IfConstSimplifyTransforms.transformPass(dynamicInput);
+		switch (dynamicOutput.def) {
+			case ECond([
+				{condition: {def: ECall(null, "observe", [])}, body: {def: EInteger(7)}},
+				{condition: {def: EBoolean(true)}, body: {def: EInteger(42)}}
+			]):
+			default:
+				fail("cond simplification must preserve dynamic condition order and effects: " + ElixirASTPrinter.printAST(dynamicOutput));
+		}
+		var noMatch = makeAST(ECond([impossible]));
+		if (!Type.enumEq(IfConstSimplifyTransforms.transformPass(noMatch).def, noMatch.def))
+			fail("all-false cond must preserve its no-match failure");
+	}
+
+	/** Later hygiene must still be able to see bindings inside a concatenated expression. */
+	static function testInterpolationKeepsBindingStructure():Void {
+		var binding = makeAST(EMatch(PVar("items"), makeAST(EList([]))));
+		var body = makeAST(EBlock([binding, makeAST(EVar("items"))]));
+		var closure = makeAST(EFn([{args: [], guard: null, body: body}]));
+		var rendered = makeAST(ERemoteCall(makeAST(EVar("Enum")), "join", [makeAST(ECall(closure, "", [])), makeAST(EString(","))]));
+		var input = makeAST(EBinary(StringConcat, makeAST(EString("values: ")), rendered));
+		var output = ElixirASTTransformer.alias_stringInterpolationPass(input);
+		if (!Type.enumEq(output.def, input.def))
+			fail("retaining a binding scope must preserve its complete expression and evaluation order");
+		switch (output.def) {
+			case EBinary(StringConcat, _, _):
+			default:
+				fail("interpolation serialized a binding before later hygiene could inspect it");
+		}
+		var simple = makeAST(EBinary(StringConcat, makeAST(EString("value: ")), makeAST(EVar("value"))));
+		switch (ElixirASTTransformer.alias_stringInterpolationPass(simple).def) {
+			case ERaw(_):
+			default:
+				fail("simple interpolation should retain its existing representation");
+		}
+		// A binding need not have a surrounding closure or block to require hygiene.
+		for (operand in [binding, makeAST(EBinary(Match, makeAST(EVar("items")), makeAST(EList([]))))]) {
+			var call = makeAST(ECall(null, "render", [operand]));
+			var concat = makeAST(EBinary(StringConcat, makeAST(EString("items: ")), call));
+			if (!Type.enumEq(ElixirASTTransformer.alias_stringInterpolationPass(concat).def, concat.def))
+				fail("interpolation must retain nested assignment operands");
+		}
+	}
+
+	/** A final assignment is also the block's value, including inside another assignment. */
+	static function testFinalAssignmentValue():Void {
+		for (binary in [false, true]) {
+			for (doBlock in [false, true]) {
+				var payload = makeAST(ETuple([makeAST(EAtom("success")), makeAST(EInteger(42))]));
+				var assignment = binary ? makeAST(EBinary(Match, makeAST(EVar("result")), payload)) : makeAST(EMatch(PVar("result"), payload));
+				var body = makeAST(doBlock ? EDo([assignment]) : EBlock([assignment]));
+				var input = makeAST(EMatch(PVar("value"), body));
+				var output = ShadowedInitAssignPruneTransforms.pass(input);
+				switch (output.def) {
+					case EMatch(_, {def: EBlock([last]) | EDo([last])}):
+						if (!Type.enumEq(last.def, assignment.def))
+							fail("final assignment must preserve its value and binding");
+					default:
+						fail("pruning erased a block's final assignment value");
+				}
+			}
+		}
 	}
 
 	/** Later reads use the replacement value, but RHS effects and earlier reads survive. */
@@ -41,6 +232,13 @@ class TestStdlibWarningTransforms {
 			var initial = binary ? makeAST(EBinary(Match, value, effect)) : makeAST(EMatch(PVar("value"), effect));
 			for (example in [
 				{rest: [replace, value], expectedName: "_value"},
+				{
+					rest: [
+						makeAST(EIf(makeAST(EVar("enabled")), makeAST(EBlock([replace, value])), makeAST(EInteger(0))))
+					],
+					expectedName: "_value"
+				},
+				{rest: [makeAST(ERaw("consume(value)"))], expectedName: "value"},
 				{rest: [read, replace, value], expectedName: "value"},
 				{
 					rest: [
@@ -53,7 +251,7 @@ class TestStdlibWarningTransforms {
 				{rest: [capture, replace, makeAST(ETuple([makeAST(EVar("saved")), value]))], expectedName: "value"}
 			]) {
 				var input = makeAST(EDef("probe", [PVar("enabled")], null, makeAST(EBlock([initial].concat(example.rest)))));
-				var output = FinalUnderscoreRepairTransforms.transformPass(LocalAssignUnusedUnderscoreScopedTransforms.pass(input));
+				var output = UnderscorePromoteByUseLateTransforms.resultBinderPass(FinalUnderscoreRepairTransforms.transformPass(LocalAssignUnusedUnderscoreScopedTransforms.pass(input)));
 				switch (output.def) {
 					case EDef(_, _, _, {def: EBlock(statements)}):
 						switch (statements[0].def) {

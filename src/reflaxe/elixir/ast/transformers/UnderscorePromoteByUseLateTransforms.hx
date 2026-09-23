@@ -5,6 +5,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ASTUtils;
+import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 
 /**
 	* UnderscorePromoteByUseLateTransforms
@@ -223,7 +224,9 @@ class UnderscorePromoteByUseLateTransforms {
 				case EBinary(Match, _, rhs): rhs;
 				default: statement;
 			};
-			if (astUsesExactVar(valueExpression, name))
+			// A same-named branch local or closure argument does not read this
+			// result. Only a free reference can justify restoring its binder.
+			if (VarUseAnalyzer.freeVarNames(valueExpression).exists(name))
 				return true;
 
 			var rebinds = switch (statement.def) {

@@ -195,7 +195,27 @@ class Main {
 		};
 	}
 
+	/** Runtime expectations remain active when trace output is disabled. */
+	static function expect(actual:String, expected:String):Void {
+		if (actual != expected)
+			throw 'Expected "$expected", got "$actual"';
+	}
+
 	public static function main() {
+		expect(matchSimpleValue(-5), "negative");
+		expect(matchSimpleValue(150), "large");
+		expect(classifyString("x"), "single char");
+		expect(processArray([]), "empty");
+		expect(processArray([7]), "single: 7");
+		expect(processArray([7, 8]), "pair: 7,8");
+		expect(processArray([7, 8, 9]), "triple: 7,8,9");
+		expect(processArray([1, 2, 3, 4]), "quad: 1,2,3,4");
+		expect(processArray([1, 2, 3, 4, 5]), "many: 5 elements");
+		expect(matchMatrix([]), "empty matrix");
+		expect(matchMatrix([[7]]), "single element: 7");
+		expect(matchMatrix([[1, 2], [3, 4]]), "2x2 matrix: [[1,2],[3,4]]");
+		expect(matchMatrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), "3x3 matrix");
+		expect(matchMatrix([[1, 2]]), "non-square matrix");
 		trace("Advanced pattern matching test");
 
 		// Test simple patterns

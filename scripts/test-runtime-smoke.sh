@@ -25,6 +25,13 @@ TEST_DIRS=(
   "test/snapshot/stdlib/sys_io_process/basic"
   "test/runtime/loop_control_accumulators"
   "test/runtime/switch_case_body"
+  "test/runtime/array_pattern_bindings"
+  "test/runtime/dynamic_length"
+  "test/runtime/inline_optional_default"
+  "test/runtime/inline_abstract_nested_result"
+  "test/snapshot/core/advanced_patterns"
+  "test/snapshot/core/enhanced_pattern_matching"
+  "test/snapshot/core/enhanced_patterns"
   "test/runtime/nested_dynamic_comprehensions"
   "test/runtime/fast_boot/string_tools_rebinding"
   "test/snapshot/regression/non_void_tail_values"
@@ -46,8 +53,10 @@ run_one() (
   fi
 
   echo "[runtime-smoke] → compile: $test_dir"
+  # Keep trace arguments: Haxe's no-traces option removes their evaluation,
+  # including original fixture calls that runtime acceptance must exercise.
   if (cd "$abs_test_dir" && "$WITH_TIMEOUT" "$COMPILE_TIMEOUT_SECS" \
-    "$HAXE_BIN" --no-traces -D no_traces -D elixir_output=out -D reflaxe.dont_output_metadata_id compile.hxml); then
+    "$HAXE_BIN" -D elixir_output=out -D reflaxe.dont_output_metadata_id compile.hxml); then
     :
   else
     local compile_status=$?

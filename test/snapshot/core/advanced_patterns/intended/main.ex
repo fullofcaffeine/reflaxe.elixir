@@ -4,7 +4,7 @@ defmodule Main do
       0 -> "zero"
       1 -> "one"
       2 -> "two"
-      n ->
+      _ ->
         n = value
         if (n < 0) do
           "negative"
@@ -15,25 +15,35 @@ defmodule Main do
     end)
   end
   def process_array(arr) do
-    (case arr do
-      [] -> "empty"
-      [_head | _tail] ->
-        x = Enum.at(arr, 0)
+    (case length(arr) do
+      0 -> "empty"
+      1 ->
+        array_read_node_0 = Enum.at(arr, 0)
+        x = array_read_node_0
         "single: #{Reflaxe.Elixir.HaxeFloat.to_string(x)}"
       2 ->
-        x = Enum.at(arr, 0)
-        y = Enum.at(arr, 1)
+        array_read_node_1 = Enum.at(arr, 0)
+        array_read_node_2 = Enum.at(arr, 1)
+        x = array_read_node_1
+        y = array_read_node_2
         "pair: #{Reflaxe.Elixir.HaxeFloat.to_string(x)},#{Reflaxe.Elixir.HaxeFloat.to_string(y)}"
       3 ->
-        x = Enum.at(arr, 0)
-        y = Enum.at(arr, 1)
-        z = Enum.at(arr, 2)
+        array_read_node_3 = Enum.at(arr, 0)
+        array_read_node_4 = Enum.at(arr, 1)
+        array_read_node_5 = Enum.at(arr, 2)
+        x = array_read_node_3
+        y = array_read_node_4
+        z = array_read_node_5
         "triple: #{Reflaxe.Elixir.HaxeFloat.to_string(x)},#{Reflaxe.Elixir.HaxeFloat.to_string(y)},#{Reflaxe.Elixir.HaxeFloat.to_string(z)}"
       4 ->
-        first = Enum.at(arr, 0)
-        second = Enum.at(arr, 1)
-        third = Enum.at(arr, 2)
-        fourth = Enum.at(arr, 3)
+        array_read_node_6 = Enum.at(arr, 0)
+        array_read_node_7 = Enum.at(arr, 1)
+        array_read_node_8 = Enum.at(arr, 2)
+        array_read_node_9 = Enum.at(arr, 3)
+        first = array_read_node_6
+        second = array_read_node_7
+        third = array_read_node_8
+        fourth = array_read_node_9
         "quad: #{Reflaxe.Elixir.HaxeFloat.to_string(first)},#{Reflaxe.Elixir.HaxeFloat.to_string(second)},#{Reflaxe.Elixir.HaxeFloat.to_string(third)},#{Reflaxe.Elixir.HaxeFloat.to_string(fourth)}"
       _ ->
         a = arr
@@ -49,7 +59,7 @@ defmodule Main do
       "" -> "empty"
       "goodbye" -> "farewell"
       "hello" -> "greeting"
-      s ->
+      _ ->
         s = str
         if (String.length(s) == 1) do
           "single char"
@@ -115,62 +125,101 @@ defmodule Main do
     end
   end
   def match_matrix(matrix) do
-    (case matrix do
-      [] -> "empty matrix"
-      [head | _tail] when length(head) == 1 ->
-        x = Enum.at(head, 0)
-        "single element: #{Reflaxe.Elixir.HaxeFloat.to_string(x)}"
-      [head | _tail] when length(m) == length(head) -> "square matrix #{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}x#{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}"
-      [_head | _tail] -> "non-square matrix"
+    (case length(matrix) do
+      0 -> "empty matrix"
+      1 ->
+        array_read_node_10 = Enum.at(matrix, 0)
+        if (length(array_read_node_10) == 1) do
+          array_read_node_11 = Enum.at(array_read_node_10, 0)
+          x = array_read_node_11
+          "single element: #{Reflaxe.Elixir.HaxeFloat.to_string(x)}"
+        else
+          m = matrix
+          if (length(m) == length(Enum.at(m, 0))) do
+            "square matrix #{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}x#{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}"
+          else
+            "non-square matrix"
+          end
+        end
       2 ->
-        cond do
-          length(Enum.at(matrix, 1)) == 2 ->
-            c = Enum.at(g, 0)
-            d = Enum.at(g, 1)
-            b = Enum.at(g, 1)
-            a = Enum.at(g, 0)
-            "2x2 matrix: [[" <> Reflaxe.Elixir.HaxeFloat.to_string(a) <> "," <> Reflaxe.Elixir.HaxeFloat.to_string(b) <> "],[" <> Reflaxe.Elixir.HaxeFloat.to_string(c) <> "," <> Reflaxe.Elixir.HaxeFloat.to_string(d) <> "]]"
-          true ->
+        array_read_node_12 = Enum.at(matrix, 0)
+        array_read_node_13 = Enum.at(matrix, 1)
+        if (length(array_read_node_12) == 2) do
+          array_read_node_14 = Enum.at(array_read_node_12, 0)
+          array_read_node_15 = Enum.at(array_read_node_12, 1)
+          if (length(array_read_node_13) == 2) do
+            array_read_node_16 = Enum.at(array_read_node_13, 0)
+            array_read_node_17 = Enum.at(array_read_node_13, 1)
+            c = array_read_node_16
+            d = array_read_node_17
+            b = array_read_node_15
+            a = array_read_node_14
+            "2x2 matrix: [[#{Reflaxe.Elixir.HaxeFloat.to_string(a)},#{Reflaxe.Elixir.HaxeFloat.to_string(b)}],[#{Reflaxe.Elixir.HaxeFloat.to_string(c)},#{Reflaxe.Elixir.HaxeFloat.to_string(d)}]]"
+          else
             m = matrix
             if (length(m) == length(Enum.at(m, 0))) do
-              "square matrix " <> Reflaxe.Elixir.HaxeFloat.to_string(length(m)) <> "x" <> Reflaxe.Elixir.HaxeFloat.to_string(length(m))
+              "square matrix #{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}x#{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}"
             else
               "non-square matrix"
             end
+          end
+        else
+          m = matrix
+          if (length(m) == length(Enum.at(m, 0))) do
+            "square matrix #{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}x#{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}"
+          else
+            "non-square matrix"
+          end
         end
-      2 when length(m) == length(Enum.at(m, 0)) -> "square matrix #{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}x#{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}"
-      2 -> "non-square matrix"
       3 ->
-        cond do
-          length(Enum.at(matrix, 1)) == 3 ->
-            if (length(Enum.at(matrix, 2)) == 3) do
-              _h = Enum.at(g, 1)
-              _i = Enum.at(g, 2)
-              _a = Enum.at(g, 0)
-              _b = Enum.at(g, 1)
-              _c = Enum.at(g, 2)
-              _f = Enum.at(g, 2)
-              _e = Enum.at(g, 1)
-              _d = Enum.at(g, 0)
+        array_read_node_18 = Enum.at(matrix, 0)
+        array_read_node_19 = Enum.at(matrix, 1)
+        array_read_node_20 = Enum.at(matrix, 2)
+        if (length(array_read_node_18) == 3) do
+          array_read_node_21 = Enum.at(array_read_node_18, 0)
+          array_read_node_22 = Enum.at(array_read_node_18, 1)
+          array_read_node_23 = Enum.at(array_read_node_18, 2)
+          if (length(array_read_node_19) == 3) do
+            array_read_node_24 = Enum.at(array_read_node_19, 0)
+            array_read_node_25 = Enum.at(array_read_node_19, 1)
+            array_read_node_26 = Enum.at(array_read_node_19, 2)
+            if (length(array_read_node_20) == 3) do
+              _array_read_node_27 = Enum.at(array_read_node_20, 0)
+              array_read_node_28 = Enum.at(array_read_node_20, 1)
+              array_read_node_29 = Enum.at(array_read_node_20, 2)
+              _h = array_read_node_28
+              _i = array_read_node_29
+              _a = array_read_node_21
+              _b = array_read_node_22
+              _c = array_read_node_23
+              _f = array_read_node_26
+              _e = array_read_node_25
+              _d = array_read_node_24
               "3x3 matrix"
             else
               m = matrix
               if (length(m) == length(Enum.at(m, 0))) do
-                "square matrix " <> Reflaxe.Elixir.HaxeFloat.to_string(length(m)) <> "x" <> Reflaxe.Elixir.HaxeFloat.to_string(length(m))
+                "square matrix #{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}x#{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}"
               else
                 "non-square matrix"
               end
             end
-          true ->
+          else
             m = matrix
             if (length(m) == length(Enum.at(m, 0))) do
-              "square matrix " <> Reflaxe.Elixir.HaxeFloat.to_string(length(m)) <> "x" <> Reflaxe.Elixir.HaxeFloat.to_string(length(m))
+              "square matrix #{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}x#{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}"
             else
               "non-square matrix"
             end
+          end
+        else
+          m = matrix
+          if (length(m) == length(Enum.at(m, 0))) do
+            "square matrix #{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}x#{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}"
+          else
+            "non-square matrix"
+          end
         end
-      3 when length(m) == length(Enum.at(m, 0)) -> "square matrix #{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}x#{Reflaxe.Elixir.HaxeFloat.to_string(length(m))}"
-      3 -> "non-square matrix"
       _ ->
         m = matrix
         if (length(m) == length(Enum.at(m, 0))) do
@@ -190,16 +239,42 @@ defmodule Main do
         "child"
       else
         (case has_permission do
-          false when age >= 13 and age < 18 -> "teen without permission"
-          false when age >= 18 and age < 21 -> "young adult"
-          false when age >= 21 and age < 65 -> "adult"
-          false when age >= 65 -> "senior"
-          false -> "unknown"
-          true when age >= 13 and age < 18 -> "teen with permission"
-          true when age >= 18 and age < 21 -> "young adult"
-          true when age >= 21 and age < 65 -> "adult"
-          true when age >= 65 -> "senior"
-          true -> "unknown"
+          false ->
+            a = age
+            if (a >= 13 and a < 18) do
+              "teen without permission"
+            else
+              a = age
+              if (a >= 18 and a < 21) do
+                "young adult"
+              else
+                a = age
+                if (a >= 21 and a < 65) do
+                  "adult"
+                else
+                  a = age
+                  if (a >= 65), do: "senior", else: "unknown"
+                end
+              end
+            end
+          true ->
+            a = age
+            if (a >= 13 and a < 18) do
+              "teen with permission"
+            else
+              a = age
+              if (a >= 18 and a < 21) do
+                "young adult"
+              else
+                a = age
+                if (a >= 21 and a < 65) do
+                  "adult"
+                else
+                  a = age
+                  if (a >= 65), do: "senior", else: "unknown"
+                end
+              end
+            end
           _ ->
             a = age
             if (a >= 18 and a < 21) do
@@ -236,7 +311,19 @@ defmodule Main do
           else
             v = value
             cond do
-              Std.is(v, Array) -> "array of length " <> Reflaxe.Elixir.HaxeFloat.to_string(length(v))
+              Std.is(v, Array) ->
+                "array of length " <> Reflaxe.Elixir.HaxeFloat.to_string((fn
+                  dyn_obj when is_binary(dyn_obj) ->
+                    String.length(dyn_obj)
+                  dyn_obj when is_list(dyn_obj) ->
+                    length(dyn_obj)
+                  dyn_obj ->
+                    (case Map.fetch(dyn_obj, "length") do
+                      {:ok, dyn_value} -> dyn_value
+                      _ ->
+                        Map.get(dyn_obj, :length)
+                    end)
+                end).(v))
               Reflaxe.Elixir.HaxeFloat.eq(value, nil) -> "null value"
               true -> "unknown type"
             end
@@ -290,7 +377,26 @@ defmodule Main do
       _ -> "unknown status"
     end)
   end
+  defp expect(actual, expected) do
+    if (actual != expected) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Expected \"" <> expected <> "\", got \"" <> actual <> "\""]
+    end
+  end
   def main() do
+    expect(match_simple_value(-5), "negative")
+    expect(match_simple_value(150), "large")
+    expect(classify_string("x"), "single char")
+    expect(process_array([]), "empty")
+    expect(process_array([7]), "single: 7")
+    expect(process_array([7, 8]), "pair: 7,8")
+    expect(process_array([7, 8, 9]), "triple: 7,8,9")
+    expect(process_array([1, 2, 3, 4]), "quad: 1,2,3,4")
+    expect(process_array([1, 2, 3, 4, 5]), "many: 5 elements")
+    expect(match_matrix([]), "empty matrix")
+    expect(match_matrix([[7]]), "single element: 7")
+    expect(match_matrix([[1, 2], [3, 4]]), "2x2 matrix: [[1,2],[3,4]]")
+    expect(match_matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), "3x3 matrix")
+    expect(match_matrix([[1, 2]]), "non-square matrix")
     nil
   end
 end
