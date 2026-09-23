@@ -32,7 +32,7 @@
 		},
 		{
 			"path": "haxe/io/bytes.ex",
-			"sha256": "ce984e7813867ba305566225b115a2cf09b9ad79a04d804a1037d9c51f659992"
+			"sha256": "20622141132d6283a50eed0260dd66c5a1084e4a26b9501e6b8ea2a4e244ef7d"
 		},
 		{
 			"path": "haxe/iterators/array_iterator.ex",
@@ -44,7 +44,7 @@
 		},
 		{
 			"path": "main.ex",
-			"sha256": "829a722ced13b5cbde602c3f30e3d16afd592d369bacaebec013ec9a72636467"
+			"sha256": "4466c77841ac96ce2fb29aabe9d231dca423d44b6018d663e1db2fa00e594cb8"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.ex",
@@ -67,5 +67,5 @@
 			"sha256": "f2a82328598a111ca241f6735f3d419325b46b8e66330358fb1afc01920658dd"
 		}
 	],
-	"generation": "a4cc4165f4de2a83cefcf86a6d86de1dc2c4adee1bb1ff9f24690b13563a3896"
+	"generation": "6c1e402f62364308efe6ddcfddea1b13aed41158d927e85b6534f8c803397990"
 }

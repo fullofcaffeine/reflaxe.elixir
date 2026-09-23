@@ -17,8 +17,8 @@ defmodule SslSocketOutput do
       SslSocketState.send_binary(
         struct.socket_ref,
         (fn ->
-           reflaxe_dispatch_receiver = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :sub, [buf, pos, len])
-           apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get_data, [reflaxe_dispatch_receiver])
+           reflaxe_dispatch_receiver_node_0 = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :sub, [buf, pos, len])
+           apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :get_data, [reflaxe_dispatch_receiver_node_0])
          end).()
       )
       len

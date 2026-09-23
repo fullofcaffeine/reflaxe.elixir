@@ -49,12 +49,12 @@ defmodule Bytes do
     if (pos < 0 or pos + 4 > struct.length) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
-    Reflaxe.Elixir.HaxeFloat.decode32((fn -> :binary.part((fn -> data = Process.get(struct.dict_key)
+    Reflaxe.Elixir.HaxeFloat.decode32((:binary.part((fn -> data = Process.get(struct.dict_key)
     if (Reflaxe.Elixir.HaxeFloat.eq(data, nil)) do
       data = struct.b
       Process.put(struct.dict_key, data)
     end
-    data end).(), pos, 4) end).())
+    data end).(), pos, 4)))
   end
   def set_float(struct, pos, v) do
     if (pos < 0 or pos + 4 > struct.length) do

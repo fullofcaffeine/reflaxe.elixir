@@ -10,8 +10,8 @@ defmodule Main do
     encoded_hex = apply(Map.get(hex, :__reflaxe_class__) || Map.get(hex, :__struct__), :encode_bytes, [hex, binary])
     assert_that(apply(Map.get(encoded_hex, :__reflaxe_class__) || Map.get(encoded_hex, :__struct__), :to_string, [encoded_hex]) == "00ff10", "hex encode failed")
     assert_that((fn ->
-      reflaxe_dispatch_receiver = apply(Map.get(hex, :__reflaxe_class__) || Map.get(hex, :__struct__), :decode_bytes, [hex, Bytes.of_string("00ff10", {:utf8})])
-      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_hex, [reflaxe_dispatch_receiver])
+      reflaxe_dispatch_receiver_node_0 = apply(Map.get(hex, :__reflaxe_class__) || Map.get(hex, :__struct__), :decode_bytes, [hex, Bytes.of_string("00ff10", {:utf8})])
+      apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :to_hex, [reflaxe_dispatch_receiver_node_0])
     end).() == "00ff10", "hex decode failed")
     assert_that(Haxe.Crypto.BaseCode.encode("A", "01") == "01000001", "binary string encode failed")
     assert_that(Haxe.Crypto.BaseCode.decode("01000001", "01") == "A", "binary string decode failed")
@@ -25,8 +25,8 @@ defmodule Main do
           %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
           _ -> haxe_exception
         end), haxe_exception} do
-          {error, _} ->
-            assert_that(Reflaxe.Elixir.HaxeFloat.to_string(error) == "BaseCode : base length must be a power of two.", "invalid base length error mismatch")
+          {error_2, _} ->
+            assert_that(Reflaxe.Elixir.HaxeFloat.to_string(error_2) == "BaseCode : base length must be a power of two.", "invalid base length error mismatch")
         end)
     end
     try do
@@ -39,8 +39,8 @@ defmodule Main do
           %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
           _ -> haxe_exception
         end), haxe_exception} do
-          {error, _} ->
-            assert_that(Reflaxe.Elixir.HaxeFloat.to_string(error) == "BaseCode : invalid encoded char", "invalid encoded character error mismatch")
+          {error_2, _} ->
+            assert_that(Reflaxe.Elixir.HaxeFloat.to_string(error_2) == "BaseCode : invalid encoded char", "invalid encoded character error mismatch")
         end)
     end
   end
