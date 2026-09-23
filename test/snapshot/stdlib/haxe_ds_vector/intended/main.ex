@@ -24,8 +24,8 @@ defmodule Main do
     arr = Vector_Impl_.to_array(dest)
     apply(Map.get(dest, :__reflaxe_class__) || Map.get(dest, :__struct__), :set, [dest, 1, 8])
     assert_that(Enum.at(arr, 1) == 7, "toArray should preserve a snapshot")
-    alias = dest
-    apply(Map.get(alias, :__reflaxe_class__) || Map.get(alias, :__struct__), :set, [alias, 2, 42])
+    alias_ = dest
+    apply(Map.get(alias_, :__reflaxe_class__) || Map.get(alias_, :__struct__), :set, [alias_, 2, 42])
     assert_that(apply(Map.get(dest, :__reflaxe_class__) || Map.get(dest, :__struct__), :get, [dest, 2]) == 42, "fromData should share backing state")
     sum = 0
     value = Vector_Impl_.iterator(dest)
