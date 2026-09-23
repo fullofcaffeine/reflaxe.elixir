@@ -67,8 +67,6 @@ class PassScopeManifest {
 			"WebParamFinalFix",
 			"ControllerLocalUnusedUnderscore_Final",
 			"ControllerJsonFinalize_AbsoluteFinal",
-			"WebDropAliasAssign_Ultimate",
-			"WebAliasAssignUnderscore_Ultimate",
 			"WebJsonSecondArgRewrite_Ultimate",
 			"ControllerJsonSecondArgUndefinedRewrite_Ultimate",
 			"ControllerLocalAssignUnusedUnderscore_Final"

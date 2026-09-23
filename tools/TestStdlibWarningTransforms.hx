@@ -21,6 +21,7 @@ import reflaxe.elixir.ast.transformers.CaseTupleBinderUnshadowTransforms;
 @:nullSafety(Off)
 class TestStdlibWarningTransforms {
 	public static function run():Expr {
+		testUsedAliasBinding();
 		testNestedTupleBinderScope();
 		testBooleanAliasConditions();
 		testLateBinderScope();
@@ -38,6 +39,29 @@ class TestStdlibWarningTransforms {
 
 		Sys.println("Stdlib warning transform contracts passed");
 		return macro null;
+	}
+
+	/** A used local stays bound even when its spelling resembles a web helper. */
+	static function testUsedAliasBinding():Void {
+		for (name in ["data", "json", "conn"]) {
+			var binding = makeAST(EMatch(PVar(name), makeAST(ECall(null, "observe", []))));
+			var body = makeAST(EBlock([binding, makeAST(EVar(name))]));
+			var source = makeAST(EDefmodule("SampleWeb.Probe", makeAST(EDef("probe", [], null, body))));
+			if (ElixirASTPrinter.print(LocalAssignUnusedUnderscoreScopedTransforms.pass(source)) != ElixirASTPrinter.print(source))
+				fail("used alias binding must retain its value and declaration: " + name);
+			// Native extern bodies retain their references as opaque target code.
+			// The compiler must not rename a binder without updating those reads.
+			for (nested in [false, true]) {
+				var nativeBody = makeAST(EBlock([binding, makeAST(ERaw('consume(' + name + ')'))]));
+				var body = nested ? makeAST(EIf(makeAST(EVar("enabled")), nativeBody, makeAST(EInteger(0)))) : nativeBody;
+				var nativeSource = makeAST(EDefmodule("SampleWeb.Probe", makeAST(EDef("probe", nested ? [PVar("enabled")] : [], null, body))));
+				nativeSource.metadata.isPhoenixWeb = true;
+				var emitted = ElixirASTPrinter.print(ElixirASTTransformer.transform(nativeSource));
+				var lines = emitted.split("\n").map(StringTools.trim);
+				if (!lines.contains(name + ' = observe()') || !lines.contains('consume(' + name + ')'))
+					fail("native extern reads must keep their declared local through the full pipeline: " + name + "\n" + emitted);
+			}
+		}
 	}
 
 	/** A name bound by a nested pattern or closure is not an undefined outer local. */

@@ -3125,26 +3125,8 @@ class ElixirASTPassRegistry {
 			]
 		});
 
-		// Ultimate sweep: drop json/data/conn alias assigns in all Web.* modules
-		passes.push({
-			name: "WebDropAliasAssign_Ultimate",
-			description: "Ultimate: drop alias assigns to json/data/conn in Web.* modules",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.WebDropAliasAssignUltimateTransforms.pass,
-			runAfter: [
-				"ControllerJsonFinalize_AbsoluteFinal",
-				"ControllerAliasAssignDrop_Replay_Ultimate"
-			]
-		});
-
-		// As a last resort, underscore remaining alias assigns (json/data/conn) to silence WAE
-		passes.push({
-			name: "WebAliasAssignUnderscore_Ultimate",
-			description: "Ultimate: rewrite json/data/conn alias binders to underscored variants in Web.*",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.WebAliasAssignUnderscoreTransforms.pass,
-			runAfter: ["WebDropAliasAssign_Ultimate"]
-		});
+		// Used locals must survive regardless of their spelling or module name.
+		// The existing scope-aware unused-binding analysis owns warning cleanup.
 		// ABSOLUTE-LAST hygiene: remove lingering ok_value/_g in any function/EFn bodies
 		passes.push({
 			name: "OkValueGlobalCleanup_AbsoluteLast",
@@ -3152,7 +3134,8 @@ class ElixirASTPassRegistry {
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.OkValueGlobalCleanupTransforms.pass,
 			runAfter: [
-				"WebAliasAssignUnderscore_Ultimate",
+				"ControllerJsonFinalize_AbsoluteFinal",
+				"ControllerAliasAssignDrop_Replay_Ultimate",
 				"ControllerJsonSecondArgUndefinedRewrite_Ultimate",
 				"CaseBinderRefNormalizeByFlattenUnderscores_Final",
 				"FunctionArgMultiStmtIIFE_Final",
@@ -3170,8 +3153,7 @@ class ElixirASTPassRegistry {
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.WebJsonSecondArgRewriteFinalTransforms.pass,
 			runAfter: [
-				"WebDropAliasAssign_Ultimate",
-				"WebAliasAssignUnderscore_Ultimate",
+				"ControllerAliasAssignDrop_Replay_Ultimate",
 				"ControllerJsonFinalize_AbsoluteFinal"
 			]
 		});
