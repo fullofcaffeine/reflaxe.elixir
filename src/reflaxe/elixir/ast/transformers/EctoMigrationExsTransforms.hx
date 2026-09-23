@@ -657,48 +657,24 @@ class EctoMigrationExsTransforms {
 				//   apply(runtime_module, :method, [reflaxe_dispatch_receiver | args])
 				//
 				// For migration parsing we want to treat this as a single call step whose builder is <receiver_expr>.
-				case EBlock(expressions) if (expressions.length >= 2):
-					var lastExpr = expressions[expressions.length - 1];
-					var receiverName:Null<String> = null;
-					var receiverValue:Null<ElixirAST> = null;
-					for (prefixExpr in expressions.slice(0, expressions.length - 1)) {
-						switch (prefixExpr.def) {
-							case EMatch(PVar(name), value):
-								receiverName = name;
-								receiverValue = value;
-							default:
-						}
-					}
-					if (receiverName == null || receiverValue == null)
-						break;
+				case EBlock(expressions) | EDo(expressions):
+					// A receiver wrapper has exactly one binding and one returned call.
+					// Never ignore extra statements: they can carry independent effects.
+					if (expressions.length != 2)
+						return null;
+					var assignment = extractAssignment(expressions[0]);
+					if (assignment == null || assignment.name == "_")
+						return null;
 
-					switch (unwrapStatement(lastExpr).def) {
-						case ECall(_target2, "apply", applyArgs2) if (applyArgs2.length == 3):
-							var methodName2:Null<String> = switch (unwrap(applyArgs2[1]).def) {
-								case EAtom(name):
-									name;
-								default:
-									null;
-							};
-							var argElements2:Null<Array<ElixirAST>> = switch (unwrap(applyArgs2[2]).def) {
-								case EList(elements):
-									elements;
-								default:
-									null;
-							};
-							if (methodName2 == null || argElements2 == null || argElements2.length == 0)
-								break;
-							var receiverRef = unwrapStatement(argElements2[0]);
-							switch (receiverRef.def) {
-								case EVar(name) if (name == receiverName):
-									var stepArgs2 = (argElements2.length > 1) ? argElements2.slice(1) : [];
-									reversedSteps.push({name: canonicalizeCallName(methodName2), args: stepArgs2});
-									current = unwrapStatement(receiverValue);
-								default:
-									break;
-							}
+					var step = extractCallStep(expressions[1]);
+					if (step == null)
+						return null;
+					switch (unwrapStatement(step.receiver).def) {
+						case EVar(name) if (name == assignment.name):
+							reversedSteps.push(step.step);
+							current = unwrapStatement(assignment.value);
 						default:
-							break;
+							return null;
 					}
 
 				case ECall(_target, funcName, args):
@@ -745,6 +721,10 @@ class EctoMigrationExsTransforms {
 				unwrapStatement(value);
 			case EBinary(Match, _left, value):
 				unwrapStatement(value);
+			case ECall({def: EFn([{args: [], guard: null, body: body}])}, "", []):
+				// An immediately invoked zero-argument function is an expression
+				// wrapper. Its body still has to satisfy the exact builder grammar.
+				unwrapStatement(body);
 			default:
 				current;
 		};
@@ -768,8 +748,9 @@ class EctoMigrationExsTransforms {
 	 *
 	 * HOW
 	 * - Requires `create_table` or `alter_table` to establish a named receiver.
-	 * - Accepts bare calls, explicit receiver rebindings, and intentional wildcard
-	 *   matches only when each next call consumes that exact receiver.
+	 * - Accepts bare calls, receiver rebindings (including fresh names), and intentional
+	 *   wildcard matches only when each next call consumes the preceding receiver.
+	 * - The initial assignment may contain an already nested builder chain.
 	 *
 	 * EXAMPLES
 	 * - `receiver = create_table(...); add_column(receiver, ...)` becomes one chain.
@@ -786,17 +767,16 @@ class EctoMigrationExsTransforms {
 		if (firstAssign.name == "_")
 			return null;
 
-		var firstCallExpr = unwrapCallExpr(firstAssign.value);
-		var firstStep = extractCallStep(firstCallExpr);
-		if (firstStep == null)
+		var initialChain = extractCallChain(firstAssign.value);
+		if (initialChain == null)
 			return null;
 
 		// Only treat this as a sequential chain when the first call starts a migration builder.
-		if (firstStep.step.name != "create_table" && firstStep.step.name != "alter_table")
+		if (initialChain.calls[0].name != "create_table" && initialChain.calls[0].name != "alter_table")
 			return null;
 
 		var receiverVarName = firstAssign.name;
-		var calls:Array<MigrationCallStep> = [firstStep.step];
+		var calls = initialChain.calls.copy();
 
 		var i = startIndex + 1;
 		while (i < statements.length) {
@@ -807,9 +787,6 @@ class EctoMigrationExsTransforms {
 			}
 
 			var assignment = extractAssignment(statement);
-			if (assignment != null && assignment.name != "_" && assignment.name != receiverVarName)
-				break;
-
 			var callExpr = unwrapCallExpr(assignment != null ? assignment.value : statement);
 			var step = extractCallStep(callExpr);
 			if (step == null)
@@ -819,13 +796,15 @@ class EctoMigrationExsTransforms {
 			switch (unwrapStatement(step.receiver).def) {
 				case EVar(name) if (name == receiverVarName):
 					calls.push(step.step);
+					if (assignment != null && assignment.name != "_")
+						receiverVarName = assignment.name;
 					i++;
 				default:
-					return {chain: {base: firstStep.receiver, calls: calls}, nextIndex: i};
+					return {chain: {base: initialChain.base, calls: calls}, nextIndex: i};
 			}
 		}
 
-		return {chain: {base: firstStep.receiver, calls: calls}, nextIndex: i};
+		return {chain: {base: initialChain.base, calls: calls}, nextIndex: i};
 	}
 
 	static function extractAssignment(statement:ElixirAST):Null<MigrationAssignmentExtract> {
@@ -955,39 +934,16 @@ class EctoMigrationExsTransforms {
 				switch (rhs.def) {
 					case EBlock(expressions2) | EDo(expressions2) if (expressions2.length > 0):
 						var out:Array<ElixirAST> = [];
-						var firstExpr = expressions2[0];
-
-						// If the first expression already binds the same variable, the outer
-						// match is redundant and would produce `x = x = ...` when flattened.
-						// Drop the outer match and expand the block directly.
-						var droppedOuter = false;
-						switch (pattern) {
-							case PVar(name):
-								switch (unwrap(firstExpr).def) {
-									case EMatch(PVar(bound), _) if (bound == name):
-										droppedOuter = true;
-									case EBinary(Match, left, _) if (switch (unwrap(left).def) {
-											case EVar(n): n == name;
-											default: false;
-										}):
-										droppedOuter = true;
-									default:
-								}
-							default:
-						}
-
-						if (droppedOuter) {
-							for (expandedFirst in expandStatement(firstExpr))
-								out.push(expandedFirst);
-						} else {
-							var first = makeASTWithMeta(EMatch(pattern, firstExpr), statement.metadata, statement.pos);
-							for (expandedFirst in expandStatement(first))
-								out.push(expandedFirst);
-						}
-						for (j in 1...expressions2.length) {
+						// A block's result is its last expression, never its first.
+						// Keep each prefix binding separate so fresh receiver names retain
+						// the value returned by their own step in the fluent chain.
+						for (j in 0...expressions2.length - 1) {
 							for (expandedRest in expandStatement(expressions2[j]))
 								out.push(expandedRest);
 						}
+						var last = makeASTWithMeta(EMatch(pattern, expressions2[expressions2.length - 1]), statement.metadata, statement.pos);
+						for (expandedLast in expandStatement(last))
+							out.push(expandedLast);
 						out;
 					default:
 						[statement];
