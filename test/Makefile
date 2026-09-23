@@ -290,8 +290,9 @@ update-intended:
 			exit 1; \
 		fi; \
 		echo "Compiling $(TEST) to generate new output (timeout $(UPDATE_TIMEOUT))..."; \
+		compile_log="$(abspath $(TEST_RESULTS_PREFIX))-update-$(subst /,__,$(TEST)).log"; \
 		rm -rf $$testdir/$(OUTPUT_DIR); \
-		if (cd $$testdir && $(WITH_TIMEOUT) $(UPDATE_TIMEOUT_SECS) haxe --no-traces -D no_traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml) > /dev/null 2>&1; then \
+		if (cd $$testdir && $(WITH_TIMEOUT) $(UPDATE_TIMEOUT_SECS) haxe --no-traces -D no_traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml) > "$$compile_log" 2>&1; then \
 		if [ -d "$$testdir/$(OUTPUT_DIR)" ]; then \
 			rm -rf $$testdir/intended && \
 			cp -r $$testdir/$(OUTPUT_DIR) $$testdir/intended && \
@@ -301,7 +302,9 @@ update-intended:
 			exit 1; \
 		fi; \
 		else \
-			echo "❌ Compile timeout/failed for $(TEST) (limit $(UPDATE_TIMEOUT))"; \
+			code=$$?; \
+			echo "❌ Compilation failed for $(TEST): exit $$code (limit $(UPDATE_TIMEOUT)); log: $$compile_log"; \
+			cat "$$compile_log"; \
 			exit 1; \
 		fi; \
 	else \
@@ -320,19 +323,26 @@ $(UPDATE_TARGETS): update-%:
 	@testname=$$(echo $* | sed 's|__|/|g'); \
 	testdir=$(TEST_DIR)/$$testname; \
 	if [ -f $$testdir/compile.hxml ]; then \
-		if (cd $$testdir && $(WITH_TIMEOUT) $(UPDATE_TIMEOUT_SECS) haxe --no-traces -D no_traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml) > /dev/null 2>&1; then \
+		compile_log="$(abspath $(TEST_RESULTS_PREFIX))-update-$*.log"; \
+		rm -rf $$testdir/$(OUTPUT_DIR); \
+		if (cd $$testdir && $(WITH_TIMEOUT) $(UPDATE_TIMEOUT_SECS) haxe --no-traces -D no_traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml) > "$$compile_log" 2>&1; then \
 		if [ -d $$testdir/$(OUTPUT_DIR) ]; then \
 			rm -rf $$testdir/intended && \
 			cp -r $$testdir/$(OUTPUT_DIR) $$testdir/intended && \
 			echo "✅ $$testname"; \
 		else \
 			echo "❌ $$testname (no output)"; \
+			exit 1; \
 		fi; \
 		else \
-			echo "❌ $$testname (timeout/fail)"; \
+			code=$$?; \
+			echo "❌ Compilation failed for $$testname: exit $$code (limit $(UPDATE_TIMEOUT)); log: $$compile_log"; \
+			cat "$$compile_log"; \
+			exit 1; \
 		fi; \
 	else \
 		echo "❌ $$testname (not found)"; \
+		exit 1; \
 	fi
 
 # Generic pattern rule so update-list can spawn arbitrary update-* targets
@@ -340,19 +350,26 @@ update-%:
 	@testname=$$(echo $* | sed 's|__|/|g'); \
 	testdir=$(TEST_DIR)/$$testname; \
 	if [ -f $$testdir/compile.hxml ]; then \
-		if (cd $$testdir && $(WITH_TIMEOUT) $(UPDATE_TIMEOUT_SECS) haxe --no-traces -D no_traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml) > /dev/null 2>&1; then \
+		compile_log="$(abspath $(TEST_RESULTS_PREFIX))-update-$*.log"; \
+		rm -rf $$testdir/$(OUTPUT_DIR); \
+		if (cd $$testdir && $(WITH_TIMEOUT) $(UPDATE_TIMEOUT_SECS) haxe --no-traces -D no_traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml) > "$$compile_log" 2>&1; then \
 		if [ -d $$testdir/$(OUTPUT_DIR) ]; then \
 			rm -rf $$testdir/intended && \
 			cp -r $$testdir/$(OUTPUT_DIR) $$testdir/intended && \
 			echo "✅ $$testname"; \
 		else \
 			echo "❌ $$testname (no output)"; \
+			exit 1; \
 		fi; \
 		else \
-			echo "❌ $$testname (timeout/fail)"; \
+			code=$$?; \
+			echo "❌ Compilation failed for $$testname: exit $$code (limit $(UPDATE_TIMEOUT)); log: $$compile_log"; \
+			cat "$$compile_log"; \
+			exit 1; \
 		fi; \
 	else \
 		echo "❌ $$testname (not found)"; \
+		exit 1; \
 	fi
 
 # Update a list of tests in parallel: LIST=file with newline-separated snapshot paths
