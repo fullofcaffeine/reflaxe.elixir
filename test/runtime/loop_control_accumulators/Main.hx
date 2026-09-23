@@ -145,6 +145,7 @@ class Main {
 	}
 
 	public static function main():Void {
+		LoopSwitchProbe.main();
 		assertPartition("null guard", [], [], guardedPartition(null));
 		assertPartition("empty guard", [], [], guardedPartition([]));
 		assertPartition("guarded loop", [1, 0], [2, 3], guardedPartition([1, 2, 0, 3]));

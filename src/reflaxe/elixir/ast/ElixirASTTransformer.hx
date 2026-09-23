@@ -786,7 +786,7 @@ class ElixirASTTransformer {
 
 		return {
 			pattern: clause.pattern,
-			guard: null,
+			guard: clause.guard,
 			body: flatCond
 		};
 	}

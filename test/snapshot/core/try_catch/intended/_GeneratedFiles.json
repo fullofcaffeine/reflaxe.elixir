@@ -10,7 +10,8 @@
 		"haxe/iterators/array_key_value_iterator.ex",
 		"haxe/iterators/array_iterator.ex",
 		"haxe/_call_stack/call_stack_impl_.ex",
-		"custom_exception.ex"
+		"custom_exception.ex",
+		"catch_state_probe.ex"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
 	"id": 0,
@@ -18,12 +19,16 @@
 	"version": 2,
 	"ownedFiles": [
 		{
+			"path": "catch_state_probe.ex",
+			"sha256": "1c4c12effb1a5901603a6ab1da8a42bcbd234b9c013a04c2b4a3b6dbe96c6a0b"
+		},
+		{
 			"path": "custom_exception.ex",
 			"sha256": "9709f6346b27e85dc6a0f65d9c7fdab2a0ef6385f96d9f82ba17d729922d39b7"
 		},
 		{
 			"path": "haxe/_call_stack/call_stack_impl_.ex",
-			"sha256": "ab46ba4f786a95420ae1cd78188f77ebebc3ced2db90d1351297f573f30dadf8"
+			"sha256": "c77b161d05e1094665a37413ce6e0af07159fcdbc2f2cd20c19ceec25be5d818"
 		},
 		{
 			"path": "haxe/iterators/array_iterator.ex",
@@ -35,7 +40,7 @@
 		},
 		{
 			"path": "main.ex",
-			"sha256": "561de6d3de5d71245ab5819280adfeba4a286334a11c69c625cc1606846b5582"
+			"sha256": "055991763995acf841e3651cf86301123cd5c2a43c06e35ee105407dc07c2bef"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.ex",
@@ -62,5 +67,5 @@
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "61cd66e493f429ad62ec76e6062d339c6068a3902c3679666735b338762bd345"
+	"generation": "ea8ab7aa8757956650983efbaaa657b974af22b6ca84f9820d32c60a9beef422"
 }

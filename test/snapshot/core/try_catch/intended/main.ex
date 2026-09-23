@@ -10,7 +10,7 @@ defmodule Main do
           %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
           _ -> haxe_exception
         end), haxe_exception} do
-          {e, _} when is_binary(e) -> e
+          {e_2, _} when is_binary(e_2) -> e_2
           _ ->
             reraise(haxe_exception, __STACKTRACE__)
         end)
@@ -28,8 +28,8 @@ defmodule Main do
           %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
           _ -> haxe_exception
         end), haxe_exception} do
-          {e, _} when is_struct(e, Reflaxe.Exception) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == Reflaxe.Exception ->
-            Reflaxe.Exception.get_message(e)
+          {e_2, _} when is_struct(e_2, Reflaxe.Exception) or is_map(e_2) and is_map_key(e_2, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e_2) == Reflaxe.Exception ->
+            Reflaxe.Exception.get_message(e_2)
           _ ->
             reraise(haxe_exception, __STACKTRACE__)
         end)
@@ -88,7 +88,7 @@ defmodule Main do
           %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
           _ -> haxe_exception
         end), haxe_exception} do
-          {e, _} when is_binary(e) -> nil
+          {e_2, _} when is_binary(e_2) -> nil
           _ ->
             reraise(haxe_exception, __STACKTRACE__)
         end)
@@ -102,7 +102,7 @@ defmodule Main do
           %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
           _ -> haxe_exception
         end), haxe_exception} do
-          {_e, _} -> nil
+          {_e_2, _} -> nil
         end)
     end
     nil
@@ -118,7 +118,7 @@ defmodule Main do
             %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
             _ -> haxe_exception
           end), haxe_exception} do
-            {e, _} when is_binary(e) -> raise Reflaxe.Elixir.HaxeThrow, [value: "Rethrow from inner"]
+            {e_2, _} when is_binary(e_2) -> raise Reflaxe.Elixir.HaxeThrow, [value: "Rethrow from inner"]
             _ ->
               reraise(haxe_exception, __STACKTRACE__)
           end)
@@ -131,7 +131,7 @@ defmodule Main do
           %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
           _ -> haxe_exception
         end), haxe_exception} do
-          {e, _} when is_binary(e) -> e
+          {e_2, _} when is_binary(e_2) -> e_2
           _ ->
             reraise(haxe_exception, __STACKTRACE__)
         end)
@@ -202,7 +202,7 @@ defmodule Main do
             %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
             _ -> haxe_exception
           end), haxe_exception} do
-            {e, _} when is_struct(e, Reflaxe.Exception) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == Reflaxe.Exception -> raise Reflaxe.Elixir.HaxeThrow, [value: e]
+            {e_2, _} when is_struct(e_2, Reflaxe.Exception) or is_map(e_2) and is_map_key(e_2, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e_2) == Reflaxe.Exception -> raise Reflaxe.Elixir.HaxeThrow, [value: e_2]
             _ ->
               reraise(haxe_exception, __STACKTRACE__)
           end)
@@ -215,8 +215,8 @@ defmodule Main do
           %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
           _ -> haxe_exception
         end), haxe_exception} do
-          {e, _} when is_struct(e, Reflaxe.Exception) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == Reflaxe.Exception ->
-            Reflaxe.Exception.get_message(e)
+          {e_2, _} when is_struct(e_2, Reflaxe.Exception) or is_map(e_2) and is_map_key(e_2, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e_2) == Reflaxe.Exception ->
+            Reflaxe.Exception.get_message(e_2)
           _ ->
             reraise(haxe_exception, __STACKTRACE__)
         end)
@@ -263,7 +263,7 @@ defmodule Main do
           %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
           _ -> haxe_exception
         end), haxe_exception} do
-          {_e, _} -> 0
+          {_e_2, _} -> 0
         end)
     end
     if (123 != value) do
@@ -282,7 +282,7 @@ defmodule Main do
           %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
           _ -> haxe_exception
         end), haxe_exception} do
-          {_e, _} -> -1
+          {_e_2, _} -> -1
         end)
     end
     if (-1 != value_value) do
@@ -290,6 +290,7 @@ defmodule Main do
     end
   end
   def main() do
+    CatchStateProbe.main()
     basic_try_catch()
     multiple_catch()
     try_catch_finally()
