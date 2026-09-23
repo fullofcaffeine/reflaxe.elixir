@@ -13,7 +13,7 @@ defmodule Main do
     assert_that(apply(Map.get(values, :__reflaxe_class__) || Map.get(values, :__struct__), :first, [values]) == "zero", "first should reflect pushed head")
     assert_that(apply(Map.get(values, :__reflaxe_class__) || Map.get(values, :__struct__), :last, [values]) == "two", "last should reflect appended tail")
     assert_that(apply(Map.get(values, :__reflaxe_class__) || Map.get(values, :__struct__), :to_string, [values]) == "{zero, one, two}", "toString should preserve order")
-    entries = Array.new()
+    entries = []
     key_value_iterator = apply(Map.get(values, :__reflaxe_class__) || Map.get(values, :__struct__), :key_value_iterator, [values])
     {entries} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {entries}, fn _, {acc_entries} ->
       try do
