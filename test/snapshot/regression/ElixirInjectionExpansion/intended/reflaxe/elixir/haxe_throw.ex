@@ -13,30 +13,23 @@ defmodule Reflaxe.Elixir.HaxeThrow do
     message = if message == nil, do: inspect(value), else: message
     struct(__MODULE__, Keyword.put(opts, :message, message))
 
-    item
   end
   def get_message(struct) do
     Reflaxe.Exception.get_message(struct)
-    item
   end
   def get_stack(struct) do
     Reflaxe.Exception.get_stack(struct)
-    item
   end
   def get_previous(struct) do
     Reflaxe.Exception.get_previous(struct)
-    item
   end
   def get_native(struct) do
     Reflaxe.Exception.get_native(struct)
-    item
   end
   def to_string(struct) do
     Reflaxe.Exception.to_string(struct)
-    item
   end
   def details(struct) do
     Reflaxe.Exception.details(struct)
-    item
   end
 end

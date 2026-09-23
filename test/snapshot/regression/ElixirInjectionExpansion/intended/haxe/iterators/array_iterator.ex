@@ -14,12 +14,10 @@ defmodule ArrayIterator do
   end
   def has_next(struct) do
     current_index(struct) < length(struct.array)
-    item
   end
   def next(struct) do
     index = current_index(struct)
         Process.put(state_key(struct), index + 1)
         Enum.at(struct.array, index)
-    item
   end
 end

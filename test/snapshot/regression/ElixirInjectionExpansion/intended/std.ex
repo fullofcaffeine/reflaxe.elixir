@@ -1,20 +1,12 @@
 defmodule Std do
   def string(value) do
     Reflaxe.Elixir.HaxeFloat.to_string(value)
-    item
   end
   def parse_int(str) do
-
-                case Integer.parse(str) do
-                    {num, _} -> num
-                    :error -> nil
-                end
-
-    item
+    Reflaxe.Elixir.HaxeInt.parse(str)
   end
   def parse_float(str) do
     Reflaxe.Elixir.HaxeFloat.parse(str)
-    item
   end
   def is(value, type) do
 
@@ -36,6 +28,7 @@ defmodule Std do
                         # For user-defined types, check if it's a struct with matching __struct__ field
                         case value do
                             %{__struct__: struct_type} -> struct_type == type
+                            %{__reflaxe_class__: class_type} -> class_type == type
                             # For enums (tagged tuples), check if first element matches the type atom
                             {tag, _} when is_atom(tag) -> tag == type
                             {tag, _, _} when is_atom(tag) -> tag == type
@@ -44,18 +37,20 @@ defmodule Std do
                         end
                 end
 
-    item
   end
   def is_of_type(value, type) do
     is(value, type)
-    item
+  end
+  def downcast(value, target_class) do
+    if (is(value, target_class)), do: value, else: nil
+  end
+  def instance(value, target_class) do
+    downcast(value, target_class)
   end
   def random(max) do
     if max <= 0, do: 0, else: (:rand.uniform(max) - 1)
-    item
   end
   def int(value) do
     trunc(value)
-    item
   end
 end

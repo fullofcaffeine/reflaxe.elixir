@@ -17,7 +17,6 @@ defmodule Type do
             _ -> {:t_unknown}
           end
 
-    item
   end
   def enum_index(enum_value) do
 
@@ -27,7 +26,6 @@ defmodule Type do
             _ -> 0
           end
 
-    item
   end
   def enum_parameters(enum_value) do
 
@@ -37,7 +35,6 @@ defmodule Type do
             _ -> []
           end
 
-    item
   end
   def enum_constructor(enum_value) do
 
@@ -47,27 +44,22 @@ defmodule Type do
             _ -> ""
           end
 
-    item
   end
   def enum_eq(a, b) do
     a == b
-    item
   end
   def get_class(object) do
     case object do %{__reflaxe_class__: mod} -> mod; %{__struct__: mod} -> mod; _ -> nil end
-    item
   end
   def get_super_class(c) do
-    ignore = c
-    ignore
+    _ignore = c
+    nil
   end
   def get_class_name(c) do
     case c do mod when is_atom(mod) -> mod |> Module.split() |> Enum.join("."); _ -> nil end
-    item
   end
   def get_enum_name(e) do
     case e do mod when is_atom(mod) -> mod |> Module.split() |> Enum.join("."); _ -> nil end
-    item
   end
   def resolve_class(name) do
     case name do
@@ -81,7 +73,6 @@ defmodule Type do
       other ->
         other
     end
-    item
   end
   def resolve_enum(name) do
     case name do
@@ -93,22 +84,18 @@ defmodule Type do
       other ->
         other
     end
-    item
   end
   def is_type(value, t) do
     case value do %{__struct__: mod} -> mod == t; _ -> false end
-    item
   end
   def create_instance(cl, args) do
     apply(cl, :new, args)
-    item
   end
   def create_empty_instance(cl) do
     struct(cl)
-    item
   end
   def create_enum(enum, constructor, params \\ nil) do
-    ignore_enum = enum
+    _ignore_enum = enum
 
           tag = String.to_atom(constructor)
           values = case params do
@@ -118,23 +105,19 @@ defmodule Type do
           end
           List.to_tuple([tag | values])
 
-    ignore_enum
   end
   def create_enum_index(enum, index, params \\ nil) do
     _ignore_enum = enum
     _ignore_i = index
-    ignore_p = params
+    _ignore_p = params
     raise Reflaxe.Elixir.HaxeThrow, [value: "Type.createEnumIndex not implemented for Elixir target"]
-    ignore_p
   end
   def get_enum_constructs(enum) do
-    ignore_enum = enum
+    _ignore_enum = enum
     []
-    ignore_enum
   end
   def all_enums(enum) do
-    ignore_enum = enum
+    _ignore_enum = enum
     []
-    ignore_enum
   end
 end

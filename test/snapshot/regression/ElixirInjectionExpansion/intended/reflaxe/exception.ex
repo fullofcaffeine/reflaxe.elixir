@@ -11,23 +11,18 @@ defmodule Reflaxe.Exception do
   end
   def get_message(struct) do
     Map.get(struct, :message)
-    item
   end
   def get_stack(struct) do
     Map.get(struct, :stack, [])
-    item
   end
   def get_previous(struct) do
     Map.get(struct, :previous)
-    item
   end
   def get_native(struct) do
     Map.get(struct, :native)
-    item
   end
   def to_string(struct) do
     get_message(struct)
-    item
   end
   def details(struct) do
 
@@ -46,6 +41,5 @@ defmodule Reflaxe.Exception do
     end
     build.(build, struct, "")
 
-    item
   end
 end
