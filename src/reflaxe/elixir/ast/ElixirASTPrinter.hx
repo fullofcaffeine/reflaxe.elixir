@@ -1989,7 +1989,19 @@ class ElixirASTPrinter {
 					default:
 				}
 				#end
-				unaryOpToString(op) + print(expr, 0);
+				// Prefix operators bind tighter than binary operands. Without grouping,
+				// not (a and b) becomes (not a) and b, and -(a + b) becomes -a + b.
+				var operand = print(expr, 0);
+				switch (expr.def) {
+					case EBinary(_, _, _) if (!needsParentheses(expr.def)):
+						operand = '(' + operand + ')';
+					case ERaw(_):
+						// Native expressions are opaque: preserve their complete value without
+						// guessing precedence from source text or changing evaluation count.
+						operand = '(' + operand + ')';
+					default:
+				}
+				unaryOpToString(op) + operand;
 
 			case EField(target, field):
 				// Special-case: now.to_iso8601 -> DateTime.to_iso8601(now)

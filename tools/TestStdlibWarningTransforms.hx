@@ -6,6 +6,7 @@ import haxe.macro.Expr;
 import reflaxe.elixir.ast.ElixirAST.ElixirAST as ElixirASTNode;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
+import reflaxe.elixir.ast.ElixirASTPrinter;
 import reflaxe.elixir.ast.transformers.BareLiteralDropTransforms;
 import reflaxe.elixir.ast.transformers.BinderTransforms;
 
@@ -13,6 +14,7 @@ import reflaxe.elixir.ast.transformers.BinderTransforms;
 @:nullSafety(Off)
 class TestStdlibWarningTransforms {
 	public static function run():Expr {
+		testUnaryOperandGrouping();
 		testKnownNilRemovesUnreachableShift();
 		testKnownNonNilFoldsNegatedCheck();
 		testKnownNonNilFoldsBooleanIdentity();
@@ -22,6 +24,26 @@ class TestStdlibWarningTransforms {
 
 		Sys.println("Stdlib warning transform contracts passed");
 		return macro null;
+	}
+
+	/** Prefix operators apply to the complete operand, not its first printed term. */
+	static function testUnaryOperandGrouping():Void {
+		var left = makeAST(EVar("left"));
+		var right = makeAST(EVar("right"));
+		var conjunction = makeAST(EBinary(And, left, right));
+		var sum = makeAST(EBinary(Add, left, right));
+		for (example in [
+			{input: makeAST(EUnary(Not, conjunction)), expected: "not (left and right)"},
+			{input: makeAST(EUnary(Bang, conjunction)), expected: "!(left and right)"},
+			{input: makeAST(EUnary(Negate, sum)), expected: "-(left + right)"},
+			{input: makeAST(EUnary(Positive, sum)), expected: "+(left + right)"},
+			{input: makeAST(EUnary(Not, makeAST(ERaw("left != nil")))), expected: "not (left != nil)"},
+			{input: makeAST(EUnary(Negate, makeAST(ERaw("left + right")))), expected: "-(left + right)"},
+			{input: makeAST(EUnary(Not, left)), expected: "not left"}
+		]) {
+			if (ElixirASTPrinter.printAST(example.input) != example.expected)
+				fail("unary printing must preserve the complete binary operand and leave atomic operands unchanged");
+		}
 	}
 
 	static function testKnownNonNilFoldsBooleanIdentity():Void {
