@@ -68,8 +68,8 @@ defmodule Main do
           {:cont, {acc_numbers, acc_temp}}
       end
     end)
-    reflaxe_dispatch_receiver = EReg.new("\\d+", "")
-    _replaced = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, text, "XXX"])
+    reflaxe_dispatch_receiver_node_0 = EReg.new("\\d+", "")
+    _replaced = apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :replace, [reflaxe_dispatch_receiver_node_0, text, "XXX"])
     _email_regex = EReg.new("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", "")
     nil
   end
