@@ -46,5 +46,8 @@ defmodule Main do
     if (Reflaxe.Elixir.HaxeFloat.neq(apply(Map.get(values, :__reflaxe_class__) || Map.get(values, :__struct__), :float_zero_closure, [values]).(), 0)) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "float zero closure result lost"]
     end
+    if (apply(Map.get(values, :__reflaxe_class__) || Map.get(values, :__struct__), :first_return_wins, [values]) != 42) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "unreachable return replaced the first result"]
+    end
   end
 end

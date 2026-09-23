@@ -57,6 +57,12 @@ class TailValues {
 	public function floatZeroClosure():Void->Float {
 		return () -> 0.0;
 	}
+
+	/** Unreachable numeric expressions must not replace an earlier return. */
+	public function firstReturnWins():Int {
+		return 42;
+		return 0;
+	}
 }
 
 class Main {
@@ -96,5 +102,7 @@ class Main {
 			throw "one closure result lost";
 		if (values.floatZeroClosure()() != 0.0)
 			throw "float zero closure result lost";
+		if (values.firstReturnWins() != 42)
+			throw "unreachable return replaced the first result";
 	}
 }

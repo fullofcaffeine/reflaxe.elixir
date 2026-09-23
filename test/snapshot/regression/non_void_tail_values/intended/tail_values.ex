@@ -44,4 +44,7 @@ defmodule TailValues do
   def float_zero_closure(_struct) do
     fn -> 0 end
   end
+  def first_return_wins(_struct) do
+    42
+  end
 end
