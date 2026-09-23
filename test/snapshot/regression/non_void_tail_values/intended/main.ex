@@ -37,5 +37,14 @@ defmodule Main do
     if (apply(Map.get(values, :__reflaxe_class__) || Map.get(values, :__struct__), :branch_value, [values, true]) != 1 or apply(Map.get(values, :__reflaxe_class__) || Map.get(values, :__struct__), :branch_value, [values, false]) != 2) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "branch tail value lost"]
     end
+    if (apply(Map.get(values, :__reflaxe_class__) || Map.get(values, :__struct__), :zero_closure, [values]).() != 0) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "zero closure result lost"]
+    end
+    if (apply(Map.get(values, :__reflaxe_class__) || Map.get(values, :__struct__), :one_closure, [values]).() != 1) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "one closure result lost"]
+    end
+    if (Reflaxe.Elixir.HaxeFloat.neq(apply(Map.get(values, :__reflaxe_class__) || Map.get(values, :__struct__), :float_zero_closure, [values]).(), 0)) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "float zero closure result lost"]
+    end
   end
 end

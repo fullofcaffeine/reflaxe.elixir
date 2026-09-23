@@ -44,6 +44,19 @@ class TailValues {
 	public function branchValue(flag:Bool):Int {
 		return flag ? 1 : 2;
 	}
+
+	/** Keep literal closure results observable across the generated function boundary. */
+	public function zeroClosure():Void->Int {
+		return () -> 0;
+	}
+
+	public function oneClosure():Void->Int {
+		return () -> 1;
+	}
+
+	public function floatZeroClosure():Void->Float {
+		return () -> 0.0;
+	}
 }
 
 class Main {
@@ -77,5 +90,11 @@ class Main {
 			throw "call tail value lost";
 		if (values.branchValue(true) != 1 || values.branchValue(false) != 2)
 			throw "branch tail value lost";
+		if (values.zeroClosure()() != 0)
+			throw "zero closure result lost";
+		if (values.oneClosure()() != 1)
+			throw "one closure result lost";
+		if (values.floatZeroClosure()() != 0.0)
+			throw "float zero closure result lost";
 	}
 }

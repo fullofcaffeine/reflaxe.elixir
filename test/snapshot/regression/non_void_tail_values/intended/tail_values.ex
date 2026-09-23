@@ -35,4 +35,13 @@ defmodule TailValues do
   def branch_value(_struct, flag) do
     if (flag), do: 1, else: 2
   end
+  def zero_closure(_struct) do
+    fn -> 0 end
+  end
+  def one_closure(_struct) do
+    fn -> 1 end
+  end
+  def float_zero_closure(_struct) do
+    fn -> 0 end
+  end
 end
