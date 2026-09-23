@@ -43,6 +43,42 @@ class ClauseContext {
 	// Maps enum parameter index to {finalName: String, isUsed: Bool}
 	public var enumBindingPlan:Map<Int, {finalName:String, isUsed:Bool}> = new Map();
 
+	/** Exact typed receiver whose payload this clause pattern binds. */
+	public var enumReceiver:Null<haxe.macro.Type.TypedExpr> = null;
+
+	/** Find a payload binding only in the clause that destructured this receiver. */
+	public function findEnumBinding(receiver:haxe.macro.Type.TypedExpr, constructor:String, index:Int):Null<{finalName:String, isUsed:Bool}> {
+		if (sameEnumReceiver(enumReceiver, receiver) && patternExtractedParams.contains(constructor) && enumBindingPlan.exists(index))
+			return enumBindingPlan.get(index);
+		return parent == null ? null : parent.findEnumBinding(receiver, constructor, index);
+	}
+
+	/** Compare identity-bearing locals and nested payload paths, never variable spelling. */
+	static function sameEnumReceiver(left:Null<haxe.macro.Type.TypedExpr>, right:Null<haxe.macro.Type.TypedExpr>):Bool {
+		if (left == null || right == null)
+			return false;
+		// Substitutions retain the original expression object for an evaluated
+		// scrutinee. Reuse that occurrence even when it is a call; never equate
+		// separate calls merely because their callee and arguments look alike.
+		if (left == right)
+			return true;
+		switch (left.expr) {
+			case TParenthesis(inner) | TMeta(_, inner) | TCast(inner, _):
+				return sameEnumReceiver(inner, right);
+			default:
+		}
+		switch (right.expr) {
+			case TParenthesis(inner) | TMeta(_, inner) | TCast(inner, _):
+				return sameEnumReceiver(left, inner);
+			default:
+		}
+		return switch ([left.expr, right.expr]) {
+			case [TLocal(a), TLocal(b)]: a.id == b.id;
+			case [TEnumParameter(a, af, ai), TEnumParameter(b, bf, bi)]: af == bf && ai == bi && sameEnumReceiver(a, b);
+			default: false;
+		};
+	}
+
 	// CRITICAL: Store enum type for TEnumIndex optimization recovery
 	// When Haxe optimizes enum switches to integer indices, we need the original enum type
 	// to map indices back to constructor names and parameters

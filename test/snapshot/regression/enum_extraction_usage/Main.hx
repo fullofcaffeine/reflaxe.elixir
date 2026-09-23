@@ -36,7 +36,9 @@ class Main {
 		testMixedUsage();
 		testNestedExtraction();
 		testMultipleExtractions();
-		testTreeExtraction();
+		// Each nested node contributes its own value: 1 + 2 + 3.
+		if (testTreeExtraction() != 6)
+			throw "Nested tree extraction must preserve all three independent bindings";
 	}
 
 	/**

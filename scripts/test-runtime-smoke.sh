@@ -26,6 +26,7 @@ TEST_DIRS=(
   "test/runtime/loop_control_accumulators"
   "test/runtime/switch_case_body"
   "test/runtime/array_pattern_bindings"
+  "test/runtime/nested_enum_bindings"
   "test/runtime/dynamic_length"
   "test/runtime/inline_optional_default"
   "test/runtime/inline_abstract_nested_result"

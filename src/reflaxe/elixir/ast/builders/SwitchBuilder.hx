@@ -383,7 +383,7 @@ class SwitchBuilder {
 			#if debug_switch_builder
 			#if !no_traces trace('[SwitchBuilder] Building case ${i + 1}/${cases.length}'); #end
 			#end
-			var clausesFromCase = buildCaseClause(switchCase, targetVarName, context, i, enumType);
+			var clausesFromCase = buildCaseClause(switchCase, targetVarName, context, i, enumType, actualSwitchExpr);
 			if (clausesFromCase.length > 0) {
 				#if debug_switch_builder
 				#if !no_traces trace('[SwitchBuilder]   Generated ${clausesFromCase.length} clause(s) from this case'); #end
@@ -490,7 +490,7 @@ class SwitchBuilder {
 	 * HOW: Analyzes case values, extracts patterns, detects guard chains, compiles bodies
 	 */
 	static function buildCaseClause(switchCase:{values:Array<TypedExpr>, expr:TypedExpr}, targetVarName:String, context:CompilationContext, caseIndex:Int,
-			enumTypeForSwitch:Null<EnumType>):Array<ECaseClause> {
+			enumTypeForSwitch:Null<EnumType>, receiver:TypedExpr):Array<ECaseClause> {
 		// Multi-value cases (`case a, b:`) are compiled as multiple clauses with identical bodies.
 		if (switchCase.values.length == 0) {
 			return [];
@@ -498,7 +498,7 @@ class SwitchBuilder {
 		if (switchCase.values.length > 1) {
 			var out:Array<ECaseClause> = [];
 			for (v in switchCase.values) {
-				out = out.concat(buildCaseClause({values: [v], expr: switchCase.expr}, targetVarName, context, caseIndex, enumTypeForSwitch));
+				out = out.concat(buildCaseClause({values: [v], expr: switchCase.expr}, targetVarName, context, caseIndex, enumTypeForSwitch, receiver));
 			}
 			return out;
 		}
@@ -506,6 +506,7 @@ class SwitchBuilder {
 		// Per-clause ClauseContext for proper binding and usage tracking
 		var parentCtx = context.getCurrentClauseContext();
 		var clauseCtx = new ClauseContext(parentCtx);
+		clauseCtx.enumReceiver = context.substituteIfNeeded(receiver);
 		if (enumTypeForSwitch != null)
 			clauseCtx.enumType = enumTypeForSwitch;
 		context.pushClauseContext(clauseCtx);
@@ -882,12 +883,16 @@ class SwitchBuilder {
 		}
 		collectBinders(pattern);
 
-		function guardUsesUnsafeInfraTemp(econd:TypedExpr):Bool {
+		function guardRequiresBodyLowering(econd:TypedExpr):Bool {
 			var hit = false;
 			function walk(te:TypedExpr):Void {
 				if (hit || te == null)
 					return;
 				switch (te.expr) {
+					case TEnumIndex(_):
+						// Constructor tests need ControlFlowBuilder's tuple-pattern lowering.
+						hit = true;
+						return;
 					case TLocal(v):
 						if (v != null && v.name != null && isInfrastructureVar(v.name)) {
 							var elixirName = VariableAnalyzer.toElixirVarName(v.name);
@@ -909,7 +914,7 @@ class SwitchBuilder {
 			switch (current.expr) {
 				case TIf(econd, eif, eelse):
 					#if debug_switch_builder trace('[GuardChain] Found TIf - extracting guard'); #end
-					if (guardUsesUnsafeInfraTemp(econd)) {
+					if (guardRequiresBodyLowering(econd)) {
 						#if debug_switch_builder
 						trace('[GuardChain]   Unsafe infra temp in condition; keeping original body (no when-guards)');
 						#end

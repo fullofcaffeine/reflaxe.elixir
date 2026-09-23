@@ -307,6 +307,7 @@ class ControlFlowBuilder {
 				// - redundant TEnumParameter and temp→binder assignments are skipped
 				var parentCtx = context.getCurrentClauseContext();
 				var clauseCtx = new ClauseContext(parentCtx);
+				clauseCtx.enumReceiver = context.substituteIfNeeded(enumValue);
 				clauseCtx.enumType = enumTypeInfo;
 				clauseCtx.patternExtractedParams.push(matchingConstructor);
 				for (i in 0...constructorParams) {
