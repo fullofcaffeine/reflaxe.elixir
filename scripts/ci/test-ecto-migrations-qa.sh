@@ -32,6 +32,14 @@ cat >"$tmp_dir/mix" <<'FAKE_MIX'
 set -euo pipefail
 printf 'mix %s\n' "$*" >>"$QA_FAKE_CALLS"
 
+if [[ "$*" == "deps.compile" && "${QA_FAKE_MODE:-}" == "dependency_failure" ]]; then
+  exit 67
+fi
+if [[ "$*" == "compile --force --warnings-as-errors --no-deps-check" \
+  && "${QA_FAKE_MODE:-}" == "strict_compile_failure" ]]; then
+  exit 68
+fi
+
 if [[ "$*" == "run --no-start --no-compile qa/create_owned_database.exs" ]]; then
   if [[ "${QA_FAKE_MODE:-}" == "existing" ]]; then
     exit 66
@@ -138,6 +146,34 @@ if find "$invalid_tmp" -mindepth 1 -print -quit | grep -q .; then
   echo "Unsafe database suffix leaked a temporary workspace" >&2
   exit 1
 fi
+
+run_direct success
+if (( case_status != 0 )); then
+  echo "Expected successful QA status 0, got $case_status" >&2
+  exit 1
+fi
+compile_calls=$(grep -E '^mix (deps\.compile|compile)( |$)' "$calls_file")
+expected_compile_calls=$'mix deps.compile\nmix compile --force --warnings-as-errors --no-deps-check'
+if [[ "$compile_calls" != "$expected_compile_calls" ]]; then
+  echo "QA must prepare dependencies and strictly compile the application exactly once" >&2
+  cat "$calls_file" >&2
+  exit 1
+fi
+assert_drop_last
+
+for mode in dependency_failure strict_compile_failure; do
+  run_direct "$mode"
+  expected_status=67
+  [[ "$mode" != strict_compile_failure ]] || expected_status=68
+  if (( case_status != expected_status )); then
+    echo "Expected $mode status $expected_status, got $case_status" >&2
+    exit 1
+  fi
+  if grep -Eq 'create_owned_database|ecto\.migrate|ecto\.drop' "$calls_file"; then
+    echo "Compilation failure must stop before database effects" >&2
+    exit 1
+  fi
+done
 
 run_direct migration_failure
 if (( case_status != 37 )); then

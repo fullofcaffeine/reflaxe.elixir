@@ -97,7 +97,9 @@ if [[ ! -f "$qa_migrations_dir/20240101120000_create_users.exs" \
   exit 1
 fi
 "$haxe_bin" build-tests.hxml
-MIX_ENV=test "$mix_bin" compile
+# Prepare cold dependencies without generating and compiling the application
+# twice. The forced strict pass below remains the application compile gate.
+MIX_ENV=test "$mix_bin" deps.compile
 MIX_ENV=test "$mix_bin" compile --force --warnings-as-errors --no-deps-check
 MIX_ENV=test "$mix_bin" run --no-start --no-compile qa/strict_compile_migrations.exs
 MIX_ENV=test "$mix_bin" run --no-start --no-compile qa/create_owned_database.exs
