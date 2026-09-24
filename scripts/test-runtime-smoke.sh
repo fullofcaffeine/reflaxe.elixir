@@ -25,6 +25,7 @@ TEST_DIRS=(
   "test/snapshot/stdlib/sys_io_process/basic"
   "test/snapshot/stdlib/haxe_io_bytes_streams"
   "test/runtime/loop_control_accumulators"
+  "test/snapshot/regression/numeric_control_flow_concat"
   "test/snapshot/regression/reducer_loop_return_semantics"
   "test/runtime/switch_case_body"
   "test/runtime/array_pattern_bindings"

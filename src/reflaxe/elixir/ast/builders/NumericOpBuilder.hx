@@ -106,12 +106,10 @@ class NumericOpBuilder {
 	}
 
 	static function buildStringConcat(leftAST:ElixirAST, rightAST:ElixirAST, leftExpr:TypedExpr, rightExpr:TypedExpr):ElixirAST {
+		// Control-flow shape does not determine its result type: for example,
+		// Std.random lowers to a case expression that still returns an Int.
 		var leftString = TypeUtils.isStringType(leftExpr.t) ? leftAST : toHaxeString(leftAST);
-		var rightString = if (TypeUtils.isStringType(rightExpr.t) || shouldPreserveStringyAst(rightAST)) {
-			rightAST;
-		} else {
-			toHaxeString(rightAST);
-		};
+		var rightString = TypeUtils.isStringType(rightExpr.t) ? rightAST : toHaxeString(rightAST);
 
 		return makeAST(EBinary(EBinaryOp.StringConcat, leftString, rightString));
 	}
@@ -130,22 +128,6 @@ class NumericOpBuilder {
 
 	static function safeOperand(expr:Null<ElixirAST>):ElixirAST {
 		return expr != null ? expr : makeAST(EInteger(0));
-	}
-
-	static function shouldPreserveStringyAst(expr:ElixirAST):Bool {
-		return switch (expr.def) {
-			case ERaw(_):
-				true;
-			case ECase(_, _) | ECond(_) | EWith(_, _, _):
-				true;
-			case EIf(_, _, elseBranch) if (elseBranch != null):
-				true;
-			case EBlock(expressions) if (expressions.length > 0):
-				var lastExpression = expressions[expressions.length - 1];
-				shouldPreserveStringyAst(lastExpression);
-			default:
-				false;
-		}
 	}
 }
 #end
