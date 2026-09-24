@@ -65,7 +65,7 @@ defmodule Main do
     field = :email
     pattern = EReg.new("@", "")
     this1 = Ecto.Changeset.validate_format(this1, field, pattern)
-    this1 = Ecto.Changeset.validate_number(this1, :age,
+    this1 = Ecto.Changeset.validate_number(this1, :age, (
               (fn opts ->
                  greater_than_or_equal_to =
                    case Map.fetch(opts, :greater_than_or_equal_to) do
@@ -89,7 +89,7 @@ defmodule Main do
                  ]
                  |> Enum.filter(fn {_, value} -> value != nil end)
                end).(%{min: 18, max: 120})
-    )
+    ))
     cs = Ecto.Changeset.validate_inclusion(this1, :role, ["admin", "user"])
     cs = Ecto.Changeset.validate_exclusion(cs, :role, ["blocked"])
     cs
