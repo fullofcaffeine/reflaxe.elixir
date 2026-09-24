@@ -72,8 +72,18 @@ defmodule Main do
   end
   defp test_slice_function() do
     numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    _from_third = apply(Map.get(numbers, :__reflaxe_class__) || Map.get(numbers, :__struct__), :slice, [numbers, 2, nil])
-    _middle = apply(Map.get(numbers, :__reflaxe_class__) || Map.get(numbers, :__struct__), :slice, [numbers, 2, 5])
+    _from_third = (fn array_slice_values_node_0, array_slice_start_node_1, _ ->
+      array_slice_length_node_2 = length(array_slice_values_node_0)
+      array_slice_first_node_3 = min(array_slice_length_node_2, max(0, (if (array_slice_start_node_1 < 0), do: array_slice_length_node_2 + array_slice_start_node_1, else: array_slice_start_node_1)))
+      array_slice_last_node_4 = array_slice_length_node_2
+      Enum.slice(array_slice_values_node_0, array_slice_first_node_3, max(0, (array_slice_last_node_4 - array_slice_first_node_3)))
+    end).(numbers, 2, nil)
+    _middle = (fn array_slice_values_node_5, array_slice_start_node_6, array_slice_end_node_7 ->
+      array_slice_length_node_8 = length(array_slice_values_node_5)
+      array_slice_first_node_9 = min(array_slice_length_node_8, max(0, (if (array_slice_start_node_6 < 0), do: array_slice_length_node_8 + array_slice_start_node_6, else: array_slice_start_node_6)))
+      array_slice_last_node_10 = min(array_slice_length_node_8, max(0, (if (array_slice_end_node_7 < 0), do: array_slice_length_node_8 + array_slice_end_node_7, else: array_slice_end_node_7)))
+      Enum.slice(array_slice_values_node_5, array_slice_first_node_9, max(0, (array_slice_last_node_10 - array_slice_first_node_9)))
+    end).(numbers, 2, 5)
     nil
   end
   defp test_iterator_function() do

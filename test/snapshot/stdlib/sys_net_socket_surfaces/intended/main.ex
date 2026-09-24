@@ -91,8 +91,8 @@ defmodule Main do
     apply(Map.get(client, :__reflaxe_class__) || Map.get(client, :__struct__), :connect, [client, host, port])
     apply(Map.get(client, :__reflaxe_class__) || Map.get(client, :__struct__), :set_blocking, [client, false])
     try do
-      reflaxe_dispatch_receiver = client.input
-      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :read_bytes, [reflaxe_dispatch_receiver, Bytes.alloc(1), 0, 1])
+      reflaxe_dispatch_receiver_node_0 = client.input
+      apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :read_bytes, [reflaxe_dispatch_receiver_node_0, Bytes.alloc(1), 0, 1])
       raise Reflaxe.Elixir.HaxeThrow, [value: "Socket.input.readBytes should block when no stream data is ready"]
     rescue
       haxe_exception ->
@@ -114,8 +114,8 @@ defmodule Main do
     apply(Map.get(client, :__reflaxe_class__) || Map.get(client, :__struct__), :set_timeout, [client, 0.25])
     apply(Map.get(server, :__reflaxe_class__) || Map.get(server, :__struct__), :send_message, [server, "send"])
     buffer = Bytes.of_string("________", {:utf8})
-    reflaxe_dispatch_receiver = client.input
-    received = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :read_bytes, [reflaxe_dispatch_receiver, buffer, 2, 5])
+    reflaxe_dispatch_receiver_node_1 = client.input
+    received = apply(Map.get(reflaxe_dispatch_receiver_node_1, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_1, :__struct__), :read_bytes, [reflaxe_dispatch_receiver_node_1, buffer, 2, 5])
     if (received != 5 or apply(Map.get(buffer, :__reflaxe_class__) || Map.get(buffer, :__struct__), :to_string, [buffer]) != "__hello_") do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Socket.input.readBytes should mutate only the requested buffer range"]
     end

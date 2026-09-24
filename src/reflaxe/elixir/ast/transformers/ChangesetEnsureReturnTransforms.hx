@@ -39,9 +39,6 @@ class ChangesetEnsureReturnTransforms {
 			return switch (n.def) {
 				case EDef(name, args, guards, body):
 					var info = analyzeBody(body);
-					#if debug_hygiene
-					if (info.hasChangeset) // DEBUG: Sys.println('[ChangesetEnsureReturn] def ' + name + ' lastAssigned=' + (info.lastAssigned == null ? 'null' : info.lastAssigned));
-					#end
 					if (!info.hasChangeset || info.lastAssigned == null)
 						return n;
 					var newBody = ensureTrailingVar(body, info.lastAssigned);

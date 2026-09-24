@@ -9,15 +9,32 @@ defmodule Main do
   end
   defp test_basic_for_loops() do
     fruits = ["apple", "banana", "orange"]
-    g = 0
+    _g = 0
     Enum.each(fruits, fn _ -> nil end)
     scores = %{"Alice" => 95, "Bob" => 87, "Charlie" => 92}
     g = Reflaxe.Elixir.IMap.key_value_iterator(scores)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
       try do
-        if (g.has_next.()) do
-          _name = g.next.().key
-          _score = g.next.().value
+        if ((case g do
+        reflaxe_structural_receiver_node_0 ->
+          (case Map.fetch(reflaxe_structural_receiver_node_0, :has_next) do
+            {:ok, reflaxe_structural_callback_node_0} ->
+              reflaxe_structural_callback_node_0.()
+            :error ->
+              apply(Map.get(reflaxe_structural_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_structural_receiver_node_0, :__struct__), :has_next, [reflaxe_structural_receiver_node_0])
+          end)
+      end)) do
+          g = (case g do
+            reflaxe_structural_receiver_node_1 ->
+              (case Map.fetch(reflaxe_structural_receiver_node_1, :next) do
+                {:ok, reflaxe_structural_callback_node_1} ->
+                  reflaxe_structural_callback_node_1.()
+                :error ->
+                  apply(Map.get(reflaxe_structural_receiver_node_1, :__reflaxe_class__) || Map.get(reflaxe_structural_receiver_node_1, :__struct__), :next, [reflaxe_structural_receiver_node_1])
+              end)
+          end)
+          _name = g.key
+          _score = g.value
           {:cont, acc}
         else
           {:halt, acc}
@@ -177,7 +194,7 @@ defmodule Main do
       end
     end)
     j = 0
-    {j} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {j}, fn _, {acc_j} ->
+    {_j} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {j}, fn _, {acc_j} ->
       try do
         if (acc_j < 2) do
           acc_j = acc_j + 1
@@ -227,11 +244,22 @@ defmodule Main do
     _g = 0
     Enum.each(0..4//1, fn i ->
       _g = 0
-      Enum.each(0..4//1, fn j ->
-        if (i + j > 4) do
-          throw(:break)
+      {} = Enum.reduce_while(0..4//1, {}, fn j, {} ->
+        try do
+          if (i + j > 4) do
+            throw({:break, {}})
+          end
+          {:cont, {}}
+        catch
+          :throw, {:break, break_state} ->
+            {:halt, break_state}
+          :throw, {:continue, continue_state} ->
+            {:cont, continue_state}
+          :throw, :break ->
+            {:halt, {}}
+          :throw, :continue ->
+            {:cont, {}}
         end
-        nil
       end)
     end)
     numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -292,11 +320,11 @@ defmodule Main do
     _g = 0
     _ = Enum.reduce(events, current_state, fn event, current_state_acc ->
       current_state_acc = (case event do
-        "begin" when current_state_acc == 0 ->
-          current_state_acc = 1
+        "begin" ->
+          current_state_acc = if (current_state_acc == 0), do: 1, else: current_state_acc
           current_state_acc
-        "finish" when current_state_acc == 1 ->
-          current_state_acc = 2
+        "finish" ->
+          current_state_acc = if (current_state_acc == 1), do: 2, else: current_state_acc
           current_state_acc
         "work" -> current_state_acc
       end)
@@ -308,9 +336,12 @@ defmodule Main do
     _g = 0
     {_results, _errors} = Enum.reduce_while(items, {results, errors}, fn item, {results_acc, errors_acc} ->
       try do
-        if (StringTools.haxe_index_of(item, "error", 0) >= 0) do
+        errors_acc = if (StringTools.haxe_index_of(item, "error", 0) >= 0) do
           errors_acc = errors_acc ++ ["Failed: " <> item]
           throw({:continue, {results_acc, errors_acc}})
+          errors_acc
+        else
+          errors_acc
         end
         results_acc = results_acc ++ ["Processed: " <> item]
         {:cont, {results_acc, errors_acc}}

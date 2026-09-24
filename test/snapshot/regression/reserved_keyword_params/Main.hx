@@ -8,6 +8,11 @@
  */
 class Main {
 	static function main() {
+		if (KeywordMethods.or(4, 7) != 11)
+			throw "Reserved method direct call must reach its declaration";
+		final captured = KeywordMethods.or;
+		if (captured(2, 3) != 5)
+			throw "Reserved method capture must match direct calls";
 		// Test Elixir reserved keywords that Haxe allows as parameters
 		// Note: Some keywords like "do", "if", "else", "case", "import" are also Haxe keywords
 		testEnd("hello", "world");
@@ -25,6 +30,20 @@ class Main {
 
 		// Test multiple reserved keywords
 		testMultiple("start", "middle", "result");
+		localKeywordArrays();
+	}
+
+	/** Local declarations must use the same escaped names as their reads and writes. */
+	public static function localKeywordArrays():Int {
+		final after:Array<Int> = [];
+		final end:Array<Int> = [];
+		final rescue:Array<Int> = [];
+
+		after.push(1);
+		end.push(2);
+		rescue.push(3);
+
+		return after.length + end.length + rescue.length;
 	}
 
 	// Functions with Elixir reserved keyword parameters (that Haxe allows)
@@ -79,5 +98,12 @@ class Main {
 	// Test multiple reserved keywords in one function
 	static function testMultiple(start:String, end:String, after:String):String {
 		return start + " -> " + end + " (after: " + after + ")";
+	}
+}
+
+/** Ordinary Haxe method names can coincide with Elixir operators. */
+class KeywordMethods {
+	public static function or(left:Int, right:Int):Int {
+		return left + right;
 	}
 }

@@ -21,10 +21,19 @@ class Main {
 		testEmptyCases();
 
 		// Test 4: Fall-through patterns
-		testFallThrough();
+		if (testFallThrough(State.Loading(50)) != ""
+			|| testFallThrough(State.Processing(60)) != "Progress: 60%"
+			|| testFallThrough(State.Complete("ready")) != "Done: ready"
+			|| testFallThrough(State.Error("offline")) != "Error: offline")
+			throw "Empty and non-empty enum branches must preserve their results";
 
 		// Test 5: Nested enum patterns
-		testNestedEnums();
+		if (testNestedEnums(Container.Box(Content.Text("Hello"))) != "Box contains text: Hello"
+			|| testNestedEnums(Container.Box(Content.Number(12))) != "Box contains number: 12"
+			|| testNestedEnums(Container.Box(Content.Empty)) != "Box is empty"
+			|| testNestedEnums(Container.List([])) != "List with 0 items"
+			|| testNestedEnums(Container.Empty) != "Container is empty")
+			throw "Nested enum branches must preserve their payloads";
 
 		// Test 6: Mixed parameter and non-parameter cases
 		testMixedCases();
@@ -75,8 +84,7 @@ class Main {
 		trace("Empty cases handled");
 	}
 
-	static function testFallThrough() {
-		var state = State.Loading(50);
+	static function testFallThrough(state:State):String {
 		var description = "";
 
 		switch (state) {
@@ -90,27 +98,25 @@ class Main {
 				description = 'Error: $msg';
 		}
 
-		trace(description);
+		return description;
 	}
 
-	static function testNestedEnums() {
-		var container = Container.Box(Content.Text("Hello"));
-
-		switch (container) {
+	static function testNestedEnums(container:Container):String {
+		return switch (container) {
 			case Box(content):
 				switch (content) {
 					case Text(str):
-						trace('Box contains text: $str');
+						'Box contains text: $str';
 					case Number(n):
-						trace('Box contains number: $n');
+						'Box contains number: $n';
 					case Empty:
-						trace('Box is empty');
+						'Box is empty';
 				}
 			case List(items):
-				trace('List with ${items.length} items');
+				'List with ${items.length} items';
 			case Empty:
-				trace('Container is empty');
-		}
+				'Container is empty';
+		};
 	}
 
 	static function testMixedCases() {

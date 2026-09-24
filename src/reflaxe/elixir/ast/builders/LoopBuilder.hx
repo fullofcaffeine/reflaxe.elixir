@@ -2027,7 +2027,8 @@ class LoopBuilder {
 		};
 	}
 
-	static function rewriteReducerStatementSequence(stmts:Array<ElixirAST>, continueValue:ElixirAST, continuePattern:EPattern):ElixirAST {
+	static function rewriteReducerStatementSequence(stmts:Array<ElixirAST>, continueValue:ElixirAST, continuePattern:EPattern,
+			discardValue:Bool = false):ElixirAST {
 		if (stmts == null || stmts.length == 0)
 			return makeCont(continueValue);
 
@@ -2039,10 +2040,10 @@ class LoopBuilder {
 			var last = index == stmts.length - 1;
 
 			if (last)
-				return rewriteReducerTerminalForCarrier(stmt, continueValue, continuePattern);
+				return rewriteReducerTerminalForCarrier(stmt, continueValue, continuePattern, discardValue);
 
 			if (subtreeContainsFromReturnAst(stmt)) {
-				var carrierStmt = rewriteReducerTerminalForCarrier(stmt, continueValue, continuePattern);
+				var carrierStmt = rewriteReducerTerminalForCarrier(stmt, continueValue, continuePattern, true);
 				return makeAST(ECase(carrierStmt, [
 					{
 						pattern: PTuple([PLiteral(makeAST(EAtom(ElixirAtom.raw("halt")))), PVar("reflaxe_halt_payload")]),
@@ -2066,24 +2067,35 @@ class LoopBuilder {
 		return rewriteFrom(0);
 	}
 
-	static function rewriteReducerTerminalForCarrier(expr:ElixirAST, continueValue:ElixirAST, continuePattern:EPattern):ElixirAST {
+	/**
+	 * Tag each reducer exit as function return or ordinary loop continuation.
+	 * Descend through branch-owning expressions, including try handlers: wrapping
+	 * their value from outside would turn an early return into accumulator state.
+	 * Closure bodies remain separate function scopes and are not rewritten here.
+	 */
+	static function rewriteReducerTerminalForCarrier(expr:ElixirAST, continueValue:ElixirAST, continuePattern:EPattern, discardValue:Bool = false):ElixirAST {
 		if (expr == null)
 			return makeCont(continueValue);
 		if (isFromReturnAst(expr))
 			return makeHaltReturn(expr);
 
 		return switch (expr.def) {
+			case ECond(clauses):
+				makeASTWithMeta(ECond([
+					for (clause in clauses)
+						{condition: clause.condition, body: rewriteReducerTerminalForCarrier(clause.body, continueValue, continuePattern, discardValue)}
+				]), expr.metadata, expr.pos);
 			case EBlock(stmts):
-				rewriteReducerStatementSequence(stmts, continueValue, continuePattern);
+				rewriteReducerStatementSequence(stmts, continueValue, continuePattern, discardValue);
 			case EDo(stmts):
-				rewriteReducerStatementSequence(stmts, continueValue, continuePattern);
+				rewriteReducerStatementSequence(stmts, continueValue, continuePattern, discardValue);
 			case EIf(condition, thenBranch, elseBranch):
-				makeASTWithMeta(EIf(condition, rewriteReducerTerminalForCarrier(thenBranch, continueValue, continuePattern),
-					elseBranch != null ? rewriteReducerTerminalForCarrier(elseBranch, continueValue, continuePattern) : makeCont(continueValue)),
+				makeASTWithMeta(EIf(condition, rewriteReducerTerminalForCarrier(thenBranch, continueValue, continuePattern, discardValue),
+					elseBranch != null ? rewriteReducerTerminalForCarrier(elseBranch, continueValue, continuePattern, discardValue) : makeCont(continueValue)),
 					expr.metadata, expr.pos);
 			case EUnless(condition, body, elseBranch):
-				makeASTWithMeta(EUnless(condition, rewriteReducerTerminalForCarrier(body, continueValue, continuePattern),
-					elseBranch != null ? rewriteReducerTerminalForCarrier(elseBranch, continueValue, continuePattern) : makeCont(continueValue)),
+				makeASTWithMeta(EUnless(condition, rewriteReducerTerminalForCarrier(body, continueValue, continuePattern, discardValue),
+					elseBranch != null ? rewriteReducerTerminalForCarrier(elseBranch, continueValue, continuePattern, discardValue) : makeCont(continueValue)),
 					expr.metadata, expr.pos);
 			case ECase(scrutinee, clauses):
 				makeASTWithMeta(ECase(scrutinee, [
@@ -2091,17 +2103,37 @@ class LoopBuilder {
 						{
 							pattern: clause.pattern,
 							guard: clause.guard,
-							body: rewriteReducerTerminalForCarrier(clause.body, continueValue, continuePattern)
+							body: rewriteReducerTerminalForCarrier(clause.body, continueValue, continuePattern, discardValue)
 						}
 				]), expr.metadata, expr.pos);
+			case ETry(protectedBody, rescue, catches, afterBlock, elseBlock):
+				// A Haxe return in either the protected body or a handler exits the
+				// enclosing function. Put the carrier inside each branch, so a rescued
+				// return cannot become the next iteration's ordinary accumulator.
+				function branchResult(branch:ElixirAST):ElixirAST {
+					return rewriteReducerTerminalForCarrier(branch, continueValue, continuePattern, true);
+				}
+				makeASTWithMeta(ETry(elseBlock == null ? branchResult(protectedBody) : protectedBody, [
+					for (clause in rescue)
+						{pattern: clause.pattern, varName: clause.varName, body: branchResult(clause.body)}
+				], [
+					for (clause in catches)
+						{kind: clause.kind, pattern: clause.pattern, body: branchResult(clause.body)}
+				], afterBlock,
+					elseBlock == null ? null : branchResult(elseBlock)), expr.metadata, expr.pos);
 			case EMatch(_, _):
 				makeAST(EBlock([expr, makeCont(continueValue)]));
 			case EBinary(Match, _, _):
 				makeAST(EBlock([expr, makeCont(continueValue)]));
 			case EReceiverEffect(_):
 				makeAST(EBlock([expr, makeCont(continueValue)]));
+			case ERaise(_, _) | EThrow(_) | ECall(null, "reraise", _):
+				// Exception and loop-control exits have no continuation value.
+				expr;
 			default:
-				makeCont(expr);
+				// A statement contributes effects and current state; a prebuilt
+				// accumulator expression already is the value to carry.
+				discardValue ? makeAST(EBlock([expr, makeCont(continueValue)])) : makeCont(expr);
 		};
 	}
 
@@ -2220,20 +2252,7 @@ class LoopBuilder {
 					}
 				]))
 			]));
-			var continueFallthrough = makeContinueFallthrough(outerBindPattern);
-
-			return makeAST(ECase(reduceWhileCall, [
-				{
-					pattern: PTuple([PLiteral(makeAST(EAtom(RETURN_TAG))), PVar("reflaxe_return_value")]),
-					guard: null,
-					body: makeAST(EVar("reflaxe_return_value"))
-				},
-				{
-					pattern: PTuple([PLiteral(makeAST(EAtom(CONTINUE_TAG))), continueFallthrough.pattern]),
-					guard: null,
-					body: continueFallthrough.body
-				}
-			]));
+			return unwrapReturnCarrier(reduceWhileCall, outerBindPattern);
 		}
 
 		if (bodyContainsLoopControl) {
@@ -2738,6 +2757,10 @@ class LoopBuilder {
 	/**
 	 * Main entry point for TWhile compilation
 	 * Extracted from ElixirASTBuilder lines 5350-6040
+	 * Indexed array loops with break/continue use the existing control-aware
+	 * reducer even without changed locals. For `for (x in xs) { if (x < 0)
+	 * break; consume(x); }`, an empty tuple carries state and the reducer catches
+	 * the break locally; a bare Enum.each would let it escape the function.
 	 */
 	public static function buildWhileComplete(econd:TypedExpr, e:TypedExpr, normalWhile:Bool, expr:TypedExpr, context:BuildContext,
 			toElixirVarName:String->String):ElixirASTDef {
@@ -2774,7 +2797,10 @@ class LoopBuilder {
 			// If the user body mutates outer locals, lower to Enum.reduce with an explicit
 			// state accumulator so mutations survive across iterations.
 			var mutated = MutabilityDetector.detectMutatedVariables(forInArrayPattern.userBody);
-			if (Lambda.count(mutated) == 0) {
+			var loopControl = analyzeCurrentLoopControl(forInArrayPattern.userBody);
+			var bodyContainsLoopControl = loopControl.hasBreak || loopControl.hasContinue;
+			// Side-effect-only loops still need the current-loop break/continue handler.
+			if (Lambda.count(mutated) == 0 && !bodyContainsLoopControl) {
 				var bodyAst = buildExpression(forInArrayPattern.userBody);
 				return ERemoteCall(makeAST(EVar("Enum")), "each", [
 					arrayExpr,
@@ -2855,8 +2881,6 @@ class LoopBuilder {
 					}
 				}
 			}
-			var loopControl = analyzeCurrentLoopControl(forInArrayPattern.userBody);
-			var bodyContainsLoopControl = loopControl.hasBreak || loopControl.hasContinue;
 			if (bodyContainsLoopControl && compilationContext != null && compilationContext.loopControlStateStack != null) {
 				var stateNames = [for (m in mutatedList) m.accName];
 				compilationContext.loopControlStateStack.push(stateNames.length == 1 ? LoopStateVar(stateNames[0]) : LoopStateTuple(stateNames));
@@ -3417,6 +3441,13 @@ class LoopBuilder {
 		return used;
 	}
 
+	/**
+	 * Recover numeric range loops and preserve their local control flow.
+	 * Haxe `for (i in 0...limit) { if (stop(i)) break; visit(i); }` needs
+	 * Enum.reduce_while with a local catch even when no outer value changes.
+	 * Reuse the stateful reducer with an empty tuple in that case. Nested loop
+	 * control belongs to the nested loop, so it cannot halt the outer range.
+	 */
 	static function buildDesugaredForRangeLoop(econd:TypedExpr, body:TypedExpr, context:BuildContext, toElixirVarName:String->String):Null<ElixirASTDef> {
 		// Unwrap common wrappers in the while condition.
 		function unwrap(e:TypedExpr):TypedExpr {
@@ -3516,7 +3547,10 @@ class LoopBuilder {
 
 		// If the loop mutates outer locals, use Enum.reduce and thread state explicitly.
 		var mutated = MutabilityDetector.detectMutatedVariables(bodyInfo.userCode);
-		if (Lambda.count(mutated) == 0) {
+		var loopControl = analyzeCurrentLoopControl(bodyInfo.userCode);
+		var bodyContainsLoopControl = loopControl.hasBreak || loopControl.hasContinue;
+		// An empty state is valid: control flow, not mutation alone, selects the reducer.
+		if (Lambda.count(mutated) == 0 && !bodyContainsLoopControl) {
 			var bodyAst = buildExpression(bodyInfo.userCode);
 			return ERemoteCall(makeAST(EVar("Enum")), "each", [
 				rangeAst,
@@ -3595,8 +3629,6 @@ class LoopBuilder {
 				}
 			}
 		}
-		var loopControl = analyzeCurrentLoopControl(bodyInfo.userCode);
-		var bodyContainsLoopControl = loopControl.hasBreak || loopControl.hasContinue;
 		if (bodyContainsLoopControl && compilationContext != null && compilationContext.loopControlStateStack != null) {
 			var stateNames = [for (m in mutatedList) m.accName];
 			compilationContext.loopControlStateStack.push(stateNames.length == 1 ? LoopStateVar(stateNames[0]) : LoopStateTuple(stateNames));
@@ -4144,6 +4176,58 @@ class LoopBuilder {
 		return makeAST(ETry(body, [], catchClauses, null, null));
 	}
 
+	/** Exposes loop completion to the existing remainder-lift pass without throwing a function return. */
+	static function unwrapReturnCarrier(reducer:ElixirAST, outerPattern:EPattern):ElixirAST {
+		final fallthrough = makeContinueFallthrough(outerPattern);
+		return makeAST(ECase(reducer, [
+			{
+				pattern: PTuple([PLiteral(makeAST(EAtom(RETURN_TAG))), PVar("reflaxe_return_value")]),
+				guard: null,
+				body: makeAST(EVar("reflaxe_return_value"))
+			},
+			{
+				pattern: PTuple([PLiteral(makeAST(EAtom(CONTINUE_TAG))), fallthrough.pattern]),
+				guard: null,
+				body: fallthrough.body
+			}
+		]));
+	}
+
+	/**
+	 * Uses the collection-loop return protocol for general while loops.
+	 * Condition failure and break preserve state; a source return has a distinct tag.
+	 * The body rewrite preserves early exits before subsequent statements, and the
+	 * existing remainder-lift pass keeps the enclosing function's tail off return paths.
+	 */
+	static function buildReturningWhile(condition:ElixirAST, body:ElixirAST, state:{
+		initial:ElixirAST,
+		pattern:EPattern,
+		outerPattern:EPattern,
+		value:ElixirAST
+	}):ElixirASTDef {
+		final rewrittenBody = rewriteReducerBodyForReturnCarrier(body, state.value, state.pattern);
+		final conditionExit = makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("halt"))), makeContinueState(state.value)]));
+		final callbackBody = wrapLoopControlTry(makeAST(EIf(condition, rewrittenBody, conditionExit)), state.value, value -> makeContinueState(value));
+		final iterations = makeAST(ERemoteCall(makeAST(EVar("Stream")), "iterate", [
+			makeAST(EInteger(0)),
+			makeAST(EFn([
+				{args: [PVar("n")], guard: null, body: makeAST(EBinary(Add, makeAST(EVar("n")), makeAST(EInteger(1))))}
+			]))
+		]));
+		final reducer = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce_while", [
+			iterations,
+			makeContinueState(state.initial),
+			makeAST(EFn([
+				{
+					args: [PWildcard, PTuple([PLiteral(makeAST(EAtom(CONTINUE_TAG))), state.pattern])],
+					guard: null,
+					body: callbackBody
+				}
+			]))
+		]));
+		return unwrapReturnCarrier(reducer, state.outerPattern).def;
+	}
+
 	static function buildWhileLoop(econd:TypedExpr, e:TypedExpr, normalWhile:Bool, context:BuildContext, toElixirVarName:String->String):ElixirASTDef {
 		#if debug_loop_builder
 		#end
@@ -4189,8 +4273,15 @@ class LoopBuilder {
 
 		// If there are variables to thread, use reduce_while with state
 		if (Lambda.count(mutatedVars) > 0) {
-			return buildReduceWhileWithState(mutatedVars, condition, body, context, toElixirVarName);
+			return buildReduceWhileWithState(mutatedVars, condition, body, context, toElixirVarName, containsNonLocalReturn(e));
 		} else {
+			if (containsNonLocalReturn(e))
+				return buildReturningWhile(condition, body, {
+					initial: makeAST(EAtom(ElixirAtom.ok())),
+					pattern: PVar("acc"),
+					outerPattern: PWildcard,
+					value: makeAST(EVar("acc"))
+				});
 			// Flatten body blocks so downstream hygiene can see assignments and the {:cont, acc}
 			// tuple in a single block (avoids incorrect "unused assignment" underscoring).
 			function buildThenBlock(bodyExpr:ElixirAST):ElixirAST {
@@ -4239,7 +4330,7 @@ class LoopBuilder {
 	 * Build reduce_while with state threading for mutated variables
 	 */
 	static function buildReduceWhileWithState(mutatedVars:Map<Int, TVar>, condition:ElixirAST, body:ElixirAST, context:BuildContext,
-			toElixirVarName:String->String):ElixirASTDef {
+			toElixirVarName:String->String, bodyContainsReturn:Bool):ElixirASTDef {
 		#if debug_loop_builder
 		if (body != null) {
 			var bodyStr = ElixirASTPrinter.print(body, 0);
@@ -4336,6 +4427,13 @@ class LoopBuilder {
 
 		// Transform body similarly
 		var transformedBody = transformExpressionWithMapping(body, outerToReducerVar);
+		if (bodyContainsReturn)
+			return buildReturningWhile(transformedCondition, transformedBody, {
+				initial: initAcc,
+				pattern: reducerAccPattern,
+				outerPattern: finalAccPattern,
+				value: newAccTuple
+			});
 
 		#if debug_loop_builder
 		#end
@@ -4454,6 +4552,20 @@ class LoopBuilder {
 				case EVar(name):
 					var to = mapped(name);
 					to != null ? makeASTWithMeta(EVar(to), n.metadata, n.pos) : n;
+
+				case EReceiverEffect(effect):
+					// The operation's reads were renamed by child traversal. Its write
+					// target is a binding descriptor, not a child expression, and must
+					// select the same loop state. Otherwise nested count++ writes an
+					// unused outer local while returning the unchanged accumulator.
+					var to = mapped(effect.receiver.name);
+					to != null ? makeASTWithMeta(EReceiverEffect({
+						receiver: {varId: effect.receiver.varId, name: to},
+						operation: effect.operation,
+						resultShape: effect.resultShape,
+						valueProjection: effect.valueProjection,
+						writeback: effect.writeback
+					}), n.metadata, n.pos) : n;
 
 				// Some builders emit assignments as `left = rhs` using EBinary(Match, ...).
 				// Rewrite the binder to the reducer var so subsequent passes see an actual

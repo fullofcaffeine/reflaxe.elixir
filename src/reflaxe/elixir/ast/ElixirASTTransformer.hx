@@ -786,7 +786,7 @@ class ElixirASTTransformer {
 
 		return {
 			pattern: clause.pattern,
-			guard: null,
+			guard: clause.guard,
 			body: flatCond
 		};
 	}
@@ -1175,300 +1175,83 @@ class ElixirASTTransformer {
 	 * - Anonymous functions: May reference outer scope variables
 	 */
 	/**
-	 * Remove Redundant Enum Extraction Pass
+	 * Remove only extractions already supplied by the current tuple pattern.
 	 *
-	 * WHY: Elixir pattern matching already extracts values, but Haxe generates redundant elem() calls
-	 * WHAT: Removes assignments like `g = elem(result, 1)` after pattern `{:ok, g}`
-	 * HOW: Detects and removes redundant extraction statements in case bodies
-	 *
-	 * EXAMPLE:
-	 * Before:
-	 *   {:ok, g} ->
-	 *     g = elem(result, 1)  # Redundant!
-	 *     value = g
-	 *     value
-	 *
-	 * After:
-	 *   {:ok, g} ->
-	 *     value = g
-	 *     value
+	 * Temporary-looking names are not evidence of redundancy: their assignments
+	 * can preserve distinct payloads or values captured from an enclosing scope.
+	 * Restrict removal to a leading prefix, before any retained statement can
+	 * rebind the target or payload. Keep the final expression's return value.
 	 */
 	static function removeRedundantEnumExtractionPass(ast:ElixirAST):ElixirAST {
-		#if debug_redundant_extraction
-		#end
+		function variableName(node:ElixirAST):Null<String> {
+			return node == null ? null : switch (node.def) {
+				case EVar(name): name;
+				case EParen(inner): variableName(inner);
+				default: null;
+			};
+		}
 
-		// Track the case target variable name for nested detection
-		var caseTargetVar:String = null;
-		// Track whether the current case has an enum binding plan
-		var currentCaseHasBindingPlan:Bool = false;
+		function suppliedByPattern(statement:ElixirAST, targetName:Null<String>, elements:Array<EPattern>):Bool {
+			if (statement == null)
+				return false;
+			var assignment = switch (statement.def) {
+				case EMatch(PVar(name), rhs) | EBinary(Match, {def: EVar(name)}, rhs): {name: name, rhs: rhs};
+				default: null;
+			};
+			if (assignment == null || assignment.rhs == null)
+				return false;
+			var payloadIndex = -1;
+			for (i in 1...elements.length)
+				switch (elements[i]) {
+					case PVar(name) if (name == assignment.name):
+						payloadIndex = i;
+					default:
+				}
+			if (payloadIndex < 0)
+				return false;
+			if (variableName(assignment.rhs) == assignment.name)
+				return true;
+			if (targetName == null)
+				return false;
+			// A clause may shadow its own scrutinee name. Only flat payload
+			// binders with distinct names prove that elem still reads the source.
+			for (i in 1...elements.length)
+				switch (elements[i]) {
+					case PVar(name) if (name != targetName):
+					case PWildcard:
+					default:
+						return false;
+				}
+			return switch (assignment.rhs.def) {
+				case ECall(null, "elem", [source, {def: EInteger(index)}]) | ERemoteCall({def: EVar("Kernel")}, "elem", [source, {def: EInteger(index)}]):
+					variableName(source) == targetName && index == payloadIndex;
+				default: false;
+			};
+		}
 
 		return transformNode(ast, function(node:ElixirAST):ElixirAST {
-			switch (node.def) {
+			return switch (node.def) {
 				case ECase(target, clauses):
-					// Enhanced debug for ChangesetUtils issue
-					var targetDebug = switch (target.def) {
-						case EVar(v): 'variable: $v';
-						case EParen(inner): switch (inner.def) {
-								case EVar(v): 'variable in parens: $v';
-								default: 'complex expression';
+					var targetName = variableName(target);
+					var nextClauses = [
+						for (clause in clauses) {
+							var nextBody = clause.body == null ? null : switch [clause.pattern, clause.body.def] {
+								case [PTuple(elements), EBlock(statements)] if (elements.length > 0 && switch (elements[0]) {
+										case PLiteral({def: EAtom(_)}): true;
+										default: false;
+									}):
+									var start = 0;
+									while (start < statements.length - 1 && suppliedByPattern(statements[start], targetName, elements))
+										start++;
+									start == 0 ? clause.body : makeASTWithMeta(EBlock(statements.slice(start)), clause.body.metadata, clause.body.pos);
+								default: clause.body;
 							};
-						default: 'complex expression';
-					};
-					#if debug_redundant_extraction
-					#end
-					// Check if this case has an enum binding plan
-					currentCaseHasBindingPlan = node.metadata != null && node.metadata.hasEnumBindingPlan == true;
-					#if debug_enum_extraction
-					if (currentCaseHasBindingPlan) {}
-					#end
-
-					// Extract the case target variable name
-					switch (target.def) {
-						case EVar(v): caseTargetVar = v;
-						case EParen(inner):
-							switch (inner.def) {
-								case EVar(v): caseTargetVar = v;
-								default:
-							}
-						default:
-					}
-
-					// Process each case clause
-					var newClauses = [];
-					for (i in 0...clauses.length) {
-						var clause = clauses[i];
-						// ECaseClause is a typedef with pattern, guard, and body fields
-						var pattern = clause.pattern;
-						var guard = clause.guard;
-						var body = clause.body;
-
-						// Debug pattern to understand ChangesetUtils issue
-						#if debug_redundant_extraction
-						var patternDebug = switch (pattern) {
-							case PTuple(elements):
-								var elemStrs = [
-									for (e in elements)
-										switch (e) {
-											case PLiteral(ast):
-												switch (ast.def) {
-													case EAtom(a): ':$a';
-													default: '?';
-												}
-											case PVar(v):
-												v;
-											default:
-												'?';
-										}
-								];
-								'{${elemStrs.join(", ")}}';
-							default: 'other pattern';
-						};
-						#end
-
-						// Propagate the binding plan flag to the clause body
-						if (currentCaseHasBindingPlan && body != null) {
-							if (body.metadata == null)
-								body.metadata = {};
-							body.metadata.parentHasBindingPlan = true;
+							{pattern: clause.pattern, guard: clause.guard, body: nextBody};
 						}
-
-						// Check if body contains redundant extraction (guard for null bodies)
-						var newBody = if (body == null) null else switch (body.def) {
-							case EBlock(exprs):
-								// M0 FIX: Track variable renames when removing redundant assignments
-								var varRenames:Map<String, String> = new Map();
-
-								// First pass: Filter out redundant elem() assignments and track renames
-								var filtered = [];
-								for (i in 0...exprs.length) {
-									var expr = exprs[i];
-
-									// Skip null expressions (these are filtered assignments from TEnumParameter)
-									if (expr == null) {
-										continue;
-									}
-
-									var isRedundant = false;
-
-									// Check if marked as redundant via metadata
-									if (expr.metadata != null && expr.metadata.redundantEnumExtraction == true) {
-										isRedundant = true;
-										#if debug_redundant_extraction
-										#end
-									}
-
-									// Check if this is a redundant extraction
-									switch (expr.def) {
-										case EMatch(PVar(varName), rhs):
-											// Enhanced debug for ChangesetUtils issues
-											if (rhs != null) {
-												var rhsDebug = switch (rhs.def) {
-													case EVar(v): 'EVar($v)';
-													case ECall(_, fn, _): 'ECall($fn)';
-													default: reflaxe.elixir.util.EnumReflection.enumConstructor(rhs.def);
-												};
-												#if debug_redundant_extraction
-												#end
-											} else {
-												#if debug_redundant_extraction
-												#end
-												// Mark this as redundant since it has no RHS
-												isRedundant = true;
-											}
-
-											// Check for self-assignment first (e.g., content = content)
-											if (varName == switch (rhs.def) {
-													case EVar(v): v;
-													default: null;
-												}) {
-												isRedundant = true;
-												#if debug_redundant_extraction
-												#end
-												}
-											// Check if the target variable itself is a temp pattern var
-											else if (reflaxe.elixir.ast.ElixirASTBuilder.isTempPatternVarName(varName)) {
-												isRedundant = true;
-												#if debug_redundant_extraction
-												#end
-											}
-											// Check if RHS is a reference to a temp variable (g, g1, g2, _g, etc.)
-											else switch (rhs.def) {
-												case EVar(v):
-													// Check if this is an assignment from a temp variable
-													// Handle both "g" and "_g" patterns
-													// CRITICAL FIX: For idiomatic enums, the pattern uses the actual variable names
-													// (like {:ok, value}) instead of temp vars (like {:ok, g}).
-													// This means assignments like "value = g" are trying to assign from a
-													// non-existent variable 'g'. These MUST be removed unconditionally.
-													//
-													// Enhanced: For idiomatic enums with canonical pattern names,
-													// ANY assignment where RHS is "g" or a temp var should be removed
-													// because patterns already extract the values
-
-													// First, check if RHS is "g" (regardless of what LHS is)
-													// This catches "value = g" in idiomatic enums
-													if (v == "g" || v == "_g") {
-														isRedundant = true;
-														#if debug_redundant_extraction
-														#end
-													}
-													// Check for numbered temp vars in RHS: g1, g2, etc.
-													else if (v.length > 1 && v.charAt(0) == "g" && v.length == 2 && v.charAt(1) >= '0' && v.charAt(1) <= '9') {
-														isRedundant = true;
-														#if debug_redundant_extraction
-														#end
-													}
-													// Check for underscore-prefixed numbered temp vars: _g1, _g2, etc.
-													else if (v.length == 3 && v.charAt(0) == "_" && v.charAt(1) == "g" && v.charAt(2) >= '0'
-														&& v.charAt(2) <= '9') {
-														isRedundant = true;
-														#if debug_redundant_extraction
-														#end
-													}
-														// Also check for "g = result" pattern where result is case target
-													// This is ALWAYS wrong and should be removed - the pattern already extracted g
-													else if (v == caseTargetVar) {
-														// Remove assignments like "g = result" where g is a temp var
-														// The pattern {:error, g} already binds g to the error value
-														// So "g = result" would incorrectly assign the whole tuple
-														if (varName == "g"
-															|| varName == "_g"
-															|| (varName.length == 2 && varName.charAt(0) == "g" && varName.charAt(1) >= '0'
-																&& varName.charAt(1) <= '9')
-															|| (varName.length == 3 && varName.charAt(0) == "_" && varName.charAt(1) == "g"
-																&& varName.charAt(2) >= '0' && varName.charAt(2) <= '9')) {
-															isRedundant = true;
-															#if debug_redundant_extraction
-															#end
-														}
-													}
-
-												case ECall(targetExpr, funcName, args) if (funcName == "elem" && args.length == 1):
-													#if debug_redundant_extraction
-													#end
-													// Check if elem is extracting from the case target
-													var isTargetMatch = switch (targetExpr.def) {
-														case EVar(v):
-															#if debug_redundant_extraction
-															#end
-															// Check if this matches the case target variable
-															v == caseTargetVar;
-														default:
-															#if debug_redundant_extraction
-															#end
-															false;
-													};
-
-													if (isTargetMatch) {
-														// Check if this variable was already extracted by the pattern
-														// Pattern variables like 'g', 'g1', 'g2' are extracted
-														if (varName == "g"
-															|| (varName.length > 1 && varName.charAt(0) == "g" && varName.charAt(1) >= '0'
-																&& varName.charAt(1) <= '9')) {
-															isRedundant = true;
-															#if debug_redundant_extraction
-															#end
-														} else {
-															#if debug_redundant_extraction
-															#end
-														}
-													} else {
-														#if debug_redundant_extraction
-														#end
-													}
-												default:
-											}
-										default:
-									}
-
-									if (!isRedundant) {
-										filtered.push(expr);
-									}
-								}
-
-								// Return filtered block or single expression if only one left
-								// CRITICAL FIX: Must actually evaluate to a value, not just execute expressions
-								// ALSO: Ensure immutability by creating new AST nodes
-								if (filtered.length == 0) {
-									makeAST(ENil);
-								} else if (filtered.length == 1) {
-									// Recursively transform the single expression to ensure complete immutability
-									transformNode(filtered[0], function(n) {
-										return n;
-									});
-								} else {
-									// Recursively transform each filtered expression to ensure immutability
-									var transformedFiltered = filtered.map(function(expr) {
-										return transformNode(expr, function(n) {
-											return n;
-										});
-									});
-									// Preserve metadata when creating new block
-									makeASTWithMeta(EBlock(transformedFiltered), body.metadata, body.pos);
-								};
-
-							default:
-								body; // Not a block, keep as-is
-						};
-
-						// Create new clause with updated body
-						// IMPORTANT: Recursively transform the new body to ensure all nested structures are processed
-						var fullyTransformedBody = transformNode(newBody, function(n) {
-							return n;
-						});
-						newClauses.push({
-							pattern: pattern,
-							guard: guard,
-							body: fullyTransformedBody
-						});
-					}
-
-					// Create new ECase node preserving original metadata and position
-					return makeASTWithMeta(ECase(target, newClauses), node.metadata, node.pos);
-
-				default:
-					return node;
-			}
+					];
+					makeASTWithMeta(ECase(target, nextClauses), node.metadata, node.pos);
+				default: node;
+			};
 		});
 	}
 
@@ -2964,6 +2747,25 @@ class ElixirASTTransformer {
 	 * NOTE: We use a custom traversal instead of transformNode to avoid recursive transformation
 	 */
 	static function stringInterpolationPass(ast:ElixirAST):ElixirAST {
+		// Raw interpolation must not hide bindings from later scope and hygiene passes.
+		// Keep complex operands structured; the printer can emit their concatenation.
+		function containsBindingScope(node:ElixirAST):Bool {
+			if (node == null)
+				return false;
+			switch (node.def) {
+				case EBlock(_), EDo(_), EFn(_), EMatch(_, _), EBinary(Match, _, _), ECase(_, _), EFor(_, _, _, _, _), EWith(_, _, _), ETry(_, _, _, _, _),
+					EReceiverEffect(_):
+					return true;
+				default:
+			}
+			var found = false;
+			iterateAST(node, child -> {
+				if (!found)
+					found = containsBindingScope(child);
+			});
+			return found;
+		}
+
 		function transform(node:ElixirAST):ElixirAST {
 			// Handle null nodes
 			if (node == null)
@@ -2991,6 +2793,10 @@ class ElixirASTTransformer {
 					}
 
 					collectParts(node);
+					for (part in parts) {
+						if (!part.isString && containsBindingScope(part.expr))
+							return node;
+					}
 
 					// Check if we should convert to interpolation
 					var hasNonString = false;

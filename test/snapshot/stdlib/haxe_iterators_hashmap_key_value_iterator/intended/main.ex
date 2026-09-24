@@ -11,14 +11,14 @@ defmodule Main do
     map = apply(Map.get(map, :__reflaxe_class__) || Map.get(map, :__struct__), :set, [map, first, "one"])
     map = apply(Map.get(map, :__reflaxe_class__) || Map.get(map, :__struct__), :set, [map, second, "two"])
     iterator = HashMapKeyValueIterator.new(map)
-    seen = Array.new()
+    seen = []
     {seen} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {seen}, fn _, {acc_seen} ->
       try do
         if (apply(Map.get(iterator, :__reflaxe_class__) || Map.get(iterator, :__struct__), :has_next, [iterator])) do
           pair = apply(Map.get(iterator, :__reflaxe_class__) || Map.get(iterator, :__struct__), :next, [iterator])
           acc_seen = acc_seen ++ [(fn ->
-            reflaxe_dispatch_receiver = pair.key
-            apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+            reflaxe_dispatch_receiver_node_0 = pair.key
+            apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :to_string, [reflaxe_dispatch_receiver_node_0])
           end).() <> "=" <> pair.value]
           {:cont, {acc_seen}}
         else
@@ -35,7 +35,7 @@ defmodule Main do
           {:cont, {acc_seen}}
       end
     end)
-    seen = Enum.sort(seen, fn a, b -> &Reflect.compare/2.(a, b) < 0 end)
+    seen = Enum.sort(seen, fn a, b -> (&Reflect.compare/2).(a, b) < 0 end)
     assert_that(Enum.join(seen, ",") == "key:1=one,key:2=two", "explicit HashMapKeyValueIterator should preserve key/value pairs")
   end
 end

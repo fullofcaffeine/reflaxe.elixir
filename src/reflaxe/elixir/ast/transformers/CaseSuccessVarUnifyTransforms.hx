@@ -45,8 +45,8 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - No name invention: only trims a single leading underscore and only when the body references the trimmed
  *   name. If the body doesn’t use it, the pattern binder remains underscored.
  * - Shape/API-based: restricted to the success tuple `{:ok, _x}`; error branches and other tuples untouched.
- * - Complements CaseSuccessVarUnifier (which rewrites undefined body refs to the bound success var); this
- *   pass aligns the pattern itself with usage to avoid future drift.
+ * - Like the lexical success-binder alignment, this aligns the pattern spelling.
+ *   Neither pass may infer payload identity from an unrelated free reference.
  */
 class CaseSuccessVarUnifyTransforms {
 	public static function transformPass(ast:ElixirAST):ElixirAST {

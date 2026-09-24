@@ -758,7 +758,7 @@ class ElixirASTBuilder {
 
 				// Delegate simple variable declarations to VariableBuilder
 				// Complex patterns (blocks, comprehensions) are handled below
-				if (init == null || isSimpleInit(init)) {
+				if (VariableBuilder.isSimpleInit(init)) {
 					var result = VariableBuilder.buildVariableDeclaration(v, init, currentContext);
 
 					#if debug_ast_builder
@@ -1059,7 +1059,7 @@ class ElixirASTBuilder {
 
 				if (init != null) {
 					switch (init.expr) {
-						case TEnumParameter(e, _, index):
+						case TEnumParameter(e, ef, index):
 							// This is the temp extraction: _g = result.elem(1)
 							isEnumExtraction = true;
 							varOrigin = ExtractionTemp; // Mark as extraction temp
@@ -1100,8 +1100,11 @@ class ElixirASTBuilder {
 							// If so, the pattern already extracts it correctly and we should skip this assignment
 							if (currentContext.currentClauseContext != null
 								&& currentContext.currentClauseContext.enumBindingPlan != null) {
-								var plan = currentContext.currentClauseContext.enumBindingPlan;
-								if (plan.exists(index)) {
+								var binding = currentContext.currentClauseContext.findEnumBinding(currentContext.substituteIfNeeded(e), ef.name, index);
+								if (binding != null) {
+									// Omitting the extraction also requires redirecting this exact
+									// typed local to the payload already supplied by the pattern.
+									currentContext.currentClauseContext.pushPatternBindings([{varId: v.id, binderName: binding.finalName}]);
 									// The binding plan already handles this extraction in the pattern
 									shouldSkipRedundantExtraction = true;
 									#if debug_enum_extraction
@@ -1525,11 +1528,9 @@ class ElixirASTBuilder {
 								// CRITICAL: Check what TEnumParameter would return BEFORE building it
 								// This avoids creating g = g assignments
 								if (currentContext.currentClauseContext != null) {
-									var hasPlan = currentContext.currentClauseContext.enumBindingPlan.exists(index);
+									var info = currentContext.currentClauseContext.findEnumBinding(currentContext.substituteIfNeeded(e), ef.name, index);
 
-									if (hasPlan) {
-										var info = currentContext.currentClauseContext.enumBindingPlan.get(index);
-
+									if (info != null) {
 										if (info.finalName == finalVarName) {
 											// This would create g = g
 											shouldSkipAssignment = true;
@@ -2947,253 +2948,16 @@ class ElixirASTBuilder {
 				return LoopBuilder.buildWhileComplete(econd, e, normalWhile, expr, currentContext, name -> VariableAnalyzer.toElixirVarName(name));
 
 			case TEnumParameter(e, ef, index):
-				/**
-				 * TEnumParameter extraction for enum constructor parameters
-				 *
-				 * WHY: When Haxe compiles enum patterns like `case Ok(value):`, it generates
-				 *      TEnumParameter expressions to extract the parameters. However, in Elixir
-				 *      pattern matching, the pattern `{:ok, value}` already extracts the value.
-				 *
-				 * PROBLEM: When patterns have ignored parameters like `case Ok(_):`, Haxe still
-				 *          generates TEnumParameter which tries to extract from the already-extracted
-				 *          value. This causes runtime errors like `elem(nil, 1)` when the extracted
-				 *          value is nil.
-				 *
-				 * SOLUTION: Use the EnumBindingPlan from ClauseContext which provides a single
-				 *           source of truth for variable names at each parameter index.
-				 *
-				 * EDGE CASES:
-				 * - Ignored parameters: Pattern extracts to temp var but it's not used
-				 * - Nested enums: Multiple levels of extraction
-				 * - Abstract types: May not have ClauseContext mappings
-				 * - ChangesetUtils: Patterns use canonical names but body expects temp vars
-				 */
-
-				// Debug trace to understand the extraction context
-				#if debug_enum_extraction
-				#if debug_ast_builder
-				#end
-				#if debug_ast_builder
-				#end
-				#if debug_ast_builder
-				#end
-				#if debug_ast_builder
-				#end
-				#if debug_ast_builder
-				#end
-				if (currentContext.currentClauseContext != null) {
-					#if debug_ast_builder
-					#end
-					if (currentContext.currentClauseContext.enumBindingPlan.exists(index)) {
-						var info = currentContext.currentClauseContext.enumBindingPlan.get(index);
-						#if debug_ast_builder
-						#end
-					}
-				}
-				#end
-
-				// TASK 4.5 FIX: Check if this parameter was already extracted by the pattern
-				// If the enum field name is in patternExtractedParams, the pattern already bound it
-
-				if (currentContext.currentClauseContext != null
-					&& currentContext.currentClauseContext.patternExtractedParams.contains(ef.name)) {
-					// The pattern already extracted this parameter
-					// Use the binding plan to find the actual variable name
-					if (currentContext.currentClauseContext.enumBindingPlan.exists(index)) {
-						var info = currentContext.currentClauseContext.enumBindingPlan.get(index);
-
-						#if debug_enum_parameter
-						#end
-
-						// CRITICAL FIX: If parameter is unused (has underscore prefix), return null to skip TVar
-						// This prevents generating: x = _x (where _x is the unused pattern variable)
-						// Instead we skip the assignment entirely since the pattern already has _x
-						if (!info.isUsed || (info.finalName != null && info.finalName.charAt(0) == "_")) {
-							#if debug_enum_parameter trace('[TEnumParameter]   *** RETURNING NULL - Parameter is UNUSED ***'); #end
-							return null;
-						}
-
-						// Return the pattern-bound variable directly
-						return EVar(info.finalName);
-					} else {
-						// Fallback: use the enum field name as variable name
-						var varName = VariableAnalyzer.toElixirVarName(ef.name);
-
-						#if debug_enum_extraction
-						#end
-
-						return EVar(varName);
-					}
-				}
-
-				// CRITICAL FIX for ChangesetUtils pattern-body mismatch:
-				// When TEnumParameter tries to extract from a variable like 'g' that doesn't exist
-				// because the pattern used canonical names directly (like {:ok, value}),
-				// we need to detect this and return the correct variable.
-
-				// First, check what variable we're trying to extract from
-				var sourceVarName:String = null;
-				switch (e.expr) {
-					case TLocal(v):
-						sourceVarName = VariableAnalyzer.toElixirVarName(v.name);
-						#if debug_enum_extraction
-						#if debug_ast_builder
-						#end
-						#end
-					default:
-						// Not a local variable
-				}
-
-				// Check if we have a binding plan for this index
-				if (currentContext.currentClauseContext != null && currentContext.currentClauseContext.enumBindingPlan.exists(index)) {
-					// Use the variable name from the binding plan
-					var info = currentContext.currentClauseContext.enumBindingPlan.get(index);
-
-					#if debug_ast_builder
-					#end
-
-					#if debug_enum_extraction
-					#if debug_ast_builder
-					#end
-					#end
-
-					// CRITICAL: Check if we're trying to extract from a temp var that doesn't exist
-					// This happens when the pattern used canonical names directly
-					if (sourceVarName != null && TypedExprPreprocessor.isInfrastructureVar(sourceVarName)) {
-						// We're trying to extract from an infrastructure var like 'g', '_g', 'g1', '_g1'
-						// But if the binding plan uses a different name, the pattern already extracted it
-						if (info.finalName != sourceVarName) {
-							#if debug_ast_builder
-							#end
-							#if debug_enum_extraction
-							#if debug_ast_builder
-							#end
-							#if debug_ast_builder
-							#end
-							#end
-							// The pattern already extracted to the correct variable
-							return EVar(info.finalName);
-						}
-					}
-
-					// ID-BASED TRACKING: Check if this would create a redundant assignment
-					// If the binding plan says to use the same name as the source, it would create g = g
-					if (info.finalName == sourceVarName && sourceVarName != null) {
-						#if debug_ast_builder
-						#end
-						// This would create g = g, skip the assignment by returning null
-						return null;
-					}
-
-					// CRITICAL FIX: If the pattern already extracted to a real variable name (not temp var),
-					// return null to skip the redundant TVar assignment entirely.
-					// Example: pattern {:ok, value} already binds 'value', so TVar(value, TEnumParameter(...))
-					// should be skipped - the value is already available from the pattern.
-					//
-					// This prevents generating:
-					//   {:ok, value} ->
-					//     value = value  # or value = nil
-					//
-					// When we should generate:
-					//   {:ok, value} ->
-					//     # value already available from pattern
-					//
-					// Check if the final name is NOT a temporary/infrastructure variable
-					var finalNameIsTemp = (info.finalName != null
-						&& (info.finalName == "_" || TypedExprPreprocessor.isInfrastructureVar(info.finalName)));
-
-					// ALWAYS skip TVar assignment for pattern-extracted variables
-					// Whether temp var (like "_g") or real var (like "value"),
-					// the pattern already extracted it - no assignment needed
-					#if debug_ast_builder
-					if (finalNameIsTemp) {} else {}
-					#end
-					return null;
+				// A slot number is meaningful only for the receiver destructured by its
+				// owning clause. Nested constructors can have identical names and slots.
+				var receiver = currentContext.substituteIfNeeded(e);
+				var binding = currentContext.currentClauseContext == null ? null : currentContext.currentClauseContext.findEnumBinding(receiver, ef.name,
+					index);
+				if (binding != null) {
+					binding.isUsed ? EVar(binding.finalName) : null;
 				} else {
-					#if debug_ast_builder
-					#end
-
-					// CRITICAL FIX: When there's no binding plan and we're trying to extract from
-					// a temp var that doesn't exist (like 'g', '_g'), return null to skip the assignment
-					// This happens in embedded switches where the pattern uses the actual variable name
-					if (sourceVarName != null && TypedExprPreprocessor.isInfrastructureVar(sourceVarName)) {
-						#if debug_ast_builder
-						#end
-						// Return null to skip the assignment - the pattern already extracted the value
-						return null;
-					}
-
-					// Fallback to the old logic for backward compatibility
-
-					// Check if this is extracting from an already-extracted pattern variable
-					var skipExtraction = false;
-					var extractedVarName:String = null;
-
-					// Check if we're in a switch case context where patterns have already extracted values
-					// This avoids redundant extraction like: case {:ok, g} -> g = elem(result, 1)
-
-					// Check for local variables that might be extracted pattern variables
-					if (!skipExtraction) {
-						switch (e.expr) {
-							case TLocal(v):
-								var varName = VariableAnalyzer.toElixirVarName(v.name);
-
-								#if debug_enum_extraction
-								#if debug_ast_builder
-								#end
-								if (currentContext.currentClauseContext != null) {
-									#if debug_ast_builder
-									#end
-									if (currentContext.currentClauseContext.localToName.exists(v.id)) {
-										#if debug_ast_builder
-										#end
-									}
-								}
-								#end
-
-								// Check if this variable was extracted by the pattern
-								// Pattern extraction creates variables like 'g', 'g1', 'g2' for ignored params
-								// or uses actual names for named params
-								if (currentContext.currentClauseContext != null
-									&& currentContext.currentClauseContext.localToName.exists(v.id)) {
-									// This variable was mapped in the pattern, it's already extracted
-									extractedVarName = currentContext.currentClauseContext.localToName.get(v.id);
-									skipExtraction = true;
-
-									#if debug_enum_extraction
-									#if debug_ast_builder
-									#end
-									#end
-								} else {
-									// No ClauseContext mapping: do not assume this local has already been
-									// destructured. Emit `elem/2` normally so non-pattern contexts (like
-									// optimized single-constructor enum handling) remain correct.
-								}
-							case _:
-								// Not a local variable, normal extraction needed
-								#if debug_enum_extraction
-								#if debug_ast_builder
-								#end
-								#end
-						}
-					}
-
-					if (skipExtraction && extractedVarName != null) {
-						// The pattern already extracted this value, just return the variable reference
-						EVar(extractedVarName);
-					} else {
-						// Normal case: generate the elem() extraction
-						var exprAST = buildFromTypedExpr(e, currentContext);
-
-						#if debug_enum_extraction
-						#if debug_ast_builder
-						#end
-						#end
-
-						// Will be transformed to proper pattern extraction
-						// +1 because Elixir tuples are 0-based but first element is the tag
-						ECall(exprAST, "elem", [makeAST(EInteger(index + 1))]);
-					}
+					var receiverAst = buildFromTypedExpr(receiver, currentContext);
+					ECall(null, "elem", [receiverAst, makeAST(EInteger(index + 1))]);
 				}
 
 			case TEnumIndex(e):
@@ -4827,42 +4591,6 @@ class ElixirASTBuilder {
 			case TThrow(_): true;
 			default: false;
 		}
-	}
-
-	/**
-	 * Check if an initialization expression is simple enough for VariableBuilder
-	 * 
-	 * WHY: Complex initializations (blocks, comprehensions) need special handling
-	 * WHAT: Identifies simple init patterns that VariableBuilder can handle
-	 * HOW: Checks expression type against simple patterns
-	 */
-	static function isSimpleInit(init:TypedExpr):Bool {
-		if (init == null)
-			return true;
-
-		return switch (init.expr) {
-			case TConst(_): true;
-			case TLocal(_): true;
-			case TField(_, _): true;
-			case TCall(_, _): true;
-			case TNew(_, _, _): true;
-			case TObjectDecl(_): true;
-			case TArrayDecl(_): true;
-			case TBinop(_, _, _): true;
-			case TUnop(_, _, _): true;
-			case TParenthesis(e): isSimpleInit(e);
-			case TCast(e, _): isSimpleInit(e);
-			case TMeta(_, e): isSimpleInit(e);
-			// Complex patterns that need special handling
-			case TBlock(_): false;
-			case TIf(_, _, _): false;
-			case TSwitch(_, _, _): false;
-			case TWhile(_, _, _): false;
-			case TFor(_, _, _): false;
-			case TTry(_, _): false;
-			case TFunction(_): false;
-			default: true;
-		};
 	}
 
 	/**

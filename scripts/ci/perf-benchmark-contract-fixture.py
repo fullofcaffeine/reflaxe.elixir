@@ -444,21 +444,52 @@ check(
 
 # Exercise the real shell harness with fake compilers. This proves the public
 # scenario names and result schema without paying for a Phoenix dependency build.
-fixture_rel = Path("tmp") / f"perf-benchmark-contract-{os.getpid()}"
-fixture_root = ROOT / fixture_rel
+fixture_root = Path(tempfile.mkdtemp(prefix="perf-benchmark-harness-"))
+fixture_rel = Path("tmp") / "contract"
+fixture_repo = fixture_root / "repo"
 fake_bin = fixture_root / "fake-bin"
 artifact_rel = fixture_rel / "artifacts"
 out_rel = fixture_rel / "result.json"
 try:
+    # Exercise the real Git/worktree path without checking out the entire
+    # compiler repository inside a bounded fake-compiler contract.
+    for relative in (
+        "scripts/perf/benchmark-todo-compile.sh",
+        "scripts/perf/benchmark_contract.py",
+        "scripts/with-timeout.sh",
+        "examples/03-phoenix-app/build.hxml",
+        "examples/03-phoenix-app/src_haxe/PhoenixHaxeExample.hx",
+    ):
+        destination = fixture_repo / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / relative, destination)
+    subprocess.run(["git", "init", "--quiet", str(fixture_repo)], check=True)
+    subprocess.run(["git", "add", "."], cwd=fixture_repo, check=True)
+    subprocess.run(
+        ["git", "-c", "user.name=Contract fixture", "-c", "user.email=fixture@example.invalid",
+         "-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null",
+         "commit", "--quiet", "-m", "test: seed isolated benchmark inputs"],
+        cwd=fixture_repo,
+        check=True,
+    )
     fake_bin.mkdir(parents=True, exist_ok=True)
-    for name, version in (("haxe", "4.3.7"), ("mix", "Mix 1.18 fixture")):
+    for name, version in (
+        ("haxe", "4.3.7"),
+        ("mix", "Mix 1.18 fixture"),
+        ("elixir", "Elixir 1.18 fixture"),
+        ("erl", "27-fixture"),
+    ):
         executable = fake_bin / name
         script = (
             "#!/usr/bin/env bash\n"
             "set -euo pipefail\n"
             f"if [[ \"${{1:-}}\" == \"-version\" || \"${{1:-}}\" == \"--version\" ]]; then printf '%s\\n' '{version}'; exit 0; fi\n"
         )
-        if name == "haxe":
+        if name == "erl":
+            # Metadata calls erl with -noshell/-eval, not --version. No real
+            # runtime is needed by this fake-compiler/schema contract.
+            script += f"printf '%s\\n' '{version}'\n"
+        elif name == "haxe":
             script += (
                 "if [[ \"${PERF_FIXTURE_FAIL_BUILD:-0}\" == \"1\" ]]; then printf '%s\\n' 'fixture build failure' >&2; exit 7; fi\n"
                 "for argument in \"$@\"; do\n"
@@ -494,15 +525,17 @@ try:
             "--phase-timers",
             "coarse",
         ],
-        cwd=ROOT,
+        cwd=fixture_repo,
         env=environment,
         check=True,
-        timeout=30,
+        # This is a behavior contract, not a wall-time performance budget.
+        # Allow background-scheduled Git/process/reporting work to finish.
+        timeout=120,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
     )
-    result_path = ROOT / out_rel
+    result_path = fixture_repo / out_rel
     if not result_path.is_file():
         raise AssertionError(
             "compile harness did not write its result\n"
@@ -510,6 +543,8 @@ try:
             f"stderr:\n{completed.stderr}"
         )
     result = json.loads(result_path.read_text(encoding="utf-8"))
+    check(result["environment"]["elixir"] == "Elixir 1.18 fixture", "Elixir metadata escaped fixture isolation")
+    check(result["environment"]["otp_release"] == "27-fixture", "OTP metadata escaped fixture isolation")
     check(result["schema_version"] == contract.SCHEMA_VERSION, "shell harness schema version")
     check(result["environment"]["machine_state"] == "idle", "machine state was not recorded")
     check(
@@ -567,16 +602,16 @@ try:
             "--out",
             str(failure_out_rel),
         ],
-        cwd=ROOT,
+        cwd=fixture_repo,
         env=failure_environment,
         check=False,
-        timeout=30,
+        timeout=120,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
     )
     check(failed.returncode != 0, "compile harness accepted a failed Haxe phase")
-    failure_result = json.loads((ROOT / failure_out_rel).read_text(encoding="utf-8"))
+    failure_result = json.loads((fixture_repo / failure_out_rel).read_text(encoding="utf-8"))
     check(failure_result["status"] == "failure", "failed Haxe phase produced a successful result")
     failed_run = failure_result["runs"][-1]
     check(failed_run["status"] == "failure", "failed run was not marked as failed")

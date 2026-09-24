@@ -28,8 +28,10 @@
 		"phoenix/_live_socket/live_socket_impl_.ex",
 		"haxe/iterators/array_key_value_iterator.ex",
 		"haxe/iterators/array_iterator.ex",
+		"haxe/functional/result.ex",
 		"haxe/exceptions/pos_exception.ex",
 		"haxe/exceptions/not_implemented_exception.ex",
+		"haxe/ds/option.ex",
 		"haxe/_call_stack/call_stack_impl_.ex",
 		"golden_message.ex",
 		"ecto/option.ex",
@@ -64,7 +66,11 @@
 		},
 		{
 			"path": "haxe/_call_stack/call_stack_impl_.ex",
-			"sha256": "51ccde2aded2494513ee0e4df47307da4b81b76b152e144ec83f62ca98578569"
+			"sha256": "c77b161d05e1094665a37413ce6e0af07159fcdbc2f2cd20c19ceec25be5d818"
+		},
+		{
+			"path": "haxe/ds/option.ex",
+			"sha256": "63ac76e868b4b2dfe585786ccd2a345305751f959a8cdb63a5a2c34106113043"
 		},
 		{
 			"path": "haxe/exceptions/not_implemented_exception.ex",
@@ -73,6 +79,10 @@
 		{
 			"path": "haxe/exceptions/pos_exception.ex",
 			"sha256": "1bf19747702bbde341c3a92e2fc6f137f2e04508952fc452a0ae73aa61b2b1dd"
+		},
+		{
+			"path": "haxe/functional/result.ex",
+			"sha256": "41853f86663b99ae0b271938f47328e736fdbd3d2aacd7eaff087f3ef381104d"
 		},
 		{
 			"path": "haxe/iterators/array_iterator.ex",
@@ -172,7 +182,7 @@
 		},
 		{
 			"path": "std.ex",
-			"sha256": "2719d51795868959cd6891134e197cf72d4b523091c594a280b37e367fd8e03f"
+			"sha256": "8a84e0a9ac56b570713a432d5e9d2de5bc2a0cb19aacdc3a80284a6a439bcf97"
 		},
 		{
 			"path": "string_tools.ex",
@@ -180,12 +190,12 @@
 		},
 		{
 			"path": "test_app_web/golden_live.ex",
-			"sha256": "202151d0aa9041024caae372e783303178dfc4f10a79d213d2f5376f294b541a"
+			"sha256": "550a867b1ca3064f9c558dfcb4f10081147cf7727afa239722d381f7cbf0ab6a"
 		},
 		{
 			"path": "type.ex",
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "07e15b69662943f794a3e14d9fa1e0db5fe3ed5a532338f17eff1f15ad715cd6"
+	"generation": "095957139cbe049e7fbd8a2e25f6ef4e2cbab825bc092882f0b3a383b53d3c25"
 }

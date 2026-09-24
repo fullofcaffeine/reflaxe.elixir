@@ -17,7 +17,9 @@
 		"haxe/io/output.ex",
 		"haxe/io/input.ex",
 		"haxe/io/fp_helper.ex",
+		"haxe/io/error.ex",
 		"haxe/io/eof.ex",
+		"haxe/io/encoding.ex",
 		"haxe/io/bytes_output.ex",
 		"haxe/io/bytes_input.ex",
 		"haxe/io/bytes_buffer.ex",
@@ -35,7 +37,7 @@
 	"ownedFiles": [
 		{
 			"path": "haxe/_call_stack/call_stack_impl_.ex",
-			"sha256": "ab46ba4f786a95420ae1cd78188f77ebebc3ced2db90d1351297f573f30dadf8"
+			"sha256": "c77b161d05e1094665a37413ce6e0af07159fcdbc2f2cd20c19ceec25be5d818"
 		},
 		{
 			"path": "haxe/exceptions/not_implemented_exception.ex",
@@ -51,11 +53,11 @@
 		},
 		{
 			"path": "haxe/io/buffer_input.ex",
-			"sha256": "c10b930b6c108f3f63c4a5cc0eec3b6137dd95d89a73edf6124719fd312f4cef"
+			"sha256": "48b139c9ff8c309b323c423acc64da06e3fcb351606a50c124719bfe5313c891"
 		},
 		{
 			"path": "haxe/io/bytes.ex",
-			"sha256": "2b5bbb5087c447a1f5869d498456c3ead74a5142aa35e49e341176f3d4d8585d"
+			"sha256": "11425e6fd7aa22effb29f0185cbdaa5dc1b22853a2f4d3fdba1427f096dc2aa4"
 		},
 		{
 			"path": "haxe/io/bytes_buffer.ex",
@@ -70,8 +72,16 @@
 			"sha256": "b72e0a45fb50b28ef657948e800759f5d1ec451533b676eb3b3b0882888b5af8"
 		},
 		{
+			"path": "haxe/io/encoding.ex",
+			"sha256": "aed9a161edd05cdbf4dd2f3c14646b8d615b3d3b783c31543cfdc4c337bb55d3"
+		},
+		{
 			"path": "haxe/io/eof.ex",
 			"sha256": "209a67120806bddd55fd2677ef52bc750f52e377be130a1bc58a9c73edcdd967"
+		},
+		{
+			"path": "haxe/io/error.ex",
+			"sha256": "5eba0b04b02433b84f6c421a2b5af49845386b9e549c4fb3d862f57b18ce16c0"
 		},
 		{
 			"path": "haxe/io/fp_helper.ex",
@@ -79,11 +89,11 @@
 		},
 		{
 			"path": "haxe/io/input.ex",
-			"sha256": "4b3e9212807a50abd22adb84b4b64abd1f9cb80bde6f32f04ab02bdd8f1b646f"
+			"sha256": "f47f5a3f9e03992f548dbe20d47d4d0422fa04cd962d92a20df4233553790f9d"
 		},
 		{
 			"path": "haxe/io/output.ex",
-			"sha256": "8a2e0944356c3e3ab9a3dc1faba06473b19e927c94286c792d0f0a79b616fc75"
+			"sha256": "b04b4b74b345ba5721c316763f0ae3b5b20e29f422081904a191661ec39c218b"
 		},
 		{
 			"path": "haxe/io/string_input.ex",
@@ -107,11 +117,11 @@
 		},
 		{
 			"path": "int_iterator.ex",
-			"sha256": "b2835b6dc973f62d5e79732053e7944116c9c0032e0747206eff211183182f11"
+			"sha256": "ccad9bbf2c0dd81202fc7919321d15c91c990aa36d882b399c22e7d05f27d40c"
 		},
 		{
 			"path": "main.ex",
-			"sha256": "c909347c55a5bd347f1fde76dbfbabd87f18bca40f770d37724439d68c6cfdfb"
+			"sha256": "184ef11278c04db4208571dca38bb3b57a2681cf5548b62dc3d2de2f6ffd511f"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.ex",
@@ -131,7 +141,7 @@
 		},
 		{
 			"path": "std.ex",
-			"sha256": "2719d51795868959cd6891134e197cf72d4b523091c594a280b37e367fd8e03f"
+			"sha256": "8a84e0a9ac56b570713a432d5e9d2de5bc2a0cb19aacdc3a80284a6a439bcf97"
 		},
 		{
 			"path": "string_tools.ex",
@@ -142,5 +152,5 @@
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "43f339fbfc44408ad3eb9d2bceadfafb8e6d1d68dc1c49122cac072c3ad468d4"
+	"generation": "cdcda2c8fe20adbde0c37ca543ba8e3b71e8114a6bb347a7f9715c8984a80fa5"
 }

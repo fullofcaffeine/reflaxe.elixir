@@ -34,6 +34,9 @@ import Type;
  *   non-underscore name (e.g., `_this` → `this`).
  * - Uses a conservative usage index to detect later uses (closures, ERaw tokenization,
  *   interpolation) in a single O(N) build.
+ * - Match exact names: a read of `value` does not read `_value`. For Haxe
+ *   `var value = observe(); value = 2; return value`, the first generated
+ *   `_value = observe()` must remain unused while its effects still execute.
  *
  * EXAMPLES
  * Before:
@@ -185,7 +188,9 @@ class FinalUnderscoreRepairTransforms {
 
 		// Collect all underscore-prefixed variables that are used later
 		var usedUnderscoreVars = new Map<String, Int>(); // varName -> index of assignment
-		var usage = OptimizedVarUseAnalyzer.build(stmts);
+		// Repair actual reads of the underscored binding, not a distinct base name.
+		// `_value = effect(); value = replacement; consume(value)` must stay unused.
+		var usage = OptimizedVarUseAnalyzer.buildExact(stmts);
 
 		for (i in 0...stmts.length) {
 			var stmt = stmts[i];

@@ -32,14 +32,16 @@
 		"phoenix/conn_state.exs",
 		"haxe/iterators/array_key_value_iterator.exs",
 		"haxe/iterators/array_iterator.exs",
+		"haxe/functional/result.exs",
 		"haxe/exceptions/pos_exception.exs",
 		"haxe/exceptions/not_implemented_exception.exs",
+		"haxe/ds/option.exs",
 		"ecto/option.exs",
 		"ecto/changeset_action.exs",
 		"e_reg.exs"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 13,
+	"id": 15,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
@@ -56,12 +58,20 @@
 			"sha256": "327dc7217b3300f5fb391514f65f6a3569733c80fe6c3fb721eaabe67c87f6b1"
 		},
 		{
+			"path": "haxe/ds/option.exs",
+			"sha256": "63ac76e868b4b2dfe585786ccd2a345305751f959a8cdb63a5a2c34106113043"
+		},
+		{
 			"path": "haxe/exceptions/not_implemented_exception.exs",
 			"sha256": "79e1169384c0e4040281af71c745bba63d1ca530105f2c290d880ad94b818273"
 		},
 		{
 			"path": "haxe/exceptions/pos_exception.exs",
 			"sha256": "1bf19747702bbde341c3a92e2fc6f137f2e04508952fc452a0ae73aa61b2b1dd"
+		},
+		{
+			"path": "haxe/functional/result.exs",
+			"sha256": "41853f86663b99ae0b271938f47328e736fdbd3d2aacd7eaff087f3ef381104d"
 		},
 		{
 			"path": "haxe/iterators/array_iterator.exs",
@@ -149,7 +159,7 @@
 		},
 		{
 			"path": "phoenix_chat_web/app_live.exs",
-			"sha256": "e4226d02e0175f6f2163dc45ca4428ee8c3afb2a7d603ff59c3dbfbee739fbc1"
+			"sha256": "ea99f4b6d89b75513233d2d4dd132f3e81882847cad877b340909ca61864b285"
 		},
 		{
 			"path": "phoenix_chat_web/presence.exs",
@@ -192,5 +202,5 @@
 			"sha256": "79ab34d32eb9843745093db6c5ec4907244e88d06815f942372dc9825eda7f04"
 		}
 	],
-	"generation": "20fea284991795a7c880a2321b0fb310a69be1ce5fced6ad1aee2c4d4ef2d0e0"
+	"generation": "26bb7c40b139f44413acbbf3b5210f32a6db698e2ed89b99838a4c688f5da76e"
 }

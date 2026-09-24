@@ -8,21 +8,21 @@ defmodule Socket do
   end
   def close(struct) do
     SocketState.close(struct.socket_ref)
-    reflaxe_dispatch_receiver = struct.input
-    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :close, [reflaxe_dispatch_receiver])
-    reflaxe_dispatch_receiver = struct.output
-    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :close, [reflaxe_dispatch_receiver])
+    reflaxe_dispatch_receiver_node_0 = struct.input
+    apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :close, [reflaxe_dispatch_receiver_node_0])
+    reflaxe_dispatch_receiver_node_1 = struct.output
+    apply(Map.get(reflaxe_dispatch_receiver_node_1, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_1, :__struct__), :close, [reflaxe_dispatch_receiver_node_1])
   end
   def read(struct) do
-    reflaxe_dispatch_receiver = Bytes.of_data(SocketState.recv_all(struct.socket_ref))
-    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+    reflaxe_dispatch_receiver_node_2 = Bytes.of_data(SocketState.recv_all(struct.socket_ref))
+    apply(Map.get(reflaxe_dispatch_receiver_node_2, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_2, :__struct__), :to_string, [reflaxe_dispatch_receiver_node_2])
   end
   def write(struct, content) do
     SocketState.send_binary(
       struct.socket_ref,
       (fn ->
-         reflaxe_dispatch_receiver = Bytes.of_string(content, {:utf8})
-         apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get_data, [reflaxe_dispatch_receiver])
+         reflaxe_dispatch_receiver_node_3 = Bytes.of_string(content, {:utf8})
+         apply(Map.get(reflaxe_dispatch_receiver_node_3, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_3, :__struct__), :get_data, [reflaxe_dispatch_receiver_node_3])
        end).()
     )
   end

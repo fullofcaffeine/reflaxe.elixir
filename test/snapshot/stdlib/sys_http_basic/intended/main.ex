@@ -96,8 +96,8 @@ defmodule Main do
     assert_that(get_callback_string("sys_http_bytes") == "get-ok", "GET should call onBytes")
     assert_that(HttpBase.get_response_data(http) == "get-ok", "GET should expose responseData")
     assert_that((fn ->
-      reflaxe_dispatch_receiver = HttpBase.get_response_bytes(http)
-      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+      reflaxe_dispatch_receiver_node_0 = HttpBase.get_response_bytes(http)
+      apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :to_string, [reflaxe_dispatch_receiver_node_0])
     end).() == "get-ok", "GET should expose responseBytes")
     assert_that(map_value(Http.get_response_headers(http), "x-test") == "two", "duplicate responseHeaders should keep last value")
     values = apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :get_response_header_values, [http, "x-test"])
@@ -132,8 +132,8 @@ defmodule Main do
     apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :set_post_data, [http, "payload"])
     apply(Map.get(http, :__reflaxe_class__) || Map.get(http, :__struct__), :custom_request, [http, false, output, nil, "PUT"])
     assert_that((fn ->
-      reflaxe_dispatch_receiver = apply(Map.get(output, :__reflaxe_class__) || Map.get(output, :__struct__), :get_bytes, [output])
-      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+      reflaxe_dispatch_receiver_node_1 = apply(Map.get(output, :__reflaxe_class__) || Map.get(output, :__struct__), :get_bytes, [output])
+      apply(Map.get(reflaxe_dispatch_receiver_node_1, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_1, :__struct__), :to_string, [reflaxe_dispatch_receiver_node_1])
     end).() == "put-ok", "customRequest should support PUT through :httpc")
   end
   defp test_multipart_upload() do
@@ -153,8 +153,8 @@ defmodule Main do
     assert_that(get_callback_int("sys_http_error_status") == 404, "HTTP errors should still report status")
     assert_that(get_callback_string("sys_http_error") == "Http Error #404", "HTTP errors should call onError with Haxe-compatible message")
     assert_that((fn ->
-      reflaxe_dispatch_receiver = HttpBase.get_response_bytes(http)
-      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+      reflaxe_dispatch_receiver_node_2 = HttpBase.get_response_bytes(http)
+      apply(Map.get(reflaxe_dispatch_receiver_node_2, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_2, :__struct__), :to_string, [reflaxe_dispatch_receiver_node_2])
     end).() == "missing", "HTTP error should retain response body bytes")
   end
   def main() do

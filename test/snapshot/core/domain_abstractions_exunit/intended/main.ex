@@ -52,7 +52,6 @@ defmodule Main do
       {:ok, a} ->
         (case pos2 do
           {:ok, b} ->
-            a = b
             sum = PositiveInt_Impl_.add(a, b)
             actual = PositiveInt_Impl_.to_int(sum)
             assert actual == 8
@@ -172,9 +171,6 @@ defmodule Main do
               {:ok, age} ->
                 (case user_name do
                   {:ok, name} ->
-                    id = name
-                    email = name
-                    age = name
                     profile_email = Email_Impl_.to_string(email)
                     profile_normalized_id = UserId_Impl_.to_string(UserId_Impl_.normalize(id))
                     profile_is_company_email = Email_Impl_.has_domain(email, "company.com")

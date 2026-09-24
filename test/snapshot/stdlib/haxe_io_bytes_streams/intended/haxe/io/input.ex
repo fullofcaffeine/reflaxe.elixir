@@ -58,14 +58,15 @@ defmodule Input do
     bufsize = if (Kernel.is_nil(bufsize)), do: 16384, else: bufsize
     buf = Bytes.alloc(bufsize)
     total = BytesBuffer.new()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+    {total} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {total}, fn _, {acc_total} ->
       try do
-        try do
+        acc_total = try do
           len = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_bytes, [struct, buf, 0, bufsize])
           if (len == 0) do
             raise Reflaxe.Elixir.HaxeThrow, [value: {:blocked}]
           end
-          _ = apply(Map.get(total, :__reflaxe_class__) || Map.get(total, :__struct__), :add_bytes, [total, buf, 0, len])
+          acc_total = apply(Map.get(acc_total, :__reflaxe_class__) || Map.get(acc_total, :__struct__), :add_bytes, [acc_total, buf, 0, len])
+          acc_total
         rescue
           haxe_exception ->
             Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
@@ -73,21 +74,22 @@ defmodule Input do
               %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
               _ -> haxe_exception
             end), haxe_exception} do
-              {haxe_catch_value, _} when is_struct(haxe_catch_value, Eof) or is_map(haxe_catch_value) and is_map_key(haxe_catch_value, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, haxe_catch_value) == Eof -> throw({:break, acc})
+              {haxe_catch_value, _} when is_struct(haxe_catch_value, Eof) or is_map(haxe_catch_value) and is_map_key(haxe_catch_value, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, haxe_catch_value) == Eof -> throw({:break, {acc_total}})
               _ ->
                 reraise(haxe_exception, __STACKTRACE__)
             end)
+            acc_total
         end
-        {:cont, acc}
+        {:cont, {acc_total}}
       catch
         :throw, {:break, break_state} ->
           {:halt, break_state}
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, acc}
+          {:halt, {acc_total}}
         :throw, :continue ->
-          {:cont, acc}
+          {:cont, {acc_total}}
       end
     end)
     apply(Map.get(total, :__reflaxe_class__) || Map.get(total, :__struct__), :get_bytes, [total])
@@ -149,13 +151,13 @@ defmodule Input do
   end
   def read_until(struct, end_param) do
     buf = BytesBuffer.new()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+    {buf} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {buf}, fn _, {acc_buf} ->
       try do
         if ((last = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])) != end_param) do
-          _ = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :add_byte, [buf, last])
-          {:cont, acc}
+          acc_buf = apply(Map.get(acc_buf, :__reflaxe_class__) || Map.get(acc_buf, :__struct__), :add_byte, [acc_buf, last])
+          {:cont, {acc_buf}}
         else
-          {:halt, acc}
+          {:halt, {acc_buf}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -163,24 +165,25 @@ defmodule Input do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, acc}
+          {:halt, {acc_buf}}
         :throw, :continue ->
-          {:cont, acc}
+          {:cont, {acc_buf}}
       end
     end)
-    reflaxe_dispatch_receiver = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :get_bytes, [buf])
-    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+    reflaxe_dispatch_receiver_node_0 = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :get_bytes, [buf])
+    apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :to_string, [reflaxe_dispatch_receiver_node_0])
   end
   def read_line(struct) do
     buf = BytesBuffer.new()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+    (case Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {:__reflaxe_continue__, {buf}}, fn _, {:__reflaxe_continue__, {acc_buf}} ->
       try do
         try do
           last = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])
           if (last == 10) do
-            throw({:break, acc})
+            throw({:break, {acc_buf}})
           end
-          _ = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :add_byte, [buf, last])
+          acc_buf = apply(Map.get(acc_buf, :__reflaxe_class__) || Map.get(acc_buf, :__struct__), :add_byte, [acc_buf, last])
+          {:cont, {:__reflaxe_continue__, {acc_buf}}}
         rescue
           haxe_exception ->
             Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
@@ -189,36 +192,39 @@ defmodule Input do
               _ -> haxe_exception
             end), haxe_exception} do
               {e, _} when is_struct(e, Eof) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == Eof ->
-                reflaxe_dispatch_receiver = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :get_bytes, [buf])
-                s = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+                reflaxe_dispatch_receiver_node_1 = apply(Map.get(acc_buf, :__reflaxe_class__) || Map.get(acc_buf, :__struct__), :get_bytes, [acc_buf])
+                s = apply(Map.get(reflaxe_dispatch_receiver_node_1, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_1, :__struct__), :to_string, [reflaxe_dispatch_receiver_node_1])
                 if (String.length(s) == 0) do
                   raise Reflaxe.Elixir.HaxeThrow, [value: e]
                 end
-                s
+                {:halt, {:__reflaxe_return__, s}}
               _ ->
                 reraise(haxe_exception, __STACKTRACE__)
             end)
         end
-        {:cont, acc}
       catch
         :throw, {:break, break_state} ->
-          {:halt, break_state}
+          {:halt, {:__reflaxe_continue__, break_state}}
         :throw, {:continue, continue_state} ->
-          {:cont, continue_state}
+          {:cont, {:__reflaxe_continue__, continue_state}}
         :throw, :break ->
-          {:halt, acc}
+          {:halt, {:__reflaxe_continue__, {acc_buf}}}
         :throw, :continue ->
-          {:cont, acc}
+          {:cont, {:__reflaxe_continue__, {acc_buf}}}
       end
+    end) do
+      {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
+      {:__reflaxe_continue__, {reflaxe_continue_buf}} ->
+        {buf} = {reflaxe_continue_buf}
+        reflaxe_dispatch_receiver_node_2 = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :get_bytes, [buf])
+        s = apply(Map.get(reflaxe_dispatch_receiver_node_2, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_2, :__struct__), :to_string, [reflaxe_dispatch_receiver_node_2])
+        s = if (String.length(s) > 0 and StringTools.haxe_char_code_at(s, (String.length(s) - 1)) == 13) do
+          StringTools.haxe_substr_non_nil_len(s, 0, -1)
+        else
+          s
+        end
+        s
     end)
-    reflaxe_dispatch_receiver = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :get_bytes, [buf])
-    s = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
-    s = if (String.length(s) > 0 and StringTools.haxe_char_code_at(s, (String.length(s) - 1)) == 13) do
-      StringTools.haxe_substr_non_nil_len(s, 0, -1)
-    else
-      s
-    end
-    s
   end
   def read_float(struct) do
     FPHelper.i32_to_float(apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_int32, [struct]))

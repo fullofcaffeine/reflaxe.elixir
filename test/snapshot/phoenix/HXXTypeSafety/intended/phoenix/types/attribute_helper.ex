@@ -9,7 +9,7 @@ defmodule AttributeHelper do
       "htmlFor" -> "for"
       "httpEquiv" -> "http-equiv"
       "tabIndex" -> "tabindex"
-      s ->
+      _ ->
         s = name
         if (StringTools.starts_with(s, "phx")) do
           "phx-#{String.downcase(StringTools.haxe_substring(s, 3, nil))}"

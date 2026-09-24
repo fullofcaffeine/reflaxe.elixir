@@ -77,6 +77,8 @@ class VarUseAnalyzer {
 	 */
 	public static function freeVarUseCounts(n:ElixirAST, ?initiallyBound:Map<String, Bool>):Map<String, Int> {
 		var refs = new Map<String, Int>();
+		// Pattern keys/sizes contain expressions, and expressions contain patterns.
+		var walk:(ElixirAST, Map<String, Bool>) -> Void = null;
 
 		function recordReference(name:String):Void {
 			if (name == null || name.length == 0)
@@ -179,14 +181,21 @@ class VarUseAnalyzer {
 					recordPatternPins(head, scope, pinned);
 					recordPatternPins(tail, scope, pinned);
 				case PMap(pairs):
-					for (pair in pairs)
+					for (pair in pairs) {
+						walk(pair.key, scope);
 						recordPatternPins(pair.value, scope, pinned);
+					}
 				case PStruct(_, fields):
 					for (field in fields)
 						recordPatternPins(field.value, scope, pinned);
 				case PBinary(segments):
-					for (segment in segments)
+					var segmentScope = cloneScope(scope);
+					for (segment in segments) {
+						// A size can read an outer value or an earlier segment binder.
+						walk(segment.size, segmentScope);
 						recordPatternPins(segment.pattern, scope, pinned);
+						bindPattern(segment.pattern, segmentScope);
+					}
 				default:
 			}
 		}
@@ -226,7 +235,7 @@ class VarUseAnalyzer {
 					recordReference(name);
 		}
 
-		function walk(node:ElixirAST, scope:Map<String, Bool>):Void {
+		walk = function(node:ElixirAST, scope:Map<String, Bool>):Void {
 			if (node == null || node.def == null)
 				return;
 			switch (node.def) {
@@ -375,6 +384,8 @@ class VarUseAnalyzer {
 	 *   between `value` and `_value`. The general-purpose `stmtUsesVar/2`
 	 *   intentionally considers underscore/case variants, which can produce
 	 *   false positives for these shape-sensitive passes.
+	 * - Unlisted expression forms use the shared AST child traversal. In particular,
+	 *   a nested loop catch must not hide an outer local used in its try body.
 	 */
 	public static function stmtUsesVarExact(n:ElixirAST, name:String):Bool {
 		if (name == null || name.length == 0)
@@ -503,8 +514,11 @@ class VarUseAnalyzer {
 					for (e in elems)
 						walk(e, false);
 				case EFn(clauses):
-					for (cl in clauses)
+					for (cl in clauses) {
+						if (cl.guard != null)
+							walk(cl.guard, false);
 						walk(cl.body, false);
+					}
 				case ECond(condClauses):
 					for (cl in condClauses) {
 						walk(cl.condition, false);
@@ -539,6 +553,10 @@ class VarUseAnalyzer {
 				case ECapture(capturedExpr, _):
 					walk(capturedExpr, false);
 				default:
+					reflaxe.elixir.ast.ElixirASTTransformer.transformAST(x, child -> {
+						walk(child, false);
+						child;
+					});
 			}
 		}
 		walk(n, false);

@@ -32,8 +32,8 @@ defmodule Haxe.Crypto.BaseCode do
   def encode_bytes(struct, bytes) do
     data = (
           reflaxe_basecode_input = apply(Map.get(bytes, :__reflaxe_class__) || Map.get(bytes, :__struct__), :get_data, [bytes])
-          reflaxe_basecode_base = (fn -> reflaxe_dispatch_receiver = struct.base
-    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get_data, [reflaxe_dispatch_receiver]) end).()
+          reflaxe_basecode_base = (fn -> reflaxe_dispatch_receiver_node_0 = struct.base
+    apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :get_data, [reflaxe_dispatch_receiver_node_0]) end).()
           reflaxe_basecode_nbits = struct.nbits
           reflaxe_basecode_bit_count = byte_size(reflaxe_basecode_input) * 8
           reflaxe_basecode_size = div(reflaxe_basecode_bit_count, reflaxe_basecode_nbits)
@@ -85,8 +85,8 @@ defmodule Haxe.Crypto.BaseCode do
   def decode_bytes(struct, bytes) do
     data = (
           reflaxe_basecode_input = apply(Map.get(bytes, :__reflaxe_class__) || Map.get(bytes, :__struct__), :get_data, [bytes])
-          reflaxe_basecode_base = (fn -> reflaxe_dispatch_receiver = struct.base
-    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get_data, [reflaxe_dispatch_receiver]) end).()
+          reflaxe_basecode_base = (fn -> reflaxe_dispatch_receiver_node_1 = struct.base
+    apply(Map.get(reflaxe_dispatch_receiver_node_1, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_1, :__struct__), :get_data, [reflaxe_dispatch_receiver_node_1]) end).()
           reflaxe_basecode_nbits = struct.nbits
           reflaxe_basecode_size = div(byte_size(reflaxe_basecode_input) * reflaxe_basecode_nbits, 8)
 
@@ -133,12 +133,12 @@ defmodule Haxe.Crypto.BaseCode do
     Bytes.of_data(data)
   end
   def encode_string(struct, s) do
-    reflaxe_dispatch_receiver = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :encode_bytes, [struct, Bytes.of_string(s, {:utf8})])
-    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+    reflaxe_dispatch_receiver_node_2 = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :encode_bytes, [struct, Bytes.of_string(s, {:utf8})])
+    apply(Map.get(reflaxe_dispatch_receiver_node_2, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_2, :__struct__), :to_string, [reflaxe_dispatch_receiver_node_2])
   end
   def decode_string(struct, s) do
-    reflaxe_dispatch_receiver = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :decode_bytes, [struct, Bytes.of_string(s, {:utf8})])
-    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+    reflaxe_dispatch_receiver_node_3 = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :decode_bytes, [struct, Bytes.of_string(s, {:utf8})])
+    apply(Map.get(reflaxe_dispatch_receiver_node_3, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_3, :__struct__), :to_string, [reflaxe_dispatch_receiver_node_3])
   end
   def encode(s, base_param) do
     b = Haxe.Crypto.BaseCode.new(Bytes.of_string(base_param, {:utf8}))

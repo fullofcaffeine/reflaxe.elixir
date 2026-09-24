@@ -4,6 +4,8 @@ package reflaxe.elixir.ast.builders;
 import haxe.macro.Type;
 import haxe.macro.Expr;
 import haxe.macro.Context;
+import haxe.macro.TypedExprTools;
+import reflaxe.elixir.ast.PassContext.PassTempAllocator;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
@@ -85,6 +87,7 @@ class ExceptionBuilder {
 			return null;
 		}
 
+		var handlerNames = handlerBindingNames(e, catches, context);
 		var nativeExceptionCatches = [for (c in catches) if (isNativeExceptionCatchType(c.v.t)) c];
 		if (nativeExceptionCatches.length > 0) {
 			if (catches.length != 1) {
@@ -94,10 +97,9 @@ class ExceptionBuilder {
 			}
 
 			var nativeCatch = nativeExceptionCatches[0];
-			var nativeCatchName = VariableAnalyzer.toElixirVarName(nativeCatch.v.name);
-			var nativeCatchBody = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(nativeCatch.expr, context);
-			if (nativeCatchBody == null)
-				nativeCatchBody = makeAST(ENil);
+			var handler = buildHandler(nativeCatch.v, nativeCatch.expr, handlerNames.get(nativeCatch.v.id), context);
+			var nativeCatchName = handler.name;
+			var nativeCatchBody = handler.body;
 
 			return ETry(body, [
 				{
@@ -138,23 +140,15 @@ class ExceptionBuilder {
 		var caseClauses:Array<ECaseClause> = [];
 
 		for (c in catches) {
-			var catchVarName = VariableAnalyzer.toElixirVarName(c.v.name);
+			var handler = buildHandler(c.v, c.expr, handlerNames.get(c.v.id), context);
+			var catchVarName = handler.name;
 			var isHaxeExceptionCatch = isHaxeExceptionCatchType(c.v.t);
 			if (isCatchAll(c.v))
 				hasCatchAll = true;
 			if (isHaxeExceptionCatch)
 				hasHaxeExceptionCatch = true;
 
-			var catchBody = if (context.compiler != null) {
-				// CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
-				// Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
-				reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(c.expr, context);
-			} else {
-				makeAST(ENil);
-			};
-
-			if (catchBody == null)
-				catchBody = makeAST(ENil);
+			var catchBody = handler.body;
 
 			var pattern:EPattern;
 			var guard:Null<ElixirAST> = null;
@@ -202,6 +196,75 @@ class ExceptionBuilder {
 		];
 
 		return ETry(body, rescueClauses, [], null, null);
+	}
+
+	/**
+	 * Keep handler-local bindings distinct before branch joins export outer state.
+	 * A sibling handler can update an outer `value` while this handler binds its
+	 * own `value`. Reserve the surrounding typed names and map only this TVar ID;
+	 * a name-based substitution would also rename the outer binding. Scan the
+	 * typed source once per try; sibling handlers can share a name because their
+	 * scopes are separate. Reuse the deterministic allocator for occupied names.
+	 */
+	static function handlerBindingNames(protectedBody:TypedExpr, catches:Array<{v:TVar, expr:TypedExpr}>, context:CompilationContext):Map<Int, String> {
+		var reserved = new Map<String, Bool>();
+		var handlerIds = new Map<Int, Bool>();
+		for (handler in catches)
+			handlerIds.set(handler.v.id, true);
+		function reserve(variable:TVar):Void {
+			if (!handlerIds.exists(variable.id))
+				reserved.set(VariableBuilder.resolveVariableName(variable, context), true);
+		}
+		function visit(node:TypedExpr):Void {
+			switch (node.expr) {
+				case TLocal(variable) | TVar(variable, _):
+					reserve(variable);
+				case TFunction(fn):
+					for (arg in fn.args)
+						reserve(arg.v);
+				case TTry(_, handlers):
+					for (handler in handlers)
+						reserve(handler.v);
+				default:
+			}
+			TypedExprTools.iter(node, visit);
+		}
+		var owner = context.currentFunction == null ? null : context.currentFunction.expr();
+		if (owner != null)
+			visit(owner);
+		visit(protectedBody);
+		for (handler in catches)
+			visit(handler.expr);
+		var names = new Map<Int, String>();
+		var reservedNames = [for (name in reserved.keys()) name];
+		for (handler in catches) {
+			var original = VariableBuilder.resolveVariableName(handler.v, context);
+			var allocator = new PassTempAllocator(reservedNames);
+			names.set(handler.v.id, original == "_" ? "_" : allocator.allocate(original));
+		}
+		return names;
+	}
+
+	/** Build with an ID-only mapping, restoring it even if macro compilation fails. */
+	static function buildHandler(variable:TVar, expression:TypedExpr, name:String, context:CompilationContext,
+			?lower:TypedExpr->ElixirAST):{name:String, body:ElixirAST} {
+		var key = Std.string(variable.id);
+		var previous = context.tempVarRenameMap.get(key);
+		context.tempVarRenameMap.set(key, name);
+		function restore():Void {
+			if (previous == null)
+				context.tempVarRenameMap.remove(key);
+			else
+				context.tempVarRenameMap.set(key, previous);
+		}
+		try {
+			var body = lower == null ? reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expression, context) : lower(expression);
+			restore();
+			return {name: name, body: body == null ? makeAST(ENil) : body};
+		} catch (error:haxe.Exception) {
+			restore();
+			throw error;
+		}
 	}
 
 	static function isNativeExceptionCatchType(t:Null<Type>):Bool {

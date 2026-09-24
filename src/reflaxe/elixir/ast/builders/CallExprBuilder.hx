@@ -228,6 +228,42 @@ class CallExprBuilder {
 		return EBlock(prefix);
 	}
 
+	/**
+	 * A structural method can be a record closure or a generated class method.
+	 * Evaluate the receiver once before arguments. A present field is authoritative;
+	 * only absence dispatches through the existing class carrier convention.
+	 * Function-valued variables remain distinct from structural methods.
+	 */
+	static function buildStructuralMethodCall(receiver:ElixirAST, methodName:String, args:Array<ElixirAST>, context:CompilationContext):ElixirASTDef {
+		var id = context.generateNodeId();
+		var receiverName = 'reflaxe_structural_receiver_$id';
+		var callbackName = 'reflaxe_structural_callback_$id';
+		var receiverRef = makeAST(EVar(receiverName));
+		var lookup = makeAST(ERemoteCall(makeAST(EVar("Map")), "fetch", [receiverRef, makeAST(EAtom(methodName))]));
+		var dispatch = makeAST(ECase(lookup, [
+			{
+				pattern: PTuple([PLiteral(makeAST(EAtom("ok"))), PVar(callbackName)]),
+				body: makeAST(ECall(makeAST(EVar(callbackName)), "", args))
+			},
+			{
+				pattern: PLiteral(makeAST(EAtom("error"))),
+				body: buildRuntimeInstanceCall(receiverRef, methodName, args)
+			}
+		]));
+		return ECase(receiver, [{pattern: PVar(receiverName), body: dispatch}]);
+	}
+
+	/** Dispatch through a stable receiver; callers own evaluation and writeback. */
+	static function buildRuntimeInstanceCall(receiver:ElixirAST, methodName:String, args:Array<ElixirAST>):ElixirAST {
+		var runtimeModule = makeAST(EBinary(OrElse, makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [receiver, makeAST(EAtom("__reflaxe_class__"))])),
+			makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [receiver, makeAST(EAtom("__struct__"))]))));
+		return makeAST(ECall(null, "apply", [
+			runtimeModule,
+			makeAST(EAtom(methodName)),
+			makeAST(EList([receiver].concat(args)))
+		]));
+	}
+
 	static function providedArgMayBeNil(args:Array<TypedExpr>, index:Int):Bool {
 		return args == null || index >= args.length || TypeUtils.mayBeNil(args[index].t);
 	}
@@ -942,6 +978,9 @@ class CallExprBuilder {
 								case "copy":
 									return receiverAst.def;
 
+								case "slice" if (argASTs != null && argASTs.length == 2):
+									return ArrayBuilder.buildSlice(receiverAst, argASTs[0], argASTs[1], providedArgMayBeNil(args, 1), context);
+
 								case "map" if (argASTs != null && argASTs.length == 1):
 									return ERemoteCall(makeAST(EVar("Enum")), "map", [receiverAst, argASTs[0]]);
 
@@ -1169,7 +1208,14 @@ class CallExprBuilder {
 						//   the same module) because private functions are not exported and cannot be invoked
 						//   via `apply/3`.
 						// --------------------------------------------------------------------
-						var receiverAst = buildExpression(obj);
+						var isSuperReceiver = switch (obj.expr) {
+							case TConst(TSuper): true;
+							default: false;
+						};
+						// Explicit parent calls select the declaring method, but keep the current
+						// object. Reuse typed `this` lowering so closures and receiver naming keep
+						// their existing context; `super` is not a separate runtime binding.
+						var receiverAst = buildExpression(isSuperReceiver ? {expr: TConst(TThis), t: obj.t, pos: obj.pos} : obj);
 						var classType = classRef.get();
 						var isElixirModuleReference = classType != null
 							&& classType.isExtern
@@ -1191,10 +1237,6 @@ class CallExprBuilder {
 						var callArgs = [receiverAst].concat(argASTs);
 
 						var isPublicMethod = cf.get().isPublic;
-						var isSuperReceiver = switch (obj.expr) {
-							case TConst(TSuper): true;
-							default: false;
-						};
 						if (isPublicMethod && !isSuperReceiver) {
 							var receiverRef = receiverAst;
 							var prefix:Array<ElixirAST> = [];
@@ -1202,50 +1244,48 @@ class CallExprBuilder {
 								case EVar(_):
 									// Receiver is already a stable binding; do not re-bind.
 								default:
-									var tempReceiverName = "reflaxe_dispatch_receiver";
+									// Sibling expressions can share the surrounding block after lowering.
+									// Preserve each evaluated receiver with the existing node allocator.
+									var tempReceiverName = 'reflaxe_dispatch_receiver_${context.generateNodeId()}';
 									prefix.push(makeAST(EMatch(PVar(tempReceiverName), receiverAst)));
 									receiverRef = makeAST(EVar(tempReceiverName));
 							}
 
-							var runtimeModule = makeAST(EBinary(OrElse,
-								makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [receiverRef, makeAST(EAtom("__reflaxe_class__"))])),
-								makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [receiverRef, makeAST(EAtom("__struct__"))]))));
+							var applyCall = buildRuntimeInstanceCall(receiverRef, elixirMethodName, argASTs);
 
-							var applyCall = makeAST(ECall(null, "apply", [
-								runtimeModule,
-								makeAST(EAtom(elixirMethodName)),
-								makeAST(EList([receiverRef].concat(argASTs)))
-							]));
+							var dispatchResult = applyCall;
 
+							// Compose receiver-return handling before attaching its evaluation prefix.
+							// Returning here would drop calls such as makeBuffer() in makeBuffer().add(x).
 							var receiverConvention = ReceiverReturnConventions.forMethod(classPack, className, methodName);
 							switch (receiverConvention) {
 								case UpdatedReceiver:
 									switch (receiverRef.def) {
 										case EVar(receiverVarName):
-											return EMatch(PVar(receiverVarName), applyCall);
+											dispatchResult = makeAST(EMatch(PVar(receiverVarName), applyCall));
 										default:
 									}
 								case UpdatedReceiverAndValue:
 									switch (receiverRef.def) {
 										case EVar(receiverVarName):
-											return makeAST(EReceiverEffect({
+											dispatchResult = makeAST(EReceiverEffect({
 												receiver: {varId: -1, name: receiverVarName},
 												operation: applyCall,
 												resultShape: UpdatedReceiverAndValue,
 												valueProjection: CompanionValue,
 												writeback: Always
-											})).def;
+											}));
 										default:
 									}
 								case PureValue:
 							}
 
 							if (prefix.length > 0) {
-								prefix.push(applyCall);
+								prefix.push(dispatchResult);
 								return EBlock(prefix);
 							}
 
-							return applyCall.def;
+							return dispatchResult.def;
 						}
 
 						// Private instance methods: static dispatch within the declaring module.
@@ -1381,9 +1421,11 @@ class CallExprBuilder {
 							return phoenixCall;
 						}
 
-						// Convert method name to snake_case for Elixir function calls unless a
-						// native name was provided (native names are already exact).
-						var elixirMethodName = resolvedMethodName != null ? resolvedMethodName : ElixirNaming.toVarName(methodName);
+						// Generated functions and captured references share function-name escaping:
+						// Haxe `Methods.or(a, b)` calls `Methods.or_fn(a, b)`, not the
+						// variable spelling `or_`. Native names remain exact; externs retain
+						// their existing target-API spelling instead of generated-function rules.
+						var elixirMethodName = resolvedMethodName != null ? resolvedMethodName : classType.isExtern ? ElixirNaming.toVarName(methodName) : NameUtils.toSafeElixirFunctionName(methodName);
 
 						// IDIOMATIC FIX: Within the same module, use unqualified function calls
 						// Elixir allows calling module functions directly when within that module
@@ -1399,6 +1441,9 @@ class CallExprBuilder {
 							return ERemoteCall(ModuleBuilder.buildStaticCallTarget(classType, cf.get(), moduleName, elixirMethodName), elixirMethodName,
 								argASTs);
 						}
+
+					case FAnon(cf) if (cf.get().kind.match(FMethod(_))):
+						return buildStructuralMethodCall(buildExpression(obj), ElixirNaming.toVarName(cf.get().name), argASTs, context);
 
 					case FEnum(_, ef):
 						// This should have been caught by PatternDetector.isEnumConstructor

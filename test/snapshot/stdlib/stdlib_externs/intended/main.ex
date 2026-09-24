@@ -28,7 +28,7 @@ defmodule Main do
     _keys = Registry.keys("MyRegistry", Kernel.self())
   end
   defp test_agent_externs() do
-    _agent_result = Agent.start_link(fn -> nil end)
+    _agent_result = Agent.start_link(fn -> 0 end)
     _state = Agent.get(nil, fn count -> count end)
     Agent.update(nil, fn count -> count + 1 end)
     Agent.cast(nil, fn count -> count + 1 end)
@@ -47,6 +47,7 @@ defmodule Main do
     IO.puts("Using helper function")
     IO.puts("stderr", "This is an error message")
     label = "label"
+    label = label || ""
     if (label != "") do
       IO.puts("#{label}: ")
     end
@@ -58,6 +59,7 @@ defmodule Main do
     color = IO.io.ansi.blue()
     IO.write("#{color}Info text#{IO.io.ansi.reset()}")
     label = "Array"
+    label = label || ""
     result = IO.iodata_to_binary(IO.inspect([1, 2, 3]))
     _formatted = if (label != "") do
       "#{label}: #{result}"
@@ -67,7 +69,7 @@ defmodule Main do
   end
   defp test_file_externs() do
     _read_result = File.read("test.txt")
-    content = File.read!("test.txt")
+    _content = File.read!("test.txt")
     _write_result = File.write("output.txt", "Hello, File!")
     File.write!("output2.txt", "Hello again!")
     _stat_result = File.stat("test.txt")
@@ -165,6 +167,7 @@ defmodule Main do
     string = String.trim("   ")
     _is_blank = String.length(string) == 0
     pad_with = "0"
+    pad_with = pad_with || " "
     _left_padded = if (String.length("test") >= 10) do
       "test"
     else

@@ -45,43 +45,43 @@ using Lambda;
  * 2. **Readability**: Code with infrastructure variables looks machine-generated rather
  *    than hand-written, reducing maintainability.
  * 
- * 3. **Unnecessary Assignments**: Elixir's pattern matching can work directly on
- *    expressions, making these temporary variables redundant.
+ * 3. **Unnecessary Assignments**: Some literal bindings can be removed. Calls,
+ *    allocations, and reads generally need bindings to preserve evaluation semantics.
  * 
  * ## Our Solution
  * 
  * This preprocessor intercepts TypedExpr trees BEFORE they reach the AST builder and:
  * 1. Detects infrastructure variable patterns
- * 2. Substitutes variables with their original expressions
- * 3. Removes unnecessary temporary variable declarations
- * 4. Ensures the generated Elixir code is clean and idiomatic
+ * 2. Substitutes stable literal/type values only when the local has no writes
+ * 3. Retains other bindings to preserve call count, order, exceptions, and captured values
+ * 4. Leaves target naming and usage cleanup to the existing AST passes
  * 
  * ## Examples of Infrastructure Variable Patterns
  * 
  * ### Switch Pattern
  * ```
- * TVar(_g, field_expr) + TSwitch(TLocal(_g), cases, default)
- * → TSwitch(field_expr, cases, default)
+ * TVar(_g, constant) + TSwitch(TLocal(_g), cases, default)
+ * → TSwitch(constant, cases, default) // only when _g has no writes
  * ```
  * 
  * ### Nested Assignment Pattern
  * ```
- * TVar(_g, expr1) + TVar(output, TLocal(_g)) + TSwitch(TLocal(_g), ...)
- * → TVar(output, TSwitch(expr1, ...))
+ * TVar(_g, next()) + use(TLocal(_g).key, TLocal(_g).value)
+ * → retain the binding; both reads must use the same call result
  * ```
  * 
  * ## Architecture Benefits
  * 
  * - **Single Responsibility**: Only handles infrastructure variable elimination
  * - **Early Intervention**: Fixes patterns before they reach AST builder
- * - **Clean Output**: Generated Elixir has no trace of infrastructure variables
+ * - **Correct Output**: Necessary bindings survive until safe target-side cleanup
  * - **Composable**: Works with existing LoopBuilder and other transformers
  * 
  * ## Edge Cases
  * 
  * - Nested switches may have multiple infrastructure variables (_g, _g1, _g2)
- * - Some patterns may legitimately use variables named `g` (unlikely but possible)
- * - Complex expressions might need careful substitution to preserve semantics
+ * - Authored variables named `g` have the same evaluation guarantees
+ * - A name match alone never proves that an initializer is safe to repeat or move
  * - Infrastructure variables in loop constructs are handled by LoopBuilder
  */
 /**
@@ -105,14 +105,13 @@ using Lambda;
  *   generated Elixir looks hand-written and remains stable for later Transformer passes.
  *
  * WHAT it does (high level)
- * - Detects infrastructure variables and substitutes their original expressions (ID-based) across
- *   the tree.
+ * - Detects infrastructure variables and substitutes only stable values, keyed by variable ID.
  * - Processes blocks to keep evaluation order while removing temp declarations.
  * - Merges assignment + switch shapes at the TypedExpr level when present, and provides an early
  *   generic merge to keep “var x = switch(expr)” intact for the builder.
  *
  * EXAMPLES (simplified)
- * - TVar(_g, expr); TSwitch(TLocal(_g), …) → TSwitch(expr, …)
+ * - TVar(_g, constant); TSwitch(TLocal(_g), …) → TSwitch(constant, …), if _g has no writes
  * - return switch(expr) … → (preserved by dedicated preprocessor) → idiomatic case in output
  */
 class TypedExprPreprocessor {
@@ -534,21 +533,6 @@ class TypedExprPreprocessor {
 			case TBlock(exprs):
 				processBlock(exprs, expr.pos, expr.t, substitutions);
 
-			// Skip TVar assignments for infrastructure variables that aren't used elsewhere
-			case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
-				#if debug_infrastructure_vars
-				#end
-
-				// Infrastructure variable assignment - track for substitution by ID
-				// Using ID instead of name prevents shadowing bugs in nested scopes
-				substitutions.set(v.id, init);
-
-				#if debug_infrastructure_vars
-				#end
-
-				// Return empty block to skip generating the assignment
-				{expr: TBlock([]), pos: expr.pos, t: expr.t};
-
 			// For all other expressions, delegate to recursive substitution
 			default:
 				applySubstitutionsRecursively(expr, substitutions);
@@ -627,11 +611,18 @@ class TypedExprPreprocessor {
 				default: null;
 			}
 		}
+		// A literal initializer is stable, but replacing a local that is assigned
+		// later would still erase its state. Include writes in the existing
+		// ID-based protection set, including writes inside nested expressions.
 		for (stmt in exprs) {
 			function scanMutationReceiver(e:TypedExpr):Void {
 				if (e == null)
 					return;
 				switch (e.expr) {
+					case TBinop(OpAssign | OpAssignOp(_), target, _) | TUnop(OpIncrement | OpDecrement, _, target):
+						var localVar = unwrapLocal(target);
+						if (localVar != null)
+							protectedMutationInfraVarIds.set(localVar.id, true);
 					case TCall(target, _):
 						switch (target.expr) {
 							case TField(obj, fieldAccess):
@@ -743,6 +734,7 @@ class TypedExprPreprocessor {
 
 					if (init != null
 						&& isInfrastructureVar(v.name)
+						&& isStableSubstitutionValue(init)
 						&& !protectedLoopInfraVarIds.exists(v.id)
 						&& !protectedMutationInfraVarIds.exists(v.id)) {
 						#if debug_preprocessor
@@ -967,6 +959,25 @@ class TypedExprPreprocessor {
 	}
 
 	/**
+	 * Keep only substitutions whose value cannot change when a read moves.
+	 *
+	 * Calls, allocations, field reads, and local reads must keep their original
+	 * binding: repeating them can duplicate effects or observe a later value.
+	 * For example, `var g = iterator.next(); use(g.key, g.value)` must advance
+	 * once. Even `var g = source` must retain the value before source changes.
+	 * Literal/type values are stable; processBlock separately proves that the
+	 * substituted local has no writes. Everything else remains an ordinary
+	 * binding for the existing builder and usage-based cleanup.
+	 */
+	static function isStableSubstitutionValue(expr:TypedExpr):Bool {
+		return switch (expr.expr) {
+			case TConst(_) | TTypeExpr(_): true;
+			case TParenthesis(inner) | TMeta(_, inner): isStableSubstitutionValue(inner);
+			default: false;
+		};
+	}
+
+	/**
 	 * Check if an expression uses a specific variable
 	 * 
 	 * WHY: Need to detect when infrastructure variables are referenced
@@ -1011,43 +1022,8 @@ class TypedExprPreprocessor {
 	}
 
 	/**
-	 * Scan for infrastructure variable declarations and add to substitution map
-	 *
-	 * WHY: Need to pre-scan loop bodies to find infrastructure variables before processing
-	 * WHAT: Recursively finds TVar declarations with infrastructure variable names
-	 * HOW: Traverses expression tree looking for TVar(g*, init) patterns
-	 *
-	 * This allows us to build a complete substitution map before processing the loop body,
-	 * ensuring that references to infrastructure variables can be properly substituted.
-	 */
-	static function scanForInfrastructureVars(expr:TypedExpr, substitutions:Map<Int, TypedExpr>):Void {
-		if (expr == null)
-			return;
-
-		switch (expr.expr) {
-			case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
-				// Found an infrastructure variable declaration (store by ID)
-				#if debug_preprocessor
-				#end
-				substitutions.set(v.id, init);
-
-			case TBlock(exprs):
-				// Scan all expressions in the block
-				for (e in exprs) {
-					scanForInfrastructureVars(e, substitutions);
-				}
-
-			default:
-				// Recursively scan sub-expressions
-				TypedExprTools.iter(expr, function(e) {
-					scanForInfrastructureVars(e, substitutions);
-				});
-		}
-	}
-
-	/**
 	 * Detect Map iteration patterns that generate iterator infrastructure
-	 * 
+	 *
 	 * WHY: Map iteration generates keyValueIterator().hasNext() patterns that aren't idiomatic
 	 * WHAT: Detects for-in loops over Maps with key=>value syntax
 	 * HOW: Checks for TFor with iterator field access patterns typical of Maps

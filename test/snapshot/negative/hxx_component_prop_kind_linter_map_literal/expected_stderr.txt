@@ -1,0 +1,1 @@
+HEEx component prop type error: <.card> "title" expects string but got map

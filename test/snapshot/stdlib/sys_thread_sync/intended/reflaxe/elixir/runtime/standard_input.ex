@@ -3,8 +3,8 @@ defmodule Reflaxe.Elixir.Runtime.StandardInput do
     %{:__reflaxe_class__ => Reflaxe.Elixir.Runtime.StandardInput, :big_endian => nil}
   end
   def read_byte(_struct) do
-    reflaxe_dispatch_receiver = read_chunk(1)
-    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get, [reflaxe_dispatch_receiver, 0])
+    reflaxe_dispatch_receiver_node_0 = read_chunk(1)
+    apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :get, [reflaxe_dispatch_receiver_node_0, 0])
   end
   def read_bytes(_struct, buf, pos, len) do
     if (pos < 0 or len < 0 or pos + len > buf.length) do

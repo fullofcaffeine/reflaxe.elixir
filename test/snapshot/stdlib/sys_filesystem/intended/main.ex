@@ -125,8 +125,8 @@ defmodule Main do
     assert_that(apply(Map.get(input, :__reflaxe_class__) || Map.get(input, :__struct__), :tell, [input]) == 4, "tell must follow caller-buffer reads")
     apply(Map.get(input, :__reflaxe_class__) || Map.get(input, :__struct__), :seek, [input, -2, {:seek_end}])
     assert_that((fn ->
-      reflaxe_dispatch_receiver = apply(Map.get(input, :__reflaxe_class__) || Map.get(input, :__struct__), :read, [input, 2])
-      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+      reflaxe_dispatch_receiver_node_0 = apply(Map.get(input, :__reflaxe_class__) || Map.get(input, :__struct__), :read, [input, 2])
+      apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :to_string, [reflaxe_dispatch_receiver_node_0])
     end).() == "HI", "input seek must support positions relative to the end")
     assert_that(apply(Map.get(input, :__reflaxe_class__) || Map.get(input, :__struct__), :eof, [input]), "eof must be true after the last byte")
     apply(Map.get(input, :__reflaxe_class__) || Map.get(input, :__struct__), :close, [input])
@@ -137,13 +137,13 @@ defmodule Main do
     apply(Map.get(binary, :__reflaxe_class__) || Map.get(binary, :__struct__), :set, [binary, 3, 255])
     Sys.IO.File.save_bytes(copied, binary)
     assert_that((fn ->
-      reflaxe_dispatch_receiver = Sys.IO.File.get_bytes(copied)
-      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :compare, [reflaxe_dispatch_receiver, binary])
+      reflaxe_dispatch_receiver_node_1 = Sys.IO.File.get_bytes(copied)
+      apply(Map.get(reflaxe_dispatch_receiver_node_1, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_1, :__struct__), :compare, [reflaxe_dispatch_receiver_node_1, binary])
     end).() == 0, "saveBytes and getBytes must preserve all byte values")
     Sys.IO.File.copy(copied, original)
     assert_that((fn ->
-      reflaxe_dispatch_receiver = Sys.IO.File.get_bytes(original)
-      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :compare, [reflaxe_dispatch_receiver, binary])
+      reflaxe_dispatch_receiver_node_2 = Sys.IO.File.get_bytes(original)
+      apply(Map.get(reflaxe_dispatch_receiver_node_2, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_2, :__struct__), :compare, [reflaxe_dispatch_receiver_node_2, binary])
     end).() == 0, "copy must preserve binary content")
     File.ln_s!("nested", link)
     assert_that(FileSystem.is_directory(link), "isDirectory must follow a directory symlink")

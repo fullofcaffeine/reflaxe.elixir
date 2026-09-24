@@ -1,18 +1,18 @@
 defmodule CallStack_Impl_ do
   import Kernel, except: [to_string: 1], warn: false
   def call_stack() do
-    stack_trace_to_haxe((fn ->
+    stack_trace_to_haxe((
     case Process.info(self(), :current_stacktrace) do
       {:current_stacktrace, stacktrace} -> stacktrace
       _ -> []
     end
-     end).())
+    ))
   end
   def exception_stack(full_stack \\ false) do
     exception_stack = stack_trace_to_haxe(Process.get(:__reflaxe_last_stacktrace__, []))
     if (full_stack), do: exception_stack, else: subtract(exception_stack, call_stack())
   end
-  defp stack_trace_to_haxe(stack_trace) do
+  def stack_trace_to_haxe(stack_trace) do
 
     Enum.map(stack_trace, fn
       {module, function, _arity, location} ->

@@ -118,11 +118,11 @@ defmodule Main do
     test_condition_broadcast()
     done = Sys.Thread.Lock.new()
     pool = Sys.Thread.FixedThreadPool.new(2)
-    apply(Map.get(pool, :__reflaxe_class__) || Map.get(pool, :__struct__), :run, (fn -> [pool, fn ->
-      reflaxe_dispatch_receiver = Sys.Thread.Thread.current()
-      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :send_message, [reflaxe_dispatch_receiver, "pool-local"])
+    apply(Map.get(pool, :__reflaxe_class__) || Map.get(pool, :__struct__), :run, [pool, fn ->
+      reflaxe_dispatch_receiver_node_0 = Sys.Thread.Thread.current()
+      apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :send_message, [reflaxe_dispatch_receiver_node_0, "pool-local"])
       apply(Map.get(done, :__reflaxe_class__) || Map.get(done, :__struct__), :release, [done])
-    end] end).())
+    end])
     if (not apply(Map.get(done, :__reflaxe_class__) || Map.get(done, :__struct__), :wait, [done, 1])) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "FixedThreadPool task did not run"]
     end

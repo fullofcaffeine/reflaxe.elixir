@@ -33,6 +33,9 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *         {a, b} = case expr do ... end
  *     - Ensure each branch/clause returns the updated variable value(s) by appending the return
  *       expression (or tuple) to the end of each branch body.
+ * - Assignment patterns may bind several values, as in a loop reducer's
+ *   `{left, right} = Enum.reduce(...)`. Inspect every binding in the pattern,
+ *   not only a single variable. Pinned values are reads, not new bindings.
  *
  * EXAMPLES
  * Haxe:
@@ -141,6 +144,32 @@ class ControlFlowStateHoistTransforms {
 				var newElse = elseBlock != null ? rewriteInScope(elseBlock, clone(bound), true) : null;
 				makeASTWithMeta(EWith(newClauses, newDo, newElse), node.metadata, node.pos);
 
+			case ETry(body, rescue, catchClauses, afterBlock, elseBlock):
+				// Loop break/continue lowering wraps its reducer in try. Branch updates
+				// must survive within that body, without leaking bindings between handlers
+				// or changing the try's result and exception behavior.
+				var newRescue:Array<ERescueClause> = [];
+				for (cl in rescue) {
+					var handlerBound = clone(bound);
+					bindFromPattern(cl.pattern, handlerBound);
+					if (cl.varName != null && isBindableName(cl.varName))
+						handlerBound.set(cl.varName, true);
+					var rewritten:ERescueClause = {pattern: cl.pattern, body: rewriteInScope(cl.body, handlerBound, true)};
+					if (cl.varName != null)
+						rewritten.varName = cl.varName;
+					newRescue.push(rewritten);
+				}
+				var newCatch:Array<ECatchClause> = [];
+				for (cl in catchClauses) {
+					var handlerBound = clone(bound);
+					bindFromPattern(cl.pattern, handlerBound);
+					newCatch.push({kind: cl.kind, pattern: cl.pattern, body: rewriteInScope(cl.body, handlerBound, true)});
+				}
+				makeASTWithMeta(ETry(rewriteInScope(body, clone(bound), true), newRescue, newCatch,
+					afterBlock != null ? rewriteInScope(afterBlock, clone(bound), false) : null,
+					elseBlock != null ? rewriteInScope(elseBlock, clone(bound), true) : null),
+					node.metadata, node.pos);
+
 			case EBinary(op, left, right):
 				makeASTWithMeta(EBinary(op, rewriteInScope(left, bound, true), rewriteInScope(right, bound, true)), node.metadata, node.pos);
 			case EMatch(p, rhs):
@@ -230,10 +259,10 @@ class ControlFlowStateHoistTransforms {
 				maybeHoistControlFlowStatement(inner, bound);
 
 			// Some pipelines materialize statement-position control-flow as `_ = <expr>`.
-			// If the RHS is a control-flow form, treat it as a statement to hoist.
-			case EBinary(Match, left, rhs) if (isUnderscoredVar(left) && isControlFlowExpr(rhs)):
+			// Only exact `_` discards. Named underscore bindings can be read later.
+			case EBinary(Match, left, rhs) if (isDiscardVar(left) && isControlFlowExpr(rhs)):
 				maybeHoistControlFlowStatement(rhs, bound);
-			case EMatch(PVar(lhs), rhs) if (lhs != null && lhs.length > 0 && lhs.charAt(0) == '_' && isControlFlowExpr(rhs)):
+			case EMatch(PVar("_"), rhs) if (isControlFlowExpr(rhs)):
 				maybeHoistControlFlowStatement(rhs, bound);
 
 			case EIf(cond, thenB, elseB):
@@ -266,8 +295,7 @@ class ControlFlowStateHoistTransforms {
 				makeHoistMatch(updates, rewrittenUnless, stmt);
 
 			case ECase(expr, clauses):
-				var bodies:Array<ElixirAST> = [for (c in clauses) c.body];
-				var updates = collectAssignedToBoundVars(bodies, bound);
+				var updates = collectAssignedToBoundVars([stmt], bound);
 				if (updates.length == 0)
 					return stmt;
 				var ret = makeReturnExpr(updates);
@@ -295,16 +323,40 @@ class ControlFlowStateHoistTransforms {
 				var rewrittenCond = rewriteInScope(newCond, clone(bound), true);
 				makeHoistMatch(updates, rewrittenCond, stmt);
 
+			case ETry(body, rescue, catchClauses, null, null):
+				// A normally completed try or handler must export its updated locals,
+				// just like an if/case branch. Appending the state also makes a final
+				// handler case a statement, so the existing nested hoist can export it.
+				// Native after/else forms have different scopes and are not handled here.
+				// This does not transport writes from a throwing body into its handler.
+				var updates = collectAssignedToBoundVars([stmt], bound);
+				if (updates.length == 0)
+					return stmt;
+				var ret = makeReturnExpr(updates);
+				var newRescue:Array<ERescueClause> = [];
+				for (cl in rescue) {
+					var rewritten:ERescueClause = {pattern: cl.pattern, body: ensureReturns(cl.body, ret)};
+					if (cl.varName != null)
+						rewritten.varName = cl.varName;
+					newRescue.push(rewritten);
+				}
+				var newCatch:Array<ECatchClause> = [
+					for (cl in catchClauses)
+						{kind: cl.kind, pattern: cl.pattern, body: ensureReturns(cl.body, ret)}
+				];
+				var newTry = makeASTWithMeta(ETry(ensureReturns(body, ret), newRescue, newCatch, null, null), stmt.metadata, stmt.pos);
+				makeHoistMatch(updates, rewriteInScope(newTry, clone(bound), true), stmt);
+
 			default:
 				stmt;
 		};
 	}
 
-	static inline function isUnderscoredVar(lhs:ElixirAST):Bool {
+	static inline function isDiscardVar(lhs:ElixirAST):Bool {
 		if (lhs == null || lhs.def == null)
 			return false;
 		return switch (lhs.def) {
-			case EVar(nm) if (nm != null && nm.length > 0 && nm.charAt(0) == '_'): true;
+			case EVar("_"): true;
 			default: false;
 		}
 	}
@@ -323,7 +375,7 @@ class ControlFlowStateHoistTransforms {
 			}
 		}
 		return switch (cur.def) {
-			case EIf(_, _, _) | EUnless(_, _, _) | ECase(_, _) | ECond(_): true;
+			case EIf(_, _, _) | EUnless(_, _, _) | ECase(_, _) | ECond(_) | ETry(_, _, _, null, null): true;
 			default: false;
 		}
 	}
@@ -382,11 +434,28 @@ class ControlFlowStateHoistTransforms {
 			case EFn(_):
 				return;
 
+			case ECase(expr, clauses):
+				collectAssignedVars(expr, bound, out);
+				for (cl in clauses)
+					collectAssignedVars(cl.body, withoutPatternBindings(bound, cl.pattern), out);
+
+			case ETry(body, rescue, catchClauses, null, null):
+				collectAssignedVars(body, bound, out);
+				for (cl in rescue) {
+					var handlerBound = withoutPatternBindings(bound, cl.pattern);
+					if (cl.varName != null)
+						handlerBound.remove(cl.varName);
+					collectAssignedVars(cl.body, handlerBound, out);
+				}
+				for (cl in catchClauses)
+					collectAssignedVars(cl.body, withoutPatternBindings(bound, cl.pattern), out);
+
 			case EMatch(pat, rhs):
-				switch (pat) {
-					case PVar(name) if (isBindableName(name) && bound.exists(name)):
+				var assigned = new Map<String, Bool>();
+				bindFromPattern(pat, assigned);
+				for (name in assigned.keys()) {
+					if (bound.exists(name))
 						out.set(name, true);
-					default:
 				}
 				collectAssignedVars(rhs, bound, out);
 
@@ -407,6 +476,16 @@ class ControlFlowStateHoistTransforms {
 	}
 
 	// -------------------- Bound tracking --------------------
+
+	/** Handler and case binders shadow outer names; their writes are not outer updates. */
+	static function withoutPatternBindings(bound:Map<String, Bool>, pattern:EPattern):Map<String, Bool> {
+		var local = clone(bound);
+		var introduced = new Map<String, Bool>();
+		bindFromPattern(pattern, introduced);
+		for (name in introduced.keys())
+			local.remove(name);
+		return local;
+	}
 
 	static function bindFromStatement(stmt:ElixirAST, bound:Map<String, Bool>):Void {
 		if (stmt == null || stmt.def == null)
@@ -458,8 +537,8 @@ class ControlFlowStateHoistTransforms {
 			case PBinary(segs):
 				for (s in segs)
 					bindFromPattern(s.pattern, out);
-			case PPin(inner):
-				bindFromPattern(inner, out);
+			case PPin(_):
+				// A pin matches a prior value; it cannot introduce or update a binding.
 			default:
 		}
 	}

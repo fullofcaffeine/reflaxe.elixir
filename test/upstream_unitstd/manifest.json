@@ -141,7 +141,7 @@
       "fixtureKind": "adapted",
       "source": "Std.unit.hx",
       "fixture": "test/upstream_unitstd/upstream/Std.unit.hx",
-      "reason": "The interface downcast assertion is excluded because interface runtime identity belongs to the separate reflection parity task. Random bounds use parsed runtime values so generated Elixir does not contain always-constant guards. All scalar type checks, class and built-in downcasts, string conversion, integer and float conversion, parsing, and random contracts remain enabled.",
+      "reason": "The interface downcast assertion is excluded because interface runtime identity belongs to the separate reflection parity task. Random bounds use parsed runtime values so generated Elixir does not contain always-constant guards. All scalar type checks, class and built-in downcasts, string conversion, integer and float conversion, parsing, and random contracts remain enabled. The local test/runtime/dynamic_length fixture additionally compares Dynamic type checks against the Haxe interpreter: null is false, while non-null values including zero and false match.",
       "sourceSha256": "c2b9e70dea6b32b2e9ab866da79196800b5fdf9533b708314ccc2804889f5fe9",
       "fixtureSha256": "8c53373728ef4cd73583f643435aa69b53c4695bebdc3d82541be13fc3a00689",
       "adaptationPatch": "test/upstream_unitstd/adaptations/Std.unit.hx.patch",

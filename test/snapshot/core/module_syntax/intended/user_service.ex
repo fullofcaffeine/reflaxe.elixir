@@ -6,7 +6,7 @@ defmodule UserService do
     data
   end
   def complex_function(arg1, arg2, arg3, _arg4) do
-    if (arg) do
+    if (arg3) do
       "#{arg1} #{Reflaxe.Elixir.HaxeFloat.to_string(arg2)}"
     else
       "default"

@@ -5,6 +5,7 @@ import elixir.ErlangTerm;
 import elixir.File;
 import elixir.Kernel;
 import elixir.System;
+import elixir.mix.Local;
 import elixir.mix.Mix;
 import elixir.mix.Project;
 import elixir.mix.Task;
@@ -25,7 +26,6 @@ import elixir.types.Term;
 @:keep
 @:native("HaxePhoenixLiveReact.DependencyWorker")
 class LiveReactDependencyWorker {
-	static inline final HEX:Atom = "hex";
 	static inline final DEPS:Atom = "deps";
 	static inline final LOCKFILE:Atom = "lockfile";
 	static inline final DEPS_PATH:Atom = "deps_path";
@@ -46,7 +46,9 @@ class LiveReactDependencyWorker {
 		var dependencyPath:String = ElixirMap.fetchBangTerm(input, "dependencyPath");
 
 		Mix.start();
-		Mix.ensureApplicationBang(HEX);
+		// Elixir 1.14 loads these in the Mix CLI, which this standalone worker bypasses.
+		Local.appendArchives();
+		Local.appendPaths();
 
 		var config:KeywordList<Term> = [
 			{_0: DEPS, _1: dependencies},

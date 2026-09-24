@@ -426,12 +426,6 @@ class FieldAccessBuilder {
 		// but fall back to atoms when present.
 		var snakeField = NameUtils.toSnakeCase(fieldName);
 
-		// Special-case: `dyn.length` should behave like `length(dyn)` for lists (Haxe Array),
-		// matching the existing EField printer behavior for `.length`.
-		if (snakeField == "length") {
-			return ECall(null, "length", [objAST]);
-		}
-
 		var outerVarName = "_dyn_obj";
 		var valueVarName = "_dyn_value";
 		var objVar = makeAST(EVar(outerVarName));
@@ -455,12 +449,39 @@ class FieldAccessBuilder {
 			}
 		]));
 
-		var outerCase = makeAST(ECase(objAST, [
-			{
-				pattern: EPattern.PVar(outerVarName),
-				body: innerCase
-			}
-		]));
+		var clauses:Array<ECaseClause> = [];
+		if (snakeField == "length") {
+			// Dynamic values retain their runtime representation: binaries are
+			// strings, lists are arrays, and maps use the ordinary field lookup.
+			// Bind the receiver once so effectful expressions are not repeated.
+			clauses.push({
+				pattern: PVar(outerVarName),
+				guard: makeAST(ECall(null, "is_binary", [objVar])),
+				body: makeAST(ERemoteCall(makeAST(EVar("String")), "length", [objVar]))
+			});
+			clauses.push({
+				pattern: PVar(outerVarName),
+				guard: makeAST(ECall(null, "is_list", [objVar])),
+				body: makeAST(ECall(null, "length", [objVar]))
+			});
+		}
+		clauses.push({pattern: EPattern.PVar(outerVarName), body: innerCase});
+		if (snakeField == "length") {
+			// Keep polymorphic dispatch at a function boundary. An inline case
+			// over a statically inferred binary makes Elixir report the list arm
+			// as invalid even though its guard prevents execution. Function
+			// clauses preserve both runtime representations without erasing types
+			// or requiring a separately emitted runtime module.
+			return ECall(makeAST(EFn([
+				for (clause in clauses)
+					{
+						args: [clause.pattern],
+						guard: clause.guard,
+						body: clause.body
+					}
+			])), "", [objAST]);
+		}
+		var outerCase = makeAST(ECase(objAST, clauses));
 
 		return outerCase.def;
 	}

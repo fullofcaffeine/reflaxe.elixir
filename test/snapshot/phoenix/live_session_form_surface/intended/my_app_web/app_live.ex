@@ -5,7 +5,7 @@ defmodule MyAppWeb.AppLive do
     user = %{id: 1, name: "Ada"}
     params = %{name: user.name}
     changeset = Ecto.Changeset.change(user, params)
-    socket = Phoenix.Component.assign(socket, (fn -> %{form: Phoenix.Component.to_form(
+    socket = Phoenix.Component.assign(socket, %{form: Phoenix.Component.to_form(
       changeset,
       (fn ->
          errors = nil
@@ -49,11 +49,11 @@ defmodule MyAppWeb.AppLive do
                 value when is_integer(value) -> value
                 _ -> nil
               end
-    } end).())
+    })
     {:ok, socket}
   end
   def handle_event(_event, params, socket) do
-    {:noreply, Phoenix.Component.assign(socket, :search_form, (fn -> Phoenix.Component.to_form(
+    {:noreply, Phoenix.Component.assign(socket, :search_form, Phoenix.Component.to_form(
       params,
       (fn ->
          id = nil
@@ -73,6 +73,6 @@ defmodule MyAppWeb.AppLive do
                    |> Enum.filter(fn {_, value} -> value != nil end)
 
        end).()
-    ) end).())}
+    ))}
   end
 end

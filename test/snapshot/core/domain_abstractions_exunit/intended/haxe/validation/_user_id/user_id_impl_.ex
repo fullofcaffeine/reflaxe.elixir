@@ -1,12 +1,14 @@
 defmodule UserId_Impl_ do
   import Kernel, except: [to_string: 1, length: 1], warn: false
   def _new(user_id) do
-    (case validate(user_id) do
-      {:ok, value} -> value
+    g = validate(user_id)
+    this1 = (case g do
+      {:ok, this1} -> this1
       {:error, reason} ->
         raise Reflaxe.Elixir.HaxeThrow, [value: reason]
         reason
     end)
+    this1
   end
   def parse(user_id) do
     (case validate(user_id) do

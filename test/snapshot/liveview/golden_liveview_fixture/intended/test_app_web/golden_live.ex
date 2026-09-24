@@ -9,8 +9,7 @@ defmodule TestAppWeb.GoldenLive do
   def handle_info(msg, socket) do
     live = socket
     next_socket = (case msg do
-      {:external_increment, amount} ->
-        Phoenix.Component.update(live, :counter, fn n -> n + amount end)
+      {:external_increment, amount} -> Phoenix.Component.update(live, :counter, fn n -> n + amount end)
       {:external_reset} ->
         Phoenix.Component.assign(live, %{counter: 0, search_query: "", selected_tags: []})
     end)

@@ -19,9 +19,26 @@ enum NestedResult {
 
 class Main {
 	public static function main() {
+		assertText(describeStatus(Loading), "Loading...");
+		assertText(describeStatus(Success("Hello World")), "Got data: Hello World");
+		assertText(describeStatus(Failure("Network", 500)), "Error 500: Network");
+		assertText(describeNested(Ok(Loading)), "Still loading");
+		assertText(describeNested(Ok(Success("Nested"))), "Nested success: Nested");
+		assertText(describeNested(Ok(Failure("Offline", 503))), "Nested failure 503: Offline");
+		assertText(describeNested(Error("Missing")), "Top level error: Missing");
+		assertText(describeMixed(Success("ignored")), "Success (data ignored)");
+		assertText(describeMixed(Failure("Network error", 500)), "Error occurred: Network error");
+		assertText(describeMixed(Loading), "Loading");
+	}
+
+	static function assertText(actual:String, expected:String):Void {
+		if (actual != expected)
+			throw 'Expected $expected, got $actual';
+	}
+
+	static function describeStatus(status:Status):String {
 		// Test 1: Simple enum pattern with meaningful names
-		var status = Success("Hello World");
-		var result1 = switch (status) {
+		return switch (status) {
 			case Loading:
 				"Loading...";
 			case Success(data):
@@ -31,11 +48,11 @@ class Main {
 				// Should use 'error' and 'code' not 'g' and 'g1'
 				'Error $code: $error';
 		}
-		trace(result1);
+	}
 
+	static function describeNested(nested:NestedResult):String {
 		// Test 2: Nested enum patterns
-		var nested = Ok(Success("Nested"));
-		var result2 = switch (nested) {
+		return switch (nested) {
 			case Ok(Loading):
 				"Still loading";
 			case Ok(Success(data)):
@@ -46,11 +63,11 @@ class Main {
 			case Error(message):
 				'Top level error: $message';
 		}
-		trace(result2);
+	}
 
+	static function describeMixed(mixed:Status):String {
 		// Test 3: Pattern with unused parameters
-		var mixed = Failure("Network error", 500);
-		var result3 = switch (mixed) {
+		return switch (mixed) {
 			case Success(_):
 				"Success (data ignored)";
 			case Failure(error, _):
@@ -59,6 +76,5 @@ class Main {
 			case Loading:
 				"Loading";
 		}
-		trace(result3);
 	}
 }

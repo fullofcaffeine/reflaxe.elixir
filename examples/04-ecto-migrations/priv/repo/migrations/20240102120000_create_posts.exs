@@ -6,7 +6,7 @@ defmodule EctoMigrationsExample.Repo.Migrations.CreatePosts do
       add(:content, :text)
       add(:published, :boolean, [default: false])
       add(:view_count, :integer, [default: 0])
-      add(:user_id, references(:users, [on_delete: :delete_all]))
+      add(:user_id, references(:users, [on_delete: :delete_all, on_update: :update_all]))
       timestamps()
     end
     create(index(:posts, [:user_id]))
@@ -14,6 +14,7 @@ defmodule EctoMigrationsExample.Repo.Migrations.CreatePosts do
     create(constraint(:posts, :positive_view_count, [check: "view_count >= 0"]))
   end
   def down() do
+    drop(constraint(:posts, :positive_view_count))
     drop(table(:posts))
   end
 end

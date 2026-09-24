@@ -31,6 +31,7 @@ defmodule Main do
     if (Kernel.is_nil(current_meta)) do
       Presence.track(self(), socket, key, %{})
     end
+    0
   end
   defp maybe_get_meta() do
     nil

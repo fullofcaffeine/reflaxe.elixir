@@ -9,8 +9,7 @@ defmodule OptionPatterns.NotificationServiceTest do
         assert("Test message" == record.message, "Should have correct message")
         assert({:email} == record.type, "Should have correct notification type")
         assert(record.delivered, "Should be marked as delivered")
-      {:error, msg} ->
-        flunk("Unexpected error: " <> msg)
+      {:error, msg} -> flunk("Unexpected error: " <> msg)
     end)
   end
   test "send to user fails for inactive user" do
@@ -19,8 +18,7 @@ defmodule OptionPatterns.NotificationServiceTest do
     (case result do
       {:ok, _value} ->
         flunk("Expected error for inactive user")
-      {:error, msg} ->
-        assert("Cannot send notifications to inactive users" == msg, "Should have correct error message")
+      {:error, msg} -> assert("Cannot send notifications to inactive users" == msg, "Should have correct error message")
     end)
   end
   test "send to user fails for nonexistent user" do
@@ -29,8 +27,7 @@ defmodule OptionPatterns.NotificationServiceTest do
     (case result do
       {:ok, _value} ->
         flunk("Expected error for nonexistent user")
-      {:error, msg} ->
-        assert("User not found" == msg, "Should have correct error message")
+      {:error, msg} -> assert("User not found" == msg, "Should have correct error message")
     end)
   end
   test "send to user fails for empty message" do
@@ -39,8 +36,7 @@ defmodule OptionPatterns.NotificationServiceTest do
     (case result do
       {:ok, _value} ->
         flunk("Expected error for empty message")
-      {:error, msg} ->
-        assert("Message cannot be empty" == msg, "Should have correct error message")
+      {:error, msg} -> assert("Message cannot be empty" == msg, "Should have correct error message")
     end)
   end
   test "send to user fails for null message" do
@@ -49,8 +45,7 @@ defmodule OptionPatterns.NotificationServiceTest do
     (case result do
       {:ok, _value} ->
         flunk("Expected error for null message")
-      {:error, msg} ->
-        assert("Message cannot be empty" == msg, "Should have correct error message")
+      {:error, msg} -> assert("Message cannot be empty" == msg, "Should have correct error message")
     end)
   end
   test "send to email succeeds for valid email" do
@@ -60,8 +55,7 @@ defmodule OptionPatterns.NotificationServiceTest do
       {:ok, record} ->
         assert(1 == record.user_id, "Should send to correct user (Alice has ID 1)")
         assert("Email test" == record.message, "Should have correct message")
-      {:error, msg} ->
-        flunk("Unexpected error: " <> msg)
+      {:error, msg} -> flunk("Unexpected error: " <> msg)
     end)
   end
   test "send to email fails for nonexistent email" do
@@ -70,8 +64,7 @@ defmodule OptionPatterns.NotificationServiceTest do
     (case result do
       {:ok, _value} ->
         flunk("Expected error for nonexistent email")
-      {:error, msg} ->
-        assert(StringTools.haxe_index_of(msg, "No user found with email", 0) >= 0, "Should mention email not found")
+      {:error, msg} -> assert(StringTools.haxe_index_of(msg, "No user found with email", 0) >= 0, "Should mention email not found")
     end)
   end
   test "get user preferences returns preferences for configured user" do
@@ -153,8 +146,7 @@ defmodule OptionPatterns.NotificationServiceTest do
         refute(prefs.email_enabled, "Should have updated email preference")
         assert(prefs.sms_enabled, "Should have updated SMS preference")
         assert(prefs.push_enabled, "Should have updated push preference")
-      {:error, msg} ->
-        flunk("Unexpected error: " <> msg)
+      {:error, msg} -> flunk("Unexpected error: " <> msg)
     end)
     assert(OptionPatterns.NotificationService.is_notification_allowed(2, {:email}), "Default preferences remain unchanged")
   end
@@ -164,8 +156,7 @@ defmodule OptionPatterns.NotificationServiceTest do
     (case result do
       {:ok, _value} ->
         flunk("Expected error for nonexistent user")
-      {:error, msg} ->
-        assert("User not found" == msg, "Should have correct error message")
+      {:error, msg} -> assert("User not found" == msg, "Should have correct error message")
     end)
   end
   test "send fails when user disables notification type" do
@@ -185,8 +176,7 @@ defmodule OptionPatterns.NotificationServiceTest do
     (case result do
       {:ok, _value} ->
         flunk("Expected simulated delivery failure")
-      {:error, msg} ->
-        assert("Simulated delivery failure" == msg, "Should have correct error message")
+      {:error, msg} -> assert("Simulated delivery failure" == msg, "Should have correct error message")
     end)
   end
 end

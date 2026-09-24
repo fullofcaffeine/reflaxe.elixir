@@ -8,6 +8,9 @@ async function login(page: Page, base: string, name: string, email: string) {
   await page.goto(base + '/login')
   await expect(page.locator('h1')).toContainText('Sign in')
 
+  // Match the auth test's readiness boundary: LiveView mounting can replace inputs.
+  await waitForLiveViewConnected(page)
+
   const loginForm = page
     .locator('form[action="/auth/login"]')
     .filter({
@@ -17,6 +20,8 @@ async function login(page: Page, base: string, name: string, email: string) {
 
   await loginForm.locator('input[name="name"][type="text"]').fill(name)
   await loginForm.locator('input[name="email"][type="email"]').fill(email)
+  await expect(loginForm.locator('input[name="name"][type="text"]')).toHaveValue(name)
+  await expect(loginForm.locator('input[name="email"][type="email"]')).toHaveValue(email)
   await loginForm.getByRole('button', { name: /continue/i }).click()
 
   await page.waitForURL('**/todos', { timeout: 15000 })
@@ -35,7 +40,11 @@ async function createTodo(page: Page, title: string) {
 async function switchOrg(page: Page, base: string, slug: string) {
   await page.goto(base + '/org')
   await expect(page.getByTestId('org-title')).toBeVisible({ timeout: 20000 })
+  // The initial HTTP render is visible before LiveView can handle the submit.
+  await waitForLiveViewConnected(page)
+  await expect(page.locator('[data-phx-main]')).toHaveClass(/\bphx-connected\b/)
   await page.getByTestId('org-input-slug').fill(slug)
+  await expect(page.getByTestId('org-input-slug')).toHaveValue(slug)
   await page.getByTestId('btn-switch-org').click()
   await page.waitForURL('**/todos', { timeout: 20000 })
   await waitForLiveViewConnected(page)
@@ -67,4 +76,3 @@ test('a signed-in user can switch organizations and see isolated todos', async (
   await expect(page.locator('h3', { hasText: titleA }).first()).toBeVisible({ timeout: 20000 })
   await expect(page.locator('h3', { hasText: titleB })).toHaveCount(0, { timeout: 20000 })
 })
-

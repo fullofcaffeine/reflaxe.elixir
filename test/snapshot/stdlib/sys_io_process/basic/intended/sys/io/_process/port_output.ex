@@ -14,8 +14,8 @@ defmodule PortOutput do
     if (len == 0) do
       0
     else
-      reflaxe_dispatch_receiver = apply(Map.get(b, :__reflaxe_class__) || Map.get(b, :__struct__), :sub, [b, pos, len])
-      slice = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get_data, [reflaxe_dispatch_receiver])
+      reflaxe_dispatch_receiver_node_0 = apply(Map.get(b, :__reflaxe_class__) || Map.get(b, :__struct__), :sub, [b, pos, len])
+      slice = apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :get_data, [reflaxe_dispatch_receiver_node_0])
       Port.command(struct.port, slice)
       len
     end

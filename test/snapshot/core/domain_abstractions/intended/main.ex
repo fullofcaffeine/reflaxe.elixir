@@ -10,7 +10,7 @@ defmodule Main do
     nil
   end
   defp test_email_validation() do
-    _email_result = (case Email_Impl_.parse("user@example.com") do
+    (case Email_Impl_.parse("user@example.com") do
       {:ok, email} ->
         _domain = Email_Impl_.get_domain(email)
         _local_part = Email_Impl_.get_local_part(email)
@@ -30,15 +30,15 @@ defmodule Main do
     email1_result = Email_Impl_.parse("Test@Example.Com")
     email2_result = Email_Impl_.parse("test@example.com")
     if (ResultTools.is_ok(email1_result) and ResultTools.is_ok(email2_result)) do
-      email1 = ResultTools.unwrap(email1_result)
-      email2 = ResultTools.unwrap(email2_result)
-      _are_equal = Email_Impl_.equals(email1, email2)
+      email_entry = ResultTools.unwrap(email1_result)
+      email_value = ResultTools.unwrap(email2_result)
+      _are_equal = Email_Impl_.equals(email_entry, email_value)
       nil
     end
   end
   defp test_user_id_validation() do
     valid_ids = ["user123", "Alice", "Bob42", "testUser"]
-    g = 0
+    _g = 0
     Enum.each(valid_ids, fn valid_id ->
       (case UserId_Impl_.parse(valid_id) do
         {:ok, user_id} ->
@@ -174,7 +174,7 @@ defmodule Main do
     _user_id_chain = ResultTools.unwrap_or(ResultTools.filter(ResultTools.map(UserId_Impl_.parse("TestUser123"), fn user_id -> UserId_Impl_.normalize(user_id) end), fn user_id -> UserId_Impl_.starts_with(user_id, "test") end, "UserId does not start with 'test'"), ResultTools.unwrap(UserId_Impl_.parse("defaultuser")))
     _math_chain = ResultTools.unwrap_or(ResultTools.map(ResultTools.flat_map(PositiveInt_Impl_.parse(10), fn n -> PositiveInt_Impl_.safe_sub(n, ResultTools.unwrap(PositiveInt_Impl_.parse(3))) end), fn n -> PositiveInt_Impl_.multiply(n, ResultTools.unwrap(PositiveInt_Impl_.parse(2))) end), ResultTools.unwrap(PositiveInt_Impl_.parse(1)))
     _string_chain = ResultTools.unwrap_or(ResultTools.flat_map(ResultTools.map(ResultTools.flat_map(NonEmptyString_Impl_.parse_and_trim("  hello world  "), fn s -> NonEmptyString_Impl_.safe_trim(s) end), fn s -> NonEmptyString_Impl_.to_upper_case(s) end), fn s -> NonEmptyString_Impl_.safe_replace(s, "WORLD", "UNIVERSE") end), ResultTools.unwrap(NonEmptyString_Impl_.parse("fallback")))
-    _composition_result = (case build_user_profile("user123", "  alice@example.com  ", "5") do
+    (case build_user_profile("user123", "  alice@example.com  ", "5") do
       {:ok, _profile} -> nil
       {:error, _error} -> nil
     end)

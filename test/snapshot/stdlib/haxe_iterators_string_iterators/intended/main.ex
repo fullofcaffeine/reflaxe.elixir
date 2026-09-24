@@ -6,7 +6,7 @@ defmodule Main do
   end
   def main() do
     iterator = StringIterator.new("aé中")
-    codes = Array.new()
+    codes = []
     {codes} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {codes}, fn _, {acc_codes} ->
       try do
         if (apply(Map.get(iterator, :__reflaxe_class__) || Map.get(iterator, :__struct__), :has_next, [iterator])) do
@@ -28,7 +28,7 @@ defmodule Main do
     end)
     assert_that(Enum.join(codes, ",") == "97,233,20013", "StringIterator should return codepoints")
     key_value_iterator = StringKeyValueIterator.new("aé中")
-    entries = Array.new()
+    entries = []
     {entries} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {entries}, fn _, {acc_entries} ->
       try do
         if (apply(Map.get(key_value_iterator, :__reflaxe_class__) || Map.get(key_value_iterator, :__struct__), :has_next, [key_value_iterator])) do

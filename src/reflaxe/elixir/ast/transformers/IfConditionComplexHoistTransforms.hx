@@ -10,17 +10,16 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 	* IfConditionComplexHoistTransforms
 	*
 	* WHAT
-	* - Hoist complex constructs (case/cond/with/if) used inside binary conditions of
-	*   if/unless into a prior binding, then compare the bound value. This avoids
+	* - Parenthesize complex constructs (case/cond/with/if) inside binary conditions of
+	*   if/unless without moving their evaluation. This avoids
 	*   shapes like `if case ... end > -1 do` which are parser-sensitive.
 	* - Hoist a multi-statement left operand before the condition. This preserves
 	*   assignments made by an inline abstract operation such as `value++`.
 	*
 	* HOW
-	* - When encountering EIf/EUnless with condition EBinary(op, left, right) and either
-	*   side contains ECase/ECond/EWith/EIf, rewrite to an EBlock:
-	*   cond_value = <complex>
-	*   if cond_value <op> <other> do ... else ... end
+	* - Preserve both operands in a parenthesized condition. In particular, the right
+	*   operand of a short-circuit operator must not be evaluated eagerly.
+	* - Only split an already sequential multi-statement left operand into a prefix.
 
 	*
 	* WHY
@@ -86,13 +85,7 @@ class IfConditionComplexHoistTransforms {
 					var newCond = makeAST(EBinary(op, split.value, right));
 					makeAST(EBlock(split.prefix.concat([rebuild(newCond)])));
 				} else if (containsComplex(left) || containsComplex(right)) {
-					var hoisted = containsComplex(left) ? left : right;
-					var tmpName = 'cond_value';
-					var assign = makeAST(EMatch(PVar(tmpName), hoisted));
-					var newLeft = containsComplex(left) ? makeAST(EVar(tmpName)) : left;
-					var newRight = containsComplex(right) ? makeAST(EVar(tmpName)) : right;
-					var complexCond = makeAST(EBinary(op, newLeft, newRight));
-					makeAST(EBlock([assign, rebuild(complexCond)]));
+					rebuild(makeAST(EParen(cond)));
 				} else {
 					null;
 				}

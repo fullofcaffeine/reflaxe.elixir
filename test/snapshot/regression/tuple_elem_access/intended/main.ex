@@ -4,8 +4,10 @@ defmodule Main do
     if (elem(one_based, 0) != "one" or elem(one_based, 1) != 2) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "one-based tuple access failed"]
     end
-    matched = if (elem(one_based, 0) == "one") do
-      value = elem(one_based, 1)
+    one_based__1 = elem(one_based, 0)
+    one_based__2 = elem(one_based, 1)
+    matched = if (one_based__1 == "one") do
+      value = one_based__2
       value
     else
       -1

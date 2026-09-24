@@ -3,6 +3,7 @@ package migrations;
 import ecto.Migration;
 import ecto.Migration.ColumnType;
 import ecto.Migration.OnDeleteAction;
+import ecto.Migration.OnUpdateAction;
 
 /**
  * Advanced migration example with foreign keys and constraints
@@ -18,14 +19,15 @@ class CreatePosts extends Migration {
 			.addColumn("content", ColumnType.Text)
 			.addColumn("published", ColumnType.Boolean, {defaultValue: false})
 			.addColumn("view_count", ColumnType.Integer, {defaultValue: 0})
-			.addReference("user_id", "users", {onDelete: OnDeleteAction.Cascade})
+			.addColumn("user_id", ColumnType.References("users"), {onDelete: OnDeleteAction.Cascade, onUpdate: OnUpdateAction.Cascade})
 			.addTimestamps()
 			.addIndex(["user_id"])
-			.addIndex(["published", "inserted_at"])
-			.addCheckConstraint("positive_view_count", "view_count >= 0");
+			.addIndex(["published", "inserted_at"]);
+		createConstraint("posts", "positive_view_count", "view_count >= 0");
 	}
 
 	public function down():Void {
+		dropConstraint("posts", "positive_view_count");
 		dropTable("posts");
 	}
 }

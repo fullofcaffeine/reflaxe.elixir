@@ -41,11 +41,11 @@ defmodule Main do
     y = 20
     flag = true
     process_string((if (x > 5 and y < 30), do: "in_range", else: "out_of_range"))
-    process_string((fn -> if (flag) do
+    process_string(if (flag) do
         if (x > y), do: "x_greater", else: "y_greater"
       else
         "disabled"
-      end end).())
+      end)
     str = "test"
     process_string((if (String.length(str) > 3), do: "long", else: "short"))
   end

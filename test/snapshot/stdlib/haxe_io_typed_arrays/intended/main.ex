@@ -5,15 +5,15 @@ defmodule Main do
       _ = ArrayBufferViewImpl.new(Bytes.alloc(size), 0, size)
     end).()
     if (0 < Bitwise.bsr(floats.byte_length, 2)) do
-      reflaxe_dispatch_receiver = floats.bytes
-      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :set_float, [reflaxe_dispatch_receiver, floats.byte_offset, 1.25])
+      reflaxe_dispatch_receiver_node_0 = floats.bytes
+      apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :set_float, [reflaxe_dispatch_receiver_node_0, floats.byte_offset, 1.25])
     else
       0
     end
     if (Reflaxe.Elixir.HaxeFloat.neq(
       (fn ->
-         reflaxe_dispatch_receiver = floats.bytes
-         apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get_float, [reflaxe_dispatch_receiver, floats.byte_offset])
+         reflaxe_dispatch_receiver_node_1 = floats.bytes
+         apply(Map.get(reflaxe_dispatch_receiver_node_1, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_1, :__struct__), :get_float, [reflaxe_dispatch_receiver_node_1, floats.byte_offset])
        end).(),
       1.25
     )) do
@@ -22,8 +22,8 @@ defmodule Main do
     bytes = Bytes.alloc(2)
     octets = UInt8Array_Impl_.from_bytes(bytes, 0, nil)
     if (0 < octets.byte_length) do
-      reflaxe_dispatch_receiver = octets.bytes
-      apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :set, [reflaxe_dispatch_receiver, octets.byte_offset, 55])
+      reflaxe_dispatch_receiver_node_2 = octets.bytes
+      apply(Map.get(reflaxe_dispatch_receiver_node_2, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_2, :__struct__), :set, [reflaxe_dispatch_receiver_node_2, octets.byte_offset, 55])
     else
       0
     end

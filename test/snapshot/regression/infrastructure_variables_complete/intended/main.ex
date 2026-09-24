@@ -12,7 +12,8 @@ defmodule Main do
   defp test_basic_switch() do
     msg_type = "test"
     msg_data = "hello"
-    _result = if (msg_type == "test"), do: msg_data, else: "unknown"
+    g = msg_type
+    _result = if (g == "test"), do: msg_data, else: "unknown"
     nil
   end
   defp test_array_operations() do
@@ -54,9 +55,26 @@ defmodule Main do
     g = Reflaxe.Elixir.IMap.key_value_iterator(user_map)
     {_result} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result}, fn _, {acc_result} ->
       try do
-        if (g.has_next.()) do
-          key = g.next.().key
-          value = g.next.().value
+        if ((case g do
+        reflaxe_structural_receiver_node_0 ->
+          (case Map.fetch(reflaxe_structural_receiver_node_0, :has_next) do
+            {:ok, reflaxe_structural_callback_node_0} ->
+              reflaxe_structural_callback_node_0.()
+            :error ->
+              apply(Map.get(reflaxe_structural_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_structural_receiver_node_0, :__struct__), :has_next, [reflaxe_structural_receiver_node_0])
+          end)
+      end)) do
+          g = (case g do
+            reflaxe_structural_receiver_node_1 ->
+              (case Map.fetch(reflaxe_structural_receiver_node_1, :next) do
+                {:ok, reflaxe_structural_callback_node_1} ->
+                  reflaxe_structural_callback_node_1.()
+                :error ->
+                  apply(Map.get(reflaxe_structural_receiver_node_1, :__reflaxe_class__) || Map.get(reflaxe_structural_receiver_node_1, :__struct__), :next, [reflaxe_structural_receiver_node_1])
+              end)
+          end)
+          key = g.key
+          value = g.value
           acc_result = acc_result ++ ["" <> Reflaxe.Elixir.HaxeFloat.to_string(key) <> ": " <> value]
           {:cont, {acc_result}}
         else
@@ -79,7 +97,8 @@ defmodule Main do
     results = [%{status: "ok", value: 42}, %{status: "error", value: -1}]
     _g = 0
     Enum.each(results, fn result ->
-      _output = (case result.status do
+      result_status = result.status
+      _output = (case result_status do
         "error" -> "Failed: " <> Reflaxe.Elixir.HaxeFloat.to_string(result.value)
         "ok" -> "Success: " <> Reflaxe.Elixir.HaxeFloat.to_string(result.value)
         _ -> "Unknown"
@@ -90,14 +109,14 @@ defmodule Main do
   defp test_message_parsing() do
     messages = [%{type: "created", content: "New item"}, %{type: "updated", content: "Changed item"}, %{type: "deleted", content: "Removed item"}]
     parsed = Enum.map(messages, fn msg ->
-      (case msg.type do
+      msg_type = msg.type
+      (case msg_type do
         "created" -> "Created: " <> msg.content
         "deleted" -> "Deleted: " <> msg.content
         "updated" -> "Updated: " <> msg.content
         _ -> "Unknown message"
       end)
     end)
-    _g = 0
     Enum.each(parsed, fn _ -> nil end)
   end
   defp test_mixed_real_world_patterns() do

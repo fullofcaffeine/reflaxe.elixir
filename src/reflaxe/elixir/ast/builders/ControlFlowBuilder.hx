@@ -11,6 +11,7 @@ import reflaxe.elixir.ast.context.ClauseContext;
 private typedef EnumParamBinderRecovery = {
 	var binderNames:Array<Null<String>>;
 	var extractedVarIds:Array<Null<Int>>;
+	var nestedSwitchReads:Array<Bool>;
 };
 
 /**
@@ -62,6 +63,9 @@ class ControlFlowBuilder {
 		if (optimizedSwitch != null) {
 			return optimizedSwitch;
 		}
+		var stringDefault = buildStringNilDefault(econd, eif, eelse, context);
+		if (stringDefault != null)
+			return stringDefault;
 
 		// Build standard conditional
 		var condition = buildExpression(econd);
@@ -90,6 +94,66 @@ class ControlFlowBuilder {
 	}
 
 	/**
+	 * A String can be nil, but cannot be false. Native `||` therefore preserves
+	 * its nil-only default, evaluates the fallback lazily, and avoids redundant
+	 * nil comparisons after Elixir infers a concrete String-producing call.
+	 * Handles a value fallback and Haxe's inlined optional-argument write.
+	 * Do not apply this to captured locals, Bool, Dynamic, type parameters, or
+	 * arbitrary expressions: those need the original evaluation semantics.
+	 */
+	static function buildStringNilDefault(condition:TypedExpr, fallback:TypedExpr, otherwise:Null<TypedExpr>, context:CompilationContext):Null<ElixirASTDef> {
+		function unwrap(expr:TypedExpr):TypedExpr {
+			return switch (expr.expr) {
+				case TParenthesis(inner) | TMeta(_, inner) | TBlock([inner]): unwrap(inner);
+				default: expr;
+			};
+		}
+		var local:Null<TVar> = switch (unwrap(condition).expr) {
+			case TBinop(OpEq, {expr: TLocal(variable)}, {expr: TConst(TNull)}) | TBinop(OpEq, {expr: TConst(TNull)}, {expr: TLocal(variable)}): variable;
+			default: null;
+		};
+		if (local == null || local.capture)
+			return null;
+		var assignmentTarget:Null<TypedExpr> = null;
+		var defaultValue = fallback;
+		if (otherwise != null) {
+			switch (unwrap(otherwise).expr) {
+				case TLocal(variable) if (variable.id == local.id):
+				default:
+					return null;
+			}
+		} else {
+			// Haxe inlines an optional argument's default as a conditional write.
+			switch (unwrap(fallback).expr) {
+				case TBinop(OpAssign, target = {expr: TLocal(variable)}, value) if (variable.id == local.id):
+					assignmentTarget = target;
+					defaultValue = value;
+				default:
+					return null;
+			}
+		}
+		function isString(type:Type):Bool {
+			return switch (haxe.macro.TypeTools.follow(type)) {
+				case TInst(reference, _): var cls = reference.get(); cls.pack.length == 0 && cls.name == "String";
+				case TAbstract(reference, [inner]) if (reference.get().pack.length == 0 && reference.get().name == "Null"):
+					isString(inner);
+				default: false;
+			};
+		}
+		if (!isString(local.t))
+			return null;
+		var build = context.getExpressionBuilder();
+		if (assignmentTarget != null) {
+			var target = build(assignmentTarget);
+			return switch (target.def) {
+				case EVar(name): EMatch(PVar(name), makeAST(EBinary(OrElse, target, build(defaultValue))));
+				default: null;
+			};
+		}
+		return EBinary(OrElse, build(otherwise), build(defaultValue));
+	}
+
+	/**
 	 * Detect if TIf is actually an optimized enum switch
 	 * 
 	 * WHY: Haxe optimizes single-case switches to if statements
@@ -113,26 +177,22 @@ class ControlFlowBuilder {
 		// Check for enum index comparison
 		var enumValue:TypedExpr = null;
 		var enumIndex:Int = -1;
-		var enumTypeRef:haxe.macro.Type.Ref<haxe.macro.Type.EnumType> = null;
+		var enumTypeInfo:Null<EnumType> = null;
 
 		switch (condToCheck.expr) {
 			case TBinop(OpEq, {expr: TEnumIndex(e)}, {expr: TConst(TInt(index))}) | TBinop(OpEq, {expr: TConst(TInt(index))}, {expr: TEnumIndex(e)}):
-				// Found enum index comparison
-				switch (e.t) {
-					case TEnum(eRef, _):
-						enumValue = e;
-						enumIndex = index;
-						enumTypeRef = eRef;
-						#if debug_ast_builder
-						#end
-					default:
+				// Optimized ifs and switches use the same erased enum representation,
+				// including an abstract wrapper around the enum.
+				enumTypeInfo = SwitchBuilder.getEnumTypeFromExpression(e);
+				if (enumTypeInfo != null) {
+					enumValue = e;
+					enumIndex = index;
 				}
 			default:
 		}
 
-		if (enumValue != null && enumIndex >= 0 && enumTypeRef != null) {
+		if (enumValue != null && enumIndex >= 0 && enumTypeInfo != null) {
 			// Transform to proper case pattern matching
-			var enumTypeInfo = enumTypeRef.get();
 			var matchingConstructor:String = null;
 			var constructorParams = 0;
 			var constructorParamNames:Array<String> = [];
@@ -214,7 +274,10 @@ class ControlFlowBuilder {
 						}
 
 						// Only bind names that the then-branch actually uses.
-						var binderUsed = haxeBinderName != null && haxeBinderName.length > 0 && branchUsesHaxeVarName(eif, haxeBinderName);
+						var binderUsed = haxeBinderName != null
+							&& haxeBinderName.length > 0
+							&& (branchUsesHaxeVarName(eif, haxeBinderName)
+								|| (recovered != null && recovered.nestedSwitchReads[paramIndex]));
 						#if debug_enum_param_recovery
 						trace('[EnumParamRecovery] chosen binder index=' + paramIndex + ' haxe=' + haxeBinderName + ' used=' + binderUsed);
 						#end
@@ -244,6 +307,7 @@ class ControlFlowBuilder {
 				// - redundant TEnumParameter and temp→binder assignments are skipped
 				var parentCtx = context.getCurrentClauseContext();
 				var clauseCtx = new ClauseContext(parentCtx);
+				clauseCtx.enumReceiver = context.substituteIfNeeded(enumValue);
 				clauseCtx.enumType = enumTypeInfo;
 				clauseCtx.patternExtractedParams.push(matchingConstructor);
 				for (i in 0...constructorParams) {
@@ -322,6 +386,7 @@ class ControlFlowBuilder {
 	static function extractEnumParamBindersFromThenBranch(thenBranch:TypedExpr, enumScrutinee:TypedExpr, constructorName:String, paramCount:Int,
 			context:CompilationContext):EnumParamBinderRecovery {
 		var out:Array<Null<String>> = [for (_ in 0...paramCount) null];
+		var nestedSwitchReads = [for (_ in 0...paramCount) false];
 		// Track the first local ID that received the extracted parameter for each index.
 		// This lets us prefer a subsequent alias assignment (binder = extracted_temp) as the
 		// actual binder name without accidentally chasing unrelated locals.
@@ -397,6 +462,13 @@ class ControlFlowBuilder {
 				var aa = unwrapNoOpWrappers(a);
 				var bb = unwrapNoOpWrappers(b);
 				return switch (aa.expr) {
+					case TEnumParameter(sourceA, fieldA, indexA):
+						switch (bb.expr) {
+							case TEnumParameter(sourceB, fieldB, indexB): // A nested payload is the same scrutinee only when its
+								// constructor, slot, and complete source access agree.
+								fieldA == fieldB && indexA == indexB && eq(sourceA, sourceB);
+							default: false;
+						}
 					case TLocal(va):
 						switch (bb.expr) {
 							case TLocal(vb): va.id == vb.id;
@@ -524,6 +596,15 @@ class ControlFlowBuilder {
 				return;
 
 			switch (expr.expr) {
+				case TEnumIndex(inner):
+					// Preprocessing can inline the outer payload into a nested enum
+					// test. It still needs a binding even without a named local read.
+					var info = unwrapEnumParameter(resolveInfraScrutinee(inner));
+					if (info != null && info.ctorName == constructorName && info.index >= 0 && info.index < paramCount && scrutineeMatches(info.source))
+						nestedSwitchReads[info.index] = true;
+					traverse(inner);
+				case TEnumParameter(source, _, _):
+					traverse(source);
 				case TVar(v, init) if (init != null):
 					var info = unwrapEnumParameter(init);
 					if (info != null && info.ctorName == constructorName && info.index >= 0 && info.index < paramCount && scrutineeMatches(info.source)) {
@@ -624,7 +705,7 @@ class ControlFlowBuilder {
 		#if debug_enum_param_recovery
 		trace('[EnumParamRecovery] result names=' + out + ' ids=' + extractedIdByIndex);
 		#end
-		return {binderNames: out, extractedVarIds: extractedIdByIndex};
+		return {binderNames: out, extractedVarIds: extractedIdByIndex, nestedSwitchReads: nestedSwitchReads};
 	}
 
 	/**

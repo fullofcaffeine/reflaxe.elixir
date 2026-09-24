@@ -27,6 +27,7 @@ class Main {
 
 	static function main() {
 		bytesBuffer();
+		bytesBufferLoops([65, 66]);
 		bytesInputOutput();
 		bufferInput();
 		stringInput();
@@ -45,6 +46,21 @@ class Main {
 		var bytes = buffer.getBytes();
 		trace(bytes.length);
 		trace(bytes.get(0));
+	}
+
+	/** Existing persistent receiver updates must survive both reducer loop forms. */
+	public static function bytesBufferLoops(prefix:Array<Int>):Void {
+		var buffer = new BytesBuffer();
+		for (byte in prefix) {
+			buffer.addByte(byte);
+		}
+		var byte = 67;
+		while (byte < 70) {
+			buffer.addByte(byte);
+			byte++;
+		}
+		assertThat(buffer.length == 5, "Loop updates lost the buffer length.");
+		assertThat(buffer.getBytes().toString() == "ABCDE", "Loop updates lost buffer contents.");
 	}
 
 	static function bytesInputOutput() {

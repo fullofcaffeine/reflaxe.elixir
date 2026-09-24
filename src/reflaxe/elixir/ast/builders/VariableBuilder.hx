@@ -33,6 +33,37 @@ using StringTools;
  */
 @:nullSafety(Off)
 class VariableBuilder {
+	/** Classify declarations this builder owns; control-flow and enum extraction stay with their specialized lowering. */
+	public static function isSimpleInit(init:Null<TypedExpr>):Bool {
+		if (init == null)
+			return true;
+		return switch (init.expr) {
+			case TConst(_): true;
+			case TLocal(_): true;
+			case TField(_, _): true;
+			case TCall(_, _): true;
+			case TNew(_, _, _): true;
+			case TObjectDecl(_): true;
+			case TArrayDecl(_): true;
+			case TBinop(_, _, _): true;
+			case TUnop(_, _, _): true;
+			case TParenthesis(e): isSimpleInit(e);
+			case TCast(e, _): isSimpleInit(e);
+			case TMeta(_, e): isSimpleInit(e);
+			// Resolve the exact clause payload before generic declaration lowering.
+			// Otherwise a synthetic extraction can overwrite a user binder such as g.
+			case TEnumParameter(_, _, _): false;
+			case TBlock(_): false;
+			case TIf(_, _, _): false;
+			case TSwitch(_, _, _): false;
+			case TWhile(_, _, _): false;
+			case TFor(_, _, _): false;
+			case TTry(_, _): false;
+			case TFunction(_): false;
+			default: true;
+		};
+	}
+
 	static function ensureStableNameForAnonymousLocal(tvar:TVar, context:CompilationContext):Void {
 		if (tvar == null || context == null)
 			return;
@@ -164,6 +195,7 @@ class VariableBuilder {
 
 		ensureStableNameForAnonymousLocal(v, context);
 		deriveStableNameForAnonymousLocalFromInit(v, init, context);
+		registerArrayReadBinding(v, init, context);
 
 		// Check if this is an infrastructure variable that should be skipped
 		if (isInfrastructureVariableToSkip(v.name)) {
@@ -191,6 +223,83 @@ class VariableBuilder {
 
 		// Create the match expression (variable = value)
 		return EMatch(PVar(varName), initAST);
+	}
+
+	/**
+	 * Haxe reuses temporary spellings in nested array patterns. Retained reads
+	 * need distinct names by typed local identity, not a shared name-key mapping.
+	 * Reserve the entire source function, including later locals, before allocating
+	 * its reads together. Existing ID mappings make later declarations constant-time
+	 * lookups, without a second cache or repeated full-function scans.
+	 */
+	static function registerArrayReadBinding(variable:TVar, init:Null<TypedExpr>, context:CompilationContext):Void {
+		if (init == null || !isInfrastructureVariableToSkip(variable.name))
+			return;
+		switch (init.expr) {
+			case TParenthesis(inner) | TMeta(_, inner):
+				registerArrayReadBinding(variable, inner, context);
+			case TArray(_, _):
+				var key = Std.string(variable.id);
+				if (context.tempVarRenameMap.exists(key))
+					return;
+				var reserved = new Map<String, Bool>();
+				var reads = new Map<Int, Bool>();
+				var candidates:Array<TVar> = [];
+				function reserve(local:TVar):Void {
+					reserved.set(reflaxe.elixir.ast.naming.ElixirNaming.toVarName(local.name), true);
+				}
+				function isRead(expression:Null<TypedExpr>):Bool {
+					if (expression == null)
+						return false;
+					return switch (expression.expr) {
+						case TArray(_, _): true;
+						case TParenthesis(inner) | TMeta(_, inner): isRead(inner);
+						default: false;
+					};
+				}
+				function add(local:TVar):Void {
+					if (!reads.exists(local.id)) {
+						reads.set(local.id, true);
+						candidates.push(local);
+					}
+				}
+				function visit(expression:TypedExpr):Void {
+					switch (expression.expr) {
+						case TVar(local, initializer):
+							reserve(local);
+							if (isInfrastructureVariableToSkip(local.name) && isRead(initializer))
+								add(local);
+						case TLocal(local):
+							reserve(local);
+						case TFunction(fn):
+							for (arg in fn.args)
+								reserve(arg.v);
+						case TTry(_, handlers):
+							for (handler in handlers)
+								reserve(handler.v);
+						default:
+					}
+					TypedExprTools.iter(expression, visit);
+				}
+				var owner = context.currentFunction == null ? null : context.currentFunction.expr();
+				if (owner != null)
+					visit(owner);
+				// Synthesized expressions may not occur in the original source function.
+				add(variable);
+				for (name in context.tempVarRenameMap)
+					reserved.set(name, true);
+				for (candidate in candidates) {
+					var candidateKey = Std.string(candidate.id);
+					if (context.tempVarRenameMap.exists(candidateKey))
+						continue;
+					var name = 'array_read_${context.generateNodeId()}';
+					while (reserved.exists(name))
+						name = 'array_read_${context.generateNodeId()}';
+					reserved.set(name, true);
+					context.tempVarRenameMap.set(candidateKey, name);
+				}
+			default:
+		}
 	}
 
 	/**
@@ -375,7 +484,9 @@ class VariableBuilder {
 	 * 
 	 * WHY: Variables might need underscore prefix or special naming
 	 * WHAT: Determines the proper name for the declared variable
-	 * HOW: Checks usage and applies naming conventions
+	 * HOW: Honors explicit mappings, then uses the shared target-name normalizer.
+	 * Local binders and references must agree before usage analysis: for example,
+	 * `final after = []` must bind `after_`, not an apparently unread `after`.
 	 */
 	static function resolveDeclarationName(v:TVar, context:CompilationContext):String {
 		// Haxe can produce a local named `__` from source patterns like `var _ = expr`.
@@ -399,8 +510,8 @@ class VariableBuilder {
 			}
 		}
 
-		// Convert variable name to snake_case
-		var varName = reflaxe.elixir.ast.NameUtils.toSnakeCase(v.name);
+		// Normalize declarations before any pass can analyze their reads or writes.
+		var varName = reflaxe.elixir.ast.naming.ElixirNaming.toVarName(v.name);
 		if (varName == "__")
 			return "_";
 
@@ -555,7 +666,7 @@ class VariableBuilder {
 
 		// Priority 7: Check if the declaration had underscore prefix
 		// CRITICAL: References must match the declaration name exactly
-		var varName = reflaxe.elixir.ast.NameUtils.toSnakeCase(defaultName);
+		var varName = reflaxe.elixir.ast.naming.ElixirNaming.toVarName(defaultName);
 		if (context.underscorePrefixedVars != null && context.underscorePrefixedVars.exists(tvarId)) {
 			var hasUnderscorePrefix = context.underscorePrefixedVars.get(tvarId) == true;
 			if (hasUnderscorePrefix && varName.length > 0 && varName.charAt(0) != "_") {

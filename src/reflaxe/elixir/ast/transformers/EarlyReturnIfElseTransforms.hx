@@ -30,6 +30,8 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   2) If the then-branch only *contains* an early return (nested), appends the remainder
  *      to the then-branch too so fallthrough paths continue correctly.
  *   3) Recursively rewrites early-return patterns inside the inserted remainder.
+ * - Stops a sequence after a proven return. Later expressions are unreachable,
+ *   even when they look like valid numeric results to later cleanup passes.
  *
  * EXAMPLES
  * Haxe:
@@ -133,6 +135,10 @@ class EarlyReturnIfElseTransforms {
 		var i = 0;
 		while (i < stmts.length) {
 			var stmt = stmts[i];
+			if (isFromReturn(stmt)) {
+				out.push(stmt);
+				return wrap(out);
+			}
 
 			switch (stmt.def) {
 				case EIf(condition, thenBranch, null) if (containsFromReturn(thenBranch) && i < stmts.length - 1):

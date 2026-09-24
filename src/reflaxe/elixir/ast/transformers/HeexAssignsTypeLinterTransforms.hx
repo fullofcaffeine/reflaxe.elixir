@@ -2666,8 +2666,9 @@ class HeexAssignsTypeLinterTransforms {
 			return;
 
 		// RepoDiscovery enumerates type paths, but component modules can be multi-type
-		// (typedefs + classes). Use Context.getModule to avoid re-entering typing for a
-		// type that may still be in-progress and to access all types in the module.
+		// (typedefs + classes). Prefer direct module loading to avoid re-entering typing.
+		// A secondary type path (Module.Component) is not a module path: resolve its
+		// owning module through Haxe's typed identity instead of guessing from its name.
 		var processedModules = new Map<String, Bool>();
 
 		#if debug_assigns_linter
@@ -2679,12 +2680,24 @@ class HeexAssignsTypeLinterTransforms {
 				continue;
 			if (processedModules.exists(typePath))
 				continue;
-			processedModules.set(typePath, true);
-
+			var modulePath = typePath;
 			var moduleTypes:Array<haxe.macro.Type> = null;
-			try
-				moduleTypes = Context.getModule(typePath)
-			catch (e:Dynamic) {
+			try {
+				try {
+					moduleTypes = Context.getModule(modulePath);
+				} catch (_:haxe.Exception) {
+					modulePath = switch (Context.getType(typePath)) {
+						case TInst(ref, _): ref.get().module;
+						case TEnum(ref, _): ref.get().module;
+						case TType(ref, _): ref.get().module;
+						case TAbstract(ref, _): ref.get().module;
+						default: typePath;
+					};
+					if (processedModules.exists(modulePath))
+						continue;
+					moduleTypes = Context.getModule(modulePath);
+				}
+			} catch (e:Dynamic) {
 				#if debug_assigns_linter
 				trace('[HeexAssignsTypeLinter] component index: failed to load module ' + typePath + ': ' + Std.string(e));
 				#end
@@ -2692,6 +2705,7 @@ class HeexAssignsTypeLinterTransforms {
 			}
 			if (moduleTypes == null)
 				continue;
+			processedModules.set(modulePath, true);
 
 			for (moduleType in moduleTypes) {
 				var cls:Null<haxe.macro.Type.ClassType> = null;
@@ -4423,7 +4437,7 @@ class HeexAssignsTypeLinterTransforms {
 		// Support anonymous structure extension: typedef X = {> Base, ... }
 		var baseTypes:Array<String> = [];
 
-		// Parse lines: supports both `var name: Type` and `name: Type`, with optional comma/semicolon terminators
+		// Read mutable, final, and shorthand structure fields with optional comma/semicolon terminators.
 		var lines = block.split("\n");
 		for (ln in lines) {
 			var line = ln.trim();
@@ -4463,7 +4477,7 @@ class HeexAssignsTypeLinterTransforms {
 			var name:String = null;
 			var typeSpec:String = null;
 			// Keep parsing tolerant of commas inside generic types (e.g. Slot<Term, CardLet>).
-			var reVar = ~/^var\s+\??([A-Za-z0-9_]+)\s*:\s*(.+)$/;
+			var reVar = ~/^(?:var|final)\s+\??([A-Za-z0-9_]+)\s*:\s*(.+)$/;
 			if (reVar.match(line)) {
 				name = reVar.matched(1);
 				typeSpec = reVar.matched(2).trim();

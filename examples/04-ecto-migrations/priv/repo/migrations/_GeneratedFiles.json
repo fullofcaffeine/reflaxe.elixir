@@ -4,7 +4,7 @@
 		"20240101120000_create_users.exs"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 2,
+	"id": 3,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
@@ -14,8 +14,8 @@
 		},
 		{
 			"path": "20240102120000_create_posts.exs",
-			"sha256": "67a0e4f9c8bafd4caed4d15e2b53190fd423d143a8c9bae7678d6cecdcb81447"
+			"sha256": "a2f2906460fa9b85654c922e1ef51970acdc28c951e875ccd072e608d7774615"
 		}
 	],
-	"generation": "c502cbad1b39a76e29628fd717b8edae9d21f7276b79cd10efedeff382f24ed7"
+	"generation": "c9e3980c90e4713777434fb7e85d6446041054b3ed961ec3357bb564b5f93e09"
 }

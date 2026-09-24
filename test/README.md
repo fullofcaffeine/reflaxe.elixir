@@ -62,6 +62,22 @@ make -j8          # 8 parallel jobs
 make -j1          # Sequential execution
 ```
 
+### Check Rejected Programs
+
+From the repository root, run:
+
+```bash
+npm run test:negative-runner-contract  # Check the runner without compiling Haxe
+make -C test -j2 summary-negative     # Compile all expected-to-fail fixtures
+make -C test summary-negative-safe    # Use the same checks sequentially
+```
+
+A negative fixture passes only when Haxe exits with status 1 and produces a diagnostic.
+Timeouts, signals, missing tools, empty output, and successful compilation fail the check.
+If a fixture declares `expected_stderr.txt` or `expected_message.txt`, every nonempty line must appear in the diagnostic.
+Without these files, the check proves rejection, not the specific reason for rejection.
+Compiler logs remain under `test/test-results-<run>-negative-<fixture>.log` for review.
+
 ### Run Specific Test
 ```bash
 make test-core/arrays                    # Run arrays test

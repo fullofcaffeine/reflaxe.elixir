@@ -6,59 +6,70 @@ defmodule Main do
   end
   defp test_simple_while_loop(key, limit) do
     count = 0
-    {_count} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count}, fn _, {acc_count} ->
+    (case Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {:__reflaxe_continue__, {count}}, fn _, {:__reflaxe_continue__, {acc_count}} ->
       try do
         if (acc_count < limit) do
-          if (key == "test") do
-            "Found: " <> key
-          else
-            acc_count = acc_count + 1
-            {:cont, {acc_count}}
-          end
+          (case (if (key == "test"), do: {:halt, {:__reflaxe_return__, "Found: " <> key}}, else: {:cont, {:__reflaxe_continue__, {acc_count}}}) do
+            {:halt, reflaxe_halt_payload} -> {:halt, reflaxe_halt_payload}
+            {:cont, {:__reflaxe_continue__, {acc_count}}} ->
+              acc_count = acc_count + 1
+              {:cont, {:__reflaxe_continue__, {acc_count}}}
+          end)
         else
-          {:halt, {acc_count}}
+          {:halt, {:__reflaxe_continue__, {acc_count}}}
         end
       catch
         :throw, {:break, break_state} ->
-          {:halt, break_state}
+          {:halt, {:__reflaxe_continue__, break_state}}
         :throw, {:continue, continue_state} ->
-          {:cont, continue_state}
+          {:cont, {:__reflaxe_continue__, continue_state}}
         :throw, :break ->
-          {:halt, {acc_count}}
+          {:halt, {:__reflaxe_continue__, {acc_count}}}
         :throw, :continue ->
-          {:cont, {acc_count}}
+          {:cont, {:__reflaxe_continue__, {acc_count}}}
       end
+    end) do
+      {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
+      {:__reflaxe_continue__, {reflaxe_continue_count}} ->
+        {_count} = {reflaxe_continue_count}
+        "Not found"
     end)
-    "Not found"
   end
   defp binary_search(arr, target) do
     left = 0
     right = (length(arr) - 1)
-    {_left, _right} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {left, right}, fn _, {acc_left, acc_right} ->
+    (case Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {:__reflaxe_continue__, {left, right}}, fn _, {:__reflaxe_continue__, {acc_left, acc_right}} ->
       try do
         if (acc_left <= acc_right) do
           mid = trunc(Reflaxe.Elixir.HaxeFloat.divide(acc_left + acc_right, 2))
           cond do
-            Enum.at(arr, mid) == target -> true
-            Enum.at(arr, mid) < target -> acc_left = mid + 1
-            true -> acc_right = (mid - 1)
+            Enum.at(arr, mid) == target -> {:halt, {:__reflaxe_return__, true}}
+            Enum.at(arr, mid) < target ->
+              acc_left = mid + 1
+              {:cont, {:__reflaxe_continue__, {acc_left, acc_right}}}
+            true ->
+              acc_right = (mid - 1)
+              {:cont, {:__reflaxe_continue__, {acc_left, acc_right}}}
           end
-          {:cont, {acc_left, acc_right}}
         else
-          {:halt, {acc_left, acc_right}}
+          {:halt, {:__reflaxe_continue__, {acc_left, acc_right}}}
         end
       catch
         :throw, {:break, break_state} ->
-          {:halt, break_state}
+          {:halt, {:__reflaxe_continue__, break_state}}
         :throw, {:continue, continue_state} ->
-          {:cont, continue_state}
+          {:cont, {:__reflaxe_continue__, continue_state}}
         :throw, :break ->
-          {:halt, {acc_left, acc_right}}
+          {:halt, {:__reflaxe_continue__, {acc_left, acc_right}}}
         :throw, :continue ->
-          {:cont, {acc_left, acc_right}}
+          {:cont, {:__reflaxe_continue__, {acc_left, acc_right}}}
       end
+    end) do
+      {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
+      {:__reflaxe_continue__, {reflaxe_continue_left, reflaxe_continue_right}} ->
+        {_left, _right} = {reflaxe_continue_left, reflaxe_continue_right}
+        false
     end)
-    false
   end
   defp process_items(items, max_count, verbose) do
     processed = 0

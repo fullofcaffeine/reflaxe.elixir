@@ -97,29 +97,29 @@ defmodule Output do
   def write_double(struct, x) do
     i64 = FPHelper.double_to_i64(x)
     if (struct.big_endian) do
-      apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_int32, (fn -> [struct, (fn ->
+      apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_int32, [struct, (fn ->
         x = :erlang.bsr(i64, 32)
         reflaxe_i32_clamp = :erlang.band(x, 4294967295)
         if reflaxe_i32_clamp >= 2147483648, do: reflaxe_i32_clamp - 4294967296, else: reflaxe_i32_clamp
-      end).()] end).())
-      apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_int32, (fn -> [struct, (fn ->
+      end).()])
+      apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_int32, [struct, (fn ->
         low_unsigned = :erlang.band(i64, 4294967295)
         signed = if low_unsigned >= 2147483648, do: low_unsigned - 4294967296, else: low_unsigned
         reflaxe_i32_clamp = :erlang.band(signed, 4294967295)
         if reflaxe_i32_clamp >= 2147483648, do: reflaxe_i32_clamp - 4294967296, else: reflaxe_i32_clamp
-      end).()] end).())
+      end).()])
     else
-      apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_int32, (fn -> [struct, (fn ->
+      apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_int32, [struct, (fn ->
         low_unsigned = :erlang.band(i64, 4294967295)
         signed = if low_unsigned >= 2147483648, do: low_unsigned - 4294967296, else: low_unsigned
         reflaxe_i32_clamp = :erlang.band(signed, 4294967295)
         if reflaxe_i32_clamp >= 2147483648, do: reflaxe_i32_clamp - 4294967296, else: reflaxe_i32_clamp
-      end).()] end).())
-      apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_int32, (fn -> [struct, (fn ->
+      end).()])
+      apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_int32, [struct, (fn ->
         x = :erlang.bsr(i64, 32)
         reflaxe_i32_clamp = :erlang.band(x, 4294967295)
         if reflaxe_i32_clamp >= 2147483648, do: reflaxe_i32_clamp - 4294967296, else: reflaxe_i32_clamp
-      end).()] end).())
+      end).()])
     end
   end
   def write_int8(struct, x) do

@@ -2,15 +2,12 @@ defmodule Reflaxe.Elixir.HaxeFloat do
   import Kernel, except: [to_string: 1], warn: false
   def nan() do
     {__MODULE__, :nan}
-    item
   end
   def positive_infinity() do
     {__MODULE__, :positive_infinity}
-    item
   end
   def negative_infinity() do
     {__MODULE__, :negative_infinity}
-    item
   end
   def is_special(value) do
 
@@ -19,11 +16,9 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       _ -> false
     end
 
-    item
   end
   def is_haxe_float(value) do
     is_number(value) or Reflaxe.Elixir.HaxeFloat.is_special(value)
-    item
   end
   def is_na_n(value) do
 
@@ -32,7 +27,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       _ -> false
     end
 
-    item
   end
   def is_finite(value) do
 
@@ -42,7 +36,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       _ -> false
     end
 
-    item
   end
   def require_finite_native(value, boundary) do
 
@@ -65,7 +58,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
             inspect(value)
     end
 
-    item
   end
   def neg(value) do
 
@@ -77,7 +69,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       value -> raise ArithmeticError, "expected a Haxe Float-compatible value, got: #{inspect(value)}"
     end
 
-    item
   end
   def add(left, right) do
 
@@ -94,11 +85,9 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       {left, right} -> raise ArithmeticError, "expected Haxe Float-compatible values, got: #{inspect({left, right})}"
     end
 
-    item
   end
   def sub(left, right) do
     Reflaxe.Elixir.HaxeFloat.add(left, Reflaxe.Elixir.HaxeFloat.neg(right))
-    item
   end
   def mul(left, right) do
 
@@ -124,7 +113,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       {left, right} -> raise ArithmeticError, "expected Haxe Float-compatible values, got: #{inspect({left, right})}"
     end
 
-    item
   end
   def divide(left, right) do
 
@@ -153,7 +141,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       {left, right} -> raise ArithmeticError, "expected Haxe Float-compatible values, got: #{inspect({left, right})}"
     end
 
-    item
   end
   def remainder(left, right) do
 
@@ -165,7 +152,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       {left, right} -> raise ArithmeticError, "expected Haxe Float-compatible values, got: #{inspect({left, right})}"
     end
 
-    item
   end
   def eq(left, right) do
 
@@ -175,11 +161,9 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       {left, right} -> left == right
     end
 
-    item
   end
   def neq(left, right) do
     not Reflaxe.Elixir.HaxeFloat.eq(left, right)
-    item
   end
   def lt(left, right) do
 
@@ -195,19 +179,15 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       _ -> false
     end
 
-    item
   end
   def lte(left, right) do
     Reflaxe.Elixir.HaxeFloat.lt(left, right) or Reflaxe.Elixir.HaxeFloat.eq(left, right)
-    item
   end
   def gt(left, right) do
     Reflaxe.Elixir.HaxeFloat.lt(right, left)
-    item
   end
   def gte(left, right) do
     Reflaxe.Elixir.HaxeFloat.gt(left, right) or Reflaxe.Elixir.HaxeFloat.eq(left, right)
-    item
   end
   def abs(value) do
 
@@ -219,7 +199,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       value -> raise ArithmeticError, "expected a Haxe Float-compatible value, got: #{inspect(value)}"
     end
 
-    item
   end
   def min(left, right) do
 
@@ -229,7 +208,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       {left, right} -> if Reflaxe.Elixir.HaxeFloat.lte(left, right), do: left, else: right
     end
 
-    item
   end
   def max(left, right) do
 
@@ -239,19 +217,15 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       {left, right} -> if Reflaxe.Elixir.HaxeFloat.gte(left, right), do: left, else: right
     end
 
-    item
   end
   def sin(value) do
     Reflaxe.Elixir.HaxeFloat.unary_math(value, &:math.sin/1)
-    item
   end
   def cos(value) do
     Reflaxe.Elixir.HaxeFloat.unary_math(value, &:math.cos/1)
-    item
   end
   def tan(value) do
     Reflaxe.Elixir.HaxeFloat.unary_math(value, &:math.tan/1)
-    item
   end
   def acos(value) do
 
@@ -262,7 +236,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       value -> raise ArithmeticError, "expected a Haxe Float-compatible value, got: #{inspect(value)}"
     end
 
-    item
   end
   def asin(value) do
 
@@ -273,11 +246,9 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       value -> raise ArithmeticError, "expected a Haxe Float-compatible value, got: #{inspect(value)}"
     end
 
-    item
   end
   def atan(value) do
     Reflaxe.Elixir.HaxeFloat.unary_math(value, &:math.atan/1)
-    item
   end
   def atan2(y, x) do
 
@@ -290,7 +261,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       {y, x} -> raise ArithmeticError, "expected Haxe Float-compatible values, got: #{inspect({y, x})}"
     end
 
-    item
   end
   def exp(value) do
 
@@ -302,7 +272,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       value -> raise ArithmeticError, "expected a Haxe Float-compatible value, got: #{inspect(value)}"
     end
 
-    item
   end
   def log(value) do
 
@@ -316,7 +285,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       value -> raise ArithmeticError, "expected a Haxe Float-compatible value, got: #{inspect(value)}"
     end
 
-    item
   end
   def pow(base, exponent) do
 
@@ -343,7 +311,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
         end
     end
 
-    item
   end
   def sqrt(value) do
 
@@ -356,7 +323,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       value -> raise ArithmeticError, "expected a Haxe Float-compatible value, got: #{inspect(value)}"
     end
 
-    item
   end
   def round_int(value) do
 
@@ -365,7 +331,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       value -> raise ArithmeticError, "Math.round is undefined for non-finite Haxe Float value: #{inspect(value)}"
     end
 
-    item
   end
   def floor_int(value) do
 
@@ -374,7 +339,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       value -> raise ArithmeticError, "Math.floor is undefined for non-finite Haxe Float value: #{inspect(value)}"
     end
 
-    item
   end
   def ceil_int(value) do
 
@@ -383,7 +347,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       value -> raise ArithmeticError, "Math.ceil is undefined for non-finite Haxe Float value: #{inspect(value)}"
     end
 
-    item
   end
   def ffloor(value) do
 
@@ -394,7 +357,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       value -> raise ArithmeticError, "expected a Haxe Float-compatible value, got: #{inspect(value)}"
     end
 
-    item
   end
   def fceil(value) do
 
@@ -405,7 +367,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       value -> raise ArithmeticError, "expected a Haxe Float-compatible value, got: #{inspect(value)}"
     end
 
-    item
   end
   def fround(value) do
 
@@ -416,7 +377,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       value -> raise ArithmeticError, "expected a Haxe Float-compatible value, got: #{inspect(value)}"
     end
 
-    item
   end
   def canonicalize(value) do
 
@@ -429,7 +389,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       value -> value
     end
 
-    item
   end
   def unary_math(value, function_value) do
 
@@ -448,7 +407,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
         raise ArithmeticError, "expected a Haxe Float-compatible value, got: #{inspect(value)}"
     end
 
-    item
   end
   def to_string(value) do
 
@@ -460,10 +418,30 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       {Reflaxe.Elixir.HaxeFloat, :negative_infinity} -> "-Infinity"
       value when is_atom(value) -> Atom.to_string(value)
       value when is_number(value) or is_boolean(value) -> Kernel.to_string(value)
+      %{__reflaxe_class__: module} when is_atom(module) ->
+        if function_exported?(module, :to_string, 1) do
+          apply(module, :to_string, [value])
+        else
+          inspect(value)
+        end
       value -> inspect(value)
     end
 
-    item
+  end
+  def enum_to_string(enum_module, value) do
+
+    constructor = apply(enum_module, :__haxe_enum_constructor__, [value])
+    parameters =
+      case value do
+        tuple when is_tuple(tuple) and tuple_size(tuple) > 1 -> tl(Tuple.to_list(tuple))
+        _ -> []
+      end
+
+    case parameters do
+      [] -> constructor
+      values -> constructor <> "(" <> Enum.map_join(values, ",", &Reflaxe.Elixir.HaxeFloat.to_string/1) <> ")"
+    end
+
   end
   def parse(value) do
 
@@ -507,7 +485,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
         Reflaxe.Elixir.HaxeFloat.nan()
     end
 
-    item
   end
   def encode32(value) do
 
@@ -519,7 +496,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       value -> raise ArgumentError, "expected a Haxe Float-compatible value, got: #{inspect(value)}"
     end
 
-    item
   end
   def encode64(value) do
 
@@ -531,7 +507,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
       value -> raise ArgumentError, "expected a Haxe Float-compatible value, got: #{inspect(value)}"
     end
 
-    item
   end
   def decode32(bytes) do
 
@@ -555,7 +530,6 @@ defmodule Reflaxe.Elixir.HaxeFloat do
         value
     end
 
-    item
   end
   def decode64(bytes) do
 
@@ -579,6 +553,5 @@ defmodule Reflaxe.Elixir.HaxeFloat do
         value
     end
 
-    item
   end
 end

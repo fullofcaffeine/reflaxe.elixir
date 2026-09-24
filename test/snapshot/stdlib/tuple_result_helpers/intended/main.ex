@@ -2,10 +2,13 @@ defmodule Main do
   def main() do
     ok_result = {:ok, "created"}
     error_result = {:error, "invalid"}
-    if (not match?({:ok, _}, ok_result)) do
+    check_results(ok_result, error_result)
+  end
+  def check_results(ok_result, error_result) do
+    if (not (match?({:ok, _}, ok_result))) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "ok tuple did not match"]
     end
-    if (not match?({:error, _}, error_result)) do
+    if (not (match?({:error, _}, error_result))) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "error tuple did not match"]
     end
     if (match?({:error, _}, ok_result)) do

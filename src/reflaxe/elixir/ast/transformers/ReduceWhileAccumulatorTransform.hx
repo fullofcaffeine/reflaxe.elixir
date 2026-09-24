@@ -22,6 +22,10 @@ using reflaxe.elixir.ast.ElixirASTTransformer;
  * - Finds variable assignments that shadow accumulator variables
  * - Transforms assignments into accumulator updates
  * - Ensures proper tuple return values with {:cont/:halt, updated_accumulator}
+ * - Preserves expression results already owned by an assignment. For example,
+ *   a Haxe switch that updates a map inside a loop may lower to
+ *   `{local, acc} = case ... -> {local, acc} end`; lifting that RHS again
+ *   would replace the tuple with a map and crash the enclosing match.
  * 
  * ARCHITECTURE BENEFITS:
  * - Single Responsibility: Only handles reduce_while accumulator threading
@@ -442,13 +446,14 @@ class ReduceWhileAccumulatorTransform {
 				}
 
 			case EMatch(pattern, value):
-				// If an ordinary assignment contains a nested loop on its RHS, still
-				// transform that loop. The left side is not an accumulator write, but
-				// the nested reducer may have its own accumulator locals to thread.
-				return makeAST(EMatch(pattern, transformBodyRecursive(value, accVarNames, accUpdates, preserveAssignments, outerToAccAliases)));
+				// The assignment already owns its result, including a state tuple from
+				// ControlFlowStateHoist. Do not lift its RHS again as a statement:
+				// {local, acc} = case ... -> {local, acc} end must not return only acc.
+				// Nested reducers still need their own independently scoped processing.
+				return makeAST(EMatch(pattern, transformReduceWhile(value)));
 
 			case EBinary(Match, left, value):
-				return makeAST(EBinary(Match, left, transformBodyRecursive(value, accVarNames, accUpdates, preserveAssignments, outerToAccAliases)));
+				return makeAST(EBinary(Match, left, transformReduceWhile(value)));
 
 			case ERemoteCall(module, "reduce_while", args) if (isEnumModule(module)):
 				return transformReduceWhile(body);

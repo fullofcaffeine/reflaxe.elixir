@@ -1,0 +1,1 @@
+addCheckConstraint expects string literal name and expression.

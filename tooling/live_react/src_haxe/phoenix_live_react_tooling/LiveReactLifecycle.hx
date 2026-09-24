@@ -208,7 +208,7 @@ class LiveReactLifecycle {
 				+ " is missing. No writes occurred. Run `mix haxe.phoenix.live_react` to install it.");
 		if (reason == ENOENT)
 			return null;
-		return Kernel.raiseValue("cannot read " + path + ": " + ErlangFile.formatError(reason));
+		return Kernel.raiseValue("cannot read " + path + ": " + Kernel.toString(ErlangFile.formatError(reason)));
 	}
 
 	static function decodeManifest(content:String):Term {
@@ -504,7 +504,8 @@ class LiveReactLifecycle {
 				+ ": a hand-owned source file already exists. No writes occurred. Re-run with --existing to register reviewed existing source instead.");
 		var reason = Kernel.elem(read, 1);
 		if (reason != ENOENT)
-			return Kernel.raiseValue("cannot inspect starter path " + relative + ": " + ErlangFile.formatError(reason) + ". No writes occurred.");
+			return Kernel.raiseValue("cannot inspect starter path " + relative + ": " + Kernel.toString(ErlangFile.formatError(reason))
+				+ ". No writes occurred.");
 		return ProjectPatch.writeFileBang(plan, path, content);
 	}
 
@@ -814,7 +815,7 @@ class LiveReactLifecycle {
 		}
 		var reason = Kernel.elem(read, 1);
 		if (reason != ENOENT)
-			return Kernel.raiseValue("cannot read " + path + ": " + ErlangFile.formatError(reason));
+			return Kernel.raiseValue("cannot read " + path + ": " + Kernel.toString(ErlangFile.formatError(reason)));
 		return desired;
 	}
 
@@ -835,7 +836,7 @@ class LiveReactLifecycle {
 				+ ". No writes occurred.");
 		}
 		var reason = Kernel.elem(read, 1);
-		return reason == ENOENT ? plan : Kernel.raiseValue("cannot read " + path + ": " + ErlangFile.formatError(reason));
+		return reason == ENOENT ? plan : Kernel.raiseValue("cannot read " + path + ": " + Kernel.toString(ErlangFile.formatError(reason)));
 	}
 
 	static function jsonObject(entries:Array<{_0:String, _1:Term}>):Term {

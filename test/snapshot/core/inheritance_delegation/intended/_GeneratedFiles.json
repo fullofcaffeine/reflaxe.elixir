@@ -5,6 +5,7 @@
 		"special_child.ex",
 		"reflaxe/exception.ex",
 		"reflaxe/elixir/haxe_throw.ex",
+		"reflaxe/elixir/haxe_int.ex",
 		"reflaxe/elixir/haxe_float.ex",
 		"parent.ex",
 		"main.ex",
@@ -21,7 +22,7 @@
 	"ownedFiles": [
 		{
 			"path": "child.ex",
-			"sha256": "c0d8a84d5db90763d0255f29d895f11d25317360d3ca788c8f8268605ecbeeaf"
+			"sha256": "b26c6421e60612949f19a308e773b3e26e22af2548514688caae6d8d11680d23"
 		},
 		{
 			"path": "custom_exception.ex",
@@ -29,7 +30,7 @@
 		},
 		{
 			"path": "haxe/_call_stack/call_stack_impl_.ex",
-			"sha256": "ab46ba4f786a95420ae1cd78188f77ebebc3ced2db90d1351297f573f30dadf8"
+			"sha256": "c77b161d05e1094665a37413ce6e0af07159fcdbc2f2cd20c19ceec25be5d818"
 		},
 		{
 			"path": "haxe/iterators/array_iterator.ex",
@@ -41,7 +42,7 @@
 		},
 		{
 			"path": "main.ex",
-			"sha256": "83788e3d43d4df9fc94d090f597ed4527115e414b628199d58ef71831a3e2c95"
+			"sha256": "0541571320d71bb863897e4f727fae60ff9e1ab80b6569eb74ff4c517e86b1fe"
 		},
 		{
 			"path": "parent.ex",
@@ -49,7 +50,11 @@
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.ex",
-			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+			"sha256": "6786d5bfb513f44365615186bd6c8f2589222501729873f517d82d2ee23822f4"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_int.ex",
+			"sha256": "61392d67ec3807b64ea717b125498909d6fb903f8600b77dc18a17a65a955515"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_throw.ex",
@@ -61,16 +66,16 @@
 		},
 		{
 			"path": "special_child.ex",
-			"sha256": "5a7013d09caf1f6f52550663bb8bf00b9ec04aa31f2a1efacab42eacfa4e2dc4"
+			"sha256": "60797fe444320f7c028cd8340576351a54c356487c150181036b53de4111e656"
 		},
 		{
 			"path": "std.ex",
-			"sha256": "cfc6ad389294bc64c9d82be070797b4e65041a3d225fc0741500ca7cc6c8f804"
+			"sha256": "2719d51795868959cd6891134e197cf72d4b523091c594a280b37e367fd8e03f"
 		},
 		{
 			"path": "type.ex",
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "1f2c4d8d40a7a45537869a768b3fbff7de78fdc991af9f1bc08cb30d913592f5"
+	"generation": "8b8720235dfda9f8354859594a6470c810f2daf4f3c6ca2f860ba72492dec8b3"
 }

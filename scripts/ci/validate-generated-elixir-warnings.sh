@@ -35,16 +35,17 @@ if (( ${#generated_files[@]} == 0 )); then
   exit 1
 fi
 
-code_path_args=()
+# Keep the argv array nonempty: Bash 3.2 treats expansion of an empty array
+# as unbound under nounset, which otherwise breaks clean-checkout validation.
+elixir_args=("${ELIXIR_BIN}")
 for ebin_dir in "${BUILD_ROOT}/${MIX_ENV}/lib/"*/ebin; do
   if [[ -d "${ebin_dir}" ]]; then
-    code_path_args+=(-pa "${ebin_dir}")
+    elixir_args+=(-pa "${ebin_dir}")
   fi
 done
 
 "${TIMEOUT}" --secs "${VALIDATE_TIMEOUT_SECS}" --cwd "${ROOT_DIR}" -- \
-  "${ELIXIR_BIN}" \
-  "${code_path_args[@]}" \
+  "${elixir_args[@]}" \
   "${ROOT_DIR}/scripts/ci/validate-generated-elixir-warnings.exs" \
   "${BEAM_DIR}" \
   "${generated_files[@]}"

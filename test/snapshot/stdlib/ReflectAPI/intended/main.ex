@@ -56,7 +56,7 @@ defmodule Main do
             end)
         end)
     end)
-    assert((fn -> Reflaxe.Elixir.HaxeFloat.eq(((case {updated, "age"} do
+    assert(Reflaxe.Elixir.HaxeFloat.eq(((case {updated, "age"} do
         {reflect_obj, reflect_field} ->
           (case Map.fetch(reflect_obj, reflect_field) do
             {:ok, reflect_value} -> reflect_value
@@ -72,7 +72,7 @@ defmodule Main do
                   Map.get(reflect_obj, reflect_atom)
               end)
           end)
-      end)), 31) end).(), "Field should be updated")
+      end)), 31), "Field should be updated")
     assert(obj.age == 30, "Original object should be unchanged (immutability)")
     with_email = (case {obj, "email", "john@example.com"} do
       {reflect_obj, reflect_field, reflect_value} ->
@@ -93,7 +93,7 @@ defmodule Main do
             end)
         end)
     end)
-    assert((fn -> Reflaxe.Elixir.HaxeFloat.eq(((case {with_email, "email"} do
+    assert(Reflaxe.Elixir.HaxeFloat.eq(((case {with_email, "email"} do
         {reflect_obj, reflect_field} ->
           (case Map.fetch(reflect_obj, reflect_field) do
             {:ok, reflect_value} -> reflect_value
@@ -109,7 +109,7 @@ defmodule Main do
                   Map.get(reflect_obj, reflect_atom)
               end)
           end)
-      end)), "john@example.com") end).(), "New field should be added")
+      end)), "john@example.com"), "New field should be added")
     fields = Reflect.fields(obj)
     assert(length(fields) == 3, "Should have 3 fields")
     assert((case Enum.find_index(fields, fn item -> item == "name" end) do
@@ -218,7 +218,7 @@ defmodule Main do
     assert(Reflect.is_object(42) == false, "Number should not be object")
     assert(Reflect.is_object([1, 2, 3]) == false, "Array should not be object")
     copied = obj
-    assert((fn -> Reflaxe.Elixir.HaxeFloat.eq(((case {copied, "name"} do
+    assert(Reflaxe.Elixir.HaxeFloat.eq(((case {copied, "name"} do
         {reflect_obj, reflect_field} ->
           (case Map.fetch(reflect_obj, reflect_field) do
             {:ok, reflect_value} -> reflect_value
@@ -234,7 +234,7 @@ defmodule Main do
                   Map.get(reflect_obj, reflect_atom)
               end)
           end)
-      end)), "John") end).(), "Copy should have same fields")
+      end)), "John"), "Copy should have same fields")
     assert(Reflect.compare("a", "b") < 0, "a should be less than b")
     assert(Reflect.compare("b", "a") > 0, "b should be greater than a")
     assert(Reflect.compare("same", "same") == 0, "Same strings should be equal")

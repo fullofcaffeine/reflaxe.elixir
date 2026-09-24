@@ -12,7 +12,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 	* WHAT
 	* - Converts standalone arithmetic increments/decrements used as statements into
 	*   explicit assignments (count = count + 1), and drops bare numeric literals
-	*   (1/0/0.0) used as statements anywhere in blocks or function bodies.
+	*   (1/0/0.0) used as non-final statements in blocks or function bodies.
 	*
 	* WHY
 	* - Prevents warnings from unused numeric expressions and ensures mutation intent
@@ -21,7 +21,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 	* HOW
 	* - In EBlock/EDo bodies, for each statement:
 	*   - If EBinary(Add|Subtract, EVar(v), EInteger(1|…)) → EMatch(PVar(v), EBinary(...))
-	*   - Drop EInteger(1|0) and EFloat(0.0)
+	*   - Drop EInteger(1|0) and EFloat(0.0) only before the final result
 	* - Apply the same normalization to EFn clause bodies when they are blocks.
 
 	*
@@ -56,10 +56,11 @@ class ArithmeticIncrementTransforms {
 
 	static function normalizeBlock(stmts:Array<ElixirAST>):Array<ElixirAST> {
 		var out:Array<ElixirAST> = [];
-		for (s in stmts) {
+		for (index in 0...stmts.length) {
+			var s = stmts[index];
 			var r = rewriteStmt(s);
-			if (r == null) {
-				// keep original
+			if (r == null || (index == stmts.length - 1 && r.def == ENil)) {
+				// A trailing literal is the block's result, not an unused sentinel.
 				out.push(s);
 			} else if (r.def != ENil) {
 				out.push(r);

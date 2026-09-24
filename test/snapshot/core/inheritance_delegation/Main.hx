@@ -24,6 +24,10 @@ class Main {
 	 */
 	static function testBasicInheritance() {
 		var child = new Child("Alice", 25);
+		if (child.getName() != "Alice" || child.getAge() != 25)
+			throw "Parent and child constructors must initialize the same receiver.";
+		if (child.getDescription() != "Parent: Alice, Age: 25")
+			throw "An explicit parent call must preserve inherited fields.";
 		trace("Name: " + child.getName());
 		trace("Age: " + child.getAge());
 		trace("Description: " + child.getDescription());
@@ -45,6 +49,11 @@ class Main {
 	 */
 	static function testMethodOverride() {
 		var special = new SpecialChild("Bob", 30);
+		if (special.getDescription() != "Special Parent: Bob, Age: 30")
+			throw "Each explicit parent call must select the next implementation.";
+		var parent:Parent = special;
+		if (parent.getDescription() != "Special Parent: Bob, Age: 30")
+			throw "A base-typed call must still select the derived override.";
 		trace("Special description: " + special.getDescription());
 	}
 }

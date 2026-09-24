@@ -164,7 +164,7 @@ defmodule HaxePhoenixLiveReact do
           if reason == :enoent do
             nil
           else
-            Kernel.raise("cannot read #{path}: #{:file.format_error(reason)}")
+            Kernel.raise("cannot read #{path}: #{Kernel.to_string(:file.format_error(reason))}")
           end
         end
       end
@@ -329,8 +329,8 @@ defmodule HaxePhoenixLiveReact do
       dependency: dependency,
       components: components,
       managed_files: managed_files,
-      package_keys: package_plan.owned_keys,
-      package_values: package_plan.owned_values,
+      package_keys: Map.get(package_plan, :owned_keys),
+      package_values: Map.get(package_plan, :owned_values),
       restores: elem(layout_patched, 1),
       dependency_owned: dependency.owned,
       lock_owned: dependency.lock_owned
@@ -404,7 +404,9 @@ defmodule HaxePhoenixLiveReact do
     restores = existing_restores(manifest)
     source = read_required_sources(topology)
     package_plan = HaxePhoenixLiveReact.Package.remove(topology, manifest)
-    retain_live_react = Enum.member?(package_plan.retained_keys, "dependencies.live_react")
+
+    retain_live_react =
+      Enum.member?(Map.get(package_plan, :retained_keys), "dependencies.live_react")
 
     mix_exs =
       HaxePhoenixLiveReact.SourcePatcher.remove_mix_wiring(
@@ -473,7 +475,7 @@ defmodule HaxePhoenixLiveReact do
       mode: :remove,
       package_root: topology.package_root_relative,
       client_mode: topology.client_mode,
-      retained_package_keys: package_plan.retained_keys,
+      retained_package_keys: Map.get(package_plan, :retained_keys),
       retained_live_react_dependency: retain_live_react and dependency_owned,
       changes: HaxeProjectPatch.changes(plan)
     }
@@ -737,7 +739,7 @@ defmodule HaxePhoenixLiveReact do
 
       if reason != :enoent do
         Kernel.raise(
-          "cannot inspect starter path #{relative}: #{:file.format_error(reason)}. No writes occurred."
+          "cannot inspect starter path #{relative}: #{Kernel.to_string(:file.format_error(reason))}. No writes occurred."
         )
       else
         HaxeProjectPatch.write_file!(plan, path, content, nil)
@@ -1071,7 +1073,9 @@ defmodule HaxePhoenixLiveReact do
     else
       if length(matches) > 1 do
         Kernel.raise(
-          "multiple Phoenix root layouts found: #{Enum.map_join(matches, ", ", fn path -> Path.relative_to(path, root) end)}. No writes occurred."
+          "multiple Phoenix root layouts found: " <>
+            Enum.map_join(matches, ", ", fn path -> Path.relative_to(path, root) end) <>
+            ". No writes occurred."
         )
       else
         haxe_candidates = Path.wildcard(Path.join([root, "src_haxe", "**", "Layouts.hx"]))
@@ -1096,7 +1100,9 @@ defmodule HaxePhoenixLiveReact do
             )
           else
             Kernel.raise(
-              "multiple Haxe-authored Phoenix root layouts found: #{Enum.map_join(haxe_matches, ", ", fn path -> Path.relative_to(path, root) end)}. No writes occurred."
+              "multiple Haxe-authored Phoenix root layouts found: " <>
+                Enum.map_join(haxe_matches, ", ", fn path -> Path.relative_to(path, root) end) <>
+                ". No writes occurred."
             )
           end
         end
@@ -1275,7 +1281,7 @@ defmodule HaxePhoenixLiveReact do
       reason = Kernel.elem(read, 1)
 
       if reason != :enoent do
-        Kernel.raise("cannot read #{path}: #{:file.format_error(reason)}")
+        Kernel.raise("cannot read #{path}: #{Kernel.to_string(:file.format_error(reason))}")
       else
         desired
       end
@@ -1315,7 +1321,7 @@ defmodule HaxePhoenixLiveReact do
       if reason == :enoent do
         plan
       else
-        Kernel.raise("cannot read #{path}: #{:file.format_error(reason)}")
+        Kernel.raise("cannot read #{path}: #{Kernel.to_string(:file.format_error(reason))}")
       end
     end
   end

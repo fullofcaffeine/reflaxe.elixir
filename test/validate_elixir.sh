@@ -73,12 +73,12 @@ PASSED_TESTS=0
 FAILED_COUNT=0
 MISSING_ARTIFACT_COUNT=0
 
-is_windows_shell() {
-    # MSYS2/Git-Bash environments report MINGW/MSYS/CYGWIN here.
-    # We only need to detect this to convert POSIX paths to Windows paths
-    # for Windows-native `elixir`/`erl` binaries.
-    uname -s 2>/dev/null | grep -qiE 'mingw|msys|cygwin'
-}
+# The host is fixed for this invocation. Detect it once, not once per file.
+# Windows-native Elixir still needs the same MSYS2/Git-Bash path conversion.
+WINDOWS_SHELL=0
+if uname -s 2>/dev/null | grep -qiE 'mingw|msys|cygwin'; then
+    WINDOWS_SHELL=1
+fi
 
 echo "=== Elixir Syntax Validation ===" | tee "$VALIDATION_LOG"
 echo "Validating generated Elixir code in:" | tee -a "$VALIDATION_LOG"
@@ -124,6 +124,7 @@ validate_test_directory() {
     fi
     
     TOTAL_TESTS=$((TOTAL_TESTS + 1))
+    echo "Validating $test_name" | tee -a "$VALIDATION_LOG"
     
     # Build one Elixir command to parse all files without executing them
     # Using Code.string_to_quoted/2 avoids running top-level code in files
@@ -136,7 +137,7 @@ validate_test_directory() {
         local files=()
         while IFS= read -r f; do
             [ -n "$f" ] || continue
-            if is_windows_shell && command -v cygpath >/dev/null 2>&1; then
+            if [ "$WINDOWS_SHELL" -eq 1 ] && command -v cygpath >/dev/null 2>&1; then
                 if [[ "$f" == /* ]]; then
                     files+=("$(cygpath -w "$f")")
                 else
@@ -147,7 +148,11 @@ validate_test_directory() {
             fi
         done <<< "$ex_files"
 
-        if ! "$WITH_TIMEOUT" "$PARSE_TIMEOUT_SECS" elixir -e "$parse_cmd" "${files[@]}" > /dev/null 2>>"$VALIDATION_LOG"; then
+        if "$WITH_TIMEOUT" "$PARSE_TIMEOUT_SECS" elixir -e "$parse_cmd" "${files[@]}" >>"$VALIDATION_LOG" 2>&1; then
+            echo "Passed $test_name" | tee -a "$VALIDATION_LOG"
+        else
+            local parse_status=$?
+            echo "Failed $test_name (parser status $parse_status)" | tee -a "$VALIDATION_LOG"
             test_passed=false
         fi
     fi

@@ -11,6 +11,8 @@
 		"haxe/test/assert.ex",
 		"haxe/iterators/array_key_value_iterator.ex",
 		"haxe/iterators/array_iterator.ex",
+		"haxe/functional/result.ex",
+		"haxe/ds/option.ex",
 		"haxe/_call_stack/call_stack_impl_.ex",
 		"elixir/array_tools.ex"
 	],
@@ -25,7 +27,15 @@
 		},
 		{
 			"path": "haxe/_call_stack/call_stack_impl_.ex",
-			"sha256": "51ccde2aded2494513ee0e4df47307da4b81b76b152e144ec83f62ca98578569"
+			"sha256": "c77b161d05e1094665a37413ce6e0af07159fcdbc2f2cd20c19ceec25be5d818"
+		},
+		{
+			"path": "haxe/ds/option.ex",
+			"sha256": "63ac76e868b4b2dfe585786ccd2a345305751f959a8cdb63a5a2c34106113043"
+		},
+		{
+			"path": "haxe/functional/result.ex",
+			"sha256": "41853f86663b99ae0b271938f47328e736fdbd3d2aacd7eaff087f3ef381104d"
 		},
 		{
 			"path": "haxe/iterators/array_iterator.ex",
@@ -41,7 +51,7 @@
 		},
 		{
 			"path": "main.ex",
-			"sha256": "7281ad286b062064d8118b1f8c5b3890281bd4c7c75cc6177fe169c9da4a5749"
+			"sha256": "71acd67ab894cd79c179682816ca3a4259b6436df2047417b8876120f84610d4"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.ex",
@@ -61,7 +71,7 @@
 		},
 		{
 			"path": "std.ex",
-			"sha256": "2719d51795868959cd6891134e197cf72d4b523091c594a280b37e367fd8e03f"
+			"sha256": "8a84e0a9ac56b570713a432d5e9d2de5bc2a0cb19aacdc3a80284a6a439bcf97"
 		},
 		{
 			"path": "string_tools.ex",
@@ -72,5 +82,5 @@
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "c255bea420376046ca60d8367ebbb48223c7d05467cc132b6c16664b7cc10e90"
+	"generation": "5afb93f2439f781211625d5f4e9d304668bbc84558a07bb403f1f77fadb1b6da"
 }

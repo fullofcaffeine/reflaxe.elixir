@@ -203,6 +203,7 @@ defmodule PhoenixChatWeb.AppLive do
           -1
         else
           if (not a.is_me and b.is_me) do
+            1
           else
             if (a.name < b.name) do
               -1

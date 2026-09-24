@@ -7,8 +7,7 @@ defmodule ResultTools do
   end
   def flat_map(result, transform) do
     (case result do
-      {:ok, value} ->
-        transform.(value)
+      {:ok, value} -> transform.(value)
       {:error, error} -> {:error, error}
     end)
   end
@@ -17,10 +16,8 @@ defmodule ResultTools do
   end
   def fold(result, on_success, on_error) do
     (case result do
-      {:ok, value} ->
-        on_success.(value)
-      {:error, error} ->
-        on_error.(error)
+      {:ok, value} -> on_success.(value)
+      {:error, error} -> on_error.(error)
     end)
   end
   def is_ok(result) do
@@ -50,14 +47,12 @@ defmodule ResultTools do
   def unwrap_or_else(result, error_handler) do
     (case result do
       {:ok, value} -> value
-      {:error, error} ->
-        error_handler.(error)
+      {:error, error} -> error_handler.(error)
     end)
   end
   def filter(result, predicate, error_value) do
     (case result do
-      {:ok, value} ->
-        if (predicate.(value)), do: {:ok, value}, else: {:error, error_value}
+      {:ok, value} -> if (predicate.(value)), do: {:ok, value}, else: {:error, error_value}
       {:error, error} -> {:error, error}
     end)
   end

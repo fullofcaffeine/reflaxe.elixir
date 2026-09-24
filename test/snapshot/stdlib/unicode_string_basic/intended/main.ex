@@ -112,7 +112,7 @@ defmodule Main do
   end
   defp test_validate_utf8() do
     valid = Bytes.of_string("Aé🌍中", {:utf8})
-    expect("valid utf8", (fn ->
+    expect("valid utf8", (
           case {:utf8} do
             {:raw_native} ->
               raise "UnicodeString.validate: RawNative encoding is not supported"
@@ -193,9 +193,9 @@ defmodule Main do
               end
               reflaxe_unicode_valid.(reflaxe_unicode_valid, 0)
           end
-     end).())
+    ))
     invalid = Bytes.of_data(<<0xC0>>)
-    expect("invalid utf8", (fn -> not
+    expect("invalid utf8", not (
           case {:utf8} do
             {:raw_native} ->
               raise "UnicodeString.validate: RawNative encoding is not supported"
@@ -276,7 +276,7 @@ defmodule Main do
               end
               reflaxe_unicode_valid.(reflaxe_unicode_valid, 0)
           end
-     end).())
+    ))
   end
   defp expect(label, condition) do
     if not (condition), do: raise("UnicodeString assertion failed: " <> label)

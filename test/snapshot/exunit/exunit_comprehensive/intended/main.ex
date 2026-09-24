@@ -48,14 +48,15 @@ defmodule Main do
   end
   test "pattern matching" do
     result = %{type: "ok", value: "success"}
-    (case (case result do
-  dyn_obj ->
-    (case Map.fetch(dyn_obj, "type") do
-      {:ok, dyn_value} -> dyn_value
-      _ ->
-        Map.get(dyn_obj, :type)
+    result_type = (case result do
+      dyn_obj ->
+        (case Map.fetch(dyn_obj, "type") do
+          {:ok, dyn_value} -> dyn_value
+          _ ->
+            Map.get(dyn_obj, :type)
+        end)
     end)
-end) do
+    (case result_type do
       "error" ->
         flunk("Should not match error")
       "ok" ->
@@ -77,8 +78,10 @@ end) do
       0 ->
         flunk("Should not be empty")
       3 ->
-        head = list_0
-        second = list_1
+        result_type = list_0
+        g_value = list_1
+        head = result_type
+        second = g_value
         third = list_2
         assert(1 == head, "Head should be 1")
         _ = second
@@ -99,7 +102,7 @@ end) do
           %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
           _ -> haxe_exception
         end), haxe_exception} do
-          {e, _} when is_binary(e) -> assert("Test exception" == e, "Exception message should match")
+          {e_2, _} when is_binary(e_2) -> assert("Test exception" == e_2, "Exception message should match")
           _ ->
             reraise(haxe_exception, __STACKTRACE__)
         end)
@@ -115,7 +118,7 @@ end) do
           %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
           _ -> haxe_exception
         end), haxe_exception} do
-          {_e, _} ->
+          {_e_2, _} ->
             assert(true, "Assertion failure was caught")
         end)
     end
@@ -128,11 +131,11 @@ end) do
   end
   test "custom assertions" do
     assert_between = fn value, min, max, msg ->
-      assert(Reflaxe.Elixir.HaxeFloat.gte(value, min) and Reflaxe.Elixir.HaxeFloat.lte(value, max), (fn -> if (not Kernel.is_nil(msg)) do
+      assert(Reflaxe.Elixir.HaxeFloat.gte(value, min) and Reflaxe.Elixir.HaxeFloat.lte(value, max), if (not Kernel.is_nil(msg)) do
           msg
         else
           "Value " <> Reflaxe.Elixir.HaxeFloat.to_string(value) <> " should be between " <> Reflaxe.Elixir.HaxeFloat.to_string(min) <> " and " <> Reflaxe.Elixir.HaxeFloat.to_string(max)
-        end end).())
+        end)
     end
     assert_contains = fn array, element, msg ->
       assert((case Enum.find_index(array, fn item -> item == element end) do

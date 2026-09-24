@@ -32,8 +32,8 @@ defmodule Sys.IO.FileInput do
     if (Reflaxe.Elixir.HaxeFloat.eq(result, :eof)) do
       raise Reflaxe.Elixir.HaxeThrow, [value: Eof.new()]
     end
-    reflaxe_dispatch_receiver = read_data(result)
-    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get, [reflaxe_dispatch_receiver, 0])
+    reflaxe_dispatch_receiver_node_0 = read_data(result)
+    apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :get, [reflaxe_dispatch_receiver_node_0, 0])
   end
   def read_bytes(struct, buf, pos, len) do
     if (pos < 0 or len < 0 or pos + len > buf.length) do

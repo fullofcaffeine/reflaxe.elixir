@@ -178,14 +178,6 @@ class ElixirASTPassRegistry {
 			pass: reflaxe.elixir.ast.transformers.HandleInfoCaseBinderCollisionRepairTransforms.transformPass
 		});
 
-		// After repair, map scrutinee var references to the tuple payload binder inside clauses
-		passes.push({
-			name: "CaseScrutineeVarToTupleBinder",
-			description: "In case scrutinee do {:tag, binder} -> ..., rewrite body EVar(scrutinee) → EVar(binder)",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.CaseScrutineeVarToTupleBinderTransforms.transformPass
-		});
-
 		// Then apply the generic binder-avoid transform which will now be a no-op
 		// for handle_info clauses already repaired above.
 		passes.push({
@@ -438,11 +430,10 @@ class ElixirASTPassRegistry {
 			pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapBuilderCollapsePass
 		});
 
-		// Cleanup redundant temp alias assignments introduced during enum extraction
-		// Rewrite case discriminant from temp alias (_g/g/gN) to original expression BEFORE alias cleanup
+		// Inline adjacent single-use function-body case inputs before alias cleanup.
 		passes.push({
 			name: "DiscriminantRewrite",
-			description: "Rewrite case on temp discriminant (_g) to case on original expression",
+			description: "Inline adjacent single-use case inputs while preserving result assignments and live bindings",
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.DiscriminantRewriteTransforms.discriminantRewritePass
 		});
@@ -501,8 +492,8 @@ class ElixirASTPassRegistry {
 		// NOTE (ordering)
 		// - This pass must run AFTER StructUpdateTransform, because StructUpdateTransform can
 		//   materialize reducer-body assignments (e.g. `buf = %{buf | ...}`) from earlier shapes.
-		// - It must run BEFORE ReduceWhileAccumulator/ReduceWhileResultBinding so those passes see
-		//   the expanded accumulator tuple and keep subsequent threading consistent.
+		// - It must run BEFORE ReduceWhileAccumulator so that pass sees
+		//   the expanded accumulator tuple and keeps subsequent threading consistent.
 		passes.push({
 			name: "ReduceWhileOuterAssignToAccumulator",
 			description: "Rewrite reduce_while loops that assign outer vars into accumulator threading",
@@ -521,14 +512,8 @@ class ElixirASTPassRegistry {
 			runAfter: ["ReduceWhileOuterAssignToAccumulator"]
 		});
 
-		// Ensure reduce_while results are bound back to local accumulator variables
-		passes.push({
-			name: "ReduceWhileResultBinding",
-			description: "Bind Enum.reduce_while result to original accumulator locals (required in fast_boot)",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.ReduceWhileResultBindingTransforms.bindReduceWhileResultPass,
-			runAfterIfPresent: ["ReduceWhileAccumulator"]
-		});
+		// LoopBuilder owns final-state bindings. Inferring another assignment from a
+		// reducer's seed duplicates those bindings and mutates inputs of native calls.
 		// Early chain assign normalization group (order preserved)
 		passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.AssignChainEarly.build());
 
@@ -699,15 +684,6 @@ class ElixirASTPassRegistry {
 			description: "Merge `x = init; case x do ... end` into `x = case init do ... end`",
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.CaseResultAssignmentMergeTransforms.pass
-		});
-
-		// Repair inner-case scrutinee that incorrectly references the outer result var
-		// before it is bound (generic Option.Some → inner case on binder).
-		passes.push({
-			name: "SwitchInnerCaseBinderRepair",
-			description: "Rewrite inner `case <lhs>` to `case <binder>` when clause pattern binds the value (avoids undefined var)",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.SwitchInnerCaseBinderRepairTransforms.repairPass
 		});
 
 		// Normalize if-then branches that accidentally emit nested `do` blocks
@@ -929,12 +905,12 @@ class ElixirASTPassRegistry {
 			pass: reflaxe.elixir.ast.transformers.RepoAtomToSchemaTransforms.transformPass
 		});
 
-		// Unify case success vars in {:ok, v} branches to eliminate undefined placeholders
+		// Align an underscored success binder without guessing unrelated value identities.
 		passes.push({
 			name: "CaseSuccessVarUnifier",
-			description: "Rewrite undefined placeholder locals to the success var in {:ok, v} clauses",
+			description: "Align an underscored success binder with its exact trimmed reference",
 			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.CaseSuccessVarUnifier.unifySuccessVarPass
+			pass: reflaxe.elixir.ast.transformers.SuccessVarAbsoluteReplaceUndefinedTransforms.replacePass
 		});
 
 		// (moved later) PatternBindingHarmonize should run after HygieneConsolidated
@@ -2764,12 +2740,8 @@ class ElixirASTPassRegistry {
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.StructUpdateStandaloneDiscardTransforms.transformPass
 		});
-		passes.push({
-			name: "TupleLhsDiscard",
-			description: "Discard {x} = expr (arity-1 tuple LHS) and keep expr",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.TupleLhsDiscardTransforms.discardPass
-		});
+		// Tuple matches bind values and check shape even at arity one. Keep them;
+		// the scope-aware unused-binding passes handle warning cleanup safely.
 
 		// Absolute Final 3: if pin operator exists anywhere in the module and require is missing, inject it
 		passes.push({
@@ -2802,10 +2774,10 @@ class ElixirASTPassRegistry {
 			enabled: true, // Re-enabled with lock-aware skipping
 			pass: reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.alignPass
 		});
-		// Final safety: replace undefined lowercase refs in {:ok, binder} clause bodies with binder
+		// Final lexical spelling alignment; unrelated unresolved names remain errors.
 		passes.push({
 			name: "SuccessVarAbsoluteReplaceUndefined",
-			description: "Final safety: replace any undefined lower-case var in {:ok, binder} clause body with binder",
+			description: "Align exact success-binder underscore spelling in lexical scope",
 			enabled: true, // Re-enabled with lock-aware skipping
 			pass: reflaxe.elixir.ast.transformers.SuccessVarAbsoluteReplaceUndefinedTransforms.replacePass
 		});
@@ -2951,19 +2923,17 @@ class ElixirASTPassRegistry {
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.EFnBinderAlignToUndefinedRefTransforms.pass
 		});
-		// Replay success-var unifier late to catch placeholders introduced by later rewrites
+		// Replay spelling alignment after later hygiene rewrites.
 		passes.push({
 			name: "CaseSuccessVarUnifier_Replay_Final",
-			description: "Replay unifier to rewrite undefined placeholders to {:ok, v} binder (late)",
+			description: "Replay exact underscore spelling alignment for success binders (late)",
 			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.CaseSuccessVarUnifier.unifySuccessVarPass
+			pass: reflaxe.elixir.ast.transformers.SuccessVarAbsoluteReplaceUndefinedTransforms.replacePass
 		});
-		// Ultra-final replay: replace any lingering undefined lower-case refs in {:ok, binder}
-		// clause bodies with the bound success binder. This runs after all other late passes
-		// to catch any constructs introduced by them.
+		// Replay lexical spelling alignment after other late passes.
 		passes.push({
 			name: "SuccessVarAbsoluteReplaceUndefined_Replay_Final",
-			description: "Ultra-final: map undefined lower-case vars in {:ok, binder} bodies to binder",
+			description: "Replay lexical success-binder underscore spelling alignment",
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.SuccessVarAbsoluteReplaceUndefinedTransforms.replacePass
 		});
@@ -3125,26 +3095,8 @@ class ElixirASTPassRegistry {
 			]
 		});
 
-		// Ultimate sweep: drop json/data/conn alias assigns in all Web.* modules
-		passes.push({
-			name: "WebDropAliasAssign_Ultimate",
-			description: "Ultimate: drop alias assigns to json/data/conn in Web.* modules",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.WebDropAliasAssignUltimateTransforms.pass,
-			runAfter: [
-				"ControllerJsonFinalize_AbsoluteFinal",
-				"ControllerAliasAssignDrop_Replay_Ultimate"
-			]
-		});
-
-		// As a last resort, underscore remaining alias assigns (json/data/conn) to silence WAE
-		passes.push({
-			name: "WebAliasAssignUnderscore_Ultimate",
-			description: "Ultimate: rewrite json/data/conn alias binders to underscored variants in Web.*",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.WebAliasAssignUnderscoreTransforms.pass,
-			runAfter: ["WebDropAliasAssign_Ultimate"]
-		});
+		// Used locals must survive regardless of their spelling or module name.
+		// The existing scope-aware unused-binding analysis owns warning cleanup.
 		// ABSOLUTE-LAST hygiene: remove lingering ok_value/_g in any function/EFn bodies
 		passes.push({
 			name: "OkValueGlobalCleanup_AbsoluteLast",
@@ -3152,7 +3104,8 @@ class ElixirASTPassRegistry {
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.OkValueGlobalCleanupTransforms.pass,
 			runAfter: [
-				"WebAliasAssignUnderscore_Ultimate",
+				"ControllerJsonFinalize_AbsoluteFinal",
+				"ControllerAliasAssignDrop_Replay_Ultimate",
 				"ControllerJsonSecondArgUndefinedRewrite_Ultimate",
 				"CaseBinderRefNormalizeByFlattenUnderscores_Final",
 				"FunctionArgMultiStmtIIFE_Final",
@@ -3170,8 +3123,7 @@ class ElixirASTPassRegistry {
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.WebJsonSecondArgRewriteFinalTransforms.pass,
 			runAfter: [
-				"WebDropAliasAssign_Ultimate",
-				"WebAliasAssignUnderscore_Ultimate",
+				"ControllerAliasAssignDrop_Replay_Ultimate",
 				"ControllerJsonFinalize_AbsoluteFinal"
 			]
 		});
@@ -3819,15 +3771,6 @@ class ElixirASTPassRegistry {
 			pass: reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.alignPass
 		});
 
-		// Late replay: map scrutinee var refs to tuple payload binder inside case clauses
-		// Some passes rebuild case bodies or rename binders after the early run; replay here ensures
-		// guards like `if (todo.user_id == ...)` use the tuple payload (e.g., `value.user_id`).
-		passes.push({
-			name: "CaseScrutineeVarToTupleBinder_Replay_Final",
-			description: "Replay ultra-final: rewrite EVar(scrutinee) → EVar(binder) inside case clause bodies",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.CaseScrutineeVarToTupleBinderTransforms.transformPass
-		});
 		// Absolute-final safety: unshadow tuple binder when case scrutinee is a function arg
 		passes.push({
 			name: "CaseTupleBinderUnshadow_Final",
@@ -3860,12 +3803,6 @@ class ElixirASTPassRegistry {
 			description: "Debug-only: dump reduce_while EFn clause bodies",
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.DebugDumpReduceWhileEFnTransforms.transformPass
-		});
-		passes.push({
-			name: "CaseAtomPatternTupleNormalize_Final",
-			description: "Absolute final: normalize sibling :tag patterns to {:tag} when tuple tag patterns exist",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.CaseAtomPatternTupleNormalizeTransforms.transformPass
 		});
 		// Replay list guard/cons fixes at the very end to catch any late rewrites
 		passes.push({

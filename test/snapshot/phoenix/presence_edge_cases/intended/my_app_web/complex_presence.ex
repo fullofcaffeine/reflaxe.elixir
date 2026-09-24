@@ -4,14 +4,14 @@ defmodule MyAppWeb.ComplexPresence do
     MyApp.Presence.track(
       self(),
       socket,
-      "#{(fn -> Reflaxe.Elixir.HaxeFloat.to_string(((case user do
-      _dyn_obj ->
-        (case Map.fetch(_dyn_obj, "id") do
-          {:ok, _dyn_value} -> _dyn_value
+      Reflaxe.Elixir.HaxeFloat.to_string(((case user do
+      dyn_obj ->
+        (case Map.fetch(dyn_obj, "id") do
+          {:ok, dyn_value} -> dyn_value
           _ ->
-            Map.get(_dyn_obj, :id)
+            Map.get(dyn_obj, :id)
         end)
-    end))) end).()}_#{Reflaxe.Elixir.HaxeFloat.to_string(DateTime.to_unix(DateTime.utc_now(), :millisecond))}",
+    end))) <> "_" <> Reflaxe.Elixir.HaxeFloat.to_string(DateTime.to_unix(DateTime.utc_now(), :millisecond)),
       (fn ->
          v = Reflaxe.Elixir.HaxeFloat.divide(DateTime.to_unix(DateTime.utc_now(), :millisecond), 1000)
          %{name: Reflaxe.Elixir.HaxeFloat.to_string(((case user do

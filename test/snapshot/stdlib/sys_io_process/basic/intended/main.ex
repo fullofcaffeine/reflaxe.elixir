@@ -1,9 +1,9 @@
 defmodule Main do
   def main() do
     p = Sys.IO.Process.new("sh", ["-c", "printf hello"], nil)
-    reflaxe_dispatch_receiver = p.stdout
-    reflaxe_dispatch_receiver = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :read_all, [reflaxe_dispatch_receiver, nil])
-    out = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+    reflaxe_dispatch_receiver_node_0 = p.stdout
+    reflaxe_dispatch_receiver_node_1 = apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :read_all, [reflaxe_dispatch_receiver_node_0, nil])
+    out = apply(Map.get(reflaxe_dispatch_receiver_node_1, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_1, :__struct__), :to_string, [reflaxe_dispatch_receiver_node_1])
     code = apply(Map.get(p, :__reflaxe_class__) || Map.get(p, :__struct__), :exit_code, [p, true])
     apply(Map.get(p, :__reflaxe_class__) || Map.get(p, :__struct__), :close, [p])
     detached = Sys.IO.Process.new("sh", ["-c", "exit 3"], true)

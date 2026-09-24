@@ -1,12 +1,12 @@
 defmodule Main do
   def main() do
     bulk_action = {:some, {:set_priority, "high"}}
-    _result = (case parse_action(bulk_action) do
+    (case parse_action(bulk_action) do
       {:some, _msg} -> nil
       {:none} -> nil
     end)
     simple_action = {:some, {:complete_all}}
-    _result_value = parse_action(simple_action)
+    _ = parse_action(simple_action)
     nil
   end
   defp parse_action(opt_action) do

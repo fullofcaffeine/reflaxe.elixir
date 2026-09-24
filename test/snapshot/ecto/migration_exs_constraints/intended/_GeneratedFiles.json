@@ -1,0 +1,16 @@
+{
+	"filesGenerated": [
+		"20240103120000_check_prices.exs"
+	],
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 0,
+	"wasCached": false,
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "20240103120000_check_prices.exs",
+			"sha256": "f294c6c8a53bdb569120bd747907a47ca0904e383662b42df3f9dd8e47fb7e9e"
+		}
+	],
+	"generation": "3b3ba78d490bedc7b1b269f8ce3655db55a506252fc80a76d176a4f89ad8594a"
+}

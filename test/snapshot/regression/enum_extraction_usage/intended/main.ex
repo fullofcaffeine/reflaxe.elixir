@@ -1,39 +1,51 @@
 defmodule Main do
   def main() do
-    test_unused_extraction()
-    test_used_extraction()
-    test_mixed_usage()
-    test_nested_extraction()
-    test_multiple_extractions()
-    test_tree_extraction()
+    assert_text(test_unused_extraction({:ok, "hello"}), "success")
+    assert_text(test_unused_extraction({:error, "ignored"}), "failure")
+    assert_text(test_used_extraction({:ok, "world"}), "Got: world")
+    assert_text(test_used_extraction({:error, "offline"}), "Error: offline")
+    assert_text(test_mixed_usage({:ok, 42}), "Number is 42")
+    assert_text(test_mixed_usage({:error, "ignored"}), "Got an error")
+    assert_text(test_nested_extraction({:some, {:ok, 123}}), "Nested value: 123")
+    assert_text(test_nested_extraction({:some, {:error, "ignored"}}), "Nested error")
+    assert_text(test_nested_extraction({:none}), "Nothing")
+    assert_text(test_multiple_extractions({:node, {:leaf}, 42, {:leaf}}), "Value: 42")
+    assert_text(test_multiple_extractions({:leaf}), "Empty")
+    if (test_tree_extraction({:node, {:node, {:leaf}, 1, {:leaf}}, 2, {:node, {:leaf}, 3, {:leaf}}}) != 6) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Nested tree extraction must preserve all three independent bindings"]
+    end
+    if (test_tree_extraction({:node, {:leaf}, 7, {:leaf}}) != 7 or test_tree_extraction({:leaf}) != 0) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Tree fallback branches must preserve their results"]
+    end
+    if (not test_option_extraction({:some, "test"}) or test_option_extraction({:none})) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Unused option payloads must not change constructor selection"]
+    end
   end
-  defp test_unused_extraction() do
-    result = {:ok, "hello"}
-    switch_result_1 = (case result do
+  defp assert_text(actual, expected) do
+    if (actual != expected) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Expected " <> expected <> ", got " <> actual]
+    end
+  end
+  defp test_unused_extraction(result) do
+    (case result do
       {:ok, _value} -> "success"
       {:error, _error} -> "failure"
     end)
-    switch_result_1
   end
-  defp test_used_extraction() do
-    result = {:ok, "world"}
-    switch_result_1 = (case result do
+  defp test_used_extraction(result) do
+    (case result do
       {:ok, value} -> "Got: #{value}"
       {:error, msg} -> "Error: #{msg}"
     end)
-    switch_result_1
   end
-  defp test_mixed_usage() do
-    result = {:ok, 42}
-    switch_result_1 = (case result do
+  defp test_mixed_usage(result) do
+    (case result do
       {:ok, num} -> "Number is #{Reflaxe.Elixir.HaxeFloat.to_string(num)}"
       {:error, _error} -> "Got an error"
     end)
-    switch_result_1
   end
-  defp test_nested_extraction() do
-    opt = {:some, {:ok, 123}}
-    switch_result_1 = (case opt do
+  defp test_nested_extraction(opt) do
+    (case opt do
       {:some, result} ->
         (case result do
           {:ok, value} -> "Nested value: #{Reflaxe.Elixir.HaxeFloat.to_string(value)}"
@@ -41,27 +53,35 @@ defmodule Main do
         end)
       {:none} -> "Nothing"
     end)
-    switch_result_1
   end
-  defp test_multiple_extractions() do
-    node = {:node, {:leaf}, 42, {:leaf}}
-    switch_result_1 = (case node do
+  defp test_multiple_extractions(node) do
+    (case node do
       {:leaf} -> "Empty"
       {:node, _left, value, _right} -> "Value: #{Reflaxe.Elixir.HaxeFloat.to_string(value)}"
     end)
-    switch_result_1
   end
-  defp test_tree_extraction() do
-    tree = {:node, {:node, {:leaf}, 1, {:leaf}}, 2, {:node, {:leaf}, 3, {:leaf}}}
-    switch_result_1 = (case tree do
+  defp test_tree_extraction(tree) do
+    (case tree do
       {:leaf} -> 0
-      {:node, left, value, right} when left == 1 ->
-        (case right do
-          {:node, _, _, _} -> left_val + center_val + right_val
-          _ -> value
+      {:node, left, center_val, right} ->
+        (case left do
+          {:node, _g3, left_val, _} ->
+            (case right do
+              {:node, _g, right_val, _} -> left_val + center_val + right_val
+              _ ->
+                value = center_val
+                value
+            end)
+          _ ->
+            value = center_val
+            value
         end)
-      {:node, _left, value, _right} -> value
     end)
-    switch_result_1
+  end
+  defp test_option_extraction(opt) do
+    (case opt do
+      {:some, _val} -> true
+      {:none} -> false
+    end)
   end
 end

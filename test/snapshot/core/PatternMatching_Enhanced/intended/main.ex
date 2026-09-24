@@ -9,8 +9,7 @@ defmodule Main do
     nil
   end
   defp test_simple_enum_pattern() do
-    color = {:red}
-    _result = (case color do
+    _result = (case {:red} do
       {:red} -> "red"
       {:green} -> "green"
       {:blue} -> "blue"
@@ -19,22 +18,24 @@ defmodule Main do
     nil
   end
   defp test_complex_enum_pattern() do
-    color = {:rgb, 255, 128, 0}
-    _brightness = (case color do
+    brightness = (case {:rgb, 255, 128, 0} do
       {:red} -> "primary"
       {:green} -> "primary"
       {:blue} -> "primary"
-      {:rgb, r, _g, b} ->
-        cond do
-          r + r + b > 500 -> "bright"
-          true -> if (r + r + b < 100), do: "dark", else: "medium"
+      {:rgb, r, g, b} ->
+        if (r + g + b > 500) do
+          "bright"
+        else
+          if (r + g + b < 100), do: "dark", else: "medium"
         end
     end)
+    if (brightness != "medium") do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "RGB guard must use each distinct channel"]
+    end
     nil
   end
   defp test_result_pattern() do
-    result = {:ok, "success"}
-    _message = (case result do
+    _message = (case {:ok, "success"} do
       {:ok, value} -> "Got value: #{value}"
       {:error, error} -> "Got error: #{error}"
     end)
@@ -63,19 +64,25 @@ defmodule Main do
     arrays = [[], [1], [1, 2], [1, 2, 3], [1, 2, 3, 4, 5]]
     _g = 0
     Enum.each(arrays, fn arr ->
-      _description = (case arr do
-        [] -> "empty"
-        [_head | _tail] ->
-          x = Enum.at(arr, 0)
+      _description = (case length(arr) do
+        0 -> "empty"
+        1 ->
+          array_read_node_0 = Enum.at(arr, 0)
+          x = array_read_node_0
           "single: " <> Reflaxe.Elixir.HaxeFloat.to_string(x)
         2 ->
-          x = Enum.at(arr, 0)
-          y = Enum.at(arr, 1)
+          array_read_node_1 = Enum.at(arr, 0)
+          array_read_node_2 = Enum.at(arr, 1)
+          x = array_read_node_1
+          y = array_read_node_2
           "pair: " <> Reflaxe.Elixir.HaxeFloat.to_string(x) <> ", " <> Reflaxe.Elixir.HaxeFloat.to_string(y)
         3 ->
-          x = Enum.at(arr, 0)
-          y = Enum.at(arr, 1)
-          z = Enum.at(arr, 2)
+          array_read_node_3 = Enum.at(arr, 0)
+          array_read_node_4 = Enum.at(arr, 1)
+          array_read_node_5 = Enum.at(arr, 2)
+          x = array_read_node_3
+          y = array_read_node_4
+          z = array_read_node_5
           "triple: " <> Reflaxe.Elixir.HaxeFloat.to_string(x) <> ", " <> Reflaxe.Elixir.HaxeFloat.to_string(y) <> ", " <> Reflaxe.Elixir.HaxeFloat.to_string(z)
         _ ->
           "length=" <> Reflaxe.Elixir.HaxeFloat.to_string(length(arr)) <> ", first=" <> (if (length(arr) > 0) do
@@ -90,27 +97,29 @@ defmodule Main do
   defp test_object_patterns() do
     point_x = 10
     point_y = 20
-    x = point_x
-    y = point_y
+    g = point_x
+    g_value = point_y
+    x = g
+    y = g_value
     _quadrant = if (x > 0 and y > 0) do
       "first"
     else
-      x = point_x
-      y = point_y
+      x = g
+      y = g_value
       if (x < 0 and y > 0) do
         "second"
       else
-        x = point_x
-        y = point_y
+        x = g
+        y = g_value
         if (x < 0 and y < 0) do
           "third"
         else
-          x = point_x
-          y = point_y
+          x = g
+          y = g_value
           cond do
             x > 0 and y < 0 -> "fourth"
-            point_x == 0 -> "axis"
-            point_y == 0 -> "axis"
+            g == 0 -> "axis"
+            g_value == 0 -> "axis"
             true -> "origin"
           end
         end

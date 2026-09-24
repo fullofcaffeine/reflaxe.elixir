@@ -431,18 +431,22 @@ defmodule HaxePhoenixLiveReact.Dependency do
       false
     else
       if left.kind == :git do
-        left.repository == right.repository and left.ref == right.ref
+        Map.get(left, :repository) == Map.get(right, :repository) and
+          Map.get(left, :ref) == Map.get(right, :ref)
       else
-        if left.kind == :hex,
-          do: left.package_name == right.package_name and left.requirement == right.requirement,
-          else: left.path == right.path
+        if left.kind == :hex do
+          Map.get(left, :package_name) == Map.get(right, :package_name) and
+            Map.get(left, :requirement) == Map.get(right, :requirement)
+        else
+          Map.get(left, :path) == Map.get(right, :path)
+        end
       end
     end
   end
 
   defp dependency_checkout(root, source) do
     if source.kind == :path do
-      Path.expand(source.path, root)
+      Path.expand(Map.get(source, :path), root)
     else
       Path.join([root, "deps", "live_react"])
     end
@@ -525,17 +529,18 @@ defmodule HaxePhoenixLiveReact.Dependency do
         normalized = normalize_git_repository(Kernel.elem(entry, 1))
         revision = Kernel.elem(entry, 2)
 
-        if normalized != source.repository do
+        if normalized != Map.get(source, :repository) do
           {:error,
            "Mix lock repository " <>
-             Kernel.inspect(normalized) <> " does not match " <> Kernel.inspect(source.repository)}
+             Kernel.inspect(normalized) <>
+             " does not match " <> Kernel.inspect(Map.get(source, :repository))}
         else
           if not Regex.match?(rx_with_options("^[0-9a-f]{40}$", "i"), revision) do
             {:error, "Mix lock revision is not a full Git commit"}
           else
-            if not Kernel.is_nil(source.ref) and
-                 Regex.match?(rx_with_options("^[0-9a-f]{40}$", "i"), source.ref) and
-                 String.downcase(source.ref) != String.downcase(revision) do
+            if not Kernel.is_nil(Map.get(source, :ref)) and
+                 Regex.match?(rx_with_options("^[0-9a-f]{40}$", "i"), Map.get(source, :ref)) and
+                 String.downcase(Map.get(source, :ref)) != String.downcase(revision) do
               {:error, "Mix lock revision does not match the declared Git ref"}
             else
               identity =
@@ -567,10 +572,11 @@ defmodule HaxePhoenixLiveReact.Dependency do
         package_name = Kernel.to_string(Kernel.elem(entry, 1))
         version = Kernel.elem(entry, 2)
 
-        if package_name != source.package_name do
-          {:error, "Hex package " <> package_name <> " does not match " <> source.package_name}
+        if package_name != Map.get(source, :package_name) do
+          {:error,
+           "Hex package " <> package_name <> " does not match " <> Map.get(source, :package_name)}
         else
-          requirement_result = validate_hex_requirement(version, source.requirement)
+          requirement_result = validate_hex_requirement(version, Map.get(source, :requirement))
 
           if requirement_result != :ok do
             requirement_result
@@ -605,7 +611,7 @@ defmodule HaxePhoenixLiveReact.Dependency do
   end
 
   defp path_identity(source, checkout, root) do
-    declared = source.path
+    declared = Map.get(source, :path)
     expanded = Path.expand(declared, root)
     declared_type = Path.type(declared)
 
@@ -748,7 +754,7 @@ defmodule HaxePhoenixLiveReact.Dependency do
       if reason == :enoent do
         {"%{}\n", false}
       else
-        Kernel.raise("cannot read #{path}: #{:file.format_error(reason)}")
+        Kernel.raise("cannot read #{path}: #{Kernel.to_string(:file.format_error(reason))}")
       end
     end
   end

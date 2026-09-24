@@ -543,7 +543,7 @@ class LiveReactDependencyResolver {
 		var reason = Kernel.elem(result, 1);
 		if (reason == ENOENT)
 			return {_0: "%{}\n", _1: false};
-		return Kernel.raiseValue("cannot read " + path + ": " + ErlangFile.formatError(reason));
+		return Kernel.raiseValue("cannot read " + path + ": " + Kernel.toString(ErlangFile.formatError(reason)));
 	}
 
 	static function originalLockStateFor(content:String, lock:Term, existed:Bool):Term {

@@ -3,7 +3,9 @@
 		"type.ex",
 		"std.ex",
 		"reflaxe/exception.ex",
+		"reflaxe/elixir/i_map.ex",
 		"reflaxe/elixir/haxe_throw.ex",
+		"reflaxe/elixir/haxe_int.ex",
 		"reflaxe/elixir/haxe_float.ex",
 		"main.ex",
 		"int_iterator.ex",
@@ -18,7 +20,7 @@
 	"ownedFiles": [
 		{
 			"path": "haxe/_call_stack/call_stack_impl_.ex",
-			"sha256": "ab46ba4f786a95420ae1cd78188f77ebebc3ced2db90d1351297f573f30dadf8"
+			"sha256": "c77b161d05e1094665a37413ce6e0af07159fcdbc2f2cd20c19ceec25be5d818"
 		},
 		{
 			"path": "haxe/iterators/array_iterator.ex",
@@ -30,19 +32,27 @@
 		},
 		{
 			"path": "int_iterator.ex",
-			"sha256": "b2835b6dc973f62d5e79732053e7944116c9c0032e0747206eff211183182f11"
+			"sha256": "ccad9bbf2c0dd81202fc7919321d15c91c990aa36d882b399c22e7d05f27d40c"
 		},
 		{
 			"path": "main.ex",
-			"sha256": "3cf83d37168b70ac3e02090ff0a0aeaf81e636904df2f1508d2f02f7d61aa05c"
+			"sha256": "196d738757a5b6dd08a0d2bcf8395f48828c33bbcc380fec2857b165f888c2b2"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.ex",
-			"sha256": "bc021d23f7a9c094c760d4ad341755619236d1d45ae688b47f0517c0b5557013"
+			"sha256": "6786d5bfb513f44365615186bd6c8f2589222501729873f517d82d2ee23822f4"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_int.ex",
+			"sha256": "61392d67ec3807b64ea717b125498909d6fb903f8600b77dc18a17a65a955515"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_throw.ex",
 			"sha256": "642bbf29d073acc9eb2ffcea4a8e6016396a43f1a4180a79331b537bfefc6094"
+		},
+		{
+			"path": "reflaxe/elixir/i_map.ex",
+			"sha256": "b30386c78b24d2874344c2bc345f14131f4a8ea32a60f315ef05ca2b207530be"
 		},
 		{
 			"path": "reflaxe/exception.ex",
@@ -50,12 +60,12 @@
 		},
 		{
 			"path": "std.ex",
-			"sha256": "cfc6ad389294bc64c9d82be070797b4e65041a3d225fc0741500ca7cc6c8f804"
+			"sha256": "2719d51795868959cd6891134e197cf72d4b523091c594a280b37e367fd8e03f"
 		},
 		{
 			"path": "type.ex",
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "80671956f0ef0a9caf0ffac7ad0d2cf9d878ec327b350c9fbd67528725d42a4b"
+	"generation": "bdba99a8d422c9c1e7bd3fa6e122b180e86e5a1d53f66355d8b242954050251f"
 }

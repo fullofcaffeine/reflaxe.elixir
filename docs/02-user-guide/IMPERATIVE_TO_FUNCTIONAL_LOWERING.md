@@ -142,6 +142,46 @@ Implication:
 
 - Prefer writing Haxe code in “expression-first” style; the compiler has more room to emit clean `Enum.*` forms.
 
+#### Return from a while loop
+
+A `return` inside a Haxe loop exits the enclosing function, not only one reducer callback.
+For example:
+
+```haxe
+static function find(limit:Int, target:Int):Int {
+    var index = 0;
+    while (index < limit) {
+        if (index == target) return index;
+        index++;
+    }
+    return -1;
+}
+```
+
+The reducer distinguishes a function return from ordinary loop completion with tagged values.
+The enclosing Elixir expression has this shape:
+
+```elixir
+case loop_result do
+  {:__reflaxe_return__, value} -> value
+  {:__reflaxe_continue__, final_state} ->
+    # Restore state needed by statements after the loop.
+    -1
+end
+```
+
+Here, `loop_result` represents the generated `Enum.reduce_while/3` call, not a public helper.
+Only ordinary completion runs the statements after the loop.
+`break` ends the loop and preserves its latest state. `continue` starts the next iteration with that state.
+A return inside a nested function belongs to that nested function.
+
+The maintained `test/runtime/loop_control_accumulators` fixture checks matching, absent, and zero-iteration searches, binary search, and combined return/break/continue behavior.
+These checks do not establish support for every nested-loop, exception, or shared-mutation combination.
+
+Direct native reducer calls follow a different contract: they return a value without rebinding their input variables.
+The compiler emits state assignments from the Haxe loop itself, not from the mere presence of an `Enum.reduce_while/3` call.
+The fast-boot string-padding runtime fixture checks both native input preservation and the final state of ordinary Haxe loops.
+
 ### 3) “Statements” become **expressions**
 
 Elixir is expression-oriented; many things “return a value” naturally.

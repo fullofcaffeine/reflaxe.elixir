@@ -30,9 +30,9 @@
         }
       ],
       "footprint": {
-        "maxGeneratedFiles": 57,
+        "maxGeneratedFiles": 59,
         "maxApplicationFiles": 11,
-        "maxSupportFiles": 46,
+        "maxSupportFiles": 48,
         "supportGroups": [
           {
             "id": "ecto-extern-support",
@@ -51,8 +51,8 @@
           {
             "id": "haxe-runtime",
             "paths": ["haxe/"],
-            "maxFiles": 5,
-            "reason": "Haxe exception and iterator compatibility modules that remain reachable.",
+            "maxFiles": 7,
+            "reason": "Reachable Haxe exception and iterator modules, plus Option and Result constructor metadata required for standard-library enum string conversion and reflection.",
             "tracking": "haxe.elixir.codex-3qh.14"
           },
           {
@@ -227,10 +227,10 @@
         }
       ],
       "footprint": {
-        "maxGeneratedFiles": 117,
-        "maxApplicationFiles": 70,
-        "maxSupportFiles": 47,
-        "reason": "The Todo canary now includes three app-owned LiveReact modules: its typed event protocol, native LiveReact asset boundary, and island component. The generated support footprint did not grow.",
+        "maxGeneratedFiles": 123,
+        "maxApplicationFiles": 72,
+        "maxSupportFiles": 51,
+        "reason": "The Todo canary retains its three LiveReact modules plus ErrorHTML and ErrorJSON, which Phoenix calls at runtime. Four public Haxe enum modules provide constructor metadata for string conversion and reflection.",
         "tracking": "haxe.elixir.codex-msb.11",
         "supportGroups": [
           {
@@ -250,8 +250,8 @@
           {
             "id": "haxe-runtime",
             "paths": ["haxe/"],
-            "maxFiles": 5,
-            "reason": "Reachable Haxe cryptography, exception, and iterator compatibility modules.",
+            "maxFiles": 9,
+            "reason": "Reachable Haxe cryptography, exception, and iterator modules, plus Option, Result, Error, and Encoding constructor metadata.",
             "tracking": "haxe.elixir.codex-3qh.14"
           },
           {

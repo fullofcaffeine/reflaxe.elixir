@@ -11,8 +11,8 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 	*
 	* WHAT
 	* - Ensures Enum.join first argument is a single valid expression by wrapping
-	*   it in an IIFE unless it is already a simple, safe expression (list literal
-	*   or comprehension or variable).
+	*   statement blocks in an IIFE. Calls and other single expressions retain
+	*   their caller scope, even when their arguments assign caller locals.
 	*
 	* WHY
 	* - Some late-emitted shapes can still surface as raw statement sequences in
@@ -68,9 +68,9 @@ class JoinArgAlwaysIIFETransforms {
 
 	static function isSafe(e:ElixirAST):Bool {
 		return switch (e.def) {
-			case EList(_) | EFor(_, _, _, _, _) | EVar(_): true;
+			case EBlock(_) | EDo(_): false;
 			case EParen(inner): isSafe(inner);
-			default: false;
+			default: true;
 		}
 	}
 }

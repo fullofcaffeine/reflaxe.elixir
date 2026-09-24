@@ -28,8 +28,10 @@
 		"phoenix/conn_state.exs",
 		"haxe/iterators/array_key_value_iterator.exs",
 		"haxe/iterators/array_iterator.exs",
+		"haxe/functional/result.exs",
 		"haxe/exceptions/pos_exception.exs",
 		"haxe/exceptions/not_implemented_exception.exs",
+		"haxe/ds/option.exs",
 		"elixir/otp/supervisor_strategy.exs",
 		"elixir/otp/shutdown_type.exs",
 		"elixir/otp/restart_type.exs",
@@ -42,7 +44,7 @@
 		"e_reg.exs"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 8,
+	"id": 10,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
@@ -87,12 +89,20 @@
 			"sha256": "0e3a75cf0ec36827542182526b8dad3495be7c0b38df4a77cf07f86dc8b30cea"
 		},
 		{
+			"path": "haxe/ds/option.exs",
+			"sha256": "63ac76e868b4b2dfe585786ccd2a345305751f959a8cdb63a5a2c34106113043"
+		},
+		{
 			"path": "haxe/exceptions/not_implemented_exception.exs",
 			"sha256": "79e1169384c0e4040281af71c745bba63d1ca530105f2c290d880ad94b818273"
 		},
 		{
 			"path": "haxe/exceptions/pos_exception.exs",
 			"sha256": "1bf19747702bbde341c3a92e2fc6f137f2e04508952fc452a0ae73aa61b2b1dd"
+		},
+		{
+			"path": "haxe/functional/result.exs",
+			"sha256": "41853f86663b99ae0b271938f47328e736fdbd3d2aacd7eaff087f3ef381104d"
 		},
 		{
 			"path": "haxe/iterators/array_iterator.exs",
@@ -164,7 +174,7 @@
 		},
 		{
 			"path": "phoenix_chat_web/app_live.exs",
-			"sha256": "32f42a8e1b2854718cc164e023a99c39760ada111b4db745e89b46be8bd0682d"
+			"sha256": "d0e0f4ce25c57c96aaf7d227ff5d1365a7b2681ece582d5a9a0ab56995292055"
 		},
 		{
 			"path": "phoenix_chat_web/presence.exs",
@@ -207,5 +217,5 @@
 			"sha256": "79ab34d32eb9843745093db6c5ec4907244e88d06815f942372dc9825eda7f04"
 		}
 	],
-	"generation": "3b6970b5aa92661b97e4515bab6cdc47123e991c14739c04ed7a5f09fce5cff5"
+	"generation": "a2dbc364c15ef22e73858ca0548630533bb8dedbdee5b66623f312268d2f125b"
 }

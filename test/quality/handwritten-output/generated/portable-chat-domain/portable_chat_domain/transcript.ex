@@ -5,9 +5,10 @@ defmodule PortableChatDomain.Transcript do
 
   def add(history, author, body) do
     next = history
+    g = PortableChatDomain.MessageRules.validate(author, body)
 
     next =
-      case PortableChatDomain.MessageRules.validate(author, body) do
+      case g do
         {:accepted, message} ->
           next = next ++ [message]
           next

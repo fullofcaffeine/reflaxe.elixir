@@ -36,23 +36,31 @@ defmodule Main do
   def nested_with_condition() do
     [(fn ->
       g = []
-      g ++ [0]
-      g ++ [2]
+      g = g ++ [0]
+      g = g
+      g = g ++ [2]
+      g = g
       g
     end).(), (fn ->
       g = []
-      g ++ [5]
-      g ++ [7]
+      g = g
+      g = g ++ [5]
+      g = g
+      g = g ++ [7]
       g
     end).(), (fn ->
       g = []
-      g ++ [8]
-      g ++ [10]
+      g = g ++ [8]
+      g = g
+      g = g ++ [10]
+      g = g
       g
     end).(), (fn ->
       g = []
-      g ++ [13]
-      g ++ [15]
+      g = g
+      g = g ++ [13]
+      g = g
+      g = g ++ [15]
       g
     end).()]
   end
@@ -215,13 +223,14 @@ defmodule Main do
   end
   def mixed_constant_variable() do
     n = 3
-    g = n
-    g = Enum.reduce(0..(g - 1)//1, g, fn i, g_acc ->
-      Enum.concat(g_acc, (fn -> [(fn ->
+    g = []
+    g2 = n
+    g = Enum.reduce(0..(g2 - 1)//1, g, fn i, g_acc ->
+      Enum.concat(g_acc, [(fn ->
         g_acc = []
         g_acc = Enum.concat(g_acc, [i])
         Enum.concat(g_acc, [i + 1])
-      end).()] end).())
+      end).()])
     end)
     g
   end

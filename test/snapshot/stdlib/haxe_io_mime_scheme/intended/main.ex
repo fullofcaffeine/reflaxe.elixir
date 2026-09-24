@@ -71,10 +71,9 @@ defmodule Main do
           %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
           _ -> haxe_exception
         end), haxe_exception} do
-          {error, _} when is_tuple(error) and elem(error, 0) in [:overflow, :outside_bounds, :custom, :blocked] ->
-            (case error do
-              {:custom, message} ->
-                assert_true(Reflaxe.Elixir.HaxeFloat.eq(message, "io failure"), "Error.Custom payload changed")
+          {error_2, _} when is_tuple(error_2) and elem(error_2, 0) in [:overflow, :outside_bounds, :custom, :blocked] ->
+            (case error_2 do
+              {:custom, message} -> assert_true(Reflaxe.Elixir.HaxeFloat.eq(message, "io failure"), "Error.Custom payload changed")
               _ ->
                 assert_true(false, "Error.Custom changed constructor")
             end)

@@ -26,7 +26,7 @@ defmodule Main do
       Process.sleep(100)
       42
     end)
-    result = Task.await(task)
+    _result = Task.await(task)
     slow_task = Task.async(fn ->
       Process.sleep(5000)
       "slow"
@@ -37,7 +37,7 @@ defmodule Main do
     end
     Task.start(fn -> nil end)
     _linked_result = Task.start_link(fn -> nil end)
-    tasks = [Task.async(fn -> nil end), Task.async(fn -> 2 end), Task.async(fn -> 3 end)]
+    tasks = [Task.async(fn -> 1 end), Task.async(fn -> 2 end), Task.async(fn -> 3 end)]
     results = Task.yield_many(tasks)
     _g = 0
     Enum.each(results, fn task_result ->

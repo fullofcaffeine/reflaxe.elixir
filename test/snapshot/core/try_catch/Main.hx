@@ -238,6 +238,7 @@ class Main {
 	}
 
 	public static function main() {
+		CatchStateProbe.main();
 		trace("=== Basic Try-Catch ===");
 		basicTryCatch();
 

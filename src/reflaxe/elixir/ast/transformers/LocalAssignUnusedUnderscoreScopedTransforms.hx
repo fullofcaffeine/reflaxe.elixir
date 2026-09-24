@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
+import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 
 /**
 	* LocalAssignUnusedUnderscoreScopedTransforms
@@ -24,9 +25,14 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 	*   that `name = expr` becomes `_name = expr` when `name` is not referenced in
 	*   any subsequent statement within the same block. Scalar function bodies are
 	*   analyzed through a synthetic block and then restored to scalar value context.
+	* - Stop the previous value's lifetime at an unconditional simple assignment,
+	*   then count RHS reads. Conditional writes do not end that lifetime.
 
 	*
 	* EXAMPLES
+	* - Haxe `var value = observe(); value = 2; return value` emits
+	*   `_value = observe(); value = 2; value`, preserving the call without an
+	*   unused-variable warning. `value = value + 1` still reads the old value.
 	* - `defp unused_param(_t), do: 1` must retain `1`; the analysis block is
 	*   internal and must not turn the scalar return into a discarded statement.
 	* - Covered by snapshot tests under `test/snapshot/**`.
@@ -207,7 +213,15 @@ class LocalAssignUnusedUnderscoreScopedTransforms {
 		var idx = stmts.length - 1;
 		while (idx >= 0) {
 			usedLaterByIndex[idx] = cloneScope(usedLater);
-			collectUsedVars(stmts[idx], usedLater);
+			// A definite local assignment ends the preceding value's lifetime.
+			// Collect RHS reads afterward: x = x + 1 still needs the old x.
+			// Do not infer kills from conditional writes or compound patterns.
+			switch (stmts[idx].def) {
+				case EMatch(PVar(name), _) | EBinary(Match, {def: EVar(name)}, _):
+					usedLater.remove(name);
+				default:
+			}
+			collectIncomingReads(stmts[idx], usedLater);
 			idx--;
 		}
 
@@ -456,6 +470,28 @@ class LocalAssignUnusedUnderscoreScopedTransforms {
 		return true;
 	}
 
+	/** Count reads of incoming values, not same-named locals rebound inside branches. */
+	static function collectIncomingReads(node:ElixirAST, out:Map<String, Bool>):Void {
+		for (name in VarUseAnalyzer.freeVarNames(node).keys())
+			out.set(name, true);
+		// The lexical analyzer deliberately excludes opaque target code. HEEx also
+		// carries reads outside ordinary EVar nodes, including its implicit assigns
+		// input. Preserve these reads using the existing target-aware scanner.
+		function collectRawReads(current:ElixirAST):Void {
+			if (current == null)
+				return;
+			switch (current.def) {
+				case ERaw(_):
+					collectUsedVars(current, out);
+				case ESigil(type, _, _) if (type == "H" || type == "h"):
+					collectUsedVars(current, out);
+				default:
+					ElixirASTTransformer.iterateAST(current, collectRawReads);
+			}
+		}
+		collectRawReads(node);
+	}
+
 	static function collectUsedVars(node:ElixirAST, out:Map<String, Bool>):Void {
 		// IMPORTANT: use exact tracking here. Variant-aware collection (snake/camel/base/underscore)
 		// can produce false positives from tokens inside raw strings (e.g., "User not found"),
@@ -498,10 +534,45 @@ class LocalAssignUnusedUnderscoreScopedTransforms {
 			var newGuard = c.guard != null ? rewriteWithScope(c.guard, clauseScope, usedAfter) : null;
 			if (newGuard != null)
 				collectUsedVars(newGuard, used);
-			var pat = underscoreUnusedInPattern(c.pattern, used);
+			var pat = discardImmediatelyOverwrittenCapture(c.pattern, newGuard, newBody);
+			pat = underscoreUnusedInPattern(pat, used);
 			out.push({pattern: pat, guard: newGuard, body: newBody});
 		}
 		return out;
+	}
+
+	/**
+	 * A simple case capture replaced before its first read need not bind a value.
+	 * Keep captures read by guards or assignment RHS expressions. Only an immediate,
+	 * unconditional simple assignment proves this; conditional writes do not.
+	 * Use a wildcard so later name-alignment passes cannot revive the dead capture
+	 * merely because the replacement value has the same spelling.
+	 */
+	static function discardImmediatelyOverwrittenCapture(pattern:EPattern, guard:Null<ElixirAST>, body:ElixirAST):EPattern {
+		var name = switch (pattern) {
+			case PVar(value): value;
+			default: return pattern;
+		};
+		var first = body;
+		while (first != null) {
+			switch (first.def) {
+				case EBlock(items) | EDo(items) if (items.length > 0):
+					first = items[0];
+				default:
+					break;
+			}
+		}
+		if (first == null)
+			return pattern;
+		var rhs = switch (first.def) {
+			case EMatch(PVar(bound), value) | EBinary(Match, {def: EVar(bound)}, value) if (bound == name): value;
+			default: return pattern;
+		};
+		var reads = new Map<String, Bool>();
+		collectUsedVars(rhs, reads);
+		if (guard != null)
+			collectUsedVars(guard, reads);
+		return reads.exists(name) ? pattern : PWildcard;
 	}
 
 	static function underscoreUnusedInPattern(p:EPattern, used:Map<String, Bool>):EPattern {

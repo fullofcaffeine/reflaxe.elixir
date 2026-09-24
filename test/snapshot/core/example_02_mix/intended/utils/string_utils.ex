@@ -49,12 +49,12 @@ defmodule StringUtils do
     else
       s = String.downcase(text)
       slug = StringTools.ltrim(StringTools.rtrim(s))
-      reflaxe_dispatch_receiver = EReg.new("[^a-z0-9\\s-]", "g")
-      slug = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, slug, ""])
-      reflaxe_dispatch_receiver = EReg.new("\\s+", "g")
-      slug = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, slug, "-"])
-      reflaxe_dispatch_receiver = EReg.new("-+", "g")
-      slug = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, slug, "-"])
+      reflaxe_dispatch_receiver_node_0 = EReg.new("[^a-z0-9\\s-]", "g")
+      slug = apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :replace, [reflaxe_dispatch_receiver_node_0, slug, ""])
+      reflaxe_dispatch_receiver_node_1 = EReg.new("\\s+", "g")
+      slug = apply(Map.get(reflaxe_dispatch_receiver_node_1, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_1, :__struct__), :replace, [reflaxe_dispatch_receiver_node_1, slug, "-"])
+      reflaxe_dispatch_receiver_node_2 = EReg.new("-+", "g")
+      slug = apply(Map.get(reflaxe_dispatch_receiver_node_2, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_2, :__struct__), :replace, [reflaxe_dispatch_receiver_node_2, slug, "-"])
       {slug} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, fn _, {acc_slug} ->
         try do
           if (StringTools.haxe_char_at(acc_slug, 0) == "-") do
@@ -137,8 +137,8 @@ defmodule StringUtils do
     end
   end
   defp remove_excess_whitespace(text) do
-    reflaxe_dispatch_receiver = EReg.new("\\s+", "g")
-    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, text, " "])
+    reflaxe_dispatch_receiver_node_3 = EReg.new("\\s+", "g")
+    apply(Map.get(reflaxe_dispatch_receiver_node_3, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_3, :__struct__), :replace, [reflaxe_dispatch_receiver_node_3, text, " "])
   end
   defp normalize_case(text) do
     "#{String.upcase(StringTools.haxe_char_at(text, 0))}#{(fn -> String.downcase(

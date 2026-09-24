@@ -10,7 +10,10 @@ import haxe.Constraints.IMap;
  * The Elixir backend keeps the upstream public API shape, but its specialization casts preserve an
  * existing receiver when one is present. Map instances are represented as native `%{}` terms and the
  * AST pipeline lowers operations to idiomatic `Map.*` / `Enum.*` calls.
+ * This override is loaded from a library classpath, so `@:dce` restores normal
+ * stdlib dead-code removal. Unused iterator methods must not retain helpers.
  */
+@:dce
 @:transitive
 @:multiType(@:followWithAbstracts K)
 abstract Map<K, V>(IMap<K, V>) {

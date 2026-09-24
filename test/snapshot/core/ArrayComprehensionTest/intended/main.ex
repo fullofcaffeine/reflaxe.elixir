@@ -21,10 +21,16 @@ defmodule Main do
     end).()]
     g = []
     g = g ++ [0]
+    g = g
     g = g ++ [2]
+    g = g
     g = g ++ [4]
+    g = g
     g = g ++ [6]
-    _evens = g ++ [8]
+    g = g
+    g = g ++ [8]
+    g = g
+    _evens = g
     multiplier = 2
     _doubled = [0 * multiplier, multiplier, 2 * multiplier, 3 * multiplier, 4 * multiplier]
     nil

@@ -33,7 +33,8 @@ private typedef NameBindingFlow = {
  * - In each EBlock/EDo statement list, track assignments of the form `name = <literal>`
  *   where <literal> is side-effect-free (nil, literals, empty list/map, and nested literals).
  * - If `name` is not referenced by any statement before a subsequent top-level assignment to `name`,
- *   prune the earlier initializer.
+ *   prune the earlier initializer. Never prune the final assignment: its value
+ *   is the block's result even when its local name has no subsequent read.
  *
  * EXAMPLES
  * Before:
@@ -91,8 +92,13 @@ class ShadowedInitAssignPruneTransforms {
 			var outIndex = out.length;
 			out.push(stmt);
 
-			// Record a new initializer candidate.
-			if (assignedName != null && isPrunableInitializer(stmt, assignedName) && !pendingInit.exists(assignedName)) {
+			// The tail assignment supplies the block's value, including when this
+			// block is another assignment's RHS. Its binding may be unused but
+			// its value is not; leave binding cleanup to the usage-aware pass.
+			if (outIndex < stmts.length - 1
+				&& assignedName != null
+				&& isPrunableInitializer(stmt, assignedName)
+				&& !pendingInit.exists(assignedName)) {
 				pendingInit.set(assignedName, outIndex);
 			}
 		}

@@ -37,7 +37,7 @@ defmodule Main do
           {:cont, acc}
       end
     end)
-    Enum.reduce_while(Map.keys(map), {[]}, fn k, {acc__g} ->
+    {_g} = Enum.reduce_while(Map.keys(map), {[]}, fn k, {acc__g} ->
       try do
         acc__g = acc__g ++ [k]
         {:cont, {acc__g}}
@@ -53,7 +53,7 @@ defmodule Main do
       end
     end)
     _keys = []
-    Enum.reduce_while(Map.keys(map), {[]}, fn k, {acc__g} ->
+    {_g} = Enum.reduce_while(Map.keys(map), {[]}, fn k, {acc__g} ->
       try do
         acc__g = acc__g ++ [Map.get(map, k)]
         {:cont, {acc__g}}
@@ -302,12 +302,13 @@ defmodule Main do
     result = %{}
     {result} = Enum.reduce_while(Map.keys(input), {result}, fn key, {acc_result} ->
       try do
-        acc_result =
-          (case label_for(key) do
-            {:present, value} ->
-              Map.put(acc_result, key, value)
-            {:missing} -> acc_result
-          end)
+        g = label_for(key)
+        acc_result = (case g do
+          {:present, value} ->
+            acc_result = Map.put(acc_result, key, value)
+            acc_result
+          {:missing} -> acc_result
+        end)
         {:cont, {acc_result}}
       catch
         :throw, {:break, break_state} ->

@@ -3,7 +3,7 @@ defmodule Main do
     (case opt do
       {:some, v} ->
         (case v do
-          {:a, n} -> n + 1
+          {:a, n} -> _ = n + 1
           {:b} -> 0
         end)
       {:none} -> -1

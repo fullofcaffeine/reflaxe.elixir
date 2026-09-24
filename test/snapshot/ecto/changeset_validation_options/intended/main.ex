@@ -57,7 +57,7 @@ defmodule Main do
                end).(user, params)
 
     cs =
-      Ecto.Changeset.validate_number(this1, :age,
+      Ecto.Changeset.validate_number(this1, :age, (
                 (fn opts ->
                    greater_than_or_equal_to =
                      case Map.fetch(opts, :greater_than_or_equal_to) do
@@ -81,8 +81,8 @@ defmodule Main do
                    ]
                    |> Enum.filter(fn {_, value} -> value != nil end)
                  end).(%{greater_than_or_equal_to: 18, less_than_or_equal_to: 120})
-      )
-    Ecto.Changeset.validate_number(this1, :score,
+      ))
+    Ecto.Changeset.validate_number(this1, :score, (
               (fn opts ->
                  greater_than_or_equal_to =
                    case Map.fetch(opts, :greater_than_or_equal_to) do
@@ -106,7 +106,7 @@ defmodule Main do
                  ]
                  |> Enum.filter(fn {_, value} -> value != nil end)
                end).(%{greater_than: 0, less_than: 100, not_equal_to: 13})
-    )
+    ))
     cs
   end
   def shorthand_aliases(user, params) do
@@ -167,7 +167,7 @@ defmodule Main do
                    Ecto.Changeset.cast(data, normalized_params, Map.keys(normalized_params))
                  end).(user, params)
 
-    Ecto.Changeset.validate_number(this1, :age,
+    Ecto.Changeset.validate_number(this1, :age, (
               (fn opts ->
                  greater_than_or_equal_to =
                    case Map.fetch(opts, :greater_than_or_equal_to) do
@@ -191,7 +191,7 @@ defmodule Main do
                  ]
                  |> Enum.filter(fn {_, value} -> value != nil end)
                end).(%{min: 18, max: 120})
-    )
+    ))
     cs
   end
 end

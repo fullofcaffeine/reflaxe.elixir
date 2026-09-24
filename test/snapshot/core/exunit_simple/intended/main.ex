@@ -11,8 +11,6 @@ defmodule Main do
     refute(is_nil(non_null_value), "String should not be null")
   end
   test "failure assertion" do
-    should_not_reach = false
-    if (should_not_reach), do: flunk("This code should never be reached")
     assert(true, "Test should complete without failure")
   end
 end

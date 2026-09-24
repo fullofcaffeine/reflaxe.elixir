@@ -33,10 +33,8 @@ defmodule OptionPatterns.ConfigManagerTest do
     result = OptionPatterns.ConfigManager.get_required("app_name")
     assert(match?({:ok, _}, result), "Should successfully get required configuration")
     (case result do
-      {:ok, value} ->
-        assert("OptionPatterns" == value, "Should have correct value")
-      {:error, msg} ->
-        flunk("Unexpected error: " <> msg)
+      {:ok, value} -> assert("OptionPatterns" == value, "Should have correct value")
+      {:error, msg} -> flunk("Unexpected error: " <> msg)
     end)
   end
   test "get required returns error for missing key" do
@@ -45,8 +43,7 @@ defmodule OptionPatterns.ConfigManagerTest do
     (case result do
       {:ok, _value} ->
         flunk("Expected error for missing required key")
-      {:error, msg} ->
-        assert(StringTools.haxe_index_of(msg, "missing_key", 0) >= 0, "Error should mention the missing key")
+      {:error, msg} -> assert(StringTools.haxe_index_of(msg, "missing_key", 0) >= 0, "Error should mention the missing key")
     end)
   end
   test "get int returns value for valid number" do
@@ -79,10 +76,8 @@ defmodule OptionPatterns.ConfigManagerTest do
     result = OptionPatterns.ConfigManager.get_int_with_range("max_connections", 1, 1000)
     assert(match?({:ok, _}, result), "Should succeed for value within range")
     (case result do
-      {:ok, value} ->
-        assert(100 == value, "Should have correct value")
-      {:error, msg} ->
-        flunk("Unexpected error: " <> msg)
+      {:ok, value} -> assert(100 == value, "Should have correct value")
+      {:error, msg} -> flunk("Unexpected error: " <> msg)
     end)
   end
   test "get int with range fails for value below min" do
@@ -91,8 +86,7 @@ defmodule OptionPatterns.ConfigManagerTest do
     (case result do
       {:ok, _value} ->
         flunk("Expected error for value below minimum")
-      {:error, msg} ->
-        assert(StringTools.haxe_index_of(msg, "below minimum", 0) >= 0, "Error should mention minimum value")
+      {:error, msg} -> assert(StringTools.haxe_index_of(msg, "below minimum", 0) >= 0, "Error should mention minimum value")
     end)
   end
   test "get int with range fails for value above max" do
@@ -101,8 +95,7 @@ defmodule OptionPatterns.ConfigManagerTest do
     (case result do
       {:ok, _value} ->
         flunk("Expected error for value above maximum")
-      {:error, msg} ->
-        assert(StringTools.haxe_index_of(msg, "above maximum", 0) >= 0, "Error should mention maximum value")
+      {:error, msg} -> assert(StringTools.haxe_index_of(msg, "above maximum", 0) >= 0, "Error should mention maximum value")
     end)
   end
   test "get int with range fails for missing key" do
@@ -111,18 +104,15 @@ defmodule OptionPatterns.ConfigManagerTest do
     (case result do
       {:ok, _value} ->
         flunk("Expected error for missing key")
-      {:error, msg} ->
-        assert(StringTools.haxe_index_of(msg, "missing or not a valid number", 0) >= 0, "Error should mention missing/invalid")
+      {:error, msg} -> assert(StringTools.haxe_index_of(msg, "missing or not a valid number", 0) >= 0, "Error should mention missing/invalid")
     end)
   end
   test "get database url succeeds for valid url" do
     result = OptionPatterns.ConfigManager.get_database_url()
     assert(match?({:ok, _}, result), "Should succeed for valid database URL")
     (case result do
-      {:ok, url} ->
-        assert(StringTools.haxe_index_of(url, "postgres://", 0) >= 0, "Should contain protocol")
-      {:error, msg} ->
-        flunk("Unexpected error: " <> msg)
+      {:ok, url} -> assert(StringTools.haxe_index_of(url, "postgres://", 0) >= 0, "Should contain protocol")
+      {:error, msg} -> flunk("Unexpected error: " <> msg)
     end)
   end
   test "get timeout returns valid value within bounds" do
@@ -160,10 +150,8 @@ defmodule OptionPatterns.ConfigManagerTest do
     result = OptionPatterns.ConfigManager.validate_required(["app_name", "timeout", "debug"])
     assert(match?({:ok, _}, result), "Should succeed when all required keys are present")
     (case result do
-      {:ok, valid} ->
-        assert(valid, "Should return true for valid configuration")
-      {:error, msg} ->
-        flunk("Unexpected error: " <> msg)
+      {:ok, valid} -> assert(valid, "Should return true for valid configuration")
+      {:error, msg} -> flunk("Unexpected error: " <> msg)
     end)
   end
   test "validate required fails when keys are missing" do

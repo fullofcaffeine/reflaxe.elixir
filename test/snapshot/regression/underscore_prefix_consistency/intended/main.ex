@@ -2,7 +2,9 @@ defmodule Main do
   def main() do
     test_changeset_pattern()
     _result = process_data("unused", 42)
-    test_pattern_matching_unused()
+    if (test_pattern_matching_unused(get_some_value()) != 42 or test_pattern_matching_unused({:none}) != 0) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Pattern matching must preserve the used value and the empty case"]
+    end
     test_lambda_unused()
   end
   defp test_changeset_pattern() do
@@ -11,15 +13,16 @@ defmodule Main do
   defp process_data(_unused, data) do
     data * 2
   end
-  defp test_pattern_matching_unused() do
-    _result = (case get_some_value() do
-      {:some, g} ->
-        _meta = g.metadata
-        v = g.value
+  defp test_pattern_matching_unused(input) do
+    (case input do
+      {:some, value} ->
+        g_metadata = value.metadata
+        g_value = value.value
+        _meta = g_metadata
+        v = g_value
         v
       {:none} -> 0
     end)
-    nil
   end
   defp test_lambda_unused() do
     items = [1, 2, 3]

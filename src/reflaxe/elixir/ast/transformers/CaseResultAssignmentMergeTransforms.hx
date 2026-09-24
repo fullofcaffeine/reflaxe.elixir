@@ -16,17 +16,18 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   x = case INIT do ... end
  *
  * WHY
- * - Haxe→Elixir lowering can separate `var x = switch(expr)` into two statements:
- *   `x = expr` followed by `case x do ... end`, leaving `x` bound to the original
- *   INIT rather than the case result. This produces incorrect values (e.g., "medium"
- *   instead of "border-yellow-500").
+ * - A tail case may be folded into its adjacent input binding when that input
+ *   has no remaining readers. The resulting block must still return the case value.
+ * - This is not a repair for missing result assignments. An input and a result
+ *   are different values; later readers must retain the input they originally saw.
  *
  * HOW
- * - Scan blocks (function bodies and nested blocks) for the two-statement pattern:
+ * - Inspect the final two statements in a function body:
  *   - First statement: EMatch(PVar(name) | EBinary(Match, EVar(name), _), init)
  *   - Second statement: ECase(EVar(name), clauses)
- *   - Rewrite into a single EMatch(name, ECase(init, clauses)) and remove the ECase.
- * - Safe and general: does not rely on application-specific names or domains.
+ *   - Require no input read in case guards, bodies, or pinned patterns.
+ *   - Preserve the complete initializer, including assignments and effects.
+ *   - Only then merge; never change an input that later statements may read.
  *
  * EXAMPLES
  * Haxe:
@@ -71,15 +72,8 @@ class CaseResultAssignmentMergeTransforms {
 			case EBlock(stmts) if (stmts != null && stmts.length >= 2):
 				var out:Array<ElixirAST> = [];
 				var i = 0;
-				function extractInit(e:ElixirAST):ElixirAST {
-					return switch (e.def) {
-						case EBinary(Match, _left, rhs): extractInit(rhs);
-						case EMatch(_pat, rhs2): extractInit(rhs2);
-						default: e;
-					}
-				}
 				while (i < stmts.length) {
-					if (i + 1 < stmts.length) {
+					if (i + 2 == stmts.length) {
 						var s1 = stmts[i];
 						var s2 = stmts[i + 1];
 						var name:Null<String> = null;
@@ -91,19 +85,28 @@ class CaseResultAssignmentMergeTransforms {
 									case PVar(n): name = n;
 									default:
 								}
-								init = extractInit(rhs);
+								init = rhs;
 							case EBinary(Match, left, rhs2):
 								switch (left.def) {
 									case EVar(n2): name = n2;
 									default:
 								}
-								init = extractInit(rhs2);
+								init = rhs2;
 							default:
 						}
 						if (name != null && init != null) {
 							// Second statement must be case on that var
 							switch (s2.def) {
 								case ECase(target, clauses):
+									// Moving the binding after the case is only safe when no
+									// branch or guard still reads its original value. Keep
+									// the entire initializer, including nested assignments.
+									var branchScope = makeASTWithMeta(ECase(makeASTWithMeta(ENil, {}, s2.pos), clauses), {}, s2.pos);
+									if (reflaxe.elixir.ast.analyzers.VarUseAnalyzer.usesFreeVarExact(branchScope, name)
+										|| reflaxe.elixir.ast.analyzers.VarUseAnalyzer.stmtUsesVarExact(branchScope, name)) {
+										out.push(stmts[i++]);
+										continue;
+									}
 									switch (target.def) {
 										case EVar(v) if (v == name):
 											var merged = makeASTWithMeta(EMatch(PVar(name), makeASTWithMeta(ECase(init, clauses), s2.metadata, s2.pos)),

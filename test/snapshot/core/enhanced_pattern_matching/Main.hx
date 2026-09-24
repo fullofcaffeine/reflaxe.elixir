@@ -225,7 +225,21 @@ class EnhancedPatternMatchingTest {
 		return Result.success('Formatted: [$data]');
 	}
 
+	/** Runtime assertions cover array lengths, guards, and fallback aliases. */
+	static function expect(actual:String, expected:String):Void {
+		if (actual != expected)
+			throw 'Expected "$expected", got "$actual"';
+	}
+
 	public static function main() {
+		expect(matchArrayPatterns([]), "empty array");
+		expect(matchArrayPatterns([7]), "single element: 7");
+		expect(matchArrayPatterns([7, 8]), "pair: [7, 8]");
+		expect(matchArrayPatterns([7, 8, 9]), "triple: [7, 8, 9]");
+		expect(matchArrayPatterns([7, 8, 9, 10]), "starts with 7, has 3 more elements");
+		expect(matchWithRangeGuards(85, "score"), "Good score");
+		expect(matchWithRangeGuards(25, "temperature"), "Warm");
+		expect(matchWithRangeGuards(5, "other"), 'Unknown category "other" with value 5');
 		trace("Enhanced pattern matching compilation test");
 
 		// Test basic patterns
@@ -269,5 +283,12 @@ class EnhancedPatternMatchingTest {
 		// Test binary patterns
 		trace(matchBinaryPattern("test"));
 		trace(matchBinaryPattern(""));
+	}
+}
+
+/** Give the complete multi-type fixture the same executable entry as other tests. */
+class Main {
+	public static function main():Void {
+		EnhancedPatternMatchingTest.main();
 	}
 }

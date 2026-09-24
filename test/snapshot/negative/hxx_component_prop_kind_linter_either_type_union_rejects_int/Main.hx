@@ -11,14 +11,15 @@ typedef CardAssigns = {
 class Components {
 	@:component
 	public static function card(assigns:CardAssigns):String {
-		return hxx('<div>${assigns.label}${assigns.inner_content}</div>');
+		return HXX.hxx('<div>${assigns.label}${assigns.inner_content}</div>');
 	}
 }
 
+@:component
 class Main {
 	public static function render(assigns:{}):String {
 		// Should fail: EitherType<String, Bool> does not accept Int.
-		return hxx('<.card label=${123}>Hi</.card>');
+		return <div><.card label=${123}>Hi</.card></div>;
 	}
 
 	public static function main():Void {}

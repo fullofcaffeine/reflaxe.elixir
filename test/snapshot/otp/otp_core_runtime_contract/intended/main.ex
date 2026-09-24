@@ -56,7 +56,7 @@ defmodule Main do
     wait_until_stopped(slow_pid)
   end
   defp test_agent_state_and_stop() do
-    _started = (case Agent.start(fn -> 10 end) do
+    (case Agent.start(fn -> 10 end) do
       {:ok, agent} ->
         assert_equals("Agent.get reads initial state", 10, Agent.get(agent, fn value -> value end))
         Agent.update(agent, fn value -> value + 5 end)
@@ -65,8 +65,7 @@ defmodule Main do
         assert_equals("Agent.cast is observed by a later call from the same process", 17, Agent.get(agent, fn value -> value end))
         Agent.stop(agent)
         assert_true("Agent.stop ends the process", not Process.alive?(agent))
-      {:error, reason} ->
-        Kernel.raise("OTP contract failed: Agent.start returned #{reason}")
+      {:error, reason} -> Kernel.raise("OTP contract failed: Agent.start returned #{reason}")
     end)
   end
   def main() do

@@ -32,9 +32,15 @@ class Main {
 		colors.set("blue", "#0000FF");
 
 		trace("Simple Map iteration:");
+		var seen = 0;
 		for (name => hex in colors) {
 			trace('Color $name has hex value $hex');
+			if (colors.get(name) != hex)
+				throw "Map iteration detached a key from its value";
+			seen++;
 		}
+		if (seen != 3)
+			throw "Map iteration lost an entry";
 	}
 
 	// Test 2: Key-only iteration (value should be _)
@@ -50,6 +56,8 @@ class Main {
 			keys.push(item);
 		}
 		trace('Items in inventory: ${keys.join(", ")}');
+		if (keys.length != 3 || keys.indexOf("apples") < 0 || keys.indexOf("oranges") < 0 || keys.indexOf("bananas") < 0)
+			throw "Key-only iteration lost or duplicated a key";
 	}
 
 	// Test 3: Value-only iteration (key should be _)
@@ -65,6 +73,8 @@ class Main {
 			total += score;
 		}
 		trace('Total score: $total');
+		if (total != 274)
+			throw "Value-only iteration lost accumulated state";
 	}
 
 	// Test 4: Map comprehension with transformation
@@ -77,6 +87,11 @@ class Main {
 		trace("Map comprehension:");
 		var discounted = [for (item => price in prices) '$item: $$${price * 0.9}'];
 		trace('Discounted prices: ${discounted.join(", ")}');
+		if (discounted.length != 3
+			|| discounted.indexOf("apple: $1.35") < 0
+			|| discounted.indexOf("orange: $1.8") < 0
+			|| discounted.indexOf("banana: $0.675") < 0)
+			throw "Map comprehension changed its transformed entries";
 	}
 
 	// Test 5: Nested Map iterations
@@ -94,12 +109,18 @@ class Main {
 		departments.set("Sales", sales);
 
 		trace("Nested Map iteration:");
+		var count = 0;
+		var totalYears = 0;
 		for (dept => employees in departments) {
 			trace('Department: $dept');
 			for (name => years in employees) {
 				trace('  $name: $years years');
+				count++;
+				totalYears += years;
 			}
 		}
+		if (count != 4 || totalYears != 19)
+			throw "Nested map iteration lost accumulated state";
 	}
 
 	// Test 6: Map iteration with filtering
@@ -118,6 +139,8 @@ class Main {
 			}
 		}
 		trace('Adults: ${adults.join(", ")}');
+		if (adults.length != 2 || adults.indexOf("Alice") < 0 || adults.indexOf("Charlie") < 0)
+			throw "Filtered map iteration selected the wrong entries";
 	}
 
 	// Test 7: Map iteration with accumulation
@@ -136,6 +159,8 @@ class Main {
 		}
 		trace('Products: ${descriptions.join(", ")}');
 		trace('Total value: $$${totalValue}');
+		if (descriptions.length != 3 || Math.abs(totalValue - 1100.49) > 0.000001)
+			throw "Map iteration lost array or numeric accumulator state";
 	}
 
 	// Helper function for testing

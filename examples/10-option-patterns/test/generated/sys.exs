@@ -6,28 +6,38 @@ defmodule Sys do
     IO.write(v)
   end
   def stdin() do
-    Process.group_leader()
+    Reflaxe.Elixir.Runtime.StandardInput.new()
   end
   def stdout() do
-    Process.group_leader()
+    Reflaxe.Elixir.Runtime.StandardOutput.new(:standard_io)
   end
   def stderr() do
-    :standard_error
+    Reflaxe.Elixir.Runtime.StandardOutput.new(:stderr)
   end
   def get_char(echo) do
 
-                {:ok, old_settings} = :io.getopts(:standard_io)
+                old_echo = :proplists.get_value(:echo, :io.getopts(:standard_io), :undefined)
 
-                if not echo do
-                    :io.setopts(:standard_io, [{:echo, false}])
+                if old_echo != :undefined do
+                  :io.setopts(:standard_io, [{:echo, false}])
                 end
 
-                input = IO.getn("", 1)
-                :io.setopts(:standard_io, old_settings)
+                input =
+                  try do
+                    IO.getn("", 1)
+                  after
+                    if old_echo != :undefined do
+                      :io.setopts(:standard_io, [{:echo, old_echo}])
+                    end
+                  end
 
                 case input do
-                    <<c::utf8>> -> c
-                    _ -> 0
+                  <<c::utf8>> ->
+                    if echo, do: IO.write(input)
+                    c
+
+                  _ ->
+                    0
                 end
 
   end
@@ -38,7 +48,11 @@ defmodule Sys do
     System.get_env(s)
   end
   def put_env(s, v) do
-    System.put_env(s, v)
+    if (Kernel.is_nil(v)) do
+      System.delete_env(s)
+    else
+      System.put_env(s, v)
+    end
   end
   def get_cwd() do
     File.cwd!()
@@ -53,22 +67,30 @@ defmodule Sys do
     System.halt(code)
   end
   def command(cmd, args \\ nil) do
-    if (Kernel.is_nil(args) or length(args) == 0) do
+    if (Kernel.is_nil(args)) do
 
-                      case System.cmd("sh", ["-c", cmd]) do
-                          {_, 0} -> 0
-                          {_, code} -> code
+                      {shell, shell_args} =
+                        case :os.type() do
+                          {:win32, _} -> {"cmd", ["/d", "/s", "/c", cmd]}
+                          _ -> {"sh", ["-c", cmd]}
+                        end
+
+              case System.cmd(shell, shell_args) do
+                          {output, code} ->
+                            IO.write(output)
+                            code
                       end
     else
 
-                      case System.cmd(cmd, args) do
-                          {_, 0} -> 0
-                          {_, code} -> code
+              case System.cmd(cmd, args) do
+                          {output, code} ->
+                            IO.write(output)
+                            code
                       end
     end
   end
   def time() do
-    System.system_time(:second)
+    System.system_time(:nanosecond) / 1_000_000_000.0
   end
   def cpu_time() do
 
@@ -83,11 +105,11 @@ defmodule Sys do
   def system_name() do
 
                 case :os.type() do
-                    {:unix, :linux} -> "linux"
-                    {:unix, :darwin} -> "darwin"
-                    {:win32, _} -> "windows"
-                    {:unix, name} -> Atom.to_string(name)
-                    {family, name} -> Atom.to_string(family) <> "_" <> Atom.to_string(name)
+                    {:unix, :linux} -> "Linux"
+                    {:unix, :darwin} -> "Mac"
+                    {:win32, _} -> "Windows"
+                    {:unix, _} -> "BSD"
+                    _ -> "BSD"
                 end
 
   end
@@ -103,9 +125,6 @@ defmodule Sys do
     executable_path()
   end
   def set_time_locale(loc) do
-
-                Application.put_env(:elixir, :locale, loc)
-
-    true
+    (is_binary(loc) and false)
   end
 end

@@ -21,7 +21,7 @@ defmodule Main do
     42
   end
   test "without assertions" do
-
+    _y = "hello"
   end
   test "with many tags" do
     assert true
