@@ -54,7 +54,7 @@ defmodule PhoenixHxTodo.Todos do
         (case create_for_user(user, item.title, item.notes) do
           {:ok, created} ->
             cond do
-              created.completed -> PhoenixHxTodo.Repo.update(PhoenixHxTodo.Todo.toggle_completed(created))
+              item.completed -> PhoenixHxTodo.Repo.update(PhoenixHxTodo.Todo.toggle_completed(created))
               true -> nil
             end
           {:error, _error} -> nil

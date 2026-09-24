@@ -27,8 +27,12 @@
 		"haxe/log.ex",
 		"haxe/iterators/array_key_value_iterator.ex",
 		"haxe/iterators/array_iterator.ex",
+		"haxe/io/error.ex",
+		"haxe/io/encoding.ex",
+		"haxe/functional/result.ex",
 		"haxe/exceptions/pos_exception.ex",
 		"haxe/exceptions/not_implemented_exception.ex",
+		"haxe/ds/option.ex",
 		"elixir/otp/supervisor_strategy.ex",
 		"elixir/otp/shutdown_type.ex",
 		"elixir/otp/restart_type.ex",
@@ -41,7 +45,7 @@
 		"e_reg.ex"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 47,
+	"id": 48,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
@@ -86,12 +90,28 @@
 			"sha256": "0e3a75cf0ec36827542182526b8dad3495be7c0b38df4a77cf07f86dc8b30cea"
 		},
 		{
+			"path": "haxe/ds/option.ex",
+			"sha256": "63ac76e868b4b2dfe585786ccd2a345305751f959a8cdb63a5a2c34106113043"
+		},
+		{
 			"path": "haxe/exceptions/not_implemented_exception.ex",
 			"sha256": "79e1169384c0e4040281af71c745bba63d1ca530105f2c290d880ad94b818273"
 		},
 		{
 			"path": "haxe/exceptions/pos_exception.ex",
 			"sha256": "1bf19747702bbde341c3a92e2fc6f137f2e04508952fc452a0ae73aa61b2b1dd"
+		},
+		{
+			"path": "haxe/functional/result.ex",
+			"sha256": "41853f86663b99ae0b271938f47328e736fdbd3d2aacd7eaff087f3ef381104d"
+		},
+		{
+			"path": "haxe/io/encoding.ex",
+			"sha256": "aed9a161edd05cdbf4dd2f3c14646b8d615b3d3b783c31543cfdc4c337bb55d3"
+		},
+		{
+			"path": "haxe/io/error.ex",
+			"sha256": "5eba0b04b02433b84f6c421a2b5af49845386b9e549c4fb3d862f57b18ce16c0"
 		},
 		{
 			"path": "haxe/iterators/array_iterator.ex",
@@ -159,7 +179,7 @@
 		},
 		{
 			"path": "phoenix_chat_web/app_live.ex",
-			"sha256": "32f42a8e1b2854718cc164e023a99c39760ada111b4db745e89b46be8bd0682d"
+			"sha256": "d0e0f4ce25c57c96aaf7d227ff5d1365a7b2681ece582d5a9a0ab56995292055"
 		},
 		{
 			"path": "phoenix_chat_web/presence.ex",
@@ -202,5 +222,5 @@
 			"sha256": "79ab34d32eb9843745093db6c5ec4907244e88d06815f942372dc9825eda7f04"
 		}
 	],
-	"generation": "ec647f7f8d74013ffd2a03adf603a77667b9f3472a39ac629d52bbaa9ae12ec6"
+	"generation": "83e7689647cfd0bdf76ab9109b811d72c754af9feeaef5e234805072fd60c419"
 }
