@@ -113,7 +113,7 @@ class TestArrayPatternTransforms {
 		}
 	}
 
-	/** Printing must preserve numeric results; cleanup belongs to typed AST passes. */
+	/** Ordinary blocks preserve numeric results; the invariant rejects legacy do-block loss. */
 	static function testPrintedReturnValues():Void {
 		for (value in [makeAST(EInteger(0)), makeAST(EInteger(1)), makeAST(EFloat(0.0))]) {
 			value.metadata.sourceExpr = Context.typeExpr(macro 0);
@@ -126,8 +126,9 @@ class TestArrayPatternTransforms {
 				definition.metadata.functionResultContract = Value;
 				definition.metadata.functionResultMayBeNil = false;
 				final state = FunctionResultInvariant.capture(definition, "Probe").get("Probe.numeric_result/0");
-				if (state == null || state.problem != null)
-					fail("result validation rejected a numeric tail preserved by the printer");
+				final legacyDo = sequence.def.match(EDo(_));
+				if (state == null || (state.problem != null) != legacyDo)
+					fail("result validation must accept ordinary block tails and reject legacy do-block loss");
 				for (cleanup in [
 					GlobalNumericSentinelCleanupTransforms.cleanupPass,
 					ArithmeticIncrementTransforms.transformPass
