@@ -1,0 +1,1 @@
+Composite references cannot repeat local or referenced columns.

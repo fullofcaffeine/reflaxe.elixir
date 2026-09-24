@@ -12,13 +12,13 @@
 		"ecto_migrations_example/migration_runtime_test.exs"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 34,
+	"id": 47,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
 		{
 			"path": "ecto_migrations_example/migration_runtime_test.exs",
-			"sha256": "a4f1a0ce5b8f0958df8881ffe005eef4d8509e44a3bc4d825944d4a5a45f9f08"
+			"sha256": "bc0c09992a8fe938fd3bd7257d1e78761b322ccfb439615e250d7f77a5f32653"
 		},
 		{
 			"path": "ecto_migrations_example/test_case.exs",
@@ -57,5 +57,5 @@
 			"sha256": "9eb2137ead37e4b2ff0650cbece40b4da0427a5fe35a95b0de3eeacb82facbd2"
 		}
 	],
-	"generation": "4c0639adbbe9ccf8cd6cd7efde7e1c150552715396536353758a513955522db0"
+	"generation": "8fd635b13c4f16f3c202e0c4c507653c0973ad6393250a5d4e69db3918181ae7"
 }

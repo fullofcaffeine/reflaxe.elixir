@@ -245,7 +245,65 @@ string-concatenated.
 `@:migration` marks migration classes for migration-specific processing.
 
 - In `.exs` migration mode (`-D ecto_migrations_exs`), only the documented supported DSL subset is guaranteed.
+- `execute("SQL...")` is supported in both `up` and `down`. It preserves SQL bytes and statement order beside typed table operations.
+- In this mode, the SQL argument must lower to a string literal. Runtime Haxe helpers are not retained; dynamic SQL expressions produce a compile-time diagnostic.
+- SQL remains data passed to Ecto. Quotes, backslashes, newlines, and literal `#{...}` text do not become Elixir code.
 - For unsupported advanced migration shapes, use hand-written Elixir migrations.
+
+### Typed foreign keys
+
+Keep the column type explicit and attach a structured reference:
+
+```haxe
+import ecto.Migration;
+import ecto.Migration.ColumnType;
+import ecto.Migration.OnDeleteAction;
+import ecto.Migration.OnUpdateAction;
+
+@:migration({timestamp: "20240105120000"})
+class CreateChildren extends Migration {
+    public function up():Void {
+        createTable("children")
+            .addColumn("scope_id", ColumnType.Integer, {nullable: false})
+            .addColumn("parent_code", ColumnType.String(), {
+                nullable: false,
+                reference: {
+                    table: "parents",
+                    column: "code",
+                    name: "children_parent_scope",
+                    with: [{localColumn: "scope_id", referencedColumn: "scope_id"}],
+                    onDelete: OnDeleteAction.Restrict,
+                    onUpdate: OnUpdateAction.Restrict
+                }
+            });
+    }
+
+    public function down():Void {
+        dropTable("children");
+    }
+}
+```
+
+The parent table must already have compatible columns and a unique key on `(code, scope_id)`.
+The generated column uses Ecto's native reference API:
+
+```elixir
+add :parent_code,
+    references(:parents, type: :string, column: :code,
+      name: :children_parent_scope, with: [scope_id: :scope_id],
+      on_delete: :restrict, on_update: :restrict),
+    null: false
+```
+
+Haxe retains the column's value type. For example, an integer `defaultValue` on this string column fails during type checking.
+Reference actions use enums. Each additional column pair uses named fields instead of positional strings.
+The `.exs` emitter rejects dynamic or empty names, repeated columns, empty pair arrays, and conflicting reference declarations.
+The same `reference` option works with `AlterTableBuilder.addColumn` and `modifyColumn`.
+
+PostgreSQL validates the actual parent schema and enforces the foreign key when the migration runs.
+String identifiers do not prove that an external database has the declared tables or columns.
+Use `execute` for SQL that the typed migration API cannot express.
+The framework-neutral `ecto/migration_exs_composite_reference` fixture and migration example verify this path.
 
 ## Test Surface
 

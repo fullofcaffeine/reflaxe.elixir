@@ -1388,7 +1388,8 @@ class ElixirASTPrinter {
 								print(value, 0);
 						};
 
-						p.key + ': ' + valueStr;
+						// Keyword keys are atoms too; quoted schema identifiers need literal escaping.
+						print(makeAST(EAtom(p.key)), 0).substr(1) + ': ' + valueStr;
 					}
 				].join(', ') + ']';
 
@@ -2082,10 +2083,13 @@ class ElixirASTPrinter {
 				}
 
 				if (needsQuotes) {
-					':"' + atomStr + '"';
+					':"' + escapeString(atomStr).replace("#{", "\\#{") + '"';
 				} else {
 					':' + atomStr;
 				}
+
+			case EStringLiteral(value):
+				'"' + escapeString(value).replace("#{", "\\#{") + '"';
 
 			case EString(value):
 				// Sanitize interpolated strings that contain Enum.join(<multi-stmt>, sep)

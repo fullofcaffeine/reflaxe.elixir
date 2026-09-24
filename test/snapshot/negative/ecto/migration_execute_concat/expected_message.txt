@@ -1,0 +1,1 @@
+Migration execute expects one SQL string literal in ecto_migrations_exs builds.

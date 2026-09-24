@@ -96,6 +96,20 @@ if [[ ! -f "$qa_migrations_dir/20240101120000_create_users.exs" \
   echo "[ecto-migrations-qa] Fresh timestamped migrations were not generated" >&2
   exit 1
 fi
+# Exercise SQL emission with the compiler-owned, framework-neutral fixture.
+# Its migration uses Ecto's supplied repository, independent of its module name.
+qa_execute_dir="$qa_workspace/execute"
+"$haxe_bin" --cwd "$repo_root/test/snapshot/ecto/migration_exs_execute" compile.hxml -D "elixir_output=$qa_execute_dir"
+# Each compiler invocation owns its output directory and removes stale files.
+# Combine unchanged generated scripts only after both invocations finish.
+cp "$qa_execute_dir/20240104120000_execute_sql.exs" "$qa_migrations_dir/"
+if [[ ! -f "$qa_migrations_dir/20240104120000_execute_sql.exs" ]]; then
+  echo "[ecto-migrations-qa] SQL execution fixture was not generated" >&2
+  exit 1
+fi
+qa_reference_dir="$qa_workspace/reference"
+"$haxe_bin" --cwd "$repo_root/test/snapshot/ecto/migration_exs_composite_reference" compile.hxml -D "elixir_output=$qa_reference_dir"
+cp "$qa_reference_dir/20240105120000_composite_reference.exs" "$qa_migrations_dir/"
 "$haxe_bin" build-tests.hxml
 # Prepare cold dependencies without generating and compiling the application
 # twice. The forced strict pass below remains the application compile gate.

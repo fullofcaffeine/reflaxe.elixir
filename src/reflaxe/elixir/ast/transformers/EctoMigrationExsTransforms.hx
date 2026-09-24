@@ -273,6 +273,8 @@ class EctoMigrationExsTransforms {
 
 	static function buildUpStatementsFromChain(chain:MigrationCallChain, pos:Position):Null<Array<ElixirAST>> {
 		var first = chain.calls[0];
+		if (first.name == "execute")
+			return buildExecuteStatement(chain, pos);
 		if (first.name == "create_constraint" || first.name == "drop_constraint")
 			return buildStandaloneConstraint(chain, pos);
 		return if (first.name == "create_table") {
@@ -280,13 +282,15 @@ class EctoMigrationExsTransforms {
 		} else if (first.name == "alter_table") {
 			buildAlterTableStatementsFromChain(chain, pos);
 		} else {
-			compilerError("Unsupported migration up/0: expected create_table, alter_table, create_constraint or drop_constraint.", pos);
+			compilerError("Unsupported migration up/0: expected create_table, alter_table, create_constraint, drop_constraint or execute.", pos);
 			null;
 		};
 	}
 
 	static function buildDownStatementsFromChain(chain:MigrationCallChain, pos:Position):Null<Array<ElixirAST>> {
 		var first = chain.calls[0];
+		if (first.name == "execute")
+			return buildExecuteStatement(chain, pos);
 		if (first.name == "create_constraint" || first.name == "drop_constraint")
 			return buildStandaloneConstraint(chain, pos);
 		if (first.name == "drop_table" && first.args.length >= 1) {
@@ -303,8 +307,29 @@ class EctoMigrationExsTransforms {
 			return buildAlterTableStatementsFromChain(chain, pos);
 		}
 
-		compilerError("Unsupported migration down/0: expected drop_table, alter_table, create_constraint or drop_constraint.", pos);
+		compilerError("Unsupported migration down/0: expected drop_table, alter_table, create_constraint, drop_constraint or execute.", pos);
 		return null;
+	}
+
+	/**
+	 * Lowers the declared SQL entrypoint in either migration direction.
+	 * For example, Haxe `execute("SELECT 1")` becomes native `execute("SELECT 1")`.
+	 * The literal node preserves SQL bytes, including target interpolation markers,
+	 * while the printer owns quoting. Dynamic expressions are rejected because
+	 * this emitter removes the original class helpers and receiver.
+	 */
+	static function buildExecuteStatement(chain:MigrationCallChain, pos:Position):Null<Array<ElixirAST>> {
+		var call = chain.calls[0];
+		if (chain.calls.length != 1 || call.args.length != 1 || extractString(call.args[0]) == null) {
+			// This pass replaces the class, including its helpers and receiver.
+			// Reject dynamic expressions instead of emitting dangling references.
+			compilerError("Migration execute expects one SQL string literal in ecto_migrations_exs builds.", pos);
+			return null;
+		}
+		var sql = extractString(call.args[0]);
+		return [
+			makeAST(ECall(null, "execute", [makeASTWithMeta(EStringLiteral(sql), call.args[0].metadata, call.args[0].pos)]))
+		];
 	}
 
 	/**
@@ -469,7 +494,7 @@ class EctoMigrationExsTransforms {
 		var keywordPairs = (args.length >= 3) ? normalizeColumnOptions(args[2], pos) : [];
 		keywordPairs = keywordPairs.concat(typeInfo.extraOptions);
 
-		var typeExpr = args.length >= 3 ? withReferenceOptions(typeInfo.typeExpr, args[2], pos) : typeInfo.typeExpr;
+		var typeExpr = args.length >= 3 ? withReferenceOptions(typeInfo.typeExpr, args[2], pos, columnName) : typeInfo.typeExpr;
 		var callArgs:Array<ElixirAST> = [makeAtom(columnName), typeExpr];
 		if (keywordPairs.length > 0) {
 			callArgs.push(makeAST(EKeywordList(keywordPairs)));
@@ -509,7 +534,7 @@ class EctoMigrationExsTransforms {
 		var keywordPairs = (args.length >= 3) ? normalizeColumnOptions(args[2], pos) : [];
 		keywordPairs = keywordPairs.concat(typeInfo.extraOptions);
 
-		var typeExpr = args.length >= 3 ? withReferenceOptions(typeInfo.typeExpr, args[2], pos) : typeInfo.typeExpr;
+		var typeExpr = args.length >= 3 ? withReferenceOptions(typeInfo.typeExpr, args[2], pos, columnName) : typeInfo.typeExpr;
 		var callArgs:Array<ElixirAST> = [makeAtom(columnName), typeExpr];
 		if (keywordPairs.length > 0) {
 			callArgs.push(makeAST(EKeywordList(keywordPairs)));
@@ -531,7 +556,7 @@ class EctoMigrationExsTransforms {
 			return null;
 		}
 
-		var refPairs = (args.length >= 3) ? normalizeReferenceOptions(args[2], pos) : [];
+		var refPairs = (args.length >= 3) ? normalizeReferenceOptions(args[2], pos, columnName) : [];
 		var refCallArgs:Array<ElixirAST> = [makeAtom(referencedTable)];
 		if (refPairs.length > 0)
 			refCallArgs.push(makeAST(EKeywordList(refPairs)));
@@ -1108,43 +1133,117 @@ class EctoMigrationExsTransforms {
 	}
 
 	/**
-	 * Keeps foreign-key actions inside references/2 for add and modify columns.
-	 * Column options such as null/default still belong to add/3 or modify/3.
-	 * Reuses the addReference mapping, e.g. Cascade becomes :delete_all.
+	 * Attaches a structured foreign key to the existing typed column expression.
+	 * Haxe `addColumn("code", String(), {reference: {table: "parents"}})` becomes
+	 * `add :code, references(:parents, type: :string)`. Null/default/size remain
+	 * column options. The legacy References constructor retains its native default.
 	 */
-	static function withReferenceOptions(typeExpr:ElixirAST, options:ElixirAST, pos:Position):ElixirAST {
+	static function withReferenceOptions(typeExpr:ElixirAST, options:ElixirAST, pos:Position, columnName:String):ElixirAST {
+		var optionPairs = normalizeMapPairs(options, pos);
+		for (option in optionPairs) {
+			if (option.key != "reference")
+				continue;
+			switch (typeExpr.def) {
+				case ECall(null, "references", _):
+					compilerError("Use either ColumnType.References or a typed column with reference options, not both.", pos);
+				default:
+			}
+			for (other in optionPairs)
+				if (other.key == "on_delete" || other.key == "on_update")
+					compilerError("Put foreign-key actions inside the reference description.", pos);
+			var referencePairs = normalizeMapPairs(option.value, pos);
+			var table:Null<String> = null;
+			for (pair in referencePairs)
+				if (pair.key == "table")
+					table = requireReferenceName(pair.value, pos);
+			if (table == null)
+				compilerError("A column reference requires a literal table name.", pos);
+			var pairs = normalizeReferenceOptions(option.value, pos, columnName);
+			pairs.unshift({key: "type", value: typeExpr});
+			return makeAST(ECall(null, "references", [makeAtom(table), makeAST(EKeywordList(pairs))]));
+		}
 		return switch (typeExpr.def) {
 			case ECall(null, "references", args):
-				var pairs = normalizeReferenceOptions(options, pos);
+				var pairs = normalizeReferenceOptions(options, pos, columnName);
 				pairs.length == 0 ? typeExpr : makeAST(ECall(null, "references", args.concat([makeAST(EKeywordList(pairs))])));
 			default:
 				typeExpr;
 		};
 	}
 
-	static function normalizeReferenceOptions(expr:ElixirAST, pos:Position):Array<ElixirAST.EKeywordPair> {
+	/** Emits reference options as native Ecto keywords, including ordered column pairs. */
+	static function normalizeReferenceOptions(expr:ElixirAST, pos:Position, columnName:String):Array<ElixirAST.EKeywordPair> {
 		var pairs = normalizeMapPairs(expr, pos);
 		var out:Array<ElixirAST.EKeywordPair> = [];
-
+		var targetColumn = "id";
+		for (pair in pairs)
+			if (pair.key == "column")
+				targetColumn = requireReferenceName(pair.value, pos);
 		for (p in pairs) {
 			switch (p.key) {
 				case "on_delete":
-					var mappedOnDelete = mapOnDelete(p.value);
-					if (mappedOnDelete != null)
-						out.push({key: "on_delete", value: mappedOnDelete});
+					var mapped = mapOnDelete(p.value);
+					if (mapped == null)
+						compilerError("Reference actions must be enum literals in ecto_migrations_exs builds.", pos);
+					out.push({key: "on_delete", value: mapped});
 				case "on_update":
-					var mappedOnUpdate = mapOnUpdate(p.value);
-					if (mappedOnUpdate != null)
-						out.push({key: "on_update", value: mappedOnUpdate});
-				case "column":
-					var col = extractString(p.value);
-					if (col != null && col != "")
-						out.push({key: "column", value: makeAtom(col)});
+					var mapped = mapOnUpdate(p.value);
+					if (mapped == null)
+						compilerError("Reference actions must be enum literals in ecto_migrations_exs builds.", pos);
+					out.push({key: "on_update", value: mapped});
+				case "column" | "name":
+					out.push({key: p.key, value: makeAtom(requireReferenceName(p.value, pos))});
+				case "with":
+					out.push({key: "with", value: normalizeReferenceColumns(p.value, columnName, targetColumn, pos)});
 				default:
 			}
 		}
-
 		return out;
+	}
+
+	/** Names are schema identifiers, never SQL fragments or runtime expressions. */
+	static function requireReferenceName(value:ElixirAST, pos:Position):String {
+		var name = extractString(value);
+		if (name == null || StringTools.trim(name) == "")
+			compilerError("Reference names must be non-empty string literals.", pos);
+		return name;
+	}
+
+	/**
+	 * Maps named Haxe pairs to Ecto's `with: [local: :parent]` option.
+	 * Both sides must remain unique, including the primary column pair. Rejecting
+	 * malformed mappings here prevents quietly emitting a weaker foreign key.
+	 */
+	static function normalizeReferenceColumns(value:ElixirAST, localColumn:String, targetColumn:String, pos:Position):ElixirAST {
+		var pairs:Array<ElixirAST.EKeywordPair> = [];
+		var localNames = new Map<String, Bool>();
+		var targetNames = new Map<String, Bool>();
+		localNames.set(localColumn, true);
+		targetNames.set(targetColumn, true);
+		switch (unwrap(value).def) {
+			case EList(elements) if (elements.length > 0):
+				for (element in elements) {
+					var local:Null<String> = null;
+					var target:Null<String> = null;
+					for (field in normalizeMapPairs(element, pos)) {
+						switch (field.key) {
+							case "local_column": local = requireReferenceName(field.value, pos);
+							case "referenced_column": target = requireReferenceName(field.value, pos);
+							default:
+						}
+					}
+					if (local == null || target == null)
+						compilerError("Composite reference pairs require localColumn and referencedColumn literals.", pos);
+					if (localNames.exists(local) || targetNames.exists(target))
+						compilerError("Composite references cannot repeat local or referenced columns.", pos);
+					localNames.set(local, true);
+					targetNames.set(target, true);
+					pairs.push({key: local, value: makeAtom(target)});
+				}
+			default:
+				compilerError("Composite references require a non-empty literal array of column pairs.", pos);
+		}
+		return makeAST(EKeywordList(pairs));
 	}
 
 	static function normalizeIndexOptions(expr:ElixirAST, pos:Position):Array<ElixirAST.EKeywordPair> {

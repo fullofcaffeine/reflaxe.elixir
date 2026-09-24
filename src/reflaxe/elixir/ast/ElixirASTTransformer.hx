@@ -4952,8 +4952,8 @@ class ElixirASTTransformer {
 				var newBody = transformNodeScopedInternal(body, transformer, isBoundary);
 				newBody != body ? makeASTWithMeta(EDefmodule(name, newBody), ast.metadata, ast.pos) : ast;
 
-			case EAtom(_) | EString(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil | ECharlist(_) | EVar(_) | EUnderscore | EAlias(_, _) |
-				EImport(_, _, _, _) | ERequire(_, _) | EModuledoc(_) | EDoc(_) | ESpec(_) | ETypeDef(_, _) | ESigil(_, _, _) | EAssign(_):
+			case EAtom(_) | EString(_) | EStringLiteral(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil | ECharlist(_) | EVar(_) | EUnderscore |
+				EAlias(_, _) | EImport(_, _, _, _) | ERequire(_, _) | EModuledoc(_) | EDoc(_) | ESpec(_) | ETypeDef(_, _) | ESigil(_, _, _) | EAssign(_):
 				ast;
 		};
 

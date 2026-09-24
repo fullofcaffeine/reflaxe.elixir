@@ -1,0 +1,16 @@
+{
+	"filesGenerated": [
+		"20240104120000_execute_sql.exs"
+	],
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 0,
+	"wasCached": false,
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "20240104120000_execute_sql.exs",
+			"sha256": "b5f49897213036638c4340c89c72e00afe51b621755d3cd727d4e4ee84c97d0e"
+		}
+	],
+	"generation": "d653ccb5ce312c5a41cf036780283b4d773fe7d6e466726f6d503e80790676f2"
+}
