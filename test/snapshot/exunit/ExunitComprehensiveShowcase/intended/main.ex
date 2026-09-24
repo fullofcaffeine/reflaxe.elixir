@@ -16,7 +16,7 @@ defmodule Main do
     %{test_id: :rand.uniform(), timestamp: DateTime.utc_now()}
   end
   setup context do
-    on_exit(fn -> nil end)
+    on_exit(fn -> counter = 0 end)
     :ok
   end
   setup_all context do
@@ -122,12 +122,7 @@ defmodule Main do
       end
     end
     test "fail method" do
-      condition = false
-      if (condition) do
-        flunk("This should not execute")
-      else
-        assert true
-      end
+      assert true
     end
   end
   describe "Domain Assertions" do

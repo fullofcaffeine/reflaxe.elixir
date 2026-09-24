@@ -70,8 +70,7 @@ defmodule Main do
     failure_result = failure_operation.()
     assert(match?({:error, _}, failure_result), "Failure operation should return Error")
     (case success_result do
-      {:ok, value} ->
-        assert(value == 42, "Success value should be 42")
+      {:ok, value} -> assert(value == 42, "Success value should be 42")
       {:error, _error} ->
         flunk("Should not be an error")
     end)
@@ -89,7 +88,7 @@ defmodule Main do
     assert(Map.has_key?(map, "one"), "Map should contain 'one'")
     assert(Map.get(map, "two") == 2, "Map value for 'two' should be 2")
     refute(Map.has_key?(map, "four"), "Map should not contain 'four'")
-    Enum.reduce_while(Map.keys(map), {[]}, fn k, {acc__g} ->
+    {keys} = Enum.reduce_while(Map.keys(map), {[]}, fn k, {acc__g} ->
       try do
         acc__g = acc__g ++ [k]
         {:cont, {acc__g}}
@@ -104,7 +103,6 @@ defmodule Main do
           {:cont, {acc__g}}
       end
     end)
-    keys = []
     assert(length(keys) == 3, "Map should have 3 keys")
   end
   test "edge cases" do
