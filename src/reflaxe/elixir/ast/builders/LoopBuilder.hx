@@ -2027,7 +2027,8 @@ class LoopBuilder {
 		};
 	}
 
-	static function rewriteReducerStatementSequence(stmts:Array<ElixirAST>, continueValue:ElixirAST, continuePattern:EPattern):ElixirAST {
+	static function rewriteReducerStatementSequence(stmts:Array<ElixirAST>, continueValue:ElixirAST, continuePattern:EPattern,
+			discardValue:Bool = false):ElixirAST {
 		if (stmts == null || stmts.length == 0)
 			return makeCont(continueValue);
 
@@ -2039,10 +2040,10 @@ class LoopBuilder {
 			var last = index == stmts.length - 1;
 
 			if (last)
-				return rewriteReducerTerminalForCarrier(stmt, continueValue, continuePattern);
+				return rewriteReducerTerminalForCarrier(stmt, continueValue, continuePattern, discardValue);
 
 			if (subtreeContainsFromReturnAst(stmt)) {
-				var carrierStmt = rewriteReducerTerminalForCarrier(stmt, continueValue, continuePattern);
+				var carrierStmt = rewriteReducerTerminalForCarrier(stmt, continueValue, continuePattern, true);
 				return makeAST(ECase(carrierStmt, [
 					{
 						pattern: PTuple([PLiteral(makeAST(EAtom(ElixirAtom.raw("halt")))), PVar("reflaxe_halt_payload")]),
@@ -2066,7 +2067,13 @@ class LoopBuilder {
 		return rewriteFrom(0);
 	}
 
-	static function rewriteReducerTerminalForCarrier(expr:ElixirAST, continueValue:ElixirAST, continuePattern:EPattern):ElixirAST {
+	/**
+	 * Tag each reducer exit as function return or ordinary loop continuation.
+	 * Descend through branch-owning expressions, including try handlers: wrapping
+	 * their value from outside would turn an early return into accumulator state.
+	 * Closure bodies remain separate function scopes and are not rewritten here.
+	 */
+	static function rewriteReducerTerminalForCarrier(expr:ElixirAST, continueValue:ElixirAST, continuePattern:EPattern, discardValue:Bool = false):ElixirAST {
 		if (expr == null)
 			return makeCont(continueValue);
 		if (isFromReturnAst(expr))
@@ -2076,19 +2083,19 @@ class LoopBuilder {
 			case ECond(clauses):
 				makeASTWithMeta(ECond([
 					for (clause in clauses)
-						{condition: clause.condition, body: rewriteReducerTerminalForCarrier(clause.body, continueValue, continuePattern)}
+						{condition: clause.condition, body: rewriteReducerTerminalForCarrier(clause.body, continueValue, continuePattern, discardValue)}
 				]), expr.metadata, expr.pos);
 			case EBlock(stmts):
-				rewriteReducerStatementSequence(stmts, continueValue, continuePattern);
+				rewriteReducerStatementSequence(stmts, continueValue, continuePattern, discardValue);
 			case EDo(stmts):
-				rewriteReducerStatementSequence(stmts, continueValue, continuePattern);
+				rewriteReducerStatementSequence(stmts, continueValue, continuePattern, discardValue);
 			case EIf(condition, thenBranch, elseBranch):
-				makeASTWithMeta(EIf(condition, rewriteReducerTerminalForCarrier(thenBranch, continueValue, continuePattern),
-					elseBranch != null ? rewriteReducerTerminalForCarrier(elseBranch, continueValue, continuePattern) : makeCont(continueValue)),
+				makeASTWithMeta(EIf(condition, rewriteReducerTerminalForCarrier(thenBranch, continueValue, continuePattern, discardValue),
+					elseBranch != null ? rewriteReducerTerminalForCarrier(elseBranch, continueValue, continuePattern, discardValue) : makeCont(continueValue)),
 					expr.metadata, expr.pos);
 			case EUnless(condition, body, elseBranch):
-				makeASTWithMeta(EUnless(condition, rewriteReducerTerminalForCarrier(body, continueValue, continuePattern),
-					elseBranch != null ? rewriteReducerTerminalForCarrier(elseBranch, continueValue, continuePattern) : makeCont(continueValue)),
+				makeASTWithMeta(EUnless(condition, rewriteReducerTerminalForCarrier(body, continueValue, continuePattern, discardValue),
+					elseBranch != null ? rewriteReducerTerminalForCarrier(elseBranch, continueValue, continuePattern, discardValue) : makeCont(continueValue)),
 					expr.metadata, expr.pos);
 			case ECase(scrutinee, clauses):
 				makeASTWithMeta(ECase(scrutinee, [
@@ -2096,17 +2103,37 @@ class LoopBuilder {
 						{
 							pattern: clause.pattern,
 							guard: clause.guard,
-							body: rewriteReducerTerminalForCarrier(clause.body, continueValue, continuePattern)
+							body: rewriteReducerTerminalForCarrier(clause.body, continueValue, continuePattern, discardValue)
 						}
 				]), expr.metadata, expr.pos);
+			case ETry(protectedBody, rescue, catches, afterBlock, elseBlock):
+				// A Haxe return in either the protected body or a handler exits the
+				// enclosing function. Put the carrier inside each branch, so a rescued
+				// return cannot become the next iteration's ordinary accumulator.
+				function branchResult(branch:ElixirAST):ElixirAST {
+					return rewriteReducerTerminalForCarrier(branch, continueValue, continuePattern, true);
+				}
+				makeASTWithMeta(ETry(elseBlock == null ? branchResult(protectedBody) : protectedBody, [
+					for (clause in rescue)
+						{pattern: clause.pattern, varName: clause.varName, body: branchResult(clause.body)}
+				], [
+					for (clause in catches)
+						{kind: clause.kind, pattern: clause.pattern, body: branchResult(clause.body)}
+				], afterBlock,
+					elseBlock == null ? null : branchResult(elseBlock)), expr.metadata, expr.pos);
 			case EMatch(_, _):
 				makeAST(EBlock([expr, makeCont(continueValue)]));
 			case EBinary(Match, _, _):
 				makeAST(EBlock([expr, makeCont(continueValue)]));
 			case EReceiverEffect(_):
 				makeAST(EBlock([expr, makeCont(continueValue)]));
+			case ERaise(_, _) | EThrow(_) | ECall(null, "reraise", _):
+				// Exception and loop-control exits have no continuation value.
+				expr;
 			default:
-				makeCont(expr);
+				// A statement contributes effects and current state; a prebuilt
+				// accumulator expression already is the value to carry.
+				discardValue ? makeAST(EBlock([expr, makeCont(continueValue)])) : makeCont(expr);
 		};
 	}
 

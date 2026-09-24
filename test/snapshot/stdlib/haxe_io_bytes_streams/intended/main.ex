@@ -6,6 +6,7 @@ defmodule Main do
   end
   def main() do
     bytes_buffer()
+    bytes_buffer_loops([65, 66])
     bytes_input_output()
     buffer_input()
     string_input()
@@ -21,6 +22,37 @@ defmodule Main do
     buffer = apply(Map.get(buffer, :__reflaxe_class__) || Map.get(buffer, :__struct__), :add_double, [buffer, 3.25])
     _bytes = apply(Map.get(buffer, :__reflaxe_class__) || Map.get(buffer, :__struct__), :get_bytes, [buffer])
     nil
+  end
+  def bytes_buffer_loops(prefix) do
+    buffer = BytesBuffer.new()
+    _g = 0
+    buffer = Enum.reduce(prefix, buffer, fn byte, buffer_acc -> apply(Map.get(buffer_acc, :__reflaxe_class__) || Map.get(buffer_acc, :__struct__), :add_byte, [buffer_acc, byte]) end)
+    byte = 67
+    {buffer, _byte} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {buffer, byte}, fn _, {acc_buffer, acc_byte} ->
+      try do
+        if (acc_byte < 70) do
+          acc_buffer = apply(Map.get(acc_buffer, :__reflaxe_class__) || Map.get(acc_buffer, :__struct__), :add_byte, [acc_buffer, acc_byte])
+          acc_byte = acc_byte + 1
+          {:cont, {acc_buffer, acc_byte}}
+        else
+          {:halt, {acc_buffer, acc_byte}}
+        end
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, {acc_buffer, acc_byte}}
+        :throw, :continue ->
+          {:cont, {acc_buffer, acc_byte}}
+      end
+    end)
+    assert_that(buffer.byte_length == 5, "Loop updates lost the buffer length.")
+    assert_that((fn ->
+      reflaxe_dispatch_receiver_node_0 = apply(Map.get(buffer, :__reflaxe_class__) || Map.get(buffer, :__struct__), :get_bytes, [buffer])
+      apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :to_string, [reflaxe_dispatch_receiver_node_0])
+    end).() == "ABCDE", "Loop updates lost buffer contents.")
   end
   defp bytes_input_output() do
     out = BytesOutput.new()
@@ -52,8 +84,8 @@ defmodule Main do
   end
   defp io_semantics() do
     all_input = BytesInput.new(Bytes.of_string("hello", {:utf8}), nil, nil)
-    reflaxe_dispatch_receiver_node_0 = apply(Map.get(all_input, :__reflaxe_class__) || Map.get(all_input, :__struct__), :read_all, [all_input, 2])
-    all = apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :to_string, [reflaxe_dispatch_receiver_node_0])
+    reflaxe_dispatch_receiver_node_1 = apply(Map.get(all_input, :__reflaxe_class__) || Map.get(all_input, :__struct__), :read_all, [all_input, 2])
+    all = apply(Map.get(reflaxe_dispatch_receiver_node_1, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_1, :__struct__), :to_string, [reflaxe_dispatch_receiver_node_1])
     assert_that(all == "hello", "readAll chunked failed")
     line_input = BytesInput.new(Bytes.of_string("a\r\nb\n", {:utf8}), nil, nil)
     assert_that(apply(Map.get(line_input, :__reflaxe_class__) || Map.get(line_input, :__struct__), :read_line, [line_input]) == "a", "readLine CRLF failed")
@@ -77,8 +109,8 @@ defmodule Main do
     sink = BytesOutput.new()
     apply(Map.get(sink, :__reflaxe_class__) || Map.get(sink, :__struct__), :write_input, [sink, src, 2])
     assert_that((fn ->
-      reflaxe_dispatch_receiver_node_1 = apply(Map.get(sink, :__reflaxe_class__) || Map.get(sink, :__struct__), :get_bytes, [sink])
-      apply(Map.get(reflaxe_dispatch_receiver_node_1, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_1, :__struct__), :to_string, [reflaxe_dispatch_receiver_node_1])
+      reflaxe_dispatch_receiver_node_2 = apply(Map.get(sink, :__reflaxe_class__) || Map.get(sink, :__struct__), :get_bytes, [sink])
+      apply(Map.get(reflaxe_dispatch_receiver_node_2, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_2, :__struct__), :to_string, [reflaxe_dispatch_receiver_node_2])
     end).() == "xyz", "writeInput failed")
     out = BytesOutput.new()
     Output.set_big_endian(out, false)

@@ -3,6 +3,8 @@ package reflaxe.elixir.helpers;
 #if (macro || reflaxe_runtime)
 import haxe.macro.Type;
 import haxe.macro.TypedExprTools;
+import reflaxe.elixir.ast.ReceiverReturnConventions;
+import reflaxe.elixir.ast.ReceiverReturnConventions.ReceiverReturnConvention;
 
 /**
  * MutabilityDetector: Detects variables that are mutated in expressions
@@ -14,17 +16,18 @@ import haxe.macro.TypedExprTools;
  * WHAT: Analyzes TypedExpr trees to find variables that are assigned to
  * after their initial declaration.
  *
- * HOW: Traverses the AST looking for TBinop(OpAssign) and similar patterns
- * that indicate mutation.
+ * HOW: Traverses assignments, increments, and instance calls. Calls reuse
+ * ReceiverReturnConventions so methods that return updated receiver state
+ * participate in loop accumulators just like explicit local assignments.
  *
  * ARCHITECTURE BENEFITS:
  * - Centralized mutation detection logic
  * - Consistent handling across all compilation contexts
  * - Testable in isolation
  *
- * NOTE: This is a CONSERVATIVE stub implementation for Phase 2 integration.
- * It assumes variables might be mutable when unsure, which is safe but
- * may generate less optimal code. Full implementation in Phase 3.
+ * EXAMPLE: `for (byte in bytes) buffer.addByte(byte)` must lower to a reducer
+ * that carries the updated buffer, rather than discarding each returned value.
+ * This tracks direct local writeback; it does not establish shared alias identity.
  */
 class MutabilityDetector {
 	/**
@@ -62,8 +65,6 @@ class MutabilityDetector {
 			};
 		}
 
-		// Conservative stub implementation
-		// Full implementation would detect actual mutations
 		function traverse(e:TypedExpr):Void {
 			if (e == null)
 				return;
@@ -96,9 +97,12 @@ class MutabilityDetector {
 					if (init != null)
 						traverse(init);
 
-				case TCall({expr: TField({expr: TLocal(receiver)}, FInstance(_, _, cf))}, args):
+				case TCall({expr: TField({expr: TLocal(receiver)}, FInstance(classRef, _, cf))}, args):
 					var methodName = cf.get().name;
-					if (isMutatingMethodName(methodName)) {
+					// Reuse the typed call contract: persistent receiver updates must
+					// survive the reducer boundary just like explicit local assignments.
+					var receiverConvention = ReceiverReturnConventions.forClassMethod(classRef.get(), methodName);
+					if (receiverConvention != PureValue || isMutatingMethodName(methodName)) {
 						markMutated(receiver);
 					}
 					for (a in args)

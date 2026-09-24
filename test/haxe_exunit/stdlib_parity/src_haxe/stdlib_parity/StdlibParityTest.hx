@@ -117,6 +117,19 @@ class ConstraintConstructibleValue {
 	}
 }
 
+/** Exercise Input's Haxe line reader instead of BytesInput's native override. */
+class BytewiseInput extends haxe.io.Input {
+	final bytes:BytesInput;
+
+	public function new(text:String) {
+		bytes = new BytesInput(Bytes.ofString(text));
+	}
+
+	public override function readByte():Int {
+		return bytes.readByte();
+	}
+}
+
 @:exunit
 class StdlibParityTest extends TestCase {
 	static function sliceText(values:Array<Int>, start:Int, ?end:Int):String {
@@ -1467,13 +1480,28 @@ class StdlibParityTest extends TestCase {
 	@:describe("haxe.io.BytesInput/BytesOutput")
 	@:test
 	function testBytesInputReadLineHandlesCrLfAndLf():Void {
-		var input = new BytesInput(Bytes.ofString("alpha\r\nbeta\n"));
+		var input = new BytesInput(Bytes.ofString("alpha\r\nbeta\nlast"));
 		Assert.equals("alpha", input.readLine());
 		Assert.equals("beta", input.readLine());
+		// EOF must return the final nonempty line, then throw on the next read.
+		Assert.equals("last", input.readLine());
 
 		try {
 			input.readLine();
 			Assert.fail("readLine should throw Eof after the final line");
+		} catch (_:Eof) {}
+	}
+
+	@:describe("haxe.io.Input")
+	@:test
+	function testInputReadLineReturnsFinalLineAtEof():Void {
+		final input = new BytewiseInput("alpha\r\nbeta\nlast");
+		Assert.equals("alpha", input.readLine());
+		Assert.equals("beta", input.readLine());
+		Assert.equals("last", input.readLine());
+		try {
+			input.readLine();
+			Assert.fail("Input.readLine should throw Eof after the final line");
 		} catch (_:Eof) {}
 	}
 
