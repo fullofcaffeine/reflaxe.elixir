@@ -13,6 +13,13 @@ Your `.hxml` sets the target output directory via:
 Reflaxe.Elixir will emit one Elixir source file per compiled module under that directory, using
 package/module naming rules (snake_case paths, Phoenix conventions when applicable).
 
+Calls must use the module identity that the compiler emits. Adding a Phoenix web
+module does not move every shared helper into the application namespace. For
+example, a module-level Haxe function emitted as `Shared_Fields_.value/0` keeps
+that call target inside `MyApp.Reader`. It must not become
+`MyApp.Shared_Fields_.value/0` unless that module exists. The compiler's module
+registry records emitted identities, not possible app-prefixed spellings.
+
 For Phoenix applications, `lib` is a normal in-place output root. The important
 question is not whether generated app code lives under `lib`, but whether the
 target modules and paths look like a handwritten Phoenix app. App-facing modules
