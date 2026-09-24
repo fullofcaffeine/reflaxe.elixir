@@ -17,12 +17,16 @@ package reflaxe.elixir;
  * - `unwrap/1` accepts plain Elixir maps or pre-normalized pair lists.
  * - Tree-backed or custom `IMap` implementations must pass key/value pairs
  *   produced by their own iterator implementation instead of passing the wrapper.
+ * - `@:dce` makes this library helper eligible for normal (`std`) dead-code
+ *   removal. Iterator features retain the needed entry points; lookup-only
+ *   programs do not acquire an unused runtime module from early typing.
  *
  * EXAMPLES
  * - `%{"a" => 1}` becomes `[%{key: "a", value: 1}]`.
  * - `[{"a", 1}]` becomes `[%{key: "a", value: 1}]`.
  */
 @:native("Reflaxe.Elixir.IMap")
+@:dce
 class IMap {
 	public static function unwrap<K, V>(mapOrPairs:Any):Array<{key:K, value:V}> {
 		return untyped __elixir__('normalize_pair = fn
@@ -53,11 +57,16 @@ class IMap {
 	/**
 	 * Builds the structural iterator value expected by Haxe `Map.iterator()`
 	 * lowering over native Elixir map values.
+	 * The typed unwrap call retains normalization under full dead-code removal;
+	 * a raw Elixir call alone does not establish a Haxe dependency.
+	 * Native injection constructs exactly the public hasNext/next closure shape.
 	 */
 	@:native("value_iterator")
-	public static function valueIterator<K, V>(mapOrPairs:Any):Any {
+	@:ifFeature("haxe.ds.StringMap.iterator", "haxe.ds.IntMap.iterator", "haxe.ds.EnumValueMap.iterator", "haxe.IMap.iterator")
+	public static function valueIterator<K, V>(mapOrPairs:Any):Iterator<V> {
+		var pairs:Array<{key:K, value:V}> = unwrap(mapOrPairs);
 		return untyped __elixir__('values =
-      Reflaxe.Elixir.IMap.unwrap({0})
+      {0}
       |> Enum.map(fn %{value: value} -> value end)
     ref = make_ref()
     state_key = {ArrayIterator, ref}
@@ -74,34 +83,36 @@ class IMap {
         Process.put(state_key, index + 1)
         Enum.at(values, index)
       end
-    }', mapOrPairs);
+    }', pairs);
 	}
 
 	/**
 	 * Builds the structural iterator value expected by Haxe `keyValueIterator()`
 	 * lowering while keeping native Elixir maps as the backing storage.
 	 *
-	 * Haxe's `KeyValueIterator` structural API calls `iterator.has_next.()` and
-	 * `iterator.next.()` directly, so this helper owns the closure-backed cursor
-	 * instead of routing through generated constructor state.
+	 * The structural API exposes has_next/next closure fields. This helper owns
+	 * their cursor state instead of routing through generated constructor state.
+	 * The typed unwrap call retains its implementation under full dead-code removal.
+	 * Native injection constructs exactly the public hasNext/next closure shape.
 	 */
 	@:native("key_value_iterator")
-	public static function keyValueIterator<K, V>(mapOrPairs:Any):Any {
-		return untyped __elixir__('pairs = Reflaxe.Elixir.IMap.unwrap({0})
-    ref = make_ref()
+	@:ifFeature("haxe.ds.StringMap.keyValueIterator", "haxe.ds.IntMap.keyValueIterator", "haxe.ds.EnumValueMap.keyValueIterator", "haxe.IMap.keyValueIterator")
+	public static function keyValueIterator<K, V>(mapOrPairs:Any):KeyValueIterator<K, V> {
+		var pairs:Array<{key:K, value:V}> = unwrap(mapOrPairs);
+		return untyped __elixir__('ref = make_ref()
     state_key = {MapKeyValueIterator, ref}
     %{
       __reflaxe_class__: MapKeyValueIterator,
-      pairs: pairs,
+      pairs: {0},
       ref: ref,
       current: 0,
       has_next: fn ->
-        Process.get(state_key, 0) < length(pairs)
+        Process.get(state_key, 0) < length({0})
       end,
       next: fn ->
         index = Process.get(state_key, 0)
         Process.put(state_key, index + 1)
-        case Enum.at(pairs, index) do
+        case Enum.at({0}, index) do
           %{key: key, value: value} ->
             %{key: key, value: value}
           {key, value} ->
@@ -110,6 +121,6 @@ class IMap {
             %{key: nil, value: nil}
         end
       end
-    }', mapOrPairs);
+    }', pairs);
 	}
 }

@@ -36,6 +36,7 @@ class Main {
 	}
 
 	static function main():Void {
+		EnumPayloadProbe.main();
 		expect(Node(Node(Empty, 11, Empty), 21, Node(Empty, 31, Empty)), 63);
 		expect(Node(Empty, 21, Node(Empty, 31, Empty)), 21);
 		expect(Node(Node(Empty, 11, Empty), 21, Empty), 21);

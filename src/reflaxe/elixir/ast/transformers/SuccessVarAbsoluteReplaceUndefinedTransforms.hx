@@ -10,20 +10,18 @@ import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 	* SuccessVarAbsoluteReplaceUndefinedTransforms
 	*
 	* WHAT
-	* - As a final safety net for success-clauses `{:ok, binder}`, replace any simple, lowercase
-	*   undefined variable references in the clause body with the bound success `binder`.
+	* - Restore an underscored success binder only for a free use of its exact trimmed name.
 	*
 	* WHY
-	* - Earlier usage-driven passes should align names; however, in complex pipelines some cases
-	*   may remain. This absolute pass eliminates remaining undefined placeholder names without
-	*   guessing domain-specific identifiers, keeping it shape- and scope-based.
+	* - Later hygiene can leave a spelling mismatch. An unrelated unresolved name is not
+	*   evidence that it denotes the success payload; preserve it for diagnostics.
 	*
 	* HOW
 	* - For each case clause with pattern `{:ok, PVar(binder)}`:
 	*   - Use `VarUseAnalyzer` to find lowercase references that are genuinely free in
 	*     the clause's lexical scope.
-	*   - Replace those free references with `EVar(binder)` without crossing nested binders.
-	* - Runs at the absolute end of the pipeline.
+	*   - Align only the exact underscore spelling, preserving outer bindings and body references.
+	* - Shared by early cleanup and late replay registrations; repeating it preserves aligned output.
 
 	*
 	* EXAMPLES
@@ -128,35 +126,14 @@ class SuccessVarAbsoluteReplaceUndefinedTransforms {
 					// capture a variable from the outer scope.
 					if (binder.length > 1 && binder.charAt(0) == '_') {
 						var trimmed = binder.substr(1);
-						if (free.exists(trimmed)) {
+						if (free.exists(trimmed) || VarUseAnalyzer.usesFreeVarExact(newGuard, trimmed, clauseBound)) {
 							var newPattern = rewriteOkBinder(cl.pattern, trimmed);
 							newClauses.push({pattern: newPattern, guard: newGuard, body: processedBody});
 							continue;
 						}
 					}
 
-					// Collect undefined lowercase vars (excluding those available from the outer scope).
-					var undef:Array<String> = [];
-					for (k in free.keys()) {
-						if (isLower(k) && !StringTools.startsWith(k, "_"))
-							undef.push(k);
-					}
-
-					// If binder is underscored and exactly one undefined exists, prefer renaming binder to that name.
-					if (binder.length > 1 && binder.charAt(0) == '_' && undef.length == 1) {
-						var newName = undef[0];
-						var newPattern = rewriteOkBinder(cl.pattern, newName);
-						// Body already references newName; no need to map undefined refs
-						newClauses.push({pattern: newPattern, guard: newGuard, body: processedBody});
-						continue;
-					}
-
-					var replacements = new Map<String, String>();
-					for (name in undef)
-						replacements.set(name, binder);
-					var newBody = ScopedVarRewriter.rewrite(processedBody, replacements, clauseBound);
-
-					newClauses.push({pattern: cl.pattern, guard: newGuard, body: newBody});
+					newClauses.push({pattern: cl.pattern, guard: newGuard, body: processedBody});
 				}
 				makeASTWithMeta(ECase(newTarget, newClauses), n.metadata, n.pos);
 
@@ -281,13 +258,6 @@ class SuccessVarAbsoluteReplaceUndefinedTransforms {
 			for (k in m.keys())
 				out.set(k, true);
 		return out;
-	}
-
-	static inline function isLower(s:String):Bool {
-		if (s == null || s.length == 0)
-			return false;
-		var c = s.charAt(0);
-		return c.toLowerCase() == c;
 	}
 }
 #end

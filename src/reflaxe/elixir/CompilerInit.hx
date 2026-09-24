@@ -187,6 +187,9 @@ class CompilerInit {
 		// - Ecto migrations (`-D ecto_migrations_exs`)
 		// - Opt-in script/test builds (`-D elixir_output_exs`)
 		var outputExtension = (Context.defined("ecto_migrations_exs") || Context.defined("elixir_output_exs")) ? ".exs" : ".ex";
+		// Type the native-map helper before DCE. Its @:ifFeature declarations own
+		// retention, so unused inline map methods do not force runtime output.
+		Context.getType("reflaxe.elixir.IMap");
 		ReflectCompiler.AddCompiler(new ElixirCompiler(), {
 			fileOutputExtension: outputExtension,
 			outputDirDefineName: "elixir_output",

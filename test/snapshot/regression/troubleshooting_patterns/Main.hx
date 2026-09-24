@@ -42,9 +42,7 @@ class Main {
 	 * Issue 1: Exhaustive patterns with Result type
 	 * Tests generic enum exhaustiveness
 	 */
-	public static function testResultExhaustiveness():String {
-		var apiResult:Result<String> = Result.Ok("Success");
-
+	public static function testResultExhaustiveness(apiResult:Result<String>):String {
 		return switch (apiResult) {
 			case Ok(value): "Success: " + value;
 			case Error(message): "Failed: " + message;
@@ -73,9 +71,7 @@ class Main {
 	 * Issue 2: Complex guard expressions
 	 * Tests multiple conditions and type guards
 	 */
-	public static function testComplexGuards():String {
-		var user = {name: "Alice", age: 25, verified: true};
-
+	public static function testComplexGuards(user:{name:String, age:Int, verified:Bool}):String {
 		return switch ([user.age, user.verified]) {
 			case [age, verified] if (age < 13): "Child account";
 			case [age, false] if (age >= 13 && age < 18): "Unverified teen";
@@ -217,15 +213,29 @@ class Main {
 
 		// Test all 4 troubleshooting issues
 		trace("1. Exhaustive Enum: " + testExhaustiveEnumHandling());
-		trace("1. Exhaustive Result: " + testResultExhaustiveness());
+		trace("1. Exhaustive Result: " + testResultExhaustiveness(Result.Ok("Success")));
 		trace("2. Guard Clauses: " + testGuardClauses());
-		trace("2. Complex Guards: " + testComplexGuards());
+		trace("2. Complex Guards: " + testComplexGuards({name: "Alice", age: 25, verified: true}));
 		trace("3. Binary Patterns: " + testBinaryDataPatterns());
 		trace("3. Binary Segments: " + testBinarySegments());
 		trace("4. Edge Cases: " + testPatternMatchingEdgeCases());
 		trace("4. Syntax Handling: " + testProperSyntaxHandling());
 		trace("Performance: " + testPatternMatchingPerformance());
+		assertText(testResultExhaustiveness(Result.Ok("Success")), "Success: Success");
+		assertText(testResultExhaustiveness(Result.Error("offline")), "Failed: offline");
+		assertText(testComplexGuards({name: "child", age: 10, verified: false}), "Child account");
+		assertText(testComplexGuards({name: "teen", age: 15, verified: false}), "Unverified teen");
+		assertText(testComplexGuards({name: "teen", age: 15, verified: true}), "Verified teen");
+		assertText(testComplexGuards({name: "adult", age: 25, verified: false}), "Unverified adult");
+		assertText(testComplexGuards({name: "adult", age: 25, verified: true}), "Verified adult");
+		assertText(testComplexGuards({name: "senior", age: 70, verified: true}), "Senior user");
+		assertText(testPatternMatchingEdgeCases(), "Three elements ending with object: test");
 
 		trace("All pattern matching troubleshooting issues tested");
+	}
+
+	static function assertText(actual:String, expected:String):Void {
+		if (actual != expected)
+			throw 'Expected $expected, got $actual';
 	}
 }

@@ -49,7 +49,7 @@ defmodule Main do
   end
   defp test_result_map() do
     result = {:ok, 10}
-    _mapped = (case map_result(result, fn x -> x * 2 end) do
+    (case map_result(result, fn x -> x * 2 end) do
       {:ok, _value} -> nil
       {:error, _error} -> nil
     end)
@@ -63,7 +63,7 @@ defmodule Main do
   end
   defp test_option_map() do
     option = {:some, 5}
-    _mapped = (case map_option(option, fn x -> x + 10 end) do
+    (case map_option(option, fn x -> x + 10 end) do
       {:some, _value} -> nil
       {:none} -> nil
     end)

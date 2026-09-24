@@ -3807,7 +3807,9 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	}
 
 	/**
-	 * Suppression rules for enum emission (std/internal)
+	 * Suppress target-internal enums, not all standard-library namespaces.
+	 * Public library enums still need constructor metadata for string conversion
+	 * and reflection even when construction lowers directly to tagged values.
 	 */
 	private function shouldSuppressEnumEmission(enumType:EnumType):Bool {
 		if (enumType == null)
@@ -3822,8 +3824,6 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 
 		if (enumType.pack != null && enumType.pack.length > 0) {
 			var top = enumType.pack[0];
-			if (top == "haxe")
-				return true;
 			if (StringTools.startsWith(top, "_"))
 				return true;
 		}

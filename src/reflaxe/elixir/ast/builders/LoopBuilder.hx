@@ -2730,6 +2730,10 @@ class LoopBuilder {
 	/**
 	 * Main entry point for TWhile compilation
 	 * Extracted from ElixirASTBuilder lines 5350-6040
+	 * Indexed array loops with break/continue use the existing control-aware
+	 * reducer even without changed locals. For `for (x in xs) { if (x < 0)
+	 * break; consume(x); }`, an empty tuple carries state and the reducer catches
+	 * the break locally; a bare Enum.each would let it escape the function.
 	 */
 	public static function buildWhileComplete(econd:TypedExpr, e:TypedExpr, normalWhile:Bool, expr:TypedExpr, context:BuildContext,
 			toElixirVarName:String->String):ElixirASTDef {
@@ -2766,7 +2770,10 @@ class LoopBuilder {
 			// If the user body mutates outer locals, lower to Enum.reduce with an explicit
 			// state accumulator so mutations survive across iterations.
 			var mutated = MutabilityDetector.detectMutatedVariables(forInArrayPattern.userBody);
-			if (Lambda.count(mutated) == 0) {
+			var loopControl = analyzeCurrentLoopControl(forInArrayPattern.userBody);
+			var bodyContainsLoopControl = loopControl.hasBreak || loopControl.hasContinue;
+			// Side-effect-only loops still need the current-loop break/continue handler.
+			if (Lambda.count(mutated) == 0 && !bodyContainsLoopControl) {
 				var bodyAst = buildExpression(forInArrayPattern.userBody);
 				return ERemoteCall(makeAST(EVar("Enum")), "each", [
 					arrayExpr,
@@ -2847,8 +2854,6 @@ class LoopBuilder {
 					}
 				}
 			}
-			var loopControl = analyzeCurrentLoopControl(forInArrayPattern.userBody);
-			var bodyContainsLoopControl = loopControl.hasBreak || loopControl.hasContinue;
 			if (bodyContainsLoopControl && compilationContext != null && compilationContext.loopControlStateStack != null) {
 				var stateNames = [for (m in mutatedList) m.accName];
 				compilationContext.loopControlStateStack.push(stateNames.length == 1 ? LoopStateVar(stateNames[0]) : LoopStateTuple(stateNames));
@@ -3409,6 +3414,13 @@ class LoopBuilder {
 		return used;
 	}
 
+	/**
+	 * Recover numeric range loops and preserve their local control flow.
+	 * Haxe `for (i in 0...limit) { if (stop(i)) break; visit(i); }` needs
+	 * Enum.reduce_while with a local catch even when no outer value changes.
+	 * Reuse the stateful reducer with an empty tuple in that case. Nested loop
+	 * control belongs to the nested loop, so it cannot halt the outer range.
+	 */
 	static function buildDesugaredForRangeLoop(econd:TypedExpr, body:TypedExpr, context:BuildContext, toElixirVarName:String->String):Null<ElixirASTDef> {
 		// Unwrap common wrappers in the while condition.
 		function unwrap(e:TypedExpr):TypedExpr {
@@ -3508,7 +3520,10 @@ class LoopBuilder {
 
 		// If the loop mutates outer locals, use Enum.reduce and thread state explicitly.
 		var mutated = MutabilityDetector.detectMutatedVariables(bodyInfo.userCode);
-		if (Lambda.count(mutated) == 0) {
+		var loopControl = analyzeCurrentLoopControl(bodyInfo.userCode);
+		var bodyContainsLoopControl = loopControl.hasBreak || loopControl.hasContinue;
+		// An empty state is valid: control flow, not mutation alone, selects the reducer.
+		if (Lambda.count(mutated) == 0 && !bodyContainsLoopControl) {
 			var bodyAst = buildExpression(bodyInfo.userCode);
 			return ERemoteCall(makeAST(EVar("Enum")), "each", [
 				rangeAst,
@@ -3587,8 +3602,6 @@ class LoopBuilder {
 				}
 			}
 		}
-		var loopControl = analyzeCurrentLoopControl(bodyInfo.userCode);
-		var bodyContainsLoopControl = loopControl.hasBreak || loopControl.hasContinue;
 		if (bodyContainsLoopControl && compilationContext != null && compilationContext.loopControlStateStack != null) {
 			var stateNames = [for (m in mutatedList) m.accName];
 			compilationContext.loopControlStateStack.push(stateNames.length == 1 ? LoopStateVar(stateNames[0]) : LoopStateTuple(stateNames));
@@ -4512,6 +4525,20 @@ class LoopBuilder {
 				case EVar(name):
 					var to = mapped(name);
 					to != null ? makeASTWithMeta(EVar(to), n.metadata, n.pos) : n;
+
+				case EReceiverEffect(effect):
+					// The operation's reads were renamed by child traversal. Its write
+					// target is a binding descriptor, not a child expression, and must
+					// select the same loop state. Otherwise nested count++ writes an
+					// unused outer local while returning the unchanged accumulator.
+					var to = mapped(effect.receiver.name);
+					to != null ? makeASTWithMeta(EReceiverEffect({
+						receiver: {varId: effect.receiver.varId, name: to},
+						operation: effect.operation,
+						resultShape: effect.resultShape,
+						valueProjection: effect.valueProjection,
+						writeback: effect.writeback
+					}), n.metadata, n.pos) : n;
 
 				// Some builders emit assignments as `left = rhs` using EBinary(Match, ...).
 				// Rewrite the binder to the reducer var so subsequent passes see an actual

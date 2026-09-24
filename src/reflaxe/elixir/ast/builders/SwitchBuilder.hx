@@ -427,48 +427,8 @@ class SwitchBuilder {
 		};
 		caseClauses = bindWildcardScrutineeAliasIfNeeded(caseClauses, scrutineeVarName);
 
-		// Repair inner case scrutinees in clause bodies using binder metadata.
-		//
-		// WHY
-		// - Haxe lowering sometimes emits nested cases that scrutinee on temporary vars (g/_g/_g1...).
-		// - Rewriting *all* infra temps to a single binder is incorrect for multi-parameter enums
-		//   (it can rewrite a right-branch scrutinee to the left binder).
-		//
-		// HOW
-		// - Build a mapping from infra-temp names to tuple payload binders from the clause pattern.
-		// - Rewrite only when the scrutinee is an infra temp that maps to a known binder.
-		if (caseClauses.length > 0) {
-			var repaired:Array<ECaseClause> = [];
-			for (cl in caseClauses) {
-				var binder:Null<String> = null;
-				if (cl.body != null && cl.body.metadata != null) {
-					// Use binder computed during case building when available
-					binder = cl.body.metadata.primaryCaseBinder;
-				}
-				if (binder == null) {
-					// Fallback: derive from pattern shape
-					binder = selectPrimaryBinder(cl.pattern);
-				}
-				var newBody = cl.body;
-				// Strategy A: when original target var name is known, replace that scrutinee
-				if (targetVarName != null && binder != null && binder != targetVarName) {
-					newBody = rewriteInnerCaseScrutinee(newBody, targetVarName, binder);
-				}
-				// Strategy B: infra-temp scrutinee → corresponding tuple binder (per-parameter)
-				var infraMap:Null<Map<String, String>> = null;
-				if (newBody != null && newBody.metadata != null) {
-					infraMap = newBody.metadata.infraTempVarToBinderName;
-				}
-				if (infraMap == null) {
-					infraMap = buildInfraScrutineeMapFromPattern(cl.pattern);
-				}
-				if (infraMap != null) {
-					newBody = rewriteInnerCaseScrutineeInfraMap(newBody, infraMap);
-				}
-				repaired.push({pattern: cl.pattern, guard: cl.guard, body: newBody});
-			}
-			caseClauses = repaired;
-		}
+		// Nested switches already have typed receivers. Reused temporary spellings
+		// do not identify an outer payload or authorize a receiver substitution.
 
 		// Generate case expression
 		if (caseClauses.length == 0) {
@@ -827,6 +787,23 @@ class SwitchBuilder {
 	 */
 	static function extractGuardChain(expr:TypedExpr, pattern:EPattern, context:CompilationContext, primaryBinder:Null<String>,
 			originalCaseBody:TypedExpr):Array<ECaseClause> {
+		// A body-level if without an else succeeds with no effect when false.
+		// Promoting it to a guard would instead reject the matched pattern. Check
+		// the whole chain before lowering so a later missing else cannot leave
+		// partially extracted clauses or mutate their binding context.
+		var candidate = expr;
+		while (candidate != null) {
+			switch (candidate.expr) {
+				case TBlock([only]):
+					candidate = only;
+				case TIf(_, _, otherwise):
+					if (otherwise == null)
+						return [];
+					candidate = otherwise;
+				default:
+					candidate = null;
+			}
+		}
 		var clauses:Array<ECaseClause> = [];
 		var current = expr;
 
@@ -1214,262 +1191,6 @@ class SwitchBuilder {
 	}
 
 	/**
-	 * Recursively rewrite any inner case scrutinee `case oldName ->` to `case newName ->`.
-	 */
-	static function rewriteInnerCaseScrutinee(body:ElixirAST, oldName:String, newName:String):ElixirAST {
-		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(n:ElixirAST):ElixirAST {
-			if (n == null || n.def == null)
-				return n;
-			return switch (n.def) {
-				case ECase(scrut, cls):
-					var nscrut = switch (scrut.def) {
-						case EVar(v) if (v == oldName): {def: EVar(newName), metadata: scrut.metadata, pos: scrut.pos};
-						default: scrut;
-					};
-					var ncls = [];
-					for (c in cls)
-						ncls.push({
-							pattern: c.pattern,
-							guard: c.guard == null ? null : rewriteInnerCaseScrutinee(c.guard, oldName, newName),
-							body: rewriteInnerCaseScrutinee(c.body, oldName, newName)
-						});
-					{def: ECase(nscrut, ncls), metadata: n.metadata, pos: n.pos};
-				case EBlock(stmts):
-					var out:Array<ElixirAST> = [];
-					for (s in stmts)
-						out.push(rewriteInnerCaseScrutinee(s, oldName, newName));
-					{def: EBlock(out), metadata: n.metadata, pos: n.pos};
-				case EDo(statements):
-					var outDo:Array<ElixirAST> = [];
-					for (s in statements)
-						outDo.push(rewriteInnerCaseScrutinee(s, oldName, newName));
-					{def: EDo(outDo), metadata: n.metadata, pos: n.pos};
-				case EIf(c, t, e):
-					{
-						def: EIf(rewriteInnerCaseScrutinee(c, oldName, newName), rewriteInnerCaseScrutinee(t, oldName, newName),
-							e == null ? null : rewriteInnerCaseScrutinee(e, oldName, newName)),
-						metadata: n.metadata,
-						pos: n.pos
-					};
-				case EBinary(op, l, r):
-					{
-						def: EBinary(op, rewriteInnerCaseScrutinee(l, oldName, newName), rewriteInnerCaseScrutinee(r, oldName, newName)),
-						metadata: n.metadata,
-						pos: n.pos
-					};
-				case EMatch(pat, rhs):
-					{def: EMatch(pat, rewriteInnerCaseScrutinee(rhs, oldName, newName)), metadata: n.metadata, pos: n.pos};
-				case ECall(tgt, fnm, args):
-					var nt = tgt == null ? null : rewriteInnerCaseScrutinee(tgt, oldName, newName);
-					var nargs = [for (a in args) rewriteInnerCaseScrutinee(a, oldName, newName)];
-					{def: ECall(nt, fnm, nargs), metadata: n.metadata, pos: n.pos};
-				case ERemoteCall(moduleExpr, functionName, remoteArgs):
-					var nmod = rewriteInnerCaseScrutinee(moduleExpr, oldName, newName);
-					var nargs = [for (a in remoteArgs) rewriteInnerCaseScrutinee(a, oldName, newName)];
-					{def: ERemoteCall(nmod, functionName, nargs), metadata: n.metadata, pos: n.pos};
-				default:
-					n;
-			}
-		});
-	}
-
-	static function buildInfraScrutineeMapFromPattern(pattern:EPattern):Null<Map<String, String>> {
-		// Only attempt for tagged tuples: {:atom, ...payload}
-		var payload:Array<EPattern> = null;
-		switch (pattern) {
-			case PTuple(es) if (es.length >= 2):
-				switch (es[0]) {
-					case PLiteral(ast):
-						switch (ast.def) {
-							case EAtom(_):
-								payload = es.slice(1);
-							default:
-						}
-					default:
-				}
-			default:
-		}
-		if (payload == null)
-			return null;
-
-		var binderNames:Array<Null<String>> = [];
-		for (p in payload) {
-			binderNames.push(switch (p) {
-				case PVar(n): n;
-				default: null;
-			});
-		}
-
-		var map:Map<String, String> = new Map();
-		for (i in 0...binderNames.length) {
-			var binderName = binderNames[i];
-			if (binderName == null)
-				continue;
-
-			// Index 0 uses g/_g without suffix, subsequent indices use gN/_gN.
-			var keys = (i == 0) ? ["g", "_g", "g0", "_g0"] : ["g" + i, "_g" + i];
-			for (k in keys)
-				map.set(k, binderName);
-		}
-
-		return map;
-	}
-
-	static function rewriteInnerCaseScrutineeInfraMap(body:ElixirAST, renameMap:Map<String, String>):ElixirAST {
-		if (renameMap == null)
-			return body;
-
-		function cloneNameSet(src:Map<String, Bool>):Map<String, Bool> {
-			var out = new Map<String, Bool>();
-			for (k in src.keys())
-				out.set(k, true);
-			return out;
-		}
-
-		function collectPatternBinders(p:EPattern, out:Map<String, Bool>):Void {
-			switch (p) {
-				case PVar(n) if (n != null && n.length > 0):
-					out.set(n, true);
-				case PAlias(nm, inner):
-					if (nm != null && nm.length > 0)
-						out.set(nm, true);
-					collectPatternBinders(inner, out);
-				case PTuple(es) | PList(es):
-					for (e in es)
-						collectPatternBinders(e, out);
-				case PCons(h, t):
-					collectPatternBinders(h, out);
-					collectPatternBinders(t, out);
-				case PMap(kvs):
-					for (kv in kvs)
-						collectPatternBinders(kv.value, out);
-				case PStruct(_, fs):
-					for (f in fs)
-						collectPatternBinders(f.value, out);
-				case PPin(inner):
-					collectPatternBinders(inner, out);
-				default:
-			}
-		}
-
-		function collectDeclaredFromStatement(stmt:ElixirAST, out:Map<String, Bool>):Void {
-			if (stmt == null || stmt.def == null)
-				return;
-			switch (stmt.def) {
-				case EMatch(PVar(lhs), _):
-					if (lhs != null && lhs.length > 0)
-						out.set(lhs, true);
-				case EBinary(Match, {def: EVar(lhs)}, _):
-					if (lhs != null && lhs.length > 0)
-						out.set(lhs, true);
-				default:
-			}
-		}
-
-		function rewriteExpr(expr:ElixirAST, bound:Map<String, Bool>):ElixirAST {
-			if (expr == null || expr.def == null)
-				return expr;
-			return switch (expr.def) {
-				case EVar(v) if (v != null && renameMap.exists(v) && !bound.exists(v)):
-					makeASTWithMeta(EVar(renameMap.get(v)), expr.metadata, expr.pos);
-
-				case ECase(scrut, clauses):
-					var nextScrut = rewriteExpr(scrut, bound);
-					var nextClauses:Array<ECaseClause> = [];
-					for (cl in clauses) {
-						var clauseScope = cloneNameSet(bound);
-						collectPatternBinders(cl.pattern, clauseScope);
-						var nextGuard = cl.guard == null ? null : rewriteExpr(cl.guard, clauseScope);
-						var nextBody = rewriteExpr(cl.body, clauseScope);
-						nextClauses.push({pattern: cl.pattern, guard: nextGuard, body: nextBody});
-					}
-					makeASTWithMeta(ECase(nextScrut, nextClauses), expr.metadata, expr.pos);
-
-				case EFn(clauses):
-					var nextFnClauses = [];
-					for (cl in clauses) {
-						var fnScope = cloneNameSet(bound);
-						for (a in cl.args)
-							collectPatternBinders(a, fnScope);
-						var nextGuard = cl.guard == null ? null : rewriteExpr(cl.guard, fnScope);
-						var nextBody = rewriteExpr(cl.body, fnScope);
-						nextFnClauses.push({args: cl.args, guard: nextGuard, body: nextBody});
-					}
-					makeASTWithMeta(EFn(nextFnClauses), expr.metadata, expr.pos);
-
-				case EBlock(stmts):
-					var scope = cloneNameSet(bound);
-					var outStmts:Array<ElixirAST> = [];
-					for (s in stmts) {
-						var ns = rewriteExpr(s, scope);
-						outStmts.push(ns);
-						collectDeclaredFromStatement(ns, scope);
-					}
-					makeASTWithMeta(EBlock(outStmts), expr.metadata, expr.pos);
-
-				case EDo(stmts):
-					var scopeDo = cloneNameSet(bound);
-					var outDo:Array<ElixirAST> = [];
-					for (s in stmts) {
-						var ns = rewriteExpr(s, scopeDo);
-						outDo.push(ns);
-						collectDeclaredFromStatement(ns, scopeDo);
-					}
-					makeASTWithMeta(EDo(outDo), expr.metadata, expr.pos);
-
-				case EMatch(pat, rhs):
-					makeASTWithMeta(EMatch(pat, rewriteExpr(rhs, bound)), expr.metadata, expr.pos);
-
-				case EBinary(Match, left, right):
-					// Never rewrite the LHS; only the RHS expression.
-					makeASTWithMeta(EBinary(Match, left, rewriteExpr(right, bound)), expr.metadata, expr.pos);
-
-				default:
-					reflaxe.elixir.ast.ElixirASTTransformer.transformAST(expr, function(child:ElixirAST):ElixirAST {
-						return rewriteExpr(child, bound);
-					});
-			};
-		}
-
-		// If the body assigns an infra-temp name (g/_g/gN/_gN) locally, do not rewrite it.
-		// This avoids corrupting nested switches that happen to use the same infra temp names.
-		var initialBound = new Map<String, Bool>();
-		function markBound(name:String):Void {
-			if (name == null || name.length == 0)
-				return;
-			initialBound.set(name, true);
-			if (!isInfrastructureVar(name))
-				return;
-
-			var base = (name.charAt(0) == "_") ? name.substr(1) : name;
-			initialBound.set(base, true);
-			initialBound.set("_" + base, true);
-
-			// Alias: some Haxe lowerings use g/_g and g0/_g0 interchangeably for index 0
-			if (base == "g") {
-				initialBound.set("g0", true);
-				initialBound.set("_g0", true);
-			} else if (base == "g0") {
-				initialBound.set("g", true);
-				initialBound.set("_g", true);
-			}
-		}
-		ASTUtils.walk(body, function(n:ElixirAST) {
-			if (n == null || n.def == null)
-				return;
-			switch (n.def) {
-				case EMatch(PVar(lhs), _):
-					markBound(lhs);
-				case EBinary(Match, {def: EVar(lhs)}, _):
-					markBound(lhs);
-				default:
-			}
-		});
-
-		return rewriteExpr(body, initialBound);
-	}
-
-	/**
 	 * Build pattern from case value expression
 	 *
 	 * WHY: Patterns need to match Elixir's pattern matching semantics
@@ -1708,17 +1429,20 @@ class SwitchBuilder {
 				//   values (e.g. rightVal from the right subtree) and then apply them to the outer pattern.
 				//
 				// HOW
-				// - Track the TVar.id(s) for the current switch target name (and simple aliases to it).
+				// - Track the exact typed receiver identity and its simple local aliases.
 				// - Accept `TEnumParameter(receiver, ctorName, index)` only when `receiver` is one of those ids.
 				var allowedReceiverIds:Map<Int, Bool> = new Map();
+				var ownerClause = context.getCurrentClauseContext();
+				var rootReceiver = ownerClause == null ? null : ownerClause.enumReceiver;
 				if (rootVarName != null) {
-					// Collect direct IDs for the root var name and any simple alias edges.
+					// Reused temporary spellings do not make two typed locals equivalent.
 					var aliasEdges:Map<Int, Int> = new Map();
 					function collectAliases(expr:TypedExpr):Void {
 						if (expr == null)
 							return;
 						switch (expr.expr) {
-							case TLocal(v) if (v != null && v.name == rootVarName):
+							case TLocal(v) if (v != null
+								&& ClauseContext.sameEnumReceiver(rootReceiver, context.substituteIfNeeded(expr))):
 								allowedReceiverIds.set(v.id, true);
 							case TVar(v, init):
 								if (v != null && init != null) {
@@ -1749,7 +1473,7 @@ class SwitchBuilder {
 				}
 
 				function isReceiverFromRoot(receiver:TypedExpr):Bool {
-					if (rootVarName == null)
+					if (ClauseContext.sameEnumReceiver(rootReceiver, context.substituteIfNeeded(receiver)))
 						return true;
 					var unwrapped = unwrapNoOp(receiver);
 					return switch (unwrapped.expr) {

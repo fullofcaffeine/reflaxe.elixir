@@ -758,7 +758,7 @@ class ElixirASTBuilder {
 
 				// Delegate simple variable declarations to VariableBuilder
 				// Complex patterns (blocks, comprehensions) are handled below
-				if (init == null || isSimpleInit(init)) {
+				if (VariableBuilder.isSimpleInit(init)) {
 					var result = VariableBuilder.buildVariableDeclaration(v, init, currentContext);
 
 					#if debug_ast_builder
@@ -1102,6 +1102,9 @@ class ElixirASTBuilder {
 								&& currentContext.currentClauseContext.enumBindingPlan != null) {
 								var binding = currentContext.currentClauseContext.findEnumBinding(currentContext.substituteIfNeeded(e), ef.name, index);
 								if (binding != null) {
+									// Omitting the extraction also requires redirecting this exact
+									// typed local to the payload already supplied by the pattern.
+									currentContext.currentClauseContext.pushPatternBindings([{varId: v.id, binderName: binding.finalName}]);
 									// The binding plan already handles this extraction in the pattern
 									shouldSkipRedundantExtraction = true;
 									#if debug_enum_extraction
@@ -4588,42 +4591,6 @@ class ElixirASTBuilder {
 			case TThrow(_): true;
 			default: false;
 		}
-	}
-
-	/**
-	 * Check if an initialization expression is simple enough for VariableBuilder
-	 * 
-	 * WHY: Complex initializations (blocks, comprehensions) need special handling
-	 * WHAT: Identifies simple init patterns that VariableBuilder can handle
-	 * HOW: Checks expression type against simple patterns
-	 */
-	static function isSimpleInit(init:TypedExpr):Bool {
-		if (init == null)
-			return true;
-
-		return switch (init.expr) {
-			case TConst(_): true;
-			case TLocal(_): true;
-			case TField(_, _): true;
-			case TCall(_, _): true;
-			case TNew(_, _, _): true;
-			case TObjectDecl(_): true;
-			case TArrayDecl(_): true;
-			case TBinop(_, _, _): true;
-			case TUnop(_, _, _): true;
-			case TParenthesis(e): isSimpleInit(e);
-			case TCast(e, _): isSimpleInit(e);
-			case TMeta(_, e): isSimpleInit(e);
-			// Complex patterns that need special handling
-			case TBlock(_): false;
-			case TIf(_, _, _): false;
-			case TSwitch(_, _, _): false;
-			case TWhile(_, _, _): false;
-			case TFor(_, _, _): false;
-			case TTry(_, _): false;
-			case TFunction(_): false;
-			default: true;
-		};
 	}
 
 	/**

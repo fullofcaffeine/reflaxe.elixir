@@ -68,6 +68,9 @@ class Main {
 				"medium";
 		}
 
+		// The distinct green payload matters: 255 + 128 + 0 is 383, not 510.
+		if (brightness != "medium")
+			throw "RGB guard must use each distinct channel";
 		trace('Complex enum result: ${brightness}');
 	}
 

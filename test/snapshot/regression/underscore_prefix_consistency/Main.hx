@@ -18,7 +18,8 @@ class Main {
 		trace(result);
 
 		// Test unused parameters in pattern matching
-		testPatternMatchingUnused();
+		if (testPatternMatchingUnused(getSomeValue()) != 42 || testPatternMatchingUnused(None) != 0)
+			throw "Pattern matching must preserve the used value and the empty case";
 
 		// Test lambda with unused parameters
 		testLambdaUnused();
@@ -46,15 +47,14 @@ class Main {
 	/**
 	 * Test pattern matching with unused variables
 	 */
-	static function testPatternMatchingUnused() {
-		var result = switch (getSomeValue()) {
+	static function testPatternMatchingUnused(input:Option<{value:Int, metadata:String}>):Int {
+		return switch (input) {
 			case Some({value: v, metadata: _meta}):
 				// _meta should be consistently prefixed if referenced
 				v;
 			case None:
 				0;
 		}
-		trace(result);
 	}
 
 	/**

@@ -124,9 +124,10 @@ class Std {
 	 * ```
 	 * 
 	 * ### 5. Dynamic Type
-	 * Everything matches Dynamic since it represents "any type":
+	 * Every non-null value matches Dynamic, including false, zero and empty arrays:
 	 * ```haxe
-	 * Std.is(anything, Dynamic);        // Always true (not implemented here)
+	 * Std.isOfType(0, Dynamic);         // true
+	 * Std.isOfType(null, Dynamic);      // false
 	 * ```
 	 * 
 	 * ### 6. Enum Limitations
@@ -166,6 +167,10 @@ class Std {
 	 * @return True if the value is of the specified type, false otherwise
 	 */
 	public static function is(value:Dynamic, type:Dynamic):Bool {
+		// Match the type identity before native module-name classification. Haxe's
+		// runtime Dynamic test accepts every non-null value, not null itself.
+		if (type == Dynamic)
+			return value != null;
 		// Runtime type checking for Elixir types
 		// Handles basic types, structs, and enums (as tagged tuples)
 		return untyped __elixir__('

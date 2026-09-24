@@ -8,6 +8,11 @@
  */
 class Main {
 	static function main() {
+		if (KeywordMethods.or(4, 7) != 11)
+			throw "Reserved method direct call must reach its declaration";
+		final captured = KeywordMethods.or;
+		if (captured(2, 3) != 5)
+			throw "Reserved method capture must match direct calls";
 		// Test Elixir reserved keywords that Haxe allows as parameters
 		// Note: Some keywords like "do", "if", "else", "case", "import" are also Haxe keywords
 		testEnd("hello", "world");
@@ -93,5 +98,12 @@ class Main {
 	// Test multiple reserved keywords in one function
 	static function testMultiple(start:String, end:String, after:String):String {
 		return start + " -> " + end + " (after: " + after + ")";
+	}
+}
+
+/** Ordinary Haxe method names can coincide with Elixir operators. */
+class KeywordMethods {
+	public static function or(left:Int, right:Int):Int {
+		return left + right;
 	}
 }

@@ -4,7 +4,7 @@ defmodule PatternMatchingTest do
       {:red} -> "red"
       {:green} -> "green"
       {:blue} -> "blue"
-      {:rgb, r, _g, b} -> "rgb(#{Reflaxe.Elixir.HaxeFloat.to_string(r)},#{Reflaxe.Elixir.HaxeFloat.to_string(_g)},#{Reflaxe.Elixir.HaxeFloat.to_string(b)})"
+      {:rgb, r, g, b} -> "rgb(#{Reflaxe.Elixir.HaxeFloat.to_string(r)},#{Reflaxe.Elixir.HaxeFloat.to_string(g)},#{Reflaxe.Elixir.HaxeFloat.to_string(b)})"
     end)
   end
   def match_option(option) do
@@ -68,8 +68,7 @@ defmodule PatternMatchingTest do
           {:red} -> "red color"
           {:green} -> "green color"
           {:blue} -> "blue color"
-          {:rgb, r, _g, _b} ->
-            if (r > 128), do: "bright rgb", else: "dark rgb"
+          {:rgb, r, _g, _b} -> if (r > 128), do: "bright rgb", else: "dark rgb"
         end)
     end)
   end

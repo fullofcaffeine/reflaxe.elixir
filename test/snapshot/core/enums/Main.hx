@@ -72,6 +72,20 @@ class Main {
 	}
 
 	public static function main() {
+		// Distinct channel values expose accidental reuse of another pattern binder.
+		if (describeRGB(RGB(250, 10, 10)) != "mostly red"
+			|| describeRGB(RGB(10, 250, 10)) != "mostly green"
+			|| describeRGB(RGB(10, 10, 250)) != "mostly blue"
+			|| describeRGB(RGB(80, 80, 80)) != "mixed color"
+			|| describeRGB(Red) != "not RGB")
+			throw "RGB guards must read their own channels.";
+		var equalTree = Node(Leaf(1), Leaf(2));
+		var differentTree = Node(Leaf(1), Leaf(3));
+		if (!compareTrees(equalTree, equalTree)
+			|| compareTrees(equalTree, differentTree)
+			|| compareTrees(Leaf(1), equalTree)
+			|| compareTrees(equalTree, Leaf(1)))
+			throw "Tree comparisons must match both receivers and their payloads.";
 		// Test simple enum
 		var color = RGB(255, 128, 0);
 		trace(colorToString(color));

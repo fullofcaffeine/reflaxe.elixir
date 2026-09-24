@@ -15,6 +15,7 @@ import reflaxe.elixir.ast.transformers.LocalAssignUnusedUnderscoreScopedTransfor
 import reflaxe.elixir.ast.transformers.CaseBinderUnderscoreAlignTransforms;
 import reflaxe.elixir.ast.transformers.BinderTransforms;
 import reflaxe.elixir.preprocessor.TypedExprPreprocessor;
+import reflaxe.elixir.ast.validation.FunctionResultInvariant;
 
 /** Checks exact matching independently of the compiler's pattern recovery. */
 class TestArrayPatternTransforms {
@@ -115,11 +116,18 @@ class TestArrayPatternTransforms {
 	/** Printing must preserve numeric results; cleanup belongs to typed AST passes. */
 	static function testPrintedReturnValues():Void {
 		for (value in [makeAST(EInteger(0)), makeAST(EInteger(1)), makeAST(EFloat(0.0))]) {
+			value.metadata.sourceExpr = Context.typeExpr(macro 0);
 			final literal = ElixirASTPrinter.print(value);
 			final block = makeAST(EBlock([makeAST(ECall(null, "observe", [])), value]));
 			if (StringTools.trim(ElixirASTPrinter.print(block)) != "observe()\n" + literal)
 				fail("printer discarded a numeric block result");
 			for (sequence in [block, makeAST(EDo([makeAST(ECall(null, "observe", [])), value]))]) {
+				final definition = makeAST(EDef("numeric_result", [], null, sequence));
+				definition.metadata.functionResultContract = Value;
+				definition.metadata.functionResultMayBeNil = false;
+				final state = FunctionResultInvariant.capture(definition, "Probe").get("Probe.numeric_result/0");
+				if (state == null || state.problem != null)
+					fail("result validation rejected a numeric tail preserved by the printer");
 				for (cleanup in [
 					GlobalNumericSentinelCleanupTransforms.cleanupPass,
 					ArithmeticIncrementTransforms.transformPass

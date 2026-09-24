@@ -2247,33 +2247,10 @@ end'))
 		});
 	}
 
-	// Remove redundant temp-to-binder assignments inside case clauses
-	// Example:
-	//   case {:todo_created, todo} ->
-	//     todo = _g
-	//     %{type: "todo_created", todo: todo}
-	// The pattern already binds `todo`; the assignment from temp `_g` is redundant and may reference
-	// an eliminated temp. This pass removes such assignments conservatively.
+	// Remove unused local aliases inside case clauses. A source missing from this
+	// clause's declarations may be captured from an enclosing scope; its spelling
+	// does not authorize dropping a live assignment.
 	public static function casePatternTempAssignmentRemovalPass(ast:ElixirAST):ElixirAST {
-		// Detect infrastructure temps: g, g1, _g, _g1, ...
-		function isInfraTemp(name:String):Bool {
-			if (name == null || name.length == 0)
-				return false;
-			var n = name;
-			if (n.charAt(0) == "_")
-				n = n.substr(1);
-			if (n == "g")
-				return true;
-			if (n.charAt(0) != "g")
-				return false;
-			for (i in 1...n.length) {
-				var c = n.charCodeAt(i);
-				if (c < '0'.code || c > '9'.code)
-					return false;
-			}
-			return true;
-		}
-
 		function extractSimpleVarName(expr:Null<ElixirAST>):Null<String> {
 			if (expr == null || expr.def == null)
 				return null;
@@ -2285,32 +2262,6 @@ end'))
 				default:
 					null;
 			};
-		}
-
-		function collectBoundVarsFromPattern(p:EPattern, out:Map<String, Bool>):Void {
-			switch (p) {
-				case PVar(name) if (name != null && name.length > 0):
-					out.set(name, true);
-				case PAlias(name, inner):
-					if (name != null && name.length > 0)
-						out.set(name, true);
-					collectBoundVarsFromPattern(inner, out);
-				case PTuple(es) | PList(es):
-					for (e in es)
-						collectBoundVarsFromPattern(e, out);
-				case PCons(h, t):
-					collectBoundVarsFromPattern(h, out);
-					collectBoundVarsFromPattern(t, out);
-				case PMap(kvs):
-					for (kv in kvs)
-						collectBoundVarsFromPattern(kv.value, out);
-				case PStruct(_, fs):
-					for (f in fs)
-						collectBoundVarsFromPattern(f.value, out);
-				case PPin(inner):
-					collectBoundVarsFromPattern(inner, out);
-				default:
-			}
 		}
 
 		function declaredVarFromStatement(stmt:ElixirAST):Null<String> {
@@ -2389,73 +2340,16 @@ end'))
 			return keptReversed;
 		}
 
-		function dropUndefinedTempAssignmentsInClauseBody(body:ElixirAST, bound:Map<String, Bool>):ElixirAST {
-			if (body == null || body.def == null)
+		// Clause-local declarations do not enumerate enclosing lexical bindings.
+		// Only remove aliases proven dead by the existing read analysis.
+		function cleanClauseAliases(body:ElixirAST):ElixirAST {
+			if (body == null)
 				return body;
 			return switch (body.def) {
-				case EBlock(stmts):
-					var declared = new Map<String, Bool>();
-					for (k in bound.keys())
-						declared.set(k, true);
-
-					var kept:Array<ElixirAST> = [];
-					for (s in stmts) {
-						var drop = false;
-						var rhsName:Null<String> = null;
-						switch (s.def) {
-							case EMatch(_, rhs):
-								rhsName = extractSimpleVarName(rhs);
-							case EBinary(Match, _, rhsExpr):
-								rhsName = extractSimpleVarName(rhsExpr);
-							default:
-						}
-						if (rhsName != null && isInfraTemp(rhsName) && !declared.exists(rhsName)) {
-							// This statement reads an infra temp that is not bound by the clause pattern
-							// and has not been declared earlier in the clause body.
-							drop = true;
-						}
-
-						if (!drop) {
-							kept.push(s);
-							var lhs = declaredVarFromStatement(s);
-							if (lhs != null)
-								declared.set(lhs, true);
-						}
-					}
-					makeASTWithMeta(EBlock(dropUnusedAliasAssignments(kept)), body.metadata, body.pos);
-
-				case EDo(stmts):
-					var declaredDo = new Map<String, Bool>();
-					for (k in bound.keys())
-						declaredDo.set(k, true);
-
-					var keptDo:Array<ElixirAST> = [];
-					for (s in stmts) {
-						var drop = false;
-						var rhsName:Null<String> = null;
-						switch (s.def) {
-							case EMatch(_, rhs):
-								rhsName = extractSimpleVarName(rhs);
-							case EBinary(Match, _, rhsExpr):
-								rhsName = extractSimpleVarName(rhsExpr);
-							default:
-						}
-						if (rhsName != null && isInfraTemp(rhsName) && !declaredDo.exists(rhsName)) {
-							drop = true;
-						}
-
-						if (!drop) {
-							keptDo.push(s);
-							var lhs = declaredVarFromStatement(s);
-							if (lhs != null)
-								declaredDo.set(lhs, true);
-						}
-					}
-					makeASTWithMeta(EDo(dropUnusedAliasAssignments(keptDo)), body.metadata, body.pos);
-
-				default:
-					body;
-			}
+				case EBlock(stmts): makeASTWithMeta(EBlock(dropUnusedAliasAssignments(stmts)), body.metadata, body.pos);
+				case EDo(stmts): makeASTWithMeta(EDo(dropUnusedAliasAssignments(stmts)), body.metadata, body.pos);
+				default: body;
+			};
 		}
 
 		function pass(node:ElixirAST):ElixirAST {
@@ -2467,11 +2361,9 @@ end'))
 					var nextExpr = pass(expr);
 					var nextClauses:Array<ECaseClause> = [];
 					for (cl in clauses) {
-						var bound = new Map<String, Bool>();
-						collectBoundVarsFromPattern(cl.pattern, bound);
 						var nextGuard = cl.guard == null ? null : pass(cl.guard);
 						var nextBody = pass(cl.body);
-						var cleanedBody = dropUndefinedTempAssignmentsInClauseBody(nextBody, bound);
+						var cleanedBody = cleanClauseAliases(nextBody);
 						nextClauses.push({pattern: cl.pattern, guard: nextGuard, body: cleanedBody});
 					}
 					makeASTWithMeta(ECase(nextExpr, nextClauses), node.metadata, node.pos);

@@ -23,8 +23,7 @@ defmodule Main do
         assert_equals("parameter shadows outer payload", 8, apply_to(7, fn payload -> payload + 1 end))
         assert_equals("nested parameter shadowing", 9, apply_to(7, fn value -> apply_to(value, fn value -> value + 2 end) end))
         (case apply_result_to(7, fn value -> {:ok, value} end) do
-          {:ok, callback_value} ->
-            assert_equals("tuple-returning callback", 7, callback_value)
+          {:ok, callback_value} -> assert_equals("tuple-returning callback", 7, callback_value)
           {:error, callback_error} -> raise Reflaxe.Elixir.HaxeThrow, [value: "unexpected callback error: " <> callback_error]
         end)
       {:error, message} -> raise Reflaxe.Elixir.HaxeThrow, [value: "unexpected error: " <> message]
@@ -32,8 +31,7 @@ defmodule Main do
   end
   defp verify_object_capture(result) do
     (case result do
-      {:ok, payload} ->
-        assert_equals("outer object capture", 10, apply_to(7, fn _ignored -> payload.amount end))
+      {:ok, payload} -> assert_equals("outer object capture", 10, apply_to(7, fn _ignored -> payload.amount end))
       {:error, message} -> raise Reflaxe.Elixir.HaxeThrow, [value: "unexpected object error: " <> message]
     end)
   end

@@ -704,6 +704,9 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 	private static function extractHasNextVar(expr:ElixirAST):Null<String> {
 		if (expr == null || expr.def == null)
 			return null;
+		var structuralReceiver = extractStructuralCallReceiver(expr, "has_next");
+		if (structuralReceiver != null)
+			return structuralReceiver;
 		return switch (unwrapParen(expr).def) {
 			case ECall(target, "", args) if (args != null && args.length == 0):
 				switch (unwrapParen(target).def) {
@@ -762,6 +765,8 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 	private static function isHasNextCall(expr:ElixirAST, iterVar:String):Bool {
 		if (expr == null || expr.def == null)
 			return false;
+		if (extractStructuralCallReceiver(expr, "has_next") == iterVar)
+			return true;
 		return switch (unwrapParen(expr).def) {
 			case ECall(target, "", args) if (args != null && args.length == 0):
 				switch (unwrapParen(target).def) {
@@ -829,6 +834,8 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 	private static function isNextCall(expr:ElixirAST, iterVar:String):Bool {
 		if (expr == null || expr.def == null)
 			return false;
+		if (extractStructuralCallReceiver(expr, "next") == iterVar)
+			return true;
 		return switch (unwrapParen(expr).def) {
 			case ECall(target, "", args) if (args != null && args.length == 0):
 				switch (unwrapParen(target).def) {
@@ -839,6 +846,47 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 				}
 			default:
 				false;
+		};
+	}
+
+	/**
+	 * Recognize the exact zero-argument structural dispatch emitted by CallExprBuilder.
+	 * The surrounding rewrite separately proves that this receiver is Map.keys output.
+	 * Check both branches and every receiver reference: extra effects, arguments, or
+	 * changed dispatch semantics must not be erased along with iterator scaffolding.
+	 */
+	private static function extractStructuralCallReceiver(expr:ElixirAST, method:String):Null<String> {
+		if (expr == null)
+			return null;
+		return switch (unwrapParen(expr).def) {
+			case ECase({def: EVar(receiver)}, [{pattern: PVar(bound), guard: null, body: dispatch}]):
+				switch (unwrapParen(dispatch).def) {
+					case ECase({def: ERemoteCall({def: EVar("Map")}, "fetch", [{def: EVar(lookupReceiver)}, {def: EAtom(lookupMethod)}])},
+						[
+							{pattern: PTuple([PLiteral({def: EAtom(ok)}), PVar(callback)]), guard: null, body: {def: ECall({def: EVar(called)}, "", [])}},
+							{
+								pattern: PLiteral({def: EAtom(error)}),
+								guard: null,
+								body: {
+									def: ECall(null, "apply", [
+										module,
+										{def: EAtom(fallbackMethod)},
+										{def: EList([{def: EVar(fallbackReceiver)}])}
+									])
+								}
+							}
+						])
+						if (ok == "ok" && error == "error" && lookupReceiver == bound && lookupMethod == method && called == callback
+							&& fallbackMethod == method && fallbackReceiver == bound):
+						switch (module.def) {
+							case EBinary(OrElse, {def: ERemoteCall({def: EVar("Map")}, "get", [{def: EVar(classReceiver)}, {def: EAtom(classKey)}])},
+								{def: ERemoteCall({def: EVar("Map")}, "get", [{def: EVar(structReceiver)}, {def: EAtom(structKey)}])})
+								if (classReceiver == bound && structReceiver == bound && classKey == "__reflaxe_class__" && structKey == "__struct__"): receiver;
+							default: null;
+						}
+					default: null;
+				}
+			default: null;
 		};
 	}
 

@@ -54,7 +54,7 @@ class ClauseContext {
 	}
 
 	/** Compare identity-bearing locals and nested payload paths, never variable spelling. */
-	static function sameEnumReceiver(left:Null<haxe.macro.Type.TypedExpr>, right:Null<haxe.macro.Type.TypedExpr>):Bool {
+	public static function sameEnumReceiver(left:Null<haxe.macro.Type.TypedExpr>, right:Null<haxe.macro.Type.TypedExpr>):Bool {
 		if (left == null || right == null)
 			return false;
 		// Substitutions retain the original expression object for an evaluated

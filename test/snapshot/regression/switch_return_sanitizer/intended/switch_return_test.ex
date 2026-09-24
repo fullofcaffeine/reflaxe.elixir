@@ -38,8 +38,7 @@ defmodule SwitchReturnTest do
   end
   def map_or_else(result, map_fn, else_fn) do
     (case result do
-      {:ok, value} ->
-        map_fn.(value)
+      {:ok, value} -> map_fn.(value)
       {:error, _error} ->
         else_fn.()
     end)

@@ -160,6 +160,34 @@ class ArrayBuilder {
 		var target = buildExpression(array);
 		var key = buildExpression(index);
 
+		// A Dynamic value can carry a list-backed Haxe array. Native Access.get
+		// cannot index that list numerically. Capture both operands once, in source
+		// order, and retain native access for other representations. Negative Haxe
+		// indices are out of bounds, unlike Enum.at's offsets from the list tail.
+		if (haxe.macro.TypeTools.follow(array.t).match(TDynamic(_))) {
+			var id = context.generateNodeId();
+			var valueName = 'dynamic_array_value_$id';
+			var indexName = 'dynamic_array_index_$id';
+			var valueRef = makeAST(EVar(valueName));
+			var indexRef = makeAST(EVar(indexName));
+			var pattern = PTuple([PVar(valueName), PVar(indexName)]);
+			var isArrayIndex = makeAST(EBinary(And, makeAST(ECall(null, "is_list", [valueRef])), makeAST(ECall(null, "is_integer", [indexRef]))));
+			var read = makeAST(EIf(makeAST(EBinary(Less, indexRef, makeAST(EInteger(0)))), makeAST(ENil),
+				makeAST(ERemoteCall(makeAST(EVar("Enum")), "at", [valueRef, indexRef]))));
+			var dispatch = makeAST(ECase(makeAST(ETuple([valueRef, indexRef])), [
+				{pattern: pattern, guard: isArrayIndex, body: read},
+				{pattern: pattern, body: makeAST(EAccess(valueRef, indexRef))}
+			]));
+			// Capture the receiver before lowering index effects. A tuple of the
+			// original operands lets an index prelude rebind the receiver too early.
+			// Keep these matches in caller scope so index writes remain visible.
+			return EBlock([
+				makeAST(EMatch(PVar(valueName), target)),
+				makeAST(EMatch(PVar(indexName), key)),
+				dispatch
+			]);
+		}
+
 		return EAccess(target, key);
 	}
 

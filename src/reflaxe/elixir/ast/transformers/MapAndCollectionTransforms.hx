@@ -1902,28 +1902,14 @@ class MapAndCollectionTransforms {
 		});
 	}
 
+	/**
+	 * Keep binders read by nested callbacks or native output expressions.
+	 * For Haxe nested loops printing the outer value, `fn outer -> ... outer ...`
+	 * must not become `fn _ -> ... outer ...`. Reuse the shared exact-name scan,
+	 * including opaque native references, instead of an incomplete local walker.
+	 */
 	static function bodyUsesVar(body:ElixirAST, name:String):Bool {
-		if (body == null || body.def == null || name == null)
-			return false;
-		var used = false;
-
-		ASTUtils.walk(body, function(n:ElixirAST):Void {
-			if (used || n == null || n.def == null)
-				return;
-			switch (n.def) {
-				case EVar(nm) if (nm == name):
-					used = true;
-				case EString(str):
-					if (str != null && str.indexOf("#{") != -1) {
-						if (str.indexOf("#{" + name + "}") != -1 || str.indexOf("#{" + name + ".") != -1) {
-							used = true;
-						}
-					}
-				default:
-			}
-		});
-
-		return used;
+		return reflaxe.elixir.ast.analyzers.VarUseAnalyzer.stmtUsesVarExact(body, name);
 	}
 
 	/**

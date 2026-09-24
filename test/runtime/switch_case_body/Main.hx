@@ -1,5 +1,39 @@
 /** Checks that guard extraction preserves complete switch-case bodies. */
 class Main {
+	static var effects:Int = 0;
+
+	static function recordEffect(value:Int):Void {
+		effects = effects + value;
+	}
+
+	/** A false body condition does not reject an already matched case. */
+	static function optionalEffect(mode:String, enabled:Bool):Void {
+		switch (mode) {
+			case "selected":
+				if (enabled)
+					recordEffect(1);
+			default:
+				recordEffect(10);
+		}
+	}
+
+	static function returnedFields(data:{first:Int, second:Int, tag:Int}):Int {
+		return switch ([data.first, data.second, data.tag]) {
+			case [left, right, 1] if (left > 0): left + right;
+			case [left, right, 2]: left * right;
+			case [left, right, _]: left - right;
+		};
+	}
+
+	static function returnedGuard(data:{value:Int}):Int {
+		return switch (data.value) {
+			case 0: 10;
+			case 1: 20;
+			case value if (value < 4): value + 1;
+			case value: value + 2;
+		};
+	}
+
 	static function classify(mode:String, input:Int):Int {
 		return switch mode {
 			case "convert":
@@ -47,6 +81,21 @@ class Main {
 	}
 
 	static function main():Void {
+		effects = 0;
+		optionalEffect("selected", false);
+		expect(effects, 0);
+		optionalEffect("selected", true);
+		expect(effects, 1);
+		optionalEffect("other", false);
+		expect(effects, 11);
+		expect(returnedFields({first: 11, second: 7, tag: 1}), 18);
+		expect(returnedFields({first: 11, second: 7, tag: 2}), 77);
+		expect(returnedFields({first: 11, second: 7, tag: 0}), 4);
+		expect(returnedFields({first: -3, second: 7, tag: 1}), -10);
+		expect(returnedGuard({value: 0}), 10);
+		expect(returnedGuard({value: 1}), 20);
+		expect(returnedGuard({value: 2}), 3);
+		expect(returnedGuard({value: 9}), 11);
 		expect(classify("convert", -1), 7);
 		expect(classify("convert", 2), 3);
 		expect(classify("nested", 0), 9);

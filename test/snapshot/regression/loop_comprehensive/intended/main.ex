@@ -8,18 +8,40 @@ defmodule Main do
     evens = evens ++ [8]
     _ = evens
     _g = 0
-    Enum.each(0..9//1, fn i ->
-      if (i == 5) do
-        throw(:break)
+    {} = Enum.reduce_while(0..9//1, {}, fn i, {} ->
+      try do
+        if (i == 5) do
+          throw({:break, {}})
+        end
+        {:cont, {}}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, {}}
+        :throw, :continue ->
+          {:cont, {}}
       end
-      nil
     end)
     _g = 0
-    Enum.each(0..4//1, fn i ->
-      if (i == 2) do
-        throw(:continue)
+    {} = Enum.reduce_while(0..4//1, {}, fn i, {} ->
+      try do
+        if (i == 2) do
+          throw({:continue, {}})
+        end
+        {:cont, {}}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, {}}
+        :throw, :continue ->
+          {:cont, {}}
       end
-      nil
     end)
     count = 0
     {_count} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count}, fn _, {acc_count} ->

@@ -336,19 +336,17 @@ defmodule Main do
     primary_colors = ["red", "green", "blue"]
     secondary_colors = ["orange", "purple", "yellow"]
     c = color
-    cond_value = (case Enum.find_index(primary_colors, fn item -> item == c end) do
+    if (((case Enum.find_index(primary_colors, fn item -> item == c end) do
       nil -> -1
       index -> index
-    end)
-    if (cond_value >= 0) do
+    end) >= 0)) do
       "primary color"
     else
       c = color
-      cond_value = (case Enum.find_index(secondary_colors, fn item -> item == c end) do
+      if (((case Enum.find_index(secondary_colors, fn item -> item == c end) do
         nil -> -1
         index -> index
-      end)
-      if (cond_value >= 0) do
+      end) >= 0)) do
         "secondary color"
       else
         (case color do

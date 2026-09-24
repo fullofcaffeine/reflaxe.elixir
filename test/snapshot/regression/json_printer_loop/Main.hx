@@ -9,6 +9,8 @@ class Main {
 		var printer = new JsonPrinter();
 		var arr = [1, 2, 3, 4, 5];
 		printer.writeArray(arr);
+		if (printer.toString() != "[1, 2, 3, 4, 5]")
+			throw "JSON array output must retain all buffer writes";
 
 		var obj = {name: "test", values: [1, 2, 3]};
 		printer.writeObject(obj);

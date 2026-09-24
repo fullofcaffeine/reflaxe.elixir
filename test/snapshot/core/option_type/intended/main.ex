@@ -15,15 +15,12 @@ defmodule Main do
     _no_person = {:none}
   end
   defp test_pattern_matching() do
-    user = {:some, "Bob"}
-    _result = (case user do
+    _result = (case {:some, "Bob"} do
       {:some, name} -> "Hello, #{name}"
       {:none} -> "Hello, anonymous"
     end)
-    scores = {:some, [1, 2, 3]}
-    _total = (case scores do
-      {:some, score_list} ->
-        length(score_list)
+    _total = (case {:some, [1, 2, 3]} do
+      {:some, score_list} -> length(score_list)
       {:none} -> 0
     end)
     process_user({:some, "Charlie"})
@@ -47,7 +44,7 @@ defmodule Main do
     _expensive_default = OptionTools.lazy_unwrap(user, fn -> "Computed default" end)
     first = {:some, "First"}
     second = {:none}
-    _combined = OptionTools.or_(first, second)
+    _combined = OptionTools.or_fn(first, second)
     _lazy_second = OptionTools.lazy_or(first, fn -> {:some, "Lazy second"} end)
   end
   defp test_beam_integration() do

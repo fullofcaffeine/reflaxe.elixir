@@ -228,6 +228,42 @@ class CallExprBuilder {
 		return EBlock(prefix);
 	}
 
+	/**
+	 * A structural method can be a record closure or a generated class method.
+	 * Evaluate the receiver once before arguments. A present field is authoritative;
+	 * only absence dispatches through the existing class carrier convention.
+	 * Function-valued variables remain distinct from structural methods.
+	 */
+	static function buildStructuralMethodCall(receiver:ElixirAST, methodName:String, args:Array<ElixirAST>, context:CompilationContext):ElixirASTDef {
+		var id = context.generateNodeId();
+		var receiverName = 'reflaxe_structural_receiver_$id';
+		var callbackName = 'reflaxe_structural_callback_$id';
+		var receiverRef = makeAST(EVar(receiverName));
+		var lookup = makeAST(ERemoteCall(makeAST(EVar("Map")), "fetch", [receiverRef, makeAST(EAtom(methodName))]));
+		var dispatch = makeAST(ECase(lookup, [
+			{
+				pattern: PTuple([PLiteral(makeAST(EAtom("ok"))), PVar(callbackName)]),
+				body: makeAST(ECall(makeAST(EVar(callbackName)), "", args))
+			},
+			{
+				pattern: PLiteral(makeAST(EAtom("error"))),
+				body: buildRuntimeInstanceCall(receiverRef, methodName, args)
+			}
+		]));
+		return ECase(receiver, [{pattern: PVar(receiverName), body: dispatch}]);
+	}
+
+	/** Dispatch through a stable receiver; callers own evaluation and writeback. */
+	static function buildRuntimeInstanceCall(receiver:ElixirAST, methodName:String, args:Array<ElixirAST>):ElixirAST {
+		var runtimeModule = makeAST(EBinary(OrElse, makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [receiver, makeAST(EAtom("__reflaxe_class__"))])),
+			makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [receiver, makeAST(EAtom("__struct__"))]))));
+		return makeAST(ECall(null, "apply", [
+			runtimeModule,
+			makeAST(EAtom(methodName)),
+			makeAST(EList([receiver].concat(args)))
+		]));
+	}
+
 	static function providedArgMayBeNil(args:Array<TypedExpr>, index:Int):Bool {
 		return args == null || index >= args.length || TypeUtils.mayBeNil(args[index].t);
 	}
@@ -1215,15 +1251,7 @@ class CallExprBuilder {
 									receiverRef = makeAST(EVar(tempReceiverName));
 							}
 
-							var runtimeModule = makeAST(EBinary(OrElse,
-								makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [receiverRef, makeAST(EAtom("__reflaxe_class__"))])),
-								makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [receiverRef, makeAST(EAtom("__struct__"))]))));
-
-							var applyCall = makeAST(ECall(null, "apply", [
-								runtimeModule,
-								makeAST(EAtom(elixirMethodName)),
-								makeAST(EList([receiverRef].concat(argASTs)))
-							]));
+							var applyCall = buildRuntimeInstanceCall(receiverRef, elixirMethodName, argASTs);
 
 							var dispatchResult = applyCall;
 
@@ -1393,9 +1421,11 @@ class CallExprBuilder {
 							return phoenixCall;
 						}
 
-						// Convert method name to snake_case for Elixir function calls unless a
-						// native name was provided (native names are already exact).
-						var elixirMethodName = resolvedMethodName != null ? resolvedMethodName : ElixirNaming.toVarName(methodName);
+						// Generated functions and captured references share function-name escaping:
+						// Haxe `Methods.or(a, b)` calls `Methods.or_fn(a, b)`, not the
+						// variable spelling `or_`. Native names remain exact; externs retain
+						// their existing target-API spelling instead of generated-function rules.
+						var elixirMethodName = resolvedMethodName != null ? resolvedMethodName : classType.isExtern ? ElixirNaming.toVarName(methodName) : NameUtils.toSafeElixirFunctionName(methodName);
 
 						// IDIOMATIC FIX: Within the same module, use unqualified function calls
 						// Elixir allows calling module functions directly when within that module
@@ -1411,6 +1441,9 @@ class CallExprBuilder {
 							return ERemoteCall(ModuleBuilder.buildStaticCallTarget(classType, cf.get(), moduleName, elixirMethodName), elixirMethodName,
 								argASTs);
 						}
+
+					case FAnon(cf) if (cf.get().kind.match(FMethod(_))):
+						return buildStructuralMethodCall(buildExpression(obj), ElixirNaming.toVarName(cf.get().name), argASTs, context);
 
 					case FEnum(_, ef):
 						// This should have been caught by PatternDetector.isEnumConstructor

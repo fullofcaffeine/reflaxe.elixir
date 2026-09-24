@@ -8,8 +8,7 @@ defmodule OptionTools do
   end
   def then(option, transform) do
     (case option do
-      {:some, value} ->
-        transform.(value)
+      {:some, value} -> transform.(value)
       {:none} -> {:none}
     end)
   end
@@ -24,8 +23,7 @@ defmodule OptionTools do
   end
   def filter(option, predicate) do
     (case option do
-      {:some, value} ->
-        if (predicate.(value)), do: {:some, value}, else: {:none}
+      {:some, value} -> if (predicate.(value)), do: {:some, value}, else: {:none}
       {:none} -> {:none}
     end)
   end
@@ -44,13 +42,13 @@ defmodule OptionTools do
   end
   def or_fn(first, second) do
     (case first do
-      {:some, v} -> v
+      {:some, _v} -> first
       {:none} -> second
     end)
   end
   def lazy_or(first, fn_param) do
     (case first do
-      {:some, v} -> v
+      {:some, _v} -> first
       {:none} ->
         fn_param.()
     end)
@@ -125,8 +123,7 @@ defmodule OptionTools do
   end
   def apply(option, fn_param) do
     (case option do
-      {:some, value} ->
-        fn_param.(value)
+      {:some, value} -> fn_param.(value)
       {:none} -> nil
     end)
     option

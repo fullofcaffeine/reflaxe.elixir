@@ -1,6 +1,6 @@
 defmodule Main do
   def main() do
-    _test = (case {:option1, "test"} do
+    (case {:option1, "test"} do
       {:option1, _value} -> nil
       {:option2, _data} -> nil
       {:option3} -> nil

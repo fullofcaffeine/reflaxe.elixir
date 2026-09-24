@@ -54,6 +54,11 @@ class NativeModulePreserver {
 			return null;
 		if (cls.meta == null || !cls.meta.has(":native"))
 			return null;
+		// Explicit conditional retention takes precedence over the convenience
+		// heuristic for small native modules. Otherwise an unused runtime helper
+		// becomes unconditional merely because it contains three or fewer methods.
+		if (cls.meta.has(":ifFeature"))
+			return null;
 
 		final nativeName = extractNativeName(cls.meta);
 		if (nativeName == null || nativeName.indexOf(".") == -1)
@@ -87,6 +92,8 @@ class NativeModulePreserver {
 			return false;
 
 		for (field in fields) {
+			if (field.meta != null && fieldMetaHas(field.meta, ":ifFeature"))
+				return false;
 			if (!isPublicStatic(field))
 				return false;
 		}

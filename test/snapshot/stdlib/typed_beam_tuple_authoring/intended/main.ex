@@ -6,8 +6,10 @@ defmodule Main do
     quintuple = {"five", 5, true, 5.5, "last"}
     legacy = {"legacy", 2}
     raw = {"raw", 1}
-    matched = if (elem(raw, 0) == "raw") do
-      value = elem(raw, 1)
+    raw__0 = elem(raw, 0)
+    raw__1 = elem(raw, 1)
+    matched = if (raw__0 == "raw") do
+      value = raw__1
       value
     else
       -1

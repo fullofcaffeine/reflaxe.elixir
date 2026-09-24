@@ -21,6 +21,22 @@ import reflaxe.elixir.ast.transformers.CaseTupleBinderUnshadowTransforms;
 @:nullSafety(Off)
 class TestStdlibWarningTransforms {
 	public static function run():Expr {
+		testPatternExpressionReads();
+		testNumericResultBlockKinds();
+		testSuccessBinderLexicalScope();
+		testSuccessCaseDoesNotGuessPayload();
+		testLateSuccessCaseDoesNotGuessPayload();
+		testDiscriminantInliningBoundary();
+		testCaseMergeKeepsInputBindings();
+		testNumericCleanupKeepsCapturedNames();
+		testCaseAliasKeepsOuterBinding();
+		testEnumExtractionKeepsLiveAliases();
+		testEnumExtractionKeepsShadowedSource();
+		testMapKeysStructuralDispatchBoundary();
+		testNonEnumCaseKeepsCapturedBindings();
+		testComplexConditionKeepsBothOperands();
+		testLoopRenameKeepsMutationTarget();
+		testNativeCaseAlternativesStayDistinct();
 		testChangesetPassLeavesOrdinaryFunctions();
 		testHeexAssignsRebinding();
 		testUsedAliasBinding();
@@ -41,6 +57,462 @@ class TestStdlibWarningTransforms {
 
 		Sys.println("Stdlib warning transform contracts passed");
 		return macro null;
+	}
+
+	/** Nested patterns and guard-only uses participate in the same lexical binding contract. */
+	static function testSuccessBinderLexicalScope():Void {
+		var inner = makeAST(ECase(makeAST(EVar("inner")), [
+			{
+				pattern: PTuple([PLiteral(makeAST(EAtom("ok"))), PVar("_payload")]),
+				body: makeAST(EString("#{payload.slug}"))
+			}
+		]));
+		var outer = makeAST(ECase(makeAST(EVar("outer")), [
+			{
+				pattern: PTuple([PLiteral(makeAST(EAtom("ok"))), PVar("payload")]),
+				body: inner
+			}
+		]));
+		var source = makeAST(EDef("probe", [PVar("outer"), PVar("inner")], null, outer));
+		var nestedResult = reflaxe.elixir.ast.transformers.SuccessVarAbsoluteReplaceUndefinedTransforms.replacePass(source);
+		if (ElixirASTPrinter.printAST(nestedResult) != ElixirASTPrinter.printAST(source))
+			fail("An inner underscore binder must not capture an outer pattern payload.");
+		assertSuccessCleanupStable(nestedResult);
+		for (hasOuter in [false, true]) {
+			var args:Array<reflaxe.elixir.ast.ElixirAST.EPattern> = hasOuter ? [PVar("input"), PVar("payload")] : [PVar("input")];
+			function guarded(binder:String):ElixirASTNode {
+				return makeAST(EDef("probe", args, null, makeAST(ECase(makeAST(EVar("input")), [
+					{
+						pattern: PTuple([PLiteral(makeAST(EAtom("ok"))), PVar(binder)]),
+						guard: makeAST(EVar("payload")),
+						body: makeAST(EAtom("ok"))
+					}
+				]))));
+			}
+			var actual = reflaxe.elixir.ast.transformers.SuccessVarAbsoluteReplaceUndefinedTransforms.replacePass(guarded("_payload"));
+			if (ElixirASTPrinter.printAST(actual) != ElixirASTPrinter.printAST(guarded(hasOuter ? "_payload" : "payload")))
+				fail("Guard-only spelling alignment must retain outer bindings.");
+			assertSuccessCleanupStable(actual);
+		}
+	}
+
+	/** Registry replay must not change an already aligned binder or capture another scope. */
+	static function assertSuccessCleanupStable(first:ElixirASTNode):Void {
+		var before = ElixirASTPrinter.printAST(first);
+		var second = reflaxe.elixir.ast.transformers.SuccessVarAbsoluteReplaceUndefinedTransforms.replacePass(first);
+		if (ElixirASTPrinter.printAST(second) != before)
+			fail("Repeating success binder cleanup must leave generated output unchanged.");
+	}
+
+	/** An undefined or captured name is not evidence that it denotes the nearest success payload. */
+	static function testSuccessCaseDoesNotGuessPayload():Void {
+		for (reference in ["record", "unresolved"]) {
+			var inner = makeAST(ECase(makeAST(EVar("inner")), [
+				{
+					pattern: PTuple([PLiteral(makeAST(EAtom("ok"))), PVar("_value")]),
+					body: makeAST(EString("#{" + reference + ".slug}"))
+				}
+			]));
+			var outer = makeAST(ECase(makeAST(EVar("outer")), [
+				{
+					pattern: PTuple([PLiteral(makeAST(EAtom("ok"))), PVar("record")]),
+					body: inner
+				}
+			]));
+			var source = makeAST(EDef("probe", [PVar("outer"), PVar("inner")], null, outer));
+			var actual = reflaxe.elixir.ast.transformers.SuccessVarAbsoluteReplaceUndefinedTransforms.replacePass(source);
+			if (ElixirASTPrinter.printAST(actual) != ElixirASTPrinter.printAST(source))
+				fail("Success-case cleanup must not guess which payload a reference denotes.");
+		}
+	}
+
+	/** Missing references must remain errors, not acquire the value of an unrelated result. */
+	static function testLateSuccessCaseDoesNotGuessPayload():Void {
+		// A free use of the exact spelling may restore that binder's underscore,
+		// but a same-named function argument remains an independent outer value.
+		for (hasOuter in [false, true]) {
+			var body = makeAST(EString("#{payload.slug}"));
+			var source = makeAST(EDef("probe", hasOuter ? [PVar("input"), PVar("payload")] : [PVar("input")], null, makeAST(ECase(makeAST(EVar("input")), [
+				{
+					pattern: PTuple([PLiteral(makeAST(EAtom("ok"))), PVar("_payload")]),
+					body: body
+				}
+			]))));
+			var expected = makeAST(EDef("probe", hasOuter ? [PVar("input"), PVar("payload")] : [PVar("input")], null, makeAST(ECase(makeAST(EVar("input")), [
+				{
+					pattern: PTuple([PLiteral(makeAST(EAtom("ok"))), PVar(hasOuter ? "_payload" : "payload")]),
+					body: body
+				}
+			]))));
+			var actual = reflaxe.elixir.ast.transformers.SuccessVarAbsoluteReplaceUndefinedTransforms.replacePass(source);
+			if (ElixirASTPrinter.printAST(actual) != ElixirASTPrinter.printAST(expected))
+				fail("Success binder spelling must preserve independently bound outer values.");
+			assertSuccessCleanupStable(actual);
+		}
+		for (binder in ["payload", "_payload"]) {
+			var branch = makeAST(ECase(makeAST(EVar("input")), [
+				{
+					pattern: PTuple([PLiteral(makeAST(EAtom("ok"))), PVar(binder)]),
+					body: makeAST(EString("#{missing.slug}"))
+				}
+			]));
+			var source = makeAST(EDef("probe", [PVar("input")], null, branch));
+			var actual = reflaxe.elixir.ast.transformers.SuccessVarAbsoluteReplaceUndefinedTransforms.replacePass(source);
+			if (ElixirASTPrinter.printAST(actual) != ElixirASTPrinter.printAST(source))
+				fail("Late success cleanup must preserve unresolved references instead of assigning payload identity.");
+		}
+	}
+
+	/** Keys and binary sizes read existing bindings even when no clause body does. */
+	static function testPatternExpressionReads():Void {
+		var patterns:Array<reflaxe.elixir.ast.ElixirAST.EPattern> = [
+			PMap([{key: makeAST(EPin(makeAST(EVar("saved")))), value: PWildcard}]),
+			PBinary([{pattern: PWildcard, size: makeAST(EVar("saved")), type: "binary"}])
+		];
+		for (pattern in patterns) {
+			var branch = makeAST(ECase(makeAST(EVar("saved")), [{pattern: pattern, body: makeAST(EInteger(7))}]));
+			var source = makeAST(EDef("probe", [], null, makeAST(EBlock([makeAST(EMatch(PVar("saved"), makeAST(ECall(null, "observe", [])))), branch]))));
+			for (actual in [
+				reflaxe.elixir.ast.transformers.DiscriminantRewriteTransforms.discriminantRewritePass(source),
+				reflaxe.elixir.ast.transformers.CaseResultAssignmentMergeTransforms.pass(source)
+			])
+				if (ElixirASTPrinter.printAST(actual) != ElixirASTPrinter.printAST(source))
+					fail("A pattern key or binary size must retain its input binding.");
+		}
+	}
+
+	/** Ordinary blocks preserve numeric returns; legacy do-block printing still drops bare sentinels. */
+	static function testNumericResultBlockKinds():Void {
+		for (value in [0, 1]) {
+			var tail = makeAST(EInteger(value));
+			tail.metadata.sourceExpr = Context.typeExpr(macro $v{value});
+			for (isDo in [false, true]) {
+				var statements = [makeAST(ECall(null, "observe", [])), tail];
+				var definition = makeAST(EDef("probe", [], null, makeAST(isDo ? EDo(statements) : EBlock(statements))));
+				definition.metadata.functionResultContract = Value;
+				var state = reflaxe.elixir.ast.validation.FunctionResultInvariant.capture(definition, "Probe").get("Probe.probe/0");
+				if (state == null || (state.problem != null) != isDo)
+					fail("Result validation must distinguish preserved block tails from discarded do-block tails.");
+			}
+		}
+	}
+
+	/** Only adjacent single-use inputs can move into a case without losing bindings or repeating effects. */
+	static function testDiscriminantInliningBoundary():Void {
+		function functionBody(statements:Array<ElixirASTNode>):ElixirASTNode {
+			return makeAST(EDef("probe", [], null, makeAST(EBlock(statements))));
+		}
+		var init = makeAST(ECall(null, "observe", []));
+		var binding = makeAST(EMatch(PVar("saved"), init));
+		var simpleCase = makeAST(ECase(makeAST(EVar("saved")), [{pattern: PWildcard, body: makeAST(EInteger(1))}]));
+		var source = functionBody([binding, simpleCase]);
+		var actual = reflaxe.elixir.ast.transformers.DiscriminantRewriteTransforms.discriminantRewritePass(source);
+		var expected = functionBody([makeAST(ECase(init, [{pattern: PWildcard, body: makeAST(EInteger(1))}]))]);
+		if (ElixirASTPrinter.printAST(actual) != ElixirASTPrinter.printAST(expected))
+			fail("An adjacent single-use named discriminant must evaluate its initializer exactly once.");
+		var assigned = functionBody([binding, makeAST(EMatch(PVar("answer"), simpleCase)), makeAST(EVar("answer"))]);
+		var assignedExpected = functionBody([
+			makeAST(EMatch(PVar("answer"), makeAST(ECase(init, [{pattern: PWildcard, body: makeAST(EInteger(1))}])))),
+			makeAST(EVar("answer"))
+		]);
+		var assignedResult = reflaxe.elixir.ast.transformers.DiscriminantRewriteTransforms.discriminantRewritePass(assigned);
+		if (ElixirASTPrinter.printAST(assignedResult) != ElixirASTPrinter.printAST(assignedExpected))
+			fail("Inlining a case input must preserve the separate case-result assignment.");
+		var nested = functionBody([makeAST(EBlock([binding, simpleCase])), makeAST(EVar("saved"))]);
+		var nestedResult = reflaxe.elixir.ast.transformers.DiscriminantRewriteTransforms.discriminantRewritePass(nested);
+		if (ElixirASTPrinter.printAST(nestedResult) != ElixirASTPrinter.printAST(nested))
+			fail("A nested block binding can still be read by its enclosing function.");
+		var captured = functionBody([
+			binding,
+			simpleCase,
+			makeAST(EFn([{args: [], guard: null, body: makeAST(EVar("saved"))}]))
+		]);
+		var capturedResult = reflaxe.elixir.ast.transformers.DiscriminantRewriteTransforms.discriminantRewritePass(captured);
+		if (ElixirASTPrinter.printAST(capturedResult) != ElixirASTPrinter.printAST(captured))
+			fail("A later closure must retain its captured case input.");
+		var cases:Array<ElixirASTNode> = [
+			makeAST(ECase(makeAST(EVar("saved")), [{pattern: PWildcard, body: makeAST(EVar("saved"))}])),
+			makeAST(ECase(makeAST(EVar("saved")), [{pattern: PPin(PVar("saved")), body: makeAST(EInteger(1))}])),
+			makeAST(ECase(makeAST(EVar("saved")), [{pattern: PWildcard, guard: makeAST(EVar("saved")), body: makeAST(EInteger(1))}]))
+		];
+		for (caseExpr in cases) {
+			var retained = functionBody([binding, caseExpr]);
+			var result = reflaxe.elixir.ast.transformers.DiscriminantRewriteTransforms.discriminantRewritePass(retained);
+			if (ElixirASTPrinter.printAST(result) != ElixirASTPrinter.printAST(retained))
+				fail("Discriminant inlining must preserve clause reads, pins, and guards.");
+		}
+		for (name in ["saved", "_g"]) {
+			var bind = makeAST(EMatch(PVar(name), init));
+			var match = makeAST(ECase(makeAST(EVar(name)), [{pattern: PWildcard, body: makeAST(EInteger(1))}]));
+			for (statements in [
+				[bind, match, makeAST(EVar(name))],
+				[bind, makeAST(ECall(null, "effect", [])), match]
+			]) {
+				var retained = functionBody(statements);
+				var result = reflaxe.elixir.ast.transformers.DiscriminantRewriteTransforms.discriminantRewritePass(retained);
+				if (ElixirASTPrinter.printAST(result) != ElixirASTPrinter.printAST(retained))
+					fail("Discriminant inlining must preserve later reads and intervening effects.");
+			}
+		}
+	}
+
+	/** A case result cannot replace an input still read in a branch, pin, guard, or suffix. */
+	static function testCaseMergeKeepsInputBindings():Void {
+		var initializer = makeAST(EMatch(PVar("effect_result"), makeAST(ECall(null, "observe", []))));
+		var clauses:Array<reflaxe.elixir.ast.ElixirAST.ECaseClause> = [{pattern: PWildcard, body: makeAST(EInteger(1))}];
+		var eligible = makeAST(EDef("probe", [], null, makeAST(EBlock([
+			makeAST(EMatch(PVar("saved"), initializer)),
+			makeAST(ECase(makeAST(EVar("saved")), clauses))
+		]))));
+		var expected = makeAST(EDef("probe", [], null, makeAST(EBlock([makeAST(EMatch(PVar("saved"), makeAST(ECase(initializer, clauses))))]))));
+		if (ElixirASTPrinter.printAST(reflaxe.elixir.ast.transformers.CaseResultAssignmentMergeTransforms.pass(eligible)) != ElixirASTPrinter.printAST(expected))
+			fail("Eligible case merging must retain the complete effectful initializer exactly once.");
+		var binding = makeAST(EMatch(PVar("saved"), makeAST(EInteger(7))));
+		var cases:Array<ElixirASTNode> = [
+			makeAST(ECase(makeAST(EVar("saved")), [{pattern: PWildcard, body: makeAST(EVar("saved"))}])),
+			makeAST(ECase(makeAST(EVar("saved")), [{pattern: PPin(PVar("saved")), body: makeAST(EInteger(1))}])),
+			makeAST(ECase(makeAST(EVar("saved")), [{pattern: PWildcard, guard: makeAST(EVar("saved")), body: makeAST(EInteger(1))}]))
+		];
+		for (caseExpr in cases) {
+			var source = makeAST(EDef("probe", [], null, makeAST(EBlock([binding, caseExpr]))));
+			var actual = reflaxe.elixir.ast.transformers.CaseResultAssignmentMergeTransforms.pass(source);
+			if (ElixirASTPrinter.printAST(actual) != ElixirASTPrinter.printAST(source))
+				fail("Case merging must retain a captured input binding.");
+		}
+		var simpleCase = makeAST(ECase(makeAST(EVar("saved")), [{pattern: PWildcard, body: makeAST(EInteger(1))}]));
+		var withSuffix = makeAST(EDef("probe", [], null, makeAST(EBlock([binding, simpleCase, makeAST(EVar("saved"))]))));
+		var actual = reflaxe.elixir.ast.transformers.CaseResultAssignmentMergeTransforms.pass(withSuffix);
+		if (ElixirASTPrinter.printAST(actual) != ElixirASTPrinter.printAST(withSuffix))
+			fail("Case merging must not replace the input read after the case.");
+	}
+
+	/** Cosmetic names must not capture an outer value, including after underscore promotion. */
+	static function testNumericCleanupKeepsCapturedNames():Void {
+		for (captured in ["g_value", "_g_value", "_g"]) {
+			var input = makeAST(ECase(makeAST(EVar("input")), [
+				{
+					pattern: PTuple([PVar("_g3"), PVar("_g")]),
+					body: makeAST(EVar(captured))
+				}
+			]));
+			var actual = reflaxe.elixir.ast.transformers.NumericSuffixVarNormalizeTransforms.normalizePass(input);
+			switch (actual.def) {
+				case ECase(_, [{pattern: PTuple([PVar(name), _]), body: {def: EVar(read)}}]):
+					if (read != captured || name == captured || name == "_" + captured)
+						fail("Cosmetic numeric cleanup must not capture a distinct enclosing variable.");
+				default:
+					fail("Numeric cleanup changed the case shape.");
+			}
+		}
+	}
+
+	/** A case body can read a saved value from its enclosing lexical scope. */
+	static function testCaseAliasKeepsOuterBinding():Void {
+		var source = makeAST(ECase(makeAST(EVar("input")), [
+			{
+				pattern: PWildcard,
+				body: makeAST(EBlock([makeAST(EMatch(PVar("value"), makeAST(EVar("_g2")))), makeAST(EVar("value"))]))
+			}
+		]));
+		var actual = BinderTransforms.casePatternTempAssignmentRemovalPass(source);
+		if (ElixirASTPrinter.printAST(actual) != ElixirASTPrinter.printAST(source))
+			fail("A case-local scan cannot declare an enclosing temporary undefined.");
+	}
+
+	/** Pattern extraction must not delete saved payloads still read by the clause. */
+	static function testEnumExtractionKeepsLiveAliases():Void {
+		var statements = [
+			makeAST(EMatch(PVar("_g"), makeAST(EVar("first")))),
+			makeAST(EMatch(PVar("_g2"), makeAST(EVar("last")))),
+			makeAST(EMatch(PVar("first"), makeAST(EVar("_g")))),
+			makeAST(EMatch(PVar("last"), makeAST(EVar("_g2")))),
+			makeAST(ETuple([makeAST(EVar("first")), makeAST(EVar("middle")), makeAST(EVar("last"))]))
+		];
+		var input = makeAST(ECase(makeAST(EVar("input")), [
+			{
+				pattern: PTuple([
+					PLiteral(makeAST(EAtom("channels"))),
+					PVar("first"),
+					PVar("middle"),
+					PVar("last")
+				]),
+				guard: null,
+				body: makeAST(EBlock(statements))
+			}
+		]));
+		for (result in [ElixirASTTransformer.alias_removeRedundantEnumExtractionPass(input)]) {
+			switch (result.def) {
+				case ECase(_, [{body: {def: EBlock(actual)}}]):
+					if (actual.length != statements.length)
+						fail("enum extraction must retain live payload aliases instead of leaving undefined reads");
+					for (i in 0...statements.length)
+						assertNode(actual[i], statements[i].def, "enum extraction must preserve distinct payload values");
+				default:
+					fail("live enum payload alias block changed shape");
+			}
+		}
+
+		var read = makeAST(EVar("value"));
+		var extraction = makeAST(EMatch(PVar("value"), makeAST(ECall(null, "elem", [makeAST(EVar("input")), makeAST(EInteger(1))]))));
+		var otherSlot = makeAST(EMatch(PVar("value"), makeAST(ECall(null, "elem", [makeAST(EVar("input")), makeAST(EInteger(2))]))));
+		var effect = makeAST(ECall(null, "observe", []));
+		for (example in [
+			{input: [extraction, read], expected: [read]},
+			{input: [otherSlot, read], expected: [otherSlot, read]},
+			{input: [effect, extraction, read], expected: [effect, extraction, read]},
+			{input: [extraction], expected: [extraction]}
+		]) {
+			var source = makeAST(ECase(makeAST(EVar("input")), [
+				{
+					pattern: PTuple([PLiteral(makeAST(EAtom("some"))), PVar("value")]),
+					guard: null,
+					body: makeAST(EBlock(example.input))
+				}
+			]));
+			var actual = ElixirASTTransformer.alias_removeRedundantEnumExtractionPass(source);
+			switch (actual.def) {
+				case ECase(_, [{body: {def: EBlock(statements)}}]):
+					if (statements.length != example.expected.length)
+						fail("enum extraction must prove the exact payload slot and preserve later or final assignments");
+					for (i in 0...statements.length)
+						assertNode(statements[i], example.expected[i].def, "enum extraction changed a retained expression");
+				default:
+					fail("exact extraction contract changed shape");
+			}
+		}
+	}
+
+	/** A clause can bind the source name to a different tuple before extraction. */
+	static function testEnumExtractionKeepsShadowedSource():Void {
+		var patterns:Array<reflaxe.elixir.ast.ElixirAST.EPattern> = [PVar("input"), PTuple([PVar("input")])];
+		for (sourcePattern in patterns) {
+			var input = makeAST(ECase(makeAST(EVar("input")), [
+				{
+					pattern: PTuple([PLiteral(makeAST(EAtom("pair"))), PVar("value"), sourcePattern]),
+					guard: null,
+					body: makeAST(EBlock([
+						makeAST(EMatch(PVar("value"), makeAST(ECall(null, "elem", [makeAST(EVar("input")), makeAST(EInteger(1))])))),
+						makeAST(EVar("value"))
+					]))
+				}
+			]));
+			if (ElixirASTPrinter.printAST(ElixirASTTransformer.alias_removeRedundantEnumExtractionPass(input)) != ElixirASTPrinter.printAST(input))
+				fail("enum extraction must retain reads from a source rebound by the clause pattern");
+		}
+	}
+
+	/** Recognizing iterator scaffolding must not erase altered dispatch or effects. */
+	@:access(reflaxe.elixir.ast.transformers.MapKeysIteratorReduceWhileRewriteTransforms)
+	static function testMapKeysStructuralDispatchBoundary():Void {
+		function call(method:String, fallbackMethod:String, withEffect:Bool):ElixirASTNode {
+			var receiver = makeAST(EVar("bound"));
+			var module = makeAST(EBinary(OrElse, makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [receiver, makeAST(EAtom("__reflaxe_class__"))])),
+				makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [receiver, makeAST(EAtom("__struct__"))]))));
+			var callback = makeAST(ECall(makeAST(EVar("callback")), "", []));
+			if (withEffect)
+				callback = makeAST(EBlock([makeAST(ECall(null, "effect", [])), callback]));
+			var dispatch = makeAST(ECase(makeAST(ERemoteCall(makeAST(EVar("Map")), "fetch", [receiver, makeAST(EAtom(method))])), [
+				{pattern: PTuple([PLiteral(makeAST(EAtom("ok"))), PVar("callback")]), body: callback},
+				{
+					pattern: PLiteral(makeAST(EAtom("error"))),
+					body: makeAST(ECall(null, "apply", [module, makeAST(EAtom(fallbackMethod)), makeAST(EList([receiver]))]))
+				}
+			]));
+			return makeAST(ECase(makeAST(EVar("keys")), [{pattern: PVar("bound"), body: dispatch}]));
+		}
+		for (method in ["has_next", "next"]) {
+			var matched = reflaxe.elixir.ast.transformers.MapKeysIteratorReduceWhileRewriteTransforms.extractStructuralCallReceiver(call(method, method,
+				false), method);
+			if (matched != "keys")
+				fail("Map-key loop recognition must support exact structural dispatch.");
+			for (different in [
+				call(method, "other", false),
+				call(method, method, true),
+				call("other", "other", false)
+			]) {
+				if (reflaxe.elixir.ast.transformers.MapKeysIteratorReduceWhileRewriteTransforms.extractStructuralCallReceiver(different, method) != null)
+					fail("Map-key loop recognition must preserve extra effects and changed dispatch.");
+			}
+		}
+	}
+
+	/** Renaming loop state must rename the write target as well as its value. */
+	@:access(reflaxe.elixir.ast.builders.LoopBuilder)
+	static function testLoopRenameKeepsMutationTarget():Void {
+		var effect = makeAST(EReceiverEffect({
+			receiver: {varId: 73, name: "count"},
+			operation: makeAST(ETuple([
+				makeAST(EBinary(Add, makeAST(EVar("count")), makeAST(EInteger(1)))),
+				makeAST(EVar("count"))
+			])),
+			resultShape: UpdatedReceiverAndValue,
+			valueProjection: CompanionValue,
+			writeback: Always
+		}));
+		var actual = reflaxe.elixir.ast.builders.LoopBuilder.transformExpressionWithMapping(effect, ["count" => "carried_count"]);
+		switch (actual.def) {
+			case EReceiverEffect(updated):
+				if (updated.receiver.name != "carried_count" || updated.receiver.varId != 73)
+					fail("Loop state renaming must preserve mutation identity and update its write target.");
+				switch (updated.operation.def) {
+					case ETuple([
+						{def: EBinary(Add, {def: EVar("carried_count")}, _)},
+						{def: EVar("carried_count")}
+					]):
+					default: fail("Loop mutation reads and writes must select the same state binding.");
+				}
+			default:
+				fail("Loop state renaming must preserve the mutation contract.");
+		}
+	}
+
+	/** Parenthesizing conditions must preserve distinct operands and lazy right-side effects. */
+	static function testComplexConditionKeepsBothOperands():Void {
+		var left = makeAST(EIf(makeAST(EVar("choose_left")), makeAST(EBoolean(true)), makeAST(EBoolean(false))));
+		var right = makeAST(EIf(makeAST(EVar("choose_right")), makeAST(ECall(null, "right_effect", [])), makeAST(EBoolean(false))));
+		for (condition in [
+			makeAST(EBinary(OrElse, left, right)),
+			makeAST(EBinary(AndAlso, makeAST(EVar("gate")), right))
+		]) {
+			var branch = makeAST(EAtom("matched"));
+			var input = makeAST(EIf(condition, branch, null));
+			var expected = makeAST(EIf(makeAST(EParen(condition)), branch, null));
+			var actual = reflaxe.elixir.ast.transformers.IfConditionComplexHoistTransforms.pass(input);
+			if (ElixirASTPrinter.printAST(actual) != ElixirASTPrinter.printAST(expected))
+				fail("Complex condition repair must not duplicate the left operand or eagerly evaluate the right operand.");
+		}
+	}
+
+	/** An array-length branch has no enum payload that can replace its locals. */
+	static function testNonEnumCaseKeepsCapturedBindings():Void {
+		var patterns:Array<reflaxe.elixir.ast.ElixirAST.EPattern> = [PLiteral(makeAST(EInteger(3))), PList([PVar("item")])];
+		for (pattern in patterns) {
+			var source = makeAST(ECase(makeAST(EVar("input")), [
+				{
+					pattern: pattern,
+					body: makeAST(EBlock([makeAST(EMatch(PVar("_g"), makeAST(EVar("saved")))), makeAST(EVar("_g"))]))
+				}
+			]));
+			var actual = ElixirASTTransformer.alias_removeRedundantEnumExtractionPass(source);
+			if (ElixirASTPrinter.printAST(actual) != ElixirASTPrinter.printAST(source))
+				fail("Enum extraction must preserve ordinary numeric/list case bindings.");
+		}
+	}
+
+	/** Native atoms and tagged tuples are distinct values, not style variants. */
+	static function testNativeCaseAlternativesStayDistinct():Void {
+		var body = makeAST(ECase(makeAST(EVar("input")), [
+			{pattern: PTuple([PLiteral(makeAST(EAtom("ok"))), PVar("value")]), body: makeAST(EVar("value"))},
+			{pattern: PLiteral(makeAST(EAtom("error"))), body: makeAST(EInteger(2))},
+			{pattern: PTuple([PLiteral(makeAST(EAtom("error")))]), body: makeAST(EInteger(3))}
+		]));
+		var actual = makeAST(EDef("native_result", [PVar("input")], null, body));
+		for (pass in reflaxe.elixir.ast.transformers.registry.ElixirASTPassRegistry.getEnabledPasses()) {
+			actual = pass.pass(actual);
+			var printed = ElixirASTPrinter.printAST(actual);
+			if (printed.indexOf(":error ->") < 0 || printed.indexOf("{:error} ->") < 0)
+				fail("Native atom and tuple alternatives must remain distinct after " + pass.name);
+		}
 	}
 
 	/** Diagnostic defines must not turn an Ecto-only repair into a generic rewrite. */

@@ -235,6 +235,14 @@ class NumericSuffixVarNormalizeTransforms {
 		if (reserved != null)
 			for (k in reserved.keys())
 				used.set(k, true);
+		// Reads can refer to enclosing bindings that are absent from this scope's
+		// declarations. Reserve both spellings because later warning cleanup may
+		// promote an underscore binder; cosmetic renaming must not capture a read.
+		if (refs != null)
+			for (k in refs.keys()) {
+				used.set(k, true);
+				used.set(StringTools.startsWith(k, "_") ? k.substr(1) : "_" + k, true);
+			}
 
 		for (k in toNormalize.keys()) {
 			var split = splitNumericSuffix(k);

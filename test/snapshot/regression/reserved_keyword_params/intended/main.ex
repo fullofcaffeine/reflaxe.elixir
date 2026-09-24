@@ -1,5 +1,12 @@
 defmodule Main do
   def main() do
+    if (KeywordMethods.or_fn(4, 7) != 11) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Reserved method direct call must reach its declaration"]
+    end
+    captured = &KeywordMethods.or_fn/2
+    if (captured.(2, 3) != 5) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Reserved method capture must match direct calls"]
+    end
     test_end("hello", "world")
     test_after(100)
     test_rescue("exception")

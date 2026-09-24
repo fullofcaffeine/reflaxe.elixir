@@ -395,8 +395,7 @@ defmodule Main do
   def test_exhaustive_patterns() do
     flag = true
     bool_result = if (flag), do: "True case", else: "False case"
-    status = 1
-    enum_result = (case status do
+    enum_result = (case 1 do
       0 -> "Inactive"
       1 -> "Active"
       2 -> "Pending"
@@ -409,16 +408,22 @@ defmodule Main do
     array_result = (case 3 do
       0 -> "Empty"
       1 ->
-        x = arr_0
+        g = arr_0
+        x = g
         "Single: #{Reflaxe.Elixir.HaxeFloat.to_string(x)}"
       2 ->
-        x = arr_0
-        y = arr_1
+        g = arr_0
+        g_value = arr_1
+        x = g
+        y = g_value
         "Pair: #{Reflaxe.Elixir.HaxeFloat.to_string(x)},#{Reflaxe.Elixir.HaxeFloat.to_string(y)}"
       3 ->
-        x = arr_0
-        y = arr_1
-        z = arr_2
+        g = arr_0
+        g_value = arr_1
+        g2 = arr_2
+        x = g
+        y = g_value
+        z = g2
         "Triple: #{Reflaxe.Elixir.HaxeFloat.to_string(x)},#{Reflaxe.Elixir.HaxeFloat.to_string(y)},#{Reflaxe.Elixir.HaxeFloat.to_string(z)}"
       _ -> "Other array pattern"
     end)
@@ -427,28 +432,30 @@ defmodule Main do
   def test_nested_patterns_with_guards() do
     data_user_age = 28
     data_user_active = true
-    age = data_user_age
+    g = data_user_age
+    g_value = data_user_active
+    age = g
     perms = 2
-    active = data_user_active
+    active = g_value
     if (age >= 18 and age < 25 and perms > 0 and active) do
       "Young adult with permissions"
     else
-      age = data_user_age
+      age = g
       perms = 2
-      active = data_user_active
+      active = g_value
       if (age >= 25 and age < 65 and perms >= 2 and active) do
         "Adult with full permissions"
       else
-        age = data_user_age
-        active = data_user_active
+        age = g
+        active = g_value
         if (age >= 65 and active) do
           "Senior user"
         else
-          _ = data_user_age
-          _ = data_user_active
-          _ = data_user_age
+          _ = g
+          _ = g_value
+          _ = g
           perms = 2
-          _ = data_user_active
+          _ = g_value
           if (perms == 0), do: "User without permissions", else: "Other user type"
         end
       end
@@ -459,31 +466,35 @@ defmodule Main do
     metrics_memory = 68.7
     metrics_disk = 23.1
     metrics_network = 12.8
-    cpu = metrics_cpu
-    mem = metrics_memory
-    disk = metrics_disk
-    net = metrics_network
+    g = metrics_cpu
+    g_value = metrics_memory
+    g_next = metrics_disk
+    g_entry = metrics_network
+    cpu = g
+    mem = g_value
+    disk = g_next
+    net = g_entry
     if (Reflaxe.Elixir.HaxeFloat.gt(cpu, 80) or Reflaxe.Elixir.HaxeFloat.gt(mem, 90) or Reflaxe.Elixir.HaxeFloat.gt(disk, 90) or Reflaxe.Elixir.HaxeFloat.gt(net, 80)) do
       "Critical resource usage"
     else
-      cpu = metrics_cpu
-      mem = metrics_memory
-      disk = metrics_disk
-      net = metrics_network
+      cpu = g
+      mem = g_value
+      disk = g_next
+      net = g_entry
       if (Reflaxe.Elixir.HaxeFloat.gt(cpu, 60) or Reflaxe.Elixir.HaxeFloat.gt(mem, 75) or Reflaxe.Elixir.HaxeFloat.gt(disk, 75) or Reflaxe.Elixir.HaxeFloat.gt(net, 60)) do
         "High resource usage"
       else
-        cpu = metrics_cpu
-        mem = metrics_memory
-        disk = metrics_disk
-        net = metrics_network
+        cpu = g
+        mem = g_value
+        disk = g_next
+        net = g_entry
         if (Reflaxe.Elixir.HaxeFloat.gt(cpu, 40) and Reflaxe.Elixir.HaxeFloat.gt(mem, 50) and Reflaxe.Elixir.HaxeFloat.gt(disk, 50) and Reflaxe.Elixir.HaxeFloat.gt(net, 30)) do
           "Moderate resource usage"
         else
-          cpu = metrics_cpu
-          mem = metrics_memory
-          disk = metrics_disk
-          net = metrics_network
+          cpu = g
+          mem = g_value
+          disk = g_next
+          net = g_entry
           if (Reflaxe.Elixir.HaxeFloat.lte(cpu, 40) and Reflaxe.Elixir.HaxeFloat.lte(mem, 50) and Reflaxe.Elixir.HaxeFloat.lte(disk, 50) and Reflaxe.Elixir.HaxeFloat.lte(net, 30)), do: "Low resource usage", else: "Unknown resource state"
         end
       end

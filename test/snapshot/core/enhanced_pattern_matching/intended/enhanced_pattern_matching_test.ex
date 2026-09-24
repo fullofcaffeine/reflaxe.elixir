@@ -42,14 +42,20 @@ defmodule EnhancedPatternMatchingTest do
           end
         end
       {:completed, result, duration} ->
-        cond do
-          duration < 1000 -> "Fast completion: " <> result
-          true -> if (duration >= 1000 and duration < 5000), do: "Normal completion: " <> result, else: "Slow completion: " <> result
+        if (duration < 1000) do
+          "Fast completion: #{result}"
+        else
+          if (duration >= 1000 and duration < 5000) do
+            "Normal completion: #{result}"
+          else
+            "Slow completion: #{result}"
+          end
         end
       {:failed, error, retries} ->
-        cond do
-          retries < 3 -> "Recoverable failure: " <> error
-          true -> "Permanent failure: " <> error
+        if (retries < 3) do
+          "Recoverable failure: #{error}"
+        else
+          "Permanent failure: #{error}"
         end
     end)
   end
@@ -110,16 +116,13 @@ defmodule EnhancedPatternMatchingTest do
     end)
   end
   def chain_result_operations(input) do
-    step1 = validate_input(input)
-    (case (case step1 do
-      {:success, validated} ->
-        process_data(validated)
+    (case (case validate_input(input) do
+      {:success, validated} -> process_data(validated)
       {:error, error, context} ->
         context = context || ""
         _result = {:error, error, context}
     end) do
-      {:success, processed} ->
-        format_output(processed)
+      {:success, processed} -> format_output(processed)
       {:error, error, context} ->
         context = context || ""
         _result = {:error, error, context}
@@ -189,19 +192,21 @@ defmodule EnhancedPatternMatchingTest do
     end
   end
   def match_object_patterns(data) do
+    data_name = data.name
+    data_age = data.age
     (case data.active do
       false ->
-        age = data.age
-        name = data.name
+        age = data_age
+        name = data_name
         "Inactive user: #{name} (#{Reflaxe.Elixir.HaxeFloat.to_string(age)})"
       true ->
-        age = data.age
-        name = data.name
+        age = data_age
+        name = data_name
         if (age >= 18) do
           "Active adult: #{name} (#{Reflaxe.Elixir.HaxeFloat.to_string(age)})"
         else
-          age = data.age
-          name = data.name
+          age = data_age
+          name = data_name
           if (age < 18) do
             "Active minor: #{name} (#{Reflaxe.Elixir.HaxeFloat.to_string(age)})"
           else
@@ -229,15 +234,16 @@ defmodule EnhancedPatternMatchingTest do
   end
   def match_binary_pattern(data) do
     bytes = Bytes.of_string(data, {:utf8})
-    (case bytes.length do
+    bytes_length = bytes.length
+    (case bytes_length do
       0 -> "empty"
       1 -> "single byte: #{Reflaxe.Elixir.HaxeFloat.to_string(apply(Map.get(bytes, :__reflaxe_class__) || Map.get(bytes, :__struct__), :get, [bytes, 0]))}"
       _ ->
-        n = bytes.length
+        n = bytes_length
         if (n <= 4) do
           "small data: #{Reflaxe.Elixir.HaxeFloat.to_string(n)} bytes"
         else
-          n = bytes.length
+          n = bytes_length
           "large data: #{Reflaxe.Elixir.HaxeFloat.to_string(n)} bytes"
         end
     end)

@@ -41,6 +41,15 @@ TEST_DIRS=(
   "test/snapshot/regression/builtin_array_constructor"
   "test/snapshot/regression/result_switch_lambda_binders"
   "test/snapshot/regression/tuple_elem_access"
+  "test/snapshot/regression/temporary_single_evaluation"
+  "test/snapshot/regression/reserved_keyword_params"
+  "test/snapshot/regression/SwitchOnFieldAccess"
+  "test/snapshot/regression/enum_pattern_names"
+  "test/snapshot/regression/underscore_prefix_consistency"
+  "test/snapshot/regression/enum_snake_case_patterns"
+  "test/snapshot/regression/enum_extraction_usage"
+  "test/snapshot/regression/OrphanedEnumParameters"
+  "test/snapshot/regression/troubleshooting_patterns"
   "test/snapshot/stdlib/uint_32bit_semantics"
 )
 
@@ -105,7 +114,12 @@ run_one() (
       Code.ensure_loaded!(Main)
       unless function_exported?(Main, :main, 0), do: raise("Missing Main.main/0")
       Main.main()
-    ' >/dev/null)
+    ' >"$beam_dir/stdout")
+  # Some contracts observe effects rather than a returned value. Keep their
+  # independently authored output expectations beside the Haxe fixture.
+  if [[ -f "$abs_test_dir/expected.stdout" ]]; then
+    diff -u "$abs_test_dir/expected.stdout" "$beam_dir/stdout"
+  fi
 )
 
 for test_dir in "${TEST_DIRS[@]}"; do

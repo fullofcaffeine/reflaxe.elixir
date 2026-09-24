@@ -73,8 +73,7 @@ defmodule Main do
         end), haxe_exception} do
           {error_2, _} when is_tuple(error_2) and elem(error_2, 0) in [:overflow, :outside_bounds, :custom, :blocked] ->
             (case error_2 do
-              {:custom, message} ->
-                assert_true(Reflaxe.Elixir.HaxeFloat.eq(message, "io failure"), "Error.Custom payload changed")
+              {:custom, message} -> assert_true(Reflaxe.Elixir.HaxeFloat.eq(message, "io failure"), "Error.Custom payload changed")
               _ ->
                 assert_true(false, "Error.Custom changed constructor")
             end)

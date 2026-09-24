@@ -9,11 +9,11 @@ defmodule Main do
     nil
   end
   defp test_pattern_matching() do
-    _user_opt = (case {:some, 42} do
+    (case {:some, 42} do
       {:some, _value} -> nil
       {:none} -> nil
     end)
-    _result = (case {:ok, "data"} do
+    (case {:ok, "data"} do
       {:ok, _value} -> nil
       {:error, _reason} -> nil
     end)

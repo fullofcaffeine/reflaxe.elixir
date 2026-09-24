@@ -11,15 +11,55 @@ defmodule Main do
     expect("has id", apply(Map.get(root, :__reflaxe_class__) || Map.get(root, :__struct__), :exists, [root, "id"]))
     expect("root parent", Xml.get_parent(root).node_type == Xml.document())
     attrs = apply(Map.get(root, :__reflaxe_class__) || Map.get(root, :__struct__), :attributes, [root])
-    expect("attr has first", attrs.has_next.())
-    expect("attr name", attrs.next.() == "id")
-    expect("attr exhausted", not attrs.has_next.())
+    expect("attr has first", ((case attrs do
+        reflaxe_structural_receiver_node_0 ->
+          (case Map.fetch(reflaxe_structural_receiver_node_0, :has_next) do
+            {:ok, reflaxe_structural_callback_node_0} ->
+              reflaxe_structural_callback_node_0.()
+            :error ->
+              apply(Map.get(reflaxe_structural_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_structural_receiver_node_0, :__struct__), :has_next, [reflaxe_structural_receiver_node_0])
+          end)
+      end)))
+    expect("attr name", (case attrs do
+      reflaxe_structural_receiver_node_1 ->
+        (case Map.fetch(reflaxe_structural_receiver_node_1, :next) do
+          {:ok, reflaxe_structural_callback_node_1} ->
+            reflaxe_structural_callback_node_1.()
+          :error ->
+            apply(Map.get(reflaxe_structural_receiver_node_1, :__reflaxe_class__) || Map.get(reflaxe_structural_receiver_node_1, :__struct__), :next, [reflaxe_structural_receiver_node_1])
+        end)
+    end) == "id")
+    expect("attr exhausted", not (case attrs do
+      reflaxe_structural_receiver_node_2 ->
+        (case Map.fetch(reflaxe_structural_receiver_node_2, :has_next) do
+          {:ok, reflaxe_structural_callback_node_2} ->
+            reflaxe_structural_callback_node_2.()
+          :error ->
+            apply(Map.get(reflaxe_structural_receiver_node_2, :__reflaxe_class__) || Map.get(reflaxe_structural_receiver_node_2, :__struct__), :has_next, [reflaxe_structural_receiver_node_2])
+        end)
+    end))
     count = 0
     item = apply(Map.get(root, :__reflaxe_class__) || Map.get(root, :__struct__), :elements_named, [root, "item"])
     {count} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count}, fn _, {acc_count} ->
       try do
-        if (item.has_next.()) do
-          item = item.next.()
+        if ((case item do
+        reflaxe_structural_receiver_node_3 ->
+          (case Map.fetch(reflaxe_structural_receiver_node_3, :has_next) do
+            {:ok, reflaxe_structural_callback_node_3} ->
+              reflaxe_structural_callback_node_3.()
+            :error ->
+              apply(Map.get(reflaxe_structural_receiver_node_3, :__reflaxe_class__) || Map.get(reflaxe_structural_receiver_node_3, :__struct__), :has_next, [reflaxe_structural_receiver_node_3])
+          end)
+      end)) do
+          item = (case item do
+            reflaxe_structural_receiver_node_4 ->
+              (case Map.fetch(reflaxe_structural_receiver_node_4, :next) do
+                {:ok, reflaxe_structural_callback_node_4} ->
+                  reflaxe_structural_callback_node_4.()
+                :error ->
+                  apply(Map.get(reflaxe_structural_receiver_node_4, :__reflaxe_class__) || Map.get(reflaxe_structural_receiver_node_4, :__struct__), :next, [reflaxe_structural_receiver_node_4])
+              end)
+          end)
           acc_count = acc_count + 1
           expect("item text", Xml.get_node_value(apply(Map.get(item, :__reflaxe_class__) || Map.get(item, :__struct__), :first_child, [item])) == (if (acc_count == 1), do: "A", else: "B"))
           {:cont, {acc_count}}

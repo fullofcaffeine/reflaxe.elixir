@@ -4,6 +4,7 @@
 		"string_tools.ex",
 		"std.ex",
 		"reflaxe/exception.ex",
+		"reflaxe/elixir/i_map.ex",
 		"reflaxe/elixir/haxe_throw.ex",
 		"reflaxe/elixir/haxe_int.ex",
 		"reflaxe/elixir/haxe_float.ex",
@@ -42,11 +43,11 @@
 		},
 		{
 			"path": "lambda.ex",
-			"sha256": "eb64c98d9fe099d3d43bf355c3fdf030b75bb7ff565f820462f0de4ab04aba73"
+			"sha256": "edd78c6f28a4a99bca7060c8dc0d7161b33a2cff693558ddcd4d2cbac17fb45d"
 		},
 		{
 			"path": "main.ex",
-			"sha256": "fa32534adfff61d19e94c113b63950b1c1a2c6faa2112a822b622c377fd4851b"
+			"sha256": "e9e64f07a338f5c646d1b17bc72c2675b5f8393cd37d69437caefa2342594478"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.ex",
@@ -59,6 +60,10 @@
 		{
 			"path": "reflaxe/elixir/haxe_throw.ex",
 			"sha256": "642bbf29d073acc9eb2ffcea4a8e6016396a43f1a4180a79331b537bfefc6094"
+		},
+		{
+			"path": "reflaxe/elixir/i_map.ex",
+			"sha256": "b30386c78b24d2874344c2bc345f14131f4a8ea32a60f315ef05ca2b207530be"
 		},
 		{
 			"path": "reflaxe/exception.ex",
@@ -77,5 +82,5 @@
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "30a2d34553b6ea563a1b57ef639bc62b2698f15e28e6fd045a9200dde9e940eb"
+	"generation": "9fb199f1bf9275bd14d20040b18a597fa3de4c1dae09c491fada05c2c7ba639f"
 }

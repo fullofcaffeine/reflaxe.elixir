@@ -1,5 +1,38 @@
 /** Runtime contracts for loop results, including updates inside conditional scopes. */
 class Main {
+	/** An outer range value used only by an output call remains a captured local. */
+	public static function interpolationOnlyRange():Void {
+		for (outer in 0...3) {
+			for (inner in 0...3) {
+				if (inner == 1)
+					break;
+				Sys.println('capture:$outer:$inner');
+			}
+		}
+	}
+
+	/** No outer local changes: inner break must still stop only its own range loop. */
+	public static function statelessRangeControl():Void {
+		for (outer in 0...3) {
+			for (inner in 0...3) {
+				if (outer + inner > 2)
+					break;
+				Sys.println('range:$outer:$inner');
+			}
+		}
+	}
+
+	/** A side-effect-only array loop must honor continue and break without an accumulator. */
+	public static function statelessArrayControl():Void {
+		for (value in [0, 1, 2, 3, 4]) {
+			if (value == 1)
+				continue;
+			if (value == 3)
+				break;
+			Sys.println('array:$value');
+		}
+	}
+
 	/** Returns belong to the Haxe function, including inside a stateful while callback. */
 	static function whileFind(limit:Int, target:Int):Int {
 		var index = 0;
@@ -204,6 +237,9 @@ class Main {
 	}
 
 	public static function main():Void {
+		interpolationOnlyRange();
+		statelessRangeControl();
+		statelessArrayControl();
 		assertInts("while returns", [10, 12, -1, -1], [whileFind(3, 0), whileFind(3, 2), whileFind(3, 8), whileFind(0, 0)]);
 		if (!whileSearch([1, 3, 5, 7, 9], 5) || whileSearch([1, 3, 5, 7, 9], 4) || whileSearch([], 1))
 			throw "while binary search return or termination";

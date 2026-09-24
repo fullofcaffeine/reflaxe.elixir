@@ -18,9 +18,9 @@ typedef FunctionResultState = {
  *
  * WHAT
  * - Checks authored EDef/EDefp nodes carrying FunctionResultContract.Value.
- * - Detects transitions from a valid result carrier to a missing target tail,
- *   non-nullable nil tail, or source numeric tail placed in EBlock/EDo shapes
- *   that the printer treats as sentinels.
+ * - Detects transitions from a valid result carrier to a missing target tail
+ *   or non-nullable nil tail. Ordinary numeric block tails are preserved;
+ *   legacy do-block printing still discards bare numeric sentinels.
  *
  * WHY
  * - Cleanup passes can accidentally move a scalar return into statement-only
@@ -141,7 +141,10 @@ class FunctionResultInvariant {
 				blockTailProblem(statements, mayBeNil, "block");
 
 			case EDo(statements):
-				blockTailProblem(statements, mayBeNil, "do block");
+				if (statements != null
+					&& statements.length > 0
+					&& isPrinterDiscardedSourceNumericTail(statements[statements.length - 1]))
+					"the source numeric result is discarded by do-block printing"; else blockTailProblem(statements, mayBeNil, "do block");
 
 			case EParen(inner):
 				tailProblem(inner, mayBeNil);
@@ -228,15 +231,23 @@ class FunctionResultInvariant {
 		};
 	}
 
+	/** Keep source results protected until legacy do-block sentinel filtering is removed. */
+	static function isPrinterDiscardedSourceNumericTail(node:ElixirAST):Bool {
+		if (node == null || node.def == null || node.metadata == null || node.metadata.sourceExpr == null)
+			return false;
+		return switch (node.def) {
+			case EInteger(value) if (value == 0 || value == 1): true;
+			case EFloat(value) if (value == 0.0): true;
+			case ERaw(code) if (code != null && (code.trim() == "0" || code.trim() == "1")): true;
+			default: false;
+		};
+	}
+
 	static function blockTailProblem(statements:Array<ElixirAST>, mayBeNil:Bool, label:String):Null<String> {
 		if (statements == null || statements.length == 0)
 			return "the final " + label + " is empty";
 
-		var tail = statements[statements.length - 1];
-		if (isPrinterDiscardedSourceNumericTail(tail))
-			return "a source numeric result was moved into a " + label + " shape where the printer discards it as a sentinel";
-
-		return tailProblem(tail, mayBeNil);
+		return tailProblem(statements[statements.length - 1], mayBeNil);
 	}
 
 	static function clauseTailProblem(bodies:Array<ElixirAST>, mayBeNil:Bool, label:String, allowEmpty:Bool = false):Null<String> {
@@ -249,18 +260,6 @@ class FunctionResultInvariant {
 				return label + " branch " + (index + 1) + " has no valid result: " + problem;
 		}
 		return null;
-	}
-
-	static function isPrinterDiscardedSourceNumericTail(node:ElixirAST):Bool {
-		if (node == null || node.def == null || node.metadata == null || node.metadata.sourceExpr == null)
-			return false;
-
-		return switch (node.def) {
-			case EInteger(value) if (value == 0 || value == 1): true;
-			case EFloat(value) if (value == 0.0): true;
-			case ERaw(code) if (code != null && (code.trim() == "0" || code.trim() == "1")): true;
-			default: false;
-		};
 	}
 }
 #end

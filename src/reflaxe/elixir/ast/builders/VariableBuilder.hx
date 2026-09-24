@@ -33,6 +33,37 @@ using StringTools;
  */
 @:nullSafety(Off)
 class VariableBuilder {
+	/** Classify declarations this builder owns; control-flow and enum extraction stay with their specialized lowering. */
+	public static function isSimpleInit(init:Null<TypedExpr>):Bool {
+		if (init == null)
+			return true;
+		return switch (init.expr) {
+			case TConst(_): true;
+			case TLocal(_): true;
+			case TField(_, _): true;
+			case TCall(_, _): true;
+			case TNew(_, _, _): true;
+			case TObjectDecl(_): true;
+			case TArrayDecl(_): true;
+			case TBinop(_, _, _): true;
+			case TUnop(_, _, _): true;
+			case TParenthesis(e): isSimpleInit(e);
+			case TCast(e, _): isSimpleInit(e);
+			case TMeta(_, e): isSimpleInit(e);
+			// Resolve the exact clause payload before generic declaration lowering.
+			// Otherwise a synthetic extraction can overwrite a user binder such as g.
+			case TEnumParameter(_, _, _): false;
+			case TBlock(_): false;
+			case TIf(_, _, _): false;
+			case TSwitch(_, _, _): false;
+			case TWhile(_, _, _): false;
+			case TFor(_, _, _): false;
+			case TTry(_, _): false;
+			case TFunction(_): false;
+			default: true;
+		};
+	}
+
 	static function ensureStableNameForAnonymousLocal(tvar:TVar, context:CompilationContext):Void {
 		if (tvar == null || context == null)
 			return;

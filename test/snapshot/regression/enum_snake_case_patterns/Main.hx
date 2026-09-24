@@ -47,7 +47,14 @@ class Main {
 		testTopicConversion();
 
 		// Test message pattern matching
-		testMessagePatterns();
+		trace(testMessagePatterns(TodoCreated({id: 1, title: "Test"})));
+		assertText(testMessagePatterns(TodoCreated("new")), "Created todo: new");
+		assertText(testMessagePatterns(TodoUpdated("changed")), "Updated todo: changed");
+		assertText(testMessagePatterns(TodoDeleted(7)), "Deleted todo: 7");
+		assertText(testMessagePatterns(BulkUpdate("refresh")), "Bulk action: refresh");
+		assertText(testMessagePatterns(UserOnline(8)), "User 8 is online");
+		assertText(testMessagePatterns(UserOffline(9)), "User 9 is offline");
+		assertText(testMessagePatterns(SystemAlert("check", "info")), "Alert [info]: check");
 
 		// Test complex naming
 		testComplexNames();
@@ -68,9 +75,7 @@ class Main {
 		trace('Topic string: $topicString');
 	}
 
-	static function testMessagePatterns() {
-		var message:PubSubMessage = TodoCreated({id: 1, title: "Test"});
-
+	static function testMessagePatterns(message:PubSubMessage):String {
 		// Pattern matching with parameters should also use snake_case
 		var result = switch (message) {
 			case TodoCreated(todo):
@@ -89,7 +94,12 @@ class Main {
 				'Alert [$level]: $msg';
 		}
 
-		trace(result);
+		return result;
+	}
+
+	static function assertText(actual:String, expected:String):Void {
+		if (actual != expected)
+			throw 'Expected $expected, got $actual';
 	}
 
 	static function testComplexNames() {
