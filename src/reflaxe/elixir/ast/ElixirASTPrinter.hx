@@ -2087,6 +2087,9 @@ class ElixirASTPrinter {
 					':' + atomStr;
 				}
 
+			case EStringLiteral(value):
+				'"' + escapeString(value).replace("#{", "\\#{") + '"';
+
 			case EString(value):
 				// Sanitize interpolated strings that contain Enum.join(<multi-stmt>, sep)
 				// by wrapping the first argument in an IIFE to ensure valid syntax.

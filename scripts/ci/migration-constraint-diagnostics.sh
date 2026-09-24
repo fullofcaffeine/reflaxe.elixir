@@ -8,7 +8,7 @@ diagnostic_tmp="$(mktemp -d "${TMPDIR:-/tmp}/migration-diagnostics.XXXXXX")"
 trap 'rm -rf "$diagnostic_tmp"' EXIT
 haxe_bin="${HAXE_BIN:-haxe}"
 
-for name in migration_constraint_empty_table migration_constraint_empty_name migration_constraint_dynamic_check; do
+for name in migration_constraint_empty_table migration_constraint_empty_name migration_constraint_dynamic_check migration_execute_dynamic migration_execute_concat; do
   fixture="$fixture_root/$name"
   log="$diagnostic_tmp/$name.log"
   output="$diagnostic_tmp/$name-output"

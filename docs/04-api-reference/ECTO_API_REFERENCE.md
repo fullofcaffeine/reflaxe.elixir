@@ -245,6 +245,9 @@ string-concatenated.
 `@:migration` marks migration classes for migration-specific processing.
 
 - In `.exs` migration mode (`-D ecto_migrations_exs`), only the documented supported DSL subset is guaranteed.
+- `execute("SQL...")` is supported in both `up` and `down`. It preserves SQL bytes and statement order beside typed table operations.
+- In this mode, the SQL argument must lower to a string literal. Runtime Haxe helpers are not retained; dynamic SQL expressions produce a compile-time diagnostic.
+- SQL remains data passed to Ecto. Quotes, backslashes, newlines, and literal `#{...}` text do not become Elixir code.
 - For unsupported advanced migration shapes, use hand-written Elixir migrations.
 
 ## Test Surface

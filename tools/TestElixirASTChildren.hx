@@ -113,6 +113,7 @@ class TestElixirASTChildren {
 				1, 0),
 			nodeCase("EAtom", EAtom(ElixirAtom.raw("ok")), 0, 0),
 			nodeCase("EString", EString("value"), 0, 0),
+			nodeCase("EStringLiteral", EStringLiteral("#{literal}"), 0, 0),
 			nodeCase("EInteger", EInteger(1), 0, 0),
 			nodeCase("EFloat", EFloat(1.5), 0, 0),
 			nodeCase("EBoolean", EBoolean(true), 0, 0),

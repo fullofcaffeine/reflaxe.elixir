@@ -14,6 +14,8 @@ case "${PWD##*/}" in
     message='Constraint table and name must be non-empty string literals.' ;;
   migration_constraint_dynamic_check)
     message='addCheckConstraint expects string literal name and expression.' ;;
+  migration_execute_dynamic|migration_execute_concat)
+    message='Migration execute expects one SQL string literal in ecto_migrations_exs builds.' ;;
   *) exit 99 ;;
 esac
 case "$DIAGNOSTIC_CONTRACT_MODE" in
@@ -44,7 +46,7 @@ for mode in expected wrong-message success timeout crash missing-command emitted
   HAXE_BIN="$contract_tmp/haxe" DIAGNOSTIC_CONTRACT_MODE="$mode" \
     bash "$ROOT_DIR/scripts/ci/migration-constraint-diagnostics.sh" >"$contract_tmp/$mode.log" 2>&1 || status=$?
   if [[ "$mode" == expected ]]; then
-    if [[ "$status" != 0 ]] || [[ "$(grep -c 'rejected with the expected diagnostic' "$contract_tmp/$mode.log")" != 3 ]]; then
+    if [[ "$status" != 0 ]] || [[ "$(grep -c 'rejected with the expected diagnostic' "$contract_tmp/$mode.log")" != 5 ]]; then
       cat "$contract_tmp/$mode.log" >&2
       echo "Diagnostic observer rejected its valid control" >&2
       exit 1

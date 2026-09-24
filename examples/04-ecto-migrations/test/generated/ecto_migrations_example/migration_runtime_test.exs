@@ -38,11 +38,15 @@ defmodule EctoMigrationsExample.MigrationRuntimeTest do
     actual = Ecto.Adapters.SQL.query!(repo, "SELECT count(*)::text FROM posts", []).rows
     assert actual == [["0"]]
     Ecto.Adapters.SQL.query!(repo, "DO $$ BEGIN BEGIN INSERT INTO posts (title, view_count, inserted_at, updated_at) VALUES ('invalid', -1, NOW(), NOW()); RAISE EXCEPTION 'negative count was accepted'; EXCEPTION WHEN check_violation THEN NULL; END; END $$", [])
+    actual = Ecto.Adapters.SQL.query!(repo, "SELECT encode(convert_to(label, 'UTF8'), 'hex') FROM execute_audit ORDER BY label", []).rows
+    assert actual == [["6669727374"], ["71756f7465202720736c617368205c20696e746572706f6c6174696f6e20237b756e746f75636865647d"]]
     migration_path = System.fetch_env!("ECTO_MIGRATIONS_PATH")
     options = [{:all, true}]
     Ecto.Migrator.run(repo, migration_path, :down, options)
     rolled_back = Ecto.Adapters.SQL.query!(repo, EctoMigrationsExample.MigrationRuntimeTest.table_query(), [])
     actual = length(rolled_back.rows)
     assert actual == 0
+    actual = Ecto.Adapters.SQL.query!(repo, "SELECT count(*)::text FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('execute_records','execute_audit')", []).rows
+    assert actual == [["0"]]
   end
 end

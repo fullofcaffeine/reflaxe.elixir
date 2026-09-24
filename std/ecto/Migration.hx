@@ -103,6 +103,8 @@ abstract class Migration {
 
 	/**
 	 * Execute raw SQL for advanced operations
+	 * In ecto_migrations_exs builds, SQL must lower to a string literal.
+	 * Runtime Haxe helpers are not retained in emitted migration modules.
 	 * Use sparingly - prefer typed operations when possible
 	 */
 	public function execute(sql:String):Void {

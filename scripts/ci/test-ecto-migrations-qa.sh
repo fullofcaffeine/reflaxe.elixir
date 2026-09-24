@@ -25,6 +25,15 @@ if [[ "${1:-}" == "build-migrations.hxml" ]]; then
   : >"$output_dir/20240101120000_create_users.exs"
   : >"$output_dir/20240102120000_create_posts.exs"
 fi
+if [[ "${1:-}" == "--cwd" ]]; then
+  for argument in "$@"; do
+    case "$argument" in
+      elixir_output=*)
+        mkdir -p "${argument#elixir_output=}"
+        : >"${argument#elixir_output=}/20240104120000_execute_sql.exs" ;;
+    esac
+  done
+fi
 FAKE_HAXE
 
 cat >"$tmp_dir/mix" <<'FAKE_MIX'

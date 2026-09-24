@@ -38,9 +38,9 @@ This directory contains the Reflaxe.Elixir compiler test suite, validating that 
 ### Test Statistics (as of 2026-08-22)
 - **423 positive snapshot tests** validating compiler output
 - **2026-09-23 positive inventory: 433 active fixtures**, including captured callback invocation and built-in array construction. Both new fixtures also run in the native runtime smoke suite.
-- **2026-09-24 positive inventory: 436 active fixtures**, including numeric control-flow concatenation with an independent stdout contract and native runtime smoke coverage.
+- **2026-09-24 positive inventory: 437 active fixtures**, including numeric control-flow concatenation and literal migration SQL, with independent native runtime expectations.
 - **97 negative snapshot tests** validating expected failures
-- **2026-09-23 negative inventory: 101 fixtures**, including three standalone migration-constraint rejection cases. These require diagnostic verification; a compilation timeout is not a passing rejection.
+- **2026-09-24 negative inventory: 103 fixtures**, including three standalone migration-constraint and two migration-SQL rejection cases. These require diagnostic verification; a compilation timeout is not a passing rejection.
 - **~8,000 test files** (source + intended + outputs)
 - **6 test categories** organizing tests by feature area
 

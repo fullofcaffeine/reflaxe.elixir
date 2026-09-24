@@ -236,6 +236,9 @@ enum ElixirASTDef {
 	/** String literal */
 	EString(value:String);
 
+	/** Literal binary data: target interpolation delimiters have no code meaning. */
+	EStringLiteral(value:String);
+
 	/** Integer literal */
 	EInteger(value:Int);
 

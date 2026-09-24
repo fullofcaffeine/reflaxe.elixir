@@ -273,6 +273,8 @@ class EctoMigrationExsTransforms {
 
 	static function buildUpStatementsFromChain(chain:MigrationCallChain, pos:Position):Null<Array<ElixirAST>> {
 		var first = chain.calls[0];
+		if (first.name == "execute")
+			return buildExecuteStatement(chain, pos);
 		if (first.name == "create_constraint" || first.name == "drop_constraint")
 			return buildStandaloneConstraint(chain, pos);
 		return if (first.name == "create_table") {
@@ -280,13 +282,15 @@ class EctoMigrationExsTransforms {
 		} else if (first.name == "alter_table") {
 			buildAlterTableStatementsFromChain(chain, pos);
 		} else {
-			compilerError("Unsupported migration up/0: expected create_table, alter_table, create_constraint or drop_constraint.", pos);
+			compilerError("Unsupported migration up/0: expected create_table, alter_table, create_constraint, drop_constraint or execute.", pos);
 			null;
 		};
 	}
 
 	static function buildDownStatementsFromChain(chain:MigrationCallChain, pos:Position):Null<Array<ElixirAST>> {
 		var first = chain.calls[0];
+		if (first.name == "execute")
+			return buildExecuteStatement(chain, pos);
 		if (first.name == "create_constraint" || first.name == "drop_constraint")
 			return buildStandaloneConstraint(chain, pos);
 		if (first.name == "drop_table" && first.args.length >= 1) {
@@ -303,8 +307,29 @@ class EctoMigrationExsTransforms {
 			return buildAlterTableStatementsFromChain(chain, pos);
 		}
 
-		compilerError("Unsupported migration down/0: expected drop_table, alter_table, create_constraint or drop_constraint.", pos);
+		compilerError("Unsupported migration down/0: expected drop_table, alter_table, create_constraint, drop_constraint or execute.", pos);
 		return null;
+	}
+
+	/**
+	 * Lowers the declared SQL entrypoint in either migration direction.
+	 * For example, Haxe `execute("SELECT 1")` becomes native `execute("SELECT 1")`.
+	 * The literal node preserves SQL bytes, including target interpolation markers,
+	 * while the printer owns quoting. Dynamic expressions are rejected because
+	 * this emitter removes the original class helpers and receiver.
+	 */
+	static function buildExecuteStatement(chain:MigrationCallChain, pos:Position):Null<Array<ElixirAST>> {
+		var call = chain.calls[0];
+		if (chain.calls.length != 1 || call.args.length != 1 || extractString(call.args[0]) == null) {
+			// This pass replaces the class, including its helpers and receiver.
+			// Reject dynamic expressions instead of emitting dangling references.
+			compilerError("Migration execute expects one SQL string literal in ecto_migrations_exs builds.", pos);
+			return null;
+		}
+		var sql = extractString(call.args[0]);
+		return [
+			makeAST(ECall(null, "execute", [makeASTWithMeta(EStringLiteral(sql), call.args[0].metadata, call.args[0].pos)]))
+		];
 	}
 
 	/**

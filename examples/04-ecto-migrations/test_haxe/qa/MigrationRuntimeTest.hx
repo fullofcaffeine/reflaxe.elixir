@@ -41,11 +41,26 @@ class MigrationRuntimeTest extends TestCase {
 			"VALUES ('invalid', -1, NOW(), NOW()); RAISE EXCEPTION 'negative count was accepted'; " + "EXCEPTION WHEN check_violation THEN NULL; END; END $$",
 			[]);
 
+		// Independently specified runtime bytes: SQL quoting and target-looking text
+		// are data, while the audit table proves the preceding inserts ran first.
+		// Hex keeps the oracle independent of the compiler string printer under test.
+		assertEqual([
+			["6669727374"],
+			[
+				"71756f7465202720736c617368205c20696e746572706f6c6174696f6e20237b756e746f75636865647d"
+			]
+		],
+			EctoSQL.query(repo, "SELECT encode(convert_to(label, 'UTF8'), 'hex') FROM execute_audit ORDER BY label", []).rows);
+
 		var migrationPath = ElixirSystem.fetchEnv("ECTO_MIGRATIONS_PATH");
 		var options:Array<{_0:Atom, _1:Term}> = [{_0: "all", _1: true}];
 		Migrator.run(repo, migrationPath, "down", options);
 
 		var rolledBack = EctoSQL.query(repo, TABLE_QUERY, []);
 		assertEqual(0, rolledBack.rows.length);
+		assertEqual([["0"]],
+			EctoSQL.query(repo,
+				"SELECT count(*)::text FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('execute_records','execute_audit')", [])
+				.rows);
 	}
 }
