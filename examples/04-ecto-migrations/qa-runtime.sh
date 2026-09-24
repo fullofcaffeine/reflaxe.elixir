@@ -107,6 +107,9 @@ if [[ ! -f "$qa_migrations_dir/20240104120000_execute_sql.exs" ]]; then
   echo "[ecto-migrations-qa] SQL execution fixture was not generated" >&2
   exit 1
 fi
+qa_reference_dir="$qa_workspace/reference"
+"$haxe_bin" --cwd "$repo_root/test/snapshot/ecto/migration_exs_composite_reference" compile.hxml -D "elixir_output=$qa_reference_dir"
+cp "$qa_reference_dir/20240105120000_composite_reference.exs" "$qa_migrations_dir/"
 "$haxe_bin" build-tests.hxml
 # Prepare cold dependencies without generating and compiling the application
 # twice. The forced strict pass below remains the application compile gate.

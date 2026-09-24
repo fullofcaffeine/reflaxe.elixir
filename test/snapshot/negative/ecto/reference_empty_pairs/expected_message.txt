@@ -1,0 +1,1 @@
+Composite references require a non-empty literal array of column pairs.

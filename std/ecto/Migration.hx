@@ -359,6 +359,9 @@ enum ColumnType<T> {
  * Column options that apply based on column type
  */
 typedef ColumnOptions<T> = {
+	/** Attach a foreign key without losing this column's value/default type. */
+	var ?reference:ColumnReference;
+
 	@:optional var nullable:Bool;
 	@:optional var defaultValue:T;
 	@:optional var primaryKey:Bool;
@@ -417,9 +420,33 @@ enum IndexMethod {
  * Foreign key reference options
  */
 typedef ReferenceOptions = {
-	@:optional var column:String; // Referenced column (default: id)
-	@:optional var onDelete:OnDeleteAction;
-	@:optional var onUpdate:OnUpdateAction;
+	var ?column:String; // Referenced column (default: id)
+	var ?name:String;
+	var ?with:Array<ReferenceColumnPair>;
+	var ?onDelete:OnDeleteAction;
+	var ?onUpdate:OnUpdateAction;
+}
+
+/**
+ * Adds a foreign key to an explicitly typed column. For example,
+ * `addColumn("parent_code", String(), {reference: {table: "parents", column: "code"}})`
+ * emits `add :parent_code, references(:parents, type: :string, column: :code)`.
+ * Haxe checks the column's default value type; the database checks referenced
+ * schema existence, compatible types, and uniqueness when the migration runs.
+ */
+typedef ColumnReference = {
+	> ReferenceOptions,
+	var table:String;
+}
+
+/**
+ * One additional local-to-parent column pair in a composite foreign key.
+ * Named fields prevent confusion between the two sides. Migration emission
+ * requires literal, non-empty names and rejects repeated columns on either side.
+ */
+typedef ReferenceColumnPair = {
+	var localColumn:String;
+	var referencedColumn:String;
 }
 
 /**

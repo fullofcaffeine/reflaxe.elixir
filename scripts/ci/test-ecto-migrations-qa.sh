@@ -30,7 +30,8 @@ if [[ "${1:-}" == "--cwd" ]]; then
     case "$argument" in
       elixir_output=*)
         mkdir -p "${argument#elixir_output=}"
-        : >"${argument#elixir_output=}/20240104120000_execute_sql.exs" ;;
+        : >"${argument#elixir_output=}/20240104120000_execute_sql.exs"
+        : >"${argument#elixir_output=}/20240105120000_composite_reference.exs" ;;
     esac
   done
 fi
