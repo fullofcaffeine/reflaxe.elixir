@@ -408,7 +408,9 @@ defmodule Main do
           "Empty array"
         end
       1 ->
-        array_read_node_53 = (case {data, 0} do
+        dynamic_array_value_node_52 = data
+        dynamic_array_index_node_52 = 0
+        array_read_node_53 = (case {dynamic_array_value_node_52, dynamic_array_index_node_52} do
           {dynamic_array_value_node_52, dynamic_array_index_node_52} when is_list(dynamic_array_value_node_52) and is_integer(dynamic_array_index_node_52) ->
             cond do
               dynamic_array_index_node_52 < 0 -> nil
@@ -450,7 +452,9 @@ defmodule Main do
           end
         end
       2 ->
-        array_read_node_54 = (case {data, 0} do
+        dynamic_array_value_node_59 = data
+        dynamic_array_index_node_59 = 0
+        array_read_node_54 = (case {dynamic_array_value_node_59, dynamic_array_index_node_59} do
           {dynamic_array_value_node_59, dynamic_array_index_node_59} when is_list(dynamic_array_value_node_59) and is_integer(dynamic_array_index_node_59) ->
             cond do
               dynamic_array_index_node_59 < 0 -> nil
@@ -458,7 +462,9 @@ defmodule Main do
             end
           {dynamic_array_value_node_59, dynamic_array_index_node_59} -> dynamic_array_value_node_59[dynamic_array_index_node_59]
         end)
-        array_read_node_55 = (case {data, 1} do
+        dynamic_array_value_node_60 = data
+        dynamic_array_index_node_60 = 1
+        array_read_node_55 = (case {dynamic_array_value_node_60, dynamic_array_index_node_60} do
           {dynamic_array_value_node_60, dynamic_array_index_node_60} when is_list(dynamic_array_value_node_60) and is_integer(dynamic_array_index_node_60) ->
             cond do
               dynamic_array_index_node_60 < 0 -> nil
@@ -508,7 +514,9 @@ defmodule Main do
           end
         end
       3 ->
-        array_read_node_56 = (case {data, 0} do
+        dynamic_array_value_node_61 = data
+        dynamic_array_index_node_61 = 0
+        array_read_node_56 = (case {dynamic_array_value_node_61, dynamic_array_index_node_61} do
           {dynamic_array_value_node_61, dynamic_array_index_node_61} when is_list(dynamic_array_value_node_61) and is_integer(dynamic_array_index_node_61) ->
             cond do
               dynamic_array_index_node_61 < 0 -> nil
@@ -516,7 +524,9 @@ defmodule Main do
             end
           {dynamic_array_value_node_61, dynamic_array_index_node_61} -> dynamic_array_value_node_61[dynamic_array_index_node_61]
         end)
-        array_read_node_57 = (case {data, 1} do
+        dynamic_array_value_node_62 = data
+        dynamic_array_index_node_62 = 1
+        array_read_node_57 = (case {dynamic_array_value_node_62, dynamic_array_index_node_62} do
           {dynamic_array_value_node_62, dynamic_array_index_node_62} when is_list(dynamic_array_value_node_62) and is_integer(dynamic_array_index_node_62) ->
             cond do
               dynamic_array_index_node_62 < 0 -> nil
@@ -524,7 +534,9 @@ defmodule Main do
             end
           {dynamic_array_value_node_62, dynamic_array_index_node_62} -> dynamic_array_value_node_62[dynamic_array_index_node_62]
         end)
-        array_read_node_58 = (case {data, 2} do
+        dynamic_array_value_node_63 = data
+        dynamic_array_index_node_63 = 2
+        array_read_node_58 = (case {dynamic_array_value_node_63, dynamic_array_index_node_63} do
           {dynamic_array_value_node_63, dynamic_array_index_node_63} when is_list(dynamic_array_value_node_63) and is_integer(dynamic_array_index_node_63) ->
             cond do
               dynamic_array_index_node_63 < 0 -> nil

@@ -1,9 +1,9 @@
-defmodule Haxe.Functional.Result do
+defmodule Result do
   def ok(arg0) do
-    {:ok, arg0}
+    {0, arg0}
   end
   def error(arg0) do
-    {:error, arg0}
+    {1, arg0}
   end
   def __haxe_enum_constructs__() do
     ["Ok", "Error"]
@@ -19,7 +19,7 @@ defmodule Haxe.Functional.Result do
         :ok -> 0
         1 -> 1
         :error -> 1
-        _ -> raise "Unknown enum value " <> Kernel.inspect(value) <> " for Haxe.Functional.Result"
+        _ -> raise "Unknown enum value " <> Kernel.inspect(value) <> " for Result"
     end
   end
   def __haxe_enum_constructor__(value) do
@@ -33,7 +33,7 @@ defmodule Haxe.Functional.Result do
         :ok -> "Ok"
         1 -> "Error"
         :error -> "Error"
-        _ -> raise "Unknown enum value " <> Kernel.inspect(value) <> " for Haxe.Functional.Result"
+        _ -> raise "Unknown enum value " <> Kernel.inspect(value) <> " for Result"
     end
   end
   def __haxe_enum_create_by_name__(constructor, params) do
@@ -44,10 +44,10 @@ defmodule Haxe.Functional.Result do
     end
     case constructor do
       "Ok" when length(values) == 1 -> List.to_tuple([:ok | values])
-      "Ok" -> raise "Enum constructor Ok expects 1 params for Haxe.Functional.Result"
+      "Ok" -> raise "Enum constructor Ok expects 1 params for Result"
       "Error" when length(values) == 1 -> List.to_tuple([:error | values])
-      "Error" -> raise "Enum constructor Error expects 1 params for Haxe.Functional.Result"
-      other -> raise "Unknown enum constructor " <> Kernel.inspect(other) <> " for Haxe.Functional.Result"
+      "Error" -> raise "Enum constructor Error expects 1 params for Result"
+      other -> raise "Unknown enum constructor " <> Kernel.inspect(other) <> " for Result"
     end
   end
   def __haxe_enum_create_by_index__(index, params) do
@@ -58,10 +58,10 @@ defmodule Haxe.Functional.Result do
     end
     case index do
       0 when length(values) == 1 -> List.to_tuple([:ok | values])
-      0 -> raise "Enum constructor Ok expects 1 params for Haxe.Functional.Result"
+      0 -> raise "Enum constructor Ok expects 1 params for Result"
       1 when length(values) == 1 -> List.to_tuple([:error | values])
-      1 -> raise "Enum constructor Error expects 1 params for Haxe.Functional.Result"
-      other -> raise "Unknown enum constructor index " <> Kernel.inspect(other) <> " for Haxe.Functional.Result"
+      1 -> raise "Enum constructor Error expects 1 params for Result"
+      other -> raise "Unknown enum constructor index " <> Kernel.inspect(other) <> " for Result"
     end
   end
   def __haxe_enum_all__() do

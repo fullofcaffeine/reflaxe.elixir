@@ -26,8 +26,24 @@ defmodule Main do
     wrapped_iterator = Reflaxe.Elixir.IMap.key_value_iterator(wrapped_map)
     {_wrapped_pairs} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {wrapped_pairs}, fn _, {acc_wrapped_pairs} ->
       try do
-        if (wrapped_iterator.has_next.()) do
-          pair = wrapped_iterator.next.()
+        if ((case wrapped_iterator do
+        reflaxe_structural_receiver_node_0 ->
+          (case Map.fetch(reflaxe_structural_receiver_node_0, :has_next) do
+            {:ok, reflaxe_structural_callback_node_0} ->
+              reflaxe_structural_callback_node_0.()
+            :error ->
+              apply(Map.get(reflaxe_structural_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_structural_receiver_node_0, :__struct__), :has_next, [reflaxe_structural_receiver_node_0])
+          end)
+      end)) do
+          pair = (case wrapped_iterator do
+            reflaxe_structural_receiver_node_1 ->
+              (case Map.fetch(reflaxe_structural_receiver_node_1, :next) do
+                {:ok, reflaxe_structural_callback_node_1} ->
+                  reflaxe_structural_callback_node_1.()
+                :error ->
+                  apply(Map.get(reflaxe_structural_receiver_node_1, :__reflaxe_class__) || Map.get(reflaxe_structural_receiver_node_1, :__struct__), :next, [reflaxe_structural_receiver_node_1])
+              end)
+          end)
           acc_wrapped_pairs = acc_wrapped_pairs ++ [pair.key <> ":" <> Reflaxe.Elixir.HaxeFloat.to_string(pair.value)]
           {:cont, {acc_wrapped_pairs}}
         else
@@ -51,8 +67,24 @@ defmodule Main do
     tree_iterator = apply(Map.get(balanced_tree, :__reflaxe_class__) || Map.get(balanced_tree, :__struct__), :key_value_iterator, [balanced_tree])
     {_tree_pairs} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {tree_pairs}, fn _, {acc_tree_pairs} ->
       try do
-        if (tree_iterator.has_next.()) do
-          tree_pair = tree_iterator.next.()
+        if ((case tree_iterator do
+        reflaxe_structural_receiver_node_2 ->
+          (case Map.fetch(reflaxe_structural_receiver_node_2, :has_next) do
+            {:ok, reflaxe_structural_callback_node_2} ->
+              reflaxe_structural_callback_node_2.()
+            :error ->
+              apply(Map.get(reflaxe_structural_receiver_node_2, :__reflaxe_class__) || Map.get(reflaxe_structural_receiver_node_2, :__struct__), :has_next, [reflaxe_structural_receiver_node_2])
+          end)
+      end)) do
+          tree_pair = (case tree_iterator do
+            reflaxe_structural_receiver_node_3 ->
+              (case Map.fetch(reflaxe_structural_receiver_node_3, :next) do
+                {:ok, reflaxe_structural_callback_node_3} ->
+                  reflaxe_structural_callback_node_3.()
+                :error ->
+                  apply(Map.get(reflaxe_structural_receiver_node_3, :__reflaxe_class__) || Map.get(reflaxe_structural_receiver_node_3, :__struct__), :next, [reflaxe_structural_receiver_node_3])
+              end)
+          end)
           acc_tree_pairs = acc_tree_pairs ++ [tree_pair.key <> ":" <> Reflaxe.Elixir.HaxeFloat.to_string(tree_pair.value)]
           {:cont, {acc_tree_pairs}}
         else

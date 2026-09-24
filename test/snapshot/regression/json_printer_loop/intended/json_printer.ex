@@ -6,7 +6,8 @@ defmodule JsonPrinter do
     struct
   end
   def write_array(struct, arr) do
-    reflaxe_dispatch_receiver = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :add, [reflaxe_dispatch_receiver, "["])
+    reflaxe_dispatch_receiver_node_0 = struct.buffer
+    _ = apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :add, [reflaxe_dispatch_receiver_node_0, "["])
     items = ""
     _g = 0
     arr_length = length(arr)
@@ -14,12 +15,14 @@ defmodule JsonPrinter do
       items_acc = if (i > 0), do: items_acc <> ", ", else: items_acc
       items_acc <> write_value(struct, Enum.at(arr, i))
     end)
-    reflaxe_dispatch_receiver = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :add, [reflaxe_dispatch_receiver, items])
-    reflaxe_dispatch_receiver = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :add, [reflaxe_dispatch_receiver, "]"])
-    reflaxe_dispatch_receiver
+    reflaxe_dispatch_receiver_node_1 = struct.buffer
+    _ = apply(Map.get(reflaxe_dispatch_receiver_node_1, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_1, :__struct__), :add, [reflaxe_dispatch_receiver_node_1, items])
+    reflaxe_dispatch_receiver_node_2 = struct.buffer
+    _ = apply(Map.get(reflaxe_dispatch_receiver_node_2, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_2, :__struct__), :add, [reflaxe_dispatch_receiver_node_2, "]"])
   end
   def write_object(struct, obj) do
-    reflaxe_dispatch_receiver = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :add, [reflaxe_dispatch_receiver, "{"])
+    reflaxe_dispatch_receiver_node_3 = struct.buffer
+    _ = apply(Map.get(reflaxe_dispatch_receiver_node_3, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_3, :__struct__), :add, [reflaxe_dispatch_receiver_node_3, "{"])
     fields = Reflect.fields(obj)
     result = ""
     _g = 0
@@ -46,9 +49,10 @@ defmodule JsonPrinter do
       end)
       result_acc <> "\"" <> field <> "\": " <> write_value(struct, value)
     end)
-    reflaxe_dispatch_receiver = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :add, [reflaxe_dispatch_receiver, result])
-    reflaxe_dispatch_receiver = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :add, [reflaxe_dispatch_receiver, "}"])
-    reflaxe_dispatch_receiver
+    reflaxe_dispatch_receiver_node_4 = struct.buffer
+    _ = apply(Map.get(reflaxe_dispatch_receiver_node_4, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_4, :__struct__), :add, [reflaxe_dispatch_receiver_node_4, result])
+    reflaxe_dispatch_receiver_node_5 = struct.buffer
+    _ = apply(Map.get(reflaxe_dispatch_receiver_node_5, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_5, :__struct__), :add, [reflaxe_dispatch_receiver_node_5, "}"])
   end
   defp write_value(struct, v) do
     if (Reflaxe.Elixir.HaxeFloat.eq(v, nil)) do
@@ -78,7 +82,7 @@ defmodule JsonPrinter do
     end
   end
   def to_string(struct) do
-    reflaxe_dispatch_receiver = struct.buffer
-    apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+    reflaxe_dispatch_receiver_node_6 = struct.buffer
+    apply(Map.get(reflaxe_dispatch_receiver_node_6, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_6, :__struct__), :to_string, [reflaxe_dispatch_receiver_node_6])
   end
 end
