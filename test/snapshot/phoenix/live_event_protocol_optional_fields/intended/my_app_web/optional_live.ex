@@ -15,7 +15,7 @@ defmodule MyAppWeb.OptionalLive do
     MyApp.OptionalEvents.decode("search", payload)
   end
   defp handle_search(query, socket) do
-    summary = if (Kernel.is_nil(query)), do: "all", else: query
+    summary = query || "all"
     {:noreply, Phoenix.Component.assign(socket, :summary, summary)}
   end
   defp handle_save_profile(payload, socket) do

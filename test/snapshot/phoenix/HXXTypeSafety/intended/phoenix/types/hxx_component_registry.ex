@@ -253,7 +253,7 @@ defmodule HXXComponentRegistry do
       "srcSet" -> "srcset"
       "tabIndex" -> "tabindex"
       "useMap" -> "usemap"
-      s ->
+      _ ->
         s = name
         if (StringTools.haxe_index_of(s, "-", 0) != -1) do
           s
