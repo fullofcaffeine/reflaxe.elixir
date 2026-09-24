@@ -10,7 +10,8 @@ defmodule HaxePhoenixLiveReact.DependencyWorker do
     deps_path = Map.fetch!(input, "depsPath")
     dependency_path = Map.fetch!(input, "dependencyPath")
     Mix.start()
-    Mix.ensure_application!(:hex)
+    Mix.Local.append_archives()
+    Mix.Local.append_paths()
     config = [{:deps, dependencies}, {:lockfile, lockfile}, {:deps_path, deps_path}]
 
     Mix.Project.in_project(app, root, config, fn _project_module ->

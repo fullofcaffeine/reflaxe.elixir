@@ -27,7 +27,7 @@ class LiveReactHost {
 		var result = File.lstatResult(path);
 		var resultTag = tag(result);
 		if (resultTag == ERROR)
-			return Kernel.raiseValue("expected " + label + " file at " + path + ": " + ErlangFile.formatError(Kernel.elem(result, 1)));
+			return Kernel.raiseValue("expected " + label + " file at " + path + ": " + Kernel.toString(ErlangFile.formatError(Kernel.elem(result, 1))));
 		var stat:FileStat = Kernel.elemAs(result, 1);
 		return stat.type == REGULAR ? OK : Kernel.raiseValue("expected " + label + " file at " + path + ", found " + Kernel.toString(stat.type));
 	}
@@ -46,7 +46,7 @@ class LiveReactHost {
 	public static function formatPathError(reason:Term):String {
 		if (Kernel.isTuple(reason) && Kernel.tupleSize(reason) == 2 && Kernel.elem(reason, 0) == "physical_path")
 			return Kernel.elemAs(reason, 1);
-		return ErlangFile.formatError(reason);
+		return Kernel.toString(ErlangFile.formatError(reason));
 	}
 
 	static function tag(value:Term):Atom {

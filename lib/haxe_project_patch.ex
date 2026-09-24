@@ -59,7 +59,7 @@ defmodule HaxeProjectPatch do
       fn state ->
         if state.state == :missing,
           do: write_instruction(initial_content),
-          else: write_instruction(patch_fun.(state.content))
+          else: write_instruction(patch_fun.(Map.get(state, :content)))
       end,
       opts
     )
@@ -71,7 +71,7 @@ defmodule HaxeProjectPatch do
     update_file!(
       plan,
       path,
-      fn state -> write_instruction(patch_fun.(state.content)) end,
+      fn state -> write_instruction(patch_fun.(Map.get(state, :content))) end,
       options
     )
   end
@@ -385,7 +385,13 @@ defmodule HaxeProjectPatch do
               "invalid project patch instruction for #{path}: #{Kernel.inspect(instruction)}"
             )
           else
-            mode = if before.state == :regular, do: before.mode, else: 420
+            mode =
+              if before.state == :regular do
+                Map.get(before, :mode)
+              else
+                420
+              end
+
             after_state = regular_state(Kernel.elem(instruction, 1), mode)
 
             if same_state(before, after_state),
@@ -592,11 +598,19 @@ defmodule HaxeProjectPatch do
     operation = staged.operation
 
     if not Kernel.is_nil(staged.backup_path) do
-      write_exclusive_bang(staged.backup_path, operation.before.content, operation.before.mode)
+      write_exclusive_bang(
+        staged.backup_path,
+        Map.get(operation.before, :content),
+        Map.get(operation.before, :mode)
+      )
     end
 
     if not Kernel.is_nil(staged.new_path) do
-      write_exclusive_bang(staged.new_path, operation.after.content, operation.after.mode)
+      write_exclusive_bang(
+        staged.new_path,
+        Map.get(operation.after, :content),
+        Map.get(operation.after, :mode)
+      )
     end
   end
 
@@ -891,8 +905,8 @@ defmodule HaxeProjectPatch do
       {"path", staged.operation.relative},
       {"before", state_to_json(staged.operation.before)},
       {"after", state_to_json(staged.operation.after)},
-      {"newPath", staged.new_relative},
-      {"backupPath", staged.backup_relative},
+      {"newPath", Map.get(staged, :new_relative)},
+      {"backupPath", Map.get(staged, :backup_relative)},
       {"manifest", staged.operation.manifest?}
     ])
   end
@@ -900,7 +914,12 @@ defmodule HaxeProjectPatch do
   defp state_to_json(state) do
     if state.state == :missing,
       do: json_object([{"state", "missing"}]),
-      else: json_object([{"state", "regular"}, {"sha256", state.sha256}, {"mode", state.mode}])
+      else:
+        json_object([
+          {"state", "regular"},
+          {"sha256", Map.get(state, :sha256)},
+          {"mode", Map.get(state, :mode)}
+        ])
   end
 
   defp read_journal_bang(root, directory, path) do
@@ -1267,11 +1286,13 @@ defmodule HaxeProjectPatch do
   end
 
   defp same_state(left, right) do
-    if left.state == :missing or right.state == :missing,
-      do: left.state == :missing and right.state == :missing,
-      else:
-        left.state == :regular and right.state == :regular and left.sha256 == right.sha256 and
-          left.mode == right.mode
+    if left.state == :missing or right.state == :missing do
+      left.state == :missing and right.state == :missing
+    else
+      left.state == :regular and right.state == :regular and
+        Map.get(left, :sha256) == Map.get(right, :sha256) and
+        Map.get(left, :mode) == Map.get(right, :mode)
+    end
   end
 
   defp sha256(content) do

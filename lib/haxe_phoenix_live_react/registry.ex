@@ -2,9 +2,8 @@ defmodule HaxePhoenixLiveReact.Registry do
   def component(name, module_path \\ nil, export_name \\ nil) do
     normalized = %{
       name: name,
-      module_path:
-        if(Kernel.is_nil(module_path), do: default_module_path(name), else: module_path),
-      export_name: if(Kernel.is_nil(export_name), do: name <> "Boundary", else: export_name)
+      module_path: module_path || default_module_path(name),
+      export_name: export_name || name <> "Boundary"
     }
 
     validate_component(normalized)

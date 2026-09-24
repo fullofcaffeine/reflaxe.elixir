@@ -5,7 +5,7 @@ defmodule HaxePhoenixLiveReact.Host do
 
     if result_tag == :error do
       Kernel.raise(
-        "expected #{label} file at #{path}: #{:file.format_error(Kernel.elem(result, 1))}"
+        "expected #{label} file at #{path}: #{Kernel.to_string(:file.format_error(Kernel.elem(result, 1)))}"
       )
     else
       stat = Kernel.elem(result, 1)
@@ -37,7 +37,7 @@ defmodule HaxePhoenixLiveReact.Host do
          Kernel.elem(reason, 0) == "physical_path" do
       Kernel.elem(reason, 1)
     else
-      :file.format_error(reason)
+      Kernel.to_string(:file.format_error(reason))
     end
   end
 
