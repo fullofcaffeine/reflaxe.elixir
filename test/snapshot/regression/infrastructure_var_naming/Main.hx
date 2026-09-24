@@ -19,7 +19,8 @@ class Main {
 		if (first < 0 || second < 0 || first >= value.items.length || second >= value.items.length)
 			return value.items;
 		final next = [
-			for (position in 0...value.items.length) value.items[position == first ? second : position == second ? first : position]
+			for (position in 0...value.items.length)
+				value.items[position == first ? second : position == second ? first : position]
 		];
 		return next;
 	}
