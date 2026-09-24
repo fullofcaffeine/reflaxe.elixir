@@ -2643,8 +2643,9 @@ class StdlibParityTest extends TestCase {
 	@:describe("UInt and haxe.Int32")
 	@:test
 	function testUnsignedAndSigned32BitWidthContracts():Void {
-		var unsignedMax:UInt = -1;
-		var unsignedZero:UInt = 0;
+		// Exercise runtime width conversion; Elixir 1.14 warns about constant-only guards.
+		var unsignedMax:UInt = Std.parseInt("-1");
+		var unsignedZero:UInt = Std.parseInt("0");
 		Assert.isTrue(unsignedMax > unsignedZero);
 		Assert.equals(4294967295.0, (unsignedMax : Float));
 		Assert.equals(0, ((unsignedMax + 1) : Int));
