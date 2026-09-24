@@ -143,7 +143,7 @@ defmodule OptionPatterns.NotificationService do
       if (StringTools.haxe_index_of(message, "FAIL", 0) >= 0) do
         {:error, "Simulated delivery failure"}
       else
-        record = OptionPatterns.NotificationRecord.new(user.id, message, type, System.system_time(:second), true)
+        record = OptionPatterns.NotificationRecord.new(user.id, message, type, System.system_time(:nanosecond) / 1_000_000_000.0, true)
         OptionPatterns.NotificationService.delivery_log(OptionPatterns.NotificationService.delivery_log() ++ [record])
         {:ok, record}
       end

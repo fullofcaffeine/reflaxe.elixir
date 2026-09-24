@@ -5,6 +5,8 @@
 		"string_tools.exs",
 		"std.exs",
 		"reflaxe/exception.exs",
+		"reflaxe/elixir/runtime/standard_output.exs",
+		"reflaxe/elixir/runtime/standard_input.exs",
 		"reflaxe/elixir/haxe_throw.exs",
 		"reflaxe/elixir/haxe_int.exs",
 		"reflaxe/elixir/haxe_float.exs",
@@ -29,17 +31,22 @@
 		"haxe/io/output.exs",
 		"haxe/io/input.exs",
 		"haxe/io/fp_helper.exs",
+		"haxe/io/error.exs",
 		"haxe/io/eof.exs",
+		"haxe/io/encoding.exs",
 		"haxe/io/bytes_buffer.exs",
 		"haxe/io/bytes.exs",
 		"haxe/int64_helper.exs",
 		"haxe/functional/result_tools.exs",
+		"haxe/functional/result.exs",
 		"haxe/exceptions/pos_exception.exs",
 		"haxe/exceptions/not_implemented_exception.exs",
 		"haxe/ds/option_tools.exs",
+		"haxe/ds/option.exs",
 		"haxe/_call_stack/call_stack_impl_.exs",
 		"haxe/functional/result_tools.exs.map",
 		"haxe/io/bytes_buffer.exs.map",
+		"reflaxe/elixir/runtime/standard_input.exs.map",
 		"std.exs.map",
 		"option_patterns/config_manager_test.exs.map",
 		"reflaxe/exception.exs.map",
@@ -72,30 +79,35 @@
 		"option_patterns/notification_service_test.exs.map",
 		"haxe/io/fp_helper.exs.map",
 		"haxe/io/input.exs.map",
+		"reflaxe/elixir/runtime/standard_output.exs.map",
 		"option_patterns/user.exs.map",
 		"haxe/_call_stack/call_stack_impl_.exs.map",
 		"reflaxe/elixir/haxe_float.exs.map"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 22,
+	"id": 24,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
 		{
 			"path": "haxe/_call_stack/call_stack_impl_.exs",
-			"sha256": "51ccde2aded2494513ee0e4df47307da4b81b76b152e144ec83f62ca98578569"
+			"sha256": "c77b161d05e1094665a37413ce6e0af07159fcdbc2f2cd20c19ceec25be5d818"
 		},
 		{
 			"path": "haxe/_call_stack/call_stack_impl_.exs.map",
-			"sha256": "5e03fb67fb9b28ff4d557f71e3887595c05cf1bfc3f2a1513ff78e8caa65b6a1"
+			"sha256": "5651705c3fe66febf958b8c86574d0df021a336d07c40bb961e921eaba5b612f"
+		},
+		{
+			"path": "haxe/ds/option.exs",
+			"sha256": "63ac76e868b4b2dfe585786ccd2a345305751f959a8cdb63a5a2c34106113043"
 		},
 		{
 			"path": "haxe/ds/option_tools.exs",
-			"sha256": "92d06a2e3ed367ea41ff4df4b0242fa08e80dd5853e410bcb81fa2c57e7c9339"
+			"sha256": "e299e6415b4bc16218d953b1f26a17a134a539c4286771ae273615e38bddebb6"
 		},
 		{
 			"path": "haxe/ds/option_tools.exs.map",
-			"sha256": "a17727dee1d817a1ffe242b20131f14c6ce9b09e9bb2c9851334812fca5151ca"
+			"sha256": "34dc8313aeb88f4d931302dba0149a7f1be6f5350b6c994343d3cb87b8563d22"
 		},
 		{
 			"path": "haxe/exceptions/not_implemented_exception.exs",
@@ -114,12 +126,16 @@
 			"sha256": "c3e720e16568886611223f0f38050256f631a13cfb7c58769dc4f7f0f7bd1242"
 		},
 		{
+			"path": "haxe/functional/result.exs",
+			"sha256": "41853f86663b99ae0b271938f47328e736fdbd3d2aacd7eaff087f3ef381104d"
+		},
+		{
 			"path": "haxe/functional/result_tools.exs",
-			"sha256": "b0eb7d8fab7cad7a56aa6cf73b248a4a842bddd74efa7de8cc970ad2463112d4"
+			"sha256": "a420a9282ea826e1a9aa09f9fb86dcb8a83be8f3d06ae6085ddc899290203d0b"
 		},
 		{
 			"path": "haxe/functional/result_tools.exs.map",
-			"sha256": "ea8cdcc1df1ef5d53b4c18ce812a957445ec61c1cf0ad290232792fea8f19224"
+			"sha256": "693ae154bf993c1de5d3691728bc3306468f7e21289c212450271bcc825a5fa5"
 		},
 		{
 			"path": "haxe/int64_helper.exs",
@@ -131,11 +147,11 @@
 		},
 		{
 			"path": "haxe/io/bytes.exs",
-			"sha256": "2b5bbb5087c447a1f5869d498456c3ead74a5142aa35e49e341176f3d4d8585d"
+			"sha256": "11425e6fd7aa22effb29f0185cbdaa5dc1b22853a2f4d3fdba1427f096dc2aa4"
 		},
 		{
 			"path": "haxe/io/bytes.exs.map",
-			"sha256": "63ae1c0d556653db81dbfd02fb25e79e97ebb4a293d5eaa6ceee26d4c1548007"
+			"sha256": "01ebac35807eba788ee2fe692904145468ff30c72a5f73eab5e30a280b40f619"
 		},
 		{
 			"path": "haxe/io/bytes_buffer.exs",
@@ -146,12 +162,20 @@
 			"sha256": "665ee1e706e5eb817ec9c8215ab2c7adc3d7312a370666573ea28ceaa62a25db"
 		},
 		{
+			"path": "haxe/io/encoding.exs",
+			"sha256": "aed9a161edd05cdbf4dd2f3c14646b8d615b3d3b783c31543cfdc4c337bb55d3"
+		},
+		{
 			"path": "haxe/io/eof.exs",
 			"sha256": "209a67120806bddd55fd2677ef52bc750f52e377be130a1bc58a9c73edcdd967"
 		},
 		{
 			"path": "haxe/io/eof.exs.map",
 			"sha256": "c30f454cce5d5d7dce15b0a9ded6cb0dc2ad83802e8ff70d027ad52c0e6e9707"
+		},
+		{
+			"path": "haxe/io/error.exs",
+			"sha256": "5eba0b04b02433b84f6c421a2b5af49845386b9e549c4fb3d862f57b18ce16c0"
 		},
 		{
 			"path": "haxe/io/fp_helper.exs",
@@ -163,15 +187,15 @@
 		},
 		{
 			"path": "haxe/io/input.exs",
-			"sha256": "319de1fd3db88959a19fbb8bf4bfc258d6d3945cadbc812f3e0f7f84e4794d37"
+			"sha256": "967e1e7c51566b910ae43ccec541ed400d3df7e51ae083e2fb378c9b31b22bd6"
 		},
 		{
 			"path": "haxe/io/input.exs.map",
-			"sha256": "25858b7eabd68a743eee3560ff72fe9cc2573b206f2e0fb983eeb00f9dec4590"
+			"sha256": "e0f2eb4455c260aa41b0846e3a77456969b603ec314f65bf6ff491738732e45d"
 		},
 		{
 			"path": "haxe/io/output.exs",
-			"sha256": "0d6ab268881585c34b7c7b9fc92135081bc877a79ac833feb3f104f77b2ba6a1"
+			"sha256": "da3047ec66e4c81b8e200dfe7dcfff616cc8c6087fade1d13b90e61820a1e16f"
 		},
 		{
 			"path": "haxe/io/output.exs.map",
@@ -219,11 +243,11 @@
 		},
 		{
 			"path": "int_iterator.exs",
-			"sha256": "b2835b6dc973f62d5e79732053e7944116c9c0032e0747206eff211183182f11"
+			"sha256": "ccad9bbf2c0dd81202fc7919321d15c91c990aa36d882b399c22e7d05f27d40c"
 		},
 		{
 			"path": "int_iterator.exs.map",
-			"sha256": "2cc30ad6aaac2c92843e63a49ebb5ef5204eba4bb8e08448f95498818c89d0c9"
+			"sha256": "649f9d36515b105d22a6780d4fb4941e26c1403e23f3618c943a6c2c04397578"
 		},
 		{
 			"path": "option_patterns/bulk_notification_result.exs",
@@ -235,19 +259,19 @@
 		},
 		{
 			"path": "option_patterns/config_manager.exs",
-			"sha256": "652065e0abf9a656736e6f1d90b47c6127591094d2ecac961b3e355728d99ede"
+			"sha256": "c639de0155561138032ef0aeec648f6d249161c8025fbc8bee602eeec6078387"
 		},
 		{
 			"path": "option_patterns/config_manager.exs.map",
-			"sha256": "c5fa01c510590deb026bd14c9aebefcc2ca583070f117468288d66fb810e0cd0"
+			"sha256": "3ae18d1a6c68a3dca5bfe8fe0aaa8defbf0e85019494dfc35de759bead46d124"
 		},
 		{
 			"path": "option_patterns/config_manager_test.exs",
-			"sha256": "16b73237d9db42cfc81e6d29fd54f3c5120622c8470927faa3bfc13924a2e0a3"
+			"sha256": "512803b7d577ac94bf546c6315f8a7ed584bd466c60b3659e9508126dc4ad85c"
 		},
 		{
 			"path": "option_patterns/config_manager_test.exs.map",
-			"sha256": "3cf71b0e180647d06100efce6c4c6ee32b34138296844ea163c4a8d3114a13b4"
+			"sha256": "3cba2280fd6cc1aa27ec5a06c8c30e2255d30d0ae62ba036a56b975283089587"
 		},
 		{
 			"path": "option_patterns/notification_attempt.exs",
@@ -275,19 +299,19 @@
 		},
 		{
 			"path": "option_patterns/notification_service.exs",
-			"sha256": "f33a6c3f3c978623f4dba9b12b553ce9b3d5673f8de2292cf7c3919ab90e1df4"
+			"sha256": "10c0bbff27e826fdc22076af3e8218cf195debe008ec36ea872d250beebf7708"
 		},
 		{
 			"path": "option_patterns/notification_service.exs.map",
-			"sha256": "5aab23dddafe8284701a107439ceb4493235552ecdb78ae96268d89a5746d6a3"
+			"sha256": "564dbe5e3f027036a4188e8111b12a53cfe2322078fead5f3c6b82290eeecf7a"
 		},
 		{
 			"path": "option_patterns/notification_service_test.exs",
-			"sha256": "ccc92eb5b8bde800505f7f8fb28799bf225cc90227bdefd97e4618ac0e0f0473"
+			"sha256": "0476ee8d8143c76015d0a821a19146035b496371ccba8865006b65ae16b56d30"
 		},
 		{
 			"path": "option_patterns/notification_service_test.exs.map",
-			"sha256": "73ec107c91caf3553d277b9000d10f95c80b5667d36dcc03033834837a68dbe6"
+			"sha256": "19d42c6837cc20d249804c368cd51d550d93acf8814a5cf261051412a255581a"
 		},
 		{
 			"path": "option_patterns/notification_type.exs",
@@ -307,15 +331,15 @@
 		},
 		{
 			"path": "option_patterns/user_repository.exs.map",
-			"sha256": "9d625f68afeb364e91e2ae1bfa26bc2bf05a540d27adc21b6393e00c6edf44c7"
+			"sha256": "0f902e837c61c3013ceb63a1fd5dc19a32468cf05c47fc576b6240394fe493af"
 		},
 		{
 			"path": "option_patterns/user_repository_test.exs",
-			"sha256": "8bb29897ccc28a9041703ab9011d49ed4de3aaf82e300e8d828f8c48905c2159"
+			"sha256": "eeacbefc22c4e2478a05327756f0f12c42bd2cd992063db3cd653d666256c02c"
 		},
 		{
 			"path": "option_patterns/user_repository_test.exs.map",
-			"sha256": "6936b69fb897d60bec82af0ac20900ae5e747f04929fe339a713a29da05a676b"
+			"sha256": "3db594684b20576c8d1f0fb2edc55dd0c8467020007df5949f2cc71939bfca88"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.exs",
@@ -342,6 +366,22 @@
 			"sha256": "53a26b8682c93321fa04f78706aa7acb50d0543877c5fde1752f5fa745f4e139"
 		},
 		{
+			"path": "reflaxe/elixir/runtime/standard_input.exs",
+			"sha256": "0cc3ccc3537713ac6469c71fa9d356cde2fcdd9236ad4ed5e1f3ef241536ded0"
+		},
+		{
+			"path": "reflaxe/elixir/runtime/standard_input.exs.map",
+			"sha256": "3acf5bc87f2fee82104857417cd2f86283a67d95219563ceb1a7eaba39ff7165"
+		},
+		{
+			"path": "reflaxe/elixir/runtime/standard_output.exs",
+			"sha256": "5ed341db9d972fa4ba4fb8d3f853e0d841be88bad852322a0c22ca23b9375ae9"
+		},
+		{
+			"path": "reflaxe/elixir/runtime/standard_output.exs.map",
+			"sha256": "3326e139a23f2a6a37b083edd10d546d6efd95da5891ef8dfb9acc2a5ffcd668"
+		},
+		{
 			"path": "reflaxe/exception.exs",
 			"sha256": "02fc779b3a5c750db17ab47e624c22bbb8887786a22a767969ab23d1946be755"
 		},
@@ -351,11 +391,11 @@
 		},
 		{
 			"path": "std.exs",
-			"sha256": "2719d51795868959cd6891134e197cf72d4b523091c594a280b37e367fd8e03f"
+			"sha256": "8a84e0a9ac56b570713a432d5e9d2de5bc2a0cb19aacdc3a80284a6a439bcf97"
 		},
 		{
 			"path": "std.exs.map",
-			"sha256": "9169b3d91eca3a522e49cdacd71b3acf46b95efc494c5ac1bd14e1dedabb161f"
+			"sha256": "508e7f55721c6dec1a6abef0068e89fc8e9096f24beda0f5483b7bcfb3fbec44"
 		},
 		{
 			"path": "string_tools.exs",
@@ -367,11 +407,11 @@
 		},
 		{
 			"path": "sys.exs",
-			"sha256": "b490355c713ae337db2b2f94bf6f04b59ca5a66fb71db54a7ff5f200d4bd4865"
+			"sha256": "5f69862e2b785964668eda9171c65d7e01803f8d3492e3588957799d810f7c32"
 		},
 		{
 			"path": "sys.exs.map",
-			"sha256": "292bcc2faae71b3bd4dbde2072fb1423a7e7e8fd95b795ee771323093880cb74"
+			"sha256": "6c083590b1578a6fedfb086de4fbe806fa5fbe10ddbc021f4b5d1c957a75e2a2"
 		},
 		{
 			"path": "type.exs",
@@ -382,5 +422,5 @@
 			"sha256": "b90d3a44bb1138601ef71badc9e1380f807ed3932966260cd9c073a995f4e213"
 		}
 	],
-	"generation": "0d954be8e9cdf626cc2bb023f32d477e05493a84c0e6c3f263dbd666668fb0f7"
+	"generation": "aad99d3279273fb64be62609e65fee52b3a465395dcc8c266ca0620c8d9f9c88"
 }

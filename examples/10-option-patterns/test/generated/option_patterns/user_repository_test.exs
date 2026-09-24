@@ -51,8 +51,7 @@ defmodule OptionPatterns.UserRepositoryTest do
     user = OptionPatterns.UserRepository.find_first_active()
     assert(match?({:some, _}, user), "Should find an active user")
     (case user do
-      {:some, u} ->
-        assert(u.active, "Found user should be active")
+      {:some, u} -> assert(u.active, "Found user should be active")
       {:none} ->
         flunk("Expected to find an active user")
     end)
@@ -90,10 +89,8 @@ defmodule OptionPatterns.UserRepositoryTest do
     result = OptionPatterns.UserRepository.update_email(1, "newalice@example.com")
     assert(match?({:ok, _}, result), "Should successfully update email for valid user")
     (case result do
-      {:ok, user} ->
-        assert("newalice@example.com" == user.email, "Should have updated email")
-      {:error, msg} ->
-        flunk("Unexpected error: " <> msg)
+      {:ok, user} -> assert("newalice@example.com" == user.email, "Should have updated email")
+      {:error, msg} -> flunk("Unexpected error: " <> msg)
     end)
   end
   test "update email fails for invalid user" do
@@ -102,8 +99,7 @@ defmodule OptionPatterns.UserRepositoryTest do
     (case result do
       {:ok, _value} ->
         flunk("Expected error for invalid user")
-      {:error, msg} ->
-        assert("User not found" == msg, "Should have correct error message")
+      {:error, msg} -> assert("User not found" == msg, "Should have correct error message")
     end)
   end
   test "update email fails for invalid email format" do
@@ -112,8 +108,7 @@ defmodule OptionPatterns.UserRepositoryTest do
     (case result do
       {:ok, _value} ->
         flunk("Expected error for invalid email")
-      {:error, msg} ->
-        assert("Invalid email format" == msg, "Should have correct error message")
+      {:error, msg} -> assert("Invalid email format" == msg, "Should have correct error message")
     end)
   end
   test "get users by status returns active users" do
@@ -136,8 +131,7 @@ defmodule OptionPatterns.UserRepositoryTest do
         assert("Test User" == user.name, "Should have correct name")
         assert("test@example.com" == user.email, "Should have correct email")
         assert(user.active, "New user should be active")
-      {:error, msg} ->
-        flunk("Unexpected error: " <> msg)
+      {:error, msg} -> flunk("Unexpected error: " <> msg)
     end)
   end
   test "create fails for empty name" do
@@ -146,8 +140,7 @@ defmodule OptionPatterns.UserRepositoryTest do
     (case result do
       {:ok, _value} ->
         flunk("Expected error for empty name")
-      {:error, msg} ->
-        assert("Name is required" == msg, "Should have correct error message")
+      {:error, msg} -> assert("Name is required" == msg, "Should have correct error message")
     end)
   end
   test "create fails for invalid email" do
@@ -156,8 +149,7 @@ defmodule OptionPatterns.UserRepositoryTest do
     (case result do
       {:ok, _value} ->
         flunk("Expected error for invalid email")
-      {:error, msg} ->
-        assert("Valid email is required" == msg, "Should have correct error message")
+      {:error, msg} -> assert("Valid email is required" == msg, "Should have correct error message")
     end)
   end
   test "create fails for duplicate email" do
@@ -166,8 +158,7 @@ defmodule OptionPatterns.UserRepositoryTest do
     (case result do
       {:ok, _value} ->
         flunk("Expected error for duplicate email")
-      {:error, msg} ->
-        assert("Email already exists" == msg, "Should have correct error message")
+      {:error, msg} -> assert("Email already exists" == msg, "Should have correct error message")
     end)
   end
 end

@@ -37,14 +37,14 @@ defmodule OptionPatterns.ConfigManager do
   end
   def get_int(key) do
     option = get(key)
-    OptionTools.then(option, (fn -> fn value ->
+    OptionTools.then(option, fn value ->
       parsed = Reflaxe.Elixir.HaxeInt.parse(value)
       if (not Kernel.is_nil(parsed)), do: {:some, parsed}, else: {:none}
-    end end).())
+    end)
   end
   def get_bool(key) do
     option = get(key)
-    OptionTools.then(option, (fn -> fn value ->
+    OptionTools.then(option, fn value ->
       (case String.downcase(value) do
         "0" -> {:some, false}
         "false" -> {:some, false}
@@ -54,25 +54,25 @@ defmodule OptionPatterns.ConfigManager do
         "yes" -> {:some, true}
         _ -> {:none}
       end)
-    end end).())
+    end)
   end
   def get_int_with_range(key, min, max) do
-    ResultTools.flat_map(OptionTools.to_result(get_int(key), "Configuration \"#{key}\" is missing or not a valid number"), (fn -> fn value ->
+    ResultTools.flat_map(OptionTools.to_result(get_int(key), "Configuration \"#{key}\" is missing or not a valid number"), fn value ->
       if (value < min) do
         {:error, "Configuration \"" <> key <> "\" value " <> Reflaxe.Elixir.HaxeFloat.to_string(value) <> " is below minimum " <> Reflaxe.Elixir.HaxeFloat.to_string(min)}
       else
         if (value > max), do: {:error, "Configuration \"" <> key <> "\" value " <> Reflaxe.Elixir.HaxeFloat.to_string(value) <> " is above maximum " <> Reflaxe.Elixir.HaxeFloat.to_string(max)}, else: {:ok, value}
       end
-    end end).())
+    end)
   end
   def get_database_url() do
-    ResultTools.flat_map(get_required("database_url"), (fn -> fn url ->
+    ResultTools.flat_map(get_required("database_url"), fn url ->
       if (StringTools.haxe_index_of(url, "://", 0) <= 0) do
         {:error, "Database URL must contain protocol (e.g., postgres://)"}
       else
         if (String.length(url) < 10), do: {:error, "Database URL appears to be too short"}, else: {:ok, url}
       end
-    end end).())
+    end)
   end
   def get_timeout() do
     ResultTools.unwrap_or(get_int_with_range("timeout", 1, 300), 30)
@@ -85,12 +85,13 @@ defmodule OptionPatterns.ConfigManager do
     this1 = OptionPatterns.ConfigManager.config()
     {result} = Enum.reduce_while(Map.keys(this1), {result}, fn key, {acc_result} ->
       try do
-        acc_result =
-          (case get(key) do
-            {:some, value} ->
-              Map.put(acc_result, key, value)
-            {:none} -> acc_result
-          end)
+        g = get(key)
+        acc_result = (case g do
+          {:some, value} ->
+            acc_result = Map.put(acc_result, key, value)
+            acc_result
+          {:none} -> acc_result
+        end)
         {:cont, {acc_result}}
       catch
         :throw, {:break, break_state} ->
@@ -106,12 +107,12 @@ defmodule OptionPatterns.ConfigManager do
     result
   end
   def validate_required(required_keys) do
-    missing = Enum.filter(required_keys, (fn -> fn key ->
+    missing = Enum.filter(required_keys, fn key ->
       (case get(key) do
         {:some, _v} -> false
         {:none} -> true
       end)
-    end end).())
+    end)
     if (length(missing) > 0), do: {:error, "Missing required configuration: " <> Enum.join(missing, ", ")}, else: {:ok, true}
   end
 end

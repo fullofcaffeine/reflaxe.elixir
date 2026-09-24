@@ -6,11 +6,13 @@
 		"reflaxe/elixir/haxe_float.exs",
 		"haxe/iterators/array_key_value_iterator.exs",
 		"haxe/iterators/array_iterator.exs",
+		"haxe/functional/result.exs",
+		"haxe/ds/option.exs",
 		"ecto_migrations_example/test_case.exs",
 		"ecto_migrations_example/migration_runtime_test.exs"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 29,
+	"id": 34,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
@@ -21,6 +23,14 @@
 		{
 			"path": "ecto_migrations_example/test_case.exs",
 			"sha256": "ea97c23145ea9207085b3f2cd0fd0b1dbe8ea4822df836951315b72e99d16d45"
+		},
+		{
+			"path": "haxe/ds/option.exs",
+			"sha256": "63ac76e868b4b2dfe585786ccd2a345305751f959a8cdb63a5a2c34106113043"
+		},
+		{
+			"path": "haxe/functional/result.exs",
+			"sha256": "41853f86663b99ae0b271938f47328e736fdbd3d2aacd7eaff087f3ef381104d"
 		},
 		{
 			"path": "haxe/iterators/array_iterator.exs",
@@ -47,5 +57,5 @@
 			"sha256": "9eb2137ead37e4b2ff0650cbece40b4da0427a5fe35a95b0de3eeacb82facbd2"
 		}
 	],
-	"generation": "1a44d8bf60afd2f90935e26ea71945055550962c225559339375350918d07c71"
+	"generation": "4c0639adbbe9ccf8cd6cd7efde7e1c150552715396536353758a513955522db0"
 }
