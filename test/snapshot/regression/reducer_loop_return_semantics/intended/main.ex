@@ -58,14 +58,11 @@ defmodule Main do
   def string_keys(keys) do
     names = []
     (case Enum.reduce_while(keys, {:__reflaxe_continue__, names}, fn key, {:__reflaxe_continue__, names_acc} ->
-      (case (case key do
+      (case key do
         {:text, name} ->
           names_acc = names_acc ++ [name]
           {:cont, {:__reflaxe_continue__, names_acc}}
         {:other, _} -> {:halt, {:__reflaxe_return__, nil}}
-      end) do
-        {:halt, reflaxe_halt_payload} -> {:halt, reflaxe_halt_payload}
-        {:cont, {:__reflaxe_continue__, names_acc}} -> {:cont, {:__reflaxe_continue__, names_acc}}
       end)
     end) do
       {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value

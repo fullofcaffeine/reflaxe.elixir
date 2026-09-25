@@ -18,7 +18,27 @@ class Main {
 		return current;
 	}
 
+	public static function statementCase(item:Item):Int {
+		var count = 0;
+		switch item {
+			case Value(text):
+				if (text == "")
+					return -2;
+				count = text.length;
+			case Missing(_):
+				return -1;
+		}
+		Sys.println("switch fallthrough");
+		return count + 1;
+	}
+
 	public static function main():Void {
+		if (statementCase(Missing("absent")) != -1)
+			throw "Statement switch return continued.";
+		if (statementCase(Value("")) != -2)
+			throw "Nested switch return continued.";
+		if (statementCase(Value("body")) != 5)
+			throw "Statement switch fallthrough value changed.";
 		if (nested(10, true, true) != -1)
 			throw "Nested absent return lost.";
 		if (nested(10, false, true) != -2)

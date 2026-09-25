@@ -31,6 +31,8 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   2) Leaves returning paths alone. This includes nested returns in complete
  *      if/else statements before later mutable-state reads.
  *   3) Recursively rewrites early-return patterns inside the inserted remainder.
+ * - Applies the same fallthrough-only continuation to statement case clauses,
+ *   preserving subjects, patterns, guards, and nested function return scope.
  * - Distributes assignment continuations through returning branch expressions,
  *   binding only normal results and preserving nested function return scope.
  * - Stops a sequence after a proven return. Later expressions are unreachable,
@@ -75,6 +77,7 @@ class EarlyReturnIfElseTransforms {
 				isFromReturn(inner);
 			case EIf(_, thenBranch, elseBranch) if (elseBranch != null): isFromReturn(thenBranch) && isFromReturn(elseBranch);
 			case EUnless(_, body, elseBranch) if (elseBranch != null): isFromReturn(body) && isFromReturn(elseBranch);
+			case ECase(_, clauses) if (clauses.length > 0): Lambda.foreach(clauses, clause -> isFromReturn(clause.body));
 			default:
 				false;
 		};
@@ -136,6 +139,15 @@ class EarlyReturnIfElseTransforms {
 		};
 	}
 
+	/** A parenthesized case keeps the same statement continuation boundary. */
+	static function unwrapStatementCase(node:ElixirAST):Null<ElixirAST> {
+		return switch node.def {
+			case EParen(inner): unwrapStatementCase(inner);
+			case ECase(_, _): node;
+			case _: null;
+		};
+	}
+
 	static function rewriteSequenceAsSameKind(stmts:Array<ElixirAST>, wrap:Array<ElixirAST>->ElixirAST):ElixirAST {
 		if (stmts == null || stmts.length == 0)
 			return wrap([]);
@@ -144,6 +156,9 @@ class EarlyReturnIfElseTransforms {
 		var i = 0;
 		while (i < stmts.length) {
 			var stmt = stmts[i];
+			final caseStatement = unwrapStatementCase(stmt);
+			if (caseStatement != null)
+				stmt = caseStatement;
 			if (isFromReturn(stmt)) {
 				out.push(stmt);
 				return wrap(out);
@@ -158,6 +173,23 @@ class EarlyReturnIfElseTransforms {
 						var binding = makeASTWithMeta(EMatch(pattern, normal), stmt.metadata, stmt.pos);
 						return buildRestExpr([binding].concat(rest), stmt.metadata, stmt.pos);
 					}));
+					return wrap(out);
+
+				case EBlock(_) | EDo(_) if (containsFromReturn(stmt) && i < stmts.length - 1):
+					out.push(appendContinuation(stmt, buildRestExpr(stmts.slice(i + 1), stmt.metadata, stmt.pos)));
+					return wrap(out);
+
+				case ECase(subject, clauses) if (i < stmts.length - 1
+					&& Lambda.exists(clauses, clause -> containsFromReturn(clause.body))):
+					final continuation = buildRestExpr(stmts.slice(i + 1), stmt.metadata, stmt.pos);
+					out.push(makeASTWithMeta(ECase(subject, [
+						for (clause in clauses)
+							{
+								pattern: clause.pattern,
+								guard: clause.guard,
+								body: isFromReturn(clause.body) ? clause.body : appendContinuation(clause.body, continuation)
+							}
+					]), stmt.metadata, stmt.pos));
 					return wrap(out);
 
 				case EIf(condition, thenBranch, elseBranch) if ((containsFromReturn(thenBranch) || containsFromReturn(elseBranch))

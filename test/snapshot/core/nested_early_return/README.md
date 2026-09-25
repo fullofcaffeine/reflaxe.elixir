@@ -39,3 +39,7 @@ effects. Stock Haxe and the strict native runtime runner must agree.
 Run the fixture through `npm run test:runtime-smoke`. It is also part of the
 normal snapshot suite. These checks do not establish universal support for
 every combination of returns, exceptions, and loop control.
+
+Statement switches also preserve direct and nested function exits before later statements.
+The mixed branch fixture returns -1 or -2 without printing; its fallthrough prints once and returns 5.
+Transparent blocks must carry that continuation without moving it onto a returning path.
