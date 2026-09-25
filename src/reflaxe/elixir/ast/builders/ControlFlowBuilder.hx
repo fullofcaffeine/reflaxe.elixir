@@ -382,6 +382,9 @@ class ControlFlowBuilder {
 	 *   - `scrutinee` matches the enum value used in the `TEnumIndex(scrutinee) == N` condition
 	 *   - `ef.name` matches the constructor name
 	 *   mapping `index -> name`.
+	 * - Preserve parameters read by nested constructor tests using their extracted
+	 *   TVar IDs or exact inlined extraction. For example, `Selected(Red)` must
+	 *   bind the color payload even though the source gives it no variable name.
 	 */
 	static function extractEnumParamBindersFromThenBranch(thenBranch:TypedExpr, enumScrutinee:TypedExpr, constructorName:String, paramCount:Int,
 			context:CompilationContext):EnumParamBinderRecovery {
@@ -597,9 +600,20 @@ class ControlFlowBuilder {
 
 			switch (expr.expr) {
 				case TEnumIndex(inner):
-					// Preprocessing can inline the outer payload into a nested enum
-					// test. It still needs a binding even without a named local read.
-					var info = unwrapEnumParameter(resolveInfraScrutinee(inner));
+					// A nested constructor test such as Selected(Red) reads the
+					// extracted payload, whether preprocessing kept its local or
+					// inlined the extraction. Match local identity: Haxe can reuse
+					// `_g` for both the outer subject and the nested payload.
+					var subject = resolveInfraScrutinee(inner);
+					switch (subject.expr) {
+						case TLocal(local):
+							for (index in 0...paramCount) {
+								if (extractedIdByIndex[index] == local.id)
+									nestedSwitchReads[index] = true;
+							}
+						default:
+					}
+					var info = unwrapEnumParameter(subject);
 					if (info != null && info.ctorName == constructorName && info.index >= 0 && info.index < paramCount && scrutineeMatches(info.source))
 						nestedSwitchReads[info.index] = true;
 					traverse(inner);

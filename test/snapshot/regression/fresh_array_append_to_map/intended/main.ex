@@ -10,7 +10,6 @@ defmodule Main do
   end
   def conditional_append(values) do
     output = []
-    _g = 0
     output = Enum.reduce(values, output, fn value, output_acc ->
       if (value > 0) do
         output_acc = Enum.concat(output_acc, [value])
@@ -23,7 +22,6 @@ defmodule Main do
   end
   def multiple_append(values) do
     output = []
-    _g = 0
     output = Enum.reduce(values, output, fn value, output_acc ->
       output_acc = Enum.concat(output_acc, [value])
       Enum.concat(output_acc, [value * 2])
@@ -32,13 +30,11 @@ defmodule Main do
   end
   def partial_accumulator_read(values) do
     output = []
-    _g = 0
     output = Enum.reduce(values, output, fn value, output_acc -> Enum.concat(output_acc, [length(output_acc) + value]) end)
     output
   end
   def break_fallback(values) do
     output = []
-    _g = 0
     output = Enum.reduce_while(values, output, fn value, output_acc ->
       try do
         if (value < 0) do
@@ -61,7 +57,6 @@ defmodule Main do
   end
   def continue_fallback(values) do
     output = []
-    _g = 0
     output = Enum.reduce_while(values, output, fn value, output_acc ->
       try do
         if (value < 0) do
@@ -85,7 +80,6 @@ defmodule Main do
   def carried_state_fallback(values) do
     output = []
     visited = 0
-    _g = 0
     {output, visited} = Enum.reduce_while(values, {output, visited}, fn value, {output_acc, visited_acc} ->
       try do
         visited_acc = visited_acc + 1
@@ -141,7 +135,6 @@ defmodule Main do
   end
   def control_and_return_fallback(values) do
     output = []
-    _g = 0
     (case Enum.reduce_while(values, {:__reflaxe_continue__, output}, fn value, {:__reflaxe_continue__, output_acc} ->
       try do
         if (value == -1) do
@@ -175,7 +168,6 @@ defmodule Main do
   end
   def return_fallback(values) do
     output = []
-    _g = 0
     (case Enum.reduce_while(values, {:__reflaxe_continue__, output}, fn value, {:__reflaxe_continue__, output_acc} ->
       (case (if (value < 0), do: {:halt, {:__reflaxe_return__, output_acc}}, else: {:cont, {:__reflaxe_continue__, output_acc}}) do
         {:halt, reflaxe_halt_payload} -> {:halt, reflaxe_halt_payload}
@@ -192,7 +184,6 @@ defmodule Main do
   end
   def throw_fallback(values) do
     output = []
-    _g = 0
     output = Enum.reduce(values, output, fn value, output_acc ->
       if (value < 0) do
         raise Reflaxe.Elixir.HaxeThrow, [value: "negative value"]
@@ -204,7 +195,6 @@ defmodule Main do
   def stateful_receiver_fallback(values) do
     box = ProjectionBox.new(1)
     output = []
-    _g = 0
     output = Enum.reduce(values, output, fn value, output_acc -> Enum.concat(output_acc, [apply(Map.get(box, :__reflaxe_class__) || Map.get(box, :__struct__), :project, [box, value])]) end)
     output
   end
@@ -236,13 +226,11 @@ defmodule Main do
   end
   def self_iterator_fallback() do
     output = []
-    _g = 0
     output = Enum.reduce(output, output, fn value, output_acc -> Enum.concat(output_acc, [value]) end)
     output
   end
   def non_fresh_accumulator(values, prefix) do
     output = prefix
-    _g = 0
     output = Enum.reduce(values, output, fn value, output_acc -> Enum.concat(output_acc, [value]) end)
     output
   end

@@ -59,11 +59,9 @@ defmodule Main do
   defp assert_stat(stat) do
     assert_that(stat.size == 5, "stat size must match the file content")
     integer_fields = [stat.gid, stat.uid, stat.dev, stat.ino, stat.nlink, stat.rdev, stat.mode]
-    _g = 0
     Enum.each(integer_fields, fn value -> assert_that(Std.is(value, Int), "every integer FileStat field must be present") end)
     assert_that(stat.nlink >= 1, "stat must report at least one hard link")
     date_fields = [stat.atime, stat.mtime, stat.ctime]
-    _g = 0
     Enum.each(date_fields, fn value ->
       assert_that(not Kernel.is_nil(value), "every Date FileStat field must be present")
       assert_that(Reflaxe.Elixir.HaxeFloat.gt(DateTime.to_unix(value, :millisecond), 0), "every FileStat date must be a usable Haxe Date")

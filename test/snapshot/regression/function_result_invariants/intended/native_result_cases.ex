@@ -22,7 +22,6 @@ defmodule NativeResultCases do
     if (flag), do: "value", else: nil
   end
   def loop_carrier(_struct, values) do
-    _g = 0
     (case Enum.reduce_while(values, :__reflaxe_no_return__, fn value, _ ->
       if (value > 2), do: {:halt, {:__reflaxe_return__, value}}, else: {:cont, :__reflaxe_no_return__}
     end) do

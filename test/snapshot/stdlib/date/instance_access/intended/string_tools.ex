@@ -273,7 +273,6 @@ defmodule StringTools do
   end
   def quote_regexp_meta(s) do
     special_chars = ["\\", "^", "$", ".", "|", "?", "*", "+", "(", ")", "[", "]", "{", "}"]
-    _g = 0
     s = Enum.reduce(special_chars, s, fn char, s_acc -> replace(s_acc, char, "\\" <> char) end)
     s
   end

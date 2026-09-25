@@ -78,9 +78,9 @@ defmodule Main do
       0 ->
         flunk("Should not be empty")
       3 ->
-        result_type = list_0
+        g = list_0
         g_value = list_1
-        head = result_type
+        head = g
         second = g_value
         third = list_2
         assert(1 == head, "Head should be 1")
@@ -162,7 +162,6 @@ defmodule Main do
   end
   test "data driven" do
     test_cases = [%{input: 1, expected: 2}, %{input: 2, expected: 4}, %{input: 3, expected: 6}, %{input: 4, expected: 8}, %{input: 5, expected: 10}]
-    _g = 0
     Enum.each(test_cases, fn test_case ->
       result = test_case.input * 2
       assert(test_case.expected == result, "Input " <> Reflaxe.Elixir.HaxeFloat.to_string(test_case.input) <> " should produce " <> Reflaxe.Elixir.HaxeFloat.to_string(test_case.expected))

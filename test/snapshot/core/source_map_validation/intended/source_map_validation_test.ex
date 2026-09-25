@@ -5,7 +5,6 @@ defmodule SourceMapValidationTest do
     test_function(simple_var, number)
     if (number > 0), do: nil, else: nil
     array = [1, 2, 3, 4, 5]
-    _g = 0
     Enum.each(array, fn item -> process_item(item) end)
     instance = TestClass.new("example")
     apply(Map.get(instance, :__reflaxe_class__) || Map.get(instance, :__struct__), :do_something, [instance])

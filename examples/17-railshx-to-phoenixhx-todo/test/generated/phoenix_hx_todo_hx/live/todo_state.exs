@@ -26,7 +26,6 @@ defmodule PhoenixHxTodoHx.Live.TodoState do
   def stats(todos) do
     open = 0
     completed = 0
-    _g = 0
     {open, completed} = Enum.reduce(todos, {open, completed}, fn todo, {open_acc, completed_acc} ->
       if (todo.completed) do
         completed_acc = completed_acc + 1

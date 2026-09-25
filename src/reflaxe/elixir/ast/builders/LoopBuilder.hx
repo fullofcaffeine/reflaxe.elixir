@@ -3687,6 +3687,26 @@ class LoopBuilder {
 			bodyContainsReturn, bodyContainsLoopControl).def;
 	}
 
+	/**
+	 * Identify the pure counter seed consumed by array-iteration lowering.
+	 *
+	 * WHY: Replacing an indexed while with Enum.each/reduce makes its zero seed
+	 * redundant. The enclosing block must remove the declaration together with
+	 * the lowered loop, rather than leave `_g = 0` in generated source.
+	 * HOW: Reuse the loop detector and match the exact TVar ID, never its spelling.
+	 * The caller must also prove that later statements do not read this local.
+	 */
+	public static function consumesArrayCounterSeed(counter:TVar, initializer:TypedExpr, loop:TypedExpr):Bool {
+		if (!isZeroInt(initializer))
+			return false;
+		return switch (unwrapTypedExpr(loop).expr) {
+			case TWhile(condition, body, true): var pattern = detectForInArrayPattern(condition,
+					body); pattern != null && pattern.isExclusive && pattern.counterVar.id == counter.id;
+			default:
+				false;
+		};
+	}
+
 	static function detectForInArrayPattern(econd:TypedExpr, body:TypedExpr):Null<{
 		arrayExpr:TypedExpr,
 		counterVar:TVar,

@@ -14,7 +14,6 @@ defmodule Main do
   end
   defp test_loop() do
     items = [1, 2, 3, 4, 5]
-    _g = 0
     Enum.each(items, fn _ -> nil end)
   end
   defp test_lambda() do

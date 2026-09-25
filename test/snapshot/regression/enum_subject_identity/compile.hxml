@@ -1,0 +1,10 @@
+-cp ../../../runtime/nested_enum_bindings
+-cp .
+-cp ../../../../src
+-cp ../../../../std
+-cp ../../../../std/elixir/_std
+-lib reflaxe
+-D reflaxe_runtime
+-D elixir_output=out
+--macro reflaxe.elixir.CompilerInit.Start()
+-main Main

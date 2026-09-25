@@ -114,13 +114,11 @@ defmodule OptionPatterns.UserRepositoryTest do
   test "get users by status returns active users" do
     active_users = OptionPatterns.UserRepository.get_users_by_status(true)
     assert(length(active_users) >= 3, "Should have at least 3 active users")
-    _g = 0
     Enum.each(active_users, fn user -> assert(user.active, "All returned users should be active") end)
   end
   test "get users by status returns inactive users" do
     inactive_users = OptionPatterns.UserRepository.get_users_by_status(false)
     assert(length(inactive_users) >= 1, "Should have at least 1 inactive user")
-    _g = 0
     Enum.each(inactive_users, fn user -> refute(user.active, "All returned users should be inactive") end)
   end
   test "create succeeds for valid data" do

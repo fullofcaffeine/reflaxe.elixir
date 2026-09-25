@@ -25,7 +25,6 @@ defmodule Main do
   end
   def bytes_buffer_loops(prefix) do
     buffer = BytesBuffer.new()
-    _g = 0
     buffer = Enum.reduce(prefix, buffer, fn byte, buffer_acc -> apply(Map.get(buffer_acc, :__reflaxe_class__) || Map.get(buffer_acc, :__struct__), :add_byte, [buffer_acc, byte]) end)
     byte = 67
     {buffer, _byte} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {buffer, byte}, fn _, {acc_buffer, acc_byte} ->

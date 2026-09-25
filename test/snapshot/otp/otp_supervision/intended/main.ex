@@ -39,7 +39,6 @@ defmodule Main do
     _linked_result = Task.start_link(fn -> nil end)
     tasks = [Task.async(fn -> 1 end), Task.async(fn -> 2 end), Task.async(fn -> 3 end)]
     results = Task.yield_many(tasks)
-    _g = 0
     Enum.each(results, fn task_result ->
       if (not Kernel.is_nil(task_result.result)), do: nil
     end)
@@ -91,7 +90,6 @@ defmodule Main do
     supervisor = result
     _stats = Supervisor.count_children(supervisor)
     children_list = Supervisor.which_children(supervisor)
-    _g = 0
     Enum.each(children_list, fn _ -> nil end)
     Supervisor.restart_child(supervisor, "worker1")
     Supervisor.terminate_child(supervisor, "normal")

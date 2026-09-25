@@ -3,14 +3,13 @@ defmodule Main do
     numbers = [1, 2, 3, 4, 5]
     _doubled = Enum.map(numbers, fn n -> n * 2 end)
     g = []
-    g = Enum.reduce(numbers, g, fn n, g_acc ->
+    _evens = Enum.reduce(numbers, g, fn n, g_acc ->
       if (rem(n, 2) == 0) do
         Enum.concat(g_acc, [n])
       else
         g_acc
       end
     end)
-    _evens = g
     g = []
     x = 1
     y = "a"
@@ -68,10 +67,8 @@ defmodule Main do
       end
     end)
     sum = 0
-    _g = 0
     _ = Enum.reduce(numbers, sum, fn n, sum_acc -> sum_acc + n end)
     output = []
-    _g = 0
     _ = Enum.reduce(numbers, output, fn n, output_acc ->
       if (n > 2) do
         output_acc = Enum.concat(output_acc, [n])

@@ -645,7 +645,6 @@ defmodule Main do
   def test_pattern_matching_performance() do
     operations = [%{type: "read", resource: "user", id: 123}, %{type: "write", resource: "post", id: 456}, %{type: "delete", resource: "comment", id: 789}, %{type: "update", resource: "user", id: 123}]
     results = []
-    _g = 0
     results = Enum.reduce(operations, results, fn op, results_acc ->
       op_type = op.type
       op_resource = op.resource

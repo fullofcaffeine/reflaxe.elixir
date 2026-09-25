@@ -71,7 +71,6 @@ defmodule OptionTools do
   end
   def values(options) do
     result = []
-    _g = 0
     result = Enum.reduce(options, result, fn option, result_acc ->
       (case option do
         {:some, value} ->

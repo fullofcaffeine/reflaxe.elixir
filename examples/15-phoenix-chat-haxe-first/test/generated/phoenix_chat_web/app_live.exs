@@ -186,7 +186,6 @@ defmodule PhoenixChatWeb.AppLive do
     users = socket.assigns.online_users
     keys = Map.keys(users)
     views = []
-    _g = 0
     views = Enum.reduce(keys, views, fn key, views_acc ->
       entry = Map.get(users, key, nil)
       if (not Kernel.is_nil(entry) and not Kernel.is_nil(entry.metas) and length(entry.metas) > 0) do

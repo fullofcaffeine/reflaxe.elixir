@@ -48,7 +48,6 @@ defmodule Main do
     if (Reflaxe.Elixir.HaxeFloat.eq(b, 0)), do: {:error, "Division by zero"}, else: {:ok, Reflaxe.Elixir.HaxeFloat.divide(a, b)}
   end
   defp find_in_array(_struct, arr, item) do
-    _g = 0
     (case Enum.reduce_while(arr, :__reflaxe_no_return__, fn element, _ ->
       if (element == item), do: {:halt, {:__reflaxe_return__, {:some, element}}}, else: {:cont, :__reflaxe_no_return__}
     end) do

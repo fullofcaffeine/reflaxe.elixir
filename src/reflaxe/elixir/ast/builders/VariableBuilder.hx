@@ -350,7 +350,10 @@ class VariableBuilder {
 	 * 
 	 * WHY: Infrastructure variables often need special tracking or skipping
 	 * WHAT: Maps infrastructure vars for switch patterns or skips them
-	 * HOW: Analyzes init patterns and stores mappings
+	 * HOW: Analyzes init patterns and stores mappings by TVar identity. Generated
+	 * temporary spellings are not identities: `_g = input.choice` and a later
+	 * `_g = decode(value)` can represent different locals in the same function.
+	 * A field-derived name must remain attached only to the first local.
 	 */
 	static function handleInfrastructureDeclaration(v:TVar, init:Null<TypedExpr>, context:CompilationContext):Null<ElixirASTDef> {
 		if (init == null) {
@@ -379,10 +382,9 @@ class VariableBuilder {
 						if (context.tempVarRenameMap == null) {
 							context.tempVarRenameMap = new Map<String, String>();
 						}
-						// Store BOTH keys to keep declarations and references consistent.
-						// - Name-based lookup is used when Haxe reuses names with new IDs.
-						// - ID-based lookup is used for stable binder alignment within a scope.
-						context.tempVarRenameMap.set(v.name, extractedVarName);
+						// Haxe reuses temporary spellings across independent expressions.
+						// Only this TVar identity owns the field-derived name: a later
+						// `_g = decode(...)` must not inherit an earlier `_g = input.kind`.
 						context.tempVarRenameMap.set(Std.string(v.id), extractedVarName);
 
 						#if debug_infrastructure_vars
@@ -448,8 +450,7 @@ class VariableBuilder {
 			if (context.tempVarRenameMap == null)
 				context.tempVarRenameMap = new Map<String, String>();
 			var idKey = Std.string(v.id);
-			if (!context.tempVarRenameMap.exists(idKey) && !context.tempVarRenameMap.exists(v.name)) {
-				context.tempVarRenameMap.set(v.name, "g_value");
+			if (!context.tempVarRenameMap.exists(idKey)) {
 				context.tempVarRenameMap.set(idKey, "g_value");
 			}
 		}

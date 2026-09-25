@@ -255,11 +255,7 @@ defmodule Main do
       g = g ++ [4]
       g
     end).()]
-    _g = 0
-    sum = Enum.reduce(data, sum, fn row, sum_acc ->
-      _g = 0
-      Enum.reduce(row, sum_acc, fn val, sum_acc -> sum_acc + val end)
-    end)
+    sum = Enum.reduce(data, sum, fn row, sum_acc -> Enum.reduce(row, sum_acc, fn val, sum_acc -> sum_acc + val end) end)
     sum
   end
   def with_meta_and_parens() do
@@ -293,8 +289,7 @@ defmodule Main do
   def comprehension_from_iterable() do
     source = [1, 2, 3]
     g = []
-    g = Enum.reduce(source, g, fn x, g_acc -> Enum.concat(g_acc, [Enum.map(source, fn y -> x * y end)]) end)
-    g
+    Enum.reduce(source, g, fn x, g_acc -> Enum.concat(g_acc, [Enum.map(source, fn y -> x * y end)]) end)
   end
   def empty_comprehensions() do
     []
