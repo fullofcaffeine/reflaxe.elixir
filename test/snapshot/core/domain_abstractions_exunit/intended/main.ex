@@ -109,7 +109,7 @@ defmodule Main do
       {:ok, ws} ->
         trimmed = NonEmptyString_Impl_.safe_trim(ws)
         assert match?({:error, _}, trimmed)
-      {:error, _error} -> flunk("Whitespace-only should parse")
+      {:error, _} -> flunk("Whitespace-only should parse")
     end)
   end
   test "result chaining" do
@@ -139,7 +139,7 @@ defmodule Main do
   test "error handling" do
     invalid_email = Email_Impl_.parse("invalid-email")
     (case invalid_email do
-      {:ok, _value} -> flunk("Invalid email should not parse")
+      {:ok, _} -> flunk("Invalid email should not parse")
       {:error, message} ->
         condition = StringTools.haxe_index_of(message, "Invalid email", 0) >= 0
         assert condition
@@ -151,7 +151,7 @@ defmodule Main do
         doubled = PositiveInt_Impl_.multiply(large, large)
         condition = PositiveInt_Impl_.to_int(doubled) > 0
         assert condition
-      {:error, _error} -> flunk("Large integer should parse")
+      {:error, _} -> flunk("Large integer should parse")
     end)
   end
   test "real world scenario" do

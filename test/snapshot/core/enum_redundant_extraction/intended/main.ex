@@ -1,6 +1,7 @@
 defmodule Main do
   def main() do
-    (case {:created, "Hello world"} do
+    msg = {:created, "Hello world"}
+    (case msg do
       {:created, _content} -> nil
       {:updated, _id, _content} -> nil
       {:deleted, _id} -> nil

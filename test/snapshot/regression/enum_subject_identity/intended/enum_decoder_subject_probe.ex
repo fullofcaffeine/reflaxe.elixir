@@ -13,7 +13,7 @@ defmodule EnumDecoderSubjectProbe do
       accepted = (case (term = Enum.at(rows, 0)
       if (Kernel.is_boolean(term)), do: {:ok, term}, else: {:error, {:expected_type, {:boolean}, TermDecoder.kind(term)}}) do
         {:ok, value} -> value
-        {:error, _error} -> false
+        {:error, _} -> false
       end)
       if (accepted), do: 20, else: 10
     else

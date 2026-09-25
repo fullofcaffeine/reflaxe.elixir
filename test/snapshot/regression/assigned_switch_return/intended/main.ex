@@ -53,7 +53,7 @@ defmodule Main do
           "outer"
         else
           (case operation do
-            {:put, _id} ->
+            {:put, _} ->
               if (not exists) do
                 "inner"
               else

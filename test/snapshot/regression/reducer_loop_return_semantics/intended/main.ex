@@ -59,7 +59,7 @@ defmodule Main do
         {:text, name} ->
           names_acc = names_acc ++ [name]
           {:cont, {:__reflaxe_continue__, names_acc}}
-        {:other, _reason} -> {:halt, {:__reflaxe_return__, nil}}
+        {:other, _} -> {:halt, {:__reflaxe_return__, nil}}
       end) do
         {:halt, reflaxe_halt_payload} -> {:halt, reflaxe_halt_payload}
         {:cont, {:__reflaxe_continue__, names_acc}} -> {:cont, {:__reflaxe_continue__, names_acc}}

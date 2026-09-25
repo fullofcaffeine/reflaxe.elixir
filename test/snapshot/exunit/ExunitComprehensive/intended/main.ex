@@ -71,7 +71,7 @@ defmodule Main do
     assert(match?({:error, _}, failure_result), "Failure operation should return Error")
     (case success_result do
       {:ok, value} -> assert(value == 42, "Success value should be 42")
-      {:error, _error} ->
+      {:error, _} ->
         flunk("Should not be an error")
     end)
   end

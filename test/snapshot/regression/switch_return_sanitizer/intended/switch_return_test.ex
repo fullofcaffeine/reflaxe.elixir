@@ -5,13 +5,13 @@ defmodule SwitchReturnTest do
   def instance_unwrap_or(_struct, result, default_value) do
     (case result do
       {:ok, value} -> value
-      {:error, _error} -> default_value
+      {:error, _} -> default_value
     end)
   end
   def unwrap_or(result, default_value) do
     (case result do
       {:ok, value} -> value
-      {:error, _error} -> default_value
+      {:error, _} -> default_value
     end)
   end
   def get_or_else(option, default_value) do
@@ -25,7 +25,7 @@ defmodule SwitchReturnTest do
       {:some, result} ->
         (case result do
           {:ok, value} -> value
-          {:error, _error} -> default_value
+          {:error, _} -> default_value
         end)
       {:none} -> default_value
     end)
@@ -33,13 +33,13 @@ defmodule SwitchReturnTest do
   def working_unwrap_or(result, default_value) do
     (case result do
       {:ok, value} -> value
-      {:error, _error} -> default_value
+      {:error, _} -> default_value
     end)
   end
   def map_or_else(result, map_fn, else_fn) do
     (case result do
       {:ok, value} -> map_fn.(value)
-      {:error, _error} ->
+      {:error, _} ->
         else_fn.()
     end)
   end

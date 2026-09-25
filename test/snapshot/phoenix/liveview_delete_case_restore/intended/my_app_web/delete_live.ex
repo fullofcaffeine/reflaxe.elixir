@@ -15,7 +15,7 @@ defmodule MyAppWeb.DeleteLive do
       {:ok, _deleted} ->
         s2 = remove_todo_from_list(_id, socket)
         %{noreply: s2}
-      {:error, _reason} -> %{noreply: socket}
+      {:error, _} -> %{noreply: socket}
     end)
   end
   defp remove_todo_from_list(_id_like, socket) do

@@ -32,6 +32,7 @@ TEST_DIRS=(
   "test/runtime/switch_case_body"
   "test/runtime/array_pattern_bindings"
   "test/runtime/nested_enum_bindings"
+  "test/snapshot/phoenix/controller_value_preservation"
   "test/runtime/dynamic_length"
   "test/runtime/inline_optional_default"
   "test/runtime/inline_abstract_nested_result"
@@ -107,6 +108,13 @@ run_one() (
   while IFS= read -r generated_file; do
     generated_files+=("$generated_file")
   done < <(cd "$outdir" && find . -type f -name '*.ex' -print | LC_ALL=C sort)
+  # A fixture may need a native macro supplied by its host. Keep that small
+  # bootstrap separate from generated code and compile both with the same gate.
+  if [[ -d "$abs_test_dir/native" ]]; then
+    while IFS= read -r native_file; do
+      generated_files+=("$native_file")
+    done < <(find "$abs_test_dir/native" -type f -name '*.ex' -print | LC_ALL=C sort)
+  fi
 
   # As in the OTP smoke owner, compile the complete dependency set together.
   # Sequential -r loading reports false missing-module warnings and charges

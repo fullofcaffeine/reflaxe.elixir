@@ -4,9 +4,9 @@ defmodule Sample.Reader do
   end
   def run(_struct, input) do
     (case (if (Kernel.is_binary(input)), do: {:ok, input}, else: {:error, {:expected_type, {:binary}, TermDecoder.kind(input)}}) do
-      {:ok, _value} ->
+      {:ok, _} ->
         Shared_Fields_.value()
-      {:error, _error} -> -1
+      {:error, _} -> -1
     end)
   end
 end

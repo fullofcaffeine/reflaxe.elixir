@@ -57,7 +57,7 @@ defmodule Main do
         {:outside_bounds} ->
           matched_acc = matched_acc + 1
           matched_acc
-        {:custom, _e} -> matched_acc
+        {:custom, _} -> matched_acc
       end)
     end)
     assert_true(matched == 3, "Error constructors changed")

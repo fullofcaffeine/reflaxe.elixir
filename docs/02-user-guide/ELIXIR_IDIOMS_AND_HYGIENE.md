@@ -140,6 +140,30 @@ end
 When a named binder is required to keep pattern behavior (for example repeated binders that must match),
 generated code keeps an underscored name such as `{:pair, _x, _x}`.
 
+An ignored enum payload must not replace a value from an enclosing scope:
+
+```haxe
+var value = 70;
+return switch (result) {
+  case Ok(_): value;
+  case Error(_): -1;
+};
+```
+
+```elixir
+value = 70
+case result do
+  {:ok, _} -> value
+  {:error, _} -> -1
+end
+```
+
+The success branch returns `70`, regardless of the ignored payload. The compiler
+tracks the matched expression and typed local identities when deciding which
+payloads are used. Nested matches must preserve the same distinction.
+The [controller value regression](../../test/snapshot/phoenix/controller_value_preservation/Main.hx)
+checks this behavior in both controller and ordinary Haxe code.
+
 ### Special case: Phoenix `assigns`
 
 Phoenix function components and `~H` templates expect the parameter to be named `assigns`.

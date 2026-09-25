@@ -4,7 +4,7 @@ defmodule Main do
   end
   def main() do
     (case subscribe() do
-      {:ok, _value} -> nil
+      {:ok, _} -> nil
       {:error, _msg} -> nil
     end)
     (case subscribe() do
@@ -16,7 +16,7 @@ defmodule Main do
       {:error, _msg} -> nil
     end)
     (case process_data() do
-      {:data, _id, _timestamp, _name, _metadata} -> nil
+      {:data, _id, _, _name, _} -> nil
       {:no_data} -> nil
     end)
   end

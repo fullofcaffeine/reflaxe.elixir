@@ -13,7 +13,7 @@ defmodule Main do
       {:red} -> "red"
       {:green} -> "green"
       {:blue} -> "blue"
-      {:rgb, _r, _g, _b} -> "custom"
+      {:rgb, _, _, _} -> "custom"
     end)
     nil
   end

@@ -37,8 +37,8 @@ defmodule Sys.Thread.EventLoop do
         (case apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :progress, [struct]) do
           {:now} -> nil
           {:never} -> throw({:break, acc})
-          {:any_time, payload_struct} ->
-            apply(Map.get(payload_struct, :__reflaxe_class__) || Map.get(payload_struct, :__struct__), :wait, [payload_struct, nil])
+          {:any_time, _} ->
+            apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :wait, [struct, nil])
           {:at, time} ->
             apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :wait, [struct, (fn ->
               b = Reflaxe.Elixir.HaxeFloat.sub(time, System.system_time(:nanosecond) / 1_000_000_000.0)

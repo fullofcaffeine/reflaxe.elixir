@@ -37,8 +37,8 @@ defmodule Main do
   defp describe_mixed(mixed) do
     (case mixed do
       {:loading} -> "Loading"
-      {:success, _data} -> "Success (data ignored)"
-      {:failure, error, _code} -> "Error occurred: #{error}"
+      {:success, _} -> "Success (data ignored)"
+      {:failure, error, _} -> "Error occurred: #{error}"
     end)
   end
 end

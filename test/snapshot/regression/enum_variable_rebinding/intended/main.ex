@@ -1,12 +1,12 @@
 defmodule Main do
   def main() do
     _msg1 = (case {:error, "failed"} do
-      {:ok, _value} -> "Success"
+      {:ok, _} -> "Success"
       {:error, g} -> "Error: #{g}"
     end)
     _msg2 = (case {:ok, 42} do
       {:ok, value} -> "Got: #{Reflaxe.Elixir.HaxeFloat.to_string(value)}"
-      {:error, _error} -> "Failed"
+      {:error, _} -> "Failed"
     end)
     _msg3 = (case {:some, "hello"} do
       {:some, value} -> "Value: #{value}"
