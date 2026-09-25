@@ -969,6 +969,21 @@ run_step "strict native compile of packaged abstract identities" 60 "$work_dir" 
 run_step "execute packaged abstract identity contracts" 20 "$work_dir" \
   'elixir -pa identity-beam -e "Main.main()"'
 
+# Unary blocks must retain receiver effects inside the short-circuited operand.
+mkdir -p "$work_dir/unary-values" "$work_dir/unary-beam"
+cp "$ROOT_DIR/test/snapshot/regression/negated_block_operands/Main.hx" "$work_dir/unary-values/"
+cp "$ROOT_DIR/test/snapshot/regression/negated_block_operands/expected.stdout" "$work_dir/unary-values/"
+run_step "compile unary blocks through source checkout" 120 "$work_dir" \
+  '"$PWD/node_modules/.bin/haxe" build-source.hxml -cp unary-values -dce full -D elixir_output=out_unary_source -D reflaxe_elixir_validate_results -D hxx_granular_pass_registry > unary-source.log 2>&1 || { tail -80 unary-source.log; exit 1; }'
+run_step "compile unary blocks through installed package" 120 "$work_dir" \
+  'PATH="$HAXELIB_WRAPPER_DIR:$(dirname "$HAXE_BIN"):$PATH" "$HAXE_BIN" build.hxml -cp unary-values -dce full -D elixir_output=out_unary_package -D reflaxe_elixir_validate_results -D hxx_granular_pass_registry > unary-package.log 2>&1 || { tail -80 unary-package.log; exit 1; }'
+require_file "$work_dir/out_unary_package/main.ex"
+compare_generated_elixir "$work_dir/out_unary_source" "$work_dir/out_unary_package"
+run_step "strict native compile of packaged unary blocks" 60 "$work_dir" \
+  'find out_unary_package -type f -name "*.ex" -print0 | xargs -0 elixir validate-identity-warnings.exs unary-beam'
+run_step "execute packaged unary block contracts" 20 "$work_dir" \
+  'elixir -pa unary-beam -e "Main.main()" > unary.stdout && diff -u unary-values/expected.stdout unary.stdout'
+
 mix_project="$work_dir/package_mix"
 mkdir -p "$mix_project/lib"
 cp -R "$work_dir/out/." "$mix_project/lib/"
