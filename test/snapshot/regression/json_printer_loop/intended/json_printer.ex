@@ -70,7 +70,6 @@ defmodule JsonPrinter do
             if (Std.is(v, Array)) do
               arr = v
               items = []
-              _g = 0
               items = Enum.reduce(arr, items, fn item, items_acc -> Enum.concat(items_acc, [write_value(struct, item)]) end)
               "[#{Enum.join(items, ", ")}]"
             else

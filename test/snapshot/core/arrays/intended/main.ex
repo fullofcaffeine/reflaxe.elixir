@@ -9,7 +9,6 @@ defmodule Main do
   end
   def array_iteration() do
     fruits = ["apple", "banana", "orange", "grape"]
-    _g = 0
     Enum.each(fruits, fn _ -> nil end)
     _g = 0
     fruits_length = length(fruits)
@@ -73,11 +72,7 @@ defmodule Main do
   end
   def multi_dimensional() do
     matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-    _g = 0
-    Enum.each(matrix, fn row ->
-      _g = 0
-      Enum.each(row, fn _ -> nil end)
-    end)
+    Enum.each(matrix, fn row -> Enum.each(row, fn _ -> nil end) end)
     _grid = [(fn ->
       g = []
       g = g ++ [0]

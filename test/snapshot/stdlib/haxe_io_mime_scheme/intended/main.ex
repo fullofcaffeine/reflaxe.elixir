@@ -46,7 +46,6 @@ defmodule Main do
   defp test_error() do
     simple_errors = [{:blocked}, {:overflow}, {:outside_bounds}]
     matched = 0
-    _g = 0
     matched = Enum.reduce(simple_errors, matched, fn error, matched_acc ->
       (case error do
         {:blocked} ->

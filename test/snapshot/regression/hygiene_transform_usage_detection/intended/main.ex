@@ -37,7 +37,6 @@ defmodule Main do
   end
   defp for_loop_test(arr) do
     sum = 0
-    _g = 0
     sum = Enum.reduce(arr, sum, fn i, sum_acc -> sum_acc + i end)
     sum
   end

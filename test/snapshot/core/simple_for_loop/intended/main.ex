@@ -1,7 +1,6 @@
 defmodule Main do
   def main() do
     fruits = ["apple", "banana", "orange"]
-    _g = 0
     Enum.each(fruits, fn _ -> nil end)
     i = 0
     {_i} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i}, fn _, {acc_i} ->

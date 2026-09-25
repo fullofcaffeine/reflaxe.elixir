@@ -88,7 +88,6 @@ defmodule Main do
   end
   defp test_iterator_function() do
     numbers = [1, 2, 3]
-    _g = 0
     Enum.each(numbers, fn _ -> nil end)
     iter = ArrayIterator.new(numbers)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->

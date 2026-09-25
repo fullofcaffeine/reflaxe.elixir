@@ -43,7 +43,6 @@ defmodule Main do
   end
   defp test_guard_patterns() do
     numbers = [1, 5, 10, 15, 20]
-    _g = 0
     Enum.each(numbers, fn num ->
       n = num
       _category = if (n < 5) do
@@ -62,7 +61,6 @@ defmodule Main do
   end
   defp test_array_patterns() do
     arrays = [[], [1], [1, 2], [1, 2, 3], [1, 2, 3, 4, 5]]
-    _g = 0
     Enum.each(arrays, fn arr ->
       _description = (case length(arr) do
         0 -> "empty"

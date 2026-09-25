@@ -26,11 +26,7 @@ defmodule Main do
   defp test_nested_loops() do
     matrix = [[1, 2], [3, 4], [5, 6]]
     result = []
-    _g = 0
-    _ = Enum.reduce(matrix, result, fn row, result_acc ->
-      _g = 0
-      Enum.reduce(row, result_acc, fn item, result_acc -> Enum.concat(result_acc, [item * 2]) end)
-    end)
+    _ = Enum.reduce(matrix, result, fn row, result_acc -> Enum.reduce(row, result_acc, fn item, result_acc -> Enum.concat(result_acc, [item * 2]) end) end)
     nil
   end
   defp test_filter_with_indexing() do
@@ -95,7 +91,6 @@ defmodule Main do
   end
   defp test_result_pattern_matching() do
     results = [%{status: "ok", value: 42}, %{status: "error", value: -1}]
-    _g = 0
     Enum.each(results, fn result ->
       result_status = result.status
       _output = (case result_status do
@@ -147,7 +142,6 @@ defmodule Main do
     end)
     if (not Kernel.is_nil(found)), do: nil
     completed_count = 0
-    _g = 0
     _ = Enum.reduce(todos, completed_count, fn todo, completed_count_acc ->
       if (todo.completed) do
         completed_count_acc = completed_count_acc + 1
@@ -157,7 +151,6 @@ defmodule Main do
       end
     end)
     titles = []
-    _g = 0
     _ = Enum.reduce(todos, titles, fn todo, titles_acc ->
       if (not todo.completed) do
         titles_acc = Enum.concat(titles_acc, [String.upcase(todo.title)])

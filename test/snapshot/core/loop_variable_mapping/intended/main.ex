@@ -2,7 +2,6 @@ defmodule Main do
   def main() do
     array = [1, 2, 3, 4, 5]
     result = []
-    _g = 0
     result = Enum.reduce(array, result, fn item, result_acc ->
       if (item > 2) do
         result_acc = Enum.concat(result_acc, [item * 2])
@@ -26,7 +25,6 @@ defmodule Main do
       end)
     end)
     filtered = []
-    _g = 0
     _ = Enum.reduce(array, filtered, fn x, filtered_acc ->
       if (rem(x, 2) == 0) do
         filtered_acc = Enum.concat(filtered_acc, [x])
@@ -45,9 +43,7 @@ defmodule Main do
     result = result ++ [2]
     _ = result ++ [i]
     sum = 0
-    _g = 0
     sum = Enum.reduce(array, sum, fn n, sum_acc -> sum_acc + n end)
-    _g = 0
     _ = Enum.reduce(array, sum, fn n, sum_acc -> (sum_acc - n) end)
     nil
   end

@@ -16,6 +16,8 @@ import reflaxe.elixir.ast.transformers.CaseBinderUnderscoreAlignTransforms;
 import reflaxe.elixir.ast.transformers.BinderTransforms;
 import reflaxe.elixir.preprocessor.TypedExprPreprocessor;
 import reflaxe.elixir.ast.validation.FunctionResultInvariant;
+import reflaxe.elixir.ast.builders.LoopBuilder;
+import reflaxe.elixir.ast.builders.BlockBuilder;
 
 /** Checks exact matching independently of the compiler's pattern recovery. */
 class TestArrayPatternTransforms {
@@ -24,6 +26,7 @@ class TestArrayPatternTransforms {
 		testOverwrittenCaseBinder();
 		testPrintedReturnValues();
 		testNestedExtractionBindings();
+		testConsumedArrayCounterSeed();
 		final list = makeAST(EList([makeAST(ECall(null, "read_once", []))]));
 		final target = makeAST(ECall(null, "length", [list]));
 		final guard = makeAST(EBinary(Equal, makeAST(EVar("arr")), makeAST(EInteger(7))));
@@ -177,6 +180,41 @@ class TestArrayPatternTransforms {
 			TypedExprTools.iter(expr, verify);
 		}
 		verify(result);
+	}
+
+	/** Counter elimination needs the exact local, zero seed and absence of later captures. */
+	static function testConsumedArrayCounterSeed():Void {
+		var source = Context.typeExpr(macro {
+			var values = [1, 2];
+			var cursor = 0;
+			while (cursor < values.length) {
+				var value = values[cursor];
+				cursor++;
+				if (value < 0)
+					throw "negative";
+			}
+			function() return cursor;
+		});
+		switch (source.expr) {
+			case TBlock([_, {expr: TVar(counter, initializer)}, loop, capture]):
+				if (!LoopBuilder.consumesArrayCounterSeed(counter, initializer, loop))
+					fail("A zero seed for the exact array-loop counter must be consumed.");
+				if (LoopBuilder.consumesArrayCounterSeed(counter, Context.typeExpr(macro 3), loop))
+					fail("A nonzero initializer must not be removed.");
+
+				var other = Context.typeExpr(macro {var cursor = 0; cursor;});
+				switch (other.expr) {
+					case TBlock([{expr: TVar(otherCounter, _)}, _]):
+						if (LoopBuilder.consumesArrayCounterSeed(otherCounter, initializer,
+							loop)) fail("Same-spelled counters with different IDs must remain independent.");
+					default: fail("Unexpected independent-counter fixture shape.");
+				}
+
+				if (! @:privateAccess BlockBuilder.typedExprsUseLocal([capture], counter, true))
+					fail("A later closure must keep its captured counter declaration.");
+			default:
+				fail("Unexpected array-loop fixture shape.");
+		}
 	}
 
 	static function fail(message:String):Void {

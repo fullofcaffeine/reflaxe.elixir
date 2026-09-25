@@ -13,7 +13,6 @@ defmodule Main do
     _ = fn s -> String.upcase(s) end
     _var_args = fn args ->
       sum = 0
-      _g = 0
       Enum.reduce(args, sum, fn arg, sum_acc -> Reflaxe.Elixir.HaxeFloat.add(sum_acc, arg) end)
     end
     nil
@@ -35,7 +34,6 @@ defmodule Main do
   end
   def dynamic_collections() do
     dyn_array = [1, "two", 3, true, %{x: 10}]
-    _g = 0
     Enum.each(dyn_array, fn _ -> nil end)
     dyn_obj = %{}
     _ = dyn_obj |> Map.put(:field1, "value1") |> Map.put(:field2, 42) |> Map.put(:field3, [1, 2, 3])

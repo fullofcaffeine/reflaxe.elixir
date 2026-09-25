@@ -20,7 +20,6 @@ defmodule Main do
       {:error, _error} -> nil
     end)
     invalid_emails = ["invalid-email", "@example.com", "user@", "user@@example.com", "", "user space@example.com"]
-    _g = 0
     Enum.each(invalid_emails, fn invalid_email ->
       (case Email_Impl_.parse(invalid_email) do
         {:ok, _value} -> nil
@@ -38,7 +37,6 @@ defmodule Main do
   end
   defp test_user_id_validation() do
     valid_ids = ["user123", "Alice", "Bob42", "testUser"]
-    _g = 0
     Enum.each(valid_ids, fn valid_id ->
       (case UserId_Impl_.parse(valid_id) do
         {:ok, user_id} ->
@@ -57,7 +55,6 @@ defmodule Main do
        end).(),
       ""
     )]
-    _g = 0
     Enum.each(invalid_ids, fn invalid_id ->
       (case UserId_Impl_.parse(invalid_id) do
         {:ok, _value} -> nil
@@ -76,7 +73,6 @@ defmodule Main do
   end
   defp test_positive_int_arithmetic() do
     valid_numbers = [1, 5, 42, 100, 999]
-    _g = 0
     Enum.each(valid_numbers, fn valid_num ->
       (case PositiveInt_Impl_.parse(valid_num) do
         {:ok, pos_int} ->
@@ -96,7 +92,6 @@ defmodule Main do
       end)
     end)
     invalid_numbers = [0, -1, -42, -100]
-    _g = 0
     Enum.each(invalid_numbers, fn invalid_num ->
       (case PositiveInt_Impl_.parse(invalid_num) do
         {:ok, _value} -> nil
@@ -123,7 +118,6 @@ defmodule Main do
   end
   defp test_non_empty_string_operations() do
     valid_strings = ["hello", "world", "test", "NonEmptyString"]
-    _g = 0
     Enum.each(valid_strings, fn valid_str ->
       (case NonEmptyString_Impl_.parse(valid_str) do
         {:ok, non_empty_str} ->
@@ -142,7 +136,6 @@ defmodule Main do
       end)
     end)
     invalid_strings = ["", "   ", "\t\n"]
-    _g = 0
     Enum.each(invalid_strings, fn invalid_str ->
       (case NonEmptyString_Impl_.parse(invalid_str) do
         {:ok, _value} -> nil
@@ -150,7 +143,6 @@ defmodule Main do
       end)
     end)
     whitespace_strings = ["  hello  ", "\tworld\n", "  test  "]
-    _g = 0
     Enum.each(whitespace_strings, fn whitespace_str ->
       (case NonEmptyString_Impl_.parse_and_trim(whitespace_str) do
         {:ok, _trimmed} -> nil
@@ -166,7 +158,6 @@ defmodule Main do
       {:error, _error} -> nil
     end)
     parts = NonEmptyString_Impl_.split_non_empty(test_str, " ")
-    _g = 0
     Enum.each(parts, fn _ -> nil end)
   end
   defp test_functional_composition() do
@@ -181,7 +172,6 @@ defmodule Main do
   end
   defp test_error_handling() do
     invalid_inputs = [%{email: "invalid-email", user_id: "ab", score: "0"}, %{email: "user@domain", user_id: "user@123", score: "-5"}, %{email: "", user_id: "", score: "not-a-number"}]
-    _g = 0
     Enum.each(invalid_inputs, fn input ->
       (case build_user_profile(input.user_id, input.email, input.score) do
         {:ok, _value} -> nil
@@ -189,7 +179,6 @@ defmodule Main do
       end)
     end)
     edge_cases = [%{email: "a@b.co", user_id: "usr", score: "1"}, %{email: "very.long.email.address@very.long.domain.name.example.com", user_id: "user123456789", score: "999"}]
-    _g = 0
     Enum.each(edge_cases, fn edge_case ->
       (case build_user_profile(edge_case.user_id, edge_case.email, edge_case.score) do
         {:ok, _profile} -> nil
@@ -200,7 +189,6 @@ defmodule Main do
   defp test_real_world_scenarios() do
     registration_data = [%{user_id: "alice123", email: "alice@example.com", preferred_name: "Alice Smith"}, %{user_id: "bob456", email: "bob.jones@company.org", preferred_name: "Bob"}, %{user_id: "charlie", email: "charlie@test.dev", preferred_name: "Charlie Brown"}]
     valid_users = []
-    _g = 0
     _ = Enum.reduce(registration_data, valid_users, fn user_data, valid_users_acc ->
       user_result = create_user(user_data.user_id, user_data.email, user_data.preferred_name)
       (case user_result do
@@ -211,7 +199,6 @@ defmodule Main do
       end)
     end)
     config_data = [%{timeout: "30", retries: "3", name: "production"}, %{timeout: "0", retries: "5", name: ""}, %{timeout: "60", retries: "-1", name: "test"}]
-    _g = 0
     Enum.each(config_data, fn config ->
       config_result = validate_configuration(config.timeout, config.retries, config.name)
       (case config_result do

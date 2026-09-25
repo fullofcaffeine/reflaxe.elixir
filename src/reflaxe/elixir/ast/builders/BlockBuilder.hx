@@ -407,7 +407,7 @@ class BlockBuilder {
 		return EBlock(expressions);
 	}
 
-	static function typedExprsUseLocal(expressions:Array<TypedExpr>, local:TVar):Bool {
+	static function typedExprsUseLocal(expressions:Array<TypedExpr>, local:TVar, includeClosures:Bool = false):Bool {
 		if (expressions == null || local == null)
 			return false;
 
@@ -418,7 +418,7 @@ class BlockBuilder {
 			switch (unwrapTypedExpr(expr).expr) {
 				case TLocal(v) if (v.id == local.id):
 					found = true;
-				case TFunction(_):
+				case TFunction(_) if (!includeClosures):
 					return;
 				default:
 					TypedExprTools.iter(expr, walk);
@@ -1171,6 +1171,17 @@ class BlockBuilder {
 			var index = 0;
 			while (index < el.length) {
 				var expr = el[index];
+				if (index + 1 < el.length) {
+					switch (unwrapTypedExpr(expr).expr) {
+						case TVar(counter, initializer)
+							if (initializer != null
+								&& LoopBuilder.consumesArrayCounterSeed(counter, initializer, el[index + 1])
+								&& !typedExprsUseLocal(el.slice(index + 2), counter, true)):
+							index++;
+							continue;
+						default:
+					}
+				}
 				if (index + 1 < el.length && isPersistentIteratorAliasForNextLoop(expr, el[index + 1])) {
 					index++;
 					continue;

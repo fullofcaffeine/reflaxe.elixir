@@ -18,7 +18,6 @@ defmodule StringUtils do
     else
       parts = StringTools.haxe_split(StringTools.ltrim(StringTools.rtrim(name)), " ")
       formatted = []
-      _g = 0
       formatted = Enum.reduce(parts, formatted, fn part, formatted_acc ->
         if (String.length(part) > 0) do
           capitalized = String.upcase(StringTools.haxe_char_at(part, 0)) <> String.downcase(StringTools.haxe_substr(part, 1, nil))

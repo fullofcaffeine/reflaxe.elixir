@@ -9,7 +9,6 @@ defmodule Main do
   end
   defp test_basic_for_loops() do
     fruits = ["apple", "banana", "orange"]
-    _g = 0
     Enum.each(fruits, fn _ -> nil end)
     scores = %{"Alice" => 95, "Bob" => 87, "Charlie" => 92}
     g = Reflaxe.Elixir.IMap.key_value_iterator(scores)
@@ -234,7 +233,6 @@ defmodule Main do
       end
     end)
     matrix = [[1, 2], [3, 4], [5, 6]]
-    _g = 0
     Enum.each(matrix, fn row ->
       _doubled = Enum.map(row, fn n -> n * 2 end)
       nil
@@ -264,7 +262,6 @@ defmodule Main do
     end)
     numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     processed = []
-    _g = 0
     _ = Enum.reduce_while(numbers, processed, fn n, processed_acc ->
       try do
         if (rem(n, 3) == 0) do
@@ -308,7 +305,6 @@ defmodule Main do
     acc_sum = 0
     acc_count = 0
     acc_product = 1
-    _g = 0
     {_acc_sum, _acc_count, _acc_product} = Enum.reduce(data, {acc_sum, acc_count, acc_product}, fn n, {acc_sum_acc, acc_count_acc, acc_product_acc} ->
       acc_sum_acc = acc_sum_acc + n
       acc_count_acc = acc_count_acc + 1
@@ -317,7 +313,6 @@ defmodule Main do
     end)
     current_state = 0
     events = ["begin", "work", "work", "finish"]
-    _g = 0
     _ = Enum.reduce(events, current_state, fn event, current_state_acc ->
       current_state_acc = (case event do
         "begin" ->
@@ -333,7 +328,6 @@ defmodule Main do
     items = ["valid1", "error", "valid2", "valid3"]
     results = []
     errors = []
-    _g = 0
     {_results, _errors} = Enum.reduce_while(items, {results, errors}, fn item, {results_acc, errors_acc} ->
       try do
         errors_acc = if (StringTools.haxe_index_of(item, "error", 0) >= 0) do
