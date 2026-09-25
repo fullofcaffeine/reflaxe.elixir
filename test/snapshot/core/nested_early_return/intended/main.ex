@@ -12,7 +12,30 @@ defmodule Main do
       end
     end
   end
+  def statement_case(item) do
+    _count = 0
+    (case item do
+      {:value, text} ->
+        cond do
+          text == "" -> -2
+          true ->
+            count = String.length(text)
+            IO.puts("switch fallthrough")
+            _ = count + 1
+        end
+      {:missing, _} -> -1
+    end)
+  end
   def main() do
+    if (statement_case({:missing, "absent"}) != -1) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Statement switch return continued."]
+    end
+    if (statement_case({:value, ""}) != -2) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Nested switch return continued."]
+    end
+    if (statement_case({:value, "body"}) != 5) do
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Statement switch fallthrough value changed."]
+    end
     if (nested(10, true, true) != -1) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Nested absent return lost."]
     end
@@ -72,16 +95,13 @@ defmodule Main do
   end
   def nested_loops(outer, inner) do
     (case Enum.reduce_while(outer, {:__reflaxe_continue__, {}}, fn first, {:__reflaxe_continue__, {}} ->
-      (case (case Enum.reduce_while(inner, {:__reflaxe_continue__, {}}, fn second, {:__reflaxe_continue__, {}} ->
+      (case Enum.reduce_while(inner, {:__reflaxe_continue__, {}}, fn second, {:__reflaxe_continue__, {}} ->
         if (first + second < 1), do: {:halt, {:__reflaxe_return__, false}}, else: {:cont, {:__reflaxe_continue__, {}}}
       end) do
         {:__reflaxe_return__, reflaxe_return_value} -> {:halt, {:__reflaxe_return__, reflaxe_return_value}}
         {:__reflaxe_continue__, {}} ->
           {} = {}
           {:cont, {:__reflaxe_continue__, {}}}
-      end) do
-        {:halt, reflaxe_halt_payload} -> {:halt, reflaxe_halt_payload}
-        {:cont, {:__reflaxe_continue__, {}}} -> {:cont, {:__reflaxe_continue__, {}}}
       end)
     end) do
       {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
