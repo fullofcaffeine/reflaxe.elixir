@@ -114,6 +114,31 @@ benefit from checking every phase. Exact pass attribution now works in the defau
 pipeline. `-D hxx_granular_pass_registry` retains a direct-construction path for differential tests;
 it is no longer required for useful diagnostics.
 
+## Private Methods Called Across Modules
+
+Haxe checks private access before target generation. `@:allow` and `@:access`
+can authorize a call from another class without making the Haxe method public.
+Elixir requires an exported `def` for a call from another module.
+
+`PrivateMethodExports` scans typed references before class emission. A private
+method or constructor used from another emitted module becomes `def`. Internal-only methods
+remain `defp`. This also preserves modules whose only used methods are private
+in Haxe; private-function pruning must not remove those exports.
+
+For example, an authorized `Scope.value()` call becomes `Scope.value()` in
+Elixir, with `def value()` in `Scope`. Unauthorized Haxe calls still fail during
+type checking. Haxe privacy is a source-language access rule, not a runtime
+security boundary for handwritten Elixir callers.
+
+Warm compiler-server builds compare export requirements with the last
+successfully published compilation. A changed requirement rebuilds the owning
+class, even when only its caller's source changed. Failed compilations do not
+advance this dependency state.
+
+The `regression/authorized_private_calls` fixture covers direct static and
+instance calls, private constructors, static captures, and internal helpers. The negative fixture
+`unauthorized_private_call` checks that source access remains restricted.
+
 ## Anonymous Tuple-Shaped Object Contract
 
 Haxe does not have a single built-in tuple syntax, so typed surfaces commonly

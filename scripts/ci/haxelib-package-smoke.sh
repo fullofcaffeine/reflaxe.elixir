@@ -984,6 +984,21 @@ run_step "strict native compile of packaged unary blocks" 60 "$work_dir" \
 run_step "execute packaged unary block contracts" 20 "$work_dir" \
   'elixir -pa unary-beam -e "Main.main()" > unary.stdout && diff -u unary-values/expected.stdout unary.stdout'
 
+# Checked private calls require exports in both source and packaged compilers.
+mkdir -p "$work_dir/private-calls" "$work_dir/private-calls-beam"
+cp "$ROOT_DIR/test/snapshot/regression/authorized_private_calls/"*.hx "$work_dir/private-calls/"
+cp "$ROOT_DIR/test/snapshot/regression/authorized_private_calls/expected.stdout" "$work_dir/private-calls/"
+run_step "compile authorized private calls through source checkout" 120 "$work_dir" \
+  '"$PWD/node_modules/.bin/haxe" build-source.hxml -cp private-calls -dce full -D elixir_output=out_private_source -D reflaxe_elixir_validate_results > private-source.log 2>&1 || { tail -80 private-source.log; exit 1; }'
+run_step "compile authorized private calls through installed package" 120 "$work_dir" \
+  'PATH="$HAXELIB_WRAPPER_DIR:$(dirname "$HAXE_BIN"):$PATH" "$HAXE_BIN" build.hxml -cp private-calls -dce full -D elixir_output=out_private_package -D reflaxe_elixir_validate_results > private-package.log 2>&1 || { tail -80 private-package.log; exit 1; }'
+require_file "$work_dir/out_private_package/private_only.ex"
+compare_generated_elixir "$work_dir/out_private_source" "$work_dir/out_private_package"
+run_step "strict native compile of packaged private calls" 60 "$work_dir" \
+  'find out_private_package -type f -name "*.ex" -print0 | xargs -0 elixir validate-identity-warnings.exs private-calls-beam'
+run_step "execute packaged private call contracts" 20 "$work_dir" \
+  'elixir -pa private-calls-beam -e "Main.main()" > private.stdout && diff -u private-calls/expected.stdout private.stdout'
+
 mix_project="$work_dir/package_mix"
 mkdir -p "$mix_project/lib"
 cp -R "$work_dir/out/." "$mix_project/lib/"

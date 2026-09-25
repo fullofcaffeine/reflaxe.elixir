@@ -314,6 +314,12 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	 */
 	public var moduleBaseTypes:Map<String, BaseType> = new Map();
 
+	/** Private methods referenced from another emitted module in this compilation. */
+	var privateMethodExports:Map<String, Bool> = [];
+
+	/** Warm-server dependency state advances only after successful publication. */
+	@:persistent static var previousPrivateMethodExports:Null<Map<String, Bool>> = null;
+
 	/**
 	 * Constructor - Initialize the compiler with type mapping and pattern matching systems
 	 */
@@ -354,6 +360,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		// request boundary so phase totals never leak into the next edit sample.
 		phaseTimings.reset();
 		var result = filterTypesBody(moduleTypes);
+		privateMethodExports = PrivateMethodExports.collect(result);
 		// ReflectCompiler applies its define/server-cache filters and initialization
 		// callbacks after this method returns and before onCompileStart().
 		reflaxeFiltersStarted = phaseTimings.start();
@@ -395,6 +402,11 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	public override function onCompileStart():Void {
 		phaseTimings.finish("reflaxe_module_filters_and_init", reflaxeFiltersStarted);
 		astPipelineStarted = phaseTimings.start();
+	}
+
+	/** Re-emit unchanged classes when caller edits change their required exports. */
+	public override function shouldRecompileClass(classType:ClassType):Bool {
+		return PrivateMethodExports.changedForClass(classType, privateMethodExports, previousPrivateMethodExports);
 	}
 
 	public override function onCompileEnd():Void {
@@ -2778,7 +2790,10 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 					return false;
 				}
 
-				var emitPublic = funcData.field.isPublic || isMainEntrypoint || isPublicPropertyAccessor(funcData.field.name);
+				var emitPublic = funcData.field.isPublic
+					|| isMainEntrypoint
+					|| isPublicPropertyAccessor(funcData.field.name)
+					|| privateMethodExports.exists(PrivateMethodExports.key(classType, funcData.field, funcData.isStatic));
 				var funcDef = emitPublic ? EDef(elixirName, params, null, funcBody) : EDefp(elixirName, params, null, funcBody);
 
 				if (isMainEntrypoint && currentCompiledModule != null && modulesWithBootstrap.indexOf(currentCompiledModule) < 0) {
@@ -6505,6 +6520,7 @@ left_name == right_name and left_params == right_params';
 	/** Called after the ownership transaction has committed Elixir and source maps. */
 	public override function onOutputComplete() {
 		pruneEmptyOutputDirectories();
+		previousPrivateMethodExports = privateMethodExports;
 	}
 
 	function pruneEmptyOutputDirectories():Void {
