@@ -48,11 +48,13 @@ defmodule Main do
     if (Reflaxe.Elixir.HaxeFloat.eq(b, 0)), do: {:error, "Division by zero"}, else: {:ok, Reflaxe.Elixir.HaxeFloat.divide(a, b)}
   end
   defp find_in_array(_struct, arr, item) do
-    (case Enum.reduce_while(arr, :__reflaxe_no_return__, fn element, _ ->
-      if (element == item), do: {:halt, {:__reflaxe_return__, {:some, element}}}, else: {:cont, :__reflaxe_no_return__}
+    (case Enum.reduce_while(arr, {:__reflaxe_continue__, {}}, fn element, {:__reflaxe_continue__, {}} ->
+      if (element == item), do: {:halt, {:__reflaxe_return__, {:some, element}}}, else: {:cont, {:__reflaxe_continue__, {}}}
     end) do
       {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
-      _ -> {:none}
+      {:__reflaxe_continue__, {}} ->
+        {} = {}
+        {:none}
     end)
   end
   defp perform_async_calculation(_struct) do

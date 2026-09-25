@@ -26,11 +26,13 @@ defmodule OptionPatterns.UserRepository do
     else
       _g = 0
       g_value = OptionPatterns.UserRepository.users()
-      (case Enum.reduce_while(g_value, :__reflaxe_no_return__, fn user, _ ->
-        if (user.id == id), do: {:halt, {:__reflaxe_return__, {:some, user}}}, else: {:cont, :__reflaxe_no_return__}
+      (case Enum.reduce_while(g_value, {:__reflaxe_continue__, {}}, fn user, {:__reflaxe_continue__, {}} ->
+        if (user.id == id), do: {:halt, {:__reflaxe_return__, {:some, user}}}, else: {:cont, {:__reflaxe_continue__, {}}}
       end) do
         {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
-        _ -> {:none}
+        {:__reflaxe_continue__, {}} ->
+          {} = {}
+          {:none}
       end)
     end
   end
@@ -40,22 +42,26 @@ defmodule OptionPatterns.UserRepository do
     else
       _g = 0
       g_value = OptionPatterns.UserRepository.users()
-      (case Enum.reduce_while(g_value, :__reflaxe_no_return__, fn user, _ ->
-        if (user.email == email), do: {:halt, {:__reflaxe_return__, {:some, user}}}, else: {:cont, :__reflaxe_no_return__}
+      (case Enum.reduce_while(g_value, {:__reflaxe_continue__, {}}, fn user, {:__reflaxe_continue__, {}} ->
+        if (user.email == email), do: {:halt, {:__reflaxe_return__, {:some, user}}}, else: {:cont, {:__reflaxe_continue__, {}}}
       end) do
         {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
-        _ -> {:none}
+        {:__reflaxe_continue__, {}} ->
+          {} = {}
+          {:none}
       end)
     end
   end
   def find_first_active() do
     _g = 0
     g_value = OptionPatterns.UserRepository.users()
-    (case Enum.reduce_while(g_value, :__reflaxe_no_return__, fn user, _ ->
-      if (user.active), do: {:halt, {:__reflaxe_return__, {:some, user}}}, else: {:cont, :__reflaxe_no_return__}
+    (case Enum.reduce_while(g_value, {:__reflaxe_continue__, {}}, fn user, {:__reflaxe_continue__, {}} ->
+      if (user.active), do: {:halt, {:__reflaxe_return__, {:some, user}}}, else: {:cont, {:__reflaxe_continue__, {}}}
     end) do
       {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
-      _ -> {:none}
+      {:__reflaxe_continue__, {}} ->
+        {} = {}
+        {:none}
     end)
   end
   def get_user_email(id) do

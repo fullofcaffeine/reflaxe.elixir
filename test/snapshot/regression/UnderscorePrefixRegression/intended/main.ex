@@ -9,12 +9,12 @@ defmodule Main do
     (case Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {:__reflaxe_continue__, {count}}, fn _, {:__reflaxe_continue__, {acc_count}} ->
       try do
         if (acc_count < limit) do
-          (case (if (key == "test"), do: {:halt, {:__reflaxe_return__, "Found: " <> key}}, else: {:cont, {:__reflaxe_continue__, {acc_count}}}) do
-            {:halt, reflaxe_halt_payload} -> {:halt, reflaxe_halt_payload}
-            {:cont, {:__reflaxe_continue__, {acc_count}}} ->
-              acc_count = acc_count + 1
-              {:cont, {:__reflaxe_continue__, {acc_count}}}
-          end)
+          if (key == "test") do
+            {:halt, {:__reflaxe_return__, "Found: " <> key}}
+          else
+            acc_count = acc_count + 1
+            {:cont, {:__reflaxe_continue__, {acc_count}}}
+          end
         else
           {:halt, {:__reflaxe_continue__, {acc_count}}}
         end

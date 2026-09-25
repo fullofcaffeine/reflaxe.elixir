@@ -30,25 +30,28 @@ defmodule Main do
     end
   end
   def exact_fields(keys, required, optional) do
-    (case Enum.reduce_while(required, :__reflaxe_no_return__, fn name, _ ->
+    (case Enum.reduce_while(required, {:__reflaxe_continue__, {}}, fn name, {:__reflaxe_continue__, {}} ->
       if (((case Enum.find_index(keys, fn item -> item == name end) do
         nil -> -1
         index -> index
-      end) < 0)), do: {:halt, {:__reflaxe_return__, false}}, else: {:cont, :__reflaxe_no_return__}
+      end) < 0)), do: {:halt, {:__reflaxe_return__, false}}, else: {:cont, {:__reflaxe_continue__, {}}}
     end) do
       {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
-      _ ->
-        (case Enum.reduce_while(keys, :__reflaxe_no_return__, fn name, _ ->
+      {:__reflaxe_continue__, {}} ->
+        {} = {}
+        (case Enum.reduce_while(keys, {:__reflaxe_continue__, {}}, fn name, {:__reflaxe_continue__, {}} ->
           if (((case Enum.find_index(required, fn item -> item == name end) do
             nil -> -1
             index -> index
           end) < 0 and (case Enum.find_index(optional, fn item -> item == name end) do
             nil -> -1
             index -> index
-          end) < 0)), do: {:halt, {:__reflaxe_return__, false}}, else: {:cont, :__reflaxe_no_return__}
+          end) < 0)), do: {:halt, {:__reflaxe_return__, false}}, else: {:cont, {:__reflaxe_continue__, {}}}
         end) do
           {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
-          _ -> true
+          {:__reflaxe_continue__, {}} ->
+            {} = {}
+            true
         end)
     end)
   end
@@ -74,36 +77,36 @@ defmodule Main do
   def three_loops(first, second, third) do
     total = 0
     (case Enum.reduce_while(first, {:__reflaxe_continue__, total}, fn value, {:__reflaxe_continue__, total_acc} ->
-      (case (if (value < 0), do: {:halt, {:__reflaxe_return__, (-100 - total_acc)}}, else: {:cont, {:__reflaxe_continue__, total_acc}}) do
-        {:halt, reflaxe_halt_payload} -> {:halt, reflaxe_halt_payload}
-        {:cont, {:__reflaxe_continue__, total_acc}} ->
-          total_acc = total_acc + value
-          {:cont, {:__reflaxe_continue__, total_acc}}
-      end)
+      if (value < 0) do
+        {:halt, {:__reflaxe_return__, (-100 - total_acc)}}
+      else
+        total_acc = total_acc + value
+        {:cont, {:__reflaxe_continue__, total_acc}}
+      end
     end) do
       {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
       {:__reflaxe_continue__, reflaxe_continue_total} ->
         total = reflaxe_continue_total
         total = total + 10
         (case Enum.reduce_while(second, {:__reflaxe_continue__, total}, fn value, {:__reflaxe_continue__, total_acc} ->
-          (case (if (value < 0), do: {:halt, {:__reflaxe_return__, (-200 - total_acc)}}, else: {:cont, {:__reflaxe_continue__, total_acc}}) do
-            {:halt, reflaxe_halt_payload} -> {:halt, reflaxe_halt_payload}
-            {:cont, {:__reflaxe_continue__, total_acc}} ->
-              total_acc = total_acc + value
-              {:cont, {:__reflaxe_continue__, total_acc}}
-          end)
+          if (value < 0) do
+            {:halt, {:__reflaxe_return__, (-200 - total_acc)}}
+          else
+            total_acc = total_acc + value
+            {:cont, {:__reflaxe_continue__, total_acc}}
+          end
         end) do
           {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
           {:__reflaxe_continue__, reflaxe_continue_total} ->
             total = reflaxe_continue_total
             total = total + 20
             (case Enum.reduce_while(third, {:__reflaxe_continue__, total}, fn value, {:__reflaxe_continue__, total_acc} ->
-              (case (if (value < 0), do: {:halt, {:__reflaxe_return__, (-300 - total_acc)}}, else: {:cont, {:__reflaxe_continue__, total_acc}}) do
-                {:halt, reflaxe_halt_payload} -> {:halt, reflaxe_halt_payload}
-                {:cont, {:__reflaxe_continue__, total_acc}} ->
-                  total_acc = total_acc + value
-                  {:cont, {:__reflaxe_continue__, total_acc}}
-              end)
+              if (value < 0) do
+                {:halt, {:__reflaxe_return__, (-300 - total_acc)}}
+              else
+                total_acc = total_acc + value
+                {:cont, {:__reflaxe_continue__, total_acc}}
+              end
             end) do
               {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
               {:__reflaxe_continue__, reflaxe_continue_total} ->
@@ -200,12 +203,12 @@ defmodule Main do
   defp sum_until_negative(values) do
     total = 0
     (case Enum.reduce_while(values, {:__reflaxe_continue__, total}, fn value, {:__reflaxe_continue__, total_acc} ->
-      (case (if (value < 0), do: {:halt, {:__reflaxe_return__, -1}}, else: {:cont, {:__reflaxe_continue__, total_acc}}) do
-        {:halt, reflaxe_halt_payload} -> {:halt, reflaxe_halt_payload}
-        {:cont, {:__reflaxe_continue__, total_acc}} ->
-          total_acc = total_acc + value
-          {:cont, {:__reflaxe_continue__, total_acc}}
-      end)
+      if (value < 0) do
+        {:halt, {:__reflaxe_return__, -1}}
+      else
+        total_acc = total_acc + value
+        {:cont, {:__reflaxe_continue__, total_acc}}
+      end
     end) do
       {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
       {:__reflaxe_continue__, reflaxe_continue_total} ->

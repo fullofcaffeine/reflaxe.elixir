@@ -2003,6 +2003,12 @@ class LoopBuilder {
 	static function subtreeContainsFromReturnAst(ast:ElixirAST):Bool {
 		if (ast == null || ast.def == null)
 			return false;
+		// A nested function owns its returns; its declaration is an ordinary value.
+		switch (ast.def) {
+			case EFn(_) | EDef(_, _, _, _) | EDefp(_, _, _, _):
+				return false;
+			default:
+		}
 		if (isFromReturnAst(ast))
 			return true;
 		var found = false;
@@ -2013,9 +2019,15 @@ class LoopBuilder {
 		return found;
 	}
 
+	/** Normalize branch-local assignments before adding the loop return protocol.
+	 * For `final x = switch input { case Value(v): v; case Missing: return false; }`,
+	 * the binding and its later uses must stay on the normal branch. Tagging the
+	 * unnormalized assignment first would lose that binding across a carrier case.
+	 */
 	static function rewriteReducerBodyForReturnCarrier(body:ElixirAST, continueValue:ElixirAST, continuePattern:EPattern):ElixirAST {
 		if (body == null)
 			return makeCont(continueValue);
+		body = reflaxe.elixir.ast.transformers.EarlyReturnIfElseTransforms.pass(body);
 
 		return switch (body.def) {
 			case EBlock(stmts):
@@ -2757,7 +2769,7 @@ class LoopBuilder {
 	/**
 	 * Main entry point for TWhile compilation
 	 * Extracted from ElixirASTBuilder lines 5350-6040
-	 * Indexed array loops with break/continue use the existing control-aware
+	 * Indexed array loops with return/break/continue use the existing control-aware
 	 * reducer even without changed locals. For `for (x in xs) { if (x < 0)
 	 * break; consume(x); }`, an empty tuple carries state and the reducer catches
 	 * the break locally; a bare Enum.each would let it escape the function.
@@ -2799,8 +2811,9 @@ class LoopBuilder {
 			var mutated = MutabilityDetector.detectMutatedVariables(forInArrayPattern.userBody);
 			var loopControl = analyzeCurrentLoopControl(forInArrayPattern.userBody);
 			var bodyContainsLoopControl = loopControl.hasBreak || loopControl.hasContinue;
-			// Side-effect-only loops still need the current-loop break/continue handler.
-			if (Lambda.count(mutated) == 0 && !bodyContainsLoopControl) {
+			var bodyContainsReturn = containsNonLocalReturn(forInArrayPattern.userBody);
+			// A function return needs its carrier even when no outer local changes.
+			if (Lambda.count(mutated) == 0 && !bodyContainsLoopControl && !bodyContainsReturn) {
 				var bodyAst = buildExpression(forInArrayPattern.userBody);
 				return ERemoteCall(makeAST(EVar("Enum")), "each", [
 					arrayExpr,
@@ -2934,7 +2947,6 @@ class LoopBuilder {
 			}
 
 			var statefulBody = ensureReturnsState(compiledBody, stateReturn);
-			var bodyContainsReturn = containsNonLocalReturn(forInArrayPattern.userBody);
 			return buildStatefulReducerLoop(arrayExpr, initialState, PVar(binderName), statePattern, outerBindPattern, stateReturn, statefulBody,
 				bodyContainsReturn, bodyContainsLoopControl).def;
 		}
@@ -3447,6 +3459,9 @@ class LoopBuilder {
 	 * Enum.reduce_while with a local catch even when no outer value changes.
 	 * Reuse the stateful reducer with an empty tuple in that case. Nested loop
 	 * control belongs to the nested loop, so it cannot halt the outer range.
+	 * A source return also selects the existing return carrier: for example,
+	 * `for (i in 0...n) if (a) { if (b) return false; }` must exit the function,
+	 * rather than discard `false` as the result of an Enum.each callback.
 	 */
 	static function buildDesugaredForRangeLoop(econd:TypedExpr, body:TypedExpr, context:BuildContext, toElixirVarName:String->String):Null<ElixirASTDef> {
 		// Unwrap common wrappers in the while condition.
@@ -3549,8 +3564,9 @@ class LoopBuilder {
 		var mutated = MutabilityDetector.detectMutatedVariables(bodyInfo.userCode);
 		var loopControl = analyzeCurrentLoopControl(bodyInfo.userCode);
 		var bodyContainsLoopControl = loopControl.hasBreak || loopControl.hasContinue;
+		var bodyContainsReturn = containsNonLocalReturn(bodyInfo.userCode);
 		// An empty state is valid: control flow, not mutation alone, selects the reducer.
-		if (Lambda.count(mutated) == 0 && !bodyContainsLoopControl) {
+		if (Lambda.count(mutated) == 0 && !bodyContainsLoopControl && !bodyContainsReturn) {
 			var bodyAst = buildExpression(bodyInfo.userCode);
 			return ERemoteCall(makeAST(EVar("Enum")), "each", [
 				rangeAst,
@@ -3682,7 +3698,6 @@ class LoopBuilder {
 		}
 
 		var statefulBody = ensureReturnsState(compiledBody, stateReturn);
-		var bodyContainsReturn = containsNonLocalReturn(bodyInfo.userCode);
 		return buildStatefulReducerLoop(rangeAst, initialState, PVar(binderName), statePattern, outerBindPattern, stateReturn, statefulBody,
 			bodyContainsReturn, bodyContainsLoopControl).def;
 	}
@@ -4196,14 +4211,19 @@ class LoopBuilder {
 		return makeAST(ETry(body, [], catchClauses, null, null));
 	}
 
-	/** Exposes loop completion to the existing remainder-lift pass without throwing a function return. */
+	/** Exposes loop completion to the existing remainder-lift pass without throwing.
+	 * Keep the function-exit marker on the returned value: an enclosing loop must
+	 * propagate an inner loop's return instead of treating it as a callback value.
+	 */
 	static function unwrapReturnCarrier(reducer:ElixirAST, outerPattern:EPattern):ElixirAST {
 		final fallthrough = makeContinueFallthrough(outerPattern);
 		return makeAST(ECase(reducer, [
 			{
 				pattern: PTuple([PLiteral(makeAST(EAtom(RETURN_TAG))), PVar("reflaxe_return_value")]),
 				guard: null,
-				body: makeAST(EVar("reflaxe_return_value"))
+				body: makeASTWithMeta(EVar("reflaxe_return_value"), {
+					fromReturn: true
+				}, reducer.pos)
 			},
 			{
 				pattern: PTuple([PLiteral(makeAST(EAtom(CONTINUE_TAG))), fallthrough.pattern]),

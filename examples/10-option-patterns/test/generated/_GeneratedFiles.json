@@ -85,7 +85,7 @@
 		"reflaxe/elixir/haxe_float.exs.map"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 26,
+	"id": 27,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
@@ -327,11 +327,11 @@
 		},
 		{
 			"path": "option_patterns/user_repository.exs",
-			"sha256": "c3c0e8041877781efbee65febdfe38d6dc7c9f5b72e5627703444c148c766c48"
+			"sha256": "1d0325450434f73cbcfa15af01671231b91f54b83801fa0b3a63f9abb51777e6"
 		},
 		{
 			"path": "option_patterns/user_repository.exs.map",
-			"sha256": "02c277e04b77df5805d0069905c85c45d2cbb1d77a9c31d585bd735486b32670"
+			"sha256": "21e6c7d64fc44d3daccf84ca3a0c7e28659fb1a33950ab64495770b094c07751"
 		},
 		{
 			"path": "option_patterns/user_repository_test.exs",
@@ -422,5 +422,5 @@
 			"sha256": "b90d3a44bb1138601ef71badc9e1380f807ed3932966260cd9c073a995f4e213"
 		}
 	],
-	"generation": "1449bffb2a74d274ca206ef57816b1d8966a0d4b5f3743c61adf3d18baea6fca"
+	"generation": "e29090a6a4846b048782bed015dc643c03254eab6ca9d2e30b3d5414557c2df7"
 }

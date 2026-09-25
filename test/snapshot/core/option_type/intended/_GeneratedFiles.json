@@ -10,7 +10,9 @@
 		"main.ex",
 		"haxe/iterators/array_key_value_iterator.ex",
 		"haxe/iterators/array_iterator.ex",
+		"haxe/functional/result.ex",
 		"haxe/ds/option_tools.ex",
+		"haxe/ds/option.ex",
 		"haxe/_call_stack/call_stack_impl_.ex",
 		"elixir/array_tools.ex"
 	],
@@ -28,8 +30,16 @@
 			"sha256": "c77b161d05e1094665a37413ce6e0af07159fcdbc2f2cd20c19ceec25be5d818"
 		},
 		{
+			"path": "haxe/ds/option.ex",
+			"sha256": "63ac76e868b4b2dfe585786ccd2a345305751f959a8cdb63a5a2c34106113043"
+		},
+		{
 			"path": "haxe/ds/option_tools.ex",
-			"sha256": "e299e6415b4bc16218d953b1f26a17a134a539c4286771ae273615e38bddebb6"
+			"sha256": "c8b597fafd7585365f23317c880d76974a3293c198640a2511fd9217051676a0"
+		},
+		{
+			"path": "haxe/functional/result.ex",
+			"sha256": "41853f86663b99ae0b271938f47328e736fdbd3d2aacd7eaff087f3ef381104d"
 		},
 		{
 			"path": "haxe/iterators/array_iterator.ex",
@@ -61,7 +71,7 @@
 		},
 		{
 			"path": "std.ex",
-			"sha256": "2719d51795868959cd6891134e197cf72d4b523091c594a280b37e367fd8e03f"
+			"sha256": "8a84e0a9ac56b570713a432d5e9d2de5bc2a0cb19aacdc3a80284a6a439bcf97"
 		},
 		{
 			"path": "type.ex",
@@ -69,8 +79,8 @@
 		},
 		{
 			"path": "user_service.ex",
-			"sha256": "6224ad09275ba205c31fbd048d0e4b7764e845bf3c320007bf25c165709ca601"
+			"sha256": "bcf6b8fae3790a0869147237f7db71a0a054bfac27b3ef5edbeb80899bd5f7a9"
 		}
 	],
-	"generation": "690d004534f66044217180cdef9843ff346cc9dbea2206b61fbf33ff0bee0f89"
+	"generation": "6c7fc8c5348510452d18eb4aef9ca6020de758ec8cd7cb51fa61d42039272961"
 }

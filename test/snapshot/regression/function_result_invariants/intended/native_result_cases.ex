@@ -22,11 +22,13 @@ defmodule NativeResultCases do
     if (flag), do: "value", else: nil
   end
   def loop_carrier(_struct, values) do
-    (case Enum.reduce_while(values, :__reflaxe_no_return__, fn value, _ ->
-      if (value > 2), do: {:halt, {:__reflaxe_return__, value}}, else: {:cont, :__reflaxe_no_return__}
+    (case Enum.reduce_while(values, {:__reflaxe_continue__, {}}, fn value, {:__reflaxe_continue__, {}} ->
+      if (value > 2), do: {:halt, {:__reflaxe_return__, value}}, else: {:cont, {:__reflaxe_continue__, {}}}
     end) do
       {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
-      _ -> -1
+      {:__reflaxe_continue__, {}} ->
+        {} = {}
+        -1
     end)
   end
   def callback_value(_struct, input) do

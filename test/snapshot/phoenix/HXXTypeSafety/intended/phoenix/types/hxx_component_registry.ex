@@ -315,11 +315,12 @@ defmodule HXXComponentRegistry do
   defp validate_component_attribute(component, attribute_name) do
     _g = 0
     component_attributes = component.attributes
-    (case Enum.reduce_while(component_attributes, :__reflaxe_no_return__, fn attr, _ ->
-      if (attr.name == attribute_name), do: {:halt, {:__reflaxe_return__, true}}, else: {:cont, :__reflaxe_no_return__}
+    (case Enum.reduce_while(component_attributes, {:__reflaxe_continue__, {}}, fn attr, {:__reflaxe_continue__, {}} ->
+      if (attr.name == attribute_name), do: {:halt, {:__reflaxe_return__, true}}, else: {:cont, {:__reflaxe_continue__, {}}}
     end) do
       {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
-      _ ->
+      {:__reflaxe_continue__, {}} ->
+        {} = {}
         Enum.member?(get_global_attributes(), attribute_name)
     end)
   end

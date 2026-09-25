@@ -56,7 +56,7 @@
 		},
 		{
 			"path": "phoenix/types/hxx_component_registry.ex",
-			"sha256": "4acf0051d22542d948f8a341b66a00059d5c2a0075e71790e3ef40a008585605"
+			"sha256": "7730281422e2ad7d59a5fdd9ecc77b8264a9fdcf454b87a32ffb4ad4f135608b"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.ex",
@@ -80,12 +80,12 @@
 		},
 		{
 			"path": "string_tools.ex",
-			"sha256": "bb5f47e529150a00f248ac791970199bd13a42d23acc3a9c2da761f5930ff5a0"
+			"sha256": "9e41f665054890de627579849e522aef25f22790788a508d7655b2b166b5ef16"
 		},
 		{
 			"path": "type.ex",
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "7f60cb3e16b58abf1e05e705772c098e0685f9673fab3ba130125cad797254f2"
+	"generation": "07545d48a8800a0b13c15196f142757659d95e2da8fe8b8b3bc0b4587ea64794"
 }
