@@ -64,7 +64,7 @@
 		"phoenix_hx_todo/postgrex_types.ex"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 56,
+	"id": 57,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
@@ -218,7 +218,7 @@
 		},
 		{
 			"path": "phoenix_hx_todo/chat_messages.exs",
-			"sha256": "2c7b79c3b268b34727872d0159ba5b04a7f692d09913b1edd9f0043d53f0f4a1"
+			"sha256": "fbb32a9ff4394665d6634e207510f8b34e4f8b6171f3a62a29d3cb64224ee465"
 		},
 		{
 			"path": "phoenix_hx_todo/chat_panel_test.exs",
@@ -250,7 +250,7 @@
 		},
 		{
 			"path": "phoenix_hx_todo/todos.exs",
-			"sha256": "a685d44d6d77b29161ca334886f3abc3e62a38333f7ffdbae1fdd8e5cb656952"
+			"sha256": "dfff0f9ff72a8c1686c634fc212947c80efe968c0501b56c087044ca5b6bf397"
 		},
 		{
 			"path": "phoenix_hx_todo/user.exs",
@@ -262,7 +262,7 @@
 		},
 		{
 			"path": "phoenix_hx_todo_web/app_live.exs",
-			"sha256": "1e33b3ad776157f3fd0e177ea118e3c139b237824ac5b2635b62dab5e044e81e"
+			"sha256": "0edeb16d800f78ebf5ec83901162451b848281438ba970e89e5d48755e0f82d1"
 		},
 		{
 			"path": "phoenix_hx_todo_web/live_events/todo_event.exs",
@@ -317,5 +317,5 @@
 			"sha256": "79ab34d32eb9843745093db6c5ec4907244e88d06815f942372dc9825eda7f04"
 		}
 	],
-	"generation": "185e54cd0ce06c51ed76597117e0c389fbd84c140c43a934fd50ad5d6f433a90"
+	"generation": "78b260817976d5faef5168c9b93bb53d17f668d9f658bbbb728e5a08a96edb90"
 }

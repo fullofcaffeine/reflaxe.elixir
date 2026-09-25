@@ -85,7 +85,7 @@
 		"reflaxe/elixir/haxe_float.exs.map"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 25,
+	"id": 26,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
@@ -103,11 +103,11 @@
 		},
 		{
 			"path": "haxe/ds/option_tools.exs",
-			"sha256": "de545df1b016dc3f657fe6a1a3d2f790fd44d03b5cee80fa8ee04dc01aadbce4"
+			"sha256": "c8b597fafd7585365f23317c880d76974a3293c198640a2511fd9217051676a0"
 		},
 		{
 			"path": "haxe/ds/option_tools.exs.map",
-			"sha256": "d581952e12c31ba985426aecab2a98c31fcb5175a49fa80da58a3c761cdc64e6"
+			"sha256": "cf39ec1a01a34fa378efa3af1c99b2b4ca184af4deb9e4da2eea2e3474f1e81f"
 		},
 		{
 			"path": "haxe/exceptions/not_implemented_exception.exs",
@@ -131,11 +131,11 @@
 		},
 		{
 			"path": "haxe/functional/result_tools.exs",
-			"sha256": "a8b4a5f4476d09bfb5535984b375629292e88f002e5f96ad0b8ebb4f2aeff4b7"
+			"sha256": "29b0403f50c1028ba916ccce400bc99580d9126b21dd27a30aacec105beb8475"
 		},
 		{
 			"path": "haxe/functional/result_tools.exs.map",
-			"sha256": "12888c334589149ea53f1f9ab971e43105c2e770b474a09c9a621e0dae427d16"
+			"sha256": "2709e24e69deafed9f5a2fec518ad82b1ba3b55cfb613f9d77db861edbe2bc35"
 		},
 		{
 			"path": "haxe/int64_helper.exs",
@@ -259,15 +259,15 @@
 		},
 		{
 			"path": "option_patterns/config_manager.exs",
-			"sha256": "c639de0155561138032ef0aeec648f6d249161c8025fbc8bee602eeec6078387"
+			"sha256": "27a8bd0e90a8502a1377a42dc2d3d0eb3a913afdd503b34d4b16d49d9ebef160"
 		},
 		{
 			"path": "option_patterns/config_manager.exs.map",
-			"sha256": "3ae18d1a6c68a3dca5bfe8fe0aaa8defbf0e85019494dfc35de759bead46d124"
+			"sha256": "92594f8d321e8770db87e6c8b5c1cac15c665fc06c847c2d7b5f9b9ad061084e"
 		},
 		{
 			"path": "option_patterns/config_manager_test.exs",
-			"sha256": "512803b7d577ac94bf546c6315f8a7ed584bd466c60b3659e9508126dc4ad85c"
+			"sha256": "6d12ea2249a4c2bbec18abfbc66eb9c8f929af8647e29a3e737cbb5fe7f58c2a"
 		},
 		{
 			"path": "option_patterns/config_manager_test.exs.map",
@@ -299,15 +299,15 @@
 		},
 		{
 			"path": "option_patterns/notification_service.exs",
-			"sha256": "10c0bbff27e826fdc22076af3e8218cf195debe008ec36ea872d250beebf7708"
+			"sha256": "364248bf3fea6d1d8cf82ec04095380759e9236caf7cbd306d4f8755d571c492"
 		},
 		{
 			"path": "option_patterns/notification_service.exs.map",
-			"sha256": "564dbe5e3f027036a4188e8111b12a53cfe2322078fead5f3c6b82290eeecf7a"
+			"sha256": "7149877df68a51e6ee162ea7c6d332023248fd4ef5320ef73cf2e7a23473c2ef"
 		},
 		{
 			"path": "option_patterns/notification_service_test.exs",
-			"sha256": "e29e177b885fb9bf46c1038d156a50808f04f7303149af82ee10ccc060921b8a"
+			"sha256": "2bf1f0d87fa401207772550f861748242f367e69f6faf6a6243d0239c9c2fd79"
 		},
 		{
 			"path": "option_patterns/notification_service_test.exs.map",
@@ -327,15 +327,15 @@
 		},
 		{
 			"path": "option_patterns/user_repository.exs",
-			"sha256": "6ff15c6874ce5b71cb23ebe248f2dade146ac9bdd519e5e6c07d0bf81f934f0c"
+			"sha256": "c3c0e8041877781efbee65febdfe38d6dc7c9f5b72e5627703444c148c766c48"
 		},
 		{
 			"path": "option_patterns/user_repository.exs.map",
-			"sha256": "0f902e837c61c3013ceb63a1fd5dc19a32468cf05c47fc576b6240394fe493af"
+			"sha256": "02c277e04b77df5805d0069905c85c45d2cbb1d77a9c31d585bd735486b32670"
 		},
 		{
 			"path": "option_patterns/user_repository_test.exs",
-			"sha256": "2b8e551f9181f992426667cda26890e9fed26713a7223286a17c3b313b2d9879"
+			"sha256": "147b65ff9a695d1d0f1b6cfc154d2785e33fbb66925161a1baae4d4ebf3cd8d9"
 		},
 		{
 			"path": "option_patterns/user_repository_test.exs.map",
@@ -422,5 +422,5 @@
 			"sha256": "b90d3a44bb1138601ef71badc9e1380f807ed3932966260cd9c073a995f4e213"
 		}
 	],
-	"generation": "3634c75105592371adea649f709dc6075f7906013a1b828250e7a36d6eb04884"
+	"generation": "1449bffb2a74d274ca206ef57816b1d8966a0d4b5f3743c61adf3d18baea6fca"
 }

@@ -13,7 +13,7 @@ defmodule PortableChatDomain.Transcript do
           next = next ++ [message]
           next
 
-        {:rejected, _reason} ->
+        {:rejected, _} ->
           next
       end
 

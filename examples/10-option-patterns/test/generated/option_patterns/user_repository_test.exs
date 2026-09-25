@@ -97,7 +97,7 @@ defmodule OptionPatterns.UserRepositoryTest do
     result = OptionPatterns.UserRepository.update_email(999, "test@example.com")
     assert(match?({:error, _}, result), "Should fail to update email for invalid user")
     (case result do
-      {:ok, _value} ->
+      {:ok, _} ->
         flunk("Expected error for invalid user")
       {:error, msg} -> assert("User not found" == msg, "Should have correct error message")
     end)
@@ -106,7 +106,7 @@ defmodule OptionPatterns.UserRepositoryTest do
     result = OptionPatterns.UserRepository.update_email(1, "invalid-email")
     assert(match?({:error, _}, result), "Should fail for invalid email format")
     (case result do
-      {:ok, _value} ->
+      {:ok, _} ->
         flunk("Expected error for invalid email")
       {:error, msg} -> assert("Invalid email format" == msg, "Should have correct error message")
     end)
@@ -136,7 +136,7 @@ defmodule OptionPatterns.UserRepositoryTest do
     result = OptionPatterns.UserRepository.create("", "test@example.com")
     assert(match?({:error, _}, result), "Should fail for empty name")
     (case result do
-      {:ok, _value} ->
+      {:ok, _} ->
         flunk("Expected error for empty name")
       {:error, msg} -> assert("Name is required" == msg, "Should have correct error message")
     end)
@@ -145,7 +145,7 @@ defmodule OptionPatterns.UserRepositoryTest do
     result = OptionPatterns.UserRepository.create("Test User", "invalid-email")
     assert(match?({:error, _}, result), "Should fail for invalid email")
     (case result do
-      {:ok, _value} ->
+      {:ok, _} ->
         flunk("Expected error for invalid email")
       {:error, msg} -> assert("Valid email is required" == msg, "Should have correct error message")
     end)
@@ -154,7 +154,7 @@ defmodule OptionPatterns.UserRepositoryTest do
     result = OptionPatterns.UserRepository.create("Test User", "bob@example.com")
     assert(match?({:error, _}, result), "Should fail for duplicate email")
     (case result do
-      {:ok, _value} ->
+      {:ok, _} ->
         flunk("Expected error for duplicate email")
       {:error, msg} -> assert("Email already exists" == msg, "Should have correct error message")
     end)

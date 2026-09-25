@@ -96,7 +96,7 @@ defmodule OptionPatterns.UserRepository do
         {:error, "Valid email is required"}
       else
         email_exists = (case find_by_email(email) do
-          {:some, _v} -> true
+          {:some, _} -> true
           {:none} -> false
         end)
         if (email_exists) do

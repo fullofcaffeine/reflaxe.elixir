@@ -16,7 +16,7 @@ defmodule OptionPatterns.NotificationServiceTest do
     result = OptionPatterns.NotificationService.send_to_user(3, "Test message", {:email})
     assert(match?({:error, _}, result), "Should fail to send notification to inactive user")
     (case result do
-      {:ok, _value} ->
+      {:ok, _} ->
         flunk("Expected error for inactive user")
       {:error, msg} -> assert("Cannot send notifications to inactive users" == msg, "Should have correct error message")
     end)
@@ -25,7 +25,7 @@ defmodule OptionPatterns.NotificationServiceTest do
     result = OptionPatterns.NotificationService.send_to_user(999, "Test message", {:email})
     assert(match?({:error, _}, result), "Should fail to send notification to nonexistent user")
     (case result do
-      {:ok, _value} ->
+      {:ok, _} ->
         flunk("Expected error for nonexistent user")
       {:error, msg} -> assert("User not found" == msg, "Should have correct error message")
     end)
@@ -34,7 +34,7 @@ defmodule OptionPatterns.NotificationServiceTest do
     result = OptionPatterns.NotificationService.send_to_user(1, "", {:email})
     assert(match?({:error, _}, result), "Should fail for empty message")
     (case result do
-      {:ok, _value} ->
+      {:ok, _} ->
         flunk("Expected error for empty message")
       {:error, msg} -> assert("Message cannot be empty" == msg, "Should have correct error message")
     end)
@@ -43,7 +43,7 @@ defmodule OptionPatterns.NotificationServiceTest do
     result = OptionPatterns.NotificationService.send_to_user(1, nil, {:email})
     assert(match?({:error, _}, result), "Should fail for null message")
     (case result do
-      {:ok, _value} ->
+      {:ok, _} ->
         flunk("Expected error for null message")
       {:error, msg} -> assert("Message cannot be empty" == msg, "Should have correct error message")
     end)
@@ -62,7 +62,7 @@ defmodule OptionPatterns.NotificationServiceTest do
     result = OptionPatterns.NotificationService.send_to_email("nonexistent@example.com", "Test", {:email})
     assert(match?({:error, _}, result), "Should fail for nonexistent email")
     (case result do
-      {:ok, _value} ->
+      {:ok, _} ->
         flunk("Expected error for nonexistent email")
       {:error, msg} -> assert(StringTools.haxe_index_of(msg, "No user found with email", 0) >= 0, "Should mention email not found")
     end)
@@ -153,7 +153,7 @@ defmodule OptionPatterns.NotificationServiceTest do
     result = OptionPatterns.NotificationService.set_user_preferences(999, true, true, true)
     assert(match?({:error, _}, result), "Should fail to set preferences for nonexistent user")
     (case result do
-      {:ok, _value} ->
+      {:ok, _} ->
         flunk("Expected error for nonexistent user")
       {:error, msg} -> assert("User not found" == msg, "Should have correct error message")
     end)
@@ -162,7 +162,7 @@ defmodule OptionPatterns.NotificationServiceTest do
     result = OptionPatterns.NotificationService.send_to_user(4, "Test", {:email})
     assert(match?({:error, _}, result), "Should fail when user has disabled notification type")
     (case result do
-      {:ok, _value} ->
+      {:ok, _} ->
         flunk("Expected error for disabled notification type")
       {:error, msg} ->
         assert(StringTools.haxe_index_of(msg, "disabled", 0) >= 0, "Should mention disabled notification type")
@@ -173,7 +173,7 @@ defmodule OptionPatterns.NotificationServiceTest do
     result = OptionPatterns.NotificationService.send_to_user(1, "This will FAIL", {:email})
     assert(match?({:error, _}, result), "Should handle simulated delivery failure")
     (case result do
-      {:ok, _value} ->
+      {:ok, _} ->
         flunk("Expected simulated delivery failure")
       {:error, msg} -> assert("Simulated delivery failure" == msg, "Should have correct error message")
     end)

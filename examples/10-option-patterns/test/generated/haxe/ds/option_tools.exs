@@ -42,26 +42,26 @@ defmodule OptionTools do
   end
   def or_fn(first, second) do
     (case first do
-      {:some, _v} -> first
+      {:some, _} -> first
       {:none} -> second
     end)
   end
   def lazy_or(first, fn_param) do
     (case first do
-      {:some, _v} -> first
+      {:some, _} -> first
       {:none} ->
         fn_param.()
     end)
   end
   def is_some(option) do
     (case option do
-      {:some, _v} -> true
+      {:some, _} -> true
       {:none} -> false
     end)
   end
   def is_none(option) do
     (case option do
-      {:some, _v} -> false
+      {:some, _} -> false
       {:none} -> true
     end)
   end
@@ -90,7 +90,7 @@ defmodule OptionTools do
   def from_result(result) do
     (case result do
       {:ok, value} -> {:some, value}
-      {:error, _error} -> {:none}
+      {:error, _} -> {:none}
     end)
   end
   def from_nullable(value) do
