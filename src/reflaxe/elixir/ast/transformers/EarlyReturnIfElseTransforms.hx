@@ -24,11 +24,12 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - The builder tags nodes originating from `TReturn` using `metadata.fromReturn`.
  * - This pass scans EBlock/EDo sequences for:
- *     EIf(cond, thenBranch(contains fromReturn), elseBranch = null)
+ *     EIf(cond, thenBranch, elseBranch) with a return in either branch
  *   and, when there are subsequent statements:
- *   1) Moves the remainder of the sequence into the else branch
- *   2) If the then-branch only *contains* an early return (nested), appends the remainder
- *      to the then-branch too so fallthrough paths continue correctly.
+ *   1) Appends the remainder to each branch that can fall through, creating an
+ *      else branch when absent.
+ *   2) Leaves returning paths alone. This includes nested returns in complete
+ *      if/else statements before later mutable-state reads.
  *   3) Recursively rewrites early-return patterns inside the inserted remainder.
  * - Distributes assignment continuations through returning branch expressions,
  *   binding only normal results and preserving nested function return scope.
@@ -159,18 +160,23 @@ class EarlyReturnIfElseTransforms {
 					}));
 					return wrap(out);
 
-				case EIf(condition, thenBranch, null) if (containsFromReturn(thenBranch) && i < stmts.length - 1):
+				case EIf(condition, thenBranch, elseBranch) if ((containsFromReturn(thenBranch) || containsFromReturn(elseBranch))
+					&& i < stmts.length - 1):
 					var rest = stmts.slice(i + 1);
 					var elseExpr = buildRestExpr(rest, stmt.metadata, stmt.pos);
 					var thenWithContinuation = isFromReturn(thenBranch) ? thenBranch : appendContinuation(thenBranch, elseExpr);
-					out.push(makeASTWithMeta(EIf(condition, thenWithContinuation, elseExpr), stmt.metadata, stmt.pos));
+					var elseWithContinuation = elseBranch == null ? elseExpr : isFromReturn(elseBranch) ? elseBranch : appendContinuation(elseBranch, elseExpr);
+					out.push(makeASTWithMeta(EIf(condition, thenWithContinuation, elseWithContinuation), stmt.metadata, stmt.pos));
 					return wrap(out);
 
-				case EUnless(condition, body, null) if (containsFromReturn(body) && i < stmts.length - 1):
+				case EUnless(condition, body, elseBranch) if ((containsFromReturn(body) || containsFromReturn(elseBranch))
+					&& i < stmts.length - 1):
 					var restUnless = stmts.slice(i + 1);
 					var elseExprUnless = buildRestExpr(restUnless, stmt.metadata, stmt.pos);
 					var bodyWithContinuation = isFromReturn(body) ? body : appendContinuation(body, elseExprUnless);
-					out.push(makeASTWithMeta(EUnless(condition, bodyWithContinuation, elseExprUnless), stmt.metadata, stmt.pos));
+					var elseWithContinuation = elseBranch == null ? elseExprUnless : isFromReturn(elseBranch) ? elseBranch : appendContinuation(elseBranch,
+						elseExprUnless);
+					out.push(makeASTWithMeta(EUnless(condition, bodyWithContinuation, elseWithContinuation), stmt.metadata, stmt.pos));
 					return wrap(out);
 
 				default:

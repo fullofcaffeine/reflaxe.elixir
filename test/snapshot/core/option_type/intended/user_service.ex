@@ -23,11 +23,13 @@ defmodule UserService do
   def find_user(name) do
     _g = 0
     g_value = UserService.users()
-    (case Enum.reduce_while(g_value, :__reflaxe_no_return__, fn user, _ ->
-      if (user.name == name), do: {:halt, {:__reflaxe_return__, {:some, user}}}, else: {:cont, :__reflaxe_no_return__}
+    (case Enum.reduce_while(g_value, {:__reflaxe_continue__, {}}, fn user, {:__reflaxe_continue__, {}} ->
+      if (user.name == name), do: {:halt, {:__reflaxe_return__, {:some, user}}}, else: {:cont, {:__reflaxe_continue__, {}}}
     end) do
       {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
-      _ -> {:none}
+      {:__reflaxe_continue__, {}} ->
+        {} = {}
+        {:none}
     end)
   end
   def get_user_email(name) do

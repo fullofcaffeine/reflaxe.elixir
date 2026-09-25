@@ -29,6 +29,7 @@ TEST_DIRS=(
   "test/snapshot/regression/emitted_module_identity"
   "test/snapshot/regression/reducer_loop_return_semantics"
   "test/snapshot/regression/assigned_switch_return"
+  "test/snapshot/core/nested_early_return"
   "test/runtime/switch_case_body"
   "test/runtime/array_pattern_bindings"
   "test/runtime/nested_enum_bindings"

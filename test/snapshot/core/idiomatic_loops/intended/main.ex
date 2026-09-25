@@ -283,11 +283,13 @@ defmodule Main do
     find_first = fn arr, target ->
       _g = 0
       arr_length = length(arr)
-      (case Enum.reduce_while(0..(arr_length - 1)//1, :__reflaxe_no_return__, fn i, _ ->
-        if (Enum.at(arr, i) == target), do: {:halt, {:__reflaxe_return__, i}}, else: {:cont, :__reflaxe_no_return__}
+      (case Enum.reduce_while(0..(arr_length - 1)//1, {:__reflaxe_continue__, {}}, fn i, {:__reflaxe_continue__, {}} ->
+        if (Enum.at(arr, i) == target), do: {:halt, {:__reflaxe_return__, i}}, else: {:cont, {:__reflaxe_continue__, {}}}
       end) do
         {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
-        _ -> -1
+        {:__reflaxe_continue__, {}} ->
+          {} = {}
+          -1
       end)
     end
     _index = find_first.([10, 20, 30, 40], 30)

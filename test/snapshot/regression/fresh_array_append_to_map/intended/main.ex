@@ -143,12 +143,12 @@ defmodule Main do
         if (value == -2) do
           throw({:break, output_acc})
         end
-        (case (if (value == -3), do: {:halt, {:__reflaxe_return__, output_acc}}, else: {:cont, {:__reflaxe_continue__, output_acc}}) do
-          {:halt, reflaxe_halt_payload} -> {:halt, reflaxe_halt_payload}
-          {:cont, {:__reflaxe_continue__, output_acc}} ->
-            output_acc = output_acc ++ [value]
-            {:cont, {:__reflaxe_continue__, output_acc}}
-        end)
+        if (value == -3) do
+          {:halt, {:__reflaxe_return__, output_acc}}
+        else
+          output_acc = output_acc ++ [value]
+          {:cont, {:__reflaxe_continue__, output_acc}}
+        end
       catch
         :throw, {:break, break_state} ->
           {:halt, {:__reflaxe_continue__, break_state}}
@@ -169,12 +169,12 @@ defmodule Main do
   def return_fallback(values) do
     output = []
     (case Enum.reduce_while(values, {:__reflaxe_continue__, output}, fn value, {:__reflaxe_continue__, output_acc} ->
-      (case (if (value < 0), do: {:halt, {:__reflaxe_return__, output_acc}}, else: {:cont, {:__reflaxe_continue__, output_acc}}) do
-        {:halt, reflaxe_halt_payload} -> {:halt, reflaxe_halt_payload}
-        {:cont, {:__reflaxe_continue__, output_acc}} ->
-          output_acc = output_acc ++ [value]
-          {:cont, {:__reflaxe_continue__, output_acc}}
-      end)
+      if (value < 0) do
+        {:halt, {:__reflaxe_return__, output_acc}}
+      else
+        output_acc = output_acc ++ [value]
+        {:cont, {:__reflaxe_continue__, output_acc}}
+      end
     end) do
       {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
       {:__reflaxe_continue__, reflaxe_continue_output} ->
