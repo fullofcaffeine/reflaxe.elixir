@@ -30,6 +30,8 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   2) If the then-branch only *contains* an early return (nested), appends the remainder
  *      to the then-branch too so fallthrough paths continue correctly.
  *   3) Recursively rewrites early-return patterns inside the inserted remainder.
+ * - Distributes assignment continuations through returning branch expressions,
+ *   binding only normal results and preserving nested function return scope.
  * - Stops a sequence after a proven return. Later expressions are unreachable,
  *   even when they look like valid numeric results to later cleanup passes.
  *
@@ -86,6 +88,12 @@ class EarlyReturnIfElseTransforms {
 		function scan(node:ElixirAST):Void {
 			if (found || node == null || node.def == null)
 				return;
+			// A nested function owns its returns; creating it does not exit this one.
+			switch (node.def) {
+				case EFn(_) | EDef(_, _, _, _) | EDefp(_, _, _, _):
+					return;
+				default:
+			}
 			if (node.metadata != null && node.metadata.fromReturn == true) {
 				found = true;
 				return;
@@ -141,6 +149,16 @@ class EarlyReturnIfElseTransforms {
 			}
 
 			switch (stmt.def) {
+				case EMatch(pattern, value) if (containsFromReturn(value) && canBindNormalResult(value)):
+					var rest = stmts.slice(i + 1);
+					// Bind only normal branch results. An explicit return bypasses both
+					// the assignment and the remainder of the enclosing function.
+					out.push(bindNormalResult(value, function(normal) {
+						var binding = makeASTWithMeta(EMatch(pattern, normal), stmt.metadata, stmt.pos);
+						return buildRestExpr([binding].concat(rest), stmt.metadata, stmt.pos);
+					}));
+					return wrap(out);
+
 				case EIf(condition, thenBranch, null) if (containsFromReturn(thenBranch) && i < stmts.length - 1):
 					var rest = stmts.slice(i + 1);
 					var elseExpr = buildRestExpr(rest, stmt.metadata, stmt.pos);
@@ -162,6 +180,61 @@ class EarlyReturnIfElseTransforms {
 		}
 
 		return wrap(out);
+	}
+
+	/** Only distribute through visible branch results, never through call arguments
+	 * or exception handlers whose evaluation/catch boundary would change.
+	 */
+	static function canBindNormalResult(value:ElixirAST):Bool {
+		if (value == null || !containsFromReturn(value) || isFromReturn(value))
+			return true;
+		return switch (value.def) {
+			case EParen(inner): canBindNormalResult(inner);
+			case EBlock(stmts) | EDo(stmts) if (stmts != null && stmts.length > 0):
+				canBindNormalResult(stmts[stmts.length - 1]);
+			case EIf(condition, thenBranch, elseBranch): !containsFromReturn(condition) && canBindNormalResult(thenBranch) && canBindNormalResult(elseBranch);
+			case EUnless(condition, body, elseBranch): !containsFromReturn(condition) && canBindNormalResult(body) && canBindNormalResult(elseBranch);
+			case ECase(subject, clauses): !containsFromReturn(subject) && Lambda.foreach(clauses,
+					clause -> !containsFromReturn(clause.guard) && canBindNormalResult(clause.body));
+			default: false;
+		};
+	}
+
+	/** Distribute an assignment continuation through value-producing control flow.
+	 * Return metadata distinguishes a function exit from an ordinary branch value.
+	 * Statement prefixes retain their evaluation order and use the same early-return
+	 * reconstruction as surrounding blocks. Nested functions are opaque values.
+	 */
+	static function bindNormalResult(value:ElixirAST, continuation:ElixirAST->ElixirAST):ElixirAST {
+		if (isFromReturn(value))
+			return value;
+		return switch (value.def) {
+			case EParen(inner):
+				bindNormalResult(inner, continuation);
+			case EBlock(stmts) | EDo(stmts) if (stmts != null && stmts.length > 0):
+				var prefix = stmts.slice(0, stmts.length - 1);
+				prefix.push(bindNormalResult(stmts[stmts.length - 1], continuation));
+				rewriteSequenceAsSameKind(prefix, function(exprs) return makeASTWithMeta(EBlock(exprs), value.metadata, value.pos));
+			case EIf(condition, thenBranch, elseBranch):
+				makeASTWithMeta(EIf(condition, bindNormalResult(thenBranch, continuation),
+					bindNormalResult(elseBranch == null ? makeAST(ENil) : elseBranch, continuation)),
+					value.metadata, value.pos);
+			case EUnless(condition, body, elseBranch):
+				makeASTWithMeta(EUnless(condition, bindNormalResult(body, continuation),
+					bindNormalResult(elseBranch == null ? makeAST(ENil) : elseBranch, continuation)),
+					value.metadata, value.pos);
+			case ECase(subject, clauses):
+				makeASTWithMeta(ECase(subject, [
+					for (clause in clauses)
+						{
+							pattern: clause.pattern,
+							guard: clause.guard,
+							body: bindNormalResult(clause.body, continuation)
+						}
+				]), value.metadata, value.pos);
+			default:
+				continuation(value);
+		};
 	}
 
 	static function buildRestExpr(rest:Array<ElixirAST>, meta:ElixirMetadata, pos:haxe.macro.Expr.Position):ElixirAST {
