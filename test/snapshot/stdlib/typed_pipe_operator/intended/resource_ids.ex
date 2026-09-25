@@ -5,7 +5,8 @@ defmodule ResourceIds do
     else
       parsed = Reflaxe.Elixir.HaxeInt.parse(value)
       if (not Kernel.is_nil(parsed) and parsed > 0) do
-        _ = parsed
+        value = parsed
+        value
       else
         nil
       end

@@ -4,7 +4,7 @@ Generated from the validated granular registry by `tools/RegistryOrderDoc.hx`; d
 
 Scope labels are executable semantic ownership. `PassScopeManifest` maps exact stable pass IDs to scopes, while `PassApplicability` derives module capabilities only from typed annotation metadata and structured ElixirAST. The verification-only `-D reflaxe_elixir_disable_pass_scopes` switch restores legacy all-pass execution for byte-parity checks.
 
-- Effective granular passes per transformed module: **571**
+- Effective granular passes per transformed module: **570**
 - Full deterministic order: [TRANSFORM_PASS_REGISTRY_ORDER_GRANULAR.md](TRANSFORM_PASS_REGISTRY_ORDER_GRANULAR.md)
 - Rebuild: `npm run docs:passes`
 - Drift guard: `npm run guard:pass-inventory`
@@ -45,7 +45,7 @@ A family is the intersection of a phase contract and semantic ownership scope. E
 
 | Family | Effective passes |
 |---|---:|
-| `absolute-final.core` | 117 |
+| `absolute-final.core` | 116 |
 | `absolute-final.ecto` | 7 |
 | `absolute-final.exunit` | 2 |
 | `absolute-final.hxx` | 6 |

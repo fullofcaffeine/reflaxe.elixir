@@ -2247,9 +2247,12 @@ end'))
 		});
 	}
 
-	// Remove unused local aliases inside case clauses. A source missing from this
-	// clause's declarations may be captured from an enclosing scope; its spelling
-	// does not authorize dropping a live assignment.
+	/**
+	 * Removes unused non-final aliases inside case clauses. The final assignment
+	 * still carries the branch result even when its destination is never read.
+	 * Sources can also be captured from an enclosing scope; declaration spelling
+	 * does not authorize dropping a live assignment.
+	 */
 	public static function casePatternTempAssignmentRemovalPass(ast:ElixirAST):ElixirAST {
 		function extractSimpleVarName(expr:Null<ElixirAST>):Null<String> {
 			if (expr == null || expr.def == null)
@@ -2311,8 +2314,8 @@ end'))
 				// Trivial alias: lhs = rhs (both simple vars)
 				var alias = extractAliasAssignment(s);
 
-				// Drop only when lhs is never read later in the block.
-				if (alias != null && !usedLater.exists(alias.lhs)) {
+				// A dead destination does not make the final expression's value dead.
+				if (i < stmts.length - 1 && alias != null && !usedLater.exists(alias.lhs)) {
 					// dropped
 				} else {
 					keptReversed.push(s);

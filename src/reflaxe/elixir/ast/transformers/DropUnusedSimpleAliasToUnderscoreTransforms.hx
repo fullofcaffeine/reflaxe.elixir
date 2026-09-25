@@ -23,6 +23,8 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 	* - For each statement in EBlock/EDo: if it is an assignment with a simple LHS variable and
 	*   RHS that is a simple expression (var, atom, number, string, remote/local call) and the
 	*   LHS is not used later in the same container, rewrite the LHS to `_`.
+	* - A final variable copy becomes its RHS directly: the enclosing
+	*   block consumes its value, so an explicit discard assignment is unnecessary.
 
 	*
 	* EXAMPLES
@@ -50,16 +52,25 @@ class DropUnusedSimpleAliasToUnderscoreTransforms {
 			switch (stmt.def) {
 				case EBinary(Match, {def: EVar(lhs)}, rhs)
 					if (isSimple(rhs) && hasNumericSuffix(lhs) && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, lhs)):
-					rewrittenStmt = makeASTWithMeta(EBinary(Match, makeAST(EVar("_")), rhs), stmt.metadata, stmt.pos);
+					rewrittenStmt = (i == stmts.length - 1 && isVariable(rhs)) ? makeASTWithMeta(rhs.def, stmt.metadata,
+						stmt.pos) : makeASTWithMeta(EBinary(Match, makeAST(EVar("_")), rhs), stmt.metadata, stmt.pos);
 				case EMatch(PVar(lhs), rhs) if (isSimple(rhs)
 					&& hasNumericSuffix(lhs)
 					&& !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, lhs)):
-					rewrittenStmt = makeASTWithMeta(EMatch(PVar("_"), rhs), stmt.metadata, stmt.pos);
+					rewrittenStmt = (i == stmts.length - 1 && isVariable(rhs)) ? makeASTWithMeta(rhs.def, stmt.metadata,
+						stmt.pos) : makeASTWithMeta(EMatch(PVar("_"), rhs), stmt.metadata, stmt.pos);
 				default:
 			}
 			out.push(rewrittenStmt);
 		}
 		return out;
+	}
+
+	static function isVariable(expr:ElixirAST):Bool {
+		return switch (expr.def) {
+			case EVar(_): true;
+			default: false;
+		};
 	}
 
 	static function isSimple(e:ElixirAST):Bool {
