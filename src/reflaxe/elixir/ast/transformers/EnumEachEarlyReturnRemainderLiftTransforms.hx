@@ -114,6 +114,10 @@ class EnumEachEarlyReturnRemainderLiftTransforms {
 	static function buildElseExprFromRemainder(remainder:Array<ElixirAST>, meta:ElixirMetadata, pos:Position):ElixirAST {
 		if (remainder == null || remainder.length == 0)
 			return makeAST(ENil);
+		// This continuation is assembled after the post-order child traversal.
+		// Normalize its own sequence now so a second loop return cannot be
+		// overwritten by later statements in the newly created branch.
+		remainder = liftRemainder(remainder, meta, pos);
 		if (remainder.length == 1)
 			return remainder[0];
 		return makeASTWithMeta(EBlock(remainder), meta, pos);
