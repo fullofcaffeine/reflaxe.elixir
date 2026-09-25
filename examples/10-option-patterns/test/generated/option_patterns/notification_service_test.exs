@@ -114,7 +114,6 @@ defmodule OptionPatterns.NotificationServiceTest do
     OptionPatterns.NotificationService.send_to_user(1, "History test", {:email})
     history = OptionPatterns.NotificationService.get_user_notification_history(1)
     assert(length(history) >= 1, "Should have at least 1 notification in history")
-    _g = 0
     Enum.each(history, fn record -> assert(1 == record.user_id, "All history records should be for user 1") end)
   end
   test "get user notification history returns empty for user without history" do

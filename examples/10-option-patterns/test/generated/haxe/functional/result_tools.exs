@@ -76,7 +76,6 @@ defmodule ResultTools do
   end
   def sequence(results) do
     values = []
-    _g = 0
     (case Enum.reduce_while(results, {:__reflaxe_continue__, values}, fn result, {:__reflaxe_continue__, values_acc} ->
       (case ((case result do
         {:ok, value} ->

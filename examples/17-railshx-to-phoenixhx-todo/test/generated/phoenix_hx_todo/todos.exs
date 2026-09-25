@@ -49,7 +49,6 @@ defmodule PhoenixHxTodo.Todos do
       nil
     else
       defaults = PhoenixHxTodoHx.Live.TodoState.seed(PhoenixHxTodo.User.display_name(user))
-      _g = 0
       Enum.each(defaults, fn item ->
         (case create_for_user(user, item.title, item.notes) do
           {:ok, created} ->
