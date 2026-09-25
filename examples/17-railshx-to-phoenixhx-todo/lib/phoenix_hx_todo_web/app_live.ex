@@ -217,8 +217,8 @@ defmodule PhoenixHxTodoWeb.AppLive do
         {:noreply, Phoenix.Component.assign(socket, :status, "Sign in again before creating a task.")}
       else
         (case PhoenixHxTodo.Todos.create_for_user(user, title, notes) do
-          {:ok, _value} -> {:noreply, refresh_todos(Phoenix.Component.assign(socket, %{title_input: "", notes_input: ""}), "Task added through Ecto and Phoenix LiveView.")}
-          {:error, _reason} -> {:noreply, Phoenix.Component.assign(socket, :status, "Could not create that task.")}
+          {:ok, _} -> {:noreply, refresh_todos(Phoenix.Component.assign(socket, %{title_input: "", notes_input: ""}), "Task added through Ecto and Phoenix LiveView.")}
+          {:error, _} -> {:noreply, Phoenix.Component.assign(socket, :status, "Could not create that task.")}
         end)
       end
     end

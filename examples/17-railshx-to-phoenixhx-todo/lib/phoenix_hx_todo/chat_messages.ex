@@ -14,8 +14,8 @@ defmodule PhoenixHxTodo.ChatMessages do
   end
   def create_for_user_ok(user, body) do
     (case create_for_user(user, body) do
-      {:ok, _value} -> true
-      {:error, _error} -> false
+      {:ok, _} -> true
+      {:error, _} -> false
     end)
   end
   def view_items() do

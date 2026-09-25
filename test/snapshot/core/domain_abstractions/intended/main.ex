@@ -22,7 +22,7 @@ defmodule Main do
     invalid_emails = ["invalid-email", "@example.com", "user@", "user@@example.com", "", "user space@example.com"]
     Enum.each(invalid_emails, fn invalid_email ->
       (case Email_Impl_.parse(invalid_email) do
-        {:ok, _value} -> nil
+        {:ok, _} -> nil
         {:error, _error} -> nil
       end)
     end)
@@ -57,7 +57,7 @@ defmodule Main do
     )]
     Enum.each(invalid_ids, fn invalid_id ->
       (case UserId_Impl_.parse(invalid_id) do
-        {:ok, _value} -> nil
+        {:ok, _} -> nil
         {:error, _error} -> nil
       end)
     end)
@@ -94,14 +94,14 @@ defmodule Main do
     invalid_numbers = [0, -1, -42, -100]
     Enum.each(invalid_numbers, fn invalid_num ->
       (case PositiveInt_Impl_.parse(invalid_num) do
-        {:ok, _value} -> nil
+        {:ok, _} -> nil
         {:error, _error} -> nil
       end)
     end)
     five = ResultTools.unwrap(PositiveInt_Impl_.parse(5))
     ten = ResultTools.unwrap(PositiveInt_Impl_.parse(10))
     (case PositiveInt_Impl_.safe_sub(five, ten) do
-      {:ok, _value} -> nil
+      {:ok, _} -> nil
       {:error, _error} -> nil
     end)
     twenty = ResultTools.unwrap(PositiveInt_Impl_.parse(20))
@@ -138,7 +138,7 @@ defmodule Main do
     invalid_strings = ["", "   ", "\t\n"]
     Enum.each(invalid_strings, fn invalid_str ->
       (case NonEmptyString_Impl_.parse(invalid_str) do
-        {:ok, _value} -> nil
+        {:ok, _} -> nil
         {:error, _error} -> nil
       end)
     end)
@@ -174,7 +174,7 @@ defmodule Main do
     invalid_inputs = [%{email: "invalid-email", user_id: "ab", score: "0"}, %{email: "user@domain", user_id: "user@123", score: "-5"}, %{email: "", user_id: "", score: "not-a-number"}]
     Enum.each(invalid_inputs, fn input ->
       (case build_user_profile(input.user_id, input.email, input.score) do
-        {:ok, _value} -> nil
+        {:ok, _} -> nil
         {:error, _error} -> nil
       end)
     end)

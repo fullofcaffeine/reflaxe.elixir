@@ -37,7 +37,7 @@ defmodule EnumSubjectProbe do
     if (not selected) do
       accepted = (case classify(value) do
         {:ok, result} -> result
-        {:error, _error} -> false
+        {:error, _} -> false
       end)
       if (accepted), do: 20, else: 10
     else

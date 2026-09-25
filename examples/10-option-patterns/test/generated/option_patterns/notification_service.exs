@@ -99,7 +99,7 @@ defmodule OptionPatterns.NotificationService do
   end
   def set_user_preferences(user_id, email_enabled, sms_enabled, push_enabled) do
     (case OptionPatterns.UserRepository.find(user_id) do
-      {:some, _v} ->
+      {:some, _} ->
         prefs = OptionPatterns.NotificationPreferences.new(email_enabled, sms_enabled, push_enabled)
         {:ok, prefs}
       {:none} -> {:error, "User not found"}
@@ -107,25 +107,25 @@ defmodule OptionPatterns.NotificationService do
   end
   defp is_successful_attempt(attempt) do
     (case attempt.result do
-      {:ok, _value} -> true
-      {:error, _error} -> false
+      {:ok, _} -> true
+      {:error, _} -> false
     end)
   end
   defp is_failed_attempt(attempt) do
     (case attempt.result do
-      {:ok, _value} -> false
-      {:error, _error} -> true
+      {:ok, _} -> false
+      {:error, _} -> true
     end)
   end
   defp successful_record(attempt) do
     (case attempt.result do
       {:ok, record} -> record
-      {:error, _error} -> raise Reflaxe.Elixir.HaxeThrow, [value: "Filtered successful notifications cannot contain failures"]
+      {:error, _} -> raise Reflaxe.Elixir.HaxeThrow, [value: "Filtered successful notifications cannot contain failures"]
     end)
   end
   defp failed_entry(attempt) do
     (case attempt.result do
-      {:ok, _value} -> raise Reflaxe.Elixir.HaxeThrow, [value: "Filtered failed notifications cannot contain successes"]
+      {:ok, _} -> raise Reflaxe.Elixir.HaxeThrow, [value: "Filtered failed notifications cannot contain successes"]
       {:error, reason} -> %{user_id: attempt.user_id, reason: reason}
     end)
   end

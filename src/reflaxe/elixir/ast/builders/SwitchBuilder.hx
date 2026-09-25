@@ -809,24 +809,6 @@ class SwitchBuilder {
 
 		#if debug_switch_builder trace('[GuardChain] Starting extraction, expr type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(current.expr)}'); #end
 
-		// Names that are in scope outside the clause body must NOT be considered "undefined"
-		// for binder harmonization. In particular, function parameters are always in scope
-		// inside case clause bodies. Treating them as undefined can cause us to rename a
-		// payload binder to a function param name, which rebinds it and corrupts semantics
-		// (regression: enum_index_usage unwrap_or/2).
-		var functionParamNames = new Map<String, Bool>();
-		if (context != null && context.functionParameterIds != null && context.tempVarRenameMap != null) {
-			for (idKey in context.functionParameterIds.keys()) {
-				var nm = context.tempVarRenameMap.get(idKey);
-				if (nm != null && nm.length > 0) {
-					functionParamNames.set(nm, true);
-					if (nm.charAt(0) == "_" && nm.length > 1) {
-						functionParamNames.set(nm.substr(1), true);
-					}
-				}
-			}
-		}
-
 		// Guard clauses (`when`) cannot reference locals that are only defined inside the clause body.
 		// Haxe lowering for nested enum patterns sometimes introduces infra temps (g/_g/g1/...) for
 		// intermediate checks; if we lift those into a guard, we create undefined-variable errors.
@@ -1002,123 +984,15 @@ class SwitchBuilder {
 			}
 		}
 
-		// Annotate clause bodies with the computed binder and apply clause-local binder harmonization
-		var _cctx = context.getCurrentClauseContext();
-		if (_cctx != null && _cctx.primaryCaseBinder != null) {
-			var annotated:Array<ECaseClause> = [];
-			for (cl in clauses) {
-				var harmonized = cl;
-				// If pattern is {:tag, PVar(binder)} and the body clearly uses one undefined local,
-				// rename the binder to that local (usage-driven, per clause).
-				switch (cl.pattern) {
-					case PTuple(es) if (es.length == 2):
-						switch (es[0]) {
-							case PLiteral(_):
-								switch (es[1]) {
-									case PVar(bn):
-										var declared = new Map<String, Bool>();
-										function patDecl(p:EPattern):Void {
-											switch (p) {
-												case PVar(n):
-													declared.set(n, true);
-												case PTuple(ps) | PList(ps):
-													for (pp in ps)
-														patDecl(pp);
-												case PCons(h, t):
-													patDecl(h);
-													patDecl(t);
-												case PMap(kvs):
-													for (kv in kvs)
-														patDecl(kv.value);
-												case PStruct(_, fs):
-													for (f in fs)
-														patDecl(f.value);
-												case PPin(inner):
-													patDecl(inner);
-												default:
-											}
-										}
-										patDecl(cl.pattern);
-										reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(n:ElixirAST):ElixirAST {
-											switch (n.def) {
-												case EMatch(p, _):
-													patDecl(p);
-												case EBinary(Match, {def: EVar(lhs)}, _):
-													declared.set(lhs, true);
-												default:
-											}
-											return n;
-										});
-										var used = new Map<String, Bool>();
-										reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(n:ElixirAST):ElixirAST {
-											switch (n.def) {
-												case EVar(v):
-													if (v != null && v.length > 0 && v.charAt(0).toLowerCase() == v.charAt(0))
-														used.set(v, true);
-												default:
-											}
-											return n;
-										});
-										var undef:Array<String> = [];
-										for (k in used.keys()) {
-											if (k == bn)
-												continue;
-											if (declared.exists(k))
-												continue;
-											if (functionParamNames.exists(k))
-												continue;
-											undef.push(k);
-										}
-										// Only rename if the original pattern variable bn is NOT used in the body.
-										// If bn IS used, keep the original binding - don't rename to some other variable.
-										var bnIsUsed = used.exists(bn);
-										// Helper to check if a name is generic/auto-generated (single char, _prefix, contains digit, or "value"/"arg"/"v")
-										// Only rename generic names - descriptive names like "query" should be preserved!
-										inline function isGenericBinder(name:String):Bool {
-											if (name == null || name.length == 0)
-												return true;
-											if (name.charAt(0) == "_")
-												return true;
-											if (name.length == 1)
-												return true;
-											if (name == "value" || name == "arg" || name == "v")
-												return true;
-											var hasDigit = false;
-											for (j in 0...name.length) {
-												var c = name.charCodeAt(j);
-												if (c >= 48 && c <= 57) {
-													hasDigit = true;
-													break;
-												}
-											}
-											return hasDigit;
-										}
-										if (undef.length == 1 && !bnIsUsed && isGenericBinder(bn)) {
-											var newName = undef[0];
-											harmonized = {
-												pattern: PTuple([es[0], PVar(newName)]),
-												guard: cl.guard,
-												body: reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(x:ElixirAST):ElixirAST {
-													return switch (x.def) {
-														case EVar(v) if (v == bn): makeASTWithMeta(EVar(newName), x.metadata, x.pos);
-														default: x;
-													};
-												})
-											};
-										}
-									default:
-								}
-							default:
-						}
-					default:
-				}
-				var b = harmonized.body;
-				if (b != null) {
-					b.metadata.primaryCaseBinder = _cctx.primaryCaseBinder; // store for outer repair
-				}
-				annotated.push(harmonized);
+		// Bindings come from typed pattern identities. A free local in a clause can
+		// belong to an enclosing case; guessing a payload name from body usage
+		// would shadow that local, including when the payload is ignored.
+		var clauseContext = context.getCurrentClauseContext();
+		if (clauseContext != null && clauseContext.primaryCaseBinder != null) {
+			for (clause in clauses) {
+				if (clause.body != null)
+					clause.body.metadata.primaryCaseBinder = clauseContext.primaryCaseBinder;
 			}
-			clauses = annotated;
 		}
 
 		#if debug_switch_builder trace('[GuardChain] Extracted ${clauses.length} total clauses'); #end
@@ -1284,9 +1158,10 @@ class SwitchBuilder {
 	/**
 	 * Generate idiomatic Elixir pattern for enum constructor WITH usage analysis
 	 *
-	 * WHY: Detect unused parameters to apply underscore prefix and prevent orphaned TEnumParameter extraction
+	 * WHY: Keep ignored payloads from capturing unrelated locals or leaving orphaned TEnumParameter extraction
 	 * WHAT: Creates tuple patterns with proper naming based on actual parameter usage in case body
-	 * HOW: Uses EnumHandler.isEnumParameterUsedAtIndex to detect usage, applies underscore prefix if unused
+	 * HOW: Tracks the clause receiver and typed local identities; unused payload slots become wildcards.
+	 * For example, `case Ok(_): outer` emits `{:ok, _} -> outer`, preserving the enclosing value.
 	 *
 	 * CRITICAL: This solves the "empty case body" bug where unused parameters generate orphaned _g variables
 	 */
@@ -1658,17 +1533,8 @@ class SwitchBuilder {
 
 			var isResultCtor = (ef.name == "Ok" || ef.name == "Error");
 			// Precompute usage to avoid repeated full-tree scans per parameter
-			var usedFlags:Array<Bool>;
-			var localUsage:Map<String, Bool>;
-			var bodyIsLarge = isLargeCaseBody(caseBody);
-			if (bodyIsLarge) {
-				// For very large bodies, assume parameters are used to avoid expensive scans
-				usedFlags = [for (_ in 0...parameterNames.length) true];
-				localUsage = new Map<String, Bool>();
-			} else {
-				usedFlags = computeEnumParamUsage(caseBody, parameterNames.length);
-				localUsage = collectReadLocalNameUsage(caseBody);
-			}
+			var usedFlags = computeEnumParamUsage(caseBody, parameterNames.length, ef, context);
+			var localUsage = collectReadLocalNameUsage(caseBody);
 			#if debug_switch_builder
 			trace('[SwitchBuilder] === generateIdiomaticEnumPatternWithBody for ${ef.name} ===');
 			trace('[SwitchBuilder]   parameterNames = [${parameterNames.join(", ")}]');
@@ -1730,9 +1596,9 @@ class SwitchBuilder {
 				//   that IS used must win, otherwise the body references become undefined.
 				var rb:Null<String> = (recoveredBinders != null && i < recoveredBinders.length) ? recoveredBinders[i] : null;
 				if (rb != null && !isEnvLikeName(rb) && !isAutoTempName(rb) && !isFunctionParamByName(rb)) {
-					var rbUsed = bodyIsLarge || localUsage.exists(rb);
+					var rbUsed = localUsage.exists(rb);
 					if (rbUsed) {
-						var enumNameUsed = bodyIsLarge || localUsage.exists(enumParamName);
+						var enumNameUsed = localUsage.exists(enumParamName);
 						var canOverride = (parameterNames.length == 1) || isGenericOrAutoName(enumParamName) || !enumNameUsed;
 						if (canOverride) {
 							candidate = rb;
@@ -1795,11 +1661,6 @@ class SwitchBuilder {
 
 				// CRITICAL: Use precomputed usage from a single scan
 				var isUsed = (i < usedFlags.length) ? usedFlags[i] : false;
-				if (!isUsed) {
-					var rawParamName = candidate;
-					if (rawParamName != null)
-						isUsed = (localUsage.exists(rawParamName));
-				}
 
 				var paramName = baseParamName;
 				if (!isUsed && paramName != null && paramName.length > 0 && paramName.charAt(0) != "_") {
@@ -1808,7 +1669,9 @@ class SwitchBuilder {
 
 				#if debug_switch_builder trace('[SwitchBuilder]     Parameter $i: EnumParam=${parameterNames[i]}, Usage=${isUsed ? "USED" : "UNUSED"}, FinalName=${paramName}'); #end
 
-				patterns.push(PVar(paramName));
+				// An unused payload has no local identity. A named underscore binder
+				// can be mistaken for an enclosing local by later name cleanup.
+				patterns.push(isUsed ? PVar(paramName) : PWildcard);
 
 				// Populate enumBindingPlan with proper usage information
 				if (context.currentClauseContext != null) {
@@ -1868,21 +1731,29 @@ class SwitchBuilder {
 		}
 	}
 
-	// ----------------------------------------------------------------------
-	// Performance helpers (usage analysis caching per case)
-	// ----------------------------------------------------------------------
-	static function computeEnumParamUsage(caseBody:TypedExpr, paramCount:Int):Array<Bool> {
+	/**
+	 * Find the payload slots read from this clause's enum receiver.
+	 * Nested matches can share constructor and local names, so names alone cannot
+	 * establish use. Resolve compiler substitutions and follow typed local IDs.
+	 * For `case Ok(_): switch (other) { case Ok(value): value; ... }`, the inner
+	 * read must not turn the outer wildcard into a binding. Alias reads are retained
+	 * conservatively; this helper does not perform dead-store elimination.
+	 */
+	static function computeEnumParamUsage(caseBody:TypedExpr, paramCount:Int, constructor:EnumField, context:CompilationContext):Array<Bool> {
 		var used:Array<Bool> = [for (_ in 0...paramCount) false];
-		var assignedFromParam = new Map<String, Int>(); // localName -> enumParamIndex
-		var extractionTemps = new Map<String, Bool>(); // locals that only exist as extraction scaffolding (_g/_g1/...)
+		var assignedFromParam = new Map<Int, Int>();
+		var clause = context.getCurrentClauseContext();
+		var receiver = clause == null ? null : clause.enumReceiver;
 
-		inline function registerAssignment(name:String, idx:Int):Void {
-			if (name == null)
-				return;
-			if (idx >= 0 && idx < paramCount)
-				assignedFromParam.set(name, idx);
-			if (isInfrastructureVar(name))
-				extractionTemps.set(name, true);
+		function isCurrentReceiver(candidate:TypedExpr):Bool {
+			// Without receiver evidence, retain bindings conservatively.
+			return receiver == null
+				|| ClauseContext.sameEnumReceiver(context.substituteIfNeeded(receiver), context.substituteIfNeeded(candidate));
+		}
+
+		inline function registerAssignment(local:TVar, index:Int):Void {
+			if (index >= 0 && index < paramCount)
+				assignedFromParam.set(local.id, index);
 		}
 
 		function unwrapNoOp(cur:TypedExpr):TypedExpr {
@@ -1928,84 +1799,54 @@ class SwitchBuilder {
 			};
 		}
 
-		// First pass: collect extraction/alias assignments and mark direct uses of TEnumParameter
+		// Follow typed receiver and local identities. A nested constructor can use
+		// the same payload slot without making this case's payload live.
 		function pass1(te:TypedExpr):Void {
 			if (te == null)
 				return;
+			te = context.substituteIfNeeded(te);
 			switch (te.expr) {
-				case TEnumParameter(_, _, idx):
-					// Direct usage (not just extraction into a local)
-					if (idx >= 0 && idx < paramCount)
-						used[idx] = true;
-
-				case TArray(receiver, indexExpr):
+				case TEnumParameter(subject, field, index):
+					if (field.name == constructor.name && isCurrentReceiver(subject) && index >= 0 && index < paramCount)
+						used[index] = true;
+					// The receiver can itself consume an enclosing payload.
+					pass1(subject);
+				case TArray(subject, indexExpr):
 					var info = extractIndexAccess(te);
-					if (info != null && info.index >= 0 && info.index < paramCount) {
+					if (info != null && isCurrentReceiver(info.receiver) && info.index >= 0 && info.index < paramCount)
 						used[info.index] = true;
-						pass1(info.receiver);
-						return;
+					pass1(subject);
+					pass1(indexExpr);
+				case TVar(local, value) | TBinop(OpAssign, {expr: TLocal(local)}, value):
+					if (value != null) {
+						var unwrapped = unwrapNoOp(context.substituteIfNeeded(value));
+						switch (unwrapped.expr) {
+							case TEnumParameter(subject, field, index) if (field.name == constructor.name && isCurrentReceiver(subject)):
+								registerAssignment(local, index);
+								pass1(subject);
+							case TArray(_, _):
+								var info = extractIndexAccess(unwrapped);
+								if (info != null && isCurrentReceiver(info.receiver)) {
+									registerAssignment(local, info.index);
+									pass1(info.receiver);
+								} else {
+									pass1(unwrapped);
+								}
+							case TLocal(source) if (assignedFromParam.exists(source.id)):
+								registerAssignment(local, assignedFromParam.get(source.id));
+							default:
+								pass1(unwrapped);
+						}
 					}
-
-				case TVar(v, init) if (init != null):
-					var initU = unwrapNoOp(init);
-					switch (initU.expr) {
-						case TEnumParameter(_, _, idx2):
-							// Extraction into a local; usage depends on later reads
-							registerAssignment(v.name, idx2);
-						case TArray(receiver, indexExpr):
-							var info = extractIndexAccess(initU);
-							if (info != null && info.index >= 0 && info.index < paramCount) {
-								registerAssignment(v.name, info.index);
-								return;
-							}
-						case TLocal(src) if (assignedFromParam.exists(src.name)):
-							// Alias: v = tmp; tmp was extracted from enum param
-							registerAssignment(v.name, assignedFromParam.get(src.name));
-						default:
-							// Traverse init for real uses
-							pass1(initU);
-					}
-
-				case TBinop(OpAssign, lhs, rhs):
-					var rhsU = unwrapNoOp(rhs);
-					switch (lhs.expr) {
-						case TLocal(v):
-							switch (rhsU.expr) {
-								case TEnumParameter(_, _, idx3):
-									registerAssignment(v.name, idx3);
-									return;
-								case TArray(receiver, indexExpr):
-									var info = extractIndexAccess(rhsU);
-									if (info != null && info.index >= 0 && info.index < paramCount) {
-										registerAssignment(v.name, info.index);
-										return;
-									}
-								case TLocal(src2) if (assignedFromParam.exists(src2.name)):
-									registerAssignment(v.name, assignedFromParam.get(src2.name));
-									return;
-								default:
-							}
-						default:
-					}
-					// Only traverse RHS (LHS is a write position)
-					pass1(rhsU);
-
 				default:
-					haxe.macro.TypedExprTools.iter(te, pass1);
+					TypedExprTools.iter(te, pass1);
 			}
 		}
-		pass1(caseBody);
 
-		// Second pass: mark parameters as used when a local extracted from them is actually read.
-		var readLocals = collectReadLocalNameUsage(caseBody);
-		for (k in readLocals.keys()) {
-			if (extractionTemps.exists(k))
-				continue;
-			if (assignedFromParam.exists(k)) {
-				var pi = assignedFromParam.get(k);
-				if (pi >= 0 && pi < paramCount)
-					used[pi] = true;
-			}
+		pass1(caseBody);
+		for (id in collectReadLocals(caseBody).keys()) {
+			if (assignedFromParam.exists(id))
+				used[assignedFromParam.get(id)] = true;
 		}
 		return used;
 	}
@@ -2023,7 +1864,15 @@ class SwitchBuilder {
 	 *   known write positions (LHS of OpAssign, declared TVar name).
 	 */
 	static function collectReadLocalNameUsage(caseBody:TypedExpr):Map<String, Bool> {
-		var used = new Map<String, Bool>();
+		var names = new Map<String, Bool>();
+		for (local in collectReadLocals(caseBody))
+			names.set(local.name, true);
+		return names;
+	}
+
+	/** Collect read identities without treating assignment destinations as reads. */
+	static function collectReadLocals(caseBody:TypedExpr):Map<Int, TVar> {
+		var used = new Map<Int, TVar>();
 
 		function walk(te:TypedExpr, isWrite:Bool):Void {
 			if (te == null)
@@ -2031,7 +1880,7 @@ class SwitchBuilder {
 			switch (te.expr) {
 				case TLocal(v):
 					if (!isWrite)
-						used.set(v.name, true);
+						used.set(v.id, v);
 
 				case TVar(_, init):
 					// Declaring the var isn't a read; init is evaluated as a read context.
@@ -2065,20 +1914,6 @@ class SwitchBuilder {
 		return used;
 	}
 
-	static inline function isLargeCaseBody(caseBody:TypedExpr):Bool {
-		// Fast heuristic: stop counting after a threshold to avoid full traversal
-		var count = 0;
-		var limit = 5000; // Safe cap to prevent pathological scans on giant bodies
-		function countNodes(te:TypedExpr):Void {
-			if (count >= limit || te == null)
-				return;
-			count++;
-			haxe.macro.TypedExprTools.iter(te, countNodes);
-		}
-		countNodes(caseBody);
-		return count >= limit;
-	}
-
 	/**
 	 * Generate idiomatic enum pattern using constructor args to recover user variable names.
 	 *
@@ -2099,11 +1934,10 @@ class SwitchBuilder {
 		}
 		var patterns:Array<EPattern> = [PLiteral(makeAST(EAtom(atomName)))];
 		var isResultCtor = (ef.name == "Ok" || ef.name == "Error");
-		var bodyIsLarge = isLargeCaseBody(caseBody);
-		var usedFlags:Array<Bool> = bodyIsLarge ? [for (_ in 0...paramCount) true] : computeEnumParamUsage(caseBody, paramCount);
-		var localUsage = bodyIsLarge ? new Map<String, Bool>() : collectReadLocalNameUsage(caseBody);
+		var usedFlags = computeEnumParamUsage(caseBody, paramCount, ef, context);
+		var readLocals = collectReadLocals(caseBody);
 
-		function extractBinderNameFromArg(arg:TypedExpr):Null<String> {
+		function extractBinderFromArg(arg:TypedExpr):Null<TVar> {
 			var cur = arg;
 			while (cur != null) {
 				switch (cur.expr) {
@@ -2126,8 +1960,8 @@ class SwitchBuilder {
 			if (cur == null)
 				return null;
 			return switch (cur.expr) {
-				case TLocal(v): v.name;
-				case TVar(v, _): v.name;
+				case TLocal(v): v;
+				case TVar(v, _): v;
 				default: null;
 			};
 		}
@@ -2138,10 +1972,8 @@ class SwitchBuilder {
 			//   the enum field signature. `guardVars` is only meaningful for enum-index recovery and
 			//   is not positional here.
 			var guardName = (guardVars != null && i < guardVars.length) ? guardVars[i] : null;
-			var argLocal:Null<String> = null;
-			if (i < callArgs.length) {
-				argLocal = extractBinderNameFromArg(callArgs[i]);
-			}
+			var argBinder = i < callArgs.length ? extractBinderFromArg(callArgs[i]) : null;
+			var argLocal = argBinder == null ? null : argBinder.name;
 			var enumParamName:Null<String> = null;
 			switch (ef.type) {
 				case TFun(args, _):
@@ -2196,16 +2028,15 @@ class SwitchBuilder {
 				baseParamName = (ef.name == "Ok") ? "value" : "reason";
 			}
 			var isUsed = (i < usedFlags.length) ? usedFlags[i] : false;
-			if (!isUsed && chosen != null) {
-				isUsed = localUsage.exists(chosen);
-			}
+			if (!isUsed && argBinder != null)
+				isUsed = readLocals.exists(argBinder.id);
 
 			var finalName = baseParamName;
 			if (!isUsed && finalName != null && finalName.length > 0 && finalName.charAt(0) != "_") {
 				finalName = "_" + finalName;
 			}
 
-			patterns.push(PVar(finalName));
+			patterns.push(isUsed ? PVar(finalName) : PWildcard);
 			if (context.currentClauseContext != null) {
 				context.currentClauseContext.enumBindingPlan.set(i, {finalName: finalName, isUsed: isUsed});
 			}

@@ -7,8 +7,8 @@ defmodule Main do
   defp test_ignored_parameter() do
     result = get_result()
     switch_result_1 = (case result do
-      {:ok, _value} -> "Success"
-      {:error, _message} -> "Failed"
+      {:ok, _} -> "Success"
+      {:error, _} -> "Failed"
     end)
     switch_result_1
   end

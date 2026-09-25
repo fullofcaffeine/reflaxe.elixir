@@ -7,7 +7,7 @@ defmodule Main do
   defp unwrap_or(result, default_value) do
     (case result do
       {:ok, value} -> value
-      {:error, _message} -> default_value
+      {:error, _} -> default_value
     end)
   end
   defp get_result() do

@@ -2974,45 +2974,17 @@ class ElixirASTPassRegistry {
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.CaseBinderUnderscoreAlignTransforms.pass
 		});
-		// Align case binder names in {:ok, binder}/{:error, binder} to the single undefined
-		// lower-case name used within the clause body (usage-driven, no app coupling)
-		// Controller-only cleanup: drop json/data/conn alias chains before Phoenix.Controller.json calls
-		passes.push({
-			name: "ControllerJsonCallCleanup_Final",
-			description: "Remove json/data/conn alias chains before Phoenix.Controller.json and use original conn",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.ControllerJsonCallCleanupTransforms.pass
-		});
-		passes.push({
-			name: "ControllerAliasChainDrop_Final",
-			description: "Drop contiguous json/data/conn alias-chains to the same RHS var in controllers",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.ControllerAliasChainDropTransforms.pass
-		});
 		passes.push({
 			name: "ControllerResultBinderNormalize_Final",
 			description: "Normalize {:ok,_}/{:error,_} binders to value/reason in controllers (final)",
 			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.ControllerResultBinderNormalizeTransforms.pass,
-			runAfter: ["ControllerJsonCallCleanup_Final"]
-		});
-		passes.push({
-			name: "ControllerAliasAssignDrop_AbsoluteFinal",
-			description: "Absolute-final: drop assignments to json/data/conn in controller bodies and case arms",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.ControllerAliasAssignDropTransforms.pass
+			pass: reflaxe.elixir.ast.transformers.ControllerResultBinderNormalizeTransforms.pass
 		});
 		passes.push({
 			name: "WebDropUnusedSimpleAssign_AbsoluteFinal",
 			description: "Absolute-final: in Web modules, drop simple unused assignments (pure RHS)",
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.WebDropUnusedSimpleAssignTransforms.pass
-		});
-		passes.push({
-			name: "ControllerAliasAssignDrop_Replay_Ultimate",
-			description: "Ultimate replay: drop alias assigns json/data/conn in controllers after all rewrites",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.ControllerAliasAssignDropTransforms.pass
 		});
 
 		// Absolute-final global hygiene: drop `nil = _var` anywhere in bodies
@@ -3024,7 +2996,6 @@ class ElixirASTPassRegistry {
 			runAfter: [
 				"CaseClauseHygieneCleanup_Final",
 				"CaseNilAssignCleanup_Final",
-				"ControllerAliasAssignDrop_Replay_Ultimate",
 				"SuccessVarAbsoluteReplaceUndefined_Replay_Final",
 				"HandleEventParamsUltraFinal_Last"
 			]
@@ -3064,25 +3035,7 @@ class ElixirASTPassRegistry {
 			name: "WebJsonCallAliasRewrite_AbsoluteFinal",
 			description: "Absolute-final: in Web.* modules, remove json/data/conn alias lines and rewrite json(conn, data) to use RHS var",
 			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.WebJsonCallAliasRewriteAbsoluteFinalTransforms.pass,
-			runBefore: ["ControllerAliasAssignDrop_Replay_Ultimate", "ControllerAliasChainDrop_Final"]
-		});
-
-		// Absolute-last controller-specific finalizer to force correct json/2 shape in case arms
-		passes.push({
-			name: "ControllerJsonFinalize_AbsoluteFinal",
-			description: "Absolute-last: in controllers, map json(conn, data) arg2 to case binder and drop alias lines",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.ControllerJsonFinalizeAbsoluteTransforms.pass,
-			runAfter: [
-				"WebJsonCallAliasRewrite_AbsoluteFinal",
-				"ControllerAliasAssignDrop_Replay_Ultimate",
-				"ControllerResultBinderNormalize_Final",
-				"ControllerCaseRenameBinderIfBodyRefsBase_Final",
-				"ControllerJsonDataArgToBinder_Final",
-				"ControllerJsonDataArgPickSingleVar_Final",
-				"HandleEventParamsUltraFinal_Last"
-			]
+			pass: reflaxe.elixir.ast.transformers.WebJsonCallAliasRewriteAbsoluteFinalTransforms.pass
 		});
 
 		// Used locals must survive regardless of their spelling or module name.
@@ -3094,8 +3047,6 @@ class ElixirASTPassRegistry {
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.OkValueGlobalCleanupTransforms.pass,
 			runAfter: [
-				"ControllerJsonFinalize_AbsoluteFinal",
-				"ControllerAliasAssignDrop_Replay_Ultimate",
 				"ControllerJsonSecondArgUndefinedRewrite_Ultimate",
 				"CaseBinderRefNormalizeByFlattenUnderscores_Final",
 				"FunctionArgMultiStmtIIFE_Final",
@@ -3112,9 +3063,14 @@ class ElixirASTPassRegistry {
 			description: "Ultimate: rewrite Phoenix.Controller.json(conn, data|json) to binder/value in Web.*",
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.WebJsonSecondArgRewriteFinalTransforms.pass,
+			// Preserve the ordering inherited through the removed controller finalizer.
 			runAfter: [
-				"ControllerAliasAssignDrop_Replay_Ultimate",
-				"ControllerJsonFinalize_AbsoluteFinal"
+				"WebJsonCallAliasRewrite_AbsoluteFinal",
+				"ControllerResultBinderNormalize_Final",
+				"ControllerCaseRenameBinderIfBodyRefsBase_Final",
+				"ControllerJsonDataArgToBinder_Final",
+				"ControllerJsonDataArgPickSingleVar_Final",
+				"HandleEventParamsUltraFinal_Last"
 			]
 		});
 
@@ -3133,7 +3089,7 @@ class ElixirASTPassRegistry {
 			description: "Ultimate: in controllers, if json(conn, data) remains with undefined `data`, rewrite to binder/safe expr",
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.ControllerJsonSecondArgUndefinedRewriteUltimateTransforms.pass,
-			runAfter: ["WebJsonSecondArgRewrite_Ultimate", "ControllerAliasAssignDrop_Replay_Ultimate"]
+			runAfter: ["WebJsonSecondArgRewrite_Ultimate"]
 		});
 
 		// Normalize case payload binder references to the declared binder when they differ
@@ -3144,10 +3100,7 @@ class ElixirASTPassRegistry {
 			description: "Unify clause body refs that flatten to the binder name (remove underscores)",
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.CaseBinderRefNormalizeByFlattenUnderscoresTransforms.pass,
-			runAfter: [
-				"ControllerJsonSecondArgUndefinedRewrite_Ultimate",
-				"ControllerJsonFinalize_AbsoluteFinal"
-			]
+			runAfter: ["ControllerJsonSecondArgUndefinedRewrite_Ultimate"]
 		});
 
 		// Ensure multi-statement argument blocks are safe in function calls by wrapping them
@@ -3223,7 +3176,7 @@ class ElixirASTPassRegistry {
 			description: "Promote case binder _name -> name in controllers when body references base name",
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.ControllerCaseRenameBinderIfBodyRefsBaseTransforms.pass,
-			runAfter: ["CaseErrorVarUnify_Final", "ControllerJsonCallCleanup_Final"]
+			runAfter: ["CaseErrorVarUnify_Final"]
 		});
 
 		passes.push({

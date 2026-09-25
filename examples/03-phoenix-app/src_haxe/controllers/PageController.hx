@@ -4,6 +4,11 @@ import plug.Conn;
 
 typedef EmptyParams = {};
 
+/** Application-owned JSON shape, constructed before crossing into Phoenix. */
+typedef GreetingResponse = {
+	final message:String;
+};
+
 /**
  * Minimal Phoenix controller implemented in Haxe.
  */
@@ -17,6 +22,10 @@ class PageController {
 	 * GET /
 	 */
 	public static function home(conn:Conn<EmptyParams>, params:EmptyParams):Conn<EmptyParams> {
-		return conn.json({message: "Hello from Haxe → Elixir!"});
+		return conn.json(greeting("Haxe", "Elixir"));
+	}
+
+	static function greeting(source:String, target:String):GreetingResponse {
+		return {message: 'Hello from $source → $target!'};
 	}
 }

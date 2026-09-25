@@ -2,13 +2,13 @@ defmodule Main do
   defp unwrap_or(result, default_value) do
     (case result do
       {:ok, value} -> value
-      {:error, _reason} -> default_value
+      {:error, _} -> default_value
     end)
   end
   defp to_option(result) do
     (case result do
       {:ok, value} -> value
-      {:error, _reason} -> nil
+      {:error, _} -> nil
     end)
   end
   def main() do

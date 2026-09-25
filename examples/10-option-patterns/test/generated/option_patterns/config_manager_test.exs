@@ -41,7 +41,7 @@ defmodule OptionPatterns.ConfigManagerTest do
     result = OptionPatterns.ConfigManager.get_required("missing_key")
     assert(match?({:error, _}, result), "Should fail for missing required configuration")
     (case result do
-      {:ok, _value} ->
+      {:ok, _} ->
         flunk("Expected error for missing required key")
       {:error, msg} -> assert(StringTools.haxe_index_of(msg, "missing_key", 0) >= 0, "Error should mention the missing key")
     end)
@@ -84,7 +84,7 @@ defmodule OptionPatterns.ConfigManagerTest do
     result = OptionPatterns.ConfigManager.get_int_with_range("timeout", 100, 1000)
     assert(match?({:error, _}, result), "Should fail for value below minimum")
     (case result do
-      {:ok, _value} ->
+      {:ok, _} ->
         flunk("Expected error for value below minimum")
       {:error, msg} -> assert(StringTools.haxe_index_of(msg, "below minimum", 0) >= 0, "Error should mention minimum value")
     end)
@@ -93,7 +93,7 @@ defmodule OptionPatterns.ConfigManagerTest do
     result = OptionPatterns.ConfigManager.get_int_with_range("max_connections", 1, 50)
     assert(match?({:error, _}, result), "Should fail for value above maximum")
     (case result do
-      {:ok, _value} ->
+      {:ok, _} ->
         flunk("Expected error for value above maximum")
       {:error, msg} -> assert(StringTools.haxe_index_of(msg, "above maximum", 0) >= 0, "Error should mention maximum value")
     end)
@@ -102,7 +102,7 @@ defmodule OptionPatterns.ConfigManagerTest do
     result = OptionPatterns.ConfigManager.get_int_with_range("missing_key", 1, 100)
     assert(match?({:error, _}, result), "Should fail for missing key")
     (case result do
-      {:ok, _value} ->
+      {:ok, _} ->
         flunk("Expected error for missing key")
       {:error, msg} -> assert(StringTools.haxe_index_of(msg, "missing or not a valid number", 0) >= 0, "Error should mention missing/invalid")
     end)
@@ -158,7 +158,7 @@ defmodule OptionPatterns.ConfigManagerTest do
     result = OptionPatterns.ConfigManager.validate_required(["app_name", "missing_key1", "missing_key2"])
     assert(match?({:error, _}, result), "Should fail when required keys are missing")
     (case result do
-      {:ok, _value} ->
+      {:ok, _} ->
         flunk("Expected error for missing required keys")
       {:error, msg} ->
         assert(StringTools.haxe_index_of(msg, "missing_key1", 0) >= 0, "Error should mention first missing key")

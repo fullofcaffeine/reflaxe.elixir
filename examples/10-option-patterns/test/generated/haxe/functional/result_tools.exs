@@ -22,14 +22,14 @@ defmodule ResultTools do
   end
   def is_ok(result) do
     (case result do
-      {:ok, _value} -> true
-      {:error, _error} -> false
+      {:ok, _} -> true
+      {:error, _} -> false
     end)
   end
   def is_error(result) do
     (case result do
-      {:ok, _value} -> false
-      {:error, _error} -> true
+      {:ok, _} -> false
+      {:error, _} -> true
     end)
   end
   def unwrap(result) do
@@ -41,7 +41,7 @@ defmodule ResultTools do
   def unwrap_or(result, default_value) do
     (case result do
       {:ok, value} -> value
-      {:error, _error} -> default_value
+      {:error, _} -> default_value
     end)
   end
   def unwrap_or_else(result, error_handler) do
@@ -100,7 +100,7 @@ defmodule ResultTools do
   def to_option(result) do
     (case result do
       {:ok, value} -> {:some, value}
-      {:error, _error} -> {:none}
+      {:error, _} -> {:none}
     end)
   end
 end

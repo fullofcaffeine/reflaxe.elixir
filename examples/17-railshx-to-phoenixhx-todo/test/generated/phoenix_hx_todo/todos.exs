@@ -28,8 +28,8 @@ defmodule PhoenixHxTodo.Todos do
       false
     else
       (case PhoenixHxTodo.Repo.update(PhoenixHxTodo.Todo.toggle_completed(todo)) do
-        {:ok, _value} -> true
-        {:error, _error} -> false
+        {:ok, _} -> true
+        {:error, _} -> false
       end)
     end
   end
@@ -39,8 +39,8 @@ defmodule PhoenixHxTodo.Todos do
       false
     else
       (case PhoenixHxTodo.Repo.delete(todo) do
-        {:ok, _value} -> true
-        {:error, _error} -> false
+        {:ok, _} -> true
+        {:error, _} -> false
       end)
     end
   end
@@ -56,7 +56,7 @@ defmodule PhoenixHxTodo.Todos do
               item.completed -> PhoenixHxTodo.Repo.update(PhoenixHxTodo.Todo.toggle_completed(created))
               true -> nil
             end
-          {:error, _error} -> nil
+          {:error, _} -> nil
         end)
       end)
     end

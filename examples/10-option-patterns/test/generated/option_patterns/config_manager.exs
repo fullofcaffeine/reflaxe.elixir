@@ -109,7 +109,7 @@ defmodule OptionPatterns.ConfigManager do
   def validate_required(required_keys) do
     missing = Enum.filter(required_keys, fn key ->
       (case get(key) do
-        {:some, _v} -> false
+        {:some, _} -> false
         {:none} -> true
       end)
     end)

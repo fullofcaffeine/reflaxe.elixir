@@ -58,7 +58,7 @@ defmodule Main do
     else
       (case result do
         {:ok, value} -> value
-        {:exit, _reason} -> nil
+        {:exit, _} -> nil
       end)
     end
     Task.start(fn -> nil end)
