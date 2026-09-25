@@ -1,9 +1,9 @@
 {
   "schemaVersion": 4,
   "mode": "transparent-groups-scoped",
-  "effectivePassCount": 571,
-  "maxRecordsPerModule": 572,
-  "effectiveOrderSha256": "b968fe73993679877a499923977e14f663c09167de9ae9931ec3364c836f58d0",
+  "effectivePassCount": 570,
+  "maxRecordsPerModule": 571,
+  "effectiveOrderSha256": "d83fb9e1f35f4b4f5cf9befdcff9ddd9b8a5d33f15871c0eb709f5e815cc81f3",
   "phaseOrder": [
     "bootstrap",
     "framework-annotations",
@@ -28,7 +28,7 @@
       "scope": "core",
       "fixture": "test/snapshot/core/basic_syntax",
       "module": "Main",
-      "expectedPassCount": 402,
+      "expectedPassCount": 401,
       "referenceTotalMs": 105.23,
       "referenceSlowestPasses": [
         {
@@ -58,7 +58,7 @@
       "scope": "stdlib",
       "fixture": "test/snapshot/stdlib/stdlib_externs",
       "module": "AgentRef_Impl_",
-      "expectedPassCount": 402,
+      "expectedPassCount": 401,
       "referenceTotalMs": 22.87,
       "referenceSlowestPasses": [
         {
@@ -88,7 +88,7 @@
       "scope": "phoenix",
       "fixture": "test/snapshot/phoenix/router",
       "module": "MyAppWeb.Router",
-      "expectedPassCount": 563,
+      "expectedPassCount": 562,
       "referenceTotalMs": 51.75,
       "referenceSlowestPasses": [
         {
@@ -118,7 +118,7 @@
       "scope": "liveview",
       "fixture": "test/snapshot/liveview/golden_liveview_fixture",
       "module": "TestAppWeb.GoldenLive",
-      "expectedPassCount": 567,
+      "expectedPassCount": 566,
       "referenceTotalMs": 204.05,
       "referenceSlowestPasses": [
         {
@@ -148,7 +148,7 @@
       "scope": "ecto",
       "fixture": "test/snapshot/ecto/changeset",
       "module": "User",
-      "expectedPassCount": 449,
+      "expectedPassCount": 448,
       "referenceTotalMs": 29.83,
       "referenceSlowestPasses": [
         {
@@ -178,7 +178,7 @@
       "scope": "hxx",
       "fixture": "test/snapshot/phoenix/hxx_inline_markup_basic",
       "module": "Main",
-      "expectedPassCount": 462,
+      "expectedPassCount": 461,
       "referenceTotalMs": 25.38,
       "referenceSlowestPasses": [
         {
@@ -208,7 +208,7 @@
       "scope": "exunit",
       "fixture": "test/snapshot/exunit/exunit_comprehensive",
       "module": "Main",
-      "expectedPassCount": 405,
+      "expectedPassCount": 404,
       "referenceTotalMs": 238.57,
       "referenceSlowestPasses": [
         {
@@ -238,7 +238,7 @@
       "scope": "mix",
       "fixture": "test/snapshot/core/mix_task_annotation",
       "module": "Mix.Tasks.Haxe.Example",
-      "expectedPassCount": 403,
+      "expectedPassCount": 402,
       "referenceTotalMs": 30.25,
       "referenceSlowestPasses": [
         {

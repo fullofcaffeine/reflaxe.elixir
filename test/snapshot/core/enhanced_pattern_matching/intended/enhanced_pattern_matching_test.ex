@@ -120,12 +120,14 @@ defmodule EnhancedPatternMatchingTest do
       {:success, validated} -> process_data(validated)
       {:error, error, context} ->
         context = context || ""
-        _result = {:error, error, context}
+        result = {:error, error, context}
+        result
     end) do
       {:success, processed} -> format_output(processed)
       {:error, error, context} ->
         context = context || ""
-        _result = {:error, error, context}
+        result = {:error, error, context}
+        result
     end)
   end
   def match_array_patterns(arr) do
@@ -252,15 +254,18 @@ defmodule EnhancedPatternMatchingTest do
     if (String.length(input) == 0) do
       context = "validation"
       context = context || ""
-      _result = {:error, "Empty input", context}
+      result = {:error, "Empty input", context}
+      result
     else
       if (String.length(input) > 1000) do
         context = "validation"
         context = context || ""
-        _result = {:error, "Input too long", context}
+        result = {:error, "Input too long", context}
+        result
       else
         value = String.downcase(input)
-        _result = {:success, value}
+        result = {:success, value}
+        result
       end
     end
   end
@@ -268,19 +273,23 @@ defmodule EnhancedPatternMatchingTest do
     if (StringTools.haxe_index_of(data, "error", 0) >= 0) do
       context = "processing"
       context = context || ""
-      _result = {:error, "Data contains error keyword", context}
+      result = {:error, "Data contains error keyword", context}
+      result
     else
       value = String.upcase(data)
-      _result = {:success, value}
+      result = {:success, value}
+      result
     end
   end
   defp format_output(data) do
     if (String.length(data) == 0) do
       context = "formatting"
       context = context || ""
-      _result = {:error, "No data to format", context}
+      result = {:error, "No data to format", context}
+      result
     else
-      _result = {:success, "Formatted: [" <> data <> "]"}
+      result = {:success, "Formatted: [" <> data <> "]"}
+      result
     end
   end
   defp expect(actual, expected) do
@@ -299,7 +308,8 @@ defmodule EnhancedPatternMatchingTest do
     expect(match_with_range_guards(5, "other"), "Unknown category \"other\" with value 5")
     result = {:success, "deep value"}
     value = result
-    _nested_success = _ = {:success, value}
+    result = {:success, value}
+    _nested_success = result
     nil
   end
 end

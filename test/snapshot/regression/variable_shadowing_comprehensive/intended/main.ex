@@ -8,30 +8,37 @@ defmodule Main do
     nil
   end
   defp test_basic_shadowing() do
+    value = "test"
+    _ = value
     nil
   end
   defp test_shadowing_with_intervening_statements() do
-    _query = this1
+    query = "SELECT * FROM users"
+    new_query = "#{query} WHERE active = true"
+    _ = new_query
     nil
   end
   defp test_shadowing_in_if_blocks() do
     filter = %{name: "John", email: "john@example.com", is_active: true}
-    query = this1
+    query = "SELECT * FROM users"
     query = if (not Kernel.is_nil(filter.name)) do
-      _value = "%#{filter.name}%"
-      this2
+      value = "%#{filter.name}%"
+      new_query = "#{query} WHERE name LIKE '#{value}'"
+      new_query
     else
       query
     end
     query = if (not Kernel.is_nil(filter.email)) do
-      _value = "%#{filter.email}%"
-      this3
+      value = "%#{filter.email}%"
+      new_query = "#{query} AND email LIKE '#{value}'"
+      new_query
     else
       query
     end
     _ = if (filter.is_active == true) do
-      _value = filter.is_active
-      this4
+      value = filter.is_active
+      new_query = "#{query} AND active = #{Reflaxe.Elixir.HaxeFloat.to_string(value)}"
+      new_query
     else
       query
     end

@@ -952,6 +952,23 @@ run_step "check source-checkout output uses canonical Mix formatting" 120 "$work
 run_step "check installed-package output uses canonical Mix formatting" 120 "$work_dir" \
   'mix format --force --check-formatted "out/**/*.ex"'
 
+# Reuse the source-language regression for package parity and native execution.
+# An identity stub repaired only at the end can hide a lost conditional result.
+mkdir -p "$work_dir/identity-values/probe" "$work_dir/identity-beam"
+cp "$ROOT_DIR/test/snapshot/regression/abstract_identity_values/Main.hx" "$work_dir/identity-values/"
+cp "$ROOT_DIR/test/snapshot/regression/abstract_identity_values/probe/Label.hx" "$work_dir/identity-values/probe/"
+run_step "compile abstract identities through source checkout" 120 "$work_dir" \
+  '"$PWD/node_modules/.bin/haxe" build-source.hxml -cp identity-values -dce full -D elixir_output=out_identity_source -D reflaxe_elixir_validate_results -D hxx_granular_pass_registry > identity-source.log 2>&1 || { tail -80 identity-source.log; exit 1; }'
+run_step "compile abstract identities through installed package" 120 "$work_dir" \
+  'PATH="$HAXELIB_WRAPPER_DIR:$(dirname "$HAXE_BIN"):$PATH" "$HAXE_BIN" build.hxml -cp identity-values -dce full -D elixir_output=out_identity_package -D reflaxe_elixir_validate_results -D hxx_granular_pass_registry > identity-package.log 2>&1 || { tail -80 identity-package.log; exit 1; }'
+require_file "$work_dir/out_identity_package/main.ex"
+compare_generated_elixir "$work_dir/out_identity_source" "$work_dir/out_identity_package"
+cp "$ROOT_DIR/scripts/ci/validate-generated-elixir-warnings.exs" "$work_dir/validate-identity-warnings.exs"
+run_step "strict native compile of packaged abstract identities" 60 "$work_dir" \
+  'find out_identity_package -type f -name "*.ex" -print0 | xargs -0 elixir validate-identity-warnings.exs identity-beam'
+run_step "execute packaged abstract identity contracts" 20 "$work_dir" \
+  'elixir -pa identity-beam -e "Main.main()"'
+
 mix_project="$work_dir/package_mix"
 mkdir -p "$mix_project/lib"
 cp -R "$work_dir/out/." "$mix_project/lib/"

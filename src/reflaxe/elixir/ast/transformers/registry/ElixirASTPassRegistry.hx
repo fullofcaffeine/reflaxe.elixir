@@ -2853,16 +2853,6 @@ class ElixirASTPassRegistry {
 			runAfter: ["EFnTempChainSimplify_AlwaysRun"]
 		});
 
-		// CRITICAL: Haxe can emit empty bodies for inline abstract impl stubs (e.g. Atom_Impl_._new/1).
-		// In strict Elixir builds (`--warnings-as-errors`) this triggers unused-argument warnings and fails compilation.
-		// Keep this pass outside fast_boot/hygiene guards so all builds stay warning-free.
-		passes.push({
-			name: "AbstractImplIdentityStub_AlwaysRun",
-			description: "Ensure empty abstract-impl stubs (_new/from_string) return their single argument (prevents unused-arg warnings)",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.AbstractImplIdentityStubTransforms.transformPass
-		});
-
 		passes.push({
 			name: "HandleInfoDropUnusedAssign",
 			description: "In handle_info/2, drop v = case ... when v is unused",

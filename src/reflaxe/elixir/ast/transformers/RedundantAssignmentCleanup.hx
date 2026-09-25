@@ -18,8 +18,8 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
  *   single assignment and should be collapsed for idiomatic output.
  *
  * HOW
- * - Remove pure copies: `EMatch(PVar(thisN), EVar(x))` → drop.
- * - Remove known throwaway binds like `new_query = ...`.
+ * - Preserve standalone copies: their binding can be read later and their value
+ *   can be the result of a function or branch. Usage-aware cleanup owns removal.
  * - Collapse nested chain: `EMatch(PVar(dst), EMatch(PVar(thisN), expr))` → `dst = expr`.
  * - Collapse sequential chain inside blocks: `thisN = expr; dst = thisN` → `dst = expr`.
  *   Only applies when `thisN` matches `^this\d*$` to avoid touching user vars.
@@ -33,25 +33,12 @@ class RedundantAssignmentCleanup {
 		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
 			return switch (n.def) {
 				case EMatch(pattern, expr):
-					switch (pattern) {
-						case PVar(name) if (isRedundantName(name) && isSafeCopy(expr)):
-							// Remove by replacing with an empty block
-							makeASTWithMeta(EBlock([]), n.metadata, n.pos);
-						case PVar(name) if (name == "new_query"):
-							makeASTWithMeta(EBlock([]), n.metadata, n.pos);
+					// Collapse nested chained match: dst = (thisN = expr) -> dst = expr
+					switch (expr.def) {
+						case EMatch(PVar(innerName), innerExpr) if (isRedundantName(innerName)):
+							makeASTWithMeta(EMatch(pattern, innerExpr), n.metadata, n.pos);
 						default:
-							// Collapse nested chained match: dst = (thisN = expr) -> dst = expr
-							switch (expr.def) {
-								case EMatch(innerPat, innerExpr):
-									switch (innerPat) {
-										case PVar(innerName) if (isRedundantName(innerName)):
-											makeASTWithMeta(EMatch(pattern, innerExpr), n.metadata, n.pos);
-										default:
-											n;
-									}
-								default:
-									n;
-							}
+							n;
 					}
 				case EBlock(stmts):
 					// Collapse sequential pattern: thisN = expr; dst = thisN
@@ -136,12 +123,5 @@ class RedundantAssignmentCleanup {
 		}
 		return false;
 	}
-
-	static inline function isSafeCopy(expr:ElixirAST):Bool {
-		// Only consider pure variable copies safe to remove
-		return expr != null && expr.def != null && switch (expr.def) {
-			case EVar(_): true;
-			default: false;
-		}}
 }
 #end
