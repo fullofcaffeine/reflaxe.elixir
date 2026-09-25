@@ -1204,8 +1204,11 @@ class BlockBuilder {
 				if (expressions.length == 0) {
 					result = ENil;
 				} else if (expressions.length == 1) {
-					// Single expression blocks can be unwrapped
-					result = expressions[0].def;
+					// An eliminated enum binding may leave only an explicit return.
+					// Its marker belongs to the child, not the outer typed block;
+					// extracting .def would turn a function exit into an ordinary value.
+					var only = expressions[0];
+					result = only.metadata != null && only.metadata.fromReturn == true ? EBlock(expressions) : only.def;
 				} else {
 					result = EBlock(expressions);
 				}
