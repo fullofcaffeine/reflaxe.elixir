@@ -1997,6 +1997,10 @@ class ElixirASTPrinter {
 				switch (expr.def) {
 					case EBinary(_, _, _) if (!needsParentheses(expr.def)):
 						operand = '(' + operand + ')';
+					case EBlock(_):
+						// The operator consumes the final block value. Group the whole block
+						// in place so Boolean short-circuiting still controls its effects.
+						operand = '(' + operand + ')';
 					case ERaw(_):
 						// Native expressions are opaque: preserve their complete value without
 						// guessing precedence from source text or changing evaluation count.
