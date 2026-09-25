@@ -56,6 +56,7 @@ TEST_DIRS=(
   "test/snapshot/regression/enum_pattern_names"
   "test/snapshot/regression/underscore_prefix_consistency"
   "test/snapshot/regression/enum_snake_case_patterns"
+  "test/snapshot/regression/enum_variable_rebinding"
   "test/snapshot/regression/enum_extraction_usage"
   "test/snapshot/regression/OrphanedEnumParameters"
   "test/snapshot/regression/troubleshooting_patterns"

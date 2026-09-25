@@ -52,7 +52,7 @@
       "strictElixir": { "mode": "ci" },
       "runtime": {
         "mode": "sentinel",
-        "command": "SECRET_KEY_BASE=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa QA_SKIP_ASSETS=1 scripts/qa-sentinel.sh --app examples/03-phoenix-app --hxml build.hxml --env prod --port 4003 --deadline 600 --verbose && python3 -c 'import json; assert json.load(open(\"/tmp/qa-index.html\", encoding=\"utf-8\")) == {\"message\": \"Hello from Haxe → Elixir!\"}'",
+        "command": "SECRET_KEY_BASE=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa QA_SKIP_ASSETS=1 scripts/qa-sentinel.sh --app examples/03-phoenix-app --hxml build.hxml --env prod --port 4003 --deadline 600 --verbose && python3 -c 'import json; assert json.load(open(\"/tmp/qa-index.html\", encoding=\"utf-8\")) == {\"message\": \"Hello from Haxe → Elixir!\"}' && bash test/snapshot/phoenix/remote_call_targets/run_runtime_dependencies.sh",
         "timeoutSeconds": 600,
         "ci": true,
         "evidence": ["src_haxe/controllers/PageController.hx", "config/prod.exs", "config/runtime.exs"]

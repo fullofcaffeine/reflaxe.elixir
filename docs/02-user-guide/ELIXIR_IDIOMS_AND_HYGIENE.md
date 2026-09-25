@@ -164,6 +164,32 @@ payloads are used. Nested matches must preserve the same distinction.
 The [controller value regression](../../test/snapshot/phoenix/controller_value_preservation/Main.hx)
 checks this behavior in both controller and ordinary Haxe code.
 
+### Remote calls keep their declared target
+
+A precise extern selects the native library API. For example, a Haxe extern for
+`Phoenix.Socket.assign` must emit `Phoenix.Socket.assign(socket, key, value)`.
+A method named `assign` on an ordinary Haxe helper remains a call to that helper.
+The method name alone does not select `Phoenix.Component`.
+
+Likewise, a web controller calling a generated helper must use that helper's
+emitted module name. It must not add an application prefix merely because the
+caller is a web module. Atom module targets such as `:erlang` remain constants
+inside enum branches; they must not become payload variables.
+
+The [remote-call regression](../../test/snapshot/phoenix/remote_call_targets/Main.hx)
+checks these boundaries against real Phoenix libraries. Its runtime check also
+covers declared Presence modules through the existing typed `PresenceBehavior`
+API. Raw Presence module inference and inline abstract conversion are separate
+contracts; this regression does not certify those paths.
+
+The [enum alias regression](../../test/snapshot/regression/enum_variable_rebinding/Main.hx)
+also preserves separate payload and alias values. Starting with `g = 42`, a Haxe
+alias `value = g` can change to `43` while `g` remains `42`. The native runtime
+check requires `g * 100 + value` to return `4243`. Generated Elixir currently
+keeps explicit alias assignments for this case; removing them requires proof
+that the two locals remain independent. This is not a general alias-optimization
+guarantee.
+
 ### Special case: Phoenix `assigns`
 
 Phoenix function components and `~H` templates expect the parameter to be named `assigns`.
