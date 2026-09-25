@@ -1,11 +1,11 @@
 defmodule LVListFilter do
   def adjust(selected, tag) do
     ret = selected
-    if (Lambda.has(selected, tag)) do
-      ret = Lambda.filter(ret, fn t -> t != t end)
-      ret
+    ret = if (Lambda.has(selected, tag)) do
+      Lambda.filter(ret, fn t -> t != t end)
     else
       ret
     end
+    ret
   end
 end

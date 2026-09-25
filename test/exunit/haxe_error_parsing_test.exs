@@ -188,8 +188,8 @@ defmodule HaxeErrorParsingTest do
     end
   end
 
-  describe "performance requirements" do
-    test "parses large error output efficiently" do
+  describe "batch correctness with diagnostic timings" do
+    test "parses every error in a large output in order" do
       # Create large error output (100 errors)
       large_error_output = 
         1..100
@@ -201,18 +201,24 @@ defmodule HaxeErrorParsingTest do
       parse_time = System.monotonic_time(:millisecond) - start_time
       
       assert length(errors) == 100
-      assert parse_time < 100, "Should parse 100 errors quickly (<100ms), took #{parse_time}ms"
+      # Ordinary shared-runner timings are observations, not calibrated budgets.
+      # See TESTING_INFRASTRUCTURE.md: Wall-clock checks under ordinary load.
+      IO.puts("Error parsing observation: 100 diagnostics in #{parse_time}ms")
       
       # Verify all errors are properly structured
-      Enum.each(errors, fn error ->
+      Enum.each(Enum.with_index(errors, 1), fn {error, index} ->
         assert error.type == :compilation_error
         assert error.level == :haxe
-        assert String.starts_with?(error.file, "src_haxe/Module")
+        assert error.file == "src_haxe/Module#{index}.hx"
+        assert error.line == index
+        assert error.error_type == "Type not found"
+        assert error.message == "BadType#{index}"
         assert is_binary(error.error_id)
       end)
+      assert length(Enum.uniq_by(errors, & &1.error_id)) == 100
     end
 
-    test "JSON serialization is fast" do
+    test "JSON serialization preserves each stored diagnostic" do
       error_output = """
       src_haxe/User.hx:10: Type not found : UnknownType
       src_haxe/Post.hx:20: Field not found : badField
@@ -225,12 +231,16 @@ defmodule HaxeErrorParsingTest do
       json_time = System.monotonic_time(:millisecond) - start_time
       
       assert String.length(json_output) > 0
-      assert json_time < 50, "JSON serialization should be fast (<50ms), took #{json_time}ms"
+      IO.puts("Error JSON serialization observation: #{json_time}ms")
       
       # Verify JSON is valid
       {:ok, decoded} = Jason.decode(json_output)
       assert is_list(decoded)
       assert length(decoded) == 2
+      assert Enum.map(decoded, &Map.take(&1, ["file", "line", "error_type", "message"])) == [
+        %{"file" => "src_haxe/User.hx", "line" => 10, "error_type" => "Type not found", "message" => "UnknownType"},
+        %{"file" => "src_haxe/Post.hx", "line" => 20, "error_type" => "Field not found", "message" => "badField"}
+      ]
     end
   end
 
