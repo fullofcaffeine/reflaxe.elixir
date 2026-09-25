@@ -98,6 +98,7 @@ src/reflaxe/elixir/
 ├── ElixirCompiler.hx             # Main transpiler (MUST stay <2000 lines)
 ├── ElixirPrinter.hx              # AST to string conversion
 ├── ElixirTyper.hx                # Type mapping (Haxe → Elixir)
+├── PrivateMethodExports.hx       # Typed cross-module private-method export requirements
 ├── GeneratedOutputManager.hx     # Collects output for transactional publication
 ├── GeneratedOutputOwnership.hx   # Manifest ownership + recovery protocol
 ├── AGENTS.md                     # THIS FILE - Keep updated!

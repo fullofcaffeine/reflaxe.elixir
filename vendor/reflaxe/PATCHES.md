@@ -69,6 +69,22 @@ future work.
 
 ## Required Local Patches
 
+### Target-owned Class Cache Dependencies
+
+`BaseCompiler.shouldRecompileClass` lets a target rebuild an unchanged class
+when its output depends on another typed module. Reflaxe checks this hook after
+the target's `filterTypes` scan and before removing cached classes.
+
+Reflaxe.Elixir uses it for private-method exports. Adding an authorized remote
+call must change the target method from `defp` to `def`, even when that target's
+source file did not change. Removing the call must restore `defp`. Dependency
+state advances only after successful output publication. The default hook
+returns false and preserves existing source-cache behavior for other targets.
+
+The private-export add/remove cases in `test:reflaxe-server-cache` compare warm
+output with fresh output. Owner: `haxe.elixir.codex-x31`. This patch stays local
+until an equivalent upstream cache hook is reviewed, adopted, and verified.
+
 ### 1. `Run.hx`: Build Root File Copy
 
 Status: local patch, submitted upstream in

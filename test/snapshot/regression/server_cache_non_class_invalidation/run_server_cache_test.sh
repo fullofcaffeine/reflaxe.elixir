@@ -485,6 +485,41 @@ run_cross_project_variant() {
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "cross-project-A-after-project-B"
 }
 
+run_private_exports_variant() {
+	local variants="$FIXTURE_DIR/variants/private-exports"
+	cp "$variants/PrivateCacheScope.hx" "$PROJECT_DIR/src/PrivateCacheScope.hx"
+	local phase source expected_visibility expected_stdout
+	for phase in local-before remote local-after; do
+		if [[ "$phase" == remote ]]; then
+			source=MainRemote.hx
+			expected_visibility='  def secret() do'
+			expected_stdout=14
+		else
+			source=MainLocal.hx
+			expected_visibility='  defp secret() do'
+			expected_stdout=7
+		fi
+		# Only the caller changes. anchor() keeps secret() and its owning module
+		# alive in every phase, so ordinary DCE cannot hide missing invalidation.
+		cp "$variants/$source" "$PROJECT_DIR/src/Main.hx"
+		compile_server "$SERVER_OUTPUT"
+		compile_direct "$TMP_ROOT/direct-private-$phase"
+		compare_generated_output "$TMP_ROOT/direct-private-$phase" "$SERVER_OUTPUT" "private-exports-$phase"
+		grep -Fxq "$expected_visibility" "$SERVER_OUTPUT/private_cache_scope.ex"
+		"$TIMEOUT" --secs 60 --cwd "$PROJECT_DIR" -- elixir -e '
+          [root, expected] = System.argv()
+          {:ok, _, []} = Kernel.ParallelCompiler.compile(Path.wildcard(Path.join(root, "**/*.ex")))
+          ExUnit.start(autorun: false)
+          actual = ExUnit.CaptureIO.capture_io(fn -> Main.main() end)
+          if actual != expected <> "\n", do: raise("private export runtime mismatch: #{inspect(actual)}")
+        ' "$SERVER_OUTPUT" "$expected_stdout"
+	done
+	restore_baseline_sources
+	rm -f "$PROJECT_DIR/src/PrivateCacheScope.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "private-exports-baseline-restored"
+}
+
 HAXE_BIN="$(resolve_haxe_server_binary)"
 HAXE_VERSION="$($HAXE_BIN -version)"
 EXPECTED_VERSION="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$ROOT_DIR/.haxerc")"
@@ -571,6 +606,7 @@ run_hxx_registry_variant
 run_external_macro_input_variant
 run_hxml_define_variant
 run_module_routes_variant
+run_private_exports_variant
 run_cross_project_variant
 
 FINAL_FD_COUNT="$(open_fd_count "$SERVER_PID")"

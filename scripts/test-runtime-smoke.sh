@@ -44,6 +44,7 @@ TEST_DIRS=(
   "test/snapshot/regression/function_result_invariants"
   "test/snapshot/regression/abstract_identity_values"
   "test/snapshot/regression/negated_block_operands"
+  "test/snapshot/regression/authorized_private_calls"
   "test/snapshot/regression/captured_callback_invocation"
   "test/snapshot/regression/builtin_array_constructor"
   "test/snapshot/regression/result_switch_lambda_binders"

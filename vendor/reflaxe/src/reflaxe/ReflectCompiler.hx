@@ -262,7 +262,7 @@ class ReflectCompiler {
 		}
 
 		// Apply other type filters
-		final moduleTypes = applyModuleFilters(moduleTypes);
+		final moduleTypes = applyModuleFilters(compiler, moduleTypes);
 
 		// Start
 		callInitCallbacks(compiler);
@@ -292,9 +292,9 @@ class ReflectCompiler {
 	/**
 		Filters types based on defines and build cache.
 	**/
-	static function applyModuleFilters(moduleTypes: Array<ModuleType>) {
+	static function applyModuleFilters(compiler: BaseCompiler, moduleTypes: Array<ModuleType>) {
 		final moduleTypes = applyDefineFilters(moduleTypes);
-		final moduleTypes = applyBuildCacheCheckFilter(moduleTypes);
+		final moduleTypes = applyBuildCacheCheckFilter(compiler, moduleTypes);
 		return moduleTypes;
 	}
 
@@ -326,7 +326,7 @@ class ReflectCompiler {
 		#end
 	}
 
-	static function applyBuildCacheCheckFilter(moduleTypes: Array<ModuleType>) {
+	static function applyBuildCacheCheckFilter(compiler: BaseCompiler, moduleTypes: Array<ModuleType>) {
 		#if !reflaxe.disallow_build_cache_check
 		currentModuleIds = moduleTypes.map(moduleType -> moduleType.getUniqueId());
 		currentModuleIds.sort(Reflect.compare);
@@ -340,6 +340,9 @@ class ReflectCompiler {
 			final result = moduleTypes.filter(mt -> {
 				switch(mt) {
 					case TClassDecl(_.get() => c): {
+						if(compiler.shouldRecompileClass(c)) {
+							return true;
+						}
 						for(cls in rebuiltClasses) {
 							if(cls.name == c.name && cls.module == c.module && cls.pack.equals(c.pack)) {
 								return true;

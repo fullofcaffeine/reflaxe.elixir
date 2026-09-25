@@ -321,6 +321,17 @@ abstract class BaseCompiler {
 	}
 
 	/**
+		Requests emission of an otherwise cached class when target-owned dependencies
+		changed. Called after filterTypes, where a target can inspect all typed modules.
+		Returning false preserves Haxe's ordinary rebuilt-class decision; it cannot
+		suppress an actual source rebuild. Targets should commit dependency state only
+		after successful output publication.
+	**/
+	public function shouldRecompileClass(cls: ClassType): Bool {
+		return false;
+	}
+
+	/**
 		A function intended to be overriden by your compiler class.
 
 		This is called at the start of compilation for each class.
