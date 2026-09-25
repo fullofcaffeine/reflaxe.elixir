@@ -51,8 +51,6 @@ class PassScopeManifest {
 			"SupervisorStartLinkChildrenInlineFix",
 			"ERawWebModuleQualification",
 			"WebRemoteCallModuleQualification",
-			"AbsoluteFinalWebModuleQualification",
-			"WebReduceWhileEFnQualification",
 			"GettextArityAndParamRepair",
 			"ControllerResultBinderNormalize_Final",
 			"WebDropUnusedSimpleAssign_AbsoluteFinal",

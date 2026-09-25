@@ -1,9 +1,9 @@
 {
   "schemaVersion": 4,
   "mode": "transparent-groups-scoped",
-  "effectivePassCount": 565,
-  "maxRecordsPerModule": 566,
-  "effectiveOrderSha256": "3632e2ad2d3a8b77ba1f1ac209fb6dea1b6f48ab9af34d11d754e70984b3f7ae",
+  "effectivePassCount": 560,
+  "maxRecordsPerModule": 561,
+  "effectiveOrderSha256": "7d986e0f88feb4b5cf197f0995196503703cf23788786e819d2a3715a2d142ef",
   "phaseOrder": [
     "bootstrap",
     "framework-annotations",
@@ -28,7 +28,7 @@
       "scope": "core",
       "fixture": "test/snapshot/core/basic_syntax",
       "module": "Main",
-      "expectedPassCount": 401,
+      "expectedPassCount": 398,
       "referenceTotalMs": 105.23,
       "referenceSlowestPasses": [
         {
@@ -52,13 +52,13 @@
           "ms": 0.91
         }
       ],
-      "expectedSkippedCount": 164
+      "expectedSkippedCount": 162
     },
     {
       "scope": "stdlib",
       "fixture": "test/snapshot/stdlib/stdlib_externs",
       "module": "AgentRef_Impl_",
-      "expectedPassCount": 401,
+      "expectedPassCount": 398,
       "referenceTotalMs": 22.87,
       "referenceSlowestPasses": [
         {
@@ -82,13 +82,13 @@
           "ms": 0.11
         }
       ],
-      "expectedSkippedCount": 164
+      "expectedSkippedCount": 162
     },
     {
       "scope": "phoenix",
       "fixture": "test/snapshot/phoenix/router",
       "module": "MyAppWeb.Router",
-      "expectedPassCount": 557,
+      "expectedPassCount": 552,
       "referenceTotalMs": 51.75,
       "referenceSlowestPasses": [
         {
@@ -118,7 +118,7 @@
       "scope": "liveview",
       "fixture": "test/snapshot/liveview/golden_liveview_fixture",
       "module": "TestAppWeb.GoldenLive",
-      "expectedPassCount": 561,
+      "expectedPassCount": 556,
       "referenceTotalMs": 204.05,
       "referenceSlowestPasses": [
         {
@@ -148,7 +148,7 @@
       "scope": "ecto",
       "fixture": "test/snapshot/ecto/changeset",
       "module": "User",
-      "expectedPassCount": 448,
+      "expectedPassCount": 445,
       "referenceTotalMs": 29.83,
       "referenceSlowestPasses": [
         {
@@ -172,13 +172,13 @@
           "ms": 0.06
         }
       ],
-      "expectedSkippedCount": 117
+      "expectedSkippedCount": 115
     },
     {
       "scope": "hxx",
       "fixture": "test/snapshot/phoenix/hxx_inline_markup_basic",
       "module": "Main",
-      "expectedPassCount": 456,
+      "expectedPassCount": 453,
       "referenceTotalMs": 25.38,
       "referenceSlowestPasses": [
         {
@@ -202,13 +202,13 @@
           "ms": 0.06
         }
       ],
-      "expectedSkippedCount": 109
+      "expectedSkippedCount": 107
     },
     {
       "scope": "exunit",
       "fixture": "test/snapshot/exunit/exunit_comprehensive",
       "module": "Main",
-      "expectedPassCount": 404,
+      "expectedPassCount": 401,
       "referenceTotalMs": 238.57,
       "referenceSlowestPasses": [
         {
@@ -232,13 +232,13 @@
           "ms": 1.8
         }
       ],
-      "expectedSkippedCount": 161
+      "expectedSkippedCount": 159
     },
     {
       "scope": "mix",
       "fixture": "test/snapshot/core/mix_task_annotation",
       "module": "Mix.Tasks.Haxe.Example",
-      "expectedPassCount": 402,
+      "expectedPassCount": 399,
       "referenceTotalMs": 30.25,
       "referenceSlowestPasses": [
         {
@@ -262,7 +262,7 @@
           "ms": 0.56
         }
       ],
-      "expectedSkippedCount": 163
+      "expectedSkippedCount": 161
     }
   ]
 }

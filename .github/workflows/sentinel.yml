@@ -68,6 +68,11 @@ jobs:
           scripts/qa-sentinel.sh --app examples/03-phoenix-app --hxml build.hxml --env prod --port 4003 --deadline 600 --verbose | tee qa-minimal-phoenix.log
           python3 -c 'import json; assert json.load(open("/tmp/qa-index.html", encoding="utf-8")) == {"message": "Hello from Haxe → Elixir!"}'
 
+      - name: Check typed Phoenix call targets
+        run: |
+          set -euo pipefail
+          bash test/snapshot/phoenix/remote_call_targets/run_runtime_dependencies.sh | tee qa-typed-phoenix-targets.log
+
       - name: Upload minimal Phoenix QA logs
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -77,6 +82,7 @@ jobs:
             /tmp/qa-*.log
             /tmp/qa-*.meta
             qa-minimal-phoenix.log
+            qa-typed-phoenix-targets.log
 
   smoke:
     runs-on: ubuntu-latest

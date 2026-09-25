@@ -50,6 +50,22 @@ class Main {
 		// Test unwrap_or pattern (like in ChangesetUtils)
 		var unwrapped = unwrapOr(Error("oops"), "default");
 		trace(unwrapped);
+		if (msg1 != "Error: failed" || msg2 != "Got: 42" || msg3 != "Value: hello" || unwrapped != "default")
+			throw "Enum branches must preserve their payload values";
+		if (independentAlias(Ok(42)) != 4243 || independentAlias(Error("failed")) != -1)
+			throw "Payload and alias must remain independent";
+	}
+
+	/** An alias copies a value; changing it must not change the pattern payload. */
+	@:keep
+	public static function independentAlias(result:Result<Int, String>):Int {
+		return switch (result) {
+			case Ok(g):
+				var value = g;
+				value = value + 1;
+				g * 100 + value;
+			case Error(_): -1;
+		};
 	}
 
 	static function unwrapOr<T>(result:Result<T, String>, defaultValue:T):T {

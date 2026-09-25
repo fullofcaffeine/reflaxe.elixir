@@ -736,13 +736,7 @@ class ElixirASTPassRegistry {
 			pass: reflaxe.elixir.ast.transformers.CaseTupleMultiBinderPromoteByUseTransforms.pass,
 			runAfter: ["ClauseCamelRefToSnake"]
 		});
-		// Safer variant: rewrite undefined body var to the existing payload binder (does not rename binder)
-		passes.push({
-			name: "ClauseUndefinedRefRewrite",
-			description: "Within {:tag, binder} arms, rewrite single undefined body var to binder (scope-aware)",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.ClauseUndefinedRefRewriteTransforms.transformPass
-		});
+
 		passes.push({
 			name: "CasePayloadBinderAvoidReserved",
 			description: "Avoid reserved binder names (socket/params); rename binder to sole undefined body var",
@@ -1418,25 +1412,6 @@ class ElixirASTPassRegistry {
 			description: "Convert bare concatenations in blocks to assignments",
 			enabled: true,
 			pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_fixBareConcatenationsPass
-		});
-
-		// Final safeguard: rewrite any remaining free assign(socket, map) to Component.assign(socket, map)
-		passes.push({
-			name: "FinalAssignRewrite",
-			description: "Rewrite remaining assign/2 calls to Component.assign/2",
-			enabled: true,
-			pass: function(ast:ElixirAST):ElixirAST {
-				return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
-					return switch (n.def) {
-						case ECall(_, func, args) if (func == "assign" && args != null && args.length == 2):
-							makeASTWithMeta(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", args), n.metadata, n.pos);
-						case ERemoteCall(mod, func, args) if (func == "assign" && args != null && args.length >= 2):
-							makeASTWithMeta(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", args), n.metadata, n.pos);
-						default:
-							n;
-					}
-				});
-			}
 		});
 
 		// Late: Inline trailing return variables from their last assignments to avoid undefined vars
@@ -2288,20 +2263,6 @@ class ElixirASTPassRegistry {
 			pass: reflaxe.elixir.ast.transformers.ClosureUnusedAssignmentDiscardTransforms.discardPass
 		});
 
-		// Absolute final sweep: ensure Web EFns contain qualified application module calls
-		passes.push({
-			name: "WebEFnModuleQualification",
-			description: "Final sweep to qualify single-segment modules inside <App>Web.* EFn bodies",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.BinderTransforms.webEFnModuleQualificationPass
-		});
-		// Absolute-final qualification: ensure no bare app modules remain in Web contexts
-		passes.push({
-			name: "AbsoluteFinalWebModuleQualification",
-			description: "Absolute-final: qualify single-segment CamelCase modules to <App>.<Module> inside <App>Web.*",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.AbsoluteFinalWebModuleQualificationTransforms.pass
-		});
 		// Insert alias <App>.<Module> for bare module calls inside Web modules (safety net)
 		passes.push({
 			name: "AliasAppLocalModules",
@@ -2309,13 +2270,7 @@ class ElixirASTPassRegistry {
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.AliasAppLocalModulesTransforms.pass
 		});
-		// Targeted final pass to ensure Enum.reduce_while bodies are qualified in Web modules
-		passes.push({
-			name: "WebReduceWhileEFnQualification",
-			description: "Explicitly qualify single-segment modules inside Enum.reduce_while EFns in <App>Web.*",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.BinderTransforms.webReduceWhileEFnQualificationPass
-		});
+
 		passes.push({
 			name: "SelfAssignCompression",
 			description: "Compress duplicated self-assignments x = x = expr to x = expr",

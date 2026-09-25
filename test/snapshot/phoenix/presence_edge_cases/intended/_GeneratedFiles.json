@@ -1,21 +1,16 @@
 {
 	"filesGenerated": [
-		"type.ex",
-		"std.ex",
 		"reflaxe/exception.ex",
 		"reflaxe/elixir/haxe_throw.ex",
 		"reflaxe/elixir/haxe_int.ex",
 		"reflaxe/elixir/haxe_float.ex",
-		"my_app_web/presence_live.ex",
+		"my_app_web/presence_caller.ex",
 		"my_app_web/mixed_usage.ex",
-		"my_app_web/incorrect_usage.ex",
 		"my_app_web/conditional_presence.ex",
 		"my_app_web/complex_presence.ex",
 		"main.ex",
 		"haxe/iterators/array_key_value_iterator.ex",
-		"haxe/iterators/array_iterator.ex",
-		"haxe/functional/result.ex",
-		"haxe/_call_stack/call_stack_impl_.ex"
+		"haxe/iterators/array_iterator.ex"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
 	"id": 0,
@@ -23,44 +18,32 @@
 	"version": 2,
 	"ownedFiles": [
 		{
-			"path": "haxe/_call_stack/call_stack_impl_.ex",
-			"sha256": "c77b161d05e1094665a37413ce6e0af07159fcdbc2f2cd20c19ceec25be5d818"
-		},
-		{
-			"path": "haxe/functional/result.ex",
-			"sha256": "41853f86663b99ae0b271938f47328e736fdbd3d2aacd7eaff087f3ef381104d"
-		},
-		{
 			"path": "haxe/iterators/array_iterator.ex",
-			"sha256": "3186b41d2124063a790c08804f1bfb9c3a7508de7f6a99ad2cdb1687f1c2b82d"
+			"sha256": "bf879924ad145b575913240565bc19645add254693e0e7d1f87bee45a9ab0c56"
 		},
 		{
 			"path": "haxe/iterators/array_key_value_iterator.ex",
-			"sha256": "7c2a5a2cc281bb9a1c5ed1bb56e351bdb68b53a7d048fa70decc5bfdd527419e"
+			"sha256": "387d4592afd651337e15dda44716f25a7a7cdd97e1b6a43e9c2aba3f4029a3a3"
 		},
 		{
 			"path": "main.ex",
-			"sha256": "b33cb5d36844c62d6e5dfab12434b21eb1df56b9655a2717200773955b0a09de"
+			"sha256": "b00c6089f2367c3a3c2d6e71a51d883c14134a8294578e75e16da747a1717852"
 		},
 		{
 			"path": "my_app_web/complex_presence.ex",
-			"sha256": "83d1657b470d33605b75ba7a16c2cd49e447f577fc0ca47a42a6c9be834d8350"
+			"sha256": "9b9849019a32856a6ac7e886f955d4817ae070356ab4273464c0d98ca81ce0fd"
 		},
 		{
 			"path": "my_app_web/conditional_presence.ex",
-			"sha256": "64faa95998fe106cd63d0f97baeae464ca5c0ef2c6559266a4b73f3be66657b1"
-		},
-		{
-			"path": "my_app_web/incorrect_usage.ex",
-			"sha256": "9e0637feea46fb222272daa0b27870d467e0c1279826618aac256bc83f30c8af"
+			"sha256": "687311477b807427c3c46da8d527c27402886c2075208a0b443ffa58a03a4592"
 		},
 		{
 			"path": "my_app_web/mixed_usage.ex",
-			"sha256": "15630380cd8918f9c2a5096ba12120cea71824df9ff80f637ae2a8e29dcf66f3"
+			"sha256": "befe9dd3cfb211e5d4b96e45d043e336582119e554c01f58d3335c9b3c5f3261"
 		},
 		{
-			"path": "my_app_web/presence_live.ex",
-			"sha256": "f4c6f08924be63e85846d1a2435eb3817c9f2fc66614e516c3cb54a9e561628b"
+			"path": "my_app_web/presence_caller.ex",
+			"sha256": "369eccc4babe0c1e4198b2af856b9037776ac4bb4530652378e25f77cff3ff1f"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.ex",
@@ -72,20 +55,12 @@
 		},
 		{
 			"path": "reflaxe/elixir/haxe_throw.ex",
-			"sha256": "642bbf29d073acc9eb2ffcea4a8e6016396a43f1a4180a79331b537bfefc6094"
+			"sha256": "8e498f80275fd241c22701a4f170bb1cf2135aa572ccd1b8f4a2d17728f849b1"
 		},
 		{
 			"path": "reflaxe/exception.ex",
-			"sha256": "02fc779b3a5c750db17ab47e624c22bbb8887786a22a767969ab23d1946be755"
-		},
-		{
-			"path": "std.ex",
-			"sha256": "8a84e0a9ac56b570713a432d5e9d2de5bc2a0cb19aacdc3a80284a6a439bcf97"
-		},
-		{
-			"path": "type.ex",
-			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
+			"sha256": "9eb2137ead37e4b2ff0650cbece40b4da0427a5fe35a95b0de3eeacb82facbd2"
 		}
 	],
-	"generation": "e8f3ff935d13abb4ba65cf1bd22d3286155a241230cc47ae9232aa0b90a100a8"
+	"generation": "6273476645b7f6b9c338744ad6b93a12cffe6b71962372e157712ab45e7d07af"
 }
