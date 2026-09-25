@@ -85,7 +85,7 @@
 		},
 		{
 			"path": "my_app_web/optional_live.ex",
-			"sha256": "48861923fbb34a74a008ab5664d45d09a23454bc94afa8648f6693ec2afb1d85"
+			"sha256": "50ff288a3ff2a16229944d7dc4fbfeda1ca64fba4d251563e00957be7255fd1c"
 		},
 		{
 			"path": "optional_event.ex",
@@ -172,5 +172,5 @@
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "a6d80180b79aa422dff7fcf6a3966b79cbba683d4edacf57266d936075735616"
+	"generation": "3a65b6627e8cdfc97f4d90fabcef8caa123431ba0cc9ffc0dc2eede1ee5e14a5"
 }

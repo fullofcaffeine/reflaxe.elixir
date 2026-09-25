@@ -3,10 +3,10 @@ defmodule MyAppWeb.ProfileLive do
   use Phoenix.LiveView, layout: {MyAppWeb.Layouts, :app}
   def encode_copied(message, copied_at) do
     payload = %{message: message, copied_at: copied_at}
-    MyApp.ProfileHookEvents.encode({:clipboard_copied, payload})
+    ProfileHookEvents.encode({:clipboard_copied, payload})
   end
   def decode_copied(payload) do
-    MyApp.ProfileHookEvents.decode("clipboard_copied", payload)
+    ProfileHookEvents.decode("clipboard_copied", payload)
   end
   defp handle_clipboard_copied(payload, socket) do
     {:noreply, Phoenix.Component.assign(socket, :flash_message, payload.message)}

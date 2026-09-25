@@ -260,16 +260,11 @@ class ModuleBuilder {
 		#end
 
 		var moduleName = extractModuleName(classType);
-		// Register module globally for cross-file qualification
-		try {
-			reflaxe.elixir.ElixirCompiler.registerModule(moduleName);
-			// Also register app-prefixed variant for Web-context qualification,
-			// e.g., TodoApp + "." + Todo -> "TodoApp.Todo"
-			var app = reflaxe.elixir.PhoenixMapper.getAppModuleName();
-			if (app != null && app.length > 0 && moduleName.indexOf('.') == -1) {
-				reflaxe.elixir.ElixirCompiler.registerModule(app + "." + moduleName);
-			}
-		} catch (e) {}
+		// Register only the identity emitted below. An app-prefixed spelling is
+		// not another module: recording it makes later qualification redirect
+		// valid root calls (for example Shared_Fields_.value()) to absent modules.
+		// Application-owned classes already receive their prefix in extractModuleName.
+		reflaxe.elixir.ElixirCompiler.registerModule(moduleName);
 		var attributes:Array<EAttribute> = [];
 
 		// Use provided metadata or create empty object

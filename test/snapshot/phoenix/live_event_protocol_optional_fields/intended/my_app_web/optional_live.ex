@@ -12,7 +12,7 @@ defmodule MyAppWeb.OptionalLive do
     """
   end
   def decode_search(payload) do
-    MyApp.OptionalEvents.decode("search", payload)
+    OptionalEvents.decode("search", payload)
   end
   defp handle_search(query, socket) do
     summary = query || "all"

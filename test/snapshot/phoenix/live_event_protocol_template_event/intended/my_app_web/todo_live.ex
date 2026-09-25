@@ -10,7 +10,7 @@ defmodule MyAppWeb.TodoLive do
     "toggle_todo"
   end
   def decode_toggle(payload) do
-    MyApp.TodoEvents.decode("toggle_todo", payload)
+    TodoEvents.decode("toggle_todo", payload)
   end
   defp handle_toggle_todo(id, socket) do
     {:noreply, Phoenix.Component.assign(socket, :last_id, Reflaxe.Elixir.HaxeFloat.to_string(id))}

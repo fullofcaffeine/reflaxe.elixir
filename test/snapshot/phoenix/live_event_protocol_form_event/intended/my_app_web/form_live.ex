@@ -12,7 +12,7 @@ defmodule MyAppWeb.FormLive do
     "create_todo"
   end
   def decode_create(payload) do
-    MyApp.TodoFormEvents.decode("create_todo", payload)
+    TodoFormEvents.decode("create_todo", payload)
   end
   defp handle_create_todo(payload, socket) do
     {:noreply, Phoenix.Component.assign(socket, :summary, payload.title <> ":" <> Reflaxe.Elixir.HaxeFloat.to_string(payload.priority))}
