@@ -56,6 +56,50 @@ both still generate ordinary atoms such as `:millisecond`.
 
 ## Typed Wrapper Modules (`elixir.types.*`)
 
+### Handle a native process-call failure
+
+A call such as `GenServer.call` can exit when its server is unavailable.
+Ordinary Haxe catches handle exceptions; they do not catch these native exits.
+Use `NativeExit` at that target boundary:
+
+```haxe
+import elixir.types.NativeExit;
+
+function safely(operation:Void->String):String {
+    return try {
+        operation();
+    } catch (_:NativeExit) {
+        "unavailable";
+    }
+}
+```
+
+The compiler emits the native Elixir boundary directly:
+
+```elixir
+try do
+  operation.()
+catch
+  :exit, _ -> "unavailable"
+end
+```
+
+This explicit type keeps application recovery in Haxe without changing ordinary
+exception handling. It is target-specific and must be the only catch clause in
+that `try`. Nest a separate `try` when you also need to rescue exceptions.
+Exceptions, native throws, and failures in the handler propagate normally.
+
+An exit reason can contain the full request, including private data. Discard
+it when returning a generic failure. A caught timeout does not prove that the
+server did no work; do not retry an effect without its own recovery contract.
+This boundary does not intercept asynchronous exit signals or untrappable
+process termination.
+
+The generated shape and native failure cases are covered by
+`test/snapshot/core/native_exit_catch`, including an unavailable GenServer.
+
+### Boundary value types
+
 Typed wrappers are provided for BEAM values and runtime contracts:
 
 - core values: `Term`, `Atom`, `Pid`, `Reference`
