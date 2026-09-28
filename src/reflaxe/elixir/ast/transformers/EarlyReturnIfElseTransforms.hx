@@ -31,7 +31,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   2) Leaves returning paths alone. This includes nested returns in complete
  *      if/else statements before later mutable-state reads.
  *   3) Recursively rewrites early-return patterns inside the inserted remainder.
- * - Applies the same fallthrough-only continuation to statement case clauses,
+ * - Applies the same fallthrough-only continuation to statement case and cond clauses,
  *   preserving subjects, patterns, guards, and nested function return scope.
  * - Distributes assignment continuations through returning branch expressions,
  *   binding only normal results and preserving nested function return scope.
@@ -78,6 +78,7 @@ class EarlyReturnIfElseTransforms {
 			case EIf(_, thenBranch, elseBranch) if (elseBranch != null): isFromReturn(thenBranch) && isFromReturn(elseBranch);
 			case EUnless(_, body, elseBranch) if (elseBranch != null): isFromReturn(body) && isFromReturn(elseBranch);
 			case ECase(_, clauses) if (clauses.length > 0): Lambda.foreach(clauses, clause -> isFromReturn(clause.body));
+			case ECond(clauses) if (clauses.length > 0): Lambda.foreach(clauses, clause -> isFromReturn(clause.body));
 			default:
 				false;
 		};
@@ -192,6 +193,17 @@ class EarlyReturnIfElseTransforms {
 					]), stmt.metadata, stmt.pos));
 					return wrap(out);
 
+				case ECond(clauses) if (i < stmts.length - 1 && Lambda.exists(clauses, clause -> containsFromReturn(clause.body))):
+					final continuation = buildRestExpr(stmts.slice(i + 1), stmt.metadata, stmt.pos);
+					out.push(makeASTWithMeta(ECond([
+						for (clause in clauses)
+							{
+								condition: clause.condition,
+								body: isFromReturn(clause.body) ? clause.body : appendContinuation(clause.body, continuation)
+							}
+					]), stmt.metadata, stmt.pos));
+					return wrap(out);
+
 				case EIf(condition, thenBranch, elseBranch) if ((containsFromReturn(thenBranch) || containsFromReturn(elseBranch))
 					&& i < stmts.length - 1):
 					var rest = stmts.slice(i + 1);
@@ -232,6 +244,8 @@ class EarlyReturnIfElseTransforms {
 				canBindNormalResult(stmts[stmts.length - 1]);
 			case EIf(condition, thenBranch, elseBranch): !containsFromReturn(condition) && canBindNormalResult(thenBranch) && canBindNormalResult(elseBranch);
 			case EUnless(condition, body, elseBranch): !containsFromReturn(condition) && canBindNormalResult(body) && canBindNormalResult(elseBranch);
+			case ECond(clauses): Lambda.foreach(clauses, clause -> !containsFromReturn(clause.condition)
+					&& canBindNormalResult(clause.body));
 			case ECase(subject, clauses): !containsFromReturn(subject) && Lambda.foreach(clauses,
 					clause -> !containsFromReturn(clause.guard) && canBindNormalResult(clause.body));
 			default: false;
@@ -261,6 +275,14 @@ class EarlyReturnIfElseTransforms {
 				makeASTWithMeta(EUnless(condition, bindNormalResult(body, continuation),
 					bindNormalResult(elseBranch == null ? makeAST(ENil) : elseBranch, continuation)),
 					value.metadata, value.pos);
+			case ECond(clauses):
+				makeASTWithMeta(ECond([
+					for (clause in clauses)
+						{
+							condition: clause.condition,
+							body: bindNormalResult(clause.body, continuation)
+						}
+				]), value.metadata, value.pos);
 			case ECase(subject, clauses):
 				makeASTWithMeta(ECase(subject, [
 					for (clause in clauses)

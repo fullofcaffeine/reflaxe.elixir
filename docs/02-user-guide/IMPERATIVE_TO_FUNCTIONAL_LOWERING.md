@@ -68,6 +68,42 @@ If you want the deep dive (with many examples), start here:
 - `docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md` (portable vs typed Elixir-first strategy)
 - `docs/06-guides/KNOWN_LIMITATIONS.md` (sharp edges + experimental surfaces)
 
+## Returns inside chained conditions
+
+A `return` inside an `if` branch exits the enclosing Haxe function, even when
+that `if` supplies a local value. For example:
+
+```haxe
+final value = if (kind == 0) {
+    return 90;
+} else if (kind == 1) {
+    10;
+} else return 80;
+return value + 1;
+```
+
+The Elixir structure keeps the later calculation only on the normal branch:
+
+```elixir
+cond do
+  kind == 0 -> 90
+  kind == 1 ->
+    value = 10
+    value + 1
+  true -> 80
+end
+```
+
+Conditions keep their order and run once. A chain without a final `else` still
+runs the following statements when no condition matches. A nested function owns
+its own returns. When the chain is inside a `try`, the calculation stays inside
+that same exception boundary.
+
+The `assigned_switch_return` fixture checks these cases with stock Haxe and
+native runtime expectations. This support does not establish general early
+return support across a `try` followed by more statements; that separate
+limitation is tracked in `haxe.elixir.codex-cer`.
+
 ## The mental model
 
 ### 1) Local value updates become **rebinding**
