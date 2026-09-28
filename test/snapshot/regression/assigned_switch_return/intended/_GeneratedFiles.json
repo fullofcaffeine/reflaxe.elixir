@@ -8,6 +8,7 @@
 		"reflaxe/elixir/haxe_float.ex",
 		"operation.ex",
 		"main.ex",
+		"int_iterator.ex",
 		"haxe/iterators/array_key_value_iterator.ex",
 		"haxe/iterators/array_iterator.ex",
 		"haxe/_call_stack/call_stack_impl_.ex"
@@ -30,8 +31,12 @@
 			"sha256": "7c2a5a2cc281bb9a1c5ed1bb56e351bdb68b53a7d048fa70decc5bfdd527419e"
 		},
 		{
+			"path": "int_iterator.ex",
+			"sha256": "ccad9bbf2c0dd81202fc7919321d15c91c990aa36d882b399c22e7d05f27d40c"
+		},
+		{
 			"path": "main.ex",
-			"sha256": "39b642ea0eb7a56803bb84907b08e45a33e6a78058123faa5f896fbee4d12bd1"
+			"sha256": "42f72460fb09d1225df76f6979e89392649682f268999fb2ec54435c22aa9140"
 		},
 		{
 			"path": "operation.ex",
@@ -62,5 +67,5 @@
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "764f25361a193d6282ae1bec8cd6fdcb159eac602b9bb2afcd847df8c553a656"
+	"generation": "507503b05e9289ae9b49b77aefd485376aaa06fee1f3497a55dcfe5be930091b"
 }

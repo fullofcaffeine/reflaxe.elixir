@@ -138,15 +138,12 @@ defmodule Main do
       g_value = length
       (case Enum.reduce_while(0..(g_value - 1)//1, {:__reflaxe_continue__, {}}, fn index, {:__reflaxe_continue__, {}} ->
         value = Enum.at(values, index)
-        (case (cond do
+        cond do
           length == 4 ->
             if ((if (index == 0), do: value != 127, else: value < 0 or value > 255)), do: {:halt, {:__reflaxe_return__, false}}, else: {:cont, {:__reflaxe_continue__, {}}}
           value != (if (index == 7), do: 1, else: 0) -> {:halt, {:__reflaxe_return__, false}}
           true -> {:cont, {:__reflaxe_continue__, {}}}
-        end) do
-          {:halt, reflaxe_halt_payload} -> {:halt, reflaxe_halt_payload}
-          {:cont, {:__reflaxe_continue__, {}}} -> {:cont, {:__reflaxe_continue__, {}}}
-        end)
+        end
       end) do
         {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
         {:__reflaxe_continue__, {}} ->
@@ -157,15 +154,12 @@ defmodule Main do
   end
   def collection_valid(values) do
     (case Enum.reduce_while(values, {:__reflaxe_continue__, {}}, fn value, {:__reflaxe_continue__, {}} ->
-      (case (cond do
+      cond do
         value < 10 ->
           if (value < 0), do: {:halt, {:__reflaxe_return__, false}}, else: {:cont, {:__reflaxe_continue__, {}}}
         value > 20 -> {:halt, {:__reflaxe_return__, false}}
         true -> {:cont, {:__reflaxe_continue__, {}}}
-      end) do
-        {:halt, reflaxe_halt_payload} -> {:halt, reflaxe_halt_payload}
-        {:cont, {:__reflaxe_continue__, {}}} -> {:cont, {:__reflaxe_continue__, {}}}
-      end)
+      end
     end) do
       {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
       {:__reflaxe_continue__, {}} ->
