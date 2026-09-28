@@ -1,0 +1,1 @@
+A native Elixir exit catch must be the only catch clause. Nest a separate try to handle exceptions.

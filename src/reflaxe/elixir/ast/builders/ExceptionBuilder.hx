@@ -88,6 +88,21 @@ class ExceptionBuilder {
 		}
 
 		var handlerNames = handlerBindingNames(e, catches, context);
+		// An explicit target marker admits only synchronous exits. Ordinary Haxe
+		// catches remain rescue clauses and never swallow native throw/exit values.
+		var nativeExitCatches = [for (c in catches) if (isNativeExitCatchType(c.v.t)) c];
+		if (nativeExitCatches.length > 0) {
+			if (catches.length != 1) {
+				context.error("A native Elixir exit catch must be the only catch clause. Nest a separate try to handle exceptions.",
+					nativeExitCatches[0].expr.pos);
+				return null;
+			}
+			var nativeCatch = nativeExitCatches[0];
+			var handler = buildHandler(nativeCatch.v, nativeCatch.expr, handlerNames.get(nativeCatch.v.id), context);
+			return ETry(body, [], [
+				{kind: Exit, pattern: handler.name == "_" ? PWildcard : PVar(handler.name), body: handler.body}
+			], null, null);
+		}
 		var nativeExceptionCatches = [for (c in catches) if (isNativeExceptionCatchType(c.v.t)) c];
 		if (nativeExceptionCatches.length > 0) {
 			if (catches.length != 1) {
@@ -264,6 +279,20 @@ class ExceptionBuilder {
 		} catch (error:haxe.Exception) {
 			restore();
 			throw error;
+		}
+	}
+
+	/**
+	 * Recognize the exit marker through typedefs before thrown-value dispatch.
+	 * A local alias must preserve `catch :exit`, not silently become a rescue
+	 * guard for an extern class that has no runtime module.
+	 */
+	static function isNativeExitCatchType(t:Null<Type>):Bool {
+		if (t == null)
+			return false;
+		return switch (haxe.macro.TypeTools.follow(t)) {
+			case TInst(ref, _): var type = ref.get(); type.meta.has(":elixirNativeExit") || type.meta.has("elixirNativeExit");
+			default: false;
 		}
 	}
 

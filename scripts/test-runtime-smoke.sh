@@ -22,6 +22,7 @@ RUNTIME_TIMEOUT_SECS="${RUNTIME_TIMEOUT_SECS:-20}"
 
 TEST_DIRS=(
   "test/snapshot/core/try_catch"
+  "test/snapshot/core/native_exit_catch"
   "test/snapshot/stdlib/sys_io_process/basic"
   "test/snapshot/stdlib/haxe_io_bytes_streams"
   "test/runtime/loop_control_accumulators"
@@ -127,6 +128,13 @@ run_one() (
     elixir "$ROOT_DIR/scripts/ci/validate-generated-elixir-warnings.exs" "$beam_dir" "${generated_files[@]}")
 
   echo "[runtime-smoke] → run: $test_dir ($entry)"
+  # Native observers can assert target exception/exit domains independently
+  # of the compiler path being tested. Most fixtures use Haxe Main.main instead.
+  if [[ -f "$abs_test_dir/runtime.exs" ]]; then
+    (cd "$outdir" && "$WITH_TIMEOUT" "$RUNTIME_TIMEOUT_SECS" \
+      elixir -pa "$beam_dir" "$abs_test_dir/runtime.exs")
+    return
+  fi
   (cd "$outdir" && "$WITH_TIMEOUT" "$RUNTIME_TIMEOUT_SECS" \
     elixir -pa "$beam_dir" -e '
       Code.ensure_loaded!(Main)
