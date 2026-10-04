@@ -874,30 +874,13 @@ class ElixirASTPrinter {
 				].join('\n') + '\n' + indentStr(indent) + 'end') + ')';
 
 			case ECond(clauses):
-				var clauseStrs = [];
-				for (clause in clauses) {
-					var conditionStr = print(clause.condition, 0);
-					var bodyStr = print(clause.body, 0);
-
-					// Check if body needs multi-line formatting
-					var isMultiLine = switch (clause.body.def) {
-						case EIf(_, _, _): true;
-						case ECase(_, _): true;
-						case ECond(_): true;
-						case EWith(_, _, _): true;
-						case EBlock(exprs) if (exprs.length > 1): true;
-						case _: bodyStr.indexOf('\n') >= 0;
-					};
-
-					if (isMultiLine) {
-						// Multi-line format: condition on one line, body indented on next
-						clauseStrs.push(indentStr(indent + 1) + conditionStr + ' ->\n' + indentBody(bodyStr, indent + 2));
-					} else {
-						// Single-line format: condition and body on same line
-						clauseStrs.push(indentStr(indent + 1) + conditionStr + ' -> ' + bodyStr);
-					}
-				}
-				'cond do\n' + clauseStrs.join('\n') + '\n' + indentStr(indent) + 'end';
+				ElixirCondPrinter.printCond({
+					clauses: clauses,
+					indent: indent,
+					print: print,
+					indentStr: indentStr,
+					indentBody: indentBody
+				});
 
 			case EMatch(pattern, expr):
 				var patternStr = printPattern(pattern);
