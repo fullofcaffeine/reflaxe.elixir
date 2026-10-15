@@ -40,6 +40,9 @@ class ReleaseDependencyRepair {
 			<subjectRef>
 				caf:reflaxe-elixir:project:root
 			</subjectRef>
+			<evidenceRef id="caf:concept:evidence:braces-repair:maintained-source" kind="source" ref="caf:source:braces:maintained" role="selected-repair-source" authority="native">
+				Select maintained source bca44d5cf49c64d9f31fdc06ef9b09a13f9ac89d. The native lockfile records the archive URL and integrity. Git owns its review and merge history.
+			</evidenceRef>
 			<anchor id="caf:concept:anchor:braces-repair:release-tools" name="Compiler release tools" role="boundary" boundary="Build and release dependencies are not Caffeine runtime services." targetRefs={["caf:source:reflaxe-elixir:package-lock"]} evidenceRefs={[]}>
 				semantic-release and its commit analyzer depend on micromatch, which depends on braces.
 			</anchor>
@@ -52,6 +55,9 @@ class ReleaseDependencyRepair {
 			<constraint id="caf:concept:constraint:braces-repair:proof" kind="must" appliesToAnchorRefs={["caf:concept:anchor:braces-repair:fork"]} evidenceRefs={["caf:concept:evidence:braces-repair:upstream"]} boundary="An audit that cannot identify a fork is not evidence that the fork is safe.">
 				Independently test hostile nesting, caller-supplied syntax trees, cycles and normal pattern behavior. Run upstream tests and release-tool compatibility checks. Review the exact artifact and audit treatment before adoption. Do not suppress an advisory, invent a patched version, or treat a passing install as security proof.
 			</constraint>
+			<statement id="caf:concept:statement:braces-repair:selection" kind="decision" subjectAnchorRefs={["caf:concept:anchor:braces-repair:fork"]} targetRefs={["caf:source:braces:maintained", "caf:source:reflaxe-elixir:package-lock"]} evidenceRefs={["caf:concept:evidence:braces-repair:maintained-source"]} claimBoundary="This selects intended source; it does not claim that any host installed it." detailMarkdown="[Maintained fork review](https://github.com/fullofcaffeine/braces/pull/1). [Exact source](https://github.com/fullofcaffeine/braces/commit/bca44d5cf49c64d9f31fdc06ef9b09a13f9ac89d).">
+				Use the maintained fork through an exact HTTPS archive and native package integrity. Keep the ordinary audit unchanged in meaning. Also check the installed fork through the real micromatch dependency, then test release classification and release notes. Both the audit and these checks must pass before release.
+			</statement>
 			<constraint id="caf:concept:constraint:braces-repair:exit" kind="must" appliesToAnchorRefs={["caf:concept:anchor:braces-repair:fork"]} evidenceRefs={["caf:concept:evidence:braces-repair:task"]} boundary="A future upstream release is a candidate until independently verified.">
 				Compiler dependency maintainers own updates to the retained fork. Return to a supported upstream release when it contains the required repair and passes the same checks. Remove the override only after exact consumer adoption; preserve rollback source and evidence.
 			</constraint>
