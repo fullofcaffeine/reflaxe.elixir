@@ -40,7 +40,7 @@ defmodule UserManagement.MixProject do
       {:telemetry_metrics, "~> 0.6"},
       {:telemetry_poller, "~> 1.0"},
       {:jason, "~> 1.2"},
-      {:bandit, "~> 1.12.0"},
+      {:bandit, "~> 1.13.0"},
       {:ecto_sql, "~> 3.14"},
       {:postgrex, "~> 0.22.3"}
     ]

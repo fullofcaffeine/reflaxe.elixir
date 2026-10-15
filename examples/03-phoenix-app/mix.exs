@@ -46,7 +46,7 @@ defmodule PhoenixHaxeExample.MixProject do
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
-      {:bandit, "~> 1.12.0"}
+      {:bandit, "~> 1.13.0"}
     ]
   end
 
