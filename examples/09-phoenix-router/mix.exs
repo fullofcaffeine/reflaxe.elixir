@@ -40,7 +40,7 @@ defmodule PhoenixRouter.MixProject do
       {:telemetry_metrics, "~> 0.6"},
       {:telemetry_poller, "~> 1.0"},
       {:jason, "~> 1.2"},
-      {:bandit, "~> 1.13.0"}
+      {:bandit, "~> 1.13.1"}
     ]
   end
 end
