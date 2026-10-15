@@ -67,6 +67,9 @@ class ReleaseDependencyRepair {
 			<nonGoal>
 				No claim that these external task and source references are already imported into the Caffeine graph.
 			</nonGoal>
+			<nonGoal>
+				This repair limits nesting depth. It does not bound expansion size or make arbitrary JavaScript syntax-tree objects safe. The short-input path also retains its existing literal behavior.
+			</nonGoal>
 			<migrationOrDeletionPlan>
 				Retire the temporary fork selection after a reviewed upstream release passes the same security and compatibility checks. Keep this explanation as historical rationale, with a link to the replacing selection. Do not retain a parallel installer or second lockfile authority.
 			</migrationOrDeletionPlan>
