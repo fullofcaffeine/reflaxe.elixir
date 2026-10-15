@@ -2006,6 +2006,9 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			return null;
 		}
 
+		// Validate before specialty generators can return without an endpoint wrapper.
+		final endpointAdmission = reflaxe.elixir.macros.EndpointAdmissionMetadata.read(classType);
+
 		#if (macro && debug_migration_build)
 		if (Context.defined("ecto_migrations_exs") && classType.meta != null && classType.meta.has(":migration")) {
 			Sys.println('[MigrationBuild] '
@@ -2936,6 +2939,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 
 		// Prepare metadata for special module types BEFORE building the module
 		var metadata:ElixirMetadata = {};
+		metadata.endpointAdmission = endpointAdmission;
 		// Retain source annotations as compiler-only capability facts. Pass scoping
 		// consumes these fields; neither flag is rendered into generated Elixir.
 		var usesHxx = classType.meta.has(":template")

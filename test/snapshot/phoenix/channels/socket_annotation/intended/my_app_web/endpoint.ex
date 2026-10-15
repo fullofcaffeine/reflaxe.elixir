@@ -4,7 +4,7 @@ defmodule MyAppWeb.Endpoint do
   socket("/live", Phoenix.LiveView.Socket, [websocket: [connect_info: [session: @session_options]], longpoll: [connect_info: [session: @session_options]]])
   socket("/socket", MyAppWeb.UserSocket, [websocket: [connect_info: [session: @session_options]], longpoll: false])
   plug(Plug.Static, [at: "/", from: :my_app, gzip: false, only: ["assets", "fonts", "images", "favicon.ico", "robots.txt"]])
-  if (Code.ensure_loaded?(Phoenix.CodeReloader)), do: plug(Phoenix.CodeReloader)
+  if (code_reloading?), do: plug(Phoenix.CodeReloader)
   plug(Plug.RequestId)
   plug(Plug.Telemetry, [event_prefix: [:phoenix, :endpoint]])
   plug(Plug.Parsers, [parsers: [:urlencoded, :multipart, :json], pass: ["*/*"], json_decoder: Phoenix.json_library()])

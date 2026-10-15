@@ -1,0 +1,1 @@
+@:endpointAdmission requires an @:endpoint class

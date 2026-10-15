@@ -1,0 +1,1 @@
+Only one @:endpointAdmission method is allowed per endpoint

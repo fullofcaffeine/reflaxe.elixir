@@ -1,0 +1,1 @@
+An endpoint with @:endpointAdmission cannot also define call/2
