@@ -68,7 +68,7 @@ defmodule TodoApp.MixProject do
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
       {:swoosh, "~> 1.26.3"},
-      {:bandit, "~> 1.12.0"},
+      {:bandit, "~> 1.13.1"},
       {:file_system, "~> 1.1", only: [:dev, :test]}
     ]
   end
