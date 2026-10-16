@@ -85,7 +85,7 @@
     "test:release-recovery": "node scripts/release/test-release-recovery.js",
     "test:release-workflow": "node scripts/release/test-release-workflow.js",
     "audit:examples-hex": "bash scripts/ci/audit-example-hex.sh",
-    "audit:npm-high": "node scripts/ci/audit-npm-high.mjs",
+    "audit:npm-high": "node scripts/ci/audit-npm-high.mjs && npm run test:release-dependencies",
     "package:haxelib": "bash scripts/release/package-haxelib.sh",
     "test:core": "scripts/test-runner.sh --category core",
     "test:stdlib": "scripts/test-runner.sh --category stdlib",
@@ -165,7 +165,8 @@
     "profile:passes:baseline": "python3 scripts/compiler/pass_inventory_baseline.py",
     "test:pass-scope-parity": "python3 scripts/compiler/pass_scope_parity.py",
     "guard:pass-scopes": "npm run profile:passes:baseline && npm run test:pass-scope-parity",
-    "docs:hxx:index": "haxe tools/HxxRegistryIndex.hxml"
+    "docs:hxx:index": "haxe tools/HxxRegistryIndex.hxml",
+    "test:release-dependencies": "node scripts/ci/test-release-dependencies.mjs"
   },
   "engines": {
     "node": ">=22.14.0"
@@ -183,5 +184,8 @@
   "bugs": {
     "url": "https://github.com/fullofcaffeine/reflaxe.elixir/issues"
   },
-  "homepage": "https://github.com/fullofcaffeine/reflaxe.elixir#readme"
+  "homepage": "https://github.com/fullofcaffeine/reflaxe.elixir#readme",
+  "overrides": {
+    "braces": "https://codeload.github.com/fullofcaffeine/braces/tar.gz/bca44d5cf49c64d9f31fdc06ef9b09a13f9ac89d"
+  }
 }
