@@ -74,7 +74,7 @@ class ControlFlowBuilder {
 
 		// Check if this should be a cond statement (multiple chained if-else)
 		if (shouldUseCond(eif, eelse)) {
-			return buildCondStatement(econd, eif, eelse, context);
+			return buildCondStatement(condition, thenBranch, elseBranch);
 		}
 
 		// CRITICAL FIX: Always use EIf, never ECall
@@ -843,42 +843,49 @@ class ControlFlowBuilder {
 	}
 
 	/**
-	 * Build cond statement from chained if-else
-	 * 
-	 * WHY: More idiomatic for multiple conditions in Elixir
-	 * WHAT: Transforms if-else chain to cond clauses
-	 * HOW: Recursively extracts conditions and branches
+	 * WHAT: Flattens already-built conditional branches into Elixir cond clauses.
+	 * WHY: Rebuilding raw Haxe conditions bypasses enum-pattern recovery and can
+	 * compare a complete enum tuple with an integer or lose its payload binding.
+	 * HOW: Reuse the branches built by buildIf. Flatten EIf/ECond only; preserve
+	 * other expressions, including recovered ECase patterns, as the final body.
+	 * EXAMPLE: A nullable `switch choice { case First(id): id; case _: "other"; }`
+	 * retains `{:first, id} -> id` after its nil check instead of `choice == 0`.
+	 * The nullable_enum_cond regression checks both ignored and consumed payloads.
 	 */
-	static function buildCondStatement(econd:TypedExpr, eif:TypedExpr, eelse:Null<TypedExpr>, context:CompilationContext):ElixirASTDef {
-		var buildExpression = context.getExpressionBuilder();
+	static function buildCondStatement(condition:ElixirAST, thenBranch:ElixirAST, elseBranch:Null<ElixirAST>):ElixirASTDef {
 		var clauses = [];
 		var hasFinalElse = false; // Track if we emitted a final else clause
 
 		// Add first condition
 		clauses.push({
-			condition: buildExpression(econd),
-			body: buildExpression(eif)
+			condition: condition,
+			body: thenBranch
 		});
 
 		// Extract remaining conditions from else chain
-		var current = eelse;
+		var current = elseBranch;
 		while (current != null) {
-			switch (current.expr) {
-				case TIf(cond2, if2, else2):
+			switch (current.def) {
+				case EIf(nestedCondition, nestedThen, nestedElse):
 					clauses.push({
-						condition: buildExpression(cond2),
-						body: buildExpression(if2)
+						condition: nestedCondition,
+						body: nestedThen
 					});
-					current = else2;
+					current = nestedElse;
 
-				case TBlock([single]):
+				case EBlock([single]):
 					current = single;
+
+				case ECond(nestedClauses):
+					clauses = clauses.concat(nestedClauses);
+					hasFinalElse = true;
+					break;
 
 				default:
 					// Final else becomes Elixir's boolean true guard.
 					clauses.push({
 						condition: makeAST(EBoolean(true)),
-						body: buildExpression(current)
+						body: current
 					});
 					hasFinalElse = true;
 					break;
