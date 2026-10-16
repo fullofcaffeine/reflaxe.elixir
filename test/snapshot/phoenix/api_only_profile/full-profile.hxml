@@ -1,0 +1,17 @@
+-cp .
+-cp full-support
+-cp ../../../../src
+-cp ../../../../std
+-cp ../../../../std/elixir/_std
+-lib reflaxe
+-D reflaxe_runtime
+-D elixir_output=out-full
+--macro reflaxe.elixir.CompilerInit.Start()
+--macro keep('channels.ApiChannel')
+--macro keep('controllers.ApiController')
+--macro keep('infrastructure.UserSocket')
+--macro keep('infrastructure.ApiEndpoint')
+--macro keep('infrastructure.ApiRouter')
+--macro keep('fullsupport.Gettext')
+--macro include('fullsupport', true, null, null, true)
+Main

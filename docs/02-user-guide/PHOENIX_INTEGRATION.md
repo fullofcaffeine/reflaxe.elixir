@@ -107,6 +107,12 @@ cannot select incompatible capabilities. It does not install Phoenix packages,
 generate browser code, or reject separately authored LiveView/HTML modules.
 Use the normal profile when the backend needs server-rendered UI.
 
+Both profiles use the endpoint's `code_reloader` setting to decide whether to
+include `Phoenix.CodeReloader`. Installing Phoenix does not enable reloading.
+With `code_reloader: false`, the generated endpoint serves requests without a
+running Mix project. Development reloading still requires the normal Phoenix
+and Mix development setup.
+
 Focused compiler contracts:
 
 - [API-only JSON and sessionless Channels](../../test/snapshot/phoenix/api_only_profile/compile.hxml)

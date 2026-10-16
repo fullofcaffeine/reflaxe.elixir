@@ -291,9 +291,8 @@ class AnnotationTransforms {
 		statements.push(makeAST(ECall(null, "plug", [makeAST(EVar("Plug.Static")), staticOptions])));
 
 		// if code_reloading? do plug Phoenix.CodeReloader end
-		// Note: code_reloading? is imported by use Phoenix.Endpoint but might need explicit reference
-		var codeReloadingBlock = makeAST(EIf(makeAST(ECall(null, "Code.ensure_loaded?", [makeAST(EVar("Phoenix.CodeReloader"))])),
-			makeAST(ECall(null, "plug", [makeAST(EVar("Phoenix.CodeReloader"))])), null));
+		// Phoenix owns this setting; installing its module does not enable development reloading.
+		var codeReloadingBlock = makeAST(EIf(makeAST(EVar("code_reloading?")), makeAST(ECall(null, "plug", [makeAST(EVar("Phoenix.CodeReloader"))])), null));
 		statements.push(codeReloadingBlock);
 
 		// Request pipeline plugs
