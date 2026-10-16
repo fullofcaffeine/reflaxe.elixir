@@ -19,10 +19,10 @@ done
 (
   cd "$fixture_dir/../api_only_profile"
   "$compiler_root/scripts/with-timeout.sh" --secs 120 -- "$compiler_root/node_modules/.bin/haxe" full-profile.hxml
-  "$compiler_root/scripts/with-timeout.sh" --secs 60 -- elixir "${beam_args[@]}" runtime.exs out-full
-  "$compiler_root/scripts/with-timeout.sh" --secs 60 -- elixir "${beam_args[@]}" runtime.exs out-full reload-enabled
+  "$compiler_root/scripts/with-timeout.sh" --secs 60 -- elixir "${beam_args[@]}" reloader-runtime.exs out-full
+  "$compiler_root/scripts/with-timeout.sh" --secs 60 -- elixir "${beam_args[@]}" reloader-runtime.exs out-full reload-enabled
 )
-for case_dir in "$fixture_dir" "$fixture_dir/../presence" "$fixture_dir/../presence_edge_cases" "$compiler_root/test/snapshot/regression/annotated_callback_retention" "$fixture_dir/../api_only_profile"; do
+for case_dir in "$fixture_dir" "$fixture_dir/../presence" "$fixture_dir/../presence_edge_cases" "$compiler_root/test/snapshot/regression/annotated_callback_retention"; do
   (
     cd "$case_dir"
     "$compiler_root/scripts/with-timeout.sh" --secs 120 -- "$compiler_root/node_modules/.bin/haxe" compile.hxml

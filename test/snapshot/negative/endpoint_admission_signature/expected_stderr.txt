@@ -1,1 +1,0 @@
-@:endpointAdmission requires one non-optional plug.Conn<T> argument and the same return type

@@ -9,22 +9,4 @@ defmodule MyAppWeb.Endpoint do
   plug(Plug.MethodOverride)
   plug(Plug.Head)
   plug(MyAppWeb.Router)
-  def call(conn, opts) do
-    conn = admit_request(conn)
-    if (conn.halted), do: conn, else: super(conn, opts)
-  end
-  def admit_request(conn) do
-    if (length(Plug.Conn.get_req_header(conn, "x-fail")) > 0) do
-      raise Reflaxe.Elixir.HaxeThrow, [value: Reflaxe.Exception.new("Admission failure fixture", nil, nil)]
-    end
-    if (length(Plug.Conn.get_req_header(conn, "x-deny")) > 0) do
-      this1 = Plug.Conn.send_resp(conn, 400, "Rejected before dispatch")
-      Plug.Conn.halt(this1)
-    else
-      mark_request(conn)
-    end
-  end
-  defp mark_request(conn) do
-    Plug.Conn.put_resp_header(conn, "x-admission", "checked")
-  end
 end

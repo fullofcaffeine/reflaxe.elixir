@@ -899,7 +899,6 @@ typedef ElixirMetadata = {
 	?isSocket:Bool, // @:socket Phoenix.Socket module
 	?socketChannels:Array<SocketChannelMeta>, // Parsed @:socketChannels metadata for Socket emission
 	?endpointSockets:Array<EndpointSocketMeta>, // Parsed @:endpointSockets metadata for Endpoint emission
-	?endpointAdmission:String, // Validated early request callback's emitted function name
 	?endpointLiveLongpoll:Bool, // @:endpoint({liveLongpoll: true|false}) controls /live longpoll transport emission
 	?isExunit:Bool, // @:exunit ExUnit.Case test module
 	?isMixTask:Bool, // @:mixTask Mix.Task module

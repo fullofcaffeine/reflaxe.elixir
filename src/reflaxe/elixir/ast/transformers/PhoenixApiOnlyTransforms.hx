@@ -60,14 +60,10 @@ class PhoenixApiOnlyTransforms {
 	/** Replace one `@:endpoint` module with its API and Channels infrastructure. */
 	public static function endpoint(ast:ElixirAST):ElixirAST {
 		return switch ast.def {
-			case EModule(name, attrs, body):
-				final statements = endpointStatements(name, ast.metadata);
-				EndpointAdmissionTransforms.append(statements, makeAST(EBlock(body)), ast.metadata);
-				makeASTWithMeta(EModule(name, attrs, statements), ast.metadata, ast.pos);
-			case EDefmodule(name, body):
-				final statements = endpointStatements(name, ast.metadata);
-				EndpointAdmissionTransforms.append(statements, body, ast.metadata);
-				makeASTWithMeta(EDefmodule(name, makeAST(EBlock(statements))), ast.metadata, ast.pos);
+			case EModule(name, attrs, _):
+				makeASTWithMeta(EModule(name, attrs, endpointStatements(name, ast.metadata)), ast.metadata, ast.pos);
+			case EDefmodule(name, _):
+				makeASTWithMeta(EDefmodule(name, makeAST(EBlock(endpointStatements(name, ast.metadata)))), ast.metadata, ast.pos);
 			default:
 				ast;
 		};

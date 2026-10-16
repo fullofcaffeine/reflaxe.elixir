@@ -1,1 +1,0 @@
-An endpoint admission callback cannot be combined with @:gettext generation

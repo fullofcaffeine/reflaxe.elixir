@@ -155,7 +155,6 @@ class AnnotationTransforms {
 					case EBlock(s): s;
 					default: [endpointBody];
 				};
-				EndpointAdmissionTransforms.append(stmts, makeAST(EBlock(exprs)), ast.metadata);
 				return makeASTWithMeta(EModule(name, attrs, stmts), ast.metadata, ast.pos);
 
 			case EDefmodule(name, body) if (ast.metadata?.isEndpoint == true):
@@ -166,10 +165,6 @@ class AnnotationTransforms {
 				var endpointBody = buildEndpointBody(name, appName, ast.metadata);
 
 				// Create new module with endpoint body, preserving metadata
-				switch endpointBody.def {
-					case EBlock(statements): EndpointAdmissionTransforms.append(statements, body, ast.metadata);
-					default:
-				}
 				return makeASTWithMeta(EDefmodule(name, endpointBody), ast.metadata, ast.pos);
 
 			default:

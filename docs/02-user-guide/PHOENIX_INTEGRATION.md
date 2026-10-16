@@ -107,6 +107,12 @@ cannot select incompatible capabilities. It does not install Phoenix packages,
 generate browser code, or reject separately authored LiveView/HTML modules.
 Use the normal profile when the backend needs server-rendered UI.
 
+Both profiles use the endpoint's `code_reloader` setting to decide whether to
+include `Phoenix.CodeReloader`. Installing Phoenix does not enable reloading.
+With `code_reloader: false`, the generated endpoint serves requests without a
+running Mix project. Development reloading still requires the normal Phoenix
+and Mix development setup.
+
 Focused compiler contracts:
 
 - [API-only JSON and sessionless Channels](../../test/snapshot/phoenix/api_only_profile/compile.hxml)
@@ -122,53 +128,6 @@ For step-by-step setup, start here:
 
 - New app: `docs/06-guides/PHOENIX_NEW_APP.md`
 - Existing app: `docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md`
-
-## Check a request before redirects and sockets
-
-An ordinary router plug runs too late to check requests before Phoenix's HTTPS
-redirect or socket dispatch. Mark one endpoint method with `@:endpointAdmission`
-when your application needs that earlier check:
-
-```haxe
-import plug.Conn;
-
-@:endpoint
-@:appName("my_app")
-@:native("MyAppWeb.Endpoint")
-class Endpoint {
-    @:endpointAdmission
-    public static function checkRequest(conn:Conn<{}>):Conn<{}> {
-        if (conn.getPath() == "/disabled")
-            return conn.sendResp(403, "This endpoint is disabled.").halt();
-        return conn;
-    }
-}
-```
-
-The compiler checks the callback's connection type and keeps its Haxe helpers.
-The callback runs once before the endpoint's plug pipeline, including redirects,
-static files, and sockets. A halted connection stops there. Other connections
-continue through the original pipeline. This works with API-only and full-web
-endpoints. The compiler supplies no host, authorization, or other product policy.
-
-The generated entry point uses Plug's standard override mechanism:
-
-```elixir
-def call(conn, opts) do
-  conn = check_request(conn)
-  if conn.halted, do: conn, else: super(conn, opts)
-end
-```
-
-Phoenix still owns endpoint setup and error handling. The callback runs before
-body parsing and session fetching, so it must not rely on those later steps.
-It must be a non-inline static method with one required `plug.Conn<T>` argument
-and the same return type. Use only one admission callback per endpoint.
-
-Both endpoint profiles use Phoenix's `code_reloading?` setting to include the
-development reloader. Installing Phoenix does not enable reloading when the
-endpoint has `code_reloader: false`. This also lets the full-web endpoint run
-outside Mix with reloading disabled.
 
 ## Key Principles
 

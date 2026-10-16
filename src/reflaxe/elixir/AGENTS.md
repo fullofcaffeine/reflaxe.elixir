@@ -14,7 +14,6 @@ This file contains compiler-specific development guidance for agents working on 
 - **ElixirTyper.hx** - Type mapping between Haxe and Elixir systems
 - **schema/** directory - Schema introspection and metadata processing
 - **macros/MixTaskMetadata.hx** - Typed `@:mixTask` configuration and callback validation
-- **macros/EndpointAdmissionMetadata.hx** - Typed early endpoint callback validation; `ast/transformers/EndpointAdmissionTransforms.hx` emits the native call override
 
 ## 🧭 Transform Design Principles (No Band-Aids)
 
