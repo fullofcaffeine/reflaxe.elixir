@@ -48,6 +48,7 @@
 		"haxe/exceptions/pos_exception.exs",
 		"haxe/exceptions/not_implemented_exception.exs",
 		"haxe/ds/option.exs",
+		"haxe/_call_stack/call_stack_impl_.exs",
 		"elixir/otp/supervisor_strategy.exs",
 		"elixir/otp/shutdown_type.exs",
 		"elixir/otp/restart_type.exs",
@@ -64,7 +65,7 @@
 		"phoenix_hx_todo/postgrex_types.ex"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 57,
+	"id": 58,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
@@ -119,6 +120,10 @@
 		{
 			"path": "elixir/otp/supervisor_strategy.exs",
 			"sha256": "0e3a75cf0ec36827542182526b8dad3495be7c0b38df4a77cf07f86dc8b30cea"
+		},
+		{
+			"path": "haxe/_call_stack/call_stack_impl_.exs",
+			"sha256": "3d3b684e82682c81adf0238c87ec359aec80788e539e9b15a7204a9e2edda898"
 		},
 		{
 			"path": "haxe/ds/option.exs",
@@ -298,7 +303,7 @@
 		},
 		{
 			"path": "reflaxe/elixir/haxe_throw.exs",
-			"sha256": "8e498f80275fd241c22701a4f170bb1cf2135aa572ccd1b8f4a2d17728f849b1"
+			"sha256": "291a4cc0352939a2e04a74e92402315005950976979f65f82a41dda2f4007481"
 		},
 		{
 			"path": "reflaxe/elixir/macros/http_method.exs",
@@ -306,7 +311,7 @@
 		},
 		{
 			"path": "reflaxe/exception.exs",
-			"sha256": "9eb2137ead37e4b2ff0650cbece40b4da0427a5fe35a95b0de3eeacb82facbd2"
+			"sha256": "fad0fa4f51eedcf1528114a257d00324b119859ce126cb623a3a2ef5b0561936"
 		},
 		{
 			"path": "std.exs",
@@ -317,5 +322,5 @@
 			"sha256": "79ab34d32eb9843745093db6c5ec4907244e88d06815f942372dc9825eda7f04"
 		}
 	],
-	"generation": "78b260817976d5faef5168c9b93bb53d17f668d9f658bbbb728e5a08a96edb90"
+	"generation": "77a472cc94b9b4a10388adb960f90f787f5996a1827f47e67221df4d7e7b97d7"
 }

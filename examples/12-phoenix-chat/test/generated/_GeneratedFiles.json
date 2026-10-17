@@ -36,12 +36,13 @@
 		"haxe/exceptions/pos_exception.exs",
 		"haxe/exceptions/not_implemented_exception.exs",
 		"haxe/ds/option.exs",
+		"haxe/_call_stack/call_stack_impl_.exs",
 		"ecto/option.exs",
 		"ecto/changeset_action.exs",
 		"e_reg.exs"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 17,
+	"id": 18,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
@@ -56,6 +57,10 @@
 		{
 			"path": "ecto/option.exs",
 			"sha256": "327dc7217b3300f5fb391514f65f6a3569733c80fe6c3fb721eaabe67c87f6b1"
+		},
+		{
+			"path": "haxe/_call_stack/call_stack_impl_.exs",
+			"sha256": "3d3b684e82682c81adf0238c87ec359aec80788e539e9b15a7204a9e2edda898"
 		},
 		{
 			"path": "haxe/ds/option.exs",
@@ -183,11 +188,11 @@
 		},
 		{
 			"path": "reflaxe/elixir/haxe_throw.exs",
-			"sha256": "8e498f80275fd241c22701a4f170bb1cf2135aa572ccd1b8f4a2d17728f849b1"
+			"sha256": "291a4cc0352939a2e04a74e92402315005950976979f65f82a41dda2f4007481"
 		},
 		{
 			"path": "reflaxe/exception.exs",
-			"sha256": "9eb2137ead37e4b2ff0650cbece40b4da0427a5fe35a95b0de3eeacb82facbd2"
+			"sha256": "fad0fa4f51eedcf1528114a257d00324b119859ce126cb623a3a2ef5b0561936"
 		},
 		{
 			"path": "reflect.exs",
@@ -202,5 +207,5 @@
 			"sha256": "79ab34d32eb9843745093db6c5ec4907244e88d06815f942372dc9825eda7f04"
 		}
 	],
-	"generation": "0a0315c4eca37bb1a8055edaf3c6bde00249f17db1e5b5c68c169662e5f71e63"
+	"generation": "9859f70d436314f1624f21f3027cd7eb7147ad71e9720b08dd6efdc9d249d494"
 }
