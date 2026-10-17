@@ -60,6 +60,7 @@ TEST_DIRS=(
   "test/snapshot/regression/enum_snake_case_patterns"
   "test/snapshot/regression/enum_variable_rebinding"
   "test/snapshot/regression/nullable_enum_cond"
+  "test/snapshot/regression/base_exception_catch"
   "test/snapshot/regression/enum_extraction_usage"
   "test/snapshot/regression/OrphanedEnumParameters"
   "test/snapshot/regression/troubleshooting_patterns"

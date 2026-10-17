@@ -41,6 +41,7 @@ This directory contains the Reflaxe.Elixir compiler test suite, validating that 
 - **2026-09-24 positive inventory: 440 active fixtures**, including numeric control-flow concatenation, literal migration SQL, emitted module identities, and assigned-switch early returns, with independent native runtime expectations.
 - **2026-09-25 positive inventory: 443 active fixtures**, including abstract identity values, unary block operands, and authorized private calls, also exercised by the native runtime smoke suite.
 - **Remote-call target coverage adds one positive Phoenix fixture** (`remote_call_targets`), with real-library observers for that fixture, both Presence fixtures, and annotated callback retention. The existing enum-variable-rebinding fixture now also runs in native runtime smoke coverage.
+- Base exception coverage adds one positive regression fixture (`base_exception_catch`) with native message, alias, ordering, and propagation observations.
 - Nullable enum coverage adds one positive regression fixture (`nullable_enum_cond`), with an independent native observer in the runtime smoke suite.
 - **97 negative snapshot tests** validating expected failures
 - **2026-09-24 negative inventory: 108 fixtures**, including three standalone migration-constraint, two migration-SQL, and five typed-reference rejection cases. These require diagnostic verification; a compilation timeout is not a passing rejection.

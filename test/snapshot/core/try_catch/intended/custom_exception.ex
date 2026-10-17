@@ -1,6 +1,9 @@
 defmodule CustomException do
   defexception [:message, :previous, :native, :stack, :code]
   import Kernel, except: [to_string: 1], warn: false
+  def __reflaxe_haxe_exception__() do
+    true
+  end
   def new(message_param, code_param) do
     struct = %CustomException{}
     struct = Map.merge(struct, Map.drop(Reflaxe.Exception.new(message_param, nil, nil), [:__struct__, :__reflaxe_class__]))

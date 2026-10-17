@@ -79,7 +79,8 @@ class Main {
 			} else if (type == 3) {
 				"exception:Exception error";
 			} else if (type == 4) {
-				"dynamic";
+				// Base Exception is a catch-all before the later Dynamic handler.
+				"exception:" + Std.string({error: "Object error"});
 			} else {
 				"none";
 			};

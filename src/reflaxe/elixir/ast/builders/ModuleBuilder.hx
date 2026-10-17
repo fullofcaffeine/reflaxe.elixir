@@ -277,7 +277,17 @@ class ModuleBuilder {
 
 			// Don't add defstruct for exceptions - defexception handles it automatically
 			// The ElixirASTPrinter will handle the defexception macro when it sees isException metadata
-			// Just keep the regular fields (methods like toString)
+			// The normalizer must distinguish Haxe exception subclasses from native
+			// exceptions. Emit the existing typed classification, not a field-shape
+			// heuristic or a general reflection registry. This name is runtime-owned.
+			for (field in fields) {
+				switch (field.def) {
+					case EDef("__reflaxe_haxe_exception__", _, _, _) | EDefp("__reflaxe_haxe_exception__", _, _, _):
+						Context.error("__reflaxe_haxe_exception__ is reserved for exception runtime identity", classType.pos);
+					default:
+				}
+			}
+			fields.unshift(makeAST(EDef("__reflaxe_haxe_exception__", [], null, makeAST(EBoolean(true)))));
 		}
 
 		// `@:elixirStruct` is an explicit native-value ABI declaration. Unlike an
