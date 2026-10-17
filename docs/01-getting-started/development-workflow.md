@@ -127,6 +127,23 @@ npm test
 npm run qa:sentinel
 ```
 
+The runtime smoke suite uses one worker by default. You can request bounded
+parallel execution with `npm run test:runtime-smoke -- --jobs 2`. Each fixture
+still compiles Haxe, checks generated Elixir diagnostics, and executes its native
+observer. OTP checks run after all fixtures pass. A failed fixture makes the
+command fail.
+
+Use `npm run test:runtime-smoke -- --fixture test/snapshot/core/try_catch` to
+reproduce one registered fixture. This focused command does not run the whole
+suite or its final OTP checks. Invalid fixture names fail before compilation.
+
+The parallel run uses the existing process-tree timeout wrapper. It stops owned
+children on interruption and has a default total limit of 1,800 seconds. Set
+`RUNTIME_SMOKE_TIMEOUT_SECS` to change that limit. Existing per-stage limits still
+apply. More workers consume more CPU and memory; measure on the intended host
+before selecting a CI worker count. Background-scheduled runs prove behavior,
+not comparative performance.
+
 `npm run test:changed` is an advisory local heuristic, not completion evidence:
 it does not yet have a reviewed semantic-ownership manifest or selector-miss
 audit.
