@@ -151,9 +151,46 @@ run_one() (
   fi
 )
 
-for test_dir in "${TEST_DIRS[@]}"; do
-  run_one "$test_dir"
+# Keep one fixture inventory. Make owns bounded scheduling; each child uses
+# the same compile, strict-target, runtime, and timeout path as a serial run.
+jobs=1
+fixture=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --jobs) jobs="${2:?--jobs requires a positive integer}"; shift 2 ;;
+    --fixture) fixture="${2:?--fixture requires a registered fixture}"; shift 2 ;;
+    *) echo "Usage: $0 [--jobs N] [--fixture PATH]" >&2; exit 2 ;;
+  esac
 done
+if [[ ! "$jobs" =~ ^[1-9][0-9]*$ ]]; then
+  echo "[runtime-smoke] --jobs requires a positive integer" >&2
+  exit 2
+fi
+if [[ -n "$fixture" ]]; then
+  for test_dir in "${TEST_DIRS[@]}"; do
+    if [[ "$test_dir" == "$fixture" ]]; then
+      run_one "$test_dir"
+      exit 0
+    fi
+  done
+  echo "[runtime-smoke] Unknown fixture: $fixture" >&2
+  exit 2
+fi
+if [[ "$jobs" == 1 ]]; then
+  for test_dir in "${TEST_DIRS[@]}"; do
+    run_one "$test_dir"
+  done
+else
+  export RUNTIME_SMOKE_RUNNER="$SCRIPT_DIR/test-runtime-smoke.sh"
+  export RUNTIME_SMOKE_ROOT="$ROOT_DIR"
+  # A parent make -i/-n must not ignore failed fixtures or skip execution.
+  # This runner owns its worker count and failure behavior.
+  unset MAKEFLAGS GNUMAKEFLAGS MFLAGS
+  # Replace this shell so external interrupts reach the existing process-tree
+  # owner. It also bounds the whole parallel run, including its OTP checks.
+  exec "$ROOT_DIR/scripts/with-timeout.sh" --secs "${RUNTIME_SMOKE_TIMEOUT_SECS:-1800}" -- \
+    make --no-print-directory -f "$SCRIPT_DIR/runtime-smoke.mk" -j "$jobs" "FIXTURES=${TEST_DIRS[*]}"
+fi
 
 bash "$ROOT_DIR/scripts/ci/runtime-smoke-otp-core.sh"
 
