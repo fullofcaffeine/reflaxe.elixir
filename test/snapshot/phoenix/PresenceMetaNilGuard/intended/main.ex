@@ -7,16 +7,14 @@ defmodule Main do
     if (Kernel.is_nil(current_meta)) do
       Presence.track(self(), socket, key, %{})
     end
-    current_meta = %{}
-    Map.get(current_meta, :user_name)
+    current_meta.user_name
   end
   def needs_coalesce_do_end(socket, key) do
     current_meta = maybe_get_meta()
     if (Kernel.is_nil(current_meta)) do
       Presence.track(self(), socket, key, %{})
     end
-    current_meta = %{}
-    Map.get(current_meta, :online_at)
+    current_meta.online_at
   end
   def negative_reassign_prevents_injection(socket, key) do
     current_meta = maybe_get_meta()

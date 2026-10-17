@@ -3,12 +3,12 @@ package;
 import phoenix.Presence;
 
 /**
- * Presence metadata nil-guard coalesce tests
+ * A Presence side effect does not assign a local metadata value.
  *
- * Verifies that after an `if (meta == null)` guard, subsequent field access
- * on `meta` is safe by coalescing to an empty map `%{}` when needed.
- * Covers both one-liner and do/end styles, plus negative cases to prevent
- * over-coalescing.
+ * These syntax snapshots preserve field reads and explicit reassignment.
+ * The first two functions deliberately dereference missing metadata: generated
+ * code must not invent an empty map or silently turn invalid access into null.
+ * Valid-record behavior is executed by regression/nullable_record_guard.
  */
 typedef Meta = {
 	var onlineAt:Float;
@@ -18,7 +18,7 @@ typedef Meta = {
 class Main {
 	static function main() {}
 
-	// One-liner `if` style: should insert `currentMeta = %{}` before field access
+	// A one-line guard must not replace the value after the Presence call.
 	public static function needsCoalesceOneLiner(socket:Dynamic, key:String):String {
 		var currentMeta:Null<Meta> = maybeGetMeta();
 		if (currentMeta == null)
@@ -27,7 +27,7 @@ class Main {
 		return name;
 	}
 
-	// do/end block style: should insert `currentMeta = %{}` before field access
+	// Braces do not authorize implicit replacement either.
 	public static function needsCoalesceDoEnd(socket:Dynamic, key:String):Float {
 		var currentMeta:Null<Meta> = maybeGetMeta();
 		if (currentMeta == null) {
@@ -37,7 +37,7 @@ class Main {
 		return ts;
 	}
 
-	// Negative: reassignment before field access prevents coalescing injection
+	// Only an explicit assignment changes the local metadata.
 	public static function negativeReassignPreventsInjection(socket:Dynamic, key:String):Float {
 		var currentMeta:Null<Meta> = maybeGetMeta();
 		if (currentMeta == null)
@@ -47,7 +47,7 @@ class Main {
 		return ts;
 	}
 
-	// Negative: no field access after guard, so no injection
+	// A side-effect-only path retains its explicit return value.
 	public static function negativeNoFieldAccess(socket:Dynamic, key:String):Int {
 		var currentMeta:Null<Meta> = maybeGetMeta();
 		if (currentMeta == null)

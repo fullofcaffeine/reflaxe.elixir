@@ -2347,14 +2347,6 @@ class ElixirASTPassRegistry {
 			pass: reflaxe.elixir.ast.transformers.BinderTransforms.changesetStructQualificationPass
 		});
 
-		// Coalesce variables to empty map after nil-guard when fields are used
-		passes.push({
-			name: "NilGuardCoalesceToMap",
-			description: "Insert v = %{} after if Kernel.is_nil(v) when v.field is used later",
-			enabled: true,
-			pass: reflaxe.elixir.ast.transformers.BinderTransforms.nilGuardCoalesceToMapPass
-		});
-
 		// Rewrite Haxe Date_Impl_ helpers to Elixir forms
 		passes.push({
 			name: "DateImplRewrite",
