@@ -377,6 +377,13 @@
       "reason": "No matching upstream unitstd spec exists. Local Haxe-authored ExUnit runtime tests cover construction, codepoint iteration, length, indexing, slicing, comparison, UTF-8 validation, and the legacy transcoding methods that intentionally fail fast."
     },
     {
+      "module": "haxe.Exception",
+      "upstreamSpec": "absent",
+      "disposition": "applicable",
+      "execution": "not-run",
+      "reason": "No matching upstream unitstd spec exists at the pinned Haxe revision. The local base_exception_catch regression has independent native runtime checks for string normalization, existing exception preservation, typed catch order, aliases and unmatched propagation. This does not establish complete exception API conformance."
+    },
+    {
       "module": "haxe.ValueException",
       "upstreamSpec": "absent",
       "disposition": "applicable",

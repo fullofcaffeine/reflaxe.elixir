@@ -227,10 +227,10 @@
         }
       ],
       "footprint": {
-        "maxGeneratedFiles": 123,
+        "maxGeneratedFiles": 124,
         "maxApplicationFiles": 72,
-        "maxSupportFiles": 51,
-        "reason": "The Todo canary retains its three LiveReact modules plus ErrorHTML and ErrorJSON, which Phoenix calls at runtime. Four public Haxe enum modules provide constructor metadata for string conversion and reflection.",
+        "maxSupportFiles": 52,
+        "reason": "The Todo canary retains its three LiveReact modules plus ErrorHTML and ErrorJSON, which Phoenix calls at runtime. Four public Haxe enum modules provide constructor metadata for string conversion and reflection. Exception construction also retains one call-stack module through a typed call; haxe.elixir.codex-652 proves this dependency preserves captured stacks.",
         "tracking": "haxe.elixir.codex-msb.11",
         "supportGroups": [
           {
@@ -250,9 +250,9 @@
           {
             "id": "haxe-runtime",
             "paths": ["haxe/"],
-            "maxFiles": 9,
-            "reason": "Reachable Haxe cryptography, exception, and iterator modules, plus Option, Result, Error, and Encoding constructor metadata.",
-            "tracking": "haxe.elixir.codex-3qh.14"
+            "maxFiles": 10,
+            "reason": "Reachable Haxe cryptography, exception, and iterator modules, plus Option, Result, Error, and Encoding constructor metadata. The additional haxe/_call_stack/call_stack_impl_.ex module implements exception stack capture. Removing it would leave the exception constructor calling a missing module.",
+            "tracking": "haxe.elixir.codex-652"
           },
           {
             "id": "phoenix-extern-support",

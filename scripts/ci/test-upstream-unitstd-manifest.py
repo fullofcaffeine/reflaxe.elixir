@@ -55,7 +55,7 @@ class UpstreamUnitstdManifestTest(unittest.TestCase):
 		self.assertEqual(
 			checker.validate_manifest(self.root),
 			{
-				"modules": 124,
+				"modules": 125,
 				"runtimeEntries": 37,
 				"uniqueFixtures": 36,
 				"adaptedEntries": 10,

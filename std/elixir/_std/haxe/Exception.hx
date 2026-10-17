@@ -84,11 +84,20 @@ class Exception {
 	/**
 	 * Used internally for wildcard catches like `catch(e:Exception)`.
 	 *
-	 * For this target, we treat the caught value as an exception if it is a struct
-	 * and otherwise wrap it in a `haxe.Exception`.
+	 * Preserve compiler-classified Haxe exception structs, including subclasses.
+	 * Native exceptions and ordinary values receive a Haxe wrapper. The native
+	 * check is confined here because Haxe's current runtime class test has no
+	 * ancestry information. ModuleBuilder emits the reserved identity function
+	 * from typed exception metadata; familiar field names are not sufficient.
 	 */
 	static private function caught(value:Any):Exception {
-		return if (Std.isOfType(value, Exception)) {
+		var isHaxeException:Bool = untyped __elixir__('case {0} do
+  %{__struct__: module} when is_atom(module) ->
+    Code.ensure_loaded?(module) and function_exported?(module, :__reflaxe_haxe_exception__, 0) and
+      apply(module, :__reflaxe_haxe_exception__, []) === true
+  _ -> false
+end', value);
+		return if (isHaxeException) {
 			cast value;
 		} else {
 			new Exception(Std.string(value), null, value);
@@ -116,7 +125,10 @@ class Exception {
 		untyped __elixir__('{0} = %{ {0} | message: {1} }', this, message);
 		untyped __elixir__('{0} = %{ {0} | previous: {1} }', this, previous);
 		untyped __elixir__('{0} = %{ {0} | native: {1} }', this, native);
-		untyped __elixir__('{0} = %{ {0} | stack: apply(CallStack_Impl_, :call_stack, []) }', this);
+		// A typed reference keeps stack capture reachable under full DCE. A raw
+		// apply(CallStack_Impl_, ...) hid the dependency and broke construction.
+		var capturedStack = CallStack.callStack();
+		untyped __elixir__('{0} = %{ {0} | stack: {1} }', this, capturedStack);
 	}
 
 	private function unwrap():Any {

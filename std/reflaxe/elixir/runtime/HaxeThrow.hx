@@ -48,6 +48,18 @@ import elixir.types.Term;
 class HaxeThrow extends haxe.Exception {
 	public var value:Null<Term>;
 
+	/**
+	 * Turn a rescued Haxe value into the standard base exception representation.
+	 * The compiler calls this for `catch (e:haxe.Exception)`: existing exception
+	 * objects retain their fields, while strings receive unquoted messages.
+	 * Keep this generated-call entry point under DCE. The typed private call
+	 * keeps the standard helper reachable and gives it a checked native export.
+	 */
+	@:keep
+	public static function normalizeCaught(value:Term):haxe.Exception {
+		return @:privateAccess haxe.Exception.caught(value);
+	}
+
 	public function new(message:String, ?previous:haxe.Exception, ?native:Any) {
 		super(message, previous, native);
 	}

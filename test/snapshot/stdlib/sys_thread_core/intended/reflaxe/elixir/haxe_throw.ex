@@ -1,10 +1,16 @@
 defmodule Reflaxe.Elixir.HaxeThrow do
   defexception [:message, :previous, :native, :stack, :value]
   import Kernel, except: [to_string: 1], warn: false
+  def __reflaxe_haxe_exception__() do
+    true
+  end
   def new(message_param, previous_param \\ nil, native_param \\ nil) do
     struct = %Reflaxe.Elixir.HaxeThrow{}
     struct = Map.merge(struct, Map.drop(Reflaxe.Exception.new(message_param, previous_param, native_param), [:__struct__, :__reflaxe_class__]))
     struct
+  end
+  def normalize_caught(value_param) do
+    Reflaxe.Exception.caught(value_param)
   end
   def exception(opts) do
 

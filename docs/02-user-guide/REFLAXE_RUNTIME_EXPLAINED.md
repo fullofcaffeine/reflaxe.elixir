@@ -102,6 +102,25 @@ Until that work lands, describe the current contract as **selective helper
 calls with conservatively retained core helper modules**, not "helpers are
 emitted only when needed."
 
+## Base exception catches
+
+`catch (error:haxe.Exception)` catches any thrown value. A thrown string becomes
+a Haxe exception with that string as its message. An existing Haxe exception,
+including a subclass, keeps its message, cause, native value, and stack.
+Earlier typed handlers still run first. Handlers after a catch-all cannot run.
+
+The generated catch calls `Reflaxe.Elixir.HaxeThrow.normalize_caught/1` when it
+uses the caught exception. Generated Haxe exception modules expose the reserved
+`__reflaxe_haxe_exception__/0` function. This reports the compiler's existing
+exception classification. It is not a general reflection API. Native exceptions
+and records with similar fields receive a Haxe wrapper instead.
+
+Regenerate exception modules and their runtime together when updating the
+compiler. Old generated modules do not contain this identity function. The
+internal generated-code contract does not change an authored schema or wire
+format. General inheritance checks and early returns across catch boundaries
+remain separate compiler work.
+
 ## Portable and Elixir-first code
 
 Both authoring profiles use the same compiler pipeline and both aim for
