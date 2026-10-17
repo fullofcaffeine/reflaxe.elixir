@@ -21,7 +21,7 @@ original = %Reflaxe.Exception{
 preserved = Main.caught_object(fn -> raise Reflaxe.Elixir.HaxeThrow, value: original end)
 unless preserved === original, do: raise("Base catch changed the existing exception object")
 normalized = Main.caught_object(fn -> raise Reflaxe.Elixir.HaxeThrow, value: "text" end)
-unless normalized.message == "text" and normalized.native == "text" and is_list(normalized.stack),
+unless normalized.message == "text" and normalized.native == "text" and is_list(normalized.stack) and normalized.stack != [],
   do: raise("Base catch lost the thrown value or stack representation")
 
 for foreign <- [%{message: "looks like an exception", stack: []}, %ArgumentError{message: "native"}] do
