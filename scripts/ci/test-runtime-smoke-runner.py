@@ -113,6 +113,16 @@ exit 0
             self.assertIn('compile failed:', result.stdout)
             self.assertNotIn('OTP', log.read_text())
 
+    def test_parent_make_flags_cannot_hide_failure(self):
+        for name, value in [('MAKEFLAGS', 'i'), ('GNUMAKEFLAGS', 'i'), ('MAKEFLAGS', 'n')]:
+            with self.subTest(flag=name, value=value), self.fixture_environment() as (root, env, log, _):
+                env.update(FAIL_PHASE='compile')
+                env[name] = value
+                result = self.run_runner(root, env, '--jobs', '2')
+                self.assertNotEqual(result.returncode, 0, result.stdout)
+                self.assertNotIn('All runtime smoke tests passed', result.stdout)
+                self.assertNotIn('OTP', log.read_text())
+
     def test_whole_run_deadline_is_nonpassing(self):
         with self.fixture_environment() as (root, env, log, _):
             env.update(COMPILE_DELAY='5', RUNTIME_SMOKE_TIMEOUT_SECS='1')

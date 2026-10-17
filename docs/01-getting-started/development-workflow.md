@@ -131,7 +131,8 @@ The runtime smoke suite uses one worker by default. You can request bounded
 parallel execution with `npm run test:runtime-smoke -- --jobs 2`. Each fixture
 still compiles Haxe, checks generated Elixir diagnostics, and executes its native
 observer. OTP checks run after all fixtures pass. A failed fixture makes the
-command fail.
+command fail. Parent Make flags cannot turn this check into a dry run or make it
+ignore errors.
 
 Use `npm run test:runtime-smoke -- --fixture test/snapshot/core/try_catch` to
 reproduce one registered fixture. This focused command does not run the whole

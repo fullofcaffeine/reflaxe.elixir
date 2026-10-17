@@ -182,6 +182,9 @@ if [[ "$jobs" == 1 ]]; then
 else
   export RUNTIME_SMOKE_RUNNER="$SCRIPT_DIR/test-runtime-smoke.sh"
   export RUNTIME_SMOKE_ROOT="$ROOT_DIR"
+  # A parent make -i/-n must not ignore failed fixtures or skip execution.
+  # This runner owns its worker count and failure behavior.
+  unset MAKEFLAGS GNUMAKEFLAGS MFLAGS
   # Replace this shell so external interrupts reach the existing process-tree
   # owner. It also bounds the whole parallel run, including its OTP checks.
   exec "$ROOT_DIR/scripts/with-timeout.sh" --secs "${RUNTIME_SMOKE_TIMEOUT_SECS:-1800}" -- \
