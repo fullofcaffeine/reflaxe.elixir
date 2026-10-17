@@ -28,7 +28,9 @@
 		"haxe/io/output.ex",
 		"haxe/io/input.ex",
 		"haxe/io/fp_helper.ex",
+		"haxe/io/error.ex",
 		"haxe/io/eof.ex",
+		"haxe/io/encoding.ex",
 		"haxe/io/bytes_buffer.ex",
 		"haxe/io/bytes.ex",
 		"haxe/int64_helper.ex",
@@ -66,8 +68,16 @@
 			"sha256": "0962445091a69c1e1334a2925e6e6ccd39bd1cc179c50ef0f137adfcd1feadbd"
 		},
 		{
+			"path": "haxe/io/encoding.ex",
+			"sha256": "aed9a161edd05cdbf4dd2f3c14646b8d615b3d3b783c31543cfdc4c337bb55d3"
+		},
+		{
 			"path": "haxe/io/eof.ex",
 			"sha256": "209a67120806bddd55fd2677ef52bc750f52e377be130a1bc58a9c73edcdd967"
+		},
+		{
+			"path": "haxe/io/error.ex",
+			"sha256": "5eba0b04b02433b84f6c421a2b5af49845386b9e549c4fb3d862f57b18ce16c0"
 		},
 		{
 			"path": "haxe/io/fp_helper.ex",
@@ -75,7 +85,7 @@
 		},
 		{
 			"path": "haxe/io/input.ex",
-			"sha256": "847aeaad741da044df231bf5ea934f07288b928292b1d6073698233197ecf054"
+			"sha256": "f47f5a3f9e03992f548dbe20d47d4d0422fa04cd962d92a20df4233553790f9d"
 		},
 		{
 			"path": "haxe/io/output.ex",
@@ -115,7 +125,7 @@
 		},
 		{
 			"path": "reflaxe/elixir/haxe_throw.ex",
-			"sha256": "642bbf29d073acc9eb2ffcea4a8e6016396a43f1a4180a79331b537bfefc6094"
+			"sha256": "4118c571eee08edcfc6d1e167f0bcb2174d66c903266acd8fa8bb116b60f25b0"
 		},
 		{
 			"path": "reflaxe/elixir/runtime/standard_input.ex",
@@ -127,15 +137,15 @@
 		},
 		{
 			"path": "reflaxe/exception.ex",
-			"sha256": "02fc779b3a5c750db17ab47e624c22bbb8887786a22a767969ab23d1946be755"
+			"sha256": "0a933096bd71c3832467fc32117c622f2f3bea788bb303dd07873603cf2257ee"
 		},
 		{
 			"path": "std.ex",
-			"sha256": "2719d51795868959cd6891134e197cf72d4b523091c594a280b37e367fd8e03f"
+			"sha256": "8a84e0a9ac56b570713a432d5e9d2de5bc2a0cb19aacdc3a80284a6a439bcf97"
 		},
 		{
 			"path": "string_tools.ex",
-			"sha256": "bb5f47e529150a00f248ac791970199bd13a42d23acc3a9c2da761f5930ff5a0"
+			"sha256": "9e41f665054890de627579849e522aef25f22790788a508d7655b2b166b5ef16"
 		},
 		{
 			"path": "sys.ex",
@@ -159,7 +169,7 @@
 		},
 		{
 			"path": "sys/thread/event_loop.ex",
-			"sha256": "d30e350fc680436f8f0adf1f76a6dd4c097ab1d7d818a9252ccdef6d291b1b47"
+			"sha256": "6bef0bac62a2dc64b91170e3632ec5e4975301db701f7c4865a32d0cb1bab206"
 		},
 		{
 			"path": "sys/thread/next_event_time.ex",
@@ -167,11 +177,11 @@
 		},
 		{
 			"path": "sys/thread/no_event_loop_exception.ex",
-			"sha256": "da4987e175469744e9f23bf4e28c6ab6ba2892df9670acbeb3391095a400a98d"
+			"sha256": "0e8cf5e16c7fe0b06614cf08eec473e89f0eecae1fa11f2b351096072314b060"
 		},
 		{
 			"path": "sys/thread/thread.ex",
-			"sha256": "148a3a370b0f8fe19944fa06c8e3bffdae9eead51667951f513d5d47af01deeb"
+			"sha256": "2d74caf1d1368048a8ca6a5f5bc1d77f4641e75ddd12bd4374e57fc38ec27db9"
 		},
 		{
 			"path": "sys/thread/tls.ex",
@@ -182,5 +192,5 @@
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "e8ee6c7fc028b29b493945f024e29bfbd3a9d9c5bf984a0afb00421273ba3f76"
+	"generation": "80af699690b7a2f65fbd226f538e6a836f3ba0a3802d5f6bbd14b924ae831fe4"
 }

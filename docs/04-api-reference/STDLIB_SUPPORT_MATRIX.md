@@ -199,6 +199,10 @@ state across processes.
 - `haxe.CallStack` (BEAM stack capture/formatting)
 - `haxe.Constraints` (official stdlib fallback for compile-time `Function` and `IMap` constraints; `IMap` values cross the runtime boundary through `Reflaxe.Elixir.IMap`)
 - `haxe.DynamicAccess` (Reflect-backed dynamic maps)
+- `haxe.Exception` (target override; base catches normalize thrown strings and
+  preserve existing exception objects. The local `base_exception_catch` runtime
+  observer covers messages, aliases, catch order, and unmatched propagation;
+  this is not complete exception API conformance.)
 - `haxe.EntryPoint` (currently unsupported Haxe process main-loop bridge and therefore a 1.0 blocker;
   meanwhile use the documented
   `elixir.otp.Application` + `TypeSafeChildSpec` application-wiring shape, `phoenix.*` modules and

@@ -28,10 +28,9 @@ defmodule Main do
           %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
           _ -> haxe_exception
         end), haxe_exception} do
-          {e_2, _} when is_struct(e_2, Reflaxe.Exception) or is_map(e_2) and is_map_key(e_2, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e_2) == Reflaxe.Exception ->
+          {e_2, _} ->
+            e_2 = Reflaxe.Elixir.HaxeThrow.normalize_caught(e_2)
             Reflaxe.Exception.get_message(e_2)
-          _ ->
-            reraise(haxe_exception, __STACKTRACE__)
         end)
     end
     if ("Exception object" != caught_exception_message) do
@@ -57,15 +56,16 @@ defmodule Main do
           end), haxe_exception} do
             {e, _} when is_binary(e) -> "string:" <> e
             {e, _} when is_integer(e) -> "int:" <> Reflaxe.Elixir.HaxeFloat.to_string(e)
-            {e, _} when is_struct(e, Reflaxe.Exception) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == Reflaxe.Exception -> "exception:" <> Reflaxe.Exception.get_message(e)
-            {_e, _} -> "dynamic"
+            {e, _} ->
+              e = Reflaxe.Elixir.HaxeThrow.normalize_caught(e)
+              "exception:" <> Reflaxe.Exception.get_message(e)
           end)
       end
       expected = cond do
         type == 1 -> "string:String error"
         type == 2 -> "int:42"
         type == 3 -> "exception:Exception error"
-        type == 4 -> "dynamic"
+        type == 4 -> "exception:" <> Reflaxe.Elixir.HaxeFloat.to_string(%{error: "Object error"})
         true -> "none"
       end
       if (expected != outcome) do
@@ -181,10 +181,9 @@ defmodule Main do
           %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
           _ -> haxe_exception
         end), haxe_exception} do
-          {e, _} when is_struct(e, Reflaxe.Exception) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == Reflaxe.Exception ->
+          {e, _} ->
+            e = Reflaxe.Elixir.HaxeThrow.normalize_caught(e)
             Reflaxe.Exception.get_message(e)
-          _ ->
-            reraise(haxe_exception, __STACKTRACE__)
         end)
     end
     if ("Division by zero" != caught_division_message) do
@@ -202,9 +201,9 @@ defmodule Main do
             %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
             _ -> haxe_exception
           end), haxe_exception} do
-            {e_2, _} when is_struct(e_2, Reflaxe.Exception) or is_map(e_2) and is_map_key(e_2, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e_2) == Reflaxe.Exception -> raise Reflaxe.Elixir.HaxeThrow, [value: e_2]
-            _ ->
-              reraise(haxe_exception, __STACKTRACE__)
+            {e_2, _} ->
+              e_2 = Reflaxe.Elixir.HaxeThrow.normalize_caught(e_2)
+              raise Reflaxe.Elixir.HaxeThrow, [value: e_2]
           end)
       end
       "no_error"
@@ -215,10 +214,9 @@ defmodule Main do
           %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
           _ -> haxe_exception
         end), haxe_exception} do
-          {e_2, _} when is_struct(e_2, Reflaxe.Exception) or is_map(e_2) and is_map_key(e_2, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e_2) == Reflaxe.Exception ->
+          {e_2, _} ->
+            e_2 = Reflaxe.Elixir.HaxeThrow.normalize_caught(e_2)
             Reflaxe.Exception.get_message(e_2)
-          _ ->
-            reraise(haxe_exception, __STACKTRACE__)
         end)
     end
     if ("Original error" != message) do
@@ -239,10 +237,9 @@ defmodule Main do
           %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
           _ -> haxe_exception
         end), haxe_exception} do
-          {e, _} when is_struct(e, Reflaxe.Exception) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == Reflaxe.Exception ->
+          {e, _} ->
+            e = Reflaxe.Elixir.HaxeThrow.normalize_caught(e)
             Reflaxe.Exception.get_message(e)
-          _ ->
-            reraise(haxe_exception, __STACKTRACE__)
         end)
     end
     if ("Deep error" != caught_message) do

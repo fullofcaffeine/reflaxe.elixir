@@ -41,11 +41,10 @@ defmodule Sys.Thread.Thread do
             %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
             _ -> haxe_exception
           end), haxe_exception} do
-            {error, _} when is_struct(error, Reflaxe.Exception) or is_map(error) and is_map_key(error, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, error) == Reflaxe.Exception ->
+            {error, _} ->
+              error = Reflaxe.Elixir.HaxeThrow.normalize_caught(error)
               ThreadRuntime.clear_event_loop()
               raise Reflaxe.Elixir.HaxeThrow, [value: error]
-            _ ->
-              reraise(haxe_exception, __STACKTRACE__)
           end)
       end
       ThreadRuntime.clear_event_loop()

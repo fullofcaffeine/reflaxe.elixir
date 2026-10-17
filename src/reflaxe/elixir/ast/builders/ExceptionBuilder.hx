@@ -147,7 +147,8 @@ class ExceptionBuilder {
 		]));
 
 		// Dispatch uses `{thrown_value, exception}` so we can bind either the original thrown
-		// value (default) or the exception struct (for `catch(e:haxe.Exception)`).
+		// value and preserve the native exception for unmatched rethrows. Base Haxe
+		// catches normalize the value through the standard exception implementation.
 		var dispatchScrutinee = makeAST(ETuple([unwrapCase, exceptionVar]));
 
 		var hasCatchAll = false;
@@ -169,8 +170,15 @@ class ExceptionBuilder {
 			var guard:Null<ElixirAST> = null;
 
 			if (isHaxeExceptionCatch) {
-				// Bind the exception struct itself as the catch variable.
-				pattern = PTuple([PWildcard, catchVarName == "_" ? PWildcard : PVar(catchVarName)]);
+				// Normalize the original thrown value through the Haxe exception owner.
+				pattern = PTuple([catchVarName == "_" ? PWildcard : PVar(catchVarName), PWildcard]);
+				if (catchVarName != "_") {
+					catchBody = makeAST(EBlock([
+						makeAST(EMatch(PVar(catchVarName),
+							makeAST(ERemoteCall(makeAST(EVar(HAXE_THROW_MODULE)), "normalize_caught", [makeAST(EVar(catchVarName))])))),
+						catchBody
+					]));
+				}
 			} else {
 				// Bind the original thrown value as the catch variable.
 				var thrownBinderName = catchVarName == "_" ? "haxe_catch_value" : catchVarName;
@@ -187,6 +195,10 @@ class ExceptionBuilder {
 				guard: guard,
 				body: catchBody
 			});
+			// Haxe selects the first matching handler. A base exception or Dynamic
+			// handler consumes every remaining value; later clauses are unreachable.
+			if (hasCatchAll || hasHaxeExceptionCatch)
+				break;
 		}
 
 		if (!hasCatchAll && !hasHaxeExceptionCatch) {
@@ -408,13 +420,19 @@ class ExceptionBuilder {
 		}
 	}
 
+	/**
+	 * Recognize the base exception by its source module after native renaming.
+	 * Haxe can report `Reflaxe.Exception` as its class path during generation;
+	 * the original module remains `haxe.Exception`. Checking the package would
+	 * turn `catch (e:haxe.Exception)` into a narrow record-type test and let
+	 * thrown strings escape. Follow typedef aliases before checking identity;
+	 * subclasses still use ordinary typed guards.
+	 */
 	static function isHaxeExceptionCatchType(t:Null<Type>):Bool {
 		if (t == null)
 			return false;
-		return switch (t) {
-			case TLazy(f):
-				isHaxeExceptionCatchType(f());
-			case TInst(clsRef, _): var cls = clsRef.get(); cls.pack.length == 1 && cls.pack[0] == "haxe" && cls.name == "Exception";
+		return switch (haxe.macro.TypeTools.follow(t)) {
+			case TInst(clsRef, _): var cls = clsRef.get(); cls.module == "haxe.Exception" && cls.name == "Exception";
 			default:
 				false;
 		};
