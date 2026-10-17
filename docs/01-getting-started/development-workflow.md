@@ -134,6 +134,10 @@ observer. OTP checks run after all fixtures pass. A failed fixture makes the
 command fail. Parent Make flags cannot turn this check into a dry run or make it
 ignore errors.
 
+The CI Mix and BEAM command selects two smoke workers. Its Mix tests and server
+cleanup checks still run in their existing order before the smoke suite. Use
+`--jobs 1` for a serial smoke reproduction.
+
 Use `npm run test:runtime-smoke -- --fixture test/snapshot/core/try_catch` to
 reproduce one registered fixture. This focused command does not run the whole
 suite or its final OTP checks. Invalid fixture names fail before compilation.
