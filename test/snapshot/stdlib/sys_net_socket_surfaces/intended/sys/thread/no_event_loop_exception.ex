@@ -1,6 +1,9 @@
 defmodule NoEventLoopException do
   defexception [:message, :previous, :native, :stack]
   import Kernel, except: [to_string: 1], warn: false
+  def __reflaxe_haxe_exception__() do
+    true
+  end
   def new(msg \\ "Event loop is not available. Refer to sys.thread.Thread.runWithEventLoop.", previous_param \\ nil) do
     struct = %NoEventLoopException{}
     struct = Map.merge(struct, Map.drop(Reflaxe.Exception.new(msg, previous_param, nil), [:__struct__, :__reflaxe_class__]))
