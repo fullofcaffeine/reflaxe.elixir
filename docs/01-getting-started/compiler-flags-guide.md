@@ -58,6 +58,32 @@ end)
 - **Maintainability**: Clear, idiomatic expressions
 - **Runtime flexibility**: Lazy evaluation, hot code reloading
 
+## Select which application modules to discover
+
+By default, the compiler scans project classpaths for Phoenix and Ecto annotations.
+This includes runtime-only modules that ordinary Haxe imports do not reach.
+Use the default for a normal Phoenix application.
+
+A focused probe can select its entry points explicitly:
+
+```hxml
+-D elixir_discovery=explicit
+-main CredentialProbe
+```
+
+This skips the classpath scan. Haxe still types the selected entry points and
+their dependencies. Annotations on those included modules still take effect.
+For example, adding `myapp.Repo` as a Haxe module entry point still includes
+that annotated repository. Merely leaving its file on the classpath does not.
+
+Omit the define, or use `-D elixir_discovery=auto`, to retain automatic discovery.
+Other values are errors. This option does not enable a different code generator,
+relax validation, or reuse old output. The caller must explicitly include every
+runtime-only module needed by an application that selects explicit mode.
+
+The proposal and its verification boundary are described in
+[`caf/FocusedCompilation.hx`](../../caf/FocusedCompilation.hx).
+
 ## ✅ Recommended Compiler Configuration
 
 ### `reflaxe_runtime`: compiler-development context

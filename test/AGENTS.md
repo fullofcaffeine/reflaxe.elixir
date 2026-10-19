@@ -44,6 +44,7 @@ This directory contains the Reflaxe.Elixir compiler test suite, validating that 
 - Base exception coverage adds one positive regression fixture (`base_exception_catch`) with native message, alias, ordering, and propagation observations.
 - Nullable record coverage adds one positive regression fixture (`nullable_record_guard`), with native field-preservation and null-rejection observations.
 - Nullable enum coverage adds one positive regression fixture (`nullable_enum_cond`), with an independent native observer in the runtime smoke suite.
+- The existing Phoenix `repo_discovery` fixture also checks explicit discovery selection in cold and persistent compilers through `npm run test:discovery-modes`; this adds no snapshot fixture.
 - **97 negative snapshot tests** validating expected failures
 - **2026-09-24 negative inventory: 108 fixtures**, including three standalone migration-constraint, two migration-SQL, and five typed-reference rejection cases. These require diagnostic verification; a compilation timeout is not a passing rejection.
 - **2026-09-25 negative inventory: 109 fixtures**, including rejection of unauthorized private calls.
