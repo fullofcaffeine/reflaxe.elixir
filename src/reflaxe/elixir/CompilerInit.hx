@@ -47,6 +47,15 @@ class CompilerInit {
 		}
 		#end
 
+		// Validate outside discovery's best-effort catch: a misspelled selection must
+		// not silently widen a focused build. Explicit roots still use normal typing
+		// and annotated-module retention; only classpath scanning is omitted.
+		final discoverAnnotatedModules = switch (Context.definedValue("elixir_discovery")) {
+			case null, "auto": true;
+			case "explicit": false;
+			case _: Context.fatalError("elixir_discovery must be auto or explicit.", Context.currentPos());
+		};
+
 		if (compilerRegistered)
 			return;
 		compilerRegistered = true;
@@ -132,9 +141,11 @@ class CompilerInit {
 
 		// Macro-phase discovery: force-type framework-annotated modules so they join normal compilation.
 		// Under fast_boot, RepoDiscovery uses a temp-file cache to avoid repeated project-wide scans.
-		try {
-			reflaxe.elixir.macros.RepoDiscovery.run();
-		} catch (e:haxe.Exception) {}
+		if (discoverAnnotatedModules) {
+			try {
+				reflaxe.elixir.macros.RepoDiscovery.run();
+			} catch (e:haxe.Exception) {}
+		}
 
 		// Ensure the exception wrapper module exists when compiling Haxe `throw` / `try-catch`.
 		//
