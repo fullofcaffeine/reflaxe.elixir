@@ -51,11 +51,11 @@ defmodule Main do
     {_numbers, _temp} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {numbers, temp}, fn _, {acc_numbers, acc_temp} ->
       try do
         if (apply(Map.get(all_numbers, :__reflaxe_class__) || Map.get(all_numbers, :__struct__), :match, [all_numbers, acc_temp])) do
-          acc_numbers = acc_numbers ++ [apply(Map.get(all_numbers, :__reflaxe_class__) || Map.get(all_numbers, :__struct__), :matched, [all_numbers, 0])]
+          acc_numbers = [apply(Map.get(all_numbers, :__reflaxe_class__) || Map.get(all_numbers, :__struct__), :matched, [all_numbers, 0]) | acc_numbers]
           acc_temp = apply(Map.get(all_numbers, :__reflaxe_class__) || Map.get(all_numbers, :__struct__), :matched_right, [all_numbers])
           {:cont, {acc_numbers, acc_temp}}
         else
-          {:halt, {acc_numbers, acc_temp}}
+          {:halt, {Enum.reverse(acc_numbers), acc_temp}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -63,7 +63,7 @@ defmodule Main do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_numbers, acc_temp}}
+          {:halt, {Enum.reverse(acc_numbers), acc_temp}}
         :throw, :continue ->
           {:cont, {acc_numbers, acc_temp}}
       end

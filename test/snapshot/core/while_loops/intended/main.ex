@@ -72,10 +72,10 @@ defmodule Main do
           if (rem(acc_k, 2) != 0) do
             throw({:continue, {acc_k, acc_evens}})
           end
-          acc_evens = acc_evens ++ [acc_k]
+          acc_evens = [acc_k | acc_evens]
           {:cont, {acc_k, acc_evens}}
         else
-          {:halt, {acc_k, acc_evens}}
+          {:halt, {acc_k, Enum.reverse(acc_evens)}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -83,7 +83,7 @@ defmodule Main do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_k, acc_evens}}
+          {:halt, {acc_k, Enum.reverse(acc_evens)}}
         :throw, :continue ->
           {:cont, {acc_k, acc_evens}}
       end

@@ -8,14 +8,13 @@ defmodule Main do
     if (first < 0 or second < 0 or first >= length(value.items) or second >= length(value.items)) do
       value.items
     else
-      g = []
       g2 = length(value.items)
-      g = Enum.reduce(0..(g2 - 1)//1, g, fn position, g_acc ->
-        Enum.concat(g_acc, [Enum.at(value.items, (cond do
+      g = Enum.map(0..(g2 - 1)//1, fn position ->
+        Enum.at(value.items, (cond do
           position == first -> second
           position == second -> first
           true -> position
-        end))])
+        end))
       end)
       next = g
       next

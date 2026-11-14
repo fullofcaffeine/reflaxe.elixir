@@ -85,10 +85,10 @@ defmodule Main do
           end)
           item = g.key
           _ = g.value
-          acc_keys = acc_keys ++ [item]
+          acc_keys = [item | acc_keys]
           {:cont, {acc_keys}}
         else
-          {:halt, {acc_keys}}
+          {:halt, {Enum.reverse(acc_keys)}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -96,7 +96,7 @@ defmodule Main do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_keys}}
+          {:halt, {Enum.reverse(acc_keys)}}
         :throw, :continue ->
           {:cont, {acc_keys}}
       end
@@ -187,10 +187,10 @@ defmodule Main do
           end)
           item = g_value.key
           price = g_value.value
-          acc__g = acc__g ++ ["" <> item <> ": $" <> Reflaxe.Elixir.HaxeFloat.to_string(Reflaxe.Elixir.HaxeFloat.mul(price, 0.9))]
+          acc__g = ["" <> item <> ": $" <> Reflaxe.Elixir.HaxeFloat.to_string(Reflaxe.Elixir.HaxeFloat.mul(price, 0.9)) | acc__g]
           {:cont, {acc__g}}
         else
-          {:halt, {acc__g}}
+          {:halt, {Enum.reverse(acc__g)}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -198,7 +198,7 @@ defmodule Main do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc__g}}
+          {:halt, {Enum.reverse(acc__g)}}
         :throw, :continue ->
           {:cont, {acc__g}}
       end
@@ -335,10 +335,14 @@ defmodule Main do
           end)
           name = g.key
           age = g.value
-          acc_adults = if (age >= 18), do: acc_adults ++ [name], else: acc_adults
+          acc_adults = if (age >= 18) do
+            [name | acc_adults]
+          else
+            acc_adults
+          end
           {:cont, {acc_adults}}
         else
-          {:halt, {acc_adults}}
+          {:halt, {Enum.reverse(acc_adults)}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -346,7 +350,7 @@ defmodule Main do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_adults}}
+          {:halt, {Enum.reverse(acc_adults)}}
         :throw, :continue ->
           {:cont, {acc_adults}}
       end
@@ -389,11 +393,11 @@ defmodule Main do
           end)
           product = g.key
           price = g.value
-          acc_descriptions = acc_descriptions ++ ["" <> product <> " ($" <> Reflaxe.Elixir.HaxeFloat.to_string(price) <> ")"]
+          acc_descriptions = ["" <> product <> " ($" <> Reflaxe.Elixir.HaxeFloat.to_string(price) <> ")" | acc_descriptions]
           acc_total_value = Reflaxe.Elixir.HaxeFloat.add(acc_total_value, price)
           {:cont, {acc_descriptions, acc_total_value}}
         else
-          {:halt, {acc_descriptions, acc_total_value}}
+          {:halt, {Enum.reverse(acc_descriptions), acc_total_value}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -401,7 +405,7 @@ defmodule Main do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_descriptions, acc_total_value}}
+          {:halt, {Enum.reverse(acc_descriptions), acc_total_value}}
         :throw, :continue ->
           {:cont, {acc_descriptions, acc_total_value}}
       end

@@ -34,14 +34,14 @@ defmodule Main do
     names = []
     _g = 0
     items_length = length(items)
-    _ = Enum.reduce(0..(items_length - 1)//1, names, fn i, names_acc ->
+    _ = Enum.reverse(Enum.reduce(0..(items_length - 1)//1, names, fn i, names_acc ->
       item = Enum.at(items, i)
       if (item.id > 1) do
-        Enum.concat(names_acc, [item.name])
+        [item.name | names_acc]
       else
         names_acc
       end
-    end)
+    end))
     nil
   end
   defp test_map_iterator() do
@@ -71,10 +71,10 @@ defmodule Main do
           end)
           key = g.key
           value = g.value
-          acc_result = acc_result ++ ["" <> Reflaxe.Elixir.HaxeFloat.to_string(key) <> ": " <> value]
+          acc_result = ["" <> Reflaxe.Elixir.HaxeFloat.to_string(key) <> ": " <> value | acc_result]
           {:cont, {acc_result}}
         else
-          {:halt, {acc_result}}
+          {:halt, {Enum.reverse(acc_result)}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -82,7 +82,7 @@ defmodule Main do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_result}}
+          {:halt, {Enum.reverse(acc_result)}}
         :throw, :continue ->
           {:cont, {acc_result}}
       end
@@ -151,14 +151,14 @@ defmodule Main do
       end
     end)
     titles = []
-    _ = Enum.reduce(todos, titles, fn todo, titles_acc ->
+    _ = Enum.reverse(Enum.reduce(todos, titles, fn todo, titles_acc ->
       if (not todo.completed) do
-        titles_acc = Enum.concat(titles_acc, [String.upcase(todo.title)])
+        titles_acc = [String.upcase(todo.title) | titles_acc]
         titles_acc
       else
         titles_acc
       end
-    end)
+    end))
     nil
   end
 end

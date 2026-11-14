@@ -289,7 +289,7 @@ defmodule Main do
   def comprehension_from_iterable() do
     source = [1, 2, 3]
     g = []
-    Enum.reduce(source, g, fn x, g_acc -> Enum.concat(g_acc, [Enum.map(source, fn y -> x * y end)]) end)
+    Enum.reverse(Enum.reduce(source, g, fn x, g_acc -> [Enum.map(source, fn y -> x * y end) | g_acc] end))
   end
   def empty_comprehensions() do
     []

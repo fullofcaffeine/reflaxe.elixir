@@ -5,10 +5,10 @@ defmodule Main do
     {_array_values} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {array_values}, fn _, {acc_array_values} ->
       try do
         if (apply(Map.get(array_iterator, :__reflaxe_class__) || Map.get(array_iterator, :__struct__), :has_next, [array_iterator])) do
-          acc_array_values = acc_array_values ++ [apply(Map.get(array_iterator, :__reflaxe_class__) || Map.get(array_iterator, :__struct__), :next, [array_iterator])]
+          acc_array_values = [apply(Map.get(array_iterator, :__reflaxe_class__) || Map.get(array_iterator, :__struct__), :next, [array_iterator]) | acc_array_values]
           {:cont, {acc_array_values}}
         else
-          {:halt, {acc_array_values}}
+          {:halt, {Enum.reverse(acc_array_values)}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -16,7 +16,7 @@ defmodule Main do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_array_values}}
+          {:halt, {Enum.reverse(acc_array_values)}}
         :throw, :continue ->
           {:cont, {acc_array_values}}
       end
@@ -44,10 +44,10 @@ defmodule Main do
                   apply(Map.get(reflaxe_structural_receiver_node_1, :__reflaxe_class__) || Map.get(reflaxe_structural_receiver_node_1, :__struct__), :next, [reflaxe_structural_receiver_node_1])
               end)
           end)
-          acc_wrapped_pairs = acc_wrapped_pairs ++ [pair.key <> ":" <> Reflaxe.Elixir.HaxeFloat.to_string(pair.value)]
+          acc_wrapped_pairs = [pair.key <> ":" <> Reflaxe.Elixir.HaxeFloat.to_string(pair.value) | acc_wrapped_pairs]
           {:cont, {acc_wrapped_pairs}}
         else
-          {:halt, {acc_wrapped_pairs}}
+          {:halt, {Enum.reverse(acc_wrapped_pairs)}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -55,7 +55,7 @@ defmodule Main do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_wrapped_pairs}}
+          {:halt, {Enum.reverse(acc_wrapped_pairs)}}
         :throw, :continue ->
           {:cont, {acc_wrapped_pairs}}
       end
@@ -85,10 +85,10 @@ defmodule Main do
                   apply(Map.get(reflaxe_structural_receiver_node_3, :__reflaxe_class__) || Map.get(reflaxe_structural_receiver_node_3, :__struct__), :next, [reflaxe_structural_receiver_node_3])
               end)
           end)
-          acc_tree_pairs = acc_tree_pairs ++ [tree_pair.key <> ":" <> Reflaxe.Elixir.HaxeFloat.to_string(tree_pair.value)]
+          acc_tree_pairs = [tree_pair.key <> ":" <> Reflaxe.Elixir.HaxeFloat.to_string(tree_pair.value) | acc_tree_pairs]
           {:cont, {acc_tree_pairs}}
         else
-          {:halt, {acc_tree_pairs}}
+          {:halt, {Enum.reverse(acc_tree_pairs)}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -96,7 +96,7 @@ defmodule Main do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_tree_pairs}}
+          {:halt, {Enum.reverse(acc_tree_pairs)}}
         :throw, :continue ->
           {:cont, {acc_tree_pairs}}
       end

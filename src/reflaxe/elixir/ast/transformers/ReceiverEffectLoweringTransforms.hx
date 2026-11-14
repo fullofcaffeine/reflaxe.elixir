@@ -315,6 +315,8 @@ class ReceiverEffectLoweringTransforms {
 				{prelude: targetPlan.prelude, value: makeASTWithMeta(EField(targetPlan.value, field), node.metadata, node.pos)};
 			case EList(elements):
 				lowerElementList(elements, function(values) return makeASTWithMeta(EList(values), node.metadata, node.pos));
+			case ECons(head, tail):
+				lowerElementList([head, tail], function(values) return makeASTWithMeta(ECons(values[0], values[1]), node.metadata, node.pos));
 			case ETuple(elements):
 				lowerElementList(elements, function(values) return makeASTWithMeta(ETuple(values), node.metadata, node.pos));
 			case EMap(pairs):

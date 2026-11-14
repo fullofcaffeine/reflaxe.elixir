@@ -6,12 +6,12 @@ defmodule Main do
     {codes, chars, _i} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {codes, chars, i}, fn _, {acc_codes, acc_chars, acc_i} ->
       try do
         if (acc_i < StringTools.haxe_length(s)) do
-          acc_codes = acc_codes ++ [Reflaxe.Elixir.HaxeFloat.to_string(StringTools.haxe_char_code_at(s, acc_i))]
-          acc_chars = acc_chars ++ [StringTools.haxe_char_at(s, acc_i)]
+          acc_codes = [Reflaxe.Elixir.HaxeFloat.to_string(StringTools.haxe_char_code_at(s, acc_i)) | acc_codes]
+          acc_chars = [StringTools.haxe_char_at(s, acc_i) | acc_chars]
           acc_i = acc_i + 1
           {:cont, {acc_codes, acc_chars, acc_i}}
         else
-          {:halt, {acc_codes, acc_chars, acc_i}}
+          {:halt, {Enum.reverse(acc_codes), Enum.reverse(acc_chars), acc_i}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -19,7 +19,7 @@ defmodule Main do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_codes, acc_chars, acc_i}}
+          {:halt, {Enum.reverse(acc_codes), Enum.reverse(acc_chars), acc_i}}
         :throw, :continue ->
           {:cont, {acc_codes, acc_chars, acc_i}}
       end

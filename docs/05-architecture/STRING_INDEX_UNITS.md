@@ -186,8 +186,10 @@ numbers:
 | 36 KB | 49 s | 227 ms |
 | 72 KB | 187 s | 491 ms |
 
-The parser times still grow faster than the input. That part is not String
-reads: see the last item under Limits.
+The parser times on this branch still grew faster than the input. That part
+was not String reads: `StringBuf` appends and `array.push` copied their whole
+content on each call. With both fixed, the 144 KB array takes about 0.34 s and
+the time grows in proportion to the input.
 
 Single operations on short strings, in nanoseconds per call (best of two runs;
 "before" is the compiler before this change):
@@ -226,7 +228,10 @@ No measured operation is slower than before.
 - `StringTools.ltrim` and `rtrim` use Elixir's Unicode whitespace list, which is
   wider than Haxe's (`haxe.elixir.codex-u66`).
 - A fast String read does not make a whole parser linear. `array.push` in a
-  loop (`haxe.elixir.codex-sd6`) still copies the whole array on each call.
+  loop is linear only for a new, empty array that the loop body does not read;
+  other shapes still copy the whole array on each call
+  (`haxe.elixir.codex-sd6`,
+  `docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md`).
 
 ## Tests
 

@@ -3,13 +3,13 @@ defmodule Main do
     numbers = [1, 2, 3, 4, 5]
     _doubled = Enum.map(numbers, fn n -> n * 2 end)
     g = []
-    _evens = Enum.reduce(numbers, g, fn n, g_acc ->
+    _evens = Enum.reverse(Enum.reduce(numbers, g, fn n, g_acc ->
       if (rem(n, 2) == 0) do
-        Enum.concat(g_acc, [n])
+        [n | g_acc]
       else
         g_acc
       end
-    end)
+    end))
     g = []
     x = 1
     y = "a"
@@ -27,11 +27,11 @@ defmodule Main do
     {_i, _collected} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i, collected}, fn _, {acc_i, acc_collected} ->
       try do
         if (acc_i < 5) do
-          acc_collected = acc_collected ++ [acc_i * acc_i]
+          acc_collected = [acc_i * acc_i | acc_collected]
           acc_i = acc_i + 1
           {:cont, {acc_i, acc_collected}}
         else
-          {:halt, {acc_i, acc_collected}}
+          {:halt, {acc_i, Enum.reverse(acc_collected)}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -39,7 +39,7 @@ defmodule Main do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_i, acc_collected}}
+          {:halt, {acc_i, Enum.reverse(acc_collected)}}
         :throw, :continue ->
           {:cont, {acc_i, acc_collected}}
       end
@@ -49,11 +49,11 @@ defmodule Main do
     {_j, _results} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {j, results}, fn _, {acc_j, acc_results} ->
       try do
         if (acc_j < 3) do
-          acc_results = acc_results ++ [acc_j]
+          acc_results = [acc_j | acc_results]
           acc_j = acc_j + 1
           {:cont, {acc_j, acc_results}}
         else
-          {:halt, {acc_j, acc_results}}
+          {:halt, {acc_j, Enum.reverse(acc_results)}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -61,7 +61,7 @@ defmodule Main do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_j, acc_results}}
+          {:halt, {acc_j, Enum.reverse(acc_results)}}
         :throw, :continue ->
           {:cont, {acc_j, acc_results}}
       end
@@ -69,14 +69,14 @@ defmodule Main do
     sum = 0
     _ = Enum.reduce(numbers, sum, fn n, sum_acc -> sum_acc + n end)
     output = []
-    _ = Enum.reduce(numbers, output, fn n, output_acc ->
+    _ = Enum.reverse(Enum.reduce(numbers, output, fn n, output_acc ->
       if (n > 2) do
-        output_acc = Enum.concat(output_acc, [n])
+        output_acc = [n | output_acc]
         output_acc
       else
         output_acc
       end
-    end)
+    end))
     nil
   end
 end

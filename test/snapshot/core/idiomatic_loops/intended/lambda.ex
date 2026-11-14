@@ -30,10 +30,10 @@ defmodule Lambda do
                   apply(Map.get(reflaxe_structural_receiver_node_2, :__reflaxe_class__) || Map.get(reflaxe_structural_receiver_node_2, :__struct__), :next, [reflaxe_structural_receiver_node_2])
               end)
           end)
-          acc_arr = acc_arr ++ [v]
+          acc_arr = [v | acc_arr]
           {:cont, {acc_arr}}
         else
-          {:halt, {acc_arr}}
+          {:halt, {Enum.reverse(acc_arr)}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -41,7 +41,7 @@ defmodule Lambda do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_arr}}
+          {:halt, {Enum.reverse(acc_arr)}}
         :throw, :continue ->
           {:cont, {acc_arr}}
       end
@@ -79,10 +79,10 @@ defmodule Lambda do
                   apply(Map.get(reflaxe_structural_receiver_node_5, :__reflaxe_class__) || Map.get(reflaxe_structural_receiver_node_5, :__struct__), :next, [reflaxe_structural_receiver_node_5])
               end)
           end)
-          acc_arr = acc_arr ++ [v]
+          acc_arr = [v | acc_arr]
           {:cont, {acc_arr}}
         else
-          {:halt, {acc_arr}}
+          {:halt, {Enum.reverse(acc_arr)}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -90,7 +90,7 @@ defmodule Lambda do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_arr}}
+          {:halt, {Enum.reverse(acc_arr)}}
         :throw, :continue ->
           {:cont, {acc_arr}}
       end
@@ -128,10 +128,10 @@ defmodule Lambda do
                   apply(Map.get(reflaxe_structural_receiver_node_8, :__reflaxe_class__) || Map.get(reflaxe_structural_receiver_node_8, :__struct__), :next, [reflaxe_structural_receiver_node_8])
               end)
           end)
-          acc_arr = acc_arr ++ [v]
+          acc_arr = [v | acc_arr]
           {:cont, {acc_arr}}
         else
-          {:halt, {acc_arr}}
+          {:halt, {Enum.reverse(acc_arr)}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -139,7 +139,7 @@ defmodule Lambda do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_arr}}
+          {:halt, {Enum.reverse(acc_arr)}}
         :throw, :continue ->
           {:cont, {acc_arr}}
       end

@@ -1,0 +1,15 @@
+collect 0,1,2,3,4
+collectOdd 1,3,5,7,9
+untilLimit-done done:4:9
+untilLimit-over over:3
+squares 0,1,4,9,16
+keepEven 4,10,8
+split 0,1,2|3,4,5
+runningTotal 36
+extend 100,200,0,1,2
+twoLoops 0,1,2,-1,2,1,0
+grid 0 1 2/3 4 5|012012
+fill 9,8,0,1,2
+aliasAfter 4:4:0,1,2,3
+doubled 2,4,6
+none []

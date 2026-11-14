@@ -17,10 +17,10 @@ defmodule Main do
           reflaxe_receiver_value_0 = acc__g_offset
           acc__g_offset = acc__g_offset + 1
           code = StringTools.fast_code_at(reflaxe_call_value_1, reflaxe_receiver_value_0)
-          acc_codes = acc_codes ++ [code]
+          acc_codes = [code | acc_codes]
           {:cont, {acc_codes, acc__g_offset}}
         else
-          {:halt, {acc_codes, acc__g_offset}}
+          {:halt, {Enum.reverse(acc_codes), acc__g_offset}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -28,7 +28,7 @@ defmodule Main do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_codes, acc__g_offset}}
+          {:halt, {Enum.reverse(acc_codes), acc__g_offset}}
         :throw, :continue ->
           {:cont, {acc_codes, acc__g_offset}}
       end
@@ -54,10 +54,10 @@ defmodule Main do
           g_value = StringTools.fast_code_at(reflaxe_call_value_3, reflaxe_receiver_value_2)
           index = g_key
           code = g_value
-          acc_entries = acc_entries ++ [Reflaxe.Elixir.HaxeFloat.to_string(index) <> ":" <> Reflaxe.Elixir.HaxeFloat.to_string(code)]
+          acc_entries = [Reflaxe.Elixir.HaxeFloat.to_string(index) <> ":" <> Reflaxe.Elixir.HaxeFloat.to_string(code) | acc_entries]
           {:cont, {acc_entries, acc__g_offset}}
         else
-          {:halt, {acc_entries, acc__g_offset}}
+          {:halt, {Enum.reverse(acc_entries), acc__g_offset}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -65,7 +65,7 @@ defmodule Main do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_entries, acc__g_offset}}
+          {:halt, {Enum.reverse(acc_entries), acc__g_offset}}
         :throw, :continue ->
           {:cont, {acc_entries, acc__g_offset}}
       end
@@ -91,10 +91,10 @@ defmodule Main do
           g_value = StringTools.fast_code_at(reflaxe_call_value_5, reflaxe_receiver_value_4)
           index = g_key
           code = g_value
-          acc__g = acc__g ++ [[index, code]]
+          acc__g = [[index, code] | acc__g]
           {:cont, {acc__g, acc__g_offset}}
         else
-          {:halt, {acc__g, acc__g_offset}}
+          {:halt, {Enum.reverse(acc__g), acc__g_offset}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -102,7 +102,7 @@ defmodule Main do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc__g, acc__g_offset}}
+          {:halt, {Enum.reverse(acc__g), acc__g_offset}}
         :throw, :continue ->
           {:cont, {acc__g, acc__g_offset}}
       end

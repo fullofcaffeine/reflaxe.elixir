@@ -70,7 +70,9 @@ Things to know:
 - **Two large strings.** A loop that reads two different strings of 256 bytes or more in turn is
   correct but slow.
 - **Not yet on this rule:** `haxe.Template`.
-- **Still slower than linear:** `array.push` in a loop.
+- **`array.push` in a loop** is linear when the array is new and empty at the loop and the loop
+  body only pushes to it. Other loop shapes still copy the array on each `push`; see
+  [Imperative to functional lowering](../02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md).
 
 See [String positions count codepoints](../05-architecture/STRING_INDEX_UNITS.md).
 
