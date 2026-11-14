@@ -321,6 +321,59 @@ No feature flag is required. The former
 has been retired; semantics-proven output improvements belong to the single
 normal compiler pipeline.
 
+### `push` in a loop: add in front, reverse once
+
+A Haxe `Array` is a BEAM list. The direct form of `items.push(x)` is
+`items = items ++ [x]`, and `++` copies its whole left list. A loop that
+collects N items that way costs N squared: 40,000 items took 14 seconds.
+
+When the array is new and empty at the loop, and the loop body does nothing
+with it except `push`, the compiler writes the usual Elixir form. It adds each
+item in front and puts the list back in order once, where the loop ends:
+
+```haxe
+var items = [];
+var i = 0;
+while (i < count) {
+	items.push(i);
+	i++;
+}
+return items;
+```
+
+```elixir
+if (acc_i < count) do
+  acc_items = [acc_i | acc_items]
+  acc_i = acc_i + 1
+  {:cont, {acc_items, acc_i}}
+else
+  {:halt, {Enum.reverse(acc_items), acc_i}}
+end
+```
+
+A `return` or `break` inside the loop may read the array, because the loop
+ends there; that read is `Enum.reverse(acc_items)`. A `for` loop with a
+conditional `push` becomes `Enum.reverse(Enum.reduce(...))` with `[x | acc]`.
+
+These loops keep the direct form, and still cost one copy for each `push`:
+
+- the body reads the array while the loop runs (`items.length`, `items[i]`, the
+  array as a call argument, or a nested function that names it);
+- the array is not known to be empty at the loop: a parameter, a field, an
+  array literal with items, or an array that an earlier statement names;
+- a `for` loop over a collection that uses `break`;
+- a nested loop that pushes to an array of the outer loop.
+
+For those, build the result with `map`/`filter`, or collect into a local array
+and append it once after the loop. Task `haxe.elixir.codex-sd6` lists the
+shapes that are not covered. The rule is in
+`reflaxe.elixir.ast.transformers.LinearListAppendTransforms`, and
+`test/snapshot/regression/array_push_linear_loop` checks results against the
+Haxe interpreter with a time budget.
+
+This does not change alias behavior. The array is still a persistent list, so
+a second variable that names it does not see a later `push` (see above).
+
 ### Loops + break/continue semantics
 
 Key idea:

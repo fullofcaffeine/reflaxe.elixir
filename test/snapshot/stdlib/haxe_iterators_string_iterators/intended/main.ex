@@ -10,10 +10,10 @@ defmodule Main do
     {codes} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {codes}, fn _, {acc_codes} ->
       try do
         if (apply(Map.get(iterator, :__reflaxe_class__) || Map.get(iterator, :__struct__), :has_next, [iterator])) do
-          acc_codes = acc_codes ++ [apply(Map.get(iterator, :__reflaxe_class__) || Map.get(iterator, :__struct__), :next, [iterator])]
+          acc_codes = [apply(Map.get(iterator, :__reflaxe_class__) || Map.get(iterator, :__struct__), :next, [iterator]) | acc_codes]
           {:cont, {acc_codes}}
         else
-          {:halt, {acc_codes}}
+          {:halt, {Enum.reverse(acc_codes)}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -21,7 +21,7 @@ defmodule Main do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_codes}}
+          {:halt, {Enum.reverse(acc_codes)}}
         :throw, :continue ->
           {:cont, {acc_codes}}
       end
@@ -33,10 +33,10 @@ defmodule Main do
       try do
         if (apply(Map.get(key_value_iterator, :__reflaxe_class__) || Map.get(key_value_iterator, :__struct__), :has_next, [key_value_iterator])) do
           entry = apply(Map.get(key_value_iterator, :__reflaxe_class__) || Map.get(key_value_iterator, :__struct__), :next, [key_value_iterator])
-          acc_entries = acc_entries ++ [Reflaxe.Elixir.HaxeFloat.to_string(entry.key) <> ":" <> Reflaxe.Elixir.HaxeFloat.to_string(entry.value)]
+          acc_entries = [Reflaxe.Elixir.HaxeFloat.to_string(entry.key) <> ":" <> Reflaxe.Elixir.HaxeFloat.to_string(entry.value) | acc_entries]
           {:cont, {acc_entries}}
         else
-          {:halt, {acc_entries}}
+          {:halt, {Enum.reverse(acc_entries)}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -44,7 +44,7 @@ defmodule Main do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_entries}}
+          {:halt, {Enum.reverse(acc_entries)}}
         :throw, :continue ->
           {:cont, {acc_entries}}
       end

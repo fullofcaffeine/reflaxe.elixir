@@ -7,9 +7,8 @@ defmodule Main do
         if (Enum.at(arr, 0) == 72 and length(arr) > 1) do
           "Starts with 'H', rest: " <> Enum.join(
             (fn ->
-               g = []
                arr_length = length(arr)
-               g = Enum.reduce(1..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]) end)
+               g = Enum.map(1..(arr_length - 1)//1, fn i -> Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i)) end)
                g
              end).(),
             ","
@@ -26,9 +25,8 @@ defmodule Main do
           if (Enum.at(arr, 0) == 72 and length(arr) > 1) do
             "Starts with 'H', rest: " <> Enum.join(
               (fn ->
-                 g = []
                  arr_length = length(arr)
-                 g = Enum.reduce(1..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]) end)
+                 g = Enum.map(1..(arr_length - 1)//1, fn i -> Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i)) end)
                  g
                end).(),
               ","
@@ -49,9 +47,8 @@ defmodule Main do
         if (Enum.at(arr, 0) == 72 and length(arr) > 1) do
           "Starts with 'H', rest: " <> Enum.join(
             (fn ->
-               g = []
                arr_length = length(arr)
-               g = Enum.reduce(1..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]) end)
+               g = Enum.map(1..(arr_length - 1)//1, fn i -> Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i)) end)
                g
              end).(),
             ","
@@ -80,9 +77,8 @@ defmodule Main do
         if (Enum.at(arr, 0) == 72 and length(arr) > 1) do
           "Starts with 'H', rest: " <> Enum.join(
             (fn ->
-               g = []
                arr_length = length(arr)
-               g = Enum.reduce(1..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]) end)
+               g = Enum.map(1..(arr_length - 1)//1, fn i -> Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i)) end)
                g
              end).(),
             ","
@@ -109,9 +105,8 @@ defmodule Main do
         if (Enum.at(arr, 0) == 72 and length(arr) > 1) do
           "Starts with 'H', rest: " <> Enum.join(
             (fn ->
-               g = []
                arr_length = length(arr)
-               g = Enum.reduce(1..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]) end)
+               g = Enum.map(1..(arr_length - 1)//1, fn i -> Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i)) end)
                g
              end).(),
             ","
@@ -143,9 +138,8 @@ defmodule Main do
             if (length(arr) >= 4 and Enum.at(arr, 0) == 1 and Enum.at(arr, 1) == 0) do
               "Protocol v1, size=" <> Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, 2)) <> ", data=" <> Enum.join(
                 (fn ->
-                   g = []
                    arr_length = length(arr)
-                   g = Enum.reduce(3..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]) end)
+                   g = Enum.map(3..(arr_length - 1)//1, fn i -> Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i)) end)
                    g
                  end).(),
                 ","
@@ -167,9 +161,8 @@ defmodule Main do
           if (length(arr) >= 4 and Enum.at(arr, 0) == 1 and Enum.at(arr, 1) == 0) do
             "Protocol v1, size=" <> Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, 2)) <> ", data=" <> Enum.join(
               (fn ->
-                 g = []
                  arr_length = length(arr)
-                 g = Enum.reduce(3..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]) end)
+                 g = Enum.map(3..(arr_length - 1)//1, fn i -> Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i)) end)
                  g
                end).(),
               ","
@@ -195,9 +188,8 @@ defmodule Main do
         if (length(arr) >= 4 and Enum.at(arr, 0) == 1 and Enum.at(arr, 1) == 0) do
           "Protocol v1, size=" <> Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, 2)) <> ", data=" <> Enum.join(
             (fn ->
-               g = []
                arr_length = length(arr)
-               g = Enum.reduce(3..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]) end)
+               g = Enum.map(3..(arr_length - 1)//1, fn i -> Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i)) end)
                g
              end).(),
             ","
@@ -214,9 +206,8 @@ defmodule Main do
         if (length(arr) >= 4 and Enum.at(arr, 0) == 1 and Enum.at(arr, 1) == 0) do
           "Protocol v1, size=" <> Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, 2)) <> ", data=" <> Enum.join(
             (fn ->
-               g = []
                arr_length = length(arr)
-               g = Enum.reduce(3..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i))]) end)
+               g = Enum.map(3..(arr_length - 1)//1, fn i -> Reflaxe.Elixir.HaxeFloat.to_string(Enum.at(arr, i)) end)
                g
              end).(),
             ","

@@ -146,14 +146,13 @@ defmodule Main do
                   if (length(arr) >= 9) do
                     "Full HTTP request: " <> Enum.join(
                       (fn ->
-                         g = []
                          g2 = (fn array_slice_values_node_4, array_slice_start_node_5, array_slice_end_node_6 ->
                            array_slice_length_node_7 = length(array_slice_values_node_4)
                            array_slice_first_node_8 = min(array_slice_length_node_7, max(0, (if (array_slice_start_node_5 < 0), do: array_slice_length_node_7 + array_slice_start_node_5, else: array_slice_start_node_5)))
                            array_slice_last_node_9 = min(array_slice_length_node_7, max(0, (if (array_slice_end_node_6 < 0), do: array_slice_length_node_7 + array_slice_end_node_6, else: array_slice_end_node_6)))
                            Enum.slice(array_slice_values_node_4, array_slice_first_node_8, max(0, (array_slice_last_node_9 - array_slice_first_node_8)))
                          end).(arr, 0, 4)
-                         g = Enum.reduce(g2, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
+                         g = Enum.map(g2, fn b -> <<b::utf8>> end)
                          g
                        end).(),
                       ""
@@ -175,14 +174,13 @@ defmodule Main do
                 if (length(arr) >= 9) do
                   "Full HTTP request: " <> Enum.join(
                     (fn ->
-                       g = []
                        g2 = (fn array_slice_values_node_10, array_slice_start_node_11, array_slice_end_node_12 ->
                          array_slice_length_node_13 = length(array_slice_values_node_10)
                          array_slice_first_node_14 = min(array_slice_length_node_13, max(0, (if (array_slice_start_node_11 < 0), do: array_slice_length_node_13 + array_slice_start_node_11, else: array_slice_start_node_11)))
                          array_slice_last_node_15 = min(array_slice_length_node_13, max(0, (if (array_slice_end_node_12 < 0), do: array_slice_length_node_13 + array_slice_end_node_12, else: array_slice_end_node_12)))
                          Enum.slice(array_slice_values_node_10, array_slice_first_node_14, max(0, (array_slice_last_node_15 - array_slice_first_node_14)))
                        end).(arr, 0, 4)
-                       g = Enum.reduce(g2, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
+                       g = Enum.map(g2, fn b -> <<b::utf8>> end)
                        g
                      end).(),
                     ""
@@ -204,14 +202,13 @@ defmodule Main do
               if (length(arr) >= 9) do
                 "Full HTTP request: " <> Enum.join(
                   (fn ->
-                     g = []
                      g2 = (fn array_slice_values_node_16, array_slice_start_node_17, array_slice_end_node_18 ->
                        array_slice_length_node_19 = length(array_slice_values_node_16)
                        array_slice_first_node_20 = min(array_slice_length_node_19, max(0, (if (array_slice_start_node_17 < 0), do: array_slice_length_node_19 + array_slice_start_node_17, else: array_slice_start_node_17)))
                        array_slice_last_node_21 = min(array_slice_length_node_19, max(0, (if (array_slice_end_node_18 < 0), do: array_slice_length_node_19 + array_slice_end_node_18, else: array_slice_end_node_18)))
                        Enum.slice(array_slice_values_node_16, array_slice_first_node_20, max(0, (array_slice_last_node_21 - array_slice_first_node_20)))
                      end).(arr, 0, 4)
-                     g = Enum.reduce(g2, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
+                     g = Enum.map(g2, fn b -> <<b::utf8>> end)
                      g
                    end).(),
                   ""
@@ -238,14 +235,13 @@ defmodule Main do
                   if (length(arr) >= 9) do
                     "Full HTTP request: " <> Enum.join(
                       (fn ->
-                         g = []
                          g2 = (fn array_slice_values_node_22, array_slice_start_node_23, array_slice_end_node_24 ->
                            array_slice_length_node_25 = length(array_slice_values_node_22)
                            array_slice_first_node_26 = min(array_slice_length_node_25, max(0, (if (array_slice_start_node_23 < 0), do: array_slice_length_node_25 + array_slice_start_node_23, else: array_slice_start_node_23)))
                            array_slice_last_node_27 = min(array_slice_length_node_25, max(0, (if (array_slice_end_node_24 < 0), do: array_slice_length_node_25 + array_slice_end_node_24, else: array_slice_end_node_24)))
                            Enum.slice(array_slice_values_node_22, array_slice_first_node_26, max(0, (array_slice_last_node_27 - array_slice_first_node_26)))
                          end).(arr, 0, 4)
-                         g = Enum.reduce(g2, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
+                         g = Enum.map(g2, fn b -> <<b::utf8>> end)
                          g
                        end).(),
                       ""
@@ -267,14 +263,13 @@ defmodule Main do
                 if (length(arr) >= 9) do
                   "Full HTTP request: " <> Enum.join(
                     (fn ->
-                       g = []
                        g2 = (fn array_slice_values_node_28, array_slice_start_node_29, array_slice_end_node_30 ->
                          array_slice_length_node_31 = length(array_slice_values_node_28)
                          array_slice_first_node_32 = min(array_slice_length_node_31, max(0, (if (array_slice_start_node_29 < 0), do: array_slice_length_node_31 + array_slice_start_node_29, else: array_slice_start_node_29)))
                          array_slice_last_node_33 = min(array_slice_length_node_31, max(0, (if (array_slice_end_node_30 < 0), do: array_slice_length_node_31 + array_slice_end_node_30, else: array_slice_end_node_30)))
                          Enum.slice(array_slice_values_node_28, array_slice_first_node_32, max(0, (array_slice_last_node_33 - array_slice_first_node_32)))
                        end).(arr, 0, 4)
-                       g = Enum.reduce(g2, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
+                       g = Enum.map(g2, fn b -> <<b::utf8>> end)
                        g
                      end).(),
                     ""
@@ -296,14 +291,13 @@ defmodule Main do
               if (length(arr) >= 9) do
                 "Full HTTP request: " <> Enum.join(
                   (fn ->
-                     g = []
                      g2 = (fn array_slice_values_node_34, array_slice_start_node_35, array_slice_end_node_36 ->
                        array_slice_length_node_37 = length(array_slice_values_node_34)
                        array_slice_first_node_38 = min(array_slice_length_node_37, max(0, (if (array_slice_start_node_35 < 0), do: array_slice_length_node_37 + array_slice_start_node_35, else: array_slice_start_node_35)))
                        array_slice_last_node_39 = min(array_slice_length_node_37, max(0, (if (array_slice_end_node_36 < 0), do: array_slice_length_node_37 + array_slice_end_node_36, else: array_slice_end_node_36)))
                        Enum.slice(array_slice_values_node_34, array_slice_first_node_38, max(0, (array_slice_last_node_39 - array_slice_first_node_38)))
                      end).(arr, 0, 4)
-                     g = Enum.reduce(g2, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
+                     g = Enum.map(g2, fn b -> <<b::utf8>> end)
                      g
                    end).(),
                   ""
@@ -325,14 +319,13 @@ defmodule Main do
             if (length(arr) >= 9) do
               "Full HTTP request: " <> Enum.join(
                 (fn ->
-                   g = []
                    g2 = (fn array_slice_values_node_40, array_slice_start_node_41, array_slice_end_node_42 ->
                      array_slice_length_node_43 = length(array_slice_values_node_40)
                      array_slice_first_node_44 = min(array_slice_length_node_43, max(0, (if (array_slice_start_node_41 < 0), do: array_slice_length_node_43 + array_slice_start_node_41, else: array_slice_start_node_41)))
                      array_slice_last_node_45 = min(array_slice_length_node_43, max(0, (if (array_slice_end_node_42 < 0), do: array_slice_length_node_43 + array_slice_end_node_42, else: array_slice_end_node_42)))
                      Enum.slice(array_slice_values_node_40, array_slice_first_node_44, max(0, (array_slice_last_node_45 - array_slice_first_node_44)))
                    end).(arr, 0, 4)
-                   g = Enum.reduce(g2, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
+                   g = Enum.map(g2, fn b -> <<b::utf8>> end)
                    g
                  end).(),
                 ""
@@ -347,14 +340,13 @@ defmodule Main do
       if (length(arr) >= 9) do
         "Full HTTP request: " <> Enum.join(
           (fn ->
-             g = []
              g2 = (fn array_slice_values_node_46, array_slice_start_node_47, array_slice_end_node_48 ->
                array_slice_length_node_49 = length(array_slice_values_node_46)
                array_slice_first_node_50 = min(array_slice_length_node_49, max(0, (if (array_slice_start_node_47 < 0), do: array_slice_length_node_49 + array_slice_start_node_47, else: array_slice_start_node_47)))
                array_slice_last_node_51 = min(array_slice_length_node_49, max(0, (if (array_slice_end_node_48 < 0), do: array_slice_length_node_49 + array_slice_end_node_48, else: array_slice_end_node_48)))
                Enum.slice(array_slice_values_node_46, array_slice_first_node_50, max(0, (array_slice_last_node_51 - array_slice_first_node_50)))
              end).(arr, 0, 4)
-             g = Enum.reduce(g2, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
+             g = Enum.map(g2, fn b -> <<b::utf8>> end)
              g
            end).(),
           ""
@@ -645,7 +637,7 @@ defmodule Main do
   def test_pattern_matching_performance() do
     operations = [%{type: "read", resource: "user", id: 123}, %{type: "write", resource: "post", id: 456}, %{type: "delete", resource: "comment", id: 789}, %{type: "update", resource: "user", id: 123}]
     results = []
-    results = Enum.reduce(operations, results, fn op, results_acc ->
+    results = Enum.reverse(Enum.reduce(operations, results, fn op, results_acc ->
       op_type = op.type
       op_resource = op.resource
       result = (case op_type do
@@ -686,8 +678,8 @@ defmodule Main do
           resource = op_resource
           "Unknown operation: " <> type <> " on " <> resource
       end)
-      Enum.concat(results_acc, [result])
-    end)
+      [result | results_acc]
+    end))
     Enum.join(results, "; ")
   end
   def main() do

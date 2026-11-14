@@ -174,6 +174,14 @@ enum ElixirASTDef {
 	/** List literal [] */
 	EList(elements:Array<ElixirAST>);
 
+	/**
+	 * List cell `[head | tail]`: a new list with `head` in front of the list `tail`.
+	 *
+	 * It builds one cell and copies nothing, so it is the constant-time way to
+	 * add an element. `tail ++ [head]` copies all of `tail`.
+	 */
+	ECons(head:ElixirAST, tail:ElixirAST);
+
 	/** Tuple literal {} */
 	ETuple(elements:Array<ElixirAST>);
 

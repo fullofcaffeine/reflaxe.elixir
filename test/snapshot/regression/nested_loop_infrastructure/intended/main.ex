@@ -1,14 +1,14 @@
 defmodule Main do
   def paired_rows(source) do
     rows = []
-    rows = Enum.reduce(source, rows, fn x, rows_acc ->
+    rows = Enum.reverse(Enum.reduce(source, rows, fn x, rows_acc ->
       row = []
-      row = Enum.reduce(source, row, fn y, row_acc ->
-        row_acc = Enum.concat(row_acc, [x])
-        Enum.concat(row_acc, [y])
-      end)
-      Enum.concat(rows_acc, [row])
-    end)
+      row = Enum.reverse(Enum.reduce(source, row, fn y, row_acc ->
+        row_acc = [x | row_acc]
+        [y | row_acc]
+      end))
+      [row | rows_acc]
+    end))
     rows
   end
   def main() do

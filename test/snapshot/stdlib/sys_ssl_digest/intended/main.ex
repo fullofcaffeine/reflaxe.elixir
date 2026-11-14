@@ -10,11 +10,11 @@ defmodule Main do
     {lines, _offset} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {lines, offset}, fn _, {acc_lines, acc_offset} ->
       try do
         if (acc_offset < StringTools.haxe_length(body)) do
-          acc_lines = acc_lines ++ [StringTools.haxe_substr_non_nil_len(body, acc_offset, 64)]
+          acc_lines = [StringTools.haxe_substr_non_nil_len(body, acc_offset, 64) | acc_lines]
           acc_offset = acc_offset + 64
           {:cont, {acc_lines, acc_offset}}
         else
-          {:halt, {acc_lines, acc_offset}}
+          {:halt, {Enum.reverse(acc_lines), acc_offset}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -22,7 +22,7 @@ defmodule Main do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_lines, acc_offset}}
+          {:halt, {Enum.reverse(acc_lines), acc_offset}}
         :throw, :continue ->
           {:cont, {acc_lines, acc_offset}}
       end

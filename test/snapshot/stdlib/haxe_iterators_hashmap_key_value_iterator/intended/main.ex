@@ -16,13 +16,13 @@ defmodule Main do
       try do
         if (apply(Map.get(iterator, :__reflaxe_class__) || Map.get(iterator, :__struct__), :has_next, [iterator])) do
           pair = apply(Map.get(iterator, :__reflaxe_class__) || Map.get(iterator, :__struct__), :next, [iterator])
-          acc_seen = acc_seen ++ [(fn ->
+          acc_seen = [(fn ->
             reflaxe_dispatch_receiver_node_0 = pair.key
             apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :to_string, [reflaxe_dispatch_receiver_node_0])
-          end).() <> "=" <> pair.value]
+          end).() <> "=" <> pair.value | acc_seen]
           {:cont, {acc_seen}}
         else
-          {:halt, {acc_seen}}
+          {:halt, {Enum.reverse(acc_seen)}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -30,7 +30,7 @@ defmodule Main do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_seen}}
+          {:halt, {Enum.reverse(acc_seen)}}
         :throw, :continue ->
           {:cont, {acc_seen}}
       end

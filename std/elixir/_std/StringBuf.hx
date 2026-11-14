@@ -22,10 +22,14 @@
 
 /**
  * A String buffer is an efficient way to build a big string by appending small elements together.
- * 
- * For Elixir target, this is implemented using iolists for optimal performance.
- * Instead of string concatenation, we build a list that Elixir can efficiently convert to binary.
- * 
+ *
+ * This file gives the Haxe type and API. The Elixir module body comes from
+ * `reflaxe.elixir.ast.transformers.StdStringBufOverrideTransforms`, which
+ * replaces the compiled body of this class. Change behavior there.
+ *
+ * On the Elixir target the buffer is a struct whose `parts` field holds
+ * iodata: a list that may hold binaries and other such lists.
+ *
  * ## Usage Example (Haxe)
  * ```haxe
  * var buf = new StringBuf();
@@ -34,25 +38,19 @@
  * buf.add("World");
  * var result = buf.toString(); // "Hello World"
  * ```
- * 
- * ## Generated Idiomatic Elixir
+ *
+ * ## Generated Elixir
  * ```elixir
- * # StringBuf.new() generates:
- * iolist = []
- * 
- * # buf.add("Hello") generates:
- * iolist = iolist ++ ["Hello"]
- * 
- * # buf.toString() generates:
- * IO.iodata_to_binary(iolist)
+ * buf = StringBuf.new()
+ * buf = StringBuf.add(buf, "Hello")   # %{buf | parts: [buf.parts, "Hello"]}
+ * StringBuf.to_string(buf)            # IO.iodata_to_binary(buf.parts)
  * ```
- * 
+ *
  * ## Performance Characteristics
- * - **O(1)** append operations (iolists are linked lists)
- * - **O(n)** final conversion to string
- * - **Memory efficient** - no intermediate string concatenations
- * - **BEAM optimized** - iolists are a core Erlang/Elixir pattern
- * 
+ * - Each append makes one two-element list and copies nothing.
+ * - `toString()` joins all pieces in one pass.
+ * - `length` joins the pieces and counts codepoints on each call.
+ *
  * @see https://www.erlang.org/doc/efficiency_guide/listhandling#iolist
  */
 @:coreApi
@@ -72,9 +70,9 @@ class StringBuf {
 	}
 
 	/**
-	 * Returns the length of `this` StringBuf in characters.
+	 * Returns the length of `this` StringBuf in characters (codepoints).
 	 * 
-	 * Note: This requires converting iolist to binary and measuring.
+	 * Note: This joins the pieces and counts on each call.
 	 * For performance-critical code, avoid calling this frequently.
 	 */
 	public var length(get, never):Int;

@@ -74,6 +74,7 @@ class TestElixirASTChildren {
 			nodeCase("ERaise", ERaise(child, child), 2, 0),
 			nodeCase("EThrow", EThrow(child), 1, 0),
 			nodeCase("EList", EList([child]), 1, 0),
+			nodeCase("ECons", ECons(child, child), 2, 0),
 			nodeCase("ETuple", ETuple([child]), 1, 0),
 			nodeCase("EMap", EMap([
 				{

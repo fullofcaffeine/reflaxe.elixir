@@ -1,4 +1,6 @@
 defmodule StringBuf do
+  # `parts` is iodata: each append wraps the earlier parts as `[earlier, piece]`,
+  # so it copies nothing. `to_string/1` joins the pieces once.
   defstruct parts: []
   def new() do
     %__MODULE__{}
@@ -9,31 +11,20 @@ defmodule StringBuf do
       Kernel.is_binary(x) -> x
       true -> inspect(x)
     end
-    %{struct | parts: struct.parts ++ [str]}
+    %{struct | parts: [struct.parts, str]}
   end
   def add_char(struct, c) do
-    %{struct | parts: struct.parts ++ [<<c::utf8>>]}
+    %{struct | parts: [struct.parts, <<c::utf8>>]}
   end
   def add_sub(struct, s, pos, len) do
-    if Kernel.is_nil(s), do: struct, else: (
-      substr = if Kernel.is_nil(len) do
-        utf16_slice(s, pos, nil)
-      else
-        utf16_slice(s, pos, len)
-      end
-      %{struct | parts: struct.parts ++ [substr]}
-    )
+    if Kernel.is_nil(s) do
+      struct
+    else
+      %{struct | parts: [struct.parts, StringTools.haxe_substr(s, pos, len)]}
+    end
   end
-  defp utf16_slice(s, pos, len) do
-    end_pos = if Kernel.is_nil(len), do: nil, else: pos + len
-    {parts, _offset} = Enum.reduce(String.graphemes(s), {[], 0}, fn grapheme, {acc, offset} ->
-      codepoint = List.first(String.to_charlist(grapheme)) || 0
-      units = if codepoint > 0xFFFF, do: 2, else: 1
-      next_offset = offset + units
-      include = next_offset > pos and (Kernel.is_nil(end_pos) or offset < end_pos)
-      {if(include, do: [grapheme | acc], else: acc), next_offset}
-    end)
-    parts |> Enum.reverse() |> IO.iodata_to_binary()
+  def get_length(struct) do
+    struct.parts |> IO.iodata_to_binary() |> String.codepoints() |> length()
   end
   def to_string(struct) do
     IO.iodata_to_binary(struct.parts)

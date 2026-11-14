@@ -10,18 +10,17 @@ defmodule Main do
     results = []
     _g = 0
     items_length = length(items)
-    _ = Enum.reduce(0..(items_length - 1)//1, results, fn i, results_acc ->
+    _ = Enum.reverse(Enum.reduce(0..(items_length - 1)//1, results, fn i, results_acc ->
       item = Enum.at(items, i)
-      Enum.concat(results_acc, ["" <> Reflaxe.Elixir.HaxeFloat.to_string(i) <> ": " <> item])
-    end)
+      ["" <> Reflaxe.Elixir.HaxeFloat.to_string(i) <> ": " <> item | results_acc]
+    end))
     nil
   end
   defp test_indexed_map() do
     items = ["first", "second", "third"]
-    indexed = []
     _g = 0
     items_length = length(items)
-    indexed = Enum.reduce(0..(items_length - 1)//1, indexed, fn i, indexed_acc -> Enum.concat(indexed_acc, ["Item #" <> Reflaxe.Elixir.HaxeFloat.to_string(i + 1) <> ": " <> Enum.at(items, i)]) end)
+    indexed = Enum.map(0..(items_length - 1)//1, fn i -> "Item #" <> Reflaxe.Elixir.HaxeFloat.to_string(i + 1) <> ": " <> Enum.at(items, i) end)
     indexed
   end
   defp test_indexed_filter() do
@@ -29,14 +28,14 @@ defmodule Main do
     even_indexed = []
     _g = 0
     items_length = length(items)
-    even_indexed = Enum.reduce(0..(items_length - 1)//1, even_indexed, fn i, even_indexed_acc ->
+    even_indexed = Enum.reverse(Enum.reduce(0..(items_length - 1)//1, even_indexed, fn i, even_indexed_acc ->
       if (rem(i, 2) == 0) do
-        even_indexed_acc = Enum.concat(even_indexed_acc, [Enum.at(items, i)])
+        even_indexed_acc = [Enum.at(items, i) | even_indexed_acc]
         even_indexed_acc
       else
         even_indexed_acc
       end
-    end)
+    end))
     even_indexed
   end
   defp test_complex_indexed_operation() do

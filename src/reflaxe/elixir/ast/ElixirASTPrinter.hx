@@ -1141,6 +1141,9 @@ class ElixirASTPrinter {
 			// ================================================================
 			// Data Structures
 			// ================================================================
+			case ECons(head, tail):
+				'[' + print(head, 0) + ' | ' + print(tail, 0) + ']';
+
 			case EList(elements):
 				// Multi-statement blocks inside list literals need special handling
 				// Invalid Elixir: [g = [], g ++ [0], g]
@@ -2817,7 +2820,7 @@ class ElixirASTPrinter {
 	/**
 	 * Print a pattern
 	 */
-	static function printPattern(pattern:EPattern):String {
+	public static function printPattern(pattern:EPattern):String {
 		return switch (pattern) {
 			case PVar(name):
 				var nm = name;
