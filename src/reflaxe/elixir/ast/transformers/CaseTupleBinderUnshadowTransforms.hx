@@ -88,7 +88,7 @@ class CaseTupleBinderUnshadowTransforms {
 	static function repairClause(c:ECaseClause, scrutinee:String):ECaseClause {
 		// If pattern matches {:atom, PVar(scrutinee)}, rename binder to value
 		var binderName:Null<String> = null;
-		var pat2 = switch (c.pattern) {
+		var unshadowedPattern = switch (c.pattern) {
 			case PTuple(es) if (es.length == 2):
 				switch (es[1]) {
 					case PVar(n) if (n == scrutinee):
@@ -115,13 +115,13 @@ class CaseTupleBinderUnshadowTransforms {
 			if (!allReadsFree || valueInUse)
 				return c;
 			return {
-				pattern: pat2,
+				pattern: unshadowedPattern,
 				guard: c.guard != null ? renameReads(c.guard, scrutinee, binderName) : null,
 				body: renameReads(c.body, scrutinee, binderName)
 			};
 		}
 		// If body references exactly one undefined lower-case local, prefix bind it to value
-		var declared = collectDeclared(pat2, c.body);
+		var declared = collectDeclared(unshadowedPattern, c.body);
 		// Nested case patterns and closure parameters own their local names.
 		// Only reads free in this body can need the existing outer repair.
 		var used = VarUseAnalyzer.freeVarNames(c.body);
@@ -137,9 +137,9 @@ class CaseTupleBinderUnshadowTransforms {
 				case EDo(sts2): makeASTWithMeta(EDo([prefix].concat(sts2)), c.body.metadata, c.body.pos);
 				default: makeASTWithMeta(EBlock([prefix, c.body]), c.body.metadata, c.body.pos);
 			};
-			return {pattern: pat2, guard: c.guard, body: body2};
+			return {pattern: unshadowedPattern, guard: c.guard, body: body2};
 		}
-		return {pattern: pat2, guard: c.guard, body: c.body};
+		return {pattern: unshadowedPattern, guard: c.guard, body: c.body};
 	}
 
 	/** Counts the reads of `name` in `node`, at any depth. A pattern that binds the name is not a read. */
