@@ -24,6 +24,12 @@ import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 	*
 	* HOW
 	* - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+	* - When the guard or body reads the binder under the shared name, rename those reads
+	*   too. A nested enum pattern, such as `Err(Stale(wanted, _))`, builds
+	*   `case g do {:err, g} -> case g do {:stale, wanted, _} -> ...`; the inner `g` is the
+	*   binder. The result is `case g do {:err, value} -> case value do ...`.
+	*   If the clause binds the name again, or already uses `value`, leave it unchanged.
+	*   Regression fixture: `regression/nested_enum_pattern_outer_value`.
 
 	*
 	* EXAMPLES
@@ -82,7 +88,7 @@ class CaseTupleBinderUnshadowTransforms {
 	static function repairClause(c:ECaseClause, scrutinee:String):ECaseClause {
 		// If pattern matches {:atom, PVar(scrutinee)}, rename binder to value
 		var binderName:Null<String> = null;
-		var pat2 = switch (c.pattern) {
+		var unshadowedPattern = switch (c.pattern) {
 			case PTuple(es) if (es.length == 2):
 				switch (es[1]) {
 					case PVar(n) if (n == scrutinee):
@@ -94,8 +100,28 @@ class CaseTupleBinderUnshadowTransforms {
 		};
 		if (binderName == null)
 			return c;
+		// The binder had the name of the scrutinee, so it shadowed it in this clause.
+		// Reads of that name in the guard or body are reads of the binder and must
+		// follow the rename. Example: `case g do {:err, g} -> case g do {:stale, ...`.
+		var readsBinder = usesName(c.body, scrutinee) || (c.guard != null && usesName(c.guard, scrutinee));
+		if (readsBinder) {
+			// Rename only when it is certainly right: every read of the name is free
+			// (nothing in the clause binds it again) and `value` is not in use.
+			var freeReads = VarUseAnalyzer.freeVarUseCounts(c.body).get(scrutinee);
+			var allReadsFree = freeReads != null && freeReads == countReads(c.body, scrutinee);
+			var valueInUse = usesName(c.body, binderName)
+				|| (c.guard != null && usesName(c.guard, binderName))
+				|| collectDeclared(c.pattern, c.body).exists(binderName);
+			if (!allReadsFree || valueInUse)
+				return c;
+			return {
+				pattern: unshadowedPattern,
+				guard: c.guard != null ? renameReads(c.guard, scrutinee, binderName) : null,
+				body: renameReads(c.body, scrutinee, binderName)
+			};
+		}
 		// If body references exactly one undefined lower-case local, prefix bind it to value
-		var declared = collectDeclared(pat2, c.body);
+		var declared = collectDeclared(unshadowedPattern, c.body);
 		// Nested case patterns and closure parameters own their local names.
 		// Only reads free in this body can need the existing outer repair.
 		var used = VarUseAnalyzer.freeVarNames(c.body);
@@ -111,9 +137,37 @@ class CaseTupleBinderUnshadowTransforms {
 				case EDo(sts2): makeASTWithMeta(EDo([prefix].concat(sts2)), c.body.metadata, c.body.pos);
 				default: makeASTWithMeta(EBlock([prefix, c.body]), c.body.metadata, c.body.pos);
 			};
-			return {pattern: pat2, guard: c.guard, body: body2};
+			return {pattern: unshadowedPattern, guard: c.guard, body: body2};
 		}
-		return {pattern: pat2, guard: c.guard, body: c.body};
+		return {pattern: unshadowedPattern, guard: c.guard, body: c.body};
+	}
+
+	/** Counts the reads of `name` in `node`, at any depth. A pattern that binds the name is not a read. */
+	static function countReads(node:ElixirAST, name:String):Int {
+		var reads = 0;
+		reflaxe.elixir.ast.ASTUtils.walk(node, function(n:ElixirAST):Void {
+			switch (n.def) {
+				case EVar(candidate) if (candidate == name):
+					reads++;
+				default:
+			}
+		});
+		return reads;
+	}
+
+	/** True when `node` reads `name` at any depth. */
+	static function usesName(node:ElixirAST, name:String):Bool {
+		return countReads(node, name) > 0;
+	}
+
+	/** Returns `node` with every read of `from` changed to a read of `to`. */
+	static function renameReads(node:ElixirAST, from:String, to:String):ElixirAST {
+		return ElixirASTTransformer.transformNode(node, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EVar(candidate) if (candidate == from): makeASTWithMeta(EVar(to), n.metadata, n.pos);
+				default: n;
+			}
+		});
 	}
 
 	static function allowLocal(name:String):Bool {

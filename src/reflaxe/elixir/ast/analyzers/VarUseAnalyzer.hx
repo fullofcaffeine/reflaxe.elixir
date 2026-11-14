@@ -824,6 +824,14 @@ class VarUseAnalyzer {
 					// Capture expressions can reference variables
 					walk(capturedExpr, false);
 				default:
+					// Every other form, such as `raise`, `throw`, `try` and `receive`, can
+					// read variables too. Visit its children with the shared traversal, as
+					// stmtUsesVarExact does. A form that is skipped here looks like "no use",
+					// and a cleanup pass then deletes a binding that is still read.
+					reflaxe.elixir.ast.ElixirASTTransformer.transformAST(x, child -> {
+						walk(child, false);
+						child;
+					});
 			}
 		}
 		walk(n, false);
