@@ -23,7 +23,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 
 	*
 	* HOW
-	* - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+	* - Walk the ElixirAST once with `ElixirASTTransformer.transformNode`, which visits
+	*   children before parents, and rewrite the matching statements of each block.
+	* - Each block is handled exactly once, so the cost grows linearly with the size of
+	*   the function, also for deeply nested `case` chains.
 
 	*
 	* EXAMPLES
@@ -37,18 +40,9 @@ class ConcatSelfAssignBinderUnderscoreTransforms {
 	static function rewriteNode(node:ElixirAST):ElixirAST {
 		return ElixirASTTransformer.transformNode(node, function(n:ElixirAST):ElixirAST {
 			return switch (n.def) {
-				case EDef(name, args, g, body): makeASTWithMeta(EDef(name, args, g, rewriteNode(body)), n.metadata, n.pos);
-				case EDefp(name2, args2, g2, body2): makeASTWithMeta(EDefp(name2, args2, g2, rewriteNode(body2)), n.metadata, n.pos);
-				case EFn(clauses):
-					var outClauses = [];
-					for (cl in clauses)
-						outClauses.push({args: cl.args, guard: cl.guard, body: rewriteNode(cl.body)});
-					makeASTWithMeta(EFn(outClauses), n.metadata, n.pos);
-				case ECase(expr, clauses):
-					var newClauses = [];
-					for (cl in clauses)
-						newClauses.push({pattern: cl.pattern, guard: cl.guard, body: rewriteNode(cl.body)});
-					makeASTWithMeta(ECase(expr, newClauses), n.metadata, n.pos);
+				// `transformNode` visits children before parents, so function, anonymous
+				// function and `case` bodies need no extra recursive call here. An extra call
+				// repeats all nested work once per level and doubles the cost with each level.
 				case EBlock(stmts): makeASTWithMeta(EBlock(rewrite(stmts)), n.metadata, n.pos);
 				case EDo(stmts2): makeASTWithMeta(EDo(rewrite(stmts2)), n.metadata, n.pos);
 				default: n;

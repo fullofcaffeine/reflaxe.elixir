@@ -1282,10 +1282,15 @@ class BinderTransforms {
 	 *   without changing semantics.
 	 *
 	 * HOW
-	 * - For each function body, recursively process blocks and track variables
+	 * - Walk each function body once, from the outside in, and track variables
 	 *   assigned to nil or to clearly non-nil literals.
-	 * - Process blocks nested in expression positions with a copy of the current
-	 *   state. Do not export their assignments to later parent statements.
+	 * - Process each nested block with a copy of the state at that point, and update
+	 *   the copy at each statement of the nested block. Do not export its assignments
+	 *   to later parent statements.
+	 * - Handle each node exactly once, so the cost grows with the size of the function
+	 *   and not with its nesting depth. Regression fixtures:
+	 *   `regression/early_return_chain_linear_time` and
+	 *   `regression/nested_nil_check_rebinding`.
 	 * - Process generated ExUnit test and setup macro bodies as independent
 	 *   function scopes because ExUnitTransform has already removed their EDef nodes.
 	 * - Replace `is_nil(var)` with `true` for known nil values and `false` for
@@ -1461,57 +1466,36 @@ class BinderTransforms {
 			}
 		}
 
-		// Process a block with flowing known-value sets.
-		function processBlock(block:ElixirAST, incomingNonNil:Map<String, Bool>, incomingNil:Map<String, Bool>):ElixirAST {
+		// Rewrite one node of the current function scope, from the outside in.
+		//
+		// A block gets its own copy of the known-value sets and updates it statement by
+		// statement. Any other node rewrites its children with the sets of the nearest
+		// enclosing block and then folds its own nil check. An anonymous function is left
+		// untouched, because its arguments can shadow outer variables.
+		//
+		// Exactly one call must handle each node. Do not add a second walk that starts
+		// this function again for the blocks inside a statement: the work then multiplies
+		// at every level of nesting. A chain of "return early on error" switches adds one
+		// level per step, so such a function stops compiling in reasonable time.
+		function rewriteInScope(node:ElixirAST, incomingNonNil:Map<String, Bool>, incomingNil:Map<String, Bool>):ElixirAST {
 			// Defensive: some defs may not carry a body (e.g. stubbed functions); skip safely.
-			if (block == null)
-				return block;
-			return switch (block.def) {
-				case EBlock(stmts):
-					var nonNil = new Map<String, Bool>();
-					var knownNil = new Map<String, Bool>();
-					// Copy incoming sets.
-					for (k in incomingNonNil.keys())
-						nonNil.set(k, true);
-					for (k in incomingNil.keys())
-						knownNil.set(k, true);
+			if (node == null || node.def == null)
+				return node;
+			return switch (node.def) {
+				case EFn(_):
+					node;
+				case EBlock(stmts) | EDo(stmts):
+					var nonNil = incomingNonNil.copy();
+					var knownNil = incomingNil.copy();
 					var out:Array<ElixirAST> = [];
 					for (stmt in stmts) {
-						var s = stmt;
-						// Generic deep rewrite first. A block can remain nested in a function
-						// argument until later IIFE cleanup, so process that block's statements
-						// in sequence before rewriting its nil checks.
-						s = ElixirASTTransformer.transformNodeUntil(s, function(n:ElixirAST):ElixirAST {
-							return switch (n.def) {
-								case EBlock(_) | EDo(_):
-									processBlock(n, nonNil, knownNil);
-								default:
-									rewriteProvableIsNil(n, nonNil, knownNil);
-							}
-						}, function(n:ElixirAST):Bool {
-							return switch (n.def) {
-								case EFn(_): true;
-								default: false;
-							};
-						});
-						// Attempt rewrite in conditions
+						var s = rewriteInScope(stmt, nonNil, knownNil);
+						// A statement-level `if` whose condition became a constant keeps
+						// only the branch that runs.
 						switch (s.def) {
-							case EIf(cond, thenB, elseB):
-								var newCond = rewriteProvableIsNil(cond, nonNil, knownNil);
-								var newThen = processBlock(thenB, nonNil, knownNil);
-								var newElse = elseB != null ? processBlock(elseB, nonNil, knownNil) : null;
-								var rewrittenIf = makeASTWithMeta(EIf(newCond, newThen, newElse), s.metadata, s.pos);
-								s = IfConstSimplifyTransforms.transformPass(rewrittenIf);
-							case ECase(expr, clauses):
-								var newExpr = rewriteProvableIsNil(expr, nonNil, knownNil);
-								var newClauses = [];
-								for (c in clauses) {
-									var bodyProcessed = processBlock(c.body, nonNil, knownNil);
-									newClauses.push({pattern: c.pattern, guard: c.guard, body: bodyProcessed});
-								}
-								s = makeASTWithMeta(ECase(newExpr, newClauses), s.metadata, s.pos);
+							case EIf(_, _, _):
+								s = IfConstSimplifyTransforms.transformPass(s);
 							default:
-								// No-op; we'll examine assignments below
 						}
 						// Conservatively invalidate every variable assigned anywhere in the
 						// statement. A direct top-level assignment can establish a new fact below.
@@ -1554,27 +1538,24 @@ class BinderTransforms {
 						}
 						out.push(s);
 					}
-					makeASTWithMeta(EBlock(out), block.metadata, block.pos);
-				case EDo(statements):
-					var processed = processBlock(makeASTWithMeta(EBlock(statements), block.metadata, block.pos), incomingNonNil, incomingNil);
-					switch (processed.def) {
-						case EBlock(out): makeASTWithMeta(EDo(out), block.metadata, block.pos);
-						default: block;
-					}
+					makeASTWithMeta(switch (node.def) {
+						case EDo(_): EDo(out);
+						default: EBlock(out);
+					}, node.metadata, node.pos);
 				default:
-					// Not a block; conservatively descend
-					ElixirASTTransformer.transformNode(block, function(n) return n);
+					rewriteProvableIsNil(ElixirASTTransformer.transformAST(node, child -> rewriteInScope(child, incomingNonNil, incomingNil)), incomingNonNil,
+						incomingNil);
 			}
 		}
 
 		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
 			return switch (n.def) {
 				case EDef(name, args, guards, body):
-					makeASTWithMeta(EDef(name, args, guards, processBlock(body, new Map(), new Map())), n.metadata, n.pos);
+					makeASTWithMeta(EDef(name, args, guards, rewriteInScope(body, new Map(), new Map())), n.metadata, n.pos);
 				case EDefp(name, args, guards, body):
-					makeASTWithMeta(EDefp(name, args, guards, processBlock(body, new Map(), new Map())), n.metadata, n.pos);
+					makeASTWithMeta(EDefp(name, args, guards, rewriteInScope(body, new Map(), new Map())), n.metadata, n.pos);
 				case EMacroCall(name, args, body) if (isExUnitFunctionMacro(name)):
-					makeASTWithMeta(EMacroCall(name, args, processBlock(body, new Map(), new Map())), n.metadata, n.pos);
+					makeASTWithMeta(EMacroCall(name, args, rewriteInScope(body, new Map(), new Map())), n.metadata, n.pos);
 				default:
 					n;
 			}

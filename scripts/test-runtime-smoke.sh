@@ -62,6 +62,8 @@ TEST_DIRS=(
   "test/snapshot/regression/nullable_enum_cond"
   "test/snapshot/regression/base_exception_catch"
   "test/snapshot/regression/nullable_record_guard"
+  "test/snapshot/regression/nested_nil_check_rebinding"
+  "test/snapshot/regression/early_return_chain_linear_time"
   "test/snapshot/regression/enum_extraction_usage"
   "test/snapshot/regression/OrphanedEnumParameters"
   "test/snapshot/regression/troubleshooting_patterns"
