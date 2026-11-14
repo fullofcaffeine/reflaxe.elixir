@@ -165,7 +165,7 @@ defmodule EnhancedPatternMatchingTest do
       "empty string"
     else
       s = input
-      if (String.length(s) == 1) do
+      if (StringTools.haxe_length(s) == 1) do
         "single character: \"#{s}\""
       else
         s = input
@@ -173,7 +173,7 @@ defmodule EnhancedPatternMatchingTest do
           "has prefix: \"#{s}\""
         else
           s = input
-          if (StringTools.haxe_substr(s, (String.length(s) - 7), nil) == "_suffix") do
+          if (StringTools.haxe_substr(s, (StringTools.haxe_length(s) - 7), nil) == "_suffix") do
             "has suffix: \"#{s}\""
           else
             s = input
@@ -181,7 +181,7 @@ defmodule EnhancedPatternMatchingTest do
               "contains @: \"#{s}\""
             else
               s = input
-              if (String.length(s) > 100) do
+              if (StringTools.haxe_length(s) > 100) do
                 "very long string"
               else
                 s = input
@@ -251,13 +251,13 @@ defmodule EnhancedPatternMatchingTest do
     end)
   end
   defp validate_input(input) do
-    if (String.length(input) == 0) do
+    if (StringTools.haxe_length(input) == 0) do
       context = "validation"
       context = context || ""
       result = {:error, "Empty input", context}
       result
     else
-      if (String.length(input) > 1000) do
+      if (StringTools.haxe_length(input) > 1000) do
         context = "validation"
         context = context || ""
         result = {:error, "Input too long", context}
@@ -282,7 +282,7 @@ defmodule EnhancedPatternMatchingTest do
     end
   end
   defp format_output(data) do
-    if (String.length(data) == 0) do
+    if (StringTools.haxe_length(data) == 0) do
       context = "formatting"
       context = context || ""
       result = {:error, "No data to format", context}

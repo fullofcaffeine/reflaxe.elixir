@@ -9,7 +9,7 @@ defmodule Main do
     offset = 0
     {lines, _offset} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {lines, offset}, fn _, {acc_lines, acc_offset} ->
       try do
-        if (acc_offset < String.length(body)) do
+        if (acc_offset < StringTools.haxe_length(body)) do
           acc_lines = acc_lines ++ [StringTools.haxe_substr_non_nil_len(body, acc_offset, 64)]
           acc_offset = acc_offset + 64
           {:cont, {acc_lines, acc_offset}}

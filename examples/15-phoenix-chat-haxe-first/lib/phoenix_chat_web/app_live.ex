@@ -244,8 +244,8 @@ defmodule PhoenixChatWeb.AppLive do
   end
   defp display_name_from_id(id) do
     clean = id
-    clean = if (String.length(clean) > 8) do
-      StringTools.haxe_substr(clean, (String.length(clean) - 8), nil)
+    clean = if (StringTools.haxe_length(clean) > 8) do
+      StringTools.haxe_substr(clean, (StringTools.haxe_length(clean) - 8), nil)
     else
       clean
     end

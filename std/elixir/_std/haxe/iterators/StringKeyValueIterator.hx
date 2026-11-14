@@ -25,14 +25,15 @@ class StringKeyValueIterator {
 		return untyped __elixir__('Process.get({0}, {1})', stateKey(), this.offset);
 	}
 
+	@:access(StringTools)
 	public function hasNext():Bool {
-		return untyped __elixir__('String.at({0}, {1}) != nil', this.s, currentOffset());
+		return StringTools.haxeCharCodeAt(this.s, currentOffset()) != null;
 	}
 
 	@:access(StringTools)
 	public function next():{key:Int, value:Int} {
 		var index = currentOffset();
 		untyped __elixir__('Process.put({0}, {1} + 1)', stateKey(), index);
-		return {key: index, value: untyped __elixir__('Enum.at(String.to_charlist({0}), {1})', this.s, index)};
+		return {key: index, value: StringTools.fastCodeAt(this.s, index)};
 	}
 }

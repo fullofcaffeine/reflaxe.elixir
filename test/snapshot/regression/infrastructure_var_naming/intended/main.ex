@@ -38,7 +38,7 @@ defmodule Main do
     input = "ABC"
     result = ""
     _g = 0
-    input_length = String.length(input)
+    input_length = StringTools.haxe_length(input)
     result = Enum.reduce(0..(input_length - 1)//1, result, fn i, result_acc ->
       c = StringTools.haxe_char_at(input, i)
       result_acc <> c

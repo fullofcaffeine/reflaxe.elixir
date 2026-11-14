@@ -542,7 +542,7 @@ class ElixirASTPassRegistry {
 		});
 		passes.push({
 			name: "KnownStringLengthFieldRewrite",
-			description: "Transform .length on locals proven to hold strings into String.length/1",
+			description: "Transform .length on locals proven to hold strings into a codepoint count",
 			enabled: true,
 			pass: reflaxe.elixir.ast.transformers.KnownStringLengthFieldRewriteTransforms.pass,
 			runAfter: ["ArrayLengthFieldToFunction"]

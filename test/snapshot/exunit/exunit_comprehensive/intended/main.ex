@@ -21,7 +21,7 @@ defmodule Main do
   end
   test "string operations" do
     str = "Hello, World!"
-    assert(13 == String.length(str), "String length should be correct")
+    assert(13 == length(String.codepoints(str)), "String length should be correct")
     assert(StringTools.haxe_index_of(str, "World", 0) > 0, "Should contain 'World'")
     assert("HELLO, WORLD!" == String.upcase(str), "Uppercase should work")
     assert("hello, world!" == String.downcase(str), "Lowercase should work")

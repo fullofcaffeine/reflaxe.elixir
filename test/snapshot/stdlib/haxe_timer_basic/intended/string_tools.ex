@@ -2,7 +2,7 @@ defmodule StringTools do
   def url_encode(s) do
     result = ""
     _g = 0
-    s_length = String.length(s)
+    s_length = StringTools.haxe_length(s)
     result = Enum.reduce(0..(s_length - 1)//1, result, fn i, result_acc ->
       c = fast_code_at(s, i)
       if (c >= 65 and c <= 90 or c >= 97 and c <= 122 or c >= 48 and c <= 57 or c == 45 or c == 95 or c == 46 or c == 126), do: result_acc <> haxe_char_at(s, i), else: result_acc <> "%" <> hex(c, 2)
@@ -26,22 +26,18 @@ defmodule StringTools do
     s
   end
   def starts_with(s, start) do
-    String.length(s) >= String.length(start) and haxe_substr(s, 0, String.length(start)) == start
+    StringTools.haxe_length(s) >= StringTools.haxe_length(start) and haxe_substr(s, 0, StringTools.haxe_length(start)) == start
   end
   def ends_with(s, end_param) do
-    elen = String.length(end_param)
-    slen = String.length(s)
+    elen = StringTools.haxe_length(end_param)
+    slen = StringTools.haxe_length(s)
     slen >= elen and haxe_substr(s, (slen - elen), elen) == end_param
   end
   def is_space(s, pos) do
-    if (pos < 0) do
-      false
-    else
-      (case Enum.at(String.to_charlist(s), pos) do
-        nil -> false
-        code -> code > 8 and code < 14 or code == 32
-      end)
-    end
+    (case haxe_char_code_at(s, pos) do
+      nil -> false
+      code -> code > 8 and code < 14 or code == 32
+    end)
   end
   def ltrim(s) do
     String.trim_leading(s)
@@ -53,13 +49,13 @@ defmodule StringTools do
     ltrim(rtrim(s))
   end
   def lpad(s, c, l) do
-    if (String.length(c) <= 0) do
+    if (StringTools.haxe_length(c) <= 0) do
       s
     else
       buf = ""
       {buf} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {buf}, fn _, {acc_buf} ->
         try do
-          if (String.length(acc_buf) + String.length(s) < l) do
+          if (StringTools.haxe_length(acc_buf) + StringTools.haxe_length(s) < l) do
             acc_buf = acc_buf <> c
             {:cont, {acc_buf}}
           else
@@ -80,13 +76,13 @@ defmodule StringTools do
     end
   end
   def rpad(s, c, l) do
-    if (String.length(c) <= 0) do
+    if (StringTools.haxe_length(c) <= 0) do
       s
     else
       buf = s
       {buf} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {buf}, fn _, {acc_buf} ->
         try do
-          if (String.length(acc_buf) < l) do
+          if (StringTools.haxe_length(acc_buf) < l) do
             acc_buf = acc_buf <> c
             {:cont, {acc_buf}}
           else
@@ -117,13 +113,13 @@ defmodule StringTools do
     end
   end
   def fast_code_at(s, index) do
-    case Enum.at(String.to_charlist(s), index) do
+    case haxe_char_code_at(s, index) do
       nil -> -1
       code -> code
     end
   end
   def unsafe_code_at(s, index) do
-    case Enum.at(String.to_charlist(s), index) do
+    case haxe_char_code_at(s, index) do
       nil -> 0
       code -> code
     end
@@ -131,18 +127,91 @@ defmodule StringTools do
   def contains(s, value) do
     haxe_index_of(s, value, 0) != -1
   end
-  def haxe_char_at(s, index) do
-    if index < 0 do
-      ""
+  def haxe_unit_index(s) do
+    if byte_size(s) < 256 do
+      haxe_unit_index_build(s)
     else
-      String.at(s, index) || ""
+      case Process.get(:reflaxe_haxe_string_index) do
+        {^s, index} ->
+          index
+        _ ->
+          index = haxe_unit_index_build(s)
+          Process.put(:reflaxe_haxe_string_index, {s, index})
+          index
+      end
     end
+  end
+  def haxe_unit_index_build(s) do
+    if haxe_ascii_only(s), do: :ascii, else: :erlang.list_to_tuple(haxe_unit_offsets(s, 0, []))
+  end
+  def haxe_ascii_only(s) do
+    case s do
+      <<word::64, rest::binary>> when Bitwise.band(word, 0x8080808080808080) == 0 -> haxe_ascii_only(rest)
+      <<byte, rest::binary>> when byte < 128 -> haxe_ascii_only(rest)
+      <<>> -> true
+      _ -> false
+    end
+  end
+  def haxe_unit_offsets(s, offset, found) do
+    case s do
+      <<_::utf8, rest::binary>> -> haxe_unit_offsets(rest, offset + byte_size(s) - byte_size(rest), [offset | found])
+      <<_, rest::binary>> -> haxe_unit_offsets(rest, offset + 1, [offset | found])
+      <<>> -> :lists.reverse([offset | found])
+    end
+  end
+  def haxe_unit_count(s, index) do
+    if index == :ascii, do: byte_size(s), else: tuple_size(index) - 1
+  end
+  def haxe_unit_offset(index, position) do
+    if index == :ascii, do: position, else: elem(index, position)
+  end
+  def haxe_unit_position(index, offset) do
+    if index == :ascii, do: offset, else: haxe_unit_search(index, offset, 0, tuple_size(index) - 1)
+  end
+  def haxe_unit_search(offsets, offset, low, high) do
+    cond do
+      low >= high -> low
+      elem(offsets, div(low + high + 1, 2)) <= offset -> haxe_unit_search(offsets, offset, div(low + high + 1, 2), high)
+      true -> haxe_unit_search(offsets, offset, low, div(low + high + 1, 2) - 1)
+    end
+  end
+  def haxe_unit_part(s, index, start, count) do
+    haxe_byte_range(s, haxe_unit_offset(index, min(start, haxe_unit_count(s, index))), haxe_unit_offset(index, min(start + max(count, 0), haxe_unit_count(s, index))))
+  end
+  def haxe_byte_range(s, from, to) do
+    binary_part(s, from, to - from)
+  end
+  def haxe_unit_code(s, offset) do
+    case s do
+      <<_::binary-size(offset), code::utf8, _::binary>> -> code
+      _ -> :binary.at(s, offset)
+    end
+  end
+  def haxe_last_match(s, value, size, from) do
+    cond do
+      from < 0 -> -1
+      binary_part(s, from, size) == value -> from
+      true -> haxe_last_match(s, value, size, from - 1)
+    end
+  end
+  def haxe_length(s) do
+    haxe_unit_count(s, haxe_unit_index(s))
+  end
+  def haxe_char_at(s, index) do
+    if index < 0, do: "", else: haxe_unit_part(s, haxe_unit_index(s), index, 1)
   end
   def haxe_char_code_at(s, index) do
     if index < 0 do
       nil
     else
-      Enum.at(String.to_charlist(s), index)
+      case haxe_unit_index(s) do
+        :ascii ->
+          if index < byte_size(s), do: :binary.at(s, index), else: nil
+        offsets when index < tuple_size(offsets) - 1 ->
+          haxe_unit_code(s, elem(offsets, index))
+        _ ->
+          nil
+      end
     end
   end
   def haxe_index_of(s, value, start_index \\ nil) do
@@ -150,7 +219,8 @@ defmodule StringTools do
     (fn ->
       reflaxe_string_source = s
       reflaxe_string_value = value
-      reflaxe_string_length = String.length(reflaxe_string_source)
+      reflaxe_string_index = haxe_unit_index(reflaxe_string_source)
+      reflaxe_string_length = haxe_unit_count(reflaxe_string_source, reflaxe_string_index)
       reflaxe_string_start =
         cond do
           Kernel.is_nil(start_index) -> 0
@@ -164,9 +234,9 @@ defmodule StringTools do
         reflaxe_string_start > reflaxe_string_length ->
           -1
         true ->
-          reflaxe_string_slice = String.slice(reflaxe_string_source, reflaxe_string_start, reflaxe_string_length - reflaxe_string_start)
-          case :binary.match(reflaxe_string_slice, reflaxe_string_value) do
-            {byte_pos, _} -> String.length(binary_part(reflaxe_string_slice, 0, byte_pos)) + reflaxe_string_start
+          reflaxe_string_from = haxe_unit_offset(reflaxe_string_index, reflaxe_string_start)
+          case :binary.match(reflaxe_string_source, reflaxe_string_value, scope: {reflaxe_string_from, byte_size(reflaxe_string_source) - reflaxe_string_from}) do
+            {byte_pos, _} -> haxe_unit_position(reflaxe_string_index, byte_pos)
             :nomatch -> -1
           end
       end
@@ -178,36 +248,33 @@ defmodule StringTools do
     (fn ->
       reflaxe_string_source = s
       reflaxe_string_value = value
-      reflaxe_string_length = String.length(reflaxe_string_source)
+      reflaxe_string_index = haxe_unit_index(reflaxe_string_source)
+      reflaxe_string_length = haxe_unit_count(reflaxe_string_source, reflaxe_string_index)
       reflaxe_string_start = if Kernel.is_nil(start_index), do: reflaxe_string_length, else: min(max(start_index, 0), reflaxe_string_length)
 
       if reflaxe_string_value == "" do
         reflaxe_string_start
       else
-        reflaxe_string_graphemes = String.graphemes(reflaxe_string_source)
-        reflaxe_string_needle = String.graphemes(reflaxe_string_value)
-        reflaxe_string_needle_length = length(reflaxe_string_needle)
+        reflaxe_string_size = byte_size(reflaxe_string_value)
+        reflaxe_string_from = min(haxe_unit_offset(reflaxe_string_index, reflaxe_string_start), byte_size(reflaxe_string_source) - reflaxe_string_size)
 
-        if reflaxe_string_needle_length > reflaxe_string_length do
-          -1
-        else
-          reflaxe_string_max_start = min(reflaxe_string_start, reflaxe_string_length - reflaxe_string_needle_length)
-          Enum.find(reflaxe_string_max_start..0//-1, -1, fn reflaxe_string_index ->
-            Enum.slice(reflaxe_string_graphemes, reflaxe_string_index, reflaxe_string_needle_length) == reflaxe_string_needle
-          end)
+        case haxe_last_match(reflaxe_string_source, reflaxe_string_value, reflaxe_string_size, reflaxe_string_from) do
+          -1 -> -1
+          byte_pos -> haxe_unit_position(reflaxe_string_index, byte_pos)
         end
       end
     end).()
 
   end
   def haxe_split(s, delimiter) do
-    if delimiter == "", do: String.graphemes(s), else: String.split(s, delimiter)
+    if delimiter == "", do: String.codepoints(s), else: String.split(s, delimiter)
   end
   def haxe_substr(s, pos, len \\ nil) do
 
     (fn ->
       reflaxe_string_source = s
-      reflaxe_string_length = String.length(reflaxe_string_source)
+      reflaxe_string_index = haxe_unit_index(reflaxe_string_source)
+      reflaxe_string_length = haxe_unit_count(reflaxe_string_source, reflaxe_string_index)
       reflaxe_string_start =
         cond do
           pos < 0 -> max(reflaxe_string_length + pos, 0)
@@ -221,7 +288,7 @@ defmodule StringTools do
           true -> len
         end
 
-      String.slice(reflaxe_string_source, reflaxe_string_start, reflaxe_string_count)
+      haxe_unit_part(reflaxe_string_source, reflaxe_string_index, reflaxe_string_start, reflaxe_string_count)
     end).()
 
   end
@@ -229,7 +296,8 @@ defmodule StringTools do
 
     (fn ->
       reflaxe_string_source = s
-      reflaxe_string_length = String.length(reflaxe_string_source)
+      reflaxe_string_index = haxe_unit_index(reflaxe_string_source)
+      reflaxe_string_length = haxe_unit_count(reflaxe_string_source, reflaxe_string_index)
       reflaxe_string_start =
         cond do
           pos < 0 -> max(reflaxe_string_length + pos, 0)
@@ -242,7 +310,7 @@ defmodule StringTools do
           true -> len
         end
 
-      String.slice(reflaxe_string_source, reflaxe_string_start, reflaxe_string_count)
+      haxe_unit_part(reflaxe_string_source, reflaxe_string_index, reflaxe_string_start, reflaxe_string_count)
     end).()
 
   end
@@ -250,12 +318,11 @@ defmodule StringTools do
 
     (fn ->
       reflaxe_string_source = s
-      reflaxe_string_length = String.length(reflaxe_string_source)
+      reflaxe_string_index = haxe_unit_index(reflaxe_string_source)
+      reflaxe_string_length = haxe_unit_count(reflaxe_string_source, reflaxe_string_index)
       reflaxe_string_start = min(max(start_index, 0), reflaxe_string_length)
       reflaxe_string_end = if Kernel.is_nil(end_index), do: reflaxe_string_length, else: min(max(end_index, 0), reflaxe_string_length)
-      reflaxe_string_from = min(reflaxe_string_start, reflaxe_string_end)
-      reflaxe_string_count = abs(reflaxe_string_end - reflaxe_string_start)
-      String.slice(reflaxe_string_source, reflaxe_string_from, reflaxe_string_count)
+      haxe_unit_part(reflaxe_string_source, reflaxe_string_index, min(reflaxe_string_start, reflaxe_string_end), abs(reflaxe_string_end - reflaxe_string_start))
     end).()
 
   end

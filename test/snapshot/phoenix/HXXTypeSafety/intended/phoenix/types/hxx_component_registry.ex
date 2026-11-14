@@ -301,7 +301,7 @@ defmodule HXXComponentRegistry do
   defp camel_to_kebab(str) do
     result = ""
     _g = 0
-    str_length = String.length(str)
+    str_length = StringTools.haxe_length(str)
     result = Enum.reduce(0..(str_length - 1)//1, result, fn i, result_acc ->
       char = StringTools.haxe_char_at(str, i)
       if (char == String.upcase(char) and i > 0) do

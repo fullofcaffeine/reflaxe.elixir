@@ -368,7 +368,7 @@ defmodule Main do
     data = [1, [2, 3], %{name: "test", value: 42}]
     switch_result_1 = (case (fn
       dyn_obj when is_binary(dyn_obj) ->
-        String.length(dyn_obj)
+        length(String.codepoints(dyn_obj))
       dyn_obj when is_list(dyn_obj) ->
         length(dyn_obj)
       dyn_obj ->
@@ -382,7 +382,7 @@ defmodule Main do
         arr = data
         if (Std.is(arr, Array) and Reflaxe.Elixir.HaxeFloat.gt((fn
           dyn_obj when is_binary(dyn_obj) ->
-            String.length(dyn_obj)
+            length(String.codepoints(dyn_obj))
           dyn_obj when is_list(dyn_obj) ->
             length(dyn_obj)
           dyn_obj ->
@@ -394,7 +394,7 @@ defmodule Main do
         end).(arr), 3)) do
           "Large array with " <> Reflaxe.Elixir.HaxeFloat.to_string((fn
             dyn_obj when is_binary(dyn_obj) ->
-              String.length(dyn_obj)
+              length(String.codepoints(dyn_obj))
             dyn_obj when is_list(dyn_obj) ->
               length(dyn_obj)
             dyn_obj ->
@@ -425,7 +425,7 @@ defmodule Main do
           arr = data
           if (Std.is(arr, Array) and Reflaxe.Elixir.HaxeFloat.gt((fn
             dyn_obj when is_binary(dyn_obj) ->
-              String.length(dyn_obj)
+              length(String.codepoints(dyn_obj))
             dyn_obj when is_list(dyn_obj) ->
               length(dyn_obj)
             dyn_obj ->
@@ -437,7 +437,7 @@ defmodule Main do
           end).(arr), 3)) do
             "Large array with " <> Reflaxe.Elixir.HaxeFloat.to_string((fn
               dyn_obj when is_binary(dyn_obj) ->
-                String.length(dyn_obj)
+                length(String.codepoints(dyn_obj))
               dyn_obj when is_list(dyn_obj) ->
                 length(dyn_obj)
               dyn_obj ->
@@ -487,7 +487,7 @@ defmodule Main do
           arr = data
           if (Std.is(arr, Array) and Reflaxe.Elixir.HaxeFloat.gt((fn
             dyn_obj when is_binary(dyn_obj) ->
-              String.length(dyn_obj)
+              length(String.codepoints(dyn_obj))
             dyn_obj when is_list(dyn_obj) ->
               length(dyn_obj)
             dyn_obj ->
@@ -499,7 +499,7 @@ defmodule Main do
           end).(arr), 3)) do
             "Large array with " <> Reflaxe.Elixir.HaxeFloat.to_string((fn
               dyn_obj when is_binary(dyn_obj) ->
-                String.length(dyn_obj)
+                length(String.codepoints(dyn_obj))
               dyn_obj when is_list(dyn_obj) ->
                 length(dyn_obj)
               dyn_obj ->
@@ -567,7 +567,7 @@ defmodule Main do
           arr = data
           if (Std.is(arr, Array) and Reflaxe.Elixir.HaxeFloat.gt((fn
             dyn_obj when is_binary(dyn_obj) ->
-              String.length(dyn_obj)
+              length(String.codepoints(dyn_obj))
             dyn_obj when is_list(dyn_obj) ->
               length(dyn_obj)
             dyn_obj ->
@@ -579,7 +579,7 @@ defmodule Main do
           end).(arr), 3)) do
             "Large array with " <> Reflaxe.Elixir.HaxeFloat.to_string((fn
               dyn_obj when is_binary(dyn_obj) ->
-                String.length(dyn_obj)
+                length(String.codepoints(dyn_obj))
               dyn_obj when is_list(dyn_obj) ->
                 length(dyn_obj)
               dyn_obj ->
@@ -597,7 +597,7 @@ defmodule Main do
         arr = data
         if (Std.is(arr, Array) and Reflaxe.Elixir.HaxeFloat.gt((fn
           dyn_obj when is_binary(dyn_obj) ->
-            String.length(dyn_obj)
+            length(String.codepoints(dyn_obj))
           dyn_obj when is_list(dyn_obj) ->
             length(dyn_obj)
           dyn_obj ->
@@ -609,7 +609,7 @@ defmodule Main do
         end).(arr), 3)) do
           "Large array with " <> Reflaxe.Elixir.HaxeFloat.to_string((fn
             dyn_obj when is_binary(dyn_obj) ->
-              String.length(dyn_obj)
+              length(String.codepoints(dyn_obj))
             dyn_obj when is_list(dyn_obj) ->
               length(dyn_obj)
             dyn_obj ->

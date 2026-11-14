@@ -11,7 +11,7 @@ defmodule Main do
     container = Container.new()
     apply(Map.get(container, :__reflaxe_class__) || Map.get(container, :__struct__), :add, [container, "Hello"])
     apply(Map.get(container, :__reflaxe_class__) || Map.get(container, :__struct__), :add, [container, "World"])
-    _lengths = apply(Map.get(container, :__reflaxe_class__) || Map.get(container, :__struct__), :map, [container, fn s -> String.length(s) end])
+    _lengths = apply(Map.get(container, :__reflaxe_class__) || Map.get(container, :__struct__), :map, [container, fn s -> StringTools.haxe_length(s) end])
     nil
   end
 end

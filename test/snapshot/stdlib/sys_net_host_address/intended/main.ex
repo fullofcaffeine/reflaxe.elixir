@@ -10,7 +10,7 @@ defmodule Main do
     if (apply(Map.get(host, :__reflaxe_class__) || Map.get(host, :__struct__), :to_string, [host]) != "127.0.0.1") do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Host.toString should preserve IPv4 loopback"]
     end
-    if (String.length(apply(Map.get(host, :__reflaxe_class__) || Map.get(host, :__struct__), :reverse, [host])) == 0) do
+    if (StringTools.haxe_length(apply(Map.get(host, :__reflaxe_class__) || Map.get(host, :__struct__), :reverse, [host])) == 0) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Host.reverse should return a local name"]
     end
     high_host = Host.new("255.255.255.255")
@@ -46,7 +46,7 @@ defmodule Main do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Address.getHost should reconstruct Host from integer IPv4"]
     end
     local_name = Host.localhost()
-    if (Kernel.is_nil(local_name) or String.length(local_name) == 0) do
+    if (Kernel.is_nil(local_name) or StringTools.haxe_length(local_name) == 0) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Host.localhost should return a hostname"]
     end
   end

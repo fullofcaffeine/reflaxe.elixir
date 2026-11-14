@@ -75,7 +75,7 @@ class Utf8 {
 	}
 
 	public static inline function length(value:String):Int {
-		return untyped __elixir__('String.length({0})', value);
+		return StringTools.haxeLength(value);
 	}
 
 	public static function compare(left:String, right:String):Int {

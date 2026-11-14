@@ -5,7 +5,7 @@ defmodule TestString do
     struct
   end
   def cca(struct, index) do
-    if (index < String.length(struct.str)) do
+    if (index < StringTools.haxe_length(struct.str)) do
       StringTools.haxe_char_code_at(struct.str, index)
     else
       0

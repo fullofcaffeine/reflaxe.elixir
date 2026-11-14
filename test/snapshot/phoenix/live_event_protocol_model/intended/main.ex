@@ -38,6 +38,6 @@ defmodule Main do
     assert_that(StringTools.haxe_index_of(Main.manifest(), "event hook Ping ping ()", 0) >= 0, "ping event missing")
     assert_that(StringTools.haxe_index_of(Main.manifest(), "event hook TodoSelected todo_selected (todoId:Int->todo_id:int, fromHook:Bool->from_hook:bool)", 0) >= 0, "multi-field event missing")
     assert_that(StringTools.haxe_index_of(Main.manifest(), "event hook TagsChanged tags_changed (tags:Array<String>->tags:string_array)", 0) >= 0, "array field missing")
-    assert_that(String.length(Main.hash()) == 40, "manifest hash should be sha1")
+    assert_that(StringTools.haxe_length(Main.hash()) == 40, "manifest hash should be sha1")
   end
 end

@@ -104,9 +104,9 @@
         }
       ],
       "footprint": {
-        "maxGeneratedFiles": 16,
+        "maxGeneratedFiles": 17,
         "maxApplicationFiles": 7,
-        "maxSupportFiles": 9,
+        "maxSupportFiles": 10,
         "supportGroups": [
           {
             "id": "haxe-runtime",
@@ -128,6 +128,13 @@
             "maxFiles": 2,
             "reason": "Reachable root-level Haxe compatibility modules emitted by this build.",
             "tracking": "haxe.elixir.codex-3qh.14"
+          },
+          {
+            "id": "string-position-runtime",
+            "paths": ["string_tools.ex"],
+            "maxFiles": 1,
+            "reason": "StringCommandRenderable reads value.length. A Haxe String length counts codepoints, so it calls StringTools.haxe_length/1 instead of the grapheme-counting String.length/1; see docs/05-architecture/STRING_INDEX_UNITS.md.",
+            "tracking": "haxe.elixir.codex-m41"
           }
         ]
       },
@@ -196,8 +203,8 @@
           "metric": "helperCall",
           "file": "portable_chat_domain/message_rules.ex",
           "key": "StringTools",
-          "count": 5,
-          "reason": "Portable trim and split operations retain Haxe semantics until native String operations are proven equivalent for these inputs.",
+          "count": 12,
+          "reason": "Portable trim and split operations retain Haxe semantics until native String operations are proven equivalent for these inputs. Seven calls are String length reads: a Haxe length counts codepoints through StringTools.haxe_length/1, not graphemes as String.length/1 does (docs/05-architecture/STRING_INDEX_UNITS.md).",
           "tracking": "haxe.elixir.codex-3qh.10"
         },
         {
