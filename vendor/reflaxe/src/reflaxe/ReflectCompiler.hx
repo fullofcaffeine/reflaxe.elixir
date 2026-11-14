@@ -344,7 +344,7 @@ class ReflectCompiler {
 							return true;
 						}
 						for(cls in rebuiltClasses) {
-							if(cls.name == c.name && cls.module == c.module && cls.pack.equals(c.pack)) {
+							if(isSameSourceClass(cls, c)) {
 								return true;
 							}
 						}
@@ -363,6 +363,34 @@ class ReflectCompiler {
 		}
 		#end
 		return moduleTypes;
+	}
+
+	/**
+		Returns true when a class that Haxe typed again in this server request
+		(`rebuilt`) is the same source class as `current`, a class in the list
+		that Haxe gives to the target after typing.
+
+		The two records cannot be compared by `pack` and `name`. The build macro
+		sees a class with its Haxe path, for example
+		`my_app.server.ErrorJSON`. Before the target runs, Haxe renames a class
+		that has `@:native("MyAppWeb.ErrorJSON")` to that native path and keeps
+		the Haxe path in `@:realPath`. A comparison of the paths then never
+		matches. The cache filter dropped the edited class, and a warm build
+		kept the old target file while it reported success.
+
+		This compares the source module and the Haxe path, which do not change.
+	**/
+	static function isSameSourceClass(rebuilt: ClassType, current: ClassType): Bool {
+		return rebuilt.module == current.module && sourceClassPath(rebuilt) == sourceClassPath(current);
+	}
+
+	/**
+		Returns the dotted path that the Haxe source gives to a class. Haxe
+		stores it in `@:realPath` after it applies an `@:native` name.
+	**/
+	static function sourceClassPath(cls: ClassType): String {
+		final realPath = cls.meta.extractStringFromFirstMeta(":realPath");
+		return realPath != null ? realPath : cls.pack.concat([cls.name]).join(".");
 	}
 
 	/**
