@@ -1,0 +1,13 @@
+--- a/tests/unit/src/unitstd/StringBuf.unit.hx
++++ b/test/upstream_unitstd/upstream/StringBuf.unit.hx
+@@ -29,7 +29,9 @@
+ x.addChar(0x1F47D);
+ x.toString() == "👽";
+ var x = new StringBuf();
+-#if utf16
++#if (elixir || reflaxe_runtime || elixir_output)
++x.addSub("a👽b", 1, 1);
++#elseif utf16
+ x.addSub("a👽b", 1, 2);
+ #else
+ x.addSub("a👽b", 1, 1);

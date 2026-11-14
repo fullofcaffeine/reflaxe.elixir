@@ -69,8 +69,8 @@ Things to know:
   sensitive string.
 - **Two large strings.** A loop that reads two different strings of 256 bytes or more in turn is
   correct but slow.
-- **Not yet on this rule:** `StringBuf.addSub` and `haxe.Template`.
-- **Still slower than linear:** `StringBuf` appends and `array.push` in a loop.
+- **Not yet on this rule:** `haxe.Template`.
+- **Still slower than linear:** `array.push` in a loop.
 
 See [String positions count codepoints](../05-architecture/STRING_INDEX_UNITS.md).
 

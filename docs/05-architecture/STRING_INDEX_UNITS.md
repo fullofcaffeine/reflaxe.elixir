@@ -69,8 +69,10 @@ Graphemes remain available on purpose through the typed Elixir API
 
 `StringTools.fastCodeAt`, `unsafeCodeAt`, `isSpace`, `UnicodeString.length`,
 `haxe.Utf8.length`, `StringIterator` and `StringKeyValueIterator` use the same
-helpers. A `.length` read on a value whose type is not known at compile time,
-but which is a binary at run time, uses `length(String.codepoints(value))`.
+helpers. `StringBuf.addSub(s, pos, len)` cuts with `StringTools.haxe_substr`, and
+`StringBuf.length` counts the codepoints of the built text. A `.length` read on
+a value whose type is not known at compile time, but which is a binary at run
+time, uses `length(String.codepoints(value))`.
 
 `EReg` follows the rule too: `matchedPos`, `matchedLeft`, `matchedRight`, the
 `matchSub` range, `replace` and `map` count codepoints, so
@@ -79,11 +81,6 @@ module has its own small counting functions and does not need `StringTools`.
 
 `s.length` no longer prints as `String.length(s)`. That call reads well, but it
 counts graphemes, so it gives a different number from every other operation.
-
-`StringBuf.addSub(s, pos, len)` is not changed here. The branch
-`loop/linear-buffers`, which is stacked on this work, moves it to codepoints
-together with the `StringBuf` append cost (`haxe.elixir.codex-e0w`). Until that
-branch lands, `addSub` still cuts in UTF-16 units.
 
 ### Text that is not valid UTF-8
 
@@ -224,15 +221,12 @@ No measured operation is slower than before.
 - `EReg.replace` and `EReg.map` convert positions with a walk for each match,
   as before this change, so many matches in one large string cost more than
   linear time.
-- Not yet on this rule: `StringBuf.addSub` (branch `loop/linear-buffers`,
-  `haxe.elixir.codex-e0w`), and `haxe.Template` and the legacy untyped rewrite
-  in `ElixirASTTransformer.stringMethodTransformPass`
-  (`haxe.elixir.codex-u66`).
+- Not yet on this rule: `haxe.Template` and the legacy untyped rewrite in
+  `ElixirASTTransformer.stringMethodTransformPass` (`haxe.elixir.codex-u66`).
 - `StringTools.ltrim` and `rtrim` use Elixir's Unicode whitespace list, which is
   wider than Haxe's (`haxe.elixir.codex-u66`).
-- A fast String read does not make a whole parser linear. `StringBuf` appends
-  (`haxe.elixir.codex-e0w`) and `array.push` in a loop (`haxe.elixir.codex-sd6`)
-  still copy their whole content on each call.
+- A fast String read does not make a whole parser linear. `array.push` in a
+  loop (`haxe.elixir.codex-sd6`) still copies the whole array on each call.
 
 ## Tests
 
@@ -244,5 +238,8 @@ No measured operation is slower than before.
 - `test/snapshot/regression/string_scan_scaling`: three loop shapes on 800 KB
   with a time budget, and what the process keeps: whole and appended strings
   only, no slices, at most 1,048,576 offsets, nothing after `releaseIndex`.
+- `test/snapshot/regression/string_buf_linear_append`: `StringBuf.addSub` and
+  `length` against Haxe interpreter results, and 800 KB of appends with a time
+  budget.
 
 All run in `npm run test:runtime-smoke`.

@@ -1,0 +1,6 @@
+-cp .
+-lib reflaxe.elixir
+-main Main
+-D elixir_output=out
+-D no-utf16
+-dce full
