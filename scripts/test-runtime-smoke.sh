@@ -68,6 +68,7 @@ TEST_DIRS=(
   "test/snapshot/regression/tuple_value_with_hoisted_receiver"
   "test/snapshot/regression/switch_after_early_return_switch"
   "test/snapshot/regression/catch_all_name_in_throw"
+  "test/snapshot/regression/nested_enum_pattern_outer_value"
   "test/snapshot/regression/enum_extraction_usage"
   "test/snapshot/regression/OrphanedEnumParameters"
   "test/snapshot/regression/troubleshooting_patterns"
