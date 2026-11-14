@@ -18,11 +18,12 @@ defmodule Main do
   end
   def two_arguments(batch, first, second) do
     array_index_receiver_node_2 = batch.values
-    array_index_receiver_node_3 = batch.values
-    {:missing, (case Enum.find_index(array_index_receiver_node_2, fn item -> item == first end) do
+    tuple_elem_1 = (case Enum.find_index(array_index_receiver_node_2, fn item -> item == first end) do
       nil -> -1
       index -> index
-    end), (case Enum.find_index(array_index_receiver_node_3, fn item -> item == second end) do
+    end)
+    array_index_receiver_node_3 = batch.values
+    {:missing, tuple_elem_1, (case Enum.find_index(array_index_receiver_node_3, fn item -> item == second end) do
       nil -> -1
       index -> index
     end)}
