@@ -69,6 +69,13 @@ Things to know:
   sensitive string.
 - **Two large strings.** A loop that reads two different strings of 256 bytes or more in turn is
   correct but slow.
+- **Large slices and very large text.** Each read of a slice of a much larger binary (a
+  `String.split/2` part, a decoded JSON field, a regex capture) compares it with a kept copy: fast
+  for tens of KB, slow for hundreds. Copy a large slice with `:binary.copy/1` before a character
+  loop. Above 1,048,576 codepoints a loop grows faster than linear.
+- **EReg byte mode.** Patterns compile without the `u` flag, so `.` or a character class can match
+  one byte of a multi-byte character. Global `replace`, `map` and `split` also differ from the Haxe
+  interpreter for patterns that match the empty string.
 - **Not yet on this rule:** `StringBuf.addSub` and `haxe.Template`.
 - **Still slower than linear:** `StringBuf` appends and `array.push` in a loop.
 

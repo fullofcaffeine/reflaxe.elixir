@@ -114,10 +114,10 @@ size: 72 KB took about three minutes.
   offset are equal, so each operation is a direct byte read.
 - **256 bytes or more, other text:** the index is `{stride, count,
   checkpoints}`. `checkpoints` is a tuple with the byte offset of every
-  `stride`-th codepoint. `stride` is 1 for text up to 1 MB, so each read is
-  direct. Above 1 MB it doubles until the tuple holds at most 1,048,576
-  offsets, and a read walks at most `stride - 1` codepoints from the nearest
-  stored offset.
+  `stride`-th codepoint. `stride` is 1 for text of up to 1,048,576 codepoints,
+  so each read is direct. Above that it doubles until the tuple holds at most
+  1,048,576 offsets, and a read walks at most `stride - 1` codepoints from the
+  nearest stored offset.
 
 ### What is kept, and for how long
 
@@ -135,21 +135,33 @@ of the large string.
 
 Rules that limit what is kept:
 
-- **A slice of a larger binary is not kept.** `binary_part/3` and pattern
-  matching return a slice that refers to the whole original binary. Keeping a
-  300-byte slice of a 66 MB request body would keep all 66 MB alive. The index
-  is not kept when `:binary.referenced_byte_size(s)` is more than twice
-  `byte_size(s)`. The limit is twice the size, not the exact size, because a
-  string built with `<>` has spare room behind it for the next append: BEAM
-  reports up to twice its size for it. Such strings are common inputs, and
-  without the index a loop over them is quadratic again. The cost of this
-  choice is bounded: the kept entry can hold at most as much unused memory as
-  the string itself.
+- **A slice of a larger binary is kept as a copy.** `binary_part/3`, pattern
+  matching, `String.split/2`, JSON decoders and regex captures return a slice
+  that refers to the whole original binary. Keeping a 300-byte slice of a
+  66 MB request body would keep all 66 MB alive. When
+  `:binary.referenced_byte_size(s)` is more than twice `byte_size(s)`, the
+  entry holds `:binary.copy(s)` in place of `s`. The extra memory is the size
+  of the string itself. Because the lookup compares bytes, a later read of the
+  slice finds the copy; that comparison reads the whole string, so each read
+  of a slice costs time in proportion to its size (about 1 microsecond per
+  40 KB on the test machine). A loop over a 40 KB slice takes under 0.1 s. A
+  loop over a slice of several hundred KB is slow again: copy such a slice
+  with `:binary.copy/1` before the loop, which makes it a whole string.
+- **Why twice the size.** A string built with `<>` has spare room behind it
+  for the next append, and BEAM reports up to twice its size for it. Such
+  strings are common inputs. They are kept as they are, with no copy and no
+  comparison cost. The unused memory such an entry can hold is at most the
+  size of the string itself.
 - **The index is at most 8 MB.** The checkpoint tuple never has more than
-  1,048,576 elements of one machine word each. 8 MB was chosen because it
-  keeps direct reads for text up to 1 MB, which covers ordinary documents and
-  API payloads, and it keeps the index near or below the size of the text it
-  serves. Larger text stays linear; each read walks a few codepoints more.
+  1,048,576 elements of one machine word each. Up to 1,048,576 codepoints
+  every read is direct and a character loop is linear. Above that, a read
+  walks on average `stride / 2` codepoints, so the cost of one read grows
+  with the codepoint count divided by 1,048,576, and a loop over the whole
+  text grows faster than linear: measured 64 ms for 0.5 million codepoints,
+  144 ms for 1.05 million, 391 ms for 2.25 million and 1044 ms for 4.5
+  million. 8 MB was chosen because it keeps direct reads for ordinary
+  documents and API payloads and keeps the index near or below the size of
+  the text it serves.
 - **The string itself has no size limit.** A loop over a 50 MB string keeps
   that string until another large string replaces it or the process ends.
 
@@ -177,7 +189,11 @@ The loop `while (i < s.length) total += s.charCodeAt(i++)`, from
 | --- | --- | --- |
 | 800 KB ASCII | stopped at the 20 s limit | 66 ms |
 | 800 KB with two-byte characters | stopped at the 20 s limit | 131 ms |
-| 2.4 MB with two-byte characters (stride 4) | not measured | 522 ms |
+| 2.4 MB with two-byte characters (stride 4) | not measured | 366 ms |
+| 40 KB ASCII slice of a 120 KB parent | 1122 ms | 83 ms |
+| 40 KB two-byte slice of a 120 KB parent | 11091 ms | 75 ms |
+
+For the two slice rows, "before" is this change without the kept copy.
 
 A JSON parser written in Haxe (Caf's canonical JSON codec), on an array of
 numbers:
@@ -217,13 +233,23 @@ No measured operation is slower than before.
   bytes or more in turn rebuilds the index on each switch. The results stay
   correct; the cost is one pass over the string per switch. Task:
   `haxe.elixir.codex-dvy`.
-- A large slice of a much larger binary gets no kept index, so a character loop
-  over it walks the slice on each read. Copy it first with `:binary.copy/1`
-  when it must be scanned.
+- Each read of a slice of a much larger binary compares the slice with its
+  kept copy. That is fast for tens of KB and slow for hundreds of KB. Copy a
+  large slice first with `:binary.copy/1` when it must be scanned.
+- Text above 1,048,576 codepoints is read through a sparse index, so a loop
+  over it grows faster than linear (see the measurements above).
 - The dynamic `.length` path counts on each call and does not use the index.
 - `EReg.replace` and `EReg.map` convert positions with a walk for each match,
   as before this change, so many matches in one large string cost more than
   linear time.
+- `EReg` compiles patterns in byte mode (no `u` flag), as before this change.
+  `.`, a character class, or `^` in multiline mode can then match one byte of
+  a multi-byte character; such a byte counts as one position
+  (`haxe.elixir.codex-nw3`).
+- For a pattern that can match the empty string, global `EReg.replace`, `map`
+  and `split` place some results differently from the Haxe interpreter, as
+  before this change. Example: `$` in multiline mode on `"ab\r\ncd\r\n"`
+  (`haxe.elixir.codex-uy3`).
 - Not yet on this rule: `StringBuf.addSub` (branch `loop/linear-buffers`,
   `haxe.elixir.codex-e0w`), and `haxe.Template` and the legacy untyped rewrite
   in `ElixirASTTransformer.stringMethodTransformPass`
@@ -242,7 +268,8 @@ No measured operation is slower than before.
 - `test/snapshot/regression/ereg_codepoint_positions`: `EReg` positions used
   with `substr`, checked against Haxe interpreter results.
 - `test/snapshot/regression/string_scan_scaling`: three loop shapes on 800 KB
-  with a time budget, and what the process keeps: whole and appended strings
-  only, no slices, at most 1,048,576 offsets, nothing after `releaseIndex`.
+  with a time budget, a loop over a 40 KB part returned by `String.split/2`,
+  and what the process keeps: whole and appended strings as they are, a copy
+  for a slice, at most 1,048,576 offsets, nothing after `releaseIndex`.
 
 All run in `npm run test:runtime-smoke`.
