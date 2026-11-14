@@ -40,7 +40,7 @@
         "otp": "27.2"
       },
       "phoenix": "1.7.24",
-      "phoenixHtml": "4.3.0",
+      "phoenixHtml": "4.4.0",
       "phoenixLiveView": "1.2.9",
       "liveReact": {
         "kind": "git",
@@ -91,7 +91,7 @@
         "otp": "27.2"
       },
       "phoenix": "1.8.10",
-      "phoenixHtml": "4.3.0",
+      "phoenixHtml": "4.4.0",
       "phoenixLiveView": "1.2.9",
       "liveReact": {
         "kind": "git",
@@ -142,7 +142,7 @@
         "otp": "27.2"
       },
       "phoenix": "1.7.24",
-      "phoenixHtml": "3.3.4",
+      "phoenixHtml": "3.3.5",
       "phoenixLiveView": "1.2.9",
       "liveReact": {
         "kind": "git",

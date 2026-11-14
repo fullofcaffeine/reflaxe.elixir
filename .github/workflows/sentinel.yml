@@ -85,7 +85,10 @@ jobs:
             qa-typed-phoenix-targets.log
 
   smoke:
-    runs-on: ubuntu-latest
+    # Pinned to ubuntu-24.04: Playwright does not support Chromium on ubuntu-26.04,
+    # which ubuntu-latest now resolves to. Remove the pin when Playwright supports
+    # Chromium on ubuntu-26.04 (tracked in haxe.elixir.codex-55k).
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     services:
       postgres:
@@ -321,7 +324,10 @@ jobs:
             todo-app-mix-test.log
 
   smoke-phoenix-chat:
-    runs-on: ubuntu-latest
+    # Pinned to ubuntu-24.04: Playwright does not support Chromium on ubuntu-26.04,
+    # which ubuntu-latest now resolves to. Remove the pin when Playwright supports
+    # Chromium on ubuntu-26.04 (tracked in haxe.elixir.codex-55k).
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - name: Checkout
@@ -408,7 +414,10 @@ jobs:
             qa-chat-run.log
 
   smoke-live-react:
-    runs-on: ubuntu-latest
+    # Pinned to ubuntu-24.04: Playwright does not support Chromium on ubuntu-26.04,
+    # which ubuntu-latest now resolves to. Remove the pin when Playwright supports
+    # Chromium on ubuntu-26.04 (tracked in haxe.elixir.codex-55k).
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - name: Checkout
