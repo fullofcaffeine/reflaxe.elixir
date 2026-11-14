@@ -515,6 +515,33 @@ Local fix:
   regeneration; the cost is one in-memory copy of those source files.
 - Commit both successful baselines only after output succeeds, so a failed
   target build cannot poison the next request.
+- Compare that source text without its classes and module-level fields. Many
+  source files declare a typedef or an enum beside a class or beside
+  module-level functions (a "mixed file"). With the complete file text, an edit
+  in a function body of a mixed file regenerated every module. Now a class in a
+  mixed file has the same rule as a class in a file of its own: Haxe types it
+  again and reports it, and Reflaxe builds it and the classes that Haxe typed
+  again with it.
+
+  What is cut: `class Name { ... }` and `interface Name { ... }` from the
+  keyword to the last brace, and each module-level function or variable from
+  its first modifier to the end of its body. Each cut leaves one zero byte.
+  What stays: every enum, typedef and abstract, imports, the text between
+  declarations, and the metadata and documentation in front of a class (Haxe
+  does not include them in the class position). An edit in any of these still
+  regenerates every module.
+
+  Each position that Haxe reports is checked against the bytes on disk: the
+  text must start with that declaration, and a class must end with `}`. A
+  position that fails the check is not cut, which can only cause an extra full
+  regeneration. The hidden class that holds the methods of an abstract is never
+  cut, because its position is the abstract itself.
+
+  Why this keeps the earlier guarantee: the text of every non-class
+  declaration, with its metadata, is still compared byte for byte. The only
+  edits that no longer force a full regeneration are edits inside a class or
+  inside a module-level field. Those are the edits that already took the
+  class-only path when the class had a file of its own.
 
 Current decision:
 
@@ -529,6 +556,17 @@ Upstream action:
 Good upstream candidate after the warm-server regression is also reproduced in
 Reflaxe's own target-neutral test suite. Do not open a PR without explicit user
 authorization.
+
+The `mixed-file` cases in `test:reflaxe-server-cache` edit a class body, a
+module-level function body, a typedef and an abstract in mixed files. They
+require a partial build for the first two and a full build for the last two,
+and compare each warm output with a fresh build. The `mixed-registry` case
+keeps a `@:phxHookNames` registry beside a class: a class edit must pass, and a
+registry edit must still make the warm build reject the removed hook name.
+
+Not done (`haxe.elixir.codex-c0o.4`): an edit to the enum, typedef or abstract
+itself still regenerates every module. A class edit in a module that many
+modules import still builds each module that Haxe typed again.
 
 Validation before removal:
 
