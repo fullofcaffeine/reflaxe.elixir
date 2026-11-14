@@ -527,6 +527,41 @@ run_native_class_variant() {
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "native-class-removed"
 }
 
+run_discovery_variant() {
+	local variants="$FIXTURE_DIR/variants/discovery"
+	local phase source expected
+
+	# Module discovery keeps its scan results on the server. Each phase changes
+	# only the metadata of a class that nothing refers to, so the server must
+	# scan that file again: the module appears, then disappears.
+	for phase in plain-before annotated plain-after; do
+		if [[ "$phase" == annotated ]]; then
+			source=CacheDiscoveredAnnotated.hx
+			expected=present
+		else
+			source=CacheDiscoveredPlain.hx
+			expected=absent
+		fi
+		cp "$variants/$source" "$PROJECT_DIR/src/CacheDiscovered.hx"
+		compile_server "$SERVER_OUTPUT"
+		compile_direct "$TMP_ROOT/direct-discovery-$phase"
+		compare_generated_output "$TMP_ROOT/direct-discovery-$phase" "$SERVER_OUTPUT" "discovery-$phase"
+		if [[ "$expected" == present && ! -f "$SERVER_OUTPUT/cache_discovered.ex" ]]; then
+			echo "SERVER_CACHE_PARITY:discovery-$phase did not generate the annotated module" >&2
+			return 1
+		fi
+		if [[ "$expected" == absent && -e "$SERVER_OUTPUT/cache_discovered.ex" ]]; then
+			echo "SERVER_CACHE_PARITY:discovery-$phase kept a module that is no longer annotated" >&2
+			return 1
+		fi
+	done
+
+	restore_baseline_sources
+	rm -f "$PROJECT_DIR/src/CacheDiscovered.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "discovery-removed"
+}
+
 run_private_exports_variant() {
 	local variants="$FIXTURE_DIR/variants/private-exports"
 	cp "$variants/PrivateCacheScope.hx" "$PROJECT_DIR/src/PrivateCacheScope.hx"
@@ -651,6 +686,7 @@ run_hxml_define_variant
 run_module_routes_variant
 run_private_exports_variant
 run_native_class_variant
+run_discovery_variant
 run_cross_project_variant
 
 FINAL_FD_COUNT="$(open_fd_count "$SERVER_PID")"
