@@ -1,6 +1,7 @@
 {
 	"filesGenerated": [
 		"type.ex",
+		"string_tools.ex",
 		"std.ex",
 		"reflaxe/exception.ex",
 		"reflaxe/elixir/haxe_throw.ex",
@@ -18,7 +19,7 @@
 		"abstraction_lab/command_renderable.ex"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 45,
+	"id": 48,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
@@ -48,7 +49,7 @@
 		},
 		{
 			"path": "abstraction_lab/string_command_renderable.ex",
-			"sha256": "986e1b161ec3551baafad864c4928c5316dddd94acc9d9598e240a8c433696e1"
+			"sha256": "db1b48b05b152104ca17fd180cfa754a4f07dacb1c01477d3b65ca566aa3ede1"
 		},
 		{
 			"path": "haxe/_call_stack/call_stack_impl_.ex",
@@ -83,9 +84,13 @@
 			"sha256": "8a84e0a9ac56b570713a432d5e9d2de5bc2a0cb19aacdc3a80284a6a439bcf97"
 		},
 		{
+			"path": "string_tools.ex",
+			"sha256": "5caed888cea7f9daa26268cf69a0ef1a5945014bd506a36e60ee998015baac6f"
+		},
+		{
 			"path": "type.ex",
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "3afbc2d0a450b2b3e9383c5d9e7b69bcbe346c51a06ceedef04e0cd387a39997"
+	"generation": "00aec75a9722104b81731494652b95b3d57478e60733112dea913e4ff969d230"
 }

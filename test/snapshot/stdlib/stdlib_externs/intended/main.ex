@@ -109,7 +109,7 @@ defmodule Main do
     _filename = Path.basename("/home/user/file.txt")
     _filename_no_ext = Path.rootname(Path.basename("/home/user/file.txt"))
     ext = Path.extname("/home/user/file.txt")
-    _ = if (String.length(ext) > 0 and StringTools.haxe_char_at(ext, 0) == ".") do
+    _ = if (StringTools.haxe_length(ext) > 0 and StringTools.haxe_char_at(ext, 0) == ".") do
       StringTools.haxe_substr(ext, 1, nil)
     else
       ext

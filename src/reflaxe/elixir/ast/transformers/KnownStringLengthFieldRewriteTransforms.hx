@@ -9,7 +9,7 @@ import reflaxe.elixir.ast.ElixirASTHelpers.*;
  *
  * WHAT
  * - Rewrites `.length` field access on locals proven to hold Elixir strings into
- *   `String.length(local)` before printing.
+ *   `length(String.codepoints(local))` before printing.
  *
  * WHY
  * - Some inlined iterator shapes lose Haxe receiver type metadata before the AST
@@ -17,7 +17,10 @@ import reflaxe.elixir.ast.ElixirASTHelpers.*;
  *     text = "Aé"
  *     g_s = text
  *     g_s.length
- *   `g_s.length` is invalid on BEAM strings; it must be `String.length(g_s)`.
+ *   `g_s.length` is invalid on BEAM strings. A Haxe String length counts codepoints,
+ *   so it becomes `length(String.codepoints(g_s))`. This late pass has no typed proof
+ *   that the StringTools runtime module is emitted, so it does not call
+ *   `StringTools.haxe_length/1`, which typed `.length` access uses.
  * - This keeps the printer generic and preserves struct fields such as `Bytes.length`.
  *
  * HOW
@@ -255,7 +258,8 @@ class KnownStringLengthFieldRewriteTransforms {
 				var rewrittenTarget = rewrite(target, knownStrings);
 				switch (rewrittenTarget.def) {
 					case EVar(name) if (knownStrings.exists(name)):
-						makeASTWithMeta(ERemoteCall(makeAST(EVar("String")), "length", [rewrittenTarget]), node.metadata, node.pos);
+						makeASTWithMeta(ECall(null, "length", [makeAST(ERemoteCall(makeAST(EVar("String")), "codepoints", [rewrittenTarget]))]),
+							node.metadata, node.pos);
 					default:
 						rewrittenTarget != target ? makeASTWithMeta(EField(rewrittenTarget, "length"), node.metadata, node.pos) : node;
 				}

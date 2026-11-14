@@ -24,8 +24,8 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - is_space/2 is left intact; new ltrim/rtrim no longer depend on it.
  * - Inline `substr` calls evaluate their source exactly once and calculate the
  *   source length only when negative, omitted, dynamic, or clamped bounds need
- *   it. A fixed `substr(0, positiveLength)` lowers directly to `String.slice/3`
- *   without an unused length binding.
+ *   it. A fixed `substr(0, positiveLength)` cuts with `StringTools.haxe_unit_part/4`
+ *   without an unused length binding. Lengths and positions count codepoints.
  *
  * EXAMPLES
  * Haxe (caller):
@@ -91,17 +91,16 @@ class StringToolsNativeRewrite {
 				var sVar = makeAST(EVar("s"));
 				var posVar = makeAST(EVar("pos"));
 				var codeVar = makeAST(EVar("code"));
-				var charlist = makeAST(ERemoteCall(makeAST(EVar("String")), "to_charlist", [sVar]));
-				var enumAt = makeAST(ERemoteCall(makeAST(EVar("Enum")), "at", [charlist, posVar]));
+				// The code of the codepoint at `pos`, or nil outside the string.
+				var codeAt = makeAST(ECall(null, "haxe_char_code_at", [sVar, posVar]));
 				var cond = makeAST(EBinary(Or,
 					makeAST(EBinary(And, makeAST(EBinary(Greater, codeVar, makeAST(EInteger(8)))), makeAST(EBinary(Less, codeVar, makeAST(EInteger(14)))))),
 					makeAST(EBinary(Equal, codeVar, makeAST(EInteger(32))))));
-				var codeCase = makeAST(ECase(enumAt, [
+				var codeCase = makeAST(ECase(codeAt, [
 					{pattern: PLiteral(makeAST(ENil)), guard: null, body: makeAST(EBoolean(false))},
 					{pattern: PVar("code"), guard: null, body: cond}
 				]));
-				var isNegative = makeAST(EBinary(Less, posVar, makeAST(EInteger(0))));
-				makeASTWithMeta(EDef(fnName, newParams, guards, makeAST(EIf(isNegative, makeAST(EBoolean(false)), codeCase))), n.metadata, n.pos);
+				makeASTWithMeta(EDef(fnName, newParams, guards, codeCase), n.metadata, n.pos);
 			default:
 				n;
 		}
@@ -121,7 +120,7 @@ class StringToolsNativeRewrite {
 		var lengthNeeded = posInt == null || posInt != 0 || lenIsNil || lenInt == null || lenInt < 0;
 		var statements:Array<ElixirAST> = [makeAST(EMatch(PVar("reflaxe_string_source"), source))];
 		if (lengthNeeded) {
-			statements.push(makeAST(EMatch(PVar("reflaxe_string_length"), makeAST(ERemoteCall(makeAST(EVar("String")), "length", [sourceVar])))));
+			statements.push(makeAST(EMatch(PVar("reflaxe_string_length"), makeAST(ERemoteCall(makeAST(EVar("StringTools")), "haxe_length", [sourceVar])))));
 		}
 
 		var posExpr:ElixirAST;
@@ -197,7 +196,13 @@ class StringToolsNativeRewrite {
 
 		statements.push(makeAST(EMatch(PVar("reflaxe_string_start"), startExpr)));
 		statements.push(makeAST(EMatch(PVar("reflaxe_string_count"), countExpr)));
-		statements.push(makeAST(ERemoteCall(makeAST(EVar("String")), "slice", [sourceVar, startVar, countVar])));
+		// Positions are codepoints; `String.slice/3` would count graphemes.
+		statements.push(makeAST(ERemoteCall(makeAST(EVar("StringTools")), "haxe_unit_part", [
+			sourceVar,
+			makeAST(ERemoteCall(makeAST(EVar("StringTools")), "haxe_unit_index", [sourceVar])),
+			startVar,
+			countVar
+		])));
 		var body = makeAST(EBlock(statements));
 		return makeAST(ECall(makeAST(EFn([{args: [], guard: null, body: body}])), "", []));
 	}

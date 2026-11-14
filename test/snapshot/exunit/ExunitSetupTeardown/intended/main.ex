@@ -17,7 +17,7 @@ defmodule Main do
   end
   test "string" do
     str = "Hello"
-    assert(5 == String.length(str), "String length should be 5")
+    assert(5 == length(String.codepoints(str)), "String length should be 5")
     assert("HELLO" == String.upcase(str), "Uppercase should work")
   end
 end

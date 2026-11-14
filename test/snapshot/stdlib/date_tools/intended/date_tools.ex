@@ -157,7 +157,7 @@ defmodule DateTools do
           {:cont, {acc_result, acc_p}}
       end
     end)
-    result = apply(Map.get(result, :__reflaxe_class__) || Map.get(result, :__struct__), :add_sub, [result, f, p, (String.length(f) - p)])
+    result = apply(Map.get(result, :__reflaxe_class__) || Map.get(result, :__struct__), :add_sub, [result, f, p, (StringTools.haxe_length(f) - p)])
     apply(Map.get(result, :__reflaxe_class__) || Map.get(result, :__struct__), :to_string, [result])
   end
   def format(d, f) do

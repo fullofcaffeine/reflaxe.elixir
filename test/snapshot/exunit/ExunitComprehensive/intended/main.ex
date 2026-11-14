@@ -109,8 +109,8 @@ defmodule Main do
     assert(0 == 0, "Empty array should have length 0")
     assert(true, "Empty array check should work")
     empty_str = ""
-    assert(String.length(empty_str) == 0, "Empty string should have length 0")
-    refute(String.length(empty_str) > 0, "Empty string should not have positive length")
+    assert(length(String.codepoints(empty_str)) == 0, "Empty string should have length 0")
+    refute(length(String.codepoints(empty_str)) > 0, "Empty string should not have positive length")
     single_0 = 42
     assert(1 == 1, "Single element array should have length 1")
     assert(single_0 == 42, "Single element should be 42")

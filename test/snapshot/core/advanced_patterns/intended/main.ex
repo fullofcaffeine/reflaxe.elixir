@@ -61,15 +61,15 @@ defmodule Main do
       "hello" -> "greeting"
       _ ->
         s = str
-        if (String.length(s) == 1) do
+        if (StringTools.haxe_length(s) == 1) do
           "single char"
         else
           s = str
-          if (String.length(s) > 10 and String.length(s) <= 20) do
+          if (StringTools.haxe_length(s) > 10 and StringTools.haxe_length(s) <= 20) do
             "medium"
           else
             s = str
-            if (String.length(s) > 20), do: "long", else: "other"
+            if (StringTools.haxe_length(s) > 20), do: "long", else: "other"
           end
         end
     end)
@@ -314,7 +314,7 @@ defmodule Main do
               Std.is(v, Array) ->
                 "array of length " <> Reflaxe.Elixir.HaxeFloat.to_string((fn
                   dyn_obj when is_binary(dyn_obj) ->
-                    String.length(dyn_obj)
+                    length(String.codepoints(dyn_obj))
                   dyn_obj when is_list(dyn_obj) ->
                     length(dyn_obj)
                   dyn_obj ->

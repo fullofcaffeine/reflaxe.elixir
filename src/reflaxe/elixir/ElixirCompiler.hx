@@ -472,12 +472,34 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 							}
 						default:
 					}
+				case TField(receiver, fieldAccess) if (runtimeFieldAccessName(fieldAccess) == "length"
+					&& isStringLengthReceiver(receiver.t)):
+					// `s.length` lowers to StringTools.haxe_length/1 (FieldAccessBuilder).
+					found = true;
+					return;
 				default:
 			}
 			haxe.macro.TypedExprTools.iter(node, visit);
 		}
 		visit(expr);
 		return found;
+	}
+
+	/**
+	 * True when `.length` on a value of this type is a Haxe String length.
+	 *
+	 * Mirrors the receiver test in `FieldAccessBuilder`, which lowers that access
+	 * to `StringTools.haxe_length/1`; both must agree, or generated code calls a
+	 * runtime module that was not emitted.
+	 */
+	private function isStringLengthReceiver(type:haxe.macro.Type):Bool {
+		return switch (haxe.macro.TypeTools.follow(type)) {
+			case TInst(_.get() => {name: "String"}, _): true;
+			case TAbstract(_.get() => {name: "String"}, _): true;
+			case TAbstract(_.get() => {pack: [], name: "UnicodeString"}, _): true;
+			case TAbstract(_.get() => {pack: [], name: "Null"}, [inner]): isStringLengthReceiver(inner);
+			default: false;
+		}
 	}
 
 	private function runtimeFieldAccessName(fieldAccess:FieldAccess):Null<String> {

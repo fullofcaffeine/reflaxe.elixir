@@ -364,11 +364,15 @@ class FieldAccessBuilder {
 				receiverType;
 		};
 
-		// Special-case: String.length (Haxe) must lower to String.length/1 (Elixir).
+		// Special-case: String.length (Haxe) lowers to StringTools.haxe_length/1.
 		//
 		// WHY:
 		// - The printer has a generic `field == "length"` shortcut that prints `length(obj)`,
 		//   which is correct for lists but wrong for strings.
+		// - Elixir's `String.length/1` counts graphemes, but every Haxe String position
+		//   counts codepoints: "\r\n" is one grapheme and two codepoints. The helper also
+		//   reuses the position index of a large string, so `i < s.length` in a loop does
+		//   not walk the string again. See docs/05-architecture/STRING_INDEX_UNITS.md.
 		//
 		// HOW:
 		// - Use typed information from the receiver to detect String and emit an explicit
@@ -381,7 +385,7 @@ class FieldAccessBuilder {
 				default: false;
 			};
 			if (isString) {
-				return ERemoteCall(makeAST(EVar("String")), "length", [objAST]);
+				return ERemoteCall(makeAST(EVar("StringTools")), "haxe_length", [objAST]);
 			}
 
 			// Haxe `Array.length` should lower to `length(list)` on the BEAM.
@@ -457,7 +461,9 @@ class FieldAccessBuilder {
 			clauses.push({
 				pattern: PVar(outerVarName),
 				guard: makeAST(ECall(null, "is_binary", [objVar])),
-				body: makeAST(ERemoteCall(makeAST(EVar("String")), "length", [objVar]))
+				// Codepoints, as for a typed String. This path has no typed proof that
+				// the StringTools runtime module is emitted, so it counts natively.
+				body: makeAST(ECall(null, "length", [makeAST(ERemoteCall(makeAST(EVar("String")), "codepoints", [objVar]))]))
 			});
 			clauses.push({
 				pattern: PVar(outerVarName),

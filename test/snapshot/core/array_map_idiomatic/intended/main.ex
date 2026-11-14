@@ -39,7 +39,7 @@ defmodule Main do
     "Processed: #{Reflaxe.Elixir.HaxeFloat.to_string(n)}"
   end
   defp generate_id(name) do
-    String.length(name) * 100
+    StringTools.haxe_length(name) * 100
   end
   defp string_value(s) do
     %{type: "StringValue", value: s}

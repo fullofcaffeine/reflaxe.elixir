@@ -8,7 +8,7 @@ defmodule Main do
         whole = "0"
         fraction = digits
         {fraction, whole}
-      position >= String.length(digits) ->
+      position >= StringTools.haxe_length(digits) ->
         whole = digits
         fraction = ""
         {fraction, whole}

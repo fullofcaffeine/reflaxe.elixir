@@ -108,7 +108,7 @@ Effective pass count: **559**
 | 98 | `ReduceWhileAccumulator` | `core-lowering` | `core` | `core-lowering.core` | after: ReduceWhileOuterAssignToAccumulator | Fix variable shadowing in reduce_while loops by proper accumulator threading |
 | 99 | `FluentApiOptimization` | `core-lowering` | `core` | `core-lowering.core` | source order | Optimize fluent API patterns to avoid unused struct assignments |
 | 100 | `ArrayLengthFieldToFunction` | `core-lowering` | `core` | `core-lowering.core` | source order | Transform array.length field access to length(array) function calls |
-| 101 | `KnownStringLengthFieldRewrite` | `core-lowering` | `core` | `core-lowering.core` | after: ArrayLengthFieldToFunction | Transform .length on locals proven to hold strings into String.length/1 |
+| 101 | `KnownStringLengthFieldRewrite` | `core-lowering` | `core` | `core-lowering.core` | after: ArrayLengthFieldToFunction | Transform .length on locals proven to hold strings into a codepoint count |
 | 102 | `FPHelperDoubleToI64FieldAccessRewrite` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite i64.high/low from FPHelper.double_to_i64 to Bitwise ops (WAE) |
 | 103 | `DateTimeMethodRewrite` | `core-lowering` | `core` | `core-lowering.core` | source order | Rewrite method-style DateTime calls to module calls |
 | 104 | `TupleElemFieldToFunction` | `core-lowering` | `core` | `core-lowering.core` | source order | Transform tuple.elem field access to elem(tuple, index) function calls |

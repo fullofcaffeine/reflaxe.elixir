@@ -151,13 +151,9 @@ class StringTools {
 		var c = s.charCodeAt(pos);
 		return (c > 8 && c < 14) || c == 32;
 		#else
-		return untyped __elixir__('if {1} < 0 do
-  false
-else
-  case Enum.at(String.to_charlist({0}), {1}) do
-    nil -> false
-    code -> (code > 8 and code < 14) or code == 32
-  end
+		return untyped __elixir__('case haxe_char_code_at({0}, {1}) do
+  nil -> false
+  code -> (code > 8 and code < 14) or code == 32
 end', s, pos);
 		#end
 	}
@@ -270,7 +266,7 @@ end', s, pos);
 		var code = s.charCodeAt(index);
 		return code == null ? -1 : code;
 		#else
-		return untyped __elixir__('case Enum.at(String.to_charlist({0}), {1}) do
+		return untyped __elixir__('case haxe_char_code_at({0}, {1}) do
   nil -> -1
   code -> code
 end', s, index);
@@ -280,7 +276,7 @@ end', s, index);
 	/**
 	 * Returns the character code at `index` without exposing a nullable result.
 	 *
-	 * Elixir string access is codepoint-indexed in this target. The official
+	 * String positions are codepoints on this target. The official
 	 * Haxe stdlib uses `unsafeCodeAt` in iterator/parser hot paths after doing
 	 * its own bounds checks, so this aliases the target's fast code access.
 	 */
@@ -289,7 +285,7 @@ end', s, index);
 		var code = s.charCodeAt(index);
 		return code == null ? 0 : code;
 		#else
-		return untyped __elixir__('case Enum.at(String.to_charlist({0}), {1}) do
+		return untyped __elixir__('case haxe_char_code_at({0}, {1}) do
   nil -> 0
   code -> code
 end', s, index);
@@ -303,8 +299,272 @@ end', s, index);
 		return haxeIndexOf(s, value, 0) != -1;
 	}
 
+	#if !macro
 	/**
-	 * Haxe-compatible `String.charAt`.
+	 * Returns the position index of `s`: the data that finds codepoint N without
+	 * a walk from the start of the string.
+	 *
+	 * WHY: A Haxe string position counts Unicode codepoints. BEAM stores a
+	 * string as UTF-8 bytes, where one codepoint takes one to four bytes, so
+	 * `s.charCodeAt(i)` must first find the byte where codepoint `i` starts.
+	 * A walk for each call makes a `while (i < s.length)` loop quadratic.
+	 *
+	 * HOW: The index is one of three values.
+	 * - `:ascii`: every codepoint is one byte, so position equals byte offset.
+	 * - `:walk`: no stored data; each operation walks from the start. Used for
+	 *   a string under 256 bytes, where a short walk costs less than an index.
+	 * - `{stride, count, checkpoints}`: `checkpoints` holds the byte offset of
+	 *   every `stride`-th codepoint and `count` is the number of codepoints.
+	 *   `stride` is 1 up to 1,048,576 codepoints and doubles above that, so
+	 *   the tuple never holds more than 1,048,576 offsets (8 MB).
+	 *
+	 * A string of 256 bytes or more keeps its index in the process dictionary
+	 * under `:reflaxe_haxe_string_index`, for as long as the same string is
+	 * read. Only the last such string is kept, and `releaseIndex` drops it.
+	 * A slice of a much larger binary is kept as a copy, because the slice
+	 * itself would keep the whole larger binary alive: the test is that the
+	 * binary it refers to is more than twice its own size. (A string built with
+	 * `<>` refers to up to twice its size, and is kept as it is.) The kept
+	 * entry is found by a match on the bytes, so a read of the slice finds its
+	 * copy at the cost of one byte comparison.
+	 *
+	 * Bytes that are not valid UTF-8 count as one position each.
+	 * See `docs/05-architecture/STRING_INDEX_UNITS.md`.
+	 */
+	@:keep
+	@:noCompletion
+	public static function haxeUnitIndex(s:String):elixir.types.Term {
+		return untyped __elixir__('if byte_size({0}) < 256 do
+  :walk
+else
+  case Process.get(:reflaxe_haxe_string_index) do
+    {^{0}, index} ->
+      index
+    _ ->
+      index = if haxe_ascii_only({0}), do: :ascii, else: haxe_unit_checkpoints({0}, 0, 0, haxe_unit_stride(haxe_unit_span({0}, 0), 1), [])
+      Process.put(:reflaxe_haxe_string_index, {if(:binary.referenced_byte_size({0}) > 2 * byte_size({0}), do: :binary.copy({0}), else: {0}), index})
+      index
+  end
+end', s);
+	}
+
+	/**
+	 * True when every byte of `s` is ASCII. Reads seven bytes at a time: a
+	 * 56-bit number is a small integer on BEAM, and a 64-bit one is not.
+	 */
+	@:keep
+	@:noCompletion
+	public static function haxeAsciiOnly(s:String):Bool {
+		return untyped __elixir__('case {0} do
+  <<word::56, rest::binary>> when Bitwise.band(word, 0x80808080808080) == 0 -> haxe_ascii_only(rest)
+  <<byte, rest::binary>> when byte < 128 -> haxe_ascii_only(rest)
+  <<>> -> true
+  _ -> false
+end', s);
+	}
+
+	/**
+	 * Returns how many codepoints lie between two stored offsets for a string of
+	 * `count` codepoints: the smallest power of two that keeps the index at or
+	 * below 1,048,576 offsets.
+	 */
+	@:keep
+	@:noCompletion
+	public static function haxeUnitStride(count:Int, stride:Int):Int {
+		return untyped __elixir__('if {0} <= {1} * 1_048_576, do: {1}, else: haxe_unit_stride({0}, {1} * 2)', count, stride);
+	}
+
+	/**
+	 * Builds `{stride, count, checkpoints}` for a string in one pass. `s` is the
+	 * part not yet read, `offset` its byte offset in the whole string, `position`
+	 * its codepoint position, and `found` the stored offsets, newest first.
+	 */
+	@:keep
+	@:noCompletion
+	public static function haxeUnitCheckpoints(s:String, offset:Int, position:Int, stride:Int, found:elixir.types.Term):elixir.types.Term {
+		return untyped __elixir__('case {0} do
+  <<_::utf8, rest::binary>> ->
+    haxe_unit_checkpoints(rest, {1} + byte_size({0}) - byte_size(rest), {2} + 1, {3}, if(rem({2}, {3}) == 0, do: [{1} | {4}], else: {4}))
+  <<_, rest::binary>> ->
+    haxe_unit_checkpoints(rest, {1} + 1, {2} + 1, {3}, if(rem({2}, {3}) == 0, do: [{1} | {4}], else: {4}))
+  <<>> ->
+    {{3}, {2}, :erlang.list_to_tuple(:lists.reverse({4}))}
+end', s, offset, position, stride, found);
+	}
+
+	/** Returns the number of codepoints in `s`, given its position index. */
+	@:keep
+	@:noCompletion
+	public static function haxeUnitCount(s:String, index:elixir.types.Term):Int {
+		return untyped __elixir__('case {1} do
+  :ascii -> byte_size({0})
+  :walk -> if haxe_ascii_only({0}), do: byte_size({0}), else: haxe_unit_span({0}, 0)
+  {_, count, _} -> count
+end', s, index);
+	}
+
+	/** Counts the codepoints of `s`, added to `counted`. */
+	@:keep
+	@:noCompletion
+	public static function haxeUnitSpan(s:String, counted:Int):Int {
+		return untyped __elixir__('case {0} do
+  <<_::utf8, rest::binary>> -> haxe_unit_span(rest, {1} + 1)
+  <<_, rest::binary>> -> haxe_unit_span(rest, {1} + 1)
+  <<>> -> {1}
+end', s, counted);
+	}
+
+	/**
+	 * Returns the byte offset where codepoint `position` starts, or the byte
+	 * size when `position` is at or after the end. `position` must not be negative.
+	 */
+	@:keep
+	@:noCompletion
+	public static function haxeUnitOffset(s:String, index:elixir.types.Term, position:Int):Int {
+		return untyped __elixir__('case {1} do
+  :ascii -> min({2}, byte_size({0}))
+  :walk -> haxe_unit_skip({0}, 0, {2})
+  {_, count, _} when {2} >= count -> byte_size({0})
+  {stride, _, checkpoints} -> haxe_unit_skip({0}, elem(checkpoints, div({2}, stride)), rem({2}, stride))
+end', s, index, position);
+	}
+
+	/** Returns the byte offset `count` codepoints after byte `offset`, stopping at the end of `s`. */
+	@:keep
+	@:noCompletion
+	public static function haxeUnitSkip(s:String, offset:Int, count:Int):Int {
+		return untyped __elixir__('if {2} <= 0 do
+  {1}
+else
+  case {0} do
+    <<_::binary-size({1}), _::utf8, rest::binary>> -> haxe_unit_skip({0}, byte_size({0}) - byte_size(rest), {2} - 1)
+    <<_::binary-size({1}), _, _::binary>> -> haxe_unit_skip({0}, {1} + 1, {2} - 1)
+    _ -> {1}
+  end
+end', s, offset, count);
+	}
+
+	/** Returns the codepoint position that starts at byte `offset`. */
+	@:keep
+	@:noCompletion
+	public static function haxeUnitPosition(s:String, index:elixir.types.Term, offset:Int):Int {
+		return untyped __elixir__('case {1} do
+  :ascii -> {2}
+  :walk -> haxe_unit_span(binary_part({0}, 0, {2}), 0)
+  {stride, _, checkpoints} -> haxe_unit_position_from({0}, {2}, stride, checkpoints, haxe_unit_search(checkpoints, {2}, 0, tuple_size(checkpoints) - 1))
+end', s, index, offset);
+	}
+
+	/** Counts from stored offset number `slot` up to byte `offset`. */
+	@:keep
+	@:noCompletion
+	public static function haxeUnitPositionFrom(s:String, offset:Int, stride:Int, checkpoints:elixir.types.Term, slot:Int):Int {
+		return untyped __elixir__('{4} * {2} + haxe_unit_span(binary_part({0}, elem({3}, {4}), {1} - elem({3}, {4})), 0)', s, offset, stride, checkpoints,
+			slot);
+	}
+
+	/** Finds the last element of `offsets` in `low..high` that is not after byte `offset`. */
+	@:keep
+	@:noCompletion
+	public static function haxeUnitSearch(offsets:elixir.types.Term, offset:Int, low:Int, high:Int):Int {
+		return untyped __elixir__('cond do
+  {2} >= {3} -> {2}
+  elem({0}, div({2} + {3} + 1, 2)) <= {1} -> haxe_unit_search({0}, {1}, div({2} + {3} + 1, 2), {3})
+  true -> haxe_unit_search({0}, {1}, {2}, div({2} + {3} + 1, 2) - 1)
+end', offsets, offset, low, high);
+	}
+
+	/**
+	 * Returns up to `count` codepoints of `s` from position `start`. Both are
+	 * clamped to the end of the string; `start` must not be negative.
+	 */
+	@:keep
+	@:noCompletion
+	public static function haxeUnitPart(s:String, index:elixir.types.Term, start:Int, count:Int):String {
+		return untyped __elixir__('if {1} == :walk do
+  haxe_unit_walk_part({0}, haxe_unit_skip({0}, 0, {2}), {3})
+else
+  haxe_byte_range({0}, haxe_unit_offset({0}, {1}, {2}), haxe_unit_offset({0}, {1}, {2} + max({3}, 0)))
+end', s, index, start, count);
+	}
+
+	/** Returns up to `count` codepoints of `s` that start at byte offset `from`, by a walk. */
+	@:keep
+	@:noCompletion
+	public static function haxeUnitWalkPart(s:String, from:Int, count:Int):String {
+		return untyped __elixir__('haxe_byte_range({0}, {1}, haxe_unit_skip({0}, {1}, {2}))', s, from, count);
+	}
+
+	/** Returns the bytes of `s` from byte offset `from` up to, not including, `to`. */
+	@:keep
+	@:noCompletion
+	public static function haxeByteRange(s:String, from:Int, to:Int):String {
+		return untyped __elixir__('binary_part({0}, {1}, {2} - {1})', s, from, to);
+	}
+
+	/**
+	 * Returns the code of the codepoint that starts at byte `offset`, the byte
+	 * value when it is not valid UTF-8, or nil at the end of `s`.
+	 */
+	@:keep
+	@:noCompletion
+	public static function haxeUnitCode(s:String, offset:Int):Null<Int> {
+		return untyped __elixir__('case {0} do
+  <<_::binary-size({1}), code::utf8, _::binary>> -> code
+  <<_::binary-size({1}), byte, _::binary>> -> byte
+  _ -> nil
+end', s, offset);
+	}
+
+	/** Returns the last byte offset, not after `from`, where `value` (of `size` bytes) occurs in `s`, or -1. */
+	@:keep
+	@:noCompletion
+	public static function haxeLastMatch(s:String, value:String, size:Int, from:Int):Int {
+		return untyped __elixir__('cond do
+  {3} < 0 -> -1
+  binary_part({0}, {3}, {2}) == {1} -> {3}
+  true -> haxe_last_match({0}, {1}, {2}, {3} - 1)
+end', s, value, size, from);
+	}
+	#end
+
+	/**
+	 * Drops the position index that this process keeps for the last large
+	 * string it read by position.
+	 *
+	 * Reading a string of 256 bytes or more by position (`length`, `charAt`,
+	 * `charCodeAt`, `substr`, `indexOf`, ...) stores that string and its index
+	 * in the process dictionary until another large string replaces it. A
+	 * long-lived process, such as a GenServer, therefore keeps the string
+	 * alive, and it appears in `:sys.get_status/1` output and in crash reports.
+	 * Call this when the process has finished with a large or sensitive string.
+	 * It changes no result; the next read builds the index again.
+	 *
+	 * This function exists only on the Elixir target.
+	 */
+	public static function releaseIndex():Void {
+		#if !macro
+		untyped __elixir__('Process.delete(:reflaxe_haxe_string_index)');
+		#end
+	}
+
+	/**
+	 * Haxe-compatible `String.length`: the number of codepoints.
+	 */
+	#if !macro
+	@:keep
+	#end
+	@:noCompletion
+	public static function haxeLength(s:String):Int {
+		#if macro
+		return s.length;
+		#else
+		return untyped __elixir__('haxe_unit_count({0}, haxe_unit_index({0}))', s);
+		#end
+	}
+
+	/**
+	 * Haxe-compatible `String.charAt`: the codepoint at position `index`, or "".
 	 */
 	#if !macro
 	@:keep
@@ -314,16 +574,12 @@ end', s, index);
 		#if macro
 		return s.charAt(index);
 		#else
-		return untyped __elixir__('if {1} < 0 do
-  ""
-else
-  String.at({0}, {1}) || ""
-end', s, index);
+		return untyped __elixir__('if {1} < 0, do: "", else: haxe_unit_part({0}, haxe_unit_index({0}), {1}, 1)', s, index);
 		#end
 	}
 
 	/**
-	 * Haxe-compatible `String.charCodeAt`.
+	 * Haxe-compatible `String.charCodeAt`: the code of the codepoint at position `index`, or null.
 	 */
 	#if !macro
 	@:keep
@@ -333,11 +589,7 @@ end', s, index);
 		#if macro
 		return s.charCodeAt(index);
 		#else
-		return untyped __elixir__('if {1} < 0 do
-  nil
-else
-  Enum.at(String.to_charlist({0}), {1})
-end', s, index);
+		return untyped __elixir__('if {1} < 0, do: nil, else: haxe_unit_code({0}, haxe_unit_offset({0}, haxe_unit_index({0}), {1}))', s, index);
 		#end
 	}
 
@@ -356,7 +608,8 @@ end', s, index);
 (fn ->
   reflaxe_string_source = {0}
   reflaxe_string_value = {1}
-  reflaxe_string_length = String.length(reflaxe_string_source)
+  reflaxe_string_index = haxe_unit_index(reflaxe_string_source)
+  reflaxe_string_length = haxe_unit_count(reflaxe_string_source, reflaxe_string_index)
   reflaxe_string_start =
     cond do
       Kernel.is_nil({2}) -> 0
@@ -370,9 +623,9 @@ end', s, index);
     reflaxe_string_start > reflaxe_string_length ->
       -1
     true ->
-      reflaxe_string_slice = String.slice(reflaxe_string_source, reflaxe_string_start, reflaxe_string_length - reflaxe_string_start)
-      case :binary.match(reflaxe_string_slice, reflaxe_string_value) do
-        {byte_pos, _} -> String.length(binary_part(reflaxe_string_slice, 0, byte_pos)) + reflaxe_string_start
+      reflaxe_string_from = haxe_unit_offset(reflaxe_string_source, reflaxe_string_index, reflaxe_string_start)
+      case :binary.match(reflaxe_string_source, reflaxe_string_value, scope: {reflaxe_string_from, byte_size(reflaxe_string_source) - reflaxe_string_from}) do
+        {byte_pos, _} -> haxe_unit_position(reflaxe_string_source, reflaxe_string_index, byte_pos)
         :nomatch -> -1
       end
   end
@@ -396,23 +649,19 @@ end).()
 (fn ->
   reflaxe_string_source = {0}
   reflaxe_string_value = {1}
-  reflaxe_string_length = String.length(reflaxe_string_source)
+  reflaxe_string_index = haxe_unit_index(reflaxe_string_source)
+  reflaxe_string_length = haxe_unit_count(reflaxe_string_source, reflaxe_string_index)
   reflaxe_string_start = if Kernel.is_nil({2}), do: reflaxe_string_length, else: min(max({2}, 0), reflaxe_string_length)
 
   if reflaxe_string_value == "" do
     reflaxe_string_start
   else
-    reflaxe_string_graphemes = String.graphemes(reflaxe_string_source)
-    reflaxe_string_needle = String.graphemes(reflaxe_string_value)
-    reflaxe_string_needle_length = length(reflaxe_string_needle)
+    reflaxe_string_size = byte_size(reflaxe_string_value)
+    reflaxe_string_from = min(haxe_unit_offset(reflaxe_string_source, reflaxe_string_index, reflaxe_string_start), byte_size(reflaxe_string_source) - reflaxe_string_size)
 
-    if reflaxe_string_needle_length > reflaxe_string_length do
-      -1
-    else
-      reflaxe_string_max_start = min(reflaxe_string_start, reflaxe_string_length - reflaxe_string_needle_length)
-      Enum.find(reflaxe_string_max_start..0//-1, -1, fn reflaxe_string_index ->
-        Enum.slice(reflaxe_string_graphemes, reflaxe_string_index, reflaxe_string_needle_length) == reflaxe_string_needle
-      end)
+    case haxe_last_match(reflaxe_string_source, reflaxe_string_value, reflaxe_string_size, reflaxe_string_from) do
+      -1 -> -1
+      byte_pos -> haxe_unit_position(reflaxe_string_source, reflaxe_string_index, byte_pos)
     end
   end
 end).()
@@ -421,7 +670,7 @@ end).()
 	}
 
 	/**
-	 * Haxe-compatible `String.split`.
+	 * Haxe-compatible `String.split`. An empty delimiter gives one piece per codepoint.
 	 */
 	#if !macro
 	@:keep
@@ -431,7 +680,7 @@ end).()
 		#if macro
 		return s.split(delimiter);
 		#else
-		return untyped __elixir__('if {1} == "", do: String.graphemes({0}), else: String.split({0}, {1})', s, delimiter);
+		return untyped __elixir__('if {1} == "", do: String.codepoints({0}), else: String.split({0}, {1})', s, delimiter);
 		#end
 	}
 
@@ -449,7 +698,8 @@ end).()
 		return untyped __elixir__('
 (fn ->
   reflaxe_string_source = {0}
-  reflaxe_string_length = String.length(reflaxe_string_source)
+  reflaxe_string_index = haxe_unit_index(reflaxe_string_source)
+  reflaxe_string_length = haxe_unit_count(reflaxe_string_source, reflaxe_string_index)
   reflaxe_string_start =
     cond do
       {1} < 0 -> max(reflaxe_string_length + {1}, 0)
@@ -463,7 +713,7 @@ end).()
       true -> {2}
     end
 
-  String.slice(reflaxe_string_source, reflaxe_string_start, reflaxe_string_count)
+  haxe_unit_part(reflaxe_string_source, reflaxe_string_index, reflaxe_string_start, reflaxe_string_count)
 end).()
 ', s, pos, len);
 		#end
@@ -483,7 +733,8 @@ end).()
 		return untyped __elixir__('
 (fn ->
   reflaxe_string_source = {0}
-  reflaxe_string_length = String.length(reflaxe_string_source)
+  reflaxe_string_index = haxe_unit_index(reflaxe_string_source)
+  reflaxe_string_length = haxe_unit_count(reflaxe_string_source, reflaxe_string_index)
   reflaxe_string_start =
     cond do
       {1} < 0 -> max(reflaxe_string_length + {1}, 0)
@@ -496,7 +747,7 @@ end).()
       true -> {2}
     end
 
-  String.slice(reflaxe_string_source, reflaxe_string_start, reflaxe_string_count)
+  haxe_unit_part(reflaxe_string_source, reflaxe_string_index, reflaxe_string_start, reflaxe_string_count)
 end).()
 ', s, pos, len);
 		#end
@@ -516,12 +767,11 @@ end).()
 		return untyped __elixir__('
 (fn ->
   reflaxe_string_source = {0}
-  reflaxe_string_length = String.length(reflaxe_string_source)
+  reflaxe_string_index = haxe_unit_index(reflaxe_string_source)
+  reflaxe_string_length = haxe_unit_count(reflaxe_string_source, reflaxe_string_index)
   reflaxe_string_start = min(max({1}, 0), reflaxe_string_length)
   reflaxe_string_end = if Kernel.is_nil({2}), do: reflaxe_string_length, else: min(max({2}, 0), reflaxe_string_length)
-  reflaxe_string_from = min(reflaxe_string_start, reflaxe_string_end)
-  reflaxe_string_count = abs(reflaxe_string_end - reflaxe_string_start)
-  String.slice(reflaxe_string_source, reflaxe_string_from, reflaxe_string_count)
+  haxe_unit_part(reflaxe_string_source, reflaxe_string_index, min(reflaxe_string_start, reflaxe_string_end), abs(reflaxe_string_end - reflaxe_string_start))
 end).()
 ', s, startIndex, endIndex);
 		#end

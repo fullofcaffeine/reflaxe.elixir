@@ -4,7 +4,7 @@ defmodule Main do
       reflaxe_string_source = value
       reflaxe_string_start = 0
       reflaxe_string_count = 4
-      String.slice(reflaxe_string_source, reflaxe_string_start, reflaxe_string_count)
+      StringTools.haxe_unit_part(reflaxe_string_source, StringTools.haxe_unit_index(reflaxe_string_source), reflaxe_string_start, reflaxe_string_count)
     end).()}..."
   end
   def main() do

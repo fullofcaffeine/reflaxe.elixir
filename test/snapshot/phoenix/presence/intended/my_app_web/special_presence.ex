@@ -6,7 +6,7 @@ defmodule MyAppWeb.SpecialPresence do
     socket
   end
   def track_with_string_op(socket, user_id) do
-    key = if (String.length(user_id) > 0), do: user_id, else: "anonymous"
+    key = if (StringTools.haxe_length(user_id) > 0), do: user_id, else: "anonymous"
     track_special(socket, key, %{status: "special"})
   end
   def track_internal(topic, key, meta) do

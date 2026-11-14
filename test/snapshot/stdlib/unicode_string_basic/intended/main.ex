@@ -6,7 +6,7 @@ defmodule Main do
   end
   defp test_iteration() do
     text = "Aé🌍中"
-    expect("unicode length", String.length(text) == 4)
+    expect("unicode length", StringTools.haxe_length(text) == 4)
     codes = []
     g_offset = 0
     g_s = text

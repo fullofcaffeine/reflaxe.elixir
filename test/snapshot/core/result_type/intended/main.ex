@@ -26,7 +26,7 @@ defmodule Main do
     result = {:ok, "hello"}
     _upper_result = ResultTools.map(result, fn s -> String.upcase(s) end)
     _chained_result = ResultTools.flat_map(result, fn s ->
-      if (String.length(s) > 0), do: {:ok, s <> "!"}, else: {:error, "empty"}
+      if (StringTools.haxe_length(s) > 0), do: {:ok, s <> "!"}, else: {:error, "empty"}
     end)
     _is_valid = ResultTools.is_ok(result)
     _has_error = ResultTools.is_error(result)

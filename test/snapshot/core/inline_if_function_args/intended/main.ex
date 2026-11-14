@@ -47,7 +47,7 @@ defmodule Main do
         "disabled"
       end)
     str = "test"
-    process_string((if (String.length(str) > 3), do: "long", else: "short"))
+    process_string((if (StringTools.haxe_length(str) > 3), do: "long", else: "short"))
   end
   defp process_string(s) do
     "Processed: #{s}"
