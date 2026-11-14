@@ -485,6 +485,83 @@ run_cross_project_variant() {
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "cross-project-A-after-project-B"
 }
 
+run_native_class_variant() {
+	local variants="$FIXTURE_DIR/variants/native-class"
+	local direct_before="$TMP_ROOT/direct-native-class-before"
+	local direct_after="$TMP_ROOT/direct-native-class-after"
+
+	cp "$variants/MainNative.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/CacheNativeBefore.hx" "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$direct_before"
+	compare_generated_output "$direct_before" "$SERVER_OUTPUT" "native-class-before"
+
+	# Only the body of the @:native class changes. Haxe renames such a class to
+	# its native path after typing, so the warm build must still recognize it as
+	# the edited class and write its new target file.
+	cp "$variants/CacheNativeAfter.hx" "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT" >"$TMP_ROOT/native-class-after.log"
+	compile_direct "$direct_after"
+	compare_generated_output "$direct_after" "$SERVER_OUTPUT" "native-class-after"
+
+	# The baseline enum CacheStatus did not change and nothing made Haxe type it
+	# again, so this one-class edit must not build any enum module again. The
+	# server reports its phases because it runs with REFLAXE_ELIXIR_TIMINGS=1.
+	grep -Fq 'REFLAXE_ELIXIR_TIMINGS' "$TMP_ROOT/native-class-after.log" || {
+		echo "SERVER_CACHE_REUSE:native-class-after printed no phase report" >&2
+		return 1
+	}
+	if grep -Fq '"enum_ast_construction"' "$TMP_ROOT/native-class-after.log"; then
+		echo "SERVER_CACHE_REUSE:native-class-after built an unchanged enum again" >&2
+		return 1
+	fi
+	echo "SERVER_CACHE_REUSE:unchanged-enum-skipped:PASS"
+	grep -RFq '"native-after"' "$SERVER_OUTPUT" || {
+		echo "SERVER_CACHE_PARITY:native-class-after kept the stale @:native class body" >&2
+		return 1
+	}
+
+	restore_baseline_sources
+	rm -f "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "native-class-removed"
+}
+
+run_discovery_variant() {
+	local variants="$FIXTURE_DIR/variants/discovery"
+	local phase source expected
+
+	# Module discovery keeps its scan results on the server. Each phase changes
+	# only the metadata of a class that nothing refers to, so the server must
+	# scan that file again: the module appears, then disappears.
+	for phase in plain-before annotated plain-after; do
+		if [[ "$phase" == annotated ]]; then
+			source=CacheDiscoveredAnnotated.hx
+			expected=present
+		else
+			source=CacheDiscoveredPlain.hx
+			expected=absent
+		fi
+		cp "$variants/$source" "$PROJECT_DIR/src/CacheDiscovered.hx"
+		compile_server "$SERVER_OUTPUT"
+		compile_direct "$TMP_ROOT/direct-discovery-$phase"
+		compare_generated_output "$TMP_ROOT/direct-discovery-$phase" "$SERVER_OUTPUT" "discovery-$phase"
+		if [[ "$expected" == present && ! -f "$SERVER_OUTPUT/cache_discovered.ex" ]]; then
+			echo "SERVER_CACHE_PARITY:discovery-$phase did not generate the annotated module" >&2
+			return 1
+		fi
+		if [[ "$expected" == absent && -e "$SERVER_OUTPUT/cache_discovered.ex" ]]; then
+			echo "SERVER_CACHE_PARITY:discovery-$phase kept a module that is no longer annotated" >&2
+			return 1
+		fi
+	done
+
+	restore_baseline_sources
+	rm -f "$PROJECT_DIR/src/CacheDiscovered.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "discovery-removed"
+}
+
 run_private_exports_variant() {
 	local variants="$FIXTURE_DIR/variants/private-exports"
 	cp "$variants/PrivateCacheScope.hx" "$PROJECT_DIR/src/PrivateCacheScope.hx"
@@ -554,7 +631,8 @@ with socket.socket() as sock:
 PY
 )"
 
-"$HAXE_BIN" --wait "$SERVER_PORT" </dev/null >"$TMP_ROOT/server.log" 2>&1 &
+# The phase report lets the native-class variant check what a warm request built.
+REFLAXE_ELIXIR_TIMINGS=1 "$HAXE_BIN" --wait "$SERVER_PORT" </dev/null >"$TMP_ROOT/server.log" 2>&1 &
 SERVER_PID="$!"
 
 server_ready=0
@@ -607,6 +685,8 @@ run_external_macro_input_variant
 run_hxml_define_variant
 run_module_routes_variant
 run_private_exports_variant
+run_native_class_variant
+run_discovery_variant
 run_cross_project_variant
 
 FINAL_FD_COUNT="$(open_fd_count "$SERVER_PID")"

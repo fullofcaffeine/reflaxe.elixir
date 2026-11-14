@@ -85,6 +85,44 @@ The private-export add/remove cases in `test:reflaxe-server-cache` compare warm
 output with fresh output. Owner: `haxe.elixir.codex-x31`. This patch stays local
 until an equivalent upstream cache hook is reviewed, adopted, and verified.
 
+### Cached Rebuild Matches `@:native` Classes By Source Path
+
+On a compilation server, Reflaxe keeps only the classes that Haxe typed again
+in the current request. It found them by comparing `pack` and `name` of the
+class seen by the build macro with the class in the post-typing list. Haxe
+renames a class with `@:native("MyAppWeb.ErrorJSON")` to its native path before
+the target runs, so the comparison never matched. The edited class was dropped,
+the old target file stayed on disk, and the build reported success.
+
+`ReflectCompiler.isSameSourceClass` now compares the source module and the Haxe
+path, which Haxe keeps in `@:realPath`. Most Phoenix modules use `@:native`
+(controllers, endpoints, JSON views), so this is required before a warm server
+can be trusted for a Phoenix application.
+
+The `native-class` variant in `test:reflaxe-server-cache` edits only the body of
+a `@:native` class and compares warm output with fresh output. This patch stays
+local until upstream Reflaxe has an equivalent comparison.
+
+### Cached Rebuild Skips Enums That Haxe Reused
+
+Upstream Reflaxe generates each enum, typedef and abstract again on each warm
+request, because it records only rebuilt classes. Haxe also runs a build macro
+when it types an enum, so `ReflectCompiler.addToBuildCache` now records enums
+too, and the cache filter drops an enum that Haxe reused from the server cache.
+
+Why this is safe: Haxe types an enum again when its source file or a module
+that it uses changed, and the existing source fingerprint of every non-class
+declaration still forces one full target build when any such file changes.
+Typedefs and abstracts have no build macro and are still always passed on; the
+Elixir target generates no module for them.
+
+Measured on a consumer backend with 80 enum modules: the pass pipeline of a
+one-class warm edit ran for 81 modules (about 3.2 s) before, and for 1 module
+(about 0.06 s) after. `test:reflaxe-server-cache` checks that a one-class edit
+builds no enum module, and each of its variants still compares the complete
+warm output with a fresh build. This patch stays local until upstream Reflaxe
+tracks rebuilt enums.
+
 ### 1. `Run.hx`: Build Root File Copy
 
 Status: local patch, submitted upstream in

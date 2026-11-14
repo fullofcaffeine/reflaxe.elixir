@@ -115,6 +115,7 @@ class ReflectCompiler {
 	#if !reflaxe.disallow_build_cache_check
 	public static var isCachedRebuild = false;
 	static var rebuiltClasses: Null<Array<ClassType>> = null;
+	static var rebuiltEnumKeys: Null<Array<String>> = null;
 	#end
 
 	#if !reflaxe.disallow_build_cache_check
@@ -132,6 +133,7 @@ class ReflectCompiler {
 				isCachedRun = true;
 			} else {
 				rebuiltClasses = [];
+				rebuiltEnumKeys = [];
 				#if eval
 				Compiler.addGlobalMetadata("", "@:build(reflaxe.ReflectCompiler.addToBuildCache())");
 				#end
@@ -146,6 +148,16 @@ class ReflectCompiler {
 		if(cls != null && rebuiltClasses != null) {
 			rebuiltClasses.push(cls.get());
 		}
+		#if eval
+		// Haxe also runs a build macro when it types an enum. Record it, so an
+		// enum that Haxe reused from the server cache is not generated again.
+		if(rebuiltEnumKeys != null) {
+			switch(Context.getLocalType()) {
+				case TEnum(_.get() => enm, _): rebuiltEnumKeys.push(sourceTypeKey(enm));
+				case _:
+			}
+		}
+		#end
 		return null;
 	}
 	#end
@@ -344,12 +356,17 @@ class ReflectCompiler {
 							return true;
 						}
 						for(cls in rebuiltClasses) {
-							if(cls.name == c.name && cls.module == c.module && cls.pack.equals(c.pack)) {
+							if(isSameSourceClass(cls, c)) {
 								return true;
 							}
 						}
 					}
-					case _: return true; // Non-class types cannot be tracked with build macros, so always build for now...
+					case TEnumDecl(_.get() => enm): {
+						// Haxe types an enum again when its file or a module that it
+						// uses changed. An enum that Haxe reused has the same output.
+						return rebuiltEnumKeys != null && rebuiltEnumKeys.contains(sourceTypeKey(enm));
+					}
+					case _: return true; // Typedefs and abstracts have no build macro, so always build them.
 				}
 				return false;
 			});
@@ -363,6 +380,36 @@ class ReflectCompiler {
 		}
 		#end
 		return moduleTypes;
+	}
+
+	/**
+		Returns true when a class that Haxe typed again in this server request
+		(`rebuilt`) is the same source class as `current`, a class in the list
+		that Haxe gives to the target after typing.
+
+		The two records cannot be compared by `pack` and `name`. The build macro
+		sees a class with its Haxe path, for example
+		`my_app.server.ErrorJSON`. Before the target runs, Haxe renames a class
+		that has `@:native("MyAppWeb.ErrorJSON")` to that native path and keeps
+		the Haxe path in `@:realPath`. A comparison of the paths then never
+		matches. The cache filter dropped the edited class, and a warm build
+		kept the old target file while it reported success.
+
+		This compares the source module and the Haxe path, which do not change.
+	**/
+	static function isSameSourceClass(rebuilt: ClassType, current: ClassType): Bool {
+		return sourceTypeKey(rebuilt) == sourceTypeKey(current);
+	}
+
+	/**
+		Returns a key for a class or enum that is the same before and after Haxe
+		applies an `@:native` name: the source module, then the dotted path that
+		the Haxe source gives to the type. Haxe stores that path in `@:realPath`
+		when it renames the type.
+	**/
+	static function sourceTypeKey(type: BaseType): String {
+		final realPath = type.meta.extractStringFromFirstMeta(":realPath");
+		return type.module + "\u0000" + (realPath != null ? realPath : type.pack.concat([type.name]).join("."));
 	}
 
 	/**
