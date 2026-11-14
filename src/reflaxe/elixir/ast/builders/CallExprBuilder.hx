@@ -63,6 +63,26 @@ class CallExprBuilder {
 		return currentClass != null && ModuleBuilder.extractModuleName(currentClass) == targetModuleName;
 	}
 
+	/**
+	 * True when the receiver expression of a method call is itself an assignment,
+	 * for example `(r = new EReg("a", ""))` in `(r = new EReg("a", "")).match(s)`.
+	 *
+	 * WHY: The receiver is stored in a temporary before the call, which gives
+	 * `tmp = r = EReg.new(...)`. Assignment cleanup then removes `r =`, and a
+	 * `cond` test runs in its own function scope, so the user's variable keeps its
+	 * old value and later reads fail at run time. The caller reports an error.
+	 * HOW: Looks through parentheses, metadata and casts at the typed expression.
+	 * Assignments deeper inside the receiver, such as in a call argument, are not
+	 * covered. Negative fixture: `negative/receiver_assignment_unsupported`.
+	 */
+	static function receiverAssignsVariable(receiver:TypedExpr):Bool {
+		return switch (receiver.expr) {
+			case TParenthesis(inner) | TMeta(_, inner) | TCast(inner, _): receiverAssignsVariable(inner);
+			case TBinop(OpAssign, _, _) | TBinop(OpAssignOp(_), _, _): true;
+			default: false;
+		}
+	}
+
 	static function unwrapMeta(expr:TypedExpr):TypedExpr {
 		return switch (expr.expr) {
 			case TMeta(_, inner): unwrapMeta(inner);
@@ -1244,6 +1264,17 @@ class CallExprBuilder {
 								case EVar(_):
 									// Receiver is already a stable binding; do not re-bind.
 								default:
+									// `(r = new EReg(...)).match(s)` assigns a variable inside the
+									// receiver. Later cleanup drops that assignment, and a condition
+									// can run in its own scope, so `r` would silently stay unset.
+									// Refuse it here instead of emitting wrong Elixir.
+									if (receiverAssignsVariable(obj)) {
+										context.error("Reflaxe.Elixir cannot keep an assignment inside the receiver of a method call, "
+											+ "such as `(r = new EReg(...)).match(s)`. Assign the variable in its own statement first, "
+											+ "then call the method on it.",
+											obj.pos);
+										return ENil;
+									}
 									// Sibling expressions can share the surrounding block after lowering.
 									// Preserve each evaluated receiver with the existing node allocator.
 									var tempReceiverName = 'reflaxe_dispatch_receiver_${context.generateNodeId()}';
