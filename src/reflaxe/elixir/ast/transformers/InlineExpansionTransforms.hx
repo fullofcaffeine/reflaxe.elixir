@@ -749,10 +749,23 @@ class InlineExpansionTransforms {
 	 *   end
 	 *   {:set_priority, value}
 	 * 
+	 * HELPER STATEMENTS:
+	 * A tuple element can also be a block of helper statements followed by a value.
+	 * `Negative(batch.values.indexOf(wanted))` builds
+	 * `{:negative, [receiver = batch.values, <find index in receiver>]}`.
+	 * The helper statements move in front of the tuple and the value stays in it:
+	 * 
+	 *   receiver = batch.values
+	 *   {:negative, <find index in receiver>}
+	 * 
+	 * No statement is dropped, also when tuples are nested. Regression fixture:
+	 * `regression/tuple_value_with_hoisted_receiver`.
+	 * 
 	 * PATTERN DETECTION:
 	 * We look for ETuple nodes containing:
 	 * - Inline variable assignments (len = nil)
 	 * - Inline if-else expressions that use those variables
+	 * - Blocks of helper statements followed by a value
 	 * 
 	 * REAL-WORLD EXAMPLES:
 	 * - String.substr with optional length parameter
@@ -817,8 +830,29 @@ class InlineExpansionTransforms {
 								false;
 						};
 
-						// Check for problematic inline patterns
-						if (isProblematicBlock || containsInlineAssignment(element)) {
+						// A block of helper statements followed by a value, such as
+						// `[receiver = batch.values, Enum.find_index(receiver, ...)]`. Move the
+						// helper statements in front of the tuple, in their order, and keep the
+						// value in the tuple. Every statement must survive: the value uses the
+						// names that the statements bind.
+						var helperBlock:Null<Array<ElixirAST>> = switch (element.def) {
+							case EBlock(exprs) if (!isProblematicBlock && exprs.length >= 2 && containsInlineAssignment(element)): exprs;
+							default: null;
+						};
+
+						if (helperBlock != null) {
+							for (index in 0...helperBlock.length - 1)
+								extractedAssignments.push(helperBlock[index]);
+							var value = helperBlock[helperBlock.length - 1];
+							if (containsInlineAssignment(value)) {
+								var valueVar = 'tuple_elem_$i';
+								extractedAssignments.push(ElixirASTHelpers.make(EMatch(PVar(valueVar), extractInlineExpression(value))));
+								newElements.push(ElixirASTHelpers.make(EVar(valueVar)));
+							} else {
+								newElements.push(value);
+							}
+							needsExtraction = true;
+						} else if (isProblematicBlock || containsInlineAssignment(element)) {
 							#if debug_inline_tuple_extraction
 							#end
 
@@ -929,22 +963,9 @@ class InlineExpansionTransforms {
 					// The "len = nil" assignment is necessary for the if condition to work
 					// We need to preserve the semantic meaning of the optional parameter
 					expr; // Return the whole block, not just exprs[1]
-				} else if (exprs.length == 2) {
-					// General pattern: [assignment, expression using the assigned variable]
-					var firstIsAssignment = switch (exprs[0].def) {
-						case EMatch(_, _) | EBinary(Match, _, _): true;
-						default: false;
-					};
-
-					if (firstIsAssignment) {
-						// For non-optional parameter patterns, we can extract just the expression
-						exprs[1];
-					} else {
-						// Keep as block if pattern doesn't match
-						expr;
-					}
 				} else {
-					// Keep as block if there are multiple expressions
+					// Keep every other block whole. Its last expression can use the names
+					// that its earlier statements bind, so no statement may be dropped.
 					expr;
 				}
 

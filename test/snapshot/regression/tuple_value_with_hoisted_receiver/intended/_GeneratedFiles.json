@@ -1,0 +1,71 @@
+{
+	"filesGenerated": [
+		"string_tools.ex",
+		"std.ex",
+		"reflaxe/exception.ex",
+		"reflaxe/elixir/haxe_throw.ex",
+		"reflaxe/elixir/haxe_int.ex",
+		"reflaxe/elixir/haxe_float.ex",
+		"problem.ex",
+		"outcome.ex",
+		"main.ex",
+		"haxe/iterators/array_key_value_iterator.ex",
+		"haxe/iterators/array_iterator.ex",
+		"haxe/_call_stack/call_stack_impl_.ex"
+	],
+	"protocol": "reflaxe-elixir/generated-output",
+	"id": 0,
+	"wasCached": false,
+	"version": 2,
+	"ownedFiles": [
+		{
+			"path": "haxe/_call_stack/call_stack_impl_.ex",
+			"sha256": "3d3b684e82682c81adf0238c87ec359aec80788e539e9b15a7204a9e2edda898"
+		},
+		{
+			"path": "haxe/iterators/array_iterator.ex",
+			"sha256": "bf879924ad145b575913240565bc19645add254693e0e7d1f87bee45a9ab0c56"
+		},
+		{
+			"path": "haxe/iterators/array_key_value_iterator.ex",
+			"sha256": "387d4592afd651337e15dda44716f25a7a7cdd97e1b6a43e9c2aba3f4029a3a3"
+		},
+		{
+			"path": "main.ex",
+			"sha256": "c2db323857fa3323b81cefc2f2cf5fe9cb18be3b31cbcac01e8c9a3ba94e3054"
+		},
+		{
+			"path": "outcome.ex",
+			"sha256": "0834b9a0459d314cde2502796f288d12831872b43f21fe23206acabd2278c18c"
+		},
+		{
+			"path": "problem.ex",
+			"sha256": "4828e7e3dafd226b2293e1ca39adf2c9812c6f742305fe75295243e83c52f2ad"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_float.ex",
+			"sha256": "6786d5bfb513f44365615186bd6c8f2589222501729873f517d82d2ee23822f4"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_int.ex",
+			"sha256": "61392d67ec3807b64ea717b125498909d6fb903f8600b77dc18a17a65a955515"
+		},
+		{
+			"path": "reflaxe/elixir/haxe_throw.ex",
+			"sha256": "291a4cc0352939a2e04a74e92402315005950976979f65f82a41dda2f4007481"
+		},
+		{
+			"path": "reflaxe/exception.ex",
+			"sha256": "fad0fa4f51eedcf1528114a257d00324b119859ce126cb623a3a2ef5b0561936"
+		},
+		{
+			"path": "std.ex",
+			"sha256": "4ae2f11465f1a1ed428e1e9b939db6c5c58a26ba26d27de0450fdff27938444f"
+		},
+		{
+			"path": "string_tools.ex",
+			"sha256": "9e41f665054890de627579849e522aef25f22790788a508d7655b2b166b5ef16"
+		}
+	],
+	"generation": "e89bbcae9015139381dbdfc0969fc3b6712111b95e2a11ec43bf08e3022ab53d"
+}
