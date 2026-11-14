@@ -18,7 +18,6 @@ import haxe.macro.Expr;
 import haxe.macro.Type;
 
 #if eval
-import haxe.crypto.Sha256;
 import sys.FileSystem;
 import sys.io.File;
 #end
@@ -121,9 +120,9 @@ class ReflectCompiler {
 	#if !reflaxe.disallow_build_cache_check
 	@:persistent static var isCachedRun = false;
 	@:persistent static var previousSuccessfulModuleIds: Null<Array<String>> = null;
-	@:persistent static var previousSuccessfulNonClassSourceDigests: Null<Array<String>> = null;
+	@:persistent static var previousSuccessfulNonClassSourceTexts: Null<Array<String>> = null;
 	static var currentModuleIds: Null<Array<String>> = null;
-	static var currentNonClassSourceDigests: Null<Array<String>> = null;
+	static var currentNonClassSourceTexts: Null<Array<String>> = null;
 	#end
 
 	public static function checkServerCache() {
@@ -342,11 +341,11 @@ class ReflectCompiler {
 		#if !reflaxe.disallow_build_cache_check
 		currentModuleIds = moduleTypes.map(moduleType -> moduleType.getUniqueId());
 		currentModuleIds.sort(Reflect.compare);
-		currentNonClassSourceDigests = collectNonClassSourceDigests(moduleTypes);
+		currentNonClassSourceTexts = collectNonClassSourceTexts(moduleTypes);
 		final liveModuleSetChanged = previousSuccessfulModuleIds != null
 			&& !previousSuccessfulModuleIds.equals(currentModuleIds);
-		final nonClassSourceChanged = previousSuccessfulNonClassSourceDigests != null
-			&& !previousSuccessfulNonClassSourceDigests.equals(currentNonClassSourceDigests);
+		final nonClassSourceChanged = previousSuccessfulNonClassSourceTexts != null
+			&& !previousSuccessfulNonClassSourceTexts.equals(currentNonClassSourceTexts);
 
 		if(rebuiltClasses != null && !liveModuleSetChanged && !nonClassSourceChanged) {
 			final result = moduleTypes.filter(mt -> {
@@ -413,22 +412,29 @@ class ReflectCompiler {
 	}
 
 	/**
-		Returns stable content fingerprints for source files that define enums,
-		typedefs, or abstracts visible to this target build.
+		Returns the path and text of each source file that defines an enum,
+		typedef, or abstract visible to this target build.
 
 		Haxe build macros can tell Reflaxe which classes were rebuilt, but build
 		macros do not run on non-class declarations. Rebuilding only a changed enum
 		or abstract is unsafe because it can provide facts used by otherwise
 		unchanged classes. For example, changing an unreferenced `@:phxHookNames`
 		abstract must revalidate every HXX template that uses the global hook
-		registry. Without this fingerprint, a warm build can accept a hook that a
+		registry. Without this comparison, a warm build can accept a hook that a
 		clean build correctly rejects.
 
 		When one of these source files changes, `applyBuildCacheCheckFilter` performs
 		one full target regeneration. Reading exact bytes avoids trusting timestamps;
-		duplicate declarations from the same source file are hashed only once.
+		duplicate declarations from the same source file are read only once.
+
+		Each entry holds the file path and the full file text, not a hash of it.
+		Haxe compares two strings with native code, but it runs SHA-256 in the
+		macro interpreter, which cost about half a second for each warm request
+		of a 400-file project. Two texts are equal exactly when their bytes are
+		equal, so the same edits cause a full regeneration as before. The cost is
+		memory: the server keeps one copy of these source texts.
 	**/
-	static function collectNonClassSourceDigests(moduleTypes:Array<ModuleType>):Array<String> {
+	static function collectNonClassSourceTexts(moduleTypes:Array<ModuleType>):Array<String> {
 		#if eval
 		final sourceFiles = new Map<String, Bool>();
 		for(moduleType in moduleTypes) {
@@ -446,8 +452,8 @@ class ReflectCompiler {
 
 		final result = [];
 		for(sourceFile in sourceFiles.keys()) {
-			final digest = try Sha256.make(File.getBytes(sourceFile)).toHex() catch(_) "<unreadable>";
-			result.push(sourceFile + "\u0000" + digest);
+			final text = try File.getContent(sourceFile) catch(_) "<unreadable>";
+			result.push(sourceFile + "\u0000" + text);
 		}
 		result.sort(Reflect.compare);
 		return result;
@@ -474,8 +480,8 @@ class ReflectCompiler {
 		if(currentModuleIds != null) {
 			previousSuccessfulModuleIds = currentModuleIds.copy();
 		}
-		if(currentNonClassSourceDigests != null) {
-			previousSuccessfulNonClassSourceDigests = currentNonClassSourceDigests.copy();
+		if(currentNonClassSourceTexts != null) {
+			previousSuccessfulNonClassSourceTexts = currentNonClassSourceTexts.copy();
 		}
 		#end
 	}

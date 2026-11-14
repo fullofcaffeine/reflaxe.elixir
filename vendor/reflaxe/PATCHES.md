@@ -505,9 +505,14 @@ Local fix:
 - When the next request has added, removed, or renamed a module, bypass the
   rebuilt-class filter for that request and regenerate all currently live
   modules once.
-- Fingerprint the exact source bytes for every source file that contributes a
+- Remember the exact source text for every source file that contributes a
   visible enum, typedef, or abstract. If one changes, bypass the class-only
-  filter and regenerate all currently live modules once.
+  filter and regenerate all currently live modules once. The server keeps the
+  text itself and compares it with native string equality. An earlier version
+  kept a SHA-256 digest, which Haxe computes in the macro interpreter: about
+  0.5 s for each warm request of a consumer backend. Two texts are equal
+  exactly when their bytes are equal, so the same edits cause a full
+  regeneration; the cost is one in-memory copy of those source files.
 - Commit both successful baselines only after output succeeds, so a failed
   target build cannot poison the next request.
 
