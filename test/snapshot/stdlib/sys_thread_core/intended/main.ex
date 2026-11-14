@@ -42,10 +42,11 @@ defmodule Main do
     loop = Sys.Thread.EventLoop.new()
     loop_mailbox = Sys.Thread.Thread.current()
     apply(Map.get(loop, :__reflaxe_class__) || Map.get(loop, :__struct__), :run, [loop, fn -> apply(Map.get(loop_mailbox, :__reflaxe_class__) || Map.get(loop_mailbox, :__struct__), :send_message, [loop_mailbox, "loop-ran"]) end])
-    (case apply(Map.get(loop, :__reflaxe_class__) || Map.get(loop, :__struct__), :progress, [loop]) do
+    g = apply(Map.get(loop, :__reflaxe_class__) || Map.get(loop, :__struct__), :progress, [loop])
+    (case g do
       {:now} -> nil
       _ ->
-        other = apply(Map.get(loop, :__reflaxe_class__) || Map.get(loop, :__struct__), :progress, [loop])
+        other = g
         raise Reflaxe.Elixir.HaxeThrow, [value: "EventLoop progress should return Now, got " <> Reflaxe.Elixir.HaxeFloat.enum_to_string(Sys.Thread.NextEventTime, other)]
     end)
     if (Reflaxe.Elixir.HaxeFloat.neq(Sys.Thread.Thread.read_message(true), "loop-ran")) do
