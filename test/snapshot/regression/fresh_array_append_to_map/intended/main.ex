@@ -10,22 +10,22 @@ defmodule Main do
   end
   def conditional_append(values) do
     output = []
-    output = Enum.reduce(values, output, fn value, output_acc ->
+    output = Enum.reverse(Enum.reduce(values, output, fn value, output_acc ->
       if (value > 0) do
-        output_acc = Enum.concat(output_acc, [value])
+        output_acc = [value | output_acc]
         output_acc
       else
         output_acc
       end
-    end)
+    end))
     output
   end
   def multiple_append(values) do
     output = []
-    output = Enum.reduce(values, output, fn value, output_acc ->
-      output_acc = Enum.concat(output_acc, [value])
-      Enum.concat(output_acc, [value * 2])
-    end)
+    output = Enum.reverse(Enum.reduce(values, output, fn value, output_acc ->
+      output_acc = [value | output_acc]
+      [value * 2 | output_acc]
+    end))
     output
   end
   def partial_accumulator_read(values) do
@@ -184,18 +184,17 @@ defmodule Main do
   end
   def throw_fallback(values) do
     output = []
-    output = Enum.reduce(values, output, fn value, output_acc ->
+    output = Enum.reverse(Enum.reduce(values, output, fn value, output_acc ->
       if (value < 0) do
         raise Reflaxe.Elixir.HaxeThrow, [value: "negative value"]
       end
-      Enum.concat(output_acc, [value])
-    end)
+      [value | output_acc]
+    end))
     output
   end
   def stateful_receiver_fallback(values) do
     box = ProjectionBox.new(1)
-    output = []
-    output = Enum.reduce(values, output, fn value, output_acc -> Enum.concat(output_acc, [apply(Map.get(box, :__reflaxe_class__) || Map.get(box, :__struct__), :project, [box, value])]) end)
+    output = Enum.map(values, fn value -> apply(Map.get(box, :__reflaxe_class__) || Map.get(box, :__struct__), :project, [box, value]) end)
     output
   end
   def persistent_iterator_fallback(limit) do
@@ -206,10 +205,10 @@ defmodule Main do
         if (apply(Map.get(acc_iterator, :__reflaxe_class__) || Map.get(acc_iterator, :__struct__), :has_next, [acc_iterator])) do
           {acc_iterator, reflaxe_receiver_value_node_0} = apply(Map.get(acc_iterator, :__reflaxe_class__) || Map.get(acc_iterator, :__struct__), :next, [acc_iterator])
           value = reflaxe_receiver_value_node_0
-          acc_output = acc_output ++ [value * 2]
+          acc_output = [value * 2 | acc_output]
           {:cont, {acc_iterator, acc_output}}
         else
-          {:halt, {acc_iterator, acc_output}}
+          {:halt, {acc_iterator, Enum.reverse(acc_output)}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -217,7 +216,7 @@ defmodule Main do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_iterator, acc_output}}
+          {:halt, {acc_iterator, Enum.reverse(acc_output)}}
         :throw, :continue ->
           {:cont, {acc_iterator, acc_output}}
       end
@@ -226,7 +225,7 @@ defmodule Main do
   end
   def self_iterator_fallback() do
     output = []
-    output = Enum.reduce(output, output, fn value, output_acc -> Enum.concat(output_acc, [value]) end)
+    output = Enum.reverse(Enum.reduce(output, output, fn value, output_acc -> [value | output_acc] end))
     output
   end
   def non_fresh_accumulator(values, prefix) do

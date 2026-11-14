@@ -4,7 +4,7 @@ defmodule Main do
     editing_users = []
     _g = 0
     g_value = Reflect.fields(all_users)
-    _ = Enum.reduce(g_value, editing_users, fn user_id, editing_users_acc ->
+    _ = Enum.reverse(Enum.reduce(g_value, editing_users, fn user_id, editing_users_acc ->
       entry = (case {all_users, user_id} do
         {reflect_obj, reflect_field} ->
           (case Map.fetch(reflect_obj, reflect_field) do
@@ -25,18 +25,18 @@ defmodule Main do
       if (length(entry.metas) > 0) do
         meta = Enum.at(entry.metas, 0)
         if (meta.editing_todo_id == 42) do
-          Enum.concat(editing_users_acc, [meta])
+          [meta | editing_users_acc]
         else
           editing_users_acc
         end
       else
         editing_users_acc
       end
-    end)
+    end))
     user_names = []
     _g = 0
     g_value = Reflect.fields(all_users)
-    _ = Enum.reduce(g_value, user_names, fn user_id, user_names_acc ->
+    _ = Enum.reverse(Enum.reduce(g_value, user_names, fn user_id, user_names_acc ->
       entry = (case {all_users, user_id} do
         {reflect_obj, reflect_field} ->
           (case Map.fetch(reflect_obj, reflect_field) do
@@ -58,11 +58,11 @@ defmodule Main do
       if (length(meta_list) > 0) do
         first_meta = Enum.at(meta_list, 0)
         name = first_meta.user_name
-        Enum.concat(user_names_acc, [name])
+        [name | user_names_acc]
       else
         user_names_acc
       end
-    end)
+    end))
     all_metadata = []
     _g = 0
     g_value = Reflect.fields(all_users)

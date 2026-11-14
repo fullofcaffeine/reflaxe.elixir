@@ -18,15 +18,15 @@ defmodule StringUtils do
     else
       parts = StringTools.haxe_split(StringTools.ltrim(StringTools.rtrim(name)), " ")
       formatted = []
-      formatted = Enum.reduce(parts, formatted, fn part, formatted_acc ->
+      formatted = Enum.reverse(Enum.reduce(parts, formatted, fn part, formatted_acc ->
         if (StringTools.haxe_length(part) > 0) do
           capitalized = String.upcase(StringTools.haxe_char_at(part, 0)) <> String.downcase(StringTools.haxe_substr(part, 1, nil))
-          formatted_acc = Enum.concat(formatted_acc, [capitalized])
+          formatted_acc = [capitalized | formatted_acc]
           formatted_acc
         else
           formatted_acc
         end
-      end)
+      end))
       Enum.join(formatted, " ")
     end
   end

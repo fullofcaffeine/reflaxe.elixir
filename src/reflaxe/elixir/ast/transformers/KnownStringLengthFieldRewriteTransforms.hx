@@ -349,6 +349,11 @@ class KnownStringLengthFieldRewriteTransforms {
 					(rewrittenStart != start || rewrittenEnd != end || rewrittenStep != step) ? makeASTWithMeta(ERange(rewrittenStart, rewrittenEnd,
 						exclusive, rewrittenStep), node.metadata, node.pos) : node;
 
+			case ECons(head, tail):
+				var rewrittenHead = rewrite(head, knownStrings);
+				var rewrittenTail = rewrite(tail, knownStrings);
+				(rewrittenHead != head || rewrittenTail != tail) ? makeASTWithMeta(ECons(rewrittenHead, rewrittenTail), node.metadata, node.pos) : node;
+
 			case EList(elements):
 				var changed = false;
 				var rewrittenElements = [

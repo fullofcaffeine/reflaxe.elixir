@@ -77,7 +77,9 @@ Things to know:
   one byte of a multi-byte character. Global `replace`, `map` and `split` also differ from the Haxe
   interpreter for patterns that match the empty string.
 - **Not yet on this rule:** `haxe.Template`.
-- **Still slower than linear:** `array.push` in a loop.
+- **`array.push` in a loop** is linear when the array is new and empty at the loop and the loop
+  body only pushes to it. Other loop shapes still copy the array on each `push`; see
+  [Imperative to functional lowering](../02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md).
 
 See [String positions count codepoints](../05-architecture/STRING_INDEX_UNITS.md).
 

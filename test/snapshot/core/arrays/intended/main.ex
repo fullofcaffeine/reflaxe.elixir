@@ -98,14 +98,13 @@ defmodule Main do
     Enum.filter(Enum.map(arr, fn x -> x * x end), fn x -> x > 10 end)
   end
   def first_n(arr, n) do
-    g = []
     g_value = trunc(
       (fn ->
          b = length(arr)
          Reflaxe.Elixir.HaxeFloat.min(n, b)
        end).()
     )
-    g = Enum.reduce(0..(g_value - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Enum.at(arr, i)]) end)
+    g = Enum.map(0..(g_value - 1)//1, fn i -> Enum.at(arr, i) end)
     g
   end
   def functional_methods() do

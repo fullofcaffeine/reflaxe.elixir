@@ -525,6 +525,16 @@ class ElixirASTTransformer {
 		#if reflaxe_elixir_validate_results
 		functionResultStates = reflaxe.elixir.ast.validation.FunctionResultInvariant.validateTransition(result, rootName, "ReduceWhileAccumulator_Final",
 			functionResultStates);
+		#end
+
+		// Runs last because it needs the final reducer shape of every loop: it turns
+		// `acc = acc ++ [x]` on a fresh array into `[x | acc]` plus one reversal.
+		passContext.beginPass("LinearListAppend_Final", null, PassScope.Core);
+		result = reflaxe.elixir.ast.transformers.LinearListAppendTransforms.pass(result);
+		passContext.finish(PassContext.legacyOutcome(result));
+		#if reflaxe_elixir_validate_results
+		functionResultStates = reflaxe.elixir.ast.validation.FunctionResultInvariant.validateTransition(result, rootName, "LinearListAppend_Final",
+			functionResultStates);
 		reflaxe.elixir.ast.validation.FunctionResultInvariant.assertNoDegradedResults(functionResultStates);
 		#end
 
@@ -4725,6 +4735,10 @@ class ElixirASTTransformer {
 			case EList(elements):
 				var elementsResult = transformArray(elements, transformer, isBoundary);
 				elementsResult.changed ? makeASTWithMeta(EList(elementsResult.array), ast.metadata, ast.pos) : ast;
+
+			case ECons(head, tail): var newHead = transformNodeScopedInternal(head, transformer,
+					isBoundary); var newTail = transformNodeScopedInternal(tail, transformer,
+					isBoundary); newHead != head || newTail != tail ? makeASTWithMeta(ECons(newHead, newTail), ast.metadata, ast.pos) : ast;
 
 			case ETuple(elements):
 				var elementsResult = transformArray(elements, transformer, isBoundary);

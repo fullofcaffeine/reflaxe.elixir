@@ -49,8 +49,7 @@ defmodule Main do
     end)
     invalid_ids = ["ab", "user@123", "user 123", "user-123", "", Enum.join(
       (fn ->
-         g = []
-         g = Enum.reduce(0..59//1, g, fn _i, g_acc -> Enum.concat(g_acc, ["a"]) end)
+         g = Enum.map(0..59//1, fn _i -> "a" end)
          g
        end).(),
       ""
@@ -189,15 +188,15 @@ defmodule Main do
   defp test_real_world_scenarios() do
     registration_data = [%{user_id: "alice123", email: "alice@example.com", preferred_name: "Alice Smith"}, %{user_id: "bob456", email: "bob.jones@company.org", preferred_name: "Bob"}, %{user_id: "charlie", email: "charlie@test.dev", preferred_name: "Charlie Brown"}]
     valid_users = []
-    _ = Enum.reduce(registration_data, valid_users, fn user_data, valid_users_acc ->
+    _ = Enum.reverse(Enum.reduce(registration_data, valid_users, fn user_data, valid_users_acc ->
       user_result = create_user(user_data.user_id, user_data.email, user_data.preferred_name)
       (case user_result do
         {:ok, user} ->
-          valid_users_acc = Enum.concat(valid_users_acc, [user])
+          valid_users_acc = [user | valid_users_acc]
           valid_users_acc
         {:error, _error} -> valid_users_acc
       end)
-    end)
+    end))
     config_data = [%{timeout: "30", retries: "3", name: "production"}, %{timeout: "0", retries: "5", name: ""}, %{timeout: "60", retries: "-1", name: "test"}]
     Enum.each(config_data, fn config ->
       config_result = validate_configuration(config.timeout, config.retries, config.name)

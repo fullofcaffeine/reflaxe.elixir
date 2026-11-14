@@ -186,16 +186,16 @@ defmodule PhoenixChatWeb.AppLive do
     users = socket.assigns.online_users
     keys = Map.keys(users)
     views = []
-    views = Enum.reduce(keys, views, fn key, views_acc ->
+    views = Enum.reverse(Enum.reduce(keys, views, fn key, views_acc ->
       entry = Map.get(users, key, nil)
       if (not Kernel.is_nil(entry) and not Kernel.is_nil(entry.metas) and length(entry.metas) > 0) do
         meta = Enum.at(entry.metas, 0)
         is_me = key == socket.assigns.current_user_id
-        Enum.concat(views_acc, [%{user_id: key, name: meta.name, online_at: meta.online_at, is_me: is_me, row_class: (if (is_me), do: "online-row is-me", else: "online-row")}])
+        [%{user_id: key, name: meta.name, online_at: meta.online_at, is_me: is_me, row_class: (if (is_me), do: "online-row is-me", else: "online-row")} | views_acc]
       else
         views_acc
       end
-    end)
+    end))
     views = Enum.sort(views, fn a, b ->
       (fn a, b ->
         if (a.is_me and not b.is_me) do
