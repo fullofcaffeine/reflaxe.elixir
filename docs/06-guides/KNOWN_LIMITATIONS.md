@@ -76,8 +76,8 @@ Things to know:
 - **EReg byte mode.** Patterns compile without the `u` flag, so `.` or a character class can match
   one byte of a multi-byte character. Global `replace`, `map` and `split` also differ from the Haxe
   interpreter for patterns that match the empty string.
-- **Not yet on this rule:** `StringBuf.addSub` and `haxe.Template`.
-- **Still slower than linear:** `StringBuf` appends and `array.push` in a loop.
+- **Not yet on this rule:** `haxe.Template`.
+- **Still slower than linear:** `array.push` in a loop.
 
 See [String positions count codepoints](../05-architecture/STRING_INDEX_UNITS.md).
 

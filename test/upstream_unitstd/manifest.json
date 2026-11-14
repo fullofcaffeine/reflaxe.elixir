@@ -173,11 +173,14 @@
       "upstreamSpec": "available",
       "disposition": "applicable",
       "execution": "runtime-suite",
-      "fixtureKind": "unchanged",
+      "fixtureKind": "adapted",
       "source": "StringBuf.unit.hx",
       "fixture": "test/upstream_unitstd/upstream/StringBuf.unit.hx",
+      "reason": "The upstream utf16 branch cuts the surrogate pair of one astral character with addSub(s, 1, 2). Haxe defines utf16 for this custom target, but String positions count codepoints here, so the Elixir branch cuts one codepoint with addSub(s, 1, 1), as the upstream non-utf16 branch does.",
       "sourceSha256": "03de9a22d3576a462773b04682de3db2cc665337849cb14a6b3875a16d88ae41",
-      "fixtureSha256": "03de9a22d3576a462773b04682de3db2cc665337849cb14a6b3875a16d88ae41"
+      "fixtureSha256": "c54e01031ea92e5ee005e76e7f60d444bc752d716a00fcc09ab2cf3f0672393e",
+      "adaptationPatch": "test/upstream_unitstd/adaptations/StringBuf.unit.hx.patch",
+      "adaptationPatchSha256": "e6c67e7ac1aa3ea6aa9007fb589b740ca4ca91fd1b856ed0745e817318938e07"
     },
     {
       "module": "StringTools",
