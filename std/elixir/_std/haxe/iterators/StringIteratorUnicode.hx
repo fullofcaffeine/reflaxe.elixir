@@ -3,8 +3,8 @@ package haxe.iterators;
 /**
  * Elixir-target Unicode string iterator.
  *
- * Elixir strings are UTF-8 binaries and `String.length/1` / charlist access are
- * already codepoint-indexed in our lowering, so this must use the non-UTF16
+ * Elixir strings are UTF-8 binaries and every Haxe String position counts
+ * codepoints on this target, so this must use the non-UTF16
  * Haxe iterator semantics even if the compiler carries a generic `utf16` define.
  */
 class StringIteratorUnicode {

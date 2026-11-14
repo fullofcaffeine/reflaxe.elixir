@@ -33,7 +33,7 @@ defmodule PatternMatchingTest do
       "hello" -> "greeting"
       _ ->
         s = str
-        if (String.length(s) > 10), do: "long", else: "other"
+        if (StringTools.haxe_length(s) > 10), do: "long", else: "other"
     end)
   end
   def match_array(arr) do

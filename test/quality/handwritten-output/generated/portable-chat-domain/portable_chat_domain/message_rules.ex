@@ -20,16 +20,16 @@ defmodule PortableChatDomain.MessageRules do
     normalized_author = normalize_author(author)
     normalized_body = normalize_body(body)
 
-    if String.length(normalized_author) == 0 do
+    if StringTools.haxe_length(normalized_author) == 0 do
       {:rejected, "author is required"}
     else
-      if String.length(normalized_author) > 32 do
+      if StringTools.haxe_length(normalized_author) > 32 do
         {:rejected, "author is too long"}
       else
-        if String.length(normalized_body) == 0 do
+        if StringTools.haxe_length(normalized_body) == 0 do
           {:rejected, "message body is required"}
         else
-          if String.length(normalized_body) > 280,
+          if StringTools.haxe_length(normalized_body) > 280,
             do: {:rejected, "message body is too long"},
             else:
               {:accepted,
@@ -48,14 +48,14 @@ defmodule PortableChatDomain.MessageRules do
   end
 
   defp preview(body) do
-    if String.length(body) <= 48 do
+    if StringTools.haxe_length(body) <= 48 do
       body
     else
       "#{(fn ->
             reflaxe_string_source = body
             reflaxe_string_start = 0
             reflaxe_string_count = 48
-            String.slice(reflaxe_string_source, reflaxe_string_start, reflaxe_string_count)
+            StringTools.haxe_unit_part(reflaxe_string_source, StringTools.haxe_unit_index(reflaxe_string_source), reflaxe_string_start, reflaxe_string_count)
           end).()}..."
     end
   end

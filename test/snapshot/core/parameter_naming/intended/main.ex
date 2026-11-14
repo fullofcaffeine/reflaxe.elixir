@@ -6,7 +6,7 @@ defmodule Main do
     "Hello #{user_name}: #{message}"
   end
   def process_order(_struct, order_id, customer_email, amount) do
-    order_id > 0 and String.length(customer_email) > 0 and Reflaxe.Elixir.HaxeFloat.gt(amount, 0)
+    order_id > 0 and StringTools.haxe_length(customer_email) > 0 and Reflaxe.Elixir.HaxeFloat.gt(amount, 0)
   end
   def validate_email(_struct, email_address) do
     StringTools.haxe_index_of(email_address, "@", 0) > 0

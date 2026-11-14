@@ -28,7 +28,7 @@ defmodule Main do
   end
   defp record(label) do
     Main.events("#{Main.events()}#{label}")
-    String.length(Main.events())
+    StringTools.haxe_length(Main.events())
   end
   defp check_order() do
     Main.events("")

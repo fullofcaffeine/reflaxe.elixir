@@ -12,7 +12,7 @@ defmodule Main do
     value
   end
   defp rejects(value) do
-    String.length(value) != 3 or not (reflaxe_dispatch_receiver_node_0 = EReg.new("^[a-z]+$", "")
+    StringTools.haxe_length(value) != 3 or not (reflaxe_dispatch_receiver_node_0 = EReg.new("^[a-z]+$", "")
     apply(Map.get(reflaxe_dispatch_receiver_node_0, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver_node_0, :__struct__), :match, [reflaxe_dispatch_receiver_node_0, value]))
   end
   defp fail() do

@@ -31,7 +31,7 @@ abstract UnicodeString(String) from String to String {
 	public var length(get, never):Int;
 
 	inline function get_length():Int {
-		return untyped __elixir__('String.length({0})', this);
+		return StringTools.haxeLength(this);
 	}
 
 	static public inline function validate(bytes:Bytes, encoding:Encoding):Bool {

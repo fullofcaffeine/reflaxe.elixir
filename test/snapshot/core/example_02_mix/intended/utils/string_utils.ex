@@ -4,7 +4,7 @@ defmodule StringUtils do
       ""
     else
       processed = StringTools.ltrim(StringTools.rtrim(input))
-      if (String.length(processed) == 0) do
+      if (StringTools.haxe_length(processed) == 0) do
         "[empty]"
       else
         processed = processed |> remove_excess_whitespace() |> normalize_case()
@@ -13,13 +13,13 @@ defmodule StringUtils do
     end
   end
   def format_display_name(name) do
-    if (Kernel.is_nil(name) or String.length(StringTools.ltrim(StringTools.rtrim(name))) == 0) do
+    if (Kernel.is_nil(name) or StringTools.haxe_length(StringTools.ltrim(StringTools.rtrim(name))) == 0) do
       "Anonymous User"
     else
       parts = StringTools.haxe_split(StringTools.ltrim(StringTools.rtrim(name)), " ")
       formatted = []
       formatted = Enum.reduce(parts, formatted, fn part, formatted_acc ->
-        if (String.length(part) > 0) do
+        if (StringTools.haxe_length(part) > 0) do
           capitalized = String.upcase(StringTools.haxe_char_at(part, 0)) <> String.downcase(StringTools.haxe_substr(part, 1, nil))
           formatted_acc = Enum.concat(formatted_acc, [capitalized])
           formatted_acc
@@ -35,7 +35,7 @@ defmodule StringUtils do
       %{valid: false, error: "Email is required"}
     else
       trimmed = StringTools.ltrim(StringTools.rtrim(email))
-      if (String.length(trimmed) == 0) do
+      if (StringTools.haxe_length(trimmed) == 0) do
         %{valid: false, error: "Email cannot be empty"}
       else
         if (not is_valid_email_format(trimmed)), do: %{valid: false, error: "Invalid email format"}, else: %{valid: true, email: String.downcase(trimmed), domain: extract_domain(trimmed), username: extract_username(trimmed)}
@@ -75,8 +75,8 @@ defmodule StringUtils do
       end)
       {slug} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, fn _, {acc_slug} ->
         try do
-          if (StringTools.haxe_char_at(acc_slug, (String.length(acc_slug) - 1)) == "-") do
-            acc_slug = StringTools.haxe_substr_non_nil_len(acc_slug, 0, (String.length(acc_slug) - 1))
+          if (StringTools.haxe_char_at(acc_slug, (StringTools.haxe_length(acc_slug) - 1)) == "-") do
+            acc_slug = StringTools.haxe_substr_non_nil_len(acc_slug, 0, (StringTools.haxe_length(acc_slug) - 1))
             {:cont, {acc_slug}}
           else
             {:halt, {acc_slug}}
@@ -99,7 +99,7 @@ defmodule StringUtils do
     if (Kernel.is_nil(text)) do
       ""
     else
-      if (String.length(text) <= max_length) do
+      if (StringTools.haxe_length(text) <= max_length) do
         text
       else
         truncated = StringTools.haxe_substr_non_nil_len(text, 0, (max_length - 3))
@@ -114,9 +114,9 @@ defmodule StringUtils do
     end
   end
   def mask_sensitive_info(text, visible_chars \\ 2) do
-    if (Kernel.is_nil(text) or String.length(text) <= visible_chars) do
+    if (Kernel.is_nil(text) or StringTools.haxe_length(text) <= visible_chars) do
       repeat_count = if (not Kernel.is_nil(text)) do
-        String.length(text)
+        StringTools.haxe_length(text)
       else
         4
       end
@@ -127,7 +127,7 @@ defmodule StringUtils do
       result
     else
       visible = StringTools.haxe_substr_non_nil_len(text, 0, visible_chars)
-      masked_count = (String.length(text) - visible_chars)
+      masked_count = (StringTools.haxe_length(text) - visible_chars)
       masked = ""
       _g = 0
       g_value = masked_count
@@ -143,17 +143,17 @@ defmodule StringUtils do
     "#{String.upcase(StringTools.haxe_char_at(text, 0))}#{(fn -> String.downcase(
       (fn ->
          reflaxe_string_source = text
-         reflaxe_string_length = String.length(reflaxe_string_source)
+         reflaxe_string_length = StringTools.haxe_length(reflaxe_string_source)
          reflaxe_string_start = min(1, reflaxe_string_length)
          reflaxe_string_count = (reflaxe_string_length - reflaxe_string_start)
-         String.slice(reflaxe_string_source, reflaxe_string_start, reflaxe_string_count)
+         StringTools.haxe_unit_part(reflaxe_string_source, StringTools.haxe_unit_index(reflaxe_string_source), reflaxe_string_start, reflaxe_string_count)
        end).()
     ) end).()}"
   end
   defp is_valid_email_format(email) do
     at_index = StringTools.haxe_index_of(email, "@", 0)
     dot_index = StringTools.haxe_last_index_of(email, ".", nil)
-    at_index > 0 and dot_index > at_index and dot_index < (String.length(email) - 1)
+    at_index > 0 and dot_index > at_index and dot_index < (StringTools.haxe_length(email) - 1)
   end
   defp extract_domain(email) do
     at_index = StringTools.haxe_index_of(email, "@", 0)

@@ -19,7 +19,7 @@ defmodule Main do
         cond do
           text == "" -> -2
           true ->
-            count = String.length(text)
+            count = StringTools.haxe_length(text)
             IO.puts("switch fallthrough")
             _ = count + 1
         end

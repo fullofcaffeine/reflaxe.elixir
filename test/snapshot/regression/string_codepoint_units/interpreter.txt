@@ -1,0 +1,51 @@
+crlf-array describe 7|91,49,44,13,10,50,93|[/1/,/\u{D}/\u{A}/2/]
+crlf-array slices 1,|1,|1,\u{D}\u{A}2]|2]|1,\u{D}\u{A}2]
+crlf-array pieces [/1/,/\u{D}/\u{A}/2/]
+crlf-array outside null,null,[],[]
+crlf-array check ok@7
+crlf-object describe 12|123,13,10,34,97,34,58,32,49,13,10,125|{/\u{D}/\u{A}/"/a/"/:/ /1/\u{D}/\u{A}/}
+crlf-object slices \u{D}\u{A}|\u{D}\u{A}|\u{D}\u{A}"a": 1\u{D}\u{A}}|\u{A}}|\u{D}\u{A}"a": 1\u{D}\u{A}}
+crlf-object pieces {/\u{D}/\u{A}/"/a/"/:/ /1/\u{D}/\u{A}/}
+crlf-object outside null,null,[],[]
+crlf-object check ok@12
+combining describe 4|34,101,769,34|"/e/\u{301}/"
+combining slices e\u{301}|e\u{301}|e\u{301}"|\u{301}"|e\u{301}"
+combining pieces "/e/\u{301}/"
+combining outside null,null,[],[]
+combining check ok@4
+flag describe 11|91,34,127463,127479,34,44,116,114,117,101,93|[/"/\u{1F1E7}/\u{1F1F7}/"/,/t/r/u/e/]
+flag slices "\u{1F1E7}|"\u{1F1E7}|"\u{1F1E7}\u{1F1F7}",true]|e]|"\u{1F1E7}\u{1F1F7}",true]
+flag pieces [/"/\u{1F1E7}/\u{1F1F7}/"/,/t/r/u/e/]
+flag outside null,null,[],[]
+flag check ok@11
+family describe 22|123,34,107,34,58,34,128104,8205,128105,8205,128103,34,44,34,122,34,58,110,117,108,108,125|{/"/k/"/:/"/\u{1F468}/\u{200D}/\u{1F469}/\u{200D}/\u{1F467}/"/,/"/z/"/:/n/u/l/l/}
+family slices "k|"k|"k":"\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467}","z":null}|l}|"k":"\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467}","z":null}
+family pieces {/"/k/"/:/"/\u{1F468}/\u{200D}/\u{1F469}/\u{200D}/\u{1F467}/"/,/"/z/"/:/n/u/l/l/}
+family outside null,null,[],[]
+family check ok@22
+jamo describe 8|91,34,4352,4449,34,44,49,93|[/"/\u{1100}/\u{1161}/"/,/1/]
+jamo slices "\u{1100}|"\u{1100}|"\u{1100}\u{1161}",1]|1]|"\u{1100}\u{1161}",1]
+jamo pieces [/"/\u{1100}/\u{1161}/"/,/1/]
+jamo outside null,null,[],[]
+jamo check ok@8
+plain describe 6|91,49,44,32,50,93|[/1/,/ /2/]
+plain slices 1,|1,|1, 2]|2]|1, 2]
+plain pieces [/1/,/ /2/]
+plain outside null,null,[],[]
+plain check ok@6
+empty describe 0||
+empty slices ||||
+empty pieces 
+empty outside null,null,[],[]
+empty check error@0
+bad describe 7|91,49,44,13,10,63,93|[/1/,/\u{D}/\u{A}/?/]
+bad slices 1,|1,|1,\u{D}\u{A}?]|?]|1,\u{D}\u{A}?]
+bad pieces [/1/,/\u{D}/\u{A}/?/]
+bad outside null,null,[],[]
+bad check error@5
+crlf find 2,2,5,2
+flag find 2,2,5,2
+accent find 0,2,2,2
+overlap find 0,-1,1,1
+empty find 0,2,2,2
+missing find -1,-1,-1,-1

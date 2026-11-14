@@ -294,7 +294,7 @@ defmodule Main do
     v = value
     if (Std.is(v, String) and Reflaxe.Elixir.HaxeFloat.gt((fn
       dyn_obj when is_binary(dyn_obj) ->
-        String.length(dyn_obj)
+        length(String.codepoints(dyn_obj))
       dyn_obj when is_list(dyn_obj) ->
         length(dyn_obj)
       dyn_obj ->
@@ -309,7 +309,7 @@ defmodule Main do
       v = value
       if (Std.is(v, String) and Reflaxe.Elixir.HaxeFloat.lte((fn
         dyn_obj when is_binary(dyn_obj) ->
-          String.length(dyn_obj)
+          length(String.codepoints(dyn_obj))
         dyn_obj when is_list(dyn_obj) ->
           length(dyn_obj)
         dyn_obj ->
@@ -342,7 +342,7 @@ defmodule Main do
                   Std.is(v, Array) ->
                     "Array with " <> Reflaxe.Elixir.HaxeFloat.to_string((fn
                       dyn_obj when is_binary(dyn_obj) ->
-                        String.length(dyn_obj)
+                        length(String.codepoints(dyn_obj))
                       dyn_obj when is_list(dyn_obj) ->
                         length(dyn_obj)
                       dyn_obj ->

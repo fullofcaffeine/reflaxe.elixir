@@ -99,14 +99,28 @@ Shorter strings are indexed on each call. That is cheap, and it means a short
 string read inside the loop (a separator, a keyword) does not replace the kept
 index of the large one.
 
-Measured on one machine (Apple silicon, OTP 27, Elixir 1.18.3), the loop
-`while (i < s.length) total += s.charCodeAt(i++)`:
+Measured on one machine (Apple silicon, OTP 27, Elixir 1.18.3).
+
+The loop `while (i < s.length) total += s.charCodeAt(i++)`, from
+`test/snapshot/regression/string_scan_scaling`:
 
 | Input | Before | After |
 | --- | --- | --- |
-| 72 KB | about 187 s (Caf JSON parser) | under 10 ms |
-| 800 KB ASCII | did not finish | 47 ms |
-| 800 KB with two-byte characters | did not finish | 104 ms |
+| 800 KB ASCII | stopped at the 20 s limit | 47 ms |
+| 800 KB with two-byte characters | stopped at the 20 s limit | 104 ms |
+
+A JSON parser written in Haxe (Caf's canonical JSON codec), on an array of
+numbers:
+
+| Input | Before | After |
+| --- | --- | --- |
+| 9 KB | 2.8 s | 19 ms |
+| 18 KB | 12 s | 59 ms |
+| 36 KB | 49 s | 227 ms |
+| 72 KB | 187 s | 491 ms |
+
+The parser times still grow faster than the input. That part is not String
+reads: see the last item under Limits.
 
 `test/snapshot/regression/string_scan_scaling` keeps this result with a time
 budget.

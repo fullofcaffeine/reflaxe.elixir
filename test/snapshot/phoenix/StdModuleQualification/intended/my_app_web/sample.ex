@@ -8,7 +8,7 @@ defmodule MyAppWeb.Sample do
     Enum.at(ys, 0)
   end
   def string_len_guard(s) do
-    String.length(s)
+    StringTools.haxe_length(s)
   end
   def reflect_map_get() do
     m = %{}

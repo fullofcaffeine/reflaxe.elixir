@@ -49,7 +49,7 @@ defmodule Main do
       Std.is(value, Array) ->
         "Array of length: " <> Reflaxe.Elixir.HaxeFloat.to_string((fn
           dyn_obj when is_binary(dyn_obj) ->
-            String.length(dyn_obj)
+            length(String.codepoints(dyn_obj))
           dyn_obj when is_list(dyn_obj) ->
             length(dyn_obj)
           dyn_obj ->
