@@ -500,9 +500,22 @@ run_native_class_variant() {
 	# its native path after typing, so the warm build must still recognize it as
 	# the edited class and write its new target file.
 	cp "$variants/CacheNativeAfter.hx" "$PROJECT_DIR/src/CacheNative.hx"
-	compile_server "$SERVER_OUTPUT"
+	compile_server "$SERVER_OUTPUT" >"$TMP_ROOT/native-class-after.log"
 	compile_direct "$direct_after"
 	compare_generated_output "$direct_after" "$SERVER_OUTPUT" "native-class-after"
+
+	# The baseline enum CacheStatus did not change and nothing made Haxe type it
+	# again, so this one-class edit must not build any enum module again. The
+	# server reports its phases because it runs with REFLAXE_ELIXIR_TIMINGS=1.
+	grep -Fq 'REFLAXE_ELIXIR_TIMINGS' "$TMP_ROOT/native-class-after.log" || {
+		echo "SERVER_CACHE_REUSE:native-class-after printed no phase report" >&2
+		return 1
+	}
+	if grep -Fq '"enum_ast_construction"' "$TMP_ROOT/native-class-after.log"; then
+		echo "SERVER_CACHE_REUSE:native-class-after built an unchanged enum again" >&2
+		return 1
+	fi
+	echo "SERVER_CACHE_REUSE:unchanged-enum-skipped:PASS"
 	grep -RFq '"native-after"' "$SERVER_OUTPUT" || {
 		echo "SERVER_CACHE_PARITY:native-class-after kept the stale @:native class body" >&2
 		return 1
@@ -583,7 +596,8 @@ with socket.socket() as sock:
 PY
 )"
 
-"$HAXE_BIN" --wait "$SERVER_PORT" </dev/null >"$TMP_ROOT/server.log" 2>&1 &
+# The phase report lets the native-class variant check what a warm request built.
+REFLAXE_ELIXIR_TIMINGS=1 "$HAXE_BIN" --wait "$SERVER_PORT" </dev/null >"$TMP_ROOT/server.log" 2>&1 &
 SERVER_PID="$!"
 
 server_ready=0
