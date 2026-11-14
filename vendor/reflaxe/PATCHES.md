@@ -85,6 +85,24 @@ The private-export add/remove cases in `test:reflaxe-server-cache` compare warm
 output with fresh output. Owner: `haxe.elixir.codex-x31`. This patch stays local
 until an equivalent upstream cache hook is reviewed, adopted, and verified.
 
+### Cached Rebuild Matches `@:native` Classes By Source Path
+
+On a compilation server, Reflaxe keeps only the classes that Haxe typed again
+in the current request. It found them by comparing `pack` and `name` of the
+class seen by the build macro with the class in the post-typing list. Haxe
+renames a class with `@:native("MyAppWeb.ErrorJSON")` to its native path before
+the target runs, so the comparison never matched. The edited class was dropped,
+the old target file stayed on disk, and the build reported success.
+
+`ReflectCompiler.isSameSourceClass` now compares the source module and the Haxe
+path, which Haxe keeps in `@:realPath`. Most Phoenix modules use `@:native`
+(controllers, endpoints, JSON views), so this is required before a warm server
+can be trusted for a Phoenix application.
+
+The `native-class` variant in `test:reflaxe-server-cache` edits only the body of
+a `@:native` class and compares warm output with fresh output. This patch stays
+local until upstream Reflaxe has an equivalent comparison.
+
 ### 1. `Run.hx`: Build Root File Copy
 
 Status: local patch, submitted upstream in

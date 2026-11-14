@@ -485,6 +485,35 @@ run_cross_project_variant() {
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "cross-project-A-after-project-B"
 }
 
+run_native_class_variant() {
+	local variants="$FIXTURE_DIR/variants/native-class"
+	local direct_before="$TMP_ROOT/direct-native-class-before"
+	local direct_after="$TMP_ROOT/direct-native-class-after"
+
+	cp "$variants/MainNative.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/CacheNativeBefore.hx" "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$direct_before"
+	compare_generated_output "$direct_before" "$SERVER_OUTPUT" "native-class-before"
+
+	# Only the body of the @:native class changes. Haxe renames such a class to
+	# its native path after typing, so the warm build must still recognize it as
+	# the edited class and write its new target file.
+	cp "$variants/CacheNativeAfter.hx" "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$direct_after"
+	compare_generated_output "$direct_after" "$SERVER_OUTPUT" "native-class-after"
+	grep -RFq '"native-after"' "$SERVER_OUTPUT" || {
+		echo "SERVER_CACHE_PARITY:native-class-after kept the stale @:native class body" >&2
+		return 1
+	}
+
+	restore_baseline_sources
+	rm -f "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "native-class-removed"
+}
+
 run_private_exports_variant() {
 	local variants="$FIXTURE_DIR/variants/private-exports"
 	cp "$variants/PrivateCacheScope.hx" "$PROJECT_DIR/src/PrivateCacheScope.hx"
@@ -607,6 +636,7 @@ run_external_macro_input_variant
 run_hxml_define_variant
 run_module_routes_variant
 run_private_exports_variant
+run_native_class_variant
 run_cross_project_variant
 
 FINAL_FD_COUNT="$(open_fd_count "$SERVER_PID")"
