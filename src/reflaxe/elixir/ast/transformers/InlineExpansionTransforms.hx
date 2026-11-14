@@ -761,6 +761,19 @@ class InlineExpansionTransforms {
 	 * No statement is dropped, also when tuples are nested. Regression fixture:
 	 * `regression/tuple_value_with_hoisted_receiver`.
 	 * 
+	 * EVALUATION ORDER:
+	 * Haxe evaluates arguments from left to right. A statement that moves in front
+	 * of the tuple would run before the earlier elements. So each earlier element
+	 * that is not a variable or a literal is first bound to a temporary, in order:
+	 * 
+	 *   P(tick("first"), list("second").indexOf(2))
+	 * 
+	 *   tuple_elem_1 = tick("first")
+	 *   receiver = list("second")
+	 *   {:p, tuple_elem_1, <find index in receiver>}
+	 * 
+	 * Regression fixture: `regression/tuple_argument_order`.
+	 * 
 	 * PATTERN DETECTION:
 	 * We look for ETuple nodes containing:
 	 * - Inline variable assignments (len = nil)
@@ -789,6 +802,41 @@ class InlineExpansionTransforms {
 					var needsExtraction = false;
 					var extractedAssignments:Array<ElixirAST> = [];
 					var newElements:Array<ElixirAST> = [];
+
+					// Names of temporaries that an inner tuple already uses. A new temporary
+					// must not take one of them, or it would be bound again before it is read.
+					var usedTempNames = new Map<String, Bool>();
+					reflaxe.elixir.ast.ASTUtils.walk(node, function(inner:ElixirAST):Void {
+						switch (inner.def) {
+							case EVar(name) | EMatch(PVar(name), _) if (StringTools.startsWith(name, "tuple_elem_")):
+								usedTempNames.set(name, true);
+							default:
+						}
+					});
+					function freshTempName(position:Int):String {
+						var name = 'tuple_elem_$position';
+						var attempt = 1;
+						while (usedTempNames.exists(name)) {
+							name = 'tuple_elem_${position}_$attempt';
+							attempt++;
+						}
+						usedTempNames.set(name, true);
+						return name;
+					}
+
+					// Elements still inside the tuple that are not plain values. Haxe
+					// evaluates arguments from left to right. Statements that move in front
+					// of the tuple would run before these elements, so each of them is first
+					// bound to a temporary, in order.
+					var keptInTuple:Array<Int> = [];
+					function bindKeptElements():Void {
+						for (position in keptInTuple) {
+							var tempName = freshTempName(position);
+							extractedAssignments.push(ElixirASTHelpers.make(EMatch(PVar(tempName), newElements[position])));
+							newElements[position] = ElixirASTHelpers.make(EVar(tempName));
+						}
+						keptInTuple = [];
+					}
 
 					for (i in 0...elements.length) {
 						var element = elements[i];
@@ -841,23 +889,27 @@ class InlineExpansionTransforms {
 						};
 
 						if (helperBlock != null) {
+							bindKeptElements();
 							for (index in 0...helperBlock.length - 1)
 								extractedAssignments.push(helperBlock[index]);
 							var value = helperBlock[helperBlock.length - 1];
 							if (containsInlineAssignment(value)) {
-								var valueVar = 'tuple_elem_$i';
+								var valueVar = freshTempName(i);
 								extractedAssignments.push(ElixirASTHelpers.make(EMatch(PVar(valueVar), extractInlineExpression(value))));
 								newElements.push(ElixirASTHelpers.make(EVar(valueVar)));
 							} else {
 								newElements.push(value);
+								if (!isPlainValue(value))
+									keptInTuple.push(i);
 							}
 							needsExtraction = true;
 						} else if (isProblematicBlock || containsInlineAssignment(element)) {
 							#if debug_inline_tuple_extraction
 							#end
+							bindKeptElements();
 
 							// Extract the inline assignment to a temporary variable
-							var tempVar = 'tuple_elem_$i';
+							var tempVar = freshTempName(i);
 
 							// Create the assignment: tuple_elem_i = <extracted expression>
 							var extractedExpr = extractInlineExpression(element);
@@ -870,6 +922,8 @@ class InlineExpansionTransforms {
 						} else {
 							// Keep element as-is
 							newElements.push(element);
+							if (!isPlainValue(element))
+								keptInTuple.push(i);
 						}
 					}
 
@@ -890,6 +944,17 @@ class InlineExpansionTransforms {
 			}
 			return node;
 		});
+	}
+
+	/**
+	 * True for a variable or a literal: a value that has no effect and reads the
+	 * same whether it is evaluated before or after other statements.
+	 */
+	static function isPlainValue(expr:ElixirAST):Bool {
+		return switch (expr.def) {
+			case EVar(_) | EAtom(_) | EString(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil: true;
+			default: false;
+		};
 	}
 
 	/**
