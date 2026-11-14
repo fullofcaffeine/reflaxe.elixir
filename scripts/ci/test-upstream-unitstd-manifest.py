@@ -58,8 +58,8 @@ class UpstreamUnitstdManifestTest(unittest.TestCase):
 				"modules": 125,
 				"runtimeEntries": 37,
 				"uniqueFixtures": 36,
-				"adaptedEntries": 10,
-				"adaptationPatches": 9,
+				"adaptedEntries": 11,
+				"adaptationPatches": 10,
 			},
 		)
 
