@@ -49,6 +49,20 @@ pre-1.0 behavior—not the finished compatibility promise. The
 [Standard Libraries And Packages](../08-roadmap/stdlib-and-package-ecosystem.md) explains what
 “complete” means and how the release policy enforces it.
 
+## String positions count codepoints
+
+Every Haxe `String` position and length counts Unicode codepoints, as on the Haxe interpreter:
+`"\r\n".length` is 2, and a flag emoji has length 2. `s.length` compiles to
+`StringTools.haxe_length(s)`, not to Elixir's `String.length/1`, which counts graphemes
+(characters as a reader sees them). Use `elixir.ElixirString` when you need graphemes.
+
+Character loops over a large string are fast when they read one large string at a time. A loop
+that reads two different strings of 256 bytes or more in turn is correct but slow.
+
+Not yet on this rule: `EReg` match positions, `haxe.Template`, and `StringBuf.addSub`.
+`StringBuf` appends and `array.push` in a loop still cost the square of the size. See
+[String positions count codepoints](../05-architecture/STRING_INDEX_UNITS.md).
+
 ## Shared Haxe references are not complete yet
 
 The current persistent map/list lowering can update one lexical variable without
