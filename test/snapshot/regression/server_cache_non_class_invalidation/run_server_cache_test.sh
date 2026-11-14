@@ -527,6 +527,77 @@ run_native_class_variant() {
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "native-class-removed"
 }
 
+run_tampered_output_variant() {
+	local variants="$FIXTURE_DIR/variants/native-class"
+	local direct_after="$TMP_ROOT/direct-tampered-output-after"
+	local failure_log="$TMP_ROOT/tampered-output.log"
+	local owned="$SERVER_OUTPUT/main.ex"
+	local original="$TMP_ROOT/tampered-output-original.ex"
+	local tampered="$TMP_ROOT/tampered-output-tampered.ex"
+
+	# Two server requests first. After them the server remembers the digest of
+	# each generated file, so the next request takes the fast ownership check.
+	cp "$variants/MainNative.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/CacheNativeBefore.hx" "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_server "$SERVER_OUTPUT"
+
+	# Change one generated file by hand, the way an editor would. The size and
+	# the file time stay the same, so only a comparison of the bytes can see it.
+	cp "$owned" "$original"
+	python3 - "$owned" <<'PY'
+import os
+import sys
+
+path = sys.argv[1]
+before = os.stat(path)
+data = open(path, "rb").read()
+changed = data.replace(b"defmodule Main", b"defmodule Maim", 1)
+if changed == data or len(changed) != len(data):
+    raise SystemExit("tampered-output fixture could not change main.ex")
+open(path, "wb").write(changed)
+os.utime(path, ns=(before.st_atime_ns, before.st_mtime_ns))
+PY
+	cp "$owned" "$tampered"
+
+	# The source edit below changes a different generated file. The warm request
+	# must still read every owned file, find the hand edit, and publish nothing.
+	cp "$variants/CacheNativeAfter.hx" "$PROJECT_DIR/src/CacheNative.hx"
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" --connect "$SERVER_PORT" compile.hxml -D "elixir_output=$SERVER_OUTPUT" \
+		>"$failure_log" 2>&1
+	then
+		echo "SERVER_CACHE_OWNERSHIP:tampered-output warm build accepted a hand-edited generated file" >&2
+		return 1
+	fi
+	grep -Fq 'Owned generated output was modified outside the compiler' "$failure_log" || {
+		echo "SERVER_CACHE_OWNERSHIP:tampered-output warm build failed for the wrong reason" >&2
+		sed -n '1,160p' "$failure_log" >&2
+		return 1
+	}
+	cmp -s "$owned" "$tampered" || {
+		echo "SERVER_CACHE_OWNERSHIP:tampered-output warm build overwrote the hand-edited file" >&2
+		return 1
+	}
+	if grep -RFq '"native-after"' "$SERVER_OUTPUT"; then
+		echo "SERVER_CACHE_OWNERSHIP:tampered-output warm build published other files after the refusal" >&2
+		return 1
+	fi
+	echo "SERVER_CACHE_OWNERSHIP:tampered-output-refused:PASS"
+
+	# When the generated file has its compiler bytes again, the same server
+	# publishes the pending source edit.
+	cp "$original" "$owned"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$direct_after"
+	compare_generated_output "$direct_after" "$SERVER_OUTPUT" "tampered-output-restored"
+
+	restore_baseline_sources
+	rm -f "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "tampered-output-removed"
+}
+
 run_discovery_variant() {
 	local variants="$FIXTURE_DIR/variants/discovery"
 	local phase source expected
@@ -686,6 +757,7 @@ run_hxml_define_variant
 run_module_routes_variant
 run_private_exports_variant
 run_native_class_variant
+run_tampered_output_variant
 run_discovery_variant
 run_cross_project_variant
 
