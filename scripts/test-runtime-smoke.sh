@@ -69,6 +69,7 @@ TEST_DIRS=(
   "test/snapshot/regression/tuple_argument_order"
   "test/snapshot/regression/string_codepoint_units"
   "test/snapshot/regression/string_scan_scaling"
+  "test/snapshot/regression/ereg_codepoint_positions"
   "test/snapshot/regression/switch_after_early_return_switch"
   "test/snapshot/regression/catch_all_name_in_throw"
   "test/snapshot/regression/nested_enum_pattern_outer_value"
