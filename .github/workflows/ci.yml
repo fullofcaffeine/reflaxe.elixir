@@ -562,7 +562,10 @@ jobs:
 
   smoke-min-toolchain:
     name: Smoke (minimum toolchain)
-    runs-on: ubuntu-latest
+    # Pinned to ubuntu-24.04: setup-beam has no OTP 25 build for ubuntu-26.04, which
+    # ubuntu-latest now resolves to. Remove the pin when OTP 25 is available on
+    # ubuntu-26.04 or the minimum toolchain is raised (tracked in haxe.elixir.codex-55k).
+    runs-on: ubuntu-24.04
     needs: [guards]
     timeout-minutes: 35
     steps:
@@ -757,7 +760,10 @@ jobs:
       matrix:
         include:
           - lane: minimum
-            os: ubuntu-latest
+            # Pinned to ubuntu-24.04: setup-beam has no OTP 25 build for ubuntu-26.04.
+            # Remove the pin when OTP 25 is available on ubuntu-26.04 or the minimum
+            # toolchain is raised (tracked in haxe.elixir.codex-55k).
+            os: ubuntu-24.04
             otp: '25'
             elixir: '1.14'
           - lane: primary-linux
