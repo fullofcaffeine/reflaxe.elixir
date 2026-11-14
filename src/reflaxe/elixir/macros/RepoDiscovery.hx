@@ -4,7 +4,6 @@ package reflaxe.elixir.macros;
 import haxe.macro.Context;
 import haxe.crypto.Md5;
 import haxe.io.Path;
-import haxe.io.Eof;
 import haxe.Json;
 
 using StringTools;
@@ -45,6 +44,25 @@ class RepoDiscovery {
 	static var hasRun:Bool = false;
 	static var afterInitScheduled:Bool = false;
 	static var pendingTypePaths:Array<String> = [];
+
+	/**
+	 * Scan results that a Haxe compilation server keeps between requests.
+	 *
+	 * WHY: discovery reads each project `.hx` file line by line in the macro
+	 * interpreter. On a warm server that scan was the largest single cost of a
+	 * request: about 5 s of an 11 s one-file rebuild for a project with roughly
+	 * one thousand source files, although the files had not changed.
+	 *
+	 * WHAT: for each scanned file, the exact text that was scanned and the type
+	 * path that the scan found (null when the file has no relevant metadata).
+	 *
+	 * HOW: the key is the scan mode and the file path. A later request reads the
+	 * file again, which is a fast native read, and scans it only when the text
+	 * differs. Comparing the full text avoids trusting file times, which Haxe
+	 * reports at one-second precision. A fresh compiler process starts empty, so
+	 * a direct build is unchanged.
+	 */
+	@:persistent static var scannedFiles:Null<Map<String, ScannedFile>> = null;
 
 	static final metaTokens:Array<String> = [
 		"@:repo",
@@ -183,7 +201,35 @@ class RepoDiscovery {
 	}
 
 	static function processHxFile(filePath:String):Void {
-		var file:Null<sys.io.FileInput> = null;
+		var content:String;
+		try
+			content = sys.io.File.getContent(filePath)
+		catch (_)
+			return;
+
+		var cache = scannedFiles;
+		if (cache == null)
+			scannedFiles = cache = new Map();
+		// The migration-only build looks for other metadata in the same files.
+		var cacheKey = (Context.defined("ecto_migrations_exs") ? "migrations:" : "application:") + filePath;
+		var cached = cache.get(cacheKey);
+		if (cached != null && cached.content == content) {
+			if (cached.typePath != null)
+				forceType(cached.typePath);
+			return;
+		}
+
+		var typePath = annotatedTypePath(filePath, content);
+		cache.set(cacheKey, {content: content, typePath: typePath});
+		if (typePath != null)
+			forceType(typePath);
+	}
+
+	/**
+	 * Returns the type path to force-type for one source file, or null when the
+	 * file has no relevant Phoenix or Ecto metadata.
+	 */
+	static function annotatedTypePath(filePath:String, content:String):Null<String> {
 		var inBlock = false;
 		var hasRelevantMeta = false;
 		var pkg = "";
@@ -193,73 +239,59 @@ class RepoDiscovery {
 		var enumRe = ~/^enum\s+([A-Za-z0-9_]+)/;
 		var abstractRe = ~/^abstract\s+([A-Za-z0-9_]+)/;
 
-		try {
-			file = sys.io.File.read(filePath, false);
-			try {
-				while (true) {
-					var line = file.readLine();
-					var t = StringTools.trim(line);
+		// The whole file is read with one native call and no handle stays open.
+		// Repo discovery may inspect thousands of ordinary project files; an open
+		// handle for each would eventually prevent a long-lived Haxe compilation
+		// server from starting subprocesses such as `haxelib`.
+		for (line in content.split("\n")) {
+			var t = StringTools.trim(line);
 
-					if (t.length == 0)
-						continue;
+			if (t.length == 0)
+				continue;
 
-					if (inBlock) {
-						if (t.indexOf("*/") != -1)
-							inBlock = false;
-						continue;
-					}
-					if (t.startsWith("/*")) {
-						if (t.indexOf("*/") == -1)
-							inBlock = true;
-						continue;
-					}
-					if (t.startsWith("//"))
-						continue;
-
-					if (pkg.length == 0 && t.startsWith("package ")) {
-						var rest = t.substr("package ".length);
-						var semi = rest.indexOf(";");
-						if (semi != -1)
-							rest = rest.substr(0, semi);
-						pkg = StringTools.trim(rest);
-					}
-
-					if (!hasRelevantMeta && hasRelevantMetadataToken(t)) {
-						hasRelevantMeta = true;
-					}
-
-					if (typeName == null) {
-						if (classRe.match(t)) {
-							typeName = classRe.matched(1);
-						} else if (enumAbstractRe.match(t)) {
-							typeName = enumAbstractRe.matched(1);
-						} else if (enumRe.match(t)) {
-							typeName = enumRe.matched(1);
-						} else if (abstractRe.match(t)) {
-							typeName = abstractRe.matched(1);
-						}
-					}
-
-					if (hasRelevantMeta && typeName != null)
-						break;
-				}
-			} catch (e:Eof) {
-				// Reached end-of-file; process what we discovered.
+			if (inBlock) {
+				if (t.indexOf("*/") != -1)
+					inBlock = false;
+				continue;
 			}
-		} catch (_) {}
+			if (t.startsWith("/*")) {
+				if (t.indexOf("*/") == -1)
+					inBlock = true;
+				continue;
+			}
+			if (t.startsWith("//"))
+				continue;
 
-		// Close before any early return below. Repo discovery may inspect thousands of
-		// ordinary project files that do not contain Phoenix metadata. Leaving those
-		// handles open eventually prevents a long-lived Haxe compilation server from
-		// starting subprocesses such as `haxelib`, so later rebuilds fail even though
-		// the server itself is still running.
-		try
-			if (file != null)
-				file.close()
-		catch (_) {}
+			if (pkg.length == 0 && t.startsWith("package ")) {
+				var rest = t.substr("package ".length);
+				var semi = rest.indexOf(";");
+				if (semi != -1)
+					rest = rest.substr(0, semi);
+				pkg = StringTools.trim(rest);
+			}
+
+			if (!hasRelevantMeta && hasRelevantMetadataToken(t)) {
+				hasRelevantMeta = true;
+			}
+
+			if (typeName == null) {
+				if (classRe.match(t)) {
+					typeName = classRe.matched(1);
+				} else if (enumAbstractRe.match(t)) {
+					typeName = enumAbstractRe.matched(1);
+				} else if (enumRe.match(t)) {
+					typeName = enumRe.matched(1);
+				} else if (abstractRe.match(t)) {
+					typeName = abstractRe.matched(1);
+				}
+			}
+
+			if (hasRelevantMeta && typeName != null)
+				break;
+		}
 
 		if (!hasRelevantMeta)
-			return;
+			return null;
 
 		try {
 			var moduleName = Path.withoutExtension(Path.withoutDirectory(filePath));
@@ -268,7 +300,7 @@ class RepoDiscovery {
 				moduleName = typeName;
 			}
 			if (moduleName == null || moduleName.length == 0)
-				return;
+				return null;
 
 			// Haxe modules are named after the file. If a file contains multiple top-level types,
 			// additional types are addressed as Module.Type (e.g., Main.CustomTags).
@@ -278,8 +310,9 @@ class RepoDiscovery {
 			// synthetic KModuleFields container.
 			var modBase = (pkg.length > 0) ? (pkg + "." + moduleName) : moduleName;
 			var mod = (typeName != null && typeName != moduleName) ? (modBase + "." + typeName) : modBase;
-			forceType(mod);
+			return mod;
 		} catch (_) {}
+		return null;
 	}
 
 	static function hasRelevantMetadataToken(line:String):Bool {
@@ -511,5 +544,11 @@ class RepoDiscovery {
 			return null;
 		return Path.join([tmp, "reflaxe_elixir_cache"]);
 	}
+}
+
+/** One scanned source file: its exact text and the type path that the scan found, if any. */
+private typedef ScannedFile = {
+	final content:String;
+	final typePath:Null<String>;
 }
 #end
