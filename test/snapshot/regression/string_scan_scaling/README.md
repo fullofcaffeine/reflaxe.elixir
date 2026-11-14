@@ -25,9 +25,13 @@ for slow machines; a normal run takes well under one second.
 
 `runtime.exs` also checks what the String runtime keeps in the process
 dictionary between calls: a whole large string and a string built with `<>` are
-kept, a short string and a slice of a much larger binary are not, the index for
-2.4 MB of two-byte text holds at most 1,048,576 offsets and still reads the
-right characters, and `StringTools.releaseIndex()` leaves nothing behind.
+kept, a short string is not, a slice of a much larger binary is kept as a copy
+so that it does not keep the larger binary alive, the index for 2.4 MB of
+two-byte text holds at most 1,048,576 offsets and still reads the right
+characters, and `StringTools.releaseIndex()` leaves nothing behind. A loop over
+a 40 KB part returned by `String.split/2` has a one-second budget; it took over
+one second (ASCII) and over ten seconds (two-byte text) before the copy was
+kept, and takes under 0.1 s now.
 
 Run the snapshot with `make -C test test-regression__string_scan_scaling` and
 the timed check with

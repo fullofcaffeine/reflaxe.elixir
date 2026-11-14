@@ -44,14 +44,32 @@ check.("release drops the entry", kept.() == nil)
 check.("reads a short string", Main.code_at("1234\u00E9", 4) == 0xE9)
 check.("does not keep a short string", kept.() == nil)
 
-# A slice of a much larger binary is not kept: the entry would keep the whole
-# larger binary alive for as long as the process lives.
+# A slice of a much larger binary is kept as a copy. Keeping the slice itself
+# would keep the whole larger binary alive for as long as the process lives.
 parent = String.duplicate("1234\u00E9678,", 100_000)
 slice = binary_part(parent, 10, 600)
 check.("the slice refers to its parent", :binary.referenced_byte_size(slice) > 2 * byte_size(slice))
 check.("reads a slice", Main.cut(slice, 4, 3) == String.slice(slice, 4, 3))
 check.("reads a slice by code", Main.code_at(slice, 4) == 0xE9)
-check.("does not keep a slice", kept.() == nil)
+{kept_slice, _} = kept.()
+check.("keeps the content of the slice", kept_slice == slice)
+check.("keeps a copy, not the parent", :binary.referenced_byte_size(kept_slice) == byte_size(kept_slice))
+
+# The parts that `String.split/2` returns are slices of the text that was
+# split. A character loop over such a part reads through the kept copy: each
+# read compares the bytes of the part with the copy. Each part here is 40 KB,
+# one third of its parent. Before the copy was kept, the ASCII loop took over
+# one second and the two-byte loop over ten seconds.
+for {name, unit, repeats} <- [{"ascii", "12345678,", 4_500}, {"mixed", "1234\u00E9678,", 4_000}] do
+  row = String.duplicate(unit, repeats)
+  [part | _] = String.split(row <> "|" <> row <> "|" <> row, "|")
+  check.("#{name} part is a slice", :binary.referenced_byte_size(part) > 2 * byte_size(part))
+  {part_micros, part_sum} = :timer.tc(fn -> Main.sum_codes(part) end)
+  check.("#{name} part sum", part_sum == sum.(row))
+  IO.puts("sumCodes #{name} split part (40 KB of a 120 KB parent): #{div(part_micros, 1000)} ms")
+  check.("#{name} part loop time", div(part_micros, 1000) < 1_000)
+end
+Main.release()
 
 # A string built with `<>` has spare room behind it. It must still be kept,
 # or a loop over it would walk the string on every read.
@@ -79,4 +97,4 @@ check.("capped cut", Main.cut(huge, huge_codes - 5, 9) == "\u00E9678,")
 check.("capped loop time", div(huge_micros, 1000) < budget_ms)
 Main.release()
 
-IO.puts("PASS: kept index: whole and built strings only, capped at 1,048,576 offsets, loop over 2.4 MB in #{div(huge_micros, 1000)} ms")
+IO.puts("PASS: kept index: whole strings, copies of slices, at most 1,048,576 offsets, loop over 2.4 MB in #{div(huge_micros, 1000)} ms")

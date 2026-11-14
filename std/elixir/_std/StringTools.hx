@@ -312,20 +312,21 @@ end', s, index);
 	 * HOW: The index is one of three values.
 	 * - `:ascii`: every codepoint is one byte, so position equals byte offset.
 	 * - `:walk`: no stored data; each operation walks from the start. Used for
-	 *   a string under 256 bytes, and for a non-ASCII string whose index is not
-	 *   kept. There a short walk costs less than building an index for one call.
+	 *   a string under 256 bytes, where a short walk costs less than an index.
 	 * - `{stride, count, checkpoints}`: `checkpoints` holds the byte offset of
 	 *   every `stride`-th codepoint and `count` is the number of codepoints.
-	 *   `stride` is 1 up to 1 MB of text and doubles above that, so the tuple
-	 *   never holds more than 1,048,576 offsets (8 MB).
+	 *   `stride` is 1 up to 1,048,576 codepoints and doubles above that, so
+	 *   the tuple never holds more than 1,048,576 offsets (8 MB).
 	 *
 	 * A string of 256 bytes or more keeps its index in the process dictionary
 	 * under `:reflaxe_haxe_string_index`, for as long as the same string is
 	 * read. Only the last such string is kept, and `releaseIndex` drops it.
-	 * A slice of a much larger binary is never kept, because the entry would
-	 * keep the whole larger binary alive: the test is that the binary it refers
-	 * to is more than twice its own size. (A string built with `<>` refers to
-	 * up to twice its size, and must stay eligible.)
+	 * A slice of a much larger binary is kept as a copy, because the slice
+	 * itself would keep the whole larger binary alive: the test is that the
+	 * binary it refers to is more than twice its own size. (A string built with
+	 * `<>` refers to up to twice its size, and is kept as it is.) The kept
+	 * entry is found by a match on the bytes, so a read of the slice finds its
+	 * copy at the cost of one byte comparison.
 	 *
 	 * Bytes that are not valid UTF-8 count as one position each.
 	 * See `docs/05-architecture/STRING_INDEX_UNITS.md`.
@@ -340,13 +341,9 @@ else
     {^{0}, index} ->
       index
     _ ->
-      if :binary.referenced_byte_size({0}) > 2 * byte_size({0}) do
-        if haxe_ascii_only({0}), do: :ascii, else: :walk
-      else
-        index = if haxe_ascii_only({0}), do: :ascii, else: haxe_unit_checkpoints({0}, 0, 0, haxe_unit_stride(byte_size({0}), 1), [])
-        Process.put(:reflaxe_haxe_string_index, {{0}, index})
-        index
-      end
+      index = if haxe_ascii_only({0}), do: :ascii, else: haxe_unit_checkpoints({0}, 0, 0, haxe_unit_stride(haxe_unit_span({0}, 0), 1), [])
+      Process.put(:reflaxe_haxe_string_index, {if(:binary.referenced_byte_size({0}) > 2 * byte_size({0}), do: :binary.copy({0}), else: {0}), index})
+      index
   end
 end', s);
 	}
@@ -368,13 +365,13 @@ end', s);
 
 	/**
 	 * Returns how many codepoints lie between two stored offsets for a string of
-	 * `size` bytes: the smallest power of two that keeps the index at or below
-	 * 1,048,576 offsets. A string has at most one codepoint per byte.
+	 * `count` codepoints: the smallest power of two that keeps the index at or
+	 * below 1,048,576 offsets.
 	 */
 	@:keep
 	@:noCompletion
-	public static function haxeUnitStride(size:Int, stride:Int):Int {
-		return untyped __elixir__('if {0} <= {1} * 1_048_576, do: {1}, else: haxe_unit_stride({0}, {1} * 2)', size, stride);
+	public static function haxeUnitStride(count:Int, stride:Int):Int {
+		return untyped __elixir__('if {0} <= {1} * 1_048_576, do: {1}, else: haxe_unit_stride({0}, {1} * 2)', count, stride);
 	}
 
 	/**

@@ -135,13 +135,9 @@ defmodule StringTools do
         {^s, index} ->
           index
         _ ->
-          if :binary.referenced_byte_size(s) > 2 * byte_size(s) do
-            if haxe_ascii_only(s), do: :ascii, else: :walk
-          else
-            index = if haxe_ascii_only(s), do: :ascii, else: haxe_unit_checkpoints(s, 0, 0, haxe_unit_stride(byte_size(s), 1), [])
-            Process.put(:reflaxe_haxe_string_index, {s, index})
-            index
-          end
+          index = if haxe_ascii_only(s), do: :ascii, else: haxe_unit_checkpoints(s, 0, 0, haxe_unit_stride(haxe_unit_span(s, 0), 1), [])
+          Process.put(:reflaxe_haxe_string_index, {if(:binary.referenced_byte_size(s) > 2 * byte_size(s), do: :binary.copy(s), else: s), index})
+          index
       end
     end
   end
@@ -153,8 +149,8 @@ defmodule StringTools do
       _ -> false
     end
   end
-  def haxe_unit_stride(size, stride) do
-    if size <= stride * 1_048_576, do: stride, else: haxe_unit_stride(size, stride * 2)
+  def haxe_unit_stride(count, stride) do
+    if count <= stride * 1_048_576, do: stride, else: haxe_unit_stride(count, stride * 2)
   end
   def haxe_unit_checkpoints(s, offset, position, stride, found) do
     case s do
