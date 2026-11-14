@@ -30,7 +30,7 @@
 		},
 		{
 			"path": "main.ex",
-			"sha256": "70ff082a74b74b9f7380061504a19153a25c3ecc9126ad9820da23e0a7eb0a4a"
+			"sha256": "c6bb73edd7ea7b4b83d725e50351db1e317f1d6e326940a3d3b62f41a259b34f"
 		},
 		{
 			"path": "outcome.ex",
@@ -57,5 +57,5 @@
 			"sha256": "4ae2f11465f1a1ed428e1e9b939db6c5c58a26ba26d27de0450fdff27938444f"
 		}
 	],
-	"generation": "62f14b4a6fcd7cda92b4037b62c7a9c8a01e62de7a0b076592b7efb813868a1e"
+	"generation": "67c47a506b90764d757e71c598ddae26541651b5dc545fb6c2368d7b565f8ccb"
 }

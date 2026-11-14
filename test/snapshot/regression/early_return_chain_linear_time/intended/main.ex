@@ -42,7 +42,67 @@ defmodule Main do
                                                 (case step(a11, fail_at) do
                                                   {:ok, value} ->
                                                     a12 = value
-                                                    {:ok, a12}
+                                                    (case step(a12, fail_at) do
+                                                      {:ok, value} ->
+                                                        a13 = value
+                                                        (case step(a13, fail_at) do
+                                                          {:ok, value} ->
+                                                            a14 = value
+                                                            (case step(a14, fail_at) do
+                                                              {:ok, value} ->
+                                                                a15 = value
+                                                                (case step(a15, fail_at) do
+                                                                  {:ok, value} ->
+                                                                    a16 = value
+                                                                    (case step(a16, fail_at) do
+                                                                      {:ok, value} ->
+                                                                        a17 = value
+                                                                        (case step(a17, fail_at) do
+                                                                          {:ok, value} ->
+                                                                            a18 = value
+                                                                            (case step(a18, fail_at) do
+                                                                              {:ok, value} ->
+                                                                                a19 = value
+                                                                                (case step(a19, fail_at) do
+                                                                                  {:ok, value} ->
+                                                                                    a20 = value
+                                                                                    (case step(a20, fail_at) do
+                                                                                      {:ok, value} ->
+                                                                                        a21 = value
+                                                                                        (case step(a21, fail_at) do
+                                                                                          {:ok, value} ->
+                                                                                            a22 = value
+                                                                                            (case step(a22, fail_at) do
+                                                                                              {:ok, value} ->
+                                                                                                a23 = value
+                                                                                                (case step(a23, fail_at) do
+                                                                                                  {:ok, value} ->
+                                                                                                    a24 = value
+                                                                                                    {:ok, a24}
+                                                                                                  {:err, error} -> {:err, error}
+                                                                                                end)
+                                                                                              {:err, error} -> {:err, error}
+                                                                                            end)
+                                                                                          {:err, error} -> {:err, error}
+                                                                                        end)
+                                                                                      {:err, error} -> {:err, error}
+                                                                                    end)
+                                                                                  {:err, error} -> {:err, error}
+                                                                                end)
+                                                                              {:err, error} -> {:err, error}
+                                                                            end)
+                                                                          {:err, error} -> {:err, error}
+                                                                        end)
+                                                                      {:err, error} -> {:err, error}
+                                                                    end)
+                                                                  {:err, error} -> {:err, error}
+                                                                end)
+                                                              {:err, error} -> {:err, error}
+                                                            end)
+                                                          {:err, error} -> {:err, error}
+                                                        end)
+                                                      {:err, error} -> {:err, error}
+                                                    end)
                                                   {:err, error} -> {:err, error}
                                                 end)
                                               {:err, error} -> {:err, error}

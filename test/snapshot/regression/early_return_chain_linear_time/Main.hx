@@ -69,6 +69,54 @@ class Main {
 			case Ok(value): value;
 			case Err(error): return Err(error);
 		};
-		return Ok(a12);
+		final a13 = switch step(a12, failAt) {
+			case Ok(value): value;
+			case Err(error): return Err(error);
+		};
+		final a14 = switch step(a13, failAt) {
+			case Ok(value): value;
+			case Err(error): return Err(error);
+		};
+		final a15 = switch step(a14, failAt) {
+			case Ok(value): value;
+			case Err(error): return Err(error);
+		};
+		final a16 = switch step(a15, failAt) {
+			case Ok(value): value;
+			case Err(error): return Err(error);
+		};
+		final a17 = switch step(a16, failAt) {
+			case Ok(value): value;
+			case Err(error): return Err(error);
+		};
+		final a18 = switch step(a17, failAt) {
+			case Ok(value): value;
+			case Err(error): return Err(error);
+		};
+		final a19 = switch step(a18, failAt) {
+			case Ok(value): value;
+			case Err(error): return Err(error);
+		};
+		final a20 = switch step(a19, failAt) {
+			case Ok(value): value;
+			case Err(error): return Err(error);
+		};
+		final a21 = switch step(a20, failAt) {
+			case Ok(value): value;
+			case Err(error): return Err(error);
+		};
+		final a22 = switch step(a21, failAt) {
+			case Ok(value): value;
+			case Err(error): return Err(error);
+		};
+		final a23 = switch step(a22, failAt) {
+			case Ok(value): value;
+			case Err(error): return Err(error);
+		};
+		final a24 = switch step(a23, failAt) {
+			case Ok(value): value;
+			case Err(error): return Err(error);
+		};
+		return Ok(a24);
 	}
 }

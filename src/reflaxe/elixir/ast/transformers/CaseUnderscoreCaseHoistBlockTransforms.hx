@@ -18,7 +18,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 
 	*
 	* HOW
-	* - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+	* - Walk the ElixirAST once with `ElixirASTTransformer.transformNode`, which visits
+	*   children before parents, and rewrite the matching statements of each block.
+	* - Each block is handled exactly once, so the cost grows linearly with the size of
+	*   the function, also for deeply nested `case` chains.
 
 	*
 	* EXAMPLES
@@ -40,9 +43,11 @@ class CaseUnderscoreCaseHoistBlockTransforms {
 				case EBlock(stmts):
 					var out:Array<ElixirAST> = [];
 					for (i in 0...stmts.length) {
+						// `transformNode` calls this function children-first, so `s` and every
+						// block nested in it are already rewritten. Do not run the pass on `s`
+						// again: that repeats all nested work once per block level and makes
+						// the cost double with each level of nesting.
 						var s = stmts[i];
-						// Recursively transform nested blocks first so inner `_ = case` becomes visible here
-						s = transformPass(s);
 						var hoisted = false;
 						switch (s.def) {
 							case EMatch(pat, {def: ECase(scrut, clauses)}) if (isDiscardPattern(pat)):
@@ -82,7 +87,6 @@ class CaseUnderscoreCaseHoistBlockTransforms {
 					var out2:Array<ElixirAST> = [];
 					for (i2 in 0...stmts2.length) {
 						var s2 = stmts2[i2];
-						s2 = transformPass(s2);
 						var hoisted2 = false;
 						switch (s2.def) {
 							case EMatch(p3, {def: ECase(scr3, cls3)}) if (isDiscardPattern(p3)):
