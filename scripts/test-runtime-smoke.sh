@@ -66,6 +66,8 @@ TEST_DIRS=(
   "test/snapshot/regression/early_return_chain_linear_time"
   "test/snapshot/regression/method_call_receiver_in_cond_condition"
   "test/snapshot/regression/tuple_value_with_hoisted_receiver"
+  "test/snapshot/regression/switch_after_early_return_switch"
+  "test/snapshot/regression/catch_all_name_in_throw"
   "test/snapshot/regression/enum_extraction_usage"
   "test/snapshot/regression/OrphanedEnumParameters"
   "test/snapshot/regression/troubleshooting_patterns"

@@ -275,11 +275,21 @@ class TempVariableTransforms {
 	 * 
 	 * WHY: Enum extraction can generate redundant temp alias assignments in statement contexts
 	 * WHAT: Removes temp alias assignments that immediately precede their only usage
-	 * HOW: Detects `alias = value; use(alias)` patterns and simplifies to `use(value)`
+	 * HOW: Detects `alias = value; use(alias)` patterns and simplifies to `use(value)`.
+	 * The rest of the block must read this binding of the alias exactly once.
+	 * Only that one position gets the value, so a later binding with the same
+	 * name keeps its own value. Otherwise the assignment stays and the value
+	 * runs once.
 	 * 
 	 * PATTERN:
 	 * Before: `g_temp = :some_atom; case g_temp do ... end`
 	 * After: `case :some_atom do ... end`
+	 * 
+	 * The case body can bind `_g` again and read it:
+	 * Before: `_g = lookup(key); case _g do {:ok, v} -> _g = word(v); case _g do ... end end`
+	 * After: `case lookup(key) do {:ok, v} -> _g = word(v); case _g do ... end end`
+	 * 
+	 * Regression fixture: `regression/switch_after_early_return_switch`.
 	 */
 	public static function tempAliasCleanupPass(ast:ElixirAST):ElixirAST {
 		return ElixirASTTransformer.transformNode(ast, cleanupTempAliases);
@@ -297,9 +307,16 @@ class TempVariableTransforms {
 							case EMatch(PVar(varName), value) if (isTempAliasVar(varName)):
 								// Check if next expression immediately uses this temp var
 								var nextExpr = exprs[i + 1];
-								if (isSingleUseOfVar(nextExpr, varName)) {
-									// Replace the usage with the value directly
-									var replaced = replaceVarWithValue(nextExpr, varName, value);
+								// The alias must be read exactly once by the rest of the block, in the
+								// position that isSingleUseOfVar checks. A read of a later binding
+								// with the same name does not count: Haxe names the stored value of
+								// every switch `_g`, so a case body can bind `_g` again.
+								var rest = makeAST(EBlock(exprs.slice(i + 1)));
+								var freeReads = reflaxe.elixir.ast.analyzers.VarUseAnalyzer.freeVarUseCounts(rest).get(varName);
+								if (freeReads == 1 && isSingleUseOfVar(nextExpr, varName)) {
+									// Write the value only in that one position. Other nodes with
+									// the same name belong to the later binding.
+									var replaced = replaceSingleUse(nextExpr, value);
 									newExprs.push(replaced);
 									i += 2; // Skip both the assignment and the usage
 									continue;
@@ -320,8 +337,8 @@ class TempVariableTransforms {
 		return node;
 	}
 
+	/** True when `expr` is a `case` on `varName` or a call with `varName` as first argument. */
 	private static function isSingleUseOfVar(expr:ElixirAST, varName:String):Bool {
-		// Simple check - could be enhanced to verify it's the ONLY use
 		return switch (expr.def) {
 			case ECase(caseExpr, _):
 				switch (caseExpr.def) {
@@ -342,13 +359,17 @@ class TempVariableTransforms {
 		return name.indexOf("g_") == 0 || StringTools.startsWith(name, "_g") || name == "g" || StringTools.startsWith(name, "g");
 	}
 
-	private static function replaceVarWithValue(expr:ElixirAST, varName:String, value:ElixirAST):ElixirAST {
-		return ElixirASTTransformer.transformNode(expr, function(n) {
-			return switch (n.def) {
-				case EVar(v) if (v == varName): value;
-				default: n;
-			};
-		});
+	/**
+	 * Writes `value` in the one position that `isSingleUseOfVar` accepted: the
+	 * tested expression of a `case`, or the first argument of a call. No other
+	 * node changes.
+	 */
+	private static function replaceSingleUse(expr:ElixirAST, value:ElixirAST):ElixirAST {
+		return switch (expr.def) {
+			case ECase(_, clauses): makeASTWithMeta(ECase(value, clauses), expr.metadata, expr.pos);
+			case ECall(target, name, args): makeASTWithMeta(ECall(target, name, [value].concat(args.slice(1))), expr.metadata, expr.pos);
+			default: expr;
+		};
 	}
 
 	/**
