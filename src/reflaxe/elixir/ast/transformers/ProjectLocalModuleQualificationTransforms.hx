@@ -25,6 +25,10 @@ import reflaxe.elixir.ast.StdModuleWhitelist;
 	* - Collect all module names defined in the current AST (EModule/EDefmodule) that
 	*   are single-segment CamelCase and not whitelisted std/framework roots.
 	* - Exclude modules already prefixed by <App> (e.g., <App>Web) to avoid double-qualification.
+	* - Exclude the module that the AST itself defines. It is emitted under its own name,
+	*   so a call to itself must keep that name. Example: a module-level `final` read
+	*   inside `defmodule Tags_Fields_` stays `Tags_Fields_.keep_private_tags()`.
+	*   Regression fixture: `regression/module_level_final_with_app_name`.
 	* - Transform ERemoteCall/ECall targets using the collected names to <App>.<Name>.
 	* - Shape-based: no app-specific heuristics beyond the configured app prefix.
 
@@ -116,6 +120,15 @@ class ProjectLocalModuleQualificationTransforms {
 			}
 		}
 		collect(ast);
+
+		// The module that this AST defines keeps the name it is defined with. A call
+		// from inside `defmodule Tags_Fields_` to `Tags_Fields_.keep_private_tags()`
+		// must not become `<App>.Tags_Fields_...`: no module has that name.
+		switch (ast.def) {
+			case EModule(ownName, _, _) | EDefmodule(ownName, _):
+				localRoots.remove(ownName);
+			default:
+		}
 
 		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
 			return switch (n.def) {
