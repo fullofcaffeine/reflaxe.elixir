@@ -13,11 +13,11 @@ defmodule EReg do
     subject = s
     pos_g = max(pos, 0)
     len_g = len
-    total_g = String.length(subject)
+    total_g = unit_count(subject)
     pos_g = if pos_g > total_g, do: total_g, else: pos_g
     end_g = if len_g < 0, do: total_g, else: min(pos_g + len_g, total_g)
-    prefix = String.slice(subject, 0, end_g)
-    offset_b = byte_size(String.slice(subject, 0, pos_g))
+    prefix = unit_slice(subject, 0, end_g)
+    offset_b = byte_size(unit_slice(subject, 0, pos_g))
     indices = Regex.run(struct.regex, prefix, [return: :index, offset: offset_b])
     if indices == nil do
       Process.delete({:reflaxe_ereg, struct.ref})
@@ -28,14 +28,14 @@ defmodule EReg do
       pad = if missing > 0, do: List.duplicate({-1, 0}, missing), else: []
       padded = indices ++ pad
       [{mpos_b, mlen_b} | _] = padded
-      mpos_g = if mpos_b < 0, do: -1, else: String.length(binary_part(subject, 0, mpos_b))
-      mlen_g = if mpos_b < 0, do: 0, else: String.length(binary_part(subject, mpos_b, mlen_b))
+      mpos_g = if mpos_b < 0, do: -1, else: unit_count(binary_part(subject, 0, mpos_b))
+      mlen_g = if mpos_b < 0, do: 0, else: unit_count(binary_part(subject, mpos_b, mlen_b))
       matches =
         Enum.map(padded, fn
           {p, l} when is_integer(p) and p >= 0 -> binary_part(subject, p, l)
           _ -> nil
         end)
-      Process.put({:reflaxe_ereg, struct.ref}, %{subject: subject, matches: matches, pos: mpos_g, len: mlen_g})
+      Process.put({:reflaxe_ereg, struct.ref}, %{subject: subject, matches: matches, pos: mpos_g, len: mlen_g, byte_pos: mpos_b, byte_len: mlen_b})
       true
     end
   end
@@ -48,13 +48,13 @@ defmodule EReg do
   def matched_left(struct) do
     state = Process.get({:reflaxe_ereg, struct.ref})
     if state == nil, do: haxe_throw("No string matched")
-    String.slice(state.subject, 0, state.pos)
+    binary_part(state.subject, 0, state.byte_pos)
   end
   def matched_right(struct) do
     state = Process.get({:reflaxe_ereg, struct.ref})
     if state == nil, do: haxe_throw("No string matched")
-    start = state.pos + state.len
-    String.slice(state.subject, start, String.length(state.subject) - start)
+    start = state.byte_pos + state.byte_len
+    binary_part(state.subject, start, byte_size(state.subject) - start)
   end
   def matched_pos(struct) do
     state = Process.get({:reflaxe_ereg, struct.ref})
@@ -70,28 +70,28 @@ defmodule EReg do
   end
   def replace(struct, s, by) do
     parts = String.split(by, "$", trim: false)
-    buf = replace_loop(struct, s, parts, 0, String.length(s), true, [])
+    buf = replace_loop(struct, s, parts, 0, unit_count(s), true, [])
     IO.iodata_to_binary(buf)
   end
   defp replace_loop(struct, s, parts, pos, len, first, buf) do
     if not match_sub(struct, s, pos, len) do
-      [buf, String.slice(s, pos, len)]
+      [buf, unit_slice(s, pos, len)]
     else
       %{pos: mpos, len: mlen} = matched_pos(struct)
       {mpos, done} =
         cond do
-          mlen == 0 and not first and mpos == String.length(s) -> {mpos, true}
+          mlen == 0 and not first and mpos == unit_count(s) -> {mpos, true}
           mlen == 0 and not first -> {mpos + 1, false}
           true -> {mpos, false}
         end
       if done do
-        [buf, String.slice(s, pos, len)]
+        [buf, unit_slice(s, pos, len)]
       else
-        buf = [buf, String.slice(s, pos, mpos - pos), build_replacement(struct, parts)]
+        buf = [buf, unit_slice(s, pos, mpos - pos), build_replacement(struct, parts)]
         tot = mpos + mlen - pos
         pos = pos + tot
         len = len - tot
-        if struct.global, do: replace_loop(struct, s, parts, pos, len, false, buf), else: [buf, String.slice(s, pos, len)]
+        if struct.global, do: replace_loop(struct, s, parts, pos, len, false, buf), else: [buf, unit_slice(s, pos, len)]
       end
     end
   end
@@ -130,21 +130,21 @@ defmodule EReg do
     end
   end
   def map(struct, s, f) do
-    total = String.length(s)
+    total = unit_count(s)
     {buf, offset} = map_loop(struct, s, f, 0, total, [])
-    buf = if not struct.global and offset > 0 and offset < total, do: [buf, String.slice(s, offset, total - offset)], else: buf
+    buf = if not struct.global and offset > 0 and offset < total, do: [buf, unit_slice(s, offset, total - offset)], else: buf
     IO.iodata_to_binary(buf)
   end
   defp map_loop(struct, s, f, offset, total, buf) do
     cond do
       offset >= total -> {buf, offset}
-      not match_sub(struct, s, offset, -1) -> {[buf, String.slice(s, offset, total - offset)], total}
+      not match_sub(struct, s, offset, -1) -> {[buf, unit_slice(s, offset, total - offset)], total}
       true ->
         %{pos: mpos, len: mlen} = matched_pos(struct)
-        buf = [buf, String.slice(s, offset, mpos - offset), f.(struct)]
+        buf = [buf, unit_slice(s, offset, mpos - offset), f.(struct)]
         {buf, new_offset} =
           if mlen == 0 do
-            {[buf, String.slice(s, mpos, 1)], mpos + 1}
+            {[buf, unit_slice(s, mpos, 1)], mpos + 1}
           else
             {buf, mpos + mlen}
           end
@@ -152,5 +152,17 @@ defmodule EReg do
     end
   end
   def escape(s), do: Regex.escape(s)
+  defp unit_count(s), do: unit_count(s, 0)
+  defp unit_count(<<_::utf8, rest::binary>>, n), do: unit_count(rest, n + 1)
+  defp unit_count(<<_, rest::binary>>, n), do: unit_count(rest, n + 1)
+  defp unit_count(<<>>, n), do: n
+  defp unit_slice(s, pos, len) do
+    rest = unit_drop(s, max(pos, 0))
+    binary_part(rest, 0, byte_size(rest) - byte_size(unit_drop(rest, max(len, 0))))
+  end
+  defp unit_drop(s, 0), do: s
+  defp unit_drop(<<_::utf8, rest::binary>>, n), do: unit_drop(rest, n - 1)
+  defp unit_drop(<<_, rest::binary>>, n), do: unit_drop(rest, n - 1)
+  defp unit_drop(<<>>, _n), do: <<>>
   defp haxe_throw(value), do: raise(Reflaxe.Elixir.HaxeThrow, [value: value])
 end
