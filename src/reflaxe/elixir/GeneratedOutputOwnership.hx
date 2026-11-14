@@ -108,9 +108,9 @@ class GeneratedOutputOwnership {
 	// candidate that replaces them. A full rebuild that changes every file then
 	// still finds each content again in the same request.
 	static inline var REMEMBERED_CONTENTS_PER_PATH = 2;
-	// When the remembered bytes exceed this size, all of them are dropped and the
-	// next request computes each digest again. This keeps a long-lived server that
-	// writes many output folders from growing without limit.
+	// When new content would take the remembered bytes past this size, all of
+	// them are dropped first and each digest is computed again. This keeps a
+	// long-lived server that writes many output folders from growing without limit.
 	static inline var REMEMBERED_BYTES_LIMIT = 268435456;
 
 	// `@:persistent` keeps these values between requests on a compilation server.
@@ -1102,21 +1102,28 @@ class GeneratedOutputOwnership {
 		return hashBytes(bytes);
 		#else
 		var all = rememberedDigests;
-		if (all == null || rememberedByteCount > REMEMBERED_BYTES_LIMIT) {
+		var known = all == null ? null : all.get(target);
+		if (known != null) {
+			for (entry in known) {
+				if (entry.bytes.length == bytes.length && entry.bytes.compare(bytes) == 0)
+					return entry.digest;
+			}
+		}
+		var digest = hashBytes(bytes);
+		// Keep the limit before the new bytes are added, so the remembered total
+		// never passes it. Content larger than the limit is never remembered.
+		if (bytes.length > REMEMBERED_BYTES_LIMIT)
+			return digest;
+		if (all == null || rememberedByteCount + bytes.length > REMEMBERED_BYTES_LIMIT) {
 			all = new Map();
 			rememberedDigests = all;
 			rememberedByteCount = 0;
+			known = null;
 		}
-		var known = all.get(target);
 		if (known == null) {
 			known = [];
 			all.set(target, known);
 		}
-		for (entry in known) {
-			if (entry.bytes.length == bytes.length && entry.bytes.compare(bytes) == 0)
-				return entry.digest;
-		}
-		var digest = hashBytes(bytes);
 		known.unshift({bytes: bytes, digest: digest});
 		rememberedByteCount += bytes.length;
 		while (known.length > REMEMBERED_CONTENTS_PER_PATH) {
