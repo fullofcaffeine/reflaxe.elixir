@@ -29,6 +29,10 @@ defmodule Main do
   def slices(s, pos, len) do
     Enum.join([StringTools.haxe_substr_non_nil_len(s, pos, len), StringTools.haxe_substring(s, pos, pos + len), StringTools.haxe_substr(s, pos, nil), StringTools.haxe_substr(s, -2, nil), StringTools.haxe_substring(s, pos, nil)], "|")
   end
+  def edges(s) do
+    far = StringTools.haxe_length(s) + 5
+    Enum.join([StringTools.haxe_substr(s, -3, nil), StringTools.haxe_substr_non_nil_len(s, -3, 2), StringTools.haxe_substr_non_nil_len(s, -far, 2), StringTools.haxe_substr(s, far, nil), StringTools.haxe_substr_non_nil_len(s, 1, far), StringTools.haxe_substr_non_nil_len(s, 2, -1), StringTools.haxe_substr_non_nil_len(s, 2, -far), StringTools.haxe_substring(s, -2, 3), StringTools.haxe_substring(s, 3, 1), StringTools.haxe_substring(s, 2, far), StringTools.haxe_substring(s, far, nil), StringTools.haxe_substring(s, -far, -1), "[#{StringTools.haxe_char_at(s, far)}]", Reflaxe.Elixir.HaxeFloat.to_string(StringTools.haxe_char_code_at(s, -far))], "|")
+  end
   def find(s, needle) do
     Enum.join([StringTools.haxe_index_of(s, needle, 0), StringTools.haxe_index_of(s, needle, 2), StringTools.haxe_last_index_of(s, needle, nil), StringTools.haxe_last_index_of(s, needle, 2)], ",")
   end
@@ -294,6 +298,7 @@ defmodule Main do
     line(label, "pieces", pieces(s))
     line(label, "outside", outside(s))
     line(label, "check", check(s))
+    line(label, "edges", edges(s))
   end
   def main() do
     accent = <<769::utf8>>
@@ -310,6 +315,49 @@ defmodule Main do
     show("plain", "[1, 2]")
     show("empty", "")
     show("bad", "[1,\r\n?]")
+    unit = "e#{accent}\r\n#{flag}ab"
+    large = ""
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    large = "#{large}#{unit}"
+    show("large", large)
     line("crlf", "find", find("a\r\nb\r\nc", "\n"))
     line("flag", "find", find("#{flag}x#{flag}x", "x"))
     line("accent", "find", find("e#{accent}e#{accent}", "e"))

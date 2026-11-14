@@ -23,6 +23,12 @@ two-byte characters. It checks the results against values computed in Elixir
 and fails when the loops together take more than 5 seconds. The budget is wide
 for slow machines; a normal run takes well under one second.
 
+`runtime.exs` also checks what the String runtime keeps in the process
+dictionary between calls: a whole large string and a string built with `<>` are
+kept, a short string and a slice of a much larger binary are not, the index for
+2.4 MB of two-byte text holds at most 1,048,576 offsets and still reads the
+right characters, and `StringTools.releaseIndex()` leaves nothing behind.
+
 Run the snapshot with `make -C test test-regression__string_scan_scaling` and
 the timed check with
 `scripts/test-runtime-smoke.sh --fixture test/snapshot/regression/string_scan_scaling`.

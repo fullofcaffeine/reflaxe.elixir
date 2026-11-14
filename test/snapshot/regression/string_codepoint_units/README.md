@@ -32,5 +32,12 @@ Run the snapshot with `make -C test test-regression__string_codepoint_units`
 and the native check with
 `scripts/test-runtime-smoke.sh --fixture test/snapshot/regression/string_codepoint_units`.
 
+`Main.edges` cuts with negative and out-of-range arguments, and the `large`
+input (280 codepoints in 600 bytes) takes the path that keeps a position index.
+
+One interpreter result is left out because the interpreter itself is wrong
+there: `lastIndexOf` on the large non-ASCII text returns a position after the
+end of the string, so the large input has no search line.
+
 Not covered here: `EReg` positions, `haxe.Template`, and text that is not valid
 UTF-8.

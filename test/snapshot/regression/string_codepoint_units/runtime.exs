@@ -13,7 +13,9 @@ texts = [
   {"jamo", "[\"" <> jamo <> "\",1]"},
   {"plain", "[1, 2]"},
   {"empty", ""},
-  {"bad", "[1,\r\n?]"}
+  {"bad", "[1,\r\n?]"},
+  # 280 codepoints in 600 bytes: large enough for the kept position index.
+  {"large", String.duplicate("e" <> accent <> "\r\n" <> flag <> "ab", 40)}
 ]
 
 searches = [
@@ -41,7 +43,8 @@ actual =
       "#{label} slices #{plain.(Main.slices(text, 1, 2))}",
       "#{label} pieces #{plain.(Main.pieces(text))}",
       "#{label} outside #{plain.(Main.outside(text))}",
-      "#{label} check #{plain.(Main.check(text))}"
+      "#{label} check #{plain.(Main.check(text))}",
+      "#{label} edges #{plain.(Main.edges(text))}"
     ]
   end) ++
     Enum.map(searches, fn {label, text, needle} -> "#{label} find #{plain.(Main.find(text, needle))}" end)

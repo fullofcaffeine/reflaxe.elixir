@@ -29,6 +29,30 @@ class Main {
 		].join("|");
 	}
 
+	/**
+	 * Cuts with negative and out-of-range arguments. `far` is a position
+	 * after the end of any test string.
+	 */
+	public static function edges(s:String):String {
+		var far = s.length + 5;
+		return [
+			s.substr(-3),
+			s.substr(-3, 2),
+			s.substr(-far, 2),
+			s.substr(far),
+			s.substr(1, far),
+			s.substr(2, -1),
+			s.substr(2, -far),
+			s.substring(-2, 3),
+			s.substring(3, 1),
+			s.substring(2, far),
+			s.substring(far),
+			s.substring(-far, -1),
+			"[" + s.charAt(far) + "]",
+			Std.string(s.charCodeAt(-far))
+		].join("|");
+	}
+
 	/** Searches forward and backward; the answers are positions in codepoints. */
 	public static function find(s:String, needle:String):String {
 		return [
@@ -166,6 +190,7 @@ class Main {
 		line(label, "pieces", pieces(s));
 		line(label, "outside", outside(s));
 		line(label, "check", check(s));
+		line(label, "edges", edges(s));
 	}
 
 	/**
@@ -187,6 +212,14 @@ class Main {
 		show("plain", "[1, 2]");
 		show("empty", "");
 		show("bad", "[1,\r\n?]");
+		// 280 codepoints in 600 bytes: large enough for the kept position index.
+		var unit = "e" + accent + "\r\n" + flag + "ab";
+		var large = "";
+		for (_ in 0...40)
+			large += unit;
+		// No search on the large text: for non-ASCII text of this size the
+		// interpreter's `lastIndexOf` returns a position after the end.
+		show("large", large);
 		line("crlf", "find", find("a\r\nb\r\nc", "\n"));
 		line("flag", "find", find(flag + "x" + flag + "x", "x"));
 		line("accent", "find", find("e" + accent + "e" + accent, "e"));

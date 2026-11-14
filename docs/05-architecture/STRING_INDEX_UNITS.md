@@ -72,11 +72,31 @@ Graphemes remain available on purpose through the typed Elixir API
 helpers. A `.length` read on a value whose type is not known at compile time,
 but which is a binary at run time, uses `length(String.codepoints(value))`.
 
+`EReg` follows the rule too: `matchedPos`, `matchedLeft`, `matchedRight`, the
+`matchSub` range, `replace` and `map` count codepoints, so
+`text.substr(matcher.matchedPos().pos)` cuts at the match. The `EReg` runtime
+module has its own small counting functions and does not need `StringTools`.
+
 `s.length` no longer prints as `String.length(s)`. That call reads well, but it
 counts graphemes, so it gives a different number from every other operation.
 
+`StringBuf.addSub(s, pos, len)` is not changed here. The branch
+`loop/linear-buffers`, which is stacked on this work, moves it to codepoints
+together with the `StringBuf` append cost (`haxe.elixir.codex-e0w`). Until that
+branch lands, `addSub` still cuts in UTF-16 units.
+
+### Text that is not valid UTF-8
+
 A byte that is not valid UTF-8 counts as one position, and its code is the byte
 value. This matches `String.codepoints/1`.
+
+One visible difference from other Haxe targets follows from this. A Haxe
+string on the interpreter or on JavaScript can hold half of a UTF-16 surrogate
+pair, for example `String.fromCharCode(0xD800)`. A BEAM string cannot: Erlang's
+UTF-8 does not allow the codes `0xD800` to `0xDFFF`. `String.fromCharCode` with
+such a code raises `ArgumentError` on this target. If the three bytes that
+other systems write for it (`ED A0 80`, the encoding known as WTF-8) arrive
+from outside, they count as three positions, not one.
 
 ## How positions stay fast
 
@@ -85,19 +105,68 @@ finding codepoint `i` means a walk from the start. A walk for each `length`,
 `charAt` and `charCodeAt` made a character loop cost the square of the string
 size: 72 KB took about three minutes.
 
-`StringTools.haxe_unit_index/1` builds a position index for a string once:
+`StringTools.haxe_unit_index/1` chooses how to find positions in a string:
 
-- `:ascii` when every codepoint is one byte. Position and byte offset are then
-  equal, and each operation is a direct byte read.
-- Otherwise a tuple with the byte offset of each codepoint.
+- **Under 256 bytes:** no index. Each read walks from the start to the
+  position it needs. `charAt(3)` reads three codepoints and stops, so short
+  strings cost no more than before this change (measured below).
+- **256 bytes or more, all ASCII:** the index is `:ascii`. Position and byte
+  offset are equal, so each operation is a direct byte read.
+- **256 bytes or more, other text:** the index is `{stride, count,
+  checkpoints}`. `checkpoints` is a tuple with the byte offset of every
+  `stride`-th codepoint. `stride` is 1 for text up to 1 MB, so each read is
+  direct. Above 1 MB it doubles until the tuple holds at most 1,048,576
+  offsets, and a read walks at most `stride - 1` codepoints from the nearest
+  stored offset.
+
+### What is kept, and for how long
 
 For a string of 256 bytes or more, the index is kept in the process dictionary
-under `:reflaxe_haxe_string_index`, together with the string. The next
-operation on the same string reuses it. The test "is this the same string" is
-`===`, which BEAM answers at once for the same term and for a different size.
-Shorter strings are indexed on each call. That is cheap, and it means a short
-string read inside the loop (a separator, a keyword) does not replace the kept
-index of the large one.
+under `:reflaxe_haxe_string_index`, together with the string, as
+`{string, index}`. The next operation on the same string reuses it. The lookup
+is a pattern match with the string pinned (`{^s, index}`), which compares the
+bytes of the two binaries. BEAM answers at once when both are the same term or
+have different sizes; two different binaries with the same size and content
+also match, after a byte comparison.
+
+Only the last large string is kept. Strings under 256 bytes never replace it,
+so a short separator or keyword read inside a loop does not disturb the index
+of the large string.
+
+Rules that limit what is kept:
+
+- **A slice of a larger binary is not kept.** `binary_part/3` and pattern
+  matching return a slice that refers to the whole original binary. Keeping a
+  300-byte slice of a 66 MB request body would keep all 66 MB alive. The index
+  is not kept when `:binary.referenced_byte_size(s)` is more than twice
+  `byte_size(s)`. The limit is twice the size, not the exact size, because a
+  string built with `<>` has spare room behind it for the next append: BEAM
+  reports up to twice its size for it. Such strings are common inputs, and
+  without the index a loop over them is quadratic again. The cost of this
+  choice is bounded: the kept entry can hold at most as much unused memory as
+  the string itself.
+- **The index is at most 8 MB.** The checkpoint tuple never has more than
+  1,048,576 elements of one machine word each. 8 MB was chosen because it
+  keeps direct reads for text up to 1 MB, which covers ordinary documents and
+  API payloads, and it keeps the index near or below the size of the text it
+  serves. Larger text stays linear; each read walks a few codepoints more.
+- **The string itself has no size limit.** A loop over a 50 MB string keeps
+  that string until another large string replaces it or the process ends.
+
+`StringTools.releaseIndex()` drops the entry. Call it in a long-lived process,
+such as a GenServer, when it has finished with a large or sensitive string. It
+changes no result; the next read builds the index again.
+
+What a kept entry means for a long-lived process:
+
+- The string stays in memory after the code that read it has returned.
+- The string appears in `:sys.get_status/1` output, in `Process.info(pid,
+  :dictionary)`, and in the crash report that OTP logs when the process ends
+  abnormally. A password or token inside a string of 256 bytes or more can
+  therefore reach a log. Call `StringTools.releaseIndex()` after such a read,
+  or do the read in a short-lived process such as a `Task`.
+
+### Measurements
 
 Measured on one machine (Apple silicon, OTP 27, Elixir 1.18.3).
 
@@ -106,8 +175,9 @@ The loop `while (i < s.length) total += s.charCodeAt(i++)`, from
 
 | Input | Before | After |
 | --- | --- | --- |
-| 800 KB ASCII | stopped at the 20 s limit | 47 ms |
-| 800 KB with two-byte characters | stopped at the 20 s limit | 104 ms |
+| 800 KB ASCII | stopped at the 20 s limit | 66 ms |
+| 800 KB with two-byte characters | stopped at the 20 s limit | 131 ms |
+| 2.4 MB with two-byte characters (stride 4) | not measured | 522 ms |
 
 A JSON parser written in Haxe (Caf's canonical JSON codec), on an array of
 numbers:
@@ -122,8 +192,24 @@ numbers:
 The parser times still grow faster than the input. That part is not String
 reads: see the last item under Limits.
 
-`test/snapshot/regression/string_scan_scaling` keeps this result with a time
-budget.
+Single operations on short strings, in nanoseconds per call (best of two runs;
+"before" is the compiler before this change):
+
+| Input | Operation | Before | After |
+| --- | --- | --- | --- |
+| 8 bytes ASCII | `length` | 150 | 118 |
+| 8 bytes ASCII | `charAt(3)` | 168 | 102 |
+| 8 bytes ASCII | `charCodeAt(3)` | 58 | 40 |
+| 200 bytes ASCII | `length` | 591 | 118 |
+| 200 bytes ASCII | `charAt(3)` | 184 | 84 |
+| 200 bytes ASCII | `charCodeAt(3)` | 758 | 57 |
+| 20 codepoints, accents | `length` | 766 | 147 |
+| 20 codepoints, accents | `charAt(3)` | 190 | 116 |
+| 120 codepoints, accents | `charAt(3)` | 207 | 92 |
+| 120 codepoints, accents | `substr(1, 3)` | 5708 | 901 |
+| 300 bytes ASCII | `charCodeAt(3)` | 1170 | 33 |
+
+No measured operation is slower than before.
 
 ## Limits
 
@@ -131,12 +217,16 @@ budget.
   bytes or more in turn rebuilds the index on each switch. The results stay
   correct; the cost is one pass over the string per switch. Task:
   `haxe.elixir.codex-dvy`.
-- The kept index holds its string, and for non-ASCII text one machine word per
-  codepoint, until another large string replaces it or the process ends.
+- A large slice of a much larger binary gets no kept index, so a character loop
+  over it walks the slice on each read. Copy it first with `:binary.copy/1`
+  when it must be scanned.
 - The dynamic `.length` path counts on each call and does not use the index.
-- Not yet on this rule: `EReg` match positions (`haxe.elixir.codex-4x2`),
-  `StringBuf.addSub` (`haxe.elixir.codex-e0w`), and `haxe.Template` and the
-  legacy untyped rewrite in `ElixirASTTransformer.stringMethodTransformPass`
+- `EReg.replace` and `EReg.map` convert positions with a walk for each match,
+  as before this change, so many matches in one large string cost more than
+  linear time.
+- Not yet on this rule: `StringBuf.addSub` (branch `loop/linear-buffers`,
+  `haxe.elixir.codex-e0w`), and `haxe.Template` and the legacy untyped rewrite
+  in `ElixirASTTransformer.stringMethodTransformPass`
   (`haxe.elixir.codex-u66`).
 - `StringTools.ltrim` and `rtrim` use Elixir's Unicode whitespace list, which is
   wider than Haxe's (`haxe.elixir.codex-u66`).
@@ -146,9 +236,13 @@ budget.
 
 ## Tests
 
-- `test/snapshot/regression/string_codepoint_units`: the inputs above, checked
-  in Elixir against Haxe interpreter results.
+- `test/snapshot/regression/string_codepoint_units`: the inputs above, a
+  600-byte input that uses the kept index, and negative and out-of-range
+  arguments, checked in Elixir against Haxe interpreter results.
+- `test/snapshot/regression/ereg_codepoint_positions`: `EReg` positions used
+  with `substr`, checked against Haxe interpreter results.
 - `test/snapshot/regression/string_scan_scaling`: three loop shapes on 800 KB
-  with a time budget.
+  with a time budget, and what the process keeps: whole and appended strings
+  only, no slices, at most 1,048,576 offsets, nothing after `releaseIndex`.
 
-Both run in `npm run test:runtime-smoke`.
+All run in `npm run test:runtime-smoke`.

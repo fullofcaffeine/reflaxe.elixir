@@ -46,13 +46,13 @@
 		"e_reg.ex"
 	],
 	"protocol": "reflaxe-elixir/generated-output",
-	"id": 51,
+	"id": 52,
 	"wasCached": false,
 	"version": 2,
 	"ownedFiles": [
 		{
 			"path": "e_reg.ex",
-			"sha256": "c0d6f5906cc887fc266663c36e86836576fab02b58e6cc1604f2e4e26f948b14"
+			"sha256": "a00507525afd7cc3b412fc6c9f3cf1e94ae21494b57bd4ee1070d96185ae51ca"
 		},
 		{
 			"path": "ecto/changeset_action.ex",
@@ -224,8 +224,8 @@
 		},
 		{
 			"path": "string_tools.ex",
-			"sha256": "e4f872efad0c0771f5e8bb0bd07b6b03bc3244b6e69190d8775b5a8d495a67b1"
+			"sha256": "22b9d0a60df19c1de7ca28881d42f7bfda7f93c6928ef52ebe461d0b4433f53c"
 		}
 	],
-	"generation": "6ae9c88eae444678c75441691fbb9aa7ee4e4f27083ff7f3261bb366a9e4e8d0"
+	"generation": "2b970b1163a1824b9b5e03bc7aaa7ee2f0d251cded0f8ff7060ea6db21d4d8d9"
 }
