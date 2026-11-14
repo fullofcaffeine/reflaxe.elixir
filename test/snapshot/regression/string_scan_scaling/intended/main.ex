@@ -87,8 +87,20 @@ defmodule Main do
     end)
     total
   end
+  def code_at(source, index) do
+    StringTools.haxe_char_code_at(source, index)
+  end
+  def cut(source, start, length) do
+    StringTools.haxe_substr_non_nil_len(source, start, length)
+  end
+  def release() do
+    StringTools.release_index()
+  end
   def main() do
     v = "#{Reflaxe.Elixir.HaxeFloat.to_string(sum_codes("12,34"))} #{Reflaxe.Elixir.HaxeFloat.to_string(count("12,34", ","))} #{Reflaxe.Elixir.HaxeFloat.to_string(sum_numbers("12,34", ","))}"
     IO.puts(v)
+    v = "#{Reflaxe.Elixir.HaxeFloat.to_string(code_at("12,34", 0))} #{cut("12,34", 0, 2)}"
+    IO.puts(v)
+    release()
   end
 end

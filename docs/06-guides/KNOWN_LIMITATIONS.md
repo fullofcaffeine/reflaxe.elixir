@@ -51,17 +51,28 @@ pre-1.0 behavior—not the finished compatibility promise. The
 
 ## String positions count codepoints
 
-Every Haxe `String` position and length counts Unicode codepoints, as on the Haxe interpreter:
-`"\r\n".length` is 2, and a flag emoji has length 2. `s.length` compiles to
+Every Haxe `String` and `EReg` position and length counts Unicode codepoints, as on the Haxe
+interpreter: `"\r\n".length` is 2, and a flag emoji has length 2. `s.length` compiles to
 `StringTools.haxe_length(s)`, not to Elixir's `String.length/1`, which counts graphemes
 (characters as a reader sees them). Use `elixir.ElixirString` when you need graphemes.
 
-Character loops over a large string are fast when they read one large string at a time. A loop
-that reads two different strings of 256 bytes or more in turn is correct but slow.
+Things to know:
 
-Not yet on this rule: `EReg` match positions, `haxe.Template`, and `StringBuf.addSub`.
-`StringBuf` appends and `array.push` in a loop still cost the square of the size. See
-[String positions count codepoints](../05-architecture/STRING_INDEX_UNITS.md).
+- **Lone surrogates.** A Haxe string on JavaScript or the interpreter can hold half of a UTF-16
+  surrogate pair, such as `String.fromCharCode(0xD800)`. A BEAM string cannot. On this target that
+  call raises `ArgumentError`, and the three bytes other systems write for such a code (`ED A0 80`,
+  known as WTF-8) count as three positions when they arrive from outside.
+- **Kept index.** After a process reads a string of 256 bytes or more by position, it keeps that
+  string and a position index in its process dictionary until it reads another large string. The
+  string stays in memory, and it appears in `:sys.get_status/1` output and in crash reports. Call
+  `StringTools.releaseIndex()` in a long-lived process when it has finished with a large or
+  sensitive string.
+- **Two large strings.** A loop that reads two different strings of 256 bytes or more in turn is
+  correct but slow.
+- **Not yet on this rule:** `StringBuf.addSub` and `haxe.Template`.
+- **Still slower than linear:** `StringBuf` appends and `array.push` in a loop.
+
+See [String positions count codepoints](../05-architecture/STRING_INDEX_UNITS.md).
 
 ## Shared Haxe references are not complete yet
 

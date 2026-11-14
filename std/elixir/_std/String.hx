@@ -23,8 +23,12 @@ extern class String {
 	extern public function new(value:String):Void;
 
 	/**
-	 * The number of characters in `this` String.
-	 * Maps to String.length/1 in Elixir
+	 * The number of Unicode codepoints in `this` String.
+	 *
+	 * Compiles to `StringTools.haxe_length/1`, not to Elixir's `String.length/1`,
+	 * which counts graphemes. Every position that `charAt`, `charCodeAt`,
+	 * `substr`, `substring`, `indexOf` and `lastIndexOf` take or return counts
+	 * the same unit. See docs/05-architecture/STRING_INDEX_UNITS.md.
 	 */
 	public var length(default, null):Int;
 

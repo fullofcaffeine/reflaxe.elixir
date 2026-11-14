@@ -14,44 +14,85 @@ defmodule StringTools do
   end
   def haxe_unit_index(s) do
     if byte_size(s) < 256 do
-      haxe_unit_index_build(s)
+      :walk
     else
       case Process.get(:reflaxe_haxe_string_index) do
         {^s, index} ->
           index
         _ ->
-          index = haxe_unit_index_build(s)
-          Process.put(:reflaxe_haxe_string_index, {s, index})
-          index
+          if :binary.referenced_byte_size(s) > 2 * byte_size(s) do
+            if haxe_ascii_only(s), do: :ascii, else: :walk
+          else
+            index = if haxe_ascii_only(s), do: :ascii, else: haxe_unit_checkpoints(s, 0, 0, haxe_unit_stride(byte_size(s), 1), [])
+            Process.put(:reflaxe_haxe_string_index, {s, index})
+            index
+          end
       end
     end
   end
-  def haxe_unit_index_build(s) do
-    if haxe_ascii_only(s), do: :ascii, else: :erlang.list_to_tuple(haxe_unit_offsets(s, 0, []))
-  end
   def haxe_ascii_only(s) do
     case s do
-      <<word::64, rest::binary>> when Bitwise.band(word, 0x8080808080808080) == 0 -> haxe_ascii_only(rest)
+      <<word::56, rest::binary>> when Bitwise.band(word, 0x80808080808080) == 0 -> haxe_ascii_only(rest)
       <<byte, rest::binary>> when byte < 128 -> haxe_ascii_only(rest)
       <<>> -> true
       _ -> false
     end
   end
-  def haxe_unit_offsets(s, offset, found) do
+  def haxe_unit_stride(size, stride) do
+    if size <= stride * 1_048_576, do: stride, else: haxe_unit_stride(size, stride * 2)
+  end
+  def haxe_unit_checkpoints(s, offset, position, stride, found) do
     case s do
-      <<_::utf8, rest::binary>> -> haxe_unit_offsets(rest, offset + byte_size(s) - byte_size(rest), [offset | found])
-      <<_, rest::binary>> -> haxe_unit_offsets(rest, offset + 1, [offset | found])
-      <<>> -> :lists.reverse([offset | found])
+      <<_::utf8, rest::binary>> ->
+        haxe_unit_checkpoints(rest, offset + byte_size(s) - byte_size(rest), position + 1, stride, if(rem(position, stride) == 0, do: [offset | found], else: found))
+      <<_, rest::binary>> ->
+        haxe_unit_checkpoints(rest, offset + 1, position + 1, stride, if(rem(position, stride) == 0, do: [offset | found], else: found))
+      <<>> ->
+        {stride, position, :erlang.list_to_tuple(:lists.reverse(found))}
     end
   end
   def haxe_unit_count(s, index) do
-    if index == :ascii, do: byte_size(s), else: tuple_size(index) - 1
+    case index do
+      :ascii -> byte_size(s)
+      :walk -> if haxe_ascii_only(s), do: byte_size(s), else: haxe_unit_span(s, 0)
+      {_, count, _} -> count
+    end
   end
-  def haxe_unit_offset(index, position) do
-    if index == :ascii, do: position, else: elem(index, position)
+  def haxe_unit_span(s, counted) do
+    case s do
+      <<_::utf8, rest::binary>> -> haxe_unit_span(rest, counted + 1)
+      <<_, rest::binary>> -> haxe_unit_span(rest, counted + 1)
+      <<>> -> counted
+    end
   end
-  def haxe_unit_position(index, offset) do
-    if index == :ascii, do: offset, else: haxe_unit_search(index, offset, 0, tuple_size(index) - 1)
+  def haxe_unit_offset(s, index, position) do
+    case index do
+      :ascii -> min(position, byte_size(s))
+      :walk -> haxe_unit_skip(s, 0, position)
+      {_, count, _} when position >= count -> byte_size(s)
+      {stride, _, checkpoints} -> haxe_unit_skip(s, elem(checkpoints, div(position, stride)), rem(position, stride))
+    end
+  end
+  def haxe_unit_skip(s, offset, count) do
+    if count <= 0 do
+      offset
+    else
+      case s do
+        <<_::binary-size(offset), _::utf8, rest::binary>> -> haxe_unit_skip(s, byte_size(s) - byte_size(rest), count - 1)
+        <<_::binary-size(offset), _, _::binary>> -> haxe_unit_skip(s, offset + 1, count - 1)
+        _ -> offset
+      end
+    end
+  end
+  def haxe_unit_position(s, index, offset) do
+    case index do
+      :ascii -> offset
+      :walk -> haxe_unit_span(binary_part(s, 0, offset), 0)
+      {stride, _, checkpoints} -> haxe_unit_position_from(s, offset, stride, checkpoints, haxe_unit_search(checkpoints, offset, 0, tuple_size(checkpoints) - 1))
+    end
+  end
+  def haxe_unit_position_from(s, offset, stride, checkpoints, slot) do
+    slot * stride + haxe_unit_span(binary_part(s, elem(checkpoints, slot), offset - elem(checkpoints, slot)), 0)
   end
   def haxe_unit_search(offsets, offset, low, high) do
     cond do
@@ -61,7 +102,14 @@ defmodule StringTools do
     end
   end
   def haxe_unit_part(s, index, start, count) do
-    haxe_byte_range(s, haxe_unit_offset(index, min(start, haxe_unit_count(s, index))), haxe_unit_offset(index, min(start + max(count, 0), haxe_unit_count(s, index))))
+    if index == :walk do
+      haxe_unit_walk_part(s, haxe_unit_skip(s, 0, start), count)
+    else
+      haxe_byte_range(s, haxe_unit_offset(s, index, start), haxe_unit_offset(s, index, start + max(count, 0)))
+    end
+  end
+  def haxe_unit_walk_part(s, from, count) do
+    haxe_byte_range(s, from, haxe_unit_skip(s, from, count))
   end
   def haxe_byte_range(s, from, to) do
     binary_part(s, from, to - from)
@@ -69,7 +117,8 @@ defmodule StringTools do
   def haxe_unit_code(s, offset) do
     case s do
       <<_::binary-size(offset), code::utf8, _::binary>> -> code
-      _ -> :binary.at(s, offset)
+      <<_::binary-size(offset), byte, _::binary>> -> byte
+      _ -> nil
     end
   end
   def haxe_last_match(s, value, size, from) do
@@ -86,18 +135,7 @@ defmodule StringTools do
     if index < 0, do: "", else: haxe_unit_part(s, haxe_unit_index(s), index, 1)
   end
   def haxe_char_code_at(s, index) do
-    if index < 0 do
-      nil
-    else
-      case haxe_unit_index(s) do
-        :ascii ->
-          if index < byte_size(s), do: :binary.at(s, index), else: nil
-        offsets when index < tuple_size(offsets) - 1 ->
-          haxe_unit_code(s, elem(offsets, index))
-        _ ->
-          nil
-      end
-    end
+    if index < 0, do: nil, else: haxe_unit_code(s, haxe_unit_offset(s, haxe_unit_index(s), index))
   end
   def haxe_index_of(s, value, start_index \\ nil) do
 
@@ -119,9 +157,9 @@ defmodule StringTools do
         reflaxe_string_start > reflaxe_string_length ->
           -1
         true ->
-          reflaxe_string_from = haxe_unit_offset(reflaxe_string_index, reflaxe_string_start)
+          reflaxe_string_from = haxe_unit_offset(reflaxe_string_source, reflaxe_string_index, reflaxe_string_start)
           case :binary.match(reflaxe_string_source, reflaxe_string_value, scope: {reflaxe_string_from, byte_size(reflaxe_string_source) - reflaxe_string_from}) do
-            {byte_pos, _} -> haxe_unit_position(reflaxe_string_index, byte_pos)
+            {byte_pos, _} -> haxe_unit_position(reflaxe_string_source, reflaxe_string_index, byte_pos)
             :nomatch -> -1
           end
       end
@@ -141,11 +179,11 @@ defmodule StringTools do
         reflaxe_string_start
       else
         reflaxe_string_size = byte_size(reflaxe_string_value)
-        reflaxe_string_from = min(haxe_unit_offset(reflaxe_string_index, reflaxe_string_start), byte_size(reflaxe_string_source) - reflaxe_string_size)
+        reflaxe_string_from = min(haxe_unit_offset(reflaxe_string_source, reflaxe_string_index, reflaxe_string_start), byte_size(reflaxe_string_source) - reflaxe_string_size)
 
         case haxe_last_match(reflaxe_string_source, reflaxe_string_value, reflaxe_string_size, reflaxe_string_from) do
           -1 -> -1
-          byte_pos -> haxe_unit_position(reflaxe_string_index, byte_pos)
+          byte_pos -> haxe_unit_position(reflaxe_string_source, reflaxe_string_index, byte_pos)
         end
       end
     end).()
