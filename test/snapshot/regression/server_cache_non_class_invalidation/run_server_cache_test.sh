@@ -755,6 +755,124 @@ run_mixed_file_registry_variant() {
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "mixed-registry-removed"
 }
 
+# Writes a copy of a mixed-file fixture with non-ASCII text in front of it.
+# A Haxe position counts characters, and each of these prefixes has more bytes
+# than characters, so byte offsets and character offsets differ in the result.
+write_with_non_ascii_prefix() {
+	python3 - "$1" "$2" "$3" <<'PY'
+import sys
+
+kind, source, target = sys.argv[1], sys.argv[2], sys.argv[3]
+prefixes = {
+    "byte-order-mark": b"\xef\xbb\xbf",
+    "e-acute": "// caf\u00e9 \u00e9t\u00e9\n".encode(),
+    "emoji": "// \U0001F600 note \U0001F600\n".encode(),
+}
+with open(target, "wb") as out:
+    out.write(prefixes[kind] + open(source, "rb").read())
+PY
+}
+
+run_mixed_file_non_ascii_variant() {
+	local variants="$FIXTURE_DIR/variants/mixed-file"
+	local log="$TMP_ROOT/mixed-file-non-ascii.log"
+	local kind full_count partial_count
+
+	cp "$variants/MainMixed.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/CacheMixedFunctionsBefore.hx" "$PROJECT_DIR/src/CacheMixedFunctions.hx"
+	cp "$variants/CacheMixedBystander.hx" "$PROJECT_DIR/src/CacheMixedBystander.hx"
+
+	for kind in byte-order-mark e-acute emoji; do
+		write_with_non_ascii_prefix "$kind" "$variants/CacheMixedBefore.hx" "$PROJECT_DIR/src/CacheMixed.hx"
+		compile_server "$SERVER_OUTPUT" >"$log"
+		compile_direct "$TMP_ROOT/direct-mixed-$kind-before"
+		compare_generated_output "$TMP_ROOT/direct-mixed-$kind-before" "$SERVER_OUTPUT" "mixed-file-$kind-before"
+		full_count="$(built_class_count "$log")"
+
+		# Only the class body changes. The class-only path must still apply when
+		# non-ASCII text stands in front of the class.
+		write_with_non_ascii_prefix "$kind" "$variants/CacheMixedClassEdit.hx" "$PROJECT_DIR/src/CacheMixed.hx"
+		compile_server "$SERVER_OUTPUT" >"$log"
+		compile_direct "$TMP_ROOT/direct-mixed-$kind-class-edit"
+		compare_generated_output "$TMP_ROOT/direct-mixed-$kind-class-edit" "$SERVER_OUTPUT" "mixed-file-$kind-class-edit"
+		grep -RFq '"mixed-class-edit"' "$SERVER_OUTPUT" || {
+			echo "SERVER_CACHE_PARITY:mixed-file-$kind-class-edit kept the stale class body" >&2
+			return 1
+		}
+		partial_count="$(built_class_count "$log")"
+		if ((partial_count >= full_count)); then
+			echo "SERVER_CACHE_REUSE:mixed-file-$kind-class-edit built $partial_count class modules, the same as a full build ($full_count)" >&2
+			return 1
+		fi
+		echo "SERVER_CACHE_REUSE:mixed-file-$kind-class-edit:PASS built=$partial_count full=$full_count"
+
+		# The abstract behind the class changes: every module must be built.
+		write_with_non_ascii_prefix "$kind" "$variants/CacheMixedAbstractEdit.hx" "$PROJECT_DIR/src/CacheMixed.hx"
+		compile_server "$SERVER_OUTPUT" >"$log"
+		compile_direct "$TMP_ROOT/direct-mixed-$kind-abstract-edit"
+		compare_generated_output "$TMP_ROOT/direct-mixed-$kind-abstract-edit" "$SERVER_OUTPUT" "mixed-file-$kind-abstract-edit"
+		partial_count="$(built_class_count "$log")"
+		if ((partial_count < full_count)); then
+			echo "SERVER_CACHE_REUSE:mixed-file-$kind-abstract-edit built only $partial_count of $full_count class modules after an abstract edit" >&2
+			return 1
+		fi
+	done
+
+	restore_baseline_sources
+	rm -f "$PROJECT_DIR/src/CacheMixed.hx" "$PROJECT_DIR/src/CacheMixedFunctions.hx" "$PROJECT_DIR/src/CacheMixedBystander.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "mixed-file-non-ascii-removed"
+}
+
+run_decoy_registry_variant() {
+	local variants="$FIXTURE_DIR/variants/mixed-file"
+	local direct_failure_log="$TMP_ROOT/direct-decoy-registry-renamed.log"
+	local server_failure_log="$TMP_ROOT/server-decoy-registry-renamed.log"
+
+	# make_decoy_registry.py explains the file. Read as byte offsets, the
+	# position of its class covers the hook registry in front of the class.
+	cp "$variants/MainHxxMixed.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$FIXTURE_DIR/variants/hxx-registry/CacheTemplate.hx" "$PROJECT_DIR/src/CacheTemplate.hx"
+	python3 "$variants/make_decoy_registry.py" "decoy-note" "Known" "$PROJECT_DIR/src/HookName.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-decoy-registry-known"
+	compare_generated_output "$TMP_ROOT/direct-decoy-registry-known" "$SERVER_OUTPUT" "decoy-registry-known"
+
+	# Only the registry entry changes, to a name of the same length. The class
+	# is the same. The warm request must reject the removed hook name.
+	python3 "$variants/make_decoy_registry.py" "decoy-note" "Knowx" "$PROJECT_DIR/src/HookName.hx"
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" compile.hxml -D "elixir_output=$TMP_ROOT/direct-decoy-registry-renamed" \
+		>"$direct_failure_log" 2>&1
+	then
+		echo "SERVER_CACHE_PARITY:decoy-registry-renamed direct build unexpectedly succeeded" >&2
+		return 1
+	fi
+	grep -Fq 'unknown hook "Known"' "$direct_failure_log" || {
+		echo "SERVER_CACHE_PARITY:decoy-registry-renamed direct build failed for the wrong reason" >&2
+		sed -n '1,160p' "$direct_failure_log" >&2
+		return 1
+	}
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" --connect "$SERVER_PORT" compile.hxml -D "elixir_output=$SERVER_OUTPUT" \
+		>"$server_failure_log" 2>&1
+	then
+		echo "SERVER_CACHE_PARITY:decoy-registry-renamed warm build accepted a stale global registry" >&2
+		return 1
+	fi
+	grep -Fq 'unknown hook "Known"' "$server_failure_log" || {
+		echo "SERVER_CACHE_PARITY:decoy-registry-renamed warm build failed for the wrong reason" >&2
+		sed -n '1,160p' "$server_failure_log" >&2
+		return 1
+	}
+	echo "SERVER_CACHE_DIAGNOSTIC_PARITY:decoy-registry-renamed:PASS"
+
+	restore_baseline_sources
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "decoy-registry-removed"
+}
+
 run_discovery_variant() {
 	local variants="$FIXTURE_DIR/variants/discovery"
 	local phase source expected
@@ -917,6 +1035,8 @@ run_native_class_variant
 run_tampered_output_variant
 run_mixed_file_variant
 run_mixed_file_registry_variant
+run_mixed_file_non_ascii_variant
+run_decoy_registry_variant
 run_discovery_variant
 run_cross_project_variant
 

@@ -43,7 +43,8 @@ using reflaxe.helpers.TypeHelper;
 
 /**
 	One part of a source file where Haxe says a class or a module-level field
-	is written. `start` must match the text at `min`. See
+	is written. `min` and `max` count characters, as Haxe positions do.
+	`start` must match the text at `min`. See
 	`ReflectCompiler.nonClassSourceText`.
 **/
 private typedef ClassSourceSpan = {
@@ -503,7 +504,7 @@ class ReflectCompiler {
 
 		final result = [];
 		for(sourceFile in sourceFiles.keys()) {
-			final text = try nonClassSourceText(File.getBytes(sourceFile), classSpans.get(sourceFile)) catch(_) "<unreadable>";
+			final text = try nonClassSourceText(File.getBytes(sourceFile).toString(), classSpans.get(sourceFile)) catch(_) "<unreadable>";
 			result.push(sourceFile + "\u0000" + text);
 		}
 		result.sort(Reflect.compare);
@@ -555,59 +556,89 @@ class ReflectCompiler {
 
 	/**
 		Returns the text of one source file without its classes and module-level
-		fields. Each removed part leaves one zero byte, so two files are equal
-		only when they have the same parts in the same places.
+		fields, or the complete text when any position cannot be trusted.
 
 		What is removed: for `class Name { ... }` and `interface Name { ... }`,
 		the text from the keyword to the last brace. For a module-level
 		`function name(...) ...` or `var name ...`, the text from its first
-		modifier to the end of its body.
+		modifier to the end of its body. Each removed part leaves one zero
+		character, so two files are equal only when they have the same parts in
+		the same places.
 
 		What stays: every enum, typedef and abstract; imports; text between
 		declarations; and the metadata, documentation and modifiers in front of
 		a class, because Haxe does not include them in the class position. An
 		edit in any of these still causes a full regeneration.
 
-		Each position from Haxe is checked against the bytes on disk before it
-		is used. The text there must start with the declaration that Haxe named,
-		and a class must end with `}`. A position that does not match, lies
-		outside the file, or overlaps an earlier one is not removed. The text
-		then stays in the result, which can only cause an extra full
-		regeneration. This covers classes that a macro defines with a borrowed
+		Units: a Haxe position counts characters, not bytes. A byte order mark
+		is one character, and so is `é` or an emoji. `text` is the decoded file,
+		and Haxe's macro interpreter also indexes a string by character, so the
+		positions are used on `text` directly. An earlier version cut the raw
+		bytes. In a file with non-ASCII text before a class, the cut then
+		started too early and could reach over an enum or an abstract, and a
+		change there was not seen.
+
+		Each position is checked before anything is removed:
+		- it lies inside the text and does not overlap another position (two
+		  equal positions count once: a macro can define a second class at the
+		  position of the first);
+		- the text there starts with the declaration that Haxe named;
+		- a class ends with `}`;
+		- the text does not contain the start of an enum, typedef or abstract.
+		  Haxe has no nested type declarations, so such a start inside a class
+		  can only be in a string or a comment.
+
+		When any check fails, nothing is removed from this file and the complete
+		text is returned. The file then behaves as before this function existed:
+		each edit in it causes a full regeneration. A failed check can thus only
+		cost time. It covers classes that a macro defines with a borrowed
 		position, and positions that are older than the file on disk.
 
 		A class or field that Haxe removed as unused is not in the list, so its
-		text stays too.
+		text stays.
 
 		Example: a file holds `typedef Options = {...}` and
 		`function render(options:Options) { return "a"; }`. A change of `"a"` to
 		`"b"` gives the same result, and only the changed function's module is
 		built again. A change in `Options` gives a different result.
 	**/
-	static function nonClassSourceText(bytes:haxe.io.Bytes, spans:Null<Array<ClassSourceSpan>>):String {
+	static function nonClassSourceText(text:String, spans:Null<Array<ClassSourceSpan>>):String {
+		final complete = "all\u0000" + text;
 		if(spans == null || spans.length == 0) {
-			return bytes.toString();
+			return complete;
 		}
-		spans.sort((left, right) -> left.min - right.min);
-		final result = new haxe.io.BytesBuffer();
+		spans.sort((left, right) -> left.min != right.min ? left.min - right.min : left.max - right.max);
+		final nonClassStart = ~/(^|[^A-Za-z0-9_.$])(enum|typedef|abstract)\s+(abstract\s+)?[A-Z_]/;
+		final result = new StringBuf();
+		result.add("cut\u0000");
 		var cursor = 0;
+		var previousMin = -1;
+		var previousMax = -1;
 		for(span in spans) {
-			if(span.min < cursor || span.max <= span.min || span.max > bytes.length) {
+			if(span.min == previousMin && span.max == previousMax) {
 				continue;
 			}
-			final startLength = span.max - span.min < 512 ? span.max - span.min : 512;
-			if(!span.start.match(bytes.getString(span.min, startLength))) {
-				continue;
+			if(span.min < cursor || span.max <= span.min || span.max > text.length) {
+				return complete;
 			}
-			if(span.endsWithBrace && bytes.get(span.max - 1) != "}".code) {
-				continue;
+			final removed = text.substring(span.min, span.max);
+			if(!span.start.match(removed)) {
+				return complete;
 			}
-			result.addBytes(bytes, cursor, span.min - cursor);
-			result.addByte(0);
+			if(span.endsWithBrace && !StringTools.endsWith(removed, "}")) {
+				return complete;
+			}
+			if(nonClassStart.match(removed)) {
+				return complete;
+			}
+			result.add(text.substring(cursor, span.min));
+			result.add("\u0000");
 			cursor = span.max;
+			previousMin = span.min;
+			previousMax = span.max;
 		}
-		result.addBytes(bytes, cursor, bytes.length - cursor);
-		return result.getBytes().toString();
+		result.add(text.substring(cursor));
+		return result.toString();
 	}
 	#end
 

@@ -531,11 +531,21 @@ Local fix:
   does not include them in the class position). An edit in any of these still
   regenerates every module.
 
-  Each position that Haxe reports is checked against the bytes on disk: the
-  text must start with that declaration, and a class must end with `}`. A
-  position that fails the check is not cut, which can only cause an extra full
-  regeneration. The hidden class that holds the methods of an abstract is never
-  cut, because its position is the abstract itself.
+  A Haxe position counts characters, not bytes: a byte order mark, `é` and an
+  emoji are one character each. The cut therefore works on the decoded text,
+  which Haxe's macro interpreter also indexes by character. The first version
+  of this patch cut raw bytes. With non-ASCII text in front of a class, the cut
+  started too early and could remove an enum or an abstract from the
+  comparison, so a warm build could keep stale output and report success.
+
+  Each position is checked against the text on disk: it must lie inside the
+  file and not overlap another position, the text must start with that
+  declaration, a class must end with `}`, and the text must not contain the
+  start of an enum, typedef or abstract. When one check fails, nothing is cut
+  from that file and its complete text is compared, as before this patch. A
+  failed check can therefore only cause an extra full regeneration. The hidden
+  class that holds the methods of an abstract is never cut, because its
+  position is the abstract itself.
 
   Why this keeps the earlier guarantee: the text of every non-class
   declaration, with its metadata, is still compared byte for byte. The only
@@ -563,6 +573,11 @@ require a partial build for the first two and a full build for the last two,
 and compare each warm output with a fresh build. The `mixed-registry` case
 keeps a `@:phxHookNames` registry beside a class: a class edit must pass, and a
 registry edit must still make the warm build reject the removed hook name.
+The `byte-order-mark`, `e-acute` and `emoji` cases repeat the class edit and
+the abstract edit with non-ASCII text in front of the class. The
+`decoy-registry` case uses a file in which byte offsets and character offsets
+disagree so that a byte cut would cover the registry; the warm build must
+reject the renamed hook.
 
 Not done (`haxe.elixir.codex-c0o.4`): an edit to the enum, typedef or abstract
 itself still regenerates every module. A class edit in a module that many

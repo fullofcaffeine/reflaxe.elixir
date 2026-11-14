@@ -403,6 +403,14 @@ again with it. A change in `Options` builds everything. Metadata and documentati
 in front of a class are outside the class text that Haxe reports, so an edit there
 also builds everything.
 
+Reflaxe checks each class position against the file before it leaves the class
+out. If a check fails, the whole file is compared and every edit in it builds
+everything, as for a file without this rule. One case is easy to meet: a class or
+module-level function whose text contains something that looks like the start of
+a type declaration, for example a comment with the words `enum Status` or
+`typedef Options`. Non-ASCII text, a byte order mark, and CRLF line ends do not
+cause this.
+
 Adding, deleting, or renaming a Haxe module intentionally causes one full target
 regeneration. For example, if `CacheLegacy.hx` previously generated
 `cache_legacy.ex` and is renamed to `CacheRenamed.hx`, the next warm request
