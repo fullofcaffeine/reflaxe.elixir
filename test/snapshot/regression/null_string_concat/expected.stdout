@@ -26,8 +26,13 @@ value=v
 literal=null
 a/null/b/null
 a/a/b/1
+a/null
+a/v
+null/c
+v/c
+p/v
 count=5/part/no
 count=6/part/yes
 null
 null
-Main.hx:55: x/null
+Main.hx:66: x/null

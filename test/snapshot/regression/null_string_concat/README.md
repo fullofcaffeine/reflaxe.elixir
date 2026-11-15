@@ -15,7 +15,8 @@ in Haxe, and the compiler lowers its `+` in the same way. `"x/" + null` did not
 compile.
 
 An operand whose Haxe type can hold null (`Null<String>`, an optional argument,
-a `Map.get` result) now goes through `Reflaxe.Elixir.HaxeFloat.to_string/1`.
+a `Map.get` result, a typedef alias of these) now goes through
+`Reflaxe.Elixir.HaxeFloat.to_string/1`.
 That helper returns a binary unchanged and maps `nil` to `"null"`. Operands of
 other types already used it. A plain `String` operand keeps the direct form
 `"x/#{name}"`, with no run-time check.

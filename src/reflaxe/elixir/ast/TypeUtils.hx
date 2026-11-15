@@ -108,12 +108,29 @@ class TypeUtils {
 	}
 
 	/**
-	 * Returns true when the declared Haxe type can hold null: `Null<T>`, an optional
-	 * argument, `Dynamic`, or a type that is still unknown.
+	 * Returns true when the declared Haxe type says that the value can be null.
 	 *
-	 * A lowering calls this to decide whether it must handle `nil`. Plain `Int`, `Float`,
-	 * `Bool` and `String` return false, so their fast path has no run-time check. Example:
+	 * A lowering calls this to decide whether it must handle `nil`. Example:
 	 * `"x/" + name` converts `name` to text only when `name` is a `Null<String>`.
+	 *
+	 * Returns true for exactly these types:
+	 * - `Null<T>`, which includes an optional argument `?name:T` and an `@:optional` field;
+	 * - `Dynamic`;
+	 * - a type that Haxe has not resolved yet (an unbound monomorph), or no type at all;
+	 * - a typedef alias of a type in this list, at any depth and with its type arguments
+	 *   applied, such as `A<Dynamic>` with `typedef B<T> = T` and `typedef A<T> = B<T>`;
+	 * - an abstract whose declared underlying type is in this list, such as `Any` (over
+	 *   `Dynamic`) or `abstract Id(Null<Int>)`;
+	 * - a core-type abstract other than `Int`, `Float` and `Bool`, such as `EnumValue`,
+	 *   `Class<T>` or `Void`. It has no underlying type to read, so the answer is the safe one.
+	 *
+	 * Returns false for every other type: plain `Int`, `Float`, `Bool` and `String`, class
+	 * instances, enums, functions, anonymous structures, and abstracts over those, such as
+	 * `UInt`. So a value declared as plain `String` that holds null at run time is not
+	 * detected.
+	 *
+	 * Limit: the type arguments of an abstract are not applied, so `abstract Box<T>(T)`
+	 * returns false for `Box<Null<Int>>`.
 	 */
 	public static function mayBeNil(t:Null<Type>):Bool {
 		return mayBeNilInner(t, 0);
@@ -275,8 +292,11 @@ class TypeUtils {
 			case TMono(monoRef): var resolved = monoRef.get(); resolved == null || mayBeNilInner(resolved, depth + 1);
 			case TLazy(thunk):
 				mayBeNilInner(thunk(), depth + 1);
-			case TType(typeRef, _):
-				mayBeNilInner(typeRef.get().type, depth + 1);
+			case TType(_, _):
+				// `followed` already has this alias's type arguments applied. The raw
+				// `typeRef.get().type` would lose them: with `typedef B<T> = T` and
+				// `typedef A<T> = B<T>`, `A<Dynamic>` would end at the bare parameter `T`.
+				mayBeNilInner(followed, depth + 1);
 			default:
 				false;
 		}

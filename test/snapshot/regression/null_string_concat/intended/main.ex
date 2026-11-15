@@ -56,6 +56,16 @@ defmodule Main do
     IO.puts(v)
     v = chain("a", "b", 1)
     IO.puts(v)
+    v = two_level_alias(nil)
+    IO.puts(v)
+    v = two_level_alias("v")
+    IO.puts(v)
+    v = three_level_alias(nil)
+    IO.puts(v)
+    v = three_level_alias("v")
+    IO.puts(v)
+    v = alias_of_plain("v")
+    IO.puts(v)
     v = non_null(false, 5)
     IO.puts(v)
     v = non_null(true, 6)
@@ -121,6 +131,15 @@ defmodule Main do
   end
   def chain(first, second, third) do
     "a/#{Reflaxe.Elixir.HaxeFloat.to_string(first)}/#{second}/#{Reflaxe.Elixir.HaxeFloat.to_string(third)}"
+  end
+  def two_level_alias(value) do
+    "a/#{Reflaxe.Elixir.HaxeFloat.to_string(value)}"
+  end
+  def three_level_alias(value) do
+    "#{Reflaxe.Elixir.HaxeFloat.to_string(value)}/c"
+  end
+  def alias_of_plain(value) do
+    "p/#{value}"
   end
   def non_null(flag, count) do
     "count=#{Reflaxe.Elixir.HaxeFloat.to_string(count)}/part#{if (flag), do: "/yes", else: "/no"}"

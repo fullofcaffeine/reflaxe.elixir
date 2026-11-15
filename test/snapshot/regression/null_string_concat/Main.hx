@@ -6,6 +6,10 @@
  * compiler can fold it at compile time. `expected.stdout` is the output of
  * `haxe -cp . -main Main --interp`.
  */
+typedef Same<T> = T;
+typedef Alias<T> = Same<T>;
+typedef Outer<T> = Alias<T>;
+
 @:keep
 class Main {
 	static function main():Void {
@@ -44,6 +48,13 @@ class Main {
 		Sys.println(literalNull());
 		Sys.println(chain(null, "b", null));
 		Sys.println(chain("a", "b", 1));
+
+		// A generic alias keeps its type argument through two and three levels.
+		Sys.println(twoLevelAlias(null));
+		Sys.println(twoLevelAlias("v"));
+		Sys.println(threeLevelAlias(null));
+		Sys.println(threeLevelAlias("v"));
+		Sys.println(aliasOfPlain("v"));
 
 		// Values that cannot be null stay unchanged.
 		Sys.println(nonNull(false, 5));
@@ -127,6 +138,18 @@ class Main {
 
 	public static function chain(first:Null<String>, second:String, third:Dynamic):String {
 		return "a/" + first + "/" + second + "/" + third;
+	}
+
+	public static function twoLevelAlias(value:Alias<Null<String>>):String {
+		return "a/" + value;
+	}
+
+	public static function threeLevelAlias(value:Outer<Null<String>>):String {
+		return value + "/c";
+	}
+
+	public static function aliasOfPlain(value:Alias<String>):String {
+		return "p/" + value;
 	}
 
 	public static function nonNull(flag:Bool, count:Int):String {
