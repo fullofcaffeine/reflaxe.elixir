@@ -42,7 +42,7 @@ class CasePayloadBinderAvoidReservedTransforms {
 		if (isReserved(name))
 			return false;
 		var c = name.charAt(0);
-		return c.toLowerCase() == c;
+		return reflaxe.elixir.ast.naming.ElixirNaming.isVariableStart(c);
 	}
 
 	public static function transformPass(ast:ElixirAST):ElixirAST {

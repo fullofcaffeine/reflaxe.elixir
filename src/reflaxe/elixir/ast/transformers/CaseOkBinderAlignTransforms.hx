@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ASTUtils;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.analyzers.ElixirCodeVarRefTokenizer;
+import reflaxe.elixir.ast.naming.ElixirNaming;
 
 /**
 	* CaseOkBinderAlignTransforms
@@ -245,8 +246,8 @@ class CaseOkBinderAlignTransforms {
 		inline function considerCandidate(v:String):Void {
 			if (v == null || v.length == 0)
 				return;
-			var firstChar = v.charAt(0);
-			if (firstChar.toLowerCase() != firstChar)
+			// Only a local variable can name the binder; `:erlang` is a module.
+			if (!ElixirNaming.isVariableName(v))
 				return;
 			var vlow = v.toLowerCase();
 			if (seen.exists(vlow))
@@ -364,7 +365,7 @@ class CaseOkBinderAlignTransforms {
 		if (funcArgs.exists(name))
 			return false;
 		var c = name.charAt(0);
-		return c.toLowerCase() == c;
+		return reflaxe.elixir.ast.naming.ElixirNaming.isVariableStart(c);
 	}
 
 	static function replaceIdent(code:String, from:String, to:String):String {

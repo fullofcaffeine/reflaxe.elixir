@@ -107,7 +107,7 @@ class UnderscoreBinderAlignByBodyUseTransforms {
 		if (name == "socket" || name == "live_socket" || name == "liveSocket")
 			return false;
 		var c = name.charAt(0);
-		return c.toLowerCase() == c;
+		return reflaxe.elixir.ast.naming.ElixirNaming.isVariableStart(c);
 	}
 
 	static function extractSecondBinder(p:EPattern):Null<String> {
@@ -209,7 +209,7 @@ class UnderscoreBinderAlignByBodyUseTransforms {
 			switch (x.def) {
 				case EVar(v):
 					var c = v.charAt(0);
-					if (c.toLowerCase() == c)
+					if (reflaxe.elixir.ast.naming.ElixirNaming.isVariableStart(c))
 						names.set(v, true);
 				default:
 			}

@@ -135,7 +135,7 @@ class CaseUnderscoreBinderPromoteByUseTransforms {
 						if (firstIsTag) {
 							var undefined:Array<String> = [];
 							for (k in used.keys())
-								if (!patNames.exists(k) && k.charAt(0).toLowerCase() == k.charAt(0))
+								if (!patNames.exists(k) && reflaxe.elixir.ast.naming.ElixirNaming.isVariableStart(k.charAt(0)))
 									undefined.push(k);
 							undefined = undefined.filter(k -> k != "socket" && !StringTools.endsWith(k, "socket") && !StringTools.endsWith(k, "Socket"));
 							if (undefined.length == 1) {

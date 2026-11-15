@@ -151,7 +151,7 @@ class HandleEventParamExtractFromBodyUseTransforms {
 		if (isInternalVariable(name))
 			return false;
 		var c = name.charAt(0);
-		return c.toLowerCase() == c && c != '_';
+		return reflaxe.elixir.ast.naming.ElixirNaming.isVariableStart(c) && c != '_';
 	}
 
 	/**

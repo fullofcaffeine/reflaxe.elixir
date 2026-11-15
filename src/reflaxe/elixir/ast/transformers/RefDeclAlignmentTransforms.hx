@@ -113,7 +113,7 @@ class RefDeclAlignmentTransforms {
 				return false;
 			// Exclude atoms, module names are not present here; keep simple lowercase names
 			var c = id.charAt(0);
-			return c.toLowerCase() == c && c != '_';
+			return reflaxe.elixir.ast.naming.ElixirNaming.isVariableStart(c) && c != '_';
 		}
 		function collectTokensFromString(src:String, out:Map<String, Bool>):Void {
 			if (src == null || src.indexOf("#{") == -1)

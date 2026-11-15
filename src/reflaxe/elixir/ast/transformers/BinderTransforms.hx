@@ -3708,7 +3708,7 @@ end'))
 
 	static inline function isLower(s:String):Bool {
 		var c = s.charAt(0);
-		return c.toLowerCase() == c; // crude but effective for variable vs module
+		return reflaxe.elixir.ast.naming.ElixirNaming.isVariableStart(c); // variable, not a module such as `Enum` or `:erlang`
 	}
 
 	// Removed app-leaning alias whitelist; aliasing is strictly usage- and snake_case-driven

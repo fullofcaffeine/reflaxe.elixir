@@ -189,7 +189,7 @@ class RepoCaseBinderNormalizeTransforms {
 				return;
 			switch (n.def) {
 				case EVar(name):
-					if (name != null && name.length > 0 && name.charAt(0).toLowerCase() == name.charAt(0))
+					if (name != null && name.length > 0 && reflaxe.elixir.ast.naming.ElixirNaming.isVariableStart(name.charAt(0)))
 						names.set(name, true);
 				case EField(t, _):
 					scan(t);

@@ -340,10 +340,8 @@ class CaseErrorVarUnifyTransforms {
 	}
 
 	static inline function isLower(s:String):Bool {
-		if (s == null || s.length == 0)
-			return false;
-		var c = s.charAt(0);
-		return c.toLowerCase() == c;
+		// `:erlang` in `:erlang.term_to_binary(x)` is a module, not an unbound local.
+		return reflaxe.elixir.ast.naming.ElixirNaming.isVariableName(s);
 	}
 }
 #end
