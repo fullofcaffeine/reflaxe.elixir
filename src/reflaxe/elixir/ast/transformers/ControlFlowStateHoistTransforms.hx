@@ -78,13 +78,13 @@ class ControlFlowStateHoistTransforms {
 				case EDef(name, args, guards, body):
 					var bound = collectBoundFromArgs(args);
 					var newGuards = guards != null ? rewriteInScope(guards, bound, true) : null;
-					var newBody = rewriteInScope(body, bound, true);
+					var newBody = rewriteInScope(body, bound, true, true);
 					makeASTWithMeta(EDef(name, args, newGuards, newBody), node.metadata, node.pos);
 
 				case EDefp(name, args, guards, body):
 					var bound = collectBoundFromArgs(args);
 					var newGuards = guards != null ? rewriteInScope(guards, bound, true) : null;
-					var newBody = rewriteInScope(body, bound, true);
+					var newBody = rewriteInScope(body, bound, true, true);
 					makeASTWithMeta(EDefp(name, args, newGuards, newBody), node.metadata, node.pos);
 
 				case EFn(clauses):
@@ -92,7 +92,7 @@ class ControlFlowStateHoistTransforms {
 					for (cl in clauses) {
 						var clauseBound = collectBoundFromArgs(cl.args);
 						var newGuard = cl.guard != null ? rewriteInScope(cl.guard, clauseBound, true) : null;
-						var newClauseBody = rewriteInScope(cl.body, clauseBound, true);
+						var newClauseBody = rewriteInScope(cl.body, clauseBound, true, true);
 						newClauses.push({args: cl.args, guard: newGuard, body: newClauseBody});
 					}
 					makeASTWithMeta(EFn(newClauses), node.metadata, node.pos);
@@ -105,15 +105,22 @@ class ControlFlowStateHoistTransforms {
 
 	// -------------------- Scope rewrite (carries bound-set) --------------------
 
-	static function rewriteInScope(node:ElixirAST, bound:Map<String, Bool>, valueUsed:Bool):ElixirAST {
+	/**
+	 * Rewrites one node with the bindings that are visible at that point.
+	 *
+	 * `scopeEnd` is true only for the body of a function or closure: when its
+	 * statement list ends, every local binding ends too. `rewriteSeq` uses
+	 * that to skip a hoist whose result nothing can read.
+	 */
+	static function rewriteInScope(node:ElixirAST, bound:Map<String, Bool>, valueUsed:Bool, scopeEnd:Bool = false):ElixirAST {
 		if (node == null || node.def == null)
 			return node;
 
 		return switch (node.def) {
 			case EBlock(stmts):
-				makeASTWithMeta(EBlock(rewriteSeq(stmts, bound, valueUsed)), node.metadata, node.pos);
+				makeASTWithMeta(EBlock(rewriteSeq(stmts, bound, valueUsed, scopeEnd)), node.metadata, node.pos);
 			case EDo(stmts):
-				makeASTWithMeta(EDo(rewriteSeq(stmts, bound, valueUsed)), node.metadata, node.pos);
+				makeASTWithMeta(EDo(rewriteSeq(stmts, bound, valueUsed, scopeEnd)), node.metadata, node.pos);
 
 			case EIf(cond, thenB, elseB):
 				var newCond = rewriteInScope(cond, bound, true);
@@ -231,7 +238,7 @@ class ControlFlowStateHoistTransforms {
 		};
 	}
 
-	static function rewriteSeq(stmts:Array<ElixirAST>, bound:Map<String, Bool>, blockValueUsed:Bool):Array<ElixirAST> {
+	static function rewriteSeq(stmts:Array<ElixirAST>, bound:Map<String, Bool>, blockValueUsed:Bool, scopeEnd:Bool = false):Array<ElixirAST> {
 		if (stmts == null)
 			return stmts;
 
@@ -250,7 +257,7 @@ class ControlFlowStateHoistTransforms {
 			// flow, so its branch updates must leave together with that value.
 			if (!stmtValueUsed) {
 				newStmt = maybeHoistControlFlowStatement(newStmt, localBound);
-				newStmt = maybeHoistControlFlowValue(newStmt, localBound);
+				newStmt = maybeHoistControlFlowValue(newStmt, localBound, scopeEnd && i == stmts.length - 2 ? stmts[i + 1] : null);
 			}
 
 			out.push(newStmt);
@@ -395,6 +402,12 @@ class ControlFlowStateHoistTransforms {
 	 *   with one branch.
 	 * - The rewritten control flow goes through `rewriteInScope` again, so a
 	 *   statement inside a branch that now needs the same rule gets it.
+	 * - `scopeResult` is set when only one more statement follows and the
+	 *   function or closure ends there. If that statement is a plain variable
+	 *   or a constant, an update it does not read is dead and is left out.
+	 *   This keeps `return switch e { case A: socket = f(socket); socket; ... }`
+	 *   as it was: the compiler emits it as `r = case ... end` followed by
+	 *   `r`, and nothing reads `socket` after that.
 	 *
 	 * EXAMPLES
 	 * Haxe:
@@ -417,7 +430,7 @@ class ControlFlowStateHoistTransforms {
 	 *     {:none} -> {0, out}
 	 *   end
 	 */
-	static function maybeHoistControlFlowValue(stmt:ElixirAST, bound:Map<String, Bool>):ElixirAST {
+	static function maybeHoistControlFlowValue(stmt:ElixirAST, bound:Map<String, Bool>, ?scopeResult:ElixirAST):ElixirAST {
 		if (stmt == null || stmt.def == null)
 			return stmt;
 
@@ -446,7 +459,7 @@ class ControlFlowStateHoistTransforms {
 		bindFromPattern(targetPattern, targets);
 		var updates = [
 			for (name in collectAssignedToBoundVars(bodies, bound))
-				if (!targets.exists(name)) name
+				if (!targets.exists(name) && !endsUnread(name, scopeResult)) name
 		];
 		if (updates.length == 0)
 			return stmt;
@@ -454,6 +467,22 @@ class ControlFlowStateHoistTransforms {
 		var newRhs = rewriteValueScopes(returnValueWithUpdates(rhs, updates), bound);
 		var pattern = PTuple([targetPattern].concat([for (name in updates) PVar(name)]));
 		return makeASTWithMeta(EMatch(pattern, newRhs), stmt.metadata, stmt.pos);
+	}
+
+	/**
+	 * True when the scope ends with `scopeResult` and that statement cannot
+	 * read `name`: it is a different plain variable or a constant. Any other
+	 * statement counts as a possible read.
+	 */
+	static function endsUnread(name:String, scopeResult:Null<ElixirAST>):Bool {
+		if (scopeResult == null || scopeResult.def == null)
+			return false;
+		return switch (scopeResult.def) {
+			case EParen(inner): endsUnread(name, inner);
+			case EVar(other): other != name;
+			case ENil | EAtom(_) | EInteger(_) | EFloat(_) | EBoolean(_): true;
+			default: false;
+		}
 	}
 
 	/**

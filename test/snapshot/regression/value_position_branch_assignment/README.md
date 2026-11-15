@@ -50,7 +50,7 @@ end
 ```
 
 `expected.stdout` is the output of this program on the Haxe interpreter. The
-compiler before the fix printed 17 of the 26 lines wrong. The fixture covers:
+compiler before the fix printed 18 of the 30 lines wrong. The fixture covers:
 
 - a value `switch` with a plain subject and with a call subject (the compiler
   stores a call subject in a temporary first, which makes the value a block);
@@ -66,6 +66,9 @@ compiler before the fix printed 17 of the 26 lines wrong. The fixture covers:
   this fix;
 - a branch that throws. It has no value, so it stays as it is; pairing it with
   the updates would not even be valid Elixir (`{raise ..., out}`);
+- a function that ends by returning the assigned variable, and one that ends
+  by returning only the value. In the second one nothing can read the
+  assignment after the `switch`, so the generated `case` keeps its plain form;
 - three loops: `for` with an early return (the shape above), `for` without one,
   and `while`.
 

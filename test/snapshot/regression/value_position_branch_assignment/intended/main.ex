@@ -19,6 +19,10 @@ defmodule Main do
     IO.puts(v)
     v = throwing_branch(k == "x")
     IO.puts(v)
+    v = returns_updated(k)
+    IO.puts(v)
+    v = returns_value_only(k)
+    IO.puts(v)
     k = ""
     v = switch_value(find(k))
     IO.puts(v)
@@ -37,6 +41,10 @@ defmodule Main do
     v = shadowed_local(k == "x")
     IO.puts(v)
     v = throwing_branch(k == "x")
+    IO.puts(v)
+    v = returns_updated(k)
+    IO.puts(v)
+    v = returns_value_only(k)
     IO.puts(v)
     v = nested_ternary_binding("y")
     IO.puts(v)
@@ -189,6 +197,30 @@ defmodule Main do
             reraise(haxe_exception, __STACKTRACE__)
         end)
     end
+  end
+  def returns_updated(k) do
+    out = "d"
+    {hit, out} = (case find(k) do
+      {:some, v} ->
+        out = v
+        {true, out}
+      {:none} -> {false, out}
+    end)
+    out = if (hit) do
+      "#{out}!"
+    else
+      out
+    end
+    out
+  end
+  def returns_value_only(k) do
+    out = "d"
+    (case find(k) do
+      {:some, v} ->
+        out = "#{v}#{out}"
+        StringTools.haxe_length(out)
+      {:none} -> 0
+    end)
   end
   def allowed(names) do
     seen = false

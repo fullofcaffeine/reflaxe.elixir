@@ -27,6 +27,8 @@ class Main {
 			Sys.println(nestedSwitch(find(k), k == ""));
 			Sys.println(shadowedLocal(k == "x"));
 			Sys.println(throwingBranch(k == "x"));
+			Sys.println(returnsUpdated(k));
+			Sys.println(returnsValueOnly(k));
 		}
 		Sys.println(nestedTernaryBinding("y"));
 		Sys.println(nestedSwitch(Some("q"), true));
@@ -157,6 +159,31 @@ class Main {
 		} catch (e:String) {
 			return out + e;
 		}
+	}
+
+	/** The function ends by returning the variable that an arm assigned, not the value. */
+	public static function returnsUpdated(k:String):String {
+		var out = "d";
+		var hit = switch find(k) {
+			case Some(v):
+				out = v;
+				true;
+			case None: false;
+		};
+		if (hit)
+			out = out + "!";
+		return out;
+	}
+
+	/** The function ends by returning the value; nothing reads `out` after the `switch`. */
+	public static function returnsValueOnly(k:String):Int {
+		var out = "d";
+		return switch find(k) {
+			case Some(v):
+				out = v + out;
+				out.length;
+			case None: 0;
+		};
 	}
 
 	/**
