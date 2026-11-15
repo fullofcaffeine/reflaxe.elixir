@@ -91,7 +91,7 @@ class ControlFlowBuilder {
 		//   return ECall(makeAST(EVar("if")), "", [condition, {:do, then}, {:else, else}]);
 		//
 		// NEW CORRECT CODE (generates proper if expressions):
-		return EIf(condition, thenBranch, elseBranch);
+		return buildIfKeepingTestBindings(condition, thenBranch, elseBranch);
 	}
 
 	/**
@@ -859,7 +859,7 @@ class ControlFlowBuilder {
 		// keeps `v` for them, so such a test must stay an `if`, whose condition
 		// binding reaches both branches (haxe.elixir.codex-u8x).
 		if (conditionBindsVariable(condition))
-			return EIf(condition, thenBranch, elseBranch);
+			return buildIfKeepingTestBindings(condition, thenBranch, elseBranch);
 
 		var clauses = [];
 		var hasFinalElse = false; // Track if we emitted a final else clause
@@ -909,6 +909,86 @@ class ControlFlowBuilder {
 		}
 
 		return ECond(clauses);
+	}
+
+	/**
+	 * Builds an `if` whose branches, and the code after it, see every variable
+	 * that its test binds.
+	 *
+	 * WHY: Elixir exports a binding from the test of an `if`, but not from the
+	 * right side of `and`, `or`, `&&` or `||` inside that test: those operators
+	 * run their right side in a scope of its own. Haxe keeps the assignment in
+	 * `else if (k != "z" && (v = get(m, k)) > 0)`, so the branches and the code
+	 * after the `if` must read the new `v` (haxe.elixir.codex-u8x).
+	 *
+	 * HOW: Split the test at each such operator, so that every binding test
+	 * becomes the whole test of an `if` of its own:
+	 *
+	 *   if a and b, do: x, else: y   becomes   if a, do: (if b, do: x, else: y), else: y
+	 *   if a or b, do: x, else: y    becomes   if a, do: x, else: (if b, do: x, else: y)
+	 *   if not a, do: x, else: y     becomes   if a, do: y, else: x
+	 *
+	 * The split writes one branch twice. Both copies are the same code and at
+	 * most one of them runs, exactly as in the short-circuit form. A test that
+	 * binds nothing on the right side of such an operator stays as it is.
+	 *
+	 * LIMITS: Only the boolean structure at the top of the test is split. A
+	 * binding operator inside a call argument or a comparison operand is not
+	 * reached. The `if` must be a statement for the code after it to see the
+	 * binding: a value `if`, such as a ternary, exports no assignment at all.
+	 * Value-position switches have the same gap (haxe.elixir.codex-pap).
+	 *
+	 * Regression fixture: `regression/short_circuit_condition_assignment`.
+	 */
+	static function buildIfKeepingTestBindings(condition:ElixirAST, thenBranch:ElixirAST, elseBranch:Null<ElixirAST>):ElixirASTDef {
+		var test = withoutParentheses(condition);
+		if (!testBindsInShortCircuitScope(test))
+			return EIf(condition, thenBranch, elseBranch);
+		return switch (test.def) {
+			case EBinary(And | AndAlso, left, right):
+				buildIfKeepingTestBindings(left, makeAST(buildIfKeepingTestBindings(right, thenBranch, elseBranch)), elseBranch);
+			case EBinary(Or | OrElse, left, right):
+				buildIfKeepingTestBindings(left, thenBranch, makeAST(buildIfKeepingTestBindings(right, thenBranch, elseBranch)));
+			case EUnary(Not, negated):
+				// An `if` without `else` has the value nil when the test fails.
+				buildIfKeepingTestBindings(negated, elseBranch == null ? makeAST(ENil) : elseBranch, thenBranch);
+			default:
+				EIf(condition, thenBranch, elseBranch);
+		};
+	}
+
+	/**
+	 * Returns true when `test` binds a variable in a place that Elixir does not
+	 * export: on the right side of `and`, `or`, `&&` or `||`, also below `not`
+	 * and on the left side of another such operator.
+	 *
+	 * In `a and (v = f()) > 0` the match is on the right side, so `v` is not
+	 * visible after the test. In `(v = f()) > 0 and a` it is on the left side,
+	 * which Elixir evaluates in the enclosing scope, so nothing needs to change.
+	 */
+	static function testBindsInShortCircuitScope(test:ElixirAST):Bool {
+		var operand = withoutParentheses(test);
+		return switch (operand.def) {
+			case EBinary(And | AndAlso | Or | OrElse, left, right): conditionBindsVariable(right) || testBindsInShortCircuitScope(left);
+			case EUnary(Not, negated):
+				testBindsInShortCircuitScope(negated);
+			default:
+				false;
+		};
+	}
+
+	/** Returns the expression inside any number of enclosing parentheses. */
+	static function withoutParentheses(expression:ElixirAST):ElixirAST {
+		var current = expression;
+		while (current != null && current.def != null) {
+			switch (current.def) {
+				case EParen(inner):
+					current = inner;
+				default:
+					return current;
+			}
+		}
+		return current;
 	}
 
 	/**
