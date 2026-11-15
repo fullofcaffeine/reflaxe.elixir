@@ -351,7 +351,7 @@ class UnderscorePromoteByUseLateTransforms {
 		// This pass promotes underscores, not distinct numbered locals.
 		// Collapsing _g2 to g can overwrite g before its captured read.
 		var b = s;
-		if (b == "" || b.charAt(0) != b.charAt(0).toLowerCase() || b.charAt(0) == "_")
+		if (b == "" || !reflaxe.elixir.ast.naming.ElixirNaming.isVariableStart(b.charAt(0)) || b.charAt(0) == "_")
 			return null;
 		return b;
 	}
