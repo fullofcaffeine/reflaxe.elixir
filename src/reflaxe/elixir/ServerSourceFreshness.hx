@@ -61,23 +61,33 @@ private typedef SourceSnapshot = {
  *   `Context.registerModuleDependency` are not covered. For these, a tool that
  *   can write the same file two times within one second must start a new
  *   server.
- * - Haxe resets everything that a macro remembers when a request has other
- *   defines than the request before it, but it keeps the typed modules of
- *   both sets of defines. The first request after such a change has no
- *   snapshots and compares nothing. One server that takes turns between two
- *   HXML files with different defines is not covered across each change.
+ * - Haxe forgets everything that a macro remembers whenever it builds its
+ *   macro interpreter again: when a request has other defines than the
+ *   request before it, and after a failed build with an error in macro code,
+ *   for example a type error in a macro file. Haxe keeps its typed modules in
+ *   both cases. The next request has no snapshots and compares nothing, and
+ *   every file is a first-time file again. A file that changed with the same
+ *   file time more than two seconds before that request then stays old until
+ *   it changes again. One server that takes turns between two HXML files with
+ *   different defines is not covered across each change.
  * - A module that Haxe loads before this macro runs is not covered: the few
  *   base modules such as `StdTypes`, and any module that an earlier
  *   initialization macro of the project asks for, for example
  *   `--macro haxe.macro.Context.getType("A")` in front of `-lib reflaxe.elixir`.
  *   Haxe has then already decided to reuse the module in this request.
- * - A request can stop before Haxe finished typing, for example on a syntax
- *   error. A file that Haxe parsed for the first time in such a request is not
- *   known here until a later request reaches the end of typing. This case
- *   follows from how Haxe keeps parsed files; it was not reproduced. A request
- *   with an ordinary type error does reach the end of typing.
+ * - Some requests record nothing: an editor (display) request, and a request
+ *   that stops before Haxe finished typing, for example on a syntax error. A
+ *   file that Haxe parsed for the first time in such a request, and that then
+ *   changed with the same file time, is still old in the next build. That
+ *   build marks it `UNPROVEN`, and the build after it uses the new text. The
+ *   display case is in the server-cache test. The other case follows from how
+ *   Haxe keeps parsed files; it was not reproduced. A request with an ordinary
+ *   type error does reach the end of typing.
  * - The first-time rule compares file times with the clock of this machine. A
  *   file system that stamps files from another clock is outside this rule.
+ * - Each request reads every known file, and the server keeps one copy of
+ *   each. A file stays known when it leaves the build; it is dropped only
+ *   when it is deleted or the server stops.
  * - A fresh compiler process has no snapshots, so a direct build compiles as
  *   before. It only records snapshots that nothing reads.
  */
@@ -103,10 +113,10 @@ class ServerSourceFreshness {
 
 	/**
 	 * Start time, in seconds, of the oldest request whose files were not
-	 * recorded, or null when the last request recorded its files. A request
-	 * that stops before Haxe finished typing never reaches
-	 * `recordTypedSources`, but Haxe may keep files that it parsed in that
-	 * request. A first-time file must be older than that request to be trusted.
+	 * recorded, or null when the last request recorded its files. An editor
+	 * (display) request and a request that stops before Haxe finished typing
+	 * never reach `recordTypedSources`, but Haxe keeps the files that it parsed
+	 * in them. A first-time file must be older than that request to be trusted.
 	 */
 	@:persistent static var unrecordedSince:Null<Float> = null;
 
@@ -120,13 +130,18 @@ class ServerSourceFreshness {
 	 */
 	public static function start():Void {
 		#if macro
-		// An editor (display) request does not generate output.
-		if (Context.defined("display"))
-			return;
-
 		final earliestUnrecorded = unrecordedSince;
 		final trustedBeforeSeconds = earliestUnrecorded != null ? earliestUnrecorded : Sys.time();
 		unrecordedSince = trustedBeforeSeconds;
+
+		// An editor (display) request generates no output and Haxe ends it
+		// before typing is complete, so nothing is compared or recorded here.
+		// It must still count as an unrecorded request above: Haxe uses the same
+		// cache for display and build requests and keeps each file that the
+		// display request parsed.
+		if (Context.defined("display"))
+			return;
+
 		trustedBeforeMs = (trustedBeforeSeconds - FILE_TIME_MARGIN_SECONDS) * 1000.0;
 
 		final known = snapshots;
@@ -175,6 +190,10 @@ class ServerSourceFreshness {
 			if (file == null || file.length == 0 || seenFiles.exists(file))
 				continue;
 			seenFiles.set(file, true);
+			// The keys are full paths. Haxe names most library files by their
+			// full path already, and those need no file system call here.
+			if (known.exists(file))
+				continue;
 
 			// A type that a macro defines can name a file that does not exist.
 			final path = try FileSystem.fullPath(file) catch (_:haxe.Exception) null;

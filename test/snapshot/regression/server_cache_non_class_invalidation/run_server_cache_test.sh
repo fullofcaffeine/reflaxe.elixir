@@ -329,6 +329,82 @@ run_same_second_edit_variant() {
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "same-second-removed"
 }
 
+# A "first-time file" is a source file that no build on this server has
+# recorded yet. The server has no earlier copy of it to compare with, so it
+# has its own two rules. Both cases below wait three seconds, which is longer
+# than the two-second margin of those rules.
+run_same_second_first_time_file_variant() {
+	local variants="$FIXTURE_DIR/variants/native-class"
+	local log="$TMP_ROOT/same-second-first-time.log"
+	local display_log="$TMP_ROOT/same-second-display.log"
+	local display_position unchanged_count
+
+	# Rule 1: a file that was last written well before the first build that
+	# reads it is trusted. The next build without an edit must build no class
+	# module again, and a later change with the same file time must be found.
+	cp "$variants/MainNative.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/CacheNativeBefore.hx" "$PROJECT_DIR/src/CacheNative.hx"
+	sleep 3
+	compile_server "$SERVER_OUTPUT"
+	compile_server "$SERVER_OUTPUT" >"$log"
+	unchanged_count="$(built_class_count "$log")"
+	if ((unchanged_count != 0)); then
+		echo "SERVER_CACHE_REUSE:same-second-settled-file built $unchanged_count class modules again without an edit" >&2
+		return 1
+	fi
+	echo "SERVER_CACHE_REUSE:same-second-settled-file:PASS"
+	edit_keeping_file_time "$PROJECT_DIR/src/CacheNative.hx" "native-before" "native-after"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-same-second-settled-file"
+	compare_generated_output "$TMP_ROOT/direct-same-second-settled-file" "$SERVER_OUTPUT" "same-second-settled-file"
+	grep -RFq '"native-after"' "$SERVER_OUTPUT" || {
+		echo "SERVER_CACHE_PARITY:same-second-settled-file kept the stale class body" >&2
+		return 1
+	}
+
+	restore_baseline_sources
+	rm -f "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "same-second-settled-file-removed"
+
+	# Rule 2: an editor (display) request reads a new file before any build
+	# does, and Haxe keeps what it parsed. The file then changes with the same
+	# file time. The first build may still use the old text, because the server
+	# learns about the file only in that build. The second build must not.
+	cp "$variants/MainNative.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/CacheNativeBefore.hx" "$PROJECT_DIR/src/CacheNative.hx"
+	display_position="$(python3 - "$PROJECT_DIR/src/Main.hx" <<'PY'
+import sys
+
+text = open(sys.argv[1], "rb").read()
+print(text.index(b"CacheNative.label") + len(b"CacheNative.") + 2)
+PY
+)"
+	"$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" --connect "$SERVER_PORT" compile.hxml -D "elixir_output=$SERVER_OUTPUT" \
+		--display "src/Main.hx@$display_position@type" >"$display_log" 2>&1 || true
+	grep -Fq 'String' "$display_log" || {
+		echo "SERVER_CACHE_PARITY:same-second-after-display: the display request did not type CacheNative.label" >&2
+		sed -n '1,40p' "$display_log" >&2
+		return 1
+	}
+	edit_keeping_file_time "$PROJECT_DIR/src/CacheNative.hx" "native-before" "native-after"
+	sleep 3
+	compile_server "$SERVER_OUTPUT"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-same-second-after-display"
+	compare_generated_output "$TMP_ROOT/direct-same-second-after-display" "$SERVER_OUTPUT" "same-second-after-display"
+	grep -RFq '"native-after"' "$SERVER_OUTPUT" || {
+		echo "SERVER_CACHE_PARITY:same-second-after-display kept the stale class body" >&2
+		return 1
+	}
+
+	restore_baseline_sources
+	rm -f "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "same-second-after-display-removed"
+}
+
 run_module_rename_variant() {
 	local direct_legacy="$TMP_ROOT/direct-module-legacy"
 	local direct_renamed="$TMP_ROOT/direct-module-renamed"
@@ -1073,6 +1149,7 @@ BASELINE_FD_COUNT="$(open_fd_count "$SERVER_PID")"
 
 # First, because every later variant relies on the server seeing each edit.
 run_same_second_edit_variant
+run_same_second_first_time_file_variant
 
 run_variant \
 	"enum" \

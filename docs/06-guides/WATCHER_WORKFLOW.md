@@ -389,18 +389,24 @@ within one second, or a tool writes a file and restores its file time, Haxe
 cannot see the second change. Without help, the server keeps the old class or
 enum and the build reports success with old output.
 
-Reflaxe.Elixir closes this for the `.hx` files that define the types of your
-build. When a server request starts, it reads each of these files again and
+Reflaxe.Elixir finds this change in the common case: a `.hx` file that defines
+a type of your build, and that an earlier build on the same server already
+used. When a server request starts, it reads each of these files again and
 compares the bytes with the previous request. It tells Haxe to forget each file
 that differs, and Haxe types that file again in the same request. For example,
 a formatter that rewrites `TodoLive.hx` half a second after you save it no
 longer leaves the unformatted version in the generated Elixir.
 
-A file that the server reads for the first time less than two seconds after it
-was written is read once more on the next request. The server has no earlier
-copy of such a file to compare with.
+This is a narrower promise than "every warm build equals a direct build". The
+rest of this section lists what is outside it. If a tool can write one file two
+times within one second in one of these cases, restart the watcher after that
+change, or make the tool wait one second between the writes.
 
-The check does not know these files, so the one-second limit of Haxe still
+**Cost.** Each server request reads every file that the check knows, and the
+server keeps one copy of each file in memory. A file stays known after it
+leaves the build, until it is deleted or the server stops.
+
+**Files that the check does not know.** The one-second limit of Haxe still
 applies to them:
 
 - a `.hx` file that only macro code imports;
@@ -410,15 +416,28 @@ applies to them:
 - a module that a `--macro` line of your HXML asks for before
   `-lib reflaxe.elixir`, for example `--macro haxe.macro.Context.getType("A")`.
 
-If a tool can write one of these two times within one second, restart the
-watcher after that change, or make the tool wait one second between the writes.
+**A file that the server sees for the first time.** The server has no earlier
+copy of such a file to compare with. It trusts the file only when the last
+write is at least two seconds older than the request. Otherwise it reads the
+file once more on the next request. This rule compares file times with the
+clock of your machine, so a file system that takes its times from another
+clock is outside it.
 
-The check also needs two requests in a row with the same defines. Haxe resets
-what a macro remembers when the defines change, so the first request after a
-change of defines compares nothing. `mix haxe.watch` gives each HXML file its
-own server and is not affected. If you send two HXML files with different
-defines to one server by hand, the one-second limit still applies to an edit
-that you make between a request of one file and the next request of the other.
+**One build can still be old.** Some requests read files but record nothing:
+an editor (display) request on the same server, and a build that stops before
+Haxe finished typing, for example on a syntax error. Suppose such a request
+reads a new file, and the file then changes with the same file time. The next
+build still uses the old text. The build after it uses the new text.
+
+**The server can lose what the check remembers.** Haxe forgets everything that
+a macro remembers whenever it builds its macro interpreter again. This happens
+when the defines change between two requests, and after a failed build with an
+error in macro code, for example a type error in one of your macro files. Haxe
+keeps its typed modules in both cases. The first request after that compares
+nothing. A file that changed with the same file time more than two seconds
+before that request stays old until you change it again. `mix haxe.watch` gives
+each HXML file its own server, so a change of defines does not happen there;
+an error in macro code can happen on any server.
 
 Changing an enum, typedef, or abstract intentionally
 causes one full target regeneration. These declarations can affect otherwise
